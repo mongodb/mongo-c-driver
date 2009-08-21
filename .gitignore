@@ -1,4 +1,7 @@
 
 *~
 *.o
-test
+*.a
+simpletest
+.scon*
+
