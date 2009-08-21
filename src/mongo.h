@@ -3,14 +3,16 @@
 #ifndef _MONGO_H_
 #define _MONGO_H_
 
+#include "bson.h"
+
 struct mongo_connection_options {
-    const char * _host;
-    int _port;
+    const char * host;
+    int port;
 };
 
 struct mongo_connection {
-    int _sock;
-    struct mongo_connection_options _options;
+    int sock;
+    struct mongo_connection_options options;
 };
 
 /**
