@@ -5,11 +5,17 @@
 
 int main(){
     struct mongo_connection conn;
-    int i;
+    struct bson_buffer bb;
+    struct bson b;
+
+    bson_buffer_init( & bb );
+    bson_append_double( &bb , "a" , 17 );
+    bson_init( &b , bson_finish( &bb ) , 1 );
+    
+    printf( "size: %d\n" , bson_size( &b ) );
     
     mongo_exit_on_error( mongo_connect( &conn , 0 ) );
-
-    for ( i=0; i<10; i++ ){
-        printf( "%d\n" , i );
-    }
+    mongo_exit_on_error( mongo_insert( &conn , "test.cc" , &b ) );
+    
+    return 0;
 }

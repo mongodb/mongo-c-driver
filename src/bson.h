@@ -25,6 +25,25 @@ enum bson_type {
     bson_long = 18
 };
 
+/* ----------------------------
+   READING
+   ------------------------------ */
+
+struct bson {
+    char * data;
+    int owned;
+};
+
+struct bson * bson_init( struct bson * b , char * data , int mine );
+int bson_size( struct bson * b );
+void bson_destory( struct bson * b );
+
+void bson_print( struct bson * b );
+
+
+/* ----------------------------
+   BUILDING
+   ------------------------------ */
 
 struct bson_buffer {
     char * buf;
@@ -33,12 +52,17 @@ struct bson_buffer {
     int finished;
 };
 
-struct bson_buffer * bson_init( struct bson_buffer * b );
+struct bson_buffer * bson_buffer_init( struct bson_buffer * b );
 struct bson_buffer * bson_ensure_space( struct bson_buffer * b , int bytesNeeded );
-struct bson_buffer * bson_finish( struct bson_buffer * b );
+
+/**
+ * @return the raw data.  you either should free this OR call bson_destory not both
+ */
+char * bson_finish( struct bson_buffer * b );
 void bson_destroy( struct bson_buffer * b );
 
 struct bson_buffer * bson_append_int( struct bson_buffer * b , const char * name , int i );
+struct bson_buffer * bson_append_double( struct bson_buffer * b , const char * name , double d );
 struct bson_buffer * bson_append_string( struct bson_buffer * b , const char * name , const char * str );
 struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , int i );
 struct bson_buffer * bson_append_null( struct bson_buffer * b , const char * name );
