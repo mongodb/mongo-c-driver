@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <arpa/inet.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 /* ----------------------------
@@ -42,11 +42,11 @@ int mongo_connect( struct mongo_connection * conn , struct mongo_connection_opti
         exit(-2);
         return -2;
     }
-    
+
     /* setup */
     conn->options = options;
     conn->sock = 0;
-    
+
     memset( conn->sa.sin_zero , 0 , sizeof(conn->sa.sin_zero) );
     conn->sa.sin_family = AF_INET;
     conn->sa.sin_port = htons(port);
@@ -59,12 +59,12 @@ int mongo_connect( struct mongo_connection * conn , struct mongo_connection_opti
         fprintf( stderr , "couldn't get socket errno: %d" , errno );
         return -1;
     }
-    
+
     if ( connect( conn->sock , &conn->sa , conn->addressSize ) ){
         fprintf( stderr , "couldn' connect errno: %d\n" , errno );
         return -2;
     }
-    
+
     /* options */
 
     /* nagle */
@@ -84,12 +84,12 @@ int mongo_insert( struct mongo_connection * conn , const char * ns , struct bson
                                                       0 , 0 , mongo_op_insert );
     if ( ! mm )
         return 0;
-    
+
     data = &mm->data;
     memset( data , 0 , 4 );
     memcpy( data + 4 , ns , strlen( ns ) + 1 );
     memcpy( data + 4 + strlen( ns ) + 1 , bson->data , bson_size( bson ) );
-    
+
     write( conn->sock , mm , mm->len );
     return 0;
 }
@@ -97,7 +97,7 @@ int mongo_insert( struct mongo_connection * conn , const char * ns , struct bson
 void mongo_exit_on_error( int ret ){
     if ( ret == 0 )
         return;
-    
+
     printf( "unexpeted error: %d\n" , ret );
     exit(ret);
 }

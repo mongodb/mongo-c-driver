@@ -53,7 +53,7 @@ struct bson_buffer {
 };
 
 struct bson_buffer * bson_buffer_init( struct bson_buffer * b );
-struct bson_buffer * bson_ensure_space( struct bson_buffer * b , int bytesNeeded );
+struct bson_buffer * bson_ensure_space( struct bson_buffer * b , const int bytesNeeded );
 
 /**
  * @return the raw data.  you either should free this OR call bson_destory not both
@@ -61,10 +61,10 @@ struct bson_buffer * bson_ensure_space( struct bson_buffer * b , int bytesNeeded
 char * bson_finish( struct bson_buffer * b );
 void bson_destroy( struct bson_buffer * b );
 
-struct bson_buffer * bson_append_int( struct bson_buffer * b , const char * name , int i );
-struct bson_buffer * bson_append_double( struct bson_buffer * b , const char * name , double d );
+struct bson_buffer * bson_append_int( struct bson_buffer * b , const char * name , const int i );
+struct bson_buffer * bson_append_double( struct bson_buffer * b , const char * name , const double d );
 struct bson_buffer * bson_append_string( struct bson_buffer * b , const char * name , const char * str );
-struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , int i );
+struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , const int i );
 struct bson_buffer * bson_append_null( struct bson_buffer * b , const char * name );
 
 

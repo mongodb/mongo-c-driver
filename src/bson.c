@@ -1,8 +1,8 @@
 /* bson.c */
 
 #include "bson.h"
+#include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
 
 const int initialBufferSize = 128;
 
@@ -27,7 +27,7 @@ void bson_destory( struct bson * b ){
 }
 
 void bson_print( struct bson * b ){
-    
+
 }
 
 
@@ -54,7 +54,7 @@ void bson_append( struct bson_buffer * b , const void * data , int len ){
     b->cur += len;
 }
 
-struct bson_buffer * bson_ensure_space( struct bson_buffer * b , int bytesNeeded ){
+struct bson_buffer * bson_ensure_space( struct bson_buffer * b , const int bytesNeeded ){
     if ( b->finished )
         return 0;
     if ( b->bufSize - ( b->cur - b->buf ) > bytesNeeded )
@@ -82,7 +82,7 @@ void bson_destroy( struct bson_buffer * b ){
     b->finished = 1;
 }
 
-struct bson_buffer * bson_append_estart( struct bson_buffer * b , int type , const char * name , int dataSize ){
+struct bson_buffer * bson_append_estart( struct bson_buffer * b , int type , const char * name , const int dataSize ){
     if ( ! bson_ensure_space( b , 1 + strlen( name ) + 1 + dataSize ) )
         return 0;
     bson_append_byte( b , (char)type );
@@ -94,17 +94,17 @@ struct bson_buffer * bson_append_estart( struct bson_buffer * b , int type , con
    BUILDING TYPES
    ------------------------------ */
 
-struct bson_buffer * bson_append_int( struct bson_buffer * b , const char * name , int i ){
+struct bson_buffer * bson_append_int( struct bson_buffer * b , const char * name , const int i ){
     if ( ! bson_append_estart( b , bson_int , name , 4 ) ) return 0;
     bson_append( b , &i , 4 );
     return b;
 }
-struct bson_buffer * bson_append_double( struct bson_buffer * b , const char * name , double d ){
+struct bson_buffer * bson_append_double( struct bson_buffer * b , const char * name , const double d ){
     if ( ! bson_append_estart( b , bson_double , name , 8 ) ) return 0;
     bson_append( b , &d , 8 );
     return b;
 }
-struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , int i ){
+struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , const int i ){
     if ( ! bson_append_estart( b , bson_bool , name , 1 ) ) return 0;
     bson_append_byte( b , i != 0 );
     return b;
