@@ -33,14 +33,15 @@ struct bson_buffer {
     int finished;
 };
 
-void bson_init( struct bson_buffer * b );
-void bson_ensure_space( struct bson_buffer * b , int bytesNeeded );
-void bson_finish( struct bson_buffer * b );
+struct bson_buffer * bson_init( struct bson_buffer * b );
+struct bson_buffer * bson_ensure_space( struct bson_buffer * b , int bytesNeeded );
+struct bson_buffer * bson_finish( struct bson_buffer * b );
+void bson_destroy( struct bson_buffer * b );
 
-void bson_append_int( struct bson_buffer * b , const char * name , int i );
-void bson_append_string( struct bson_buffer * b , const char * name , const char * str );
-void bson_append_bool( struct bson_buffer * b , const char * name , int i );
-void bson_append_null( struct bson_buffer * b , const char * name );
+struct bson_buffer * bson_append_int( struct bson_buffer * b , const char * name , int i );
+struct bson_buffer * bson_append_string( struct bson_buffer * b , const char * name , const char * str );
+struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , int i );
+struct bson_buffer * bson_append_null( struct bson_buffer * b , const char * name );
 
 
 #endif

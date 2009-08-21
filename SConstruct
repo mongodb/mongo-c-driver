@@ -5,7 +5,7 @@ import os
 env = Environment()
 
 if "darwin" == os.sys.platform or "linux2" == os.sys.platform:
-    env.Append( CPPFLAGS=" -ansi -pedantic " )
+    env.Append( CPPFLAGS=" -ansi -pedantic -Wall " )
 
 env.Append( CPPPATH=["src/"] )
 
