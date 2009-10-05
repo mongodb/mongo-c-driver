@@ -3,6 +3,7 @@
 #include "bson.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 const int initialBufferSize = 128;
 
@@ -16,7 +17,10 @@ struct bson * bson_init( struct bson * b , char * data , int mine ){
     return b;
 }
 int bson_size( struct bson * b ){
-    int * i = (int*)b->data;
+    int * i;
+    if ( ! b || ! b->data )
+        return 0;
+    i = (int*)b->data;
     return i[0];
 }
 void bson_destory( struct bson * b ){
@@ -67,11 +71,13 @@ struct bson_buffer * bson_ensure_space( struct bson_buffer * b , const int bytes
 
 char * bson_finish( struct bson_buffer * b ){
     int * i;
-    if ( ! bson_ensure_space( b , 1 ) ) return 0;
-    bson_append_byte( b , 0 );
-    i = (int*)b->buf;
-    i[0] = b->cur - b->buf;
-    b->finished = 1;
+    if ( ! b->finished ){
+        if ( ! bson_ensure_space( b , 1 ) ) return 0;
+        bson_append_byte( b , 0 );
+        i = (int*)b->buf;
+        i[0] = b->cur - b->buf;
+        b->finished = 1;
+    }
     return b->buf;
 }
 
@@ -113,7 +119,19 @@ struct bson_buffer * bson_append_null( struct bson_buffer * b , const char * nam
     if ( ! bson_append_estart( b , bson_null , name , 0 ) ) return 0;
     return b;
 }
+struct bson_buffer * bson_append_string( struct bson_buffer * b , const char * name , const char * value ){
+    if ( ! bson_append_estart( b , bson_size , name , strlen(value) + 1 ) ) return 0;
+    bson_append( b , value , strlen( value ) + 1 );
+    return b;
+}
 
 
 
 
+
+void bson_fatal( char * msg , int ok ){
+    if ( ok )
+        return;
+    fprintf( stderr , "bson error: %s\n" , msg );
+    exit(-5);
+}

@@ -94,6 +94,52 @@ int mongo_insert( struct mongo_connection * conn , const char * ns , struct bson
     return 0;
 }
 
+char * mongo_data_append( char * start , const void * data , int len ){
+    memcpy( start , data , len );
+    return start + len;
+}
+
+struct mongo_message * mongo_read_response( struct mongo_connection * conn ){
+    char smallbuf[16];
+    struct mongo_message * mm;
+    int total , temp;
+    
+    total = 0;
+    while ( total < 16 ){
+        temp = read( conn->sock , smallbuf , 16 - total );
+        if ( temp < 0 ){
+            fprintf( stderr , "error reading " );
+            return 0;
+        }
+    }
+}
+
+void mongo_query( struct mongo_connection * conn , const char * ns , struct bson * query , struct bson * fields , int nToReturn , int nToSkip , int options ){
+    char * data;
+    struct mongo_message * mm = mongo_message_create( 16 + 
+                                                      4 + /*  options */
+                                                      strlen( ns ) + 1 + /* ns */
+                                                      4 + 4 + /* skip,return */
+                                                      bson_size( query ) +
+                                                      bson_size( fields ) ,
+                                                      0 , 0 , mongo_op_query );
+
+    data = &mm->data;
+    data = mongo_data_append( data , &options , 4 );
+    data = mongo_data_append( data , ns , strlen( ns ) + 1 );    
+    data = mongo_data_append( data , &nToSkip , 4 );
+    data = mongo_data_append( data , &nToReturn , 4 );
+    data = mongo_data_append( data , query->data , bson_size( query ) );    
+    if ( fields )
+        data = mongo_data_append( data , fields->data , bson_size( fields ) );    
+    
+
+    bson_fatal( "query building fail!" , data == ((char*)mm) + mm->len );
+
+    write( conn->sock , mm , mm->len );
+    
+}
+
 void mongo_exit_on_error( int ret ){
     if ( ret == 0 )
         return;

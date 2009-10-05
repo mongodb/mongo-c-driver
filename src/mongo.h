@@ -61,6 +61,7 @@ int mongo_destory( struct mongo_connection * conn );
 int mongo_insert( struct mongo_connection * conn , const char * ns , struct bson * data );
 int mongo_insert_batch( struct mongo_connection * conn , const char * ns , struct bson ** data , int num );
 
+void mongo_query( struct mongo_connection * conn , const char * ns , struct bson * query , struct bson * fields , int nToReturn , int nToSkip , int options );
 
 /* ----------------------------
    HIGHER LEVEL - indexes - command helpers eval

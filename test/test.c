@@ -17,5 +17,7 @@ int main(){
     mongo_exit_on_error( mongo_connect( &conn , 0 ) );
     mongo_exit_on_error( mongo_insert( &conn , "test.cc" , &b ) );
     
+    mongo_query( &conn , "test.cc" , &b , 0 , 0 , 0 , 0 );
+    
     return 0;
 }
