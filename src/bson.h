@@ -53,6 +53,10 @@ enum bson_type bson_iterator_next( struct bson_iterator * i );
 const char * bson_iterator_key( struct bson_iterator * i );
 const char * bson_iterator_value( struct bson_iterator * i );
 
+double bson_iterator_double( struct bson_iterator * i );
+int bson_iterator_int( struct bson_iterator * i );
+int bson_iterator_bool( struct bson_iterator * i );
+const char * bson_iterator_string( struct bson_iterator * i );
 
 /* ----------------------------
    BUILDING

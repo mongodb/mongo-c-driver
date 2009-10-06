@@ -36,8 +36,21 @@ void bson_print( struct bson * b ){
 
     while ( bson_iterator_more( &i ) ){
         enum bson_type t = bson_iterator_next( &i );
+        if ( t == 0 )
+            break;
+        
         const char * key = bson_iterator_key( &i );
-        printf( "\t%s : %d \n" , key , t );
+        printf( "\t%s : %d \t " , key , t );
+        switch ( t ){
+        case bson_int: printf( "%d" , bson_iterator_int( &i ) ); break;
+        case bson_double: printf( "%f" , bson_iterator_double( &i ) ); break;
+        case bson_bool: printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
+        case bson_string: printf( "%s" , bson_iterator_string( &i ) ); break;
+        case bson_null: printf( "null" ); break;
+        default:
+            fprintf( stderr , "can't print type : %d\n" , t );
+        }
+        printf( "\n" );
     }
 }
 
@@ -89,6 +102,21 @@ const char * bson_iterator_value( struct bson_iterator * i ){
     return t;
 }
 
+/* types */
+
+int bson_iterator_int( struct bson_iterator * i ){
+    return ((int*)bson_iterator_value( i ))[0];
+}
+double bson_iterator_double( struct bson_iterator * i ){
+    return ((double*)bson_iterator_value( i ))[0];
+}
+
+int bson_iterator_bool( struct bson_iterator * i ){
+    return bson_iterator_value( i )[0];
+}
+const char * bson_iterator_string( struct bson_iterator * i ){
+    return bson_iterator_value( i ) + 4;
+}
 
 /* ----------------------------
    BUILDING

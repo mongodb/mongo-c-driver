@@ -28,7 +28,7 @@ char * json_to_bson( char * js ){
                 bson_append_bool( &bb , k , json_object_get_boolean( v ) );
                 break;
             case json_type_double:
-                bson_append_double( &bb , k , json_object_get_boolean( v ) );
+                bson_append_double( &bb , k , json_object_get_double( v ) );
                 break;
             case json_type_string:
                 bson_append_string( &bb , k , json_object_get_string( v ) );
