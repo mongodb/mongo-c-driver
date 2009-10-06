@@ -64,6 +64,9 @@ int json_to_bson_test( char * js , int size , const char * hash ){
         return 0;
     }    
 
+    fprintf( stderr , "%s\n" , js );
+    bson_print( &b );
+
     bson_destory( &b );
     return 1;
 }
@@ -87,7 +90,10 @@ int main(){
     run_json_to_bson_test( "{ 'x' : null }" , 8 , "" );
     run_json_to_bson_test( "{ 'x' : 5.2 }" , 16 , "" );
     run_json_to_bson_test( "{ 'x' : 4 }" , 12 , "" );
-    run_json_to_bson_test( "{ 'x' : 'eliot' }" , 14 , "" );
+    run_json_to_bson_test( "{ 'x' : 'eliot' }" , 18 , "" );
+    run_json_to_bson_test( "{ 'x' : 5.2 , 'y' : 'truth' , 'z' : 1 }" , 36 , "" );
+    run_json_to_bson_test( "{ 'x' : 5.2 , 'y' : 'truth' , 'z' : 1.1 }" , 40 , "" );
+    run_json_to_bson_test( "{ 'x' : 'eliot' , 'y' : true , 'z' : 1 }" , 29 , "" );
     
     printf( "----\ntotal: %d\nfails : %d\n" , total , fails );
     

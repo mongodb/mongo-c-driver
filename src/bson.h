@@ -40,6 +40,19 @@ void bson_destory( struct bson * b );
 
 void bson_print( struct bson * b );
 
+struct bson_iterator {
+    const char * cur;
+    int first;
+};
+
+void bson_iterator_init( struct bson_iterator * i , const char * bson );
+
+int bson_iterator_more( struct bson_iterator * i );
+enum bson_type bson_iterator_next( struct bson_iterator * i );
+
+const char * bson_iterator_key( struct bson_iterator * i );
+const char * bson_iterator_value( struct bson_iterator * i );
+
 
 /* ----------------------------
    BUILDING

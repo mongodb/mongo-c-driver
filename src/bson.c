@@ -31,7 +31,62 @@ void bson_destory( struct bson * b ){
 }
 
 void bson_print( struct bson * b ){
+    struct bson_iterator i;
+    bson_iterator_init( &i , b->data );
 
+    while ( bson_iterator_more( &i ) ){
+        enum bson_type t = bson_iterator_next( &i );
+        const char * key = bson_iterator_key( &i );
+        printf( "\t%s : %d \n" , key , t );
+    }
+}
+
+/* ----------------------------
+   ITERATOR
+   ------------------------------ */
+
+void bson_iterator_init( struct bson_iterator * i , const char * bson ){
+    i->cur = bson + 4;
+    i->first = 1;
+}
+
+int bson_iterator_more( struct bson_iterator * i ){
+    return *(i->cur);
+}
+
+enum bson_type bson_iterator_next( struct bson_iterator * i ){
+    int ds;
+
+    if ( i->first ){
+        i->first = 0;
+        return (enum bson_type)(*i->cur);
+    }
+    
+    switch ( (enum bson_type)(*i->cur) ){
+    case bson_double: ds = 8; break;
+    case bson_bool: ds = 1; break;
+    case bson_null: ds = 0; break;
+    case bson_int: ds = 4; break;
+    case bson_long: ds = 8; break;
+    case bson_string: ds = 4 + ((int*)bson_iterator_value(i))[0]; break;
+    default: 
+        fprintf( stderr , "WTF: %d\n"  , (int)(i->cur[0]) );
+        exit(-1);
+        return 0;
+    }
+    
+    i->cur += 1 + strlen( i->cur + 1 ) + 1 + ds;
+
+    return (enum bson_type)(*i->cur);
+}
+
+const char * bson_iterator_key( struct bson_iterator * i ){
+    return i->cur + 1;
+}
+const char * bson_iterator_value( struct bson_iterator * i ){
+    char * t = i->cur + 1;
+    t += strlen( t ) + 1;
+    return t;
 }
 
 
@@ -120,8 +175,10 @@ struct bson_buffer * bson_append_null( struct bson_buffer * b , const char * nam
     return b;
 }
 struct bson_buffer * bson_append_string( struct bson_buffer * b , const char * name , const char * value ){
-    if ( ! bson_append_estart( b , bson_size , name , strlen(value) + 1 ) ) return 0;
-    bson_append( b , value , strlen( value ) + 1 );
+    int sl = strlen( value ) + 1;
+    if ( ! bson_append_estart( b , bson_string , name , 4 + sl ) ) return 0;
+    bson_append( b , &sl , 4 );
+    bson_append( b , value , sl );
     return b;
 }
 
