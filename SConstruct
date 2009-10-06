@@ -11,15 +11,18 @@ if "darwin" == os.sys.platform or "linux2" == os.sys.platform:
 
 env.Append( CPPPATH=["src/"] )
 
-coreFiles = Glob( "src/*.c" );
+coreFiles = []
 
-env.Default( env.Library( "mongoc" , coreFiles ) )
+m = env.Library( "mongoc" , coreFiles + [ "src/mongo.c"] )
+b = env.Library( "bson" , coreFiles + [ "src/bson.c"] )
 
-jsonEnv = env.Clone()
-jsonEnv.Append( LIBS=["json"] )
-jsonEnv.Append( LIBS=["mongoc"] )
-jsonEnv.Prepend( LIBPATH=["."] )
+env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
 
-env.Program( 'testsimple' , coreFiles + ["test/test.c"]  )
-jsonEnv.Program( 'testjson' , ["test/json.c"]  )
+testEnv = env.Clone()
+testEnv.Append( LIBS=["json"] )
+testEnv.Append( LIBS=["mongoc","bson"] )
+testEnv.Prepend( LIBPATH=["."] )
+
+testEnv.Program( 'testsimple' , coreFiles + ["test/test.c"]  )
+testEnv.Program( 'testjson' , ["test/json.c"]  )
 
