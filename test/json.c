@@ -4,6 +4,7 @@
 
 #include "mongo.h"
 #include "json/json.h"
+#include "md5.h"
 
 char * json_to_bson( char * js ){
     struct json_object * o = json_tokener_parse(js);
@@ -47,7 +48,14 @@ char * json_to_bson( char * js ){
 
 int json_to_bson_test( char * js , int size , const char * hash ){
     struct bson b;
+    md5_state_t st;
+    md5_byte_t digest[16];
+    char myhash[33];
+    int i;
 
+    fprintf( stderr , "----\n%s\n" , js );
+
+    
     bson_init( &b , json_to_bson( js ) , 1 );
 
     if ( b.data == 0 ){
@@ -64,9 +72,28 @@ int json_to_bson_test( char * js , int size , const char * hash ){
         return 0;
     }    
 
-    fprintf( stderr , "%s\n" , js );
     bson_print( &b );
+    
 
+    md5_init(&st);
+    md5_append( &st , (const md5_byte_t*)b.data , bson_size( &b ) );
+    md5_finish(&st, digest);
+
+    for ( i=0; i<16; i++ )
+        sprintf( myhash + ( i * 2 ) , "%.2x" , digest[i] );
+    myhash[32] = 0;
+
+    if ( strlen( hash ) != 32 ){
+        fprintf( stderr , "\tinvalid hash given got %s\n" , myhash );
+        bson_destory( &b );
+        return 0;
+    }
+    else if ( strstr( myhash , hash ) != myhash ){
+        fprintf( stderr , "\t hashes don't match\n\t%s\n\t%s\n" , myhash , hash );
+        bson_destory( &b );
+        return 0;
+    }
+    
     bson_destory( &b );
     return 1;
 }
@@ -82,21 +109,25 @@ int run_json_to_bson_test( char * js , int size , const char * hash ){
     return fails;
 }
 
+#define JSONBSONTEST run_json_to_bson_test
+
 int main(){
 
     run_json_to_bson_test( "1" , 0 , 0 );
-
-    run_json_to_bson_test( "{ 'x' : true }" , 9 , "" );
-    run_json_to_bson_test( "{ 'x' : null }" , 8 , "" );
-    run_json_to_bson_test( "{ 'x' : 5.2 }" , 16 , "" );
-    run_json_to_bson_test( "{ 'x' : 4 }" , 12 , "" );
-    run_json_to_bson_test( "{ 'x' : 'eliot' }" , 18 , "" );
-    run_json_to_bson_test( "{ 'x' : 5.2 , 'y' : 'truth' , 'z' : 1 }" , 36 , "" );
-    run_json_to_bson_test( "{ 'x' : 5.2 , 'y' : 'truth' , 'z' : 1.1 }" , 40 , "" );
-    run_json_to_bson_test( "{ 'x' : 'eliot' , 'y' : true , 'z' : 1 }" , 29 , "" );
-    run_json_to_bson_test( "{ 'x' : 5.2 , 'y' : { 'a' : 'eliot' , b : true } , 'z' : null }" , 44 , "" );
-    run_json_to_bson_test( "{ 'x' : 5.2 , 'y' : [ 'a' , 'eliot' , 'b' , true ] , 'z' : null }" , 62 , "" );
     
+    JSONBSONTEST( "{ 'x' : true }" , 9 , "6fe24623e4efc5cf07f027f9c66b5456" );
+    JSONBSONTEST( "{ 'x' : null }" , 8 , "12d43430ff6729af501faf0638e68888" );
+    JSONBSONTEST( "{ 'x' : 5.2 }" , 16 , "aaeeac4a58e9c30eec6b0b0319d0dff2" );
+    JSONBSONTEST( "{ 'x' : 'eliot' }" , 18 , "331a3b8b7cbbe0706c80acdb45d4ebbe" );
+    JSONBSONTEST( "{ 'x' : 5.2 , 'y' : 'truth' , 'z' : 1.1 }" , 40 , "7c77b3a6e63e2f988ede92624409da58" );
+    /*
+    JSONBSONTEST( "{ 'x' : 5.2 , 'y' : { 'a' : 'eliot' , b : true } , 'z' : null }" , 44 , "b3de8a0739ab329e7aea138d87235205" );
+    JSONBSONTEST( "{ 'x' : 5.2 , 'y' : [ 'a' , 'eliot' , 'b' , true ] , 'z' : null }" , 62 , "cb7bad5697714ba0cbf51d113b6a0ee8" );
+    */
+    JSONBSONTEST( "{ 'x' : 4 }" , 12 , "d1ed8dbf79b78fa215e2ded74548d89d" );
+    JSONBSONTEST( "{ 'x' : 5.2 , 'y' : 'truth' , 'z' : 1 }" , 36 , "8993953de080e9d4ef449d18211ef88a" );
+    JSONBSONTEST( "{ 'x' : 'eliot' , 'y' : true , 'z' : 1 }" , 29 , "24e79c12e6c746966b123310cb1a3290" );
+
     printf( "----\ntotal: %d\nfails : %d\n" , total , fails );
     
     return fails;

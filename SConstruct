@@ -23,6 +23,8 @@ testEnv.Append( LIBS=["json"] )
 testEnv.Append( LIBS=["mongoc","bson"] )
 testEnv.Prepend( LIBPATH=["."] )
 
-testEnv.Program( 'testsimple' , coreFiles + ["test/test.c"]  )
-testEnv.Program( 'testjson' , ["test/json.c"]  )
+testCoreFiles = [ "test/md5.c" ]
+
+testEnv.Program( 'testsimple' , testCoreFiles + ["test/test.c"]  )
+testEnv.Program( 'testjson' , testCoreFiles + ["test/json.c"]  )
 
