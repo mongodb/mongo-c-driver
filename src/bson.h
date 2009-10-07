@@ -39,6 +39,7 @@ int bson_size( struct bson * b );
 void bson_destory( struct bson * b );
 
 void bson_print( struct bson * b );
+void bson_print_raw( const char * bson , int depth );
 
 struct bson_iterator {
     const char * cur;
@@ -67,6 +68,8 @@ struct bson_buffer {
     char * cur;
     int bufSize;
     int finished;
+    char* stack[32];
+    int stackPos;
 };
 
 struct bson_buffer * bson_buffer_init( struct bson_buffer * b );
@@ -85,7 +88,8 @@ struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * nam
 struct bson_buffer * bson_append_null( struct bson_buffer * b , const char * name );
 
 struct bson_buffer * bson_append_start_object( struct bson_buffer * b , const char * name );
-struct bson_buffer * bson_append_finish_object( struct bson_buffer * b , const char * name );
+struct bson_buffer * bson_append_start_array( struct bson_buffer * b , const char * name );
+struct bson_buffer * bson_append_finish_object( struct bson_buffer * b );
 
 
 

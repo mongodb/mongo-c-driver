@@ -31,22 +31,35 @@ void bson_destory( struct bson * b ){
 }
 
 void bson_print( struct bson * b ){
+    bson_print_raw( b->data , 0 );
+}
+
+void bson_print_raw( const char * data , int depth ){
     struct bson_iterator i;
-    bson_iterator_init( &i , b->data );
+    const char * key;
+    int temp;
+    bson_iterator_init( &i , data );
 
     while ( bson_iterator_more( &i ) ){
         enum bson_type t = bson_iterator_next( &i );
         if ( t == 0 )
             break;
+        key = bson_iterator_key( &i );
         
-        const char * key = bson_iterator_key( &i );
-        printf( "\t%s : %d \t " , key , t );
+        for ( temp=0; temp<=depth; temp++ )
+            printf( "\t" );
+        printf( "%s : %d \t " , key , t );
         switch ( t ){
         case bson_int: printf( "%d" , bson_iterator_int( &i ) ); break;
         case bson_double: printf( "%f" , bson_iterator_double( &i ) ); break;
         case bson_bool: printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
         case bson_string: printf( "%s" , bson_iterator_string( &i ) ); break;
         case bson_null: printf( "null" ); break;
+        case bson_object:
+        case bson_array:
+            printf( "\n" );
+            bson_print_raw( bson_iterator_value( &i ) , depth + 1 );
+            break;
         default:
             fprintf( stderr , "can't print type : %d\n" , t );
         }
@@ -82,6 +95,8 @@ enum bson_type bson_iterator_next( struct bson_iterator * i ){
     case bson_int: ds = 4; break;
     case bson_long: ds = 8; break;
     case bson_string: ds = 4 + ((int*)bson_iterator_value(i))[0]; break;
+    case bson_object: ds = ((int*)bson_iterator_value(i))[0]; break;
+    case bson_array: ds = ((int*)bson_iterator_value(i))[0]; break;
     default: 
         fprintf( stderr , "WTF: %d\n"  , (int)(i->cur[0]) );
         exit(-1);
@@ -97,7 +112,7 @@ const char * bson_iterator_key( struct bson_iterator * i ){
     return i->cur + 1;
 }
 const char * bson_iterator_value( struct bson_iterator * i ){
-    char * t = i->cur + 1;
+    const char * t = i->cur + 1;
     t += strlen( t ) + 1;
     return t;
 }
@@ -129,6 +144,7 @@ struct bson_buffer * bson_buffer_init( struct bson_buffer * b ){
     b->bufSize = initialBufferSize;
     b->cur = b->buf + 4;
     b->finished = 0;
+    b->stackPos = 0;
     return b;
 }
 
@@ -211,7 +227,34 @@ struct bson_buffer * bson_append_string( struct bson_buffer * b , const char * n
 }
 
 
+struct bson_buffer * bson_append_start_object( struct bson_buffer * b , const char * name ){
+    int x = 0;
+    if ( ! bson_append_estart( b , bson_object , name , 5 ) ) return 0;
+    b->stack[ b->stackPos++ ] = b->cur;
+    bson_append( b , &x , 4 );
+    return b;
+}
 
+struct bson_buffer * bson_append_start_array( struct bson_buffer * b , const char * name ){
+    int x = 0;
+    if ( ! bson_append_estart( b , bson_array , name , 5 ) ) return 0;
+    b->stack[ b->stackPos++ ] = b->cur;
+    bson_append( b , &x , 4 );
+    return b;
+}
+
+struct bson_buffer * bson_append_finish_object( struct bson_buffer * b ){
+    char * start;
+    int i;
+    if ( ! bson_ensure_space( b , 1 ) ) return 0;
+    bson_append_byte( b , 0 );
+    
+    start = b->stack[ --b->stackPos ];
+    i = b->cur - start;
+    memcpy( start , &i , 4 );
+
+    return b;
+}
 
 
 void bson_fatal( char * msg , int ok ){
