@@ -84,6 +84,11 @@ struct bson_buffer * bson_append_string( struct bson_buffer * b , const char * n
 struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , const int i );
 struct bson_buffer * bson_append_null( struct bson_buffer * b , const char * name );
 
+struct bson_buffer * bson_append_start_object( struct bson_buffer * b , const char * name );
+struct bson_buffer * bson_append_finish_object( struct bson_buffer * b , const char * name );
+
+
+
 void bson_fatal( char * msg , int ok );
 
 #endif

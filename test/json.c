@@ -94,6 +94,8 @@ int main(){
     run_json_to_bson_test( "{ 'x' : 5.2 , 'y' : 'truth' , 'z' : 1 }" , 36 , "" );
     run_json_to_bson_test( "{ 'x' : 5.2 , 'y' : 'truth' , 'z' : 1.1 }" , 40 , "" );
     run_json_to_bson_test( "{ 'x' : 'eliot' , 'y' : true , 'z' : 1 }" , 29 , "" );
+    run_json_to_bson_test( "{ 'x' : 5.2 , 'y' : { 'a' : 'eliot' , b : true } , 'z' : null }" , 44 , "" );
+    run_json_to_bson_test( "{ 'x' : 5.2 , 'y' : [ 'a' , 'eliot' , 'b' , true ] , 'z' : null }" , 62 , "" );
     
     printf( "----\ntotal: %d\nfails : %d\n" , total , fails );
     
