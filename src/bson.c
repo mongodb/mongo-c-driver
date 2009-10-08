@@ -7,6 +7,7 @@
 
 const int initialBufferSize = 128;
 
+
 /* ----------------------------
    READING
    ------------------------------ */
@@ -126,7 +127,7 @@ double bson_iterator_double( struct bson_iterator * i ){
     return ((double*)bson_iterator_value( i ))[0];
 }
 
-int bson_iterator_bool( struct bson_iterator * i ){
+bson_bool_t bson_iterator_bool( struct bson_iterator * i ){
     return bson_iterator_value( i )[0];
 }
 const char * bson_iterator_string( struct bson_iterator * i ){
@@ -209,7 +210,7 @@ struct bson_buffer * bson_append_double( struct bson_buffer * b , const char * n
     bson_append( b , &d , 8 );
     return b;
 }
-struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , const int i ){
+struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , const bson_bool_t i ){
     if ( ! bson_append_estart( b , bson_bool , name , 1 ) ) return 0;
     bson_append_byte( b , i != 0 );
     return b;

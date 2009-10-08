@@ -25,14 +25,31 @@ enum bson_type {
     bson_long = 18
 };
 
-/* ----------------------------
-   READING
-   ------------------------------ */
 
 struct bson {
     char * data;
     int owned;
 };
+
+struct bson_iterator {
+    const char * cur;
+    int first;
+};
+
+struct bson_buffer {
+    char * buf;
+    char * cur;
+    int bufSize;
+    int finished;
+    char* stack[32];
+    int stackPos;
+};
+
+typedef short bson_bool_t;
+
+/* ----------------------------
+   READING
+   ------------------------------ */
 
 struct bson * bson_init( struct bson * b , char * data , int mine );
 int bson_size( struct bson * b );
@@ -40,11 +57,6 @@ void bson_destory( struct bson * b );
 
 void bson_print( struct bson * b );
 void bson_print_raw( const char * bson , int depth );
-
-struct bson_iterator {
-    const char * cur;
-    int first;
-};
 
 void bson_iterator_init( struct bson_iterator * i , const char * bson );
 
@@ -56,21 +68,12 @@ const char * bson_iterator_value( struct bson_iterator * i );
 
 double bson_iterator_double( struct bson_iterator * i );
 int bson_iterator_int( struct bson_iterator * i );
-int bson_iterator_bool( struct bson_iterator * i );
+bson_bool_t bson_iterator_bool( struct bson_iterator * i );
 const char * bson_iterator_string( struct bson_iterator * i );
 
 /* ----------------------------
    BUILDING
    ------------------------------ */
-
-struct bson_buffer {
-    char * buf;
-    char * cur;
-    int bufSize;
-    int finished;
-    char* stack[32];
-    int stackPos;
-};
 
 struct bson_buffer * bson_buffer_init( struct bson_buffer * b );
 struct bson_buffer * bson_ensure_space( struct bson_buffer * b , const int bytesNeeded );
@@ -84,7 +87,7 @@ void bson_destroy( struct bson_buffer * b );
 struct bson_buffer * bson_append_int( struct bson_buffer * b , const char * name , const int i );
 struct bson_buffer * bson_append_double( struct bson_buffer * b , const char * name , const double d );
 struct bson_buffer * bson_append_string( struct bson_buffer * b , const char * name , const char * str );
-struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , const int i );
+struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , const bson_bool_t v );
 struct bson_buffer * bson_append_null( struct bson_buffer * b , const char * name );
 
 struct bson_buffer * bson_append_start_object( struct bson_buffer * b , const char * name );
