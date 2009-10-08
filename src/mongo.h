@@ -10,16 +10,17 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-struct mongo_connection_options {
-    const char * host;
+typedef struct mongo_connection_options {
+    char host[255];
     int port;
-};
+} mongo_connection_options;
 
 struct mongo_connection {
-    struct mongo_connection_options * options;
+    struct mongo_connection_options options;
     struct sockaddr_in sa;
     socklen_t addressSize;
     int sock;
+    int connected;
 };
 
 struct mongo_message {

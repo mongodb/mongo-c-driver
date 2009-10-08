@@ -33,24 +33,28 @@ struct mongo_message * mongo_message_create( int len , int id , int responseTo ,
    ------------------------------ */
 
 int mongo_connect( struct mongo_connection * conn , struct mongo_connection_options * options ){
-    const char * ip = "127.0.0.1";
-    int port = 27017;
     int x = 1;
+    conn->options.port = 27017;
+    conn->connected = 0;
 
     if ( options ){
+        memcpy( &(conn->options) , options , sizeof( mongo_connection_options ) );
         printf( "can't handle options to mongo_connect yet" );
         exit(-2);
         return -2;
     }
+    else {
+        strcpy( conn->options.host , "127.0.0.1" );
+    }
 
     /* setup */
-    conn->options = options;
+
     conn->sock = 0;
 
     memset( conn->sa.sin_zero , 0 , sizeof(conn->sa.sin_zero) );
     conn->sa.sin_family = AF_INET;
-    conn->sa.sin_port = htons(port);
-    conn->sa.sin_addr.s_addr = inet_addr( ip );
+    conn->sa.sin_port = htons(conn->options.port);
+    conn->sa.sin_addr.s_addr = inet_addr( conn->options.host );
     conn->addressSize = sizeof(conn->sa);
 
     /* connect */
@@ -60,7 +64,7 @@ int mongo_connect( struct mongo_connection * conn , struct mongo_connection_opti
         return -1;
     }
 
-    if ( connect( conn->sock , &conn->sa , conn->addressSize ) ){
+    if ( connect( conn->sock , (struct sockaddr*)&conn->sa , conn->addressSize ) ){
         fprintf( stderr , "couldn' connect errno: %d\n" , errno );
         return -2;
     }
@@ -75,6 +79,8 @@ int mongo_connect( struct mongo_connection * conn , struct mongo_connection_opti
 
     /* TODO signals */
 
+
+    conn->connected = 1;
     return 0;
 }
 
@@ -138,6 +144,22 @@ void mongo_query( struct mongo_connection * conn , const char * ns , struct bson
 
     write( conn->sock , mm , mm->len );
     
+}
+
+int mongo_disconnect( struct mongo_connection * conn ){
+    if ( ! conn->connected )
+        return 1;
+
+    close( conn->sock );
+    
+    conn->sock = 0;
+    conn->connected = 0;
+    
+    return 0;
+}
+
+int mongo_destory( struct mongo_connection * conn ){
+    return mongo_disconnect( conn );
 }
 
 void mongo_exit_on_error( int ret ){
