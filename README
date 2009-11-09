@@ -3,3 +3,4 @@ This is a very basic MongoDB c driver.
 
 The goal is to be super strict for ultimate portability, no dependencies, and very embeddable anywhere.
 
+You will need JSON-C (http://oss.metaparadigm.com/json-c/) to compile the unit tests.
