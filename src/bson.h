@@ -3,7 +3,7 @@
 #ifndef _BSON_H_
 #define _BSON_H_
 
-enum bson_type {
+typedef enum {
     bson_eoo=0 ,
     bson_double=1,
     bson_string=2,
@@ -23,7 +23,7 @@ enum bson_type {
     bson_int = 16,
     bson_timestamp = 17,
     bson_long = 18
-};
+} bson_type;
 
 
 typedef struct {
@@ -61,7 +61,7 @@ void bson_print_raw( const char * bson , int depth );
 void bson_iterator_init( bson_iterator * i , const char * bson );
 
 int bson_iterator_more( bson_iterator * i );
-enum bson_type bson_iterator_next( bson_iterator * i );
+bson_type bson_iterator_next( bson_iterator * i );
 
 const char * bson_iterator_key( bson_iterator * i );
 const char * bson_iterator_value( bson_iterator * i );

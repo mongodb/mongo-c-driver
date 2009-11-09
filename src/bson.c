@@ -42,7 +42,7 @@ void bson_print_raw( const char * data , int depth ){
     bson_iterator_init( &i , data );
 
     while ( bson_iterator_more( &i ) ){
-        enum bson_type t = bson_iterator_next( &i );
+        bson_type t = bson_iterator_next( &i );
         if ( t == 0 )
             break;
         key = bson_iterator_key( &i );
@@ -81,15 +81,15 @@ int bson_iterator_more( bson_iterator * i ){
     return *(i->cur);
 }
 
-enum bson_type bson_iterator_next( bson_iterator * i ){
+bson_type bson_iterator_next( bson_iterator * i ){
     int ds;
 
     if ( i->first ){
         i->first = 0;
-        return (enum bson_type)(*i->cur);
+        return (bson_type)(*i->cur);
     }
     
-    switch ( (enum bson_type)(*i->cur) ){
+    switch ( (bson_type)(*i->cur) ){
     case bson_double: ds = 8; break;
     case bson_bool: ds = 1; break;
     case bson_null: ds = 0; break;
@@ -106,7 +106,7 @@ enum bson_type bson_iterator_next( bson_iterator * i ){
     
     i->cur += 1 + strlen( i->cur + 1 ) + 1 + ds;
 
-    return (enum bson_type)(*i->cur);
+    return (bson_type)(*i->cur);
 }
 
 const char * bson_iterator_key( bson_iterator * i ){
