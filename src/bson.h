@@ -90,6 +90,7 @@ int bson_iterator_int_raw( bson_iterator * i );
 int64_t bson_iterator_long_raw( bson_iterator * i );
 bson_bool_t bson_iterator_bool_raw( bson_iterator * i );
 const char * bson_iterator_string( bson_iterator * i );
+int bson_iterator_string_len( bson_iterator * i );
 
 /* ----------------------------
    BUILDING

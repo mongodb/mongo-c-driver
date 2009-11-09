@@ -176,6 +176,9 @@ bson_bool_t bson_iterator_bool( bson_iterator * i ){
 const char * bson_iterator_string( bson_iterator * i ){
     return bson_iterator_value( i ) + 4;
 }
+int bson_iterator_string_len( bson_iterator * i ){
+    return bson_iterator_int_raw( i );
+}
 
 /* ----------------------------
    BUILDING
