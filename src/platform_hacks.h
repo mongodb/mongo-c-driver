@@ -18,7 +18,7 @@ typedef __int64 int64_t;
 #include <stdint.h>
 #endif
 
-#ifdef __BIG_ENDIAN__
+#ifdef MONGO_BIG_ENDIAN
 #define bson_endian_from_double(x) (bson_swap_endian64(bson_double_as_int64(x)))
 #define bson_endian_to_double(x) (bson_int64_as_double(bson_swap_endian64(x)))
 #define bson_endian64(x) (bson_swap_endian64(x))

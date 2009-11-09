@@ -1,17 +1,10 @@
 /* endian_swap.c */
 
-#ifndef __BIG_ENDIAN__
-#define __BIG_ENDIAN__
-#define __BIG_ENDIAN__was_undef
+#ifndef MONGO_BIG_ENDIAN
+#define MONGO_BIG_ENDIAN
 #endif
 
 #include "platform_hacks.h"
-
-#ifdef __BIG_ENDIAN__was_undef
-#undef __BIG_ENDIAN__
-#undef __BIG_ENDIAN__was_undef
-#endif
-
 #include <stdio.h>
 
 #define ASSERT(x) \
