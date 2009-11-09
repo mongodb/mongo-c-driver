@@ -27,4 +27,5 @@ testCoreFiles = [ "test/md5.c" ]
 
 testEnv.Program( 'testsimple' , testCoreFiles + ["test/test.c"]  )
 testEnv.Program( 'testjson' , testCoreFiles + ["test/json.c"]  )
+testEnv.Program( 'testendian_swap' , testCoreFiles + ["test/endian_swap.c"]  )
 
