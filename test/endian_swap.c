@@ -7,7 +7,7 @@
 
 #include "platform_hacks.h"
 
-#ifndef __BIG_ENDIAN__was_undef
+#ifdef __BIG_ENDIAN__was_undef
 #undef __BIG_ENDIAN__
 #undef __BIG_ENDIAN__was_undef
 #endif
