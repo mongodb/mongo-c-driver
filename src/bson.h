@@ -3,13 +3,7 @@
 #ifndef _BSON_H_
 #define _BSON_H_
 
-/* may need more hacks here */
-#ifdef _MSC_VER
-typedef __int64 int64_t;
-#else
-#include <stdint.h>
-#endif
-
+#include "platform_hacks.h"
 
 typedef enum {
     bson_eoo=0 ,
