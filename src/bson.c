@@ -109,6 +109,9 @@ bson_type bson_iterator_next( bson_iterator * i ){
     return (bson_type)(*i->cur);
 }
 
+bson_type bson_iterator_type( bson_iterator * i ){
+    return (bson_type)i->cur[0];
+}
 const char * bson_iterator_key( bson_iterator * i ){
     return i->cur + 1;
 }
@@ -125,6 +128,9 @@ int bson_iterator_int( bson_iterator * i ){
 }
 double bson_iterator_double( bson_iterator * i ){
     return ((double*)bson_iterator_value( i ))[0];
+}
+int64_t bson_iterator_long( bson_iterator * i ){
+    return ((int64_t*)bson_iterator_value( i ))[0];
 }
 
 bson_bool_t bson_iterator_bool( bson_iterator * i ){

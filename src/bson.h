@@ -3,6 +3,14 @@
 #ifndef _BSON_H_
 #define _BSON_H_
 
+/* may need more hacks here */
+#ifdef _MSC_VER
+typedef __int64 int64_t;
+#else
+#include <stdint.h>
+#endif
+
+
 typedef enum {
     bson_eoo=0 ,
     bson_double=1,
@@ -63,13 +71,16 @@ void bson_iterator_init( bson_iterator * i , const char * bson );
 int bson_iterator_more( bson_iterator * i );
 bson_type bson_iterator_next( bson_iterator * i );
 
+bson_type bson_iterator_type( bson_iterator * i );
 const char * bson_iterator_key( bson_iterator * i );
 const char * bson_iterator_value( bson_iterator * i );
+
 
 double bson_iterator_double( bson_iterator * i );
 int bson_iterator_int( bson_iterator * i );
 bson_bool_t bson_iterator_bool( bson_iterator * i );
 const char * bson_iterator_string( bson_iterator * i );
+int64_t bson_iterator_long( bson_iterator * i );
 
 /* ----------------------------
    BUILDING
