@@ -89,15 +89,15 @@ bson_type bson_iterator_next( bson_iterator * i ){
         return (bson_type)(*i->cur);
     }
     
-    switch ( (bson_type)(*i->cur) ){
+    switch ( bson_iterator_type(i) ){
     case bson_double: ds = 8; break;
     case bson_bool: ds = 1; break;
     case bson_null: ds = 0; break;
     case bson_int: ds = 4; break;
     case bson_long: ds = 8; break;
-    case bson_string: ds = 4 + ((int*)bson_iterator_value(i))[0]; break;
-    case bson_object: ds = ((int*)bson_iterator_value(i))[0]; break;
-    case bson_array: ds = ((int*)bson_iterator_value(i))[0]; break;
+    case bson_string: ds = 4 + bson_iterator_int_raw(i); break;
+    case bson_object: ds = bson_iterator_int_raw(i); break;
+    case bson_array: ds = bson_iterator_int_raw(i); break;
     default: 
         fprintf( stderr , "WTF: %d\n"  , (int)(i->cur[0]) );
         exit(-1);
