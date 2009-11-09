@@ -15,21 +15,21 @@ typedef struct mongo_connection_options {
     int port;
 } mongo_connection_options;
 
-struct mongo_connection {
-    struct mongo_connection_options options;
+typedef struct {
+    mongo_connection_options options;
     struct sockaddr_in sa;
     socklen_t addressSize;
     int sock;
     int connected;
-};
+} mongo_connection;
 
-struct mongo_message {
+typedef struct {
     int len;
     int id;
     int responseTo;
     int op;
     char data;
-};
+} mongo_message;
 
 enum mongo_operations {
     mongo_op_msg = 1000,    /* generic msg command followed by a string */
@@ -49,9 +49,9 @@ enum mongo_operations {
 /**
  * @param options can be null
  */
-int mongo_connect( struct mongo_connection * conn , struct mongo_connection_options * options );
-int mongo_disconnect( struct mongo_connection * conn );
-int mongo_destory( struct mongo_connection * conn );
+int mongo_connect( mongo_connection * conn , mongo_connection_options * options );
+int mongo_disconnect( mongo_connection * conn );
+int mongo_destory( mongo_connection * conn );
 
 
 
@@ -59,10 +59,10 @@ int mongo_destory( struct mongo_connection * conn );
    CORE METHODS - insert update remove query getmore
    ------------------------------ */
 
-int mongo_insert( struct mongo_connection * conn , const char * ns , struct bson * data );
-int mongo_insert_batch( struct mongo_connection * conn , const char * ns , struct bson ** data , int num );
+int mongo_insert( mongo_connection * conn , const char * ns , bson * data );
+int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
-void mongo_query( struct mongo_connection * conn , const char * ns , struct bson * query , struct bson * fields , int nToReturn , int nToSkip , int options );
+void mongo_query( mongo_connection * conn , const char * ns , bson * query , bson * fields , int nToReturn , int nToSkip , int options );
 
 /* ----------------------------
    HIGHER LEVEL - indexes - command helpers eval

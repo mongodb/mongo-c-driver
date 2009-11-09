@@ -4,9 +4,9 @@
 #include <stdio.h>
 
 int main(){
-    struct mongo_connection conn;
-    struct bson_buffer bb;
-    struct bson b;
+    mongo_connection conn;
+    bson_buffer bb;
+    bson b;
 
     bson_buffer_init( & bb );
     bson_append_double( &bb , "a" , 17 );

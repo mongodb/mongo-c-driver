@@ -7,13 +7,13 @@
 #include "json/json.h"
 #include "md5.h"
 
-void json_to_bson_append_element( struct bson_buffer * bb , const char * k , struct json_object * v );
+void json_to_bson_append_element( bson_buffer * bb , const char * k , struct json_object * v );
 
 /**
    should already have called start_array
    this will not call start/finish
  */
-void json_to_bson_append_array( struct bson_buffer * bb , struct json_object * a ){
+void json_to_bson_append_array( bson_buffer * bb , struct json_object * a ){
     int i;
     char buf[10];
     for ( i=0; i<json_object_array_length( a ); i++){
@@ -22,13 +22,13 @@ void json_to_bson_append_array( struct bson_buffer * bb , struct json_object * a
     }
 }
 
-void json_to_bson_append( struct bson_buffer * bb , struct json_object * o ){
+void json_to_bson_append( bson_buffer * bb , struct json_object * o ){
     json_object_object_foreach(o,k,v){
         json_to_bson_append_element( bb , k , v );
     }
 }
 
-void json_to_bson_append_element( struct bson_buffer * bb , const char * k , struct json_object * v ){
+void json_to_bson_append_element( bson_buffer * bb , const char * k , struct json_object * v ){
     if ( ! v ){
         bson_append_null( bb , k );
         return;
@@ -65,7 +65,7 @@ void json_to_bson_append_element( struct bson_buffer * bb , const char * k , str
 
 char * json_to_bson( char * js ){
     struct json_object * o = json_tokener_parse(js);
-    struct bson_buffer bb;
+    bson_buffer bb;
     
     if ( is_error( o ) ){
         fprintf( stderr , "\t ERROR PARSING\n" );
@@ -83,7 +83,7 @@ char * json_to_bson( char * js ){
 }
 
 int json_to_bson_test( char * js , int size , const char * hash ){
-    struct bson b;
+    bson b;
     md5_state_t st;
     md5_byte_t digest[16];
     char myhash[33];

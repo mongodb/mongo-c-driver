@@ -26,24 +26,24 @@ enum bson_type {
 };
 
 
-struct bson {
+typedef struct {
     char * data;
     int owned;
-};
+} bson;
 
-struct bson_iterator {
+typedef struct {
     const char * cur;
     int first;
-};
+} bson_iterator;
 
-struct bson_buffer {
+typedef struct {
     char * buf;
     char * cur;
     int bufSize;
     int finished;
     char* stack[32];
     int stackPos;
-};
+} bson_buffer;
 
 typedef short bson_bool_t;
 
@@ -51,48 +51,48 @@ typedef short bson_bool_t;
    READING
    ------------------------------ */
 
-struct bson * bson_init( struct bson * b , char * data , int mine );
-int bson_size( struct bson * b );
-void bson_destory( struct bson * b );
+bson * bson_init( bson * b , char * data , int mine );
+int bson_size( bson * b );
+void bson_destory( bson * b );
 
-void bson_print( struct bson * b );
+void bson_print( bson * b );
 void bson_print_raw( const char * bson , int depth );
 
-void bson_iterator_init( struct bson_iterator * i , const char * bson );
+void bson_iterator_init( bson_iterator * i , const char * bson );
 
-int bson_iterator_more( struct bson_iterator * i );
-enum bson_type bson_iterator_next( struct bson_iterator * i );
+int bson_iterator_more( bson_iterator * i );
+enum bson_type bson_iterator_next( bson_iterator * i );
 
-const char * bson_iterator_key( struct bson_iterator * i );
-const char * bson_iterator_value( struct bson_iterator * i );
+const char * bson_iterator_key( bson_iterator * i );
+const char * bson_iterator_value( bson_iterator * i );
 
-double bson_iterator_double( struct bson_iterator * i );
-int bson_iterator_int( struct bson_iterator * i );
-bson_bool_t bson_iterator_bool( struct bson_iterator * i );
-const char * bson_iterator_string( struct bson_iterator * i );
+double bson_iterator_double( bson_iterator * i );
+int bson_iterator_int( bson_iterator * i );
+bson_bool_t bson_iterator_bool( bson_iterator * i );
+const char * bson_iterator_string( bson_iterator * i );
 
 /* ----------------------------
    BUILDING
    ------------------------------ */
 
-struct bson_buffer * bson_buffer_init( struct bson_buffer * b );
-struct bson_buffer * bson_ensure_space( struct bson_buffer * b , const int bytesNeeded );
+bson_buffer * bson_buffer_init( bson_buffer * b );
+bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded );
 
 /**
  * @return the raw data.  you either should free this OR call bson_destory not both
  */
-char * bson_finish( struct bson_buffer * b );
-void bson_destroy( struct bson_buffer * b );
+char * bson_finish( bson_buffer * b );
+void bson_destroy( bson_buffer * b );
 
-struct bson_buffer * bson_append_int( struct bson_buffer * b , const char * name , const int i );
-struct bson_buffer * bson_append_double( struct bson_buffer * b , const char * name , const double d );
-struct bson_buffer * bson_append_string( struct bson_buffer * b , const char * name , const char * str );
-struct bson_buffer * bson_append_bool( struct bson_buffer * b , const char * name , const bson_bool_t v );
-struct bson_buffer * bson_append_null( struct bson_buffer * b , const char * name );
+bson_buffer * bson_append_int( bson_buffer * b , const char * name , const int i );
+bson_buffer * bson_append_double( bson_buffer * b , const char * name , const double d );
+bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * str );
+bson_buffer * bson_append_bool( bson_buffer * b , const char * name , const bson_bool_t v );
+bson_buffer * bson_append_null( bson_buffer * b , const char * name );
 
-struct bson_buffer * bson_append_start_object( struct bson_buffer * b , const char * name );
-struct bson_buffer * bson_append_start_array( struct bson_buffer * b , const char * name );
-struct bson_buffer * bson_append_finish_object( struct bson_buffer * b );
+bson_buffer * bson_append_start_object( bson_buffer * b , const char * name );
+bson_buffer * bson_append_start_array( bson_buffer * b , const char * name );
+bson_buffer * bson_append_finish_object( bson_buffer * b );
 
 
 

@@ -14,8 +14,8 @@
    message stuff
    ------------------------------ */
 
-struct mongo_message * mongo_message_create( int len , int id , int responseTo , int op ){
-    struct mongo_message * mm = (struct mongo_message*)malloc( len );
+mongo_message * mongo_message_create( int len , int id , int responseTo , int op ){
+    mongo_message * mm = (mongo_message*)malloc( len );
     if ( ! mm )
         return 0;
     mm->len = len;
@@ -32,7 +32,7 @@ struct mongo_message * mongo_message_create( int len , int id , int responseTo ,
    connection stuff
    ------------------------------ */
 
-int mongo_connect( struct mongo_connection * conn , struct mongo_connection_options * options ){
+int mongo_connect( mongo_connection * conn , mongo_connection_options * options ){
     int x = 1;
     conn->options.port = 27017;
     conn->connected = 0;
@@ -84,9 +84,9 @@ int mongo_connect( struct mongo_connection * conn , struct mongo_connection_opti
     return 0;
 }
 
-int mongo_insert( struct mongo_connection * conn , const char * ns , struct bson * bson ){
+int mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
     char * data;
-    struct mongo_message * mm = mongo_message_create( 16 + 4 + strlen( ns ) + 1 + bson_size( bson ) ,
+    mongo_message * mm = mongo_message_create( 16 + 4 + strlen( ns ) + 1 + bson_size( bson ) ,
                                                       0 , 0 , mongo_op_insert );
     if ( ! mm )
         return 0;
@@ -105,9 +105,9 @@ char * mongo_data_append( char * start , const void * data , int len ){
     return start + len;
 }
 
-struct mongo_message * mongo_read_response( struct mongo_connection * conn ){
+mongo_message * mongo_read_response( mongo_connection * conn ){
     char smallbuf[16];
-    struct mongo_message * mm;
+    mongo_message * mm;
     int total , temp;
     
     total = 0;
@@ -120,9 +120,9 @@ struct mongo_message * mongo_read_response( struct mongo_connection * conn ){
     }
 }
 
-void mongo_query( struct mongo_connection * conn , const char * ns , struct bson * query , struct bson * fields , int nToReturn , int nToSkip , int options ){
+void mongo_query( mongo_connection * conn , const char * ns , bson * query , bson * fields , int nToReturn , int nToSkip , int options ){
     char * data;
-    struct mongo_message * mm = mongo_message_create( 16 + 
+    mongo_message * mm = mongo_message_create( 16 + 
                                                       4 + /*  options */
                                                       strlen( ns ) + 1 + /* ns */
                                                       4 + 4 + /* skip,return */
@@ -146,7 +146,7 @@ void mongo_query( struct mongo_connection * conn , const char * ns , struct bson
     
 }
 
-int mongo_disconnect( struct mongo_connection * conn ){
+int mongo_disconnect( mongo_connection * conn ){
     if ( ! conn->connected )
         return 1;
 
@@ -158,7 +158,7 @@ int mongo_disconnect( struct mongo_connection * conn ){
     return 0;
 }
 
-int mongo_destory( struct mongo_connection * conn ){
+int mongo_destory( mongo_connection * conn ){
     return mongo_disconnect( conn );
 }
 
