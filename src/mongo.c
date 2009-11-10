@@ -10,21 +10,57 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+static const int HEADER_SIZE=4*4; /* 4 x 4byte fields */
 /* ----------------------------
    message stuff
    ------------------------------ */
+
+static void looping_write(const int sock, const void* buf, int len){
+    const char* cbuf = buf;
+    while (len){
+        /* TODO handle -1 */
+        int sent = write(sock, cbuf, len);
+        cbuf += sent;
+        len -= sent;
+    }
+}
+
+static void looping_read(const int sock, void* buf, int len){
+    char* cbuf = buf;
+    while (len){
+        /* TODO handle -1 */
+        int sent = read(sock, cbuf, len);
+        cbuf += sent;
+        len -= sent;
+    }
+}
+
+void mongo_message_send(const int sock, const mongo_message* mm){
+    mongo_message out; /* little endian */
+    bson_swap_endian32(&out.len, &mm->len);
+    bson_swap_endian32(&out.id, &mm->id);
+    bson_swap_endian32(&out.responseTo, &mm->responseTo);
+    bson_swap_endian32(&out.op, &mm->op);
+    
+    looping_write(sock, &out, HEADER_SIZE);
+    looping_write(sock, &mm->data, mm->len - HEADER_SIZE);
+}
+
 
 mongo_message * mongo_message_create( int len , int id , int responseTo , int op ){
     mongo_message * mm = (mongo_message*)malloc( len );
     if ( ! mm )
         return 0;
+
+    if (!id)
+        id = rand();
+
+    /* native endian (converted on send) */
     mm->len = len;
-    if ( id )
-        mm->id = id;
-    else
-        mm->id = rand();
+    mm->id = id;
     mm->responseTo = responseTo;
     mm->op = op;
+
     return mm;
 }
 
@@ -96,7 +132,8 @@ int mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
     memcpy( data + 4 , ns , strlen( ns ) + 1 );
     memcpy( data + 4 + strlen( ns ) + 1 , bson->data , bson_size( bson ) );
 
-    write( conn->sock , mm , mm->len );
+    mongo_message_send( conn->sock , mm );
+    free(mm);
     return 0;
 }
 
@@ -105,19 +142,30 @@ char * mongo_data_append( char * start , const void * data , int len ){
     return start + len;
 }
 
+char * mongo_data_append32( char * start , const void * data){
+    bson_swap_endian32( start , data );
+    return start + 4;
+}
+
 mongo_message * mongo_read_response( mongo_connection * conn ){
-    char smallbuf[16];
-    mongo_message * mm;
-    int total , temp;
+    mongo_message mm; /* header from network */
+    mongo_message * out; /* native endian */
+    int len;
+
+    looping_read(conn->sock, &mm, HEADER_SIZE);
+
+    bson_swap_endian32(&len, &mm.len);
+    out = (mongo_message*)malloc(len);
+    if (out) return NULL;
+
+    out->len = len;
+    bson_swap_endian32(&out->id, &mm.id);
+    bson_swap_endian32(&out->responseTo, &mm.responseTo);
+    bson_swap_endian32(&out->op, &mm.op);
     
-    total = 0;
-    while ( total < 16 ){
-        temp = read( conn->sock , smallbuf , 16 - total );
-        if ( temp < 0 ){
-            fprintf( stderr , "error reading " );
-            return 0;
-        }
-    }
+    looping_read(conn->sock, &out->data, len-HEADER_SIZE);
+
+    return out;
 }
 
 void mongo_query( mongo_connection * conn , const char * ns , bson * query , bson * fields , int nToReturn , int nToSkip , int options ){
@@ -131,10 +179,10 @@ void mongo_query( mongo_connection * conn , const char * ns , bson * query , bso
                                                       0 , 0 , mongo_op_query );
 
     data = &mm->data;
-    data = mongo_data_append( data , &options , 4 );
+    data = mongo_data_append32( data , &options );
     data = mongo_data_append( data , ns , strlen( ns ) + 1 );    
-    data = mongo_data_append( data , &nToSkip , 4 );
-    data = mongo_data_append( data , &nToReturn , 4 );
+    data = mongo_data_append32( data , &nToSkip );
+    data = mongo_data_append32( data , &nToReturn );
     data = mongo_data_append( data , query->data , bson_size( query ) );    
     if ( fields )
         data = mongo_data_append( data , fields->data , bson_size( fields ) );    
@@ -142,8 +190,8 @@ void mongo_query( mongo_connection * conn , const char * ns , bson * query , bso
 
     bson_fatal( "query building fail!" , data == ((char*)mm) + mm->len );
 
-    write( conn->sock , mm , mm->len );
-    
+    mongo_message_send( conn->sock , mm );
+    free(mm);
 }
 
 int mongo_disconnect( mongo_connection * conn ){
