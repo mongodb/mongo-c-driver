@@ -210,7 +210,7 @@ void bson_append( bson_buffer * b , const void * data , int len ){
     b->cur += len;
 }
 void bson_append32(bson_buffer * b, const void * data){
-    bson_swap_endian64(b->cur, data);
+    bson_swap_endian32(b->cur, data);
     b->cur += 4;
 }
 void bson_append64(bson_buffer * b, const void * data){
