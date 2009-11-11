@@ -70,17 +70,14 @@ mongo_message * mongo_message_create( int len , int id , int responseTo , int op
 
 int mongo_connect( mongo_connection * conn , mongo_connection_options * options ){
     int x = 1;
-    conn->options.port = 27017;
     conn->connected = 0;
 
     if ( options ){
         memcpy( &(conn->options) , options , sizeof( mongo_connection_options ) );
-        printf( "can't handle options to mongo_connect yet" );
-        exit(-2);
-        return -2;
     }
     else {
         strcpy( conn->options.host , "127.0.0.1" );
+        conn->options.port = 27017;
     }
 
     /* setup */
