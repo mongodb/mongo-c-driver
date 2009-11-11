@@ -23,6 +23,7 @@ typedef struct {
     int connected;
 } mongo_connection;
 
+#pragma pack(1)
 typedef struct {
     int len;
     int id;
@@ -36,6 +37,7 @@ typedef struct {
 } mongo_message;
 
 typedef struct {
+    int flag; /* non-zero on failure */
     int64_t cursorID;
     int start;
     int num;
@@ -46,11 +48,14 @@ typedef struct {
     mongo_reply_fields fields;
     char objs;
 } mongo_reply;
+#pragma pack()
 
 typedef struct {
     mongo_reply * mm; /* message is owned by cursor */
     mongo_connection * conn; /* connection is *not* owned by cursor */
+    const char* ns; /* owned by cursor */
     bson current;
+    int index;
 } mongo_cursor;
 
 enum mongo_operations {
@@ -84,7 +89,7 @@ int mongo_destory( mongo_connection * conn );
 int mongo_insert( mongo_connection * conn , const char * ns , bson * data );
 int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
-void mongo_query(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
+mongo_cursor* mongo_query(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
 
 /* ----------------------------
    HIGHER LEVEL - indexes - command helpers eval

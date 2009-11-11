@@ -20,11 +20,11 @@ int main(){
     ASSERT(sizeof(int64_t) == 8);
     ASSERT(sizeof(double) == 8);
 
-    ASSERT(sizeof(mongo_header) == 16);
-    ASSERT(sizeof(mongo_reply_fields) == 16);
+    ASSERT(sizeof(mongo_header) == 4+4+4+4);
+    ASSERT(sizeof(mongo_reply_fields) == 4+8+4+4);
 
     /* field offset of obj in mongo_reply */
-    ASSERT((&mr.objs - (char*)&mr) == 32);
+    ASSERT((&mr.objs - (char*)&mr) == (4+4+4+4 + 4+8+4+4));
 
     return 0;
 }
