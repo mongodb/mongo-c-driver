@@ -69,7 +69,7 @@ bson_type bson_iterator_type( bson_iterator * i );
 const char * bson_iterator_key( bson_iterator * i );
 const char * bson_iterator_value( bson_iterator * i );
 
-/* these convert to the right type */
+/* these convert to the right type (return 0 if non-numeric) */
 double bson_iterator_double( bson_iterator * i );
 int bson_iterator_int( bson_iterator * i );
 int64_t bson_iterator_long( bson_iterator * i );
@@ -78,7 +78,7 @@ int64_t bson_iterator_long( bson_iterator * i );
 /* true: anything else (even empty strings and objects) */
 bson_bool_t bson_iterator_bool( bson_iterator * i );
 
-/* these assume you are using the right type (return 0 if non-numeric) */
+/* these assume you are using the right type */
 double bson_iterator_double_raw( bson_iterator * i );
 int bson_iterator_int_raw( bson_iterator * i );
 int64_t bson_iterator_long_raw( bson_iterator * i );
