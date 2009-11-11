@@ -28,8 +28,30 @@ typedef struct {
     int id;
     int responseTo;
     int op;
+} mongo_header;
+
+typedef struct {
+    mongo_header head;
     char data;
 } mongo_message;
+
+typedef struct {
+    int64_t cursorID;
+    int start;
+    int num;
+} mongo_reply_fields;
+
+typedef struct {
+    mongo_header head;
+    mongo_reply_fields fields;
+    char objs;
+} mongo_reply;
+
+typedef struct {
+    mongo_reply * mm; /* message is owned by cursor */
+    mongo_connection * conn; /* connection is *not* owned by cursor */
+    bson current;
+} mongo_cursor;
 
 enum mongo_operations {
     mongo_op_msg = 1000,    /* generic msg command followed by a string */
@@ -62,7 +84,7 @@ int mongo_destory( mongo_connection * conn );
 int mongo_insert( mongo_connection * conn , const char * ns , bson * data );
 int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
-void mongo_query( mongo_connection * conn , const char * ns , bson * query , bson * fields , int nToReturn , int nToSkip , int options );
+void mongo_query(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
 
 /* ----------------------------
    HIGHER LEVEL - indexes - command helpers eval

@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-static const int HEADER_SIZE=4*4; /* 4 x 4byte fields */
 /* ----------------------------
    message stuff
    ------------------------------ */
@@ -36,14 +35,14 @@ static void looping_read(const int sock, void* buf, int len){
 }
 
 void mongo_message_send(const int sock, const mongo_message* mm){
-    mongo_message out; /* little endian */
-    bson_swap_endian32(&out.len, &mm->len);
-    bson_swap_endian32(&out.id, &mm->id);
-    bson_swap_endian32(&out.responseTo, &mm->responseTo);
-    bson_swap_endian32(&out.op, &mm->op);
+    mongo_header head; /* little endian */
+    bson_swap_endian32(&head.len, &mm->head.len);
+    bson_swap_endian32(&head.id, &mm->head.id);
+    bson_swap_endian32(&head.responseTo, &mm->head.responseTo);
+    bson_swap_endian32(&head.op, &mm->head.op);
     
-    looping_write(sock, &out, HEADER_SIZE);
-    looping_write(sock, &mm->data, mm->len - HEADER_SIZE);
+    looping_write(sock, &head, sizeof(head));
+    looping_write(sock, &mm->data, mm->head.len - sizeof(head));
 }
 
 
@@ -56,10 +55,10 @@ mongo_message * mongo_message_create( int len , int id , int responseTo , int op
         id = rand();
 
     /* native endian (converted on send) */
-    mm->len = len;
-    mm->id = id;
-    mm->responseTo = responseTo;
-    mm->op = op;
+    mm->head.len = len;
+    mm->head.id = id;
+    mm->head.responseTo = responseTo;
+    mm->head.op = op;
 
     return mm;
 }
@@ -147,23 +146,29 @@ char * mongo_data_append32( char * start , const void * data){
     return start + 4;
 }
 
-mongo_message * mongo_read_response( mongo_connection * conn ){
-    mongo_message mm; /* header from network */
-    mongo_message * out; /* native endian */
+mongo_reply * mongo_read_response( mongo_connection * conn ){
+    mongo_header head; /* header from network */
+    mongo_reply_fields fields; /* header from network */
+    mongo_reply * out; /* native endian */
     int len;
 
-    looping_read(conn->sock, &mm, HEADER_SIZE);
+    looping_read(conn->sock, &head, sizeof(head));
+    looping_read(conn->sock, &fields, sizeof(fields));
 
-    bson_swap_endian32(&len, &mm.len);
-    out = (mongo_message*)malloc(len);
+    bson_swap_endian32(&len, &head.len);
+    out = (mongo_reply*)malloc(len);
     if (out) return NULL;
 
-    out->len = len;
-    bson_swap_endian32(&out->id, &mm.id);
-    bson_swap_endian32(&out->responseTo, &mm.responseTo);
-    bson_swap_endian32(&out->op, &mm.op);
-    
-    looping_read(conn->sock, &out->data, len-HEADER_SIZE);
+    out->head.len = len;
+    bson_swap_endian32(&out->head.id, &head.id);
+    bson_swap_endian32(&out->head.responseTo, &head.responseTo);
+    bson_swap_endian32(&out->head.op, &head.op);
+
+    bson_swap_endian32(&out->fields.cursorID, &fields.cursorID);
+    bson_swap_endian32(&out->fields.start, &fields.start);
+    bson_swap_endian32(&out->fields.num, &fields.num);
+
+    looping_read(conn->sock, &out->objs, len-sizeof(head)-sizeof(fields));
 
     return out;
 }
@@ -187,8 +192,7 @@ void mongo_query( mongo_connection * conn , const char * ns , bson * query , bso
     if ( fields )
         data = mongo_data_append( data , fields->data , bson_size( fields ) );    
     
-
-    bson_fatal( "query building fail!" , data == ((char*)mm) + mm->len );
+    bson_fatal( "query building fail!" , data == ((char*)mm) + mm->head.len );
 
     mongo_message_send( conn->sock , mm );
     free(mm);
