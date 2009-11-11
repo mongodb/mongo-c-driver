@@ -29,8 +29,9 @@ testEnv.Prepend( LIBPATH=["."] )
 
 testCoreFiles = [ "test/md5.c" ]
 
-testEnv.Program( 'testsimple' , testCoreFiles + ["test/test.c"]  )
-testEnv.Program( 'testjson' , testCoreFiles + ["test/json.c"]  )
-testEnv.Program( 'testendian_swap' , testCoreFiles + ["test/endian_swap.c"]  )
-testEnv.Program( 'testsizes' , testCoreFiles + ["test/sizes.c"]  )
-
+for name in Split('simple json endian_swap sizes'):
+    filename = "test/%s.c" % name
+    exe = "test" + name
+    test = testEnv.Program( exe , testCoreFiles + [filename]  )
+    test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> /dev/null')
+    AlwaysBuild(test_alias)

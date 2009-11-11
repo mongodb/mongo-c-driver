@@ -117,17 +117,19 @@ int json_to_bson_test( char * js , int size , const char * hash ){
     myhash[32] = 0;
 
     if ( strlen( hash ) != 32 ){
-        fprintf( stderr , "\tinvalid hash given got %s\n" , myhash );
+        printf( "\tinvalid hash given got %s\n" , myhash );
         bson_destory( &b );
         return 0;
     }
     else if ( strstr( myhash , hash ) != myhash ){
-        fprintf( stderr , "\t hashes don't match\n\t%s\n\t%s\n" , myhash , hash );
+        printf( "  hashes don't match\n");
+        printf( "    JSON:  %s\n\t%s\n", hash, js );
+        printf( "    BSON:  %s\n", myhash);
+        bson_print( &b );
         bson_destory( &b );
         return 0;
     }
 
-    bson_print( &b );
     bson_destory( &b );
     return 1;
 }
@@ -161,6 +163,6 @@ int main(){
     JSONBSONTEST( "{ 'x' : 5.2 , 'y' : { 'a' : 'eliot' , 'b' : true } , 'z' : null }" , 44 , "b3de8a0739ab329e7aea138d87235205" );
     JSONBSONTEST( "{ 'x' : 5.2 , 'y' : [ 'a' , 'eliot' , 'b' , true ] , 'z' : null }" , 62 , "cb7bad5697714ba0cbf51d113b6a0ee8" );
 
-    printf( "----\ntotal: %d\nfails : %d\n" , total , fails );
+    fprintf( stderr,  "----\ntotal: %d\nfails : %d\n" , total , fails );
     return fails;
 }
