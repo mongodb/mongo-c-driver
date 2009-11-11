@@ -12,7 +12,7 @@ int main(){
 
     bson_buffer_init( & bb );
     bson_append_double( &bb , "a" , 17 );
-    bson_init( &b , bson_finish( &bb ) , 1 );
+    bson_init( &b , bson_buffer_finish( &bb ) , 1 );
     
     strncpy(opts.host, TEST_SERVER, 255);
     opts.host[254] = '\0';

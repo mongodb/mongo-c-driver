@@ -12,6 +12,11 @@ const int initialBufferSize = 128;
    READING
    ------------------------------ */
 
+bson * bson_empty(bson * obj){
+    static char * data = "\005\0\0\0\0";
+    return bson_init(obj, data, 0);
+}
+
 bson * bson_init( bson * b , char * data , int mine ){
     b->data = data;
     b->owned = mine;
@@ -24,7 +29,7 @@ int bson_size( bson * b ){
     bson_swap_endian32(&i, b->data);
     return i;
 }
-void bson_destory( bson * b ){
+void bson_destroy( bson * b ){
     if ( b->owned && b->data )
         free( b->data );
     b->data = 0;
@@ -229,7 +234,7 @@ bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded ){
     return b;
 }
 
-char * bson_finish( bson_buffer * b ){
+char * bson_buffer_finish( bson_buffer * b ){
     int i;
     if ( ! b->finished ){
         if ( ! bson_ensure_space( b , 1 ) ) return 0;
@@ -241,7 +246,7 @@ char * bson_finish( bson_buffer * b ){
     return b->buf;
 }
 
-void bson_destroy( bson_buffer * b ){
+void bson_buffer_destroy( bson_buffer * b ){
     free( b->buf );
     b->buf = 0;
     b->cur = 0;

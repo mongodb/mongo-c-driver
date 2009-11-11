@@ -79,7 +79,7 @@ char * json_to_bson( char * js ){
     
     bson_buffer_init( &bb );
     json_to_bson_append( &bb , o );
-    return bson_finish( &bb );
+    return bson_buffer_finish( &bb );
 }
 
 int json_to_bson_test( char * js , int size , const char * hash ){
@@ -104,7 +104,7 @@ int json_to_bson_test( char * js , int size , const char * hash ){
     
     if ( size != bson_size( &b ) ){
         fprintf( stderr , "sizes don't match [%s] want != got %d != %d\n" , js , size , bson_size(&b) );
-        bson_destory( &b );
+        bson_destroy( &b );
         return 0;
     }    
 
@@ -118,7 +118,7 @@ int json_to_bson_test( char * js , int size , const char * hash ){
 
     if ( strlen( hash ) != 32 ){
         printf( "\tinvalid hash given got %s\n" , myhash );
-        bson_destory( &b );
+        bson_destroy( &b );
         return 0;
     }
     else if ( strstr( myhash , hash ) != myhash ){
@@ -126,11 +126,11 @@ int json_to_bson_test( char * js , int size , const char * hash ){
         printf( "    JSON:  %s\n\t%s\n", hash, js );
         printf( "    BSON:  %s\n", myhash);
         bson_print( &b );
-        bson_destory( &b );
+        bson_destroy( &b );
         return 0;
     }
 
-    bson_destory( &b );
+    bson_destroy( &b );
     return 1;
 }
 

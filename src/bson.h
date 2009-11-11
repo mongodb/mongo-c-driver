@@ -53,9 +53,11 @@ typedef short bson_bool_t;
    READING
    ------------------------------ */
 
+
+bson * bson_empty(); /* returns pointer to static empty bson object */
 bson * bson_init( bson * b , char * data , int mine );
 int bson_size( bson * b );
-void bson_destory( bson * b );
+void bson_destroy( bson * b );
 
 void bson_print( bson * b );
 void bson_print_raw( const char * bson , int depth );
@@ -94,10 +96,10 @@ bson_buffer * bson_buffer_init( bson_buffer * b );
 bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded );
 
 /**
- * @return the raw data.  you either should free this OR call bson_destory not both
+ * @return the raw data.  you either should free this OR call bson_destroy not both
  */
-char * bson_finish( bson_buffer * b );
-void bson_destroy( bson_buffer * b );
+char * bson_buffer_finish( bson_buffer * b );
+void bson_buffer_destroy( bson_buffer * b );
 
 bson_buffer * bson_append_int( bson_buffer * b , const char * name , const int i );
 bson_buffer * bson_append_double( bson_buffer * b , const char * name , const double d );
