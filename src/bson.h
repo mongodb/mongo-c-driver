@@ -47,6 +47,13 @@ typedef struct {
     int stackPos;
 } bson_buffer;
 
+#pragma pack(1)
+typedef union{
+    char bytes[12];
+    int ints[3];
+} bson_oid_t;
+#pragma pack(0)
+
 typedef short bson_bool_t;
 
 /* ----------------------------
@@ -54,7 +61,7 @@ typedef short bson_bool_t;
    ------------------------------ */
 
 
-bson * bson_empty(); /* returns pointer to static empty bson object */
+bson * bson_empty(bson * obj); /* returns pointer to static empty bson object */
 bson * bson_init( bson * b , char * data , int mine );
 int bson_size( bson * b );
 void bson_destroy( bson * b );
@@ -87,7 +94,12 @@ int64_t bson_iterator_long_raw( bson_iterator * i );
 bson_bool_t bson_iterator_bool_raw( bson_iterator * i );
 const char * bson_iterator_string( bson_iterator * i );
 int bson_iterator_string_len( bson_iterator * i );
+bson_oid_t* bson_iterator_oid( bson_iterator * i );
 
+/* str must be at least 25 hex chars */
+void bson_oid_from_string(bson_oid_t* oid, const char* str);
+void bson_oid_to_string(const bson_oid_t* oid, char* str);
+void bson_oid_gen(bson_oid_t* oid);
 /* ----------------------------
    BUILDING
    ------------------------------ */
@@ -101,6 +113,8 @@ bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded );
 char * bson_buffer_finish( bson_buffer * b );
 void bson_buffer_destroy( bson_buffer * b );
 
+bson_buffer * bson_append_oid( bson_buffer * b , const char * name , const bson_oid_t* oid );
+bson_buffer * bson_append_new_oid( bson_buffer * b , const char * name );
 bson_buffer * bson_append_int( bson_buffer * b , const char * name , const int i );
 bson_buffer * bson_append_double( bson_buffer * b , const char * name , const double d );
 bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * str );

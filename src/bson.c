@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 const int initialBufferSize = 128;
 
@@ -26,7 +27,7 @@ int bson_size( bson * b ){
     int i;
     if ( ! b || ! b->data )
         return 0;
-    bson_swap_endian32(&i, b->data);
+    bson_little_endian32(&i, b->data);
     return i;
 }
 void bson_destroy( bson * b ){
@@ -34,6 +35,63 @@ void bson_destroy( bson * b ){
         free( b->data );
     b->data = 0;
     b->owned = 0;
+}
+
+static char hexbyte(char hex){
+    switch (hex){
+        case '0': return 0x0;
+        case '1': return 0x1;
+        case '2': return 0x2;
+        case '3': return 0x3;
+        case '4': return 0x4;
+        case '5': return 0x5;
+        case '6': return 0x6;
+        case '7': return 0x7;
+        case '8': return 0x8;
+        case '9': return 0x9;
+        case 'a': 
+        case 'A': return 0xa;
+        case 'b':
+        case 'B': return 0xb;
+        case 'c':
+        case 'C': return 0xc;
+        case 'd':
+        case 'D': return 0xd;
+        case 'e':
+        case 'E': return 0xe;
+        case 'f':
+        case 'F': return 0xf;
+        default: return 0x0; /* something smarter? */
+    }
+}
+
+void bson_oid_from_string(bson_oid_t* oid, const char* str){
+    int i;
+    for (i=0; i<12; i++){
+        oid->bytes[i] = (hexbyte(str[2*i]) << 4) | hexbyte(str[2*i + 1]);
+    }
+}
+void bson_oid_to_string(const bson_oid_t* oid, char* str){
+    static const char hex[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
+    int i;
+    for (i=0; i<12; i++){
+        str[2*i]     = hex[(oid->bytes[i] & 0xf0) >> 4];
+        str[2*i + 1] = hex[ oid->bytes[i] & 0x0f      ];
+    }
+    str[24] = '\0';
+}
+void bson_oid_gen(bson_oid_t* oid){
+    static int incr = 0;
+    static int fuzz = 0;
+    int i = incr++; /*TODO make atomic*/
+    int t = time(NULL);
+
+    /* TODO rand sucks. find something better */
+    if (!fuzz) fuzz = rand();
+    
+    bson_big_endian32(&oid->ints[0], &t);
+    oid->ints[1] = fuzz;
+    bson_big_endian32(&oid->ints[2], &i);
 }
 
 void bson_print( bson * b ){
@@ -44,6 +102,7 @@ void bson_print_raw( const char * data , int depth ){
     bson_iterator i;
     const char * key;
     int temp;
+    char oidhex[25];
     bson_iterator_init( &i , data );
 
     while ( bson_iterator_next( &i ) ){
@@ -61,6 +120,7 @@ void bson_print_raw( const char * data , int depth ){
         case bson_bool: printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
         case bson_string: printf( "%s" , bson_iterator_string( &i ) ); break;
         case bson_null: printf( "null" ); break;
+        case bson_oid: bson_oid_to_string(bson_iterator_oid(&i), oidhex); printf( "%s" , oidhex ); break;
         case bson_object:
         case bson_array:
             printf( "\n" );
@@ -131,22 +191,26 @@ const char * bson_iterator_value( bson_iterator * i ){
 
 int bson_iterator_int_raw( bson_iterator * i ){
     int out;
-    bson_swap_endian32(&out, bson_iterator_value( i ));
+    bson_little_endian32(&out, bson_iterator_value( i ));
     return out;
 }
 double bson_iterator_double_raw( bson_iterator * i ){
     double out;
-    bson_swap_endian64(&out, bson_iterator_value( i ));
+    bson_little_endian64(&out, bson_iterator_value( i ));
     return out;
 }
 int64_t bson_iterator_long_raw( bson_iterator * i ){
     int64_t out;
-    bson_swap_endian64(&out, bson_iterator_value( i ));
+    bson_little_endian64(&out, bson_iterator_value( i ));
     return out;
 }
 
 bson_bool_t bson_iterator_bool_raw( bson_iterator * i ){
     return bson_iterator_value( i )[0];
+}
+
+bson_oid_t * bson_iterator_oid( bson_iterator * i ){
+    return (bson_oid_t*)bson_iterator_value(i);
 }
 
 int bson_iterator_int( bson_iterator * i ){
@@ -216,11 +280,11 @@ void bson_append( bson_buffer * b , const void * data , int len ){
     b->cur += len;
 }
 void bson_append32(bson_buffer * b, const void * data){
-    bson_swap_endian32(b->cur, data);
+    bson_little_endian32(b->cur, data);
     b->cur += 4;
 }
 void bson_append64(bson_buffer * b, const void * data){
-    bson_swap_endian64(b->cur, data);
+    bson_little_endian64(b->cur, data);
     b->cur += 8;
 }
 
@@ -241,7 +305,7 @@ char * bson_buffer_finish( bson_buffer * b ){
         if ( ! bson_ensure_space( b , 1 ) ) return 0;
         bson_append_byte( b , 0 );
         i = b->cur - b->buf;
-        bson_swap_endian32(b->buf, &i);
+        bson_little_endian32(b->buf, &i);
         b->finished = 1;
     }
     return b->buf;
@@ -292,6 +356,16 @@ bson_buffer * bson_append_string( bson_buffer * b , const char * name , const ch
     bson_append( b , value , sl );
     return b;
 }
+bson_buffer * bson_append_oid( bson_buffer * b , const char * name , const bson_oid_t * oid ){
+    if ( ! bson_append_estart( b , bson_oid , name , 12 ) ) return 0;
+    bson_append( b , oid , 12 );
+    return b;
+}
+bson_buffer * bson_append_new_oid( bson_buffer * b , const char * name ){
+    bson_oid_t oid;
+    bson_oid_gen(&oid);
+    return bson_append_oid(b, name, &oid);
+}
 
 
 bson_buffer * bson_append_start_object( bson_buffer * b , const char * name ){
@@ -318,7 +392,7 @@ bson_buffer * bson_append_finish_object( bson_buffer * b ){
     
     start = b->stack[ --b->stackPos ];
     i = b->cur - start;
-    bson_swap_endian32(start, &i);
+    bson_little_endian32(start, &i);
 
     return b;
 }

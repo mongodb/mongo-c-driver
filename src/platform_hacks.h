@@ -18,7 +18,19 @@ typedef __int64 int64_t;
 #include <stdint.h>
 #endif
 
+/* big endian is only used for OID generation. little is used everywhere else */
 #ifdef MONGO_BIG_ENDIAN
+#define bson_little_endian64(out, in) ( bson_swap_endian64(out, in) )
+#define bson_little_endian32(out, in) ( bson_swap_endian32(out, in) )
+#define bson_big_endian64(out, in) ( memcpy(out, in, 8) )
+#define bson_big_endian32(out, in) ( memcpy(out, in, 4) )
+#else
+#define bson_little_endian64(out, in) ( memcpy(out, in, 8) )
+#define bson_little_endian32(out, in) ( memcpy(out, in, 4) )
+#define bson_big_endian64(out, in) ( bson_swap_endian64(out, in) )
+#define bson_big_endian32(out, in) ( bson_swap_endian32(out, in) )
+#endif
+
 MONGO_INLINE void bson_swap_endian64(void* outp, const void* inp){
     const char *in = inp;
     char *out = outp;
@@ -42,9 +54,4 @@ MONGO_INLINE void bson_swap_endian32(void* outp, const void* inp){
     out[2] = in[1];
     out[3] = in[0];
 }
-#else
-#define bson_swap_endian64(out, in) ( memcpy(out, in, 8) )
-#define bson_swap_endian32(out, in) ( memcpy(out, in, 4) )
-#endif
-
 #endif

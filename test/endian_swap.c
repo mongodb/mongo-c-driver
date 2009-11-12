@@ -1,9 +1,5 @@
 /* endian_swap.c */
 
-#ifndef MONGO_BIG_ENDIAN
-#define MONGO_BIG_ENDIAN
-#endif
-
 #include "platform_hacks.h"
 #include <stdio.h>
 

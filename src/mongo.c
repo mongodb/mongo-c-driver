@@ -38,10 +38,10 @@ static void looping_read(const int sock, void* buf, int len){
 
 void mongo_message_send(const int sock, const mongo_message* mm){
     mongo_header head; /* little endian */
-    bson_swap_endian32(&head.len, &mm->head.len);
-    bson_swap_endian32(&head.id, &mm->head.id);
-    bson_swap_endian32(&head.responseTo, &mm->head.responseTo);
-    bson_swap_endian32(&head.op, &mm->head.op);
+    bson_little_endian32(&head.len, &mm->head.len);
+    bson_little_endian32(&head.id, &mm->head.id);
+    bson_little_endian32(&head.responseTo, &mm->head.responseTo);
+    bson_little_endian32(&head.op, &mm->head.op);
     
     looping_write(sock, &head, sizeof(head));
     looping_write(sock, &mm->data, mm->head.len - sizeof(head));
@@ -54,12 +54,12 @@ char * mongo_data_append( char * start , const void * data , int len ){
 }
 
 char * mongo_data_append32( char * start , const void * data){
-    bson_swap_endian32( start , data );
+    bson_little_endian32( start , data );
     return start + 4;
 }
 
 char * mongo_data_append64( char * start , const void * data){
-    bson_swap_endian64( start , data );
+    bson_little_endian64( start , data );
     return start + 8;
 }
 
@@ -184,18 +184,18 @@ mongo_reply * mongo_read_response( mongo_connection * conn ){
     looping_read(conn->sock, &head, sizeof(head));
     looping_read(conn->sock, &fields, sizeof(fields));
 
-    bson_swap_endian32(&len, &head.len);
+    bson_little_endian32(&len, &head.len);
     CHECK(out = (mongo_reply*)malloc(len));
 
     out->head.len = len;
-    bson_swap_endian32(&out->head.id, &head.id);
-    bson_swap_endian32(&out->head.responseTo, &head.responseTo);
-    bson_swap_endian32(&out->head.op, &head.op);
+    bson_little_endian32(&out->head.id, &head.id);
+    bson_little_endian32(&out->head.responseTo, &head.responseTo);
+    bson_little_endian32(&out->head.op, &head.op);
 
-    bson_swap_endian32(&out->fields.flag, &fields.flag);
-    bson_swap_endian64(&out->fields.cursorID, &fields.cursorID);
-    bson_swap_endian32(&out->fields.start, &fields.start);
-    bson_swap_endian32(&out->fields.num, &fields.num);
+    bson_little_endian32(&out->fields.flag, &fields.flag);
+    bson_little_endian64(&out->fields.cursorID, &fields.cursorID);
+    bson_little_endian32(&out->fields.start, &fields.start);
+    bson_little_endian32(&out->fields.num, &fields.num);
 
     looping_read(conn->sock, &out->objs, len-sizeof(head)-sizeof(fields));
 

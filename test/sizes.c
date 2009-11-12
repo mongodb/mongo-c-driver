@@ -19,6 +19,7 @@ int main(){
     ASSERT(sizeof(int) == 4);
     ASSERT(sizeof(int64_t) == 8);
     ASSERT(sizeof(double) == 8);
+    ASSERT(sizeof(bson_oid_t) == 12);
 
     ASSERT(sizeof(mongo_header) == 4+4+4+4);
     ASSERT(sizeof(mongo_reply_fields) == 4+8+4+4);
