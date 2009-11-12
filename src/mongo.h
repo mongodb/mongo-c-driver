@@ -55,7 +55,6 @@ typedef struct {
     mongo_connection * conn; /* connection is *not* owned by cursor */
     const char* ns; /* owned by cursor */
     bson current;
-    int index;
 } mongo_cursor;
 
 enum mongo_operations {
@@ -89,7 +88,10 @@ int mongo_destory( mongo_connection * conn );
 int mongo_insert( mongo_connection * conn , const char * ns , bson * data );
 int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
+
 mongo_cursor* mongo_query(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
+bson_bool_t mongo_cursor_next(mongo_cursor* cursor);
+void mongo_cursor_destroy(mongo_cursor* cursor);
 
 /* ----------------------------
    HIGHER LEVEL - indexes - command helpers eval

@@ -46,8 +46,8 @@ void bson_print_raw( const char * data , int depth ){
     int temp;
     bson_iterator_init( &i , data );
 
-    while ( bson_iterator_more( &i ) ){
-        bson_type t = bson_iterator_next( &i );
+    while ( bson_iterator_next( &i ) ){
+        bson_type t = bson_iterator_type( &i );
         if ( t == 0 )
             break;
         key = bson_iterator_key( &i );
@@ -100,6 +100,7 @@ bson_type bson_iterator_next( bson_iterator * i ){
     case bson_null: ds = 0; break;
     case bson_int: ds = 4; break;
     case bson_long: ds = 8; break;
+    case bson_oid: ds = 12; break;
     case bson_string: ds = 4 + bson_iterator_int_raw(i); break;
     case bson_object: ds = bson_iterator_int_raw(i); break;
     case bson_array: ds = bson_iterator_int_raw(i); break;

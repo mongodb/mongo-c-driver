@@ -48,6 +48,21 @@ void mongo_message_send(const int sock, const mongo_message* mm){
 }
 
 
+char * mongo_data_append( char * start , const void * data , int len ){
+    memcpy( start , data , len );
+    return start + len;
+}
+
+char * mongo_data_append32( char * start , const void * data){
+    bson_swap_endian32( start , data );
+    return start + 4;
+}
+
+char * mongo_data_append64( char * start , const void * data){
+    bson_swap_endian64( start , data );
+    return start + 8;
+}
+
 mongo_message * mongo_message_create( int len , int id , int responseTo , int op ){
     mongo_message * mm = (mongo_message*)malloc( len );
     CHECK(mm);
@@ -117,6 +132,32 @@ int mongo_connect( mongo_connection * conn , mongo_connection_options * options 
     return 0;
 }
 
+int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bsons, int count){
+    int size =  16 + 4 + strlen( ns ) + 1;
+    int i;
+    mongo_message * mm;
+    char* data;
+
+    for(i=0; i<count; i++){
+        size += bson_size(bsons[i]);
+    }
+
+    CHECK(mm = mongo_message_create( size , 0 , 0 , mongo_op_insert ));
+
+    i=0;
+    data = &mm->data;
+    data = mongo_data_append32(data, &i);
+    data = mongo_data_append(data, ns , strlen( ns ) + 1 );
+
+    for(i=0; i<count; i++){
+        data = mongo_data_append(data, bsons[i]->data , bson_size( bsons[i] ) );
+    }
+
+    mongo_message_send( conn->sock , mm );
+    free(mm);
+    return 0;
+}
+
 int mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
     char * data;
     mongo_message * mm = mongo_message_create( 16 + 4 + strlen( ns ) + 1 + bson_size( bson ) ,
@@ -132,21 +173,6 @@ int mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
     mongo_message_send( conn->sock , mm );
     free(mm);
     return 0;
-}
-
-char * mongo_data_append( char * start , const void * data , int len ){
-    memcpy( start , data , len );
-    return start + len;
-}
-
-char * mongo_data_append32( char * start , const void * data){
-    bson_swap_endian32( start , data );
-    return start + 4;
-}
-
-char * mongo_data_append64( char * start , const void * data){
-    bson_swap_endian64( start , data );
-    return start + 8;
 }
 
 mongo_reply * mongo_read_response( mongo_connection * conn ){
@@ -167,7 +193,7 @@ mongo_reply * mongo_read_response( mongo_connection * conn ){
     bson_swap_endian32(&out->head.op, &head.op);
 
     bson_swap_endian32(&out->fields.flag, &fields.flag);
-    bson_swap_endian32(&out->fields.cursorID, &fields.cursorID);
+    bson_swap_endian64(&out->fields.cursorID, &fields.cursorID);
     bson_swap_endian32(&out->fields.start, &fields.start);
     bson_swap_endian32(&out->fields.num, &fields.num);
 
@@ -203,7 +229,7 @@ mongo_cursor* mongo_query(mongo_connection* conn, const char* ns, bson* query, b
     mongo_message_send( conn->sock , mm );
     free(mm);
 
-    CHECK(cursor = malloc(sizeof(cursor)));
+    CHECK(cursor = malloc(sizeof(mongo_cursor)));
 
     cursor->mm = mongo_read_response(conn);
     if (!cursor->mm){
@@ -220,7 +246,7 @@ mongo_cursor* mongo_query(mongo_connection* conn, const char* ns, bson* query, b
     }
     memcpy((void*)cursor->ns, ns, sl); /* cast needed to silence GCC warning */
     cursor->conn = conn;
-    cursor->index = -1;
+    cursor->current.data = NULL;
     return cursor;
 }
 
@@ -249,48 +275,76 @@ void mongo_exit_on_error( int ret ){
 }
 
 bson_bool_t mongo_cursor_get_more(mongo_cursor* cursor){
-    char* data;
-    int sl = strlen(cursor->ns)+1;
-    int zero = 0;
-    mongo_message * mm = mongo_message_create(16 /*header*/
-                                             +4 /*ZERO*/
-                                             +sl
-                                             +4 /*numToReturn*/
-                                             +8 /*cursorID*/
-                                             , 0, 0, mongo_op_get_more);
-    CHECK(mm);
+    if (cursor->mm && cursor->mm->fields.cursorID){
+        char* data;
+        int sl = strlen(cursor->ns)+1;
+        int zero = 0;
+        mongo_message * mm = mongo_message_create(16 /*header*/
+                                                 +4 /*ZERO*/
+                                                 +sl
+                                                 +4 /*numToReturn*/
+                                                 +8 /*cursorID*/
+                                                 , 0, 0, mongo_op_get_more);
+        CHECK(mm);
 
-    data = &mm->data;
-    data = mongo_data_append32(data, &zero);
-    data = mongo_data_append(data, cursor->ns, sl);
-    data = mongo_data_append32(data, &zero);
-    data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
-    mongo_message_send(cursor->conn->sock, mm);
-    free(mm);
+        data = &mm->data;
+        data = mongo_data_append32(data, &zero);
+        data = mongo_data_append(data, cursor->ns, sl);
+        data = mongo_data_append32(data, &zero);
+        data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
+        mongo_message_send(cursor->conn->sock, mm);
+        free(mm);
 
-    free(cursor->mm);
+        free(cursor->mm);
 
-    CHECK(cursor->mm = mongo_read_response(cursor->conn));
-    return cursor->mm->fields.num;
+        CHECK(cursor->mm = mongo_read_response(cursor->conn));
+        return cursor->mm->fields.num;
+    } else{
+        return 0;
+    }
 }
 
 bson_bool_t mongo_cursor_next(mongo_cursor* cursor){
-    if (cursor->mm->fields.num == 0)
+    char* bson_addr;
+
+    /* no data */
+    if (!cursor->mm || cursor->mm->fields.num == 0)
         return 0;
 
-    if (cursor->index == (cursor->mm->fields.start + cursor->mm->fields.num)){
+    /* first */
+    if (cursor->current.data == NULL){
+        bson_init(&cursor->current, &cursor->mm->objs, 0);
+        return 1;
+    }
+
+    bson_addr = cursor->current.data + bson_size(&cursor->current);
+    if (cursor->current.data >= ((char*)cursor->mm + cursor->mm->head.len)){
         if (!mongo_cursor_get_more(cursor))
             return 0;
         bson_init(&cursor->current, &cursor->mm->objs, 0);
-    }
-
-    if (cursor->index == -1){
-        bson_init(&cursor->current, &cursor->mm->objs, 0);
-    }else{
-        char* bson_addr = cursor->current.data + bson_size(&cursor->current);
+    } else {
         bson_init(&cursor->current, bson_addr, 0);
     }
 
-    cursor->index++;
     return 1;
+}
+
+void mongo_cursor_destroy(mongo_cursor* cursor){
+    if (cursor->mm && cursor->mm->fields.cursorID){
+        int zero = 0;
+        int one = 1;
+        mongo_message * mm = mongo_message_create(16 /*header*/
+                                                 +4 /*ZERO*/
+                                                 +4 /*numCursors*/
+                                                 +8 /*cursorID*/
+                                                 , 0, 0, mongo_op_kill_cursors);
+        char* data = &mm->data;
+        data = mongo_data_append32(data, &zero);
+        data = mongo_data_append32(data, &one);
+        data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
+    }
+        
+    free(cursor->mm);
+    free((void*)cursor->ns);
+    free(cursor);
 }
