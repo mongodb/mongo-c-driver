@@ -318,7 +318,7 @@ bson_bool_t mongo_cursor_next(mongo_cursor* cursor){
     }
 
     bson_addr = cursor->current.data + bson_size(&cursor->current);
-    if (cursor->current.data >= ((char*)cursor->mm + cursor->mm->head.len)){
+    if (bson_addr >= ((char*)cursor->mm + cursor->mm->head.len)){
         if (!mongo_cursor_get_more(cursor))
             return 0;
         bson_init(&cursor->current, &cursor->mm->objs, 0);
