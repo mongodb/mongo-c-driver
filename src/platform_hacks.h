@@ -15,7 +15,7 @@
 #ifdef MONGO_HAVE_STDINT
 #include <stdint.h>
 #elif defined(MONGO_HAVE_UNISTD)
-#include <stdint.h>
+#include <unistd.h>
 #elif defined(MONGO_USE__INT64)
 typedef __int64 int64_t;
 #elif defined(MONGO_USE_LONG_LONG_INT)
