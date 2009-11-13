@@ -25,9 +25,21 @@ int main(){
         bson_buffer_init( & bb );
 
         bson_append_new_oid( &bb, "_id" );
-        bson_append_double(  &bb , "a" , 17 );
-        bson_append_int(     &bb , "b" , 17 );
-        bson_append_string(  &bb , "c" , "17" );
+        bson_append_double( &bb , "a" , 17 );
+        bson_append_int( &bb , "b" , 17 );
+        bson_append_string( &bb , "c" , "17" );
+
+        {
+            bson_buffer * sub = bson_append_start_object(  &bb , "d" );
+            bson_append_int( sub, "i", 71 );
+            bson_append_finish_object(sub);
+        }
+        {
+            bson_buffer * arr = bson_append_start_array(  &bb , "e" );
+            bson_append_int( arr, "0", 71 );
+            bson_append_string( arr, "1", "71" );
+            bson_append_finish_object(arr);
+        }
 
         bson_init( &b , bson_buffer_finish( &bb ) , 1 );
         mongo_insert( &conn , "test.cc" , &b );
@@ -55,6 +67,12 @@ int main(){
                 case bson_oid:
                     bson_oid_to_string(bson_iterator_oid(&it), hex_oid);
                     fprintf(stderr, "(oid) \"%s\"\n", hex_oid);
+                    break;
+                case bson_object:
+                    fprintf(stderr, "(subobject) {...}\n");
+                    break;
+                case bson_array:
+                    fprintf(stderr, "(array) [...]\n");
                     break;
                 default:
                     fprintf(stderr, "(type %d)\n", bson_iterator_type(&it));
