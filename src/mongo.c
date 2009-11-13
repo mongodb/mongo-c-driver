@@ -10,8 +10,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define CHECK(x) if (!(x)) return 0
-
 /* only need one of these */
 static const int zero = 0;
 static const int one = 0;
@@ -68,8 +66,7 @@ char * mongo_data_append64( char * start , const void * data){
 }
 
 mongo_message * mongo_message_create( int len , int id , int responseTo , int op ){
-    mongo_message * mm = (mongo_message*)malloc( len );
-    CHECK(mm);
+    mongo_message * mm = (mongo_message*)bson_malloc( len );
 
     if (!id)
         id = rand();
@@ -142,7 +139,7 @@ int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bson
         size += bson_size(bsons[i]);
     }
 
-    CHECK(mm = mongo_message_create( size , 0 , 0 , mongo_op_insert ));
+    mm = mongo_message_create( size , 0 , 0 , mongo_op_insert );
 
     i=0;
     data = &mm->data;
@@ -185,7 +182,7 @@ mongo_reply * mongo_read_response( mongo_connection * conn ){
     looping_read(conn->sock, &fields, sizeof(fields));
 
     bson_little_endian32(&len, &head.len);
-    CHECK(out = (mongo_reply*)malloc(len));
+    out = (mongo_reply*)bson_malloc(len);
 
     out->head.len = len;
     bson_little_endian32(&out->head.id, &head.id);
@@ -224,12 +221,12 @@ mongo_cursor* mongo_query(mongo_connection* conn, const char* ns, bson* query, b
     if ( fields )
         data = mongo_data_append( data , fields->data , bson_size( fields ) );    
     
-    bson_fatal( "query building fail!" , data == ((char*)mm) + mm->head.len );
+    bson_fatal_msg( (data == ((char*)mm) + mm->head.len), "query building fail!" );
 
     mongo_message_send( conn->sock , mm );
     free(mm);
 
-    CHECK(cursor = malloc(sizeof(mongo_cursor)));
+    cursor = (mongo_cursor*)bson_malloc(sizeof(mongo_cursor));
 
     cursor->mm = mongo_read_response(conn);
     if (!cursor->mm){
@@ -238,7 +235,7 @@ mongo_cursor* mongo_query(mongo_connection* conn, const char* ns, bson* query, b
     }
 
     sl = strlen(ns)+1;
-    cursor->ns = malloc(sl);
+    cursor->ns = bson_malloc(sl);
     if (!cursor->ns){
         free(cursor->mm);
         free(cursor);
@@ -266,14 +263,6 @@ int mongo_destory( mongo_connection * conn ){
     return mongo_disconnect( conn );
 }
 
-void mongo_exit_on_error( int ret ){
-    if ( ret == 0 )
-        return;
-
-    printf( "unexpeted error: %d\n" , ret );
-    exit(ret);
-}
-
 bson_bool_t mongo_cursor_get_more(mongo_cursor* cursor){
     if (cursor->mm && cursor->mm->fields.cursorID){
         char* data;
@@ -284,8 +273,6 @@ bson_bool_t mongo_cursor_get_more(mongo_cursor* cursor){
                                                  +4 /*numToReturn*/
                                                  +8 /*cursorID*/
                                                  , 0, 0, mongo_op_get_more);
-        CHECK(mm);
-
         data = &mm->data;
         data = mongo_data_append32(data, &zero);
         data = mongo_data_append(data, cursor->ns, sl);
@@ -296,8 +283,8 @@ bson_bool_t mongo_cursor_get_more(mongo_cursor* cursor){
 
         free(cursor->mm);
 
-        CHECK(cursor->mm = mongo_read_response(cursor->conn));
-        return cursor->mm->fields.num;
+        cursor->mm = mongo_read_response(cursor->conn);
+        return cursor->mm && cursor->mm->fields.num;
     } else{
         return 0;
     }

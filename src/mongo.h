@@ -74,6 +74,7 @@ enum mongo_operations {
 
 /**
  * @param options can be null
+ * return of 0 indicates success
  */
 int mongo_connect( mongo_connection * conn , mongo_connection_options * options );
 int mongo_disconnect( mongo_connection * conn );
@@ -106,6 +107,6 @@ void mongo_cursor_destroy(mongo_cursor* cursor);
    UTILS
    ------------------------------ */
 
-void mongo_exit_on_error( int ret );
+
 
 #endif

@@ -3,6 +3,7 @@
 #include "mongo.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 int main(){
     mongo_connection conn;
@@ -18,7 +19,10 @@ int main(){
     opts.host[254] = '\0';
     opts.port = 27017;
 
-    mongo_exit_on_error( mongo_connect( &conn , &opts ) );
+    if (mongo_connect( &conn , &opts )){
+        printf("failed to connect\n");
+        exit(1);
+    }
 
     /* TODO drop collection */
     for(i=0; i< 5; i++){

@@ -263,9 +263,7 @@ int bson_iterator_string_len( bson_iterator * i ){
    ------------------------------ */
 
 bson_buffer * bson_buffer_init( bson_buffer * b ){
-    b->buf = (char*)malloc( initialBufferSize );
-    if ( ! b->buf )
-        return 0;
+    b->buf = (char*)bson_malloc( initialBufferSize );
     b->bufSize = initialBufferSize;
     b->cur = b->buf + 4;
     b->finished = 0;
@@ -297,7 +295,7 @@ bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded ){
         return b;
     b->buf = (char*)realloc( b->buf , (int)(1.5 * ( b->bufSize + bytesNeeded ) ) );
     if ( ! b->buf )
-        return 0;
+        bson_fatal_msg(!!b->buf, "realloc() failed");
     return b;
 }
 
@@ -397,10 +395,32 @@ bson_buffer * bson_append_finish_object( bson_buffer * b ){
     return b;
 }
 
+void* bson_malloc(int size){
+    void* p = malloc(size);
+    bson_fatal_msg(!!p, "malloc() failed");
+    return p;
+}
 
-void bson_fatal( char * msg , int ok ){
-    if ( ok )
+static bson_err_handler err_handler = NULL;
+
+bson_err_handler set_bson_err_handler(bson_err_handler func){
+    bson_err_handler old = err_handler;
+    err_handler = func;
+    return old;
+}
+
+void bson_fatal( int ok ){
+    bson_fatal_msg(ok, "");
+}
+
+void bson_fatal_msg( int ok , const char* msg){
+    if (ok)
         return;
-    fprintf( stderr , "bson error: %s\n" , msg );
+
+    if (err_handler){
+        err_handler(msg);
+    }
+
+    fprintf( stderr , "error: %s\n" , msg );
     exit(-5);
 }

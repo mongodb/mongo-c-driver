@@ -127,6 +127,23 @@ bson_buffer * bson_append_finish_object( bson_buffer * b );
 
 
 
-void bson_fatal( char * msg , int ok );
+/* ------------------------------
+   ERROR HANDLING - also used in mongo code
+   ------------------------------ */
+
+void * bson_malloc(int size); /* checks return value */
+
+/* bson_err_handlers shouldn't return!!! */
+typedef void(*bson_err_handler)(const char* errmsg);
+
+/* returns old handler or NULL */
+/* default handler prints error then exits with failure*/
+bson_err_handler set_bson_err_handler(bson_err_handler func);
+
+
+
+/* does nothing is ok != 0 */
+void bson_fatal( int ok );
+void bson_fatal_msg( int ok, const char* msg );
 
 #endif
