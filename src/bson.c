@@ -160,15 +160,33 @@ bson_type bson_iterator_next( bson_iterator * i ){
     }
     
     switch ( bson_iterator_type(i) ){
-    case bson_double: ds = 8; break;
-    case bson_bool: ds = 1; break;
+    case bson_undefined:
     case bson_null: ds = 0; break;
+    case bson_bool: ds = 1; break;
     case bson_int: ds = 4; break;
-    case bson_long: ds = 8; break;
+    case bson_long:
+    case bson_double:
+    case bson_timestamp:
+    case bson_date: ds = 8; break;
     case bson_oid: ds = 12; break;
-    case bson_string: ds = 4 + bson_iterator_int_raw(i); break;
-    case bson_object: ds = bson_iterator_int_raw(i); break;
-    case bson_array: ds = bson_iterator_int_raw(i); break;
+    case bson_string:
+    case bson_symbol:
+    case bson_code: ds = 4 + bson_iterator_int_raw(i); break;
+    case bson_binary: ds = 5 + bson_iterator_int_raw(i); break;
+    case bson_object:
+    case bson_array:
+    case bson_codewscope: ds = bson_iterator_int_raw(i); break;
+    case bson_dbref: ds = 4+12 + bson_iterator_int_raw(i); break;
+    case bson_regex:
+        {
+            const char * s = bson_iterator_value(i);
+            const char * p = s;
+            p += strlen(p)+1;
+            p += strlen(p)+1;
+            ds = p-s;
+            break;
+        }
+
     default: 
         fprintf( stderr , "WTF: %d\n"  , (int)(i->cur[0]) );
         exit(-1);
@@ -270,6 +288,15 @@ char bson_iterator_bin_type( bson_iterator * i ){
 }
 const char * bson_iterator_bin_data( bson_iterator * i ){
     return bson_iterator_value( i ) + 5;
+}
+
+const char * bson_iterator_regex( bson_iterator * i ){
+    return bson_iterator_value( i );
+}
+const char * bson_iterator_regex_opts( bson_iterator * i ){
+    const char* p = bson_iterator_value( i );
+    return p + strlen(p) + 1;
+
 }
 
 /* ----------------------------
@@ -402,6 +429,12 @@ bson_buffer * bson_append_new_oid( bson_buffer * b , const char * name ){
     return bson_append_oid(b, name, &oid);
 }
 
+bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const char * pattern, const char * opts ){
+    if ( ! bson_append_estart( b , bson_regex , name , 12 ) ) return 0;
+    bson_append( b , pattern , strlen(pattern) );
+    bson_append( b , opts , strlen(opts) );
+    return b;
+}
 
 bson_buffer * bson_append_start_object( bson_buffer * b , const char * name ){
     if ( ! bson_append_estart( b , bson_object , name , 5 ) ) return 0;

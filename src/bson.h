@@ -18,7 +18,7 @@ typedef enum {
     bson_date=9,
     bson_null=10,
     bson_regex=11,
-    bson_dbref=12,
+    bson_dbref=12, /* deprecated */
     bson_code=13,
     bson_symbol=14,
     bson_codewscope=15,
@@ -103,6 +103,9 @@ int bson_iterator_bin_len( bson_iterator * i );
 char bson_iterator_bin_type( bson_iterator * i );
 const char * bson_iterator_bin_data( bson_iterator * i );
 
+const char * bson_iterator_regex( bson_iterator * i );
+const char * bson_iterator_regex_opts( bson_iterator * i );
+
 /* str must be at least 25 hex chars */
 void bson_oid_from_string(bson_oid_t* oid, const char* str);
 void bson_oid_to_string(const bson_oid_t* oid, char* str);
@@ -131,6 +134,7 @@ bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type,
 bson_buffer * bson_append_bool( bson_buffer * b , const char * name , const bson_bool_t v );
 bson_buffer * bson_append_null( bson_buffer * b , const char * name );
 bson_buffer * bson_append_undefined( bson_buffer * b , const char * name );
+bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const char * pattern, const char * opts );
 
 bson_buffer * bson_append_start_object( bson_buffer * b , const char * name );
 bson_buffer * bson_append_start_array( bson_buffer * b , const char * name );
