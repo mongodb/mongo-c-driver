@@ -8,6 +8,8 @@
 
 const int initialBufferSize = 128;
 
+/* only need one of these */
+static const int zero = 0;
 
 /* ----------------------------
    READING
@@ -369,18 +371,16 @@ bson_buffer * bson_append_new_oid( bson_buffer * b , const char * name ){
 
 
 bson_buffer * bson_append_start_object( bson_buffer * b , const char * name ){
-    int x = 0;
     if ( ! bson_append_estart( b , bson_object , name , 5 ) ) return 0;
     b->stack[ b->stackPos++ ] = b->cur;
-    bson_append32( b , &x );
+    bson_append32( b , &zero );
     return b;
 }
 
 bson_buffer * bson_append_start_array( bson_buffer * b , const char * name ){
-    int x = 0;
     if ( ! bson_append_estart( b , bson_array , name , 5 ) ) return 0;
     b->stack[ b->stackPos++ ] = b->cur;
-    bson_append32( b , &x );
+    bson_append32( b , &zero );
     return b;
 }
 

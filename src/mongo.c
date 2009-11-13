@@ -12,6 +12,10 @@
 
 #define CHECK(x) if (!(x)) return 0
 
+/* only need one of these */
+static const int zero = 0;
+static const int one = 0;
+
 /* ----------------------------
    message stuff
    ------------------------------ */
@@ -84,7 +88,6 @@ mongo_message * mongo_message_create( int len , int id , int responseTo , int op
    ------------------------------ */
 
 int mongo_connect( mongo_connection * conn , mongo_connection_options * options ){
-    int x = 1;
     conn->connected = 0;
 
     if ( options ){
@@ -120,10 +123,7 @@ int mongo_connect( mongo_connection * conn , mongo_connection_options * options 
     /* options */
 
     /* nagle */
-    if ( setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &x, sizeof(x) ) ){
-        fprintf( stderr , "disbale nagle failed" );
-        return -3;
-    }
+    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &one, sizeof(one) );
 
     /* TODO signals */
 
@@ -278,7 +278,6 @@ bson_bool_t mongo_cursor_get_more(mongo_cursor* cursor){
     if (cursor->mm && cursor->mm->fields.cursorID){
         char* data;
         int sl = strlen(cursor->ns)+1;
-        int zero = 0;
         mongo_message * mm = mongo_message_create(16 /*header*/
                                                  +4 /*ZERO*/
                                                  +sl
@@ -331,8 +330,6 @@ bson_bool_t mongo_cursor_next(mongo_cursor* cursor){
 
 void mongo_cursor_destroy(mongo_cursor* cursor){
     if (cursor->mm && cursor->mm->fields.cursorID){
-        int zero = 0;
-        int one = 1;
         mongo_message * mm = mongo_message_create(16 /*header*/
                                                  +4 /*ZERO*/
                                                  +4 /*numCursors*/
