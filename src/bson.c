@@ -89,7 +89,10 @@ void bson_oid_gen(bson_oid_t* oid){
     int t = time(NULL);
 
     /* TODO rand sucks. find something better */
-    if (!fuzz) fuzz = rand();
+    if (!fuzz){
+        srand(t);
+        fuzz = rand();
+    }
     
     bson_big_endian32(&oid->ints[0], &t);
     oid->ints[1] = fuzz;
