@@ -261,6 +261,17 @@ int bson_iterator_string_len( bson_iterator * i ){
     return bson_iterator_int_raw( i );
 }
 
+int bson_iterator_bin_len( bson_iterator * i ){
+    return bson_iterator_int_raw( i );
+}
+
+char bson_iterator_bin_type( bson_iterator * i ){
+    return bson_iterator_value(i)[4];
+}
+const char * bson_iterator_bin_data( bson_iterator * i ){
+    return bson_iterator_value( i ) + 5;
+}
+
 /* ----------------------------
    BUILDING
    ------------------------------ */
@@ -371,6 +382,14 @@ bson_buffer * bson_append_symbol( bson_buffer * b , const char * name , const ch
 }
 bson_buffer * bson_append_code( bson_buffer * b , const char * name , const char * value ){
     return bson_append_string_base(b, name, value, bson_code);
+}
+bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len ){
+    const int size = 4+1+len;
+    if ( ! bson_append_estart( b , bson_bindata , name , size ) ) return 0;
+    bson_append32(b, &size);
+    bson_append_byte(b, type);
+    bson_append(b, str, len);
+    return b;
 }
 bson_buffer * bson_append_oid( bson_buffer * b , const char * name , const bson_oid_t * oid ){
     if ( ! bson_append_estart( b , bson_oid , name , 12 ) ) return 0;

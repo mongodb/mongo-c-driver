@@ -98,6 +98,11 @@ bson_oid_t* bson_iterator_oid( bson_iterator * i );
 const char * bson_iterator_string( bson_iterator * i );
 int bson_iterator_string_len( bson_iterator * i );
 
+
+int bson_iterator_bin_len( bson_iterator * i );
+char bson_iterator_bin_type( bson_iterator * i );
+const char * bson_iterator_bin_data( bson_iterator * i );
+
 /* str must be at least 25 hex chars */
 void bson_oid_from_string(bson_oid_t* oid, const char* str);
 void bson_oid_to_string(const bson_oid_t* oid, char* str);
@@ -122,6 +127,7 @@ bson_buffer * bson_append_double( bson_buffer * b , const char * name , const do
 bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * str );
 bson_buffer * bson_append_symbol( bson_buffer * b , const char * name , const char * str );
 bson_buffer * bson_append_code( bson_buffer * b , const char * name , const char * str );
+bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len );
 bson_buffer * bson_append_bool( bson_buffer * b , const char * name , const bson_bool_t v );
 bson_buffer * bson_append_null( bson_buffer * b , const char * name );
 bson_buffer * bson_append_undefined( bson_buffer * b , const char * name );
