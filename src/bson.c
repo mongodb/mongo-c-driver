@@ -352,12 +352,25 @@ bson_buffer * bson_append_null( bson_buffer * b , const char * name ){
     if ( ! bson_append_estart( b , bson_null , name , 0 ) ) return 0;
     return b;
 }
-bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * value ){
+bson_buffer * bson_append_undefined( bson_buffer * b , const char * name ){
+    if ( ! bson_append_estart( b , bson_undefined , name , 0 ) ) return 0;
+    return b;
+}
+bson_buffer * bson_append_string_base( bson_buffer * b , const char * name , const char * value , bson_type type){
     int sl = strlen( value ) + 1;
-    if ( ! bson_append_estart( b , bson_string , name , 4 + sl ) ) return 0;
+    if ( ! bson_append_estart( b , type , name , 4 + sl ) ) return 0;
     bson_append32( b , &sl);
     bson_append( b , value , sl );
     return b;
+}
+bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * value ){
+    return bson_append_string_base(b, name, value, bson_string);
+}
+bson_buffer * bson_append_symbol( bson_buffer * b , const char * name , const char * value ){
+    return bson_append_string_base(b, name, value, bson_symbol);
+}
+bson_buffer * bson_append_code( bson_buffer * b , const char * name , const char * value ){
+    return bson_append_string_base(b, name, value, bson_code);
 }
 bson_buffer * bson_append_oid( bson_buffer * b , const char * name , const bson_oid_t * oid ){
     if ( ! bson_append_estart( b , bson_oid , name , 12 ) ) return 0;
