@@ -20,6 +20,12 @@ bson * bson_empty(bson * obj){
     return bson_init(obj, data, 0);
 }
 
+void bson_copy(bson* out, const bson* in){
+    out->data = bson_malloc(bson_size(in));
+    out->owned = 1;
+    memcpy(out->data, in->data, bson_size(in));
+}
+
 bson * bson_init( bson * b , char * data , int mine ){
     b->data = data;
     b->owned = mine;
