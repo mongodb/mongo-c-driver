@@ -21,6 +21,7 @@ bson * bson_empty(bson * obj){
 }
 
 void bson_copy(bson* out, const bson* in){
+    if (!out) return;
     out->data = bson_malloc(bson_size(in));
     out->owned = 1;
     memcpy(out->data, in->data, bson_size(in));
