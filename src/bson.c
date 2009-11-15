@@ -172,7 +172,7 @@ bson_type bson_iterator_next( bson_iterator * i ){
     case bson_string:
     case bson_symbol:
     case bson_code: ds = 4 + bson_iterator_int_raw(i); break;
-    case bson_binary: ds = 5 + bson_iterator_int_raw(i); break;
+    case bson_bindata: ds = 5 + bson_iterator_int_raw(i); break;
     case bson_object:
     case bson_array:
     case bson_codewscope: ds = bson_iterator_int_raw(i); break;
