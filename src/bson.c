@@ -32,7 +32,7 @@ bson * bson_init( bson * b , char * data , int mine ){
     b->owned = mine;
     return b;
 }
-int bson_size( bson * b ){
+int bson_size(const bson * b ){
     int i;
     if ( ! b || ! b->data )
         return 0;
