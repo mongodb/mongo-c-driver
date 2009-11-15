@@ -24,7 +24,11 @@ int main(){
         exit(1);
     }
 
-    /* TODO drop collection */
+    if (!mongo_cmd_drop_collection(&conn, "test", "cc", NULL)){
+        printf("failed to drop collection\n");
+        exit(1);
+    }
+
     for(i=0; i< 5; i++){
         bson_buffer_init( & bb );
 

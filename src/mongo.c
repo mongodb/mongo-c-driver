@@ -347,3 +347,75 @@ void mongo_cursor_destroy(mongo_cursor* cursor){
     free((void*)cursor->ns);
     free(cursor);
 }
+
+bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * command, bson * out){
+    bson fields;
+    int sl = strlen(db);
+    char* ns = bson_malloc(sl + 5 + 1); /* ".$cmd" + nul */
+    bson_bool_t success;
+
+    strcpy(ns, db);
+    strcpy(ns+sl, ".$cmd");
+
+    success = mongo_find_one(conn, ns, command, bson_empty(&fields), out);
+    free(ns);
+    return success;
+}
+
+bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db){
+    bson out;
+    bson cmd;
+    bson_buffer bb;
+    bson_bool_t success = 0;
+
+    bson_buffer_init(&bb);
+    bson_append_int(&bb, "dropDatabase", 1);
+    bson_init(&cmd, bson_buffer_finish(&bb), 1);
+
+    if(mongo_run_command(conn, db, &cmd, &out)){
+        bson_iterator it;
+        bson_iterator_init(&it, out.data);
+        while(bson_iterator_next(&it)){
+            if (strcmp("ok", bson_iterator_key(&it)) != 0)
+                continue;
+            success = bson_iterator_bool(&it);
+            break;
+        }
+    }
+    
+    bson_destroy(&cmd);
+    bson_destroy(&out);
+    return success;
+}
+
+bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, const char * collection, bson * realout){
+    bson out;
+    bson cmd;
+    bson_buffer bb;
+    bson_bool_t success = 0;
+
+    bson_buffer_init(&bb);
+    bson_append_string(&bb, "drop", collection);
+    bson_init(&cmd, bson_buffer_finish(&bb), 1);
+
+    if(mongo_run_command(conn, db, &cmd, &out)){
+        bson_iterator it;
+        bson_iterator_init(&it, out.data);
+        while(bson_iterator_next(&it)){
+            if (strcmp("ok", bson_iterator_key(&it)) != 0)
+                continue;
+            success = bson_iterator_bool(&it);
+            break;
+        }
+    }
+    
+    bson_destroy(&cmd);
+
+    if(realout)
+        *realout = out; /* transfer of ownership */
+    else
+        bson_destroy(&out);
+
+    return success;
+}
+

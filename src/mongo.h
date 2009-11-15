@@ -104,6 +104,10 @@ bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, 
    COMMANDS
    ------------------------------ */
 
+/* out must be empty or NULL */
+bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * command, bson * out);
+bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db);
+bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, const char * collection, bson * out);
 
 /* ----------------------------
    UTILS
