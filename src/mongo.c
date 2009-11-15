@@ -316,6 +316,8 @@ bson_bool_t mongo_cursor_next(mongo_cursor* cursor){
 }
 
 void mongo_cursor_destroy(mongo_cursor* cursor){
+    if (!cursor) return;
+
     if (cursor->mm && cursor->mm->fields.cursorID){
         mongo_message * mm = mongo_message_create(16 /*header*/
                                                  +4 /*ZERO*/
