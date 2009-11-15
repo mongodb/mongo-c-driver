@@ -247,6 +247,19 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bs
     return cursor;
 }
 
+bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, bson* fields, bson* out){
+    mongo_cursor* cursor = mongo_find(conn, ns, query, fields, 1, 0, 0);
+
+    if (cursor && mongo_cursor_next(cursor)){
+        bson_copy(out, &cursor->current);
+        mongo_cursor_destroy(cursor);
+        return 1;
+    }else{
+        mongo_cursor_destroy(cursor);
+        return 0;
+    }
+}
+
 int mongo_disconnect( mongo_connection * conn ){
     if ( ! conn->connected )
         return 1;

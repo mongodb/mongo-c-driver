@@ -94,6 +94,8 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bs
 bson_bool_t mongo_cursor_next(mongo_cursor* cursor);
 void mongo_cursor_destroy(mongo_cursor* cursor);
 
+bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, bson* fields, bson* out);
+
 /* ----------------------------
    HIGHER LEVEL - indexes - command helpers eval
    ------------------------------ */
