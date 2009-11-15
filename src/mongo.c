@@ -199,7 +199,7 @@ mongo_reply * mongo_read_response( mongo_connection * conn ){
     return out;
 }
 
-mongo_cursor* mongo_query(mongo_connection* conn, const char* ns, bson* query, bson* fields, int nToReturn, int nToSkip, int options){
+mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bson* fields, int nToReturn, int nToSkip, int options){
     int sl;
     mongo_cursor * cursor;
     char * data;

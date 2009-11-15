@@ -50,7 +50,7 @@ int main(){
         bson_destroy(&b);
     }
     
-    cursor = mongo_query( &conn , "test.cc" , bson_empty(&b) , 0 , 0 , 0 , 0 );
+    cursor = mongo_find( &conn , "test.cc" , bson_empty(&b) , 0 , 0 , 0 , 0 );
 
     while (mongo_cursor_next(cursor)){
         bson_iterator it;

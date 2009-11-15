@@ -90,7 +90,7 @@ int mongo_insert( mongo_connection * conn , const char * ns , bson * data );
 int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
 
-mongo_cursor* mongo_query(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
+mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
 bson_bool_t mongo_cursor_next(mongo_cursor* cursor);
 void mongo_cursor_destroy(mongo_cursor* cursor);
 
