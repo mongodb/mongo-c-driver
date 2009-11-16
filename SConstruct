@@ -74,7 +74,7 @@ testEnv.Prepend( LIBPATH=["."] )
 
 testCoreFiles = [ "test/md5.c" ]
 
-for name in Split('simple json endian_swap sizes'):
+for name in Split('sizes endian_swap json simple update'):
     filename = "test/%s.c" % name
     exe = "test" + name
     test = testEnv.Program( exe , testCoreFiles + [filename]  )

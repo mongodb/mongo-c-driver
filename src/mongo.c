@@ -170,6 +170,27 @@ void mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
     free(mm);
 }
 
+void mongo_update(mongo_connection* conn, const char* ns, const bson* cond, const bson* op, int flags){
+    char * data;
+    mongo_message * mm = mongo_message_create( 16 /* header */
+                                             + 4  /* ZERO */
+                                             + strlen(ns) + 1
+                                             + 4  /* flags */
+                                             + bson_size(cond)
+                                             + bson_size(op)
+                                             , 0 , 0 , mongo_op_update );
+
+    data = &mm->data;
+    data = mongo_data_append32(data, &zero);
+    data = mongo_data_append(data, ns, strlen(ns) + 1);
+    data = mongo_data_append32(data, &flags);
+    data = mongo_data_append(data, cond->data, bson_size(cond));
+    data = mongo_data_append(data, op->data, bson_size(op));
+
+    mongo_message_send(conn->sock, mm);
+    free(mm);
+}
+
 mongo_reply * mongo_read_response( mongo_connection * conn ){
     mongo_header head; /* header from network */
     mongo_reply_fields fields; /* header from network */

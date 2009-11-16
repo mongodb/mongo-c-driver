@@ -89,6 +89,9 @@ bson_bool_t mongo_destory( mongo_connection * conn );
 void mongo_insert( mongo_connection * conn , const char * ns , bson * data );
 void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
+static const int MONGO_UPDATE_UPSERT = 0x1;
+static const int MONGO_UPDATE_MULTI = 0x2;
+void mongo_update(mongo_connection* conn, const char* ns, const bson* cond, const bson* op, int flags);
 
 mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
 bson_bool_t mongo_cursor_next(mongo_cursor* cursor);
