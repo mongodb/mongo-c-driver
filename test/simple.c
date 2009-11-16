@@ -49,7 +49,7 @@ int main(){
             bson_append_finish_object(arr);
         }
 
-        bson_init( &b , bson_buffer_finish( &bb ) , 1 );
+        bson_from_buffer(&b, &bb);
         mongo_insert( &conn , "test.cc" , &b );
         bson_destroy(&b);
     }

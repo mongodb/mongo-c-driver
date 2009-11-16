@@ -27,6 +27,10 @@ void bson_copy(bson* out, const bson* in){
     memcpy(out->data, in->data, bson_size(in));
 }
 
+bson * bson_from_buffer(bson * b, bson_buffer * buf){
+    return bson_init(b, bson_buffer_finish(buf), 1);
+}
+
 bson * bson_init( bson * b , char * data , int mine ){
     b->data = data;
     b->owned = mine;

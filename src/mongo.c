@@ -370,7 +370,7 @@ bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db){
 
     bson_buffer_init(&bb);
     bson_append_int(&bb, "dropDatabase", 1);
-    bson_init(&cmd, bson_buffer_finish(&bb), 1);
+    bson_from_buffer(&cmd, &bb);
 
     if(mongo_run_command(conn, db, &cmd, &out)){
         bson_iterator it;
@@ -396,7 +396,7 @@ bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, 
 
     bson_buffer_init(&bb);
     bson_append_string(&bb, "drop", collection);
-    bson_init(&cmd, bson_buffer_finish(&bb), 1);
+    bson_from_buffer(&cmd, &bb);
 
     if(mongo_run_command(conn, db, &cmd, &out)){
         bson_iterator it;

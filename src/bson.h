@@ -63,6 +63,7 @@ typedef short bson_bool_t;
 
 bson * bson_empty(bson * obj); /* returns pointer to static empty bson object */
 void bson_copy(bson* out, const bson* in); /* puts data in new buffer. NOOP if out==NULL */
+bson * bson_from_buffer(bson * b, bson_buffer * buf);
 bson * bson_init( bson * b , char * data , int mine );
 int bson_size(const bson * b );
 void bson_destroy( bson * b );
