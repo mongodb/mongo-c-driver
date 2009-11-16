@@ -12,7 +12,7 @@
 #endif
 
 
-#ifdef MONGO_HAVE_STDINT
+#if defined(MONGO_HAVE_STDINT) || __STDC_VERSION__ >= 199901L
 #include <stdint.h>
 #elif defined(MONGO_HAVE_UNISTD)
 #include <unistd.h>
@@ -20,11 +20,13 @@
 typedef __int64 int64_t;
 #elif defined(MONGO_USE_LONG_LONG_INT)
 typedef long long int int64_t;
+#else
+#error must have a 64bit int type
 #endif
 
-#ifdef MONGO_HAVE_BOOL
+#if defined(MONGO_HAVE_BOOL)
 typedef bool bson_bool_t;
-#elif defined(MONGO_HAVE_STDBOOL)
+#elif defined(MONGO_HAVE_STDBOOL) || __STDC_VERSION__ >= 199901L
 #include <stdbool.h>
 typedef _Bool bson_bool_t;
 #else
