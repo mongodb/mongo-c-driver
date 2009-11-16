@@ -141,30 +141,32 @@ void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bso
 
     mm = mongo_message_create( size , 0 , 0 , mongo_op_insert );
 
-    i=0;
     data = &mm->data;
-    data = mongo_data_append32(data, &i);
-    data = mongo_data_append(data, ns , strlen( ns ) + 1 );
+    data = mongo_data_append32(data, &zero);
+    data = mongo_data_append(data, ns, strlen(ns) + 1);
 
     for(i=0; i<count; i++){
-        data = mongo_data_append(data, bsons[i]->data , bson_size( bsons[i] ) );
+        data = mongo_data_append(data, bsons[i]->data, bson_size( bsons[i] ) );
     }
 
-    mongo_message_send( conn->sock , mm );
+    mongo_message_send(conn->sock, mm);
     free(mm);
 }
 
 void mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
     char * data;
-    mongo_message * mm = mongo_message_create( 16 + 4 + strlen( ns ) + 1 + bson_size( bson ) ,
-                                                      0 , 0 , mongo_op_insert );
+    mongo_message * mm = mongo_message_create( 16 /* header */
+                                             + 4 /* ZERO */
+                                             + strlen(ns)
+                                             + 1 + bson_size(bson)
+                                             , 0, 0, mongo_op_insert);
 
     data = &mm->data;
-    memset( data , 0 , 4 );
-    memcpy( data + 4 , ns , strlen( ns ) + 1 );
-    memcpy( data + 4 + strlen( ns ) + 1 , bson->data , bson_size( bson ) );
+    data = mongo_data_append32(data, &zero);
+    data = mongo_data_append(data, ns, strlen(ns) + 1);
+    data = mongo_data_append(data, bson->data, bson_size(bson));
 
-    mongo_message_send( conn->sock , mm );
+    mongo_message_send(conn->sock, mm);
     free(mm);
 }
 
