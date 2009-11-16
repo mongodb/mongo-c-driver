@@ -20,7 +20,7 @@ typedef struct {
     struct sockaddr_in sa;
     socklen_t addressSize;
     int sock;
-    int connected;
+    bson_bool_t connected;
 } mongo_connection;
 
 #pragma pack(1)
@@ -77,8 +77,8 @@ enum mongo_operations {
  * return of 0 indicates success
  */
 int mongo_connect( mongo_connection * conn , mongo_connection_options * options );
-int mongo_disconnect( mongo_connection * conn );
-int mongo_destory( mongo_connection * conn );
+bson_bool_t mongo_disconnect( mongo_connection * conn );
+bson_bool_t mongo_destory( mongo_connection * conn );
 
 
 
@@ -86,8 +86,8 @@ int mongo_destory( mongo_connection * conn );
    CORE METHODS - insert update remove query getmore
    ------------------------------ */
 
-int mongo_insert( mongo_connection * conn , const char * ns , bson * data );
-int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
+void mongo_insert( mongo_connection * conn , const char * ns , bson * data );
+void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
 
 mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);

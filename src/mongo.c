@@ -129,7 +129,7 @@ int mongo_connect( mongo_connection * conn , mongo_connection_options * options 
     return 0;
 }
 
-int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bsons, int count){
+void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bsons, int count){
     int size =  16 + 4 + strlen( ns ) + 1;
     int i;
     mongo_message * mm;
@@ -152,15 +152,12 @@ int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bson
 
     mongo_message_send( conn->sock , mm );
     free(mm);
-    return 0;
 }
 
-int mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
+void mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
     char * data;
     mongo_message * mm = mongo_message_create( 16 + 4 + strlen( ns ) + 1 + bson_size( bson ) ,
                                                       0 , 0 , mongo_op_insert );
-    if ( ! mm )
-        return 0;
 
     data = &mm->data;
     memset( data , 0 , 4 );
@@ -169,7 +166,6 @@ int mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
 
     mongo_message_send( conn->sock , mm );
     free(mm);
-    return 0;
 }
 
 mongo_reply * mongo_read_response( mongo_connection * conn ){
@@ -260,7 +256,7 @@ bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, 
     }
 }
 
-int mongo_disconnect( mongo_connection * conn ){
+bson_bool_t mongo_disconnect( mongo_connection * conn ){
     if ( ! conn->connected )
         return 1;
 
@@ -272,7 +268,7 @@ int mongo_disconnect( mongo_connection * conn ){
     return 0;
 }
 
-int mongo_destory( mongo_connection * conn ){
+bson_bool_t mongo_destory( mongo_connection * conn ){
     return mongo_disconnect( conn );
 }
 

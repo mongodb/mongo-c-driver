@@ -31,7 +31,7 @@ bson * bson_from_buffer(bson * b, bson_buffer * buf){
     return bson_init(b, bson_buffer_finish(buf), 1);
 }
 
-bson * bson_init( bson * b , char * data , int mine ){
+bson * bson_init( bson * b , char * data , bson_bool_t mine ){
     b->data = data;
     b->owned = mine;
     return b;
@@ -158,7 +158,7 @@ void bson_iterator_init( bson_iterator * i , const char * bson ){
     i->first = 1;
 }
 
-int bson_iterator_more( bson_iterator * i ){
+bson_bool_t bson_iterator_more( bson_iterator * i ){
     return *(i->cur);
 }
 
