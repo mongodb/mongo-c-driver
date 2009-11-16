@@ -34,6 +34,13 @@ if not conf.CheckType('int64_t'):
     else:
         print "*** what is your 64 bit int type? ****"
         Exit(1)
+
+if conf.CheckType('bool'):
+    conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_BOOL " )
+elif conf.CheckType('_Bool', '#include <stdbool.h>\n'):
+    conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_STDBOOL " )
+#if we don't have a bool type we default to char
+
 env = conf.Finish()
 
 if sys.byteorder == 'big':

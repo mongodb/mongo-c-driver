@@ -5,8 +5,6 @@
 
 #include "platform_hacks.h"
 
-typedef short bson_bool_t;
-
 typedef enum {
     bson_eoo=0 ,
     bson_double=1,

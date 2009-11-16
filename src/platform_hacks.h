@@ -22,6 +22,15 @@ typedef __int64 int64_t;
 typedef long long int int64_t;
 #endif
 
+#ifdef MONGO_HAVE_BOOL
+typedef bool bson_bool_t;
+#elif defined(MONGO_HAVE_STDBOOL)
+#include <stdbool.h>
+typedef _Bool bson_bool_t;
+#else
+typedef unsigned char bson_bool_t;
+#endif
+
 /* big endian is only used for OID generation. little is used everywhere else */
 #ifdef MONGO_BIG_ENDIAN
 #define bson_little_endian64(out, in) ( bson_swap_endian64(out, in) )
