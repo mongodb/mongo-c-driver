@@ -10,6 +10,12 @@ AddOption('--test-server',
           action='store',
           help='IP address of server to use for testing')
 
+AddOption('--c99',
+          dest='use_c99',
+          default=False,
+          action='store_true',
+          help='Compile with c99 (recommended for gcc)')
+
 import os
 import sys
 
@@ -19,29 +25,34 @@ if "darwin" == os.sys.platform or "linux2" == os.sys.platform:
     env.Append( CPPFLAGS=" -ansi -pedantic -Wall -ggdb " )
     env.Append( CPPPATH=["/opt/local/include/"] )
     env.Append( LIBPATH=["/opt/local/lib/"] )
+    if GetOption('use_c99'):
+        env.Append( CPPFLAGS=" -std=c99 " )
+        
 
-conf = Configure(env)
+#we shouldn't need these options in c99 mode
+if not GetOption('use_c99'):
+    conf = Configure(env)
 
-if not conf.CheckType('int64_t'):
-    if conf.CheckType('int64_t', '#include <stdint.h>\n'):
-        conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_STDINT " )
-    elif conf.CheckType('int64_t', '#include <unistd.h>\n'):
-        conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_UNISTD " )
-    elif conf.CheckType('__int64'):
-        conf.env.Append( CPPFLAGS=" -DMONGO_USE__INT64 " )
-    elif conf.CheckType('long long int'):
-        conf.env.Append( CPPFLAGS=" -DMONGO_USE_LONG_LONG_INT " )
-    else:
-        print "*** what is your 64 bit int type? ****"
-        Exit(1)
+    if not conf.CheckType('int64_t'):
+        if conf.CheckType('int64_t', '#include <stdint.h>\n'):
+            conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_STDINT " )
+        elif conf.CheckType('int64_t', '#include <unistd.h>\n'):
+            conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_UNISTD " )
+        elif conf.CheckType('__int64'):
+            conf.env.Append( CPPFLAGS=" -DMONGO_USE__INT64 " )
+        elif conf.CheckType('long long int'):
+            conf.env.Append( CPPFLAGS=" -DMONGO_USE_LONG_LONG_INT " )
+        else:
+            print "*** what is your 64 bit int type? ****"
+            Exit(1)
 
-if conf.CheckType('bool'):
-    conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_BOOL " )
-elif conf.CheckType('_Bool', '#include <stdbool.h>\n'):
-    conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_STDBOOL " )
-#if we don't have a bool type we default to char
+    if conf.CheckType('bool'):
+        conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_BOOL " )
+    elif conf.CheckType('_Bool', '#include <stdbool.h>\n'):
+        conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_STDBOOL " )
+    #if we don't have a bool type we default to char
 
-env = conf.Finish()
+    env = conf.Finish()
 
 if sys.byteorder == 'big':
     env.Append( CPPFLAGS=" -DMONGO_BIG_ENDIAN " )
