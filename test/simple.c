@@ -14,6 +14,8 @@ int main(){
     int i;
     char hex_oid[25];
 
+    const char * col = "c.simple";
+    const char * ns = "test.c.simple";
     
     strncpy(opts.host, TEST_SERVER, 255);
     opts.host[254] = '\0';
@@ -24,7 +26,9 @@ int main(){
         exit(1);
     }
 
-    if (!mongo_cmd_drop_collection(&conn, "test", "cc", NULL)){
+    /* if the collection doesn't exist dropping it will fail */
+    if (!mongo_cmd_drop_collection(&conn, "test", col, NULL)
+          && mongo_find_one(&conn, ns, bson_empty(&b), bson_empty(&b), NULL)){
         printf("failed to drop collection\n");
         exit(1);
     }
@@ -50,11 +54,11 @@ int main(){
         }
 
         bson_from_buffer(&b, &bb);
-        mongo_insert( &conn , "test.cc" , &b );
+        mongo_insert( &conn , ns , &b );
         bson_destroy(&b);
     }
     
-    cursor = mongo_find( &conn , "test.cc" , bson_empty(&b) , 0 , 0 , 0 , 0 );
+    cursor = mongo_find( &conn , ns , bson_empty(&b) , 0 , 0 , 0 , 0 );
 
     while (mongo_cursor_next(cursor)){
         bson_iterator it;
