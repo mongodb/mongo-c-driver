@@ -9,6 +9,7 @@ testsimple
 testendian_swap
 testsizes
 testupdate
+testerrors
 
 tags
 
