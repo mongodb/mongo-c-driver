@@ -447,6 +447,12 @@ bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const cha
     return b;
 }
 
+bson_buffer * bson_append_bson( bson_buffer * b , const char * name , const bson* bson){
+    if ( ! bson_append_estart( b , bson_object , name , bson_size(bson) ) ) return 0;
+    bson_append( b , bson->data , bson_size(bson) );
+    return b;
+}
+
 bson_buffer * bson_append_start_object( bson_buffer * b , const char * name ){
     if ( ! bson_append_estart( b , bson_object , name , 5 ) ) return 0;
     b->stack[ b->stackPos++ ] = b->cur;
