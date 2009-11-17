@@ -70,6 +70,10 @@ void bson_destroy( bson * b );
 void bson_print( bson * b );
 void bson_print_raw( const char * bson , int depth );
 
+/* advances iterator to named field */
+/* returns bson_eoo (which is false) if field not found */
+bson_type bson_find(bson_iterator* it, const bson* obj, const char* name);
+
 void bson_iterator_init( bson_iterator * i , const char * bson );
 
 bson_bool_t bson_iterator_more( bson_iterator * i );

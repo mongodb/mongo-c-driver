@@ -158,6 +158,15 @@ void bson_iterator_init( bson_iterator * i , const char * bson ){
     i->first = 1;
 }
 
+bson_type bson_find(bson_iterator* it, const bson* obj, const char* name){
+    bson_iterator_init(it, obj->data);
+    while(bson_iterator_next(it)){
+        if (strcmp(name, bson_iterator_key(it)) == 0)
+            break;
+    }
+    return bson_iterator_type(it);
+}
+
 bson_bool_t bson_iterator_more( bson_iterator * i ){
     return *(i->cur);
 }

@@ -312,13 +312,8 @@ int64_t mongo_count(mongo_connection* conn, const char* db, const char* ns, bson
 
     if(mongo_run_command(conn, db, &cmd, &out)){
         bson_iterator it;
-        bson_iterator_init(&it, out.data);
-        while(bson_iterator_next(&it)){
-            if (strcmp("n", bson_iterator_key(&it)) != 0)
-                continue;
+        if(bson_find(&it, &out, "n"))
             count = bson_iterator_long(&it);
-            break;
-        }
     }
     
     bson_destroy(&cmd);
@@ -443,13 +438,8 @@ bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db){
 
     if(mongo_run_command(conn, db, &cmd, &out)){
         bson_iterator it;
-        bson_iterator_init(&it, out.data);
-        while(bson_iterator_next(&it)){
-            if (strcmp("ok", bson_iterator_key(&it)) != 0)
-                continue;
+        if(bson_find(&it, &out, "ok"))
             success = bson_iterator_bool(&it);
-            break;
-        }
     }
     
     bson_destroy(&cmd);
@@ -469,13 +459,8 @@ bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, 
 
     if(mongo_run_command(conn, db, &cmd, &out)){
         bson_iterator it;
-        bson_iterator_init(&it, out.data);
-        while(bson_iterator_next(&it)){
-            if (strcmp("ok", bson_iterator_key(&it)) != 0)
-                continue;
+        if(bson_find(&it, &out, "ok"))
             success = bson_iterator_bool(&it);
-            break;
-        }
     }
     
     bson_destroy(&cmd);
@@ -513,13 +498,7 @@ static bson_bool_t mongo_cmd_get_error_helper(mongo_connection * conn, const cha
 
     if(mongo_run_command(conn, db, &cmd, &out)){
         bson_iterator it;
-        bson_iterator_init(&it, out.data);
-        while(bson_iterator_next(&it)){
-            if (strcmp("err", bson_iterator_key(&it)) != 0)
-                continue;
-            haserror = (bson_iterator_type(&it) != bson_null);
-            break;
-        }
+        haserror = (bson_find(&it, &out, "err") != bson_null);
     }
     
     bson_destroy(&cmd);
