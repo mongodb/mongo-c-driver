@@ -93,6 +93,8 @@ static const int MONGO_UPDATE_UPSERT = 0x1;
 static const int MONGO_UPDATE_MULTI = 0x2;
 void mongo_update(mongo_connection* conn, const char* ns, const bson* cond, const bson* op, int flags);
 
+void mongo_remove(mongo_connection* conn, const char* ns, const bson* cond);
+
 mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
 bson_bool_t mongo_cursor_next(mongo_cursor* cursor);
 void mongo_cursor_destroy(mongo_cursor* cursor);

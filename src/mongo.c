@@ -191,6 +191,25 @@ void mongo_update(mongo_connection* conn, const char* ns, const bson* cond, cons
     free(mm);
 }
 
+void mongo_remove(mongo_connection* conn, const char* ns, const bson* cond){
+    char * data;
+    mongo_message * mm = mongo_message_create( 16 /* header */
+                                             + 4  /* ZERO */
+                                             + strlen(ns) + 1
+                                             + 4  /* ZERO */
+                                             + bson_size(cond)
+                                             , 0 , 0 , mongo_op_delete );
+
+    data = &mm->data;
+    data = mongo_data_append32(data, &zero);
+    data = mongo_data_append(data, ns, strlen(ns) + 1);
+    data = mongo_data_append32(data, &zero);
+    data = mongo_data_append(data, cond->data, bson_size(cond));
+
+    mongo_message_send(conn->sock, mm);
+    free(mm);
+}
+
 mongo_reply * mongo_read_response( mongo_connection * conn ){
     mongo_header head; /* header from network */
     mongo_reply_fields fields; /* header from network */

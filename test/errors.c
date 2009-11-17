@@ -87,4 +87,6 @@ int main(){
 
     ASSERT(!mongo_cmd_get_last_error(&conn, db, &obj));
     bson_destroy(&obj);
+
+    return 0;
 }
