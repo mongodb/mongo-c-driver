@@ -109,5 +109,7 @@ int main(){
         ASSERT(fields == 3);
     }
 
+    bson_destroy(&obj);
+
     return 0;
 }
