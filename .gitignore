@@ -4,12 +4,7 @@
 *.a
 .scon*
 
-testjson
-testsimple
-testendian_swap
-testsizes
-testupdate
-testerrors
+test_*
 
 tags
 

@@ -74,9 +74,9 @@ testEnv.Prepend( LIBPATH=["."] )
 
 testCoreFiles = [ "test/md5.c" ]
 
-for name in Split('sizes endian_swap json simple update errors'):
+for name in Split('sizes endian_swap json simple update errors count_delete'):
     filename = "test/%s.c" % name
-    exe = "test" + name
+    exe = "test_" + name
     test = testEnv.Program( exe , testCoreFiles + [filename]  )
     test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> /dev/null')
     AlwaysBuild(test_alias)

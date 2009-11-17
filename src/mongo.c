@@ -298,6 +298,34 @@ bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, 
     }
 }
 
+int64_t mongo_count(mongo_connection* conn, const char* db, const char* ns, bson* query){
+    bson_buffer bb;
+    bson cmd;
+    bson out;
+    int64_t count = -1;
+
+    bson_buffer_init(&bb);
+    bson_append_string(&bb, "count", ns);
+    if (query && bson_size(query) > 5) /* not empty */
+        bson_append_bson(&bb, "query", query);
+    bson_from_buffer(&cmd, &bb);
+
+    if(mongo_run_command(conn, db, &cmd, &out)){
+        bson_iterator it;
+        bson_iterator_init(&it, out.data);
+        while(bson_iterator_next(&it)){
+            if (strcmp("n", bson_iterator_key(&it)) != 0)
+                continue;
+            count = bson_iterator_long(&it);
+            break;
+        }
+    }
+    
+    bson_destroy(&cmd);
+    bson_destroy(&out);
+    return count;
+}
+
 bson_bool_t mongo_disconnect( mongo_connection * conn ){
     if ( ! conn->connected )
         return 1;
