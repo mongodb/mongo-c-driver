@@ -97,6 +97,7 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bs
 bson_bool_t mongo_cursor_next(mongo_cursor* cursor);
 void mongo_cursor_destroy(mongo_cursor* cursor);
 
+/* out can be NULL if you don't care about results. useful for commands */
 bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, bson* fields, bson* out);
 
 /* ----------------------------
@@ -107,10 +108,15 @@ bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, 
    COMMANDS
    ------------------------------ */
 
-/* out must be empty or NULL */
 bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * command, bson * out);
+
 bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db);
 bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, const char * collection, bson * out);
+
+/* true return indicates error */
+bson_bool_t mongo_cmd_get_last_error(mongo_connection * conn, const char * db, bson * out);
+bson_bool_t mongo_cmd_get_prev_error(mongo_connection * conn, const char * db, bson * out);
+void        mongo_cmd_reset_error(mongo_connection * conn, const char * db);
 
 /* ----------------------------
    UTILS

@@ -441,3 +441,53 @@ bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, 
     return success;
 }
 
+void mongo_cmd_reset_error(mongo_connection * conn, const char * db){
+    bson cmd;
+    bson_buffer bb;
+
+    bson_buffer_init(&bb);
+    bson_append_int(&bb, "reseterror", 1);
+    bson_from_buffer(&cmd, &bb);
+
+    mongo_run_command(conn, db, &cmd, NULL);
+    
+    bson_destroy(&cmd);
+}
+
+static bson_bool_t mongo_cmd_get_error_helper(mongo_connection * conn, const char * db, bson * realout, const char * cmdtype){
+    bson out;
+    bson cmd;
+    bson_buffer bb;
+    bson_bool_t haserror = 1;
+
+    bson_buffer_init(&bb);
+    bson_append_int(&bb, cmdtype, 1);
+    bson_from_buffer(&cmd, &bb);
+
+    if(mongo_run_command(conn, db, &cmd, &out)){
+        bson_iterator it;
+        bson_iterator_init(&it, out.data);
+        while(bson_iterator_next(&it)){
+            if (strcmp("err", bson_iterator_key(&it)) != 0)
+                continue;
+            haserror = (bson_iterator_type(&it) != bson_null);
+            break;
+        }
+    }
+    
+    bson_destroy(&cmd);
+
+    if(realout)
+        *realout = out; /* transfer of ownership */
+    else
+        bson_destroy(&out);
+
+    return haserror;
+}
+
+bson_bool_t mongo_cmd_get_prev_error(mongo_connection * conn, const char * db, bson * out){
+    return mongo_cmd_get_error_helper(conn, db, out, "getpreverror");
+}
+bson_bool_t mongo_cmd_get_last_error(mongo_connection * conn, const char * db, bson * out){
+    return mongo_cmd_get_error_helper(conn, db, out, "getlasterror");
+}
