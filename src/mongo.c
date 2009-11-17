@@ -360,6 +360,9 @@ void mongo_cursor_destroy(mongo_cursor* cursor){
         data = mongo_data_append32(data, &zero);
         data = mongo_data_append32(data, &one);
         data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
+        
+        mongo_message_send(cursor->conn->sock, mm);
+        free(mm);
     }
         
     free(cursor->mm);
