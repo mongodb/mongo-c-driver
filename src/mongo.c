@@ -12,7 +12,7 @@
 
 /* only need one of these */
 static const int zero = 0;
-static const int one = 0;
+static const int one = 1;
 
 /* ----------------------------
    message stuff
