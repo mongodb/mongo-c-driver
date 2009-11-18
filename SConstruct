@@ -16,6 +16,12 @@ AddOption('--c99',
           action='store_true',
           help='Compile with c99 (recommended for gcc)')
 
+AddOption('--d',
+          dest='optimize',
+          default=True,
+          action='store_false',
+          help='disable optimizations')
+
 import os
 import sys
 
@@ -27,6 +33,9 @@ if "darwin" == os.sys.platform or "linux2" == os.sys.platform:
     env.Append( LIBPATH=["/opt/local/lib/"] )
     if GetOption('use_c99'):
         env.Append( CPPFLAGS=" -std=c99 " )
+    if GetOption('optimize'):
+        env.Append( CPPFLAGS=" -O3 " )
+        # -O3 benchmarks *significantly* faster than -O2 when disabling networking
         
 
 #we shouldn't need these options in c99 mode
@@ -66,11 +75,14 @@ b = env.Library( "bson" , coreFiles + [ "src/bson.c"] )
 
 env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
 
-testEnv = env.Clone()
+benchmarkEnv = env.Clone()
+benchmarkEnv.Append( CFLAGS=[r'-DTEST_SERVER=\"%s\"'%GetOption('test_server')] )
+benchmarkEnv.Append( LIBS=[m, b] )
+benchmarkEnv.Prepend( LIBPATH=["."] )
+benchmarkEnv.Program( "benchmark" , coreFiles + [ "test/benchmark.c"] )
+
+testEnv = benchmarkEnv.Clone()
 testEnv.Append( LIBS=["json"] )
-testEnv.Append( LIBS=[m, b] )
-testEnv.Append( CFLAGS=['-DTEST_SERVER=\\"%s\\"'%GetOption('test_server')] )
-testEnv.Prepend( LIBPATH=["."] )
 
 testCoreFiles = [ "test/md5.c" ]
 

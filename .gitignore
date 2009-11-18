@@ -5,6 +5,7 @@
 .scon*
 
 test_*
+benchmark
 
 tags
 
