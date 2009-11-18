@@ -36,7 +36,7 @@ int main(){
     bson_append_finish_object(&bb);
     bson_from_buffer(&b, &bb);
 
-    bson_print(&b);
+    /* bson_print(&b); */
     bson_destroy(&b);
     return 0;
 }

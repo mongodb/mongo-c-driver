@@ -43,7 +43,7 @@ typedef struct {
     char * cur;
     int bufSize;
     bson_bool_t finished;
-    char* stack[32];
+    int stack[32];
     int stackPos;
 } bson_buffer;
 

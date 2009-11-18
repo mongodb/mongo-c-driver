@@ -350,13 +350,24 @@ void bson_append64(bson_buffer * b, const void * data){
 }
 
 bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded ){
-    if ( b->finished )
-        return 0;
-    if ( b->bufSize - ( b->cur - b->buf ) > bytesNeeded )
+    int pos = b->cur - b->buf;
+    char * orig = b->buf;
+    int new_size;
+
+    if (b->finished)
+        bson_fatal_msg(!!b->buf, "trying to append to finished buffer");
+
+    if (pos + bytesNeeded <= b->bufSize)
         return b;
-    b->buf = (char*)realloc( b->buf , (int)(1.5 * ( b->bufSize + bytesNeeded ) ) );
-    if ( ! b->buf )
+
+    new_size = 1.5 * (b->bufSize + bytesNeeded);
+    b->buf = realloc(b->buf, new_size);
+    if (!b->buf)
         bson_fatal_msg(!!b->buf, "realloc() failed");
+
+    b->bufSize = new_size;
+    b->cur += b->buf - orig;
+
     return b;
 }
 
@@ -464,14 +475,14 @@ bson_buffer * bson_append_bson( bson_buffer * b , const char * name , const bson
 
 bson_buffer * bson_append_start_object( bson_buffer * b , const char * name ){
     if ( ! bson_append_estart( b , bson_object , name , 5 ) ) return 0;
-    b->stack[ b->stackPos++ ] = b->cur;
+    b->stack[ b->stackPos++ ] = b->cur - b->buf;
     bson_append32( b , &zero );
     return b;
 }
 
 bson_buffer * bson_append_start_array( bson_buffer * b , const char * name ){
     if ( ! bson_append_estart( b , bson_array , name , 5 ) ) return 0;
-    b->stack[ b->stackPos++ ] = b->cur;
+    b->stack[ b->stackPos++ ] = b->cur - b->buf;
     bson_append32( b , &zero );
     return b;
 }
@@ -482,7 +493,7 @@ bson_buffer * bson_append_finish_object( bson_buffer * b ){
     if ( ! bson_ensure_space( b , 1 ) ) return 0;
     bson_append_byte( b , 0 );
     
-    start = b->stack[ --b->stackPos ];
+    start = b->buf + b->stack[ --b->stackPos ];
     i = b->cur - start;
     bson_little_endian32(start, &i);
 
