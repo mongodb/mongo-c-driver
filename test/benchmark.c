@@ -17,6 +17,10 @@
 /* supports preprocessor concatenation */
 #define DB "benchmarks"
 
+#ifndef TEST_SERVER
+#define TEST_SERVER "127.0.0.1"
+#endif
+
 #define PER_TRIAL 5000
 #define BATCH_SIZE  100
 
