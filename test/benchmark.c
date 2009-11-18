@@ -196,14 +196,14 @@ static void batch_insert_large_test(){
 }
 
 typedef void(*nullary)();
-static void time_it(nullary func, const char* name){
+static void time_it(nullary func, const char* name, bson_bool_t gle){
     struct timeval start, end;
     double timer;
     double ops;
 
     gettimeofday(&start, NULL);
     func();
-    ASSERT(!mongo_cmd_get_last_error(&conn, DB, NULL));
+    if (gle) ASSERT(!mongo_cmd_get_last_error(&conn, DB, NULL));
     gettimeofday(&end, NULL);
 
     timer = end.tv_sec - start.tv_sec;
@@ -216,7 +216,7 @@ static void time_it(nullary func, const char* name){
     printf("%-45s\t%15f\n", name, ops);
 }
 
-#define TIME(func) (time_it(func , #func))
+#define TIME(func, gle) (time_it(func, #func, gle))
 
 static void clean(){
     bson b;
@@ -245,19 +245,19 @@ int main(){
     clean();
 
     printf("-----\n");
-    TIME(serialize_small_test);
-    TIME(serialize_medium_test);
-    TIME(serialize_large_test);
+    TIME(serialize_small_test, 0);
+    TIME(serialize_medium_test, 0);
+    TIME(serialize_large_test, 0);
 
     printf("-----\n");
-    TIME(single_insert_small_test);
-    TIME(single_insert_medium_test);
-    TIME(single_insert_large_test);
+    TIME(single_insert_small_test, 1);
+    TIME(single_insert_medium_test, 1);
+    TIME(single_insert_large_test, 1);
 
     printf("-----\n");
-    TIME(batch_insert_small_test);
-    TIME(batch_insert_medium_test);
-    TIME(batch_insert_large_test);
+    TIME(batch_insert_small_test, 1);
+    TIME(batch_insert_medium_test, 1);
+    TIME(batch_insert_large_test, 1);
 
     return 0;
 }
