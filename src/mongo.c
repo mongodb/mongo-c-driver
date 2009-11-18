@@ -425,36 +425,14 @@ bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * c
     free(ns);
     return success;
 }
-
-bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db){
+bson_bool_t mongo_simple_int_command(mongo_connection * conn, const char * db, const char* cmdstr, int arg, bson * realout){
     bson out;
     bson cmd;
     bson_buffer bb;
     bson_bool_t success = 0;
 
     bson_buffer_init(&bb);
-    bson_append_int(&bb, "dropDatabase", 1);
-    bson_from_buffer(&cmd, &bb);
-
-    if(mongo_run_command(conn, db, &cmd, &out)){
-        bson_iterator it;
-        if(bson_find(&it, &out, "ok"))
-            success = bson_iterator_bool(&it);
-    }
-    
-    bson_destroy(&cmd);
-    bson_destroy(&out);
-    return success;
-}
-
-bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, const char * collection, bson * realout){
-    bson out;
-    bson cmd;
-    bson_buffer bb;
-    bson_bool_t success = 0;
-
-    bson_buffer_init(&bb);
-    bson_append_string(&bb, "drop", collection);
+    bson_append_int(&bb, cmdstr, arg);
     bson_from_buffer(&cmd, &bb);
 
     if(mongo_run_command(conn, db, &cmd, &out)){
@@ -465,44 +443,62 @@ bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, 
     
     bson_destroy(&cmd);
 
-    if(realout)
-        *realout = out; /* transfer of ownership */
+    if (realout)
+        *realout = out;
     else
         bson_destroy(&out);
 
     return success;
 }
 
-void mongo_cmd_reset_error(mongo_connection * conn, const char * db){
-    bson cmd;
-    bson_buffer bb;
-
-    bson_buffer_init(&bb);
-    bson_append_int(&bb, "reseterror", 1);
-    bson_from_buffer(&cmd, &bb);
-
-    mongo_run_command(conn, db, &cmd, NULL);
-    
-    bson_destroy(&cmd);
-}
-
-static bson_bool_t mongo_cmd_get_error_helper(mongo_connection * conn, const char * db, bson * realout, const char * cmdtype){
+bson_bool_t mongo_simple_str_command(mongo_connection * conn, const char * db, const char* cmdstr, const char* arg, bson * realout){
     bson out;
     bson cmd;
     bson_buffer bb;
-    bson_bool_t haserror = 1;
+    bson_bool_t success = 0;
 
     bson_buffer_init(&bb);
-    bson_append_int(&bb, cmdtype, 1);
+    bson_append_string(&bb, cmdstr, arg);
     bson_from_buffer(&cmd, &bb);
 
     if(mongo_run_command(conn, db, &cmd, &out)){
         bson_iterator it;
-        haserror = (bson_find(&it, &out, "err") != bson_null);
+        if(bson_find(&it, &out, "ok"))
+            success = bson_iterator_bool(&it);
     }
     
     bson_destroy(&cmd);
 
+    if (realout)
+        *realout = out;
+    else
+        bson_destroy(&out);
+
+    return success;
+}
+
+bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db){
+    return mongo_simple_int_command(conn, db, "dropDatabase", 1, NULL);
+}
+
+bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, const char * collection, bson * out){
+    return mongo_simple_str_command(conn, db, "drop", collection, out);
+}
+
+void mongo_cmd_reset_error(mongo_connection * conn, const char * db){
+    mongo_simple_int_command(conn, db, "reseterror", 1, NULL);
+}
+
+static bson_bool_t mongo_cmd_get_error_helper(mongo_connection * conn, const char * db, bson * realout, const char * cmdtype){
+    bson out = {NULL,0};
+    bson_bool_t haserror = 1;
+
+
+    if(mongo_simple_int_command(conn, db, cmdtype, 1, &out)){
+        bson_iterator it;
+        haserror = (bson_find(&it, &out, "err") != bson_null);
+    }
+    
     if(realout)
         *realout = out; /* transfer of ownership */
     else

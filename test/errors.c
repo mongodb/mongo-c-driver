@@ -16,19 +16,6 @@ static mongo_connection_options opts;
 static const char* db = "test";
 static const char* ns = "test.c.error";
 
-void force_error(){
-    bson cmd;
-    bson_buffer bb;
-
-    bson_buffer_init(&bb);
-    bson_append_int(&bb, "forceerror", 1);
-    bson_from_buffer(&cmd, &bb);
-
-    mongo_run_command(&conn, db, &cmd, NULL);
-    
-    bson_destroy(&cmd);
-}
-
 int main(){
     bson obj;
 
@@ -53,7 +40,7 @@ int main(){
     bson_destroy(&obj);
 
     /*********************/
-    force_error();
+    mongo_simple_int_command(&conn, db, "forceerror", 1, NULL);
 
     ASSERT(mongo_cmd_get_prev_error(&conn, db, NULL));
     ASSERT(mongo_cmd_get_last_error(&conn, db, NULL));

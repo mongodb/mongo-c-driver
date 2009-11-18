@@ -114,6 +114,10 @@ int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll, bs
 
 bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * command, bson * out);
 
+/* for simple commands with a single k-v pair */
+bson_bool_t mongo_simple_int_command(mongo_connection * conn, const char * db, const char* cmd,         int arg, bson * out);
+bson_bool_t mongo_simple_str_command(mongo_connection * conn, const char * db, const char* cmd, const char* arg, bson * out);
+
 bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db);
 bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, const char * collection, bson * out);
 
