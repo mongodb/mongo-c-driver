@@ -391,10 +391,11 @@ void bson_buffer_destroy( bson_buffer * b ){
 }
 
 bson_buffer * bson_append_estart( bson_buffer * b , int type , const char * name , const int dataSize ){
-    if ( ! bson_ensure_space( b , 1 + strlen( name ) + 1 + dataSize ) )
+    const int sl = strlen(name) + 1;
+    if ( ! bson_ensure_space( b , 1 + sl + dataSize ) )
         return 0;
     bson_append_byte( b , (char)type );
-    bson_append( b , name , strlen( name ) + 1 );
+    bson_append( b , name , sl );
     return b;
 }
 
