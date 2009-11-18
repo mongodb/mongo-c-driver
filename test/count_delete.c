@@ -68,6 +68,6 @@ int main(){
     ASSERT(mongo_count(&conn, db, col, NULL) == 3);
     ASSERT(mongo_count(&conn, db, col, &b) == 0);
 
-    mongo_destory( &conn );
+    mongo_destroy( &conn );
     return 0;
 }

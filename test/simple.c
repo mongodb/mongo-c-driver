@@ -95,6 +95,6 @@ int main(){
     }
 
     mongo_cursor_destroy(cursor);
-    mongo_destory( &conn );
+    mongo_destroy( &conn );
     return 0;
 }

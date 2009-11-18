@@ -259,7 +259,7 @@ int main(){
     TIME(batch_insert_medium_test, 1);
     TIME(batch_insert_large_test, 1);
 
-    mongo_destory(&conn);
+    mongo_destroy(&conn);
 
     return 0;
 }

@@ -78,7 +78,7 @@ enum mongo_operations {
  */
 int mongo_connect( mongo_connection * conn , mongo_connection_options * options );
 bson_bool_t mongo_disconnect( mongo_connection * conn );
-bson_bool_t mongo_destory( mongo_connection * conn );
+bson_bool_t mongo_destroy( mongo_connection * conn );
 
 
 

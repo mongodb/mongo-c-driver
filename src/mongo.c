@@ -333,7 +333,7 @@ bson_bool_t mongo_disconnect( mongo_connection * conn ){
     return 0;
 }
 
-bson_bool_t mongo_destory( mongo_connection * conn ){
+bson_bool_t mongo_destroy( mongo_connection * conn ){
     return mongo_disconnect( conn );
 }
 
