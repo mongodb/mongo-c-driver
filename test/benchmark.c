@@ -87,6 +87,30 @@ static void make_large(bson * out, int i){
     bson_from_buffer(out, &bb);
 }
 
+static void serialize_small_test(){
+    int i;
+    bson b;
+    for (i=0; i<PER_TRIAL; i++){
+        make_small(&b, i);
+        bson_destroy(&b);
+    }
+}
+static void serialize_medium_test(){
+    int i;
+    bson b;
+    for (i=0; i<PER_TRIAL; i++){
+        make_medium(&b, i);
+        bson_destroy(&b);
+    }
+}
+static void serialize_large_test(){
+    int i;
+    bson b;
+    for (i=0; i<PER_TRIAL; i++){
+        make_large(&b, i);
+        bson_destroy(&b);
+    }
+}
 static void single_insert_small_test(){
     int i;
     bson b;
@@ -220,10 +244,17 @@ int main(){
 
     clean();
 
+    printf("-----\n");
+    TIME(serialize_small_test);
+    TIME(serialize_medium_test);
+    TIME(serialize_large_test);
+
+    printf("-----\n");
     TIME(single_insert_small_test);
     TIME(single_insert_medium_test);
     TIME(single_insert_large_test);
 
+    printf("-----\n");
     TIME(batch_insert_small_test);
     TIME(batch_insert_medium_test);
     TIME(batch_insert_large_test);
