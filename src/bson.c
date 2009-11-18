@@ -390,7 +390,7 @@ void bson_buffer_destroy( bson_buffer * b ){
     b->finished = 1;
 }
 
-bson_buffer * bson_append_estart( bson_buffer * b , int type , const char * name , const int dataSize ){
+static bson_buffer * bson_append_estart( bson_buffer * b , int type , const char * name , const int dataSize ){
     const int sl = strlen(name) + 1;
     if ( ! bson_ensure_space( b , 1 + sl + dataSize ) )
         return 0;
@@ -529,4 +529,12 @@ void bson_fatal_msg( int ok , const char* msg){
 
     fprintf( stderr , "error: %s\n" , msg );
     exit(-5);
+}
+
+extern const char bson_numstrs[1000][4];
+void bson_numstr(char* str, int i){
+    if(i < 1000)
+        memcpy(str, bson_numstrs[i], 4);
+    else
+        sprintf(str,"%d", i);
 }

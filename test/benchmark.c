@@ -79,8 +79,8 @@ static void make_large(bson * out, int i){
 
     bson_append_start_array(&bb, "harvested_words");
     for (num=0; num < 14*20; num++){
-        sprintf(numstr, "%d", num);
-        bson_append_string(&bb, numstr, words[i%14]);
+        bson_numstr(numstr, num);
+        bson_append_string(&bb, numstr, words[num%14]);
     }
     bson_append_finish_object(&bb);
 
@@ -258,6 +258,8 @@ int main(){
     TIME(batch_insert_small_test, 1);
     TIME(batch_insert_medium_test, 1);
     TIME(batch_insert_large_test, 1);
+
+    mongo_destory(&conn);
 
     return 0;
 }

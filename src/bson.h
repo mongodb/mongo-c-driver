@@ -146,6 +146,8 @@ bson_buffer * bson_append_start_object( bson_buffer * b , const char * name );
 bson_buffer * bson_append_start_array( bson_buffer * b , const char * name );
 bson_buffer * bson_append_finish_object( bson_buffer * b );
 
+void bson_numstr(char* str, int i);
+void bson_incnumstr(char* str);
 
 
 /* ------------------------------

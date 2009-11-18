@@ -71,7 +71,7 @@ env.Append( CPPPATH=["src/"] )
 coreFiles = []
 
 m = env.Library( "mongoc" , coreFiles + [ "src/mongo.c"] )
-b = env.Library( "bson" , coreFiles + [ "src/bson.c"] )
+b = env.Library( "bson" , coreFiles + [ "src/bson.c", "src/numbers.c"] )
 
 env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
 
