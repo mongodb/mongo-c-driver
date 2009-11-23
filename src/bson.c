@@ -180,6 +180,7 @@ bson_type bson_iterator_next( bson_iterator * i ){
     }
     
     switch ( bson_iterator_type(i) ){
+    case bson_eoo: return bson_eoo; /* don't advance */
     case bson_undefined:
     case bson_null: ds = 0; break;
     case bson_bool: ds = 1; break;
