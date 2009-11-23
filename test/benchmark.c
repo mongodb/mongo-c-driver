@@ -282,6 +282,40 @@ static void find_index_small_test()  {find(DB ".index.small");}
 static void find_index_medium_test() {find(DB ".index.medium");}
 static void find_index_large_test()  {find(DB ".index.large");}
 
+
+static void find_range(const char* ns){
+    int i;
+    bson b;
+
+    for (i=0; i < PER_TRIAL; i++){
+        int j=0;
+        mongo_cursor * cursor;
+        bson_buffer bb;
+
+        bson_buffer_init(&bb);
+        bson_append_start_object(&bb, "x");
+        bson_append_int(&bb, "$gt", PER_TRIAL/2);
+        bson_append_int(&bb, "$lt", PER_TRIAL/2 + BATCH_SIZE);
+        bson_append_finish_object(&bb);
+        bson_from_buffer(&b, &bb);
+
+        cursor = mongo_find(&conn, ns, &b, NULL, 0,0,0);
+        ASSERT(cursor);
+
+        while(mongo_cursor_next(cursor)) {
+            j++;
+        }
+        ASSERT(j == BATCH_SIZE-1);
+
+        mongo_cursor_destroy(cursor);
+        bson_destroy(&b);
+    }
+}
+
+static void find_range_small_test()  {find_range(DB ".index.small");}
+static void find_range_medium_test() {find_range(DB ".index.medium");}
+static void find_range_large_test()  {find_range(DB ".index.large");}
+
 typedef void(*nullary)();
 static void time_it(nullary func, const char* name, bson_bool_t gle){
     struct timeval start, end;
@@ -370,6 +404,11 @@ int main(){
     TIME(find_index_small_test, 1);
     TIME(find_index_medium_test, 1);
     TIME(find_index_large_test, 1);
+
+    printf("-----\n");
+    TIME(find_range_small_test, 1);
+    TIME(find_range_medium_test, 1);
+    TIME(find_range_large_test, 1);
 
 
     mongo_destroy(&conn);
