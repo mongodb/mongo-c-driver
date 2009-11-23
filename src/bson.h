@@ -141,6 +141,7 @@ bson_buffer * bson_append_null( bson_buffer * b , const char * name );
 bson_buffer * bson_append_undefined( bson_buffer * b , const char * name );
 bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const char * pattern, const char * opts );
 bson_buffer * bson_append_bson( bson_buffer * b , const char * name , const bson* bson);
+bson_buffer * bson_append_element( bson_buffer * b, const char * name_or_null, const bson_iterator* elem);
 
 bson_buffer * bson_append_start_object( bson_buffer * b , const char * name );
 bson_buffer * bson_append_start_array( bson_buffer * b , const char * name );

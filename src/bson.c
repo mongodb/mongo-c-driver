@@ -209,9 +209,12 @@ bson_type bson_iterator_next( bson_iterator * i ){
         }
 
     default: 
-        fprintf( stderr , "WTF: %d\n"  , (int)(i->cur[0]) );
-        exit(-1);
-        return 0;
+        {
+            char msg[] = "unknown type: 000000000000";
+            bson_numstr(msg+14, (unsigned)(i->cur[0]));
+            bson_fatal_msg(0, msg);
+            return 0;
+        }
     }
     
     i->cur += 1 + strlen( i->cur + 1 ) + 1 + ds;
@@ -472,6 +475,17 @@ bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const cha
 bson_buffer * bson_append_bson( bson_buffer * b , const char * name , const bson* bson){
     if ( ! bson_append_estart( b , bson_object , name , bson_size(bson) ) ) return 0;
     bson_append( b , bson->data , bson_size(bson) );
+    return b;
+}
+
+bson_buffer * bson_append_element( bson_buffer * b, const char * name_or_null, const bson_iterator* elem){
+    bson_iterator next = *elem;
+    int size;
+
+    bson_iterator_next(&next);
+    size = next.cur - elem->cur;
+    bson_ensure_space(b, size);
+    bson_append(b, elem->cur, size);
     return b;
 }
 
