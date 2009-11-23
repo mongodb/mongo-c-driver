@@ -232,6 +232,56 @@ static void batch_insert_large_test(){
     }
 }
 
+static void make_query(bson* b){
+    bson_buffer bb;
+    bson_buffer_init(&bb);
+    bson_append_int(&bb, "x", PER_TRIAL/2);
+    bson_from_buffer(b, &bb);
+}
+
+static void find_one(const char* ns){
+    bson b;
+    int i;
+    for (i=0; i < PER_TRIAL; i++){
+        make_query(&b);
+        ASSERT(mongo_find_one(&conn, ns, &b, NULL, NULL));
+        bson_destroy(&b);
+    }
+}
+
+static void find_one_noindex_small_test()  {find_one(DB ".single.small");}
+static void find_one_noindex_medium_test() {find_one(DB ".single.medium");}
+static void find_one_noindex_large_test()  {find_one(DB ".single.large");}
+
+static void find_one_index_small_test()  {find_one(DB ".index.small");}
+static void find_one_index_medium_test() {find_one(DB ".index.medium");}
+static void find_one_index_large_test()  {find_one(DB ".index.large");}
+
+static void find(const char* ns){
+    bson b;
+    int i;
+    for (i=0; i < PER_TRIAL; i++){
+        mongo_cursor * cursor;
+        make_query(&b);
+        cursor = mongo_find(&conn, ns, &b, NULL, 0,0,0);
+        ASSERT(cursor);
+
+        while(mongo_cursor_next(cursor))
+        {}
+
+        mongo_cursor_destroy(cursor);
+        bson_destroy(&b);
+    }
+}
+
+static void find_noindex_small_test()  {find(DB ".single.small");}
+static void find_noindex_medium_test() {find(DB ".single.medium");}
+static void find_noindex_large_test()  {find(DB ".single.large");}
+
+static void find_index_small_test()  {find(DB ".index.small");}
+static void find_index_medium_test() {find(DB ".index.medium");}
+static void find_index_large_test()  {find(DB ".index.large");}
+
 typedef void(*nullary)();
 static void time_it(nullary func, const char* name, bson_bool_t gle){
     struct timeval start, end;
@@ -300,6 +350,27 @@ int main(){
     TIME(batch_insert_small_test, 1);
     TIME(batch_insert_medium_test, 1);
     TIME(batch_insert_large_test, 1);
+
+    printf("-----\n");
+    TIME(find_one_noindex_small_test, 1);
+    TIME(find_one_noindex_medium_test, 1);
+    TIME(find_one_noindex_large_test, 1);
+
+    printf("-----\n");
+    TIME(find_one_index_small_test, 1);
+    TIME(find_one_index_medium_test, 1);
+    TIME(find_one_index_large_test, 1);
+
+    printf("-----\n");
+    TIME(find_noindex_small_test, 1);
+    TIME(find_noindex_medium_test, 1);
+    TIME(find_noindex_large_test, 1);
+
+    printf("-----\n");
+    TIME(find_index_small_test, 1);
+    TIME(find_index_medium_test, 1);
+    TIME(find_index_large_test, 1);
+
 
     mongo_destroy(&conn);
 
