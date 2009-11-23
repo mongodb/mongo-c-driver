@@ -145,6 +145,39 @@ static void single_insert_large_test(){
     }
 }
 
+static void index_insert_small_test(){
+    int i;
+    bson b;
+    ASSERT(mongo_create_simple_index(&conn, DB ".index.small", "x", 0, NULL));
+    for (i=0; i<PER_TRIAL; i++){
+        make_small(&b, i);
+        mongo_insert(&conn, DB ".index.small", &b);
+        bson_destroy(&b);
+    }
+}
+
+static void index_insert_medium_test(){
+    int i;
+    bson b;
+    ASSERT(mongo_create_simple_index(&conn, DB ".index.medium", "x", 0, NULL));
+    for (i=0; i<PER_TRIAL; i++){
+        make_medium(&b, i);
+        mongo_insert(&conn, DB ".index.medium", &b);
+        bson_destroy(&b);
+    }
+}
+
+static void index_insert_large_test(){
+    int i;
+    bson b;
+    ASSERT(mongo_create_simple_index(&conn, DB ".index.large", "x", 0, NULL));
+    for (i=0; i<PER_TRIAL; i++){
+        make_large(&b, i);
+        mongo_insert(&conn, DB ".index.large", &b);
+        bson_destroy(&b);
+    }
+}
+
 static void batch_insert_small_test(){
     int i, j;
     bson b[BATCH_SIZE];
@@ -257,6 +290,11 @@ int main(){
     TIME(single_insert_small_test, 1);
     TIME(single_insert_medium_test, 1);
     TIME(single_insert_large_test, 1);
+
+    printf("-----\n");
+    TIME(index_insert_small_test, 1);
+    TIME(index_insert_medium_test, 1);
+    TIME(index_insert_large_test, 1);
 
     printf("-----\n");
     TIME(batch_insert_small_test, 1);

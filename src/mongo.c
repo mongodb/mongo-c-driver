@@ -412,6 +412,54 @@ void mongo_cursor_destroy(mongo_cursor* cursor){
     free(cursor);
 }
 
+bson_bool_t mongo_create_index(mongo_connection * conn, const char * ns, bson * key, int options, bson * out){
+    bson_buffer bb;
+    bson b;
+    bson_iterator it;
+    char name[255] = {'_'};
+    int i = 1;
+    char idxns[1024];
+
+    bson_iterator_init(&it, key->data);
+    while(i < 255 && bson_iterator_next(&it)){
+        strncpy(name + i, bson_iterator_key(&it), 255 - i);
+        i += strlen(bson_iterator_key(&it));
+    }
+    name[254] = '\0';
+
+    bson_buffer_init(&bb);
+    bson_append_bson(&bb, "key", key);
+    bson_append_string(&bb, "ns", ns);
+    bson_append_string(&bb, "name", name);
+    if (options & MONGO_INDEX_UNIQUE)
+        bson_append_bool(&bb, "unique", 1);
+    if (options & MONGO_INDEX_DROP_DUPS)
+        bson_append_bool(&bb, "dropDups", 1);
+    
+    bson_from_buffer(&b, &bb);
+
+    strncpy(idxns, ns, 1024-16);
+    strcpy(strchr(idxns, '.'), ".system.indexes");
+    mongo_insert(conn, idxns, &b);
+    bson_destroy(&b);
+
+    *strchr(idxns, '.') = '\0'; /* just db not ns */
+    return !mongo_cmd_get_last_error(conn, idxns, out);
+}
+bson_bool_t mongo_create_simple_index(mongo_connection * conn, const char * ns, const char* field, int options, bson * out){
+    bson_buffer bb;
+    bson b;
+    bson_bool_t success;
+
+    bson_buffer_init(&bb);
+    bson_append_int(&bb, field, 1);
+    bson_from_buffer(&b, &bb);
+
+    success = mongo_create_index(conn, ns, &b, options, out);
+    bson_destroy(&b);
+    return success;
+}
+
 bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * command, bson * out){
     bson fields;
     int sl = strlen(db);

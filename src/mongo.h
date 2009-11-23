@@ -108,6 +108,14 @@ int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll, bs
    HIGHER LEVEL - indexes - command helpers eval
    ------------------------------ */
 
+/* Returns true on success */
+/* WARNING: Unlike other drivers these do not cache results */
+
+static const int MONGO_INDEX_UNIQUE = 0x1;
+static const int MONGO_INDEX_DROP_DUPS = 0x2;
+bson_bool_t mongo_create_index(mongo_connection * conn, const char * ns, bson * key, int options, bson * out);
+bson_bool_t mongo_create_simple_index(mongo_connection * conn, const char * ns, const char* field, int options, bson * out);
+
 /* ----------------------------
    COMMANDS
    ------------------------------ */
