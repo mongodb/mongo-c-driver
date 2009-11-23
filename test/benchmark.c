@@ -386,29 +386,29 @@ int main(){
     TIME(batch_insert_large_test, 1);
 
     printf("-----\n");
-    TIME(find_one_noindex_small_test, 1);
-    TIME(find_one_noindex_medium_test, 1);
-    TIME(find_one_noindex_large_test, 1);
+    TIME(find_one_noindex_small_test, 0);
+    TIME(find_one_noindex_medium_test, 0);
+    TIME(find_one_noindex_large_test, 0);
 
     printf("-----\n");
-    TIME(find_one_index_small_test, 1);
-    TIME(find_one_index_medium_test, 1);
-    TIME(find_one_index_large_test, 1);
+    TIME(find_one_index_small_test, 0);
+    TIME(find_one_index_medium_test, 0);
+    TIME(find_one_index_large_test, 0);
 
     printf("-----\n");
-    TIME(find_noindex_small_test, 1);
-    TIME(find_noindex_medium_test, 1);
-    TIME(find_noindex_large_test, 1);
+    TIME(find_noindex_small_test, 0);
+    TIME(find_noindex_medium_test, 0);
+    TIME(find_noindex_large_test, 0);
 
     printf("-----\n");
-    TIME(find_index_small_test, 1);
-    TIME(find_index_medium_test, 1);
-    TIME(find_index_large_test, 1);
+    TIME(find_index_small_test, 0);
+    TIME(find_index_medium_test, 0);
+    TIME(find_index_large_test, 0);
 
     printf("-----\n");
-    TIME(find_range_small_test, 1);
-    TIME(find_range_medium_test, 1);
-    TIME(find_range_large_test, 1);
+    TIME(find_range_small_test, 0);
+    TIME(find_range_medium_test, 0);
+    TIME(find_range_large_test, 0);
 
 
     mongo_destroy(&conn);
