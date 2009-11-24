@@ -57,7 +57,7 @@ if not GetOption('use_c99'):
 
     if conf.CheckType('bool'):
         conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_BOOL " )
-    elif conf.CheckType('_Bool', '#include <stdbool.h>\n'):
+    elif conf.CheckType('bool', '#include <stdbool.h>\n'):
         conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_STDBOOL " )
     #if we don't have a bool type we default to char
 

@@ -28,7 +28,7 @@ typedef long long int int64_t;
 typedef bool bson_bool_t;
 #elif defined(MONGO_HAVE_STDBOOL) || __STDC_VERSION__ >= 199901L
 #include <stdbool.h>
-typedef _Bool bson_bool_t;
+typedef bool bson_bool_t;
 #else
 typedef unsigned char bson_bool_t;
 #endif
