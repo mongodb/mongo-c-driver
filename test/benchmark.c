@@ -27,7 +27,7 @@
 #define PER_TRIAL 5000
 #define BATCH_SIZE  100
 
-static mongo_connection conn;
+static mongo_connection conn[1];
 
 static void make_small(bson * out, int i){
     bson_buffer bb;
@@ -123,7 +123,7 @@ static void single_insert_small_test(){
     bson b;
     for (i=0; i<PER_TRIAL; i++){
         make_small(&b, i);
-        mongo_insert(&conn, DB ".single.small", &b);
+        mongo_insert(conn, DB ".single.small", &b);
         bson_destroy(&b);
     }
 }
@@ -133,7 +133,7 @@ static void single_insert_medium_test(){
     bson b;
     for (i=0; i<PER_TRIAL; i++){
         make_medium(&b, i);
-        mongo_insert(&conn, DB ".single.medium", &b);
+        mongo_insert(conn, DB ".single.medium", &b);
         bson_destroy(&b);
     }
 }
@@ -143,7 +143,7 @@ static void single_insert_large_test(){
     bson b;
     for (i=0; i<PER_TRIAL; i++){
         make_large(&b, i);
-        mongo_insert(&conn, DB ".single.large", &b);
+        mongo_insert(conn, DB ".single.large", &b);
         bson_destroy(&b);
     }
 }
@@ -151,10 +151,10 @@ static void single_insert_large_test(){
 static void index_insert_small_test(){
     int i;
     bson b;
-    ASSERT(mongo_create_simple_index(&conn, DB ".index.small", "x", 0, NULL));
+    ASSERT(mongo_create_simple_index(conn, DB ".index.small", "x", 0, NULL));
     for (i=0; i<PER_TRIAL; i++){
         make_small(&b, i);
-        mongo_insert(&conn, DB ".index.small", &b);
+        mongo_insert(conn, DB ".index.small", &b);
         bson_destroy(&b);
     }
 }
@@ -162,10 +162,10 @@ static void index_insert_small_test(){
 static void index_insert_medium_test(){
     int i;
     bson b;
-    ASSERT(mongo_create_simple_index(&conn, DB ".index.medium", "x", 0, NULL));
+    ASSERT(mongo_create_simple_index(conn, DB ".index.medium", "x", 0, NULL));
     for (i=0; i<PER_TRIAL; i++){
         make_medium(&b, i);
-        mongo_insert(&conn, DB ".index.medium", &b);
+        mongo_insert(conn, DB ".index.medium", &b);
         bson_destroy(&b);
     }
 }
@@ -173,10 +173,10 @@ static void index_insert_medium_test(){
 static void index_insert_large_test(){
     int i;
     bson b;
-    ASSERT(mongo_create_simple_index(&conn, DB ".index.large", "x", 0, NULL));
+    ASSERT(mongo_create_simple_index(conn, DB ".index.large", "x", 0, NULL));
     for (i=0; i<PER_TRIAL; i++){
         make_large(&b, i);
-        mongo_insert(&conn, DB ".index.large", &b);
+        mongo_insert(conn, DB ".index.large", &b);
         bson_destroy(&b);
     }
 }
@@ -192,7 +192,7 @@ static void batch_insert_small_test(){
         for (j=0; j < BATCH_SIZE; j++)
             make_small(&b[j], i);
 
-        mongo_insert_batch(&conn, DB ".batch.small", bp, BATCH_SIZE);
+        mongo_insert_batch(conn, DB ".batch.small", bp, BATCH_SIZE);
 
         for (j=0; j < BATCH_SIZE; j++)
             bson_destroy(&b[j]);
@@ -210,7 +210,7 @@ static void batch_insert_medium_test(){
         for (j=0; j < BATCH_SIZE; j++)
             make_medium(&b[j], i);
 
-        mongo_insert_batch(&conn, DB ".batch.medium", bp, BATCH_SIZE);
+        mongo_insert_batch(conn, DB ".batch.medium", bp, BATCH_SIZE);
 
         for (j=0; j < BATCH_SIZE; j++)
             bson_destroy(&b[j]);
@@ -228,7 +228,7 @@ static void batch_insert_large_test(){
         for (j=0; j < BATCH_SIZE; j++)
             make_large(&b[j], i);
 
-        mongo_insert_batch(&conn, DB ".batch.large", bp, BATCH_SIZE);
+        mongo_insert_batch(conn, DB ".batch.large", bp, BATCH_SIZE);
 
         for (j=0; j < BATCH_SIZE; j++)
             bson_destroy(&b[j]);
@@ -247,7 +247,7 @@ static void find_one(const char* ns){
     int i;
     for (i=0; i < PER_TRIAL; i++){
         make_query(&b);
-        ASSERT(mongo_find_one(&conn, ns, &b, NULL, NULL));
+        ASSERT(mongo_find_one(conn, ns, &b, NULL, NULL));
         bson_destroy(&b);
     }
 }
@@ -266,7 +266,7 @@ static void find(const char* ns){
     for (i=0; i < PER_TRIAL; i++){
         mongo_cursor * cursor;
         make_query(&b);
-        cursor = mongo_find(&conn, ns, &b, NULL, 0,0,0);
+        cursor = mongo_find(conn, ns, &b, NULL, 0,0,0);
         ASSERT(cursor);
 
         while(mongo_cursor_next(cursor))
@@ -302,7 +302,7 @@ static void find_range(const char* ns){
         bson_append_finish_object(&bb);
         bson_from_buffer(&b, &bb);
 
-        cursor = mongo_find(&conn, ns, &b, NULL, 0,0,0);
+        cursor = mongo_find(conn, ns, &b, NULL, 0,0,0);
         ASSERT(cursor);
 
         while(mongo_cursor_next(cursor)) {
@@ -327,7 +327,7 @@ static void time_it(nullary func, const char* name, bson_bool_t gle){
 
     gettimeofday(&start, NULL);
     func();
-    if (gle) ASSERT(!mongo_cmd_get_last_error(&conn, DB, NULL));
+    if (gle) ASSERT(!mongo_cmd_get_last_error(conn, DB, NULL));
     gettimeofday(&end, NULL);
 
     timer = end.tv_sec - start.tv_sec;
@@ -344,14 +344,14 @@ static void time_it(nullary func, const char* name, bson_bool_t gle){
 
 static void clean(){
     bson b;
-    if (!mongo_cmd_drop_db(&conn, DB)){
+    if (!mongo_cmd_drop_db(conn, DB)){
         printf("failed to drop db\n");
         exit(1);
     }
 
     /* create the db */
-    mongo_insert(&conn, DB ".creation", bson_empty(&b));
-    ASSERT(!mongo_cmd_get_last_error(&conn, DB, NULL));
+    mongo_insert(conn, DB ".creation", bson_empty(&b));
+    ASSERT(!mongo_cmd_get_last_error(conn, DB, NULL));
 }
 
 int main(){
@@ -361,7 +361,7 @@ int main(){
     opts.host[254] = '\0';
     opts.port = 27017;
 
-    if (mongo_connect(&conn, &opts )){
+    if (mongo_connect(conn, &opts )){
         printf("failed to connect\n");
         exit(1);
     }
@@ -418,7 +418,7 @@ int main(){
     TIME(find_range_large_test, 0);
 
 
-    mongo_destroy(&conn);
+    mongo_destroy(conn);
 
     return 0;
 }

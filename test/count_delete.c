@@ -14,7 +14,7 @@
     }while(0)
 
 int main(){
-    mongo_connection conn;
+    mongo_connection conn[1];
     mongo_connection_options opts;
     bson_buffer bb;
     bson b;
@@ -28,14 +28,14 @@ int main(){
     opts.host[254] = '\0';
     opts.port = 27017;
 
-    if (mongo_connect( &conn , &opts )){
+    if (mongo_connect( conn , &opts )){
         printf("failed to connect\n");
         exit(1);
     }
 
     /* if the collection doesn't exist dropping it will fail */
-    if (!mongo_cmd_drop_collection(&conn, "test", col, NULL)
-          && mongo_count(&conn, db, col, NULL) != 0){
+    if (!mongo_cmd_drop_collection(conn, "test", col, NULL)
+          && mongo_count(conn, db, col, NULL) != 0){
         printf("failed to drop collection\n");
         exit(1);
     }
@@ -47,7 +47,7 @@ int main(){
         bson_append_int( &bb , "a" , i+1 ); /* 1 to 5 */
         bson_from_buffer(&b, &bb);
 
-        mongo_insert( &conn , ns , &b );
+        mongo_insert( conn , ns , &b );
         bson_destroy(&b);
     }
 
@@ -60,14 +60,14 @@ int main(){
     }
     bson_from_buffer(&b, &bb);
     
-    ASSERT(mongo_count(&conn, db, col, NULL) == 5);
-    ASSERT(mongo_count(&conn, db, col, &b) == 2);
+    ASSERT(mongo_count(conn, db, col, NULL) == 5);
+    ASSERT(mongo_count(conn, db, col, &b) == 2);
 
-    mongo_remove(&conn, ns, &b);
+    mongo_remove(conn, ns, &b);
 
-    ASSERT(mongo_count(&conn, db, col, NULL) == 3);
-    ASSERT(mongo_count(&conn, db, col, &b) == 0);
+    ASSERT(mongo_count(conn, db, col, NULL) == 3);
+    ASSERT(mongo_count(conn, db, col, &b) == 0);
 
-    mongo_destroy( &conn );
+    mongo_destroy( conn );
     return 0;
 }

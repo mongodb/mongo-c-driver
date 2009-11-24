@@ -12,7 +12,7 @@
     }while(0)
 
 int main(){
-    mongo_connection conn;
+    mongo_connection conn[1];
     mongo_connection_options opts;
     bson_buffer bb;
     bson obj;
@@ -26,14 +26,14 @@ int main(){
     opts.host[254] = '\0';
     opts.port = 27017;
 
-    if (mongo_connect( &conn , &opts )){
+    if (mongo_connect( conn , &opts )){
         printf("failed to connect\n");
         exit(1);
     }
 
     /* if the collection doesn't exist dropping it will fail */
-    if (!mongo_cmd_drop_collection(&conn, "test", col, NULL)
-          && mongo_find_one(&conn, ns, bson_empty(&obj), bson_empty(&obj), NULL)){
+    if (!mongo_cmd_drop_collection(conn, "test", col, NULL)
+          && mongo_find_one(conn, ns, bson_empty(&obj), bson_empty(&obj), NULL)){
         printf("failed to drop collection\n");
         exit(1);
     }
@@ -45,7 +45,7 @@ int main(){
         bson_append_oid(&bb, "_id", &oid);
         bson_append_int(&bb, "a", 3 );
         bson_from_buffer(&obj, &bb);
-        mongo_insert(&conn, ns, &obj);
+        mongo_insert(conn, ns, &obj);
         bson_destroy(&obj);
     }
 
@@ -70,13 +70,13 @@ int main(){
         bson_from_buffer(&op, &bb);
 
         for (i=0; i<5; i++)
-            mongo_update(&conn, ns, &cond, &op, 0);
+            mongo_update(conn, ns, &cond, &op, 0);
 
         /* cond is used later */
         bson_destroy(&op);
     }
     
-    if(!mongo_find_one(&conn, ns, &cond, 0, &obj)){
+    if(!mongo_find_one(conn, ns, &cond, 0, &obj)){
         printf("Failed to find object\n");
         exit(1);
     } else {

@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 int main(){
-    mongo_connection conn;
+    mongo_connection conn[1];
     mongo_connection_options opts;
     bson_buffer bb;
     bson b;
@@ -21,14 +21,14 @@ int main(){
     opts.host[254] = '\0';
     opts.port = 27017;
 
-    if (mongo_connect( &conn , &opts )){
+    if (mongo_connect( conn , &opts )){
         printf("failed to connect\n");
         exit(1);
     }
 
     /* if the collection doesn't exist dropping it will fail */
-    if (!mongo_cmd_drop_collection(&conn, "test", col, NULL)
-          && mongo_find_one(&conn, ns, bson_empty(&b), bson_empty(&b), NULL)){
+    if (!mongo_cmd_drop_collection(conn, "test", col, NULL)
+          && mongo_find_one(conn, ns, bson_empty(&b), bson_empty(&b), NULL)){
         printf("failed to drop collection\n");
         exit(1);
     }
@@ -54,11 +54,11 @@ int main(){
         }
 
         bson_from_buffer(&b, &bb);
-        mongo_insert( &conn , ns , &b );
+        mongo_insert( conn , ns , &b );
         bson_destroy(&b);
     }
     
-    cursor = mongo_find( &conn , ns , bson_empty(&b) , 0 , 0 , 0 , 0 );
+    cursor = mongo_find( conn , ns , bson_empty(&b) , 0 , 0 , 0 , 0 );
 
     while (mongo_cursor_next(cursor)){
         bson_iterator it;
@@ -95,6 +95,6 @@ int main(){
     }
 
     mongo_cursor_destroy(cursor);
-    mongo_destroy( &conn );
+    mongo_destroy( conn );
     return 0;
 }
