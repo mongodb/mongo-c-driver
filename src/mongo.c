@@ -18,35 +18,35 @@ static const int one = 1;
    message stuff
    ------------------------------ */
 
-static void looping_write(const int sock, const void* buf, int len){
+static void looping_write(mongo_connection * conn, const void* buf, int len){
     const char* cbuf = buf;
     while (len){
         /* TODO handle -1 */
-        int sent = write(sock, cbuf, len);
+        int sent = write(conn->sock, cbuf, len);
         cbuf += sent;
         len -= sent;
     }
 }
 
-static void looping_read(const int sock, void* buf, int len){
+static void looping_read(mongo_connection * conn, void* buf, int len){
     char* cbuf = buf;
     while (len){
         /* TODO handle -1 */
-        int sent = read(sock, cbuf, len);
+        int sent = read(conn->sock, cbuf, len);
         cbuf += sent;
         len -= sent;
     }
 }
 
-void mongo_message_send(const int sock, const mongo_message* mm){
+void mongo_message_send(mongo_connection * conn, const mongo_message* mm){
     mongo_header head; /* little endian */
     bson_little_endian32(&head.len, &mm->head.len);
     bson_little_endian32(&head.id, &mm->head.id);
     bson_little_endian32(&head.responseTo, &mm->head.responseTo);
     bson_little_endian32(&head.op, &mm->head.op);
     
-    looping_write(sock, &head, sizeof(head));
-    looping_write(sock, &mm->data, mm->head.len - sizeof(head));
+    looping_write(conn, &head, sizeof(head));
+    looping_write(conn, &mm->data, mm->head.len - sizeof(head));
 }
 
 
@@ -149,7 +149,7 @@ void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bso
         data = mongo_data_append(data, bsons[i]->data, bson_size( bsons[i] ) );
     }
 
-    mongo_message_send(conn->sock, mm);
+    mongo_message_send(conn, mm);
     free(mm);
 }
 
@@ -166,7 +166,7 @@ void mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
     data = mongo_data_append(data, ns, strlen(ns) + 1);
     data = mongo_data_append(data, bson->data, bson_size(bson));
 
-    mongo_message_send(conn->sock, mm);
+    mongo_message_send(conn, mm);
     free(mm);
 }
 
@@ -187,7 +187,7 @@ void mongo_update(mongo_connection* conn, const char* ns, const bson* cond, cons
     data = mongo_data_append(data, cond->data, bson_size(cond));
     data = mongo_data_append(data, op->data, bson_size(op));
 
-    mongo_message_send(conn->sock, mm);
+    mongo_message_send(conn, mm);
     free(mm);
 }
 
@@ -206,7 +206,7 @@ void mongo_remove(mongo_connection* conn, const char* ns, const bson* cond){
     data = mongo_data_append32(data, &zero);
     data = mongo_data_append(data, cond->data, bson_size(cond));
 
-    mongo_message_send(conn->sock, mm);
+    mongo_message_send(conn, mm);
     free(mm);
 }
 
@@ -216,8 +216,8 @@ mongo_reply * mongo_read_response( mongo_connection * conn ){
     mongo_reply * out; /* native endian */
     int len;
 
-    looping_read(conn->sock, &head, sizeof(head));
-    looping_read(conn->sock, &fields, sizeof(fields));
+    looping_read(conn, &head, sizeof(head));
+    looping_read(conn, &fields, sizeof(fields));
 
     bson_little_endian32(&len, &head.len);
     out = (mongo_reply*)bson_malloc(len);
@@ -232,7 +232,7 @@ mongo_reply * mongo_read_response( mongo_connection * conn ){
     bson_little_endian32(&out->fields.start, &fields.start);
     bson_little_endian32(&out->fields.num, &fields.num);
 
-    looping_read(conn->sock, &out->objs, len-sizeof(head)-sizeof(fields));
+    looping_read(conn, &out->objs, len-sizeof(head)-sizeof(fields));
 
     return out;
 }
@@ -261,7 +261,7 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bs
     
     bson_fatal_msg( (data == ((char*)mm) + mm->head.len), "query building fail!" );
 
-    mongo_message_send( conn->sock , mm );
+    mongo_message_send( conn , mm );
     free(mm);
 
     cursor = (mongo_cursor*)bson_malloc(sizeof(mongo_cursor));
@@ -352,7 +352,7 @@ bson_bool_t mongo_cursor_get_more(mongo_cursor* cursor){
         data = mongo_data_append(data, cursor->ns, sl);
         data = mongo_data_append32(data, &zero);
         data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
-        mongo_message_send(cursor->conn->sock, mm);
+        mongo_message_send(cursor->conn, mm);
         free(mm);
 
         free(cursor->mm);
@@ -403,7 +403,7 @@ void mongo_cursor_destroy(mongo_cursor* cursor){
         data = mongo_data_append32(data, &one);
         data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
         
-        mongo_message_send(cursor->conn->sock, mm);
+        mongo_message_send(cursor->conn, mm);
         free(mm);
     }
         
