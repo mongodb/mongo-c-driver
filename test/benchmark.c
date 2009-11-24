@@ -17,6 +17,9 @@
 /* supports preprocessor concatenation */
 #define DB "benchmarks"
 
+/* finds without indexes */
+#define DO_SLOW_TESTS 0
+
 #ifndef TEST_SERVER
 #define TEST_SERVER "127.0.0.1"
 #endif
@@ -385,20 +388,24 @@ int main(){
     TIME(batch_insert_medium_test, 1);
     TIME(batch_insert_large_test, 1);
 
+#if DO_SLOW_TESTS
     printf("-----\n");
     TIME(find_one_noindex_small_test, 0);
     TIME(find_one_noindex_medium_test, 0);
     TIME(find_one_noindex_large_test, 0);
+#endif
 
     printf("-----\n");
     TIME(find_one_index_small_test, 0);
     TIME(find_one_index_medium_test, 0);
     TIME(find_one_index_large_test, 0);
 
+#if DO_SLOW_TESTS
     printf("-----\n");
     TIME(find_noindex_small_test, 0);
     TIME(find_noindex_medium_test, 0);
     TIME(find_noindex_large_test, 0);
+#endif
 
     printf("-----\n");
     TIME(find_index_small_test, 0);
