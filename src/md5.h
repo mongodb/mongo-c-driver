@@ -60,15 +60,15 @@
  * efficiently on either one than if ARCH_IS_BIG_ENDIAN is defined.
  */
 
-typedef unsigned char md5_byte_t; /* 8-bit byte */
-typedef unsigned int md5_word_t; /* 32-bit word */
+typedef unsigned char mongo_md5_byte_t; /* 8-bit byte */
+typedef unsigned int mongo_md5_word_t; /* 32-bit word */
 
 /* Define the state of the MD5 Algorithm. */
-typedef struct md5_state_s {
-    md5_word_t count[2];	/* message length in bits, lsw first */
-    md5_word_t abcd[4];		/* digest buffer */
-    md5_byte_t buf[64];		/* accumulate block */
-} md5_state_t;
+typedef struct mongo_md5_state_s {
+    mongo_md5_word_t count[2];	/* message length in bits, lsw first */
+    mongo_md5_word_t abcd[4];		/* digest buffer */
+    mongo_md5_byte_t buf[64];		/* accumulate block */
+} mongo_md5_state_t;
 
 #ifdef __cplusplus
 extern "C"
@@ -76,13 +76,13 @@ extern "C"
 #endif
 
     /* Initialize the algorithm. */
-    void md5_init(md5_state_t *pms);
+    void mongo_md5_init(mongo_md5_state_t *pms);
 
     /* Append a string to the message. */
-    void md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes);
+    void mongo_md5_append(mongo_md5_state_t *pms, const mongo_md5_byte_t *data, int nbytes);
 
     /* Finish the message and return the digest. */
-    void md5_finish(md5_state_t *pms, md5_byte_t digest[16]);
+    void mongo_md5_finish(mongo_md5_state_t *pms, mongo_md5_byte_t digest[16]);
 
 #ifdef __cplusplus
 }  /* end extern "C" */

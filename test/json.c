@@ -84,8 +84,8 @@ char * json_to_bson( char * js ){
 
 int json_to_bson_test( char * js , int size , const char * hash ){
     bson b;
-    md5_state_t st;
-    md5_byte_t digest[16];
+    mongo_md5_state_t st;
+    mongo_md5_byte_t digest[16];
     char myhash[33];
     int i;
 
@@ -108,9 +108,9 @@ int json_to_bson_test( char * js , int size , const char * hash ){
         return 0;
     }    
 
-    md5_init(&st);
-    md5_append( &st , (const md5_byte_t*)b.data , bson_size( &b ) );
-    md5_finish(&st, digest);
+    mongo_md5_init(&st);
+    mongo_md5_append( &st , (const mongo_md5_byte_t*)b.data , bson_size( &b ) );
+    mongo_md5_finish(&st, digest);
 
     for ( i=0; i<16; i++ )
         sprintf( myhash + ( i * 2 ) , "%.2x" , digest[i] );

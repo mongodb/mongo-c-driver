@@ -68,7 +68,7 @@ if sys.byteorder == 'big':
 
 env.Append( CPPPATH=["src/"] )
 
-coreFiles = []
+coreFiles = ["src/md5.c" ]
 
 m = env.Library( "mongoc" , coreFiles + [ "src/mongo.c"] )
 b = env.Library( "bson" , coreFiles + [ "src/bson.c", "src/numbers.c"] )
@@ -79,12 +79,12 @@ benchmarkEnv = env.Clone()
 benchmarkEnv.Append( CFLAGS=[r'-DTEST_SERVER=\"%s\"'%GetOption('test_server')] )
 benchmarkEnv.Append( LIBS=[m, b] )
 benchmarkEnv.Prepend( LIBPATH=["."] )
-benchmarkEnv.Program( "benchmark" , coreFiles + [ "test/benchmark.c"] )
+benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )
 
 testEnv = benchmarkEnv.Clone()
 testEnv.Append( LIBS=["json"] )
 
-testCoreFiles = [ "test/md5.c" ]
+testCoreFiles = [ ]
 
 for name in Split('sizes resize endian_swap json simple update errors count_delete'):
     filename = "test/%s.c" % name
