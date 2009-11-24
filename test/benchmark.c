@@ -18,7 +18,7 @@
 #define DB "benchmarks"
 
 /* finds without indexes */
-#define DO_SLOW_TESTS 0
+#define DO_SLOW_TESTS 1
 
 #ifndef TEST_SERVER
 #define TEST_SERVER "127.0.0.1"

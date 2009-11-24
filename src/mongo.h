@@ -3,6 +3,7 @@
 #ifndef _MONGO_H_
 #define _MONGO_H_
 
+#include "mongo_except.h"
 #include "bson.h"
 
 #include <sys/types.h>
@@ -21,6 +22,7 @@ typedef struct {
     socklen_t addressSize;
     int sock;
     bson_bool_t connected;
+    mongo_exception_context exception;
 } mongo_connection;
 
 #pragma pack(1)
