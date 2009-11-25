@@ -4,6 +4,7 @@
 #define _BSON_H_
 
 #include "platform_hacks.h"
+#include <time.h>
 
 typedef enum {
     bson_eoo=0 ,
@@ -54,6 +55,8 @@ typedef union{
 } bson_oid_t;
 #pragma pack(0)
 
+typedef int64_t bson_date_t; /* milliseconds since epoch UTC */
+
 
 /* ----------------------------
    READING
@@ -103,6 +106,8 @@ bson_oid_t* bson_iterator_oid( bson_iterator * i );
 const char * bson_iterator_string( bson_iterator * i );
 int bson_iterator_string_len( bson_iterator * i );
 
+bson_date_t bson_iterator_date(bson_iterator * i);
+time_t bson_iterator_time_t(bson_iterator * i);
 
 int bson_iterator_bin_len( bson_iterator * i );
 char bson_iterator_bin_type( bson_iterator * i );
@@ -142,6 +147,10 @@ bson_buffer * bson_append_undefined( bson_buffer * b , const char * name );
 bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const char * pattern, const char * opts );
 bson_buffer * bson_append_bson( bson_buffer * b , const char * name , const bson* bson);
 bson_buffer * bson_append_element( bson_buffer * b, const char * name_or_null, const bson_iterator* elem);
+
+/* these both append a bson_date */
+bson_buffer * bson_append_date(bson_buffer * b, const char * name, bson_date_t millis);
+bson_buffer * bson_append_time_t(bson_buffer * b, const char * name, time_t secs);
 
 bson_buffer * bson_append_start_object( bson_buffer * b , const char * name );
 bson_buffer * bson_append_start_array( bson_buffer * b , const char * name );
