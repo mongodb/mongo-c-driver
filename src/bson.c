@@ -303,6 +303,25 @@ int bson_iterator_string_len( bson_iterator * i ){
     return bson_iterator_int_raw( i );
 }
 
+const char * bson_iterator_code( bson_iterator * i ){
+    switch (bson_iterator_type(i)){
+        case bson_string:
+        case bson_code: return bson_iterator_value(i) + 4;
+        case bson_codewscope: return bson_iterator_value(i) + 8;
+        default: return NULL;
+    }
+}
+
+void bson_iterator_code_scope(bson_iterator * i, bson * scope){
+    if (bson_iterator_type(i) == bson_codewscope){
+        int code_len;
+        bson_swap_endian32(&code_len, bson_iterator_value(i)+4);
+        bson_init(scope, (void*)(bson_iterator_value(i)+8+code_len), 0);
+    }else{
+        bson_empty(scope);
+    }
+}
+
 int bson_iterator_bin_len( bson_iterator * i ){
     return bson_iterator_int_raw( i );
 }
@@ -451,6 +470,18 @@ bson_buffer * bson_append_symbol( bson_buffer * b , const char * name , const ch
 bson_buffer * bson_append_code( bson_buffer * b , const char * name , const char * value ){
     return bson_append_string_base(b, name, value, bson_code);
 }
+
+bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , const char * code , const bson * scope){
+    int sl = strlen(code) + 1;
+    int size = 4 + 4 + sl + bson_size(scope);
+    if (!bson_append_estart(b, bson_codewscope, name, size)) return 0;
+    bson_append32(b, &size);
+    bson_append32(b, &sl);
+    bson_append(b, code, sl);
+    bson_append(b, scope, bson_size(scope));
+    return b;
+}
+
 bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len ){
     const int size = 4+1+len;
     if ( ! bson_append_estart( b , bson_bindata , name , size ) ) return 0;

@@ -106,6 +106,14 @@ bson_oid_t* bson_iterator_oid( bson_iterator * i );
 const char * bson_iterator_string( bson_iterator * i );
 int bson_iterator_string_len( bson_iterator * i );
 
+/* works with bson_code, bson_codewscope, and bson_string */
+/* returns NULL for everything else */
+const char * bson_iterator_code(bson_iterator * i);
+
+/* calls bson_empty on scope if not a bson_codewscope */
+void bson_iterator_code_scope(bson_iterator * i, bson * scope);
+
+/* both of these only work with bson_date */
 bson_date_t bson_iterator_date(bson_iterator * i);
 time_t bson_iterator_time_t(bson_iterator * i);
 
@@ -116,7 +124,7 @@ const char * bson_iterator_bin_data( bson_iterator * i );
 const char * bson_iterator_regex( bson_iterator * i );
 const char * bson_iterator_regex_opts( bson_iterator * i );
 
-/* str must be at least 25 hex chars */
+/* str must be at least 24 hex chars + null byte */
 void bson_oid_from_string(bson_oid_t* oid, const char* str);
 void bson_oid_to_string(const bson_oid_t* oid, char* str);
 void bson_oid_gen(bson_oid_t* oid);
@@ -141,6 +149,7 @@ bson_buffer * bson_append_double( bson_buffer * b , const char * name , const do
 bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * str );
 bson_buffer * bson_append_symbol( bson_buffer * b , const char * name , const char * str );
 bson_buffer * bson_append_code( bson_buffer * b , const char * name , const char * str );
+bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , const char * code , const bson * scope);
 bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len );
 bson_buffer * bson_append_bool( bson_buffer * b , const char * name , const bson_bool_t v );
 bson_buffer * bson_append_null( bson_buffer * b , const char * name );
