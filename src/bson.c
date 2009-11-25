@@ -342,6 +342,13 @@ const char * bson_iterator_regex_opts( bson_iterator * i ){
 
 }
 
+void bson_iterator_subobject(bson_iterator * i, bson * sub){
+    bson_init(sub, (char*)bson_iterator_value(i), 0);
+}
+void bson_iterator_subiterator(bson_iterator * i, bson_iterator * sub){
+    bson_iterator_init(sub, bson_iterator_value(i));
+}
+
 /* ----------------------------
    BUILDING
    ------------------------------ */

@@ -124,6 +124,10 @@ const char * bson_iterator_bin_data( bson_iterator * i );
 const char * bson_iterator_regex( bson_iterator * i );
 const char * bson_iterator_regex_opts( bson_iterator * i );
 
+/* these work with bson_object and bson_array */
+void bson_iterator_subobject(bson_iterator * i, bson * sub);
+void bson_iterator_subiterator(bson_iterator * i, bson_iterator * sub);
+
 /* str must be at least 24 hex chars + null byte */
 void bson_oid_from_string(bson_oid_t* oid, const char* str);
 void bson_oid_to_string(const bson_oid_t* oid, char* str);
