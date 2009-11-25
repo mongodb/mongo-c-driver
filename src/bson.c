@@ -167,7 +167,7 @@ bson_type bson_find(bson_iterator* it, const bson* obj, const char* name){
     return bson_iterator_type(it);
 }
 
-bson_bool_t bson_iterator_more( bson_iterator * i ){
+bson_bool_t bson_iterator_more( const bson_iterator * i ){
     return *(i->cur);
 }
 
@@ -222,13 +222,13 @@ bson_type bson_iterator_next( bson_iterator * i ){
     return (bson_type)(*i->cur);
 }
 
-bson_type bson_iterator_type( bson_iterator * i ){
+bson_type bson_iterator_type( const bson_iterator * i ){
     return (bson_type)i->cur[0];
 }
-const char * bson_iterator_key( bson_iterator * i ){
+const char * bson_iterator_key( const bson_iterator * i ){
     return i->cur + 1;
 }
-const char * bson_iterator_value( bson_iterator * i ){
+const char * bson_iterator_value( const bson_iterator * i ){
     const char * t = i->cur + 1;
     t += strlen( t ) + 1;
     return t;
@@ -236,31 +236,31 @@ const char * bson_iterator_value( bson_iterator * i ){
 
 /* types */
 
-int bson_iterator_int_raw( bson_iterator * i ){
+int bson_iterator_int_raw( const bson_iterator * i ){
     int out;
     bson_little_endian32(&out, bson_iterator_value( i ));
     return out;
 }
-double bson_iterator_double_raw( bson_iterator * i ){
+double bson_iterator_double_raw( const bson_iterator * i ){
     double out;
     bson_little_endian64(&out, bson_iterator_value( i ));
     return out;
 }
-int64_t bson_iterator_long_raw( bson_iterator * i ){
+int64_t bson_iterator_long_raw( const bson_iterator * i ){
     int64_t out;
     bson_little_endian64(&out, bson_iterator_value( i ));
     return out;
 }
 
-bson_bool_t bson_iterator_bool_raw( bson_iterator * i ){
+bson_bool_t bson_iterator_bool_raw( const bson_iterator * i ){
     return bson_iterator_value( i )[0];
 }
 
-bson_oid_t * bson_iterator_oid( bson_iterator * i ){
+bson_oid_t * bson_iterator_oid( const bson_iterator * i ){
     return (bson_oid_t*)bson_iterator_value(i);
 }
 
-int bson_iterator_int( bson_iterator * i ){
+int bson_iterator_int( const bson_iterator * i ){
     switch (bson_iterator_type(i)){
         case bson_int: return bson_iterator_int_raw(i);
         case bson_long: return bson_iterator_long_raw(i);
@@ -268,7 +268,7 @@ int bson_iterator_int( bson_iterator * i ){
         default: return 0;
     }
 }
-double bson_iterator_double( bson_iterator * i ){
+double bson_iterator_double( const bson_iterator * i ){
     switch (bson_iterator_type(i)){
         case bson_int: return bson_iterator_int_raw(i);
         case bson_long: return bson_iterator_long_raw(i);
@@ -276,7 +276,7 @@ double bson_iterator_double( bson_iterator * i ){
         default: return 0;
     }
 }
-int64_t bson_iterator_long( bson_iterator * i ){
+int64_t bson_iterator_long( const bson_iterator * i ){
     switch (bson_iterator_type(i)){
         case bson_int: return bson_iterator_int_raw(i);
         case bson_long: return bson_iterator_long_raw(i);
@@ -285,7 +285,7 @@ int64_t bson_iterator_long( bson_iterator * i ){
     }
 }
 
-bson_bool_t bson_iterator_bool( bson_iterator * i ){
+bson_bool_t bson_iterator_bool( const bson_iterator * i ){
     switch (bson_iterator_type(i)){
         case bson_bool: return bson_iterator_bool_raw(i);
         case bson_int: return bson_iterator_int_raw(i) != 0;
@@ -296,14 +296,14 @@ bson_bool_t bson_iterator_bool( bson_iterator * i ){
     }
 }
 
-const char * bson_iterator_string( bson_iterator * i ){
+const char * bson_iterator_string( const bson_iterator * i ){
     return bson_iterator_value( i ) + 4;
 }
-int bson_iterator_string_len( bson_iterator * i ){
+int bson_iterator_string_len( const bson_iterator * i ){
     return bson_iterator_int_raw( i );
 }
 
-const char * bson_iterator_code( bson_iterator * i ){
+const char * bson_iterator_code( const bson_iterator * i ){
     switch (bson_iterator_type(i)){
         case bson_string:
         case bson_code: return bson_iterator_value(i) + 4;
@@ -312,7 +312,7 @@ const char * bson_iterator_code( bson_iterator * i ){
     }
 }
 
-void bson_iterator_code_scope(bson_iterator * i, bson * scope){
+void bson_iterator_code_scope(const bson_iterator * i, bson * scope){
     if (bson_iterator_type(i) == bson_codewscope){
         int code_len;
         bson_swap_endian32(&code_len, bson_iterator_value(i)+4);
@@ -322,30 +322,30 @@ void bson_iterator_code_scope(bson_iterator * i, bson * scope){
     }
 }
 
-int bson_iterator_bin_len( bson_iterator * i ){
+int bson_iterator_bin_len( const bson_iterator * i ){
     return bson_iterator_int_raw( i );
 }
 
-char bson_iterator_bin_type( bson_iterator * i ){
+char bson_iterator_bin_type( const bson_iterator * i ){
     return bson_iterator_value(i)[4];
 }
-const char * bson_iterator_bin_data( bson_iterator * i ){
+const char * bson_iterator_bin_data( const bson_iterator * i ){
     return bson_iterator_value( i ) + 5;
 }
 
-const char * bson_iterator_regex( bson_iterator * i ){
+const char * bson_iterator_regex( const bson_iterator * i ){
     return bson_iterator_value( i );
 }
-const char * bson_iterator_regex_opts( bson_iterator * i ){
+const char * bson_iterator_regex_opts( const bson_iterator * i ){
     const char* p = bson_iterator_value( i );
     return p + strlen(p) + 1;
 
 }
 
-void bson_iterator_subobject(bson_iterator * i, bson * sub){
+void bson_iterator_subobject(const bson_iterator * i, bson * sub){
     bson_init(sub, (char*)bson_iterator_value(i), 0);
 }
-void bson_iterator_subiterator(bson_iterator * i, bson_iterator * sub){
+void bson_iterator_subiterator(const bson_iterator * i, bson_iterator * sub){
     bson_iterator_init(sub, bson_iterator_value(i));
 }
 

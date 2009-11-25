@@ -79,54 +79,54 @@ bson_type bson_find(bson_iterator* it, const bson* obj, const char* name);
 
 void bson_iterator_init( bson_iterator * i , const char * bson );
 
-bson_bool_t bson_iterator_more( bson_iterator * i );
+bson_bool_t bson_iterator_more( const bson_iterator * i );
 bson_type bson_iterator_next( bson_iterator * i );
 
-bson_type bson_iterator_type( bson_iterator * i );
-const char * bson_iterator_key( bson_iterator * i );
-const char * bson_iterator_value( bson_iterator * i );
+bson_type bson_iterator_type( const bson_iterator * i );
+const char * bson_iterator_key( const bson_iterator * i );
+const char * bson_iterator_value( const bson_iterator * i );
 
 /* these convert to the right type (return 0 if non-numeric) */
-double bson_iterator_double( bson_iterator * i );
-int bson_iterator_int( bson_iterator * i );
-int64_t bson_iterator_long( bson_iterator * i );
+double bson_iterator_double( const bson_iterator * i );
+int bson_iterator_int( const bson_iterator * i );
+int64_t bson_iterator_long( const bson_iterator * i );
 
 /* false: boolean false, 0 in any type, or null */
 /* true: anything else (even empty strings and objects) */
-bson_bool_t bson_iterator_bool( bson_iterator * i );
+bson_bool_t bson_iterator_bool( const bson_iterator * i );
 
 /* these assume you are using the right type */
-double bson_iterator_double_raw( bson_iterator * i );
-int bson_iterator_int_raw( bson_iterator * i );
-int64_t bson_iterator_long_raw( bson_iterator * i );
-bson_bool_t bson_iterator_bool_raw( bson_iterator * i );
-bson_oid_t* bson_iterator_oid( bson_iterator * i );
+double bson_iterator_double_raw( const bson_iterator * i );
+int bson_iterator_int_raw( const bson_iterator * i );
+int64_t bson_iterator_long_raw( const bson_iterator * i );
+bson_bool_t bson_iterator_bool_raw( const bson_iterator * i );
+bson_oid_t* bson_iterator_oid( const bson_iterator * i );
 
 /* these can also be used with bson_code and bson_symbol*/
-const char * bson_iterator_string( bson_iterator * i );
-int bson_iterator_string_len( bson_iterator * i );
+const char * bson_iterator_string( const bson_iterator * i );
+int bson_iterator_string_len( const bson_iterator * i );
 
 /* works with bson_code, bson_codewscope, and bson_string */
 /* returns NULL for everything else */
-const char * bson_iterator_code(bson_iterator * i);
+const char * bson_iterator_code(const bson_iterator * i);
 
 /* calls bson_empty on scope if not a bson_codewscope */
-void bson_iterator_code_scope(bson_iterator * i, bson * scope);
+void bson_iterator_code_scope(const bson_iterator * i, bson * scope);
 
 /* both of these only work with bson_date */
-bson_date_t bson_iterator_date(bson_iterator * i);
-time_t bson_iterator_time_t(bson_iterator * i);
+bson_date_t bson_iterator_date(const bson_iterator * i);
+time_t bson_iterator_time_t(const bson_iterator * i);
 
-int bson_iterator_bin_len( bson_iterator * i );
-char bson_iterator_bin_type( bson_iterator * i );
-const char * bson_iterator_bin_data( bson_iterator * i );
+int bson_iterator_bin_len( const bson_iterator * i );
+char bson_iterator_bin_type( const bson_iterator * i );
+const char * bson_iterator_bin_data( const bson_iterator * i );
 
-const char * bson_iterator_regex( bson_iterator * i );
-const char * bson_iterator_regex_opts( bson_iterator * i );
+const char * bson_iterator_regex( const bson_iterator * i );
+const char * bson_iterator_regex_opts( const bson_iterator * i );
 
 /* these work with bson_object and bson_array */
-void bson_iterator_subobject(bson_iterator * i, bson * sub);
-void bson_iterator_subiterator(bson_iterator * i, bson_iterator * sub);
+void bson_iterator_subobject(const bson_iterator * i, bson * sub);
+void bson_iterator_subiterator(const bson_iterator * i, bson_iterator * sub);
 
 /* str must be at least 24 hex chars + null byte */
 void bson_oid_from_string(bson_oid_t* oid, const char* str);
