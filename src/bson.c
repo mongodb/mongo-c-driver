@@ -547,7 +547,7 @@ bson_buffer * bson_append_date( bson_buffer * b , const char * name , const bson
     return b;
 }
 
-bson_buffer * bson_append_time_t( bson_buffer * b , const char * name , const bson_date_t secs){
+bson_buffer * bson_append_time_t( bson_buffer * b , const char * name , const time_t secs){
     return bson_append_date(b, name, (bson_date_t)secs * 1000);
 }
 
