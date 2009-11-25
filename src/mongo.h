@@ -131,6 +131,9 @@ bson_bool_t mongo_simple_str_command(mongo_connection * conn, const char * db, c
 bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db);
 bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, const char * collection, bson * out);
 
+void mongo_cmd_add_user(mongo_connection* conn, const char* db, const char* user, const char* pass);
+bson_bool_t mongo_cmd_authenticate(mongo_connection* conn, const char* db, const char* user, const char* pass);
+
 /* true return indicates error */
 bson_bool_t mongo_cmd_get_last_error(mongo_connection * conn, const char * db, bson * out);
 bson_bool_t mongo_cmd_get_prev_error(mongo_connection * conn, const char * db, bson * out);
