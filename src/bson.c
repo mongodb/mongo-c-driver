@@ -412,6 +412,11 @@ bson_buffer * bson_append_int( bson_buffer * b , const char * name , const int i
     bson_append32( b , &i );
     return b;
 }
+bson_buffer * bson_append_long( bson_buffer * b , const char * name , const int64_t i ){
+    if ( ! bson_append_estart( b , bson_long , name , 8 ) ) return 0;
+    bson_append32( b , &i );
+    return b;
+}
 bson_buffer * bson_append_double( bson_buffer * b , const char * name , const double d ){
     if ( ! bson_append_estart( b , bson_double , name , 8 ) ) return 0;
     bson_append64( b , &d );
