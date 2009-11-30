@@ -5,8 +5,11 @@
  *
  * The MONGO_TRY, MONGO_CATCH, and MONGO_TROW macros assume that a pointer to
  * the current connection is available as 'conn'. If you would like to use a
- * different name, #define MONGO_CONNECTION_NAME at the top of your file. You
- * can use &conn if conn is the name of the connection rather than a pointer.
+ * different name, use the _GENERIC version of these macros.
+ *
+ * WARNING: do not return or otherwise jump (excluding MONGO_TRHOW()) out of a
+ * MONGO_TRY block as the nessesary clean-up code will not be called. Jumping
+ * out of the MONGO_CATCH block is OK.
  */
 
 #ifdef MONGO_CODE_EXAMPLE
@@ -64,9 +67,10 @@ typedef struct {
   volatile mongo_exception_type type;
 }mongo_exception_context;
 
-#ifndef MONGO_CONNECTION_NAME
-#define MONGO_CONNECTION_NAME conn
-#endif
+#define MONGO_TRY MONGO_TRY_GENERIC(conn)
+#define MONGO_CATCH MONGO_CATCH_GENERIC(conn)
+#define MONGO_THROW(e) MONGO_THROW_GENERIC(conn, e)
+#define MONGO_RETHROW() MONGO_RETHROW_GENERIC(conn)
 
 /* the rest of this file is implementation details */
 
@@ -84,24 +88,24 @@ typedef struct {
         } \
     }while(0)
 
-#define MONGO_TRY \
+#define MONGO_TRY_GENERIC(connection) \
   { \
     jmp_buf *exception__prev, exception__env; \
-    exception__prev = (MONGO_CONNECTION_NAME)->exception.penv; \
-    (MONGO_CONNECTION_NAME)->exception.penv = &exception__env; \
+    exception__prev = (connection)->exception.penv; \
+    (connection)->exception.penv = &exception__env; \
     if (setjmp(exception__env) == 0) { \
       do
 
-#define MONGO_CATCH \
-      while ((MONGO_CONNECTION_NAME)->exception.caught = 0, \
-             (MONGO_CONNECTION_NAME)->exception.caught); \
+#define MONGO_CATCH_GENERIC(connection) \
+      while ((connection)->exception.caught = 0, \
+             (connection)->exception.caught); \
     } \
     else { \
-      (MONGO_CONNECTION_NAME)->exception.caught = 1; \
+      (connection)->exception.caught = 1; \
     } \
-    (MONGO_CONNECTION_NAME)->exception.penv = exception__prev; \
+    (connection)->exception.penv = exception__prev; \
   } \
-  if (!(MONGO_CONNECTION_NAME)->exception.caught ) { } \
+  if (!(connection)->exception.caught ) { } \
   else
 
 /* Try ends with do, and Catch begins with while(0) and ends with     */
@@ -113,11 +117,12 @@ typedef struct {
 /* Most compilers should still recognize that the condition is always */
 /* false and avoid generating code for it.                            */
 
-#define MONGO_THROW(type_in) \
-  for (;; longjmp(*(MONGO_CONNECTION_NAME)->exception.penv, type_in)) \
-    (MONGO_CONNECTION_NAME)->exception.type = type_in
+#define MONGO_THROW_GENERIC(connection, type_in) \
+  for (;; longjmp(*(connection)->exception.penv, type_in)) \
+    (connection)->exception.type = type_in
 
-#define MONGO_RETHROW() MONGO_THROW((MONGO_CONNECTION_NAME)->exception.type)
+#define MONGO_RETHROW_GENERIC(connection) \
+    MONGO_THROW_GENERIC(connection, (connection)->exception.type)
 
 
 #endif
