@@ -132,6 +132,9 @@ void bson_iterator_subiterator(const bson_iterator * i, bson_iterator * sub);
 void bson_oid_from_string(bson_oid_t* oid, const char* str);
 void bson_oid_to_string(const bson_oid_t* oid, char* str);
 void bson_oid_gen(bson_oid_t* oid);
+
+time_t bson_oid_generated_time(bson_oid_t* oid); /* Gives the time the OID was created */
+
 /* ----------------------------
    BUILDING
    ------------------------------ */
