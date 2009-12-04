@@ -11,6 +11,14 @@
 #define MONGO_INLINE static
 #endif
 
+#ifdef __cplusplus
+#define MONGO_EXTERN_C_START extern "C" {
+#define MONGO_EXTERN_C_END }
+#else
+#define MONGO_EXTERN_C_START
+#define MONGO_EXTERN_C_END
+#endif
+
 
 #if defined(MONGO_HAVE_STDINT) || __STDC_VERSION__ >= 199901L
 #include <stdint.h>
@@ -24,7 +32,7 @@ typedef long long int int64_t;
 #error must have a 64bit int type
 #endif
 
-#if defined(MONGO_HAVE_BOOL)
+#if defined(MONGO_HAVE_BOOL) || defined(__cplusplus)
 typedef bool bson_bool_t;
 #elif defined(MONGO_HAVE_STDBOOL) || __STDC_VERSION__ >= 199901L
 #include <stdbool.h>
@@ -46,9 +54,11 @@ typedef unsigned char bson_bool_t;
 #define bson_big_endian32(out, in) ( bson_swap_endian32(out, in) )
 #endif
 
+MONGO_EXTERN_C_START
+
 MONGO_INLINE void bson_swap_endian64(void* outp, const void* inp){
-    const char *in = inp;
-    char *out = outp;
+    const char *in = (const char*)inp;
+    char *out = (char*)outp;
 
     out[0] = in[7];
     out[1] = in[6];
@@ -61,12 +71,15 @@ MONGO_INLINE void bson_swap_endian64(void* outp, const void* inp){
 
 }
 MONGO_INLINE void bson_swap_endian32(void* outp, const void* inp){
-    const char *in = inp;
-    char *out = outp;
+    const char *in = (const char*)inp;
+    char *out = (char*)outp;
 
     out[0] = in[3];
     out[1] = in[2];
     out[2] = in[1];
     out[3] = in[0];
 }
+
+MONGO_EXTERN_C_END
+
 #endif

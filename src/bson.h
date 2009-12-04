@@ -6,6 +6,8 @@
 #include "platform_hacks.h"
 #include <time.h>
 
+MONGO_EXTERN_C_START
+
 typedef enum {
     bson_eoo=0 ,
     bson_double=1,
@@ -196,4 +198,5 @@ bson_err_handler set_bson_err_handler(bson_err_handler func);
 void bson_fatal( int ok );
 void bson_fatal_msg( int ok, const char* msg );
 
+MONGO_EXTERN_C_END
 #endif

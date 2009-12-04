@@ -76,7 +76,7 @@ b = env.Library( "bson" , coreFiles + [ "src/bson.c", "src/numbers.c"] )
 env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
 
 benchmarkEnv = env.Clone()
-benchmarkEnv.Append( CFLAGS=[r'-DTEST_SERVER=\"%s\"'%GetOption('test_server')] )
+benchmarkEnv.Append( CPPFLAGS=r'-DTEST_SERVER=\"%s\"'%GetOption('test_server') )
 benchmarkEnv.Append( LIBS=[m, b] )
 benchmarkEnv.Prepend( LIBPATH=["."] )
 benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )
@@ -92,3 +92,8 @@ for name in Split('sizes resize endian_swap json simple update errors count_dele
     test = testEnv.Program( exe , testCoreFiles + [filename]  )
     test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> /dev/null')
     AlwaysBuild(test_alias)
+
+# special case for cpptest
+test = testEnv.Program( 'test_cpp' , testCoreFiles + ['test/cpptest.cpp']  )
+test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> /dev/null')
+AlwaysBuild(test_alias)

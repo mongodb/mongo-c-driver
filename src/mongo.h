@@ -11,6 +11,8 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
+MONGO_EXTERN_C_START
+
 typedef struct mongo_connection_options {
     char host[255];
     int port;
@@ -143,6 +145,7 @@ void        mongo_cmd_reset_error(mongo_connection * conn, const char * db);
    UTILS
    ------------------------------ */
 
+MONGO_EXTERN_C_END
 
 
 #endif
