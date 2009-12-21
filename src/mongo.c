@@ -590,6 +590,24 @@ bson_bool_t mongo_cmd_get_last_error(mongo_connection * conn, const char * db, b
     return mongo_cmd_get_error_helper(conn, db, out, "getlasterror");
 }
 
+bson_bool_t mongo_cmd_ismaster(mongo_connection * conn, bson * realout){
+    bson out = {NULL,0};
+    bson_bool_t ismaster = 0;
+
+    if (mongo_simple_int_command(conn, "admin", "ismaster", 1, &out)){
+        bson_iterator it;
+        bson_find(&it, &out, "ismaster");
+        ismaster = bson_iterator_bool(&it);
+    }
+
+    if(realout)
+        *realout = out; /* transfer of ownership */
+    else
+        bson_destroy(&out);
+
+    return ismaster;
+}
+
 static void digest2hex(mongo_md5_byte_t digest[16], char hex_digest[33]){
     static const char hex[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
     int i;
