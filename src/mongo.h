@@ -19,7 +19,8 @@ typedef struct mongo_connection_options {
 } mongo_connection_options;
 
 typedef struct {
-    mongo_connection_options options;
+    mongo_connection_options* left_opts; /* always current server */
+    mongo_connection_options* right_opts; /* unused with single server */
     struct sockaddr_in sa;
     socklen_t addressSize;
     int sock;
@@ -76,13 +77,22 @@ enum mongo_operations {
    CONNECTION STUFF
    ------------------------------ */
 
+typedef enum {
+    mongo_conn_success = 0,
+    mongo_conn_bad_arg,
+    mongo_conn_no_socket,
+    mongo_conn_fail,
+    mongo_conn_not_master /* leaves conn connected to slave */
+} mongo_conn_return;
+
 /**
  * @param options can be null
- * return of 0 indicates success
  */
-int mongo_connect( mongo_connection * conn , mongo_connection_options * options );
-bson_bool_t mongo_disconnect( mongo_connection * conn );
-bson_bool_t mongo_destroy( mongo_connection * conn );
+mongo_conn_return mongo_connect( mongo_connection * conn , mongo_connection_options * options );
+mongo_conn_return mongo_connect_pair( mongo_connection * conn , mongo_connection_options * left, mongo_connection_options * right );
+mongo_conn_return mongo_reconnect( mongo_connection * conn ); /* you will need to reauthenticate after calling */
+bson_bool_t mongo_disconnect( mongo_connection * conn ); /* use this if you want to be able to reconnect */
+bson_bool_t mongo_destroy( mongo_connection * conn ); /* you must call this even if connection failed */
 
 
 

@@ -90,51 +90,103 @@ mongo_message * mongo_message_create( int len , int id , int responseTo , int op
 /* ----------------------------
    connection stuff
    ------------------------------ */
-
-int mongo_connect( mongo_connection * conn , mongo_connection_options * options ){
-    conn->connected = 0;
-
-    if ( options ){
-        memcpy( &(conn->options) , options , sizeof( mongo_connection_options ) );
-    }
-    else {
-        strcpy( conn->options.host , "127.0.0.1" );
-        conn->options.port = 27017;
-    }
-
+static int mongo_connect_helper( mongo_connection * conn ){
     /* setup */
-
     conn->sock = 0;
+    conn->connected = 0;
 
     memset( conn->sa.sin_zero , 0 , sizeof(conn->sa.sin_zero) );
     conn->sa.sin_family = AF_INET;
-    conn->sa.sin_port = htons(conn->options.port);
-    conn->sa.sin_addr.s_addr = inet_addr( conn->options.host );
+    conn->sa.sin_port = htons(conn->left_opts->port);
+    conn->sa.sin_addr.s_addr = inet_addr( conn->left_opts->host );
     conn->addressSize = sizeof(conn->sa);
 
     /* connect */
     conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
     if ( conn->sock <= 0 ){
-        fprintf( stderr , "couldn't get socket errno: %d" , errno );
-        return -1;
+        return mongo_conn_no_socket;
     }
 
     if ( connect( conn->sock , (struct sockaddr*)&conn->sa , conn->addressSize ) ){
-        fprintf( stderr , "couldn' connect errno: %d\n" , errno );
-        return -2;
+        return mongo_conn_fail;
     }
-
-    /* options */
 
     /* nagle */
     setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &one, sizeof(one) );
 
     /* TODO signals */
 
-    MONGO_INIT_EXCEPTION(&conn->exception);
-
     conn->connected = 1;
     return 0;
+}
+
+mongo_conn_return mongo_connect( mongo_connection * conn , mongo_connection_options * options ){
+    MONGO_INIT_EXCEPTION(&conn->exception);
+
+    conn->left_opts = bson_malloc(sizeof(mongo_connection_options));
+    conn->right_opts = NULL;
+
+    if ( options ){
+        memcpy( conn->left_opts , options , sizeof( mongo_connection_options ) );
+    } else {
+        strcpy( conn->left_opts->host , "127.0.0.1" );
+        conn->left_opts->port = 27017;
+    }
+
+    return mongo_connect_helper(conn);
+}
+
+static void swap_repl_pair(mongo_connection * conn){
+    mongo_connection_options * tmp = conn->left_opts;
+    conn->left_opts = conn->right_opts;
+    conn->right_opts = tmp;
+}
+
+mongo_conn_return mongo_connect_pair( mongo_connection * conn , mongo_connection_options * left, mongo_connection_options * right ){
+    conn->connected = 0;
+    MONGO_INIT_EXCEPTION(&conn->exception);
+
+    conn->left_opts = NULL;
+    conn->right_opts = NULL;
+
+    if ( !left || !right )
+        return mongo_conn_bad_arg;
+
+    conn->left_opts = bson_malloc(sizeof(mongo_connection_options));
+    conn->right_opts = bson_malloc(sizeof(mongo_connection_options));
+
+    memcpy( conn->left_opts,  left,  sizeof( mongo_connection_options ) );
+    memcpy( conn->right_opts, right, sizeof( mongo_connection_options ) );
+    
+    return mongo_reconnect(conn);
+}
+
+mongo_conn_return mongo_reconnect( mongo_connection * conn ){
+    mongo_conn_return ret;
+    mongo_disconnect(conn);
+
+    /* single server */
+    if(conn->right_opts == NULL)
+        return mongo_connect_helper(conn);
+
+    /* repl pair */
+    ret = mongo_connect_helper(conn);
+    if (ret == mongo_conn_success && mongo_cmd_ismaster(conn, NULL)){
+        return mongo_conn_success;
+    }
+
+    swap_repl_pair(conn);
+
+    ret = mongo_connect_helper(conn);
+    if (ret == mongo_conn_success){
+        if(mongo_cmd_ismaster(conn, NULL))
+            return mongo_conn_success;
+        else
+            return mongo_conn_not_master;
+    }
+
+    /* failed to connect to both servers */
+    return ret;
 }
 
 void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bsons, int count){
@@ -348,6 +400,11 @@ bson_bool_t mongo_disconnect( mongo_connection * conn ){
 }
 
 bson_bool_t mongo_destroy( mongo_connection * conn ){
+    free(conn->left_opts);
+    free(conn->right_opts);
+    conn->left_opts = NULL;
+    conn->right_opts = NULL;
+
     return mongo_disconnect( conn );
 }
 

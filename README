@@ -41,7 +41,6 @@ more documentation
 checking for $err in query results
 query helper for sort and hint
 explain and profiler helpers
-replica-pair support
 GridFS
 safe-mode modifications (maybe)
 cached ensure_index (maybe)
