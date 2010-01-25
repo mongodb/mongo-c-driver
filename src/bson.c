@@ -322,11 +322,19 @@ const char * bson_iterator_code( const bson_iterator * i ){
 void bson_iterator_code_scope(const bson_iterator * i, bson * scope){
     if (bson_iterator_type(i) == bson_codewscope){
         int code_len;
-        bson_swap_endian32(&code_len, bson_iterator_value(i)+4);
+        bson_little_endian32(&code_len, bson_iterator_value(i)+4);
         bson_init(scope, (void*)(bson_iterator_value(i)+8+code_len), 0);
     }else{
         bson_empty(scope);
     }
+}
+
+bson_date_t bson_iterator_date(const bson_iterator * i){
+    return bson_iterator_long_raw(i);
+}
+
+time_t bson_iterator_time_t(const bson_iterator * i){
+    return bson_iterator_date(i) / 1000;
 }
 
 int bson_iterator_bin_len( const bson_iterator * i ){
@@ -492,7 +500,7 @@ bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , co
     bson_append32(b, &size);
     bson_append32(b, &sl);
     bson_append(b, code, sl);
-    bson_append(b, scope, bson_size(scope));
+    bson_append(b, scope->data, bson_size(scope));
     return b;
 }
 
@@ -515,9 +523,11 @@ bson_buffer * bson_append_new_oid( bson_buffer * b , const char * name ){
 }
 
 bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const char * pattern, const char * opts ){
-    if ( ! bson_append_estart( b , bson_regex , name , 12 ) ) return 0;
-    bson_append( b , pattern , strlen(pattern) );
-    bson_append( b , opts , strlen(opts) );
+    const int plen = strlen(pattern)+1;
+    const int olen = strlen(opts)+1;
+    if ( ! bson_append_estart( b , bson_regex , name , plen + olen ) ) return 0;
+    bson_append( b , pattern , plen );
+    bson_append( b , opts , olen );
     return b;
 }
 

@@ -86,7 +86,7 @@ testEnv.Append( LIBS=["json"] )
 
 testCoreFiles = [ ]
 
-for name in Split('sizes resize endian_swap json simple update errors count_delete auth pair'):
+for name in Split('sizes resize endian_swap all_types json simple update errors count_delete auth pair'):
     filename = "test/%s.c" % name
     exe = "test_" + name
     test = testEnv.Program( exe , testCoreFiles + [filename]  )

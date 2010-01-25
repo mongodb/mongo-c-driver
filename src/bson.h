@@ -81,6 +81,7 @@ bson_type bson_find(bson_iterator* it, const bson* obj, const char* name);
 
 void bson_iterator_init( bson_iterator * i , const char * bson );
 
+/* more returns true for eoo. best to loop with bson_iterator_next(&it) */
 bson_bool_t bson_iterator_more( const bson_iterator * i );
 bson_type bson_iterator_next( bson_iterator * i );
 
