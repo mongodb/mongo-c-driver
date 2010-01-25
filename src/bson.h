@@ -30,6 +30,7 @@ typedef enum {
     bson_long = 18
 } bson_type;
 
+typedef int bson_bool_t;
 
 typedef struct {
     char * data;
@@ -58,7 +59,6 @@ typedef union{
 #pragma pack(0)
 
 typedef int64_t bson_date_t; /* milliseconds since epoch UTC */
-
 
 /* ----------------------------
    READING

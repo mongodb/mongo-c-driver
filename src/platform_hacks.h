@@ -32,15 +32,6 @@ typedef long long int int64_t;
 #error must have a 64bit int type
 #endif
 
-#if defined(MONGO_HAVE_BOOL) || defined(__cplusplus)
-typedef bool bson_bool_t;
-#elif defined(MONGO_HAVE_STDBOOL) || __STDC_VERSION__ >= 199901L
-#include <stdbool.h>
-typedef bool bson_bool_t;
-#else
-typedef unsigned char bson_bool_t;
-#endif
-
 /* big endian is only used for OID generation. little is used everywhere else */
 #ifdef MONGO_BIG_ENDIAN
 #define bson_little_endian64(out, in) ( bson_swap_endian64(out, in) )
