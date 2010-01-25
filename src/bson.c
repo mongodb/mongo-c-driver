@@ -497,9 +497,8 @@ bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , co
 }
 
 bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len ){
-    const int size = 4+1+len;
-    if ( ! bson_append_estart( b , bson_bindata , name , size ) ) return 0;
-    bson_append32(b, &size);
+    if ( ! bson_append_estart( b , bson_bindata , name , 4+1+len ) ) return 0;
+    bson_append32(b, &len);
     bson_append_byte(b, type);
     bson_append(b, str, len);
     return b;
