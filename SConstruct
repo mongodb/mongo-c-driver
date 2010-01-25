@@ -28,11 +28,16 @@ import sys
 env = Environment()
 
 if "darwin" == os.sys.platform or "linux2" == os.sys.platform:
-    env.Append( CPPFLAGS=" -ansi -pedantic -Wall -ggdb " )
+    env.Append( CPPFLAGS=" -pedantic -Wall -ggdb " )
     env.Append( CPPPATH=["/opt/local/include/"] )
     env.Append( LIBPATH=["/opt/local/lib/"] )
+
     if GetOption('use_c99'):
-        env.Append( CPPFLAGS=" -std=c99 " )
+        env.Append( CFLAGS=" -std=c99 " )
+        env.Append( CXXFLAGS=" -DMONGO_HAVE_STDINT " )
+    else:
+        env.Append( CFLAGS=" -ansi " )
+
     if GetOption('optimize'):
         env.Append( CPPFLAGS=" -O3 " )
         # -O3 benchmarks *significantly* faster than -O2 when disabling networking
