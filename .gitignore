@@ -1,11 +1,14 @@
 
 *~
 *.o
+*.obj
 *.a
+*.lib
 .scon*
 
 test_*
 benchmark
+benchmark.exe
 
 tags
 

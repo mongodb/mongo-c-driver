@@ -4,7 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+#ifndef _WIN32
 #include <sys/time.h>
+#endif
 
 #define ASSERT(x) \
     do{ \
@@ -321,9 +324,20 @@ static void find_range_large_test()  {find_range(DB ".index.large");}
 
 typedef void(*nullary)();
 static void time_it(nullary func, const char* name, bson_bool_t gle){
-    struct timeval start, end;
     double timer;
     double ops;
+
+#ifdef _WIN32
+    int64_t start, end;
+
+    start = GetTickCount64();
+    func();
+    if (gle) ASSERT(!mongo_cmd_get_last_error(conn, DB, NULL));
+    end = GetTickCount64();
+
+    timer = end - start;
+#else
+    struct timeval start, end;
 
     gettimeofday(&start, NULL);
     func();
@@ -333,6 +347,7 @@ static void time_it(nullary func, const char* name, bson_bool_t gle){
     timer = end.tv_sec - start.tv_sec;
     timer *= 1000000;
     timer += end.tv_usec - start.tv_usec;
+#endif
 
     ops = PER_TRIAL / timer;
     ops *= 1000000;

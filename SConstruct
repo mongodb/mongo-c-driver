@@ -27,7 +27,7 @@ import sys
 
 env = Environment( ENV=os.environ )
 
-if "darwin" == os.sys.platform or "linux2" == os.sys.platform:
+if os.sys.platform in ["darwin", "linux2"]:
     env.Append( CPPFLAGS=" -pedantic -Wall -ggdb " )
     env.Append( CPPPATH=["/opt/local/include/"] )
     env.Append( LIBPATH=["/opt/local/lib/"] )
@@ -41,6 +41,8 @@ if "darwin" == os.sys.platform or "linux2" == os.sys.platform:
     if GetOption('optimize'):
         env.Append( CPPFLAGS=" -O3 " )
         # -O3 benchmarks *significantly* faster than -O2 when disabling networking
+elif 'win32' == os.sys.platform:
+    env.Append( LIBS='ws2_32' )
         
 
 #we shouldn't need these options in c99 mode
@@ -62,6 +64,12 @@ if not GetOption('use_c99'):
 
     env = conf.Finish()
 
+have_libjson = False
+conf = Configure(env)
+if conf.CheckLib('json'):
+    have_libjson = True
+env = conf.Finish()
+
 if sys.byteorder == 'big':
     env.Append( CPPDEFINES="MONGO_BIG_ENDIAN" )
 
@@ -75,21 +83,25 @@ b = env.Library( "bson" , coreFiles + [ "src/bson.c", "src/numbers.c"] )
 env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
 
 benchmarkEnv = env.Clone()
-benchmarkEnv.Append( CPPDEFINES=[('DTEST_SERVER', '"%s"'%GetOption('test_server'))] )
+benchmarkEnv.Append( CPPDEFINES=[('TEST_SERVER', r'\"%s\"'%GetOption('test_server'))] )
 benchmarkEnv.Append( LIBS=[m, b] )
 benchmarkEnv.Prepend( LIBPATH=["."] )
 benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )
 
 testEnv = benchmarkEnv.Clone()
-testEnv.Append( LIBS=["json"] )
-
 testCoreFiles = [ ]
 
-for name in Split('sizes resize endian_swap all_types json simple update errors count_delete auth pair'):
+tests = Split('sizes resize endian_swap all_types simple update errors count_delete auth pair')
+
+if have_libjson:
+    tests.append('json')
+    testEnv.Append( LIBS=["json"] )
+
+for name in tests:
     filename = "test/%s.c" % name
     exe = "test_" + name
     test = testEnv.Program( exe , testCoreFiles + [filename]  )
-    test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> /dev/null')
+    test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> ' + os.path.devnull)
     AlwaysBuild(test_alias)
 
 # special case for cpptest
