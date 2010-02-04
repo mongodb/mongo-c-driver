@@ -557,13 +557,13 @@ bson_buffer * bson_append_element( bson_buffer * b, const char * name_or_null, c
     return b;
 }
 
-bson_buffer * bson_append_date( bson_buffer * b , const char * name , const bson_date_t millis ){
+bson_buffer * bson_append_date( bson_buffer * b , const char * name , bson_date_t millis ){
     if ( ! bson_append_estart( b , bson_date , name , 8 ) ) return 0;
     bson_append64( b , &millis );
     return b;
 }
 
-bson_buffer * bson_append_time_t( bson_buffer * b , const char * name , const time_t secs){
+bson_buffer * bson_append_time_t( bson_buffer * b , const char * name , time_t secs){
     return bson_append_date(b, name, (bson_date_t)secs * 1000);
 }
 

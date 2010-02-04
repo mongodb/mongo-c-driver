@@ -6,10 +6,17 @@
 #include "mongo_except.h"
 #include "bson.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#include <winsock.h>
+typedef int socklen_t;
+#else
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#endif
 
 MONGO_EXTERN_C_START
 

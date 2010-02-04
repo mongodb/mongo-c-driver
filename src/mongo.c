@@ -7,9 +7,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 /* only need one of these */
 static const int zero = 0;

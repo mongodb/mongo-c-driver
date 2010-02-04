@@ -25,7 +25,7 @@ AddOption('--d',
 import os
 import sys
 
-env = Environment()
+env = Environment( ENV=os.environ )
 
 if "darwin" == os.sys.platform or "linux2" == os.sys.platform:
     env.Append( CPPFLAGS=" -pedantic -Wall -ggdb " )
@@ -34,7 +34,7 @@ if "darwin" == os.sys.platform or "linux2" == os.sys.platform:
 
     if GetOption('use_c99'):
         env.Append( CFLAGS=" -std=c99 " )
-        env.Append( CXXFLAGS=" -DMONGO_HAVE_STDINT " )
+        env.Append( CXXDEFINES="MONGO_HAVE_STDINT" )
     else:
         env.Append( CFLAGS=" -ansi " )
 
@@ -49,13 +49,13 @@ if not GetOption('use_c99'):
 
     if not conf.CheckType('int64_t'):
         if conf.CheckType('int64_t', '#include <stdint.h>\n'):
-            conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_STDINT " )
+            conf.env.Append( CPPDEFINES="MONGO_HAVE_STDINT" )
         elif conf.CheckType('int64_t', '#include <unistd.h>\n'):
-            conf.env.Append( CPPFLAGS=" -DMONGO_HAVE_UNISTD " )
+            conf.env.Append( CPPDEFINES="MONGO_HAVE_UNISTD" )
         elif conf.CheckType('__int64'):
-            conf.env.Append( CPPFLAGS=" -DMONGO_USE__INT64 " )
+            conf.env.Append( CPPDEFINES="MONGO_USE__INT64" )
         elif conf.CheckType('long long int'):
-            conf.env.Append( CPPFLAGS=" -DMONGO_USE_LONG_LONG_INT " )
+            conf.env.Append( CPPDEFINES="MONGO_USE_LONG_LONG_INT" )
         else:
             print "*** what is your 64 bit int type? ****"
             Exit(1)
@@ -63,7 +63,7 @@ if not GetOption('use_c99'):
     env = conf.Finish()
 
 if sys.byteorder == 'big':
-    env.Append( CPPFLAGS=" -DMONGO_BIG_ENDIAN " )
+    env.Append( CPPDEFINES="MONGO_BIG_ENDIAN" )
 
 env.Append( CPPPATH=["src/"] )
 
@@ -75,7 +75,7 @@ b = env.Library( "bson" , coreFiles + [ "src/bson.c", "src/numbers.c"] )
 env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
 
 benchmarkEnv = env.Clone()
-benchmarkEnv.Append( CPPFLAGS=r'-DTEST_SERVER=\"%s\"'%GetOption('test_server') )
+benchmarkEnv.Append( CPPDEFINES=[('DTEST_SERVER', '"%s"'%GetOption('test_server'))] )
 benchmarkEnv.Append( LIBS=[m, b] )
 benchmarkEnv.Prepend( LIBPATH=["."] )
 benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )

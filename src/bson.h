@@ -56,7 +56,7 @@ typedef union{
     char bytes[12];
     int ints[3];
 } bson_oid_t;
-#pragma pack(0)
+#pragma pack()
 
 typedef int64_t bson_date_t; /* milliseconds since epoch UTC */
 
