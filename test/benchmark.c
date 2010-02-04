@@ -1,5 +1,6 @@
 /* test.c */
 
+#include "test.h"
 #include "mongo.h"
 #include <stdio.h>
 #include <string.h>
@@ -8,14 +9,6 @@
 #ifndef _WIN32
 #include <sys/time.h>
 #endif
-
-#define ASSERT(x) \
-    do{ \
-        if(!(x)){ \
-            printf("failed assert (%d): %s\n", __LINE__,  #x); \
-            exit(1); \
-        }\
-    }while(0)
 
 /* supports preprocessor concatenation */
 #define DB "benchmarks"
@@ -371,7 +364,9 @@ static void clean(){
 
 int main(){
     mongo_connection_options opts;
-    
+
+    INIT_SOCKETS_FOR_WINDOWS;
+
     strncpy(opts.host, TEST_SERVER, 255);
     opts.host[254] = '\0';
     opts.port = 27017;

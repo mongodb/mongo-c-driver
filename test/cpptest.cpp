@@ -1,17 +1,10 @@
+#include "test.h"
 #include "mongo.h"
 #include <iostream>
 #include <cstring>
 #include <cstdio>
 
 // this is just a simple test to make sure everything works when compiled with a c++ compiler
-//
-#define ASSERT(x) \
-    do{ \
-        if(!(x)){ \
-            printf("failed assert (%d): %s\n", __LINE__,  #x); \
-            return 1; \
-        }\
-    }while(0)
 
 using namespace std;
 
@@ -20,6 +13,8 @@ int main(){
     mongo_connection_options opts;
     bson_buffer bb;
     bson b;
+
+    INIT_SOCKETS_FOR_WINDOWS;
     
     strncpy(opts.host, TEST_SERVER, 255);
     opts.host[254] = '\0';

@@ -1,5 +1,6 @@
 /* testjson.c */
 
+#include "test.h"
 #include <stdio.h>
 #include <string.h>
 

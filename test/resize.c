@@ -1,15 +1,8 @@
 /* resize.c */
 
+#include "test.h"
 #include "bson.h"
 #include <string.h>
-
-#define ASSERT(x) \
-    do{ \
-        if(!(x)){ \
-            printf("failed assert (%d): %s\n", __LINE__,  #x); \
-            return 1; \
-        }\
-    }while(0)
 
 /* 64 Xs */
 const char* bigstring = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";

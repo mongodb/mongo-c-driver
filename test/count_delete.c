@@ -1,17 +1,10 @@
 /* count_delete.c */
 
+#include "test.h"
 #include "mongo.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#define ASSERT(x) \
-    do{ \
-        if(!(x)){ \
-            printf("failed assert (%d): %s\n", __LINE__,  #x); \
-            return 1; \
-        }\
-    }while(0)
 
 int main(){
     mongo_connection conn[1];
@@ -23,6 +16,8 @@ int main(){
     const char * db = "test";
     const char * col = "c.simple";
     const char * ns = "test.c.simple";
+
+    INIT_SOCKETS_FOR_WINDOWS;
     
     strncpy(opts.host, TEST_SERVER, 255);
     opts.host[254] = '\0';

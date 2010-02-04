@@ -1,15 +1,8 @@
+#include "test.h"
 #include "mongo.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#define ASSERT(x) \
-    do{ \
-        if(!(x)){ \
-            printf("failed assert: %s\n", #x); \
-            return 1; \
-        }\
-    }while(0)
 
 int main(){
     mongo_connection conn[1];
@@ -21,6 +14,8 @@ int main(){
     bson_oid_t oid;
     const char* col = "c.update_test";
     const char* ns = "test.c.update_test";
+
+    INIT_SOCKETS_FOR_WINDOWS;
 
     strncpy(opts.host, TEST_SERVER, 255);
     opts.host[254] = '\0';

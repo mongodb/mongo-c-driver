@@ -1,16 +1,8 @@
 /* endian_swap.c */
 
+#include "test.h"
 #include "platform_hacks.h"
 #include <stdio.h>
-
-#define ASSERT(x) \
-    do{ \
-        if(!(x)){ \
-            printf("failed assert: %s\n", #x); \
-            return 1; \
-        }\
-    }while(0)
-
 
 int main(){
     int small = 0x00112233;

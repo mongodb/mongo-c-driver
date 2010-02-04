@@ -1,15 +1,8 @@
+#include "test.h"
 #include "bson.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#define ASSERT(x) \
-    do{ \
-        if(!(x)){ \
-            printf("failed assert (%d): %s\n", __LINE__,  #x); \
-            return 1; \
-        }\
-    }while(0)
 
 int main(){
     bson_buffer bb;

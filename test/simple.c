@@ -1,5 +1,6 @@
 /* test.c */
 
+#include "test.h"
 #include "mongo.h"
 #include <stdio.h>
 #include <string.h>
@@ -16,6 +17,8 @@ int main(){
 
     const char * col = "c.simple";
     const char * ns = "test.c.simple";
+
+    INIT_SOCKETS_FOR_WINDOWS;
     
     strncpy(opts.host, TEST_SERVER, 255);
     opts.host[254] = '\0';

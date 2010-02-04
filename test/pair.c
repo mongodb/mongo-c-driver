@@ -1,21 +1,17 @@
+#include "test.h"
 #include "mongo.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#define ASSERT(x) \
-    do{ \
-        if(!(x)){ \
-            printf("failed assert (%d): %s\n", __LINE__,  #x); \
-            return 1; \
-        }\
-    }while(0)
 
 static mongo_connection conn[1];
 static mongo_connection_options left;
 static mongo_connection_options right;
 
 int main(){
+
+    INIT_SOCKETS_FOR_WINDOWS;
+
     strncpy(left.host, TEST_SERVER, 255);
     left.host[254] = '\0';
     left.port = 27017;

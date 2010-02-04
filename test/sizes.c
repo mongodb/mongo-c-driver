@@ -1,17 +1,8 @@
 /* sizes.c */
 
+#include "test.h"
 #include "mongo.h"
 #include <stdio.h>
-
-
-#define ASSERT(x) \
-    do{ \
-        if(!(x)){ \
-            printf("failed assert: %s\n", #x); \
-            return 1; \
-        }\
-    }while(0)
-
 
 int main(){
     mongo_reply mr;
