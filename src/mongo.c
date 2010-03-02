@@ -9,7 +9,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 /* only need one of these */
 static const int zero = 0;
