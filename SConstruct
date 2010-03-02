@@ -76,11 +76,16 @@ if sys.byteorder == 'big':
 env.Append( CPPPATH=["src/"] )
 
 coreFiles = ["src/md5.c" ]
-
-m = env.Library( "mongoc" , coreFiles + [ "src/mongo.c"] )
-b = env.Library( "bson" , coreFiles + [ "src/bson.c", "src/numbers.c"] )
-
+mFiles = [ "src/mongo.c"]
+bFiles = [ "src/bson.c", "src/numbers.c"]
+mLibFiles = coreFiles + mFiles + bFiles
+bLibFiles = coreFiles + bFiles
+m = env.Library( "mongoc" ,  mLibFiles )
+b = env.Library( "bson" , bLibFiles  )
 env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
+dynm = env.SharedLibrary( "mongoc" , mLibFiles )
+dynb = env.SharedLibrary( "bson" , bLibFiles )
+env.Default( env.Alias( "sharedlib" , [ dynm[0] , dynb[0] ] ) )
 
 benchmarkEnv = env.Clone()
 benchmarkEnv.Append( CPPDEFINES=[('TEST_SERVER', r'\"%s\"'%GetOption('test_server'))] )

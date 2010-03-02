@@ -1,9 +1,12 @@
 
 *~
 *.o
+*.os
 *.obj
 *.a
 *.lib
+*.so
+*.dylib
 .scon*
 
 test_*
