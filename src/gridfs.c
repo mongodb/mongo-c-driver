@@ -340,7 +340,7 @@ void GridFile_destroy(GridFile* oGridFile)
 bson_bool_t GridFile_exists(GridFile* oGridFile)
 
 {
-  return (bson_bool_t)(oGridFile != NULL);
+  return (bson_bool_t)(oGridFile != NULL || oGridFile->obj == NULL);
 }
 
 /*--------------------------------------------------------------------*/
