@@ -53,47 +53,47 @@ int gridfs_init(mongo_connection * client, const char * dbname,
   gfs->client = client;
   
   /* Allocate space to own the dbname */
-  gfs->dbname = (char *)malloc(strlen(dbname)+1);
+  gfs->dbname = (const char *)malloc(strlen(dbname)+1);
   if (gfs->dbname == NULL) {
     return FALSE;
   }
-  strcpy(gfs->dbname, dbname);
+  strcpy((char*)gfs->dbname, dbname);
   
   /* Allocate space to own the prefix */
-  if (prefix == NULL) prefix == "fs";
-  gfs->prefix = (char *)malloc(strlen(prefix)+1);
+  if (prefix == NULL) prefix = "fs";
+  gfs->prefix = (const char *)malloc(strlen(prefix)+1);
   if (gfs->prefix == NULL) {
-    free(gfs->dbname);
+    free((char*)gfs->dbname);
     return FALSE;
   }
-  strcpy(gfs->prefix, prefix);
+  strcpy((char *)gfs->prefix, prefix);
 
   /* Allocate space to own files_ns */
   gfs->files_ns = 
-    (char *) malloc (strlen(prefix)+strlen(dbname)+strlen(".files")+2);
+    (const char *) malloc (strlen(prefix)+strlen(dbname)+strlen(".files")+2);
   if (gfs->files_ns == NULL) {
-    free(gfs->dbname);
-    free(gfs->prefix);
+    free((char*)gfs->dbname);
+    free((char*)gfs->prefix);
     return FALSE;
   }
-  strcpy(gfs->files_ns, dbname);
-  strcat(gfs->files_ns, ".");
-  strcat(gfs->files_ns, prefix);
-  strcat(gfs->files_ns, ".files");
+  strcpy((char*)gfs->files_ns, dbname);
+  strcat((char*)gfs->files_ns, ".");
+  strcat((char*)gfs->files_ns, prefix);
+  strcat((char*)gfs->files_ns, ".files");
     
   /* Allocate space to own chunks_ns */
-  gfs->chunks_ns = (char *) malloc(strlen(prefix) + strlen(dbname) 
+  gfs->chunks_ns = (const char *) malloc(strlen(prefix) + strlen(dbname) 
 				      + strlen(".chunks") + 2);
   if (gfs->chunks_ns == NULL) {
-    free(gfs->dbname);
-    free(gfs->prefix);
-    free(gfs->files_ns);
+    free((char*)gfs->dbname);
+    free((char*)gfs->prefix);
+    free((char*)gfs->files_ns);
     return FALSE;
   }
-  strcpy(gfs->chunks_ns, dbname);
-  strcat(gfs->chunks_ns, ".");
-  strcat(gfs->chunks_ns, prefix);
-  strcat(gfs->chunks_ns, ".chunks");
+  strcpy((char*)gfs->chunks_ns, dbname);
+  strcat((char*)gfs->chunks_ns, ".");
+  strcat((char*)gfs->chunks_ns, prefix);
+  strcat((char*)gfs->chunks_ns, ".chunks");
   			      
   return TRUE;
 }
@@ -104,10 +104,10 @@ void gridfs_destroy(gridfs* gfs)
 
 {
   if (gfs == NULL) return;
-  if (gfs->dbname) free(gfs->dbname);
-  if (gfs->prefix) free(gfs->prefix);
-  if (gfs->files_ns) free(gfs->files_ns);
-  if (gfs->chunks_ns) free(gfs->chunks_ns);
+  if (gfs->dbname) free((char*)gfs->dbname);
+  if (gfs->prefix) free((char*)gfs->prefix);
+  if (gfs->files_ns) free((char*)gfs->files_ns);
+  if (gfs->chunks_ns) free((char*)gfs->chunks_ns);
 }
 
 /*--------------------------------------------------------------------*/
@@ -484,7 +484,7 @@ gridfs_offset gridfile_write_file(gridfile* gfile, FILE *stream)
 
 /*--------------------------------------------------------------------*/
 
-gridfs_offset gridfile_write_buffer(gridfile* gfile, void * buf)
+gridfs_offset gridfile_write_buffer(gridfile* gfile, char * buf)
 
 {
   const int num = gridfile_get_numchunks( gfile );

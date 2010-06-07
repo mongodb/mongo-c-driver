@@ -20,13 +20,13 @@ typedef struct {
   /* The client to db-connection. */
   mongo_connection* client;
   /* The root database name */
-  char* dbname;
+  const char* dbname;
   /* The prefix of the GridFS's collections, default is NULL */
-  char* prefix;
+  const char* prefix;
   /* The namespace where the file's metadata is stored */
-  char* files_ns;
+  const char* files_ns;
   /* The namespace where the files's data is stored in chunks */
-  char* chunks_ns;
+  const char* chunks_ns;
 } gridfs;
 
 /* A GridFile contains the GridFS it is located in and the file 
@@ -197,6 +197,6 @@ gridfs_offset gridfile_write_file(gridfile* gfile, FILE * stream);
  *  @param gfile - the working GridFile
  *  @param buf - the buffer to write to
  */
-gridfs_offset gridfile_write_buffer(gridfile* gfile, void * buf);
+gridfs_offset gridfile_write_buffer(gridfile* gfile, char * buf);
 
 #endif
