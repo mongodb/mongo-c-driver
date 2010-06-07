@@ -134,7 +134,9 @@ static bson gridfs_insert_file( gridfs* gfs, const char* name,
   /* Create and insert BSON for file metadata */
   bson_buffer_init(&buf);
   bson_append_oid(&buf, "_id", &id);
-  bson_append_string(&buf, "filename", name);
+  if (name != NULL && strlen(name) != 0) {
+    bson_append_string(&buf, "filename", name);
+  }
   bson_append_int(&buf, "length", length);
   bson_append_int(&buf, "chunkSize", DEFAULT_CHUNK_SIZE);
   bson_append_date(&buf, "uploadDate", (bson_date_t)1000*time(NULL));
@@ -177,10 +179,6 @@ bson gridfs_store_buffer( gridfs* gfs, const char* data,
     data += chunkLen;
   }
   
-  /* Untitled files */
-  if (remotename == NULL || strlen(remotename)==0) 
-    remotename = "untitled";
-
   /* Inserts file's metadata */
   return gridfs_insert_file(gfs, remotename, id, length, contenttype);
 }
@@ -226,8 +224,7 @@ bson gridfs_store_file(gridfs* gfs, const char* filename,
     remotename = filename; }
 
   /* Inserts file's metadata */
-  return gridfs_insert_file(gfs, remotename, id, length, 
-			   contenttype);
+  return gridfs_insert_file(gfs, remotename, id, length, contenttype);
 }
 
 /*--------------------------------------------------------------------*/
