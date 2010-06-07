@@ -331,6 +331,7 @@ int gridfile_init(gridfs* gfs, bson* obj, gridfile* gfile)
 
 {
   gfile->gfs = gfs;
+  gfile->pos = 0;
   gfile->obj = (bson*)malloc(sizeof(bson));
   if (gfile->obj == NULL) return FALSE;
   bson_copy(gfile->obj, obj);
@@ -537,3 +538,50 @@ gridfs_offset gridfile_write_buffer(gridfile* gfile, char * buf)
 }
  
 /*--------------------------------------------------------------------*/
+
+size_t gridfile_read(gridfile* gfile, size_t size, char* buf)
+
+{
+  int n;  
+  size_t i = 0;
+  size_t chunksize;
+  size_t contentlength;
+  size_t len;
+  bson chunk;
+  bson_iterator it;
+  const char * data;
+  
+ 
+  contentlength = gridfile_get_contentlength(gfile);
+  chunksize = gridfile_get_chunksize(gfile);
+  size = (contentlength - gfile->pos < size)  
+    ? contentlength - gfile->pos
+    : size;
+  for (i = 0; i < size; i++) {
+    if ((gfile->pos+i)/chunksize != n) {
+      n = (gfile->pos+i)/chunksize;
+      chunk = gridfile_get_chunk(gfile, n);
+      bson_find( &it, &chunk, "data" );
+      len = bson_iterator_bin_len( &it );
+      data = bson_iterator_bin_data( &it );
+      data += (gfile->pos+i)%chunksize;
+    }
+    *buf = *data;
+    buf++;
+    data++;
+  }
+  gfile->pos = gfile->pos + size;
+  return size;
+}
+    
+/*--------------------------------------------------------------------*/
+
+size_t gridfile_seek(gridfile* gfile, size_t offset)
+
+{
+  size_t length; 
+
+  length = gridfile_get_contentlength(gfile);
+  gfile->pos = length < offset ? length : offset;
+  return gfile->pos;
+}

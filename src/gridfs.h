@@ -36,6 +36,8 @@ typedef struct {
   gridfs* gfs;
   /* The GridFile's bson object where all it's metadata is located */
   bson* obj;
+  /* The position is the offset in the file */
+  size_t pos;
 } gridfile;
 
 /*--------------------------------------------------------------------*/
@@ -198,5 +200,25 @@ gridfs_offset gridfile_write_file(gridfile* gfile, FILE * stream);
  *  @param buf - the buffer to write to
  */
 gridfs_offset gridfile_write_buffer(gridfile* gfile, char * buf);
+
+/** Reads length bytes from the GridFile to a buffer 
+ *  and updates the position in the file. 
+ *  (assumes the buffer is large enough)
+ *  (if size is greater than EOF gridfile_read reads until EOF)
+ *  @param gfile - the working GridFile
+ *  @param size - the amount of bytes to be read
+ *  @param buf - the buffer to read to
+ *  @return - the number of bytes read
+ */
+size_t gridfile_read(gridfile* gfile, size_t size, char* buf);
+
+/** Updates the position in the file
+ *  (If the offset goes beyond the contentlength,
+ *  the position is updated to the end of the file.)
+ *  @param gfile - the working GridFile
+ *  @param offset - the position to update to
+ *  @return - resulting offset location
+ */
+size_t gridfile_seek(gridfile* gfile, size_t offset);
 
 #endif
