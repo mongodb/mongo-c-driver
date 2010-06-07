@@ -165,6 +165,9 @@ bson gridfs_store_buffer( gridfs* gfs, const char* data,
   int chunkLen;
   bson * oChunk;
 
+  /* Large files Assertion */
+  assert(length <= 0xffffffff);
+
   /* Generate and append an oid*/ 
   bson_oid_gen(&id);
   
@@ -217,7 +220,8 @@ bson gridfs_store_file(gridfs* gfs, const char* filename,
   /* Close the file stream */
   if (fd != stdin) fclose(fd);
 
-  // Large files assertion?
+  /* Large files Assertion */
+  assert(length <= 0xffffffff);
   
   /* Optional Remote Name */
   if (remotename == NULL || strlen(remotename)==0) {
