@@ -322,7 +322,7 @@ mongo_reply * mongo_read_response( mongo_connection * conn ){
 
 mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bson* fields, int nToReturn, int nToSkip, int options){
     int sl;
-    mongo_cursor * cursor;
+    volatile mongo_cursor * cursor;
     char * data;
     mongo_message * mm = mongo_message_create( 16 + /* header */
                                                4 + /*  options */
@@ -351,7 +351,7 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bs
     MONGO_TRY{
         cursor->mm = mongo_read_response(conn);
     }MONGO_CATCH{
-        free(cursor);
+      free((mongo_cursor*)cursor);
         MONGO_RETHROW();
     }
 
@@ -359,13 +359,13 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bs
     cursor->ns = bson_malloc(sl);
     if (!cursor->ns){
         free(cursor->mm);
-        free(cursor);
+        free((mongo_cursor*)cursor);
         return 0;
     }
     memcpy((void*)cursor->ns, ns, sl); /* cast needed to silence GCC warning */
     cursor->conn = conn;
     cursor->current.data = NULL;
-    return cursor;
+    return (mongo_cursor*)cursor;
 }
 
 bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, bson* fields, bson* out){
