@@ -526,7 +526,7 @@ gridfs_offset gridfile_write_buffer(gridfile* gfile, char * buf)
   const char* data;
   const int num = gridfile_get_numchunks( gfile );
  
-  for ( int i=0; i<num; i++ ){
+  for ( i = 0; i < num; i++ ){
     chunk = gridfile_get_chunk( gfile, i );
     bson_find( &it, &chunk, "data" );
     len = bson_iterator_bin_len( &it );
@@ -543,23 +543,23 @@ gridfs_offset gridfile_write_buffer(gridfile* gfile, char * buf)
 size_t gridfile_read(gridfile* gfile, size_t size, char* buf)
 
 {
-  int n;  
-  size_t i = 0;
-  size_t chunksize;
-  size_t contentlength;
-  size_t len;
   bson chunk;
   bson_iterator it;
-  const char * data;
-  
+  size_t n = 0;  
+  size_t i = 0;
+  size_t chunksize = 0;
+  size_t contentlength = 0;
+  size_t len = 0;
+  const char * data = NULL;
  
   contentlength = gridfile_get_contentlength(gfile);
   chunksize = gridfile_get_chunksize(gfile);
   size = (contentlength - gfile->pos < size)  
     ? contentlength - gfile->pos
     : size;
+
   for (i = 0; i < size; i++) {
-    if ((gfile->pos+i)/chunksize != n) {
+    if (i == 0 || (gfile->pos+i)/chunksize != n) {
       n = (gfile->pos+i)/chunksize;
       chunk = gridfile_get_chunk(gfile, n);
       bson_find( &it, &chunk, "data" );
