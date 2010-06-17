@@ -49,7 +49,12 @@ static void chunk_free(bson * oChunk)
 int gridfs_init(mongo_connection * client, const char * dbname, 
 		const char * prefix, gridfs* gfs)
 {  
-  
+  int options;
+  bson_buffer bb;
+  bson b;
+  bson out;
+  bson_bool_t success;
+
   gfs->client = client;
   
   /* Allocate space to own the dbname */
@@ -94,6 +99,35 @@ int gridfs_init(mongo_connection * client, const char * dbname,
   strcat((char*)gfs->chunks_ns, ".");
   strcat((char*)gfs->chunks_ns, prefix);
   strcat((char*)gfs->chunks_ns, ".chunks");
+
+  bson_buffer_init(&bb);
+  bson_append_int(&bb, "filename", 1);
+  bson_from_buffer(&b, &bb);
+  options = 0;
+  success = mongo_create_index(gfs->client, gfs->files_ns, &b, options, &out);
+  bson_destroy(&b);
+  if (!success) {
+    free((char*)gfs->dbname);
+    free((char*)gfs->prefix);
+    free((char*)gfs->files_ns);
+    free((char*)gfs->chunks_ns);
+    return FALSE;
+  }
+  
+  bson_buffer_init(&bb);
+  bson_append_int(&bb, "files_id", 1);
+  bson_append_int(&bb, "n", 1);
+  bson_from_buffer(&b, &bb);
+  options = MONGO_INDEX_UNIQUE;
+  success = mongo_create_index(gfs->client, gfs->chunks_ns, &b, options, &out);
+  bson_destroy(&b);
+  if (!success) {
+    free((char*)gfs->dbname);
+    free((char*)gfs->prefix);
+    free((char*)gfs->files_ns);
+    free((char*)gfs->chunks_ns);
+    return FALSE;
+  }
   			      
   return TRUE;
 }
