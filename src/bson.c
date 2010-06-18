@@ -550,8 +550,8 @@ bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type,
 	bson_append32(b, &len);
 	bson_append_byte(b, type);
 	bson_append(b, str, len);
-	return b;
     }
+    return b;
 }
 bson_buffer * bson_append_oid( bson_buffer * b , const char * name , const bson_oid_t * oid ){
     if ( ! bson_append_estart( b , bson_oid , name , 12 ) ) return 0;
