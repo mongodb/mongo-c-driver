@@ -219,7 +219,9 @@ bson_type bson_iterator_next( bson_iterator * i ){
     case bson_string:
     case bson_symbol:
     case bson_code: ds = 4 + bson_iterator_int_raw(i); break;
-    case bson_bindata: ds = 5 + bson_iterator_int_raw(i); break;
+    case bson_bindata: ds = (bson_iterator_bin_type( i ) == 2)
+	? 9 + bson_iterator_int_raw(i)
+	: 5 + bson_iterator_int_raw(i); break;
     case bson_object:
     case bson_array:
     case bson_codewscope: ds = bson_iterator_int_raw(i); break;
@@ -365,14 +367,18 @@ time_t bson_iterator_time_t(const bson_iterator * i){
 }
 
 int bson_iterator_bin_len( const bson_iterator * i ){
-    return bson_iterator_int_raw( i );
+    return (bson_iterator_bin_type(i) == 2) 
+        ? bson_iterator_int_raw( i ) - 4
+        : bson_iterator_int_raw( i );
 }
 
 char bson_iterator_bin_type( const bson_iterator * i ){
     return bson_iterator_value(i)[4];
 }
 const char * bson_iterator_bin_data( const bson_iterator * i ){
-    return bson_iterator_value( i ) + 5;
+  return (bson_iterator_bin_type( i ) == 2) 
+    ? bson_iterator_value( i ) + 9
+    : bson_iterator_value( i ) + 5;
 }
 
 const char * bson_iterator_regex( const bson_iterator * i ){
@@ -532,11 +538,20 @@ bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , co
 }
 
 bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len ){
-    if ( ! bson_append_estart( b , bson_bindata , name , 4+1+len ) ) return 0;
-    bson_append32(b, &len);
-    bson_append_byte(b, type);
-    bson_append(b, str, len);
-    return b;
+    int subtwolen = len + 4;
+    if ( type == 2 ){
+        if ( ! bson_append_estart( b , bson_bindata , name , 4+1+4+len ) ) return 0;
+	bson_append32(b, &subtwolen);
+	bson_append_byte(b, type);
+	bson_append32(b, &len);
+	bson_append(b, str, len);  
+    }else{  
+        if ( ! bson_append_estart( b , bson_bindata , name , 4+1+len ) ) return 0;
+	bson_append32(b, &len);
+	bson_append_byte(b, type);
+	bson_append(b, str, len);
+	return b;
+    }
 }
 bson_buffer * bson_append_oid( bson_buffer * b , const char * name , const bson_oid_t * oid ){
     if ( ! bson_append_estart( b , bson_oid , name , 12 ) ) return 0;
