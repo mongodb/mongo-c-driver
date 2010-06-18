@@ -30,7 +30,7 @@ static bson * chunk_new(bson_oid_t id, int chunkNumber,
   bson_buffer_init(&buf);
   bson_append_oid(&buf, "files_id", &id);
   bson_append_int(&buf, "n", chunkNumber);
-  bson_append_binary(&buf, "data", 5, data, len);
+  bson_append_binary(&buf, "data", 2, data, len);
   bson_from_buffer(b, &buf);
   return  b; 
 }
@@ -242,14 +242,15 @@ bson gridfs_store_file(gridfs* gfs, const char* filename,
   bson_oid_gen(&id);
   
   /* Insert the file chunk by chunk */
+  chunkLen = fread(buffer, 1, DEFAULT_CHUNK_SIZE, fd);
   do {
-    chunkLen = fread(buffer, 1, DEFAULT_CHUNK_SIZE, fd);
     oChunk = chunk_new( id, chunkNumber, buffer, chunkLen );
     mongo_insert(gfs->client, gfs->chunks_ns, oChunk);
     chunk_free(oChunk);
     length += chunkLen;
     chunkNumber++;
-  } while (chunkLen == DEFAULT_CHUNK_SIZE);
+    chunkLen = fread(buffer, 1, DEFAULT_CHUNK_SIZE, fd);
+  } while (chunkLen != 0);
 
   /* Close the file stream */
   if (fd != stdin) fclose(fd);
