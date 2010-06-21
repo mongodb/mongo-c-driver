@@ -6,8 +6,6 @@
 #include "gridfs.h"
 #include "mongo.h"
 #include "bson.h"
-#include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -494,12 +492,16 @@ int gridfile_get_numchunks(gridfile* gfile)
   bson_iterator it;
   size_t length;
   size_t chunkSize;
+  double numchunks;
   
   bson_find(&it, gfile->obj, "length");
   length = bson_iterator_int(&it); 
   bson_find(&it, gfile->obj, "chunkSize");
   chunkSize = bson_iterator_int(&it);
-  return ceil((double)length/(double)chunkSize);
+  numchunks = ((double)length/(double)chunkSize);
+  return (numchunks - (int)numchunks > 0) 
+    ? (int)(numchunks+1)
+    : (int)(numchunks);
 }
 
 /*--------------------------------------------------------------------*/
