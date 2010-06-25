@@ -188,6 +188,14 @@ int gridfile_get_numchunks(gridfile* gfile);
  */
 bson gridfile_get_chunk(gridfile* gfile, int n);
 
+/** Returns a mongo_cursor of *size* chunks starting with chunk *start*
+ *  @param gfile - the working GridFile
+ *  @param start - the first chunk in the cursor
+ *  @param size - the number of chunks to be returned
+ *  @return - mongo_cursor of the chunks (must be destroyed after use)
+ */
+mongo_cursor* gridfile_get_chunks(gridfile* gfile, int start, int size);
+
 /** Writes the GridFile to a stream 
  *  @param gfile - the working GridFile
  *  @param stream - the file stream to write to

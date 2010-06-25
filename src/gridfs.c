@@ -531,6 +531,50 @@ bson gridfile_get_chunk(gridfile* gfile, int n)
 
 /*--------------------------------------------------------------------*/
 
+mongo_cursor* gridfile_get_chunks(gridfile* gfile, int start, int size)
+
+{
+  bson_iterator it;
+  bson_oid_t id;
+  bson_buffer gte_buf;
+  bson gte_bson;
+  bson_buffer query_buf;
+  bson query_bson;  
+  bson_buffer orderby_buf;
+  bson orderby_bson;
+  bson_buffer command_buf;
+  bson command_bson;
+    
+  bson_find(&it, gfile->meta, "_id");
+  id = *bson_iterator_oid(&it); 
+  
+  bson_buffer_init(&query_buf);
+  bson_append_oid(&query_buf, "files_id", &id);
+  if (size == 1) {
+    bson_append_int(&query_buf, "n", start);
+  } else {
+    bson_buffer_init(&gte_buf);
+    bson_append_int(&gte_buf, "$gte", start);
+    bson_from_buffer(&gte_bson, &gte_buf);
+    bson_append_bson(&query_buf, "n", &gte_bson);
+  }
+  bson_from_buffer(&query_bson, &query_buf);
+  
+  bson_buffer_init(&orderby_buf);
+  bson_append_int(&orderby_buf, "n", 1);
+  bson_from_buffer(&orderby_bson, &orderby_buf);
+
+  bson_buffer_init(&command_buf);
+  bson_append_bson(&command_buf, "query", &query_bson);
+  bson_append_bson(&command_buf, "orderby", &orderby_bson);
+  bson_from_buffer(&command_bson, &command_buf);
+  
+  return mongo_find(gfile->gfs->client, gfile->gfs->chunks_ns, 
+		    &command_bson, NULL, size, 0, 0);
+}
+
+/*--------------------------------------------------------------------*/
+
 gridfs_offset gridfile_write_file(gridfile* gfile, FILE *stream)
 
 {
@@ -581,35 +625,54 @@ gridfs_offset gridfile_write_buffer(gridfile* gfile, char * buf)
 gridfs_offset gridfile_read(gridfile* gfile, gridfs_offset size, char* buf)
 
 {
+  mongo_cursor* chunks;
   bson chunk;
+
+  int first_chunk;
+  int last_chunk;
+  int total_chunks;
+  gridfs_offset chunksize;
+  gridfs_offset contentlength;
+  gridfs_offset bytes_left;
+  int i; 
   bson_iterator it;
-  size_t n = 0;  
-  size_t i = 0;
-  gridfs_offset chunksize = 0;
-  gridfs_offset contentlength = 0;
-  gridfs_offset len = 0;
-  const char * data = NULL;
+  gridfs_offset chunk_len;
+  const char * chunk_data;
  
   contentlength = gridfile_get_contentlength(gfile);
   chunksize = gridfile_get_chunksize(gfile);
   size = (contentlength - gfile->pos < size)  
     ? contentlength - gfile->pos
     : size;
+  bytes_left = size;
 
-  for (i = 0; i < size; i++) {
-    if (i == 0 || (gfile->pos+i)/chunksize != n) {
-      n = (gfile->pos+i)/chunksize;
-      chunk = gridfile_get_chunk(gfile, n);
-      bson_find( &it, &chunk, "data" );
-      len = bson_iterator_bin_len( &it );
-      data = bson_iterator_bin_data( &it );
-      data += (gfile->pos+i)%chunksize;
+  first_chunk = (gfile->pos)/chunksize;
+  last_chunk = (gfile->pos+size-1)/chunksize;
+  total_chunks = last_chunk - first_chunk + 1;
+  chunks = gridfile_get_chunks(gfile, first_chunk, total_chunks);
+
+  for (i = 0; i < total_chunks; i++) {
+    mongo_cursor_next(chunks);
+    chunk = chunks->current;
+    bson_find(&it, &chunk, "data");
+    chunk_len = bson_iterator_bin_len( &it );
+    chunk_data = bson_iterator_bin_data( &it );
+    if (i == 0) {
+      chunk_data += (gfile->pos)%chunksize;
+      chunk_len -= (gfile->pos)%chunksize;
     }
-    *buf = *data;
-    buf++;
-    data++;
+    if (bytes_left > chunk_len) {
+      memcpy(buf, chunk_data, chunk_len);
+      bytes_left -= chunk_len;
+      buf += chunk_len;
+    } else {
+      memcpy(buf, chunk_data, bytes_left);
+    }
   }
+
+  mongo_cursor_destroy(chunks);
   gfile->pos = gfile->pos + size;
+
   return size;
 }
     
