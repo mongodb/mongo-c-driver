@@ -41,8 +41,10 @@
 #include <unistd.h>
 #elif defined(MONGO_USE__INT64)
 typedef __int64 int64_t;
+typedef unsigned __int64 uint64_t;
 #elif defined(MONGO_USE_LONG_LONG_INT)
 typedef long long int int64_t;
+typedef unsigned long long int uint64_t;
 #else
 #error must have a 64bit int type
 #endif

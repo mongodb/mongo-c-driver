@@ -5,14 +5,14 @@
 
 #include "mongo.h"
 #include "bson.h"
+#include "platform_hacks.h"
 #include <stdio.h>
-
 #ifndef GRIDFS_INCLUDED
 #define GRIDFS_INCLUDED
 
 enum {DEFAULT_CHUNK_SIZE = 256 * 1024};
 
-typedef unsigned long long gridfs_offset;
+typedef uint64_t gridfs_offset;
 
 /* A GridFS contains a db connections, a root database name, and a 
    optional prefix */
@@ -35,9 +35,9 @@ typedef struct {
   /* The GridFS where the GridFile is located */
   gridfs* gfs;
   /* The GridFile's bson object where all it's metadata is located */
-  bson* obj;
+  bson* meta;
   /* The position is the offset in the file */
-  size_t pos;
+  gridfs_offset pos;
 } gridfile;
 
 /*--------------------------------------------------------------------*/
@@ -65,7 +65,7 @@ void gridfs_destroy(gridfs* gfs);
  *  @param contenttype - optional MIME type for this object
  *  @return - the file object
  */
-bson gridfs_store_buffer(gridfs* gfs, const char* data, size_t length, 
+bson gridfs_store_buffer(gridfs* gfs, const char* data, gridfs_offset length, 
 			 const char* remotename, 
 			 const char * contenttype);
 
@@ -108,11 +108,11 @@ int gridfs_find_filename(gridfs* gfs, const char *filename,
 
 /** Initializes a  GridFile containing the GridFS and file bson
  *  @param gfs - the GridFS where the GridFile is located
- *  @param obj - the file object
+ *  @param meta - the file object
  *  @param gfile - the output GridFile that is being initialized
  *  @return 1 if successful, 0 otherwise
  */
-int gridfile_init(gridfs* gfs, bson* obj, gridfile* gfile);
+int gridfile_init(gridfs* gfs, bson* meta, gridfile* gfile);
 
 /** Destroys the GridFile 
  *  @param oGridFIle - the GridFile being destroyed
@@ -192,7 +192,7 @@ bson gridfile_get_chunk(gridfile* gfile, int n);
  *  @param gfile - the working GridFile
  *  @param stream - the file stream to write to
  */
-gridfs_offset gridfile_write_file(gridfile* gfile, FILE * stream);
+gridfs_offset gridfile_write_file(gridfile* gfile, FILE* stream);
 
 /** Writes the GridFile to a buffer 
  *  (assumes the buffer is large enough)
@@ -210,7 +210,7 @@ gridfs_offset gridfile_write_buffer(gridfile* gfile, char * buf);
  *  @param buf - the buffer to read to
  *  @return - the number of bytes read
  */
-size_t gridfile_read(gridfile* gfile, size_t size, char* buf);
+gridfs_offset gridfile_read(gridfile* gfile, gridfs_offset size, char* buf);
 
 /** Updates the position in the file
  *  (If the offset goes beyond the contentlength,
@@ -219,6 +219,6 @@ size_t gridfile_read(gridfile* gfile, size_t size, char* buf);
  *  @param offset - the position to update to
  *  @return - resulting offset location
  */
-size_t gridfile_seek(gridfile* gfile, size_t offset);
+gridfs_offset gridfile_seek(gridfile* gfile, gridfs_offset offset);
 
 #endif
