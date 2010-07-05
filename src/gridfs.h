@@ -167,8 +167,18 @@ const char* gridfile_get_md5(gridfile* gfile);
  *  @return - the data of the field specified
  *            (NULL if none exists)
  */
-const char *gridfile_get_filefield(gridfile* gfile, 
-				  const char* name);
+const char *gridfile_get_field(gridfile* gfile,
+                                 const char* name);
+
+/** Returns a boolean field in GridFile specified by name
+ *  @param gfile - the working GridFile
+ *  @param name - the name of the field to be returned
+ *  @return - the boolean of the field specified
+ *            (NULL if none exists)
+ */
+bson_bool_t gridfile_get_boolean(gridfile* gfile,
+                                 const char* name);
+
 /** Returns the metadata of GridFile
  *  @param gfile - the working GridFile
  *  @return - the metadata of the Gridfile in a bson object
