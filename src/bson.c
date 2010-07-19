@@ -535,8 +535,8 @@ bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , co
 }
 
 bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len ){
-    int subtwolen = len + 4;
     if ( type == 2 ){
+        int subtwolen = len + 4;
         if ( ! bson_append_estart( b , bson_bindata , name , 4+1+4+len ) ) return 0;
 	bson_append32(b, &subtwolen);
 	bson_append_byte(b, type);
