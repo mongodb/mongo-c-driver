@@ -212,13 +212,6 @@ mongo_cursor* gridfile_get_chunks(gridfile* gfile, int start, int size);
  */
 gridfs_offset gridfile_write_file(gridfile* gfile, FILE* stream);
 
-/** Writes the GridFile to a buffer 
- *  (assumes the buffer is large enough)
- *  @param gfile - the working GridFile
- *  @param buf - the buffer to write to
- */
-gridfs_offset gridfile_write_buffer(gridfile* gfile, char * buf);
-
 /** Reads length bytes from the GridFile to a buffer 
  *  and updates the position in the file. 
  *  (assumes the buffer is large enough)

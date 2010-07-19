@@ -605,30 +605,6 @@ gridfs_offset gridfile_write_file(gridfile* gfile, FILE *stream)
 
   return gridfile_get_contentlength(gfile);
 }
-
-/*--------------------------------------------------------------------*/
-
-gridfs_offset gridfile_write_buffer(gridfile* gfile, char * buf)
-
-{
-  int i;
-  gridfs_offset len;
-  bson chunk;
-  bson_iterator it;
-  const char* data;
-  const int num = gridfile_get_numchunks( gfile );
- 
-  for ( i = 0; i < num; i++ ){
-    chunk = gridfile_get_chunk( gfile, i );
-    bson_find( &it, &chunk, "data" );
-    len = bson_iterator_bin_len( &it );
-    data = bson_iterator_bin_data( &it );
-    memcpy( buf, data, len);
-    buf += len;
-  }
-  
-  return gridfile_get_contentlength(gfile);
-}
  
 /*--------------------------------------------------------------------*/
 
