@@ -27,5 +27,7 @@ int main(){
     mongo_cmd_add_user(conn, db, "user", "password");
     ASSERT(mongo_cmd_authenticate(conn, db, "user", "password") == 1);
 
+    mongo_cmd_drop_db(conn, db);
+    mongo_destroy(conn);
     return 0;
 }

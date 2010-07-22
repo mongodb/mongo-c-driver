@@ -70,5 +70,7 @@ int main(){
     ASSERT(!mongo_cmd_get_last_error(conn, db, &obj));
     bson_destroy(&obj);
 
+    mongo_cmd_drop_db(conn, db);
+    mongo_destroy(conn);
     return 0;
 }

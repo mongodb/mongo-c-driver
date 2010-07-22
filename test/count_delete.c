@@ -63,6 +63,7 @@ int main(){
     ASSERT(mongo_count(conn, db, col, NULL) == 3);
     ASSERT(mongo_count(conn, db, col, &b) == 0);
 
-    mongo_destroy( conn );
+    mongo_cmd_drop_db(conn, db);
+    mongo_destroy(conn);
     return 0;
 }
