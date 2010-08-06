@@ -235,7 +235,7 @@ bson gridfs_store_file(gridfs* gfs, const char* filename,
   /* Open the file and the correct stream */
   if (strcmp(filename, "-") == 0) fd = stdin;
   else fd = fopen(filename, "rb");
-  assert(fd != NULL); // No such file
+  assert(fd != NULL); /* No such file */
 
   /* Generate and append an oid*/
   bson_oid_gen(&id);

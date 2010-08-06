@@ -76,7 +76,7 @@ if sys.byteorder == 'big':
 env.Append( CPPPATH=["src/"] )
 
 coreFiles = ["src/md5.c" ]
-mFiles = [ "src/mongo.c"]
+mFiles = [ "src/mongo.c", "src/gridfs.c"]
 bFiles = [ "src/bson.c", "src/numbers.c"]
 mLibFiles = coreFiles + mFiles + bFiles
 bLibFiles = coreFiles + bFiles
@@ -96,7 +96,7 @@ benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )
 testEnv = benchmarkEnv.Clone()
 testCoreFiles = [ ]
 
-tests = Split('sizes resize endian_swap all_types simple update errors count_delete auth pair')
+tests = Split('sizes resize endian_swap all_types simple update errors count_delete auth pair gridfs')
 
 if have_libjson:
     tests.append('json')
