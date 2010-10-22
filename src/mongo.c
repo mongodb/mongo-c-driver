@@ -293,6 +293,10 @@ mongo_reply * mongo_read_response( mongo_connection * conn ){
     looping_read(conn, &fields, sizeof(fields));
 
     bson_little_endian32(&len, &head.len);
+
+    if (len < sizeof(head)+sizeof(fields) || len > 64*1024*1024)
+        MONGO_THROW(MONGO_EXCEPT_NETWORK); /* most likely corruption */
+
     out = (mongo_reply*)bson_malloc(len);
 
     out->head.len = len;
