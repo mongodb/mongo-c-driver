@@ -7,7 +7,6 @@
 int main(){
     bson_buffer bb;
     bson b;
-    bson bp;
     bson_iterator it, it2, it3;
     bson_oid_t oid;
     bson_timestamp_t ts;
