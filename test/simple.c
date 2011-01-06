@@ -14,12 +14,13 @@ int main(){
     mongo_cursor * cursor;
     int i;
     char hex_oid[25];
+    bson_timestamp_t ts = { 1, 2 };
 
     const char * col = "c.simple";
     const char * ns = "test.c.simple";
 
     INIT_SOCKETS_FOR_WINDOWS;
-    
+
     strncpy(opts.host, TEST_SERVER, 255);
     opts.host[254] = '\0';
     opts.port = 27017;
@@ -40,6 +41,7 @@ int main(){
         bson_buffer_init( & bb );
 
         bson_append_new_oid( &bb, "_id" );
+        bson_append_timestamp( &bb, "ts", &ts );
         bson_append_double( &bb , "a" , 17 );
         bson_append_int( &bb , "b" , 17 );
         bson_append_string( &bb , "c" , "17" );
@@ -60,7 +62,7 @@ int main(){
         mongo_insert( conn , ns , &b );
         bson_destroy(&b);
     }
-    
+
     cursor = mongo_find( conn , ns , bson_empty(&b) , 0 , 0 , 0 , 0 );
 
     while (mongo_cursor_next(cursor)){
@@ -88,6 +90,9 @@ int main(){
                     break;
                 case bson_array:
                     fprintf(stderr, "(array) [...]\n");
+                    break;
+                case bson_timestamp:
+                    fprintf(stderr, "(timestamp) [...]\n");
                     break;
                 default:
                     fprintf(stderr, "(type %d)\n", bson_iterator_type(&it));

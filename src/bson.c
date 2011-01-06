@@ -139,6 +139,7 @@ void bson_print_raw( const char * data , int depth ){
     bson_iterator i;
     const char * key;
     int temp;
+    bson_timestamp_t ts;
     char oidhex[25];
     bson_iterator_init( &i , data );
 
@@ -147,7 +148,7 @@ void bson_print_raw( const char * data , int depth ){
         if ( t == 0 )
             break;
         key = bson_iterator_key( &i );
-        
+
         for ( temp=0; temp<=depth; temp++ )
             printf( "\t" );
         printf( "%s : %d \t " , key , t );
@@ -158,6 +159,10 @@ void bson_print_raw( const char * data , int depth ){
         case bson_string: printf( "%s" , bson_iterator_string( &i ) ); break;
         case bson_null: printf( "null" ); break;
         case bson_oid: bson_oid_to_string(bson_iterator_oid(&i), oidhex); printf( "%s" , oidhex ); break;
+        case bson_timestamp:
+            ts = bson_iterator_timestamp( &i );
+            printf("i: %d, t: %d", ts.i, ts.t);
+            break;
         case bson_object:
         case bson_array:
             printf( "\n" );
@@ -304,6 +309,13 @@ int64_t bson_iterator_long( const bson_iterator * i ){
         case bson_double: return bson_iterator_double_raw(i);
         default: return 0;
     }
+}
+
+bson_timestamp_t bson_iterator_timestamp( const bson_iterator * i){
+    bson_timestamp_t ts;
+    bson_little_endian32(&(ts.i), bson_iterator_value(i));
+    bson_little_endian32(&(ts.t), bson_iterator_value(i) + 4);
+    return ts;
 }
 
 bson_bool_t bson_iterator_bool( const bson_iterator * i ){
@@ -572,6 +584,15 @@ bson_buffer * bson_append_element( bson_buffer * b, const char * name_or_null, c
     return b;
 }
 
+bson_buffer * bson_append_timestamp( bson_buffer * b, const char * name, bson_timestamp_t * ts ){
+    if ( ! bson_append_estart( b , bson_timestamp , name , 8 ) ) return 0;
+
+    bson_append32( b , &(ts->i) );
+    bson_append32( b , &(ts->t) );
+
+    return b;
+}
+
 bson_buffer * bson_append_date( bson_buffer * b , const char * name , bson_date_t millis ){
     if ( ! bson_append_estart( b , bson_date , name , 8 ) ) return 0;
     bson_append64( b , &millis );
@@ -601,7 +622,7 @@ bson_buffer * bson_append_finish_object( bson_buffer * b ){
     int i;
     if ( ! bson_ensure_space( b , 1 ) ) return 0;
     bson_append_byte( b , 0 );
-    
+
     start = b->buf + b->stack[ --b->stackPos ];
     i = b->cur - start;
     bson_little_endian32(start, &i);

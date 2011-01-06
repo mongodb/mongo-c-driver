@@ -75,10 +75,14 @@ typedef union{
 
 typedef int64_t bson_date_t; /* milliseconds since epoch UTC */
 
+typedef struct {
+  int i; /* increment */
+  int t; /* time in seconds */
+} bson_timestamp_t;
+
 /* ----------------------------
    READING
    ------------------------------ */
-
 
 bson * bson_empty(bson * obj); /* returns pointer to static empty bson object */
 void bson_copy(bson* out, const bson* in); /* puts data in new buffer. NOOP if out==NULL */
@@ -108,6 +112,9 @@ const char * bson_iterator_value( const bson_iterator * i );
 double bson_iterator_double( const bson_iterator * i );
 int bson_iterator_int( const bson_iterator * i );
 int64_t bson_iterator_long( const bson_iterator * i );
+
+/* return the bson timestamp as a whole or in parts */
+bson_timestamp_t bson_iterator_timestamp( const bson_iterator * i );
 
 /* false: boolean false, 0 in any type, or null */
 /* true: anything else (even empty strings and objects) */
@@ -182,6 +189,7 @@ bson_buffer * bson_append_undefined( bson_buffer * b , const char * name );
 bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const char * pattern, const char * opts );
 bson_buffer * bson_append_bson( bson_buffer * b , const char * name , const bson* bson);
 bson_buffer * bson_append_element( bson_buffer * b, const char * name_or_null, const bson_iterator* elem);
+bson_buffer * bson_append_timestamp( bson_buffer * b, const char * name, bson_timestamp_t * ts );
 
 /* these both append a bson_date */
 bson_buffer * bson_append_date(bson_buffer * b, const char * name, bson_date_t millis);

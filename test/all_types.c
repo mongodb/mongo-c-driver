@@ -7,8 +7,14 @@
 int main(){
     bson_buffer bb;
     bson b;
+    bson bp;
     bson_iterator it, it2, it3;
     bson_oid_t oid;
+    bson_timestamp_t ts;
+    bson_timestamp_t ts_result;
+
+    ts.i = 1;
+    ts.t = 2;
 
     bson_buffer_init(&bb);
     bson_append_double(&bb, "d", 3.14);
@@ -48,13 +54,15 @@ int main(){
         bson_destroy(&scope);
     }
 
-    /* no timestamp test (internal) */
+    bson_append_timestamp(&bb, "timestamp", &ts);
     bson_append_long(&bb, "l", 0x1122334455667788);
 
     bson_from_buffer(&b, &bb);
 
+    bson_print(&b);
+
     bson_iterator_init(&it, b.data);
-    
+
     ASSERT(bson_iterator_more(&it));
     ASSERT(bson_iterator_next(&it) == bson_double);
     ASSERT(bson_iterator_type(&it) == bson_double);
@@ -86,7 +94,7 @@ int main(){
     ASSERT(bson_iterator_bin_type(&it3) == 8);
     ASSERT(bson_iterator_bin_len(&it3) == 5);
     ASSERT(!memcmp(bson_iterator_bin_data(&it3), "w\0rld", 5));
-    
+
     ASSERT(bson_iterator_more(&it3));
     ASSERT(bson_iterator_next(&it3) == bson_eoo);
     ASSERT(bson_iterator_type(&it3) == bson_eoo);
@@ -101,7 +109,6 @@ int main(){
     ASSERT(bson_iterator_next(&it) == bson_undefined);
     ASSERT(bson_iterator_type(&it) == bson_undefined);
     ASSERT(!strcmp(bson_iterator_key(&it), "u"));
-
 
     ASSERT(bson_iterator_more(&it));
     ASSERT(bson_iterator_next(&it) == bson_oid);
@@ -173,6 +180,14 @@ int main(){
     }
 
     ASSERT(bson_iterator_more(&it));
+    ASSERT(bson_iterator_next(&it) == bson_timestamp);
+    ASSERT(bson_iterator_type(&it) == bson_timestamp);
+    ASSERT(!strcmp(bson_iterator_key(&it), "timestamp"));
+    ts_result = bson_iterator_timestamp(&it);
+    ASSERT( ts_result.i == 1 );
+    ASSERT( ts_result.t == 2);
+
+    ASSERT(bson_iterator_more(&it));
     ASSERT(bson_iterator_next(&it) == bson_long);
     ASSERT(bson_iterator_type(&it) == bson_long);
     ASSERT(!strcmp(bson_iterator_key(&it), "l"));
@@ -182,10 +197,7 @@ int main(){
     ASSERT(bson_iterator_next(&it) == bson_eoo);
     ASSERT(bson_iterator_type(&it) == bson_eoo);
     ASSERT(!bson_iterator_more(&it));
-    
+
     return 0;
 }
 
-
-        
-        
