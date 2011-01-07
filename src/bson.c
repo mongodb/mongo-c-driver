@@ -511,7 +511,8 @@ bson_buffer * bson_append_string_base( bson_buffer * b , const char * name , con
     int sl = len + 1;
     if ( ! bson_append_estart( b , type , name , 4 + sl ) ) return 0;
     bson_append32( b , &sl);
-    bson_append( b , value , sl );
+    bson_append( b , value , sl - 1 );
+    bson_append( b , "\0" , 1 );
     return b;
 }
 bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * value ){
