@@ -507,25 +507,33 @@ bson_buffer * bson_append_undefined( bson_buffer * b , const char * name ){
     if ( ! bson_append_estart( b , bson_undefined , name , 0 ) ) return 0;
     return b;
 }
-bson_buffer * bson_append_string_base( bson_buffer * b , const char * name , const char * value , bson_type type){
-    int sl = strlen( value ) + 1;
+bson_buffer * bson_append_string_base( bson_buffer * b , const char * name , const char * value , int len , bson_type type){
+    int sl = len + 1;
     if ( ! bson_append_estart( b , type , name , 4 + sl ) ) return 0;
     bson_append32( b , &sl);
     bson_append( b , value , sl );
     return b;
 }
 bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * value ){
-    return bson_append_string_base(b, name, value, bson_string);
+    return bson_append_string_base(b, name, value, strlen ( value ), bson_string);
 }
 bson_buffer * bson_append_symbol( bson_buffer * b , const char * name , const char * value ){
-    return bson_append_string_base(b, name, value, bson_symbol);
+    return bson_append_string_base(b, name, value, strlen ( value ), bson_symbol);
 }
 bson_buffer * bson_append_code( bson_buffer * b , const char * name , const char * value ){
-    return bson_append_string_base(b, name, value, bson_code);
+    return bson_append_string_base(b, name, value, strlen ( value ), bson_code);
 }
-
-bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , const char * code , const bson * scope){
-    int sl = strlen(code) + 1;
+bson_buffer * bson_append_string_n( bson_buffer * b , const char * name , const char * value , int len ){
+    return bson_append_string_base(b, name, value, len, bson_string);
+}
+bson_buffer * bson_append_symbol_n( bson_buffer * b , const char * name , const char * value , int len ){
+    return bson_append_string_base(b, name, value, len, bson_symbol);
+}
+bson_buffer * bson_append_code_n( bson_buffer * b , const char * name , const char * value , int len ){
+    return bson_append_string_base(b, name, value, len, bson_code);
+}
+bson_buffer * bson_append_code_w_scope_n( bson_buffer * b , const char * name , const char * code , int len , const bson * scope){
+    int sl = len + 1;
     int size = 4 + 4 + sl + bson_size(scope);
     if (!bson_append_estart(b, bson_codewscope, name, size)) return 0;
     bson_append32(b, &size);
@@ -533,6 +541,9 @@ bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , co
     bson_append(b, code, sl);
     bson_append(b, scope->data, bson_size(scope));
     return b;
+}
+bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , const char * code , const bson * scope){
+    return bson_append_code_w_scope_n( b, name, code, strlen ( code ), scope );
 }
 
 bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len ){

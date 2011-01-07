@@ -179,9 +179,13 @@ bson_buffer * bson_append_int( bson_buffer * b , const char * name , const int i
 bson_buffer * bson_append_long( bson_buffer * b , const char * name , const int64_t i );
 bson_buffer * bson_append_double( bson_buffer * b , const char * name , const double d );
 bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * str );
+bson_buffer * bson_append_string_n( bson_buffer * b, const char * name, const char * str , int len);
 bson_buffer * bson_append_symbol( bson_buffer * b , const char * name , const char * str );
+bson_buffer * bson_append_symbol_n( bson_buffer * b , const char * name , const char * str , int len );
 bson_buffer * bson_append_code( bson_buffer * b , const char * name , const char * str );
+bson_buffer * bson_append_code_n( bson_buffer * b , const char * name , const char * str , int len );
 bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , const char * code , const bson * scope);
+bson_buffer * bson_append_code_w_scope_n( bson_buffer * b , const char * name , const char * code , int size , const bson * scope);
 bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len );
 bson_buffer * bson_append_bool( bson_buffer * b , const char * name , const bson_bool_t v );
 bson_buffer * bson_append_null( bson_buffer * b , const char * name );
