@@ -18,6 +18,7 @@ int main(){
     bson_buffer_init(&bb);
     bson_append_double(&bb, "d", 3.14);
     bson_append_string(&bb, "s", "hello");
+    bson_append_string_n(&bb, "s_n", "goodbye cruel world", 7);
 
     {
         bson_buffer *obj = bson_append_start_object(&bb, "o");
@@ -39,7 +40,9 @@ int main(){
     bson_append_regex(&bb, "r", "^asdf", "imx");
     /* no dbref test (deprecated) */
     bson_append_code(&bb, "c", "function(){}");
+    bson_append_code_n(&bb, "c_n", "function(){}garbage", 12);
     bson_append_symbol(&bb, "symbol", "SYMBOL");
+    bson_append_symbol_n(&bb, "symbol_n", "SYMBOL and garbage", 6);
 
     {
         bson_buffer scope_buf;
@@ -72,6 +75,12 @@ int main(){
     ASSERT(bson_iterator_type(&it) == bson_string);
     ASSERT(!strcmp(bson_iterator_key(&it), "s"));
     ASSERT(!strcmp(bson_iterator_string(&it), "hello"));
+
+    ASSERT(bson_iterator_more(&it));
+    ASSERT(bson_iterator_next(&it) == bson_string);
+    ASSERT(bson_iterator_type(&it) == bson_string);
+    ASSERT(!strcmp(bson_iterator_key(&it), "s_n"));
+    ASSERT(!strcmp(bson_iterator_string(&it), "goodbye"));
 
     ASSERT(bson_iterator_more(&it));
     ASSERT(bson_iterator_next(&it) == bson_object);
@@ -149,9 +158,22 @@ int main(){
     ASSERT(!strcmp(bson_iterator_code(&it), "function(){}"));
 
     ASSERT(bson_iterator_more(&it));
+    ASSERT(bson_iterator_next(&it) == bson_code);
+    ASSERT(bson_iterator_type(&it) == bson_code);
+    ASSERT(!strcmp(bson_iterator_key(&it), "c_n"));
+    ASSERT(!strcmp(bson_iterator_string(&it), "function(){}"));
+    ASSERT(!strcmp(bson_iterator_code(&it), "function(){}"));
+
+    ASSERT(bson_iterator_more(&it));
     ASSERT(bson_iterator_next(&it) == bson_symbol);
     ASSERT(bson_iterator_type(&it) == bson_symbol);
     ASSERT(!strcmp(bson_iterator_key(&it), "symbol"));
+    ASSERT(!strcmp(bson_iterator_string(&it), "SYMBOL"));
+
+    ASSERT(bson_iterator_more(&it));
+    ASSERT(bson_iterator_next(&it) == bson_symbol);
+    ASSERT(bson_iterator_type(&it) == bson_symbol);
+    ASSERT(!strcmp(bson_iterator_key(&it), "symbol_n"));
     ASSERT(!strcmp(bson_iterator_string(&it), "SYMBOL"));
 
     ASSERT(bson_iterator_more(&it));
