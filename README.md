@@ -1,23 +1,26 @@
+# MongoDB C Driver
+
 This is a very basic MongoDB c driver. This is an alpha release.
 
-Please post tickets and improvements at http://jira.mongodb.org/browse/CDRIVER
+Please post tickets and improvements to [JIRA](http://jira.mongodb.org/browse/CDRIVER).
 
 The goal is to be super strict for ultimate portability, no dependencies, and very embeddable anywhere.
 
 You will need JSON-C (http://oss.metaparadigm.com/json-c/) to compile the unit tests, but it is not required for the main libraries.
 
-Building with scons:
-scons # this will produce libbson.a and libmongoc.a
-scons --c99 # this will use c99 mode in gcc (recommended)
-scons test # this will compile and run the unit tests (optional)
-scons test --test-server=123.4.5.67 # use remote server for tests
+## Building with scons:
+    scons # this will produce libbson.a and libmongoc.a
+    scons --c99 # this will use c99 mode in gcc (recommended)
+    scons test # this will compile and run the unit tests (optional)
+    scons test --test-server=123.4.5.67 # use remote server for tests
 
-Building with gcc:
-gcc --std=c99 -Isrc src/*.c YOUR_APP.c # No -Ddefines are needed in c99 mode on little endien
+## Building with gcc:
+    gcc --std=c99 -Isrc src/*.c YOUR_APP.c # No -Ddefines are needed in c99 mode on little endien
 
-Building with MSVC:
+## Building with MSVC:
 TODO
 
+## #define options
 #define options (you must use the same flags to compile all apps and libs):
 MONGO_BIG_ENDIAN             This must be defined if on a big endian architecture
 
@@ -32,7 +35,7 @@ MONGO_USE__INT64             Define this if '__int64' is your compiler's 64bit t
 MONGO_USE_LONG_LONG_INT      Define this if 'long long int' is your compiler's 64bit type
 
 
-Error Handling:
+## Error Handling:
 I'm using an exception system based on cexcept. If you would like to gracefully
 handle errors, take a look at src/mongo_except.h. It is currently only used for
 network failures, but more errors will be used in the future.
@@ -47,7 +50,7 @@ GridFS
 safe-mode modifications (maybe)
 cached ensure_index (maybe)
 
-LICENSE
+## LICENSE
 
 Unless otherwise specified in a source file, sources in this
 repository are published under the terms of the Apache License version
