@@ -717,7 +717,7 @@ void mongo_cmd_add_user(mongo_connection* conn, const char* db, const char* user
     bson user_obj;
     bson pass_obj;
     char hex_digest[33];
-    char* ns = malloc(strlen(db) + strlen(".system.users") + 1);
+    char* ns = bson_malloc(strlen(db) + strlen(".system.users") + 1);
 
     strcpy(ns, db);
     strcpy(ns+strlen(db), ".system.users");
