@@ -121,6 +121,7 @@ static int mongo_connect_helper( mongo_connection * conn ){
     /* connect */
     conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
     if ( conn->sock <= 0 ){
+        mongo_close_socket( conn->sock );
         return mongo_conn_no_socket;
     }
 
@@ -412,11 +413,7 @@ bson_bool_t mongo_disconnect( mongo_connection * conn ){
     if ( ! conn->connected )
         return 1;
 
-#ifdef _WIN32
-    closesocket( conn->sock );
-#else
-    close( conn->sock );
-#endif
+    mongo_close_socket( conn->sock );
     
     conn->sock = 0;
     conn->connected = 0;

@@ -24,6 +24,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <winsock.h>
+#define mongo_close_socket(sock) ( closesocket(close) )
 typedef int socklen_t;
 #else
 #include <arpa/inet.h>
@@ -31,6 +32,7 @@ typedef int socklen_t;
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#define mongo_close_socket(sock) ( close(sock) )
 #endif
 
 MONGO_EXTERN_C_START
