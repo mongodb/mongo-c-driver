@@ -1,4 +1,6 @@
-This is a very basic MongoDB c driver. This is an alpha release, please email mathias@10gen.com if you run into issues or have API suggestions.
+This is a very basic MongoDB c driver. This is an alpha release.
+
+Please post tickets and improvements at http://jira.mongodb.org/browse/CDRIVER
 
 The goal is to be super strict for ultimate portability, no dependencies, and very embeddable anywhere.
 
