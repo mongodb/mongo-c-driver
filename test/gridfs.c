@@ -15,7 +15,7 @@ void fill_buffer_randomly(char * data, size_t length)
     int i, random;
     char * letters = "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     int nletters = strlen(letters)+1;
-    
+
     for (i = 0; i < length; i++) {
         random = rand() % nletters;
         data[i] = letters[random];
@@ -42,18 +42,18 @@ void test_gridfile(gridfs *gfs, char *data_before, size_t length, char *filename
 
     gridfs_find_filename(gfs, filename, gfile);
     ASSERT(gridfile_exists(gfile));
-    
+
     fd = fopen("output", "w+");
     gridfile_write_file(gfile, fd);
     fseek(fd, 0, SEEK_SET);
     ASSERT(fread(data_after, length, sizeof(char), fd));
     fclose(fd);
     ASSERT( strncmp(data_before, data_after, length) == 0 );
-    
+
     gridfile_read( gfile, length, data_after);
     ASSERT( strncmp(data_before, data_after, length) == 0 );
 
-    ASSERT( strcmp( gridfile_get_filename( gfile ), filename ) == 0 ); 
+    ASSERT( strcmp( gridfile_get_filename( gfile ), filename ) == 0 );
 
     ASSERT( gridfile_get_contentlength( gfile ) == length );
 
@@ -78,7 +78,7 @@ int main(void) {
     char data_before[UPPER];
     size_t i;
     FILE *fd;
-    
+
     srand(time(NULL));
 
     INIT_SOCKETS_FOR_WINDOWS;
@@ -92,24 +92,24 @@ int main(void) {
         printf("failed to connect\n");
         exit(1);
     }
-      
+
     gridfs_init(conn, "test", "fs", gfs);
-    
+
     for (i = LOWER; i <= UPPER; i+=DELTA) {
         fill_buffer_randomly(data_before, i);
-        
-        /* Input from buffer */ 
+
+        /* Input from buffer */
         gridfs_store_buffer(gfs, data_before, i, "input-buffer", "text/html");
         test_gridfile(gfs, data_before, i, "input-buffer", "text/html");
-        
+
         /* Input from file */
         fd = fopen("input-file", "w");
         fwrite(data_before, sizeof(char), i, fd);
-        fclose(fd);  
+        fclose(fd);
         gridfs_store_file(gfs, "input-file", "input-file", "text/html");
         test_gridfile(gfs, data_before, i, "input-file", "text/html");
     }
-    
+
     gridfs_destroy(gfs);
     mongo_cmd_drop_db(conn, "test");
     mongo_destroy(conn);
