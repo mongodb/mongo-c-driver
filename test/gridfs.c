@@ -6,19 +6,21 @@
 #include <string.h>
 #include <stdio.h>
 
-#define UPPER 1024*1024
+#define LARGE 3*1024*1024
+#define UPPER 2000*1024
 #define LOWER 1024*128
 #define DELTA 1024*128
 
-void fill_buffer_randomly(char * data, size_t length)
+void fill_buffer_randomly(char * data, int64_t length)
 {
-    int i, random;
+    int64_t i;
+    int random;
     char * letters = "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     int nletters = strlen(letters)+1;
 
     for (i = 0; i < length; i++) {
         random = rand() % nletters;
-        data[i] = letters[random];
+        *(data + i) = letters[random];
     }
 }
 
@@ -32,9 +34,9 @@ static void digest2hex(mongo_md5_byte_t digest[16], char hex_digest[33]){
     hex_digest[32] = '\0';
 }
 
-void test_gridfile(gridfs *gfs, char *data_before, size_t length, char *filename, char *content_type) {
+void test_gridfile(gridfs *gfs, char *data_before, int64_t length, char *filename, char *content_type) {
     gridfile gfile[1];
-    char data_after[UPPER];
+    char data_after[LARGE];
     FILE * fd;
     mongo_md5_state_t pms[1];
     mongo_md5_byte_t digest[16];
@@ -50,7 +52,7 @@ void test_gridfile(gridfs *gfs, char *data_before, size_t length, char *filename
     fclose(fd);
     ASSERT( strncmp(data_before, data_after, length) == 0 );
 
-    gridfile_read( gfile, length, data_after);
+    gridfile_read( gfile, length, data_after );
     ASSERT( strncmp(data_before, data_after, length) == 0 );
 
     ASSERT( strcmp( gridfile_get_filename( gfile ), filename ) == 0 );
@@ -71,19 +73,18 @@ void test_gridfile(gridfs *gfs, char *data_before, size_t length, char *filename
     gridfs_remove_filename(gfs, filename);
 }
 
-int main(void) {
+void test_basic() {
     mongo_connection conn[1];
     mongo_connection_options opts;
     gridfs gfs[1];
     char data_before[UPPER];
-    size_t i;
+    int64_t i;
     FILE *fd;
 
     srand(time(NULL));
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-/*    strncpy(opts.host, TEST_SERVER, 255);*/
     strncpy(opts.host, "127.0.0.1", 255);
     opts.host[254] = '\0';
     opts.port = 27017;
@@ -111,7 +112,120 @@ int main(void) {
     }
 
     gridfs_destroy(gfs);
-    mongo_cmd_drop_db(conn, "test");
     mongo_destroy(conn);
+}
+
+void test_streaming() {
+    mongo_connection conn[1];
+    mongo_connection_options opts;
+    gridfs gfs[1];
+    gridfs gfs1[1];
+    char buf[LARGE];
+    char small[LOWER];
+    int n;
+
+    srand(time(NULL));
+
+    INIT_SOCKETS_FOR_WINDOWS;
+
+    strncpy(opts.host, "127.0.0.1", 255);
+    opts.host[254] = '\0';
+    opts.port = 27017;
+
+    if (mongo_connect( conn , &opts )){
+        printf("failed to connect\n");
+        exit(1);
+    }
+
+    fill_buffer_randomly(small, (int64_t)LOWER);
+    fill_buffer_randomly(buf, (int64_t)LARGE);
+
+    gridfs_init(conn, "test", "fs", gfs);
+
+    gridfs_store_buffer(gfs, small, LOWER, "small", "text/html");
+    test_gridfile(gfs, small, LOWER, "small", "text/html");
+    gridfs_destroy(gfs);
+
+    gridfs_init(conn, "test", "fs", gfs);
+    gridfs_store_stream_init(gfs, "large", "text/html");
+    for(n=0; n < (LARGE / 1024); n++) {
+      gridfs_store_stream(gfs, buf + (n * 1024), 1024);
+    }
+    gridfs_store_stream_done( gfs );
+    test_gridfile(gfs, buf, LARGE, "large", "text/html");
+
+    gridfs_destroy(gfs);
+    mongo_destroy(conn);
+}
+
+void test_large() {
+    mongo_connection conn[1];
+    mongo_connection_options opts;
+    gridfs gfs[1];
+    gridfile gfile[1];
+    FILE *fd;
+    int i, n;
+    char buffer[LARGE];
+    int64_t filesize = (int64_t)1024 * (int64_t)LARGE;
+
+    srand(time(NULL));
+
+    INIT_SOCKETS_FOR_WINDOWS;
+
+    strncpy(opts.host, "127.0.0.1", 255);
+    opts.host[254] = '\0';
+    opts.port = 27017;
+
+    if (mongo_connect( conn , &opts )){
+        printf("failed to connect\n");
+        exit(1);
+    }
+
+    gridfs_init(conn, "test", "fs", gfs);
+
+    /* Create a very large file */
+    fill_buffer_randomly(buffer, (int64_t)LARGE);
+    fd = fopen("bigfile", "w");
+    for(i=0; i<1024; i++) {
+      fwrite(buffer, 1, LARGE, fd);
+    }
+    fclose(fd);
+
+    /* Now read the file into GridFS */
+    gridfs_store_file(gfs, "bigfile", "bigfile", "text/html");
+
+    gridfs_find_filename(gfs, "bigfile", gfile);
+
+    ASSERT( strcmp( gridfile_get_filename( gfile ), "bigfile" ) == 0 );
+    ASSERT( gridfile_get_contentlength( gfile ) ==  filesize );
+
+    /* Read the file using the streaming interface */
+    gridfs_store_stream_init( gfs, "bigfile-stream", "text/html");
+
+    fd = fopen("bigfile", "r");
+
+    while((n = fread(buffer, 1, 1024, fd)) != 0) {
+      gridfs_store_stream(gfs, buffer, n);
+    }
+    gridfs_store_stream_done( gfs );
+
+    gridfs_find_filename(gfs, "bigfile-stream", gfile);
+
+    ASSERT( strcmp( gridfile_get_filename( gfile ), "bigfile-stream" ) == 0 );
+    ASSERT( gridfile_get_contentlength( gfile ) ==  filesize );
+
+    gridfs_destroy(gfs);
+    mongo_destroy(conn);
+}
+
+int main(void) {
+    test_basic();
+    test_streaming();
+
+    /* Normally not necessary to run this test, as it
+     * deals with very large files.
+    test_large();
+    */
+
     return 0;
 }

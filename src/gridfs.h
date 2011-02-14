@@ -27,6 +27,27 @@ typedef struct {
   const char* files_ns;
   /* The namespace where the files's data is stored in chunks */
   const char* chunks_ns;
+
+  /* The following attributes are used when incrementally streaming
+   * buffers into a single GridFS file. Storing this information
+   * in the struct allows users to call gridfs_store_stream iteratively.
+   */
+  int chunk_num;
+
+  char* pending_data;
+
+  int pending_len;
+
+  int chunk_len;
+
+  bson_oid_t id;
+
+  gridfs_offset length;
+
+  const char* remote_name;
+
+  const char* content_type;
+
 } gridfs;
 
 /* A GridFile contains the GridFS it is located in and the file
@@ -57,6 +78,12 @@ int gridfs_init(mongo_connection* client, const char* dbname,
  */
 void gridfs_destroy(gridfs* gfs);
 
+void gridfs_store_stream_init( gridfs* gfs, const char* remote_name, const char* content_type);
+
+bson gridfs_store_stream( gridfs* gfs, const char* data, gridfs_offset length );
+
+bson gridfs_store_stream_done( gridfs* gfs );
+
 /** Write a buffer as a GridFS file.
  *  @param gfs - the working GridFS
  *  @param data - pointer to buffer to store in GridFS
@@ -68,6 +95,12 @@ void gridfs_destroy(gridfs* gfs);
 bson gridfs_store_buffer(gridfs* gfs, const char* data, gridfs_offset length,
 			 const char* remotename,
 			 const char * contenttype);
+
+
+/** Write to a GridFS file incrementally. You can call this function any number
+ *  of times with a new buffer each time. This allows you to effectively
+ *  stream to a GridFS file. When finished, be sure to call gridfs_store_stream_done.
+ */
 
 /** Puts the file reference by filename into the db
  *  @param gfs - the working GridFS
