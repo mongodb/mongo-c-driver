@@ -216,8 +216,6 @@ typedef void(*bson_err_handler)(const char* errmsg);
 /* default handler prints error then exits with failure*/
 bson_err_handler set_bson_err_handler(bson_err_handler func);
 
-
-
 /* does nothing is ok != 0 */
 void bson_fatal( int ok );
 void bson_fatal_msg( int ok, const char* msg );

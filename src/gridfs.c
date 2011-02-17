@@ -221,25 +221,31 @@ bson gridfs_store_buffer( gridfs* gfs, const char* data,
 
 /*--------------------------------------------------------------------*/
 
-void gridfs_store_stream_init( gridfs* gfs, const char* remote_name, const char* content_type)
+int gridfile_writer_init( gridfile* gfile, gridfs* gfs,
+    const char* remote_name, const char* content_type )
 {
-    bson_oid_gen( &(gfs->id) );
-    gfs->chunk_num = 0;
-    gfs->chunk_len = DEFAULT_CHUNK_SIZE;
-    gfs->length = 0;
-    gfs->pending_data = NULL;
-    gfs->pending_len = 0;
-    gfs->remote_name = ( const char * ) malloc( strlen( remote_name ) + 1 );
-    strcpy(gfs->remote_name, remote_name);
-    gfs->content_type = ( const char *) malloc( strlen( content_type ) + 1 );
-    strcpy(gfs->content_type, content_type);
+    gfile->gfs = gfs;
 
-    return;
+    bson_oid_gen( &(gfile->id) );
+    gfile->chunk_num = 0;
+    gfile->length = 0;
+    gfile->pending_len = 0;
+    gfile->pending_data = NULL;
+    gfile->remote_name = (const char *)malloc( strlen( remote_name ) + 1 );
+    if( !gfile->remote_name )
+      return 0;
+    strcpy( (char *)gfile->remote_name, remote_name );
+    gfile->content_type = (const char *)malloc( strlen( content_type ) );
+    if( !gfile->content_type )
+      return 0;
+    strcpy( (char *)gfile->content_type, content_type );
+
+    return 1;
 }
 
 /*--------------------------------------------------------------------*/
 
-bson gridfs_store_stream( gridfs* gfs, const char* data, gridfs_offset length )
+int gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset length )
 {
 
   int bytes_left = 0;
@@ -247,83 +253,90 @@ bson gridfs_store_stream( gridfs* gfs, const char* data, gridfs_offset length )
   int chunks_to_write = 0;
   char* buffer;
   bson* oChunk;
-  gridfs_offset to_write = length + gfs->pending_len;
+  gridfs_offset to_write = length + gfile->pending_len;
 
-  if ( to_write < gfs->chunk_len ) {
-    if( gfs->pending_data ) {
-      gfs->pending_data = (char *)realloc((void *)gfs->pending_data, gfs->pending_len + to_write);
-      memcpy( gfs->pending_data + gfs->pending_len, data, length );
+  if ( to_write < DEFAULT_CHUNK_SIZE ) { /* Less than one chunk to write */
+    if( gfile->pending_data ) {
+      gfile->pending_data = (char *)realloc((void *)gfile->pending_data, gfile->pending_len + to_write);
+      memcpy( gfile->pending_data + gfile->pending_len, data, length );
     } else if (to_write > 0) {
-      gfs->pending_data = (char *)malloc(to_write);
-      memcpy( gfs->pending_data, data, length );
+      gfile->pending_data = (char *)malloc(to_write);
+      memcpy( gfile->pending_data, data, length );
     }
-    gfs->pending_len += length;
-  } else {
-    if ( gfs->pending_len > 0 ) {
-      chunks_to_write = to_write / gfs->chunk_len;
-      bytes_left = to_write % gfs->chunk_len;
+    gfile->pending_len += length;
 
-      /* write chunks but initial chunk needs to combine length
-       * of pending */
-      data_partial_len = gfs->chunk_len - gfs->pending_len;
-      buffer = (char *)malloc( gfs->chunk_len );
-      memcpy(buffer, gfs->pending_data, gfs->pending_len);
-      memcpy(buffer + gfs->pending_len, data, data_partial_len);
+  } else { /* At least one chunk of data to write */
 
-      oChunk = chunk_new(gfs->id, gfs->chunk_num, buffer, gfs->chunk_len);
-      mongo_insert(gfs->client, gfs->chunks_ns, oChunk);
+    /* If there's a pending chunk to be written, we need to combine
+     * the buffer provided up to DEFAULT_CHUNK_SIZE.
+     */
+    if ( gfile->pending_len > 0 ) {
+      chunks_to_write = to_write / DEFAULT_CHUNK_SIZE;
+      bytes_left = to_write % DEFAULT_CHUNK_SIZE;
+
+      data_partial_len = DEFAULT_CHUNK_SIZE - gfile->pending_len;
+      buffer = (char *)malloc( DEFAULT_CHUNK_SIZE );
+      memcpy(buffer, gfile->pending_data, gfile->pending_len);
+      memcpy(buffer + gfile->pending_len, data, data_partial_len);
+
+      oChunk = chunk_new(gfile->id, gfile->chunk_num, buffer, DEFAULT_CHUNK_SIZE);
+      mongo_insert(gfile->gfs->client, gfile->gfs->chunks_ns, oChunk);
       chunk_free(oChunk);
-      gfs->chunk_num++;
-      gfs->length += gfs->chunk_len;
+      gfile->chunk_num++;
+      gfile->length += DEFAULT_CHUNK_SIZE;
       data += data_partial_len;
 
       chunks_to_write--;
+
+      free(buffer);
     }
 
     while( chunks_to_write > 0 ) {
-      oChunk = chunk_new(gfs->id, gfs->chunk_num, data, gfs->chunk_len);
-      mongo_insert(gfs->client, gfs->chunks_ns, oChunk);
+      oChunk = chunk_new(gfile->id, gfile->chunk_num, data, DEFAULT_CHUNK_SIZE);
+      mongo_insert(gfile->gfs->client, gfile->gfs->chunks_ns, oChunk);
       chunk_free(oChunk);
-      gfs->chunk_num++;
+      gfile->chunk_num++;
       chunks_to_write--;
-      gfs->length += gfs->chunk_len;
-      data += gfs->chunk_len;
+      gfile->length += DEFAULT_CHUNK_SIZE;
+      data += DEFAULT_CHUNK_SIZE;
     }
 
-    /* store leftover bytes as pending data */
-    free(gfs->pending_data);
+    free(gfile->pending_data);
 
-    if( bytes_left == 0 ) {
-      gfs->pending_data = NULL;
-    }
+    /* If there are any leftover bytes, store them as pending data. */
+    if( bytes_left == 0 )
+      gfile->pending_data = NULL;
     else {
-      gfs->pending_data = (char *)malloc( bytes_left );
-      memcpy( gfs->pending_data, data, bytes_left );
+      gfile->pending_data = (char *)malloc( bytes_left );
+      memcpy( gfile->pending_data, data, bytes_left );
     }
 
-    gfs->pending_len = bytes_left;
+    gfile->pending_len = bytes_left;
   }
 
+  return 1;
 }
 
 /*--------------------------------------------------------------------*/
 
-bson gridfs_store_stream_done( gridfs* gfs )
+bson gridfile_writer_done( gridfile* gfile )
 {
 
-  /* write any remaining pending chunk data */
-  /* if we ever have pending data, it will always take up less than one chunk */
+  /* write any remaining pending chunk data.
+   * pending data will always take up less than one chunk
+   */
   bson* oChunk;
-  if( gfs->pending_data )
+  if( gfile->pending_data )
   {
-    oChunk = chunk_new(gfs->id, gfs->chunk_num, gfs->pending_data, gfs->pending_len);
-    mongo_insert(gfs->client, gfs->chunks_ns, oChunk);
+    oChunk = chunk_new(gfile->id, gfile->chunk_num, gfile->pending_data, gfile->pending_len);
+    mongo_insert(gfile->gfs->client, gfile->gfs->chunks_ns, oChunk);
     chunk_free(oChunk);
-    gfs->length += gfs->pending_len;
+    gfile->length += gfile->pending_len;
   }
 
   /* insert into files collection */
-  return gridfs_insert_file(gfs, gfs->remote_name, gfs->id, gfs->length, gfs->content_type);
+  return gridfs_insert_file(gfile->gfs, gfile->remote_name, gfile->id,
+      gfile->length, gfile->content_type);
 }
 
 /*--------------------------------------------------------------------*/

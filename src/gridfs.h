@@ -28,27 +28,11 @@ typedef struct {
   /* The namespace where the files's data is stored in chunks */
   const char* chunks_ns;
 
-  /* The following attributes are used when incrementally streaming
-   * buffers into a single GridFS file. Storing this information
-   * in the struct allows users to call gridfs_store_stream iteratively.
-   */
-  int chunk_num;
-
-  char* pending_data;
-
-  int pending_len;
-
-  int chunk_len;
-
-  bson_oid_t id;
-
-  gridfs_offset length;
-
-  const char* remote_name;
-
-  const char* content_type;
-
 } gridfs;
+
+/* The state of a gridfile. This is used for incrementally writing buffers
+ * to a single GridFS file.
+ */
 
 /* A GridFile contains the GridFS it is located in and the file
    metadata */
@@ -59,12 +43,26 @@ typedef struct {
   bson* meta;
   /* The position is the offset in the file */
   gridfs_offset pos;
+  /* The files_id of the gridfile */
+  bson_oid_t id;
+  /* The name of the gridfile as a string */
+  const char* remote_name;
+  /* The gridfile's content type */
+  const char* content_type;
+  /* The length of this gridfile */
+  gridfs_offset length;
+  /* The number of the current chunk being written to */
+  int chunk_num;
+  /* A buffer storing data still to be written to chunks */
+  char* pending_data;
+  /* Length of pending data */
+  int pending_len;
+
 } gridfile;
 
 /*--------------------------------------------------------------------*/
 
-
-/** Initializes the GridFS object
+/** Initializes a GridFS object
  *  @param client - db connection
  *  @param dbname - database name
  *  @param prefix - collection prefix, default is fs if NULL or empty
@@ -72,19 +70,37 @@ typedef struct {
  *  @return - 1 if successful, 0 otherwise
  */
 int gridfs_init(mongo_connection* client, const char* dbname,
-		const char* prefix, gridfs* gfs);
+  const char* prefix, gridfs* gfs);
 
-/** Destroys the GridFS object
+/** Destroys a GridFS object
  */
-void gridfs_destroy(gridfs* gfs);
+void gridfs_destroy( gridfs* gfs );
 
-void gridfs_store_stream_init( gridfs* gfs, const char* remote_name, const char* content_type);
+/** Initializes a gridfile for writing incrementally with gridfs_write_buffer.
+ *  Once initialized, you can write any number of buffers with gridfs_write_buffer.
+ *  When done, you must call gridfs_writer_done to save the file metadata.
+ *
+ *  @return - 1 if successful, 0 otherwise
+ */
+int gridfile_writer_init( gridfile* gfile, gridfs* gfs, const char* remote_name, const char* content_type );
 
-bson gridfs_store_stream( gridfs* gfs, const char* data, gridfs_offset length );
+/** Write to a GridFS file incrementally. You can call this function any number
+ *  of times with a new buffer each time. This allows you to effectively
+ *  stream to a GridFS file. When finished, be sure to call gridfs_writer_done.
+ *
+ *  @return - 1 if successful, 0 otherwise
+ */
+int gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset length );
 
-bson gridfs_store_stream_done( gridfs* gfs );
+/** Signal that writing of this gridfile is complete by
+ *  writing any buffered chunks along with the entry in the
+ *  files collection.
+ *
+ *  @return - the file object if successful; otherwise 0.
+ */
+bson gridfile_writer_done( gridfile* gfile );
 
-/** Write a buffer as a GridFS file.
+/** Store a buffer as a GridFS file.
  *  @param gfs - the working GridFS
  *  @param data - pointer to buffer to store in GridFS
  *  @param length - length of the buffer
@@ -93,16 +109,10 @@ bson gridfs_store_stream_done( gridfs* gfs );
  *  @return - the file object
  */
 bson gridfs_store_buffer(gridfs* gfs, const char* data, gridfs_offset length,
-			 const char* remotename,
-			 const char * contenttype);
+    const char* remotename,
+    const char * contenttype);
 
-
-/** Write to a GridFS file incrementally. You can call this function any number
- *  of times with a new buffer each time. This allows you to effectively
- *  stream to a GridFS file. When finished, be sure to call gridfs_store_stream_done.
- */
-
-/** Puts the file reference by filename into the db
+/** Open the file referenced by filename and store it as a GridFS file.
  *  @param gfs - the working GridFS
  *  @param filename - local filename relative to the process
  *  @param remotename - optional filename for use in the database
@@ -110,7 +120,7 @@ bson gridfs_store_buffer(gridfs* gfs, const char* data, gridfs_offset length,
  *  @return - the file object
  */
 bson gridfs_store_file(gridfs* gfs, const char* filename,
-		       const char* remotename, const char* contenttype);
+         const char* remotename, const char* contenttype);
 
 /** Removes the files referenced by filename from the db
  *  @param gfs - the working GridFS
@@ -134,7 +144,7 @@ int gridfs_find_query(gridfs* gfs, bson* query, gridfile* gfile );
  *  @return 1 if successful, 0 otherwise
  */
 int gridfs_find_filename(gridfs* gfs, const char *filename,
-			      gridfile* gfile);
+         gridfile* gfile);
 
 /*--------------------------------------------------------------------*/
 

@@ -119,7 +119,7 @@ void test_streaming() {
     mongo_connection conn[1];
     mongo_connection_options opts;
     gridfs gfs[1];
-    gridfs gfs1[1];
+    gridfile gfile[1];
     char buf[LARGE];
     char small[LOWER];
     int n;
@@ -147,11 +147,11 @@ void test_streaming() {
     gridfs_destroy(gfs);
 
     gridfs_init(conn, "test", "fs", gfs);
-    gridfs_store_stream_init(gfs, "large", "text/html");
+    gridfile_writer_init(gfile, gfs, "large", "text/html");
     for(n=0; n < (LARGE / 1024); n++) {
-      gridfs_store_stream(gfs, buf + (n * 1024), 1024);
+      gridfile_write_buffer(gfile, buf + (n * 1024), 1024);
     }
-    gridfs_store_stream_done( gfs );
+    gridfile_writer_done( gfile );
     test_gridfile(gfs, buf, LARGE, "large", "text/html");
 
     gridfs_destroy(gfs);
@@ -200,14 +200,14 @@ void test_large() {
     ASSERT( gridfile_get_contentlength( gfile ) ==  filesize );
 
     /* Read the file using the streaming interface */
-    gridfs_store_stream_init( gfs, "bigfile-stream", "text/html");
+    gridfile_writer_init( gfile, gfs, "bigfile-stream", "text/html");
 
     fd = fopen("bigfile", "r");
 
     while((n = fread(buffer, 1, 1024, fd)) != 0) {
-      gridfs_store_stream(gfs, buffer, n);
+      gridfile_write_buffer(gfile, buffer, n);
     }
-    gridfs_store_stream_done( gfs );
+    gridfile_writer_done( gfile );
 
     gridfs_find_filename(gfs, "bigfile-stream", gfile);
 
@@ -222,10 +222,9 @@ int main(void) {
     test_basic();
     test_streaming();
 
-    /* Normally not necessary to run this test, as it
-     * deals with very large files.
-    test_large();
-    */
-
+  /* Normally not necessary to run test_large(), as it
+   * deals with very large (3GB) files and is therefore slow.
+   * test_large();
+   */
     return 0;
 }
