@@ -63,7 +63,7 @@ void mongo_message_send(mongo_connection * conn, mongo_message* mm){
     bson_little_endian32(&head.id, &mm->head.id);
     bson_little_endian32(&head.responseTo, &mm->head.responseTo);
     bson_little_endian32(&head.op, &mm->head.op);
-    
+
     MONGO_TRY{
         looping_write(conn, &head, sizeof(head));
         looping_write(conn, &mm->data, mm->head.len - sizeof(head));
@@ -175,7 +175,7 @@ mongo_conn_return mongo_connect_pair( mongo_connection * conn , mongo_connection
 
     memcpy( conn->left_opts,  left,  sizeof( mongo_connection_options ) );
     memcpy( conn->right_opts, right, sizeof( mongo_connection_options ) );
-    
+
     return mongo_reconnect(conn);
 }
 
@@ -335,13 +335,13 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bs
 
     data = &mm->data;
     data = mongo_data_append32( data , &options );
-    data = mongo_data_append( data , ns , strlen( ns ) + 1 );    
+    data = mongo_data_append( data , ns , strlen( ns ) + 1 );
     data = mongo_data_append32( data , &nToSkip );
     data = mongo_data_append32( data , &nToReturn );
-    data = mongo_data_append( data , query->data , bson_size( query ) );    
+    data = mongo_data_append( data , query->data , bson_size( query ) );
     if ( fields )
-        data = mongo_data_append( data , fields->data , bson_size( fields ) );    
-    
+        data = mongo_data_append( data , fields->data , bson_size( fields ) );
+
     bson_fatal_msg( (data == ((char*)mm) + mm->head.len), "query building fail!" );
 
     mongo_message_send( conn , mm );
@@ -403,7 +403,7 @@ int64_t mongo_count(mongo_connection* conn, const char* db, const char* ns, bson
         bson_destroy(&cmd);
         MONGO_RETHROW();
     }
-    
+
     bson_destroy(&cmd);
     bson_destroy(&out);
     return count;
@@ -414,10 +414,10 @@ bson_bool_t mongo_disconnect( mongo_connection * conn ){
         return 1;
 
     mongo_close_socket( conn->sock );
-    
+
     conn->sock = 0;
     conn->connected = 0;
-    
+
     return 0;
 }
 
@@ -503,7 +503,7 @@ void mongo_cursor_destroy(mongo_cursor* cursor){
         data = mongo_data_append32(data, &zero);
         data = mongo_data_append32(data, &one);
         data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
-        
+
         MONGO_TRY{
             mongo_message_send(conn, mm);
         }MONGO_CATCH{
@@ -513,7 +513,7 @@ void mongo_cursor_destroy(mongo_cursor* cursor){
             MONGO_RETHROW();
         }
     }
-        
+
     free(cursor->mm);
     free((void*)cursor->ns);
     free(cursor);
@@ -542,7 +542,7 @@ bson_bool_t mongo_create_index(mongo_connection * conn, const char * ns, bson * 
         bson_append_bool(&bb, "unique", 1);
     if (options & MONGO_INDEX_DROP_DUPS)
         bson_append_bool(&bb, "dropDups", 1);
-    
+
     bson_from_buffer(&b, &bb);
 
     strncpy(idxns, ns, 1024-16);
@@ -595,7 +595,7 @@ bson_bool_t mongo_simple_int_command(mongo_connection * conn, const char * db, c
         if(bson_find(&it, &out, "ok"))
             success = bson_iterator_bool(&it);
     }
-    
+
     bson_destroy(&cmd);
 
     if (realout)
@@ -621,7 +621,7 @@ bson_bool_t mongo_simple_str_command(mongo_connection * conn, const char * db, c
         if(bson_find(&it, &out, "ok"))
             success = bson_iterator_bool(&it);
     }
-    
+
     bson_destroy(&cmd);
 
     if (realout)
@@ -653,7 +653,7 @@ static bson_bool_t mongo_cmd_get_error_helper(mongo_connection * conn, const cha
         bson_iterator it;
         haserror = (bson_find(&it, &out, "err") != bson_null);
     }
-    
+
     if(realout)
         *realout = out; /* transfer of ownership */
     else
