@@ -11,11 +11,16 @@ You will need JSON-C (http://oss.metaparadigm.com/json-c/) to compile the unit t
 ## Building with scons:
     scons # this will produce libbson.a and libmongoc.a
     scons --c99 # this will use c99 mode in gcc (recommended)
-    scons test # this will compile and run the unit tests (optional)
-    scons test --test-server=123.4.5.67 # use remote server for tests
 
 ## Building with gcc:
     gcc --std=c99 -Isrc src/*.c YOUR_APP.c # No -Ddefines are needed in c99 mode on little endien
+
+## Running the tests
+Make sure that you're running mongod on localhost on the default port (27017). Then run:
+    scons test
+
+You may optionally specify a remote server:
+    scons test --test-server=123.4.5.67
 
 ## Building with MSVC:
 TODO
