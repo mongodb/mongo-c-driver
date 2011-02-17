@@ -126,6 +126,7 @@ static int mongo_connect_helper( mongo_connection * conn ){
     }
 
     if ( connect( conn->sock , (struct sockaddr*)&conn->sa , conn->addressSize ) ){
+        mongo_close_socket( conn->sock );
         return mongo_conn_fail;
     }
 
