@@ -241,7 +241,7 @@ void gridfile_writer_init( gridfile* gfile, gridfs* gfs,
 
 /*--------------------------------------------------------------------*/
 
-int gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset length )
+void gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset length )
 {
 
   int bytes_left = 0;
@@ -309,8 +309,6 @@ int gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset leng
 
     gfile->pending_len = bytes_left;
   }
-
-  return 1;
 }
 
 /*--------------------------------------------------------------------*/

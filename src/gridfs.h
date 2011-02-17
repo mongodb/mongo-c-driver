@@ -90,7 +90,7 @@ void gridfile_writer_init( gridfile* gfile, gridfs* gfs, const char* remote_name
  *
  *  @return - 1 if successful, 0 otherwise
  */
-int gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset length );
+void gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset length );
 
 /** Signal that writing of this gridfile is complete by
  *  writing any buffered chunks along with the entry in the
