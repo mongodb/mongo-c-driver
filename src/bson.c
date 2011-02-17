@@ -648,6 +648,12 @@ void* bson_malloc(int size){
     return p;
 }
 
+void* bson_realloc(void* ptr, int size){
+    void* p = realloc(ptr, size);
+    bson_fatal_msg(!!p, "realloc() failed");
+    return p;
+}
+
 static bson_err_handler err_handler = NULL;
 
 bson_err_handler set_bson_err_handler(bson_err_handler func){

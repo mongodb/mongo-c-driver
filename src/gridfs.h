@@ -82,7 +82,7 @@ void gridfs_destroy( gridfs* gfs );
  *
  *  @return - 1 if successful, 0 otherwise
  */
-int gridfile_writer_init( gridfile* gfile, gridfs* gfs, const char* remote_name, const char* content_type );
+void gridfile_writer_init( gridfile* gfile, gridfs* gfs, const char* remote_name, const char* content_type );
 
 /** Write to a GridFS file incrementally. You can call this function any number
  *  of times with a new buffer each time. This allows you to effectively

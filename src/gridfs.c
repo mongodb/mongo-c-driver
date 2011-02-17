@@ -23,7 +23,7 @@ static bson * chunk_new(bson_oid_t id, int chunkNumber,
   bson * b;
   bson_buffer buf;
 
-  b = (bson *)malloc(sizeof(bson));
+  b = (bson *)bson_malloc(sizeof(bson));
   if (b == NULL) return NULL;
 
   bson_buffer_init(&buf);
@@ -57,7 +57,7 @@ int gridfs_init(mongo_connection * client, const char * dbname,
   gfs->client = client;
 
   /* Allocate space to own the dbname */
-  gfs->dbname = (const char *)malloc(strlen(dbname)+1);
+  gfs->dbname = (const char *)bson_malloc(strlen(dbname)+1);
   if (gfs->dbname == NULL) {
     return FALSE;
   }
@@ -65,7 +65,7 @@ int gridfs_init(mongo_connection * client, const char * dbname,
 
   /* Allocate space to own the prefix */
   if (prefix == NULL) prefix = "fs";
-  gfs->prefix = (const char *)malloc(strlen(prefix)+1);
+  gfs->prefix = (const char *)bson_malloc(strlen(prefix)+1);
   if (gfs->prefix == NULL) {
     free((char*)gfs->dbname);
     return FALSE;
@@ -74,7 +74,7 @@ int gridfs_init(mongo_connection * client, const char * dbname,
 
   /* Allocate space to own files_ns */
   gfs->files_ns =
-    (const char *) malloc (strlen(prefix)+strlen(dbname)+strlen(".files")+2);
+    (const char *) bson_malloc (strlen(prefix)+strlen(dbname)+strlen(".files")+2);
   if (gfs->files_ns == NULL) {
     free((char*)gfs->dbname);
     free((char*)gfs->prefix);
@@ -86,7 +86,7 @@ int gridfs_init(mongo_connection * client, const char * dbname,
   strcat((char*)gfs->files_ns, ".files");
 
   /* Allocate space to own chunks_ns */
-  gfs->chunks_ns = (const char *) malloc(strlen(prefix) + strlen(dbname)
+  gfs->chunks_ns = (const char *) bson_malloc(strlen(prefix) + strlen(dbname)
               + strlen(".chunks") + 2);
   if (gfs->chunks_ns == NULL) {
     free((char*)gfs->dbname);
@@ -221,7 +221,7 @@ bson gridfs_store_buffer( gridfs* gfs, const char* data,
 
 /*--------------------------------------------------------------------*/
 
-int gridfile_writer_init( gridfile* gfile, gridfs* gfs,
+void gridfile_writer_init( gridfile* gfile, gridfs* gfs,
     const char* remote_name, const char* content_type )
 {
     gfile->gfs = gfs;
@@ -231,16 +231,12 @@ int gridfile_writer_init( gridfile* gfile, gridfs* gfs,
     gfile->length = 0;
     gfile->pending_len = 0;
     gfile->pending_data = NULL;
-    gfile->remote_name = (const char *)malloc( strlen( remote_name ) + 1 );
-    if( !gfile->remote_name )
-      return 0;
-    strcpy( (char *)gfile->remote_name, remote_name );
-    gfile->content_type = (const char *)malloc( strlen( content_type ) );
-    if( !gfile->content_type )
-      return 0;
-    strcpy( (char *)gfile->content_type, content_type );
 
-    return 1;
+    gfile->remote_name = (const char *)bson_malloc( strlen( remote_name ) + 1 );
+    strcpy( (char *)gfile->remote_name, remote_name );
+
+    gfile->content_type = (const char *)bson_malloc( strlen( content_type ) );
+    strcpy( (char *)gfile->content_type, content_type );
 }
 
 /*--------------------------------------------------------------------*/
@@ -257,10 +253,10 @@ int gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset leng
 
   if ( to_write < DEFAULT_CHUNK_SIZE ) { /* Less than one chunk to write */
     if( gfile->pending_data ) {
-      gfile->pending_data = (char *)realloc((void *)gfile->pending_data, gfile->pending_len + to_write);
+      gfile->pending_data = (char *)bson_realloc((void *)gfile->pending_data, gfile->pending_len + to_write);
       memcpy( gfile->pending_data + gfile->pending_len, data, length );
     } else if (to_write > 0) {
-      gfile->pending_data = (char *)malloc(to_write);
+      gfile->pending_data = (char *)bson_malloc(to_write);
       memcpy( gfile->pending_data, data, length );
     }
     gfile->pending_len += length;
@@ -275,7 +271,7 @@ int gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset leng
       bytes_left = to_write % DEFAULT_CHUNK_SIZE;
 
       data_partial_len = DEFAULT_CHUNK_SIZE - gfile->pending_len;
-      buffer = (char *)malloc( DEFAULT_CHUNK_SIZE );
+      buffer = (char *)bson_malloc( DEFAULT_CHUNK_SIZE );
       memcpy(buffer, gfile->pending_data, gfile->pending_len);
       memcpy(buffer + gfile->pending_len, data, data_partial_len);
 
@@ -307,7 +303,7 @@ int gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset leng
     if( bytes_left == 0 )
       gfile->pending_data = NULL;
     else {
-      gfile->pending_data = (char *)malloc( bytes_left );
+      gfile->pending_data = (char *)bson_malloc( bytes_left );
       memcpy( gfile->pending_data, data, bytes_left );
     }
 
@@ -487,7 +483,7 @@ int gridfile_init(gridfs* gfs, bson* meta, gridfile* gfile)
 {
   gfile->gfs = gfs;
   gfile->pos = 0;
-  gfile->meta = (bson*)malloc(sizeof(bson));
+  gfile->meta = (bson*)bson_malloc(sizeof(bson));
   if (gfile->meta == NULL) return FALSE;
   bson_copy(gfile->meta, meta);
   return TRUE;

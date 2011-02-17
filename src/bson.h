@@ -208,6 +208,7 @@ void bson_incnumstr(char* str);
    ------------------------------ */
 
 void * bson_malloc(int size); /* checks return value */
+void * bson_realloc(void * ptr, int size); /* checks return value */
 
 /* bson_err_handlers shouldn't return!!! */
 typedef void(*bson_err_handler)(const char* errmsg);
