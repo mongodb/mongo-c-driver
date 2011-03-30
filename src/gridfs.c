@@ -325,6 +325,7 @@ bson gridfile_writer_done( gridfile* gfile )
     oChunk = chunk_new(gfile->id, gfile->chunk_num, gfile->pending_data, gfile->pending_len);
     mongo_insert(gfile->gfs->client, gfile->gfs->chunks_ns, oChunk);
     chunk_free(oChunk);
+    free(gfile->pending_data);
     gfile->length += gfile->pending_len;
   }
 
