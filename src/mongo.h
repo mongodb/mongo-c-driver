@@ -42,9 +42,16 @@ typedef struct mongo_connection_options {
     int port;
 } mongo_connection_options;
 
+typedef struct mongo_host_port {
+    char host[255];
+    int port;
+    struct mongo_host_port* next;
+} mongo_host_port;
+
 typedef struct {
     mongo_connection_options* left_opts; /* always current server */
     mongo_connection_options* right_opts; /* unused with single server */
+    mongo_host_port* seeds;
     struct sockaddr_in sa;
     socklen_t addressSize;
     int sock;
@@ -115,10 +122,13 @@ typedef enum {
 mongo_conn_return mongo_connect( mongo_connection * conn , mongo_connection_options * options );
 mongo_conn_return mongo_connect_pair( mongo_connection * conn , mongo_connection_options * left, mongo_connection_options * right );
 mongo_conn_return mongo_reconnect( mongo_connection * conn ); /* you will need to reauthenticate after calling */
+
+void mongo_replset_init_conn(mongo_connection* conn);
+int mongo_replset_add_seed(mongo_connection* conn, const char* host, int port);
+mongo_conn_return mongo_replset_connect(mongo_connection* conn);
+
 bson_bool_t mongo_disconnect( mongo_connection * conn ); /* use this if you want to be able to reconnect */
 bson_bool_t mongo_destroy( mongo_connection * conn ); /* you must call this even if connection failed */
-
-
 
 /* ----------------------------
    CORE METHODS - insert update remove query getmore

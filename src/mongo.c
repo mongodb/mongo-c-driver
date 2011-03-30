@@ -115,7 +115,7 @@ static int mongo_connect_helper( mongo_connection * conn ){
     memset( conn->sa.sin_zero , 0 , sizeof(conn->sa.sin_zero) );
     conn->sa.sin_family = AF_INET;
     conn->sa.sin_port = htons(conn->left_opts->port);
-    conn->sa.sin_addr.s_addr = inet_addr( conn->left_opts->host );
+    conn->sa.sin_addr.s_addr = inet_addr(conn->left_opts->host);
     conn->addressSize = sizeof(conn->sa);
 
     /* connect */
@@ -153,6 +153,94 @@ mongo_conn_return mongo_connect( mongo_connection * conn , mongo_connection_opti
     }
 
     return mongo_connect_helper(conn);
+}
+
+
+void mongo_replset_init_conn(mongo_connection* conn) {
+    conn->seeds = NULL;
+}
+
+int mongo_replset_add_seed(mongo_connection* conn, const char* host, int port) {
+    mongo_host_port* host_port = bson_malloc(sizeof(mongo_host_port));
+    host_port->port = port;
+    host_port->next = NULL;
+    strncpy( host_port->host, host, strlen(host) );
+
+    if( conn->seeds == NULL )
+        conn->seeds = host_port;
+    else {
+        mongo_host_port* p = conn->seeds;
+        while( p->next != NULL )
+          p = p->next;
+        p->next = host_port;
+    }
+
+    return 0;
+}
+
+mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
+
+    bson* out;
+    bson_bool_t ismaster;
+
+    mongo_host_port* node = conn->seeds;
+
+    conn->sock = 0;
+    conn->connected = 0;
+
+    while( node != NULL ) {
+
+        memset( conn->sa.sin_zero , 0 , sizeof(conn->sa.sin_zero) );
+        conn->sa.sin_family = AF_INET;
+        conn->sa.sin_port = htons(node->port);
+        conn->sa.sin_addr.s_addr = inet_addr(node->host);
+
+        conn->addressSize = sizeof(conn->sa);
+
+        conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
+        if ( conn->sock <= 0 ){
+            mongo_close_socket( conn->sock );
+            return mongo_conn_no_socket;
+        }
+
+        if ( connect( conn->sock , (struct sockaddr*)&conn->sa , conn->addressSize ) ){
+            mongo_close_socket( conn->sock );
+        }
+
+        setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &one, sizeof(one) );
+
+        /* Check whether this is the primary node */
+        ismaster = 0;
+
+        out = bson_malloc(sizeof(bson));
+        out->data = NULL;
+        out->owned = 0;
+
+        if (mongo_simple_int_command(conn, "admin", "ismaster", 1, out)) {
+            bson_iterator it;
+            bson_find(&it, out, "ismaster");
+            ismaster = bson_iterator_bool(&it);
+            free(out);
+        }
+
+        if(ismaster) {
+            conn->connected = 1;
+        }
+        else {
+            mongo_close_socket( conn->sock );
+        }
+
+        node = node->next;
+    }
+
+    /* TODO signals */
+
+    /* Might be nice to know which node is primary */
+    /* con->primary = NULL; */
+    if( conn->connected == 1 )
+        return 0;
+    else
+        return -1;
 }
 
 static void swap_repl_pair(mongo_connection * conn){
@@ -581,6 +669,7 @@ bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * c
     free(ns);
     return success;
 }
+
 bson_bool_t mongo_simple_int_command(mongo_connection * conn, const char * db, const char* cmdstr, int arg, bson * realout){
     bson out;
     bson cmd;

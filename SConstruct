@@ -96,7 +96,7 @@ benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )
 testEnv = benchmarkEnv.Clone()
 testCoreFiles = [ ]
 
-tests = Split('sizes resize endian_swap all_types simple update errors count_delete auth pair gridfs')
+tests = Split('sizes resize endian_swap all_types simple update errors count_delete auth pair gridfs replica_set')
 
 if have_libjson:
     tests.append('json')
