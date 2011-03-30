@@ -720,7 +720,6 @@ gridfs_offset gridfile_write_file(gridfile* gfile, FILE *stream)
   const int num = gridfile_get_numchunks( gfile );
 
   for ( i=0; i<num; i++ ){
-    printf("N: %d", i);
     chunk = gridfile_get_chunk( gfile, i );
     bson_find( &it, &chunk, "data" );
     len = bson_iterator_bin_len( &it );
