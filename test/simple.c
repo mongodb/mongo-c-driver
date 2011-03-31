@@ -104,6 +104,7 @@ int main(){
 
     mongo_cursor_destroy(cursor);
     mongo_cmd_drop_db(conn, "test");
+    mongo_disconnect( conn );
     mongo_destroy( conn );
     return 0;
 }

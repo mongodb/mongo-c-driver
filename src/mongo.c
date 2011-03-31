@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -114,8 +115,8 @@ static int mongo_connect_helper( mongo_connection * conn ){
 
     memset( conn->sa.sin_zero , 0 , sizeof(conn->sa.sin_zero) );
     conn->sa.sin_family = AF_INET;
-    conn->sa.sin_port = htons(conn->left_opts->port);
-    conn->sa.sin_addr.s_addr = inet_addr(conn->left_opts->host);
+    conn->sa.sin_port = htons(conn->seeds->port);
+    conn->sa.sin_addr.s_addr = inet_addr(conn->seeds->host);
     conn->addressSize = sizeof(conn->sa);
 
     /* connect */
@@ -141,15 +142,17 @@ static int mongo_connect_helper( mongo_connection * conn ){
 
 mongo_conn_return mongo_connect( mongo_connection * conn , mongo_connection_options * options ){
     MONGO_INIT_EXCEPTION(&conn->exception);
+    conn->replica_set = 0;
 
-    conn->left_opts = bson_malloc(sizeof(mongo_connection_options));
-    conn->right_opts = NULL;
+    conn->seeds = bson_malloc(sizeof(mongo_host_port));
+    conn->seeds->next = NULL;
 
     if ( options ){
-        memcpy( conn->left_opts , options , sizeof( mongo_connection_options ) );
+        strncpy(conn->seeds->host, options->host, strlen( options->host ) + 1 );
+        conn->seeds->port = options->port;
     } else {
-        strcpy( conn->left_opts->host , "127.0.0.1" );
-        conn->left_opts->port = 27017;
+        strcpy( conn->seeds->host , "127.0.0.1" );
+        conn->seeds->port = 27017;
     }
 
     return mongo_connect_helper(conn);
@@ -157,6 +160,9 @@ mongo_conn_return mongo_connect( mongo_connection * conn , mongo_connection_opti
 
 
 void mongo_replset_init_conn(mongo_connection* conn) {
+    MONGO_INIT_EXCEPTION(&conn->exception);
+    conn->replica_set = 1;
+
     conn->seeds = NULL;
 }
 
@@ -243,57 +249,14 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
         return -1;
 }
 
-static void swap_repl_pair(mongo_connection * conn){
-    mongo_connection_options * tmp = conn->left_opts;
-    conn->left_opts = conn->right_opts;
-    conn->right_opts = tmp;
-}
-
-mongo_conn_return mongo_connect_pair( mongo_connection * conn , mongo_connection_options * left, mongo_connection_options * right ){
-    conn->connected = 0;
-    MONGO_INIT_EXCEPTION(&conn->exception);
-
-    conn->left_opts = NULL;
-    conn->right_opts = NULL;
-
-    if ( !left || !right )
-        return mongo_conn_bad_arg;
-
-    conn->left_opts = bson_malloc(sizeof(mongo_connection_options));
-    conn->right_opts = bson_malloc(sizeof(mongo_connection_options));
-
-    memcpy( conn->left_opts,  left,  sizeof( mongo_connection_options ) );
-    memcpy( conn->right_opts, right, sizeof( mongo_connection_options ) );
-
-    return mongo_reconnect(conn);
-}
-
 mongo_conn_return mongo_reconnect( mongo_connection * conn ){
     mongo_conn_return ret;
     mongo_disconnect(conn);
 
-    /* single server */
-    if(conn->right_opts == NULL)
-        return mongo_connect_helper(conn);
-
-    /* repl pair */
-    ret = mongo_connect_helper(conn);
-    if (ret == mongo_conn_success && mongo_cmd_ismaster(conn, NULL)){
-        return mongo_conn_success;
-    }
-
-    swap_repl_pair(conn);
-
-    ret = mongo_connect_helper(conn);
-    if (ret == mongo_conn_success){
-        if(mongo_cmd_ismaster(conn, NULL))
-            return mongo_conn_success;
-        else
-            return mongo_conn_not_master;
-    }
-
-    /* failed to connect to both servers */
-    return ret;
+    if(conn->replica_set)
+      return mongo_connect_helper(conn);
+    else
+      return mongo_replset_connect(conn);
 }
 
 void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bsons, int count){
@@ -511,11 +474,17 @@ bson_bool_t mongo_disconnect( mongo_connection * conn ){
 }
 
 bson_bool_t mongo_destroy( mongo_connection * conn ){
-    free(conn->left_opts);
-    free(conn->right_opts);
-    conn->left_opts = NULL;
-    conn->right_opts = NULL;
+    struct mongo_host_port* node;
+    struct mongo_host_port* prev;
 
+    node = conn->seeds;
+    while( node != NULL ) {
+      prev = node;
+      node = node->next;
+      free(prev);
+    }
+
+    conn->seeds = NULL;
     return mongo_disconnect( conn );
 }
 

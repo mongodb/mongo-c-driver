@@ -49,13 +49,12 @@ typedef struct mongo_host_port {
 } mongo_host_port;
 
 typedef struct {
-    mongo_connection_options* left_opts; /* always current server */
-    mongo_connection_options* right_opts; /* unused with single server */
     mongo_host_port* seeds;
     struct sockaddr_in sa;
     socklen_t addressSize;
     int sock;
     bson_bool_t connected;
+    bson_bool_t replica_set;
     mongo_exception_context exception;
 } mongo_connection;
 

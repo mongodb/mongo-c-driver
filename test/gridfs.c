@@ -90,7 +90,7 @@ void test_basic() {
     opts.port = 27017;
 
     if (mongo_connect( conn , &opts )){
-        printf("failed to connect\n");
+        printf("failed to connect 2\n");
         exit(1);
     }
 
@@ -112,6 +112,7 @@ void test_basic() {
     }
 
     gridfs_destroy(gfs);
+    mongo_disconnect(conn);
     mongo_destroy(conn);
 }
 
@@ -133,7 +134,7 @@ void test_streaming() {
     opts.port = 27017;
 
     if (mongo_connect( conn , &opts )){
-        printf("failed to connect\n");
+        printf("failed to connect 3\n");
         exit(1);
     }
 
@@ -177,7 +178,7 @@ void test_large() {
     opts.port = 27017;
 
     if (mongo_connect( conn , &opts )){
-        printf("failed to connect\n");
+        printf("failed to connect 1\n");
         exit(1);
     }
 
@@ -215,6 +216,7 @@ void test_large() {
     ASSERT( gridfile_get_contentlength( gfile ) ==  filesize );
 
     gridfs_destroy(gfs);
+    mongo_disconnect(conn);
     mongo_destroy(conn);
 }
 
