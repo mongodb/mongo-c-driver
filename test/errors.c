@@ -5,7 +5,6 @@
 #include <stdlib.h>
 
 static mongo_connection conn[1];
-static mongo_connection_options opts;
 static const char* db = "test";
 static const char* ns = "test.c.error";
 
@@ -14,11 +13,7 @@ int main(){
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    strncpy(opts.host, TEST_SERVER, 255);
-    opts.host[254] = '\0';
-    opts.port = 27017;
-
-    if (mongo_connect( conn , &opts )){
+    if (mongo_connect( conn , &TEST_SERVER, 27017 )){
         printf("failed to connect\n");
         exit(1);
     }

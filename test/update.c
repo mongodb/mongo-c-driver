@@ -6,7 +6,6 @@
 
 int main(){
     mongo_connection conn[1];
-    mongo_connection_options opts;
     bson_buffer bb;
     bson obj;
     bson cond;
@@ -17,11 +16,7 @@ int main(){
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    strncpy(opts.host, TEST_SERVER, 255);
-    opts.host[254] = '\0';
-    opts.port = 27017;
-
-    if (mongo_connect( conn , &opts )){
+    if (mongo_connect( conn , &TEST_SERVER, 27017 )){
         printf("failed to connect\n");
         exit(1);
     }

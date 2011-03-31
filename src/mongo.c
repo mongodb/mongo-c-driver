@@ -108,15 +108,15 @@ mongo_message * mongo_message_create( int len , int id , int responseTo , int op
 /* ----------------------------
    connection stuff
    ------------------------------ */
-static int mongo_connect_helper( mongo_connection * conn ){
+static int mongo_socket_connect( mongo_connection * conn, const char * host, int port ){
     /* setup */
     conn->sock = 0;
     conn->connected = 0;
 
     memset( conn->sa.sin_zero , 0 , sizeof(conn->sa.sin_zero) );
     conn->sa.sin_family = AF_INET;
-    conn->sa.sin_port = htons(conn->seeds->port);
-    conn->sa.sin_addr.s_addr = inet_addr(conn->seeds->host);
+    conn->sa.sin_port = htons(port);
+    conn->sa.sin_addr.s_addr = inet_addr(host);
     conn->addressSize = sizeof(conn->sa);
 
     /* connect */
@@ -140,24 +140,18 @@ static int mongo_connect_helper( mongo_connection * conn ){
     return 0;
 }
 
-mongo_conn_return mongo_connect( mongo_connection * conn , mongo_connection_options * options ){
+mongo_conn_return mongo_connect( mongo_connection * conn , const char * host, int port ){
     MONGO_INIT_EXCEPTION(&conn->exception);
     conn->replica_set = 0;
 
     conn->seeds = bson_malloc(sizeof(mongo_host_port));
+
+    strncpy(conn->seeds->host, host, strlen( host ) + 1 );
+    conn->seeds->port = port;
     conn->seeds->next = NULL;
 
-    if ( options ){
-        strncpy(conn->seeds->host, options->host, strlen( options->host ) + 1 );
-        conn->seeds->port = options->port;
-    } else {
-        strcpy( conn->seeds->host , "127.0.0.1" );
-        conn->seeds->port = 27017;
-    }
-
-    return mongo_connect_helper(conn);
+    return mongo_socket_connect(conn, host, port);
 }
-
 
 void mongo_replset_init_conn(mongo_connection* conn) {
     MONGO_INIT_EXCEPTION(&conn->exception);
@@ -254,7 +248,7 @@ mongo_conn_return mongo_reconnect( mongo_connection * conn ){
     mongo_disconnect(conn);
 
     if(conn->replica_set)
-      return mongo_connect_helper(conn);
+      return mongo_socket_connect(conn, &(conn->seeds->host), conn->seeds->port);
     else
       return mongo_replset_connect(conn);
 }

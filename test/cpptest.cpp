@@ -10,17 +10,12 @@ using namespace std;
 
 int main(){
     mongo_connection conn[1];
-    mongo_connection_options opts;
     bson_buffer bb;
     bson b;
 
     INIT_SOCKETS_FOR_WINDOWS;
-    
-    strncpy(opts.host, TEST_SERVER, 255);
-    opts.host[254] = '\0';
-    opts.port = 27017;
 
-    if (mongo_connect( conn , &opts )){
+    if (mongo_connect( conn , (const char *)&TEST_SERVER, 27017 )){
         cout << "failed to connect" << endl;
         return 1;
     }

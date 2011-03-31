@@ -37,11 +37,6 @@ typedef int socklen_t;
 
 MONGO_EXTERN_C_START
 
-typedef struct mongo_connection_options {
-    char host[255];
-    int port;
-} mongo_connection_options;
-
 typedef struct mongo_host_port {
     char host[255];
     int port;
@@ -118,13 +113,16 @@ typedef enum {
 /**
  * @param options can be null
  */
-mongo_conn_return mongo_connect( mongo_connection * conn , mongo_connection_options * options );
-mongo_conn_return mongo_connect_pair( mongo_connection * conn , mongo_connection_options * left, mongo_connection_options * right );
-mongo_conn_return mongo_reconnect( mongo_connection * conn ); /* you will need to reauthenticate after calling */
+mongo_conn_return mongo_connect( mongo_connection * conn , const char* host, int port );
 
+/* To connect to a replica set, you'll need to call each of these methods. */
 void mongo_replset_init_conn(mongo_connection* conn);
 int mongo_replset_add_seed(mongo_connection* conn, const char* host, int port);
 mongo_conn_return mongo_replset_connect(mongo_connection* conn);
+
+
+/* This method will reconnect to a single mongod or to a replica set. */
+mongo_conn_return mongo_reconnect( mongo_connection * conn ); /* you will need to reauthenticate after calling */
 
 bson_bool_t mongo_disconnect( mongo_connection * conn ); /* use this if you want to be able to reconnect */
 bson_bool_t mongo_destroy( mongo_connection * conn ); /* you must call this even if connection failed */

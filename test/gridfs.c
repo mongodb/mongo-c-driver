@@ -75,7 +75,6 @@ void test_gridfile(gridfs *gfs, char *data_before, int64_t length, char *filenam
 
 void test_basic() {
     mongo_connection conn[1];
-    mongo_connection_options opts;
     gridfs gfs[1];
     char data_before[UPPER];
     int64_t i;
@@ -85,11 +84,7 @@ void test_basic() {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    strncpy(opts.host, "127.0.0.1", 255);
-    opts.host[254] = '\0';
-    opts.port = 27017;
-
-    if (mongo_connect( conn , &opts )){
+    if (mongo_connect( conn, &TEST_SERVER, 27017 )){
         printf("failed to connect 2\n");
         exit(1);
     }
@@ -118,7 +113,6 @@ void test_basic() {
 
 void test_streaming() {
     mongo_connection conn[1];
-    mongo_connection_options opts;
     gridfs gfs[1];
     gridfile gfile[1];
     char buf[LARGE];
@@ -129,11 +123,7 @@ void test_streaming() {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    strncpy(opts.host, "127.0.0.1", 255);
-    opts.host[254] = '\0';
-    opts.port = 27017;
-
-    if (mongo_connect( conn , &opts )){
+    if (mongo_connect( conn , &TEST_SERVER, 27017 )){
         printf("failed to connect 3\n");
         exit(1);
     }
@@ -161,7 +151,6 @@ void test_streaming() {
 
 void test_large() {
     mongo_connection conn[1];
-    mongo_connection_options opts;
     gridfs gfs[1];
     gridfile gfile[1];
     FILE *fd;
@@ -173,11 +162,7 @@ void test_large() {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    strncpy(opts.host, "127.0.0.1", 255);
-    opts.host[254] = '\0';
-    opts.port = 27017;
-
-    if (mongo_connect( conn , &opts )){
+    if (mongo_connect( conn, &TEST_SERVER, 27017 )){
         printf("failed to connect 1\n");
         exit(1);
     }
