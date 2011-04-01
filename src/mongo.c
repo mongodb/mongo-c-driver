@@ -155,6 +155,7 @@ mongo_conn_return mongo_connect( mongo_connection * conn , const char * host, in
 
 void mongo_replset_init_conn(mongo_connection* conn) {
     MONGO_INIT_EXCEPTION(&conn->exception);
+    conn->primary_connected = 0;
     conn->replica_set = 1;
 
     conn->seeds = NULL;
@@ -182,6 +183,7 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
 
     bson* out;
     bson_bool_t ismaster;
+    int connect_res;
 
     mongo_host_port* node = conn->seeds;
 
@@ -190,54 +192,40 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
 
     while( node != NULL ) {
 
-        memset( conn->sa.sin_zero , 0 , sizeof(conn->sa.sin_zero) );
-        conn->sa.sin_family = AF_INET;
-        conn->sa.sin_port = htons(node->port);
-        conn->sa.sin_addr.s_addr = inet_addr(node->host);
-
-        conn->addressSize = sizeof(conn->sa);
-
-        conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
-        if ( conn->sock <= 0 ){
-            mongo_close_socket( conn->sock );
-            return mongo_conn_no_socket;
+        if( connect_res = mongo_socket_connect( conn, &node->host, node->port ) ) {
+            if( connect_res == mongo_conn_no_socket )
+                return connect_res;
         }
+        else { /* We're connected, so check whether this is the primary node */
+            ismaster = 0;
 
-        if ( connect( conn->sock , (struct sockaddr*)&conn->sa , conn->addressSize ) ){
-            mongo_close_socket( conn->sock );
+            out = bson_malloc(sizeof(bson));
+            out->data = NULL;
+            out->owned = 0;
+
+            if (mongo_simple_int_command(conn, "admin", "ismaster", 1, out)) {
+                bson_iterator it;
+                bson_find(&it, out, "ismaster");
+                ismaster = bson_iterator_bool(&it);
+                free(out);
+            }
+
+            if(ismaster) {
+                conn->primary_connected = 1;
+            }
+            else {
+                mongo_close_socket( conn->sock );
+            }
+
+            node = node->next;
         }
-
-        setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &one, sizeof(one) );
-
-        /* Check whether this is the primary node */
-        ismaster = 0;
-
-        out = bson_malloc(sizeof(bson));
-        out->data = NULL;
-        out->owned = 0;
-
-        if (mongo_simple_int_command(conn, "admin", "ismaster", 1, out)) {
-            bson_iterator it;
-            bson_find(&it, out, "ismaster");
-            ismaster = bson_iterator_bool(&it);
-            free(out);
-        }
-
-        if(ismaster) {
-            conn->connected = 1;
-        }
-        else {
-            mongo_close_socket( conn->sock );
-        }
-
-        node = node->next;
     }
 
     /* TODO signals */
 
     /* Might be nice to know which node is primary */
     /* con->primary = NULL; */
-    if( conn->connected == 1 )
+    if( conn->primary_connected == 1 )
         return 0;
     else
         return -1;

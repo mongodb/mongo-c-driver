@@ -49,6 +49,7 @@ typedef struct {
     socklen_t addressSize;
     int sock;
     bson_bool_t connected;
+    bson_bool_t primary_connected;
     bson_bool_t replica_set;
     mongo_exception_context exception;
 } mongo_connection;
