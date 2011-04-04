@@ -45,6 +45,7 @@ typedef struct mongo_host_port {
 
 typedef struct {
     mongo_host_port* seeds;
+    char* name;
     struct sockaddr_in sa;
     socklen_t addressSize;
     int sock;
@@ -108,7 +109,9 @@ typedef enum {
     mongo_conn_bad_arg,
     mongo_conn_no_socket,
     mongo_conn_fail,
-    mongo_conn_not_master /* leaves conn connected to slave */
+    mongo_conn_not_master, /* leaves conn connected to slave */
+    mongo_conn_bad_set_name, /* The provided replica set name doesn't match the existing replica set */
+    mongo_conn_cannot_find_primary
 } mongo_conn_return;
 
 /**
@@ -117,9 +120,9 @@ typedef enum {
 mongo_conn_return mongo_connect( mongo_connection * conn , const char* host, int port );
 
 /* To connect to a replica set, you'll need to call each of these methods. */
-void mongo_replset_init_conn(mongo_connection* conn);
-int mongo_replset_add_seed(mongo_connection* conn, const char* host, int port);
-mongo_conn_return mongo_replset_connect(mongo_connection* conn);
+void mongo_replset_init_conn( mongo_connection* conn, const char* name );
+int mongo_replset_add_seed( mongo_connection* conn, const char* host, int port );
+mongo_conn_return mongo_replset_connect( mongo_connection* conn );
 
 
 /* This method will reconnect to a single mongod or to a replica set. */

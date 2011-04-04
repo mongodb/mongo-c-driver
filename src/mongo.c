@@ -143,6 +143,7 @@ static int mongo_socket_connect( mongo_connection * conn, const char * host, int
 mongo_conn_return mongo_connect( mongo_connection * conn , const char * host, int port ){
     MONGO_INIT_EXCEPTION(&conn->exception);
     conn->replica_set = 0;
+    conn->name = NULL;
 
     conn->seeds = bson_malloc(sizeof(mongo_host_port));
 
@@ -153,10 +154,12 @@ mongo_conn_return mongo_connect( mongo_connection * conn , const char * host, in
     return mongo_socket_connect(conn, host, port);
 }
 
-void mongo_replset_init_conn(mongo_connection* conn) {
+void mongo_replset_init_conn( mongo_connection* conn, const char* name ) {
     MONGO_INIT_EXCEPTION(&conn->exception);
     conn->primary_connected = 0;
     conn->replica_set = 1;
+    conn->name = (char *)bson_malloc( sizeof( name ) + 1 );
+    memcpy( conn->name, name, sizeof( name ) + 1  );
 
     conn->seeds = NULL;
 }
@@ -179,12 +182,44 @@ int mongo_replset_add_seed(mongo_connection* conn, const char* host, int port) {
     return 0;
 }
 
-mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
+static int mongo_replset_check_node( mongo_connection* conn ) {
 
     bson* out;
-    bson_bool_t ismaster;
-    int connect_res;
+    bson_iterator it;
+    bson_bool_t ismaster = 0;
+    const char* set_name;
 
+    out = bson_malloc(sizeof(bson));
+    out->data = NULL;
+    out->owned = 0;
+
+    if (mongo_simple_int_command(conn, "admin", "ismaster", 1, out)) {
+        bson_find(&it, out, "ismaster");
+        ismaster = bson_iterator_bool(&it);
+
+        bson_find( &it, out, "setName" );
+        set_name = bson_iterator_string( &it );
+        if( strcmp( set_name, conn->name ) != 0 ) {
+            free(out);
+            return mongo_conn_bad_set_name;
+        }
+
+        free(out);
+    }
+
+    if(ismaster) {
+        conn->primary_connected = 1;
+    }
+    else {
+        mongo_close_socket( conn->sock );
+    }
+
+    return 0;
+}
+
+mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
+
+    int connect_error = 0;
     mongo_host_port* node = conn->seeds;
 
     conn->sock = 0;
@@ -192,33 +227,15 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
 
     while( node != NULL ) {
 
-        if( connect_res = mongo_socket_connect( conn, &node->host, node->port ) ) {
-            if( connect_res == mongo_conn_no_socket )
-                return connect_res;
+        connect_error = mongo_socket_connect( conn, (const char*)&node->host, node->port );
+
+        if( connect_error == 0 ) { /* We're connected, so check whether this is the primary node */
+            if ( (connect_error = mongo_replset_check_node( conn )) )
+                return connect_error;
         }
-        else { /* We're connected, so check whether this is the primary node */
-            ismaster = 0;
 
-            out = bson_malloc(sizeof(bson));
-            out->data = NULL;
-            out->owned = 0;
-
-            if (mongo_simple_int_command(conn, "admin", "ismaster", 1, out)) {
-                bson_iterator it;
-                bson_find(&it, out, "ismaster");
-                ismaster = bson_iterator_bool(&it);
-                free(out);
-            }
-
-            if(ismaster) {
-                conn->primary_connected = 1;
-            }
-            else {
-                mongo_close_socket( conn->sock );
-            }
-
-            node = node->next;
-        }
+        /* It's okay if cannot connect to every single node. */
+        node = node->next;
     }
 
     /* TODO signals */
@@ -228,15 +245,14 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
     if( conn->primary_connected == 1 )
         return 0;
     else
-        return -1;
+        return mongo_conn_cannot_find_primary;
 }
 
 mongo_conn_return mongo_reconnect( mongo_connection * conn ){
-    mongo_conn_return ret;
     mongo_disconnect(conn);
 
     if(conn->replica_set)
-      return mongo_socket_connect(conn, &(conn->seeds->host), conn->seeds->port);
+      return mongo_socket_connect(conn, conn->seeds->host, conn->seeds->port);
     else
       return mongo_replset_connect(conn);
 }
@@ -467,6 +483,7 @@ bson_bool_t mongo_destroy( mongo_connection * conn ){
     }
 
     conn->seeds = NULL;
+    free( conn->name );
     return mongo_disconnect( conn );
 }
 

@@ -6,24 +6,24 @@
 #include <string.h>
 #include <stdlib.h>
 
-int main(){
+int test_connect( const char* set_name ) {
+
     mongo_connection conn[1];
+    int error = 0;
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    mongo_replset_init_conn( conn );
+    mongo_replset_init_conn( conn, set_name );
     mongo_replset_add_seed( conn, TEST_SERVER, 30000 );
     mongo_replset_add_seed( conn, TEST_SERVER, 30001 );
-    mongo_host_port* p = conn->seeds;
 
-    while( p != NULL ) {
-      p = p->next;
-    }
+    return mongo_replset_connect( conn );
+}
 
-    if( mongo_replset_connect( conn ) ) {
-      printf("Failed to connect.");
-      exit(1);
-    }
+int main(){
+    ASSERT( test_connect( "test-rs" ) == 0 );
+
+    ASSERT( test_connect( "test-foobar" ) == mongo_conn_bad_set_name );
 
     return 0;
 }
