@@ -63,11 +63,8 @@ int main(){
      */
     bson_from_buffer( &b, &bb );
 
-    /* This is how you can iterate over the array of objects */
-    bson_iterator_init( &it, b.data );
-
     /* Advance to the 'items' array */
-    bson_find( &it, &b.data, "items" );
+    bson_find( &it, &b, "items" );
 
     /* Get the subobject representing items */
     bson_iterator_subobject( &it, &sub );

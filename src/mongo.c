@@ -29,6 +29,8 @@
 #include <unistd.h>
 #endif
 
+#include <strings.h>
+
 /* only need one of these */
 static const int zero = 0;
 static const int one = 1;
@@ -144,6 +146,7 @@ mongo_conn_return mongo_connect( mongo_connection * conn , const char * host, in
     MONGO_INIT_EXCEPTION(&conn->exception);
     conn->replica_set = 0;
     conn->name = NULL;
+    conn->hosts = NULL;
 
     conn->seeds = bson_malloc(sizeof(mongo_host_port));
 
@@ -158,22 +161,23 @@ void mongo_replset_init_conn( mongo_connection* conn, const char* name ) {
     MONGO_INIT_EXCEPTION(&conn->exception);
     conn->primary_connected = 0;
     conn->replica_set = 1;
+    conn->hosts = NULL;
     conn->name = (char *)bson_malloc( sizeof( name ) + 1 );
     memcpy( conn->name, name, sizeof( name ) + 1  );
 
     conn->seeds = NULL;
 }
 
-int mongo_replset_add_seed(mongo_connection* conn, const char* host, int port) {
+static int mongo_replset_add_node( mongo_host_port** list, const char* host, int port ) {
     mongo_host_port* host_port = bson_malloc(sizeof(mongo_host_port));
     host_port->port = port;
     host_port->next = NULL;
-    strncpy( host_port->host, host, strlen(host) );
+    strncpy( host_port->host, host, strlen(host) + 1 );
 
-    if( conn->seeds == NULL )
-        conn->seeds = host_port;
+    if( *list == NULL )
+        *list = host_port;
     else {
-        mongo_host_port* p = conn->seeds;
+        mongo_host_port* p = *list;
         while( p->next != NULL )
           p = p->next;
         p->next = host_port;
@@ -182,29 +186,94 @@ int mongo_replset_add_seed(mongo_connection* conn, const char* host, int port) {
     return 0;
 }
 
-static int mongo_replset_check_node( mongo_connection* conn ) {
+int mongo_replset_add_seed(mongo_connection* conn, const char* host, int port) {
+    return mongo_replset_add_node( &conn->seeds, host, port );
+}
 
-    bson* out;
+static int mongo_replset_check_seed( mongo_connection* conn ) {
+    bson out;
+    bson hosts;
+    const char* data;
+    bson_iterator it;
+    bson_iterator it_sub;
+    const char* host_string;
+    char* host;
+    int len, idx, port, split;
+
+    out.data = NULL;
+    out.owned = 0;
+
+    hosts.data = NULL;
+    hosts.owned = 0;
+
+    /* TODO: Do we need to free out's data? */
+    if (mongo_simple_int_command(conn, "admin", "ismaster", 1, &out)) {
+
+        if( bson_find( &it, &out, "hosts" ) ) {
+            data = bson_iterator_value( &it );
+            bson_iterator_init( &it_sub, data );
+
+            /* Iterate over host list, adding each host to the
+             * connection's host list.
+             */
+            while( bson_iterator_next( &it_sub ) ) {
+                host_string = bson_iterator_string( &it_sub );
+                len = split = idx = 0;
+
+                /* Split the host_port string at the ':' */
+                while(1) {
+                    if( *(host_string + len) == 0)
+                      break;
+                    if( *(host_string + len) == ':' )
+                      split = len;
+                    len++;
+                }
+
+                /* If 'split' is set, we know the that port exists;
+                 * Otherwise, we set the default port.
+                 */
+                if( len > 0 ) {
+                    idx = split ? split : len;
+                    host = (char *)bson_malloc( idx + 1 );
+                    memcpy( host, host_string, idx );
+                    memcpy( host + idx, "\0", 1 );
+                    if( split )
+                        port = atoi( host_string + idx + 1 );
+                    else
+                        port = 27017;
+
+                    mongo_replset_add_node( &conn->hosts, host, port );
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+/* Find out whether the current connected node is master, and
+ * verify that the node's replica set name matched the provided name
+ */
+static int mongo_replset_check_host( mongo_connection* conn ) {
+
+    bson out;
     bson_iterator it;
     bson_bool_t ismaster = 0;
     const char* set_name;
 
-    out = bson_malloc(sizeof(bson));
-    out->data = NULL;
-    out->owned = 0;
+    out.data = NULL;
+    out.owned = 0;
 
-    if (mongo_simple_int_command(conn, "admin", "ismaster", 1, out)) {
-        bson_find(&it, out, "ismaster");
-        ismaster = bson_iterator_bool(&it);
+    if (mongo_simple_int_command(conn, "admin", "ismaster", 1, &out)) {
+        if( bson_find(&it, &out, "ismaster") )
+            ismaster = bson_iterator_bool( &it );
 
-        bson_find( &it, out, "setName" );
-        set_name = bson_iterator_string( &it );
-        if( strcmp( set_name, conn->name ) != 0 ) {
-            free(out);
-            return mongo_conn_bad_set_name;
+        if( bson_find( &it, &out, "setName" ) ) {
+            set_name = bson_iterator_string( &it );
+            if( strcmp( set_name, conn->name ) != 0 ) {
+                return mongo_conn_bad_set_name;
+            }
         }
-
-        free(out);
     }
 
     if(ismaster) {
@@ -220,28 +289,59 @@ static int mongo_replset_check_node( mongo_connection* conn ) {
 mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
 
     int connect_error = 0;
-    mongo_host_port* node = conn->seeds;
+    mongo_host_port* node;
+    mongo_host_port* p;
 
     conn->sock = 0;
     conn->connected = 0;
 
+    /* First iterate over the seed nodes to get the canonical list of hosts
+     * from the replica set. Break out once we have a host list.
+     */
+    node = conn->seeds;
     while( node != NULL ) {
-
         connect_error = mongo_socket_connect( conn, (const char*)&node->host, node->port );
 
-        if( connect_error == 0 ) { /* We're connected, so check whether this is the primary node */
-            if ( (connect_error = mongo_replset_check_node( conn )) )
+        if( connect_error == 0 ) {
+            if ( (connect_error = mongo_replset_check_seed( conn )) )
                 return connect_error;
         }
+        printf("%s:%d", node->host, node->port);
 
-        /* It's okay if cannot connect to every single node. */
+        if( conn->hosts )
+            break;
+
         node = node->next;
     }
 
-    /* TODO signals */
+    p = conn->hosts;
+    printf("2");
+    while(p != NULL) {
+      printf("\nLIST: %s:%d", p->host, p->port);
+      p = p->next;
+    }
 
-    /* Might be nice to know which node is primary */
-    /* con->primary = NULL; */
+    /* Iterate over the host list, checking for the primary node. */
+    if( !conn->hosts )
+        return mongo_conn_cannot_find_primary;
+    else {
+        printf("Made it!"); 
+        node = conn->hosts;
+
+        printf("%s:%d", node->host, node->port );
+
+        while( node != NULL ) {
+            connect_error = mongo_socket_connect( conn, (const char*)&node->host, node->port );
+
+            if( connect_error == 0 ) {
+                if ( (connect_error = mongo_replset_check_host( conn )) )
+                    return connect_error;
+            }
+
+            node = node->next;
+        }
+    }
+
     if( conn->primary_connected == 1 )
         return 0;
     else

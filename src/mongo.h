@@ -44,8 +44,9 @@ typedef struct mongo_host_port {
 } mongo_host_port;
 
 typedef struct {
-    mongo_host_port* seeds;
-    char* name;
+    mongo_host_port* seeds; /* The list of seed nodes provided by the user. */
+    mongo_host_port* hosts; /* The list of host as reported by the replica set */
+    char* name;             /* The name of the replica set. */
     struct sockaddr_in sa;
     socklen_t addressSize;
     int sock;
