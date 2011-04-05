@@ -30,6 +30,7 @@ typedef int socklen_t;
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #define mongo_close_socket(sock) ( close(sock) )

@@ -29,8 +29,6 @@
 #include <unistd.h>
 #endif
 
-#include <strings.h>
-
 /* only need one of these */
 static const int zero = 0;
 static const int one = 1;
@@ -111,34 +109,41 @@ mongo_message * mongo_message_create( int len , int id , int responseTo , int op
    connection stuff
    ------------------------------ */
 static int mongo_socket_connect( mongo_connection * conn, const char * host, int port ){
-    /* setup */
+    struct addrinfo* addrs = NULL;
+    struct addrinfo hints;
+    char port_str[12];
+    int ret;
+
     conn->sock = 0;
     conn->connected = 0;
 
-    memset( conn->sa.sin_zero , 0 , sizeof(conn->sa.sin_zero) );
-    conn->sa.sin_family = AF_INET;
-    conn->sa.sin_port = htons(port);
-    conn->sa.sin_addr.s_addr = inet_addr(host);
-    conn->addressSize = sizeof(conn->sa);
+    memset( &hints, 0, sizeof( hints ) );
+    hints.ai_family = AF_INET;
 
-    /* connect */
+    sprintf( port_str, "%d", port );
+
     conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
     if ( conn->sock <= 0 ){
         mongo_close_socket( conn->sock );
         return mongo_conn_no_socket;
     }
 
-    if ( connect( conn->sock , (struct sockaddr*)&conn->sa , conn->addressSize ) ){
-        mongo_close_socket( conn->sock );
+    ret = getaddrinfo( host, port_str, &hints, &addrs );
+    if(ret) {
+        fprintf( stderr, "getaddrinfo failed: %s", gai_strerror( ret ) );
         return mongo_conn_fail;
     }
 
-    /* nagle */
+    if ( connect( conn->sock, addrs->ai_addr, addrs->ai_addrlen ) ){
+        mongo_close_socket( conn->sock );
+        freeaddrinfo( addrs );
+        return mongo_conn_fail;
+    }
+
     setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &one, sizeof(one) );
 
-    /* TODO signals */
-
     conn->connected = 1;
+    freeaddrinfo( addrs );
     return 0;
 }
 
@@ -290,7 +295,6 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
 
     int connect_error = 0;
     mongo_host_port* node;
-    mongo_host_port* p;
 
     conn->sock = 0;
     conn->connected = 0;
@@ -306,7 +310,6 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
             if ( (connect_error = mongo_replset_check_seed( conn )) )
                 return connect_error;
         }
-        printf("%s:%d", node->host, node->port);
 
         if( conn->hosts )
             break;
@@ -314,21 +317,11 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
         node = node->next;
     }
 
-    p = conn->hosts;
-    printf("2");
-    while(p != NULL) {
-      printf("\nLIST: %s:%d", p->host, p->port);
-      p = p->next;
-    }
-
     /* Iterate over the host list, checking for the primary node. */
     if( !conn->hosts )
         return mongo_conn_cannot_find_primary;
     else {
-        printf("Made it!"); 
         node = conn->hosts;
-
-        printf("%s:%d", node->host, node->port );
 
         while( node != NULL ) {
             connect_error = mongo_socket_connect( conn, (const char*)&node->host, node->port );

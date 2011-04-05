@@ -42,7 +42,6 @@ int main(){
     bson_append_symbol(&bb, "symbol", "SYMBOL");
 
     {
-        char hex[30];
         bson_buffer scope_buf;
         bson scope;
         bson_buffer_init(&scope_buf);

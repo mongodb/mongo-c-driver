@@ -9,7 +9,6 @@
 int test_connect( const char* set_name ) {
 
     mongo_connection conn[1];
-    int error = 0;
 
     INIT_SOCKETS_FOR_WINDOWS;
 

@@ -18,7 +18,7 @@ int main(){
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if (mongo_connect( conn , &TEST_SERVER , 27017 )){
+    if (mongo_connect( conn , TEST_SERVER , 27017 )){
         printf("failed to connect\n");
         exit(1);
     }

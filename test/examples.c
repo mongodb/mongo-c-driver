@@ -8,7 +8,6 @@ int main(){
     bson_buffer bb;
     bson b, sub;
     bson_iterator it;
-    bson_type type;
 
     /* Create a rich document like this one:
      *
@@ -74,41 +73,3 @@ int main(){
 
    return 0;
 }
-
-/*
-void bson_iterate_object( bson* b, int depth ) {
-    bson_iterator it;
-
-    bson_iterator_init( &it, b->data );
-
-    while ( bson_iterator_next( &it ) ){
-        bson_type t = bson_iterator_type( &it );
-        if ( t == 0 )
-            break;
-        key = bson_iterator_key( &i );
-
-        for ( temp=0; temp<=depth; temp++ )
-            printf( "\t" );
-        printf( "%s : %d \t " , key , t );
-        switch ( t ){
-        case bson_int: printf( "%d" , bson_iterator_int( &i ) ); break;
-        case bson_double: printf( "%f" , bson_iterator_double( &i ) ); break;
-        case bson_bool: printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
-        case bson_string: printf( "%s" , bson_iterator_string( &i ) ); break;
-        case bson_null: printf( "null" ); break;
-        case bson_oid: bson_oid_to_string(bson_iterator_oid(&i), oidhex); printf( "%s" , oidhex ); break;
-        case bson_timestamp:
-            ts = bson_iterator_timestamp( &i );
-            printf("i: %d, t: %d", ts.i, ts.t);
-            break;
-        case bson_object:
-        case bson_array:
-            printf( "\n" );
-            bson_print_raw( bson_iterator_value( &i ) , depth + 1 );
-            break;
-        default:
-            fprintf( stderr , "can't print type : %d\n" , t );
-        }
-        printf( "\n" );
-    }
-} */

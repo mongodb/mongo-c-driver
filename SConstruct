@@ -28,7 +28,7 @@ import sys
 env = Environment( ENV=os.environ )
 
 if os.sys.platform in ["darwin", "linux2"]:
-    env.Append( CPPFLAGS=" -pedantic -Wall -ggdb " )
+    env.Append( CPPFLAGS=" -pedantic -Wall -ggdb" )
     env.Append( CPPPATH=["/opt/local/include/"] )
     env.Append( LIBPATH=["/opt/local/lib/"] )
 
@@ -38,12 +38,14 @@ if os.sys.platform in ["darwin", "linux2"]:
     else:
         env.Append( CFLAGS=" -ansi " )
 
+    env.Append( CFLAGS=" -D_POSIX_SOURCE")
+
     if GetOption('optimize'):
         env.Append( CPPFLAGS=" -O3 " )
         # -O3 benchmarks *significantly* faster than -O2 when disabling networking
 elif 'win32' == os.sys.platform:
     env.Append( LIBS='ws2_32' )
-        
+
 
 #we shouldn't need these options in c99 mode
 if not GetOption('use_c99'):

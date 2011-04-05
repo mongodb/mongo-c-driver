@@ -84,7 +84,7 @@ void test_basic() {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if (mongo_connect( conn, &TEST_SERVER, 27017 )){
+    if (mongo_connect( conn, TEST_SERVER, 27017 )){
         printf("failed to connect 2\n");
         exit(1);
     }
@@ -123,7 +123,7 @@ void test_streaming() {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if (mongo_connect( conn , &TEST_SERVER, 27017 )){
+    if (mongo_connect( conn , TEST_SERVER, 27017 )){
         printf("failed to connect 3\n");
         exit(1);
     }
@@ -162,7 +162,7 @@ void test_large() {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if (mongo_connect( conn, &TEST_SERVER, 27017 )){
+    if (mongo_connect( conn, TEST_SERVER, 27017 )){
         printf("failed to connect 1\n");
         exit(1);
     }
