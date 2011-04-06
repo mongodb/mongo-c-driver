@@ -219,12 +219,11 @@ static int mongo_replset_check_seed( mongo_connection* conn ) {
     int len, idx, port, split;
 
     out.data = NULL;
-    out.owned = 0;
+    out.owned = 1;
 
     hosts.data = NULL;
-    hosts.owned = 0;
+    hosts.owned = 1;
 
-    /* KB TODO: Do we need to free out's data? */
     if (mongo_simple_int_command(conn, "admin", "ismaster", 1, &out)) {
 
         if( bson_find( &it, &out, "hosts" ) ) {
@@ -266,6 +265,9 @@ static int mongo_replset_check_seed( mongo_connection* conn ) {
         }
     }
 
+    bson_destroy( &out );
+    bson_destroy( &hosts );
+
     return 0;
 }
 
@@ -280,7 +282,7 @@ static int mongo_replset_check_host( mongo_connection* conn ) {
     const char* set_name;
 
     out.data = NULL;
-    out.owned = 0;
+    out.owned = 1;
 
     if (mongo_simple_int_command(conn, "admin", "ismaster", 1, &out)) {
         if( bson_find(&it, &out, "ismaster") )
@@ -293,6 +295,7 @@ static int mongo_replset_check_host( mongo_connection* conn ) {
             }
         }
     }
+    bson_destroy( &out );
 
     if(ismaster) {
         conn->replset->primary_connected = 1;
