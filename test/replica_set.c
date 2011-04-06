@@ -9,6 +9,7 @@
 int test_connect( const char* set_name ) {
 
     mongo_connection conn[1];
+    int res;
 
     INIT_SOCKETS_FOR_WINDOWS;
 
@@ -16,7 +17,14 @@ int test_connect( const char* set_name ) {
     mongo_replset_add_seed( conn, TEST_SERVER, 30000 );
     mongo_replset_add_seed( conn, TEST_SERVER, 30001 );
 
-    return mongo_replset_connect( conn );
+    if( res = mongo_replset_connect( conn ) ) {
+        mongo_destroy( conn );
+        return res;
+    }
+    else {
+        mongo_disconnect( conn );
+        return mongo_reconnect( conn );
+    }
 }
 
 int main() {

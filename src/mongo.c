@@ -164,6 +164,7 @@ void mongo_replset_init_conn( mongo_connection* conn, const char* name ) {
     MONGO_INIT_EXCEPTION(&conn->exception);
     conn->replset = bson_malloc( sizeof( mongo_replset ) );
     conn->replset->primary_connected = 0;
+    conn->replset->seeds = NULL;
     conn->replset->hosts = NULL;
     conn->replset->name = (char *)bson_malloc( sizeof( name ) + 1 );
     memcpy( conn->replset->name, name, sizeof( name ) + 1  );
@@ -361,13 +362,13 @@ mongo_conn_return mongo_reconnect( mongo_connection * conn ){
     mongo_disconnect(conn);
 
     if( conn->replset )
-      return mongo_replset_connect(conn);
+      return mongo_replset_connect( conn );
     else
-      return mongo_socket_connect(conn, conn->primary->host, conn->primary->port);
+      return mongo_socket_connect( conn, conn->primary->host, conn->primary->port );
 }
 
 bson_bool_t mongo_disconnect( mongo_connection * conn ){
-    if ( ! conn->connected )
+    if( ! conn->connected )
         return 1;
 
     mongo_close_socket( conn->sock );
