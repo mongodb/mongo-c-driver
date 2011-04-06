@@ -19,9 +19,8 @@ int test_connect( const char* set_name ) {
     return mongo_replset_connect( conn );
 }
 
-int main(){
+int main() {
     ASSERT( test_connect( "test-rs" ) == 0 );
-
     ASSERT( test_connect( "test-foobar" ) == mongo_conn_bad_set_name );
 
     return 0;
