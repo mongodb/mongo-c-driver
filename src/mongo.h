@@ -104,10 +104,9 @@ enum mongo_operations {
 };
 
 
-/* ----------------------------
-   CONNECTION STUFF
-   ------------------------------ */
-
+/*
+ * CONNECTIONS
+ */
 typedef enum {
     mongo_conn_success = 0,
     mongo_conn_bad_arg,
@@ -119,21 +118,75 @@ typedef enum {
 } mongo_conn_return;
 
 /*
-  @param options can be null
+ * Connect to a single MongoDB server.
+ *
+ * @param conn a mongo_connection object.
+ * @param host a numerical network address or a network hostname.
+ * @param port the port to connect to.
+ *
+ * @return mongo_conn_return
  */
 mongo_conn_return mongo_connect( mongo_connection * conn , const char* host, int port );
 
-/* To connect to a replica set, you'll need to call each of these methods. */
+/* 
+ * Initialize a connection object for connecting with a replica set.
+ *
+ * @param conn a mongo_connection object.
+ * @param name the name of the replica set to connect to.
+ * */
 void mongo_replset_init_conn( mongo_connection* conn, const char* name );
+
+/*
+ * Add a seed node to the connection object.
+ *
+ * You must specify at least one seed node before connecting to a replica set.
+ *
+ * @param conn a mongo_connection object.
+ * @param host a numerical network address or a network hostname.
+ * @param port the port to connect to.
+ */
 int mongo_replset_add_seed( mongo_connection* conn, const char* host, int port );
+
+/*
+ * Connect to a replica set.
+ *
+ * Before passing a connection object to this method, you must already have called
+ * mongo_replset_init_conn and mongo_replset_add_seed.
+ *
+ * @param conn a mongo_connection object.
+ *
+ * @return mongo_conn_return
+ */
 mongo_conn_return mongo_replset_connect( mongo_connection* conn );
 
+/*
+ * Try reconnecting to the server using the existing connection settings.
+ *
+ * This method will disconnect the current socket. If you've authentication,
+ * you'll need to re-authenticate after calling this function.
+ *
+ * @param conn
+ *
+ * @return mongo_conn_return
+ */
+mongo_conn_return mongo_reconnect( mongo_connection * conn );
 
-/* This method will reconnect to a single mongod or to a replica set. */
-mongo_conn_return mongo_reconnect( mongo_connection * conn ); /* you will need to reauthenticate after calling */
+/*
+ * Close the current connection to the server.
+ */
+bson_bool_t mongo_disconnect( mongo_connection * conn );
 
-bson_bool_t mongo_disconnect( mongo_connection * conn ); /* use this if you want to be able to reconnect */
-bson_bool_t mongo_destroy( mongo_connection * conn ); /* you must call this even if connection failed */
+/*
+ * Close any existing connection to the server and free all allocated
+ * memory associated with the conn object.
+ *
+ * You must always call this method when finished with the connection object.
+ *
+ * @param conn
+ *
+ * @return bson_bool_t
+ */
+bson_bool_t mongo_destroy( mongo_connection * conn );
 
 /* ----------------------------
    CORE METHODS - insert update remove query getmore
