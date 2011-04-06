@@ -45,15 +45,17 @@ typedef struct mongo_host_port {
 } mongo_host_port;
 
 typedef struct {
-    mongo_host_port* seeds; /* The list of seed nodes provided by the user. */
-    mongo_host_port* hosts; /* The list of host as reported by the replica set */
-    char* name;             /* The name of the replica set. */
-    struct sockaddr_in sa;
-    socklen_t addressSize;
+    mongo_host_port* seeds; /*< The list of seed nodes provided by the user. */
+    mongo_host_port* hosts; /*< The list of host and ports reported by the replica set */
+    char* name;             /*< The name of the replica set. */
+    bson_bool_t primary_connected; /*< Whether we've managed to connect to a primary node. */
+} mongo_replset;
+
+typedef struct {
+    mongo_host_port* primary;
+    mongo_replset* replset;
     int sock;
     bson_bool_t connected;
-    bson_bool_t primary_connected;
-    bson_bool_t replica_set;
     mongo_exception_context exception;
 } mongo_connection;
 
@@ -116,8 +118,8 @@ typedef enum {
     mongo_conn_cannot_find_primary
 } mongo_conn_return;
 
-/**
- * @param options can be null
+/*
+  @param options can be null
  */
 mongo_conn_return mongo_connect( mongo_connection * conn , const char* host, int port );
 
