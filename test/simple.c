@@ -100,6 +100,11 @@ int main(){
     mongo_cursor_destroy(cursor);
     mongo_cmd_drop_db(conn, "test");
     mongo_disconnect( conn );
+
+    mongo_reconnect( conn );
+
+    ASSERT( mongo_simple_int_command( conn, "admin", "ping", 1, NULL ) );
+
     mongo_destroy( conn );
     return 0;
 }
