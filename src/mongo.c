@@ -108,7 +108,9 @@ mongo_message * mongo_message_create( int len , int id , int responseTo , int op
 /* ----------------------------
    connection stuff
    ------------------------------ */
+#ifdef _MONGO_USE_GETADDRINFO
 static int mongo_socket_connect( mongo_connection * conn, const char * host, int port ){
+
     struct addrinfo* addrs = NULL;
     struct addrinfo hints;
     char port_str[12];
@@ -146,6 +148,33 @@ static int mongo_socket_connect( mongo_connection * conn, const char * host, int
     freeaddrinfo( addrs );
     return 0;
 }
+#else
+static int mongo_socket_connect( mongo_connection * conn, const char * host, int port ){
+    struct sockaddr_in sa;
+    socklen_t addressSize;
+
+    memset( sa.sin_zero , 0 , sizeof( sa.sin_zero ) );
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons( port );
+    sa.sin_addr.s_addr = inet_addr( host );
+    addressSize = sizeof( sa );
+
+    conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
+    if ( conn->sock <= 0 ){
+        mongo_close_socket( conn->sock );
+        return mongo_conn_no_socket;
+    }
+
+    if ( connect( conn->sock, (struct sockaddr *)&sa, addressSize ) ){
+        return mongo_conn_fail;
+    }
+
+    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &one, sizeof(one) );
+
+    conn->connected = 1;
+    return 0;
+}
+#endif
 
 mongo_conn_return mongo_connect( mongo_connection * conn , const char * host, int port ){
     MONGO_INIT_EXCEPTION(&conn->exception);

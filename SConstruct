@@ -38,8 +38,6 @@ if os.sys.platform in ["darwin", "linux2"]:
     else:
         env.Append( CFLAGS=" -ansi " )
 
-    env.Append( CFLAGS=" -D_POSIX_SOURCE")
-
     if GetOption('optimize'):
         env.Append( CPPFLAGS=" -O3 " )
         # -O3 benchmarks *significantly* faster than -O2 when disabling networking

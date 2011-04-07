@@ -36,6 +36,10 @@ typedef int socklen_t;
 #define mongo_close_socket(sock) ( close(sock) )
 #endif
 
+#if defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE) || _POSIX_C_SOURCE >= 1
+#define _MONGO_USE_GETADDRINFO
+#endif
+
 MONGO_EXTERN_C_START
 
 typedef struct mongo_host_port {
