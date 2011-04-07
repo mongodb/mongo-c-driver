@@ -502,7 +502,7 @@ mongo_reply * mongo_read_response( mongo_connection * conn ){
     mongo_header head; /* header from network */
     mongo_reply_fields fields; /* header from network */
     mongo_reply * out; /* native endian */
-    int len;
+    unsigned int len;
 
     looping_read(conn, &head, sizeof(head));
     looping_read(conn, &fields, sizeof(fields));
