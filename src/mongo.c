@@ -344,7 +344,6 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
 
     int connect_error = 0;
     mongo_host_port* node;
-    mongo_host_port* p;
 
     conn->sock = 0;
     conn->connected = 0;
