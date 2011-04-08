@@ -297,6 +297,9 @@ static int mongo_replset_check_seed( mongo_connection* conn ) {
 
     bson_destroy( &out );
     bson_destroy( &hosts );
+    mongo_close_socket( conn->sock );
+    conn->sock = 0;
+    conn->connected = 0;
 
     return 0;
 }
@@ -341,6 +344,7 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
 
     int connect_error = 0;
     mongo_host_port* node;
+    mongo_host_port* p;
 
     conn->sock = 0;
     conn->connected = 0;
@@ -375,30 +379,51 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
             if( connect_error == 0 ) {
                 if ( (connect_error = mongo_replset_check_host( conn )) )
                     return connect_error;
+
+                /* Primary found, so return. */
+                else if( conn->replset->primary_connected )
+                     return 0;
+
+                /* No primary, so close the connection. */
+                else {
+                    mongo_close_socket( conn->sock );
+                    conn->sock = 0;
+                    conn->connected = 0;
+                }
             }
 
             node = node->next;
         }
     }
 
-    if( conn->replset->primary_connected == 1 )
-        return 0;
-    else
-        return mongo_conn_cannot_find_primary;
+    return mongo_conn_cannot_find_primary;
 }
 
 mongo_conn_return mongo_reconnect( mongo_connection * conn ){
+    int res;
     mongo_disconnect(conn);
 
-    if( conn->replset )
-      return mongo_replset_connect( conn );
+    if( conn->replset ) {
+        conn->replset->primary_connected = 0;
+        mongo_replset_free_list( &conn->replset->hosts );
+        conn->replset->hosts = NULL;
+        res = mongo_replset_connect( conn );
+        return res;
+    }
     else
-      return mongo_socket_connect( conn, conn->primary->host, conn->primary->port );
+        return mongo_socket_connect( conn, conn->primary->host, conn->primary->port );
 }
 
 bson_bool_t mongo_disconnect( mongo_connection * conn ){
     if( ! conn->connected )
         return 1;
+
+    if( conn->replset ) {
+        conn->replset->primary_connected = 0;
+        mongo_replset_free_list( &conn->replset->hosts );
+        conn->replset->hosts = NULL;
+        return mongo_replset_connect( conn );
+    }
 
     mongo_close_socket( conn->sock );
 
