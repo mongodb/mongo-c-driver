@@ -55,6 +55,10 @@ GridFS
 safe-mode modifications (maybe)
 cached ensure_index (maybe)
 
+CREDITS:
+
+Gergely Nagy - Non-null-terminated string support.
+
 ## LICENSE
 
 Unless otherwise specified in a source file, sources in this
