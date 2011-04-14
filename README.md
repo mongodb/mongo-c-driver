@@ -25,11 +25,18 @@ Then follow the build steps below.
     gcc --std=c99 -Isrc src/*.c YOUR_APP.c # No -Ddefines are needed in c99 mode on little endien
 
 ## Running the tests
-Make sure that you're running mongod on localhost on the default port (27017). Then run:
+Make sure that you're running mongod on localhost on the default port (27017). The replica set
+test assumes a replica set with at least three nodes running on localhost and starting at port
+(30000).
+
+To compile and run the tests:
     scons test
 
 You may optionally specify a remote server:
     scons test --test-server=123.4.5.67
+
+You may also specify an alternate starting port for the replica set members:
+    scons test --test-server=123.4.5.67 --seed-start-port=40000
 
 ## Building with MSVC:
 TODO

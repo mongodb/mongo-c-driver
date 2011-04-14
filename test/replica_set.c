@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#ifndef SEED_START_PORT
+#define SEED_START_PORT 30000
+#endif
+
 int test_connect( const char* set_name ) {
 
     mongo_connection conn[1];
@@ -15,8 +19,8 @@ int test_connect( const char* set_name ) {
     INIT_SOCKETS_FOR_WINDOWS;
 
     mongo_replset_init_conn( conn, set_name );
-    mongo_replset_add_seed( conn, TEST_SERVER, 30000 );
-    mongo_replset_add_seed( conn, TEST_SERVER, 30001 );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
 
     if( res = mongo_replset_connect( conn ) ) {
         mongo_destroy( conn );
@@ -38,8 +42,8 @@ int test_reconnect( const char* set_name ) {
     INIT_SOCKETS_FOR_WINDOWS;
 
     mongo_replset_init_conn( conn, set_name );
-    mongo_replset_add_seed( conn, TEST_SERVER, 30000 );
-    mongo_replset_add_seed( conn, TEST_SERVER, 30001 );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
 
     if( res = mongo_replset_connect( conn ) ) {
         mongo_destroy( conn );

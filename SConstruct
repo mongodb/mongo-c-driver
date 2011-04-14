@@ -10,6 +10,14 @@ AddOption('--test-server',
           action='store',
           help='IP address of server to use for testing')
 
+AddOption('--seed-start-port',
+          dest='seed_start_port',
+          default=30000,
+          type='int',
+          nargs=1,
+          action='store',
+          help='IP address of server to use for testing')
+
 AddOption('--c99',
           dest='use_c99',
           default=False,
@@ -88,7 +96,8 @@ dynb = env.SharedLibrary( "bson" , bLibFiles )
 env.Default( env.Alias( "sharedlib" , [ dynm[0] , dynb[0] ] ) )
 
 benchmarkEnv = env.Clone()
-benchmarkEnv.Append( CPPDEFINES=[('TEST_SERVER', r'\"%s\"'%GetOption('test_server'))] )
+benchmarkEnv.Append( CPPDEFINES=[('TEST_SERVER', r'\"%s\"'%GetOption('test_server')),
+('SEED_START_PORT', r'%d'%GetOption('seed_start_port'))] )
 benchmarkEnv.Append( LIBS=[m, b] )
 benchmarkEnv.Prepend( LIBPATH=["."] )
 benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )
@@ -96,7 +105,8 @@ benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )
 testEnv = benchmarkEnv.Clone()
 testCoreFiles = [ ]
 
-tests = Split('sizes resize endian_swap all_types simple update errors count_delete auth gridfs replica_set examples')
+tests = Split("sizes resize endian_swap all_types simple update errors "
+"count_delete auth gridfs replica_set examples")
 
 if have_libjson:
     tests.append('json')
