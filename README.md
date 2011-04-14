@@ -1,12 +1,15 @@
 # MongoDB C Driver
 
-This is a very basic MongoDB c driver. This is an alpha release.
+This is a very basic MongoDB C driver. The goal is to be super strict for ultimate portability,
+no dependencies, and generic embeddability.
+
+Until the 1.0 release, this driver should be considered alpha. The API will be in flux until then.
 
 Please post tickets and improvements to [JIRA](http://jira.mongodb.org/browse/CDRIVER).
 
-The goal is to be super strict for ultimate portability, no dependencies, and very embeddable anywhere.
+You will need JSON-C (http://oss.metaparadigm.com/json-c/) to compile all the unit tests, but it is not required for the main libraries.
 
-You will need JSON-C (http://oss.metaparadigm.com/json-c/) to compile the unit tests, but it is not required for the main libraries.
+# Building
 
 ## Building with scons:
     scons # this will produce libbson.a and libmongoc.a
@@ -40,8 +43,8 @@ MONGO_USE__INT64             Define this if '__int64' is your compiler's 64bit t
 MONGO_USE_LONG_LONG_INT      Define this if 'long long int' is your compiler's 64bit type
 
 
-## Error Handling:
-I'm using an exception system based on cexcept. If you would like to gracefully
+# Error Handling:
+The driver uses an exception system based on cexcept. If you would like to gracefully
 handle errors, take a look at src/mongo_except.h. It is currently only used for
 network failures, but more errors will be used in the future.
 
@@ -51,15 +54,14 @@ more documentation
 checking for $err in query results
 query helper for sort and hint
 explain and profiler helpers
-GridFS
 safe-mode modifications (maybe)
 cached ensure_index (maybe)
 
-CREDITS:
+# CREDITS
 
 Gergely Nagy - Non-null-terminated string support.
 
-## LICENSE
+# LICENSE
 
 Unless otherwise specified in a source file, sources in this
 repository are published under the terms of the Apache License version
