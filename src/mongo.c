@@ -125,7 +125,7 @@ static int mongo_socket_connect( mongo_connection * conn, const char * host, int
     sprintf( port_str, "%d", port );
 
     conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
-    if ( conn->sock <= 0 ){
+    if ( conn->sock < 0 ){
         mongo_close_socket( conn->sock );
         return mongo_conn_no_socket;
     }
@@ -160,7 +160,7 @@ static int mongo_socket_connect( mongo_connection * conn, const char * host, int
     addressSize = sizeof( sa );
 
     conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
-    if ( conn->sock <= 0 ){
+    if ( conn->sock < 0 ){
         mongo_close_socket( conn->sock );
         return mongo_conn_no_socket;
     }
