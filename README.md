@@ -3,11 +3,11 @@
 This is a very basic MongoDB C driver. The goal is to be super strict for ultimate portability,
 no dependencies, and generic embeddability.
 
-Until the 1.0 release, this driver should be considered alpha. The API will be in flux until then.
+Until the 1.0 release, this driver should be considered alpha. Keep in mind that the API will be in flux until then.
 
 Please post tickets and improvements to [JIRA](http://jira.mongodb.org/browse/CDRIVER).
 
-You will need JSON-C (http://oss.metaparadigm.com/json-c/) to compile all the unit tests, but it is not required for the main libraries.
+You'll need [JSON-C](http://oss.metaparadigm.com/json-c/) to compile all the unit tests, but it's not required for the main libraries.
 
 # Building
 
@@ -41,27 +41,28 @@ You may also specify an alternate starting port for the replica set members:
 ## Building with MSVC:
 TODO
 
-## #define options
-#define options (you must use the same flags to compile all apps and libs):
+# Custom defines
+(Note: you must use the same flags to compile all apps and libs):
 MONGO_BIG_ENDIAN             This must be defined if on a big endian architecture
 
-one of these (defaults to unsigned char if neither is defined)
+one of these (defaults to unsigned char if neither is defined):
+
 MONGO_HAVE_BOOL              Define this if your compiler has a plain 'bool' type
 MONGO_HAVE_STDBOOL           Define this if you must include <stdbool.h> to get 'bool'
 
 one of these (required if not using c99):
+
 MONGO_HAVE_STDINT            Define this if you have <stdint.h> for int64_t
 MONGO_HAVE_UNISTD            Define this if you have <unistd.h> for int64_t
 MONGO_USE__INT64             Define this if '__int64' is your compiler's 64bit type (MSVC)
 MONGO_USE_LONG_LONG_INT      Define this if 'long long int' is your compiler's 64bit type
 
-
-# Error Handling:
+# Error Handling
 The driver uses an exception system based on cexcept. If you would like to gracefully
 handle errors, take a look at src/mongo_except.h. It is currently only used for
 network failures, but more errors will be used in the future.
 
-TODO:
+# TODO
 building on windows
 more documentation
 checking for $err in query results
