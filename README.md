@@ -11,6 +11,12 @@ You will need JSON-C (http://oss.metaparadigm.com/json-c/) to compile all the un
 
 # Building
 
+First checkout the version you want to build. For example, to build version 0.3, run:
+
+    git checkout v0.3
+
+Then follow the build steps below.
+
 ## Building with scons:
     scons # this will produce libbson.a and libmongoc.a
     scons --c99 # this will use c99 mode in gcc (recommended)
