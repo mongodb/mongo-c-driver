@@ -203,7 +203,7 @@ bson_bool_t mongo_destroy( mongo_connection * conn );
    CORE METHODS - insert update remove query getmore
    ------------------------------ */
 /**
- * Insert.
+ * Insert a BSON document into a MongoDB server.
  *
  *
  * @param conn a mongo_connection object.
@@ -214,8 +214,13 @@ bson_bool_t mongo_destroy( mongo_connection * conn );
 void mongo_insert( mongo_connection * conn , const char * ns , bson * data );
 
 /**
+ * Insert a batch of BSON documents into a MongoDB server 
  *
- *
+ * @param conn a mongo_connection object.
+ * @param ns the namespace.
+ * @param data the bson data.
+ * @param num the number of documents in data.
+ * 
  */
 void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
@@ -223,45 +228,81 @@ static const int MONGO_UPDATE_UPSERT = 0x1;
 static const int MONGO_UPDATE_MULTI = 0x2;
 
 /**
- *
+ * Update a document in a MongoDB server.
+ * 
+ * @param conn a mongo_connection object.
+ * @param ns the namespace.
+ * @param cond the bson update query.
+ * @param op the bson update data.
+ * @param flags flags for the update.
  *
  */
 void mongo_update(mongo_connection* conn, const char* ns, const bson* cond, const bson* op, int flags);
 
 /**
+ * Remove a document from a MongoDB server.
  *
+ * @param conn a mongo_connection object.
+ * @param ns the namespace.
+ * @param cond the bson query.
  *
  */
 void mongo_remove(mongo_connection* conn, const char* ns, const bson* cond);
 
 /**
+ * Find documents in a MongoDB server.
  *
+ * @param conn a mongo_connection object.
+ * @param ns the namespace.
+ * @param query the bson query.
+ * @param fields a bson document of fields to be returned.
+ * @param nToReturn the maximum number of documents to retrun.
+ * @param nToSkip the number of documents to skip.
+ * @param options options for the find query.
  *
+ * @return mongo_cursor* a pointer to a result cursor.
  */
 mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
 
 /**
+ * Iterate to the next item in the cursor.
  *
+ * @param cursor a cursor returned from a call to mongo_find
  *
+ * @return bson_bool_t returns true if there is another item in the result
  */
 bson_bool_t mongo_cursor_next(mongo_cursor* cursor);
 
 /**
+ * Destroy a cursor object.
  *
+ * @param cursor the cursor to destroy.
  *
  */
 void mongo_cursor_destroy(mongo_cursor* cursor);
 
 /**
+ * Find a single document in a MongoDB server.
  *
+ * @param conn a mongo_connection object.
+ * @param ns the namespace.
+ * @param query the bson query.
+ * @param fields a bson document of the fields to be returned.
+ * @param out a bson document in which to put the query result.
  *
  */
 /* out can be NULL if you don't care about results. useful for commands */
 bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, bson* fields, bson* out);
 
 /**
+ * Count the number of documents in a collection matching a query.
  *
+ * @param conn a mongo_connection object.
+ * @param db the db name.
+ * @param coll the collection name.
+ * @param query the BSON query.
  *
+ * @returns int64_t the number of matching documents.
  */
 int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll, bson* query);
 
@@ -274,6 +315,7 @@ int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll, bs
 
 static const int MONGO_INDEX_UNIQUE = 0x1;
 static const int MONGO_INDEX_DROP_DUPS = 0x2;
+
 /**
  *
  *
