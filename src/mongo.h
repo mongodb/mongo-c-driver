@@ -302,7 +302,7 @@ bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, 
  * @param coll the collection name.
  * @param query the BSON query.
  *
- * @returns int64_t the number of matching documents.
+ * @return int64_t the number of matching documents.
  */
 int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll, bson* query);
 
@@ -317,13 +317,28 @@ static const int MONGO_INDEX_UNIQUE = 0x1;
 static const int MONGO_INDEX_DROP_DUPS = 0x2;
 
 /**
+ * Create a compouned index.
  *
+ * @param conn a mongo_connection object.
+ * @param ns the namespace.
+ * @param data the bson index data.
+ * @param options index options.
+ * @param out a bson document containing errors, if any.
  *
+ * @return bson_bool_t successful if the index was created.
  */
 bson_bool_t mongo_create_index(mongo_connection * conn, const char * ns, bson * key, int options, bson * out);
+
 /**
+ * Create an index with a single key.
  *
+ * @param conn a mongo_connection object.
+ * @param ns the namespace.
+ * @param field the index key.
+ * @param options index options.
+ * @param out a BSON document containing errors, if any.
  *
+ * @return bson_bool_t successful if the index was created.
  */
 bson_bool_t mongo_create_simple_index(mongo_connection * conn, const char * ns, const char* field, int options, bson * out);
 
@@ -332,31 +347,130 @@ bson_bool_t mongo_create_simple_index(mongo_connection * conn, const char * ns, 
    ------------------------------ */
 
 /**
+ * Run a command on a MongoDB server.
  *
+ * @param conn a mongo_connection object.
+ * @param db the name of the database.
+ * @param command the BSON command to run.
+ * @param out the BSON result of the command.
  *
+ * @return bson_bool_t returns success if the command ran without error.
  */
 bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * command, bson * out);
 
 /**
+ * Run a command that accepts a simple string key and integer value.
  *
+ * @param conn a mongo_connection object.
+ * @param db the name of the database.
+ * @param cmd the command to run.
+ * @param arg the integer argument to the command.
+ * @param out the BSON result of the command.
+ * 
+ * @return bson_bool_t successful if the command ran without error.
  *
  */
 /* for simple commands with a single k-v pair */
 bson_bool_t mongo_simple_int_command(mongo_connection * conn, const char * db, const char* cmd,         int arg, bson * out);
+
+/**
+ * Run a command that accepts a simple string key and value.
+ *
+ * @param conn a mongo_connection object.
+ * @param db the name of the database.
+ * @param cmd the command to run.
+ * @param arg the string argument to the command.
+ * @param out the BSON result of the command.
+ * 
+ * @return bson_bool_t successful if the command ran without error.
+ *
+ */
 bson_bool_t mongo_simple_str_command(mongo_connection * conn, const char * db, const char* cmd, const char* arg, bson * out);
 
+/**
+ * Drop a database.
+ *
+ * @param conn a mongo_connection object.
+ * @param db the name of the database to drop.
+ * 
+ * @return bson_bool_t returns success if the database drop was successful.
+ */
 bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db);
+
+/**
+ * Drop a collection.
+ *
+ * @param conn a mongo_connection object.
+ * @param db the name of the database.
+ * @param collection the name of the collection to drop.
+ * @param out a BSON document containing the result of the command.
+ *
+ * @return bson_bool_t returns success if the collection drop was successful.
+ */
 bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, const char * collection, bson * out);
 
+/**
+ * Add a database user.
+ *
+ * @param conn a mongo_connection object.
+ * @param db the database in which to add the user.
+ * @param user the user name
+ * @param pass the user password
+  */ 
 void mongo_cmd_add_user(mongo_connection* conn, const char* db, const char* user, const char* pass);
+
+/**
+ * Authenticate a user.
+ *
+ * @param conn a mongo_connection object.
+ * @param db the database to authenticate against.
+ * @param user the user name to authenticate.
+ * @param pass the user's password.
+ */
 bson_bool_t mongo_cmd_authenticate(mongo_connection* conn, const char* db, const char* user, const char* pass);
 
+/**
+ * Check if the current server is a master.
+ * 
+ * @param conn a mongo_connection object.
+ * @param out a BSON result of the command.
+ * 
+ * @return bson_bool_t returns true if the server is a master.
+ */
 /* return value is master status */
 bson_bool_t mongo_cmd_ismaster(mongo_connection * conn, bson * out);
 
+/**
+ * Get the error for the last command with the current connection.
+ *
+ * @param conn a mongo_connection object.
+ * @param db the name of the database.
+ * @param out a BSON object containing the error details.
+ *
+ * @return bson_bool_t returns true if the last command had an error.
+ */
 /* true return indicates error */
 bson_bool_t mongo_cmd_get_last_error(mongo_connection * conn, const char * db, bson * out);
-bson_bool_t mongo_cmd_get_prev_error(mongo_connection * conn, const char * db, bson * out);
+
+/**
+ * Get the most recent error with the current connection.
+ *
+ * @param conn a mongo_connection object.
+ * @param db the name of the database.
+ * @param out a BSON object containing the error details.
+ *
+ * @return bson_bool_t returns true if there is an error to return.
+ */
+
+bson_bool_t mongo_cmd_get_prev_error(mongo_connection * conn, const char * db, 
+bson * out);
+
+/**
+ * Reset the error state for the connection.
+ * 
+ * @param conn a mongo_connection object.
+ * @param db the name of the database.
+ */
 void        mongo_cmd_reset_error(mongo_connection * conn, const char * db);
 
 /* ----------------------------
