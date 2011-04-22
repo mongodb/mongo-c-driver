@@ -33,7 +33,17 @@ AddOption('--d',
 import os
 import sys
 
+import buildscripts
+
 env = Environment( ENV=os.environ )
+
+#  ---- Docs ----
+def build_docs(env, target, source):
+    from buildscripts import docs
+    docs.main()
+
+env.Alias("docs", [], [build_docs])
+env.AlwaysBuild("docs")
 
 if os.sys.platform in ["darwin", "linux2"]:
     env.Append( CPPFLAGS=" -pedantic -Wall -ggdb -DMONGO_HAVE_STDINT" )
