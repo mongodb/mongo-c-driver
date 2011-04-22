@@ -1,6 +1,6 @@
-/* mongo.h */
+/** @file mongo.h */
 
-/*    Copyright 2009, 2010 10gen Inc.
+/**    Copyright 2009, 2010 10gen Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -121,7 +121,7 @@ typedef enum {
     mongo_conn_cannot_find_primary
 } mongo_conn_return;
 
-/*
+/**
  * Connect to a single MongoDB server.
  *
  * @param conn a mongo_connection object.
@@ -132,7 +132,7 @@ typedef enum {
  */
 mongo_conn_return mongo_connect( mongo_connection * conn , const char* host, int port );
 
-/* 
+/** 
  * Initialize a connection object for connecting with a replica set.
  *
  * @param conn a mongo_connection object.
@@ -140,7 +140,7 @@ mongo_conn_return mongo_connect( mongo_connection * conn , const char* host, int
  * */
 void mongo_replset_init_conn( mongo_connection* conn, const char* name );
 
-/*
+/**
  * Add a seed node to the connection object.
  *
  * You must specify at least one seed node before connecting to a replica set.
@@ -151,7 +151,7 @@ void mongo_replset_init_conn( mongo_connection* conn, const char* name );
  */
 int mongo_replset_add_seed( mongo_connection* conn, const char* host, int port );
 
-/*
+/**
  * Connect to a replica set.
  *
  * Before passing a connection object to this method, you must already have called
@@ -163,7 +163,7 @@ int mongo_replset_add_seed( mongo_connection* conn, const char* host, int port )
  */
 mongo_conn_return mongo_replset_connect( mongo_connection* conn );
 
-/*
+/**
  * Try reconnecting to the server using the existing connection settings.
  *
  * This method will disconnect the current socket. If you've authentication,
@@ -175,12 +175,16 @@ mongo_conn_return mongo_replset_connect( mongo_connection* conn );
  */
 mongo_conn_return mongo_reconnect( mongo_connection * conn );
 
-/*
+/**
  * Close the current connection to the server.
+ *
+ * @param conn
+ *
+ * @return bson_bool_t
  */
 bson_bool_t mongo_disconnect( mongo_connection * conn );
 
-/*
+/**
  * Close any existing connection to the server and free all allocated
  * memory associated with the conn object.
  *
@@ -195,23 +199,67 @@ bson_bool_t mongo_destroy( mongo_connection * conn );
 /* ----------------------------
    CORE METHODS - insert update remove query getmore
    ------------------------------ */
-
+/**
+ * Insert.
+ *
+ *
+ * @param conn a mongo_connection object.
+ * @param ns the namespace.
+ * @param data the bson data.
+ *
+ */
 void mongo_insert( mongo_connection * conn , const char * ns , bson * data );
+
+/**
+ *
+ *
+ */
 void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
 static const int MONGO_UPDATE_UPSERT = 0x1;
 static const int MONGO_UPDATE_MULTI = 0x2;
+
+/**
+ *
+ *
+ */
 void mongo_update(mongo_connection* conn, const char* ns, const bson* cond, const bson* op, int flags);
 
+/**
+ *
+ *
+ */
 void mongo_remove(mongo_connection* conn, const char* ns, const bson* cond);
 
+/**
+ *
+ *
+ */
 mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
+
+/**
+ *
+ *
+ */
 bson_bool_t mongo_cursor_next(mongo_cursor* cursor);
+
+/**
+ *
+ *
+ */
 void mongo_cursor_destroy(mongo_cursor* cursor);
 
+/**
+ *
+ *
+ */
 /* out can be NULL if you don't care about results. useful for commands */
 bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, bson* fields, bson* out);
 
+/**
+ *
+ *
+ */
 int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll, bson* query);
 
 /* ----------------------------
@@ -223,15 +271,31 @@ int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll, bs
 
 static const int MONGO_INDEX_UNIQUE = 0x1;
 static const int MONGO_INDEX_DROP_DUPS = 0x2;
+/**
+ *
+ *
+ */
 bson_bool_t mongo_create_index(mongo_connection * conn, const char * ns, bson * key, int options, bson * out);
+/**
+ *
+ *
+ */
 bson_bool_t mongo_create_simple_index(mongo_connection * conn, const char * ns, const char* field, int options, bson * out);
 
 /* ----------------------------
    COMMANDS
    ------------------------------ */
 
+/**
+ *
+ *
+ */
 bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * command, bson * out);
 
+/**
+ *
+ *
+ */
 /* for simple commands with a single k-v pair */
 bson_bool_t mongo_simple_int_command(mongo_connection * conn, const char * db, const char* cmd,         int arg, bson * out);
 bson_bool_t mongo_simple_str_command(mongo_connection * conn, const char * db, const char* cmd, const char* arg, bson * out);
