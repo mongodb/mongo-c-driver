@@ -1,3 +1,7 @@
+/**
+ * @file gridfs.h
+ * @brief GridFS Declarations
+ */
 /*--------------------------------------------------------------------*/
 /* gridfs.h                                                           */
 /* Author: Christopher Triolo                                         */

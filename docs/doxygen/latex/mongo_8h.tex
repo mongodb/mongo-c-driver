@@ -1,0 +1,341 @@
+\hypertarget{mongo_8h}{
+\section{mongo.h File Reference}
+\label{mongo_8h}\index{mongo.h@{mongo.h}}
+}
+Main Mongo\-DB Declarations. 
+
+{\tt \#include \char`\"{}mongo\_\-except.h\char`\"{}}\par
+{\tt \#include \char`\"{}bson.h\char`\"{}}\par
+{\tt \#include $<$arpa/inet.h$>$}\par
+{\tt \#include $<$sys/types.h$>$}\par
+{\tt \#include $<$sys/socket.h$>$}\par
+{\tt \#include $<$netdb.h$>$}\par
+{\tt \#include $<$netinet/in.h$>$}\par
+{\tt \#include $<$netinet/tcp.h$>$}\par
+\subsection*{Classes}
+\begin{CompactItemize}
+\item 
+struct \textbf{mongo\_\-host\_\-port}
+\item 
+struct \textbf{mongo\_\-replset}
+\item 
+struct \textbf{mongo\_\-connection}
+\item 
+struct \textbf{mongo\_\-header}
+\item 
+struct \textbf{mongo\_\-message}
+\item 
+struct \textbf{mongo\_\-reply\_\-fields}
+\item 
+struct \textbf{mongo\_\-reply}
+\item 
+struct \textbf{mongo\_\-cursor}
+\end{CompactItemize}
+\subsection*{Defines}
+\begin{CompactItemize}
+\item 
+\#define \hyperlink{mongo_8h_32d4531648465a3c69fd57e7f301f79e}{mongo\_\-close\_\-socket}(sock)~( close(sock) )
+\begin{CompactList}\small\item\em Copyright 2009, 2010, 2011 10gen Inc. \item\end{CompactList}\end{CompactItemize}
+\subsection*{Enumerations}
+\begin{CompactItemize}
+\item 
+enum \textbf{mongo\_\-operations} \{ \par
+\textbf{mongo\_\-op\_\-msg} =  1000, 
+\textbf{mongo\_\-op\_\-update} =  2001, 
+\textbf{mongo\_\-op\_\-insert} =  2002, 
+\textbf{mongo\_\-op\_\-query} =  2004, 
+\par
+\textbf{mongo\_\-op\_\-get\_\-more} =  2005, 
+\textbf{mongo\_\-op\_\-delete} =  2006, 
+\textbf{mongo\_\-op\_\-kill\_\-cursors} =  2007
+ \}
+\item 
+enum \textbf{mongo\_\-conn\_\-return} \{ \par
+\textbf{mongo\_\-conn\_\-success} =  0, 
+\textbf{mongo\_\-conn\_\-bad\_\-arg}, 
+\textbf{mongo\_\-conn\_\-no\_\-socket}, 
+\textbf{mongo\_\-conn\_\-fail}, 
+\par
+\textbf{mongo\_\-conn\_\-not\_\-master}, 
+\textbf{mongo\_\-conn\_\-bad\_\-set\_\-name}, 
+\textbf{mongo\_\-conn\_\-cannot\_\-find\_\-primary}
+ \}
+\end{CompactItemize}
+\subsection*{Functions}
+\begin{CompactItemize}
+\item 
+mongo\_\-conn\_\-return \hyperlink{mongo_8h_b12bbbc487b87550a7d7c733d8598c2d}{mongo\_\-connect} (mongo\_\-connection $\ast$conn, const char $\ast$host, int port)
+\begin{CompactList}\small\item\em Connect to a single Mongo\-DB server. \item\end{CompactList}\item 
+void \hyperlink{mongo_8h_ecf04d5dc107793662a9aa83f55e689b}{mongo\_\-replset\_\-init\_\-conn} (mongo\_\-connection $\ast$conn, const char $\ast$name)
+\begin{CompactList}\small\item\em Initialize a connection object for connecting with a replica set. \item\end{CompactList}\item 
+int \hyperlink{mongo_8h_60cefbaf5185594589087a0e327afc4a}{mongo\_\-replset\_\-add\_\-seed} (mongo\_\-connection $\ast$conn, const char $\ast$host, int port)
+\begin{CompactList}\small\item\em Add a seed node to the connection object. \item\end{CompactList}\item 
+mongo\_\-conn\_\-return \hyperlink{mongo_8h_545723b78cec4b05dbec728f63afb55a}{mongo\_\-replset\_\-connect} (mongo\_\-connection $\ast$conn)
+\begin{CompactList}\small\item\em Connect to a replica set. \item\end{CompactList}\item 
+mongo\_\-conn\_\-return \hyperlink{mongo_8h_a210eb3bc861dff1a83299213a14c354}{mongo\_\-reconnect} (mongo\_\-connection $\ast$conn)
+\begin{CompactList}\small\item\em Try reconnecting to the server using the existing connection settings. \item\end{CompactList}\item 
+bson\_\-bool\_\-t \hyperlink{mongo_8h_394319045e8961c4a8578a873cd50228}{mongo\_\-disconnect} (mongo\_\-connection $\ast$conn)
+\begin{CompactList}\small\item\em Close the current connection to the server. \item\end{CompactList}\item 
+bson\_\-bool\_\-t \hyperlink{mongo_8h_a3b247a96ae7105f563d2a4d748e11cf}{mongo\_\-destroy} (mongo\_\-connection $\ast$conn)
+\begin{CompactList}\small\item\em Close any existing connection to the server and free all allocated memory associated with the conn object. \item\end{CompactList}\item 
+void \hyperlink{mongo_8h_c8039267cf30622888c0ad3480ece8be}{mongo\_\-insert} (mongo\_\-connection $\ast$conn, const char $\ast$ns, bson $\ast$data)
+\begin{CompactList}\small\item\em Insert. \item\end{CompactList}\item 
+\hypertarget{mongo_8h_6a9fb685598cab54d487b607754b9b4d}{
+void \textbf{mongo\_\-insert\_\-batch} (mongo\_\-connection $\ast$conn, const char $\ast$ns, bson $\ast$$\ast$data, int num)}
+\label{mongo_8h_6a9fb685598cab54d487b607754b9b4d}
+
+\item 
+\hypertarget{mongo_8h_6708f5012de283b6ede36e04afec1f80}{
+void \textbf{mongo\_\-update} (mongo\_\-connection $\ast$conn, const char $\ast$ns, const bson $\ast$cond, const bson $\ast$op, int flags)}
+\label{mongo_8h_6708f5012de283b6ede36e04afec1f80}
+
+\item 
+\hypertarget{mongo_8h_9d2712ebe61f672d454beff14dd02370}{
+void \textbf{mongo\_\-remove} (mongo\_\-connection $\ast$conn, const char $\ast$ns, const bson $\ast$cond)}
+\label{mongo_8h_9d2712ebe61f672d454beff14dd02370}
+
+\item 
+\hypertarget{mongo_8h_4f8883a7356af87a37f41e60fa44844f}{
+mongo\_\-cursor $\ast$ \textbf{mongo\_\-find} (mongo\_\-connection $\ast$conn, const char $\ast$ns, bson $\ast$query, bson $\ast$fields, int n\-To\-Return, int n\-To\-Skip, int options)}
+\label{mongo_8h_4f8883a7356af87a37f41e60fa44844f}
+
+\item 
+\hypertarget{mongo_8h_6f917cd64658090ebc96a9541abf377d}{
+bson\_\-bool\_\-t \textbf{mongo\_\-cursor\_\-next} (mongo\_\-cursor $\ast$cursor)}
+\label{mongo_8h_6f917cd64658090ebc96a9541abf377d}
+
+\item 
+\hypertarget{mongo_8h_1770910e6eaf773afa4f6bd78b848c90}{
+void \textbf{mongo\_\-cursor\_\-destroy} (mongo\_\-cursor $\ast$cursor)}
+\label{mongo_8h_1770910e6eaf773afa4f6bd78b848c90}
+
+\item 
+\hypertarget{mongo_8h_4041c663b3b65b9b62d39578296d5fbf}{
+bson\_\-bool\_\-t \textbf{mongo\_\-find\_\-one} (mongo\_\-connection $\ast$conn, const char $\ast$ns, bson $\ast$query, bson $\ast$fields, bson $\ast$out)}
+\label{mongo_8h_4041c663b3b65b9b62d39578296d5fbf}
+
+\item 
+\hypertarget{mongo_8h_cec524013f90c4d5d4b77162dc985127}{
+int64\_\-t \textbf{mongo\_\-count} (mongo\_\-connection $\ast$conn, const char $\ast$db, const char $\ast$coll, bson $\ast$query)}
+\label{mongo_8h_cec524013f90c4d5d4b77162dc985127}
+
+\item 
+\hypertarget{mongo_8h_004892c7d4aa0258c58618942f8cf32e}{
+bson\_\-bool\_\-t \textbf{mongo\_\-create\_\-index} (mongo\_\-connection $\ast$conn, const char $\ast$ns, bson $\ast$key, int options, bson $\ast$out)}
+\label{mongo_8h_004892c7d4aa0258c58618942f8cf32e}
+
+\item 
+\hypertarget{mongo_8h_b2c13d0e6b0a26c189f2616059865225}{
+bson\_\-bool\_\-t \textbf{mongo\_\-create\_\-simple\_\-index} (mongo\_\-connection $\ast$conn, const char $\ast$ns, const char $\ast$field, int options, bson $\ast$out)}
+\label{mongo_8h_b2c13d0e6b0a26c189f2616059865225}
+
+\item 
+\hypertarget{mongo_8h_c0739a2f84e2d81e43fd0ef1a8d6dd3e}{
+bson\_\-bool\_\-t \textbf{mongo\_\-run\_\-command} (mongo\_\-connection $\ast$conn, const char $\ast$db, bson $\ast$command, bson $\ast$out)}
+\label{mongo_8h_c0739a2f84e2d81e43fd0ef1a8d6dd3e}
+
+\item 
+\hypertarget{mongo_8h_d3feda20b7f8e89fc40c6a39e8925017}{
+bson\_\-bool\_\-t \textbf{mongo\_\-simple\_\-int\_\-command} (mongo\_\-connection $\ast$conn, const char $\ast$db, const char $\ast$cmd, int arg, bson $\ast$out)}
+\label{mongo_8h_d3feda20b7f8e89fc40c6a39e8925017}
+
+\item 
+\hypertarget{mongo_8h_be70262009985e56fcb45fc54ff0db46}{
+bson\_\-bool\_\-t \textbf{mongo\_\-simple\_\-str\_\-command} (mongo\_\-connection $\ast$conn, const char $\ast$db, const char $\ast$cmd, const char $\ast$arg, bson $\ast$out)}
+\label{mongo_8h_be70262009985e56fcb45fc54ff0db46}
+
+\item 
+\hypertarget{mongo_8h_db4940e664a6b5cc1e16c6479f774a4a}{
+bson\_\-bool\_\-t \textbf{mongo\_\-cmd\_\-drop\_\-db} (mongo\_\-connection $\ast$conn, const char $\ast$db)}
+\label{mongo_8h_db4940e664a6b5cc1e16c6479f774a4a}
+
+\item 
+\hypertarget{mongo_8h_ca18ecfd4a87913c6a45176de8531854}{
+bson\_\-bool\_\-t \textbf{mongo\_\-cmd\_\-drop\_\-collection} (mongo\_\-connection $\ast$conn, const char $\ast$db, const char $\ast$collection, bson $\ast$out)}
+\label{mongo_8h_ca18ecfd4a87913c6a45176de8531854}
+
+\item 
+\hypertarget{mongo_8h_8bccc4a6ab158881df80e3d1d0297b1b}{
+void \textbf{mongo\_\-cmd\_\-add\_\-user} (mongo\_\-connection $\ast$conn, const char $\ast$db, const char $\ast$user, const char $\ast$pass)}
+\label{mongo_8h_8bccc4a6ab158881df80e3d1d0297b1b}
+
+\item 
+\hypertarget{mongo_8h_108771217ba3b194b13568c49f584909}{
+bson\_\-bool\_\-t \textbf{mongo\_\-cmd\_\-authenticate} (mongo\_\-connection $\ast$conn, const char $\ast$db, const char $\ast$user, const char $\ast$pass)}
+\label{mongo_8h_108771217ba3b194b13568c49f584909}
+
+\item 
+\hypertarget{mongo_8h_3c5e92a557a460dd49ee68a25925e3b5}{
+bson\_\-bool\_\-t \textbf{mongo\_\-cmd\_\-ismaster} (mongo\_\-connection $\ast$conn, bson $\ast$out)}
+\label{mongo_8h_3c5e92a557a460dd49ee68a25925e3b5}
+
+\item 
+\hypertarget{mongo_8h_6ed9436f374555a1b6ca7f6c6d895be6}{
+bson\_\-bool\_\-t \textbf{mongo\_\-cmd\_\-get\_\-last\_\-error} (mongo\_\-connection $\ast$conn, const char $\ast$db, bson $\ast$out)}
+\label{mongo_8h_6ed9436f374555a1b6ca7f6c6d895be6}
+
+\item 
+\hypertarget{mongo_8h_6be366626b45644280af157f0bd492ea}{
+bson\_\-bool\_\-t \textbf{mongo\_\-cmd\_\-get\_\-prev\_\-error} (mongo\_\-connection $\ast$conn, const char $\ast$db, bson $\ast$out)}
+\label{mongo_8h_6be366626b45644280af157f0bd492ea}
+
+\item 
+\hypertarget{mongo_8h_6f9a48e91434f0bdaa0a36ed21486567}{
+void \textbf{mongo\_\-cmd\_\-reset\_\-error} (mongo\_\-connection $\ast$conn, const char $\ast$db)}
+\label{mongo_8h_6f9a48e91434f0bdaa0a36ed21486567}
+
+\end{CompactItemize}
+
+
+\subsection{Detailed Description}
+Main Mongo\-DB Declarations. 
+
+
+
+\subsection{Define Documentation}
+\hypertarget{mongo_8h_32d4531648465a3c69fd57e7f301f79e}{
+\index{mongo.h@{mongo.h}!mongo_close_socket@{mongo\_\-close\_\-socket}}
+\index{mongo_close_socket@{mongo\_\-close\_\-socket}!mongo.h@{mongo.h}}
+\subsubsection[mongo\_\-close\_\-socket]{\setlength{\rightskip}{0pt plus 5cm}\#define mongo\_\-close\_\-socket(sock)~( close(sock) )}}
+\label{mongo_8h_32d4531648465a3c69fd57e7f301f79e}
+
+
+Copyright 2009, 2010, 2011 10gen Inc. 
+
+Licensed under the Apache License, Version 2.0 (the \char`\"{}License\char`\"{}); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+\href{http://www.apache.org/licenses/LICENSE-2.0}\tt{http://www.apache.org/licenses/LICENSE-2.0}
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an \char`\"{}AS IS\char`\"{} BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License. 
+
+\subsection{Function Documentation}
+\hypertarget{mongo_8h_b12bbbc487b87550a7d7c733d8598c2d}{
+\index{mongo.h@{mongo.h}!mongo_connect@{mongo\_\-connect}}
+\index{mongo_connect@{mongo\_\-connect}!mongo.h@{mongo.h}}
+\subsubsection[mongo\_\-connect]{\setlength{\rightskip}{0pt plus 5cm}mongo\_\-conn\_\-return mongo\_\-connect (mongo\_\-connection $\ast$ {\em conn}, const char $\ast$ {\em host}, int {\em port})}}
+\label{mongo_8h_b12bbbc487b87550a7d7c733d8598c2d}
+
+
+Connect to a single Mongo\-DB server. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em conn}]a mongo\_\-connection object. \item[{\em host}]a numerical network address or a network hostname. \item[{\em port}]the port to connect to.\end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]mongo\_\-conn\_\-return \end{Desc}
+\hypertarget{mongo_8h_a3b247a96ae7105f563d2a4d748e11cf}{
+\index{mongo.h@{mongo.h}!mongo_destroy@{mongo\_\-destroy}}
+\index{mongo_destroy@{mongo\_\-destroy}!mongo.h@{mongo.h}}
+\subsubsection[mongo\_\-destroy]{\setlength{\rightskip}{0pt plus 5cm}bson\_\-bool\_\-t mongo\_\-destroy (mongo\_\-connection $\ast$ {\em conn})}}
+\label{mongo_8h_a3b247a96ae7105f563d2a4d748e11cf}
+
+
+Close any existing connection to the server and free all allocated memory associated with the conn object. 
+
+You must always call this method when finished with the connection object.
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em conn}]\end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]bson\_\-bool\_\-t \end{Desc}
+\hypertarget{mongo_8h_394319045e8961c4a8578a873cd50228}{
+\index{mongo.h@{mongo.h}!mongo_disconnect@{mongo\_\-disconnect}}
+\index{mongo_disconnect@{mongo\_\-disconnect}!mongo.h@{mongo.h}}
+\subsubsection[mongo\_\-disconnect]{\setlength{\rightskip}{0pt plus 5cm}bson\_\-bool\_\-t mongo\_\-disconnect (mongo\_\-connection $\ast$ {\em conn})}}
+\label{mongo_8h_394319045e8961c4a8578a873cd50228}
+
+
+Close the current connection to the server. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em conn}]\end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]bson\_\-bool\_\-t \end{Desc}
+\hypertarget{mongo_8h_c8039267cf30622888c0ad3480ece8be}{
+\index{mongo.h@{mongo.h}!mongo_insert@{mongo\_\-insert}}
+\index{mongo_insert@{mongo\_\-insert}!mongo.h@{mongo.h}}
+\subsubsection[mongo\_\-insert]{\setlength{\rightskip}{0pt plus 5cm}void mongo\_\-insert (mongo\_\-connection $\ast$ {\em conn}, const char $\ast$ {\em ns}, bson $\ast$ {\em data})}}
+\label{mongo_8h_c8039267cf30622888c0ad3480ece8be}
+
+
+Insert. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em conn}]a mongo\_\-connection object. \item[{\em ns}]the namespace. \item[{\em data}]the bson data. \end{description}
+\end{Desc}
+\hypertarget{mongo_8h_a210eb3bc861dff1a83299213a14c354}{
+\index{mongo.h@{mongo.h}!mongo_reconnect@{mongo\_\-reconnect}}
+\index{mongo_reconnect@{mongo\_\-reconnect}!mongo.h@{mongo.h}}
+\subsubsection[mongo\_\-reconnect]{\setlength{\rightskip}{0pt plus 5cm}mongo\_\-conn\_\-return mongo\_\-reconnect (mongo\_\-connection $\ast$ {\em conn})}}
+\label{mongo_8h_a210eb3bc861dff1a83299213a14c354}
+
+
+Try reconnecting to the server using the existing connection settings. 
+
+This method will disconnect the current socket. If you've authentication, you'll need to re-authenticate after calling this function.
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em conn}]\end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]mongo\_\-conn\_\-return \end{Desc}
+\hypertarget{mongo_8h_60cefbaf5185594589087a0e327afc4a}{
+\index{mongo.h@{mongo.h}!mongo_replset_add_seed@{mongo\_\-replset\_\-add\_\-seed}}
+\index{mongo_replset_add_seed@{mongo\_\-replset\_\-add\_\-seed}!mongo.h@{mongo.h}}
+\subsubsection[mongo\_\-replset\_\-add\_\-seed]{\setlength{\rightskip}{0pt plus 5cm}int mongo\_\-replset\_\-add\_\-seed (mongo\_\-connection $\ast$ {\em conn}, const char $\ast$ {\em host}, int {\em port})}}
+\label{mongo_8h_60cefbaf5185594589087a0e327afc4a}
+
+
+Add a seed node to the connection object. 
+
+You must specify at least one seed node before connecting to a replica set.
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em conn}]a mongo\_\-connection object. \item[{\em host}]a numerical network address or a network hostname. \item[{\em port}]the port to connect to. \end{description}
+\end{Desc}
+\hypertarget{mongo_8h_545723b78cec4b05dbec728f63afb55a}{
+\index{mongo.h@{mongo.h}!mongo_replset_connect@{mongo\_\-replset\_\-connect}}
+\index{mongo_replset_connect@{mongo\_\-replset\_\-connect}!mongo.h@{mongo.h}}
+\subsubsection[mongo\_\-replset\_\-connect]{\setlength{\rightskip}{0pt plus 5cm}mongo\_\-conn\_\-return mongo\_\-replset\_\-connect (mongo\_\-connection $\ast$ {\em conn})}}
+\label{mongo_8h_545723b78cec4b05dbec728f63afb55a}
+
+
+Connect to a replica set. 
+
+Before passing a connection object to this method, you must already have called mongo\_\-replset\_\-init\_\-conn and mongo\_\-replset\_\-add\_\-seed.
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em conn}]a mongo\_\-connection object.\end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]mongo\_\-conn\_\-return \end{Desc}
+\hypertarget{mongo_8h_ecf04d5dc107793662a9aa83f55e689b}{
+\index{mongo.h@{mongo.h}!mongo_replset_init_conn@{mongo\_\-replset\_\-init\_\-conn}}
+\index{mongo_replset_init_conn@{mongo\_\-replset\_\-init\_\-conn}!mongo.h@{mongo.h}}
+\subsubsection[mongo\_\-replset\_\-init\_\-conn]{\setlength{\rightskip}{0pt plus 5cm}void mongo\_\-replset\_\-init\_\-conn (mongo\_\-connection $\ast$ {\em conn}, const char $\ast$ {\em name})}}
+\label{mongo_8h_ecf04d5dc107793662a9aa83f55e689b}
+
+
+Initialize a connection object for connecting with a replica set. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em conn}]a mongo\_\-connection object. \item[{\em name}]the name of the replica set to connect to. \end{description}
+\end{Desc}

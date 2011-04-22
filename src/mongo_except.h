@@ -1,4 +1,4 @@
-/* mongo_except.h */
+/** @file mongo_except.h */
 
 /*    Copyright 2009 10gen Inc.
  *

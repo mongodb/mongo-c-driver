@@ -1,0 +1,514 @@
+\hypertarget{gridfs_8h}{
+\section{gridfs.h File Reference}
+\label{gridfs_8h}\index{gridfs.h@{gridfs.h}}
+}
+Grid\-FS Declarations. 
+
+{\tt \#include \char`\"{}mongo.h\char`\"{}}\par
+{\tt \#include \char`\"{}bson.h\char`\"{}}\par
+{\tt \#include \char`\"{}platform\_\-hacks.h\char`\"{}}\par
+{\tt \#include $<$stdio.h$>$}\par
+\subsection*{Classes}
+\begin{CompactItemize}
+\item 
+struct \textbf{gridfs}
+\item 
+struct \textbf{gridfile}
+\end{CompactItemize}
+\subsection*{Typedefs}
+\begin{CompactItemize}
+\item 
+\hypertarget{gridfs_8h_0af8bc85e021e3894287df8a98e6a72e}{
+typedef uint64\_\-t \textbf{gridfs\_\-offset}}
+\label{gridfs_8h_0af8bc85e021e3894287df8a98e6a72e}
+
+\end{CompactItemize}
+\subsection*{Enumerations}
+\begin{CompactItemize}
+\item 
+enum \{ \textbf{DEFAULT\_\-CHUNK\_\-SIZE} =  256 $\ast$ 1024
+ \}
+\end{CompactItemize}
+\subsection*{Functions}
+\begin{CompactItemize}
+\item 
+int \hyperlink{gridfs_8h_103debc0d8ad798eb613baf74c64c52a}{gridfs\_\-init} (mongo\_\-connection $\ast$client, const char $\ast$dbname, const char $\ast$prefix, gridfs $\ast$gfs)
+\begin{CompactList}\small\item\em Initializes a Grid\-FS object. \item\end{CompactList}\item 
+\hypertarget{gridfs_8h_10ee96fb8a0d014f443efc6f501e8494}{
+void \hyperlink{gridfs_8h_10ee96fb8a0d014f443efc6f501e8494}{gridfs\_\-destroy} (gridfs $\ast$gfs)}
+\label{gridfs_8h_10ee96fb8a0d014f443efc6f501e8494}
+
+\begin{CompactList}\small\item\em Destroys a Grid\-FS object. \item\end{CompactList}\item 
+void \hyperlink{gridfs_8h_357d562e2eb8647e32c9737e56e3e911}{gridfile\_\-writer\_\-init} (gridfile $\ast$gfile, gridfs $\ast$gfs, const char $\ast$remote\_\-name, const char $\ast$content\_\-type)
+\begin{CompactList}\small\item\em Initializes a gridfile for writing incrementally with gridfs\_\-write\_\-buffer. \item\end{CompactList}\item 
+void \hyperlink{gridfs_8h_648434c8644a1a220383765ffc6999ec}{gridfile\_\-write\_\-buffer} (gridfile $\ast$gfile, const char $\ast$data, gridfs\_\-offset length)
+\begin{CompactList}\small\item\em Write to a Grid\-FS file incrementally. \item\end{CompactList}\item 
+bson \hyperlink{gridfs_8h_030101e0b0867acb28fdc2345fdc7bc4}{gridfile\_\-writer\_\-done} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Signal that writing of this gridfile is complete by writing any buffered chunks along with the entry in the files collection. \item\end{CompactList}\item 
+bson \hyperlink{gridfs_8h_18aaca75b5a78a56150aa603adfda3c6}{gridfs\_\-store\_\-buffer} (gridfs $\ast$gfs, const char $\ast$data, gridfs\_\-offset length, const char $\ast$remotename, const char $\ast$contenttype)
+\begin{CompactList}\small\item\em Store a buffer as a Grid\-FS file. \item\end{CompactList}\item 
+bson \hyperlink{gridfs_8h_af64ce80e06625ccbf07e6fb11c8ee6c}{gridfs\_\-store\_\-file} (gridfs $\ast$gfs, const char $\ast$filename, const char $\ast$remotename, const char $\ast$contenttype)
+\begin{CompactList}\small\item\em Open the file referenced by filename and store it as a Grid\-FS file. \item\end{CompactList}\item 
+void \hyperlink{gridfs_8h_2410badfa933a34b74ed6d976d45889d}{gridfs\_\-remove\_\-filename} (gridfs $\ast$gfs, const char $\ast$filename)
+\begin{CompactList}\small\item\em Removes the files referenced by filename from the db. \item\end{CompactList}\item 
+int \hyperlink{gridfs_8h_b487b10abbae1f448fc760c6fca94f3f}{gridfs\_\-find\_\-query} (gridfs $\ast$gfs, bson $\ast$query, gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Find the first query within the Grid\-FS and return it as a Grid\-File. \item\end{CompactList}\item 
+int \hyperlink{gridfs_8h_c44fdd22ea2f0cd0393d0a8b98206203}{gridfs\_\-find\_\-filename} (gridfs $\ast$gfs, const char $\ast$filename, gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Find the first file referenced by filename within the Grid\-FS and return it as a Grid\-File. \item\end{CompactList}\item 
+int \hyperlink{gridfs_8h_d65002de1cd6fee014cd58364622d142}{gridfile\_\-init} (gridfs $\ast$gfs, bson $\ast$meta, gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Initializes a Grid\-File containing the Grid\-FS and file bson. \item\end{CompactList}\item 
+void \hyperlink{gridfs_8h_c98b40fc7c7c7cbfd7896b68ef2fe5e2}{gridfile\_\-destroy} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Destroys the Grid\-File. \item\end{CompactList}\item 
+int \hyperlink{gridfs_8h_d17af5fcb009eec0337d64ec6ea9dec5}{gridfile\_\-exists} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Returns whether or not the Grid\-File exists. \item\end{CompactList}\item 
+const char $\ast$ \hyperlink{gridfs_8h_da39959312754244e75bd61f02f0d09e}{gridfile\_\-get\_\-filename} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Returns the filename of Grid\-File. \item\end{CompactList}\item 
+int \hyperlink{gridfs_8h_ac6d8923b623e3b4504e14a6ecf1942b}{gridfile\_\-get\_\-chunksize} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Returns the size of the chunks of the Grid\-File. \item\end{CompactList}\item 
+gridfs\_\-offset \hyperlink{gridfs_8h_5bc451e7856966b4d4e09ca3c16b26eb}{gridfile\_\-get\_\-contentlength} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Returns the length of Grid\-File's data. \item\end{CompactList}\item 
+const char $\ast$ \hyperlink{gridfs_8h_3c185ba67da7a82e37ea03fe2480ff18}{gridfile\_\-get\_\-contenttype} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Returns the MIME type of the Grid\-File. \item\end{CompactList}\item 
+bson\_\-date\_\-t \hyperlink{gridfs_8h_7261902cceb40949a977c4782e5353c9}{gridfile\_\-get\_\-uploaddate} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Returns the upload date of Grid\-File. \item\end{CompactList}\item 
+const char $\ast$ \hyperlink{gridfs_8h_ff8c5401b34f9581893426ba9a77fe41}{gridfile\_\-get\_\-md5} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Returns the MD5 of Grid\-File. \item\end{CompactList}\item 
+const char $\ast$ \hyperlink{gridfs_8h_03a6b31fa1b7673ed0693f4a58693f8a}{gridfile\_\-get\_\-field} (gridfile $\ast$gfile, const char $\ast$name)
+\begin{CompactList}\small\item\em Returns the field in Grid\-File specified by name. \item\end{CompactList}\item 
+bson\_\-bool\_\-t \hyperlink{gridfs_8h_3d86c9cf4417e185451e9404234e00ff}{gridfile\_\-get\_\-boolean} (gridfile $\ast$gfile, const char $\ast$name)
+\begin{CompactList}\small\item\em Returns a boolean field in Grid\-File specified by name. \item\end{CompactList}\item 
+bson \hyperlink{gridfs_8h_387cf713cb7269955d91fbfacf5e88a8}{gridfile\_\-get\_\-metadata} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Returns the metadata of Grid\-File. \item\end{CompactList}\item 
+int \hyperlink{gridfs_8h_e317f5625ef2124455739e7fdd3fc09b}{gridfile\_\-get\_\-numchunks} (gridfile $\ast$gfile)
+\begin{CompactList}\small\item\em Returns the number of chunks in the Grid\-File. \item\end{CompactList}\item 
+bson \hyperlink{gridfs_8h_bde638946662e0a0b935118ea1e173e4}{gridfile\_\-get\_\-chunk} (gridfile $\ast$gfile, int n)
+\begin{CompactList}\small\item\em Returns chunk n of Grid\-File. \item\end{CompactList}\item 
+mongo\_\-cursor $\ast$ \hyperlink{gridfs_8h_89879597c585375d8d4bf50a810cedd6}{gridfile\_\-get\_\-chunks} (gridfile $\ast$gfile, int start, int size)
+\begin{CompactList}\small\item\em Returns a mongo\_\-cursor of $\ast$size$\ast$ chunks starting with chunk $\ast$start$\ast$. \item\end{CompactList}\item 
+gridfs\_\-offset \hyperlink{gridfs_8h_72d5c8b6714b66cb83bf8981fef6984a}{gridfile\_\-write\_\-file} (gridfile $\ast$gfile, FILE $\ast$stream)
+\begin{CompactList}\small\item\em Writes the Grid\-File to a stream. \item\end{CompactList}\item 
+gridfs\_\-offset \hyperlink{gridfs_8h_dd4670749692f3ea0a0839b4b405f553}{gridfile\_\-read} (gridfile $\ast$gfile, gridfs\_\-offset size, char $\ast$buf)
+\begin{CompactList}\small\item\em Reads length bytes from the Grid\-File to a buffer and updates the position in the file. \item\end{CompactList}\item 
+gridfs\_\-offset \hyperlink{gridfs_8h_26b28b81fe06ade342eebd7126adb74a}{gridfile\_\-seek} (gridfile $\ast$gfile, gridfs\_\-offset offset)
+\begin{CompactList}\small\item\em Updates the position in the file (If the offset goes beyond the contentlength, the position is updated to the end of the file. \item\end{CompactList}\end{CompactItemize}
+
+
+\subsection{Detailed Description}
+Grid\-FS Declarations. 
+
+
+
+\subsection{Function Documentation}
+\hypertarget{gridfs_8h_c98b40fc7c7c7cbfd7896b68ef2fe5e2}{
+\index{gridfs.h@{gridfs.h}!gridfile_destroy@{gridfile\_\-destroy}}
+\index{gridfile_destroy@{gridfile\_\-destroy}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-destroy]{\setlength{\rightskip}{0pt plus 5cm}void gridfile\_\-destroy (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_c98b40fc7c7c7cbfd7896b68ef2fe5e2}
+
+
+Destroys the Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em o\-Grid\-FIle}]- the Grid\-File being destroyed \end{description}
+\end{Desc}
+\hypertarget{gridfs_8h_d17af5fcb009eec0337d64ec6ea9dec5}{
+\index{gridfs.h@{gridfs.h}!gridfile_exists@{gridfile\_\-exists}}
+\index{gridfile_exists@{gridfile\_\-exists}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-exists]{\setlength{\rightskip}{0pt plus 5cm}int gridfile\_\-exists (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_d17af5fcb009eec0337d64ec6ea9dec5}
+
+
+Returns whether or not the Grid\-File exists. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the Grid\-File being examined \end{description}
+\end{Desc}
+\hypertarget{gridfs_8h_3d86c9cf4417e185451e9404234e00ff}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_boolean@{gridfile\_\-get\_\-boolean}}
+\index{gridfile_get_boolean@{gridfile\_\-get\_\-boolean}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-boolean]{\setlength{\rightskip}{0pt plus 5cm}bson\_\-bool\_\-t gridfile\_\-get\_\-boolean (gridfile $\ast$ {\em gfile}, const char $\ast$ {\em name})}}
+\label{gridfs_8h_3d86c9cf4417e185451e9404234e00ff}
+
+
+Returns a boolean field in Grid\-File specified by name. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \item[{\em name}]- the name of the field to be returned \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the boolean of the field specified (NULL if none exists) \end{Desc}
+\hypertarget{gridfs_8h_bde638946662e0a0b935118ea1e173e4}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_chunk@{gridfile\_\-get\_\-chunk}}
+\index{gridfile_get_chunk@{gridfile\_\-get\_\-chunk}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-chunk]{\setlength{\rightskip}{0pt plus 5cm}bson gridfile\_\-get\_\-chunk (gridfile $\ast$ {\em gfile}, int {\em n})}}
+\label{gridfs_8h_bde638946662e0a0b935118ea1e173e4}
+
+
+Returns chunk n of Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the nth chunk of the Gridfile \end{Desc}
+\hypertarget{gridfs_8h_89879597c585375d8d4bf50a810cedd6}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_chunks@{gridfile\_\-get\_\-chunks}}
+\index{gridfile_get_chunks@{gridfile\_\-get\_\-chunks}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-chunks]{\setlength{\rightskip}{0pt plus 5cm}mongo\_\-cursor$\ast$ gridfile\_\-get\_\-chunks (gridfile $\ast$ {\em gfile}, int {\em start}, int {\em size})}}
+\label{gridfs_8h_89879597c585375d8d4bf50a810cedd6}
+
+
+Returns a mongo\_\-cursor of $\ast$size$\ast$ chunks starting with chunk $\ast$start$\ast$. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \item[{\em start}]- the first chunk in the cursor \item[{\em size}]- the number of chunks to be returned \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- mongo\_\-cursor of the chunks (must be destroyed after use) \end{Desc}
+\hypertarget{gridfs_8h_ac6d8923b623e3b4504e14a6ecf1942b}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_chunksize@{gridfile\_\-get\_\-chunksize}}
+\index{gridfile_get_chunksize@{gridfile\_\-get\_\-chunksize}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-chunksize]{\setlength{\rightskip}{0pt plus 5cm}int gridfile\_\-get\_\-chunksize (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_ac6d8923b623e3b4504e14a6ecf1942b}
+
+
+Returns the size of the chunks of the Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the size of the chunks of the Gridfile \end{Desc}
+\hypertarget{gridfs_8h_5bc451e7856966b4d4e09ca3c16b26eb}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_contentlength@{gridfile\_\-get\_\-contentlength}}
+\index{gridfile_get_contentlength@{gridfile\_\-get\_\-contentlength}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-contentlength]{\setlength{\rightskip}{0pt plus 5cm}gridfs\_\-offset gridfile\_\-get\_\-contentlength (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_5bc451e7856966b4d4e09ca3c16b26eb}
+
+
+Returns the length of Grid\-File's data. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the length of the Gridfile's data \end{Desc}
+\hypertarget{gridfs_8h_3c185ba67da7a82e37ea03fe2480ff18}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_contenttype@{gridfile\_\-get\_\-contenttype}}
+\index{gridfile_get_contenttype@{gridfile\_\-get\_\-contenttype}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-contenttype]{\setlength{\rightskip}{0pt plus 5cm}const char$\ast$ gridfile\_\-get\_\-contenttype (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_3c185ba67da7a82e37ea03fe2480ff18}
+
+
+Returns the MIME type of the Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the MIME type of the Gridfile (NULL if no type specified) \end{Desc}
+\hypertarget{gridfs_8h_03a6b31fa1b7673ed0693f4a58693f8a}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_field@{gridfile\_\-get\_\-field}}
+\index{gridfile_get_field@{gridfile\_\-get\_\-field}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-field]{\setlength{\rightskip}{0pt plus 5cm}const char$\ast$ gridfile\_\-get\_\-field (gridfile $\ast$ {\em gfile}, const char $\ast$ {\em name})}}
+\label{gridfs_8h_03a6b31fa1b7673ed0693f4a58693f8a}
+
+
+Returns the field in Grid\-File specified by name. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \item[{\em name}]- the name of the field to be returned \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the data of the field specified (NULL if none exists) \end{Desc}
+\hypertarget{gridfs_8h_da39959312754244e75bd61f02f0d09e}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_filename@{gridfile\_\-get\_\-filename}}
+\index{gridfile_get_filename@{gridfile\_\-get\_\-filename}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-filename]{\setlength{\rightskip}{0pt plus 5cm}const char$\ast$ gridfile\_\-get\_\-filename (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_da39959312754244e75bd61f02f0d09e}
+
+
+Returns the filename of Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the filename of the Gridfile \end{Desc}
+\hypertarget{gridfs_8h_ff8c5401b34f9581893426ba9a77fe41}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_md5@{gridfile\_\-get\_\-md5}}
+\index{gridfile_get_md5@{gridfile\_\-get\_\-md5}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-md5]{\setlength{\rightskip}{0pt plus 5cm}const char$\ast$ gridfile\_\-get\_\-md5 (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_ff8c5401b34f9581893426ba9a77fe41}
+
+
+Returns the MD5 of Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the MD5 of the Gridfile \end{Desc}
+\hypertarget{gridfs_8h_387cf713cb7269955d91fbfacf5e88a8}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_metadata@{gridfile\_\-get\_\-metadata}}
+\index{gridfile_get_metadata@{gridfile\_\-get\_\-metadata}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-metadata]{\setlength{\rightskip}{0pt plus 5cm}bson gridfile\_\-get\_\-metadata (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_387cf713cb7269955d91fbfacf5e88a8}
+
+
+Returns the metadata of Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the metadata of the Gridfile in a bson object (an empty bson is returned if none exists) \end{Desc}
+\hypertarget{gridfs_8h_e317f5625ef2124455739e7fdd3fc09b}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_numchunks@{gridfile\_\-get\_\-numchunks}}
+\index{gridfile_get_numchunks@{gridfile\_\-get\_\-numchunks}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-numchunks]{\setlength{\rightskip}{0pt plus 5cm}int gridfile\_\-get\_\-numchunks (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_e317f5625ef2124455739e7fdd3fc09b}
+
+
+Returns the number of chunks in the Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the number of chunks in the Gridfile \end{Desc}
+\hypertarget{gridfs_8h_7261902cceb40949a977c4782e5353c9}{
+\index{gridfs.h@{gridfs.h}!gridfile_get_uploaddate@{gridfile\_\-get\_\-uploaddate}}
+\index{gridfile_get_uploaddate@{gridfile\_\-get\_\-uploaddate}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-get\_\-uploaddate]{\setlength{\rightskip}{0pt plus 5cm}bson\_\-date\_\-t gridfile\_\-get\_\-uploaddate (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_7261902cceb40949a977c4782e5353c9}
+
+
+Returns the upload date of Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the upload date of the Gridfile \end{Desc}
+\hypertarget{gridfs_8h_d65002de1cd6fee014cd58364622d142}{
+\index{gridfs.h@{gridfs.h}!gridfile_init@{gridfile\_\-init}}
+\index{gridfile_init@{gridfile\_\-init}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-init]{\setlength{\rightskip}{0pt plus 5cm}int gridfile\_\-init (gridfs $\ast$ {\em gfs}, bson $\ast$ {\em meta}, gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_d65002de1cd6fee014cd58364622d142}
+
+
+Initializes a Grid\-File containing the Grid\-FS and file bson. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfs}]- the Grid\-FS where the Grid\-File is located \item[{\em meta}]- the file object \item[{\em gfile}]- the output Grid\-File that is being initialized \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]1 if successful, 0 otherwise \end{Desc}
+\hypertarget{gridfs_8h_dd4670749692f3ea0a0839b4b405f553}{
+\index{gridfs.h@{gridfs.h}!gridfile_read@{gridfile\_\-read}}
+\index{gridfile_read@{gridfile\_\-read}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-read]{\setlength{\rightskip}{0pt plus 5cm}gridfs\_\-offset gridfile\_\-read (gridfile $\ast$ {\em gfile}, gridfs\_\-offset {\em size}, char $\ast$ {\em buf})}}
+\label{gridfs_8h_dd4670749692f3ea0a0839b4b405f553}
+
+
+Reads length bytes from the Grid\-File to a buffer and updates the position in the file. 
+
+(assumes the buffer is large enough) (if size is greater than EOF gridfile\_\-read reads until EOF) \begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \item[{\em size}]- the amount of bytes to be read \item[{\em buf}]- the buffer to read to \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the number of bytes read \end{Desc}
+\hypertarget{gridfs_8h_26b28b81fe06ade342eebd7126adb74a}{
+\index{gridfs.h@{gridfs.h}!gridfile_seek@{gridfile\_\-seek}}
+\index{gridfile_seek@{gridfile\_\-seek}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-seek]{\setlength{\rightskip}{0pt plus 5cm}gridfs\_\-offset gridfile\_\-seek (gridfile $\ast$ {\em gfile}, gridfs\_\-offset {\em offset})}}
+\label{gridfs_8h_26b28b81fe06ade342eebd7126adb74a}
+
+
+Updates the position in the file (If the offset goes beyond the contentlength, the position is updated to the end of the file. 
+
+) \begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \item[{\em offset}]- the position to update to \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- resulting offset location \end{Desc}
+\hypertarget{gridfs_8h_648434c8644a1a220383765ffc6999ec}{
+\index{gridfs.h@{gridfs.h}!gridfile_write_buffer@{gridfile\_\-write\_\-buffer}}
+\index{gridfile_write_buffer@{gridfile\_\-write\_\-buffer}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-write\_\-buffer]{\setlength{\rightskip}{0pt plus 5cm}void gridfile\_\-write\_\-buffer (gridfile $\ast$ {\em gfile}, const char $\ast$ {\em data}, gridfs\_\-offset {\em length})}}
+\label{gridfs_8h_648434c8644a1a220383765ffc6999ec}
+
+
+Write to a Grid\-FS file incrementally. 
+
+You can call this function any number of times with a new buffer each time. This allows you to effectively stream to a Grid\-FS file. When finished, be sure to call gridfs\_\-writer\_\-done.
+
+\begin{Desc}
+\item[Returns:]- 1 if successful, 0 otherwise \end{Desc}
+\hypertarget{gridfs_8h_72d5c8b6714b66cb83bf8981fef6984a}{
+\index{gridfs.h@{gridfs.h}!gridfile_write_file@{gridfile\_\-write\_\-file}}
+\index{gridfile_write_file@{gridfile\_\-write\_\-file}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-write\_\-file]{\setlength{\rightskip}{0pt plus 5cm}gridfs\_\-offset gridfile\_\-write\_\-file (gridfile $\ast$ {\em gfile}, FILE $\ast$ {\em stream})}}
+\label{gridfs_8h_72d5c8b6714b66cb83bf8981fef6984a}
+
+
+Writes the Grid\-File to a stream. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfile}]- the working Grid\-File \item[{\em stream}]- the file stream to write to \end{description}
+\end{Desc}
+\hypertarget{gridfs_8h_030101e0b0867acb28fdc2345fdc7bc4}{
+\index{gridfs.h@{gridfs.h}!gridfile_writer_done@{gridfile\_\-writer\_\-done}}
+\index{gridfile_writer_done@{gridfile\_\-writer\_\-done}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-writer\_\-done]{\setlength{\rightskip}{0pt plus 5cm}bson gridfile\_\-writer\_\-done (gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_030101e0b0867acb28fdc2345fdc7bc4}
+
+
+Signal that writing of this gridfile is complete by writing any buffered chunks along with the entry in the files collection. 
+
+\begin{Desc}
+\item[Returns:]- the file object if successful; otherwise 0. \end{Desc}
+\hypertarget{gridfs_8h_357d562e2eb8647e32c9737e56e3e911}{
+\index{gridfs.h@{gridfs.h}!gridfile_writer_init@{gridfile\_\-writer\_\-init}}
+\index{gridfile_writer_init@{gridfile\_\-writer\_\-init}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfile\_\-writer\_\-init]{\setlength{\rightskip}{0pt plus 5cm}void gridfile\_\-writer\_\-init (gridfile $\ast$ {\em gfile}, gridfs $\ast$ {\em gfs}, const char $\ast$ {\em remote\_\-name}, const char $\ast$ {\em content\_\-type})}}
+\label{gridfs_8h_357d562e2eb8647e32c9737e56e3e911}
+
+
+Initializes a gridfile for writing incrementally with gridfs\_\-write\_\-buffer. 
+
+Once initialized, you can write any number of buffers with gridfs\_\-write\_\-buffer. When done, you must call gridfs\_\-writer\_\-done to save the file metadata.
+
+\begin{Desc}
+\item[Returns:]- 1 if successful, 0 otherwise \end{Desc}
+\hypertarget{gridfs_8h_c44fdd22ea2f0cd0393d0a8b98206203}{
+\index{gridfs.h@{gridfs.h}!gridfs_find_filename@{gridfs\_\-find\_\-filename}}
+\index{gridfs_find_filename@{gridfs\_\-find\_\-filename}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfs\_\-find\_\-filename]{\setlength{\rightskip}{0pt plus 5cm}int gridfs\_\-find\_\-filename (gridfs $\ast$ {\em gfs}, const char $\ast$ {\em filename}, gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_c44fdd22ea2f0cd0393d0a8b98206203}
+
+
+Find the first file referenced by filename within the Grid\-FS and return it as a Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfs}]- the working Grid\-FS \item[{\em filename}]- filename of the file to find \item[{\em gfile}]- the output Grid\-File to be intialized \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]1 if successful, 0 otherwise \end{Desc}
+\hypertarget{gridfs_8h_b487b10abbae1f448fc760c6fca94f3f}{
+\index{gridfs.h@{gridfs.h}!gridfs_find_query@{gridfs\_\-find\_\-query}}
+\index{gridfs_find_query@{gridfs\_\-find\_\-query}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfs\_\-find\_\-query]{\setlength{\rightskip}{0pt plus 5cm}int gridfs\_\-find\_\-query (gridfs $\ast$ {\em gfs}, bson $\ast$ {\em query}, gridfile $\ast$ {\em gfile})}}
+\label{gridfs_8h_b487b10abbae1f448fc760c6fca94f3f}
+
+
+Find the first query within the Grid\-FS and return it as a Grid\-File. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfs}]- the working Grid\-FS \item[{\em query}]- a pointer to the bson with the query data \item[{\em gfile}]- the output Grid\-File to be initialized \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]1 if successful, 0 otherwise \end{Desc}
+\hypertarget{gridfs_8h_103debc0d8ad798eb613baf74c64c52a}{
+\index{gridfs.h@{gridfs.h}!gridfs_init@{gridfs\_\-init}}
+\index{gridfs_init@{gridfs\_\-init}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfs\_\-init]{\setlength{\rightskip}{0pt plus 5cm}int gridfs\_\-init (mongo\_\-connection $\ast$ {\em client}, const char $\ast$ {\em dbname}, const char $\ast$ {\em prefix}, gridfs $\ast$ {\em gfs})}}
+\label{gridfs_8h_103debc0d8ad798eb613baf74c64c52a}
+
+
+Initializes a Grid\-FS object. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em client}]- db connection \item[{\em dbname}]- database name \item[{\em prefix}]- collection prefix, default is fs if NULL or empty \item[{\em gfs}]- the Grid\-FS object to initialize \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- 1 if successful, 0 otherwise \end{Desc}
+\hypertarget{gridfs_8h_2410badfa933a34b74ed6d976d45889d}{
+\index{gridfs.h@{gridfs.h}!gridfs_remove_filename@{gridfs\_\-remove\_\-filename}}
+\index{gridfs_remove_filename@{gridfs\_\-remove\_\-filename}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfs\_\-remove\_\-filename]{\setlength{\rightskip}{0pt plus 5cm}void gridfs\_\-remove\_\-filename (gridfs $\ast$ {\em gfs}, const char $\ast$ {\em filename})}}
+\label{gridfs_8h_2410badfa933a34b74ed6d976d45889d}
+
+
+Removes the files referenced by filename from the db. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfs}]- the working Grid\-FS \item[{\em filename}]- the filename of the file/s to be removed \end{description}
+\end{Desc}
+\hypertarget{gridfs_8h_18aaca75b5a78a56150aa603adfda3c6}{
+\index{gridfs.h@{gridfs.h}!gridfs_store_buffer@{gridfs\_\-store\_\-buffer}}
+\index{gridfs_store_buffer@{gridfs\_\-store\_\-buffer}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfs\_\-store\_\-buffer]{\setlength{\rightskip}{0pt plus 5cm}bson gridfs\_\-store\_\-buffer (gridfs $\ast$ {\em gfs}, const char $\ast$ {\em data}, gridfs\_\-offset {\em length}, const char $\ast$ {\em remotename}, const char $\ast$ {\em contenttype})}}
+\label{gridfs_8h_18aaca75b5a78a56150aa603adfda3c6}
+
+
+Store a buffer as a Grid\-FS file. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfs}]- the working Grid\-FS \item[{\em data}]- pointer to buffer to store in Grid\-FS \item[{\em length}]- length of the buffer \item[{\em remotename}]- filename for use in the database \item[{\em contenttype}]- optional MIME type for this object \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the file object \end{Desc}
+\hypertarget{gridfs_8h_af64ce80e06625ccbf07e6fb11c8ee6c}{
+\index{gridfs.h@{gridfs.h}!gridfs_store_file@{gridfs\_\-store\_\-file}}
+\index{gridfs_store_file@{gridfs\_\-store\_\-file}!gridfs.h@{gridfs.h}}
+\subsubsection[gridfs\_\-store\_\-file]{\setlength{\rightskip}{0pt plus 5cm}bson gridfs\_\-store\_\-file (gridfs $\ast$ {\em gfs}, const char $\ast$ {\em filename}, const char $\ast$ {\em remotename}, const char $\ast$ {\em contenttype})}}
+\label{gridfs_8h_af64ce80e06625ccbf07e6fb11c8ee6c}
+
+
+Open the file referenced by filename and store it as a Grid\-FS file. 
+
+\begin{Desc}
+\item[Parameters:]
+\begin{description}
+\item[{\em gfs}]- the working Grid\-FS \item[{\em filename}]- local filename relative to the process \item[{\em remotename}]- optional filename for use in the database \item[{\em contenttype}]- optional MIME type for this object \end{description}
+\end{Desc}
+\begin{Desc}
+\item[Returns:]- the file object \end{Desc}
