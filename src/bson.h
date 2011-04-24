@@ -3,7 +3,7 @@
  * @brief BSON Declarations
  */
 
-/**    Copyright 2009, 2010, 2011 10gen Inc.
+/*    Copyright 2009, 2010, 2011 10gen Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -86,43 +86,198 @@ typedef struct {
 /* ----------------------------
    READING
    ------------------------------ */
-
+/**
+ * Returns a pointer to a static empty BSON object.
+ *
+ * @param obj the BSON object to initialize.
+ *
+ * @return bson the empty initialized BSON object.
+ */
 bson * bson_empty(bson * obj); /* returns pointer to static empty bson object */
+
+/**
+ * Copy BSON data from one object to another.
+ *
+ * @param out the copy destination BSON object.
+ * @param in the copy source BSON object.
+ */
 void bson_copy(bson* out, const bson* in); /* puts data in new buffer. NOOP if out==NULL */
+
+/**
+ * Make a BSON object from a BSON buffer.
+ *
+ * @param b the destination BSON object.
+ * @param buf the source BSON buffer object.
+ *
+ * @return bson the newly created BSON object.
+ */
 bson * bson_from_buffer(bson * b, bson_buffer * buf);
+
+/**
+ * Initialize a BSON object.
+ *
+ * @param b the BSON object to initialize.
+ * @param data the raw BSON data.
+ * @param mine whether or not the data's allocation should be freed by bson_destroy
+ *
+ * @return bson the initialized BSON object.
+ */
 bson * bson_init( bson * b , char * data , bson_bool_t mine );
+
+/**
+ * Size of a BSON object.
+ *
+ * @param b the BSON object.
+ *
+ * @return int the size.
+ */
 int bson_size(const bson * b );
+
+/**
+ * Destroy a BSON object.
+ *
+ * @param b the object to destroy.
+ */
 void bson_destroy( bson * b );
 
+/**
+ * Print a string representation of a BSON object.
+ *
+ * @param b the BSON object to print.
+ */
 void bson_print( bson * b );
+
+/**
+ * Print a string representation of a BSON object.
+ *
+ * @param bson the raw data to print.
+ * @param depth the depth to recurse the object.x
+ */
 void bson_print_raw( const char * bson , int depth );
 
+/**
+ * Advance a bson_iterator to the named field.
+ *
+ * @param it the bson_iterator to use.
+ * @param obj the BSON object to use.
+ * @param name the name of the field to find.
+ *
+ * @return bson_eoo if the name is not found.
+ */
 /* advances iterator to named field */
 /* returns bson_eoo (which is false) if field not found */
 bson_type bson_find(bson_iterator* it, const bson* obj, const char* name);
 
+/**
+ * Initialize a bson_iterator.
+ *
+ * @param i the bson_iterator to initialize.
+ * @param bson the BSON object to associate with the iterator.
+ */
 void bson_iterator_init( bson_iterator * i , const char * bson );
 
+/**
+ * Check to see if the bson_iterator has more data.
+ *
+ * @param i the iterator.
+ *
+ * @return bson_bool_t returns true if there is more data.
+ */
 /* more returns true for eoo. best to loop with bson_iterator_next(&it) */
 bson_bool_t bson_iterator_more( const bson_iterator * i );
+
+/**
+ * Point the iterator at the next BSON object.
+ *
+ * @param i the bson_iterator.
+ *
+ * @return bson_type the type of the next BSON object.
+ */
 bson_type bson_iterator_next( bson_iterator * i );
 
+/**
+ * Get the type of the BSON object currently pointed to by the iterator.
+ *
+ * @param i the bson_iterator
+ *
+ * @return bson_type the type of the current BSON object.
+ */
 bson_type bson_iterator_type( const bson_iterator * i );
+
+/**
+ * Get the key of the BSON object currently pointed to by the iterator.
+ *
+ * @param i the bson_iterator
+ *
+ * @return const char * the key of the current BSON object.
+ */
 const char * bson_iterator_key( const bson_iterator * i );
+
+/**
+ * Get the value of the BSON object currently pointed to by the iterator.
+ *
+ * @param i the bson_iterator
+ *
+ * @return const char * the value of the current BSON object.
+ */
 const char * bson_iterator_value( const bson_iterator * i );
 
+/**
+ * Get the double value of the BSON object currently pointed to by the iterator.
+ *
+ * @param i the bson_iterator
+ *
+ * @return double the value of the current BSON object.
+ */
 /* these convert to the right type (return 0 if non-numeric) */
 double bson_iterator_double( const bson_iterator * i );
+
+/**
+ * Get the int value of the BSON object currently pointed to by the iterator.
+ *
+ * @param i the bson_iterator
+ *
+ * @return int the value of the current BSON object.
+ */
 int bson_iterator_int( const bson_iterator * i );
+
+/**
+ * Get the long value of the BSON object currently pointed to by the iterator.
+ *
+ * @param i the bson_iterator
+ *
+ * @return long the value of the current BSON object.
+ */
 int64_t bson_iterator_long( const bson_iterator * i );
 
+/**
+ * Get the timestamp value of the BSON object currently pointed to by the iterator.
+ *
+ * @param i the bson_iterator
+ *
+ * @return bson_timestamp_t the value of the current BSON object.
+ */
 /* return the bson timestamp as a whole or in parts */
 bson_timestamp_t bson_iterator_timestamp( const bson_iterator * i );
 
+/**
+ * Get the boolean value of the BSON object currently pointed to by the iterator.
+ *
+ * @param i the bson_iterator
+ *
+ * @return bson_bool_t the value of the current BSON object.
+ */
 /* false: boolean false, 0 in any type, or null */
 /* true: anything else (even empty strings and objects) */
 bson_bool_t bson_iterator_bool( const bson_iterator * i );
 
+/**
+ * Get the boolean value of the BSON object currently pointed to by the iterator.
+ *
+ * @param i the bson_iterator
+ *
+ * @return bson_bool_t the value of the current BSON object.
+ */
 /* these assume you are using the right type */
 double bson_iterator_double_raw( const bson_iterator * i );
 int bson_iterator_int_raw( const bson_iterator * i );
