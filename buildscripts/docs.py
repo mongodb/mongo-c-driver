@@ -9,7 +9,6 @@ import subprocess
 import time
 import urllib2
 
-
 def clean_dir(dir):
     try:
         shutil.rmtree(dir)
@@ -21,8 +20,7 @@ def gen_c(dir):
     clean_dir(dir)
     clean_dir("docs/doxygen")
 
-    # Too noisy...
-    with open("/dev/null") as null:
+    with open(os.devnull, 'w') as null:
         subprocess.call(["doxygen", "doxygenConfig"], stdout=null, stderr=null)
 
     os.rename("docs/doxygen/html", dir)

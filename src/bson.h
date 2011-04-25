@@ -223,7 +223,8 @@ const char * bson_iterator_key( const bson_iterator * i );
 const char * bson_iterator_value( const bson_iterator * i );
 
 /**
- * Get the double value of the BSON object currently pointed to by the iterator.
+ * Get the double value of the BSON object currently pointed to by the
+ * iterator.
  *
  * @param i the bson_iterator
  *
@@ -251,7 +252,8 @@ int bson_iterator_int( const bson_iterator * i );
 int64_t bson_iterator_long( const bson_iterator * i );
 
 /**
- * Get the timestamp value of the BSON object currently pointed to by the iterator.
+ * Get the timestamp value of the BSON object currently pointed to by
+ * the iterator.
  *
  * @param i the bson_iterator
  *
@@ -261,7 +263,8 @@ int64_t bson_iterator_long( const bson_iterator * i );
 bson_timestamp_t bson_iterator_timestamp( const bson_iterator * i );
 
 /**
- * Get the boolean value of the BSON object currently pointed to by the iterator.
+ * Get the boolean value of the BSON object currently pointed to by
+ * the iterator.
  *
  * @param i the bson_iterator
  *
@@ -272,41 +275,178 @@ bson_timestamp_t bson_iterator_timestamp( const bson_iterator * i );
 bson_bool_t bson_iterator_bool( const bson_iterator * i );
 
 /**
- * Get the boolean value of the BSON object currently pointed to by the iterator.
+ * Get the double value of the BSON object currently pointed to by the
+ * iterator. Assumes the correct type is used.
+ *
+ * @param i the bson_iterator
+ *
+ * @return double the value of the current BSON object.
+ */
+/* these assume you are using the right type */
+double bson_iterator_double_raw( const bson_iterator * i );
+
+/**
+ * Get the int value of the BSON object currently pointed to by the
+ * iterator. Assumes the correct type is used.
+ *
+ * @param i the bson_iterator
+ *
+ * @return int the value of the current BSON object.
+ */
+int bson_iterator_int_raw( const bson_iterator * i );
+
+/**
+ * Get the long value of the BSON object currently pointed to by the
+ * iterator. Assumes the correct type is used.
+ *
+ * @param i the bson_iterator
+ *
+ * @return int64_t the value of the current BSON object.
+ */
+int64_t bson_iterator_long_raw( const bson_iterator * i );
+
+/**
+ * Get the bson_bool_t value of the BSON object currently pointed to by the
+ * iterator. Assumes the correct type is used.
  *
  * @param i the bson_iterator
  *
  * @return bson_bool_t the value of the current BSON object.
  */
-/* these assume you are using the right type */
-double bson_iterator_double_raw( const bson_iterator * i );
-int bson_iterator_int_raw( const bson_iterator * i );
-int64_t bson_iterator_long_raw( const bson_iterator * i );
 bson_bool_t bson_iterator_bool_raw( const bson_iterator * i );
+
+/**
+ * Get the bson_oid_t value of the BSON object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return bson_oid_t the value of the current BSON object.
+ */
 bson_oid_t* bson_iterator_oid( const bson_iterator * i );
 
+/**
+ * Get the string value of the BSON object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return const char * the value of the current BSON object.
+ */
 /* these can also be used with bson_code and bson_symbol*/
 const char * bson_iterator_string( const bson_iterator * i );
+
+/**
+ * Get the string length of the BSON object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return int the length of the current BSON object.
+ */
 int bson_iterator_string_len( const bson_iterator * i );
 
+/**
+ * Get the code value of the BSON object currently pointed to by the
+ * iterator. Works with bson_code, bson_codewscope, and bson_string 
+ * returns NULL for everything else.
+ *
+ * @param i the bson_iterator
+ *
+ * @return const char * the code value of the current BSON object.
+ */
 /* works with bson_code, bson_codewscope, and bson_string */
 /* returns NULL for everything else */
 const char * bson_iterator_code(const bson_iterator * i);
 
+/**
+ * Calls bson_empty on scope if not a bson_codewscope 
+ *
+ * @param i the bson_iterator.
+ * @param scope the bson scope.
+ */
 /* calls bson_empty on scope if not a bson_codewscope */
 void bson_iterator_code_scope(const bson_iterator * i, bson * scope);
 
+/**
+ * Get the date value of the BSON object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return bson_date_t the date value of the current BSON object.
+ */
 /* both of these only work with bson_date */
 bson_date_t bson_iterator_date(const bson_iterator * i);
+
+/**
+ * Get the time value of the BSON object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return time_t the time value of the current BSON object.
+ */
 time_t bson_iterator_time_t(const bson_iterator * i);
 
+/**
+ * Get the length of the BSON binary object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return int the length of the current BSON binary object.
+ */
 int bson_iterator_bin_len( const bson_iterator * i );
+
+/**
+ * Get the type of the BSON binary object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return char the type of the current BSON binary object.
+ */
 char bson_iterator_bin_type( const bson_iterator * i );
+
+/**
+ * Get the value of the BSON binary object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return const char * the value of the current BSON binary object.
+ */
 const char * bson_iterator_bin_data( const bson_iterator * i );
 
+/**
+ * Get the value of the BSON regex object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return const char * the value of the current BSON regex object.
+ */
 const char * bson_iterator_regex( const bson_iterator * i );
+
+/**
+ * Get the options of the BSON regex object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return const char * the options of the current BSON regex object.
+ */
 const char * bson_iterator_regex_opts( const bson_iterator * i );
 
+/**
+ * Get the value of the BSON binary object currently pointed to by the
+ * iterator. 
+ *
+ * @param i the bson_iterator
+ *
+ * @return const char * the value of the current BSON binary object.
+ */
 /* these work with bson_object and bson_array */
 void bson_iterator_subobject(const bson_iterator * i, bson * sub);
 void bson_iterator_subiterator(const bson_iterator * i, bson_iterator * sub);
