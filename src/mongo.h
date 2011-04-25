@@ -131,7 +131,7 @@ typedef enum {
  * @param host a numerical network address or a network hostname.
  * @param port the port to connect to.
  *
- * @return mongo_conn_return
+ * @return a mongo connection return status.
  */
 mongo_conn_return mongo_connect( mongo_connection * conn , const char* host, int port );
 
@@ -151,6 +151,8 @@ void mongo_replset_init_conn( mongo_connection* conn, const char* name );
  * @param conn a mongo_connection object.
  * @param host a numerical network address or a network hostname.
  * @param port the port to connect to.
+ *
+ * @return 0 on success.
  */
 int mongo_replset_add_seed( mongo_connection* conn, const char* host, int port );
 
@@ -162,7 +164,7 @@ int mongo_replset_add_seed( mongo_connection* conn, const char* host, int port )
  *
  * @param conn a mongo_connection object.
  *
- * @return mongo_conn_return
+ * @return a mongo connection return status.
  */
 mongo_conn_return mongo_replset_connect( mongo_connection* conn );
 
@@ -172,18 +174,18 @@ mongo_conn_return mongo_replset_connect( mongo_connection* conn );
  * This method will disconnect the current socket. If you've authentication,
  * you'll need to re-authenticate after calling this function.
  *
- * @param conn
+ * @param conn a mongo_connection object.
  *
- * @return mongo_conn_return
+ * @return a mongo connection object.
  */
 mongo_conn_return mongo_reconnect( mongo_connection * conn );
 
 /**
  * Close the current connection to the server.
  *
- * @param conn
+ * @param conn a mongo_connection object.
  *
- * @return bson_bool_t
+ * @return false if the the disconnection succeeded.
  */
 bson_bool_t mongo_disconnect( mongo_connection * conn );
 
@@ -193,9 +195,9 @@ bson_bool_t mongo_disconnect( mongo_connection * conn );
  *
  * You must always call this method when finished with the connection object.
  *
- * @param conn
+ * @param conn a mongo_connection object.
  *
- * @return bson_bool_t
+ * @return false if the destroy succeeded.
  */
 bson_bool_t mongo_destroy( mongo_connection * conn );
 
@@ -260,7 +262,7 @@ void mongo_remove(mongo_connection* conn, const char* ns, const bson* cond);
  * @param nToSkip the number of documents to skip.
  * @param options options for the find query.
  *
- * @return mongo_cursor* a pointer to a result cursor.
+ * @return a result cursor.
  */
 mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bson* fields ,int nToReturn ,int nToSkip, int options);
 
@@ -269,7 +271,7 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query, bs
  *
  * @param cursor a cursor returned from a call to mongo_find
  *
- * @return bson_bool_t returns true if there is another item in the result
+ * @return  true if there is another item in the result
  */
 bson_bool_t mongo_cursor_next(mongo_cursor* cursor);
 
@@ -302,7 +304,7 @@ bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, 
  * @param coll the collection name.
  * @param query the BSON query.
  *
- * @return int64_t the number of matching documents.
+ * @return the number of matching documents.
  */
 int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll, bson* query);
 
@@ -325,7 +327,7 @@ static const int MONGO_INDEX_DROP_DUPS = 0x2;
  * @param options index options.
  * @param out a bson document containing errors, if any.
  *
- * @return bson_bool_t successful if the index was created.
+ * @return true if the index was created.
  */
 bson_bool_t mongo_create_index(mongo_connection * conn, const char * ns, bson * key, int options, bson * out);
 
@@ -338,7 +340,7 @@ bson_bool_t mongo_create_index(mongo_connection * conn, const char * ns, bson * 
  * @param options index options.
  * @param out a BSON document containing errors, if any.
  *
- * @return bson_bool_t successful if the index was created.
+ * @return true if the index was created.
  */
 bson_bool_t mongo_create_simple_index(mongo_connection * conn, const char * ns, const char* field, int options, bson * out);
 
@@ -354,7 +356,7 @@ bson_bool_t mongo_create_simple_index(mongo_connection * conn, const char * ns, 
  * @param command the BSON command to run.
  * @param out the BSON result of the command.
  *
- * @return bson_bool_t returns success if the command ran without error.
+ * @return true if the command ran without error.
  */
 bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * command, bson * out);
 
@@ -367,7 +369,7 @@ bson_bool_t mongo_run_command(mongo_connection * conn, const char * db, bson * c
  * @param arg the integer argument to the command.
  * @param out the BSON result of the command.
  * 
- * @return bson_bool_t successful if the command ran without error.
+ * @return true if the command ran without error.
  *
  */
 /* for simple commands with a single k-v pair */
@@ -382,7 +384,7 @@ bson_bool_t mongo_simple_int_command(mongo_connection * conn, const char * db, c
  * @param arg the string argument to the command.
  * @param out the BSON result of the command.
  * 
- * @return bson_bool_t successful if the command ran without error.
+ * @return true if the command ran without error.
  *
  */
 bson_bool_t mongo_simple_str_command(mongo_connection * conn, const char * db, const char* cmd, const char* arg, bson * out);
@@ -393,7 +395,7 @@ bson_bool_t mongo_simple_str_command(mongo_connection * conn, const char * db, c
  * @param conn a mongo_connection object.
  * @param db the name of the database to drop.
  * 
- * @return bson_bool_t returns success if the database drop was successful.
+ * @return true if the database drop was successful.
  */
 bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db);
 
@@ -405,7 +407,7 @@ bson_bool_t mongo_cmd_drop_db(mongo_connection * conn, const char * db);
  * @param collection the name of the collection to drop.
  * @param out a BSON document containing the result of the command.
  *
- * @return bson_bool_t returns success if the collection drop was successful.
+ * @return true if the collection drop was successful.
  */
 bson_bool_t mongo_cmd_drop_collection(mongo_connection * conn, const char * db, const char * collection, bson * out);
 
@@ -426,6 +428,8 @@ void mongo_cmd_add_user(mongo_connection* conn, const char* db, const char* user
  * @param db the database to authenticate against.
  * @param user the user name to authenticate.
  * @param pass the user's password.
+ * 
+ * @return true if authentication succeeded.
  */
 bson_bool_t mongo_cmd_authenticate(mongo_connection* conn, const char* db, const char* user, const char* pass);
 
@@ -435,7 +439,7 @@ bson_bool_t mongo_cmd_authenticate(mongo_connection* conn, const char* db, const
  * @param conn a mongo_connection object.
  * @param out a BSON result of the command.
  * 
- * @return bson_bool_t returns true if the server is a master.
+ * @return true if the server is a master.
  */
 /* return value is master status */
 bson_bool_t mongo_cmd_ismaster(mongo_connection * conn, bson * out);
@@ -447,7 +451,7 @@ bson_bool_t mongo_cmd_ismaster(mongo_connection * conn, bson * out);
  * @param db the name of the database.
  * @param out a BSON object containing the error details.
  *
- * @return bson_bool_t returns true if the last command had an error.
+ * @return true if the last command had an error.
  */
 /* true return indicates error */
 bson_bool_t mongo_cmd_get_last_error(mongo_connection * conn, const char * db, bson * out);
@@ -459,7 +463,7 @@ bson_bool_t mongo_cmd_get_last_error(mongo_connection * conn, const char * db, b
  * @param db the name of the database.
  * @param out a BSON object containing the error details.
  *
- * @return bson_bool_t returns true if there is an error to return.
+ * @return true if there is an error to return.
  */
 
 bson_bool_t mongo_cmd_get_prev_error(mongo_connection * conn, const char * db, 
