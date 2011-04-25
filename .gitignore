@@ -8,6 +8,7 @@
 *.so
 *.dylib
 .scon*
+*.pyc
 
 test_*
 benchmark
