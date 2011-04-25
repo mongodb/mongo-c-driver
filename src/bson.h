@@ -91,7 +91,7 @@ typedef struct {
  *
  * @param obj the BSON object to initialize.
  *
- * @return bson the empty initialized BSON object.
+ * @return the empty initialized BSON object.
  */
 bson * bson_empty(bson * obj); /* returns pointer to static empty bson object */
 
@@ -109,7 +109,7 @@ void bson_copy(bson* out, const bson* in); /* puts data in new buffer. NOOP if o
  * @param b the destination BSON object.
  * @param buf the source BSON buffer object.
  *
- * @return bson the newly created BSON object.
+ * @return the newly created BSON object.
  */
 bson * bson_from_buffer(bson * b, bson_buffer * buf);
 
@@ -120,7 +120,7 @@ bson * bson_from_buffer(bson * b, bson_buffer * buf);
  * @param data the raw BSON data.
  * @param mine whether or not the data's allocation should be freed by bson_destroy
  *
- * @return bson the initialized BSON object.
+ * @return the initialized BSON object.
  */
 bson * bson_init( bson * b , char * data , bson_bool_t mine );
 
@@ -129,7 +129,7 @@ bson * bson_init( bson * b , char * data , bson_bool_t mine );
  *
  * @param b the BSON object.
  *
- * @return int the size.
+ * @return the size.
  */
 int bson_size(const bson * b );
 
@@ -155,6 +155,8 @@ void bson_print( bson * b );
  */
 void bson_print_raw( const char * bson , int depth );
 
+/* advances iterator to named field */
+/* returns bson_eoo (which is false) if field not found */
 /**
  * Advance a bson_iterator to the named field.
  *
@@ -162,10 +164,8 @@ void bson_print_raw( const char * bson , int depth );
  * @param obj the BSON object to use.
  * @param name the name of the field to find.
  *
- * @return bson_eoo if the name is not found.
+ * @return the type of the found object, bson_eoo if it is not found.
  */
-/* advances iterator to named field */
-/* returns bson_eoo (which is false) if field not found */
 bson_type bson_find(bson_iterator* it, const bson* obj, const char* name);
 
 /**
@@ -176,14 +176,14 @@ bson_type bson_find(bson_iterator* it, const bson* obj, const char* name);
  */
 void bson_iterator_init( bson_iterator * i , const char * bson );
 
+/* more returns true for eoo. best to loop with bson_iterator_next(&it) */
 /**
  * Check to see if the bson_iterator has more data.
  *
  * @param i the iterator.
  *
- * @return bson_bool_t returns true if there is more data.
+ * @return  returns true if there is more data.
  */
-/* more returns true for eoo. best to loop with bson_iterator_next(&it) */
 bson_bool_t bson_iterator_more( const bson_iterator * i );
 
 /**
@@ -191,7 +191,7 @@ bson_bool_t bson_iterator_more( const bson_iterator * i );
  *
  * @param i the bson_iterator.
  *
- * @return bson_type the type of the next BSON object.
+ * @return the type of the next BSON object.
  */
 bson_type bson_iterator_next( bson_iterator * i );
 
@@ -200,7 +200,7 @@ bson_type bson_iterator_next( bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return bson_type the type of the current BSON object.
+ * @return  the type of the current BSON object.
  */
 bson_type bson_iterator_type( const bson_iterator * i );
 
@@ -209,7 +209,7 @@ bson_type bson_iterator_type( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return const char * the key of the current BSON object.
+ * @return the key of the current BSON object.
  */
 const char * bson_iterator_key( const bson_iterator * i );
 
@@ -218,19 +218,19 @@ const char * bson_iterator_key( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return const char * the value of the current BSON object.
+ * @return  the value of the current BSON object.
  */
 const char * bson_iterator_value( const bson_iterator * i );
 
+/* these convert to the right type (return 0 if non-numeric) */
 /**
  * Get the double value of the BSON object currently pointed to by the
  * iterator.
  *
  * @param i the bson_iterator
  *
- * @return double the value of the current BSON object.
+ * @return  the value of the current BSON object.
  */
-/* these convert to the right type (return 0 if non-numeric) */
 double bson_iterator_double( const bson_iterator * i );
 
 /**
@@ -238,7 +238,7 @@ double bson_iterator_double( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return int the value of the current BSON object.
+ * @return  the value of the current BSON object.
  */
 int bson_iterator_int( const bson_iterator * i );
 
@@ -247,19 +247,19 @@ int bson_iterator_int( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return long the value of the current BSON object.
+ * @return the value of the current BSON object.
  */
 int64_t bson_iterator_long( const bson_iterator * i );
 
+/* return the bson timestamp as a whole or in parts */
 /**
  * Get the timestamp value of the BSON object currently pointed to by
  * the iterator.
  *
  * @param i the bson_iterator
  *
- * @return bson_timestamp_t the value of the current BSON object.
+ * @return the value of the current BSON object.
  */
-/* return the bson timestamp as a whole or in parts */
 bson_timestamp_t bson_iterator_timestamp( const bson_iterator * i );
 
 /**
@@ -268,7 +268,7 @@ bson_timestamp_t bson_iterator_timestamp( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return bson_bool_t the value of the current BSON object.
+ * @return the value of the current BSON object.
  */
 /* false: boolean false, 0 in any type, or null */
 /* true: anything else (even empty strings and objects) */
@@ -280,7 +280,7 @@ bson_bool_t bson_iterator_bool( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return double the value of the current BSON object.
+ * @return the value of the current BSON object.
  */
 /* these assume you are using the right type */
 double bson_iterator_double_raw( const bson_iterator * i );
@@ -291,7 +291,7 @@ double bson_iterator_double_raw( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return int the value of the current BSON object.
+ * @return the value of the current BSON object.
  */
 int bson_iterator_int_raw( const bson_iterator * i );
 
@@ -301,7 +301,7 @@ int bson_iterator_int_raw( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return int64_t the value of the current BSON object.
+ * @return the value of the current BSON object.
  */
 int64_t bson_iterator_long_raw( const bson_iterator * i );
 
@@ -311,7 +311,7 @@ int64_t bson_iterator_long_raw( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return bson_bool_t the value of the current BSON object.
+ * @return the value of the current BSON object.
  */
 bson_bool_t bson_iterator_bool_raw( const bson_iterator * i );
 
@@ -321,7 +321,7 @@ bson_bool_t bson_iterator_bool_raw( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return bson_oid_t the value of the current BSON object.
+ * @return the value of the current BSON object.
  */
 bson_oid_t* bson_iterator_oid( const bson_iterator * i );
 
@@ -331,7 +331,7 @@ bson_oid_t* bson_iterator_oid( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return const char * the value of the current BSON object.
+ * @return  the value of the current BSON object.
  */
 /* these can also be used with bson_code and bson_symbol*/
 const char * bson_iterator_string( const bson_iterator * i );
@@ -342,7 +342,7 @@ const char * bson_iterator_string( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return int the length of the current BSON object.
+ * @return the length of the current BSON object.
  */
 int bson_iterator_string_len( const bson_iterator * i );
 
@@ -353,7 +353,7 @@ int bson_iterator_string_len( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return const char * the code value of the current BSON object.
+ * @return the code value of the current BSON object.
  */
 /* works with bson_code, bson_codewscope, and bson_string */
 /* returns NULL for everything else */
@@ -374,7 +374,7 @@ void bson_iterator_code_scope(const bson_iterator * i, bson * scope);
  *
  * @param i the bson_iterator
  *
- * @return bson_date_t the date value of the current BSON object.
+ * @return the date value of the current BSON object.
  */
 /* both of these only work with bson_date */
 bson_date_t bson_iterator_date(const bson_iterator * i);
@@ -385,7 +385,7 @@ bson_date_t bson_iterator_date(const bson_iterator * i);
  *
  * @param i the bson_iterator
  *
- * @return time_t the time value of the current BSON object.
+ * @return the time value of the current BSON object.
  */
 time_t bson_iterator_time_t(const bson_iterator * i);
 
@@ -395,7 +395,7 @@ time_t bson_iterator_time_t(const bson_iterator * i);
  *
  * @param i the bson_iterator
  *
- * @return int the length of the current BSON binary object.
+ * @return the length of the current BSON binary object.
  */
 int bson_iterator_bin_len( const bson_iterator * i );
 
@@ -405,7 +405,7 @@ int bson_iterator_bin_len( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return char the type of the current BSON binary object.
+ * @return the type of the current BSON binary object.
  */
 char bson_iterator_bin_type( const bson_iterator * i );
 
@@ -415,7 +415,7 @@ char bson_iterator_bin_type( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return const char * the value of the current BSON binary object.
+ * @return the value of the current BSON binary object.
  */
 const char * bson_iterator_bin_data( const bson_iterator * i );
 
@@ -425,7 +425,7 @@ const char * bson_iterator_bin_data( const bson_iterator * i );
  *
  * @param i the bson_iterator
  *
- * @return const char * the value of the current BSON regex object.
+ * @return the value of the current BSON regex object.
  */
 const char * bson_iterator_regex( const bson_iterator * i );
 
@@ -433,72 +433,388 @@ const char * bson_iterator_regex( const bson_iterator * i );
  * Get the options of the BSON regex object currently pointed to by the
  * iterator. 
  *
- * @param i the bson_iterator
+ * @param i the bson_iterator.
  *
- * @return const char * the options of the current BSON regex object.
+ * @return the options of the current BSON regex object.
  */
 const char * bson_iterator_regex_opts( const bson_iterator * i );
 
+/* these work with bson_object and bson_array */
 /**
- * Get the value of the BSON binary object currently pointed to by the
+ * Get the BSON subobject currently pointed to by the
  * iterator. 
  *
- * @param i the bson_iterator
- *
- * @return const char * the value of the current BSON binary object.
+ * @param i the bson_iterator.
+ * @param sub the BSON subobject destination.
  */
-/* these work with bson_object and bson_array */
 void bson_iterator_subobject(const bson_iterator * i, bson * sub);
+
+/**
+ * Get a bson_iterator that on the BSON subobject.
+ *
+ * @param i the bson_iterator.
+ * @param sub the iterator to point at the BSON subobject.
+ */
 void bson_iterator_subiterator(const bson_iterator * i, bson_iterator * sub);
 
 /* str must be at least 24 hex chars + null byte */
+/**
+ * Create a bson_oid_t from a string. 
+ *
+ * @param oid the bson_oid_t destination.
+ * @param str a null terminated string comprised of at least 24 hex chars.
+ */
 void bson_oid_from_string(bson_oid_t* oid, const char* str);
+
+/**
+ * Create a string representation of the bson_oid_t.
+ *
+ * @param oid the bson_oid_t source.
+ * @param str the string representation destination.
+ */
 void bson_oid_to_string(const bson_oid_t* oid, char* str);
+
+/**
+ * Create a bson_oid object.
+ *
+ * @param oid the destination for the newly created bson_oid_t.
+ */
 void bson_oid_gen(bson_oid_t* oid);
 
+/**
+ * Get the time a bson_oid_t was created.
+ *
+ * @param oid the bson_oid_t.
+ */
 time_t bson_oid_generated_time(bson_oid_t* oid); /* Gives the time the OID was created */
 
 /* ----------------------------
    BUILDING
    ------------------------------ */
-
+/**
+ * Initialize a bson_buffer.
+ * 
+ * @param b the bson_buffer object to initialize.
+ *
+ * @return the initialized bson_buffer.
+ */
 bson_buffer * bson_buffer_init( bson_buffer * b );
+
+/**
+ * Grow a bson_buffer object.
+ * 
+ * @param b the bson_buffer to grow.
+ * @param bytesNeeded the additional number of bytes needed.
+ *
+ * @return the supplied bson_buffer with the new allocation.
+ */
 bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded );
 
 /**
- * @return the raw data.  you either should free this OR call bson_destroy not both
+ * Finalize a bson_buffer object.
+ *
+ * @param b the bson_buffer object to finalize.
+ *
+ * @return the raw data. to deallocate memory, either free this or
+ * call bson_buffer_destroy, but not both (see below).
  */
 char * bson_buffer_finish( bson_buffer * b );
+
+/** 
+ * Destroy a bson_buffer object.
+ *
+ * @param b the bson_buffer to destroy. 
+ *
+ */
 void bson_buffer_destroy( bson_buffer * b );
 
+/**
+ * Append a previously created bson_oid_t to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the bson_oid_t.
+ * @param oid the bson_oid_t to append.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_oid( bson_buffer * b , const char * name , const bson_oid_t* oid );
+
+/**
+ * Append a bson_oid_t to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the bson_oid_t.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_new_oid( bson_buffer * b , const char * name );
+
+/**
+ * Append an int to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the int.
+ * @param i the int to append.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_int( bson_buffer * b , const char * name , const int i );
+
+/**
+ * Append an long to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the long.
+ * @param i the long to append.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_long( bson_buffer * b , const char * name , const int64_t i );
+
+/**
+ * Append an double to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the double.
+ * @param d the double to append.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_double( bson_buffer * b , const char * name , const double d );
+
+/**
+ * Append a string to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the string.
+ * @param str the string to append.
+ *
+ * @return the bson_buffer.
+*/
 bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * str );
+
+/**
+ * Append len bytes of a string to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the string.
+ * @param str the string to append.
+ * @param len the number of bytes from str to append.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_string_n( bson_buffer * b, const char * name, const char * str , int len);
+
+/**
+ * Append a symbol to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the symbol.
+ * @param str the symbol to append.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_symbol( bson_buffer * b , const char * name , const char * str );
+/**
+ * Append len bytes of a symbol to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the symbol.
+ * @param str the symbol to append.
+ * @param len the number of bytes from str to append.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_symbol_n( bson_buffer * b , const char * name , const char * str , int len );
+
+/**
+ * Append code to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the code.
+ * @param str the code to append.
+ * @param len the number of bytes from str to append.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_code( bson_buffer * b , const char * name , const char * str );
+
+/**
+ * Append len bytes of code to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the code.
+ * @param str the code to append.
+ * @param len the number of bytes from str to append.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_code_n( bson_buffer * b , const char * name , const char * str , int len );
+
+/**
+ * Append code to a bson_buffer with scope.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the code.
+ * @param str the string to append.
+ * @param scope a BSON object containing the scope.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , const char * code , const bson * scope);
+
+/**
+ * Append len bytes of code to a bson_buffer with scope.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the code.
+ * @param str the string to append.
+ * @param len the number of bytes from str to append.
+ * @param scope a BSON object containing the scope.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_code_w_scope_n( bson_buffer * b , const char * name , const char * code , int size , const bson * scope);
+
+/**
+ * Append binary data to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the data.
+ * @param type the binary data type.
+ * @param str the binary data.
+ * @param len the length of the data.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len );
+
+/**
+ * Append a bson_bool_t to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the boolean value.
+ * @param v the bson_bool_t to append.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_bool( bson_buffer * b , const char * name , const bson_bool_t v );
+
+/**
+ * Append a null value to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the null value.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_null( bson_buffer * b , const char * name );
+
+/**
+ * Append an undefined value to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the undefined value.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_undefined( bson_buffer * b , const char * name );
+
+/**
+ * Append a regex value to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the regex value.
+ * @param pattern the regex pattern to append.
+ * @param the regex options.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const char * pattern, const char * opts );
+
+/**
+ * Append bson data to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the bson data.
+ * @param bson the bson object to append.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_bson( bson_buffer * b , const char * name , const bson* bson);
+
+/**
+ * Append a BSON element to a bson_buffer from the current point of an iterator.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name_or_null the key for the BSON element, or NULL.
+ * @param elem the bson_iterator.
+ * 
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_element( bson_buffer * b, const char * name_or_null, const bson_iterator* elem);
+
+/**
+ * Append a bson_timestamp_t value to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the timestampe value.
+ * @param ts the bson_timestamp_t value to append.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_timestamp( bson_buffer * b, const char * name, bson_timestamp_t * ts );
 
 /* these both append a bson_date */
+/**
+ * Append a bson_date_t value to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the date value.
+ * @param millis the bson_date_t to append.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_date(bson_buffer * b, const char * name, bson_date_t millis);
+
+/**
+ * Append a time_t value to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the key for the date value.
+ * @param secs the time_t to append.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_time_t(bson_buffer * b, const char * name, time_t secs);
 
+/**
+ * Start appending a new object to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the name of the new object.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_start_object( bson_buffer * b , const char * name );
+
+/**
+ * Start appending a new array to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ * @param name the name of the new array.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_start_array( bson_buffer * b , const char * name );
+
+/**
+ * Finish appending a new object or array to a bson_buffer.
+ *
+ * @param b the bson_buffer to append to.
+ *
+ * @return the bson_buffer.
+ */
 bson_buffer * bson_append_finish_object( bson_buffer * b );
 
 void bson_numstr(char* str, int i);
@@ -508,8 +824,26 @@ void bson_incnumstr(char* str);
 /* ------------------------------
    ERROR HANDLING - also used in mongo code
    ------------------------------ */
-
+/**
+ * Allocates memory and checks return value, exiting fatally if malloc() fails.
+ * 
+ * @param size bytes to allocate.
+ *
+ * @return a pointer to the allocated memory.
+ * 
+ * @sa malloc(3)
+ */ 
 void * bson_malloc(int size); /* checks return value */
+
+/**
+ * Changes the size of allocated memory and checks return value, exiting fatally if realloc() fails.
+ * 
+ * @param size bytes to allocate.
+ *
+ * @return a pointer to the allocated memory.
+ *
+ * @sa malloc(3)
+ */ 
 void * bson_realloc(void * ptr, int size); /* checks return value */
 
 /* bson_err_handlers shouldn't return!!! */
@@ -517,10 +851,29 @@ typedef void(*bson_err_handler)(const char* errmsg);
 
 /* returns old handler or NULL */
 /* default handler prints error then exits with failure*/
+/**
+ * Set a function for error handling.
+ * 
+ * @param func a bson_err_handler function.
+ * 
+ * @return the old error handling function, or NULL.
+ */
 bson_err_handler set_bson_err_handler(bson_err_handler func);
 
-/* does nothing is ok != 0 */
+/* does nothing if ok != 0 */
+/**
+ * Exit fatally.
+ *
+ * @param ok exits if ok is equal to 0.
+ */
 void bson_fatal( int ok );
+
+/**
+ * Exit fatally with an error message.
+  *
+ * @param ok exits if ok is equal to 0.
+ * @param msg prints to stderr before exiting.
+ */
 void bson_fatal_msg( int ok, const char* msg );
 
 MONGO_EXTERN_C_END
