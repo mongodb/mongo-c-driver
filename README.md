@@ -74,6 +74,7 @@ cached ensure_index (maybe)
 # CREDITS
 
 Gergely Nagy - Non-null-terminated string support.
+Josh Rotenberg - Initial Doxygen setup and a significant chunk of documentation.
 
 # LICENSE
 
