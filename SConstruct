@@ -95,7 +95,7 @@ env.Append( CPPPATH=["src/"] )
 
 coreFiles = ["src/md5.c" ]
 mFiles = [ "src/mongo.c", "src/gridfs.c"]
-bFiles = [ "src/bson.c", "src/numbers.c"]
+bFiles = [ "src/bson.c", "src/numbers.c", "src/encoding.c"]
 mLibFiles = coreFiles + mFiles + bFiles
 bLibFiles = coreFiles + bFiles
 m = env.Library( "mongoc" ,  mLibFiles )
@@ -116,7 +116,7 @@ testEnv = benchmarkEnv.Clone()
 testCoreFiles = [ ]
 
 tests = Split("sizes resize endian_swap all_types simple update errors "
-"count_delete auth gridfs replica_set examples")
+"count_delete auth gridfs validate replica_set examples")
 
 if have_libjson:
     tests.append('json')

@@ -53,6 +53,7 @@ typedef int bson_bool_t;
 typedef struct {
     char * data;
     bson_bool_t owned;
+    int err; /**< Bitfield representing errors or warnings on this bson object. */
 } bson;
 
 typedef struct {
@@ -67,6 +68,8 @@ typedef struct {
     bson_bool_t finished;
     int stack[32];
     int stackPos;
+    int err; /**< Bitfield representing errors or warnings on this buffer */
+    char* errstr; /**< A string representation most the recent error or warning. */
 } bson_buffer;
 
 #pragma pack(1)
@@ -875,6 +878,13 @@ void bson_fatal( int ok );
  * @param msg prints to stderr before exiting.
  */
 void bson_fatal_msg( int ok, const char* msg );
+
+/**
+ * Invoke the error handler but do not exit.
+ *
+ * @param b the buffer object.
+ */
+void bson_builder_error( bson_buffer* b );
 
 MONGO_EXTERN_C_END
 #endif

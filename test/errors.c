@@ -67,5 +67,10 @@ int main(){
 
     mongo_cmd_drop_db(conn, db);
     mongo_destroy(conn);
+
+    bson_buffer bb;
+    bson_buffer_init( & bb );
+
+
     return 0;
 }

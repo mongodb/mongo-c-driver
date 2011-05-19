@@ -52,10 +52,10 @@ typedef struct mongo_host_port {
 } mongo_host_port;
 
 typedef struct {
-    mongo_host_port* seeds; /*< The list of seed nodes provided by the user. */
-    mongo_host_port* hosts; /*< The list of host and ports reported by the replica set */
-    char* name;             /*< The name of the replica set. */
-    bson_bool_t primary_connected; /*< Whether we've managed to connect to a primary node. */
+    mongo_host_port* seeds; /**< The list of seed nodes provided by the user. */
+    mongo_host_port* hosts; /**< The list of host and ports reported by the replica set */
+    char* name;             /**< The name of the replica set. */
+    bson_bool_t primary_connected; /**< Whether we've managed to connect to a primary node. */
 } mongo_replset;
 
 typedef struct {

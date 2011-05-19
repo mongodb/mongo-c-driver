@@ -15,11 +15,13 @@
  *    limitations under the License.
  */
 
-#include "bson.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+
+#include "bson.h"
+#include "encoding.h"
 
 const int initialBufferSize = 128;
 
@@ -43,6 +45,7 @@ void bson_copy(bson* out, const bson* in){
 }
 
 bson * bson_from_buffer(bson * b, bson_buffer * buf){
+    b->err = buf->err;
     return bson_init(b, bson_buffer_finish(buf), 1);
 }
 
@@ -204,7 +207,7 @@ bson_type bson_iterator_next( bson_iterator * i ){
         i->first = 0;
         return (bson_type)(*i->cur);
     }
-    
+
     switch ( bson_iterator_type(i) ){
     case bson_eoo: return bson_eoo; /* don't advance */
     case bson_undefined:
@@ -405,6 +408,8 @@ bson_buffer * bson_buffer_init( bson_buffer * b ){
     b->cur = b->buf + 4;
     b->finished = 0;
     b->stackPos = 0;
+    b->err = 0;
+    b->errstr = NULL;
     return b;
 }
 
@@ -447,6 +452,13 @@ bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded ){
     return b;
 }
 
+/**
+ * Add null byte, mark as finished, and return buffer.
+ * Note that the buffer will now be own by the bson
+ * object created from a call to bson_from_buffer.
+ * This buffer is then deallocated by calling
+ * bson_destroy().
+ */
 char * bson_buffer_finish( bson_buffer * b ){
     int i;
     if ( ! b->finished ){
@@ -461,17 +473,24 @@ char * bson_buffer_finish( bson_buffer * b ){
 
 void bson_buffer_destroy( bson_buffer * b ){
     free( b->buf );
+    b->err = 0;
     b->buf = 0;
     b->cur = 0;
     b->finished = 1;
 }
 
 static bson_buffer * bson_append_estart( bson_buffer * b , int type , const char * name , const int dataSize ){
-    const int sl = strlen(name) + 1;
-    if ( ! bson_ensure_space( b , 1 + sl + dataSize ) )
+    const int len = strlen(name) + 1;
+    if ( ! bson_ensure_space( b , 1 + len + dataSize ) )
         return 0;
+
+    if( !bson_check_field_name( b, (unsigned char* )name, len - 1 ) ) {
+        bson_builder_error( b );
+        return 0;
+    }
+
     bson_append_byte( b , (char)type );
-    bson_append( b , name , sl );
+    bson_append( b , name , len );
     return b;
 }
 
@@ -510,6 +529,7 @@ bson_buffer * bson_append_undefined( bson_buffer * b , const char * name ){
 bson_buffer * bson_append_string_base( bson_buffer * b , const char * name , const char * value , int len , bson_type type){
     int sl = len + 1;
     if ( ! bson_append_estart( b , type , name , 4 + sl ) ) return 0;
+    if ( ! bson_check_string( b, value, sl - 1 ) ) return 0;
     bson_append32( b , &sl);
     bson_append( b , value , sl - 1 );
     bson_append( b , "\0" , 1 );
@@ -578,6 +598,7 @@ bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const cha
     const int plen = strlen(pattern)+1;
     const int olen = strlen(opts)+1;
     if ( ! bson_append_estart( b , bson_regex , name , plen + olen ) ) return 0;
+    if ( ! bson_check_string( b, pattern, plen - 1 ) ) return 0;
     bson_append( b , pattern , plen );
     bson_append( b , opts , olen );
     return b;
@@ -672,6 +693,17 @@ bson_err_handler set_bson_err_handler(bson_err_handler func){
     bson_err_handler old = err_handler;
     err_handler = func;
     return old;
+}
+
+/**
+ * This method is invoked when a non-fatal bson error is encountered.
+ * Calls the error handler if available.
+ *
+ *  @param
+ */
+void bson_builder_error( bson_buffer* b ) {
+    if( err_handler )
+      err_handler( "BSON error." );
 }
 
 void bson_fatal( int ok ){
