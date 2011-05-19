@@ -45,6 +45,9 @@ typedef int socklen_t;
 
 MONGO_EXTERN_C_START
 
+#define MONGO_OK 0
+#define MONGO_ERROR -1
+
 typedef struct mongo_host_port {
     char host[255];
     int port;
@@ -64,6 +67,8 @@ typedef struct {
     int sock;
     bson_bool_t connected;
     mongo_exception_context exception;
+    int err; /**< Most recent error code. */
+    char* errstr; /**< String interpretation of code if applicable. */
 } mongo_connection;
 
 #pragma pack(1)

@@ -186,6 +186,9 @@ mongo_conn_return mongo_connect( mongo_connection * conn , const char * host, in
     conn->primary->port = port;
     conn->primary->next = NULL;
 
+    conn->err = 0;
+    conn->errstr = NULL;
+
     return mongo_socket_connect(conn, host, port);
 }
 
@@ -200,6 +203,9 @@ void mongo_replset_init_conn( mongo_connection* conn, const char* name ) {
 
     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
     conn->primary = NULL;
+
+    conn->err = 0;
+    conn->errstr = NULL;
 }
 
 static int mongo_replset_add_node( mongo_host_port** list, const char* host, int port ) {
@@ -442,6 +448,7 @@ bson_bool_t mongo_destroy( mongo_connection * conn ){
     }
 
     free( conn->primary );
+    free( conn->errstr );
     return mongo_disconnect( conn );
 }
 
@@ -470,6 +477,7 @@ void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bso
 
 void mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
     char * data;
+
     mongo_message * mm = mongo_message_create( 16 /* header */
                                              + 4 /* ZERO */
                                              + strlen(ns)
