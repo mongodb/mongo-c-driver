@@ -454,7 +454,7 @@ bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded ){
 
 /**
  * Add null byte, mark as finished, and return buffer.
- * Note that the buffer will now be own by the bson
+ * Note that the buffer will now be owned by the bson
  * object created from a call to bson_from_buffer.
  * This buffer is then deallocated by calling
  * bson_destroy().
