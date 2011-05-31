@@ -127,7 +127,7 @@ void bson_copy(bson* out, const bson* in); /* puts data in new buffer. NOOP if o
  * @param b the destination BSON object.
  * @param buf the source BSON buffer object.
  *
- * @return the newly created BSON object.
+ * @return BSON_OK or BSON_ERROR.
  */
 int bson_from_buffer(bson * b, bson_buffer * buf);
 
@@ -138,7 +138,7 @@ int bson_from_buffer(bson * b, bson_buffer * buf);
  * @param data the raw BSON data.
  * @param mine whether or not the data's allocation should be freed by bson_destroy
  *
- * @return BSON_OK.
+ * @return BSON_OK or BSON_ERROR.
  */
 int bson_init( bson * b , char * data , bson_bool_t mine );
 

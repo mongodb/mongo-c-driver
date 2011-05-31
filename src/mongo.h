@@ -49,8 +49,8 @@ MONGO_EXTERN_C_START
 #define MONGO_MINOR 4
 #define MONGO_PATCH 0
 
-#define MONGO_OK 0
-#define MONGO_ERROR -1
+#define MONGO_OK BSON_OK
+#define MONGO_ERROR BSON_ERROR
 
 typedef struct mongo_host_port {
     char host[255];
