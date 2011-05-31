@@ -492,7 +492,6 @@ void bson_buffer_destroy( bson_buffer * b ){
 static int bson_append_estart( bson_buffer * b, int type, const char * name, const int dataSize ){
     const int len = strlen(name) + 1;
     if ( bson_ensure_space( b, 1 + len + dataSize ) == BSON_ERROR ) {
-        printf("SPACE!");
         return BSON_ERROR;
     }
 
@@ -555,7 +554,6 @@ int bson_append_string_base( bson_buffer * b, const char * name,
 
     int sl = len + 1;
     if ( bson_append_estart( b, type, name, 4 + sl ) == BSON_ERROR ) {
-        printf("START ERROR!");
         return BSON_ERROR;
     }
     if ( bson_check_string( b, value, sl - 1 ) == BSON_ERROR )

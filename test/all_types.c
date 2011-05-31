@@ -55,14 +55,10 @@ int main(){
         bson_destroy(&scope);
     }
 
-    int r = bson_append_timestamp(&bb, "timestamp", &ts);
-    printf("RES1: %d", r);
-    int re = bson_append_long(&bb, "l", 0x1122334455667788);
-    printf("ERR: %d", bb.err);
-    printf("RES2: %d", re);
+    bson_append_timestamp(&bb, "timestamp", &ts);
+    bson_append_long(&bb, "l", 0x1122334455667788);
 
-    int res = bson_from_buffer(&b, &bb);
-    printf("RES5: %d", res);
+    bson_from_buffer(&b, &bb);
 
     bson_print(&b);
 

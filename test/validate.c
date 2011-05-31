@@ -14,9 +14,6 @@ int main() {
     unsigned char not_utf8[3];
     int result;
 
-    const char * col = "c.validate";
-    const char * ns = "test.c.validate";
-
     not_utf8[0] = 0xC0;
     not_utf8[1] = 0xC0;
     not_utf8[3] = '\0';
