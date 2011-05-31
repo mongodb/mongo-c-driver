@@ -24,6 +24,20 @@
 #include "platform_hacks.h"
 #include <time.h>
 
+/* Generic error and warning flags. */
+#define BSON_OK 0
+#define BSON_ERROR -1
+#define BSON_WARNING -2
+
+/* BSON validity flags. */
+#define BSON_VALID 0x0
+#define BSON_NOT_UTF8 0x2 /**< Either a key or a string is not valid UTF-8. */
+#define BSON_FIELD_HAS_DOT 0x4 /**< Warning: key contains '.' character. */
+#define BSON_FIELD_INIT_DOLLAR 0x8 /**< Warning: key starts with '$' character. */
+
+/* BSON error codes. */
+#define BSON_OBJECT_FINISHED 1 /**< Trying to modify a finished BSON object. */
+
 MONGO_EXTERN_C_START
 
 typedef enum {
@@ -54,6 +68,7 @@ typedef struct {
     char * data;
     bson_bool_t owned;
     int err; /**< Bitfield representing errors or warnings on this bson object. */
+    char* errstr; /**< A string representation of the most recent error or warning. */
 } bson;
 
 typedef struct {
@@ -69,7 +84,7 @@ typedef struct {
     int stack[32];
     int stackPos;
     int err; /**< Bitfield representing errors or warnings on this buffer */
-    char* errstr; /**< A string representation most the recent error or warning. */
+    char* errstr; /**< A string representation of the most recent error or warning. */
 } bson_buffer;
 
 #pragma pack(1)
@@ -114,7 +129,7 @@ void bson_copy(bson* out, const bson* in); /* puts data in new buffer. NOOP if o
  *
  * @return the newly created BSON object.
  */
-bson * bson_from_buffer(bson * b, bson_buffer * buf);
+int bson_from_buffer(bson * b, bson_buffer * buf);
 
 /**
  * Initialize a BSON object.
@@ -123,9 +138,9 @@ bson * bson_from_buffer(bson * b, bson_buffer * buf);
  * @param data the raw BSON data.
  * @param mine whether or not the data's allocation should be freed by bson_destroy
  *
- * @return the initialized BSON object.
+ * @return BSON_OK.
  */
-bson * bson_init( bson * b , char * data , bson_bool_t mine );
+int bson_init( bson * b , char * data , bson_bool_t mine );
 
 /**
  * Size of a BSON object.
@@ -499,9 +514,9 @@ time_t bson_oid_generated_time(bson_oid_t* oid); /* Gives the time the OID was c
  * 
  * @param b the bson_buffer object to initialize.
  *
- * @return the initialized bson_buffer.
+ * @return 0. Exits if cannot allocate memory.
  */
-bson_buffer * bson_buffer_init( bson_buffer * b );
+int bson_buffer_init( bson_buffer * b );
 
 /**
  * Grow a bson_buffer object.
@@ -509,19 +524,20 @@ bson_buffer * bson_buffer_init( bson_buffer * b );
  * @param b the bson_buffer to grow.
  * @param bytesNeeded the additional number of bytes needed.
  *
- * @return the supplied bson_buffer with the new allocation.
+ * @return BSON_OK or BSON_ERROR with the bson_buffer error object set.
+ *   Exits if allocation fails.
  */
-bson_buffer * bson_ensure_space( bson_buffer * b , const int bytesNeeded );
+int bson_ensure_space( bson_buffer * b, const int bytesNeeded );
 
 /**
  * Finalize a bson_buffer object.
  *
  * @param b the bson_buffer object to finalize.
  *
- * @return the raw data. to deallocate memory, either free this or
- * call bson_buffer_destroy, but not both (see below).
+ * @return the standard error code. To deallocate memory,
+ *   call bson_buffer_destroy on the bson_buffer object.
  */
-char * bson_buffer_finish( bson_buffer * b );
+int bson_buffer_finish( bson_buffer * b );
 
 /** 
  * Destroy a bson_buffer object.
@@ -538,9 +554,9 @@ void bson_buffer_destroy( bson_buffer * b );
  * @param name the key for the bson_oid_t.
  * @param oid the bson_oid_t to append.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_oid( bson_buffer * b , const char * name , const bson_oid_t* oid );
+int bson_append_oid( bson_buffer * b, const char * name, const bson_oid_t* oid );
 
 /**
  * Append a bson_oid_t to a bson_buffer.
@@ -548,9 +564,9 @@ bson_buffer * bson_append_oid( bson_buffer * b , const char * name , const bson_
  * @param b the bson_buffer to append to.
  * @param name the key for the bson_oid_t.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_new_oid( bson_buffer * b , const char * name );
+int bson_append_new_oid( bson_buffer * b, const char * name );
 
 /**
  * Append an int to a bson_buffer.
@@ -559,9 +575,9 @@ bson_buffer * bson_append_new_oid( bson_buffer * b , const char * name );
  * @param name the key for the int.
  * @param i the int to append.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_int( bson_buffer * b , const char * name , const int i );
+int bson_append_int( bson_buffer * b, const char * name, const int i );
 
 /**
  * Append an long to a bson_buffer.
@@ -570,9 +586,9 @@ bson_buffer * bson_append_int( bson_buffer * b , const char * name , const int i
  * @param name the key for the long.
  * @param i the long to append.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_long( bson_buffer * b , const char * name , const int64_t i );
+int bson_append_long( bson_buffer * b, const char * name, const int64_t i );
 
 /**
  * Append an double to a bson_buffer.
@@ -580,10 +596,10 @@ bson_buffer * bson_append_long( bson_buffer * b , const char * name , const int6
  * @param b the bson_buffer to append to.
  * @param name the key for the double.
  * @param d the double to append.
- * 
- * @return the bson_buffer.
+ *
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_double( bson_buffer * b , const char * name , const double d );
+int bson_append_double( bson_buffer * b, const char * name, const double d );
 
 /**
  * Append a string to a bson_buffer.
@@ -592,9 +608,9 @@ bson_buffer * bson_append_double( bson_buffer * b , const char * name , const do
  * @param name the key for the string.
  * @param str the string to append.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
 */
-bson_buffer * bson_append_string( bson_buffer * b , const char * name , const char * str );
+int bson_append_string( bson_buffer * b, const char * name, const char * str );
 
 /**
  * Append len bytes of a string to a bson_buffer.
@@ -604,9 +620,9 @@ bson_buffer * bson_append_string( bson_buffer * b , const char * name , const ch
  * @param str the string to append.
  * @param len the number of bytes from str to append.
  * 
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_string_n( bson_buffer * b, const char * name, const char * str , int len);
+int bson_append_string_n( bson_buffer * b, const char * name, const char * str, int len);
 
 /**
  * Append a symbol to a bson_buffer.
@@ -615,9 +631,10 @@ bson_buffer * bson_append_string_n( bson_buffer * b, const char * name, const ch
  * @param name the key for the symbol.
  * @param str the symbol to append.
  * 
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_symbol( bson_buffer * b , const char * name , const char * str );
+int bson_append_symbol( bson_buffer * b, const char * name, const char * str );
+
 /**
  * Append len bytes of a symbol to a bson_buffer.
  *
@@ -626,9 +643,9 @@ bson_buffer * bson_append_symbol( bson_buffer * b , const char * name , const ch
  * @param str the symbol to append.
  * @param len the number of bytes from str to append.
  * 
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_symbol_n( bson_buffer * b , const char * name , const char * str , int len );
+int bson_append_symbol_n( bson_buffer * b, const char * name, const char * str, int len );
 
 /**
  * Append code to a bson_buffer.
@@ -638,9 +655,9 @@ bson_buffer * bson_append_symbol_n( bson_buffer * b , const char * name , const 
  * @param str the code to append.
  * @param len the number of bytes from str to append.
  * 
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_code( bson_buffer * b , const char * name , const char * str );
+int bson_append_code( bson_buffer * b, const char * name, const char * str );
 
 /**
  * Append len bytes of code to a bson_buffer.
@@ -650,9 +667,9 @@ bson_buffer * bson_append_code( bson_buffer * b , const char * name , const char
  * @param str the code to append.
  * @param len the number of bytes from str to append.
  * 
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_code_n( bson_buffer * b , const char * name , const char * str , int len );
+int bson_append_code_n( bson_buffer * b, const char * name, const char * str, int len );
 
 /**
  * Append code to a bson_buffer with scope.
@@ -662,9 +679,9 @@ bson_buffer * bson_append_code_n( bson_buffer * b , const char * name , const ch
  * @param str the string to append.
  * @param scope a BSON object containing the scope.
  * 
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , const char * code , const bson * scope);
+int bson_append_code_w_scope( bson_buffer * b, const char * name, const char * code, const bson * scope);
 
 /**
  * Append len bytes of code to a bson_buffer with scope.
@@ -675,9 +692,9 @@ bson_buffer * bson_append_code_w_scope( bson_buffer * b , const char * name , co
  * @param len the number of bytes from str to append.
  * @param scope a BSON object containing the scope.
  * 
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_code_w_scope_n( bson_buffer * b , const char * name , const char * code , int size , const bson * scope);
+int bson_append_code_w_scope_n( bson_buffer * b, const char * name, const char * code, int size, const bson * scope);
 
 /**
  * Append binary data to a bson_buffer.
@@ -687,10 +704,10 @@ bson_buffer * bson_append_code_w_scope_n( bson_buffer * b , const char * name , 
  * @param type the binary data type.
  * @param str the binary data.
  * @param len the length of the data.
- * 
- * @return the bson_buffer.
+ *
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len );
+int bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len );
 
 /**
  * Append a bson_bool_t to a bson_buffer.
@@ -698,30 +715,30 @@ bson_buffer * bson_append_binary( bson_buffer * b, const char * name, char type,
  * @param b the bson_buffer to append to.
  * @param name the key for the boolean value.
  * @param v the bson_bool_t to append.
- * 
- * @return the bson_buffer.
+ *
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_bool( bson_buffer * b , const char * name , const bson_bool_t v );
+int bson_append_bool( bson_buffer * b, const char * name, const bson_bool_t v );
 
 /**
  * Append a null value to a bson_buffer.
  *
  * @param b the bson_buffer to append to.
  * @param name the key for the null value.
- * 
- * @return the bson_buffer.
+ *
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_null( bson_buffer * b , const char * name );
+int bson_append_null( bson_buffer * b, const char * name );
 
 /**
  * Append an undefined value to a bson_buffer.
  *
  * @param b the bson_buffer to append to.
  * @param name the key for the undefined value.
- * 
- * @return the bson_buffer.
+ *
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_undefined( bson_buffer * b , const char * name );
+int bson_append_undefined( bson_buffer * b, const char * name );
 
 /**
  * Append a regex value to a bson_buffer.
@@ -731,9 +748,9 @@ bson_buffer * bson_append_undefined( bson_buffer * b , const char * name );
  * @param pattern the regex pattern to append.
  * @param the regex options.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const char * pattern, const char * opts );
+int bson_append_regex( bson_buffer * b, const char * name, const char * pattern, const char * opts );
 
 /**
  * Append bson data to a bson_buffer.
@@ -742,9 +759,9 @@ bson_buffer * bson_append_regex( bson_buffer * b , const char * name , const cha
  * @param name the key for the bson data.
  * @param bson the bson object to append.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_bson( bson_buffer * b , const char * name , const bson* bson);
+int bson_append_bson( bson_buffer * b, const char * name, const bson* bson);
 
 /**
  * Append a BSON element to a bson_buffer from the current point of an iterator.
@@ -752,10 +769,10 @@ bson_buffer * bson_append_bson( bson_buffer * b , const char * name , const bson
  * @param b the bson_buffer to append to.
  * @param name_or_null the key for the BSON element, or NULL.
  * @param elem the bson_iterator.
- * 
- * @return the bson_buffer.
+ *
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_element( bson_buffer * b, const char * name_or_null, const bson_iterator* elem);
+int bson_append_element( bson_buffer * b, const char * name_or_null, const bson_iterator* elem);
 
 /**
  * Append a bson_timestamp_t value to a bson_buffer.
@@ -764,9 +781,9 @@ bson_buffer * bson_append_element( bson_buffer * b, const char * name_or_null, c
  * @param name the key for the timestampe value.
  * @param ts the bson_timestamp_t value to append.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_timestamp( bson_buffer * b, const char * name, bson_timestamp_t * ts );
+int bson_append_timestamp( bson_buffer * b, const char * name, bson_timestamp_t * ts );
 
 /* these both append a bson_date */
 /**
@@ -776,9 +793,9 @@ bson_buffer * bson_append_timestamp( bson_buffer * b, const char * name, bson_ti
  * @param name the key for the date value.
  * @param millis the bson_date_t to append.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_date(bson_buffer * b, const char * name, bson_date_t millis);
+int bson_append_date(bson_buffer * b, const char * name, bson_date_t millis);
 
 /**
  * Append a time_t value to a bson_buffer.
@@ -787,9 +804,9 @@ bson_buffer * bson_append_date(bson_buffer * b, const char * name, bson_date_t m
  * @param name the key for the date value.
  * @param secs the time_t to append.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_time_t(bson_buffer * b, const char * name, time_t secs);
+int bson_append_time_t(bson_buffer * b, const char * name, time_t secs);
 
 /**
  * Start appending a new object to a bson_buffer.
@@ -797,9 +814,9 @@ bson_buffer * bson_append_time_t(bson_buffer * b, const char * name, time_t secs
  * @param b the bson_buffer to append to.
  * @param name the name of the new object.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_start_object( bson_buffer * b , const char * name );
+int bson_append_start_object( bson_buffer * b, const char * name );
 
 /**
  * Start appending a new array to a bson_buffer.
@@ -807,18 +824,18 @@ bson_buffer * bson_append_start_object( bson_buffer * b , const char * name );
  * @param b the bson_buffer to append to.
  * @param name the name of the new array.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_start_array( bson_buffer * b , const char * name );
+int bson_append_start_array( bson_buffer * b, const char * name );
 
 /**
  * Finish appending a new object or array to a bson_buffer.
  *
  * @param b the bson_buffer to append to.
  *
- * @return the bson_buffer.
+ * @return BSON_OK or BSON_ERROR.
  */
-bson_buffer * bson_append_finish_object( bson_buffer * b );
+int bson_append_finish_object( bson_buffer * b );
 
 void bson_numstr(char* str, int i);
 void bson_incnumstr(char* str);

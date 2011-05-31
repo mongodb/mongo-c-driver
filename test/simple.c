@@ -42,15 +42,15 @@ int main(){
         bson_append_string( &bb , "c" , "17" );
 
         {
-            bson_buffer * sub = bson_append_start_object(  &bb , "d" );
-            bson_append_int( sub, "i", 71 );
-            bson_append_finish_object(sub);
+            bson_append_start_object(  &bb , "d" );
+                bson_append_int( &bb, "i", 71 );
+            bson_append_finish_object( &bb );
         }
         {
-            bson_buffer * arr = bson_append_start_array(  &bb , "e" );
-            bson_append_int( arr, "0", 71 );
-            bson_append_string( arr, "1", "71" );
-            bson_append_finish_object(arr);
+            bson_append_start_array(  &bb , "e" );
+                bson_append_int( &bb, "0", 71 );
+                bson_append_string( &bb, "1", "71" );
+            bson_append_finish_object( &bb );
         }
 
         bson_from_buffer(&b, &bb);

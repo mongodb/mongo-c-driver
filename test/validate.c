@@ -31,19 +31,19 @@ int main() {
     /* Test valid keys. */
     bson_buffer_init( & bb );
     result = bson_append_string( &bb , "a.b" , "17" );
-    ASSERT( result != 0 );
+    ASSERT( result == BSON_OK );
     ASSERT( bb.err & BSON_FIELD_HAS_DOT );
 
     result = bson_append_string( &bb , "$ab" , "17" );
-    ASSERT( result != 0 );
+    ASSERT( result == BSON_OK );
     ASSERT( bb.err & BSON_FIELD_INIT_DOLLAR );
 
     result = bson_append_string( &bb , "ab" , "this is valid utf8" );
-    ASSERT( result != 0 );
+    ASSERT( result == BSON_OK );
     ASSERT( ! (bb.err & BSON_NOT_UTF8 ) );
 
     result = bson_append_string( &bb , (const char*)not_utf8, "valid" );
-    ASSERT( result == 0 );
+    ASSERT( result == BSON_ERROR );
     ASSERT( bb.err & BSON_NOT_UTF8 );
 
     bson_from_buffer(&b, &bb);
@@ -56,23 +56,24 @@ int main() {
     /* Test valid strings. */
     bson_buffer_init( & bb );
     result = bson_append_string( &bb , "foo" , "bar" );
-    ASSERT( result != 0 );
+    ASSERT( result == BSON_OK );
     ASSERT( bb.err == 0 );
 
     result = bson_append_string( &bb , "foo" , (const char*)not_utf8 );
-    ASSERT( result == 0 );
+    ASSERT( result == BSON_ERROR );
     ASSERT( bb.err & BSON_NOT_UTF8 );
 
     bb.err = 0;
     ASSERT( bb.err == 0 );
 
     result = bson_append_regex( &bb , "foo" , (const char*)not_utf8, "s" );
-    ASSERT( result == 0 );
+    ASSERT( result == BSON_ERROR );
     ASSERT( bb.err & BSON_NOT_UTF8 );
 
     mongo_cmd_drop_db(conn, "test");
     mongo_disconnect( conn );
 
     mongo_destroy( conn );
+
     return 0;
 }

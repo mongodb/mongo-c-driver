@@ -21,11 +21,11 @@ int main(){
     bson_append_string_n(&bb, "s_n", "goodbye cruel world", 7);
 
     {
-        bson_buffer *obj = bson_append_start_object(&bb, "o");
-        bson_buffer *arr = bson_append_start_array(obj, "a");
-        bson_append_binary(arr, "0", 8, "w\0rld", 5);
-        bson_append_finish_object(arr);
-        bson_append_finish_object(obj);
+        bson_append_start_object(&bb, "o");
+            bson_append_start_array(&bb, "a");
+                bson_append_binary(&bb, "0", 8, "w\0rld", 5);
+            bson_append_finish_object(&bb);
+        bson_append_finish_object(&bb);
     }
 
     bson_append_undefined(&bb, "u");
@@ -55,10 +55,14 @@ int main(){
         bson_destroy(&scope);
     }
 
-    bson_append_timestamp(&bb, "timestamp", &ts);
-    bson_append_long(&bb, "l", 0x1122334455667788);
+    int r = bson_append_timestamp(&bb, "timestamp", &ts);
+    printf("RES1: %d", r);
+    int re = bson_append_long(&bb, "l", 0x1122334455667788);
+    printf("ERR: %d", bb.err);
+    printf("RES2: %d", re);
 
-    bson_from_buffer(&b, &bb);
+    int res = bson_from_buffer(&b, &bb);
+    printf("RES5: %d", res);
 
     bson_print(&b);
 

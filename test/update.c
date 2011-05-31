@@ -48,14 +48,14 @@ int main(){
 
         bson_buffer_init(&bb);
         {
-            bson_buffer * sub = bson_append_start_object(&bb, "$inc");
-            bson_append_int(sub, "a", 2 );
-            bson_append_finish_object(sub);
+            bson_append_start_object(&bb, "$inc");
+                bson_append_int(&bb, "a", 2 );
+            bson_append_finish_object(&bb);
         }
         {
-            bson_buffer * sub = bson_append_start_object(&bb, "$set");
-            bson_append_double(sub, "b", -1.5 );
-            bson_append_finish_object(sub);
+            bson_append_start_object(&bb, "$set");
+                bson_append_double(&bb, "b", -1.5 );
+            bson_append_finish_object(&bb);
         }
         bson_from_buffer(&op, &bb);
 

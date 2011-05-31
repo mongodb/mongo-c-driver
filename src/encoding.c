@@ -109,17 +109,17 @@ static int bson_validate_string( bson_buffer* b, const unsigned char* string,
             sequence_length = trailingBytesForUTF8[*(string + position)] + 1;
             if ((position + sequence_length) > length) {
                 b->err |= BSON_NOT_UTF8;
-                return 0;
+                return BSON_ERROR;
             }
             if (!isLegalUTF8(string + position, sequence_length)) {
                 b->err |= BSON_NOT_UTF8;
-                return 0;
+                return BSON_ERROR;
             }
         }
         position += sequence_length;
     }
 
-    return 1;
+    return BSON_OK;
 }
 
 

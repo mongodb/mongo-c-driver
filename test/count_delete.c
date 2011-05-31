@@ -44,9 +44,9 @@ int main(){
     /* query: {a: {$gt: 3}} */
     bson_buffer_init( & bb );
     {
-        bson_buffer * sub = bson_append_start_object(&bb, "a");
-        bson_append_int(sub, "$gt", 3);
-        bson_append_finish_object(sub);
+        bson_append_start_object(&bb, "a");
+            bson_append_int(&bb, "$gt", 3);
+        bson_append_finish_object(&bb);
     }
     bson_from_buffer(&b, &bb);
     

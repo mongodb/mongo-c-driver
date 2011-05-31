@@ -19,11 +19,6 @@
 
 MONGO_EXTERN_C_START
 
-#define BSON_VALID 0x0
-#define BSON_NOT_UTF8 0x2
-#define BSON_FIELD_HAS_DOT 0x4
-#define BSON_FIELD_INIT_DOLLAR 0x8
-
 /**
  * Check that a field name is valid UTF8, does not start with a '$',
  * and contains no '.' characters. Set buffer bit field appropriately.
@@ -34,11 +29,12 @@ MONGO_EXTERN_C_START
  * @param string The field name as char*.
  * @param length The length of the field name.
  *
- * @return 1 if valid UTF8 and 0 if not. All BSON strings must be
- *     valid UTF8. Note that this function may return 1 if string
- *     contains '.', since the validity of this depends on context.
+ * @return BSON_OK if valid UTF8 and BSON_ERROR if not. All BSON strings must be
+ *     valid UTF8. This function will also check whether the string
+ *     contains '.' or starts with '$', since the validity of this depends on context.
+ *     Set the value of b->err appropriately.
  */
-bson_bool_t bson_check_field_name( bson_buffer* b, const unsigned char* string,
+int bson_check_field_name( bson_buffer* b, const unsigned char* string,
     const int length );
 
 /**
@@ -48,7 +44,8 @@ bson_bool_t bson_check_field_name( bson_buffer* b, const unsigned char* string,
  * @param string The string to check.
  * @param length The length of the string.
  *
- * @return 1 if valid UTF8 and 0 if not.
+ * @return BSON_OK if valid UTF-8; otherwise, BSON_ERROR.
+ *     Sets b->err on error.
  */
 bson_bool_t bson_check_string( bson_buffer* b, const unsigned char* string,
     const int length );
