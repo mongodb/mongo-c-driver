@@ -11,7 +11,8 @@ You'll need [JSON-C](http://oss.metaparadigm.com/json-c/) to compile all the uni
 
 # Building
 
-First checkout the version you want to build. For example, to build version 0.3, run:
+First checkout the version you want to build. *Always build from a particular tag, since HEAD may be
+a work in progress.* For example, to build version 0.3, run:
 
     git checkout v0.3
 
@@ -58,9 +59,10 @@ MONGO_USE__INT64             Define this if '__int64' is your compiler's 64bit t
 MONGO_USE_LONG_LONG_INT      Define this if 'long long int' is your compiler's 64bit type
 
 # Error Handling
-The driver uses an exception system based on cexcept. If you would like to gracefully
-handle errors, take a look at src/mongo_except.h. It is currently only used for
-network failures, but more errors will be used in the future.
+Most functions return MONGO_OK or BSON_OK on success and MONGO_ERROR or BSON_ERROR on failure.
+Specific error codes and string are then stored in the bson_buffer->err, mongo_connection->err,
+bson_buffer->errstr, and mongo_connection->errstr fields. This is still a work in progress but will
+be consistent and complete witht the 0.5 release.
 
 # TODO
 building on windows
