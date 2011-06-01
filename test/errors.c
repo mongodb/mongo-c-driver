@@ -20,49 +20,57 @@ int main(){
 
 
     /*********************/
-    ASSERT(!mongo_cmd_get_prev_error(conn, db, NULL));
-    ASSERT(!mongo_cmd_get_last_error(conn, db, NULL));
+    ASSERT(mongo_cmd_get_prev_error(conn, db, NULL) == MONGO_OK);
+    ASSERT( conn->lasterrcode == 0 );
+    ASSERT( conn->lasterrstr == NULL );
 
-    ASSERT(!mongo_cmd_get_prev_error(conn, db, &obj));
+    ASSERT(mongo_cmd_get_last_error(conn, db, NULL) == MONGO_OK);
+    ASSERT( conn->lasterrcode == 0 );
+    ASSERT( conn->lasterrstr == NULL );
+
+    ASSERT(mongo_cmd_get_prev_error(conn, db, &obj) == MONGO_OK);
     bson_destroy(&obj);
 
-    ASSERT(!mongo_cmd_get_last_error(conn, db, &obj));
+    ASSERT(mongo_cmd_get_last_error(conn, db, &obj) == MONGO_OK);
     bson_destroy(&obj);
 
     /*********************/
     mongo_simple_int_command(conn, db, "forceerror", 1, NULL);
 
-    ASSERT(mongo_cmd_get_prev_error(conn, db, NULL));
-    ASSERT(mongo_cmd_get_last_error(conn, db, NULL));
+    ASSERT(mongo_cmd_get_prev_error(conn, db, NULL) == MONGO_ERROR);
+    ASSERT( conn->lasterrcode == 10038 );
+    ASSERT( strcmp( (const char*)conn->lasterrstr, "forced error" ) == 0 );
 
-    ASSERT(mongo_cmd_get_prev_error(conn, db, &obj));
+    ASSERT(mongo_cmd_get_last_error(conn, db, NULL) == MONGO_ERROR);
+
+    ASSERT(mongo_cmd_get_prev_error(conn, db, &obj) == MONGO_ERROR);
     bson_destroy(&obj);
 
-    ASSERT(mongo_cmd_get_last_error(conn, db, &obj));
+    ASSERT(mongo_cmd_get_last_error(conn, db, &obj) == MONGO_ERROR);
     bson_destroy(&obj);
 
     /* should clear lasterror but not preverror */
     mongo_find_one(conn, ns, bson_empty(&obj), bson_empty(&obj), NULL);
 
-    ASSERT(mongo_cmd_get_prev_error(conn, db, NULL));
-    ASSERT(!mongo_cmd_get_last_error(conn, db, NULL));
+    ASSERT(mongo_cmd_get_prev_error(conn, db, NULL) == MONGO_ERROR);
+    ASSERT(mongo_cmd_get_last_error(conn, db, NULL) == MONGO_OK);
 
-    ASSERT(mongo_cmd_get_prev_error(conn, db, &obj));
+    ASSERT(mongo_cmd_get_prev_error(conn, db, &obj) == MONGO_ERROR);
     bson_destroy(&obj);
 
-    ASSERT(!mongo_cmd_get_last_error(conn, db, &obj));
+    ASSERT(mongo_cmd_get_last_error(conn, db, &obj) == MONGO_OK);
     bson_destroy(&obj);
 
     /*********************/
     mongo_cmd_reset_error(conn, db);
 
-    ASSERT(!mongo_cmd_get_prev_error(conn, db, NULL));
-    ASSERT(!mongo_cmd_get_last_error(conn, db, NULL));
+    ASSERT(mongo_cmd_get_prev_error(conn, db, NULL) == MONGO_OK);
+    ASSERT(mongo_cmd_get_last_error(conn, db, NULL) == MONGO_OK);
 
-    ASSERT(!mongo_cmd_get_prev_error(conn, db, &obj));
+    ASSERT(mongo_cmd_get_prev_error(conn, db, &obj) == MONGO_OK);
     bson_destroy(&obj);
 
-    ASSERT(!mongo_cmd_get_last_error(conn, db, &obj));
+    ASSERT(mongo_cmd_get_last_error(conn, db, &obj) == MONGO_OK);
     bson_destroy(&obj);
 
     mongo_cmd_drop_db(conn, db);

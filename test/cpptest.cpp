@@ -44,21 +44,6 @@ int main(){
         bson_destroy(&b);
     }
 
-    struct test_exception {};
-    
-    bool caught = false;
-    try{
-        MONGO_TRY{
-            MONGO_THROW(MONGO_EXCEPT_NETWORK);
-        }MONGO_CATCH{
-            throw test_exception();
-        }
-    }catch (test_exception& e){
-        caught = true;
-    }
-
-    ASSERT(caught);
-
     mongo_destroy( conn );
 
     return 0;

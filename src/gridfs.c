@@ -103,7 +103,7 @@ int gridfs_init(mongo_connection * client, const char * dbname,
   bson_append_int(&bb, "filename", 1);
   bson_from_buffer(&b, &bb);
   options = 0;
-  success = mongo_create_index(gfs->client, gfs->files_ns, &b, options, &out);
+  success = (mongo_create_index(gfs->client, gfs->files_ns, &b, options, &out) == MONGO_OK);
   bson_destroy(&b);
   if (!success) {
     free((char*)gfs->dbname);
@@ -118,7 +118,7 @@ int gridfs_init(mongo_connection * client, const char * dbname,
   bson_append_int(&bb, "n", 1);
   bson_from_buffer(&b, &bb);
   options = MONGO_INDEX_UNIQUE;
-  success = mongo_create_index(gfs->client, gfs->chunks_ns, &b, options, &out);
+  success = (mongo_create_index(gfs->client, gfs->chunks_ns, &b, options, &out) == MONGO_OK);
   bson_destroy(&b);
   if (!success) {
     free((char*)gfs->dbname);
@@ -160,8 +160,7 @@ static bson gridfs_insert_file( gridfs* gfs, const char* name,
   bson_append_oid(&buf, "filemd5", &id);
   bson_append_string(&buf, "root", gfs->prefix);
   bson_from_buffer(&command, &buf);
-  assert(mongo_run_command(gfs->client, gfs->dbname,
-         &command, &res));
+  assert(mongo_run_command(gfs->client, gfs->dbname, &command, &res) == MONGO_OK);
   bson_destroy(&command);
 
   /* Create and insert BSON for file metadata */
@@ -400,7 +399,7 @@ void gridfs_remove_filename(gridfs* gfs, const char* filename )
   bson_destroy(&query);
 
   /* Remove each file and it's chunks from files named filename */
-  while (mongo_cursor_next(files)) {
+  while (mongo_cursor_next(files) == MONGO_OK) {
     file = files->current;
     bson_find(&it, &file, "_id");
     id = *bson_iterator_oid(&it);
@@ -445,7 +444,7 @@ int gridfs_find_query(gridfs* gfs, bson* query,
 
 
   i = (mongo_find_one(gfs->client, gfs->files_ns,
-         &finalQuery, NULL, &out));
+         &finalQuery, NULL, &out) == MONGO_OK);
   bson_destroy(&uploadDate);
   bson_destroy(&finalQuery);
   if (!i)
@@ -659,7 +658,7 @@ bson gridfile_get_chunk(gridfile* gfile, int n)
 
   assert(mongo_find_one(gfile->gfs->client,
       gfile->gfs->chunks_ns,
-      &query, NULL, &out));
+      &query, NULL, &out) == MONGO_OK);
   return out;
 }
 

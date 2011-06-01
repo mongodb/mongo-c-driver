@@ -22,8 +22,8 @@ int main(){
     }
 
     /* if the collection doesn't exist dropping it will fail */
-    if (!mongo_cmd_drop_collection(conn, "test", col, NULL)
-          && mongo_find_one(conn, ns, bson_empty(&obj), bson_empty(&obj), NULL)){
+    if ( mongo_cmd_drop_collection(conn, "test", col, NULL) == MONGO_OK
+          && mongo_find_one(conn, ns, bson_empty(&obj), bson_empty(&obj), NULL) != MONGO_OK ){
         printf("failed to drop collection\n");
         exit(1);
     }
@@ -65,8 +65,8 @@ int main(){
         /* cond is used later */
         bson_destroy(&op);
     }
-    
-    if(!mongo_find_one(conn, ns, &cond, 0, &obj)){
+
+    if( mongo_find_one(conn, ns, &cond, 0, &obj) != MONGO_OK ){
         printf("Failed to find object\n");
         exit(1);
     } else {

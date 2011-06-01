@@ -116,7 +116,7 @@ testEnv = benchmarkEnv.Clone()
 testCoreFiles = [ ]
 
 tests = Split("sizes resize endian_swap all_types simple update errors "
-"count_delete auth gridfs validate replica_set examples")
+"count_delete auth gridfs validate examples replica_set")
 
 if have_libjson:
     tests.append('json')

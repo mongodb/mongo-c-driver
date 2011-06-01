@@ -25,12 +25,8 @@ int main(){
         exit(1);
     }
 
-    /* if the collection doesn't exist dropping it will fail */
-    if (!mongo_cmd_drop_collection(conn, "test", col, NULL)
-          && mongo_find_one(conn, ns, bson_empty(&b), bson_empty(&b), NULL)){
-        printf("failed to drop collection\n");
-        exit(1);
-    }
+    mongo_cmd_drop_collection(conn, "test", col, NULL);
+    mongo_find_one(conn, ns, bson_empty(&b), bson_empty(&b), NULL);
 
     for(i=0; i< 5; i++){
         bson_buffer_init( & bb );
@@ -60,7 +56,7 @@ int main(){
 
     cursor = mongo_find( conn , ns , bson_empty(&b) , 0 , 0 , 0 , 0 );
 
-    while (mongo_cursor_next(cursor)){
+    while( mongo_cursor_next(cursor) == MONGO_OK ){
         bson_iterator it;
         bson_iterator_init(&it, cursor->current.data);
         while(bson_iterator_next(&it)){
@@ -98,12 +94,12 @@ int main(){
     }
 
     mongo_cursor_destroy(cursor);
-    mongo_cmd_drop_db(conn, "test");
+    ASSERT( mongo_cmd_drop_db(conn, "test") == MONGO_OK );
     mongo_disconnect( conn );
 
     mongo_reconnect( conn );
 
-    ASSERT( mongo_simple_int_command( conn, "admin", "ping", 1, NULL ) );
+    ASSERT( mongo_simple_int_command( conn, "admin", "ping", 1, NULL ) == MONGO_OK );
 
     mongo_destroy( conn );
     return 0;
