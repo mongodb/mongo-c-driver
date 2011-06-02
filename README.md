@@ -26,30 +26,32 @@ Then follow the build steps below.
     gcc --std=c99 -Isrc src/*.c YOUR_APP.c # No -Ddefines are needed in c99 mode on little endien
 
 ## Running the tests
-Make sure that you're running mongod on localhost on the default port (27017). The replica set
-test assumes a replica set with at least three nodes running on localhost and starting at port
-(30000).
+Make sure that you're running mongod on 127.0.0.1 on the default port (27017). The replica set
+test assumes a replica set with at least three nodes running at 127.0.0.1 and starting at port
+30000. Note that the driver does not recognize 'localhost' as a valid host name.
 
 To compile and run the tests:
+
     scons test
 
 You may optionally specify a remote server:
+
     scons test --test-server=123.4.5.67
 
 You may also specify an alternate starting port for the replica set members:
-    scons test --test-server=123.4.5.67 --seed-start-port=40000
 
-## Building with MSVC:
-TODO
+    scons test --test-server=123.4.5.67 --seed-start-port=40000
 
 # Custom defines
 (Note: you must use the same flags to compile all apps and libs):
-MONGO_BIG_ENDIAN             This must be defined if on a big endian architecture
+
+`MONGO_BIG_ENDIAN`             This must be defined if on a big endian architecture
 
 one of these (defaults to unsigned char if neither is defined):
 
-MONGO_HAVE_BOOL              Define this if your compiler has a plain 'bool' type
-MONGO_HAVE_STDBOOL           Define this if you must include <stdbool.h> to get 'bool'
+`MONGO_HAVE_BOOL`              Define this if your compiler has a plain 'bool' type
+
+`MONGO_HAVE_STDBOOL`           Define this if you must include <stdbool.h> to get 'bool'
 
 one of these (required if not using c99):
 
@@ -60,23 +62,25 @@ MONGO_USE_LONG_LONG_INT      Define this if 'long long int' is your compiler's 6
 
 # Error Handling
 Most functions return MONGO_OK or BSON_OK on success and MONGO_ERROR or BSON_ERROR on failure.
-Specific error codes and string are then stored in the bson_buffer->err, mongo_connection->err,
-bson_buffer->errstr, and mongo_connection->errstr fields. This is still a work in progress but will
-be consistent and complete witht the 0.5 release.
+Specific error codes and string are then stored in the `err` and `errstr` fields of the
+`mongo_connection`, `bson_buffer`, and `bson` structs.
+
+The error handling conventions are still a work in progress but will be
+consistent and complete for the 0.5 release.
 
 # TODO
-building on windows
-more documentation
-checking for $err in query results
-query helper for sort and hint
-explain and profiler helpers
-safe-mode modifications (maybe)
-cached ensure_index (maybe)
+* building on windows
+* more documentation
+* checking for $err in query results
+* query helper for sort and hint
+* explain and profiler helpers
+* safe-mode modifications (maybe)
+* cached ensure_index (maybe)
 
 # CREDITS
 
-Gergely Nagy - Non-null-terminated string support.
-Josh Rotenberg - Initial Doxygen setup and a significant chunk of documentation.
+* Gergely Nagy - Non-null-terminated string support.
+* Josh Rotenberg - Initial Doxygen setup and a significant chunk of documentation.
 
 # LICENSE
 
