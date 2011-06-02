@@ -58,6 +58,14 @@ MONGO_EXTERN_C_START
 #define MONGO_CURSOR_INVALID 5
 #define MONGO_INVALID_BSON 6 /**< BSON not valid for the specified op. */
 
+/* Cursor bitfield options. */
+#define MONGO_TAILABLE (1<<1) /**< Create a tailable cursor. */
+#define MONGO_SLAVE_OK (1<<2) /**< Allow queries on a non-primary node. */
+#define MONGO_NO_CURSOR_TIMEOUT (1<<4) /**< Disable cursor timeouts. */
+#define MONGO_AWAIT_DATA (1<<5) /**< Momentarily block at end of query for more data. */
+#define MONGO_EXHAUST (1<<6)    /**< Stream data in multiple 'more' packages. */
+#define MONGO_PARTIAL (1<<7) /**< Via mongos, allow reads even if a shard is down. */
+
 typedef struct mongo_host_port {
     char host[255];
     int port;
@@ -285,7 +293,7 @@ void mongo_remove(mongo_connection* conn, const char* ns, const bson* cond);
  * @param fields a bson document of fields to be returned.
  * @param nToReturn the maximum number of documents to retrun.
  * @param nToSkip the number of documents to skip.
- * @param options options for the find query.
+ * @param options A bitfield containing cursor options.
  *
  * @return A cursor object or NULL if an error has occurred. In case of
  *     an error, the err field on the mongo_connection will be set.
