@@ -56,6 +56,7 @@ MONGO_EXTERN_C_START
 #define MONGO_COMMAND_FAILED 3
 #define MONGO_CURSOR_EXHAUSTED 4
 #define MONGO_CURSOR_INVALID 5
+#define MONGO_INVALID_BSON 6 /**< BSON not valid for the specified op. */
 
 typedef struct mongo_host_port {
     char host[255];
@@ -220,26 +221,33 @@ bson_bool_t mongo_destroy( mongo_connection * conn );
    CORE METHODS - insert update remove query getmore
    ------------------------------ */
 /**
- * Insert a BSON document into a MongoDB server.
- *
+ * Insert a BSON document into a MongoDB server. This function
+ * will fail if the supplied BSON struct is not UTF-8 or if
+ * the keys are invalid for insert (contain '.' or start with '$').
  *
  * @param conn a mongo_connection object.
  * @param ns the namespace.
  * @param data the bson data.
  *
+ * @return MONGO_OK or MONGO_ERROR. If the conn->err
+ *     field is MONGO_BSON_INVALID, check the err field
+ *     on the bson struct for the reason.
  */
-void mongo_insert( mongo_connection * conn , const char * ns , bson * data );
+int mongo_insert( mongo_connection* conn, const char* ns, bson* data );
 
 /**
- * Insert a batch of BSON documents into a MongoDB server 
+ * Insert a batch of BSON documents into a MongoDB server. This function
+ * will fail if any of the documents to be inserted is invalid.
  *
  * @param conn a mongo_connection object.
  * @param ns the namespace.
  * @param data the bson data.
  * @param num the number of documents in data.
- * 
+ *
+ * @return MONGO_OK or MONGO_ERROR.
+ *
  */
-void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
+int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
 static const int MONGO_UPDATE_UPSERT = 0x1;
 static const int MONGO_UPDATE_MULTI = 0x2;

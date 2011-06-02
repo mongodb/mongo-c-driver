@@ -477,7 +477,35 @@ bson_bool_t mongo_destroy( mongo_connection * conn ){
     return mongo_disconnect( conn );
 }
 
-void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bsons, int count){
+/*
+ * Determine whether this BSON object is valid for the
+ * given operation.
+ */
+static int mongo_bson_valid( mongo_connection * conn, bson* bson, int write ) {
+    if( bson->err & BSON_NOT_UTF8 ) {
+        conn->err = MONGO_INVALID_BSON;
+        return MONGO_ERROR;
+    }
+
+    if( write ) {
+        if( (bson->err & BSON_FIELD_HAS_DOT) ||
+            (bson->err & BSON_FIELD_INIT_DOLLAR) ) {
+
+            conn->err = MONGO_INVALID_BSON;
+            return MONGO_ERROR;
+
+        }
+    }
+
+    conn->err = 0;
+    conn->errstr = NULL;
+
+    return MONGO_OK;
+}
+
+int mongo_insert_batch( mongo_connection * conn, const char * ns,
+    bson ** bsons, int count ) {
+
     int size =  16 + 4 + strlen( ns ) + 1;
     int i;
     mongo_message * mm;
@@ -485,6 +513,8 @@ void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bso
 
     for(i=0; i<count; i++){
         size += bson_size(bsons[i]);
+        if( mongo_bson_valid( conn, bsons[i], 1 ) != MONGO_OK )
+            return MONGO_ERROR;
     }
 
     mm = mongo_message_create( size , 0 , 0 , mongo_op_insert );
@@ -497,35 +527,53 @@ void mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** bso
         data = mongo_data_append(data, bsons[i]->data, bson_size( bsons[i] ) );
     }
 
-    mongo_message_send(conn, mm);
+    return mongo_message_send(conn, mm);
 }
 
-void mongo_insert( mongo_connection * conn , const char * ns , bson * bson ){
-    char * data;
+int mongo_insert( mongo_connection * conn , const char * ns , bson * bson ) {
 
-    mongo_message * mm = mongo_message_create( 16 /* header */
-                                             + 4 /* ZERO */
-                                             + strlen(ns)
-                                             + 1 + bson_size(bson)
-                                             , 0, 0, mongo_op_insert);
+    char* data;
+    mongo_message* mm;
+
+    /* Make sure that BSON is valid for insert. */
+    if( mongo_bson_valid( conn, bson, 1 ) != MONGO_OK ) {
+        return MONGO_ERROR;
+    }
+
+    mm = mongo_message_create( 16 /* header */
+                              + 4 /* ZERO */
+                              + strlen(ns)
+                              + 1 + bson_size(bson)
+                              , 0, 0, mongo_op_insert);
 
     data = &mm->data;
     data = mongo_data_append32(data, &zero);
     data = mongo_data_append(data, ns, strlen(ns) + 1);
     data = mongo_data_append(data, bson->data, bson_size(bson));
 
-    mongo_message_send(conn, mm);
+    return mongo_message_send(conn, mm);
 }
 
-int mongo_update(mongo_connection* conn, const char* ns, const bson* cond, const bson* op, int flags){
-    char * data;
-    mongo_message * mm = mongo_message_create( 16 /* header */
-                                             + 4  /* ZERO */
-                                             + strlen(ns) + 1
-                                             + 4  /* flags */
-                                             + bson_size(cond)
-                                             + bson_size(op)
-                                             , 0 , 0 , mongo_op_update );
+int mongo_update(mongo_connection* conn, const char* ns, const bson* cond,
+    const bson* op, int flags) {
+
+    char* data;
+    mongo_message* mm;
+
+    /* Make sure that the op BSON is valid UTF-8.
+     * TODO: decide whether to check cond as well.
+     * */
+    if( mongo_bson_valid( conn, op, 0 ) != MONGO_OK ) {
+        return MONGO_ERROR;
+    }
+
+    mm = mongo_message_create( 16 /* header */
+                              + 4  /* ZERO */
+                              + strlen(ns) + 1
+                              + 4  /* flags */
+                              + bson_size(cond)
+                              + bson_size(op)
+                              , 0 , 0 , mongo_op_update );
 
     data = &mm->data;
     data = mongo_data_append32(data, &zero);
