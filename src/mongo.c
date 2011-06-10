@@ -212,8 +212,8 @@ void mongo_replset_init_conn( mongo_connection* conn, const char* name ) {
     conn->replset->primary_connected = 0;
     conn->replset->seeds = NULL;
     conn->replset->hosts = NULL;
-    conn->replset->name = (char *)bson_malloc( sizeof( name ) + 1 );
-    memcpy( conn->replset->name, name, sizeof( name ) + 1  );
+    conn->replset->name = (char *)bson_malloc( strlen( name ) + 1 );
+    memcpy( conn->replset->name, name, strlen( name ) + 1  );
 
     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
     conn->primary = NULL;
