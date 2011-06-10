@@ -585,7 +585,7 @@ int mongo_update(mongo_connection* conn, const char* ns, const bson* cond,
     return mongo_message_send(conn, mm);
 }
 
-void mongo_remove(mongo_connection* conn, const char* ns, const bson* cond){
+int mongo_remove(mongo_connection* conn, const char* ns, const bson* cond){
     char * data;
     mongo_message * mm = mongo_message_create( 16 /* header */
                                              + 4  /* ZERO */
@@ -600,7 +600,7 @@ void mongo_remove(mongo_connection* conn, const char* ns, const bson* cond){
     data = mongo_data_append32(data, &zero);
     data = mongo_data_append(data, cond->data, bson_size(cond));
 
-    mongo_message_send(conn, mm);
+    return mongo_message_send(conn, mm);
 }
 
 int mongo_read_response( mongo_connection * conn, mongo_reply** mm ){
@@ -762,7 +762,13 @@ int mongo_cursor_get_more(mongo_cursor* cursor){
         data = mongo_data_append(data, cursor->ns, sl);
         data = mongo_data_append32(data, &zero);
         data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
-        mongo_message_send(conn, mm);
+
+        res = mongo_message_send(conn, mm);
+        if( res != MONGO_OK ) {
+            cursor->mm = NULL;
+            mongo_cursor_destroy(cursor);
+            return res;
+        }
 
         free(cursor->mm);
 

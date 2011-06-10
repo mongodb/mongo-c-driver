@@ -281,8 +281,9 @@ int mongo_update(mongo_connection* conn, const char* ns, const bson* cond, const
  * @param ns the namespace.
  * @param cond the bson query.
  *
+ * @return MONGO_OK or MONGO_ERROR with error stored in conn object.
  */
-void mongo_remove(mongo_connection* conn, const char* ns, const bson* cond);
+int mongo_remove(mongo_connection* conn, const char* ns, const bson* cond);
 
 /**
  * Find documents in a MongoDB server.
