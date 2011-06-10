@@ -668,7 +668,11 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
 
     bson_fatal_msg( (data == ((char*)mm) + mm->head.len), "query building fail!" );
 
-    mongo_message_send( conn , mm );
+    res = mongo_message_send( conn , mm );
+    if(res != MONGO_OK){
+        conn->err = res;
+        return NULL;
+    }
 
     cursor = (mongo_cursor*)bson_malloc(sizeof(mongo_cursor));
 
