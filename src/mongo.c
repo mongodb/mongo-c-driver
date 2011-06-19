@@ -134,6 +134,7 @@ static int mongo_socket_connect( mongo_connection * conn, const char * host, int
 
     memset( &hints, 0, sizeof( hints ) );
     hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
 
     sprintf( port_str, "%d", port );
 
