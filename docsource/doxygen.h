@@ -6,11 +6,7 @@
 /**
 @mainpage MongoDB C Driver
 
-http://www.mongodb.org/display/DOCS/C+Language+Center
-
 The MongoDB C Driver is the 10gen-supported driver for MongoDB.
-
-Add discussion and more examples here.
 
 Example code:
 
@@ -92,6 +88,5 @@ int main(){
 }
 
 @endcode
-
 
 */

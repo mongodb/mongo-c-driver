@@ -68,6 +68,14 @@ Specific error codes and string are then stored in the `err` and `errstr` fields
 The error handling conventions are still a work in progress but will be
 consistent and complete for the 0.5 release.
 
+# Docs
+The docs are built using Sphinx and Doxygen. If you have these tools install, then
+can build the docs with scons:
+
+    scons docs
+
+The html docs will appear in docs/html.
+
 # TODO
 * building on windows
 * more documentation
