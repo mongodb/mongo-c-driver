@@ -261,6 +261,32 @@ int mongo_replset_add_seed(mongo_connection* conn, const char* host, int port) {
     return mongo_replset_add_node( &conn->replset->seeds, host, port );
 }
 
+static void *mongo_parse_host( const char *host_string, mongo_host_port *host_port ) {
+    int len, idx, split;
+    len = split = idx = 0;
+
+    /* Split the host_port string at the ':' */
+    while(1) {
+        if( *(host_string + len) == '\0' )
+          break;
+        if( *(host_string + len) == ':' )
+          split = len;
+
+        len++;
+    }
+
+    /* If 'split' is set, we know the that port exists;
+     * Otherwise, we set the default port.
+     */
+    idx = split ? split : len;
+    memcpy( host_port->host, host_string, idx );
+    memcpy( host_port->host + idx, "\0", 1 );
+    if( split )
+        host_port->port = atoi( host_string + idx + 1 );
+    else
+        host_port->port = 27017;
+}
+
 static int mongo_replset_check_seed( mongo_connection* conn ) {
     bson out;
     bson hosts;
@@ -270,6 +296,7 @@ static int mongo_replset_check_seed( mongo_connection* conn ) {
     const char* host_string;
     char* host;
     int len, idx, port, split;
+    mongo_host_port *host_port = NULL;
 
     out.data = NULL;
     out.owned = 1;
@@ -284,35 +311,19 @@ static int mongo_replset_check_seed( mongo_connection* conn ) {
             bson_iterator_init( &it_sub, data );
 
             /* Iterate over host list, adding each host to the
-             * connection's host list.
-             */
+             * connection's host list. */
             while( bson_iterator_next( &it_sub ) ) {
                 host_string = bson_iterator_string( &it_sub );
-                len = split = idx = 0;
 
-                /* Split the host_port string at the ':' */
-                while(1) {
-                    if( *(host_string + len) == 0)
-                      break;
-                    if( *(host_string + len) == ':' )
-                      split = len;
-                    len++;
-                }
+                host_port = bson_malloc( sizeof( mongo_host_port ) );
+                mongo_parse_host( host_string, host_port );
 
-                /* If 'split' is set, we know the that port exists;
-                 * Otherwise, we set the default port.
-                 */
-                if( len > 0 ) {
-                    idx = split ? split : len;
-                    host = (char *)bson_malloc( idx + 1 );
-                    memcpy( host, host_string, idx );
-                    memcpy( host + idx, "\0", 1 );
-                    if( split )
-                        port = atoi( host_string + idx + 1 );
-                    else
-                        port = 27017;
+                if( host_port ) {
+                    mongo_replset_add_node( &conn->replset->hosts,
+                        host_port->host, host_port->port );
 
-                    mongo_replset_add_node( &conn->replset->hosts, host, port );
+                    free( host_port );
+                    host_port = NULL;
                 }
             }
         }
@@ -738,7 +749,6 @@ int64_t mongo_count(mongo_connection* conn, const char* db, const char* ns, bson
         return MONGO_ERROR;
     }
 }
-
 
 
 int mongo_cursor_get_more(mongo_cursor* cursor){
