@@ -22,14 +22,10 @@ int test_connect( const char* set_name ) {
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
 
-    if( (res = mongo_replset_connect( conn )) ) {
-        mongo_destroy( conn );
-        return res;
-    }
-    else {
-        mongo_disconnect( conn );
-        return mongo_reconnect( conn );
-    }
+    res = mongo_replset_connect( conn );
+    mongo_destroy( conn );
+
+    return res;
 }
 
 int test_reconnect( const char* set_name ) {

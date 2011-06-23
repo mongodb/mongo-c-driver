@@ -217,7 +217,6 @@ void mongo_replset_init_conn( mongo_connection* conn, const char* name ) {
     memcpy( conn->replset->name, name, strlen( name ) + 1  );
 
     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
-    conn->primary = NULL;
 
     conn->err = 0;
     conn->errstr = NULL;
@@ -358,6 +357,7 @@ static int mongo_replset_check_host( mongo_connection* conn ) {
         if( bson_find( &it, &out, "setName" ) ) {
             set_name = bson_iterator_string( &it );
             if( strcmp( set_name, conn->replset->name ) != 0 ) {
+                bson_destroy( &out );
                 return mongo_conn_bad_set_name;
             }
         }
@@ -838,11 +838,11 @@ int mongo_cursor_destroy(mongo_cursor* cursor){
         data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
 
         result = mongo_message_send(conn, mm);
-
-        free(cursor->mm);
-        free((void*)cursor->ns);
-        free(cursor);
     }
+
+    free(cursor->mm);
+    free((void*)cursor->ns);
+    free(cursor);
 
     return result;
 }
