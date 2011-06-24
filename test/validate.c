@@ -22,7 +22,7 @@ int main() {
     bson_buffer bb;
     bson b, empty;
     unsigned char not_utf8[3];
-    int result;
+    int result = 0;
     const char * ns = "test.c.validate";
 
     int i, j;
@@ -31,7 +31,7 @@ int main() {
 
     not_utf8[0] = 0xC0;
     not_utf8[1] = 0xC0;
-    not_utf8[3] = '\0';
+    not_utf8[2] = '\0';
 
     INIT_SOCKETS_FOR_WINDOWS;
 
@@ -44,6 +44,7 @@ int main() {
     bson_buffer_init( & bb );
     result = bson_append_string( &bb , "a.b" , "17" );
     ASSERT( result == BSON_OK );
+
     ASSERT( bb.err & BSON_FIELD_HAS_DOT );
 
     result = bson_append_string( &bb , "$ab" , "17" );
