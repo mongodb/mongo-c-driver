@@ -80,7 +80,8 @@ char * json_to_bson( char * js ){
     
     bson_buffer_init( &bb );
     json_to_bson_append( &bb , o );
-    return bson_buffer_finish( &bb );
+    bson_buffer_finish( &bb );
+    return bb.buf;
 }
 
 int json_to_bson_test( char * js , int size , const char * hash ){
