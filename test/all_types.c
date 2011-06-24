@@ -218,6 +218,8 @@ int main(){
     ASSERT(bson_iterator_type(&it) == bson_eoo);
     ASSERT(!bson_iterator_more(&it));
 
+    bson_destroy( &b );
+
     return 0;
 }
 
