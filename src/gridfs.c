@@ -191,7 +191,8 @@ bson gridfs_store_buffer( gridfs* gfs, const char* data,
         const char * contenttype)
 
 {
-  char const * const end = data + length;
+  char const * end = data + length;
+  const char* data_ptr = data;
   bson_oid_t id;
   int chunkNumber = 0;
   int chunkLen;
@@ -204,14 +205,14 @@ bson gridfs_store_buffer( gridfs* gfs, const char* data,
   bson_oid_gen(&id);
 
   /* Insert the file's data chunk by chunk */
-  while (data < end) {
-    chunkLen = DEFAULT_CHUNK_SIZE < (unsigned int)(end - data) ?
-      DEFAULT_CHUNK_SIZE : (unsigned int)(end - data);
-    oChunk = chunk_new( id, chunkNumber, data, chunkLen );
+  while (data_ptr < end) {
+    chunkLen = DEFAULT_CHUNK_SIZE < (unsigned int)(end - data_ptr) ?
+      DEFAULT_CHUNK_SIZE : (unsigned int)(end - data_ptr);
+    oChunk = chunk_new( id, chunkNumber, data_ptr, chunkLen );
     mongo_insert(gfs->client, gfs->chunks_ns, oChunk);
     chunk_free(oChunk);
     chunkNumber++;
-    data += chunkLen;
+    data_ptr += chunkLen;
   }
 
   /* Inserts file's metadata */
@@ -234,7 +235,7 @@ void gridfile_writer_init( gridfile* gfile, gridfs* gfs,
     gfile->remote_name = (const char *)bson_malloc( strlen( remote_name ) + 1 );
     strcpy( (char *)gfile->remote_name, remote_name );
 
-    gfile->content_type = (const char *)bson_malloc( strlen( content_type ) );
+    gfile->content_type = (const char *)bson_malloc( strlen( content_type ) + 1 );
     strcpy( (char *)gfile->content_type, content_type );
 }
 

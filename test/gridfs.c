@@ -5,15 +5,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <limits.h>
 
 #define LARGE 3*1024*1024
 #define UPPER 2000*1024
 #define LOWER 1024*128
 #define DELTA 1024*128
 
-void fill_buffer_randomly(char * data, int64_t length)
+void fill_buffer_randomly(char * data, uint64_t length)
 {
-    int64_t i;
+    uint64_t i;
     int random;
     char * letters = "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     int nletters = strlen(letters)+1;
@@ -34,13 +35,19 @@ static void digest2hex(mongo_md5_byte_t digest[16], char hex_digest[33]){
     hex_digest[32] = '\0';
 }
 
-void test_gridfile(gridfs *gfs, char *data_before, int64_t length, char *filename, char *content_type) {
+void test_gridfile(gridfs *gfs, char *data_before, uint64_t length, char *filename, char *content_type) {
     gridfile gfile[1];
-    char data_after[LARGE];
+    char *data_after = malloc( LARGE );
+    if( data_after == -1 ) {
+        printf("Failed to allocated memory");
+        exit(1);
+    }
     FILE * fd;
     mongo_md5_state_t pms[1];
     mongo_md5_byte_t digest[16];
     char hex_digest[33];
+    uint64_t i = length;
+    int n;
 
     gridfs_find_filename(gfs, filename, gfile);
     ASSERT(gridfile_exists(gfile));
@@ -63,21 +70,37 @@ void test_gridfile(gridfs *gfs, char *data_before, int64_t length, char *filenam
 
     ASSERT( strcmp( gridfile_get_contenttype( gfile ), content_type ) == 0) ;
 
+    ASSERT( strncmp( data_before, data_after, length ) == 0 );
+
     mongo_md5_init(pms);
-    mongo_md5_append(pms, (const mongo_md5_byte_t *)data_before, (int)length);
+
+    n = 0;
+    while( i > INT_MAX  ) {
+        mongo_md5_append(pms, (const mongo_md5_byte_t *)data_before + (n * INT_MAX), INT_MAX);
+        i -= INT_MAX;
+        n += 1;
+    }
+    if( i > 0 )
+        mongo_md5_append(pms, (const mongo_md5_byte_t *)data_before + (n * INT_MAX), i);
+
     mongo_md5_finish(pms, digest);
     digest2hex(digest, hex_digest);
     ASSERT( strcmp( gridfile_get_md5( gfile ), hex_digest ) == 0 );
 
     gridfile_destroy(gfile);
     gridfs_remove_filename(gfs, filename);
+    free( data_after );
 }
 
 void test_basic() {
     mongo_connection conn[1];
     gridfs gfs[1];
-    char data_before[UPPER];
-    int64_t i;
+    char *data_before = malloc( UPPER );
+    if( data_before == -1 ) {
+        printf("Failed to allocate");
+        exit(1);
+    }
+    uint64_t i;
     FILE *fd;
 
     srand(time(NULL));
@@ -91,8 +114,8 @@ void test_basic() {
 
     gridfs_init(conn, "test", "fs", gfs);
 
-    for (i = LOWER; i <= UPPER; i+=DELTA) {
-        fill_buffer_randomly(data_before, i);
+    fill_buffer_randomly( data_before, UPPER );
+    for (i = LOWER; i <= UPPER; i += DELTA) {
 
         /* Input from buffer */
         gridfs_store_buffer(gfs, data_before, i, "input-buffer", "text/html");
@@ -109,14 +132,19 @@ void test_basic() {
     gridfs_destroy(gfs);
     mongo_disconnect(conn);
     mongo_destroy(conn);
+    free( data_before );
 }
 
 void test_streaming() {
     mongo_connection conn[1];
     gridfs gfs[1];
     gridfile gfile[1];
-    char buf[LARGE];
-    char small[LOWER];
+    char *buf = malloc( LARGE );
+    char *small = malloc( LOWER );
+    if( buf == -1 || small == -1 ) {
+        printf("Failed to allocate");
+        exit(1);
+    }
     int n;
 
     srand(time(NULL));
@@ -128,8 +156,8 @@ void test_streaming() {
         exit(1);
     }
 
-    fill_buffer_randomly(small, (int64_t)LOWER);
-    fill_buffer_randomly(buf, (int64_t)LARGE);
+    fill_buffer_randomly(small, (uint64_t)LOWER);
+    fill_buffer_randomly(buf, (uint64_t)LARGE);
 
     gridfs_init(conn, "test", "fs", gfs);
 
@@ -147,6 +175,8 @@ void test_streaming() {
 
     gridfs_destroy(gfs);
     mongo_destroy(conn);
+    free(buf);
+    free(small);
 }
 
 void test_large() {
@@ -155,8 +185,12 @@ void test_large() {
     gridfile gfile[1];
     FILE *fd;
     int i, n;
-    char buffer[LARGE];
-    int64_t filesize = (int64_t)1024 * (int64_t)LARGE;
+    char *buffer = malloc( LARGE );
+    if( buffer == -1 ) {
+        printf("Failed to allocate memory.");
+        exit(1);
+    }
+    uint64_t filesize = (uint64_t)1024 * (uint64_t)LARGE;
 
     srand(time(NULL));
 
@@ -170,7 +204,7 @@ void test_large() {
     gridfs_init(conn, "test", "fs", gfs);
 
     /* Create a very large file */
-    fill_buffer_randomly(buffer, (int64_t)LARGE);
+    fill_buffer_randomly(buffer, (uint64_t)LARGE);
     fd = fopen("bigfile", "w");
     for(i=0; i<1024; i++) {
       fwrite(buffer, 1, LARGE, fd);
