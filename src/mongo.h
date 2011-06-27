@@ -134,7 +134,6 @@ enum mongo_operations {
     mongo_op_kill_cursors = 2007
 };
 
-
 /*
  * CONNECTIONS
  */

@@ -38,7 +38,7 @@ static void digest2hex(mongo_md5_byte_t digest[16], char hex_digest[33]){
 void test_gridfile(gridfs *gfs, char *data_before, uint64_t length, char *filename, char *content_type) {
     gridfile gfile[1];
     char *data_after = malloc( LARGE );
-    if( data_after == -1 ) {
+    if( data_after == NULL ) {
         printf("Failed to allocated memory");
         exit(1);
     }
@@ -96,7 +96,7 @@ void test_basic() {
     mongo_connection conn[1];
     gridfs gfs[1];
     char *data_before = malloc( UPPER );
-    if( data_before == -1 ) {
+    if( data_before == NULL ) {
         printf("Failed to allocate");
         exit(1);
     }
@@ -141,7 +141,7 @@ void test_streaming() {
     gridfile gfile[1];
     char *buf = malloc( LARGE );
     char *small = malloc( LOWER );
-    if( buf == -1 || small == -1 ) {
+    if( buf == NULL || small == NULL ) {
         printf("Failed to allocate");
         exit(1);
     }
@@ -186,7 +186,7 @@ void test_large() {
     FILE *fd;
     int i, n;
     char *buffer = malloc( LARGE );
-    if( buffer == -1 ) {
+    if( buffer == NULL ) {
         printf("Failed to allocate memory.");
         exit(1);
     }
