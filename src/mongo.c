@@ -260,7 +260,7 @@ int mongo_replset_add_seed(mongo_connection* conn, const char* host, int port) {
     return mongo_replset_add_node( &conn->replset->seeds, host, port );
 }
 
-static void *mongo_parse_host( const char *host_string, mongo_host_port *host_port ) {
+static void mongo_parse_host( const char *host_string, mongo_host_port *host_port ) {
     int len, idx, split;
     len = split = idx = 0;
 
