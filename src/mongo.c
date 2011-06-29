@@ -41,8 +41,9 @@ static int looping_write(mongo_connection * conn, const void* buf, int len){
     const char* cbuf = buf;
     while (len){
         int sent = send(conn->sock, cbuf, len, 0);
-        if (sent == -1)
+        if (sent == -1) {
            return MONGO_IO_ERROR;
+        }
         cbuf += sent;
         len -= sent;
     }
@@ -293,8 +294,6 @@ static int mongo_replset_check_seed( mongo_connection* conn ) {
     bson_iterator it;
     bson_iterator it_sub;
     const char* host_string;
-    char* host;
-    int len, idx, port, split;
     mongo_host_port *host_port = NULL;
 
     out.data = NULL;
@@ -432,6 +431,24 @@ mongo_conn_return mongo_replset_connect(mongo_connection* conn) {
     }
 
     return mongo_conn_cannot_find_primary;
+}
+
+int mongo_conn_set_timeout( mongo_connection *conn, int millis ) {
+    struct timeval tv;
+    tv.tv_sec = millis / 1000;
+    tv.tv_usec = (millis % 1000) * 1000;
+
+    if (setsockopt( conn->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv) ) == -1) {
+        conn->err = MONGO_IO_ERROR;
+        return MONGO_ERROR;
+    }
+
+    if (setsockopt( conn->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv) ) == -1) {
+        conn->err = MONGO_IO_ERROR;
+        return MONGO_ERROR;
+    }
+
+    return MONGO_OK;
 }
 
 mongo_conn_return mongo_reconnect( mongo_connection * conn ){

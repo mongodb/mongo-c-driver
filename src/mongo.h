@@ -66,6 +66,9 @@ MONGO_EXTERN_C_START
 #define MONGO_EXHAUST (1<<6)    /**< Stream data in multiple 'more' packages. */
 #define MONGO_PARTIAL (1<<7) /**< Via mongos, allow reads even if a shard is down. */
 
+static const int MONGO_UPDATE_UPSERT = 0x1;
+static const int MONGO_UPDATE_MULTI = 0x2;
+
 typedef struct mongo_host_port {
     char host[255];
     int port;
@@ -191,6 +194,16 @@ int mongo_replset_add_seed( mongo_connection* conn, const char* host, int port )
  */
 mongo_conn_return mongo_replset_connect( mongo_connection* conn );
 
+/** Set a timeout for operations on this connection.
+ *
+ *  @param conn a mongo_connection object.
+ *  @param millis timeout time in milliseconds.
+ *
+ *  @return MONGO_OK. On error, return MONGO_ERROR and
+ *    set the conn->err field.
+ */
+int mongo_conn_set_timeout( mongo_connection *conn, int millis );
+
 /**
  * Try reconnecting to the server using the existing connection settings.
  *
@@ -256,12 +269,9 @@ int mongo_insert( mongo_connection* conn, const char* ns, bson* data );
  */
 int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
 
-static const int MONGO_UPDATE_UPSERT = 0x1;
-static const int MONGO_UPDATE_MULTI = 0x2;
-
 /**
  * Update a document in a MongoDB server.
- * 
+ *
  * @param conn a mongo_connection object.
  * @param ns the namespace.
  * @param cond the bson update query.
