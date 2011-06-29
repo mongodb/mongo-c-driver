@@ -27,7 +27,6 @@
 /* Generic error and warning flags. */
 #define BSON_OK 0
 #define BSON_ERROR -1
-#define BSON_WARNING -2
 
 /* BSON validity flags. */
 #define BSON_VALID 0x0
