@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/time.h>
 
 #ifndef _WIN32
 #include <unistd.h>
