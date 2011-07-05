@@ -24,20 +24,22 @@
 #include "platform_hacks.h"
 #include <time.h>
 
+MONGO_EXTERN_C_START
+
 /* Generic error and warning flags. */
 #define BSON_OK 0
 #define BSON_ERROR -1
 
-/* BSON validity flags. */
-#define BSON_VALID 0x0
-#define BSON_NOT_UTF8 0x2 /**< Either a key or a string is not valid UTF-8. */
-#define BSON_FIELD_HAS_DOT 0x4 /**< Warning: key contains '.' character. */
-#define BSON_FIELD_INIT_DOLLAR 0x8 /**< Warning: key starts with '$' character. */
-
 /* BSON error codes. */
 #define BSON_OBJECT_FINISHED 1 /**< Trying to modify a finished BSON object. */
 
-MONGO_EXTERN_C_START
+/* BSON validity flags. */
+enum bson_validity_t {
+    BSON_VALID = 0,             /**< BSON is valid and UTF-8 compliant. */
+    BSON_NOT_UTF8 = (1<<1),          /**< A key or a string is not valid UTF-8. */
+    BSON_FIELD_HAS_DOT = (1<<2),     /**< Warning: key contains '.' character. */
+    BSON_FIELD_INIT_DOLLAR = (1<<3) /**< Warning: key starts with '$' character. */
+};
 
 typedef enum {
     bson_eoo=0 ,

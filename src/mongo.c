@@ -547,7 +547,7 @@ int mongo_insert_batch( mongo_connection * conn, const char * ns,
             return MONGO_ERROR;
     }
 
-    mm = mongo_message_create( size , 0 , 0 , mongo_op_insert );
+    mm = mongo_message_create( size , 0 , 0 , MONGO_OP_INSERT );
 
     data = &mm->data;
     data = mongo_data_append32(data, &zero);
@@ -574,7 +574,7 @@ int mongo_insert( mongo_connection * conn , const char * ns , bson * bson ) {
                               + 4 /* ZERO */
                               + strlen(ns)
                               + 1 + bson_size(bson)
-                              , 0, 0, mongo_op_insert);
+                              , 0, 0, MONGO_OP_INSERT);
 
     data = &mm->data;
     data = mongo_data_append32(data, &zero);
@@ -603,7 +603,7 @@ int mongo_update(mongo_connection* conn, const char* ns, const bson* cond,
                               + 4  /* flags */
                               + bson_size(cond)
                               + bson_size(op)
-                              , 0 , 0 , mongo_op_update );
+                              , 0 , 0 , MONGO_OP_UPDATE );
 
     data = &mm->data;
     data = mongo_data_append32(data, &zero);
@@ -622,7 +622,7 @@ int mongo_remove(mongo_connection* conn, const char* ns, const bson* cond){
                                              + strlen(ns) + 1
                                              + 4  /* ZERO */
                                              + bson_size(cond)
-                                             , 0 , 0 , mongo_op_delete );
+                                             , 0 , 0 , MONGO_OP_DELETE );
 
     data = &mm->data;
     data = mongo_data_append32(data, &zero);
@@ -684,7 +684,7 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
                                                4 + 4 + /* skip,return */
                                                bson_size( query ) +
                                                bson_size( fields ) ,
-                                               0 , 0 , mongo_op_query );
+                                               0 , 0 , MONGO_OP_QUERY );
 
 
     data = &mm->data;
@@ -785,7 +785,7 @@ int mongo_cursor_get_more(mongo_cursor* cursor){
                                                  +sl
                                                  +4 /*numToReturn*/
                                                  +8 /*cursorID*/
-                                                 , 0, 0, mongo_op_get_more);
+                                                 , 0, 0, MONGO_OP_GET_MORE);
         data = &mm->data;
         data = mongo_data_append32(data, &zero);
         data = mongo_data_append(data, cursor->ns, sl);
@@ -849,7 +849,7 @@ int mongo_cursor_destroy(mongo_cursor* cursor){
                                                  +4 /*ZERO*/
                                                  +4 /*numCursors*/
                                                  +8 /*cursorID*/
-                                                 , 0, 0, mongo_op_kill_cursors);
+                                                 , 0, 0, MONGO_OP_KILL_CURSORS);
         char* data = &mm->data;
         data = mongo_data_append32(data, &zero);
         data = mongo_data_append32(data, &one);

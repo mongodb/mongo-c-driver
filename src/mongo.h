@@ -51,20 +51,43 @@ MONGO_EXTERN_C_START
 #define MONGO_OK 0
 #define MONGO_ERROR -1
 
-#define MONGO_IO_ERROR 1
-#define MONGO_READ_SIZE_ERROR 2
-#define MONGO_COMMAND_FAILED 3
-#define MONGO_CURSOR_EXHAUSTED 4
-#define MONGO_CURSOR_INVALID 5
-#define MONGO_INVALID_BSON 6 /**< BSON not valid for the specified op. */
+enum mongo_error_t {
+    MONGO_IO_ERROR = 1,         /**< A socket error occurred. */
+    MONGO_READ_SIZE_ERROR = 2,  /**< The response is not the expected length. */
+    MONGO_COMMAND_FAILED = 3,   /**< The command returned with 'ok' value of 0. */
+    MONGO_CURSOR_EXHAUSTED = 4, /**< The cursor has no more results. */
+    MONGO_CURSOR_INVALID = 5,   /**< The cursor has timed out or is not recognized. */
+    MONGO_INVALID_BSON = 6      /**< BSON not valid for the specified op. */
+};
 
-/* Cursor bitfield options. */
-#define MONGO_TAILABLE (1<<1) /**< Create a tailable cursor. */
-#define MONGO_SLAVE_OK (1<<2) /**< Allow queries on a non-primary node. */
-#define MONGO_NO_CURSOR_TIMEOUT (1<<4) /**< Disable cursor timeouts. */
-#define MONGO_AWAIT_DATA (1<<5) /**< Momentarily block at end of query for more data. */
-#define MONGO_EXHAUST (1<<6)    /**< Stream data in multiple 'more' packages. */
-#define MONGO_PARTIAL (1<<7) /**< Via mongos, allow reads even if a shard is down. */
+enum mongo_cursor_bitfield_t {
+    MONGO_TAILABLE = (1<<1),          /**< Create a tailable cursor. */
+    MONGO_SLAVE_OK = (1<<2),          /**< Allow queries on a non-primary node. */
+    MONGO_NO_CURSOR_TIMEOUT = (1<<4), /**< Disable cursor timeouts. */
+    MONGO_AWAIT_DATA = (1<<5),        /**< Momentarily block for more data. */
+    MONGO_EXHAUST = (1<<6),           /**< Stream in multiple 'more' packages. */
+    MONGO_PARTIAL = (1<<7)            /**< Allow reads even if a shard is down. */
+};
+
+enum mongo_operations {
+    MONGO_OP_MSG = 1000,
+    MONGO_OP_UPDATE = 2001,
+    MONGO_OP_INSERT = 2002,
+    MONGO_OP_QUERY = 2004,
+    MONGO_OP_GET_MORE = 2005,
+    MONGO_OP_DELETE = 2006,
+    MONGO_OP_KILL_CURSORS = 2007
+};
+
+typedef enum {
+    mongo_conn_success = 0,
+    mongo_conn_bad_arg,
+    mongo_conn_no_socket,
+    mongo_conn_fail,
+    mongo_conn_not_master,   /**< Not connected to master node. */
+    mongo_conn_bad_set_name, /**< Given rs name doesn't match this replica set */
+    mongo_conn_cannot_find_primary
+} mongo_conn_return;
 
 static const int MONGO_UPDATE_UPSERT = 0x1;
 static const int MONGO_UPDATE_MULTI = 0x2;
@@ -127,28 +150,9 @@ typedef struct {
     bson current;
 } mongo_cursor;
 
-enum mongo_operations {
-    mongo_op_msg = 1000,    /* generic msg command followed by a string */
-    mongo_op_update = 2001, /* update object */
-    mongo_op_insert = 2002,
-    mongo_op_query = 2004,
-    mongo_op_get_more = 2005,
-    mongo_op_delete = 2006,
-    mongo_op_kill_cursors = 2007
-};
-
 /*
  * CONNECTIONS
  */
-typedef enum {
-    mongo_conn_success = 0,
-    mongo_conn_bad_arg,
-    mongo_conn_no_socket,
-    mongo_conn_fail,
-    mongo_conn_not_master, /* leaves conn connected to slave */
-    mongo_conn_bad_set_name, /* The provided replica set name doesn't match the existing replica set */
-    mongo_conn_cannot_find_primary
-} mongo_conn_return;
 
 /**
  * Connect to a single MongoDB server.
