@@ -1019,14 +1019,14 @@ static int mongo_cmd_get_error_helper(mongo_connection * conn, const char * db,
     /* If there's an error, store its code and string in the connection object. */
     if( mongo_simple_int_command(conn, db, cmdtype, 1, &out) == MONGO_OK ) {
         bson_iterator it;
-        haserror = (bson_find(&it, &out, "err") != bson_null);
+        haserror = (bson_find(&it, &out, "err") != BSON_NULL);
         if( haserror ) {
              conn->lasterrstr = (char *)bson_malloc( bson_iterator_string_len( &it ) );
              if( conn->lasterrstr ) {
                  strcpy( conn->lasterrstr, bson_iterator_string( &it ) );
              }
 
-            if( bson_find( &it, &out, "code" ) != bson_null )
+            if( bson_find( &it, &out, "code" ) != BSON_NULL )
                 conn->lasterrcode = bson_iterator_int( &it );
         }
     }

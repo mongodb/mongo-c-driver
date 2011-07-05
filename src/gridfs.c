@@ -536,7 +536,7 @@ gridfs_offset gridfile_get_contentlength(gridfile* gfile)
 
   bson_find(&it, gfile->meta, "length");
 
-  if( bson_iterator_type( &it ) == bson_int )
+  if( bson_iterator_type( &it ) == BSON_INT )
     return (gridfs_offset)bson_iterator_int( &it );
   else
     return (gridfs_offset)bson_iterator_long( &it );
@@ -626,7 +626,7 @@ int gridfile_get_numchunks(gridfile* gfile)
 
   bson_find(&it, gfile->meta, "length");
 
-  if( bson_iterator_type( &it ) == bson_int )
+  if( bson_iterator_type( &it ) == BSON_INT )
     length = (gridfs_offset)bson_iterator_int( &it );
   else
     length = (gridfs_offset)bson_iterator_long( &it );

@@ -79,17 +79,17 @@ int main(){
         while(bson_iterator_next(&it)){
             switch(bson_iterator_key(&it)[0]){
                 case '_': /* id */
-                    ASSERT(bson_iterator_type(&it) == bson_oid);
+                    ASSERT(bson_iterator_type(&it) == BSON_OID);
                     ASSERT(!memcmp(bson_iterator_oid(&it)->bytes, oid.bytes, 12));
                     fields++;
                     break;
                 case 'a':
-                    ASSERT(bson_iterator_type(&it) == bson_int);
+                    ASSERT(bson_iterator_type(&it) == BSON_INT);
                     ASSERT(bson_iterator_int(&it) == 3 + 5*2);
                     fields++;
                     break;
                 case 'b':
-                    ASSERT(bson_iterator_type(&it) == bson_double);
+                    ASSERT(bson_iterator_type(&it) == BSON_DOUBLE);
                     ASSERT(bson_iterator_double(&it) == -1.5);
                     fields++;
                     break;

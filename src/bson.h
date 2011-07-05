@@ -42,25 +42,25 @@ enum bson_validity_t {
 };
 
 typedef enum {
-    bson_eoo=0 ,
-    bson_double=1,
-    bson_string=2,
-    bson_object=3,
-    bson_array=4,
-    bson_bindata=5,
-    bson_undefined=6,
-    bson_oid=7,
-    bson_bool=8,
-    bson_date=9,
-    bson_null=10,
-    bson_regex=11,
-    bson_dbref=12, /* deprecated */
-    bson_code=13,
-    bson_symbol=14,
-    bson_codewscope=15,
-    bson_int = 16,
-    bson_timestamp = 17,
-    bson_long = 18
+    BSON_EOO = 0,
+    BSON_DOUBLE = 1,
+    BSON_STRING = 2,
+    BSON_OBJECT = 3,
+    BSON_ARRAY = 4,
+    BSON_BINDATA = 5,
+    BSON_UNDEFINED = 6,
+    BSON_OID = 7,
+    BSON_BOOL = 8,
+    BSON_DATE = 9,
+    BSON_NULL = 10,
+    BSON_REGEX = 11,
+    BSON_DBREF = 12, /**< Deprecated. */
+    BSON_CODE = 13,
+    BSON_SYMBOL = 14,
+    BSON_CODEWSCOPE = 15,
+    BSON_INT = 16,
+    BSON_TIMESTAMP = 17,
+    BSON_LONG = 18
 } bson_type;
 
 typedef int bson_bool_t;
@@ -367,14 +367,14 @@ int bson_iterator_string_len( const bson_iterator * i );
 
 /**
  * Get the code value of the BSON object currently pointed to by the
- * iterator. Works with bson_code, bson_codewscope, and bson_string 
+ * iterator. Works with bson_code, bson_codewscope, and BSON_STRING 
  * returns NULL for everything else.
  *
  * @param i the bson_iterator
  *
  * @return the code value of the current BSON object.
  */
-/* works with bson_code, bson_codewscope, and bson_string */
+/* works with bson_code, bson_codewscope, and BSON_STRING */
 /* returns NULL for everything else */
 const char * bson_iterator_code(const bson_iterator * i);
 
@@ -458,7 +458,7 @@ const char * bson_iterator_regex( const bson_iterator * i );
  */
 const char * bson_iterator_regex_opts( const bson_iterator * i );
 
-/* these work with bson_object and bson_array */
+/* these work with BSON_OBJECT and BSON_ARRAY */
 /**
  * Get the BSON subobject currently pointed to by the
  * iterator. 

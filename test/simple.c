@@ -63,26 +63,26 @@ int main(){
             fprintf(stderr, "  %s: ", bson_iterator_key(&it));
 
             switch(bson_iterator_type(&it)){
-                case bson_double:
+                case BSON_DOUBLE:
                     fprintf(stderr, "(double) %e\n", bson_iterator_double(&it));
                     break;
-                case bson_int:
+                case BSON_INT:
                     fprintf(stderr, "(int) %d\n", bson_iterator_int(&it));
                     break;
-                case bson_string:
+                case BSON_STRING:
                     fprintf(stderr, "(string) \"%s\"\n", bson_iterator_string(&it));
                     break;
-                case bson_oid:
+                case BSON_OID:
                     bson_oid_to_string(bson_iterator_oid(&it), hex_oid);
                     fprintf(stderr, "(oid) \"%s\"\n", hex_oid);
                     break;
-                case bson_object:
+                case BSON_OBJECT:
                     fprintf(stderr, "(subobject) {...}\n");
                     break;
-                case bson_array:
+                case BSON_ARRAY:
                     fprintf(stderr, "(array) [...]\n");
                     break;
-                case bson_timestamp:
+                case BSON_TIMESTAMP:
                     fprintf(stderr, "(timestamp) [...]\n");
                     break;
                 default:

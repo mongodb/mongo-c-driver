@@ -160,18 +160,18 @@ void bson_print_raw( const char * data , int depth ){
             printf( "\t" );
         printf( "%s : %d \t " , key , t );
         switch ( t ){
-        case bson_int: printf( "%d" , bson_iterator_int( &i ) ); break;
-        case bson_double: printf( "%f" , bson_iterator_double( &i ) ); break;
-        case bson_bool: printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
-        case bson_string: printf( "%s" , bson_iterator_string( &i ) ); break;
-        case bson_null: printf( "null" ); break;
-        case bson_oid: bson_oid_to_string(bson_iterator_oid(&i), oidhex); printf( "%s" , oidhex ); break;
-        case bson_timestamp:
+        case BSON_INT: printf( "%d" , bson_iterator_int( &i ) ); break;
+        case BSON_DOUBLE: printf( "%f" , bson_iterator_double( &i ) ); break;
+        case BSON_BOOL: printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
+        case BSON_STRING: printf( "%s" , bson_iterator_string( &i ) ); break;
+        case BSON_NULL: printf( "null" ); break;
+        case BSON_OID: bson_oid_to_string(bson_iterator_oid(&i), oidhex); printf( "%s" , oidhex ); break;
+        case BSON_TIMESTAMP:
             ts = bson_iterator_timestamp( &i );
             printf("i: %d, t: %d", ts.i, ts.t);
             break;
-        case bson_object:
-        case bson_array:
+        case BSON_OBJECT:
+        case BSON_ARRAY:
             printf( "\n" );
             bson_print_raw( bson_iterator_value( &i ) , depth + 1 );
             break;
@@ -213,25 +213,25 @@ bson_type bson_iterator_next( bson_iterator * i ){
     }
 
     switch ( bson_iterator_type(i) ){
-    case bson_eoo: return bson_eoo; /* don't advance */
-    case bson_undefined:
-    case bson_null: ds = 0; break;
-    case bson_bool: ds = 1; break;
-    case bson_int: ds = 4; break;
-    case bson_long:
-    case bson_double:
-    case bson_timestamp:
-    case bson_date: ds = 8; break;
-    case bson_oid: ds = 12; break;
-    case bson_string:
-    case bson_symbol:
-    case bson_code: ds = 4 + bson_iterator_int_raw(i); break;
-    case bson_bindata: ds = 5 + bson_iterator_int_raw(i); break;
-    case bson_object:
-    case bson_array:
-    case bson_codewscope: ds = bson_iterator_int_raw(i); break;
-    case bson_dbref: ds = 4+12 + bson_iterator_int_raw(i); break;
-    case bson_regex:
+    case BSON_EOO: return BSON_EOO; /* don't advance */
+    case BSON_UNDEFINED:
+    case BSON_NULL: ds = 0; break;
+    case BSON_BOOL: ds = 1; break;
+    case BSON_INT: ds = 4; break;
+    case BSON_LONG:
+    case BSON_DOUBLE:
+    case BSON_TIMESTAMP:
+    case BSON_DATE: ds = 8; break;
+    case BSON_OID: ds = 12; break;
+    case BSON_STRING:
+    case BSON_SYMBOL:
+    case BSON_CODE: ds = 4 + bson_iterator_int_raw(i); break;
+    case BSON_BINDATA: ds = 5 + bson_iterator_int_raw(i); break;
+    case BSON_OBJECT:
+    case BSON_ARRAY:
+    case BSON_CODEWSCOPE: ds = bson_iterator_int_raw(i); break;
+    case BSON_DBREF: ds = 4+12 + bson_iterator_int_raw(i); break;
+    case BSON_REGEX:
         {
             const char * s = bson_iterator_value(i);
             const char * p = s;
@@ -295,25 +295,25 @@ bson_oid_t * bson_iterator_oid( const bson_iterator * i ){
 
 int bson_iterator_int( const bson_iterator * i ){
     switch (bson_iterator_type(i)){
-        case bson_int: return bson_iterator_int_raw(i);
-        case bson_long: return bson_iterator_long_raw(i);
-        case bson_double: return bson_iterator_double_raw(i);
+        case BSON_INT: return bson_iterator_int_raw(i);
+        case BSON_LONG: return bson_iterator_long_raw(i);
+        case BSON_DOUBLE: return bson_iterator_double_raw(i);
         default: return 0;
     }
 }
 double bson_iterator_double( const bson_iterator * i ){
     switch (bson_iterator_type(i)){
-        case bson_int: return bson_iterator_int_raw(i);
-        case bson_long: return bson_iterator_long_raw(i);
-        case bson_double: return bson_iterator_double_raw(i);
+        case BSON_INT: return bson_iterator_int_raw(i);
+        case BSON_LONG: return bson_iterator_long_raw(i);
+        case BSON_DOUBLE: return bson_iterator_double_raw(i);
         default: return 0;
     }
 }
 int64_t bson_iterator_long( const bson_iterator * i ){
     switch (bson_iterator_type(i)){
-        case bson_int: return bson_iterator_int_raw(i);
-        case bson_long: return bson_iterator_long_raw(i);
-        case bson_double: return bson_iterator_double_raw(i);
+        case BSON_INT: return bson_iterator_int_raw(i);
+        case BSON_LONG: return bson_iterator_long_raw(i);
+        case BSON_DOUBLE: return bson_iterator_double_raw(i);
         default: return 0;
     }
 }
@@ -327,12 +327,12 @@ bson_timestamp_t bson_iterator_timestamp( const bson_iterator * i){
 
 bson_bool_t bson_iterator_bool( const bson_iterator * i ){
     switch (bson_iterator_type(i)){
-        case bson_bool: return bson_iterator_bool_raw(i);
-        case bson_int: return bson_iterator_int_raw(i) != 0;
-        case bson_long: return bson_iterator_long_raw(i) != 0;
-        case bson_double: return bson_iterator_double_raw(i) != 0;
-        case bson_eoo:
-        case bson_null: return 0;
+        case BSON_BOOL: return bson_iterator_bool_raw(i);
+        case BSON_INT: return bson_iterator_int_raw(i) != 0;
+        case BSON_LONG: return bson_iterator_long_raw(i) != 0;
+        case BSON_DOUBLE: return bson_iterator_double_raw(i) != 0;
+        case BSON_EOO:
+        case BSON_NULL: return 0;
         default: return 1;
     }
 }
@@ -346,15 +346,15 @@ int bson_iterator_string_len( const bson_iterator * i ){
 
 const char * bson_iterator_code( const bson_iterator * i ){
     switch (bson_iterator_type(i)){
-        case bson_string:
-        case bson_code: return bson_iterator_value(i) + 4;
-        case bson_codewscope: return bson_iterator_value(i) + 8;
+        case BSON_STRING:
+        case BSON_CODE: return bson_iterator_value(i) + 4;
+        case BSON_CODEWSCOPE: return bson_iterator_value(i) + 8;
         default: return NULL;
     }
 }
 
 void bson_iterator_code_scope(const bson_iterator * i, bson * scope){
-    if (bson_iterator_type(i) == bson_codewscope){
+    if (bson_iterator_type(i) == BSON_CODEWSCOPE){
         int code_len;
         bson_little_endian32(&code_len, bson_iterator_value(i)+4);
         bson_init(scope, (void*)(bson_iterator_value(i)+8+code_len), 0);
@@ -510,41 +510,41 @@ static int bson_append_estart( bson_buffer * b, int type, const char * name, con
    ------------------------------ */
 
 int bson_append_int( bson_buffer * b, const char * name, const int i ) {
-    if ( bson_append_estart( b, bson_int, name, 4 ) == BSON_ERROR )
+    if ( bson_append_estart( b, BSON_INT, name, 4 ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append32( b , &i );
     return BSON_OK;
 }
 
 int bson_append_long( bson_buffer * b, const char * name, const int64_t i ) {
-    if ( bson_append_estart( b , bson_long, name, 8 ) == BSON_ERROR )
+    if ( bson_append_estart( b , BSON_LONG, name, 8 ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append64( b , &i );
     return BSON_OK;
 }
 
 int bson_append_double( bson_buffer * b, const char * name, const double d ) {
-    if ( bson_append_estart( b, bson_double, name, 8 ) == BSON_ERROR )
+    if ( bson_append_estart( b, BSON_DOUBLE, name, 8 ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append64( b , &d );
     return BSON_OK;
 }
 
 int bson_append_bool( bson_buffer * b, const char * name, const bson_bool_t i ) {
-    if ( bson_append_estart( b, bson_bool, name, 1 ) == BSON_ERROR )
+    if ( bson_append_estart( b, BSON_BOOL, name, 1 ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append_byte( b , i != 0 );
     return BSON_OK;
 }
 
 int bson_append_null( bson_buffer * b, const char * name ) {
-    if ( bson_append_estart( b , bson_null, name, 0 ) == BSON_ERROR )
+    if ( bson_append_estart( b , BSON_NULL, name, 0 ) == BSON_ERROR )
         return BSON_ERROR;
     return BSON_OK;
 }
 
 int bson_append_undefined( bson_buffer * b, const char * name ) {
-    if ( bson_append_estart( b, bson_undefined, name, 0 ) == BSON_ERROR )
+    if ( bson_append_estart( b, BSON_UNDEFINED, name, 0 ) == BSON_ERROR )
         return BSON_ERROR;
     return BSON_OK;
 }
@@ -565,27 +565,27 @@ int bson_append_string_base( bson_buffer * b, const char * name,
 }
 
 int bson_append_string( bson_buffer * b, const char * name, const char * value ) {
-    return bson_append_string_base(b, name, value, strlen ( value ), bson_string);
+    return bson_append_string_base(b, name, value, strlen ( value ), BSON_STRING);
 }
 
 int bson_append_symbol( bson_buffer * b, const char * name, const char * value ) {
-    return bson_append_string_base(b, name, value, strlen ( value ), bson_symbol);
+    return bson_append_string_base(b, name, value, strlen ( value ), BSON_SYMBOL);
 }
 
 int bson_append_code( bson_buffer * b, const char * name, const char * value ) {
-    return bson_append_string_base(b, name, value, strlen ( value ), bson_code);
+    return bson_append_string_base(b, name, value, strlen ( value ), BSON_CODE);
 }
 
 int bson_append_string_n( bson_buffer * b, const char * name, const char * value, int len ) {
-    return bson_append_string_base(b, name, value, len, bson_string);
+    return bson_append_string_base(b, name, value, len, BSON_STRING);
 }
 
 int bson_append_symbol_n( bson_buffer * b, const char * name, const char * value, int len ) {
-    return bson_append_string_base(b, name, value, len, bson_symbol);
+    return bson_append_string_base(b, name, value, len, BSON_SYMBOL);
 }
 
 int bson_append_code_n( bson_buffer * b, const char * name, const char * value, int len ) {
-    return bson_append_string_base(b, name, value, len, bson_code);
+    return bson_append_string_base(b, name, value, len, BSON_CODE);
 }
 
 int bson_append_code_w_scope_n( bson_buffer * b, const char * name,
@@ -593,7 +593,7 @@ int bson_append_code_w_scope_n( bson_buffer * b, const char * name,
 
     int sl = len + 1;
     int size = 4 + 4 + sl + bson_size(scope);
-    if ( bson_append_estart(b, bson_codewscope, name, size) == BSON_ERROR )
+    if ( bson_append_estart(b, BSON_CODEWSCOPE, name, size) == BSON_ERROR )
         return BSON_ERROR;
     bson_append32(b, &size);
     bson_append32(b, &sl);
@@ -609,14 +609,14 @@ int bson_append_code_w_scope( bson_buffer * b, const char * name, const char * c
 int bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len ){
     if ( type == 2 ){
         int subtwolen = len + 4;
-        if ( bson_append_estart( b, bson_bindata, name, 4+1+4+len ) == BSON_ERROR )
+        if ( bson_append_estart( b, BSON_BINDATA, name, 4+1+4+len ) == BSON_ERROR )
             return BSON_ERROR;
         bson_append32(b, &subtwolen);
         bson_append_byte(b, type);
         bson_append32(b, &len);
         bson_append(b, str, len);
     } else {
-        if ( bson_append_estart( b, bson_bindata, name, 4+1+len ) == BSON_ERROR )
+        if ( bson_append_estart( b, BSON_BINDATA, name, 4+1+len ) == BSON_ERROR )
             return BSON_ERROR;
         bson_append32(b, &len);
         bson_append_byte(b, type);
@@ -626,7 +626,7 @@ int bson_append_binary( bson_buffer * b, const char * name, char type, const cha
 }
 
 int bson_append_oid( bson_buffer * b, const char * name, const bson_oid_t * oid ){
-    if ( bson_append_estart( b, bson_oid, name, 12 ) == BSON_ERROR )
+    if ( bson_append_estart( b, BSON_OID, name, 12 ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append( b , oid , 12 );
     return BSON_OK;
@@ -641,7 +641,7 @@ int bson_append_new_oid( bson_buffer * b, const char * name ){
 int bson_append_regex( bson_buffer * b, const char * name, const char * pattern, const char * opts ){
     const int plen = strlen(pattern)+1;
     const int olen = strlen(opts)+1;
-    if ( bson_append_estart( b, bson_regex, name, plen + olen ) == BSON_ERROR )
+    if ( bson_append_estart( b, BSON_REGEX, name, plen + olen ) == BSON_ERROR )
         return BSON_ERROR;
     if ( bson_check_string( b, pattern, plen - 1 ) == BSON_ERROR )
         return BSON_ERROR;
@@ -651,7 +651,7 @@ int bson_append_regex( bson_buffer * b, const char * name, const char * pattern,
 }
 
 int bson_append_bson( bson_buffer * b, const char * name, const bson* bson){
-    if ( bson_append_estart( b, bson_object, name, bson_size(bson) ) == BSON_ERROR )
+    if ( bson_append_estart( b, BSON_OBJECT, name, bson_size(bson) ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append( b , bson->data , bson_size(bson) );
     return BSON_OK;
@@ -678,7 +678,7 @@ int bson_append_element( bson_buffer * b, const char * name_or_null, const bson_
 }
 
 int bson_append_timestamp( bson_buffer * b, const char * name, bson_timestamp_t * ts ){
-    if ( bson_append_estart( b, bson_timestamp, name, 8 ) == BSON_ERROR ) return BSON_ERROR;
+    if ( bson_append_estart( b, BSON_TIMESTAMP, name, 8 ) == BSON_ERROR ) return BSON_ERROR;
 
     bson_append32( b , &(ts->i) );
     bson_append32( b , &(ts->t) );
@@ -687,7 +687,7 @@ int bson_append_timestamp( bson_buffer * b, const char * name, bson_timestamp_t 
 }
 
 int bson_append_date( bson_buffer * b, const char * name, bson_date_t millis ) {
-    if ( bson_append_estart( b, bson_date, name, 8 ) == BSON_ERROR ) return BSON_ERROR;
+    if ( bson_append_estart( b, BSON_DATE, name, 8 ) == BSON_ERROR ) return BSON_ERROR;
     bson_append64( b , &millis );
     return BSON_OK;
 }
@@ -697,14 +697,14 @@ int bson_append_time_t( bson_buffer * b, const char * name, time_t secs) {
 }
 
 int bson_append_start_object( bson_buffer * b, const char * name ) {
-    if ( bson_append_estart( b, bson_object, name, 5 ) == BSON_ERROR ) return BSON_ERROR;
+    if ( bson_append_estart( b, BSON_OBJECT, name, 5 ) == BSON_ERROR ) return BSON_ERROR;
     b->stack[ b->stackPos++ ] = b->cur - b->buf;
     bson_append32( b , &zero );
     return BSON_OK;
 }
 
 int bson_append_start_array( bson_buffer * b, const char * name ) {
-    if ( bson_append_estart( b, bson_array, name, 5 ) == BSON_ERROR ) return BSON_ERROR;
+    if ( bson_append_estart( b, BSON_ARRAY, name, 5 ) == BSON_ERROR ) return BSON_ERROR;
     b->stack[ b->stackPos++ ] = b->cur - b->buf;
     bson_append32( b , &zero );
     return BSON_OK;
