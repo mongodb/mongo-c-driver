@@ -30,14 +30,14 @@ MONGO_EXTERN_C_START
 #define BSON_OK 0
 #define BSON_ERROR -1
 
-/* BSON error codes. */
-#define BSON_OBJECT_FINISHED 1 /**< Trying to modify a finished BSON object. */
+enum bson_error_t {
+    BSON_OBJECT_FINISHED 1 /**< Trying to modify a finished BSON object. */
+};
 
-/* BSON validity flags. */
 enum bson_validity_t {
-    BSON_VALID = 0,             /**< BSON is valid and UTF-8 compliant. */
-    BSON_NOT_UTF8 = (1<<1),          /**< A key or a string is not valid UTF-8. */
-    BSON_FIELD_HAS_DOT = (1<<2),     /**< Warning: key contains '.' character. */
+    BSON_VALID = 0,                 /**< BSON is valid and UTF-8 compliant. */
+    BSON_NOT_UTF8 = (1<<1),         /**< A key or a string is not valid UTF-8. */
+    BSON_FIELD_HAS_DOT = (1<<2),    /**< Warning: key contains '.' character. */
     BSON_FIELD_INIT_DOLLAR = (1<<3) /**< Warning: key starts with '$' character. */
 };
 
