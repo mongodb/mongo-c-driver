@@ -23,6 +23,10 @@ int test_connect( const char* set_name ) {
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
 
     res = mongo_replset_connect( conn );
+
+    if( res != MONGO_OK )
+        res = conn->err;
+
     mongo_destroy( conn );
 
     return res;
@@ -41,7 +45,7 @@ int test_reconnect( const char* set_name ) {
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
 
-    if( (res = mongo_replset_connect( conn )) ) {
+    if( (mongo_replset_connect( conn ) != MONGO_OK) ) {
         mongo_destroy( conn );
         return res;
     }
@@ -68,8 +72,8 @@ int test_reconnect( const char* set_name ) {
 }
 
 int main() {
-    ASSERT( test_connect( "test-rs" ) == 0 );
-    ASSERT( test_connect( "test-foobar" ) == mongo_conn_bad_set_name );
+    ASSERT( test_connect( "test-rs" ) == MONGO_OK );
+    ASSERT( test_connect( "test-foobar" ) == MONGO_CONN_BAD_SET_NAME );
 
     /*
     ASSERT( test_reconnect( "test-rs" ) == 0 );

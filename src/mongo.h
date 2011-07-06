@@ -69,6 +69,16 @@ enum mongo_cursor_bitfield_t {
     MONGO_PARTIAL = (1<<7)            /**< Allow reads even if a shard is down. */
 };
 
+enum mongo_conn_return {
+    MONGO_CONN_SUCCESS = 0,
+    MONGO_CONN_BAD_ARG,
+    MONGO_CONN_NO_SOCKET,
+    MONGO_CONN_FAIL,
+    MONGO_CONN_NOT_MASTER,         /**< Not connected to master node. */
+    MONGO_CONN_BAD_SET_NAME,       /**< Given rs name doesn't match this replica set. */
+    MONGO_CONN_CANNOT_FIND_PRIMARY /**< Can't find primary in this replica set. */
+};
+
 enum mongo_operations {
     MONGO_OP_MSG = 1000,
     MONGO_OP_UPDATE = 2001,
@@ -78,16 +88,6 @@ enum mongo_operations {
     MONGO_OP_DELETE = 2006,
     MONGO_OP_KILL_CURSORS = 2007
 };
-
-typedef enum {
-    mongo_conn_success = 0,
-    mongo_conn_bad_arg,
-    mongo_conn_no_socket,
-    mongo_conn_fail,
-    mongo_conn_not_master,         /**< Not connected to master node. */
-    mongo_conn_bad_set_name,       /**< Given rs name doesn't match this replica set */
-    mongo_conn_cannot_find_primary /**< Given rs name doesn't match this replica set */
-} mongo_conn_return;
 
 static const int MONGO_UPDATE_UPSERT = 0x1;
 static const int MONGO_UPDATE_MULTI = 0x2;
@@ -161,11 +161,12 @@ typedef struct {
  * @param host a numerical network address or a network hostname.
  * @param port the port to connect to.
  *
- * @return a mongo connection return status.
+ * @return MONGO_OK or MONGO_ERROR on failure. On failure, a constant of type
+ *   mongo_conn_return will be set on the conn->err field.
  */
-mongo_conn_return mongo_connect( mongo_connection * conn , const char* host, int port );
+int mongo_connect( mongo_connection * conn , const char* host, int port );
 
-/** 
+/**
  * Initialize a connection object for connecting with a replica set.
  *
  * @param conn a mongo_connection object.
@@ -181,10 +182,8 @@ void mongo_replset_init_conn( mongo_connection* conn, const char* name );
  * @param conn a mongo_connection object.
  * @param host a numerical network address or a network hostname.
  * @param port the port to connect to.
- *
- * @return 0 on success.
  */
-int mongo_replset_add_seed( mongo_connection* conn, const char* host, int port );
+void mongo_replset_add_seed( mongo_connection* conn, const char* host, int port );
 
 /**
  * Connect to a replica set.
@@ -194,9 +193,10 @@ int mongo_replset_add_seed( mongo_connection* conn, const char* host, int port )
  *
  * @param conn a mongo_connection object.
  *
- * @return a mongo connection return status.
+ * @return MONGO_OK or MONGO_ERROR on failure. On failure, a constant of type
+ *   mongo_conn_return will be set on the conn->err field.
  */
-mongo_conn_return mongo_replset_connect( mongo_connection* conn );
+int mongo_replset_connect( mongo_connection* conn );
 
 /** Set a timeout for operations on this connection.
  *
@@ -211,23 +211,22 @@ int mongo_conn_set_timeout( mongo_connection *conn, int millis );
 /**
  * Try reconnecting to the server using the existing connection settings.
  *
- * This method will disconnect the current socket. If you've authentication,
+ * This method will disconnect the current socket. If you've authenticated,
  * you'll need to re-authenticate after calling this function.
  *
  * @param conn a mongo_connection object.
  *
- * @return a mongo connection object.
+ * @return MONGO_OK or MONGO_ERROR and
+ *   set the conn->err field.
  */
-mongo_conn_return mongo_reconnect( mongo_connection * conn );
+int mongo_reconnect( mongo_connection * conn );
 
 /**
  * Close the current connection to the server.
  *
  * @param conn a mongo_connection object.
- *
- * @return false if the the disconnection succeeded.
  */
-bson_bool_t mongo_disconnect( mongo_connection * conn );
+void mongo_disconnect( mongo_connection * conn );
 
 /**
  * Close any existing connection to the server and free all allocated
@@ -236,10 +235,8 @@ bson_bool_t mongo_disconnect( mongo_connection * conn );
  * You must always call this method when finished with the connection object.
  *
  * @param conn a mongo_connection object.
- *
- * @return false if the destroy succeeded.
  */
-bson_bool_t mongo_destroy( mongo_connection * conn );
+void mongo_destroy( mongo_connection * conn );
 
 /* ----------------------------
    CORE METHODS - insert update remove query getmore

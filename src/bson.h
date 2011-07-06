@@ -26,12 +26,11 @@
 
 MONGO_EXTERN_C_START
 
-/* Generic error and warning flags. */
 #define BSON_OK 0
 #define BSON_ERROR -1
 
 enum bson_error_t {
-    BSON_OBJECT_FINISHED 1 /**< Trying to modify a finished BSON object. */
+    BSON_OBJECT_FINISHED = 1 /**< Trying to modify a finished BSON object. */
 };
 
 enum bson_validity_t {
