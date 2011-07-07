@@ -41,7 +41,8 @@ static int looping_write(mongo_connection * conn, const void* buf, int len){
     while (len){
         int sent = send(conn->sock, cbuf, len, 0);
         if (sent == -1) {
-           return MONGO_IO_ERROR;
+           conn->err = MONGO_IO_ERROR;
+           return MONGO_ERROR;
         }
         cbuf += sent;
         len -= sent;
@@ -54,8 +55,10 @@ static int looping_read(mongo_connection * conn, void* buf, int len){
     char* cbuf = buf;
     while (len){
         int sent = recv(conn->sock, cbuf, len, 0);
-        if (sent == 0 || sent == -1)
-            return MONGO_IO_ERROR;
+        if (sent == 0 || sent == -1) {
+            conn->err = MONGO_IO_ERROR;
+            return MONGO_ERROR;
+        }
         cbuf += sent;
         len -= sent;
     }
@@ -622,7 +625,6 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
 
     res = mongo_message_send( conn , mm );
     if(res != MONGO_OK){
-        conn->err = res;
         return NULL;
     }
 
@@ -630,7 +632,6 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
 
     res = mongo_read_response( conn, &(cursor->mm) );
     if( res != MONGO_OK ) {
-        conn->err = res;
         free((mongo_cursor*)cursor); /* cast away volatile, not changing type */
         return NULL;
     }

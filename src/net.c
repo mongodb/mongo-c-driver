@@ -76,10 +76,8 @@ int mongo_socket_connect( mongo_connection * conn, const char * host, int port )
     sa.sin_addr.s_addr = inet_addr( host );
     addressSize = sizeof( sa );
 
-    printf("%s:%d\n", host, port);
     conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
     if ( conn->sock < 0 ){
-        printf("Socket: %d", conn->sock);
         mongo_close_socket( conn->sock );
         conn->err = MONGO_CONN_NO_SOCKET;
         return MONGO_ERROR;
