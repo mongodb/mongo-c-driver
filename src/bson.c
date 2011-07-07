@@ -452,11 +452,14 @@ int bson_ensure_space( bson_buffer * b, const int bytesNeeded ){
         return BSON_OK;
 
     new_size = 1.5 * (b->bufSize + bytesNeeded);
-    if( new_size < b->bufSize && (b->bufSize + bytesNeeded < INT_MAX) )
-        new_size = INT_MAX;
-    else {
-        b->err = BSON_SIZE_OVERFLOW;
-        return BSON_ERROR;
+
+    if( new_size < b->bufSize ) {
+        if( ( b->bufSize + bytesNeeded ) < INT_MAX )
+            new_size = INT_MAX;
+        else {
+            b->err = BSON_SIZE_OVERFLOW;
+            return BSON_ERROR;
+        }
     }
 
     b->buf = realloc(b->buf, new_size);
