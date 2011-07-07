@@ -174,7 +174,7 @@ void bson_print( bson * b );
 void bson_print_raw( const char * bson , int depth );
 
 /* advances iterator to named field */
-/* returns bson_eoo (which is false) if field not found */
+/* returns BSON_EOO (which is false) if field not found */
 /**
  * Advance a bson_iterator to the named field.
  *

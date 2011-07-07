@@ -784,6 +784,10 @@ int mongo_create_index(mongo_connection * conn, const char * ns, bson * key, int
         bson_append_bool(&bb, "unique", 1);
     if (options & MONGO_INDEX_DROP_DUPS)
         bson_append_bool(&bb, "dropDups", 1);
+    if (options & MONGO_INDEX_BACKGROUND)
+        bson_append_bool(&bb, "background", 1);
+    if (options & MONGO_INDEX_SPARSE)
+        bson_append_bool(&bb, "sparse", 1);
 
     bson_from_buffer(&b, &bb);
 

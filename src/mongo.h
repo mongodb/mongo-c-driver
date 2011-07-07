@@ -60,6 +60,13 @@ enum mongo_conn_return {
     MONGO_CONN_CANNOT_FIND_PRIMARY /**< Can't find primary in this replica set. */
 };
 
+enum mongo_index_opts {
+    MONGO_INDEX_UNIQUE = (1<<0),
+    MONGO_INDEX_DROP_DUPS = (1<<2),
+    MONGO_INDEX_BACKGROUND = (1<<3),
+    MONGO_INDEX_SPARSE = (1<<4)
+};
+
 enum mongo_operations {
     MONGO_OP_MSG = 1000,
     MONGO_OP_UPDATE = 2001,
@@ -337,8 +344,6 @@ bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, 
  */
 int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll, bson* query);
 
-static const int MONGO_INDEX_UNIQUE = 0x1;
-static const int MONGO_INDEX_DROP_DUPS = 0x2;
 
 /**
  * Create a compouned index.
@@ -346,7 +351,9 @@ static const int MONGO_INDEX_DROP_DUPS = 0x2;
  * @param conn a mongo_connection object.
  * @param ns the namespace.
  * @param data the bson index data.
- * @param options index options.
+ * @param options a bitfield for setting index options. Possibilities include
+ *   MONGO_INDEX_UNIQUE, MONGO_INDEX_DROP_DUPS, MONGO_INDEX_BACKGROUND,
+ *   and MONGO_INDEX_SPARSE.
  * @param out a bson document containing errors, if any.
  *
  * @return MONGO_OK if index is created successfully; otherwise, MONGO_ERROR.
