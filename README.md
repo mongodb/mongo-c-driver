@@ -66,8 +66,8 @@ Specific error codes and error strings are then stored in the `err` and `errstr`
 `mongo_connection`, `bson_buffer`, and `bson` structs.
 
 # Docs
-The docs are built using Sphinx and Doxygen. If you have these tools install, then
-can build the docs with scons:
+The docs are built using Sphinx and Doxygen. If you have these tools installed, then
+you can build the docs with scons:
 
     scons docs
 
