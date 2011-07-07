@@ -62,11 +62,8 @@ MONGO_USE_LONG_LONG_INT      Define this if 'long long int' is your compiler's 6
 
 # Error Handling
 Most functions return MONGO_OK or BSON_OK on success and MONGO_ERROR or BSON_ERROR on failure.
-Specific error codes and string are then stored in the `err` and `errstr` fields of the
+Specific error codes and error strings are then stored in the `err` and `errstr` fields of the
 `mongo_connection`, `bson_buffer`, and `bson` structs.
-
-The error handling conventions are still a work in progress but will be
-consistent and complete for the 0.5 release.
 
 # Docs
 The docs are built using Sphinx and Doxygen. If you have these tools install, then

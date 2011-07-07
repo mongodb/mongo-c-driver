@@ -29,12 +29,14 @@ Let's make a tutorial.c file that connects to the database:
       mongo_connection conn[1];
       status = mongo_connect( conn, "localhost", 27017 );
 
-      switch (status) {
-        case mongo_conn_success: printf( "connection succeeded\n" ); break;
-        case mongo_conn_bad_arg: printf( "bad arguments\n" ); return 1;
-        case mongo_conn_no_socket: printf( "no socket\n" ); return 1;
-        case mongo_conn_fail: printf( "connection failed\n" ); return 1;
-        case mongo_conn_not_master: printf( "not master\n" ); return 1;
+      if( status != MONGO_OK ) {
+          switch ( conn->err ) {
+            case MONGO_CONN_SUCCESS:    printf( "connection succeeded\n" ); break;
+            case MONGO_CONN_BAD_ARG:    printf( "bad arguments\n" ); return 1;
+            case MONGO_CONN_NO_SOCKET:  printf( "no socket\n" ); return 1;
+            case MONGO_CONN_FAIL:       printf( "connection failed\n" ); return 1;
+            case MONGO_CONN_NOT_MASTER: printf( "not master\n" ); return 1;
+          }
       }
 
       mongo_destroy( conn );
@@ -62,6 +64,9 @@ and finally you connect. Here's an example:
       mongo_replset_add_seed( "10.4.3.32", 27017 );
 
       status = mongo_replset_connect( conn );
+      if( status != MONGO_OK ) {
+          // Check conn->err for error code.
+      }
 
       return 0;
     }
@@ -187,7 +192,7 @@ Let's now fetch all objects from the persons collection, and display them.
       bson_empty( empty );
 
       cursor = mongo_find( conn, "tutorial.persons", empty, empty, 0, 0, 0 );
-        while( mongo_cursor_next( cursor ) ) {
+        while( mongo_cursor_next( cursor ) == MONGO_OK ) {
         bson_print( &cursor->current );
       }
 
@@ -217,7 +222,7 @@ whose age is a given value:
       bson_from_buffer( query, query_buf );
 
       cursor = mongo_find( conn, "tutorial.persons", query, NULL, 0, 0, 0 );
-      while( mongo_cursor_next( cursor ) ) {
+      while( mongo_cursor_next( cursor ) == MONGO_OK ) {
         bson_iterator it[1];
         if ( bson_find( it, &cursor->current, "name" )) {
           printf( "name: %s\n", bson_iterator_string( it ) );
@@ -277,7 +282,7 @@ how we can create that index:
 
 .. code-block:: c
 
-    static void tutorial_index( mongo_connection * conn ) {
+    static void tutorial_index( mongo_connection *conn ) {
       bson key[1];
       bson_buffer key_buf[1];
 
