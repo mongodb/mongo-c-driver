@@ -107,6 +107,7 @@ void bson_oid_from_string(bson_oid_t* oid, const char* str){
         oid->bytes[i] = (hexbyte(str[2*i]) << 4) | hexbyte(str[2*i + 1]);
     }
 }
+
 void bson_oid_to_string(const bson_oid_t* oid, char* str){
     static const char hex[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
     int i;
@@ -116,18 +117,35 @@ void bson_oid_to_string(const bson_oid_t* oid, char* str){
     }
     str[24] = '\0';
 }
-void bson_oid_gen(bson_oid_t* oid){
+
+void bson_set_oid_fuzz( int (*func)(void) ) {
+    oid_fuzz_func = func;
+}
+
+void bson_set_oid_inc( int (*func)(void) ) {
+    oid_inc_func = func;
+}
+
+void bson_oid_gen( bson_oid_t *oid ) {
     static int incr = 0;
     static int fuzz = 0;
-    int i = incr++; /*TODO make atomic*/
+    int i;
     int t = time(NULL);
 
-    /* TODO rand sucks. find something better */
-    if (!fuzz){
-        srand(t);
-        fuzz = rand();
+    if( oid_inc_func )
+        i = oid_inc_func();
+    else
+        i = incr++;
+
+    if (!fuzz) {
+        if ( oid_fuzz_func )
+            fuzz = oid_fuzz_func();
+        else {
+            srand(t);
+            fuzz = rand();
+        }
     }
-    
+
     bson_big_endian32(&oid->ints[0], &t);
     oid->ints[1] = fuzz;
     bson_big_endian32(&oid->ints[2], &i);

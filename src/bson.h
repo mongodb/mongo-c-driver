@@ -102,6 +102,9 @@ typedef struct {
   int t; /* time in seconds */
 } bson_timestamp_t;
 
+static int (*oid_fuzz_func)( void ) = NULL;
+static int (*oid_inc_func)( void ) = NULL;
+
 /* ----------------------------
    READING
    ------------------------------ */
@@ -499,6 +502,23 @@ void bson_oid_to_string(const bson_oid_t* oid, char* str);
  * @param oid the destination for the newly created bson_oid_t.
  */
 void bson_oid_gen(bson_oid_t* oid);
+
+/**
+ * Set a function to be used to generate the second four bytes
+ * of an object id.
+ *
+ * @param func a pointer to a function that returns an int.
+ */
+void bson_set_oid_fuzz( int (*func)(void) );
+
+/**
+ * Set a function to be used to generate the incrementing part
+ * of an object id (last four bytes). If you need thread-safety
+ * in generating object ids, you should set this function.
+ *
+ * @param func a pointer to a function that returns an int.
+ */
+void bson_set_oid_inc( int (*func)(void) );
 
 /**
  * Get the time a bson_oid_t was created.
