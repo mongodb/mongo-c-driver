@@ -94,7 +94,7 @@ if sys.byteorder == 'big':
 env.Append( CPPPATH=["src/"] )
 
 coreFiles = ["src/md5.c" ]
-mFiles = [ "src/mongo.c", "src/gridfs.c"]
+mFiles = [ "src/mongo.c", "src/net.c", "src/gridfs.c"]
 bFiles = [ "src/bson.c", "src/numbers.c", "src/encoding.c"]
 mLibFiles = coreFiles + mFiles + bFiles
 bLibFiles = coreFiles + bFiles

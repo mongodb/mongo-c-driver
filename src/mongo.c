@@ -16,6 +16,7 @@
  */
 
 #include "mongo.h"
+#include "net.h"
 #include "md5.h"
 
 #include <stdlib.h>
@@ -30,13 +31,10 @@
 #include <unistd.h>
 #endif
 
-/* only need one of these */
-static const int zero = 0;
-static const int one = 1;
+static const int ZERO = 0;
+static const int ONE = 1;
 
-/* ----------------------------
-   message stuff
-   ------------------------------ */
+/* Wire protocol. */
 
 static int looping_write(mongo_connection * conn, const void* buf, int len){
     const char* cbuf = buf;
@@ -65,6 +63,21 @@ static int looping_read(mongo_connection * conn, void* buf, int len){
     return MONGO_OK;
 }
 
+mongo_message * mongo_message_create( int len , int id , int responseTo , int op ){
+    mongo_message * mm = (mongo_message*)bson_malloc( len );
+
+    if (!id)
+        id = rand();
+
+    /* native endian (converted on send) */
+    mm->head.len = len;
+    mm->head.id = id;
+    mm->head.responseTo = responseTo;
+    mm->head.op = op;
+
+    return mm;
+}
+
 /* Always calls free(mm) */
 int mongo_message_send(mongo_connection * conn, mongo_message* mm){
     mongo_header head; /* little endian */
@@ -90,6 +103,44 @@ int mongo_message_send(mongo_connection * conn, mongo_message* mm){
     return MONGO_OK;
 }
 
+int mongo_read_response( mongo_connection * conn, mongo_reply** mm ){
+    mongo_header head; /* header from network */
+    mongo_reply_fields fields; /* header from network */
+    mongo_reply * out; /* native endian */
+    unsigned int len;
+    int res;
+
+    looping_read(conn, &head, sizeof(head));
+    looping_read(conn, &fields, sizeof(fields));
+
+    bson_little_endian32(&len, &head.len);
+
+    if (len < sizeof(head)+sizeof(fields) || len > 64*1024*1024)
+        return MONGO_READ_SIZE_ERROR;  /* most likely corruption */
+
+    out = (mongo_reply*)bson_malloc(len);
+
+    out->head.len = len;
+    bson_little_endian32(&out->head.id, &head.id);
+    bson_little_endian32(&out->head.responseTo, &head.responseTo);
+    bson_little_endian32(&out->head.op, &head.op);
+
+    bson_little_endian32(&out->fields.flag, &fields.flag);
+    bson_little_endian64(&out->fields.cursorID, &fields.cursorID);
+    bson_little_endian32(&out->fields.start, &fields.start);
+    bson_little_endian32(&out->fields.num, &fields.num);
+
+    res = looping_read(conn, &out->objs, len-sizeof(head)-sizeof(fields));
+    if( res != MONGO_OK ) {
+        free(out);
+        return res;
+    }
+
+    *mm = out;
+
+    return MONGO_OK;
+}
+
 char * mongo_data_append( char * start , const void * data , int len ){
     memcpy( start , data , len );
     return start + len;
@@ -105,102 +156,8 @@ char * mongo_data_append64( char * start , const void * data){
     return start + 8;
 }
 
-mongo_message * mongo_message_create( int len , int id , int responseTo , int op ){
-    mongo_message * mm = (mongo_message*)bson_malloc( len );
 
-    if (!id)
-        id = rand();
-
-    /* native endian (converted on send) */
-    mm->head.len = len;
-    mm->head.id = id;
-    mm->head.responseTo = responseTo;
-    mm->head.op = op;
-
-    return mm;
-}
-
-/* ----------------------------
-   connection stuff
-   ------------------------------ */
-#ifdef _MONGO_USE_GETADDRINFO
-static int mongo_socket_connect( mongo_connection * conn, const char * host, int port ){
-
-    struct addrinfo* addrs = NULL;
-    struct addrinfo hints;
-    char port_str[12];
-    int ret;
-
-    conn->sock = 0;
-    conn->connected = 0;
-
-    memset( &hints, 0, sizeof( hints ) );
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-
-    sprintf( port_str, "%d", port );
-
-    conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
-    if ( conn->sock < 0 ){
-        printf("Socket: %d", conn->sock);
-        mongo_close_socket( conn->sock );
-        conn->err = MONGO_CONN_NO_SOCKET;
-        return MONGO_ERROR;
-    }
-
-    ret = getaddrinfo( host, port_str, &hints, &addrs );
-    if(ret) {
-        fprintf( stderr, "getaddrinfo failed: %s", gai_strerror( ret ) );
-        conn->err = MONGO_CONN_FAIL;
-        return MONGO_ERROR;
-    }
-
-    if ( connect( conn->sock, addrs->ai_addr, addrs->ai_addrlen ) ){
-        mongo_close_socket( conn->sock );
-        freeaddrinfo( addrs );
-        conn->err = MONGO_CONN_FAIL;
-        return MONGO_ERROR:
-    }
-
-    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &one, sizeof(one) );
-
-    conn->connected = 1;
-    freeaddrinfo( addrs );
-
-    return MONGO_OK;
-}
-#else
-static int mongo_socket_connect( mongo_connection * conn, const char * host, int port ){
-    struct sockaddr_in sa;
-    socklen_t addressSize;
-
-    memset( sa.sin_zero , 0 , sizeof( sa.sin_zero ) );
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons( port );
-    sa.sin_addr.s_addr = inet_addr( host );
-    addressSize = sizeof( sa );
-
-    printf("%s:%d\n", host, port);
-    conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
-    if ( conn->sock < 0 ){
-        printf("Socket: %d", conn->sock);
-        mongo_close_socket( conn->sock );
-        conn->err = MONGO_CONN_NO_SOCKET;
-        return MONGO_ERROR;
-    }
-
-    if ( connect( conn->sock, (struct sockaddr *)&sa, addressSize ) ){
-        conn->err = MONGO_CONN_FAIL;
-        return MONGO_ERROR;
-    }
-
-    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &one, sizeof(one) );
-
-    conn->connected = 1;
-
-    return MONGO_OK;
-}
-#endif
+/* Connection API */
 
 int mongo_connect( mongo_connection * conn , const char * host, int port ){
     conn->replset = NULL;
@@ -283,8 +240,7 @@ static void mongo_parse_host( const char *host_string, mongo_host_port *host_por
     }
 
     /* If 'split' is set, we know the that port exists;
-     * Otherwise, we set the default port.
-     */
+     * Otherwise, we set the default port. */
     idx = split ? split : len;
     memcpy( host_port->host, host_string, idx );
     memcpy( host_port->host + idx, "\0", 1 );
@@ -512,10 +468,7 @@ void mongo_destroy( mongo_connection * conn ){
     conn->lasterrstr = NULL;
 }
 
-/*
- * Determine whether this BSON object is valid for the
- * given operation.
- */
+/* Determine whether this BSON object is valid for the given operation.  */
 static int mongo_bson_valid( mongo_connection * conn, bson* bson, int write ) {
     if( bson->err & BSON_NOT_UTF8 ) {
         conn->err = MONGO_INVALID_BSON;
@@ -538,6 +491,8 @@ static int mongo_bson_valid( mongo_connection * conn, bson* bson, int write ) {
     return MONGO_OK;
 }
 
+/* MongoDB CRUD API */
+
 int mongo_insert_batch( mongo_connection * conn, const char * ns,
     bson ** bsons, int count ) {
 
@@ -555,7 +510,7 @@ int mongo_insert_batch( mongo_connection * conn, const char * ns,
     mm = mongo_message_create( size , 0 , 0 , MONGO_OP_INSERT );
 
     data = &mm->data;
-    data = mongo_data_append32(data, &zero);
+    data = mongo_data_append32(data, &ZERO);
     data = mongo_data_append(data, ns, strlen(ns) + 1);
 
     for(i=0; i<count; i++){
@@ -582,7 +537,7 @@ int mongo_insert( mongo_connection * conn , const char * ns , bson * bson ) {
                               , 0, 0, MONGO_OP_INSERT);
 
     data = &mm->data;
-    data = mongo_data_append32(data, &zero);
+    data = mongo_data_append32(data, &ZERO);
     data = mongo_data_append(data, ns, strlen(ns) + 1);
     data = mongo_data_append(data, bson->data, bson_size(bson));
 
@@ -611,7 +566,7 @@ int mongo_update(mongo_connection* conn, const char* ns, const bson* cond,
                               , 0 , 0 , MONGO_OP_UPDATE );
 
     data = &mm->data;
-    data = mongo_data_append32(data, &zero);
+    data = mongo_data_append32(data, &ZERO);
     data = mongo_data_append(data, ns, strlen(ns) + 1);
     data = mongo_data_append32(data, &flags);
     data = mongo_data_append(data, cond->data, bson_size(cond));
@@ -630,50 +585,12 @@ int mongo_remove(mongo_connection* conn, const char* ns, const bson* cond){
                                              , 0 , 0 , MONGO_OP_DELETE );
 
     data = &mm->data;
-    data = mongo_data_append32(data, &zero);
+    data = mongo_data_append32(data, &ZERO);
     data = mongo_data_append(data, ns, strlen(ns) + 1);
-    data = mongo_data_append32(data, &zero);
+    data = mongo_data_append32(data, &ZERO);
     data = mongo_data_append(data, cond->data, bson_size(cond));
 
     return mongo_message_send(conn, mm);
-}
-
-int mongo_read_response( mongo_connection * conn, mongo_reply** mm ){
-    mongo_header head; /* header from network */
-    mongo_reply_fields fields; /* header from network */
-    mongo_reply * out; /* native endian */
-    unsigned int len;
-    int res;
-
-    looping_read(conn, &head, sizeof(head));
-    looping_read(conn, &fields, sizeof(fields));
-
-    bson_little_endian32(&len, &head.len);
-
-    if (len < sizeof(head)+sizeof(fields) || len > 64*1024*1024)
-        return MONGO_READ_SIZE_ERROR;  /* most likely corruption */
-
-    out = (mongo_reply*)bson_malloc(len);
-
-    out->head.len = len;
-    bson_little_endian32(&out->head.id, &head.id);
-    bson_little_endian32(&out->head.responseTo, &head.responseTo);
-    bson_little_endian32(&out->head.op, &head.op);
-
-    bson_little_endian32(&out->fields.flag, &fields.flag);
-    bson_little_endian64(&out->fields.cursorID, &fields.cursorID);
-    bson_little_endian32(&out->fields.start, &fields.start);
-    bson_little_endian32(&out->fields.num, &fields.num);
-
-    res = looping_read(conn, &out->objs, len-sizeof(head)-sizeof(fields));
-    if( res != MONGO_OK ) {
-        free(out);
-        return res;
-    }
-
-    *mm = out;
-
-    return MONGO_OK;
 }
 
 mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
@@ -747,32 +664,6 @@ int mongo_find_one(mongo_connection* conn, const char* ns, bson* query,
     }
 }
 
-int64_t mongo_count(mongo_connection* conn, const char* db, const char* ns, bson* query){
-    bson_buffer bb;
-    bson cmd;
-    bson out;
-    int64_t count = -1;
-
-    bson_buffer_init(&bb);
-    bson_append_string(&bb, "count", ns);
-    if (query && bson_size(query) > 5) /* not empty */
-        bson_append_bson(&bb, "query", query);
-    bson_from_buffer(&cmd, &bb);
-
-    if( mongo_run_command(conn, db, &cmd, &out) == MONGO_OK ) {
-        bson_iterator it;
-        if(bson_find(&it, &out, "n"))
-            count = bson_iterator_long(&it);
-        bson_destroy(&cmd);
-        bson_destroy(&out);
-        return count;
-    }
-    else {
-        bson_destroy(&cmd);
-        return MONGO_ERROR;
-    }
-}
-
 
 int mongo_cursor_get_more(mongo_cursor* cursor){
     int res;
@@ -792,9 +683,9 @@ int mongo_cursor_get_more(mongo_cursor* cursor){
                                                  +8 /*cursorID*/
                                                  , 0, 0, MONGO_OP_GET_MORE);
         data = &mm->data;
-        data = mongo_data_append32(data, &zero);
+        data = mongo_data_append32(data, &ZERO);
         data = mongo_data_append(data, cursor->ns, sl);
-        data = mongo_data_append32(data, &zero);
+        data = mongo_data_append32(data, &ZERO);
         data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
 
         res = mongo_message_send(conn, mm);
@@ -856,8 +747,8 @@ int mongo_cursor_destroy(mongo_cursor* cursor){
                                                  +8 /*cursorID*/
                                                  , 0, 0, MONGO_OP_KILL_CURSORS);
         char* data = &mm->data;
-        data = mongo_data_append32(data, &zero);
-        data = mongo_data_append32(data, &one);
+        data = mongo_data_append32(data, &ZERO);
+        data = mongo_data_append32(data, &ONE);
         data = mongo_data_append64(data, &cursor->mm->fields.cursorID);
 
         result = mongo_message_send(conn, mm);
@@ -869,6 +760,8 @@ int mongo_cursor_destroy(mongo_cursor* cursor){
 
     return result;
 }
+
+/* MongoDB Helper Functions */
 
 int mongo_create_index(mongo_connection * conn, const char * ns, bson * key, int options, bson * out){
     bson_buffer bb;
@@ -904,6 +797,7 @@ int mongo_create_index(mongo_connection * conn, const char * ns, bson * key, int
     *strchr(idxns, '.') = '\0'; /* just db not ns */
     return mongo_cmd_get_last_error(conn, idxns, out);
 }
+
 bson_bool_t mongo_create_simple_index(mongo_connection * conn, const char * ns, const char* field, int options, bson * out){
     bson_buffer bb;
     bson b;
@@ -916,6 +810,32 @@ bson_bool_t mongo_create_simple_index(mongo_connection * conn, const char * ns, 
     success = mongo_create_index(conn, ns, &b, options, out);
     bson_destroy(&b);
     return success;
+}
+
+int64_t mongo_count(mongo_connection* conn, const char* db, const char* ns, bson* query){
+    bson_buffer bb;
+    bson cmd;
+    bson out;
+    int64_t count = -1;
+
+    bson_buffer_init(&bb);
+    bson_append_string(&bb, "count", ns);
+    if (query && bson_size(query) > 5) /* not empty */
+        bson_append_bson(&bb, "query", query);
+    bson_from_buffer(&cmd, &bb);
+
+    if( mongo_run_command(conn, db, &cmd, &out) == MONGO_OK ) {
+        bson_iterator it;
+        if(bson_find(&it, &out, "n"))
+            count = bson_iterator_long(&it);
+        bson_destroy(&cmd);
+        bson_destroy(&out);
+        return count;
+    }
+    else {
+        bson_destroy(&cmd);
+        return MONGO_ERROR;
+    }
 }
 
 int mongo_run_command(mongo_connection* conn, const char* db, bson* command,
