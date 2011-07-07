@@ -30,7 +30,8 @@ MONGO_EXTERN_C_START
 #define BSON_ERROR -1
 
 enum bson_error_t {
-    BSON_OBJECT_FINISHED = 1 /**< Trying to modify a finished BSON object. */
+    BSON_OBJECT_FINISHED = 1, /**< Trying to modify a finished BSON object. */
+    BSON_SIZE_OVERFLOW = 2 /**< Trying to create a BSON object larger than INT_MAX. */
 };
 
 enum bson_validity_t {
