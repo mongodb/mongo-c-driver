@@ -107,15 +107,12 @@ m = env.Library( "mongoc" ,  mLibFiles )
 b = env.Library( "bson" , bLibFiles  )
 env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
 
-smenv = env.Clone()
-sbenv = env.Clone()
-
 if os.sys.platform == "linux2":
-    smenv.Append( SHLINKFLAGS="-shared -Wl,-soname,libmongoc.so." + VERSION )
-    sbenv.Append( SHLINKFLAGS = "-shared -Wl,-soname,libbson.so." + VERSION )
+    env.Append( SHLINKFLAGS="-shared -Wl,-soname,libmongoc.so." + VERSION )
+    env.Append( SHLINKFLAGS = "-shared -Wl,-soname,libbson.so." + VERSION )
 
-dynm = smenv.SharedLibrary( "mongoc" , mLibFiles )
-dynb = sbenv.SharedLibrary( "bson" , bLibFiles )
+dynm = env.SharedLibrary( "mongoc" , mLibFiles )
+dynb = env.SharedLibrary( "bson" , bLibFiles )
 env.Default( env.Alias( "sharedlib" , [ dynm[0] , dynb[0] ] ) )
 
 

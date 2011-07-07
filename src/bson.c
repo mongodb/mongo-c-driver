@@ -495,7 +495,7 @@ static int bson_append_estart( bson_buffer * b, int type, const char * name, con
         return BSON_ERROR;
     }
 
-    if( bson_check_field_name( b, (unsigned char* )name, len - 1 ) == BSON_ERROR ) {
+    if( bson_check_field_name( b, (const char* )name, len - 1 ) == BSON_ERROR ) {
         bson_builder_error( b );
         return BSON_ERROR;
     }
@@ -553,7 +553,7 @@ int bson_append_string_base( bson_buffer * b, const char * name,
     const char * value, int len, bson_type type) {
 
     int sl = len + 1;
-    if ( bson_check_string( b, value, sl - 1 ) == BSON_ERROR )
+    if ( bson_check_string( b, (const char *)value, sl - 1 ) == BSON_ERROR )
         return BSON_ERROR;
     if ( bson_append_estart( b, type, name, 4 + sl ) == BSON_ERROR ) {
         return BSON_ERROR;

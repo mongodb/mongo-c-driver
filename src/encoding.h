@@ -34,7 +34,7 @@ MONGO_EXTERN_C_START
  *     contains '.' or starts with '$', since the validity of this depends on context.
  *     Set the value of b->err appropriately.
  */
-int bson_check_field_name( bson_buffer* b, const unsigned char* string,
+int bson_check_field_name( bson_buffer* b, const char* string,
     const int length );
 
 /**
@@ -47,7 +47,7 @@ int bson_check_field_name( bson_buffer* b, const unsigned char* string,
  * @return BSON_OK if valid UTF-8; otherwise, BSON_ERROR.
  *     Sets b->err on error.
  */
-bson_bool_t bson_check_string( bson_buffer* b, const unsigned char* string,
+bson_bool_t bson_check_string( bson_buffer* b, const char* string,
     const int length );
 
 MONGO_EXTERN_C_END

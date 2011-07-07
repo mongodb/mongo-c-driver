@@ -16,6 +16,7 @@
  */
 
 #include "net.h"
+#include <string.h>
 
 #ifdef _MONGO_USE_GETADDRINFO
 int mongo_socket_connect( mongo_connection * conn, const char * host, int port ){

@@ -123,14 +123,14 @@ static int bson_validate_string( bson_buffer* b, const unsigned char* string,
 }
 
 
-int bson_check_string( bson_buffer* b, const unsigned char* string,
+int bson_check_string( bson_buffer* b, const char* string,
     const int length ) {
 
-    return bson_validate_string( b, string, length, 1, 0, 0 );
+    return bson_validate_string( b, (const unsigned char *)string, length, 1, 0, 0 );
 }
 
-int bson_check_field_name( bson_buffer* b, const unsigned char* string,
+int bson_check_field_name( bson_buffer* b, const char* string,
     const int length ) {
 
-    return bson_validate_string( b, string, length, 1, 1, 1 );
+    return bson_validate_string( b, (const unsigned char *)string, length, 1, 1, 1 );
 }

@@ -27,10 +27,6 @@
 #include <errno.h>
 #include <sys/time.h>
 
-#ifndef _WIN32
-#include <unistd.h>
-#endif
-
 static const int ZERO = 0;
 static const int ONE = 1;
 
@@ -437,7 +433,7 @@ int mongo_reconnect( mongo_connection * conn ){
 
 void mongo_disconnect( mongo_connection * conn ){
     if( ! conn->connected )
-        return 1;
+        return;
 
     if( conn->replset ) {
         conn->replset->primary_connected = 0;
@@ -557,7 +553,7 @@ int mongo_update(mongo_connection* conn, const char* ns, const bson* cond,
     /* Make sure that the op BSON is valid UTF-8.
      * TODO: decide whether to check cond as well.
      * */
-    if( mongo_bson_valid( conn, op, 0 ) != MONGO_OK ) {
+    if( mongo_bson_valid( conn, (bson *)op, 0 ) != MONGO_OK ) {
         return MONGO_ERROR;
     }
 
@@ -631,7 +627,7 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
 
     cursor = (mongo_cursor*)bson_malloc(sizeof(mongo_cursor));
 
-    res = mongo_read_response( conn, &(cursor->mm) );
+    res = mongo_read_response( conn, (mongo_reply **)&(cursor->mm) );
     if( res != MONGO_OK ) {
         free((mongo_cursor*)cursor); /* cast away volatile, not changing type */
         return NULL;
