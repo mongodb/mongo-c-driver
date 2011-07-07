@@ -1,5 +1,6 @@
 # -*- mode: python; -*-
 
+VERSION = "0.3.2"
 
 # --- options ----
 AddOption('--test-server',
@@ -37,6 +38,8 @@ import buildscripts
 
 env = Environment( ENV=os.environ )
 
+
+
 #  ---- Docs ----
 def build_docs(env, target, source):
     from buildscripts import docs
@@ -45,6 +48,9 @@ def build_docs(env, target, source):
 env.Alias("docs", [], [build_docs])
 env.AlwaysBuild("docs")
 
+
+
+# ---- Libraries ----
 if os.sys.platform in ["darwin", "linux2"]:
     env.Append( CPPFLAGS=" -pedantic -Wall -ggdb -DMONGO_HAVE_STDINT" )
     env.Append( CPPPATH=["/opt/local/include/"] )
@@ -61,7 +67,6 @@ if os.sys.platform in ["darwin", "linux2"]:
         # -O3 benchmarks *significantly* faster than -O2 when disabling networking
 elif 'win32' == os.sys.platform:
     env.Append( LIBS='ws2_32' )
-
 
 #we shouldn't need these options in c99 mode
 if not GetOption('use_c99'):
@@ -101,10 +106,21 @@ bLibFiles = coreFiles + bFiles
 m = env.Library( "mongoc" ,  mLibFiles )
 b = env.Library( "bson" , bLibFiles  )
 env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
-dynm = env.SharedLibrary( "mongoc" , mLibFiles )
-dynb = env.SharedLibrary( "bson" , bLibFiles )
+
+smenv = env.Clone()
+sbenv = env.Clone()
+
+if os.sys.platform == "linux2":
+    smenv.Append( SHLINKFLAGS="-shared -Wl,-soname,libmongoc.so." + VERSION )
+    sbenv.Append( SHLINKFLAGS = "-shared -Wl,-soname,libbson.so." + VERSION )
+
+dynm = smenv.SharedLibrary( "mongoc" , mLibFiles )
+dynb = sbenv.SharedLibrary( "bson" , bLibFiles )
 env.Default( env.Alias( "sharedlib" , [ dynm[0] , dynb[0] ] ) )
 
+
+
+# ---- Benchmarking ----
 benchmarkEnv = env.Clone()
 benchmarkEnv.Append( CPPDEFINES=[('TEST_SERVER', r'\"%s\"'%GetOption('test_server')),
 ('SEED_START_PORT', r'%d'%GetOption('seed_start_port'))] )
@@ -112,6 +128,9 @@ benchmarkEnv.Append( LIBS=[m, b] )
 benchmarkEnv.Prepend( LIBPATH=["."] )
 benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )
 
+
+
+# ---- Tests ----
 testEnv = benchmarkEnv.Clone()
 testCoreFiles = [ ]
 
