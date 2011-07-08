@@ -36,10 +36,14 @@ enum mongo_error_t {
     MONGO_IO_ERROR = 1,         /**< A socket error occurred. */
     MONGO_READ_SIZE_ERROR = 2,  /**< The response is not the expected length. */
     MONGO_COMMAND_FAILED = 3,   /**< The command returned with 'ok' value of 0. */
-    MONGO_CURSOR_EXHAUSTED = 4, /**< The cursor has no more results. */
-    MONGO_CURSOR_INVALID = 5,   /**< The cursor has timed out or is not recognized. */
-    MONGO_BSON_INVALID = 6      /**< BSON not valid for the specified op. */
+    MONGO_BSON_INVALID = 7      /**< BSON not valid for the specified op. */
 };
+
+enum mongo_cursor_error_t {
+    MONGO_CURSOR_EXHAUSTED = 1, /**< The cursor has no more results. */
+    MONGO_CURSOR_INVALID = 2,   /**< The cursor has timed out or is not recognized. */
+    MONGO_CURSOR_PENDING = 3,   /**< Tailable cursor still alive but no data. */
+}
 
 enum mongo_cursor_bitfield_t {
     MONGO_TAILABLE = (1<<1),          /**< Create a tailable cursor. */
@@ -94,7 +98,7 @@ typedef struct {
 } mongo_message;
 
 typedef struct {
-    int flag; /* non-zero on failure */
+    int flag; /* FIX THIS COMMENT non-zero on failure */
     int64_t cursorID;
     int start;
     int num;
@@ -132,10 +136,12 @@ typedef struct {
 } mongo_connection;
 
 typedef struct {
-    mongo_reply * mm; /* message is owned by cursor */
-    mongo_connection * conn; /* connection is *not* owned by cursor */
-    const char* ns; /* owned by cursor */
-    bson current;
+    mongo_reply * reply; /**< reply is owned by cursor */
+    mongo_connection * conn; /**< connection is *not* owned by cursor */
+    const char* ns;   /**< owned by cursor */
+    bson current;     /**< This cursor's current bson object. */
+    int err;
+    int options;      /**< Bitfield containing cursor options. */
 } mongo_cursor;
 
 /* Connection API */
@@ -254,7 +260,8 @@ int mongo_insert( mongo_connection* conn, const char* ns, bson* data );
  * @return MONGO_OK or MONGO_ERROR.
  *
  */
-int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data , int num );
+int mongo_insert_batch( mongo_connection * conn , const char * ns ,
+    bson ** data , int num );
 
 /**
  * Update a document in a MongoDB server.
@@ -268,7 +275,8 @@ int mongo_insert_batch( mongo_connection * conn , const char * ns , bson ** data
  * @return MONGO_OK or MONGO_ERROR with error stored in conn object.
  *
  */
-int mongo_update(mongo_connection* conn, const char* ns, const bson* cond, const bson* op, int flags);
+int mongo_update(mongo_connection* conn, const char* ns, const bson* cond,
+    const bson* op, int flags);
 
 /**
  * Remove a document from a MongoDB server.
@@ -303,7 +311,7 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
  *
  * @param cursor a cursor returned from a call to mongo_find
  *
- * @return MONGO_OK if there is another result.
+ * @return MONGO_OK.
  */
 int mongo_cursor_next(mongo_cursor* cursor);
 
@@ -328,7 +336,8 @@ int mongo_cursor_destroy(mongo_cursor* cursor);
  *
  */
 /* out can be NULL if you don't care about results. useful for commands */
-bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, bson* fields, bson* out);
+bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query,
+    bson* fields, bson* out);
 
 /* MongoDB Helper Functions */
 
@@ -340,10 +349,11 @@ bson_bool_t mongo_find_one(mongo_connection* conn, const char* ns, bson* query, 
  * @param coll the collection name.
  * @param query the BSON query.
  *
- * @return the number of matching documents. If the command fails, returns MONGO_ERROR.
+ * @return the number of matching documents. If the command fails,
+ *     MONGO_ERROR is returned.
  */
-int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll, bson* query);
-
+int64_t mongo_count(mongo_connection* conn, const char* db, const char* coll,
+    bson* query);
 
 /**
  * Create a compouned index.
