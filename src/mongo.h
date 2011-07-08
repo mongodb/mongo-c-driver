@@ -38,7 +38,7 @@ enum mongo_error_t {
     MONGO_COMMAND_FAILED = 3,   /**< The command returned with 'ok' value of 0. */
     MONGO_CURSOR_EXHAUSTED = 4, /**< The cursor has no more results. */
     MONGO_CURSOR_INVALID = 5,   /**< The cursor has timed out or is not recognized. */
-    MONGO_INVALID_BSON = 6      /**< BSON not valid for the specified op. */
+    MONGO_BSON_INVALID = 6      /**< BSON not valid for the specified op. */
 };
 
 enum mongo_cursor_bitfield_t {

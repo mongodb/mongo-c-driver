@@ -66,11 +66,11 @@ int main() {
 
     result = mongo_insert( conn, ns, &b );
     ASSERT( result == MONGO_ERROR );
-    ASSERT( conn->err == MONGO_INVALID_BSON );
+    ASSERT( conn->err == MONGO_BSON_INVALID );
 
     result = mongo_update( conn, ns, bson_empty( &empty ), &b, 0 );
     ASSERT( result == MONGO_ERROR );
-    ASSERT( conn->err == MONGO_INVALID_BSON );
+    ASSERT( conn->err == MONGO_BSON_INVALID );
 
     bson_destroy(&b);
 
@@ -99,7 +99,7 @@ int main() {
 
     result = mongo_insert_batch( conn, ns, bp, BATCH_SIZE );
     ASSERT( result == MONGO_ERROR );
-    ASSERT( conn->err == MONGO_INVALID_BSON );
+    ASSERT( conn->err == MONGO_BSON_INVALID );
 
     for (j=0; j < BATCH_SIZE; j++)
         bson_destroy(&bs[j]);

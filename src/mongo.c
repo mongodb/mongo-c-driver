@@ -471,7 +471,7 @@ void mongo_destroy( mongo_connection * conn ){
 /* Determine whether this BSON object is valid for the given operation.  */
 static int mongo_bson_valid( mongo_connection * conn, bson* bson, int write ) {
     if( bson->err & BSON_NOT_UTF8 ) {
-        conn->err = MONGO_INVALID_BSON;
+        conn->err = MONGO_BSON_INVALID;
         return MONGO_ERROR;
     }
 
@@ -479,7 +479,7 @@ static int mongo_bson_valid( mongo_connection * conn, bson* bson, int write ) {
         if( (bson->err & BSON_FIELD_HAS_DOT) ||
             (bson->err & BSON_FIELD_INIT_DOLLAR) ) {
 
-            conn->err = MONGO_INVALID_BSON;
+            conn->err = MONGO_BSON_INVALID;
             return MONGO_ERROR;
 
         }
