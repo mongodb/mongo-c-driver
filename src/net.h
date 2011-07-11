@@ -1,6 +1,6 @@
 /**
  * @file net.h
- * @brief Networking and wire protocol.
+ * @brief Networking.
  */
 
 /*    Copyright 2009-2011 10gen Inc.
