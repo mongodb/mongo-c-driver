@@ -608,7 +608,6 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
                                                bson_size( fields ) ,
                                                0 , 0 , MONGO_OP_QUERY );
 
-
     data = &mm->data;
     data = mongo_data_append32( data , &options );
     data = mongo_data_append( data , ns , strlen( ns ) + 1 );
@@ -675,7 +674,6 @@ int mongo_cursor_get_more(mongo_cursor* cursor){
         return MONGO_ERROR;
     }
     else {
-        mongo_connection* conn = cursor->conn;
         char* data;
         int sl = strlen(cursor->ns)+1;
         mongo_message * mm = mongo_message_create(16 /*header*/
@@ -690,32 +688,45 @@ int mongo_cursor_get_more(mongo_cursor* cursor){
         data = mongo_data_append32(data, &ZERO);
         data = mongo_data_append64(data, &cursor->reply->fields.cursorID);
 
-        res = mongo_message_send(conn, mm);
+        free(cursor->reply);
+        res = mongo_message_send( cursor->conn, mm);
         if( res != MONGO_OK ) {
             mongo_cursor_destroy(cursor);
             return MONGO_ERROR;
         }
 
-        free(cursor->reply);
         res = mongo_read_response( cursor->conn, &(cursor->reply) );
         if( res != MONGO_OK ) {
             mongo_cursor_destroy(cursor);
             return MONGO_ERROR;
         }
+        cursor->current.data = NULL;
 
         return MONGO_OK;
     }
 }
 
 int mongo_cursor_next(mongo_cursor* cursor){
-    char* bson_addr;
+    char *next_object;
+    char *message_end;
+    int res;
 
     if( !cursor->reply )
         return MONGO_ERROR;
 
     /* no data */
     if ( cursor->reply->fields.num == 0 ) {
-        return MONGO_ERROR;
+
+        /* Special case for tailable cursors. */
+        if( cursor->reply->fields.cursorID ) {
+            if( ( mongo_cursor_get_more(cursor) != MONGO_OK ) ||
+                cursor->reply->fields.num == 0 ) {
+                return MONGO_ERROR;
+            }
+        }
+
+        else
+            return MONGO_ERROR;
     }
 
     /* first */
@@ -724,14 +735,23 @@ int mongo_cursor_next(mongo_cursor* cursor){
         return MONGO_OK;
     }
 
-    bson_addr = cursor->current.data + bson_size(&cursor->current);
-    if (bson_addr >= ((char*)cursor->reply + cursor->reply->head.len)){
+    next_object = cursor->current.data + bson_size(&cursor->current);
+    message_end = (char*)cursor->reply + cursor->reply->head.len;
+
+    if (next_object >= message_end) {
         if( mongo_cursor_get_more(cursor) != MONGO_OK )
             return MONGO_ERROR;
 
+        /* If there's still a cursor id, then the message should be pending.
+         * TODO: be sure not to overwrite conn->err. */
+        if( cursor->reply->fields.num == 0 && cursor->reply->fields.cursorID ) {
+            cursor->err = MONGO_CURSOR_PENDING;
+            return MONGO_ERROR;
+        }
+
         bson_init(&cursor->current, &cursor->reply->objs, 0);
     } else {
-        bson_init(&cursor->current, bson_addr, 0);
+        bson_init(&cursor->current, next_object, 0);
     }
 
     return MONGO_OK;
