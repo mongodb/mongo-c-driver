@@ -102,8 +102,6 @@ typedef struct {
   int t; /* time in seconds */
 } bson_timestamp_t;
 
-static int (*oid_fuzz_func)( void ) = NULL;
-static int (*oid_inc_func)( void ) = NULL;
 
 /* ----------------------------
    READING

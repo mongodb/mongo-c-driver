@@ -29,6 +29,9 @@ const int initialBufferSize = 128;
 /* only need one of these */
 static const int zero = 0;
 
+static int (*oid_fuzz_func)( void ) = NULL;
+static int (*oid_inc_func)( void ) = NULL;
+
 /* ----------------------------
    READING
    ------------------------------ */
