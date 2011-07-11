@@ -35,6 +35,7 @@ typedef int socklen_t;
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <fcntl.h>
 #define mongo_close_socket(sock) ( close(sock) )
 #endif
 

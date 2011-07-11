@@ -18,6 +18,46 @@
 #include "net.h"
 #include <string.h>
 
+static int mongo_create_socket( mongo_connection *conn ) {
+    int fd;
+
+    if( ( fd = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) {
+        conn->err = MONGO_CONN_NO_SOCKET;
+        return MONGO_ERROR;
+    }
+    conn->sock = fd;
+
+    return MONGO_OK;
+}
+
+static int mongo_set_blocking_status( mongo_connection *conn ) {
+    int flags;
+    int blocking;
+
+    /* For the moment, setting conn_timeout_ms is platform-specific.
+     * So do nothing is this value isn't set.  */
+    blocking = ( conn->conn_timeout_ms == 0 );
+    if( blocking )
+        return MONGO_OK;
+    else {
+        if( ( flags = fcntl( conn->sock, F_GETFL ) ) == -1 ) {
+            conn->err = MONGO_IO_ERROR;
+            mongo_close_socket( conn->sock );
+            return MONGO_ERROR;
+        }
+
+        flags |= O_NONBLOCK;
+
+        if( ( flags = fcntl( conn->sock, F_SETFL, flags ) ) == -1 ) {
+            conn->err = MONGO_IO_ERROR;
+            mongo_close_socket( conn->sock );
+            return MONGO_ERROR;
+        }
+    }
+
+    return MONGO_OK;
+}
+
 #ifdef _MONGO_USE_GETADDRINFO
 int mongo_socket_connect( mongo_connection * conn, const char * host, int port ){
 
@@ -36,22 +76,16 @@ int mongo_socket_connect( mongo_connection * conn, const char * host, int port )
 
     sprintf( port_str, "%d", port );
 
-    conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
-    if ( conn->sock < 0 ){
-        printf("Socket: %d", conn->sock);
-        mongo_close_socket( conn->sock );
-        conn->err = MONGO_CONN_NO_SOCKET;
+    if( mongo_create_socket( conn ) != MONGO_OK )
         return MONGO_ERROR;
-    }
 
-    ret = getaddrinfo( host, port_str, &hints, &addrs );
-    if(ret) {
+    if( getaddrinfo( host, port_str, &hints, &addrs ) != 0 ) {
         fprintf( stderr, "getaddrinfo failed: %s", gai_strerror( ret ) );
         conn->err = MONGO_CONN_FAIL;
         return MONGO_ERROR;
     }
 
-    if ( connect( conn->sock, addrs->ai_addr, addrs->ai_addrlen ) ){
+    if ( connect( conn->sock, addrs->ai_addr, addrs->ai_addrlen ) == -1 ) {
         mongo_close_socket( conn->sock );
         freeaddrinfo( addrs );
         conn->err = MONGO_CONN_FAIL;
@@ -71,20 +105,16 @@ int mongo_socket_connect( mongo_connection * conn, const char * host, int port )
     socklen_t addressSize;
     int flag = 1;
 
+    if( mongo_create_socket( conn ) != MONGO_OK )
+        return MONGO_ERROR;
+
     memset( sa.sin_zero , 0 , sizeof( sa.sin_zero ) );
     sa.sin_family = AF_INET;
     sa.sin_port = htons( port );
     sa.sin_addr.s_addr = inet_addr( host );
     addressSize = sizeof( sa );
 
-    conn->sock = socket( AF_INET, SOCK_STREAM, 0 );
-    if ( conn->sock < 0 ){
-        mongo_close_socket( conn->sock );
-        conn->err = MONGO_CONN_NO_SOCKET;
-        return MONGO_ERROR;
-    }
-
-    if ( connect( conn->sock, (struct sockaddr *)&sa, addressSize ) ){
+    if ( connect( conn->sock, (struct sockaddr *)&sa, addressSize ) == -1 ) {
         conn->err = MONGO_CONN_FAIL;
         return MONGO_ERROR;
     }

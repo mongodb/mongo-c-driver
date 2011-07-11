@@ -167,6 +167,7 @@ int mongo_connect( mongo_connection * conn , const char * host, int port ){
     strncpy( conn->primary->host, host, strlen( host ) + 1 );
     conn->primary->port = port;
     conn->primary->next = NULL;
+    conn->conn_timeout_ms = 0;
 
     conn->err = 0;
     conn->errstr = NULL;
@@ -185,6 +186,8 @@ void mongo_replset_init_conn( mongo_connection* conn, const char* name ) {
     memcpy( conn->replset->name, name, strlen( name ) + 1  );
 
     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
+
+    conn->conn_timeout_ms = 0;
 
     conn->err = 0;
     conn->errstr = NULL;

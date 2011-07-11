@@ -125,7 +125,11 @@ typedef struct {
     mongo_host_port* primary;  /**< Primary connection info. */
     mongo_replset* replset;    /**< replset object if connected to a replica set. */
     int sock;                  /**< Socket file descriptor. */
+    int flags;                 /**< Flags on this connection object. */
+    int conn_timeout_ms;       /**< Connection timeout in milliseconds. */
+    int op_timeout_ms;         /**< Read and write timeout in milliseconds. */
     bson_bool_t connected;     /**< Connection status. */
+
     mongo_error_t err;         /**< Most recent driver error code. */
     char* errstr;              /**< String version of most recent driver error code. */
     int lasterrcode;           /**< getlasterror given by the server on calls. */
