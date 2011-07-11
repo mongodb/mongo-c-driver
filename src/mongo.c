@@ -598,7 +598,7 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
 
     int sl;
     int res;
-    volatile mongo_cursor * cursor; /* volatile due to longjmp in mongo exception handler */
+    mongo_cursor * cursor;
     char * data;
     mongo_message * mm = mongo_message_create( 16 + /* header */
                                                4 + /*  options */
@@ -629,7 +629,7 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
 
     res = mongo_read_response( conn, (mongo_reply **)&(cursor->reply) );
     if( res != MONGO_OK ) {
-        free((mongo_cursor*)cursor); /* cast away volatile, not changing type */
+        free( cursor );
         return NULL;
     }
 
@@ -637,10 +637,10 @@ mongo_cursor* mongo_find(mongo_connection* conn, const char* ns, bson* query,
     cursor->ns = bson_malloc(sl);
     if (!cursor->ns){
         free(cursor->reply);
-        free((mongo_cursor*)cursor); /* cast away volatile, not changing type */
+        free( cursor );
         return NULL;
     }
-    memcpy((void*)cursor->ns, ns, sl); /* cast needed to silence GCC warning */
+    memcpy( (void*)cursor->ns, ns, sl );
     cursor->conn = conn;
     cursor->current.data = NULL;
     cursor->options = options;
