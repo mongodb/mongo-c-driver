@@ -18,6 +18,37 @@ int main(){
     const char * col = "c.simple";
     const char * ns = "test.c.simple";
 
+    /* mongo_connect( conn, TEST_SERVER, 27017 ); */
+
+    /* Simple connect API
+    mongo *conn = mongo_new();
+    mongo_connect( conn, TEST_SERVER, 27017 );
+    mongo_destroy( conn );
+
+    * Advanced and replica set API
+    mongo *conn = mongo_new();
+    mongo_set_connect_timeout( conn, 1000 );
+    mongo_set_op_timeout( conn, 1000 )
+    mongo_set_replset( conn, "foobar" );
+    mongo_replset_connect( conn );
+    mongo_destroy( conn );
+
+    * BSON API
+    bson *obj = bson_new();
+    bson_append_int( obj, "a", 1 );
+    mongo_insert( conn, obj );
+    bson_destroy( obj );
+
+    * Cursor API
+    mongo_cursor *cursor = mongo_cursor_new( conn, "test.ns" );
+    mongo_cursor_limit( cursor, 100 );
+    mongo_cursor_skip( cursor, 100 );
+    mongo_cursor_query( cursor, query );
+    mongo_cursor_fields( cursor, fields );
+    data = mongo_cursor_next( cursor );
+    mongo_cursor_destroy( cursor );
+    */
+
     INIT_SOCKETS_FOR_WINDOWS;
 
     if( mongo_connect( conn , TEST_SERVER, 27017 ) != MONGO_OK ){

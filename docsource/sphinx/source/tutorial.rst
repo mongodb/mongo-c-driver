@@ -26,7 +26,7 @@ Let's make a tutorial.c file that connects to the database:
     #include "mongo.h"
 
     int main() {
-      mongo_connection conn[1];
+      mongo *conn = mongo_new();
       status = mongo_connect( conn, "localhost", 27017 );
 
       if( status != MONGO_OK ) {
@@ -57,16 +57,20 @@ and finally you connect. Here's an example:
     #include "mongo.h"
 
     int main() {
-      mongo_connection conn[1];
+      mongo *conn = mongo_new();
 
-      mongo_replset_init_conn( conn, "replset-my-app");
       mongo_replset_add_seed( "10.4.3.22", 27017 );
       mongo_replset_add_seed( "10.4.3.32", 27017 );
 
-      status = mongo_replset_connect( conn );
+      mongo_connect( conn );
+
+      status = mongo_replset_connect( conn, "my-repl-set" );
+
       if( status != MONGO_OK ) {
           // Check conn->err for error code.
       }
+
+      mongo_destroy( conn );
 
       return 0;
     }
@@ -104,6 +108,15 @@ Let's now create a BSON "person" object which contains name and age. We might in
   bson_append_string( buf, "name", "Joe" );
   bson_append_int( buf, "age", 33 );
   bson_from_buffer( b, buf );
+
+  bson *b = bson_new();
+  bson_append_string( buf, "name", "Joe" );
+  bson_append_int( buf, "age", 33 );
+  bson_finish( b );
+
+  mongo_insert( conn, b );
+
+  bson_destroy( b );
 
 Use the ``bson_append_new_oid()`` function to add an object id to your object.
 The server will add an object id to the ``_id`` field if it is not included explicitly.
