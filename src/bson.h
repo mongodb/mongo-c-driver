@@ -41,6 +41,15 @@ enum bson_validity_t {
     BSON_FIELD_INIT_DOLLAR = (1<<3) /**< Warning: key starts with '$' character. */
 };
 
+enum bson_binary_subtype_t {
+    BSON_BIN_BINARY = 0,
+    BSON_BIN_FUNC = 1,
+    BSON_BIN_BINARY_OLD = 2,
+    BSON_BIN_UUID = 3,
+    BSON_BIN_MD5 = 5,
+    BSON_BIN_USER = 128
+};
+
 typedef enum {
     BSON_EOO = 0,
     BSON_DOUBLE = 1,

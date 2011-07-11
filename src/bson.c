@@ -394,7 +394,7 @@ time_t bson_iterator_time_t(const bson_iterator * i){
 }
 
 int bson_iterator_bin_len( const bson_iterator * i ){
-    return (bson_iterator_bin_type(i) == 2) 
+    return (bson_iterator_bin_type(i) == BSON_BIN_BINARY_OLD )
         ? bson_iterator_int_raw( i ) - 4
         : bson_iterator_int_raw( i );
 }
@@ -402,8 +402,9 @@ int bson_iterator_bin_len( const bson_iterator * i ){
 char bson_iterator_bin_type( const bson_iterator * i ){
     return bson_iterator_value(i)[4];
 }
+
 const char * bson_iterator_bin_data( const bson_iterator * i ){
-  return (bson_iterator_bin_type( i ) == 2) 
+  return (bson_iterator_bin_type( i ) == BSON_BIN_BINARY_OLD ) 
     ? bson_iterator_value( i ) + 9
     : bson_iterator_value( i ) + 5;
 }
@@ -639,7 +640,7 @@ int bson_append_code_w_scope( bson_buffer * b, const char * name, const char * c
 }
 
 int bson_append_binary( bson_buffer * b, const char * name, char type, const char * str, int len ){
-    if ( type == 2 ){
+    if ( type == BSON_BIN_BINARY_OLD ){
         int subtwolen = len + 4;
         if ( bson_append_estart( b, BSON_BINDATA, name, 4+1+4+len ) == BSON_ERROR )
             return BSON_ERROR;

@@ -29,7 +29,7 @@ static bson * chunk_new(bson_oid_t id, int chunkNumber,
   bson_buffer_init(&buf);
   bson_append_oid(&buf, "files_id", &id);
   bson_append_int(&buf, "n", chunkNumber);
-  bson_append_binary(&buf, "data", 2, data, len);
+  bson_append_binary(&buf, "data", BSON_BIN_BINARY, data, len);
   bson_from_buffer(b, &buf);
   return  b;
 }
