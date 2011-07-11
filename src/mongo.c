@@ -666,10 +666,14 @@ int mongo_find_one(mongo_connection* conn, const char* ns, bson* query,
 int mongo_cursor_get_more(mongo_cursor* cursor){
     int res;
 
-    if( ! cursor->reply )
-        return MONGO_CURSOR_INVALID;
-    else if( ! cursor->reply->fields.cursorID )
-        return MONGO_CURSOR_EXHAUSTED;
+    if( ! cursor->reply ) {
+        cursor->err = MONGO_CURSOR_INVALID;
+        return MONGO_ERROR;
+    }
+    else if( ! cursor->reply->fields.cursorID ) {
+        cursor->err = MONGO_CURSOR_EXHAUSTED;
+        return MONGO_ERROR;
+    }
     else {
         mongo_connection* conn = cursor->conn;
         char* data;
@@ -689,15 +693,14 @@ int mongo_cursor_get_more(mongo_cursor* cursor){
         res = mongo_message_send(conn, mm);
         if( res != MONGO_OK ) {
             mongo_cursor_destroy(cursor);
-            return res;
+            return MONGO_ERROR;
         }
 
         free(cursor->reply);
         res = mongo_read_response( cursor->conn, &(cursor->reply) );
         if( res != MONGO_OK ) {
-            cursor->reply = NULL;
             mongo_cursor_destroy(cursor);
-            return res;
+            return MONGO_ERROR;
         }
 
         return MONGO_OK;
@@ -709,14 +712,6 @@ int mongo_cursor_next(mongo_cursor* cursor){
 
     if( !cursor->reply )
         return MONGO_ERROR;
-
-    /* If tailable but num is 0, we need to do a getmore. */
-    if ((cursor->options & MONGO_TAILABLE ) &&
-        cursor->reply->fields.num == 0 ) {
-
-        if( mongo_cursor_get_more(cursor) != MONGO_OK )
-            return MONGO_ERROR;
-    }
 
     /* no data */
     if ( cursor->reply->fields.num == 0 ) {
@@ -733,6 +728,7 @@ int mongo_cursor_next(mongo_cursor* cursor){
     if (bson_addr >= ((char*)cursor->reply + cursor->reply->head.len)){
         if( mongo_cursor_get_more(cursor) != MONGO_OK )
             return MONGO_ERROR;
+
         bson_init(&cursor->current, &cursor->reply->objs, 0);
     } else {
         bson_init(&cursor->current, bson_addr, 0);
