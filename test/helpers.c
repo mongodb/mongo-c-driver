@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-int test_index_helper( mongo_connection *conn ) {
+int test_index_helper( mongo *conn ) {
 
     bson_buffer bb;
     bson b, out;
@@ -41,7 +41,7 @@ int test_index_helper( mongo_connection *conn ) {
 
 int main() {
 
-    mongo_connection conn[1];
+    mongo conn[1];
 
     if( mongo_connect( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
         printf("Failed to connect");

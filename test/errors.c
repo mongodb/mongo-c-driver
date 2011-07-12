@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-static mongo_connection conn[1];
+static mongo conn[1];
 static const char* db = "test";
 static const char* ns = "test.c.error";
 

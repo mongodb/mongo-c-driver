@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 int main(){
-    mongo_connection conn[1];
+    mongo conn[1];
     bson_buffer bb;
     bson b;
     mongo_cursor * cursor;

@@ -49,7 +49,7 @@ typedef int socklen_t;
 
 MONGO_EXTERN_C_START
 
-int mongo_socket_connect( mongo_connection *conn, const char *host, int port );
+int mongo_socket_connect( mongo *conn, const char *host, int port );
 
 MONGO_EXTERN_C_END
 #endif

@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-int create_capped_collection( mongo_connection *conn ) {
+int create_capped_collection( mongo *conn ) {
     bson_buffer bb;
     bson b;
 
@@ -20,7 +20,7 @@ int create_capped_collection( mongo_connection *conn ) {
     ASSERT( mongo_run_command( conn, "test", &b, NULL ) == MONGO_OK );
 }
 
-int insert_sample_data( mongo_connection *conn, int n ) {
+int insert_sample_data( mongo *conn, int n ) {
     bson_buffer bb;
     bson b;
     int i;
@@ -38,11 +38,11 @@ int insert_sample_data( mongo_connection *conn, int n ) {
     }
 }
 
-int remove_sample_data( mongo_connection *conn ) {
+int remove_sample_data( mongo *conn ) {
     mongo_cmd_drop_collection( conn, "test", "cursors", NULL );
 }
 
-int test_multiple_getmore( mongo_connection *conn ) {
+int test_multiple_getmore( mongo *conn ) {
     mongo_cursor *cursor;
     bson b;
     int count;
@@ -65,7 +65,7 @@ int test_multiple_getmore( mongo_connection *conn ) {
     return 0;
 }
 
-int test_tailable( mongo_connection *conn ) {
+int test_tailable( mongo *conn ) {
     mongo_cursor *cursor;
     bson_buffer bb;
     bson b, q;
@@ -112,7 +112,7 @@ int test_tailable( mongo_connection *conn ) {
 
 int main() {
 
-    mongo_connection conn[1];
+    mongo conn[1];
     bson_buffer bb;
     bson b;
     int res;

@@ -30,7 +30,7 @@ typedef uint64_t gridfs_offset;
    optional prefix */
 typedef struct {
   /* The client to db-connection. */
-  mongo_connection* client;
+  mongo* client;
   /* The root database name */
   const char* dbname;
   /* The prefix of the GridFS's collections, default is NULL */
@@ -81,7 +81,7 @@ typedef struct {
  *  @param gfs - the GridFS object to initialize
  *  @return - 1 if successful, 0 otherwise
  */
-int gridfs_init(mongo_connection* client, const char* dbname,
+int gridfs_init(mongo* client, const char* dbname,
   const char* prefix, gridfs* gfs);
 
 /** Destroys a GridFS object

@@ -57,7 +57,7 @@ static void chunk_free(bson * oChunk)
 
 /*--------------------------------------------------------------------*/
 
-int gridfs_init(mongo_connection * client, const char * dbname,
+int gridfs_init(mongo * client, const char * dbname,
     const char * prefix, gridfs* gfs)
 {
   int options;

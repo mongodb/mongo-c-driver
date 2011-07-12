@@ -18,7 +18,7 @@
 #include "net.h"
 #include <string.h>
 
-static int mongo_create_socket( mongo_connection *conn ) {
+static int mongo_create_socket( mongo *conn ) {
     int fd;
 
     if( ( fd = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) {
@@ -30,7 +30,7 @@ static int mongo_create_socket( mongo_connection *conn ) {
     return MONGO_OK;
 }
 
-static int mongo_set_blocking_status( mongo_connection *conn ) {
+static int mongo_set_blocking_status( mongo *conn ) {
     int flags;
     int blocking;
 
@@ -59,7 +59,7 @@ static int mongo_set_blocking_status( mongo_connection *conn ) {
 }
 
 #ifdef _MONGO_USE_GETADDRINFO
-int mongo_socket_connect( mongo_connection * conn, const char * host, int port ){
+int mongo_socket_connect( mongo * conn, const char * host, int port ){
 
     struct addrinfo* addrs = NULL;
     struct addrinfo hints;
@@ -100,7 +100,7 @@ int mongo_socket_connect( mongo_connection * conn, const char * host, int port )
     return MONGO_OK;
 }
 #else
-int mongo_socket_connect( mongo_connection * conn, const char * host, int port ){
+int mongo_socket_connect( mongo * conn, const char * host, int port ){
     struct sockaddr_in sa;
     socklen_t addressSize;
     int flag = 1;
