@@ -26,7 +26,7 @@ Let's make a tutorial.c file that connects to the database:
     #include "mongo.h"
 
     int main() {
-      mongo *conn = mongo_new();
+      mongo conn[1];
       status = mongo_connect( conn, "localhost", 27017 );
 
       if( status != MONGO_OK ) {
@@ -57,7 +57,7 @@ and finally you connect. Here's an example:
     #include "mongo.h"
 
     int main() {
-      mongo *conn = mongo_new();
+      mongo conn[1];
 
       mongo_replset_add_seed( "10.4.3.22", 27017 );
       mongo_replset_add_seed( "10.4.3.32", 27017 );
@@ -102,16 +102,10 @@ Let's now create a BSON "person" object which contains name and age. We might in
 .. code-block:: c
 
   bson b[1];
-  bson_buffer buf[1];
 
-  bson_buffer_init( buf )
-  bson_append_string( buf, "name", "Joe" );
-  bson_append_int( buf, "age", 33 );
-  bson_from_buffer( b, buf );
-
-  bson *b = bson_new();
-  bson_append_string( buf, "name", "Joe" );
-  bson_append_int( buf, "age", 33 );
+  bson_init( b )
+  bson_append_string( b, "name", "Joe" );
+  bson_append_int( b, "age", 33 );
   bson_finish( b );
 
   mongo_insert( conn, b );
@@ -124,13 +118,12 @@ The server will add an object id to the ``_id`` field if it is not included expl
 .. code-block:: c
 
     bson b[1];
-    bson_buffer buf[1];
 
-    bson_buffer_init( buf );
-    bson_append_new_oid( buf, "_id" );
-    bson_append_string( buf, "name", "Joe" );
-    bson_append_int( buf, "age", 33 );
-    bson_from_buffer( b, buf );
+    bson_init( b );
+    bson_append_new_oid( b, "_id" );
+    bson_append_string( b, "name", "Joe" );
+    bson_append_int( b, "age", 33 );
+    bson_finish( b );
 
 ``bson_buffer_new_oid( ..., "_id" )`` should be at the beginning of the generated object.
 
@@ -164,7 +157,6 @@ We can do batch inserts as well:
 
     static void tutorial_insert_batch( mongo_connection *conn ) {
       bson *p, **ps;
-      bson_buffer *p_buf;
       char *names[4];
       int ages[] = { 29, 24, 24, 32 };
       int i, n = 4;
@@ -174,14 +166,12 @@ We can do batch inserts as well:
 
       for ( i = 0; i < n; i++ ) {
         p = ( bson * )malloc( sizeof( bson ) );
-        p_buf = ( bson_buffer * )malloc( sizeof( bson_buffer ) );
-        bson_buffer_init( p_buf );
+        bson_init( p );
         bson_append_new_oid( p_buf, "_id" );
         bson_append_string( p_buf, "name", names[i] );
         bson_append_int( p_buf, "age", ages[i] );
-        bson_from_buffer( p, p_buf );
+        bson_finish( p );
         ps[i] = p;
-        free( p_buf );
       }
 
       mongo_insert_batch( conn, "tutorial.persons", ps, n );
@@ -227,10 +217,9 @@ whose age is a given value:
 
     static void tutorial_simple_query( mongo_connection *conn ) {
       bson query[1];
-      bson_buffer query_buf[1];
       mongo_cursor *cursor;
 
-      bson_buffer_init( query_buf );
+      bson_init( query );
       bson_append_int( query_buf, "age", 24 );
       bson_from_buffer( query, query_buf );
 
@@ -243,6 +232,7 @@ whose age is a given value:
       }
 
       bson_destroy( query );
+      mongo_cursor_destroy( cursor );
     }
 
 Our query above, written as JSON, is of the form
@@ -269,23 +259,23 @@ To do this, we change the query statement from:
 
 .. code-block:: c
 
-    bson_buffer_init( query_buf );
-    bson_append_int( query_buf, "age", 24 );
-    bson_from_buffer( query, query_buf );
+    bson_init( query );
+    bson_append_int( query, "age", 24 );
+    bson_finish( query );
 
 to:
 
 .. code-block:: c
 
-    bson_buffer_init( query_buf );
-      bson_append_start_object( query_buf, "$query" );
-        bson_append_int( query_buf, "age", 24 );
-      bson_append_finish_object( query_buf );
+    bson_init( query );
+      bson_append_start_object( query, "$query" );
+        bson_append_int( query, "age", 24 );
+      bson_append_finish_object( query );
 
-      bson_append_start_object( query_buf, "$orderby" );
-        bson_append_int( query_buf, "name", 1);
-      bson_append_finish_object( query_buf );
-    bson_from_buffer( query, query_buf );
+      bson_append_start_object( query, "$orderby" );
+        bson_append_int( query, "name", 1);
+      bson_append_finish_object( query );
+    bson_from_buffer( query, query );
 
 Indexing
 --------
@@ -297,11 +287,10 @@ how we can create that index:
 
     static void tutorial_index( mongo_connection *conn ) {
       bson key[1];
-      bson_buffer key_buf[1];
 
-      bson_buffer_init( key_buf );
-      bson_append_int( key_buf, "name", 1 );
-      bson_from_buffer( key, key_buf );
+      bson_init( key );
+      bson_append_int( key, "name", 1 );
+      bson_finish( key );
 
       mongo_create_index( conn, "tutorial.persons", key, 0, NULL );
 
@@ -309,10 +298,10 @@ how we can create that index:
 
       printf( "simple index created on \"name\"\n" );
 
-      bson_buffer_init( key_buf );
-      bson_append_int( key_buf, "age", 1 );
-      bson_append_int( key_buf, "name", 1 );
-      bson_from_buffer( key, key_buf );
+      bson_init( key );
+      bson_append_int( key, "age", 1 );
+      bson_append_int( key, "name", 1 );
+      bson_finish( key );
 
       mongo_create_index( conn, "tutorial.persons", key, 0, NULL );
 
@@ -340,18 +329,17 @@ is equivalent to the following C function:
 
     static void tutorial_update( mongo_connection *conn ) {
       bson cond[1], op[1];
-      bson_buffer cond_buf[1], op_buf[1];
 
-      bson_buffer_init( cond_buf );
-      bson_append_string( cond_buf, "name", "Joe");
-      bson_append_int( cond_buf, "age", 33);
-      bson_from_buffer( cond, cond_buf );
+      bson_init( cond );
+      bson_append_string( cond, "name", "Joe");
+      bson_append_int( cond, "age", 33);
+      bson_finish( cond );
 
-      bson_buffer_init( op_buf );
-      bson_append_start_object( op_buf, "$inc" );
-      bson_append_int( op_buf, "visits", 1 );
-      bson_append_finish_object( op_buf );
-      bson_from_buffer( op, op_buf );
+      bson_init( op );
+      bson_append_start_object( op, "$inc" );
+        bson_append_int( op, "visits", 1 );
+      bson_append_finish_object( op );
+      bson_finish( op );
 
       mongo_update(conn, "tutorial.persons", cond, op, 0);
 
