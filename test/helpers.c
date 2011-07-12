@@ -41,7 +41,7 @@ int test_index_helper( mongo *conn ) {
 
 int main() {
 
-    mongo conn[1];
+    mongo *conn = mongo_new();
 
     if( mongo_connect( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
         printf("Failed to connect");

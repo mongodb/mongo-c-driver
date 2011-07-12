@@ -93,7 +93,7 @@ void test_gridfile(gridfs *gfs, char *data_before, uint64_t length, char *filena
 }
 
 void test_basic() {
-    mongo conn[1];
+    mongo *conn = mongo_new();
     gridfs gfs[1];
     char *data_before = malloc( UPPER );
     if( data_before == NULL ) {
@@ -136,7 +136,7 @@ void test_basic() {
 }
 
 void test_streaming() {
-    mongo conn[1];
+    mongo *conn = mongo_new();
     gridfs gfs[1];
     gridfile gfile[1];
     char *buf = malloc( LARGE );
@@ -180,7 +180,7 @@ void test_streaming() {
 }
 
 void test_large() {
-    mongo conn[1];
+    mongo *conn = mongo_new();
     gridfs gfs[1];
     gridfile gfile[1];
     FILE *fd;

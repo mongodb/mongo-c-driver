@@ -147,8 +147,10 @@ typedef struct {
 
 /* Connection API */
 
-/** Get a pointer to a new mongo connection object.
+/** Get a pointer to a new mongo connection object. When finished,
+ *  you must pass this object to mongo_destroy( ).
  *
+ *  @return a mongo connection object.
  */
 mongo *mongo_new( void );
 
@@ -165,15 +167,16 @@ mongo *mongo_new( void );
 int mongo_connect( mongo * conn , const char* host, int port );
 
 /**
- * Initialize a connection object for connecting with a replica set.
+ * Set up this connection object for connecting to a replica set.
+ * To connect, pass the object to mongo_replset_connect().
  *
  * @param conn a mongo object.
  * @param name the name of the replica set to connect to.
  * */
-void mongo_replset_init_conn( mongo* conn, const char* name );
+void mongo_set_replset( mongo *conn, const char *name );
 
 /**
- * Add a seed node to the connection object.
+ * Add a seed node to the replica set connection object.
  *
  * You must specify at least one seed node before connecting to a replica set.
  *
@@ -187,7 +190,7 @@ void mongo_replset_add_seed( mongo* conn, const char* host, int port );
  * Connect to a replica set.
  *
  * Before passing a connection object to this method, you must already have called
- * mongo_replset_init_conn and mongo_replset_add_seed.
+ * mongo_set_replset and mongo_replset_add_seed.
  *
  * @param conn a mongo object.
  *
@@ -220,7 +223,9 @@ int mongo_conn_set_timeout( mongo *conn, int millis );
 int mongo_reconnect( mongo * conn );
 
 /**
- * Close the current connection to the server.
+ * Close the current connection to the server. After calling
+ * this function, you may call mongo_reconnect with the same
+ * connection object.
  *
  * @param conn a mongo object.
  */

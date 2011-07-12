@@ -13,7 +13,7 @@
 
 int test_connect( const char* set_name ) {
 
-    mongo conn[1];
+    mongo *conn = mongo_new();
     int res;
 
     INIT_SOCKETS_FOR_WINDOWS;
@@ -34,7 +34,7 @@ int test_connect( const char* set_name ) {
 
 int test_reconnect( const char* set_name ) {
 
-    mongo conn[1];
+    mongo *conn = mongo_new();
     int res;
     int e = 0;
     bson b;

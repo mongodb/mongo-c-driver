@@ -4,11 +4,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-static mongo conn[1];
 static const char* db = "test";
 static const char* ns = "test.c.error";
 
 int main(){
+    mongo *conn = mongo_new();
     bson obj;
 
     INIT_SOCKETS_FOR_WINDOWS;

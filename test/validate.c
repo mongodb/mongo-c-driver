@@ -18,7 +18,7 @@ static void make_small_invalid( bson * out, int i ) {
 }
 
 int main() {
-    mongo conn[1];
+    mongo *conn = mongo_new();
     bson_buffer bb;
     bson b, empty;
     unsigned char not_utf8[3];

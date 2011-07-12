@@ -23,7 +23,7 @@
 #define PER_TRIAL 5000
 #define BATCH_SIZE  100
 
-static mongo conn[1];
+static mongo *conn = mongo_new();
 
 static void make_small(bson * out, int i){
     bson_buffer bb;

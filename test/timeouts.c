@@ -9,7 +9,7 @@
 
 int main() {
 
-    mongo conn[1];
+    mongo *conn = mongo_new();
     bson_buffer bb;
     bson b;
     int res;
