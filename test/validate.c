@@ -10,22 +10,20 @@
 #define BATCH_SIZE 10
 
 static void make_small_invalid( bson * out, int i ) {
-    bson_buffer bb;
-    bson_buffer_init(&bb);
-    bson_append_new_oid(&bb, "$_id");
-    bson_append_int(&bb, "x.foo", i);
-    bson_from_buffer(out, &bb);
+    bson_init(out);
+    bson_append_new_oid(out, "$_id");
+    bson_append_int(out, "x.foo", i);
+    bson_finish(out);
 }
 
 int main() {
-    mongo *conn = mongo_new();
-    bson_buffer bb;
+    mongo conn[1];
     bson b, empty;
     unsigned char not_utf8[3];
     int result = 0;
     const char * ns = "test.c.validate";
 
-    int i, j;
+    int i=0, j=0;
     bson bs[BATCH_SIZE];
     bson *bp[BATCH_SIZE];
 
@@ -41,25 +39,25 @@ int main() {
     }
 
     /* Test valid keys. */
-    bson_buffer_init( & bb );
-    result = bson_append_string( &bb , "a.b" , "17" );
+    bson_init( &b );
+    result = bson_append_string( &b , "a.b" , "17" );
     ASSERT( result == BSON_OK );
 
-    ASSERT( bb.err & BSON_FIELD_HAS_DOT );
+    ASSERT( b.err & BSON_FIELD_HAS_DOT );
 
-    result = bson_append_string( &bb , "$ab" , "17" );
+    result = bson_append_string( &b , "$ab" , "17" );
     ASSERT( result == BSON_OK );
-    ASSERT( bb.err & BSON_FIELD_INIT_DOLLAR );
+    ASSERT( b.err & BSON_FIELD_INIT_DOLLAR );
 
-    result = bson_append_string( &bb , "ab" , "this is valid utf8" );
+    result = bson_append_string( &b , "ab" , "this is valid utf8" );
     ASSERT( result == BSON_OK );
-    ASSERT( ! (bb.err & BSON_NOT_UTF8 ) );
+    ASSERT( ! (b.err & BSON_NOT_UTF8 ) );
 
-    result = bson_append_string( &bb , (const char*)not_utf8, "valid" );
+    result = bson_append_string( &b , (const char*)not_utf8, "valid" );
     ASSERT( result == BSON_ERROR );
-    ASSERT( bb.err & BSON_NOT_UTF8 );
+    ASSERT( b.err & BSON_NOT_UTF8 );
 
-    bson_from_buffer(&b, &bb);
+    bson_finish(&b);
     ASSERT( b.err & BSON_FIELD_HAS_DOT );
     ASSERT( b.err & BSON_FIELD_INIT_DOLLAR );
     ASSERT( b.err & BSON_NOT_UTF8 );
@@ -75,21 +73,21 @@ int main() {
     bson_destroy(&b);
 
     /* Test valid strings. */
-    bson_buffer_init( & bb );
-    result = bson_append_string( &bb , "foo" , "bar" );
+    bson_init( & b );
+    result = bson_append_string( &b , "foo" , "bar" );
     ASSERT( result == BSON_OK );
-    ASSERT( bb.err == 0 );
+    ASSERT( b.err == 0 );
 
-    result = bson_append_string( &bb , "foo" , (const char*)not_utf8 );
+    result = bson_append_string( &b , "foo" , (const char*)not_utf8 );
     ASSERT( result == BSON_ERROR );
-    ASSERT( bb.err & BSON_NOT_UTF8 );
+    ASSERT( b.err & BSON_NOT_UTF8 );
 
-    bb.err = 0;
-    ASSERT( bb.err == 0 );
+    b.err = 0;
+    ASSERT( b.err == 0 );
 
-    result = bson_append_regex( &bb , "foo" , (const char*)not_utf8, "s" );
+    result = bson_append_regex( &b , "foo" , (const char*)not_utf8, "s" );
     ASSERT( result == BSON_ERROR );
-    ASSERT( bb.err & BSON_NOT_UTF8 );
+    ASSERT( b.err & BSON_NOT_UTF8 );
 
     for (j=0; j < BATCH_SIZE; j++)
         bp[j] = &bs[j];

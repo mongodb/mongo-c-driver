@@ -7,30 +7,30 @@
 #include <stdlib.h>
 #include <time.h>
 
-int create_capped_collection( mongo *conn ) {
-    bson_buffer bb;
+void create_capped_collection( mongo *conn ) {
     bson b;
 
-    bson_buffer_init( &bb );
-    bson_append_string( &bb, "create", "cursors" );
-    bson_append_bool( &bb, "capped", 1 );
-    bson_append_int( &bb, "size", 1000000 );
-    bson_from_buffer( &b, &bb );
+    bson_init( &b );
+    bson_append_string( &b, "create", "cursors" );
+    bson_append_bool( &b, "capped", 1 );
+    bson_append_int( &b, "size", 1000000 );
+    bson_finish( &b );
 
     ASSERT( mongo_run_command( conn, "test", &b, NULL ) == MONGO_OK );
+
+    bson_destroy( &b );
 }
 
-int insert_sample_data( mongo *conn, int n ) {
-    bson_buffer bb;
+void insert_sample_data( mongo *conn, int n ) {
     bson b;
     int i;
 
     create_capped_collection( conn );
 
     for( i=0; i<n; i++ ) {
-        bson_buffer_init( &bb );
-        bson_append_int( &bb, "a", i );
-        bson_from_buffer( &b, &bb );
+        bson_init( &b );
+        bson_append_int( &b, "a", i );
+        bson_finish( &b );
 
         mongo_insert( conn, "test.cursors", &b );
 
@@ -38,7 +38,7 @@ int insert_sample_data( mongo *conn, int n ) {
     }
 }
 
-int remove_sample_data( mongo *conn ) {
+void remove_sample_data( mongo *conn ) {
     mongo_cmd_drop_collection( conn, "test", "cursors", NULL );
 }
 
@@ -67,21 +67,21 @@ int test_multiple_getmore( mongo *conn ) {
 
 int test_tailable( mongo *conn ) {
     mongo_cursor *cursor;
-    bson_buffer bb;
-    bson b, q;
+    bson b, e;
     int count;
 
     insert_sample_data( conn, 10000 );
 
-    bson_buffer_init( &bb );
-    bson_append_start_object( &bb, "$query" );
-    bson_append_finish_object( &bb );
-    bson_append_start_object( &bb, "$sort" );
-    bson_append_int( &bb, "$natural", -1 );
-    bson_append_finish_object( &bb );
-    bson_from_buffer( &q, &bb );
+    bson_init( &b );
+    bson_append_start_object( &b, "$query" );
+    bson_append_finish_object( &b );
+    bson_append_start_object( &b, "$sort" );
+    bson_append_int( &b, "$natural", -1 );
+    bson_append_finish_object( &b );
+    bson_finish( &b );
 
-    cursor = mongo_find( conn, "test.cursors", &q, bson_empty( &b ), 0, 0, MONGO_TAILABLE );
+    cursor = mongo_find( conn, "test.cursors", &b, bson_empty( &e ), 0, 0, MONGO_TAILABLE );
+    bson_destroy( &b );
 
     count = 0;
     while( mongo_cursor_next( cursor ) == MONGO_OK )
@@ -112,11 +112,7 @@ int test_tailable( mongo *conn ) {
 
 int main() {
 
-    mongo *conn = mongo_new();
-    bson_buffer bb;
-    bson b;
-    int res;
-    time_t t1, t2;
+    mongo conn[1];
 
     if( mongo_connect( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
         printf("Failed to connect");
@@ -127,5 +123,6 @@ int main() {
     test_multiple_getmore( conn );
     test_tailable( conn );
 
+    mongo_destroy( conn );
     return 0;
 }

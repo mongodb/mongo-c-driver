@@ -7,8 +7,7 @@
 #include <stdlib.h>
 
 int main(){
-    mongo *conn = mongo_new();
-    bson_buffer bb;
+    mongo conn[1];
     bson b;
     mongo_cursor * cursor;
     int i;
@@ -60,29 +59,29 @@ int main(){
     mongo_find_one(conn, ns, bson_empty(&b), bson_empty(&b), NULL);
 
     for(i=0; i< 5; i++){
-        bson_buffer_init( & bb );
+        bson_init( &b );
 
-        bson_append_new_oid( &bb, "_id" );
-        bson_append_timestamp( &bb, "ts", &ts );
-        bson_append_double( &bb , "a" , 17 );
-        bson_append_int( &bb , "b" , 17 );
-        bson_append_string( &bb , "c" , "17" );
+        bson_append_new_oid( &b, "_id" );
+        bson_append_timestamp( &b, "ts", &ts );
+        bson_append_double( &b , "a" , 17 );
+        bson_append_int( &b , "b" , 17 );
+        bson_append_string( &b , "c" , "17" );
 
         {
-            bson_append_start_object(  &bb , "d" );
-                bson_append_int( &bb, "i", 71 );
-            bson_append_finish_object( &bb );
+            bson_append_start_object(  &b , "d" );
+                bson_append_int( &b, "i", 71 );
+            bson_append_finish_object( &b );
         }
         {
-            bson_append_start_array(  &bb , "e" );
-                bson_append_int( &bb, "0", 71 );
-                bson_append_string( &bb, "1", "71" );
-            bson_append_finish_object( &bb );
+            bson_append_start_array(  &b , "e" );
+                bson_append_int( &b, "0", 71 );
+                bson_append_string( &b, "1", "71" );
+            bson_append_finish_object( &b );
         }
 
-        bson_from_buffer(&b, &bb);
+        bson_finish(&b);
         mongo_insert( conn , ns , &b );
-        bson_destroy(&b);
+        bson_destroy( &b );
     }
 
     cursor = mongo_find( conn , ns , bson_empty(&b) , 0 , 0 , 0 , 0 );

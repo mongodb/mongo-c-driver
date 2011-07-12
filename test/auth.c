@@ -8,9 +8,10 @@ static const char* db = "test";
 
 int main(){
 
+    mongo conn[1];
+
     INIT_SOCKETS_FOR_WINDOWS;
 
-    mongo *conn = mongo_new();
     if (mongo_connect( conn , TEST_SERVER, 27017 )){
         printf("failed to connect\n");
         exit(1);

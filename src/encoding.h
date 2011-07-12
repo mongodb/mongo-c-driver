@@ -21,11 +21,11 @@ MONGO_EXTERN_C_START
 
 /**
  * Check that a field name is valid UTF8, does not start with a '$',
- * and contains no '.' characters. Set buffer bit field appropriately.
+ * and contains no '.' characters. Set bson bit field appropriately.
  * Note that we don't need to check for '\0' because we're using
  * strlen(3), which stops at '\0'.
  *
- * @param b The bson_buffer to which field name will be appended.
+ * @param b The bson object to which field name will be appended.
  * @param string The field name as char*.
  * @param length The length of the field name.
  *
@@ -34,20 +34,20 @@ MONGO_EXTERN_C_START
  *     contains '.' or starts with '$', since the validity of this depends on context.
  *     Set the value of b->err appropriately.
  */
-int bson_check_field_name( bson_buffer* b, const char* string,
+int bson_check_field_name( bson* b, const char* string,
     const int length );
 
 /**
  * Check that a string is valid UTF8. Sets the buffer bit field appropriately.
  *
- * @param b The bson_buffer to which string will be appended.
+ * @param b The bson object to which string will be appended.
  * @param string The string to check.
  * @param length The length of the string.
  *
  * @return BSON_OK if valid UTF-8; otherwise, BSON_ERROR.
  *     Sets b->err on error.
  */
-bson_bool_t bson_check_string( bson_buffer* b, const char* string,
+bson_bool_t bson_check_string( bson* b, const char* string,
     const int length );
 
 MONGO_EXTERN_C_END

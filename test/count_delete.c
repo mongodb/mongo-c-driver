@@ -7,8 +7,7 @@
 #include <stdlib.h>
 
 int main(){
-    mongo *conn = mongo_new();
-    bson_buffer bb;
+    mongo conn[1];
     bson b;
     int i;
 
@@ -31,25 +30,25 @@ int main(){
     }
 
     for(i=0; i< 5; i++){
-        bson_buffer_init( & bb );
+        bson_init( &b );
 
-        bson_append_new_oid( &bb, "_id" );
-        bson_append_int( &bb , "a" , i+1 ); /* 1 to 5 */
-        bson_from_buffer(&b, &bb);
+        bson_append_new_oid( &b, "_id" );
+        bson_append_int( &b , "a" , i+1 ); /* 1 to 5 */
+        bson_finish(&b);
 
         mongo_insert( conn , ns , &b );
         bson_destroy(&b);
     }
 
     /* query: {a: {$gt: 3}} */
-    bson_buffer_init( & bb );
+    bson_init( &b );
     {
-        bson_append_start_object(&bb, "a");
-            bson_append_int(&bb, "$gt", 3);
-        bson_append_finish_object(&bb);
+        bson_append_start_object(&b, "a");
+            bson_append_int(&b, "$gt", 3);
+        bson_append_finish_object(&b);
     }
-    bson_from_buffer(&b, &bb);
-    
+    bson_finish(&b);
+
     ASSERT(mongo_count(conn, db, col, NULL) == 5);
     ASSERT(mongo_count(conn, db, col, &b) == 2);
 
@@ -58,6 +57,7 @@ int main(){
     ASSERT(mongo_count(conn, db, col, NULL) == 3);
     ASSERT(mongo_count(conn, db, col, &b) == 0);
 
+    bson_destroy( &b );
     mongo_cmd_drop_db(conn, db);
     mongo_destroy(conn);
     return 0;

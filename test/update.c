@@ -5,8 +5,7 @@
 #include <stdlib.h>
 
 int main(){
-    mongo *conn = mongo_new();
-    bson_buffer bb;
+    mongo conn[1];
     bson obj;
     bson cond;
     int i;
@@ -31,10 +30,10 @@ int main(){
     bson_oid_gen(&oid);
 
     { /* insert */
-        bson_buffer_init(&bb);
-        bson_append_oid(&bb, "_id", &oid);
-        bson_append_int(&bb, "a", 3 );
-        bson_from_buffer(&obj, &bb);
+        bson_init(&obj);
+        bson_append_oid(&obj, "_id", &oid);
+        bson_append_int(&obj, "a", 3 );
+        bson_finish(&obj);
         mongo_insert(conn, ns, &obj);
         bson_destroy(&obj);
     }
@@ -42,22 +41,22 @@ int main(){
     { /* insert */
         bson op;
 
-        bson_buffer_init(&bb);
-        bson_append_oid(&bb, "_id", &oid);
-        bson_from_buffer(&cond, &bb);
+        bson_init(&cond);
+        bson_append_oid(&cond, "_id", &oid);
+        bson_finish(&cond);
 
-        bson_buffer_init(&bb);
+        bson_init(&op);
         {
-            bson_append_start_object(&bb, "$inc");
-                bson_append_int(&bb, "a", 2 );
-            bson_append_finish_object(&bb);
+            bson_append_start_object(&op, "$inc");
+                bson_append_int(&op, "a", 2 );
+            bson_append_finish_object(&op);
         }
         {
-            bson_append_start_object(&bb, "$set");
-                bson_append_double(&bb, "b", -1.5 );
-            bson_append_finish_object(&bb);
+            bson_append_start_object(&op, "$set");
+                bson_append_double(&op, "b", -1.5 );
+            bson_append_finish_object(&op);
         }
-        bson_from_buffer(&op, &bb);
+        bson_finish(&op);
 
         for (i=0; i<5; i++)
             mongo_update(conn, ns, &cond, &op, 0);

@@ -5,7 +5,6 @@
 #include <stdlib.h>
 
 int main(){
-    bson_buffer bb;
     bson b, sub;
     bson_iterator it;
 
@@ -34,33 +33,30 @@ int main(){
      *   total: 2298
      * }
      */
-    bson_buffer_init( &bb );
-    bson_append_new_oid( &bb, "_id" );
-    bson_append_new_oid( &bb, "user_id" );
+    bson_init( &b );
+    bson_append_new_oid( &b, "_id" );
+    bson_append_new_oid( &b, "user_id" );
 
-    bson_append_start_array( &bb, "items" );
-        bson_append_start_object( &bb, "0" );
-            bson_append_string( &bb, "name", "John Coltrane: Impressions" );
-            bson_append_int( &bb, "price", 1099 );
-        bson_append_finish_object( &bb );
+    bson_append_start_array( &b, "items" );
+        bson_append_start_object( &b, "0" );
+            bson_append_string( &b, "name", "John Coltrane: Impressions" );
+            bson_append_int( &b, "price", 1099 );
+        bson_append_finish_object( &b );
 
-        bson_append_start_object( &bb, "1" );
-            bson_append_string( &bb, "name", "Larry Young: Unity" );
-            bson_append_int( &bb, "price", 1199 );
-        bson_append_finish_object( &bb );
-    bson_append_finish_object( &bb );
+        bson_append_start_object( &b, "1" );
+            bson_append_string( &b, "name", "Larry Young: Unity" );
+            bson_append_int( &b, "price", 1199 );
+        bson_append_finish_object( &b );
+    bson_append_finish_object( &b );
 
-    bson_append_start_object( &bb, "address" );
-        bson_append_string( &bb, "street", "59 18th St." );
-        bson_append_int( &bb, "zip", 10010 );
-    bson_append_finish_object( &bb );
+    bson_append_start_object( &b, "address" );
+        bson_append_string( &b, "street", "59 18th St." );
+        bson_append_int( &b, "zip", 10010 );
+    bson_append_finish_object( &b );
 
-    bson_append_int( &bb, "total", 2298 );
+    bson_append_int( &b, "total", 2298 );
 
-    /* Convert from a buffer to a raw BSON object that
-     * can be sent to the server:
-     */
-    bson_from_buffer( &b, &bb );
+    bson_finish( &b );
 
     /* Advance to the 'items' array */
     bson_find( &it, &b, "items" );

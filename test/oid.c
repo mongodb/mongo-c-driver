@@ -20,8 +20,6 @@ int fuzz() {
 /* Test custom increment and fuzz functions. */
 int main() {
 
-    bson_buffer bb;
-    bson b;
     bson_oid_t o;
     int res;
 

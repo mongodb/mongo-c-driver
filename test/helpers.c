@@ -9,25 +9,23 @@
 
 int test_index_helper( mongo *conn ) {
 
-    bson_buffer bb;
     bson b, out;
-    mongo_cursor c;
     bson_iterator it;
 
-    bson_buffer_init( &bb );
-    bson_append_int( &bb, "foo", 1 );
-    bson_from_buffer( &b, &bb );
+    bson_init( &b );
+    bson_append_int( &b, "foo", 1 );
+    bson_finish( &b );
 
     mongo_create_index( conn, "test.bar", &b, MONGO_INDEX_SPARSE | MONGO_INDEX_UNIQUE, &out );
 
     bson_destroy( &b );
 
-    bson_buffer_init( &bb );
-    bson_append_start_object( &bb, "key" );
-        bson_append_int( &bb, "foo", 1 );
-    bson_append_finish_object( &bb );
+    bson_init( &b );
+    bson_append_start_object( &b, "key" );
+        bson_append_int( &b, "foo", 1 );
+    bson_append_finish_object( &b );
 
-    bson_from_buffer( &b, &bb );
+    bson_finish( &b );
 
     mongo_find_one( conn, "test.system.indexes", &b, NULL, &out );
 
@@ -41,7 +39,7 @@ int test_index_helper( mongo *conn ) {
 
 int main() {
 
-    mongo *conn = mongo_new();
+    mongo conn[1];
 
     if( mongo_connect( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
         printf("Failed to connect");

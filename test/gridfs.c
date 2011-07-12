@@ -37,17 +37,13 @@ static void digest2hex(mongo_md5_byte_t digest[16], char hex_digest[33]){
 
 void test_gridfile(gridfs *gfs, char *data_before, uint64_t length, char *filename, char *content_type) {
     gridfile gfile[1];
-    char *data_after = malloc( LARGE );
-    if( data_after == NULL ) {
-        printf("Failed to allocated memory");
-        exit(1);
-    }
     FILE * fd;
     mongo_md5_state_t pms[1];
     mongo_md5_byte_t digest[16];
     char hex_digest[33];
     uint64_t i = length;
     int n;
+    char *data_after = bson_malloc( LARGE );
 
     gridfs_find_filename(gfs, filename, gfile);
     ASSERT(gridfile_exists(gfile));
@@ -93,13 +89,9 @@ void test_gridfile(gridfs *gfs, char *data_before, uint64_t length, char *filena
 }
 
 void test_basic() {
-    mongo *conn = mongo_new();
+    mongo conn[1];
     gridfs gfs[1];
-    char *data_before = malloc( UPPER );
-    if( data_before == NULL ) {
-        printf("Failed to allocate");
-        exit(1);
-    }
+    char *data_before = bson_malloc( UPPER );
     uint64_t i;
     FILE *fd;
 
@@ -136,16 +128,17 @@ void test_basic() {
 }
 
 void test_streaming() {
-    mongo *conn = mongo_new();
+    mongo conn[1];
     gridfs gfs[1];
     gridfile gfile[1];
-    char *buf = malloc( LARGE );
-    char *small = malloc( LOWER );
+    char *buf = bson_malloc( LARGE );
+    char *small = bson_malloc( LOWER );
+    int n;
+
     if( buf == NULL || small == NULL ) {
         printf("Failed to allocate");
         exit(1);
     }
-    int n;
 
     srand(time(NULL));
 
@@ -180,16 +173,12 @@ void test_streaming() {
 }
 
 void test_large() {
-    mongo *conn = mongo_new();
+    mongo conn[1];
     gridfs gfs[1];
     gridfile gfile[1];
     FILE *fd;
     int i, n;
-    char *buffer = malloc( LARGE );
-    if( buffer == NULL ) {
-        printf("Failed to allocate memory.");
-        exit(1);
-    }
+    char *buffer = bson_malloc( LARGE );
     uint64_t filesize = (uint64_t)1024 * (uint64_t)LARGE;
 
     srand(time(NULL));

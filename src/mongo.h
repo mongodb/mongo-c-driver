@@ -147,12 +147,17 @@ typedef struct {
 
 /* Connection API */
 
-/** Get a pointer to a new mongo connection object. When finished,
- *  you must pass this object to mongo_destroy( ).
+/** Initialize a new mongo connection object. If not created
+ *  with mongo_new, you must initialize each mongo
+ *  object using this function.
  *
- *  @return a mongo connection object.
+ *  @note When finished, you must pass this object to
+ *      mongo_destroy( ).
+ *
+ *  @param conn a mongo connection object allocated on the stack
+ *      or heap.
  */
-mongo *mongo_new( void );
+void mongo_init( mongo *conn );
 
 /**
  * Connect to a single MongoDB server.

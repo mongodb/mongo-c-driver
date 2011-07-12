@@ -58,9 +58,9 @@ typedef struct {
   /* The files_id of the gridfile */
   bson_oid_t id;
   /* The name of the gridfile as a string */
-  const char* remote_name;
+  char* remote_name;
   /* The gridfile's content type */
-  const char* content_type;
+  char* content_type;
   /* The length of this gridfile */
   gridfs_offset length;
   /* The number of the current chunk being written to */

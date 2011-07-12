@@ -5,64 +5,63 @@
 #include <stdlib.h>
 
 int main(){
-    bson_buffer bb;
-    bson b;
     bson_iterator it, it2, it3;
     bson_oid_t oid;
     bson_timestamp_t ts;
     bson_timestamp_t ts_result;
+    bson b[1];
+    bson scope[1];
 
     ts.i = 1;
     ts.t = 2;
 
-    bson_buffer_init(&bb);
-    bson_append_double(&bb, "d", 3.14);
-    bson_append_string(&bb, "s", "hello");
-    bson_append_string_n(&bb, "s_n", "goodbye cruel world", 7);
+    printf("BSON size %d\n", sizeof( bson ) );
+
+
+    bson_init(b);
+    bson_append_double(b, "d", 3.14);
+    bson_append_string(b, "s", "hello");
+    bson_append_string_n(b, "s_n", "goodbye cruel world", 7);
 
     {
-        bson_append_start_object(&bb, "o");
-            bson_append_start_array(&bb, "a");
-                bson_append_binary(&bb, "0", 8, "w\0rld", 5);
-            bson_append_finish_object(&bb);
-        bson_append_finish_object(&bb);
+        bson_append_start_object(b, "o");
+            bson_append_start_array(b, "a");
+                bson_append_binary(b, "0", 8, "w\0rld", 5);
+            bson_append_finish_object(b);
+        bson_append_finish_object(b);
     }
 
-    bson_append_undefined(&bb, "u");
+    bson_append_undefined(b, "u");
 
     bson_oid_from_string(&oid, "010203040506070809101112");
     ASSERT(!memcmp(oid.bytes, "\x001\x002\x003\x004\x005\x006\x007\x008\x009\x010\x011\x012", 12));
-    bson_append_oid(&bb, "oid", &oid);
+    bson_append_oid(b, "oid", &oid);
 
-    bson_append_bool(&bb, "b", 1);
-    bson_append_date(&bb, "date", 0x0102030405060708);
-    bson_append_null(&bb, "n");
-    bson_append_regex(&bb, "r", "^asdf", "imx");
+    bson_append_bool(b, "b", 1);
+    bson_append_date(b, "date", 0x0102030405060708);
+    bson_append_null(b, "n");
+    bson_append_regex(b, "r", "^asdf", "imx");
     /* no dbref test (deprecated) */
-    bson_append_code(&bb, "c", "function(){}");
-    bson_append_code_n(&bb, "c_n", "function(){}garbage", 12);
-    bson_append_symbol(&bb, "symbol", "SYMBOL");
-    bson_append_symbol_n(&bb, "symbol_n", "SYMBOL and garbage", 6);
+    bson_append_code(b, "c", "function(){}");
+    bson_append_code_n(b, "c_n", "function(){}garbage", 12);
+    bson_append_symbol(b, "symbol", "SYMBOL");
+    bson_append_symbol_n(b, "symbol_n", "SYMBOL and garbage", 6);
 
     {
-        bson_buffer scope_buf;
-        bson scope;
-        bson_buffer_init(&scope_buf);
-        bson_append_int(&scope_buf, "i", 123);
-        bson_from_buffer(&scope, &scope_buf);
+        bson_init(scope);
+        bson_append_int(scope, "i", 123);
+        bson_finish(scope);
 
-        bson_append_code_w_scope(&bb, "cws", "function(){return i}", &scope);
-        bson_destroy(&scope);
+        bson_append_code_w_scope(b, "cws", "function(){return i}", scope);
+        bson_destroy(scope);
     }
 
-    bson_append_timestamp(&bb, "timestamp", &ts);
-    bson_append_long(&bb, "l", 0x1122334455667788);
+    bson_append_timestamp(b, "timestamp", &ts);
+    bson_append_long(b, "l", 0x1122334455667788);
 
-    bson_from_buffer(&b, &bb);
+    bson_print(b);
 
-    bson_print(&b);
-
-    bson_iterator_init(&it, b.data);
+    bson_iterator_init(&it, b->data);
 
     ASSERT(bson_iterator_more(&it));
     ASSERT(bson_iterator_next(&it) == BSON_DOUBLE);
@@ -218,7 +217,7 @@ int main(){
     ASSERT(bson_iterator_type(&it) == BSON_EOO);
     ASSERT(!bson_iterator_more(&it));
 
-    bson_destroy( &b );
+    bson_destroy( b );
 
     return 0;
 }

@@ -8,7 +8,7 @@ static const char* db = "test";
 static const char* ns = "test.c.error";
 
 int main(){
-    mongo *conn = mongo_new();
+    mongo conn[1];
     bson obj;
 
     INIT_SOCKETS_FOR_WINDOWS;

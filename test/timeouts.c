@@ -9,11 +9,9 @@
 
 int main() {
 
-    mongo *conn = mongo_new();
-    bson_buffer bb;
+    mongo conn[1];
     bson b;
     int res;
-    time_t t1, t2;
 
     if( mongo_connect( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
         printf("Failed to connect");
