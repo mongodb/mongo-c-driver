@@ -20,12 +20,16 @@ int main(){
     /* mongo_connect( conn, TEST_SERVER, 27017 ); */
 
     /* Simple connect API
-    mongo *conn = mongo_new();
+    mongo conn[1];
+
+    mongo_init( conn );
     mongo_connect( conn, TEST_SERVER, 27017 );
     mongo_destroy( conn );
 
     * Advanced and replica set API
-    mongo *conn = mongo_new();
+    mongo conn[1];
+
+    mongo_init( conn );
     mongo_set_connect_timeout( conn, 1000 );
     mongo_set_op_timeout( conn, 1000 )
     mongo_set_replset( conn, "foobar" );
@@ -33,13 +37,23 @@ int main(){
     mongo_destroy( conn );
 
     * BSON API
-    bson *obj = bson_new();
+    bson obj[1];
+
+    bson_init( obj );
     bson_append_int( obj, "a", 1 );
+    bson_finish( obj );
     mongo_insert( conn, obj );
     bson_destroy( obj );
 
+    * BSON Iterator API
+    bson_iterator i[1];
+
+    bson_iterator_init( i, b->data );
+
     * Cursor API
-    mongo_cursor *cursor = mongo_cursor_new( conn, "test.ns" );
+    mongo_cursor cursor[1];
+
+    mongo_cursor_init( cursor, "test.ns" );
     mongo_cursor_limit( cursor, 100 );
     mongo_cursor_skip( cursor, 100 );
     mongo_cursor_query( cursor, query );
