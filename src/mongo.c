@@ -160,15 +160,8 @@ char * mongo_data_append64( char * start , const void * data){
 
 /* Connection API */
 
-int mongo_connect( mongo *conn , const char *host, int port ){
+void mongo_init( mongo *conn ) {
     conn->replset = NULL;
-
-    conn->primary = bson_malloc( sizeof( mongo_host_port ) );
-
-    strncpy( conn->primary->host, host, strlen( host ) + 1 );
-    conn->primary->port = port;
-    conn->primary->next = NULL;
-
     conn->err = 0;
     conn->errstr = NULL;
     conn->lasterrcode = 0;
@@ -176,11 +169,19 @@ int mongo_connect( mongo *conn , const char *host, int port ){
 
     conn->conn_timeout_ms = 0;
     conn->op_timeout_ms = 0;
+}
 
+int mongo_connect( mongo *conn , const char *host, int port ){
+    conn->primary = bson_malloc( sizeof( mongo_host_port ) );
+    strncpy( conn->primary->host, host, strlen( host ) + 1 );
+    conn->primary->port = port;
+    conn->primary->next = NULL;
+
+    mongo_init( conn );
     return mongo_socket_connect(conn, host, port);
 }
 
-void mongo_replset_init_conn( mongo* conn, const char* name ) {
+void mongo_replset_init( mongo* conn, const char* name ) {
     conn->replset = bson_malloc( sizeof( mongo_replset ) );
     conn->replset->primary_connected = 0;
     conn->replset->seeds = NULL;
@@ -188,15 +189,9 @@ void mongo_replset_init_conn( mongo* conn, const char* name ) {
     conn->replset->name = (char *)bson_malloc( strlen( name ) + 1 );
     memcpy( conn->replset->name, name, strlen( name ) + 1  );
 
-    conn->err = 0;
-    conn->errstr = NULL;
-    conn->lasterrcode = 0;
-    conn->lasterrstr = NULL;
-
-    conn->conn_timeout_ms = 0;
-    conn->op_timeout_ms = 0;
-
     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
+
+    mongo_init( conn );
 }
 
 static void mongo_replset_add_node( mongo_host_port** list, const char* host, int port ) {

@@ -178,7 +178,7 @@ int mongo_connect( mongo * conn , const char* host, int port );
  * @param conn a mongo object.
  * @param name the name of the replica set to connect to.
  * */
-void mongo_set_replset( mongo *conn, const char *name );
+void mongo_replset_init( mongo *conn, const char *name );
 
 /**
  * Add a seed node to the replica set connection object.
