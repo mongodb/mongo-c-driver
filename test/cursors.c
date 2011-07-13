@@ -110,6 +110,34 @@ int test_tailable( mongo *conn ) {
     return 0;
 }
 
+int test_builder_api( mongo *conn ) {
+    int count = 0;
+    mongo_cursor cursor[1];
+
+    insert_sample_data( conn, 10000 );
+    mongo_cursor_init( cursor, conn, "test.cursors" );
+
+    while( mongo_cursor_next( cursor ) == MONGO_OK ) {
+        count++;
+    }
+    printf("count %d\n", count);
+    ASSERT( count == 10000 );
+
+    mongo_cursor_destroy( cursor );
+
+    mongo_cursor_init( cursor, conn, "test.cursors" );
+    mongo_cursor_set_limit( cursor, 10 );
+    count = 0;
+    while( mongo_cursor_next( cursor ) == MONGO_OK ) {
+        count++;
+    }
+    printf("count %d\n", count);
+    ASSERT( count == 10 );
+    mongo_cursor_destroy( cursor );
+
+    return 0;
+}
+
 int main() {
 
     mongo conn[1];
@@ -122,6 +150,7 @@ int main() {
     remove_sample_data( conn );
     test_multiple_getmore( conn );
     test_tailable( conn );
+    test_builder_api( conn );
 
     mongo_destroy( conn );
     return 0;

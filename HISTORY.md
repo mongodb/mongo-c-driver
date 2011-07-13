@@ -7,6 +7,15 @@ These changes have been made for extensibility, consistency,
 and ease of use. Please read the following release notes
 carefully, and study the updated tutorial.
 
+Principles:
+
+1. Present a consistent interface for all objects: connections,
+   cursors, bson objects, and bson iterators.
+2. Require no knowledge of an object's to use its interface.
+3. Allow users to allocate base objects on the stack or on the heap.
+4. Integrate with new error reporting strategy.
+5. Concision, except where it impairs clarity.
+
 * mongo_replset_init_conn has been renamed to mongo_replset_init.
 * bson_buffer has been removed. All methods for building bson
   objects now take objects of type bson. The new pattern looks like this:

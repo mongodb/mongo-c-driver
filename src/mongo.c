@@ -592,58 +592,125 @@ int mongo_remove(mongo* conn, const char* ns, const bson* cond){
     return mongo_message_send(conn, mm);
 }
 
-mongo_cursor* mongo_find(mongo* conn, const char* ns, bson* query,
-    bson* fields, int nToReturn, int nToSkip, int options) {
 
-    int sl;
+static int mongo_cursor_op_query( mongo_cursor *cursor ) {
     int res;
-    mongo_cursor * cursor;
+    bson empty;
     char * data;
-    mongo_message * mm = mongo_message_create( 16 + /* header */
-                                               4 + /*  options */
-                                               strlen( ns ) + 1 + /* ns */
-                                               4 + 4 + /* skip,return */
-                                               bson_size( query ) +
-                                               bson_size( fields ) ,
-                                               0 , 0 , MONGO_OP_QUERY );
+    mongo_message *mm;
+
+    /* Set up default values for query and fields, if necessary. */
+    if( ! cursor->query )
+        cursor->query = bson_empty( &empty );
+    if( ! cursor->fields )
+        cursor->fields = bson_empty( &empty );
+
+    mm = mongo_message_create( 16 + /* header */
+                                4 + /*  options */
+                                strlen( cursor->ns ) + 1 + /* ns */
+                                4 + 4 + /* skip,return */
+                                bson_size( cursor->query ) +
+                                bson_size( cursor->fields ) ,
+                                0 , 0 , MONGO_OP_QUERY );
 
     data = &mm->data;
-    data = mongo_data_append32( data , &options );
-    data = mongo_data_append( data , ns , strlen( ns ) + 1 );
-    data = mongo_data_append32( data , &nToSkip );
-    data = mongo_data_append32( data , &nToReturn );
-    data = mongo_data_append( data , query->data , bson_size( query ) );
-    if ( fields )
-        data = mongo_data_append( data , fields->data , bson_size( fields ) );
+    data = mongo_data_append32( data , &cursor->options );
+    data = mongo_data_append( data , cursor->ns , strlen( cursor->ns ) + 1 );
+    data = mongo_data_append32( data , &cursor->skip );
+    data = mongo_data_append32( data , &cursor->limit );
+    data = mongo_data_append( data , cursor->query->data , bson_size( cursor->query ) );
+    if ( cursor->fields )
+        data = mongo_data_append( data , cursor->fields->data , bson_size( cursor->fields ) );
 
     bson_fatal_msg( (data == ((char*)mm) + mm->head.len), "query building fail!" );
 
-    res = mongo_message_send( conn , mm );
+    res = mongo_message_send( cursor->conn , mm );
     if(res != MONGO_OK){
-        return NULL;
+        return MONGO_ERROR;
     }
 
-    cursor = (mongo_cursor*)bson_malloc(sizeof(mongo_cursor));
-
-    res = mongo_read_response( conn, (mongo_reply **)&(cursor->reply) );
+    res = mongo_read_response( cursor->conn, (mongo_reply **)&(cursor->reply) );
     if( res != MONGO_OK ) {
-        free( cursor );
-        return NULL;
+        return MONGO_ERROR;
     }
 
-    sl = strlen(ns)+1;
-    cursor->ns = bson_malloc(sl);
-    if (!cursor->ns){
+    cursor->seen += cursor->reply->fields.num;
+    cursor->flags |= MONGO_CURSOR_QUERY_SENT;
+    return MONGO_OK;
+}
+
+static int mongo_cursor_get_more(mongo_cursor* cursor){
+    int res;
+
+    if( cursor->limit > 0 && cursor->seen >= cursor->limit ) {
+        cursor->err = MONGO_CURSOR_EXHAUSTED;
+        return MONGO_ERROR;
+    }
+    else if( ! cursor->reply ) {
+        cursor->err = MONGO_CURSOR_INVALID;
+        return MONGO_ERROR;
+    }
+    else if( ! cursor->reply->fields.cursorID ) {
+        cursor->err = MONGO_CURSOR_EXHAUSTED;
+        return MONGO_ERROR;
+    }
+    else {
+        char* data;
+        int sl = strlen(cursor->ns)+1;
+        int limit = 0;
+        if( cursor->limit > 0)
+          limit = cursor->limit - cursor->seen;
+
+        mongo_message * mm = mongo_message_create(16 /*header*/
+                                                 +4 /*ZERO*/
+                                                 +sl
+                                                 +4 /*numToReturn*/
+                                                 +8 /*cursorID*/
+                                                 , 0, 0, MONGO_OP_GET_MORE);
+        data = &mm->data;
+        data = mongo_data_append32(data, &ZERO);
+        data = mongo_data_append(data, cursor->ns, sl);
+        data = mongo_data_append32(data, &limit);
+        data = mongo_data_append64(data, &cursor->reply->fields.cursorID);
+
         free(cursor->reply);
-        free( cursor );
+        res = mongo_message_send( cursor->conn, mm);
+        if( res != MONGO_OK ) {
+            mongo_cursor_destroy(cursor);
+            return MONGO_ERROR;
+        }
+
+        res = mongo_read_response( cursor->conn, &(cursor->reply) );
+        if( res != MONGO_OK ) {
+            mongo_cursor_destroy(cursor);
+            return MONGO_ERROR;
+        }
+        cursor->current.data = NULL;
+        cursor->seen += cursor->reply->fields.num;
+
+        return MONGO_OK;
+    }
+}
+
+mongo_cursor* mongo_find(mongo* conn, const char* ns, bson* query,
+    bson* fields, int limit, int skip, int options) {
+
+    mongo_cursor *cursor = (mongo_cursor*)bson_malloc(sizeof(mongo_cursor));
+    mongo_cursor_init( cursor, conn, ns );
+    cursor->flags |= MONGO_CURSOR_MUST_FREE;
+
+    mongo_cursor_set_query( cursor, query );
+    mongo_cursor_set_fields( cursor, fields );
+    mongo_cursor_set_limit( cursor, limit );
+    mongo_cursor_set_skip( cursor, skip );
+    mongo_cursor_set_options( cursor, options );
+
+    if( mongo_cursor_op_query( cursor ) == MONGO_OK)
+        return cursor;
+    else {
+        mongo_cursor_destroy( cursor );
         return NULL;
     }
-    memcpy( (void*)cursor->ns, ns, sl );
-    cursor->conn = conn;
-    cursor->current.data = NULL;
-    cursor->options = options;
-
-    return (mongo_cursor*)cursor;
 }
 
 int mongo_find_one(mongo* conn, const char* ns, bson* query,
@@ -661,53 +728,48 @@ int mongo_find_one(mongo* conn, const char* ns, bson* query,
     }
 }
 
-int mongo_cursor_get_more(mongo_cursor* cursor){
-    int res;
+void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns ) {
+    cursor->conn = conn;
+    cursor->ns = (char *)bson_malloc( strlen( ns ) + 1);
+    strncpy( cursor->ns, ns, strlen( ns ) + 1 );
+    cursor->current.data = NULL;
+    cursor->reply = NULL;
+    cursor->flags = 0;
+    cursor->seen = 0;
+    cursor->err = 0;
+    cursor->options = 0;
+    cursor->query = NULL;
+    cursor->fields = NULL;
+    cursor->skip = 0;
+    cursor->limit = 0;
+}
 
-    if( ! cursor->reply ) {
-        cursor->err = MONGO_CURSOR_INVALID;
-        return MONGO_ERROR;
-    }
-    else if( ! cursor->reply->fields.cursorID ) {
-        cursor->err = MONGO_CURSOR_EXHAUSTED;
-        return MONGO_ERROR;
-    }
-    else {
-        char* data;
-        int sl = strlen(cursor->ns)+1;
-        mongo_message * mm = mongo_message_create(16 /*header*/
-                                                 +4 /*ZERO*/
-                                                 +sl
-                                                 +4 /*numToReturn*/
-                                                 +8 /*cursorID*/
-                                                 , 0, 0, MONGO_OP_GET_MORE);
-        data = &mm->data;
-        data = mongo_data_append32(data, &ZERO);
-        data = mongo_data_append(data, cursor->ns, sl);
-        data = mongo_data_append32(data, &ZERO);
-        data = mongo_data_append64(data, &cursor->reply->fields.cursorID);
+void mongo_cursor_set_query( mongo_cursor *cursor, bson *query ) {
+    cursor->query = query;
+}
 
-        free(cursor->reply);
-        res = mongo_message_send( cursor->conn, mm);
-        if( res != MONGO_OK ) {
-            mongo_cursor_destroy(cursor);
-            return MONGO_ERROR;
-        }
+void mongo_cursor_set_fields( mongo_cursor *cursor, bson *fields ) {
+    cursor->fields = fields;
+}
 
-        res = mongo_read_response( cursor->conn, &(cursor->reply) );
-        if( res != MONGO_OK ) {
-            mongo_cursor_destroy(cursor);
-            return MONGO_ERROR;
-        }
-        cursor->current.data = NULL;
+void mongo_cursor_set_skip( mongo_cursor *cursor, int skip ) {
+    cursor->skip = skip;
+}
 
-        return MONGO_OK;
-    }
+void mongo_cursor_set_limit( mongo_cursor *cursor, int limit ) {
+    cursor->limit = limit;
+}
+
+void mongo_cursor_set_options( mongo_cursor *cursor, int options ) {
+    cursor->options = options;
 }
 
 int mongo_cursor_next(mongo_cursor* cursor){
     char *next_object;
     char *message_end;
+
+    if( ! (cursor->flags & MONGO_CURSOR_QUERY_SENT ) )
+        mongo_cursor_op_query( cursor );
 
     if( !cursor->reply )
         return MONGO_ERROR;
@@ -740,8 +802,7 @@ int mongo_cursor_next(mongo_cursor* cursor){
         if( mongo_cursor_get_more(cursor) != MONGO_OK )
             return MONGO_ERROR;
 
-        /* If there's still a cursor id, then the message should be pending.
-         * TODO: be sure not to overwrite conn->err. */
+        /* If there's still a cursor id, then the message should be pending. */
         if( cursor->reply->fields.num == 0 && cursor->reply->fields.cursorID ) {
             cursor->err = MONGO_CURSOR_PENDING;
             return MONGO_ERROR;
@@ -760,6 +821,7 @@ int mongo_cursor_destroy(mongo_cursor* cursor){
 
     if (!cursor) return result;
 
+    /* Kill cursor if live. */
     if (cursor->reply && cursor->reply->fields.cursorID){
         mongo* conn = cursor->conn;
         mongo_message * mm = mongo_message_create(16 /*header*/
@@ -776,8 +838,7 @@ int mongo_cursor_destroy(mongo_cursor* cursor){
     }
 
     free(cursor->reply);
-    free((void*)cursor->ns);
-    free(cursor);
+    free(cursor->ns);
 
     return result;
 }

@@ -36,6 +36,7 @@ int main(){
 
     /*********************/
     mongo_simple_int_command(conn, db, "forceerror", 1, NULL);
+    printf("Got HERE\n");
 
     ASSERT(mongo_cmd_get_prev_error(conn, db, NULL) == MONGO_ERROR);
     ASSERT( conn->lasterrcode == 10038 );
@@ -45,8 +46,10 @@ int main(){
 
     ASSERT(mongo_cmd_get_prev_error(conn, db, &obj) == MONGO_ERROR);
     bson_destroy(&obj);
+    printf("Got HERE 2\n");
 
     ASSERT(mongo_cmd_get_last_error(conn, db, &obj) == MONGO_ERROR);
+    printf("Got HERE 3\n");
     bson_destroy(&obj);
 
     /* should clear lasterror but not preverror */

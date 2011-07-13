@@ -8,8 +8,8 @@
 
 int main(){
     mongo conn[1];
+    mongo_cursor cursor[1];
     bson b;
-    mongo_cursor * cursor;
     int i;
     char hex_oid[25];
     bson_timestamp_t ts = { 1, 2 };
@@ -29,10 +29,8 @@ int main(){
     * Advanced and replica set API
     mongo conn[1];
 
-    mongo_init( conn );
+    mongo_replset_init( conn, "foobar" );
     mongo_set_connect_timeout( conn, 1000 );
-    mongo_set_op_timeout( conn, 1000 )
-    mongo_set_replset( conn, "foobar" );
     mongo_replset_connect( conn );
     mongo_destroy( conn );
 
@@ -56,8 +54,8 @@ int main(){
     mongo_cursor_init( cursor, "test.ns" );
     mongo_cursor_limit( cursor, 100 );
     mongo_cursor_skip( cursor, 100 );
-    mongo_cursor_query( cursor, query );
-    mongo_cursor_fields( cursor, fields );
+    mongo_cursor_query( cursor, &query );
+    mongo_cursor_fields( cursor, &fields );
     data = mongo_cursor_next( cursor );
     mongo_cursor_destroy( cursor );
     */
@@ -98,7 +96,7 @@ int main(){
         bson_destroy( &b );
     }
 
-    cursor = mongo_find( conn , ns , bson_empty(&b) , 0 , 0 , 0 , 0 );
+    mongo_cursor_init( cursor, conn, ns );
 
     while( mongo_cursor_next(cursor) == MONGO_OK ){
         bson_iterator it;

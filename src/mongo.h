@@ -42,13 +42,18 @@ typedef enum mongo_error_t {
     MONGO_BSON_INVALID = 7      /**< BSON not valid for the specified op. */
 } mongo_error_t;
 
-enum mongo_cursor_bitfield_t {
+enum mongo_cursor_options {
     MONGO_TAILABLE = (1<<1),          /**< Create a tailable cursor. */
     MONGO_SLAVE_OK = (1<<2),          /**< Allow queries on a non-primary node. */
     MONGO_NO_CURSOR_TIMEOUT = (1<<4), /**< Disable cursor timeouts. */
     MONGO_AWAIT_DATA = (1<<5),        /**< Momentarily block for more data. */
     MONGO_EXHAUST = (1<<6),           /**< Stream in multiple 'more' packages. */
     MONGO_PARTIAL = (1<<7)            /**< Allow reads even if a shard is down. */
+};
+
+enum mongo_cursor_flags {
+    MONGO_CURSOR_MUST_FREE = 1,      /**< mongo_cursor_destroy should free cursor. */
+    MONGO_CURSOR_QUERY_SENT = (1<<1) /**< Initial query has been sent. */
 };
 
 enum mongo_conn_return {
@@ -138,11 +143,17 @@ typedef struct mongo {
 
 typedef struct {
     mongo_reply * reply; /**< reply is owned by cursor */
-    mongo * conn; /**< connection is *not* owned by cursor */
+    mongo * conn;      /**< connection is *not* owned by cursor */
     const char* ns;    /**< owned by cursor */
+    int flags;         /**< Flags used internally by this drivers. */
+    int seen;          /**< Number returned so far. */
     bson current;      /**< This cursor's current bson object. */
     mongo_error_t err; /**< Errors on this cursor. */
+    bson *query;       /**< Bitfield containing cursor options. */
+    bson *fields;      /**< Bitfield containing cursor options. */
     int options;       /**< Bitfield containing cursor options. */
+    int limit;         /**< Bitfield containing cursor options. */
+    int skip;          /**< Bitfield containing cursor options. */
 } mongo_cursor;
 
 /* Connection API */
@@ -312,27 +323,85 @@ int mongo_remove(mongo* conn, const char* ns, const bson* cond);
  * @param ns the namespace.
  * @param query the bson query.
  * @param fields a bson document of fields to be returned.
- * @param nToReturn the maximum number of documents to retrun.
- * @param nToSkip the number of documents to skip.
+ * @param limit the maximum number of documents to retrun.
+ * @param skip the number of documents to skip.
  * @param options A bitfield containing cursor options.
  *
- * @return A cursor object or NULL if an error has occurred. In case of
- *     an error, the err field on the mongo will be set.
+ * @return A cursor object allocated on the heap or NULL if
+ *     an error has occurred. For finer-grained error checking,
+ *     use the cursor builder API instead.
  */
 mongo_cursor* mongo_find(mongo* conn, const char* ns, bson* query,
-    bson* fields, int nToReturn, int nToSkip, int options);
+    bson* fields, int limit, int skip, int options);
 
 /**
- * Iterate to the next item in the cursor.
+ * Initalize a new cursor object.
  *
- * @param cursor a cursor returned from a call to mongo_find
+ * @param cursor
+ * @param ns the namespace, represented as the the database
+ *     name and collection name separated by a dot. e.g., "test.users"
+ */
+void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns );
+
+/**
+ * Set the bson object specifying this cursor's query spec.
  *
- * @return MONGO_OK.
+ * @param cursor
+ * @param query a bson object representing the query spec. This may
+ *   be either a simple query spec or a complex spec storing values for
+ *   $query, $orderby, $hint, and/or $explain. See
+ *   http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol for details.
+ */
+void mongo_cursor_set_query( mongo_cursor *cursor, bson *query );
+
+/**
+ * Set the fields to return for this cursor.
+ *
+ * @param cursor
+ * @param fields a bson object representing the fields to return.
+ *   See http://www.mongodb.org/display/DOCS/Retrieving+a+Subset+of+Fields.
+ */
+void mongo_cursor_set_fields( mongo_cursor *cursor, bson *fields );
+
+/**
+ * Set the number of documents to skip.
+ *
+ * @param cursor
+ * @param skip
+ */
+void mongo_cursor_set_skip( mongo_cursor *cursor, int skip );
+
+/**
+ * Set the number of documents to return.
+ *
+ * @param cursor
+ * @param limit
+ */
+void mongo_cursor_set_limit( mongo_cursor *cursor, int limit );
+
+/**
+ * Set any of the available query options (e.g., MONGO_TAILABLE).
+ *
+ * @param cursor
+ * @param options a bitfield storing query options. See
+ *   mongo_cursor_bitfield_t for available constants.
+ */
+void mongo_cursor_set_options( mongo_cursor *cursor, int options );
+
+/**
+ * Iterate the cursor, returning the next item. When successful,
+ *   the returned object will be stored in cursor->current;
+ *
+ * @param cursor
+ *
+ * @return MONGO_OK. On error, returns MONGO_ERROR and sets
+ *   cursor->err with a value of mongo_error_t.
  */
 int mongo_cursor_next(mongo_cursor* cursor);
 
 /**
- * Destroy a cursor object.
+ * Destroy a cursor object. When finished with a cursor, you
+ * must pass it to this function.
  *
  * @param cursor the cursor to destroy.
  *

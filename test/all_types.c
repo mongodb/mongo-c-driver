@@ -15,9 +15,6 @@ int main(){
     ts.i = 1;
     ts.t = 2;
 
-    printf("BSON size %d\n", sizeof( bson ) );
-
-
     bson_init(b);
     bson_append_double(b, "d", 3.14);
     bson_append_string(b, "s", "hello");
