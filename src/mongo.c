@@ -182,6 +182,8 @@ int mongo_connect( mongo *conn , const char *host, int port ){
 }
 
 void mongo_replset_init( mongo* conn, const char* name ) {
+    mongo_init( conn );
+
     conn->replset = bson_malloc( sizeof( mongo_replset ) );
     conn->replset->primary_connected = 0;
     conn->replset->seeds = NULL;
@@ -190,8 +192,6 @@ void mongo_replset_init( mongo* conn, const char* name ) {
     memcpy( conn->replset->name, name, strlen( name ) + 1  );
 
     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
-
-    mongo_init( conn );
 }
 
 static void mongo_replset_add_node( mongo_host_port** list, const char* host, int port ) {
