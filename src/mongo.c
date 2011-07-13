@@ -840,6 +840,9 @@ int mongo_cursor_destroy(mongo_cursor* cursor){
     free(cursor->reply);
     free(cursor->ns);
 
+    if( cursor->flags & MONGO_CURSOR_MUST_FREE )
+        free( cursor );
+
     return result;
 }
 
