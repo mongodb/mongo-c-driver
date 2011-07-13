@@ -120,7 +120,6 @@ int test_builder_api( mongo *conn ) {
     while( mongo_cursor_next( cursor ) == MONGO_OK ) {
         count++;
     }
-    printf("count %d\n", count);
     ASSERT( count == 10000 );
 
     mongo_cursor_destroy( cursor );
@@ -131,7 +130,6 @@ int test_builder_api( mongo *conn ) {
     while( mongo_cursor_next( cursor ) == MONGO_OK ) {
         count++;
     }
-    printf("count %d\n", count);
     ASSERT( count == 10 );
     mongo_cursor_destroy( cursor );
 
