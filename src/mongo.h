@@ -83,9 +83,11 @@ enum mongo_operations {
     MONGO_OP_KILL_CURSORS = 2007
 };
 
-static const int MONGO_UPDATE_UPSERT = 0x1;
-static const int MONGO_UPDATE_MULTI = 0x2;
-static const int MONGO_UPDATE_BASIC = 0x4;
+enum mongo_update_t {
+    MONGO_UPDATE_UPSERT = 0x1,
+    MONGO_UPDATE_MULTI = 0x2,
+    MONGO_UPDATE_BASIC = 0x4,
+};
 
 #pragma pack(1)
 typedef struct {
