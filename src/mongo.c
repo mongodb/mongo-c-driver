@@ -20,49 +20,19 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <sys/time.h>
 
-#include "net.h"
+#ifdef _USE_LINUX_SYSTEM
+#include "platform/linux/net.h"
+#elif defined _USE_CUSTOM_SYSTEM
+#include "platform/custom/net.h"
+#else
+#include "platform/net.h"
+#endif
 
 static const int ZERO = 0;
 static const int ONE = 1;
-
-/* Wire protocol. */
-
-static int looping_write(mongo * conn, const void* buf, int len){
-    const char* cbuf = buf;
-    while (len){
-        int sent = send(conn->sock, cbuf, len, 0);
-        if (sent == -1) {
-           conn->err = MONGO_IO_ERROR;
-           return MONGO_ERROR;
-        }
-        cbuf += sent;
-        len -= sent;
-    }
-
-    return MONGO_OK;
-}
-
-static int looping_read(mongo * conn, void* buf, int len){
-    char* cbuf = buf;
-    while (len){
-        int sent = recv(conn->sock, cbuf, len, 0);
-        if (sent == 0 || sent == -1) {
-            conn->err = MONGO_IO_ERROR;
-            return MONGO_ERROR;
-        }
-        cbuf += sent;
-        len -= sent;
-    }
-
-    return MONGO_OK;
-}
-
 mongo_message * mongo_message_create( int len , int id , int responseTo , int op ){
     mongo_message * mm = (mongo_message*)bson_malloc( len );
 
@@ -87,13 +57,13 @@ int mongo_message_send(mongo * conn, mongo_message* mm){
     bson_little_endian32(&head.responseTo, &mm->head.responseTo);
     bson_little_endian32(&head.op, &mm->head.op);
 
-    res = looping_write(conn, &head, sizeof(head));
+    res = mongo_write_socket(conn, &head, sizeof(head));
     if( res != MONGO_OK ) {
         free( mm );
         return res;
     }
 
-    res = looping_write(conn, &mm->data, mm->head.len - sizeof(head));
+    res = mongo_write_socket(conn, &mm->data, mm->head.len - sizeof(head));
     if( res != MONGO_OK ) {
         free( mm );
         return res;
@@ -110,8 +80,8 @@ int mongo_read_response( mongo * conn, mongo_reply** reply ){
     unsigned int len;
     int res;
 
-    looping_read(conn, &head, sizeof(head));
-    looping_read(conn, &fields, sizeof(fields));
+    mongo_read_socket(conn, &head, sizeof(head));
+    mongo_read_socket(conn, &fields, sizeof(fields));
 
     bson_little_endian32(&len, &head.len);
 
@@ -130,7 +100,7 @@ int mongo_read_response( mongo * conn, mongo_reply** reply ){
     bson_little_endian32(&out->fields.start, &fields.start);
     bson_little_endian32(&out->fields.num, &fields.num);
 
-    res = looping_read(conn, &out->objs, len-sizeof(head)-sizeof(fields));
+    res = mongo_read_socket(conn, &out->objs, len-sizeof(head)-sizeof(fields));
     if( res != MONGO_OK ) {
         free(out);
         return res;
@@ -396,7 +366,7 @@ int mongo_replset_connect(mongo* conn) {
     return MONGO_ERROR;
 }
 
-int mongo_conn_set_timeout( mongo *conn, int millis ) {
+int mongo_set_op_timeout( mongo *conn, int millis ) {
     struct timeval tv;
     tv.tv_sec = millis / 1000;
     tv.tv_usec = (millis % 1000) * 1000;
@@ -657,15 +627,17 @@ static int mongo_cursor_get_more(mongo_cursor* cursor){
         char* data;
         int sl = strlen(cursor->ns)+1;
         int limit = 0;
+        mongo_message *mm;
+
         if( cursor->limit > 0)
           limit = cursor->limit - cursor->seen;
 
-        mongo_message * mm = mongo_message_create(16 /*header*/
-                                                 +4 /*ZERO*/
-                                                 +sl
-                                                 +4 /*numToReturn*/
-                                                 +8 /*cursorID*/
-                                                 , 0, 0, MONGO_OP_GET_MORE);
+        mm = mongo_message_create(16 /*header*/
+                                  +4 /*ZERO*/
+                                  +sl
+                                  +4 /*numToReturn*/
+                                  +8 /*cursorID*/
+                                  , 0, 0, MONGO_OP_GET_MORE);
         data = &mm->data;
         data = mongo_data_append32(data, &ZERO);
         data = mongo_data_append(data, cursor->ns, sl);
@@ -729,8 +701,8 @@ int mongo_find_one(mongo* conn, const char* ns, bson* query,
 
 void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns ) {
     cursor->conn = conn;
-    cursor->ns = (char *)bson_malloc( strlen( ns ) + 1);
-    strncpy( cursor->ns, ns, strlen( ns ) + 1 );
+    cursor->ns = (const char *)bson_malloc( strlen( ns ) + 1);
+    strncpy( (char *)cursor->ns, ns, strlen( ns ) + 1 );
     cursor->current.data = NULL;
     cursor->reply = NULL;
     cursor->flags = 0;
@@ -837,7 +809,7 @@ int mongo_cursor_destroy(mongo_cursor* cursor){
     }
 
     free(cursor->reply);
-    free(cursor->ns);
+    free((void*)cursor->ns);
 
     if( cursor->flags & MONGO_CURSOR_MUST_FREE )
         free( cursor );

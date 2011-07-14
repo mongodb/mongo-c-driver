@@ -16,8 +16,6 @@
  */
 
 #include "mongo.h"
-#include "bson.h"
-#include "platform_hacks.h"
 #include <stdio.h>
 #ifndef GRIDFS_INCLUDED
 #define GRIDFS_INCLUDED

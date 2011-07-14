@@ -21,7 +21,7 @@
 #ifndef _BSON_H_
 #define _BSON_H_
 
-#include "platform_hacks.h"
+#include "platform/platform_hacks.h"
 #include <time.h>
 
 MONGO_EXTERN_C_START

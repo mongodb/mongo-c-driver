@@ -18,6 +18,7 @@
  *    limitations under the License.
  */
 
+/* Header for generic net.h */
 #ifndef _MONGO_NET_H_
 #define _MONGO_NET_H_
 
@@ -49,6 +50,10 @@ typedef int socklen_t;
 
 MONGO_EXTERN_C_START
 
+/* This is a no-op in the generic implementation. */
+int mongo_set_socket_op_timeout( mongo *conn, int millis );
+int mongo_read_socket(mongo * conn, void* buf, int len);
+int mongo_write_socket(mongo * conn, const void* buf, int len);
 int mongo_socket_connect( mongo *conn, const char *host, int port );
 
 MONGO_EXTERN_C_END

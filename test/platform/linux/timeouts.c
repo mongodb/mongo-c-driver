@@ -1,6 +1,6 @@
 /* timeouts.c */
 
-#include "test.h"
+#include "../../test.h"
 #include "mongo.h"
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +24,7 @@ int main() {
     ASSERT( res == MONGO_OK );
 
     /* 50ms timeout */
-    mongo_conn_set_timeout( conn, 50 );
+    mongo_set_op_timeout( conn, 50 );
 
     ASSERT( conn->err == 0 );
     res = mongo_simple_str_command( conn, "test", "$eval",

@@ -42,21 +42,12 @@ typedef enum mongo_error_t {
     MONGO_BSON_INVALID = 7      /**< BSON not valid for the specified op. */
 } mongo_error_t;
 
-enum mongo_cursor_options {
-    MONGO_TAILABLE = (1<<1),          /**< Create a tailable cursor. */
-    MONGO_SLAVE_OK = (1<<2),          /**< Allow queries on a non-primary node. */
-    MONGO_NO_CURSOR_TIMEOUT = (1<<4), /**< Disable cursor timeouts. */
-    MONGO_AWAIT_DATA = (1<<5),        /**< Momentarily block for more data. */
-    MONGO_EXHAUST = (1<<6),           /**< Stream in multiple 'more' packages. */
-    MONGO_PARTIAL = (1<<7)            /**< Allow reads even if a shard is down. */
-};
-
 enum mongo_cursor_flags {
     MONGO_CURSOR_MUST_FREE = 1,      /**< mongo_cursor_destroy should free cursor. */
     MONGO_CURSOR_QUERY_SENT = (1<<1) /**< Initial query has been sent. */
 };
 
-enum mongo_conn_return {
+enum mongo_conn_return_t {
     MONGO_CONN_SUCCESS = 0,
     MONGO_CONN_BAD_ARG,
     MONGO_CONN_NO_SOCKET,
@@ -73,6 +64,21 @@ enum mongo_index_opts {
     MONGO_INDEX_SPARSE = (1<<4)
 };
 
+enum mongo_update_opts {
+    MONGO_UPDATE_UPSERT = 0x1,
+    MONGO_UPDATE_MULTI = 0x2,
+    MONGO_UPDATE_BASIC = 0x4
+};
+
+enum mongo_cursor_opts {
+    MONGO_TAILABLE = (1<<1),          /**< Create a tailable cursor. */
+    MONGO_SLAVE_OK = (1<<2),          /**< Allow queries on a non-primary node. */
+    MONGO_NO_CURSOR_TIMEOUT = (1<<4), /**< Disable cursor timeouts. */
+    MONGO_AWAIT_DATA = (1<<5),        /**< Momentarily block for more data. */
+    MONGO_EXHAUST = (1<<6),           /**< Stream in multiple 'more' packages. */
+    MONGO_PARTIAL = (1<<7)            /**< Allow reads even if a shard is down. */
+};
+
 enum mongo_operations {
     MONGO_OP_MSG = 1000,
     MONGO_OP_UPDATE = 2001,
@@ -81,12 +87,6 @@ enum mongo_operations {
     MONGO_OP_GET_MORE = 2005,
     MONGO_OP_DELETE = 2006,
     MONGO_OP_KILL_CURSORS = 2007
-};
-
-enum mongo_update_t {
-    MONGO_UPDATE_UPSERT = 0x1,
-    MONGO_UPDATE_MULTI = 0x2,
-    MONGO_UPDATE_BASIC = 0x4,
 };
 
 #pragma pack(1)
@@ -181,7 +181,7 @@ void mongo_init( mongo *conn );
  * @param port the port to connect to.
  *
  * @return MONGO_OK or MONGO_ERROR on failure. On failure, a constant of type
- *   mongo_conn_return will be set on the conn->err field.
+ *   mongo_conn_return_t will be set on the conn->err field.
  */
 int mongo_connect( mongo * conn , const char* host, int port );
 
@@ -214,7 +214,7 @@ void mongo_replset_add_seed( mongo* conn, const char* host, int port );
  * @param conn a mongo object.
  *
  * @return MONGO_OK or MONGO_ERROR on failure. On failure, a constant of type
- *   mongo_conn_return will be set on the conn->err field.
+ *   mongo_conn_return_t will be set on the conn->err field.
  */
 int mongo_replset_connect( mongo* conn );
 
@@ -226,7 +226,7 @@ int mongo_replset_connect( mongo* conn );
  *  @return MONGO_OK. On error, return MONGO_ERROR and
  *    set the conn->err field.
  */
-int mongo_conn_set_timeout( mongo *conn, int millis );
+int mongo_set_op_timeout( mongo *conn, int millis );
 
 /**
  * Try reconnecting to the server using the existing connection settings.

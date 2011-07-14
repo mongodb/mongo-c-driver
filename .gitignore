@@ -9,6 +9,7 @@
 *.dylib
 .scon*
 *.pyc
+*.swp
 
 test_*
 benchmark

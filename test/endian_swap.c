@@ -1,7 +1,7 @@
 /* endian_swap.c */
 
 #include "test.h"
-#include "platform_hacks.h"
+#include "bson.h"
 #include <stdio.h>
 
 int main(){

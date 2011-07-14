@@ -15,8 +15,39 @@
  *    limitations under the License.
  */
 
+/* Implementation for Linux version of net.h */
 #include "net.h"
 #include <string.h>
+
+int mongo_write_socket(mongo * conn, const void* buf, int len){
+    const char* cbuf = buf;
+    while (len){
+        int sent = send(conn->sock, cbuf, len, 0);
+        if (sent == -1) {
+           conn->err = MONGO_IO_ERROR;
+           return MONGO_ERROR;
+        }
+        cbuf += sent;
+        len -= sent;
+    }
+
+    return MONGO_OK;
+}
+
+int mongo_read_socket(mongo * conn, void* buf, int len){
+    char* cbuf = buf;
+    while (len){
+        int sent = recv(conn->sock, cbuf, len, 0);
+        if (sent == 0 || sent == -1) {
+            conn->err = MONGO_IO_ERROR;
+            return MONGO_ERROR;
+        }
+        cbuf += sent;
+        len -= sent;
+    }
+
+    return MONGO_OK;
+}
 
 static int mongo_create_socket( mongo *conn ) {
     int fd;
@@ -34,8 +65,6 @@ static int mongo_set_blocking_status( mongo *conn ) {
     int flags;
     int blocking;
 
-    /* For the moment, setting conn_timeout_ms is platform-specific.
-     * So do nothing is this value isn't set.  */
     blocking = ( conn->conn_timeout_ms == 0 );
     if( blocking )
         return MONGO_OK;
@@ -53,6 +82,24 @@ static int mongo_set_blocking_status( mongo *conn ) {
             mongo_close_socket( conn->sock );
             return MONGO_ERROR;
         }
+    }
+
+    return MONGO_OK;
+}
+
+int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
+    struct timeval tv;
+    tv.tv_sec = millis / 1000;
+    tv.tv_usec = (millis % 1000) * 1000;
+
+    if (setsockopt( conn->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv) ) == -1) {
+        conn->err = MONGO_IO_ERROR;
+        return MONGO_ERROR;
+    }
+
+    if (setsockopt( conn->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv) ) == -1) {
+        conn->err = MONGO_IO_ERROR;
+        return MONGO_ERROR;
     }
 
     return MONGO_OK;

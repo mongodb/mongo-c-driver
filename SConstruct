@@ -31,14 +31,24 @@ AddOption('--d',
           action='store_false',
           help='disable optimizations')
 
+AddOption('--use-platform',
+          dest='compile_platform',
+          default='GENERIC',
+          type='string',
+          nargs=1,
+          action='store',
+          help='Compile for a specific platform to take advantage '
+               ' of particular system features. For the moment, this include timeouts only.'
+               ' Current options include LINUX, '
+               ' GENERIC, and CUSTOM. If you specific CUSTOM, you must place a'
+               ' system-specific implementation of net.h and net.c in src/platform/custom/')
+
 import os
 import sys
 
 import buildscripts
 
 env = Environment( ENV=os.environ )
-
-
 
 #  ---- Docs ----
 def build_docs(env, target, source):
@@ -48,7 +58,18 @@ def build_docs(env, target, source):
 env.Alias("docs", [], [build_docs])
 env.AlwaysBuild("docs")
 
-
+# ---- Platforms ----
+PLATFORM_TEST_DIR = None
+if "LINUX" == GetOption('compile_platform'):
+    env.Append( CPPFLAGS=" -D_MONGO_USE_LINUX_SYSTEM" )
+    NET_LIB = "src/platform/linux/net.c"
+    PLATFORM_TEST_DIR = "test/platform/linux/"
+    PLATFORM_TESTS = [ "timeouts" ]
+elif "CUSTOM" == GetOption('compile_platform'):
+    env.Append( CPPFLAGS=" -D_MONGO_USE_CUSTOM_SYSTEM" )
+    NET_LIB = "src/platform/custom/net.c"
+else:
+    NET_LIB = "src/platform/net.c"
 
 # ---- Libraries ----
 if os.sys.platform in ["darwin", "linux2"]:
@@ -99,7 +120,7 @@ if sys.byteorder == 'big':
 env.Append( CPPPATH=["src/"] )
 
 coreFiles = ["src/md5.c" ]
-mFiles = [ "src/mongo.c", "src/net.c", "src/gridfs.c"]
+mFiles = [ "src/mongo.c", NET_LIB, "src/gridfs.c"]
 bFiles = [ "src/bson.c", "src/numbers.c", "src/encoding.c"]
 mLibFiles = coreFiles + mFiles + bFiles
 bLibFiles = coreFiles + bFiles
@@ -125,25 +146,41 @@ benchmarkEnv.Append( LIBS=[m, b] )
 benchmarkEnv.Prepend( LIBPATH=["."] )
 benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )
 
-
-
 # ---- Tests ----
 testEnv = benchmarkEnv.Clone()
 testCoreFiles = [ ]
 
+def run_tests( root, tests ):
+    for name in tests:
+        filename = "%s/%s.c" % (root, name)
+        exe = "test_" + name
+        test = testEnv.Program( exe , testCoreFiles + [filename]  )
+        test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> ' + os.path.devnull)
+        AlwaysBuild(test_alias)
+
 tests = Split("sizes resize endian_swap all_types simple update errors "
-"count_delete auth gridfs validate examples timeouts helpers oid cursors replica_set")
+"count_delete auth gridfs validate examples helpers oid cursors replica_set")
+
+# Run standard tests
+run_tests("test", tests)
+
+# Run platform tests
+if not PLATFORM_TEST_DIR is None:
+    run_tests( PLATFORM_TEST_DIR, PLATFORM_TESTS )
 
 if have_libjson:
     tests.append('json')
     testEnv.Append( LIBS=["json"] )
 
-for name in tests:
-    filename = "test/%s.c" % name
-    exe = "test_" + name
-    test = testEnv.Program( exe , testCoreFiles + [filename]  )
-    test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> ' + os.path.devnull)
-    AlwaysBuild(test_alias)
+#for name in tests:
+#    filename = "test/%s.c" % name
+#    exe = "test_" + name
+#    test = testEnv.Program( exe , testCoreFiles + [filename]  )
+#    test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> ' + os.path.devnull)
+#    AlwaysBuild(test_alias)
+
+#if "LINUX" == "compile-platform":
+#    tests.append( "platform/linux/timeouts" )
 
 # special case for cpptest
 test = testEnv.Program( 'test_cpp' , testCoreFiles + ['test/cpptest.cpp']  )
