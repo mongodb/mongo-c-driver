@@ -81,6 +81,9 @@ int mongo_socket_connect( mongo * conn, const char * host, int port ){
     addressSize = sizeof( sa );
 
     if ( connect( conn->sock, (struct sockaddr *)&sa, addressSize ) == -1 ) {
+        mongo_close_socket( conn->sock );
+        conn->connected = 0;
+        conn->sock = 0;
         conn->err = MONGO_CONN_FAIL;
         return MONGO_ERROR;
     }
