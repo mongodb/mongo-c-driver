@@ -157,7 +157,6 @@ char * mongo_data_append64( char * start , const void * data){
     return start + 8;
 }
 
-
 /* Connection API */
 
 void mongo_init( mongo *conn ) {

@@ -85,6 +85,7 @@ enum mongo_operations {
 
 static const int MONGO_UPDATE_UPSERT = 0x1;
 static const int MONGO_UPDATE_MULTI = 0x2;
+static const int MONGO_UPDATE_BASIC = 0x4;
 
 #pragma pack(1)
 typedef struct {

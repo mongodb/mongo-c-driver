@@ -1,28 +1,62 @@
 MongoDB C Driver Tutorial
 =========================
 
+This document shows how to use MongoDB from C. If you're not familiar with MongoDB.
+you'll want to get a brief overview of the database and its shell API. The official
+tutorial is a great place to start.
 
-This document is an introduction to usage of the MongoDB database from a C program.
-
-First, install Mongo.
-
-Next, you may wish to take a look at the guide for a language independent look at how
-to use MongoDB.&nbsp; Also, we suggest some basic familiarity with the MongoDB shell.
+Next, you'll want to install and run MongoDB.
 
 A working C program complete with examples from this tutorial can be found
+TODO: UPDATE THIS GIST.
 `here <https://gist.github.com/920297>`_.
+
+C API
+-----
+
+When writing programs with the C driver, you'll be using four different
+entities: connections, cursors, bson objects, and bson iterators. The APIs
+for each of these follow a similiar pattern. You start by allocating an object,
+either on the stack or the heap (the examples that follow all use the stack). You then
+call an ``init`` function and use other function to build the object. When you're finished,
+you pass the object to a ``destroy`` function.
+
+So, for instance, to create a new connection, start by allocating a ``mongo`` object:
+
+.. code-block:: c
+
+    mongo conn;
+
+Next, initialize it:
+
+.. code-block:: c
+
+    mongo_init( &conn );
+
+Set any optional values, like a timeout, and the connect:
+
+.. code-block:: c
+
+    mongo_set_op_timeout( &conn, 1000 );
+    mongo_connect( &conn );
+
+When you're finished, destroy it:
+
+.. code-block:: c
+
+    mongo_destroy( &conn );
+
+There are more details, but that's the basic pattern. Keep this in mind
+as you learn the API and start using the driver.
 
 Connecting
 ----------
 
-Let's make a tutorial.c file that connects to the database:
+Let's start by that connects to the database:
 
 .. code-block:: c
 
-    #include <stdlib.h>
     #include <stdio.h>
-    #include <string.h>
-    #include "bson.h"
     #include "mongo.h"
 
     int main() {
@@ -40,17 +74,30 @@ Let's make a tutorial.c file that connects to the database:
       }
 
       mongo_destroy( conn );
-      printf( "\nconnection closed\n" );
 
       return 0;
     }
+
+Building the sample program
+---------------------------
+
+If you are using ``gcc`` on Linux or OS X, you can compile with something like this,
+depending on location of your include files:
+
+.. code-block:: bash
+
+    $ gcc -Isrc --std=c99 /path/to/mongo-c-driver/src/*.c -I /path/to/mongo-c-driver/src/ tutorial.c -o tutorial
+    $ ./tutorial
+    connection succeeded
+    connection closed
+
 
 Connecting to a replica set
 ---------------------------
 
 The API for connecting to a replica set is slightly different. First you initialize
-the connection object, specifying the replica set's name, then you add seed nodes,
-and finally you connect. Here's an example:
+the connection object, specifying the replica set's name (in this case, "shard1"),
+then you add seed nodes, and finally you connect. Here's an example:
 
 .. code-block:: c
 
@@ -59,12 +106,11 @@ and finally you connect. Here's an example:
     int main() {
       mongo conn[1];
 
+      mongo_replset_init( conn, "shard1" );
       mongo_replset_add_seed( "10.4.3.22", 27017 );
       mongo_replset_add_seed( "10.4.3.32", 27017 );
 
-      mongo_connect( conn );
-
-      status = mongo_replset_connect( conn, "my-repl-set" );
+      status = mongo_connect( conn );
 
       if( status != MONGO_OK ) {
           // Check conn->err for error code.
@@ -74,20 +120,6 @@ and finally you connect. Here's an example:
 
       return 0;
     }
-
-You'd then proceed to check the status as we did in the previous example.
-
-Building the sample program
----------------------------
-
-If you are using gcc on Linux or OS X, you would compile with something like this, depending on location of your include files:
-
-.. code-block:: bash
-
-    $ gcc -Isrc --std=c99 /path/to/mongo-c-driver/src/*.c -I /path/to/mongo-c-driver/src/ tutorial.c -o tutorial
-    $ ./tutorial
-    connection succeeded
-    connection closed
 
 BSON
 ----
@@ -127,11 +159,12 @@ The server will add an object id to the ``_id`` field if it is not included expl
 
 ``bson_buffer_new_oid( ..., "_id" )`` should be at the beginning of the generated object.
 
-When you are done using the object remember to use ``bson_destroy()`` to free up the memory allocated by the buffer.
+When you are done using the bson object remember pass it to
+``bson_destroy()`` to free up the memory allocated by the buffer.
 
 .. code-block:: c
 
-    bson_destroy( b )
+    bson_destroy( b );
 
 Inserting a single document
 ---------------------------
@@ -185,49 +218,48 @@ We can do batch inserts as well:
 Simple Queries
 --------------
 
-Let's now fetch all objects from the persons collection, and display them.
+Let's now fetch all objects from the ``persons`` collection, and display them.
 
 .. code-block:: c
 
     static void tutorial_empty_query( mongo_connection *conn) {
-      mongo_cursor *cursor;
-      bson empty[1];
-      bson_empty( empty );
+      mongo_cursor cursor[1];
+      mongo_cursor_init( cursor, conn, "tutorial.persons" );
 
-      cursor = mongo_find( conn, "tutorial.persons", empty, empty, 0, 0, 0 );
-        while( mongo_cursor_next( cursor ) == MONGO_OK ) {
+      while( mongo_cursor_next( cursor ) == MONGO_OK )
         bson_print( &cursor->current );
-      }
 
       mongo_cursor_destroy( cursor );
-      bson_destroy( empty );
     }
 
-``empty`` is the empty BSON object \-\- we use it to represent what we
-mean by ``{}`` in JSON: an empty query pattern (an empty query is a query for all objects).
+Here we use the most basic possible cursor, which iterates over all documents. This is the
+equivalent of running ``db.persons.find()`` from the shell.
+
+You initialize a cursor with ``mongo_cursor_init()``. Whenever you finish with a cursor,
+you must pass it to ``mongo_cursor_destroy()``.
 
 We use ``bson_print()`` to print an abbreviated JSON string representation of the object.
 
-``mongo_find()`` returns a ``mongo_cursor``, which must be destroyed after use.
-
-Let's now write a function which prints out the name of all persons in the collection
-whose age is a given value:
+Let's now write a function which prints out the name of all persons
+whose age is 24:
 
 .. code-block:: c
 
     static void tutorial_simple_query( mongo_connection *conn ) {
       bson query[1];
-      mongo_cursor *cursor;
+      mongo_cursor cursor[1];
 
       bson_init( query );
       bson_append_int( query_buf, "age", 24 );
-      bson_from_buffer( query, query_buf );
+      bson_finish( query );
 
-      cursor = mongo_find( conn, "tutorial.persons", query, NULL, 0, 0, 0 );
+      mongo_cursor_init( cursor, conn, "tutorial.persons" );
+      mongo_cursor_set_query( cursor, query )
+
       while( mongo_cursor_next( cursor ) == MONGO_OK ) {
-        bson_iterator it[1];
-        if ( bson_find( it, &cursor->current, "name" )) {
-          printf( "name: %s\n", bson_iterator_string( it ) );
+        bson_iterator iterator[1];
+        if ( bson_find( iterator, &cursor->current, "name" )) {
+            printf( "name: %s\n", bson_iterator_string( it ) );
         }
       }
 
@@ -235,18 +267,12 @@ whose age is a given value:
       mongo_cursor_destroy( cursor );
     }
 
-Our query above, written as JSON, is of the form
+Our query above, written as JSON, is equivalent to the following from the JavaScript shell:
 
 .. code-block:: javascript
 
-    { age : 24 }
-
-In the mongo shell (which uses javascript), we could invoke:
-
-.. code-block:: javascript
-
-    use tutorial;
-    db.persons.find( { age : 24 } );
+    use tutorial
+    db.persons.find( { age: 24 } )
 
 Complex Queries
 ---------------
@@ -254,8 +280,18 @@ Complex Queries
 Sometimes we want to do more then a simple query. We may want the results to
 be sorted in a special way, or what the query to use a certain index.
 
-Let's now make the results from previous query be sorted alphabetically by name.
-To do this, we change the query statement from:
+Let's add a sort clause to our previous query. This requires some knowledge of the
+implementation of query specs in MongoDB. A query spec can either consist of:
+
+1. A query matcher alone, as in our previous example.
+
+or
+
+2. A query matcher, sort clause, hint enforcer, or explain directive. Each of these
+   is wrapped by the keys ``$query``, ``$orderby``, ``$hint``, and ``$explain``, respectively.
+   Most of the time, you'll only use ``$query`` and ``$orderby``.
+
+To add a sort clause to our previous query, we change our query spec from this:
 
 .. code-block:: c
 
@@ -263,7 +299,7 @@ To do this, we change the query statement from:
     bson_append_int( query, "age", 24 );
     bson_finish( query );
 
-to:
+to this:
 
 .. code-block:: c
 
@@ -275,13 +311,64 @@ to:
       bson_append_start_object( query, "$orderby" );
         bson_append_int( query, "name", 1);
       bson_append_finish_object( query );
-    bson_from_buffer( query, query );
+    bson_finish( query );
+
+This is equivalent to the following query from the MongoDB shell:
+
+.. code-block:: javascript
+
+    db.persons.find( { age: 24 } ).sort( { name: 1 } );
+
+
+Updating documents
+------------------
+
+Use the ``mongo_update()`` function to perform updates.
+For example the following update in the MongoDB shell:
+
+.. code-block:: javascript
+
+    use tutorial
+    db.persons.update( { name : 'Joe', age : 33 },
+                       { $inc : { visits : 1 } } )
+
+is equivalent to the following C function:
+
+.. code-block:: c
+
+    static void tutorial_update( mongo_connection *conn ) {
+      bson cond[1], op[1];
+
+      bson_init( cond );
+        bson_append_string( cond, "name", "Joe");
+        bson_append_int( cond, "age", 33);
+      bson_finish( cond );
+
+      bson_init( op );
+        bson_append_start_object( op, "$inc" );
+          bson_append_int( op, "visits", 1 );
+        bson_append_finish_object( op );
+      bson_finish( op );
+
+      mongo_update( conn, "tutorial.persons", cond, op, MONGO_UPDATE_BASIC );
+
+      bson_destroy( cond );
+      bson_destroy( op );
+    }
+
+The final argument to ``mongo_update()`` is a bitfield storing update options. If
+you want to update all documents matching the ``cond``, you must use ``MONGO_UPDATE_MULTI``.
+For upserts, use ``MONGO_UPDATE_UPSERT``. Here's an example:
+
+.. code-block:: c
+
+      mongo_update( conn, "tutorial.persons", cond, op, MONGO_UPDATE_MULTI );
 
 Indexing
 --------
 
-Let's suppose we want to have an index on age so that our queries are fast. Here's
-how we can create that index:
+Now we'll create a couple of indexes. The first is a simple index on ``name``, and
+the second is a compound index on ``name`` and ``age``.
 
 .. code-block:: c
 
@@ -311,41 +398,6 @@ how we can create that index:
     }
 
 
-Updating documents
-------------------
-
-Use the ``mongo_update()`` function to perform a updates.
-For example the following update in the MongoDB shell:
-
-.. code-block:: javascript
-
-    use tutorial
-    db.persons.update( { name : 'Joe', age : 33 },
-                       { $inc : { visits : 1 } } )
-
-is equivalent to the following C function:
-
-.. code-block:: c
-
-    static void tutorial_update( mongo_connection *conn ) {
-      bson cond[1], op[1];
-
-      bson_init( cond );
-      bson_append_string( cond, "name", "Joe");
-      bson_append_int( cond, "age", 33);
-      bson_finish( cond );
-
-      bson_init( op );
-      bson_append_start_object( op, "$inc" );
-        bson_append_int( op, "visits", 1 );
-      bson_append_finish_object( op );
-      bson_finish( op );
-
-      mongo_update(conn, "tutorial.persons", cond, op, 0);
-
-      bson_destroy( cond );
-      bson_destroy( op );
-    }
 
 Further Reading
 ---------------
