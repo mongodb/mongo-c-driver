@@ -48,7 +48,7 @@ static void chunk_free(bson * oChunk)
 
 {
   bson_destroy(oChunk);
-  free(oChunk);
+  bson_free(oChunk);
 }
 
 /*--------------------------------------------------------------------*/
@@ -73,7 +73,7 @@ int gridfs_init(mongo * client, const char * dbname,
   if (prefix == NULL) prefix = "fs";
   gfs->prefix = (const char *)bson_malloc(strlen(prefix)+1);
   if (gfs->prefix == NULL) {
-    free((char*)gfs->dbname);
+    bson_free((char*)gfs->dbname);
     return FALSE;
   }
   strcpy((char *)gfs->prefix, prefix);
@@ -82,8 +82,8 @@ int gridfs_init(mongo * client, const char * dbname,
   gfs->files_ns =
     (const char *) bson_malloc (strlen(prefix)+strlen(dbname)+strlen(".files")+2);
   if (gfs->files_ns == NULL) {
-    free((char*)gfs->dbname);
-    free((char*)gfs->prefix);
+    bson_free((char*)gfs->dbname);
+    bson_free((char*)gfs->prefix);
     return FALSE;
   }
   strcpy((char*)gfs->files_ns, dbname);
@@ -95,9 +95,9 @@ int gridfs_init(mongo * client, const char * dbname,
   gfs->chunks_ns = (const char *) bson_malloc(strlen(prefix) + strlen(dbname)
               + strlen(".chunks") + 2);
   if (gfs->chunks_ns == NULL) {
-    free((char*)gfs->dbname);
-    free((char*)gfs->prefix);
-    free((char*)gfs->files_ns);
+    bson_free((char*)gfs->dbname);
+    bson_free((char*)gfs->prefix);
+    bson_free((char*)gfs->files_ns);
     return FALSE;
   }
   strcpy((char*)gfs->chunks_ns, dbname);
@@ -112,10 +112,10 @@ int gridfs_init(mongo * client, const char * dbname,
   success = (mongo_create_index(gfs->client, gfs->files_ns, &b, options, NULL) == MONGO_OK);
   bson_destroy( &b );
   if (!success) {
-    free((char*)gfs->dbname);
-    free((char*)gfs->prefix);
-    free((char*)gfs->files_ns);
-    free((char*)gfs->chunks_ns);
+    bson_free((char*)gfs->dbname);
+    bson_free((char*)gfs->prefix);
+    bson_free((char*)gfs->files_ns);
+    bson_free((char*)gfs->chunks_ns);
     return FALSE;
   }
 
@@ -127,10 +127,10 @@ int gridfs_init(mongo * client, const char * dbname,
   success = (mongo_create_index(gfs->client, gfs->chunks_ns, &b, options, NULL) == MONGO_OK);
   bson_destroy( &b );
   if (!success) {
-    free((char*)gfs->dbname);
-    free((char*)gfs->prefix);
-    free((char*)gfs->files_ns);
-    free((char*)gfs->chunks_ns);
+    bson_free((char*)gfs->dbname);
+    bson_free((char*)gfs->prefix);
+    bson_free((char*)gfs->files_ns);
+    bson_free((char*)gfs->chunks_ns);
     return FALSE;
   }
 
@@ -143,10 +143,10 @@ void gridfs_destroy(gridfs* gfs)
 
 {
   if (gfs == NULL) return;
-  if (gfs->dbname) free((char*)gfs->dbname);
-  if (gfs->prefix) free((char*)gfs->prefix);
-  if (gfs->files_ns) free((char*)gfs->files_ns);
-  if (gfs->chunks_ns) free((char*)gfs->chunks_ns);
+  if (gfs->dbname) bson_free((char*)gfs->dbname);
+  if (gfs->prefix) bson_free((char*)gfs->prefix);
+  if (gfs->files_ns) bson_free((char*)gfs->files_ns);
+  if (gfs->chunks_ns) bson_free((char*)gfs->chunks_ns);
 }
 
 /*--------------------------------------------------------------------*/
@@ -290,7 +290,7 @@ void gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset len
 
       chunks_to_write--;
 
-      free(buffer);
+      bson_free(buffer);
     }
 
     while( chunks_to_write > 0 ) {
@@ -303,7 +303,7 @@ void gridfile_write_buffer( gridfile* gfile, const char* data, gridfs_offset len
       data += DEFAULT_CHUNK_SIZE;
     }
 
-    free(gfile->pending_data);
+    bson_free(gfile->pending_data);
 
     /* If there are any leftover bytes, store them as pending data. */
     if( bytes_left == 0 )
@@ -332,7 +332,7 @@ bson gridfile_writer_done( gridfile* gfile )
     oChunk = chunk_new(gfile->id, gfile->chunk_num, gfile->pending_data, gfile->pending_len);
     mongo_insert(gfile->gfs->client, gfile->gfs->chunks_ns, oChunk);
     chunk_free(oChunk);
-    free(gfile->pending_data);
+    bson_free(gfile->pending_data);
     gfile->length += gfile->pending_len;
   }
 
@@ -340,8 +340,8 @@ bson gridfile_writer_done( gridfile* gfile )
   response = gridfs_insert_file(gfile->gfs, gfile->remote_name, gfile->id,
       gfile->length, gfile->content_type);
 
-  free( gfile->remote_name );
-  free( gfile->content_type );
+  bson_free( gfile->remote_name );
+  bson_free( gfile->content_type );
 
   return response;
 }
@@ -503,7 +503,7 @@ void gridfile_destroy(gridfile* gfile)
 
 {
   bson_destroy(gfile->meta);
-  free(gfile->meta);
+  bson_free(gfile->meta);
 }
 
 /*--------------------------------------------------------------------*/

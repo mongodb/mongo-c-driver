@@ -159,7 +159,7 @@ def run_tests( root, tests ):
         AlwaysBuild(test_alias)
 
 tests = Split("sizes resize endian_swap all_types simple update errors "
-"count_delete auth gridfs validate examples helpers oid cursors replica_set")
+"count_delete auth gridfs validate examples helpers oid functions cursors replica_set")
 
 # Run standard tests
 run_tests("test", tests)

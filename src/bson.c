@@ -29,8 +29,15 @@ const int initialBufferSize = 128;
 /* only need one of these */
 static const int zero = 0;
 
+/* Custom standard function pointers. */
+static void *(*malloc_func)( size_t ) = NULL;
+static void *(*realloc_func)( void *, size_t ) = NULL;
+static void (*free_func)( void * ) = NULL;
+static int (*printf_func)( const char *, ... ) = NULL;
+static int (*fprintf_func)( FILE*, const char *, ... ) = NULL;
+static int (*sprintf_func)( char *, const char *, ... ) = NULL;
 static int (*oid_fuzz_func)( void ) = NULL;
-static int (*oid_inc_func)( void ) = NULL;
+static int (*oid_inc_func)( void )  = NULL;
 
 /* ----------------------------
    READING
@@ -164,28 +171,28 @@ void bson_print_raw( const char * data , int depth ){
         key = bson_iterator_key( &i );
 
         for ( temp=0; temp<=depth; temp++ )
-            printf( "\t" );
-        printf( "%s : %d \t " , key , t );
+            bson_printf( "\t" );
+        bson_printf( "%s : %d \t " , key , t );
         switch ( t ){
-        case BSON_INT: printf( "%d" , bson_iterator_int( &i ) ); break;
-        case BSON_DOUBLE: printf( "%f" , bson_iterator_double( &i ) ); break;
-        case BSON_BOOL: printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
-        case BSON_STRING: printf( "%s" , bson_iterator_string( &i ) ); break;
-        case BSON_NULL: printf( "null" ); break;
-        case BSON_OID: bson_oid_to_string(bson_iterator_oid(&i), oidhex); printf( "%s" , oidhex ); break;
+        case BSON_INT: bson_printf( "%d" , bson_iterator_int( &i ) ); break;
+        case BSON_DOUBLE: bson_printf( "%f" , bson_iterator_double( &i ) ); break;
+        case BSON_BOOL: bson_printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
+        case BSON_STRING: bson_printf( "%s" , bson_iterator_string( &i ) ); break;
+        case BSON_NULL: bson_printf( "null" ); break;
+        case BSON_OID: bson_oid_to_string(bson_iterator_oid(&i), oidhex); bson_printf( "%s" , oidhex ); break;
         case BSON_TIMESTAMP:
             ts = bson_iterator_timestamp( &i );
-            printf("i: %d, t: %d", ts.i, ts.t);
+            bson_printf("i: %d, t: %d", ts.i, ts.t);
             break;
         case BSON_OBJECT:
         case BSON_ARRAY:
-            printf( "\n" );
+            bson_printf( "\n" );
             bson_print_raw( bson_iterator_value( &i ) , depth + 1 );
             break;
         default:
-            fprintf( stderr , "can't print type : %d\n" , t );
+            bson_fprintf( stderr , "can't print type : %d\n" , t );
         }
-        printf( "\n" );
+        bson_printf( "\n" );
     }
 }
 
@@ -510,7 +517,7 @@ int bson_finish( bson * b ){
 }
 
 void bson_destroy( bson * b ){
-    free( b->data );
+    bson_free( b->data );
     b->err = 0;
     b->data = 0;
     b->cur = 0;
@@ -751,24 +758,102 @@ int bson_append_finish_object( bson * b ){
     return BSON_OK;
 }
 
-void* bson_malloc(int size){
-    void* p = malloc(size);
-    bson_fatal_msg(!!p, "malloc() failed");
-    return p;
-}
-
-void* bson_realloc(void* ptr, int size){
-    void* p = realloc(ptr, size);
-    bson_fatal_msg(!!p, "realloc() failed");
-    return p;
-}
-
 static bson_err_handler err_handler = NULL;
 
 bson_err_handler set_bson_err_handler(bson_err_handler func){
     bson_err_handler old = err_handler;
     err_handler = func;
     return old;
+}
+
+void bson_set_malloc( void *(*func)( size_t )  ) {
+    malloc_func = func;
+}
+
+void *bson_malloc(int size) {
+    void *p;
+    if( malloc_func)
+        p = malloc_func(size);
+    else
+        p = malloc(size);
+    bson_fatal_msg(!!p, "malloc() failed");
+    return p;
+}
+
+void bson_set_realloc( void *(*func)( void *, size_t ) ) {
+    realloc_func = func;
+}
+
+void* bson_realloc(void* ptr, int size){
+    void *p;
+    if( realloc_func )
+        p = realloc_func(ptr, size);
+    else
+        p = realloc(ptr, size);
+    bson_fatal_msg(!!p, "realloc() failed");
+    return p;
+}
+
+void bson_set_free( void (*func)( void * ) ) {
+    free_func = func;
+}
+
+void bson_free( void *ptr ) {
+    if( free_func )
+        free_func( ptr );
+    else
+        free( ptr );
+}
+
+void bson_set_printf( int (*func)( const char *, ... ) ) {
+    printf_func = func;
+}
+
+int bson_printf( const char *format, ... ) {
+    va_list ap;
+    int ret;
+    va_start( ap, format );
+    if( printf_func )
+        ret = printf_func( format, ap );
+    else
+        ret = printf( format, ap );
+    va_end( ap );
+
+    return ret;
+}
+
+void bson_set_fprintf( int (*func)( FILE*, const char *, ... ) ) {
+    fprintf_func = func;
+}
+
+int bson_fprintf( FILE *fp, const char *format, ... ) {
+    va_list ap;
+    int ret;
+    va_start( ap, format );
+    if( fprintf_func )
+        ret = fprintf_func( fp, format, ap );
+    else
+        ret = fprintf( fp, format, ap );
+    va_end( ap );
+
+    return ret;
+}
+
+void bson_set_sprintf( int (*func)( char *, const char *, ... ) ) {
+    sprintf_func = func;
+}
+
+int bson_sprintf( char* s, const char *format, ... ) {
+    va_list ap;
+    int ret;
+    va_start( ap, format );
+    if( sprintf_func )
+        ret = sprintf_func( s, format, ap );
+    else
+        ret = sprintf( s, format, ap );
+    va_end( ap );
+
+    return ret;
 }
 
 /**
@@ -794,14 +879,15 @@ void bson_fatal_msg( int ok , const char* msg){
         err_handler(msg);
     }
 
-    fprintf( stderr , "error: %s\n" , msg );
+    bson_fprintf( stderr , "error: %s\n" , msg );
     exit(-5);
 }
 
 extern const char bson_numstrs[1000][4];
+
 void bson_numstr(char* str, int i){
     if(i < 1000)
         memcpy(str, bson_numstrs[i], 4);
     else
-        sprintf(str,"%d", i);
+        bson_sprintf(str,"%d", i);
 }

@@ -23,6 +23,10 @@
 
 #include "platform/platform_hacks.h"
 #include <time.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 MONGO_EXTERN_C_START
 
@@ -854,44 +858,84 @@ int bson_append_start_array( bson * b, const char * name );
 int bson_append_finish_object( bson * b );
 
 void bson_numstr(char* str, int i);
+
 void bson_incnumstr(char* str);
 
-
-/* ------------------------------
-   ERROR HANDLING - also used in mongo code
-   ------------------------------ */
-/**
- * Allocates memory and checks return value, exiting fatally if malloc() fails.
- * 
- * @param size bytes to allocate.
- *
- * @return a pointer to the allocated memory.
- * 
- * @sa malloc(3)
- */ 
-void * bson_malloc(int size); /* checks return value */
-
-/**
- * Changes the size of allocated memory and checks return value, exiting fatally if realloc() fails.
- * 
- * @param size bytes to allocate.
- *
- * @return a pointer to the allocated memory.
- *
- * @sa malloc(3)
- */ 
-void * bson_realloc(void * ptr, int size); /* checks return value */
+/* Error handling and stadard library function over-riding. */
+/* -------------------------------------------------------- */
 
 /* bson_err_handlers shouldn't return!!! */
 typedef void(*bson_err_handler)(const char* errmsg);
 
-/* returns old handler or NULL */
-/* default handler prints error then exits with failure*/
+/* Set an alternative to the standard malloc(). */
+void bson_set_malloc( void *(*func)( size_t )  );
+
+/**
+ * Allocates memory and checks return value, exiting fatally if malloc() fails.
+ *
+ * @param size bytes to allocate.
+ *
+ * @return a pointer to the allocated memory.
+ *
+ * @sa malloc(3)
+ */
+void *bson_malloc( int size );
+
+/* Set an alternative to the standard realloc(). */
+void bson_set_realloc( void *(*func)( void *, size_t ) );
+
+/**
+ * Changes the size of allocated memory and checks return value,
+ * exiting fatally if realloc() fails.
+ *
+ * @param ptr pointer to the space to reallocate.
+ * @param size bytes to allocate.
+ *
+ * @return a pointer to the allocated memory.
+ *
+ * @sa realloc()
+ */
+void *bson_realloc( void *ptr, int size );
+
+/* Set an alternative to the standard free(). */
+void bson_set_free( void (*func)( void * ) );
+
+/**
+ * Release memory allocated by malloc or realloc.
+ *
+ * @param ptr
+ */
+void bson_free( void *ptr );
+
+/* Set an alternative to the standard printf(). */
+void bson_set_printf( int (*func)( const char *, ... ) );
+
+/**
+ * Use this instead of printf.
+ */
+int bson_printf( const char *format, ... );
+
+/* Set an alternative to the standard fprintf(). */
+void bson_set_fprintf( int (*func)( FILE *, const char *, ... ) );
+
+/**
+ * Use this instead of fprintf.
+ */
+int bson_fprintf( FILE *fp, const char *format, ... );
+
+/* Set an alternative to the standard sprintf(). */
+void bson_set_sprintf( int (*func)( char *, const char *, ... ) );
+
+/**
+ * Use this instead of sprintf.
+ */
+int bson_sprintf( char *s, const char *format, ... );
+
 /**
  * Set a function for error handling.
- * 
+ *
  * @param func a bson_err_handler function.
- * 
+ *
  * @return the old error handling function, or NULL.
  */
 bson_err_handler set_bson_err_handler(bson_err_handler func);
@@ -913,7 +957,7 @@ void bson_fatal( int ok );
 void bson_fatal_msg( int ok, const char* msg );
 
 /**
- * Invoke the error handler but do not exit.
+ * Invoke the error handler, but do not exit.
  *
  * @param b the buffer object.
  */

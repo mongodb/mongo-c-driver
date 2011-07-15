@@ -48,7 +48,7 @@ mongo_message * mongo_message_create( int len , int id , int responseTo , int op
     return mm;
 }
 
-/* Always calls free(mm) */
+/* Always calls bson_free(mm) */
 int mongo_message_send(mongo * conn, mongo_message* mm){
     mongo_header head; /* little endian */
     int res;
@@ -59,17 +59,17 @@ int mongo_message_send(mongo * conn, mongo_message* mm){
 
     res = mongo_write_socket(conn, &head, sizeof(head));
     if( res != MONGO_OK ) {
-        free( mm );
+        bson_free( mm );
         return res;
     }
 
     res = mongo_write_socket(conn, &mm->data, mm->head.len - sizeof(head));
     if( res != MONGO_OK ) {
-        free( mm );
+        bson_free( mm );
         return res;
     }
 
-    free( mm );
+    bson_free( mm );
     return MONGO_OK;
 }
 
@@ -102,7 +102,7 @@ int mongo_read_response( mongo * conn, mongo_reply** reply ){
 
     res = mongo_read_socket(conn, &out->objs, len-sizeof(head)-sizeof(fields));
     if( res != MONGO_OK ) {
-        free(out);
+        bson_free(out);
         return res;
     }
 
@@ -186,7 +186,7 @@ static void mongo_replset_free_list( mongo_host_port** list ) {
     while( node != NULL ) {
         prev = node;
         node = node->next;
-        free(prev);
+        bson_free(prev);
     }
 
     *list = NULL;
@@ -252,7 +252,7 @@ static void mongo_replset_check_seed( mongo* conn ) {
                     mongo_replset_add_node( &conn->replset->hosts,
                         host_port->host, host_port->port );
 
-                    free( host_port );
+                    bson_free( host_port );
                     host_port = NULL;
                 }
             }
@@ -421,14 +421,14 @@ void mongo_destroy( mongo * conn ){
     if( conn->replset ) {
         mongo_replset_free_list( &conn->replset->seeds );
         mongo_replset_free_list( &conn->replset->hosts );
-        free( conn->replset->name );
-        free( conn->replset );
+        bson_free( conn->replset->name );
+        bson_free( conn->replset );
         conn->replset = NULL;
     }
 
-    free( conn->primary );
-    free( conn->errstr );
-    free( conn->lasterrstr );
+    bson_free( conn->primary );
+    bson_free( conn->errstr );
+    bson_free( conn->lasterrstr );
 
     conn->err = 0;
     conn->errstr = NULL;
@@ -644,7 +644,7 @@ static int mongo_cursor_get_more(mongo_cursor* cursor){
         data = mongo_data_append32(data, &limit);
         data = mongo_data_append64(data, &cursor->reply->fields.cursorID);
 
-        free(cursor->reply);
+        bson_free(cursor->reply);
         res = mongo_message_send( cursor->conn, mm);
         if( res != MONGO_OK ) {
             mongo_cursor_destroy(cursor);
@@ -808,11 +808,11 @@ int mongo_cursor_destroy(mongo_cursor* cursor){
         result = mongo_message_send(conn, mm);
     }
 
-    free(cursor->reply);
-    free((void*)cursor->ns);
+    bson_free(cursor->reply);
+    bson_free((void*)cursor->ns);
 
     if( cursor->flags & MONGO_CURSOR_MUST_FREE )
-        free( cursor );
+        bson_free( cursor );
 
     return result;
 }
@@ -907,7 +907,7 @@ int mongo_run_command(mongo* conn, const char* db, bson* command,
     strcpy(ns+sl, ".$cmd");
 
     res = mongo_find_one(conn, ns, command, bson_empty(&fields), out);
-    free(ns);
+    bson_free(ns);
     return res;
 }
 
@@ -993,7 +993,7 @@ static int mongo_cmd_get_error_helper(mongo * conn, const char * db,
 
     /* Reset last error codes. */
     conn->lasterrcode = 0;
-    free(conn->lasterrstr);
+    bson_free(conn->lasterrstr);
     conn->lasterrstr = NULL;
 
     /* If there's an error, store its code and string in the connection object. */
@@ -1094,7 +1094,7 @@ int mongo_cmd_add_user(mongo* conn, const char* db, const char* user, const char
 
     res = mongo_update(conn, ns, &user_obj, &pass_obj, MONGO_UPDATE_UPSERT);
 
-    free(ns);
+    bson_free(ns);
     bson_destroy(&user_obj);
     bson_destroy(&pass_obj);
 
