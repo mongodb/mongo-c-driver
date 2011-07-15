@@ -18,22 +18,22 @@ def clean_dir(dir):
 
 def gen_api(dir):
     clean_dir(dir)
-    clean_dir("docsource/doxygen")
+    clean_dir("docs/source/doxygen")
 
     with open(os.devnull, 'w') as null:
         subprocess.call(["doxygen", "doxygenConfig"], stdout=null, stderr=null)
 
-    os.rename("docsource/doxygen/html", dir)
+    os.rename("docs/source/doxygen/html", dir)
 
 def gen_sphinx(dir):
     clean_dir(dir)
-    os.chdir("docsource/sphinx")
+    os.chdir("docs/source/sphinx")
 
     with open(os.devnull, 'w') as null:
         subprocess.call(["make", "html"], stdout=null, stderr=null)
 
     os.chdir("../../")
-    os.rename("docsource/sphinx/build/html", dir)
+    os.rename("doc/source/sphinx/build/html", dir)
 
 def version():
     """Get the driver version from doxygenConfig.
@@ -46,7 +46,6 @@ def version():
 
 def main():
     print("Generating C docs in docs/html")
-    clean_dir("docs")
     gen_sphinx("docs/html")
     gen_api("docs/html/api")
 
