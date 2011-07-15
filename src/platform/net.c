@@ -89,6 +89,8 @@ int mongo_socket_connect( mongo * conn, const char * host, int port ){
     }
 
     setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(flag) );
+    if( conn->op_timeout_ms > 0 )
+        mongo_set_socket_op_timeout( conn, conn->op_timeout_ms );
 
     conn->connected = 1;
 
