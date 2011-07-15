@@ -45,8 +45,8 @@ AddOption('--use-platform',
 
 import os
 import sys
+sys.path.append("docs")
 
-sys.path.append(os.path.abspath("docs"))
 import buildscripts
 
 env = Environment( ENV=os.environ )

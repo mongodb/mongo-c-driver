@@ -32,8 +32,8 @@ def gen_sphinx(dir):
     with open(os.devnull, 'w') as null:
         subprocess.call(["make", "html"], stdout=null, stderr=null)
 
-    os.chdir("../../")
-    os.rename("doc/source/sphinx/build/html", dir)
+    os.chdir("../../../")
+    os.rename("docs/source/sphinx/build/html", dir)
 
 def version():
     """Get the driver version from doxygenConfig.
@@ -45,8 +45,9 @@ def version():
 
 
 def main():
-    print("Generating C docs in docs/html")
+    print("Generating Sphinx docs in docs/html")
     gen_sphinx("docs/html")
+    print("Generating Doxygen docs in docs/html/api")
     gen_api("docs/html/api")
 
 
