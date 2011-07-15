@@ -171,28 +171,28 @@ void bson_print_raw( const char * data , int depth ){
         key = bson_iterator_key( &i );
 
         for ( temp=0; temp<=depth; temp++ )
-            bson_printf( "\t" );
+            printf( "\t" );
         bson_printf( "%s : %d \t " , key , t );
         switch ( t ){
-        case BSON_INT: bson_printf( "%d" , bson_iterator_int( &i ) ); break;
-        case BSON_DOUBLE: bson_printf( "%f" , bson_iterator_double( &i ) ); break;
-        case BSON_BOOL: bson_printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
-        case BSON_STRING: bson_printf( "%s" , bson_iterator_string( &i ) ); break;
-        case BSON_NULL: bson_printf( "null" ); break;
-        case BSON_OID: bson_oid_to_string(bson_iterator_oid(&i), oidhex); bson_printf( "%s" , oidhex ); break;
+        case BSON_INT: printf( "%d" , bson_iterator_int( &i ) ); break;
+        case BSON_DOUBLE: printf( "%f" , bson_iterator_double( &i ) ); break;
+        case BSON_BOOL: printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
+        case BSON_STRING: printf( "%s" , bson_iterator_string( &i ) ); break;
+        case BSON_NULL: printf( "null" ); break;
+        case BSON_OID: bson_oid_to_string(bson_iterator_oid(&i), oidhex); printf( "%s" , oidhex ); break;
         case BSON_TIMESTAMP:
             ts = bson_iterator_timestamp( &i );
-            bson_printf("i: %d, t: %d", ts.i, ts.t);
+            printf("i: %d, t: %d", ts.i, ts.t);
             break;
         case BSON_OBJECT:
         case BSON_ARRAY:
-            bson_printf( "\n" );
+            printf( "\n" );
             bson_print_raw( bson_iterator_value( &i ) , depth + 1 );
             break;
         default:
             bson_fprintf( stderr , "can't print type : %d\n" , t );
         }
-        bson_printf( "\n" );
+        printf( "\n" );
     }
 }
 
@@ -816,7 +816,7 @@ int bson_printf( const char *format, ... ) {
     if( printf_func )
         ret = printf_func( format, ap );
     else
-        ret = printf( format, ap );
+        ret = vprintf( format, ap );
     va_end( ap );
 
     return ret;
@@ -833,7 +833,7 @@ int bson_fprintf( FILE *fp, const char *format, ... ) {
     if( fprintf_func )
         ret = fprintf_func( fp, format, ap );
     else
-        ret = fprintf( fp, format, ap );
+        ret = vfprintf( fp, format, ap );
     va_end( ap );
 
     return ret;
@@ -850,7 +850,7 @@ int bson_sprintf( char* s, const char *format, ... ) {
     if( sprintf_func )
         ret = sprintf_func( s, format, ap );
     else
-        ret = sprintf( s, format, ap );
+        ret = vsprintf( s, format, ap );
     va_end( ap );
 
     return ret;

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#include <unistd.h>
 
 #define LARGE 3*1024*1024
 #define UPPER 2000*1024
@@ -125,6 +126,10 @@ void test_basic() {
     mongo_disconnect(conn);
     mongo_destroy(conn);
     free( data_before );
+
+    /* Clean up files. */
+    unlink("input-file");
+    unlink("output");
 }
 
 void test_streaming() {

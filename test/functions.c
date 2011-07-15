@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 int test_value = 0;
 
@@ -23,36 +24,27 @@ void my_free( void *ptr ) {
     free( ptr );
 }
 
-int my_printf( const char *format, ... ) {
+int my_printf( const char *format, va_list ap ) {
     int ret;
-    va_list ap;
     test_value = 4;
 
-    va_start( ap, format );
-    ret = printf( format, ap );
-    va_end( ap );
+    ret = vprintf( format, ap );
     return ret;
 }
 
-int my_fprintf( FILE *fp, const char *format, ... ) {
+int my_fprintf( FILE *fp, const char *format, va_list ap ) {
     int ret;
-    va_list ap;
     test_value = 5;
 
-    va_start( ap, format );
-    ret = fprintf( fp, format, ap );
-    va_end( ap );
+    ret = vfprintf( fp, format, ap );
     return ret;
 }
 
-int my_sprintf( char *s, const char *format, ... ) {
+int my_sprintf( char *s, const char *format, va_list ap ) {
     int ret;
-    va_list ap;
     test_value = 6;
 
-    va_start( ap, format );
-    ret = sprintf( s, format, ap );
-    va_end( ap );
+    ret = vsprintf( s, format, ap );
     return ret;
 }
 
@@ -84,9 +76,10 @@ int main() {
 
     bson_printf("Test %d\n", test_value );
     ASSERT( test_value == 0 );
-    bson_fprintf( stderr, "Test %d\n", test_value );
+    bson_fprintf( stdout, "Test %d\n", test_value );
     ASSERT( test_value == 0 );
     bson_sprintf( str, "Test %d\n", test_value );
+    bson_printf( "Str: %s\n", str );
     ASSERT( test_value == 0 );
 
     bson_set_printf( my_printf );
@@ -95,10 +88,11 @@ int main() {
 
     bson_printf("Test %d\n", test_value );
     ASSERT( test_value == 4 );
-    bson_fprintf( stderr, "Test %d\n", test_value );
+    bson_fprintf( stdout, "Test %d\n", test_value );
     ASSERT( test_value == 5 );
     bson_sprintf( str, "Test %d\n", test_value );
     ASSERT( test_value == 6 );
+    bson_printf( "Str: %s\n", str );
 
     return 0;
 }
