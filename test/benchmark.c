@@ -23,31 +23,29 @@
 #define PER_TRIAL 5000
 #define BATCH_SIZE  100
 
-static mongo *conn = mongo_new();
+static mongo conn[1];
 
 static void make_small(bson * out, int i){
-    bson_buffer bb;
-    bson_buffer_init(&bb);
-    bson_append_new_oid(&bb, "_id");
-    bson_append_int(&bb, "x", i);
-    bson_from_buffer(out, &bb);
+    bson_init(out);
+    bson_append_new_oid(out, "_id");
+    bson_append_int(out, "x", i);
+    bson_finish(out);
 }
 
 static void make_medium(bson * out, int i){
-    bson_buffer bb;
-    bson_buffer_init(&bb);
-    bson_append_new_oid(&bb, "_id");
-    bson_append_int(&bb, "x", i);
-    bson_append_int(&bb, "integer", 5);
-    bson_append_double(&bb, "number", 5.05);
-    bson_append_bool(&bb, "boolean", 0);
+    bson_init(out);
+    bson_append_new_oid(out, "_id");
+    bson_append_int(out, "x", i);
+    bson_append_int(out, "integer", 5);
+    bson_append_double(out, "number", 5.05);
+    bson_append_bool(out, "boolean", 0);
 
-    bson_append_start_array(&bb, "array");
-    bson_append_string(&bb, "0", "test");
-    bson_append_string(&bb, "1", "benchmark");
-    bson_append_finish_object(&bb);
+    bson_append_start_array(out, "array");
+    bson_append_string(out, "0", "test");
+    bson_append_string(out, "1", "benchmark");
+    bson_append_finish_object(out);
 
-    bson_from_buffer(out, &bb);
+    bson_finish(out);
 }
 
 static const char *words[14] = 
@@ -58,36 +56,35 @@ static const char *words[14] =
 static void make_large(bson * out, int i){
     int num;
     char numstr[4];
-    bson_buffer bb;
-    bson_buffer_init(&bb);
+    bson_init(out);
 
-    bson_append_new_oid(&bb, "_id");
-    bson_append_int(&bb, "x", i);
-    bson_append_string(&bb, "base_url", "http://www.example.com/test-me");
-    bson_append_int(&bb, "total_word_count", 6743);
-    bson_append_int(&bb, "access_time", 999); /*TODO use date*/
+    bson_append_new_oid(out, "_id");
+    bson_append_int(out, "x", i);
+    bson_append_string(out, "base_url", "http://www.example.com/test-me");
+    bson_append_int(out, "total_word_count", 6743);
+    bson_append_int(out, "access_time", 999); /*TODO use date*/
 
-    bson_append_start_object(&bb, "meta_tags");
-    bson_append_string(&bb, "description", "i am a long description string");
-    bson_append_string(&bb, "author", "Holly Man");
-    bson_append_string(&bb, "dynamically_created_meta_tag", "who know\n what");
-    bson_append_finish_object(&bb);
+    bson_append_start_object(out, "meta_tags");
+    bson_append_string(out, "description", "i am a long description string");
+    bson_append_string(out, "author", "Holly Man");
+    bson_append_string(out, "dynamically_created_meta_tag", "who know\n what");
+    bson_append_finish_object(out);
 
-    bson_append_start_object(&bb, "page_structure");
-    bson_append_int(&bb, "counted_tags", 3450);
-    bson_append_int(&bb, "no_of_js_attached", 10);
-    bson_append_int(&bb, "no_of_images", 6);
-    bson_append_finish_object(&bb);
+    bson_append_start_object(out, "page_structure");
+    bson_append_int(out, "counted_tags", 3450);
+    bson_append_int(out, "no_of_js_attached", 10);
+    bson_append_int(out, "no_of_images", 6);
+    bson_append_finish_object(out);
 
 
-    bson_append_start_array(&bb, "harvested_words");
+    bson_append_start_array(out, "harvested_words");
     for (num=0; num < 14*20; num++){
         bson_numstr(numstr, num);
-        bson_append_string(&bb, numstr, words[num%14]);
+        bson_append_string(out, numstr, words[num%14]);
     }
-    bson_append_finish_object(&bb);
+    bson_append_finish_object(out);
 
-    bson_from_buffer(out, &bb);
+    bson_finish(out);
 }
 
 static void serialize_small_test(){
@@ -147,7 +144,7 @@ static void single_insert_large_test(){
 static void index_insert_small_test(){
     int i;
     bson b;
-    ASSERT(mongo_create_simple_index(conn, DB ".index.small", "x", 0, NULL));
+    ASSERT(mongo_create_simple_index(conn, DB ".index.small", "x", 0, NULL) == MONGO_OK);
     for (i=0; i<PER_TRIAL; i++){
         make_small(&b, i);
         mongo_insert(conn, DB ".index.small", &b);
@@ -158,7 +155,7 @@ static void index_insert_small_test(){
 static void index_insert_medium_test(){
     int i;
     bson b;
-    ASSERT(mongo_create_simple_index(conn, DB ".index.medium", "x", 0, NULL));
+    ASSERT(mongo_create_simple_index(conn, DB ".index.medium", "x", 0, NULL) == MONGO_OK);
     for (i=0; i<PER_TRIAL; i++){
         make_medium(&b, i);
         mongo_insert(conn, DB ".index.medium", &b);
@@ -169,7 +166,7 @@ static void index_insert_medium_test(){
 static void index_insert_large_test(){
     int i;
     bson b;
-    ASSERT(mongo_create_simple_index(conn, DB ".index.large", "x", 0, NULL));
+    ASSERT(mongo_create_simple_index(conn, DB ".index.large", "x", 0, NULL) == MONGO_OK );
     for (i=0; i<PER_TRIAL; i++){
         make_large(&b, i);
         mongo_insert(conn, DB ".index.large", &b);
@@ -232,10 +229,9 @@ static void batch_insert_large_test(){
 }
 
 static void make_query(bson* b){
-    bson_buffer bb;
-    bson_buffer_init(&bb);
-    bson_append_int(&bb, "x", PER_TRIAL/2);
-    bson_from_buffer(b, &bb);
+    bson_init(b);
+    bson_append_int(b, "x", PER_TRIAL/2);
+    bson_finish(b);
 }
 
 static void find_one(const char* ns){
@@ -243,7 +239,7 @@ static void find_one(const char* ns){
     int i;
     for (i=0; i < PER_TRIAL; i++){
         make_query(&b);
-        ASSERT(mongo_find_one(conn, ns, &b, NULL, NULL));
+        ASSERT(mongo_find_one(conn, ns, &b, NULL, NULL) == MONGO_OK);
         bson_destroy(&b);
     }
 }
@@ -265,7 +261,7 @@ static void find(const char* ns){
         cursor = mongo_find(conn, ns, &b, NULL, 0,0,0);
         ASSERT(cursor);
 
-        while(mongo_cursor_next(cursor))
+        while(mongo_cursor_next(cursor) == MONGO_OK)
         {}
 
         mongo_cursor_destroy(cursor);
@@ -284,30 +280,29 @@ static void find_index_large_test()  {find(DB ".index.large");}
 
 static void find_range(const char* ns){
     int i;
-    bson b;
+    bson bb;
+    mongo_cursor * cursor;
 
     for (i=0; i < PER_TRIAL; i++){
         int j=0;
-        mongo_cursor * cursor;
-        bson_buffer bb;
 
-        bson_buffer_init(&bb);
+        bson_init(&bb);
         bson_append_start_object(&bb, "x");
         bson_append_int(&bb, "$gt", PER_TRIAL/2);
         bson_append_int(&bb, "$lt", PER_TRIAL/2 + BATCH_SIZE);
         bson_append_finish_object(&bb);
-        bson_from_buffer(&b, &bb);
+        bson_finish(&bb);
 
-        cursor = mongo_find(conn, ns, &b, NULL, 0,0,0);
+        cursor = mongo_find(conn, ns, &bb, NULL, 0,0,0);
         ASSERT(cursor);
 
-        while(mongo_cursor_next(cursor)) {
+        while(mongo_cursor_next(cursor) == MONGO_OK) {
             j++;
         }
         ASSERT(j == BATCH_SIZE-1);
 
         mongo_cursor_destroy(cursor);
-        bson_destroy(&b);
+        bson_destroy(&bb);
     }
 }
 
@@ -352,7 +347,7 @@ static void time_it(nullary func, const char* name, bson_bool_t gle){
 
 static void clean(){
     bson b;
-    if (!mongo_cmd_drop_db(conn, DB)){
+    if (mongo_cmd_drop_db(conn, DB) != MONGO_OK){
         printf("failed to drop db\n");
         exit(1);
     }
@@ -365,7 +360,7 @@ static void clean(){
 int main(){
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if (mongo_connect( conn, TEST_SERVER, 27017 )){
+    if (mongo_connect( conn, TEST_SERVER, 27017 ) != MONGO_OK){
         printf("failed to connect\n");
         exit(1);
     }
