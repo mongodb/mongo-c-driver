@@ -39,7 +39,8 @@ typedef enum mongo_error_t {
     MONGO_CURSOR_EXHAUSTED = 4, /**< The cursor has no more results. */
     MONGO_CURSOR_INVALID = 5,   /**< The cursor has timed out or is not recognized. */
     MONGO_CURSOR_PENDING = 6,   /**< Tailable cursor still alive but no data. */
-    MONGO_BSON_INVALID = 7      /**< BSON not valid for the specified op. */
+    MONGO_BSON_INVALID = 7,     /**< BSON not valid for the specified op. */
+    MONGO_BSON_NOT_FINISHED = 8 /**< BSON object has not been finished. */
 } mongo_error_t;
 
 enum mongo_cursor_flags {

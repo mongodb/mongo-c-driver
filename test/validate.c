@@ -38,6 +38,12 @@ int main() {
         exit(1);
     }
 
+    /* Test checking for finished bson. */
+    bson_init( &b );
+    bson_append_int( &b, "foo", 1 );
+    ASSERT( mongo_insert( conn, "test.foo", &b ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_BSON_NOT_FINISHED );
+
     /* Test valid keys. */
     bson_init( &b );
     result = bson_append_string( &b , "a.b" , "17" );

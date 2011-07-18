@@ -428,6 +428,11 @@ void mongo_destroy( mongo * conn ){
 
 /* Determine whether this BSON object is valid for the given operation.  */
 static int mongo_bson_valid( mongo * conn, bson* bson, int write ) {
+    if( ! bson->finished ) {
+        conn->err = MONGO_BSON_NOT_FINISHED;
+        return MONGO_ERROR;
+    }
+
     if( bson->err & BSON_NOT_UTF8 ) {
         conn->err = MONGO_BSON_INVALID;
         return MONGO_ERROR;
