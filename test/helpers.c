@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-int test_index_helper( mongo *conn ) {
+void test_index_helper( mongo *conn ) {
 
     bson b, out;
     bson_iterator it;
@@ -31,7 +31,7 @@ int test_index_helper( mongo *conn ) {
 
     bson_print( &out );
 
-    bson_iterator_init( &it, &out );
+    bson_iterator_init( &it, (const char *)out.data);
 
     ASSERT( bson_find( &it, &out, "unique" ) );
     ASSERT( bson_find( &it, &out, "sparse" ) );

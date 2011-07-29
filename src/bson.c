@@ -33,9 +33,9 @@ static const int zero = 0;
 static void *(*malloc_func)( size_t ) = NULL;
 static void *(*realloc_func)( void *, size_t ) = NULL;
 static void (*free_func)( void * ) = NULL;
-static int (*printf_func)( const char *, ... ) = NULL;
-static int (*fprintf_func)( FILE*, const char *, ... ) = NULL;
-static int (*sprintf_func)( char *, const char *, ... ) = NULL;
+static int (*printf_func)( const char *, va_list ) = NULL;
+static int (*fprintf_func)( FILE*, const char *, va_list ) = NULL;
+static int (*sprintf_func)( char *, const char *, va_list ) = NULL;
 static int (*oid_fuzz_func)( void ) = NULL;
 static int (*oid_inc_func)( void )  = NULL;
 
@@ -834,7 +834,7 @@ void bson_free( void *ptr ) {
         free( ptr );
 }
 
-void bson_set_printf( int (*func)( const char *, ... ) ) {
+void bson_set_printf( int (*func)( const char *, va_list ) ) {
     printf_func = func;
 }
 
@@ -851,7 +851,7 @@ int bson_printf( const char *format, ... ) {
     return ret;
 }
 
-void bson_set_fprintf( int (*func)( FILE*, const char *, ... ) ) {
+void bson_set_fprintf( int (*func)( FILE*, const char *, va_list ) ) {
     fprintf_func = func;
 }
 
@@ -868,7 +868,7 @@ int bson_fprintf( FILE *fp, const char *format, ... ) {
     return ret;
 }
 
-void bson_set_sprintf( int (*func)( char *, const char *, ... ) ) {
+void bson_set_sprintf( int (*func)( char *, const char *, va_list ) ) {
     sprintf_func = func;
 }
 

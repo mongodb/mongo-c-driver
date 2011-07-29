@@ -916,7 +916,7 @@ void bson_set_free( void (*func)( void * ) );
 void bson_free( void *ptr );
 
 /* Set an alternative to the standard printf(). */
-void bson_set_printf( int (*func)( const char *, ... ) );
+void bson_set_printf( int (*func)( const char *, va_list ) );
 
 /**
  * Use this instead of printf.
@@ -924,7 +924,7 @@ void bson_set_printf( int (*func)( const char *, ... ) );
 int bson_printf( const char *format, ... );
 
 /* Set an alternative to the standard fprintf(). */
-void bson_set_fprintf( int (*func)( FILE *, const char *, ... ) );
+void bson_set_fprintf( int (*func)( FILE *, const char *, va_list ) );
 
 /**
  * Use this instead of fprintf.
@@ -932,7 +932,7 @@ void bson_set_fprintf( int (*func)( FILE *, const char *, ... ) );
 int bson_fprintf( FILE *fp, const char *format, ... );
 
 /* Set an alternative to the standard sprintf(). */
-void bson_set_sprintf( int (*func)( char *, const char *, ... ) );
+void bson_set_sprintf( int (*func)( char *, const char *, va_list ) );
 
 /**
  * Use this instead of sprintf.
