@@ -69,7 +69,7 @@ elif "CUSTOM" == GetOption('compile_platform'):
     env.Append( CPPFLAGS=" -D_MONGO_USE_CUSTOM_SYSTEM" )
     NET_LIB = "src/platform/custom/net.c"
 else:
-    NET_LIB = "src/platform/net.c"
+    NET_LIB = "src/net.c"
 
 # ---- Libraries ----
 if os.sys.platform in ["darwin", "linux2"]:

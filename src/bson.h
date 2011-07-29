@@ -21,7 +21,7 @@
 #ifndef _BSON_H_
 #define _BSON_H_
 
-#include "platform/platform_hacks.h"
+#include "platform.h"
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>

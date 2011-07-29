@@ -28,7 +28,7 @@
 #elif defined _USE_CUSTOM_SYSTEM
 #include "platform/custom/net.h"
 #else
-#include "platform/net.h"
+#include "net.h"
 #endif
 
 static const int ZERO = 0;
