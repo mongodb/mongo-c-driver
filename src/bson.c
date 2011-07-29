@@ -176,6 +176,7 @@ void bson_print_raw( const char * data , int depth ){
     int temp;
     bson_timestamp_t ts;
     char oidhex[25];
+    bson scope;
     bson_iterator_init( &i , data );
 
     while ( bson_iterator_next( &i ) ){
@@ -188,12 +189,26 @@ void bson_print_raw( const char * data , int depth ){
             printf( "\t" );
         bson_printf( "%s : %d \t " , key , t );
         switch ( t ){
-        case BSON_INT: printf( "%d" , bson_iterator_int( &i ) ); break;
         case BSON_DOUBLE: printf( "%f" , bson_iterator_double( &i ) ); break;
-        case BSON_BOOL: printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
         case BSON_STRING: printf( "%s" , bson_iterator_string( &i ) ); break;
-        case BSON_NULL: printf( "null" ); break;
+        case BSON_SYMBOL: printf( "SYMBOL: %s" , bson_iterator_string( &i ) ); break;
         case BSON_OID: bson_oid_to_string(bson_iterator_oid(&i), oidhex); printf( "%s" , oidhex ); break;
+        case BSON_BOOL: printf( "%s" , bson_iterator_bool( &i ) ? "true" : "false" ); break;
+        case BSON_DATE: printf( "%ld" , (long int)bson_iterator_date( &i ) ); break;
+        case BSON_BINDATA: printf( "BSON_BINDATA" ); break;
+        case BSON_UNDEFINED: printf( "BSON_UNDEFINED" ); break;
+        case BSON_NULL: printf( "BSON_NULL" ); break;
+        case BSON_REGEX: printf( "BSON_REGEX: %s", bson_iterator_regex( &i ) ); break;
+        case BSON_CODE: printf( "BSON_CODE: %s", bson_iterator_code( &i ) ); break;
+        case BSON_CODEWSCOPE:
+            printf( "BSON_CODE_W_SCOPE: %s", bson_iterator_code( &i ) );
+            bson_init( &scope );
+            bson_iterator_code_scope( &i, &scope );
+            printf("\n\t SCOPE: ");
+            bson_print( &scope );
+            break;
+        case BSON_INT: printf( "%d" , bson_iterator_int( &i ) ); break;
+        case BSON_LONG: printf( "%ld" , bson_iterator_long( &i ) ); break;
         case BSON_TIMESTAMP:
             ts = bson_iterator_timestamp( &i );
             printf("i: %d, t: %d", ts.i, ts.t);

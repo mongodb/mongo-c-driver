@@ -42,8 +42,8 @@ int main(){
     /* no dbref test (deprecated) */
     bson_append_code(b, "c", "function(){}");
     bson_append_code_n(b, "c_n", "function(){}garbage", 12);
-    bson_append_symbol(b, "symbol", "SYMBOL");
-    bson_append_symbol_n(b, "symbol_n", "SYMBOL and garbage", 6);
+    bson_append_symbol(b, "symbol", "symbol");
+    bson_append_symbol_n(b, "symbol_n", "symbol and garbage", 6);
 
     {
         bson_init(scope);
@@ -177,13 +177,13 @@ int main(){
     ASSERT(bson_iterator_next(&it) == BSON_SYMBOL);
     ASSERT(bson_iterator_type(&it) == BSON_SYMBOL);
     ASSERT(!strcmp(bson_iterator_key(&it), "symbol"));
-    ASSERT(!strcmp(bson_iterator_string(&it), "SYMBOL"));
+    ASSERT(!strcmp(bson_iterator_string(&it), "symbol"));
 
     ASSERT(bson_iterator_more(&it));
     ASSERT(bson_iterator_next(&it) == BSON_SYMBOL);
     ASSERT(bson_iterator_type(&it) == BSON_SYMBOL);
     ASSERT(!strcmp(bson_iterator_key(&it), "symbol_n"));
-    ASSERT(!strcmp(bson_iterator_string(&it), "SYMBOL"));
+    ASSERT(!strcmp(bson_iterator_string(&it), "symbol"));
 
     ASSERT(bson_iterator_more(&it));
     ASSERT(bson_iterator_next(&it) == BSON_CODEWSCOPE);

@@ -315,7 +315,7 @@ bson_oid_t* bson_iterator_oid( const bson_iterator * i );
 
 /**
  * Get the string value of the BSON object currently pointed to by the
- * iterator. 
+ * iterator.
  *
  * @param i the bson_iterator
  *
