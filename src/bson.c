@@ -49,10 +49,24 @@ bson *bson_empty(bson * obj){
     return obj;
 }
 
-void bson_copy(bson* out, const bson* in){
+void bson_copy_basic( bson *out, const bson *in ) {
     if (!out) return;
     bson_init_size( out, bson_size( in ) );
     memcpy(out->data, in->data, bson_size(in));
+}
+
+void bson_copy(bson* out, const bson* in) {
+    int i;
+
+    if (!out) return;
+    bson_copy_basic( out, in );
+    out->cur = in->cur;
+    out->dataSize = in->dataSize;
+    out->finished = in->finished;
+    out->stackPos = in->stackPos;
+    for(i=0; i<out->stackPos; i++)
+      out->stack[i] = in->stack[i];
+    out->err = in->err;
 }
 
 int bson_init_data( bson * b, char * data ){

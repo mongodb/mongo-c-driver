@@ -10,6 +10,7 @@ int main(){
     bson_timestamp_t ts;
     bson_timestamp_t ts_result;
     bson b[1];
+    bson copy[1];
     bson scope[1];
 
     ts.i = 1;
@@ -55,6 +56,18 @@ int main(){
 
     bson_append_timestamp(b, "timestamp", &ts);
     bson_append_long(b, "l", 0x1122334455667788);
+    bson_finish(b);
+
+    /* Set stackPos to test stack copy. */
+    b->stackPos = 1;
+    bson_copy( copy, b );
+
+    ASSERT( copy->stackPos == b->stackPos );
+    ASSERT( copy->finished == b->finished );
+    ASSERT( copy->err == b->err );
+    ASSERT( copy->stack[0] == b->stack[0] );
+    b->stackPos = 0;
+    copy->stackPos = 0;
 
     bson_print(b);
 

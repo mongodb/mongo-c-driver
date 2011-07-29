@@ -158,7 +158,7 @@ def run_tests( root, tests ):
         test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> ' + os.path.devnull)
         AlwaysBuild(test_alias)
 
-tests = Split("sizes resize endian_swap all_types simple update errors "
+tests = Split("sizes resize endian_swap bson simple update errors "
 "count_delete auth gridfs validate examples helpers oid functions cursors replica_set")
 
 # Run standard tests
@@ -171,16 +171,6 @@ if not PLATFORM_TEST_DIR is None:
 if have_libjson:
     tests.append('json')
     testEnv.Append( LIBS=["json"] )
-
-#for name in tests:
-#    filename = "test/%s.c" % name
-#    exe = "test_" + name
-#    test = testEnv.Program( exe , testCoreFiles + [filename]  )
-#    test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> ' + os.path.devnull)
-#    AlwaysBuild(test_alias)
-
-#if "LINUX" == "compile-platform":
-#    tests.append( "platform/linux/timeouts" )
 
 # special case for cpptest
 test = testEnv.Program( 'test_cpp' , testCoreFiles + ['test/cpptest.cpp']  )

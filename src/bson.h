@@ -560,7 +560,15 @@ void bson_destroy( bson * b );
 bson * bson_empty(bson * obj);
 
 /**
- * Copy BSON data from one object to another.
+ * Copy BSON data only from one object to another.
+ *
+ * @param out the copy destination BSON object.
+ * @param in the copy source BSON object.
+ */
+void bson_copy_basic( bson *out, const bson *in );
+
+/**
+ * Make a complete copy of the a BSON object.
  *
  * @param out the copy destination BSON object.
  * @param in the copy source BSON object.
