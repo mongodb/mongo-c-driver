@@ -8,34 +8,34 @@
 #include "json/json.h"
 #include "md5.h"
 
-void json_to_bson_append_element( bson_buffer * bb , const char * k , struct json_object * v );
+void json_to_bson_append_element( bson_buffer *bb , const char *k , struct json_object *v );
 
 /**
    should already have called start_array
    this will not call start/finish
  */
-void json_to_bson_append_array( bson_buffer * bb , struct json_object * a ){
+void json_to_bson_append_array( bson_buffer *bb , struct json_object *a ) {
     int i;
     char buf[10];
-    for ( i=0; i<json_object_array_length( a ); i++){
+    for ( i=0; i<json_object_array_length( a ); i++ ) {
         sprintf( buf , "%d" , i );
         json_to_bson_append_element( bb , buf , json_object_array_get_idx( a , i ) );
     }
 }
 
-void json_to_bson_append( bson_buffer * bb , struct json_object * o ){
-    json_object_object_foreach(o,k,v){
+void json_to_bson_append( bson_buffer *bb , struct json_object *o ) {
+    json_object_object_foreach( o,k,v ) {
         json_to_bson_append_element( bb , k , v );
     }
 }
 
-void json_to_bson_append_element( bson_buffer * bb , const char * k , struct json_object * v ){
-    if ( ! v ){
+void json_to_bson_append_element( bson_buffer *bb , const char *k , struct json_object *v ) {
+    if ( ! v ) {
         bson_append_null( bb , k );
         return;
     }
-    
-    switch ( json_object_get_type( v ) ){
+
+    switch ( json_object_get_type( v ) ) {
     case json_type_int:
         bson_append_int( bb , k , json_object_get_int( v ) );
         break;
@@ -59,32 +59,32 @@ void json_to_bson_append_element( bson_buffer * bb , const char * k , struct jso
         bson_append_finish_object( bb );
         break;
     default:
-        fprintf( stderr , "can't handle type for : %s\n" , json_object_to_json_string(v) );
+        fprintf( stderr , "can't handle type for : %s\n" , json_object_to_json_string( v ) );
     }
 }
 
 
-char * json_to_bson( char * js ){
-    struct json_object * o = json_tokener_parse(js);
+char *json_to_bson( char *js ) {
+    struct json_object *o = json_tokener_parse( js );
     bson_buffer bb;
-    
-    if ( is_error( o ) ){
+
+    if ( is_error( o ) ) {
         fprintf( stderr , "\t ERROR PARSING\n" );
         return 0;
     }
-    
-    if ( ! json_object_is_type( o , json_type_object ) ){
+
+    if ( ! json_object_is_type( o , json_type_object ) ) {
         fprintf( stderr , "json_to_bson needs a JSON object, not type\n" );
         return 0;
     }
-    
+
     bson_buffer_init( &bb );
     json_to_bson_append( &bb , o );
     bson_buffer_finish( &bb );
     return bb.buf;
 }
 
-int json_to_bson_test( char * js , int size , const char * hash ){
+int json_to_bson_test( char *js , int size , const char *hash ) {
     bson b;
     mongo_md5_state_t st;
     mongo_md5_byte_t digest[16];
@@ -93,40 +93,39 @@ int json_to_bson_test( char * js , int size , const char * hash ){
 
     fprintf( stderr , "----\n%s\n" , js );
 
-    
+
     bson_init( &b , json_to_bson( js ) , 1 );
 
-    if ( b.data == 0 ){
+    if ( b.data == 0 ) {
         if ( size == 0 )
             return 1;
         fprintf( stderr , "failed when wasn't supposed to: %s\n" , js );
         return 0;
-        
+
     }
-    
-    if ( size != bson_size( &b ) ){
-        fprintf( stderr , "sizes don't match [%s] want != got %d != %d\n" , js , size , bson_size(&b) );
+
+    if ( size != bson_size( &b ) ) {
+        fprintf( stderr , "sizes don't match [%s] want != got %d != %d\n" , js , size , bson_size( &b ) );
         bson_destroy( &b );
         return 0;
-    }    
+    }
 
-    mongo_md5_init(&st);
-    mongo_md5_append( &st , (const mongo_md5_byte_t*)b.data , bson_size( &b ) );
-    mongo_md5_finish(&st, digest);
+    mongo_md5_init( &st );
+    mongo_md5_append( &st , ( const mongo_md5_byte_t * )b.data , bson_size( &b ) );
+    mongo_md5_finish( &st, digest );
 
     for ( i=0; i<16; i++ )
         sprintf( myhash + ( i * 2 ) , "%.2x" , digest[i] );
     myhash[32] = 0;
 
-    if ( strlen( hash ) != 32 ){
+    if ( strlen( hash ) != 32 ) {
         printf( "\tinvalid hash given got %s\n" , myhash );
         bson_destroy( &b );
         return 0;
-    }
-    else if ( strstr( myhash , hash ) != myhash ){
-        printf( "  hashes don't match\n");
+    } else if ( strstr( myhash , hash ) != myhash ) {
+        printf( "  hashes don't match\n" );
         printf( "    JSON:  %s\n\t%s\n", hash, js );
-        printf( "    BSON:  %s\n", myhash);
+        printf( "    BSON:  %s\n", myhash );
         bson_print( &b );
         bson_destroy( &b );
         return 0;
@@ -139,20 +138,20 @@ int json_to_bson_test( char * js , int size , const char * hash ){
 int total = 0;
 int fails = 0;
 
-int run_json_to_bson_test( char * js , int size , const char * hash ){
+int run_json_to_bson_test( char *js , int size , const char *hash ) {
     total++;
     if ( ! json_to_bson_test( js , size , hash ) )
         fails++;
-    
+
     return fails;
 }
 
 #define JSONBSONTEST run_json_to_bson_test
 
-int main(){
+int main() {
 
     run_json_to_bson_test( "1" , 0 , 0 );
-    
+
     JSONBSONTEST( "{ 'x' : true }" , 9 , "6fe24623e4efc5cf07f027f9c66b5456" );
     JSONBSONTEST( "{ 'x' : null }" , 8 , "12d43430ff6729af501faf0638e68888" );
     JSONBSONTEST( "{ 'x' : 5.2 }" , 16 , "aaeeac4a58e9c30eec6b0b0319d0dff2" );

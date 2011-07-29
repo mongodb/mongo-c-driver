@@ -78,13 +78,13 @@ extern "C"
 #endif
 
     /* Initialize the algorithm. */
-    void mongo_md5_init(mongo_md5_state_t *pms);
+    void mongo_md5_init( mongo_md5_state_t *pms );
 
     /* Append a string to the message. */
-    void mongo_md5_append(mongo_md5_state_t *pms, const mongo_md5_byte_t *data, int nbytes);
+    void mongo_md5_append( mongo_md5_state_t *pms, const mongo_md5_byte_t *data, int nbytes );
 
     /* Finish the message and return the digest. */
-    void mongo_md5_finish(mongo_md5_state_t *pms, mongo_md5_byte_t digest[16]);
+    void mongo_md5_finish( mongo_md5_state_t *pms, mongo_md5_byte_t digest[16] );
 
 #ifdef __cplusplus
 }  /* end extern "C" */

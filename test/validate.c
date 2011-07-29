@@ -9,11 +9,11 @@
 
 #define BATCH_SIZE 10
 
-static void make_small_invalid( bson * out, int i ) {
-    bson_init(out);
-    bson_append_new_oid(out, "$_id");
-    bson_append_int(out, "x.foo", i);
-    bson_finish(out);
+static void make_small_invalid( bson *out, int i ) {
+    bson_init( out );
+    bson_append_new_oid( out, "$_id" );
+    bson_append_int( out, "x.foo", i );
+    bson_finish( out );
 }
 
 int main() {
@@ -21,7 +21,7 @@ int main() {
     bson b, empty;
     unsigned char not_utf8[3];
     int result = 0;
-    const char * ns = "test.c.validate";
+    const char *ns = "test.c.validate";
 
     int i=0, j=0;
     bson bs[BATCH_SIZE];
@@ -33,9 +33,9 @@ int main() {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if (mongo_connect( conn , TEST_SERVER, 27017 )){
-        printf("failed to connect\n");
-        exit(1);
+    if ( mongo_connect( conn , TEST_SERVER, 27017 ) ) {
+        printf( "failed to connect\n" );
+        exit( 1 );
     }
 
     /* Test checking for finished bson. */
@@ -57,13 +57,13 @@ int main() {
 
     result = bson_append_string( &b , "ab" , "this is valid utf8" );
     ASSERT( result == BSON_OK );
-    ASSERT( ! (b.err & BSON_NOT_UTF8 ) );
+    ASSERT( ! ( b.err & BSON_NOT_UTF8 ) );
 
-    result = bson_append_string( &b , (const char*)not_utf8, "valid" );
+    result = bson_append_string( &b , ( const char * )not_utf8, "valid" );
     ASSERT( result == BSON_ERROR );
     ASSERT( b.err & BSON_NOT_UTF8 );
 
-    bson_finish(&b);
+    bson_finish( &b );
     ASSERT( b.err & BSON_FIELD_HAS_DOT );
     ASSERT( b.err & BSON_FIELD_INIT_DOLLAR );
     ASSERT( b.err & BSON_NOT_UTF8 );
@@ -76,7 +76,7 @@ int main() {
     ASSERT( result == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_INVALID );
 
-    bson_destroy(&b);
+    bson_destroy( &b );
 
     /* Test valid strings. */
     bson_init( & b );
@@ -84,31 +84,31 @@ int main() {
     ASSERT( result == BSON_OK );
     ASSERT( b.err == 0 );
 
-    result = bson_append_string( &b , "foo" , (const char*)not_utf8 );
+    result = bson_append_string( &b , "foo" , ( const char * )not_utf8 );
     ASSERT( result == BSON_ERROR );
     ASSERT( b.err & BSON_NOT_UTF8 );
 
     b.err = 0;
     ASSERT( b.err == 0 );
 
-    result = bson_append_regex( &b , "foo" , (const char*)not_utf8, "s" );
+    result = bson_append_regex( &b , "foo" , ( const char * )not_utf8, "s" );
     ASSERT( result == BSON_ERROR );
     ASSERT( b.err & BSON_NOT_UTF8 );
 
-    for (j=0; j < BATCH_SIZE; j++)
+    for ( j=0; j < BATCH_SIZE; j++ )
         bp[j] = &bs[j];
 
-    for (j=0; j < BATCH_SIZE; j++)
-        make_small_invalid(&bs[j], i);
+    for ( j=0; j < BATCH_SIZE; j++ )
+        make_small_invalid( &bs[j], i );
 
     result = mongo_insert_batch( conn, ns, bp, BATCH_SIZE );
     ASSERT( result == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_INVALID );
 
-    for (j=0; j < BATCH_SIZE; j++)
-        bson_destroy(&bs[j]);
+    for ( j=0; j < BATCH_SIZE; j++ )
+        bson_destroy( &bs[j] );
 
-    mongo_cmd_drop_db(conn, "test");
+    mongo_cmd_drop_db( conn, "test" );
     mongo_disconnect( conn );
 
     mongo_destroy( conn );

@@ -141,8 +141,8 @@ int main() {
     mongo conn[1];
 
     if( mongo_connect( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
-        printf("Failed to connect");
-        exit(1);
+        printf( "Failed to connect" );
+        exit( 1 );
     }
 
     remove_sample_data( conn );

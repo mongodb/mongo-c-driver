@@ -42,8 +42,8 @@
 MONGO_EXTERN_C_START
 
 int mongo_set_socket_op_timeout( mongo *conn, int millis );
-int mongo_read_socket(mongo * conn, void* buf, int len);
-int mongo_write_socket(mongo * conn, const void* buf, int len);
+int mongo_read_socket( mongo *conn, void *buf, int len );
+int mongo_write_socket( mongo *conn, const void *buf, int len );
 int mongo_socket_connect( mongo *conn, const char *host, int port );
 
 MONGO_EXTERN_C_END

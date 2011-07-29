@@ -11,7 +11,7 @@
 #define SEED_START_PORT 30000
 #endif
 
-int test_connect( const char* set_name ) {
+int test_connect( const char *set_name ) {
 
     mongo conn[1];
     int res;
@@ -32,7 +32,7 @@ int test_connect( const char* set_name ) {
     return res;
 }
 
-int test_reconnect( const char* set_name ) {
+int test_reconnect( const char *set_name ) {
 
     mongo conn[1];
     int res;
@@ -45,30 +45,29 @@ int test_reconnect( const char* set_name ) {
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
 
-    if( (mongo_replset_connect( conn ) != MONGO_OK) ) {
+    if( ( mongo_replset_connect( conn ) != MONGO_OK ) ) {
         mongo_destroy( conn );
         return res;
-    }
-    else {
-      fprintf( stderr, "Disconnect now:\n");
-      sleep( 10 );
-      e = 1;
-    do {
-          res = mongo_find_one( conn, "foo.bar", bson_empty(&b), bson_empty(&b), NULL);
-          if( res == MONGO_ERROR && conn->err == MONGO_IO_ERROR ) {
-            sleep( 2 );
-            if( e++ < 30) {
-              fprintf( stderr, "Attempting reconnect %d.\n", e);
-              mongo_reconnect( conn );
-            } else {
-              fprintf( stderr, "Fail.\n");
-              return -1;
+    } else {
+        fprintf( stderr, "Disconnect now:\n" );
+        sleep( 10 );
+        e = 1;
+        do {
+            res = mongo_find_one( conn, "foo.bar", bson_empty( &b ), bson_empty( &b ), NULL );
+            if( res == MONGO_ERROR && conn->err == MONGO_IO_ERROR ) {
+                sleep( 2 );
+                if( e++ < 30 ) {
+                    fprintf( stderr, "Attempting reconnect %d.\n", e );
+                    mongo_reconnect( conn );
+                } else {
+                    fprintf( stderr, "Fail.\n" );
+                    return -1;
+                }
             }
-          }
-    } while(1);
-  }
+        } while( 1 );
+    }
 
-  return 0;
+    return 0;
 }
 
 int main() {

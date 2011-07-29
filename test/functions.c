@@ -74,7 +74,7 @@ int main() {
 
     test_value = 0;
 
-    bson_printf("Test %d\n", test_value );
+    bson_printf( "Test %d\n", test_value );
     ASSERT( test_value == 0 );
     bson_fprintf( stdout, "Test %d\n", test_value );
     ASSERT( test_value == 0 );
@@ -86,7 +86,7 @@ int main() {
     bson_set_fprintf( my_fprintf );
     bson_set_sprintf( my_sprintf );
 
-    bson_printf("Test %d\n", test_value );
+    bson_printf( "Test %d\n", test_value );
     ASSERT( test_value == 4 );
     bson_fprintf( stdout, "Test %d\n", test_value );
     ASSERT( test_value == 5 );

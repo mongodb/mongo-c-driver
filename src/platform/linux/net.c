@@ -19,13 +19,13 @@
 #include "net.h"
 #include <string.h>
 
-int mongo_write_socket(mongo * conn, const void* buf, int len){
-    const char* cbuf = buf;
-    while (len){
-        int sent = send(conn->sock, cbuf, len, 0);
-        if (sent == -1) {
-           conn->err = MONGO_IO_ERROR;
-           return MONGO_ERROR;
+int mongo_write_socket( mongo *conn, const void *buf, int len ) {
+    const char *cbuf = buf;
+    while ( len ) {
+        int sent = send( conn->sock, cbuf, len, 0 );
+        if ( sent == -1 ) {
+            conn->err = MONGO_IO_ERROR;
+            return MONGO_ERROR;
         }
         cbuf += sent;
         len -= sent;
@@ -34,11 +34,11 @@ int mongo_write_socket(mongo * conn, const void* buf, int len){
     return MONGO_OK;
 }
 
-int mongo_read_socket(mongo * conn, void* buf, int len){
-    char* cbuf = buf;
-    while (len){
-        int sent = recv(conn->sock, cbuf, len, 0);
-        if (sent == 0 || sent == -1) {
+int mongo_read_socket( mongo *conn, void *buf, int len ) {
+    char *cbuf = buf;
+    while ( len ) {
+        int sent = recv( conn->sock, cbuf, len, 0 );
+        if ( sent == 0 || sent == -1 ) {
             conn->err = MONGO_IO_ERROR;
             return MONGO_ERROR;
         }
@@ -90,14 +90,14 @@ static int mongo_set_blocking_status( mongo *conn ) {
 int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
     struct timeval tv;
     tv.tv_sec = millis / 1000;
-    tv.tv_usec = (millis % 1000) * 1000;
+    tv.tv_usec = ( millis % 1000 ) * 1000;
 
-    if (setsockopt( conn->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv) ) == -1) {
+    if ( setsockopt( conn->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof( tv ) ) == -1 ) {
         conn->err = MONGO_IO_ERROR;
         return MONGO_ERROR;
     }
 
-    if (setsockopt( conn->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv) ) == -1) {
+    if ( setsockopt( conn->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof( tv ) ) == -1 ) {
         conn->err = MONGO_IO_ERROR;
         return MONGO_ERROR;
     }
@@ -106,9 +106,9 @@ int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
 }
 
 #ifdef _MONGO_USE_GETADDRINFO
-int mongo_socket_connect( mongo * conn, const char * host, int port ){
+int mongo_socket_connect( mongo *conn, const char *host, int port ) {
 
-    struct addrinfo* addrs = NULL;
+    struct addrinfo *addrs = NULL;
     struct addrinfo hints;
     int flag = 1;
     char port_str[12];
@@ -136,10 +136,10 @@ int mongo_socket_connect( mongo * conn, const char * host, int port ){
         mongo_close_socket( conn->sock );
         freeaddrinfo( addrs );
         conn->err = MONGO_CONN_FAIL;
-        return MONGO_ERROR:
-    }
+return MONGO_ERROR:
+           }
 
-    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag) );
+           setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, ( char * )&flag, sizeof( flag ) );
     if( conn->op_timeout_ms > 0 )
         mongo_set_socket_op_timeout( conn, conn->op_timeout_ms );
 
@@ -149,7 +149,7 @@ int mongo_socket_connect( mongo * conn, const char * host, int port ){
     return MONGO_OK;
 }
 #else
-int mongo_socket_connect( mongo * conn, const char * host, int port ){
+int mongo_socket_connect( mongo *conn, const char *host, int port ) {
     struct sockaddr_in sa;
     socklen_t addressSize;
     int flag = 1;
@@ -163,7 +163,7 @@ int mongo_socket_connect( mongo * conn, const char * host, int port ){
     sa.sin_addr.s_addr = inet_addr( host );
     addressSize = sizeof( sa );
 
-    if ( connect( conn->sock, (struct sockaddr *)&sa, addressSize ) == -1 ) {
+    if ( connect( conn->sock, ( struct sockaddr * )&sa, addressSize ) == -1 ) {
         mongo_close_socket( conn->sock );
         conn->connected = 0;
         conn->sock = 0;
@@ -171,7 +171,7 @@ int mongo_socket_connect( mongo * conn, const char * host, int port ){
         return MONGO_ERROR;
     }
 
-    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(flag) );
+    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, ( char * ) &flag, sizeof( flag ) );
 
     if( conn->op_timeout_ms > 0 )
         mongo_set_socket_op_timeout( conn, conn->op_timeout_ms );

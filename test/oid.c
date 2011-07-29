@@ -27,7 +27,7 @@ int main() {
     bson_set_oid_fuzz( fuzz );
 
     bson_oid_gen( &o );
-    bson_big_endian32( &res, &(o.ints[2]) );
+    bson_big_endian32( &res, &( o.ints[2] ) );
 
     ASSERT( o.ints[1] == 50000 );
     ASSERT( res == 1001 );
