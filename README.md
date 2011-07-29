@@ -1,7 +1,11 @@
 # MongoDB C Driver
 
-This is then 10gen-supported MongoDB C driver. The goal is to be super strict for ultimate portability,
+This is then 10gen-supported MongoDB C driver. There are two goals for this driver.
+The first is to provide a strict, default compilation option for ultimate portability,
 no dependencies, and generic embeddability.
+
+The second is to support more advanced, platform-specific features, like socket timeout,
+by providing an interface for platform-specific modules.
 
 Until the 1.0 release, this driver should be considered alpha. Keep in mind that the API will be in flux until then.
 

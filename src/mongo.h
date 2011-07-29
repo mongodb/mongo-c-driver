@@ -219,7 +219,9 @@ void mongo_replset_add_seed( mongo *conn, const char *host, int port );
  */
 int mongo_replset_connect( mongo *conn );
 
-/** Set a timeout for operations on this connection.
+/** Set a timeout for operations on this connection. This
+ *  is a platform-specific feature, and only work on *nix
+ *  system. You must also compile for linux to support this.
  *
  *  @param conn a mongo object.
  *  @param millis timeout time in milliseconds.
