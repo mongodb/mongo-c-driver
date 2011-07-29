@@ -7,9 +7,8 @@ tutorial is a great place to start.
 
 Next, you'll want to install and run MongoDB.
 
-A working C program complete with examples from this tutorial can be found
-TODO: UPDATE THIS GIST.
-`here <https://gist.github.com/920297>`_.
+A working C program complete with examples from this tutorial can be
+found in the examples folder of the source distribution.
 
 C API
 -----
@@ -33,14 +32,14 @@ Next, initialize it:
 
     mongo_init( &conn );
 
-Set any optional values, like a timeout, and the connect:
+Set any optional values, like a timeout, and then call ``mongo_connect``:
 
 .. code-block:: c
 
     mongo_set_op_timeout( &conn, 1000 );
-    mongo_connect( &conn );
+    mongo_connect( &conn, "127.0.0.1", 27017 );
 
-When you're finished, destroy it:
+When you're finished, destroy the mongo object:
 
 .. code-block:: c
 
@@ -61,7 +60,7 @@ Let's start by that connects to the database:
 
     int main() {
       mongo conn[1];
-      status = mongo_connect( conn, "localhost", 27017 );
+      status = mongo_connect( conn, "127.0.0.1", 27017 );
 
       if( status != MONGO_OK ) {
           switch ( conn->err ) {
@@ -110,7 +109,7 @@ then you add seed nodes, and finally you connect. Here's an example:
       mongo_replset_add_seed( "10.4.3.22", 27017 );
       mongo_replset_add_seed( "10.4.3.32", 27017 );
 
-      status = mongo_connect( conn );
+      status = mongo_replset_connect( conn );
 
       if( status != MONGO_OK ) {
           // Check conn->err for error code.
@@ -125,11 +124,8 @@ BSON
 ----
 
 MongoDB database stores data in a format called *BSON*. BSON is a JSON-like binary object format.
+To create BSON objects
 
-To save data in the database we must create bson objects. We use ``bson_buffer`` to make ``bson``
-objects, ``and bson_iterator`` to enumerate ``bson`` objects.
-
-Let's now create a BSON "person" object which contains name and age. We might invoke:
 
 .. code-block:: c
 
@@ -145,7 +141,9 @@ Let's now create a BSON "person" object which contains name and age. We might in
   bson_destroy( b );
 
 Use the ``bson_append_new_oid()`` function to add an object id to your object.
-The server will add an object id to the ``_id`` field if it is not included explicitly.
+The server will add an object id to the ``_id`` field if it is not included explicitly,
+but it's best to create it client-side. When you do create the id, be sure to place it
+at the beginning of the object, as we do here:
 
 .. code-block:: c
 
@@ -157,14 +155,16 @@ The server will add an object id to the ``_id`` field if it is not included expl
     bson_append_int( b, "age", 33 );
     bson_finish( b );
 
-``bson_buffer_new_oid( ..., "_id" )`` should be at the beginning of the generated object.
-
-When you are done using the bson object remember pass it to
+When you're done using the ``bson`` object, remember pass it to
 ``bson_destroy()`` to free up the memory allocated by the buffer.
 
 .. code-block:: c
 
     bson_destroy( b );
+
+You can see the complete 
+
+.. BSON API: api/bson_8h.html
 
 Inserting a single document
 ---------------------------

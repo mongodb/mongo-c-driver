@@ -43,16 +43,15 @@ AddOption('--use-platform',
                ' GENERIC, and CUSTOM. If you specific CUSTOM, you must place a'
                ' system-specific implementation of net.h and net.c in src/platform/custom/')
 
-import os
-import sys
-sys.path.append("docs")
-
-import buildscripts
+import os, sys
 
 env = Environment( ENV=os.environ )
 
 #  ---- Docs ----
 def build_docs(env, target, source):
+    buildscript_path = os.path.join(os.path.abspath("docs"))
+    sys.path.insert(0, buildscript_path)
+    import buildscripts
     from buildscripts import docs
     docs.main()
 
