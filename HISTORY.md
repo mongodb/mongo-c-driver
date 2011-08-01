@@ -7,19 +7,19 @@ These changes have been made for extensibility, consistency,
 and ease of use. Please read the following release notes
 carefully, and study the updated tutorial.
 
-Principles:
+API Principles:
 
 1. Present a consistent interface for all objects: connections,
    cursors, bson objects, and bson iterators.
-2. Require no knowledge of an object's to use its interface.
-3. Allow users to allocate base objects on the stack or on the heap.
-4. Integrate with new error reporting strategy.
-5. Concision, except where it impairs clarity.
+2. Require no knowledge of an object's implementation to use the API.
+3. Allow users to allocate objects on the stack or on the heap.
+4. Integrate API with new error reporting strategy.
+5. Be concise, except where it impairs clarity.
 
 Changes:
 
 * mongo_replset_init_conn has been renamed to mongo_replset_init.
-* bson_buffer has been removed. All methods for building bson
+* bson_buffer has been removed. All functions for building bson
   objects now take objects of type bson. The new pattern looks like this:
 
     bson b[1];
@@ -62,6 +62,24 @@ Changes:
     while( mongo_cursor_next( cursor ) == MONGO_OK )
         bson_print( mongo_cursor_bson( cursor ) );
 
+* bson_iterator_init now takes a (bson*) instead of a (const char*). This is consistent
+  with bson_find, which also takes a (bson*). If you want to initiate a bson iterator
+  with a buffer, use the new function bson_iterator_from_buffer.
+* With the addition of the mongo_cursor_bson function, it's now no
+  longer necessary to know how bson and mongo_cursor objects are implemented.
+
+  Examples:
+
+    bson b[1];
+    bson_iterator i[1];
+
+    bson_iterator_init( i, b );
+
+    /* With a cursor */
+    bson_iterator_init( i, mongo_cursor_bson( cursor ) );
+
+* Added mongo_cursor_data and bson_data functions, which return the
+  raw bson buffer as a (const char *).
 * All constants that were once lower case are now
   upper case. These include: MONGO_OP_MSG, MONGO_OP_UPDATE, MONGO_OP_INSERT,
   MONGO_OP_QUERY, MONGO_OP_GET_MORE, MONGO_OP_DELETE, MONGO_OP_KILL_CURSORS
@@ -73,16 +91,16 @@ Changes:
   If your programs use any of these constants, you must convert them to their
   upper case forms, or you will see compile errors.
 * The error handling strategy has been changed. Exceptions are not longer being used.
-* Methods taking a mongo_connection object now return either MONGO_OK or MONGO_ERROR.
+* Functions taking a mongo_connection object now return either MONGO_OK or MONGO_ERROR.
   In case of an error, an error code of type mongo_error_t will be indicated on the
   mongo_connection->err field.
-* Methods taking a bson object now return either BSON_OK or BSON_ERROR.
+* Functions taking a bson object now return either BSON_OK or BSON_ERROR.
   In case of an error, an error code of type bson_validity_t will be indicated on the
   bson->err or bson_buffer->err field.
 * Calls to mongo_cmd_get_last_error store the error status on the
-  mongo->lasterrcode and mongo->lasterrstr.
+  mongo->lasterrcode and mongo->lasterrstr fields.
 * bson_print now prints all types.
-* Allow custom malloc, realloc, free, printf, sprintf, and fprintf.
+* Users may now set custom malloc, realloc, free, printf, sprintf, and fprintf fields.
 * Groundwork for modules for supporting platform-specific features (e.g., socket timeouts).
 * Added mongo_set_op_timeout for setting socket timeout. To take advantage of this, you must
   compile with --use-platform=LINUX. The compiles with platform/linux/net.h instead of the

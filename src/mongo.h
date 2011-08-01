@@ -209,7 +209,7 @@ void mongo_replset_add_seed( mongo *conn, const char *host, int port );
 /**
  * Connect to a replica set.
  *
- * Before passing a connection object to this method, you must already have called
+ * Before passing a connection object to this function, you must already have called
  * mongo_set_replset and mongo_replset_add_seed.
  *
  * @param conn a mongo object.
@@ -234,7 +234,7 @@ int mongo_set_op_timeout( mongo *conn, int millis );
 /**
  * Try reconnecting to the server using the existing connection settings.
  *
- * This method will disconnect the current socket. If you've authenticated,
+ * This function will disconnect the current socket. If you've authenticated,
  * you'll need to re-authenticate after calling this function.
  *
  * @param conn a mongo object.
@@ -257,15 +257,12 @@ void mongo_disconnect( mongo *conn );
  * Close any existing connection to the server and free all allocated
  * memory associated with the conn object.
  *
- * You must always call this method when finished with the connection object.
+ * You must always call this function when finished with the connection object.
  *
  * @param conn a mongo object.
  */
 void mongo_destroy( mongo *conn );
 
-/* ----------------------------
-   CORE METHODS - insert update remove query getmore
-   ------------------------------ */
 /**
  * Insert a BSON document into a MongoDB server. This function
  * will fail if the supplied BSON struct is not UTF-8 or if
@@ -393,6 +390,22 @@ void mongo_cursor_set_limit( mongo_cursor *cursor, int limit );
  *   mongo_cursor_bitfield_t for available constants.
  */
 void mongo_cursor_set_options( mongo_cursor *cursor, int options );
+
+/**
+ * Return the current BSON object data as a const char*. This is useful
+ * for creating bson iterators with bson_iterator_init.
+ *
+ * @param cursor
+ */
+const char *mongo_cursor_data( mongo_cursor *cursor );
+
+/**
+ * Return the current BSON object data as a const char*. This is useful
+ * for creating bson iterators with bson_iterator_init.
+ *
+ * @param cursor
+ */
+bson *mongo_cursor_bson( mongo_cursor *cursor );
 
 /**
  * Iterate the cursor, returning the next item. When successful,
@@ -606,13 +619,8 @@ int mongo_cmd_get_prev_error( mongo *conn, const char *db, bson *out );
  * @param conn a mongo object.
  * @param db the name of the database.
  */
-void        mongo_cmd_reset_error( mongo *conn, const char *db );
-
-/* ----------------------------
-   UTILS
-   ------------------------------ */
+void mongo_cmd_reset_error( mongo *conn, const char *db );
 
 MONGO_EXTERN_C_END
-
 
 #endif

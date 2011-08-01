@@ -71,7 +71,7 @@ int main() {
 
     bson_print( b );
 
-    bson_iterator_init( &it, b->data );
+    bson_iterator_init( &it, b );
 
     ASSERT( bson_iterator_more( &it ) );
     ASSERT( bson_iterator_next( &it ) == BSON_DOUBLE );
@@ -194,7 +194,7 @@ int main() {
     {
         bson scope;
         bson_iterator_code_scope( &it, &scope );
-        bson_iterator_init( &it2, scope.data );
+        bson_iterator_init( &it2, &scope );
 
         ASSERT( bson_iterator_more( &it2 ) );
         ASSERT( bson_iterator_next( &it2 ) == BSON_INT );

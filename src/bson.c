@@ -82,6 +82,10 @@ int bson_size( const bson *b ) {
     return i;
 }
 
+const char *bson_data( bson *b ) {
+    return (const char *)b->data;
+}
+
 static char hexbyte( char hex ) {
     switch ( hex ) {
     case '0':
@@ -194,7 +198,7 @@ void bson_print_raw( const char *data , int depth ) {
     bson_timestamp_t ts;
     char oidhex[25];
     bson scope;
-    bson_iterator_init( &i , data );
+    bson_iterator_from_buffer( &i, data );
 
     while ( bson_iterator_next( &i ) ) {
         bson_type t = bson_iterator_type( &i );
@@ -273,13 +277,18 @@ void bson_print_raw( const char *data , int depth ) {
    ITERATOR
    ------------------------------ */
 
-void bson_iterator_init( bson_iterator *i , const char *bson ) {
-    i->cur = bson + 4;
+void bson_iterator_init( bson_iterator *i , bson *b ) {
+    i->cur = b->data + 4;
+    i->first = 1;
+}
+
+void bson_iterator_from_buffer( bson_iterator *i, const char *buffer ) {
+    i->cur = buffer + 4;
     i->first = 1;
 }
 
 bson_type bson_find( bson_iterator *it, const bson *obj, const char *name ) {
-    bson_iterator_init( it, obj->data );
+    bson_iterator_init( it, (bson *)obj );
     while( bson_iterator_next( it ) ) {
         if ( strcmp( name, bson_iterator_key( it ) ) == 0 )
             break;
@@ -362,9 +371,11 @@ bson_type bson_iterator_next( bson_iterator *i ) {
 bson_type bson_iterator_type( const bson_iterator *i ) {
     return ( bson_type )i->cur[0];
 }
+
 const char *bson_iterator_key( const bson_iterator *i ) {
     return i->cur + 1;
 }
+
 const char *bson_iterator_value( const bson_iterator *i ) {
     const char *t = i->cur + 1;
     t += strlen( t ) + 1;
@@ -378,11 +389,13 @@ int bson_iterator_int_raw( const bson_iterator *i ) {
     bson_little_endian32( &out, bson_iterator_value( i ) );
     return out;
 }
+
 double bson_iterator_double_raw( const bson_iterator *i ) {
     double out;
     bson_little_endian64( &out, bson_iterator_value( i ) );
     return out;
 }
+
 int64_t bson_iterator_long_raw( const bson_iterator *i ) {
     int64_t out;
     bson_little_endian64( &out, bson_iterator_value( i ) );
@@ -409,6 +422,7 @@ int bson_iterator_int( const bson_iterator *i ) {
         return 0;
     }
 }
+
 double bson_iterator_double( const bson_iterator *i ) {
     switch ( bson_iterator_type( i ) ) {
     case BSON_INT:
@@ -421,6 +435,7 @@ double bson_iterator_double( const bson_iterator *i ) {
         return 0;
     }
 }
+
 int64_t bson_iterator_long( const bson_iterator *i ) {
     switch ( bson_iterator_type( i ) ) {
     case BSON_INT:
@@ -462,6 +477,7 @@ bson_bool_t bson_iterator_bool( const bson_iterator *i ) {
 const char *bson_iterator_string( const bson_iterator *i ) {
     return bson_iterator_value( i ) + 4;
 }
+
 int bson_iterator_string_len( const bson_iterator *i ) {
     return bson_iterator_int_raw( i );
 }
@@ -515,6 +531,7 @@ const char *bson_iterator_bin_data( const bson_iterator *i ) {
 const char *bson_iterator_regex( const bson_iterator *i ) {
     return bson_iterator_value( i );
 }
+
 const char *bson_iterator_regex_opts( const bson_iterator *i ) {
     const char *p = bson_iterator_value( i );
     return p + strlen( p ) + 1;
@@ -524,8 +541,9 @@ const char *bson_iterator_regex_opts( const bson_iterator *i ) {
 void bson_iterator_subobject( const bson_iterator *i, bson *sub ) {
     bson_init_data( sub, ( char * )bson_iterator_value( i ) );
 }
+
 void bson_iterator_subiterator( const bson_iterator *i, bson_iterator *sub ) {
-    bson_iterator_init( sub, bson_iterator_value( i ) );
+    bson_iterator_from_buffer( sub, bson_iterator_value( i ) );
 }
 
 /* ----------------------------
@@ -607,13 +625,6 @@ int bson_ensure_space( bson *b, const int bytesNeeded ) {
     return BSON_OK;
 }
 
-/**
- * Add null byte, mark as finished, and return buffer.
- * Note that the buffer will now be owned by the bson
- * object created from a call to bson_from_buffer.
- * This buffer is then deallocated by calling
- * bson_destroy().
- */
 int bson_finish( bson *b ) {
     int i;
     if ( ! b->finished ) {

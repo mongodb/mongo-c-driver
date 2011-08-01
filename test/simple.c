@@ -46,7 +46,7 @@ int main() {
     * BSON Iterator API
     bson_iterator i[1];
 
-    bson_iterator_init( i, b->data );
+    bson_iterator_init( i, b );
 
     * Cursor API
     mongo_cursor cursor[1];
@@ -100,7 +100,7 @@ int main() {
 
     while( mongo_cursor_next( cursor ) == MONGO_OK ) {
         bson_iterator it;
-        bson_iterator_init( &it, cursor->current.data );
+        bson_iterator_init( &it, mongo_cursor_bson( cursor ) );
         while( bson_iterator_next( &it ) ) {
             fprintf( stderr, "  %s: ", bson_iterator_key( &it ) );
 

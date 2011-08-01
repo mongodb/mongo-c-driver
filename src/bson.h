@@ -122,18 +122,18 @@ typedef struct {
 int bson_size( const bson *b );
 
 /**
- * Destroy a BSON object.
- *
- * @param b the object to destroy.
- */
-void bson_destroy( bson *b );
-
-/**
  * Print a string representation of a BSON object.
  *
  * @param b the BSON object to print.
  */
 void bson_print( bson *b );
+
+/**
+ * Return a pointer to the raw buffer stored by this bson object.
+ *
+ * @param b a BSON object
+ */
+const char *bson_data( bson *b );
 
 /**
  * Print a string representation of a BSON object.
@@ -143,8 +143,6 @@ void bson_print( bson *b );
  */
 void bson_print_raw( const char *bson , int depth );
 
-/* advances iterator to named field */
-/* returns BSON_EOO (which is false) if field not found */
 /**
  * Advance a bson_iterator to the named field.
  *
@@ -152,7 +150,7 @@ void bson_print_raw( const char *bson , int depth );
  * @param obj the BSON object to use.
  * @param name the name of the field to find.
  *
- * @return the type of the found object, bson_eoo if it is not found.
+ * @return the type of the found object or BSON_EOO if it is not found.
  */
 bson_type bson_find( bson_iterator *it, const bson *obj, const char *name );
 
@@ -162,7 +160,16 @@ bson_type bson_find( bson_iterator *it, const bson *obj, const char *name );
  * @param i the bson_iterator to initialize.
  * @param bson the BSON object to associate with the iterator.
  */
-void bson_iterator_init( bson_iterator *i , const char *bson );
+void bson_iterator_init( bson_iterator *i , bson *b );
+
+/**
+ * Initialize a bson iterator from a const char* buffer. Note
+ * that this is mostly used internally.
+ *
+ * @param i the bson_iterator to initialize.
+ * @param buffer the buffer to point to.
+ */
+void bson_iterator_from_buffer( bson_iterator *i, const char *buffer );
 
 /* more returns true for eoo. best to loop with bson_iterator_next(&it) */
 /**
@@ -518,6 +525,15 @@ void bson_init( bson *b );
  */
 int bson_init_data( bson *b , char *data );
 
+/**
+ * Initialize a BSON object, and set its
+ * buffer to the given size.
+ *
+ * @param b the BSON object to initialize.
+ * @param size the initial size of the buffer.
+ *
+ * @return BSON_OK or BSON_ERROR.
+ */
 void bson_init_size( bson *b, int size );
 
 /**

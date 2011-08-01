@@ -31,7 +31,7 @@ void test_index_helper( mongo *conn ) {
 
     bson_print( &out );
 
-    bson_iterator_init( &it, ( const char * )out.data );
+    bson_iterator_init( &it, &out );
 
     ASSERT( bson_find( &it, &out, "unique" ) );
     ASSERT( bson_find( &it, &out, "sparse" ) );

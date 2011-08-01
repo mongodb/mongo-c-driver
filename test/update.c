@@ -73,7 +73,7 @@ int main() {
     } else {
         int fields = 0;
         bson_iterator it;
-        bson_iterator_init( &it, obj.data );
+        bson_iterator_init( &it, &obj );
 
         bson_destroy( &cond );
 

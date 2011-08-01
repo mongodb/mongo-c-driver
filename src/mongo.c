@@ -238,7 +238,7 @@ static void mongo_replset_check_seed( mongo *conn ) {
 
         if( bson_find( &it, &out, "hosts" ) ) {
             data = bson_iterator_value( &it );
-            bson_iterator_init( &it_sub, data );
+            bson_iterator_from_buffer( &it_sub, data );
 
             /* Iterate over host list, adding each host to the
              * connection's host list. */
@@ -724,6 +724,14 @@ void mongo_cursor_set_options( mongo_cursor *cursor, int options ) {
     cursor->options = options;
 }
 
+const char *mongo_cursor_data( mongo_cursor *cursor ) {
+    return cursor->current.data;
+}
+
+bson *mongo_cursor_bson( mongo_cursor *cursor ) {
+    return &(cursor->current);
+}
+
 int mongo_cursor_next( mongo_cursor *cursor ) {
     char *next_object;
     char *message_end;
@@ -815,7 +823,7 @@ int mongo_create_index( mongo *conn, const char *ns, bson *key, int options, bso
     int i = 1;
     char idxns[1024];
 
-    bson_iterator_init( &it, key->data );
+    bson_iterator_init( &it, key );
     while( i < 255 && bson_iterator_next( &it ) ) {
         strncpy( name + i, bson_iterator_key( &it ), 255 - i );
         i += strlen( bson_iterator_key( &it ) );
