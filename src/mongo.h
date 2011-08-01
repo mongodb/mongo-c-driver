@@ -347,7 +347,9 @@ mongo_cursor *mongo_find( mongo *conn, const char *ns, bson *query,
 void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns );
 
 /**
- * Set the bson object specifying this cursor's query spec.
+ * Set the bson object specifying this cursor's query spec. If
+ * your query is the empty bson object "{}", then you need not
+ * set this value.
  *
  * @param cursor
  * @param query a bson object representing the query spec. This may
@@ -358,7 +360,8 @@ void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns );
 void mongo_cursor_set_query( mongo_cursor *cursor, bson *query );
 
 /**
- * Set the fields to return for this cursor.
+ * Set the fields to return for this cursor. If you want to return
+ * all fields, you need not set this value.
  *
  * @param cursor
  * @param fields a bson object representing the fields to return.

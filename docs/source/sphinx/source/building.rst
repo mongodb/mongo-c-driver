@@ -6,7 +6,7 @@ a work in progress.* For example, to build version 0.3, run:
 
 .. code-block:: bash
 
-    git checkout v0.3
+    git checkout v0.4
 
 Then follow the build steps below.
 

@@ -105,6 +105,7 @@ Changes:
 * Added mongo_set_op_timeout for setting socket timeout. To take advantage of this, you must
   compile with --use-platform=LINUX. The compiles with platform/linux/net.h instead of the
   top-level net.h.
+* Fixed tailable cursors.
 * Fixed a few memory leaks.
 
 ## 0.3

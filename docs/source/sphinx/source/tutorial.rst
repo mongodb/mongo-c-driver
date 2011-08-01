@@ -258,7 +258,7 @@ whose age is 24:
 
       while( mongo_cursor_next( cursor ) == MONGO_OK ) {
         bson_iterator iterator[1];
-        if ( bson_find( iterator, &cursor->current, "name" )) {
+        if ( bson_find( iterator, mongo_cursor_bson( cursor ), "name" )) {
             printf( "name: %s\n", bson_iterator_string( it ) );
         }
       }
