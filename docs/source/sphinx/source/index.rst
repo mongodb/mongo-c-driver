@@ -18,6 +18,9 @@ The API was completely revamped in v0.4.
 :doc:`building`
     How to build the driver from source.
 
+:doc:`bson`
+    How to build the driver from source.
+
 `API Docs <api/index.html>`_
     Doxygen-generated API docs.
 
