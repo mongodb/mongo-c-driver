@@ -1,6 +1,6 @@
 # MongoDB C Driver History
 
-## 0.4 (UNRELEASED)
+## 0.4
 
 THIS RELEASE INCLUDES NUMEROUS BACKWARD-BREAKING CHANGES.
 These changes have been made for extensibility, consistency,
@@ -16,6 +16,8 @@ Principles:
 4. Integrate with new error reporting strategy.
 5. Concision, except where it impairs clarity.
 
+Changes:
+
 * mongo_replset_init_conn has been renamed to mongo_replset_init.
 * bson_buffer has been removed. All methods for building bson
   objects now take objects of type bson. The new pattern looks like this:
@@ -24,10 +26,42 @@ Principles:
     bson_init( b );
     bson_append_int( b, "foo", 1 );
     bson_finish( b );
-    /* The object is ready to use. */
+    /* The object is ready to use.
+       When finished, destroy it. */
     bson_destroy( b );
 
 * mongo_connection has been renamed to mongo.
+
+    mongo conn[1];
+    mongo_connect( conn, '127.0.0.1', 27017 );
+    /* Connection is ready. Destroy when down. */
+    mongo_destroy( conn );
+
+* New cursor builder API for clearer code:
+
+    mongo_cursor cursor[1];
+    mongo_cursor_init( cursor, conn, "test.foo" );
+
+    bson query[1];
+
+    bson_init( query );
+    bson_append_int( query, "bar", 1 );
+    bson_finish( query );
+
+    bson fields[1];
+
+    bson_init( fields );
+    bson_append_int( fields, "baz", 1 );
+    bson_finish( fields );
+
+    mongo_cursor_set_query( cursor, query );
+    mongo_cursor_set_fields( cursor, fields );
+    mongo_cursor_set_limit( cursor, 10 );
+    mongo_cursor_set_skip( cursor, 10 );
+
+    while( mongo_cursor_next( cursor ) == MONGO_OK )
+        bson_print( mongo_cursor_bson( cursor ) );
+
 * All constants that were once lower case are now
   upper case. These include: MONGO_OP_MSG, MONGO_OP_UPDATE, MONGO_OP_INSERT,
   MONGO_OP_QUERY, MONGO_OP_GET_MORE, MONGO_OP_DELETE, MONGO_OP_KILL_CURSORS
@@ -38,6 +72,7 @@ Principles:
   MONGO_CONN_NOT_MASTER, MONGO_CONN_BAD_SET_NAME, MONGO_CONN_CANNOT_FIND_PRIMARY 
   If your programs use any of these constants, you must convert them to their
   upper case forms, or you will see compile errors.
+* The error handling strategy has been changed. Exceptions are not longer being used.
 * Methods taking a mongo_connection object now return either MONGO_OK or MONGO_ERROR.
   In case of an error, an error code of type mongo_error_t will be indicated on the
   mongo_connection->err field.
@@ -46,6 +81,12 @@ Principles:
   bson->err or bson_buffer->err field.
 * Calls to mongo_cmd_get_last_error store the error status on the
   mongo->lasterrcode and mongo->lasterrstr.
+* bson_print now prints all types.
+* Allow custom malloc, realloc, free, printf, sprintf, and fprintf.
+* Groundwork for modules for supporting platform-specific features (e.g., socket timeouts).
+* Added mongo_set_op_timeout for setting socket timeout. To take advantage of this, you must
+  compile with --use-platform=LINUX. The compiles with platform/linux/net.h instead of the
+  top-level net.h.
 * Fixed a few memory leaks.
 
 ## 0.3
