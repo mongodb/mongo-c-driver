@@ -19,6 +19,7 @@ static void make_small_invalid( bson *out, int i ) {
 int main() {
     mongo conn[1];
     bson b, empty;
+    mongo_cursor cursor[1];
     unsigned char not_utf8[3];
     int result = 0;
     const char *ns = "test.c.validate";
@@ -63,18 +64,24 @@ int main() {
     ASSERT( result == BSON_ERROR );
     ASSERT( b.err & BSON_NOT_UTF8 );
 
-    bson_finish( &b );
+    ASSERT( bson_finish( &b ) == BSON_ERROR );
     ASSERT( b.err & BSON_FIELD_HAS_DOT );
     ASSERT( b.err & BSON_FIELD_INIT_DOLLAR );
     ASSERT( b.err & BSON_NOT_UTF8 );
 
     result = mongo_insert( conn, ns, &b );
     ASSERT( result == MONGO_ERROR );
-    ASSERT( conn->err == MONGO_BSON_INVALID );
+    ASSERT( conn->err & MONGO_BSON_NOT_FINISHED );
 
     result = mongo_update( conn, ns, bson_empty( &empty ), &b, 0 );
     ASSERT( result == MONGO_ERROR );
-    ASSERT( conn->err == MONGO_BSON_INVALID );
+    ASSERT( conn->err & MONGO_BSON_NOT_FINISHED );
+
+    mongo_cursor_init( cursor, conn, "test.cursors" );
+    mongo_cursor_set_query( cursor, &b );
+    result = mongo_cursor_next( cursor );
+    ASSERT( result == MONGO_ERROR );
+    ASSERT( cursor->err & MONGO_BSON_NOT_FINISHED );
 
     bson_destroy( &b );
 

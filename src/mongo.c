@@ -451,6 +451,21 @@ static int mongo_bson_valid( mongo *conn, bson *bson, int write ) {
     return MONGO_OK;
 }
 
+/* Determine whether this BSON object is valid for the given operation.  */
+static int mongo_cursor_bson_valid( mongo_cursor *cursor, bson *bson ) {
+    if( ! bson->finished ) {
+        cursor->err = MONGO_BSON_NOT_FINISHED;
+        return MONGO_ERROR;
+    }
+
+    if( bson->err & BSON_NOT_UTF8 ) {
+        cursor->err = MONGO_BSON_INVALID;
+        return MONGO_ERROR;
+    }
+
+    return MONGO_OK;
+}
+
 /* MongoDB CRUD API */
 
 int mongo_insert_batch( mongo *conn, const char *ns,
@@ -537,6 +552,14 @@ int mongo_update( mongo *conn, const char *ns, const bson *cond,
 
 int mongo_remove( mongo *conn, const char *ns, const bson *cond ) {
     char *data;
+
+    /* Make sure that the BSON is valid UTF-8.
+     * TODO: decide whether to check cond as well.
+     * */
+    if( mongo_bson_valid( conn, ( bson * )cond, 0 ) != MONGO_OK ) {
+        return MONGO_ERROR;
+    }
+
     mongo_message *mm = mongo_message_create( 16  /* header */
                         + 4  /* ZERO */
                         + strlen( ns ) + 1
@@ -563,8 +586,13 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
     /* Set up default values for query and fields, if necessary. */
     if( ! cursor->query )
         cursor->query = bson_empty( &empty );
+    else if( mongo_cursor_bson_valid( cursor, cursor->query ) != MONGO_OK )
+        return MONGO_ERROR;
+
     if( ! cursor->fields )
         cursor->fields = bson_empty( &empty );
+    else if( mongo_cursor_bson_valid( cursor, cursor->fields ) != MONGO_OK )
+        return MONGO_ERROR;
 
     mm = mongo_message_create( 16 + /* header */
                                4 + /*  options */

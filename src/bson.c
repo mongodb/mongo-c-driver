@@ -46,6 +46,8 @@ static int ( *oid_inc_func )( void )  = NULL;
 bson *bson_empty( bson *obj ) {
     static char *data = "\005\0\0\0\0";
     bson_init_data( obj, data );
+    obj->finished = 1;
+    obj->err = 0;
     return obj;
 }
 
@@ -64,9 +66,9 @@ void bson_copy( bson *out, const bson *in ) {
     out->dataSize = in->dataSize;
     out->finished = in->finished;
     out->stackPos = in->stackPos;
+    out->err = in->err;
     for( i=0; i<out->stackPos; i++ )
         out->stack[i] = in->stack[i];
-    out->err = in->err;
 }
 
 int bson_init_data( bson *b, char *data ) {
@@ -596,11 +598,6 @@ int bson_ensure_space( bson *b, const int bytesNeeded ) {
     char *orig = b->data;
     int new_size;
 
-    if ( b->finished ) {
-        b->err = BSON_OBJECT_FINISHED;
-        return BSON_ERROR;
-    }
-
     if ( pos + bytesNeeded <= b->dataSize )
         return BSON_OK;
 
@@ -627,6 +624,10 @@ int bson_ensure_space( bson *b, const int bytesNeeded ) {
 
 int bson_finish( bson *b ) {
     int i;
+
+    if( b->err & BSON_NOT_UTF8 )
+        return BSON_ERROR;
+
     if ( ! b->finished ) {
         if ( bson_ensure_space( b, 1 ) == BSON_ERROR ) return BSON_ERROR;
         bson_append_byte( b, 0 );
@@ -648,6 +649,12 @@ void bson_destroy( bson *b ) {
 
 static int bson_append_estart( bson *b, int type, const char *name, const int dataSize ) {
     const int len = strlen( name ) + 1;
+
+    if ( b->finished ) {
+        b->err |= BSON_ALREADY_FINISHED;
+        return BSON_ERROR;
+    }
+
     if ( bson_ensure_space( b, 1 + len + dataSize ) == BSON_ERROR ) {
         return BSON_ERROR;
     }
@@ -878,6 +885,10 @@ int bson_append_finish_object( bson *b ) {
     bson_little_endian32( start, &i );
 
     return BSON_OK;
+}
+
+int bson_append_finish_array( bson *b ) {
+    return bson_append_finish_object( b );
 }
 
 static bson_err_handler err_handler = NULL;

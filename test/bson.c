@@ -58,6 +58,12 @@ int main() {
     bson_append_long( b, "l", 0x1122334455667788 );
     bson_finish( b );
 
+    ASSERT( b->err == BSON_VALID );
+
+    /* Test append after finish. */
+    ASSERT( bson_append_string( b, "foo", "bar" ) == BSON_ERROR );
+    ASSERT( b->err & BSON_ALREADY_FINISHED );
+
     /* Set stackPos to test stack copy. */
     b->stackPos = 1;
     bson_copy( copy, b );

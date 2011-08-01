@@ -34,15 +34,15 @@ MONGO_EXTERN_C_START
 #define BSON_ERROR -1
 
 enum bson_error_t {
-    BSON_OBJECT_FINISHED = 1, /**< Trying to modify a finished BSON object. */
-    BSON_SIZE_OVERFLOW = 2 /**< Trying to create a BSON object larger than INT_MAX. */
+    BSON_SIZE_OVERFLOW = 1 /**< Trying to create a BSON object larger than INT_MAX. */
 };
 
 enum bson_validity_t {
     BSON_VALID = 0,                 /**< BSON is valid and UTF-8 compliant. */
     BSON_NOT_UTF8 = ( 1<<1 ),       /**< A key or a string is not valid UTF-8. */
     BSON_FIELD_HAS_DOT = ( 1<<2 ),  /**< Warning: key contains '.' character. */
-    BSON_FIELD_INIT_DOLLAR = ( 1<<3 ) /**< Warning: key starts with '$' character. */
+    BSON_FIELD_INIT_DOLLAR = ( 1<<3 ), /**< Warning: key starts with '$' character. */
+    BSON_ALREADY_FINISHED = ( 1<<4 )  /**< Trying to modify a finished BSON object. */
 };
 
 enum bson_binary_subtype_t {
@@ -880,6 +880,16 @@ int bson_append_start_array( bson *b, const char *name );
  * @return BSON_OK or BSON_ERROR.
  */
 int bson_append_finish_object( bson *b );
+
+/**
+ * Finish appending a new object or array to a bson. This
+ * is simply an alias for bson_append_finish_object.
+ *
+ * @param b the bson to append to.
+ *
+ * @return BSON_OK or BSON_ERROR.
+ */
+int bson_append_finish_array( bson *b );
 
 void bson_numstr( char *str, int i );
 
