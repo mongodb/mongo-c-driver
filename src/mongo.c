@@ -728,8 +728,8 @@ const char *mongo_cursor_data( mongo_cursor *cursor ) {
     return cursor->current.data;
 }
 
-bson *mongo_cursor_bson( mongo_cursor *cursor ) {
-    return &(cursor->current);
+const bson *mongo_cursor_bson( mongo_cursor *cursor ) {
+    return (const bson *)&(cursor->current);
 }
 
 int mongo_cursor_next( mongo_cursor *cursor ) {

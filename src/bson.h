@@ -160,7 +160,7 @@ bson_type bson_find( bson_iterator *it, const bson *obj, const char *name );
  * @param i the bson_iterator to initialize.
  * @param bson the BSON object to associate with the iterator.
  */
-void bson_iterator_init( bson_iterator *i , bson *b );
+void bson_iterator_init( bson_iterator *i , const bson *b );
 
 /**
  * Initialize a bson iterator from a const char* buffer. Note

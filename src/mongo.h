@@ -405,7 +405,7 @@ const char *mongo_cursor_data( mongo_cursor *cursor );
  *
  * @param cursor
  */
-bson *mongo_cursor_bson( mongo_cursor *cursor );
+const bson *mongo_cursor_bson( mongo_cursor *cursor );
 
 /**
  * Iterate the cursor, returning the next item. When successful,

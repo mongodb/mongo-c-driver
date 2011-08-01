@@ -277,7 +277,7 @@ void bson_print_raw( const char *data , int depth ) {
    ITERATOR
    ------------------------------ */
 
-void bson_iterator_init( bson_iterator *i , bson *b ) {
+void bson_iterator_init( bson_iterator *i, const bson *b ) {
     i->cur = b->data + 4;
     i->first = 1;
 }
