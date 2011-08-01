@@ -19,6 +19,6 @@ tags
 
 config.log
 
-docs
-docsource/sphinx/build
-docsource/doxygen
+docs/html
+docs/source/sphinx/build
+docs/source/doxygen
