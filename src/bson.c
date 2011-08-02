@@ -263,7 +263,7 @@ void bson_print_raw( const char *data , int depth ) {
             printf( "%d" , bson_iterator_int( &i ) );
             break;
         case BSON_LONG:
-            printf( "%ll" , bson_iterator_long( &i ) );
+            printf( "%lld" , bson_iterator_long( &i ) );
             break;
         case BSON_TIMESTAMP:
             ts = bson_iterator_timestamp( &i );
