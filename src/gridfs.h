@@ -54,7 +54,7 @@ typedef struct {
  *  @param prefix - collection prefix, default is fs if NULL or empty
  *  @param gfs - the GridFS object to initialize
  *
- *  @return - 1 if successful, 0 otherwise
+ *  @return - MONGO_OK or MONGO_ERROR.
  */
 int gridfs_init( mongo *client, const char *dbname,
                  const char *prefix, gridfs *gfs );
@@ -72,7 +72,6 @@ void gridfs_destroy( gridfs *gfs );
  *  Once initialized, you can write any number of buffers with gridfs_write_buffer.
  *  When done, you must call gridfs_writer_done to save the file metadata.
  *
- *  @return - 1 if successful, 0 otherwise
  */
 void gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char *remote_name,
                            const char *content_type );
@@ -82,7 +81,6 @@ void gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char *remote_name
  *  of times with a new buffer each time. This allows you to effectively
  *  stream to a GridFS file. When finished, be sure to call gridfs_writer_done.
  *
- *  @return - 1 if successful, 0 otherwise
  */
 void gridfile_write_buffer( gridfile *gfile, const char *data,
                             gridfs_offset length );
@@ -92,9 +90,9 @@ void gridfile_write_buffer( gridfile *gfile, const char *data,
  *  writing any buffered chunks along with the entry in the
  *  files collection.
  *
- *  @return - the file object if successful; otherwise 0.
+ *  @return - MONGO_OK or MONGO_ERROR.
  */
-bson gridfile_writer_done( gridfile *gfile );
+int gridfile_writer_done( gridfile *gfile );
 
 /**
  *  Store a buffer as a GridFS file.
@@ -104,9 +102,9 @@ bson gridfile_writer_done( gridfile *gfile );
  *  @param remotename - filename for use in the database
  *  @param contenttype - optional MIME type for this object
  *
- *  @return - the file object
+ *  @return - MONGO_OK or MONGO_ERROR.
  */
-bson gridfs_store_buffer( gridfs *gfs, const char *data, gridfs_offset length,
+int gridfs_store_buffer( gridfs *gfs, const char *data, gridfs_offset length,
                           const char *remotename,
                           const char *contenttype );
 
@@ -117,9 +115,9 @@ bson gridfs_store_buffer( gridfs *gfs, const char *data, gridfs_offset length,
  *  @param remotename - optional filename for use in the database
  *  @param contenttype - optional MIME type for this object
  *
- *  @return - the file object
+ *  @return - MONGO_OK or MONGO_ERROR.
  */
-bson gridfs_store_file( gridfs *gfs, const char *filename,
+int gridfs_store_file( gridfs *gfs, const char *filename,
                         const char *remotename, const char *contenttype );
 
 /**
@@ -134,7 +132,8 @@ void gridfs_remove_filename( gridfs *gfs, const char *filename );
  *  @param gfs - the working GridFS
  *  @param query - a pointer to the bson with the query data
  *  @param gfile - the output GridFile to be initialized
- *  @return 1 if successful, 0 otherwise
+ *
+ *  @return MONGO_OK if successful, MONGO_ERROR otherwise
  */
 int gridfs_find_query( gridfs *gfs, bson *query, gridfile *gfile );
 
@@ -145,7 +144,7 @@ int gridfs_find_query( gridfs *gfs, bson *query, gridfile *gfile );
  *  @param filename - filename of the file to find
  *  @param gfile - the output GridFile to be intialized
  *
- *  @return 1 if successful, 0 otherwise
+ *  @return MONGO_OK or MONGO_ERROR.
  */
 int gridfs_find_filename( gridfs *gfs, const char *filename,
                           gridfile *gfile );
@@ -156,7 +155,7 @@ int gridfs_find_filename( gridfs *gfs, const char *filename,
  *  @param meta - the file object
  *  @param gfile - the output GridFile that is being initialized
  *
- *  @return 1 if successful, 0 otherwise
+ *  @return - MONGO_OK or MONGO_ERROR.
  */
 int gridfile_init( gridfs *gfs, bson *meta, gridfile *gfile );
 
@@ -171,7 +170,7 @@ void gridfile_destroy( gridfile *gfile );
  *  Returns whether or not the GridFile exists
  *  @param gfile - the GridFile being examined
  */
-int gridfile_exists( gridfile *gfile );
+bson_bool_t gridfile_exists( gridfile *gfile );
 
 /**
  *  Returns the filename of GridFile

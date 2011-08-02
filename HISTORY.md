@@ -106,6 +106,10 @@ Changes:
   compile with --use-platform=LINUX. The compiles with platform/linux/net.h instead of the
   top-level net.h.
 * Fixed tailable cursors.
+* GridFS API is now in-line with the new driver API. In particular, all of the
+  following functions now return MONGO_OK or MONGO_ERROR: gridfs_init,
+  gridfile_init, gridfile_writer_done, gridfs_store_buffer, gridfs_store_file,
+  and gridfs_find_query.
 * Fixed a few memory leaks.
 
 ## 0.3
