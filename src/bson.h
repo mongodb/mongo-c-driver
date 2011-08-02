@@ -901,8 +901,19 @@ void bson_incnumstr( char *str );
 /* bson_err_handlers shouldn't return!!! */
 typedef void( *bson_err_handler )( const char *errmsg );
 
-/* Set an alternative to the standard malloc(). */
-void bson_set_malloc( void *( *func )( size_t )  );
+typedef int (*bson_printf_func)( const char *, ... );
+typedef int (*bson_fprintf_func)( FILE *, const char *, ... );
+typedef int (*bson_sprintf_func)( char *, const char *, ... );
+
+extern void *( *bson_malloc_func )( size_t );
+extern void *( *bson_realloc_func )( void *, size_t );
+extern void ( *bson_free )( void * );
+
+extern bson_printf_func bson_printf;
+extern bson_fprintf_func bson_fprintf;
+extern bson_sprintf_func bson_sprintf;
+
+extern bson_printf_func bson_errprintf;
 
 /**
  * Allocates memory and checks return value, exiting fatally if malloc() fails.
@@ -914,9 +925,6 @@ void bson_set_malloc( void *( *func )( size_t )  );
  * @sa malloc(3)
  */
 void *bson_malloc( int size );
-
-/* Set an alternative to the standard realloc(). */
-void bson_set_realloc( void *( *func )( void *, size_t ) );
 
 /**
  * Changes the size of allocated memory and checks return value,
@@ -930,40 +938,6 @@ void bson_set_realloc( void *( *func )( void *, size_t ) );
  * @sa realloc()
  */
 void *bson_realloc( void *ptr, int size );
-
-/* Set an alternative to the standard free(). */
-void bson_set_free( void ( *func )( void * ) );
-
-/**
- * Release memory allocated by malloc or realloc.
- *
- * @param ptr
- */
-void bson_free( void *ptr );
-
-/* Set an alternative to the standard printf(). */
-void bson_set_printf( int ( *func )( const char *, va_list ) );
-
-/**
- * Use this instead of printf.
- */
-int bson_printf( const char *format, ... );
-
-/* Set an alternative to the standard fprintf(). */
-void bson_set_fprintf( int ( *func )( FILE *, const char *, va_list ) );
-
-/**
- * Use this instead of fprintf.
- */
-int bson_fprintf( FILE *fp, const char *format, ... );
-
-/* Set an alternative to the standard sprintf(). */
-void bson_set_sprintf( int ( *func )( char *, const char *, va_list ) );
-
-/**
- * Use this instead of sprintf.
- */
-int bson_sprintf( char *s, const char *format, ... );
 
 /**
  * Set a function for error handling.

@@ -24,28 +24,32 @@ void my_free( void *ptr ) {
     free( ptr );
 }
 
-int my_printf( const char *format, va_list ap ) {
-    int ret;
+int my_printf( const char *format, ... ) {
+    int ret = 0;
     test_value = 4;
 
-    ret = vprintf( format, ap );
     return ret;
 }
 
-int my_fprintf( FILE *fp, const char *format, va_list ap ) {
-    int ret;
+int my_fprintf( FILE *fp, const char *format, ... ) {
+    int ret = 0;
     test_value = 5;
 
-    ret = vfprintf( fp, format, ap );
     return ret;
 }
 
-int my_sprintf( char *s, const char *format, va_list ap ) {
-    int ret;
+int my_sprintf( char *s, const char *format, ... ) {
+    int ret = 0;
     test_value = 6;
 
-    ret = vsprintf( s, format, ap );
     return ret;
+}
+
+int my_errprintf( const char *format, ... ) {
+   int ret = 0;
+   test_value = 7;
+
+   return ret;
 }
 
 int main() {
@@ -61,9 +65,9 @@ int main() {
     bson_free( ptr );
     ASSERT( test_value == 0 );
 
-    bson_set_malloc( my_malloc );
-    bson_set_realloc( my_realloc );
-    bson_set_free( my_free );
+    bson_malloc_func = my_malloc;
+    bson_realloc_func = my_realloc;
+    bson_free = my_free;
 
     ptr = bson_malloc( size );
     ASSERT( test_value == 1 );
@@ -74,17 +78,20 @@ int main() {
 
     test_value = 0;
 
-    bson_printf( "Test %d\n", test_value );
+    bson_printf( "Test printf %d\n", test_value );
     ASSERT( test_value == 0 );
-    bson_fprintf( stdout, "Test %d\n", test_value );
+    bson_fprintf( stdout, "Test fprintf %d\n", test_value );
     ASSERT( test_value == 0 );
-    bson_sprintf( str, "Test %d\n", test_value );
-    bson_printf( "Str: %s\n", str );
+    bson_sprintf( str, "Test sprintf %d\n", test_value );
+    printf( "%s", str );
+    ASSERT( test_value == 0 );
+    bson_errprintf( "Test err %d\n", test_value );
     ASSERT( test_value == 0 );
 
-    bson_set_printf( my_printf );
-    bson_set_fprintf( my_fprintf );
-    bson_set_sprintf( my_sprintf );
+    bson_printf = my_printf;
+    bson_sprintf = my_sprintf;
+    bson_fprintf = my_fprintf;
+    bson_errprintf = my_errprintf;
 
     bson_printf( "Test %d\n", test_value );
     ASSERT( test_value == 4 );
@@ -93,6 +100,8 @@ int main() {
     bson_sprintf( str, "Test %d\n", test_value );
     ASSERT( test_value == 6 );
     bson_printf( "Str: %s\n", str );
+    bson_errprintf( "Test %d\n", test_value );
+    ASSERT( test_value == 7 );
 
     return 0;
 }

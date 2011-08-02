@@ -30,12 +30,17 @@ const int initialBufferSize = 128;
 static const int zero = 0;
 
 /* Custom standard function pointers. */
-static void *( *malloc_func )( size_t ) = NULL;
-static void *( *realloc_func )( void *, size_t ) = NULL;
-static void ( *free_func )( void * ) = NULL;
-static int ( *printf_func )( const char *, va_list ) = NULL;
-static int ( *fprintf_func )( FILE *, const char *, va_list ) = NULL;
-static int ( *sprintf_func )( char *, const char *, va_list ) = NULL;
+void *( *bson_malloc_func )( size_t ) = malloc;
+void *( *bson_realloc_func )( void *, size_t ) = realloc;
+void  ( *bson_free )( void * ) = free;
+bson_printf_func bson_printf = printf;
+bson_fprintf_func bson_fprintf = fprintf;
+bson_sprintf_func bson_sprintf = sprintf;
+
+static int _bson_errprintf( const char *, ... );
+bson_printf_func bson_errprintf = _bson_errprintf;
+
+/* ObjectId fuzz functions. */
 static int ( *oid_fuzz_func )( void ) = NULL;
 static int ( *oid_inc_func )( void )  = NULL;
 
@@ -891,6 +896,9 @@ int bson_append_finish_array( bson *b ) {
     return bson_append_finish_object( b );
 }
 
+
+/* Error handling and allocators. */
+
 static bson_err_handler err_handler = NULL;
 
 bson_err_handler set_bson_err_handler( bson_err_handler func ) {
@@ -899,91 +907,25 @@ bson_err_handler set_bson_err_handler( bson_err_handler func ) {
     return old;
 }
 
-void bson_set_malloc( void *( *func )( size_t )  ) {
-    malloc_func = func;
-}
-
 void *bson_malloc( int size ) {
     void *p;
-    if( malloc_func )
-        p = malloc_func( size );
-    else
-        p = malloc( size );
+    p = bson_malloc_func( size );
     bson_fatal_msg( !!p, "malloc() failed" );
     return p;
 }
 
-void bson_set_realloc( void *( *func )( void *, size_t ) ) {
-    realloc_func = func;
-}
-
 void *bson_realloc( void *ptr, int size ) {
     void *p;
-    if( realloc_func )
-        p = realloc_func( ptr, size );
-    else
-        p = realloc( ptr, size );
+    p = bson_realloc_func( ptr, size );
     bson_fatal_msg( !!p, "realloc() failed" );
     return p;
 }
 
-void bson_set_free( void ( *func )( void * ) ) {
-    free_func = func;
-}
-
-void bson_free( void *ptr ) {
-    if( free_func )
-        free_func( ptr );
-    else
-        free( ptr );
-}
-
-void bson_set_printf( int ( *func )( const char *, va_list ) ) {
-    printf_func = func;
-}
-
-int bson_printf( const char *format, ... ) {
+int _bson_errprintf( const char *format, ... ) {
     va_list ap;
     int ret;
     va_start( ap, format );
-    if( printf_func )
-        ret = printf_func( format, ap );
-    else
-        ret = vprintf( format, ap );
-    va_end( ap );
-
-    return ret;
-}
-
-void bson_set_fprintf( int ( *func )( FILE *, const char *, va_list ) ) {
-    fprintf_func = func;
-}
-
-int bson_fprintf( FILE *fp, const char *format, ... ) {
-    va_list ap;
-    int ret;
-    va_start( ap, format );
-    if( fprintf_func )
-        ret = fprintf_func( fp, format, ap );
-    else
-        ret = vfprintf( fp, format, ap );
-    va_end( ap );
-
-    return ret;
-}
-
-void bson_set_sprintf( int ( *func )( char *, const char *, va_list ) ) {
-    sprintf_func = func;
-}
-
-int bson_sprintf( char *s, const char *format, ... ) {
-    va_list ap;
-    int ret;
-    va_start( ap, format );
-    if( sprintf_func )
-        ret = sprintf_func( s, format, ap );
-    else
-        ret = vsprintf( s, format, ap );
+    ret = vfprintf( stderr, format, ap );
     va_end( ap );
 
     return ret;
@@ -1016,6 +958,8 @@ void bson_fatal_msg( int ok , const char *msg ) {
     exit( -5 );
 }
 
+
+/* Efficiently copy an integer to a string. */
 extern const char bson_numstrs[1000][4];
 
 void bson_numstr( char *str, int i ) {
