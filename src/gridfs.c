@@ -16,22 +16,16 @@
  */
 
 #include "gridfs.h"
-#include "mongo.h"
-#include "bson.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
 #define TRUE 1
 #define FALSE 0
 
-
-/*--------------------------------------------------------------------*/
-
 static bson *chunk_new( bson_oid_t id, int chunkNumber,
-                        const char *data, int len )
-
-{
+                        const char *data, int len ) {
     bson *b = bson_malloc( sizeof( bson ) );
 
     bson_init( b );
@@ -42,19 +36,14 @@ static bson *chunk_new( bson_oid_t id, int chunkNumber,
     return  b;
 }
 
-/*--------------------------------------------------------------------*/
-
-static void chunk_free( bson *oChunk )
-
-{
+static void chunk_free( bson *oChunk ) {
     bson_destroy( oChunk );
     bson_free( oChunk );
 }
 
-/*--------------------------------------------------------------------*/
+int gridfs_init( mongo *client, const char *dbname, const char *prefix,
+    gridfs *gfs ) {
 
-int gridfs_init( mongo *client, const char *dbname,
-                 const char *prefix, gridfs *gfs ) {
     int options;
     bson b;
     bson_bool_t success;
@@ -136,19 +125,13 @@ int gridfs_init( mongo *client, const char *dbname,
     return TRUE;
 }
 
-/*--------------------------------------------------------------------*/
-
-void gridfs_destroy( gridfs *gfs )
-
-{
+void gridfs_destroy( gridfs *gfs ) {
     if ( gfs == NULL ) return;
     if ( gfs->dbname ) bson_free( ( char * )gfs->dbname );
     if ( gfs->prefix ) bson_free( ( char * )gfs->prefix );
     if ( gfs->files_ns ) bson_free( ( char * )gfs->files_ns );
     if ( gfs->chunks_ns ) bson_free( ( char * )gfs->chunks_ns );
 }
-
-/*--------------------------------------------------------------------*/
 
 static bson gridfs_insert_file( gridfs *gfs, const char *name,
                                 const bson_oid_t id, gridfs_offset length,
@@ -188,13 +171,10 @@ static bson gridfs_insert_file( gridfs *gfs, const char *name,
     return ret;
 }
 
-/*--------------------------------------------------------------------*/
-
 bson gridfs_store_buffer( gridfs *gfs, const char *data,
                           gridfs_offset length, const char *remotename,
-                          const char *contenttype )
+                          const char *contenttype ) {
 
-{
     char const *end = data + length;
     const char *data_ptr = data;
     bson_oid_t id;
@@ -223,8 +203,6 @@ bson gridfs_store_buffer( gridfs *gfs, const char *data,
     return gridfs_insert_file( gfs, remotename, id, length, contenttype );
 }
 
-/*--------------------------------------------------------------------*/
-
 void gridfile_writer_init( gridfile *gfile, gridfs *gfs,
                            const char *remote_name, const char *content_type ) {
     gfile->gfs = gfs;
@@ -242,9 +220,8 @@ void gridfile_writer_init( gridfile *gfile, gridfs *gfs,
     strcpy( ( char * )gfile->content_type, content_type );
 }
 
-/*--------------------------------------------------------------------*/
-
-void gridfile_write_buffer( gridfile *gfile, const char *data, gridfs_offset length ) {
+void gridfile_write_buffer( gridfile *gfile, const char *data,
+    gridfs_offset length ) {
 
     int bytes_left = 0;
     int data_partial_len = 0;
@@ -313,13 +290,10 @@ void gridfile_write_buffer( gridfile *gfile, const char *data, gridfs_offset len
     }
 }
 
-/*--------------------------------------------------------------------*/
-
 bson gridfile_writer_done( gridfile *gfile ) {
 
     /* write any remaining pending chunk data.
-     * pending data will always take up less than one chunk
-     */
+     * pending data will always take up less than one chunk */
     bson *oChunk;
     bson response;
     if( gfile->pending_data ) {
@@ -340,10 +314,9 @@ bson gridfile_writer_done( gridfile *gfile ) {
     return response;
 }
 
-/*--------------------------------------------------------------------*/
-
 bson gridfs_store_file( gridfs *gfs, const char *filename,
                         const char *remotename, const char *contenttype ) {
+
     char buffer[DEFAULT_CHUNK_SIZE];
     FILE *fd;
     bson_oid_t id;
@@ -386,11 +359,7 @@ bson gridfs_store_file( gridfs *gfs, const char *filename,
     return gridfs_insert_file( gfs, remotename, id, length, contenttype );
 }
 
-/*--------------------------------------------------------------------*/
-
-void gridfs_remove_filename( gridfs *gfs, const char *filename )
-
-{
+void gridfs_remove_filename( gridfs *gfs, const char *filename ) {
     bson query;
     mongo_cursor *files;
     bson file;
@@ -428,12 +397,9 @@ void gridfs_remove_filename( gridfs *gfs, const char *filename )
     mongo_cursor_destroy( files );
 }
 
-/*--------------------------------------------------------------------*/
-
 int gridfs_find_query( gridfs *gfs, bson *query,
-                       gridfile *gfile )
+                       gridfile *gfile ) {
 
-{
     bson uploadDate;
     bson finalQuery;
     bson out;
@@ -461,8 +427,6 @@ int gridfs_find_query( gridfs *gfs, bson *query,
     }
 }
 
-/*--------------------------------------------------------------------*/
-
 int gridfs_find_filename( gridfs *gfs, const char *filename,
                           gridfile *gfile )
 
@@ -478,8 +442,6 @@ int gridfs_find_filename( gridfs *gfs, const char *filename,
     return i;
 }
 
-/*--------------------------------------------------------------------*/
-
 int gridfile_init( gridfs *gfs, bson *meta, gridfile *gfile )
 
 {
@@ -491,8 +453,6 @@ int gridfile_init( gridfs *gfs, bson *meta, gridfile *gfile )
     return TRUE;
 }
 
-/*--------------------------------------------------------------------*/
-
 void gridfile_destroy( gridfile *gfile )
 
 {
@@ -500,41 +460,25 @@ void gridfile_destroy( gridfile *gfile )
     bson_free( gfile->meta );
 }
 
-/*--------------------------------------------------------------------*/
-
-bson_bool_t gridfile_exists( gridfile *gfile )
-
-{
+bson_bool_t gridfile_exists( gridfile *gfile ) {
     return ( bson_bool_t )( gfile != NULL || gfile->meta == NULL );
 }
 
-/*--------------------------------------------------------------------*/
-
-const char *gridfile_get_filename( gridfile *gfile )
-
-{
+const char *gridfile_get_filename( gridfile *gfile ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, "filename" );
     return bson_iterator_string( &it );
 }
 
-/*--------------------------------------------------------------------*/
-
-int gridfile_get_chunksize( gridfile *gfile )
-
-{
+int gridfile_get_chunksize( gridfile *gfile ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, "chunkSize" );
     return bson_iterator_int( &it );
 }
 
-/*--------------------------------------------------------------------*/
-
-gridfs_offset gridfile_get_contentlength( gridfile *gfile )
-
-{
+gridfs_offset gridfile_get_contentlength( gridfile *gfile ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, "length" );
@@ -545,11 +489,7 @@ gridfs_offset gridfile_get_contentlength( gridfile *gfile )
         return ( gridfs_offset )bson_iterator_long( &it );
 }
 
-/*--------------------------------------------------------------------*/
-
-const char *gridfile_get_contenttype( gridfile *gfile )
-
-{
+const char *gridfile_get_contenttype( gridfile *gfile ) {
     bson_iterator it;
 
     if ( bson_find( &it, gfile->meta, "contentType" ) )
@@ -557,40 +497,26 @@ const char *gridfile_get_contenttype( gridfile *gfile )
     else return NULL;
 }
 
-/*--------------------------------------------------------------------*/
-
-bson_date_t gridfile_get_uploaddate( gridfile *gfile )
-
-{
+bson_date_t gridfile_get_uploaddate( gridfile *gfile ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, "uploadDate" );
     return bson_iterator_date( &it );
 }
 
-/*--------------------------------------------------------------------*/
-
-const char *gridfile_get_md5( gridfile *gfile )
-
-{
+const char *gridfile_get_md5( gridfile *gfile ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, "md5" );
     return bson_iterator_string( &it );
 }
 
-/*--------------------------------------------------------------------*/
-
-const char *gridfile_get_field( gridfile *gfile, const char *name )
-
-{
+const char *gridfile_get_field( gridfile *gfile, const char *name ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, name );
     return bson_iterator_value( &it );
 }
-
-/*--------------------------------------------------------------------*/
 
 bson_bool_t gridfile_get_boolean( gridfile *gfile, const char *name ) {
     bson_iterator it;
@@ -599,10 +525,7 @@ bson_bool_t gridfile_get_boolean( gridfile *gfile, const char *name ) {
     return bson_iterator_bool( &it );
 }
 
-/*--------------------------------------------------------------------*/
-bson gridfile_get_metadata( gridfile *gfile )
-
-{
+bson gridfile_get_metadata( gridfile *gfile ) {
     bson sub;
     bson_iterator it;
 
@@ -615,11 +538,7 @@ bson gridfile_get_metadata( gridfile *gfile )
     }
 }
 
-/*--------------------------------------------------------------------*/
-
-int gridfile_get_numchunks( gridfile *gfile )
-
-{
+int gridfile_get_numchunks( gridfile *gfile ) {
     bson_iterator it;
     gridfs_offset length;
     gridfs_offset chunkSize;
@@ -640,11 +559,7 @@ int gridfile_get_numchunks( gridfile *gfile )
            : ( int )( numchunks );
 }
 
-/*--------------------------------------------------------------------*/
-
-bson gridfile_get_chunk( gridfile *gfile, int n )
-
-{
+bson gridfile_get_chunk( gridfile *gfile, int n ) {
     bson query;
     bson out;
     bson_iterator it;
@@ -665,11 +580,7 @@ bson gridfile_get_chunk( gridfile *gfile, int n )
     return out;
 }
 
-/*--------------------------------------------------------------------*/
-
-mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, int size )
-
-{
+mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, int size ) {
     bson_iterator it;
     bson_oid_t id;
     bson gte;
@@ -713,11 +624,7 @@ mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, int size )
     return cursor;
 }
 
-/*--------------------------------------------------------------------*/
-
-gridfs_offset gridfile_write_file( gridfile *gfile, FILE *stream )
-
-{
+gridfs_offset gridfile_write_file( gridfile *gfile, FILE *stream ) {
     int i;
     size_t len;
     bson chunk;
@@ -737,11 +644,7 @@ gridfs_offset gridfile_write_file( gridfile *gfile, FILE *stream )
     return gridfile_get_contentlength( gfile );
 }
 
-/*--------------------------------------------------------------------*/
-
-gridfs_offset gridfile_read( gridfile *gfile, gridfs_offset size, char *buf )
-
-{
+gridfs_offset gridfile_read( gridfile *gfile, gridfs_offset size, char *buf ) {
     mongo_cursor *chunks;
     bson chunk;
 
@@ -793,11 +696,7 @@ gridfs_offset gridfile_read( gridfile *gfile, gridfs_offset size, char *buf )
     return size;
 }
 
-/*--------------------------------------------------------------------*/
-
-gridfs_offset gridfile_seek( gridfile *gfile, gridfs_offset offset )
-
-{
+gridfs_offset gridfile_seek( gridfile *gfile, gridfs_offset offset ) {
     gridfs_offset length;
 
     length = gridfile_get_contentlength( gfile );
