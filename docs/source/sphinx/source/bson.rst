@@ -4,7 +4,7 @@ BSON
 BSON (i.e., binary structured object notation) is the binary format used
 by MongoDB to store data and express queries and commands. To work with
 MongoDB is to trade in BSON objects. This document describes how to
-create, read, destory BSON object from the MongoDB C Driver.
+create, read, and destroy BSON objects using the MongoDB C Driver.
 
 Libraries
 ---------
@@ -114,7 +114,7 @@ can contain any of the following values:
 * BSON_ALREADY_FINISHED
 
 The most important of these is ``BSON_NOT_UTF8`` because the BSON
-object cannot be used with MongoDB if it is not valid UTF8.
+objects cannot be used with MongoDB if they're not valid UTF8.
 
 To keep your code clean, you may want to check for BSON_OK only when
 calling ``bson_finish()``. If the object is not valid, it will not be
@@ -123,3 +123,69 @@ finished, so it's quite important to check the return code here.
 Reading BSON objects
 --------------------
 
+You can read through a BSON object using a ``bson_iterator``. For
+a complete example, you may want to read through the implementation
+of ``bson_print_raw()`` (in ``bson.h``). But the basic idea is to
+initialize a ``bson_iterator`` object and then iterate over each
+successive element using ``bson_iterator_next()``. Let's take an
+example. Suppose we have a finished object of type ``bson*`` called ``b``:
+
+.. code-block:: c
+
+
+   bson_iterator i[1];
+   bson_type type;
+   const char * key;
+
+   bson_iterator_init( i, b );
+
+   type = bson_iterator_next( i );
+   key = bson_iterator_key( i );
+
+   printf( "Type: %d, Key: %s\n", type, key );
+
+We've advanced to the first element in the object, and we can print
+both it's BSON numeric type and its key name. To print the value,
+we need to use the type to find the correct method for reading the
+value. For instance, if the element is a string, then we use
+``bson_iterator_string`` to return the result:
+
+.. code-block:: c
+
+   printf( "Value: %s\n", bson_iterator_string( i ) );
+
+In addition to iterating over each successive BSON element,
+we can use the ``bson_find()`` function to jump directly
+to an element by name. Again, suppose that ``b`` is a pointer
+to a ``bson`` object. If we want to jump to the element
+named "address", we use ``bson_find()`` like so:
+
+.. code-block:: c
+
+   bson_iterator i[1], sub[i];
+   bson_type type;
+
+   type = bson_find( i, b, "address" );
+
+This will initialize the iterator, ``i``, and position
+it at the element named "address". The return value
+will be the "address" element's type.
+
+Reading sub-objects and arrays
+------------------------------
+
+Since "address" is a sub-object, we need to specially
+iterate it. To do that, we get the raw value and initialize
+a new BSON iterator like so:
+
+.. code-block:: c
+
+   type = bson_find( i, b, "address" );
+
+   bson_iterator_from_buffer( sub, bson_iterator_value( b ) );
+
+The function ``bson_iterator_value`` returns a ``char *`` pointing
+to the sub-object. Thus, we must initialize the iterator using
+``bson_iterator_from_buffer``. From there, we can iterate over
+``sub`` until we reach ``BSON_EOO``, indicating the end of the
+sub-object.

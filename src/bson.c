@@ -192,9 +192,10 @@ void bson_oid_gen( bson_oid_t *oid ) {
 time_t bson_oid_generated_time( bson_oid_t *oid ) {
     time_t out;
     bson_big_endian32( &out, &oid->ints[0] );
-    return out;
 
+    return out;
 }
+
 void bson_print( bson *b ) {
     bson_print_raw( b->data , 0 );
 }

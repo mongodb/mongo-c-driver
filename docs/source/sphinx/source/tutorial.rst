@@ -162,10 +162,6 @@ When you're done using the ``bson`` object, remember pass it to
 
     bson_destroy( b );
 
-You can see the complete 
-
-.. BSON API: api/bson_8h.html
-
 Inserting a single document
 ---------------------------
 
@@ -402,4 +398,5 @@ the second is a compound index on ``name`` and ``age``.
 Further Reading
 ---------------
 
-This overview just touches on the basics of using Mongo from C.
+This overview just touches on the basics of using Mongo from C. For more examples,
+check out the other documentation pages, and have a look at the driver's test cases.
