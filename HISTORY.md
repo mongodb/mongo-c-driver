@@ -21,51 +21,52 @@ Changes:
 * mongo_replset_init_conn has been renamed to mongo_replset_init.
 * bson_buffer has been removed. All functions for building bson
   objects now take objects of type bson. The new pattern looks like this:
-    Example:
 
-      bson b[1];
-      bson_init( b );
-      bson_append_int( b, "foo", 1 );
-      bson_finish( b );
-      /* The object is ready to use.
-         When finished, destroy it. */
-      bson_destroy( b );
+  Example:
+
+    bson b[1];
+    bson_init( b );
+    bson_append_int( b, "foo", 1 );
+    bson_finish( b );
+    /* The object is ready to use.
+       When finished, destroy it. */
+    bson_destroy( b );
 
 * mongo_connection has been renamed to mongo.
 
-    Example:
+  Example:
 
-      mongo conn[1];
-      mongo_connect( conn, '127.0.0.1', 27017 );
-      /* Connection is ready. Destroy when down. */
-      mongo_destroy( conn );
+    mongo conn[1];
+    mongo_connect( conn, '127.0.0.1', 27017 );
+    /* Connection is ready. Destroy when down. */
+    mongo_destroy( conn );
 
 * New cursor builder API for clearer code:
 
-    Example:
+  Example:
 
-      mongo_cursor cursor[1];
-      mongo_cursor_init( cursor, conn, "test.foo" );
+    mongo_cursor cursor[1];
+    mongo_cursor_init( cursor, conn, "test.foo" );
 
-      bson query[1];
+    bson query[1];
 
-      bson_init( query );
-      bson_append_int( query, "bar", 1 );
-      bson_finish( query );
+    bson_init( query );
+    bson_append_int( query, "bar", 1 );
+    bson_finish( query );
 
-      bson fields[1];
+    bson fields[1];
 
-      bson_init( fields );
-      bson_append_int( fields, "baz", 1 );
-      bson_finish( fields );
+    bson_init( fields );
+    bson_append_int( fields, "baz", 1 );
+    bson_finish( fields );
 
-      mongo_cursor_set_query( cursor, query );
-      mongo_cursor_set_fields( cursor, fields );
-      mongo_cursor_set_limit( cursor, 10 );
-      mongo_cursor_set_skip( cursor, 10 );
+    mongo_cursor_set_query( cursor, query );
+    mongo_cursor_set_fields( cursor, fields );
+    mongo_cursor_set_limit( cursor, 10 );
+    mongo_cursor_set_skip( cursor, 10 );
 
-      while( mongo_cursor_next( cursor ) == MONGO_OK )
-          bson_print( mongo_cursor_bson( cursor ) );
+    while( mongo_cursor_next( cursor ) == MONGO_OK )
+        bson_print( mongo_cursor_bson( cursor ) );
 
 * bson_iterator_init now takes a (bson*) instead of a (const char*). This is consistent
   with bson_find, which also takes a (bson*). If you want to initiate a bson iterator
