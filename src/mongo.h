@@ -32,6 +32,8 @@ MONGO_EXTERN_C_START
 #define MONGO_OK 0
 #define MONGO_ERROR -1
 
+#define MONGO_DEFAULT_PORT 27017
+
 typedef enum mongo_error_t {
     MONGO_IO_ERROR = 1,         /**< A socket error occurred. */
     MONGO_READ_SIZE_ERROR = 2,  /**< The response is not the expected length. */
@@ -205,6 +207,15 @@ void mongo_replset_init( mongo *conn, const char *name );
  * @param port the port to connect to.
  */
 void mongo_replset_add_seed( mongo *conn, const char *host, int port );
+
+/**
+ * Utility function for converting a host-port string to a mongo_host_port.
+ *
+ * @param host_string a string containing either a host or a host and port separated
+ *     by a colon.
+ * @param host_port the mongo_host_port object to write the result to.
+ */
+void mongo_parse_host( const char *host_string, mongo_host_port *host_port );
 
 /**
  * Connect to a replica set.

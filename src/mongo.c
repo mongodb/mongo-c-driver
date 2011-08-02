@@ -196,7 +196,7 @@ void mongo_replset_add_seed( mongo *conn, const char *host, int port ) {
     mongo_replset_add_node( &conn->replset->seeds, host, port );
 }
 
-static void mongo_parse_host( const char *host_string, mongo_host_port *host_port ) {
+void mongo_parse_host( const char *host_string, mongo_host_port *host_port ) {
     int len, idx, split;
     len = split = idx = 0;
 
@@ -218,7 +218,7 @@ static void mongo_parse_host( const char *host_string, mongo_host_port *host_por
     if( split )
         host_port->port = atoi( host_string + idx + 1 );
     else
-        host_port->port = 27017;
+        host_port->port = MONGO_DEFAULT_PORT;
 }
 
 static void mongo_replset_check_seed( mongo *conn ) {
