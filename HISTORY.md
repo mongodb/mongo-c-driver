@@ -32,6 +32,7 @@ Changes:
       bson_destroy( b );
 
 * mongo_connection has been renamed to mongo.
+
     Example:
 
       mongo conn[1];
@@ -40,6 +41,7 @@ Changes:
       mongo_destroy( conn );
 
 * New cursor builder API for clearer code:
+
     Example:
 
       mongo_cursor cursor[1];
@@ -70,6 +72,7 @@ Changes:
   with a buffer, use the new function bson_iterator_from_buffer.
 * With the addition of the mongo_cursor_bson function, it's now no
   longer necessary to know how bson and mongo_cursor objects are implemented.
+
   Example:
 
     bson b[1];
