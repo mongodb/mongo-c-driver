@@ -128,7 +128,9 @@ int gridfs_store_file( gridfs *gfs, const char *filename,
 void gridfs_remove_filename( gridfs *gfs, const char *filename );
 
 /**
- *  Find the first query within the GridFS and return it as a GridFile
+ *  Find the first file matching the provided query within the
+ *  GridFS files collection, and return the file as a GridFile.
+ *
  *  @param gfs - the working GridFS
  *  @param query - a pointer to the bson with the query data
  *  @param gfile - the output GridFile to be initialized
@@ -146,8 +148,7 @@ int gridfs_find_query( gridfs *gfs, bson *query, gridfile *gfile );
  *
  *  @return MONGO_OK or MONGO_ERROR.
  */
-int gridfs_find_filename( gridfs *gfs, const char *filename,
-                          gridfile *gfile );
+int gridfs_find_filename( gridfs *gfs, const char *filename, gridfile *gfile );
 
 /**
  *  Initializes a GridFile containing the GridFS and file bson
