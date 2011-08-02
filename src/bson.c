@@ -53,6 +53,7 @@ bson *bson_empty( bson *obj ) {
     bson_init_data( obj, data );
     obj->finished = 1;
     obj->err = 0;
+    obj->stackPos = 0;
     return obj;
 }
 
@@ -67,7 +68,7 @@ void bson_copy( bson *out, const bson *in ) {
 
     if ( !out ) return;
     bson_copy_basic( out, in );
-    out->cur = in->cur;
+    out->cur = out->data + ( in->cur - in->data );
     out->dataSize = in->dataSize;
     out->finished = in->finished;
     out->stackPos = in->stackPos;
@@ -262,7 +263,7 @@ void bson_print_raw( const char *data , int depth ) {
             printf( "%d" , bson_iterator_int( &i ) );
             break;
         case BSON_LONG:
-            printf( "%ld" , bson_iterator_long( &i ) );
+            printf( "%ll" , bson_iterator_long( &i ) );
             break;
         case BSON_TIMESTAMP:
             ts = bson_iterator_timestamp( &i );
@@ -274,7 +275,7 @@ void bson_print_raw( const char *data , int depth ) {
             bson_print_raw( bson_iterator_value( &i ) , depth + 1 );
             break;
         default:
-            bson_errprintf( stderr , "can't print type : %d\n" , t );
+            bson_errprintf( "can't print type : %d\n" , t );
         }
         printf( "\n" );
     }
@@ -617,7 +618,7 @@ int bson_ensure_space( bson *b, const int bytesNeeded ) {
         }
     }
 
-    b->data = realloc( b->data, new_size );
+    b->data = bson_realloc( b->data, new_size );
     if ( !b->data )
         bson_fatal_msg( !!b->data, "realloc() failed" );
 
@@ -954,7 +955,7 @@ void bson_fatal_msg( int ok , const char *msg ) {
         err_handler( msg );
     }
 
-    bson_errprintf( stderr , "error: %s\n" , msg );
+    bson_errprintf( "error: %s\n" , msg );
     exit( -5 );
 }
 
