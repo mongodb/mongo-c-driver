@@ -274,7 +274,7 @@ void bson_print_raw( const char *data , int depth ) {
             bson_print_raw( bson_iterator_value( &i ) , depth + 1 );
             break;
         default:
-            bson_fprintf( stderr , "can't print type : %d\n" , t );
+            bson_errprintf( stderr , "can't print type : %d\n" , t );
         }
         printf( "\n" );
     }
@@ -954,7 +954,7 @@ void bson_fatal_msg( int ok , const char *msg ) {
         err_handler( msg );
     }
 
-    bson_fprintf( stderr , "error: %s\n" , msg );
+    bson_errprintf( stderr , "error: %s\n" , msg );
     exit( -5 );
 }
 
