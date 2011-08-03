@@ -32,3 +32,4 @@ The API was completely revamped in v0.4.
 
    tutorial
    building
+   bson

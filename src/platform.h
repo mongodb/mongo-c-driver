@@ -1,4 +1,4 @@
-/** @file platform_hacks.h */
+/** @file platform.h */
 
 /**    Copyright 2009-2011 10gen Inc.
  *
