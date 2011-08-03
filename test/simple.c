@@ -139,6 +139,16 @@ int main() {
     ASSERT( mongo_cmd_drop_db( conn, "test" ) == MONGO_OK );
     mongo_disconnect( conn );
 
+    ASSERT( mongo_check_connection( conn ) == MONGO_ERROR );
+
+    mongo_reconnect( conn );
+
+    ASSERT( mongo_check_connection( conn ) == MONGO_OK );
+
+    close( conn->sock );
+
+    ASSERT( mongo_check_connection( conn ) == MONGO_ERROR );
+
     mongo_reconnect( conn );
 
     ASSERT( mongo_simple_int_command( conn, "admin", "ping", 1, NULL ) == MONGO_OK );

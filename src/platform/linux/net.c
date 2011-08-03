@@ -127,8 +127,8 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
         return MONGO_ERROR;
 
     if( getaddrinfo( host, port_str, &hints, &addrs ) != 0 ) {
-        fprintf( stderr, "getaddrinfo failed: %s", gai_strerror( ret ) );
-        conn->err = MONGO_CONN_FAIL;
+        bson_errprintf( "getaddrinfo failed: %s", gai_strerror( ret ) );
+        conn->err = MONGO_CONN_ADDR_FAIL;
         return MONGO_ERROR;
     }
 
@@ -136,10 +136,10 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
         mongo_close_socket( conn->sock );
         freeaddrinfo( addrs );
         conn->err = MONGO_CONN_FAIL;
-return MONGO_ERROR:
-           }
+        return MONGO_ERROR:
+    }
 
-           setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, ( char * )&flag, sizeof( flag ) );
+    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, ( char * )&flag, sizeof( flag ) );
     if( conn->op_timeout_ms > 0 )
         mongo_set_socket_op_timeout( conn, conn->op_timeout_ms );
 

@@ -129,6 +129,30 @@ char *mongo_data_append64( char *start , const void *data ) {
 
 /* Connection API */
 
+static int mongo_check_is_master( mongo *conn ) {
+    bson out;
+    bson_iterator it;
+    bson_bool_t ismaster = 0;
+
+    out.data = NULL;
+
+    if ( mongo_simple_int_command( conn, "admin", "ismaster", 1, &out ) == MONGO_OK ) {
+        if( bson_find( &it, &out, "ismaster" ) )
+            ismaster = bson_iterator_bool( &it );
+    } else {
+        return MONGO_ERROR;
+    }
+
+    bson_destroy( &out );
+
+    if( ismaster )
+        return MONGO_OK;
+    else {
+        conn->err = MONGO_CONN_NOT_MASTER;
+        return MONGO_ERROR;
+    }
+}
+
 void mongo_init( mongo *conn ) {
     conn->replset = NULL;
     conn->err = 0;
@@ -147,7 +171,13 @@ int mongo_connect( mongo *conn , const char *host, int port ) {
     conn->primary->next = NULL;
 
     mongo_init( conn );
-    return mongo_socket_connect( conn, host, port );
+    if( mongo_socket_connect( conn, host, port ) != MONGO_OK )
+        return MONGO_ERROR;
+
+    if( mongo_check_is_master( conn ) != MONGO_OK )
+        return MONGO_ERROR;
+    else
+        return MONGO_OK;
 }
 
 void mongo_replset_init( mongo *conn, const char *name ) {
@@ -331,7 +361,7 @@ int mongo_replset_connect( mongo *conn ) {
 
     /* Iterate over the host list, checking for the primary node. */
     if( !conn->replset->hosts ) {
-        conn->err = MONGO_CONN_CANNOT_FIND_PRIMARY;
+        conn->err = MONGO_CONN_NO_PRIMARY;
         return MONGO_ERROR;
     } else {
         node = conn->replset->hosts;
@@ -360,7 +390,7 @@ int mongo_replset_connect( mongo *conn ) {
     }
 
 
-    conn->err = MONGO_CONN_CANNOT_FIND_PRIMARY;
+    conn->err = MONGO_CONN_NO_PRIMARY;
     return MONGO_ERROR;
 }
 
@@ -384,6 +414,16 @@ int mongo_reconnect( mongo *conn ) {
         return res;
     } else
         return mongo_socket_connect( conn, conn->primary->host, conn->primary->port );
+}
+
+int mongo_check_connection( mongo *conn ) {
+    if( ! conn->connected )
+        return MONGO_ERROR;
+
+    if( mongo_simple_int_command( conn, "admin", "ping", 1, NULL ) == MONGO_OK )
+        return MONGO_OK;
+    else
+        return MONGO_ERROR;
 }
 
 void mongo_disconnect( mongo *conn ) {

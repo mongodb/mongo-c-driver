@@ -35,29 +35,27 @@ MONGO_EXTERN_C_START
 #define MONGO_DEFAULT_PORT 27017
 
 typedef enum mongo_error_t {
-    MONGO_IO_ERROR = 1,         /**< A socket error occurred. */
-    MONGO_READ_SIZE_ERROR = 2,  /**< The response is not the expected length. */
-    MONGO_COMMAND_FAILED = 3,   /**< The command returned with 'ok' value of 0. */
-    MONGO_CURSOR_EXHAUSTED = 4, /**< The cursor has no more results. */
-    MONGO_CURSOR_INVALID = 5,   /**< The cursor has timed out or is not recognized. */
-    MONGO_CURSOR_PENDING = 6,   /**< Tailable cursor still alive but no data. */
-    MONGO_BSON_INVALID = 7,     /**< BSON not valid for the specified op. */
-    MONGO_BSON_NOT_FINISHED = 8 /**< BSON object has not been finished. */
+    MONGO_CONN_SUCCESS = 0,  /**< Connection success! */
+    MONGO_CONN_NO_SOCKET,    /**< Could not create a socket. */
+    MONGO_CONN_FAIL,         /**< An error occured while calling connect(). */
+    MONGO_CONN_ADDR_FAIL,    /**< An error occured while calling getaddrinfo(). */
+    MONGO_CONN_NOT_MASTER,   /**< Warning: connected to a non-master node (read-only). */
+    MONGO_CONN_BAD_SET_NAME, /**< Given rs name doesn't match this replica set. */
+    MONGO_CONN_NO_PRIMARY,   /**< Can't find primary in replica set. Connection closed. */
+
+    MONGO_IO_ERROR,          /**< An error occurred while reading or writing on socket. */
+    MONGO_READ_SIZE_ERROR,   /**< The response is not the expected length. */
+    MONGO_COMMAND_FAILED,    /**< The command returned with 'ok' value of 0. */
+    MONGO_CURSOR_EXHAUSTED,  /**< The cursor has no more results. */
+    MONGO_CURSOR_INVALID,    /**< The cursor has timed out or is not recognized. */
+    MONGO_CURSOR_PENDING,    /**< Tailable cursor still alive but no data. */
+    MONGO_BSON_INVALID,      /**< BSON not valid for the specified op. */
+    MONGO_BSON_NOT_FINISHED  /**< BSON object has not been finished. */
 } mongo_error_t;
 
 enum mongo_cursor_flags {
     MONGO_CURSOR_MUST_FREE = 1,      /**< mongo_cursor_destroy should free cursor. */
     MONGO_CURSOR_QUERY_SENT = ( 1<<1 ) /**< Initial query has been sent. */
-};
-
-enum mongo_conn_return_t {
-    MONGO_CONN_SUCCESS = 0,
-    MONGO_CONN_BAD_ARG,
-    MONGO_CONN_NO_SOCKET,
-    MONGO_CONN_FAIL,
-    MONGO_CONN_NOT_MASTER,         /**< Not connected to master node. */
-    MONGO_CONN_BAD_SET_NAME,       /**< Given rs name doesn't match this replica set. */
-    MONGO_CONN_CANNOT_FIND_PRIMARY /**< Can't find primary in this replica set. */
 };
 
 enum mongo_index_opts {
@@ -241,6 +239,16 @@ int mongo_replset_connect( mongo *conn );
  *    set the conn->err field.
  */
 int mongo_set_op_timeout( mongo *conn, int millis );
+
+/**
+ * Ensure that this connection is healthy by performing
+ * a round-trip to the server.
+ *
+ * @param conn a mongo connection
+ *
+ * @return MONGO_OK if connected; otherwise, MONGO_ERROR.
+ */
+int mongo_check_connection( mongo *conn );
 
 /**
  * Try reconnecting to the server using the existing connection settings.
