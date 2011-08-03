@@ -158,7 +158,7 @@ def run_tests( root, tests ):
         test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> ' + os.path.devnull)
         AlwaysBuild(test_alias)
 
-tests = Split("sizes resize endian_swap bson simple update errors "
+tests = Split("sizes resize endian_swap bson bson_subobject simple update errors "
 "count_delete auth gridfs validate examples helpers oid functions cursors replica_set")
 
 # Run standard tests

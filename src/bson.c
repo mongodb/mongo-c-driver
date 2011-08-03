@@ -82,6 +82,13 @@ int bson_init_data( bson *b, char *data ) {
     return BSON_OK;
 }
 
+static void _bson_reset( bson *b ) {
+    b->finished = 0;
+    b->stackPos = 0;
+    b->err = 0;
+    b->errstr = NULL;
+}
+
 int bson_size( const bson *b ) {
     int i;
     if ( ! b || ! b->data )
@@ -264,7 +271,7 @@ void bson_print_raw( const char *data , int depth ) {
             printf( "%d" , bson_iterator_int( &i ) );
             break;
         case BSON_LONG:
-            printf( "%lld" , bson_iterator_long( &i ) );
+            printf( "%lld" , ( long long int )bson_iterator_long( &i ) );
             break;
         case BSON_TIMESTAMP:
             ts = bson_iterator_timestamp( &i );
@@ -549,6 +556,8 @@ const char *bson_iterator_regex_opts( const bson_iterator *i ) {
 
 void bson_iterator_subobject( const bson_iterator *i, bson *sub ) {
     bson_init_data( sub, ( char * )bson_iterator_value( i ) );
+    _bson_reset( sub );
+    sub->finished = 1;
 }
 
 void bson_iterator_subiterator( const bson_iterator *i, bson_iterator *sub ) {
@@ -566,10 +575,7 @@ static void _bson_init_size( bson *b, int size ) {
         b->data = ( char * )bson_malloc( size );
     b->dataSize = size;
     b->cur = b->data + 4;
-    b->finished = 0;
-    b->stackPos = 0;
-    b->err = 0;
-    b->errstr = NULL;
+    _bson_reset( b );
 }
 
 void bson_init( bson *b ) {
