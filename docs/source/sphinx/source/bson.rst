@@ -182,10 +182,37 @@ a new BSON iterator like so:
 
    type = bson_find( i, b, "address" );
 
-   bson_iterator_from_buffer( sub, bson_iterator_value( b ) );
+   bson_iterator_subiterator( i, sub );
 
-The function ``bson_iterator_value`` returns a ``char *`` pointing
-to the sub-object. Thus, we must initialize the iterator using
-``bson_iterator_from_buffer``. From there, we can iterate over
+The function ``bson_iterator_subiterator`` initializes
+the iterator ``sub`` and points it to the beginning of the
+sub-object. From there, we can iterate over
 ``sub`` until we reach ``BSON_EOO``, indicating the end of the
 sub-object.
+
+If you want to work with a sub-object by itself, there's
+a function, ``bson_iterator_subobject``, for initializing
+a new ``bson`` object with the value of the sub-object. Note
+that this does not copy the object. If you want a copy of the
+object, use ``bsop_copy()``.
+
+.. code-block: c
+
+   bson copy[1];
+
+   bson_copy( copy, sub );
+
+Getting a Raw BSON Pointer
+--------------------------
+
+Sometimes you'll want to access the ``char *`` that
+points to the buffer storing the raw BSON object. For that,
+use the ``bson_data()`` function. You can use this in concert
+with the bson_iterator_from_buffer() function to initialize an
+iterator:
+
+.. code-block:: c
+
+   bson_iterator i[1];
+
+   bson_iterator_from_buffer( i, bson_data( b ) );
