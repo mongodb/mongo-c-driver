@@ -93,7 +93,7 @@ from "0" to *n*, where *n* is the number of elements in the array.
 
 You'll notice that some knowledge of the BSON specification and
 of the available types is necessary. For that, take a few minutes to
-consult the 'official BSON specification <http://bsonspec.org>'_.
+consult the `official BSON specification <http://bsonspec.org>`_.
 
 Error handling
 --------------
