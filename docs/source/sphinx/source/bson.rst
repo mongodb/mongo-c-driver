@@ -33,7 +33,7 @@ The pattern of BSON object usage is pretty simple. Here are the steps:
 To demonstrate, let's create a BSON object corresponding to the simple JSON object
 ``{count: 1001}``.
 
-.. code: c
+.. code-block:: c
 
     bson b[1];
 
@@ -54,7 +54,7 @@ BSON objects can contain arrays as well as sub-objects. Here
 we'll see how to create these by building the bson object
 corresponding to the following JSON object:
 
-.. code: javascript
+.. code-block:: javascript
 
     {
       name: "Kyle",
@@ -196,7 +196,7 @@ a new ``bson`` object with the value of the sub-object. Note
 that this does not copy the object. If you want a copy of the
 object, use ``bsop_copy()``.
 
-.. code-block: c
+.. code-block:: c
 
    bson copy[1];
 

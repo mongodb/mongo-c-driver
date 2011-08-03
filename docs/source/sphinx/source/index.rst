@@ -19,7 +19,10 @@ The API was completely revamped in v0.4.
     How to build the driver from source.
 
 :doc:`bson`
-    How to build the driver from source.
+    How to work with BSON objects.
+
+:doc:`connections`
+    How connect to single nodes and to replica sets.
 
 `API Docs <api/index.html>`_
     Doxygen-generated API docs.
@@ -33,3 +36,4 @@ The API was completely revamped in v0.4.
    tutorial
    building
    bson
+   connections
