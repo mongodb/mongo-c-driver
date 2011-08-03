@@ -67,7 +67,7 @@ corresponding to the following JSON object:
       }
     }
 
-.. code: c
+.. code-block:: c
 
      bson b[1];
 
