@@ -374,8 +374,11 @@ int mongo_replset_connect( mongo *conn ) {
                     return MONGO_ERROR;
 
                 /* Primary found, so return. */
-                else if( conn->replset->primary_connected )
+                else if( conn->replset->primary_connected ) {
+                    strncpy( conn->primary->host, node->host, strlen( node->host ) + 1 );
+                    conn->primary->port = node->port;
                     return MONGO_OK;
+                }
 
                 /* No primary, so close the connection. */
                 else {

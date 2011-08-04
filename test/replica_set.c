@@ -27,8 +27,11 @@ int test_connect( const char *set_name ) {
     if( res != MONGO_OK )
         res = conn->err;
 
-    mongo_destroy( conn );
+    ASSERT( conn->primary->port == SEED_START_PORT ||
+       conn->primary->port == SEED_START_PORT + 1 ||
+       conn->primary->port == SEED_START_PORT + 2 );
 
+    mongo_destroy( conn );
     return res;
 }
 
