@@ -1065,8 +1065,10 @@ int mongo_simple_str_command( mongo *conn, const char *db,
 
     if( success )
         return MONGO_OK;
-    else
+    else {
+        conn->err = MONGO_COMMAND_FAILED;
         return MONGO_ERROR;
+    }
 }
 
 int mongo_cmd_drop_db( mongo *conn, const char *db ) {
