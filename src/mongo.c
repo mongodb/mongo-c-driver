@@ -497,12 +497,14 @@ static int mongo_bson_valid( mongo *conn, bson *bson, int write ) {
 /* Determine whether this BSON object is valid for the given operation.  */
 static int mongo_cursor_bson_valid( mongo_cursor *cursor, bson *bson ) {
     if( ! bson->finished ) {
-        cursor->err = MONGO_BSON_NOT_FINISHED;
+        cursor->err = MONGO_CURSOR_BSON_ERROR;
+        cursor->conn->err = MONGO_BSON_NOT_FINISHED;
         return MONGO_ERROR;
     }
 
     if( bson->err & BSON_NOT_UTF8 ) {
-        cursor->err = MONGO_BSON_INVALID;
+        cursor->err = MONGO_CURSOR_BSON_ERROR;
+        cursor->conn->err = MONGO_BSON_INVALID;
         return MONGO_ERROR;
     }
 
@@ -625,6 +627,15 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
     bson empty;
     char *data;
     mongo_message *mm;
+    bson temp;
+    bson_iterator it;
+
+    /* Clear any errors. */
+    bson_free( cursor->conn->lasterrstr );
+    cursor->conn->lasterrstr = NULL;
+    cursor->conn->lasterrcode = 0;
+    cursor->conn->err = 0;
+    cursor->err = 0;
 
     /* Set up default values for query and fields, if necessary. */
     if( ! cursor->query )
@@ -664,6 +675,19 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
     res = mongo_read_response( cursor->conn, ( mongo_reply ** )&( cursor->reply ) );
     if( res != MONGO_OK ) {
         return MONGO_ERROR;
+    }
+
+    if( cursor->reply->fields.num == 1 ) {
+        bson_init_data( &temp, &cursor->reply->objs );
+        if( bson_find( &it, &temp, "$err" ) ) {
+            cursor->conn->lasterrstr =
+              (char *)bson_malloc( bson_iterator_string_len( &it ) );
+            strcpy( cursor->conn->lasterrstr, bson_iterator_string( &it ) );
+            bson_find( &it, &temp, "code" );
+            cursor->conn->lasterrcode = bson_iterator_int( &it );
+            cursor->err = MONGO_CURSOR_QUERY_FAIL;
+            return MONGO_ERROR;
+        }
     }
 
     cursor->seen += cursor->reply->fields.num;
@@ -747,7 +771,11 @@ mongo_cursor *mongo_find( mongo *conn, const char *ns, bson *query,
 int mongo_find_one( mongo *conn, const char *ns, bson *query,
                     bson *fields, bson *out ) {
 
-    mongo_cursor *cursor = mongo_find( conn, ns, query, fields, 1, 0, 0 );
+    mongo_cursor cursor[1];
+    mongo_cursor_init( cursor, conn, ns );
+    mongo_cursor_set_query( cursor, query );
+    mongo_cursor_set_fields( cursor, fields );
+    mongo_cursor_set_limit( cursor, 1 );
 
     if ( cursor && mongo_cursor_next( cursor ) == MONGO_OK ) {
         bson_copy_basic( out, &cursor->current );
@@ -808,7 +836,8 @@ int mongo_cursor_next( mongo_cursor *cursor ) {
     char *message_end;
 
     if( ! ( cursor->flags & MONGO_CURSOR_QUERY_SENT ) )
-        mongo_cursor_op_query( cursor );
+        if( mongo_cursor_op_query( cursor ) != MONGO_OK )
+            return MONGO_ERROR;
 
     if( !cursor->reply )
         return MONGO_ERROR;

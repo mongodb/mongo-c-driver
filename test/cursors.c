@@ -136,6 +136,28 @@ int test_builder_api( mongo *conn ) {
     return 0;
 }
 
+int test_bad_query( mongo *conn ) {
+    mongo_cursor cursor[1];
+    bson b[1];
+
+    bson_init( b );
+    bson_append_start_object( b, "foo" );
+        bson_append_int( b, "$bad", 1 );
+    bson_append_finish_object( b );
+    bson_finish( b );
+
+    mongo_cursor_init( cursor, conn, "test.cursors" );
+    mongo_cursor_set_query( cursor, b );
+
+    ASSERT( mongo_cursor_next( cursor ) == MONGO_ERROR );
+    ASSERT( cursor->err == MONGO_CURSOR_QUERY_FAIL );
+    ASSERT( cursor->conn->lasterrcode == 10068 );
+    ASSERT( strlen( cursor->conn->lasterrstr ) > 0 );
+
+    mongo_cursor_destroy( cursor );
+    return 0;
+}
+
 int main() {
 
     mongo conn[1];
@@ -149,6 +171,7 @@ int main() {
     test_multiple_getmore( conn );
     test_tailable( conn );
     test_builder_api( conn );
+    test_bad_query( conn );
 
     mongo_destroy( conn );
     return 0;

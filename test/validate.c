@@ -81,7 +81,8 @@ int main() {
     mongo_cursor_set_query( cursor, &b );
     result = mongo_cursor_next( cursor );
     ASSERT( result == MONGO_ERROR );
-    ASSERT( cursor->err & MONGO_BSON_NOT_FINISHED );
+    ASSERT( cursor->err & MONGO_CURSOR_BSON_ERROR );
+    ASSERT( cursor->conn->err & MONGO_BSON_NOT_FINISHED );
 
     bson_destroy( &b );
 

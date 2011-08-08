@@ -24,8 +24,10 @@ int test_connect( const char *set_name ) {
 
     res = mongo_replset_connect( conn );
 
-    if( res != MONGO_OK )
+    if( res != MONGO_OK ) {
         res = conn->err;
+        return res;
+    }
 
     ASSERT( conn->primary->port == SEED_START_PORT ||
        conn->primary->port == SEED_START_PORT + 1 ||
