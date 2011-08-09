@@ -983,7 +983,6 @@ int mongo_run_command( mongo *conn, const char *db, bson *command,
 
     bson response = {NULL, 0};
     bson fields;
-    bson_iterator it;
     int sl = strlen( db );
     char *ns = bson_malloc( sl + 5 + 1 ); /* ".$cmd" + nul */
     int res, success = 0;

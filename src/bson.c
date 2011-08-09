@@ -271,7 +271,7 @@ void bson_print_raw( const char *data , int depth ) {
             bson_printf( "%d" , bson_iterator_int( &i ) );
             break;
         case BSON_LONG:
-            bson_printf( "%lld" , ( long long int )bson_iterator_long( &i ) );
+            bson_printf( "%lld" , ( uint64_t )bson_iterator_long( &i ) );
             break;
         case BSON_TIMESTAMP:
             ts = bson_iterator_timestamp( &i );
