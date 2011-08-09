@@ -128,12 +128,19 @@ m = env.Library( "mongoc" ,  mLibFiles )
 b = env.Library( "bson" , bLibFiles  )
 env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
 
-if os.sys.platform == "linux2":
-    env.Append( SHLINKFLAGS="-shared -Wl,-soname,libmongoc.so." + VERSION )
-    env.Append( SHLINKFLAGS = "-shared -Wl,-soname,libbson.so." + VERSION )
+# build the objects explicitly so that shared targets use the same
+# environment (otherwise scons complains)
+mSharedObjs = env.SharedObject(mLibFiles)
+bSharedObjs = env.SharedObject(bLibFiles)
 
-dynm = env.SharedLibrary( "mongoc" , mLibFiles )
-dynb = env.SharedLibrary( "bson" , bLibFiles )
+bsonEnv = env.Clone()
+if os.sys.platform == "linux2":
+    env.Append( SHLINKFLAGS = "-shared -Wl,-soname,libmongoc.so." + VERSION )
+    bsonEnv.Append( SHLINKFLAGS = "-shared -Wl,-soname,libbson.so." + VERSION )
+
+dynm = env.SharedLibrary( "mongoc" , mSharedObjs )
+dynb = bsonEnv.SharedLibrary( "bson" , bSharedObjs )
+
 env.Default( env.Alias( "sharedlib" , [ dynm[0] , dynb[0] ] ) )
 
 
