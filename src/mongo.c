@@ -154,23 +154,17 @@ static int mongo_check_is_master( mongo *conn ) {
 }
 
 void mongo_init( mongo *conn ) {
-    conn->replset = NULL;
-    conn->err = 0;
-    conn->errstr = NULL;
-    conn->lasterrcode = 0;
-    conn->lasterrstr = NULL;
-
-    conn->conn_timeout_ms = 0;
-    conn->op_timeout_ms = 0;
+    memset( conn, 0, sizeof( mongo ) );
 }
 
 int mongo_connect( mongo *conn , const char *host, int port ) {
+    mongo_init( conn );
+
     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
     strncpy( conn->primary->host, host, strlen( host ) + 1 );
     conn->primary->port = port;
     conn->primary->next = NULL;
 
-    mongo_init( conn );
     if( mongo_socket_connect( conn, host, port ) != MONGO_OK )
         return MONGO_ERROR;
 
@@ -788,19 +782,11 @@ int mongo_find_one( mongo *conn, const char *ns, bson *query,
 }
 
 void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns ) {
+    memset( cursor, 0, sizeof( mongo_cursor ) );
     cursor->conn = conn;
     cursor->ns = ( const char * )bson_malloc( strlen( ns ) + 1 );
     strncpy( ( char * )cursor->ns, ns, strlen( ns ) + 1 );
     cursor->current.data = NULL;
-    cursor->reply = NULL;
-    cursor->flags = 0;
-    cursor->seen = 0;
-    cursor->err = 0;
-    cursor->options = 0;
-    cursor->query = NULL;
-    cursor->fields = NULL;
-    cursor->skip = 0;
-    cursor->limit = 0;
 }
 
 void mongo_cursor_set_query( mongo_cursor *cursor, bson *query ) {
