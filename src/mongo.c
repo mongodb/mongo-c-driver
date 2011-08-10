@@ -773,7 +773,10 @@ int mongo_find_one( mongo *conn, const char *ns, bson *query,
     mongo_cursor_set_limit( cursor, 1 );
 
     if ( mongo_cursor_next( cursor ) == MONGO_OK ) {
-        bson_copy_basic( out, (bson *)&cursor->current );
+        bson_init_size( out, bson_size( (bson *)&cursor->current ) );
+        memcpy( out->data, cursor->current.data,
+            bson_size( (bson *)&cursor->current ) );
+        out->finished = 1;
         mongo_cursor_destroy( cursor );
         return MONGO_OK;
     } else {

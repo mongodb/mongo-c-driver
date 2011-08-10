@@ -9,6 +9,9 @@ UNRELEASED
 * On queries that return $err, set cursor->err to MONGO_CURSOR_QUERY_FAIL.
 * When passing bad BSON to a cursor object, set cursor->err to MONGO_CURSOR_BSON_ERROR,
   and store the specific BSON error on the conn->err field.
+* Removed bson_copy_basic().
+* bson_copy() will copy finished bson objects only.
+* bson_copy() returns BSON_OK on success and BSON_ERROR on failure.
 
 ## 0.4
 

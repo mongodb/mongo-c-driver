@@ -57,6 +57,10 @@ int test_bson_generic() {
 
    bson_append_timestamp( b, "timestamp", &ts );
    bson_append_long( b, "l", 0x1122334455667788 );
+
+   /* Ensure that we can't copy a non-finished object. */
+   ASSERT( bson_copy( copy, b ) == BSON_ERROR );
+
    bson_finish( b );
 
    ASSERT( b->err == BSON_VALID );
@@ -65,16 +69,10 @@ int test_bson_generic() {
    ASSERT( bson_append_string( b, "foo", "bar" ) == BSON_ERROR );
    ASSERT( b->err & BSON_ALREADY_FINISHED );
 
-   /* Set stackPos to test stack copy. */
-   b->stackPos = 1;
-   bson_copy( copy, b );
+   ASSERT( bson_copy( copy, b ) == BSON_OK );
 
-   ASSERT( copy->stackPos == b->stackPos );
-   ASSERT( copy->finished == b->finished );
-   ASSERT( copy->err == b->err );
-   ASSERT( copy->stack[0] == b->stack[0] );
-   b->stackPos = 0;
-   copy->stackPos = 0;
+   ASSERT( 1 == copy->finished );
+   ASSERT( 0 == copy->err );
 
    bson_print( b );
 

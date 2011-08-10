@@ -576,20 +576,14 @@ void bson_destroy( bson *b );
 bson *bson_empty( bson *obj );
 
 /**
- * Copy BSON data only from one object to another.
- *
- * @param out the copy destination BSON object.
- * @param in the copy source BSON object.
- */
-void bson_copy_basic( bson *out, const bson *in );
-
-/**
  * Make a complete copy of the a BSON object.
+ * The source bson object must be in a finished
+ * state; otherwise, the copy will fail.
  *
  * @param out the copy destination BSON object.
  * @param in the copy source BSON object.
  */
-void bson_copy( bson *out, const bson *in ); /* puts data in new buffer. NOOP if out==NULL */
+int bson_copy( bson *out, const bson *in ); /* puts data in new buffer. NOOP if out==NULL */
 
 /**
  * Append a previously created bson_oid_t to a bson object.
