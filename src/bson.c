@@ -72,6 +72,12 @@ int bson_init_data( bson *b, char *data ) {
     return BSON_OK;
 }
 
+int bson_init_finished_data( bson *b, char *data ) {
+    bson_init_data( b, data );
+    b->finished = 1;
+    return BSON_OK;
+}
+
 static void _bson_reset( bson *b ) {
     b->finished = 0;
     b->stackPos = 0;

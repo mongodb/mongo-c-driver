@@ -849,7 +849,7 @@ int mongo_cursor_next( mongo_cursor *cursor ) {
 
     /* first */
     if ( cursor->current.data == NULL ) {
-        bson_init_data( &cursor->current, &cursor->reply->objs );
+        bson_init_finished_data( &cursor->current, &cursor->reply->objs );
         return MONGO_OK;
     }
 
@@ -866,9 +866,9 @@ int mongo_cursor_next( mongo_cursor *cursor ) {
             return MONGO_ERROR;
         }
 
-        bson_init_data( &cursor->current, &cursor->reply->objs );
+        bson_init_finished_data( &cursor->current, &cursor->reply->objs );
     } else {
-        bson_init_data( &cursor->current, next_object );
+        bson_init_finished_data( &cursor->current, next_object );
     }
 
     return MONGO_OK;

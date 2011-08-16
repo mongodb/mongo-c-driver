@@ -158,7 +158,26 @@ int test_bad_query( mongo *conn ) {
     ASSERT( strlen( cursor->conn->lasterrstr ) > 0 );
 
     mongo_cursor_destroy( cursor );
+    bson_destroy( b );
     return 0;
+}
+
+int test_copy_cursor_data( mongo *conn ) {
+    mongo_cursor cursor[1];
+    bson b[1];
+
+    insert_sample_data( conn, 10 );
+    mongo_cursor_init( cursor, conn, "test.cursors" );
+
+    mongo_cursor_next( cursor );
+
+    ASSERT( bson_copy( b, mongo_cursor_bson( cursor ) ) == MONGO_OK );
+
+    ASSERT( memcmp( (void *)b->data, (void *)(cursor->current).data,
+                bson_size( &cursor->current ) ) == 0 );
+
+    mongo_cursor_destroy( cursor );
+    bson_destroy( b );
 }
 
 int main() {
@@ -174,6 +193,7 @@ int main() {
     test_tailable( conn );
     test_builder_api( conn );
     test_bad_query( conn );
+    test_copy_cursor_data( conn );
 
     mongo_destroy( conn );
     return 0;
