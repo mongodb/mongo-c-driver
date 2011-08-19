@@ -526,6 +526,18 @@ void bson_init( bson *b );
 int bson_init_data( bson *b , char *data );
 
 /**
+ * Initialize a BSON object, and point its data
+ * pointer to the provided char*. We assume
+ * that the data represents a finished BSON object.
+ *
+ * @param b the BSON object to initialize.
+ * @param data the raw BSON data.
+ *
+ * @return BSON_OK or BSON_ERROR.
+ */
+int bson_init_finished_data( bson *b, char *data );
+
+/**
  * Initialize a BSON object, and set its
  * buffer to the given size.
  *
