@@ -36,6 +36,8 @@ Once you're built the libraries, you can compile a program with ``gcc`` like so:
 
     gcc --std=c99 -Isrc src/*.c example.c
 
+Replace `example.c` with whichever file you wish to compile.
+
 Platform-specific features
 --------------------------
 
