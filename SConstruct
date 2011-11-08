@@ -25,6 +25,12 @@ AddOption('--c99',
           action='store_true',
           help='Compile with c99 (recommended for gcc)')
 
+AddOption('--m32',
+          dest='use_m32',
+          default=False,
+          action='store_true',
+          help='Compile with m32 (recommended, actually required, for 32 bit applications on 64 bit machines)')
+
 AddOption('--d',
           dest='optimize',
           default=True,
@@ -113,6 +119,11 @@ conf = Configure(env)
 if conf.CheckLib('json'):
     have_libjson = True
 env = conf.Finish()
+
+if GetOption('use_m32'):
+    env.Append( CPPFLAGS=" -m32" )
+    env.Append( SHLINKFLAGS=" -m32" )
+
 
 if sys.byteorder == 'big':
     env.Append( CPPDEFINES="MONGO_BIG_ENDIAN" )
