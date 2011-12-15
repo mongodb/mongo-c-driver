@@ -11,6 +11,8 @@
 *.pyc
 *.swp
 
+.DS_Store
+
 test_*
 benchmark
 benchmark.exe
