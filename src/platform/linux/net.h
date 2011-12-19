@@ -33,6 +33,7 @@
 #include <netinet/tcp.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
 #define mongo_close_socket(sock) ( close(sock) )
 
 #if defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE) || _POSIX_C_SOURCE >= 1

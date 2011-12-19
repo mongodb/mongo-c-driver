@@ -61,7 +61,7 @@ env.AlwaysBuild("docs")
 # ---- Platforms ----
 PLATFORM_TEST_DIR = None
 if "LINUX" == GetOption('compile_platform'):
-    env.Append( CPPFLAGS=" -D_MONGO_USE_LINUX_SYSTEM" )
+    env.Append( CPPFLAGS=" -D_MONGO_USE_LINUX_SYSTEM -D_POSIX_SOURCE" )
     NET_LIB = "src/platform/linux/net.c"
     PLATFORM_TEST_DIR = "test/platform/linux/"
     PLATFORM_TESTS = [ "timeouts" ]
