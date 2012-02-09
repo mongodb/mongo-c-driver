@@ -105,8 +105,8 @@ then you add seed nodes, and finally you connect. Here's an example:
       mongo conn[1];
 
       mongo_replset_init( conn, "shard1" );
-      mongo_replset_add_seed( "10.4.3.22", 27017 );
-      mongo_replset_add_seed( "10.4.3.32", 27017 );
+      mongo_replset_add_seed( conn, "10.4.3.22", 27017 );
+      mongo_replset_add_seed( conn, "10.4.3.32", 27017 );
 
       status = mongo_replset_connect( conn );
 
