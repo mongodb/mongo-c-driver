@@ -21,23 +21,23 @@
 #include <string.h>
 #include <assert.h>
 
-EXPORT gridfs* gridfs_create() {
+MONGO_EXPORT gridfs* gridfs_create() {
     return (gridfs*)bson_malloc(sizeof(gridfs));
 }
 
-EXPORT void gridfs_dispose(gridfs* gfs) {
+MONGO_EXPORT void gridfs_dispose(gridfs* gfs) {
     free(gfs);
 }
 
-EXPORT gridfile* gridfile_create() {
+MONGO_EXPORT gridfile* gridfile_create() {
     return (gridfile*)bson_malloc(sizeof(gridfile));
 }
 
-EXPORT void gridfile_dispose(gridfile* gf) {
+MONGO_EXPORT void gridfile_dispose(gridfile* gf) {
     free(gf);
 }
 
-EXPORT void gridfile_get_descriptor(gridfile* gf, bson* out) {
+MONGO_EXPORT void gridfile_get_descriptor(gridfile* gf, bson* out) {
     *out = *gf->meta;
 }
 
@@ -125,7 +125,7 @@ int gridfs_init( mongo *client, const char *dbname, const char *prefix,
     return MONGO_OK;
 }
 
-EXPORT void gridfs_destroy( gridfs *gfs ) {
+MONGO_EXPORT void gridfs_destroy( gridfs *gfs ) {
     if ( gfs == NULL ) return;
     if ( gfs->dbname ) bson_free( ( char * )gfs->dbname );
     if ( gfs->prefix ) bson_free( ( char * )gfs->prefix );
@@ -176,7 +176,7 @@ static int gridfs_insert_file( gridfs *gfs, const char *name,
     return result;
 }
 
-EXPORT int gridfs_store_buffer( gridfs *gfs, const char *data,
+MONGO_EXPORT int gridfs_store_buffer( gridfs *gfs, const char *data,
                           gridfs_offset length, const char *remotename,
                           const char *contenttype ) {
 
@@ -208,7 +208,7 @@ EXPORT int gridfs_store_buffer( gridfs *gfs, const char *data,
     return gridfs_insert_file( gfs, remotename, id, length, contenttype );
 }
 
-EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs,
+MONGO_EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs,
                            const char *remote_name, const char *content_type ) {
     gfile->gfs = gfs;
 
@@ -225,7 +225,7 @@ EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs,
     strcpy( ( char * )gfile->content_type, content_type );
 }
 
-EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
+MONGO_EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
     gridfs_offset length ) {
 
     int bytes_left = 0;
@@ -295,7 +295,7 @@ EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
     }
 }
 
-EXPORT int gridfile_writer_done( gridfile *gfile ) {
+MONGO_EXPORT int gridfile_writer_done( gridfile *gfile ) {
 
     /* write any remaining pending chunk data.
      * pending data will always take up less than one chunk */
@@ -367,7 +367,7 @@ int gridfs_store_file( gridfs *gfs, const char *filename,
     return gridfs_insert_file( gfs, remotename, id, length, contenttype );
 }
 
-EXPORT void gridfs_remove_filename( gridfs *gfs, const char *filename ) {
+MONGO_EXPORT void gridfs_remove_filename( gridfs *gfs, const char *filename ) {
     bson query;
     mongo_cursor *files;
     bson file;
@@ -461,7 +461,7 @@ int gridfile_init( gridfs *gfs, bson *meta, gridfile *gfile )
     return MONGO_OK;
 }
 
-EXPORT void gridfile_destroy( gridfile *gfile )
+MONGO_EXPORT void gridfile_destroy( gridfile *gfile )
 
 {
     bson_destroy( gfile->meta );
@@ -472,21 +472,21 @@ bson_bool_t gridfile_exists( gridfile *gfile ) {
     return ( bson_bool_t )( gfile != NULL || gfile->meta == NULL );
 }
 
-EXPORT const char *gridfile_get_filename( gridfile *gfile ) {
+MONGO_EXPORT const char *gridfile_get_filename( gridfile *gfile ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, "filename" );
     return bson_iterator_string( &it );
 }
 
-EXPORT int gridfile_get_chunksize( gridfile *gfile ) {
+MONGO_EXPORT int gridfile_get_chunksize( gridfile *gfile ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, "chunkSize" );
     return bson_iterator_int( &it );
 }
 
-EXPORT gridfs_offset gridfile_get_contentlength( gridfile *gfile ) {
+MONGO_EXPORT gridfs_offset gridfile_get_contentlength( gridfile *gfile ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, "length" );
@@ -497,7 +497,7 @@ EXPORT gridfs_offset gridfile_get_contentlength( gridfile *gfile ) {
         return ( gridfs_offset )bson_iterator_long( &it );
 }
 
-EXPORT const char *gridfile_get_contenttype( gridfile *gfile ) {
+MONGO_EXPORT const char *gridfile_get_contenttype( gridfile *gfile ) {
     bson_iterator it;
 
     if ( bson_find( &it, gfile->meta, "contentType" ) )
@@ -505,14 +505,14 @@ EXPORT const char *gridfile_get_contenttype( gridfile *gfile ) {
     else return NULL;
 }
 
-EXPORT bson_date_t gridfile_get_uploaddate( gridfile *gfile ) {
+MONGO_EXPORT bson_date_t gridfile_get_uploaddate( gridfile *gfile ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, "uploadDate" );
     return bson_iterator_date( &it );
 }
 
-EXPORT const char *gridfile_get_md5( gridfile *gfile ) {
+MONGO_EXPORT const char *gridfile_get_md5( gridfile *gfile ) {
     bson_iterator it;
 
     bson_find( &it, gfile->meta, "md5" );
@@ -533,7 +533,7 @@ bson_bool_t gridfile_get_boolean( gridfile *gfile, const char *name ) {
     return bson_iterator_bool( &it );
 }
 
-EXPORT void gridfile_get_metadata( gridfile *gfile, bson* out ) {
+MONGO_EXPORT void gridfile_get_metadata( gridfile *gfile, bson* out ) {
     bson_iterator it;
 
     if ( bson_find( &it, gfile->meta, "metadata" ) )
@@ -542,7 +542,7 @@ EXPORT void gridfile_get_metadata( gridfile *gfile, bson* out ) {
         bson_empty( out );
 }
 
-EXPORT int gridfile_get_numchunks( gridfile *gfile ) {
+MONGO_EXPORT int gridfile_get_numchunks( gridfile *gfile ) {
     bson_iterator it;
     gridfs_offset length;
     gridfs_offset chunkSize;
@@ -563,7 +563,7 @@ EXPORT int gridfile_get_numchunks( gridfile *gfile ) {
            : ( int )( numchunks );
 }
 
-EXPORT void gridfile_get_chunk( gridfile *gfile, int n, bson* out ) {
+MONGO_EXPORT void gridfile_get_chunk( gridfile *gfile, int n, bson* out ) {
     bson query;
     
     bson_iterator it;
@@ -588,7 +588,7 @@ EXPORT void gridfile_get_chunk( gridfile *gfile, int n, bson* out ) {
     }
 }
 
-EXPORT mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, int size ) {
+MONGO_EXPORT mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, int size ) {
     bson_iterator it;
     bson_oid_t id;
     bson gte;
@@ -652,7 +652,7 @@ gridfs_offset gridfile_write_file( gridfile *gfile, FILE *stream ) {
     return gridfile_get_contentlength( gfile );
 }
 
-EXPORT gridfs_offset gridfile_read( gridfile *gfile, gridfs_offset size, char *buf ) {
+MONGO_EXPORT gridfs_offset gridfile_read( gridfile *gfile, gridfs_offset size, char *buf ) {
     mongo_cursor *chunks;
     bson chunk;
 
@@ -704,7 +704,7 @@ EXPORT gridfs_offset gridfile_read( gridfile *gfile, gridfs_offset size, char *b
     return size;
 }
 
-EXPORT gridfs_offset gridfile_seek( gridfile *gfile, gridfs_offset offset ) {
+MONGO_EXPORT gridfs_offset gridfile_seek( gridfile *gfile, gridfs_offset offset ) {
     gridfs_offset length;
 
     length = gridfile_get_contentlength( gfile );

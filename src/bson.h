@@ -18,8 +18,8 @@
  *    limitations under the License.
  */
 
-#ifndef _BSON_H_
-#define _BSON_H_
+#ifndef BSON_H_
+#define BSON_H_
 
 #include "platform.h"
 #include <time.h>
@@ -112,8 +112,8 @@ typedef struct {
    READING
    ------------------------------ */
 
-EXPORT bson* bson_create();
-EXPORT void  bson_dispose(bson* b);
+MONGO_EXPORT bson* bson_create();
+MONGO_EXPORT void  bson_dispose(bson* b);
 /**
  * Size of a BSON object.
  *
@@ -121,8 +121,8 @@ EXPORT void  bson_dispose(bson* b);
  *
  * @return the size.
  */
-EXPORT int bson_size( const bson *b );
-EXPORT int bson_buffer_size( const bson *b );
+MONGO_EXPORT int bson_size( const bson *b );
+MONGO_EXPORT int bson_buffer_size( const bson *b );
 
 /**
  * Print a string representation of a BSON object.
@@ -155,18 +155,18 @@ void bson_print_raw( const char *bson , int depth );
  *
  * @return the type of the found object or BSON_EOO if it is not found.
  */
-EXPORT bson_type bson_find( bson_iterator *it, const bson *obj, const char *name );
+MONGO_EXPORT bson_type bson_find( bson_iterator *it, const bson *obj, const char *name );
 
 
-EXPORT bson_iterator* bson_iterator_create();
-EXPORT void bson_iterator_dispose(bson_iterator*);
+MONGO_EXPORT bson_iterator* bson_iterator_create();
+MONGO_EXPORT void bson_iterator_dispose(bson_iterator*);
 /**
  * Initialize a bson_iterator.
  *
  * @param i the bson_iterator to initialize.
  * @param bson the BSON object to associate with the iterator.
  */
-EXPORT void bson_iterator_init( bson_iterator *i , const bson *b );
+MONGO_EXPORT void bson_iterator_init( bson_iterator *i , const bson *b );
 
 /**
  * Initialize a bson iterator from a const char* buffer. Note
@@ -194,7 +194,7 @@ bson_bool_t bson_iterator_more( const bson_iterator *i );
  *
  * @return the type of the next BSON object.
  */
-EXPORT bson_type bson_iterator_next( bson_iterator *i );
+MONGO_EXPORT bson_type bson_iterator_next( bson_iterator *i );
 
 /**
  * Get the type of the BSON object currently pointed to by the iterator.
@@ -203,7 +203,7 @@ EXPORT bson_type bson_iterator_next( bson_iterator *i );
  *
  * @return  the type of the current BSON object.
  */
-EXPORT bson_type bson_iterator_type( const bson_iterator *i );
+MONGO_EXPORT bson_type bson_iterator_type( const bson_iterator *i );
 
 /**
  * Get the key of the BSON object currently pointed to by the iterator.
@@ -212,7 +212,7 @@ EXPORT bson_type bson_iterator_type( const bson_iterator *i );
  *
  * @return the key of the current BSON object.
  */
-EXPORT const char *bson_iterator_key( const bson_iterator *i );
+MONGO_EXPORT const char *bson_iterator_key( const bson_iterator *i );
 
 /**
  * Get the value of the BSON object currently pointed to by the iterator.
@@ -232,7 +232,7 @@ const char *bson_iterator_value( const bson_iterator *i );
  *
  * @return  the value of the current BSON object.
  */
-EXPORT double bson_iterator_double( const bson_iterator *i );
+MONGO_EXPORT double bson_iterator_double( const bson_iterator *i );
 
 /**
  * Get the int value of the BSON object currently pointed to by the iterator.
@@ -241,7 +241,7 @@ EXPORT double bson_iterator_double( const bson_iterator *i );
  *
  * @return  the value of the current BSON object.
  */
-EXPORT int bson_iterator_int( const bson_iterator *i );
+MONGO_EXPORT int bson_iterator_int( const bson_iterator *i );
 
 /**
  * Get the long value of the BSON object currently pointed to by the iterator.
@@ -250,7 +250,7 @@ EXPORT int bson_iterator_int( const bson_iterator *i );
  *
  * @return the value of the current BSON object.
  */
-EXPORT int64_t bson_iterator_long( const bson_iterator *i );
+MONGO_EXPORT int64_t bson_iterator_long( const bson_iterator *i );
 
 /* return the bson timestamp as a whole or in parts */
 /**
@@ -262,8 +262,8 @@ EXPORT int64_t bson_iterator_long( const bson_iterator *i );
  * @return the value of the current BSON object.
  */
 bson_timestamp_t bson_iterator_timestamp( const bson_iterator *i );
-EXPORT int bson_iterator_timestamp_time( const bson_iterator *i );
-EXPORT int bson_iterator_timestamp_increment( const bson_iterator *i );
+MONGO_EXPORT int bson_iterator_timestamp_time( const bson_iterator *i );
+MONGO_EXPORT int bson_iterator_timestamp_increment( const bson_iterator *i );
 
 /**
  * Get the boolean value of the BSON object currently pointed to by
@@ -275,7 +275,7 @@ EXPORT int bson_iterator_timestamp_increment( const bson_iterator *i );
  */
 /* false: boolean false, 0 in any type, or null */
 /* true: anything else (even empty strings and objects) */
-EXPORT bson_bool_t bson_iterator_bool( const bson_iterator *i );
+MONGO_EXPORT bson_bool_t bson_iterator_bool( const bson_iterator *i );
 
 /**
  * Get the double value of the BSON object currently pointed to by the
@@ -326,7 +326,7 @@ bson_bool_t bson_iterator_bool_raw( const bson_iterator *i );
  *
  * @return the value of the current BSON object.
  */
-EXPORT bson_oid_t *bson_iterator_oid( const bson_iterator *i );
+MONGO_EXPORT bson_oid_t *bson_iterator_oid( const bson_iterator *i );
 
 /**
  * Get the string value of the BSON object currently pointed to by the
@@ -337,7 +337,7 @@ EXPORT bson_oid_t *bson_iterator_oid( const bson_iterator *i );
  * @return  the value of the current BSON object.
  */
 /* these can also be used with bson_code and bson_symbol*/
-EXPORT const char *bson_iterator_string( const bson_iterator *i );
+MONGO_EXPORT const char *bson_iterator_string( const bson_iterator *i );
 
 /**
  * Get the string length of the BSON object currently pointed to by the
@@ -360,7 +360,7 @@ int bson_iterator_string_len( const bson_iterator *i );
  */
 /* works with bson_code, bson_codewscope, and BSON_STRING */
 /* returns NULL for everything else */
-EXPORT const char *bson_iterator_code( const bson_iterator *i );
+MONGO_EXPORT const char *bson_iterator_code( const bson_iterator *i );
 
 /**
  * Calls bson_empty on scope if not a bson_codewscope
@@ -369,7 +369,7 @@ EXPORT const char *bson_iterator_code( const bson_iterator *i );
  * @param scope the bson scope.
  */
 /* calls bson_empty on scope if not a bson_codewscope */
-EXPORT void bson_iterator_code_scope( const bson_iterator *i, bson *scope );
+MONGO_EXPORT void bson_iterator_code_scope( const bson_iterator *i, bson *scope );
 
 /**
  * Get the date value of the BSON object currently pointed to by the
@@ -380,7 +380,7 @@ EXPORT void bson_iterator_code_scope( const bson_iterator *i, bson *scope );
  * @return the date value of the current BSON object.
  */
 /* both of these only work with bson_date */
-EXPORT bson_date_t bson_iterator_date( const bson_iterator *i );
+MONGO_EXPORT bson_date_t bson_iterator_date( const bson_iterator *i );
 
 /**
  * Get the time value of the BSON object currently pointed to by the
@@ -400,7 +400,7 @@ time_t bson_iterator_time_t( const bson_iterator *i );
  *
  * @return the length of the current BSON binary object.
  */
-EXPORT int bson_iterator_bin_len( const bson_iterator *i );
+MONGO_EXPORT int bson_iterator_bin_len( const bson_iterator *i );
 
 /**
  * Get the type of the BSON binary object currently pointed to by the
@@ -410,7 +410,7 @@ EXPORT int bson_iterator_bin_len( const bson_iterator *i );
  *
  * @return the type of the current BSON binary object.
  */
-EXPORT char bson_iterator_bin_type( const bson_iterator *i );
+MONGO_EXPORT char bson_iterator_bin_type( const bson_iterator *i );
 
 /**
  * Get the value of the BSON binary object currently pointed to by the
@@ -420,7 +420,7 @@ EXPORT char bson_iterator_bin_type( const bson_iterator *i );
  *
  * @return the value of the current BSON binary object.
  */
-EXPORT const char *bson_iterator_bin_data( const bson_iterator *i );
+MONGO_EXPORT const char *bson_iterator_bin_data( const bson_iterator *i );
 
 /**
  * Get the value of the BSON regex object currently pointed to by the
@@ -430,7 +430,7 @@ EXPORT const char *bson_iterator_bin_data( const bson_iterator *i );
  *
  * @return the value of the current BSON regex object.
  */
-EXPORT const char *bson_iterator_regex( const bson_iterator *i );
+MONGO_EXPORT const char *bson_iterator_regex( const bson_iterator *i );
 
 /**
  * Get the options of the BSON regex object currently pointed to by the
@@ -440,7 +440,7 @@ EXPORT const char *bson_iterator_regex( const bson_iterator *i );
  *
  * @return the options of the current BSON regex object.
  */
-EXPORT const char *bson_iterator_regex_opts( const bson_iterator *i );
+MONGO_EXPORT const char *bson_iterator_regex_opts( const bson_iterator *i );
 
 /* these work with BSON_OBJECT and BSON_ARRAY */
 /**
@@ -458,7 +458,7 @@ void bson_iterator_subobject( const bson_iterator *i, bson *sub );
  * @param i the bson_iterator.
  * @param sub the iterator to point at the BSON subobject.
  */
-EXPORT void bson_iterator_subiterator( const bson_iterator *i, bson_iterator *sub );
+MONGO_EXPORT void bson_iterator_subiterator( const bson_iterator *i, bson_iterator *sub );
 
 /* str must be at least 24 hex chars + null byte */
 /**
@@ -467,7 +467,7 @@ EXPORT void bson_iterator_subiterator( const bson_iterator *i, bson_iterator *su
  * @param oid the bson_oid_t destination.
  * @param str a null terminated string comprised of at least 24 hex chars.
  */
-EXPORT void bson_oid_from_string( bson_oid_t *oid, const char *str );
+MONGO_EXPORT void bson_oid_from_string( bson_oid_t *oid, const char *str );
 
 /**
  * Create a string representation of the bson_oid_t.
@@ -475,14 +475,14 @@ EXPORT void bson_oid_from_string( bson_oid_t *oid, const char *str );
  * @param oid the bson_oid_t source.
  * @param str the string representation destination.
  */
-EXPORT void bson_oid_to_string( const bson_oid_t *oid, char *str );
+MONGO_EXPORT void bson_oid_to_string( const bson_oid_t *oid, char *str );
 
 /**
  * Create a bson_oid object.
  *
  * @param oid the destination for the newly created bson_oid_t.
  */
-EXPORT void bson_oid_gen( bson_oid_t *oid );
+MONGO_EXPORT void bson_oid_gen( bson_oid_t *oid );
 
 /**
  * Set a function to be used to generate the second four bytes
@@ -520,7 +520,7 @@ time_t bson_oid_generated_time( bson_oid_t *oid ); /* Gives the time the OID was
  *  @note When finished, you must pass the bson object to
  *      bson_destroy( ).
  */
-EXPORT void bson_init( bson *b );
+MONGO_EXPORT void bson_init( bson *b );
 
 /**
  * Initialize a BSON object, and point its data
@@ -564,7 +564,7 @@ int bson_ensure_space( bson *b, const int bytesNeeded );
  * @return the standard error code. To deallocate memory,
  *   call bson_destroy on the bson object.
  */
-EXPORT int bson_finish( bson *b );
+MONGO_EXPORT int bson_finish( bson *b );
 
 /**
  * Destroy a bson object.
@@ -572,7 +572,7 @@ EXPORT int bson_finish( bson *b );
  * @param b the bson object to destroy.
  *
  */
-EXPORT void bson_destroy( bson *b );
+MONGO_EXPORT void bson_destroy( bson *b );
 
 /**
  * Returns a pointer to a static empty BSON object.
@@ -592,7 +592,7 @@ bson *bson_empty( bson *obj );
  * @param out the copy destination BSON object.
  * @param in the copy source BSON object.
  */
-EXPORT int bson_copy( bson *out, const bson *in ); /* puts data in new buffer. NOOP if out==NULL */
+MONGO_EXPORT int bson_copy( bson *out, const bson *in ); /* puts data in new buffer. NOOP if out==NULL */
 
 /**
  * Append a previously created bson_oid_t to a bson object.
@@ -603,7 +603,7 @@ EXPORT int bson_copy( bson *out, const bson *in ); /* puts data in new buffer. N
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_oid( bson *b, const char *name, const bson_oid_t *oid );
+MONGO_EXPORT int bson_append_oid( bson *b, const char *name, const bson_oid_t *oid );
 
 /**
  * Append a bson_oid_t to a bson.
@@ -624,7 +624,7 @@ int bson_append_new_oid( bson *b, const char *name );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_int( bson *b, const char *name, const int i );
+MONGO_EXPORT int bson_append_int( bson *b, const char *name, const int i );
 
 /**
  * Append an long to a bson.
@@ -635,7 +635,7 @@ EXPORT int bson_append_int( bson *b, const char *name, const int i );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_long( bson *b, const char *name, const int64_t i );
+MONGO_EXPORT int bson_append_long( bson *b, const char *name, const int64_t i );
 
 /**
  * Append an double to a bson.
@@ -646,7 +646,7 @@ EXPORT int bson_append_long( bson *b, const char *name, const int64_t i );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_double( bson *b, const char *name, const double d );
+MONGO_EXPORT int bson_append_double( bson *b, const char *name, const double d );
 
 /**
  * Append a string to a bson.
@@ -657,7 +657,7 @@ EXPORT int bson_append_double( bson *b, const char *name, const double d );
  *
  * @return BSON_OK or BSON_ERROR.
 */
-EXPORT int bson_append_string( bson *b, const char *name, const char *str );
+MONGO_EXPORT int bson_append_string( bson *b, const char *name, const char *str );
 
 /**
  * Append len bytes of a string to a bson.
@@ -680,7 +680,7 @@ int bson_append_string_n( bson *b, const char *name, const char *str, int len );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_symbol( bson *b, const char *name, const char *str );
+MONGO_EXPORT int bson_append_symbol( bson *b, const char *name, const char *str );
 
 /**
  * Append len bytes of a symbol to a bson.
@@ -704,7 +704,7 @@ int bson_append_symbol_n( bson *b, const char *name, const char *str, int len );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_code( bson *b, const char *name, const char *str );
+MONGO_EXPORT int bson_append_code( bson *b, const char *name, const char *str );
 
 /**
  * Append len bytes of code to a bson.
@@ -728,7 +728,7 @@ int bson_append_code_n( bson *b, const char *name, const char *str, int len );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_code_w_scope( bson *b, const char *name, const char *code, const bson *scope );
+MONGO_EXPORT int bson_append_code_w_scope( bson *b, const char *name, const char *code, const bson *scope );
 
 /**
  * Append len bytes of code to a bson with scope.
@@ -754,7 +754,7 @@ int bson_append_code_w_scope_n( bson *b, const char *name, const char *code, int
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_binary( bson *b, const char *name, char type, const char *str, int len );
+MONGO_EXPORT int bson_append_binary( bson *b, const char *name, char type, const char *str, int len );
 
 /**
  * Append a bson_bool_t to a bson.
@@ -765,7 +765,7 @@ EXPORT int bson_append_binary( bson *b, const char *name, char type, const char 
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_bool( bson *b, const char *name, const bson_bool_t v );
+MONGO_EXPORT int bson_append_bool( bson *b, const char *name, const bson_bool_t v );
 
 /**
  * Append a null value to a bson.
@@ -775,7 +775,7 @@ EXPORT int bson_append_bool( bson *b, const char *name, const bson_bool_t v );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_null( bson *b, const char *name );
+MONGO_EXPORT int bson_append_null( bson *b, const char *name );
 
 /**
  * Append an undefined value to a bson.
@@ -785,7 +785,7 @@ EXPORT int bson_append_null( bson *b, const char *name );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_undefined( bson *b, const char *name );
+MONGO_EXPORT int bson_append_undefined( bson *b, const char *name );
 
 /**
  * Append a regex value to a bson.
@@ -797,7 +797,7 @@ EXPORT int bson_append_undefined( bson *b, const char *name );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_regex( bson *b, const char *name, const char *pattern, const char *opts );
+MONGO_EXPORT int bson_append_regex( bson *b, const char *name, const char *pattern, const char *opts );
 
 /**
  * Append bson data to a bson.
@@ -808,7 +808,7 @@ EXPORT int bson_append_regex( bson *b, const char *name, const char *pattern, co
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_bson( bson *b, const char *name, const bson *bson );
+MONGO_EXPORT int bson_append_bson( bson *b, const char *name, const bson *bson );
 
 /**
  * Append a BSON element to a bson from the current point of an iterator.
@@ -831,7 +831,7 @@ int bson_append_element( bson *b, const char *name_or_null, const bson_iterator 
  * @return BSON_OK or BSON_ERROR.
  */
 int bson_append_timestamp( bson *b, const char *name, bson_timestamp_t *ts );
-EXPORT int bson_append_timestamp2( bson *b, const char *name, int time, int increment );
+MONGO_EXPORT int bson_append_timestamp2( bson *b, const char *name, int time, int increment );
 
 /* these both append a bson_date */
 /**
@@ -843,7 +843,7 @@ EXPORT int bson_append_timestamp2( bson *b, const char *name, int time, int incr
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_date( bson *b, const char *name, bson_date_t millis );
+MONGO_EXPORT int bson_append_date( bson *b, const char *name, bson_date_t millis );
 
 /**
  * Append a time_t value to a bson.
@@ -864,7 +864,7 @@ int bson_append_time_t( bson *b, const char *name, time_t secs );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_start_object( bson *b, const char *name );
+MONGO_EXPORT int bson_append_start_object( bson *b, const char *name );
 
 /**
  * Start appending a new array to a bson.
@@ -874,7 +874,7 @@ EXPORT int bson_append_start_object( bson *b, const char *name );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_start_array( bson *b, const char *name );
+MONGO_EXPORT int bson_append_start_array( bson *b, const char *name );
 
 /**
  * Finish appending a new object or array to a bson.
@@ -883,7 +883,7 @@ EXPORT int bson_append_start_array( bson *b, const char *name );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-EXPORT int bson_append_finish_object( bson *b );
+MONGO_EXPORT int bson_append_finish_object( bson *b );
 
 /**
  * Finish appending a new object or array to a bson. This

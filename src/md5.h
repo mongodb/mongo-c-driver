@@ -47,8 +47,8 @@
   1999-05-03 lpd Original version.
  */
 
-#ifndef md5_INCLUDED
-#  define md5_INCLUDED
+#ifndef MONGO_MD5_H_
+#define MONGO_MD5_H_
 
 /*
  * This package supports both compile-time and run-time determination of CPU
@@ -88,4 +88,4 @@ extern "C"
 }  /* end extern "C" */
 #endif
 
-#endif /* md5_INCLUDED */
+#endif /* MONGO_MD5_H_ */

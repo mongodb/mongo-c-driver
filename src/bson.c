@@ -48,11 +48,11 @@ static int ( *oid_inc_func )( void )  = NULL;
    READING
    ------------------------------ */
 
-EXPORT bson* bson_create() {
+MONGO_EXPORT bson* bson_create() {
 	return (bson*)bson_malloc(sizeof(bson));
 }
 
-EXPORT void bson_dispose(bson* b) {
+MONGO_EXPORT void bson_dispose(bson* b) {
 	bson_free(b);
 }
 
@@ -65,7 +65,7 @@ bson *bson_empty( bson *obj ) {
     return obj;
 }
 
-EXPORT int bson_copy( bson *out, const bson *in ) {
+MONGO_EXPORT int bson_copy( bson *out, const bson *in ) {
     if ( !out ) return BSON_ERROR;
     if ( !in->finished ) return BSON_ERROR;
     bson_init_size( out, bson_size( in ) );
@@ -93,7 +93,7 @@ static void _bson_reset( bson *b ) {
     b->errstr = NULL;
 }
 
-EXPORT int bson_size( const bson *b ) {
+MONGO_EXPORT int bson_size( const bson *b ) {
     int i;
     if ( ! b || ! b->data )
         return 0;
@@ -101,7 +101,7 @@ EXPORT int bson_size( const bson *b ) {
     return i;
 }
 
-EXPORT int bson_buffer_size( const bson *b ) {
+MONGO_EXPORT int bson_buffer_size( const bson *b ) {
     return (b->cur - b->data + 1);
 }
 
@@ -155,14 +155,14 @@ static char hexbyte( char hex ) {
     }
 }
 
-EXPORT void bson_oid_from_string( bson_oid_t *oid, const char *str ) {
+MONGO_EXPORT void bson_oid_from_string( bson_oid_t *oid, const char *str ) {
     int i;
     for ( i=0; i<12; i++ ) {
         oid->bytes[i] = ( hexbyte( str[2*i] ) << 4 ) | hexbyte( str[2*i + 1] );
     }
 }
 
-EXPORT void bson_oid_to_string( const bson_oid_t *oid, char *str ) {
+MONGO_EXPORT void bson_oid_to_string( const bson_oid_t *oid, char *str ) {
     static const char hex[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
     int i;
     for ( i=0; i<12; i++ ) {
@@ -180,7 +180,7 @@ void bson_set_oid_inc( int ( *func )( void ) ) {
     oid_inc_func = func;
 }
 
-EXPORT void bson_oid_gen( bson_oid_t *oid ) {
+MONGO_EXPORT void bson_oid_gen( bson_oid_t *oid ) {
     static int incr = 0;
     static int fuzz = 0;
     int i;
@@ -302,15 +302,15 @@ void bson_print_raw( const char *data , int depth ) {
    ITERATOR
    ------------------------------ */
 
-EXPORT bson_iterator* bson_iterator_create() {
+MONGO_EXPORT bson_iterator* bson_iterator_create() {
     return (bson_iterator*)malloc(sizeof(bson_iterator*));
 }
 
-EXPORT void bson_iterator_dispose(bson_iterator* i) {
+MONGO_EXPORT void bson_iterator_dispose(bson_iterator* i) {
     free(i);
 }
 
-EXPORT void bson_iterator_init( bson_iterator *i, const bson *b ) {
+MONGO_EXPORT void bson_iterator_init( bson_iterator *i, const bson *b ) {
     i->cur = b->data + 4;
     i->first = 1;
 }
@@ -320,7 +320,7 @@ void bson_iterator_from_buffer( bson_iterator *i, const char *buffer ) {
     i->first = 1;
 }
 
-EXPORT bson_type bson_find( bson_iterator *it, const bson *obj, const char *name ) {
+MONGO_EXPORT bson_type bson_find( bson_iterator *it, const bson *obj, const char *name ) {
     bson_iterator_init( it, (bson *)obj );
     while( bson_iterator_next( it ) ) {
         if ( strcmp( name, bson_iterator_key( it ) ) == 0 )
@@ -333,7 +333,7 @@ bson_bool_t bson_iterator_more( const bson_iterator *i ) {
     return *( i->cur );
 }
 
-EXPORT bson_type bson_iterator_next( bson_iterator *i ) {
+MONGO_EXPORT bson_type bson_iterator_next( bson_iterator *i ) {
     int ds;
 
     if ( i->first ) {
@@ -401,11 +401,11 @@ EXPORT bson_type bson_iterator_next( bson_iterator *i ) {
     return ( bson_type )( *i->cur );
 }
 
-EXPORT bson_type bson_iterator_type( const bson_iterator *i ) {
+MONGO_EXPORT bson_type bson_iterator_type( const bson_iterator *i ) {
     return ( bson_type )i->cur[0];
 }
 
-EXPORT const char *bson_iterator_key( const bson_iterator *i ) {
+MONGO_EXPORT const char *bson_iterator_key( const bson_iterator *i ) {
     return i->cur + 1;
 }
 
@@ -439,11 +439,11 @@ bson_bool_t bson_iterator_bool_raw( const bson_iterator *i ) {
     return bson_iterator_value( i )[0];
 }
 
-EXPORT bson_oid_t *bson_iterator_oid( const bson_iterator *i ) {
+MONGO_EXPORT bson_oid_t *bson_iterator_oid( const bson_iterator *i ) {
     return ( bson_oid_t * )bson_iterator_value( i );
 }
 
-EXPORT int bson_iterator_int( const bson_iterator *i ) {
+MONGO_EXPORT int bson_iterator_int( const bson_iterator *i ) {
     switch ( bson_iterator_type( i ) ) {
     case BSON_INT:
         return bson_iterator_int_raw( i );
@@ -456,7 +456,7 @@ EXPORT int bson_iterator_int( const bson_iterator *i ) {
     }
 }
 
-EXPORT double bson_iterator_double( const bson_iterator *i ) {
+MONGO_EXPORT double bson_iterator_double( const bson_iterator *i ) {
     switch ( bson_iterator_type( i ) ) {
     case BSON_INT:
         return bson_iterator_int_raw( i );
@@ -469,7 +469,7 @@ EXPORT double bson_iterator_double( const bson_iterator *i ) {
     }
 }
 
-EXPORT int64_t bson_iterator_long( const bson_iterator *i ) {
+MONGO_EXPORT int64_t bson_iterator_long( const bson_iterator *i ) {
     switch ( bson_iterator_type( i ) ) {
     case BSON_INT:
         return bson_iterator_int_raw( i );
@@ -490,21 +490,21 @@ bson_timestamp_t bson_iterator_timestamp( const bson_iterator *i ) {
 }
 
 
-EXPORT int bson_iterator_timestamp_time( const bson_iterator *i ) {
+MONGO_EXPORT int bson_iterator_timestamp_time( const bson_iterator *i ) {
     int time;
     bson_little_endian32( &time, bson_iterator_value( i ) + 4 );
     return time;
 }
 
 
-EXPORT int bson_iterator_timestamp_increment( const bson_iterator *i ) {
+MONGO_EXPORT int bson_iterator_timestamp_increment( const bson_iterator *i ) {
     int increment;
     bson_little_endian32( &increment, bson_iterator_value( i ) );
     return increment;
 }
 
 
-EXPORT bson_bool_t bson_iterator_bool( const bson_iterator *i ) {
+MONGO_EXPORT bson_bool_t bson_iterator_bool( const bson_iterator *i ) {
     switch ( bson_iterator_type( i ) ) {
     case BSON_BOOL:
         return bson_iterator_bool_raw( i );
@@ -522,7 +522,7 @@ EXPORT bson_bool_t bson_iterator_bool( const bson_iterator *i ) {
     }
 }
 
-EXPORT const char *bson_iterator_string( const bson_iterator *i ) {
+MONGO_EXPORT const char *bson_iterator_string( const bson_iterator *i ) {
     return bson_iterator_value( i ) + 4;
 }
 
@@ -530,7 +530,7 @@ int bson_iterator_string_len( const bson_iterator *i ) {
     return bson_iterator_int_raw( i );
 }
 
-EXPORT const char *bson_iterator_code( const bson_iterator *i ) {
+MONGO_EXPORT const char *bson_iterator_code( const bson_iterator *i ) {
     switch ( bson_iterator_type( i ) ) {
     case BSON_STRING:
     case BSON_CODE:
@@ -542,7 +542,7 @@ EXPORT const char *bson_iterator_code( const bson_iterator *i ) {
     }
 }
 
-EXPORT void bson_iterator_code_scope( const bson_iterator *i, bson *scope ) {
+MONGO_EXPORT void bson_iterator_code_scope( const bson_iterator *i, bson *scope ) {
     if ( bson_iterator_type( i ) == BSON_CODEWSCOPE ) {
         int code_len;
         bson_little_endian32( &code_len, bson_iterator_value( i )+4 );
@@ -554,7 +554,7 @@ EXPORT void bson_iterator_code_scope( const bson_iterator *i, bson *scope ) {
     }
 }
 
-EXPORT bson_date_t bson_iterator_date( const bson_iterator *i ) {
+MONGO_EXPORT bson_date_t bson_iterator_date( const bson_iterator *i ) {
     return bson_iterator_long_raw( i );
 }
 
@@ -562,27 +562,27 @@ time_t bson_iterator_time_t( const bson_iterator *i ) {
     return bson_iterator_date( i ) / 1000;
 }
 
-EXPORT int bson_iterator_bin_len( const bson_iterator *i ) {
+MONGO_EXPORT int bson_iterator_bin_len( const bson_iterator *i ) {
     return ( bson_iterator_bin_type( i ) == BSON_BIN_BINARY_OLD )
            ? bson_iterator_int_raw( i ) - 4
            : bson_iterator_int_raw( i );
 }
 
-EXPORT char bson_iterator_bin_type( const bson_iterator *i ) {
+MONGO_EXPORT char bson_iterator_bin_type( const bson_iterator *i ) {
     return bson_iterator_value( i )[4];
 }
 
-EXPORT const char *bson_iterator_bin_data( const bson_iterator *i ) {
+MONGO_EXPORT const char *bson_iterator_bin_data( const bson_iterator *i ) {
     return ( bson_iterator_bin_type( i ) == BSON_BIN_BINARY_OLD )
            ? bson_iterator_value( i ) + 9
            : bson_iterator_value( i ) + 5;
 }
 
-EXPORT const char *bson_iterator_regex( const bson_iterator *i ) {
+MONGO_EXPORT const char *bson_iterator_regex( const bson_iterator *i ) {
     return bson_iterator_value( i );
 }
 
-EXPORT const char *bson_iterator_regex_opts( const bson_iterator *i ) {
+MONGO_EXPORT const char *bson_iterator_regex_opts( const bson_iterator *i ) {
     const char *p = bson_iterator_value( i );
     return p + strlen( p ) + 1;
 
@@ -594,7 +594,7 @@ void bson_iterator_subobject( const bson_iterator *i, bson *sub ) {
     sub->finished = 1;
 }
 
-EXPORT void bson_iterator_subiterator( const bson_iterator *i, bson_iterator *sub ) {
+MONGO_EXPORT void bson_iterator_subiterator( const bson_iterator *i, bson_iterator *sub ) {
     bson_iterator_from_buffer( sub, bson_iterator_value( i ) );
 }
 
@@ -612,7 +612,7 @@ static void _bson_init_size( bson *b, int size ) {
     _bson_reset( b );
 }
 
-EXPORT void bson_init( bson *b ) {
+MONGO_EXPORT void bson_init( bson *b ) {
     _bson_init_size( b, initialBufferSize );
 }
 
@@ -669,7 +669,7 @@ int bson_ensure_space( bson *b, const int bytesNeeded ) {
     return BSON_OK;
 }
 
-EXPORT int bson_finish( bson *b ) {
+MONGO_EXPORT int bson_finish( bson *b ) {
     int i;
 
     if( b->err & BSON_NOT_UTF8 )
@@ -686,7 +686,7 @@ EXPORT int bson_finish( bson *b ) {
     return BSON_OK;
 }
 
-EXPORT void bson_destroy( bson *b ) {
+MONGO_EXPORT void bson_destroy( bson *b ) {
     if (b) {
         bson_free( b->data );
         b->err = 0;
@@ -722,41 +722,41 @@ static int bson_append_estart( bson *b, int type, const char *name, const int da
    BUILDING TYPES
    ------------------------------ */
 
-EXPORT int bson_append_int( bson *b, const char *name, const int i ) {
+MONGO_EXPORT int bson_append_int( bson *b, const char *name, const int i ) {
     if ( bson_append_estart( b, BSON_INT, name, 4 ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append32( b , &i );
     return BSON_OK;
 }
 
-EXPORT int bson_append_long( bson *b, const char *name, const int64_t i ) {
+MONGO_EXPORT int bson_append_long( bson *b, const char *name, const int64_t i ) {
     if ( bson_append_estart( b , BSON_LONG, name, 8 ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append64( b , &i );
     return BSON_OK;
 }
 
-EXPORT int bson_append_double( bson *b, const char *name, const double d ) {
+MONGO_EXPORT int bson_append_double( bson *b, const char *name, const double d ) {
     if ( bson_append_estart( b, BSON_DOUBLE, name, 8 ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append64( b , &d );
     return BSON_OK;
 }
 
-EXPORT int bson_append_bool( bson *b, const char *name, const bson_bool_t i ) {
+MONGO_EXPORT int bson_append_bool( bson *b, const char *name, const bson_bool_t i ) {
     if ( bson_append_estart( b, BSON_BOOL, name, 1 ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append_byte( b , i != 0 );
     return BSON_OK;
 }
 
-EXPORT int bson_append_null( bson *b, const char *name ) {
+MONGO_EXPORT int bson_append_null( bson *b, const char *name ) {
     if ( bson_append_estart( b , BSON_NULL, name, 0 ) == BSON_ERROR )
         return BSON_ERROR;
     return BSON_OK;
 }
 
-EXPORT int bson_append_undefined( bson *b, const char *name ) {
+MONGO_EXPORT int bson_append_undefined( bson *b, const char *name ) {
     if ( bson_append_estart( b, BSON_UNDEFINED, name, 0 ) == BSON_ERROR )
         return BSON_ERROR;
     return BSON_OK;
@@ -777,15 +777,15 @@ int bson_append_string_base( bson *b, const char *name,
     return BSON_OK;
 }
 
-EXPORT int bson_append_string( bson *b, const char *name, const char *value ) {
+MONGO_EXPORT int bson_append_string( bson *b, const char *name, const char *value ) {
     return bson_append_string_base( b, name, value, strlen ( value ), BSON_STRING );
 }
 
-EXPORT int bson_append_symbol( bson *b, const char *name, const char *value ) {
+MONGO_EXPORT int bson_append_symbol( bson *b, const char *name, const char *value ) {
     return bson_append_string_base( b, name, value, strlen ( value ), BSON_SYMBOL );
 }
 
-EXPORT int bson_append_code( bson *b, const char *name, const char *value ) {
+MONGO_EXPORT int bson_append_code( bson *b, const char *name, const char *value ) {
     return bson_append_string_base( b, name, value, strlen ( value ), BSON_CODE );
 }
 
@@ -815,11 +815,11 @@ int bson_append_code_w_scope_n( bson *b, const char *name,
     return BSON_OK;
 }
 
-EXPORT int bson_append_code_w_scope( bson *b, const char *name, const char *code, const bson *scope ) {
+MONGO_EXPORT int bson_append_code_w_scope( bson *b, const char *name, const char *code, const bson *scope ) {
     return bson_append_code_w_scope_n( b, name, code, strlen ( code ), scope );
 }
 
-EXPORT int bson_append_binary( bson *b, const char *name, char type, const char *str, int len ) {
+MONGO_EXPORT int bson_append_binary( bson *b, const char *name, char type, const char *str, int len ) {
     if ( type == BSON_BIN_BINARY_OLD ) {
         int subtwolen = len + 4;
         if ( bson_append_estart( b, BSON_BINDATA, name, 4+1+4+len ) == BSON_ERROR )
@@ -838,7 +838,7 @@ EXPORT int bson_append_binary( bson *b, const char *name, char type, const char 
     return BSON_OK;
 }
 
-EXPORT int bson_append_oid( bson *b, const char *name, const bson_oid_t *oid ) {
+MONGO_EXPORT int bson_append_oid( bson *b, const char *name, const bson_oid_t *oid ) {
     if ( bson_append_estart( b, BSON_OID, name, 12 ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append( b , oid , 12 );
@@ -851,7 +851,7 @@ int bson_append_new_oid( bson *b, const char *name ) {
     return bson_append_oid( b, name, &oid );
 }
 
-EXPORT int bson_append_regex( bson *b, const char *name, const char *pattern, const char *opts ) {
+MONGO_EXPORT int bson_append_regex( bson *b, const char *name, const char *pattern, const char *opts ) {
     const int plen = strlen( pattern )+1;
     const int olen = strlen( opts )+1;
     if ( bson_append_estart( b, BSON_REGEX, name, plen + olen ) == BSON_ERROR )
@@ -863,7 +863,7 @@ EXPORT int bson_append_regex( bson *b, const char *name, const char *pattern, co
     return BSON_OK;
 }
 
-EXPORT int bson_append_bson( bson *b, const char *name, const bson *bson ) {
+MONGO_EXPORT int bson_append_bson( bson *b, const char *name, const bson *bson ) {
     if ( bson_append_estart( b, BSON_OBJECT, name, bson_size( bson ) ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append( b , bson->data , bson_size( bson ) );
@@ -899,7 +899,7 @@ int bson_append_timestamp( bson *b, const char *name, bson_timestamp_t *ts ) {
     return BSON_OK;
 }
 
-EXPORT int bson_append_timestamp2( bson *b, const char *name, int time, int increment ) {
+MONGO_EXPORT int bson_append_timestamp2( bson *b, const char *name, int time, int increment ) {
     if ( bson_append_estart( b, BSON_TIMESTAMP, name, 8 ) == BSON_ERROR ) return BSON_ERROR;
 
     bson_append32( b , &increment );
@@ -907,7 +907,7 @@ EXPORT int bson_append_timestamp2( bson *b, const char *name, int time, int incr
     return BSON_OK;
 }
 
-EXPORT int bson_append_date( bson *b, const char *name, bson_date_t millis ) {
+MONGO_EXPORT int bson_append_date( bson *b, const char *name, bson_date_t millis ) {
     if ( bson_append_estart( b, BSON_DATE, name, 8 ) == BSON_ERROR ) return BSON_ERROR;
     bson_append64( b , &millis );
     return BSON_OK;
@@ -917,21 +917,21 @@ int bson_append_time_t( bson *b, const char *name, time_t secs ) {
     return bson_append_date( b, name, ( bson_date_t )secs * 1000 );
 }
 
-EXPORT int bson_append_start_object( bson *b, const char *name ) {
+MONGO_EXPORT int bson_append_start_object( bson *b, const char *name ) {
     if ( bson_append_estart( b, BSON_OBJECT, name, 5 ) == BSON_ERROR ) return BSON_ERROR;
     b->stack[ b->stackPos++ ] = b->cur - b->data;
     bson_append32( b , &zero );
     return BSON_OK;
 }
 
-EXPORT int bson_append_start_array( bson *b, const char *name ) {
+MONGO_EXPORT int bson_append_start_array( bson *b, const char *name ) {
     if ( bson_append_estart( b, BSON_ARRAY, name, 5 ) == BSON_ERROR ) return BSON_ERROR;
     b->stack[ b->stackPos++ ] = b->cur - b->data;
     bson_append32( b , &zero );
     return BSON_OK;
 }
 
-EXPORT int bson_append_finish_object( bson *b ) {
+MONGO_EXPORT int bson_append_finish_object( bson *b ) {
     char *start;
     int i;
     if ( bson_ensure_space( b, 1 ) == BSON_ERROR ) return BSON_ERROR;

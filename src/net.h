@@ -16,8 +16,8 @@
  */
 
 /* Header for generic net.h */
-#ifndef _MONGO_NET_H_
-#define _MONGO_NET_H_
+#ifndef MONGO_NET_H_
+#define MONGO_NET_H_
 
 #include "mongo.h"
 

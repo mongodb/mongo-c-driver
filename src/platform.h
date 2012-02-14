@@ -18,15 +18,15 @@
 
 /* all platform-specific ifdefs should go here */
 
-#ifndef _PLATFORM_HACKS_H_
-#define _PLATFORM_HACKS_H_
+#ifndef MONGO_PLATFORM_H_
+#define MONGO_PLATFORM_H_
 
 #ifdef __GNUC__
     #define MONGO_INLINE static __inline__
-    #define EXPORT
+    #define MONGO_EXPORT
 #else
     #define MONGO_INLINE static
-        #define EXPORT __declspec(dllexport)
+        #define MONGO_EXPORT __declspec(dllexport)
 #endif
 
 
