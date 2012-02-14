@@ -168,19 +168,19 @@ benchmarkEnv.Program( "benchmark" ,  [ "test/benchmark.c"] )
 testEnv = benchmarkEnv.Clone()
 testCoreFiles = [ ]
 
-def run_tests( root, tests ):
+def run_tests( root, tests, env, alias ):
     for name in tests:
         filename = "%s/%s.c" % (root, name)
         exe = "test_" + name
-        test = testEnv.Program( exe , testCoreFiles + [filename]  )
-        test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> ' + os.path.devnull)
+        test = env.Program( exe , testCoreFiles + [filename]  )
+        test_alias = env.Alias(alias, [test], test[0].abspath + ' 2> ' + os.path.devnull)
         AlwaysBuild(test_alias)
 
 tests = Split("sizes resize endian_swap bson bson_subobject simple update errors "
-"count_delete auth gridfs validate examples helpers oid functions cursors replica_set")
+"count_delete auth gridfs validate examples helpers oid functions cursors")
 
 # Run standard tests
-run_tests("test", tests)
+run_tests("test", tests, testEnv, "test")
 
 # Run platform tests
 if not PLATFORM_TEST_DIR is None:
@@ -194,3 +194,9 @@ if have_libjson:
 test = testEnv.Program( 'test_cpp' , testCoreFiles + ['test/cpptest.cpp']  )
 test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> '+ os.path.devnull)
 AlwaysBuild(test_alias)
+
+# Run replica set test only
+repl_testEnv = benchmarkEnv.Clone()
+repl_tests = ["replica_set"]
+run_tests("test", repl_tests, repl_testEnv, "repl_test")
+
