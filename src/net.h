@@ -53,5 +53,7 @@ int mongo_read_socket( mongo *conn, void *buf, int len );
 int mongo_write_socket( mongo *conn, const void *buf, int len );
 int mongo_socket_connect( mongo *conn, const char *host, int port );
 
+/* Initialize the socket services */
+int mongo_sock_init();
 MONGO_EXTERN_C_END
 #endif

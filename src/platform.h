@@ -22,10 +22,13 @@
 #define _PLATFORM_HACKS_H_
 
 #ifdef __GNUC__
-#define MONGO_INLINE static __inline__
+    #define MONGO_INLINE static __inline__
+    #define EXPORT
 #else
-#define MONGO_INLINE static
+    #define MONGO_INLINE static
+        #define EXPORT __declspec(dllexport)
 #endif
+
 
 #ifdef __cplusplus
 #define MONGO_EXTERN_C_START extern "C" {
@@ -79,6 +82,7 @@ MONGO_INLINE void bson_swap_endian64( void *outp, const void *inp ) {
     out[7] = in[0];
 
 }
+
 MONGO_INLINE void bson_swap_endian32( void *outp, const void *inp ) {
     const char *in = ( const char * )inp;
     char *out = ( char * )outp;
@@ -87,6 +91,10 @@ MONGO_INLINE void bson_swap_endian32( void *outp, const void *inp ) {
     out[1] = in[2];
     out[2] = in[1];
     out[3] = in[0];
+}
+
+MONGO_INLINE double bson_int64_to_double( int64_t i64 ) {
+    return (double)i64;
 }
 
 MONGO_EXTERN_C_END
