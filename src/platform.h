@@ -26,7 +26,11 @@
     #define MONGO_EXPORT
 #else
     #define MONGO_INLINE static
+    #ifdef MONGO_DLL_BUILD
         #define MONGO_EXPORT __declspec(dllexport)
+    #else
+        #define MONGO_EXPORT __declspec(dllimport)
+    #endif
 #endif
 
 
