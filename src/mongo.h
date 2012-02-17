@@ -183,11 +183,9 @@ MONGO_EXPORT void mongo_cursor_dispose(mongo_cursor* cursor);
 MONGO_EXPORT int  mongo_get_server_err(mongo* conn);
 MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
 
-
-
-/** Initialize a new mongo connection object. If not created
- *  with mongo_new, you must initialize each mongo
- *  object using this function.
+/**
+ * Initialize a new mongo connection object. You must initialize each mongo
+ * object using this function.
  *
  *  @note When finished, you must pass this object to
  *      mongo_destroy( ).
@@ -205,7 +203,7 @@ void mongo_init( mongo *conn );
  * @param port the port to connect to.
  *
  * @return MONGO_OK or MONGO_ERROR on failure. On failure, a constant of type
- *   mongo_conn_return_t will be set on the conn->err field.
+ *   mongo_error_t will be set on the conn->err field.
  */
 MONGO_EXPORT int mongo_connect( mongo *conn , const char *host, int port );
 
@@ -544,7 +542,7 @@ bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns, const char *
  * @param command the BSON command to run.
  * @param out the BSON result of the command.
  *
- * @return true if the command ran without error.
+ * @return MONGO_OK if the command ran without error.
  */
 MONGO_EXPORT bson_bool_t mongo_run_command( mongo *conn, const char *db, bson *command, bson *out );
 
