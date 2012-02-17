@@ -184,7 +184,7 @@ run_tests("test", tests, testEnv, "test")
 
 # Run platform tests
 if not PLATFORM_TEST_DIR is None:
-    run_tests( PLATFORM_TEST_DIR, PLATFORM_TESTS )
+    run_tests( PLATFORM_TEST_DIR, PLATFORM_TESTS, testEnv, "test" )
 
 if have_libjson:
     tests.append('json')
