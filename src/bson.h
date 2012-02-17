@@ -899,7 +899,7 @@ void bson_numstr( char *str, int i );
 
 void bson_incnumstr( char *str );
 
-/* Error handling and stadard library function over-riding. */
+/* Error handling and standard library function over-riding. */
 /* -------------------------------------------------------- */
 
 /* bson_err_handlers shouldn't return!!! */
@@ -974,6 +974,13 @@ void bson_fatal_msg( int ok, const char *msg );
  * @param b the buffer object.
  */
 void bson_builder_error( bson *b );
+
+/**
+ * Cast an int64_t to double. This is necessary for embedding in
+ * certain environments.
+ *
+ */
+MONGO_EXPORT double bson_int64_to_double( int64_t i64 );
 
 MONGO_EXTERN_C_END
 #endif

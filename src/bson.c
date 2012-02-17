@@ -944,10 +944,13 @@ MONGO_EXPORT int bson_append_finish_object( bson *b ) {
     return BSON_OK;
 }
 
+MONGO_EXPORT double bson_int64_to_double( int64_t i64 ) {
+  return (double)i64;
+}
+
 int bson_append_finish_array( bson *b ) {
     return bson_append_finish_object( b );
 }
-
 
 /* Error handling and allocators. */
 

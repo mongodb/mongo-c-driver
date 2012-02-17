@@ -97,10 +97,6 @@ MONGO_INLINE void bson_swap_endian32( void *outp, const void *inp ) {
     out[3] = in[0];
 }
 
-MONGO_INLINE double bson_int64_to_double( int64_t i64 ) {
-    return (double)i64;
-}
-
 MONGO_EXTERN_C_END
 
 #endif
