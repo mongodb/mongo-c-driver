@@ -432,14 +432,11 @@ MONGO_EXPORT int mongo_replset_connect( mongo *conn ) {
     node = conn->replset->seeds;
     while( node != NULL ) {
         res = mongo_socket_connect( conn, ( const char * )&node->host, node->port );
-        if( res != MONGO_OK )
-            return MONGO_ERROR;
-
-        mongo_replset_check_seed( conn );
-
-        if( conn->replset->hosts )
-            break;
-
+        if( res == MONGO_OK ) {
+            mongo_replset_check_seed( conn );
+            if( conn->replset->hosts )
+                break;
+        }
         node = node->next;
     }
 

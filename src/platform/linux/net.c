@@ -21,9 +21,13 @@
 
 int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     const char *cbuf = buf;
+    int flags = MSG_NOSIGNAL;
+
     while ( len ) {
-        int sent = send( conn->sock, cbuf, len, 0 );
+        int sent = send( conn->sock, cbuf, len, flags );
         if ( sent == -1 ) {
+            if (errno == EPIPE) 
+                conn->connected = 0;
             conn->err = MONGO_IO_ERROR;
             return MONGO_ERROR;
         }
@@ -116,6 +120,7 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
 
     conn->sock = 0;
     conn->connected = 0;
+    sprintf(port_str,"%d",port);
 
     memset( &hints, 0, sizeof( hints ) );
     hints.ai_family = AF_INET;

@@ -17,13 +17,18 @@
 
 /* Implementation for generic version of net.h */
 #include "net.h"
+#include <errno.h>
 #include <string.h>
 
 int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     const char *cbuf = buf;
+    int flags = MSG_NOSIGNAL;
+
     while ( len ) {
-        int sent = send( conn->sock, cbuf, len, 0 );
+        int sent = send( conn->sock, cbuf, len, flags );
         if ( sent == -1 ) {
+            if (errno == EPIPE) 
+                conn->connected = 0;
             conn->err = MONGO_IO_ERROR;
             return MONGO_ERROR;
         }
