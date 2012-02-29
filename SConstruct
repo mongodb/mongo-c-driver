@@ -150,8 +150,14 @@ env.Append( CPPFLAGS=" -DMONGO_DLL_BUILD" )
 coreFiles = ["src/md5.c" ]
 mFiles = [ "src/mongo.c", NET_LIB, "src/gridfs.c"]
 bFiles = [ "src/bson.c", "src/numbers.c", "src/encoding.c"]
+
+mHeaders = ["src/mongo.h"]
+bHeaders = ["src/bson.h"]
+headers = mHeaders + bHeaders
+
 mLibFiles = coreFiles + mFiles + bFiles
 bLibFiles = coreFiles + bFiles
+
 m = env.Library( "mongoc" ,  mLibFiles )
 b = env.Library( "bson" , bLibFiles  )
 env.Default( env.Alias( "lib" , [ m[0] , b[0] ] ) )
@@ -168,6 +174,13 @@ if os.sys.platform == "linux2":
 
 dynm = env.SharedLibrary( "mongoc" , mSharedObjs )
 dynb = bsonEnv.SharedLibrary( "bson" , bSharedObjs )
+# ---- Install ----
+prefix = "/usr/local"
+
+env.Alias("install", env.Install(os.path.join(prefix, "lib"), [dynm[0] , dynb[0] ]))
+env.Alias("install", env.Install(os.path.join(prefix, "include"), headers))
+
+env.Command("uninstall", None, Delete(FindInstalledFiles()))
 
 env.Default( env.Alias( "sharedlib" , [ dynm[0] , dynb[0] ] ) )
 
