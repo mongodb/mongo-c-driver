@@ -31,6 +31,12 @@ AddOption('--m32',
           action='store_true',
           help='Compile with m32 (recommended, actually required, for 32 bit applications on 64 bit machines)')
 
+AddOption('--addrinfo',
+          dest='use_addrinfo',
+          default=False,
+          action='store_true',
+          help='Compile with addrinfo to make use of internet address info when connecting')
+
 AddOption('--d',
           dest='optimize',
           default=True,
@@ -51,7 +57,12 @@ AddOption('--use-platform',
 
 import os, sys
 
-env = Environment( ENV=os.environ )
+if GetOption('use_m32'):
+    msvs_arch = "x86"
+else:
+    msvs_arch = "amd64"
+print msvs_arch
+env = Environment(ENV=os.environ, MSVS_ARCH=msvs_arch, TARGET_ARCH=msvs_arch)
 
 #  ---- Docs ----
 def build_docs(env, target, source):
@@ -121,15 +132,19 @@ if conf.CheckLib('json'):
 env = conf.Finish()
 
 if GetOption('use_m32'):
-    env.Append( CPPFLAGS=" -m32" )
-    env.Append( SHLINKFLAGS=" -m32" )
+    if 'win32' != os.sys.platform:
+        env.Append( CPPFLAGS=" -m32" )
+        env.Append( SHLINKFLAGS=" -m32" )
 
+if GetOption('use_addrinfo'):
+    env.Append( CPPFLAGS=" -D_MONGO_USE_GETADDRINFO" )
 
 if sys.byteorder == 'big':
     env.Append( CPPDEFINES="MONGO_BIG_ENDIAN" )
 
 env.Append( CPPPATH=["src/"] )
 
+env.Append( CPPFLAGS=" -DMONGO_DLL_BUILD" )
 coreFiles = ["src/md5.c" ]
 mFiles = [ "src/mongo.c", NET_LIB, "src/gridfs.c"]
 bFiles = [ "src/bson.c", "src/numbers.c", "src/encoding.c"]
