@@ -22,10 +22,15 @@
 #include "mongo.h"
 
 #ifdef _WIN32
-#include <windows.h>
-#include <winsock.h>
+    #ifdef _MSC_VER
+        #include <ws2tcpip.h>  // send,recv,socklen_t etc
+        #include <wspiapi.h>   // addrinfo
+    #else
+        #include <windows.h>
+        #include <winsock.h>
+        typedef int socklen_t;
+    #endif
 #define mongo_close_socket(sock) ( closesocket(sock) )
-typedef int socklen_t;
 #else
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -54,6 +59,6 @@ int mongo_write_socket( mongo *conn, const void *buf, int len );
 int mongo_socket_connect( mongo *conn, const char *host, int port );
 
 /* Initialize the socket services */
-int mongo_sock_init();
+MONGO_EXPORT int mongo_sock_init();
 MONGO_EXTERN_C_END
 #endif
