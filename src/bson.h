@@ -950,7 +950,7 @@ void *bson_realloc( void *ptr, int size );
  *
  * @return the old error handling function, or NULL.
  */
-bson_err_handler set_bson_err_handler( bson_err_handler func );
+MONGO_EXPORT bson_err_handler set_bson_err_handler( bson_err_handler func );
 
 /* does nothing if ok != 0 */
 /**
