@@ -33,7 +33,11 @@ static const int zero = 0;
 void *( *bson_malloc_func )( size_t ) = malloc;
 void *( *bson_realloc_func )( void *, size_t ) = realloc;
 void  ( *bson_free )( void * ) = free;
+#ifdef R_SAFETY_NET
+bson_printf_func bson_printf;
+#else
 bson_printf_func bson_printf = printf;
+#endif
 bson_fprintf_func bson_fprintf = fprintf;
 bson_sprintf_func bson_sprintf = sprintf;
 
@@ -956,7 +960,7 @@ int bson_append_finish_array( bson *b ) {
 
 static bson_err_handler err_handler = NULL;
 
-bson_err_handler set_bson_err_handler( bson_err_handler func ) {
+MONGO_EXPORT bson_err_handler set_bson_err_handler( bson_err_handler func ) {
     bson_err_handler old = err_handler;
     err_handler = func;
     return old;
@@ -980,7 +984,9 @@ int _bson_errprintf( const char *format, ... ) {
     va_list ap;
     int ret;
     va_start( ap, format );
+#ifndef R_SAFETY_NET
     ret = vfprintf( stderr, format, ap );
+#endif
     va_end( ap );
 
     return ret;
@@ -1008,9 +1014,10 @@ void bson_fatal_msg( int ok , const char *msg ) {
     if ( err_handler ) {
         err_handler( msg );
     }
-
+#ifndef R_SAFETY_NET
     bson_errprintf( "error: %s\n" , msg );
     exit( -5 );
+#endif
 }
 
 
