@@ -527,7 +527,13 @@ MONGO_EXPORT bson_bool_t bson_iterator_bool( const bson_iterator *i ) {
 }
 
 MONGO_EXPORT const char *bson_iterator_string( const bson_iterator *i ) {
-    return bson_iterator_value( i ) + 4;
+    switch ( bson_iterator_type( i ) ) {
+    case BSON_STRING:
+    case BSON_SYMBOL:
+        return bson_iterator_value( i ) + 4;
+    default:
+        return "";
+    }
 }
 
 int bson_iterator_string_len( const bson_iterator *i ) {
