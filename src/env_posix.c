@@ -60,32 +60,6 @@ int mongo_read_socket( mongo *conn, void *buf, int len ) {
     return MONGO_OK;
 }
 
-static int mongo_set_blocking_status( mongo *conn ) {
-    int flags;
-    int blocking;
-
-    blocking = ( conn->conn_timeout_ms == 0 );
-    if( blocking )
-        return MONGO_OK;
-    else {
-        if( ( flags = fcntl( conn->sock, F_GETFL ) ) == -1 ) {
-            conn->err = MONGO_IO_ERROR;
-            mongo_close_socket( conn->sock );
-            return MONGO_ERROR;
-        }
-
-        flags |= O_NONBLOCK;
-
-        if( ( flags = fcntl( conn->sock, F_SETFL, flags ) ) == -1 ) {
-            conn->err = MONGO_IO_ERROR;
-            mongo_close_socket( conn->sock );
-            return MONGO_ERROR;
-        }
-    }
-
-    return MONGO_OK;
-}
-
 int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
     struct timeval tv;
     tv.tv_sec = millis / 1000;
