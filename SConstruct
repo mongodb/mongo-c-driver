@@ -79,14 +79,14 @@ env.AlwaysBuild("docs")
 PLATFORM_TEST_DIR = None
 if "LINUX" == GetOption('compile_platform'):
     env.Append( CPPFLAGS=" -D_MONGO_USE_LINUX_SYSTEM -D_POSIX_SOURCE" )
-    NET_LIB = "src/platform/linux/net.c"
+    NET_LIB = "src/env_posix.c"
     PLATFORM_TEST_DIR = "test/platform/linux/"
     PLATFORM_TESTS = [ "timeouts" ]
 elif "CUSTOM" == GetOption('compile_platform'):
     env.Append( CPPFLAGS=" -D_MONGO_USE_CUSTOM_SYSTEM" )
-    NET_LIB = "src/platform/custom/net.c"
+    NET_LIB = "src/env_default.c"
 else:
-    NET_LIB = "src/net.c"
+    NET_LIB = "src/env_default.c"
 
 # ---- Libraries ----
 if os.sys.platform in ["darwin", "linux2"]:
@@ -169,8 +169,6 @@ dynb = bsonEnv.SharedLibrary( "bson" , bSharedObjs )
 
 env.Default( env.Alias( "sharedlib" , [ dynm[0] , dynb[0] ] ) )
 
-
-
 # ---- Benchmarking ----
 benchmarkEnv = env.Clone()
 benchmarkEnv.Append( CPPDEFINES=[('TEST_SERVER', r'\"%s\"'%GetOption('test_server')),
@@ -214,4 +212,3 @@ AlwaysBuild(test_alias)
 repl_testEnv = benchmarkEnv.Clone()
 repl_tests = ["replica_set"]
 run_tests("test", repl_tests, repl_testEnv, "repl_test")
-

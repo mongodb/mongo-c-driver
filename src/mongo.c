@@ -24,11 +24,11 @@
 #include <stdlib.h>
 
 #ifdef _USE_LINUX_SYSTEM
-#include "platform/linux/net.h"
+#include "env_posix.h"
 #elif defined _USE_CUSTOM_SYSTEM
-#include "platform/custom/net.h"
+#include "env.h"
 #else
-#include "net.h"
+#include "env.h"
 #endif
 
 

@@ -16,7 +16,7 @@
  */
 
 /* Implementation for generic version of net.h */
-#include "net.h"
+#include "env.h"
 #include <errno.h>
 #include <string.h>
 

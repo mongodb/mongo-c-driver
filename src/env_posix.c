@@ -16,8 +16,11 @@
  */
 
 /* Implementation for Linux version of net.h */
-#include "net.h"
 #include <string.h>
+#include <errno.h>
+#include <sys/time.h>
+
+#include "env.h"
 
 #ifndef NI_MAXSERV
 # define NI_MAXSERV 32
