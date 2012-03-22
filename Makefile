@@ -24,10 +24,10 @@ BSON_MINOR=$(MONGO_MINOR)
 MONGO_LIBNAME=libmongoc
 BSON_LIBNAME=libbson
 
-# TODO: add replica set test, cpp test, platform tests
-TESTS=test/auth_test test/bson_test test/bson_subobject_test test/count_delete \
+# TODO: add replica set test, cpp test, platform tests, json_test
+TESTS=test/auth_test test/bson_test test/bson_subobject_test test/count_delete_test \
   test/cursors_test test/endian_swap_test test/errors_test test/examples_test \
-  test/functions_test test/gridfs_test test/helpers_test test/json_test \
+  test/functions_test test/gridfs_test test/helpers_test \
   test/oid_test test/resize_test test/simple_test test/sizes_test test/update_test \
   test/validate_test
 MONGO_OBJECTS=src/bson.o src/encoding.o src/gridfs.o src/md5.o src/mongo.o \
@@ -150,9 +150,11 @@ install:
 	$(INSTALL) $(MONGO_STLIBNAME) $(INSTALL_LIBRARY_PATH)
 	$(INSTALL) $(BSON_STLIBNAME) $(INSTALL_LIBRARY_PATH)
 
-# TODO: rename tests and activate this.
-#test: $(TESTS)
-#	for test in $(TESTS) ; do ./$$test ; done
+test: $(TESTS)
+	sh runtests.sh
+
+valgrind: $(TESTS)
+	sh runtests.sh -v
 
 clean:
 	rm -rf $(MONGO_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_DYLIBNAME) $(BSON_STLIBNAME) src/*.o test/*_test
