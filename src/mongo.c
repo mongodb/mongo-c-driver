@@ -26,7 +26,7 @@
 #ifdef _USE_LINUX_SYSTEM
 #include "env_posix.h"
 #elif defined _USE_CUSTOM_SYSTEM
-#include "env.h"
+#include "envt.h"
 #else
 #include "env.h"
 #endif
@@ -597,10 +597,10 @@ static int mongo_cursor_bson_valid( mongo_cursor *cursor, bson *bson ) {
 MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
                         bson **bsons, int count ) {
 
-    int size =  16 + 4 + strlen( ns ) + 1;
-    int i;
     mongo_message *mm;
+    int i;
     char *data;
+    int size =  16 + 4 + strlen( ns ) + 1;
 
     for( i=0; i<count; i++ ) {
         size += bson_size( bsons[i] );
