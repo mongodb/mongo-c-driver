@@ -160,8 +160,8 @@ typedef struct {
     int seen;          /**< Number returned so far. */
     bson current;      /**< This cursor's current bson object. */
     mongo_cursor_error_t err; /**< Errors on this cursor. */
-    bson *query;       /**< Bitfield containing cursor options. */
-    bson *fields;      /**< Bitfield containing cursor options. */
+    const bson *query; /**< Bitfield containing cursor options. */
+    const bson *fields;/**< Bitfield containing cursor options. */
     int options;       /**< Bitfield containing cursor options. */
     int limit;         /**< Bitfield containing cursor options. */
     int skip;          /**< Bitfield containing cursor options. */
@@ -316,7 +316,7 @@ MONGO_EXPORT void mongo_destroy( mongo *conn );
  *     field is MONGO_BSON_INVALID, check the err field
  *     on the bson struct for the reason.
  */
-MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns, bson *data );
+MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns, const bson *data );
 
 /**
  * Insert a batch of BSON documents into a MongoDB server. This function
@@ -331,7 +331,7 @@ MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns, bson *data );
  *
  */
 MONGO_EXPORT int mongo_insert_batch( mongo *conn , const char *ns ,
-                        bson **data , int num );
+                        const bson **data , int num );
 
 /**
  * Update a document in a MongoDB server.
@@ -374,8 +374,8 @@ MONGO_EXPORT int mongo_remove( mongo *conn, const char *ns, const bson *cond );
  *     an error has occurred. For finer-grained error checking,
  *     use the cursor builder API instead.
  */
-MONGO_EXPORT mongo_cursor *mongo_find( mongo *conn, const char *ns, bson *query,
-                          bson *fields, int limit, int skip, int options );
+MONGO_EXPORT mongo_cursor *mongo_find( mongo *conn, const char *ns, const bson *query,
+                          const bson *fields, int limit, int skip, int options );
 
 /**
  * Initalize a new cursor object.
@@ -397,7 +397,7 @@ void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns );
  *   $query, $orderby, $hint, and/or $explain. See
  *   http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol for details.
  */
-void mongo_cursor_set_query( mongo_cursor *cursor, bson *query );
+void mongo_cursor_set_query( mongo_cursor *cursor, const bson *query );
 
 /**
  * Set the fields to return for this cursor. If you want to return
@@ -407,7 +407,7 @@ void mongo_cursor_set_query( mongo_cursor *cursor, bson *query );
  * @param fields a bson object representing the fields to return.
  *   See http://www.mongodb.org/display/DOCS/Retrieving+a+Subset+of+Fields.
  */
-void mongo_cursor_set_fields( mongo_cursor *cursor, bson *fields );
+void mongo_cursor_set_fields( mongo_cursor *cursor, const bson *fields );
 
 /**
  * Set the number of documents to skip.
@@ -483,8 +483,8 @@ MONGO_EXPORT int mongo_cursor_destroy( mongo_cursor *cursor );
  *
  */
 /* out can be NULL if you don't care about results. useful for commands */
-MONGO_EXPORT int mongo_find_one( mongo *conn, const char *ns, bson *query,
-                            bson *fields, bson *out );
+MONGO_EXPORT int mongo_find_one( mongo *conn, const char *ns, const bson *query,
+                            const bson *fields, bson *out );
 
 /* MongoDB Helper Functions */
 
@@ -500,7 +500,7 @@ MONGO_EXPORT int mongo_find_one( mongo *conn, const char *ns, bson *query,
  *     MONGO_ERROR is returned.
  */
 MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *coll,
-                     bson *query );
+                     const bson *query );
 
 /**
  * Create a compouned index.
@@ -515,7 +515,7 @@ MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *coll,
  *
  * @return MONGO_OK if index is created successfully; otherwise, MONGO_ERROR.
  */
-MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, bson *key, int options, bson *out );
+MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *key, int options, bson *out );
 
 /**
  * Create an index with a single key.
@@ -544,7 +544,7 @@ bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns, const char *
  *
  * @return MONGO_OK if the command ran without error.
  */
-MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, bson *command, bson *out );
+MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *command, bson *out );
 
 /**
  * Run a command that accepts a simple string key and integer value.

@@ -537,7 +537,7 @@ MONGO_EXPORT void mongo_destroy( mongo *conn ) {
 }
 
 /* Determine whether this BSON object is valid for the given operation.  */
-static int mongo_bson_valid( mongo *conn, bson *bson, int write ) {
+static int mongo_bson_valid( mongo *conn, const bson *bson, int write ) {
     if( ! bson->finished ) {
         conn->err = MONGO_BSON_NOT_FINISHED;
         return MONGO_ERROR;
@@ -564,7 +564,7 @@ static int mongo_bson_valid( mongo *conn, bson *bson, int write ) {
 }
 
 /* Determine whether this BSON object is valid for the given operation.  */
-static int mongo_cursor_bson_valid( mongo_cursor *cursor, bson *bson ) {
+static int mongo_cursor_bson_valid( mongo_cursor *cursor, const bson *bson ) {
     if( ! bson->finished ) {
         cursor->err = MONGO_CURSOR_BSON_ERROR;
         cursor->conn->err = MONGO_BSON_NOT_FINISHED;
@@ -583,7 +583,7 @@ static int mongo_cursor_bson_valid( mongo_cursor *cursor, bson *bson ) {
 /* MongoDB CRUD API */
 
 MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
-                        bson **bsons, int count ) {
+                        const bson **bsons, int count ) {
 
     mongo_message *mm;
     int i;
@@ -609,7 +609,7 @@ MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
     return mongo_message_send( conn, mm );
 }
 
-MONGO_EXPORT int mongo_insert( mongo *conn , const char *ns , bson *bson ) {
+MONGO_EXPORT int mongo_insert( mongo *conn , const char *ns , const bson *bson ) {
 
     char *data;
     mongo_message *mm;
@@ -817,8 +817,8 @@ static int mongo_cursor_get_more( mongo_cursor *cursor ) {
     }
 }
 
-MONGO_EXPORT mongo_cursor *mongo_find( mongo *conn, const char *ns, bson *query,
-                          bson *fields, int limit, int skip, int options ) {
+MONGO_EXPORT mongo_cursor *mongo_find( mongo *conn, const char *ns, const bson *query,
+                          const bson *fields, int limit, int skip, int options ) {
 
     mongo_cursor *cursor = ( mongo_cursor * )bson_malloc( sizeof( mongo_cursor ) );
     mongo_cursor_init( cursor, conn, ns );
@@ -838,8 +838,8 @@ MONGO_EXPORT mongo_cursor *mongo_find( mongo *conn, const char *ns, bson *query,
     }
 }
 
-MONGO_EXPORT int mongo_find_one( mongo *conn, const char *ns, bson *query,
-                    bson *fields, bson *out ) {
+MONGO_EXPORT int mongo_find_one( mongo *conn, const char *ns, const bson *query,
+                    const bson *fields, bson *out ) {
 
     mongo_cursor cursor[1];
     mongo_cursor_init( cursor, conn, ns );
@@ -868,11 +868,11 @@ void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns ) {
     cursor->current.data = NULL;
 }
 
-void mongo_cursor_set_query( mongo_cursor *cursor, bson *query ) {
+void mongo_cursor_set_query( mongo_cursor *cursor, const bson *query ) {
     cursor->query = query;
 }
 
-void mongo_cursor_set_fields( mongo_cursor *cursor, bson *fields ) {
+void mongo_cursor_set_fields( mongo_cursor *cursor, const bson *fields ) {
     cursor->fields = fields;
 }
 
@@ -981,7 +981,7 @@ MONGO_EXPORT int mongo_cursor_destroy( mongo_cursor *cursor ) {
 
 /* MongoDB Helper Functions */
 
-MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, bson *key, int options, bson *out ) {
+MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *key, int options, bson *out ) {
     bson b;
     bson_iterator it;
     char name[255] = {'_'};
@@ -1031,7 +1031,7 @@ bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns, const char *
     return success;
 }
 
-MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *ns, bson *query ) {
+MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *ns, const bson *query ) {
     bson cmd;
     bson out = {NULL, 0};
     double count = -1;
@@ -1056,7 +1056,7 @@ MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *ns, bs
     }
 }
 
-MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, bson *command,
+MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *command,
                        bson *out ) {
 
     bson response = {NULL, 0};

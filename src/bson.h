@@ -176,14 +176,14 @@ MONGO_EXPORT int bson_buffer_size( const bson *b );
  *
  * @param b the BSON object to print.
  */
-void bson_print( bson *b );
+void bson_print( const bson *b );
 
 /**
  * Return a pointer to the raw buffer stored by this bson object.
  *
  * @param b a BSON object
  */
-const char *bson_data( bson *b );
+const char *bson_data( const bson *b );
 
 /**
  * Print a string representation of a BSON object.
