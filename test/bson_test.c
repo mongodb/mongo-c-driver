@@ -89,6 +89,7 @@ int test_bson_generic() {
    ASSERT( bson_iterator_type( &it ) == BSON_STRING );
    ASSERT( !strcmp( bson_iterator_key( &it ), "s" ) );
    ASSERT( !strcmp( bson_iterator_string( &it ), "hello" ) );
+   ASSERT( strcmp( bson_iterator_string( &it ), "" ) );
 
    ASSERT( bson_iterator_more( &it ) );
    ASSERT( bson_iterator_next( &it ) == BSON_STRING );
@@ -167,15 +168,15 @@ int test_bson_generic() {
    ASSERT( bson_iterator_more( &it ) );
    ASSERT( bson_iterator_next( &it ) == BSON_CODE );
    ASSERT( bson_iterator_type( &it ) == BSON_CODE );
+   ASSERT( !strcmp( bson_iterator_code(&it), "function(){}") );
    ASSERT( !strcmp( bson_iterator_key( &it ), "c" ) );
-   ASSERT( !strcmp( bson_iterator_string( &it ), "function(){}" ) );
-   ASSERT( !strcmp( bson_iterator_code( &it ), "function(){}" ) );
+   ASSERT( !strcmp( bson_iterator_string( &it ), "" ) );
 
    ASSERT( bson_iterator_more( &it ) );
    ASSERT( bson_iterator_next( &it ) == BSON_CODE );
    ASSERT( bson_iterator_type( &it ) == BSON_CODE );
    ASSERT( !strcmp( bson_iterator_key( &it ), "c_n" ) );
-   ASSERT( !strcmp( bson_iterator_string( &it ), "function(){}" ) );
+   ASSERT( !strcmp( bson_iterator_string( &it ), "" ) );
    ASSERT( !strcmp( bson_iterator_code( &it ), "function(){}" ) );
 
    ASSERT( bson_iterator_more( &it ) );
