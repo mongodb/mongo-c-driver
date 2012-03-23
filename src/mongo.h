@@ -483,7 +483,7 @@ MONGO_EXPORT int mongo_cursor_destroy( mongo_cursor *cursor );
  *
  */
 /* out can be NULL if you don't care about results. useful for commands */
-MONGO_EXPORT bson_bool_t mongo_find_one( mongo *conn, const char *ns, bson *query,
+MONGO_EXPORT int mongo_find_one( mongo *conn, const char *ns, bson *query,
                             bson *fields, bson *out );
 
 /* MongoDB Helper Functions */
@@ -544,7 +544,7 @@ bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns, const char *
  *
  * @return MONGO_OK if the command ran without error.
  */
-MONGO_EXPORT bson_bool_t mongo_run_command( mongo *conn, const char *db, bson *command, bson *out );
+MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, bson *command, bson *out );
 
 /**
  * Run a command that accepts a simple string key and integer value.
@@ -573,7 +573,7 @@ int mongo_simple_int_command( mongo *conn, const char *db,
  * @return true if the command ran without error.
  *
  */
-bson_bool_t mongo_simple_str_command( mongo *conn, const char *db, const char *cmd, const char *arg, bson *out );
+int mongo_simple_str_command( mongo *conn, const char *db, const char *cmd, const char *arg, bson *out );
 
 /**
  * Drop a database.
@@ -595,7 +595,7 @@ MONGO_EXPORT int mongo_cmd_drop_db( mongo *conn, const char *db );
  *
  * @return true if the collection drop was successful.
  */
-MONGO_EXPORT bson_bool_t mongo_cmd_drop_collection( mongo *conn, const char *db, const char *collection, bson *out );
+MONGO_EXPORT int mongo_cmd_drop_collection( mongo *conn, const char *db, const char *collection, bson *out );
 
 /**
  * Add a database user.
