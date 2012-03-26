@@ -204,7 +204,7 @@ if have_libjson:
     testEnv.Append( LIBS=["json"] )
 
 # special case for cpptest
-test = testEnv.Program( 'test_cpp' , testCoreFiles + ['test/cpptest_test.cpp']  )
+test = testEnv.Program( 'test_cpp' , testCoreFiles + ['test/cpptest.cpp']  )
 test_alias = testEnv.Alias('test', [test], test[0].abspath + ' 2> '+ os.path.devnull)
 AlwaysBuild(test_alias)
 

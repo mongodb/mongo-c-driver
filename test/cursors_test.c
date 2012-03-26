@@ -178,6 +178,8 @@ int test_copy_cursor_data( mongo *conn ) {
 
     mongo_cursor_destroy( cursor );
     bson_destroy( b );
+
+    return 0;
 }
 
 int main() {
