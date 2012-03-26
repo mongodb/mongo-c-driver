@@ -249,12 +249,12 @@ whose age is 24:
       bson_finish( query );
 
       mongo_cursor_init( cursor, conn, "tutorial.persons" );
-      mongo_cursor_set_query( cursor, query )
+      mongo_cursor_set_query( cursor, query );
 
       while( mongo_cursor_next( cursor ) == MONGO_OK ) {
         bson_iterator iterator[1];
         if ( bson_find( iterator, mongo_cursor_bson( cursor ), "name" )) {
-            printf( "name: %s\n", bson_iterator_string( it ) );
+            printf( "name: %s\n", bson_iterator_string( iterator ) );
         }
       }
 
