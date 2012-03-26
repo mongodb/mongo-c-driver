@@ -66,6 +66,12 @@ And you can run the tests:
 
     make test
 
+You can even build the docs:
+
+.. code-block:: bash
+
+    make docs
+
 By default, ``make`` will build the project in ``c99`` mode. If you want to change the
 language standard, set the value of STD. For example, if you want to build using
 the ANSI C standard, set STD to c89:
