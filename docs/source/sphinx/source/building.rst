@@ -2,7 +2,7 @@ Building the MongoDB C Driver
 =============================
 
 First checkout the version you want to build. *Always build from a particular tag, since HEAD may be
-a work in progress.* For example, to build version 0.3, run:
+a work in progress.* For example, to build version 0.4, run:
 
 .. code-block:: bash
 
@@ -10,61 +10,10 @@ a work in progress.* For example, to build version 0.3, run:
 
 Then follow the build steps below.
 
-Building with SCons:
---------------------
-
-This driver builds using the Python build utility, SCons_.
-Make sure you've installed SCons, and then from the project root, enter:
-
-.. _SCons: http://www.scons.org/
-
-.. code-block:: bash
-
-    scons
-
-This will build static and dynamic libraries for both ``BSON`` and for the
-the driver as a complete package. It's recommended that you build in C99 mode
-with optimizations enabled:
-
-.. code-block:: bash
-
-    scons --c99
-
-Once you're built the libraries, you can compile a program with ``gcc`` like so:
-
-.. code-block:: bash
-
-    gcc --std=c99 -Isrc src/*.c example.c
-
-Replace `example.c` with whichever file you wish to compile.
-
-Platform-specific features
---------------------------
-
-Certain behaviors, such as timeouts, have platform-specific implementations. All
-that interacts with the OS and platform is located in ``platform/net.c``.
-The default ``net.c`` is written to be as platform-generic as possible; it lacks
-support for timeouts, for example.
-However, the file ``platform/linux/net.c`` does implement timeouts
-for Linux-based systems. You can compile the driver with this implementation like so:
-
-.. code-block:: bash
-
-    scons --use-platform=LINUX
-
-You can write your own ``net.c`` to support platform-specific features by implementing
-the interface defined in ``net.h``. Then name the files ``platform/custom/net.h`` and
-``platform/custom.net.c`` and compile thusly:
-
-.. code-block:: bash
-
-    scons --use-platform=CUSTOM
-
 Compile options with custom defines
 ----------------------------------
 
-You can take advantage of special compile options by defining the following
-constants at compile time:
+Before compiling, you should note the following compile options.
 
 For big-endian support, define:
 
@@ -86,6 +35,97 @@ defining one of these:
 - ``MONGO_USE__INT64``  - Define this if ``__int64`` is your compiler's 64bit type (MSVC).
 - ``MONGO_USE_LONG_LONG_INT`` - Define this if ``long long int`` is your compiler's 64-bit type.
 
+Building with Make:
+-------------------
+
+If you're building the driver on UNIX-like platforms, including on OS X,
+then you can build with ``make``.
+
+To compile the driver, run:
+
+.. code-block:: bash
+
+    make
+
+This will build the following libraries:
+
+* libbson.a
+* libbson.so (libbson.dylib)
+* libmongoc.a
+* lobmongoc.so (libmongoc.dylib)
+
+You can install the librares with make as well:
+
+.. code-block:: bash
+
+    make install
+
+And you can run the tests:
+
+.. code-block:: bash
+
+    make test
+
+By default, ``make`` will build the project in ``c99`` mode. If you want to change the
+language standard, set the value of STD. For example, if you want to build using
+the ANSI C standard, set STD to c89:
+
+.. code-block:: bash
+
+    make STD=c89
+
+Once you've built and installed the libraries, you can compile the sample
+with ``gcc`` like so:
+
+.. code-block:: bash
+
+    gcc --std=c99 -I/usr/local/include -L/usr/local/lib -o example docs/example/example.c -lmongoc
+
+If you want to statically link the program, add the ``-static`` option:
+
+.. code-block:: bash
+
+    gcc --std=c99 -static -I/usr/local/include -L/usr/local/lib -o example docs/example/example.c -lmongoc
+
+Then run the program:
+
+.. code-block:: bash
+
+    ./example
+
+Building with SCons:
+--------------------
+
+You may also build the driver using the Python build utility, SCons_.
+This is required if you're building on Windows. Make sure you've
+installed SCons, and then from the project root, enter:
+
+.. _SCons: http://www.scons.org/
+
+.. code-block:: bash
+
+    scons
+
+This will build static and dynamic libraries for both ``BSON`` and for the
+the driver as a complete package. It's recommended that you build in C99 mode
+with optimizations enabled:
+
+.. code-block:: bash
+
+    scons --c99
+
+Once you're built the libraries, you can compile a program with ``gcc`` like so:
+
+.. code-block:: bash
+
+    gcc --std=c99 -static -Isrc -o example docs/example/example.c libmongoc.a
+
+Platform-specific features
+--------------------------
+
+TODO.
+
+
 Dependencies
 ------------
 
@@ -101,7 +141,13 @@ Make sure that you're running mongod on 127.0.0.1 on the default port (27017). T
 test assumes a replica set with at least three nodes running at 127.0.0.1 and starting at port
 30000. Note that the driver does not recognize 'localhost' as a valid host name.
 
-To compile and run the tests:
+With make:
+
+.. code-block:: bash
+
+    make test
+
+To compile and run the tests with SCons:
 
 .. code-block:: bash
 

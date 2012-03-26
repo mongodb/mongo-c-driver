@@ -31,11 +31,11 @@ value by examining the connection's ``err`` field. Continuing:
 .. code-block:: c
 
    if( result != MONGO_OK ) {
-     switch( conn->err )
-       MONGO_CONN_NO_SOCKET: break;  /**< Could not create a socket. */
-       MONGO_CONN_FAIL: break;       /**< An error occured while calling connect(). */
-       MONGO_CONN_ADDR_FAIL: break;  /**< An error occured while calling getaddrinfo(). */
-       MONGO_CONN_NOT_MASTER: break; /**< Warning: connected to a non-master node (read-only). */
+     switch( conn->err ) {
+       case MONGO_CONN_NO_SOCKET: break;  /**< Could not create a socket. */
+       case MONGO_CONN_FAIL: break;       /**< An error occured while calling connect(). */
+       case MONGO_CONN_ADDR_FAIL: break;  /**< An error occured while calling getaddrinfo(). */
+       case MONGO_CONN_NOT_MASTER: break; /**< Warning: connected to a non-master node (read-only). */
    }
 
 These are the most likely error scenarios. For all possible errors,
@@ -120,7 +120,7 @@ versions of this driver will provide a more granular error code.
 
 Note this this will work only if you've compiled with driver with timeout support.
 
-IO Errors and Reconnecting
+I/O Errors and Reconnecting
 --------------------------
 
 As you begin to use connection object to read and write data from MongoDB,
