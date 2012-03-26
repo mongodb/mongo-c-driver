@@ -21,12 +21,59 @@
 #ifndef BSON_H_
 #define BSON_H_
 
-#include "platform.h"
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+
+#ifdef __GNUC__
+    #define MONGO_INLINE static __inline__
+    #define MONGO_EXPORT
+#else
+    #define MONGO_INLINE static
+    #ifdef MONGO_STATIC_BUILD
+        #define MONGO_EXPORT
+    #elif defined(MONGO_DLL_BUILD)
+        #define MONGO_EXPORT __declspec(dllexport)
+    #else
+        #define MONGO_EXPORT __declspec(dllimport)
+    #endif
+#endif
+
+#ifdef __cplusplus
+#define MONGO_EXTERN_C_START extern "C" {
+#define MONGO_EXTERN_C_END }
+#else
+#define MONGO_EXTERN_C_START
+#define MONGO_EXTERN_C_END
+#endif
+
+#if defined(MONGO_HAVE_STDINT) || __STDC_VERSION__ >= 199901L
+#include <stdint.h>
+#elif defined(MONGO_HAVE_UNISTD)
+#include <unistd.h>
+#elif defined(MONGO_USE__INT64)
+typedef __int64 int64_t;
+typedef unsigned __int64 uint64_t;
+#elif defined(MONGO_USE_LONG_LONG_INT)
+typedef long long int int64_t;
+typedef unsigned long long int uint64_t;
+#else
+#error Must compile with c99 or define MONGO_HAVE_STDINT, MONGO_HAVE_UNISTD, MONGO_USE__INT64, or MONGO_USE_LONG_INT.
+#endif
+
+#ifdef MONGO_BIG_ENDIAN
+#define bson_little_endian64(out, in) ( bson_swap_endian64(out, in) )
+#define bson_little_endian32(out, in) ( bson_swap_endian32(out, in) )
+#define bson_big_endian64(out, in) ( memcpy(out, in, 8) )
+#define bson_big_endian32(out, in) ( memcpy(out, in, 4) )
+#else
+#define bson_little_endian64(out, in) ( memcpy(out, in, 8) )
+#define bson_little_endian32(out, in) ( memcpy(out, in, 4) )
+#define bson_big_endian64(out, in) ( bson_swap_endian64(out, in) )
+#define bson_big_endian32(out, in) ( bson_swap_endian32(out, in) )
+#endif
 
 MONGO_EXTERN_C_START
 
@@ -981,6 +1028,9 @@ void bson_builder_error( bson *b );
  *
  */
 MONGO_EXPORT double bson_int64_to_double( int64_t i64 );
+
+MONGO_EXPORT void bson_swap_endian32( void *outp, const void *inp );
+MONGO_EXPORT void bson_swap_endian64( void *outp, const void *inp );
 
 MONGO_EXTERN_C_END
 #endif
