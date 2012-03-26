@@ -1,4 +1,4 @@
-/* net.c */
+/* env_posix.c */
 
 /*    Copyright 2009-2011 10gen Inc.
  *
@@ -15,16 +15,31 @@
  *    limitations under the License.
  */
 
-/* Implementation for Linux version of net.h */
+/* Networking and other niceties for POSIX systems. */
+#include "env.h"
+#include "mongo.h"
 #include <string.h>
 #include <errno.h>
 #include <sys/time.h>
 
-#include "env.h"
-
 #ifndef NI_MAXSERV
 # define NI_MAXSERV 32
 #endif
+
+static void mongo_set_error( mongo *conn, int err, const char *str ) {
+    int errstr_size, str_size;
+
+    errstr_size = sizeof( conn->errstr ) - 1;
+    conn->err = err;
+
+    if( !str ) {
+        str = strerror( errno );
+    }
+    str_size = strlen( str );
+    errstr_size = str_size > errstr_size ? errstr_size : str_size;
+    memcpy( conn->errstr, str, errstr_size );
+    conn->errstr[errstr_size] = '\0';
+}
 
 int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     const char *cbuf = buf;
@@ -33,9 +48,9 @@ int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     while ( len ) {
         int sent = send( conn->sock, cbuf, len, flags );
         if ( sent == -1 ) {
-            if (errno == EPIPE) 
+            if (errno == EPIPE)
                 conn->connected = 0;
-            conn->err = MONGO_IO_ERROR;
+            mongo_set_error( conn, MONGO_IO_ERROR, NULL );
             return MONGO_ERROR;
         }
         cbuf += sent;
@@ -51,6 +66,7 @@ int mongo_read_socket( mongo *conn, void *buf, int len ) {
         int sent = recv( conn->sock, cbuf, len, 0 );
         if ( sent == 0 || sent == -1 ) {
             conn->err = MONGO_IO_ERROR;
+            mongo_set_error( conn, MONGO_IO_ERROR, NULL );
             return MONGO_ERROR;
         }
         cbuf += sent;
@@ -78,7 +94,6 @@ int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
     return MONGO_OK;
 }
 
-#ifdef _MONGO_USE_GETADDRINFO
 int mongo_socket_connect( mongo *conn, const char *host, int port ) {
     char port_str[NI_MAXSERV];
     int status;
@@ -143,39 +158,3 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
 
     return MONGO_OK;
 }
-#else
-int mongo_socket_connect( mongo *conn, const char *host, int port ) {
-    struct sockaddr_in sa;
-    socklen_t addressSize;
-    int flag = 1;
-
-    if ( ( conn->sock = socket( AF_INET, SOCK_STREAM, 0 ) ) < 0 ) {
-        conn->sock = 0;
-        conn->err = MONGO_CONN_NO_SOCKET;
-        return MONGO_ERROR;
-    }
-
-    memset( sa.sin_zero , 0 , sizeof( sa.sin_zero ) );
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons( port );
-    sa.sin_addr.s_addr = inet_addr( host );
-    addressSize = sizeof( sa );
-
-    if ( connect( conn->sock, ( struct sockaddr * )&sa, addressSize ) == -1 ) {
-        mongo_close_socket( conn->sock );
-        conn->connected = 0;
-        conn->sock = 0;
-        conn->err = MONGO_CONN_FAIL;
-        return MONGO_ERROR;
-    }
-
-    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, ( char * ) &flag, sizeof( flag ) );
-
-    if( conn->op_timeout_ms > 0 )
-        mongo_set_socket_op_timeout( conn, conn->op_timeout_ms );
-
-    conn->connected = 1;
-
-    return MONGO_OK;
-}
-#endif

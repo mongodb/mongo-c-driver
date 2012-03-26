@@ -1,4 +1,4 @@
-/* net.c */
+/* env_default.c */
 
 /*    Copyright 2009-2011 10gen Inc.
  *
@@ -15,7 +15,7 @@
  *    limitations under the License.
  */
 
-/* Implementation for generic version of net.h */
+/* Networking and other niceties for all systems. */
 #include "env.h"
 #include <errno.h>
 #include <string.h>

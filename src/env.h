@@ -1,4 +1,4 @@
-/** @file net.h */
+/** @file env.h */
 
 /*    Copyright 2009-2011 10gen Inc.
  *
@@ -16,8 +16,8 @@
  */
 
 /* Header for generic net.h */
-#ifndef MONGO_NET_H_
-#define MONGO_NET_H_
+#ifndef MONGO_ENV_H_
+#define MONGO_ENV_H_
 
 #include "mongo.h"
 

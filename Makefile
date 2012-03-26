@@ -36,7 +36,7 @@ BSON_OBJECTS=src/bson.o src/numbers.o src/encoding.o
 
 # Compile flags
 ALL_DEFINES=$(DEFINES)
-ALL_DEFINES+=-DMONGO_USE_GETADDRINFO
+ALL_DEFINES+=-D_POSIX_SOURCE
 CC:=$(shell sh -c 'type $(CC) >/dev/null 2>/dev/null && echo $(CC) || echo gcc')
 
 # Endianness check
