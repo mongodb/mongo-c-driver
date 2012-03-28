@@ -89,8 +89,13 @@ else:
     NET_LIB = "src/env_default.c"
 
 # ---- Libraries ----
+
+
 if os.sys.platform in ["darwin", "linux2"]:
-    env.Append( CPPFLAGS=" -pedantic -Wall -ggdb -DMONGO_HAVE_STDINT" )
+    if os.sys.platform in ["darwin"]:
+        env.Append( CPPFLAGS=" -pedantic -Wall -ggdb -DMONGO_HAVE_STDINT -DMONGO_OSX_" )
+    else:
+        env.Append( CPPFLAGS=" -pedantic -Wall -ggdb -DMONGO_HAVE_STDINT" )
     env.Append( CPPPATH=["/opt/local/include/"] )
     env.Append( LIBPATH=["/opt/local/lib/"] )
 

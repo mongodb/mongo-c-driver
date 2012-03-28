@@ -28,6 +28,9 @@ int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     const char *cbuf = buf;
 #ifdef _WIN32
     int flags = 0;
+#endif
+#ifdef MONGO_OSX_
+    int flags = 0;
 #else
     int flags = MSG_NOSIGNAL;
 #endif
