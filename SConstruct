@@ -1,6 +1,6 @@
 # -*- mode: python; -*-
 
-VERSION = "0.4"
+VERSION = "0.5"
 
 # --- options ----
 AddOption('--test-server',

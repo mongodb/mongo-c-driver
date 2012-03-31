@@ -1,7 +1,7 @@
 # MongoDB C Driver History
 
-## 0.4.1
-UNRELEASED
+## 0.5
+2012-3-31
 
 * Separate cursor-specific errors into their own enum: mongo_cursor_error_t.
 * Catch $err return on bad queries and store the result in conn->getlasterrorcode
@@ -12,6 +12,8 @@ UNRELEASED
 * Remove bson_copy_basic().
 * bson_copy() will copy finished bson objects only.
 * bson_copy() returns BSON_OK on success and BSON_ERROR on failure.
+* Added a Makefile for easy compile and install on Linux and OS X.
+* Replica set connect fixes.
 
 ## 0.4
 
