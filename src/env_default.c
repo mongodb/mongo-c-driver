@@ -29,7 +29,7 @@ int mongo_write_socket( mongo *conn, const void *buf, int len ) {
 #ifdef _WIN32
     int flags = 0;
 #else
-#ifdef MONGO_OSX_
+#ifdef __APPLE__
     int flags = 0;
 #else
     int flags = MSG_NOSIGNAL;

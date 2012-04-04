@@ -43,11 +43,7 @@ static void mongo_set_error( mongo *conn, int err, const char *str ) {
 
 int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     const char *cbuf = buf;
-#ifdef MONGO_OSX_
-    int flags = 0;
-#else
     int flags = MSG_NOSIGNAL;
-#endif
 
     while ( len ) {
         int sent = send( conn->sock, cbuf, len, flags );
