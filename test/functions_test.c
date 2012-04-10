@@ -1,5 +1,6 @@
 /* functions.c */
 
+#ifndef _WIN32
 #include "test.h"
 #include "mongo.h"
 #include <stdio.h>
@@ -105,3 +106,8 @@ int main() {
 
     return 0;
 }
+#else
+int main() {
+	return 0;
+}
+#endif

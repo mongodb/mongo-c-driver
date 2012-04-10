@@ -2,6 +2,7 @@
 
 #include "test.h"
 #include "mongo.h"
+#include "env.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -145,7 +146,7 @@ int main() {
 
     ASSERT( mongo_check_connection( conn ) == MONGO_OK );
 
-    close( conn->sock );
+    mongo_close_socket( conn->sock );
 
     ASSERT( mongo_check_connection( conn ) == MONGO_ERROR );
 

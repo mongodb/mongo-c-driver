@@ -9,11 +9,7 @@
     }while(0)
 
 #ifdef _WIN32
-#define INIT_SOCKETS_FOR_WINDOWS \
-    do{ \
-        WSADATA out; \
-        WSAStartup(MAKEWORD(2,2), &out); \
-    } while(0)
+#define INIT_SOCKETS_FOR_WINDOWS mongo_init_sockets();
 #else
 #define INIT_SOCKETS_FOR_WINDOWS do {} while(0)
 #endif

@@ -92,7 +92,7 @@ else:
 
 
 if os.sys.platform in ["darwin", "linux2"]:
-    env.Append( CPPFLAGS=" -pedantic -Wall -ggdb -DMONGO_HAVE_STDINT" )
+    env.Append( CPPFLAGS="-pedantic -Wall -ggdb -DMONGO_HAVE_STDINT" )
     env.Append( CPPPATH=["/opt/local/include/"] )
     env.Append( LIBPATH=["/opt/local/lib/"] )
 

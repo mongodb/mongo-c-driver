@@ -183,6 +183,10 @@ MONGO_EXPORT void mongo_cursor_dispose(mongo_cursor* cursor);
 MONGO_EXPORT int  mongo_get_server_err(mongo* conn);
 MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
 
+/** Initialize sockets for Windows.
+ */
+MONGO_EXPORT void mongo_init_sockets();
+
 /**
  * Initialize a new mongo connection object. You must initialize each mongo
  * object using this function.
@@ -193,7 +197,7 @@ MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
  *  @param conn a mongo connection object allocated on the stack
  *      or heap.
  */
-void mongo_init( mongo *conn );
+MONGO_EXPORT void mongo_init( mongo *conn );
 
 /**
  * Connect to a single MongoDB server.
@@ -384,7 +388,7 @@ MONGO_EXPORT mongo_cursor *mongo_find( mongo *conn, const char *ns, const bson *
  * @param ns the namespace, represented as the the database
  *     name and collection name separated by a dot. e.g., "test.users"
  */
-void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns );
+MONGO_EXPORT void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns );
 
 /**
  * Set the bson object specifying this cursor's query spec. If
@@ -397,7 +401,7 @@ void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns );
  *   $query, $orderby, $hint, and/or $explain. See
  *   http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol for details.
  */
-void mongo_cursor_set_query( mongo_cursor *cursor, const bson *query );
+MONGO_EXPORT void mongo_cursor_set_query( mongo_cursor *cursor, const bson *query );
 
 /**
  * Set the fields to return for this cursor. If you want to return
@@ -407,7 +411,7 @@ void mongo_cursor_set_query( mongo_cursor *cursor, const bson *query );
  * @param fields a bson object representing the fields to return.
  *   See http://www.mongodb.org/display/DOCS/Retrieving+a+Subset+of+Fields.
  */
-void mongo_cursor_set_fields( mongo_cursor *cursor, const bson *fields );
+MONGO_EXPORT void mongo_cursor_set_fields( mongo_cursor *cursor, const bson *fields );
 
 /**
  * Set the number of documents to skip.
@@ -415,7 +419,7 @@ void mongo_cursor_set_fields( mongo_cursor *cursor, const bson *fields );
  * @param cursor
  * @param skip
  */
-void mongo_cursor_set_skip( mongo_cursor *cursor, int skip );
+MONGO_EXPORT void mongo_cursor_set_skip( mongo_cursor *cursor, int skip );
 
 /**
  * Set the number of documents to return.
@@ -423,7 +427,7 @@ void mongo_cursor_set_skip( mongo_cursor *cursor, int skip );
  * @param cursor
  * @param limit
  */
-void mongo_cursor_set_limit( mongo_cursor *cursor, int limit );
+MONGO_EXPORT void mongo_cursor_set_limit( mongo_cursor *cursor, int limit );
 
 /**
  * Set any of the available query options (e.g., MONGO_TAILABLE).
@@ -432,7 +436,7 @@ void mongo_cursor_set_limit( mongo_cursor *cursor, int limit );
  * @param options a bitfield storing query options. See
  *   mongo_cursor_bitfield_t for available constants.
  */
-void mongo_cursor_set_options( mongo_cursor *cursor, int options );
+MONGO_EXPORT void mongo_cursor_set_options( mongo_cursor *cursor, int options );
 
 /**
  * Return the current BSON object data as a const char*. This is useful
@@ -440,7 +444,7 @@ void mongo_cursor_set_options( mongo_cursor *cursor, int options );
  *
  * @param cursor
  */
-const char *mongo_cursor_data( mongo_cursor *cursor );
+MONGO_EXPORT const char *mongo_cursor_data( mongo_cursor *cursor );
 
 /**
  * Return the current BSON object data as a const char*. This is useful
@@ -558,7 +562,7 @@ MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *com
  * @return MONGO_OK or an error code.
  *
  */
-int mongo_simple_int_command( mongo *conn, const char *db,
+MONGO_EXPORT int mongo_simple_int_command( mongo *conn, const char *db,
                               const char *cmd, int arg, bson *out );
 
 /**
@@ -573,7 +577,7 @@ int mongo_simple_int_command( mongo *conn, const char *db,
  * @return true if the command ran without error.
  *
  */
-int mongo_simple_str_command( mongo *conn, const char *db, const char *cmd, const char *arg, bson *out );
+MONGO_EXPORT int mongo_simple_str_command( mongo *conn, const char *db, const char *cmd, const char *arg, bson *out );
 
 /**
  * Drop a database.
@@ -662,7 +666,7 @@ MONGO_EXPORT int mongo_cmd_get_prev_error( mongo *conn, const char *db, bson *ou
  * @param conn a mongo object.
  * @param db the name of the database.
  */
-void mongo_cmd_reset_error( mongo *conn, const char *db );
+MONGO_EXPORT void mongo_cmd_reset_error( mongo *conn, const char *db );
 
 
 MONGO_EXTERN_C_END

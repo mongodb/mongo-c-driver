@@ -6,17 +6,16 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
-#include <unistd.h>
 
 #define LARGE 3*1024*1024
 #define UPPER 2000*1024
 #define LOWER 1024*128
 #define DELTA 1024*128
 
-void fill_buffer_randomly( char *data, uint64_t length ) {
-    uint64_t i;
+void fill_buffer_randomly( char *data, int64_t length ) {
+    int64_t i;
     int random;
-    char *letters = "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char *letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     int nletters = strlen( letters )+1;
 
     for ( i = 0; i < length; i++ ) {
@@ -35,24 +34,25 @@ static void digest2hex( mongo_md5_byte_t digest[16], char hex_digest[33] ) {
     hex_digest[32] = '\0';
 }
 
-void test_gridfile( gridfs *gfs, char *data_before, uint64_t length, char *filename, char *content_type ) {
+void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filename, char *content_type ) {
     gridfile gfile[1];
-    FILE *fd;
+    FILE *stream;
     mongo_md5_state_t pms[1];
     mongo_md5_byte_t digest[16];
     char hex_digest[33];
-    uint64_t i = length;
+    int64_t i = length;
     int n;
     char *data_after = bson_malloc( LARGE );
+    const char* st = "hello";
 
     gridfs_find_filename( gfs, filename, gfile );
     ASSERT( gridfile_exists( gfile ) );
 
-    fd = fopen( "output", "w+" );
-    gridfile_write_file( gfile, fd );
-    fseek( fd, 0, SEEK_SET );
-    ASSERT( fread( data_after, length, sizeof( char ), fd ) );
-    fclose( fd );
+    stream = fopen( "output", "w" );
+    gridfile_write_file( gfile, stream );
+    fseek( stream, 0, SEEK_SET );
+    ASSERT( fread( data_after, length, sizeof( char ), stream ) );
+    fclose( stream );
     ASSERT( strncmp( data_before, data_after, length ) == 0 );
 
     gridfile_read( gfile, length, data_after );
@@ -93,7 +93,7 @@ void test_basic() {
     mongo conn[1];
     gridfs gfs[1];
     char *data_before = bson_malloc( UPPER );
-    uint64_t i;
+    int64_t i;
     FILE *fd;
 
     srand( time( NULL ) );
@@ -154,8 +154,8 @@ void test_streaming() {
         exit( 1 );
     }
 
-    fill_buffer_randomly( small, ( uint64_t )LOWER );
-    fill_buffer_randomly( buf, ( uint64_t )LARGE );
+    fill_buffer_randomly( small, ( int64_t )LOWER );
+    fill_buffer_randomly( buf, ( int64_t )LARGE );
 
     gridfs_init( conn, "test", "fs", gfs );
 
@@ -184,7 +184,7 @@ void test_large() {
     FILE *fd;
     int i, n;
     char *buffer = bson_malloc( LARGE );
-    uint64_t filesize = ( uint64_t )1024 * ( uint64_t )LARGE;
+    int64_t filesize = ( int64_t )1024 * ( int64_t )LARGE;
 
     srand( time( NULL ) );
 
@@ -198,7 +198,7 @@ void test_large() {
     gridfs_init( conn, "test", "fs", gfs );
 
     /* Create a very large file */
-    fill_buffer_randomly( buffer, ( uint64_t )LARGE );
+    fill_buffer_randomly( buffer, ( int64_t )LARGE );
     fd = fopen( "bigfile", "w" );
     for( i=0; i<1024; i++ ) {
         fwrite( buffer, 1, LARGE, fd );
@@ -224,6 +224,7 @@ void test_large() {
     gridfile_writer_done( gfile );
 
     gridfs_find_filename( gfs, "bigfile-stream", gfile );
+    printf("Check 3\n");
 
     ASSERT( strcmp( gridfile_get_filename( gfile ), "bigfile-stream" ) == 0 );
     ASSERT( gridfile_get_contentlength( gfile ) ==  filesize );
@@ -234,8 +235,10 @@ void test_large() {
 }
 
 int main( void ) {
+#ifndef _WIN32
     test_basic();
     test_streaming();
+#endif
 
     /* Normally not necessary to run test_large(), as it
      * deals with very large (3GB) files and is therefore slow.

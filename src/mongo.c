@@ -234,7 +234,11 @@ static int mongo_check_is_master( mongo *conn ) {
     }
 }
 
-void mongo_init( mongo *conn ) {
+MONGO_EXPORT void mongo_init_sockets() {
+    mongo_env_sock_init();
+}
+
+MONGO_EXPORT void mongo_init( mongo *conn ) {
     memset( conn, 0, sizeof( mongo ) );
 }
 
@@ -860,7 +864,7 @@ MONGO_EXPORT int mongo_find_one( mongo *conn, const char *ns, const bson *query,
     }
 }
 
-void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns ) {
+MONGO_EXPORT void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns ) {
     memset( cursor, 0, sizeof( mongo_cursor ) );
     cursor->conn = conn;
     cursor->ns = ( const char * )bson_malloc( strlen( ns ) + 1 );
@@ -868,27 +872,27 @@ void mongo_cursor_init( mongo_cursor *cursor, mongo *conn, const char *ns ) {
     cursor->current.data = NULL;
 }
 
-void mongo_cursor_set_query( mongo_cursor *cursor, const bson *query ) {
+MONGO_EXPORT void mongo_cursor_set_query( mongo_cursor *cursor, const bson *query ) {
     cursor->query = query;
 }
 
-void mongo_cursor_set_fields( mongo_cursor *cursor, const bson *fields ) {
+MONGO_EXPORT void mongo_cursor_set_fields( mongo_cursor *cursor, const bson *fields ) {
     cursor->fields = fields;
 }
 
-void mongo_cursor_set_skip( mongo_cursor *cursor, int skip ) {
+MONGO_EXPORT void mongo_cursor_set_skip( mongo_cursor *cursor, int skip ) {
     cursor->skip = skip;
 }
 
-void mongo_cursor_set_limit( mongo_cursor *cursor, int limit ) {
+MONGO_EXPORT void mongo_cursor_set_limit( mongo_cursor *cursor, int limit ) {
     cursor->limit = limit;
 }
 
-void mongo_cursor_set_options( mongo_cursor *cursor, int options ) {
+MONGO_EXPORT void mongo_cursor_set_options( mongo_cursor *cursor, int options ) {
     cursor->options = options;
 }
 
-const char *mongo_cursor_data( mongo_cursor *cursor ) {
+MONGO_EXPORT const char *mongo_cursor_data( mongo_cursor *cursor ) {
     return cursor->current.data;
 }
 
@@ -1089,7 +1093,7 @@ MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *com
     }
 }
 
-int mongo_simple_int_command( mongo *conn, const char *db,
+MONGO_EXPORT int mongo_simple_int_command( mongo *conn, const char *db,
                               const char *cmdstr, int arg, bson *realout ) {
 
     bson out = {NULL, 0};
@@ -1112,7 +1116,7 @@ int mongo_simple_int_command( mongo *conn, const char *db,
     return result;
 }
 
-int mongo_simple_str_command( mongo *conn, const char *db,
+MONGO_EXPORT int mongo_simple_str_command( mongo *conn, const char *db,
                               const char *cmdstr, const char *arg, bson *realout ) {
 
     bson out = {NULL, 0};
@@ -1143,7 +1147,7 @@ MONGO_EXPORT int mongo_cmd_drop_collection( mongo *conn, const char *db, const c
     return mongo_simple_str_command( conn, db, "drop", collection, out );
 }
 
-void mongo_cmd_reset_error( mongo *conn, const char *db ) {
+MONGO_EXPORT void mongo_cmd_reset_error( mongo *conn, const char *db ) {
     mongo_simple_int_command( conn, db, "reseterror", 1, NULL );
 }
 
