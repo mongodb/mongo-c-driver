@@ -235,6 +235,8 @@ void test_large() {
 }
 
 int main( void ) {
+/* See https://jira.mongodb.org/browse/CDRIVER-126
+ * on why we exclude this test from running on WIN32 */
 #ifndef _WIN32
     test_basic();
     test_streaming();
