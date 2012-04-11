@@ -176,7 +176,7 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
 
 #endif
 
-MONGO_EXPORT int mongo_env_sock_init() {
+MONGO_EXPORT int mongo_env_sock_init( void ) {
 
     WSADATA wsaData;
     WORD wVers;

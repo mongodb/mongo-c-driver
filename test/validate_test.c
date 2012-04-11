@@ -109,7 +109,7 @@ int main() {
     for ( j=0; j < BATCH_SIZE; j++ )
         make_small_invalid( &bs[j], i );
 
-    result = mongo_insert_batch( conn, ns, bp, BATCH_SIZE );
+    result = mongo_insert_batch( conn, ns, (const bson **)bp, BATCH_SIZE );
     ASSERT( result == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_INVALID );
 

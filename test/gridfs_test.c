@@ -48,7 +48,7 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     gridfs_find_filename( gfs, filename, gfile );
     ASSERT( gridfile_exists( gfile ) );
 
-    stream = fopen( "output", "w" );
+    stream = fopen( "output", "w+" );
     gridfile_write_file( gfile, stream );
     fseek( stream, 0, SEEK_SET );
     ASSERT( fread( data_after, length, sizeof( char ), stream ) );
@@ -224,7 +224,6 @@ void test_large() {
     gridfile_writer_done( gfile );
 
     gridfs_find_filename( gfs, "bigfile-stream", gfile );
-    printf("Check 3\n");
 
     ASSERT( strcmp( gridfile_get_filename( gfile ), "bigfile-stream" ) == 0 );
     ASSERT( gridfile_get_contentlength( gfile ) ==  filesize );

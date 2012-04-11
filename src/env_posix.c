@@ -42,6 +42,10 @@ int mongo_close_socket( int socket ) {
     return close( socket );
 }
 
+int mongo_env_sock_init( void ) {
+    return 0;
+}
+
 static void mongo_set_error( mongo *conn, int err, const char *str ) {
     int errstr_size, str_size;
 
@@ -59,7 +63,11 @@ static void mongo_set_error( mongo *conn, int err, const char *str ) {
 
 int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     const char *cbuf = buf;
+#ifdef __APPLE__
+    int flags = 0;
+#else
     int flags = MSG_NOSIGNAL;
+#endif
 
     while ( len ) {
         int sent = send( conn->sock, cbuf, len, flags );
