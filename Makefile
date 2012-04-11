@@ -24,6 +24,9 @@ BSON_MINOR=$(MONGO_MINOR)
 MONGO_LIBNAME=libmongoc
 BSON_LIBNAME=libbson
 
+# Standard or posix env.
+ENV?=posix
+
 # TODO: add replica set test, cpp test, platform tests, json_test
 TESTS=test/auth_test test/bson_test test/bson_subobject_test test/count_delete_test \
   test/cursors_test test/endian_swap_test test/errors_test test/examples_test \
@@ -31,7 +34,12 @@ TESTS=test/auth_test test/bson_test test/bson_subobject_test test/count_delete_t
   test/oid_test test/resize_test test/simple_test test/sizes_test test/update_test \
   test/validate_test
 MONGO_OBJECTS=src/bson.o src/encoding.o src/gridfs.o src/md5.o src/mongo.o \
- src/numbers.o src/env_posix.o
+ src/numbers.o
+ifeq ($(ENV),posix)
+    MONGO_OBJECTS+=src/env_posix.c
+else
+    MONGO_OBJECTS+=src/env_standard.c
+endif
 BSON_OBJECTS=src/bson.o src/numbers.o src/encoding.o
 
 # Compile flags

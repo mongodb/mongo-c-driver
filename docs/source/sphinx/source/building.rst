@@ -2,11 +2,11 @@ Building the MongoDB C Driver
 =============================
 
 First checkout the version you want to build. *Always build from a particular tag, since HEAD may be
-a work in progress.* For example, to build version 0.4, run:
+a work in progress.* For example, to build version 0.5, run:
 
 .. code-block:: bash
 
-    git checkout v0.4
+    git checkout v0.5
 
 Then follow the build steps below.
 
@@ -38,8 +38,8 @@ defining one of these:
 Building with Make:
 -------------------
 
-If you're building the driver on UNIX-like platforms, including on OS X,
-then you can build with ``make``.
+If you're building the driver on posix-compliant platforms, including on OS X
+and Linux, then you can build with ``make``.
 
 To compile the driver, run:
 
@@ -54,7 +54,7 @@ This will build the following libraries:
 * libmongoc.a
 * lobmongoc.so (libmongoc.dylib)
 
-You can install the librares with make as well:
+You can install the libraries with make as well:
 
 .. code-block:: bash
 
@@ -85,13 +85,13 @@ with ``gcc`` like so:
 
 .. code-block:: bash
 
-    gcc --std=c99 -I/usr/local/include -L/usr/local/lib -o example docs/example/example.c -lmongoc
+    gcc --std=c99 -I/usr/local/include -L/usr/local/lib -o example docs/examples/example.c -lmongoc
 
 If you want to statically link the program, add the ``-static`` option:
 
 .. code-block:: bash
 
-    gcc --std=c99 -static -I/usr/local/include -L/usr/local/lib -o example docs/example/example.c -lmongoc
+    gcc --std=c99 -static -I/usr/local/include -L/usr/local/lib -o example docs/examples/example.c -lmongoc
 
 Then run the program:
 
@@ -120,17 +120,56 @@ with optimizations enabled:
 
     scons --c99
 
-Once you're built the libraries, you can compile a program with ``gcc`` like so:
+Once you've built the libraries, you can compile a program with ``gcc`` like so:
 
 .. code-block:: bash
 
     gcc --std=c99 -static -Isrc -o example docs/example/example.c libmongoc.a
 
+On Posix systems, you may also install the libraries with scons:
+
+.. code-block:: bash
+
+    scons install
+
+To build the docs:
+
+.. code-block:: bash
+
+    scons docs
+
 Platform-specific features
 --------------------------
 
-TODO.
+The original goal of the MongoDB C driver was to provide a very basic library
+capable of being embedded anywhere. This goal is now evolving somewhat given
+the increased use of the driver. In particular, it now makes sense to provide
+platform-specific features, such as socket timeouts and DNS resolution, and to
+return platform-specific error codes.
 
+To that end, we've organized all platform-specific code in the following files:
+
+* ``env_standard.c``: a standard, platform-agnostic implementation.
+* ``env_posix.c``: an implementation geared for Posix-compliant systems (Linux, OS X).
+* ``env_win32.c``: a Windows implementation.
+
+Each of these implements the interface defined in ``env.h``.
+
+When building with ``make``, we use ``env_posix.c``. When building with SCons_, we
+use ``env_posix.c`` or ``env_win32.c``, depending on the platform.
+
+If you want to compile with the generic, platform implementation, you have to do so
+explicity. In SCons_:
+
+.. code-block:: bash
+
+    scons --standard-env
+
+Using ``make``:
+
+.. code-block:: bash
+
+    make ENV=standard
 
 Dependencies
 ------------
