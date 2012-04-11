@@ -29,7 +29,7 @@ AddOption('--m32',
           dest='use_m32',
           default=False,
           action='store_true',
-          help='Compile with m32 (recommended, actually required, for 32 bit applications on 64 bit machines)')
+          help='Compile with m32 (required for 32 bit applications on 64 bit machines)')
 
 AddOption('--addrinfo',
           dest='use_addrinfo',
@@ -43,17 +43,11 @@ AddOption('--d',
           action='store_false',
           help='disable optimizations')
 
-AddOption('--use-platform',
-          dest='compile_platform',
-          default='GENERIC',
-          type='string',
-          nargs=1,
-          action='store',
-          help='Compile for a specific platform to take advantage '
-               ' of particular system features. For the moment, this include timeouts only.'
-               ' Current options include LINUX, '
-               ' GENERIC, and CUSTOM. If you specific CUSTOM, you must place a'
-               ' system-specific implementation of net.h and net.c in src/platform/custom/')
+AddOption('--standard-env',
+          dest='standard_env',
+          default=False,
+          action='store_true',
+          help='Set this option if you want to use basic, platform-agnostic networking.')
 
 import os, sys
 
@@ -61,7 +55,7 @@ if GetOption('use_m32'):
     msvs_arch = "x86"
 else:
     msvs_arch = "amd64"
-print msvs_arch
+print "Compiling for " + msvs_arch
 env = Environment(ENV=os.environ, MSVS_ARCH=msvs_arch, TARGET_ARCH=msvs_arch)
 
 #  ---- Docs ----
@@ -76,21 +70,18 @@ env.Alias("docs", [], [build_docs])
 env.AlwaysBuild("docs")
 
 # ---- Platforms ----
-PLATFORM_TEST_DIR = None
-if "LINUX" == GetOption('compile_platform'):
-    env.Append( CPPFLAGS=" -D_MONGO_USE_LINUX_SYSTEM -D_POSIX_SOURCE" )
+PLATFORM_TESTS = []
+if GetOption('standard_env'):
+    NET_LIB = "src/env_standard.c"
+elif os.sys.platform in ["darwin", "linux2"]:
     NET_LIB = "src/env_posix.c"
-    PLATFORM_TEST_DIR = "test/platform/linux/"
     PLATFORM_TESTS = [ "timeouts" ]
-elif "CUSTOM" == GetOption('compile_platform'):
-    env.Append( CPPFLAGS=" -D_MONGO_USE_CUSTOM_SYSTEM" )
-    NET_LIB = "src/env_default.c"
+elif 'win32' == os.sys.platform:
+    NET_LIB = "src/env_win32.c"
 else:
-    NET_LIB = "src/env_default.c"
+    NET_LIB = "src/env_standard.c"
 
 # ---- Libraries ----
-
-
 if os.sys.platform in ["darwin", "linux2"]:
     env.Append( CPPFLAGS="-pedantic -Wall -ggdb -DMONGO_HAVE_STDINT" )
     env.Append( CPPPATH=["/opt/local/include/"] )
@@ -209,10 +200,6 @@ tests = Split("sizes resize endian_swap bson bson_subobject simple update errors
 
 # Run standard tests
 run_tests("test", tests, testEnv, "test")
-
-# Run platform tests
-if not PLATFORM_TEST_DIR is None:
-    run_tests( PLATFORM_TEST_DIR, PLATFORM_TESTS, testEnv, "test" )
 
 if have_libjson:
     tests.append('json')

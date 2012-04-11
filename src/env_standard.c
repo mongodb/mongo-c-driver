@@ -1,4 +1,4 @@
-/* env_posix.c */
+/* env_default.c */
 
 /*    Copyright 2009-2011 10gen Inc.
  *
@@ -15,12 +15,21 @@
  *    limitations under the License.
  */
 
-/* Networking and other niceties for POSIX systems. */
+/* Vanilla networking designed to work on all systems. */
 #include "env.h"
-#include "mongo.h"
-#include <string.h>
 #include <errno.h>
-#include <sys/time.h>
+#include <string.h>
+
+#ifdef _WIN32
+    #ifdef _MSC_VER
+        #include <ws2tcpip.h>  // send,recv,socklen_t etc
+        #include <wspiapi.h>   // addrinfo
+    #else
+        #include <windows.h>
+        #include <winsock.h>
+        typedef int socklen_t;
+    #endif
+#else
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -28,7 +37,11 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <fcntl.h>
+#endif
+
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #if defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE) || _POSIX_C_SOURCE >= 1
 #define _MONGO_USE_GETADDRINFO
@@ -39,34 +52,31 @@
 #endif
 
 int mongo_close_socket( int socket ) {
+#ifdef _WIN32
+    return closesocket( socket );
+#else
     return close( socket );
-}
-
-static void mongo_set_error( mongo *conn, int err, const char *str ) {
-    int errstr_size, str_size;
-
-    errstr_size = sizeof( conn->errstr ) - 1;
-    conn->err = err;
-
-    if( !str ) {
-        str = strerror( errno );
-    }
-    str_size = strlen( str );
-    errstr_size = str_size > errstr_size ? errstr_size : str_size;
-    memcpy( conn->errstr, str, errstr_size );
-    conn->errstr[errstr_size] = '\0';
+#endif
 }
 
 int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     const char *cbuf = buf;
+#ifdef _WIN32
+    int flags = 0;
+#else
+#ifdef __APPLE__
+    int flags = 0;
+#else
     int flags = MSG_NOSIGNAL;
+#endif
+#endif
 
     while ( len ) {
         int sent = send( conn->sock, cbuf, len, flags );
         if ( sent == -1 ) {
-            if (errno == EPIPE)
+            if (errno == EPIPE) 
                 conn->connected = 0;
-            mongo_set_error( conn, MONGO_IO_ERROR, NULL );
+            conn->err = MONGO_IO_ERROR;
             return MONGO_ERROR;
         }
         cbuf += sent;
@@ -82,7 +92,6 @@ int mongo_read_socket( mongo *conn, void *buf, int len ) {
         int sent = recv( conn->sock, cbuf, len, 0 );
         if ( sent == 0 || sent == -1 ) {
             conn->err = MONGO_IO_ERROR;
-            mongo_set_error( conn, MONGO_IO_ERROR, NULL );
             return MONGO_ERROR;
         }
         cbuf += sent;
@@ -92,24 +101,12 @@ int mongo_read_socket( mongo *conn, void *buf, int len ) {
     return MONGO_OK;
 }
 
+/* This is a no-op in the generic implementation. */
 int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
-    struct timeval tv;
-    tv.tv_sec = millis / 1000;
-    tv.tv_usec = ( millis % 1000 ) * 1000;
-
-    if ( setsockopt( conn->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof( tv ) ) == -1 ) {
-        conn->err = MONGO_IO_ERROR;
-        return MONGO_ERROR;
-    }
-
-    if ( setsockopt( conn->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof( tv ) ) == -1 ) {
-        conn->err = MONGO_IO_ERROR;
-        return MONGO_ERROR;
-    }
-
     return MONGO_OK;
 }
 
+#ifdef _MONGO_USE_GETADDRINFO
 int mongo_socket_connect( mongo *conn, const char *host, int port ) {
     char port_str[NI_MAXSERV];
     int status;
@@ -120,7 +117,6 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
 
     conn->sock = 0;
     conn->connected = 0;
-    sprintf(port_str,"%d",port);
 
     bson_sprintf( port_str, "%d", port );
 
@@ -173,4 +169,74 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
     }
 
     return MONGO_OK;
+}
+#else
+int mongo_socket_connect( mongo *conn, const char *host, int port ) {
+    struct sockaddr_in sa;
+    socklen_t addressSize;
+    int flag = 1;
+
+    if ( ( conn->sock = socket( AF_INET, SOCK_STREAM, 0 ) ) < 0 ) {
+        conn->sock = 0;
+        conn->err = MONGO_CONN_NO_SOCKET;
+        return MONGO_ERROR;
+    }
+
+    memset( sa.sin_zero , 0 , sizeof( sa.sin_zero ) );
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons( port );
+    sa.sin_addr.s_addr = inet_addr( host );
+    addressSize = sizeof( sa );
+
+    if ( connect( conn->sock, ( struct sockaddr * )&sa, addressSize ) == -1 ) {
+        mongo_close_socket( conn->sock );
+        conn->connected = 0;
+        conn->sock = 0;
+        conn->err = MONGO_CONN_FAIL;
+        return MONGO_ERROR;
+    }
+
+    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, ( char * ) &flag, sizeof( flag ) );
+
+    if( conn->op_timeout_ms > 0 )
+        mongo_set_socket_op_timeout( conn, conn->op_timeout_ms );
+
+    conn->connected = 1;
+
+    return MONGO_OK;
+}
+
+#endif
+
+MONGO_EXPORT int mongo_env_sock_init() {
+
+#if defined(_WIN32)
+    WSADATA wsaData;
+    WORD wVers;
+#elif defined(SIGPIPE)
+    struct sigaction act;
+#endif
+
+    static int called_once;
+    static int retval;
+    if (called_once) return retval;
+    called_once = 1;
+
+#if defined(_WIN32)
+    wVers = MAKEWORD(1, 1);
+    retval = (WSAStartup(wVers, &wsaData) == 0);
+#elif defined(MACINTOSH)
+    GUSISetup(GUSIwithInternetSockets);
+    retval = 1;
+#elif defined(SIGPIPE)
+    retval = 1;
+    if (sigaction(SIGPIPE, (struct sigaction *)NULL, &act) < 0)
+        retval = 0;
+    else if (act.sa_handler == SIG_DFL) {
+        act.sa_handler = SIG_IGN;
+        if (sigaction(SIGPIPE, &act, (struct sigaction *)NULL) < 0)
+            retval = 0;
+    }
+#endif
+    return retval;
 }

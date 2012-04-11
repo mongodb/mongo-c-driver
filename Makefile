@@ -120,7 +120,7 @@ all: $(MONGO_DYLIBNAME) $(BSON_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_STLIBNAME)
 # Dependency targets. Run 'make deps' to generate these.
 bson.o: src/bson.c src/bson.h src/encoding.h
 encoding.o: src/encoding.c src/bson.h src/encoding.h
-env_default.o: src/env_default.c src/env.h src/mongo.h src/bson.h
+env_standard.o: src/env_standard.c src/env.h src/mongo.h src/bson.h
 env_posix.o: src/env_posix.c src/env.h src/mongo.h src/bson.h
 gridfs.o: src/gridfs.c src/gridfs.h src/mongo.h src/bson.h
 md5.o: src/md5.c src/md5.h

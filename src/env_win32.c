@@ -15,32 +15,35 @@
  *    limitations under the License.
  */
 
-/* Networking and other niceties for all systems. */
+/* Networking and other niceties for WIN32. */
 #include "env.h"
-#include <errno.h>
 #include <string.h>
+
+#ifdef _MSC_VER
+#include <ws2tcpip.h>  // send,recv,socklen_t etc
+#include <wspiapi.h>   // addrinfo
+#else
+#include <windows.h>
+#include <winsock.h>
+typedef int socklen_t;
+#endif
 
 #ifndef NI_MAXSERV
 # define NI_MAXSERV 32
 #endif
 
+int mongo_close_socket( int socket ) {
+    return closesocket( socket );
+}
+
 int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     const char *cbuf = buf;
-#ifdef _WIN32
     int flags = 0;
-#else
-#ifdef __APPLE__
-    int flags = 0;
-#else
-    int flags = MSG_NOSIGNAL;
-#endif
-#endif
 
     while ( len ) {
         int sent = send( conn->sock, cbuf, len, flags );
         if ( sent == -1 ) {
-            if (errno == EPIPE) 
-                conn->connected = 0;
+	    conn->connected = 0;
             conn->err = MONGO_IO_ERROR;
             return MONGO_ERROR;
         }
@@ -175,33 +178,16 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
 
 MONGO_EXPORT int mongo_env_sock_init() {
 
-#if defined(_WIN32)
     WSADATA wsaData;
     WORD wVers;
-#elif defined(SIGPIPE)
-    struct sigaction act;
-#endif
-
     static int called_once;
     static int retval;
-    if (called_once) return retval;
-    called_once = 1;
 
-#if defined(_WIN32)
+    if (called_once) return retval;
+
+    called_once = 1;
     wVers = MAKEWORD(1, 1);
     retval = (WSAStartup(wVers, &wsaData) == 0);
-#elif defined(MACINTOSH)
-    GUSISetup(GUSIwithInternetSockets);
-    retval = 1;
-#elif defined(SIGPIPE)
-    retval = 1;
-    if (sigaction(SIGPIPE, (struct sigaction *)NULL, &act) < 0)
-        retval = 0;
-    else if (act.sa_handler == SIG_DFL) {
-        act.sa_handler = SIG_IGN;
-        if (sigaction(SIGPIPE, &act, (struct sigaction *)NULL) < 0)
-            retval = 0;
-    }
-#endif
+
     return retval;
 }
