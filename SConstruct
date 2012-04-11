@@ -75,7 +75,7 @@ if GetOption('standard_env'):
     NET_LIB = "src/env_standard.c"
 elif os.sys.platform in ["darwin", "linux2"]:
     NET_LIB = "src/env_posix.c"
-    PLATFORM_TESTS = [ "timeouts" ]
+    PLATFORM_TESTS = [ "env_posix" ]
 elif 'win32' == os.sys.platform:
     NET_LIB = "src/env_win32.c"
 else:
@@ -199,6 +199,7 @@ def run_tests( root, tests, env, alias ):
 
 tests = Split("sizes resize endian_swap bson bson_subobject simple update errors "
 "count_delete auth gridfs validate examples helpers oid functions cursors")
+tests += PLATFORM_TESTS
 
 # Run standard tests
 run_tests("test", tests, testEnv, "test")

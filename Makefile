@@ -35,12 +35,14 @@ TESTS=test/auth_test test/bson_test test/bson_subobject_test test/count_delete_t
   test/validate_test
 MONGO_OBJECTS=src/bson.o src/encoding.o src/gridfs.o src/md5.o src/mongo.o \
  src/numbers.o
-ifeq ($(ENV),posix)
-    MONGO_OBJECTS+=src/env_posix.c
-else
-    MONGO_OBJECTS+=src/env_standard.c
-endif
 BSON_OBJECTS=src/bson.o src/numbers.o src/encoding.o
+
+ifeq ($(ENV),posix)
+    TESTS+=test/env_posix_test
+    MONGO_OBJECTS+=src/env_posix.o
+else
+    MONGO_OBJECTS+=src/env_standard.o
+endif
 
 # Compile flags
 ALL_DEFINES=$(DEFINES)
@@ -175,7 +177,7 @@ deps:
 	$(MAKE) CFLAGS="-m32" LDFLAGS="-pg"
 
 %_test: %_test.c $(MONGO_STLIBNAME)
-	$(CC) -o $@ -Isrc $(TEST_DEFINES) $(ALL_LDFLAGS) $< $(MONGO_STLIBNAME)
+	$(CC) -o $@ -L. -Isrc $(TEST_DEFINES) $(ALL_LDFLAGS) $< $(MONGO_STLIBNAME)
 
 %.o: %.c
 	$(CC) -o $@ -c $(ALL_CFLAGS) $<

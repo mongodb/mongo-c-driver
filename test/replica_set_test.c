@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-/*#include <unistd.h>
- */
 
 #ifndef SEED_START_PORT
 #define SEED_START_PORT 30000
