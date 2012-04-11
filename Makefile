@@ -45,8 +45,6 @@ ifeq ($(endian),big)
     ALL_DEFINES+=-DMONGO_BIG_ENDIAN
 endif
 
-# Posix settings
-
 # Int64 type check
 int64:=$(shell ./check_int64.sh $(CC) stdint.h && echo stdint)
 ifeq ($(int64),stdint)
@@ -66,7 +64,8 @@ OPTIMIZATION?=-O3
 WARNINGS?=-Wall
 DEBUG?=-ggdb
 STD?=c99
-ALL_CFLAGS=-std=$(STD) $(CFLAGS) $(OPTIMIZATION) $(WARNINGS) $(DEBUG) $(ALL_DEFINES)
+PEDANTIC?=-pedantic
+ALL_CFLAGS=-std=$(STD) $(PEDANTIC) $(CFLAGS) $(OPTIMIZATION) $(WARNINGS) $(DEBUG) $(ALL_DEFINES)
 ALL_LDFLAGS=$(LDFLAGS)
 
 # Shared libraries

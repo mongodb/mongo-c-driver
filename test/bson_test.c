@@ -234,6 +234,8 @@ int test_bson_generic() {
    ASSERT( !bson_iterator_more( &it ) );
 
    bson_destroy( b );
+
+   return 0;
 }
 
 int test_bson_iterator() {

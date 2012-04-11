@@ -633,7 +633,7 @@ MONGO_EXPORT mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, int 
 }
 
 gridfs_offset gridfile_write_file( gridfile *gfile, FILE *stream ) {
-    int i,j;
+    int i;
     size_t len;
     bson chunk;
     bson_iterator it;

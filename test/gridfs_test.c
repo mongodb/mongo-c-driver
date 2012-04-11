@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#include <unistd.h>
 
 #define LARGE 3*1024*1024
 #define UPPER 2000*1024
@@ -43,7 +44,6 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     int64_t i = length;
     int n;
     char *data_after = bson_malloc( LARGE );
-    const char* st = "hello";
 
     gridfs_find_filename( gfs, filename, gfile );
     ASSERT( gridfile_exists( gfile ) );
