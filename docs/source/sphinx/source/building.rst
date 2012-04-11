@@ -2,11 +2,11 @@ Building the MongoDB C Driver
 =============================
 
 First checkout the version you want to build. *Always build from a particular tag, since HEAD may be
-a work in progress.* For example, to build version 0.5, run:
+a work in progress.* For example, to build version 0.5.1, run:
 
 .. code-block:: bash
 
-    git checkout v0.5
+    git checkout v0.5.1
 
 Then follow the build steps below.
 

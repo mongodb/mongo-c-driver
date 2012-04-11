@@ -12,9 +12,9 @@ Until the 1.0 release, this driver should be considered alpha. Keep in mind that
 # Building
 
 First check out the version you want to build. *Always build from a particular tag, since HEAD may be
-a work in progress.* For example, to build version 0.5, run:
+a work in progress.* For example, to build version 0.5.1, run:
 
-    git checkout v0.5
+    git checkout v0.5.1
 
 You can then build the driver with scons:
 
