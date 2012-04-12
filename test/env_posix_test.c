@@ -77,7 +77,11 @@ int test_getaddrinfo( void ) {
 }
 
 int main() {
-    test_read_timeout();
+    char version[10];
+
+    if( mongo_get_server_version( version ) != -1 && version[0] != '1' ) {
+        test_read_timeout();
+    }
     test_getaddrinfo();
 
     return 0;
