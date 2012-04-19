@@ -14,12 +14,7 @@
 int test_read_timeout( void ) {
     mongo conn[1];
     bson b, obj, out, fields;
-    int i;
     int res;
-
-    const char *db = "test";
-    const char *col = "c.simple";
-    const char *ns = "test.c.simple";
 
     if ( mongo_connect( conn, TEST_SERVER, 27017 ) ) {
         printf( "failed to connect\n" );
