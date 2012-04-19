@@ -22,11 +22,11 @@ int main() {
     /*********************/
     ASSERT( mongo_cmd_get_prev_error( conn, db, NULL ) == MONGO_OK );
     ASSERT( conn->lasterrcode == 0 );
-    ASSERT( conn->lasterrstr == NULL );
+    ASSERT( conn->lasterrstr[0] == 0 );
 
     ASSERT( mongo_cmd_get_last_error( conn, db, NULL ) == MONGO_OK );
     ASSERT( conn->lasterrcode == 0 );
-    ASSERT( conn->lasterrstr == NULL );
+    ASSERT( conn->lasterrstr[0] == 0 );
 
     ASSERT( mongo_cmd_get_prev_error( conn, db, &obj ) == MONGO_OK );
     bson_destroy( &obj );

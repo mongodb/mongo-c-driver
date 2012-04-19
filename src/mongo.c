@@ -111,6 +111,15 @@ MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn) {
     return conn->lasterrstr;
 }
 
+static void mongo_set_last_error( mongo *conn, bson_iterator *it, bson *obj ) {
+    int result_len = bson_iterator_string_len( it );
+    const char *result_string = bson_iterator_string( it );
+    int len = result_len < MONGO_ERR_LEN ? result_len : MONGO_ERR_LEN;
+    memcpy( conn->lasterrstr, result_string, len );
+
+    if( bson_find( it, obj, "code" ) != BSON_NULL )
+        conn->lasterrcode = bson_iterator_int( it );
+}
 
 static const int ZERO = 0;
 static const int ONE = 1;
@@ -234,8 +243,16 @@ static int mongo_check_is_master( mongo *conn ) {
     }
 }
 
-MONGO_EXPORT void mongo_init_sockets() {
+MONGO_EXPORT void mongo_init_sockets( void ) {
     mongo_env_sock_init();
+}
+
+static void mongo_reset_stored_errors( mongo *conn ) {
+    conn->err = 0;
+    conn->errno = 0;
+    conn->lasterrcode = 0;
+    memset( conn->errstr, 0, MONGO_ERR_LEN );
+    memset( conn->lasterrstr, 0, MONGO_ERR_LEN );
 }
 
 MONGO_EXPORT void mongo_init( mongo *conn ) {
@@ -533,11 +550,8 @@ MONGO_EXPORT void mongo_destroy( mongo *conn ) {
     }
 
     bson_free( conn->primary );
-    bson_free( conn->lasterrstr );
 
-    conn->err = 0;
-    conn->lasterrcode = 0;
-    conn->lasterrstr = NULL;
+    mongo_reset_stored_errors( conn );
 }
 
 /* Determine whether this BSON object is valid for the given operation.  */
@@ -705,11 +719,7 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
     bson_iterator it;
 
     /* Clear any errors. */
-    bson_free( cursor->conn->lasterrstr );
-    cursor->conn->lasterrstr = NULL;
-    cursor->conn->lasterrcode = 0;
-    cursor->conn->err = 0;
-    cursor->err = 0;
+    mongo_reset_stored_errors( cursor->conn );
 
     /* Set up default values for query and fields, if necessary. */
     if( ! cursor->query )
@@ -754,11 +764,7 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
     if( cursor->reply->fields.num == 1 ) {
         bson_init_data( &temp, &cursor->reply->objs );
         if( bson_find( &it, &temp, "$err" ) ) {
-            cursor->conn->lasterrstr =
-              (char *)bson_malloc( bson_iterator_string_len( &it ) );
-            strcpy( cursor->conn->lasterrstr, bson_iterator_string( &it ) );
-            bson_find( &it, &temp, "code" );
-            cursor->conn->lasterrcode = bson_iterator_int( &it );
+            mongo_set_last_error( cursor->conn, &it, &temp );
             cursor->err = MONGO_CURSOR_QUERY_FAIL;
             return MONGO_ERROR;
         }
@@ -1158,23 +1164,13 @@ static int mongo_cmd_get_error_helper( mongo *conn, const char *db,
     bson_bool_t haserror = 0;
 
     /* Reset last error codes. */
-    conn->lasterrcode = 0;
-    bson_free( conn->lasterrstr );
-    conn->lasterrstr = NULL;
+    mongo_reset_stored_errors( conn );
 
     /* If there's an error, store its code and string in the connection object. */
     if( mongo_simple_int_command( conn, db, cmdtype, 1, &out ) == MONGO_OK ) {
         bson_iterator it;
         haserror = ( bson_find( &it, &out, "err" ) != BSON_NULL );
-        if( haserror ) {
-            conn->lasterrstr = ( char * )bson_malloc( bson_iterator_string_len( &it ) );
-            if( conn->lasterrstr ) {
-                strcpy( conn->lasterrstr, bson_iterator_string( &it ) );
-            }
-
-            if( bson_find( &it, &out, "code" ) != BSON_NULL )
-                conn->lasterrcode = bson_iterator_int( &it );
-        }
+        if( haserror ) mongo_set_last_error( conn, &it, &out );
     }
 
     if( realout )

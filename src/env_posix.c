@@ -30,10 +30,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#if defined(_XOPEN_SOURCE) || defined(_POSIX_SOURCE) || _POSIX_C_SOURCE >= 1
-#define _MONGO_USE_GETADDRINFO
-#endif
-
 #ifndef NI_MAXSERV
 # define NI_MAXSERV 32
 #endif
@@ -49,14 +45,13 @@ int mongo_env_sock_init( void ) {
 static void mongo_set_error( mongo *conn, int err, const char *str ) {
     int errstr_size, str_size;
 
-    errstr_size = sizeof( conn->errstr ) - 1;
     conn->err = err;
 
     if( !str ) {
         str = strerror( errno );
     }
-    str_size = strlen( str );
-    errstr_size = str_size > errstr_size ? errstr_size : str_size;
+    str_size = strlen( str ) + 1;
+    errstr_size = str_size > MONGO_ERR_LEN ? MONGO_ERR_LEN : str_size;
     memcpy( conn->errstr, str, errstr_size );
     conn->errstr[errstr_size] = '\0';
 }
@@ -89,7 +84,6 @@ int mongo_read_socket( mongo *conn, void *buf, int len ) {
     while ( len ) {
         int sent = recv( conn->sock, cbuf, len, 0 );
         if ( sent == 0 || sent == -1 ) {
-            conn->err = MONGO_IO_ERROR;
             mongo_set_error( conn, MONGO_IO_ERROR, NULL );
             return MONGO_ERROR;
         }
@@ -107,11 +101,12 @@ int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
 
     if ( setsockopt( conn->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof( tv ) ) == -1 ) {
         conn->err = MONGO_IO_ERROR;
+        mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_RCVTIMEO failed." );
         return MONGO_ERROR;
     }
 
     if ( setsockopt( conn->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof( tv ) ) == -1 ) {
-        conn->err = MONGO_IO_ERROR;
+        mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_SNDTIMEO failed." );
         return MONGO_ERROR;
     }
 

@@ -15,7 +15,7 @@
 #define INIT_SOCKETS_FOR_WINDOWS do {} while(0)
 #endif
 
-const char mongo_server_version[10];
+MONGO_EXTERN_C_START
 
 int mongo_get_server_version( char *version ) {
     mongo conn[1];
@@ -40,3 +40,5 @@ int mongo_get_server_version( char *version ) {
 
     return 0;
 }
+
+MONGO_EXTERN_C_END
