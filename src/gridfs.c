@@ -246,14 +246,13 @@ MONGO_EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
         gfile->pending_len += length;
 
     } else { /* At least one chunk of data to write */
+        chunks_to_write = to_write / DEFAULT_CHUNK_SIZE;
+        bytes_left = to_write % DEFAULT_CHUNK_SIZE;
 
         /* If there's a pending chunk to be written, we need to combine
          * the buffer provided up to DEFAULT_CHUNK_SIZE.
          */
         if ( gfile->pending_len > 0 ) {
-            chunks_to_write = to_write / DEFAULT_CHUNK_SIZE;
-            bytes_left = to_write % DEFAULT_CHUNK_SIZE;
-
             data_partial_len = DEFAULT_CHUNK_SIZE - gfile->pending_len;
             buffer = ( char * )bson_malloc( DEFAULT_CHUNK_SIZE );
             memcpy( buffer, gfile->pending_data, gfile->pending_len );

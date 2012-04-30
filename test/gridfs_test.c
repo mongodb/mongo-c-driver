@@ -10,6 +10,7 @@
 
 #define LARGE 3*1024*1024
 #define UPPER 2000*1024
+#define MEDIUM 1024*512
 #define LOWER 1024*128
 #define DELTA 1024*128
 
@@ -136,8 +137,9 @@ void test_streaming() {
     mongo conn[1];
     gridfs gfs[1];
     gridfile gfile[1];
-    char *buf = bson_malloc( LARGE );
+    char *medium = bson_malloc( 2*MEDIUM );
     char *small = bson_malloc( LOWER );
+    char *buf = bson_malloc( LARGE );
     int n;
 
     if( buf == NULL || small == NULL ) {
@@ -154,8 +156,18 @@ void test_streaming() {
         exit( 1 );
     }
 
+    fill_buffer_randomly( medium, ( int64_t )2 * MEDIUM );
     fill_buffer_randomly( small, ( int64_t )LOWER );
     fill_buffer_randomly( buf, ( int64_t )LARGE );
+
+    gridfs_init( conn, "test", "fs", gfs );
+    gridfile_writer_init( gfile, gfs, "medium", "text/html" );
+
+    gridfile_write_buffer( gfile, medium, MEDIUM );
+    gridfile_write_buffer( gfile, medium + MEDIUM, MEDIUM );
+    gridfile_writer_done( gfile );
+    test_gridfile( gfs, medium, 2 * MEDIUM, "medium", "text/html" );
+    gridfs_destroy( gfs );
 
     gridfs_init( conn, "test", "fs", gfs );
 
