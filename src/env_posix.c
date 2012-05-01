@@ -45,6 +45,7 @@ int mongo_env_sock_init( void ) {
 static void mongo_set_error( mongo *conn, int err, const char *str ) {
     int errstr_size, str_size;
 
+    conn->errcode = errno;
     conn->err = err;
 
     if( !str ) {

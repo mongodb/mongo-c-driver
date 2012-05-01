@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 /* Test read timeout by causing the
  * server to sleep for 10s on a query.
@@ -71,6 +72,30 @@ int test_getaddrinfo( void ) {
     return 0;
 }
 
+int test_error_messages( void ) {
+    mongo conn[1];
+    bson b[1];
+    const char *ns = "test.foo";
+
+    mongo_init( conn );
+
+    bson_init( b );
+    bson_append_int( b, "foo", 17 );
+    bson_finish( b );
+
+    ASSERT( mongo_insert( conn, ns, b ) != MONGO_OK );
+    ASSERT( conn->err == MONGO_IO_ERROR );
+    ASSERT( conn->errcode == ENOTSOCK );
+
+    mongo_init( conn );
+
+    ASSERT( mongo_count( conn, "test", "foo", NULL ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_IO_ERROR );
+    ASSERT( conn->errcode == ENOTSOCK );
+
+    return 0;
+}
+
 int main() {
     char version[10];
 
@@ -78,6 +103,7 @@ int main() {
         test_read_timeout();
     }
     test_getaddrinfo();
+    test_error_messages();
 
     return 0;
 }
