@@ -32,6 +32,25 @@ typedef int socklen_t;
 # define NI_MAXSERV 32
 #endif
 
+static void mongo_clear_errors( mongo *conn ) {
+    conn->err = 0;
+    memset( conn->errstr, 0, MONGO_ERR_LEN );
+}
+
+static void mongo_set_error( mongo *conn, int err, const char *str ) {
+    int errstr_size, str_size;
+
+    conn->err = err;
+
+    if( !str ) {
+        str = strerror( errno );
+    }
+    str_size = strlen( str ) + 1;
+    errstr_size = str_size > MONGO_ERR_LEN ? MONGO_ERR_LEN : str_size;
+    memcpy( conn->errstr, str, errstr_size );
+    conn->errstr[errstr_size] = '\0';
+}
+
 int mongo_close_socket( int socket ) {
     return closesocket( socket );
 }
@@ -74,9 +93,9 @@ int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
     return MONGO_OK;
 }
 
-#ifdef _MONGO_USE_GETADDRINFO
 int mongo_socket_connect( mongo *conn, const char *host, int port ) {
     char port_str[NI_MAXSERV];
+    char errstr[MONGO_ERR_LEN];
     int status;
 
     struct addrinfo ai_hints;
@@ -89,28 +108,32 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
     bson_sprintf( port_str, "%d", port );
 
     memset( &ai_hints, 0, sizeof( ai_hints ) );
-#ifdef AI_ADDRCONFIG
-    ai_hints.ai_flags = AI_ADDRCONFIG;
-#endif
     ai_hints.ai_family = AF_UNSPEC;
     ai_hints.ai_socktype = SOCK_STREAM;
+    ai_hints.ai_protocol = IPPROTO_TCP;
 
     status = getaddrinfo( host, port_str, &ai_hints, &ai_list );
     if ( status != 0 ) {
-        bson_errprintf( "getaddrinfo failed: %s", gai_strerror( status ) );
-        conn->err = MONGO_CONN_ADDR_FAIL;
+	bson_sprintf( errstr, "getaddrinfo failed with error %d", status );
+	mongo_set_error( conn, MONGO_CONN_ADDR_FAIL, errstr );
         return MONGO_ERROR;
     }
 
     for ( ai_ptr = ai_list; ai_ptr != NULL; ai_ptr = ai_ptr->ai_next ) {
         conn->sock = socket( ai_ptr->ai_family, ai_ptr->ai_socktype, ai_ptr->ai_protocol );
         if ( conn->sock < 0 ) {
+	    bson_sprintf( errstr, "socket() failed with error %d",
+			    WSAGetLastError() );
+	    mongo_set_error( conn, MONGO_SOCKET_ERROR, errstr );
             conn->sock = 0;
             continue;
         }
 
         status = connect( conn->sock, ai_ptr->ai_addr, ai_ptr->ai_addrlen );
         if ( status != 0 ) {
+	    bson_sprintf( errstr, "connect() failed with error %d",
+			    WSAGetLastError() );
+	    mongo_set_error( conn, MONGO_SOCKET_ERROR, errstr );
             mongo_close_socket( conn->sock );
             conn->sock = 0;
             continue;
@@ -121,6 +144,7 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
 
             setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY,
                         ( void * ) &flag, sizeof( flag ) );
+
             if ( conn->op_timeout_ms > 0 )
                 mongo_set_socket_op_timeout( conn, conn->op_timeout_ms );
         }
@@ -134,47 +158,12 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
     if ( ! conn->connected ) {
         conn->err = MONGO_CONN_FAIL;
         return MONGO_ERROR;
+    } 
+    else {
+        mongo_clear_errors( conn );
+        return MONGO_OK;
     }
-
-    return MONGO_OK;
 }
-#else
-int mongo_socket_connect( mongo *conn, const char *host, int port ) {
-    struct sockaddr_in sa;
-    socklen_t addressSize;
-    int flag = 1;
-
-    if ( ( conn->sock = socket( AF_INET, SOCK_STREAM, 0 ) ) < 0 ) {
-        conn->sock = 0;
-        conn->err = MONGO_CONN_NO_SOCKET;
-        return MONGO_ERROR;
-    }
-
-    memset( sa.sin_zero , 0 , sizeof( sa.sin_zero ) );
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons( port );
-    sa.sin_addr.s_addr = inet_addr( host );
-    addressSize = sizeof( sa );
-
-    if ( connect( conn->sock, ( struct sockaddr * )&sa, addressSize ) == -1 ) {
-        mongo_close_socket( conn->sock );
-        conn->connected = 0;
-        conn->sock = 0;
-        conn->err = MONGO_CONN_FAIL;
-        return MONGO_ERROR;
-    }
-
-    setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY, ( char * ) &flag, sizeof( flag ) );
-
-    if( conn->op_timeout_ms > 0 )
-        mongo_set_socket_op_timeout( conn, conn->op_timeout_ms );
-
-    conn->connected = 1;
-
-    return MONGO_OK;
-}
-
-#endif
 
 MONGO_EXPORT int mongo_env_sock_init( void ) {
 

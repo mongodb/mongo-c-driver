@@ -249,7 +249,7 @@ MONGO_EXPORT void mongo_init_sockets( void ) {
 
 static void mongo_reset_stored_errors( mongo *conn ) {
     conn->err = 0;
-    conn->errno = 0;
+    conn->errorcode = 0;
     conn->lasterrcode = 0;
     memset( conn->errstr, 0, MONGO_ERR_LEN );
     memset( conn->lasterrstr, 0, MONGO_ERR_LEN );

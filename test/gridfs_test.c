@@ -6,7 +6,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 
 #define LARGE 3*1024*1024
 #define UPPER 2000*1024

@@ -78,6 +78,7 @@ elif os.sys.platform in ["darwin", "linux2"]:
     PLATFORM_TESTS = [ "env_posix" ]
 elif 'win32' == os.sys.platform:
     NET_LIB = "src/env_win32.c"
+    PLATFORM_TESTS = [ "env_win32" ]
 else:
     NET_LIB = "src/env_standard.c"
 
