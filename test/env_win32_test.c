@@ -102,13 +102,13 @@ int test_error_messages( void ) {
 
     ASSERT( mongo_insert( conn, ns, b ) != MONGO_OK );
     ASSERT( conn->err == MONGO_IO_ERROR );
-    ASSERT( conn->errorcode == WSAENOTSOCK );
+    ASSERT( conn->errcode == WSAENOTSOCK );
 
     mongo_init( conn );
 
     ASSERT( mongo_count( conn, "test", "foo", NULL ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_IO_ERROR );
-    ASSERT( conn->errorcode == WSAENOTSOCK );
+    ASSERT( conn->errcode == WSAENOTSOCK );
 
     return 0;
 }

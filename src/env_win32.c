@@ -41,7 +41,7 @@ static void mongo_set_error( mongo *conn, int err, const char *str ) {
     int errstr_size, str_size;
 
     conn->err = err;
-    conn->errorcode = WSAGetLastError();
+    conn->errcode = WSAGetLastError();
 
     if( str ) {
         str_size = strlen( str ) + 1;
