@@ -88,8 +88,19 @@ int mongo_read_socket( mongo *conn, void *buf, int len ) {
     return MONGO_OK;
 }
 
-/* This is a no-op in the generic implementation. */
 int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
+    if ( setsockopt( conn->sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&millis,
+			    sizeof( millis ) ) == -1 ) {
+        mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_RCVTIMEO failed." );
+        return MONGO_ERROR;
+    }
+
+    if ( setsockopt( conn->sock, SOL_SOCKET, SO_SNDTIMEO, (const char *)&millis,
+			    sizeof( millis ) ) == -1 ) {
+        mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_SNDTIMEO failed." );
+        return MONGO_ERROR;
+    }
+
     return MONGO_OK;
 }
 

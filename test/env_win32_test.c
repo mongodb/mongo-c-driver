@@ -41,13 +41,17 @@ int test_read_timeout( void ) {
     res = mongo_insert( conn, "test.foo", &obj );
 
     /* Set the connection timeout here. */
-    mongo_set_op_timeout( conn, 1000 );
+    
+    if( mongo_set_op_timeout( conn, 1000 ) != MONGO_OK ) {
+        printf("Could not set socket timeout!.");
+	exit(1);
+    }
 
     res = mongo_find_one( conn, "test.foo", &b, bson_empty(&fields), &out );
     ASSERT( res == MONGO_ERROR );
 
     ASSERT( conn->err == MONGO_IO_ERROR );
-    ASSERT( strcmp( "Resource temporarily unavailable", conn->errstr ) == 0 );
+    ASSERT( conn->errcode == WSAETIMEDOUT );
 
     return 0;
 }
@@ -117,11 +121,9 @@ int main() {
     char version[10];
     INIT_SOCKETS_FOR_WINDOWS;
 
-    /*
     if( mongo_get_server_version( version ) != -1 && version[0] != '1' ) {
         test_read_timeout();
     }
-    */
     test_getaddrinfo();
     test_error_messages();
 
