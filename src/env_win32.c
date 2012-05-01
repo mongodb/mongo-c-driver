@@ -41,14 +41,14 @@ static void mongo_set_error( mongo *conn, int err, const char *str ) {
     int errstr_size, str_size;
 
     conn->err = err;
+    conn->errorcode = WSAGetLastError();
 
-    if( !str ) {
-        str = strerror( errno );
+    if( str ) {
+        str_size = strlen( str ) + 1;
+        errstr_size = str_size > MONGO_ERR_LEN ? MONGO_ERR_LEN : str_size;
+        memcpy( conn->errstr, str, errstr_size );
+        conn->errstr[errstr_size] = '\0';
     }
-    str_size = strlen( str ) + 1;
-    errstr_size = str_size > MONGO_ERR_LEN ? MONGO_ERR_LEN : str_size;
-    memcpy( conn->errstr, str, errstr_size );
-    conn->errstr[errstr_size] = '\0';
 }
 
 int mongo_close_socket( int socket ) {
@@ -62,8 +62,8 @@ int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     while ( len ) {
         int sent = send( conn->sock, cbuf, len, flags );
         if ( sent == -1 ) {
+	    mongo_set_error( conn, MONGO_IO_ERROR, NULL );
 	    conn->connected = 0;
-            conn->err = MONGO_IO_ERROR;
             return MONGO_ERROR;
         }
         cbuf += sent;
@@ -78,7 +78,7 @@ int mongo_read_socket( mongo *conn, void *buf, int len ) {
     while ( len ) {
         int sent = recv( conn->sock, cbuf, len, 0 );
         if ( sent == 0 || sent == -1 ) {
-            conn->err = MONGO_IO_ERROR;
+	    mongo_set_error( conn, MONGO_IO_ERROR, NULL );
             return MONGO_ERROR;
         }
         cbuf += sent;
@@ -120,20 +120,18 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
     }
 
     for ( ai_ptr = ai_list; ai_ptr != NULL; ai_ptr = ai_ptr->ai_next ) {
-        conn->sock = socket( ai_ptr->ai_family, ai_ptr->ai_socktype, ai_ptr->ai_protocol );
+        conn->sock = socket( ai_ptr->ai_family, ai_ptr->ai_socktype,
+		             ai_ptr->ai_protocol );
+
         if ( conn->sock < 0 ) {
-	    bson_sprintf( errstr, "socket() failed with error %d",
-			    WSAGetLastError() );
-	    mongo_set_error( conn, MONGO_SOCKET_ERROR, errstr );
+	    mongo_set_error( conn, MONGO_SOCKET_ERROR, "socket() failed" );
             conn->sock = 0;
             continue;
         }
 
         status = connect( conn->sock, ai_ptr->ai_addr, ai_ptr->ai_addrlen );
         if ( status != 0 ) {
-	    bson_sprintf( errstr, "connect() failed with error %d",
-			    WSAGetLastError() );
-	    mongo_set_error( conn, MONGO_SOCKET_ERROR, errstr );
+	    mongo_set_error( conn, MONGO_SOCKET_ERROR, "connect() failed" );
             mongo_close_socket( conn->sock );
             conn->sock = 0;
             continue;
