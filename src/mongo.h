@@ -34,6 +34,8 @@ MONGO_EXTERN_C_START
 
 #define MONGO_DEFAULT_PORT 27017
 
+#define MONGO_DEFAULT_MAX_BSON_SIZE 4 * 1024 * 1024
+
 #define MONGO_ERR_LEN 128
 
 typedef enum mongo_error_t {
@@ -50,7 +52,8 @@ typedef enum mongo_error_t {
     MONGO_READ_SIZE_ERROR,   /**< The response is not the expected length. */
     MONGO_COMMAND_FAILED,    /**< The command returned with 'ok' value of 0. */
     MONGO_BSON_INVALID,      /**< BSON not valid for the specified op. */
-    MONGO_BSON_NOT_FINISHED  /**< BSON object has not been finished. */
+    MONGO_BSON_NOT_FINISHED, /**< BSON object has not been finished. */
+    MONGO_BSON_TOO_LARGE     /**< BSON object exceeds max BSON size. */
 } mongo_error_t;
 
 typedef enum mongo_cursor_error_t {
@@ -147,6 +150,7 @@ typedef struct mongo {
     int flags;                 /**< Flags on this connection object. */
     int conn_timeout_ms;       /**< Connection timeout in milliseconds. */
     int op_timeout_ms;         /**< Read and write timeout in milliseconds. */
+    int max_bson_size;         /**< Largest BSON object allowed on this connection. */
     bson_bool_t connected;     /**< Connection status. */
 
     mongo_error_t err;          /**< Most recent driver error code. */
@@ -190,6 +194,10 @@ MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
 /** Initialize sockets for Windows.
  */
 MONGO_EXPORT void mongo_init_sockets();
+
+/** Clear any errors stored in error fields for this connection.
+ */
+MONGO_EXPORT void mongo_clear_stored_errors( mongo *conn );
 
 /**
  * Initialize a new mongo connection object. You must initialize each mongo

@@ -223,12 +223,17 @@ static int mongo_check_is_master( mongo *conn ) {
     bson out;
     bson_iterator it;
     bson_bool_t ismaster = 0;
+    int max_bson_size = MONGO_DEFAULT_MAX_BSON_SIZE;
 
     out.data = NULL;
 
     if ( mongo_simple_int_command( conn, "admin", "ismaster", 1, &out ) == MONGO_OK ) {
         if( bson_find( &it, &out, "ismaster" ) )
             ismaster = bson_iterator_bool( &it );
+        if( bson_find( &it, &out, "maxBsonObjectSize" ) ) {
+            max_bson_size = bson_iterator_int( &it ); 
+        }
+        conn->max_bson_size = max_bson_size;
     } else {
         return MONGO_ERROR;
     }
@@ -247,7 +252,7 @@ MONGO_EXPORT void mongo_init_sockets( void ) {
     mongo_env_sock_init();
 }
 
-static void mongo_reset_stored_errors( mongo *conn ) {
+MONGO_EXPORT void mongo_clear_stored_errors( mongo *conn ) {
     conn->err = 0;
     conn->errcode = 0;
     conn->lasterrcode = 0;
@@ -257,6 +262,7 @@ static void mongo_reset_stored_errors( mongo *conn ) {
 
 MONGO_EXPORT void mongo_init( mongo *conn ) {
     memset( conn, 0, sizeof( mongo ) );
+    conn->max_bson_size = MONGO_DEFAULT_MAX_BSON_SIZE;
 }
 
 MONGO_EXPORT int mongo_connect( mongo *conn , const char *host, int port ) {
@@ -402,12 +408,17 @@ static int mongo_replset_check_host( mongo *conn ) {
     bson_iterator it;
     bson_bool_t ismaster = 0;
     const char *set_name;
+    int max_bson_size = MONGO_DEFAULT_MAX_BSON_SIZE;
 
     out.data = NULL;
 
     if ( mongo_simple_int_command( conn, "admin", "ismaster", 1, &out ) == MONGO_OK ) {
         if( bson_find( &it, &out, "ismaster" ) )
             ismaster = bson_iterator_bool( &it );
+
+        if( bson_find( &it, &out, "maxBsonObjectSize" ) )
+            max_bson_size = bson_iterator_int( &it ); 
+        conn->max_bson_size = max_bson_size;
 
         if( bson_find( &it, &out, "setName" ) ) {
             set_name = bson_iterator_string( &it );
@@ -551,11 +562,19 @@ MONGO_EXPORT void mongo_destroy( mongo *conn ) {
 
     bson_free( conn->primary );
 
-    mongo_reset_stored_errors( conn );
+    mongo_clear_stored_errors( conn );
 }
 
 /* Determine whether this BSON object is valid for the given operation.  */
 static int mongo_bson_valid( mongo *conn, const bson *bson, int write ) {
+    int size;
+
+    size = bson_size( bson );
+    if( size > conn->max_bson_size ) {
+        conn->err = MONGO_BSON_TOO_LARGE;
+        return MONGO_ERROR;
+    }
+
     if( ! bson->finished ) {
         conn->err = MONGO_BSON_NOT_FINISHED;
         return MONGO_ERROR;
@@ -606,12 +625,18 @@ MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
     mongo_message *mm;
     int i;
     char *data;
-    int size =  16 + 4 + strlen( ns ) + 1;
+    int overhead =  16 + 4 + strlen( ns ) + 1;
+    int size = overhead;
 
     for( i=0; i<count; i++ ) {
         size += bson_size( bsons[i] );
         if( mongo_bson_valid( conn, bsons[i], 1 ) != MONGO_OK )
             return MONGO_ERROR;
+    }
+
+    if( ( size - overhead ) > conn->max_bson_size ) {
+        conn->err = MONGO_BSON_TOO_LARGE;
+        return MONGO_ERROR;
     }
 
     mm = mongo_message_create( size , 0 , 0 , MONGO_OP_INSERT );
@@ -719,7 +744,7 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
     bson_iterator it;
 
     /* Clear any errors. */
-    mongo_reset_stored_errors( cursor->conn );
+    mongo_clear_stored_errors( cursor->conn );
 
     /* Set up default values for query and fields, if necessary. */
     if( ! cursor->query )
@@ -1164,7 +1189,7 @@ static int mongo_cmd_get_error_helper( mongo *conn, const char *db,
     bson_bool_t haserror = 0;
 
     /* Reset last error codes. */
-    mongo_reset_stored_errors( conn );
+    mongo_clear_stored_errors( conn );
 
     /* If there's an error, store its code and string in the connection object. */
     if( mongo_simple_int_command( conn, db, cmdtype, 1, &out ) == MONGO_OK ) {

@@ -131,12 +131,12 @@ typedef struct {
 } bson_iterator;
 
 typedef struct {
-    char *data;
-    char *cur;
-    int dataSize;
-    bson_bool_t finished;
-    int stack[32];
-    int stackPos;
+    char *data;    /**< Pointer to a block of data in this BSON object. */
+    char *cur;     /**< Pointer to the current position. */
+    int dataSize;  /**< The number of bytes allocated to char *data. */
+    bson_bool_t finished; /**< When finished, the BSON object can no longer be modified. */
+    int stack[32];        /**< A stack used to keep track of nested BSON elements. */
+    int stackPos;         /**< Index of current stack position. */
     int err; /**< Bitfield representing errors or warnings on this buffer */
     char *errstr; /**< A string representation of the most recent error or warning. */
 } bson;
@@ -161,6 +161,7 @@ typedef struct {
 
 MONGO_EXPORT bson* bson_create();
 MONGO_EXPORT void  bson_dispose(bson* b);
+
 /**
  * Size of a BSON object.
  *
