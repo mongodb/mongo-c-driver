@@ -7,15 +7,120 @@
 static const char *db = "test";
 static const char *ns = "test.c.error";
 
+int test_namespace_validation() {
+    mongo conn[1];
+
+    mongo_init( conn );
+
+    /* Test a few legal namespaces. */
+    ASSERT( mongo_validate_ns( conn, "test.foo" ) == MONGO_OK );
+    ASSERT( conn->err == 0 );
+
+    ASSERT( mongo_validate_ns( conn, "test.foo.bar" ) == MONGO_OK );
+    ASSERT( conn->err == 0 );
+
+    /* Test illegal namespaces. */
+    ASSERT( mongo_validate_ns( conn, ".test.foo" ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "ns cannot start with", 20 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "test..foo" ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "ns cannot start with", 20 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "test" ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "ns cannot start with", 20 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "." ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "ns cannot start with", 20 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "tes t.foo" ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Database name may not contain", 28 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "te$st.foo" ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Database name may not contain", 28 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "te/st.foo" ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Database name may not contain", 28 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "te\\st.foo" ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Database name may not contain", 28 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "test.fo$o" ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Collection may not contain '$'", 29 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "test.fo..o" ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Collection may not contain two consecutive '.'", 46 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "test.fo.o." ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Collection may not end with '.'", 30 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    return 0;
+}
+
+int test_namespace_validation_on_insert( void ) {
+    mongo conn[1];
+    bson b[1], b2[1];
+    bson *objs[2];
+
+    INIT_SOCKETS_FOR_WINDOWS;
+
+    if ( mongo_connect( conn , TEST_SERVER, 27017 ) ) {
+        printf( "failed to connect\n" );
+        exit( 1 );
+    }
+
+    bson_init( b );
+    bson_append_int( b, "foo", 1 );
+    bson_finish( b );
+
+    ASSERT( mongo_insert( conn, "tet.fo$o", b ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Collection may not contain '$'", 29 ) == 0 );
+    mongo_clear_stored_errors( conn );
+
+    bson_init( b2 );
+    bson_append_int( b2, "foo", 1 );
+    bson_finish( b2 );
+
+    objs[0] = b;
+    objs[1] = b2;
+
+    ASSERT( mongo_insert_batch( conn, "tet.fo$o", (const bson **)objs, 2 ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Collection may not contain '$'", 29 ) == 0 );
+
+    return 0;
+}
+
 int test_insert_limits( void ) {
     char version[10];
     mongo conn[1];
-    int max_server_bson_size = 0;
     int i;
     char key[10];
     bson b[1], b2[1];
     bson *objs[2];
-   
+
     /* Test the default max BSON size. */
     mongo_init( conn );
     ASSERT( conn->max_bson_size == MONGO_DEFAULT_MAX_BSON_SIZE );
@@ -42,7 +147,7 @@ int test_insert_limits( void ) {
 
     ASSERT( mongo_insert( conn, "test.foo", b ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_TOO_LARGE );
-    
+
     mongo_clear_stored_errors( conn );
     ASSERT( conn->err == 0 );
 
@@ -53,13 +158,13 @@ int test_insert_limits( void ) {
     objs[0] = b;
     objs[1] = b2;
 
-    ASSERT( mongo_insert_batch( conn, "test.foo", objs, 2 ) == MONGO_ERROR );
+    ASSERT( mongo_insert_batch( conn, "test.foo", (const bson **)objs, 2 ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_TOO_LARGE );
 
     return 0;
 }
 
-int main() {
+int test_get_last_error_commands( void ) {
     mongo conn[1];
     bson obj;
 
@@ -127,8 +232,13 @@ int main() {
 
     mongo_cmd_drop_db( conn, db );
     mongo_destroy( conn );
+}
 
+int main() {
+    test_get_last_error_commands();
     test_insert_limits();
+    test_namespace_validation();
+    test_namespace_validation_on_insert();
 
     return 0;
 }

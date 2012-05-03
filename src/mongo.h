@@ -51,6 +51,7 @@ typedef enum mongo_error_t {
     MONGO_SOCKET_ERROR,      /**< Other socket error. */
     MONGO_READ_SIZE_ERROR,   /**< The response is not the expected length. */
     MONGO_COMMAND_FAILED,    /**< The command returned with 'ok' value of 0. */
+    MONGO_NS_INVALID,        /**< The name for the ns (database or collection) is invalid. */
     MONGO_BSON_INVALID,      /**< BSON not valid for the specified op. */
     MONGO_BSON_NOT_FINISHED, /**< BSON object has not been finished. */
     MONGO_BSON_TOO_LARGE     /**< BSON object exceeds max BSON size. */
@@ -251,6 +252,17 @@ MONGO_EXPORT void mongo_replset_add_seed( mongo *conn, const char *host, int por
  * @param host_port the mongo_host_port object to write the result to.
  */
 void mongo_parse_host( const char *host_string, mongo_host_port *host_port );
+
+/**
+ * Utility function for validation database and collection names.
+ *
+ * @param conn a mongo object.
+ *
+ * @return MONGO_OK or MONGO_ERROR on failure. On failure, a constant of type
+ *   mongo_conn_return_t will be set on the conn->err field.
+ *
+ */
+MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns );
 
 /**
  * Connect to a replica set.

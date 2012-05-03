@@ -111,6 +111,107 @@ MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn) {
     return conn->lasterrstr;
 }
 
+static void mongo_set_error( mongo *conn, int err, const char *str ) {
+    int errstr_size, str_size;
+
+    conn->err = err;
+
+    if( str ) {
+        str_size = strlen( str ) + 1;
+        errstr_size = str_size > MONGO_ERR_LEN ? MONGO_ERR_LEN : str_size;
+        memcpy( conn->errstr, str, errstr_size );
+        conn->errstr[errstr_size] = '\0';
+    }
+}
+
+MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
+    char *last = NULL;
+    char *current = NULL;
+    const char *db_name = ns;
+    char *collection_name = NULL;
+
+    /* If the first character is a '.', fail. */
+    if( *ns == '.' ) {
+        mongo_set_error( conn, MONGO_NS_INVALID, "ns cannot start with a '.'." );
+        return MONGO_ERROR;
+    }
+
+    /* Find the division between database and collection names. */
+    for( current = ns; *current != '\0'; current++ ) {
+        if( *current == '.' ) {
+            current++;
+            break;
+        }
+    }
+
+    /* Fail because the ns doesn't contain a '.'
+     * or the collection part starts with a dot. */
+    if( *current == '\0' || *current == '.' ) {
+        mongo_set_error( conn, MONGO_NS_INVALID, "ns cannot start with a '.'." );
+        return MONGO_ERROR;
+    }
+
+    /* Fail if collection length is 0. */
+    if( *(current + 1) == '\0' ) {
+        mongo_set_error( conn, MONGO_NS_INVALID, "Collection name missing." );
+        return MONGO_ERROR;
+    }
+
+
+    /* Point to the beginning of the collection name. */
+    collection_name = current;
+
+    /* Ensure that the database name is greater than one char.*/
+    if( collection_name - 1 == db_name ) {
+        mongo_set_error( conn, MONGO_NS_INVALID, "Database name missing." );
+        return MONGO_ERROR;
+    }
+
+    /* Go back and validate the database name. */
+    for( current = db_name; *current != '.'; current++ ) {
+        switch( *current ) {
+            case ' ':
+            case '$':
+            case '/':
+            case '\\':
+                mongo_set_error( conn, MONGO_NS_INVALID,
+                    "Database name may not contain ' ', '$', '/', or '\\'" );
+                return MONGO_ERROR;
+            default:
+                break;
+        }
+    }
+
+    /* Now validate the collection name. */
+    for( current = collection_name; *current != '\0'; current++ ) {
+
+        /* Cannot have two consecutive dots. */
+        if( last && *last == '.' && *current == '.' ) {
+                mongo_set_error( conn, MONGO_NS_INVALID,
+                    "Collection may not contain two consecutive '.'" );
+            return MONGO_ERROR;
+        }
+
+        /* Cannot contain a '$' */
+        if( *current == '$' ) {
+            mongo_set_error( conn, MONGO_NS_INVALID,
+                "Collection may not contain '$'" );
+            return MONGO_ERROR;
+        }
+
+        last = current;
+    }
+
+    /* Cannot end with a '.' */
+    if( *(current - 1) == '.' ) {
+        mongo_set_error( conn, MONGO_NS_INVALID,
+            "Collection may not end with '.'" );
+        return MONGO_ERROR;
+    }
+
+    return MONGO_OK;
+}
+
 static void mongo_set_last_error( mongo *conn, bson_iterator *it, bson *obj ) {
     int result_len = bson_iterator_string_len( it );
     const char *result_string = bson_iterator_string( it );
@@ -628,6 +729,9 @@ MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
     int overhead =  16 + 4 + strlen( ns ) + 1;
     int size = overhead;
 
+    if( mongo_validate_ns( conn, ns ) != MONGO_OK )
+        return MONGO_ERROR;
+
     for( i=0; i<count; i++ ) {
         size += bson_size( bsons[i] );
         if( mongo_bson_valid( conn, bsons[i], 1 ) != MONGO_OK )
@@ -656,6 +760,9 @@ MONGO_EXPORT int mongo_insert( mongo *conn , const char *ns , const bson *bson )
 
     char *data;
     mongo_message *mm;
+
+    if( mongo_validate_ns( conn, ns ) != MONGO_OK )
+        return MONGO_ERROR;
 
     /* Make sure that BSON is valid for insert. */
     if( mongo_bson_valid( conn, bson, 1 ) != MONGO_OK ) {
