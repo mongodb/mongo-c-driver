@@ -23,57 +23,57 @@ int test_namespace_validation() {
     ASSERT( mongo_validate_ns( conn, ".test.foo" ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "ns cannot start with", 20 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "test..foo" ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "ns cannot start with", 20 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "test" ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "ns cannot start with", 20 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "." ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "ns cannot start with", 20 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "tes t.foo" ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "Database name may not contain", 28 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "te$st.foo" ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "Database name may not contain", 28 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "te/st.foo" ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "Database name may not contain", 28 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "te\\st.foo" ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "Database name may not contain", 28 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "test.fo$o" ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "Collection may not contain '$'", 29 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "test.fo..o" ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "Collection may not contain two consecutive '.'", 46 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "test.fo.o." ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "Collection may not end with '.'", 30 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     return 0;
 }
@@ -97,7 +97,7 @@ int test_namespace_validation_on_insert( void ) {
     ASSERT( mongo_insert( conn, "tet.fo$o", b ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "Collection may not contain '$'", 29 ) == 0 );
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     bson_init( b2 );
     bson_append_int( b2, "foo", 1 );
@@ -148,7 +148,7 @@ int test_insert_limits( void ) {
     ASSERT( mongo_insert( conn, "test.foo", b ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_TOO_LARGE );
 
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
     ASSERT( conn->err == 0 );
 
     bson_init( b2 );
@@ -232,6 +232,8 @@ int test_get_last_error_commands( void ) {
 
     mongo_cmd_drop_db( conn, db );
     mongo_destroy( conn );
+
+    return 0;
 }
 
 int main() {

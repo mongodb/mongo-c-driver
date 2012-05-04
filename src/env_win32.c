@@ -17,6 +17,7 @@
 
 /* Networking and other niceties for WIN32. */
 #include "env.h"
+#include "mongo.h"
 #include <string.h>
 
 #ifdef _MSC_VER
@@ -37,20 +38,6 @@ static void mongo_clear_errors( mongo *conn ) {
     memset( conn->errstr, 0, MONGO_ERR_LEN );
 }
 
-static void mongo_set_error( mongo *conn, int err, const char *str ) {
-    int errstr_size, str_size;
-
-    conn->err = err;
-    conn->errcode = WSAGetLastError();
-
-    if( str ) {
-        str_size = strlen( str ) + 1;
-        errstr_size = str_size > MONGO_ERR_LEN ? MONGO_ERR_LEN : str_size;
-        memcpy( conn->errstr, str, errstr_size );
-        conn->errstr[errstr_size] = '\0';
-    }
-}
-
 int mongo_close_socket( int socket ) {
     return closesocket( socket );
 }
@@ -62,8 +49,8 @@ int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     while ( len ) {
         int sent = send( conn->sock, cbuf, len, flags );
         if ( sent == -1 ) {
-	    mongo_set_error( conn, MONGO_IO_ERROR, NULL );
-	    conn->connected = 0;
+            __mongo_set_error( conn, MONGO_IO_ERROR, NULL, WSAGetLastError() );
+            conn->connected = 0;
             return MONGO_ERROR;
         }
         cbuf += sent;
@@ -75,10 +62,11 @@ int mongo_write_socket( mongo *conn, const void *buf, int len ) {
 
 int mongo_read_socket( mongo *conn, void *buf, int len ) {
     char *cbuf = buf;
+
     while ( len ) {
         int sent = recv( conn->sock, cbuf, len, 0 );
         if ( sent == 0 || sent == -1 ) {
-	    mongo_set_error( conn, MONGO_IO_ERROR, NULL );
+            __mongo_set_error( conn, MONGO_IO_ERROR, NULL, WSAGetLastError() );
             return MONGO_ERROR;
         }
         cbuf += sent;
@@ -91,13 +79,15 @@ int mongo_read_socket( mongo *conn, void *buf, int len ) {
 int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
     if ( setsockopt( conn->sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&millis,
 			    sizeof( millis ) ) == -1 ) {
-        mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_RCVTIMEO failed." );
+        __mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_RCVTIMEO failed.",
+                           WSAGetLastError() );
         return MONGO_ERROR;
     }
 
     if ( setsockopt( conn->sock, SOL_SOCKET, SO_SNDTIMEO, (const char *)&millis,
 			    sizeof( millis ) ) == -1 ) {
-        mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_SNDTIMEO failed." );
+        __mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_SNDTIMEO failed.",
+                           WSAGetLastError() );
         return MONGO_ERROR;
     }
 
@@ -126,7 +116,7 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
     status = getaddrinfo( host, port_str, &ai_hints, &ai_list );
     if ( status != 0 ) {
 	bson_sprintf( errstr, "getaddrinfo failed with error %d", status );
-	mongo_set_error( conn, MONGO_CONN_ADDR_FAIL, errstr );
+	__mongo_set_error( conn, MONGO_CONN_ADDR_FAIL, errstr, WSAGetLastError() );
         return MONGO_ERROR;
     }
 
@@ -135,14 +125,14 @@ int mongo_socket_connect( mongo *conn, const char *host, int port ) {
 		             ai_ptr->ai_protocol );
 
         if ( conn->sock < 0 ) {
-	    mongo_set_error( conn, MONGO_SOCKET_ERROR, "socket() failed" );
+	    __mongo_set_error( conn, MONGO_SOCKET_ERROR, "socket() failed", WSAGetLastError() );
             conn->sock = 0;
             continue;
         }
 
         status = connect( conn->sock, ai_ptr->ai_addr, ai_ptr->ai_addrlen );
         if ( status != 0 ) {
-	    mongo_set_error( conn, MONGO_SOCKET_ERROR, "connect() failed" );
+	    __mongo_set_error( conn, MONGO_SOCKET_ERROR, "connect() failed", WSAGetLastError() );
             mongo_close_socket( conn->sock );
             conn->sock = 0;
             continue;

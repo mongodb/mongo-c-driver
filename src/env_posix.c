@@ -42,21 +42,6 @@ int mongo_env_sock_init( void ) {
     return 0;
 }
 
-static void mongo_set_error( mongo *conn, int err, const char *str ) {
-    int errstr_size, str_size;
-
-    conn->errcode = errno;
-    conn->err = err;
-
-    if( !str ) {
-        str = strerror( errno );
-    }
-    str_size = strlen( str ) + 1;
-    errstr_size = str_size > MONGO_ERR_LEN ? MONGO_ERR_LEN : str_size;
-    memcpy( conn->errstr, str, errstr_size );
-    conn->errstr[errstr_size] = '\0';
-}
-
 int mongo_write_socket( mongo *conn, const void *buf, int len ) {
     const char *cbuf = buf;
 #ifdef __APPLE__
@@ -70,7 +55,7 @@ int mongo_write_socket( mongo *conn, const void *buf, int len ) {
         if ( sent == -1 ) {
             if (errno == EPIPE)
                 conn->connected = 0;
-            mongo_set_error( conn, MONGO_IO_ERROR, NULL );
+            __mongo_set_error( conn, MONGO_IO_ERROR, strerror( errno ), errno );
             return MONGO_ERROR;
         }
         cbuf += sent;
@@ -85,7 +70,7 @@ int mongo_read_socket( mongo *conn, void *buf, int len ) {
     while ( len ) {
         int sent = recv( conn->sock, cbuf, len, 0 );
         if ( sent == 0 || sent == -1 ) {
-            mongo_set_error( conn, MONGO_IO_ERROR, NULL );
+            __mongo_set_error( conn, MONGO_IO_ERROR, strerror( errno ), errno );
             return MONGO_ERROR;
         }
         cbuf += sent;
@@ -102,12 +87,12 @@ int mongo_set_socket_op_timeout( mongo *conn, int millis ) {
 
     if ( setsockopt( conn->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof( tv ) ) == -1 ) {
         conn->err = MONGO_IO_ERROR;
-        mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_RCVTIMEO failed." );
+        __mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_RCVTIMEO failed.", errno );
         return MONGO_ERROR;
     }
 
     if ( setsockopt( conn->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof( tv ) ) == -1 ) {
-        mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_SNDTIMEO failed." );
+        __mongo_set_error( conn, MONGO_IO_ERROR, "setsockopt SO_SNDTIMEO failed.", errno );
         return MONGO_ERROR;
     }
 

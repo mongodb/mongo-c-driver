@@ -111,10 +111,12 @@ MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn) {
     return conn->lasterrstr;
 }
 
-static void mongo_set_error( mongo *conn, int err, const char *str ) {
+MONGO_EXPORT void __mongo_set_error( mongo *conn, mongo_error_t err, const char *str,
+                               int errcode ) {
     int errstr_size, str_size;
 
     conn->err = err;
+    conn->errcode = errcode;
 
     if( str ) {
         str_size = strlen( str ) + 1;
@@ -132,7 +134,7 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
 
     /* If the first character is a '.', fail. */
     if( *ns == '.' ) {
-        mongo_set_error( conn, MONGO_NS_INVALID, "ns cannot start with a '.'." );
+        __mongo_set_error( conn, MONGO_NS_INVALID, "ns cannot start with a '.'.", 0 );
         return MONGO_ERROR;
     }
 
@@ -147,13 +149,13 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
     /* Fail because the ns doesn't contain a '.'
      * or the collection part starts with a dot. */
     if( *current == '\0' || *current == '.' ) {
-        mongo_set_error( conn, MONGO_NS_INVALID, "ns cannot start with a '.'." );
+        __mongo_set_error( conn, MONGO_NS_INVALID, "ns cannot start with a '.'.", 0 );
         return MONGO_ERROR;
     }
 
     /* Fail if collection length is 0. */
     if( *(current + 1) == '\0' ) {
-        mongo_set_error( conn, MONGO_NS_INVALID, "Collection name missing." );
+        __mongo_set_error( conn, MONGO_NS_INVALID, "Collection name missing.", 0 );
         return MONGO_ERROR;
     }
 
@@ -163,7 +165,7 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
 
     /* Ensure that the database name is greater than one char.*/
     if( collection_name - 1 == db_name ) {
-        mongo_set_error( conn, MONGO_NS_INVALID, "Database name missing." );
+        __mongo_set_error( conn, MONGO_NS_INVALID, "Database name missing.", 0 );
         return MONGO_ERROR;
     }
 
@@ -174,8 +176,8 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
             case '$':
             case '/':
             case '\\':
-                mongo_set_error( conn, MONGO_NS_INVALID,
-                    "Database name may not contain ' ', '$', '/', or '\\'" );
+                __mongo_set_error( conn, MONGO_NS_INVALID,
+                    "Database name may not contain ' ', '$', '/', or '\\'", 0 );
                 return MONGO_ERROR;
             default:
                 break;
@@ -187,15 +189,15 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
 
         /* Cannot have two consecutive dots. */
         if( last && *last == '.' && *current == '.' ) {
-                mongo_set_error( conn, MONGO_NS_INVALID,
-                    "Collection may not contain two consecutive '.'" );
+                __mongo_set_error( conn, MONGO_NS_INVALID,
+                    "Collection may not contain two consecutive '.'", 0 );
             return MONGO_ERROR;
         }
 
         /* Cannot contain a '$' */
         if( *current == '$' ) {
-            mongo_set_error( conn, MONGO_NS_INVALID,
-                "Collection may not contain '$'" );
+            __mongo_set_error( conn, MONGO_NS_INVALID,
+                "Collection may not contain '$'", 0 );
             return MONGO_ERROR;
         }
 
@@ -204,8 +206,8 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
 
     /* Cannot end with a '.' */
     if( *(current - 1) == '.' ) {
-        mongo_set_error( conn, MONGO_NS_INVALID,
-            "Collection may not end with '.'" );
+        __mongo_set_error( conn, MONGO_NS_INVALID,
+            "Collection may not end with '.'", 0 );
         return MONGO_ERROR;
     }
 
@@ -353,7 +355,7 @@ MONGO_EXPORT void mongo_init_sockets( void ) {
     mongo_env_sock_init();
 }
 
-MONGO_EXPORT void mongo_clear_stored_errors( mongo *conn ) {
+MONGO_EXPORT void mongo_clear_errors( mongo *conn ) {
     conn->err = 0;
     conn->errcode = 0;
     conn->lasterrcode = 0;
@@ -663,7 +665,7 @@ MONGO_EXPORT void mongo_destroy( mongo *conn ) {
 
     bson_free( conn->primary );
 
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 }
 
 /* Determine whether this BSON object is valid for the given operation.  */
@@ -851,7 +853,7 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
     bson_iterator it;
 
     /* Clear any errors. */
-    mongo_clear_stored_errors( cursor->conn );
+    mongo_clear_errors( cursor->conn );
 
     /* Set up default values for query and fields, if necessary. */
     if( ! cursor->query )
@@ -1296,7 +1298,7 @@ static int mongo_cmd_get_error_helper( mongo *conn, const char *db,
     bson_bool_t haserror = 0;
 
     /* Reset last error codes. */
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
 
     /* If there's an error, store its code and string in the connection object. */
     if( mongo_simple_int_command( conn, db, cmdtype, 1, &out ) == MONGO_OK ) {

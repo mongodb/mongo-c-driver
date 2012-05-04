@@ -192,13 +192,15 @@ MONGO_EXPORT void mongo_cursor_dispose(mongo_cursor* cursor);
 MONGO_EXPORT int  mongo_get_server_err(mongo* conn);
 MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
 
+
+MONGO_EXPORT void __mongo_set_error( mongo *conn, mongo_error_t err,
+                                     const char *errstr, int errorcode );
+
+MONGO_EXPORT void mongo_clear_errors( mongo *conn );
+
 /** Initialize sockets for Windows.
  */
 MONGO_EXPORT void mongo_init_sockets();
-
-/** Clear any errors stored in error fields for this connection.
- */
-MONGO_EXPORT void mongo_clear_stored_errors( mongo *conn );
 
 /**
  * Initialize a new mongo connection object. You must initialize each mongo
