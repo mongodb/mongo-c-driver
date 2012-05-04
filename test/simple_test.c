@@ -146,7 +146,7 @@ int main() {
 
     ASSERT( mongo_check_connection( conn ) == MONGO_OK );
 
-    mongo_close_socket( conn->sock );
+    mongo_env_close_socket( conn->sock );
 
     ASSERT( mongo_check_connection( conn ) == MONGO_ERROR );
 

@@ -250,13 +250,13 @@ int mongo_message_send( mongo *conn, mongo_message *mm ) {
     bson_little_endian32( &head.responseTo, &mm->head.responseTo );
     bson_little_endian32( &head.op, &mm->head.op );
 
-    res = mongo_write_socket( conn, &head, sizeof( head ) );
+    res = mongo_env_write_socket( conn, &head, sizeof( head ) );
     if( res != MONGO_OK ) {
         bson_free( mm );
         return res;
     }
 
-    res = mongo_write_socket( conn, &mm->data, mm->head.len - sizeof( head ) );
+    res = mongo_env_write_socket( conn, &mm->data, mm->head.len - sizeof( head ) );
     if( res != MONGO_OK ) {
         bson_free( mm );
         return res;
@@ -273,8 +273,8 @@ int mongo_read_response( mongo *conn, mongo_reply **reply ) {
     unsigned int len;
     int res;
 
-    mongo_read_socket( conn, &head, sizeof( head ) );
-    mongo_read_socket( conn, &fields, sizeof( fields ) );
+    mongo_env_read_socket( conn, &head, sizeof( head ) );
+    mongo_env_read_socket( conn, &fields, sizeof( fields ) );
 
     bson_little_endian32( &len, &head.len );
 
@@ -293,7 +293,7 @@ int mongo_read_response( mongo *conn, mongo_reply **reply ) {
     bson_little_endian32( &out->fields.start, &fields.start );
     bson_little_endian32( &out->fields.num, &fields.num );
 
-    res = mongo_read_socket( conn, &out->objs, len-sizeof( head )-sizeof( fields ) );
+    res = mongo_env_read_socket( conn, &out->objs, len-sizeof( head )-sizeof( fields ) );
     if( res != MONGO_OK ) {
         bson_free( out );
         return res;
@@ -376,7 +376,7 @@ MONGO_EXPORT int mongo_connect( mongo *conn , const char *host, int port ) {
     conn->primary->port = port;
     conn->primary->next = NULL;
 
-    if( mongo_socket_connect( conn, host, port ) != MONGO_OK )
+    if( mongo_env_socket_connect( conn, host, port ) != MONGO_OK )
         return MONGO_ERROR;
 
     if( mongo_check_is_master( conn ) != MONGO_OK )
@@ -496,7 +496,7 @@ static void mongo_replset_check_seed( mongo *conn ) {
 
     bson_destroy( &out );
     bson_destroy( &hosts );
-    mongo_close_socket( conn->sock );
+    mongo_env_close_socket( conn->sock );
     conn->sock = 0;
     conn->connected = 0;
 
@@ -538,7 +538,7 @@ static int mongo_replset_check_host( mongo *conn ) {
     if( ismaster ) {
         conn->replset->primary_connected = 1;
     } else {
-        mongo_close_socket( conn->sock );
+        mongo_env_close_socket( conn->sock );
     }
 
     return MONGO_OK;
@@ -557,7 +557,7 @@ MONGO_EXPORT int mongo_replset_connect( mongo *conn ) {
      */
     node = conn->replset->seeds;
     while( node != NULL ) {
-        res = mongo_socket_connect( conn, ( const char * )&node->host, node->port );
+        res = mongo_env_socket_connect( conn, ( const char * )&node->host, node->port );
         if( res == MONGO_OK ) {
             mongo_replset_check_seed( conn );
             if( conn->replset->hosts )
@@ -574,7 +574,7 @@ MONGO_EXPORT int mongo_replset_connect( mongo *conn ) {
         node = conn->replset->hosts;
 
         while( node != NULL ) {
-            res = mongo_socket_connect( conn, ( const char * )&node->host, node->port );
+            res = mongo_env_socket_connect( conn, ( const char * )&node->host, node->port );
 
             if( res == MONGO_OK ) {
                 if( mongo_replset_check_host( conn ) != MONGO_OK )
@@ -589,7 +589,7 @@ MONGO_EXPORT int mongo_replset_connect( mongo *conn ) {
 
                 /* No primary, so close the connection. */
                 else {
-                    mongo_close_socket( conn->sock );
+                    mongo_env_close_socket( conn->sock );
                     conn->sock = 0;
                     conn->connected = 0;
                 }
@@ -607,7 +607,7 @@ MONGO_EXPORT int mongo_replset_connect( mongo *conn ) {
 MONGO_EXPORT int mongo_set_op_timeout( mongo *conn, int millis ) {
     conn->op_timeout_ms = millis;
     if( conn->sock && conn->connected )
-        mongo_set_socket_op_timeout( conn, millis );
+        mongo_env_set_socket_op_timeout( conn, millis );
 
     return MONGO_OK;
 }
@@ -623,7 +623,7 @@ MONGO_EXPORT int mongo_reconnect( mongo *conn ) {
         res = mongo_replset_connect( conn );
         return res;
     } else
-        return mongo_socket_connect( conn, conn->primary->host, conn->primary->port );
+        return mongo_env_socket_connect( conn, conn->primary->host, conn->primary->port );
 }
 
 MONGO_EXPORT int mongo_check_connection( mongo *conn ) {
@@ -646,7 +646,7 @@ MONGO_EXPORT void mongo_disconnect( mongo *conn ) {
         conn->replset->hosts = NULL;
     }
 
-    mongo_close_socket( conn->sock );
+    mongo_env_close_socket( conn->sock );
 
     conn->sock = 0;
     conn->connected = 0;
