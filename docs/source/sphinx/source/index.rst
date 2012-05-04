@@ -22,7 +22,10 @@ The API was completely revamped in v0.4.
     How to work with BSON objects.
 
 :doc:`connections`
-    How connect to single nodes and to replica sets.
+    How to connect to single nodes and to replica sets.
+
+:doc:`errors`
+    How errors are reported.
 
 `API Docs <api/index.html>`_
     Doxygen-generated API docs.

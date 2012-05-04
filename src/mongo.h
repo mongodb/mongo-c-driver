@@ -192,10 +192,21 @@ MONGO_EXPORT void mongo_cursor_dispose(mongo_cursor* cursor);
 MONGO_EXPORT int  mongo_get_server_err(mongo* conn);
 MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
 
-
+/**
+ * Set an error this mongo connection object. Mostly for internal use.
+ *
+ * @param conn a mongo connection object.
+ * @param err a driver error code of mongo_error_t.
+ * @param errstr a string version of the error.
+ * @param errorcode Currently errno or WSAGetLastError().
+ */
 MONGO_EXPORT void __mongo_set_error( mongo *conn, mongo_error_t err,
                                      const char *errstr, int errorcode );
-
+/**
+ * Clear all errors stored on this mongo connection object.
+ *
+ * @param conn a mongo connection object.
+ */
 MONGO_EXPORT void mongo_clear_errors( mongo *conn );
 
 /** Initialize sockets for Windows.
