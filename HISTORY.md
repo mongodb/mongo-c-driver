@@ -1,5 +1,20 @@
 # MongoDB C Driver History
 
+## 0.5.2
+2012-5-4
+
+* Validate collection and database names on insert.
+* Validate insert limits using max BSON size.
+* Support getaddrinfo and SO_RCVTIMEO and SO_SNDTIMEO on Windows.
+* Store errno/WSAGetLastError() on errors.
+* Various bug fixes and refactorings.
+* Update error reporting docs.
+
+## 0.5.1
+
+* Env for POSIX, WIN32, and standard C.
+* Various bug fixes.
+
 ## 0.5
 2012-3-31
 
