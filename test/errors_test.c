@@ -9,6 +9,8 @@ static const char *ns = "test.c.error";
 
 int test_namespace_validation() {
     mongo conn[1];
+    char longns[130] = "test.foo";
+    int i;
 
     mongo_init( conn );
 
@@ -73,6 +75,15 @@ int test_namespace_validation() {
     ASSERT( mongo_validate_ns( conn, "test.fo.o." ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "Collection may not end with '.'", 30 ) == 0 );
+    mongo_clear_errors( conn );
+
+    for(i = 8; i < 129; i++ )
+        longns[i] = 'a';
+    longns[129] = '\0';
+
+    ASSERT( mongo_validate_ns( conn, longns ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Namespace too long; has 129 but must <= 128.", 32 ) == 0 );
     mongo_clear_errors( conn );
 
     return 0;

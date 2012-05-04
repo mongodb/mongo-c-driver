@@ -126,11 +126,21 @@ MONGO_EXPORT void __mongo_set_error( mongo *conn, mongo_error_t err, const char 
     }
 }
 
+MONGO_EXPORT void mongo_clear_errors( mongo *conn ) {
+    conn->err = 0;
+    conn->errcode = 0;
+    conn->lasterrcode = 0;
+    memset( conn->errstr, 0, MONGO_ERR_LEN );
+    memset( conn->lasterrstr, 0, MONGO_ERR_LEN );
+}
+
 MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
     char *last = NULL;
     char *current = NULL;
     const char *db_name = ns;
     char *collection_name = NULL;
+    char errmsg[64];
+    int ns_len = 0;
 
     /* If the first character is a '.', fail. */
     if( *ns == '.' ) {
@@ -182,7 +192,12 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
             default:
                 break;
         }
+
+        ns_len++;
     }
+
+    /* Add one to the length for the '.' character. */
+    ns_len++;
 
     /* Now validate the collection name. */
     for( current = collection_name; *current != '\0'; current++ ) {
@@ -202,6 +217,14 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
         }
 
         last = current;
+        ns_len++;
+    }
+
+    if( ns_len > 128 ) {
+        bson_sprintf( errmsg, "Namespace too long; has %d but must <= 128.",
+                      ns_len );
+        __mongo_set_error( conn, MONGO_NS_INVALID, errmsg, 0 );
+        return MONGO_ERROR;
     }
 
     /* Cannot end with a '.' */
