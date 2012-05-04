@@ -259,6 +259,8 @@ int test_bson_size( void ) {
     bson_finish( bsmall );
     
     ASSERT( bson_size( bsmall ) == 12 );
+
+    return 0;
 }
 
 int main() {

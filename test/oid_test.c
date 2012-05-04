@@ -7,13 +7,13 @@
 #include <stdlib.h>
 #include <time.h>
 
-int increment() {
+int increment( void ) {
     static int i = 1000;
     i++;
     return i;
 }
 
-int fuzz() {
+int fuzz( void ) {
     return 50000;
 }
 

@@ -355,13 +355,6 @@ MONGO_EXPORT void mongo_init_sockets( void ) {
     mongo_env_sock_init();
 }
 
-MONGO_EXPORT void mongo_clear_errors( mongo *conn ) {
-    conn->err = 0;
-    conn->errcode = 0;
-    conn->lasterrcode = 0;
-    memset( conn->errstr, 0, MONGO_ERR_LEN );
-    memset( conn->lasterrstr, 0, MONGO_ERR_LEN );
-}
 
 MONGO_EXPORT void mongo_init( mongo *conn ) {
     memset( conn, 0, sizeof( mongo ) );
