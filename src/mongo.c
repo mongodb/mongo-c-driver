@@ -50,7 +50,7 @@ MONGO_EXPORT int mongo_get_op_timeout(mongo* conn) {
 
 const char* _get_host_port(mongo_host_port* hp) {
     static char _hp[sizeof(hp->host)+12];
-    sprintf(_hp, "%s:%d", hp->host, hp->port);
+    bson_sprintf(_hp, "%s:%d", hp->host, hp->port);
     return _hp;
 }
 
@@ -149,7 +149,7 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
     }
 
     /* Find the division between database and collection names. */
-    for( current = ns; *current != '\0'; current++ ) {
+    for( current = (char *)ns; *current != '\0'; current++ ) {
         if( *current == '.' ) {
             current++;
             break;
@@ -180,7 +180,7 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
     }
 
     /* Go back and validate the database name. */
-    for( current = db_name; *current != '.'; current++ ) {
+    for( current = (char *)db_name; *current != '.'; current++ ) {
         switch( *current ) {
             case ' ':
             case '$':
