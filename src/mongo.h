@@ -193,7 +193,7 @@ MONGO_EXPORT int  mongo_get_server_err(mongo* conn);
 MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
 
 /**
- * Set an error this mongo connection object. Mostly for internal use.
+ * Set an error on a mongo connection object. Mostly for internal use.
  *
  * @param conn a mongo connection object.
  * @param err a driver error code of mongo_error_t.
