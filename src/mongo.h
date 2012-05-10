@@ -203,7 +203,7 @@ MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
 MONGO_EXPORT void __mongo_set_error( mongo *conn, mongo_error_t err,
                                      const char *errstr, int errorcode );
 /**
- * Clear all errors stored on this mongo connection object.
+ * Clear all errors stored on a mongo connection object.
  *
  * @param conn a mongo connection object.
  */
