@@ -93,6 +93,7 @@ void test_insert( mongo *conn ) {
 
 int main() {
     mongo conn[1];
+    char version[10];
 
     INIT_SOCKETS_FOR_WINDOWS;
 
@@ -102,7 +103,9 @@ int main() {
     }
 
     test_insert( conn );
-    test_bad_input( conn );
+    if( mongo_get_server_version( version ) != -1 && version[0] != '1' ) {
+        test_bad_input( conn );
+    }
 
     mongo_destroy( conn );
     return 0;
