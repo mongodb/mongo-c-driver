@@ -32,7 +32,7 @@ TESTS=test/auth_test test/bson_test test/bson_subobject_test test/count_delete_t
   test/cursors_test test/endian_swap_test test/errors_test test/examples_test \
   test/functions_test test/gridfs_test test/helpers_test \
   test/oid_test test/resize_test test/simple_test test/sizes_test test/update_test \
-  test/validate_test
+  test/validate_test test/write_concern_test
 MONGO_OBJECTS=src/bson.o src/encoding.o src/gridfs.o src/md5.o src/mongo.o \
  src/numbers.o
 BSON_OBJECTS=src/bson.o src/numbers.o src/encoding.o

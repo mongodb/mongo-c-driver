@@ -117,7 +117,7 @@ static void single_insert_small_test() {
     bson b;
     for ( i=0; i<PER_TRIAL; i++ ) {
         make_small( &b, i );
-        mongo_insert( conn, DB ".single.small", &b );
+        mongo_insert( conn, DB ".single.small", &b, NULL );
         bson_destroy( &b );
     }
 }
@@ -127,7 +127,7 @@ static void single_insert_medium_test() {
     bson b;
     for ( i=0; i<PER_TRIAL; i++ ) {
         make_medium( &b, i );
-        mongo_insert( conn, DB ".single.medium", &b );
+        mongo_insert( conn, DB ".single.medium", &b, NULL );
         bson_destroy( &b );
     }
 }
@@ -137,7 +137,7 @@ static void single_insert_large_test() {
     bson b;
     for ( i=0; i<PER_TRIAL; i++ ) {
         make_large( &b, i );
-        mongo_insert( conn, DB ".single.large", &b );
+        mongo_insert( conn, DB ".single.large", &b, NULL );
         bson_destroy( &b );
     }
 }
@@ -148,7 +148,7 @@ static void index_insert_small_test() {
     ASSERT( mongo_create_simple_index( conn, DB ".index.small", "x", 0, NULL ) == MONGO_OK );
     for ( i=0; i<PER_TRIAL; i++ ) {
         make_small( &b, i );
-        mongo_insert( conn, DB ".index.small", &b );
+        mongo_insert( conn, DB ".index.small", &b, NULL );
         bson_destroy( &b );
     }
 }
@@ -159,7 +159,7 @@ static void index_insert_medium_test() {
     ASSERT( mongo_create_simple_index( conn, DB ".index.medium", "x", 0, NULL ) == MONGO_OK );
     for ( i=0; i<PER_TRIAL; i++ ) {
         make_medium( &b, i );
-        mongo_insert( conn, DB ".index.medium", &b );
+        mongo_insert( conn, DB ".index.medium", &b, NULL );
         bson_destroy( &b );
     }
 }
@@ -170,7 +170,7 @@ static void index_insert_large_test() {
     ASSERT( mongo_create_simple_index( conn, DB ".index.large", "x", 0, NULL ) == MONGO_OK );
     for ( i=0; i<PER_TRIAL; i++ ) {
         make_large( &b, i );
-        mongo_insert( conn, DB ".index.large", &b );
+        mongo_insert( conn, DB ".index.large", &b, NULL );
         bson_destroy( &b );
     }
 }
@@ -384,7 +384,7 @@ static void clean() {
     }
 
     /* create the db */
-    mongo_insert( conn, DB ".creation", bson_empty( &b ) );
+    mongo_insert( conn, DB ".creation", bson_empty( &b ), NULL );
     ASSERT( !mongo_cmd_get_last_error( conn, DB, NULL ) );
 }
 

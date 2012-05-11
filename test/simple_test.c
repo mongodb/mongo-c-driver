@@ -93,7 +93,7 @@ int main() {
         }
 
         bson_finish( &b );
-        mongo_insert( conn , ns , &b );
+        mongo_insert( conn , ns , &b, NULL );
         bson_destroy( &b );
     }
 

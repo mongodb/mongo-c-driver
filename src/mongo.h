@@ -51,10 +51,12 @@ typedef enum mongo_error_t {
     MONGO_SOCKET_ERROR,      /**< Other socket error. */
     MONGO_READ_SIZE_ERROR,   /**< The response is not the expected length. */
     MONGO_COMMAND_FAILED,    /**< The command returned with 'ok' value of 0. */
+    MONGO_WRITE_ERROR,       /**< Write with given write_concern returned an error. */
     MONGO_NS_INVALID,        /**< The name for the ns (database or collection) is invalid. */
     MONGO_BSON_INVALID,      /**< BSON not valid for the specified op. */
     MONGO_BSON_NOT_FINISHED, /**< BSON object has not been finished. */
-    MONGO_BSON_TOO_LARGE     /**< BSON object exceeds max BSON size. */
+    MONGO_BSON_TOO_LARGE,    /**< BSON object exceeds max BSON size. */
+    MONGO_WRITE_CONCERN_INVALID /**< Supplied write concern object is invalid. */
 } mongo_error_t;
 
 typedef enum mongo_cursor_error_t {
@@ -137,6 +139,16 @@ typedef struct mongo_host_port {
     struct mongo_host_port *next;
 } mongo_host_port;
 
+typedef struct mongo_write_concern {
+    int w;            /**< Number of nodes this write should be replicated to. */
+    int wtimeout;     /**< Number of milliseconds before replication timeout. */
+    int j;            /**< If non-zero, block until the journal sync. */
+    int fsync;        /**< Same a j with journaling enabled; otherwise, call fsync. */
+    const char *mode; /**< Either "majority" or a getlasterrormode. Overrides w value. */
+
+    bson *cmd; /**< The BSON object representing the getlasterror command. */
+} mongo_write_concern;
+
 typedef struct {
     mongo_host_port *seeds;        /**< List of seeds provided by the user. */
     mongo_host_port *hosts;        /**< List of host/ports given by the replica set */
@@ -153,7 +165,7 @@ typedef struct mongo {
     int op_timeout_ms;         /**< Read and write timeout in milliseconds. */
     int max_bson_size;         /**< Largest BSON object allowed on this connection. */
     bson_bool_t connected;     /**< Connection status. */
-    mongo_write_concern wc;    /**< The default write concern for this connection. */
+    mongo_write_concern *write_concern; /**< The default write concern. */
 
     mongo_error_t err;          /**< Most recent driver error code. */
     int errcode;                /**< Most recent errno or WSAGetLastError(). */
@@ -176,7 +188,6 @@ typedef struct {
     int limit;         /**< Bitfield containing cursor options. */
     int skip;          /**< Bitfield containing cursor options. */
 } mongo_cursor;
-
 
 /*********************************************************************
 Connection API
@@ -317,6 +328,17 @@ MONGO_EXPORT void mongo_disconnect( mongo *conn );
  */
 MONGO_EXPORT void mongo_destroy( mongo *conn );
 
+/**
+ * Identify the write concern object that this connection should use
+ * by default for all writes (inserts, updates, and deletes). This value
+ * will be overridden by any write function ending in _with_write_concern.
+ *
+ * @param conn a mongo object.
+ * @param write_concer pointer to a write concern object.
+ *
+ */
+MONGO_EXPORT void mongo_set_write_concern( mongo *conn, mongo_write_concern *write_concern );
+
 
 /*********************************************************************
 CRUD API
@@ -327,6 +349,8 @@ CRUD API
  * will fail if the supplied BSON struct is not UTF-8 or if
  * the keys are invalid for insert (contain '.' or start with '$').
  *
+ * The default write concern set on the conn object will be used.
+ *
  * @param conn a mongo object.
  * @param ns the namespace.
  * @param data the bson data.
@@ -335,11 +359,14 @@ CRUD API
  *     field is MONGO_BSON_INVALID, check the err field
  *     on the bson struct for the reason.
  */
-MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns, const bson *data );
+MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns, const bson *data,
+    mongo_write_concern *custom_write_concern );
 
 /**
  * Insert a batch of BSON documents into a MongoDB server. This function
  * will fail if any of the documents to be inserted is invalid.
+ *
+ * The default write concern set on the conn object will be used.
  *
  * @param conn a mongo object.
  * @param ns the namespace.
@@ -354,6 +381,8 @@ MONGO_EXPORT int mongo_insert_batch( mongo *conn , const char *ns ,
 
 /**
  * Update a document in a MongoDB server.
+ *
+ * The default write concern set on the conn object will be used.
  *
  * @param conn a mongo object.
  * @param ns the namespace.
@@ -370,6 +399,8 @@ MONGO_EXPORT int mongo_update( mongo *conn, const char *ns, const bson *cond,
 /**
  * Remove a document from a MongoDB server.
  *
+ * The default write concern set on the conn object will be used.
+ *
  * @param conn a mongo object.
  * @param ns the namespace.
  * @param cond the bson query.
@@ -378,6 +409,31 @@ MONGO_EXPORT int mongo_update( mongo *conn, const char *ns, const bson *cond,
  */
 MONGO_EXPORT int mongo_remove( mongo *conn, const char *ns, const bson *cond );
 
+
+/*********************************************************************
+Write Concern API
+**********************************************************************/
+
+/**
+ * Initialize a mongo_write_concern object. Effectively zeroes out the struct.
+ *
+ */
+MONGO_EXPORT void mongo_write_concern_init( mongo_write_concern *write_concern );
+
+/**
+ * Finish this write concern object by serializing the literal getlasterror
+ * command that will be sent to the server.
+ *
+ * You must call mongo_write_concern_destroy() to free the serialized BSON.
+ *
+ */
+MONGO_EXPORT int mongo_write_concern_finish( mongo_write_concern *write_concern );
+
+/**
+ * Free the write_concern object (specifically, the BSON that it owns).
+ *
+ */
+MONGO_EXPORT void mongo_write_concern_destroy( mongo_write_concern *write_concern );
 
 /*********************************************************************
 Cursor API

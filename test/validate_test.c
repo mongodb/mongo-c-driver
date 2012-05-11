@@ -42,7 +42,7 @@ int main() {
     /* Test checking for finished bson. */
     bson_init( &b );
     bson_append_int( &b, "foo", 1 );
-    ASSERT( mongo_insert( conn, "test.foo", &b ) == MONGO_ERROR );
+    ASSERT( mongo_insert( conn, "test.foo", &b, NULL ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_NOT_FINISHED );
 
     /* Test valid keys. */
@@ -69,7 +69,7 @@ int main() {
     ASSERT( b.err & BSON_FIELD_INIT_DOLLAR );
     ASSERT( b.err & BSON_NOT_UTF8 );
 
-    result = mongo_insert( conn, ns, &b );
+    result = mongo_insert( conn, ns, &b, NULL );
     ASSERT( result == MONGO_ERROR );
     ASSERT( conn->err & MONGO_BSON_NOT_FINISHED );
 

@@ -30,7 +30,7 @@ int test_read_timeout( void ) {
     bson_append_string( &obj, "foo", "bar");
     bson_finish( &obj );
 
-    res = mongo_insert( conn, "test.foo", &obj );
+    res = mongo_insert( conn, "test.foo", &obj, NULL );
 
     /* Set the connection timeout here. */
     mongo_set_op_timeout( conn, 1000 );
@@ -61,7 +61,7 @@ int test_getaddrinfo( void ) {
     bson_append_int( b, "foo", 17 );
     bson_finish( b );
 
-    mongo_insert( conn , ns , b );
+    mongo_insert( conn , ns , b, NULL );
 
     ASSERT( mongo_count( conn, "test", "foo", NULL ) == 1 );
 
@@ -83,7 +83,7 @@ int test_error_messages( void ) {
     bson_append_int( b, "foo", 17 );
     bson_finish( b );
 
-    ASSERT( mongo_insert( conn, ns, b ) != MONGO_OK );
+    ASSERT( mongo_insert( conn, ns, b, NULL ) != MONGO_OK );
     ASSERT( conn->err == MONGO_IO_ERROR );
     ASSERT( conn->errcode == ENOTSOCK );
 

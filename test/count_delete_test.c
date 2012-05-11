@@ -36,7 +36,7 @@ int main() {
         bson_append_int( &b , "a" , i+1 ); /* 1 to 5 */
         bson_finish( &b );
 
-        mongo_insert( conn , ns , &b );
+        mongo_insert( conn , ns , &b, NULL );
         bson_destroy( &b );
     }
 

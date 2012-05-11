@@ -30,7 +30,7 @@ void insert_sample_data( mongo *conn, int n ) {
         bson_append_int( &b, "a", i );
         bson_finish( &b );
 
-        mongo_insert( conn, "test.cursors", &b );
+        mongo_insert( conn, "test.cursors", &b, NULL );
 
         bson_destroy( &b );
     }

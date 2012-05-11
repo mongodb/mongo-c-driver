@@ -4,7 +4,15 @@
 #define ASSERT(x) \
     do{ \
         if(!(x)){ \
-            printf("failed assert (%d): %s\n", __LINE__,  #x); \
+            printf("\nFailed ASSERT [%s] (%d):\n     %s\n\n", __FILE__,  __LINE__,  #x); \
+            exit(1); \
+        }\
+    }while(0)
+
+#define ASSERT_EQUAL_STRINGS(x, y) \
+    do{ \
+        if((strncmp( x, y, strlen( y ) != 0 ))){ \
+            printf("\nFailed ASSERT_EQUAL_STRINGS [%s] (%d):\n  \"%s\" does not equal\n  %s\n", __FILE__,  __LINE__,  x, #y); \
             exit(1); \
         }\
     }while(0)
@@ -14,6 +22,10 @@
 #else
 #define INIT_SOCKETS_FOR_WINDOWS do {} while(0)
 #endif
+
+const char *TEST_DB = "test";
+const char *TEST_COL = "foo";
+const char *TEST_NS = "test.foo";
 
 MONGO_EXTERN_C_START
 
