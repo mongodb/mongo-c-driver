@@ -1,5 +1,25 @@
 # MongoDB C Driver History
 
+## 0.6
+UNRELEASED
+** API CHANGE **
+
+Version 0.6 supports write concern. This involves a backward-breaking
+API change, as the write functions now take an optional write_concern
+object. The new function prototypes are as follows:
+
+* int mongo_insert( mongo *conn, const char *ns, const bson *data,
+      mongo_write_concern *custom_write_concern );
+
+* int mongo_insert_batch( mongo *conn , const char *ns ,
+    const bson **data , int num, mongo_write_concern *custom_write_concern );
+
+* int mongo_update( mongo *conn, const char *ns, const bson *cond,
+    const bson *op, int flags, mongo_write_concern *custom_write_concern );
+
+* int mongo_remove( mongo *conn, const char *ns, const bson *cond,
+    mongo_write_concern *custom_write_concern );
+
 ## 0.5.2
 2012-5-4
 

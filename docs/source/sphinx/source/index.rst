@@ -24,6 +24,9 @@ The API was completely revamped in v0.4.
 :doc:`connections`
     How to connect to single nodes and to replica sets.
 
+:doc:`write_concern`
+    How to detect write errors and ensure various durability levels.
+
 :doc:`errors`
     How errors are reported.
 
