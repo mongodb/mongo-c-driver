@@ -87,6 +87,7 @@ void test_update_and_remove( mongo *conn ) {
     bson_destroy( update );
     for( i=0; i<5; i++ ) {
         bson_destroy( objs[i] );
+        bson_free( objs[i] );
     }
 }
 
