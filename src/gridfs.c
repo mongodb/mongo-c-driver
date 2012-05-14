@@ -390,14 +390,14 @@ MONGO_EXPORT void gridfs_remove_filename( gridfs *gfs, const char *filename ) {
         bson_init( &b );
         bson_append_oid( &b, "_id", &id );
         bson_finish( &b );
-        mongo_remove( gfs->client, gfs->files_ns, &b );
+        mongo_remove( gfs->client, gfs->files_ns, &b, NULL );
         bson_destroy( &b );
 
         /* Remove all chunks from the file with the specified id */
         bson_init( &b );
         bson_append_oid( &b, "files_id", &id );
         bson_finish( &b );
-        mongo_remove( gfs->client, gfs->chunks_ns, &b );
+        mongo_remove( gfs->client, gfs->chunks_ns, &b, NULL );
         bson_destroy( &b );
     }
 

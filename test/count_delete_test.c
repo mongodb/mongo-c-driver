@@ -52,7 +52,7 @@ int main() {
     ASSERT( mongo_count( conn, db, col, NULL ) == 5 );
     ASSERT( mongo_count( conn, db, col, &b ) == 2 );
 
-    mongo_remove( conn, ns, &b );
+    mongo_remove( conn, ns, &b, NULL );
 
     ASSERT( mongo_count( conn, db, col, NULL ) == 3 );
     ASSERT( mongo_count( conn, db, col, &b ) == 0 );

@@ -329,15 +329,16 @@ MONGO_EXPORT void mongo_disconnect( mongo *conn );
 MONGO_EXPORT void mongo_destroy( mongo *conn );
 
 /**
- * Identify the write concern object that this connection should use
+ * Specify the write concern object that this connection should use
  * by default for all writes (inserts, updates, and deletes). This value
- * will be overridden by any write function ending in _with_write_concern.
+ * can be overridden by passing a write_concern object to any write function.
  *
  * @param conn a mongo object.
- * @param write_concer pointer to a write concern object.
+ * @param write_concern pointer to a write concern object.
  *
  */
-MONGO_EXPORT void mongo_set_write_concern( mongo *conn, mongo_write_concern *write_concern );
+MONGO_EXPORT void mongo_set_write_concern( mongo *conn,
+    mongo_write_concern *write_concern );
 
 
 /*********************************************************************
@@ -354,6 +355,8 @@ CRUD API
  * @param conn a mongo object.
  * @param ns the namespace.
  * @param data the bson data.
+ * @param custom_write_concern a write concern object that will
+ *     override any write concern set on the conn object.
  *
  * @return MONGO_OK or MONGO_ERROR. If the conn->err
  *     field is MONGO_BSON_INVALID, check the err field
@@ -372,12 +375,14 @@ MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns, const bson *data,
  * @param ns the namespace.
  * @param data the bson data.
  * @param num the number of documents in data.
+ * @param custom_write_concern a write concern object that will
+ *     override any write concern set on the conn object.
  *
  * @return MONGO_OK or MONGO_ERROR.
  *
  */
 MONGO_EXPORT int mongo_insert_batch( mongo *conn , const char *ns ,
-                        const bson **data , int num );
+    const bson **data , int num, mongo_write_concern *custom_write_concern );
 
 /**
  * Update a document in a MongoDB server.
@@ -389,12 +394,14 @@ MONGO_EXPORT int mongo_insert_batch( mongo *conn , const char *ns ,
  * @param cond the bson update query.
  * @param op the bson update data.
  * @param flags flags for the update.
+ * @param custom_write_concern a write concern object that will
+ *     override any write concern set on the conn object.
  *
  * @return MONGO_OK or MONGO_ERROR with error stored in conn object.
  *
  */
 MONGO_EXPORT int mongo_update( mongo *conn, const char *ns, const bson *cond,
-                  const bson *op, int flags );
+    const bson *op, int flags, mongo_write_concern *custom_write_concern );
 
 /**
  * Remove a document from a MongoDB server.
@@ -404,10 +411,13 @@ MONGO_EXPORT int mongo_update( mongo *conn, const char *ns, const bson *cond,
  * @param conn a mongo object.
  * @param ns the namespace.
  * @param cond the bson query.
+ * @param custom_write_concern a write concern object that will
+ *     override any write concern set on the conn object.
  *
  * @return MONGO_OK or MONGO_ERROR with error stored in conn object.
  */
-MONGO_EXPORT int mongo_remove( mongo *conn, const char *ns, const bson *cond );
+MONGO_EXPORT int mongo_remove( mongo *conn, const char *ns, const bson *cond,
+    mongo_write_concern *custom_write_concern );
 
 
 /*********************************************************************

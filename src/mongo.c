@@ -752,51 +752,13 @@ static int mongo_cursor_bson_valid( mongo_cursor *cursor, const bson *bson ) {
     return MONGO_OK;
 }
 
-/* MongoDB CRUD API */
-
-MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
-                        const bson **bsons, int count ) {
-
-    mongo_message *mm;
-    int i;
-    char *data;
-    int overhead =  16 + 4 + strlen( ns ) + 1;
-    int size = overhead;
-
-    if( mongo_validate_ns( conn, ns ) != MONGO_OK )
-        return MONGO_ERROR;
-
-    for( i=0; i<count; i++ ) {
-        size += bson_size( bsons[i] );
-        if( mongo_bson_valid( conn, bsons[i], 1 ) != MONGO_OK )
-            return MONGO_ERROR;
-    }
-
-    if( ( size - overhead ) > conn->max_bson_size ) {
-        conn->err = MONGO_BSON_TOO_LARGE;
-        return MONGO_ERROR;
-    }
-
-    mm = mongo_message_create( size , 0 , 0 , MONGO_OP_INSERT );
-
-    data = &mm->data;
-    data = mongo_data_append32( data, &ZERO );
-    data = mongo_data_append( data, ns, strlen( ns ) + 1 );
-
-    for( i=0; i<count; i++ ) {
-        data = mongo_data_append( data, bsons[i]->data, bson_size( bsons[i] ) );
-    }
-
-    return mongo_message_send( conn, mm );
-}
-
 static int mongo_check_last_error( mongo *conn, const char *ns,
     mongo_write_concern *write_concern ) {
 
     bson response = {NULL, 0};
     bson fields;
     bson_iterator it;
-    int res, success = 0;
+    int res = 0;
     char *cmd_ns = mongo_ns_to_cmd_db( ns );
 
     res = mongo_find_one( conn, cmd_ns, write_concern->cmd, bson_empty( &fields ), &response );
@@ -805,8 +767,8 @@ static int mongo_check_last_error( mongo *conn, const char *ns,
     if( res != MONGO_OK )
         return MONGO_ERROR;
     else {
-        if( ( bson_find( &it, &response, "$err" ) != NULL ) ||
-            ( bson_find( &it, &response, "err" ) != NULL ) ) {
+        if( ( bson_find( &it, &response, "$err" ) != 0 ) ||
+            ( bson_find( &it, &response, "err" ) != 0 ) ) {
 
             __mongo_set_error( conn, MONGO_WRITE_ERROR,
                 "See conn->lasterrstr for details.", 0 );
@@ -816,6 +778,31 @@ static int mongo_check_last_error( mongo *conn, const char *ns,
             return MONGO_OK;
     }
 }
+
+static int mongo_choose_write_concern( mongo *conn,
+    mongo_write_concern *custom_write_concern,
+    mongo_write_concern **write_concern ) {
+
+    if( custom_write_concern ) {
+        *write_concern = custom_write_concern;
+    }
+    else if( conn->write_concern ) {
+        *write_concern = conn->write_concern;
+    }
+
+    if( *write_concern && !((*write_concern)->cmd) ) {
+        __mongo_set_error( conn, MONGO_WRITE_CONCERN_INVALID,
+            "Must call mongo_write_concern_finish() before using *write_concern.", 0 );
+        return MONGO_ERROR;
+    }
+    else
+        return MONGO_OK;
+}
+
+
+/*********************************************************************
+CRUD API
+**********************************************************************/
 
 MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns,
     const bson *bson, mongo_write_concern *custom_write_concern ) {
@@ -831,16 +818,8 @@ MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns,
         return MONGO_ERROR;
     }
 
-    if( custom_write_concern ) {
-        write_concern = custom_write_concern;
-    }
-    else if( conn->write_concern ) {
-        write_concern = conn->write_concern;
-    }
-
-    if( write_concern && !(write_concern->cmd) ) {
-        __mongo_set_error( conn, MONGO_WRITE_CONCERN_INVALID,
-            "Must call mongo_write_concern_finish() before using *write_concern.", 0 );
+    if( mongo_choose_write_concern( conn, custom_write_concern,
+        &write_concern ) == MONGO_ERROR ) {
         return MONGO_ERROR;
     }
 
@@ -870,16 +849,75 @@ MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns,
     }
 }
 
+MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
+    const bson **bsons, int count, mongo_write_concern *custom_write_concern ) {
+
+    mongo_message *mm;
+    mongo_write_concern *write_concern = NULL;
+    int i;
+    char *data;
+    int overhead =  16 + 4 + strlen( ns ) + 1;
+    int size = overhead;
+
+    if( mongo_validate_ns( conn, ns ) != MONGO_OK )
+        return MONGO_ERROR;
+
+    for( i=0; i<count; i++ ) {
+        size += bson_size( bsons[i] );
+        if( mongo_bson_valid( conn, bsons[i], 1 ) != MONGO_OK )
+            return MONGO_ERROR;
+    }
+
+    if( ( size - overhead ) > conn->max_bson_size ) {
+        conn->err = MONGO_BSON_TOO_LARGE;
+        return MONGO_ERROR;
+    }
+
+    if( mongo_choose_write_concern( conn, custom_write_concern,
+        &write_concern ) == MONGO_ERROR ) {
+        return MONGO_ERROR;
+    }
+
+    mm = mongo_message_create( size , 0 , 0 , MONGO_OP_INSERT );
+
+    data = &mm->data;
+    data = mongo_data_append32( data, &ZERO );
+    data = mongo_data_append( data, ns, strlen( ns ) + 1 );
+
+    for( i=0; i<count; i++ ) {
+        data = mongo_data_append( data, bsons[i]->data, bson_size( bsons[i] ) );
+    }
+
+    /* TODO: refactor so that we can send the insert message
+     * and the getlasterror messages together. */
+    if( write_concern ) {
+        if( mongo_message_send( conn, mm ) == MONGO_ERROR ) {
+            return MONGO_ERROR;
+        }
+
+        return mongo_check_last_error( conn, ns, write_concern );
+    }
+    else {
+        return mongo_message_send( conn, mm );
+    }
+}
+
 MONGO_EXPORT int mongo_update( mongo *conn, const char *ns, const bson *cond,
-                  const bson *op, int flags ) {
+    const bson *op, int flags, mongo_write_concern *custom_write_concern ) {
 
     char *data;
     mongo_message *mm;
+    mongo_write_concern *write_concern = NULL;
 
     /* Make sure that the op BSON is valid UTF-8.
      * TODO: decide whether to check cond as well.
      * */
     if( mongo_bson_valid( conn, ( bson * )op, 0 ) != MONGO_OK ) {
+        return MONGO_ERROR;
+    }
+
+    if( mongo_choose_write_concern( conn, custom_write_concern,
+        &write_concern ) == MONGO_ERROR ) {
         return MONGO_ERROR;
     }
 
@@ -898,17 +936,36 @@ MONGO_EXPORT int mongo_update( mongo *conn, const char *ns, const bson *cond,
     data = mongo_data_append( data, cond->data, bson_size( cond ) );
     data = mongo_data_append( data, op->data, bson_size( op ) );
 
-    return mongo_message_send( conn, mm );
+    /* TODO: refactor so that we can send the insert message
+     * and the getlasterror messages together. */
+    if( write_concern ) {
+        if( mongo_message_send( conn, mm ) == MONGO_ERROR ) {
+            return MONGO_ERROR;
+        }
+
+        return mongo_check_last_error( conn, ns, write_concern );
+    }
+    else {
+        return mongo_message_send( conn, mm );
+    }
 }
 
-MONGO_EXPORT int mongo_remove( mongo *conn, const char *ns, const bson *cond ) {
+MONGO_EXPORT int mongo_remove( mongo *conn, const char *ns, const bson *cond,
+    mongo_write_concern *custom_write_concern ) {
+
     char *data;
     mongo_message *mm;
+    mongo_write_concern *write_concern = NULL;
 
     /* Make sure that the BSON is valid UTF-8.
      * TODO: decide whether to check cond as well.
      * */
     if( mongo_bson_valid( conn, ( bson * )cond, 0 ) != MONGO_OK ) {
+        return MONGO_ERROR;
+    }
+
+    if( mongo_choose_write_concern( conn, custom_write_concern,
+        &write_concern ) == MONGO_ERROR ) {
         return MONGO_ERROR;
     }
 
@@ -925,8 +982,24 @@ MONGO_EXPORT int mongo_remove( mongo *conn, const char *ns, const bson *cond ) {
     data = mongo_data_append32( data, &ZERO );
     data = mongo_data_append( data, cond->data, bson_size( cond ) );
 
-    return mongo_message_send( conn, mm );
+    /* TODO: refactor so that we can send the insert message
+     * and the getlasterror messages together. */
+    if( write_concern ) {
+        if( mongo_message_send( conn, mm ) == MONGO_ERROR ) {
+            return MONGO_ERROR;
+        }
+
+        return mongo_check_last_error( conn, ns, write_concern );
+    }
+    else {
+        return mongo_message_send( conn, mm );
+    }
 }
+
+
+/*********************************************************************
+Write Concern API
+**********************************************************************/
 
 MONGO_EXPORT void mongo_write_concern_init( mongo_write_concern *write_concern ) {
     memset( write_concern, 0, sizeof( mongo_write_concern ) );
@@ -1150,10 +1223,12 @@ MONGO_EXPORT int mongo_find_one( mongo *conn, const char *ns, const bson *query,
     mongo_cursor_set_limit( cursor, 1 );
 
     if ( mongo_cursor_next( cursor ) == MONGO_OK ) {
-        bson_init_size( out, bson_size( (bson *)&cursor->current ) );
-        memcpy( out->data, cursor->current.data,
-            bson_size( (bson *)&cursor->current ) );
-        out->finished = 1;
+        if( out ) {
+            bson_init_size( out, bson_size( (bson *)&cursor->current ) );
+            memcpy( out->data, cursor->current.data,
+                bson_size( (bson *)&cursor->current ) );
+            out->finished = 1;
+        }
         mongo_cursor_destroy( cursor );
         return MONGO_OK;
     } else {
@@ -1546,7 +1621,7 @@ MONGO_EXPORT int mongo_cmd_add_user( mongo *conn, const char *db, const char *us
     bson_append_finish_object( &pass_obj );
     bson_finish( &pass_obj );
 
-    res = mongo_update( conn, ns, &user_obj, &pass_obj, MONGO_UPDATE_UPSERT );
+    res = mongo_update( conn, ns, &user_obj, &pass_obj, MONGO_UPDATE_UPSERT, NULL );
 
     bson_free( ns );
     bson_destroy( &user_obj );

@@ -73,7 +73,7 @@ int main() {
     ASSERT( result == MONGO_ERROR );
     ASSERT( conn->err & MONGO_BSON_NOT_FINISHED );
 
-    result = mongo_update( conn, ns, bson_empty( &empty ), &b, 0 );
+    result = mongo_update( conn, ns, bson_empty( &empty ), &b, 0, NULL );
     ASSERT( result == MONGO_ERROR );
     ASSERT( conn->err & MONGO_BSON_NOT_FINISHED );
 
@@ -109,7 +109,7 @@ int main() {
     for ( j=0; j < BATCH_SIZE; j++ )
         make_small_invalid( &bs[j], i );
 
-    result = mongo_insert_batch( conn, ns, (const bson **)bp, BATCH_SIZE );
+    result = mongo_insert_batch( conn, ns, (const bson **)bp, BATCH_SIZE, NULL );
     ASSERT( result == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_INVALID );
 

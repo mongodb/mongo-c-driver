@@ -11,7 +11,7 @@
 
 #define ASSERT_EQUAL_STRINGS(x, y) \
     do{ \
-        if((strncmp( x, y, strlen( y ) != 0 ))){ \
+        if((strncmp( x, y, strlen( y ) ) != 0 )){ \
             printf("\nFailed ASSERT_EQUAL_STRINGS [%s] (%d):\n  \"%s\" does not equal\n  %s\n", __FILE__,  __LINE__,  x, #y); \
             exit(1); \
         }\

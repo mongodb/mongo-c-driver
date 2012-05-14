@@ -61,7 +61,7 @@ int main() {
         bson_finish( &op );
 
         for ( i=0; i<5; i++ )
-            mongo_update( conn, ns, &cond, &op, 0 );
+            mongo_update( conn, ns, &cond, &op, 0, NULL );
 
         /* cond is used later */
         bson_destroy( &op );

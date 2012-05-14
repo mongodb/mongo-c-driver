@@ -122,7 +122,7 @@ int test_insert_limits( const char *set_name ) {
     objs[0] = b;
     objs[1] = b2;
 
-    ASSERT( mongo_insert_batch( conn, "test.foo", (const bson**)objs, 2 ) == MONGO_ERROR );
+    ASSERT( mongo_insert_batch( conn, "test.foo", (const bson**)objs, 2, NULL ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_TOO_LARGE );
 
     return 0;
