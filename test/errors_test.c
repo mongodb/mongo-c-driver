@@ -117,7 +117,7 @@ int test_namespace_validation_on_insert( void ) {
     objs[0] = b;
     objs[1] = b2;
 
-    ASSERT( mongo_insert_batch( conn, "tet.fo$o", (const bson **)objs, 2, NULL ) == MONGO_ERROR );
+    ASSERT( mongo_insert_batch( conn, "tet.fo$o", (const bson **)objs, 2, NULL, 0 ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
     ASSERT( strncmp( conn->errstr, "Collection may not contain '$'", 29 ) == 0 );
 
@@ -169,7 +169,7 @@ int test_insert_limits( void ) {
     objs[0] = b;
     objs[1] = b2;
 
-    ASSERT( mongo_insert_batch( conn, "test.foo", (const bson **)objs, 2, NULL ) == MONGO_ERROR );
+    ASSERT( mongo_insert_batch( conn, "test.foo", (const bson **)objs, 2, NULL, 0 ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_TOO_LARGE );
 
     return 0;

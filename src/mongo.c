@@ -850,7 +850,8 @@ MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns,
 }
 
 MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
-    const bson **bsons, int count, mongo_write_concern *custom_write_concern ) {
+    const bson **bsons, int count, mongo_write_concern *custom_write_concern,
+    int flags ) {
 
     mongo_message *mm;
     mongo_write_concern *write_concern = NULL;
@@ -881,7 +882,10 @@ MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
     mm = mongo_message_create( size , 0 , 0 , MONGO_OP_INSERT );
 
     data = &mm->data;
-    data = mongo_data_append32( data, &ZERO );
+    if( flags & MONGO_CONTINUE_ON_ERROR )
+        data = mongo_data_append32( data, &ONE );
+    else
+        data = mongo_data_append32( data, &ZERO );
     data = mongo_data_append( data, ns, strlen( ns ) + 1 );
 
     for( i=0; i<count; i++ ) {

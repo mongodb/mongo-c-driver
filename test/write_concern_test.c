@@ -43,7 +43,7 @@ void test_update_and_remove( mongo *conn ) {
     }
 
     ASSERT( mongo_insert_batch( conn, "test.wc", (const bson **)objs, 5,
-        NULL ) == MONGO_OK );
+        NULL, 0 ) == MONGO_OK );
 
     ASSERT( mongo_count( conn, "test", "wc", bson_empty( &empty ) ) == 5 );
 
@@ -188,19 +188,19 @@ void test_insert( mongo *conn ) {
     /* Insert two new documents by insert_batch. */
     conn->write_concern = NULL;
     ASSERT( mongo_count( conn, TEST_DB, TEST_COL, bson_empty( empty ) ) == 1 );
-    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs, 2, NULL ) == MONGO_OK );
+    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs, 2, NULL, 0 ) == MONGO_OK );
     ASSERT( mongo_count( conn, TEST_DB, TEST_COL, bson_empty( empty ) ) == 3 );
 
     /* This should definitely fail if we try again with write concern. */
     mongo_clear_errors( conn );
-    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs, 2, wc ) == MONGO_ERROR );
+    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs, 2, wc, 0 ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_WRITE_ERROR );
     ASSERT_EQUAL_STRINGS( conn->errstr, "See conn->lasterrstr for details." );
     ASSERT_EQUAL_STRINGS( conn->lasterrstr, "E11000 duplicate key error index" );
     ASSERT( conn->lasterrcode == 11000 );
 
     /* But it will succeed without the write concern set. */
-    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs, 2, NULL ) == MONGO_OK );
+    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs, 2, NULL, 0 ) == MONGO_OK );
 
     bson_destroy( b );
     bson_destroy( b2 );

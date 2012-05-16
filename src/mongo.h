@@ -87,6 +87,10 @@ enum mongo_update_opts {
     MONGO_UPDATE_BASIC = 0x4
 };
 
+enum mongo_insert_opts {
+    MONGO_CONTINUE_ON_ERROR = 0x1
+};
+
 enum mongo_cursor_opts {
     MONGO_TAILABLE = ( 1<<1 ),        /**< Create a tailable cursor. */
     MONGO_SLAVE_OK = ( 1<<2 ),        /**< Allow queries on a non-primary node. */
@@ -377,12 +381,16 @@ MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns, const bson *data,
  * @param num the number of documents in data.
  * @param custom_write_concern a write concern object that will
  *     override any write concern set on the conn object.
+ * @param flags flags on this batch insert. Currently, this value
+ *     may be 0 or MONGO_CONTINUE_ON_ERROR, which will cause the
+ *     batch insert to continue even if a given insert in the batch fails.
  *
  * @return MONGO_OK or MONGO_ERROR.
  *
  */
-MONGO_EXPORT int mongo_insert_batch( mongo *conn , const char *ns ,
-    const bson **data , int num, mongo_write_concern *custom_write_concern );
+MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
+    const bson **data, int num, mongo_write_concern *custom_write_concern,
+    int flags );
 
 /**
  * Update a document in a MongoDB server.
