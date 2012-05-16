@@ -8,19 +8,8 @@
 
 /* TODO remove and add mongo_create_collection to the public API. */
 void create_capped_collection( mongo *conn ) {
-    bson b;
-
     mongo_cmd_drop_collection( conn, "test", "wc", NULL );
-
-    bson_init( &b );
-    bson_append_string( &b, "create", "wc" );
-    bson_append_bool( &b, "capped", 1 );
-    bson_append_int( &b, "size", 1000000 );
-    bson_finish( &b );
-
-    ASSERT( mongo_run_command( conn, "test", &b, NULL ) == MONGO_OK );
-
-    bson_destroy( &b );
+    mongo_create_capped_collection( conn, "test", "wc", 1000000, 0, NULL );
 }
 
 void test_batch_insert_with_continue( mongo *conn ) {

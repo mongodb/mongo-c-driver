@@ -620,6 +620,21 @@ MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns,
     const bson *key, int options, bson *out );
 
 /**
+ * Create a capped collection.
+ *
+ * @param conn a mongo object.
+ * @param ns the namespace (e.g., "dbname.collectioname")
+ * @param size the size of the capped collection in bytes.
+ * @param max the max number of documents this collection is
+ *   allowed to contain. If zero, this argument will be ignored
+ *   and the server will use the collection's size to age document out.
+ *   If using this option, ensure that the total size can contain this
+ *   number of documents.
+ */
+MONGO_EXPORT int mongo_create_capped_collection( mongo *conn, const char *db,
+    const char *collection, int size, int max, bson *out );
+
+/**
  * Create an index with a single key.
  *
  * @param conn a mongo object.
