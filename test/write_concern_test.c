@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-
 /* TODO remove and add mongo_create_collection to the public API. */
 void create_capped_collection( mongo *conn ) {
     bson b;
@@ -22,6 +21,63 @@ void create_capped_collection( mongo *conn ) {
     ASSERT( mongo_run_command( conn, "test", &b, NULL ) == MONGO_OK );
 
     bson_destroy( &b );
+}
+
+void test_batch_insert_with_continue( mongo *conn ) {
+    bson *objs[5];
+    bson *objs2[5];
+    bson empty;
+    int i;
+
+    mongo_cmd_drop_collection( conn, TEST_DB, TEST_COL, NULL );
+    mongo_create_simple_index( conn, TEST_NS, "n", MONGO_INDEX_UNIQUE, NULL );
+
+    for( i=0; i<5; i++ ) {
+        objs[i] = bson_malloc( sizeof( bson ) );
+        bson_init( objs[i] );
+        bson_append_int( objs[i], "n", i );
+        bson_finish( objs[i] );
+    }
+
+    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs, 5,
+        NULL, 0 ) == MONGO_OK );
+
+    ASSERT( mongo_count( conn, TEST_DB, TEST_COL,
+          bson_empty( &empty ) ) == 5 );
+
+    /* Add one duplicate value for n. */
+    objs2[0] = bson_malloc( sizeof( bson ) );
+    bson_init( objs2[0] );
+    bson_append_int( objs2[0], "n", 1 );
+    bson_finish( objs2[0] );
+
+    /* Add n for 6 - 9. */
+    for( i = 1; i < 5; i++ ) {
+        objs2[i] = bson_malloc( sizeof( bson ) );
+        bson_init( objs2[i] );
+        bson_append_int( objs2[i], "n", i + 5 );
+        bson_finish( objs2[i] );
+    }
+
+    /* Without continue on error, will fail immediately. */
+    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs2, 5,
+        NULL, 0 ) == MONGO_OK );
+    ASSERT( mongo_count( conn, TEST_DB, TEST_COL,
+          bson_empty( &empty ) ) == 5 );
+
+    /* With continue on error, will insert four documents. */
+    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs2, 5,
+        NULL, MONGO_CONTINUE_ON_ERROR ) == MONGO_OK );
+    ASSERT( mongo_count( conn, TEST_DB, TEST_COL,
+          bson_empty( &empty ) ) == 9 );
+
+    for( i=0; i<5; i++ ) {
+        bson_destroy( objs2[i] );
+        bson_free( objs2[i] );
+
+        bson_destroy( objs[i] );
+        bson_free( objs[i] );
+    }
 }
 
 /* We can test write concern for update
@@ -223,6 +279,7 @@ int main() {
     if( mongo_get_server_version( version ) != -1 && version[0] != '1' ) {
         test_write_concern_input( conn );
         test_update_and_remove( conn );
+        test_batch_insert_with_continue( conn );
     }
 
     mongo_destroy( conn );
