@@ -182,10 +182,22 @@ void test_write_concern_input( mongo *conn ) {
 
 void test_insert( mongo *conn ) {
     mongo_write_concern wc[1];
-    bson b[1], b2[1], b3[1], empty[1];
+    bson b[1], b2[1], b3[1], b4[1], empty[1];
     bson *objs[2];
 
     mongo_cmd_drop_collection( conn, TEST_DB, TEST_COL, NULL );
+
+    mongo_write_concern_init( wc );
+    wc->w = 1;
+    mongo_write_concern_finish( wc );
+
+    bson_init( b4 );
+    bson_append_string( b4, "foo", "bar" );
+    bson_finish( b4 );
+
+    ASSERT( mongo_insert( conn, TEST_NS, b4, wc ) == MONGO_OK );
+
+    ASSERT( mongo_remove( conn, TEST_NS, bson_empty( empty ), wc ) == MONGO_OK );
 
     bson_init( b );
     bson_append_new_oid( b, "_id" );
@@ -195,10 +207,6 @@ void test_insert( mongo *conn ) {
 
     /* This fails but returns OK because it doesn't use a write concern. */
     ASSERT( mongo_insert( conn, TEST_NS, b, NULL ) == MONGO_OK );
-
-    mongo_write_concern_init( wc );
-    wc->w = 1;
-    mongo_write_concern_finish( wc );
 
     ASSERT( mongo_insert( conn, TEST_NS, b, wc ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_WRITE_ERROR );

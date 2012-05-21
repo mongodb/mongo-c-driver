@@ -767,8 +767,8 @@ static int mongo_check_last_error( mongo *conn, const char *ns,
     if( res != MONGO_OK )
         return MONGO_ERROR;
     else {
-        if( ( bson_find( &it, &response, "$err" ) != 0 ) ||
-            ( bson_find( &it, &response, "err" ) != 0 ) ) {
+        if( ( bson_find( &it, &response, "$err" ) == BSON_STRING ) ||
+            ( bson_find( &it, &response, "err" ) == BSON_STRING ) ) {
 
             __mongo_set_error( conn, MONGO_WRITE_ERROR,
                 "See conn->lasterrstr for details.", 0 );
