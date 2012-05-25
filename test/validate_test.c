@@ -52,6 +52,19 @@ int main() {
 
     ASSERT( b.err & BSON_FIELD_HAS_DOT );
 
+    /* Don't set INIT dollar if deb ref fields are being used. */
+    result = bson_append_string( &b , "$id" , "17" );
+    ASSERT( result == BSON_OK );
+    ASSERT( !(b.err & BSON_FIELD_INIT_DOLLAR) );
+
+    result = bson_append_string( &b , "$ref" , "17" );
+    ASSERT( result == BSON_OK );
+    ASSERT( !(b.err & BSON_FIELD_INIT_DOLLAR) );
+
+    result = bson_append_string( &b , "$db" , "17" );
+    ASSERT( result == BSON_OK );
+    ASSERT( !(b.err & BSON_FIELD_INIT_DOLLAR) );
+
     result = bson_append_string( &b , "$ab" , "17" );
     ASSERT( result == BSON_OK );
     ASSERT( b.err & BSON_FIELD_INIT_DOLLAR );
