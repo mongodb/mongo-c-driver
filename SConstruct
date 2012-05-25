@@ -52,6 +52,18 @@ AddOption('--standard-env',
           action='store_true',
           help='Set this option if you want to use basic, platform-agnostic networking.')
 
+AddOption('--install-library-path',
+          dest='install_library_path',
+          default='/usr/local/lib',
+          action='store',
+          help='The shared library install path. Defaults to /usr/local/lib.')
+
+AddOption('--install-include-path',
+          dest='install_include_path',
+          default='/usr/local/include',
+          action='store',
+          help='The header install path. Defaults to /usr/local/include.')
+
 import os, sys
 
 if GetOption('use_m32'):
@@ -179,8 +191,8 @@ if os.sys.platform == "darwim":
 else:
     shared_obj_suffix = "so"
 
-install_library_path = "/usr/local/lib"
-install_include_path = "/usr/local/include"
+install_library_path = env.GetOption("install_library_path")
+install_include_path = env.GetOption("install_include_path")
 def remove_without_exception(filename):
     try:
         os.remove(filename)
