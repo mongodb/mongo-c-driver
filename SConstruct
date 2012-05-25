@@ -1,6 +1,9 @@
 # -*- mode: python; -*-
 
-VERSION = "0.5.2"
+MAJOR_VERSION = "0"
+MINOR_VERSION = "5"
+PATCH_VERSION = "2"
+VERSION = MAJOR_VERSION + "." + MINOR_VERSION + "." + PATCH_VERSION
 
 # --- options ----
 AddOption('--test-server',
@@ -168,15 +171,57 @@ if os.sys.platform == "linux2":
 
 dynm = env.SharedLibrary( "mongoc" , mSharedObjs )
 dynb = bsonEnv.SharedLibrary( "bson" , bSharedObjs )
+
+
 # ---- Install ----
-prefix = "/usr/local"
+if os.sys.platform == "darwim":
+    shared_obj_suffix = "dylib"
+else:
+    shared_obj_suffix = "so"
 
-env.Alias("install", env.Install(os.path.join(prefix, "lib"), [dynm[0] , dynb[0] ]))
-env.Alias("install", env.Install(os.path.join(prefix, "include"), headers))
+install_library_path = "/usr/local/lib"
+install_include_path = "/usr/local/include"
+def remove_without_exception(filename):
+    try:
+        os.remove(filename)
+    except:
+        print "Could not find " + filename + ". Skipping removal."
 
-env.Command("uninstall", None, Delete(FindInstalledFiles()))
+mongoc_target = os.path.join(install_library_path, "libmongoc." + shared_obj_suffix + "." + MAJOR_VERSION + "." + MINOR_VERSION)
+mongoc_major_target = os.path.join(install_library_path, "libmongoc." + shared_obj_suffix + "." + MAJOR_VERSION)
+mongoc_base_target = os.path.join(install_library_path, "libmongoc." + shared_obj_suffix)
+
+bson_target = os.path.join(install_library_path, "libbson." + shared_obj_suffix + "." + MAJOR_VERSION + "." + MINOR_VERSION)
+bson_major_target = os.path.join(install_library_path, "libbson." + shared_obj_suffix + "." + MAJOR_VERSION)
+bson_base_target = os.path.join(install_library_path, "libbson." + shared_obj_suffix)
+
+def uninstall_shared_libraries(target=None, source=None, env=None):
+  remove_without_exception(mongoc_major_target)
+  remove_without_exception(mongoc_base_target)
+  remove_without_exception(mongoc_target)
+
+  remove_without_exception(bson_major_target)
+  remove_without_exception(bson_base_target)
+  remove_without_exception(bson_target)
+
+def install_shared_libraries(target=None, source=None, env=None):
+  import shutil
+  uninstall_shared_libraries()
+
+  shutil.copy("libmongoc." + shared_obj_suffix, mongoc_target)
+  os.symlink(mongoc_target, mongoc_base_target)
+  os.symlink(mongoc_target, mongoc_major_target)
+
+  shutil.copy("libbson." + shared_obj_suffix, bson_target)
+  os.symlink(bson_target, bson_base_target)
+  os.symlink(bson_target, bson_major_target)
+
+env.Alias("install", [], install_shared_libraries)
+
+env.Command("uninstall", [], uninstall_shared_libraries)
 
 env.Default( env.Alias( "sharedlib" , [ dynm[0] , dynb[0] ] ) )
+env.AlwaysBuild("install")
 
 # ---- Benchmarking ----
 benchmarkEnv = env.Clone()

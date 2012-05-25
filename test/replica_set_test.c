@@ -11,6 +11,10 @@
 #define SEED_START_PORT 30000
 #endif
 
+#ifndef REPLICA_SET_NAME
+#define REPLICA_SET_NAME "replica-set-foo"
+#endif
+
 int test_connect( const char *set_name ) {
 
     mongo conn[1];
@@ -50,6 +54,7 @@ int test_reconnect( const char *set_name ) {
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
 
+
     if( ( mongo_replset_connect( conn ) != MONGO_OK ) ) {
         mongo_destroy( conn );
         return res;
@@ -72,17 +77,23 @@ int test_reconnect( const char *set_name ) {
         } while( 1 );
     }
 
+
     return 0;
 }
 
 int test_insert_limits( const char *set_name ) {
     char version[10];
     mongo conn[1];
+    mongo_write_concern wc[1];
     int i;
     char key[10];
     int res = 0;
     bson b[1], b2[1];
     bson *objs[2];
+
+    mongo_write_concern_init( wc );
+    wc->w = 1;
+    mongo_write_concern_finish( wc );
 
     /* We'll perform the full test if we're running v2.0 or later. */
     if( mongo_get_server_version( version ) != -1 && version[0] <= '1' )
@@ -109,10 +120,10 @@ int test_insert_limits( const char *set_name ) {
 
     ASSERT( bson_size( b ) > conn->max_bson_size );
 
-    ASSERT( mongo_insert( conn, "test.foo", b ) == MONGO_ERROR );
+    ASSERT( mongo_insert( conn, "test.foo", b, wc ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_TOO_LARGE );
 
-    mongo_clear_stored_errors( conn );
+    mongo_clear_errors( conn );
     ASSERT( conn->err == 0 );
 
     bson_init( b2 );
@@ -122,16 +133,18 @@ int test_insert_limits( const char *set_name ) {
     objs[0] = b;
     objs[1] = b2;
 
-    ASSERT( mongo_insert_batch( conn, "test.foo", (const bson**)objs, 2, NULL ) == MONGO_ERROR );
+    ASSERT( mongo_insert_batch( conn, "test.foo", (const bson**)objs, 2, wc, 0 ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_TOO_LARGE );
+
+    mongo_write_concern_destroy( wc );
 
     return 0;
 }
 
 int main() {
-    ASSERT( test_connect( "replica-set-foo" ) == MONGO_OK );
+    ASSERT( test_connect( REPLICA_SET_NAME ) == MONGO_OK );
     ASSERT( test_connect( "test-foobar" ) == MONGO_CONN_BAD_SET_NAME );
-    ASSERT( test_insert_limits( "replica-set-foo" ) == MONGO_OK );
+    ASSERT( test_insert_limits( REPLICA_SET_NAME ) == MONGO_OK );
 
     /*
     ASSERT( test_reconnect( "test-rs" ) == 0 );
