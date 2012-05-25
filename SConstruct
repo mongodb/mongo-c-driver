@@ -186,7 +186,7 @@ dynb = bsonEnv.SharedLibrary( "bson" , bSharedObjs )
 
 
 # ---- Install ----
-if os.sys.platform == "darwim":
+if os.sys.platform == "darwin":
     shared_obj_suffix = "dylib"
 else:
     shared_obj_suffix = "so"
