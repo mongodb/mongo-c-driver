@@ -116,48 +116,14 @@ MONGO_EXPORT const char *bson_data( const bson *b ) {
 }
 
 static char hexbyte( char hex ) {
-    switch ( hex ) {
-    case '0':
+    if (hex >= '0' && hex <= '9')
+        return (hex - 0x30);
+    else if (hex >= 'A' && hex <= 'F')
+        return (hex - 0x37);
+    else if (hex >= 'a' && hex <= 'f')
+        return (hex - 0x57);
+    else
         return 0x0;
-    case '1':
-        return 0x1;
-    case '2':
-        return 0x2;
-    case '3':
-        return 0x3;
-    case '4':
-        return 0x4;
-    case '5':
-        return 0x5;
-    case '6':
-        return 0x6;
-    case '7':
-        return 0x7;
-    case '8':
-        return 0x8;
-    case '9':
-        return 0x9;
-    case 'a':
-    case 'A':
-        return 0xa;
-    case 'b':
-    case 'B':
-        return 0xb;
-    case 'c':
-    case 'C':
-        return 0xc;
-    case 'd':
-    case 'D':
-        return 0xd;
-    case 'e':
-    case 'E':
-        return 0xe;
-    case 'f':
-    case 'F':
-        return 0xf;
-    default:
-        return 0x0; /* something smarter? */
-    }
 }
 
 MONGO_EXPORT void bson_oid_from_string( bson_oid_t *oid, const char *str ) {
