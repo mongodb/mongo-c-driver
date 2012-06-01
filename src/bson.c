@@ -308,7 +308,7 @@ MONGO_EXPORT void bson_print_raw( const char *data , int depth ) {
    ------------------------------ */
 
 MONGO_EXPORT bson_iterator* bson_iterator_create() {
-    return (bson_iterator*)malloc(sizeof(bson_iterator*));
+    return ( bson_iterator* )malloc( sizeof( bson_iterator ) );
 }
 
 MONGO_EXPORT void bson_iterator_dispose(bson_iterator* i) {
