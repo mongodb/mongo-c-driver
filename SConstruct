@@ -178,8 +178,8 @@ bSharedObjs = env.SharedObject(bLibFiles)
 
 bsonEnv = env.Clone()
 if os.sys.platform == "linux2":
-    env.Append( SHLINKFLAGS = "-shared -Wl,-soname,libmongoc.so." + VERSION )
-    bsonEnv.Append( SHLINKFLAGS = "-shared -Wl,-soname,libbson.so." + VERSION )
+    env.Append( SHLINKFLAGS = "-shared -Wl,-soname,libmongoc.so." + MAJOR_VERSION + "." + MINOR_VERSION )
+    bsonEnv.Append( SHLINKFLAGS = "-shared -Wl,-soname,libbson.so." + MAJOR_VERSION + "." + MINOR_VERSION)
 
 dynm = env.SharedLibrary( "mongoc" , mSharedObjs )
 dynb = bsonEnv.SharedLibrary( "bson" , bSharedObjs )
@@ -199,36 +199,55 @@ def remove_without_exception(filename):
     except:
         print "Could not find " + filename + ". Skipping removal."
 
-mongoc_target = os.path.join(install_library_path, "libmongoc." + shared_obj_suffix + "." + MAJOR_VERSION + "." + MINOR_VERSION)
-mongoc_major_target = os.path.join(install_library_path, "libmongoc." + shared_obj_suffix + "." + MAJOR_VERSION)
-mongoc_base_target = os.path.join(install_library_path, "libmongoc." + shared_obj_suffix)
+def makedirs_without_exception(path):
+  try:
+    os.makedirs(path)
+  except:
+    print path + ": already exists, skipping"
 
-bson_target = os.path.join(install_library_path, "libbson." + shared_obj_suffix + "." + MAJOR_VERSION + "." + MINOR_VERSION)
-bson_major_target = os.path.join(install_library_path, "libbson." + shared_obj_suffix + "." + MAJOR_VERSION)
-bson_base_target = os.path.join(install_library_path, "libbson." + shared_obj_suffix)
+mongoc_target = os.path.join(install_library_path, "libmongoc." + shared_obj_suffix)
+mongoc_major_target = mongoc_target + "." + MAJOR_VERSION
+mongoc_minor_target = mongoc_major_target + "." + MINOR_VERSION
+mongoc_patch_target = mongoc_minor_target + "." + PATCH_VERSION
+
+bson_target = os.path.join(install_library_path, "libbson." + shared_obj_suffix)
+bson_major_target = bson_target + "." + MAJOR_VERSION
+bson_minor_target = bson_major_target + "." + MINOR_VERSION
+bson_patch_target = bson_minor_target + "." + PATCH_VERSION
 
 def uninstall_shared_libraries(target=None, source=None, env=None):
   remove_without_exception(mongoc_major_target)
-  remove_without_exception(mongoc_base_target)
+  remove_without_exception(mongoc_minor_target)
+  remove_without_exception(mongoc_patch_target)
   remove_without_exception(mongoc_target)
 
   remove_without_exception(bson_major_target)
-  remove_without_exception(bson_base_target)
+  remove_without_exception(bson_minor_target)
+  remove_without_exception(bson_patch_target)
   remove_without_exception(bson_target)
 
 def install_shared_libraries(target=None, source=None, env=None):
   import shutil
   uninstall_shared_libraries()
 
-  shutil.copy("libmongoc." + shared_obj_suffix, mongoc_target)
-  os.symlink(mongoc_target, mongoc_base_target)
-  os.symlink(mongoc_target, mongoc_major_target)
+  makedirs_without_exception(install_library_path)
+  shutil.copy("libmongoc." + shared_obj_suffix, mongoc_patch_target)
+  os.symlink(mongoc_patch_target, mongoc_minor_target)
+  os.symlink(mongoc_minor_target, mongoc_target)
 
-  shutil.copy("libbson." + shared_obj_suffix, bson_target)
-  os.symlink(bson_target, bson_base_target)
-  os.symlink(bson_target, bson_major_target)
+  shutil.copy("libbson." + shared_obj_suffix, bson_patch_target)
+  os.symlink(bson_patch_target, bson_minor_target)
+  os.symlink(bson_minor_target, bson_target)
 
-env.Alias("install", [], install_shared_libraries)
+def install_headers(target=None, source=None, env=None):
+  import shutil
+  # -- uninstall headers here?
+  
+  makedirs_without_exception(install_include_path)
+  for hdr in headers:
+    shutil.copy(hdr, install_include_path)
+
+env.Alias("install", [], [install_shared_libraries, install_headers] )
 
 env.Command("uninstall", [], uninstall_shared_libraries)
 
