@@ -44,7 +44,7 @@ int test_connect( const char *set_name ) {
 int test_reconnect( const char *set_name ) {
 
     mongo conn[1];
-    int res;
+    int res = 0;
     int e = 0;
     bson b;
 
@@ -57,7 +57,7 @@ int test_reconnect( const char *set_name ) {
 
     if( ( mongo_replset_connect( conn ) != MONGO_OK ) ) {
         mongo_destroy( conn );
-        return res;
+        return MONGO_ERROR;
     } else {
         fprintf( stderr, "Disconnect now:\n" );
         sleep( 10 );
