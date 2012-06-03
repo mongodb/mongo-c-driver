@@ -645,7 +645,7 @@ MONGO_EXPORT int mongo_create_capped_collection( mongo *conn, const char *db,
  *
  * @return true if the index was created.
  */
-bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns,
+MONGO_EXPORT bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns,
     const char *field, int options, bson *out );
 
 /**

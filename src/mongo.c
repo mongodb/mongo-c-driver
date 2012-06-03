@@ -1399,7 +1399,7 @@ MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *ke
     return mongo_cmd_get_last_error( conn, idxns, out );
 }
 
-bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns, const char *field, int options, bson *out ) {
+MONGO_EXPORT bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns, const char *field, int options, bson *out ) {
     bson b;
     bson_bool_t success;
 

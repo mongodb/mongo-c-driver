@@ -180,10 +180,11 @@ bsonEnv = env.Clone()
 if os.sys.platform == "linux2":
     env.Append( SHLINKFLAGS = "-shared -Wl,-soname,libmongoc.so." + MAJOR_VERSION + "." + MINOR_VERSION )
     bsonEnv.Append( SHLINKFLAGS = "-shared -Wl,-soname,libbson.so." + MAJOR_VERSION + "." + MINOR_VERSION)
-
-dynm = env.SharedLibrary( "mongoc" , mSharedObjs )
-dynb = bsonEnv.SharedLibrary( "bson" , bSharedObjs )
-
+    dynm = env.SharedLibrary( "mongoc" , mSharedObjs )
+    dynb = bsonEnv.SharedLibrary( "bson" , bSharedObjs )
+else:
+    dynm = env.SharedLibrary( "mongoc" , mSharedObjs )
+    dynb = env.SharedLibrary( "bson" , bSharedObjs )
 
 # ---- Install ----
 if os.sys.platform == "darwin":
