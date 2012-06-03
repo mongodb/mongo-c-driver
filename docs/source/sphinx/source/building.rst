@@ -153,7 +153,7 @@ If you're running on 32-bit Windows, you must compile the driver in 32-bit mode:
     scons --m32
 
 If getaddrinfo and friends aren't available on your version of Windows, you may
-compile without this feature like so:
+compile without these features like so:
 
 .. code-block:: bash
 
