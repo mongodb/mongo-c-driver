@@ -57,6 +57,8 @@ const char* _get_host_port(mongo_host_port* hp) {
 
 MONGO_EXPORT const char* mongo_get_primary(mongo* conn) {
     mongo* conn_ = (mongo*)conn;
+    if( !(conn_->connected) || (conn_->primary->host == '\0') )
+        return NULL;
     return _get_host_port(conn_->primary);
 }
 
@@ -428,6 +430,8 @@ MONGO_EXPORT void mongo_replset_init( mongo *conn, const char *name ) {
     memcpy( conn->replset->name, name, strlen( name ) + 1  );
 
     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
+    conn->primary->host[0] = '\0';
+    conn->primary->next = NULL;
 }
 
 static void mongo_replset_add_node( mongo_host_port **list, const char *host, int port ) {
