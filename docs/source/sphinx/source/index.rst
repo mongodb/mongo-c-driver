@@ -10,7 +10,8 @@ portability, no dependencies, and generic embeddability.
 
 The driver is still considered alpha but is undergoing active
 development. Support for replica sets was just added in v0.3.1.
-The API was completely revamped in v0.4.
+The API was completely revamped in v0.4. Another backward-breaking
+change (support for `write_concern`) was added in v0.6.
 
 :doc:`tutorial`
     An overview of the driver's API.
