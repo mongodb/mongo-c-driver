@@ -974,7 +974,7 @@ MONGO_EXPORT bson_err_handler set_bson_err_handler( bson_err_handler func ) {
 }
 
 MONGO_EXPORT void bson_free( void *ptr ) {
-    bson_malloc_func( ptr );
+    bson_free_func( ptr );
 }
 
 MONGO_EXPORT void *bson_malloc( int size ) {
