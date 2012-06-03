@@ -138,6 +138,27 @@ To build the docs:
 
     scons docs
 
+Building on Windows
+-------------------
+
+When building the driver on Windows, you must use the Python build
+utility, SCons_. For your compiler, we recommend that you use Visual Studio.
+If you don't have Visual Studio, a free version is available. Search for Visual
+Studio C++ Express to find it.
+
+If you're running on 32-bit Windows, you must compile the driver in 32-bit mode:
+
+.. code-block:: bash
+
+    scons --m32
+
+If getaddrinfo and friends aren't available on your version of Windows, you may
+compile without this feature like so:
+
+.. code-block:: bash
+
+    scons --m32 --standard-env
+
 Platform-specific features
 --------------------------
 
