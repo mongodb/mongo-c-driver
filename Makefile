@@ -30,17 +30,17 @@ BSON_LIBNAME=libbson
 ENV?=posix
 
 # TODO: add replica set test, cpp test, platform tests, json_test
-TESTS=test/auth_test test/bson_test test/bson_subobject_test test/count_delete_test \
-  test/cursors_test test/endian_swap_test test/errors_test test/examples_test \
-  test/functions_test test/gridfs_test test/helpers_test \
-  test/oid_test test/resize_test test/simple_test test/sizes_test test/update_test \
-  test/validate_test test/write_concern_test test/commands_test
+TESTS=test_auth test_bson test_bson_subobject test_count_delete \
+  test_cursors test_endian_swap test_errors test_examples \
+  test_functions test_gridfs test_helpers \
+  test_oid test_resize test_simple test_sizes test_update \
+  test_validate test_write_concern test_commands
 MONGO_OBJECTS=src/bson.o src/encoding.o src/gridfs.o src/md5.o src/mongo.o \
  src/numbers.o
 BSON_OBJECTS=src/bson.o src/numbers.o src/encoding.o
 
 ifeq ($(ENV),posix)
-    TESTS+=test/env_posix_test
+    TESTS+=test_env_posix
     MONGO_OBJECTS+=src/env_posix.o
 else
     MONGO_OBJECTS+=src/env_standard.o
@@ -179,7 +179,7 @@ docs:
 	python docs/buildscripts/docs.py
 
 clean:
-	rm -rf $(MONGO_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_DYLIBNAME) $(BSON_STLIBNAME) src/*.o src/*.os test/*_test
+	rm -rf $(MONGO_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_DYLIBNAME) $(BSON_STLIBNAME) src/*.o src/*.os test_*
 
 deps:
 	$(CC) -MM -DMONGO_HAVE_STDINT src/*.c
@@ -187,7 +187,7 @@ deps:
 32bit:
 	$(MAKE) CFLAGS="-m32" LDFLAGS="-pg"
 
-%_test: %_test.c $(MONGO_STLIBNAME)
+test_%: test/%_test.c $(MONGO_STLIBNAME)
 	$(CC) -o $@ -L. -Isrc $(TEST_DEFINES) $(ALL_LDFLAGS) $< $(MONGO_STLIBNAME)
 
 %.o: %.c
