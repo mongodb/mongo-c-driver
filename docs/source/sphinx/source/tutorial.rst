@@ -245,7 +245,7 @@ whose age is 24:
       mongo_cursor cursor[1];
 
       bson_init( query );
-      bson_append_int( query_buf, "age", 24 );
+      bson_append_int( query, "age", 24 );
       bson_finish( query );
 
       mongo_cursor_init( cursor, conn, "tutorial.persons" );
