@@ -68,11 +68,11 @@ Example
        bson_append_new_oid( b );
        bson_finish( b );
 
-       ASSERT( mongo_insert( conn, "test.foo", b, wc ) == MONGO_ERROR );
+       ASSERT( mongo_insert( conn, "test.foo", b, write_concern ) == MONGO_OK );
 
        /* If we try to insert the same document again,
           we'll get an error due to the unique index on _id.*/
-       ASSERT( mongo_insert( conn, "test.foo", b, wc ) == MONGO_ERROR );
+       ASSERT( mongo_insert( conn, "test.foo", b, write_concern ) == MONGO_ERROR );
        ASSERT( conn->err == MONGO_WRITE_ERROR );
        printf( "Error message: %s\n", conn->lasterrstr );
 
@@ -82,7 +82,7 @@ Example
        /* We'll get the same error if we set a default write concern
           on the connection object but don't set it on insert.*/
        mongo_set_write_concern( conn, write_concern );
-       ASSERT( mongo_insert( conn, "test.foo", b, wc ) == MONGO_ERROR );
+       ASSERT( mongo_insert( conn, "test.foo", b, write_concern ) == MONGO_ERROR );
        ASSERT( conn->err == MONGO_WRITE_ERROR );
        printf( "Error message: %s\n", conn->lasterrstr );
 
