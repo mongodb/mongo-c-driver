@@ -276,11 +276,11 @@ MONGO_EXPORT void bson_print_raw( const char *data , int depth ) {
             break;
         case BSON_CODEWSCOPE:
             bson_printf( "BSON_CODE_W_SCOPE: %s", bson_iterator_code( &i ) );
-            //bson_init( &scope ); // review - stepped on by bson_iterator_code_scope?
+            /* bson_init( &scope ); // review - stepped on by bson_iterator_code_scope? */
             bson_iterator_code_scope( &i, &scope );
             bson_printf( "\n\t SCOPE: " );
             bson_print( &scope );
-            //bson_destroy( &scope ); // review - causes free error
+            /* bson_destroy( &scope ); // review - causes free error */
             break;
         case BSON_INT:
             bson_printf( "%d" , bson_iterator_int( &i ) );
