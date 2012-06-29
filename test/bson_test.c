@@ -74,6 +74,8 @@ int test_bson_generic() {
    ASSERT( 1 == copy->finished );
    ASSERT( 0 == copy->err );
 
+   bson_destroy( copy );
+
    bson_print( b );
 
    bson_iterator_init( &it, b );
@@ -259,6 +261,8 @@ int test_bson_size( void ) {
     bson_finish( bsmall );
     
     ASSERT( bson_size( bsmall ) == 12 );
+
+    bson_destroy( bsmall );
 
     return 0;
 }

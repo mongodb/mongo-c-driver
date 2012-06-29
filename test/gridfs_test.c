@@ -187,8 +187,9 @@ void test_streaming() {
 
     gridfs_destroy( gfs );
     mongo_destroy( conn );
-    free( buf );
+    free( medium );
     free( small );
+    free( buf );
 }
 
 void test_large() {
@@ -245,6 +246,7 @@ void test_large() {
     gridfs_destroy( gfs );
     mongo_disconnect( conn );
     mongo_destroy( conn );
+    free( buffer );
 }
 
 int main( void ) {

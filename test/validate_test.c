@@ -44,6 +44,7 @@ int main() {
     bson_append_int( &b, "foo", 1 );
     ASSERT( mongo_insert( conn, "test.foo", &b, NULL ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_BSON_NOT_FINISHED );
+    bson_destroy( &b );
 
     /* Test valid keys. */
     bson_init( &b );
@@ -98,9 +99,10 @@ int main() {
     ASSERT( cursor->conn->err & MONGO_BSON_NOT_FINISHED );
 
     bson_destroy( &b );
+    mongo_cursor_destroy( cursor );
 
     /* Test valid strings. */
-    bson_init( & b );
+    bson_init( &b );
     result = bson_append_string( &b , "foo" , "bar" );
     ASSERT( result == BSON_OK );
     ASSERT( b.err == 0 );
@@ -129,6 +131,7 @@ int main() {
     for ( j=0; j < BATCH_SIZE; j++ )
         bson_destroy( &bs[j] );
 
+    bson_destroy( &b );
     mongo_cmd_drop_db( conn, "test" );
     mongo_disconnect( conn );
 

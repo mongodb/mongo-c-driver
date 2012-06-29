@@ -19,6 +19,7 @@ void test_index_helper( mongo *conn ) {
     mongo_create_index( conn, "test.bar", &b, MONGO_INDEX_SPARSE | MONGO_INDEX_UNIQUE, &out );
 
     bson_destroy( &b );
+    bson_destroy( &out );
 
     bson_init( &b );
     bson_append_start_object( &b, "key" );
@@ -35,6 +36,9 @@ void test_index_helper( mongo *conn ) {
 
     ASSERT( bson_find( &it, &out, "unique" ) );
     ASSERT( bson_find( &it, &out, "sparse" ) );
+
+    bson_destroy( &b );
+    bson_destroy( &out );
 }
 
 int main() {
@@ -48,8 +52,9 @@ int main() {
         exit( 1 );
     }
 
-
     test_index_helper( conn );
+
+    mongo_destroy( conn );
 
     return 0;
 }

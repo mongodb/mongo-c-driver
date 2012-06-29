@@ -758,7 +758,7 @@ static int mongo_cursor_bson_valid( mongo_cursor *cursor, const bson *bson ) {
 
 static int mongo_check_last_error( mongo *conn, const char *ns,
     mongo_write_concern *write_concern ) {
-
+    int ret = MONGO_OK;
     bson response = {NULL, 0};
     bson fields;
     bson_iterator it;
@@ -769,7 +769,7 @@ static int mongo_check_last_error( mongo *conn, const char *ns,
     bson_free( cmd_ns );
 
     if( res != MONGO_OK )
-        return MONGO_ERROR;
+        ret = MONGO_ERROR;
     else {
         if( ( bson_find( &it, &response, "$err" ) == BSON_STRING ) ||
             ( bson_find( &it, &response, "err" ) == BSON_STRING ) ) {
@@ -777,10 +777,11 @@ static int mongo_check_last_error( mongo *conn, const char *ns,
             __mongo_set_error( conn, MONGO_WRITE_ERROR,
                 "See conn->lasterrstr for details.", 0 );
             mongo_set_last_error( conn, &it, &response );
-            return MONGO_ERROR;
-        } else
-            return MONGO_OK;
+            ret = MONGO_ERROR;
+        }
+        bson_destroy( &response );
     }
+    return ret;
 }
 
 static int mongo_choose_write_concern( mongo *conn,
@@ -1464,7 +1465,7 @@ MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *ns, co
 
 MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *command,
                        bson *out ) {
-
+    int ret = MONGO_OK;
     bson response = {NULL, 0};
     bson fields;
     int sl = strlen( db );
@@ -1478,7 +1479,7 @@ MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *com
     bson_free( ns );
 
     if( res != MONGO_OK )
-        return MONGO_ERROR;
+        ret = MONGO_ERROR;
     else {
         bson_iterator it;
         if( bson_find( &it, &response, "ok" ) )
@@ -1486,13 +1487,16 @@ MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *com
 
         if( !success ) {
             conn->err = MONGO_COMMAND_FAILED;
-            return MONGO_ERROR;
+            bson_destroy( &response );
+            ret = MONGO_ERROR;
         } else {
             if( out )
-              *out = response;
-            return MONGO_OK;
+                *out = response;
+            else
+                bson_destroy( &response );
         }
     }
+    return ret;
 }
 
 MONGO_EXPORT int mongo_simple_int_command( mongo *conn, const char *db,
@@ -1662,7 +1666,6 @@ MONGO_EXPORT int mongo_cmd_add_user( mongo *conn, const char *db, const char *us
 MONGO_EXPORT bson_bool_t mongo_cmd_authenticate( mongo *conn, const char *db, const char *user, const char *pass ) {
     bson from_db;
     bson cmd;
-    bson out;
     const char *nonce;
     int result;
 
@@ -1696,9 +1699,8 @@ MONGO_EXPORT bson_bool_t mongo_cmd_authenticate( mongo *conn, const char *db, co
 
     bson_destroy( &from_db );
 
-    result = mongo_run_command( conn, db, &cmd, &out );
+    result = mongo_run_command( conn, db, &cmd, NULL );
 
-    bson_destroy( &from_db );
     bson_destroy( &cmd );
 
     return result;

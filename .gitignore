@@ -12,6 +12,7 @@
 *.swp
 
 .DS_Store
+.idea
 
 test_*
 benchmark

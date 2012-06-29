@@ -36,6 +36,9 @@ int main() {
     ASSERT( bson_find( it, out, "capped" ) == BSON_INT );
     ASSERT( bson_find( it, out, "max" ) == BSON_INT );
 
+    bson_destroy( cmd );
+    bson_destroy( out );
+
     mongo_cmd_drop_collection( conn, "test", col, NULL );
     mongo_cmd_drop_db( conn, db );
 

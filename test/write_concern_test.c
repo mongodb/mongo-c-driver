@@ -178,6 +178,7 @@ void test_write_concern_input( mongo *conn ) {
     conn->write_concern = NULL;
     mongo_write_concern_destroy( wc );
     mongo_write_concern_destroy( wcbad );
+    bson_destroy( b );
 }
 
 void test_insert( mongo *conn ) {
@@ -258,6 +259,7 @@ void test_insert( mongo *conn ) {
     bson_destroy( b );
     bson_destroy( b2 );
     bson_destroy( b3 );
+    bson_destroy( b4 );
     mongo_write_concern_destroy( wc );
 }
 

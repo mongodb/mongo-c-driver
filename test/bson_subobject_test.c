@@ -43,6 +43,7 @@ int main() {
     ASSERT( 0 == copy->stackPos );
     ASSERT( 0 == copy->err );
 
+    bson_destroy( copy );
     bson_destroy( b );
 
     return 0;

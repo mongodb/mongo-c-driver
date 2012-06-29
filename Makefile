@@ -187,7 +187,7 @@ deps:
 32bit:
 	$(MAKE) CFLAGS="-m32" LDFLAGS="-pg"
 
-test_%: test/%_test.c $(MONGO_STLIBNAME)
+test_%: test/%_test.c test/test.h $(MONGO_STLIBNAME)
 	$(CC) -o $@ -L. -Isrc $(TEST_DEFINES) $(ALL_LDFLAGS) $< $(MONGO_STLIBNAME)
 
 %.o: %.c

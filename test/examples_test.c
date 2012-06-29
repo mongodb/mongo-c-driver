@@ -67,5 +67,7 @@ int main() {
     /* Now iterate that object */
     bson_print( &sub );
 
+    bson_destroy( &b );
+
     return 0;
 }
