@@ -117,11 +117,11 @@ MONGO_EXPORT const char *bson_data( const bson *b ) {
 
 static char hexbyte( char hex ) {
     if (hex >= '0' && hex <= '9')
-        return (hex - 0x30);
+        return (hex - '0');
     else if (hex >= 'A' && hex <= 'F')
-        return (hex - 0x37);
+        return (hex - 'A' + 10);
     else if (hex >= 'a' && hex <= 'f')
-        return (hex - 0x57);
+        return (hex - 'a' + 10);
     else
         return 0x0;
 }
