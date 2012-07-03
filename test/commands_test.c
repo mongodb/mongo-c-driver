@@ -11,6 +11,7 @@ int main() {
     bson cmd[1];
     bson out[1];
     bson_iterator it[1];
+    char version[10];
 
     const char *db = "test";
     const char *col = "c.capped";
@@ -33,7 +34,12 @@ int main() {
 
     ASSERT( mongo_run_command( conn, db, cmd, out ) == MONGO_OK );
 
-    ASSERT( bson_find( it, out, "capped" ) == BSON_INT );
+    if( mongo_get_server_version( version ) != -1 ){
+        if( version[0] == '2' && version[2] >= '1' )
+            ASSERT( bson_find( it, out, "capped" ) == BSON_BOOL );
+        else ASSERT( bson_find( it, out, "capped" ) == BSON_INT );
+    }
+
     ASSERT( bson_find( it, out, "max" ) == BSON_INT );
 
     bson_destroy( cmd );
