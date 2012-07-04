@@ -24,7 +24,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-MONGO_EXPORT mongo* mongo_create() {
+MONGO_EXPORT mongo* mongo_create( void ) {
     return (mongo*)bson_malloc(sizeof(mongo));
 }
 
@@ -94,7 +94,7 @@ MONGO_EXPORT const char* mongo_get_host(mongo* conn, int i) {
 }
 
 
-MONGO_EXPORT mongo_cursor* mongo_cursor_create() {
+MONGO_EXPORT mongo_cursor* mongo_cursor_create( void ) {
     return (mongo_cursor*)bson_malloc(sizeof(mongo_cursor));
 }
 

@@ -199,7 +199,7 @@ Connection API
 
 /** Initialize sockets for Windows.
  */
-MONGO_EXPORT void mongo_init_sockets();
+MONGO_EXPORT void mongo_init_sockets( void );
 
 /**
  * Initialize a new mongo connection object. You must initialize each mongo
@@ -788,7 +788,7 @@ MONGO_EXPORT void mongo_cmd_reset_error( mongo *conn, const char *db );
 Utility API
 **********************************************************************/
 
-MONGO_EXPORT mongo* mongo_create();
+MONGO_EXPORT mongo* mongo_create( void );
 MONGO_EXPORT void mongo_dispose(mongo* conn);
 MONGO_EXPORT int mongo_get_err(mongo* conn);
 MONGO_EXPORT int mongo_is_connected(mongo* conn);
@@ -797,7 +797,7 @@ MONGO_EXPORT const char* mongo_get_primary(mongo* conn);
 MONGO_EXPORT int mongo_get_socket(mongo* conn) ;
 MONGO_EXPORT int mongo_get_host_count(mongo* conn);
 MONGO_EXPORT const char* mongo_get_host(mongo* conn, int i);
-MONGO_EXPORT mongo_cursor* mongo_cursor_create();
+MONGO_EXPORT mongo_cursor* mongo_cursor_create( void );
 MONGO_EXPORT void mongo_cursor_dispose(mongo_cursor* cursor);
 MONGO_EXPORT int  mongo_get_server_err(mongo* conn);
 MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn);
