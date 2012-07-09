@@ -40,7 +40,7 @@ MONGO_OBJECTS=src/bson.o src/encoding.o src/gridfs.o src/md5.o src/mongo.o \
 BSON_OBJECTS=src/bson.o src/numbers.o src/encoding.o
 
 ifeq ($(ENV),posix)
-    TESTS+=test_env_posix
+    TESTS+=test_env_posix test_unix_socket
     MONGO_OBJECTS+=src/env_posix.o
 else
     MONGO_OBJECTS+=src/env_standard.o

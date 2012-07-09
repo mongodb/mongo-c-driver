@@ -90,7 +90,7 @@ if GetOption('standard_env'):
     NET_LIB = "src/env_standard.c"
 elif os.sys.platform in ["darwin", "linux2"]:
     NET_LIB = "src/env_posix.c"
-    PLATFORM_TESTS = [ "env_posix" ]
+    PLATFORM_TESTS = [ "env_posix", "unix_socket" ]
 elif 'win32' == os.sys.platform:
     NET_LIB = "src/env_win32.c"
     PLATFORM_TESTS = [ "env_win32" ]
