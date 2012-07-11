@@ -1321,10 +1321,14 @@ MONGO_EXPORT int mongo_cursor_next( mongo_cursor *cursor ) {
         if( mongo_cursor_get_more( cursor ) != MONGO_OK )
             return MONGO_ERROR;
 
-        /* If there's still a cursor id, then the message should be pending. */
-        if( cursor->reply->fields.num == 0 && cursor->reply->fields.cursorID ) {
-            cursor->err = MONGO_CURSOR_PENDING;
-            return MONGO_ERROR;
+        if ( cursor->reply->fields.num == 0 ) {
+            /* Special case for tailable cursors. */
+            if ( cursor->reply->fields.cursorID ) {
+                cursor->err = MONGO_CURSOR_PENDING;
+                return MONGO_ERROR;
+            }
+            else
+                return MONGO_ERROR;
         }
 
         bson_init_finished_data( &cursor->current, &cursor->reply->objs );
