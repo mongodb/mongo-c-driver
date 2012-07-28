@@ -117,11 +117,11 @@ ifeq ($(kernel_name),Darwin)
     DYLIBSUFFIX=dylib
     MONGO_DYLIB_MINOR_NAME=$(MONGO_LIBNAME).$(DYLIBSUFFIX).$(MONGO_MAJOR).$(MONGO_MINOR)
     MONGO_DYLIB_MAJOR_NAME=$(MONGO_LIBNAME).$(DYLIBSUFFIX).$(MONGO_MAJOR)
-    MONGO_DYLIB_MAKE_CMD=$(CC) -shared -Wl,-install_name,$(MONGO_DYLIB_MINOR_NAME) -o $(MONGO_DYLIBNAME)
+    MONGO_DYLIB_MAKE_CMD=$(CC) -shared -Wl,-install_name,$(MONGO_DYLIB_MINOR_NAME) -o $(MONGO_DYLIBNAME) $(ALL_LDFLAGS) $(DYN_MONGO_OBJECTS)
 
     BSON_DYLIB_MINOR_NAME=$(BSON_LIBNAME).$(DYLIBSUFFIX).$(BSON_MAJOR).$(BSON_MINOR)
     BSON_DYLIB_MAJOR_NAME=$(BSON_LIBNAME).$(DYLIBSUFFIX).$(BSON_MAJOR)
-    BSON_DYLIB_MAKE_CMD=$(CC) -shared -Wl,-install_name,$(BSON_DYLIB_MINOR_NAME) -o $(BSON_DYLIBNAME)
+    BSON_DYLIB_MAKE_CMD=$(CC) -shared -Wl,-install_name,$(BSON_DYLIB_MINOR_NAME) -o $(BSON_DYLIBNAME) $(ALL_LDFLAGS) $(DYN_BSON_OBJECTS)
 endif
 
 # Installation
@@ -196,4 +196,4 @@ test_%: test/%_test.c test/test.h $(MONGO_STLIBNAME)
 %.os: %.c
 	$(CC) -o $@ -c $(ALL_CFLAGS) $(DYN_FLAGS) $<
 
-.PHONY: clean docs test
+.PHONY: 32bit all clean deps docs install test valgrind
