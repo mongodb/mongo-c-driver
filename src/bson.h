@@ -60,7 +60,7 @@ typedef unsigned __int64 uint64_t;
 typedef long long int int64_t;
 typedef unsigned long long int uint64_t;
 #else
-#error Must compile with c99 or define MONGO_HAVE_STDINT, MONGO_HAVE_UNISTD, MONGO_USE__INT64, or MONGO_USE_LONG_INT.
+#error Must compile with c99 or define MONGO_HAVE_STDINT, MONGO_HAVE_UNISTD, MONGO_USE__INT64, or MONGO_USE_LONG_LONG_INT.
 #endif
 
 #ifdef MONGO_BIG_ENDIAN
