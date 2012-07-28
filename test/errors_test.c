@@ -7,7 +7,7 @@
 static const char *db = "test";
 static const char *ns = "test.c.error";
 
-int test_namespace_validation() {
+int test_namespace_validation( void ) {
     mongo conn[1];
     char longns[130] = "test.foo";
     int i;

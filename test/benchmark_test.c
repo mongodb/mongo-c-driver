@@ -88,7 +88,7 @@ static void make_large( bson *out, int i ) {
     bson_finish( out );
 }
 
-static void serialize_small_test() {
+static void serialize_small_test( void ) {
     int i;
     bson b;
     for ( i=0; i<PER_TRIAL; i++ ) {
@@ -96,7 +96,7 @@ static void serialize_small_test() {
         bson_destroy( &b );
     }
 }
-static void serialize_medium_test() {
+static void serialize_medium_test( void ) {
     int i;
     bson b;
     for ( i=0; i<PER_TRIAL; i++ ) {
@@ -104,7 +104,7 @@ static void serialize_medium_test() {
         bson_destroy( &b );
     }
 }
-static void serialize_large_test() {
+static void serialize_large_test( void ) {
     int i;
     bson b;
     for ( i=0; i<PER_TRIAL; i++ ) {
@@ -112,7 +112,7 @@ static void serialize_large_test() {
         bson_destroy( &b );
     }
 }
-static void single_insert_small_test() {
+static void single_insert_small_test( void ) {
     int i;
     bson b;
     for ( i=0; i<PER_TRIAL; i++ ) {
@@ -122,7 +122,7 @@ static void single_insert_small_test() {
     }
 }
 
-static void single_insert_medium_test() {
+static void single_insert_medium_test( void ) {
     int i;
     bson b;
     for ( i=0; i<PER_TRIAL; i++ ) {
@@ -132,7 +132,7 @@ static void single_insert_medium_test() {
     }
 }
 
-static void single_insert_large_test() {
+static void single_insert_large_test( void ) {
     int i;
     bson b;
     for ( i=0; i<PER_TRIAL; i++ ) {
@@ -142,7 +142,7 @@ static void single_insert_large_test() {
     }
 }
 
-static void index_insert_small_test() {
+static void index_insert_small_test( void ) {
     int i;
     bson b;
     ASSERT( mongo_create_simple_index( conn, DB ".index.small", "x", 0, NULL ) == MONGO_OK );
@@ -153,7 +153,7 @@ static void index_insert_small_test() {
     }
 }
 
-static void index_insert_medium_test() {
+static void index_insert_medium_test( void ) {
     int i;
     bson b;
     ASSERT( mongo_create_simple_index( conn, DB ".index.medium", "x", 0, NULL ) == MONGO_OK );
@@ -164,7 +164,7 @@ static void index_insert_medium_test() {
     }
 }
 
-static void index_insert_large_test() {
+static void index_insert_large_test( void ) {
     int i;
     bson b;
     ASSERT( mongo_create_simple_index( conn, DB ".index.large", "x", 0, NULL ) == MONGO_OK );
@@ -175,7 +175,7 @@ static void index_insert_large_test() {
     }
 }
 
-static void batch_insert_small_test() {
+static void batch_insert_small_test( void ) {
     int i, j;
     bson b[BATCH_SIZE];
     bson *bp[BATCH_SIZE];
@@ -193,7 +193,7 @@ static void batch_insert_small_test() {
     }
 }
 
-static void batch_insert_medium_test() {
+static void batch_insert_medium_test( void ) {
     int i, j;
     bson b[BATCH_SIZE];
     bson *bp[BATCH_SIZE];
@@ -211,7 +211,7 @@ static void batch_insert_medium_test() {
     }
 }
 
-static void batch_insert_large_test() {
+static void batch_insert_large_test( void ) {
     int i, j;
     bson b[BATCH_SIZE];
     bson *bp[BATCH_SIZE];
@@ -245,23 +245,23 @@ static void find_one( const char *ns ) {
     }
 }
 
-static void find_one_noindex_small_test()  {
+static void find_one_noindex_small_test( void )  {
     find_one( DB ".single.small" );
 }
-static void find_one_noindex_medium_test() {
+static void find_one_noindex_medium_test( void ) {
     find_one( DB ".single.medium" );
 }
-static void find_one_noindex_large_test()  {
+static void find_one_noindex_large_test( void )  {
     find_one( DB ".single.large" );
 }
 
-static void find_one_index_small_test()  {
+static void find_one_index_small_test( void )  {
     find_one( DB ".index.small" );
 }
-static void find_one_index_medium_test() {
+static void find_one_index_medium_test( void ) {
     find_one( DB ".index.medium" );
 }
-static void find_one_index_large_test()  {
+static void find_one_index_large_test( void )  {
     find_one( DB ".index.large" );
 }
 
@@ -282,23 +282,23 @@ static void find( const char *ns ) {
     }
 }
 
-static void find_noindex_small_test()  {
+static void find_noindex_small_test( void )  {
     find( DB ".single.small" );
 }
-static void find_noindex_medium_test() {
+static void find_noindex_medium_test( void ) {
     find( DB ".single.medium" );
 }
-static void find_noindex_large_test()  {
+static void find_noindex_large_test( void )  {
     find( DB ".single.large" );
 }
 
-static void find_index_small_test()  {
+static void find_index_small_test( void )  {
     find( DB ".index.small" );
 }
-static void find_index_medium_test() {
+static void find_index_medium_test( void ) {
     find( DB ".index.medium" );
 }
-static void find_index_large_test()  {
+static void find_index_large_test( void )  {
     find( DB ".index.large" );
 }
 
@@ -331,17 +331,17 @@ static void find_range( const char *ns ) {
     }
 }
 
-static void find_range_small_test()  {
+static void find_range_small_test( void )  {
     find_range( DB ".index.small" );
 }
-static void find_range_medium_test() {
+static void find_range_medium_test( void ) {
     find_range( DB ".index.medium" );
 }
-static void find_range_large_test()  {
+static void find_range_large_test( void )  {
     find_range( DB ".index.large" );
 }
 
-typedef void( *nullary )();
+typedef void( *nullary )( void );
 static void time_it( nullary func, const char *name, bson_bool_t gle ) {
     double timer;
     double ops;
@@ -376,7 +376,7 @@ static void time_it( nullary func, const char *name, bson_bool_t gle ) {
 
 #define TIME(func, gle) (time_it(func, #func, gle))
 
-static void clean() {
+static void clean( void ) {
     bson b;
     if ( mongo_cmd_drop_db( conn, DB ) != MONGO_OK ) {
         printf( "failed to drop db\n" );

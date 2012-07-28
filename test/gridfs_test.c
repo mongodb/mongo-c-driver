@@ -92,7 +92,7 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     unlink( "output" );
 }
 
-void test_basic() {
+void test_basic( void ) {
     mongo conn[1];
     gridfs gfs[1];
     char *data_before = bson_malloc( UPPER );
@@ -135,7 +135,7 @@ void test_basic() {
     unlink( "output" );
 }
 
-void test_streaming() {
+void test_streaming( void ) {
     mongo conn[1];
     gridfs gfs[1];
     gridfile gfile[1];
@@ -192,7 +192,7 @@ void test_streaming() {
     free( buf );
 }
 
-void test_large() {
+void test_large( void ) {
     mongo conn[1];
     gridfs gfs[1];
     gridfile gfile[1];

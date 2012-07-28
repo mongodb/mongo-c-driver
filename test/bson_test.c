@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-int test_bson_generic() {
+int test_bson_generic( void ) {
 
    bson_iterator it, it2, it3;
    bson_oid_t oid;
@@ -240,7 +240,7 @@ int test_bson_generic() {
    return 0;
 }
 
-int test_bson_iterator() {
+int test_bson_iterator( void ) {
     bson b[1];
     bson_iterator i[1];
 
