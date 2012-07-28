@@ -51,9 +51,9 @@ typedef struct {
     int pending_len;    /**> Length of pending_data buffer */
 } gridfile;
 
-MONGO_EXPORT gridfs* gridfs_create();
+MONGO_EXPORT gridfs* gridfs_create( void );
 MONGO_EXPORT void gridfs_dispose(gridfs* gfs);
-MONGO_EXPORT gridfile* gridfile_create();
+MONGO_EXPORT gridfile* gridfile_create( void );
 MONGO_EXPORT void gridfile_dispose(gridfile* gf);
 MONGO_EXPORT void gridfile_get_descriptor(gridfile* gf, bson* out);
 

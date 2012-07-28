@@ -52,7 +52,7 @@ static int ( *oid_inc_func )( void )  = NULL;
    READING
    ------------------------------ */
 
-MONGO_EXPORT bson* bson_create() {
+MONGO_EXPORT bson* bson_create( void ) {
 	return (bson*)bson_malloc(sizeof(bson));
 }
 
@@ -274,7 +274,7 @@ MONGO_EXPORT void bson_print_raw( const char *data , int depth ) {
    ITERATOR
    ------------------------------ */
 
-MONGO_EXPORT bson_iterator* bson_iterator_create() {
+MONGO_EXPORT bson_iterator* bson_iterator_create( void ) {
     return ( bson_iterator* )malloc( sizeof( bson_iterator ) );
 }
 
