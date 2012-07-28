@@ -708,14 +708,14 @@ MONGO_EXPORT void mongo_destroy( mongo *conn ) {
 static int mongo_bson_valid( mongo *conn, const bson *bson, int write ) {
     int size;
 
-    size = bson_size( bson );
-    if( size > conn->max_bson_size ) {
-        conn->err = MONGO_BSON_TOO_LARGE;
+    if( ! bson->finished ) {
+        conn->err = MONGO_BSON_NOT_FINISHED;
         return MONGO_ERROR;
     }
 
-    if( ! bson->finished ) {
-        conn->err = MONGO_BSON_NOT_FINISHED;
+    size = bson_size( bson );
+    if( size > conn->max_bson_size ) {
+        conn->err = MONGO_BSON_TOO_LARGE;
         return MONGO_ERROR;
     }
 

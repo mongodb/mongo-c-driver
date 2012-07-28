@@ -43,11 +43,7 @@ int main() {
     bson_init( &b );
     bson_append_int( &b, "foo", 1 );
     ASSERT( mongo_insert( conn, "test.foo", &b, NULL ) == MONGO_ERROR );
-    if (conn->err != MONGO_BSON_NOT_FINISHED)
-        printf("*\n*\n*\n*\n* conn->err(%d) != MONGO_BSON_NOT_FINISHED\n*\n*\n*\n*\n", conn->err);
-/* TODO - CDRIVER-159 - test_validate fails intermittently with Jenkins
     ASSERT( conn->err == MONGO_BSON_NOT_FINISHED );
-*/
     bson_destroy( &b );
 
     /* Test valid keys. */
