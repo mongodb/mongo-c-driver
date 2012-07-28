@@ -34,6 +34,7 @@ int test_read_timeout( void ) {
 
     /* Set the connection timeout here. */
     mongo_set_op_timeout( conn, 1000 );
+    ASSERT( res == MONGO_OK );
 
     res = mongo_find_one( conn, "test.foo", &b, bson_empty(&fields), &out );
     ASSERT( res == MONGO_ERROR );

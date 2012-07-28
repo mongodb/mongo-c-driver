@@ -169,6 +169,9 @@ install:
 	$(INSTALL) $(MONGO_STLIBNAME) $(INSTALL_LIBRARY_PATH)
 	$(INSTALL) $(BSON_STLIBNAME) $(INSTALL_LIBRARY_PATH)
 
+scan-build: clean
+	scan-build -V -v make
+
 test: $(TESTS)
 	sh runtests.sh
 
