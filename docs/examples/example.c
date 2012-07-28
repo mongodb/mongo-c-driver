@@ -88,7 +88,7 @@ int main() {
     }
 
     /* Insert the sample BSON document. */
-    if( mongo_insert( &conn, "test.records", &b ) != MONGO_OK ) {
+    if( mongo_insert( &conn, "test.records", &b, NULL ) != MONGO_OK ) {
       printf( "FAIL: Failed to insert document with error %d\n", conn.err );
       exit( 1 );
     }
