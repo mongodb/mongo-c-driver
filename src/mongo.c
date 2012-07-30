@@ -517,9 +517,9 @@ static void mongo_replset_check_seed( mongo *conn ) {
                 host_string = bson_iterator_string( &it_sub );
 
                 host_port = bson_malloc( sizeof( mongo_host_port ) );
-                mongo_parse_host( host_string, host_port );
 
                 if( host_port ) {
+                    mongo_parse_host( host_string, host_port );
                     mongo_replset_add_node( &conn->replset->hosts,
                                             host_port->host, host_port->port );
 
