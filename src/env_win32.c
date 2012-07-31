@@ -21,10 +21,10 @@
 #include <string.h>
 
 #ifdef _MSC_VER
-#include <ws2tcpip.h>  // send,recv,socklen_t etc
-#include <wspiapi.h>   // addrinfo
+#include <ws2tcpip.h>  /* send,recv,socklen_t etc */
+#include <wspiapi.h>   /* addrinfo */
 #else
-#include <ws2tcpip.h>  // send,recv,socklen_t etc
+#include <ws2tcpip.h>  /* send,recv,socklen_t etc */
 #include <winsock2.h>
 typedef int socklen_t;
 #endif

@@ -111,7 +111,7 @@ then you add seed nodes, and finally you connect. Here's an example:
       status = mongo_replset_connect( conn );
 
       if( status != MONGO_OK ) {
-          // Check conn->err for error code.
+          /* Check conn->err for error code. */
       }
 
       mongo_destroy( conn );

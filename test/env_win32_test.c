@@ -9,8 +9,8 @@
 #include <stdlib.h>
 
 #ifdef _MSC_VER
-#include <ws2tcpip.h>  // send,recv,socklen_t etc
-#include <wspiapi.h>   // addrinfo
+#include <ws2tcpip.h>  /* send,recv,socklen_t etc */
+#include <wspiapi.h>   /* addrinfo */
 #else
 #include <windows.h>
 #include <winsock.h>

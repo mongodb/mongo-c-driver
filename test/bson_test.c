@@ -244,17 +244,17 @@ int test_bson_generic( void ) {
        bson_finish( bsrc );
        ASSERT( bsrc->err == BSON_VALID );
        bson_init( b );
-       bson_append_double( b, "", 3.14 ); // test empty name (in general)
+       bson_append_double( b, "", 3.14 ); /* test empty name (in general) */
        bson_iterator_init( &it, bsrc );
        ASSERT( bson_iterator_more( &it ) );
        ASSERT( bson_iterator_next( &it ) == BSON_DOUBLE );
        ASSERT( bson_iterator_type( &it ) == BSON_DOUBLE );
        bson_append_element( b, "d", &it );
-       bson_append_element( b, 0, &it ); // test null
-       bson_append_element( b, "", &it ); // test empty name
+       bson_append_element( b, 0, &it ); /* test null */
+       bson_append_element( b, "", &it ); /* test empty name */
        bson_finish( b );
        ASSERT( b->err == BSON_VALID );
-       //bson_print( b );
+       /* bson_print( b ); */
        bson_iterator_init( &it, b );
        ASSERT( bson_iterator_more( &it ) );
        ASSERT( bson_iterator_next( &it ) == BSON_DOUBLE );

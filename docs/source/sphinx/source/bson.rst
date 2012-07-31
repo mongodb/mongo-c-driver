@@ -41,7 +41,7 @@ To demonstrate, let's create a BSON object corresponding to the simple JSON obje
     bson_append_int( b, "count", 1001 );
     bson_finish( b );
 
-    // BSON object now ready for use
+    /* BSON object now ready for use */
 
     bson_destroy( b );
 

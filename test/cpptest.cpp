@@ -4,7 +4,7 @@
 #include <cstring>
 #include <cstdio>
 
-// this is just a simple test to make sure everything works when compiled with a c++ compiler
+/* this is just a simple test to make sure everything works when compiled with a c++ compiler */
 
 using namespace std;
 
