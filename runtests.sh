@@ -31,8 +31,10 @@ for i in `find . -name test_\*`
 do
   if [ $valgrind -eq 1 ]
   then
+    echo valgrind $i
     valgrind $i
   else
+    echo $i
     $i
   fi
 

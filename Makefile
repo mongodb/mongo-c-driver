@@ -30,14 +30,14 @@ BSON_LIBNAME=libbson
 ENV?=posix
 
 # TODO: add replica set test, cpp test, platform tests, json_test
-TESTS=test_auth test_bson test_bson_subobject test_count_delete \
+TESTS=test_auth test_bcon test_bson test_bson_subobject test_count_delete \
   test_cursors test_endian_swap test_errors test_examples \
   test_functions test_gridfs test_helpers \
   test_oid test_resize test_simple test_sizes test_update \
   test_validate test_write_concern test_commands
-MONGO_OBJECTS=src/bson.o src/encoding.o src/gridfs.o src/md5.o src/mongo.o \
+MONGO_OBJECTS=src/bcon.o src/bson.o src/encoding.o src/gridfs.o src/md5.o src/mongo.o \
  src/numbers.o
-BSON_OBJECTS=src/bson.o src/numbers.o src/encoding.o
+BSON_OBJECTS=src/bcon.o src/bson.o src/numbers.o src/encoding.o
 
 ifeq ($(ENV),posix)
     TESTS+=test_env_posix test_unix_socket
@@ -136,6 +136,7 @@ INSTALL_LIBRARY_PATH?=/usr/local/lib
 all: $(MONGO_DYLIBNAME) $(BSON_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_STLIBNAME)
 
 # Dependency targets. Run 'make deps' to generate these.
+bcon.o: src/bcon.c src/bcon.h src/bson.h
 bson.o: src/bson.c src/bson.h src/encoding.h
 encoding.o: src/encoding.c src/bson.h src/encoding.h
 env_standard.o: src/env_standard.c src/env.h src/mongo.h src/bson.h
@@ -182,7 +183,10 @@ docs:
 	python docs/buildscripts/docs.py
 
 clean:
-	rm -rf $(MONGO_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_DYLIBNAME) $(BSON_STLIBNAME) src/*.o src/*.os test_*
+	rm -rf src/*.o src/*.os test/*.o test/*.os test_* .scon* config.log
+
+clobber: clean
+	rm -rf $(MONGO_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_DYLIBNAME) $(BSON_STLIBNAME) docs/html docs/source/doxygen
 
 deps:
 	$(CC) -MM -DMONGO_HAVE_STDINT src/*.c
@@ -199,4 +203,4 @@ test_%: test/%_test.c test/test.h $(MONGO_STLIBNAME)
 %.os: %.c
 	$(CC) -o $@ -c $(ALL_CFLAGS) $(DYN_FLAGS) $<
 
-.PHONY: 32bit all clean deps docs install test valgrind
+.PHONY: 32bit all clean clobber deps docs install test valgrind
