@@ -25,17 +25,18 @@ int verbose = 0;
 
 int bcon_token(char *s);
 
-void test_bcon_token() {
+void test_bcon_token( void ) {
     assert(Token_Default == bcon_token(":_i:X"));
     assert(Token_Typespec == bcon_token(":_i:"));
     assert(Token_OpenBrace == bcon_token("{"));
     assert(Token_CloseBrace == bcon_token("}"));
     assert(Token_OpenBracket == bcon_token("["));
     assert(Token_CloseBracket == bcon_token("]"));
+    assert(Token_End == bcon_token("."));
     assert(Token_EOD == bcon_token(0));
 }
 
-void test_bson_from_bcon(const bcon *bc, bcon_error_t bc_err, int bv_err ) {
+void test_bson_from_bcon( const bcon *bc, bcon_error_t bc_err, int bv_err ) {
     bcon_error_t ret;
     bson b[1];
     if ( verbose ) { putchar('\t'); bcon_print(bc); putchar('\n'); }
@@ -50,36 +51,12 @@ void test_bson_from_bcon(const bcon *bc, bcon_error_t bc_err, int bv_err ) {
     bson_destroy( b );
 }
 
-void test_basic_types() {
-    bcon basic_types[] = {"string", BS("a string"), "f(double)", BF(3.14159), "boolean", BB(1), "time", BT(time(0)), "null", BNULL, "symbol", BX("a symbol"), "int", BI(123), "long", BL(456789L), BEND};
-    test_bson_from_bcon( basic_types, BCON_OK, BSON_VALID );
-}
-
-void test_basic_interpolation() {
-    char *s = "a_string";
-    double f = 3.14159;
-    bson_bool_t bb = 1;
-    time_t t = time(0);
-    char *x = "a symbol";
-    int i = 123;
-    long l = 456789L;
-    bcon basic_interpolation[] = {"string", BPS(&s), "f(double)", BPF(&f), "boolean", BPB(&bb), "time", BPT(&t), "symbol", BPX(&x), "int", BPI(&i), "long", BPL(&l), BEND};
-    test_bson_from_bcon( basic_interpolation, BCON_OK, BSON_VALID );
-}
-
-void test_oid_and_interpolation() {
-    char *oid_s = "010203040506070809101112";
-    bcon oid_bc[] = { "_id", BO(""), "user_id", BO("010203040506070809101112"), "admin_id", BPO(&oid_s), BEND };
-    if ( verbose ) { putchar('\t'); bcon_print( oid_bc ); putchar('\n'); }
-    test_bson_from_bcon( oid_bc, BCON_OK, BSON_VALID );;
-}
-
-void test_invalid_structure() {
+void test_invalid_structure( void ) {
     bcon bc_incomplete[] = { "k0", BEND };
     test_bson_from_bcon( bc_incomplete, BCON_DOCUMENT_INCOMPLETE, BSON_VALID );
 }
 
-void test_problematic_structure() {
+void test_problematic_structure( void ) {
     bcon bc_incomplete[] = { "k0", BEND };
     test_bson_from_bcon( bc_incomplete, BCON_DOCUMENT_INCOMPLETE, BSON_VALID );
     bcon bc_bracket_brace[] = { "k0", "v0", "k1", "{", "k11", "v11", "]", "v12", "}", BEND };
@@ -88,7 +65,7 @@ void test_problematic_structure() {
     test_bson_from_bcon( bc_brace_bracket, BCON_OK, BSON_VALID ); /* key for now */
 }
 
-void test_valid_structure() {
+void test_valid_structure( void ) {
     bcon bc_key_value[] = { "k0", "v0", BEND };
     test_bson_from_bcon( bc_key_value, BCON_OK, BSON_VALID );
     bcon bc_key_spec_value[] = { "k0", ":_s:", "v0", BEND };
@@ -111,16 +88,162 @@ void test_valid_structure() {
     test_bson_from_bcon( bc_array_doc, BCON_OK, BSON_VALID );
 }
 
-void test_high_order_interpolation() {
-    bcon bc_child_doc[] = { "k10", "v10", "k11", "v11", BEND };
-    bcon bc_parent_doc[] = { "k0", "v0", "k1", BPD(bc_child_doc), "k2", "v2", BEND };
-    test_bson_from_bcon( bc_parent_doc, BCON_OK, BSON_VALID );
-    bcon bc_child_array[] = { "k10", "v10", "k11", "v11", BEND };
-    bcon bc_parent_doc_array[] = { "k0", "v0", "k1", BPA(bc_child_array), "k2", "v2", BEND };
-    test_bson_from_bcon( bc_parent_doc_array, BCON_OK, BSON_VALID );
+void test_basic_types( void ) {
+    bcon doc[] = { "k0", "v0", "k1", "v1", BEND };
+    bcon array[] = { "v0", "v1", "v2", BEND };
+    bcon basic_types[] = {
+        "f(double)", BF(3.14159),
+        "string", BS("a string"),
+        "doc", BD(doc),
+        "array", BA(array),
+        "oid", BO("010203040506070809101112"),
+        "boolean", BB(1),
+        "time", BT(time(0)),
+        "null", BNULL,
+        "symbol", BX("a symbol"),
+        "int", BI(123),
+        "long", BL(456789L),
+        BEND
+    };
+    test_bson_from_bcon( basic_types, BCON_OK, BSON_VALID );
 }
 
-void test_example_hello_world() {
+void test_reference_interpolation( void ) {
+    double f = 3.14159;
+    char s[] = "a_string";
+    bcon doc[] = { "k0", "v0", "k1", "v1", BEND };
+    bcon array[] = { "v0", "v1", "v2", BEND };
+    char oid_s[] = "010203040506070809101112";
+    bson_bool_t bb = 1;
+    time_t t = time(0);
+    char x[] = "a symbol";
+    int i = 123;
+    long l = 456789L;
+    bcon reference_interpolation[] = {
+        "f", BRF(&f),
+        "string", BRS(s),
+        "doc", BRD(doc),
+        "array", BRA(array),
+        "oid", BRO(oid_s),
+        "boolean", BRB(&bb),
+        "time", BRT(&t),
+        "symbol", BRX(x),
+        "int", BRI(&i),
+        "long", BRL(&l),
+        BEND
+    };
+    test_bson_from_bcon( reference_interpolation, BCON_OK, BSON_VALID );
+    f = 2.71828;
+    strcpy(s, "b_string");
+    doc[0].s = "key";
+    array[1].s = "val";
+    strcpy(oid_s, "987654321506070809101112");
+    bb = 0;
+    t = time(0);
+    strcpy(x, "b symbol");
+    i = 456;
+    l = 123456L;
+    test_bson_from_bcon( reference_interpolation, BCON_OK, BSON_VALID );
+}
+
+void test_pointer_interpolation( void ) {
+    double f = 3.14159;
+    double *pf = &f;
+    char s[] = "a_string";
+    char **ps = (char**)&s;
+    bcon doc[] = { "k0", "v0", "k1", "v1", BEND };
+    bcon **pdoc = (bcon**)&doc;
+    bcon array[] = { "v0", "v1", "v2", BEND };
+    bcon **parray = (bcon**)&array;
+    char oid_s[] = "010203040506070809101112";
+    char **poid_s = (char**)&oid_s;
+    bson_bool_t bb = 1;
+    bson_bool_t *pbb = &bb;
+    time_t t = time(0);
+    time_t *pt = &t;
+    char x[] = "a symbol";
+    char **px = (char**)&x;
+    int i = 123;
+    int *pi = &i;
+    long l = 456789L;
+    long *pl = &l;
+    bcon pointer_interpolation[] = {
+        "alpha", "0",
+        "f", BPF(&pf),
+        "string", BPS(&ps),
+        "doc", BPD(&pdoc),
+        "array", BPA(&parray),
+        "oid", BPO(&poid_s),
+        "boolean", BPB(&pbb),
+        "time", BPT(&pt),
+        "symbol", BPX(&px),
+        "int", BPI(&pi),
+        "long", BPL(&pl),
+        "omega", "1",
+        BEND
+    };
+    test_bson_from_bcon( pointer_interpolation, BCON_OK, BSON_VALID );
+    f = 2.71828;
+    strcpy(s, "b_string");
+    doc[0].s = "key";
+    array[1].s = "val";
+    strcpy(oid_s, "987654321506070809101112");
+    bb = 0;
+    t = time(0);
+    strcpy(x, "b symbol");
+    i = 456;
+    l = 123456L;
+    test_bson_from_bcon( pointer_interpolation, BCON_OK, BSON_VALID );
+    pf = 0; ps = 0; pdoc = 0; parray = 0; poid_s = 0; pbb = 0; pt = 0; px = 0; pi = 0; pl = 0;
+    test_bson_from_bcon( pointer_interpolation, BCON_OK, BSON_VALID );
+}
+
+void test_oid_generation( void ) {
+    char oid_s[] = "010203040506070809101112";
+    char **poid_s = (char**)&oid_s;
+    bcon oid_bc[] = { "_id", BO(""), "user_id", BRO(oid_s), "admin_id", BPO(&poid_s), BEND };
+    test_bson_from_bcon( oid_bc, BCON_OK, BSON_VALID );
+    oid_s[0] = '\0';
+    test_bson_from_bcon( oid_bc, BCON_OK, BSON_VALID );
+}
+
+void test_reference_interpolation_example( void ) {
+    bson b[1];
+    char name[] = "pi";
+    double value = 3.14159;
+    bcon bc[] = { "name", BRS(name), "value", BRF(&value), BEND };
+    bson_from_bcon( b, bc ); /* generates { name: "pi", "value", 3.14159 } */
+    if (verbose) bson_print( b );
+    strcpy(name, "e");
+    value = 2.71828;
+    bson_from_bcon( b, bc ); /* generates { name: "pi", "value", 3.14159 } */
+    if (verbose) bson_print( b );
+}
+
+void test_pointer_interpolation_example( void ) {
+    bson b[1];
+    char name[] = "pi";
+    char new_name[] = "log(0)";
+    char **pname = (char**)&name;
+    double value = 3.14159;
+    double *pvalue = &value;
+    bcon bc[] = { "name", BPS(&pname), "value", BPF(&pvalue), BEND };
+    bson_from_bcon( b, bc ); /* generates { name: "pi", "value", 3.14159 } */
+    test_bson_from_bcon( bc, BCON_OK, BSON_VALID );
+    pname = (char**)&new_name;
+    pvalue = 0;
+    bson_from_bcon( b, bc ); /* generates { name: "log(0)" } */
+    test_bson_from_bcon( bc, BCON_OK, BSON_VALID );
+}
+
+void test_additional_notes_example( void ) {
+    bson b[1];
+    bcon bc[] = { "spec", BS(":_s:"), BEND };
+    bson_from_bcon( b, bc ); /* generates { spec: ":_s:" } */
+    test_bson_from_bcon( bc, BCON_OK, BSON_VALID );
+}
+
+void test_example_hello_world( void ) {
     bcon_error_t ret;
     bson b[1];
 
@@ -140,7 +263,7 @@ void test_example_hello_world() {
     bson_destroy( b );
 }
 
-void test_example_awesome() {
+void test_example_awesome( void ) {
     bcon_error_t ret;
     bson b[1];
 
@@ -230,7 +353,7 @@ void test_example_wikipedia_bson(size_t iterations) {
     assert(ret == BSON_OK);
 }
 
-void test_example_wikipedia() {
+void test_example_wikipedia( void ) {
     bson b[1];
     /*
     http://en.wikipedia.org/wiki/JSON
@@ -273,16 +396,19 @@ void test_example_wikipedia() {
 
 struct test_suite {
     char *name;
-    void (*fn)();
+    void (*fn)( void );
 } test_suite[] = {
     NAME_VALUE(test_bcon_token),
-    NAME_VALUE(test_basic_types),
-    NAME_VALUE(test_basic_interpolation),
-    NAME_VALUE(test_oid_and_interpolation),
     NAME_VALUE(test_invalid_structure),
     NAME_VALUE(test_valid_structure),
     NAME_VALUE(test_problematic_structure),
-    NAME_VALUE(test_high_order_interpolation),
+    NAME_VALUE(test_basic_types),
+    NAME_VALUE(test_reference_interpolation),
+    NAME_VALUE(test_pointer_interpolation),
+    NAME_VALUE(test_oid_generation),
+    NAME_VALUE(test_reference_interpolation_example),
+    NAME_VALUE(test_pointer_interpolation_example),
+    NAME_VALUE(test_additional_notes_example),
     NAME_VALUE(test_example_hello_world),
     NAME_VALUE(test_example_awesome),
     /* NAME_VALUE(test_example_wikipedia), */
