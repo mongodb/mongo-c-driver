@@ -64,7 +64,6 @@ Let's start by that connects to the database:
 
       if( status != MONGO_OK ) {
           switch ( conn->err ) {
-            case MONGO_CONN_SUCCESS:    printf( "connection succeeded\n" ); break;
             case MONGO_CONN_NO_SOCKET:  printf( "no socket\n" ); return 1;
             case MONGO_CONN_FAIL:       printf( "connection failed\n" ); return 1;
             case MONGO_CONN_NOT_MASTER: printf( "not master\n" ); return 1;

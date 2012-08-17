@@ -36,7 +36,7 @@ MONGO_EXTERN_C_START
  * --------
  * BCON provides for JSON-like (or BSON-like) initializers in C.
  * Without this, BSON must be constructed by procedural coding via explicit function calls.
- * With this, you now have convenient data-driven definition of BSON documents.
+ * With this, you now have concise, readable, and maintainable data-driven definition of BSON documents.
  * Here are a couple of introductory examples.
  *
  *     bcon hello[] = { "hello", "world", "." };
