@@ -144,7 +144,7 @@ typedef struct mongo_host_port {
 } mongo_host_port;
 
 typedef struct mongo_write_concern {
-    int w;            /**< Number of nodes this write should be replicated to. */
+    int w;            /**< Number of total replica write copies to complete including the primary. */
     int wtimeout;     /**< Number of milliseconds before replication timeout. */
     int j;            /**< If non-zero, block until the journal sync. */
     int fsync;        /**< Same a j with journaling enabled; otherwise, call fsync. */
