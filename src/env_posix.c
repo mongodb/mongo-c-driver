@@ -100,7 +100,7 @@ int mongo_env_set_socket_op_timeout( mongo *conn, int millis ) {
     return MONGO_OK;
 }
 
-int mongo_env_unix_socket_connect( mongo *conn, const char *sock_path ) {
+static int mongo_env_unix_socket_connect( mongo *conn, const char *sock_path ) {
     struct sockaddr_un addr;
     int status, len;
 
