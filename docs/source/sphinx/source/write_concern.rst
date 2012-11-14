@@ -34,6 +34,14 @@ write operation (``mongo_insert()``, ``mongo_insert_batch()``, ``mongo_update()`
 or ``mongo_remove``). This will override any default write concern set on the
 connection level.
 
+The w parameter has the following specifics:
+
+    -1       = do not call getLastError, suppress network errors
+    0        = do not call getLastError
+    1        = { getLastError : 1 }              - no "w" set
+    2+       = { getLastError : 1, w : 2 }       - w : 3, etc.
+    <string> = { getLastError: 1, w: <string> }
+
 Example
 -------
 
