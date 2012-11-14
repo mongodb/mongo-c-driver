@@ -48,7 +48,7 @@ MONGO_EXPORT int mongo_get_op_timeout(mongo* conn) {
 }
 
 
-const char* _get_host_port(mongo_host_port* hp) {
+static const char* _get_host_port(mongo_host_port* hp) {
     static char _hp[sizeof(hp->host)+12];
     bson_sprintf(_hp, "%s:%d", hp->host, hp->port);
     return _hp;
@@ -268,7 +268,7 @@ static void mongo_set_last_error( mongo *conn, bson_iterator *it, bson *obj ) {
 
 static const int ZERO = 0;
 static const int ONE = 1;
-mongo_message *mongo_message_create( int len , int id , int responseTo , int op ) {
+static mongo_message *mongo_message_create( int len , int id , int responseTo , int op ) {
     mongo_message *mm = ( mongo_message * )bson_malloc( len );
 
     if ( !id )
@@ -284,7 +284,7 @@ mongo_message *mongo_message_create( int len , int id , int responseTo , int op 
 }
 
 /* Always calls bson_free(mm) */
-int mongo_message_send( mongo *conn, mongo_message *mm ) {
+static int mongo_message_send( mongo *conn, mongo_message *mm ) {
     mongo_header head; /* little endian */
     int res;
     bson_little_endian32( &head.len, &mm->head.len );
@@ -308,7 +308,7 @@ int mongo_message_send( mongo *conn, mongo_message *mm ) {
     return MONGO_OK;
 }
 
-int mongo_read_response( mongo *conn, mongo_reply **reply ) {
+static int mongo_read_response( mongo *conn, mongo_reply **reply ) {
     mongo_header head; /* header from network */
     mongo_reply_fields fields; /* header from network */
     mongo_reply *out;  /* native endian */
@@ -347,17 +347,17 @@ int mongo_read_response( mongo *conn, mongo_reply **reply ) {
 }
 
 
-char *mongo_data_append( char *start , const void *data , int len ) {
+static char *mongo_data_append( char *start , const void *data , int len ) {
     memcpy( start , data , len );
     return start + len;
 }
 
-char *mongo_data_append32( char *start , const void *data ) {
+static char *mongo_data_append32( char *start , const void *data ) {
     bson_little_endian32( start , data );
     return start + 4;
 }
 
-char *mongo_data_append64( char *start , const void *data ) {
+static char *mongo_data_append64( char *start , const void *data ) {
     bson_little_endian64( start , data );
     return start + 8;
 }

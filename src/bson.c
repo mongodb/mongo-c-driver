@@ -598,22 +598,22 @@ void bson_init_size( bson *b, int size ) {
     _bson_init_size( b, size );
 }
 
-void bson_append_byte( bson *b, char c ) {
+static void bson_append_byte( bson *b, char c ) {
     b->cur[0] = c;
     b->cur++;
 }
 
-void bson_append( bson *b, const void *data, int len ) {
+static void bson_append( bson *b, const void *data, int len ) {
     memcpy( b->cur , data , len );
     b->cur += len;
 }
 
-void bson_append32( bson *b, const void *data ) {
+static void bson_append32( bson *b, const void *data ) {
     bson_little_endian32( b->cur, data );
     b->cur += 4;
 }
 
-void bson_append64( bson *b, const void *data ) {
+static void bson_append64( bson *b, const void *data ) {
     bson_little_endian64( b->cur, data );
     b->cur += 8;
 }
@@ -740,7 +740,7 @@ MONGO_EXPORT int bson_append_undefined( bson *b, const char *name ) {
     return BSON_OK;
 }
 
-int bson_append_string_base( bson *b, const char *name,
+static int bson_append_string_base( bson *b, const char *name,
                              const char *value, int len, bson_type type ) {
 
     int sl = len + 1;
