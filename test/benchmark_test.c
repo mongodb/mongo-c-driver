@@ -391,7 +391,7 @@ static void clean( void ) {
 int main() {
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if ( mongo_connect( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
+    if ( mongo_client( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
         printf( "failed to connect\n" );
         exit( 1 );
     }

@@ -12,6 +12,19 @@ void create_capped_collection( mongo *conn ) {
     mongo_create_capped_collection( conn, "test", "wc", 1000000, 0, NULL );
 }
 
+/*
+ * TODO - test for conflicting options - error return for associated functions as per spec
+ *   If conflicting write concern options are passed (w, j=true, fsync=true)
+ *   in the URI or as creation parameters to MongoClient an exception must be raised.
+ */
+
+void test_write_concern_finish( void ) {
+    bson_iterator it;
+    mongo_write_concern DEFAULT_WRITE_CONCERN = { 1, 0, 0, 0, 0, 0 }; /* w = 1 */
+    mongo_write_concern_finish( &DEFAULT_WRITE_CONCERN );
+    ASSERT( bson_find( &it, DEFAULT_WRITE_CONCERN.cmd, "w" ) == BSON_EOO ); /* should be { getLastError : 1 } - assert no "w" set */
+}
+
 void test_batch_insert_with_continue( mongo *conn ) {
     bson *objs[5];
     bson *objs2[5];
@@ -182,23 +195,26 @@ void test_write_concern_input( mongo *conn ) {
 }
 
 void test_insert( mongo *conn ) {
-    mongo_write_concern wc[1];
+    mongo_write_concern wc0[1], wc1[1];
     bson b[1], b2[1], b3[1], b4[1], empty[1];
     bson *objs[2];
 
     mongo_cmd_drop_collection( conn, TEST_DB, TEST_COL, NULL );
 
-    mongo_write_concern_init( wc );
-    wc->w = 1;
-    mongo_write_concern_finish( wc );
+    mongo_write_concern_init( wc0 );
+    wc0->w = 0;
+    mongo_write_concern_finish( wc0 );
+    mongo_write_concern_init( wc1 );
+    wc1->w = 1;
+    mongo_write_concern_finish( wc1 );
 
     bson_init( b4 );
     bson_append_string( b4, "foo", "bar" );
     bson_finish( b4 );
 
-    ASSERT( mongo_insert( conn, TEST_NS, b4, wc ) == MONGO_OK );
+    ASSERT( mongo_insert( conn, TEST_NS, b4, wc1 ) == MONGO_OK );
 
-    ASSERT( mongo_remove( conn, TEST_NS, bson_empty( empty ), wc ) == MONGO_OK );
+    ASSERT( mongo_remove( conn, TEST_NS, bson_empty( empty ), wc1 ) == MONGO_OK );
 
     bson_init( b );
     bson_append_new_oid( b, "_id" );
@@ -206,21 +222,21 @@ void test_insert( mongo *conn ) {
 
     ASSERT( mongo_insert( conn, TEST_NS, b, NULL ) == MONGO_OK );
 
-    /* This fails but returns OK because it doesn't use a write concern. */
-    ASSERT( mongo_insert( conn, TEST_NS, b, NULL ) == MONGO_OK );
+    /* This fails but returns OK with write concern w = 0 */
+    ASSERT( mongo_insert( conn, TEST_NS, b, wc0 ) == MONGO_OK ); /* no getLastError request */
 
-    ASSERT( mongo_insert( conn, TEST_NS, b, wc ) == MONGO_ERROR );
+    ASSERT( mongo_insert( conn, TEST_NS, b, wc1 ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_WRITE_ERROR );
     ASSERT_EQUAL_STRINGS( conn->errstr, "See conn->lasterrstr for details." );
     ASSERT_EQUAL_STRINGS( conn->lasterrstr, "E11000 duplicate key error index" );
     ASSERT( conn->lasterrcode == 11000 );
     mongo_clear_errors( conn );
 
-    /* Still fails but returns OK because it doesn't use a write concern. */
-    ASSERT( mongo_insert( conn, TEST_NS, b, NULL ) == MONGO_OK );
+    /* Still fails but returns OK with write concern w = 0 */
+    ASSERT( mongo_insert( conn, TEST_NS, b, wc0 ) == MONGO_OK );
 
     /* But not when we set a default write concern on the conn. */
-    mongo_set_write_concern( conn, wc );
+    mongo_set_write_concern( conn, wc1 );
     ASSERT( mongo_insert( conn, TEST_NS, b, NULL ) != MONGO_OK );
     ASSERT( conn->err == MONGO_WRITE_ERROR );
     ASSERT_EQUAL_STRINGS( conn->errstr, "See conn->lasterrstr for details." );
@@ -247,7 +263,7 @@ void test_insert( mongo *conn ) {
 
     /* This should definitely fail if we try again with write concern. */
     mongo_clear_errors( conn );
-    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs, 2, wc, 0 ) == MONGO_ERROR );
+    ASSERT( mongo_insert_batch( conn, TEST_NS, (const bson **)objs, 2, wc1, 0 ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_WRITE_ERROR );
     ASSERT_EQUAL_STRINGS( conn->errstr, "See conn->lasterrstr for details." );
     ASSERT_EQUAL_STRINGS( conn->lasterrstr, "E11000 duplicate key error index" );
@@ -260,7 +276,8 @@ void test_insert( mongo *conn ) {
     bson_destroy( b2 );
     bson_destroy( b3 );
     bson_destroy( b4 );
-    mongo_write_concern_destroy( wc );
+    mongo_write_concern_destroy( wc0 );
+    mongo_write_concern_destroy( wc1 );
 }
 
 int main() {
@@ -269,10 +286,14 @@ int main() {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if( mongo_connect( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
+    test_write_concern_finish( );
+
+    if( mongo_client( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
         printf( "failed to connect\n" );
         exit( 1 );
     }
+
+    ASSERT( conn->write_concern != (void*)0 );
 
     test_insert( conn );
     if( mongo_get_server_version( version ) != -1 && version[0] != '1' ) {

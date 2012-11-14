@@ -18,13 +18,13 @@ int main() {
     const char *col = "c.simple";
     const char *ns = "test.c.simple";
 
-    /* mongo_connect( conn, TEST_SERVER, 27017 ); */
+    /* mongo_client( conn, TEST_SERVER, 27017 ); */
 
     /* Simple connect API
     mongo conn[1];
 
     mongo_init( conn );
-    mongo_connect( conn, TEST_SERVER, 27017 );
+    mongo_client( conn, TEST_SERVER, 27017 );
     mongo_destroy( conn );
 
     * Advanced and replica set API
@@ -32,7 +32,7 @@ int main() {
 
     mongo_replset_init( conn, "foobar" );
     mongo_set_connect_timeout( conn, 1000 );
-    mongo_replset_connect( conn );
+    mongo_replset_client( conn );
     mongo_destroy( conn );
 
     * BSON API
@@ -63,7 +63,7 @@ int main() {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if( mongo_connect( conn , TEST_SERVER, 27017 ) != MONGO_OK ) {
+    if( mongo_client( conn , TEST_SERVER, 27017 ) != MONGO_OK ) {
         printf( "failed to connect\n" );
         exit( 1 );
     }

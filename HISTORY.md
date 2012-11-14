@@ -1,5 +1,28 @@
 # MongoDB C Driver History
 
+## 0.7
+2012-11-19
+** API CHANGE **
+
+In version 0.7, mongo_client and mongo_replset_client are the connection functions,
+replacing the deprecated functions mongo_connect and mongo_replset_connect, respectively.
+The mongo_client and mongo_replset_client functions now have a default write concern
+specifying the acknowledgement of writes.
+Please see the Write Concern document for explicit details.
+
+BCON (BSON C Object Notation) provides JSON-like (or BSON-like) initializers in C
+and readable, and maintainable data-driven definition of BSON documents.
+
+Other features and fixes include:
+
+* support for Unix domain sockets
+* three memory leaks in library code
+* proper cursor termination at the end of a set of large documents
+* mongo_get_primary initialization to avoid memory overrun
+* Mac dynamic library linking
+* example.c compilation
+* various other minor fixes since 2012-6-28
+
 ## 0.6
 2012-6-3
 ** API CHANGE **

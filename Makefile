@@ -30,7 +30,7 @@ BSON_LIBNAME=libbson
 ENV?=posix
 
 # TODO: add replica set test, cpp test, platform tests, json_test
-TESTS=test_auth test_bcon test_bson test_bson_subobject test_count_delete \
+TESTS=test_auth test_bcon test_bson test_bson_subobject test_connect test_count_delete \
   test_cursors test_endian_swap test_errors test_examples \
   test_functions test_gridfs test_helpers \
   test_oid test_resize test_simple test_sizes test_update \

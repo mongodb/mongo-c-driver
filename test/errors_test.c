@@ -96,7 +96,7 @@ int test_namespace_validation_on_insert( void ) {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if ( mongo_connect( conn , TEST_SERVER, 27017 ) ) {
+    if ( mongo_client( conn , TEST_SERVER, 27017 ) ) {
         printf( "failed to connect\n" );
         exit( 1 );
     }
@@ -145,7 +145,7 @@ int test_insert_limits( void ) {
     if( mongo_get_server_version( version ) != -1 && version[0] <= '1' )
         return 0;
 
-    if ( mongo_connect( conn , TEST_SERVER, 27017 ) ) {
+    if ( mongo_client( conn , TEST_SERVER, 27017 ) ) {
         printf( "failed to connect\n" );
         exit( 1 );
     }
@@ -191,7 +191,7 @@ int test_get_last_error_commands( void ) {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    if ( mongo_connect( conn , TEST_SERVER, 27017 ) ) {
+    if ( mongo_client( conn , TEST_SERVER, 27017 ) ) {
         printf( "failed to connect\n" );
         exit( 1 );
     }

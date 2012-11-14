@@ -397,12 +397,16 @@ MONGO_EXPORT void mongo_init_sockets( void ) {
     mongo_env_sock_init();
 }
 
+static mongo_write_concern DEFAULT_WRITE_CONCERN = { 1, 0, 0, 0, 0, 0 }; /* w = 1 */
+
 MONGO_EXPORT void mongo_init( mongo *conn ) {
     memset( conn, 0, sizeof( mongo ) );
     conn->max_bson_size = MONGO_DEFAULT_MAX_BSON_SIZE;
+    mongo_write_concern_finish( &DEFAULT_WRITE_CONCERN ); /* TODO fix bson cmd leak */
+    mongo_set_write_concern( conn, &DEFAULT_WRITE_CONCERN );
 }
 
-MONGO_EXPORT int mongo_connect( mongo *conn , const char *host, int port ) {
+MONGO_EXPORT int mongo_client( mongo *conn , const char *host, int port ) {
     mongo_init( conn );
 
     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
@@ -417,6 +421,14 @@ MONGO_EXPORT int mongo_connect( mongo *conn , const char *host, int port ) {
         return MONGO_ERROR;
     else
         return MONGO_OK;
+}
+
+MONGO_EXPORT int mongo_connect( mongo *conn , const char *host, int port ) {
+    int ret;
+    fprintf(stderr, "WARNING: mongo_connect() is deprecated, please use mongo_client()\n");
+    ret = mongo_client( conn, host, port );
+    mongo_set_write_concern( conn, 0 );
+    return ret;
 }
 
 MONGO_EXPORT void mongo_replset_init( mongo *conn, const char *name ) {
@@ -580,7 +592,7 @@ static int mongo_replset_check_host( mongo *conn ) {
     return MONGO_OK;
 }
 
-MONGO_EXPORT int mongo_replset_connect( mongo *conn ) {
+MONGO_EXPORT int mongo_replset_client( mongo *conn ) {
 
     int res = 0;
     mongo_host_port *node;
@@ -638,6 +650,14 @@ MONGO_EXPORT int mongo_replset_connect( mongo *conn ) {
 
     conn->err = MONGO_CONN_NO_PRIMARY;
     return MONGO_ERROR;
+}
+
+MONGO_EXPORT int mongo_replset_connect( mongo *conn ) {
+    int ret;
+    fprintf(stderr, "WARNING: mongo_replset_connect() is deprecated, please use mongo_replset_client()\n");
+    ret = mongo_replset_client( conn );
+    mongo_set_write_concern( conn, 0 );
+    return ret;
 }
 
 MONGO_EXPORT int mongo_set_op_timeout( mongo *conn, int millis ) {
@@ -794,7 +814,9 @@ static int mongo_choose_write_concern( mongo *conn,
     else if( conn->write_concern ) {
         *write_concern = conn->write_concern;
     }
-
+    if ( *write_concern && (*write_concern)->w < 1 ) {
+        *write_concern = 0; /* do not generate getLastError request */
+    }
     if( *write_concern && !((*write_concern)->cmd) ) {
         __mongo_set_error( conn, MONGO_WRITE_CONCERN_INVALID,
             "Must call mongo_write_concern_finish() before using *write_concern.", 0 );
@@ -1037,7 +1059,7 @@ MONGO_EXPORT int mongo_write_concern_finish( mongo_write_concern *write_concern 
         bson_append_string( command, "w", write_concern->mode );
     }
 
-    else if( write_concern->w ) {
+    else if( write_concern->w && write_concern->w > 1 ) {
         bson_append_int( command, "w", write_concern->w );
     }
 

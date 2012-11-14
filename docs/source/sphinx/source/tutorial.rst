@@ -32,12 +32,12 @@ Next, initialize it:
 
     mongo_init( &conn );
 
-Set any optional values, like a timeout, and then call ``mongo_connect``:
+Set any optional values, like a timeout, and then call ``mongo_client``:
 
 .. code-block:: c
 
     mongo_set_op_timeout( &conn, 1000 );
-    mongo_connect( &conn, "127.0.0.1", 27017 );
+    mongo_client( &conn, "127.0.0.1", 27017 );
 
 When you're finished, destroy the mongo object:
 
@@ -60,7 +60,7 @@ Let's start by that connects to the database:
 
     int main() {
       mongo conn[1];
-      int status = mongo_connect( conn, "127.0.0.1", 27017 );
+      int status = mongo_client( conn, "127.0.0.1", 27017 );
 
       if( status != MONGO_OK ) {
           switch ( conn->err ) {
@@ -107,7 +107,7 @@ then you add seed nodes, and finally you connect. Here's an example:
       mongo_replset_add_seed( conn, "10.4.3.22", 27017 );
       mongo_replset_add_seed( conn, "10.4.3.32", 27017 );
 
-      status = mongo_replset_connect( conn );
+      status = mongo_replset_client( conn );
 
       if( status != MONGO_OK ) {
           /* Check conn->err for error code. */

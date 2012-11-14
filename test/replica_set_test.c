@@ -15,7 +15,7 @@
 #define REPLICA_SET_NAME "replica-set-foo"
 #endif
 
-int test_connect( const char *set_name ) {
+int test_connect_deprecated( const char *set_name ) {
 
     mongo conn[1];
     int res;
@@ -27,6 +27,36 @@ int test_connect( const char *set_name ) {
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
 
     res = mongo_replset_connect( conn );
+
+    /* mongo_replset_connect should print a warning to stderr that it is deprecated */
+
+    ASSERT( conn->write_concern == (void*)0 ); /* write_concern should be 0 for backwards compatibility */
+
+    if( res != MONGO_OK ) {
+        res = conn->err;
+        return res;
+    }
+
+    ASSERT( conn->primary->port == SEED_START_PORT ||
+       conn->primary->port == SEED_START_PORT + 1 ||
+       conn->primary->port == SEED_START_PORT + 2 );
+
+    mongo_destroy( conn );
+    return res;
+}
+
+int test_connect( const char *set_name ) {
+
+    mongo conn[1];
+    int res;
+
+    INIT_SOCKETS_FOR_WINDOWS;
+
+    mongo_replset_init( conn, set_name );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
+
+    res = mongo_replset_client( conn );
 
     if( res != MONGO_OK ) {
         res = conn->err;
@@ -55,7 +85,7 @@ int test_reconnect( const char *set_name ) {
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
 
 
-    if( ( mongo_replset_connect( conn ) != MONGO_OK ) ) {
+    if( ( mongo_replset_client( conn ) != MONGO_OK ) ) {
         mongo_destroy( conn );
         return MONGO_ERROR;
     } else {
@@ -102,7 +132,7 @@ int test_insert_limits( const char *set_name ) {
     mongo_replset_init( conn, set_name );
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
     mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
-    res = mongo_replset_connect( conn );
+    res = mongo_replset_client( conn );
 
     if( res != MONGO_OK ) {
         res = conn->err;
@@ -142,6 +172,7 @@ int test_insert_limits( const char *set_name ) {
 }
 
 int main() {
+    ASSERT( test_connect_deprecated( REPLICA_SET_NAME ) == MONGO_OK );
     ASSERT( test_connect( REPLICA_SET_NAME ) == MONGO_OK );
     ASSERT( test_connect( "test-foobar" ) == MONGO_CONN_BAD_SET_NAME );
     ASSERT( test_insert_limits( REPLICA_SET_NAME ) == MONGO_OK );

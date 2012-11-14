@@ -1,25 +1,28 @@
-Write Concern (a.k.a. "Safe Mode")
-==================================
+Write Concern
+=============
 
-All writes issued from the drivers for MongoDB are "fire-and-forget" by default.
-In practice, this means that by default, failed writes aren't reported.
-For this reason,  "fire-and-forget" writes are recommended
-only for cases where losing a few writes is acceptable (logging, anayltics, etc.).
-
-In all other scenarios, you should ensure that your writes run as a round trip
-to the server. This requires that you enable write concern or "safe mode", as it's
-called elsewhere.
+The ``mongo_client`` and ``mongo_replset_client`` functions set a default write concern
+at the top level specifying acknowledgements for writes.
 
 In addition to reporting write errors, write concern also allows you to ensure
 that your write are replicated to a particular number of servers to a set
-of servers tagged with a given value. See the
-`write concern docs <http://www.mongodb.org/display/DOCS/getLastError+Command>`_ for details.
+of servers tagged with a given value.
+
+Or for very-high write performance, write concern can specify non-blocking writes
+without acknowledgment.
+This is recommended only for cases that can tolerate the potential loss of a few writes
+such as logging, analytics, etc.
+
+The old ``mongo_connect`` and ``mongo_replset_connect`` functions have a default write concern
+that is non-blocking without write acknowledgement.
+They are deprecated and temporarily available for backward compatibility to smooth transition to
+the ``mongo_client`` and ``mongo_replset_client`` functions.
 
 Implementation and API
 ----------------------
 
 Write concern is implemented by appending a call to the ``getlasterror``
-command after each write. You can certainly do this manually, but nearly all of the drivers
+command after each write.  You can certainly do this manually, but nearly all of the drivers
 provide a write concern API for simplicty. To read about the options for ``getlasterror``,
 and hence the options for write concern,
 `see the MongoDB getlasterror docs <http://www.mongodb.org/display/DOCS/getLastError+Command>`_.
@@ -52,7 +55,7 @@ Example
        mongo_write_concern write_concern[1];
        bson b[1];
 
-       if( mongo_connect( conn, "127.0.0.1", 27017 ) == MONGO_ERROR ) {
+       if( mongo_client( conn, "127.0.0.1", 27017 ) == MONGO_ERROR ) {
            printf( "Failed to connect!\n" );
            exit(1);
        }
@@ -82,7 +85,7 @@ Example
        /* We'll get the same error if we set a default write concern
           on the connection object but don't set it on insert.*/
        mongo_set_write_concern( conn, write_concern );
-       ASSERT( mongo_insert( conn, "test.foo", b, write_concern ) == MONGO_ERROR );
+       ASSERT( mongo_insert( conn, "test.foo", b, 0 ) == MONGO_ERROR );
        ASSERT( conn->err == MONGO_WRITE_ERROR );
        printf( "Error message: %s\n", conn->lasterrstr );
 
