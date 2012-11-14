@@ -18,11 +18,51 @@ void create_capped_collection( mongo *conn ) {
  *   in the URI or as creation parameters to MongoClient an exception must be raised.
  */
 
+void bson_dump( bson * b ) {
+    int i;
+    char *delim;
+    printf("b: {\n");
+    printf("\tdata: 0x%lx,\n", (unsigned long)b->data);
+    printf("\tdata: {");
+    delim = "";
+    for (i = 0; i < 32; i++) {
+        printf("%s%d", delim, b->data[i]);
+        delim = ",";
+    }
+    printf("}\n");
+    printf("\tcur: 0x%lx,\n", (unsigned long)b->cur);
+    printf("\tdataSize: %d,\n", b->dataSize);
+    printf("\tfinished: %d,\n", b->finished);
+    printf("\tstack: {");
+    delim = "";
+    for (i = 0; i < 32; i++) {
+        printf("%s%d", delim, b->stack[i]);
+        delim = ",";
+    }
+    printf("},\n");
+    printf("\tstackPos: %d,\n", b->stackPos);
+    printf("\terr: %d,\n", b->err);
+    printf("\terrstr: \"%s\"\n", b->errstr);
+    printf("}\n");
+}
+
+/* WC1 is completely static */
+static char WC1_data[] = {23,0,0,0,16,103,101,116,108,97,115,116,101,114,114,111,114,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static bson WC1_cmd = {
+    WC1_data, WC1_data, 128, 1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 0, 0, ""
+};
+static mongo_write_concern DWC1 = { 1, 0, 0, 0, 0, 0 }; /* w = 1 */ /* do not reference &WC1_cmd for this test */
+
 void test_write_concern_finish( void ) {
     bson_iterator it;
-    mongo_write_concern DEFAULT_WRITE_CONCERN = { 1, 0, 0, 0, 0, 0 }; /* w = 1 */
-    mongo_write_concern_finish( &DEFAULT_WRITE_CONCERN );
-    ASSERT( bson_find( &it, DEFAULT_WRITE_CONCERN.cmd, "w" ) == BSON_EOO ); /* should be { getLastError : 1 } - assert no "w" set */
+    ASSERT( mongo_write_concern_finish( &DWC1 ) == MONGO_OK );
+    ASSERT( bson_find( &it, DWC1.cmd, "w" ) == BSON_EOO ); /* should be { getLastError : 1 } - assert no "w" set */
+    /* bson_print( DWC1.cmd ); */
+    /* bson_dump( DWC1.cmd ); */
+    ASSERT( DWC1.cmd->dataSize == WC1_cmd.dataSize );
+    ASSERT( memcmp( DWC1.cmd->data, WC1_cmd.data, DWC1.cmd->dataSize ) );
+    ASSERT( DWC1.cmd->finished == WC1_cmd.finished );
+    ASSERT( DWC1.cmd->err == WC1_cmd.err );
 }
 
 void test_batch_insert_with_continue( mongo *conn ) {
