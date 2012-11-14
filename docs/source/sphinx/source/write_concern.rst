@@ -2,19 +2,18 @@ Write Concern
 =============
 
 The ``mongo_client`` and ``mongo_replset_client`` functions set a default write concern
-at the top level specifying acknowledgements for writes.
+at the top level specifying acknowledged writes.
 
 In addition to reporting write errors, write concern also allows you to ensure
 that your write are replicated to a particular number of servers to a set
 of servers tagged with a given value.
 
-Or for very-high write performance, write concern can specify non-blocking writes
-without acknowledgment.
+Or for very-high write performance, write concern can specify writes without acknowledgment.
 This is recommended only for cases that can tolerate the potential loss of a few writes
 such as logging, analytics, etc.
 
 The old ``mongo_connect`` and ``mongo_replset_connect`` functions have a default write concern
-that is non-blocking without write acknowledgement.
+where writes are unacknowledged.
 They are deprecated and temporarily available for backward compatibility to smooth transition to
 the ``mongo_client`` and ``mongo_replset_client`` functions.
 
@@ -34,13 +33,14 @@ write operation (``mongo_insert()``, ``mongo_insert_batch()``, ``mongo_update()`
 or ``mongo_remove``). This will override any default write concern set on the
 connection level.
 
-The w parameter has the following specifics:
+Here are specific parameters, values, and meanings:
 
-    -1       = do not call getLastError, suppress network errors
-    0        = do not call getLastError
-    1        = { getLastError : 1 }              - no "w" set
-    2+       = { getLastError : 1, w : 2 }       - w : 3, etc.
-    <string> = { getLastError: 1, w: <string> }
+    w = -1           : errors ignored
+    w = 0            : unacknowledged
+    w = 1            : acknowledged
+    w = 2            : replica acknowledged
+    j = 1 (true)     : journaled
+    fsync = 1 (true) : fsynced
 
 Example
 -------
