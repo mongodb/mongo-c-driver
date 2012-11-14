@@ -397,13 +397,17 @@ MONGO_EXPORT void mongo_init_sockets( void ) {
     mongo_env_sock_init();
 }
 
-static mongo_write_concern DEFAULT_WRITE_CONCERN = { 1, 0, 0, 0, 0, 0 }; /* w = 1 */
+/* WC1 is completely static */
+static char WC1_data[] = {23,0,0,0,16,103,101,116,108,97,115,116,101,114,114,111,114,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0};
+static bson WC1_cmd = {
+    WC1_data, WC1_data, 128, 1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 0, 0, ""
+};
+static mongo_write_concern WC1 = { 1, 0, 0, 0, 0, &WC1_cmd }; /* w = 1 */
 
 MONGO_EXPORT void mongo_init( mongo *conn ) {
     memset( conn, 0, sizeof( mongo ) );
     conn->max_bson_size = MONGO_DEFAULT_MAX_BSON_SIZE;
-    mongo_write_concern_finish( &DEFAULT_WRITE_CONCERN ); /* TODO fix bson cmd leak */
-    mongo_set_write_concern( conn, &DEFAULT_WRITE_CONCERN );
+    mongo_set_write_concern( conn, &WC1 );
 }
 
 MONGO_EXPORT int mongo_client( mongo *conn , const char *host, int port ) {
