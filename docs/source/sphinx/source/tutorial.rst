@@ -103,11 +103,11 @@ then you add seed nodes, and finally you connect. Here's an example:
     int main() {
       mongo conn[1];
 
-      mongo_replset_init( conn, "shard1" );
-      mongo_replset_add_seed( conn, "10.4.3.22", 27017 );
-      mongo_replset_add_seed( conn, "10.4.3.32", 27017 );
+      mongo_replica_set_init( conn, "shard1" );
+      mongo_replica_set_add_seed( conn, "10.4.3.22", 27017 );
+      mongo_replica_set_add_seed( conn, "10.4.3.32", 27017 );
 
-      status = mongo_replset_client( conn );
+      status = mongo_replica_set_client( conn );
 
       if( status != MONGO_OK ) {
           /* Check conn->err for error code. */

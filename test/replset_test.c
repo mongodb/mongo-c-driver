@@ -22,13 +22,13 @@ int test_connect_deprecated( const char *set_name ) {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    mongo_replica_set_init( conn, set_name );
-    mongo_replica_set_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
-    mongo_replica_set_add_seed( conn, TEST_SERVER, SEED_START_PORT );
+    mongo_replset_init( conn, set_name );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
 
-    res = mongo_replica_set_connect( conn );
+    res = mongo_replset_connect( conn );
 
-    /* mongo_replica_set_connect should print a warning to stderr that it is deprecated */
+    /* mongo_replset_connect should print a warning to stderr that it is deprecated */
 
     ASSERT( conn->write_concern == (void*)0 ); /* write_concern should be 0 for backwards compatibility */
 
@@ -52,11 +52,11 @@ int test_connect( const char *set_name ) {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    mongo_replica_set_init( conn, set_name );
-    mongo_replica_set_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
-    mongo_replica_set_add_seed( conn, TEST_SERVER, SEED_START_PORT );
+    mongo_replset_init( conn, set_name );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
 
-    res = mongo_replica_set_client( conn );
+    res = mongo_replset_client( conn );
 
     if( res != MONGO_OK ) {
         res = conn->err;
@@ -80,12 +80,12 @@ int test_reconnect( const char *set_name ) {
 
     INIT_SOCKETS_FOR_WINDOWS;
 
-    mongo_replica_set_init( conn, set_name );
-    mongo_replica_set_add_seed( conn, TEST_SERVER, SEED_START_PORT );
-    mongo_replica_set_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
+    mongo_replset_init( conn, set_name );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
 
 
-    if( ( mongo_replica_set_client( conn ) != MONGO_OK ) ) {
+    if( ( mongo_replset_client( conn ) != MONGO_OK ) ) {
         mongo_destroy( conn );
         return MONGO_ERROR;
     } else {
@@ -129,10 +129,10 @@ int test_insert_limits( const char *set_name ) {
     if( mongo_get_server_version( version ) != -1 && version[0] <= '1' )
         return 0;
 
-    mongo_replica_set_init( conn, set_name );
-    mongo_replica_set_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
-    mongo_replica_set_add_seed( conn, TEST_SERVER, SEED_START_PORT );
-    res = mongo_replica_set_client( conn );
+    mongo_replset_init( conn, set_name );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT + 1 );
+    mongo_replset_add_seed( conn, TEST_SERVER, SEED_START_PORT );
+    res = mongo_replset_client( conn );
 
     if( res != MONGO_OK ) {
         res = conn->err;

@@ -83,15 +83,15 @@ Here's how you go about that:
    mongo conn[1];
    int result;
 
-   mongo_replset_init( conn, "rs-dc-1" );
-   mongo_replset_add_seed( conn, '10.4.3.1', 27017 );
-   mongo_replset_add_seed( conn, '10.4.3.2', 27017 );
+   mongo_replica_set_init( conn, "rs-dc-1" );
+   mongo_replica_set_add_seed( conn, '10.4.3.1', 27017 );
+   mongo_replica_set_add_seed( conn, '10.4.3.2', 27017 );
 
-   result = mongo_replset_client( conn );
+   result = mongo_replica_set_client( conn );
 
 First we initiaize the connection object, providing the name of the replica set,
 in this case, "rs-dc-1." Next, we add two seed nodes. Finally, we connect
-by pass the connection to ``mongo_replset_client``.
+by pass the connection to ``mongo_replica_set_client``.
 
 As with the basic connection, we'll want to check for any errors on connect. Notice
 that there are two more error conditions we check for:

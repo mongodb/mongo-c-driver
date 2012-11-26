@@ -30,9 +30,9 @@ int main() {
     * Advanced and replica set API
     mongo conn[1];
 
-    mongo_replset_init( conn, "foobar" );
+    mongo_replica_set_init( conn, "foobar" );
     mongo_set_connect_timeout( conn, 1000 );
-    mongo_replset_client( conn );
+    mongo_replica_set_client( conn );
     mongo_destroy( conn );
 
     * BSON API

@@ -293,5 +293,5 @@ AlwaysBuild(test_alias)
 
 # Run replica set test only
 repl_testEnv = benchmarkEnv.Clone()
-repl_tests = ["replica_set"]
+repl_tests = ["replica_set", "replset"]
 run_tests("test", repl_tests, repl_testEnv, "repl_test")

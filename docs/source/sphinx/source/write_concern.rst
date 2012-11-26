@@ -1,7 +1,7 @@
 Write Concern
 =============
 
-The ``mongo_client`` and ``mongo_replset_client`` functions set a default write concern
+The ``mongo_client`` and ``mongo_replica_set_client`` functions set a default write concern
 at the top level specifying acknowledged writes.
 
 In addition to reporting write errors, write concern also allows you to ensure
@@ -12,10 +12,10 @@ Or for very-high write performance, write concern can specify writes without ack
 This is recommended only for cases that can tolerate the potential loss of a few writes
 such as logging, analytics, etc.
 
-The old ``mongo_connect`` and ``mongo_replset_connect`` functions have a default write concern
+The old ``mongo_connect`` and ``mongo_replica_set_connect`` functions have a default write concern
 where writes are unacknowledged.
 They are deprecated and temporarily available for backward compatibility to smooth transition to
-the ``mongo_client`` and ``mongo_replset_client`` functions.
+the ``mongo_client`` and ``mongo_replica_set_client`` functions.
 
 Implementation and API
 ----------------------
