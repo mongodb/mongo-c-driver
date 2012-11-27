@@ -66,21 +66,4 @@ Unless otherwise specified in a source file, sources in this
 repository are published under the terms of the Apache License version
 2.0, a copy of which is in this repository as APACHE-2.0.txt.
 
-# RELEASE PROCESS
-
-docs/source/sphinx/source
-
-    version = ...
-    release = ...
-
-doxygenConfig
-
-    PROJECT_NUMBER = ...
-
-SConstruct
-
-    MAJOR_VERSION = ...
-    MINOR_VERSION = ...
-    PATCH_VERSION = ...
-
 
