@@ -10,8 +10,9 @@ portability, no dependencies, and generic embeddability.
 
 The driver is still considered alpha but is undergoing active
 development. Support for replica sets was just added in v0.3.1.
-The API was completely revamped in v0.4. Another backward-breaking
-change (support for `write_concern`) was added in v0.6.
+The API was completely revamped in v0.4.
+Another backward-breaking change (support for `write_concern`) was added in v0.6.
+Default write acknowledgement with mongo_client and BCON (BSON C Object Notation) were added in v0.7.
 
 :doc:`tutorial`
     An overview of the driver's API.

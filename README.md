@@ -24,9 +24,9 @@ The html docs will appear in docs/html.
 # Building
 
 First check out the version you want to build. *Always build from a particular tag, since HEAD may be
-a work in progress.* For example, to build version 0.6, run:
+a work in progress.* For example, to build version 0.7, run:
 
-    git checkout v0.6
+    git checkout v0.7
 
 You can then build the driver with scons:
 
@@ -56,6 +56,7 @@ using [JIRA](http://jira.mongodb.org/browse/CDRIVER).
 
 # CREDITS
 
+* Kyle Banker - development through version 0.6.
 * Gergely Nagy - Non-null-terminated string support.
 * Josh Rotenberg - Initial Doxygen setup and a significant chunk of documentation.
 
@@ -64,3 +65,22 @@ using [JIRA](http://jira.mongodb.org/browse/CDRIVER).
 Unless otherwise specified in a source file, sources in this
 repository are published under the terms of the Apache License version
 2.0, a copy of which is in this repository as APACHE-2.0.txt.
+
+# RELEASE PROCESS
+
+docs/source/sphinx/source
+
+    version = ...
+    release = ...
+
+doxygenConfig
+
+    PROJECT_NUMBER = ...
+
+SConstruct
+
+    MAJOR_VERSION = ...
+    MINOR_VERSION = ...
+    PATCH_VERSION = ...
+
+
