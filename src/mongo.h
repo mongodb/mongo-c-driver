@@ -26,7 +26,7 @@
 MONGO_EXTERN_C_START
 
 #define MONGO_MAJOR 0
-#define MONGO_MINOR 6
+#define MONGO_MINOR 7
 #define MONGO_PATCH 0
 
 #define MONGO_OK 0
