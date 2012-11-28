@@ -23,6 +23,9 @@ Default write acknowledgement with mongo_client and BCON (BSON C Object Notation
 :doc:`bson`
     How to work with BSON objects.
 
+:doc:`bcon`
+    How to use BCON for concise, readable, and maintainable definition of BSON documents.
+
 :doc:`connections`
     How to connect to single nodes and to replica sets.
 
