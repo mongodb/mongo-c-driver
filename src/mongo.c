@@ -175,15 +175,15 @@ MONGO_EXPORT int mongo_validate_ns( mongo *conn, const char *ns ) {
         }
     }
 
-    /* Fail because the ns doesn't contain a '.'
-     * or the collection part starts with a dot. */
-    if( *current == '\0' || *current == '.' ) {
+    /* Fail if the collection part starts with a dot. */
+    if( *current == '.' ) {
         __mongo_set_error( conn, MONGO_NS_INVALID, "ns cannot start with a '.'.", 0 );
         return MONGO_ERROR;
     }
 
-    /* Fail if collection length is 0. */
-    if( *(current + 1) == '\0' ) {
+    /* Fail if collection length is 0.
+     * or the ns doesn't contain a '.'. */
+    if( *current == '\0' ) {
         __mongo_set_error( conn, MONGO_NS_INVALID, "Collection name missing.", 0 );
         return MONGO_ERROR;
     }
