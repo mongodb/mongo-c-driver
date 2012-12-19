@@ -129,8 +129,10 @@ ifeq ($(kernel_name),SunOS)
     INSTALL?=cp -r
 endif
 INSTALL?= cp -a
-INSTALL_INCLUDE_PATH?=/usr/local/include
-INSTALL_LIBRARY_PATH?=/usr/local/lib
+DESTDIR?=/
+PREFIX?=/usr/local
+INSTALL_INCLUDE_PATH?=$(DESTDIR)$(PREFIX)/include
+INSTALL_LIBRARY_PATH?=$(DESTDIR)$(PREFIX)/lib
 
 # TARGETS
 all: $(MONGO_DYLIBNAME) $(BSON_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_STLIBNAME)
