@@ -60,7 +60,7 @@ static void chunk_free( bson *oChunk ) {
 }
 
 int gridfs_init( mongo *client, const char *dbname, const char *prefix,
-    gridfs *gfs ) {
+                 gridfs *gfs ) {
 
     int options;
     bson b;
@@ -134,8 +134,8 @@ MONGO_EXPORT void gridfs_destroy( gridfs *gfs ) {
 }
 
 static int gridfs_insert_file( gridfs *gfs, const char *name,
-                                const bson_oid_t id, gridfs_offset length,
-                                const char *contenttype ) {
+                               const bson_oid_t id, gridfs_offset length,
+                               const char *contenttype ) {
     bson command;
     bson ret;
     bson res;
@@ -177,8 +177,8 @@ static int gridfs_insert_file( gridfs *gfs, const char *name,
 }
 
 MONGO_EXPORT int gridfs_store_buffer( gridfs *gfs, const char *data,
-                          gridfs_offset length, const char *remotename,
-                          const char *contenttype ) {
+                                      gridfs_offset length, const char *remotename,
+                                      const char *contenttype ) {
 
     char const *end = data + length;
     const char *data_ptr = data;
@@ -209,7 +209,7 @@ MONGO_EXPORT int gridfs_store_buffer( gridfs *gfs, const char *data,
 }
 
 MONGO_EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs,
-                           const char *remote_name, const char *content_type ) {
+                                        const char *remote_name, const char *content_type ) {
     gfile->gfs = gfs;
 
     bson_oid_gen( &( gfile->id ) );
@@ -226,7 +226,7 @@ MONGO_EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs,
 }
 
 MONGO_EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
-    gridfs_offset length ) {
+        gridfs_offset length ) {
 
     int bytes_left = 0;
     int data_partial_len = 0;
@@ -239,13 +239,15 @@ MONGO_EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
         if( gfile->pending_data ) {
             gfile->pending_data = ( char * )bson_realloc( ( void * )gfile->pending_data, gfile->pending_len + to_write );
             memcpy( gfile->pending_data + gfile->pending_len, data, length );
-        } else if ( to_write > 0 ) {
+        }
+        else if ( to_write > 0 ) {
             gfile->pending_data = ( char * )bson_malloc( to_write );
             memcpy( gfile->pending_data, data, length );
         }
         gfile->pending_len += length;
 
-    } else { /* At least one chunk of data to write */
+    }
+    else {   /* At least one chunk of data to write */
         chunks_to_write = to_write / DEFAULT_CHUNK_SIZE;
         bytes_left = to_write % DEFAULT_CHUNK_SIZE;
 
@@ -319,7 +321,7 @@ MONGO_EXPORT int gridfile_writer_done( gridfile *gfile ) {
 }
 
 int gridfs_store_file( gridfs *gfs, const char *filename,
-                        const char *remotename, const char *contenttype ) {
+                       const char *remotename, const char *contenttype ) {
 
     char buffer[DEFAULT_CHUNK_SIZE];
     FILE *fd;
@@ -349,7 +351,8 @@ int gridfs_store_file( gridfs *gfs, const char *filename,
         length += chunkLen;
         chunkNumber++;
         chunkLen = fread( buffer, 1, DEFAULT_CHUNK_SIZE, fd );
-    } while ( chunkLen != 0 );
+    }
+    while ( chunkLen != 0 );
 
     /* Close the file stream */
     if ( fd != stdin ) fclose( fd );
@@ -564,7 +567,7 @@ MONGO_EXPORT int gridfile_get_numchunks( gridfile *gfile ) {
 
 MONGO_EXPORT void gridfile_get_chunk( gridfile *gfile, int n, bson* out ) {
     bson query;
-    
+
     bson_iterator it;
     bson_oid_t id;
     int result;
@@ -603,7 +606,8 @@ MONGO_EXPORT mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, int 
     bson_append_oid( &query, "files_id", &id );
     if ( size == 1 ) {
         bson_append_int( &query, "n", start );
-    } else {
+    }
+    else {
         bson_init( &gte );
         bson_append_int( &gte, "$gte", start );
         bson_finish( &gte );
@@ -692,7 +696,8 @@ MONGO_EXPORT gridfs_offset gridfile_read( gridfile *gfile, gridfs_offset size, c
             memcpy( buf, chunk_data, chunk_len );
             bytes_left -= chunk_len;
             buf += chunk_len;
-        } else {
+        }
+        else {
             memcpy( buf, chunk_data, bytes_left );
         }
     }
