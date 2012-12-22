@@ -46,8 +46,8 @@ bcon_token_t bcon_token(char *s) {
     if (s == 0) return Token_EOD;
     switch (s[0]) {
     case ':': if (s[1] != '\0' && s[2] != '\0' && s[3] != '\0' && s[4] == '\0' &&
-                  s[3] == ':' && (s[1] == '_' || s[1] == 'P' || s[1] == 'R'))
-                                return Token_Typespec; break;
+                      s[3] == ':' && (s[1] == '_' || s[1] == 'P' || s[1] == 'R'))
+            return Token_Typespec; break;
     case '{': if (s[1] == '\0') return Token_OpenBrace; break;
     case '}': if (s[1] == '\0') return Token_CloseBrace; break;
     case '[': if (s[1] == '\0') return Token_OpenBracket; break;
@@ -69,14 +69,14 @@ bcon_error_t bson_bcon_key_value(bson *b, const char *key, const char *typespec,
         case 's': bson_append_string( b, key, bci.s ); break; /* common case */
         case 'f': bson_append_double( b, key, bci.f ); break;
         case 'D':
-                bson_append_start_object( b, key );
-                ret = bson_append_bcon( b, bci.D );
-                bson_append_finish_object( b );
+            bson_append_start_object( b, key );
+            ret = bson_append_bcon( b, bci.D );
+            bson_append_finish_object( b );
             break;
         case 'A':
-                bson_append_start_array( b, key );
-                ret = bson_append_bcon_array( b, bci.A );
-                bson_append_finish_array( b );
+            bson_append_start_array( b, key );
+            ret = bson_append_bcon_array( b, bci.A );
+            bson_append_finish_array( b );
             break;
         case 'o': if (*bci.o == '\0') bson_oid_gen( &oid ); else bson_oid_from_string( &oid, bci.o ); bson_append_oid( b, key, &oid ); break;
         case 'b': bson_append_bool( b, key, bci.b ); break;
@@ -93,14 +93,14 @@ bcon_error_t bson_bcon_key_value(bson *b, const char *key, const char *typespec,
         case 'f': bson_append_double( b, key, *bci.Rf ); break;
         case 's': bson_append_string( b, key, bci.Rs ); break;
         case 'D':
-                bson_append_start_object( b, key );
-                ret = bson_append_bcon( b, bci.RD );
-                bson_append_finish_object( b );
+            bson_append_start_object( b, key );
+            ret = bson_append_bcon( b, bci.RD );
+            bson_append_finish_object( b );
             break;
         case 'A':
-                bson_append_start_array( b, key );
-                ret = bson_append_bcon_array( b, bci.RA );
-                bson_append_finish_array( b );
+            bson_append_start_array( b, key );
+            ret = bson_append_bcon_array( b, bci.RA );
+            bson_append_finish_array( b );
             break;
         case 'o': if (*bci.o == '\0') bson_oid_gen( &oid ); else bson_oid_from_string( &oid, bci.o ); bson_append_oid( b, key, &oid ); break;
         case 'b': bson_append_bool( b, key, *bci.Rb ); break;
@@ -117,19 +117,19 @@ bcon_error_t bson_bcon_key_value(bson *b, const char *key, const char *typespec,
             case 'f': bson_append_double( b, key, **bci.Pf ); break;
             case 's': bson_append_string( b, key, *bci.Ps ); break;
             case 'D':
-                    bson_append_start_object( b, key );
-                    ret = bson_append_bcon( b, *bci.PD );
-                    bson_append_finish_object( b );
+                bson_append_start_object( b, key );
+                ret = bson_append_bcon( b, *bci.PD );
+                bson_append_finish_object( b );
                 break;
             case 'A':
-                    bson_append_start_array( b, key );
-                    ret = bson_append_bcon_array( b, *bci.PA );
-                    bson_append_finish_array( b );
+                bson_append_start_array( b, key );
+                ret = bson_append_bcon_array( b, *bci.PA );
+                bson_append_finish_array( b );
                 break;
             case 'o': if (**bci.Po == '\0') bson_oid_gen( &oid );
-                          else bson_oid_from_string( &oid, *bci.Po );
-                          bson_append_oid( b, key, &oid );
-                      break;
+                else bson_oid_from_string( &oid, *bci.Po );
+                bson_append_oid( b, key, &oid );
+                break;
             case 'b': bson_append_bool( b, key, **bci.Pb ); break;
             case 't': bson_append_time_t( b, key, **bci.Pt ); break;
             case 'x': if (*bci.Px != 0) bson_append_symbol( b, key, *bci.Px ); break;
@@ -383,41 +383,41 @@ void bcon_json_print(bcon *bc, int n) {
     bcon *bcp;
     putchar('{');
     for (end_of_data = 0, bcp = bc; !end_of_data; bcp++) {
-      bcon bci = *bcp;
-      switch (t) {
-      case 'l':
-        if (key_value_count & 0x1) putchar(':');
-        printf("%ld", bci.l);
-        t = 0;
-        key_value_count++;
-        break;
-      case 's': /* fall through */
-      default:
-        s = bci.s;
-        switch (*s) {
-        case ':':
-          ++s;
-          t = *++s;
-          break;
-        case '{':
-          if (key_value_count & 0x1) putchar(':');
-          putchar(*s);
-          key_value_count = 0;
-          break;
-        case '}':
-          putchar(*s);
-          key_value_count = 2;
-          break;
+        bcon bci = *bcp;
+        switch (t) {
+        case 'l':
+            if (key_value_count & 0x1) putchar(':');
+            printf("%ld", bci.l);
+            t = 0;
+            key_value_count++;
+            break;
+        case 's': /* fall through */
         default:
-          if (key_value_count & 0x1) putchar(':');
-          else if (key_value_count > 1) putchar(',');
-          printf("\"%s\"", s);
-          t = 0;
-          key_value_count++;
-          break;
+            s = bci.s;
+            switch (*s) {
+            case ':':
+                ++s;
+                t = *++s;
+                break;
+            case '{':
+                if (key_value_count & 0x1) putchar(':');
+                putchar(*s);
+                key_value_count = 0;
+                break;
+            case '}':
+                putchar(*s);
+                key_value_count = 2;
+                break;
+            default:
+                if (key_value_count & 0x1) putchar(':');
+                else if (key_value_count > 1) putchar(',');
+                printf("\"%s\"", s);
+                t = 0;
+                key_value_count++;
+                break;
+            }
+            break;
         }
-        break;
-      }
     }
     putchar('}');
 }

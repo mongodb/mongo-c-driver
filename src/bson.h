@@ -22,23 +22,23 @@
 #define BSON_H_
 
 #include <time.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 
 #ifdef __GNUC__
-    #define MONGO_INLINE static __inline__
-    #define MONGO_EXPORT
+#define MONGO_INLINE static __inline__
+#define MONGO_EXPORT
 #else
-    #define MONGO_INLINE static
-    #ifdef MONGO_STATIC_BUILD
-        #define MONGO_EXPORT
-    #elif defined(MONGO_DLL_BUILD)
-        #define MONGO_EXPORT __declspec(dllexport)
-    #else
-        #define MONGO_EXPORT __declspec(dllimport)
-    #endif
+#define MONGO_INLINE static
+#ifdef MONGO_STATIC_BUILD
+#define MONGO_EXPORT
+#elif defined(MONGO_DLL_BUILD)
+#define MONGO_EXPORT __declspec(dllexport)
+#else
+#define MONGO_EXPORT __declspec(dllimport)
+#endif
 #endif
 
 #ifdef __cplusplus

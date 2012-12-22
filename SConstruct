@@ -86,16 +86,14 @@ env.AlwaysBuild("docs")
 
 # ---- Platforms ----
 PLATFORM_TESTS = []
+NET_LIB = "src/env.c"
 if GetOption('standard_env'):
-    NET_LIB = "src/env_standard.c"
+    env.Append( CPPFLAGS=" -D_POSIX_SOURCE" )
 elif os.sys.platform in ["darwin", "linux2"]:
-    NET_LIB = "src/env_posix.c"
     PLATFORM_TESTS = [ "env_posix", "unix_socket" ]
 elif 'win32' == os.sys.platform:
-    NET_LIB = "src/env_win32.c"
     PLATFORM_TESTS = [ "env_win32" ]
-else:
-    NET_LIB = "src/env_standard.c"
+
 
 # ---- Libraries ----
 if os.sys.platform in ["darwin", "linux2"]:

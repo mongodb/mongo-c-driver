@@ -67,7 +67,7 @@ MONGO_EXPORT void gridfile_get_descriptor(gridfile* gf, bson* out);
  *  @return - MONGO_OK or MONGO_ERROR.
  */
 MONGO_EXPORT int gridfs_init( mongo *client, const char *dbname,
-                 const char *prefix, gridfs *gfs );
+                              const char *prefix, gridfs *gfs );
 
 /**
  * Destroys a GridFS object. Call this when finished with
@@ -84,7 +84,7 @@ MONGO_EXPORT void gridfs_destroy( gridfs *gfs );
  *
  */
 MONGO_EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char *remote_name,
-                           const char *content_type );
+                                        const char *content_type );
 
 /**
  *  Write to a GridFS file incrementally. You can call this function any number
@@ -93,7 +93,7 @@ MONGO_EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char
  *
  */
 MONGO_EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
-                            gridfs_offset length );
+        gridfs_offset length );
 
 /**
  *  Signal that writing of this gridfile is complete by
@@ -115,8 +115,8 @@ MONGO_EXPORT int gridfile_writer_done( gridfile *gfile );
  *  @return - MONGO_OK or MONGO_ERROR.
  */
 MONGO_EXPORT int gridfs_store_buffer( gridfs *gfs, const char *data, gridfs_offset length,
-                          const char *remotename,
-                          const char *contenttype );
+                                      const char *remotename,
+                                      const char *contenttype );
 
 /**
  *  Open the file referenced by filename and store it as a GridFS file.
@@ -128,7 +128,7 @@ MONGO_EXPORT int gridfs_store_buffer( gridfs *gfs, const char *data, gridfs_offs
  *  @return - MONGO_OK or MONGO_ERROR.
  */
 MONGO_EXPORT int gridfs_store_file( gridfs *gfs, const char *filename,
-                        const char *remotename, const char *contenttype );
+                                    const char *remotename, const char *contenttype );
 
 /**
  *  Removes the files referenced by filename from the db
