@@ -39,12 +39,13 @@ MONGO_OBJECTS=src/bcon.o src/bson.o src/encoding.o src/gridfs.o src/md5.o src/mo
  src/numbers.o
 BSON_OBJECTS=src/bcon.o src/bson.o src/numbers.o src/encoding.o
 
-ifeq ($(ENV),posix)
-    TESTS+=test_env_posix test_unix_socket
-    MONGO_OBJECTS+=src/env_posix.o
-else
-    MONGO_OBJECTS+=src/env_standard.o
-endif
+#ifeq ($(ENV),posix)
+#    TESTS+=test_env_posix test_unix_socket
+#    MONGO_OBJECTS+=src/env_posix.o
+#else
+#    MONGO_OBJECTS+=src/env_standard.o
+#endif
+MONGO_OBJECTS+=src/env.o
 
 DYN_MONGO_OBJECTS=$(foreach i,$(MONGO_OBJECTS),$(patsubst %.o,%.os,$(i)))
 DYN_BSON_OBJECTS=$(foreach i,$(BSON_OBJECTS),$(patsubst %.o,%.os,$(i)))
@@ -139,8 +140,7 @@ all: $(MONGO_DYLIBNAME) $(BSON_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_STLIBNAME)
 bcon.o: src/bcon.c src/bcon.h src/bson.h
 bson.o: src/bson.c src/bson.h src/encoding.h
 encoding.o: src/encoding.c src/bson.h src/encoding.h
-env_standard.o: src/env_standard.c src/env.h src/mongo.h src/bson.h
-env_posix.o: src/env_posix.c src/env.h src/mongo.h src/bson.h
+env.o: src/env.c src/env.h src/mongo.h src/bson.h
 gridfs.o: src/gridfs.c src/gridfs.h src/mongo.h src/bson.h
 md5.o: src/md5.c src/md5.h
 mongo.o: src/mongo.c src/mongo.h src/bson.h src/md5.h src/env.h
