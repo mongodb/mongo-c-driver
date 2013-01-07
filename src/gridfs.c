@@ -228,9 +228,9 @@ MONGO_EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs,
 MONGO_EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
         gridfs_offset length ) {
 
-    int bytes_left = 0;
-    int data_partial_len = 0;
-    int chunks_to_write = 0;
+    size_t bytes_left = 0;
+    size_t data_partial_len = 0;
+    size_t chunks_to_write = 0;
     char *buffer;
     bson *oChunk;
     gridfs_offset to_write = length + gfile->pending_len;
@@ -590,7 +590,7 @@ MONGO_EXPORT void gridfile_get_chunk( gridfile *gfile, int n, bson* out ) {
     }
 }
 
-MONGO_EXPORT mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, int size ) {
+MONGO_EXPORT mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, size_t size ) {
     bson_iterator it;
     bson_oid_t id;
     bson gte;
@@ -605,11 +605,11 @@ MONGO_EXPORT mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, int 
     bson_init( &query );
     bson_append_oid( &query, "files_id", &id );
     if ( size == 1 ) {
-        bson_append_int( &query, "n", start );
+        bson_append_int( &query, "n", (int)start );
     }
     else {
         bson_init( &gte );
-        bson_append_int( &gte, "$gte", start );
+        bson_append_int( &gte, "$gte", (int)start );
         bson_finish( &gte );
         bson_append_bson( &query, "n", &gte );
         bson_destroy( &gte );
@@ -626,7 +626,7 @@ MONGO_EXPORT mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, int 
     bson_finish( &command );
 
     cursor = mongo_find( gfile->gfs->client, gfile->gfs->chunks_ns,
-                         &command, NULL, size, 0, 0 );
+                         &command, NULL, (int)size, 0, 0 );
 
     bson_destroy( &command );
     bson_destroy( &query );
@@ -659,9 +659,9 @@ MONGO_EXPORT gridfs_offset gridfile_read( gridfile *gfile, gridfs_offset size, c
     mongo_cursor *chunks;
     bson chunk;
 
-    int first_chunk;
-    int last_chunk;
-    int total_chunks;
+    size_t first_chunk;
+    size_t last_chunk;
+    size_t total_chunks;
     gridfs_offset chunksize;
     gridfs_offset contentlength;
     gridfs_offset bytes_left;

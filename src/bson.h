@@ -135,7 +135,7 @@ typedef struct {
     char *cur;     /**< Pointer to the current position. */
     int dataSize;  /**< The number of bytes allocated to char *data. */
     bson_bool_t finished; /**< When finished, the BSON object can no longer be modified. */
-    int stack[32];        /**< A stack used to keep track of nested BSON elements. */
+    size_t stack[32];        /**< A stack used to keep track of nested BSON elements. */
     int stackPos;         /**< Index of current stack position. */
     int err; /**< Bitfield representing errors or warnings on this buffer */
     char *errstr; /**< A string representation of the most recent error or warning. */
@@ -170,7 +170,7 @@ MONGO_EXPORT void  bson_dispose(bson* b);
  * @return the size.
  */
 MONGO_EXPORT int bson_size( const bson *b );
-MONGO_EXPORT int bson_buffer_size( const bson *b );
+MONGO_EXPORT size_t bson_buffer_size( const bson *b );
 
 /**
  * Print a string representation of a BSON object.
@@ -602,7 +602,7 @@ void bson_init_size( bson *b, int size );
  * @return BSON_OK or BSON_ERROR with the bson error object set.
  *   Exits if allocation fails.
  */
-int bson_ensure_space( bson *b, const int bytesNeeded );
+int bson_ensure_space( bson *b, const size_t bytesNeeded );
 
 /**
  * Finalize a bson object.
@@ -717,7 +717,7 @@ MONGO_EXPORT int bson_append_string( bson *b, const char *name, const char *str 
  *
  * @return BSON_OK or BSON_ERROR.
  */
-MONGO_EXPORT int bson_append_string_n( bson *b, const char *name, const char *str, int len );
+MONGO_EXPORT int bson_append_string_n( bson *b, const char *name, const char *str, size_t len );
 
 /**
  * Append a symbol to a bson.
@@ -740,7 +740,7 @@ MONGO_EXPORT int bson_append_symbol( bson *b, const char *name, const char *str 
  *
  * @return BSON_OK or BSON_ERROR.
  */
-MONGO_EXPORT int bson_append_symbol_n( bson *b, const char *name, const char *str, int len );
+MONGO_EXPORT int bson_append_symbol_n( bson *b, const char *name, const char *str, size_t len );
 
 /**
  * Append code to a bson.
@@ -764,7 +764,7 @@ MONGO_EXPORT int bson_append_code( bson *b, const char *name, const char *str );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-MONGO_EXPORT int bson_append_code_n( bson *b, const char *name, const char *str, int len );
+MONGO_EXPORT int bson_append_code_n( bson *b, const char *name, const char *str, size_t len );
 
 /**
  * Append code to a bson with scope.
@@ -789,7 +789,7 @@ MONGO_EXPORT int bson_append_code_w_scope( bson *b, const char *name, const char
  *
  * @return BSON_OK or BSON_ERROR.
  */
-MONGO_EXPORT int bson_append_code_w_scope_n( bson *b, const char *name, const char *code, int size, const bson *scope );
+MONGO_EXPORT int bson_append_code_w_scope_n( bson *b, const char *name, const char *code, size_t size, const bson *scope );
 
 /**
  * Append binary data to a bson.
@@ -802,7 +802,7 @@ MONGO_EXPORT int bson_append_code_w_scope_n( bson *b, const char *name, const ch
  *
  * @return BSON_OK or BSON_ERROR.
  */
-MONGO_EXPORT int bson_append_binary( bson *b, const char *name, char type, const char *str, int len );
+MONGO_EXPORT int bson_append_binary( bson *b, const char *name, char type, const char *str, size_t len );
 
 /**
  * Append a bson_bool_t to a bson.
@@ -977,7 +977,7 @@ MONGO_EXPORT void bson_free( void *ptr );
  *
  * @sa malloc(3)
  */
-MONGO_EXPORT void *bson_malloc( int size );
+MONGO_EXPORT void *bson_malloc( size_t size );
 
 /**
  * Changes the size of allocated memory and checks return value,
@@ -990,7 +990,7 @@ MONGO_EXPORT void *bson_malloc( int size );
  *
  * @sa realloc()
  */
-void *bson_realloc( void *ptr, int size );
+void *bson_realloc( void *ptr, size_t size );
 
 /**
  * Set a function for error handling.
