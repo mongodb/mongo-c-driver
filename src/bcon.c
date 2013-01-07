@@ -34,7 +34,7 @@ char *bcon_errstr[] = {
     "bson finish error"
 };
 
-int bcon_error(bson *b, const bcon *bc, size_t i, bcon_error_t err) {
+static int bcon_error(bson *b, const bcon *bc, size_t i, bcon_error_t err) {
     b->err = err;
     b->errstr = bcon_errstr[err];
     return BCON_ERROR;
@@ -42,7 +42,7 @@ int bcon_error(bson *b, const bcon *bc, size_t i, bcon_error_t err) {
 
 bcon_error_t bson_append_bcon_array(bson *b, const bcon *bc);
 
-bcon_token_t bcon_token(char *s) {
+static bcon_token_t bcon_token(char *s) {
     if (s == 0) return Token_EOD;
     switch (s[0]) {
     case ':': if (s[1] != '\0' && s[2] != '\0' && s[3] != '\0' && s[4] == '\0' &&
@@ -57,7 +57,7 @@ bcon_token_t bcon_token(char *s) {
     return Token_Default;
 }
 
-bcon_error_t bson_bcon_key_value(bson *b, const char *key, const char *typespec, const bcon bci) {
+static bcon_error_t bson_bcon_key_value(bson *b, const char *key, const char *typespec, const bcon bci) {
     bcon_error_t ret = BCON_OK;
     bson_oid_t oid;
     char ptype = typespec ? typespec[1] : '_';
@@ -164,7 +164,7 @@ typedef enum bcon_state_t {
 /*
  * simplified FSM to parse BCON structure, uses stacks for sub-documents and sub-arrays
  */
-bcon_error_t bson_append_bcon_with_state(bson *b, const bcon *bc, bcon_state_t start_state) {
+static bcon_error_t bson_append_bcon_with_state(bson *b, const bcon *bc, bcon_state_t start_state) {
     bcon_error_t ret = BCON_OK;
     bcon_state_t state = start_state;
     char *key = 0;
@@ -375,7 +375,7 @@ void bcon_print(const bcon *bc) { /* prints internal representation, not JSON */
 }
 
 /* TODO - incomplete */
-void bcon_json_print(bcon *bc, int n) {
+static void bcon_json_print(bcon *bc, int n) {
     int t = 0;
     int key_value_count = 0;
     char *s;
