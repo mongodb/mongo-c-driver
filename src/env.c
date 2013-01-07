@@ -357,6 +357,13 @@ int mongo_env_socket_connect( mongo *conn, const char *host, int port ) {
             conn->sock = 0;
             continue;
         }
+#if __APPLE__
+        {
+            int flag = 1;
+            setsockopt( conn->sock, SOL_SOCKET, SO_NOSIGPIPE,
+                       ( void * ) &flag, sizeof( flag ) );
+        }
+#endif
 
         if ( ai_ptr->ai_protocol == IPPROTO_TCP ) {
             int flag = 1;

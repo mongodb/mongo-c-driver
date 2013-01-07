@@ -99,7 +99,7 @@ elif 'win32' == os.sys.platform:
 if os.sys.platform in ["darwin", "linux2"]:
     env.Append( CPPFLAGS="-pedantic -Wall -ggdb -DMONGO_HAVE_STDINT" )
     if not GetOption('standard_env'):
-        env.Append( CPPFLAGS=" -D_POSIX_SOURCE" )
+        env.Append( CPPFLAGS=" -D_POSIX_SOURCE -D_DARWIN_C_SOURCE" )
     env.Append( CPPPATH=["/opt/local/include/"] )
     env.Append( LIBPATH=["/opt/local/lib/"] )
 
