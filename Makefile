@@ -17,7 +17,7 @@
 # Version
 MONGO_MAJOR=0
 MONGO_MINOR=7
-MONGO_PATCH=0
+MONGO_PATCH=1
 BSON_MAJOR=$(MONGO_MAJOR)
 BSON_MINOR=$(MONGO_MINOR)
 BSON_PATCH=$(MONGO_PATCH)
@@ -184,8 +184,11 @@ valgrind: $(TESTS)
 docs:
 	python docs/buildscripts/docs.py
 
+zip: clobber
+	zip -r /tmp/mongo-c-driver-$(MONGO_MAJOR).$(MONGO_MINOR).$(MONGO_PATCH).zip $(shell ls)
+
 clean:
-	rm -rf src/*.o src/*.os test/*.o test/*.os test_* .scon* config.log
+	rm -rf src/*.o src/*.os test/*.o test/*.os test_* .scon* config.log docs/*/*.pyc
 
 clobber: clean
 	rm -rf $(MONGO_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_DYLIBNAME) $(BSON_STLIBNAME) docs/html docs/source/doxygen
@@ -205,4 +208,4 @@ test_%: test/%_test.c test/test.h $(MONGO_STLIBNAME)
 %.os: %.c
 	$(CC) -o $@ -c $(ALL_CFLAGS) $(DYN_FLAGS) $<
 
-.PHONY: 32bit all clean clobber deps docs install test valgrind
+.PHONY: 32bit all clean clobber deps docs install test valgrind zip

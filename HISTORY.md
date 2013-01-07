@@ -1,5 +1,16 @@
 # MongoDB C Driver History
 
+## 0.7.1
+2013-1-7
+
+Fixes
+
+* collections with one character name
+* set socket option NOSIGPIPE for Mac OS X
+* reorganize env packaging to ease build for the R driver
+* add bcon to library build for Scons
+* package build support with DESTDIR and PREFIX
+
 ## 0.7
 2012-11-19
 ** API CHANGE **
