@@ -18,6 +18,9 @@ int test_namespace_validation( void ) {
     ASSERT( mongo_validate_ns( conn, "test.foo" ) == MONGO_OK );
     ASSERT( conn->err == 0 );
 
+    ASSERT( mongo_validate_ns( conn, "test.f" ) == MONGO_OK );
+    ASSERT( conn->err == 0 );
+
     ASSERT( mongo_validate_ns( conn, "test.foo.bar" ) == MONGO_OK );
     ASSERT( conn->err == 0 );
 
@@ -34,7 +37,12 @@ int test_namespace_validation( void ) {
 
     ASSERT( mongo_validate_ns( conn, "test" ) == MONGO_ERROR );
     ASSERT( conn->err == MONGO_NS_INVALID );
-    ASSERT( strncmp( conn->errstr, "ns cannot start with", 20 ) == 0 );
+    ASSERT( strncmp( conn->errstr, "Collection name missing.", 24 ) == 0 );
+    mongo_clear_errors( conn );
+
+    ASSERT( mongo_validate_ns( conn, "test." ) == MONGO_ERROR );
+    ASSERT( conn->err == MONGO_NS_INVALID );
+    ASSERT( strncmp( conn->errstr, "Collection name missing.", 24 ) == 0 );
     mongo_clear_errors( conn );
 
     ASSERT( mongo_validate_ns( conn, "." ) == MONGO_ERROR );
