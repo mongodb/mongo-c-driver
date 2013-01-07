@@ -112,7 +112,7 @@ MONGO_EXPORT const char*  mongo_get_server_err_string(mongo* conn) {
 
 MONGO_EXPORT void __mongo_set_error( mongo *conn, mongo_error_t err, const char *str,
                                      int errcode ) {
-    int errstr_size, str_size;
+    size_t errstr_size, str_size;
 
     conn->err = err;
     conn->errcode = errcode;
@@ -265,14 +265,14 @@ static void mongo_set_last_error( mongo *conn, bson_iterator *it, bson *obj ) {
 
 static const int ZERO = 0;
 static const int ONE = 1;
-static mongo_message *mongo_message_create( int len , int id , int responseTo , int op ) {
+static mongo_message *mongo_message_create( size_t len , int id , int responseTo , int op ) {
     mongo_message *mm = ( mongo_message * )bson_malloc( len );
 
     if ( !id )
         id = rand();
 
     /* native endian (converted on send) */
-    mm->head.len = len;
+    mm->head.len = ( int )len;
     mm->head.id = id;
     mm->head.responseTo = responseTo;
     mm->head.op = op;
@@ -344,7 +344,7 @@ static int mongo_read_response( mongo *conn, mongo_reply **reply ) {
 }
 
 
-static char *mongo_data_append( char *start , const void *data , int len ) {
+static char *mongo_data_append( char *start , const void *data , size_t len ) {
     memcpy( start , data , len );
     return start + len;
 }
@@ -900,8 +900,8 @@ MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
     mongo_write_concern *write_concern = NULL;
     int i;
     char *data;
-    int overhead =  16 + 4 + strlen( ns ) + 1;
-    int size = overhead;
+    size_t overhead =  16 + 4 + strlen( ns ) + 1;
+    size_t size = overhead;
 
     if( mongo_validate_ns( conn, ns ) != MONGO_OK )
         return MONGO_ERROR;
@@ -1204,7 +1204,7 @@ static int mongo_cursor_get_more( mongo_cursor *cursor ) {
     }
     else {
         char *data;
-        int sl = strlen( cursor->ns )+1;
+        size_t sl = strlen( cursor->ns )+1;
         int limit = 0;
         mongo_message *mm;
 
@@ -1516,7 +1516,7 @@ MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *com
     int ret = MONGO_OK;
     bson response = {NULL, 0};
     bson fields;
-    int sl = strlen( db );
+    size_t sl = strlen( db );
     char *ns = bson_malloc( sl + 5 + 1 ); /* ".$cmd" + nul */
     int res, success = 0;
 
@@ -1674,9 +1674,9 @@ static void mongo_pass_digest( const char *user, const char *pass, char hex_dige
     mongo_md5_byte_t digest[16];
 
     mongo_md5_init( &st );
-    mongo_md5_append( &st, ( const mongo_md5_byte_t * )user, strlen( user ) );
+    mongo_md5_append( &st, ( const mongo_md5_byte_t * )user, ( int )strlen( user ) );
     mongo_md5_append( &st, ( const mongo_md5_byte_t * )":mongo:", 7 );
-    mongo_md5_append( &st, ( const mongo_md5_byte_t * )pass, strlen( pass ) );
+    mongo_md5_append( &st, ( const mongo_md5_byte_t * )pass, ( int )strlen( pass ) );
     mongo_md5_finish( &st, digest );
     digest2hex( digest, hex_digest );
 }
@@ -1734,8 +1734,8 @@ MONGO_EXPORT bson_bool_t mongo_cmd_authenticate( mongo *conn, const char *db, co
     mongo_pass_digest( user, pass, hex_digest );
 
     mongo_md5_init( &st );
-    mongo_md5_append( &st, ( const mongo_md5_byte_t * )nonce, strlen( nonce ) );
-    mongo_md5_append( &st, ( const mongo_md5_byte_t * )user, strlen( user ) );
+    mongo_md5_append( &st, ( const mongo_md5_byte_t * )nonce, ( int )strlen( nonce ) );
+    mongo_md5_append( &st, ( const mongo_md5_byte_t * )user, ( int )strlen( user ) );
     mongo_md5_append( &st, ( const mongo_md5_byte_t * )hex_digest, 32 );
     mongo_md5_finish( &st, digest );
     digest2hex( digest, hex_digest );

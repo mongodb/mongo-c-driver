@@ -172,7 +172,7 @@ static bcon_error_t bson_append_bcon_with_state(bson *b, const bcon *bc, bcon_st
     unsigned char doc_stack[DOC_STACK_SIZE];
     size_t doc_stack_pointer = 0;
     size_t array_index = 0;
-    unsigned int array_index_stack[ARRAY_INDEX_STACK_SIZE];
+    size_t array_index_stack[ARRAY_INDEX_STACK_SIZE];
     size_t array_index_stack_pointer = 0;
     char array_index_buffer[ARRAY_INDEX_BUFFER_SIZE]; /* max BSON size */
     int end_of_data;
