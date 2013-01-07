@@ -42,7 +42,7 @@ static int bcon_error(bson *b, const bcon *bc, size_t i, bcon_error_t err) {
 
 bcon_error_t bson_append_bcon_array(bson *b, const bcon *bc);
 
-static bcon_token_t bcon_token(char *s) {
+bcon_token_t bcon_token(char *s) {
     if (s == 0) return Token_EOD;
     switch (s[0]) {
     case ':': if (s[1] != '\0' && s[2] != '\0' && s[3] != '\0' && s[4] == '\0' &&
