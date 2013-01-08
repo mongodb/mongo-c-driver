@@ -43,7 +43,7 @@ MONGO_EXPORT void gridfile_get_descriptor(gridfile* gf, bson* out) {
 
 
 static bson *chunk_new( bson_oid_t id, int chunkNumber,
-                        const char *data, int len ) {
+                        const char *data, size_t len ) {
     bson *b = bson_malloc( sizeof( bson ) );
 
     bson_init( b );
@@ -590,7 +590,7 @@ MONGO_EXPORT void gridfile_get_chunk( gridfile *gfile, int n, bson* out ) {
     }
 }
 
-MONGO_EXPORT mongo_cursor *gridfile_get_chunks( gridfile *gfile, int start, size_t size ) {
+MONGO_EXPORT mongo_cursor *gridfile_get_chunks( gridfile *gfile, size_t start, size_t size ) {
     bson_iterator it;
     bson_oid_t id;
     bson gte;

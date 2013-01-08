@@ -513,7 +513,7 @@ Cursor API
  * @param ns the namespace.
  * @param query the bson query.
  * @param fields a bson document of fields to be returned.
- * @param limit the maximum number of documents to retrun.
+ * @param limit the maximum number of documents to return.
  * @param skip the number of documents to skip.
  * @param options A bitfield containing cursor options.
  *

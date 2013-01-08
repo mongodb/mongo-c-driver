@@ -625,7 +625,7 @@ static void bson_append64( bson *b, const void *data ) {
 }
 
 int bson_ensure_space( bson *b, const size_t bytesNeeded ) {
-    int pos = b->cur - b->data;
+    size_t pos = b->cur - b->data;
     char *orig = b->data;
     int new_size;
 
@@ -681,7 +681,7 @@ MONGO_EXPORT void bson_destroy( bson *b ) {
 }
 
 static int bson_append_estart( bson *b, int type, const char *name, const size_t dataSize ) {
-    const int len = strlen( name ) + 1;
+    const size_t len = strlen( name ) + 1;
 
     if ( b->finished ) {
         b->err |= BSON_ALREADY_FINISHED;
@@ -807,7 +807,7 @@ MONGO_EXPORT int bson_append_code_w_scope( bson *b, const char *name, const char
 
 MONGO_EXPORT int bson_append_binary( bson *b, const char *name, char type, const char *str, size_t len ) {
     if ( type == BSON_BIN_BINARY_OLD ) {
-        int subtwolen = len + 4;
+        size_t subtwolen = len + 4;
         if ( bson_append_estart( b, BSON_BINDATA, name, 4+1+4+len ) == BSON_ERROR )
             return BSON_ERROR;
         bson_append32_as_int( b, ( int )subtwolen );
