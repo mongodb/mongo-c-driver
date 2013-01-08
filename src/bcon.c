@@ -42,6 +42,9 @@ static int bcon_error(bson *b, const bcon *bc, size_t i, bcon_error_t err) {
 
 bcon_error_t bson_append_bcon_array(bson *b, const bcon *bc);
 
+/* should be static, but it used by test files */
+bcon_token_t bcon_token(char *s);
+
 bcon_token_t bcon_token(char *s) {
     if (s == 0) return Token_EOD;
     switch (s[0]) {
