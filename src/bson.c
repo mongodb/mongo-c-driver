@@ -671,10 +671,12 @@ MONGO_EXPORT int bson_finish( bson *b ) {
 }
 
 MONGO_EXPORT void bson_destroy( bson *b ) {
-    if (b) {
-        bson_free( b->data );
+    if ( b ) {
+        if ( b->data != NULL ) {
+            bson_free( b->data );
+            b->data = NULL;
+        }
         b->err = 0;
-        b->data = 0;
         b->cur = 0;
         b->finished = 1;
     }
