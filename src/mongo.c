@@ -1172,7 +1172,6 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
                                bson_size( cursor->fields ) ,
                                0 , 0 , MONGO_OP_QUERY );
     if( mm == NULL ) {
-        conn->err = MONGO_BSON_TOO_LARGE;
         return MONGO_ERROR;
     }
 
@@ -1242,7 +1241,6 @@ static int mongo_cursor_get_more( mongo_cursor *cursor ) {
                                    +8 /*cursorID*/
                                    , 0, 0, MONGO_OP_GET_MORE );
         if( mm == NULL ) {
-            conn->err = MONGO_BSON_TOO_LARGE;
             return MONGO_ERROR;
         }
 
