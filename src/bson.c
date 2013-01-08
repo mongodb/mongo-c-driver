@@ -662,6 +662,10 @@ MONGO_EXPORT int bson_finish( bson *b ) {
     if ( ! b->finished ) {
         if ( bson_ensure_space( b, 1 ) == BSON_ERROR ) return BSON_ERROR;
         bson_append_byte( b, 0 );
+        if ( b->cur - b->data >= INT32_MAX ) {
+            b->err = BSON_SIZE_OVERFLOW;
+            return BSON_ERROR;
+        }
         i = ( int )( b->cur - b->data );
         bson_little_endian32( b->data, &i );
         b->finished = 1;
@@ -752,6 +756,11 @@ static int bson_append_string_base( bson *b, const char *name,
                                     const char *value, size_t len, bson_type type ) {
 
     size_t sl = len + 1;
+    if ( sl > INT32_MAX ) {
+        b->err = BSON_SIZE_OVERFLOW;
+        // string too long
+        return BSON_ERROR;
+    }
     if ( bson_check_string( b, ( const char * )value, sl - 1 ) == BSON_ERROR )
         return BSON_ERROR;
     if ( bson_append_estart( b, type, name, 4 + sl ) == BSON_ERROR ) {
@@ -793,6 +802,10 @@ MONGO_EXPORT int bson_append_code_w_scope_n( bson *b, const char *name,
     size_t sl, size;
     if ( !scope ) return BSON_ERROR;
     sl = len + 1;
+    if ( 4 + 4 + (long long)sl + (long long)bson_size( scope ) > (long long)INT32_MAX ) {
+        b->err = BSON_SIZE_OVERFLOW;
+        return BSON_ERROR;
+    }
     size = 4 + 4 + sl + bson_size( scope );
     if ( bson_append_estart( b, BSON_CODEWSCOPE, name, size ) == BSON_ERROR )
         return BSON_ERROR;
@@ -929,6 +942,10 @@ MONGO_EXPORT int bson_append_finish_object( bson *b ) {
     bson_append_byte( b , 0 );
 
     start = b->data + b->stack[ --b->stackPos ];
+    if ( b->cur - start >= INT32_MAX ) {
+        b->err = BSON_SIZE_OVERFLOW;
+        return BSON_ERROR;
+    }
     i = ( int )( b->cur - start );
     bson_little_endian32( start, &i );
 
