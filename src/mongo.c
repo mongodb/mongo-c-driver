@@ -1423,7 +1423,6 @@ MONGO_EXPORT int mongo_cursor_destroy( mongo_cursor *cursor ) {
                             +8 /*cursorID*/
                             , 0, 0, MONGO_OP_KILL_CURSORS );
         if( mm == NULL ) {
-            conn->err = MONGO_BSON_TOO_LARGE;
             return MONGO_ERROR;
         }
         char *data = &mm->data;
