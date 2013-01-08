@@ -1485,13 +1485,13 @@ MONGO_EXPORT int mongo_create_capped_collection( mongo *conn, const char *db,
     return result;
 }
 
-MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *ns, const bson *query ) {
+MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *coll, const bson *query ) {
     bson cmd;
     bson out = {NULL, 0};
     double count = -1;
 
     bson_init( &cmd );
-    bson_append_string( &cmd, "count", ns );
+    bson_append_string( &cmd, "count", coll );
     if ( query && bson_size( query ) > 5 ) /* not empty */
         bson_append_bson( &cmd, "query", query );
     bson_finish( &cmd );
