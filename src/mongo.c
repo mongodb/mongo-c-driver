@@ -875,7 +875,7 @@ MONGO_EXPORT int mongo_insert( mongo *conn, const char *ns,
                                + strlen( ns )
                                + 1 + bson_size( bson )
                                , 0, 0, MONGO_OP_INSERT );
-    if( mm == NULL) {
+    if( mm == NULL ) {
         conn->err = MONGO_BSON_TOO_LARGE;
         return MONGO_ERROR;
     }
@@ -931,7 +931,7 @@ MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
     }
 
     mm = mongo_message_create( size , 0 , 0 , MONGO_OP_INSERT );
-    if( mm == NULL) {
+    if( mm == NULL ) {
         conn->err = MONGO_BSON_TOO_LARGE;
         return MONGO_ERROR;
     }
@@ -987,7 +987,7 @@ MONGO_EXPORT int mongo_update( mongo *conn, const char *ns, const bson *cond,
                                + bson_size( cond )
                                + bson_size( op )
                                , 0 , 0 , MONGO_OP_UPDATE );
-    if( mm == NULL) {
+    if( mm == NULL ) {
         conn->err = MONGO_BSON_TOO_LARGE;
         return MONGO_ERROR;
     }
@@ -1038,7 +1038,7 @@ MONGO_EXPORT int mongo_remove( mongo *conn, const char *ns, const bson *cond,
                                + 4  /* ZERO */
                                + bson_size( cond )
                                , 0 , 0 , MONGO_OP_DELETE );
-    if( mm == NULL) {
+    if( mm == NULL ) {
         conn->err = MONGO_BSON_TOO_LARGE;
         return MONGO_ERROR;
     }
@@ -1171,7 +1171,7 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
                                bson_size( cursor->query ) +
                                bson_size( cursor->fields ) ,
                                0 , 0 , MONGO_OP_QUERY );
-    if( mm == NULL) {
+    if( mm == NULL ) {
         conn->err = MONGO_BSON_TOO_LARGE;
         return MONGO_ERROR;
     }
@@ -1241,7 +1241,7 @@ static int mongo_cursor_get_more( mongo_cursor *cursor ) {
                                    +4 /*numToReturn*/
                                    +8 /*cursorID*/
                                    , 0, 0, MONGO_OP_GET_MORE );
-        if( mm == NULL) {
+        if( mm == NULL ) {
             conn->err = MONGO_BSON_TOO_LARGE;
             return MONGO_ERROR;
         }
@@ -1424,7 +1424,7 @@ MONGO_EXPORT int mongo_cursor_destroy( mongo_cursor *cursor ) {
                             +4 /*numCursors*/
                             +8 /*cursorID*/
                             , 0, 0, MONGO_OP_KILL_CURSORS );
-        if( mm == NULL) {
+        if( mm == NULL ) {
             conn->err = MONGO_BSON_TOO_LARGE;
             return MONGO_ERROR;
         }
