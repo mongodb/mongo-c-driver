@@ -758,7 +758,7 @@ static int bson_append_string_base( bson *b, const char *name,
     size_t sl = len + 1;
     if ( sl > INT32_MAX ) {
         b->err = BSON_SIZE_OVERFLOW;
-        // string too long
+        /* string too long */
         return BSON_ERROR;
     }
     if ( bson_check_string( b, ( const char * )value, sl - 1 ) == BSON_ERROR )
@@ -802,11 +802,11 @@ MONGO_EXPORT int bson_append_code_w_scope_n( bson *b, const char *name,
     size_t sl, size;
     if ( !scope ) return BSON_ERROR;
     sl = len + 1;
-    if ( 4 + 4 + (long long)sl + (long long)bson_size( scope ) > (long long)INT32_MAX ) {
+    size = 4 + 4 + sl + bson_size( scope );
+    if ( size > (size_t)INT32_MAX ) {
         b->err = BSON_SIZE_OVERFLOW;
         return BSON_ERROR;
     }
-    size = 4 + 4 + sl + bson_size( scope );
     if ( bson_append_estart( b, BSON_CODEWSCOPE, name, size ) == BSON_ERROR )
         return BSON_ERROR;
     bson_append32_as_int( b, ( int )size );

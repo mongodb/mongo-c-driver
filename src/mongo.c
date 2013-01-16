@@ -1411,6 +1411,7 @@ MONGO_EXPORT int mongo_cursor_next( mongo_cursor *cursor ) {
 
 MONGO_EXPORT int mongo_cursor_destroy( mongo_cursor *cursor ) {
     int result = MONGO_OK;
+    char *data;
 
     if ( !cursor ) return result;
 
@@ -1425,7 +1426,7 @@ MONGO_EXPORT int mongo_cursor_destroy( mongo_cursor *cursor ) {
         if( mm == NULL ) {
             return MONGO_ERROR;
         }
-        char *data = &mm->data;
+        data = &mm->data;
         data = mongo_data_append32( data, &ZERO );
         data = mongo_data_append32( data, &ONE );
         mongo_data_append64( data, &cursor->reply->fields.cursorID );

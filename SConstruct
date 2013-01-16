@@ -24,7 +24,7 @@ AddOption('--seed-start-port',
 
 AddOption('--c99',
           dest='use_c99',
-          default=False,
+          default=True,
           action='store_true',
           help='Compile with c99 (recommended for gcc)')
 
@@ -100,8 +100,8 @@ if os.sys.platform in ["darwin", "linux2"]:
     env.Append( CPPFLAGS="-pedantic -Wall -ggdb -DMONGO_HAVE_STDINT" )
     if not GetOption('standard_env'):
         env.Append( CPPFLAGS=" -D_POSIX_SOURCE -D_DARWIN_C_SOURCE" )
-    env.Append( CPPPATH=["/opt/local/include/"] )
-    env.Append( LIBPATH=["/opt/local/lib/"] )
+    #env.Append( CPPPATH=["/opt/local/include/"] )
+    #env.Append( LIBPATH=["/opt/local/lib/"] )
 
     if GetOption('use_c99'):
         env.Append( CFLAGS=" -std=c99 " )

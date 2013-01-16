@@ -36,7 +36,7 @@ void bson_dump( bson * b ) {
     printf("\tstack: {");
     delim = "";
     for (i = 0; i < 32; i++) {
-        printf("%s%d", delim, b->stack[i]);
+        printf("%s%zd", delim, b->stack[i]);
         delim = ",";
     }
     printf("},\n");
