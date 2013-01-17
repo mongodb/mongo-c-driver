@@ -53,38 +53,41 @@ void test_bson_from_bcon( const bcon *bc, bcon_error_t bc_err, int bv_err ) {
 
 void test_invalid_structure( void ) {
     bcon bc_incomplete[] = { "k0", BEND };
+
     test_bson_from_bcon( bc_incomplete, BCON_DOCUMENT_INCOMPLETE, BSON_VALID );
 }
 
 void test_problematic_structure( void ) {
     bcon bc_incomplete[] = { "k0", BEND };
-    test_bson_from_bcon( bc_incomplete, BCON_DOCUMENT_INCOMPLETE, BSON_VALID );
     bcon bc_bracket_brace[] = { "k0", "v0", "k1", "{", "k11", "v11", "]", "v12", "}", BEND };
-    test_bson_from_bcon( bc_bracket_brace, BCON_OK, BSON_VALID ); /* key for now */
     bcon bc_brace_bracket[] = { "k0", "v0", "k1", "[", "k11", "v11", "}", "]", BEND };
+
+    test_bson_from_bcon( bc_incomplete, BCON_DOCUMENT_INCOMPLETE, BSON_VALID );
+    test_bson_from_bcon( bc_bracket_brace, BCON_OK, BSON_VALID ); /* key for now */
     test_bson_from_bcon( bc_brace_bracket, BCON_OK, BSON_VALID ); /* key for now */
 }
 
 void test_valid_structure( void ) {
     bcon bc_key_value[] = { "k0", "v0", BEND };
-    test_bson_from_bcon( bc_key_value, BCON_OK, BSON_VALID );
     bcon bc_key_spec_value[] = { "k0", ":_s:", "v0", BEND };
-    test_bson_from_bcon( bc_key_spec_value, BCON_OK, BSON_VALID );
     bcon bc_key_value_2[] = { "k0", "v0", "k1", "v1", BEND };
-    test_bson_from_bcon( bc_key_value_2, BCON_OK, BSON_VALID );
     bcon bc_embedded[] = { "k0", "v0", "k1", "{", "k10", "v10", "k11", "v11", "}", "k2", "v2", BEND };
-    test_bson_from_bcon( bc_embedded, BCON_OK, BSON_VALID );
     bcon bc_embedded_2[] = { "k0", "v0", "k1", "{", "k10", "v10", "k11", "{", "k110", "v110", "}", "k12", "v12", "}", "k2", "v2", BEND };
-    test_bson_from_bcon( bc_embedded_2, BCON_OK, BSON_VALID );
     bcon bc_array[] = { "k0", "v0", "k1", "[", "v10", "v11", "v12", "]", "k2", "v2", BEND };
-    test_bson_from_bcon( bc_array, BCON_OK, BSON_VALID );
     bcon bc_array_with_type[] = { "k0", "v0", "k1", "[", "v10", BI(123), BL(456789), "v12", "]", "k2", "v2", BEND };
-    test_bson_from_bcon( bc_array_with_type, BCON_OK, BSON_VALID );
     bcon bc_array_2[] = { "k0", "v0", "k1", "[", "v10", "v11", "[", "v120", "v121", "]", "v13", "]", "k2", "v2", BEND };
-    test_bson_from_bcon( bc_array_2, BCON_OK, BSON_VALID );
     bcon bc_doc_array[] = { "k0", "v0", "k1", "{", "k10", "v10", "k11", "[", "v110", "v111", "]", "k12", "v12", "}", "k2", "v2", BEND };
-    test_bson_from_bcon( bc_doc_array, BCON_OK, BSON_VALID );
     bcon bc_array_doc[] = { "k0", "v0", "k1", "[", "v10", "v11", "{", "k120", "v120", "k121", "v121", "}", "v13", "]", "k2", "v2", BEND };
+
+    test_bson_from_bcon( bc_key_value, BCON_OK, BSON_VALID );
+    test_bson_from_bcon( bc_key_spec_value, BCON_OK, BSON_VALID );
+    test_bson_from_bcon( bc_key_value_2, BCON_OK, BSON_VALID );
+    test_bson_from_bcon( bc_embedded, BCON_OK, BSON_VALID );
+    test_bson_from_bcon( bc_embedded_2, BCON_OK, BSON_VALID );
+    test_bson_from_bcon( bc_array, BCON_OK, BSON_VALID );
+    test_bson_from_bcon( bc_array_with_type, BCON_OK, BSON_VALID );
+    test_bson_from_bcon( bc_array_2, BCON_OK, BSON_VALID );
+    test_bson_from_bcon( bc_doc_array, BCON_OK, BSON_VALID );
     test_bson_from_bcon( bc_array_doc, BCON_OK, BSON_VALID );
 }
 

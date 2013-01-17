@@ -113,6 +113,7 @@ if os.sys.platform in ["darwin", "linux2"]:
         env.Append( CPPFLAGS=" -O3 " )
         # -O3 benchmarks *significantly* faster than -O2 when disabling networking
 elif 'win32' == os.sys.platform:
+    env.Append( CPPFLAGS="-DMONGO_HAVE_STDINT" )
     env.Append( LIBS='ws2_32' )
 
 #we shouldn't need these options in c99 mode
@@ -273,8 +274,10 @@ def run_tests( root, tests, env, alias ):
         test_alias = env.Alias(alias, [test], test[0].abspath + ' 2> ' + os.path.devnull)
         AlwaysBuild(test_alias)
 
-tests = Split("write_concern commands sizes resize endian_swap bson bson_subobject bcon simple update errors "
+tests = Split("write_concern commands sizes resize endian_swap bson bson_subobject simple update errors "
 "count_delete auth gridfs validate examples helpers oid functions cursors")
+if os.sys.platform != 'win32':
+    tests.append("bcon")
 tests += PLATFORM_TESTS
 
 # Run standard tests

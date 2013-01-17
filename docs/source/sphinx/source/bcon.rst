@@ -29,6 +29,12 @@ Sub-documents are framed by "{" "}" string literals, and sub-arrays are framed b
 All of this is needed because C arrays and initializers are mono-typed unlike dict/array types in modern languages.
 BCON attempts to be readable and JSON-like within the context and restrictions of the C language.
 
+Important Note
+--------------
+BCON depends on C99 designated initializers.  The Microsoft Visual Studio (2012) C compiler does not yet support C99
+designated initializers, so if you want BCON on Windows, you will have to install and use a compiler that supports C99
+like gcc.
+
 Specification
 -------------
 This specification parallels the BSON specification ( http://bsonspec.org/#/specification ).
