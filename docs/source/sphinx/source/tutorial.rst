@@ -373,7 +373,7 @@ the second is a compound index on ``name`` and ``age``.
       bson_append_int( key, "name", 1 );
       bson_finish( key );
 
-      mongo_create_index( conn, "tutorial.persons", key, 0, NULL );
+      mongo_create_index( conn, "tutorial.persons", key, NULL, 0, NULL );
 
       bson_destroy( key );
 
@@ -384,7 +384,7 @@ the second is a compound index on ``name`` and ``age``.
       bson_append_int( key, "name", 1 );
       bson_finish( key );
 
-      mongo_create_index( conn, "tutorial.persons", key, 0, NULL );
+      mongo_create_index( conn, "tutorial.persons", key, NULL, 0, NULL );
 
       bson_destroy( key );
 

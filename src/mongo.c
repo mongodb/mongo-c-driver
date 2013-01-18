@@ -1445,24 +1445,33 @@ MONGO_EXPORT int mongo_cursor_destroy( mongo_cursor *cursor ) {
 
 /* MongoDB Helper Functions */
 
-MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *key, int options, bson *out ) {
+#define INDEX_NAME_BUFFER_SIZE 255
+#define INDEX_NAME_MAX_LENGTH (INDEX_NAME_BUFFER_SIZE - 1)
+
+MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *key, const char *name, int options, bson *out ) {
     bson b;
     bson_iterator it;
-    char name[255] = {'_'};
-    int i = 1;
+    char default_name[INDEX_NAME_BUFFER_SIZE] = {'\0'};
+    size_t len = 0;
+    size_t remaining;
     char idxns[1024];
 
-    bson_iterator_init( &it, key );
-    while( i < 255 && bson_iterator_next( &it ) ) {
-        strncpy( name + i, bson_iterator_key( &it ), 255 - i );
-        i += strlen( bson_iterator_key( &it ) );
+    if ( !name ) {
+        bson_iterator_init( &it, key );
+        while( len < INDEX_NAME_MAX_LENGTH && bson_iterator_next( &it ) ) {
+            remaining = INDEX_NAME_MAX_LENGTH - len;
+            strncat( default_name, bson_iterator_key( &it ), remaining );
+            len = strlen( default_name );
+            remaining = INDEX_NAME_MAX_LENGTH - len;
+            strncat( default_name, ( bson_iterator_int( &it ) < 0 ) ? "_-1" : "_1", remaining );
+            len = strlen( default_name );
+        }
     }
-    name[254] = '\0';
 
     bson_init( &b );
     bson_append_bson( &b, "key", key );
     bson_append_string( &b, "ns", ns );
-    bson_append_string( &b, "name", name );
+    bson_append_string( &b, "name", name ? name : default_name );
     if ( options & MONGO_INDEX_UNIQUE )
         bson_append_bool( &b, "unique", 1 );
     if ( options & MONGO_INDEX_DROP_DUPS )
@@ -1490,7 +1499,7 @@ MONGO_EXPORT bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns,
     bson_append_int( &b, field, 1 );
     bson_finish( &b );
 
-    success = mongo_create_index( conn, ns, &b, options, out );
+    success = mongo_create_index( conn, ns, &b, NULL, options, out );
     bson_destroy( &b );
     return success;
 }

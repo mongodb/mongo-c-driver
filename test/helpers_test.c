@@ -8,27 +8,29 @@
 #include <time.h>
 
 void test_index_helper( mongo *conn ) {
+    int ret;
 
     bson b, out;
     bson_iterator it;
 
     bson_init( &b );
-    bson_append_int( &b, "foo", 1 );
+    bson_append_int( &b, "foo", -1 );
     bson_finish( &b );
 
-    mongo_create_index( conn, "test.bar", &b, MONGO_INDEX_SPARSE | MONGO_INDEX_UNIQUE, &out );
+    mongo_create_index( conn, "test.bar", &b, NULL, MONGO_INDEX_SPARSE | MONGO_INDEX_UNIQUE, &out );
 
     bson_destroy( &b );
     bson_destroy( &out );
 
     bson_init( &b );
     bson_append_start_object( &b, "key" );
-    bson_append_int( &b, "foo", 1 );
+    bson_append_int( &b, "foo", -1 );
     bson_append_finish_object( &b );
 
     bson_finish( &b );
 
-    mongo_find_one( conn, "test.system.indexes", &b, NULL, &out );
+    ret = mongo_find_one( conn, "test.system.indexes", &b, NULL, &out );
+    ASSERT( ret == MONGO_OK );
 
     bson_print( &out );
 
