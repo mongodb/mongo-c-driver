@@ -20,6 +20,7 @@
 #include "env.h"
 
 #include <string.h>
+#include <assert.h>
 
 MONGO_EXPORT mongo* mongo_create( void ) {
     return (mongo*)bson_malloc(sizeof(mongo));
@@ -324,7 +325,14 @@ static int mongo_read_response( mongo *conn, mongo_reply **reply ) {
     if ( len < sizeof( head )+sizeof( fields ) || len > 64*1024*1024 )
         return MONGO_READ_SIZE_ERROR;  /* most likely corruption */
 
-    out = ( mongo_reply * )bson_malloc( len );
+    /*
+     * mongo_reply matches the wire for observed environments (MacOS, Linux, Windows VC), but
+     * the following incorporates possible differences with type sizes and padding/packing
+     *
+     * assert( sizeof(mongo_reply) - sizeof(char) - 16 - 20 + len >= len );
+     * printf( "sizeof(mongo_reply) - sizeof(char) - 16 - 20 = %ld\n", sizeof(mongo_reply) - sizeof(char) - 16 - 20 );
+     */
+    out = ( mongo_reply * )bson_malloc( sizeof(mongo_reply) - sizeof(char) + len - 16 - 20 );
 
     out->head.len = len;
     bson_little_endian32( &out->head.id, &head.id );
@@ -336,7 +344,7 @@ static int mongo_read_response( mongo *conn, mongo_reply **reply ) {
     bson_little_endian32( &out->fields.start, &fields.start );
     bson_little_endian32( &out->fields.num, &fields.num );
 
-    res = mongo_env_read_socket( conn, &out->objs, len-sizeof( head )-sizeof( fields ) );
+    res = mongo_env_read_socket( conn, &out->objs, len - 16 - 20 ); /* was len-sizeof( head )-sizeof( fields ) */
     if( res != MONGO_OK ) {
         bson_free( out );
         return res;
