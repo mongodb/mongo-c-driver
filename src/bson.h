@@ -56,6 +56,7 @@
 #elif defined(MONGO_USE__INT64)
 typedef __int64 int64_t;
 typedef unsigned __int64 uint64_t;
+#define INT32_MAX 0x7fffffffL
 #elif defined(MONGO_USE_LONG_LONG_INT)
 typedef long long int int64_t;
 typedef unsigned long long int uint64_t;
@@ -81,15 +82,16 @@ MONGO_EXTERN_C_START
 #define BSON_ERROR -1
 
 enum bson_error_t {
-    BSON_SIZE_OVERFLOW = 1 /**< Trying to create a BSON object larger than INT_MAX. */
+    BSON_SIZE_OVERFLOW =     (1 << 0),  /**< Trying to create a BSON object larger than INT_MAX. */
+    BSON_ALREADY_FINISHED =  (1 << 4),  /**< Trying to modify a finished BSON object. */
+    BSON_NOT_IN_SUBOBJECT =  (1 << 5)   /**< Trying bson_append_finish_object() and not in sub */
 };
 
 enum bson_validity_t {
-    BSON_VALID = 0,                 /**< BSON is valid and UTF-8 compliant. */
-    BSON_NOT_UTF8 = ( 1<<1 ),       /**< A key or a string is not valid UTF-8. */
-    BSON_FIELD_HAS_DOT = ( 1<<2 ),  /**< Warning: key contains '.' character. */
-    BSON_FIELD_INIT_DOLLAR = ( 1<<3 ), /**< Warning: key starts with '$' character. */
-    BSON_ALREADY_FINISHED = ( 1<<4 )  /**< Trying to modify a finished BSON object. */
+    BSON_VALID =             0,         /**< BSON is valid and UTF-8 compliant. */
+    BSON_NOT_UTF8 =          (1 << 1),  /**< A key or a string is not valid UTF-8. */
+    BSON_FIELD_HAS_DOT =     (1 << 2),  /**< Warning: key contains '.' character. */
+    BSON_FIELD_INIT_DOLLAR = (1 << 3)   /**< Warning: key starts with '$' character. */
 };
 
 enum bson_binary_subtype_t {

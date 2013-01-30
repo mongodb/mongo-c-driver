@@ -15,6 +15,10 @@
  *    limitations under the License.
  */
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "mongo.h"
 #include "md5.h"
 #include "env.h"
@@ -928,7 +932,7 @@ MONGO_EXPORT int mongo_insert_batch( mongo *conn, const char *ns,
             return MONGO_ERROR;
     }
 
-    if( ( size - overhead ) > conn->max_bson_size ) {
+    if( ( size - overhead ) > (size_t)conn->max_bson_size ) {
         conn->err = MONGO_BSON_TOO_LARGE;
         return MONGO_ERROR;
     }

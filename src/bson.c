@@ -15,6 +15,10 @@
  *    limitations under the License.
  */
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -938,6 +942,8 @@ MONGO_EXPORT int bson_append_start_array( bson *b, const char *name ) {
 MONGO_EXPORT int bson_append_finish_object( bson *b ) {
     char *start;
     int i;
+    if (!b) return BSON_ERROR;
+    if (!b->stackPos) { b->err = BSON_NOT_IN_SUBOBJECT; return BSON_ERROR; }
     if ( bson_ensure_space( b, 1 ) == BSON_ERROR ) return BSON_ERROR;
     bson_append_byte( b , 0 );
 
