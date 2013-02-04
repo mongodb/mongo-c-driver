@@ -95,6 +95,15 @@ MONGO_EXPORT const char* mongo_get_host(mongo* conn, int i) {
     return 0;
 }
 
+MONGO_EXPORT mongo_write_concern* mongo_write_concern_create( void ) {
+    return (mongo_write_concern*)bson_malloc(sizeof(mongo_write_concern));
+}
+
+
+MONGO_EXPORT void mongo_write_concern_dispose(mongo_write_concern* write_concern) {
+    bson_free(write_concern);
+}
+
 
 MONGO_EXPORT mongo_cursor* mongo_cursor_create( void ) {
     return (mongo_cursor*)bson_malloc(sizeof(mongo_cursor));
