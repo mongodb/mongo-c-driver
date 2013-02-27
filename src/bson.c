@@ -666,6 +666,7 @@ MONGO_EXPORT int bson_finish( bson *b ) {
         return BSON_ERROR;
 
     if ( ! b->finished ) {
+        bson_fatal_msg(!b->stackPos, "Subobject not finished before bson_finish().");
         if ( bson_ensure_space( b, 1 ) == BSON_ERROR ) return BSON_ERROR;
         bson_append_byte( b, 0 );
         if ( b->cur - b->data >= INT32_MAX ) {
