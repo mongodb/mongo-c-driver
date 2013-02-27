@@ -563,9 +563,8 @@ MONGO_EXPORT time_t bson_oid_generated_time( bson_oid_t *oid ); /* Gives the tim
    ------------------------------ */
 
 /**
- *  Initialize a new bson object. If not created
- *  with bson_new, you must initialize each new bson
- *  object using this function.
+ *  Initialize a new bson object. You must initialize each
+ *  new bson object using this function.
  *
  *  @note When finished, you must pass the bson object to
  *      bson_destroy( ).
