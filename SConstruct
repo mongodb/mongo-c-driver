@@ -160,7 +160,7 @@ mFiles = [ "src/mongo.c", NET_LIB, "src/gridfs.c"]
 bFiles = [ "src/bcon.c", "src/bson.c", "src/numbers.c", "src/encoding.c"]
 
 mHeaders = ["src/mongo.h"]
-bHeaders = ["src/bson.h"]
+bHeaders = ["src/bson.h", "src/bcon.h"]
 headers = mHeaders + bHeaders
 
 mLibFiles = coreFiles + mFiles + bFiles
