@@ -72,6 +72,8 @@ MONGO_EXPORT bson *bson_empty( bson *obj ) {
     obj->finished = 1;
     obj->err = 0;
     obj->errstr = NULL;
+    obj->stack = NULL;
+    obj->stackSize = 0;
     obj->stackPos = 0;
     return obj;
 }
@@ -102,6 +104,8 @@ static void _bson_reset( bson *b ) {
     b->stackPos = 0;
     b->err = 0;
     b->errstr = NULL;
+    b->stack = NULL;
+    b->stackSize = 0;
 }
 
 MONGO_EXPORT int bson_size( const bson *b ) {
@@ -597,6 +601,18 @@ static void _bson_init_size( bson *b, int size ) {
     _bson_reset( b );
 }
 
+static int _bson_append_grow_stack( bson * b ) {
+    size_t * new_stack = ( size_t * ) bson_realloc( b->stack, ( b->stackSize + 32 ) * sizeof( size_t ) );
+    if ( new_stack ) {
+        b->stack = new_stack;
+        b->stackSize += 32;
+    }
+    else {
+        return BSON_ERROR;
+    }
+    return BSON_OK;
+}
+
 MONGO_EXPORT void bson_init( bson *b ) {
     _bson_init_size( b, initialBufferSize );
 }
@@ -690,6 +706,12 @@ MONGO_EXPORT void bson_destroy( bson *b ) {
             bson_free( b->data );
             b->data = NULL;
         }
+        if ( b->stack ) {
+            bson_free( b->stack );
+            b->stack = NULL;
+        }
+        b->stackSize = 0;
+        b->stackPos = 0;
         b->err = 0;
         b->cur = 0;
         b->finished = 1;
@@ -933,6 +955,7 @@ MONGO_EXPORT int bson_append_time_t( bson *b, const char *name, time_t secs ) {
 
 MONGO_EXPORT int bson_append_start_object( bson *b, const char *name ) {
     if ( bson_append_estart( b, BSON_OBJECT, name, 5 ) == BSON_ERROR ) return BSON_ERROR;
+    if ( b->stackPos >= b->stackSize && _bson_append_grow_stack( b ) == BSON_ERROR ) return BSON_ERROR;
     b->stack[ b->stackPos++ ] = b->cur - b->data;
     bson_append32( b , &zero );
     return BSON_OK;
@@ -940,6 +963,7 @@ MONGO_EXPORT int bson_append_start_object( bson *b, const char *name ) {
 
 MONGO_EXPORT int bson_append_start_array( bson *b, const char *name ) {
     if ( bson_append_estart( b, BSON_ARRAY, name, 5 ) == BSON_ERROR ) return BSON_ERROR;
+    if ( b->stackPos >= b->stackSize && _bson_append_grow_stack( b ) == BSON_ERROR ) return BSON_ERROR;
     b->stack[ b->stackPos++ ] = b->cur - b->data;
     bson_append32( b , &zero );
     return BSON_OK;

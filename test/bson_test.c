@@ -309,11 +309,34 @@ int test_bson_size( void ) {
     return 0;
 }
 
+int test_bson_deep_nesting( void ) {
+    int i;
+    bson b[1];
+    bson_init( b );
+
+    for ( i = 0; i < 128; ++i )
+    {
+        bson_append_start_object( b, "sub" );
+        bson_append_string( b, "hello", "hi" );
+    }
+
+    for ( i = 0; i < 128; ++i )
+    {
+        bson_append_finish_object( b );
+    }
+
+    bson_finish( b );
+    bson_destroy( b );
+
+    return 0;
+}
+
 int main() {
 
   test_bson_generic();
   test_bson_iterator();
   test_bson_size();
+  test_bson_deep_nesting();
 
   return 0;
 }
