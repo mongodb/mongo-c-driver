@@ -321,8 +321,10 @@ static int mongo_read_response( mongo *conn, mongo_reply **reply ) {
     unsigned int len;
     int res;
 
-    mongo_env_read_socket( conn, &head, sizeof( head ) );
-    mongo_env_read_socket( conn, &fields, sizeof( fields ) );
+    if ( ( res = mongo_env_read_socket( conn, &head, sizeof( head ) ) ) != MONGO_OK ||
+         ( res = mongo_env_read_socket( conn, &fields, sizeof( fields ) ) ) != MONGO_OK ) {
+        return res;
+    }
 
     bson_little_endian32( &len, &head.len );
 
