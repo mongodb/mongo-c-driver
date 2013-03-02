@@ -137,11 +137,12 @@ typedef struct {
     char *cur;     /**< Pointer to the current position. */
     int dataSize;  /**< The number of bytes allocated to char *data. */
     bson_bool_t finished; /**< When finished, the BSON object can no longer be modified. */
-    size_t * stack;       /**< A dynamically resized stack used to keep track of nested BSON elements.*/
-    int stackSize;        /**< Current number of elements in dynamically-resized stack */
+    size_t stack[32];     /**< A stack used to keep track of nested BSON elements.*/
     int stackPos;         /**< Index of current stack position. */
     int err; /**< Bitfield representing errors or warnings on this buffer */
     char *errstr; /**< A string representation of the most recent error or warning. */
+    size_t * stackPtr;    /**< Pointer to the current stack */
+    int stackSize;        /**< Number of elements in the current stack */
 } bson;
 
 #pragma pack(1)
