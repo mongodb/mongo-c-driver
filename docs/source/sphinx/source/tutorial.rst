@@ -51,7 +51,7 @@ as you learn the API and start using the driver.
 Connecting
 ----------
 
-Let's start by that connects to the database:
+Let's start with a simple program that connects to the database:
 
 .. code-block:: c
 
