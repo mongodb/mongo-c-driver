@@ -48,7 +48,7 @@ MONGO_EXPORT void gridfile_get_descriptor(gridfile* gf, bson* out) {
 
 static bson *chunk_new( bson_oid_t id, int chunkNumber,
                         const char *data, size_t len ) {
-    bson *b = bson_malloc( sizeof( bson ) );
+    bson *b = bson_create();
 
     bson_init( b );
     bson_append_oid( b, "files_id", &id );
@@ -461,7 +461,7 @@ int gridfile_init( gridfs *gfs, bson *meta, gridfile *gfile )
 {
     gfile->gfs = gfs;
     gfile->pos = 0;
-    gfile->meta = ( bson * )bson_malloc( sizeof( bson ) );
+    gfile->meta = bson_create();
     if ( gfile->meta == NULL ) return MONGO_ERROR;
     bson_copy( gfile->meta, meta );
     return MONGO_OK;
