@@ -573,29 +573,21 @@ MONGO_EXPORT time_t bson_oid_generated_time( bson_oid_t *oid ); /* Gives the tim
    ------------------------------ */
 
 /**
- *  Initialize a new bson object. You must initialize each
- *  new bson object using this function.
+ *  Initialize a new bson object and allocates a data buffer.
  *
- *  @note When finished, you must pass the bson object to
- *      bson_destroy( ).
+ *  @note You must initialize each new bson object using this 
+ *  function or one of the other bson_init_ methods. When
+ *  done using the bson object, you must pass it to
+ *  bson_destroy( ).
  */
 MONGO_EXPORT void bson_init( bson *b );
 
 /**
- * Initialize a BSON object, and point its data
- * pointer to the provided char*.
+ * Initialize a BSON object, and allocate a data buffer
+ * of a given size.
  *
- * @param b the BSON object to initialize.
- * @param data the raw BSON data.
- *
- * @return BSON_OK or BSON_ERROR.
- */
-int bson_init_data( bson *b , char *data );
-int bson_init_finished_data( bson *b, char *data ) ;
-
-/**
- * Initialize a BSON object, and set its
- * buffer to the given size.
+ *  @note When done using the bson object, you must pass it
+ *  to bson_destroy( ).
  *
  * @param b the BSON object to initialize.
  * @param size the initial size of the buffer.
@@ -603,6 +595,36 @@ int bson_init_finished_data( bson *b, char *data ) ;
  * @return BSON_OK or BSON_ERROR.
  */
 void bson_init_size( bson *b, int size );
+
+/**
+ * Initialize a BSON object, and set its data
+ * pointer to the provided char*.
+ *
+ * @note When done using the bson object, you must pass
+ *      the object to bson_destroy( ). Alternatively you
+ *      may retain ownership of the data and free it yourself.
+ *
+ * @param b the BSON object to initialize.
+ * @param data the raw BSON data.
+ *
+ * @return BSON_OK or BSON_ERROR.
+ */
+int bson_init_data( bson *b , char *data );
+
+/**
+ * Initialize a BSON object, set its data
+ * pointer to the provided char*, and finalize it.
+ *
+ * @note When done using the bson object, you must pass
+ *      the object to bson_destroy( ). Alternatively you
+ *      may retain ownership of the data and free it yourself.
+ *
+ * @param b the BSON object to initialize.
+ * @param data the raw BSON data.
+ *
+ * @return BSON_OK or BSON_ERROR.
+ */
+int bson_init_finished_data( bson *b, char *data ) ;
 
 /**
  * Grow a bson object.
@@ -626,7 +648,7 @@ int bson_ensure_space( bson *b, const size_t bytesNeeded );
 MONGO_EXPORT int bson_finish( bson *b );
 
 /**
- * Destroy a bson object.
+ * Destroy a bson object and deallocate its data buffer.
  *
  * @param b the bson object to destroy.
  *
@@ -634,13 +656,13 @@ MONGO_EXPORT int bson_finish( bson *b );
 MONGO_EXPORT void bson_destroy( bson *b );
 
 /**
- * Returns a pointer to a static empty BSON object.
+ * Returns a pointer to a static empty BSON object. It is
+ * safe to call bson_destroy( ) on this object.
  *
  * @param obj the BSON object to initialize.
  *
  * @return the empty initialized BSON object.
  */
-/* returns pointer to static empty bson object */
 MONGO_EXPORT bson *bson_empty( bson *obj );
 
 /**
