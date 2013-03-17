@@ -1141,7 +1141,7 @@ MONGO_EXPORT void mongo_write_concern_destroy( mongo_write_concern *write_concer
     if( write_concern->cmd )
         bson_destroy( write_concern->cmd );
 
-    bson_free( write_concern->cmd );
+    bson_dispose( write_concern->cmd );
 }
 
 MONGO_EXPORT void mongo_set_write_concern( mongo *conn,

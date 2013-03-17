@@ -60,7 +60,7 @@ static bson *chunk_new( bson_oid_t id, int chunkNumber,
 
 static void chunk_free( bson *oChunk ) {
     bson_destroy( oChunk );
-    bson_free( oChunk );
+    bson_dispose( oChunk );
 }
 
 int gridfs_init( mongo *client, const char *dbname, const char *prefix,

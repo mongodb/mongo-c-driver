@@ -115,10 +115,10 @@ void test_batch_insert_with_continue( mongo *conn ) {
 
     for( i=0; i<5; i++ ) {
         bson_destroy( objs2[i] );
-        bson_free( objs2[i] );
+        bson_dispose( objs2[i] );
 
         bson_destroy( objs[i] );
-        bson_free( objs[i] );
+        bson_dispose( objs[i] );
     }
 }
 
@@ -185,7 +185,7 @@ void test_update_and_remove( mongo *conn ) {
     bson_destroy( update );
     for( i=0; i<5; i++ ) {
         bson_destroy( objs[i] );
-        bson_free( objs[i] );
+        bson_dispose( objs[i] );
     }
 }
 
