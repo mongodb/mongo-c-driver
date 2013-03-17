@@ -174,6 +174,14 @@ MONGO_EXPORT void  bson_dispose(bson* b);
  * @return the size.
  */
 MONGO_EXPORT int bson_size( const bson *b );
+
+/**
+ * Minimum finished size of an unfinished BSON object.
+ *
+ * @param b the BSON object.
+ *
+ * @return the BSON object's minimum finished size
+ */
 MONGO_EXPORT size_t bson_buffer_size( const bson *b );
 
 /**
