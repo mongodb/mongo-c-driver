@@ -240,7 +240,7 @@ MONGO_EXPORT int mongo_connect( mongo *conn , const char *host, int port );
 
 /**
  * Set up this connection object for connecting to a replica set.
- * To connect, pass the object to mongo_replica_set_connect().
+ * To connect, pass the object to mongo_replica_set_client().
  *
  * @param conn a mongo object.
  * @param name the name of the replica set to connect to.
