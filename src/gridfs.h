@@ -260,13 +260,20 @@ bson_bool_t gridfile_get_boolean( gridfile *gfile,
                                   const char *name );
 
 /**
- *  Returns the metadata of GridFile
- *  @param gfile - the working GridFile
+ *  Returns the metadata of GridFile. Calls bson_empty on metadata
+ *  if none exits.
  *
- *  @return - the metadata of the Gridfile in a bson object
- *            (an empty bson is returned if none exists)
+ * @note When copyData is false, the metadata object becomes invalid
+ *       when gfile is destroyed. For either value of copyData, you
+ *       must pass the metadata object to bson_destroy when you are
+ *       done using it.
+ *
+ *  @param gfile - the working GridFile
+ *  @param metadata an uninitialized BSON object to receive the metadata.
+ *  @param copyData when true, makes a copy of the scope data which will remain
+ *    valid when the grid file is deallocated.
  */
-MONGO_EXPORT void gridfile_get_metadata( gridfile *gfile, bson* out );
+MONGO_EXPORT void gridfile_get_metadata( gridfile *gfile, bson* metadata, bson_bool_t copyData );
 
 /**
  *  Returns the number of chunks in the GridFile
