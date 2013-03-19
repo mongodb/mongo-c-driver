@@ -201,7 +201,7 @@ int test_bson_generic( void ) {
 
    {
        bson scope;
-       bson_iterator_code_scope( &it, &scope );
+       bson_iterator_code_scope_init( &it, &scope, 0 );
        bson_iterator_init( &it2, &scope );
 
        ASSERT( bson_iterator_more( &it2 ) );
