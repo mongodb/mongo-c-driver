@@ -73,7 +73,6 @@ MONGO_EXPORT bson *bson_empty( bson *obj ) {
     bson_init_data( obj, bson_shared_empty_data );
     obj->finished = 1;
     obj->err = 0;
-    obj->errstr = NULL;
     obj->stackPtr = NULL;
     obj->stackSize = 0;
     obj->stackPos = 0;
@@ -105,7 +104,6 @@ static void _bson_reset( bson *b ) {
     b->finished = 0;
     b->stackPos = 0;
     b->err = 0;
-    b->errstr = NULL;
     b->stackPtr = NULL;
     b->stackSize = 0;
 }
