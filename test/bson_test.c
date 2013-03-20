@@ -283,14 +283,13 @@ int test_bson_generic( void ) {
 }
 
 int test_bson_iterator( void ) {
-    bson b[1];
     bson_iterator i[1];
 
-    bson_iterator_init( i, bson_empty( b ) );
+    bson_iterator_init( i, bson_shared_empty( ) );
     bson_iterator_next( i );
     bson_iterator_type( i );
 
-    bson_find( i, bson_empty( b ), "foo" );
+    bson_find( i, bson_shared_empty( ), "foo" );
 
     return 0;
 }

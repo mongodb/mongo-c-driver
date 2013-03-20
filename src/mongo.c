@@ -823,12 +823,11 @@ static int mongo_check_last_error( mongo *conn, const char *ns,
                                    mongo_write_concern *write_concern ) {
     int ret = MONGO_OK;
     bson response = {NULL, 0};
-    bson fields;
     bson_iterator it;
     int res = 0;
     char *cmd_ns = mongo_ns_to_cmd_db( ns );
 
-    res = mongo_find_one( conn, cmd_ns, write_concern->cmd, bson_empty( &fields ), &response );
+    res = mongo_find_one( conn, cmd_ns, write_concern->cmd, bson_shared_empty( ), &response );
     bson_free( cmd_ns );
 
     if( res != MONGO_OK )
@@ -1167,7 +1166,6 @@ MONGO_EXPORT void mongo_write_concern_destroy( mongo_write_concern *write_concer
 
 static int mongo_cursor_op_query( mongo_cursor *cursor ) {
     int res;
-    bson empty;
     char *data;
     mongo_message *mm;
     bson temp;
@@ -1178,12 +1176,12 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
 
     /* Set up default values for query and fields, if necessary. */
     if( ! cursor->query )
-        cursor->query = bson_empty( &empty );
+        cursor->query = bson_shared_empty( );
     else if( mongo_cursor_bson_valid( cursor, cursor->query ) != MONGO_OK )
         return MONGO_ERROR;
 
     if( ! cursor->fields )
-        cursor->fields = bson_empty( &empty );
+        cursor->fields = bson_shared_empty( );
     else if( mongo_cursor_bson_valid( cursor, cursor->fields ) != MONGO_OK )
         return MONGO_ERROR;
 
@@ -1578,7 +1576,6 @@ MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *com
                                     bson *out ) {
     int ret = MONGO_OK;
     bson response = {NULL, 0};
-    bson fields;
     size_t sl = strlen( db );
     char *ns = bson_malloc( sl + 5 + 1 ); /* ".$cmd" + nul */
     int res, success = 0;
@@ -1586,7 +1583,7 @@ MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *com
     strcpy( ns, db );
     strcpy( ns+sl, ".$cmd" );
 
-    res = mongo_find_one( conn, ns, command, bson_empty( &fields ), &response );
+    res = mongo_find_one( conn, ns, command, bson_shared_empty( ), &response );
     bson_free( ns );
 
     if( res != MONGO_OK )

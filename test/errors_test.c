@@ -235,7 +235,7 @@ int test_get_last_error_commands( void ) {
     bson_destroy( &obj );
 
     /* should clear lasterror but not preverror */
-    mongo_find_one( conn, ns, bson_empty( &obj ), bson_empty( &obj ), NULL );
+    mongo_find_one( conn, ns, bson_shared_empty( ), bson_shared_empty( ), NULL );
 
     ASSERT( mongo_cmd_get_prev_error( conn, db, NULL ) == MONGO_ERROR );
     ASSERT( mongo_cmd_get_last_error( conn, db, NULL ) == MONGO_OK );

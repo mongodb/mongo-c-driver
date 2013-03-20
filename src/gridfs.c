@@ -545,7 +545,7 @@ MONGO_EXPORT void gridfile_get_metadata( gridfile *gfile, bson* out, bson_bool_t
     if ( bson_find( &it, gfile->meta, "metadata" ) )
         bson_iterator_subobject_init( &it, out, copyData );
     else
-        bson_empty( out );
+        bson_init_empty( out );
 }
 
 MONGO_EXPORT int gridfile_get_numchunks( gridfile *gfile ) {
@@ -588,9 +588,7 @@ MONGO_EXPORT void gridfile_get_chunk( gridfile *gfile, int n, bson* out ) {
                              &query, NULL, out ) == MONGO_OK );
     bson_destroy( &query );
     if (!result) {
-        bson empty;
-        bson_empty(&empty);
-        bson_copy(out, &empty);
+        bson_init_empty( out );
     }
 }
 
