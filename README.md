@@ -46,8 +46,8 @@ To compile and run the tests:
 # Error Handling
 Most functions return MONGO_OK or BSON_OK on success and MONGO_ERROR or BSON_ERROR on failure.
 Specific error codes and error strings are then stored in the `err` and `errstr` fields of the
-`mongo` and `bson` objects. It is the client's responsibility to check for errors and handle
-them appropriately.
+`mongo` objects the `err` field of the `bson` objects. It is the client's responsibility to check
+for errors and handle them appropriately.
 
 # ISSUES
 
