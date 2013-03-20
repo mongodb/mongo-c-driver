@@ -168,8 +168,8 @@ typedef struct {
  * Allocate memory for a new BSON object.
  *
  * @note After using this function, you must initialize the object
- * using bson_init_finished_data( ), bson_init( ), or one of the other
- * init functions.
+ * using bson_init_finished_data( ), bson_init_empty( ), bson_init( ),
+ * or one of the other init functions.
  *
  * @return a new BSON object.
  */
@@ -469,7 +469,7 @@ MONGO_EXPORT const char *bson_iterator_code( const bson_iterator *i );
 
 /**
  * Get the code scope value of the BSON object currently pointed to
- * by the iterator. Calls bson_empty on scope if current object is
+ * by the iterator. Calls bson_init_empty on scope if current object is
  * not BSON_CODEWSCOPE.
  *
  * @note When copyData is false, the scope becomes invalid when the
@@ -707,14 +707,26 @@ MONGO_EXPORT void bson_destroy( bson *b );
 
 /**
  * Initialize a BSON object to an emoty object with a shared, static data
- * buffer, and returns it. It is safe to call bson_destroy( ) on this
- * object.
+ * buffer, and returns it.
+ *
+ * @note You must NOT modify this object's data. It is safe though not
+ * required to call bson_destroy( ) on this object.
  *
  * @param obj the BSON object to initialize.
  *
- * @return the empty initialized BSON object.
+ * @return BSON_OK
  */
-MONGO_EXPORT const bson *bson_empty( bson *obj );
+MONGO_EXPORT bson_bool_t bson_init_empty( bson *obj );
+
+/**
+ * Return a pointer to an empty, shared, static BSON object.
+ *
+ * @note This object is owned by the driver. You must NOT modify it
+ * and must NOT call bson_destroy( ) on it.
+ *
+ * @return the shared initialized BSON object.
+ */
+MONGO_EXPORT const bson *bson_shared_empty( );
 
 /**
  * Make a complete copy of the a BSON object.

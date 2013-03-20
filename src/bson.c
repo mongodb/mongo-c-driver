@@ -33,8 +33,8 @@ const int initialBufferSize = 128;
 /* only need one of these */
 static const int zero = 0;
 
-/* Static data to use with bson_empty( ) */
-static char *bson_shared_empty_data = "\005\0\0\0\0";
+/* Static data to use with bson_init_empty( ) and bson_shared_empty( ) */
+static char bson_shared_empty_data[] = {5,0,0,0,0};
 
 /* Custom standard function pointers. */
 void *( *bson_malloc_func )( size_t ) = malloc;
@@ -94,9 +94,14 @@ int bson_init_finished_data_with_copy( bson *b, const char *data ) {
     return BSON_OK;
 }
 
-MONGO_EXPORT const bson *bson_empty( bson *obj ) {
+MONGO_EXPORT bson_bool_t bson_init_empty( bson *obj ) {
     bson_init_finished_data( obj, bson_shared_empty_data, 0 );
-    return obj;
+    return BSON_OK;
+}
+
+MONGO_EXPORT const bson *bson_shared_empty( ) {
+    static const bson shared_empty = { bson_shared_empty_data, bson_shared_empty_data, 128, 1, 0, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 0, 0, 0, 0 };
+    return &shared_empty;
 }
 
 MONGO_EXPORT int bson_copy( bson *out, const bson *in ) {
@@ -540,7 +545,7 @@ MONGO_EXPORT void bson_iterator_code_scope_init( const bson_iterator *i, bson *s
             bson_init_finished_data( scope, (char *)scopeData, 0 );
     }
     else {
-        bson_empty( scope );
+        bson_init_empty( scope );
     }
 }
 
