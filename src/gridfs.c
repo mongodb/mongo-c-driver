@@ -30,7 +30,7 @@ MONGO_EXPORT gridfs* gridfs_create( void ) {
 }
 
 MONGO_EXPORT void gridfs_dispose(gridfs* gfs) {
-    free(gfs);
+    bson_free(gfs);
 }
 
 MONGO_EXPORT gridfile* gridfile_create( void ) {
@@ -38,7 +38,7 @@ MONGO_EXPORT gridfile* gridfile_create( void ) {
 }
 
 MONGO_EXPORT void gridfile_dispose(gridfile* gf) {
-    free(gf);
+    bson_free(gf);
 }
 
 MONGO_EXPORT void gridfile_get_descriptor(gridfile* gf, bson* out) {
