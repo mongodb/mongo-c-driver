@@ -425,7 +425,7 @@ MONGO_EXPORT void mongo_init_sockets( void ) {
 /* WC1 is completely static */
 static char WC1_data[] = {23,0,0,0,16,103,101,116,108,97,115,116,101,114,114,111,114,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0};
 static bson WC1_cmd = {
-    WC1_data, WC1_data, 128, 1, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 0, 0, 0, 0
+    WC1_data, WC1_data, 128, 1, 0, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 0, 0, 0, 0
 };
 static mongo_write_concern WC1 = { 1, 0, 0, 0, 0, &WC1_cmd }; /* w = 1 */
 
@@ -1220,7 +1220,7 @@ static int mongo_cursor_op_query( mongo_cursor *cursor ) {
     }
 
     if( cursor->reply->fields.num == 1 ) {
-        bson_init_data( &temp, &cursor->reply->objs );
+        bson_init_finished_data( &temp, &cursor->reply->objs, 0 );
         if( bson_find( &it, &temp, "$err" ) ) {
             mongo_set_last_error( cursor->conn, &it, &temp );
             cursor->err = MONGO_CURSOR_QUERY_FAIL;
@@ -1402,7 +1402,7 @@ MONGO_EXPORT int mongo_cursor_next( mongo_cursor *cursor ) {
 
     /* first */
     if ( cursor->current.data == NULL ) {
-        bson_init_finished_data( &cursor->current, &cursor->reply->objs );
+        bson_init_finished_data( &cursor->current, &cursor->reply->objs, 0 );
         return MONGO_OK;
     }
 
@@ -1423,10 +1423,10 @@ MONGO_EXPORT int mongo_cursor_next( mongo_cursor *cursor ) {
                 return MONGO_ERROR;
         }
 
-        bson_init_finished_data( &cursor->current, &cursor->reply->objs );
+        bson_init_finished_data( &cursor->current, &cursor->reply->objs, 0 );
     }
     else {
-        bson_init_finished_data( &cursor->current, next_object );
+        bson_init_finished_data( &cursor->current, next_object, 0 );
     }
 
     return MONGO_OK;

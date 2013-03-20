@@ -539,11 +539,11 @@ bson_bool_t gridfile_get_boolean( gridfile *gfile, const char *name ) {
     return bson_iterator_bool( &it );
 }
 
-MONGO_EXPORT void gridfile_get_metadata( gridfile *gfile, bson* out ) {
+MONGO_EXPORT void gridfile_get_metadata( gridfile *gfile, bson* out, bson_bool_t copyData ) {
     bson_iterator it;
 
     if ( bson_find( &it, gfile->meta, "metadata" ) )
-        bson_iterator_subobject( &it, out );
+        bson_iterator_subobject_init( &it, out, copyData );
     else
         bson_empty( out );
 }
