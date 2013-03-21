@@ -260,7 +260,7 @@ bson_bool_t gridfile_get_boolean( gridfile *gfile,
                                   const char *name );
 
 /**
- *  Returns the metadata of GridFile. Calls bson_empty on metadata
+ *  Returns the metadata of GridFile. Calls bson_init_empty on metadata
  *  if none exits.
  *
  * @note When copyData is false, the metadata object becomes invalid
