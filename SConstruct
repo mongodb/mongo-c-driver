@@ -274,7 +274,7 @@ def run_tests( root, tests, env, alias ):
         test_alias = env.Alias(alias, [test], test[0].abspath + ' 2> ' + os.path.devnull)
         AlwaysBuild(test_alias)
 
-tests = Split("write_concern commands sizes resize endian_swap bson bson_subobject simple update errors "
+tests = Split("write_concern commands sizes resize endian_swap bson_alloc bson bson_subobject simple update errors "
 "count_delete auth gridfs validate examples helpers oid functions cursors")
 if os.sys.platform != 'win32':
     tests.append("bcon")
