@@ -198,7 +198,7 @@ MONGO_EXPORT void bson_dispose( bson* b );
 int bson_init_finished_data( bson *b, char *data, bson_bool_t ownsData );
 
 /**
- * Initialize a BSON object for reading and copies finalized
+ * Initialize a BSON object for reading and copy finalized
  * BSON data from the provided char*.
  *
  * @note When done using the bson object, you must pass
@@ -707,7 +707,7 @@ MONGO_EXPORT void bson_destroy( bson *b );
 
 /**
  * Initialize a BSON object to an emoty object with a shared, static data
- * buffer, and returns it.
+ * buffer.
  *
  * @note You must NOT modify this object's data. It is safe though not
  * required to call bson_destroy( ) on this object.
