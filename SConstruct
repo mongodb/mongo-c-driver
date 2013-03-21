@@ -88,7 +88,7 @@ env.AlwaysBuild("docs")
 PLATFORM_TESTS = []
 NET_LIB = "src/env.c"
 if GetOption('standard_env'):
-    env.Append( CPPFLAGS=" -D_POSIX_SOURCE" )
+    env.Append( CPPFLAGS=" -DMONGO_ENV_STANDARD " )
 elif os.sys.platform in ["darwin", "linux2"]:
     PLATFORM_TESTS = [ "env_posix", "unix_socket" ]
 elif 'win32' == os.sys.platform:
