@@ -2,7 +2,6 @@
 #include "md5.h"
 #include "mongo.h"
 #include "gridfs.h"
-#include "prepostChunkProcessing.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -17,6 +16,8 @@
 #define LOWER 1024*128
 #define DELTA 1024*128
 #define READ_WRITE_BUF_SIZE 10 * 1024
+
+#define GRIDFILE_COMPRESS 2
 
 void fill_buffer_randomly( char *data, int64_t length ) {
     int64_t i;
