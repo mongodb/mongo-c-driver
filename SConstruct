@@ -115,6 +115,11 @@ if os.sys.platform in ["darwin", "linux2"]:
 elif 'win32' == os.sys.platform:
     env.Append( CPPFLAGS="-DMONGO_HAVE_STDINT" )
     env.Append( LIBS='ws2_32' )
+    if env['CC'] == 'gcc':
+        if not GetOption('standard_env'):
+            env.Append( CPPFLAGS=" -D_WIN32_WINNT=0x0501 " )
+        if GetOption('optimize'):
+            env.Append( CPPFLAGS=" -O3 " )
 
 #we shouldn't need these options in c99 mode
 if not GetOption('use_c99'):
