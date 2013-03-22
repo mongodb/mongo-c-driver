@@ -99,7 +99,7 @@ MONGO_EXPORT bson_bool_t bson_init_empty( bson *obj ) {
     return BSON_OK;
 }
 
-MONGO_EXPORT const bson *bson_shared_empty( ) {
+MONGO_EXPORT const bson *bson_shared_empty( void ) {
     static const bson shared_empty = { bson_shared_empty_data, bson_shared_empty_data, 128, 1, 0, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 0, 0, 0, 0 };
     return &shared_empty;
 }
