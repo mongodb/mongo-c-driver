@@ -133,6 +133,8 @@ typedef struct {
     bson_bool_t first;
 } bson_iterator;
 
+#define INIT_ITERATOR {NULL, 0}
+
 typedef struct {
     char *data;    /**< Pointer to a block of data in this BSON object. */
     char *cur;     /**< Pointer to the current position. */
@@ -145,6 +147,8 @@ typedef struct {
     size_t * stackPtr;    /**< Pointer to the current stack */
     int stackSize;        /**< Number of elements in the current stack */
 } bson;
+
+#define INIT_BSON {NULL, NULL}
 
 #pragma pack(1)
 typedef union {

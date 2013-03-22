@@ -328,7 +328,7 @@ void test_random_write2( void ) {
     fill_buffer_randomly( buf, ( int64_t )LARGE );
     memset( zeroedbuf, 0, LARGE ); 
 
-    bson_empty( &meta );
+    bson_init_empty( &meta );
 
     gridfs_init( conn, "test", "fs", gfs );
 
@@ -487,8 +487,6 @@ int main( void ) {
 /* See https://jira.mongodb.org/browse/CDRIVER-126
  * on why we exclude this test from running on WIN32 */
  
-    initPrepostChunkProcessing(0);
-
     test_basic();
     test_streaming();
     test_random_write();
