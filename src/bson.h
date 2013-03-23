@@ -730,7 +730,7 @@ MONGO_EXPORT bson_bool_t bson_init_empty( bson *obj );
  *
  * @return the shared initialized BSON object.
  */
-MONGO_EXPORT const bson *bson_shared_empty( );
+MONGO_EXPORT const bson *bson_shared_empty( void );
 
 /**
  * Make a complete copy of the a BSON object.
