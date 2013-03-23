@@ -48,7 +48,7 @@ int test_bson_empty( void ) {
     ASSERT( bson_size(empty1) > 0 );
 
     ALLOW_AND_REQUIRE_MALLOC_BEGIN;
-    bson * empty2 = bson_create();
+    bson * empty2 = bson_alloc();
     ALLOW_AND_REQUIRE_MALLOC_END;
     memset( empty2, 0, sizeof( bson) );
     bson_init_empty( empty2 );
@@ -56,7 +56,7 @@ int test_bson_empty( void ) {
     ASSERT( bson_size( empty2 ) > 0 );
     bson_destroy( empty2 );
     ALLOW_AND_REQUIRE_FREE_BEGIN;
-    bson_dispose( empty2 );
+    bson_dealloc( empty2 );
     ALLOW_AND_REQUIRE_FREE_END;
 
     return 0;

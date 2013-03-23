@@ -177,14 +177,14 @@ typedef struct {
  *
  * @return a new BSON object.
  */
-MONGO_EXPORT bson* bson_create( void );
+MONGO_EXPORT bson* bson_alloc( void );
 
 /**
  * Deallocate a BSON object.
  *
  * @note You must call bson_destroy( ) before calling this function.
  */
-MONGO_EXPORT void bson_dispose( bson* b );
+MONGO_EXPORT void bson_dealloc( bson* b );
 
 /**
  * Initialize a BSON object for reading and set its data
@@ -267,7 +267,7 @@ MONGO_EXPORT void bson_print_raw( const char *bson , int depth );
 MONGO_EXPORT bson_type bson_find( bson_iterator *it, const bson *obj, const char *name );
 
 
-MONGO_EXPORT bson_iterator* bson_iterator_create( void );
+MONGO_EXPORT bson_iterator* bson_iterator_alloc( void );
 MONGO_EXPORT void bson_iterator_dispose(bson_iterator*);
 /**
  * Initialize a bson_iterator.

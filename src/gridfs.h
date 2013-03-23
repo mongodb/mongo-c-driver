@@ -70,10 +70,10 @@ typedef int ( *gridfs_preProcessingFunc )( void** targetBuf, size_t* targetLen, 
 typedef int ( *gridfs_postProcessingFunc )( void** targetBuf, size_t* targetLen, void* srcData, size_t srcLen, int flags );
 typedef size_t ( *gridfs_pendingDataNeededSizeFunc ) (int flags);
 
-MONGO_EXPORT gridfs* gridfs_create( void );
-MONGO_EXPORT void gridfs_dispose(gridfs* gfs);
+MONGO_EXPORT gridfs* gridfs_alloc( void );
+MONGO_EXPORT void gridfs_dealloc(gridfs* gfs);
 MONGO_EXPORT gridfile* gridfile_create( void );
-MONGO_EXPORT void gridfile_dispose(gridfile* gf);
+MONGO_EXPORT void gridfile_dealloc(gridfile* gf);
 MONGO_EXPORT void gridfile_get_descriptor(gridfile* gf, bson* out);
 MONGO_EXPORT void setBufferProcessingProcs(gridfs_preProcessingFunc preProcessFunc, gridfs_postProcessingFunc postProcessFunc, gridfs_pendingDataNeededSizeFunc pendingDataNeededSizeFunc);
 

@@ -62,12 +62,12 @@ static int ( *oid_inc_func )( void )  = NULL;
    READING
    ------------------------------ */
 
-MONGO_EXPORT bson* bson_create( void ) {
-    return (bson*)bson_malloc(sizeof(bson));
+MONGO_EXPORT bson* bson_alloc( void ) {
+    return ( bson* )bson_malloc( sizeof( bson ) );
 }
 
-MONGO_EXPORT void bson_dispose(bson* b) {
-    bson_free(b);
+MONGO_EXPORT void bson_dealloc( bson* b ) {
+    bson_free( b );
 }
 
 /* When passed a char * of a BSON data block, returns its reported size */
@@ -289,12 +289,12 @@ MONGO_EXPORT void bson_print_raw( const char *data , int depth ) {
    ITERATOR
    ------------------------------ */
 
-MONGO_EXPORT bson_iterator* bson_iterator_create( void ) {
-    return ( bson_iterator* )malloc( sizeof( bson_iterator ) );
+MONGO_EXPORT bson_iterator* bson_iterator_alloc( void ) {
+    return ( bson_iterator* )bson_malloc( sizeof( bson_iterator ) );
 }
 
-MONGO_EXPORT void bson_iterator_dispose(bson_iterator* i) {
-    free(i);
+MONGO_EXPORT void bson_iterator_dealloc( bson_iterator* i ) {
+    bson_free( i );
 }
 
 MONGO_EXPORT void bson_iterator_init( bson_iterator *i, const bson *b ) {
