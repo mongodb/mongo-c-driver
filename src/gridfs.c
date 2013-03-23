@@ -16,8 +16,8 @@
  */
 
 	
-#if _MSC_VER && ! _CRT_SECURE_NO_WARNINGS   
-  #define _CRT_SECURE_NO_WARNINGS  
+#if _MSC_VER && ! _CRT_SECURE_NO_WARNINGS
+  #define _CRT_SECURE_NO_WARNINGS
 #endif
 
 #include "gridfs.h"
@@ -25,6 +25,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+#ifndef _MSC_VER
+char *_strupr(char *str)
+{
+   char *s = str;
+   while (*s)
+        *s++ = toupper((unsigned char)*s);
+   return str;
+}
+char *_strlwr(char *str)
+{
+   char *s = str;
+   while (*s)
+        *s++ = tolower((unsigned char)*s);
+   return str;
+}
+#endif
 
 /* Memory allocation functions */
 MONGO_EXPORT gridfs *gridfs_create( void ) {
@@ -1138,9 +1155,7 @@ MONGO_EXPORT gridfs_offset gridfile_truncate(gridfile *gfile, gridfs_offset newS
 
   int deleteFromChunk;
 
-  if( newSize < 0 ) {
-    newSize = 0;
-  } else if ( newSize > gridfile_get_contentlength( gfile ) ) {
+  if ( newSize > gridfile_get_contentlength( gfile ) ) {
     return gridfile_seek( gfile, gridfile_get_contentlength( gfile ) );    
   }
   if( newSize > 0 ) {
@@ -1172,10 +1187,6 @@ MONGO_EXPORT gridfs_offset gridfile_expand(gridfile *gfile, gridfs_offset bytesT
   void* buf;
 
   fileSize = gridfile_get_contentlength( gfile );
-  if( bytesToExpand < 0 ) {
-    gridfile_seek( gfile, fileSize );
-    return fileSize;
-  }
   newSize = fileSize + bytesToExpand;
   curPos = fileSize;
   bufSize = gridfile_get_chunksize ( gfile );
