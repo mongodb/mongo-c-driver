@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <assert.h>
 
 /* Memory allocation functions */
@@ -204,9 +205,11 @@ MONGO_EXPORT void gridfs_set_caseInsensitive(gridfs *gfs, bson_bool_t newValue){
 }
 
 static char* upperFileName(const char* filename){
-  char* upperName = (char*) bson_malloc((int)strlen( filename ) + 1 );
-  strcpy(upperName, filename);
-  _strupr(upperName);
+  char *upperName = (char*) bson_malloc((int)strlen( filename ) + 1 );
+  const char *in = filename;
+  char *out = upperName;
+  while (*in) *out++ = toupper(*in++);
+  *out = *in;
   return upperName;
 }
 

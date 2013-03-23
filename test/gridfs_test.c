@@ -4,6 +4,7 @@
 #include "gridfs.h"
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <limits.h>
 #ifndef _WIN32
@@ -18,6 +19,12 @@
 #define READ_WRITE_BUF_SIZE 10 * 1024
 
 #define GRIDFILE_COMPRESS 2
+
+#ifdef _MSC_VER
+#define gridfs_test_unlink _unlink
+#else
+#define gridfs_test_unlink unlink
+#endif
 
 void fill_buffer_randomly( char *data, int64_t length ) {
     int64_t i;
@@ -67,8 +74,10 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     ASSERT( memcmp( data_before, data_after, (size_t)length ) == 0 );
 
     lowerName = (char*) bson_malloc( (int)strlen( filename ) + 1);
-    strcpy( lowerName, filename);
-    _strlwr( lowerName );
+    const char *in = filename;
+    char *out = lowerName;
+    while (*in) *out++ = tolower(*in++);
+    *out = *in;
     ASSERT( strcmp( gridfile_get_filename( gfile ), lowerName ) == 0 );
     bson_free( lowerName );
 
@@ -117,7 +126,7 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     gridfile_destroy( gfile );
     gridfs_remove_filename( gfs, filename );
     free( data_after );
-    _unlink( "output" );
+    gridfs_test_unlink( "output" );
 }
 
 void test_basic( void ) {
@@ -163,8 +172,8 @@ void test_basic( void ) {
     free( data_before );
 
     /* Clean up files. */
-    _unlink( "input-file" );
-    _unlink( "output" );
+    gridfs_test_unlink( "input-file" );
+    gridfs_test_unlink( "output" );
 }
 
 void test_streaming( void ) {
@@ -298,8 +307,8 @@ void test_random_write() {
     free( buf );
 
     /* Clean up files. */
-    _unlink( "input-file" );
-    _unlink( "output" );   
+    gridfs_test_unlink( "input-file" );
+    gridfs_test_unlink( "output" );   
 }
 
 void test_random_write2( void ) {
