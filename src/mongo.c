@@ -26,13 +26,13 @@
 #include <string.h>
 #include <assert.h>
 
-MONGO_EXPORT mongo* mongo_create( void ) {
-    return (mongo*)bson_malloc(sizeof(mongo));
+MONGO_EXPORT mongo* mongo_alloc( void ) {
+    return ( mongo* )bson_malloc( sizeof( mongo ) );
 }
 
 
-MONGO_EXPORT void mongo_dispose(mongo* conn) {
-    bson_free(conn);
+MONGO_EXPORT void mongo_dealloc(mongo* conn) {
+    bson_free( conn );
 }
 
 MONGO_EXPORT int mongo_get_err(mongo* conn) {
@@ -95,23 +95,23 @@ MONGO_EXPORT const char* mongo_get_host(mongo* conn, int i) {
     return 0;
 }
 
-MONGO_EXPORT mongo_write_concern* mongo_write_concern_create( void ) {
-    return (mongo_write_concern*)bson_malloc(sizeof(mongo_write_concern));
+MONGO_EXPORT mongo_write_concern* mongo_write_concern_alloc( void ) {
+    return ( mongo_write_concern* )bson_malloc( sizeof( mongo_write_concern ) );
 }
 
 
-MONGO_EXPORT void mongo_write_concern_dispose(mongo_write_concern* write_concern) {
-    bson_free(write_concern);
+MONGO_EXPORT void mongo_write_concern_dealloc( mongo_write_concern* write_concern ) {
+    bson_free( write_concern );
 }
 
 
-MONGO_EXPORT mongo_cursor* mongo_cursor_create( void ) {
-    return (mongo_cursor*)bson_malloc(sizeof(mongo_cursor));
+MONGO_EXPORT mongo_cursor* mongo_cursor_alloc( void ) {
+    return ( mongo_cursor* )bson_malloc( sizeof( mongo_cursor ) );
 }
 
 
-MONGO_EXPORT void mongo_cursor_dispose(mongo_cursor* cursor) {
-    bson_free(cursor);
+MONGO_EXPORT void mongo_cursor_dealloc( mongo_cursor* cursor ) {
+    bson_free( cursor );
 }
 
 
@@ -1094,7 +1094,7 @@ MONGO_EXPORT int mongo_write_concern_finish( mongo_write_concern *write_concern 
         command = write_concern->cmd;
     }
     else
-        command = bson_create();
+        command = bson_alloc();
 
     if( !command ) {
         return MONGO_ERROR;
@@ -1142,7 +1142,7 @@ MONGO_EXPORT void mongo_write_concern_destroy( mongo_write_concern *write_concer
 
     if( write_concern->cmd ) {
         bson_destroy( write_concern->cmd );
-        bson_dispose( write_concern->cmd );
+        bson_dealloc( write_concern->cmd );
         write_concern->cmd = NULL;
     }
 }
@@ -1282,7 +1282,7 @@ static int mongo_cursor_get_more( mongo_cursor *cursor ) {
 MONGO_EXPORT mongo_cursor *mongo_find( mongo *conn, const char *ns, const bson *query,
                                        const bson *fields, int limit, int skip, int options ) {
 
-    mongo_cursor *cursor = mongo_cursor_create();
+    mongo_cursor *cursor = mongo_cursor_alloc();
     mongo_cursor_init( cursor, conn, ns );
     cursor->flags |= MONGO_CURSOR_MUST_FREE;
 

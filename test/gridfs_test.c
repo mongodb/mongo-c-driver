@@ -279,7 +279,7 @@ void test_random_write() {
 
         gridfile_writer_done(gfile);
         ASSERT(gfile->pos == j + n);
-        gridfile_dispose(gfile);
+        gridfile_dealloc(gfile);
         test_gridfile( gfs, data_before, j + n > i ? j + n : i, "input-buffer", "text/html" );
 
         /* Input from file */

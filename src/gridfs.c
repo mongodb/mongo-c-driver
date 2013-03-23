@@ -48,13 +48,12 @@ char *_strlwr(char *str)
 #endif
 
 /* Memory allocation functions */
-MONGO_EXPORT gridfs *gridfs_create( void ) {
-  gridfs* GridFs = (gridfs*)bson_malloc(sizeof(gridfs));
-  return GridFs;
+MONGO_EXPORT gridfs *gridfs_alloc( void ) {
+  return ( gridfs* )bson_malloc( sizeof( gridfs ) );
 }
 
-MONGO_EXPORT void gridfs_dispose(gridfs *gfs) {  
-  bson_free(gfs);
+MONGO_EXPORT void gridfs_dealloc( gridfs *gfs ) {
+  bson_free( gfs );
 }
 
 MONGO_EXPORT gridfile *gridfile_create( void ) {
@@ -63,8 +62,8 @@ MONGO_EXPORT gridfile *gridfile_create( void ) {
   return gfile;
 }
 
-MONGO_EXPORT void gridfile_dispose(gridfile *gf) {
-  bson_free(gf);
+MONGO_EXPORT void gridfile_dealloc( gridfile *gf ) {
+  bson_free( gf );
 }
 
 MONGO_EXPORT void gridfile_get_descriptor(gridfile *gf, bson *out) {
@@ -94,7 +93,7 @@ static gridfs_postProcessingFunc postProcessChunk = defaultPostProcessChunk;
 static gridfs_pendingDataNeededSizeFunc pendingDataNeededSize = defaultDendingDataNeededSize;
 
 static bson *chunk_new(bson_oid_t id, int chunkNumber, void** dataBuf, void* srcData, size_t len, int flags ) {
-  bson *b = (bson*)bson_malloc(sizeof(bson));
+  bson *b = bson_alloc();
   size_t dataBufLen = 0;
 
   if( preProcessChunk( dataBuf, &dataBufLen, srcData, len, flags) != 0 ) {
@@ -111,7 +110,7 @@ static bson *chunk_new(bson_oid_t id, int chunkNumber, void** dataBuf, void* src
 static void chunk_free(bson *oChunk) {
   if( oChunk ) {
     bson_destroy(oChunk);
-    bson_free(oChunk);
+    bson_dealloc(oChunk);
   }
 }
 /* End of memory allocation functions */
@@ -504,7 +503,7 @@ MONGO_EXPORT int gridfile_init(gridfs *gfs, bson *meta, gridfile *gfile){
   gfile->pos = 0;
   gfile->pending_len = 0;
   gfile->pending_data = NULL;
-  gfile->meta = (bson*)bson_malloc(sizeof(bson));
+  gfile->meta = bson_alloc();
   if (gfile->meta == NULL) {
     return MONGO_ERROR;
   } if( meta ) { 
@@ -637,7 +636,7 @@ MONGO_EXPORT void gridfile_destroy(gridfile *gfile)
 {
   if( gfile->meta ) { 
     bson_destroy(gfile->meta);
-    bson_free(gfile->meta);
+    bson_dealloc(gfile->meta);
     gfile->meta = NULL;
   }  
 }
