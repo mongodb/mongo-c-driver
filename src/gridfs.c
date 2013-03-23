@@ -225,7 +225,7 @@ static char* upperFileName(const char* filename){
   char *upperName = (char*) bson_malloc((int)strlen( filename ) + 1 );
   const char *in = filename;
   char *out = upperName;
-  while (*in) *out++ = toupper(*in++);
+  while (*in) *out++ = (char)toupper(*in++);
   *out = *in;
   return upperName;
 }
