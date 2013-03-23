@@ -357,7 +357,9 @@ void test_example_wikipedia_bson(size_t iterations) {
 }
 
 void test_example_wikipedia( void ) {
+    /*
     bson b[1];
+    */
     /*
     http://en.wikipedia.org/wiki/JSON
     {
