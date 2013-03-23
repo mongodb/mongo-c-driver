@@ -1562,6 +1562,7 @@ MONGO_EXPORT double mongo_count( mongo *conn, const char *db, const char *coll, 
 MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *command,
                                     bson *out ) {
     bson response = {NULL, 0};
+    bson_iterator it;
     size_t sl = strlen( db );
     char *ns = bson_malloc( sl + 5 + 1 ); /* ".$cmd" + nul */
     int res = 0;
@@ -1574,8 +1575,7 @@ MONGO_EXPORT int mongo_run_command( mongo *conn, const char *db, const bson *com
 
     if( res != MONGO_OK )
         return MONGO_ERROR;
-
-    bson_iterator it;
+    
     if( ! bson_find( &it, &response, "ok" ) ||
         ! bson_iterator_bool( &it ) ) {
         conn->err = MONGO_COMMAND_FAILED;
@@ -1747,6 +1747,7 @@ MONGO_EXPORT bson_bool_t mongo_cmd_authenticate( mongo *conn, const char *db, co
     bson cmd;
     const char *nonce;
     int result;
+    bson_iterator it;
 
     mongo_md5_state_t st;
     mongo_md5_byte_t digest[16];
@@ -1754,8 +1755,7 @@ MONGO_EXPORT bson_bool_t mongo_cmd_authenticate( mongo *conn, const char *db, co
 
     if( mongo_simple_int_command( conn, db, "getnonce", 1, &from_db ) != MONGO_OK )
         return MONGO_ERROR;
-
-    bson_iterator it;
+    
     bson_find( &it, &from_db, "nonce" );
     nonce = bson_iterator_string( &it );
 
