@@ -15,8 +15,8 @@
  *    limitations under the License.
  */
 
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
+#if _MSC_VER && ! _CRT_SECURE_NO_WARNINGS
+  #define _CRT_SECURE_NO_WARNINGS
 #endif
 
 #include "mongo.h"
