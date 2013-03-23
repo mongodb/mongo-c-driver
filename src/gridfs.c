@@ -31,15 +31,19 @@
 char *_strupr(char *str)
 {
    char *s = str;
-   while (*s)
-        *s++ = toupper((unsigned char)*s);
+   while (*s) {
+        *s = toupper((unsigned char)*s);
+        ++s;
+      }
    return str;
 }
 char *_strlwr(char *str)
 {
    char *s = str;
-   while (*s)
-        *s++ = tolower((unsigned char)*s);
+   while (*s) {
+        *s = tolower((unsigned char)*s);
+        ++s;
+   }
    return str;
 }
 #endif
