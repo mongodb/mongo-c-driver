@@ -59,6 +59,8 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     char *data_after = (char*)bson_malloc( LARGE );
     int truncBytes;
     char* lowerName;
+    const char *in = filename;
+    char *out;
 
     ASSERT(gridfs_find_filename( gfs, filename, gfile ) == MONGO_OK);
     ASSERT( gridfile_exists( gfile ) );
@@ -73,9 +75,8 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     gridfile_read( gfile, length, data_after );
     ASSERT( memcmp( data_before, data_after, (size_t)length ) == 0 );
 
-    lowerName = (char*) bson_malloc( (int)strlen( filename ) + 1);
-    const char *in = filename;
-    char *out = lowerName;
+    lowerName = (char*) bson_malloc( (int)strlen( filename ) + 1);    
+    out = lowerName;
     while (*in) *out++ = tolower(*in++);
     *out = *in;
     ASSERT( strcmp( gridfile_get_filename( gfile ), lowerName ) == 0 );
