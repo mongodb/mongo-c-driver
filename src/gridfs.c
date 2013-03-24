@@ -126,31 +126,10 @@ MONGO_EXPORT void setBufferProcessingProcs(gridfs_preProcessingFunc preProcessFu
 /* gridfs methods */
 /* -------------- */
 
-static void gridfs_freeFields( gridfs *gfs ) {
-  if( gfs->dbname ) {
-    bson_free((char*)gfs->dbname);
-    gfs->dbname = NULL;
-  }
-  if( gfs->prefix ) {
-    bson_free((char*)gfs->prefix);
-    gfs->prefix = NULL;
-  }
-  if( gfs->files_ns ) {
-    bson_free((char*)gfs->files_ns);
-    gfs->files_ns = NULL;
-  }
-  if( gfs->chunks_ns ) {
-    bson_free((char*)gfs->chunks_ns);
-    gfs->chunks_ns = NULL;
-  }      
-}
-
 /* gridfs constructor */
 MONGO_EXPORT int gridfs_init(mongo *client, const char *dbname, const char *prefix, gridfs *gfs) {
 
-  int options;
   bson b = INIT_BSON;
-  bson_bool_t success;
 
   gfs->caseInsensitive = 0;
   gfs->client = client;
@@ -162,7 +141,8 @@ MONGO_EXPORT int gridfs_init(mongo *client, const char *dbname, const char *pref
   /* Allocate space to own the prefix */
   if (prefix == NULL) {
     prefix = "fs";
-  } gfs->prefix = (const char*)bson_malloc((int)strlen(prefix) + 1);
+  }
+  gfs->prefix = (const char*)bson_malloc((int)strlen(prefix) + 1);
   strcpy((char*)gfs->prefix, prefix);
 
   /* Allocate space to own files_ns */
@@ -182,35 +162,46 @@ MONGO_EXPORT int gridfs_init(mongo *client, const char *dbname, const char *pref
   bson_init(&b);
   bson_append_int(&b, "filename", 1);
   bson_finish(&b);
-  options = 0;
-  success = (mongo_create_index(gfs->client, gfs->files_ns, &b, NULL, options, NULL) == MONGO_OK);
-  bson_destroy(&b);
-  if (!success) {
-    gridfs_freeFields( gfs );
+  if( mongo_create_index(gfs->client, gfs->files_ns, &b, NULL, 0, NULL) != MONGO_OK) {
+    bson_destroy( &b );
+    gridfs_destroy( gfs );
     return MONGO_ERROR;
   }
+  bson_destroy(&b);
 
   bson_init(&b);
   bson_append_int(&b, "files_id", 1);
   bson_append_int(&b, "n", 1);
   bson_finish(&b);
-  options = MONGO_INDEX_UNIQUE;
-  success = (mongo_create_index(gfs->client, gfs->chunks_ns, &b, NULL, options, NULL) == MONGO_OK);
-  bson_destroy(&b);
-  if (!success) {
-    gridfs_freeFields( gfs );    
+  if( mongo_create_index(gfs->client, gfs->chunks_ns, &b, NULL, MONGO_INDEX_UNIQUE, NULL) != MONGO_OK ) {
+    bson_destroy(&b);
+    gridfs_destroy( gfs );    
     return MONGO_ERROR;
   }
+  bson_destroy(&b);
 
   return MONGO_OK;
 }
 
 /* gridfs destructor */
 MONGO_EXPORT void gridfs_destroy(gridfs *gfs) {
-  if (gfs == NULL) {
-    return ;
-  } 
-  gridfs_freeFields( gfs );  
+  if( gfs == NULL ) return;
+  if( gfs->dbname ) {
+    bson_free((char*)gfs->dbname);
+    gfs->dbname = NULL;
+  }
+  if( gfs->prefix ) {
+    bson_free((char*)gfs->prefix);
+    gfs->prefix = NULL;
+  }
+  if( gfs->files_ns ) {
+    bson_free((char*)gfs->files_ns);
+    gfs->files_ns = NULL;
+  }
+  if( gfs->chunks_ns ) {
+    bson_free((char*)gfs->chunks_ns);
+    gfs->chunks_ns = NULL;
+  }      
 }
 
 /* gridfs accesors */
@@ -632,9 +623,7 @@ MONGO_EXPORT void gridfile_writer_init(gridfile *gfile, gridfs *gfs, const char 
   gfile->pending_data = (char*) bson_malloc((int)pendingDataNeededSize(gfile->flags));
 }
 
-MONGO_EXPORT void gridfile_destroy(gridfile *gfile)
-
-{
+MONGO_EXPORT void gridfile_destroy(gridfile *gfile) {
   if( gfile->meta ) { 
     bson_destroy(gfile->meta);
     bson_dealloc(gfile->meta);
@@ -934,7 +923,7 @@ MONGO_EXPORT void gridfile_get_chunk(gridfile *gfile, int n, bson *out) {
   bson_append_int(&query, "n", n);
   bson_finish(&query);
 
-  result = (mongo_find_one(gfile->gfs->client, gfile->gfs->chunks_ns,  &query, NULL, out) == MONGO_OK);
+  result = (mongo_find_one(gfile->gfs->client, gfile->gfs->chunks_ns, &query, NULL, out) == MONGO_OK);
   bson_destroy(&query);
   if (!result) {
     bson empty = INIT_BSON;
@@ -1186,7 +1175,7 @@ MONGO_EXPORT gridfs_offset gridfile_truncate(gridfile *gfile, gridfs_offset newS
   return gfile->length;
 }
 
-MONGO_EXPORT gridfs_offset gridfile_expand(gridfile *gfile, gridfs_offset bytesToExpand){
+MONGO_EXPORT gridfs_offset gridfile_expand(gridfile *gfile, gridfs_offset bytesToExpand) {
   gridfs_offset fileSize, newSize, curPos, toWrite, bufSize;  
 
   void* buf;
@@ -1213,8 +1202,7 @@ MONGO_EXPORT gridfs_offset gridfile_expand(gridfile *gfile, gridfs_offset bytesT
   return newSize;
 }
 
-MONGO_EXPORT gridfs_offset gridfile_set_size(gridfile *gfile, gridfs_offset newSize)
-{
+MONGO_EXPORT gridfs_offset gridfile_set_size(gridfile *gfile, gridfs_offset newSize) {
   gridfs_offset fileSize;
 
   fileSize = gridfile_get_contentlength( gfile );

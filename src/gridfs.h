@@ -38,9 +38,6 @@ typedef struct {
     bson_bool_t caseInsensitive; /**. If true then files are matched in case insensitive fashion */
 } gridfs;
 
-#define GRIDFILE_DEFAULT 0
-#define GRIDFILE_NOMD5 1 
-
 /* A GridFile is a single GridFS file. */
 typedef struct {
     gridfs *gfs;        /**> The GridFS where the GridFile is located */
@@ -56,6 +53,11 @@ typedef struct {
     int flags;          /**> Store here special flags such as: No MD5 calculation and Zlib Compression enabled*/
     int chunkSize;   /**> Let's cache here the cache size to avoid accesing it on the Meta mongo object every time is needed */
 } gridfile;
+
+enum gridfile_storage_type {
+    GRIDFILE_DEFAULT = 0,
+    GRIDFILE_NOMD5 = ( 1<<0 )
+};
 
 #define INIT_GRIDFILE  {NULL}
 
