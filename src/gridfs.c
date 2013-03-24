@@ -20,6 +20,13 @@
   #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#ifndef MAX
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#endif
+#ifndef MIN
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#endif
+
 #include "gridfs.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -695,7 +702,7 @@ MONGO_EXPORT int gridfile_get_chunksize(gridfile *gfile) {
 MONGO_EXPORT gridfs_offset gridfile_get_contentlength(gridfile *gfile) {
   gridfs_offset estimatedLen;
   estimatedLen = gfile->pending_len ? gfile->chunk_num * gridfile_get_chunksize( gfile ) + gfile->pending_len : gfile->length;
-  return estimatedLen > gfile->length ? estimatedLen : gfile->length;  
+  return MAX( estimatedLen, gfile->length );
 }
 
 MONGO_EXPORT const char *gridfile_get_contenttype(gridfile *gfile) {
@@ -872,7 +879,7 @@ MONGO_EXPORT void gridfile_write_buffer(gridfile *gfile, const char *data, gridf
     if( !gfile->pending_len ) {      
       gridfile_load_pending_data_with_pos_chunk( gfile );           
     }
-    buf_bytes_to_write = (int)( buf_pos + length > DEFAULT_CHUNK_SIZE ? DEFAULT_CHUNK_SIZE - buf_pos : length );
+    buf_bytes_to_write = MIN( length, DEFAULT_CHUNK_SIZE - buf_pos );
     memcpy( &gfile->pending_data[buf_pos], data, buf_bytes_to_write);
     if ( buf_bytes_to_write + buf_pos > gfile->pending_len ) {
       gfile->pending_len = buf_bytes_to_write + buf_pos;
@@ -1017,7 +1024,7 @@ MONGO_EXPORT gridfs_offset gridfile_read(gridfile *gfile, gridfs_offset size, ch
     gfile->pos += realSize;    
     if( --total_chunks <= 0) {
       return realSize;
-    };
+    }
     buf += realSize;
     bytes_left -= realSize;
     gridfile_flush_pendingchunk( gfile ); 
@@ -1039,7 +1046,7 @@ static gridfs_offset gridfile_read_from_pending_buffer(gridfile *gfile, gridfs_o
     char *chunk_data;
     gridfs_offset chunksize = gridfile_get_chunksize(gfile);
     gridfs_offset ofs = gfile->pos - gfile->chunk_num * chunksize;
-    realSize = gfile->pending_len - ofs > totalBytesToRead ? totalBytesToRead : gfile->pending_len - ofs;
+    realSize = MIN( totalBytesToRead, gfile->pending_len - ofs );
     chunk_data = gfile->pending_data + ofs;
     memcpy( buf, chunk_data, (size_t)realSize );                
     (*first_chunk)++; 
