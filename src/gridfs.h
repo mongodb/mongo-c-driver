@@ -98,6 +98,23 @@ MONGO_EXPORT int gridfs_init( mongo *client, const char *dbname,
 MONGO_EXPORT void gridfs_destroy( gridfs *gfs );
 
 /**
+ *  Initializes a GridFile containing the GridFS and file bson
+ *  @param gfs - the GridFS where the GridFile is located
+ *  @param meta - the file object
+ *  @param gfile - the output GridFile that is being initialized
+ *
+ *  @return - MONGO_OK or MONGO_ERROR.
+ */
+MONGO_EXPORT int gridfile_init( gridfs *gfs, bson *meta, gridfile *gfile );
+
+/**
+ *  Destroys the GridFile
+ *
+ *  @param oGridFIle - the GridFile being destroyed
+ */
+MONGO_EXPORT void gridfile_destroy( gridfile *gfile );
+
+/**
  *  Initializes a gridfile for writing incrementally with gridfs_write_buffer.
  *  Once initialized, you can write any number of buffers with gridfs_write_buffer.
  *  When done, you must call gridfs_writer_done to save the file metadata.
@@ -114,7 +131,7 @@ MONGO_EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char
  *  stream to a GridFS file. When finished, be sure to call gridfs_writer_done.
  *
  */
-MONGO_EXPORT void gridfile_write_buffer( gridfile *gfile, const char *data,
+MONGO_EXPORT gridfs_offset gridfile_write_buffer( gridfile *gfile, const char *data,
         gridfs_offset length );
 
 /**
@@ -181,23 +198,6 @@ MONGO_EXPORT int gridfs_find_query( gridfs *gfs, bson *query, gridfile *gfile );
  *  @return MONGO_OK or MONGO_ERROR.
  */
 MONGO_EXPORT int gridfs_find_filename( gridfs *gfs, const char *filename, gridfile *gfile );
-
-/**
- *  Initializes a GridFile containing the GridFS and file bson
- *  @param gfs - the GridFS where the GridFile is located
- *  @param meta - the file object
- *  @param gfile - the output GridFile that is being initialized
- *
- *  @return - MONGO_OK or MONGO_ERROR.
- */
-MONGO_EXPORT int gridfile_init( gridfs *gfs, bson *meta, gridfile *gfile );
-
-/**
- *  Destroys the GridFile
- *
- *  @param oGridFIle - the GridFile being destroyed
- */
-MONGO_EXPORT void gridfile_destroy( gridfile *gfile );
 
 /**
  *  Returns whether or not the GridFile exists
