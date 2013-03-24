@@ -215,7 +215,7 @@ MONGO_EXPORT void gridfs_destroy(gridfs *gfs) {
 
 /* gridfs accesors */
 
-MONGO_EXPORT bson_bool_t gridfs_get_caseInsensitive(gridfs *gfs){
+MONGO_EXPORT bson_bool_t gridfs_get_caseInsensitive( const gridfs *gfs ) {
   return gfs->caseInsensitive;
 }
 
@@ -436,7 +436,7 @@ MONGO_EXPORT void gridfs_remove_filename(gridfs *gfs, const char *filename) {
   mongo_cursor_destroy(files);
 }
 
-MONGO_EXPORT int gridfs_find_query(gridfs *gfs, bson *query, gridfile *gfile) {
+MONGO_EXPORT int gridfs_find_query( gridfs *gfs, const bson *query, gridfile *gfile ) {
 
   bson uploadDate = INIT_BSON;
   bson finalQuery = INIT_BSON;
@@ -501,7 +501,7 @@ static void gridfile_init_chunkSize(gridfile *gfile);
 
 /* gridfile constructors, destructors and memory management */
 
-MONGO_EXPORT int gridfile_init(gridfs *gfs, bson *meta, gridfile *gfile){
+MONGO_EXPORT int gridfile_init( gridfs *gfs, const bson *meta, gridfile *gfile ) {
   gfile->gfs = gfs;
   gfile->pos = 0;
   gfile->pending_len = 0;
@@ -676,7 +676,7 @@ MONGO_EXPORT const char *gridfile_get_filename( const gridfile *gfile ) {
   }
 }
 
-MONGO_EXPORT int gridfile_get_chunksize(gridfile *gfile) {
+MONGO_EXPORT int gridfile_get_chunksize( const gridfile *gfile ) {
   bson_iterator it = INIT_ITERATOR;
 
   if( gfile->chunkSize ) {
@@ -690,13 +690,13 @@ MONGO_EXPORT int gridfile_get_chunksize(gridfile *gfile) {
   }
 }
 
-MONGO_EXPORT gridfs_offset gridfile_get_contentlength(gridfile *gfile) {
+MONGO_EXPORT gridfs_offset gridfile_get_contentlength( const gridfile *gfile ) {
   gridfs_offset estimatedLen;
   estimatedLen = gfile->pending_len ? gfile->chunk_num * gridfile_get_chunksize( gfile ) + gfile->pending_len : gfile->length;
   return estimatedLen > gfile->length ? estimatedLen : gfile->length;  
 }
 
-MONGO_EXPORT const char *gridfile_get_contenttype(gridfile *gfile) {
+MONGO_EXPORT const char *gridfile_get_contenttype( const gridfile *gfile ) {
   bson_iterator it = INIT_ITERATOR;
 
   if (bson_find(&it, gfile->meta, "contentType")) {
@@ -706,7 +706,7 @@ MONGO_EXPORT const char *gridfile_get_contenttype(gridfile *gfile) {
   } 
 }
 
-MONGO_EXPORT bson_date_t gridfile_get_uploaddate(gridfile *gfile) {
+MONGO_EXPORT bson_date_t gridfile_get_uploaddate( const gridfile *gfile ) {
   bson_iterator it = INIT_ITERATOR;
 
   if( bson_find(&it, gfile->meta, "uploadDate") != BSON_EOO) {
@@ -716,7 +716,7 @@ MONGO_EXPORT bson_date_t gridfile_get_uploaddate(gridfile *gfile) {
   }
 }
 
-MONGO_EXPORT const char *gridfile_get_md5(gridfile *gfile) {
+MONGO_EXPORT const char *gridfile_get_md5( const gridfile *gfile ) {
   bson_iterator it = INIT_ITERATOR;
 
   if( bson_find(&it, gfile->meta, "md5") != BSON_EOO ) {
@@ -730,7 +730,7 @@ MONGO_EXPORT void gridfile_set_flags(gridfile *gfile, int flags){
   gfile->flags = flags;
 }
 
-MONGO_EXPORT int gridfile_get_flags(gridfile *gfile){
+MONGO_EXPORT int gridfile_get_flags( const gridfile *gfile ) {
   return gfile->flags;
 }
 
@@ -744,7 +744,7 @@ MONGO_EXPORT const char *gridfile_get_field(gridfile *gfile, const char *name) {
   }
 }
 
-MONGO_EXPORT bson_bool_t gridfile_get_boolean(gridfile *gfile, const char *name) {
+MONGO_EXPORT bson_bool_t gridfile_get_boolean( const gridfile *gfile, const char *name ) {
   bson_iterator it = INIT_ITERATOR;
 
   if( bson_find(&it, gfile->meta, name) != BSON_EOO) {
@@ -754,7 +754,7 @@ MONGO_EXPORT bson_bool_t gridfile_get_boolean(gridfile *gfile, const char *name)
   }
 }
 
-MONGO_EXPORT void gridfile_get_metadata(gridfile *gfile, bson *out, bson_bool_t copyData) {
+MONGO_EXPORT void gridfile_get_metadata( const gridfile *gfile, bson *out, bson_bool_t copyData ) {
   bson_iterator it = INIT_ITERATOR;
 
   if (bson_find(&it, gfile->meta, "metadata")) {
@@ -768,7 +768,7 @@ MONGO_EXPORT void gridfile_get_metadata(gridfile *gfile, bson *out, bson_bool_t 
 /* gridfile data management methods */
 /* ++++++++++++++++++++++++++++++++ */
 
-MONGO_EXPORT int gridfile_get_numchunks(gridfile *gfile) {
+MONGO_EXPORT int gridfile_get_numchunks( const gridfile *gfile ) {
   bson_iterator it = INIT_ITERATOR;
   gridfs_offset length;
   gridfs_offset chunkSize;
