@@ -265,7 +265,7 @@ MONGO_EXPORT const char *gridfile_get_md5( gridfile *gfile );
  * 
  *  @return - the _id field in metadata
  */
-MONGO_EXPORT bson_oid_t *gridfile_get_id(gridfile *gfile);
+MONGO_EXPORT bson_oid_t gridfile_get_id( const gridfile *gfile );
 
 /**
  *  Returns the field in GridFile specified by name
