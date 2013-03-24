@@ -60,10 +60,8 @@ typedef struct {
 #define INIT_GRIDFILE  {NULL}
 
 #ifndef _MSC_VER
-#include <ctype.h>
 char *_strupr(char *str);
 char *_strlwr(char *str);
-#define _unlink unlink
 #endif
 
 typedef int ( *gridfs_preProcessingFunc )( void** targetBuf, size_t* targetLen, void* srcBuf, size_t srcLen, int flags );
