@@ -79,38 +79,38 @@ MONGO_EXPORT void gridfile_get_descriptor(gridfile *gf, bson *out) {
 }
 
 /* Default chunk pre and post processing logic */
-static int defaultPreProcessChunk(void** targetBuf, size_t* targetLen, void* srcBuf, size_t srcLen, int flags) {
-  *targetBuf = srcBuf;
+static int gridfs_default_chunk_filter(char** targetBuf, size_t* targetLen, const char* srcData, size_t srcLen, int flags) {
+  *targetBuf = (char *) srcData;
   *targetLen = srcLen;
   return 0;
 }
 
-static int defaultPostProcessChunk(void** targetBuf, size_t* targetLen, void* srcData, size_t srcLen, int flags) {   
-  *targetBuf = srcData;
-  *targetLen = srcLen;
-  return 0;
-}
-
-static size_t defaultDendingDataNeededSize (int flags) {
+static size_t gridfs_default_pending_data_size (int flags) {
   return DEFAULT_CHUNK_SIZE;
 }
 /* End of default functions for chunks pre and post processing */
 
-static gridfs_preProcessingFunc preProcessChunk = defaultPreProcessChunk;
-static gridfs_postProcessingFunc postProcessChunk = defaultPostProcessChunk;
-static gridfs_pendingDataNeededSizeFunc pendingDataNeededSize = defaultDendingDataNeededSize;
+static gridfs_chunk_filter_func gridfs_write_filter = gridfs_default_chunk_filter;
+static gridfs_chunk_filter_func gridfs_read_filter = gridfs_default_chunk_filter;
+static gridfs_pending_data_size_func gridfs_pending_data_size = gridfs_default_pending_data_size;
 
-static bson *chunk_new(bson_oid_t id, int chunkNumber, void** dataBuf, void* srcData, size_t len, int flags ) {
+MONGO_EXPORT void gridfs_set_chunk_filter_funcs(gridfs_chunk_filter_func writeFilter, gridfs_chunk_filter_func readFilter, gridfs_pending_data_size_func pendingDataNeededSize) {
+  gridfs_write_filter = writeFilter;
+  gridfs_read_filter = readFilter;
+  gridfs_pending_data_size = pendingDataNeededSize; 
+}
+
+static bson *chunk_new(bson_oid_t id, int chunkNumber, char** dataBuf, const char* srcData, size_t len, int flags ) {
   bson *b = bson_alloc();
   size_t dataBufLen = 0;
 
-  if( preProcessChunk( dataBuf, &dataBufLen, srcData, len, flags) != 0 ) {
+  if( gridfs_write_filter( dataBuf, &dataBufLen, srcData, len, flags) != 0 ) {
     return NULL;
   }
   bson_init_size(b, dataBufLen + 128); /* a little space for field names, files_id, and n */
   bson_append_oid(b, "files_id", &id);
   bson_append_int(b, "n", chunkNumber);
-  bson_append_binary(b, "data", BSON_BIN_BINARY, (char*)(*dataBuf), (int)dataBufLen);
+  bson_append_binary(b, "data", BSON_BIN_BINARY, *dataBuf, (int)dataBufLen);
   bson_finish(b);
   return b;
 }
@@ -122,12 +122,6 @@ static void chunk_free(bson *oChunk) {
   }
 }
 /* End of memory allocation functions */
-
-MONGO_EXPORT void setBufferProcessingProcs(gridfs_preProcessingFunc preProcessFunc, gridfs_postProcessingFunc postProcessFunc, gridfs_pendingDataNeededSizeFunc pendingDataNeededSizeFunc){
-  preProcessChunk = preProcessFunc;
-  postProcessChunk = postProcessFunc;
-  pendingDataNeededSize = pendingDataNeededSizeFunc; 
-}
 
 /* -------------- */
 /* gridfs methods */
@@ -312,7 +306,7 @@ MONGO_EXPORT int gridfs_store_buffer(gridfs *gfs, const char *data, gridfs_offse
 
   char const *end = data + length;
   const char *data_ptr = data;
-  void* targetBuf = NULL;
+  char* targetBuf = NULL;
   bson_oid_t id;
   int chunkNumber = 0;
   int chunkLen;
@@ -325,7 +319,7 @@ MONGO_EXPORT int gridfs_store_buffer(gridfs *gfs, const char *data, gridfs_offse
   /* Insert the file's data chunk by chunk */
   while (data_ptr < end) {
     chunkLen = DEFAULT_CHUNK_SIZE < (unsigned int)(end - data_ptr) ? DEFAULT_CHUNK_SIZE: (unsigned int)(end - data_ptr);
-    oChunk = chunk_new(id, chunkNumber, &targetBuf, (void*)data_ptr, chunkLen, flags );
+    oChunk = chunk_new(id, chunkNumber, &targetBuf, data_ptr, chunkLen, flags );
     memAllocated = targetBuf != data_ptr;
     mongo_insert(gfs->client, gfs->chunks_ns, oChunk, NULL);
     chunk_free(oChunk);
@@ -350,7 +344,7 @@ MONGO_EXPORT int gridfs_store_file(gridfs *gfs, const char *filename, const char
   gridfs_offset length = 0;
   gridfs_offset chunkLen = 0;
   bson *oChunk;
-  void* targetBuf = NULL;
+  char* targetBuf = NULL;
 
   /* Open the file and the correct stream */
   if (strcmp(filename, "-") == 0) {
@@ -368,7 +362,7 @@ MONGO_EXPORT int gridfs_store_file(gridfs *gfs, const char *filename, const char
   /* Insert the file chunk by chunk */
   chunkLen = fread(buffer, 1, DEFAULT_CHUNK_SIZE, fd);
   do {
-    oChunk = chunk_new(id, chunkNumber, &targetBuf, (void*)buffer, (size_t)chunkLen, flags );
+    oChunk = chunk_new(id, chunkNumber, &targetBuf, buffer, (size_t)chunkLen, flags );
     mongo_insert(gfs->client, gfs->chunks_ns, oChunk, NULL);
     chunk_free(oChunk);
     length += chunkLen;
@@ -638,7 +632,7 @@ MONGO_EXPORT void gridfile_writer_init(gridfile *gfile, gridfs *gfs, const char 
   gfile->pending_len = 0;
   /* Let's pre-allocate DEFAULT_CHUNK_SIZE bytes into pending_data then we don't need to worry 
      about doing realloc everywhere we want use the pending_data buffer */
-  gfile->pending_data = (char*) bson_malloc((int)pendingDataNeededSize(gfile->flags));
+  gfile->pending_data = (char*) bson_malloc((int)gridfs_pending_data_size(gfile->flags));
 }
 
 MONGO_EXPORT void gridfile_destroy(gridfile *gfile)
@@ -807,11 +801,11 @@ static void gridfile_prepare_chunk_key_bson(bson *q, bson_oid_t *id, int chunk_n
 static void gridfile_flush_pendingchunk(gridfile *gfile) {
   bson *oChunk;
   bson q = INIT_BSON;
-  void* targetBuf = NULL;
+  char* targetBuf = NULL;
 
   if (gfile->pending_len) {
     size_t finish_position_after_flush;
-    oChunk = chunk_new(gfile->id, gfile->chunk_num, &targetBuf, (void*)gfile->pending_data, gfile->pending_len, gfile->flags );
+    oChunk = chunk_new( gfile->id, gfile->chunk_num, &targetBuf, gfile->pending_data, gfile->pending_len, gfile->flags );
     gridfile_prepare_chunk_key_bson( &q, &gfile->id, gfile->chunk_num );    
     mongo_update(gfile->gfs->client, gfile->gfs->chunks_ns, &q, oChunk, MONGO_UPDATE_UPSERT, NULL);
     bson_destroy(&q);
@@ -833,7 +827,7 @@ static void gridfile_load_pending_data_with_pos_chunk(gridfile *gfile) {
   const char *chunk_data;
   bson_iterator it = INIT_ITERATOR;
   bson chk = INIT_BSON;
-  void* targetBuffer = NULL;
+  char* targetBuffer = NULL;
   size_t targetBufferLen = 0;
 
   chk.dataSize = 0;
@@ -848,7 +842,7 @@ static void gridfile_load_pending_data_with_pos_chunk(gridfile *gfile) {
   bson_find(&it, &chk, "data");
   chunk_len = bson_iterator_bin_len(&it);
   chunk_data = bson_iterator_bin_data(&it);
-  postProcessChunk( &targetBuffer, &targetBufferLen, (void*)chunk_data, (size_t)chunk_len, gfile->flags );
+  gridfs_read_filter( &targetBuffer, &targetBufferLen, chunk_data, (size_t)chunk_len, gfile->flags );
   gfile->pending_len = (int)targetBufferLen;
   gfile->chunk_num = (int)(gfile->pos / DEFAULT_CHUNK_SIZE);
   if( targetBufferLen ) {
@@ -867,7 +861,7 @@ MONGO_EXPORT void gridfile_write_buffer(gridfile *gfile, const char *data, gridf
   bson q = INIT_BSON;
   size_t buf_pos, buf_bytes_to_write;    
   gridfs_offset bytes_left = length;
-  void* targetBuf = NULL;
+  char* targetBuf = NULL;
   int memAllocated = 0;
 
   gfile->chunk_num = (int)(gfile->pos / DEFAULT_CHUNK_SIZE);
@@ -895,7 +889,7 @@ MONGO_EXPORT void gridfile_write_buffer(gridfile *gfile, const char *data, gridf
   /* If there's still more data to be written and they happen to be full chunks, we will loop thru and 
      write all full chunks without the need for preloading the existing chunk */
   while( bytes_left >= DEFAULT_CHUNK_SIZE ) {
-    oChunk = chunk_new(gfile->id, gfile->chunk_num, &targetBuf, (void*)data, DEFAULT_CHUNK_SIZE, gfile->flags );
+    oChunk = chunk_new( gfile->id, gfile->chunk_num, &targetBuf, data, DEFAULT_CHUNK_SIZE, gfile->flags );
     memAllocated = targetBuf != data;
     gridfile_prepare_chunk_key_bson( &q, &gfile->id, gfile->chunk_num);
     mongo_update(gfile->gfs->client, gfile->gfs->chunks_ns, &q, oChunk, MONGO_UPDATE_UPSERT, NULL);
@@ -998,7 +992,7 @@ MONGO_EXPORT mongo_cursor *gridfile_get_chunks(gridfile *gfile, size_t start, si
   return cursor;
 }
 
-static gridfs_offset gridfile_read_from_pending_buffer(gridfile *gfile, gridfs_offset totalBytesToRead, void* buf, int *first_chunk);
+static gridfs_offset gridfile_read_from_pending_buffer(gridfile *gfile, gridfs_offset totalBytesToRead, char* buf, int *first_chunk);
 static gridfs_offset gridfile_load_from_chunks(gridfile *gfile, int total_chunks, gridfs_offset chunksize, mongo_cursor *chunks, char* buf, 
                                                gridfs_offset bytes_left);
 
@@ -1039,7 +1033,7 @@ MONGO_EXPORT gridfs_offset gridfile_read(gridfile *gfile, gridfs_offset size, ch
   return realSize;
 }
 
-static gridfs_offset gridfile_read_from_pending_buffer(gridfile *gfile, gridfs_offset totalBytesToRead, void* buf, 
+static gridfs_offset gridfile_read_from_pending_buffer(gridfile *gfile, gridfs_offset totalBytesToRead, char* buf, 
                                                        int *first_chunk){
   gridfs_offset realSize = 0;
   if( gfile->pending_len > 0 && *first_chunk == gfile->chunk_num) {    
@@ -1054,13 +1048,13 @@ static gridfs_offset gridfile_read_from_pending_buffer(gridfile *gfile, gridfs_o
   return realSize;     
 }
 
-static gridfs_offset gridfile_fill_buf_from_chunk(gridfile *gfile, bson *chunk, gridfs_offset chunksize, char **buf, int *allocatedMem, void **targetBuf, 
-                                         size_t *targetBufLen, gridfs_offset *bytes_left, int chunkNo);
+static gridfs_offset gridfile_fill_buf_from_chunk(gridfile *gfile, const bson *chunk, gridfs_offset chunksize, char **buf, int *allocatedMem, char **targetBuf, 
+                                                  size_t *targetBufLen, gridfs_offset *bytes_left, int chunkNo);
 
 static gridfs_offset gridfile_load_from_chunks(gridfile *gfile, int total_chunks, gridfs_offset chunksize, mongo_cursor *chunks, char* buf, 
                                                gridfs_offset bytes_left){
   int i;
-  void* targetBuf = NULL; 
+  char* targetBuf = NULL; 
   size_t targetBufLen = 0;
   int allocatedMem = 0;
   gridfs_offset realSize = 0;
@@ -1077,18 +1071,18 @@ static gridfs_offset gridfile_load_from_chunks(gridfile *gfile, int total_chunks
   return realSize;
 }
 
-static gridfs_offset gridfile_fill_buf_from_chunk(gridfile *gfile, bson *chunk, gridfs_offset chunksize, char **buf, int *allocatedMem, void **targetBuf, 
+static gridfs_offset gridfile_fill_buf_from_chunk(gridfile *gfile, const bson *chunk, gridfs_offset chunksize, char **buf, int *allocatedMem, char **targetBuf, 
                                                   size_t *targetBufLen, gridfs_offset *bytes_left, int chunkNo){
   bson_iterator it = INIT_ITERATOR;
   gridfs_offset chunk_len;
-  char *chunk_data;
+  const char *chunk_data;
 
   bson_find(&it, chunk, "data");
   chunk_len = bson_iterator_bin_len(&it);
-  chunk_data = (char*)bson_iterator_bin_data(&it);  
-  postProcessChunk( targetBuf, targetBufLen, (void*)(chunk_data), (size_t)chunk_len, gfile->flags );  
+  chunk_data = bson_iterator_bin_data(&it);  
+  gridfs_read_filter( targetBuf, targetBufLen, chunk_data, (size_t)chunk_len, gfile->flags );
   *allocatedMem = *targetBuf != chunk_data;
-  chunk_data = (char*)(*targetBuf);
+  chunk_data = *targetBuf;
   if (chunkNo == 0) {      
     chunk_data += (gfile->pos) % chunksize;
     *targetBufLen -= (size_t)( (gfile->pos) % chunksize );
@@ -1127,7 +1121,7 @@ MONGO_EXPORT gridfs_offset gridfile_write_file(gridfile *gfile, FILE *stream) {
   bson chunk = INIT_BSON;
   bson_iterator it = INIT_ITERATOR;
   const char *data = NULL;
-  void* targetBuf = NULL; 
+  char* targetBuf = NULL; 
   size_t targetBufLen = 0;
   int num;
 
@@ -1138,7 +1132,7 @@ MONGO_EXPORT gridfs_offset gridfile_write_file(gridfile *gfile, FILE *stream) {
     bson_find(&it, &chunk, "data");
     len = bson_iterator_bin_len(&it);
     data = bson_iterator_bin_data(&it);    
-    postProcessChunk( &targetBuf, &targetBufLen, (void*)data, (size_t)len, gfile->flags );    
+    gridfs_read_filter( &targetBuf, &targetBufLen, data, (size_t)len, gfile->flags );    
     fwrite(targetBuf, sizeof(char), targetBufLen, stream);
     bson_destroy(&chunk);
   }
@@ -1197,7 +1191,7 @@ MONGO_EXPORT gridfs_offset gridfile_truncate(gridfile *gfile, gridfs_offset newS
 MONGO_EXPORT gridfs_offset gridfile_expand(gridfile *gfile, gridfs_offset bytesToExpand){
   gridfs_offset fileSize, newSize, curPos, toWrite, bufSize;  
 
-  void* buf;
+  char* buf;
 
   fileSize = gridfile_get_contentlength( gfile );
   newSize = fileSize + bytesToExpand;
