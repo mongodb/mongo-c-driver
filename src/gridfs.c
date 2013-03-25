@@ -556,7 +556,7 @@ static void gridfile_init_flags(gridfile *gfile) {
   }
 }
 
-MONGO_EXPORT void gridfile_writer_init(gridfile *gfile, gridfs *gfs, const char *remote_name, const char *content_type, int flags ) {
+MONGO_EXPORT int gridfile_writer_init(gridfile *gfile, gridfs *gfs, const char *remote_name, const char *content_type, int flags ) {
   gridfile tmpFile = INIT_GRIDFILE;
 
   gfile->gfs = gfs;
@@ -599,6 +599,8 @@ MONGO_EXPORT void gridfile_writer_init(gridfile *gfile, gridfs *gfs, const char 
   /* Let's pre-allocate DEFAULT_CHUNK_SIZE bytes into pending_data then we don't need to worry 
      about doing realloc everywhere we want use the pending_data buffer */
   gfile->pending_data = (char*) bson_malloc((int)gridfs_pending_data_size(gfile->flags));
+
+  return MONGO_OK;
 }
 
 MONGO_EXPORT void gridfile_destroy(gridfile *gfile) {

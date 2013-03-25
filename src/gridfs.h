@@ -104,8 +104,8 @@ MONGO_EXPORT void gridfs_destroy( gridfs *gfs );
  *  +-+-+-+-  when using this function
  *
  */
-MONGO_EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char *remote_name,
-                                        const char *content_type, int flags );
+MONGO_EXPORT int gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char *remote_name,
+                                       const char *content_type, int flags );
 
 /**
  *  Write to a GridFS file incrementally. You can call this function any number
