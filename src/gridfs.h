@@ -104,8 +104,8 @@ MONGO_EXPORT void gridfs_destroy( gridfs *gfs );
  *  +-+-+-+-  when using this function
  *
  */
-MONGO_EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char *remote_name,
-                                        const char *content_type, int flags );
+MONGO_EXPORT int gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char *remote_name,
+                                       const char *content_type, int flags );
 
 /**
  *  Write to a GridFS file incrementally. You can call this function any number
@@ -153,10 +153,14 @@ MONGO_EXPORT int gridfs_store_file( gridfs *gfs, const char *filename,
 
 /**
  *  Removes the files referenced by filename from the db
+ *
  *  @param gfs - the working GridFS
  *  @param filename - the filename of the file/s to be removed
+ *
+ *  @return MONGO_OK if a matching file was removed, and MONGO_ERROR if
+ *    an error occurred or the file did not exist
  */
-MONGO_EXPORT void gridfs_remove_filename( gridfs *gfs, const char *filename );
+MONGO_EXPORT int gridfs_remove_filename( gridfs *gfs, const char *filename );
 
 /**
  *  Find the first file matching the provided query within the
