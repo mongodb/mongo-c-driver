@@ -127,7 +127,7 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     ASSERT( gridfile_read( gfile, length, data_after ) == 0 );
 
     gridfile_destroy( gfile );
-    gridfs_remove_filename( gfs, filename );
+    ASSERT( gridfs_remove_filename( gfs, filename ) == MONGO_OK );
     free( data_after );
     gridfs_test_unlink( "output" );
 }
@@ -172,6 +172,33 @@ void test_basic( void ) {
     /* Clean up files. */
     gridfs_test_unlink( "input-file" );
     gridfs_test_unlink( "output" );
+}
+
+void test_delete( void ) {
+    mongo conn[1];
+    gridfs gfs[1];
+    gridfile gfile[1];
+    char *data = (char*)bson_malloc( 1024 );
+
+    INIT_SOCKETS_FOR_WINDOWS;
+    CONN_CLIENT_TEST;
+    GFS_INIT;
+
+    const char *testFile = "test-delete";
+    ASSERT( gridfs_store_buffer( gfs, data, 1024, testFile, "text/html", GRIDFILE_DEFAULT ) == MONGO_OK );
+    ASSERT( gridfs_find_filename( gfs, testFile, gfile ) == MONGO_OK );
+    gridfile_destroy( gfile );
+
+    ASSERT( gridfs_remove_filename( gfs, testFile ) == MONGO_OK );
+    ASSERT( gridfs_find_filename( gfs, testFile, gfile ) == MONGO_ERROR );
+
+    ASSERT( gridfs_find_filename( gfs, "bogus-file-does-not-exist", gfile ) == MONGO_ERROR );
+    ASSERT( gridfs_remove_filename( gfs, "bogus-file-does-not-exist" ) == MONGO_ERROR );
+
+    gridfs_destroy( gfs );
+    mongo_disconnect( conn );
+    mongo_destroy( conn );
+    bson_free( data );
 }
 
 void test_streaming( void ) {
@@ -487,6 +514,7 @@ int main( void ) {
  * on why we exclude this test from running on WIN32 */
  
     test_basic();
+    test_delete();
     test_streaming();
     test_random_write();
     test_random_write2();

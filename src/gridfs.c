@@ -384,19 +384,23 @@ MONGO_EXPORT int gridfs_store_file(gridfs *gfs, const char *filename, const char
   return gridfs_insert_file(gfs, remotename, id, length, contenttype, flags, DEFAULT_CHUNK_SIZE );
 }
 
-MONGO_EXPORT void gridfs_remove_filename(gridfs *gfs, const char *filename) {
+MONGO_EXPORT int gridfs_remove_filename(gridfs *gfs, const char *filename) {
   bson query = INIT_BSON;
   mongo_cursor *files;
   bson file = INIT_BSON;
   bson_iterator it = INIT_ITERATOR;
   bson_oid_t id;
   bson b = INIT_BSON;
+  int ret = MONGO_ERROR;
 
   bson_init(&query);
   bson_append_string_uppercase( &query, "filename", filename, gfs->caseInsensitive );
   bson_finish(&query);
   files = mongo_find(gfs->client, gfs->files_ns, &query, NULL, 0, 0, 0);
   bson_destroy(&query);
+
+  /* files should be a valid cursor even if the file doesn't exist */
+  if ( files == NULL ) return MONGO_ERROR; 
 
   /* Remove each file and it's chunks from files named filename */
   while (mongo_cursor_next(files) == MONGO_OK) {
@@ -417,9 +421,12 @@ MONGO_EXPORT void gridfs_remove_filename(gridfs *gfs, const char *filename) {
     bson_finish(&b);
     mongo_remove(gfs->client, gfs->chunks_ns, &b, NULL);
     bson_destroy(&b);
+
+    ret = MONGO_OK;
   }
 
   mongo_cursor_destroy(files);
+  return ret;
 }
 
 MONGO_EXPORT int gridfs_find_query( gridfs *gfs, const bson *query, gridfile *gfile ) {
