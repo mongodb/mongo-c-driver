@@ -217,11 +217,18 @@ MONGO_EXPORT void gridfs_set_caseInsensitive(gridfs *gfs, bson_bool_t newValue){
   gfs->caseInsensitive = newValue;
 }
 
-static char* upperFileName(const char* filename) {
-  char* upperName = (char*) bson_malloc((int)strlen( filename ) + 1 );
-  strcpy(upperName, filename);
-  _strupr(upperName);
-  return upperName;
+static int bson_append_string_uppercase( bson *b, const char *name, const char *str, bson_bool_t upperCase ) {
+  char *strUpperCase;
+  if ( upperCase ) {
+    strUpperCase = (char *) bson_malloc( (int) strlen( str ) + 1 );
+    strcpy(strUpperCase, str);
+    _strupr(strUpperCase);
+    int res = bson_append_string( b, name, strUpperCase );
+    bson_free( strUpperCase );
+    return res;
+  } else {
+    return bson_append_string( b, name, str );
+  }
 }
 
 static int gridfs_insert_file(gridfs *gfs, const char *name, const bson_oid_t id, gridfs_offset length, const char *contenttype, int flags, int chunkSize) {
@@ -232,7 +239,6 @@ static int gridfs_insert_file(gridfs *gfs, const char *name, const bson_oid_t id
   bson q = INIT_BSON;
   int result;
   int64_t d;
-  char *upperName = NULL;
 
   /* If you don't care about calculating MD5 hash for a particular file, simply pass the GRIDFILE_NOMD5 value on the flag param */
   if( !( flags & GRIDFILE_NOMD5 ) ) {  
@@ -251,11 +257,8 @@ static int gridfs_insert_file(gridfs *gfs, const char *name, const bson_oid_t id
   /* Create and insert BSON for file metadata */
   bson_init(&ret);
   bson_append_oid(&ret, "_id", &id);
-  if( gfs->caseInsensitive ) {
-    upperName = upperFileName(name);    
-  }
   if (name != NULL &&  *name != '\0') {
-    bson_append_string(&ret, "filename", upperName ? upperName : name);
+    bson_append_string_uppercase( &ret, "filename", name, gfs->caseInsensitive );
   }
   bson_append_long(&ret, "length", length);
   bson_append_int(&ret, "chunkSize", chunkSize);
@@ -271,7 +274,7 @@ static int gridfs_insert_file(gridfs *gfs, const char *name, const bson_oid_t id
   if (contenttype != NULL &&  *contenttype != '\0') {
     bson_append_string(&ret, "contentType", contenttype);
   }
-  if ( upperName ) {
+  if ( gfs->caseInsensitive ) {
     bson_append_string(&ret, "realFilename", name);
   }
   bson_append_int(&ret, "flags", flags);
@@ -285,10 +288,7 @@ static int gridfs_insert_file(gridfs *gfs, const char *name, const bson_oid_t id
 
   bson_destroy(&ret);
   bson_destroy(&q);
-  if( upperName ) {
-    bson_free( upperName );
-  }
-
+  
   return result;
 }
 
@@ -385,23 +385,12 @@ MONGO_EXPORT void gridfs_remove_filename(gridfs *gfs, const char *filename) {
   bson_iterator it = INIT_ITERATOR;
   bson_oid_t id;
   bson b = INIT_BSON;
-  char *upperName = NULL;
 
-  if( gfs->caseInsensitive ) {
-    upperName = upperFileName(filename);
-  }
   bson_init(&query);
-  if( upperName ) {
-    bson_append_string(&query, "filename", upperName);
-  } else {
-    bson_append_string(&query, "filename", filename);
-  }
+  bson_append_string_uppercase( &query, "filename", filename, gfs->caseInsensitive );
   bson_finish(&query);
   files = mongo_find(gfs->client, gfs->files_ns, &query, NULL, 0, 0, 0);
   bson_destroy(&query);
-  if( upperName ) {
-    bson_free( upperName );
-  }
 
   /* Remove each file and it's chunks from files named filename */
   while (mongo_cursor_next(files) == MONGO_OK) {
@@ -460,23 +449,12 @@ MONGO_EXPORT int gridfs_find_filename(gridfs *gfs, const char *filename, gridfil
  {
   bson query = INIT_BSON;
   int i;
-  char *upperName = NULL;
 
   bson_init(&query);
-  if( gfs->caseInsensitive ) {
-    upperName = upperFileName( filename );
-  }
-  if( upperName ) {
-    bson_append_string(&query, "filename", upperName);
-  } else {
-    bson_append_string(&query, "filename", filename);
-  }
+  bson_append_string_uppercase( &query, "filename", filename, gfs->caseInsensitive );
   bson_finish(&query);
   i = gridfs_find_query(gfs, &query, gfile);
   bson_destroy(&query);
-  if( upperName ) {
-    bson_free( upperName );
-  }
   return i;
 }
 
