@@ -108,7 +108,7 @@ static bson *chunk_new(bson_oid_t id, int chunkNumber, char** dataBuf, const cha
   if( gridfs_write_filter( dataBuf, &dataBufLen, srcData, len, flags) != 0 ) {
     return NULL;
   }
-  bson_init_size(b, dataBufLen + 128); /* a little space for field names, files_id, and n */
+  bson_init_size(b, (int) dataBufLen + 128); /* a little space for field names, files_id, and n */
   bson_append_oid(b, "files_id", &id);
   bson_append_int(b, "n", chunkNumber);
   bson_append_binary(b, "data", BSON_BIN_BINARY, *dataBuf, (int)dataBufLen);
@@ -308,7 +308,7 @@ MONGO_EXPORT int gridfs_store_buffer(gridfs *gfs, const char *data, gridfs_offse
 
   /* Insert the file's data chunk by chunk */
   while (data_ptr < end) {
-    chunkLen = DEFAULT_CHUNK_SIZE < (unsigned int)(end - data_ptr) ? DEFAULT_CHUNK_SIZE: (unsigned int)(end - data_ptr);
+    chunkLen = MIN( DEFAULT_CHUNK_SIZE, (unsigned int)(end - data_ptr) );
     oChunk = chunk_new(id, chunkNumber, &targetBuf, data_ptr, chunkLen, flags );
     memAllocated = targetBuf != data_ptr;
     mongo_insert(gfs->client, gfs->chunks_ns, oChunk, NULL);
@@ -550,7 +550,7 @@ static void gridfile_init_flags(gridfile *gfile) {
   bson_iterator it = INIT_ITERATOR;
 
   if( bson_find(&it, gfile->meta, "flags") != BSON_EOO ) {
-    gfile->flags = (gridfs_offset)bson_iterator_int(&it);
+    gfile->flags = bson_iterator_int(&it);
   } else {
     gfile->flags = 0;
   }
@@ -974,7 +974,7 @@ MONGO_EXPORT gridfs_offset gridfile_read(gridfile *gfile, gridfs_offset size, ch
 
   contentlength = gridfile_get_contentlength(gfile);
   chunksize = gridfile_get_chunksize(gfile);
-  size = (contentlength - gfile->pos < size) ? contentlength - gfile->pos: size;
+  size = MIN( contentlength - gfile->pos, size );
   bytes_left = size;
 
   first_chunk = (int)((gfile->pos) / chunksize);  
@@ -1070,8 +1070,8 @@ MONGO_EXPORT gridfs_offset gridfile_seek(gridfile *gfile, gridfs_offset offset) 
   gridfs_offset newPos;
 
   chunkSize = gridfile_get_chunksize( gfile );
-  length = gridfile_get_contentlength( gfile ); 
-  newPos = length < offset ? length : offset;  
+  length = gridfile_get_contentlength( gfile );
+  newPos = MIN( length, offset );
 
   /* If we are seeking to the next chunk or prior to the current chunks let's flush the pending chunk */
   if (gfile->pending_len && (newPos >= (gfile->chunk_num + 1) * chunkSize || newPos < gfile->chunk_num * chunkSize)) {
