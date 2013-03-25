@@ -30,11 +30,12 @@ void fill_buffer_randomly( char *data, int64_t length ) {
     int64_t i;
     int random;
     char *letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    int nletters = (int)strlen( letters )+1;
+    int nletters = (int)strlen( letters );
+    char *cur;
 
-    for ( i = 0; i < length; i++ ) {
+    for ( i = 0, cur = data; i < length; i++, cur++ ) {
         random = rand() % nletters;
-        *( data + i ) = letters[random];
+        *cur = letters[random];
     }
 }
 
