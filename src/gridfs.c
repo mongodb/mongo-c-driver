@@ -311,15 +311,17 @@ MONGO_EXPORT int gridfs_store_buffer(gridfs *gfs, const char *data, gridfs_offse
     chunkLen = MIN( DEFAULT_CHUNK_SIZE, (unsigned int)(end - data_ptr) );
     oChunk = chunk_new(id, chunkNumber, &targetBuf, data_ptr, chunkLen, flags );
     memAllocated = targetBuf != data_ptr;
-    mongo_insert(gfs->client, gfs->chunks_ns, oChunk, NULL);
-    chunk_free(oChunk);
+    if( mongo_insert( gfs->client, gfs->chunks_ns, oChunk, NULL ) != MONGO_OK ) {
+      chunk_free( oChunk );
+      if( memAllocated ) bson_free( targetBuf );
+      return MONGO_ERROR;
+    }
+    chunk_free( oChunk );
     chunkNumber++;
     data_ptr += chunkLen;
   }
 
-  if( memAllocated ) {
-    bson_free( targetBuf );
-  }
+  if( memAllocated ) bson_free( targetBuf );
 
   /* Inserts file's metadata */
   return gridfs_insert_file(gfs, remotename, id, length, contenttype, flags, DEFAULT_CHUNK_SIZE);
@@ -353,7 +355,11 @@ MONGO_EXPORT int gridfs_store_file(gridfs *gfs, const char *filename, const char
   chunkLen = fread(buffer, 1, DEFAULT_CHUNK_SIZE, fd);
   do {
     oChunk = chunk_new(id, chunkNumber, &targetBuf, buffer, (size_t)chunkLen, flags );
-    mongo_insert(gfs->client, gfs->chunks_ns, oChunk, NULL);
+    if( mongo_insert( gfs->client, gfs->chunks_ns, oChunk, NULL ) != MONGO_OK ) {
+      chunk_free( oChunk );
+      if( targetBuf && targetBuf != buffer ) bson_free( targetBuf );
+      return MONGO_ERROR;
+    }
     chunk_free(oChunk);
     length += chunkLen;
     chunkNumber++;
