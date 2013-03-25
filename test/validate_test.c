@@ -33,11 +33,7 @@ int main() {
     not_utf8[2] = '\0';
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if ( mongo_client( conn, TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     /* Test checking for finished bson. */
     bson_init( &b );

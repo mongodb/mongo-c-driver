@@ -103,11 +103,7 @@ int test_namespace_validation_on_insert( void ) {
     bson *objs[2];
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if ( mongo_client( conn , TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     bson_init( b );
     bson_append_int( b, "foo", 1 );
@@ -153,10 +149,7 @@ int test_insert_limits( void ) {
     if( mongo_get_server_version( version ) != -1 && version[0] <= '1' )
         return 0;
 
-    if ( mongo_client( conn , TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     ASSERT( conn->max_bson_size > MONGO_DEFAULT_MAX_BSON_SIZE );
 
@@ -198,11 +191,7 @@ int test_get_last_error_commands( void ) {
     bson obj;
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if ( mongo_client( conn , TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     /*********************/
     ASSERT( mongo_cmd_get_prev_error( conn, db, NULL ) == MONGO_OK );
