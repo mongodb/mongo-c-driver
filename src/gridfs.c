@@ -100,7 +100,7 @@ static bson *chunk_new(bson_oid_t id, int chunkNumber, void** dataBuf, void* src
   if( preProcessChunk( dataBuf, &dataBufLen, srcData, len, flags) != 0 ) {
     return NULL;
   }
-  bson_init(b);
+  bson_init_size(b, dataBufLen + 128); /* a little space for field names, files_id, and n */
   bson_append_oid(b, "files_id", &id);
   bson_append_int(b, "n", chunkNumber);
   bson_append_binary(b, "data", BSON_BIN_BINARY, (char*)(*dataBuf), (int)dataBufLen);
