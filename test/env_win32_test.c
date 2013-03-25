@@ -60,7 +60,7 @@ int test_getaddrinfo( void ) {
     const char *ns = "test.foo";
     const char *errmsg = "getaddrinfo failed";
 
-    if( mongo_client( conn, "badhost", 27017 ) == MONGO_OK ) {
+    if( mongo_client( conn, "badhost.example.com", 27017 ) == MONGO_OK ) {
         printf( "connected to bad host!\n" );
         exit( 1 );
     } else {
