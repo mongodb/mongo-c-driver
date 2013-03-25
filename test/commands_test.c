@@ -17,11 +17,7 @@ int main() {
     const char *col = "c.capped";
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if ( mongo_client( conn , TEST_SERVER , 27017 ) ) {
-        printf( "failed to connect\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     mongo_cmd_drop_collection( conn, db, col, NULL );
 

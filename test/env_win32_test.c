@@ -25,10 +25,7 @@ int test_read_timeout( void ) {
     bson b, obj, out, fields;
     int res;
 
-    if ( mongo_client( conn, TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     bson_init( &b );
     bson_append_code( &b, "$where", "sleep( 10 * 1000 );");
@@ -63,7 +60,7 @@ int test_getaddrinfo( void ) {
     const char *ns = "test.foo";
     const char *errmsg = "getaddrinfo failed";
 
-    if( mongo_client( conn, "badhost", 27017 ) == MONGO_OK ) {
+    if( mongo_client( conn, "badhost.example.com", 27017 ) == MONGO_OK ) {
         printf( "connected to bad host!\n" );
         exit( 1 );
     } else {

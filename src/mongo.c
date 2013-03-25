@@ -1363,6 +1363,8 @@ MONGO_EXPORT int mongo_cursor_next( mongo_cursor *cursor ) {
     char *next_object;
     char *message_end;
 
+    if( cursor == NULL ) return MONGO_ERROR;
+
     if( ! ( cursor->flags & MONGO_CURSOR_QUERY_SENT ) )
         if( mongo_cursor_op_query( cursor ) != MONGO_OK )
             return MONGO_ERROR;
