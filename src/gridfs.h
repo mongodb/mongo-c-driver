@@ -129,7 +129,11 @@ MONGO_EXPORT void gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char
  *  Write to a GridFS file incrementally. You can call this function any number
  *  of times with a new buffer each time. This allows you to effectively
  *  stream to a GridFS file. When finished, be sure to call gridfs_writer_done.
- *
+ * 
+ *  @param gfile - GridFile to write to
+ *  @param data - Pointer to buffer with data to be written
+ *  @param length - Size of buffer with data to be written
+ *  @return - Number of bytes written. If different from length assume somethind went wrong
  */
 MONGO_EXPORT gridfs_offset gridfile_write_buffer( gridfile *gfile, const char *data,
         gridfs_offset length );
