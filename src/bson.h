@@ -268,7 +268,7 @@ MONGO_EXPORT bson_type bson_find( bson_iterator *it, const bson *obj, const char
 
 
 MONGO_EXPORT bson_iterator* bson_iterator_alloc( void );
-MONGO_EXPORT void bson_iterator_dispose(bson_iterator*);
+MONGO_EXPORT void bson_iterator_dealloc(bson_iterator*);
 /**
  * Initialize a bson_iterator.
  *
