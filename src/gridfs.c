@@ -35,6 +35,7 @@
 #include <assert.h>
 
 #ifndef _MSC_VER
+#include <ctype.h>
 char *_strupr(char *str)
 {
    char *s = str;
@@ -216,12 +217,10 @@ MONGO_EXPORT void gridfs_set_caseInsensitive(gridfs *gfs, bson_bool_t newValue){
   gfs->caseInsensitive = newValue;
 }
 
-static char* upperFileName(const char* filename){
-  char *upperName = (char*) bson_malloc((int)strlen( filename ) + 1 );
-  const char *in = filename;
-  char *out = upperName;
-  while (*in) *out++ = (char)toupper(*in++);
-  *out = *in;
+static char* upperFileName(const char* filename) {
+  char* upperName = (char*) bson_malloc((int)strlen( filename ) + 1 );
+  strcpy(upperName, filename);
+  _strupr(upperName);
   return upperName;
 }
 
