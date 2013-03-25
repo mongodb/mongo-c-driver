@@ -27,6 +27,12 @@ const char *TEST_DB = "test";
 const char *TEST_COL = "foo";
 const char *TEST_NS = "test.foo";
 
+#define CONN_CLIENT_TEST \
+    if( mongo_client( conn, TEST_SERVER, 27017 ) != MONGO_OK ) { \
+        printf( "Failed to connect" ); \
+        exit( 1 ); \
+    } \
+
 MONGO_EXTERN_C_START
 
 int mongo_get_server_version( char *version ) {

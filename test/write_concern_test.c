@@ -325,10 +325,7 @@ int main() {
 
     test_write_concern_finish( );
 
-    if( mongo_client( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
-        printf( "failed to connect\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     ASSERT( conn->write_concern != (void*)0 );
 
