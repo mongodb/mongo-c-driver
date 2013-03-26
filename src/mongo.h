@@ -393,6 +393,26 @@ MONGO_EXPORT void mongo_destroy( mongo *conn );
 MONGO_EXPORT void mongo_set_write_concern( mongo *conn,
         mongo_write_concern *write_concern );
 
+/**
+ * The following functions get the attributes of the write_concern object.
+ *
+ */
+MONGO_EXPORT int mongo_write_concern_get_w( mongo_write_concern *write_concern );
+MONGO_EXPORT int mongo_write_concern_get_wtimeout( mongo_write_concern *write_concern );
+MONGO_EXPORT int mongo_write_concern_get_j( mongo_write_concern *write_concern );
+MONGO_EXPORT int mongo_write_concern_get_fsync( mongo_write_concern *write_concern );
+MONGO_EXPORT const char* mongo_write_concern_get_mode( mongo_write_concern *write_concern );
+MONGO_EXPORT bson* mongo_write_concern_get_cmd( mongo_write_concern *write_concern );
+
+/**
+ * The following functions set the attributes of the write_concern object.
+ *
+ */
+MONGO_EXPORT void mongo_write_concern_set_w( mongo_write_concern *write_concern, int w );
+MONGO_EXPORT void mongo_write_concern_set_wtimeout( mongo_write_concern *write_concern, int wtimeout );
+MONGO_EXPORT void mongo_write_concern_set_j( mongo_write_concern *write_concern, int j );
+MONGO_EXPORT void mongo_write_concern_set_fsync( mongo_write_concern *write_concern, int fsync );
+MONGO_EXPORT void mongo_write_concern_set_mode( mongo_write_concern *write_concern, const char* mode );
 
 /*********************************************************************
 CRUD API

@@ -163,8 +163,8 @@ void test_update_and_remove( mongo *conn ) {
     ASSERT( mongo_remove( conn, "test.wc", query, NULL ) == MONGO_OK );
     ASSERT( mongo_find_one( conn, "test.wc", query, bson_shared_empty( ), NULL ) == MONGO_OK );
 
-    mongo_write_concern_init( wc );
-    wc->w = 1;
+    mongo_write_concern_init( wc );    
+    mongo_write_concern_set_w( wc, 1 );
     mongo_write_concern_finish( wc );
 
     mongo_clear_errors( conn );
@@ -196,8 +196,8 @@ void test_write_concern_input( mongo *conn ) {
     bson_append_new_oid( b, "_id" );
     bson_finish( b );
 
-    mongo_write_concern_init( wc );
-    wc->w = 1;
+    mongo_write_concern_init( wc );    
+    mongo_write_concern_set_w( wc, 1 );
 
     /* Failure to finish write concern object. */
     ASSERT( mongo_insert( conn, TEST_NS, b, wc ) != MONGO_OK );
@@ -209,8 +209,8 @@ void test_write_concern_input( mongo *conn ) {
 
     /* Use a bad write concern. */
     mongo_clear_errors( conn );
-    mongo_write_concern_init( wcbad );
-    wcbad->w = 2;
+    mongo_write_concern_init( wcbad );    
+    mongo_write_concern_set_w( wcbad, 2 );
     mongo_write_concern_finish( wcbad );
     mongo_set_write_concern( conn, wcbad );
     ASSERT( mongo_insert( conn, TEST_NS, b, NULL ) != MONGO_OK );
@@ -238,11 +238,11 @@ void test_insert( mongo *conn ) {
 
     mongo_cmd_drop_collection( conn, TEST_DB, TEST_COL, NULL );
 
-    mongo_write_concern_init( wc0 );
-    wc0->w = 0;
+    mongo_write_concern_init( wc0 );    
+    mongo_write_concern_set_w( wc0, 0 );
     mongo_write_concern_finish( wc0 );
-    mongo_write_concern_init( wc1 );
-    wc1->w = 1;
+    mongo_write_concern_init( wc1 );    
+    mongo_write_concern_set_w( wc1, 1 );
     mongo_write_concern_finish( wc1 );
 
     bson_init( b4 );
