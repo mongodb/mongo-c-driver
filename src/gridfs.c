@@ -1060,7 +1060,7 @@ MONGO_EXPORT gridfs_offset gridfile_seek(gridfile *gfile, gridfs_offset offset) 
 
 MONGO_EXPORT gridfs_offset gridfile_write_file(gridfile *gfile, FILE *stream) {
   char buffer[DEFAULT_CHUNK_SIZE];
-  size_t data_read, data_written;  
+  size_t data_read, data_written = 0;  
   gridfs_offset total_written = 0;
 
   do {
