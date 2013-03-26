@@ -179,12 +179,12 @@ void test_delete( void ) {
     gridfs gfs[1];
     gridfile gfile[1];
     char *data = (char*)bson_malloc( 1024 );
+    const char *testFile = "test-delete";
 
     INIT_SOCKETS_FOR_WINDOWS;
     CONN_CLIENT_TEST;
     GFS_INIT;
 
-    const char *testFile = "test-delete";
     ASSERT( gridfs_store_buffer( gfs, data, 1024, testFile, "text/html", GRIDFILE_DEFAULT ) == MONGO_OK );
     ASSERT( gridfs_find_filename( gfs, testFile, gfile ) == MONGO_OK );
     gridfile_destroy( gfile );
@@ -228,8 +228,8 @@ void test_streaming( void ) {
     gridfile_init( gfs, NULL, gfile );
     gridfile_writer_init( gfile, gfs, "medium", "text/html", GRIDFILE_DEFAULT );
 
-    gridfile_write_buffer( gfile, medium, MEDIUM );
-    gridfile_write_buffer( gfile, medium + MEDIUM, MEDIUM );
+    ASSERT( gridfile_write_buffer( gfile, medium, MEDIUM ) == MEDIUM);
+    ASSERT( gridfile_write_buffer( gfile, medium + MEDIUM, MEDIUM ) == MEDIUM);
     gridfile_writer_done( gfile );
     test_gridfile( gfs, medium, 2 * MEDIUM, "medium", "text/html" );
     gridfs_destroy( gfs );
@@ -243,7 +243,7 @@ void test_streaming( void ) {
     gridfs_remove_filename( gfs, "large" );
     gridfile_writer_init( gfile, gfs, "large", "text/html", GRIDFILE_DEFAULT );
     for( n=0; n < ( LARGE / 1024 ); n++ ) {
-        gridfile_write_buffer( gfile, buf + ( n * 1024 ), 1024 );
+        ASSERT( gridfile_write_buffer( gfile, buf + ( n * 1024 ), 1024 ) == 1024 );
     }
     gridfile_writer_done( gfile );
     test_gridfile( gfs, buf, LARGE, "large", "text/html" );
@@ -294,9 +294,9 @@ void test_random_write() {
         gridfile_writer_init(gfile, gfs, "input-buffer", "text/html", GRIDFILE_DEFAULT );
         gridfile_seek(gfile, j); // Seek into the same buffer position within the GridFS file
         if ( bytes_to_write_first ) {
-          gridfile_write_buffer(gfile, random_data, bytes_to_write_first); // Let's write 10 bytes first, and later the rest
+          ASSERT( gridfile_write_buffer(gfile, random_data, bytes_to_write_first) == bytes_to_write_first ); // Let's write 10 bytes first, and later the rest
         }
-        gridfile_write_buffer(gfile, &random_data[bytes_to_write_first], n - bytes_to_write_first); // Try to write to the existing GridFS file on the position given by j
+        ASSERT( gridfile_write_buffer(gfile, &random_data[bytes_to_write_first], n - bytes_to_write_first) == n - bytes_to_write_first ); // Try to write to the existing GridFS file on the position given by j
         gridfile_seek(gfile, j);
         gridfile_read( gfile, n, buf );
         ASSERT(memcmp( buf, &data_before[j], n) == 0);
@@ -377,7 +377,7 @@ void test_random_write2( void ) {
        given the fact 256K is not a multiple of 3072. Let's stress the buffering logic a little bit */
     for( n = LARGE / 3072 - 1; n >= 0; n-- ) {
         gridfile_seek( gfile, 3072 * n );
-        gridfile_write_buffer( gfile, buf + ( n * 3072 ), 3072 );
+        ASSERT( gridfile_write_buffer( gfile, buf + ( n * 3072 ), 3072 ) == 3072 );
     }
     gridfile_writer_done( gfile );
     test_gridfile( gfs, buf, LARGE, "random_access", "text/html" );
@@ -460,7 +460,7 @@ void test_large( void ) {
     fd = fopen( "bigfile", "r" );
     i = 0;
     while( ( n = fread( buffer, 1, READ_WRITE_BUF_SIZE, fd ) ) != 0 ) {
-        gridfile_write_buffer( gfile, buffer, n );     
+        ASSERT( gridfile_write_buffer( gfile, buffer, n ) == n );     
         if(i++ % 10 == 0) {
           bson_init( &lastErrorCmd );
           bson_append_int( &lastErrorCmd, "getLastError", 1);

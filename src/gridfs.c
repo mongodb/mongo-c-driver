@@ -212,7 +212,6 @@ MONGO_EXPORT bson_bool_t gridfs_get_caseInsensitive( const gridfs *gfs ) {
   return gfs->caseInsensitive;
 }
 
-
 MONGO_EXPORT void gridfs_set_caseInsensitive(gridfs *gfs, bson_bool_t newValue){
   gfs->caseInsensitive = newValue;
 }
@@ -220,10 +219,11 @@ MONGO_EXPORT void gridfs_set_caseInsensitive(gridfs *gfs, bson_bool_t newValue){
 static int bson_append_string_uppercase( bson *b, const char *name, const char *str, bson_bool_t upperCase ) {
   char *strUpperCase;
   if ( upperCase ) {
+    int res; 
     strUpperCase = (char *) bson_malloc( (int) strlen( str ) + 1 );
     strcpy(strUpperCase, str);
     _strupr(strUpperCase);
-    int res = bson_append_string( b, name, strUpperCase );
+    res = bson_append_string( b, name, strUpperCase );
     bson_free( strUpperCase );
     return res;
   } else {
@@ -293,50 +293,26 @@ static int gridfs_insert_file(gridfs *gfs, const char *name, const bson_oid_t id
 }
 
 MONGO_EXPORT int gridfs_store_buffer(gridfs *gfs, const char *data, gridfs_offset length, const char *remotename, const char *contenttype, int flags ) {
+  gridfile gfile = INIT_GRIDFILE;
+  gridfs_offset bytes_written;
+  
+  gridfile_init( gfs, NULL, &gfile );
+  gridfile_writer_init( &gfile, gfs, remotename, contenttype, flags );
+  
+  bytes_written = gridfile_write_buffer( &gfile, data, length );
 
-  char const *end = data + length;
-  const char *data_ptr = data;
-  char* targetBuf = NULL;
-  bson_oid_t id;
-  int chunkNumber = 0;
-  int chunkLen;
-  bson *oChunk;
-  int memAllocated = 0;
-    
-  /* Generate and append an oid*/
-  bson_oid_gen(&id);
+  gridfile_writer_done( &gfile );
+  gridfile_destroy( &gfile );
 
-  /* Insert the file's data chunk by chunk */
-  while (data_ptr < end) {
-    chunkLen = MIN( DEFAULT_CHUNK_SIZE, (unsigned int)(end - data_ptr) );
-    oChunk = chunk_new(id, chunkNumber, &targetBuf, data_ptr, chunkLen, flags );
-    memAllocated = targetBuf != data_ptr;
-    if( mongo_insert( gfs->client, gfs->chunks_ns, oChunk, NULL ) != MONGO_OK ) {
-      chunk_free( oChunk );
-      if( memAllocated ) bson_free( targetBuf );
-      return MONGO_ERROR;
-    }
-    chunk_free( oChunk );
-    chunkNumber++;
-    data_ptr += chunkLen;
-  }
-
-  if( memAllocated ) bson_free( targetBuf );
-
-  /* Inserts file's metadata */
-  return gridfs_insert_file(gfs, remotename, id, length, contenttype, flags, DEFAULT_CHUNK_SIZE);
+  return bytes_written == length ? MONGO_OK : MONGO_ERROR;
 }
 
 MONGO_EXPORT int gridfs_store_file(gridfs *gfs, const char *filename, const char *remotename, const char *contenttype, int flags ) {
-
   char buffer[DEFAULT_CHUNK_SIZE];
-  FILE *fd;
-  bson_oid_t id;
-  int chunkNumber = 0;
-  gridfs_offset length = 0;
-  gridfs_offset chunkLen = 0;
-  bson *oChunk;
-  char* targetBuf = NULL;
+  FILE *fd;    
+  gridfs_offset chunkLen;
+  gridfile gfile = INIT_GRIDFILE;
+  gridfs_offset bytes_written = 0;
 
   /* Open the file and the correct stream */
   if (strcmp(filename, "-") == 0) {
@@ -348,40 +324,29 @@ MONGO_EXPORT int gridfs_store_file(gridfs *gfs, const char *filename, const char
     } 
   }
 
-  /* Generate and append an oid*/
-  bson_oid_gen(&id);
-
-  /* Insert the file chunk by chunk */
-  chunkLen = fread(buffer, 1, DEFAULT_CHUNK_SIZE, fd);
-  do {
-    oChunk = chunk_new(id, chunkNumber, &targetBuf, buffer, (size_t)chunkLen, flags );
-    if( mongo_insert( gfs->client, gfs->chunks_ns, oChunk, NULL ) != MONGO_OK ) {
-      chunk_free( oChunk );
-      if( targetBuf && targetBuf != buffer ) bson_free( targetBuf );
-      return MONGO_ERROR;
-    }
-    chunk_free(oChunk);
-    length += chunkLen;
-    chunkNumber++;
-    chunkLen = fread(buffer, 1, DEFAULT_CHUNK_SIZE, fd);
-  } while (chunkLen != 0);
-
-  /* Close the file stream */
-  if (fd != stdin) {
-    fclose(fd);
-  } 
-
   /* Optional Remote Name */
   if (remotename == NULL ||  *remotename == '\0') {
     remotename = filename;
   }
 
-  if( targetBuf && targetBuf != buffer ) {
-    bson_free( targetBuf );
+  gridfile_init( gfs, NULL, &gfile );
+  gridfile_writer_init( &gfile, gfs, remotename, contenttype, flags ); 
+
+  chunkLen = fread(buffer, 1, DEFAULT_CHUNK_SIZE, fd);
+  while( chunkLen != 0 ) {
+    bytes_written = gridfile_write_buffer( &gfile, buffer, chunkLen );
+    if( bytes_written != chunkLen ) break;
+    chunkLen = fread(buffer, 1, DEFAULT_CHUNK_SIZE, fd);
   }
 
-  /* Inserts file's metadata */
-  return gridfs_insert_file(gfs, remotename, id, length, contenttype, flags, DEFAULT_CHUNK_SIZE );
+  gridfile_writer_done( &gfile );
+  gridfile_destroy( &gfile );
+
+  /* Close the file stream */
+  if ( fd != stdin ) {
+    fclose( fd );
+  }   
+  return ( chunkLen == 0) || ( bytes_written == chunkLen ) ? MONGO_OK : MONGO_ERROR;  
 }
 
 MONGO_EXPORT int gridfs_remove_filename(gridfs *gfs, const char *filename) {
@@ -457,9 +422,7 @@ MONGO_EXPORT int gridfs_find_query( gridfs *gfs, const bson *query, gridfile *gf
   }
 }
 
-MONGO_EXPORT int gridfs_find_filename(gridfs *gfs, const char *filename, gridfile *gfile)
-
- {
+MONGO_EXPORT int gridfs_find_filename(gridfs *gfs, const char *filename, gridfile *gfile){
   bson query = INIT_BSON;
   int i;
 
@@ -834,7 +797,7 @@ static void gridfile_load_pending_data_with_pos_chunk(gridfile *gfile) {
   return;
 }
 
-MONGO_EXPORT void gridfile_write_buffer(gridfile *gfile, const char *data, gridfs_offset length) {
+MONGO_EXPORT gridfs_offset gridfile_write_buffer(gridfile *gfile, const char *data, gridfs_offset length) {
 
   bson *oChunk;
   bson q = INIT_BSON;
@@ -852,7 +815,7 @@ MONGO_EXPORT void gridfile_write_buffer(gridfile *gfile, const char *data, gridf
     if( !gfile->pending_len ) {      
       gridfile_load_pending_data_with_pos_chunk( gfile );           
     }
-    buf_bytes_to_write = MIN( length, DEFAULT_CHUNK_SIZE - buf_pos );
+    buf_bytes_to_write = (size_t)MIN( length, DEFAULT_CHUNK_SIZE - buf_pos );
     memcpy( &gfile->pending_data[buf_pos], data, buf_bytes_to_write);
     if ( buf_bytes_to_write + buf_pos > gfile->pending_len ) {
       gfile->pending_len = buf_bytes_to_write + buf_pos;
@@ -902,6 +865,7 @@ MONGO_EXPORT void gridfile_write_buffer(gridfile *gfile, const char *data, gridf
   if( memAllocated ){
     bson_free( targetBuf );
   }
+  return length;
 }
 
 MONGO_EXPORT void gridfile_get_chunk(gridfile *gfile, int n, bson *out) {
@@ -1095,31 +1059,19 @@ MONGO_EXPORT gridfs_offset gridfile_seek(gridfile *gfile, gridfs_offset offset) 
 }
 
 MONGO_EXPORT gridfs_offset gridfile_write_file(gridfile *gfile, FILE *stream) {
-  int i;
-  size_t len;
-  bson chunk = INIT_BSON;
-  bson_iterator it = INIT_ITERATOR;
-  const char *data = NULL;
-  char* targetBuf = NULL; 
-  size_t targetBufLen = 0;
-  int num;
+  char buffer[DEFAULT_CHUNK_SIZE];
+  size_t data_read, data_written;  
+  gridfs_offset total_written = 0;
 
-  num = gridfile_get_numchunks(gfile);
+  do {
+    data_read = (size_t)gridfile_read( gfile, DEFAULT_CHUNK_SIZE, buffer );
+    if( data_read > 0 ){
+      data_written = fwrite( buffer, sizeof(char), data_read, stream );
+      total_written += data_written;              
+    }    
+  } while(( data_read > 0 ) && ( data_written == data_read ));
 
-  for (i = 0; i < num; i++) {
-    gridfile_get_chunk(gfile, i, &chunk);
-    bson_find(&it, &chunk, "data");
-    len = bson_iterator_bin_len(&it);
-    data = bson_iterator_bin_data(&it);    
-    gridfs_read_filter( &targetBuf, &targetBufLen, data, (size_t)len, gfile->flags );    
-    fwrite(targetBuf, sizeof(char), targetBufLen, stream);
-    bson_destroy(&chunk);
-  }
-
-  if( targetBuf && targetBuf != data ) {
-    bson_free( targetBuf );
-  }
-  return gridfile_get_contentlength(gfile);
+  return total_written;
 }
 
 static void gridfile_remove_chunks( gridfile *gfile, int deleteFromChunk){
