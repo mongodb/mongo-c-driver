@@ -269,7 +269,8 @@ void test_random_write() {
 
     INIT_SOCKETS_FOR_WINDOWS;
     CONN_CLIENT_TEST;
-    
+    GFS_INIT;
+
     fill_buffer_randomly( data_before, UPPER );
     fill_buffer_randomly( random_data, UPPER );
     for ( i = LOWER; i <= UPPER; i += DELTA ) {
