@@ -179,12 +179,12 @@ void test_delete( void ) {
     gridfs gfs[1];
     gridfile gfile[1];
     char *data = (char*)bson_malloc( 1024 );
+    const char *testFile = "test-delete";
 
     INIT_SOCKETS_FOR_WINDOWS;
     CONN_CLIENT_TEST;
     GFS_INIT;
 
-    const char *testFile = "test-delete";
     ASSERT( gridfs_store_buffer( gfs, data, 1024, testFile, "text/html", GRIDFILE_DEFAULT ) == MONGO_OK );
     ASSERT( gridfs_find_filename( gfs, testFile, gfile ) == MONGO_OK );
     gridfile_destroy( gfile );
