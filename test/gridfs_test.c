@@ -26,15 +26,19 @@
 #define gridfs_test_unlink unlink
 #endif
 
+#define GFS_INIT \
+    gridfs_init( conn, "test", "fs", gfs )
+
 void fill_buffer_randomly( char *data, int64_t length ) {
     int64_t i;
     int random;
     char *letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    int nletters = (int)strlen( letters )+1;
+    int nletters = (int)strlen( letters );
+    char *cur;
 
-    for ( i = 0; i < length; i++ ) {
+    for ( i = 0, cur = data; i < length; i++, cur++ ) {
         random = rand() % nletters;
-        *( data + i ) = letters[random];
+        *cur = letters[random];
     }
 }
 
@@ -123,7 +127,7 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     ASSERT( gridfile_read( gfile, length, data_after ) == 0 );
 
     gridfile_destroy( gfile );
-    gridfs_remove_filename( gfs, filename );
+    ASSERT( gridfs_remove_filename( gfs, filename ) == MONGO_OK );
     free( data_after );
     gridfs_test_unlink( "output" );
 }
@@ -138,13 +142,8 @@ void test_basic( void ) {
     srand((unsigned int) time( NULL ) );
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if ( mongo_client( conn, TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect 2\n" );
-        exit( 1 );
-    }
-
-    gridfs_init( conn, "test", "fs", gfs );
+    CONN_CLIENT_TEST;
+    GFS_INIT;
 
     fill_buffer_randomly( data_before, UPPER );
     for ( i = LOWER; i <= UPPER; i += DELTA ) {
@@ -175,6 +174,33 @@ void test_basic( void ) {
     gridfs_test_unlink( "output" );
 }
 
+void test_delete( void ) {
+    mongo conn[1];
+    gridfs gfs[1];
+    gridfile gfile[1];
+    char *data = (char*)bson_malloc( 1024 );
+
+    INIT_SOCKETS_FOR_WINDOWS;
+    CONN_CLIENT_TEST;
+    GFS_INIT;
+
+    const char *testFile = "test-delete";
+    ASSERT( gridfs_store_buffer( gfs, data, 1024, testFile, "text/html", GRIDFILE_DEFAULT ) == MONGO_OK );
+    ASSERT( gridfs_find_filename( gfs, testFile, gfile ) == MONGO_OK );
+    gridfile_destroy( gfile );
+
+    ASSERT( gridfs_remove_filename( gfs, testFile ) == MONGO_OK );
+    ASSERT( gridfs_find_filename( gfs, testFile, gfile ) == MONGO_ERROR );
+
+    ASSERT( gridfs_find_filename( gfs, "bogus-file-does-not-exist", gfile ) == MONGO_ERROR );
+    ASSERT( gridfs_remove_filename( gfs, "bogus-file-does-not-exist" ) == MONGO_ERROR );
+
+    gridfs_destroy( gfs );
+    mongo_disconnect( conn );
+    mongo_destroy( conn );
+    bson_free( data );
+}
+
 void test_streaming( void ) {
     mongo conn[1];
     gridfs gfs[1];
@@ -192,17 +218,13 @@ void test_streaming( void ) {
     srand( (unsigned int)time( NULL ) );
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if ( mongo_client( conn , TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect 3\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     fill_buffer_randomly( medium, ( int64_t )2 * MEDIUM );
     fill_buffer_randomly( small, ( int64_t )LOWER );
     fill_buffer_randomly( buf, ( int64_t )LARGE );
 
-    gridfs_init( conn, "test", "fs", gfs );
+    GFS_INIT;
     gridfile_init( gfs, NULL, gfile );
     gridfile_writer_init( gfile, gfs, "medium", "text/html", GRIDFILE_DEFAULT );
 
@@ -212,13 +234,12 @@ void test_streaming( void ) {
     test_gridfile( gfs, medium, 2 * MEDIUM, "medium", "text/html" );
     gridfs_destroy( gfs );
 
-    gridfs_init( conn, "test", "fs", gfs );
-
+    GFS_INIT;
     gridfs_store_buffer( gfs, small, LOWER, "small", "text/html", GRIDFILE_DEFAULT );
     test_gridfile( gfs, small, LOWER, "small", "text/html" );
     gridfs_destroy( gfs );
 
-    gridfs_init( conn, "test", "fs", gfs );
+    GFS_INIT;
     gridfs_remove_filename( gfs, "large" );
     gridfile_writer_init( gfile, gfs, "large", "text/html", GRIDFILE_DEFAULT );
     for( n=0; n < ( LARGE / 1024 ); n++ ) {
@@ -247,13 +268,8 @@ void test_random_write() {
     srand((unsigned int) time( NULL ) );
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if ( mongo_client( conn, TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect 2\n" );
-        exit( 1 );
-    }
-
-    gridfs_init( conn, "test", "fs", gfs );
+    CONN_CLIENT_TEST;
+    GFS_INIT;
 
     fill_buffer_randomly( data_before, UPPER );
     fill_buffer_randomly( random_data, UPPER );
@@ -327,18 +343,14 @@ void test_random_write2( void ) {
     srand( 123 ); // Init with a predictable value
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if ( mongo_client( conn , TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect 3\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     fill_buffer_randomly( buf, ( int64_t )LARGE );
     memset( zeroedbuf, 0, LARGE ); 
 
     bson_init_empty( &meta );
 
-    gridfs_init( conn, "test", "fs", gfs );
+    GFS_INIT;
 
     /* This portion of the test we will write zeroes by using new API gridfile_set_size
        function gridfile_expand tested implicitally by using gridfile_set_size making file larger */
@@ -393,18 +405,14 @@ void test_large( void ) {
     srand( (unsigned int) time( NULL ) );
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if ( mongo_client( conn, TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect 1\n" );
-        exit( 1 );
-    }    
+    CONN_CLIENT_TEST;
+    
     mongo_write_concern_init(&wc);
     wc.j = 1;
     mongo_write_concern_finish(&wc);
     mongo_set_write_concern(conn, &wc);
 
-
-    gridfs_init( conn, "test", "fs", gfs );
+    GFS_INIT;
 
     fd = fopen( "bigfile", "r" );
     if( fd ) {
@@ -496,6 +504,7 @@ int main( void ) {
  * on why we exclude this test from running on WIN32 */
  
     test_basic();
+    test_delete();
     test_streaming();
     test_random_write();
     test_random_write2();

@@ -17,10 +17,7 @@ int test_read_timeout( void ) {
     bson b, obj, out;
     int res;
 
-    if ( mongo_client( conn, TEST_SERVER, 27017 ) ) {
-        printf( "failed to connect\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     bson_init( &b );
     bson_append_code( &b, "$where", "sleep( 10 * 1000 );");
@@ -56,10 +53,7 @@ int test_getaddrinfo( void ) {
     bson b[1];
     char *ns = "test.foo";
 
-    if( mongo_client( conn, "localhost", 27017 ) != MONGO_OK ) {
-        printf( "failed to connect\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     mongo_cmd_drop_collection( conn, "test", "foo", NULL );
 

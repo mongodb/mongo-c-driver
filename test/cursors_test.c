@@ -186,11 +186,7 @@ int main() {
     mongo conn[1];
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if( mongo_client( conn, TEST_SERVER, 27017 ) != MONGO_OK ) {
-        printf( "Failed to connect" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     test_multiple_getmore( conn );
     test_tailable( conn );

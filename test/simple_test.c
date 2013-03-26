@@ -62,11 +62,7 @@ int main() {
     */
 
     INIT_SOCKETS_FOR_WINDOWS;
-
-    if( mongo_client( conn , TEST_SERVER, 27017 ) != MONGO_OK ) {
-        printf( "failed to connect\n" );
-        exit( 1 );
-    }
+    CONN_CLIENT_TEST;
 
     mongo_cmd_drop_collection( conn, "test", col, NULL );
     mongo_find_one( conn, ns, bson_shared_empty( ), bson_shared_empty( ), NULL );
