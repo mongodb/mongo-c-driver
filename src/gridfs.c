@@ -939,7 +939,7 @@ static gridfs_offset gridfile_read_from_pending_buffer(gridfile *gfile, gridfs_o
 static gridfs_offset gridfile_load_from_chunks(gridfile *gfile, int total_chunks, gridfs_offset chunksize, mongo_cursor *chunks, char* buf, 
                                                gridfs_offset bytes_left);
 
-MONGO_EXPORT gridfs_offset gridfile_read(gridfile *gfile, gridfs_offset size, char *buf) {
+MONGO_EXPORT gridfs_offset gridfile_read_buffer( gridfile *gfile, char *buf, gridfs_offset size ) {
   mongo_cursor *chunks;  
 
   int first_chunk;  
@@ -1064,7 +1064,7 @@ MONGO_EXPORT gridfs_offset gridfile_write_file(gridfile *gfile, FILE *stream) {
   gridfs_offset total_written = 0;
 
   do {
-    data_read = (size_t)gridfile_read( gfile, DEFAULT_CHUNK_SIZE, buffer );
+    data_read = (size_t)gridfile_read_buffer( gfile, buffer, DEFAULT_CHUNK_SIZE );
     if( data_read > 0 ){
       data_written = fwrite( buffer, sizeof(char), data_read, stream );
       total_written += data_written;              
