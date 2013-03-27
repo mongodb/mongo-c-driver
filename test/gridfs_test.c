@@ -74,7 +74,7 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     fclose( stream );
     ASSERT( memcmp( data_before, data_after, (size_t)length ) == 0 );
 
-    gridfile_read( gfile, length, data_after );
+    gridfile_read_buffer( gfile, data_after, length );
     ASSERT( memcmp( data_before, data_after, (size_t)length ) == 0 );
 
     lowerName = (char*) bson_malloc( (int)strlen( filename ) + 1);    
@@ -116,7 +116,7 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
 
     gridfile_seek(gfile, 0);
     ASSERT( gridfile_get_contentlength( gfile ) == (size_t)(length - truncBytes) );
-    ASSERT( gridfile_read( gfile, length, data_after ) ==  (size_t)(length - truncBytes));
+    ASSERT( gridfile_read_buffer( gfile, data_after, length ) ==  (size_t)(length - truncBytes));
     ASSERT( memcmp( data_before, data_after, (size_t)(length - truncBytes) ) == 0 );
 
     gridfile_writer_init( gfile, gfs, filename, content_type, GRIDFILE_DEFAULT);
@@ -124,7 +124,7 @@ void test_gridfile( gridfs *gfs, char *data_before, int64_t length, char *filena
     gridfile_writer_done( gfile );
 
     ASSERT( gridfile_get_contentlength( gfile ) == 0 );
-    ASSERT( gridfile_read( gfile, length, data_after ) == 0 );
+    ASSERT( gridfile_read_buffer( gfile, data_after, length ) == 0 );
 
     gridfile_destroy( gfile );
     ASSERT( gridfs_remove_filename( gfs, filename ) == MONGO_OK );
@@ -298,7 +298,7 @@ void test_random_write() {
         }
         ASSERT( gridfile_write_buffer(gfile, &random_data[bytes_to_write_first], n - bytes_to_write_first) == n - bytes_to_write_first ); // Try to write to the existing GridFS file on the position given by j
         gridfile_seek(gfile, j);
-        gridfile_read( gfile, n, buf );
+        gridfile_read_buffer( gfile, buf, n );
         ASSERT(memcmp( buf, &data_before[j], n) == 0);
 
         gridfile_writer_done(gfile);
@@ -439,7 +439,7 @@ void test_large( void ) {
     fd = fopen( "bigfile", "r" );
 
     while( ( n = fread( buffer, 1, MEDIUM, fd ) ) != 0 ) {
-      ASSERT( gridfile_read( gfile, MEDIUM, read_buf ) == n );
+      ASSERT( gridfile_read_buffer( gfile, read_buf, MEDIUM ) == n );
       ASSERT( memcmp( buffer, read_buf, n ) == 0 );
     }
 

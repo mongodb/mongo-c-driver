@@ -134,8 +134,7 @@ MONGO_EXPORT int gridfile_writer_init( gridfile *gfile, gridfs *gfs, const char 
  *  @param length - Size of buffer with data to be written
  *  @return - Number of bytes written. If different from length assume somethind went wrong
  */
-MONGO_EXPORT gridfs_offset gridfile_write_buffer( gridfile *gfile, const char *data,
-        gridfs_offset length );
+MONGO_EXPORT gridfs_offset gridfile_write_buffer( gridfile *gfile, const char *data, gridfs_offset length );
 
 /**
  *  Signal that writing of this gridfile is complete by
@@ -394,7 +393,7 @@ MONGO_EXPORT gridfs_offset gridfile_write_file( gridfile *gfile, FILE *stream );
  *
  *  @return - the number of bytes read
  */
-MONGO_EXPORT gridfs_offset gridfile_read( gridfile *gfile, gridfs_offset size, char *buf );
+MONGO_EXPORT gridfs_offset gridfile_read_buffer( gridfile *gfile, char *buf, gridfs_offset size );
 
 /**
  *  Updates the position in the file
