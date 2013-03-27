@@ -163,8 +163,8 @@ void test_update_and_remove( mongo *conn ) {
     ASSERT( mongo_remove( conn, "test.wc", query, NULL ) == MONGO_OK );
     ASSERT( mongo_find_one( conn, "test.wc", query, bson_shared_empty( ), NULL ) == MONGO_OK );
 
-    mongo_write_concern_init( wc );
-    wc->w = 1;
+    mongo_write_concern_init( wc );    
+    mongo_write_concern_set_w( wc, 1 );
     mongo_write_concern_finish( wc );
 
     mongo_clear_errors( conn );
@@ -196,8 +196,8 @@ void test_write_concern_input( mongo *conn ) {
     bson_append_new_oid( b, "_id" );
     bson_finish( b );
 
-    mongo_write_concern_init( wc );
-    wc->w = 1;
+    mongo_write_concern_init( wc );    
+    mongo_write_concern_set_w( wc, 1 );
 
     /* Failure to finish write concern object. */
     ASSERT( mongo_insert( conn, TEST_NS, b, wc ) != MONGO_OK );
@@ -209,8 +209,8 @@ void test_write_concern_input( mongo *conn ) {
 
     /* Use a bad write concern. */
     mongo_clear_errors( conn );
-    mongo_write_concern_init( wcbad );
-    wcbad->w = 2;
+    mongo_write_concern_init( wcbad );    
+    mongo_write_concern_set_w( wcbad, 2 );
     mongo_write_concern_finish( wcbad );
     mongo_set_write_concern( conn, wcbad );
     ASSERT( mongo_insert( conn, TEST_NS, b, NULL ) != MONGO_OK );
@@ -238,11 +238,11 @@ void test_insert( mongo *conn ) {
 
     mongo_cmd_drop_collection( conn, TEST_DB, TEST_COL, NULL );
 
-    mongo_write_concern_init( wc0 );
-    wc0->w = 0;
+    mongo_write_concern_init( wc0 );    
+    mongo_write_concern_set_w( wc0, 0 );
     mongo_write_concern_finish( wc0 );
-    mongo_write_concern_init( wc1 );
-    wc1->w = 1;
+    mongo_write_concern_init( wc1 );    
+    mongo_write_concern_set_w( wc1, 1 );
     mongo_write_concern_finish( wc1 );
 
     bson_init( b4 );
@@ -317,6 +317,37 @@ void test_insert( mongo *conn ) {
     mongo_write_concern_destroy( wc1 );
 }
 
+void test_write_concern_api( void ){
+  /* ATTENTION: Don't pay attention to the values themselves set with "setter" functions
+     values set to every field happen to be different in order to check for sutuations
+     where the getter (or setter) functions are wrongly coded and crossover set or get 
+     other attributes */
+  const char* wc_mode = "TEST";
+  mongo_write_concern wc;
+  memset( &wc, 0, sizeof( wc ));
+  
+  mongo_write_concern_set_w( &wc, 1 );
+  ASSERT( mongo_write_concern_get_w( &wc ) == 1 );
+
+  mongo_write_concern_set_wtimeout( &wc, 1000 );
+  ASSERT( mongo_write_concern_get_wtimeout( &wc ) == 1000 );
+
+  mongo_write_concern_set_j( &wc, 2 );
+  ASSERT( mongo_write_concern_get_j( &wc ) == 2 );
+
+  mongo_write_concern_set_fsync( &wc, 3 );
+  ASSERT( mongo_write_concern_get_fsync( &wc ) == 3 );
+
+  mongo_write_concern_set_mode( &wc, wc_mode );
+  ASSERT( mongo_write_concern_get_mode( &wc ) == wc_mode );
+
+  ASSERT( mongo_write_concern_get_cmd( &wc ) == NULL );
+  mongo_write_concern_finish( &wc );
+  ASSERT( mongo_write_concern_get_cmd( &wc ) != NULL );
+  
+  mongo_write_concern_destroy( &wc );
+}
+
 int main() {
     mongo conn[1];
     char version[10];
@@ -337,5 +368,6 @@ int main() {
     }
 
     mongo_destroy( conn );
+    test_write_concern_api();
     return 0;
 }
