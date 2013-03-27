@@ -318,6 +318,10 @@ void test_insert( mongo *conn ) {
 }
 
 void test_write_concern_api( void ){
+  /* ATTENTION: Don't pay attention to the values themselves set with "setter" functions
+     values set to every field happen to be different in order to check for sutuations
+     where the getter (or setter) functions are wrongly coded and crossover set or get 
+     other attributes */
   const char* wc_mode = "TEST";
   mongo_write_concern wc;
   memset( &wc, 0, sizeof( wc ));
