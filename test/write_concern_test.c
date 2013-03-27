@@ -317,6 +317,33 @@ void test_insert( mongo *conn ) {
     mongo_write_concern_destroy( wc1 );
 }
 
+void test_write_concern_api( void ){
+  const char* wc_mode = "TEST";
+  mongo_write_concern wc;
+  memset( &wc, 0, sizeof( wc ));
+  
+  mongo_write_concern_set_w( &wc, 1 );
+  ASSERT( mongo_write_concern_get_w( &wc ) == 1 );
+
+  mongo_write_concern_set_wtimeout( &wc, 1000 );
+  ASSERT( mongo_write_concern_get_wtimeout( &wc ) == 1000 );
+
+  mongo_write_concern_set_j( &wc, 2 );
+  ASSERT( mongo_write_concern_get_j( &wc ) == 2 );
+
+  mongo_write_concern_set_fsync( &wc, 3 );
+  ASSERT( mongo_write_concern_get_fsync( &wc ) == 3 );
+
+  mongo_write_concern_set_mode( &wc, wc_mode );
+  ASSERT( mongo_write_concern_get_mode( &wc ) == wc_mode );
+
+  ASSERT( mongo_write_concern_get_cmd( &wc ) == NULL );
+  mongo_write_concern_finish( &wc );
+  ASSERT( mongo_write_concern_get_cmd( &wc ) != NULL );
+  
+  mongo_write_concern_destroy( &wc );
+}
+
 int main() {
     mongo conn[1];
     char version[10];
@@ -337,5 +364,6 @@ int main() {
     }
 
     mongo_destroy( conn );
+    test_write_concern_api();
     return 0;
 }
