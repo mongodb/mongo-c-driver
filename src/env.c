@@ -22,19 +22,19 @@
 #include <string.h>
 
 #ifdef _MSC_VER
-#include <ws2tcpip.h>  /* send,recv,socklen_t etc */
-#include <wspiapi.h>   /* addrinfo */
+  #include <ws2tcpip.h>  /* send,recv,socklen_t etc */
+  #include <wspiapi.h>   /* addrinfo */
 #else
-#include <ws2tcpip.h>  /* send,recv,socklen_t etc */
-#include <winsock2.h>
-typedef int socklen_t;
+  #include <ws2tcpip.h>  /* send,recv,socklen_t etc */
+  #include <winsock2.h>
+  typedef int socklen_t;
 #endif
 
 #ifndef NI_MAXSERV
 # define NI_MAXSERV 32
 #endif
 
-int mongo_env_close_socket( size_t socket ) {
+int mongo_env_close_socket( SOCKET socket ) {
     return closesocket( socket );
 }
 
@@ -120,7 +120,7 @@ int mongo_env_socket_connect( mongo *conn, const char *host, int port ) {
         conn->sock = socket( ai_ptr->ai_family, ai_ptr->ai_socktype,
                              ai_ptr->ai_protocol );
 
-        if ( conn->sock < 0 ) {
+        if ( conn->sock == INVALID_SOCKET ) {
             __mongo_set_error( conn, MONGO_SOCKET_ERROR, "socket() failed",
                                WSAGetLastError() );
             conn->sock = 0;
@@ -217,7 +217,7 @@ MONGO_EXPORT int mongo_env_sock_init( void ) {
 # define NI_MAXSERV 32
 #endif
 
-int mongo_env_close_socket( size_t socket ) {
+int mongo_env_close_socket( SOCKET socket ) {
     return close( socket );
 }
 
@@ -290,7 +290,7 @@ static int mongo_env_unix_socket_connect( mongo *conn, const char *sock_path ) {
 
     sock = socket( AF_UNIX, SOCK_STREAM, 0 );
 
-    if ( sock < 0 ) {
+    if ( sock == INVALID_SOCKET ) {
         return MONGO_ERROR;
     }
 
@@ -346,7 +346,7 @@ int mongo_env_socket_connect( mongo *conn, const char *host, int port ) {
 
     for ( ai_ptr = ai_list; ai_ptr != NULL; ai_ptr = ai_ptr->ai_next ) {
         sock = socket( ai_ptr->ai_family, ai_ptr->ai_socktype, ai_ptr->ai_protocol );
-        if ( sock < 0 ) {
+        if ( sock == INVALID_SOCKET ) {
             continue;
         }
 
@@ -435,7 +435,7 @@ typedef int socklen_t;
 # define NI_MAXSERV 32
 #endif
 
-int mongo_env_close_socket( size_t socket ) {
+int mongo_env_close_socket( SOCKET socket ) {
 #ifdef _WIN32
     return closesocket( socket );
 #else
@@ -495,7 +495,7 @@ int mongo_env_socket_connect( mongo *conn, const char *host, int port ) {
     socklen_t addressSize;
     int flag = 1;
 
-    if ( ( conn->sock = socket( AF_INET, SOCK_STREAM, 0 ) ) < 0 ) {
+    if ( ( conn->sock = socket( AF_INET, SOCK_STREAM, 0 ) ) == INVALID_SOCKET ) {
         conn->sock = 0;
         conn->err = MONGO_CONN_NO_SOCKET;
         return MONGO_ERROR;
@@ -507,7 +507,7 @@ int mongo_env_socket_connect( mongo *conn, const char *host, int port ) {
     sa.sin_addr.s_addr = inet_addr( host );
     addressSize = sizeof( sa );
 
-    if ( connect( conn->sock, ( struct sockaddr * )&sa, addressSize ) == -1 ) {
+    if ( connect( conn->sock, ( struct sockaddr * )&sa, addressSize ) == INVALID_SOCKET ) {
         mongo_env_close_socket( conn->sock );
         conn->connected = 0;
         conn->sock = 0;
