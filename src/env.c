@@ -284,17 +284,16 @@ int mongo_env_set_socket_op_timeout( mongo *conn, int millis ) {
 
 static int mongo_env_unix_socket_connect( mongo *conn, const char *sock_path ) {
     struct sockaddr_un addr;
-    int sock, status, len;
+    int status, len;
 
     conn->connected = 0;
 
-    sock = socket( AF_UNIX, SOCK_STREAM, 0 );
+    conn->sock = socket( AF_UNIX, SOCK_STREAM, 0 );
 
-    if ( sock == INVALID_SOCKET ) {
+    if ( conn->sock == INVALID_SOCKET ) {
         return MONGO_ERROR;
     }
-
-    conn->sock = sock;
+    
     addr.sun_family = AF_UNIX;
     strncpy( addr.sun_path, sock_path, sizeof(addr.sun_path) - 1 );
     len = sizeof( addr );
@@ -314,7 +313,7 @@ static int mongo_env_unix_socket_connect( mongo *conn, const char *sock_path ) {
 
 int mongo_env_socket_connect( mongo *conn, const char *host, int port ) {
     char port_str[NI_MAXSERV];
-    int sock, status;
+    int status;
 
     struct addrinfo ai_hints;
     struct addrinfo *ai_list = NULL;
@@ -345,12 +344,11 @@ int mongo_env_socket_connect( mongo *conn, const char *host, int port ) {
     }
 
     for ( ai_ptr = ai_list; ai_ptr != NULL; ai_ptr = ai_ptr->ai_next ) {
-        sock = socket( ai_ptr->ai_family, ai_ptr->ai_socktype, ai_ptr->ai_protocol );
-        if ( sock == INVALID_SOCKET ) {
+        conn->sock = socket( ai_ptr->ai_family, ai_ptr->ai_socktype, ai_ptr->ai_protocol );
+        if ( conn->sock == INVALID_SOCKET ) {
             continue;
         }
-
-        conn->sock = sock;
+        
         status = connect( conn->sock, ai_ptr->ai_addr, ai_ptr->ai_addrlen );
         if ( status != 0 ) {
             mongo_env_close_socket( conn->sock );
