@@ -33,7 +33,7 @@ int mongo_env_socket_connect( mongo *conn, const char *host, int port );
 MONGO_EXPORT int mongo_env_sock_init( void );
 
 /* Close a socket */
-MONGO_EXPORT int mongo_env_close_socket( int socket );
+MONGO_EXPORT int mongo_env_close_socket( size_t socket );
 
 MONGO_EXTERN_C_END
 #endif

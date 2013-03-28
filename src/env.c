@@ -34,12 +34,12 @@ typedef int socklen_t;
 # define NI_MAXSERV 32
 #endif
 
-int mongo_env_close_socket( int socket ) {
+int mongo_env_close_socket( size_t socket ) {
     return closesocket( socket );
 }
 
 int mongo_env_write_socket( mongo *conn, const void *buf, size_t len ) {
-    const char *cbuf = buf;
+    const char *cbuf = (const char*)buf;
     int flags = 0;
 
     while ( len ) {
@@ -57,7 +57,7 @@ int mongo_env_write_socket( mongo *conn, const void *buf, size_t len ) {
 }
 
 int mongo_env_read_socket( mongo *conn, void *buf, size_t len ) {
-    char *cbuf = buf;
+    char *cbuf = (char*)buf;
 
     while ( len ) {
         size_t sent = recv( conn->sock, cbuf, len, 0 );
@@ -140,7 +140,7 @@ int mongo_env_socket_connect( mongo *conn, const char *host, int port ) {
             int flag = 1;
 
             setsockopt( conn->sock, IPPROTO_TCP, TCP_NODELAY,
-                        ( void * ) &flag, sizeof( flag ) );
+                        ( const char * ) &flag, sizeof( flag ) );
 
             if ( conn->op_timeout_ms > 0 )
                 mongo_env_set_socket_op_timeout( conn, conn->op_timeout_ms );

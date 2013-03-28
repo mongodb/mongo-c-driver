@@ -163,7 +163,7 @@ typedef struct {
 typedef struct mongo {
     mongo_host_port *primary;  /**< Primary connection info. */
     mongo_replica_set *replica_set;    /**< replica_set object if connected to a replica set. */
-    int sock;                  /**< Socket file descriptor. */
+    size_t sock;                  /**< Socket file descriptor. */
     int flags;                 /**< Flags on this connection object. */
     int conn_timeout_ms;       /**< Connection timeout in milliseconds. */
     int op_timeout_ms;         /**< Read and write timeout in milliseconds. */
@@ -864,7 +864,7 @@ MONGO_EXPORT int mongo_get_err(mongo* conn);
 MONGO_EXPORT int mongo_is_connected(mongo* conn);
 MONGO_EXPORT int mongo_get_op_timeout(mongo* conn);
 MONGO_EXPORT const char* mongo_get_primary(mongo* conn);
-MONGO_EXPORT int mongo_get_socket(mongo* conn) ;
+MONGO_EXPORT size_t mongo_get_socket(mongo* conn) ;
 MONGO_EXPORT int mongo_get_host_count(mongo* conn);
 MONGO_EXPORT const char* mongo_get_host(mongo* conn, int i);
 MONGO_EXPORT mongo_write_concern* mongo_write_concern_alloc( void );
