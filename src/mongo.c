@@ -65,7 +65,7 @@ MONGO_EXPORT const char* mongo_get_primary(mongo* conn) {
 }
 
 
-MONGO_EXPORT size_t mongo_get_socket(mongo* conn) {
+MONGO_EXPORT SOCKET mongo_get_socket(mongo* conn) {
     mongo* conn_ = (mongo*)conn;
     return conn_->sock;
 }
