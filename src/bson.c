@@ -62,6 +62,10 @@ static int ( *oid_inc_func )( void )  = NULL;
    READING
    ------------------------------ */
 
+MONGO_EXPORT void bson_init_zero(bson* b) {
+    memset(b, 0, sizeof(bson) - sizeof(b->stack));
+}
+
 MONGO_EXPORT bson* bson_alloc( void ) {
     return ( bson* )bson_malloc( sizeof( bson ) );
 }
@@ -100,7 +104,7 @@ MONGO_EXPORT bson_bool_t bson_init_empty( bson *obj ) {
 }
 
 MONGO_EXPORT const bson *bson_shared_empty( void ) {
-    static const bson shared_empty = { bson_shared_empty_data, bson_shared_empty_data, 128, 1, 0, {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 0, 0, 0, 0 };
+    static const bson shared_empty = { bson_shared_empty_data, bson_shared_empty_data, 128, 1, 0 };
     return &shared_empty;
 }
 
