@@ -1,0 +1,10 @@
+noinst_PROGRAMS =
+
+
+TEST_PROGS =
+
+
+test: $(TESTS)
+	@ for TEST_PROG in $(TEST_PROGS) ; do \
+		./$$TEST_PROG ; \
+	done

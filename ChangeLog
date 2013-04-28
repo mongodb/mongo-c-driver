@@ -1,0 +1,5 @@
+2013-04-28	Christian Hergert	<christian.hergert@10gen.com>
+
+	* .: The ChangeLog is obsolete.  Please use `git log'
+	for information on changes.
+
