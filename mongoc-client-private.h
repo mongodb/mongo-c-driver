@@ -15,18 +15,32 @@
  */
 
 
-#ifndef MONGOC_H
-#define MONGOC_H
+#ifndef MONGOC_CLIENT_PRIVATE_H
+#define MONGOC_CLIENT_PRIVATE_H
 
 
 #include <bson.h>
 
-#define MONGOC_INSIDE
 #include "mongoc-client.h"
-#include "mongoc-flags.h"
-#include "mongoc-host-list.h"
-#include "mongoc-uri.h"
-#undef MONGOC_INSIDE
+#include "mongoc-event-private.h"
 
 
-#endif /* MONGOC_H */
+BSON_BEGIN_DECLS
+
+
+bson_bool_t
+mongoc_client_send (mongoc_client_t *client,
+                    mongoc_event_t  *event,
+                    bson_error_t    *error);
+
+
+bson_bool_t
+mongoc_client_recv (mongoc_client_t *client,
+                    mongoc_event_t  *event,
+                    bson_error_t    *error);
+
+
+BSON_END_DECLS
+
+
+#endif /* MONGOC_CLIENT_PRIVATE_H */

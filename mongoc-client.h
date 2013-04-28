@@ -15,18 +15,40 @@
  */
 
 
-#ifndef MONGOC_H
-#define MONGOC_H
+#ifndef MONGOC_CLIENT_H
+#define MONGOC_CLIENT_H
 
 
 #include <bson.h>
 
-#define MONGOC_INSIDE
-#include "mongoc-client.h"
-#include "mongoc-flags.h"
-#include "mongoc-host-list.h"
 #include "mongoc-uri.h"
-#undef MONGOC_INSIDE
 
 
-#endif /* MONGOC_H */
+BSON_BEGIN_DECLS
+
+
+/**
+ * mongoc_client_t:
+ *
+ * The mongoc_client_t structure maintains information about a connection to
+ * a MongoDB server.
+ */
+typedef struct _mongoc_client_t mongoc_client_t;
+
+
+mongoc_client_t *
+mongoc_client_new (const char *uri_string);
+
+
+mongoc_client_t *
+mongoc_client_new_from_uri (const mongoc_uri_t *uri);
+
+
+void
+mongoc_client_destroy (mongoc_client_t *client);
+
+
+BSON_END_DECLS
+
+
+#endif /* MONGOC_CLIENT_H */
