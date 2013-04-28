@@ -20,3 +20,4 @@ missing
 *.pc
 stamp-h1
 *.swp
+test-mongoc-uri
