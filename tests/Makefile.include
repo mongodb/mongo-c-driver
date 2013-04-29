@@ -1,14 +1,21 @@
 noinst_PROGRAMS =
+noinst_PROGRAMS += test-mongoc-event
 noinst_PROGRAMS += test-mongoc-uri
 
 
 TEST_PROGS =
+TEST_PROGS += test-mongoc-event
 TEST_PROGS += test-mongoc-uri
 
 
 test_mongoc_uri_SOURCES = $(top_srcdir)/tests/test-mongoc-uri.c
 test_mongoc_uri_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_mongoc_uri_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+
+
+test_mongoc_event_SOURCES = $(top_srcdir)/tests/test-mongoc-event.c
+test_mongoc_event_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+test_mongoc_event_LDADD = libmongoc-1.0.la $(BSON_LIBS)
 
 
 test: $(TESTS)

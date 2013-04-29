@@ -344,7 +344,7 @@ mongoc_event_read (mongoc_event_t *oper,
       iov[0].iov_len = 16; \
       iov[1].iov_base = &e->query.flags; \
       iov[1].iov_len = 4; \
-      iov[2].iov_base = &e->query.ns; \
+      iov[2].iov_base = (void *)e->query.ns; \
       iov[2].iov_len = e->query.nslen + 1; \
       iov[3].iov_base = &e->query.skip; \
       iov[3].iov_len = 4; \
