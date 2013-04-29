@@ -285,6 +285,7 @@ mongoc_event_read (mongoc_event_t *oper,
 
 #define MONGOC_EVENT_SCATTER_KILL_CURSORS(e, iov, iovcnt) \
    do { \
+      bson_uint32_t _i; \
       iovcnt = 4; \
       iov = alloca(sizeof(struct iovec) * iovcnt); \
       e->any.len = 24 + (8 * e->kill_cursors.n_cursors); \
@@ -294,8 +295,11 @@ mongoc_event_read (mongoc_event_t *oper,
       iov[1].iov_len = 4; \
       iov[2].iov_base = &e->kill_cursors.n_cursors; \
       iov[2].iov_len = 4; \
-      iov[3].iov_base = &e->kill_cursors.cursors; \
+      iov[3].iov_base = (void *)e->kill_cursors.cursors; \
       iov[3].iov_len = 8 * e->kill_cursors.n_cursors; \
+      for (_i = 0; _i < e->kill_cursors.n_cursors; _i++) { \
+         e->kill_cursors.cursors[_i] = BSON_UINT64_TO_LE(e->kill_cursors.cursors[_i]); \
+      } \
    } while (0)
 
 

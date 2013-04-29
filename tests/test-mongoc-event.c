@@ -237,6 +237,43 @@ test_mongoc_event_get_more (void)
 }
 
 
+static void
+test_mongoc_event_kill_cursors (void)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_KILL_CURSORS);
+   bson_uint8_t *buf = NULL;
+   bson_uint8_t *fbuf = NULL;
+   bson_uint64_t *cursors;
+   bson_error_t error;
+   size_t buflen = 0;
+   size_t fbuflen = 0;
+   bson_t sel;
+
+   bson_init(&sel);
+
+   cursors = alloca(sizeof *cursors * 5);
+   cursors[0] = 1;
+   cursors[1] = 2;
+   cursors[2] = 3;
+   cursors[3] = 4;
+   cursors[4] = 5;
+
+   assert(ev.type == MONGOC_OPCODE_KILL_CURSORS);
+   ev.any.opcode = ev.type;
+   ev.any.request_id = 1234;
+   ev.any.response_to = -1;
+   ev.kill_cursors.n_cursors = 5;
+   ev.kill_cursors.cursors = cursors;
+   mongoc_event_encode(&ev, &buf, &buflen, NULL, &error);
+   assert(buflen == 64);
+   fbuf = get_test_file("kill_cursors1.dat", &fbuflen);
+   assert(buflen == fbuflen);
+   assert(!memcmp(buf, fbuf, 64));
+   bson_free(buf);
+   bson_free(fbuf);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -244,6 +281,7 @@ main (int   argc,
    run_test("/mongoc/event/delete", test_mongoc_event_delete);
    run_test("/mongoc/event/get_more", test_mongoc_event_get_more);
    run_test("/mongoc/event/insert", test_mongoc_event_insert);
+   run_test("/mongoc/event/kill_cursors", test_mongoc_event_kill_cursors);
    run_test("/mongoc/event/query", test_mongoc_event_query);
    run_test("/mongoc/event/query_no_fields", test_mongoc_event_query_no_fields);
    run_test("/mongoc/event/update", test_mongoc_event_update);
