@@ -175,10 +175,42 @@ test_mongoc_event_update (void)
 }
 
 
+static void
+test_mongoc_event_delete (void)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_DELETE);
+   bson_uint8_t *buf = NULL;
+   bson_uint8_t *fbuf = NULL;
+   bson_error_t error;
+   size_t buflen = 0;
+   size_t fbuflen = 0;
+   bson_t sel;
+
+   bson_init(&sel);
+
+   assert(ev.type == MONGOC_OPCODE_DELETE);
+   ev.any.opcode = ev.type;
+   ev.any.request_id = 1234;
+   ev.any.response_to = -1;
+   ev.delete.ns = "test.test";
+   ev.delete.nslen = sizeof "test.test" - 1;
+   ev.delete.flags = MONGOC_DELETE_SINGLE_REMOVE;
+   ev.delete.selector = &sel;
+   mongoc_event_encode(&ev, &buf, &buflen, NULL, &error);
+   assert(buflen == 39);
+   fbuf = get_test_file("delete1.dat", &fbuflen);
+   assert(buflen == fbuflen);
+   assert(!memcmp(buf, fbuf, 39));
+   bson_free(buf);
+   bson_free(fbuf);
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
+   run_test("/mongoc/event/delete", test_mongoc_event_delete);
    run_test("/mongoc/event/insert", test_mongoc_event_insert);
    run_test("/mongoc/event/query", test_mongoc_event_query);
    run_test("/mongoc/event/query_no_fields", test_mongoc_event_query_no_fields);

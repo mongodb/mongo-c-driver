@@ -260,7 +260,7 @@ mongoc_event_read (mongoc_event_t *oper,
       iov[2].iov_len = e->delete.nslen + 1; \
       iov[3].iov_base = &e->delete.flags; \
       iov[3].iov_len = 4; \
-      iov[4].iov_base = &e->delete.selector->u.top.data; \
+      iov[4].iov_base = (void *)bson_get_data(e->delete.selector); \
       iov[4].iov_len = e->delete.selector->len; \
    } while (0)
 
