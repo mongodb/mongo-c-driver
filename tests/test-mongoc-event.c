@@ -69,11 +69,45 @@ test_mongoc_event_query (void)
 }
 
 
+static void
+test_mongoc_event_query_no_fields (void)
+{
+   mongoc_event_t q = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
+   bson_uint8_t *buf = NULL;
+   bson_uint8_t *fbuf = NULL;
+   bson_error_t error;
+   size_t buflen = 0;
+   size_t fbuflen = 0;
+   bson_t b;
+
+   assert(q.type == MONGOC_OPCODE_QUERY);
+   bson_init(&b);
+   q.any.opcode = q.type;
+   q.any.request_id = 1234;
+   q.any.response_to = -1;
+   q.query.query = &b;
+   q.query.fields = NULL;
+   q.query.skip = 5;
+   q.query.n_return = 1;
+   q.query.flags = MONGOC_QUERY_SLAVE_OK;
+   q.query.ns = "test.test";
+   q.query.nslen = sizeof "test.test" - 1;
+   mongoc_event_encode(&q, &buf, &buflen, NULL, &error);
+   assert(buflen == 43);
+   fbuf = get_test_file("query2.dat", &fbuflen);
+   assert(buflen == fbuflen);
+   assert(!memcmp(buf, fbuf, 43));
+   bson_free(buf);
+   bson_free(fbuf);
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
    run_test("/mongoc/event/query", test_mongoc_event_query);
+   run_test("/mongoc/event/query_no_fields", test_mongoc_event_query_no_fields);
 
    return 0;
 }
