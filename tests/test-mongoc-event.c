@@ -102,10 +102,50 @@ test_mongoc_event_query_no_fields (void)
 }
 
 
+static void
+test_mongoc_event_insert (void)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_INSERT);
+   bson_uint8_t *buf = NULL;
+   bson_uint8_t *fbuf = NULL;
+   bson_error_t error;
+   size_t buflen = 0;
+   size_t fbuflen = 0;
+   bson_t b;
+   bson_t **docs;
+   unsigned i;
+
+   bson_init(&b);
+
+   docs = alloca(sizeof(bson_t*) * 20);
+   for (i = 0; i < 20; i++) {
+      docs[i] = &b;
+   }
+
+   assert(ev.type == MONGOC_OPCODE_INSERT);
+   ev.any.opcode = ev.type;
+   ev.any.request_id = 1234;
+   ev.any.response_to = -1;
+   ev.insert.flags = MONGOC_INSERT_CONTINUE_ON_ERROR;
+   ev.insert.ns = "test.test";
+   ev.insert.nslen = sizeof "test.test" - 1;
+   ev.insert.docslen = 20;
+   ev.insert.docs = docs;
+   mongoc_event_encode(&ev, &buf, &buflen, NULL, &error);
+   assert(buflen == 130);
+   fbuf = get_test_file("insert1.dat", &fbuflen);
+   assert(buflen == fbuflen);
+   assert(!memcmp(buf, fbuf, 130));
+   bson_free(buf);
+   bson_free(fbuf);
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
+   run_test("/mongoc/event/insert", test_mongoc_event_insert);
    run_test("/mongoc/event/query", test_mongoc_event_query);
    run_test("/mongoc/event/query_no_fields", test_mongoc_event_query_no_fields);
 
