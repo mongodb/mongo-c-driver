@@ -260,7 +260,7 @@ mongoc_event_read (mongoc_event_t *oper,
       iov[2].iov_len = e->delete.nslen + 1; \
       iov[3].iov_base = &e->delete.flags; \
       iov[3].iov_len = 4; \
-      iov[4].iov_base = &e->delete.selector->top.data; \
+      iov[4].iov_base = &e->delete.selector->u.top.data; \
       iov[4].iov_len = e->delete.selector->len; \
    } while (0)
 
@@ -330,7 +330,7 @@ mongoc_event_read (mongoc_event_t *oper,
       for (_i = 0; _i < e->reply.docslen; _i++) { \
          e->any.len += e->reply.docs[_i]->len; \
          iov[5 + _i].iov_len = e->reply.docs[_i]->len; \
-         iov[5 + _i].iov_base = e->reply.docs[_i]->top.data; \
+         iov[5 + _i].iov_base = e->reply.docs[_i]->u.top.data; \
       } \
    } while (0)
 
