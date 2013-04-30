@@ -274,6 +274,32 @@ test_mongoc_event_kill_cursors (void)
 }
 
 
+static void
+test_mongoc_event_msg (void)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_MSG);
+   bson_uint8_t *buf = NULL;
+   bson_uint8_t *fbuf = NULL;
+   bson_error_t error;
+   size_t buflen = 0;
+   size_t fbuflen = 0;
+
+   assert(ev.type == MONGOC_OPCODE_MSG);
+   ev.any.opcode = ev.type;
+   ev.any.request_id = 1234;
+   ev.any.response_to = -1;
+   ev.msg.msglen = sizeof "this is a test message." - 1;
+   ev.msg.msg = "this is a test message.";
+   mongoc_event_encode(&ev, &buf, &buflen, NULL, &error);
+   assert(buflen == 40);
+   fbuf = get_test_file("msg1.dat", &fbuflen);
+   assert(buflen == fbuflen);
+   assert(!memcmp(buf, fbuf, 40));
+   bson_free(buf);
+   bson_free(fbuf);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -282,6 +308,7 @@ main (int   argc,
    run_test("/mongoc/event/get_more", test_mongoc_event_get_more);
    run_test("/mongoc/event/insert", test_mongoc_event_insert);
    run_test("/mongoc/event/kill_cursors", test_mongoc_event_kill_cursors);
+   run_test("/mongoc/event/msg", test_mongoc_event_msg);
    run_test("/mongoc/event/query", test_mongoc_event_query);
    run_test("/mongoc/event/query_no_fields", test_mongoc_event_query_no_fields);
    run_test("/mongoc/event/update", test_mongoc_event_update);
