@@ -300,6 +300,46 @@ test_mongoc_event_msg (void)
 }
 
 
+static void
+test_mongoc_event_reply (void)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_REPLY);
+   bson_uint32_t i;
+   bson_uint8_t *buf = NULL;
+   bson_uint8_t *fbuf = NULL;
+   bson_error_t error;
+   size_t buflen = 0;
+   size_t fbuflen = 0;
+   bson_t b;
+   bson_t **docs;
+
+   bson_init(&b);
+
+   docs = alloca(sizeof(bson_t*) * 100);
+   for (i = 0; i < 100; i++) {
+      docs[i] = &b;
+   }
+
+   assert(ev.type == MONGOC_OPCODE_REPLY);
+   ev.any.opcode = ev.type;
+   ev.any.request_id = 1234;
+   ev.any.response_to = -1;
+   ev.reply.flags = MONGOC_REPLY_AWAIT_CAPABLE;
+   ev.reply.cursor_id = 12345678;
+   ev.reply.start_from = 50;
+   ev.reply.n_returned = 100;
+   ev.reply.docs = docs;
+   ev.reply.docslen = 100;
+   mongoc_event_encode(&ev, &buf, &buflen, NULL, &error);
+   assert(buflen == 536);
+   fbuf = get_test_file("reply1.dat", &fbuflen);
+   assert(buflen == fbuflen);
+   assert(!memcmp(buf, fbuf, 536));
+   bson_free(buf);
+   bson_free(fbuf);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -311,6 +351,7 @@ main (int   argc,
    run_test("/mongoc/event/msg", test_mongoc_event_msg);
    run_test("/mongoc/event/query", test_mongoc_event_query);
    run_test("/mongoc/event/query_no_fields", test_mongoc_event_query_no_fields);
+   run_test("/mongoc/event/reply", test_mongoc_event_reply);
    run_test("/mongoc/event/update", test_mongoc_event_update);
 
    return 0;
