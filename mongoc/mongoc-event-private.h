@@ -334,7 +334,7 @@ mongoc_event_read (mongoc_event_t *oper,
       for (_i = 0; _i < e->reply.docslen; _i++) { \
          e->any.len += e->reply.docs[_i]->len; \
          iov[5 + _i].iov_len = e->reply.docs[_i]->len; \
-         iov[5 + _i].iov_base = e->reply.docs[_i]->u.top.data; \
+         iov[5 + _i].iov_base = (void *)bson_get_data(e->reply.docs[_i]); \
       } \
    } while (0)
 

@@ -66,7 +66,7 @@ test_mongoc_uri_new (void)
    assert(uri);
    options = mongoc_uri_get_read_preferences(uri);
    assert(options);
-   assert_cmpint(bson_count(options), ==, 2);
+   assert_cmpint(bson_count_keys(options), ==, 2);
    assert(bson_iter_init_find(&iter, options, "0"));
    assert(BSON_ITER_HOLDS_DOCUMENT(&iter));
    assert(bson_iter_recurse(&iter, &child));
@@ -84,7 +84,7 @@ test_mongoc_uri_new (void)
    uri = mongoc_uri_new("mongodb://localhost/a?slaveok=true&ssl=false&journal=true");
    options = mongoc_uri_get_options(uri);
    assert(options);
-   assert_cmpint(bson_count(options), ==, 3);
+   assert_cmpint(bson_count_keys(options), ==, 3);
    assert(bson_iter_init(&iter, options));
    assert(bson_iter_find_case(&iter, "slaveok"));
    assert(BSON_ITER_HOLDS_BOOL(&iter));

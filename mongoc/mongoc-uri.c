@@ -282,7 +282,7 @@ again:
       }
    }
 
-   i = bson_count(&uri->read_prefs);
+   i = bson_count_keys(&uri->read_prefs);
    snprintf(keystr, sizeof keystr, "%u", i);
    bson_append_document(&uri->read_prefs, keystr, -1, &b);
    bson_destroy(&b);
