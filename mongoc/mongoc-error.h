@@ -15,20 +15,33 @@
  */
 
 
-#ifndef MONGOC_H
-#define MONGOC_H
+#ifndef MONGOC_ERRORS_H
+#define MONGOC_ERRORS_H
 
 
 #include <bson.h>
 
-#define MONGOC_INSIDE
-#include "mongoc-client.h"
-#include "mongoc-error.h"
-#include "mongoc-flags.h"
-#include "mongoc-host-list.h"
-#include "mongoc-stdint.h"
-#include "mongoc-uri.h"
-#undef MONGOC_INSIDE
+
+BSON_BEGIN_DECLS
 
 
-#endif /* MONGOC_H */
+typedef enum
+{
+   MONGOC_ERROR_CONN = 1,
+} mongoc_error_domain_t;
+
+
+typedef enum
+{
+   MONGOC_ERROR_CONN_INVALID_TYPE = 1,
+   MONGOC_ERROR_CONN_INVALID_STATE,
+   MONGOC_ERROR_CONN_NAME_RESOLUTION,
+   MONGOC_ERROR_CONN_SOCKET,
+   MONGOC_ERROR_CONN_CONNECT,
+} mongoc_error_code_t;
+
+
+BSON_END_DECLS
+
+
+#endif /* MONGOC_ERRORS_H */

@@ -9,6 +9,7 @@ lib_LTLIBRARIES += libmongoc-1.0.la
 INST_H_FILES =
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-client.h
+INST_H_FILES += $(top_srcdir)/mongoc/mongoc-error.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-flags.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-host-list.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stdint.h
@@ -18,6 +19,7 @@ INST_H_FILES += $(top_srcdir)/mongoc/mongoc-version.h
 
 NOINST_H_FILES =
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-client-private.h
+NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-conn-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-event-private.h
 
 
@@ -25,6 +27,7 @@ libmongoc_1_0_la_SOURCES =
 libmongoc_1_0_la_SOURCES += $(INST_H_FILES)
 libmongoc_1_0_la_SOURCES += $(NOINST_H_FILES)
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-client.c
+libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-conn.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-event.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-uri.c
 

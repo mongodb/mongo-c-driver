@@ -20,5 +20,6 @@ missing
 *.pc
 stamp-h1
 *.swp
+test-mongoc-conn
 test-mongoc-event
 test-mongoc-uri
