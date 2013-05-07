@@ -56,6 +56,7 @@ typedef struct
    char                *host;
    bson_uint16_t        port;
    char                *path;
+   bson_t              *options;
 } mongoc_conn_t;
 
 

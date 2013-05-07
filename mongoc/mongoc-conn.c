@@ -43,12 +43,7 @@ mongoc_conn_init_tcp (mongoc_conn_t *conn,
    conn->host = bson_strdup(host);
    conn->port = port;
 
-   /*
-    * TODO: Fetch timeout values from options.
-    */
-
-   if (options) {
-   }
+   conn->options = options ? bson_copy(options) : bson_new();
 }
 
 
@@ -175,7 +170,11 @@ void
 mongoc_conn_destroy (mongoc_conn_t *conn)
 {
    bson_return_if_fail(conn);
+
    mongoc_conn_disconnect(conn);
+   bson_free(conn->host);
+   bson_free(conn->path);
+   bson_destroy(conn->options);
 }
 
 
