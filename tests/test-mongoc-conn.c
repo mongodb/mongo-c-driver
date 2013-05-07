@@ -12,6 +12,7 @@ test_mongoc_conn_init_tcp (void)
 
    mongoc_conn_init_tcp(&conn, "127.0.0.1", 27017, NULL);
    assert(mongoc_conn_connect(&conn, &error));
+   mongoc_conn_disconnect(&conn);
    mongoc_conn_destroy(&conn);
 }
 

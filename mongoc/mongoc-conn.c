@@ -37,7 +37,8 @@ mongoc_conn_init_tcp (mongoc_conn_t *conn,
    memset(conn, 0, sizeof *conn);
 
    conn->type = MONGOC_CONN_TCP;
-   conn->fd = -1;
+   conn->rdfd = -1;
+   conn->wrfd = -1;
    conn->ping = -1;
    conn->host = bson_strdup(host);
    conn->port = port;
@@ -105,7 +106,8 @@ mongoc_conn_connect_tcp (mongoc_conn_t *conn,
 
    freeaddrinfo(result);
 
-   conn->fd = sfd;
+   conn->rdfd = sfd;
+   conn->wrfd = sfd;
    conn->state = MONGOC_CONN_STATE_ESTABLISHED;
 
    return TRUE;
@@ -150,7 +152,53 @@ mongoc_conn_connect (mongoc_conn_t *conn,
 
 
 void
+mongoc_conn_disconnect (mongoc_conn_t *conn)
+{
+   bson_return_if_fail(conn);
+
+   if (conn->rdfd != -1) {
+      close(conn->rdfd);
+   }
+
+   if (conn->rdfd != conn->wrfd) {
+      close(conn->wrfd);
+   }
+
+   conn->rdfd = -1;
+   conn->wrfd = -1;
+
+   conn->state = MONGOC_CONN_STATE_DISCONNECTED;
+}
+
+
+void
 mongoc_conn_destroy (mongoc_conn_t *conn)
 {
    bson_return_if_fail(conn);
+   mongoc_conn_disconnect(conn);
+}
+
+
+bson_bool_t
+mongoc_conn_send (mongoc_conn_t   *conn,
+                  mongoc_event_t  *event,
+                  bson_error_t    *error)
+{
+   bson_return_val_if_fail(conn, FALSE);
+   bson_return_val_if_fail(event, FALSE);
+
+   if (conn->state != MONGOC_CONN_STATE_ESTABLISHED) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CONN,
+                     MONGOC_ERROR_CONN_NOT_ESTABLISHED,
+                     "Connection not established.");
+      return FALSE;
+   }
+
+   if (!mongoc_event_write(event, conn->wrfd, error)) {
+      mongoc_conn_disconnect(conn);
+      return FALSE;
+   }
+
+   return TRUE;
 }

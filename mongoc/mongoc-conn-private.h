@@ -50,7 +50,8 @@ typedef struct
 {
    mongoc_conn_state_t  state;
    mongoc_conn_type_t   type;
-   int                  fd;
+   int                  rdfd;
+   int                  wrfd;
    bson_int32_t         ping;
    char                *host;
    bson_uint16_t        port;
@@ -82,9 +83,8 @@ mongoc_conn_connect (mongoc_conn_t *conn,
                      bson_error_t  *error);
 
 
-bson_bool_t
-mongoc_conn_disconnect (mongoc_conn_t *conn,
-                        bson_error_t  *error);
+void
+mongoc_conn_disconnect (mongoc_conn_t *conn);
 
 
 bson_bool_t
