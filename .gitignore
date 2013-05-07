@@ -22,4 +22,5 @@ stamp-h1
 *.swp
 test-mongoc-conn
 test-mongoc-event
+test-mongoc-queue
 test-mongoc-uri
