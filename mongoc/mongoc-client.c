@@ -18,13 +18,15 @@
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"
 #include "mongoc-event-private.h"
+#include "mongoc-queue-private.h"
 
 
 struct _mongoc_client_t
 {
-   mongoc_uri_t  *uri;
-   bson_uint32_t  request_id;
-   int            outfd;
+   mongoc_uri_t   *uri;
+   bson_uint32_t   request_id;
+   int             outfd;
+   mongoc_queue_t  queue;
 };
 
 
@@ -62,6 +64,7 @@ mongoc_client_new (const char *uri_string)
    client->uri = uri;
    client->outfd = 1;
    client->request_id = rand();
+   mongoc_queue_init(&client->queue);
 
    return client;
 }
