@@ -15,6 +15,8 @@
  */
 
 
+#include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -109,6 +111,41 @@ mongoc_conn_connect_tcp (mongoc_conn_t *conn,
 }
 
 
+static bson_bool_t
+mongoc_conn_connect_unix (mongoc_conn_t *conn,
+                          bson_error_t  *error)
+{
+   int fd;
+
+   bson_return_val_if_fail(conn, FALSE);
+
+   errno = 0;
+   fd = open(conn->path, O_RDWR);
+   if (fd != -1) {
+      conn->rdfd = fd;
+      conn->wrfd = fd;
+      return TRUE;
+   }
+
+   bson_set_error(error,
+                  MONGOC_ERROR_CONN,
+                  MONGOC_ERROR_CONN_CONNECT,
+                  "Cannot open unix domain socket: %s",
+                  strerror(errno));
+
+   return FALSE;
+}
+
+
+static bson_bool_t
+mongoc_conn_connect_fd (mongoc_conn_t *conn,
+                        bson_error_t  *error)
+{
+   bson_return_val_if_fail(conn, FALSE);
+   return TRUE;
+}
+
+
 bson_bool_t
 mongoc_conn_connect (mongoc_conn_t *conn,
                      bson_error_t  *error)
@@ -128,21 +165,20 @@ mongoc_conn_connect (mongoc_conn_t *conn,
    case MONGOC_CONN_TCP:
       return mongoc_conn_connect_tcp(conn, error);
    case MONGOC_CONN_UNIX:
-      // TODO:
-      break;
+      return mongoc_conn_connect_unix(conn, error);
    case MONGOC_CONN_FD:
-      // TODO:
-      break;
+      return mongoc_conn_connect_fd(conn, error);
    default:
-      bson_set_error(error,
-                     MONGOC_ERROR_CONN,
-                     MONGOC_ERROR_CONN_INVALID_STATE,
-                     "No such connection type: %02x",
-                     conn->type);
-      return FALSE;
+      break;
    }
 
-   return TRUE;
+   bson_set_error(error,
+                  MONGOC_ERROR_CONN,
+                  MONGOC_ERROR_CONN_INVALID_STATE,
+                  "No such connection type: %02x",
+                  conn->type);
+
+   return FALSE;
 }
 
 
