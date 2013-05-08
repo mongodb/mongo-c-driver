@@ -15,6 +15,8 @@ test_mongoc_queue_basic (void)
    mongoc_queue_push_tail(&q, (void *)4);
    mongoc_queue_push_head(&q, (void *)5);
 
+   assert_cmpint(mongoc_queue_get_length(&q), ==, 5);
+
    assert_cmpint(mongoc_queue_pop_head(&q), ==, (void *)5);
    assert_cmpint(mongoc_queue_pop_head(&q), ==, (void *)3);
    assert_cmpint(mongoc_queue_pop_head(&q), ==, (void *)1);

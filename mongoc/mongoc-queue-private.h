@@ -46,6 +46,10 @@ struct _mongoc_queue_item_t
 };
 
 
+void
+mongoc_queue_init (mongoc_queue_t *queue);
+
+
 void *
 mongoc_queue_pop_head (mongoc_queue_t *queue);
 
@@ -58,6 +62,10 @@ mongoc_queue_push_head (mongoc_queue_t *queue,
 void
 mongoc_queue_push_tail (mongoc_queue_t *queue,
                         void           *data);
+
+
+bson_uint32_t
+mongoc_queue_get_length (const mongoc_queue_t *queue);
 
 
 BSON_END_DECLS
