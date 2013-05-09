@@ -21,6 +21,8 @@
 
 #include <bson.h>
 
+#include "mongoc-list-private.h"
+
 
 BSON_BEGIN_DECLS
 

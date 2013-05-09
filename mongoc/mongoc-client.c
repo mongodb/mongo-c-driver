@@ -18,15 +18,15 @@
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"
 #include "mongoc-event-private.h"
+#include "mongoc-list-private.h"
 #include "mongoc-queue-private.h"
 
 
 struct _mongoc_client_t
 {
-   mongoc_uri_t   *uri;
-   bson_uint32_t   request_id;
-   int             outfd;
-   mongoc_queue_t  queue;
+   bson_uint32_t  request_id;
+   mongoc_list_t *conns;
+   mongoc_uri_t  *uri;
 };
 
 
@@ -35,6 +35,7 @@ mongoc_client_send (mongoc_client_t *client,
                     mongoc_event_t  *event,
                     bson_error_t    *error)
 {
+#if 0
    bson_bool_t ret = FALSE;
 
    bson_return_val_if_fail(client, FALSE);
@@ -47,6 +48,9 @@ mongoc_client_send (mongoc_client_t *client,
    ret = mongoc_event_write(event, client->outfd, error);
 
    return ret;
+#else
+   return FALSE;
+#endif
 }
 
 
@@ -62,9 +66,7 @@ mongoc_client_new (const char *uri_string)
 
    client = bson_malloc0(sizeof *client);
    client->uri = uri;
-   client->outfd = 1;
    client->request_id = rand();
-   mongoc_queue_init(&client->queue);
 
    return client;
 }
@@ -73,7 +75,12 @@ mongoc_client_new (const char *uri_string)
 mongoc_client_t *
 mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 {
-   return mongoc_client_new(mongoc_uri_get_string(uri));
+   const char *uristr;
+
+   bson_return_val_if_fail(uri, NULL);
+
+   uristr = mongoc_uri_get_string(uri);
+   return mongoc_client_new(uristr);
 }
 
 
