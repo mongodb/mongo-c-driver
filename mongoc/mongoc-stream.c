@@ -211,30 +211,26 @@ mongoc_stream_readv (mongoc_stream_t *stream,
 
 
 /**
- * mongoc_stream_new_unix:
- * @path: The path to a UNIX domain socket.
+ * mongoc_stream_new_from_unix:
+ * @fd: A unix style file-descriptor.
  *
- * Create a new mongoc_stream_t for a UNIX domain socket found on the
- * local file-system. If the socket does not exist, NULL is returned.
+ * Create a new mongoc_stream_t for a UNIX file descriptor. This is
+ * expected to be a socket of some sort (such as a UNIX or TCP socket).
+ *
+ * This may be useful after having connected to a peer to provide a
+ * higher level API for reading and writing. It also allows for
+ * interoperability with external stream abstractions in higher level
+ * languages.
  *
  * Returns: A newly allocated mongoc_stream_t that should be freed with
  *   mongoc_stream_destroy().
  */
 mongoc_stream_t *
-mongoc_stream_new_unix (const char *path)
+mongoc_stream_new_from_unix (int fd)
 {
    mongoc_stream_unix_t *stream;
-   int fd = -1;
 
-   bson_return_val_if_fail(path, NULL);
-
-   /*
-    * TODO: open unix domain socket.
-    */
-
-   if (fd == -1) {
-      return NULL;
-   }
+   bson_return_val_if_fail(fd != -1, NULL);
 
    stream = bson_malloc0(sizeof *stream);
    stream->fd = fd;

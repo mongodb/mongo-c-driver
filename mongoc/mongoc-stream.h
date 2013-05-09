@@ -43,19 +43,16 @@ struct _mongoc_stream_t
 };
 
 
-int              mongoc_stream_close     (mongoc_stream_t *stream);
-void             mongoc_stream_destroy   (mongoc_stream_t *stream);
-int              mongoc_stream_flush     (mongoc_stream_t *stream);
-mongoc_stream_t *mongoc_stream_new_unix  (const char      *path);
-mongoc_stream_t *mongoc_stream_new_tcp   (const char      *hostname,
-                                          bson_uint16_t    port,
-                                          const bson_t    *options);
-ssize_t          mongoc_stream_writev    (mongoc_stream_t *stream,
-                                          struct iovec    *iov,
-                                          size_t           iovcnt);
-ssize_t          mongoc_stream_readv     (mongoc_stream_t *stream,
-                                          struct iovec    *iov,
-                                          size_t           iovcnt);
+int              mongoc_stream_close         (mongoc_stream_t *stream);
+void             mongoc_stream_destroy       (mongoc_stream_t *stream);
+int              mongoc_stream_flush         (mongoc_stream_t *stream);
+mongoc_stream_t *mongoc_stream_new_from_unix (int              fd);
+ssize_t          mongoc_stream_writev        (mongoc_stream_t *stream,
+                                              struct iovec    *iov,
+                                              size_t           iovcnt);
+ssize_t          mongoc_stream_readv         (mongoc_stream_t *stream,
+                                              struct iovec    *iov,
+                                              size_t           iovcnt);
 
 
 BSON_END_DECLS
