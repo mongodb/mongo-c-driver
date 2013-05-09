@@ -113,4 +113,11 @@ void
 mongoc_client_pool_push (mongoc_client_pool_t *pool,
                          mongoc_client_t      *client)
 {
+   bson_return_if_fail(pool);
+   bson_return_if_fail(client);
+
+   bson_mutex_lock(&pool->mutex);
+   mongoc_queue_push_head(&pool->queue, client);
+   bson_cond_signal(&pool->cond);
+   bson_mutex_unlock(&pool->mutex);
 }
