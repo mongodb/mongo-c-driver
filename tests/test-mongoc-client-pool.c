@@ -1,0 +1,30 @@
+#include <mongoc.h>
+
+#include "mongoc-tests.h"
+
+
+static void
+test_mongoc_client_pool_basic (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new("mongodb://127.0.0.1?maxpoolsize=1&minpoolsize=1");
+   pool = mongoc_client_pool_new(uri);
+   client = mongoc_client_pool_pop(pool);
+   assert(client);
+   mongoc_client_pool_push(pool, client);
+   mongoc_uri_destroy(uri);
+   mongoc_client_pool_destroy(pool);
+}
+
+
+int
+main (int   argc,
+      char *argv[])
+{
+   run_test("/mongoc/client/pool/basic", test_mongoc_client_pool_basic);
+
+   return 0;
+}
