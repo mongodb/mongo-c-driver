@@ -116,6 +116,10 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    bson_return_if_fail(pool);
    bson_return_if_fail(client);
 
+   /*
+    * TODO: Shutdown old client connections.
+    */
+
    bson_mutex_lock(&pool->mutex);
    mongoc_queue_push_head(&pool->queue, client);
    bson_cond_signal(&pool->cond);
