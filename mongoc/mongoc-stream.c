@@ -35,7 +35,7 @@ mongoc_stream_unix_destroy (mongoc_stream_t *stream)
 {
    bson_return_if_fail(stream);
 
-   if (!!mongoc_stream_close(stream)) {
+   if (mongoc_stream_close(stream) != 0) {
       /*
        * TODO: Handle close failure.
        */
