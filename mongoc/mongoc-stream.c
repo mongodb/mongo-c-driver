@@ -71,7 +71,14 @@ mongoc_stream_unix_flush (mongoc_stream_t *stream)
    bson_return_val_if_fail(stream, -1);
 
    if (file->fd != -1) {
+      /*
+       * TODO: You can't use fsync() with a socket (AFAIK). So we might
+       *       need to select() for a writable condition or something to
+       *       determine when data has been sent.
+       */
+#if 0
       ret = fsync(file->fd);
+#endif
    }
 
    return ret;
