@@ -83,6 +83,7 @@ mongoc_client_destroy (mongoc_client_t *client)
    /*
     * TODO: Implement destruction.
     */
+   mongoc_uri_destroy(client->uri);
    bson_free(client);
 }
 
