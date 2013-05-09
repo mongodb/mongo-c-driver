@@ -85,3 +85,11 @@ mongoc_client_destroy (mongoc_client_t *client)
     */
    bson_free(client);
 }
+
+
+const mongoc_uri_t *
+mongoc_client_get_uri (const mongoc_client_t *client)
+{
+   bson_return_val_if_fail(client, NULL);
+   return client->uri;
+}

@@ -44,6 +44,10 @@ mongoc_client_t *
 mongoc_client_new_from_uri (const mongoc_uri_t *uri);
 
 
+const mongoc_uri_t *
+mongoc_client_get_uri (const mongoc_client_t *client);
+
+
 void
 mongoc_client_destroy (mongoc_client_t *client);
 
