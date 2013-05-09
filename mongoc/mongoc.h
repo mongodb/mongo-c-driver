@@ -23,6 +23,7 @@
 
 #define MONGOC_INSIDE
 #include "mongoc-client.h"
+#include "mongoc-client-pool.h"
 #include "mongoc-error.h"
 #include "mongoc-flags.h"
 #include "mongoc-host-list.h"
