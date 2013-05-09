@@ -23,5 +23,6 @@ stamp-h1
 test-mongoc-client-pool
 test-mongoc-conn
 test-mongoc-event
+test-mongoc-list
 test-mongoc-queue
 test-mongoc-uri
