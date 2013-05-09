@@ -17,6 +17,7 @@
 
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"
+#include "mongoc-cluster-private.h"
 #include "mongoc-event-private.h"
 #include "mongoc-list-private.h"
 #include "mongoc-queue-private.h"
@@ -24,9 +25,10 @@
 
 struct _mongoc_client_t
 {
-   bson_uint32_t  request_id;
-   mongoc_list_t *conns;
-   mongoc_uri_t  *uri;
+   bson_uint32_t     request_id;
+   mongoc_list_t    *conns;
+   mongoc_uri_t     *uri;
+   mongoc_cluster_t  cluster;
 };
 
 
