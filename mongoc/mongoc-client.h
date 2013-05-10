@@ -21,6 +21,7 @@
 
 #include <bson.h>
 
+#include "mongoc-stream.h"
 #include "mongoc-uri.h"
 
 
@@ -36,6 +37,26 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_client_t mongoc_client_t;
 
 
+/**
+ * mongoc_stream_initiator_t:
+ * @uri: The uri and options for the stream.
+ * @host: The host and port (or UNIX domain socket path) to connect to.
+ * @error: A location for an error.
+ *
+ * Creates a new mongoc_stream_t for the host and port. This can be used
+ * by language bindings to create network transports other than those
+ * built into libmongoc. An example of such would be the streams API
+ * provided by PHP.
+ *
+ * Returns: A newly allocated mongoc_stream_t or NULL on failure.
+ */
+typedef mongoc_stream_t *
+   (*mongoc_stream_initiator_t) (const mongoc_uri_t       *uri,
+                                 const mongoc_host_list_t *host,
+                                 void                     *user_data,
+                                 bson_error_t             *error);
+
+
 mongoc_client_t *
 mongoc_client_new (const char *uri_string);
 
@@ -46,6 +67,12 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri);
 
 const mongoc_uri_t *
 mongoc_client_get_uri (const mongoc_client_t *client);
+
+
+void
+mongoc_client_set_stream_initiator (mongoc_client_t           *client,
+                                    mongoc_stream_initiator_t  initiator,
+                                    void                      *user_data);
 
 
 void

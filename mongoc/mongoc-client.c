@@ -15,21 +15,132 @@
  */
 
 
+#include <errno.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"
 #include "mongoc-cluster-private.h"
 #include "mongoc-event-private.h"
+#include "mongoc-error.h"
 #include "mongoc-list-private.h"
 #include "mongoc-queue-private.h"
 
 
 struct _mongoc_client_t
 {
-   bson_uint32_t     request_id;
-   mongoc_list_t    *conns;
-   mongoc_uri_t     *uri;
-   mongoc_cluster_t  cluster;
+   bson_uint32_t              request_id;
+   mongoc_list_t             *conns;
+   mongoc_uri_t              *uri;
+   mongoc_cluster_t           cluster;
+   mongoc_stream_initiator_t  initiator;
 };
+
+
+static mongoc_stream_t *
+mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
+                           const mongoc_host_list_t *host,
+                           bson_error_t             *error)
+{
+   struct addrinfo hints;
+   struct addrinfo *result, *rp;
+   char portstr[8];
+   int s, sfd;
+
+   bson_return_val_if_fail(uri, NULL);
+   bson_return_val_if_fail(host, NULL);
+   bson_return_val_if_fail(error, NULL);
+
+   snprintf(portstr, sizeof portstr, "%hu", host->port);
+
+   memset(&hints, 0, sizeof hints);
+   hints.ai_family = host->family;
+   hints.ai_socktype = SOCK_DGRAM;
+   hints.ai_flags = 0;
+   hints.ai_protocol = 0;
+
+   s = getaddrinfo(host->host, portstr, &hints, &result);
+   if (s != 0) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CONN,
+                     MONGOC_ERROR_CONN_NAME_RESOLUTION,
+                     "Failed to resolve %s",
+                     host->host);
+      return NULL;
+   }
+
+   for (rp = result; rp; rp = rp->ai_next) {
+      sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+      if (sfd == -1) {
+         continue;
+      }
+
+      if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
+         break;
+      }
+
+      close(sfd);
+   }
+
+   if (!rp) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CONN,
+                     MONGOC_ERROR_CONN_CONNECT,
+                     "Failed to connect to target host.");
+      freeaddrinfo(result);
+      return NULL;
+   }
+
+   freeaddrinfo(result);
+
+   return mongoc_stream_new_from_unix(sfd);
+}
+
+
+static mongoc_stream_t *
+mongoc_client_connect_unix (const mongoc_uri_t       *uri,
+                            const mongoc_host_list_t *host,
+                            bson_error_t             *error)
+{
+   bson_return_val_if_fail(uri, NULL);
+   bson_return_val_if_fail(host, NULL);
+   bson_return_val_if_fail(error, NULL);
+
+   /*
+    * TODO: sockaddr_un.
+    */
+
+   return NULL;
+}
+
+
+static mongoc_stream_t *
+mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
+                                        const mongoc_host_list_t *host,
+                                        void                     *user_data,
+                                        bson_error_t             *error)
+{
+   bson_return_val_if_fail(uri, NULL);
+   bson_return_val_if_fail(host, NULL);
+   bson_return_val_if_fail(error, NULL);
+
+   switch (host->family) {
+   case AF_INET:
+      return mongoc_client_connect_tcp(uri, host, error);
+   case AF_UNIX:
+      return mongoc_client_connect_unix(uri, host, error);
+   default:
+      bson_set_error(error,
+                     MONGOC_ERROR_CONN,
+                     MONGOC_ERROR_CONN_INVALID_TYPE,
+                     "Invalid address family");
+      return FALSE;
+   }
+}
 
 
 bson_bool_t
@@ -69,6 +180,7 @@ mongoc_client_new (const char *uri_string)
    client = bson_malloc0(sizeof *client);
    client->uri = uri;
    client->request_id = rand();
+   client->initiator = mongoc_client_default_stream_initiator;
 
    return client;
 }
