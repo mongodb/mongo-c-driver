@@ -20,6 +20,7 @@
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 #include "mongoc-client.h"
@@ -106,15 +107,37 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
                             const mongoc_host_list_t *host,
                             bson_error_t             *error)
 {
+   struct sockaddr_un saddr;
+   int sfd;
+
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
    bson_return_val_if_fail(error, NULL);
 
-   /*
-    * TODO: sockaddr_un.
-    */
+   memset(&saddr, 0, sizeof saddr);
+   saddr.sun_family = AF_UNIX;
+   snprintf(saddr.sun_path, sizeof saddr.sun_path - 1,
+            "%s", host->host_and_port);
 
-   return NULL;
+   sfd = socket(AF_UNIX, SOCK_DGRAM, 0);
+   if (sfd == -1) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CONN,
+                     MONGOC_ERROR_CONN_SOCKET,
+                     "Failed to create socket.");
+      return NULL;
+   }
+
+   if (connect(sfd, (struct sockaddr *)&saddr, sizeof saddr) == -1) {
+      close(sfd);
+      bson_set_error(error,
+                     MONGOC_ERROR_CONN,
+                     MONGOC_ERROR_CONN_CONNECT,
+                     "Failed to connect to UNIX domain socket.");
+      return NULL;
+   }
+
+   return mongoc_stream_new_from_unix(sfd);
 }
 
 
@@ -127,6 +150,17 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
    bson_return_val_if_fail(error, NULL);
+
+   /*
+    * TODO:
+    *
+    *   if ssl option is set, we need to wrap our mongoc_stream_t in
+    *   a TLS stream (which needs to be written).
+    *
+    *   Something like:
+    *
+    *      mongoc_stream_t *mongoc_stream_new_tls (mongoc_stream_t *)
+    */
 
    switch (host->family) {
    case AF_INET:
