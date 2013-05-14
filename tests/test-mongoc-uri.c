@@ -28,6 +28,14 @@ test_mongoc_uri_new (void)
     */
    assert(!mongoc_uri_new("mongodb://[::1]/?ipv6=true&safe=true"));
 
+   uri = mongoc_uri_new("mongodb:///tmp/mongodb.sock/?");
+   assert(uri);
+   mongoc_uri_destroy(uri);
+
+   uri = mongoc_uri_new("mongodb://localhost/?");
+   assert(uri);
+   mongoc_uri_destroy(uri);
+
    uri = mongoc_uri_new("mongodb://localhost:27017/test?q=1");
    assert(uri);
    hosts = mongoc_uri_get_hosts(uri);
