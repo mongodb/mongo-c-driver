@@ -177,6 +177,19 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 }
 
 
+/**
+ * mongoc_client_send:
+ * @client: (in): A mongoc_client_t.
+ * @event: (in) (transfer full): A mongoc_event_t.
+ * @error: (out): A location for a bson_error_t or NULL.
+ *
+ * Send an event via @client to the MongoDB server. The event structure
+ * is mutated by @client in the process and therefore should be considered
+ * destroyed after calling this function. No further access to @event should
+ * occur after calling this method.
+ *
+ * Returns: TRUE if successful; otherwise FALSE and @error is set.
+ */
 bson_bool_t
 mongoc_client_send (mongoc_client_t *client,
                     mongoc_event_t  *event,
