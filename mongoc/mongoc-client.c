@@ -209,6 +209,10 @@ mongoc_client_send (mongoc_client_t *client,
 
    return ret;
 #else
+   bson_set_error(error,
+                  MONGOC_ERROR_CONN,
+                  MONGOC_ERROR_CONN_NOT_ESTABLISHED,
+                  "Have not yet connected.");
    return FALSE;
 #endif
 }
