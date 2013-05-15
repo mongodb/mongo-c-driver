@@ -108,9 +108,9 @@ mongoc_event_encode (mongoc_event_t     *event,
 
 
 bson_bool_t
-mongoc_event_write (mongoc_event_t *event,
-                    int             sd,
-                    bson_error_t   *error)
+mongoc_event_write (mongoc_event_t  *event,
+                    mongoc_stream_t *stream,
+                    bson_error_t    *error)
 {
    bson_uint32_t len;
    struct iovec *iov;
@@ -172,7 +172,7 @@ mongoc_event_write (mongoc_event_t *event,
 
    errno = 0;
 
-   if (len == (ret = writev(sd, iov, iovcnt))) {
+   if (len == (ret = mongoc_stream_writev(stream, iov, iovcnt))) {
       return TRUE;
    }
 

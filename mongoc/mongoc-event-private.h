@@ -24,6 +24,7 @@
 #include <sys/uio.h>
 
 #include "mongoc-flags.h"
+#include "mongoc-stream.h"
 
 
 BSON_BEGIN_DECLS
@@ -176,15 +177,15 @@ mongoc_event_decode (mongoc_event_t     *event,
 
 
 bson_bool_t
-mongoc_event_write (mongoc_event_t *event,
-                    int             sd,
-                    bson_error_t   *error);
+mongoc_event_write (mongoc_event_t  *event,
+                    mongoc_stream_t *stream,
+                    bson_error_t    *error);
 
 
 bson_bool_t
-mongoc_event_read (mongoc_event_t *oper,
-                   int             sd,
-                   bson_error_t   *error);
+mongoc_event_read (mongoc_event_t  *event,
+                   mongoc_stream_t *stream,
+                   bson_error_t    *error);
 
 
 #if BSON_BYTE_ORDER != BSON_LITTLE_ENDIAN
