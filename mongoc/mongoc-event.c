@@ -118,7 +118,7 @@ mongoc_event_write (mongoc_event_t  *event,
    int iovcnt;
 
    bson_return_val_if_fail(event, FALSE);
-   bson_return_val_if_fail(sd > -1, FALSE);
+   bson_return_val_if_fail(stream, FALSE);
 
    switch (event->type) {
    case MONGOC_OPCODE_QUERY:
