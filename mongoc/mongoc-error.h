@@ -27,7 +27,8 @@ BSON_BEGIN_DECLS
 
 typedef enum
 {
-   MONGOC_ERROR_CONN = 1,
+   MONGOC_ERROR_CONN   = 1,
+   MONGOC_ERROR_CLIENT = 2,
 } mongoc_error_domain_t;
 
 
@@ -39,6 +40,8 @@ typedef enum
    MONGOC_ERROR_CONN_SOCKET,
    MONGOC_ERROR_CONN_CONNECT,
    MONGOC_ERROR_CONN_NOT_ESTABLISHED,
+
+   MONGOC_ERROR_CLIENT_NOT_READY,
 } mongoc_error_code_t;
 
 

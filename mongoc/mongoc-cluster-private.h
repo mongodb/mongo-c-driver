@@ -33,9 +33,18 @@ typedef enum
 } mongoc_cluster_mode_t;
 
 
+typedef enum
+{
+   MONGOC_CLUSTER_FLAGS_NONE       = 0,
+   MONGOC_CLUSTER_FLAGS_NO_PRIMARY = 1 << 0,
+   MONGOC_CLUSTER_FLAGS_CONNECTING = 1 << 1,
+} mongoc_cluster_flags_t;
+
+
 typedef struct
 {
-   mongoc_cluster_mode_t mode;
+   mongoc_cluster_mode_t  mode;
+   mongoc_cluster_flags_t flags;
 } mongoc_cluster_t;
 
 

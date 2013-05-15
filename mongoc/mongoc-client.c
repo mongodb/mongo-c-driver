@@ -29,6 +29,7 @@
 #include "mongoc-event-private.h"
 #include "mongoc-error.h"
 #include "mongoc-list-private.h"
+#include "mongoc-log.h"
 #include "mongoc-queue-private.h"
 
 
@@ -38,7 +39,9 @@ struct _mongoc_client_t
    mongoc_list_t             *conns;
    mongoc_uri_t              *uri;
    mongoc_cluster_t           cluster;
+
    mongoc_stream_initiator_t  initiator;
+   void                      *initiator_data;
 };
 
 
@@ -177,6 +180,45 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 }
 
 
+static void
+mongoc_client_recover (mongoc_client_t *client)
+{
+   const mongoc_host_list_t *hosts;
+   const mongoc_host_list_t *iter;
+   mongoc_stream_t *stream;
+   bson_error_t error = { 0 };
+
+   bson_return_if_fail(client);
+
+   /*
+    * Cancel any in flight requests? (Do we need to do this here?)
+    * Break all connections.
+    * Connect in sequence to each of the seeds (eventually in parallel).
+    * Fetch the peer list (eventually need to do Authentication first).
+    * Connect to each of the peers.
+    */
+
+   if (!(hosts = mongoc_uri_get_hosts(client->uri))) {
+      MONGOC_ERROR("No hosts to connect to. Invalid URI.");
+      return;
+   }
+
+   for (iter = hosts; iter; iter = iter->next) {
+      stream = client->initiator(client->uri,
+                                 iter,
+                                 client->initiator_data,
+                                 &error);
+      if (!stream) {
+         MONGOC_WARNING("Failed to establish stream to %s. Reason: %s",
+                        iter->host_and_port, error.message);
+         bson_error_destroy(&error);
+      }
+
+      MONGOC_DEBUG("Connected to %s", iter->host_and_port);
+   }
+}
+
+
 /**
  * mongoc_client_send:
  * @client: (in): A mongoc_client_t.
@@ -195,26 +237,22 @@ mongoc_client_send (mongoc_client_t *client,
                     mongoc_event_t  *event,
                     bson_error_t    *error)
 {
-#if 0
-   bson_bool_t ret = FALSE;
+   mongoc_stream_t *stream;
+   bson_bool_t ret;
 
    bson_return_val_if_fail(client, FALSE);
    bson_return_val_if_fail(event, FALSE);
+
+   if (1) mongoc_client_recover(client);
 
    event->any.opcode = event->type;
    event->any.response_to = -1;
    event->any.request_id = ++client->request_id;
 
-   ret = mongoc_event_write(event, client->outfd, error);
+   stream = NULL;
+   ret = mongoc_event_write(event, stream, error);
 
    return ret;
-#else
-   bson_set_error(error,
-                  MONGOC_ERROR_CONN,
-                  MONGOC_ERROR_CONN_NOT_ESTABLISHED,
-                  "Have not yet connected.");
-   return FALSE;
-#endif
 }
 
 
