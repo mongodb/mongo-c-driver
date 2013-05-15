@@ -239,6 +239,27 @@ mongoc_client_is_master (mongoc_client_t *client,
 }
 
 
+static bson_bool_t
+is_authoritative (const bson_t *b)
+{
+   bson_iter_t iter;
+
+   if (bson_iter_init_find_case(&iter, b, "ismaster") &&
+       BSON_ITER_HOLDS_BOOL(&iter) &&
+       bson_iter_bool(&iter)) {
+      return TRUE;
+   }
+
+   if (bson_iter_init_find_case(&iter, b, "secondary") &&
+       BSON_ITER_HOLDS_BOOL(&iter) &&
+       bson_iter_bool(&iter)) {
+      return TRUE;
+   }
+
+   return FALSE;
+}
+
+
 static void
 mongoc_client_recover (mongoc_client_t *client)
 {
@@ -288,17 +309,16 @@ mongoc_client_recover (mongoc_client_t *client)
          continue;
       }
 
-      mongoc_cluster_seed(&client->cluster, iter, stream, b);
+      if (is_authoritative(b)) {
+         mongoc_cluster_seed(&client->cluster, iter, stream, b);
+         bson_destroy(b);
+         break;
+      }
 
       bson_destroy(b);
-
-      /*
-       * TODO: Only break if this seed information is authoritative, meaning
-       *       the node is either PRIMARY, or a healthy SECONDARY.
-       */
-
-      break;
    }
+
+   //mongoc_cluster_establish(&client->cluster);
 }
 
 
