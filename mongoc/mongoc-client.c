@@ -181,12 +181,72 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 
 
 static void
+mongoc_client_prepare_event (mongoc_client_t *client,
+                             mongoc_event_t  *event)
+{
+   bson_return_if_fail(client);
+   bson_return_if_fail(event);
+
+   event->any.opcode = event->type;
+   event->any.response_to = -1;
+   event->any.request_id = ++client->request_id;
+}
+
+
+static bson_t *
+mongoc_client_is_master (mongoc_client_t *client,
+                         mongoc_stream_t *stream,
+                         bson_error_t    *error)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
+   bson_t *b = NULL;
+   bson_t q;
+
+   bson_return_val_if_fail(client, FALSE);
+   bson_return_val_if_fail(stream, FALSE);
+
+   bson_init(&q);
+   bson_append_int32(&q, "ismaster", 8, 1);
+
+   ev.query.flags = MONGOC_QUERY_SLAVE_OK;
+   ev.query.ns = "admin.$cmd";
+   ev.query.nslen = 10;
+   ev.query.skip = 0;
+   ev.query.n_return = 1;
+   ev.query.query = &q;
+   ev.query.fields = NULL;
+
+   mongoc_client_prepare_event(client, &ev);
+
+   if (mongoc_event_write(&ev, stream, error)) {
+      memset(&ev, 0, sizeof ev);
+      if (mongoc_event_read(&ev, stream, error)) {
+         if ((ev.type == MONGOC_OPCODE_REPLY) &&
+             !(ev.reply.flags & MONGOC_REPLY_QUERY_FAILURE) &&
+             (ev.reply.docslen)) {
+            b = bson_copy(ev.reply.docs[0]);
+         }
+
+         /*
+          * TODO: How do we cleanup the incoming mongoc_event_t?
+          */
+      }
+   }
+
+   bson_destroy(&q);
+
+   return b;
+}
+
+
+static void
 mongoc_client_recover (mongoc_client_t *client)
 {
    const mongoc_host_list_t *hosts;
    const mongoc_host_list_t *iter;
    mongoc_stream_t *stream;
-   bson_error_t error = { 0 };
+   bson_error_t error;
+   bson_t *b;
 
    bson_return_if_fail(client);
 
@@ -204,6 +264,10 @@ mongoc_client_recover (mongoc_client_t *client)
    }
 
    for (iter = hosts; iter; iter = iter->next) {
+      memset(&error, 0, sizeof error);
+
+      MONGOC_DEBUG("Connecting to %s", iter->host_and_port);
+
       stream = client->initiator(client->uri,
                                  iter,
                                  client->initiator_data,
@@ -214,7 +278,26 @@ mongoc_client_recover (mongoc_client_t *client)
          bson_error_destroy(&error);
       }
 
-      MONGOC_DEBUG("Connected to %s", iter->host_and_port);
+      MONGOC_DEBUG("Connection to %s established.", iter->host_and_port);
+      MONGOC_DEBUG("Querying %s for isMaster.", iter->host_and_port);
+
+      if (!(b = mongoc_client_is_master(client, stream, &error))) {
+         MONGOC_WARNING("Failed to query %s for isMaster: %s",
+                        iter->host_and_port, error.message);
+         bson_error_destroy(&error);
+         continue;
+      }
+
+      mongoc_cluster_seed(&client->cluster, iter, stream, b);
+
+      bson_destroy(b);
+
+      /*
+       * TODO: Only break if this seed information is authoritative, meaning
+       *       the node is either PRIMARY, or a healthy SECONDARY.
+       */
+
+      break;
    }
 }
 
@@ -245,9 +328,7 @@ mongoc_client_send (mongoc_client_t *client,
 
    if (1) mongoc_client_recover(client);
 
-   event->any.opcode = event->type;
-   event->any.response_to = -1;
-   event->any.request_id = ++client->request_id;
+   mongoc_client_prepare_event(client, event);
 
    stream = NULL;
    ret = mongoc_event_write(event, stream, error);

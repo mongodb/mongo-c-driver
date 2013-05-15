@@ -48,6 +48,12 @@ typedef struct
 } mongoc_cluster_t;
 
 
+void mongoc_cluster_seed (mongoc_cluster_t         *cluster,
+                          const mongoc_host_list_t *from,
+                          mongoc_stream_t          *from_stream,
+                          const bson_t             *seed_info);
+
+
 BSON_END_DECLS
 
 
