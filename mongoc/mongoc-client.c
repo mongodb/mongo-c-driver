@@ -373,8 +373,7 @@ mongoc_client_new (const char *uri_string)
    client->uri = uri;
    client->request_id = rand();
    client->initiator = mongoc_client_default_stream_initiator;
-
-   mongoc_cluster_init(&client->cluster);
+   mongoc_cluster_init(&client->cluster, client->uri);
 
    return client;
 }

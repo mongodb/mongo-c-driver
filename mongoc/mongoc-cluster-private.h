@@ -23,6 +23,7 @@
 
 #include "mongoc-host-list.h"
 #include "mongoc-stream.h"
+#include "mongoc-uri.h"
 
 
 BSON_BEGIN_DECLS
@@ -51,9 +52,11 @@ typedef struct
 } mongoc_cluster_t;
 
 
-void mongoc_cluster_destroy (mongoc_cluster_t         *cluster);
-void mongoc_cluster_init    (mongoc_cluster_t         *cluster);
-void mongoc_cluster_seed    (mongoc_cluster_t         *cluster,
+void mongoc_cluster_destroy (mongoc_cluster_t   *cluster);
+void mongoc_cluster_init    (mongoc_cluster_t   *cluster,
+                             const mongoc_uri_t *uri);
+
+void mongoc_cluster_seed    (mongoc_cluster_t *cluster,
                              const mongoc_host_list_t *from,
                              mongoc_stream_t          *from_stream,
                              const bson_t             *seed_info);

@@ -19,10 +19,27 @@
 
 
 void
-mongoc_cluster_init (mongoc_cluster_t *cluster)
+mongoc_cluster_init (mongoc_cluster_t   *cluster,
+                     const mongoc_uri_t *uri)
 {
+   const mongoc_host_list_t *hosts;
+   const bson_t *b;
+   bson_iter_t iter;
+
    bson_return_if_fail(cluster);
+
    memset(cluster, 0, sizeof *cluster);
+
+   b = mongoc_uri_get_options(uri);
+   hosts = mongoc_uri_get_hosts(uri);
+
+   if (bson_iter_init_find_case(&iter, b, "replicaSet")) {
+      cluster->mode = MONGOC_CLUSTER_REPLICA_SET;
+   } else if (hosts->next) {
+      cluster->mode = MONGOC_CLUSTER_SHARDED_CLUSTER;
+   } else {
+      cluster->mode = MONGOC_CLUSTER_DIRECT;
+   }
 }
 
 
