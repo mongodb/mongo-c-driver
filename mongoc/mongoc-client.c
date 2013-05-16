@@ -372,6 +372,8 @@ mongoc_client_new (const char *uri_string)
    client->request_id = rand();
    client->initiator = mongoc_client_default_stream_initiator;
 
+   mongoc_cluster_init(&client->cluster);
+
    return client;
 }
 
@@ -394,6 +396,7 @@ mongoc_client_destroy (mongoc_client_t *client)
    /*
     * TODO: Implement destruction.
     */
+   mongoc_cluster_destroy(&client->cluster);
    mongoc_uri_destroy(client->uri);
    bson_free(client);
 }

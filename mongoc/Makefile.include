@@ -22,6 +22,7 @@ INST_H_FILES += $(top_srcdir)/mongoc/mongoc-version.h
 
 NOINST_H_FILES =
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-client-private.h
+NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-cluster-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-event-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-list-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-queue-private.h
@@ -32,6 +33,7 @@ libmongoc_1_0_la_SOURCES += $(INST_H_FILES)
 libmongoc_1_0_la_SOURCES += $(NOINST_H_FILES)
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-client.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-client-pool.c
+libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-cluster.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-event.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-list.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-log.c
