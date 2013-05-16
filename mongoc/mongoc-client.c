@@ -219,6 +219,7 @@ mongoc_client_is_master (mongoc_client_t *client,
    mongoc_client_prepare_event(client, &ev);
 
    if (mongoc_event_write(&ev, stream, error)) {
+#if 0
       memset(&ev, 0, sizeof ev);
       if (mongoc_event_read(&ev, stream, error)) {
          if ((ev.type == MONGOC_OPCODE_REPLY) &&
@@ -231,6 +232,7 @@ mongoc_client_is_master (mongoc_client_t *client,
           * TODO: How do we cleanup the incoming mongoc_event_t?
           */
       }
+#endif
    }
 
    bson_destroy(&q);
