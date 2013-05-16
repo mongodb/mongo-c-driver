@@ -24,11 +24,6 @@
 #include "mongoc-uri.h"
 
 
-#ifndef HOST_NAME_MAX
-#define HOST_NAME_MAX 256
-#endif
-
-
 #ifndef MONGOC_DEFAULT_PORT
 #define MONGOC_DEFAULT_PORT 27017
 #endif
