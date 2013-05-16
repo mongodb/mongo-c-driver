@@ -56,9 +56,12 @@ mongoc_uri_append_host (mongoc_uri_t  *uri,
    mongoc_host_list_t *link_;
 
    link_ = bson_malloc0(sizeof *link_);
-   link_->host = strdup(host);
+   strncpy(link_->host, host, sizeof link_->host);
+   link_->host[sizeof link_->host - 1] = '\0';
+   snprintf(link_->host_and_port, sizeof link_->host_and_port,
+            "%s:%hu", host, port);
+   link_->host_and_port[sizeof link_->host_and_port - 1] = '\0';
    link_->port = port;
-   link_->host_and_port = bson_strdup_printf("%s:%hu", host, port);
    link_->family = strstr(host, ".sock") ? AF_UNIX : AF_INET;
 
    if ((iter = uri->hosts)) {
@@ -458,8 +461,6 @@ mongoc_uri_destroy (mongoc_uri_t *uri)
       while (uri->hosts) {
          tmp = uri->hosts;
          uri->hosts = tmp->next;
-         bson_free(tmp->host);
-         bson_free(tmp->host_and_port);
          bson_free(tmp);
       }
       bson_free(uri->str);

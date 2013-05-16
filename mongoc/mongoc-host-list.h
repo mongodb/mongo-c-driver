@@ -25,14 +25,23 @@
 BSON_BEGIN_DECLS
 
 
+#ifndef HOST_NAME_MAX
+#ifdef _POSIX_HOST_NAME_MAX
+#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+#else
+#define HOST_NAME_MAX 255
+#endif
+#endif
+
+
 typedef struct _mongoc_host_list_t mongoc_host_list_t;
 
 
 struct _mongoc_host_list_t
 {
    mongoc_host_list_t *next;
-   char               *host_and_port;
-   char               *host;
+   char                host[HOST_NAME_MAX + 1];
+   char                host_and_port[HOST_NAME_MAX + 7];
    bson_uint16_t       port;
    int                 family;
    void               *padding[4];
