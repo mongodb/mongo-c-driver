@@ -312,7 +312,7 @@ mongoc_client_recover (mongoc_client_t *client)
       }
 
       if (is_authoritative(b)) {
-         mongoc_cluster_seed(&client->cluster, iter, stream, b);
+         //mongoc_cluster_seed(&client->cluster, iter, stream, b);
          bson_destroy(b);
          break;
       }

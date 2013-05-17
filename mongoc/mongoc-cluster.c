@@ -27,6 +27,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    bson_iter_t iter;
 
    bson_return_if_fail(cluster);
+   bson_return_if_fail(uri);
 
    memset(cluster, 0, sizeof *cluster);
 
@@ -40,6 +41,8 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    } else {
       cluster->mode = MONGOC_CLUSTER_DIRECT;
    }
+
+   cluster->uri = mongoc_uri_copy(uri);
 }
 
 
@@ -50,22 +53,5 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
 
    /*
     * TODO: release resources.
-    */
-}
-
-
-void
-mongoc_cluster_seed (mongoc_cluster_t         *cluster,
-                     const mongoc_host_list_t *from,
-                     mongoc_stream_t          *from_stream,
-                     const bson_t             *seed_info)
-{
-   bson_return_if_fail(cluster);
-   bson_return_if_fail(from);
-   bson_return_if_fail(from_stream);
-   bson_return_if_fail(seed_info);
-
-   /*
-    * TODO: Add to list of members.
     */
 }

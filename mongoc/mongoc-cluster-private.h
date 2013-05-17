@@ -29,6 +29,9 @@
 BSON_BEGIN_DECLS
 
 
+#define MONGOC_CLUSTER_MAX_NODES 12
+
+
 typedef enum
 {
    MONGOC_CLUSTER_DIRECT,
@@ -37,29 +40,26 @@ typedef enum
 } mongoc_cluster_mode_t;
 
 
-typedef enum
+typedef struct
 {
-   MONGOC_CLUSTER_FLAGS_NONE       = 0,
-   MONGOC_CLUSTER_FLAGS_NO_PRIMARY = 1 << 0,
-   MONGOC_CLUSTER_FLAGS_CONNECTING = 1 << 1,
-} mongoc_cluster_flags_t;
+   mongoc_host_list_t  host;
+   mongoc_stream_t    *stream;
+   bson_bool_t         primary;
+   bson_uint32_t       ping_msec;
+} mongoc_cluster_node_t;
 
 
 typedef struct
 {
-   mongoc_cluster_mode_t  mode;
-   mongoc_cluster_flags_t flags;
+   mongoc_cluster_mode_t   mode;
+   mongoc_uri_t           *uri;
+   mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
 } mongoc_cluster_t;
 
 
 void mongoc_cluster_destroy (mongoc_cluster_t   *cluster);
 void mongoc_cluster_init    (mongoc_cluster_t   *cluster,
                              const mongoc_uri_t *uri);
-
-void mongoc_cluster_seed    (mongoc_cluster_t *cluster,
-                             const mongoc_host_list_t *from,
-                             mongoc_stream_t          *from_stream,
-                             const bson_t             *seed_info);
 
 
 BSON_END_DECLS
