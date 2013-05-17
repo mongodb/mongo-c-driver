@@ -182,3 +182,16 @@ mongoc_event_write (mongoc_event_t  *event,
 
    return FALSE;
 }
+
+
+bson_bool_t
+mongoc_event_read (mongoc_event_t  *event,
+                   mongoc_stream_t *stream,
+                   bson_error_t    *error)
+{
+   bson_return_val_if_fail(event, FALSE);
+   bson_return_val_if_fail(stream, FALSE);
+   bson_return_val_if_fail(error, FALSE);
+
+   return FALSE;
+}

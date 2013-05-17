@@ -20,6 +20,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "mongoc-error.h"
+#include "mongoc-event-private.h"
 #include "mongoc-stream.h"
 
 
@@ -248,4 +250,60 @@ mongoc_stream_new_from_unix (int fd)
    stream->stream.readv = mongoc_stream_unix_readv;
 
    return (mongoc_stream_t *)stream;
+}
+
+
+/**
+ * mongoc_stream_ismaster:
+ * @stream: A mongoc_stream_t.
+ * @error: A location for an error.
+ *
+ * This is a convenience function to run the "ismaster" command on the given
+ * stream. Upon failure, NULL is returned and @error is set.
+ *
+ * Returns: A bson_t that should be freed with bson_destroy().
+ */
+bson_t *
+mongoc_stream_ismaster (mongoc_stream_t *stream,
+                        bson_error_t    *error)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
+   bson_t q;
+
+   bson_return_val_if_fail(stream, FALSE);
+   bson_return_val_if_fail(error, FALSE);
+
+   bson_init(&q);
+   bson_append_int32(&q, "ismaster", 8, 1);
+
+   ev.query.flags = MONGOC_QUERY_SLAVE_OK;
+   ev.query.ns = "admin.$cmd";
+   ev.query.nslen = 10;
+   ev.query.skip = 0;
+   ev.query.n_return = 1;
+   ev.query.query = &q;
+   ev.query.fields = NULL;
+
+   if (!mongoc_event_write(&ev, stream, error)) {
+      return FALSE;
+   }
+
+   bson_destroy(&q);
+
+   if (!mongoc_event_read(&ev, stream, error)) {
+      return FALSE;
+   }
+
+   if (ev.type != MONGOC_OPCODE_REPLY || ev.reply.docslen != 1) {
+      /*
+       * TODO: Set error.
+       */
+      return FALSE;
+   }
+
+   /*
+    * TODO: Determine how we want to release incoming events.
+    */
+
+   return ev.reply.docs[0];
 }
