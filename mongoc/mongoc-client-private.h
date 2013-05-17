@@ -23,9 +23,17 @@
 
 #include "mongoc-client.h"
 #include "mongoc-event-private.h"
+#include "mongoc-host-list.h"
+#include "mongoc-stream.h"
 
 
 BSON_BEGIN_DECLS
+
+
+mongoc_stream_t *
+mongoc_client_create_stream (mongoc_client_t          *client,
+                             const mongoc_host_list_t *host,
+                             bson_error_t             *error);
 
 
 bson_bool_t

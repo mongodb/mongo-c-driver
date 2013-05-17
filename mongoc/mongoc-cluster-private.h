@@ -54,12 +54,15 @@ typedef struct
    mongoc_cluster_mode_t   mode;
    mongoc_uri_t           *uri;
    mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
+   void                   *client;
 } mongoc_cluster_t;
 
 
-void mongoc_cluster_destroy (mongoc_cluster_t   *cluster);
-void mongoc_cluster_init    (mongoc_cluster_t   *cluster,
-                             const mongoc_uri_t *uri);
+void mongoc_cluster_destroy (mongoc_cluster_t      *cluster);
+void mongoc_cluster_init    (mongoc_cluster_t      *cluster,
+                             const mongoc_uri_t    *uri,
+                             void                  *client);
+void mongoc_cluster_prepare (mongoc_cluster_t      *cluster);
 
 
 BSON_END_DECLS

@@ -180,6 +180,19 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 }
 
 
+mongoc_stream_t *
+mongoc_client_create_stream (mongoc_client_t          *client,
+                             const mongoc_host_list_t *host,
+                             bson_error_t             *error)
+{
+   bson_return_val_if_fail(client, NULL);
+   bson_return_val_if_fail(host, NULL);
+   bson_return_val_if_fail(error, NULL);
+
+   return client->initiator(client->uri, host, client->initiator_data, error);
+}
+
+
 static void
 mongoc_client_prepare_event (mongoc_client_t *client,
                              mongoc_event_t  *event)
@@ -373,7 +386,7 @@ mongoc_client_new (const char *uri_string)
    client->uri = uri;
    client->request_id = rand();
    client->initiator = mongoc_client_default_stream_initiator;
-   mongoc_cluster_init(&client->cluster, client->uri);
+   mongoc_cluster_init(&client->cluster, client->uri, client);
 
    return client;
 }

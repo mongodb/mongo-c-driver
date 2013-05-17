@@ -16,11 +16,14 @@
 
 
 #include "mongoc-cluster-private.h"
+#include "mongoc-client-private.h"
+#include "mongoc-log.h"
 
 
 void
 mongoc_cluster_init (mongoc_cluster_t   *cluster,
-                     const mongoc_uri_t *uri)
+                     const mongoc_uri_t *uri,
+                     void               *client)
 {
    const mongoc_host_list_t *hosts;
    const bson_t *b;
@@ -43,6 +46,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    }
 
    cluster->uri = mongoc_uri_copy(uri);
+   cluster->client = client;
 }
 
 
@@ -54,4 +58,32 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
    /*
     * TODO: release resources.
     */
+}
+
+
+/**
+ * mongoc_cluster_prepare_replica_set:
+ * @cluster: A mongoc_cluster_t.
+ *
+ * Discover our replicaSet information from the first node that matches
+ * our configured information.
+ */
+void
+mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
+{
+   const mongoc_host_list_t *iter;
+   mongoc_stream_t *stream;
+   bson_error_t error = { 0 };
+
+   bson_return_if_fail(cluster);
+
+   iter = mongoc_uri_get_hosts(cluster->uri);
+   for (; iter; iter = iter->next) {
+      stream = mongoc_client_create_stream(cluster->client, iter, &error);
+      if (!stream) {
+         MONGOC_WARNING("Failed to connect to %s", error.message);
+         bson_error_destroy(&error);
+      } else {
+      }
+   }
 }
