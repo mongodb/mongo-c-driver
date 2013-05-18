@@ -61,6 +61,29 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
 }
 
 
+static void
+mongoc_cluster_ensure_stream_for (mongoc_cluster_t *cluster,
+                                  const char       *host_and_port)
+{
+   mongoc_cluster_node_t *node;
+   unsigned i;
+
+   bson_return_if_fail(cluster);
+   bson_return_if_fail(host_and_port);
+
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      node = &cluster->nodes[i];
+      if (!strcasecmp(host_and_port, node->host.host_and_port)) {
+         if (!node->stream) {
+            /*
+             * TODO: Establish stream to host_and_port.
+             */
+         }
+      }
+   }
+}
+
+
 /**
  * mongoc_cluster_prepare_replica_set:
  * @cluster: A mongoc_cluster_t.
@@ -75,7 +98,9 @@ mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
    mongoc_stream_t *stream = NULL;
    bson_error_t error = { 0 };
    bson_iter_t bi;
+   bson_iter_t ar;
    const char *setName = NULL;
+   const char *hostport;
    bson_t *b;
 
    bson_return_if_fail(cluster);
@@ -141,11 +166,6 @@ mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
       }
 
       /*
-       * We can trust the "hosts" field for the list of replicaSet members.
-       * We can connect to each of them.
-       */
-
-      /*
        * Track the maxMessageSizeBytes.
        */
       if (bson_iter_init_find_case(&bi, b, "maxMessageSizeBytes")) {
@@ -157,6 +177,20 @@ mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
        */
       if (bson_iter_init_find_case(&bi, b, "maxBsonObjectSize")) {
          cluster->max_bson_size = bson_iter_int32(&bi);
+      }
+
+      /*
+       * We can trust the "hosts" field for the list of replicaSet members.
+       * We can connect to each of them.
+       */
+      if (bson_iter_init_find_case(&bi, b, "hosts") &&
+          bson_iter_recurse(&bi, &ar)) {
+         while (bson_iter_next(&ar)) {
+            if (BSON_ITER_HOLDS_UTF8(&ar)) {
+               hostport = bson_iter_utf8(&ar, NULL);
+               mongoc_cluster_ensure_stream_for(cluster, hostport);
+            }
+         }
       }
 
       bson_destroy(b);
