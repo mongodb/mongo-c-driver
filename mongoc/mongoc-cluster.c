@@ -72,10 +72,19 @@ void
 mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
 {
    const mongoc_host_list_t *iter;
-   mongoc_stream_t *stream;
+   mongoc_stream_t *stream = NULL;
    bson_error_t error = { 0 };
+   bson_iter_t bi;
+   const char *setName = NULL;
+   bson_t *b;
 
    bson_return_if_fail(cluster);
+   bson_return_if_fail(cluster->mode == MONGOC_CLUSTER_REPLICA_SET);
+
+   bson_iter_init(&bi, mongoc_uri_get_options(cluster->uri));
+   if (bson_iter_find_case(&bi, "setName") && BSON_ITER_HOLDS_UTF8(&bi)) {
+      setName = bson_iter_utf8(&bi, NULL);
+   }
 
    iter = mongoc_uri_get_hosts(cluster->uri);
    for (; iter; iter = iter->next) {
@@ -83,7 +92,63 @@ mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
       if (!stream) {
          MONGOC_WARNING("Failed to connect to %s", error.message);
          bson_error_destroy(&error);
-      } else {
+         continue;
       }
+
+      /*
+       * Execute runCommand("ismaster") to get server information.
+       */
+      if (!(b = mongoc_stream_ismaster(stream, &error))) {
+         goto skip;
+      }
+
+      /*
+       * Make sure a string setName field exists.
+       */
+      if (!bson_iter_init_find_case(&bi, b, "setName") ||
+          !BSON_ITER_HOLDS_UTF8(&bi)) {
+         goto skip;
+      }
+
+      /*
+       * Make sure this node is part of our desired replicaSet.
+       */
+      if (setName && *setName &&
+          !!strcmp(setName, bson_iter_utf8(&bi, NULL))) {
+         goto skip;
+      }
+
+      /*
+       * Check to see if this node is a primary or secondary so that we can
+       * trust its information as authoritive about the other hosts.
+       */
+      if ((!bson_iter_init_find_case(&bi, b, "isMaster") ||
+           !BSON_ITER_HOLDS_BOOL(&bi) ||
+           !bson_iter_bool(&bi)) &&
+          (!bson_iter_init_find_case(&bi, b, "secondary") ||
+           !BSON_ITER_HOLDS_BOOL(&bi) ||
+           !bson_iter_bool(&bi))) {
+         goto skip;
+      }
+
+      /*
+       * We can trust the "hosts" field for the list of replicaSet members.
+       * We can connect to each of them.
+       */
+
+      bson_destroy(b);
+      break;
+
+skip:
+      mongoc_stream_close(stream);
+      mongoc_stream_destroy(stream);
+      stream = NULL;
+      if (b) {
+         bson_destroy(b);
+      }
+   }
+
+   if (!stream) {
+      MONGOC_WARNING("No healthy replicaSet members could be found.");
    }
 }

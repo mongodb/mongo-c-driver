@@ -294,6 +294,10 @@ mongoc_stream_ismaster (mongoc_stream_t *stream,
       return FALSE;
    }
 
+   /*
+    * TODO: Check request_id/response_to?
+    */
+
    if (ev.type != MONGOC_OPCODE_REPLY || ev.reply.docslen != 1) {
       /*
        * TODO: Set error.
