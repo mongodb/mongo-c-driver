@@ -25,3 +25,8 @@ config.log
 docs/html
 docs/source/sphinx/build
 docs/source/doxygen
+
+# These files are creaed by test cases
+output
+input-file
+bigfile
