@@ -132,9 +132,32 @@ mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
       }
 
       /*
+       * Make sure we are not talking to a mongos instance.
+       */
+      if (bson_iter_init_find_case(&bi, b, "msg") &&
+          BSON_ITER_HOLDS_UTF8(&bi) &&
+          !strcasecmp("isdbgrid", bson_iter_utf8(&bi, NULL))) {
+         goto skip;
+      }
+
+      /*
        * We can trust the "hosts" field for the list of replicaSet members.
        * We can connect to each of them.
        */
+
+      /*
+       * Track the maxMessageSizeBytes.
+       */
+      if (bson_iter_init_find_case(&bi, b, "maxMessageSizeBytes")) {
+         cluster->max_msg_size = bson_iter_int32(&bi);
+      }
+
+      /*
+       * Track the maxBsonObjectSize.
+       */
+      if (bson_iter_init_find_case(&bi, b, "maxBsonObjectSize")) {
+         cluster->max_bson_size = bson_iter_int32(&bi);
+      }
 
       bson_destroy(b);
       break;

@@ -55,6 +55,8 @@ typedef struct
    mongoc_uri_t           *uri;
    mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
    void                   *client;
+   bson_uint32_t           max_bson_size;
+   bson_uint32_t           max_msg_size;
 } mongoc_cluster_t;
 
 
