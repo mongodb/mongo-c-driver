@@ -177,7 +177,7 @@ MONGO_EXPORT void bson_oid_gen( bson_oid_t *oid ) {
 }
 
 MONGO_EXPORT time_t bson_oid_generated_time( bson_oid_t *oid ) {
-    int out = 0;
+    time_t out = 0;
     bson_big_endian32( &out, &oid->ints[0] );
 
     return out;
