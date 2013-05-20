@@ -169,6 +169,11 @@ mongoc_host_list_from_string (mongoc_host_list_t *host_list,
    const char *end_host;
    char *hostname;
 
+   bson_return_val_if_fail(host_list, FALSE);
+   bson_return_val_if_fail(host_and_port, FALSE);
+
+   memset(host_list, 0, sizeof *host_list);
+
    if ((hostname = scan_to_unichar(host_and_port, ':', &end_host))) {
       end_host++;
       if (!isdigit(*end_host)) {
