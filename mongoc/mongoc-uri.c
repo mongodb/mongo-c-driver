@@ -161,6 +161,40 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
 }
 
 
+bson_bool_t
+mongoc_host_list_from_string (mongoc_host_list_t *host_list,
+                              const char         *host_and_port)
+{
+   bson_uint16_t port;
+   const char *end_host;
+   char *hostname;
+
+   if ((hostname = scan_to_unichar(host_and_port, ':', &end_host))) {
+      end_host++;
+      if (!isdigit(*end_host)) {
+         bson_free(hostname);
+         return FALSE;
+      }
+      sscanf(end_host, "%hu", &port);
+   } else {
+      hostname = bson_strdup(host_and_port);
+      port = MONGOC_DEFAULT_PORT;
+   }
+
+   strncpy(host_list->host_and_port, host_and_port,
+           sizeof host_list->host_and_port - 1);
+   host_list->host_and_port[sizeof host_list->host_and_port-1] = '\0';
+
+   strncpy(host_list->host, hostname, sizeof host_list->host - 1);
+   host_list->host[sizeof host_list->host-1] = '\0';
+
+   host_list->port = port;
+   host_list->family = AF_INET;
+
+   return TRUE;
+}
+
+
 static bson_bool_t
 mongoc_uri_parse_hosts (mongoc_uri_t  *uri,
                         const char    *str,

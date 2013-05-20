@@ -1,4 +1,5 @@
 #include <mongoc.h>
+#include <netdb.h>
 
 #include "mongoc-tests.h"
 
@@ -127,11 +128,26 @@ test_mongoc_uri_new (void)
 }
 
 
+static void
+test_mongoc_host_list_from_string (void)
+{
+   mongoc_host_list_t host_list = { 0 };
+
+   assert(mongoc_host_list_from_string(&host_list, "localhost:27019"));
+   assert(!strcmp(host_list.host_and_port, "localhost:27019"));
+   assert(!strcmp(host_list.host, "localhost"));
+   assert(host_list.port == 27019);
+   assert(host_list.family == AF_INET);
+   assert(!host_list.next);
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
    run_test("/mongoc/uri/new", test_mongoc_uri_new);
+   run_test("/mongoc/host_list/from_string", test_mongoc_host_list_from_string);
 
    return 0;
 }
