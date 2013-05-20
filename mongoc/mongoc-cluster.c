@@ -63,7 +63,9 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
 
 static void
 mongoc_cluster_ensure_stream_for (mongoc_cluster_t *cluster,
-                                  const char       *host_and_port)
+                                  const char       *host_and_port,
+                                  mongoc_stream_t  *stream,
+                                  bson_bool_t       primary)
 {
    mongoc_cluster_node_t *node;
    mongoc_host_list_t host = { 0 };
@@ -98,13 +100,18 @@ mongoc_cluster_ensure_stream_for (mongoc_cluster_t *cluster,
    }
 
    if (found) {
+      node->primary = primary;
       if (!node->stream) {
-         node->stream = mongoc_client_create_stream(cluster->client,
-                                                    &host, &error);
-         if (!node->stream) {
-            MONGOC_WARNING("Failed to connect to %s: %s",
-                           host.host_and_port, error.message);
-            bson_error_destroy(&error);
+         if (stream) {
+            node->stream = stream;
+         } else {
+            node->stream = mongoc_client_create_stream(cluster->client,
+                                                       &host, &error);
+            if (!node->stream) {
+               MONGOC_WARNING("Failed to connect to %s: %s",
+                              host.host_and_port, error.message);
+               bson_error_destroy(&error);
+            }
          }
       }
    }
@@ -126,8 +133,11 @@ mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
    bson_error_t error = { 0 };
    bson_iter_t bi;
    bson_iter_t ar;
+   bson_bool_t ismaster;
+   bson_bool_t secondary;
    const char *setName = NULL;
    const char *hostport;
+   const char *primary = "";
    bson_t *b;
 
    bson_return_if_fail(cluster);
@@ -171,15 +181,20 @@ mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
       }
 
       /*
+       * Check to see if this stream is the primary or a secondary.
+       */
+      ismaster = (bson_iter_init_find_case(&bi, b, "isMaster") &&
+                  BSON_ITER_HOLDS_BOOL(&bi) &&
+                  bson_iter_bool(&bi));
+      secondary = (bson_iter_init_find_case(&bi, b, "secondary") &&
+                   BSON_ITER_HOLDS_BOOL(&bi) &&
+                   bson_iter_bool(&bi));
+
+      /*
        * Check to see if this node is a primary or secondary so that we can
        * trust its information as authoritive about the other hosts.
        */
-      if ((!bson_iter_init_find_case(&bi, b, "isMaster") ||
-           !BSON_ITER_HOLDS_BOOL(&bi) ||
-           !bson_iter_bool(&bi)) &&
-          (!bson_iter_init_find_case(&bi, b, "secondary") ||
-           !BSON_ITER_HOLDS_BOOL(&bi) ||
-           !bson_iter_bool(&bi))) {
+      if (!ismaster && !secondary) {
          goto skip;
       }
 
@@ -207,6 +222,22 @@ mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
       }
 
       /*
+       * Get the host:port of the replicaSet primary.
+       */
+      if (bson_iter_init_find_case(&bi, b, "primary")) {
+         primary = bson_iter_utf8(&bi, NULL);
+      }
+
+      /*
+       * Add this stream to the set of cluster nodes so we can reuse the
+       * connection. Also, the server will never give us back UNIX socket
+       * paths, so if it is UNIX domain socket it is the only way it will
+       * end up in the cluster node set.
+       */
+      mongoc_cluster_ensure_stream_for(cluster, iter->host_and_port, stream,
+                                       ismaster);
+
+      /*
        * We can trust the "hosts" field for the list of replicaSet members.
        * We can connect to each of them.
        */
@@ -215,7 +246,8 @@ mongoc_cluster_prepare_replica_set (mongoc_cluster_t *cluster)
          while (bson_iter_next(&ar)) {
             if (BSON_ITER_HOLDS_UTF8(&ar)) {
                hostport = bson_iter_utf8(&ar, NULL);
-               mongoc_cluster_ensure_stream_for(cluster, hostport);
+               mongoc_cluster_ensure_stream_for(cluster, hostport, NULL,
+                                                !strcasecmp(primary, hostport));
             }
          }
       }
