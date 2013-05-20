@@ -68,6 +68,7 @@ mongoc_cluster_ensure_stream_for (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *node;
    mongoc_host_list_t host = { 0 };
    bson_uint32_t i;
+   bson_error_t error = { 0 };
    bson_bool_t found = FALSE;
 
    bson_return_if_fail(cluster);
@@ -98,9 +99,13 @@ mongoc_cluster_ensure_stream_for (mongoc_cluster_t *cluster,
 
    if (found) {
       if (!node->stream) {
-         /*
-          * TODO: Establish stream to host_and_port.
-          */
+         node->stream = mongoc_client_create_stream(cluster->client,
+                                                    &host, &error);
+         if (!node->stream) {
+            MONGOC_WARNING("Failed to connect to %s: %s",
+                           host.host_and_port, error.message);
+            bson_error_destroy(&error);
+         }
       }
    }
 }
