@@ -66,19 +66,41 @@ mongoc_cluster_ensure_stream_for (mongoc_cluster_t *cluster,
                                   const char       *host_and_port)
 {
    mongoc_cluster_node_t *node;
-   unsigned i;
+   mongoc_host_list_t host = { 0 };
+   bson_uint32_t i;
+   bson_bool_t found = FALSE;
 
    bson_return_if_fail(cluster);
    bson_return_if_fail(host_and_port);
 
+   if (!mongoc_host_list_from_string(&host, host_and_port)) {
+      return;
+   }
+
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       node = &cluster->nodes[i];
       if (!strcasecmp(host_and_port, node->host.host_and_port)) {
-         if (!node->stream) {
-            /*
-             * TODO: Establish stream to host_and_port.
-             */
+         found = TRUE;
+         break;
+      }
+   }
+
+   if (!found) {
+      for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+         node = &cluster->nodes[i];
+         if (!node->host.host_and_port[0]) {
+            node->host = host;
+            found = TRUE;
+            break;
          }
+      }
+   }
+
+   if (found) {
+      if (!node->stream) {
+         /*
+          * TODO: Establish stream to host_and_port.
+          */
       }
    }
 }
