@@ -27,8 +27,13 @@
 
 typedef struct
 {
-   mongoc_stream_t stream;
-   int             fd;
+   mongoc_stream_t  stream;
+   int              fd;
+
+   bson_uint8_t    *inbuf;
+   bson_uint32_t    inpos;
+   bson_uint32_t    inlen;
+   bson_uint32_t    inoff;
 } mongoc_stream_unix_t;
 
 
