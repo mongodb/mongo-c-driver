@@ -103,6 +103,11 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
 
+   if (file->fd == -1) {
+      errno = EBADF;
+      return -1;
+   }
+
 #ifdef TEMP_FAILURE_RETRY
    return TEMP_FAILURE_RETRY(readv(file->fd, iov, iovcnt));
 #else
