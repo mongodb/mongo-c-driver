@@ -45,7 +45,7 @@ test_mongoc_uri_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_mongoc_uri_LDADD = libmongoc-1.0.la $(BSON_LIBS)
 
 
-test: $(TESTS)
+test: $(TEST_PROGS)
 	@ for TEST_PROG in $(TEST_PROGS) ; do \
 		./$$TEST_PROG ; \
 	done
