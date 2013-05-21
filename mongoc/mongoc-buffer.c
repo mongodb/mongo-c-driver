@@ -44,7 +44,6 @@ mongoc_buffer_init (mongoc_buffer_t   *buffer,
 {
    bson_return_if_fail(buffer);
    bson_return_if_fail(buf || !buflen);
-   bson_return_if_fail(buf || realloc_func);
 
    if (!realloc_func) {
       realloc_func = bson_realloc;

@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "mongoc-buffer-private.h"
 #include "mongoc-error.h"
 #include "mongoc-event-private.h"
 #include "mongoc-stream.h"
@@ -29,12 +30,16 @@ typedef struct
 {
    mongoc_stream_t  stream;
    int              fd;
-
-   bson_uint8_t    *inbuf;
-   bson_uint32_t    inpos;
-   bson_uint32_t    inlen;
-   bson_uint32_t    inoff;
 } mongoc_stream_unix_t;
+
+
+typedef struct
+{
+   mongoc_stream_t  stream;
+   mongoc_stream_t *base_stream;
+   mongoc_buffer_t  buffer;
+   bson_bool_t      closed;
+} mongoc_stream_buffered_t;
 
 
 static void
@@ -258,6 +263,97 @@ mongoc_stream_new_from_unix (int fd)
    stream->stream.flush = mongoc_stream_unix_flush;
    stream->stream.writev = mongoc_stream_unix_writev;
    stream->stream.readv = mongoc_stream_unix_readv;
+
+   return (mongoc_stream_t *)stream;
+}
+
+
+static void
+mongoc_stream_buffered_destroy (mongoc_stream_t *stream)
+{
+   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+
+   bson_return_if_fail(stream);
+
+   if (!buffered->closed) {
+      mongoc_stream_close(stream);
+   }
+
+   mongoc_buffer_destroy(&buffered->buffer);
+}
+
+
+static int
+mongoc_stream_buffered_close (mongoc_stream_t *stream)
+{
+   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+   int ret;
+
+   bson_return_val_if_fail(stream, -1);
+
+   if (-1 != (ret = mongoc_stream_close(buffered->base_stream))) {
+      buffered->closed = TRUE;
+   }
+
+   return ret;
+}
+
+
+static int
+mongoc_stream_buffered_flush (mongoc_stream_t *stream)
+{
+   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+   bson_return_val_if_fail(stream, -1);
+   return mongoc_stream_flush(buffered->base_stream);
+}
+
+
+static ssize_t
+mongoc_stream_buffered_writev (mongoc_stream_t *stream,
+                               struct iovec    *iov,
+                               size_t           iovcnt)
+{
+   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+   bson_return_val_if_fail(stream, -1);
+   return mongoc_stream_writev(buffered->base_stream, iov, iovcnt);
+}
+
+
+static ssize_t
+mongoc_stream_buffered_readv (mongoc_stream_t *stream,
+                              struct iovec    *iov,
+                              size_t           iovcnt)
+{
+   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+   bson_uint32_t i;
+   size_t count = 0;
+
+   bson_return_val_if_fail(stream, -1);
+
+   for (i = 0; i < iovcnt; i++) {
+      count += iov[i].iov_len;
+   }
+
+   mongoc_buffer_fill(&buffered->buffer, stream, count, NULL);
+   return mongoc_buffer_readv(&buffered->buffer, iov, iovcnt);
+}
+
+
+mongoc_stream_t *
+mongoc_stream_buffered_new (mongoc_stream_t *base_stream)
+{
+   mongoc_stream_buffered_t *stream;
+
+   bson_return_val_if_fail(base_stream, NULL);
+
+   stream = bson_malloc0(sizeof *stream);
+   stream->stream.destroy = mongoc_stream_buffered_destroy;
+   stream->stream.close = mongoc_stream_buffered_close;
+   stream->stream.flush = mongoc_stream_buffered_flush;
+   stream->stream.writev = mongoc_stream_buffered_writev;
+   stream->stream.readv = mongoc_stream_buffered_readv;
+   stream->base_stream = base_stream;
+   mongoc_buffer_init(&stream->buffer, NULL, 0, NULL);
 
    return (mongoc_stream_t *)stream;
 }
