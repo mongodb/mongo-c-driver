@@ -1474,6 +1474,7 @@ MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *ke
     size_t len = 0;
     size_t remaining;
     char idxns[1024];
+    char *p = NULL;
 
     if ( !name ) {
         bson_iterator_init( &it, key );
@@ -1502,8 +1503,16 @@ MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *ke
     bson_finish( &b );
 
     strncpy( idxns, ns, 1024-16 );
-    strcpy( strchr( idxns, '.' ), ".system.indexes" );
-    mongo_insert( conn, idxns, &b, NULL );
+    p = strchr( idxns, '.' );
+    if ( !p ) {
+	    bson_destroy( &b );
+	    return MONGO_ERROR;
+    }
+    strcpy( p, ".system.indexes" );
+    if ( mongo_insert( conn, idxns, &b, NULL ) != MONGO_OK) {
+	    bson_destroy( &b );
+	    return MONGO_ERROR;
+    }
     bson_destroy( &b );
 
     *strchr( idxns, '.' ) = '\0'; /* just db not ns */
