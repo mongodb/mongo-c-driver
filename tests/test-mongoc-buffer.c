@@ -28,6 +28,12 @@ test_mongoc_buffer_basic (void)
    iov.iov_base = lbuf;
    iov.iov_len = 1024;
    assert_cmpint(536, ==, mongoc_buffer_readv(&buf, &iov, 1));
+   assert_cmpint(0, ==, mongoc_buffer_readv(&buf, &iov, 1));
+   assert(FALSE == mongoc_buffer_fill(&buf, stream, 1, &error));
+   assert_cmpint(0, ==, mongoc_buffer_readv(&buf, &iov, 1));
+   mongoc_stream_close(stream);
+   assert(FALSE == mongoc_buffer_fill(&buf, stream, 1, &error));
+   assert_cmpint(0, ==, mongoc_buffer_readv(&buf, &iov, 1));
 }
 
 
