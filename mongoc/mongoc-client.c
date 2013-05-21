@@ -150,6 +150,8 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
                                         void                     *user_data,
                                         bson_error_t             *error)
 {
+   mongoc_stream_t *base_stream;
+
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
    bson_return_val_if_fail(error, NULL);
@@ -167,9 +169,9 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 
    switch (host->family) {
    case AF_INET:
-      return mongoc_client_connect_tcp(uri, host, error);
+      base_stream = mongoc_client_connect_tcp(uri, host, error);
    case AF_UNIX:
-      return mongoc_client_connect_unix(uri, host, error);
+      base_stream = mongoc_client_connect_unix(uri, host, error);
    default:
       bson_set_error(error,
                      MONGOC_ERROR_CONN,
@@ -177,6 +179,8 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
                      "Invalid address family");
       return FALSE;
    }
+
+   return base_stream ? mongoc_stream_buffered_new(base_stream) : NULL;
 }
 
 
