@@ -59,9 +59,9 @@ mongoc_buffer_destroy (mongoc_buffer_t *buffer);
 
 
 ssize_t
-mongoc_buffer_read (mongoc_buffer_t *buffer,
-                    struct iovec    *iov,
-                    size_t           iovcnt);
+mongoc_buffer_readv (mongoc_buffer_t *buffer,
+                     struct iovec    *iov,
+                     size_t           iovcnt);
 
 
 BSON_END_DECLS

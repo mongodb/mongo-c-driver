@@ -141,3 +141,28 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    return TRUE;
 }
+
+
+ssize_t
+mongoc_buffer_readv (mongoc_buffer_t *buffer,
+                     struct iovec    *iov,
+                     size_t           iovcnt)
+{
+   bson_uint32_t i;
+   ssize_t ret = 0;
+   size_t len;
+
+   bson_return_val_if_fail(buffer, -1);
+   bson_return_val_if_fail(iov, -1);
+   bson_return_val_if_fail(iovcnt, -1);
+
+   for (i = 0; i < iovcnt; i++) {
+      len = MIN(buffer->len, iov[i].iov_len);
+      memcpy(iov[i].iov_base, &buffer->data[buffer->off], len);
+      buffer->off += len;
+      buffer->len -= len;
+      ret += len;
+   }
+
+   return ret;
+}
