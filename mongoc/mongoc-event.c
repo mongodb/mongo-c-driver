@@ -263,13 +263,13 @@ again:
 
    switch (event->any.opcode) {
    case MONGOC_OPCODE_REPLY:
-      iovv[0].iov_base = &event->reply.flags;
+      iovv[0].iov_base = &event->reply.desc.flags;
       iovv[0].iov_len = 4;
-      iovv[1].iov_base = &event->reply.cursor_id;
+      iovv[1].iov_base = &event->reply.desc.cursor_id;
       iovv[1].iov_len = 8;
-      iovv[2].iov_base = &event->reply.start_from;
+      iovv[2].iov_base = &event->reply.desc.start_from;
       iovv[2].iov_len = 4;
-      iovv[3].iov_base = &event->reply.n_returned;
+      iovv[3].iov_base = &event->reply.desc.n_returned;
       iovv[3].iov_len = 4;
       if (mongoc_buffer_readv(&event->any.rawbuf, iovv, 4) != 20) {
          return FALSE;

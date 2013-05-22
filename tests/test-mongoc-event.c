@@ -324,10 +324,10 @@ test_mongoc_event_reply (void)
    ev.any.opcode = ev.type;
    ev.any.request_id = 1234;
    ev.any.response_to = -1;
-   ev.reply.flags = MONGOC_REPLY_AWAIT_CAPABLE;
-   ev.reply.cursor_id = 12345678;
-   ev.reply.start_from = 50;
-   ev.reply.n_returned = 100;
+   ev.reply.desc.flags = MONGOC_REPLY_AWAIT_CAPABLE;
+   ev.reply.desc.cursor_id = 12345678;
+   ev.reply.desc.start_from = 50;
+   ev.reply.desc.n_returned = 100;
    ev.reply.docs = docs;
    ev.reply.docslen = 100;
    mongoc_event_encode(&ev, &buf, &buflen, NULL, &error);
@@ -364,10 +364,10 @@ test_mongoc_event_decode_reply (void)
 
    assert_cmpint(ev.any.type, ==, MONGOC_OPCODE_REPLY);
 
-   assert_cmpint(ev.reply.flags, ==, MONGOC_REPLY_AWAIT_CAPABLE);
-   assert(ev.reply.cursor_id == 12345678);
-   assert_cmpint(ev.reply.start_from, ==, 50);
-   assert_cmpint(ev.reply.n_returned, ==, 100);
+   assert_cmpint(ev.reply.desc.flags, ==, MONGOC_REPLY_AWAIT_CAPABLE);
+   assert(ev.reply.desc.cursor_id == 12345678);
+   assert_cmpint(ev.reply.desc.start_from, ==, 50);
+   assert_cmpint(ev.reply.desc.n_returned, ==, 100);
 
    while ((b = bson_reader_read(&ev.reply.docs_reader, &eof))) {
       count++;

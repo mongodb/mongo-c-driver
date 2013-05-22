@@ -141,10 +141,14 @@ typedef struct
 {
    mongoc_event_any_t   any;
 
-   bson_uint32_t        flags;
-   bson_uint64_t        cursor_id;
-   bson_uint32_t        start_from;
-   bson_uint32_t        n_returned;
+#pragma pack(push, 1)
+   struct {
+      bson_uint32_t     flags;
+      bson_uint64_t     cursor_id;
+      bson_uint32_t     start_from;
+      bson_uint32_t     n_returned;
+   } desc;
+#pragma pack(pop)
 
    bson_reader_t        docs_reader;
 
@@ -233,10 +237,10 @@ mongoc_event_read (mongoc_event_t  *event,
    } while (0)
 #define MONGOC_EVENT_SWAB_REPLY(e) \
    do { \
-      (e)->reply.flags = BSON_UINT32_TO_LE((e)->reply.flags); \
-      (e)->reply.cursor_id = BSON_UINT64_TO_LE((e)->reply.cursor_id); \
-      (e)->reply.start_from = BSON_UINT32_TO_LE((e)->reply.start_from); \
-      (e)->reply.n_returned = BSON_UINT32_TO_LE((e)->reply.n_returned); \
+      (e)->reply.desc.flags = BSON_UINT32_TO_LE((e)->reply.desc.flags); \
+      (e)->reply.desc.cursor_id = BSON_UINT64_TO_LE((e)->reply.desc.cursor_id); \
+      (e)->reply.desc.start_from = BSON_UINT32_TO_LE((e)->reply.desc.start_from); \
+      (e)->reply.desc.n_returned = BSON_UINT32_TO_LE((e)->reply.desc.n_returned); \
    } while (0)
 #define MONGOC_EVENT_SWAB_UPDATE(e) \
    do { \
@@ -326,23 +330,17 @@ mongoc_event_read (mongoc_event_t  *event,
 #define MONGOC_EVENT_SCATTER_REPLY(e, iov, iovcnt) \
    do { \
       bson_uint32_t _i; \
-      iovcnt = 5 + e->reply.docslen; \
+      iovcnt = 2 + e->reply.docslen; \
       iov = alloca(sizeof(struct iovec) * iovcnt); \
       e->any.len = 36; \
       iov[0].iov_base = &e->any.len; \
       iov[0].iov_len = 16; \
-      iov[1].iov_base = &e->reply.flags; \
-      iov[1].iov_len = 4; \
-      iov[2].iov_base = &e->reply.cursor_id; \
-      iov[2].iov_len = 8; \
-      iov[3].iov_base = &e->reply.start_from; \
-      iov[3].iov_len = 4; \
-      iov[4].iov_base = &e->reply.n_returned; \
-      iov[4].iov_len = 4; \
+      iov[1].iov_base = &e->reply.desc; \
+      iov[1].iov_len = 20; \
       for (_i = 0; _i < e->reply.docslen; _i++) { \
          e->any.len += e->reply.docs[_i]->len; \
-         iov[5 + _i].iov_len = e->reply.docs[_i]->len; \
-         iov[5 + _i].iov_base = (void *)bson_get_data(e->reply.docs[_i]); \
+         iov[2 + _i].iov_len = e->reply.docs[_i]->len; \
+         iov[2 + _i].iov_base = (void *)bson_get_data(e->reply.docs[_i]); \
       } \
    } while (0)
 
