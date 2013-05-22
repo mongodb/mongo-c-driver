@@ -340,19 +340,83 @@ test_mongoc_event_reply (void)
 }
 
 
+static void
+test_mongoc_event_decode_reply (void)
+{
+   mongoc_stream_t *stream;
+   mongoc_event_t ev = { 0 };
+   const bson_t *b;
+   bson_error_t error = { 0 };
+   bson_bool_t r;
+   bson_bool_t eof = FALSE;
+   bson_iter_t iter;
+   int count = 0;
+   int fd;
+
+   fd = open("tests/binary/reply1.dat", O_RDONLY);
+   assert(fd >= 0);
+
+   stream = mongoc_stream_new_from_unix(fd);
+   assert(stream);
+
+   r = mongoc_event_read(&ev, stream, &error);
+   assert_cmpint(r, ==, TRUE);
+
+   assert(ev.any.type == MONGOC_OPCODE_REPLY);
+
+   while ((b = bson_reader_read(&ev.reply.docs_reader, &eof))) {
+      count++;
+      assert(bson_iter_init(&iter, b));
+      assert(!bson_iter_next(&iter));
+   }
+
+   assert(eof);
+   assert_cmpint(count, ==, 100);
+
+   mongoc_stream_close(stream);
+}
+
+
+static void
+test_mongoc_event_decode_msg (void)
+{
+   mongoc_stream_t *stream;
+   mongoc_event_t ev = { 0 };
+   bson_error_t error = { 0 };
+   bson_bool_t r;
+   int fd;
+
+   fd = open("tests/binary/msg1.dat", O_RDONLY);
+   assert(fd >= 0);
+
+   stream = mongoc_stream_new_from_unix(fd);
+   assert(stream);
+
+   r = mongoc_event_read(&ev, stream, &error);
+   assert_cmpint(r, ==, TRUE);
+
+   assert(ev.any.type == MONGOC_OPCODE_MSG);
+   assert_cmpint(ev.msg.msglen, ==, 23);
+   assert(!strcmp(ev.msg.msg, "this is a test message."));
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
-   run_test("/mongoc/event/delete", test_mongoc_event_delete);
-   run_test("/mongoc/event/get_more", test_mongoc_event_get_more);
-   run_test("/mongoc/event/insert", test_mongoc_event_insert);
-   run_test("/mongoc/event/kill_cursors", test_mongoc_event_kill_cursors);
-   run_test("/mongoc/event/msg", test_mongoc_event_msg);
-   run_test("/mongoc/event/query", test_mongoc_event_query);
-   run_test("/mongoc/event/query_no_fields", test_mongoc_event_query_no_fields);
-   run_test("/mongoc/event/reply", test_mongoc_event_reply);
-   run_test("/mongoc/event/update", test_mongoc_event_update);
+   run_test("/mongoc/event/encode/delete", test_mongoc_event_delete);
+   run_test("/mongoc/event/encode/get_more", test_mongoc_event_get_more);
+   run_test("/mongoc/event/encode/insert", test_mongoc_event_insert);
+   run_test("/mongoc/event/encode/kill_cursors", test_mongoc_event_kill_cursors);
+   run_test("/mongoc/event/encode/msg", test_mongoc_event_msg);
+   run_test("/mongoc/event/encode/query", test_mongoc_event_query);
+   run_test("/mongoc/event/encode/query_no_fields", test_mongoc_event_query_no_fields);
+   run_test("/mongoc/event/encode/reply", test_mongoc_event_reply);
+   run_test("/mongoc/event/encode/update", test_mongoc_event_update);
+
+   run_test("/mongoc/event/decode/reply", test_mongoc_event_decode_reply);
+   run_test("/mongoc/event/decode/msg", test_mongoc_event_decode_msg);
 
    return 0;
 }

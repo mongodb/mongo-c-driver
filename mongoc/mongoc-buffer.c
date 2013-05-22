@@ -49,12 +49,12 @@ mongoc_buffer_init (mongoc_buffer_t   *buffer,
       realloc_func = bson_realloc;
    }
 
-   memset(buffer, 0, sizeof *buffer);
-
-   if (!buf) {
+   if (!buf || !buflen) {
       buf = realloc_func(NULL, MONGOC_BUFFER_DEFAULT_SIZE);
       buflen = MONGOC_BUFFER_DEFAULT_SIZE;
    }
+
+   memset(buffer, 0, sizeof *buffer);
 
    buffer->data = buf;
    buffer->datalen = buflen;
@@ -91,6 +91,7 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
    ssize_t ret;
 
    bson_return_val_if_fail(buffer, FALSE);
+   bson_return_val_if_fail(buffer->realloc_func, FALSE);
    bson_return_val_if_fail(stream, FALSE);
    bson_return_val_if_fail(minsize, FALSE);
    bson_return_val_if_fail(error, FALSE);
@@ -118,7 +119,7 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
     */
    if (BSON_UNLIKELY(buffer->datalen < minsize)) {
       while (buffer->datalen < minsize) {
-         buffer->datalen <<= 1;
+         buffer->datalen = MAX(32, buffer->datalen << 1);
       }
       buffer->data = buffer->realloc_func(buffer->data, buffer->datalen);
    }

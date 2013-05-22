@@ -28,6 +28,7 @@
 #include "mongoc-flags.h"
 #include "mongoc-host-list.h"
 #include "mongoc-log.h"
+#include "mongoc-stream.h"
 #include "mongoc-stdint.h"
 #include "mongoc-uri.h"
 #undef MONGOC_INSIDE

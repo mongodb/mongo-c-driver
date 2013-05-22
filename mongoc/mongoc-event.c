@@ -223,6 +223,7 @@ mongoc_event_read (mongoc_event_t  *event,
    }
 
    MONGOC_EVENT_SWAB_HEADER(event);
+   event->any.type = event->any.opcode;
 
    /*
     * TODO: Plumb this through.
@@ -240,6 +241,7 @@ mongoc_event_read (mongoc_event_t  *event,
     * Read in the rest of the network packet.
     */
    toread = event->any.len - 16;
+   mongoc_buffer_init(&event->any.rawbuf, NULL, 0, NULL);
 again:
    n = mongoc_buffer_fill(&event->any.rawbuf, stream, toread, error);
    switch (n) {
