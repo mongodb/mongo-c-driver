@@ -362,7 +362,12 @@ test_mongoc_event_decode_reply (void)
    r = mongoc_event_read(&ev, stream, &error);
    assert_cmpint(r, ==, TRUE);
 
-   assert(ev.any.type == MONGOC_OPCODE_REPLY);
+   assert_cmpint(ev.any.type, ==, MONGOC_OPCODE_REPLY);
+
+   assert_cmpint(ev.reply.flags, ==, MONGOC_REPLY_AWAIT_CAPABLE);
+   assert(ev.reply.cursor_id == 12345678);
+   assert_cmpint(ev.reply.start_from, ==, 50);
+   assert_cmpint(ev.reply.n_returned, ==, 100);
 
    while ((b = bson_reader_read(&ev.reply.docs_reader, &eof))) {
       count++;
