@@ -189,9 +189,91 @@ mongoc_event_read (mongoc_event_t  *event,
                    mongoc_stream_t *stream,
                    bson_error_t    *error)
 {
+   bson_uint32_t max_msg_len;
+   struct iovec iov;
+   ssize_t n;
+   size_t toread;
+
    bson_return_val_if_fail(event, FALSE);
    bson_return_val_if_fail(stream, FALSE);
    bson_return_val_if_fail(error, FALSE);
+
+   memset(event, 0, sizeof *event);
+
+   /*
+    * Read the event header.
+    */
+   iov.iov_base = &event->any.len;
+   iov.iov_len = 16;
+   n = mongoc_stream_readv(stream, &iov, 1);
+   switch (n) {
+   case -1:
+   case 0:
+      /*
+       * TODO: Set error.
+       */
+      return FALSE;
+   case 16:
+      break;
+   default:
+      /*
+       * TODO: Handle short read.
+       */
+      return FALSE;
+   }
+
+   MONGOC_EVENT_SWAB_HEADER(event);
+
+   /*
+    * TODO: Plumb this through.
+    */
+   max_msg_len = 48 * 1024 * 1024;
+
+   /*
+    * Make sure message length is not invalid.
+    */
+   if ((event->any.len <= 16) || (event->any.len > max_msg_len)) {
+      return FALSE;
+   }
+
+   /*
+    * Read in the rest of the network packet.
+    */
+   toread = event->any.len - 16;
+again:
+   n = mongoc_buffer_fill(&event->any.rawbuf, stream, toread, error);
+   switch (n) {
+   case -1:
+   case 0:
+      return FALSE;
+   default:
+      toread -= n;
+      if (toread) {
+         goto again;
+      }
+      break;
+   }
+
+   /*
+    * TODO: Get a buffer from the pool large enough to contain @n bytes.
+    */
+
+   switch (event->any.opcode) {
+   case MONGOC_OPCODE_MSG:
+      event->msg.msglen = event->any.len - 17;
+      event->msg.msg = (const char *)event->any.rawbuf.data;
+      break;
+   case MONGOC_OPCODE_REPLY:
+   case MONGOC_OPCODE_KILL_CURSORS:
+   case MONGOC_OPCODE_DELETE:
+   case MONGOC_OPCODE_GET_MORE:
+   case MONGOC_OPCODE_INSERT:
+   case MONGOC_OPCODE_UPDATE:
+   case MONGOC_OPCODE_QUERY:
+      break;
+   default:
+      break;
+   }
 
    return FALSE;
 }

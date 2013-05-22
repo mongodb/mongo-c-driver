@@ -23,6 +23,7 @@
 #include <bson.h>
 #include <sys/uio.h>
 
+#include "mongoc-buffer-private.h"
 #include "mongoc-flags.h"
 #include "mongoc-stream.h"
 
@@ -50,6 +51,8 @@ typedef enum
 typedef struct
 {
    mongoc_opcode_t type;
+   mongoc_buffer_t rawbuf;
+
 #pragma pack(push, 1)
    bson_uint32_t   len;
    bson_int32_t    request_id;
