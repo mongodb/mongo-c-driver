@@ -38,7 +38,6 @@ typedef struct
    mongoc_stream_t  stream;
    mongoc_stream_t *base_stream;
    mongoc_buffer_t  buffer;
-   bson_bool_t      closed;
 } mongoc_stream_buffered_t;
 
 
@@ -275,11 +274,9 @@ mongoc_stream_buffered_destroy (mongoc_stream_t *stream)
 
    bson_return_if_fail(stream);
 
-   if (!buffered->closed) {
-      mongoc_stream_close(stream);
-   }
-
+   mongoc_stream_destroy(buffered->base_stream);
    mongoc_buffer_destroy(&buffered->buffer);
+   bson_free(stream);
 }
 
 
@@ -287,15 +284,8 @@ static int
 mongoc_stream_buffered_close (mongoc_stream_t *stream)
 {
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   int ret;
-
    bson_return_val_if_fail(stream, -1);
-
-   if (-1 != (ret = mongoc_stream_close(buffered->base_stream))) {
-      buffered->closed = TRUE;
-   }
-
-   return ret;
+   return mongoc_stream_close(buffered->base_stream);
 }
 
 
