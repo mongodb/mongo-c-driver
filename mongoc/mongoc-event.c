@@ -259,21 +259,37 @@ again:
     */
 
    switch (event->any.opcode) {
+   case MONGOC_OPCODE_REPLY:
+      iov.iov_base = &event->reply.flags;
+      iov.iov_len = 20;
+      if (mongoc_buffer_readv(&event->any.rawbuf, &iov, 1) != iov.iov_len) {
+         return FALSE;
+      }
+      bson_reader_init_from_data(&event->reply.docs_reader,
+                                 &event->any.rawbuf.data[event->any.rawbuf.off],
+                                 event->any.rawbuf.len);
+      MONGOC_EVENT_SWAB_REPLY(event);
+      break;
+   /*
+    * NOTE:
+    *
+    * Any of the following messages are unsupported at the moment, but are not
+    * really difficult to do if anyone is interested in them. As libmongoc gets
+    * used in interesting places, these will need to be implemented.
+    */
    case MONGOC_OPCODE_MSG:
       event->msg.msglen = event->any.len - 17;
       event->msg.msg = (const char *)event->any.rawbuf.data;
       break;
-   case MONGOC_OPCODE_REPLY:
    case MONGOC_OPCODE_KILL_CURSORS:
    case MONGOC_OPCODE_DELETE:
    case MONGOC_OPCODE_GET_MORE:
    case MONGOC_OPCODE_INSERT:
    case MONGOC_OPCODE_UPDATE:
    case MONGOC_OPCODE_QUERY:
-      break;
    default:
-      break;
+      return FALSE;
    }
 
-   return FALSE;
+   return TRUE;
 }

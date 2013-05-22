@@ -140,10 +140,16 @@ typedef struct
 typedef struct
 {
    mongoc_event_any_t   any;
+
+#pragma pack(push, 1)
    bson_uint32_t        flags;
    bson_uint64_t        cursor_id;
    bson_uint32_t        start_from;
    bson_uint32_t        n_returned;
+#pragma pack(pop)
+
+   bson_reader_t        docs_reader;
+
    bson_uint32_t        docslen;
    bson_t             **docs;
 } mongoc_event_reply_t;
