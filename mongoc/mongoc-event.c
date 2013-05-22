@@ -191,7 +191,6 @@ mongoc_event_read (mongoc_event_t  *event,
 {
    bson_uint32_t max_msg_len;
    struct iovec iov;
-   struct iovec iovv[4];
    ssize_t n;
    size_t toread;
 
@@ -263,15 +262,9 @@ again:
 
    switch (event->any.opcode) {
    case MONGOC_OPCODE_REPLY:
-      iovv[0].iov_base = &event->reply.desc.flags;
-      iovv[0].iov_len = 4;
-      iovv[1].iov_base = &event->reply.desc.cursor_id;
-      iovv[1].iov_len = 8;
-      iovv[2].iov_base = &event->reply.desc.start_from;
-      iovv[2].iov_len = 4;
-      iovv[3].iov_base = &event->reply.desc.n_returned;
-      iovv[3].iov_len = 4;
-      if (mongoc_buffer_readv(&event->any.rawbuf, iovv, 4) != 20) {
+      iov.iov_base = &event->reply.desc;
+      iov.iov_len = 20;
+      if (mongoc_buffer_readv(&event->any.rawbuf, &iov, 1) != 20) {
          return FALSE;
       }
       bson_reader_init_from_data(&event->reply.docs_reader,
