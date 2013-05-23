@@ -436,7 +436,7 @@ MONGO_EXPORT int mongo_client( mongo *conn , const char *host, int port ) {
     mongo_init( conn );
 
     conn->primary = (mongo_host_port*)bson_malloc( sizeof( mongo_host_port ) );
-    strncpy( conn->primary->host, host, strlen( host ) + 1 );
+    snprintf( conn->primary->host, MAXHOSTNAMELEN, "%s", host);
     conn->primary->port = port;
     conn->primary->next = NULL;
 
@@ -478,7 +478,7 @@ static void mongo_replica_set_add_node( mongo_host_port **list, const char *host
     mongo_host_port *host_port = (mongo_host_port*)bson_malloc( sizeof( mongo_host_port ) );
     host_port->port = port;
     host_port->next = NULL;
-    strncpy( host_port->host, host, strlen( host ) + 1 );
+    snprintf( host_port->host, MAXHOSTNAMELEN, "%s", host);
 
     if( *list == NULL )
         *list = host_port;
@@ -661,7 +661,7 @@ MONGO_EXPORT int mongo_replica_set_client( mongo *conn ) {
                 /* Primary found, so return. */
                 else if( conn->replica_set->primary_connected ) {
                     conn->primary = bson_malloc( sizeof( mongo_host_port ) );
-                    strncpy( conn->primary->host, node->host, strlen( node->host ) + 1 );
+                    snprintf( conn->primary->host, MAXHOSTNAMELEN, "%s", node->host );
                     conn->primary->port = node->port;
                     return MONGO_OK;
                 }
