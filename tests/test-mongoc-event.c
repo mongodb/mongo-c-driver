@@ -368,7 +368,7 @@ test_mongoc_event_decode_query (void)
    assert_cmpint(ev.query.n_return, ==, 1);
    assert_cmpint(ev.query.flags, ==, MONGOC_QUERY_SLAVE_OK);
    assert(!strcmp(ev.query.ns, "test.test"));
-   //assert_cmpint(ev.query.nslen, ==, 9);
+   assert_cmpint(ev.query.nslen, ==, 9);
 
    while ((b = bson_reader_read(&ev.query.docs_reader, &eof))) {
       count++;
