@@ -92,7 +92,7 @@ mongoc_cluster_ensure_stream_for (mongoc_cluster_t *cluster,
       for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
          node = &cluster->nodes[i];
          if (!node->host.host_and_port[0]) {
-            node->host = host;
+            memcpy(&node->host, &host, sizeof node->host);
             found = TRUE;
             break;
          }
