@@ -295,19 +295,19 @@ again:
       MONGOC_EVENT_SWAB_KILL_CURSORS(event);
       break;
    case MONGOC_OPCODE_QUERY:
-#if 0
       if (!mongoc_buffer_read_typed(&event->any.rawbuf,
-                                    BSON_TYPE_INT32, &event->query.flags,
-                                    BSON_TYPE_CSTRING, &event->query.ns,
-                                    BSON_TYPE_INT32, &event->query.skip,
-                                    BSON_TYPE_INT32, &event->query.n_return)) {
+                                    MONGOC_BUFFER_INT32, &event->query.flags,
+                                    MONGOC_BUFFER_CSTRING, &event->query.ns,
+                                    MONGOC_BUFFER_INT32, &event->query.skip,
+                                    MONGOC_BUFFER_INT32, &event->query.n_return,
+                                    0)) {
          return FALSE;
       }
+      event->query.nslen = strlen(event->query.ns);
       bson_reader_init_from_data(&event->query.docs_reader,
                                  &event->any.rawbuf.data[event->any.rawbuf.off],
-                                 &event->any.rawbuf.len);
+                                 event->any.rawbuf.len);
       break;
-#endif
    /*
     * NOTE:
     *

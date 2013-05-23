@@ -341,6 +341,49 @@ test_mongoc_event_reply (void)
 
 
 static void
+test_mongoc_event_decode_query (void)
+{
+   mongoc_stream_t *stream;
+   mongoc_event_t ev = { 0 };
+   const bson_t *b;
+   bson_error_t error = { 0 };
+   bson_bool_t r;
+   bson_bool_t eof = FALSE;
+   bson_iter_t iter;
+   int count = 0;
+   int fd;
+
+   fd = open("tests/binary/query1.dat", O_RDONLY);
+   assert(fd >= 0);
+
+   stream = mongoc_stream_new_from_unix(fd);
+   assert(stream);
+
+   r = mongoc_event_read(&ev, stream, &error);
+   assert_cmpint(r, ==, TRUE);
+
+   assert_cmpint(ev.any.type, ==, MONGOC_OPCODE_QUERY);
+
+   assert_cmpint(ev.query.skip, ==, 5);
+   assert_cmpint(ev.query.n_return, ==, 1);
+   assert_cmpint(ev.query.flags, ==, MONGOC_QUERY_SLAVE_OK);
+   assert(!strcmp(ev.query.ns, "test.test"));
+   //assert_cmpint(ev.query.nslen, ==, 9);
+
+   while ((b = bson_reader_read(&ev.query.docs_reader, &eof))) {
+      count++;
+      assert(bson_iter_init(&iter, b));
+      assert(!bson_iter_next(&iter));
+   }
+
+   assert(eof);
+   assert_cmpint(count, ==, 2);
+
+   mongoc_stream_close(stream);
+}
+
+
+static void
 test_mongoc_event_decode_reply (void)
 {
    mongoc_stream_t *stream;
@@ -450,6 +493,7 @@ main (int   argc,
 
    run_test("/mongoc/event/decode/kill_cursors", test_mongoc_event_decode_kill_cursors);
    run_test("/mongoc/event/decode/msg", test_mongoc_event_decode_msg);
+   run_test("/mongoc/event/decode/query", test_mongoc_event_decode_query);
    run_test("/mongoc/event/decode/reply", test_mongoc_event_decode_reply);
 
    return 0;
