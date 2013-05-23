@@ -15,6 +15,8 @@
  */
 
 
+#include <stdarg.h>
+
 #include "mongoc-buffer-private.h"
 
 
@@ -165,4 +167,77 @@ mongoc_buffer_readv (mongoc_buffer_t *buffer,
    }
 
    return ret;
+}
+
+
+bson_bool_t
+mongoc_buffer_read_typed (mongoc_buffer_t *buffer,
+                          int              first_type,
+                          void            *first_ptr,
+                          ...)
+{
+   struct iovec iov;
+   bson_int64_t v64;
+   bson_int32_t v32;
+   bson_bool_t found;
+   va_list args;
+   size_t end;
+   void *ptr;
+   int type;
+   int i;
+
+   bson_return_val_if_fail(buffer, FALSE);
+   bson_return_val_if_fail(first_type, FALSE);
+   bson_return_val_if_fail(first_ptr, FALSE);
+
+   ptr = first_ptr;
+   type = first_type;
+
+   va_start(args, first_ptr);
+   do {
+      switch (type) {
+      case MONGOC_BUFFER_INT32:
+         iov.iov_base = &v32;
+         iov.iov_len = 4;
+         if (!mongoc_buffer_readv(buffer, &iov, 1)) {
+            return FALSE;
+         }
+         *(bson_int32_t *)ptr = BSON_UINT32_FROM_LE(v32);
+         break;
+      case MONGOC_BUFFER_INT64:
+         iov.iov_base = &v64;
+         iov.iov_len = 8;
+         if (!mongoc_buffer_readv(buffer, &iov, 1)) {
+            return FALSE;
+         }
+         *(bson_int64_t *)ptr = BSON_UINT64_FROM_LE(v64);
+         break;
+      case MONGOC_BUFFER_CSTRING:
+         *(const char **)ptr = (const char *)&buffer->data[buffer->off];
+         end = buffer->off + buffer->len;
+         found = FALSE;
+         for (i = buffer->off; i < end; i++) {
+            if (!buffer->data[i]) {
+               if (i + 1 < end) {
+                  buffer->off = i + 1;
+                  buffer->len = end - buffer->off;
+               } else {
+                  buffer->len = 0;
+                  buffer->off = 0;
+               }
+               found = TRUE;
+               break;
+            }
+         }
+         if (!found) {
+            return FALSE;
+         }
+         break;
+      default:
+         return FALSE;
+      }
+   } while ((type = va_arg(args, int)) && (ptr = va_arg(args, void*)));
+   va_end(args);
+
+   return TRUE;
 }
