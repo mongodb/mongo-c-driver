@@ -150,11 +150,10 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
                                         void                     *user_data,
                                         bson_error_t             *error)
 {
-   mongoc_stream_t *base_stream;
+   mongoc_stream_t *base_stream = NULL;
 
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
-   bson_return_val_if_fail(error, NULL);
 
    /*
     * TODO:
@@ -170,17 +169,20 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
    switch (host->family) {
    case AF_INET:
       base_stream = mongoc_client_connect_tcp(uri, host, error);
+      break;
    case AF_UNIX:
       base_stream = mongoc_client_connect_unix(uri, host, error);
+      break;
    default:
       bson_set_error(error,
                      MONGOC_ERROR_CONN,
                      MONGOC_ERROR_CONN_INVALID_TYPE,
-                     "Invalid address family");
-      return FALSE;
+                     "Invalid address family: 0x%02x", host->family);
+      break;
    }
 
-   return base_stream ? mongoc_stream_buffered_new(base_stream) : NULL;
+   //return base_stream ? mongoc_stream_buffered_new(base_stream) : NULL;
+   return base_stream;
 }
 
 
@@ -207,54 +209,6 @@ mongoc_client_prepare_event (mongoc_client_t *client,
    event->any.opcode = event->type;
    event->any.response_to = -1;
    event->any.request_id = ++client->request_id;
-}
-
-
-static bson_t *
-mongoc_client_is_master (mongoc_client_t *client,
-                         mongoc_stream_t *stream,
-                         bson_error_t    *error)
-{
-   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
-   bson_t *b = NULL;
-   bson_t q;
-
-   bson_return_val_if_fail(client, FALSE);
-   bson_return_val_if_fail(stream, FALSE);
-
-   bson_init(&q);
-   bson_append_int32(&q, "ismaster", 8, 1);
-
-   ev.query.flags = MONGOC_QUERY_SLAVE_OK;
-   ev.query.ns = "admin.$cmd";
-   ev.query.nslen = 10;
-   ev.query.skip = 0;
-   ev.query.n_return = 1;
-   ev.query.query = &q;
-   ev.query.fields = NULL;
-
-   mongoc_client_prepare_event(client, &ev);
-
-   if (mongoc_event_write(&ev, stream, error)) {
-#if 0
-      memset(&ev, 0, sizeof ev);
-      if (mongoc_event_read(&ev, stream, error)) {
-         if ((ev.type == MONGOC_OPCODE_REPLY) &&
-             !(ev.reply.flags & MONGOC_REPLY_QUERY_FAILURE) &&
-             (ev.reply.docslen)) {
-            b = bson_copy(ev.reply.docs[0]);
-         }
-
-         /*
-          * TODO: How do we cleanup the incoming mongoc_event_t?
-          */
-      }
-#endif
-   }
-
-   bson_destroy(&q);
-
-   return b;
 }
 
 
@@ -316,14 +270,17 @@ mongoc_client_recover (mongoc_client_t *client)
          MONGOC_WARNING("Failed to establish stream to %s. Reason: %s",
                         iter->host_and_port, error.message);
          bson_error_destroy(&error);
+         continue;
       }
 
       MONGOC_DEBUG("Connection to %s established.", iter->host_and_port);
       MONGOC_DEBUG("Querying %s for isMaster.", iter->host_and_port);
 
-      if (!(b = mongoc_client_is_master(client, stream, &error))) {
+      if (!(b = mongoc_stream_ismaster(stream, &error))) {
          MONGOC_WARNING("Failed to query %s for isMaster: %s",
                         iter->host_and_port, error.message);
+         mongoc_stream_close(stream);
+         mongoc_stream_destroy(stream);
          bson_error_destroy(&error);
          continue;
       }
