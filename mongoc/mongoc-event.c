@@ -272,13 +272,6 @@ again:
                                  event->any.rawbuf.len);
       MONGOC_EVENT_SWAB_REPLY(event);
       break;
-   /*
-    * NOTE:
-    *
-    * Any of the following messages are unsupported at the moment, but are not
-    * really difficult to do if anyone is interested in them. As libmongoc gets
-    * used in interesting places, these will need to be implemented.
-    */
    case MONGOC_OPCODE_MSG:
       event->msg.msglen = event->any.len - 17;
       event->msg.msg = (const char *)event->any.rawbuf.data;
@@ -301,6 +294,13 @@ again:
          (bson_uint64_t *)&event->any.rawbuf.data[event->any.rawbuf.off];
       MONGOC_EVENT_SWAB_KILL_CURSORS(event);
       break;
+   /*
+    * NOTE:
+    *
+    * Any of the following messages are unsupported at the moment, but are not
+    * really difficult to do if anyone is interested in them. As libmongoc gets
+    * used in interesting places, these will need to be implemented.
+    */
    case MONGOC_OPCODE_DELETE:
    case MONGOC_OPCODE_GET_MORE:
    case MONGOC_OPCODE_INSERT:
