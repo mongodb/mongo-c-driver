@@ -262,7 +262,7 @@ test_mongoc_event_kill_cursors (void)
    ev.any.opcode = ev.type;
    ev.any.request_id = 1234;
    ev.any.response_to = -1;
-   ev.kill_cursors.n_cursors = 5;
+   ev.kill_cursors.desc.n_cursors = 5;
    ev.kill_cursors.cursors = cursors;
    mongoc_event_encode(&ev, &buf, &buflen, NULL, &error);
    assert(buflen == 64);
@@ -406,6 +406,34 @@ test_mongoc_event_decode_msg (void)
 }
 
 
+static void
+test_mongoc_event_decode_kill_cursors (void)
+{
+   mongoc_stream_t *stream;
+   mongoc_event_t ev = { 0 };
+   bson_error_t error = { 0 };
+   bson_bool_t r;
+   int fd;
+
+   fd = open("tests/binary/kill_cursors1.dat", O_RDONLY);
+   assert(fd >= 0);
+
+   stream = mongoc_stream_new_from_unix(fd);
+   assert(stream);
+
+   r = mongoc_event_read(&ev, stream, &error);
+   assert_cmpint(r, ==, TRUE);
+
+   assert(ev.any.type == MONGOC_OPCODE_KILL_CURSORS);
+   assert_cmpint(ev.kill_cursors.desc.n_cursors, ==, 5);
+   assert_cmpint(ev.kill_cursors.cursors[0], ==, 1);
+   assert_cmpint(ev.kill_cursors.cursors[1], ==, 2);
+   assert_cmpint(ev.kill_cursors.cursors[2], ==, 3);
+   assert_cmpint(ev.kill_cursors.cursors[3], ==, 4);
+   assert_cmpint(ev.kill_cursors.cursors[4], ==, 5);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -420,8 +448,9 @@ main (int   argc,
    run_test("/mongoc/event/encode/reply", test_mongoc_event_reply);
    run_test("/mongoc/event/encode/update", test_mongoc_event_update);
 
-   run_test("/mongoc/event/decode/reply", test_mongoc_event_decode_reply);
+   run_test("/mongoc/event/decode/kill_cursors", test_mongoc_event_decode_kill_cursors);
    run_test("/mongoc/event/decode/msg", test_mongoc_event_decode_msg);
+   run_test("/mongoc/event/decode/reply", test_mongoc_event_decode_reply);
 
    return 0;
 }

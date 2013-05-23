@@ -284,6 +284,23 @@ again:
       event->msg.msg = (const char *)event->any.rawbuf.data;
       break;
    case MONGOC_OPCODE_KILL_CURSORS:
+      iov.iov_base = &event->kill_cursors.desc;
+      iov.iov_len = 8;
+      if (mongoc_buffer_readv(&event->any.rawbuf, &iov, 1) != 8) {
+         return FALSE;
+      }
+      if (event->any.rawbuf.len !=
+          ((8 * BSON_UINT64_FROM_LE(event->kill_cursors.desc.n_cursors)))) {
+         return FALSE;
+      }
+      /*
+       * This is only safe to do because we know our alignment in the data
+       * will actually be pointer aligned and data is itself pointer aligned.
+       */
+      event->kill_cursors.cursors =
+         (bson_uint64_t *)&event->any.rawbuf.data[event->any.rawbuf.off];
+      MONGOC_EVENT_SWAB_KILL_CURSORS(event);
+      break;
    case MONGOC_OPCODE_DELETE:
    case MONGOC_OPCODE_GET_MORE:
    case MONGOC_OPCODE_INSERT:
