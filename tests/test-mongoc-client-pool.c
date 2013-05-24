@@ -20,10 +20,24 @@ test_mongoc_client_pool_basic (void)
 }
 
 
+static void
+log_handler (mongoc_log_level_t  log_level,
+             const char         *domain,
+             const char         *message,
+             void               *user_data)
+{
+   /* Do Nothing */
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
+   if (argc <= 1 || !!strcmp(argv[1], "-v")) {
+      mongoc_log_set_handler(log_handler, NULL);
+   }
+
    run_test("/mongoc/client/pool/basic", test_mongoc_client_pool_basic);
 
    return 0;
