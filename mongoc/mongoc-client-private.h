@@ -35,6 +35,10 @@ mongoc_client_create_stream (mongoc_client_t          *client,
                              const mongoc_host_list_t *host,
                              bson_error_t             *error);
 
+void
+mongoc_client_prepare_event (mongoc_client_t *client,
+                             mongoc_event_t  *event);
+
 
 bson_bool_t
 mongoc_client_send (mongoc_client_t *client,

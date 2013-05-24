@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <netinet/tcp.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -100,6 +101,17 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    }
 
    freeaddrinfo(result);
+
+   errno = 0;
+
+   {
+      int flag = 1;
+      int result = setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY,
+                              (char *)&flag, sizeof flag);
+      if (result < 0) {
+         printf("Failed to set nodelay: %s\n", strerror(errno));
+      }
+   }
 
    return mongoc_stream_new_from_unix(sfd);
 }
@@ -199,7 +211,7 @@ mongoc_client_create_stream (mongoc_client_t          *client,
 }
 
 
-static void
+void
 mongoc_client_prepare_event (mongoc_client_t *client,
                              mongoc_event_t  *event)
 {
@@ -253,28 +265,28 @@ mongoc_client_recover (mongoc_client_t *client)
     */
 
    if (!(hosts = mongoc_uri_get_hosts(client->uri))) {
-      MONGOC_ERROR("No hosts to connect to. Invalid URI.");
+      MONGOC_INFO("No hosts to connect to. Invalid URI.");
       return;
    }
 
    for (iter = hosts; iter; iter = iter->next) {
       memset(&error, 0, sizeof error);
 
-      MONGOC_DEBUG("Connecting to %s", iter->host_and_port);
+      MONGOC_INFO("Connecting to %s", iter->host_and_port);
 
       stream = client->initiator(client->uri,
                                  iter,
                                  client->initiator_data,
                                  &error);
       if (!stream) {
-         MONGOC_WARNING("Failed to establish stream to %s. Reason: %s",
-                        iter->host_and_port, error.message);
+         MONGOC_INFO("Failed to establish stream to %s. Reason: %s",
+                     iter->host_and_port, error.message);
          bson_error_destroy(&error);
          continue;
       }
 
-      MONGOC_DEBUG("Connection to %s established.", iter->host_and_port);
-      MONGOC_DEBUG("Querying %s for isMaster.", iter->host_and_port);
+      MONGOC_INFO("Connection to \"%s\" established.", iter->host_and_port);
+      MONGOC_INFO("Querying \"%s\" for isMaster.", iter->host_and_port);
 
       if (!(b = mongoc_stream_ismaster(stream, &error))) {
          MONGOC_WARNING("Failed to query %s for isMaster: %s",
@@ -282,16 +294,24 @@ mongoc_client_recover (mongoc_client_t *client)
          mongoc_stream_close(stream);
          mongoc_stream_destroy(stream);
          bson_error_destroy(&error);
+         stream = NULL;
          continue;
       }
 
-      if (is_authoritative(b)) {
-         //mongoc_cluster_seed(&client->cluster, iter, stream, b);
+      if (!is_authoritative(b)) {
+         mongoc_stream_close(stream);
+         mongoc_stream_destroy(stream);
          bson_destroy(b);
-         break;
+         stream = NULL;
+         continue;
       }
 
-      bson_destroy(b);
+      break;
+   }
+
+   if (stream && iter) {
+      MONGOC_INFO("Found healthy replicaSet member \"%s\".",
+                  iter->host_and_port);
    }
 
    //mongoc_cluster_establish(&client->cluster);
@@ -322,7 +342,17 @@ mongoc_client_send (mongoc_client_t *client,
    bson_return_val_if_fail(client, FALSE);
    bson_return_val_if_fail(event, FALSE);
 
-   if (1) mongoc_client_recover(client);
+   /*
+    * TODO: Determine need to recover.
+    */
+   {
+      static bson_bool_t once;
+      if (!once) {
+         once = TRUE;
+         mongoc_client_recover(client);
+      }
+   }
+
 
    mongoc_client_prepare_event(client, event);
 

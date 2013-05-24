@@ -27,6 +27,7 @@ test_load (mongoc_client_t *client,
       if (!mongoc_client_send(client, &ev, &error)) {
          MONGOC_DEBUG("Send failed: %s", error.message);
          bson_error_destroy(&error);
+         assert(FALSE);
       }
    }
 }

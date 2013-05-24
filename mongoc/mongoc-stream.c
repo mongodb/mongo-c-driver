@@ -364,14 +364,18 @@ mongoc_stream_ismaster (mongoc_stream_t *stream,
                         bson_error_t    *error)
 {
    mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
+   const bson_t *b;
+   bson_bool_t eof;
+   bson_t *ret = NULL;
    bson_t q;
 
    bson_return_val_if_fail(stream, FALSE);
-   bson_return_val_if_fail(error, FALSE);
 
    bson_init(&q);
    bson_append_int32(&q, "ismaster", 8, 1);
 
+   ev.any.response_to = -1;
+   ev.any.opcode = MONGOC_OPCODE_QUERY;
    ev.query.flags = MONGOC_QUERY_SLAVE_OK;
    ev.query.ns = "admin.$cmd";
    ev.query.nslen = 10;
@@ -394,16 +398,20 @@ mongoc_stream_ismaster (mongoc_stream_t *stream,
     * TODO: Check request_id/response_to?
     */
 
-   if (ev.type != MONGOC_OPCODE_REPLY || ev.reply.docslen != 1) {
+   if (ev.type != MONGOC_OPCODE_REPLY) {
       /*
        * TODO: Set error.
        */
       return FALSE;
    }
 
+   if ((b = bson_reader_read(&ev.reply.docs_reader, &eof))) {
+      ret = bson_copy(b);
+   }
+
    /*
     * TODO: Determine how we want to release incoming events.
     */
 
-   return ev.reply.docs[0];
+   return ret;
 }

@@ -173,6 +173,10 @@ mongoc_event_write (mongoc_event_t  *event,
    errno = 0;
 
    if (len == (ret = mongoc_stream_writev(stream, iov, iovcnt))) {
+      errno = 0;
+      if (0 != mongoc_stream_flush(stream)) {
+         printf("Failed to flush: %s\n", strerror(errno));
+      }
       return TRUE;
    }
 
@@ -203,6 +207,7 @@ mongoc_event_read (mongoc_event_t  *event,
    /*
     * Read the event header.
     */
+   errno = 0;
    iov.iov_base = &event->any.len;
    iov.iov_len = 16;
    n = mongoc_stream_readv(stream, &iov, 1);
