@@ -63,7 +63,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
 
    memset(&hints, 0, sizeof hints);
    hints.ai_family = host->family;
-   hints.ai_socktype = SOCK_DGRAM;
+   hints.ai_socktype = SOCK_STREAM;
    hints.ai_flags = 0;
    hints.ai_protocol = 0;
 
@@ -122,7 +122,7 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
    snprintf(saddr.sun_path, sizeof saddr.sun_path - 1,
             "%s", host->host_and_port);
 
-   sfd = socket(AF_UNIX, SOCK_DGRAM, 0);
+   sfd = socket(AF_UNIX, SOCK_STREAM, 0);
    if (sfd == -1) {
       bson_set_error(error,
                      MONGOC_ERROR_CONN,
