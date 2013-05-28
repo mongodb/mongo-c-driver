@@ -40,15 +40,17 @@ mongoc_client_prepare_event (mongoc_client_t *client,
                              mongoc_event_t  *event);
 
 
-bson_bool_t
+bson_uint32_t
 mongoc_client_send (mongoc_client_t *client,
                     mongoc_event_t  *event,
+                    bson_uint32_t    hint,
                     bson_error_t    *error);
 
 
-bson_bool_t
+bson_uint32_t
 mongoc_client_recv (mongoc_client_t *client,
                     mongoc_event_t  *event,
+                    bson_uint32_t    hint,
                     bson_error_t    *error);
 
 

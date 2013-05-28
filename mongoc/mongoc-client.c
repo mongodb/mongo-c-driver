@@ -224,100 +224,6 @@ mongoc_client_prepare_event (mongoc_client_t *client,
 }
 
 
-static bson_bool_t
-is_authoritative (const bson_t *b)
-{
-   bson_iter_t iter;
-
-   if (bson_iter_init_find_case(&iter, b, "ismaster") &&
-       BSON_ITER_HOLDS_BOOL(&iter) &&
-       bson_iter_bool(&iter)) {
-      return TRUE;
-   }
-
-   if (bson_iter_init_find_case(&iter, b, "secondary") &&
-       BSON_ITER_HOLDS_BOOL(&iter) &&
-       bson_iter_bool(&iter)) {
-      return TRUE;
-   }
-
-   return FALSE;
-}
-
-
-static void
-mongoc_client_recover (mongoc_client_t *client)
-{
-   const mongoc_host_list_t *hosts;
-   const mongoc_host_list_t *iter;
-   mongoc_stream_t *stream;
-   bson_error_t error;
-   bson_t *b;
-
-   bson_return_if_fail(client);
-
-   /*
-    * Cancel any in flight requests? (Do we need to do this here?)
-    * Break all connections.
-    * Connect in sequence to each of the seeds (eventually in parallel).
-    * Fetch the peer list (eventually need to do Authentication first).
-    * Connect to each of the peers.
-    */
-
-   if (!(hosts = mongoc_uri_get_hosts(client->uri))) {
-      MONGOC_INFO("No hosts to connect to. Invalid URI.");
-      return;
-   }
-
-   for (iter = hosts; iter; iter = iter->next) {
-      memset(&error, 0, sizeof error);
-
-      MONGOC_INFO("Connecting to %s", iter->host_and_port);
-
-      stream = client->initiator(client->uri,
-                                 iter,
-                                 client->initiator_data,
-                                 &error);
-      if (!stream) {
-         MONGOC_INFO("Failed to establish stream to %s. Reason: %s",
-                     iter->host_and_port, error.message);
-         bson_error_destroy(&error);
-         continue;
-      }
-
-      MONGOC_INFO("Connection to \"%s\" established.", iter->host_and_port);
-      MONGOC_INFO("Querying \"%s\" for isMaster.", iter->host_and_port);
-
-      if (!(b = mongoc_stream_ismaster(stream, &error))) {
-         MONGOC_WARNING("Failed to query %s for isMaster: %s",
-                        iter->host_and_port, error.message);
-         mongoc_stream_close(stream);
-         mongoc_stream_destroy(stream);
-         bson_error_destroy(&error);
-         stream = NULL;
-         continue;
-      }
-
-      if (!is_authoritative(b)) {
-         mongoc_stream_close(stream);
-         mongoc_stream_destroy(stream);
-         bson_destroy(b);
-         stream = NULL;
-         continue;
-      }
-
-      break;
-   }
-
-   if (stream && iter) {
-      MONGOC_INFO("Found healthy replicaSet member \"%s\".",
-                  iter->host_and_port);
-   }
-
-   //mongoc_cluster_establish(&client->cluster);
-}
-
-
 /**
  * mongoc_client_send:
  * @client: (in): A mongoc_client_t.
@@ -329,37 +235,37 @@ mongoc_client_recover (mongoc_client_t *client)
  * destroyed after calling this function. No further access to @event should
  * occur after calling this method.
  *
- * Returns: TRUE if successful; otherwise FALSE and @error is set.
+ * The return value contains a hint for the cluster node that was used.
+ * You can provide this value on a suplimental call to reselect the same
+ * cluster node for communication.
+ *
+ * Returns: Greater than 0 if successful; otherwise 0 and @error is set.
  */
-bson_bool_t
+bson_uint32_t
 mongoc_client_send (mongoc_client_t *client,
                     mongoc_event_t  *event,
+                    bson_uint32_t    hint,
                     bson_error_t    *error)
 {
-   mongoc_stream_t *stream;
-   bson_bool_t ret;
-
    bson_return_val_if_fail(client, FALSE);
    bson_return_val_if_fail(event, FALSE);
 
-   /*
-    * TODO: Determine need to recover.
-    */
-   {
-      static bson_bool_t once;
-      if (!once) {
-         once = TRUE;
-         mongoc_client_recover(client);
-      }
+   switch (client->cluster.state) {
+   case MONGOC_CLUSTER_STATE_BORN:
+      return mongoc_cluster_send(&client->cluster, event, hint, error);
+   case MONGOC_CLUSTER_STATE_HEALTHY:
+   case MONGOC_CLUSTER_STATE_UNHEALTHY:
+      return mongoc_cluster_try_send(&client->cluster, event, hint, error);
+   case MONGOC_CLUSTER_STATE_DEAD:
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_NOT_READY,
+                     "No healthy connections.");
+      return FALSE;
+   default:
+      assert(FALSE);
+      break;
    }
-
-
-   mongoc_client_prepare_event(client, event);
-
-   stream = NULL;
-   ret = mongoc_event_write(event, stream, error);
-
-   return ret;
 }
 
 

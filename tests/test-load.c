@@ -24,7 +24,7 @@ test_load (mongoc_client_t *client,
       ev.query.n_return = 1;
       ev.query.query = &b;
       ev.query.fields = NULL;
-      if (!mongoc_client_send(client, &ev, &error)) {
+      if (!mongoc_client_send(client, &ev, 0, &error)) {
          MONGOC_DEBUG("Send failed: %s", error.message);
          bson_error_destroy(&error);
          assert(FALSE);
