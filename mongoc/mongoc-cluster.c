@@ -17,6 +17,7 @@
 
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-error.h"
 #include "mongoc-log.h"
 
 
@@ -212,6 +213,10 @@ mongoc_cluster_send (mongoc_cluster_t *cluster,
       /*
        * TODO: Try to reestablish connections and try again.
        */
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_NOT_READY,
+                     "No stream to communicate with.");
       return FALSE;
    }
 
