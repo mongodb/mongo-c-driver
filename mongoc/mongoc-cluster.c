@@ -205,12 +205,22 @@ mongoc_cluster_send (mongoc_cluster_t *cluster,
    bson_return_val_if_fail(event, FALSE);
 
    if (!(node = mongoc_cluster_select(cluster, event, hint, error))) {
+      /*
+       * TODO: Try to reestablish connections and try again.
+       */
       return FALSE;
    }
 
    /*
     * TODO: Write the data.
     */
+
+   if (!mongoc_event_write(event, node->stream, error)) {
+      /*
+       * TODO: Mark connection as bad.
+       */
+      return 0;
+   }
 
    return node->index + 1;
 }
