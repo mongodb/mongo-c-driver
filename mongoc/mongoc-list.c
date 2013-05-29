@@ -18,6 +18,15 @@
 #include "mongoc-list-private.h"
 
 
+/**
+ * mongoc_list_append:
+ * @list: A list to append to, or NULL.
+ * @data: Data to append to @list.
+ *
+ * Appends a new link onto the linked list.
+ *
+ * Returns: @list or a new list if @list is NULL.
+ */
 mongoc_list_t *
 mongoc_list_append (mongoc_list_t *list,
                     void          *data)
@@ -38,6 +47,15 @@ mongoc_list_append (mongoc_list_t *list,
 }
 
 
+/**
+ * mongoc_list_prepend:
+ * @list: A mongoc_list_t or NULL.
+ * @data: data to prepend to the list.
+ *
+ * Prepends to @list a new link containing @data.
+ *
+ * Returns: A new link containing data with @list following.
+ */
 mongoc_list_t *
 mongoc_list_prepend (mongoc_list_t *list,
                      void          *data)
@@ -52,6 +70,15 @@ mongoc_list_prepend (mongoc_list_t *list,
 }
 
 
+/**
+ * mongoc_list_remove:
+ * @list: A mongoc_list_t.
+ * @data: Data to remove from @list.
+ *
+ * Removes the link containing @data from @list.
+ *
+ * Returns: @list with the link containing @data removed.
+ */
 mongoc_list_t *
 mongoc_list_remove (mongoc_list_t *list,
                     void          *data)
@@ -79,6 +106,14 @@ mongoc_list_remove (mongoc_list_t *list,
 }
 
 
+/**
+ * mongoc_list_foreach:
+ * @list: A mongoc_list_t or NULL.
+ * @func: A func to call for each link in @list.
+ * @user_data: User data for @func.
+ *
+ * Calls @func for each item in @list.
+ */
 void
 mongoc_list_foreach (mongoc_list_t *list,
                      void (*func) (void *data, void *user_data),
@@ -94,6 +129,12 @@ mongoc_list_foreach (mongoc_list_t *list,
 }
 
 
+/**
+ * mongoc_list_destroy:
+ * @list: A mongoc_list_t.
+ *
+ * Destroys @list and releases any resources.
+ */
 void
 mongoc_list_destroy (mongoc_list_t *list)
 {
