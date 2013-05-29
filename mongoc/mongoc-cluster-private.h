@@ -53,10 +53,11 @@ typedef enum
 
 typedef struct
 {
+   bson_uint32_t       index;
    mongoc_host_list_t  host;
    mongoc_stream_t    *stream;
    bson_bool_t         primary;
-   bson_uint32_t       ping_msec;
+   bson_int32_t        ping_msec;
    bson_t              tags;
 } mongoc_cluster_node_t;
 

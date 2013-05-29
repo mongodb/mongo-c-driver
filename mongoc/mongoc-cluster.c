@@ -36,6 +36,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
                      void               *client)
 {
    const mongoc_host_list_t *hosts;
+   bson_uint32_t i;
    const bson_t *b;
    bson_iter_t iter;
 
@@ -60,6 +61,12 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    cluster->uri = mongoc_uri_copy(uri);
    cluster->client = client;
+
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      cluster->nodes[i].index = i;
+      cluster->nodes[i].ping_msec = -1;
+      bson_init(&cluster->nodes[i].tags);
+   }
 }
 
 
@@ -78,6 +85,90 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
    /*
     * TODO: release resources.
     */
+}
+
+
+static mongoc_cluster_node_t *
+mongoc_cluster_select (mongoc_cluster_t *cluster,
+                       mongoc_event_t   *event,
+                       bson_uint32_t     hint,
+                       bson_error_t     *error)
+{
+   mongoc_cluster_node_t *nodes[MONGOC_CLUSTER_MAX_NODES];
+   const bson_t *read_prefs = NULL;
+   bson_uint32_t i;
+   bson_int32_t nearest = -1;
+   bson_bool_t need_primary = TRUE;
+
+   bson_return_val_if_fail(cluster, NULL);
+   bson_return_val_if_fail(event, NULL);
+   bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, NULL);
+
+   switch (event->type) {
+   case MONGOC_OPCODE_KILL_CURSORS:
+   case MONGOC_OPCODE_GET_MORE:
+   case MONGOC_OPCODE_MSG:
+   case MONGOC_OPCODE_REPLY:
+      need_primary = FALSE;
+      break;
+   case MONGOC_OPCODE_QUERY:
+      need_primary = FALSE;
+      read_prefs = event->query.read_prefs;
+      break;
+   case MONGOC_OPCODE_DELETE:
+   case MONGOC_OPCODE_INSERT:
+   case MONGOC_OPCODE_UPDATE:
+   default:
+      need_primary = TRUE;
+      break;
+   }
+
+   /*
+    * Build our list of nodes with established connections. Short circuit if
+    * we require a primary and we found one.
+    */
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      if (need_primary && cluster->nodes[i].primary)
+         return &cluster->nodes[i];
+      nodes[i] = cluster->nodes[i].stream ? &cluster->nodes[i] : NULL;
+   }
+
+   /*
+    * Now, we start removing connections that don't match the requirements of
+    * our requested event.
+    *
+    * - If read preferences are set, remove all non-matching.
+    * - If slaveOk exists and is false, then remove secondaries.
+    * - Find the nearest leftover node and remove those not within threshold.
+    * - Select a leftover node at random.
+    */
+
+#define IS_NEARER_THAN(n, msec) \
+   ((msec < 0 && (n)->ping_msec >= 0) || ((n)->ping_msec < msec))
+
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      if (nodes[i]) {
+         if (read_prefs) {
+         }
+         if (need_primary) {
+         }
+         if (IS_NEARER_THAN(nodes[i], nearest)) {
+            nearest = nodes[i]->ping_msec;
+         }
+      }
+   }
+
+#undef IS_NEARAR_THAN
+
+   if (hint && nodes[hint]) {
+      return nodes[hint];
+   }
+
+   /*
+    * TODO: Select available node at random.
+    */
+
+   return NULL;
 }
 
 
@@ -108,10 +199,20 @@ mongoc_cluster_send (mongoc_cluster_t *cluster,
                      bson_uint32_t     hint,
                      bson_error_t     *error)
 {
+   mongoc_cluster_node_t *node;
+
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(event, FALSE);
 
-   return FALSE;
+   if (!(node = mongoc_cluster_select(cluster, event, hint, error))) {
+      return FALSE;
+   }
+
+   /*
+    * TODO: Write the data.
+    */
+
+   return node->index + 1;
 }
 
 

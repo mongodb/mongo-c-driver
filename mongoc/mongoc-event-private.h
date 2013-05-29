@@ -96,6 +96,7 @@ typedef struct
    bson_t               *query;
    bson_t               *fields;
    bson_reader_t         docs_reader;
+   bson_t               *read_prefs;
 } mongoc_event_query_t;
 
 
