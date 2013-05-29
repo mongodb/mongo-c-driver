@@ -104,6 +104,10 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
    bson_return_val_if_fail(event, NULL);
    bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, NULL);
 
+   if (cluster->mode == MONGOC_CLUSTER_DIRECT) {
+      return cluster->nodes[0].stream ? &cluster->nodes[0] : NULL;
+   }
+
    switch (event->type) {
    case MONGOC_OPCODE_KILL_CURSORS:
    case MONGOC_OPCODE_GET_MORE:
