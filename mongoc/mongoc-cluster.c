@@ -165,15 +165,111 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
 
 #undef IS_NEARAR_THAN
 
+   /*
+    * Apply hint to reselect same connection if possible.
+    */
    if (hint && nodes[hint]) {
       return nodes[hint];
    }
 
    /*
-    * TODO: Select available node at random.
+    * TODO: Select available node at random instead of first matching.
     */
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      if (nodes[i]) {
+         return nodes[i];
+      }
+   }
 
    return NULL;
+}
+
+
+static bson_bool_t
+mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
+                                 bson_error_t     *error)
+{
+   const mongoc_host_list_t *hosts;
+   mongoc_stream_t *stream;
+   bson_iter_t iter;
+   bson_t *b;
+
+   bson_return_val_if_fail(cluster, FALSE);
+   bson_return_val_if_fail(error, FALSE);
+
+   if (!(hosts = mongoc_uri_get_hosts(cluster->uri))) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_NOT_READY,
+                     "Invalid host list supplied.");
+      return FALSE;
+   }
+
+   cluster->nodes[0].index = 0;
+   cluster->nodes[0].host = *hosts;
+   cluster->nodes[0].primary = FALSE;
+   cluster->nodes[0].ping_msec = -1;
+   cluster->nodes[0].stream = NULL;
+   bson_init(&cluster->nodes[0].tags);
+
+   stream = mongoc_client_create_stream(cluster->client, hosts, error);
+   if (!stream) {
+      return FALSE;
+   }
+
+   cluster->nodes[0].stream = stream;
+
+   if (!(b = mongoc_stream_ismaster(stream, error))) {
+      cluster->nodes[0].stream = NULL;
+      mongoc_stream_destroy(stream);
+      return FALSE;
+   }
+
+   if (bson_iter_init_find_case(&iter, b, "isMaster") &&
+       bson_iter_bool(&iter)) {
+      cluster->nodes[0].primary = TRUE;
+   }
+
+   if (bson_iter_init_find_case(&iter, b, "maxMessageSizeBytes")) {
+      cluster->max_msg_size = bson_iter_int32(&iter);
+   }
+
+   if (bson_iter_init_find_case(&iter, b, "maxBsonObjectSize")) {
+      cluster->max_bson_size = bson_iter_int32(&iter);
+   }
+
+   bson_destroy(b);
+
+   return TRUE;
+}
+
+
+static bson_bool_t
+mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
+                          bson_error_t     *error)
+{
+   bson_return_val_if_fail(cluster, FALSE);
+
+   switch (cluster->mode) {
+   case MONGOC_CLUSTER_DIRECT:
+      return mongoc_cluster_reconnect_direct(cluster, error);
+   case MONGOC_CLUSTER_REPLICA_SET:
+      /* TODO */
+      break;
+   case MONGOC_CLUSTER_SHARDED_CLUSTER:
+      /* TODO */
+      break;
+   default:
+      break;
+   }
+
+   bson_set_error(error,
+                  MONGOC_ERROR_CLIENT,
+                  MONGOC_ERROR_CLIENT_NOT_READY,
+                  "Unsupported cluster mode: %02x",
+                  cluster->mode);
+
+   return FALSE;
 }
 
 
@@ -209,15 +305,12 @@ mongoc_cluster_send (mongoc_cluster_t *cluster,
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(event, FALSE);
 
+again:
    if (!(node = mongoc_cluster_select(cluster, event, hint, error))) {
-      /*
-       * TODO: Try to reestablish connections and try again.
-       */
-      bson_set_error(error,
-                     MONGOC_ERROR_CLIENT,
-                     MONGOC_ERROR_CLIENT_NOT_READY,
-                     "No stream to communicate with.");
-      return FALSE;
+      if (!mongoc_cluster_reconnect(cluster, error)) {
+         return FALSE;
+      }
+      goto again;
    }
 
    /*
@@ -262,4 +355,38 @@ mongoc_cluster_try_send (mongoc_cluster_t *cluster,
    bson_return_val_if_fail(event, FALSE);
 
    return FALSE;
+}
+
+
+bson_bool_t
+mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
+                         mongoc_event_t   *event,
+                         bson_uint32_t     hint,
+                         bson_error_t     *error)
+{
+   mongoc_cluster_node_t *node;
+
+   bson_return_val_if_fail(cluster, FALSE);
+   bson_return_val_if_fail(event, FALSE);
+   bson_return_val_if_fail(hint, FALSE);
+   bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, FALSE);
+
+   node = &cluster->nodes[hint-1];
+   if (!node->stream) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_NOT_READY,
+                     "Failed to receive message, lost connection to node.");
+      return FALSE;
+   }
+
+   memset(event, 0, sizeof *event);
+
+   if (!mongoc_event_read(event, node->stream, error)) {
+      mongoc_stream_destroy(node->stream);
+      node->stream = NULL;
+      return FALSE;
+   }
+
+   return TRUE;
 }

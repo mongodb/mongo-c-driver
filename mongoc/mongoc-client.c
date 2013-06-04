@@ -269,6 +269,21 @@ mongoc_client_send (mongoc_client_t *client,
 }
 
 
+bson_bool_t
+mongoc_client_recv (mongoc_client_t *client,
+                    mongoc_event_t  *event,
+                    bson_uint32_t    hint,
+                    bson_error_t    *error)
+{
+   bson_return_val_if_fail(client, FALSE);
+   bson_return_val_if_fail(event, FALSE);
+   bson_return_val_if_fail(hint, FALSE);
+   bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, FALSE);
+
+   return mongoc_cluster_try_recv(&client->cluster, event, hint, error);
+}
+
+
 mongoc_client_t *
 mongoc_client_new (const char *uri_string)
 {

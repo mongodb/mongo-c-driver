@@ -47,7 +47,7 @@ mongoc_client_send (mongoc_client_t *client,
                     bson_error_t    *error);
 
 
-bson_uint32_t
+bson_bool_t
 mongoc_client_recv (mongoc_client_t *client,
                     mongoc_event_t  *event,
                     bson_uint32_t    hint,

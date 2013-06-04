@@ -90,6 +90,10 @@ bson_uint32_t mongoc_cluster_try_send (mongoc_cluster_t   *cluster,
                                        mongoc_event_t     *event,
                                        bson_uint32_t       hint,
                                        bson_error_t       *error);
+bson_bool_t   mongoc_cluster_try_recv (mongoc_cluster_t   *cluster,
+                                       mongoc_event_t     *event,
+                                       bson_uint32_t       hint,
+                                       bson_error_t       *error);
 
 
 BSON_END_DECLS

@@ -8,6 +8,7 @@ test_load (mongoc_client_t *client,
            unsigned         iterations)
 {
    mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
+   bson_uint32_t hint;
    bson_error_t error;
    unsigned i;
    bson_t b;
@@ -24,8 +25,13 @@ test_load (mongoc_client_t *client,
       ev.query.n_return = 1;
       ev.query.query = &b;
       ev.query.fields = NULL;
-      if (!mongoc_client_send(client, &ev, 0, &error)) {
+      if (!(hint = mongoc_client_send(client, &ev, 0, &error))) {
          MONGOC_DEBUG("Send failed: %s", error.message);
+         bson_error_destroy(&error);
+         assert(FALSE);
+      }
+      if (!mongoc_client_recv(client, &ev, hint, &error)) {
+         MONGOC_DEBUG("Recv failed: %s", error.message);
          bson_error_destroy(&error);
          assert(FALSE);
       }
