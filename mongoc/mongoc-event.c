@@ -220,7 +220,7 @@ mongoc_event_read (mongoc_event_t  *event,
    /*
     * Convert endianness and make sure we can read this size of message.
     */
-   memcpy(&msg_len, &event->any.rawbuf.data, 4);
+   memcpy(&msg_len, event->any.rawbuf.data, 4);
    msg_len = BSON_UINT32_FROM_LE(msg_len);
    if (msg_len > max_msg_len) {
       bson_set_error(error,
@@ -237,17 +237,24 @@ mongoc_event_read (mongoc_event_t  *event,
    }
 
    /*
-    * Read the entire message.
+    * Buffer the entire message.
     */
    if (!mongoc_buffer_fill(&event->any.rawbuf, stream, msg_len, error)) {
       return FALSE;
    }
 
    /*
-    * Swab the message header for decoding.
+    * Read the buffered header into our structure.
     */
-   memcpy(&event->any.len, event->any.rawbuf.data, 16);
-   MONGOC_EVENT_SWAB_HEADER(event);
+   if (!mongoc_buffer_read_typed(&event->any.rawbuf,
+                                 MONGOC_BUFFER_INT32, &event->any.len,
+                                 MONGOC_BUFFER_INT32, &event->any.request_id,
+                                 MONGOC_BUFFER_INT32, &event->any.response_to,
+                                 MONGOC_BUFFER_INT32, &event->any.opcode,
+                                 0)) {
+      return FALSE;
+   }
+
    event->any.type = event->any.opcode;
 
    switch (event->any.opcode) {
