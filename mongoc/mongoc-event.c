@@ -17,6 +17,7 @@
 
 #include <errno.h>
 
+#include "mongoc-error.h"
 #include "mongoc-event-private.h"
 
 
@@ -194,9 +195,8 @@ mongoc_event_read (mongoc_event_t  *event,
                    bson_error_t    *error)
 {
    bson_uint32_t max_msg_len;
+   bson_uint32_t msg_len;
    struct iovec iov;
-   ssize_t n;
-   size_t toread;
 
    bson_return_val_if_fail(event, FALSE);
    bson_return_val_if_fail(stream, FALSE);
@@ -205,30 +205,12 @@ mongoc_event_read (mongoc_event_t  *event,
    memset(event, 0, sizeof *event);
 
    /*
-    * Read the event header.
+    * Read the length of the message.
     */
-   errno = 0;
-   iov.iov_base = &event->any.len;
-   iov.iov_len = 16;
-   n = mongoc_stream_readv(stream, &iov, 1);
-   switch (n) {
-   case -1:
-   case 0:
-      /*
-       * TODO: Set error.
-       */
-      return FALSE;
-   case 16:
-      break;
-   default:
-      /*
-       * TODO: Handle short read.
-       */
+   mongoc_buffer_init(&event->any.rawbuf, NULL, 0, NULL);
+   if (!mongoc_buffer_fill(&event->any.rawbuf, stream, 4, error)) {
       return FALSE;
    }
-
-   MONGOC_EVENT_SWAB_HEADER(event);
-   event->any.type = event->any.opcode;
 
    /*
     * TODO: Plumb this through.
@@ -236,34 +218,37 @@ mongoc_event_read (mongoc_event_t  *event,
    max_msg_len = 48 * 1024 * 1024;
 
    /*
-    * Make sure message length is not invalid.
+    * Convert endianness and make sure we can read this size of message.
     */
-   if ((event->any.len <= 16) || (event->any.len > max_msg_len)) {
+   memcpy(&msg_len, &event->any.rawbuf.data, 4);
+   msg_len = BSON_UINT32_FROM_LE(msg_len);
+   if (msg_len > max_msg_len) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_TOO_BIG,
+                     "Incoming message is too large.");
+      return FALSE;
+   } else if (msg_len < 16) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_TOO_SMALL,
+                     "Incoming message size is too small.");
       return FALSE;
    }
 
    /*
-    * Read in the rest of the network packet.
+    * Read the entire message.
     */
-   toread = event->any.len - 16;
-   mongoc_buffer_init(&event->any.rawbuf, NULL, 0, NULL);
-again:
-   n = mongoc_buffer_fill(&event->any.rawbuf, stream, toread, error);
-   switch (n) {
-   case -1:
-   case 0:
+   if (!mongoc_buffer_fill(&event->any.rawbuf, stream, msg_len, error)) {
       return FALSE;
-   default:
-      toread -= n;
-      if (toread) {
-         goto again;
-      }
-      break;
    }
 
    /*
-    * TODO: Get a buffer from the pool large enough to contain @n bytes.
+    * Swab the message header for decoding.
     */
+   memcpy(&event->any.len, event->any.rawbuf.data, 16);
+   MONGOC_EVENT_SWAB_HEADER(event);
+   event->any.type = event->any.opcode;
 
    switch (event->any.opcode) {
    case MONGOC_OPCODE_REPLY:
