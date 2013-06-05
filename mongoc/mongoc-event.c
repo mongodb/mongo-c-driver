@@ -286,8 +286,11 @@ mongoc_event_read (mongoc_event_t  *event,
          return FALSE;
       }
       /*
-       * This is only safe to do because we know our alignment in the data
-       * will actually be pointer aligned and data is itself pointer aligned.
+       * A daft engineer might wonder if the pointer to array of 64-bit cursor
+       * ids is valid since there is potential for dereferencing pointers that
+       * may not be aligned.  However, due to the malloc() guarantees of
+       * alignment to a pointer and the alignment of the cursor array within
+       * the message, we will be aligned within buffer.
        */
       event->kill_cursors.cursors =
          (bson_uint64_t *)&event->any.rawbuf.data[event->any.rawbuf.off];
