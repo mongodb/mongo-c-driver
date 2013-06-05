@@ -18,6 +18,7 @@ test_load (mongoc_client_t *client,
    bson_destroy(&b);
 
    for (i = 0; i < iterations; i++) {
+      memset(&error, 0, sizeof error);
       ev.query.flags = 0;
       ev.query.nslen = 5;
       ev.query.ns = "admin.$cmd";

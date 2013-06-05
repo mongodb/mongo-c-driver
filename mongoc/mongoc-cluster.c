@@ -313,14 +313,11 @@ again:
       goto again;
    }
 
-   /*
-    * TODO: Write the data.
-    */
+   BSON_ASSERT(node->stream);
 
    if (!mongoc_event_write(event, node->stream, error)) {
-      /*
-       * TODO: Mark connection as bad.
-       */
+      mongoc_stream_destroy(node->stream);
+      node->stream = NULL;
       return 0;
    }
 
@@ -379,8 +376,6 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                      "Failed to receive message, lost connection to node.");
       return FALSE;
    }
-
-   memset(event, 0, sizeof *event);
 
    if (!mongoc_event_read(event, node->stream, error)) {
       mongoc_stream_destroy(node->stream);
