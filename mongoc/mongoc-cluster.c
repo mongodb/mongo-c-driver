@@ -305,12 +305,10 @@ mongoc_cluster_send (mongoc_cluster_t *cluster,
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(event, FALSE);
 
-again:
-   if (!(node = mongoc_cluster_select(cluster, event, hint, error))) {
+   while (!(node = mongoc_cluster_select(cluster, event, hint, error))) {
       if (!mongoc_cluster_reconnect(cluster, error)) {
          return FALSE;
       }
-      goto again;
    }
 
    BSON_ASSERT(node->stream);

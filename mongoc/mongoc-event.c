@@ -246,32 +246,34 @@ mongoc_event_read (mongoc_event_t  *event,
    /*
     * Read the buffered header into our structure.
     */
-   if (!mongoc_buffer_read_typed(&event->any.rawbuf,
-                                 MONGOC_BUFFER_INT32, &event->any.len,
-                                 MONGOC_BUFFER_INT32, &event->any.request_id,
-                                 MONGOC_BUFFER_INT32, &event->any.response_to,
-                                 MONGOC_BUFFER_INT32, &event->any.opcode,
-                                 0)) {
+   iov.iov_base = &event->any.len;
+   iov.iov_len = 16;
+   if (!mongoc_buffer_readv(&event->any.rawbuf, &iov, 1)) {
       return FALSE;
    }
 
+   MONGOC_EVENT_SWAB_HEADER(event);
    event->any.type = event->any.opcode;
 
    switch (event->any.opcode) {
    case MONGOC_OPCODE_REPLY:
       iov.iov_base = &event->reply.desc;
       iov.iov_len = 20;
-      if (mongoc_buffer_readv(&event->any.rawbuf, &iov, 1) != 20) {
+      if (!mongoc_buffer_readv(&event->any.rawbuf, &iov, 1)) {
          return FALSE;
       }
+      MONGOC_EVENT_SWAB_REPLY(event);
       bson_reader_init_from_data(&event->reply.docs_reader,
                                  &event->any.rawbuf.data[event->any.rawbuf.off],
                                  event->any.rawbuf.len);
-      MONGOC_EVENT_SWAB_REPLY(event);
       break;
    case MONGOC_OPCODE_MSG:
+      if (event->any.len < 17) {
+         return FALSE;
+      }
       event->msg.msglen = event->any.len - 17;
-      event->msg.msg = (const char *)event->any.rawbuf.data;
+      event->msg.msg = (const char *)
+         &event->any.rawbuf.data[event->any.rawbuf.off];
       break;
    case MONGOC_OPCODE_KILL_CURSORS:
       iov.iov_base = &event->kill_cursors.desc;
