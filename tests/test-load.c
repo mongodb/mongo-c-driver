@@ -7,11 +7,14 @@ static void
 test_load (mongoc_client_t *client,
            unsigned         iterations)
 {
-   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
+   mongoc_event_t ev;
    bson_uint32_t hint;
    bson_error_t error;
    unsigned i;
    bson_t b;
+   bson_t f;
+
+   bson_init(&f);
 
    bson_init(&b);
    bson_append_int32(&b, "ping", 4, 1);
@@ -19,9 +22,12 @@ test_load (mongoc_client_t *client,
 
    for (i = 0; i < iterations; i++) {
       memset(&error, 0, sizeof error);
+      memset(&ev, 0, sizeof ev);
+      ev.any.type = MONGOC_OPCODE_QUERY;
+      ev.any.opcode = MONGOC_OPCODE_QUERY;
       ev.query.flags = 0;
-      ev.query.nslen = 5;
       ev.query.ns = "admin.$cmd";
+      ev.query.nslen = 10;
       ev.query.skip = 0;
       ev.query.n_return = 1;
       ev.query.query = &b;
