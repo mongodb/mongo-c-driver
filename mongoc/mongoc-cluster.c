@@ -139,6 +139,14 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
    }
 
    /*
+    * Apply the hint if the client knows who they would like to continue
+    * communicating with.
+    */
+   if (hint) {
+      return nodes[hint];
+   }
+
+   /*
     * Now, we start removing connections that don't match the requirements of
     * our requested event.
     *
@@ -164,13 +172,6 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
    }
 
 #undef IS_NEARAR_THAN
-
-   /*
-    * Apply hint to reselect same connection if possible.
-    */
-   if (hint && nodes[hint]) {
-      return nodes[hint];
-   }
 
    /*
     * TODO: Select available node at random instead of first matching.
