@@ -368,6 +368,22 @@ mongoc_cluster_try_send (mongoc_cluster_t *cluster,
 }
 
 
+/**
+ * bson_cluster_try_recv:
+ * @cluster: A bson_cluster_t.
+ * @event: (out): A mongoc_event_t to fill.
+ * @hint: The node to receive from, returned from mongoc_cluster_send().
+ * @error: (out): A location for a bson_error_t or NULL.
+ *
+ * Tries to receive the next event from a particular node in the cluster.
+ * @hint should be the value returned from a successful send via
+ * mongoc_cluster_send() or mongoc_cluster_try_send().
+ *
+ * The caller owns the content of @event if successful and should release
+ * those resources with mongoc_event_destroy().
+ *
+ * Returns: TRUE if an event was read, otherwise FALSE and @error is set.
+ */
 bson_bool_t
 mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                          mongoc_event_t   *event,
