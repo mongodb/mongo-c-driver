@@ -98,6 +98,7 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *nodes[MONGOC_CLUSTER_MAX_NODES];
    const bson_t *read_prefs = NULL;
    bson_uint32_t i;
+   bson_uint32_t count;
    bson_int32_t nearest = -1;
    bson_bool_t need_primary = TRUE;
 
@@ -159,6 +160,8 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
 #define IS_NEARER_THAN(n, msec) \
    ((msec < 0 && (n)->ping_msec >= 0) || ((n)->ping_msec < msec))
 
+   count = 0;
+
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (nodes[i]) {
          if (read_prefs) {
@@ -168,17 +171,26 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
          if (IS_NEARER_THAN(nodes[i], nearest)) {
             nearest = nodes[i]->ping_msec;
          }
+         count++;
       }
    }
 
 #undef IS_NEARAR_THAN
 
    /*
-    * TODO: Select available node at random instead of first matching.
+    * TODO: Filter out nodes outside of threshold.
     */
+
+   /*
+    * Choose a cluster node within threshold at random.
+    */
+   count = count ? rand() % count : count;
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (nodes[i]) {
-         return nodes[i];
+         if (!count) {
+            return nodes[i];
+         }
+         count--;
       }
    }
 
