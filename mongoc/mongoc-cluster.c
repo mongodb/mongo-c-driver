@@ -347,10 +347,24 @@ mongoc_cluster_try_send (mongoc_cluster_t *cluster,
                          bson_uint32_t     hint,
                          bson_error_t     *error)
 {
+   mongoc_cluster_node_t *node;
+
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(event, FALSE);
 
-   return FALSE;
+   if (!(node = mongoc_cluster_select(cluster, event, hint, error))) {
+      return 0;
+   }
+
+   BSON_ASSERT(node->stream);
+
+   if (!mongoc_event_write(event ,node->stream, error)) {
+      mongoc_stream_destroy(node->stream);
+      node->stream = NULL;
+      return 0;
+   }
+
+   return node->index + 1;
 }
 
 
