@@ -54,7 +54,10 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    struct addrinfo hints;
    struct addrinfo *result, *rp;
    char portstr[8];
-   int s, sfd;
+   int flag;
+   int r;
+   int s;
+   int sfd;
 
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
@@ -102,15 +105,12 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
 
    freeaddrinfo(result);
 
+   flag = 1;
    errno = 0;
-
-   {
-      int flag = 1;
-      int result = setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY,
-                              (char *)&flag, sizeof flag);
-      if (result < 0) {
-         printf("Failed to set nodelay: %s\n", strerror(errno));
-      }
+   r = setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof flag);
+   if (r < 0) {
+      MONGOC_WARNING("Failed to set TCP_NODELAY on fd %u: %s\n",
+                     sfd, strerror(errno));
    }
 
    return mongoc_stream_new_from_unix(sfd);
