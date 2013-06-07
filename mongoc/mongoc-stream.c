@@ -390,7 +390,7 @@ mongoc_stream_ismaster (mongoc_stream_t *stream,
 
    bson_destroy(&q);
 
-   if (!mongoc_event_read(&ev, stream, error)) {
+   if (!mongoc_event_read(&ev, stream, 0, error)) {
       return FALSE;
    }
 
@@ -399,9 +399,10 @@ mongoc_stream_ismaster (mongoc_stream_t *stream,
     */
 
    if (ev.type != MONGOC_OPCODE_REPLY) {
-      /*
-       * TODO: Set error.
-       */
+      bson_set_error(error,
+                     MONGOC_ERROR_PROTOCOL,
+                     MONGOC_ERROR_PROTOCOL_INVALID_OPCODE,
+                     "Message with invalid opcode was received.");
       return FALSE;
    }
 

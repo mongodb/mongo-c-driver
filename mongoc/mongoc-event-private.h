@@ -202,6 +202,7 @@ mongoc_event_write (mongoc_event_t  *event,
 bson_bool_t
 mongoc_event_read (mongoc_event_t  *event,
                    mongoc_stream_t *stream,
+                   bson_uint32_t    max_msg_size,
                    bson_error_t    *error);
 
 

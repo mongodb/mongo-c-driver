@@ -27,8 +27,9 @@ BSON_BEGIN_DECLS
 
 typedef enum
 {
-   MONGOC_ERROR_CONN   = 1,
-   MONGOC_ERROR_CLIENT = 2,
+   MONGOC_ERROR_CONN     = 1,
+   MONGOC_ERROR_CLIENT   = 2,
+   MONGOC_ERROR_PROTOCOL = 3,
 } mongoc_error_domain_t;
 
 
@@ -44,6 +45,8 @@ typedef enum
    MONGOC_ERROR_CLIENT_NOT_READY,
    MONGOC_ERROR_CLIENT_TOO_BIG,
    MONGOC_ERROR_CLIENT_TOO_SMALL,
+
+   MONGOC_ERROR_PROTOCOL_INVALID_OPCODE,
 } mongoc_error_code_t;
 
 

@@ -192,9 +192,9 @@ mongoc_event_write (mongoc_event_t  *event,
 bson_bool_t
 mongoc_event_read (mongoc_event_t  *event,
                    mongoc_stream_t *stream,
+                   bson_uint32_t    max_msg_size,
                    bson_error_t    *error)
 {
-   bson_uint32_t max_msg_len;
    bson_uint32_t msg_len;
    struct iovec iov;
 
@@ -203,6 +203,10 @@ mongoc_event_read (mongoc_event_t  *event,
    bson_return_val_if_fail(error, FALSE);
 
    memset(event, 0, sizeof *event);
+
+   if (!max_msg_size) {
+      max_msg_size = 48 * 1024 * 1024;
+   }
 
    /*
     * Read the length of the message.
@@ -213,16 +217,11 @@ mongoc_event_read (mongoc_event_t  *event,
    }
 
    /*
-    * TODO: Plumb this through.
-    */
-   max_msg_len = 48 * 1024 * 1024;
-
-   /*
     * Convert endianness and make sure we can read this size of message.
     */
    memcpy(&msg_len, event->any.rawbuf.data, 4);
    msg_len = BSON_UINT32_FROM_LE(msg_len);
-   if (msg_len > max_msg_len) {
+   if (msg_len > max_msg_size) {
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_TOO_BIG,

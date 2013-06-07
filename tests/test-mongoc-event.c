@@ -359,7 +359,7 @@ test_mongoc_event_decode_query (void)
    stream = mongoc_stream_new_from_unix(fd);
    assert(stream);
 
-   r = mongoc_event_read(&ev, stream, &error);
+   r = mongoc_event_read(&ev, stream, 0, &error);
    assert_cmpint(r, ==, TRUE);
 
    assert_cmpint(ev.any.type, ==, MONGOC_OPCODE_QUERY);
@@ -402,7 +402,7 @@ test_mongoc_event_decode_reply (void)
    stream = mongoc_stream_new_from_unix(fd);
    assert(stream);
 
-   r = mongoc_event_read(&ev, stream, &error);
+   r = mongoc_event_read(&ev, stream, 0, &error);
    assert_cmpint(r, ==, TRUE);
 
    assert_cmpint(ev.any.type, ==, MONGOC_OPCODE_REPLY);
@@ -440,7 +440,7 @@ test_mongoc_event_decode_msg (void)
    stream = mongoc_stream_new_from_unix(fd);
    assert(stream);
 
-   r = mongoc_event_read(&ev, stream, &error);
+   r = mongoc_event_read(&ev, stream, 0, &error);
    assert_cmpint(r, ==, TRUE);
 
    assert(ev.any.type == MONGOC_OPCODE_MSG);
@@ -464,7 +464,7 @@ test_mongoc_event_decode_kill_cursors (void)
    stream = mongoc_stream_new_from_unix(fd);
    assert(stream);
 
-   r = mongoc_event_read(&ev, stream, &error);
+   r = mongoc_event_read(&ev, stream, 0, &error);
    assert_cmpint(r, ==, TRUE);
 
    assert(ev.any.type == MONGOC_OPCODE_KILL_CURSORS);

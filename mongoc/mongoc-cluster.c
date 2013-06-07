@@ -385,7 +385,7 @@ mongoc_cluster_try_send (mongoc_cluster_t *cluster,
 
    BSON_ASSERT(node->stream);
 
-   if (!mongoc_event_write(event ,node->stream, error)) {
+   if (!mongoc_event_write(event, node->stream, error)) {
       mongoc_stream_destroy(node->stream);
       node->stream = NULL;
       return 0;
@@ -433,7 +433,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       return FALSE;
    }
 
-   if (!mongoc_event_read(event, node->stream, error)) {
+   if (!mongoc_event_read(event, node->stream, cluster->max_msg_size, error)) {
       mongoc_stream_destroy(node->stream);
       node->stream = NULL;
       return FALSE;
