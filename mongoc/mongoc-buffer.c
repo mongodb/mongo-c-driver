@@ -15,8 +15,10 @@
  */
 
 
+#include <errno.h>
 #include <stdarg.h>
 
+#include "mongoc-error.h"
 #include "mongoc-buffer-private.h"
 
 
@@ -133,8 +135,14 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
    while (toread > 0) {
       iov.iov_base = buffer->data + buffer->off + buffer->len;
       iov.iov_len = buffer->datalen - (buffer->off + buffer->len);
+      errno = 0;
       ret = mongoc_stream_readv(stream, &iov, 1);
       if (ret <= 0) {
+         bson_set_error(error,
+                        MONGOC_ERROR_STREAM,
+                        errno,
+                        "Failed to read from stream: %s",
+                        strerror(errno));
          return FALSE;
       }
       toread -= ret;
