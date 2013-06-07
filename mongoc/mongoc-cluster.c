@@ -62,6 +62,12 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    cluster->uri = mongoc_uri_copy(uri);
    cluster->client = client;
+   cluster->sec_latency_ms = 15;
+
+   if (bson_iter_init_find_case(&iter, b, "secondaryacceptablelatencyms") &&
+       BSON_ITER_HOLDS_INT32(&iter)) {
+      cluster->sec_latency_ms = bson_iter_int32(&iter);
+   }
 
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       cluster->nodes[i].index = i;
@@ -99,6 +105,7 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
    const bson_t *read_prefs = NULL;
    bson_uint32_t i;
    bson_uint32_t count;
+   bson_uint32_t watermark;
    bson_int32_t nearest = -1;
    bson_bool_t need_primary = TRUE;
 
@@ -178,8 +185,16 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
 #undef IS_NEARAR_THAN
 
    /*
-    * TODO: Filter out nodes outside of threshold.
+    * Filter nodes with latency outside threshold of nearest.
     */
+   if (nearest != -1) {
+      watermark = nearest + cluster->sec_latency_ms;
+      for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+         if (nodes[i]->ping_msec > watermark) {
+            nodes[i] = NULL;
+         }
+      }
+   }
 
    /*
     * Choose a cluster node within threshold at random.

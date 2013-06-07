@@ -74,7 +74,7 @@ typedef struct
    void                   *client;
    bson_uint32_t           max_bson_size;
    bson_uint32_t           max_msg_size;
-
+   bson_uint32_t           sec_latency_ms;
 } mongoc_cluster_t;
 
 
