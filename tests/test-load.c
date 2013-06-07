@@ -35,12 +35,11 @@ test_load (mongoc_client_t *client,
       if (!(hint = mongoc_client_send(client, &ev, 0, &error))) {
          MONGOC_DEBUG("Send failed: %s", error.message);
          bson_error_destroy(&error);
-         assert(FALSE);
+         continue;
       }
       if (!mongoc_client_recv(client, &ev, hint, &error)) {
          MONGOC_DEBUG("Recv failed: %s", error.message);
          bson_error_destroy(&error);
-         assert(FALSE);
       }
    }
 }
@@ -56,10 +55,18 @@ main (int   argc,
    unsigned count = 10000;
 
    if (argc > 1) {
-      count = MIN(atoi(argv[1]), 1);
+      if (!(uri = mongoc_uri_new(argv[1]))) {
+         fprintf(stderr, "Failed to parse uri: %s\n", argv[1]);
+         return 1;
+      }
+   } else {
+      uri = mongoc_uri_new("mongodb://127.0.0.1:27017/");
    }
 
-   uri = mongoc_uri_new("mongodb://127.0.0.1:27017/");
+   if (argc > 2) {
+      count = MAX(atoi(argv[2]), 1);
+   }
+
    pool = mongoc_client_pool_new(uri);
    client = mongoc_client_pool_pop(pool);
    test_load(client, count);
