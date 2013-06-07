@@ -74,8 +74,8 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    s = getaddrinfo(host->host, portstr, &hints, &result);
    if (s != 0) {
       bson_set_error(error,
-                     MONGOC_ERROR_CONN,
-                     MONGOC_ERROR_CONN_NAME_RESOLUTION,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_NAME_RESOLUTION,
                      "Failed to resolve %s",
                      host->host);
       return NULL;
@@ -96,8 +96,8 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
 
    if (!rp) {
       bson_set_error(error,
-                     MONGOC_ERROR_CONN,
-                     MONGOC_ERROR_CONN_CONNECT,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_CONNECT,
                      "Failed to connect to target host.");
       freeaddrinfo(result);
       return NULL;
@@ -137,8 +137,8 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
    sfd = socket(AF_UNIX, SOCK_STREAM, 0);
    if (sfd == -1) {
       bson_set_error(error,
-                     MONGOC_ERROR_CONN,
-                     MONGOC_ERROR_CONN_SOCKET,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_SOCKET,
                      "Failed to create socket.");
       return NULL;
    }
@@ -146,8 +146,8 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
    if (connect(sfd, (struct sockaddr *)&saddr, sizeof saddr) == -1) {
       close(sfd);
       bson_set_error(error,
-                     MONGOC_ERROR_CONN,
-                     MONGOC_ERROR_CONN_CONNECT,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_CONNECT,
                      "Failed to connect to UNIX domain socket.");
       return NULL;
    }
@@ -187,8 +187,8 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
       break;
    default:
       bson_set_error(error,
-                     MONGOC_ERROR_CONN,
-                     MONGOC_ERROR_CONN_INVALID_TYPE,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_INVALID_TYPE,
                      "Invalid address family: 0x%02x", host->family);
       break;
    }
