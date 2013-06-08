@@ -149,7 +149,7 @@ typedef struct {
 #pragma pack()
 
 typedef struct mongo_host_port {
-    char host[255];
+    char host[MAXHOSTNAMELEN];
     int port;
     struct mongo_host_port *next;
 } mongo_host_port;
