@@ -15,24 +15,30 @@
  */
 
 
-#ifndef MONGOC_H
-#define MONGOC_H
+#ifndef MONGOC_DATABASE_PRIVATE_H
+#define MONGOC_DATABASE_PRIVATE_H
 
 
 #include <bson.h>
 
-#define MONGOC_INSIDE
 #include "mongoc-client.h"
-#include "mongoc-client-pool.h"
-#include "mongoc-database.h"
-#include "mongoc-error.h"
-#include "mongoc-flags.h"
-#include "mongoc-host-list.h"
-#include "mongoc-log.h"
-#include "mongoc-stream.h"
-#include "mongoc-stdint.h"
-#include "mongoc-uri.h"
-#undef MONGOC_INSIDE
 
 
-#endif /* MONGOC_H */
+BSON_BEGIN_DECLS
+
+
+struct _mongoc_database_t
+{
+   mongoc_client_t *client;
+   char name[128];
+};
+
+
+mongoc_database_t *mongoc_database_new (mongoc_client_t *client,
+                                        const char      *name);
+
+
+BSON_END_DECLS
+
+
+#endif /* MONGOC_DATABASE_PRIVATE_H */
