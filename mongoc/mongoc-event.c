@@ -214,7 +214,7 @@ mongoc_event_read (mongoc_event_t  *event,
     */
    mongoc_buffer_init(&event->any.rawbuf, NULL, 0, NULL);
    if (!mongoc_buffer_fill(&event->any.rawbuf, stream, 4, error)) {
-      return FALSE;
+      goto failure;
    }
 
    /*
@@ -227,20 +227,20 @@ mongoc_event_read (mongoc_event_t  *event,
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_TOO_BIG,
                      "Incoming message is too large.");
-      return FALSE;
+      goto failure;
    } else if (msg_len < 16) {
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_TOO_SMALL,
                      "Incoming message size is too small.");
-      return FALSE;
+      goto failure;
    }
 
    /*
     * Buffer the entire message.
     */
    if (!mongoc_buffer_fill(&event->any.rawbuf, stream, msg_len, error)) {
-      return FALSE;
+      goto failure;
    }
 
    /*
@@ -249,7 +249,7 @@ mongoc_event_read (mongoc_event_t  *event,
    iov.iov_base = &event->any.len;
    iov.iov_len = 16;
    if (!mongoc_buffer_readv(&event->any.rawbuf, &iov, 1)) {
-      return FALSE;
+      goto failure;
    }
 
    MONGOC_EVENT_SWAB_HEADER(event);
@@ -279,11 +279,11 @@ mongoc_event_read (mongoc_event_t  *event,
       iov.iov_base = &event->kill_cursors.desc;
       iov.iov_len = 8;
       if (mongoc_buffer_readv(&event->any.rawbuf, &iov, 1) != 8) {
-         return FALSE;
+         goto failure;
       }
       if (event->any.rawbuf.len !=
           ((8 * BSON_UINT64_FROM_LE(event->kill_cursors.desc.n_cursors)))) {
-         return FALSE;
+         goto failure;
       }
       /*
        * A daft engineer might wonder if the pointer to array of 64-bit cursor
@@ -303,7 +303,7 @@ mongoc_event_read (mongoc_event_t  *event,
                                     MONGOC_BUFFER_INT32, &event->query.skip,
                                     MONGOC_BUFFER_INT32, &event->query.n_return,
                                     0)) {
-         return FALSE;
+         goto failure;
       }
       event->query.nslen = strlen(event->query.ns);
       bson_reader_init_from_data(&event->query.docs_reader,
@@ -322,10 +322,15 @@ mongoc_event_read (mongoc_event_t  *event,
    case MONGOC_OPCODE_INSERT:
    case MONGOC_OPCODE_UPDATE:
    default:
-      return FALSE;
+      goto failure;
    }
 
    return TRUE;
+
+failure:
+   mongoc_buffer_destroy(&event->any.rawbuf);
+
+   return FALSE;
 }
 
 
