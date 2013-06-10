@@ -45,5 +45,20 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
    bson_return_if_fail(cursor);
 
+   if (cursor->client && cursor->cursor) {
+      /*
+       * TODO: Call kill cursor on the server.
+       */
+   }
+
    bson_free(cursor);
+}
+
+
+const bson_t *
+mongoc_cursor_next (mongoc_cursor_t *cursor)
+{
+   bson_return_val_if_fail(cursor, NULL);
+
+   return NULL;
 }

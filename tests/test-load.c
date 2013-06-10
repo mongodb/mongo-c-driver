@@ -7,9 +7,11 @@ static void
 test_load (mongoc_client_t *client,
            unsigned         iterations)
 {
-   mongoc_event_t ev;
-   bson_uint32_t hint;
+   mongoc_database_t *database;
+   mongoc_cursor_t *cursor;
+
    bson_error_t error;
+   const bson_t *bp;
    unsigned i;
    bson_t b;
    bson_t f;
@@ -20,29 +22,41 @@ test_load (mongoc_client_t *client,
    bson_append_int32(&b, "ping", 4, 1);
    bson_destroy(&b);
 
+   database = mongoc_client_get_database(client, "admin");
+
    for (i = 0; i < iterations; i++) {
       memset(&error, 0, sizeof error);
-      memset(&ev, 0, sizeof ev);
-      ev.any.type = MONGOC_OPCODE_QUERY;
-      ev.any.opcode = MONGOC_OPCODE_QUERY;
-      ev.query.flags = 0;
-      ev.query.ns = "admin.$cmd";
-      ev.query.nslen = 10;
-      ev.query.skip = 0;
-      ev.query.n_return = 1;
-      ev.query.query = &b;
-      ev.query.fields = NULL;
-      if (!(hint = mongoc_client_send(client, &ev, 0, &error))) {
-         MONGOC_DEBUG("Send failed: %s", error.message);
+      cursor = mongoc_database_command(database,
+                                       MONGOC_QUERY_NONE,
+                                       0,
+                                       1,
+                                       &b,
+                                       &f,
+                                       NULL,
+                                       &error);
+      if (!cursor) {
+         MONGOC_DEBUG("Command failed: %s", error.message);
          bson_error_destroy(&error);
          continue;
       }
-      if (!mongoc_client_recv(client, &ev, hint, &error)) {
-         MONGOC_DEBUG("Recv failed: %s", error.message);
-         bson_error_destroy(&error);
+
+      while ((bp = mongoc_cursor_next(cursor))) {
+         char *str;
+
+         str = bson_as_json(bp, NULL);
+         MONGOC_DEBUG("%s", str);
+         bson_free(str);
       }
-      mongoc_event_destroy(&ev);
+
+#if 0
+      if (bson_cursor_is_error(cursor)) {
+      }
+#endif
+
+      mongoc_cursor_destroy(cursor);
    }
+
+   mongoc_database_destroy(database);
 }
 
 

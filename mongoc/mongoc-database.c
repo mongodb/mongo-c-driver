@@ -59,6 +59,7 @@ mongoc_database_command (mongoc_database_t    *database,
                          const bson_t         *options,
                          bson_error_t         *error)
 {
+   mongoc_cursor_t *ret;
    mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
    bson_uint32_t hint;
    char ns[140];
@@ -89,5 +90,9 @@ mongoc_database_command (mongoc_database_t    *database,
       return NULL;
    }
 
-   return mongoc_cursor_new(database->client, hint, &ev);
+   ret = mongoc_cursor_new(database->client, hint, &ev);
+
+   mongoc_event_destroy(&ev);
+
+   return ret;
 }

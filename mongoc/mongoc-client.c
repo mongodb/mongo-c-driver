@@ -27,6 +27,7 @@
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"
 #include "mongoc-cluster-private.h"
+#include "mongoc-database-private.h"
 #include "mongoc-event-private.h"
 #include "mongoc-error.h"
 #include "mongoc-list-private.h"
@@ -250,6 +251,8 @@ mongoc_client_send (mongoc_client_t *client,
    bson_return_val_if_fail(client, FALSE);
    bson_return_val_if_fail(event, FALSE);
 
+   event->any.opcode = event->any.type;
+
    switch (client->cluster.state) {
    case MONGOC_CLUSTER_STATE_BORN:
       return mongoc_cluster_send(&client->cluster, event, hint, error);
@@ -342,4 +345,15 @@ mongoc_client_stamp (mongoc_client_t *client,
 {
    bson_return_val_if_fail(client, 0);
    return mongoc_cluster_stamp(&client->cluster, node);
+}
+
+
+mongoc_database_t *
+mongoc_client_get_database (mongoc_client_t *client,
+                            const char      *name)
+{
+   bson_return_val_if_fail(client, NULL);
+   bson_return_val_if_fail(name, NULL);
+
+   return mongoc_database_new(client, name);
 }

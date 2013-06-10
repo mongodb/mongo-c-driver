@@ -21,6 +21,7 @@
 
 #include <bson.h>
 
+#include "mongoc-database.h"
 #include "mongoc-stream.h"
 #include "mongoc-uri.h"
 
@@ -77,6 +78,11 @@ mongoc_client_set_stream_initiator (mongoc_client_t           *client,
 
 void
 mongoc_client_destroy (mongoc_client_t *client);
+
+
+mongoc_database_t *
+mongoc_client_get_database (mongoc_client_t *client,
+                            const char      *name);
 
 
 BSON_END_DECLS

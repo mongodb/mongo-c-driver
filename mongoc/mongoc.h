@@ -24,6 +24,7 @@
 #define MONGOC_INSIDE
 #include "mongoc-client.h"
 #include "mongoc-client-pool.h"
+#include "mongoc-cursor.h"
 #include "mongoc-database.h"
 #include "mongoc-error.h"
 #include "mongoc-flags.h"
