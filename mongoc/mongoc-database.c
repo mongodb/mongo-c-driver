@@ -16,6 +16,8 @@
 
 
 #include "mongoc-client-private.h"
+#include "mongoc-cursor.h"
+#include "mongoc-cursor-private.h"
 #include "mongoc-database.h"
 #include "mongoc-database-private.h"
 #include "mongoc-event-private.h"
