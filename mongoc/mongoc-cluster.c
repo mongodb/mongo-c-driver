@@ -89,9 +89,7 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
 {
    bson_return_if_fail(cluster);
 
-   /*
-    * TODO: release resources.
-    */
+   mongoc_uri_destroy(cluster->uri);
 }
 
 
