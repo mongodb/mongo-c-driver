@@ -410,9 +410,7 @@ mongoc_stream_ismaster (mongoc_stream_t *stream,
       ret = bson_copy(b);
    }
 
-   /*
-    * TODO: Determine how we want to release incoming events.
-    */
+   mongoc_event_destroy(&ev);
 
    return ret;
 }
