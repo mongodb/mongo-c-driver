@@ -334,3 +334,12 @@ mongoc_client_get_uri (const mongoc_client_t *client)
    bson_return_val_if_fail(client, NULL);
    return client->uri;
 }
+
+
+bson_uint32_t
+mongoc_client_stamp (mongoc_client_t *client,
+                     bson_uint32_t    node)
+{
+   bson_return_val_if_fail(client, 0);
+   return mongoc_cluster_stamp(&client->cluster, node);
+}
