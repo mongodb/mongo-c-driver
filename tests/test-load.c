@@ -41,6 +41,7 @@ test_load (mongoc_client_t *client,
          MONGOC_DEBUG("Recv failed: %s", error.message);
          bson_error_destroy(&error);
       }
+      mongoc_event_destroy(&ev);
    }
 }
 
