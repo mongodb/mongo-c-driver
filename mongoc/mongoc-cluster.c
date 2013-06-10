@@ -87,9 +87,18 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
 void
 mongoc_cluster_destroy (mongoc_cluster_t *cluster)
 {
+   bson_uint32_t i;
+
    bson_return_if_fail(cluster);
 
    mongoc_uri_destroy(cluster->uri);
+
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      if (cluster->nodes[i].stream) {
+         mongoc_stream_destroy(cluster->nodes[i].stream);
+         cluster->nodes[i].stream = NULL;
+      }
+   }
 }
 
 
