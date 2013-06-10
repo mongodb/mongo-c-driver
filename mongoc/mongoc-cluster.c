@@ -97,6 +97,7 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
       if (cluster->nodes[i].stream) {
          mongoc_stream_destroy(cluster->nodes[i].stream);
          cluster->nodes[i].stream = NULL;
+         cluster->nodes[i].stamp++;
       }
    }
 }
@@ -245,6 +246,7 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
    cluster->nodes[0].primary = FALSE;
    cluster->nodes[0].ping_msec = -1;
    cluster->nodes[0].stream = NULL;
+   cluster->nodes[0].stamp = 0;
    bson_init(&cluster->nodes[0].tags);
 
    stream = mongoc_client_create_stream(cluster->client, hosts, error);
@@ -253,6 +255,7 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
    }
 
    cluster->nodes[0].stream = stream;
+   cluster->nodes[0].stamp++;
 
    if (!(b = mongoc_stream_ismaster(stream, error))) {
       cluster->nodes[0].stream = NULL;
@@ -351,6 +354,7 @@ mongoc_cluster_send (mongoc_cluster_t *cluster,
    if (!mongoc_event_write(event, node->stream, error)) {
       mongoc_stream_destroy(node->stream);
       node->stream = NULL;
+      node->stamp++;
       return 0;
    }
 
@@ -395,6 +399,7 @@ mongoc_cluster_try_send (mongoc_cluster_t *cluster,
    if (!mongoc_event_write(event, node->stream, error)) {
       mongoc_stream_destroy(node->stream);
       node->stream = NULL;
+      node->stamp++;
       return 0;
    }
 
@@ -443,8 +448,34 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    if (!mongoc_event_read(event, node->stream, cluster->max_msg_size, error)) {
       mongoc_stream_destroy(node->stream);
       node->stream = NULL;
+      node->stamp++;
       return FALSE;
    }
 
    return TRUE;
+}
+
+
+/**
+ * mongoc_cluster_stamp:
+ * @cluster: A mongoc_cluster_t.
+ * @node: The node identifier.
+ *
+ * Returns the stamp of the node provided. The stamp is a monotonic counter
+ * that tracks changes to a node within the cluster. As changes to the node
+ * instance are made, the value is incremented. This helps cursors and other
+ * connection sensitive portions fail gracefully (or reset) upon loss of
+ * connection.
+ *
+ * Returns: A 32-bit stamp indiciating the node version.
+ */
+bson_uint32_t
+mongoc_cluster_stamp (mongoc_cluster_t *cluster,
+                      bson_uint32_t     node)
+{
+   bson_return_val_if_fail(cluster, 0);
+   bson_return_val_if_fail(node > 0, 0);
+   bson_return_val_if_fail(node <= MONGOC_CLUSTER_MAX_NODES, 0);
+
+   return cluster->nodes[node].stamp;
 }

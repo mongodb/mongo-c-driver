@@ -58,6 +58,7 @@ typedef struct
    mongoc_stream_t    *stream;
    bson_bool_t         primary;
    bson_int32_t        ping_msec;
+   bson_uint32_t       stamp;
    bson_t              tags;
 } mongoc_cluster_node_t;
 
@@ -94,6 +95,8 @@ bson_bool_t   mongoc_cluster_try_recv (mongoc_cluster_t   *cluster,
                                        mongoc_event_t     *event,
                                        bson_uint32_t       hint,
                                        bson_error_t       *error);
+bson_uint32_t mongoc_cluster_stamp    (mongoc_cluster_t   *cluster,
+                                       bson_uint32_t       node);
 
 
 BSON_END_DECLS

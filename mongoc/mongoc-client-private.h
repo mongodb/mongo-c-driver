@@ -54,6 +54,11 @@ mongoc_client_recv (mongoc_client_t *client,
                     bson_error_t    *error);
 
 
+bson_uint32_t
+mongoc_client_stamp (mongoc_client_t *client,
+                     bson_uint32_t    node);
+
+
 BSON_END_DECLS
 
 

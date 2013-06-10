@@ -78,8 +78,6 @@ mongoc_database_command (mongoc_database_t    *database,
       return NULL;
    }
 
-   memset(&ev, 0, sizeof ev);
-
    if (!mongoc_client_recv(database->client, &ev, hint, error)) {
       return NULL;
    }
@@ -89,7 +87,5 @@ mongoc_database_command (mongoc_database_t    *database,
       return NULL;
    }
 
-   //return mongoc_cursor_new(database->client, hint, &ev);
-
-   return NULL;
+   return mongoc_cursor_new(database->client, hint, &ev);
 }
