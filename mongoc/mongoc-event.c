@@ -19,6 +19,7 @@
 
 #include "mongoc-error.h"
 #include "mongoc-event-private.h"
+#include "mongoc-log.h"
 
 
 bson_bool_t
@@ -325,4 +326,38 @@ mongoc_event_read (mongoc_event_t  *event,
    }
 
    return TRUE;
+}
+
+
+/**
+ * mongoc_event_destroy:
+ * @event: A mongoc_event_t.
+ *
+ * Releases any resources associated with a mongoc_event_t.
+ */
+void
+mongoc_event_destroy (mongoc_event_t *event)
+{
+   bson_return_if_fail(event);
+
+   mongoc_buffer_destroy(&event->any.rawbuf);
+
+   switch (event->any.type) {
+   case MONGOC_OPCODE_REPLY:
+      bson_reader_destroy(&event->reply.docs_reader);
+      break;
+   case MONGOC_OPCODE_QUERY:
+      bson_reader_destroy(&event->query.docs_reader);
+      break;
+   case MONGOC_OPCODE_UPDATE:
+   case MONGOC_OPCODE_INSERT:
+   case MONGOC_OPCODE_GET_MORE:
+   case MONGOC_OPCODE_DELETE:
+   case MONGOC_OPCODE_KILL_CURSORS:
+   case MONGOC_OPCODE_MSG:
+      break;
+   default:
+      MONGOC_ERROR("Unknown opcode 0x%08x", event->any.type);
+      break;
+   }
 }

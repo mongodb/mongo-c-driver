@@ -69,8 +69,8 @@ typedef struct
    bson_uint32_t          nslen;
    const char            *ns;
    mongoc_update_flags_t  flags;
-   bson_t                *selector;
-   bson_t                *update;
+   const bson_t          *selector;
+   const bson_t          *update;
 } mongoc_event_update_t;
 
 
@@ -93,10 +93,10 @@ typedef struct
    const char           *ns;
    bson_uint32_t         skip;
    bson_uint32_t         n_return;
-   bson_t               *query;
-   bson_t               *fields;
+   const bson_t         *query;
+   const bson_t         *fields;
+   const bson_t         *read_prefs;
    bson_reader_t         docs_reader;
-   bson_t               *read_prefs;
 } mongoc_event_query_t;
 
 
@@ -118,7 +118,7 @@ typedef struct
    bson_uint32_t          nslen;
    const char            *ns;
    mongoc_delete_flags_t  flags;
-   bson_t                *selector;
+   const bson_t          *selector;
 } mongoc_event_delete_t;
 
 
@@ -156,10 +156,10 @@ typedef struct
    } desc;
 #pragma pack(pop)
 
-   bson_reader_t        docs_reader;
-
    bson_uint32_t        docslen;
    bson_t             **docs;
+
+   bson_reader_t        docs_reader;
 } mongoc_event_reply_t;
 
 
@@ -191,6 +191,10 @@ mongoc_event_decode (mongoc_event_t     *event,
                      const bson_uint8_t *buf,
                      size_t              buflen,
                      bson_error_t       *error);
+
+
+void
+mongoc_event_destroy (mongoc_event_t *event);
 
 
 bson_bool_t
