@@ -24,11 +24,11 @@
  * mongoc_cursor_new:
  * @client: A mongoc_cursor_t.
  * @hint: A hint for the target node in client.
- * @event: (transfer full): An event to be owned by the cursor.
+ * @request_id: The request_id to get a response for.
+ * @error: (out): A location for an error or NULL.
  *
- * Creates a new mongoc_cursor_t using the parameters provided.
- *
- * @event is owned by the resulting cursor if successful.
+ * Creates a new mongoc_cursor_t using the parameters provided by recieving the
+ * reply from the client.
  *
  * Returns: A mongoc_cursor_t if successful, otherwise NULL.
  *   The cursor should be destroyed with mongoc_cursor_destroy().
@@ -36,19 +36,30 @@
 mongoc_cursor_t *
 mongoc_cursor_new (mongoc_client_t *client,
                    bson_uint32_t    hint,
-                   mongoc_event_t  *event)
+                   bson_int32_t     request_id,
+                   bson_error_t    *error)
 {
    mongoc_cursor_t *cursor;
 
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(hint, NULL);
-   bson_return_val_if_fail(event, NULL);
 
    cursor = bson_malloc0(sizeof *cursor);
    cursor->client = client;
    cursor->hint = hint;
    cursor->stamp = mongoc_client_stamp(client, hint);
-   cursor->event = event;
+
+   if (!mongoc_client_recv(client, &cursor->ev, hint, error)) {
+      bson_free(cursor);
+      return NULL;
+   }
+
+   if ((cursor->ev.any.opcode != MONGOC_OPCODE_REPLY) ||
+       (cursor->ev.any.response_to != request_id)) {
+      mongoc_event_destroy(&cursor->ev);
+      bson_free(cursor);
+      return NULL;
+   }
 
    return cursor;
 }
@@ -65,10 +76,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
        */
    }
 
-   if (cursor->event) {
-      mongoc_event_destroy(cursor->event);
-      bson_free(cursor->event);
-   }
+   mongoc_event_destroy(&cursor->ev);
 
    bson_free(cursor);
 }

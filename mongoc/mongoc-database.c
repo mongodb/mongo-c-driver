@@ -59,43 +59,29 @@ mongoc_database_command (mongoc_database_t    *database,
                          const bson_t         *options,
                          bson_error_t         *error)
 {
-   mongoc_cursor_t *ret;
-   mongoc_event_t *ev;
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
    bson_uint32_t hint;
    char ns[140];
 
    bson_return_val_if_fail(database, NULL);
    bson_return_val_if_fail(command, NULL);
 
-   ev = bson_malloc0(sizeof *ev);
-   ev->any.type = MONGOC_OPCODE_QUERY;
-   ev->query.ns = ns;
-   ev->query.nslen = snprintf(ns, sizeof ns, "%s.$cmd", database->name);
+   ev.query.ns = ns;
+   ev.query.nslen = snprintf(ns, sizeof ns, "%s.$cmd", database->name);
    ns[sizeof ns - 1] = '\0';
-   ev->query.flags = flags;
-   ev->query.skip = skip;
-   ev->query.n_return = n_return;
-   ev->query.query = (bson_t *)command;
-   ev->query.fields = (bson_t *)fields;
-   ev->query.read_prefs = (bson_t *)options;
+   ev.query.flags = flags;
+   ev.query.skip = skip;
+   ev.query.n_return = n_return;
+   ev.query.query = (bson_t *)command;
+   ev.query.fields = (bson_t *)fields;
+   ev.query.read_prefs = (bson_t *)options;
 
-   if (!(hint = mongoc_client_send(database->client, ev, 0, error))) {
-      goto failure;
+   if (!(hint = mongoc_client_send(database->client, &ev, 0, error))) {
+      return NULL;
    }
 
-   if (!mongoc_client_recv(database->client, ev, hint, error)) {
-      goto failure;
-   }
-
-   if ((ev->any.type != MONGOC_OPCODE_REPLY) ||
-       !(ret = mongoc_cursor_new(database->client, hint, ev))) {
-      mongoc_event_destroy(ev);
-      goto failure;
-   }
-
-   return ret;
-
-failure:
-   bson_free(ev);
-   return NULL;
+   return mongoc_cursor_new(database->client,
+                            hint,
+                            BSON_UINT32_FROM_LE(ev.any.request_id),
+                            error);
 }

@@ -34,13 +34,14 @@ struct _mongoc_cursor_t
    bson_uint32_t    hint;
    bson_uint32_t    stamp;
    bson_uint64_t    cursor;
-   mongoc_event_t  *event;
+   mongoc_event_t   ev;
 };
 
 
 mongoc_cursor_t *mongoc_cursor_new (mongoc_client_t *client,
                                     bson_uint32_t    hint,
-                                    mongoc_event_t  *event);
+                                    bson_int32_t     request_id,
+                                    bson_error_t    *error);
 
 
 BSON_END_DECLS
