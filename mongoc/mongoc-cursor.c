@@ -90,7 +90,25 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 const bson_t *
 mongoc_cursor_next (mongoc_cursor_t *cursor)
 {
+   const bson_t *b;
+   bson_bool_t eof = FALSE;
+
    bson_return_val_if_fail(cursor, NULL);
+
+   if (!cursor->done) {
+      if (!(b = bson_reader_read(&cursor->ev.reply.docs_reader, &eof))) {
+         if (!eof) {
+            /* Parse failure. */
+            return FALSE;
+         } else {
+            /*
+             * TODO: OP_GET_MORE.
+             */
+         }
+         cursor->done = TRUE;
+      }
+      return b;
+   }
 
    return NULL;
 }

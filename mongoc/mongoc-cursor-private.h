@@ -34,6 +34,7 @@ struct _mongoc_cursor_t
    bson_uint32_t    hint;
    bson_uint32_t    stamp;
    bson_uint64_t    cursor;
+   bson_bool_t      done;
    mongoc_event_t   ev;
 };
 
