@@ -18,6 +18,7 @@
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-error.h"
 
 
 /**
@@ -56,6 +57,10 @@ mongoc_cursor_new (mongoc_client_t *client,
 
    if ((cursor->ev.any.opcode != MONGOC_OPCODE_REPLY) ||
        (cursor->ev.any.response_to != request_id)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_PROTOCOL,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                     "Received invalid reply from server.");
       mongoc_event_destroy(&cursor->ev);
       bson_free(cursor);
       return NULL;

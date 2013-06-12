@@ -401,7 +401,7 @@ mongoc_stream_ismaster (mongoc_stream_t *stream,
    if (ev.type != MONGOC_OPCODE_REPLY) {
       bson_set_error(error,
                      MONGOC_ERROR_PROTOCOL,
-                     MONGOC_ERROR_PROTOCOL_INVALID_OPCODE,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                      "Message with invalid opcode was received.");
       return FALSE;
    }
