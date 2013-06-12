@@ -38,6 +38,8 @@ mongoc_cursor_t *
 mongoc_cursor_new (mongoc_client_t *client,
                    bson_uint32_t    hint,
                    bson_int32_t     request_id,
+                   const char      *ns,
+                   bson_uint32_t    nslen,
                    bson_error_t    *error)
 {
    mongoc_cursor_t *cursor;
@@ -49,6 +51,8 @@ mongoc_cursor_new (mongoc_client_t *client,
    cursor->client = client;
    cursor->hint = hint;
    cursor->stamp = mongoc_client_stamp(client, hint);
+   cursor->ns = strdup(ns);
+   cursor->nslen = nslen;
 
    if (!mongoc_client_recv(client, &cursor->ev, hint, error)) {
       bson_free(cursor);
@@ -75,7 +79,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
    bson_return_if_fail(cursor);
 
-   if (cursor->client && cursor->cursor) {
+   if (cursor->ev.reply.desc.cursor_id) {
       /*
        * TODO: Call kill cursor on the server.
        */
@@ -83,7 +87,71 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
    mongoc_event_destroy(&cursor->ev);
 
+   /*
+    * TODO: probably should just make this inline.
+    */
+   bson_free(cursor->ns);
+
    bson_free(cursor);
+}
+
+
+static bson_bool_t
+mongoc_cursor_get_more (mongoc_cursor_t *cursor)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_GET_MORE);
+   bson_uint64_t cursor_id;
+
+   bson_return_val_if_fail(cursor, FALSE);
+
+   if (!(cursor_id = cursor->ev.reply.desc.cursor_id)) {
+      bson_set_error(&cursor->error,
+                     MONGOC_ERROR_CURSOR,
+                     MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                     "No valid cursor was provided.");
+      cursor->done = TRUE;
+      cursor->failed = TRUE;
+      return FALSE;
+   }
+
+   ev.get_more.ns = cursor->ns;
+   ev.get_more.nslen = cursor->nslen;
+   ev.get_more.n_return = cursor->batch_size;
+   ev.get_more.cursor_id = cursor_id;
+
+   /*
+    * TODO: Stamp protections for disconnections.
+    */
+
+   if (!mongoc_client_send(cursor->client,
+                           &ev,
+                           cursor->hint,
+                           &cursor->error)) {
+      cursor->done = TRUE;
+      cursor->failed = TRUE;
+      return FALSE;
+   }
+
+   if (!mongoc_client_recv(cursor->client,
+                           &cursor->ev,
+                           cursor->hint,
+                           &cursor->error)) {
+      cursor->done = TRUE;
+      cursor->failed = TRUE;
+      return FALSE;
+   }
+
+   cursor->end_of_event = FALSE;
+
+   return TRUE;
+}
+
+
+const bson_error_t *
+mongoc_cursor_error (mongoc_cursor_t *cursor)
+{
+   bson_return_val_if_fail(cursor, NULL);
+   return cursor->failed ? &cursor->error : NULL;
 }
 
 
@@ -91,24 +159,46 @@ const bson_t *
 mongoc_cursor_next (mongoc_cursor_t *cursor)
 {
    const bson_t *b;
-   bson_bool_t eof = FALSE;
+   bson_bool_t eof;
 
    bson_return_val_if_fail(cursor, NULL);
 
-   if (!cursor->done) {
-      if (!(b = bson_reader_read(&cursor->ev.reply.docs_reader, &eof))) {
-         if (!eof) {
-            /* Parse failure. */
-            return FALSE;
-         } else {
-            /*
-             * TODO: OP_GET_MORE.
-             */
-         }
-         cursor->done = TRUE;
-      }
-      return b;
+   /*
+    * Short circuit if we are finished already.
+    */
+   if (BSON_UNLIKELY(cursor->done)) {
+      return NULL;
    }
 
-   return NULL;
+   /*
+    * Check to see if we need to send a GET_MORE for more results.
+    */
+   if (BSON_UNLIKELY(cursor->end_of_event)) {
+      if (!mongoc_cursor_get_more(cursor)) {
+         return NULL;
+      }
+   }
+
+   /*
+    * Read the next BSON document from the event.
+    */
+   eof = FALSE;
+   b = bson_reader_read(&cursor->ev.reply.docs_reader, &eof);
+   cursor->end_of_event = eof;
+   cursor->done = cursor->end_of_event && !b;
+
+   /*
+    * Do a supplimental check to see if we had a corrupted reply in the
+    * document stream.
+    */
+   if (!b && !eof) {
+      cursor->failed = TRUE;
+      bson_set_error(&cursor->error,
+                     MONGOC_ERROR_CURSOR,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                     "The reply was corrupt.");
+      return NULL;
+   }
+
+   return b;
 }

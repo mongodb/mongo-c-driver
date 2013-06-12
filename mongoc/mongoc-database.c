@@ -81,6 +81,8 @@ mongoc_database_command (mongoc_database_t    *database,
       ret = mongoc_cursor_new(database->client,
                               hint,
                               BSON_UINT32_FROM_LE(ev.any.request_id),
+                              ns,
+                              ev.query.nslen,
                               error);
    }
 

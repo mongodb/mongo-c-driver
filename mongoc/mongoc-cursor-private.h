@@ -33,8 +33,18 @@ struct _mongoc_cursor_t
    mongoc_client_t *client;
    bson_uint32_t    hint;
    bson_uint32_t    stamp;
-   bson_uint64_t    cursor;
-   bson_bool_t      done;
+
+   bson_bool_t      done         : 1;
+   bson_bool_t      failed       : 1;
+   bson_bool_t      end_of_event : 1;
+
+   bson_uint32_t    batch_size;
+
+   char            *ns;
+   bson_uint32_t    nslen;
+
+   bson_error_t     error;
+
    mongoc_event_t   ev;
 };
 
@@ -42,6 +52,8 @@ struct _mongoc_cursor_t
 mongoc_cursor_t *mongoc_cursor_new (mongoc_client_t *client,
                                     bson_uint32_t    hint,
                                     bson_int32_t     request_id,
+                                    const char      *ns,
+                                    bson_uint32_t    nslen,
                                     bson_error_t    *error);
 
 

@@ -30,6 +30,7 @@ typedef enum
    MONGOC_ERROR_CLIENT   = 1,
    MONGOC_ERROR_STREAM   = 2,
    MONGOC_ERROR_PROTOCOL = 3,
+   MONGOC_ERROR_CURSOR   = 4,
 } mongoc_error_domain_t;
 
 
@@ -47,6 +48,8 @@ typedef enum
    MONGOC_ERROR_CLIENT_TOO_SMALL,
 
    MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+
+   MONGOC_ERROR_CURSOR_INVALID_CURSOR,
 } mongoc_error_code_t;
 
 

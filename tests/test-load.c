@@ -44,7 +44,7 @@ test_load (mongoc_client_t *client,
          char *str;
 
          str = bson_as_json(bp, NULL);
-         MONGOC_DEBUG("%s", str);
+         MONGOC_DEBUG("%d: %s", i, str);
          bson_free(str);
       }
 
