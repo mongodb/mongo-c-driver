@@ -59,6 +59,7 @@ mongoc_database_command (mongoc_database_t    *database,
                          const bson_t         *options,
                          bson_error_t         *error)
 {
+   mongoc_cursor_t *ret = NULL;
    mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
    bson_uint32_t hint;
    char ns[140];
@@ -76,12 +77,12 @@ mongoc_database_command (mongoc_database_t    *database,
    ev.query.fields = (bson_t *)fields;
    ev.query.read_prefs = (bson_t *)options;
 
-   if (!(hint = mongoc_client_send(database->client, &ev, 0, error))) {
-      return NULL;
+   if ((hint = mongoc_client_send(database->client, &ev, 0, error))) {
+      ret = mongoc_cursor_new(database->client,
+                              hint,
+                              BSON_UINT32_FROM_LE(ev.any.request_id),
+                              error);
    }
 
-   return mongoc_cursor_new(database->client,
-                            hint,
-                            BSON_UINT32_FROM_LE(ev.any.request_id),
-                            error);
+   return ret;
 }
