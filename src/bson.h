@@ -123,7 +123,9 @@ typedef enum {
     BSON_CODEWSCOPE = 15,
     BSON_INT = 16,
     BSON_TIMESTAMP = 17,
-    BSON_LONG = 18
+    BSON_LONG = 18,
+    BSON_MAXKEY = 127,
+    BSON_MINKEY = 255
 } bson_type;
 
 typedef int bson_bool_t;
@@ -954,6 +956,26 @@ MONGO_EXPORT int bson_append_null( bson *b, const char *name );
  * @return BSON_OK or BSON_ERROR.
  */
 MONGO_EXPORT int bson_append_undefined( bson *b, const char *name );
+
+/**
+ * Append a maxkey value to a bson.
+ *
+ * @param b the bson to append to.
+ * @param name the key for the maxkey value.
+ *
+ * @return BSON_OK or BSON_ERROR.
+ */
+MONGO_EXPORT int bson_append_maxkey( bson *b, const char *name );
+
+/**
+ * Append a minkey value to a bson.
+ *
+ * @param b the bson to append to.
+ * @param name the key for the minkey value.
+ *
+ * @return BSON_OK or BSON_ERROR.
+ */
+MONGO_EXPORT int bson_append_minkey( bson *b, const char *name );
 
 /**
  * Append a regex value to a bson.
