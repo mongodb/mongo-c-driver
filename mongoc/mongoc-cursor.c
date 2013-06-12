@@ -20,6 +20,19 @@
 #include "mongoc-client-private.h"
 
 
+/**
+ * mongoc_cursor_new:
+ * @client: A mongoc_cursor_t.
+ * @hint: A hint for the target node in client.
+ * @event: (transfer full): An event to be owned by the cursor.
+ *
+ * Creates a new mongoc_cursor_t using the parameters provided.
+ *
+ * @event is owned by the resulting cursor if successful.
+ *
+ * Returns: A mongoc_cursor_t if successful, otherwise NULL.
+ *   The cursor should be destroyed with mongoc_cursor_destroy().
+ */
 mongoc_cursor_t *
 mongoc_cursor_new (mongoc_client_t *client,
                    bson_uint32_t    hint,
@@ -35,6 +48,7 @@ mongoc_cursor_new (mongoc_client_t *client,
    cursor->client = client;
    cursor->hint = hint;
    cursor->stamp = mongoc_client_stamp(client, hint);
+   cursor->event = event;
 
    return cursor;
 }
@@ -49,6 +63,11 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       /*
        * TODO: Call kill cursor on the server.
        */
+   }
+
+   if (cursor->event) {
+      mongoc_event_destroy(cursor->event);
+      bson_free(cursor->event);
    }
 
    bson_free(cursor);
