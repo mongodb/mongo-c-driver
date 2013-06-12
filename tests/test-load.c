@@ -10,6 +10,7 @@ test_load (mongoc_client_t *client,
    mongoc_database_t *database;
    mongoc_cursor_t *cursor;
 
+   const bson_error_t *e;
    bson_error_t error;
    const bson_t *bp;
    unsigned i;
@@ -48,10 +49,9 @@ test_load (mongoc_client_t *client,
          bson_free(str);
       }
 
-#if 0
-      if (bson_cursor_is_error(cursor)) {
+      if ((e = mongoc_cursor_error(cursor))) {
+         MONGOC_WARNING("Cursor error: %s", e->message);
       }
-#endif
 
       mongoc_cursor_destroy(cursor);
    }
