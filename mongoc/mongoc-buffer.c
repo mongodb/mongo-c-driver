@@ -79,8 +79,10 @@ mongoc_buffer_destroy (mongoc_buffer_t *buffer)
 {
    bson_return_if_fail(buffer);
 
-   buffer->realloc_func(buffer->data, 0);
-   memset(buffer, 0, sizeof *buffer);
+   if (buffer->data) {
+      buffer->realloc_func(buffer->data, 0);
+      memset(buffer, 0, sizeof *buffer);
+   }
 }
 
 
