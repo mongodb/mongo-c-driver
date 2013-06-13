@@ -30,31 +30,44 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_cursor_t
 {
-   mongoc_client_t *client;
-   bson_uint32_t    hint;
-   bson_uint32_t    stamp;
+   mongoc_client_t     *client;
+   bson_uint32_t        hint;
+   bson_uint32_t        stamp;
 
-   bson_bool_t      done         : 1;
-   bson_bool_t      failed       : 1;
-   bson_bool_t      end_of_event : 1;
+   bson_bool_t          sent         : 1;
+   bson_bool_t          done         : 1;
+   bson_bool_t          failed       : 1;
+   bson_bool_t          end_of_event : 1;
 
-   bson_uint32_t    batch_size;
+   bson_t               query;
+   bson_t               fields;
+   bson_t               options;
 
-   char            *ns;
-   bson_uint32_t    nslen;
+   mongoc_query_flags_t flags;
+   bson_uint32_t        skip;
+   bson_uint32_t        limit;
+   bson_uint32_t        batch_size;
 
-   bson_error_t     error;
+   char                 ns[140];
+   bson_uint32_t        nslen;
 
-   mongoc_event_t   ev;
+   bson_error_t         error;
+
+   mongoc_event_t       ev;
 };
 
 
-mongoc_cursor_t *mongoc_cursor_new (mongoc_client_t *client,
-                                    bson_uint32_t    hint,
-                                    bson_int32_t     request_id,
-                                    const char      *ns,
-                                    bson_uint32_t    nslen,
-                                    bson_error_t    *error);
+mongoc_cursor_t *
+mongoc_cursor_new (mongoc_client_t      *client,
+                   const char           *db_and_collection,
+                   mongoc_query_flags_t  flags,
+                   bson_uint32_t         skip,
+                   bson_uint32_t         limit,
+                   bson_uint32_t         batch_size,
+                   const bson_t         *query,
+                   const bson_t         *fields,
+                   const bson_t         *options,
+                   bson_error_t         *error);
 
 
 BSON_END_DECLS

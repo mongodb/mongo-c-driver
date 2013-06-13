@@ -21,53 +21,51 @@
 #include "mongoc-error.h"
 
 
-/**
- * mongoc_cursor_new:
- * @client: A mongoc_cursor_t.
- * @hint: A hint for the target node in client.
- * @request_id: The request_id to get a response for.
- * @error: (out): A location for an error or NULL.
- *
- * Creates a new mongoc_cursor_t using the parameters provided by recieving the
- * reply from the client.
- *
- * Returns: A mongoc_cursor_t if successful, otherwise NULL.
- *   The cursor should be destroyed with mongoc_cursor_destroy().
- */
 mongoc_cursor_t *
-mongoc_cursor_new (mongoc_client_t *client,
-                   bson_uint32_t    hint,
-                   bson_int32_t     request_id,
-                   const char      *ns,
-                   bson_uint32_t    nslen,
-                   bson_error_t    *error)
+mongoc_cursor_new (mongoc_client_t      *client,
+                   const char           *db_and_collection,
+                   mongoc_query_flags_t  flags,
+                   bson_uint32_t         skip,
+                   bson_uint32_t         limit,
+                   bson_uint32_t         batch_size,
+                   const bson_t         *query,
+                   const bson_t         *fields,
+                   const bson_t         *options,
+                   bson_error_t         *error)
 {
    mongoc_cursor_t *cursor;
 
    bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(hint, NULL);
+   bson_return_val_if_fail(db_and_collection, NULL);
+   bson_return_val_if_fail(query, NULL);
+
+   /*
+    * Cursors execute their query lazily. This sadly means that we must copy
+    * some extra data around between the bson_t structures. This should be
+    * small in most cases those so it reduces to a pure memcpy. The benefit
+    * to this design is simplified error handling by API consumers.
+    */
 
    cursor = bson_malloc0(sizeof *cursor);
    cursor->client = client;
-   cursor->hint = hint;
-   cursor->stamp = mongoc_client_stamp(client, hint);
-   cursor->ns = strdup(ns);
-   cursor->nslen = nslen;
+   strncpy(cursor->ns, db_and_collection, sizeof cursor->ns - 1);
+   cursor->nslen = strlen(cursor->ns);
+   cursor->flags = flags;
+   cursor->skip = skip;
+   cursor->limit = limit;
+   cursor->batch_size = batch_size;
+   bson_copy_to(query, &cursor->query);
 
-   if (!mongoc_client_recv(client, &cursor->ev, hint, error)) {
-      bson_free(cursor);
-      return NULL;
+   if (fields) {
+      bson_copy_to(fields, &cursor->fields);
+   } else {
+      bson_init(&cursor->fields);
    }
 
-   if ((cursor->ev.any.opcode != MONGOC_OPCODE_REPLY) ||
-       (cursor->ev.any.response_to != request_id)) {
-      bson_set_error(error,
-                     MONGOC_ERROR_PROTOCOL,
-                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                     "Received invalid reply from server.");
-      mongoc_event_destroy(&cursor->ev);
-      bson_free(cursor);
-      return NULL;
+   if (options) {
+      bson_copy_to(options, &cursor->options);
+   } else {
+      bson_init(&cursor->options);
    }
 
    return cursor;
@@ -85,14 +83,65 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
        */
    }
 
+   bson_destroy(&cursor->query);
+   bson_destroy(&cursor->fields);
+   bson_destroy(&cursor->options);
    mongoc_event_destroy(&cursor->ev);
-
-   /*
-    * TODO: probably should just make this inline.
-    */
-   bson_free(cursor->ns);
+   bson_error_destroy(&cursor->error);
 
    bson_free(cursor);
+}
+
+
+static bson_bool_t
+mongoc_cursor_query (mongoc_cursor_t *cursor)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
+   bson_uint32_t hint;
+   bson_uint32_t request_id;
+
+   bson_return_val_if_fail(cursor, FALSE);
+
+   /*
+    * TODO: Merge options.
+    */
+
+   ev.query.flags = cursor->flags;
+   ev.query.nslen = cursor->nslen;
+   ev.query.ns = cursor->ns;
+   ev.query.skip = cursor->skip;
+   ev.query.n_return = cursor->limit;
+   ev.query.query = &cursor->query;
+   ev.query.fields = &cursor->fields;
+
+   if (!(hint = mongoc_client_send(cursor->client, &ev, 0, &cursor->error))) {
+      goto failure;
+   }
+
+   cursor->hint = hint;
+   request_id = BSON_UINT32_FROM_LE(ev.any.request_id);
+
+   if (!mongoc_client_recv(cursor->client,
+                           &cursor->ev,
+                           hint,
+                           &cursor->error)) {
+      goto failure;
+   }
+
+   if ((cursor->ev.any.opcode != MONGOC_OPCODE_REPLY) ||
+       (cursor->ev.any.response_to != request_id)) {
+      goto failure;
+   }
+
+   cursor->done = FALSE;
+   cursor->end_of_event = FALSE;
+   cursor->sent = TRUE;
+   return TRUE;
+
+failure:
+   cursor->failed = TRUE;
+   cursor->done = TRUE;
+   return FALSE;
 }
 
 
@@ -173,7 +222,11 @@ mongoc_cursor_next (mongoc_cursor_t *cursor)
    /*
     * Check to see if we need to send a GET_MORE for more results.
     */
-   if (BSON_UNLIKELY(cursor->end_of_event)) {
+   if (!cursor->sent) {
+      if (!mongoc_cursor_query(cursor)) {
+         return NULL;
+      }
+   } else if (BSON_UNLIKELY(cursor->end_of_event)) {
       if (!mongoc_cursor_get_more(cursor)) {
          return NULL;
       }
