@@ -21,6 +21,7 @@
 #include "mongoc-database.h"
 #include "mongoc-database-private.h"
 #include "mongoc-event-private.h"
+#include "mongoc-error.h"
 
 
 mongoc_database_t *
@@ -66,4 +67,64 @@ mongoc_database_command (mongoc_database_t    *database,
    snprintf(ns, sizeof ns, "%s.$cmd", database->name);
    return mongoc_cursor_new(database->client, ns, flags, skip, n_return, 0,
                             command, fields, options);
+}
+
+
+static bson_bool_t
+mongoc_database_command_simple (mongoc_database_t *database,
+                                const bson_t      *cmd,
+                                bson_error_t      *error)
+{
+   mongoc_cursor_t *cursor;
+   const bson_t *b;
+   bson_iter_t iter;
+   bson_bool_t ret = FALSE;
+   const char *errmsg = "unknown error";
+
+   bson_return_val_if_fail(database, FALSE);
+   bson_return_val_if_fail(cmd, FALSE);
+
+   cursor = mongoc_database_command(database, MONGOC_QUERY_NONE, 0, 1, cmd,
+                                    NULL, NULL);
+
+   if (mongoc_cursor_next(cursor, &b) &&
+       bson_iter_init_find(&iter, b, "ok") &&
+       BSON_ITER_HOLDS_DOUBLE(&iter)) {
+      if (bson_iter_double(&iter) == 1.0) {
+         ret = TRUE;
+      } else {
+         if (bson_iter_init_find(&iter, b, "errmsg")) {
+            errmsg = bson_iter_utf8(&iter, NULL);
+         }
+      }
+   }
+
+   if (!ret) {
+      bson_set_error(error,
+                     MONGOC_ERROR_QUERY,
+                     MONGOC_ERROR_QUERY_FAILURE,
+                     "%s", errmsg);
+   }
+
+   mongoc_cursor_destroy(cursor);
+
+   return ret;
+}
+
+
+bson_bool_t
+mongoc_database_drop (mongoc_database_t *database,
+                      bson_error_t      *error)
+{
+   bson_bool_t ret;
+   bson_t cmd;
+
+   bson_return_val_if_fail(database, FALSE);
+
+   bson_init(&cmd);
+   bson_append_int32(&cmd, "drop", 4, 1);
+   ret = mongoc_database_command_simple(database, &cmd, error);
+   bson_destroy(&cmd);
+
+   return ret;
 }

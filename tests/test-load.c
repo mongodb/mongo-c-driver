@@ -85,6 +85,11 @@ test_load (mongoc_client_t *client,
       bson_error_destroy(&error);
    }
 
+   if (!mongoc_database_drop(db, &error)) {
+      MONGOC_WARNING("Failed to drop database: %s", error.message);
+      bson_error_destroy(&error);
+   }
+
    mongoc_database_destroy(db);
    bson_destroy(&b);
 }

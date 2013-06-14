@@ -45,6 +45,11 @@ mongoc_database_command (mongoc_database_t    *database,
                          const bson_t         *options);
 
 
+bson_bool_t
+mongoc_database_drop (mongoc_database_t *database,
+                      bson_error_t      *error);
+
+
 BSON_END_DECLS
 
 
