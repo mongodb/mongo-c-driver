@@ -94,6 +94,44 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
 
 static bson_bool_t
+mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
+{
+   bson_uint32_t code = 0;
+   const bson_t *b;
+   bson_iter_t iter;
+   bson_bool_t eof;
+   const char *msg = "Unknown query failure";
+
+   bson_return_val_if_fail(cursor, FALSE);
+
+   if ((cursor->ev.reply.desc.flags & MONGOC_REPLY_QUERY_FAILURE)) {
+      if ((b = bson_reader_read(&cursor->ev.reply.docs_reader, &eof))) {
+         if (bson_iter_init_find(&iter, b, "$err")) {
+            msg = bson_iter_utf8(&iter, NULL);
+         }
+         if (bson_iter_init_find(&iter, b, "code")) {
+            code = bson_iter_int32(&iter);
+         }
+      }
+      bson_set_error(&cursor->error,
+                     MONGOC_ERROR_QUERY,
+                     code,
+                     "Query failure: %s",
+                     msg);
+      return TRUE;
+   } else if ((cursor->ev.reply.desc.flags & MONGOC_REPLY_CURSOR_NOT_FOUND)) {
+      bson_set_error(&cursor->error,
+                     MONGOC_ERROR_CURSOR,
+                     MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                     "The cursor is invalid or has expired.");
+      return TRUE;
+   }
+
+   return FALSE;
+}
+
+
+static bson_bool_t
 mongoc_cursor_query (mongoc_cursor_t *cursor)
 {
    mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
@@ -130,6 +168,14 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
 
    if ((cursor->ev.any.opcode != MONGOC_OPCODE_REPLY) ||
        (cursor->ev.any.response_to != request_id)) {
+      bson_set_error(&cursor->error,
+                     MONGOC_ERROR_PROTOCOL,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                     "A reply to an invalid request id was received.");
+      goto failure;
+   }
+
+   if (mongoc_cursor_unwrap_failure(cursor)) {
       goto failure;
    }
 
@@ -150,6 +196,7 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 {
    mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_GET_MORE);
    bson_uint64_t cursor_id;
+   bson_uint32_t request_id;
 
    bson_return_val_if_fail(cursor, FALSE);
 
@@ -158,9 +205,7 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
                      MONGOC_ERROR_CURSOR,
                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                      "No valid cursor was provided.");
-      cursor->done = TRUE;
-      cursor->failed = TRUE;
-      return FALSE;
+      goto failure;
    }
 
    ev.get_more.ns = cursor->ns;
@@ -181,18 +226,36 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       return FALSE;
    }
 
+   request_id = BSON_UINT32_FROM_LE(ev.any.request_id);
+
    if (!mongoc_client_recv(cursor->client,
                            &cursor->ev,
                            cursor->hint,
                            &cursor->error)) {
-      cursor->done = TRUE;
-      cursor->failed = TRUE;
-      return FALSE;
+      goto failure;
+   }
+
+   if ((cursor->ev.any.opcode != MONGOC_OPCODE_REPLY) ||
+       (cursor->ev.any.response_to != request_id)) {
+      bson_set_error(&cursor->error,
+                     MONGOC_ERROR_PROTOCOL,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                     "A reply to an invalid request id was received.");
+      goto failure;
+   }
+
+   if (mongoc_cursor_unwrap_failure(cursor)) {
+      goto failure;
    }
 
    cursor->end_of_event = FALSE;
 
    return TRUE;
+
+failure:
+      cursor->done = TRUE;
+      cursor->failed = TRUE;
+      return FALSE;
 }
 
 
