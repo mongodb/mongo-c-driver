@@ -91,6 +91,7 @@ test_load (mongoc_client_t *client,
    }
 
    mongoc_database_destroy(db);
+   mongoc_collection_destroy(col);
    bson_destroy(&b);
 }
 
