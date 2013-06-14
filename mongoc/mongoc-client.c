@@ -26,6 +26,7 @@
 
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"
+#include "mongoc-collection-private.h"
 #include "mongoc-cluster-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-event-private.h"
@@ -356,4 +357,22 @@ mongoc_client_get_database (mongoc_client_t *client,
    bson_return_val_if_fail(name, NULL);
 
    return mongoc_database_new(client, name);
+}
+
+
+mongoc_collection_t *
+mongoc_client_get_collection (mongoc_client_t *client,
+                              const char      *db,
+                              const char      *collection)
+{
+   char ns[140];
+
+   bson_return_val_if_fail(client, NULL);
+   bson_return_val_if_fail(db, NULL);
+   bson_return_val_if_fail(collection, NULL);
+
+   snprintf(ns, sizeof ns - 1, "%s.%s", db, collection);
+   ns[sizeof ns - 1] = '\0';
+
+   return mongoc_collection_new(client, ns);
 }
