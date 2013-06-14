@@ -66,8 +66,7 @@ mongoc_cursor_new (mongoc_client_t      *client,
                    bson_uint32_t         batch_size,
                    const bson_t         *query,
                    const bson_t         *fields,
-                   const bson_t         *options,
-                   bson_error_t         *error);
+                   const bson_t         *options);
 
 
 BSON_END_DECLS

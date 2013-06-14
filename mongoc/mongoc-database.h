@@ -42,8 +42,7 @@ mongoc_database_command (mongoc_database_t    *database,
                          bson_uint32_t         n_return,
                          const bson_t         *command,
                          const bson_t         *fields,
-                         const bson_t         *options,
-                         bson_error_t         *error);
+                         const bson_t         *options);
 
 
 BSON_END_DECLS
