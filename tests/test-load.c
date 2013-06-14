@@ -4,59 +4,56 @@
 
 
 static void
+print_doc (const bson_t *b)
+{
+   char *str;
+
+   str = bson_as_json(b, NULL);
+   MONGOC_DEBUG("%s", str);
+   bson_free(str);
+}
+
+
+static void
+ping (mongoc_database_t *db,
+      bson_t            *cmd)
+{
+   mongoc_cursor_t *cursor;
+   const bson_t *b;
+   bson_error_t error;
+
+   cursor = mongoc_database_command(db, MONGOC_QUERY_NONE, 0, 1, cmd, NULL, NULL, NULL);
+   while (mongoc_cursor_next(cursor, &b)) {
+      BSON_ASSERT(b);
+      print_doc(b);
+   }
+   if (mongoc_cursor_error(cursor, &error)) {
+      MONGOC_WARNING("Cursor error: %s", error.message);
+      bson_error_destroy(&error);
+   }
+   mongoc_cursor_destroy(cursor);
+}
+
+
+static void
 test_load (mongoc_client_t *client,
            unsigned         iterations)
 {
-   mongoc_database_t *database;
-   mongoc_cursor_t *cursor;
-
-   const bson_error_t *e;
-   bson_error_t error;
-   const bson_t *bp;
+   mongoc_database_t *db;
    unsigned i;
    bson_t b;
-   bson_t f;
-
-   bson_init(&f);
 
    bson_init(&b);
    bson_append_int32(&b, "ping", 4, 1);
-   bson_destroy(&b);
 
-   database = mongoc_client_get_database(client, "admin");
+   db = mongoc_client_get_database(client, "admin");
 
    for (i = 0; i < iterations; i++) {
-      memset(&error, 0, sizeof error);
-      cursor = mongoc_database_command(database,
-                                       MONGOC_QUERY_NONE,
-                                       0,
-                                       1,
-                                       &b,
-                                       &f,
-                                       NULL,
-                                       &error);
-      if (!cursor) {
-         MONGOC_DEBUG("Command failed: %s", error.message);
-         bson_error_destroy(&error);
-         continue;
-      }
-
-      while ((bp = mongoc_cursor_next(cursor))) {
-         char *str;
-
-         str = bson_as_json(bp, NULL);
-         MONGOC_DEBUG("%d: %s", i, str);
-         bson_free(str);
-      }
-
-      if ((e = mongoc_cursor_error(cursor))) {
-         MONGOC_WARNING("Cursor error: %s", e->message);
-      }
-
-      mongoc_cursor_destroy(cursor);
+      ping(db, &b);
    }
 
-   mongoc_database_destroy(database);
+   mongoc_database_destroy(db);
+   bson_destroy(&b);
 }
 
 

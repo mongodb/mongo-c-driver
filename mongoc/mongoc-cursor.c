@@ -196,27 +196,43 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 }
 
 
-const bson_error_t *
-mongoc_cursor_error (mongoc_cursor_t *cursor)
+bson_bool_t
+mongoc_cursor_error (mongoc_cursor_t *cursor,
+                     bson_error_t    *error)
 {
-   bson_return_val_if_fail(cursor, NULL);
-   return cursor->failed ? &cursor->error : NULL;
+   bson_return_val_if_fail(cursor, FALSE);
+
+   if (BSON_UNLIKELY(cursor->failed)) {
+      bson_set_error(error,
+                     cursor->error.domain,
+                     cursor->error.code,
+                     "%s",
+                     cursor->error.message);
+      return TRUE;
+   }
+
+   return FALSE;
 }
 
 
-const bson_t *
-mongoc_cursor_next (mongoc_cursor_t *cursor)
+bson_bool_t
+mongoc_cursor_next (mongoc_cursor_t  *cursor,
+                    const bson_t    **bson)
 {
    const bson_t *b;
    bson_bool_t eof;
 
-   bson_return_val_if_fail(cursor, NULL);
+   bson_return_val_if_fail(cursor, FALSE);
+
+   if (bson) {
+      *bson = NULL;
+   }
 
    /*
     * Short circuit if we are finished already.
     */
    if (BSON_UNLIKELY(cursor->done)) {
-      return NULL;
+      return FALSE;
    }
 
    /*
@@ -224,11 +240,11 @@ mongoc_cursor_next (mongoc_cursor_t *cursor)
     */
    if (!cursor->sent) {
       if (!mongoc_cursor_query(cursor)) {
-         return NULL;
+         return FALSE;
       }
    } else if (BSON_UNLIKELY(cursor->end_of_event)) {
       if (!mongoc_cursor_get_more(cursor)) {
-         return NULL;
+         return FALSE;
       }
    }
 
@@ -250,8 +266,12 @@ mongoc_cursor_next (mongoc_cursor_t *cursor)
                      MONGOC_ERROR_CURSOR,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                      "The reply was corrupt.");
-      return NULL;
+      return FALSE;
    }
 
-   return b;
+   if (bson) {
+      *bson = b;
+   }
+
+   return !!b;
 }

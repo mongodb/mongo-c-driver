@@ -28,9 +28,11 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_cursor_t mongoc_cursor_t;
 
 
-void                mongoc_cursor_destroy (mongoc_cursor_t *cursor);
-const bson_t       *mongoc_cursor_next    (mongoc_cursor_t *cursor);
-const bson_error_t *mongoc_cursor_error   (mongoc_cursor_t *cursor);
+void        mongoc_cursor_destroy (mongoc_cursor_t  *cursor);
+bson_bool_t mongoc_cursor_next    (mongoc_cursor_t  *cursor,
+                                   const bson_t    **bson);
+bson_bool_t mongoc_cursor_error   (mongoc_cursor_t  *cursor,
+                                   bson_error_t     *error);
 
 
 BSON_END_DECLS
