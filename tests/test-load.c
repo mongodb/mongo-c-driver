@@ -62,6 +62,7 @@ test_load (mongoc_client_t *client,
 {
    mongoc_database_t *db;
    mongoc_collection_t *col;
+   bson_error_t error;
    unsigned i;
    bson_t b;
    bson_t q;
@@ -77,6 +78,11 @@ test_load (mongoc_client_t *client,
    for (i = 0; i < iterations; i++) {
       ping(db, &b);
       fetch(col, &q);
+   }
+
+   if (!mongoc_collection_drop(col, &error)) {
+      MONGOC_WARNING("Failed to drop collection: %s", error.message);
+      bson_error_destroy(&error);
    }
 
    mongoc_database_destroy(db);

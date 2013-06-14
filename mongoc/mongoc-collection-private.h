@@ -31,12 +31,15 @@ struct _mongoc_collection_t
 {
    mongoc_client_t *client;
    char             ns[128];
+   char             db[128];
+   char             collection[128];
 };
 
 
 mongoc_collection_t *
 mongoc_collection_new (mongoc_client_t *client,
-                       const char      *name);
+                       const char      *db,
+                       const char      *collection);
 
 
 BSON_END_DECLS

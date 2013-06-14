@@ -45,6 +45,11 @@ mongoc_collection_find (mongoc_collection_t  *collection,
                         const bson_t         *options);
 
 
+bson_bool_t
+mongoc_collection_drop (mongoc_collection_t *collection,
+                        bson_error_t        *error);
+
+
 BSON_END_DECLS
 
 

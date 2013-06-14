@@ -18,23 +18,35 @@
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-cursor-private.h"
+#include "mongoc-error.h"
+#include "mongoc-log.h"
 
 
 mongoc_collection_t *
 mongoc_collection_new (mongoc_client_t *client,
-                       const char      *name)
+                       const char      *db,
+                       const char      *collection)
 {
-   mongoc_collection_t *collection;
+   mongoc_collection_t *col;
 
    bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(name, NULL);
+   bson_return_val_if_fail(db, NULL);
+   bson_return_val_if_fail(collection, NULL);
 
-   collection = bson_malloc0(sizeof *collection);
-   collection->client = client;
-   snprintf(collection->ns, sizeof collection->ns - 1, "%s", name);
-   collection->ns[sizeof collection->ns - 1] = '\0';
+   col = bson_malloc0(sizeof *col);
+   col->client = client;
 
-   return collection;
+   snprintf(col->ns, sizeof col->ns - 1, "%s.%s",
+            db, collection);
+   snprintf(col->db, sizeof col->db - 1, "%s", db);
+   snprintf(col->collection, sizeof col->collection - 1,
+            "%s", collection);
+
+   col->ns[sizeof col->ns-1] = '\0';
+   col->db[sizeof col->db-1] = '\0';
+   col->collection[sizeof col->collection-1] = '\0';
+
+   return col;
 }
 
 
@@ -61,4 +73,51 @@ mongoc_collection_find (mongoc_collection_t  *collection,
 
    return mongoc_cursor_new(collection->client, collection->ns, flags, skip,
                             limit, 0, query, fields, options);
+}
+
+
+bson_bool_t
+mongoc_collection_drop (mongoc_collection_t *collection,
+                        bson_error_t        *error)
+{
+   mongoc_cursor_t *cursor;
+   const bson_t *b;
+   bson_iter_t iter;
+   bson_bool_t ret = FALSE;
+   const char *errmsg = "unknown error";
+   bson_t cmd;
+   char ns[140];
+
+   bson_return_val_if_fail(collection, FALSE);
+
+   bson_init(&cmd);
+   bson_append_utf8(&cmd, "drop", 4, collection->collection, -1);
+   snprintf(ns, sizeof ns - 1, "%s.$cmd", collection->db);
+   ns[sizeof ns - 1] = '\0';
+   cursor = mongoc_cursor_new(collection->client, ns, MONGOC_QUERY_NONE,
+                              0, 1, 0, &cmd, NULL, NULL);
+   if (mongoc_cursor_next(cursor, &b)) {
+      if (bson_iter_init_find(&iter, b, "ok") &&
+          BSON_ITER_HOLDS_DOUBLE(&iter) &&
+          bson_iter_double(&iter) == 1.0) {
+         ret = TRUE;
+      } else {
+         if (bson_iter_init_find(&iter, b, "errmsg") &&
+             BSON_ITER_HOLDS_UTF8(&iter)) {
+            errmsg = bson_iter_utf8(&iter, NULL);
+         }
+         bson_set_error(error,
+                        MONGOC_ERROR_PROTOCOL,
+                        MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                        "%s",
+                        errmsg);
+      }
+   }
+   if (mongoc_cursor_error(cursor, error)) {
+      /* Do nothing */
+   }
+   mongoc_cursor_destroy(cursor);
+   bson_destroy(&cmd);
+
+   return ret;
 }
