@@ -17,6 +17,7 @@
 
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
+#include "mongoc-cursor-private.h"
 
 
 mongoc_collection_t *
@@ -43,4 +44,21 @@ mongoc_collection_destroy (mongoc_collection_t *collection)
    bson_return_if_fail(collection);
 
    bson_free(collection);
+}
+
+
+mongoc_cursor_t *
+mongoc_collection_find (mongoc_collection_t  *collection,
+                        mongoc_query_flags_t  flags,
+                        bson_uint32_t         skip,
+                        bson_uint32_t         limit,
+                        const bson_t         *query,
+                        const bson_t         *fields,
+                        const bson_t         *options)
+{
+   bson_return_val_if_fail(collection, NULL);
+   bson_return_val_if_fail(query, NULL);
+
+   return mongoc_cursor_new(collection->client, collection->ns, flags, skip,
+                            limit, 0, query, fields, options);
 }

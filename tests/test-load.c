@@ -36,20 +36,47 @@ ping (mongoc_database_t *db,
 
 
 static void
+fetch (mongoc_collection_t *col,
+       const bson_t        *spec)
+{
+   mongoc_cursor_t *cursor;
+   const bson_t *b;
+   bson_error_t error;
+
+   cursor = mongoc_collection_find(col, MONGOC_QUERY_NONE, 0, 0, spec, NULL, NULL);
+   while (mongoc_cursor_next(cursor, &b)) {
+      BSON_ASSERT(b);
+      print_doc(b);
+   }
+   if (mongoc_cursor_error(cursor, &error)) {
+      MONGOC_WARNING("Cursor error: %s", error.message);
+      bson_error_destroy(&error);
+   }
+   mongoc_cursor_destroy(cursor);
+}
+
+
+static void
 test_load (mongoc_client_t *client,
            unsigned         iterations)
 {
    mongoc_database_t *db;
+   mongoc_collection_t *col;
    unsigned i;
    bson_t b;
+   bson_t q;
 
    bson_init(&b);
    bson_append_int32(&b, "ping", 4, 1);
 
+   bson_init(&q);
+
    db = mongoc_client_get_database(client, "admin");
+   col = mongoc_client_get_collection(client, "test", "test");
 
    for (i = 0; i < iterations; i++) {
       ping(db, &b);
+      fetch(col, &q);
    }
 
    mongoc_database_destroy(db);
