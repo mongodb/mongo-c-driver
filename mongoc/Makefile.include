@@ -10,6 +10,7 @@ INST_H_FILES =
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-client.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-client-pool.h
+INST_H_FILES += $(top_srcdir)/mongoc/mongoc-collection.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-cursor.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-database.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-error.h
