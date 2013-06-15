@@ -294,6 +294,10 @@ mongoc_client_new (const char *uri_string)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
 
+   if (!uri_string) {
+      uri_string = "mongodb://127.0.0.1/";
+   }
+
    if (!(uri = mongoc_uri_new(uri_string))) {
       return NULL;
    }
