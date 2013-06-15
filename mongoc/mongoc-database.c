@@ -70,7 +70,7 @@ mongoc_database_command (mongoc_database_t    *database,
 }
 
 
-static bson_bool_t
+bson_bool_t
 mongoc_database_command_simple (mongoc_database_t *database,
                                 const bson_t      *cmd,
                                 bson_error_t      *error)
