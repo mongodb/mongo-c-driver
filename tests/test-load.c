@@ -60,8 +60,8 @@ static void
 test_load (mongoc_client_t *client,
            unsigned         iterations)
 {
-   mongoc_database_t *db;
    mongoc_collection_t *col;
+   mongoc_database_t *db;
    bson_error_t error;
    unsigned i;
    bson_t b;

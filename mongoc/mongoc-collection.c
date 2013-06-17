@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-client-private.h"
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-cursor-private.h"
@@ -45,6 +46,8 @@ mongoc_collection_new (mongoc_client_t *client,
    col->ns[sizeof col->ns-1] = '\0';
    col->db[sizeof col->db-1] = '\0';
    col->collection[sizeof col->collection-1] = '\0';
+
+   col->collectionlen = strlen(col->collection);
 
    return col;
 }
@@ -120,4 +123,119 @@ mongoc_collection_drop (mongoc_collection_t *collection,
    bson_destroy(&cmd);
 
    return ret;
+}
+
+
+bson_bool_t
+mongoc_collection_insert (mongoc_collection_t   *collection,
+                          mongoc_insert_flags_t  flags,
+                          const bson_t          *document,
+                          const bson_t          *options,
+                          bson_error_t          *error)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_INSERT);
+   bson_uint32_t hint;
+
+   bson_return_val_if_fail(collection, FALSE);
+   bson_return_val_if_fail(document, FALSE);
+
+   ev.insert.flags = flags;
+   ev.insert.nslen = collection->collectionlen;
+   ev.insert.ns = collection->collection;
+   ev.insert.docslen = 1;
+   ev.insert.docs = (bson_t **)&document;
+
+   if (!(hint = mongoc_client_send(collection->client, &ev, 0, error))) {
+      return FALSE;
+   }
+
+   /*
+    * TODO: Check options for getlasterror. Do two events and add
+    *       mongoc_event_sendv() with two events.
+    */
+
+#if 0
+   if (!mongoc_client_recv(collection->client, &ev, hint, error)) {
+      return FALSE;
+   }
+#endif
+
+   return TRUE;
+}
+
+
+bson_bool_t
+mongoc_collection_update (mongoc_collection_t   *collection,
+                          mongoc_update_flags_t  flags,
+                          const bson_t          *selector,
+                          const bson_t          *update,
+                          const bson_t          *options,
+                          bson_error_t          *error)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_UPDATE);
+   bson_uint32_t hint;
+
+   bson_return_val_if_fail(collection, FALSE);
+   bson_return_val_if_fail(selector, FALSE);
+   bson_return_val_if_fail(update, FALSE);
+
+   ev.update.nslen = collection->collectionlen;
+   ev.update.ns = collection->collection;
+   ev.update.flags = flags;
+   ev.update.selector = selector;
+   ev.update.update = update;
+
+   if (!(hint = mongoc_client_send(collection->client, &ev, 0, error))) {
+      return FALSE;
+   }
+
+   /*
+    * TODO: Check options for getlasterror. Do two events and add
+    *       mongoc_event_sendv() with two events.
+    */
+
+#if 0
+   if (!mongoc_client_recv(collection->client, &ev, hint, error)) {
+      return FALSE;
+   }
+#endif
+
+   return TRUE;
+}
+
+
+bson_bool_t
+mongoc_collection_delete (mongoc_collection_t   *collection,
+                          mongoc_delete_flags_t  flags,
+                          const bson_t          *selector,
+                          const bson_t          *options,
+                          bson_error_t          *error)
+{
+   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_UPDATE);
+   bson_uint32_t hint;
+
+   bson_return_val_if_fail(collection, FALSE);
+   bson_return_val_if_fail(selector, FALSE);
+
+   ev.delete.nslen = collection->collectionlen;
+   ev.delete.ns = collection->collection;
+   ev.delete.flags = flags;
+   ev.delete.selector = selector;
+
+   if (!(hint = mongoc_client_send(collection->client, &ev, 0, error))) {
+      return FALSE;
+   }
+
+   /*
+    * TODO: Check options for getlasterror. Do two events and add
+    *       mongoc_event_sendv() with two events.
+    */
+
+#if 0
+   if (!mongoc_client_recv(collection->client, &ev, hint, error)) {
+      return FALSE;
+   }
+#endif
+
+   return TRUE;
 }

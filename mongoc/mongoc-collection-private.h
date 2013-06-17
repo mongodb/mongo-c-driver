@@ -33,6 +33,7 @@ struct _mongoc_collection_t
    char             ns[128];
    char             db[128];
    char             collection[128];
+   bson_uint32_t    collectionlen;
 };
 
 
