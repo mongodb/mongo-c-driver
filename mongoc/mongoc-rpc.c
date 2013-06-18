@@ -23,7 +23,7 @@
 
 
 #define RPC(_name, _code) \
-   static BSON_INLINE bson_bool_t \
+   static BSON_INLINE void \
    mongoc_rpc_gather_##_name (mongoc_rpc_##_name##_t *rpc, \
                               mongoc_array_t *array) \
    { \
@@ -31,7 +31,6 @@
       BSON_ASSERT(rpc); \
       BSON_ASSERT(array); \
       _code \
-      return TRUE; \
    }
 #define INT32_FIELD(_name) \
    iov.iov_base = &rpc->_name; \
@@ -142,12 +141,12 @@
 #undef RAW_BUFFER_FIELD
 
 
-bson_bool_t
+void
 mongoc_rpc_gather (mongoc_rpc_t   *rpc,
                    mongoc_array_t *array)
 {
-   bson_return_val_if_fail(rpc, FALSE);
-   bson_return_val_if_fail(array, FALSE);
+   bson_return_if_fail(rpc);
+   bson_return_if_fail(array);
 
    switch ((mongoc_opcode_t)rpc->header.op_code) {
    case MONGOC_OPCODE_REPLY:
@@ -167,7 +166,7 @@ mongoc_rpc_gather (mongoc_rpc_t   *rpc,
    case MONGOC_OPCODE_KILL_CURSORS:
       return mongoc_rpc_gather_kill_cursors(&rpc->kill_cursors, array);
    default:
-      return FALSE;
+      break;
    }
 }
 
