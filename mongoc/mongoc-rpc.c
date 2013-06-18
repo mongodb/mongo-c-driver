@@ -178,21 +178,29 @@ mongoc_rpc_swab (mongoc_rpc_t *rpc)
 
    switch ((mongoc_opcode_t)rpc->header.op_code) {
    case MONGOC_OPCODE_REPLY:
-      return mongoc_rpc_swab_reply(&rpc->reply);
+      mongoc_rpc_swab_reply(&rpc->reply);
+      break;
    case MONGOC_OPCODE_MSG:
-      return mongoc_rpc_swab_msg(&rpc->msg);
+      mongoc_rpc_swab_msg(&rpc->msg);
+      break;
    case MONGOC_OPCODE_UPDATE:
-      return mongoc_rpc_swab_update(&rpc->update);
+      mongoc_rpc_swab_update(&rpc->update);
+      break;
    case MONGOC_OPCODE_INSERT:
-      return mongoc_rpc_swab_insert(&rpc->insert);
+      mongoc_rpc_swab_insert(&rpc->insert);
+      break;
    case MONGOC_OPCODE_QUERY:
-      return mongoc_rpc_swab_query(&rpc->query);
+      mongoc_rpc_swab_query(&rpc->query);
+      break;
    case MONGOC_OPCODE_GET_MORE:
-      return mongoc_rpc_swab_get_more(&rpc->get_more);
+      mongoc_rpc_swab_get_more(&rpc->get_more);
+      break;
    case MONGOC_OPCODE_DELETE:
-      return mongoc_rpc_swab_delete(&rpc->delete);
+      mongoc_rpc_swab_delete(&rpc->delete);
+      break;
    case MONGOC_OPCODE_KILL_CURSORS:
-      return mongoc_rpc_swab_kill_cursors(&rpc->kill_cursors);
+      mongoc_rpc_swab_kill_cursors(&rpc->kill_cursors);
+      break;
    default:
       MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.op_code);
       break;
