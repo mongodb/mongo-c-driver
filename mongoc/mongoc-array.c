@@ -33,29 +33,25 @@ npow2 (bson_uint32_t v)
 }
 
 
-mongoc_array_t *
-mongoc_array_new (size_t element_size)
+void
+mongoc_array_init (mongoc_array_t *array,
+                   size_t          element_size)
 {
-   mongoc_array_t *ar;
+   bson_return_if_fail(array);
+   bson_return_if_fail(element_size);
 
-   bson_return_val_if_fail(element_size, NULL);
-
-   ar = bson_malloc0(sizeof *ar);
-   ar->len = 0;
-   ar->element_size = element_size;
-   ar->allocated = 128;
-   ar->data = bson_malloc0(ar->allocated);
-
-   return ar;
+   array->len = 0;
+   array->element_size = element_size;
+   array->allocated = 128;
+   array->data = bson_malloc0(array->allocated);
 }
 
 
 void
 mongoc_array_destroy (mongoc_array_t *array)
 {
-   if (array) {
+   if (array && array->data) {
       bson_free(array->data);
-      bson_free(array);
    }
 }
 

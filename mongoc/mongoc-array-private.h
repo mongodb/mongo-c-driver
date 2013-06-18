@@ -39,9 +39,11 @@ struct _mongoc_array_t
 
 #define mongoc_array_append_val(a, v) mongoc_array_append_vals(a, &v, 1)
 #define mongoc_array_index(a, t, i)   ((t)((t*)(a)->data)[i])
+#define mongoc_array_clear(a)         (a)->len = 0
 
 
-mongoc_array_t *mongoc_array_new         (size_t element_size);
+void            mongoc_array_init        (mongoc_array_t *array,
+                                          size_t          element_size);
 void            mongoc_array_append_vals (mongoc_array_t *array,
                                           const void     *data,
                                           bson_uint32_t   n_elements);
