@@ -105,43 +105,55 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
 
 static mongoc_cluster_node_t *
 mongoc_cluster_select (mongoc_cluster_t *cluster,
-                       mongoc_event_t   *event,
+                       mongoc_event_t   *events,
+                       size_t            events_len,
                        bson_uint32_t     hint,
                        bson_error_t     *error)
 {
    mongoc_cluster_node_t *nodes[MONGOC_CLUSTER_MAX_NODES];
    const bson_t *read_prefs = NULL;
-   bson_uint32_t i;
    bson_uint32_t count;
    bson_uint32_t watermark;
    bson_int32_t nearest = -1;
-   bson_bool_t need_primary = TRUE;
+   bson_bool_t need_primary = FALSE;
+   size_t i;
 
    bson_return_val_if_fail(cluster, NULL);
-   bson_return_val_if_fail(event, NULL);
+   bson_return_val_if_fail(events, NULL);
+   bson_return_val_if_fail(events_len, NULL);
    bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, NULL);
 
    if (cluster->mode == MONGOC_CLUSTER_DIRECT) {
       return cluster->nodes[0].stream ? &cluster->nodes[0] : NULL;
    }
 
-   switch (event->type) {
-   case MONGOC_OPCODE_KILL_CURSORS:
-   case MONGOC_OPCODE_GET_MORE:
-   case MONGOC_OPCODE_MSG:
-   case MONGOC_OPCODE_REPLY:
-      need_primary = FALSE;
-      break;
-   case MONGOC_OPCODE_QUERY:
-      need_primary = FALSE;
-      read_prefs = event->query.read_prefs;
-      break;
-   case MONGOC_OPCODE_DELETE:
-   case MONGOC_OPCODE_INSERT:
-   case MONGOC_OPCODE_UPDATE:
-   default:
-      need_primary = TRUE;
-      break;
+   /*
+    * NOTE: Pipelining Events
+    *
+    * When pipelining events, we only obey the first read operations read
+    * prefs. However, if any event requires the primary, all events are
+    * pinned to the primary.
+    */
+
+   for (i = 0; i < events_len; i++) {
+      switch (events[i].type) {
+      case MONGOC_OPCODE_KILL_CURSORS:
+      case MONGOC_OPCODE_GET_MORE:
+      case MONGOC_OPCODE_MSG:
+      case MONGOC_OPCODE_REPLY:
+         break;
+      case MONGOC_OPCODE_QUERY:
+         if (!read_prefs) {
+            read_prefs = events[i].query.read_prefs;
+         }
+         break;
+      case MONGOC_OPCODE_DELETE:
+      case MONGOC_OPCODE_INSERT:
+      case MONGOC_OPCODE_UPDATE:
+      default:
+         need_primary = TRUE;
+         break;
+      }
    }
 
    /*
@@ -152,6 +164,13 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
       if (need_primary && cluster->nodes[i].primary)
          return &cluster->nodes[i];
       nodes[i] = cluster->nodes[i].stream ? &cluster->nodes[i] : NULL;
+   }
+
+   /*
+    * Check if we failed to locate a primary.
+    */
+   if (need_primary) {
+      return NULL;
    }
 
    /*
@@ -180,8 +199,6 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (nodes[i]) {
          if (read_prefs) {
-         }
-         if (need_primary) {
          }
          if (IS_NEARER_THAN(nodes[i], nearest)) {
             nearest = nodes[i]->ping_msec;
@@ -314,7 +331,8 @@ mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
 /**
  * mongoc_cluster_send:
  * @cluster: A mongoc_cluster_t.
- * @event: A mongoc_event_t.
+ * @events: An array of mongoc_event_t events.
+ * @events_len: Number of events in @events.
  * @hint: A hint for the cluster node or 0.
  * @error: A location for a bson_error_t or NULL.
  *
@@ -334,16 +352,19 @@ mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
  */
 bson_uint32_t
 mongoc_cluster_send (mongoc_cluster_t *cluster,
-                     mongoc_event_t   *event,
+                     mongoc_event_t   *events,
+                     size_t            events_len,
                      bson_uint32_t     hint,
                      bson_error_t     *error)
 {
    mongoc_cluster_node_t *node;
+   size_t i;
 
    bson_return_val_if_fail(cluster, FALSE);
-   bson_return_val_if_fail(event, FALSE);
+   bson_return_val_if_fail(events, FALSE);
+   bson_return_val_if_fail(events_len, FALSE);
 
-   while (!(node = mongoc_cluster_select(cluster, event, hint, error))) {
+   while (!(node = mongoc_cluster_select(cluster, events, events_len, hint, error))) {
       if (!mongoc_cluster_reconnect(cluster, error)) {
          return FALSE;
       }
@@ -351,11 +372,21 @@ mongoc_cluster_send (mongoc_cluster_t *cluster,
 
    BSON_ASSERT(node->stream);
 
-   if (!mongoc_event_write(event, node->stream, error)) {
-      mongoc_stream_destroy(node->stream);
-      node->stream = NULL;
-      node->stamp++;
-      return 0;
+   if (events_len > 1) {
+      mongoc_stream_cork(node->stream);
+   }
+
+   for (i = 0; i < events_len; i++) {
+      if (!mongoc_event_write(&events[i], node->stream, error)) {
+         mongoc_stream_destroy(node->stream);
+         node->stream = NULL;
+         node->stamp++;
+         return 0;
+      }
+   }
+
+   if (events_len > 1) {
+      mongoc_stream_uncork(node->stream);
    }
 
    return node->index + 1;
@@ -365,11 +396,12 @@ mongoc_cluster_send (mongoc_cluster_t *cluster,
 /**
  * mongoc_cluster_try_send:
  * @cluster: A mongoc_cluster_t.
- * @event: A mongoc_event_t.
+ * @events: A mongoc_event_t.
+ * @events_len: Number of elements in @events.
  * @hint: A cluster node hint.
  * @error: A location of a bson_error_t or NULL.
  *
- * Attempts to send @event to the target primary or secondary based on
+ * Attempts to send @events to the target primary or secondary based on
  * read preferences. If a cluster node is not immediately serviceable
  * then -1 is returned.
  *
@@ -381,26 +413,39 @@ mongoc_cluster_send (mongoc_cluster_t *cluster,
  */
 bson_uint32_t
 mongoc_cluster_try_send (mongoc_cluster_t *cluster,
-                         mongoc_event_t   *event,
+                         mongoc_event_t   *events,
+                         size_t            events_len,
                          bson_uint32_t     hint,
                          bson_error_t     *error)
 {
    mongoc_cluster_node_t *node;
+   size_t i;
 
    bson_return_val_if_fail(cluster, FALSE);
-   bson_return_val_if_fail(event, FALSE);
+   bson_return_val_if_fail(events, FALSE);
+   bson_return_val_if_fail(events_len, FALSE);
 
-   if (!(node = mongoc_cluster_select(cluster, event, hint, error))) {
+   if (!(node = mongoc_cluster_select(cluster, events, events_len, hint, error))) {
       return 0;
    }
 
    BSON_ASSERT(node->stream);
 
-   if (!mongoc_event_write(event, node->stream, error)) {
-      mongoc_stream_destroy(node->stream);
-      node->stream = NULL;
-      node->stamp++;
-      return 0;
+   if (events_len > 1) {
+      mongoc_stream_cork(node->stream);
+   }
+
+   for (i = 0; i < events_len; i++) {
+      if (!mongoc_event_write(&events[i], node->stream, error)) {
+         mongoc_stream_destroy(node->stream);
+         node->stream = NULL;
+         node->stamp++;
+         return 0;
+      }
+   }
+
+   if (events_len > 1) {
+      mongoc_stream_uncork(node->stream);
    }
 
    return node->index + 1;

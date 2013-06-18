@@ -151,7 +151,7 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
    ev.query.query = &cursor->query;
    ev.query.fields = &cursor->fields;
 
-   if (!(hint = mongoc_client_send(cursor->client, &ev, 0, &cursor->error))) {
+   if (!(hint = mongoc_client_send(cursor->client, &ev, 1, 0, &cursor->error))) {
       goto failure;
    }
 
@@ -216,10 +216,7 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
     * TODO: Stamp protections for disconnections.
     */
 
-   if (!mongoc_client_send(cursor->client,
-                           &ev,
-                           cursor->hint,
-                           &cursor->error)) {
+   if (!mongoc_client_send(cursor->client, &ev, 1, cursor->hint, &cursor->error)) {
       cursor->done = TRUE;
       cursor->failed = TRUE;
       return FALSE;

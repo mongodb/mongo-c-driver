@@ -79,24 +79,26 @@ typedef struct
 } mongoc_cluster_t;
 
 
-void          mongoc_cluster_destroy  (mongoc_cluster_t   *cluster);
-void          mongoc_cluster_init     (mongoc_cluster_t   *cluster,
-                                       const mongoc_uri_t *uri,
-                                       void               *client);
-bson_uint32_t mongoc_cluster_send     (mongoc_cluster_t   *cluster,
-                                       mongoc_event_t     *event,
-                                       bson_uint32_t       hint,
-                                       bson_error_t       *error);
-bson_uint32_t mongoc_cluster_try_send (mongoc_cluster_t   *cluster,
-                                       mongoc_event_t     *event,
-                                       bson_uint32_t       hint,
-                                       bson_error_t       *error);
-bson_bool_t   mongoc_cluster_try_recv (mongoc_cluster_t   *cluster,
-                                       mongoc_event_t     *event,
-                                       bson_uint32_t       hint,
-                                       bson_error_t       *error);
-bson_uint32_t mongoc_cluster_stamp    (mongoc_cluster_t   *cluster,
-                                       bson_uint32_t       node);
+void          mongoc_cluster_destroy   (mongoc_cluster_t   *cluster);
+void          mongoc_cluster_init      (mongoc_cluster_t   *cluster,
+                                        const mongoc_uri_t *uri,
+                                        void               *client);
+bson_uint32_t mongoc_cluster_send      (mongoc_cluster_t   *cluster,
+                                        mongoc_event_t     *events,
+                                        size_t              events_len,
+                                        bson_uint32_t       hint,
+                                        bson_error_t       *error);
+bson_uint32_t mongoc_cluster_try_send  (mongoc_cluster_t   *cluster,
+                                        mongoc_event_t     *events,
+                                        size_t              events_len,
+                                        bson_uint32_t       hint,
+                                        bson_error_t       *error);
+bson_bool_t   mongoc_cluster_try_recv  (mongoc_cluster_t   *cluster,
+                                        mongoc_event_t     *event,
+                                        bson_uint32_t       hint,
+                                        bson_error_t       *error);
+bson_uint32_t mongoc_cluster_stamp     (mongoc_cluster_t   *cluster,
+                                        bson_uint32_t       node);
 
 
 BSON_END_DECLS

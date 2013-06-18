@@ -229,12 +229,13 @@ mongoc_client_prepare_event (mongoc_client_t *client,
 /**
  * mongoc_client_send:
  * @client: (in): A mongoc_client_t.
- * @event: (in) (transfer full): A mongoc_event_t.
+ * @events: (in) (transfer full) (array length=events_len): A mongoc_event_t.
+ * @events_len: Number of elements in @events.
  * @error: (out): A location for a bson_error_t or NULL.
  *
  * Send an event via @client to the MongoDB server. The event structure
  * is mutated by @client in the process and therefore should be considered
- * destroyed after calling this function. No further access to @event should
+ * destroyed after calling this function. No further access to @events should
  * occur after calling this method.
  *
  * The return value contains a hint for the cluster node that was used.
@@ -245,21 +246,29 @@ mongoc_client_prepare_event (mongoc_client_t *client,
  */
 bson_uint32_t
 mongoc_client_send (mongoc_client_t *client,
-                    mongoc_event_t  *event,
+                    mongoc_event_t  *events,
+                    size_t           events_len,
                     bson_uint32_t    hint,
                     bson_error_t    *error)
 {
-   bson_return_val_if_fail(client, FALSE);
-   bson_return_val_if_fail(event, FALSE);
+   size_t i;
 
-   event->any.opcode = event->any.type;
+   bson_return_val_if_fail(client, FALSE);
+
+   if (BSON_UNLIKELY(!events || !events_len)) {
+      return TRUE;
+   }
+
+   for (i = 0; i < events_len; i++) {
+      events[i].any.opcode = events[i].any.type;
+   }
 
    switch (client->cluster.state) {
    case MONGOC_CLUSTER_STATE_BORN:
-      return mongoc_cluster_send(&client->cluster, event, hint, error);
+      return mongoc_cluster_send(&client->cluster, events, events_len, hint, error);
    case MONGOC_CLUSTER_STATE_HEALTHY:
    case MONGOC_CLUSTER_STATE_UNHEALTHY:
-      return mongoc_cluster_try_send(&client->cluster, event, hint, error);
+      return mongoc_cluster_try_send(&client->cluster, events, events_len, hint, error);
    case MONGOC_CLUSTER_STATE_DEAD:
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,

@@ -145,7 +145,7 @@ mongoc_collection_insert (mongoc_collection_t   *collection,
    ev.insert.docslen = 1;
    ev.insert.docs = (bson_t **)&document;
 
-   if (!(hint = mongoc_client_send(collection->client, &ev, 0, error))) {
+   if (!(hint = mongoc_client_send(collection->client, &ev, 1, 0, error))) {
       return FALSE;
    }
 
@@ -185,7 +185,7 @@ mongoc_collection_update (mongoc_collection_t   *collection,
    ev.update.selector = selector;
    ev.update.update = update;
 
-   if (!(hint = mongoc_client_send(collection->client, &ev, 0, error))) {
+   if (!(hint = mongoc_client_send(collection->client, &ev, 1, 0, error))) {
       return FALSE;
    }
 
@@ -222,7 +222,7 @@ mongoc_collection_delete (mongoc_collection_t   *collection,
    ev.delete.flags = flags;
    ev.delete.selector = selector;
 
-   if (!(hint = mongoc_client_send(collection->client, &ev, 0, error))) {
+   if (!(hint = mongoc_client_send(collection->client, &ev, 1, 0, error))) {
       return FALSE;
    }
 
