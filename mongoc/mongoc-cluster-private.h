@@ -21,8 +21,10 @@
 
 #include <bson.h>
 
+#include "mongoc-array-private.h"
 #include "mongoc-event-private.h"
 #include "mongoc-host-list.h"
+#include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
 #include "mongoc-uri.h"
 
@@ -76,6 +78,7 @@ typedef struct
    bson_uint32_t           max_bson_size;
    bson_uint32_t           max_msg_size;
    bson_uint32_t           sec_latency_ms;
+   mongoc_array_t          iov;
 } mongoc_cluster_t;
 
 
@@ -88,9 +91,19 @@ bson_uint32_t mongoc_cluster_send      (mongoc_cluster_t   *cluster,
                                         size_t              events_len,
                                         bson_uint32_t       hint,
                                         bson_error_t       *error);
+bson_uint32_t mongoc_cluster_sendv     (mongoc_cluster_t   *cluster,
+                                        mongoc_rpc_t       *rpcs,
+                                        size_t              rpcs_len,
+                                        bson_uint32_t       hint,
+                                        bson_error_t       *error);
 bson_uint32_t mongoc_cluster_try_send  (mongoc_cluster_t   *cluster,
                                         mongoc_event_t     *events,
                                         size_t              events_len,
+                                        bson_uint32_t       hint,
+                                        bson_error_t       *error);
+bson_uint32_t mongoc_cluster_try_sendv (mongoc_cluster_t   *cluster,
+                                        mongoc_rpc_t       *rpcs,
+                                        size_t              rpcs_len,
                                         bson_uint32_t       hint,
                                         bson_error_t       *error);
 bson_bool_t   mongoc_cluster_try_recv  (mongoc_cluster_t   *cluster,

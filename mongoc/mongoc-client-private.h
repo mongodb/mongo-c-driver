@@ -24,6 +24,7 @@
 #include "mongoc-client.h"
 #include "mongoc-event-private.h"
 #include "mongoc-host-list.h"
+#include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
 
 
@@ -46,6 +47,14 @@ mongoc_client_send (mongoc_client_t *client,
                     size_t           events_len,
                     bson_uint32_t    hint,
                     bson_error_t    *error);
+
+
+bson_uint32_t
+mongoc_client_sendv (mongoc_client_t *client,
+                     mongoc_rpc_t    *rpcs,
+                     size_t           rpcs_len,
+                     bson_uint32_t    hint,
+                     bson_error_t    *error);
 
 
 bson_bool_t

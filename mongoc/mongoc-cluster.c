@@ -15,6 +15,8 @@
  */
 
 
+#include <errno.h>
+
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-error.h"
@@ -74,6 +76,8 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
       cluster->nodes[i].ping_msec = -1;
       bson_init(&cluster->nodes[i].tags);
    }
+
+   mongoc_array_init(&cluster->iov, sizeof(struct iovec));
 }
 
 
@@ -393,6 +397,57 @@ mongoc_cluster_send (mongoc_cluster_t *cluster,
 }
 
 
+bson_uint32_t
+mongoc_cluster_sendv (mongoc_cluster_t *cluster,
+                      mongoc_rpc_t     *rpcs,
+                      size_t            rpcs_len,
+                      bson_uint32_t     hint,
+                      bson_error_t     *error)
+{
+   mongoc_cluster_node_t *node;
+   struct iovec *iov;
+   size_t iovcnt;
+   size_t i;
+
+   bson_return_val_if_fail(cluster, FALSE);
+   bson_return_val_if_fail(rpcs, FALSE);
+   bson_return_val_if_fail(rpcs_len, FALSE);
+
+again:
+   node = &cluster->nodes[0];
+   if (!node->stream) {
+      if (!mongoc_cluster_reconnect(cluster, error)) {
+         return FALSE;
+      }
+      goto again;
+   }
+
+   BSON_ASSERT(node->stream);
+
+   mongoc_array_clear(&cluster->iov);
+
+   for (i = 0; i < rpcs_len; i++) {
+      mongoc_rpc_gather(&rpcs[i], &cluster->iov);
+      mongoc_rpc_swab(&rpcs[i]);
+   }
+
+   iov = cluster->iov.data;
+   iovcnt = cluster->iov.len;
+   errno = 0;
+
+   if (!mongoc_stream_writev(node->stream, iov, iovcnt)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_SOCKET,
+                     "Failure during socket delivery: %s",
+                     strerror(errno));
+      return 0;
+   }
+
+   return node->index + 1;
+}
+
+
 /**
  * mongoc_cluster_try_send:
  * @cluster: A mongoc_cluster_t.
@@ -446,6 +501,60 @@ mongoc_cluster_try_send (mongoc_cluster_t *cluster,
 
    if (events_len > 1) {
       mongoc_stream_uncork(node->stream);
+   }
+
+   return node->index + 1;
+}
+
+
+bson_uint32_t
+mongoc_cluster_try_sendv (mongoc_cluster_t *cluster,
+                          mongoc_rpc_t     *rpcs,
+                          size_t            rpcs_len,
+                          bson_uint32_t     hint,
+                          bson_error_t     *error)
+{
+   mongoc_cluster_node_t *node;
+   struct iovec *iov;
+   size_t iovcnt;
+   size_t i;
+
+   bson_return_val_if_fail(cluster, FALSE);
+   bson_return_val_if_fail(rpcs, FALSE);
+   bson_return_val_if_fail(rpcs_len, FALSE);
+
+   /*
+    * TODO: Impelement select node for RPC.
+    */
+   node = &cluster->nodes[0];
+   if (!node->stream) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_NOT_READY,
+                     "No node available for immediate delivery.");
+      return FALSE;
+   }
+
+   BSON_ASSERT(node->stream);
+
+   mongoc_array_clear(&cluster->iov);
+
+   for (i = 0; i < rpcs_len; i++) {
+      mongoc_rpc_gather(&rpcs[i], &cluster->iov);
+      mongoc_rpc_swab(&rpcs[i]);
+   }
+
+   iov = cluster->iov.data;
+   iovcnt = cluster->iov.len;
+   errno = 0;
+
+   if (!mongoc_stream_writev(node->stream, iov, iovcnt)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_SOCKET,
+                     "Failure during socket delivery: %s",
+                     strerror(errno));
+      return 0;
    }
 
    return node->index + 1;
