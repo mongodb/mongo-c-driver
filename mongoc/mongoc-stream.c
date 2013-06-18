@@ -30,6 +30,11 @@
 #include "mongoc-stream.h"
 
 
+#ifndef TEMP_FAILURE_RETRY
+#define TEMP_FAILURE_RETRY(_f) _f
+#endif
+
+
 typedef struct
 {
    mongoc_stream_t  stream;
@@ -130,16 +135,37 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
                            size_t           iovcnt)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
+   size_t cur = 0;
+   size_t count = 0;
+   size_t i;
+   size_t towrite = 0;
+   ssize_t written;
 
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
 
-#ifdef TEMP_FAILURE_RETRY
-   return TEMP_FAILURE_RETRY(writev(file->fd, iov, iovcnt));
-#else
-   return writev(file->fd, iov, iovcnt);
-#endif
+   for (i = 0; i < iovcnt; i++) {
+      towrite += iov[i].iov_len;
+   }
+
+   for (;;) {
+      errno = 0;
+      written = TEMP_FAILURE_RETRY(writev(file->fd, iov + cur, iovcnt - cur));
+      if (written < 0) {
+         return -1;
+      }
+      while (written >= iov[cur].iov_len) {
+         written -= iov[cur++].iov_len;
+      }
+      if (cur == count) {
+         break;
+      }
+      iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + written;
+      iov[cur].iov_len -= written;
+   }
+
+   return towrite;
 }
 
 
