@@ -1,5 +1,6 @@
 noinst_PROGRAMS =
 noinst_PROGRAMS += test-load
+noinst_PROGRAMS += test-mongoc-array
 noinst_PROGRAMS += test-mongoc-buffer
 noinst_PROGRAMS += test-mongoc-client-pool
 noinst_PROGRAMS += test-mongoc-collection
@@ -10,6 +11,7 @@ noinst_PROGRAMS += test-mongoc-uri
 
 
 TEST_PROGS =
+TEST_PROGS += test-mongoc-array
 TEST_PROGS += test-mongoc-buffer
 TEST_PROGS += test-mongoc-client-pool
 TEST_PROGS += test-mongoc-collection
@@ -22,6 +24,11 @@ TEST_PROGS += test-mongoc-uri
 test_load_SOURCES = $(top_srcdir)/tests/test-load.c
 test_load_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_load_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+
+
+test_mongoc_array_SOURCES = $(top_srcdir)/tests/test-mongoc-array.c
+test_mongoc_array_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+test_mongoc_array_LDADD = libmongoc-1.0.la $(BSON_LIBS)
 
 
 test_mongoc_buffer_SOURCES = $(top_srcdir)/tests/test-mongoc-buffer.c

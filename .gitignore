@@ -21,6 +21,7 @@ missing
 stamp-h1
 *.swp
 test-load
+test-mongoc-array
 test-mongoc-buffer
 test-mongoc-client-pool
 test-mongoc-collection
