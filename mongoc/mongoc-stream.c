@@ -18,6 +18,10 @@
 #define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "mongoc-buffer-private.h"
@@ -139,6 +143,26 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
 }
 
 
+static int
+mongoc_stream_unix_cork (mongoc_stream_t *stream)
+{
+   mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
+   int state = 1;
+   bson_return_val_if_fail(stream, -1);
+   return setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+}
+
+
+static int
+mongoc_stream_unix_uncork (mongoc_stream_t *stream)
+{
+   mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
+   int state = 0;
+   bson_return_val_if_fail(stream, -1);
+   return setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+}
+
+
 /**
  * mongoc_stream_close:
  * @stream: A mongoc_stream_t.
@@ -234,6 +258,41 @@ mongoc_stream_readv (mongoc_stream_t *stream,
 
 
 /**
+ * mongoc_stream_cork:
+ * @stream: (in): A mongoc_stream_t.
+ *
+ * Corks a stream, preventing packets from being sent immediately. This is
+ * useful if you need to send multiple messages together as a single packet.
+ *
+ * Call mongoc_stream_uncork() after writing your data.
+ *
+ * Returns: 0 on success, -1 on failure.
+ */
+int
+mongoc_stream_cork (mongoc_stream_t *stream)
+{
+   bson_return_val_if_fail(stream, -1);
+   return stream->cork ? stream->cork(stream) : 0;
+}
+
+
+/**
+ * mongoc_stream_uncork:
+ * @stream: (in): A mongoc_stream_t.
+ *
+ * Uncorks a stream, previously corked with mongoc_stream_cork().
+ *
+ * Returns: 0 on success, -1 on failure.
+ */
+int
+mongoc_stream_uncork (mongoc_stream_t *stream)
+{
+   bson_return_val_if_fail(stream, -1);
+   return stream->uncork ? stream->uncork(stream) : 0;
+}
+
+
+/**
  * mongoc_stream_new_from_unix:
  * @fd: A unix style file-descriptor.
  *
@@ -262,6 +321,8 @@ mongoc_stream_new_from_unix (int fd)
    stream->stream.flush = mongoc_stream_unix_flush;
    stream->stream.writev = mongoc_stream_unix_writev;
    stream->stream.readv = mongoc_stream_unix_readv;
+   stream->stream.cork = mongoc_stream_unix_cork;
+   stream->stream.uncork = mongoc_stream_unix_uncork;
 
    return (mongoc_stream_t *)stream;
 }

@@ -40,10 +40,14 @@ struct _mongoc_stream_t
    ssize_t (*readv)   (mongoc_stream_t *stream,
                        struct iovec    *iov,
                        size_t           iovcnt);
+   int     (*cork)    (mongoc_stream_t *stream);
+   int     (*uncork)  (mongoc_stream_t *stream);
 };
 
 
 int              mongoc_stream_close         (mongoc_stream_t *stream);
+int              mongoc_stream_cork          (mongoc_stream_t *stream);
+int              mongoc_stream_uncork        (mongoc_stream_t *stream);
 void             mongoc_stream_destroy       (mongoc_stream_t *stream);
 int              mongoc_stream_flush         (mongoc_stream_t *stream);
 mongoc_stream_t *mongoc_stream_new_from_unix (int              fd);
