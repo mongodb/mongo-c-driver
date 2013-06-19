@@ -88,8 +88,8 @@ test_mongoc_rpc_delete (void)
    rpc.delete.msg_len = 0;
    rpc.delete.request_id = 1234;
    rpc.delete.response_to = -1;
-   rpc.delete.zero = 0;
    rpc.delete.op_code = MONGOC_OPCODE_DELETE;
+   rpc.delete.zero = 0;
    snprintf(rpc.delete.collection, sizeof rpc.delete.collection, "%s", "test.test");
    rpc.delete.flags = MONGOC_DELETE_SINGLE_REMOVE;
    rpc.delete.selector = &sel;
@@ -152,6 +152,26 @@ test_mongoc_rpc_insert (void)
 
 
 static void
+test_mongoc_rpc_kill_cursors (void)
+{
+   mongoc_rpc_t rpc;
+   bson_int64_t cursors[] = { 1, 2, 3, 4, 5 };
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   rpc.kill_cursors.msg_len = 0;
+   rpc.kill_cursors.request_id = 1234;
+   rpc.kill_cursors.response_to = -1;
+   rpc.kill_cursors.op_code = MONGOC_OPCODE_KILL_CURSORS;
+   rpc.kill_cursors.zero = 0;
+   rpc.kill_cursors.n_cursors = 5;
+   rpc.kill_cursors.cursors = cursors;
+
+   assert_rpc_equal("kill_cursors1.dat", &rpc);
+}
+
+
+static void
 test_mongoc_rpc_query (void)
 {
    mongoc_rpc_t rpc;
@@ -183,6 +203,7 @@ main (int   argc,
    run_test("/mongoc/rpc/delete", test_mongoc_rpc_delete);
    run_test("/mongoc/rpc/get_more", test_mongoc_rpc_get_more);
    run_test("/mongoc/rpc/insert", test_mongoc_rpc_insert);
+   run_test("/mongoc/rpc/kill_cursors", test_mongoc_rpc_kill_cursors);
    run_test("/mongoc/rpc/query", test_mongoc_rpc_query);
 
    return 0;

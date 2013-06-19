@@ -71,6 +71,10 @@
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define INT64_ARRAY_FIELD(_len, _name) \
+   iov.iov_base = &rpc->_len; \
+   iov.iov_len = 4; \
+   rpc->msg_len += iov.iov_len; \
+   mongoc_array_append_val(array, iov); \
    iov.iov_base = rpc->_name; \
    iov.iov_len = rpc->_len * 8; \
    rpc->msg_len += iov.iov_len; \
