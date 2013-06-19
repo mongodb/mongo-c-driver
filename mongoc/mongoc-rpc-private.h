@@ -32,9 +32,9 @@ BSON_BEGIN_DECLS
 #define INT64_FIELD(_name)               bson_int64_t _name;
 #define INT64_ARRAY_FIELD(_len, _name)   bson_int32_t _len; bson_int64_t *_name;
 #define CSTRING_FIELD(_name)             char _name[256];
-#define BSON_FIELD(_name)                const bson_t *_name;
-#define BSON_ARRAY_FIELD(_name)          void *_name; bson_int32_t _name##_len;
-#define RAW_BUFFER_FIELD(_name)          void *_name; bson_int32_t _name##_len;
+#define BSON_FIELD(_name)                const bson_uint8_t *_name;
+#define BSON_ARRAY_FIELD(_name)          const bson_uint8_t *_name; bson_int32_t _name##_len;
+#define RAW_BUFFER_FIELD(_name)          const bson_uint8_t *_name; bson_int32_t _name##_len;
 #define OPTIONAL(_check, _code)          _code
 
 
@@ -77,10 +77,13 @@ typedef union
 #undef RAW_BUFFER_FIELD
 
 
-void mongoc_rpc_gather (mongoc_rpc_t   *rpc,
-                        mongoc_array_t *array);
-void mongoc_rpc_swab   (mongoc_rpc_t   *rpc);
-void mongoc_rpc_printf (mongoc_rpc_t   *rpc);
+void        mongoc_rpc_gather  (mongoc_rpc_t       *rpc,
+                                mongoc_array_t     *array);
+void        mongoc_rpc_swab    (mongoc_rpc_t       *rpc);
+void        mongoc_rpc_printf  (mongoc_rpc_t       *rpc);
+bson_bool_t mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
+                                const bson_uint8_t *buf,
+                                size_t              buflen);
 
 
 BSON_END_DECLS

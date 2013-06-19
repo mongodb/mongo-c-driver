@@ -92,9 +92,40 @@ test_mongoc_rpc_delete (void)
    rpc.delete.zero = 0;
    snprintf(rpc.delete.collection, sizeof rpc.delete.collection, "%s", "test.test");
    rpc.delete.flags = MONGOC_DELETE_SINGLE_REMOVE;
-   rpc.delete.selector = &sel;
+   rpc.delete.selector = bson_get_data(&sel);
 
    assert_rpc_equal("delete1.dat", &rpc);
+}
+
+
+static void
+test_mongoc_rpc_delete_decode (void)
+{
+   bson_uint8_t *data;
+   mongoc_rpc_t rpc;
+   bson_bool_t r;
+   bson_t sel;
+   size_t length;
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   bson_init(&sel);
+
+   data = get_test_file("delete1.dat", &length);
+   r = mongoc_rpc_scatter(&rpc, data, length);
+   assert(r);
+
+   assert(rpc.delete.msg_len == 39);
+   assert(rpc.delete.request_id == 1234);
+   assert(rpc.delete.response_to == -1);
+   assert(rpc.delete.op_code == MONGOC_OPCODE_DELETE);
+   assert(rpc.delete.zero == 0);
+   assert(!strcmp("test.test", rpc.delete.collection));
+   assert(rpc.delete.flags == MONGOC_DELETE_SINGLE_REMOVE);
+   assert(!memcmp(rpc.delete.selector, bson_get_data(&sel), sel.len));
+
+   //assert_rpc_equal("delete1.dat", &rpc);
+   bson_free(data);
 }
 
 
@@ -207,8 +238,8 @@ test_mongoc_rpc_query (void)
    snprintf(rpc.query.collection, sizeof rpc.query.collection, "%s", "test.test");
    rpc.query.skip = 5;
    rpc.query.n_return = 1;
-   rpc.query.query = &b;
-   rpc.query.fields = &b;
+   rpc.query.query = bson_get_data(&b);
+   rpc.query.fields = bson_get_data(&b);
 
    assert_rpc_equal("query1.dat", &rpc);
 }
@@ -269,8 +300,8 @@ test_mongoc_rpc_update (void)
    snprintf(rpc.update.collection, sizeof rpc.update.collection,
             "%s", "test.test");
    rpc.update.flags = MONGOC_UPDATE_MULTI_UPDATE;
-   rpc.update.selector = &sel;
-   rpc.update.update = &up;
+   rpc.update.selector = bson_get_data(&sel);
+   rpc.update.update = bson_get_data(&up);
 
    assert_rpc_equal("update1.dat", &rpc);
 }
@@ -281,6 +312,7 @@ main (int   argc,
       char *argv[])
 {
    run_test("/mongoc/rpc/delete/encode", test_mongoc_rpc_delete);
+   run_test("/mongoc/rpc/delete/decode", test_mongoc_rpc_delete_decode);
    run_test("/mongoc/rpc/get_more/encode", test_mongoc_rpc_get_more);
    run_test("/mongoc/rpc/insert/encode", test_mongoc_rpc_insert);
    run_test("/mongoc/rpc/kill_cursors/encode", test_mongoc_rpc_kill_cursors);

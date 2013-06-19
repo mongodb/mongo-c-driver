@@ -49,19 +49,24 @@
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define BSON_FIELD(_name) \
-   iov.iov_base = (void *)bson_get_data(rpc->_name); \
-   iov.iov_len = rpc->_name->len; \
-   rpc->msg_len += iov.iov_len; \
-   mongoc_array_append_val(array, iov);
+   do { \
+      bson_int32_t __l; \
+      memcpy(&__l, rpc->_name, 4); \
+      __l = BSON_UINT32_FROM_LE(__l); \
+      iov.iov_base = (void *)rpc->_name; \
+      iov.iov_len = __l; \
+      rpc->msg_len += iov.iov_len; \
+      mongoc_array_append_val(array, iov); \
+   } while (0);
 #define OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
 #define BSON_ARRAY_FIELD(_name) \
-   iov.iov_base = rpc->_name; \
+   iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_name##_len; \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define RAW_BUFFER_FIELD(_name) \
-   iov.iov_base = rpc->_name; \
+   iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_name##_len; \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
@@ -70,7 +75,7 @@
    iov.iov_len = 4; \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov); \
-   iov.iov_base = rpc->_name; \
+   iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_len * 8; \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
@@ -163,9 +168,16 @@
    printf("  "#_name" : %s\n", rpc->_name);
 #define BSON_FIELD(_name) \
    do { \
-      char *s = bson_as_json(rpc->_name, NULL); \
+      bson_t b; \
+      char *s; \
+      bson_int32_t __l; \
+      memcpy(&__l, rpc->_name, 4); \
+      __l = BSON_UINT32_FROM_LE(__l); \
+      bson_init_static(&b, rpc->_name, __l); \
+      s = bson_as_json(&b, NULL); \
       printf("  "#_name" : %s\n", s); \
       bson_free(s); \
+      bson_destroy(&b); \
    } while (0);
 #define BSON_ARRAY_FIELD(_name) \
    do { \
@@ -198,6 +210,111 @@
       } \
       rpc->_len = BSON_UINT32_FROM_LE(rpc->_len); \
    } while (0);
+
+
+#include "op-delete.def"
+#include "op-get-more.def"
+#include "op-header.def"
+#include "op-insert.def"
+#include "op-kill-cursors.def"
+#include "op-msg.def"
+#include "op-query.def"
+#include "op-reply.def"
+#include "op-update.def"
+
+
+#undef RPC
+#undef INT32_FIELD
+#undef INT64_FIELD
+#undef INT64_ARRAY_FIELD
+#undef CSTRING_FIELD
+#undef BSON_FIELD
+#undef BSON_ARRAY_FIELD
+#undef OPTIONAL
+#undef RAW_BUFFER_FIELD
+
+
+#define RPC(_name, _code) \
+   static bson_bool_t \
+   mongoc_rpc_scatter_##_name (mongoc_rpc_##_name##_t *rpc, \
+                               const bson_uint8_t *buf, \
+                               size_t buflen) \
+   { \
+      BSON_ASSERT(rpc); \
+      BSON_ASSERT(buf); \
+      BSON_ASSERT(buflen); \
+      _code \
+      return TRUE; \
+   }
+#define INT32_FIELD(_name) \
+   if (buflen >= 4) { \
+      memcpy(&rpc->_name, buf, buflen); \
+      buflen -= 4; \
+      buf += 4; \
+   } else { \
+      return FALSE; \
+   }
+#define INT64_FIELD(_name) \
+   if (buflen >= 8) { \
+      memcpy(&rpc->_name, buf, buflen); \
+      buflen -= 8; \
+      buf += 8; \
+   } else { \
+      return FALSE; \
+   }
+#define INT64_ARRAY_FIELD(_len, _name) \
+   do { \
+      size_t needed = BSON_UINT32_FROM_LE(rpc->_len) * 8; \
+      if (needed <= buflen) { \
+         rpc->_name = (bson_int64_t *)buf; \
+         buf += needed; \
+         buflen -= needed; \
+      } else { \
+         return FALSE; \
+      } \
+   } while (0);
+#define CSTRING_FIELD(_name) \
+   do { \
+      size_t __i; \
+      bson_bool_t found = FALSE; \
+      for (__i = 0; __i < buflen && __i < sizeof(rpc->_name); __i++) { \
+         if (!buf[__i]) { \
+            memcpy(rpc->_name, buf, __i); \
+            buflen -= __i + 1; \
+            buf += __i + 1; \
+            found = TRUE; \
+            break; \
+         } \
+      } \
+      if (!found) { \
+         return FALSE; \
+      } \
+   } while (0);
+#define BSON_FIELD(_name) \
+   do { \
+      bson_int32_t __l; \
+      if (buflen < 4) { \
+         return FALSE; \
+      } \
+      memcpy(&__l, buf, 4); \
+      __l = BSON_UINT32_FROM_LE(__l); \
+      if (__l < 5 || __l > buflen) { \
+         return FALSE; \
+      } \
+      rpc->_name = (bson_uint8_t *)buf; \
+      buf += __l; \
+      buflen -= __l; \
+   } while (0);
+#define BSON_ARRAY_FIELD(_name)
+#define OPTIONAL(_check, _code) \
+   if (buflen) { \
+      _code \
+   }
+#define RAW_BUFFER_FIELD(_name) \
+   rpc->_name = (void *)buf; \
+   rpc->_name##_len = buflen; \
+   buf += buflen; \
+   buflen = 0;
 
 
 #include "op-delete.def"
@@ -323,5 +440,45 @@ mongoc_rpc_printf (mongoc_rpc_t *rpc)
    default:
       MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.op_code);
       break;
+   }
+}
+
+
+bson_bool_t
+mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
+                    const bson_uint8_t *buf,
+                    size_t              buflen)
+{
+   bson_return_val_if_fail(rpc, FALSE);
+   bson_return_val_if_fail(buf, FALSE);
+   bson_return_val_if_fail(buflen, FALSE);
+
+   if (BSON_UNLIKELY(buflen < 16)) {
+      return FALSE;
+   }
+
+   mongoc_rpc_scatter_header(&rpc->header, buf, 16);
+   mongoc_rpc_swab_header(&rpc->header);
+
+   switch ((mongoc_opcode_t)rpc->header.op_code) {
+   case MONGOC_OPCODE_REPLY:
+      return mongoc_rpc_scatter_reply(&rpc->reply, buf, buflen);
+   case MONGOC_OPCODE_MSG:
+      return mongoc_rpc_scatter_msg(&rpc->msg, buf, buflen);
+   case MONGOC_OPCODE_UPDATE:
+      return mongoc_rpc_scatter_update(&rpc->update, buf, buflen);
+   case MONGOC_OPCODE_INSERT:
+      return mongoc_rpc_scatter_insert(&rpc->insert, buf, buflen);
+   case MONGOC_OPCODE_QUERY:
+      return mongoc_rpc_scatter_query(&rpc->query, buf, buflen);
+   case MONGOC_OPCODE_GET_MORE:
+      return mongoc_rpc_scatter_get_more(&rpc->get_more, buf, buflen);
+   case MONGOC_OPCODE_DELETE:
+      return mongoc_rpc_scatter_delete(&rpc->delete, buf, buflen);
+   case MONGOC_OPCODE_KILL_CURSORS:
+      return mongoc_rpc_scatter_kill_cursors(&rpc->kill_cursors, buf, buflen);
+   default:
+      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.op_code);
+      return FALSE;
    }
 }
