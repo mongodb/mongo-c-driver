@@ -264,9 +264,16 @@
    }
 #define INT64_ARRAY_FIELD(_len, _name) \
    do { \
-      size_t needed = BSON_UINT32_FROM_LE(rpc->_len) * 8; \
+      size_t needed; \
+      if (buflen < 4) { \
+         return FALSE; \
+      } \
+      memcpy(&rpc->_len, buf, 4); \
+      buflen -= 4; \
+      buf += 4; \
+      needed = BSON_UINT32_FROM_LE(rpc->_len) * 8; \
       if (needed <= buflen) { \
-         rpc->_name = (bson_int64_t *)buf; \
+         rpc->_name = (void *)buf; \
          buf += needed; \
          buflen -= needed; \
       } else { \
@@ -305,7 +312,11 @@
       buf += __l; \
       buflen -= __l; \
    } while (0);
-#define BSON_ARRAY_FIELD(_name)
+#define BSON_ARRAY_FIELD(_name) \
+   rpc->_name = (void *)buf; \
+   rpc->_name##_len = buflen; \
+   buf += buflen; \
+   buflen = 0;
 #define OPTIONAL(_check, _code) \
    if (buflen) { \
       _code \
