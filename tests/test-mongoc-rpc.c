@@ -446,6 +446,51 @@ test_mongoc_rpc_reply (void)
 
 
 static void
+test_mongoc_rpc_reply_decode (void)
+{
+   bson_reader_t reader;
+   bson_uint8_t *data;
+   mongoc_rpc_t rpc;
+   const bson_t *b;
+   bson_bool_t r;
+   bson_bool_t eof = FALSE;
+   bson_t empty;
+   size_t length;
+   int count = 0;
+
+   bson_init(&empty);
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   data = get_test_file("reply1.dat", &length);
+   r = mongoc_rpc_scatter(&rpc, data, length);
+   assert(r);
+
+   assert(rpc.reply.msg_len == 536);
+   assert(rpc.reply.request_id == 1234);
+   assert(rpc.reply.response_to == -1);
+   assert(rpc.reply.op_code == MONGOC_OPCODE_REPLY);
+   assert(rpc.reply.flags == MONGOC_REPLY_AWAIT_CAPABLE);
+   assert(rpc.reply.cursor_id == 12345678);
+   assert(rpc.reply.start_from == 50);
+   assert(rpc.reply.n_returned == 100);
+   assert(rpc.reply.documents_len == 500);
+   bson_reader_init_from_data(&reader, rpc.reply.documents, rpc.reply.documents_len);
+   while ((b = bson_reader_read(&reader, &eof))) {
+      r = bson_equal(b, &empty);
+      assert(r);
+      count++;
+   }
+   assert(eof == TRUE);
+   assert(count == 100);
+
+   assert_rpc_equal("reply1.dat", &rpc);
+   bson_reader_destroy(&reader);
+   bson_free(data);
+}
+
+
+static void
 test_mongoc_rpc_update (void)
 {
    mongoc_rpc_t rpc;
@@ -489,6 +534,7 @@ main (int   argc,
    run_test("/mongoc/rpc/query/encode", test_mongoc_rpc_query);
    run_test("/mongoc/rpc/query/decode", test_mongoc_rpc_query_decode);
    run_test("/mongoc/rpc/reply/encode", test_mongoc_rpc_reply);
+   run_test("/mongoc/rpc/reply/decode", test_mongoc_rpc_reply_decode);
    run_test("/mongoc/rpc/update/encode", test_mongoc_rpc_update);
 
    return 0;
