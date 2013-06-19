@@ -249,6 +249,33 @@ test_mongoc_rpc_reply (void)
 }
 
 
+static void
+test_mongoc_rpc_update (void)
+{
+   mongoc_rpc_t rpc;
+   bson_t sel;
+   bson_t up;
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   bson_init(&sel);
+   bson_init(&up);
+
+   rpc.update.msg_len = 0;
+   rpc.update.request_id = 1234;
+   rpc.update.response_to = -1;
+   rpc.update.op_code = MONGOC_OPCODE_UPDATE;
+   rpc.update.zero = 0;
+   snprintf(rpc.update.collection, sizeof rpc.update.collection,
+            "%s", "test.test");
+   rpc.update.flags = MONGOC_UPDATE_MULTI_UPDATE;
+   rpc.update.selector = &sel;
+   rpc.update.update = &up;
+
+   assert_rpc_equal("update1.dat", &rpc);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -260,6 +287,7 @@ main (int   argc,
    run_test("/mongoc/rpc/msg", test_mongoc_rpc_msg);
    run_test("/mongoc/rpc/query", test_mongoc_rpc_query);
    run_test("/mongoc/rpc/reply", test_mongoc_rpc_reply);
+   run_test("/mongoc/rpc/update", test_mongoc_rpc_update);
 
    return 0;
 }
