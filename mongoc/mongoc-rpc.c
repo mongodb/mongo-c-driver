@@ -179,7 +179,15 @@
    } while (0);
 #define OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
-#define RAW_BUFFER_FIELD(_name)
+#define RAW_BUFFER_FIELD(_name) \
+   size_t __i; \
+   printf("  "#_name" :"); \
+   for (__i = 0; __i < rpc->_name##_len; __i++) { \
+      bson_uint8_t u; \
+      u = ((char *)rpc->_name)[__i]; \
+      printf(" %02x", u); \
+   } \
+   printf("\n");
 #define INT64_ARRAY_FIELD(_len, _name) \
    do { \
       typeof(rpc->_len) i; \
