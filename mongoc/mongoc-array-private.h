@@ -38,7 +38,7 @@ struct _mongoc_array_t
 
 
 #define mongoc_array_append_val(a, v) mongoc_array_append_vals(a, &v, 1)
-#define mongoc_array_index(a, t, i)   ((t)((t*)(a)->data)[i])
+#define mongoc_array_index(a, t, i)   (((t*)(a)->data)[i])
 #define mongoc_array_clear(a)         (a)->len = 0
 
 
