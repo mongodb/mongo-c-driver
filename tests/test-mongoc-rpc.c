@@ -214,6 +214,41 @@ test_mongoc_rpc_query (void)
 }
 
 
+static void
+test_mongoc_rpc_reply (void)
+{
+   bson_writer_t *writer;
+   mongoc_rpc_t rpc;
+   bson_uint8_t *buf = NULL;
+   size_t len = 0;
+   bson_t *b;
+   int i;
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   writer = bson_writer_new(&buf, &len, 0, bson_realloc);
+   for (i = 0; i < 100; i++) {
+      bson_writer_begin(writer, &b);
+      bson_writer_end(writer);
+   }
+
+   rpc.reply.msg_len = 0;
+   rpc.reply.request_id = 1234;
+   rpc.reply.response_to = -1;
+   rpc.reply.op_code = MONGOC_OPCODE_REPLY;
+   rpc.reply.flags = MONGOC_REPLY_AWAIT_CAPABLE;
+   rpc.reply.cursor_id = 12345678;
+   rpc.reply.start_from = 50;
+   rpc.reply.n_returned = 100;
+   rpc.reply.documents = buf;
+   rpc.reply.documents_len = bson_writer_get_length(writer);
+
+   assert_rpc_equal("reply1.dat", &rpc);
+   bson_writer_destroy(writer);
+   bson_free(buf);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -224,6 +259,7 @@ main (int   argc,
    run_test("/mongoc/rpc/kill_cursors", test_mongoc_rpc_kill_cursors);
    run_test("/mongoc/rpc/msg", test_mongoc_rpc_msg);
    run_test("/mongoc/rpc/query", test_mongoc_rpc_query);
+   run_test("/mongoc/rpc/reply", test_mongoc_rpc_reply);
 
    return 0;
 }

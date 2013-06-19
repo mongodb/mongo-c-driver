@@ -55,16 +55,11 @@
    mongoc_array_append_val(array, iov);
 #define OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
-#define BSON_ARRAY_FIELD(_len, _name) \
-   do { \
-      typeof(rpc->_len) i; \
-      for (i = 0; i < rpc->_len; i++) { \
-         iov.iov_base = (void *)bson_get_data(rpc->_name[i]); \
-         iov.iov_len = rpc->_name[i]->len; \
-         rpc->msg_len += iov.iov_len; \
-         mongoc_array_append_val(array, iov); \
-      } \
-   } while (0);
+#define BSON_ARRAY_FIELD(_name) \
+   iov.iov_base = rpc->_name; \
+   iov.iov_len = rpc->_name##_len; \
+   rpc->msg_len += iov.iov_len; \
+   mongoc_array_append_val(array, iov);
 #define RAW_BUFFER_FIELD(_name) \
    iov.iov_base = rpc->_name; \
    iov.iov_len = rpc->_name##_len; \
@@ -116,8 +111,8 @@
    rpc->_name = BSON_UINT64_FROM_LE(rpc->_name);
 #define CSTRING_FIELD(_name)
 #define BSON_FIELD(_name)
-#define BSON_ARRAY_FIELD(_len, _name) \
-   rpc->_len = BSON_UINT32_FROM_LE(rpc->_len);
+#define BSON_ARRAY_FIELD(_name) \
+   rpc->_name##_len = BSON_UINT32_FROM_LE(rpc->_name##_len);
 #define OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
 #define RAW_BUFFER_FIELD(_name)
@@ -172,12 +167,15 @@
       printf("  "#_name" : %s\n", s); \
       bson_free(s); \
    } while (0);
-#define BSON_ARRAY_FIELD(_len, _name) \
+#define BSON_ARRAY_FIELD(_name) \
    do { \
-      typeof(rpc->_len) i; \
-      for (i = 0; i < rpc->_len; i++) { \
-         char *s = bson_as_json(rpc->_name[i], NULL); \
-         printf("  "#_name"[%llu] : %s\n", (unsigned long long)i, s); \
+      bson_reader_t __r; \
+      bson_bool_t __eof; \
+      const bson_t *__b; \
+      bson_reader_init_from_data(&__r, rpc->_name, rpc->_name##_len); \
+      while ((__b = bson_reader_read(&__r, &__eof))) { \
+         char *s = bson_as_json(__b, NULL); \
+         printf("  "#_name" : %s\n", s); \
          bson_free(s); \
       } \
    } while (0);

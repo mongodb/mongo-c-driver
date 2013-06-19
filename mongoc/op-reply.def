@@ -8,5 +8,5 @@ RPC(
   INT64_FIELD(cursor_id)
   INT32_FIELD(start_from)
   INT32_FIELD(n_returned)
-  BSON_ARRAY_FIELD(n_returned, documents)
+  BSON_ARRAY_FIELD(documents)
 )
