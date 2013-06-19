@@ -54,12 +54,18 @@ assert_rpc_equal (const char   *filename,
    data = get_test_file(filename, &length);
    mongoc_array_init(&ar, sizeof(struct iovec));
    mongoc_rpc_gather(rpc, &ar);
+#if 0
+   mongoc_rpc_printf(rpc);
+#endif
    mongoc_rpc_swab(rpc);
 
    for (i = 0; i < ar.len; i++) {
       iov = &mongoc_array_index(&ar, struct iovec, i);
       assert(iov->iov_len <= (length - off));
       r = memcmp(&data[off], iov->iov_base, iov->iov_len);
+      if (r) {
+         printf("\nError iovec: %u\n", i);
+      }
       assert(r == 0);
       off += iov->iov_len;
    }
@@ -92,11 +98,92 @@ test_mongoc_rpc_delete (void)
 }
 
 
+static void
+test_mongoc_rpc_get_more (void)
+{
+   mongoc_rpc_t rpc;
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   rpc.get_more.msg_len = 0;
+   rpc.get_more.request_id = 1234;
+   rpc.get_more.response_to = -1;
+   rpc.get_more.op_code = MONGOC_OPCODE_GET_MORE;
+   rpc.get_more.zero = 0;
+   snprintf(rpc.get_more.collection, sizeof rpc.get_more.collection, "%s", "test.test");
+   rpc.get_more.n_return = 5;
+   rpc.get_more.cursor_id = 12345678L;
+
+   assert_rpc_equal("get_more1.dat", &rpc);
+}
+
+
+static void
+test_mongoc_rpc_insert (void)
+{
+   bson_writer_t *writer;
+   mongoc_rpc_t rpc;
+   bson_uint8_t *buf = NULL;
+   size_t len = 0;
+   bson_t *b;
+   int i;
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   writer = bson_writer_new(&buf, &len, 0, bson_realloc);
+   for (i = 0; i < 20; i++) {
+      bson_writer_begin(writer, &b);
+      bson_writer_end(writer);
+   }
+
+   rpc.insert.msg_len = 0;
+   rpc.insert.request_id = 1234;
+   rpc.insert.response_to = -1;
+   rpc.insert.op_code = MONGOC_OPCODE_INSERT;
+   rpc.insert.flags = MONGOC_INSERT_CONTINUE_ON_ERROR;
+   snprintf(rpc.insert.collection, sizeof rpc.insert.collection, "%s", "test.test");
+   rpc.insert.documents = buf;
+   rpc.insert.documents_len = bson_writer_get_length(writer);
+
+   assert_rpc_equal("insert1.dat", &rpc);
+   bson_writer_destroy(writer);
+   bson_free(buf);
+}
+
+
+static void
+test_mongoc_rpc_query (void)
+{
+   mongoc_rpc_t rpc;
+   bson_t b;
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   bson_init(&b);
+
+   rpc.query.msg_len = 0;
+   rpc.query.request_id = 1234;
+   rpc.query.response_to = -1;
+   rpc.query.op_code = MONGOC_OPCODE_QUERY;
+   rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
+   snprintf(rpc.query.collection, sizeof rpc.query.collection, "%s", "test.test");
+   rpc.query.skip = 5;
+   rpc.query.n_return = 1;
+   rpc.query.query = &b;
+   rpc.query.fields = &b;
+
+   assert_rpc_equal("query1.dat", &rpc);
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
    run_test("/mongoc/rpc/delete", test_mongoc_rpc_delete);
+   run_test("/mongoc/rpc/get_more", test_mongoc_rpc_get_more);
+   run_test("/mongoc/rpc/insert", test_mongoc_rpc_insert);
+   run_test("/mongoc/rpc/query", test_mongoc_rpc_query);
 
    return 0;
 }
