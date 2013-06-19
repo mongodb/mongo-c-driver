@@ -270,13 +270,12 @@
       buflen -= 4; \
       buf += 4; \
       needed = BSON_UINT32_FROM_LE(rpc->_len) * 8; \
-      if (needed <= buflen) { \
-         rpc->_name = (void *)buf; \
-         buf += needed; \
-         buflen -= needed; \
-      } else { \
+      if (needed > buflen) { \
          return FALSE; \
       } \
+      rpc->_name = (void *)buf; \
+      buf += needed; \
+      buflen -= needed; \
    } while (0);
 #define CSTRING_FIELD(_name) \
    do { \
@@ -311,9 +310,9 @@
       buflen -= __l; \
    } while (0);
 #define BSON_ARRAY_FIELD(_name) \
-   rpc->_name = (void *)buf; \
+   rpc->_name = (bson_uint8_t *)buf; \
    rpc->_name##_len = buflen; \
-   buf += buflen; \
+   buf = NULL; \
    buflen = 0;
 #define OPTIONAL(_check, _code) \
    if (buflen) { \
@@ -322,7 +321,7 @@
 #define RAW_BUFFER_FIELD(_name) \
    rpc->_name = (void *)buf; \
    rpc->_name##_len = buflen; \
-   buf += buflen; \
+   buf = NULL; \
    buflen = 0;
 
 
