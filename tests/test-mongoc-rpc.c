@@ -280,14 +280,14 @@ int
 main (int   argc,
       char *argv[])
 {
-   run_test("/mongoc/rpc/delete", test_mongoc_rpc_delete);
-   run_test("/mongoc/rpc/get_more", test_mongoc_rpc_get_more);
-   run_test("/mongoc/rpc/insert", test_mongoc_rpc_insert);
-   run_test("/mongoc/rpc/kill_cursors", test_mongoc_rpc_kill_cursors);
-   run_test("/mongoc/rpc/msg", test_mongoc_rpc_msg);
-   run_test("/mongoc/rpc/query", test_mongoc_rpc_query);
-   run_test("/mongoc/rpc/reply", test_mongoc_rpc_reply);
-   run_test("/mongoc/rpc/update", test_mongoc_rpc_update);
+   run_test("/mongoc/rpc/delete/encode", test_mongoc_rpc_delete);
+   run_test("/mongoc/rpc/get_more/encode", test_mongoc_rpc_get_more);
+   run_test("/mongoc/rpc/insert/encode", test_mongoc_rpc_insert);
+   run_test("/mongoc/rpc/kill_cursors/encode", test_mongoc_rpc_kill_cursors);
+   run_test("/mongoc/rpc/msg/encode", test_mongoc_rpc_msg);
+   run_test("/mongoc/rpc/query/encode", test_mongoc_rpc_query);
+   run_test("/mongoc/rpc/reply/encode", test_mongoc_rpc_reply);
+   run_test("/mongoc/rpc/update/encode", test_mongoc_rpc_update);
 
    return 0;
 }
