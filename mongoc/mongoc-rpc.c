@@ -237,6 +237,7 @@ mongoc_rpc_gather (mongoc_rpc_t   *rpc,
    case MONGOC_OPCODE_KILL_CURSORS:
       return mongoc_rpc_gather_kill_cursors(&rpc->kill_cursors, array);
    default:
+      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.op_code);
       break;
    }
 }
