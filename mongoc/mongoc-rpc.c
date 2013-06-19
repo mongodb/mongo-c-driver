@@ -141,6 +141,69 @@
 #undef RAW_BUFFER_FIELD
 
 
+#define RPC(_name, _code) \
+   static BSON_INLINE void \
+   mongoc_rpc_printf_##_name (mongoc_rpc_##_name##_t *rpc) \
+   { \
+      BSON_ASSERT(rpc); \
+      _code \
+   }
+#define INT32_FIELD(_name) \
+   printf("  "#_name" : %d\n", rpc->_name);
+#define INT64_FIELD(_name) \
+   printf("  "#_name" : %lld\n", (long long)rpc->_name);
+#define CSTRING_FIELD(_name) \
+   printf("  "#_name" : %s\n", rpc->_name);
+#define BSON_FIELD(_name) \
+   do { \
+      char *s = bson_as_json(rpc->_name, NULL); \
+      printf("  "#_name" : %s\n", s); \
+      bson_free(s); \
+   } while (0);
+#define BSON_ARRAY_FIELD(_len, _name) \
+   do { \
+      typeof(rpc->_len) i; \
+      for (i = 0; i < rpc->_len; i++) { \
+         char *s = bson_as_json(rpc->_name[i], NULL); \
+         printf("  "#_name"[%llu] : %s\n", (unsigned long long)i, s); \
+         bson_free(s); \
+      } \
+   } while (0);
+#define OPTIONAL(_check, _code) \
+   if (rpc->_check) { _code }
+#define RAW_BUFFER_FIELD(_name)
+#define INT64_ARRAY_FIELD(_len, _name) \
+   do { \
+      typeof(rpc->_len) i; \
+      for (i = 0; i < rpc->_len; i++) { \
+         printf("  "#_name" : %lld\n", (long long)rpc->_name[i]); \
+      } \
+      rpc->_len = BSON_UINT32_FROM_LE(rpc->_len); \
+   } while (0);
+
+
+#include "op-delete.def"
+#include "op-get-more.def"
+#include "op-header.def"
+#include "op-insert.def"
+#include "op-kill-cursors.def"
+#include "op-msg.def"
+#include "op-query.def"
+#include "op-reply.def"
+#include "op-update.def"
+
+
+#undef RPC
+#undef INT32_FIELD
+#undef INT64_FIELD
+#undef INT64_ARRAY_FIELD
+#undef CSTRING_FIELD
+#undef BSON_FIELD
+#undef BSON_ARRAY_FIELD
+#undef OPTIONAL
+#undef RAW_BUFFER_FIELD
+
+
 void
 mongoc_rpc_gather (mongoc_rpc_t   *rpc,
                    mongoc_array_t *array)
@@ -200,6 +263,43 @@ mongoc_rpc_swab (mongoc_rpc_t *rpc)
       break;
    case MONGOC_OPCODE_KILL_CURSORS:
       mongoc_rpc_swab_kill_cursors(&rpc->kill_cursors);
+      break;
+   default:
+      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.op_code);
+      break;
+   }
+}
+
+
+void
+mongoc_rpc_printf (mongoc_rpc_t *rpc)
+{
+   bson_return_if_fail(rpc);
+
+   switch ((mongoc_opcode_t)rpc->header.op_code) {
+   case MONGOC_OPCODE_REPLY:
+      mongoc_rpc_printf_reply(&rpc->reply);
+      break;
+   case MONGOC_OPCODE_MSG:
+      mongoc_rpc_printf_msg(&rpc->msg);
+      break;
+   case MONGOC_OPCODE_UPDATE:
+      mongoc_rpc_printf_update(&rpc->update);
+      break;
+   case MONGOC_OPCODE_INSERT:
+      mongoc_rpc_printf_insert(&rpc->insert);
+      break;
+   case MONGOC_OPCODE_QUERY:
+      mongoc_rpc_printf_query(&rpc->query);
+      break;
+   case MONGOC_OPCODE_GET_MORE:
+      mongoc_rpc_printf_get_more(&rpc->get_more);
+      break;
+   case MONGOC_OPCODE_DELETE:
+      mongoc_rpc_printf_delete(&rpc->delete);
+      break;
+   case MONGOC_OPCODE_KILL_CURSORS:
+      mongoc_rpc_printf_kill_cursors(&rpc->kill_cursors);
       break;
    default:
       MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.op_code);

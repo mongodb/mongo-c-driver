@@ -80,6 +80,7 @@ typedef union
 void mongoc_rpc_gather (mongoc_rpc_t   *rpc,
                         mongoc_array_t *array);
 void mongoc_rpc_swab   (mongoc_rpc_t   *rpc);
+void mongoc_rpc_printf (mongoc_rpc_t   *rpc);
 
 
 BSON_END_DECLS
