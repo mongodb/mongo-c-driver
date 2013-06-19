@@ -378,6 +378,39 @@ test_mongoc_rpc_query (void)
 
 
 static void
+test_mongoc_rpc_query_decode (void)
+{
+   bson_uint8_t *data;
+   mongoc_rpc_t rpc;
+   bson_bool_t r;
+   bson_t empty;
+   size_t length;
+
+   bson_init(&empty);
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   data = get_test_file("query1.dat", &length);
+   r = mongoc_rpc_scatter(&rpc, data, length);
+   assert(r);
+
+   assert(rpc.query.msg_len == 48);
+   assert(rpc.query.request_id == 1234);
+   assert(rpc.query.response_to == -1);
+   assert(rpc.query.op_code == MONGOC_OPCODE_QUERY);
+   assert(rpc.query.flags == MONGOC_QUERY_SLAVE_OK);
+   assert(!strcmp(rpc.query.collection, "test.test"));
+   assert(rpc.query.skip == 5);
+   assert(rpc.query.n_return == 1);
+   assert(!memcmp(rpc.query.query, bson_get_data(&empty), 5));
+   assert(!memcmp(rpc.query.fields, bson_get_data(&empty), 5));
+
+   assert_rpc_equal("query1.dat", &rpc);
+   bson_free(data);
+}
+
+
+static void
 test_mongoc_rpc_reply (void)
 {
    bson_writer_t *writer;
@@ -454,6 +487,7 @@ main (int   argc,
    run_test("/mongoc/rpc/msg/encode", test_mongoc_rpc_msg);
    run_test("/mongoc/rpc/msg/decode", test_mongoc_rpc_msg_decode);
    run_test("/mongoc/rpc/query/encode", test_mongoc_rpc_query);
+   run_test("/mongoc/rpc/query/decode", test_mongoc_rpc_query_decode);
    run_test("/mongoc/rpc/reply/encode", test_mongoc_rpc_reply);
    run_test("/mongoc/rpc/update/encode", test_mongoc_rpc_update);
 
