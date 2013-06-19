@@ -124,7 +124,7 @@ test_mongoc_rpc_delete_decode (void)
    assert(rpc.delete.flags == MONGOC_DELETE_SINGLE_REMOVE);
    assert(!memcmp(rpc.delete.selector, bson_get_data(&sel), sel.len));
 
-   //assert_rpc_equal("delete1.dat", &rpc);
+   assert_rpc_equal("delete1.dat", &rpc);
    bson_free(data);
 }
 
@@ -146,6 +146,34 @@ test_mongoc_rpc_get_more (void)
    rpc.get_more.cursor_id = 12345678L;
 
    assert_rpc_equal("get_more1.dat", &rpc);
+}
+
+
+static void
+test_mongoc_rpc_get_more_decode (void)
+{
+   bson_uint8_t *data;
+   mongoc_rpc_t rpc;
+   bson_bool_t r;
+   size_t length;
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   data = get_test_file("get_more1.dat", &length);
+   r = mongoc_rpc_scatter(&rpc, data, length);
+   assert(r);
+
+   assert(rpc.get_more.msg_len == 42);
+   assert(rpc.get_more.request_id == 1234);
+   assert(rpc.get_more.response_to == -1);
+   assert(rpc.get_more.op_code == MONGOC_OPCODE_GET_MORE);
+   assert(rpc.get_more.zero == 0);
+   assert(!strcmp("test.test", rpc.get_more.collection));
+   assert(rpc.get_more.n_return == 5);
+   assert(rpc.get_more.cursor_id == 12345678);
+
+   assert_rpc_equal("get_more1.dat", &rpc);
+   bson_free(data);
 }
 
 
@@ -314,6 +342,7 @@ main (int   argc,
    run_test("/mongoc/rpc/delete/encode", test_mongoc_rpc_delete);
    run_test("/mongoc/rpc/delete/decode", test_mongoc_rpc_delete_decode);
    run_test("/mongoc/rpc/get_more/encode", test_mongoc_rpc_get_more);
+   run_test("/mongoc/rpc/get_more/decode", test_mongoc_rpc_get_more_decode);
    run_test("/mongoc/rpc/insert/encode", test_mongoc_rpc_insert);
    run_test("/mongoc/rpc/kill_cursors/encode", test_mongoc_rpc_kill_cursors);
    run_test("/mongoc/rpc/msg/encode", test_mongoc_rpc_msg);
