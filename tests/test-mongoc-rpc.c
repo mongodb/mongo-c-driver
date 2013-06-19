@@ -211,6 +211,49 @@ test_mongoc_rpc_insert (void)
 
 
 static void
+test_mongoc_rpc_insert_decode (void)
+{
+   bson_reader_t reader;
+   bson_uint8_t *data;
+   const bson_t *b;
+   mongoc_rpc_t rpc;
+   bson_bool_t r;
+   bson_bool_t eof = FALSE;
+   size_t length;
+   bson_t empty;
+   int count = 0;
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   bson_init(&empty);
+
+   data = get_test_file("insert1.dat", &length);
+   r = mongoc_rpc_scatter(&rpc, data, length);
+   assert(r);
+
+   assert(rpc.insert.msg_len == 130);
+   assert(rpc.insert.request_id == 1234);
+   assert(rpc.insert.response_to == -1);
+   assert(rpc.insert.op_code == MONGOC_OPCODE_INSERT);
+   assert(rpc.insert.flags == MONGOC_INSERT_CONTINUE_ON_ERROR);
+   assert(!strcmp("test.test", rpc.insert.collection));
+   bson_reader_init_from_data(&reader, rpc.insert.documents, rpc.insert.documents_len);
+   while ((b = bson_reader_read(&reader, &eof))) {
+      r = bson_equal(b, &empty);
+      assert(r);
+      count++;
+   }
+   assert(eof == TRUE);
+   assert(count == 20);
+
+   assert_rpc_equal("insert1.dat", &rpc);
+   bson_free(data);
+   bson_reader_destroy(&reader);
+   bson_destroy(&empty);
+}
+
+
+static void
 test_mongoc_rpc_kill_cursors (void)
 {
    mongoc_rpc_t rpc;
@@ -344,6 +387,7 @@ main (int   argc,
    run_test("/mongoc/rpc/get_more/encode", test_mongoc_rpc_get_more);
    run_test("/mongoc/rpc/get_more/decode", test_mongoc_rpc_get_more_decode);
    run_test("/mongoc/rpc/insert/encode", test_mongoc_rpc_insert);
+   run_test("/mongoc/rpc/insert/decode", test_mongoc_rpc_insert_decode);
    run_test("/mongoc/rpc/kill_cursors/encode", test_mongoc_rpc_kill_cursors);
    run_test("/mongoc/rpc/msg/encode", test_mongoc_rpc_msg);
    run_test("/mongoc/rpc/query/encode", test_mongoc_rpc_query);
