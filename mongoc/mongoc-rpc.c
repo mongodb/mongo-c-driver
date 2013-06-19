@@ -30,23 +30,28 @@
       struct iovec iov; \
       BSON_ASSERT(rpc); \
       BSON_ASSERT(array); \
+      rpc->msg_len = 0; \
       _code \
    }
 #define INT32_FIELD(_name) \
    iov.iov_base = &rpc->_name; \
    iov.iov_len = 4; \
+   rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define INT64_FIELD(_name) \
    iov.iov_base = &rpc->_name; \
    iov.iov_len = 8; \
+   rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define CSTRING_FIELD(_name) \
    iov.iov_base = rpc->_name; \
    iov.iov_len = strlen(rpc->_name) + 1; \
+   rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define BSON_FIELD(_name) \
    iov.iov_base = (void *)bson_get_data(rpc->_name); \
    iov.iov_len = rpc->_name->len; \
+   rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
@@ -56,16 +61,19 @@
       for (i = 0; i < rpc->_len; i++) { \
          iov.iov_base = (void *)bson_get_data(rpc->_name[i]); \
          iov.iov_len = rpc->_name[i]->len; \
+         rpc->msg_len += iov.iov_len; \
          mongoc_array_append_val(array, iov); \
       } \
    } while (0);
 #define RAW_BUFFER_FIELD(_name) \
    iov.iov_base = rpc->_name; \
    iov.iov_len = rpc->_name##_len; \
+   rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define INT64_ARRAY_FIELD(_len, _name) \
    iov.iov_base = rpc->_name; \
    iov.iov_len = rpc->_len * 8; \
+   rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 
 
