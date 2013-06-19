@@ -175,7 +175,11 @@ mongoc_stream_unix_cork (mongoc_stream_t *stream)
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    int state = 1;
    bson_return_val_if_fail(stream, -1);
+#ifdef __linux__
    return setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+#else
+   return setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
+#endif
 }
 
 
@@ -185,7 +189,11 @@ mongoc_stream_unix_uncork (mongoc_stream_t *stream)
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    int state = 0;
    bson_return_val_if_fail(stream, -1);
+#ifdef __linux__
    return setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+#else
+   return setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
+#endif
 }
 
 
