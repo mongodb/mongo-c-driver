@@ -283,7 +283,7 @@
       bson_bool_t found = FALSE; \
       for (__i = 0; __i < buflen && __i < sizeof(rpc->_name); __i++) { \
          if (!buf[__i]) { \
-            memcpy(rpc->_name, buf, __i); \
+            memcpy(rpc->_name, buf, __i + 1); \
             buflen -= __i + 1; \
             buf += __i + 1; \
             found = TRUE; \
