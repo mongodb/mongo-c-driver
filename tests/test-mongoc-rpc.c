@@ -76,7 +76,7 @@ assert_rpc_equal (const char   *filename,
 
 
 static void
-test_mongoc_rpc_delete (void)
+test_mongoc_rpc_delete_gather (void)
 {
    mongoc_rpc_t rpc;
    bson_t sel;
@@ -99,7 +99,7 @@ test_mongoc_rpc_delete (void)
 
 
 static void
-test_mongoc_rpc_delete_decode (void)
+test_mongoc_rpc_delete_scatter (void)
 {
    bson_uint8_t *data;
    mongoc_rpc_t rpc;
@@ -130,7 +130,7 @@ test_mongoc_rpc_delete_decode (void)
 
 
 static void
-test_mongoc_rpc_get_more (void)
+test_mongoc_rpc_get_more_gather (void)
 {
    mongoc_rpc_t rpc;
 
@@ -150,7 +150,7 @@ test_mongoc_rpc_get_more (void)
 
 
 static void
-test_mongoc_rpc_get_more_decode (void)
+test_mongoc_rpc_get_more_scatter (void)
 {
    bson_uint8_t *data;
    mongoc_rpc_t rpc;
@@ -178,7 +178,7 @@ test_mongoc_rpc_get_more_decode (void)
 
 
 static void
-test_mongoc_rpc_insert (void)
+test_mongoc_rpc_insert_gather (void)
 {
    bson_writer_t *writer;
    mongoc_rpc_t rpc;
@@ -211,7 +211,7 @@ test_mongoc_rpc_insert (void)
 
 
 static void
-test_mongoc_rpc_insert_decode (void)
+test_mongoc_rpc_insert_scatter (void)
 {
    bson_reader_t reader;
    bson_uint8_t *data;
@@ -254,7 +254,7 @@ test_mongoc_rpc_insert_decode (void)
 
 
 static void
-test_mongoc_rpc_kill_cursors (void)
+test_mongoc_rpc_kill_cursors_gather (void)
 {
    mongoc_rpc_t rpc;
    bson_int64_t cursors[] = { BSON_UINT64_TO_LE(1),
@@ -278,7 +278,7 @@ test_mongoc_rpc_kill_cursors (void)
 
 
 static void
-test_mongoc_rpc_kill_cursors_decode (void)
+test_mongoc_rpc_kill_cursors_scatter (void)
 {
    bson_uint8_t *data;
    const bson_int64_t cursors[] = { BSON_UINT64_TO_LE(1),
@@ -310,7 +310,7 @@ test_mongoc_rpc_kill_cursors_decode (void)
 
 
 static void
-test_mongoc_rpc_msg (void)
+test_mongoc_rpc_msg_gather (void)
 {
    mongoc_rpc_t rpc;
 
@@ -328,7 +328,7 @@ test_mongoc_rpc_msg (void)
 
 
 static void
-test_mongoc_rpc_msg_decode (void)
+test_mongoc_rpc_msg_scatter (void)
 {
    bson_uint8_t *data;
    mongoc_rpc_t rpc;
@@ -353,7 +353,7 @@ test_mongoc_rpc_msg_decode (void)
 
 
 static void
-test_mongoc_rpc_query (void)
+test_mongoc_rpc_query_gather (void)
 {
    mongoc_rpc_t rpc;
    bson_t b;
@@ -378,7 +378,7 @@ test_mongoc_rpc_query (void)
 
 
 static void
-test_mongoc_rpc_query_decode (void)
+test_mongoc_rpc_query_scatter (void)
 {
    bson_uint8_t *data;
    mongoc_rpc_t rpc;
@@ -411,7 +411,7 @@ test_mongoc_rpc_query_decode (void)
 
 
 static void
-test_mongoc_rpc_reply (void)
+test_mongoc_rpc_reply_gather (void)
 {
    bson_writer_t *writer;
    mongoc_rpc_t rpc;
@@ -446,7 +446,7 @@ test_mongoc_rpc_reply (void)
 
 
 static void
-test_mongoc_rpc_reply_decode (void)
+test_mongoc_rpc_reply_scatter (void)
 {
    bson_reader_t reader;
    bson_uint8_t *data;
@@ -491,7 +491,7 @@ test_mongoc_rpc_reply_decode (void)
 
 
 static void
-test_mongoc_rpc_update (void)
+test_mongoc_rpc_update_gather (void)
 {
    mongoc_rpc_t rpc;
    bson_t sel;
@@ -518,7 +518,7 @@ test_mongoc_rpc_update (void)
 
 
 static void
-test_mongoc_rpc_update_decode (void)
+test_mongoc_rpc_update_scatter (void)
 {
    bson_uint8_t *data;
    mongoc_rpc_t rpc;
@@ -570,22 +570,22 @@ int
 main (int   argc,
       char *argv[])
 {
-   run_test("/mongoc/rpc/delete/encode", test_mongoc_rpc_delete);
-   run_test("/mongoc/rpc/delete/decode", test_mongoc_rpc_delete_decode);
-   run_test("/mongoc/rpc/get_more/encode", test_mongoc_rpc_get_more);
-   run_test("/mongoc/rpc/get_more/decode", test_mongoc_rpc_get_more_decode);
-   run_test("/mongoc/rpc/insert/encode", test_mongoc_rpc_insert);
-   run_test("/mongoc/rpc/insert/decode", test_mongoc_rpc_insert_decode);
-   run_test("/mongoc/rpc/kill_cursors/encode", test_mongoc_rpc_kill_cursors);
-   run_test("/mongoc/rpc/kill_cursors/decode", test_mongoc_rpc_kill_cursors_decode);
-   run_test("/mongoc/rpc/msg/encode", test_mongoc_rpc_msg);
-   run_test("/mongoc/rpc/msg/decode", test_mongoc_rpc_msg_decode);
-   run_test("/mongoc/rpc/query/encode", test_mongoc_rpc_query);
-   run_test("/mongoc/rpc/query/decode", test_mongoc_rpc_query_decode);
-   run_test("/mongoc/rpc/reply/encode", test_mongoc_rpc_reply);
-   run_test("/mongoc/rpc/reply/decode", test_mongoc_rpc_reply_decode);
-   run_test("/mongoc/rpc/update/encode", test_mongoc_rpc_update);
-   run_test("/mongoc/rpc/update/decode", test_mongoc_rpc_update_decode);
+   run_test("/mongoc/rpc/delete/gather", test_mongoc_rpc_delete_gather);
+   run_test("/mongoc/rpc/delete/scatter", test_mongoc_rpc_delete_scatter);
+   run_test("/mongoc/rpc/get_more/gather", test_mongoc_rpc_get_more_gather);
+   run_test("/mongoc/rpc/get_more/scatter", test_mongoc_rpc_get_more_scatter);
+   run_test("/mongoc/rpc/insert/gather", test_mongoc_rpc_insert_gather);
+   run_test("/mongoc/rpc/insert/scatter", test_mongoc_rpc_insert_scatter);
+   run_test("/mongoc/rpc/kill_cursors/gather", test_mongoc_rpc_kill_cursors_gather);
+   run_test("/mongoc/rpc/kill_cursors/scatter", test_mongoc_rpc_kill_cursors_scatter);
+   run_test("/mongoc/rpc/msg/gather", test_mongoc_rpc_msg_gather);
+   run_test("/mongoc/rpc/msg/scatter", test_mongoc_rpc_msg_scatter);
+   run_test("/mongoc/rpc/query/gather", test_mongoc_rpc_query_gather);
+   run_test("/mongoc/rpc/query/scatter", test_mongoc_rpc_query_scatter);
+   run_test("/mongoc/rpc/reply/gather", test_mongoc_rpc_reply_gather);
+   run_test("/mongoc/rpc/reply/scatter", test_mongoc_rpc_reply_scatter);
+   run_test("/mongoc/rpc/update/gather", test_mongoc_rpc_update_gather);
+   run_test("/mongoc/rpc/update/scatter", test_mongoc_rpc_update_scatter);
 
    return 0;
 }
