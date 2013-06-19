@@ -257,7 +257,11 @@ static void
 test_mongoc_rpc_kill_cursors (void)
 {
    mongoc_rpc_t rpc;
-   bson_int64_t cursors[] = { 1, 2, 3, 4, 5 };
+   bson_int64_t cursors[] = { BSON_UINT64_TO_LE(1),
+                              BSON_UINT64_TO_LE(2),
+                              BSON_UINT64_TO_LE(3),
+                              BSON_UINT64_TO_LE(4),
+                              BSON_UINT64_TO_LE(5) };
 
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
 
@@ -270,6 +274,38 @@ test_mongoc_rpc_kill_cursors (void)
    rpc.kill_cursors.cursors = cursors;
 
    assert_rpc_equal("kill_cursors1.dat", &rpc);
+}
+
+
+static void
+test_mongoc_rpc_kill_cursors_decode (void)
+{
+   bson_uint8_t *data;
+   const bson_int64_t cursors[] = { BSON_UINT64_TO_LE(1),
+                                    BSON_UINT64_TO_LE(2),
+                                    BSON_UINT64_TO_LE(3),
+                                    BSON_UINT64_TO_LE(4),
+                                    BSON_UINT64_TO_LE(5) };
+   mongoc_rpc_t rpc;
+   bson_bool_t r;
+   size_t length;
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   data = get_test_file("kill_cursors1.dat", &length);
+   r = mongoc_rpc_scatter(&rpc, data, length);
+   assert(r);
+
+   assert(rpc.kill_cursors.msg_len == 64);
+   assert(rpc.kill_cursors.request_id == 1234);
+   assert(rpc.kill_cursors.response_to == -1);
+   assert(rpc.kill_cursors.op_code == MONGOC_OPCODE_KILL_CURSORS);
+   assert(rpc.kill_cursors.zero == 0);
+   assert(rpc.kill_cursors.n_cursors == 5);
+   assert(!memcmp(rpc.kill_cursors.cursors, cursors, 5 * 8));
+
+   assert_rpc_equal("kill_cursors1.dat", &rpc);
+   bson_free(data);
 }
 
 
@@ -389,6 +425,7 @@ main (int   argc,
    run_test("/mongoc/rpc/insert/encode", test_mongoc_rpc_insert);
    run_test("/mongoc/rpc/insert/decode", test_mongoc_rpc_insert_decode);
    run_test("/mongoc/rpc/kill_cursors/encode", test_mongoc_rpc_kill_cursors);
+   run_test("/mongoc/rpc/kill_cursors/decode", test_mongoc_rpc_kill_cursors_decode);
    run_test("/mongoc/rpc/msg/encode", test_mongoc_rpc_msg);
    run_test("/mongoc/rpc/query/encode", test_mongoc_rpc_query);
    run_test("/mongoc/rpc/reply/encode", test_mongoc_rpc_reply);
