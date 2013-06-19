@@ -247,21 +247,19 @@
       return TRUE; \
    }
 #define INT32_FIELD(_name) \
-   if (buflen >= 4) { \
-      memcpy(&rpc->_name, buf, buflen); \
-      buflen -= 4; \
-      buf += 4; \
-   } else { \
+   if (buflen < 4) { \
       return FALSE; \
-   }
+   } \
+   memcpy(&rpc->_name, buf, 4); \
+   buflen -= 4; \
+   buf += 4;
 #define INT64_FIELD(_name) \
-   if (buflen >= 8) { \
-      memcpy(&rpc->_name, buf, buflen); \
-      buflen -= 8; \
-      buf += 8; \
-   } else { \
+   if (buflen < 8) { \
       return FALSE; \
-   }
+   } \
+   memcpy(&rpc->_name, buf, 8); \
+   buflen -= 8; \
+   buf += 8;
 #define INT64_ARRAY_FIELD(_len, _name) \
    do { \
       size_t needed; \
