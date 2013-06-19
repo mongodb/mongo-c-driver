@@ -172,6 +172,24 @@ test_mongoc_rpc_kill_cursors (void)
 
 
 static void
+test_mongoc_rpc_msg (void)
+{
+   mongoc_rpc_t rpc;
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   rpc.msg.msg_len = 0;
+   rpc.msg.request_id = 1234;
+   rpc.msg.response_to = -1;
+   rpc.msg.op_code = MONGOC_OPCODE_MSG;
+   snprintf(rpc.msg.msg, sizeof rpc.msg.msg, "%s",
+            "this is a test message.");
+
+   assert_rpc_equal("msg1.dat", &rpc);
+}
+
+
+static void
 test_mongoc_rpc_query (void)
 {
    mongoc_rpc_t rpc;
@@ -204,6 +222,7 @@ main (int   argc,
    run_test("/mongoc/rpc/get_more", test_mongoc_rpc_get_more);
    run_test("/mongoc/rpc/insert", test_mongoc_rpc_insert);
    run_test("/mongoc/rpc/kill_cursors", test_mongoc_rpc_kill_cursors);
+   run_test("/mongoc/rpc/msg", test_mongoc_rpc_msg);
    run_test("/mongoc/rpc/query", test_mongoc_rpc_query);
 
    return 0;
