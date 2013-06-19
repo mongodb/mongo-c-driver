@@ -517,6 +517,55 @@ test_mongoc_rpc_update (void)
 }
 
 
+static void
+test_mongoc_rpc_update_decode (void)
+{
+   bson_uint8_t *data;
+   mongoc_rpc_t rpc;
+   bson_bool_t r;
+   bson_t b;
+   bson_t empty;
+   size_t length;
+   bson_int32_t len;
+
+   bson_init(&empty);
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   data = get_test_file("update1.dat", &length);
+   r = mongoc_rpc_scatter(&rpc, data, length);
+   assert(r);
+
+   assert(rpc.update.msg_len == 44);
+   assert(rpc.update.request_id == 1234);
+   assert(rpc.update.response_to == -1);
+   assert(rpc.update.op_code == MONGOC_OPCODE_UPDATE);
+   assert(rpc.update.flags == MONGOC_UPDATE_MULTI_UPDATE);
+   assert(!strcmp(rpc.update.collection, "test.test"));
+
+   memcpy(&len, rpc.update.selector, 4);
+   len = BSON_UINT64_TO_LE(len);
+   assert(len > 4);
+   r = bson_init_static(&b, rpc.update.selector, len);
+   assert(r);
+   r = bson_equal(&b, &empty);
+   assert(r);
+   bson_destroy(&b);
+
+   memcpy(&len, rpc.update.update, 4);
+   len = BSON_UINT64_TO_LE(len);
+   assert(len > 4);
+   r = bson_init_static(&b, rpc.update.update, len);
+   assert(r);
+   r = bson_equal(&b, &empty);
+   assert(r);
+   bson_destroy(&b);
+
+   assert_rpc_equal("update1.dat", &rpc);
+   bson_free(data);
+}
+
+
 int
 main (int   argc,
       char *argv[])
@@ -536,6 +585,7 @@ main (int   argc,
    run_test("/mongoc/rpc/reply/encode", test_mongoc_rpc_reply);
    run_test("/mongoc/rpc/reply/decode", test_mongoc_rpc_reply_decode);
    run_test("/mongoc/rpc/update/encode", test_mongoc_rpc_update);
+   run_test("/mongoc/rpc/update/decode", test_mongoc_rpc_update_decode);
 
    return 0;
 }
