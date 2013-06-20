@@ -58,6 +58,9 @@ ssize_t          mongoc_stream_writev        (mongoc_stream_t *stream,
 ssize_t          mongoc_stream_readv         (mongoc_stream_t *stream,
                                               struct iovec    *iov,
                                               size_t           iovcnt);
+ssize_t          mongoc_stream_read          (mongoc_stream_t *stream,
+                                              void            *buf,
+                                              size_t           count);
 bson_t          *mongoc_stream_ismaster      (mongoc_stream_t *stream,
                                               bson_error_t    *error);
 

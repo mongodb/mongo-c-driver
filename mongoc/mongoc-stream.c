@@ -292,6 +292,38 @@ mongoc_stream_readv (mongoc_stream_t *stream,
 
 
 /**
+ * mongoc_stream_read:
+ * @stream: A mongoc_stream_t.
+ * @buf: A buffer to write into.
+ * @count: The number of bytes to write into @buf.
+ *
+ * Simplified access to mongoc_stream_readv(). Creates a single iovec
+ * with the buffer provided.
+ *
+ * Returns: -1 on failure, otherwise the number of bytes read.
+ */
+ssize_t
+mongoc_stream_read (mongoc_stream_t *stream,
+                    void            *buf,
+                    size_t           count)
+{
+   struct iovec iov;
+
+   bson_return_val_if_fail(stream, -1);
+   bson_return_val_if_fail(buf, -1);
+
+   if (!count) {
+      return 0;
+   }
+
+   iov.iov_base = buf;
+   iov.iov_len = count;
+
+   return stream->readv(stream, &iov, 1);
+}
+
+
+/**
  * mongoc_stream_cork:
  * @stream: (in): A mongoc_stream_t.
  *
