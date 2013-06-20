@@ -25,6 +25,7 @@
 
 #include "mongoc-buffer-private.h"
 #include "mongoc-flags.h"
+#include "mongoc-opcode.h"
 #include "mongoc-stream.h"
 
 
@@ -33,19 +34,6 @@ BSON_BEGIN_DECLS
 
 #define MONGOC_EVENT_INITIALIZER(t) {(mongoc_opcode_t)(t)}
 #define MONGOC_EVENT_MAX_LEN        (1024 * 1024 * 48)
-
-
-typedef enum
-{
-   MONGOC_OPCODE_REPLY         = 1,
-   MONGOC_OPCODE_MSG           = 1000,
-   MONGOC_OPCODE_UPDATE        = 2001,
-   MONGOC_OPCODE_INSERT        = 2002,
-   MONGOC_OPCODE_QUERY         = 2004,
-   MONGOC_OPCODE_GET_MORE      = 2005,
-   MONGOC_OPCODE_DELETE        = 2006,
-   MONGOC_OPCODE_KILL_CURSORS  = 2007,
-} mongoc_opcode_t;
 
 
 typedef struct
