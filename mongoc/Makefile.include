@@ -17,6 +17,7 @@ INST_H_FILES += $(top_srcdir)/mongoc/mongoc-error.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-flags.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-host-list.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-log.h
+INST_H_FILES += $(top_srcdir)/mongoc/mongoc-opcode.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stdint.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-uri.h

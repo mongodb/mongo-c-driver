@@ -15,27 +15,30 @@
  */
 
 
-#ifndef MONGOC_H
-#define MONGOC_H
+#ifndef MONGOC_OPCODE_H
+#define MONGOC_OPCODE_H
 
 
 #include <bson.h>
 
-#define MONGOC_INSIDE
-#include "mongoc-client.h"
-#include "mongoc-client-pool.h"
-#include "mongoc-collection.h"
-#include "mongoc-cursor.h"
-#include "mongoc-database.h"
-#include "mongoc-error.h"
-#include "mongoc-flags.h"
-#include "mongoc-host-list.h"
-#include "mongoc-opcode.h"
-#include "mongoc-log.h"
-#include "mongoc-stream.h"
-#include "mongoc-stdint.h"
-#include "mongoc-uri.h"
-#undef MONGOC_INSIDE
+
+BSON_BEGIN_DECLS
 
 
-#endif /* MONGOC_H */
+typedef enum
+{
+   MONGOC_OPCODE_REPLY         = 1,
+   MONGOC_OPCODE_MSG           = 1000,
+   MONGOC_OPCODE_UPDATE        = 2001,
+   MONGOC_OPCODE_INSERT        = 2002,
+   MONGOC_OPCODE_QUERY         = 2004,
+   MONGOC_OPCODE_GET_MORE      = 2005,
+   MONGOC_OPCODE_DELETE        = 2006,
+   MONGOC_OPCODE_KILL_CURSORS  = 2007,
+} mongoc_opcode_t;
+
+
+BSON_END_DECLS
+
+
+#endif /* MONGOC_OPCODE_H */
