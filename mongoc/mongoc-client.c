@@ -29,7 +29,6 @@
 #include "mongoc-collection-private.h"
 #include "mongoc-cluster-private.h"
 #include "mongoc-database-private.h"
-#include "mongoc-event-private.h"
 #include "mongoc-error.h"
 #include "mongoc-list-private.h"
 #include "mongoc-log.h"
@@ -213,96 +212,31 @@ mongoc_client_create_stream (mongoc_client_t          *client,
 }
 
 
-void
-mongoc_client_prepare_event (mongoc_client_t *client,
-                             mongoc_event_t  *event)
-{
-   bson_return_if_fail(client);
-   bson_return_if_fail(event);
-
-   event->any.opcode = event->type;
-   event->any.response_to = -1;
-   event->any.request_id = ++client->request_id;
-}
-
-
-/**
- * mongoc_client_send:
- * @client: (in): A mongoc_client_t.
- * @events: (in) (transfer full) (array length=events_len): A mongoc_event_t.
- * @events_len: Number of elements in @events.
- * @error: (out): A location for a bson_error_t or NULL.
- *
- * Send an event via @client to the MongoDB server. The event structure
- * is mutated by @client in the process and therefore should be considered
- * destroyed after calling this function. No further access to @events should
- * occur after calling this method.
- *
- * The return value contains a hint for the cluster node that was used.
- * You can provide this value on a suplimental call to reselect the same
- * cluster node for communication.
- *
- * Returns: Greater than 0 if successful; otherwise 0 and @error is set.
- */
-bson_uint32_t
-mongoc_client_send (mongoc_client_t *client,
-                    mongoc_event_t  *events,
-                    size_t           events_len,
-                    bson_uint32_t    hint,
-                    bson_error_t    *error)
-{
-   size_t i;
-
-   bson_return_val_if_fail(client, FALSE);
-
-   if (BSON_UNLIKELY(!events || !events_len)) {
-      return TRUE;
-   }
-
-   for (i = 0; i < events_len; i++) {
-      events[i].any.opcode = events[i].any.type;
-   }
-
-   switch (client->cluster.state) {
-   case MONGOC_CLUSTER_STATE_BORN:
-      return mongoc_cluster_send(&client->cluster, events, events_len, hint, error);
-   case MONGOC_CLUSTER_STATE_HEALTHY:
-   case MONGOC_CLUSTER_STATE_UNHEALTHY:
-      return mongoc_cluster_try_send(&client->cluster, events, events_len, hint, error);
-   case MONGOC_CLUSTER_STATE_DEAD:
-      bson_set_error(error,
-                     MONGOC_ERROR_CLIENT,
-                     MONGOC_ERROR_CLIENT_NOT_READY,
-                     "No healthy connections.");
-      return FALSE;
-   default:
-      assert(FALSE);
-      break;
-   }
-}
-
-
 bson_uint32_t
 mongoc_client_sendv (mongoc_client_t *client,
                      mongoc_rpc_t    *rpcs,
                      size_t           rpcs_len,
                      bson_uint32_t    hint,
+                     const bson_t    *options,
                      bson_error_t    *error)
 {
-   bson_return_val_if_fail(client, FALSE);
+   size_t i;
 
-   if (BSON_UNLIKELY(!rpcs || !rpcs_len)) {
-      return TRUE;
+   bson_return_val_if_fail(client, FALSE);
+   bson_return_val_if_fail(rpcs, FALSE);
+   bson_return_val_if_fail(rpcs_len, FALSE);
+
+   for (i = 0; i < rpcs_len; i++) {
+      rpcs[i].header.msg_len = 0;
+      rpcs[i].header.request_id = ++client->request_id;
    }
 
    switch (client->cluster.state) {
    case MONGOC_CLUSTER_STATE_BORN:
-      return mongoc_cluster_sendv(
-            &client->cluster, rpcs, rpcs_len, hint, error);
+      return mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint, options, error);
    case MONGOC_CLUSTER_STATE_HEALTHY:
    case MONGOC_CLUSTER_STATE_UNHEALTHY:
-      return mongoc_cluster_try_sendv(
-            &client->cluster, rpcs, rpcs_len, hint, error);
+      return mongoc_cluster_try_sendv(&client->cluster, rpcs, rpcs_len, hint, options, error);
    case MONGOC_CLUSTER_STATE_DEAD:
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
@@ -318,16 +252,18 @@ mongoc_client_sendv (mongoc_client_t *client,
 
 bson_bool_t
 mongoc_client_recv (mongoc_client_t *client,
-                    mongoc_event_t  *event,
+                    mongoc_rpc_t    *rpc,
+                    mongoc_buffer_t *buffer,
                     bson_uint32_t    hint,
                     bson_error_t    *error)
 {
    bson_return_val_if_fail(client, FALSE);
-   bson_return_val_if_fail(event, FALSE);
+   bson_return_val_if_fail(rpc, FALSE);
+   bson_return_val_if_fail(buffer, FALSE);
    bson_return_val_if_fail(hint, FALSE);
    bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, FALSE);
 
-   return mongoc_cluster_try_recv(&client->cluster, event, hint, error);
+   return mongoc_cluster_try_recv(&client->cluster, rpc, buffer, hint, error);
 }
 
 

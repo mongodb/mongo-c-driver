@@ -21,6 +21,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-error.h"
 #include "mongoc-log.h"
+#include "mongoc-opcode.h"
 
 
 /**
@@ -65,6 +66,8 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    cluster->uri = mongoc_uri_copy(uri);
    cluster->client = client;
    cluster->sec_latency_ms = 15;
+   cluster->max_msg_size = 1024 * 1024 * 48;
+   cluster->max_bson_size = 1024 * 1024 * 16;
 
    if (bson_iter_init_find_case(&iter, b, "secondaryacceptablelatencyms") &&
        BSON_ITER_HOLDS_INT32(&iter)) {
@@ -109,46 +112,61 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
 
 static mongoc_cluster_node_t *
 mongoc_cluster_select (mongoc_cluster_t *cluster,
-                       mongoc_event_t   *events,
-                       size_t            events_len,
+                       mongoc_rpc_t     *rpcs,
+                       size_t            rpcs_len,
                        bson_uint32_t     hint,
+                       const bson_t     *options,
                        bson_error_t     *error)
 {
    mongoc_cluster_node_t *nodes[MONGOC_CLUSTER_MAX_NODES];
-   const bson_t *read_prefs = NULL;
    bson_uint32_t count;
    bson_uint32_t watermark;
    bson_int32_t nearest = -1;
    bson_bool_t need_primary = FALSE;
+   bson_iter_t iter;
+   bson_iter_t child;
+   const char *str;
    size_t i;
 
    bson_return_val_if_fail(cluster, NULL);
-   bson_return_val_if_fail(events, NULL);
-   bson_return_val_if_fail(events_len, NULL);
+   bson_return_val_if_fail(rpcs, NULL);
+   bson_return_val_if_fail(rpcs_len, NULL);
    bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, NULL);
 
+   /*
+    * If we are in direct mode, short cut and take the first node.
+    */
    if (cluster->mode == MONGOC_CLUSTER_DIRECT) {
       return cluster->nodes[0].stream ? &cluster->nodes[0] : NULL;
    }
 
    /*
-    * NOTE: Pipelining Events
-    *
-    * When pipelining events, we only obey the first read operations read
-    * prefs. However, if any event requires the primary, all events are
-    * pinned to the primary.
+    * Check if read preferences require a primary.
     */
+   if (options &&
+       bson_iter_init_find_case(&iter, options, "$readPreference") &&
+       BSON_ITER_HOLDS_DOCUMENT(&iter) &&
+       bson_iter_recurse(&iter, &child) &&
+       bson_iter_find(&child, "mode") &&
+       BSON_ITER_HOLDS_UTF8(&child) &&
+       (str = bson_iter_utf8(&child, NULL))) {
+      need_primary = !strcasecmp(str, "PRIMARY");
+   }
 
-   for (i = 0; i < events_len; i++) {
-      switch (events[i].type) {
+   /*
+    * Check to see if any RPCs require the primary. If so, we pin all
+    * of the RPCs to the primary.
+    */
+   for (i = 0; !need_primary && i < rpcs_len; i++) {
+      switch (rpcs[i].header.op_code) {
       case MONGOC_OPCODE_KILL_CURSORS:
       case MONGOC_OPCODE_GET_MORE:
       case MONGOC_OPCODE_MSG:
       case MONGOC_OPCODE_REPLY:
          break;
       case MONGOC_OPCODE_QUERY:
-         if (!read_prefs) {
-            read_prefs = events[i].query.read_prefs;
+         if (!(rpcs[i].query.flags & MONGOC_QUERY_SLAVE_OK)) {
+            need_primary = TRUE;
          }
          break;
       case MONGOC_OPCODE_DELETE:
@@ -202,8 +220,10 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
 
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (nodes[i]) {
+#if 0
          if (read_prefs) {
          }
+#endif
          if (IS_NEARER_THAN(nodes[i], nearest)) {
             nearest = nodes[i]->ping_msec;
          }
@@ -332,76 +352,12 @@ mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
 }
 
 
-/**
- * mongoc_cluster_send:
- * @cluster: A mongoc_cluster_t.
- * @events: An array of mongoc_event_t events.
- * @events_len: Number of events in @events.
- * @hint: A hint for the cluster node or 0.
- * @error: A location for a bson_error_t or NULL.
- *
- * Sends an event via the cluster. If the event read preferences allow
- * querying a particular secondary then the appropriate transport will
- * be selected.
- *
- * This function will block until the state of the cluster is healthy.
- * Such case is useful on initial connection from a client.
- *
- * If you want a function that will fail fast in the case that the cluster
- * cannot immediately service the event, use mongoc_cluster_try_send().
- *
- * You can provide @hint to reselect the same cluster node.
- *
- * Returns: Greater than 0 if successful; otherwise 0 and @error is set.
- */
-bson_uint32_t
-mongoc_cluster_send (mongoc_cluster_t *cluster,
-                     mongoc_event_t   *events,
-                     size_t            events_len,
-                     bson_uint32_t     hint,
-                     bson_error_t     *error)
-{
-   mongoc_cluster_node_t *node;
-   size_t i;
-
-   bson_return_val_if_fail(cluster, FALSE);
-   bson_return_val_if_fail(events, FALSE);
-   bson_return_val_if_fail(events_len, FALSE);
-
-   while (!(node = mongoc_cluster_select(cluster, events, events_len, hint, error))) {
-      if (!mongoc_cluster_reconnect(cluster, error)) {
-         return FALSE;
-      }
-   }
-
-   BSON_ASSERT(node->stream);
-
-   if (events_len > 1) {
-      mongoc_stream_cork(node->stream);
-   }
-
-   for (i = 0; i < events_len; i++) {
-      if (!mongoc_event_write(&events[i], node->stream, error)) {
-         mongoc_stream_destroy(node->stream);
-         node->stream = NULL;
-         node->stamp++;
-         return 0;
-      }
-   }
-
-   if (events_len > 1) {
-      mongoc_stream_uncork(node->stream);
-   }
-
-   return node->index + 1;
-}
-
-
 bson_uint32_t
 mongoc_cluster_sendv (mongoc_cluster_t *cluster,
                       mongoc_rpc_t     *rpcs,
                       size_t            rpcs_len,
                       bson_uint32_t     hint,
+                      const bson_t     *options,
                       bson_error_t     *error)
 {
    mongoc_cluster_node_t *node;
@@ -413,13 +369,10 @@ mongoc_cluster_sendv (mongoc_cluster_t *cluster,
    bson_return_val_if_fail(rpcs, FALSE);
    bson_return_val_if_fail(rpcs_len, FALSE);
 
-again:
-   node = &cluster->nodes[0];
-   if (!node->stream) {
+   while (!(node = mongoc_cluster_select(cluster, rpcs, rpcs_len, hint, options, error))) {
       if (!mongoc_cluster_reconnect(cluster, error)) {
          return FALSE;
       }
-      goto again;
    }
 
    BSON_ASSERT(node->stream);
@@ -448,70 +401,12 @@ again:
 }
 
 
-/**
- * mongoc_cluster_try_send:
- * @cluster: A mongoc_cluster_t.
- * @events: A mongoc_event_t.
- * @events_len: Number of elements in @events.
- * @hint: A cluster node hint.
- * @error: A location of a bson_error_t or NULL.
- *
- * Attempts to send @events to the target primary or secondary based on
- * read preferences. If a cluster node is not immediately serviceable
- * then -1 is returned.
- *
- * The return value is the index of the cluster node that delivered the
- * event. This can be provided as @hint to reselect the same node on
- * a suplimental event.
- *
- * Returns: Greather than 0 if successful, otherwise 0.
- */
-bson_uint32_t
-mongoc_cluster_try_send (mongoc_cluster_t *cluster,
-                         mongoc_event_t   *events,
-                         size_t            events_len,
-                         bson_uint32_t     hint,
-                         bson_error_t     *error)
-{
-   mongoc_cluster_node_t *node;
-   size_t i;
-
-   bson_return_val_if_fail(cluster, FALSE);
-   bson_return_val_if_fail(events, FALSE);
-   bson_return_val_if_fail(events_len, FALSE);
-
-   if (!(node = mongoc_cluster_select(cluster, events, events_len, hint, error))) {
-      return 0;
-   }
-
-   BSON_ASSERT(node->stream);
-
-   if (events_len > 1) {
-      mongoc_stream_cork(node->stream);
-   }
-
-   for (i = 0; i < events_len; i++) {
-      if (!mongoc_event_write(&events[i], node->stream, error)) {
-         mongoc_stream_destroy(node->stream);
-         node->stream = NULL;
-         node->stamp++;
-         return 0;
-      }
-   }
-
-   if (events_len > 1) {
-      mongoc_stream_uncork(node->stream);
-   }
-
-   return node->index + 1;
-}
-
-
 bson_uint32_t
 mongoc_cluster_try_sendv (mongoc_cluster_t *cluster,
                           mongoc_rpc_t     *rpcs,
                           size_t            rpcs_len,
                           bson_uint32_t     hint,
+                          const bson_t     *options,
                           bson_error_t     *error)
 {
    mongoc_cluster_node_t *node;
@@ -523,16 +418,8 @@ mongoc_cluster_try_sendv (mongoc_cluster_t *cluster,
    bson_return_val_if_fail(rpcs, FALSE);
    bson_return_val_if_fail(rpcs_len, FALSE);
 
-   /*
-    * TODO: Impelement select node for RPC.
-    */
-   node = &cluster->nodes[0];
-   if (!node->stream) {
-      bson_set_error(error,
-                     MONGOC_ERROR_CLIENT,
-                     MONGOC_ERROR_CLIENT_NOT_READY,
-                     "No node available for immediate delivery.");
-      return FALSE;
+   if (!(node = mongoc_cluster_select(cluster, rpcs, rpcs_len, hint, options, error))) {
+      return 0;
    }
 
    BSON_ASSERT(node->stream);
@@ -564,32 +451,38 @@ mongoc_cluster_try_sendv (mongoc_cluster_t *cluster,
 /**
  * bson_cluster_try_recv:
  * @cluster: A bson_cluster_t.
- * @event: (out): A mongoc_event_t to fill.
+ * @rpc: (out): A mongoc_rpc_t to scatter into.
+ * @buffer: (inout): A mongoc_buffer_t to fill with contents.
  * @hint: The node to receive from, returned from mongoc_cluster_send().
  * @error: (out): A location for a bson_error_t or NULL.
  *
- * Tries to receive the next event from a particular node in the cluster.
- * @hint should be the value returned from a successful send via
- * mongoc_cluster_send() or mongoc_cluster_try_send().
- *
- * The caller owns the content of @event if successful and should release
- * those resources with mongoc_event_destroy().
+ * Tries to receive the next event from the node in the cluster specified by
+ * @hint. The contents are loaded into @buffer and then scattered into the
+ * @rpc structure. @rpc is valid as long as @buffer contains the contents
+ * read into it.
  *
  * Returns: TRUE if an event was read, otherwise FALSE and @error is set.
  */
 bson_bool_t
 mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
-                         mongoc_event_t   *event,
+                         mongoc_rpc_t     *rpc,
+                         mongoc_buffer_t  *buffer,
                          bson_uint32_t     hint,
                          bson_error_t     *error)
 {
    mongoc_cluster_node_t *node;
+   bson_int32_t msg_len;
+   off_t pos;
 
    bson_return_val_if_fail(cluster, FALSE);
-   bson_return_val_if_fail(event, FALSE);
+   bson_return_val_if_fail(rpc, FALSE);
+   bson_return_val_if_fail(buffer, FALSE);
    bson_return_val_if_fail(hint, FALSE);
    bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, FALSE);
 
+   /*
+    * Fetch the node to communicate over.
+    */
    node = &cluster->nodes[hint-1];
    if (!node->stream) {
       bson_set_error(error,
@@ -599,12 +492,57 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       return FALSE;
    }
 
-   if (!mongoc_event_read(event, node->stream, cluster->max_msg_size, error)) {
+   /*
+    * Buffer the message length to determine how much more to read.
+    */
+   pos = buffer->len;
+   if (!mongoc_buffer_append_from_stream(buffer, node->stream, 4, error)) {
       mongoc_stream_destroy(node->stream);
       node->stream = NULL;
-      node->stamp++;
       return FALSE;
    }
+
+   /*
+    * Read the msg length from the buffer.
+    */
+   memcpy(&msg_len, &buffer->data[buffer->off + pos], 4);
+   msg_len = BSON_UINT32_FROM_LE(msg_len);
+   if ((msg_len < 16) || (msg_len > cluster->max_bson_size)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_PROTOCOL,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                     "Corrupt or malicious reply received.");
+      mongoc_stream_destroy(node->stream);
+      node->stream = NULL;
+      return FALSE;
+   }
+
+   /*
+    * Read the rest of the message from the stream.
+    */
+   if (!mongoc_buffer_append_from_stream(buffer, node->stream, msg_len - 4, error)) {
+      mongoc_stream_destroy(node->stream);
+      node->stream = NULL;
+      return FALSE;
+   }
+
+   /*
+    * Scatter the buffer into the rpc structure.
+    */
+   if (!mongoc_rpc_scatter(rpc, &buffer->data[buffer->off + pos], msg_len)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_PROTOCOL,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                     "Failed to decode reply from server.");
+      mongoc_stream_destroy(node->stream);
+      node->stream = NULL;
+      return FALSE;
+   }
+
+   /*
+    * Convert endianness of the message.
+    */
+   mongoc_rpc_swab(rpc);
 
    return TRUE;
 }

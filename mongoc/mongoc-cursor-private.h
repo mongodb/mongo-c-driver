@@ -22,7 +22,7 @@
 #include <bson.h>
 
 #include "mongoc-client.h"
-#include "mongoc-event-private.h"
+#include "mongoc-rpc-private.h"
 
 
 BSON_BEGIN_DECLS
@@ -53,7 +53,8 @@ struct _mongoc_cursor_t
 
    bson_error_t         error;
 
-   mongoc_event_t       ev;
+   mongoc_rpc_t         rpc;
+   mongoc_buffer_t      buffer;
 };
 
 

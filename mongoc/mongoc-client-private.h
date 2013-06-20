@@ -21,8 +21,8 @@
 
 #include <bson.h>
 
+#include "mongoc-buffer-private.h"
 #include "mongoc-client.h"
-#include "mongoc-event-private.h"
 #include "mongoc-host-list.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
@@ -31,42 +31,22 @@
 BSON_BEGIN_DECLS
 
 
-mongoc_stream_t *
-mongoc_client_create_stream (mongoc_client_t          *client,
-                             const mongoc_host_list_t *host,
-                             bson_error_t             *error);
-
-void
-mongoc_client_prepare_event (mongoc_client_t *client,
-                             mongoc_event_t  *event);
-
-
-bson_uint32_t
-mongoc_client_send (mongoc_client_t *client,
-                    mongoc_event_t  *events,
-                    size_t           events_len,
-                    bson_uint32_t    hint,
-                    bson_error_t    *error);
-
-
-bson_uint32_t
-mongoc_client_sendv (mongoc_client_t *client,
-                     mongoc_rpc_t    *rpcs,
-                     size_t           rpcs_len,
-                     bson_uint32_t    hint,
-                     bson_error_t    *error);
-
-
-bson_bool_t
-mongoc_client_recv (mongoc_client_t *client,
-                    mongoc_event_t  *event,
-                    bson_uint32_t    hint,
-                    bson_error_t    *error);
-
-
-bson_uint32_t
-mongoc_client_stamp (mongoc_client_t *client,
-                     bson_uint32_t    node);
+mongoc_stream_t *mongoc_client_create_stream (mongoc_client_t          *client,
+                                              const mongoc_host_list_t *host,
+                                              bson_error_t             *error);
+bson_uint32_t    mongoc_client_sendv         (mongoc_client_t          *client,
+                                              mongoc_rpc_t             *rpcs,
+                                              size_t                    rpcs_len,
+                                              bson_uint32_t             hint,
+                                              const bson_t             *options,
+                                              bson_error_t             *error);
+bson_bool_t      mongoc_client_recv          (mongoc_client_t          *client,
+                                              mongoc_rpc_t             *rpc,
+                                              mongoc_buffer_t          *buffer,
+                                              bson_uint32_t             hint,
+                                              bson_error_t             *error);
+bson_uint32_t    mongoc_client_stamp         (mongoc_client_t          *client,
+                                              bson_uint32_t             node);
 
 
 BSON_END_DECLS
