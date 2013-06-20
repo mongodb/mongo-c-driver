@@ -30,50 +30,30 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_buffer_t mongoc_buffer_t;
 
 
-#define MONGOC_BUFFER_INT32   1
-#define MONGOC_BUFFER_INT64   2
-#define MONGOC_BUFFER_CSTRING 3
-
-
 struct _mongoc_buffer_t
 {
    bson_uint8_t       *data;
    size_t              datalen;
-   size_t              off;
+   off_t               off;
    size_t              len;
    bson_realloc_func   realloc_func;
 };
 
 
-void
-mongoc_buffer_init (mongoc_buffer_t   *buffer,
-                    bson_uint8_t      *buf,
-                    size_t             buflen,
-                    bson_realloc_func  realloc_func);
-
-
-bson_bool_t
-mongoc_buffer_fill (mongoc_buffer_t *buffer,
-                    mongoc_stream_t *stream,
-                    size_t           minsize,
-                    bson_error_t    *error);
-
-
-void
-mongoc_buffer_destroy (mongoc_buffer_t *buffer);
-
-
-ssize_t
-mongoc_buffer_readv (mongoc_buffer_t *buffer,
-                     struct iovec    *iov,
-                     size_t           iovcnt);
-
-
-bson_bool_t
-mongoc_buffer_read_typed (mongoc_buffer_t *buffer,
-                          int              first_type,
-                          void            *first_ptr,
-                          ...);
+void        mongoc_buffer_init               (mongoc_buffer_t   *buffer,
+                                              bson_uint8_t      *buf,
+                                              size_t             buflen,
+                                              bson_realloc_func  realloc_func);
+bson_bool_t mongoc_buffer_append_from_stream (mongoc_buffer_t   *buffer,
+                                              mongoc_stream_t   *stream,
+                                              size_t             size,
+                                              bson_error_t      *error);
+ssize_t     mongoc_buffer_fill               (mongoc_buffer_t   *buffer,
+                                              mongoc_stream_t   *stream,
+                                              bson_error_t      *error);
+void        mongoc_buffer_destroy            (mongoc_buffer_t   *buffer);
+void        mongoc_buffer_clear              (mongoc_buffer_t   *buffer,
+                                              bson_bool_t        zero);
 
 
 BSON_END_DECLS
