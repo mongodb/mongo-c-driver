@@ -21,6 +21,7 @@
 #include "mongoc-cursor-private.h"
 #include "mongoc-error.h"
 #include "mongoc-log.h"
+#include "mongoc-opcode.h"
 
 
 mongoc_collection_t *
@@ -49,6 +50,8 @@ mongoc_collection_new (mongoc_client_t *client,
 
    col->collectionlen = strlen(col->collection);
 
+   mongoc_buffer_init(&col->buffer, NULL, 0, NULL);
+
    return col;
 }
 
@@ -58,6 +61,7 @@ mongoc_collection_destroy (mongoc_collection_t *collection)
 {
    bson_return_if_fail(collection);
 
+   mongoc_buffer_destroy(&collection->buffer);
    bson_free(collection);
 }
 
@@ -74,8 +78,15 @@ mongoc_collection_find (mongoc_collection_t  *collection,
    bson_return_val_if_fail(collection, NULL);
    bson_return_val_if_fail(query, NULL);
 
-   return mongoc_cursor_new(collection->client, collection->ns, flags, skip,
-                            limit, 0, query, fields, options);
+   return mongoc_cursor_new(collection->client,
+                            collection->ns,
+                            flags,
+                            skip,
+                            limit,
+                            0,
+                            query,
+                            fields,
+                            options);
 }
 
 
@@ -133,19 +144,24 @@ mongoc_collection_insert (mongoc_collection_t   *collection,
                           const bson_t          *options,
                           bson_error_t          *error)
 {
-   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_INSERT);
    bson_uint32_t hint;
+   mongoc_rpc_t rpc;
 
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(document, FALSE);
 
-   ev.insert.flags = flags;
-   ev.insert.nslen = collection->collectionlen;
-   ev.insert.ns = collection->collection;
-   ev.insert.docslen = 1;
-   ev.insert.docs = (bson_t **)&document;
+   rpc.insert.msg_len = 0;
+   rpc.insert.request_id = 0;
+   rpc.insert.response_to = -1;
+   rpc.insert.op_code = MONGOC_OPCODE_INSERT;
+   rpc.insert.flags = flags;
+   memcpy(rpc.insert.collection, collection->collection,
+          collection->collectionlen);
+   rpc.insert.documents = bson_get_data(document);
+   rpc.insert.documents_len = document->len;
 
-   if (!(hint = mongoc_client_send(collection->client, &ev, 1, 0, error))) {
+   if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0, options,
+                                    error))) {
       return FALSE;
    }
 
@@ -172,20 +188,26 @@ mongoc_collection_update (mongoc_collection_t   *collection,
                           const bson_t          *options,
                           bson_error_t          *error)
 {
-   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_UPDATE);
    bson_uint32_t hint;
+   mongoc_rpc_t rpc;
 
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(selector, FALSE);
    bson_return_val_if_fail(update, FALSE);
 
-   ev.update.nslen = collection->collectionlen;
-   ev.update.ns = collection->collection;
-   ev.update.flags = flags;
-   ev.update.selector = selector;
-   ev.update.update = update;
+   rpc.update.msg_len = 0;
+   rpc.update.request_id = 0;
+   rpc.update.response_to = -1;
+   rpc.update.op_code = MONGOC_OPCODE_UPDATE;
+   rpc.update.zero = 0;
+   memcpy(rpc.update.collection, collection->collection,
+          collection->collectionlen);
+   rpc.update.flags = flags;
+   rpc.update.selector = bson_get_data(selector);
+   rpc.update.update = bson_get_data(update);
 
-   if (!(hint = mongoc_client_send(collection->client, &ev, 1, 0, error))) {
+   if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0,
+                                    options, error))) {
       return FALSE;
    }
 
@@ -211,18 +233,23 @@ mongoc_collection_delete (mongoc_collection_t   *collection,
                           const bson_t          *options,
                           bson_error_t          *error)
 {
-   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_UPDATE);
    bson_uint32_t hint;
+   mongoc_rpc_t rpc;
 
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(selector, FALSE);
 
-   ev.delete.nslen = collection->collectionlen;
-   ev.delete.ns = collection->collection;
-   ev.delete.flags = flags;
-   ev.delete.selector = selector;
+   rpc.delete.msg_len = 0;
+   rpc.delete.request_id = 0;
+   rpc.delete.response_to = -1;
+   rpc.delete.op_code = MONGOC_OPCODE_DELETE;
+   rpc.delete.zero = 0;
+   memcpy(rpc.delete.collection, collection->collection,
+          collection->collectionlen);
+   rpc.delete.flags = flags;
+   rpc.delete.selector = bson_get_data(selector);
 
-   if (!(hint = mongoc_client_send(collection->client, &ev, 1, 0, error))) {
+   if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0, options, error))) {
       return FALSE;
    }
 

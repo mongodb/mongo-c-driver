@@ -34,6 +34,7 @@ struct _mongoc_collection_t
    char             db[128];
    char             collection[128];
    bson_uint32_t    collectionlen;
+   mongoc_buffer_t  buffer;
 };
 
 
