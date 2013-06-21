@@ -490,3 +490,26 @@ mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
       return FALSE;
    }
 }
+
+
+bson_bool_t
+mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply,
+                            bson_t             *bson)
+{
+   bson_int32_t len;
+
+   bson_return_val_if_fail(reply, FALSE);
+   bson_return_val_if_fail(bson, FALSE);
+
+   if (!reply->documents || reply->documents_len < 4) {
+      return FALSE;
+   }
+
+   memcpy(&len, reply->documents, 4);
+   len = BSON_UINT32_FROM_LE(len);
+   if (reply->documents_len < len) {
+      return FALSE;
+   }
+
+   return bson_init_static(bson, reply->documents, len);
+}

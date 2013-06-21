@@ -19,6 +19,7 @@
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-error.h"
+#include "mongoc-opcode.h"
 
 
 mongoc_cursor_t *
@@ -76,7 +77,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
    bson_return_if_fail(cursor);
 
-   if (cursor->ev.reply.desc.cursor_id) {
+   if (cursor->rpc.reply.cursor_id) {
       /*
        * TODO: Call kill cursor on the server.
        */
@@ -85,8 +86,9 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    bson_destroy(&cursor->query);
    bson_destroy(&cursor->fields);
    bson_destroy(&cursor->options);
-   mongoc_event_destroy(&cursor->ev);
+   bson_reader_destroy(&cursor->reader);
    bson_error_destroy(&cursor->error);
+   mongoc_buffer_destroy(&cursor->buffer);
 
    bson_free(cursor);
 }
@@ -95,30 +97,42 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 static bson_bool_t
 mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 {
-   bson_uint32_t code = 0;
-   const bson_t *b;
+   bson_uint32_t code = MONGOC_ERROR_QUERY_FAILURE;
    bson_iter_t iter;
-   bson_bool_t eof;
    const char *msg = "Unknown query failure";
+   bson_t b;
 
    bson_return_val_if_fail(cursor, FALSE);
 
-   if ((cursor->ev.reply.desc.flags & MONGOC_REPLY_QUERY_FAILURE)) {
-      if ((b = bson_reader_read(&cursor->ev.reply.docs_reader, &eof))) {
-         if (bson_iter_init_find(&iter, b, "$err")) {
-            msg = bson_iter_utf8(&iter, NULL);
-         }
-         if (bson_iter_init_find(&iter, b, "code")) {
+   if (cursor->rpc.header.op_code != MONGOC_OPCODE_REPLY) {
+      bson_set_error(&cursor->error,
+                     MONGOC_ERROR_PROTOCOL,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                     "Received rpc other than OP_REPLY.");
+      return TRUE;
+   }
+
+   if ((cursor->rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
+      if (mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b)) {
+         if (bson_iter_init_find(&iter, &b, "code") &&
+             BSON_ITER_HOLDS_INT32(&iter)) {
             code = bson_iter_int32(&iter);
          }
+         if (bson_iter_init_find(&iter, &b, "$err") &&
+             BSON_ITER_HOLDS_UTF8(&iter)) {
+            msg = bson_iter_utf8(&iter, NULL);
+         }
+         bson_destroy(&b);
       }
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_QUERY,
                      code,
-                     "Query failure: %s",
+                     "%s",
                      msg);
       return TRUE;
-   } else if ((cursor->ev.reply.desc.flags & MONGOC_REPLY_CURSOR_NOT_FOUND)) {
+   }
+
+   if ((cursor->rpc.reply.flags & MONGOC_REPLY_CURSOR_NOT_FOUND)) {
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_CURSOR,
                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
@@ -133,9 +147,9 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 static bson_bool_t
 mongoc_cursor_query (mongoc_cursor_t *cursor)
 {
-   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
    bson_uint32_t hint;
    bson_uint32_t request_id;
+   mongoc_rpc_t rpc;
 
    bson_return_val_if_fail(cursor, FALSE);
 
@@ -143,30 +157,37 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
     * TODO: Merge options.
     */
 
-   ev.query.flags = cursor->flags;
-   ev.query.nslen = cursor->nslen;
-   ev.query.ns = cursor->ns;
-   ev.query.skip = cursor->skip;
-   ev.query.n_return = cursor->limit;
-   ev.query.query = &cursor->query;
-   ev.query.fields = &cursor->fields;
+   rpc.query.msg_len = 0;
+   rpc.query.request_id = 0;
+   rpc.query.response_to = -1;
+   rpc.query.op_code = MONGOC_OPCODE_QUERY;
+   rpc.query.flags = cursor->flags;
+   memcpy(rpc.query.collection, cursor->ns, cursor->nslen + 1);
+   rpc.query.skip = cursor->skip;
+   rpc.query.n_return = cursor->limit;
+   rpc.query.query = bson_get_data(&cursor->query);
+   rpc.query.fields = bson_get_data(&cursor->fields);
 
-   if (!(hint = mongoc_client_send(cursor->client, &ev, 1, 0, &cursor->error))) {
+   if (!(hint = mongoc_client_sendv(cursor->client, &rpc, 1, 0,
+                                    &cursor->options, &cursor->error))) {
       goto failure;
    }
 
    cursor->hint = hint;
-   request_id = BSON_UINT32_FROM_LE(ev.any.request_id);
+   request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
+
+   mongoc_buffer_clear(&cursor->buffer, FALSE);
 
    if (!mongoc_client_recv(cursor->client,
-                           &cursor->ev,
+                           &cursor->rpc,
+                           &cursor->buffer,
                            hint,
                            &cursor->error)) {
       goto failure;
    }
 
-   if ((cursor->ev.any.opcode != MONGOC_OPCODE_REPLY) ||
-       (cursor->ev.any.response_to != request_id)) {
+   if ((cursor->rpc.header.op_code != MONGOC_OPCODE_REPLY) ||
+       (cursor->rpc.header.response_to != request_id)) {
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_PROTOCOL,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -177,6 +198,11 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
    if (mongoc_cursor_unwrap_failure(cursor)) {
       goto failure;
    }
+
+   bson_reader_destroy(&cursor->reader);
+   bson_reader_init_from_data(&cursor->reader,
+                              cursor->rpc.reply.documents,
+                              cursor->rpc.reply.documents_len);
 
    cursor->done = FALSE;
    cursor->end_of_event = FALSE;
@@ -193,13 +219,13 @@ failure:
 static bson_bool_t
 mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 {
-   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_GET_MORE);
    bson_uint64_t cursor_id;
    bson_uint32_t request_id;
+   mongoc_rpc_t rpc;
 
    bson_return_val_if_fail(cursor, FALSE);
 
-   if (!(cursor_id = cursor->ev.reply.desc.cursor_id)) {
+   if (!(cursor_id = cursor->rpc.reply.cursor_id)) {
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_CURSOR,
                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
@@ -207,32 +233,40 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       goto failure;
    }
 
-   ev.get_more.ns = cursor->ns;
-   ev.get_more.nslen = cursor->nslen;
-   ev.get_more.n_return = cursor->batch_size;
-   ev.get_more.cursor_id = cursor_id;
+   rpc.get_more.msg_len = 0;
+   rpc.get_more.request_id = 0;
+   rpc.get_more.response_to = -1;
+   rpc.get_more.op_code = MONGOC_OPCODE_GET_MORE;
+   rpc.get_more.zero = 0;
+   memcpy(rpc.get_more.collection, cursor->ns, cursor->nslen + 1);
+   rpc.get_more.n_return = cursor->batch_size;
+   rpc.get_more.cursor_id = cursor_id;
 
    /*
     * TODO: Stamp protections for disconnections.
     */
 
-   if (!mongoc_client_send(cursor->client, &ev, 1, cursor->hint, &cursor->error)) {
+   if (!mongoc_client_sendv(cursor->client, &rpc, 1, cursor->hint,
+                            &cursor->options, &cursor->error)) {
       cursor->done = TRUE;
       cursor->failed = TRUE;
       return FALSE;
    }
 
-   request_id = BSON_UINT32_FROM_LE(ev.any.request_id);
+   mongoc_buffer_clear(&cursor->buffer, FALSE);
+
+   request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
 
    if (!mongoc_client_recv(cursor->client,
-                           &cursor->ev,
+                           &cursor->rpc,
+                           &cursor->buffer,
                            cursor->hint,
                            &cursor->error)) {
       goto failure;
    }
 
-   if ((cursor->ev.any.opcode != MONGOC_OPCODE_REPLY) ||
-       (cursor->ev.any.response_to != request_id)) {
+   if ((cursor->rpc.header.op_code != MONGOC_OPCODE_REPLY) ||
+       (cursor->rpc.header.response_to != request_id)) {
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_PROTOCOL,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -243,6 +277,11 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    if (mongoc_cursor_unwrap_failure(cursor)) {
       goto failure;
    }
+
+   bson_reader_destroy(&cursor->reader);
+   bson_reader_init_from_data(&cursor->reader,
+                              cursor->rpc.reply.documents,
+                              cursor->rpc.reply.documents_len);
 
    cursor->end_of_event = FALSE;
 
@@ -311,7 +350,7 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
     * Read the next BSON document from the event.
     */
    eof = FALSE;
-   b = bson_reader_read(&cursor->ev.reply.docs_reader, &eof);
+   b = bson_reader_read(&cursor->reader, &eof);
    cursor->end_of_event = eof;
    cursor->done = cursor->end_of_event && !b;
 

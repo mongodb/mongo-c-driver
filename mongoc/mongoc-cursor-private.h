@@ -22,6 +22,7 @@
 #include <bson.h>
 
 #include "mongoc-client.h"
+#include "mongoc-buffer-private.h"
 #include "mongoc-rpc-private.h"
 
 
@@ -55,6 +56,7 @@ struct _mongoc_cursor_t
 
    mongoc_rpc_t         rpc;
    mongoc_buffer_t      buffer;
+   bson_reader_t        reader;
 };
 
 
