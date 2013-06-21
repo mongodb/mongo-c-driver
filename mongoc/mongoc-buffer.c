@@ -153,8 +153,10 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
    bson_return_val_if_fail(stream, FALSE);
    bson_return_val_if_fail(size, FALSE);
 
+   BSON_ASSERT(buffer->datalen);
+
    if (!SPACE_FOR(buffer, size)) {
-      memmove(buffer->data, &buffer->data[buffer->off], buffer->len);
+      memmove(&buffer->data[0], &buffer->data[buffer->off], buffer->len);
       buffer->off = 0;
       if (!SPACE_FOR(buffer, size)) {
          buffer->datalen = npow2(buffer->datalen);
@@ -162,7 +164,7 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       }
    }
 
-   ret = mongoc_stream_read(stream, &buffer[buffer->off + buffer->len], size);
+   ret = mongoc_stream_read(stream, &buffer->data[buffer->off + buffer->len], size);
    if (ret != size) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
