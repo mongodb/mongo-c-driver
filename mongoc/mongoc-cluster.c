@@ -476,6 +476,8 @@ mongoc_cluster_sendv (mongoc_cluster_t *cluster,
    iovcnt = cluster->iov.len;
    errno = 0;
 
+   BSON_ASSERT(cluster->iov.len);
+
    if (!mongoc_stream_writev(node->stream, iov, iovcnt)) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
