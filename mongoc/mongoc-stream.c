@@ -143,7 +143,6 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    size_t cur = 0;
-   size_t count = 0;
    size_t i;
    size_t towrite = 0;
    ssize_t written;
@@ -156,20 +155,30 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       towrite += iov[i].iov_len;
    }
 
+   if (!towrite) {
+      return 0;
+   }
+
    for (;;) {
       errno = 0;
       written = TEMP_FAILURE_RETRY(writev(file->fd, iov + cur, iovcnt - cur));
       if (written < 0) {
          return -1;
       }
+
       while (written >= iov[cur].iov_len) {
          written -= iov[cur++].iov_len;
       }
-      if (cur == count) {
+
+      if (cur == iovcnt) {
          break;
       }
+
       iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + written;
       iov[cur].iov_len -= written;
+
+      BSON_ASSERT(iovcnt - cur);
+      BSON_ASSERT(iov[cur].iov_len);
    }
 
    return towrite;
