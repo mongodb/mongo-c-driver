@@ -283,7 +283,7 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
    bson_append_int32(&q, "ismaster", 9, 1);
 
    rpc.query.msg_len = 0;
-   rpc.query.request_id = 0;
+   rpc.query.request_id = ++cluster->request_id;
    rpc.query.response_to = -1;
    rpc.query.op_code = MONGOC_OPCODE_QUERY;
    rpc.query.flags = MONGOC_QUERY_NONE;
@@ -468,6 +468,7 @@ mongoc_cluster_sendv (mongoc_cluster_t *cluster,
    mongoc_array_clear(&cluster->iov);
 
    for (i = 0; i < rpcs_len; i++) {
+      rpcs[i].header.request_id = ++cluster->request_id;
       mongoc_rpc_gather(&rpcs[i], &cluster->iov);
       mongoc_rpc_swab(&rpcs[i]);
    }
@@ -660,4 +661,100 @@ mongoc_cluster_stamp (mongoc_cluster_t *cluster,
    bson_return_val_if_fail(node <= MONGOC_CLUSTER_MAX_NODES, 0);
 
    return cluster->nodes[node].stamp;
+}
+
+
+/**
+ * mongoc_cluster_getlasterror:
+ * @cluster: A mongoc_cluster_t.
+ * @hint: The node to deliver the rpc over.
+ * @options: Options for the getlasterror.
+ * @result: A location for the result document, or NULL.
+ * @error: A location for a bson_error_t, or NULL.
+ *
+ * Delivers a getlasterror command to the cluster node specified by @hint. If
+ * there was an error sending the rpc or the getlasterror result reports an
+ * error, then @error is set and FALSE is returned.
+ *
+ * If @result is non-NULL, then the resulting BSON document will be copied
+ * into @result and the caller should free it with bson_destroy().
+ *
+ * Returns: TRUE if successful; otherwise FALSE and @error is set.
+ */
+bson_bool_t
+mongoc_cluster_getlasterror (mongoc_cluster_t *cluster,
+                             bson_uint32_t     hint,
+                             const char       *database,
+                             const bson_t     *options,
+                             bson_t           *result,
+                             bson_error_t     *error)
+{
+   mongoc_buffer_t buffer;
+   mongoc_rpc_t rpc;
+   bson_int32_t request_id;
+   bson_t cmd;
+   bson_t reply;
+
+   bson_return_val_if_fail(cluster, FALSE);
+   bson_return_val_if_fail(hint, FALSE);
+   bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, FALSE);
+
+   bson_init(&cmd);
+   bson_append_int32(&cmd, "getlasterror", 12, 1);
+
+   /*
+    * TODO: Apply options for write concern, etc.
+    */
+
+   rpc.query.msg_len = 0;
+   rpc.query.request_id = request_id = ++cluster->request_id;
+   rpc.query.response_to = -1;
+   rpc.query.op_code = MONGOC_OPCODE_QUERY;
+   rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
+   snprintf(rpc.query.collection, sizeof rpc.query.collection, "%s.$cmd",
+            database);
+   rpc.query.collection[sizeof rpc.query.collection - 1] = '\0';
+   rpc.query.skip = 0;
+   rpc.query.n_return = 1;
+   rpc.query.query = bson_get_data(&cmd);
+   rpc.query.fields = NULL;
+
+   if (!mongoc_cluster_try_sendv(cluster, &rpc, 1, hint, NULL, error)) {
+      goto failure;
+   }
+
+   mongoc_buffer_init(&buffer, NULL, 0, NULL);
+
+   if (!mongoc_cluster_try_recv(cluster, &rpc, &buffer, hint, error)) {
+      mongoc_buffer_destroy(&buffer);
+      goto failure;
+   }
+
+   if ((rpc.header.op_code != MONGOC_OPCODE_REPLY) ||
+       (rpc.header.response_to != request_id)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_PROTOCOL,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                     "Received invalid response from server.");
+      mongoc_buffer_destroy(&buffer);
+      goto failure;
+   }
+
+   if (mongoc_rpc_reply_get_first(&rpc.reply, &reply)) {
+      if (result) {
+         bson_copy_to(&reply, result);
+      }
+      bson_destroy(&reply);
+   }
+
+   mongoc_buffer_destroy(&buffer);
+
+   return TRUE;
+
+failure:
+   if (result) {
+      bson_init(result);
+   }
+
+   return FALSE;
 }

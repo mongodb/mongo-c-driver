@@ -354,3 +354,19 @@ mongoc_client_get_collection (mongoc_client_t *client,
 
    return mongoc_collection_new(client, db, collection);
 }
+
+
+bson_bool_t
+mongoc_client_getlasterror (mongoc_client_t *client,
+                            bson_uint32_t    hint,
+                            const char      *database,
+                            const bson_t    *options,
+                            bson_t          *result,
+                            bson_error_t    *error)
+{
+   bson_return_val_if_fail(client, FALSE);
+   bson_return_val_if_fail(hint, FALSE);
+
+   return mongoc_cluster_getlasterror(&client->cluster, hint, database,
+                                      options, result, error);
+}

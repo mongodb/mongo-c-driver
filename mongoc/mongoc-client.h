@@ -70,6 +70,12 @@ mongoc_database_t   *mongoc_client_get_database         (mongoc_client_t *client
 mongoc_collection_t *mongoc_client_get_collection       (mongoc_client_t *client,
                                                          const char      *db,
                                                          const char      *collection);
+bson_bool_t         mongoc_client_getlasterror          (mongoc_client_t *client,
+                                                         bson_uint32_t    hint,
+                                                         const char      *database,
+                                                         const bson_t    *options,
+                                                         bson_t          *result,
+                                                         bson_error_t    *error);
 
 
 BSON_END_DECLS
