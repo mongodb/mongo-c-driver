@@ -68,6 +68,8 @@ mongoc_cursor_new (mongoc_client_t      *client,
       bson_init(&cursor->options);
    }
 
+   mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL);
+
    return cursor;
 }
 
