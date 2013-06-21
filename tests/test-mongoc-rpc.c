@@ -1,7 +1,6 @@
 #include <fcntl.h>
 #include <mongoc.h>
 #include <mongoc-array-private.h>
-#include <mongoc-event-private.h>
 #include <mongoc-rpc-private.h>
 #include <stdio.h>
 #include <stdlib.h>
