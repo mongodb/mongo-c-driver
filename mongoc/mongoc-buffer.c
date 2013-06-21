@@ -174,6 +174,8 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       return FALSE;
    }
 
+   buffer->len += ret;
+
    return TRUE;
 }
 
