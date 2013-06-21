@@ -201,13 +201,17 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
    bson_return_val_if_fail(buffer, FALSE);
    bson_return_val_if_fail(stream, FALSE);
 
-   memmove(buffer->data, &buffer->data[buffer->off], buffer->len);
+   BSON_ASSERT(buffer->data);
+   BSON_ASSERT(buffer->datalen);
+
+   memmove(&buffer->data[0], &buffer->data[buffer->off], buffer->len);
    buffer->off = 0;
    size = buffer->datalen - buffer->len;
-   ret = mongoc_stream_read(stream, &buffer[buffer->off + buffer->len], size);
+   ret = mongoc_stream_read(stream, &buffer->data[buffer->off + buffer->len], size);
    if (ret >= 0) {
       buffer->len += ret;
       return buffer->len;
    }
+
    return ret;
 }
