@@ -307,7 +307,7 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
       goto failure;
    }
 
-   memcpy(&msg_len, &buffer.data, 4);
+   memcpy(&msg_len, buffer.data, 4);
    msg_len = BSON_UINT32_FROM_LE(msg_len);
    if ((msg_len < 16) || (msg_len > (1024 * 1024 * 16))) {
       goto invalid_reply;
