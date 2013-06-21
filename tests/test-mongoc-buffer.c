@@ -22,8 +22,9 @@ test_mongoc_buffer_basic (void)
    assert(stream);
 
    mongoc_buffer_init(&buf, data, 1024, bson_realloc);
+
    r = mongoc_buffer_fill(&buf, stream, &error);
-   assert(r == TRUE);
+   assert_cmpint(r, ==, 536);
    assert_cmpint(buf.len, ==, 536);
 
    mongoc_buffer_destroy(&buf);
