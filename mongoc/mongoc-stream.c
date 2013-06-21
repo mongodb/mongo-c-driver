@@ -56,6 +56,8 @@ typedef struct
 static void
 mongoc_stream_unix_destroy (mongoc_stream_t *stream)
 {
+   mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
+
    bson_return_if_fail(stream);
 
    if (mongoc_stream_close(stream) != 0) {
@@ -63,6 +65,8 @@ mongoc_stream_unix_destroy (mongoc_stream_t *stream)
        * TODO: Handle close failure.
        */
    }
+
+   file->fd = -1;
 
    bson_free(stream);
 }
