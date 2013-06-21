@@ -271,7 +271,6 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
    mongoc_array_t ar;
    mongoc_rpc_t rpc;
    bson_int32_t msg_len;
-   bson_bool_t ret = FALSE;
    bson_iter_t iter;
    bson_t q;
    bson_t r;
@@ -347,6 +346,12 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
       bson_destroy(&r);
    }
 
+   mongoc_buffer_destroy(&buffer);
+   mongoc_array_destroy(&ar);
+   bson_destroy(&q);
+
+   return TRUE;
+
 invalid_reply:
    bson_set_error(error,
                   MONGOC_ERROR_PROTOCOL,
@@ -358,7 +363,7 @@ failure:
    mongoc_array_destroy(&ar);
    bson_destroy(&q);
 
-   return ret;
+   return FALSE;
 }
 
 
