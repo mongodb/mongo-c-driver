@@ -52,44 +52,24 @@ typedef struct _mongoc_client_t mongoc_client_t;
  *
  * Returns: A newly allocated mongoc_stream_t or NULL on failure.
  */
-typedef mongoc_stream_t *
-   (*mongoc_stream_initiator_t) (const mongoc_uri_t       *uri,
-                                 const mongoc_host_list_t *host,
-                                 void                     *user_data,
-                                 bson_error_t             *error);
+typedef mongoc_stream_t *(*mongoc_stream_initiator_t) (const mongoc_uri_t       *uri,
+                                                       const mongoc_host_list_t *host,
+                                                       void                     *user_data,
+                                                       bson_error_t             *error);
 
 
-mongoc_client_t *
-mongoc_client_new (const char *uri_string);
-
-
-mongoc_client_t *
-mongoc_client_new_from_uri (const mongoc_uri_t *uri);
-
-
-const mongoc_uri_t *
-mongoc_client_get_uri (const mongoc_client_t *client);
-
-
-void
-mongoc_client_set_stream_initiator (mongoc_client_t           *client,
-                                    mongoc_stream_initiator_t  initiator,
-                                    void                      *user_data);
-
-
-void
-mongoc_client_destroy (mongoc_client_t *client);
-
-
-mongoc_database_t *
-mongoc_client_get_database (mongoc_client_t *client,
-                            const char      *name);
-
-
-mongoc_collection_t *
-mongoc_client_get_collection (mongoc_client_t *client,
-                              const char      *db,
-                              const char      *collection);
+mongoc_client_t     *mongoc_client_new                  (const char *uri_string);
+mongoc_client_t     *mongoc_client_new_from_uri         (const mongoc_uri_t *uri);
+const mongoc_uri_t  *mongoc_client_get_uri              (const mongoc_client_t *client);
+void                 mongoc_client_set_stream_initiator (mongoc_client_t           *client,
+                                                         mongoc_stream_initiator_t  initiator,
+                                                         void                      *user_data);
+void                 mongoc_client_destroy              (mongoc_client_t *client);
+mongoc_database_t   *mongoc_client_get_database         (mongoc_client_t *client,
+                                                         const char      *name);
+mongoc_collection_t *mongoc_client_get_collection       (mongoc_client_t *client,
+                                                         const char      *db,
+                                                         const char      *collection);
 
 
 BSON_END_DECLS
