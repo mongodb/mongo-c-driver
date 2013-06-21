@@ -263,13 +263,109 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
 
 
 static bson_bool_t
+mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
+                         mongoc_cluster_node_t *node,
+                         bson_error_t          *error)
+{
+   mongoc_buffer_t buffer;
+   mongoc_array_t ar;
+   mongoc_rpc_t rpc;
+   bson_int32_t msg_len;
+   bson_bool_t ret = FALSE;
+   bson_iter_t iter;
+   bson_t q;
+   bson_t r;
+
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(node);
+   BSON_ASSERT(node->stream);
+
+   bson_init(&q);
+   bson_append_int32(&q, "ismaster", 9, 1);
+
+   rpc.query.msg_len = 0;
+   rpc.query.request_id = 0;
+   rpc.query.response_to = -1;
+   rpc.query.op_code = MONGOC_OPCODE_QUERY;
+   rpc.query.flags = MONGOC_QUERY_NONE;
+   memcpy(rpc.query.collection, "admin.$cmd", sizeof "admin.$cmd");
+   rpc.query.skip = 0;
+   rpc.query.n_return = 1;
+   rpc.query.query = bson_get_data(&q);
+   rpc.query.fields = NULL;
+
+   mongoc_array_init(&ar, sizeof(struct iovec));
+   mongoc_buffer_init(&buffer, NULL, 0, NULL);
+   mongoc_rpc_gather(&rpc, &ar);
+   mongoc_rpc_swab(&rpc);
+
+   if (!mongoc_stream_writev(node->stream, ar.data, ar.len)) {
+      goto failure;
+   }
+
+   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, 4, error)) {
+      goto failure;
+   }
+
+   memcpy(&msg_len, &buffer.data, 4);
+   msg_len = BSON_UINT32_FROM_LE(msg_len);
+   if ((msg_len < 16) || (msg_len > (1024 * 1024 * 16))) {
+      goto invalid_reply;
+   }
+
+   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, msg_len - 4, error)) {
+      goto failure;
+   }
+
+   if (!mongoc_rpc_scatter(&rpc, buffer.data, buffer.len)) {
+      goto invalid_reply;
+   }
+
+   mongoc_rpc_swab(&rpc);
+
+   if (rpc.header.op_code != MONGOC_OPCODE_REPLY) {
+      goto invalid_reply;
+   }
+
+   if (mongoc_rpc_reply_get_first(&rpc.reply, &r)) {
+      if (bson_iter_init_find_case(&iter, &r, "isMaster") &&
+          BSON_ITER_HOLDS_BOOL(&iter) &&
+          bson_iter_bool(&iter)) {
+         node->primary = TRUE;
+      }
+
+      if (bson_iter_init_find_case(&iter, &r, "maxMessageSizeBytes")) {
+         cluster->max_msg_size = bson_iter_int32(&iter);
+      }
+
+      if (bson_iter_init_find_case(&iter, &r, "maxBsonObjectSize")) {
+         cluster->max_bson_size = bson_iter_int32(&iter);
+      }
+
+      bson_destroy(&r);
+   }
+
+invalid_reply:
+   bson_set_error(error,
+                  MONGOC_ERROR_PROTOCOL,
+                  MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                  "Invalid reply from server.");
+
+failure:
+   mongoc_buffer_destroy(&buffer);
+   mongoc_array_destroy(&ar);
+   bson_destroy(&q);
+
+   return ret;
+}
+
+
+static bson_bool_t
 mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
                                  bson_error_t     *error)
 {
    const mongoc_host_list_t *hosts;
    mongoc_stream_t *stream;
-   bson_iter_t iter;
-   bson_t *b;
 
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(error, FALSE);
@@ -298,26 +394,11 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
    cluster->nodes[0].stream = stream;
    cluster->nodes[0].stamp++;
 
-   if (!(b = mongoc_stream_ismaster(stream, error))) {
+   if (!mongoc_cluster_ismaster(cluster, &cluster->nodes[0], error)) {
       cluster->nodes[0].stream = NULL;
       mongoc_stream_destroy(stream);
       return FALSE;
    }
-
-   if (bson_iter_init_find_case(&iter, b, "isMaster") &&
-       bson_iter_bool(&iter)) {
-      cluster->nodes[0].primary = TRUE;
-   }
-
-   if (bson_iter_init_find_case(&iter, b, "maxMessageSizeBytes")) {
-      cluster->max_msg_size = bson_iter_int32(&iter);
-   }
-
-   if (bson_iter_init_find_case(&iter, b, "maxBsonObjectSize")) {
-      cluster->max_bson_size = bson_iter_int32(&iter);
-   }
-
-   bson_destroy(b);
 
    return TRUE;
 }

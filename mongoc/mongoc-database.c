@@ -20,7 +20,6 @@
 #include "mongoc-cursor-private.h"
 #include "mongoc-database.h"
 #include "mongoc-database-private.h"
-#include "mongoc-event-private.h"
 #include "mongoc-error.h"
 
 

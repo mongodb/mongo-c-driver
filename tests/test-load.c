@@ -1,6 +1,5 @@
 #include <mongoc.h>
 #include <mongoc-client-private.h>
-#include <mongoc-event-private.h>
 
 
 static void

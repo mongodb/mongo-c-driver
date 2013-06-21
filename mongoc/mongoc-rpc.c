@@ -17,8 +17,8 @@
 
 #include <sys/uio.h>
 
-#include "mongoc-event-private.h"
 #include "mongoc-log.h"
+#include "mongoc-opcode.h"
 #include "mongoc-rpc-private.h"
 
 

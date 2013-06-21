@@ -24,9 +24,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-error.h"
-#include "mongoc-event-private.h"
+#include "mongoc-flags.h"
+#include "mongoc-opcode.h"
+#include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
 
 
@@ -410,18 +413,26 @@ mongoc_stream_buffered_destroy (mongoc_stream_t *stream)
 static int
 mongoc_stream_buffered_close (mongoc_stream_t *stream)
 {
+#if 0
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
    bson_return_val_if_fail(stream, -1);
    return mongoc_stream_close(buffered->base_stream);
+#else
+   return -1;
+#endif
 }
 
 
 static int
 mongoc_stream_buffered_flush (mongoc_stream_t *stream)
 {
+#if 0
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
    bson_return_val_if_fail(stream, -1);
    return mongoc_stream_flush(buffered->base_stream);
+#else
+   return -1;
+#endif
 }
 
 
@@ -430,9 +441,13 @@ mongoc_stream_buffered_writev (mongoc_stream_t *stream,
                                struct iovec    *iov,
                                size_t           iovcnt)
 {
+#if 0
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
    bson_return_val_if_fail(stream, -1);
    return mongoc_stream_writev(buffered->base_stream, iov, iovcnt);
+#else
+   return -1;
+#endif
 }
 
 
@@ -441,6 +456,7 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,
                               struct iovec    *iov,
                               size_t           iovcnt)
 {
+#if 0
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
    bson_uint32_t i;
    size_t count = 0;
@@ -453,6 +469,9 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,
 
    mongoc_buffer_fill(&buffered->buffer, stream, count, NULL);
    return mongoc_buffer_readv(&buffered->buffer, iov, iovcnt);
+#else
+   return -1;
+#endif
 }
 
 
@@ -473,71 +492,4 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream)
    mongoc_buffer_init(&stream->buffer, NULL, 0, NULL);
 
    return (mongoc_stream_t *)stream;
-}
-
-
-/**
- * mongoc_stream_ismaster:
- * @stream: A mongoc_stream_t.
- * @error: A location for an error.
- *
- * This is a convenience function to run the "ismaster" command on the given
- * stream. Upon failure, NULL is returned and @error is set.
- *
- * Returns: A bson_t that should be freed with bson_destroy().
- */
-bson_t *
-mongoc_stream_ismaster (mongoc_stream_t *stream,
-                        bson_error_t    *error)
-{
-   mongoc_event_t ev = MONGOC_EVENT_INITIALIZER(MONGOC_OPCODE_QUERY);
-   const bson_t *b;
-   bson_bool_t eof;
-   bson_t *ret = NULL;
-   bson_t q;
-
-   bson_return_val_if_fail(stream, FALSE);
-
-   bson_init(&q);
-   bson_append_int32(&q, "ismaster", 8, 1);
-
-   ev.any.response_to = -1;
-   ev.any.opcode = MONGOC_OPCODE_QUERY;
-   ev.query.flags = MONGOC_QUERY_SLAVE_OK;
-   ev.query.ns = "admin.$cmd";
-   ev.query.nslen = 10;
-   ev.query.skip = 0;
-   ev.query.n_return = 1;
-   ev.query.query = &q;
-   ev.query.fields = NULL;
-
-   if (!mongoc_event_write(&ev, stream, error)) {
-      return FALSE;
-   }
-
-   bson_destroy(&q);
-
-   if (!mongoc_event_read(&ev, stream, 0, error)) {
-      return FALSE;
-   }
-
-   /*
-    * TODO: Check request_id/response_to?
-    */
-
-   if (ev.type != MONGOC_OPCODE_REPLY) {
-      bson_set_error(error,
-                     MONGOC_ERROR_PROTOCOL,
-                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                     "Message with invalid opcode was received.");
-      return FALSE;
-   }
-
-   if ((b = bson_reader_read(&ev.reply.docs_reader, &eof))) {
-      ret = bson_copy(b);
-   }
-
-   mongoc_event_destroy(&ev);
-
-   return ret;
 }
