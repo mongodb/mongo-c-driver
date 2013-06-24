@@ -18,6 +18,7 @@ test_insert (void)
    bson_oid_t oid;
    unsigned i;
    bson_t b;
+   bson_t result;
 
    client = mongoc_client_new(TEST_HOST);
    assert(client);
@@ -34,13 +35,14 @@ test_insert (void)
       bson_append_oid(&b, "_id", 3, &oid);
       bson_append_utf8(&b, "hello", 5, "world", 5);
       r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL,
-                                   &error);
+                                   &result, &error);
       if (!r) {
          MONGOC_WARNING("%s\n", error.message);
          bson_error_destroy(&error);
       }
       assert(r);
       bson_destroy(&b);
+      bson_destroy(&result);
    }
 
    mongoc_collection_destroy(collection);
@@ -82,7 +84,7 @@ test_update (void)
       bson_append_int64(&b, "int64", 5, 12345678);
       bson_append_bool(&b, "bool", 4, 1);
 
-      r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
+      r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, NULL, &error);
       if (!r) {
          MONGOC_WARNING("%s\n", error.message);
          bson_error_destroy(&error);

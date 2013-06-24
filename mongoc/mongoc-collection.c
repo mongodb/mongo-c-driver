@@ -49,6 +49,7 @@ mongoc_collection_new (mongoc_client_t *client,
    col->collection[sizeof col->collection-1] = '\0';
 
    col->collectionlen = strlen(col->collection);
+   col->nslen = strlen(col->ns);
 
    mongoc_buffer_init(&col->buffer, NULL, 0, NULL);
 
@@ -142,41 +143,81 @@ mongoc_collection_insert (mongoc_collection_t   *collection,
                           mongoc_insert_flags_t  flags,
                           const bson_t          *document,
                           const bson_t          *options,
+                          bson_t                *result,
                           bson_error_t          *error)
 {
+   mongoc_buffer_t buffer;
    bson_uint32_t hint;
-   mongoc_rpc_t rpc;
+   mongoc_rpc_t rpc[2];
+   mongoc_rpc_t reply;
+   bson_bool_t ret = FALSE;
+   bson_t gle;
+   bson_t doc;
 
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(document, FALSE);
 
-   rpc.insert.msg_len = 0;
-   rpc.insert.request_id = 0;
-   rpc.insert.response_to = -1;
-   rpc.insert.op_code = MONGOC_OPCODE_INSERT;
-   rpc.insert.flags = flags;
-   memcpy(rpc.insert.collection, collection->collection,
-          collection->collectionlen);
-   rpc.insert.documents = bson_get_data(document);
-   rpc.insert.documents_len = document->len;
-
-   if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0, options,
-                                    error))) {
-      return FALSE;
-   }
+   /*
+    * Build our insert RPC.
+    */
+   rpc[0].insert.msg_len = 0;
+   rpc[0].insert.request_id = 0;
+   rpc[0].insert.response_to = -1;
+   rpc[0].insert.op_code = MONGOC_OPCODE_INSERT;
+   rpc[0].insert.flags = flags;
+   memcpy(rpc[0].insert.collection, collection->ns,
+          collection->nslen + 1);
+   rpc[0].insert.documents = bson_get_data(document);
+   rpc[0].insert.documents_len = document->len;
 
    /*
-    * TODO: Check options for getlasterror. Do two events and add
-    *       mongoc_event_sendv() with two events.
+    * Build our getlasterror RPC.
     */
+   bson_init(&gle);
+   bson_append_int32(&gle, "getlasterror", 12, 1);
+   rpc[1].query.msg_len = 0;
+   rpc[1].query.request_id = 0;
+   rpc[1].query.response_to = -1;
+   rpc[1].query.op_code = MONGOC_OPCODE_QUERY;
+   rpc[1].query.flags = MONGOC_QUERY_NONE;
+   snprintf(rpc[1].query.collection, sizeof rpc[1].query.collection,
+            "%s.$cmd", collection->db);
+   rpc[1].query.collection[sizeof rpc[1].query.collection - 1] = '\0';
+   rpc[1].query.skip = 0;
+   rpc[1].query.n_return = 1;
+   rpc[1].query.query = bson_get_data(&gle);
+   rpc[1].query.fields = NULL;
 
-#if 0
-   if (!mongoc_client_recv(collection->client, &ev, hint, error)) {
-      return FALSE;
+   if (!(hint = mongoc_client_sendv(collection->client, &rpc[0], 2, 0,
+                                    options, error))) {
+      goto cleanup;
    }
-#endif
 
-   return TRUE;
+   bson_destroy(&gle);
+
+   mongoc_buffer_init(&buffer, NULL, 0, NULL);
+
+   if (!mongoc_client_recv(collection->client, &reply, &buffer, hint, error)) {
+      mongoc_buffer_destroy(&buffer);
+      goto cleanup;
+   }
+
+   if (result) {
+      if (bson_init_static(&doc, reply.reply.documents,
+                           reply.reply.documents_len)) {
+         bson_copy_to(&doc, result);
+         bson_destroy(&doc);
+      }
+   }
+
+   mongoc_buffer_destroy(&buffer);
+
+   ret = TRUE;
+
+cleanup:
+   bson_destroy(&gle);
+
+   return ret;
 }
 
 

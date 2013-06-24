@@ -31,6 +31,7 @@ struct _mongoc_collection_t
 {
    mongoc_client_t *client;
    char             ns[128];
+   bson_uint32_t    nslen;
    char             db[128];
    char             collection[128];
    bson_uint32_t    collectionlen;
