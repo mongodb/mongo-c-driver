@@ -280,7 +280,7 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
    BSON_ASSERT(node->stream);
 
    bson_init(&q);
-   bson_append_int32(&q, "ismaster", 9, 1);
+   bson_append_int32(&q, "ismaster", 8, 1);
 
    rpc.query.msg_len = 0;
    rpc.query.request_id = ++cluster->request_id;
