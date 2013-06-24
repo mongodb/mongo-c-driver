@@ -106,7 +106,7 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 
    bson_return_val_if_fail(cursor, FALSE);
 
-   if (cursor->rpc.header.op_code != MONGOC_OPCODE_REPLY) {
+   if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_PROTOCOL,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -162,7 +162,7 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
    rpc.query.msg_len = 0;
    rpc.query.request_id = 0;
    rpc.query.response_to = -1;
-   rpc.query.op_code = MONGOC_OPCODE_QUERY;
+   rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = cursor->flags;
    memcpy(rpc.query.collection, cursor->ns, cursor->nslen + 1);
    rpc.query.skip = cursor->skip;
@@ -188,7 +188,7 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
       goto failure;
    }
 
-   if ((cursor->rpc.header.op_code != MONGOC_OPCODE_REPLY) ||
+   if ((cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) ||
        (cursor->rpc.header.response_to != request_id)) {
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_PROTOCOL,
@@ -238,7 +238,7 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    rpc.get_more.msg_len = 0;
    rpc.get_more.request_id = 0;
    rpc.get_more.response_to = -1;
-   rpc.get_more.op_code = MONGOC_OPCODE_GET_MORE;
+   rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
    rpc.get_more.zero = 0;
    memcpy(rpc.get_more.collection, cursor->ns, cursor->nslen + 1);
    rpc.get_more.n_return = cursor->batch_size;
@@ -267,7 +267,7 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       goto failure;
    }
 
-   if ((cursor->rpc.header.op_code != MONGOC_OPCODE_REPLY) ||
+   if ((cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) ||
        (cursor->rpc.header.response_to != request_id)) {
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_PROTOCOL,

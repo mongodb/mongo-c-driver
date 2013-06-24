@@ -163,7 +163,7 @@ mongoc_collection_insert (mongoc_collection_t   *collection,
    rpc[0].insert.msg_len = 0;
    rpc[0].insert.request_id = 0;
    rpc[0].insert.response_to = -1;
-   rpc[0].insert.op_code = MONGOC_OPCODE_INSERT;
+   rpc[0].insert.opcode = MONGOC_OPCODE_INSERT;
    rpc[0].insert.flags = flags;
    memcpy(rpc[0].insert.collection, collection->ns,
           collection->nslen + 1);
@@ -178,7 +178,7 @@ mongoc_collection_insert (mongoc_collection_t   *collection,
    rpc[1].query.msg_len = 0;
    rpc[1].query.request_id = 0;
    rpc[1].query.response_to = -1;
-   rpc[1].query.op_code = MONGOC_OPCODE_QUERY;
+   rpc[1].query.opcode = MONGOC_OPCODE_QUERY;
    rpc[1].query.flags = MONGOC_QUERY_NONE;
    snprintf(rpc[1].query.collection, sizeof rpc[1].query.collection,
             "%s.$cmd", collection->db);
@@ -239,7 +239,7 @@ mongoc_collection_update (mongoc_collection_t   *collection,
    rpc.update.msg_len = 0;
    rpc.update.request_id = 0;
    rpc.update.response_to = -1;
-   rpc.update.op_code = MONGOC_OPCODE_UPDATE;
+   rpc.update.opcode = MONGOC_OPCODE_UPDATE;
    rpc.update.zero = 0;
    memcpy(rpc.update.collection, collection->collection,
           collection->collectionlen);
@@ -283,7 +283,7 @@ mongoc_collection_delete (mongoc_collection_t   *collection,
    rpc.delete.msg_len = 0;
    rpc.delete.request_id = 0;
    rpc.delete.response_to = -1;
-   rpc.delete.op_code = MONGOC_OPCODE_DELETE;
+   rpc.delete.opcode = MONGOC_OPCODE_DELETE;
    rpc.delete.zero = 0;
    memcpy(rpc.delete.collection, collection->collection,
           collection->collectionlen);

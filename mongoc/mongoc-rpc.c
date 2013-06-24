@@ -354,7 +354,7 @@ mongoc_rpc_gather (mongoc_rpc_t   *rpc,
    bson_return_if_fail(rpc);
    bson_return_if_fail(array);
 
-   switch ((mongoc_opcode_t)rpc->header.op_code) {
+   switch ((mongoc_opcode_t)rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
       return mongoc_rpc_gather_reply(&rpc->reply, array);
    case MONGOC_OPCODE_MSG:
@@ -372,7 +372,7 @@ mongoc_rpc_gather (mongoc_rpc_t   *rpc,
    case MONGOC_OPCODE_KILL_CURSORS:
       return mongoc_rpc_gather_kill_cursors(&rpc->kill_cursors, array);
    default:
-      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.op_code);
+      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.opcode);
       break;
    }
 }
@@ -383,7 +383,7 @@ mongoc_rpc_swab (mongoc_rpc_t *rpc)
 {
    bson_return_if_fail(rpc);
 
-   switch ((mongoc_opcode_t)rpc->header.op_code) {
+   switch ((mongoc_opcode_t)rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
       mongoc_rpc_swab_reply(&rpc->reply);
       break;
@@ -409,7 +409,7 @@ mongoc_rpc_swab (mongoc_rpc_t *rpc)
       mongoc_rpc_swab_kill_cursors(&rpc->kill_cursors);
       break;
    default:
-      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.op_code);
+      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.opcode);
       break;
    }
 }
@@ -420,7 +420,7 @@ mongoc_rpc_printf (mongoc_rpc_t *rpc)
 {
    bson_return_if_fail(rpc);
 
-   switch ((mongoc_opcode_t)rpc->header.op_code) {
+   switch ((mongoc_opcode_t)rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
       mongoc_rpc_printf_reply(&rpc->reply);
       break;
@@ -446,7 +446,7 @@ mongoc_rpc_printf (mongoc_rpc_t *rpc)
       mongoc_rpc_printf_kill_cursors(&rpc->kill_cursors);
       break;
    default:
-      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.op_code);
+      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.opcode);
       break;
    }
 }
@@ -468,7 +468,7 @@ mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
    mongoc_rpc_scatter_header(&rpc->header, buf, 16);
    mongoc_rpc_swab_header(&rpc->header);
 
-   switch ((mongoc_opcode_t)rpc->header.op_code) {
+   switch ((mongoc_opcode_t)rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
       return mongoc_rpc_scatter_reply(&rpc->reply, buf, buflen);
    case MONGOC_OPCODE_MSG:
@@ -486,7 +486,7 @@ mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
    case MONGOC_OPCODE_KILL_CURSORS:
       return mongoc_rpc_scatter_kill_cursors(&rpc->kill_cursors, buf, buflen);
    default:
-      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.op_code);
+      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.opcode);
       return FALSE;
    }
 }

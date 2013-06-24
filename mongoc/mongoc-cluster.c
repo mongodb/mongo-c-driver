@@ -158,7 +158,7 @@ mongoc_cluster_select (mongoc_cluster_t *cluster,
     * of the RPCs to the primary.
     */
    for (i = 0; !need_primary && i < rpcs_len; i++) {
-      switch (rpcs[i].header.op_code) {
+      switch (rpcs[i].header.opcode) {
       case MONGOC_OPCODE_KILL_CURSORS:
       case MONGOC_OPCODE_GET_MORE:
       case MONGOC_OPCODE_MSG:
@@ -285,7 +285,7 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
    rpc.query.msg_len = 0;
    rpc.query.request_id = ++cluster->request_id;
    rpc.query.response_to = -1;
-   rpc.query.op_code = MONGOC_OPCODE_QUERY;
+   rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = MONGOC_QUERY_NONE;
    memcpy(rpc.query.collection, "admin.$cmd", sizeof "admin.$cmd");
    rpc.query.skip = 0;
@@ -324,7 +324,7 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
 
    mongoc_rpc_swab(&rpc);
 
-   if (rpc.header.op_code != MONGOC_OPCODE_REPLY) {
+   if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       goto invalid_reply;
    }
 
@@ -709,7 +709,7 @@ mongoc_cluster_getlasterror (mongoc_cluster_t *cluster,
    rpc.query.msg_len = 0;
    rpc.query.request_id = request_id = ++cluster->request_id;
    rpc.query.response_to = -1;
-   rpc.query.op_code = MONGOC_OPCODE_QUERY;
+   rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
    snprintf(rpc.query.collection, sizeof rpc.query.collection, "%s.$cmd",
             database);
@@ -730,7 +730,7 @@ mongoc_cluster_getlasterror (mongoc_cluster_t *cluster,
       goto failure;
    }
 
-   if ((rpc.header.op_code != MONGOC_OPCODE_REPLY) ||
+   if ((rpc.header.opcode != MONGOC_OPCODE_REPLY) ||
        (rpc.header.response_to != request_id)) {
       bson_set_error(error,
                      MONGOC_ERROR_PROTOCOL,
