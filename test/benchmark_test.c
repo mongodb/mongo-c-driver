@@ -186,7 +186,7 @@ static void batch_insert_small_test( void ) {
         for ( j=0; j < BATCH_SIZE; j++ )
             make_small( &b[j], i );
 
-        mongo_insert_batch( conn, DB ".batch.small", bp, BATCH_SIZE, NULL );
+        mongo_insert_batch( conn, DB ".batch.small", bp, BATCH_SIZE, NULL, 0 );
 
         for ( j=0; j < BATCH_SIZE; j++ )
             bson_destroy( &b[j] );
@@ -204,7 +204,7 @@ static void batch_insert_medium_test( void ) {
         for ( j=0; j < BATCH_SIZE; j++ )
             make_medium( &b[j], i );
 
-        mongo_insert_batch( conn, DB ".batch.medium", bp, BATCH_SIZE, NULL );
+        mongo_insert_batch( conn, DB ".batch.medium", bp, BATCH_SIZE, NULL, 0 );
 
         for ( j=0; j < BATCH_SIZE; j++ )
             bson_destroy( &b[j] );
@@ -222,7 +222,7 @@ static void batch_insert_large_test( void ) {
         for ( j=0; j < BATCH_SIZE; j++ )
             make_large( &b[j], i );
 
-        mongo_insert_batch( conn, DB ".batch.large", bp, BATCH_SIZE, NULL );
+        mongo_insert_batch( conn, DB ".batch.large", bp, BATCH_SIZE, NULL, 0 );
 
         for ( j=0; j < BATCH_SIZE; j++ )
             bson_destroy( &b[j] );
@@ -384,13 +384,13 @@ static void clean( void ) {
     }
 
     /* create the db */
-    mongo_insert( conn, DB ".creation", bson_empty( &b ), NULL );
+    mongo_insert( conn, DB ".creation", bson_shared_empty(), NULL );
     ASSERT( !mongo_cmd_get_last_error( conn, DB, NULL ) );
 }
 
 int main() {
     INIT_SOCKETS_FOR_WINDOWS;
-    CONN_CONNECT_TEST;
+    CONN_CLIENT_TEST;
 
     clean();
 
