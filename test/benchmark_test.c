@@ -178,7 +178,7 @@ static void index_insert_large_test( void ) {
 static void batch_insert_small_test( void ) {
     int i, j;
     bson b[BATCH_SIZE];
-    bson *bp[BATCH_SIZE];
+    const bson *bp[BATCH_SIZE];
     for ( j=0; j < BATCH_SIZE; j++ )
         bp[j] = &b[j];
 
@@ -196,7 +196,7 @@ static void batch_insert_small_test( void ) {
 static void batch_insert_medium_test( void ) {
     int i, j;
     bson b[BATCH_SIZE];
-    bson *bp[BATCH_SIZE];
+    const bson *bp[BATCH_SIZE];
     for ( j=0; j < BATCH_SIZE; j++ )
         bp[j] = &b[j];
 
@@ -214,7 +214,7 @@ static void batch_insert_medium_test( void ) {
 static void batch_insert_large_test( void ) {
     int i, j;
     bson b[BATCH_SIZE];
-    bson *bp[BATCH_SIZE];
+    const bson *bp[BATCH_SIZE];
     for ( j=0; j < BATCH_SIZE; j++ )
         bp[j] = &b[j];
 
