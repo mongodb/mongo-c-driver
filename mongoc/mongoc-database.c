@@ -79,12 +79,16 @@ mongoc_database_command_simple (mongoc_database_t *database,
    bson_iter_t iter;
    bson_bool_t ret = FALSE;
    const char *errmsg = "unknown error";
+   char ns[140];
 
    bson_return_val_if_fail(database, FALSE);
    bson_return_val_if_fail(cmd, FALSE);
 
-   cursor = mongoc_database_command(database, MONGOC_QUERY_NONE, 0, 1, cmd,
-                                    NULL, NULL);
+   snprintf(ns, sizeof ns, "%s.$cmd", database->name);
+   ns[sizeof ns-1] = '\0';
+
+   cursor = mongoc_cursor_new(database->client, ns,
+                              MONGOC_QUERY_NONE, 0, 1, 0, cmd, NULL, NULL);
 
    if (mongoc_cursor_next(cursor, &b) &&
        bson_iter_init_find(&iter, b, "ok") &&
