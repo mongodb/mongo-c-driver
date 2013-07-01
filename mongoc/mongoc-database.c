@@ -34,8 +34,8 @@ mongoc_database_new (mongoc_client_t *client,
 
    db = bson_malloc0(sizeof *db);
    db->client = client;
-   snprintf(db->name, sizeof db->name, "%s", name);
-   db->name[sizeof db->name - 1] = '\0';
+   strncpy(db->name, name, sizeof db->name);
+   db->name[sizeof db->name-1] = '\0';
 
    return db;
 }
