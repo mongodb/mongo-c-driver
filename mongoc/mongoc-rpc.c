@@ -44,6 +44,7 @@
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define CSTRING_FIELD(_name) \
+   assert(rpc->_name); \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = strlen(rpc->_name) + 1; \
    rpc->msg_len += iov.iov_len; \
