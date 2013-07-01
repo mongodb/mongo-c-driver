@@ -15,7 +15,7 @@ print_doc (const bson_t *b)
 
 static void
 ping (mongoc_database_t *db,
-      bson_t            *cmd)
+      const bson_t      *cmd)
 {
    mongoc_cursor_t *cursor;
    const bson_t *b;
