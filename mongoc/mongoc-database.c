@@ -125,7 +125,7 @@ mongoc_database_drop (mongoc_database_t *database,
    bson_return_val_if_fail(database, FALSE);
 
    bson_init(&cmd);
-   bson_append_int32(&cmd, "drop", 4, 1);
+   bson_append_int32(&cmd, "dropDatabase", 12, 1);
    ret = mongoc_database_command_simple(database, &cmd, error);
    bson_destroy(&cmd);
 
