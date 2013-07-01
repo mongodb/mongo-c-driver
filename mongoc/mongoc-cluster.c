@@ -287,7 +287,7 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
    rpc.query.response_to = -1;
    rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = MONGOC_QUERY_NONE;
-   memcpy(rpc.query.collection, "admin.$cmd", sizeof "admin.$cmd");
+   rpc.query.collection = "admin.$cmd";
    rpc.query.skip = 0;
    rpc.query.n_return = 1;
    rpc.query.query = bson_get_data(&q);
@@ -694,6 +694,7 @@ mongoc_cluster_getlasterror (mongoc_cluster_t *cluster,
    bson_int32_t request_id;
    bson_t cmd;
    bson_t reply;
+   char ns[140];
 
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(hint, FALSE);
@@ -706,14 +707,15 @@ mongoc_cluster_getlasterror (mongoc_cluster_t *cluster,
     * TODO: Apply options for write concern, etc.
     */
 
+   snprintf(ns, sizeof ns, "%s.$cmd", database);
+   ns[sizeof ns - 1] = '\0';
+
    rpc.query.msg_len = 0;
    rpc.query.request_id = request_id = ++cluster->request_id;
    rpc.query.response_to = -1;
    rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
-   snprintf(rpc.query.collection, sizeof rpc.query.collection, "%s.$cmd",
-            database);
-   rpc.query.collection[sizeof rpc.query.collection - 1] = '\0';
+   rpc.query.collection = ns;
    rpc.query.skip = 0;
    rpc.query.n_return = 1;
    rpc.query.query = bson_get_data(&cmd);

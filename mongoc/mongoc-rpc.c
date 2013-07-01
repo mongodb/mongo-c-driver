@@ -44,7 +44,7 @@
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define CSTRING_FIELD(_name) \
-   iov.iov_base = rpc->_name; \
+   iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = strlen(rpc->_name) + 1; \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
@@ -281,9 +281,9 @@
    do { \
       size_t __i; \
       bson_bool_t found = FALSE; \
-      for (__i = 0; __i < buflen && __i < sizeof(rpc->_name); __i++) { \
+      for (__i = 0; __i < buflen; __i++) { \
          if (!buf[__i]) { \
-            memcpy(rpc->_name, buf, __i + 1); \
+            rpc->_name = (const char *)buf; \
             buflen -= __i + 1; \
             buf += __i + 1; \
             found = TRUE; \

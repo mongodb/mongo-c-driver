@@ -89,7 +89,7 @@ test_mongoc_rpc_delete_gather (void)
    rpc.delete.response_to = -1;
    rpc.delete.opcode = MONGOC_OPCODE_DELETE;
    rpc.delete.zero = 0;
-   snprintf(rpc.delete.collection, sizeof rpc.delete.collection, "%s", "test.test");
+   rpc.delete.collection = "test.test";
    rpc.delete.flags = MONGOC_DELETE_SINGLE_REMOVE;
    rpc.delete.selector = bson_get_data(&sel);
 
@@ -140,7 +140,7 @@ test_mongoc_rpc_get_more_gather (void)
    rpc.get_more.response_to = -1;
    rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
    rpc.get_more.zero = 0;
-   snprintf(rpc.get_more.collection, sizeof rpc.get_more.collection, "%s", "test.test");
+   rpc.get_more.collection = "test.test";
    rpc.get_more.n_return = 5;
    rpc.get_more.cursor_id = 12345678L;
 
@@ -199,7 +199,7 @@ test_mongoc_rpc_insert_gather (void)
    rpc.insert.response_to = -1;
    rpc.insert.opcode = MONGOC_OPCODE_INSERT;
    rpc.insert.flags = MONGOC_INSERT_CONTINUE_ON_ERROR;
-   snprintf(rpc.insert.collection, sizeof rpc.insert.collection, "%s", "test.test");
+   rpc.insert.collection = "test.test";
    rpc.insert.documents = buf;
    rpc.insert.documents_len = bson_writer_get_length(writer);
 
@@ -319,8 +319,7 @@ test_mongoc_rpc_msg_gather (void)
    rpc.msg.request_id = 1234;
    rpc.msg.response_to = -1;
    rpc.msg.opcode = MONGOC_OPCODE_MSG;
-   snprintf(rpc.msg.msg, sizeof rpc.msg.msg, "%s",
-            "this is a test message.");
+   rpc.msg.msg = "this is a test message.";
 
    assert_rpc_equal("msg1.dat", &rpc);
 }
@@ -366,7 +365,7 @@ test_mongoc_rpc_query_gather (void)
    rpc.query.response_to = -1;
    rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
-   snprintf(rpc.query.collection, sizeof rpc.query.collection, "%s", "test.test");
+   rpc.query.collection = "test.test";
    rpc.query.skip = 5;
    rpc.query.n_return = 1;
    rpc.query.query = bson_get_data(&b);
@@ -506,8 +505,7 @@ test_mongoc_rpc_update_gather (void)
    rpc.update.response_to = -1;
    rpc.update.opcode = MONGOC_OPCODE_UPDATE;
    rpc.update.zero = 0;
-   snprintf(rpc.update.collection, sizeof rpc.update.collection,
-            "%s", "test.test");
+   rpc.update.collection = "test.test";
    rpc.update.flags = MONGOC_UPDATE_MULTI_UPDATE;
    rpc.update.selector = bson_get_data(&sel);
    rpc.update.update = bson_get_data(&up);

@@ -31,7 +31,7 @@ BSON_BEGIN_DECLS
 #define INT32_FIELD(_name)               bson_int32_t _name;
 #define INT64_FIELD(_name)               bson_int64_t _name;
 #define INT64_ARRAY_FIELD(_len, _name)   bson_int32_t _len; bson_int64_t *_name;
-#define CSTRING_FIELD(_name)             char _name[256];
+#define CSTRING_FIELD(_name)             const char *_name;
 #define BSON_FIELD(_name)                const bson_uint8_t *_name;
 #define BSON_ARRAY_FIELD(_name)          const bson_uint8_t *_name; bson_int32_t _name##_len;
 #define RAW_BUFFER_FIELD(_name)          const bson_uint8_t *_name; bson_int32_t _name##_len;

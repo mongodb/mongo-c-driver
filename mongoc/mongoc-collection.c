@@ -153,6 +153,7 @@ mongoc_collection_insert (mongoc_collection_t   *collection,
    bson_bool_t ret = FALSE;
    bson_t gle;
    bson_t doc;
+   char ns[140];
 
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(document, FALSE);
@@ -165,10 +166,12 @@ mongoc_collection_insert (mongoc_collection_t   *collection,
    rpc[0].insert.response_to = -1;
    rpc[0].insert.opcode = MONGOC_OPCODE_INSERT;
    rpc[0].insert.flags = flags;
-   memcpy(rpc[0].insert.collection, collection->ns,
-          collection->nslen + 1);
+   rpc[0].insert.collection = collection->ns;
    rpc[0].insert.documents = bson_get_data(document);
    rpc[0].insert.documents_len = document->len;
+
+   snprintf(ns, sizeof ns, "%s.$cmd", collection->db);
+   ns[sizeof ns - 1] = '\0';
 
    /*
     * Build our getlasterror RPC.
@@ -180,9 +183,7 @@ mongoc_collection_insert (mongoc_collection_t   *collection,
    rpc[1].query.response_to = -1;
    rpc[1].query.opcode = MONGOC_OPCODE_QUERY;
    rpc[1].query.flags = MONGOC_QUERY_NONE;
-   snprintf(rpc[1].query.collection, sizeof rpc[1].query.collection,
-            "%s.$cmd", collection->db);
-   rpc[1].query.collection[sizeof rpc[1].query.collection - 1] = '\0';
+   rpc[1].query.collection = ns;
    rpc[1].query.skip = 0;
    rpc[1].query.n_return = 1;
    rpc[1].query.query = bson_get_data(&gle);
@@ -241,8 +242,7 @@ mongoc_collection_update (mongoc_collection_t   *collection,
    rpc.update.response_to = -1;
    rpc.update.opcode = MONGOC_OPCODE_UPDATE;
    rpc.update.zero = 0;
-   memcpy(rpc.update.collection, collection->collection,
-          collection->collectionlen);
+   rpc.update.collection = collection->collection;
    rpc.update.flags = flags;
    rpc.update.selector = bson_get_data(selector);
    rpc.update.update = bson_get_data(update);
@@ -285,8 +285,7 @@ mongoc_collection_delete (mongoc_collection_t   *collection,
    rpc.delete.response_to = -1;
    rpc.delete.opcode = MONGOC_OPCODE_DELETE;
    rpc.delete.zero = 0;
-   memcpy(rpc.delete.collection, collection->collection,
-          collection->collectionlen);
+   rpc.delete.collection = collection->collection;
    rpc.delete.flags = flags;
    rpc.delete.selector = bson_get_data(selector);
 

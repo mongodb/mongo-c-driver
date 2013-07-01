@@ -164,7 +164,7 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
    rpc.query.response_to = -1;
    rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = cursor->flags;
-   memcpy(rpc.query.collection, cursor->ns, cursor->nslen + 1);
+   rpc.query.collection = cursor->ns;
    rpc.query.skip = cursor->skip;
    rpc.query.n_return = cursor->limit;
    rpc.query.query = bson_get_data(&cursor->query);
@@ -240,7 +240,7 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    rpc.get_more.response_to = -1;
    rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
    rpc.get_more.zero = 0;
-   memcpy(rpc.get_more.collection, cursor->ns, cursor->nslen + 1);
+   rpc.get_more.collection = cursor->ns;
    rpc.get_more.n_return = cursor->batch_size;
    rpc.get_more.cursor_id = cursor_id;
 
