@@ -96,11 +96,13 @@ void
 mongoc_buffer_destroy (mongoc_buffer_t *buffer)
 {
    bson_return_if_fail(buffer);
+   bson_return_if_fail(buffer->realloc_func);
 
    if (buffer->data) {
       buffer->realloc_func(buffer->data, 0);
-      memset(buffer, 0, sizeof *buffer);
    }
+
+   memset(buffer, 0, sizeof *buffer);
 }
 
 
