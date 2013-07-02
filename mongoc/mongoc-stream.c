@@ -144,22 +144,13 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    struct msghdr msg;
    size_t cur = 0;
-   size_t i;
-   size_t towrite = 0;
    ssize_t written;
+   ssize_t ret = 0;
    int flags = 0;
 
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
-
-   for (i = 0; i < iovcnt; i++) {
-      towrite += iov[i].iov_len;
-   }
-
-   if (!towrite) {
-      return 0;
-   }
 
    for (;;) {
       msg.msg_name = NULL;
@@ -169,15 +160,24 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       msg.msg_control = NULL;
       msg.msg_controllen = 0;
       msg.msg_flags = 0;
-      errno = 0;
 
+      BSON_ASSERT(msg.msg_iov->iov_len);
+      BSON_ASSERT(cur < iovcnt);
+
+      errno = 0;
       written = TEMP_FAILURE_RETRY(sendmsg(file->fd, &msg, flags));
       if (written < 0) {
          return -1;
       }
 
-      while (written >= iov[cur].iov_len) {
+      ret += written;
+
+      BSON_ASSERT(cur < iovcnt);
+
+      while ((cur < iovcnt) && (written >= iov[cur].iov_len)) {
+         BSON_ASSERT(iov[cur].iov_len);
          written -= iov[cur++].iov_len;
+         BSON_ASSERT(cur <= iovcnt);
       }
 
       if (cur == iovcnt) {
@@ -191,7 +191,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       BSON_ASSERT(iov[cur].iov_len);
    }
 
-   return towrite;
+   return ret;
 }
 
 
