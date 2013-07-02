@@ -142,10 +142,12 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
                            size_t           iovcnt)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
+   struct msghdr msg;
    size_t cur = 0;
    size_t i;
    size_t towrite = 0;
    ssize_t written;
+   int flags = 0;
 
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
@@ -160,8 +162,16 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
    }
 
    for (;;) {
+      msg.msg_name = NULL;
+      msg.msg_namelen = 0;
+      msg.msg_iov = iov + cur;
+      msg.msg_iovlen = iovcnt - cur;
+      msg.msg_control = NULL;
+      msg.msg_controllen = 0;
+      msg.msg_flags = 0;
       errno = 0;
-      written = TEMP_FAILURE_RETRY(writev(file->fd, iov + cur, iovcnt - cur));
+
+      written = TEMP_FAILURE_RETRY(sendmsg(file->fd, &msg, flags));
       if (written < 0) {
          return -1;
       }
