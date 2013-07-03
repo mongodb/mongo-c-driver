@@ -107,6 +107,8 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
          cluster->nodes[i].stamp++;
       }
    }
+
+   mongoc_array_destroy(&cluster->iov);
 }
 
 
