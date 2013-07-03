@@ -157,7 +157,9 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
    BSON_ASSERT(buffer->datalen);
 
    if (!SPACE_FOR(buffer, size)) {
-      memmove(&buffer->data[0], &buffer->data[buffer->off], buffer->len);
+      if (buffer->len) {
+         memmove(&buffer->data[0], &buffer->data[buffer->off], buffer->len);
+      }
       buffer->off = 0;
       if (!SPACE_FOR(buffer, size)) {
          buffer->datalen = npow2(buffer->datalen);
