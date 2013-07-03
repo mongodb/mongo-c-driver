@@ -148,6 +148,7 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
                                   size_t           size,
                                   bson_error_t    *error)
 {
+   bson_uint8_t *buf;
    ssize_t ret;
 
    bson_return_val_if_fail(buffer, FALSE);
@@ -167,7 +168,8 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       }
    }
 
-   ret = mongoc_stream_read(stream, &buffer->data[buffer->off + buffer->len], size);
+   buf = &buffer->data[buffer->off + buffer->len];
+   ret = mongoc_stream_read(stream, buf, size);
    if (ret != size) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
