@@ -28,6 +28,9 @@ test_mongoc_buffer_basic (void)
    assert_cmpint(buf.len, ==, 536);
 
    mongoc_buffer_destroy(&buf);
+   mongoc_buffer_destroy(&buf);
+   mongoc_buffer_destroy(&buf);
+   mongoc_buffer_destroy(&buf);
 }
 
 
