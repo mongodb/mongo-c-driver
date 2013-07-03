@@ -163,7 +163,7 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       }
       buffer->off = 0;
       if (!SPACE_FOR(buffer, size)) {
-         buffer->datalen = npow2(buffer->datalen);
+         buffer->datalen = npow2(size);
          buffer->data = bson_realloc(buffer->data, buffer->datalen);
       }
    }
