@@ -27,7 +27,7 @@
 #endif
 
 
-#define SPACE_FOR(_b, _sz) (((_b)->datalen - (_b)->off - (_b)->len) >= _sz)
+#define SPACE_FOR(_b, _sz) (((ssize_t)(_b)->datalen - (ssize_t)(_b)->off - (ssize_t)(_b)->len) >= _sz)
 
 
 static BSON_INLINE bson_uint32_t
