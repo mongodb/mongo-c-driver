@@ -22,6 +22,7 @@ INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stdint.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-uri.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-version.h
+INST_H_FILES += $(top_srcdir)/mongoc/mongoc-write-concern.h
 
 
 NOINST_H_FILES =
@@ -35,6 +36,7 @@ NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-database-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-list-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-queue-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-rpc-private.h
+NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-write-concern-private.h
 
 
 libmongoc_1_0_la_SOURCES =
@@ -54,6 +56,7 @@ libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-queue.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-rpc.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-uri.c
+libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-write-concern.c
 
 
 libmongoc_1_0_la_CPPFLAGS =

@@ -37,9 +37,9 @@ void                    mongoc_write_concern_set_journal   (mongoc_write_concern
 void                    mongoc_write_concern_set_w         (mongoc_write_concern_t *write_concern,
                                                             bson_int32_t            w);
 void                    mongoc_write_concern_set_wtimeout  (mongoc_write_concern_t *write_concern,
-                                                            bson_uint32_t           wtimeout_msec);
+                                                            bson_int32_t            wtimeout_msec);
 void                    mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
-                                                            bson_uint32_t           wtimeout_msec);
+                                                            bson_int32_t            wtimeout_msec);
 
 
 BSON_END_DECLS
