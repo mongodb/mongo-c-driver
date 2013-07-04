@@ -31,12 +31,13 @@ struct _mongoc_write_concern_t
    bson_bool_t  journal;
    bson_int32_t w;
    bson_int32_t wtimeout;
+   bson_bool_t  frozen;
    bson_t       tags;
    bson_t       compiled;
 };
 
 
-const bson_t *mongoc_write_concern_compile (mongoc_write_concern_t *write_concern);
+const bson_t *mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern);
 
 
 BSON_END_DECLS
