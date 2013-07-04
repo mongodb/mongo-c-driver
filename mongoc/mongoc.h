@@ -35,6 +35,7 @@
 #include "mongoc-stream.h"
 #include "mongoc-stdint.h"
 #include "mongoc-uri.h"
+#include "mongoc-write-concern.h"
 #undef MONGOC_INSIDE
 
 
