@@ -59,6 +59,28 @@ mongoc_read_prefs_set_tags (mongoc_read_prefs_t *read_prefs,
 }
 
 
+static bson_bool_t
+_contains_tag (const bson_t *b,
+               const char   *key,
+               const char   *value,
+               size_t        value_len)
+{
+   bson_iter_t iter;
+
+   bson_return_val_if_fail(b, FALSE);
+   bson_return_val_if_fail(key, FALSE);
+   bson_return_val_if_fail(value, FALSE);
+
+   if (bson_iter_init_find(&iter, b, key) &&
+       BSON_ITER_HOLDS_UTF8(&iter) &&
+       !strncmp(value, bson_iter_utf8(&iter, NULL), value_len)) {
+      return TRUE;
+   }
+
+   return FALSE;
+}
+
+
 /**
  * mongoc_read_prefs_accepts:
  * @read_prefs: A mongoc_read_prefs_t.
@@ -84,7 +106,9 @@ int
 _mongoc_read_prefs_accepts (mongoc_read_prefs_t   *read_prefs,
                             mongoc_cluster_node_t *node)
 {
+   bson_uint32_t len;
    bson_iter_t iter;
+   const char *value;
 
    bson_return_val_if_fail(read_prefs, FALSE);
    bson_return_val_if_fail(node, FALSE);
@@ -92,11 +116,16 @@ _mongoc_read_prefs_accepts (mongoc_read_prefs_t   *read_prefs,
    /*
     * Check tags.
     */
-
    if (!bson_empty(&read_prefs->tags)) {
       if (bson_iter_init(&iter, &read_prefs->tags)) {
          while (bson_iter_next(&iter)) {
             if (BSON_ITER_HOLDS_UTF8(&iter)) {
+               value = bson_iter_utf8(&iter, &len);
+               if (!_contains_tag(&node->tags,
+                                  bson_iter_key(&iter),
+                                  value, len)) {
+                  return 0;
+               }
             }
          }
       }
