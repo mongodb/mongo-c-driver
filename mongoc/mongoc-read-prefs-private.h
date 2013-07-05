@@ -21,14 +21,22 @@
 
 #include <bson.h>
 
+#include "mongoc-cluster-private.h"
+#include "mongoc-read-prefs.h"
+
 
 BSON_BEGIN_DECLS
 
 
 struct _mongoc_read_prefs_t
 {
-   void *dummy;
+   mongoc_read_mode_t mode;
+   bson_t             tags;
 };
+
+
+int _mongoc_read_prefs_accepts (mongoc_read_prefs_t   *read_prefs,
+                                mongoc_cluster_node_t *node);
 
 
 BSON_END_DECLS

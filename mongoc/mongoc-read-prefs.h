@@ -26,10 +26,25 @@ BSON_BEGIN_DECLS
 
 
 typedef struct _mongoc_read_prefs_t mongoc_read_prefs_t;
+typedef enum   _mongoc_read_mode_t  mongoc_read_mode_t;
 
 
-mongoc_read_prefs_t *mongoc_read_prefs_new     (void);
-void                 mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs);
+enum _mongoc_read_mode_t
+{
+   MONGOC_READ_PRIMARY,
+   MONGOC_READ_PRIMARY_PREFERRED,
+   MONGOC_READ_SECONDARY,
+   MONGOC_READ_SECONDARY_PREFERRED,
+   MONGOC_READ_NEAREST,
+};
+
+
+mongoc_read_prefs_t *mongoc_read_prefs_new      (void);
+void                 mongoc_read_prefs_destroy  (mongoc_read_prefs_t *read_prefs);
+void                 mongoc_read_prefs_set_mode (mongoc_read_prefs_t *read_prefs,
+                                                 mongoc_read_mode_t   mode);
+void                 mongoc_read_prefs_set_tags (mongoc_read_prefs_t *read_prefs,
+                                                 const bson_t        *tags);
 
 
 BSON_END_DECLS
