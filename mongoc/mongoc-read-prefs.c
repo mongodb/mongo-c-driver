@@ -114,7 +114,7 @@ _mongoc_read_prefs_accepts (mongoc_read_prefs_t   *read_prefs,
    bson_return_val_if_fail(node, FALSE);
 
    /*
-    * Check tags.
+    * TODO: Verify tag arrays.
     */
    if (!bson_empty(&read_prefs->tags)) {
       if (bson_iter_init(&iter, &read_prefs->tags)) {
