@@ -23,6 +23,8 @@
 
 #include "mongoc-flags.h"
 #include "mongoc-cursor.h"
+#include "mongoc-read-prefs.h"
+#include "mongoc-write-concern.h"
 
 
 BSON_BEGIN_DECLS
@@ -31,33 +33,33 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_collection_t mongoc_collection_t;
 
 
-void             mongoc_collection_destroy (mongoc_collection_t   *collection);
-bson_bool_t      mongoc_collection_drop    (mongoc_collection_t   *collection,
-                                            bson_error_t          *error);
-mongoc_cursor_t *mongoc_collection_find    (mongoc_collection_t   *collection,
-                                            mongoc_query_flags_t   flags,
-                                            bson_uint32_t          skip,
-                                            bson_uint32_t          n_return,
-                                            const bson_t          *query,
-                                            const bson_t          *fields,
-                                            const bson_t          *options);
-bson_bool_t      mongoc_collection_insert  (mongoc_collection_t   *collection,
-                                            mongoc_insert_flags_t  flags,
-                                            const bson_t          *document,
-                                            const bson_t          *options,
-                                            bson_t                *result,
-                                            bson_error_t          *error);
-bson_bool_t      mongoc_collection_update  (mongoc_collection_t   *collection,
-                                            mongoc_update_flags_t  flags,
-                                            const bson_t          *selector,
-                                            const bson_t          *update,
-                                            const bson_t          *options,
-                                            bson_error_t          *error);
-bson_bool_t      mongoc_collection_delete  (mongoc_collection_t   *collection,
-                                            mongoc_delete_flags_t  flags,
-                                            const bson_t          *selector,
-                                            const bson_t          *options,
-                                            bson_error_t          *error);
+void             mongoc_collection_destroy (mongoc_collection_t    *collection);
+bson_bool_t      mongoc_collection_drop    (mongoc_collection_t    *collection,
+                                            bson_error_t           *error);
+mongoc_cursor_t *mongoc_collection_find    (mongoc_collection_t    *collection,
+                                            mongoc_query_flags_t    flags,
+                                            bson_uint32_t           skip,
+                                            bson_uint32_t           n_return,
+                                            const bson_t           *query,
+                                            const bson_t           *fields,
+                                            mongoc_read_prefs_t    *read_prefs);
+bson_bool_t      mongoc_collection_insert  (mongoc_collection_t    *collection,
+                                            mongoc_insert_flags_t   flags,
+                                            const bson_t           *document,
+                                            mongoc_write_concern_t *write_concern,
+                                            bson_t                 *result,
+                                            bson_error_t           *error);
+bson_bool_t      mongoc_collection_update  (mongoc_collection_t    *collection,
+                                            mongoc_update_flags_t   flags,
+                                            const bson_t           *selector,
+                                            const bson_t           *update,
+                                            mongoc_write_concern_t *write_concern,
+                                            bson_error_t           *error);
+bson_bool_t      mongoc_collection_delete  (mongoc_collection_t    *collection,
+                                            mongoc_delete_flags_t   flags,
+                                            const bson_t           *selector,
+                                            mongoc_write_concern_t *write_concern,
+                                            bson_error_t           *error);
 
 
 BSON_END_DECLS

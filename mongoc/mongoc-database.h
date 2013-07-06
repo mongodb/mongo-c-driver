@@ -23,6 +23,7 @@
 
 #include "mongoc-cursor.h"
 #include "mongoc-flags.h"
+#include "mongoc-read-prefs.h"
 
 
 BSON_BEGIN_DECLS
@@ -42,7 +43,7 @@ mongoc_database_command (mongoc_database_t    *database,
                          bson_uint32_t         n_return,
                          const bson_t         *command,
                          const bson_t         *fields,
-                         const bson_t         *options);
+                         mongoc_read_prefs_t  *read_prefs);
 
 
 bson_bool_t

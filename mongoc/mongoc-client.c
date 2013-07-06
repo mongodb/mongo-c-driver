@@ -213,12 +213,13 @@ mongoc_client_create_stream (mongoc_client_t          *client,
 
 
 bson_uint32_t
-mongoc_client_sendv (mongoc_client_t *client,
-                     mongoc_rpc_t    *rpcs,
-                     size_t           rpcs_len,
-                     bson_uint32_t    hint,
-                     const bson_t    *options,
-                     bson_error_t    *error)
+mongoc_client_sendv (mongoc_client_t        *client,
+                     mongoc_rpc_t           *rpcs,
+                     size_t                  rpcs_len,
+                     bson_uint32_t           hint,
+                     mongoc_write_concern_t *write_concern,
+                     mongoc_read_prefs_t    *read_prefs,
+                     bson_error_t           *error)
 {
    size_t i;
 
@@ -233,10 +234,10 @@ mongoc_client_sendv (mongoc_client_t *client,
 
    switch (client->cluster.state) {
    case MONGOC_CLUSTER_STATE_BORN:
-      return mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint, options, error);
+      return mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint, write_concern, read_prefs, error);
    case MONGOC_CLUSTER_STATE_HEALTHY:
    case MONGOC_CLUSTER_STATE_UNHEALTHY:
-      return mongoc_cluster_try_sendv(&client->cluster, rpcs, rpcs_len, hint, options, error);
+      return mongoc_cluster_try_sendv(&client->cluster, rpcs, rpcs_len, hint, write_concern, read_prefs, error);
    case MONGOC_CLUSTER_STATE_DEAD:
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
@@ -353,20 +354,4 @@ mongoc_client_get_collection (mongoc_client_t *client,
    bson_return_val_if_fail(collection, NULL);
 
    return mongoc_collection_new(client, db, collection);
-}
-
-
-bson_bool_t
-mongoc_client_getlasterror (mongoc_client_t *client,
-                            bson_uint32_t    hint,
-                            const char      *database,
-                            const bson_t    *options,
-                            bson_t          *result,
-                            bson_error_t    *error)
-{
-   bson_return_val_if_fail(client, FALSE);
-   bson_return_val_if_fail(hint, FALSE);
-
-   return mongoc_cluster_getlasterror(&client->cluster, hint, database,
-                                      options, result, error);
 }

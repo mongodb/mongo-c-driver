@@ -42,7 +42,8 @@ struct _mongoc_cursor_t
 
    bson_t               query;
    bson_t               fields;
-   bson_t               options;
+
+   mongoc_read_prefs_t *read_prefs;
 
    mongoc_query_flags_t flags;
    bson_uint32_t        skip;
@@ -69,7 +70,7 @@ mongoc_cursor_new (mongoc_client_t      *client,
                    bson_uint32_t         batch_size,
                    const bson_t         *query,
                    const bson_t         *fields,
-                   const bson_t         *options);
+                   mongoc_read_prefs_t  *read_prefs);
 
 
 BSON_END_DECLS

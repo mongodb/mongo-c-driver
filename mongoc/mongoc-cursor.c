@@ -31,7 +31,7 @@ mongoc_cursor_new (mongoc_client_t      *client,
                    bson_uint32_t         batch_size,
                    const bson_t         *query,
                    const bson_t         *fields,
-                   const bson_t         *options)
+                   mongoc_read_prefs_t  *read_prefs)
 {
    mongoc_cursor_t *cursor;
 
@@ -62,10 +62,11 @@ mongoc_cursor_new (mongoc_client_t      *client,
       bson_init(&cursor->fields);
    }
 
-   if (options) {
-      bson_copy_to(options, &cursor->options);
-   } else {
-      bson_init(&cursor->options);
+   if (read_prefs) {
+      /*
+       * TODO: copy read prefs.
+       */
+      cursor->read_prefs = read_prefs;
    }
 
    mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL);
@@ -85,9 +86,12 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
        */
    }
 
+   /*
+    * TODO: Clear cursor->read_prefs once copied.
+    */
+
    bson_destroy(&cursor->query);
    bson_destroy(&cursor->fields);
-   bson_destroy(&cursor->options);
    bson_reader_destroy(&cursor->reader);
    bson_error_destroy(&cursor->error);
    mongoc_buffer_destroy(&cursor->buffer);
@@ -155,10 +159,6 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
 
    bson_return_val_if_fail(cursor, FALSE);
 
-   /*
-    * TODO: Merge options.
-    */
-
    rpc.query.msg_len = 0;
    rpc.query.request_id = 0;
    rpc.query.response_to = -1;
@@ -171,7 +171,8 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
    rpc.query.fields = bson_get_data(&cursor->fields);
 
    if (!(hint = mongoc_client_sendv(cursor->client, &rpc, 1, 0,
-                                    &cursor->options, &cursor->error))) {
+                                    NULL, cursor->read_prefs,
+                                    &cursor->error))) {
       goto failure;
    }
 
@@ -249,7 +250,7 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
     */
 
    if (!mongoc_client_sendv(cursor->client, &rpc, 1, cursor->hint,
-                            &cursor->options, &cursor->error)) {
+                            NULL, cursor->read_prefs, &cursor->error)) {
       cursor->done = TRUE;
       cursor->failed = TRUE;
       return FALSE;

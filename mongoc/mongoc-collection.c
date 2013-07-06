@@ -74,20 +74,13 @@ mongoc_collection_find (mongoc_collection_t  *collection,
                         bson_uint32_t         limit,
                         const bson_t         *query,
                         const bson_t         *fields,
-                        const bson_t         *options)
+                        mongoc_read_prefs_t  *read_prefs)
 {
    bson_return_val_if_fail(collection, NULL);
    bson_return_val_if_fail(query, NULL);
 
-   return mongoc_cursor_new(collection->client,
-                            collection->ns,
-                            flags,
-                            skip,
-                            limit,
-                            0,
-                            query,
-                            fields,
-                            options);
+   return mongoc_cursor_new(collection->client, collection->ns, flags, skip,
+                            limit, 0, query, fields, read_prefs);
 }
 
 
@@ -139,12 +132,12 @@ mongoc_collection_drop (mongoc_collection_t *collection,
 
 
 bson_bool_t
-mongoc_collection_insert (mongoc_collection_t   *collection,
-                          mongoc_insert_flags_t  flags,
-                          const bson_t          *document,
-                          const bson_t          *options,
-                          bson_t                *result,
-                          bson_error_t          *error)
+mongoc_collection_insert (mongoc_collection_t    *collection,
+                          mongoc_insert_flags_t   flags,
+                          const bson_t           *document,
+                          mongoc_write_concern_t *write_concern,
+                          bson_t                 *result,
+                          bson_error_t           *error)
 {
    mongoc_buffer_t buffer;
    bson_uint32_t hint;
@@ -190,7 +183,7 @@ mongoc_collection_insert (mongoc_collection_t   *collection,
    rpc[1].query.fields = NULL;
 
    if (!(hint = mongoc_client_sendv(collection->client, &rpc[0], 2, 0,
-                                    options, error))) {
+                                    write_concern, NULL, error))) {
       goto cleanup;
    }
 
@@ -223,12 +216,12 @@ cleanup:
 
 
 bson_bool_t
-mongoc_collection_update (mongoc_collection_t   *collection,
-                          mongoc_update_flags_t  flags,
-                          const bson_t          *selector,
-                          const bson_t          *update,
-                          const bson_t          *options,
-                          bson_error_t          *error)
+mongoc_collection_update (mongoc_collection_t    *collection,
+                          mongoc_update_flags_t   flags,
+                          const bson_t           *selector,
+                          const bson_t           *update,
+                          mongoc_write_concern_t *write_concern,
+                          bson_error_t           *error)
 {
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
@@ -248,7 +241,7 @@ mongoc_collection_update (mongoc_collection_t   *collection,
    rpc.update.update = bson_get_data(update);
 
    if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0,
-                                    options, error))) {
+                                    write_concern, NULL, error))) {
       return FALSE;
    }
 
@@ -268,11 +261,11 @@ mongoc_collection_update (mongoc_collection_t   *collection,
 
 
 bson_bool_t
-mongoc_collection_delete (mongoc_collection_t   *collection,
-                          mongoc_delete_flags_t  flags,
-                          const bson_t          *selector,
-                          const bson_t          *options,
-                          bson_error_t          *error)
+mongoc_collection_delete (mongoc_collection_t    *collection,
+                          mongoc_delete_flags_t   flags,
+                          const bson_t           *selector,
+                          mongoc_write_concern_t *write_concern,
+                          bson_error_t           *error)
 {
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
@@ -289,7 +282,8 @@ mongoc_collection_delete (mongoc_collection_t   *collection,
    rpc.delete.flags = flags;
    rpc.delete.selector = bson_get_data(selector);
 
-   if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0, options, error))) {
+   if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0,
+                                    write_concern, NULL, error))) {
       return FALSE;
    }
 

@@ -56,7 +56,7 @@ mongoc_database_command (mongoc_database_t    *database,
                          bson_uint32_t         n_return,
                          const bson_t         *command,
                          const bson_t         *fields,
-                         const bson_t         *options)
+                         mongoc_read_prefs_t  *read_prefs)
 {
    char ns[140];
 
@@ -65,7 +65,7 @@ mongoc_database_command (mongoc_database_t    *database,
 
    snprintf(ns, sizeof ns, "%s.$cmd", database->name);
    return mongoc_cursor_new(database->client, ns, flags, skip, n_return, 0,
-                            command, fields, options);
+                            command, fields, read_prefs);
 }
 
 
