@@ -45,6 +45,7 @@ void                 mongoc_read_prefs_set_mode (mongoc_read_prefs_t *read_prefs
                                                  mongoc_read_mode_t   mode);
 void                 mongoc_read_prefs_set_tags (mongoc_read_prefs_t *read_prefs,
                                                  const bson_t        *tags);
+bson_bool_t          mongoc_read_prefs_is_valid (mongoc_read_prefs_t *read_prefs);
 
 
 BSON_END_DECLS
