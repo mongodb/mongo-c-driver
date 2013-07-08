@@ -25,6 +25,10 @@
 BSON_BEGIN_DECLS
 
 
+#define MONGOC_WRITE_CONCERN_W_DEFAULT  -2
+#define MONGOC_WRITE_CONCERN_W_MAJORITY -3
+
+
 typedef struct _mongoc_write_concern_t mongoc_write_concern_t;
 
 

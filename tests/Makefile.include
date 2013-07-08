@@ -8,6 +8,7 @@ noinst_PROGRAMS += test-mongoc-list
 noinst_PROGRAMS += test-mongoc-queue
 noinst_PROGRAMS += test-mongoc-rpc
 noinst_PROGRAMS += test-mongoc-uri
+noinst_PROGRAMS += test-mongoc-write-concern
 
 
 TEST_PROGS =
@@ -19,6 +20,7 @@ TEST_PROGS += test-mongoc-list
 TEST_PROGS += test-mongoc-queue
 TEST_PROGS += test-mongoc-rpc
 TEST_PROGS += test-mongoc-uri
+TEST_PROGS += test-mongoc-write-concern
 
 
 test_load_SOURCES = $(top_srcdir)/tests/test-load.c
@@ -64,6 +66,11 @@ test_mongoc_rpc_LDADD = libmongoc-1.0.la $(BSON_LIBS)
 test_mongoc_uri_SOURCES = $(top_srcdir)/tests/test-mongoc-uri.c
 test_mongoc_uri_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_mongoc_uri_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+
+
+test_mongoc_write_concern_SOURCES = $(top_srcdir)/tests/test-mongoc-write-concern.c
+test_mongoc_write_concern_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+test_mongoc_write_concern_LDADD = libmongoc-1.0.la $(BSON_LIBS)
 
 
 test: $(TEST_PROGS)

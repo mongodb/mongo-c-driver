@@ -45,6 +45,7 @@ mongoc_write_concern_new (void)
    mongoc_write_concern_t *write_concern;
 
    write_concern = bson_malloc0(sizeof *write_concern);
+   write_concern->w = -2;
    return write_concern;
 }
 
@@ -131,7 +132,7 @@ mongoc_write_concern_set_journal (mongoc_write_concern_t *write_concern,
 bson_int32_t
 mongoc_write_concern_get_w (mongoc_write_concern_t *write_concern)
 {
-   bson_return_val_if_fail(write_concern, 0);
+   bson_return_val_if_fail(write_concern, MONGOC_WRITE_CONCERN_W_DEFAULT);
    return write_concern->w;
 }
 
@@ -151,6 +152,7 @@ mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern,
                             bson_int32_t            w)
 {
    bson_return_if_fail(write_concern);
+   bson_return_if_fail(w >= -3);
 
    if (!mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->w = w;
@@ -190,7 +192,7 @@ bson_bool_t
 mongoc_write_concern_get_wmajority (mongoc_write_concern_t *write_concern)
 {
    bson_return_val_if_fail(write_concern, FALSE);
-   return (write_concern->w == -1);
+   return (write_concern->w == -3);
 }
 
 
@@ -210,7 +212,7 @@ mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
    bson_return_if_fail(write_concern);
 
    if (!mongoc_write_concern_warn_frozen(write_concern)) {
-      write_concern->w = -1;
+      write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
       write_concern->wtimeout = wtimeout_msec;
    }
 }

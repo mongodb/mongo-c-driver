@@ -30,3 +30,4 @@ test-mongoc-list
 test-mongoc-queue
 test-mongoc-rpc
 test-mongoc-uri
+test-mongoc-write-concern
