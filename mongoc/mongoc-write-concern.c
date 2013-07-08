@@ -46,7 +46,28 @@ mongoc_write_concern_new (void)
 
    write_concern = bson_malloc0(sizeof *write_concern);
    write_concern->w = -2;
+   bson_init(&write_concern->tags);
    return write_concern;
+}
+
+
+mongoc_write_concern_t *
+mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern)
+{
+   mongoc_write_concern_t *ret = NULL;
+
+   if (write_concern) {
+      ret = mongoc_write_concern_new();
+      ret->fsync_ = write_concern->fsync_;
+      ret->journal = write_concern->journal;
+      ret->w = write_concern->w;
+      ret->wtimeout = write_concern->wtimeout;
+      ret->frozen = FALSE;
+      bson_destroy(&ret->tags);
+      bson_copy_to(&write_concern->tags, &ret->tags);
+   }
+
+   return ret;
 }
 
 
