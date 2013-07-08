@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -119,6 +120,9 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
                           bson_uint32_t    timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
+   struct pollfd fds;
+   int timeout;
+   int count;
 
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
@@ -129,9 +133,20 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       return -1;
    }
 
-   /*
-    * TODO: Handle timeout_msec.
-    */
+   timeout = 0; /* TODO: Use CLOCK_MONOTONIC if available. */
+
+   fds.fd = file->fd;
+   fds.events = (POLLIN | POLLERR);
+#ifdef POLLRDHUP
+   fds.events |= POLLRDHUP;
+#endif
+
+   count = poll(&fds, 1, timeout);
+   if (!count) {
+      /*
+       * TODO: Handle read timeout.
+       */
+   }
 
 #ifdef TEMP_FAILURE_RETRY
    return TEMP_FAILURE_RETRY(readv(file->fd, iov, iovcnt));
