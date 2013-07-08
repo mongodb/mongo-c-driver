@@ -437,8 +437,16 @@ mongoc_stream_t *
 mongoc_stream_new_from_unix (int fd)
 {
    mongoc_stream_unix_t *stream;
+   int flags;
 
    bson_return_val_if_fail(fd != -1, NULL);
+
+   /*
+    * If we cannot put the file-descriptor in O_NONBLOCK mode, there isn't much
+    * we can do. Just fail.
+    */
+   flags = fcntl(fd, F_GETFD);
+   fcntl(fd, F_SETFD, flags | O_NONBLOCK);
 
    stream = bson_malloc0(sizeof *stream);
    stream->fd = fd;
