@@ -36,7 +36,7 @@ mongoc_read_prefs_new (void)
 
 
 mongoc_read_mode_t
-mongoc_read_prefs_get_mode (mongoc_read_prefs_t *read_prefs)
+mongoc_read_prefs_get_mode (const mongoc_read_prefs_t *read_prefs)
 {
    bson_return_val_if_fail(read_prefs, 0);
    return read_prefs->mode;
@@ -55,7 +55,7 @@ mongoc_read_prefs_set_mode (mongoc_read_prefs_t *read_prefs,
 
 
 const bson_t *
-mongoc_read_prefs_get_tags (mongoc_read_prefs_t *read_prefs)
+mongoc_read_prefs_get_tags (const mongoc_read_prefs_t *read_prefs)
 {
    bson_return_val_if_fail(read_prefs, NULL);
    return &read_prefs->tags;
@@ -78,7 +78,7 @@ mongoc_read_prefs_set_tags (mongoc_read_prefs_t *read_prefs,
 
 
 bson_bool_t
-mongoc_read_prefs_is_valid (mongoc_read_prefs_t *read_prefs)
+mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
 {
    bson_return_val_if_fail(read_prefs, FALSE);
 
@@ -151,8 +151,8 @@ _score_tags (const bson_t *read_tags,
 
 
 static int
-_mongoc_read_prefs_score_primary (mongoc_read_prefs_t   *read_prefs,
-                                  mongoc_cluster_node_t *node)
+_mongoc_read_prefs_score_primary (const mongoc_read_prefs_t   *read_prefs,
+                                  const mongoc_cluster_node_t *node)
 {
    bson_return_val_if_fail(read_prefs, -1);
    bson_return_val_if_fail(node, -1);
@@ -161,8 +161,8 @@ _mongoc_read_prefs_score_primary (mongoc_read_prefs_t   *read_prefs,
 
 
 static int
-_mongoc_read_prefs_score_primary_preferred (mongoc_read_prefs_t   *read_prefs,
-                                            mongoc_cluster_node_t *node)
+_mongoc_read_prefs_score_primary_preferred (const mongoc_read_prefs_t   *read_prefs,
+                                            const mongoc_cluster_node_t *node)
 {
    const bson_t *node_tags;
    const bson_t *read_tags;
@@ -182,8 +182,8 @@ _mongoc_read_prefs_score_primary_preferred (mongoc_read_prefs_t   *read_prefs,
 
 
 static int
-_mongoc_read_prefs_score_secondary (mongoc_read_prefs_t   *read_prefs,
-                                    mongoc_cluster_node_t *node)
+_mongoc_read_prefs_score_secondary (const mongoc_read_prefs_t   *read_prefs,
+                                    const mongoc_cluster_node_t *node)
 {
    const bson_t *node_tags;
    const bson_t *read_tags;
@@ -203,8 +203,8 @@ _mongoc_read_prefs_score_secondary (mongoc_read_prefs_t   *read_prefs,
 
 
 static int
-_mongoc_read_prefs_score_secondary_preferred (mongoc_read_prefs_t   *read_prefs,
-                                              mongoc_cluster_node_t *node)
+_mongoc_read_prefs_score_secondary_preferred (const mongoc_read_prefs_t   *read_prefs,
+                                              const mongoc_cluster_node_t *node)
 {
    const bson_t *node_tags;
    const bson_t *read_tags;
@@ -224,8 +224,8 @@ _mongoc_read_prefs_score_secondary_preferred (mongoc_read_prefs_t   *read_prefs,
 
 
 static int
-_mongoc_read_prefs_score_nearest (mongoc_read_prefs_t   *read_prefs,
-                                  mongoc_cluster_node_t *node)
+_mongoc_read_prefs_score_nearest (const mongoc_read_prefs_t   *read_prefs,
+                                  const mongoc_cluster_node_t *node)
 {
    const bson_t *read_tags;
    const bson_t *node_tags;
@@ -241,8 +241,8 @@ _mongoc_read_prefs_score_nearest (mongoc_read_prefs_t   *read_prefs,
 
 
 int
-_mongoc_read_prefs_score (mongoc_read_prefs_t   *read_prefs,
-                          mongoc_cluster_node_t *node)
+_mongoc_read_prefs_score (const mongoc_read_prefs_t   *read_prefs,
+                          const mongoc_cluster_node_t *node)
 {
    bson_return_val_if_fail(read_prefs, -1);
    bson_return_val_if_fail(node, -1);
@@ -272,4 +272,19 @@ mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs)
       bson_destroy(&read_prefs->tags);
       bson_free(read_prefs);
    }
+}
+
+
+mongoc_read_prefs_t *
+mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
+{
+   mongoc_read_prefs_t *ret = NULL;
+
+   if (read_prefs) {
+      ret = mongoc_read_prefs_new();
+      ret->mode = read_prefs->mode;
+      bson_copy_to(&read_prefs->tags, &ret->tags);
+   }
+
+   return ret;
 }
