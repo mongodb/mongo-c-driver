@@ -22,6 +22,7 @@
 #include <netinet/tcp.h>
 #include <poll.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -36,6 +37,11 @@
 
 #ifndef TEMP_FAILURE_RETRY
 #define TEMP_FAILURE_RETRY(_f) _f
+#endif
+
+
+#ifndef USEC_PER_SEC
+#define USEC_PER_SEC 1000000
 #endif
 
 
@@ -113,6 +119,34 @@ mongoc_stream_unix_flush (mongoc_stream_t *stream)
 }
 
 
+static BSON_INLINE void
+timeval_add_msec (struct timeval *tv,
+                  bson_uint32_t   msec)
+{
+   BSON_ASSERT(tv);
+
+   tv->tv_sec += msec / 1000U;
+   tv->tv_usec += msec % 1000U;
+   tv->tv_sec += tv->tv_usec / USEC_PER_SEC;
+   tv->tv_usec %= USEC_PER_SEC;
+}
+
+
+static bson_uint32_t
+msec_until (const struct timeval *tv)
+{
+   struct timeval now;
+   bson_uint64_t tv_msec;
+   bson_uint64_t now_msec;
+
+   gettimeofday(&now, NULL);
+   tv_msec = (tv->tv_sec * 1000UL) + (tv->tv_usec / 1000UL);
+   now_msec = (now.tv_sec * 1000UL) + (now.tv_usec / 1000UL);
+
+   return (now_msec >= tv_msec) ? 0 : (tv_msec - now_msec);
+}
+
+
 static ssize_t
 mongoc_stream_unix_readv (mongoc_stream_t *stream,
                           struct iovec    *iov,
@@ -120,6 +154,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
                           bson_uint32_t    timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
+   struct timeval expire = { 0 };
    struct pollfd fds;
    int timeout;
    int count;
@@ -133,13 +168,18 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       return -1;
    }
 
-   timeout = 0; /* TODO: Use CLOCK_MONOTONIC if available. */
-
    fds.fd = file->fd;
    fds.events = (POLLIN | POLLERR);
 #ifdef POLLRDHUP
    fds.events |= POLLRDHUP;
 #endif
+   fds.revents = 0;
+
+   gettimeofday(&expire, NULL);
+   timeval_add_msec(&expire, timeout_msec);
+
+   timeout = msec_until(&expire);
+   fds.revents = 0;
 
    count = poll(&fds, 1, timeout);
    if (!count) {
