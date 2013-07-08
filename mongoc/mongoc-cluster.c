@@ -303,7 +303,7 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
    mongoc_rpc_gather(&rpc, &ar);
    mongoc_rpc_swab(&rpc);
 
-   if (!mongoc_stream_writev(node->stream, ar.data, ar.len)) {
+   if (!mongoc_stream_writev(node->stream, ar.data, ar.len, 0)) {
       goto failure;
    }
 
@@ -486,7 +486,7 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
 
    BSON_ASSERT(cluster->iov.len);
 
-   if (!mongoc_stream_writev(node->stream, iov, iovcnt)) {
+   if (!mongoc_stream_writev(node->stream, iov, iovcnt, 0)) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
                      MONGOC_ERROR_STREAM_SOCKET,
@@ -535,7 +535,7 @@ mongoc_cluster_try_sendv (mongoc_cluster_t       *cluster,
    iovcnt = cluster->iov.len;
    errno = 0;
 
-   if (!mongoc_stream_writev(node->stream, iov, iovcnt)) {
+   if (!mongoc_stream_writev(node->stream, iov, iovcnt, 0)) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
                      MONGOC_ERROR_STREAM_SOCKET,

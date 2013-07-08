@@ -36,10 +36,12 @@ struct _mongoc_stream_t
    int     (*flush)   (mongoc_stream_t *stream);
    ssize_t (*writev)  (mongoc_stream_t *stream,
                        struct iovec    *iov,
-                       size_t           iovcnt);
+                       size_t           iovcnt,
+                       bson_uint32_t    timeout_msec);
    ssize_t (*readv)   (mongoc_stream_t *stream,
                        struct iovec    *iov,
-                       size_t           iovcnt);
+                       size_t           iovcnt,
+                       bson_uint32_t    timeout_msec);
    int     (*cork)    (mongoc_stream_t *stream);
    int     (*uncork)  (mongoc_stream_t *stream);
 };
@@ -54,13 +56,16 @@ mongoc_stream_t *mongoc_stream_new_from_unix (int              fd);
 mongoc_stream_t *mongoc_stream_buffered_new  (mongoc_stream_t *base_stream);
 ssize_t          mongoc_stream_writev        (mongoc_stream_t *stream,
                                               struct iovec    *iov,
-                                              size_t           iovcnt);
+                                              size_t           iovcnt,
+                                              bson_uint32_t    timeout_msec);
 ssize_t          mongoc_stream_readv         (mongoc_stream_t *stream,
                                               struct iovec    *iov,
-                                              size_t           iovcnt);
+                                              size_t           iovcnt,
+                                              bson_uint32_t    timeout_msec);
 ssize_t          mongoc_stream_read          (mongoc_stream_t *stream,
                                               void            *buf,
-                                              size_t           count);
+                                              size_t           count,
+                                              bson_uint32_t    timeout_msec);
 
 
 BSON_END_DECLS

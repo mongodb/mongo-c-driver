@@ -115,7 +115,8 @@ mongoc_stream_unix_flush (mongoc_stream_t *stream)
 static ssize_t
 mongoc_stream_unix_readv (mongoc_stream_t *stream,
                           struct iovec    *iov,
-                          size_t           iovcnt)
+                          size_t           iovcnt,
+                          bson_uint32_t    timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
 
@@ -128,6 +129,10 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       return -1;
    }
 
+   /*
+    * TODO: Handle timeout_msec.
+    */
+
 #ifdef TEMP_FAILURE_RETRY
    return TEMP_FAILURE_RETRY(readv(file->fd, iov, iovcnt));
 #else
@@ -139,7 +144,8 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
 static ssize_t
 mongoc_stream_unix_writev (mongoc_stream_t *stream,
                            struct iovec    *iov,
-                           size_t           iovcnt)
+                           size_t           iovcnt,
+                           bson_uint32_t    timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    struct msghdr msg;
@@ -151,6 +157,10 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
+
+   /*
+    * TODO: Handle timeout_msec.
+    */
 
    for (;;) {
       msg.msg_name = NULL;
@@ -283,13 +293,16 @@ mongoc_stream_flush (mongoc_stream_t *stream)
 ssize_t
 mongoc_stream_writev (mongoc_stream_t *stream,
                       struct iovec    *iov,
-                      size_t           iovcnt)
+                      size_t           iovcnt,
+                      bson_uint32_t    timeout_msec)
 {
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
 
-   return stream->writev(stream, iov, iovcnt);
+   BSON_ASSERT(stream->writev);
+
+   return stream->writev(stream, iov, iovcnt, timeout_msec);
 }
 
 
@@ -307,13 +320,16 @@ mongoc_stream_writev (mongoc_stream_t *stream,
 ssize_t
 mongoc_stream_readv (mongoc_stream_t *stream,
                      struct iovec    *iov,
-                     size_t           iovcnt)
+                     size_t           iovcnt,
+                     bson_uint32_t    timeout_msec)
 {
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
 
-   return stream->readv(stream, iov, iovcnt);
+   BSON_ASSERT(stream->readv);
+
+   return stream->readv(stream, iov, iovcnt, timeout_msec);
 }
 
 
@@ -331,7 +347,8 @@ mongoc_stream_readv (mongoc_stream_t *stream,
 ssize_t
 mongoc_stream_read (mongoc_stream_t *stream,
                     void            *buf,
-                    size_t           count)
+                    size_t           count,
+                    bson_uint32_t    timeout_msec)
 {
    struct iovec iov;
 
@@ -345,7 +362,9 @@ mongoc_stream_read (mongoc_stream_t *stream,
    iov.iov_base = buf;
    iov.iov_len = count;
 
-   return stream->readv(stream, &iov, 1);
+   BSON_ASSERT(stream->readv);
+
+   return stream->readv(stream, &iov, 1, timeout_msec);
 }
 
 
@@ -436,65 +455,54 @@ mongoc_stream_buffered_destroy (mongoc_stream_t *stream)
 static int
 mongoc_stream_buffered_close (mongoc_stream_t *stream)
 {
-#if 0
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
    bson_return_val_if_fail(stream, -1);
    return mongoc_stream_close(buffered->base_stream);
-#else
-   return -1;
-#endif
 }
 
 
 static int
 mongoc_stream_buffered_flush (mongoc_stream_t *stream)
 {
-#if 0
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   bson_return_val_if_fail(stream, -1);
+   bson_return_val_if_fail(buffered, -1);
    return mongoc_stream_flush(buffered->base_stream);
-#else
-   return -1;
-#endif
 }
 
 
 static ssize_t
 mongoc_stream_buffered_writev (mongoc_stream_t *stream,
                                struct iovec    *iov,
-                               size_t           iovcnt)
+                               size_t           iovcnt,
+                               bson_uint32_t    timeout_msec)
 {
-#if 0
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   bson_return_val_if_fail(stream, -1);
-   return mongoc_stream_writev(buffered->base_stream, iov, iovcnt);
-#else
-   return -1;
-#endif
+
+   bson_return_val_if_fail(buffered, -1);
+
+   /*
+    * TODO: Implement buffering.
+    */
+
+   return mongoc_stream_writev(buffered->base_stream, iov, iovcnt, timeout_msec);
 }
 
 
 static ssize_t
 mongoc_stream_buffered_readv (mongoc_stream_t *stream,
                               struct iovec    *iov,
-                              size_t           iovcnt)
+                              size_t           iovcnt,
+                              bson_uint32_t    timeout_msec)
 {
-#if 0
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   bson_uint32_t i;
-   size_t count = 0;
 
-   bson_return_val_if_fail(stream, -1);
+   bson_return_val_if_fail(buffered, -1);
 
-   for (i = 0; i < iovcnt; i++) {
-      count += iov[i].iov_len;
-   }
+   /*
+    * TODO: Implement buffering.
+    */
 
-   mongoc_buffer_fill(&buffered->buffer, stream, count, NULL);
-   return mongoc_buffer_readv(&buffered->buffer, iov, iovcnt);
-#else
-   return -1;
-#endif
+   return mongoc_stream_readv(buffered->base_stream, iov, iovcnt, timeout_msec);
 }
 
 
