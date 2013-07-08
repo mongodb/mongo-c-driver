@@ -268,11 +268,13 @@ mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
       bson_init(b);
       bson_append_int32(b, "getlasterror", 12, 1);
 
-      if (write_concern->tags.len) {
+      if (!bson_empty(&write_concern->tags)) {
          bson_append_document(b, "w", 1, &write_concern->tags);
-      } else if (write_concern->w == -1) {
+      } else if (write_concern->w == MONGOC_WRITE_CONCERN_W_MAJORITY) {
          bson_append_utf8(b, "w", 1, "majority", 8);
-      } else if (write_concern->w) {
+      } else if (write_concern->w == MONGOC_WRITE_CONCERN_W_DEFAULT) {
+         /* Do Nothing */
+      } else if (write_concern->w > 0) {
          bson_append_int32(b, "w", 1, write_concern->w);
       }
 
