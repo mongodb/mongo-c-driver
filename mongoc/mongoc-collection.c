@@ -90,6 +90,10 @@ mongoc_collection_find (mongoc_collection_t  *collection,
    bson_return_val_if_fail(collection, NULL);
    bson_return_val_if_fail(query, NULL);
 
+   if (!read_prefs) {
+      read_prefs = collection->read_prefs;
+   }
+
    return mongoc_cursor_new(collection->client, collection->ns, flags, skip,
                             limit, 0, query, fields, read_prefs);
 }
@@ -161,6 +165,10 @@ mongoc_collection_insert (mongoc_collection_t    *collection,
 
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(document, FALSE);
+
+   if (!write_concern) {
+      write_concern = collection->write_concern;
+   }
 
    /*
     * Build our insert RPC.
@@ -241,6 +249,10 @@ mongoc_collection_update (mongoc_collection_t    *collection,
    bson_return_val_if_fail(selector, FALSE);
    bson_return_val_if_fail(update, FALSE);
 
+   if (!write_concern) {
+      write_concern = collection->write_concern;
+   }
+
    rpc.update.msg_len = 0;
    rpc.update.request_id = 0;
    rpc.update.response_to = -1;
@@ -283,6 +295,10 @@ mongoc_collection_delete (mongoc_collection_t    *collection,
 
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(selector, FALSE);
+
+   if (!write_concern) {
+      write_concern = collection->write_concern;
+   }
 
    rpc.delete.msg_len = 0;
    rpc.delete.request_id = 0;
