@@ -32,31 +32,19 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_database_t mongoc_database_t;
 
 
-void
-mongoc_database_destroy (mongoc_database_t *database);
-
-
-mongoc_cursor_t *
-mongoc_database_command (mongoc_database_t    *database,
-                         mongoc_query_flags_t  flags,
-                         bson_uint32_t         skip,
-                         bson_uint32_t         n_return,
-                         const bson_t         *command,
-                         const bson_t         *fields,
-                         mongoc_read_prefs_t  *read_prefs);
-
-
-bson_bool_t
-mongoc_database_command_simple (mongoc_database_t *database,
-                                const bson_t      *command,
-                                bson_error_t      *error);
-
-
-bson_bool_t
-mongoc_database_drop (mongoc_database_t *database,
-                      bson_error_t      *error);
-
-
+void                          mongoc_database_destroy           (mongoc_database_t            *database);
+mongoc_cursor_t              *mongoc_database_command           (mongoc_database_t            *database,
+                                                                 mongoc_query_flags_t          flags,
+                                                                 bson_uint32_t                 skip,
+                                                                 bson_uint32_t                 n_return,
+                                                                 const bson_t                 *command,
+                                                                 const bson_t                 *fields,
+                                                                 mongoc_read_prefs_t          *read_prefs);
+bson_bool_t                   mongoc_database_command_simple    (mongoc_database_t            *database,
+                                                                 const bson_t                 *command,
+                                                                 bson_error_t                 *error);
+bson_bool_t                   mongoc_database_drop              (mongoc_database_t            *database,
+                                                                 bson_error_t                 *error);
 const mongoc_read_prefs_t    *mongoc_database_get_read_prefs    (const mongoc_database_t      *database);
 void                          mongoc_database_set_read_prefs    (mongoc_database_t            *database,
                                                                  const mongoc_read_prefs_t    *read_prefs);
