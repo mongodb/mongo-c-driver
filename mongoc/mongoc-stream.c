@@ -186,7 +186,6 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
    if (ret == -1) {
       return -1;
    } else if (ret == 0) {
-      printf("0 poll()\n");
       errno = ETIME;
       return -1;
    }
@@ -205,7 +204,6 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        * TODO: What should we do here, the other side has cleanly disconnected.
        *       For now, just synthesize a timeout.
        */
-      printf("0 readv()\n");
       errno = ETIME;
       return -1;
    }
