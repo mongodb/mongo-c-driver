@@ -74,6 +74,10 @@ mongoc_database_command (mongoc_database_t    *database,
    bson_return_val_if_fail(database, NULL);
    bson_return_val_if_fail(command, NULL);
 
+   if (!read_prefs) {
+      read_prefs = database->read_prefs;
+   }
+
    snprintf(ns, sizeof ns, "%s.$cmd", database->name);
    return mongoc_cursor_new(database->client, ns, flags, skip, n_return, 0,
                             command, fields, read_prefs);
@@ -99,7 +103,8 @@ mongoc_database_command_simple (mongoc_database_t *database,
    ns[sizeof ns-1] = '\0';
 
    cursor = mongoc_cursor_new(database->client, ns,
-                              MONGOC_QUERY_NONE, 0, 1, 0, cmd, NULL, NULL);
+                              MONGOC_QUERY_NONE, 0, 1, 0, cmd, NULL,
+                              database->read_prefs);
 
    if (mongoc_cursor_next(cursor, &b) &&
        bson_iter_init_find(&iter, b, "ok") &&
