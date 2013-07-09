@@ -248,7 +248,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       errno = 0;
       written = TEMP_FAILURE_RETRY(sendmsg(file->fd, &msg, flags));
       if (written < 0) {
-         return -1;
+         return written;
       }
 
       ret += written;
