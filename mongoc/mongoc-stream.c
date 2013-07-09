@@ -144,10 +144,14 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
                           bson_uint32_t    timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
+   struct msghdr msg;
+   struct pollfd fds;
    bson_int64_t now;
    bson_int64_t expire;
-   struct pollfd fds;
-   ssize_t ret;
+   size_t cur = 0;
+   ssize_t written;
+   ssize_t ret = 0;
+   int flags = 0;
    int timeout;
 
    bson_return_val_if_fail(stream, -1);
@@ -171,41 +175,71 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
    fds.events |= POLLRDHUP;
 #endif
 
-   fds.revents = 0;
-   now = bson_get_monotonic_time();
-   timeout = MAX(0, (expire - now) / 1000UL);
+   for (;;) {
+      msg.msg_name = NULL;
+      msg.msg_namelen = 0;
+      msg.msg_iov = iov + cur;
+      msg.msg_iovlen = iovcnt - cur;
+      msg.msg_control = NULL;
+      msg.msg_controllen = 0;
+      msg.msg_flags = 0;
 
-   /*
-    * TODO: There might be a "slow leak" attack here by a malicious peer that
-    *       can make a large msg and then only give us back a byte at a time,
-    *       but quick enough where poll() always has data. I don't think it
-    *       warrants a change at this time.
-    */
+      BSON_ASSERT(msg.msg_iov->iov_len);
+      BSON_ASSERT(cur < iovcnt);
 
-   ret = poll(&fds, 1, timeout);
-   if (ret == -1) {
-      return -1;
-   } else if (ret == 0) {
-      errno = ETIME;
-      return -1;
-   }
-
-   errno = 0;
-#ifdef TEMP_FAILURE_RETRY
-   ret = TEMP_FAILURE_RETRY(readv(file->fd, iov, iovcnt));
-#else
-   ret = readv(file->fd, iov, iovcnt);
-#endif
-
-   if (ret == -1) {
-      return -1;
-   } else if (ret == 0) {
       /*
-       * TODO: What should we do here, the other side has cleanly disconnected.
-       *       For now, just synthesize a timeout.
+       * Wait for data availability using poll().
        */
-      errno = ETIME;
-      return -1;
+      fds.revents = 0;
+      now = bson_get_monotonic_time();
+      timeout = MAX(0, (expire - now) / 1000UL);
+      errno = 0;
+      written = poll(&fds, 1, timeout);
+      if (written == -1) {
+         return -1;
+      } else if (written == 0) {
+         errno = ETIME;
+         return -1;
+      }
+
+      /*
+       * Perform recvmsg() on socket to receive available data.
+       */
+      errno = 0;
+      written = TEMP_FAILURE_RETRY(recvmsg(file->fd, &msg, flags));
+      if (written == -1 && errno == ENOTSOCK) {
+         written = TEMP_FAILURE_RETRY(readv(file->fd, iov + cur, iovcnt - cur));
+         if (!written) {
+            return ret;
+         }
+      }
+
+      if (written < 0) {
+         return written;
+      } else {
+         ret += written;
+      }
+
+      BSON_ASSERT(cur < iovcnt);
+
+      /*
+       * Increment iovec's in the case we got a short read.
+       */
+      while ((cur < iovcnt) && (written >= iov[cur].iov_len)) {
+         BSON_ASSERT(iov[cur].iov_len);
+         written -= iov[cur++].iov_len;
+         BSON_ASSERT(cur <= iovcnt);
+      }
+
+      if (cur == iovcnt) {
+         break;
+      }
+
+      iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + written;
+      iov[cur].iov_len -= written;
+
+      BSON_ASSERT(iovcnt - cur);
+      BSON_ASSERT(iov[cur].iov_len);
    }
 
    return ret;
