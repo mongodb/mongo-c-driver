@@ -57,6 +57,14 @@ mongoc_database_drop (mongoc_database_t *database,
                       bson_error_t      *error);
 
 
+const mongoc_read_prefs_t    *mongoc_database_get_read_prefs    (const mongoc_database_t      *database);
+void                          mongoc_database_set_read_prefs    (mongoc_database_t            *database,
+                                                                 const mongoc_read_prefs_t    *read_prefs);
+const mongoc_write_concern_t *mongoc_database_get_write_concern (const mongoc_database_t      *database);
+void                          mongoc_database_set_write_concern (mongoc_database_t            *database,
+                                                                 const mongoc_write_concern_t *write_concern);
+
+
 BSON_END_DECLS
 
 

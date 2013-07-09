@@ -22,6 +22,8 @@
 #include <bson.h>
 
 #include "mongoc-client.h"
+#include "mongoc-read-prefs.h"
+#include "mongoc-write-concern.h"
 
 
 BSON_BEGIN_DECLS
@@ -31,6 +33,9 @@ struct _mongoc_database_t
 {
    mongoc_client_t *client;
    char name[128];
+
+   mongoc_write_concern_t *write_concern;
+   mongoc_read_prefs_t    *read_prefs;
 };
 
 

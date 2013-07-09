@@ -45,6 +45,17 @@ void
 mongoc_database_destroy (mongoc_database_t *database)
 {
    bson_return_if_fail(database);
+
+   if (database->read_prefs) {
+      mongoc_read_prefs_destroy(database->read_prefs);
+      database->read_prefs = NULL;
+   }
+
+   if (database->write_concern) {
+      mongoc_write_concern_destroy(database->write_concern);
+      database->write_concern = NULL;
+   }
+
    bson_free(database);
 }
 
@@ -130,4 +141,54 @@ mongoc_database_drop (mongoc_database_t *database,
    bson_destroy(&cmd);
 
    return ret;
+}
+
+
+const mongoc_read_prefs_t *
+mongoc_database_get_read_prefs (const mongoc_database_t *database)
+{
+   bson_return_val_if_fail(database, NULL);
+   return database->read_prefs;
+}
+
+
+void
+mongoc_database_set_read_prefs (mongoc_database_t         *database,
+                                const mongoc_read_prefs_t *read_prefs)
+{
+   bson_return_if_fail(database);
+
+   if (database->read_prefs) {
+      mongoc_read_prefs_destroy(database->read_prefs);
+      database->read_prefs = NULL;
+   }
+
+   if (read_prefs) {
+      database->read_prefs = mongoc_read_prefs_copy(read_prefs);
+   }
+}
+
+
+const mongoc_write_concern_t *
+mongoc_database_get_write_concern (const mongoc_database_t *database)
+{
+   bson_return_val_if_fail(database, NULL);
+   return database->write_concern;
+}
+
+
+void
+mongoc_database_set_write_concern (mongoc_database_t            *database,
+                                   const mongoc_write_concern_t *write_concern)
+{
+   bson_return_if_fail(database);
+
+   if (database->write_concern) {
+      mongoc_write_concern_destroy(database->write_concern);
+      database->write_concern = NULL;
+   }
+
+   if (write_concern) {
+      database->write_concern = mongoc_write_concern_copy(write_concern);
+   }
 }
