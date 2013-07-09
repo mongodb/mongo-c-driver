@@ -63,6 +63,17 @@ mongoc_collection_destroy (mongoc_collection_t *collection)
    bson_return_if_fail(collection);
 
    mongoc_buffer_destroy(&collection->buffer);
+
+   if (collection->read_prefs) {
+      mongoc_read_prefs_destroy(collection->read_prefs);
+      collection->read_prefs = NULL;
+   }
+
+   if (collection->write_concern) {
+      mongoc_write_concern_destroy(collection->write_concern);
+      collection->write_concern = NULL;
+   }
+
    bson_free(collection);
 }
 
@@ -299,4 +310,54 @@ mongoc_collection_delete (mongoc_collection_t    *collection,
 #endif
 
    return TRUE;
+}
+
+
+const mongoc_read_prefs_t *
+mongoc_collection_get_read_prefs (const mongoc_collection_t *collection)
+{
+   bson_return_val_if_fail(collection, NULL);
+   return collection->read_prefs;
+}
+
+
+void
+mongoc_collection_set_read_prefs (mongoc_collection_t       *collection,
+                                  const mongoc_read_prefs_t *read_prefs)
+{
+   bson_return_if_fail(collection);
+
+   if (collection->read_prefs) {
+      mongoc_read_prefs_destroy(collection->read_prefs);
+      collection->read_prefs = NULL;
+   }
+
+   if (read_prefs) {
+      collection->read_prefs = mongoc_read_prefs_copy(read_prefs);
+   }
+}
+
+
+const mongoc_write_concern_t *
+mongoc_collection_get_write_concern (const mongoc_collection_t *collection)
+{
+   bson_return_val_if_fail(collection, NULL);
+   return collection->write_concern;
+}
+
+
+void
+mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
+                                     const mongoc_write_concern_t *write_concern)
+{
+   bson_return_if_fail(collection);
+
+   if (collection->write_concern) {
+      mongoc_write_concern_destroy(collection->write_concern);
+      collection->write_concern = NULL;
+   }
+
+   if (write_concern) {
+      collection->write_concern = mongoc_write_concern_copy(write_concern);
+   }
 }

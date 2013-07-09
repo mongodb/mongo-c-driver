@@ -36,6 +36,9 @@ struct _mongoc_collection_t
    char             collection[128];
    bson_uint32_t    collectionlen;
    mongoc_buffer_t  buffer;
+
+   mongoc_read_prefs_t    *read_prefs;
+   mongoc_write_concern_t *write_concern;
 };
 
 

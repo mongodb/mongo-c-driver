@@ -61,6 +61,13 @@ bson_bool_t      mongoc_collection_delete  (mongoc_collection_t    *collection,
                                             mongoc_write_concern_t *write_concern,
                                             bson_error_t           *error);
 
+const mongoc_read_prefs_t    *mongoc_collection_get_read_prefs    (const mongoc_collection_t    *collection);
+void                          mongoc_collection_set_read_prefs    (mongoc_collection_t          *collection,
+                                                                   const mongoc_read_prefs_t    *read_prefs);
+const mongoc_write_concern_t *mongoc_collection_get_write_concern (const mongoc_collection_t    *collection);
+void                          mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
+                                                                   const mongoc_write_concern_t *write_concern);
+
 
 BSON_END_DECLS
 
