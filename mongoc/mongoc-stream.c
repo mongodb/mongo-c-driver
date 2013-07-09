@@ -45,6 +45,11 @@
 #endif
 
 
+#ifndef MONGOC_DEFAULT_TIMEOUT_MSEC
+#define MONGOC_DEFAULT_TIMEOUT_MSEC (60 * 60 * 1000)
+#endif
+
+
 typedef struct
 {
    mongoc_stream_t  stream;
@@ -132,21 +137,6 @@ timeval_add_msec (struct timeval *tv,
 }
 
 
-static bson_uint32_t
-msec_until (const struct timeval *tv)
-{
-   struct timeval now;
-   bson_uint64_t tv_msec;
-   bson_uint64_t now_msec;
-
-   gettimeofday(&now, NULL);
-   tv_msec = (tv->tv_sec * 1000UL) + (tv->tv_usec / 1000UL);
-   now_msec = (now.tv_sec * 1000UL) + (now.tv_usec / 1000UL);
-
-   return (now_msec >= tv_msec) ? 0 : (tv_msec - now_msec);
-}
-
-
 static ssize_t
 mongoc_stream_unix_readv (mongoc_stream_t *stream,
                           struct iovec    *iov,
@@ -154,10 +144,11 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
                           bson_uint32_t    timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
-   struct timeval expire = { 0 };
+   bson_int64_t now;
+   bson_int64_t expire;
    struct pollfd fds;
+   ssize_t ret;
    int timeout;
-   int count;
 
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
@@ -168,31 +159,58 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       return -1;
    }
 
+   if (!timeout_msec) {
+      timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
+   }
+
+   expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
+
    fds.fd = file->fd;
    fds.events = (POLLIN | POLLERR);
 #ifdef POLLRDHUP
    fds.events |= POLLRDHUP;
 #endif
+
    fds.revents = 0;
+   now = bson_get_monotonic_time();
+   timeout = MAX(0, (expire - now) / 1000UL);
 
-   gettimeofday(&expire, NULL);
-   timeval_add_msec(&expire, timeout_msec);
+   /*
+    * TODO: There might be a "slow leak" attack here by a malicious peer that
+    *       can make a large msg and then only give us back a byte at a time,
+    *       but quick enough where poll() always has data. I don't think it
+    *       warrants a change at this time.
+    */
 
-   timeout = msec_until(&expire);
-   fds.revents = 0;
-
-   count = poll(&fds, 1, timeout);
-   if (!count) {
-      /*
-       * TODO: Handle read timeout.
-       */
+   ret = poll(&fds, 1, timeout);
+   if (ret == -1) {
+      return -1;
+   } else if (ret == 0) {
+      printf("0 poll()\n");
+      errno = ETIME;
+      return -1;
    }
 
+   errno = 0;
 #ifdef TEMP_FAILURE_RETRY
-   return TEMP_FAILURE_RETRY(readv(file->fd, iov, iovcnt));
+   ret = TEMP_FAILURE_RETRY(readv(file->fd, iov, iovcnt));
 #else
-   return readv(file->fd, iov, iovcnt);
+   ret = readv(file->fd, iov, iovcnt);
 #endif
+
+   if (ret == -1) {
+      return -1;
+   } else if (ret == 0) {
+      /*
+       * TODO: What should we do here, the other side has cleanly disconnected.
+       *       For now, just synthesize a timeout.
+       */
+      printf("0 readv()\n");
+      errno = ETIME;
+      return -1;
+   }
+
+   return ret;
 }
 
 
