@@ -300,20 +300,52 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    struct msghdr msg;
+   struct pollfd fds;
+   bson_int64_t now;
+   bson_int64_t expire;
    size_t cur = 0;
    ssize_t written;
    ssize_t ret = 0;
    int flags = 0;
+   int timeout;
 
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
 
    /*
-    * TODO: Handle timeout_msec.
+    * NOTE: See notes from mongoc_stream_unix_readv(), the apply here too.
     */
 
+   if (file->fd == -1) {
+      errno = EBADF;
+      return -1;
+   }
+
+   if (!timeout_msec) {
+      timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
+   }
+
+   /*
+    * We require a monotonic clock for determining out timeout interval. This
+    * is so that we are resilient to changes in the underlying wall clock,
+    * such as during timezone changes. The monotonic clock is in microseconds
+    * since an unknown epoch (but often system startup).
+    */
+   expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
+
+   /*
+    * Prepare our pollfd. If POLLRDHUP is supported, we can get notified of
+    * our peer hang-up.
+    */
+   fds.fd = file->fd;
+   fds.events = (POLLOUT | POLLERR | POLLHUP);
+
    for (;;) {
+      /*
+       * Build our message for recvmsg() taking into account that we may have
+       * already done a short-read and must increment the iovec.
+       */
       msg.msg_name = NULL;
       msg.msg_namelen = 0;
       msg.msg_iov = iov + cur;
@@ -325,26 +357,65 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       BSON_ASSERT(msg.msg_iov->iov_len);
       BSON_ASSERT(cur < iovcnt);
 
+      fds.revents = 0;
+
+      /*
+       * Determine number of milliseconds until timeout expires.
+       */
+      now = bson_get_monotonic_time();
+      timeout = MAX(0, (expire - now) / 1000UL);
+
+      /*
+       * Block on poll() until data is available or timeout. Upont timeout,
+       * synthesize an errno of ETIME.
+       */
       errno = 0;
-      written = TEMP_FAILURE_RETRY(sendmsg(file->fd, &msg, flags));
-      if (written < 0) {
-         return written;
+      fds.revents = 0;
+      written = poll(&fds, 1, timeout);
+      if (written == -1) {
+         return -1;
+      } else if (written == 0) {
+         errno = ETIME;
+         return -1;
       }
 
-      ret += written;
+      /*
+       * Perform sendmsg() on socket to send next chunk of data. If it turns
+       * out this is not a socket, fall back to writev(). This should only
+       * happen during unit tests.
+       */
+      errno = 0;
+      written = TEMP_FAILURE_RETRY(sendmsg(file->fd, &msg, flags));
+      if (written == -1 && errno == ENOTSOCK) {
+         written = TEMP_FAILURE_RETRY(writev(file->fd, iov + cur, iovcnt - cur));
+         if (!written) {
+            return ret;
+         }
+      }
+
+      /*
+       * If our recvmsg() failed, we can't do much now can we.
+       */
+      if (written == -1) {
+         return written;
+      } else {
+         ret += written;
+      }
 
       BSON_ASSERT(cur < iovcnt);
 
+      /*
+       * Increment iovec's in the case we got a short read. Break out if
+       * we have read all our expected data.
+       */
       while ((cur < iovcnt) && (written >= iov[cur].iov_len)) {
          BSON_ASSERT(iov[cur].iov_len);
          written -= iov[cur++].iov_len;
          BSON_ASSERT(cur <= iovcnt);
       }
-
       if (cur == iovcnt) {
          break;
       }
-
       iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + written;
       iov[cur].iov_len -= written;
 
