@@ -1,6 +1,8 @@
 EXTRA_DIST =
+noinst_PROGRAMS =
 
 include mongoc/Makefile.include
+include examples/Makefile.include
 include tests/Makefile.include
 
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}

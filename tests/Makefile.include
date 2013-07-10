@@ -1,4 +1,3 @@
-noinst_PROGRAMS =
 noinst_PROGRAMS += test-load
 noinst_PROGRAMS += test-mongoc-array
 noinst_PROGRAMS += test-mongoc-buffer

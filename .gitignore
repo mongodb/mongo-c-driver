@@ -16,6 +16,7 @@ ltmain.sh
 Makefile
 Makefile.in
 missing
+mongoc-ping
 *.o
 *.pc
 stamp-h1

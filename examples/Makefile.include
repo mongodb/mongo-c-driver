@@ -1,0 +1,6 @@
+noinst_PROGRAMS += mongoc-ping
+
+
+mongoc_ping_SOURCES = $(top_srcdir)/examples/mongoc-ping.c
+mongoc_ping_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+mongoc_ping_LDADD = libmongoc-1.0.la $(BSON_LIBS)
