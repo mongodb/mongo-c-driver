@@ -30,6 +30,7 @@
 #include "mongoc-buffer-private.h"
 #include "mongoc-error.h"
 #include "mongoc-flags.h"
+#include "mongoc-log.h"
 #include "mongoc-opcode.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
@@ -653,7 +654,12 @@ mongoc_stream_new_from_unix (int fd)
     * we can do. Just fail.
     */
    flags = fcntl(fd, F_GETFD);
-   fcntl(fd, F_SETFD, flags | O_NONBLOCK);
+   if ((flags & O_NONBLOCK) != O_NONBLOCK) {
+      if (fcntl(fd, F_SETFD, flags | O_NONBLOCK) == -1) {
+         MONGOC_WARNING("Failed to set O_NONBLOCK on file descriptor!");
+         return NULL;
+      }
+   }
 
    stream = bson_malloc0(sizeof *stream);
    stream->fd = fd;
