@@ -150,7 +150,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
    bson_int64_t now;
    bson_int64_t expire;
    size_t cur = 0;
-   ssize_t written;
+   ssize_t r;
    ssize_t ret = 0;
    int flags = 0;
    int timeout;
@@ -237,10 +237,10 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        */
       errno = 0;
       fds.revents = 0;
-      written = poll(&fds, 1, timeout);
-      if (written == -1) {
+      r = poll(&fds, 1, timeout);
+      if (r == -1) {
          return -1;
-      } else if (written == 0) {
+      } else if (r == 0) {
          errno = ETIME;
          return -1;
       }
@@ -251,10 +251,10 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        * happen during unit tests.
        */
       errno = 0;
-      written = TEMP_FAILURE_RETRY(recvmsg(file->fd, &msg, flags));
-      if (written == -1 && errno == ENOTSOCK) {
-         written = TEMP_FAILURE_RETRY(readv(file->fd, iov + cur, iovcnt - cur));
-         if (!written) {
+      r = TEMP_FAILURE_RETRY(recvmsg(file->fd, &msg, flags));
+      if (r == -1 && errno == ENOTSOCK) {
+         r = TEMP_FAILURE_RETRY(readv(file->fd, iov + cur, iovcnt - cur));
+         if (!r) {
             return ret;
          }
       }
@@ -262,10 +262,10 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       /*
        * If our recvmsg() failed, we can't do much now can we.
        */
-      if (written == -1) {
-         return written;
+      if (r == -1) {
+         return r;
       } else {
-         ret += written;
+         ret += r;
       }
 
       BSON_ASSERT(cur < iovcnt);
@@ -274,16 +274,16 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        * Increment iovec's in the case we got a short read. Break out if
        * we have read all our expected data.
        */
-      while ((cur < iovcnt) && (written >= iov[cur].iov_len)) {
+      while ((cur < iovcnt) && (r >= iov[cur].iov_len)) {
          BSON_ASSERT(iov[cur].iov_len);
-         written -= iov[cur++].iov_len;
+         r -= iov[cur++].iov_len;
          BSON_ASSERT(cur <= iovcnt);
       }
       if (cur == iovcnt) {
          break;
       }
-      iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + written;
-      iov[cur].iov_len -= written;
+      iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + r;
+      iov[cur].iov_len -= r;
 
       BSON_ASSERT(iovcnt - cur);
       BSON_ASSERT(iov[cur].iov_len);
@@ -305,7 +305,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
    bson_int64_t now;
    bson_int64_t expire;
    size_t cur = 0;
-   ssize_t written;
+   ssize_t r;
    ssize_t ret = 0;
    int flags = 0;
    int timeout;
@@ -372,10 +372,10 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        */
       errno = 0;
       fds.revents = 0;
-      written = poll(&fds, 1, timeout);
-      if (written == -1) {
+      r = poll(&fds, 1, timeout);
+      if (r == -1) {
          return -1;
-      } else if (written == 0) {
+      } else if (r == 0) {
          errno = ETIME;
          return -1;
       }
@@ -386,10 +386,10 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        * happen during unit tests.
        */
       errno = 0;
-      written = TEMP_FAILURE_RETRY(sendmsg(file->fd, &msg, flags));
-      if (written == -1 && errno == ENOTSOCK) {
-         written = TEMP_FAILURE_RETRY(writev(file->fd, iov + cur, iovcnt - cur));
-         if (!written) {
+      r = TEMP_FAILURE_RETRY(sendmsg(file->fd, &msg, flags));
+      if (r == -1 && errno == ENOTSOCK) {
+         r = TEMP_FAILURE_RETRY(writev(file->fd, iov + cur, iovcnt - cur));
+         if (!r) {
             return ret;
          }
       }
@@ -397,10 +397,10 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       /*
        * If our recvmsg() failed, we can't do much now can we.
        */
-      if (written == -1) {
-         return written;
+      if (r == -1) {
+         return r;
       } else {
-         ret += written;
+         ret += r;
       }
 
       BSON_ASSERT(cur < iovcnt);
@@ -409,16 +409,16 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        * Increment iovec's in the case we got a short read. Break out if
        * we have read all our expected data.
        */
-      while ((cur < iovcnt) && (written >= iov[cur].iov_len)) {
+      while ((cur < iovcnt) && (r >= iov[cur].iov_len)) {
          BSON_ASSERT(iov[cur].iov_len);
-         written -= iov[cur++].iov_len;
+         r -= iov[cur++].iov_len;
          BSON_ASSERT(cur <= iovcnt);
       }
       if (cur == iovcnt) {
          break;
       }
-      iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + written;
-      iov[cur].iov_len -= written;
+      iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + r;
+      iov[cur].iov_len -= r;
 
       BSON_ASSERT(iovcnt - cur);
       BSON_ASSERT(iov[cur].iov_len);
