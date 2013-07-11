@@ -224,26 +224,6 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       BSON_ASSERT(cur < iovcnt);
 
       /*
-       * Determine number of milliseconds until timeout expires.
-       */
-      now = bson_get_monotonic_time();
-      timeout = MAX(0, (expire - now) / 1000UL);
-
-      /*
-       * Block on poll() until data is available or timeout. Upont timeout,
-       * synthesize an errno of ETIME.
-       */
-      errno = 0;
-      fds.revents = 0;
-      r = poll(&fds, 1, timeout);
-      if (r == -1) {
-         return -1;
-      } else if (r == 0) {
-         errno = ETIME;
-         return -1;
-      }
-
-      /*
        * Perform recvmsg() on socket to receive available data. If it turns
        * out this is not a socket, fall back to readv(). This should only
        * happen during unit tests.
@@ -285,6 +265,26 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
 
       BSON_ASSERT(iovcnt - cur);
       BSON_ASSERT(iov[cur].iov_len);
+
+      /*
+       * Determine number of milliseconds until timeout expires.
+       */
+      now = bson_get_monotonic_time();
+      timeout = MAX(0, (expire - now) / 1000UL);
+
+      /*
+       * Block on poll() until data is available or timeout. Upont timeout,
+       * synthesize an errno of ETIME.
+       */
+      errno = 0;
+      fds.revents = 0;
+      r = poll(&fds, 1, timeout);
+      if (r == -1) {
+         return -1;
+      } else if (r == 0) {
+         errno = ETIME;
+         return -1;
+      }
    }
 
    return ret;
@@ -357,26 +357,6 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       BSON_ASSERT(cur < iovcnt);
 
       /*
-       * Determine number of milliseconds until timeout expires.
-       */
-      now = bson_get_monotonic_time();
-      timeout = MAX(0, (expire - now) / 1000UL);
-
-      /*
-       * Block on poll() until data is available or timeout. Upont timeout,
-       * synthesize an errno of ETIME.
-       */
-      errno = 0;
-      fds.revents = 0;
-      r = poll(&fds, 1, timeout);
-      if (r == -1) {
-         return -1;
-      } else if (r == 0) {
-         errno = ETIME;
-         return -1;
-      }
-
-      /*
        * Perform sendmsg() on socket to send next chunk of data. If it turns
        * out this is not a socket, fall back to writev(). This should only
        * happen during unit tests.
@@ -418,6 +398,26 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
 
       BSON_ASSERT(iovcnt - cur);
       BSON_ASSERT(iov[cur].iov_len);
+
+      /*
+       * Determine number of milliseconds until timeout expires.
+       */
+      now = bson_get_monotonic_time();
+      timeout = MAX(0, (expire - now) / 1000UL);
+
+      /*
+       * Block on poll() until data is available or timeout. Upont timeout,
+       * synthesize an errno of ETIME.
+       */
+      errno = 0;
+      fds.revents = 0;
+      r = poll(&fds, 1, timeout);
+      if (r == -1) {
+         return -1;
+      } else if (r == 0) {
+         errno = ETIME;
+         return -1;
+      }
    }
 
    return ret;
