@@ -223,8 +223,6 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       BSON_ASSERT(msg.msg_iov->iov_len);
       BSON_ASSERT(cur < iovcnt);
 
-      fds.revents = 0;
-
       /*
        * Determine number of milliseconds until timeout expires.
        */
@@ -357,8 +355,6 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
 
       BSON_ASSERT(msg.msg_iov->iov_len);
       BSON_ASSERT(cur < iovcnt);
-
-      fds.revents = 0;
 
       /*
        * Determine number of milliseconds until timeout expires.
