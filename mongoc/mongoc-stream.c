@@ -18,6 +18,7 @@
 #define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <poll.h>
@@ -158,6 +159,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
+   bson_return_val_if_fail(timeout_msec <= INT_MAX, -1);
 
    /*
     * NOTE: Thar' be dragons.
@@ -169,12 +171,12 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
     * poll() is used for it's portability in waiting for available I/O on a
     * non-blocking socket or file descriptor.
     *
-    * To allow for efficient vectored I/O operations on the descriptor, we
-    * use recvmsg() instead of recv(). However, recvmsg() does not support
-    * regular file-descriptors and therefore we must fallback to writev()
-    * if we detect such a case. This is fine since we don't actually use
-    * regular file-descriptors (just socket descriptors) during production
-    * use. Files are only used in test cases.
+    * To allow for vectored I/O operations on the descriptor, we use recvmsg()
+    * instead of recv(). However, recvmsg() does not support regular
+    * file-descriptors and therefore we must fallback to readv() if we detect
+    * such a case. This is fine since we don't actually use regular
+    * file-descriptors (just socket descriptors) during production use. Files
+    * are only used in test cases.
     *
     * We apply a default timeout if one has not been provided. The default
     * is one hour. If this is not sufficient, try TCP over bongo drums.
@@ -238,15 +240,13 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       }
 
       /*
-       * If our recvmsg() failed, we can't do much now can we.
+       * If our recvmsg() failed, we can't do much now can we?
        */
       if (r == -1) {
          return r;
       } else {
          ret += r;
       }
-
-      BSON_ASSERT(cur < iovcnt);
 
       /*
        * Increment iovec's in the case we got a short read. Break out if
@@ -260,9 +260,9 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       if (cur == iovcnt) {
          break;
       }
+      BSON_ASSERT(cur < iovcnt);
       iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + r;
       iov[cur].iov_len -= r;
-
       BSON_ASSERT(iovcnt - cur);
       BSON_ASSERT(iov[cur].iov_len);
 
