@@ -58,7 +58,7 @@ AC_NEED_STDINT_H(mongoc/mongoc-stdint.h)
 dnl **************************************************************************
 dnl Check for libbson # TODO: use git submodule as fallback
 dnl **************************************************************************
-PKG_CHECK_MODULES(BSON, libbson-1.0)
+PKG_CHECK_MODULES(BSON, libbson-1.0 >= 0.1.9)
 
 
 dnl **************************************************************************
