@@ -210,7 +210,7 @@ MONGO_EXPORT void bson_dealloc( bson* b );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-int bson_init_finished_data( bson *b, char *data, bson_bool_t ownsData );
+MONGO_EXPORT int bson_init_finished_data( bson *b, char *data, bson_bool_t ownsData );
 
 /**
  * Initialize a BSON object for reading and copy finalized
@@ -224,7 +224,7 @@ int bson_init_finished_data( bson *b, char *data, bson_bool_t ownsData );
  *
  * @return BSON_OK or BSON_ERROR.
  */
-int bson_init_finished_data_with_copy( bson *b, const char *data );
+MONGO_EXPORT int bson_init_finished_data_with_copy( bson *b, const char *data );
 
 /**
  * Size of a BSON object.

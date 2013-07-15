@@ -19,6 +19,10 @@
   #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#if _MSC_VER
+  #define snprintf _snprintf
+#endif
+
 #include "mongo.h"
 #include "md5.h"
 #include "env.h"
