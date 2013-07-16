@@ -4,7 +4,7 @@
 #include "mongoc-tests.h"
 
 
-#define TEST_HOST "mongodb://127.0.0.1:27017/"
+#define TEST_HOST (getenv("MONGOC_TEST_URI") ?: "mongodb://127.0.0.1:27017/")
 
 
 static void
