@@ -24,6 +24,11 @@
 #include "mongoc-opcode.h"
 
 
+#ifndef MAX_RETRY_COUNT
+#define MAX_RETRY_COUNT 3
+#endif
+
+
 /**
  * mongoc_cluster_init:
  * @cluster: A mongoc_cluster_t.
@@ -445,6 +450,36 @@ mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
 }
 
 
+static bson_bool_t
+mongoc_cluster_needs_gle (mongoc_cluster_t       *cluster,
+                          mongoc_rpc_t           *rpc,
+                          mongoc_write_concern_t *write_concern)
+{
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(rpc);
+
+   switch (rpc->header.opcode) {
+   case MONGOC_OPCODE_REPLY:
+   case MONGOC_OPCODE_QUERY:
+   case MONGOC_OPCODE_MSG:
+   case MONGOC_OPCODE_GET_MORE:
+   case MONGOC_OPCODE_KILL_CURSORS:
+      return FALSE;
+   case MONGOC_OPCODE_INSERT:
+   case MONGOC_OPCODE_UPDATE:
+   case MONGOC_OPCODE_DELETE:
+   default:
+      break;
+   }
+
+   if (!write_concern || !mongoc_write_concern_get_w(write_concern)) {
+      return FALSE;
+   }
+
+   return TRUE;
+}
+
+
 bson_uint32_t
 mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
                       mongoc_rpc_t           *rpcs,
@@ -455,17 +490,25 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
                       bson_error_t           *error)
 {
    mongoc_cluster_node_t *node;
+   bson_bool_t need_gle;
    struct iovec *iov;
    size_t iovcnt;
    size_t i;
+   size_t j;
+   int retry_count = 0;
 
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(rpcs, FALSE);
    bson_return_val_if_fail(rpcs_len, FALSE);
 
+   /*
+    * Try to find a node to deliver to. Since we are allowed to block in this
+    * version of sendv, we try to reconnect if we cannot select a node.
+    */
    while (!(node = mongoc_cluster_select(cluster, rpcs, rpcs_len, hint,
                                          write_concern, read_prefs, error))) {
-      if (!mongoc_cluster_reconnect(cluster, error)) {
+      if ((retry_count++ == MAX_RETRY_COUNT) ||
+          !mongoc_cluster_reconnect(cluster, error)) {
          return FALSE;
       }
    }
@@ -474,10 +517,14 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
 
    mongoc_array_clear(&cluster->iov);
 
-   for (i = 0; i < rpcs_len; i++) {
+   for (i = 0, j = 0; i < rpcs_len; i++, j++) {
       rpcs[i].header.request_id = ++cluster->request_id;
-      mongoc_rpc_gather(&rpcs[i], &cluster->iov);
-      mongoc_rpc_swab(&rpcs[i]);
+      need_gle = mongoc_cluster_needs_gle(cluster, &rpcs[i], write_concern);
+      mongoc_rpc_gather(&rpcs[j], &cluster->iov);
+      mongoc_rpc_swab(&rpcs[j]);
+      if (need_gle) {
+         /* insert GLE for RPC. */
+      }
    }
 
    iov = cluster->iov.data;
