@@ -15,29 +15,33 @@
  */
 
 
-#ifndef MONGOC_H
-#define MONGOC_H
+#ifndef PYMONGOC_CLIENT_H
+#define PYMONGOC_CLIENT_H
 
 
 #include <bson.h>
-
-#define MONGOC_INSIDE
-#include "mongoc-client.h"
-#include "mongoc-client-pool.h"
-#include "mongoc-collection.h"
-#include "mongoc-cursor.h"
-#include "mongoc-database.h"
-#include "mongoc-error.h"
-#include "mongoc-flags.h"
-#include "mongoc-host-list.h"
-#include "mongoc-opcode.h"
-#include "mongoc-log.h"
-#include "mongoc-stream.h"
-#include "mongoc-stdint.h"
-#include "mongoc-uri.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-version.h"
-#undef MONGOC_INSIDE
+#include <mongoc.h>
 
 
-#endif /* MONGOC_H */
+BSON_BEGIN_DECLS
+
+
+#ifdef _POSIX_C_SOURCE
+#undef _POSIX_C_SOURCE
+#endif
+#include <Python.h>
+
+
+typedef struct {
+   PyObject_HEAD
+   mongoc_client_t *client;
+} pymongoc_client_t;
+
+
+PyTypeObject *pymongoc_client_get_type (void);
+
+
+BSON_END_DECLS
+
+
+#endif /* PYMONGOC_CLIENT_H */

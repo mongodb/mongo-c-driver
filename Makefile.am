@@ -5,6 +5,10 @@ include mongoc/Makefile.include
 include examples/Makefile.include
 include tests/Makefile.include
 
+if HAVE_PYTHON
+include bindings/python/Makefile.include
+endif
+
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 DISTCHECK_CONFIGURE_FLAGS = --enable-silent-rules
 

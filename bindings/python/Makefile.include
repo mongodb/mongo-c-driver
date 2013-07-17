@@ -1,0 +1,23 @@
+pymoduledir = $(libdir)/python2.7/site-packages
+
+pymodule_LTLIBRARIES = pymongoc.la
+
+pymongoc_la_SOURCES =
+pymongoc_la_SOURCES += $(top_srcdir)/bindings/python/pymongoc.c
+pymongoc_la_SOURCES += $(top_srcdir)/bindings/python/pymongoc-client.c
+
+
+pymongoc_la_LIBADD =
+pymongoc_la_LIBADD += libmongoc-1.0.la
+pymongoc_la_LIBADD += $(BSON_LIBS)
+pymongoc_la_LIBADD += -l$(PYTHON_LIB)
+
+
+pymongoc_la_LDFLAGS =
+pymongoc_la_LDFLAGS += -module
+
+
+pymongoc_la_CPPFLAGS =
+pymongoc_la_CPPFLAGS += $(BSON_CFLAGS)
+pymongoc_la_CPPFLAGS += -I$(top_srcdir)/mongoc
+pymongoc_la_CPPFLAGS += -I$(PYTHON_INCLUDE_DIR)
