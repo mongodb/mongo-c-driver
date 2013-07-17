@@ -22,6 +22,7 @@
 #include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
+#include "mongoc-write-concern-private.h"
 
 
 #ifndef MAX_RETRY_COUNT
@@ -490,11 +491,12 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
                       bson_error_t           *error)
 {
    mongoc_cluster_node_t *node;
-   bson_bool_t need_gle;
+   const bson_t *b;
+   mongoc_rpc_t gle;
    struct iovec *iov;
+   bson_bool_t need_gle;
    size_t iovcnt;
    size_t i;
-   size_t j;
    int retry_count = 0;
 
    bson_return_val_if_fail(cluster, FALSE);
@@ -517,13 +519,46 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
 
    mongoc_array_clear(&cluster->iov);
 
-   for (i = 0, j = 0; i < rpcs_len; i++, j++) {
+   /*
+    * TODO: We can probably remove the need for sendv and just do send since
+    * we support write concerns now. Also, we clobber our getlasterror on
+    * each subsequent mutation. It's okay, since it comes out correct anyway,
+    * just useless work (and technically the request_id changes).
+    */
+
+   for (i = 0; i < rpcs_len; i++) {
       rpcs[i].header.request_id = ++cluster->request_id;
       need_gle = mongoc_cluster_needs_gle(cluster, &rpcs[i], write_concern);
-      mongoc_rpc_gather(&rpcs[j], &cluster->iov);
-      mongoc_rpc_swab(&rpcs[j]);
+      mongoc_rpc_gather(&rpcs[i], &cluster->iov);
+      mongoc_rpc_swab(&rpcs[i]);
       if (need_gle) {
-         /* insert GLE for RPC. */
+         gle.query.msg_len = 0;
+         gle.query.request_id = ++cluster->request_id;
+         gle.query.response_to = -1;
+         gle.query.opcode = MONGOC_OPCODE_QUERY;
+         gle.query.flags = MONGOC_QUERY_NONE;
+         switch (rpcs[i].header.opcode) {
+         case MONGOC_OPCODE_INSERT:
+            gle.query.collection = rpcs[i].insert.collection;
+            break;
+         case MONGOC_OPCODE_DELETE:
+            gle.query.collection = rpcs[i].delete.collection;
+            break;
+         case MONGOC_OPCODE_UPDATE:
+            gle.query.collection = rpcs[i].update.collection;
+            break;
+         default:
+            BSON_ASSERT(FALSE);
+            gle.query.collection = "";
+            break;
+         }
+         gle.query.skip = 0;
+         gle.query.n_return = 1;
+         b = mongoc_write_concern_freeze(write_concern);
+         gle.query.query = bson_get_data(b);
+         gle.query.fields = NULL;
+         mongoc_rpc_gather(&gle, &cluster->iov);
+         mongoc_rpc_swab(&gle);
       }
    }
 
