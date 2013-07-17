@@ -76,6 +76,12 @@ pymongoc_client_tp_new (PyTypeObject *self,
    }
 
    pyclient->client = mongoc_client_new(uri_str);
+   if (!pyclient->client) {
+      PyErr_SetString(PyExc_TypeError, "Invalid URI string.");
+      Py_DECREF(pyclient);
+      pyclient = NULL;
+      goto cleanup;
+   }
 
    ret = (PyObject *)pyclient;
 
