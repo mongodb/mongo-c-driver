@@ -293,3 +293,22 @@ mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
 
    return b;
 }
+
+
+/**
+ * mongoc_write_concern_has_gle:
+ * @concern: (in): A mongoc_write_concern_t.
+ *
+ * Checks to see if @write_concern requests that a getlasterror command is to
+ * be delivered to the MongoDB server.
+ *
+ * Returns: TRUE if a getlasterror command should be sent.
+ */
+bson_bool_t
+mongoc_write_concern_has_gle (mongoc_write_concern_t *write_concern)
+{
+   if (write_concern) {
+      return ((write_concern->w != 0) && (write_concern->w != -1));
+   }
+   return FALSE;
+}
