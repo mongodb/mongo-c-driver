@@ -18,13 +18,22 @@
 #include "pymongoc-client.h"
 
 
+static void
+pymongoc_client_tp_dealloc (PyObject *self)
+{
+   pymongoc_client_t *client = (pymongoc_client_t *)self;
+   mongoc_client_destroy(client->client);
+   self->ob_type->tp_free(self);
+}
+
+
 static PyTypeObject pymongoc_client_type = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
     "pymongc.Client",          /*tp_name*/
     sizeof(pymongoc_client_t), /*tp_basicsize*/
     0,                         /*tp_itemsize*/
-    0,                         /*tp_dealloc*/
+    pymongoc_client_tp_dealloc,/*tp_dealloc*/
     0,                         /*tp_print*/
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
