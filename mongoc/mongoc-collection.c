@@ -291,16 +291,11 @@ mongoc_collection_delete (mongoc_collection_t    *collection,
       return FALSE;
    }
 
-   /*
-    * TODO: Check options for getlasterror. Do two events and add
-    *       mongoc_event_sendv() with two events.
-    */
-
-#if 0
-   if (!mongoc_client_recv(collection->client, &ev, hint, error)) {
-      return FALSE;
+   if (mongoc_write_concern_has_gle(write_concern)) {
+      if (!mongoc_client_recv_gle(collection->client, hint, error)) {
+         return FALSE;
+      }
    }
-#endif
 
    return TRUE;
 }
