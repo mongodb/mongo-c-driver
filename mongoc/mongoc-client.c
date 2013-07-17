@@ -33,6 +33,7 @@
 #include "mongoc-error.h"
 #include "mongoc-list-private.h"
 #include "mongoc-log.h"
+#include "mongoc-opcode.h"
 #include "mongoc-queue-private.h"
 
 
@@ -268,6 +269,104 @@ mongoc_client_recv (mongoc_client_t *client,
    bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, FALSE);
 
    return mongoc_cluster_try_recv(&client->cluster, rpc, buffer, hint, error);
+}
+
+
+static void
+_bson_to_error (const bson_t *b,
+                bson_error_t *error)
+{
+   bson_iter_t iter;
+   int code = 0;
+
+   BSON_ASSERT(b);
+
+   if (!error) {
+      return;
+   }
+
+   if (bson_iter_init_find(&iter, b, "code") && BSON_ITER_HOLDS_INT32(&iter)) {
+      code = bson_iter_int32(&iter);
+   }
+
+   if (bson_iter_init_find(&iter, b, "$err") && BSON_ITER_HOLDS_UTF8(&iter)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_QUERY,
+                     code,
+                     "%s",
+                     bson_iter_utf8(&iter, NULL));
+      return;
+   }
+
+   if (bson_iter_init_find(&iter, b, "errmsg") && BSON_ITER_HOLDS_UTF8(&iter)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_QUERY,
+                     code,
+                     "%s",
+                     bson_iter_utf8(&iter, NULL));
+      return;
+   }
+
+   bson_set_error(error,
+                  MONGOC_ERROR_QUERY,
+                  MONGOC_ERROR_QUERY_FAILURE,
+                  "An unknown error ocurred on the server.");
+}
+
+
+bson_bool_t
+mongoc_client_recv_gle (mongoc_client_t *client,
+                        bson_uint32_t    hint,
+                        bson_error_t    *error)
+{
+   mongoc_buffer_t buffer;
+   mongoc_rpc_t rpc;
+   bson_iter_t iter;
+   bson_bool_t ret = FALSE;
+   bson_t b;
+
+   bson_return_val_if_fail(client, FALSE);
+   bson_return_val_if_fail(hint, FALSE);
+   bson_return_val_if_fail(error, FALSE);
+
+   mongoc_buffer_init(&buffer, NULL, 0, NULL);
+
+   if (!mongoc_cluster_try_recv(&client->cluster, &rpc, &buffer, hint, error)) {
+      goto cleanup;
+   }
+
+   if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+      bson_set_error(error,
+                     MONGOC_ERROR_PROTOCOL,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                     "Received message other than OP_REPLY.");
+      goto cleanup;
+   }
+
+   if ((rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
+      if (mongoc_rpc_reply_get_first(&rpc.reply, &b)) {
+         _bson_to_error(&b, error);
+         bson_destroy(&b);
+         goto cleanup;
+      }
+   }
+
+   if (mongoc_rpc_reply_get_first(&rpc.reply, &b)) {
+      if (!bson_iter_init_find(&iter, &b, "ok") ||
+          !BSON_ITER_HOLDS_DOUBLE(&iter) ||
+          (bson_iter_double(&iter) == 0.0)) {
+         _bson_to_error(&b, error);
+      }
+      bson_destroy(&b);
+      goto cleanup;
+   }
+
+   ret = TRUE;
+
+cleanup:
+   mongoc_buffer_destroy(&buffer);
+
+   return ret;
 }
 
 

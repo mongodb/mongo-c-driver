@@ -48,6 +48,9 @@ bson_bool_t      mongoc_client_recv          (mongoc_client_t          *client,
                                               mongoc_buffer_t          *buffer,
                                               bson_uint32_t             hint,
                                               bson_error_t             *error);
+bson_bool_t      mongoc_client_recv_gle      (mongoc_client_t          *client,
+                                              bson_uint32_t             hint,
+                                              bson_error_t             *error);
 bson_uint32_t    mongoc_client_stamp         (mongoc_client_t          *client,
                                               bson_uint32_t             node);
 
