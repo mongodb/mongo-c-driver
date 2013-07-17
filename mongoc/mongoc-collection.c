@@ -22,6 +22,7 @@
 #include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
+#include "mongoc-write-concern-private.h"
 
 
 mongoc_collection_t *
@@ -156,10 +157,9 @@ mongoc_collection_insert (mongoc_collection_t    *collection,
 {
    mongoc_buffer_t buffer;
    bson_uint32_t hint;
-   mongoc_rpc_t rpc[2];
+   mongoc_rpc_t rpc;
    mongoc_rpc_t reply;
    bson_bool_t ret = FALSE;
-   bson_t gle;
    bson_t doc;
    char ns[140];
 
@@ -173,62 +173,44 @@ mongoc_collection_insert (mongoc_collection_t    *collection,
    /*
     * Build our insert RPC.
     */
-   rpc[0].insert.msg_len = 0;
-   rpc[0].insert.request_id = 0;
-   rpc[0].insert.response_to = -1;
-   rpc[0].insert.opcode = MONGOC_OPCODE_INSERT;
-   rpc[0].insert.flags = flags;
-   rpc[0].insert.collection = collection->ns;
-   rpc[0].insert.documents = bson_get_data(document);
-   rpc[0].insert.documents_len = document->len;
+   rpc.insert.msg_len = 0;
+   rpc.insert.request_id = 0;
+   rpc.insert.response_to = -1;
+   rpc.insert.opcode = MONGOC_OPCODE_INSERT;
+   rpc.insert.flags = flags;
+   rpc.insert.collection = collection->ns;
+   rpc.insert.documents = bson_get_data(document);
+   rpc.insert.documents_len = document->len;
 
    snprintf(ns, sizeof ns, "%s.$cmd", collection->db);
    ns[sizeof ns - 1] = '\0';
 
-   /*
-    * Build our getlasterror RPC.
-    */
-   bson_init(&gle);
-   bson_append_int32(&gle, "getlasterror", 12, 1);
-   rpc[1].query.msg_len = 0;
-   rpc[1].query.request_id = 0;
-   rpc[1].query.response_to = -1;
-   rpc[1].query.opcode = MONGOC_OPCODE_QUERY;
-   rpc[1].query.flags = MONGOC_QUERY_NONE;
-   rpc[1].query.collection = ns;
-   rpc[1].query.skip = 0;
-   rpc[1].query.n_return = 1;
-   rpc[1].query.query = bson_get_data(&gle);
-   rpc[1].query.fields = NULL;
-
-   if (!(hint = mongoc_client_sendv(collection->client, &rpc[0], 2, 0,
+   if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0,
                                     write_concern, NULL, error))) {
       goto cleanup;
    }
 
-   bson_destroy(&gle);
-
-   mongoc_buffer_init(&buffer, NULL, 0, NULL);
-
-   if (!mongoc_client_recv(collection->client, &reply, &buffer, hint, error)) {
-      mongoc_buffer_destroy(&buffer);
-      goto cleanup;
-   }
-
-   if (result) {
-      if (bson_init_static(&doc, reply.reply.documents,
-                           reply.reply.documents_len)) {
-         bson_copy_to(&doc, result);
-         bson_destroy(&doc);
+   if (mongoc_write_concern_has_gle(write_concern)) {
+      mongoc_buffer_init(&buffer, NULL, 0, NULL);
+      if (!mongoc_client_recv(collection->client, &reply, &buffer, hint, error)) {
+         mongoc_buffer_destroy(&buffer);
+         goto cleanup;
       }
+      if (result) {
+         if (bson_init_static(&doc, reply.reply.documents,
+                              reply.reply.documents_len)) {
+            bson_copy_to(&doc, result);
+            bson_destroy(&doc);
+         }
+      }
+      mongoc_buffer_destroy(&buffer);
+   } else if (result) {
+      bson_init(result);
    }
-
-   mongoc_buffer_destroy(&buffer);
 
    ret = TRUE;
 
 cleanup:
-   bson_destroy(&gle);
 
    return ret;
 }
@@ -268,16 +250,11 @@ mongoc_collection_update (mongoc_collection_t    *collection,
       return FALSE;
    }
 
-   /*
-    * TODO: Check options for getlasterror. Do two events and add
-    *       mongoc_event_sendv() with two events.
-    */
-
-#if 0
-   if (!mongoc_client_recv(collection->client, &ev, hint, error)) {
-      return FALSE;
+   if (mongoc_write_concern_has_gle(write_concern)) {
+      if (!mongoc_client_recv_gle(collection->client, hint, error)) {
+         return FALSE;
+      }
    }
-#endif
 
    return TRUE;
 }
