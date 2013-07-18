@@ -173,6 +173,8 @@ mongoc_collection_command_simple (mongoc_collection_t *collection,
                      code,
                      "%s", errmsg ? errmsg : "Unknown command failure");
       ret = FALSE;
+   } else {
+      ret = TRUE;
    }
 
    mongoc_cursor_destroy(cursor);
