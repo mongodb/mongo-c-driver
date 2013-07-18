@@ -30,6 +30,9 @@
 BSON_BEGIN_DECLS
 
 
+#define MONGOC_NAMESPACE_MAX 128
+
+
 /**
  * mongoc_client_t:
  *
