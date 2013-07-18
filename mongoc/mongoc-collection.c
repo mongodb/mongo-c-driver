@@ -159,9 +159,7 @@ mongoc_collection_command_simple (mongoc_collection_t *collection,
       bson_copy_to(b, reply);
    }
 
-   if (!bson_iter_init_find(&iter, b, "ok") ||
-       !BSON_ITER_HOLDS_DOUBLE(&iter) ||
-       (bson_iter_double(&iter) != 1.0)) {
+   if (!bson_iter_init_find(&iter, b, "ok") || !bson_iter_as_bool(&iter)) {
       if (bson_iter_init_find(&iter, b, "code") &&
           BSON_ITER_HOLDS_INT32(&iter)) {
          code = bson_iter_int32(&iter);
