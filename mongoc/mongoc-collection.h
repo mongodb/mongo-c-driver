@@ -46,6 +46,13 @@ bson_bool_t                   mongoc_collection_command_simple    (mongoc_collec
                                                                    mongoc_read_prefs_t    *read_prefs,
                                                                    bson_t                 *reply,
                                                                    bson_error_t           *error);
+bson_int64_t                  mongoc_collection_count             (mongoc_collection_t    *collection,
+                                                                   mongoc_query_flags_t    flags,
+                                                                   const bson_t           *query,
+                                                                   bson_int64_t            limit,
+                                                                   bson_int64_t            skip,
+                                                                   mongoc_read_prefs_t    *read_prefs,
+                                                                   bson_error_t           *error);
 bson_bool_t                   mongoc_collection_drop              (mongoc_collection_t    *collection,
                                                                    bson_error_t           *error);
 bson_bool_t                   mongoc_collection_drop_index        (mongoc_collection_t    *collection,

@@ -181,6 +181,51 @@ mongoc_collection_command_simple (mongoc_collection_t *collection,
 }
 
 
+bson_int64_t
+mongoc_collection_count (mongoc_collection_t  *collection,
+                         mongoc_query_flags_t  flags,
+                         const bson_t         *query,
+                         bson_int64_t          limit,
+                         bson_int64_t          skip,
+                         mongoc_read_prefs_t  *read_prefs,
+                         bson_error_t         *error)
+{
+   bson_int64_t ret = -1;
+   bson_iter_t iter;
+   bson_t reply;
+   bson_t cmd;
+   bson_t q;
+
+   bson_return_val_if_fail(collection, -1);
+
+   bson_init(&cmd);
+   bson_append_utf8(&cmd, "count", 5, collection->collection,
+                    collection->collectionlen);
+   if (query) {
+      bson_append_document(&cmd, "query", 5, query);
+   } else {
+      bson_init(&q);
+      bson_append_document(&cmd, "query", 5, &q);
+      bson_destroy(&q);
+   }
+   if (limit) {
+      bson_append_int64(&cmd, "limit", 5, limit);
+   }
+   if (skip) {
+      bson_append_int64(&cmd, "skip", 4, skip);
+   }
+   if (mongoc_collection_command_simple(collection, &cmd, read_prefs,
+                                        &reply, error) &&
+       bson_iter_init_find(&iter, &reply, "n")) {
+      ret = bson_iter_as_int64(&iter);
+   }
+   bson_destroy(&reply);
+   bson_destroy(&cmd);
+
+   return ret;
+}
+
+
 bson_bool_t
 mongoc_collection_drop (mongoc_collection_t *collection,
                         bson_error_t        *error)
