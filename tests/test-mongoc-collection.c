@@ -170,6 +170,36 @@ test_delete (void)
    mongoc_client_destroy(client);
 }
 
+static void
+test_count (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_int64_t count;
+   bson_t b;
+
+   client = mongoc_client_new(TEST_HOST);
+   assert(client);
+
+   collection = mongoc_client_get_collection(client, "test", "test");
+   assert(collection);
+
+   bson_init(&b);
+   count = mongoc_collection_count(collection, MONGOC_QUERY_NONE, &b,
+                                   0, 0, NULL, &error);
+   bson_destroy(&b);
+
+   if (count == -1) {
+      MONGOC_WARNING("%s\n", error.message);
+      bson_error_destroy(&error);
+   }
+   assert(count != -1);
+
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+}
+
 
 static void
 log_handler (mongoc_log_level_t  log_level,
@@ -192,6 +222,7 @@ main (int   argc,
    run_test("/mongoc/collection/insert", test_insert);
    run_test("/mongoc/collection/update", test_update);
    run_test("/mongoc/collection/delete", test_delete);
+   run_test("/mongoc/collection/count", test_count);
 
    return 0;
 }
