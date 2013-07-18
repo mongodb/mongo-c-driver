@@ -203,6 +203,28 @@ mongoc_collection_drop (mongoc_collection_t *collection,
 
 
 bson_bool_t
+mongoc_collection_drop_index (mongoc_collection_t *collection,
+                              const char          *index_name,
+                              bson_error_t        *error)
+{
+   bson_bool_t ret;
+   bson_t cmd;
+
+   bson_return_val_if_fail(collection, FALSE);
+   bson_return_val_if_fail(index_name, FALSE);
+
+   bson_init(&cmd);
+   bson_append_utf8(&cmd, "dropIndexes", 9, collection->collection,
+                    collection->collectionlen);
+   bson_append_utf8(&cmd, "index", 5, index_name, -1);
+   ret = mongoc_collection_command_simple(collection, &cmd, NULL, NULL, error);
+   bson_destroy(&cmd);
+
+   return ret;
+}
+
+
+bson_bool_t
 mongoc_collection_insert (mongoc_collection_t    *collection,
                           mongoc_insert_flags_t   flags,
                           const bson_t           *document,

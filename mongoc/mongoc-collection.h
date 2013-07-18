@@ -48,6 +48,9 @@ bson_bool_t                   mongoc_collection_command_simple    (mongoc_collec
                                                                    bson_error_t           *error);
 bson_bool_t                   mongoc_collection_drop              (mongoc_collection_t    *collection,
                                                                    bson_error_t           *error);
+bson_bool_t                   mongoc_collection_drop_index        (mongoc_collection_t    *collection,
+                                                                   const char             *index_name,
+                                                                   bson_error_t           *error);
 mongoc_cursor_t              *mongoc_collection_find              (mongoc_collection_t    *collection,
                                                                    mongoc_query_flags_t    flags,
                                                                    bson_uint32_t           skip,
