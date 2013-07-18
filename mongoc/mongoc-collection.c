@@ -25,6 +25,22 @@
 #include "mongoc-write-concern-private.h"
 
 
+/**
+ * mongoc_collection_new:
+ * @client: A mongoc_client_t.
+ * @db: The name of the database.
+ * @collection: The name of the collection.
+ *
+ * This is an internal function.
+ *
+ * This function will create a new mongoc_collection_t using @client to
+ * communicate.
+ *
+ * @client must be valid for the life of the resulting collection.
+ *
+ * Returns: A new mongoc_collection_t that should be freed with
+ *    mongoc_collection_destroy().
+ */
 mongoc_collection_t *
 mongoc_collection_new (mongoc_client_t *client,
                        const char      *db,
@@ -58,6 +74,12 @@ mongoc_collection_new (mongoc_client_t *client,
 }
 
 
+/**
+ * mongoc_collection_destroy:
+ * @collection: (in): A mongoc_collection_t.
+ *
+ * Destroyes @collection and releases any associated resources.
+ */
 void
 mongoc_collection_destroy (mongoc_collection_t *collection)
 {
@@ -79,6 +101,33 @@ mongoc_collection_destroy (mongoc_collection_t *collection)
 }
 
 
+/**
+ * mongoc_collection_find:
+ * @collection: (in): A mongoc_collection_t.
+ * @flags: (in): A bitwise or of mongoc_query_flags_t.
+ * @skip: (in): The number of documents to skip.
+ * @limit: (in): The maximum number of items.
+ * @query: (in): The query to locate matching documents.
+ * @fields: (in) (allow-none): The fields to return, or NULL for all fields.
+ * @read_prefs: (in) (allow-none): Read preferences to choose cluster node.
+ *
+ * Performs a query against the configured MongoDB server. If @read_prefs is
+ * provided, it will be used to locate a MongoDB node in the cluster to deliver
+ * the query to.
+ *
+ * @flags may be bitwise-or'd flags or MONGOC_QUERY_NONE.
+ *
+ * @skip may contain the number of documents to skip before returning the
+ * matching document.
+ *
+ * @limit may contain the maximum number of documents that may be returned.
+ *
+ * This function will always return a cursor, with the exception of invalid
+ * API use.
+ *
+ * Returns: A newly created mongoc_cursor_t that should be freed with
+ *    mongoc_cursor_destroy().
+ */
 mongoc_cursor_t *
 mongoc_collection_find (mongoc_collection_t  *collection,
                         mongoc_query_flags_t  flags,
@@ -100,6 +149,25 @@ mongoc_collection_find (mongoc_collection_t  *collection,
 }
 
 
+/**
+ * mongoc_collection_command:
+ * @collection: (in): A mongoc_collection_t.
+ * @flags: (in): Bitwise-or'd flags for command.
+ * @skip: (in): Number of documents to skip, typically 0.
+ * @n_return: (in): Number of documents to return, typically 1.
+ * @query: (in): The command to execute.
+ * @fields: (in) (allow-none): The fields to return, or NULL.
+ * @read_prefs: (in) (allow-none): Command read preferences or NULL.
+ *
+ * Executes a command on a cluster node matching @read_prefs. If @read_prefs
+ * is not provided, it will be run on the primary node.
+ *
+ * This function will always return a mongoc_cursor_t with the exception of
+ * invalid API use.
+ *
+ * Returns: A mongoc_cursor_t that should be freed with
+ *    mongoc_cursor_destroy().
+ */
 mongoc_cursor_t *
 mongoc_collection_command (mongoc_collection_t  *collection,
                            mongoc_query_flags_t  flags,
