@@ -65,7 +65,7 @@ AM_CONDITIONAL([HAVE_PYTHON], [test x$ax_python_header != xno])
 dnl **************************************************************************
 dnl Check for libbson # TODO: use git submodule as fallback
 dnl **************************************************************************
-PKG_CHECK_MODULES(BSON, libbson-1.0 >= 0.1.9)
+PKG_CHECK_MODULES(BSON, libbson-1.0 >= 0.1.10)
 
 
 dnl **************************************************************************
