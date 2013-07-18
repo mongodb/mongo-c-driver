@@ -100,47 +100,102 @@ mongoc_collection_find (mongoc_collection_t  *collection,
 }
 
 
+mongoc_cursor_t *
+mongoc_collection_command (mongoc_collection_t  *collection,
+                           mongoc_query_flags_t  flags,
+                           bson_uint32_t         skip,
+                           bson_uint32_t         n_return,
+                           const bson_t         *query,
+                           const bson_t         *fields,
+                           mongoc_read_prefs_t  *read_prefs)
+{
+   char ns[MONGOC_NAMESPACE_MAX+4];
+
+   bson_return_val_if_fail(collection, NULL);
+   bson_return_val_if_fail(query, NULL);
+
+   snprintf(ns, sizeof ns, "%s.$cmd", collection->db);
+   ns[sizeof ns - 1] = '\0';
+
+   if (!read_prefs) {
+      read_prefs = collection->read_prefs;
+   }
+
+   return mongoc_cursor_new(collection->client, ns, flags, skip,
+                            n_return, 0, query, fields, read_prefs);
+}
+
+
+bson_bool_t
+mongoc_collection_command_simple (mongoc_collection_t *collection,
+                                  const bson_t        *command,
+                                  mongoc_read_prefs_t *read_prefs,
+                                  bson_t              *reply,
+                                  bson_error_t        *error)
+{
+   mongoc_cursor_t *cursor;
+   const bson_t *b;
+   bson_bool_t ret = FALSE;
+   bson_iter_t iter;
+   const char *errmsg = NULL;
+   int code = 0;
+
+   bson_return_val_if_fail(collection, FALSE);
+   bson_return_val_if_fail(command, FALSE);
+
+   cursor = mongoc_collection_command(collection, MONGOC_QUERY_NONE, 0,
+                                      1, command, NULL, read_prefs);
+
+   if (!mongoc_cursor_next(cursor, &b)) {
+      mongoc_cursor_error(cursor, error);
+      mongoc_cursor_destroy(cursor);
+      if (reply) {
+         bson_init(reply);
+      }
+      return FALSE;
+   }
+
+   if (reply) {
+      bson_copy_to(b, reply);
+   }
+
+   if (!bson_iter_init_find(&iter, b, "ok") ||
+       !BSON_ITER_HOLDS_DOUBLE(&iter) ||
+       (bson_iter_double(&iter) != 1.0)) {
+      if (bson_iter_init_find(&iter, b, "code") &&
+          BSON_ITER_HOLDS_INT32(&iter)) {
+         code = bson_iter_int32(&iter);
+      }
+      if (bson_iter_init_find(&iter, b, "errmsg") &&
+          BSON_ITER_HOLDS_UTF8(&iter)) {
+         errmsg = bson_iter_utf8(&iter, NULL);
+      }
+      bson_set_error(error,
+                     MONGOC_ERROR_QUERY,
+                     code,
+                     "%s", errmsg ? errmsg : "Unknown command failure");
+      ret = FALSE;
+   }
+
+   mongoc_cursor_destroy(cursor);
+
+   return ret;
+}
+
+
 bson_bool_t
 mongoc_collection_drop (mongoc_collection_t *collection,
                         bson_error_t        *error)
 {
-   mongoc_cursor_t *cursor;
-   const bson_t *b;
-   bson_iter_t iter;
-   bson_bool_t ret = FALSE;
-   const char *errmsg = "unknown error";
+   bson_bool_t ret;
    bson_t cmd;
-   char ns[140];
 
    bson_return_val_if_fail(collection, FALSE);
 
    bson_init(&cmd);
-   bson_append_utf8(&cmd, "drop", 4, collection->collection, -1);
-   snprintf(ns, sizeof ns - 1, "%s.$cmd", collection->db);
-   ns[sizeof ns - 1] = '\0';
-   cursor = mongoc_cursor_new(collection->client, ns, MONGOC_QUERY_NONE,
-                              0, 1, 0, &cmd, NULL, NULL);
-   if (mongoc_cursor_next(cursor, &b)) {
-      if (bson_iter_init_find(&iter, b, "ok") &&
-          BSON_ITER_HOLDS_DOUBLE(&iter) &&
-          bson_iter_double(&iter) == 1.0) {
-         ret = TRUE;
-      } else {
-         if (bson_iter_init_find(&iter, b, "errmsg") &&
-             BSON_ITER_HOLDS_UTF8(&iter)) {
-            errmsg = bson_iter_utf8(&iter, NULL);
-         }
-         bson_set_error(error,
-                        MONGOC_ERROR_PROTOCOL,
-                        MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                        "%s",
-                        errmsg);
-      }
-   }
-   if (mongoc_cursor_error(cursor, error)) {
-      /* Do nothing */
-   }
-   mongoc_cursor_destroy(cursor);
+   bson_append_utf8(&cmd, "drop", 4, collection->collection,
+                    collection->collectionlen);
+   ret = mongoc_collection_command_simple(collection, &cmd, NULL, NULL, error);
    bson_destroy(&cmd);
 
    return ret;
