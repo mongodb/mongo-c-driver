@@ -30,6 +30,7 @@
  * @client: A mongoc_client_t.
  * @db: The name of the database.
  * @collection: The name of the collection.
+ * @write_concern: An optional write concern to apply as the default.
  *
  * This is an internal function.
  *
@@ -42,9 +43,10 @@
  *    mongoc_collection_destroy().
  */
 mongoc_collection_t *
-mongoc_collection_new (mongoc_client_t *client,
-                       const char      *db,
-                       const char      *collection)
+mongoc_collection_new (mongoc_client_t              *client,
+                       const char                   *db,
+                       const char                   *collection,
+                       const mongoc_write_concern_t *write_concern)
 {
    mongoc_collection_t *col;
 
@@ -54,6 +56,9 @@ mongoc_collection_new (mongoc_client_t *client,
 
    col = bson_malloc0(sizeof *col);
    col->client = client;
+   col->write_concern = write_concern ?
+      mongoc_write_concern_copy(write_concern) :
+      mongoc_write_concern_new();
 
    snprintf(col->ns, sizeof col->ns - 1, "%s.%s",
             db, collection);

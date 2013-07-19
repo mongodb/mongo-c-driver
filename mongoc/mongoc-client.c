@@ -457,7 +457,7 @@ mongoc_client_get_collection (mongoc_client_t *client,
    bson_return_val_if_fail(db, NULL);
    bson_return_val_if_fail(collection, NULL);
 
-   return mongoc_collection_new(client, db, collection);
+   return mongoc_collection_new(client, db, collection, client->write_concern);
 }
 
 
