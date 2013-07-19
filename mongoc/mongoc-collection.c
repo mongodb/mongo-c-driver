@@ -342,16 +342,13 @@ mongoc_collection_insert (mongoc_collection_t    *collection,
                           mongoc_insert_flags_t   flags,
                           const bson_t           *document,
                           mongoc_write_concern_t *write_concern,
-                          bson_t                 *result,
                           bson_error_t           *error)
 {
    mongoc_buffer_t buffer;
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
    mongoc_rpc_t reply;
-   bson_bool_t ret = FALSE;
-   bson_t doc;
-   char ns[140];
+   char ns[MONGOC_NAMESPACE_MAX];
 
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(document, FALSE);
@@ -377,32 +374,19 @@ mongoc_collection_insert (mongoc_collection_t    *collection,
 
    if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0,
                                     write_concern, NULL, error))) {
-      goto cleanup;
+      return FALSE;
    }
 
    if (mongoc_write_concern_has_gle(write_concern)) {
       mongoc_buffer_init(&buffer, NULL, 0, NULL);
       if (!mongoc_client_recv(collection->client, &reply, &buffer, hint, error)) {
          mongoc_buffer_destroy(&buffer);
-         goto cleanup;
-      }
-      if (result) {
-         if (bson_init_static(&doc, reply.reply.documents,
-                              reply.reply.documents_len)) {
-            bson_copy_to(&doc, result);
-            bson_destroy(&doc);
-         }
+         return FALSE;
       }
       mongoc_buffer_destroy(&buffer);
-   } else if (result) {
-      bson_init(result);
    }
 
-   ret = TRUE;
-
-cleanup:
-
-   return ret;
+   return TRUE;
 }
 
 

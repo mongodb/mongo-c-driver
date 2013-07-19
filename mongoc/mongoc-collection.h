@@ -69,7 +69,6 @@ bson_bool_t                   mongoc_collection_insert            (mongoc_collec
                                                                    mongoc_insert_flags_t   flags,
                                                                    const bson_t           *document,
                                                                    mongoc_write_concern_t *write_concern,
-                                                                   bson_t                 *result,
                                                                    bson_error_t           *error);
 bson_bool_t                   mongoc_collection_update            (mongoc_collection_t    *collection,
                                                                    mongoc_update_flags_t   flags,
