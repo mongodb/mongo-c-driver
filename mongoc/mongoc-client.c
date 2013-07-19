@@ -46,6 +46,8 @@ struct _mongoc_client_t
 
    mongoc_stream_initiator_t  initiator;
    void                      *initiator_data;
+
+   mongoc_write_concern_t    *write_concern;
 };
 
 
@@ -456,4 +458,29 @@ mongoc_client_get_collection (mongoc_client_t *client,
    bson_return_val_if_fail(collection, NULL);
 
    return mongoc_collection_new(client, db, collection);
+}
+
+
+const mongoc_write_concern_t *
+mongoc_client_get_write_concern (mongoc_client_t *client)
+{
+   bson_return_val_if_fail(client, NULL);
+   return client->write_concern;
+}
+
+
+void
+mongoc_client_set_write_concern (mongoc_client_t              *client,
+                                 const mongoc_write_concern_t *write_concern)
+{
+   bson_return_if_fail(client);
+
+   if (write_concern != client->write_concern) {
+      if (client->write_concern) {
+         mongoc_write_concern_destroy(client->write_concern);
+      }
+      client->write_concern = write_concern ?
+         mongoc_write_concern_copy(write_concern) :
+         mongoc_write_concern_new();
+   }
 }

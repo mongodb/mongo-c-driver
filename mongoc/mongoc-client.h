@@ -25,6 +25,7 @@
 #include "mongoc-database.h"
 #include "mongoc-stream.h"
 #include "mongoc-uri.h"
+#include "mongoc-write-concern.h"
 
 
 BSON_BEGIN_DECLS
@@ -73,6 +74,10 @@ mongoc_database_t   *mongoc_client_get_database         (mongoc_client_t *client
 mongoc_collection_t *mongoc_client_get_collection       (mongoc_client_t *client,
                                                          const char      *db,
                                                          const char      *collection);
+
+const mongoc_write_concern_t *mongoc_client_get_write_concern (mongoc_client_t              *client);
+void                          mongoc_client_set_write_concern (mongoc_client_t              *client,
+                                                               const mongoc_write_concern_t *write_concern);
 
 
 BSON_END_DECLS
