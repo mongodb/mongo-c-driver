@@ -414,7 +414,7 @@ mongoc_collection_update (mongoc_collection_t    *collection,
    rpc.update.response_to = -1;
    rpc.update.opcode = MONGOC_OPCODE_UPDATE;
    rpc.update.zero = 0;
-   rpc.update.collection = collection->collection;
+   rpc.update.collection = collection->ns;
    rpc.update.flags = flags;
    rpc.update.selector = bson_get_data(selector);
    rpc.update.update = bson_get_data(update);
@@ -456,7 +456,7 @@ mongoc_collection_delete (mongoc_collection_t    *collection,
    rpc.delete.response_to = -1;
    rpc.delete.opcode = MONGOC_OPCODE_DELETE;
    rpc.delete.zero = 0;
-   rpc.delete.collection = collection->collection;
+   rpc.delete.collection = collection->ns;
    rpc.delete.flags = flags;
    rpc.delete.selector = bson_get_data(selector);
 
