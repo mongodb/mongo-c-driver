@@ -46,6 +46,7 @@ mongoc_collection_t *
 mongoc_collection_new (mongoc_client_t              *client,
                        const char                   *db,
                        const char                   *collection,
+                       const mongoc_read_prefs_t    *read_prefs,
                        const mongoc_write_concern_t *write_concern)
 {
    mongoc_collection_t *col;
@@ -59,6 +60,9 @@ mongoc_collection_new (mongoc_client_t              *client,
    col->write_concern = write_concern ?
       mongoc_write_concern_copy(write_concern) :
       mongoc_write_concern_new();
+   col->read_prefs = read_prefs ?
+      mongoc_read_prefs_copy(read_prefs) :
+      mongoc_read_prefs_new();
 
    snprintf(col->ns, sizeof col->ns - 1, "%s.%s",
             db, collection);

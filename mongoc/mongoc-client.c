@@ -47,6 +47,7 @@ struct _mongoc_client_t
    mongoc_stream_initiator_t  initiator;
    void                      *initiator_data;
 
+   mongoc_read_prefs_t       *read_prefs;
    mongoc_write_concern_t    *write_concern;
 };
 
@@ -457,7 +458,8 @@ mongoc_client_get_collection (mongoc_client_t *client,
    bson_return_val_if_fail(db, NULL);
    bson_return_val_if_fail(collection, NULL);
 
-   return mongoc_collection_new(client, db, collection, client->write_concern);
+   return mongoc_collection_new(client, db, collection, client->read_prefs,
+                                client->write_concern);
 }
 
 
@@ -482,5 +484,30 @@ mongoc_client_set_write_concern (mongoc_client_t              *client,
       client->write_concern = write_concern ?
          mongoc_write_concern_copy(write_concern) :
          mongoc_write_concern_new();
+   }
+}
+
+
+const mongoc_read_prefs_t *
+mongoc_client_get_read_prefs (mongoc_client_t *client)
+{
+   bson_return_val_if_fail(client, NULL);
+   return client->read_prefs;
+}
+
+
+void
+mongoc_client_set_read_prefs (mongoc_client_t           *client,
+                              const mongoc_read_prefs_t *read_prefs)
+{
+   bson_return_if_fail(client);
+
+   if (read_prefs != client->read_prefs) {
+      if (client->read_prefs) {
+         mongoc_read_prefs_destroy(client->read_prefs);
+      }
+      client->read_prefs = read_prefs ?
+         mongoc_read_prefs_copy(read_prefs) :
+         mongoc_read_prefs_new();
    }
 }

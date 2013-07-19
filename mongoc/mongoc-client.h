@@ -23,6 +23,7 @@
 
 #include "mongoc-collection.h"
 #include "mongoc-database.h"
+#include "mongoc-read-prefs.h"
 #include "mongoc-stream.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
@@ -78,6 +79,9 @@ mongoc_collection_t *mongoc_client_get_collection       (mongoc_client_t *client
 const mongoc_write_concern_t *mongoc_client_get_write_concern (mongoc_client_t              *client);
 void                          mongoc_client_set_write_concern (mongoc_client_t              *client,
                                                                const mongoc_write_concern_t *write_concern);
+const mongoc_read_prefs_t    *mongoc_client_get_read_prefs    (mongoc_client_t              *client);
+void                          mongoc_client_set_read_prefs    (mongoc_client_t              *client,
+                                                               const mongoc_read_prefs_t    *read_prefs);
 
 
 BSON_END_DECLS
