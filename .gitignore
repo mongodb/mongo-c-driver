@@ -29,6 +29,7 @@ test-mongoc-collection
 test-mongoc-event
 test-mongoc-list
 test-mongoc-queue
+test-mongoc-read-prefs
 test-mongoc-rpc
 test-mongoc-uri
 test-mongoc-write-concern
