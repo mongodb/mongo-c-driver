@@ -1,12 +1,6 @@
 noinst_PROGRAMS += mongoc-ping
-noinst_PROGRAMS += mongoc-stat
 
 
 mongoc_ping_SOURCES = $(top_srcdir)/examples/mongoc-ping.c
 mongoc_ping_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 mongoc_ping_LDADD = libmongoc-1.0.la $(BSON_LIBS) $(SHM_LIB)
-
-
-mongoc_stat_SOURCES = $(top_srcdir)/examples/mongoc-stat.c
-mongoc_stat_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-mongoc_stat_LDADD = libmongoc-1.0.la $(BSON_LIBS) $(SHM_LIB)

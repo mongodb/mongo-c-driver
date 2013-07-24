@@ -4,6 +4,7 @@ noinst_PROGRAMS =
 include mongoc/Makefile.include
 include examples/Makefile.include
 include tests/Makefile.include
+include tools/Makefile.include
 
 if HAVE_PYTHON
 include bindings/python/Makefile.include
