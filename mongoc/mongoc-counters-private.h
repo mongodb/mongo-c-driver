@@ -19,12 +19,27 @@
 #define MONGOC_COUNTERS_H
 
 
+#ifdef __linux__
 #define _GNU_SOURCE
 #include <sched.h>
+#include <sys/sysinfo.h>
+#endif
+
 #include <bson.h>
 
 
 BSON_BEGIN_DECLS
+
+
+#ifdef __linux__
+#define ADD(v, count) v += count
+#define CURCPU sched_getcpu()
+#define NCPU   get_nprocs()
+#else
+#define ADD(v, count) __sync_fetch_and_add(&v, count)
+#define CURCPU 0
+#define NCPU   1
+#endif
 
 
 #ifndef SLOTS_PER_CACHELINE
@@ -50,27 +65,36 @@ typedef struct
 #undef COUNTER
 
 
+static inline int
+_mongoc_get_n_cpu (void)
+{
+   return NCPU;
+}
+
+
 #define COUNTER(N, ident, Category, Name, Description) \
 static inline void \
 mongoc_counter_##ident##_add (bson_int64_t val) \
 { \
-   volatile int cpu = sched_getcpu(); \
-   __mongoc_counter_##N.cpus[cpu].slots[N/SLOTS_PER_CACHELINE] += val; \
+   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N/SLOTS_PER_CACHELINE], val); \
 } \
 static inline void \
 mongoc_counter_##ident##_inc (void) \
 { \
-   volatile int cpu = sched_getcpu(); \
-   ++__mongoc_counter_##N.cpus[cpu].slots[N/SLOTS_PER_CACHELINE]; \
+   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N/SLOTS_PER_CACHELINE], 1); \
 } \
 static inline void \
 mongoc_counter_##ident##_dec (void) \
 { \
-   volatile int cpu = sched_getcpu(); \
-   --__mongoc_counter_##N.cpus[cpu].slots[N/SLOTS_PER_CACHELINE]; \
+   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N/SLOTS_PER_CACHELINE], -1); \
 }
 #include "mongoc-counters.defs"
 #undef COUNTER
+
+
+#undef ADD
+#undef NCPU
+#undef CURCPU
 
 
 BSON_END_DECLS

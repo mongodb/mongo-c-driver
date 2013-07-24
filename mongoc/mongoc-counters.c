@@ -17,12 +17,9 @@
 #define _GNU_SOURCE
 
 #include <assert.h>
-#include <malloc.h>
-#include <sched.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/sysinfo.h>
 
 #include "mongoc-counters-private.h"
 
@@ -33,7 +30,10 @@
 #undef COUNTER
 
 
-static void
+void _mongoc_counters_init (void) __attribute__((constructor));
+
+
+void
 _mongoc_counters_init (void)
 {
    mongoc_counter_slots_t *groups = NULL;
@@ -42,13 +42,7 @@ _mongoc_counters_init (void)
    int ngroups;
    int ncpu;
 
-#ifdef __linux__
-   ncpu = get_nprocs();
-#elif defined(__APPLE__)
-#error "TODO: Mac OS X support."
-#else
-#error "You're platform is not yet supported."
-#endif
+   ncpu = _mongoc_get_n_cpu();
 
 #define COUNTER(_n, ident, _category, _name, _desc) \
    nslots = MAX(nslots, _n);
@@ -69,8 +63,3 @@ _mongoc_counters_init (void)
 #include "mongoc-counters.defs"
 #undef COUNTER
 }
-
-
-void
-(*mongoc_counters_init) (void)
-   __attribute__((section (".ctors"))) = _mongoc_counters_init;
