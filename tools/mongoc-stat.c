@@ -94,18 +94,18 @@ main (int   argc,
    }
 
    pid = strtol(argv[1], NULL, 10);
-   snprintf(name, sizeof name, "mongoc-%hu", (int)pid);
+   snprintf(name, sizeof name, "/mongoc-%hu", (int)pid);
    name[sizeof name-1] = '\0';
 
    fd = shm_open(name, O_RDONLY, 0);
    if (fd == -1) {
-      fprintf(stderr, "Failed to load shared memory segment.\n");
+      perror("Failed to load shared memory segment");
       return 1;
    }
 
    mem = mmap(NULL, getpagesize(), PROT_READ, MAP_SHARED, fd, 0);
    if (mem == MAP_FAILED) {
-      fprintf(stderr, "Failed to mmap() shared memory segment.\n");
+      perror("Failed to mmap shared memory segment.");
       return 1;
    }
 
@@ -115,7 +115,7 @@ main (int   argc,
 
    mem = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
    if (mem == MAP_FAILED) {
-      fprintf(stderr, "Failed to mmap() shared memory segment.\n");
+      perror("Failed to re-mmap shared memory segment.");
       return 1;
    }
 
