@@ -29,6 +29,7 @@
 
 #include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
+#include "mongoc-counters-private.h"
 #include "mongoc-error.h"
 #include "mongoc-flags.h"
 #include "mongoc-log.h"
@@ -83,6 +84,9 @@ mongoc_stream_unix_destroy (mongoc_stream_t *stream)
    file->fd = -1;
 
    bson_free(stream);
+
+   mongoc_counter_streams_active_dec();
+   mongoc_counter_streams_disposed_inc();
 }
 
 
@@ -667,6 +671,8 @@ mongoc_stream_new_from_unix (int fd)
    stream->stream.cork = mongoc_stream_unix_cork;
    stream->stream.uncork = mongoc_stream_unix_uncork;
 
+   mongoc_counter_streams_active_inc();
+
    return (mongoc_stream_t *)stream;
 }
 
@@ -681,6 +687,9 @@ mongoc_stream_buffered_destroy (mongoc_stream_t *stream)
    mongoc_stream_destroy(buffered->base_stream);
    mongoc_buffer_destroy(&buffered->buffer);
    bson_free(stream);
+
+   mongoc_counter_streams_active_dec();
+   mongoc_counter_streams_disposed_inc();
 }
 
 
@@ -753,6 +762,8 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream)
    stream->stream.readv = mongoc_stream_buffered_readv;
    stream->base_stream = base_stream;
    mongoc_buffer_init(&stream->buffer, NULL, 0, NULL);
+
+   mongoc_counter_streams_active_inc();
 
    return (mongoc_stream_t *)stream;
 }
