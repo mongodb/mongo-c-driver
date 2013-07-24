@@ -30,13 +30,43 @@
 #include "mongoc-counters-private.h"
 
 
+#pragma pack(push, 1)
+typedef struct
+{
+   bson_uint32_t offset;
+   bson_uint32_t slot;
+   char          category[24];
+   char          name[32];
+   char          description[64];
+} mongoc_counter_info_t;
+#pragma pack(pop)
+
+
+BSON_STATIC_ASSERT(sizeof(mongoc_counter_info_t) == 128);
+
+
+#pragma pack(push, 1)
+typedef struct
+{
+   bson_uint64_t size;
+   bson_uint32_t n_cpu;
+   bson_uint32_t n_counters;
+   bson_uint32_t counters_offset;
+   bson_uint8_t  padding[44];
+} mongoc_counter_header_t;
+#pragma pack(pop)
+
+
+BSON_STATIC_ASSERT(sizeof(mongoc_counter_header_t) == 64);
+
+
 #define COUNTER(N, ident, Category, Name, Description) \
    mongoc_counter_t __mongoc_counter_##N;
 #include "mongoc-counters.defs"
 #undef COUNTER
 
 
-void _mongoc_counters_init (void) __attribute__((constructor));
+static void _mongoc_counters_init (void) __attribute__((constructor));
 
 
 static void *
@@ -45,6 +75,8 @@ get_counter_shm (size_t size)
    void *mem;
    char name[32];
    int fd;
+
+   size = MAX(size, getpagesize());
 
    snprintf(name, sizeof name, "/mongoc-%hu", getpid());
    name[sizeof name - 1] = '\0';
@@ -71,14 +103,38 @@ get_counter_shm (size_t size)
 }
 
 
-void
+static void
+mongoc_counter_info_init (mongoc_counter_info_t *info,
+                          const char            *category,
+                          const char            *name,
+                          const char            *description)
+{
+   strncpy(info->category, category, sizeof info->category);
+   strncpy(info->name, name, sizeof info->name);
+   strncpy(info->description, description, sizeof info->description);
+
+   info->category[sizeof info->category-1] = '\0';
+   info->name[sizeof info->name-1] = '\0';
+   info->description[sizeof info->description-1] = '\0';
+
+   info->offset = 0;
+   info->slot = 0;
+}
+
+
+static void
 _mongoc_counters_init (void)
 {
+   mongoc_counter_header_t *hdr;
    mongoc_counter_slots_t *groups = NULL;
+   mongoc_counter_info_t *info;
+   bson_uint8_t *mem;
    size_t size;
+   size_t info_size;
    int nslots = 0;
    int ngroups;
    int ncpu;
+   int i = 0;
 
    ncpu = _mongoc_get_n_cpu();
 
@@ -89,14 +145,30 @@ _mongoc_counters_init (void)
 
    nslots++;
    ngroups = (nslots / SLOTS_PER_CACHELINE) + 1;
-
+   info_size = nslots * sizeof *info;
    size = ncpu * ngroups * sizeof(mongoc_counter_slots_t);
-   groups = get_counter_shm(size);
-   assert(groups);
 
-#define COUNTER(_n, ident, _category, _name, _desc) \
+   mem = get_counter_shm(size + info_size);
+
+   hdr = (void *)mem;
+   hdr->size = size + info_size;
+   hdr->n_cpu = _mongoc_get_n_cpu();
+   hdr->n_counters = 0;
+   hdr->counters_offset = sizeof *hdr;
+
+   groups = (void *)(mem +
+                     hdr->counters_offset +
+                     (sizeof *info * nslots));
+
+#define COUNTER(_n, ident, Category, Name, Desc) \
    __mongoc_counter_##_n.cpus = &groups[(_n / SLOTS_PER_CACHELINE) * ncpu]; \
-   assert(__mongoc_counter_##_n.cpus);
+   assert(__mongoc_counter_##_n.cpus); \
+   info = (mongoc_counter_info_t *) \
+      (mem + hdr->counters_offset + (sizeof *info * i++)); \
+   mongoc_counter_info_init(info, Category, Name, Desc); \
+   info->offset = ((bson_uint8_t *)__mongoc_counter_##_n.cpus) - mem; \
+   info->slot = _n % 8; \
+   hdr->n_counters++;
 #include "mongoc-counters.defs"
 #undef COUNTER
 }
