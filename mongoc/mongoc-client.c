@@ -15,6 +15,8 @@
  */
 
 
+#define _GNU_SOURCE
+
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -29,6 +31,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-cluster-private.h"
+#include "mongoc-counters-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-error.h"
 #include "mongoc-list-private.h"
@@ -393,6 +396,8 @@ mongoc_client_new (const char *uri_string)
    client->initiator = mongoc_client_default_stream_initiator;
    mongoc_cluster_init(&client->cluster, client->uri, client);
 
+   mongoc_counter_clients_active_inc();
+
    return client;
 }
 
@@ -418,6 +423,9 @@ mongoc_client_destroy (mongoc_client_t *client)
    mongoc_cluster_destroy(&client->cluster);
    mongoc_uri_destroy(client->uri);
    bson_free(client);
+
+   mongoc_counter_clients_active_dec();
+   mongoc_counter_clients_disposed_inc();
 }
 
 
