@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-counters-private.h"
 #include "mongoc-client-pool.h"
 #include "mongoc-queue-private.h"
 
@@ -62,6 +63,8 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
       }
    }
 
+   mongoc_counter_client_pools_active_inc();
+
    return pool;
 }
 
@@ -80,6 +83,9 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
    bson_mutex_destroy(&pool->mutex);
    bson_cond_destroy(&pool->cond);
    bson_free(pool);
+
+   mongoc_counter_client_pools_active_dec();
+   mongoc_counter_client_pools_disposed_inc();
 }
 
 

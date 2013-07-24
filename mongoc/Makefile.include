@@ -31,6 +31,7 @@ NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-array-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-buffer-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-client-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-collection-private.h
+NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-counters-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-cursor-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-cluster-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-database-private.h
@@ -50,6 +51,7 @@ libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-client.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-client-pool.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-cluster.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-collection.c
+libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-counters.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-cursor.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-database.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-list.c
@@ -68,3 +70,7 @@ libmongoc_1_0_la_CPPFLAGS += $(BSON_CFLAGS)
 
 libmongoc_1_0_la_LIBS =
 libmongoc_1_0_la_LIBS += $(BSON_LIBS)
+
+
+EXTRA_DIST += $(top_srcdir)/mongoc/mongoc-counters.defs
+

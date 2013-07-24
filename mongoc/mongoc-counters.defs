@@ -1,31 +1,53 @@
-COUNTER(0,   CNX_ESTAB,              "Connections",  "Established",         "The number of established connections.")
-COUNTER(1,   CNX_DISPOSED,           "Connections",  "Disposed",            "The number of disposed connections.")
+/*
+ * Copyright 2013 10gen Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-COUNTER(100, OP_EGRESS_TOTAL,        "Operations",   "Egress Total",        "The number of sent operations.")
-COUNTER(101, OP_INGRESS_TOTAL,       "Operations",   "Ingress Total",       "The number of received operations.")
-COUNTER(102, OP_EGRESS_QUERY,        "Operations",   "Egress Queries",      "The number of sent Query operations.")
-COUNTER(103, OP_INCRESS_QUERY,       "Operations",   "Ingress Queries",     "The number of received Query operations.")
-COUNTER(104, OP_EGRESS_GETMORE,      "Operations",   "Egress GetMore",      "The number of sent GetMore operations.")
-COUNTER(105, OP_INGRESS_GETMORE,     "Operations",   "Ingress GetMore",     "The number of received GetMore operations.")
-COUNTER(106, OP_EGRESS_INSERT,       "Operations",   "Egress Insert",       "The number of sent Insert operations.")
-COUNTER(107, OP_INGRESS_INSERT,      "Operations",   "Ingress Insert",      "The number of received Insert operations.")
-COUNTER(108, OP_EGRESS_DELETE,       "Operations",   "Egress Delete",       "The number of sent Delete operations.")
-COUNTER(109, OP_INGRESS_DELETE,      "Operations",   "Ingress Delete",      "The number of received Delete operations.")
-COUNTER(110, OP_EGRESS_UPDATE,       "Operations",   "Egress Update",       "The number of sent Update operations.")
-COUNTER(111, OP_INGRESS_UPDATE,      "Operations",   "Ingress Update",      "The number of received Update operations.")
-COUNTER(112, OP_EGRESS_KILLCURSORS,  "Operations",   "Egress KillCursors",  "The number of sent KillCursors operations.")
-COUNTER(113, OP_INCRESS_KILLCURSORS, "Operations",   "Ingress KillCursors", "The number of received KillCursors operations.")
-COUNTER(114, OP_EGRESS_MSG,          "Operations",   "Egress Msg",          "The number of sent Msg operations.")
-COUNTER(115, OP_INGRESS_MSG,         "Operations",   "Ingress Msg",         "The number of received Msg operations.")
 
-COUNTER(200, CURSORS_ACTIVE,         "Cursors",      "Active",              "The number of active cursors.")
-COUNTER(201, CURSORS_DISPOSED,       "Cursors",      "Disposed",            "The number of disposed cursors.")
+COUNTER(000, cnx_established,        "Connections",  "Established",         "The number of established connections.")
+COUNTER(001, cnx_disposed,           "Connections",  "Disposed",            "The number of disposed connections.")
 
-COUNTER(300, CLIENTS_ACTIVE,         "Clients",      "Active",              "The number of active clients.")
-COUNTER(301, CLIENTS_DISPOSED,       "Clients",      "Disposed",            "The number of disposed clients.")
 
-COUNTER(400, STREAMS_ACTIVE,         "Streams",      "Active",              "The number of active streams.")
-COUNTER(401, STREAMS_DISPOSED,       "Streams",      "Disposed",            "The number of disposed streams.")
+COUNTER(100, op_egress_total,        "Operations",   "Egress Total",        "The number of sent operations.")
+COUNTER(101, op_ingress_total,       "Operations",   "Ingress Total",       "The number of received operations.")
+COUNTER(102, op_egress_query,        "Operations",   "Egress Queries",      "The number of sent Query operations.")
+COUNTER(103, op_incress_query,       "Operations",   "Ingress Queries",     "The number of received Query operations.")
+COUNTER(104, op_egress_getmore,      "Operations",   "Egress GetMore",      "The number of sent GetMore operations.")
+COUNTER(105, op_ingress_getmore,     "Operations",   "Ingress GetMore",     "The number of received GetMore operations.")
+COUNTER(106, op_egress_insert,       "Operations",   "Egress Insert",       "The number of sent Insert operations.")
+COUNTER(107, op_ingress_insert,      "Operations",   "Ingress Insert",      "The number of received Insert operations.")
+COUNTER(108, op_egress_delete,       "Operations",   "Egress Delete",       "The number of sent Delete operations.")
+COUNTER(109, op_ingress_delete,      "Operations",   "Ingress Delete",      "The number of received Delete operations.")
+COUNTER(110, op_egress_update,       "Operations",   "Egress Update",       "The number of sent Update operations.")
+COUNTER(111, op_ingress_update,      "Operations",   "Ingress Update",      "The number of received Update operations.")
+COUNTER(112, op_egress_killcursors,  "Operations",   "Egress KillCursors",  "The number of sent KillCursors operations.")
+COUNTER(113, op_incress_killcursors, "Operations",   "Ingress KillCursors", "The number of received KillCursors operations.")
+COUNTER(114, op_egress_msg,          "Operations",   "Egress Msg",          "The number of sent Msg operations.")
+COUNTER(115, op_ingress_msg,         "Operations",   "Ingress Msg",         "The number of received Msg operations.")
 
-COUNTER(500, CLIENT_POOLS_ACTIVE,    "Client Pools", "Active",              "The number of active client pools.")
-COUNTER(501, CLIENT_POOLS_DISPOSED,  "Client Pools", "Disposed",            "The number of disposed client pools.")
+
+COUNTER(200, cursors_active,         "Cursors",      "Active",              "The number of active cursors.")
+COUNTER(201, cursors_disposed,       "Cursors",      "Disposed",            "The number of disposed cursors.")
+
+
+COUNTER(300, clients_active,         "Clients",      "Active",              "The number of active clients.")
+COUNTER(301, clients_disposed,       "Clients",      "Disposed",            "The number of disposed clients.")
+
+
+COUNTER(400, streams_active,         "Streams",      "Active",              "The number of active streams.")
+COUNTER(401, streams_disposed,       "Streams",      "Disposed",            "The number of disposed streams.")
+
+
+COUNTER(500, client_pools_active,    "Client Pools", "Active",              "The number of active client pools.")
+COUNTER(501, client_pools_disposed,  "Client Pools", "Disposed",            "The number of disposed client pools.")
