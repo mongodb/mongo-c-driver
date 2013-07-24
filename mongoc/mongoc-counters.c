@@ -97,6 +97,7 @@ get_counter_shm (size_t size)
       return NULL;
    }
 
+   close(fd);
    memset(mem, 0, size);
 
    return mem;
