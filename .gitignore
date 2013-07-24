@@ -17,6 +17,7 @@ Makefile
 Makefile.in
 missing
 mongoc-ping
+mongoc-stat
 *.o
 *.pc
 stamp-h1
