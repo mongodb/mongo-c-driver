@@ -32,6 +32,9 @@ BSON_BEGIN_DECLS
 
 
 #ifdef __linux__
+/*
+ * TODO: Use rdtscp when available.
+ */
 #define ADD(v, count) v += count
 #define CURCPU sched_getcpu()
 #define NCPU   get_nprocs()
