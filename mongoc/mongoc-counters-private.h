@@ -52,6 +52,12 @@ typedef struct
 
 #define COUNTER(N, ident, Category, Name, Description) \
 static inline void \
+mongoc_counter_##ident##_add (bson_int64_t val) \
+{ \
+   volatile int cpu = sched_getcpu(); \
+   __mongoc_counter_##N.cpus[cpu].slots[N/SLOTS_PER_CACHELINE] += val; \
+} \
+static inline void \
 mongoc_counter_##ident##_inc (void) \
 { \
    volatile int cpu = sched_getcpu(); \
