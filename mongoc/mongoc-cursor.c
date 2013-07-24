@@ -15,9 +15,12 @@
  */
 
 
+#define _GNU_SOURCE
+
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-counters-private.h"
 #include "mongoc-error.h"
 #include "mongoc-opcode.h"
 
@@ -71,6 +74,8 @@ mongoc_cursor_new (mongoc_client_t      *client,
 
    mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL);
 
+   mongoc_counter_cursors_active_inc();
+
    return cursor;
 }
 
@@ -97,6 +102,9 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    mongoc_buffer_destroy(&cursor->buffer);
 
    bson_free(cursor);
+
+   mongoc_counter_cursors_active_dec();
+   mongoc_counter_cursors_disposed_inc();
 }
 
 
