@@ -24,59 +24,62 @@ TEST_PROGS += test-mongoc-uri
 TEST_PROGS += test-mongoc-write-concern
 
 
+TEST_LIBS = libmongoc-1.0.la $(BSON_LIBS) $(SHM_LIB)
+
+
 test_load_SOURCES = $(top_srcdir)/tests/test-load.c
 test_load_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_load_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_load_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_array_SOURCES = $(top_srcdir)/tests/test-mongoc-array.c
 test_mongoc_array_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_mongoc_array_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_mongoc_array_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_buffer_SOURCES = $(top_srcdir)/tests/test-mongoc-buffer.c
 test_mongoc_buffer_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_mongoc_buffer_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_mongoc_buffer_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_client_pool_SOURCES = $(top_srcdir)/tests/test-mongoc-client-pool.c
 test_mongoc_client_pool_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_mongoc_client_pool_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_mongoc_client_pool_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_collection_SOURCES = $(top_srcdir)/tests/test-mongoc-collection.c
 test_mongoc_collection_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_mongoc_collection_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_mongoc_collection_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_list_SOURCES = $(top_srcdir)/tests/test-mongoc-list.c
 test_mongoc_list_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_mongoc_list_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_mongoc_list_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_queue_SOURCES = $(top_srcdir)/tests/test-mongoc-queue.c
 test_mongoc_queue_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_mongoc_queue_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_mongoc_queue_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_read_prefs_SOURCES = $(top_srcdir)/tests/test-mongoc-read-prefs.c
 test_mongoc_read_prefs_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_mongoc_read_prefs_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_mongoc_read_prefs_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_rpc_SOURCES = $(top_srcdir)/tests/test-mongoc-rpc.c
 test_mongoc_rpc_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_mongoc_rpc_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_mongoc_rpc_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_uri_SOURCES = $(top_srcdir)/tests/test-mongoc-uri.c
 test_mongoc_uri_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_mongoc_uri_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_mongoc_uri_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_write_concern_SOURCES = $(top_srcdir)/tests/test-mongoc-write-concern.c
 test_mongoc_write_concern_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_mongoc_write_concern_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+test_mongoc_write_concern_LDADD = $(TEST_LIBS)
 
 
 test: $(TEST_PROGS)

@@ -69,6 +69,15 @@ PKG_CHECK_MODULES(BSON, libbson-1.0 >= 0.1.10)
 
 
 dnl **************************************************************************
+dnl Check for necessary libraries.
+dnl **************************************************************************
+AC_CHECK_FUNCS([shm_open], [SHM_LIB=],
+	       [AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt],
+			     [SHM_LIB=])])
+AC_SUBST([SHM_LIB])
+
+
+dnl **************************************************************************
 dnl Check for Python Support
 dnl **************************************************************************
 AX_PYTHON

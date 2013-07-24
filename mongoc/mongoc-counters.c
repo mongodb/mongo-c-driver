@@ -17,9 +17,15 @@
 #define _GNU_SOURCE
 
 #include <assert.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "mongoc-counters-private.h"
 
@@ -31,6 +37,38 @@
 
 
 void _mongoc_counters_init (void) __attribute__((constructor));
+
+
+static void *
+get_counter_shm (size_t size)
+{
+   void *mem;
+   char name[32];
+   int fd;
+
+   snprintf(name, sizeof name, "/mongoc-%hu", getpid());
+   name[sizeof name - 1] = '\0';
+
+   fd = shm_open(name, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+   if (fd == -1) {
+      return NULL;
+   }
+
+   if (ftruncate(fd, size) == -1) {
+      close(fd);
+      return NULL;
+   }
+
+   mem = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+   if (mem == MAP_FAILED) {
+      close(fd);
+      return NULL;
+   }
+
+   memset(mem, 0, size);
+
+   return mem;
+}
 
 
 void
@@ -53,9 +91,8 @@ _mongoc_counters_init (void)
    ngroups = (nslots / SLOTS_PER_CACHELINE) + 1;
 
    size = ncpu * ngroups * sizeof(mongoc_counter_slots_t);
-   posix_memalign((void **)&groups, 64, size);
+   groups = get_counter_shm(size);
    assert(groups);
-   memset(groups, 0, size);
 
 #define COUNTER(_n, ident, _category, _name, _desc) \
    __mongoc_counter_##_n.cpus = &groups[(_n / SLOTS_PER_CACHELINE) * ncpu]; \

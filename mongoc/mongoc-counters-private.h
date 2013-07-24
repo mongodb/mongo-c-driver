@@ -76,17 +76,17 @@ _mongoc_get_n_cpu (void)
 static inline void \
 mongoc_counter_##ident##_add (bson_int64_t val) \
 { \
-   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N/SLOTS_PER_CACHELINE], val); \
+   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N%SLOTS_PER_CACHELINE], val); \
 } \
 static inline void \
 mongoc_counter_##ident##_inc (void) \
 { \
-   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N/SLOTS_PER_CACHELINE], 1); \
+   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N%SLOTS_PER_CACHELINE], 1); \
 } \
 static inline void \
 mongoc_counter_##ident##_dec (void) \
 { \
-   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N/SLOTS_PER_CACHELINE], -1); \
+   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N%SLOTS_PER_CACHELINE], -1); \
 }
 #include "mongoc-counters.defs"
 #undef COUNTER
