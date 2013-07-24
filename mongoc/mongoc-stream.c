@@ -291,6 +291,8 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       }
    }
 
+   mongoc_counter_streams_ingress_add(ret);
+
    return ret;
 }
 
@@ -423,6 +425,8 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
          return -1;
       }
    }
+
+   mongoc_counter_streams_egress_add(ret);
 
    return ret;
 }

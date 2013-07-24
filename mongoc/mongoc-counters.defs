@@ -47,6 +47,8 @@ COUNTER(301, clients_disposed,       "Clients",      "Disposed",            "The
 
 COUNTER(400, streams_active,         "Streams",      "Active",              "The number of active streams.")
 COUNTER(401, streams_disposed,       "Streams",      "Disposed",            "The number of disposed streams.")
+COUNTER(402, streams_egress,         "Streams",      "Egress Bytes",        "The number of bytes sent.")
+COUNTER(403, streams_ingress,        "Streams",      "Ingress Bytes",       "The number of bytes received.")
 
 
 COUNTER(500, client_pools_active,    "Client Pools", "Active",              "The number of active client pools.")
