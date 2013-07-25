@@ -517,6 +517,40 @@ mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
 }
 
 
+static BSON_INLINE void
+mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
+{
+   mongoc_counter_op_ingress_total_inc();
+
+   switch (rpc->header.opcode) {
+   case MONGOC_OPCODE_DELETE:
+      mongoc_counter_op_ingress_delete_inc();
+      break;
+   case MONGOC_OPCODE_UPDATE:
+      mongoc_counter_op_ingress_update_inc();
+      break;
+   case MONGOC_OPCODE_INSERT:
+      mongoc_counter_op_ingress_insert_inc();
+      break;
+   case MONGOC_OPCODE_KILL_CURSORS:
+      mongoc_counter_op_ingress_killcursors_inc();
+      break;
+   case MONGOC_OPCODE_GET_MORE:
+      mongoc_counter_op_ingress_getmore_inc();
+      break;
+   case MONGOC_OPCODE_REPLY:
+      mongoc_counter_op_ingress_reply_inc();
+      break;
+   case MONGOC_OPCODE_MSG:
+      mongoc_counter_op_ingress_msg_inc();
+      break;
+   case MONGOC_OPCODE_QUERY:
+      mongoc_counter_op_ingress_query_inc();
+      break;
+   }
+}
+
+
 bson_uint32_t
 mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
                       mongoc_rpc_t           *rpcs,
@@ -797,6 +831,8 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
     * Convert endianness of the message.
     */
    mongoc_rpc_swab(rpc);
+
+   mongoc_cluster_inc_ingress_rpc(rpc);
 
    return TRUE;
 }
