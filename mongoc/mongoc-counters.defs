@@ -15,10 +15,6 @@
  */
 
 
-COUNTER(0,   cnx_established,        "Connections",  "Established",         "The number of established connections.")
-COUNTER(1,   cnx_disposed,           "Connections",  "Disposed",            "The number of disposed connections.")
-
-
 COUNTER(10, op_egress_total,        "Operations",   "Egress Total",        "The number of sent operations.")
 COUNTER(11, op_ingress_total,       "Operations",   "Ingress Total",       "The number of received operations.")
 COUNTER(12, op_egress_query,        "Operations",   "Egress Queries",      "The number of sent Query operations.")
