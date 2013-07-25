@@ -35,6 +35,8 @@ COUNTER(22, op_egress_killcursors,  "Operations",   "Egress KillCursors",  "The 
 COUNTER(23, op_incress_killcursors, "Operations",   "Ingress KillCursors", "The number of received KillCursors operations.")
 COUNTER(24, op_egress_msg,          "Operations",   "Egress Msg",          "The number of sent Msg operations.")
 COUNTER(25, op_ingress_msg,         "Operations",   "Ingress Msg",         "The number of received Msg operations.")
+COUNTER(26, op_egress_reply,        "Operations",   "Egress Reply",        "The number of sent Reply operations.")
+COUNTER(27, op_ingress_reply,       "Operations",   "Ingress Reply",       "The number of received Reply operations.")
 
 
 COUNTER(30, cursors_active,         "Cursors",      "Active",              "The number of active cursors.")
