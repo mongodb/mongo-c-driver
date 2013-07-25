@@ -51,3 +51,6 @@ COUNTER(53, streams_ingress,        "Streams",      "Ingress Bytes",       "The 
 
 COUNTER(60, client_pools_active,    "Client Pools", "Active",              "The number of active client pools.")
 COUNTER(61, client_pools_disposed,  "Client Pools", "Disposed",            "The number of disposed client pools.")
+
+
+COUNTER(70, protocol_ingress_error, "Protocol",     "Ingress Errors",      "The number of protocol errors on ingress.")
