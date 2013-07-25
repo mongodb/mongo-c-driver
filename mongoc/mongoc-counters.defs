@@ -15,8 +15,8 @@
  */
 
 
-COUNTER(000, cnx_established,        "Connections",  "Established",         "The number of established connections.")
-COUNTER(001, cnx_disposed,           "Connections",  "Disposed",            "The number of disposed connections.")
+COUNTER(0,   cnx_established,        "Connections",  "Established",         "The number of established connections.")
+COUNTER(1,   cnx_disposed,           "Connections",  "Disposed",            "The number of disposed connections.")
 
 
 COUNTER(100, op_egress_total,        "Operations",   "Egress Total",        "The number of sent operations.")
