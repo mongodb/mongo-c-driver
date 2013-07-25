@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+#define _GNU_SOURCE
 
 #include <errno.h>
 
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-counters-private.h"
 #include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
@@ -481,6 +483,40 @@ mongoc_cluster_needs_gle (mongoc_cluster_t       *cluster,
 }
 
 
+static BSON_INLINE void
+mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
+{
+   mongoc_counter_op_egress_total_inc();
+
+   switch (rpc->header.opcode) {
+   case MONGOC_OPCODE_DELETE:
+      mongoc_counter_op_egress_delete_inc();
+      break;
+   case MONGOC_OPCODE_UPDATE:
+      mongoc_counter_op_egress_update_inc();
+      break;
+   case MONGOC_OPCODE_INSERT:
+      mongoc_counter_op_egress_insert_inc();
+      break;
+   case MONGOC_OPCODE_KILL_CURSORS:
+      mongoc_counter_op_egress_killcursors_inc();
+      break;
+   case MONGOC_OPCODE_GET_MORE:
+      mongoc_counter_op_egress_getmore_inc();
+      break;
+   case MONGOC_OPCODE_REPLY:
+      mongoc_counter_op_egress_reply_inc();
+      break;
+   case MONGOC_OPCODE_MSG:
+      mongoc_counter_op_egress_msg_inc();
+      break;
+   case MONGOC_OPCODE_QUERY:
+      mongoc_counter_op_egress_query_inc();
+      break;
+   }
+}
+
+
 bson_uint32_t
 mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
                       mongoc_rpc_t           *rpcs,
@@ -527,6 +563,7 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
     */
 
    for (i = 0; i < rpcs_len; i++) {
+      mongoc_cluster_inc_egress_rpc(&rpcs[i]);
       rpcs[i].header.request_id = ++cluster->request_id;
       need_gle = mongoc_cluster_needs_gle(cluster, &rpcs[i], write_concern);
       mongoc_rpc_gather(&rpcs[i], &cluster->iov);
@@ -612,6 +649,7 @@ mongoc_cluster_try_sendv (mongoc_cluster_t       *cluster,
    mongoc_array_clear(&cluster->iov);
 
    for (i = 0; i < rpcs_len; i++) {
+      mongoc_cluster_inc_egress_rpc(&rpcs[i]);
       rpcs[i].header.request_id = ++cluster->request_id;
       need_gle = mongoc_cluster_needs_gle(cluster, &rpcs[i], write_concern);
       mongoc_rpc_gather(&rpcs[i], &cluster->iov);
