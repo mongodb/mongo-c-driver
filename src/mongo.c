@@ -1271,10 +1271,9 @@ static int mongo_cursor_get_more( mongo_cursor *cursor ) {
         }
 
         res = mongo_read_response( cursor->conn, &( cursor->reply ) );
-        if( res != MONGO_OK ) {
-            mongo_cursor_destroy( cursor );
+        if( res != MONGO_OK )
             return MONGO_ERROR;
-        }
+
         cursor->current.data = NULL;
         cursor->seen += cursor->reply->fields.num;
 
