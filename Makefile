@@ -192,7 +192,7 @@ zip: clobber
 	zip -r /tmp/mongo-c-driver-$(MONGO_MAJOR).$(MONGO_MINOR).$(MONGO_PATCH).zip $(shell ls)
 
 clean:
-	rm -rf src/*.o src/*.os test/*.o test/*.os test_* .scon* config.log docs/*/*.pyc
+	rm -rf example_* src/*.o src/*.os test/*.o test/*.os test_* .scon* config.log docs/*/*.pyc
 
 clobber: clean
 	rm -rf $(MONGO_DYLIBNAME) $(MONGO_STLIBNAME) $(BSON_DYLIBNAME) $(BSON_STLIBNAME) docs/html docs/source/doxygen
