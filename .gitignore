@@ -14,6 +14,7 @@
 .DS_Store
 .idea
 
+example_*
 test_*
 benchmark
 benchmark.exe
