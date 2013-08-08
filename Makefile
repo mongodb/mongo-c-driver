@@ -16,8 +16,8 @@
 
 # Version
 MONGO_MAJOR=0
-MONGO_MINOR=7
-MONGO_PATCH=1
+MONGO_MINOR=8
+MONGO_PATCH=0
 BSON_MAJOR=$(MONGO_MAJOR)
 BSON_MINOR=$(MONGO_MINOR)
 BSON_PATCH=$(MONGO_PATCH)
@@ -35,6 +35,7 @@ TESTS=test_auth test_bcon test_bson test_bson_subobject test_connect test_count_
   test_functions test_gridfs test_helpers \
   test_oid test_resize test_simple test_sizes test_update \
   test_validate test_write_concern test_commands
+EXAMPLES=example_example
 MONGO_OBJECTS=src/bcon.o src/bson.o src/encoding.o src/gridfs.o src/md5.o src/mongo.o \
  src/numbers.o
 BSON_OBJECTS=src/bcon.o src/bson.o src/numbers.o src/encoding.o
@@ -175,8 +176,11 @@ install:
 scan-build: clean
 	scan-build -V -v make
 
-test: $(TESTS)
+test: example $(TESTS)
 	sh runtests.sh
+
+example: $(EXAMPLES)
+	set -x; for i in $(EXAMPLES); do ./$$i; done
 
 valgrind: $(TESTS)
 	sh runtests.sh -v
@@ -200,6 +204,9 @@ deps:
 	$(MAKE) CFLAGS="-m32" LDFLAGS="-pg"
 
 test_%: test/%_test.c test/test.h $(MONGO_STLIBNAME)
+	$(CC) -o $@ -L. -Isrc $(TEST_DEFINES) $(ALL_LDFLAGS) $< $(MONGO_STLIBNAME)
+
+example_%: docs/examples/%.c $(MONGO_STLIBNAME)
 	$(CC) -o $@ -L. -Isrc $(TEST_DEFINES) $(ALL_LDFLAGS) $< $(MONGO_STLIBNAME)
 
 %.o: %.c
