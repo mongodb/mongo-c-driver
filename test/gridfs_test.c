@@ -185,6 +185,7 @@ void test_delete( void ) {
     CONN_CLIENT_TEST;
     GFS_INIT;
 
+    memset( data, '\0', 1024 );
     ASSERT( gridfs_store_buffer( gfs, data, 1024, testFile, "text/html", GRIDFILE_DEFAULT ) == MONGO_OK );
     ASSERT( gridfs_find_filename( gfs, testFile, gfile ) == MONGO_OK );
     gridfile_destroy( gfile );
