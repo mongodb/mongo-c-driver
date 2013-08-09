@@ -249,6 +249,7 @@ void test_streaming( void ) {
     test_gridfile( gfs, buf, LARGE, "large", "text/html" );
 
     gridfs_destroy( gfs );
+    gridfile_destroy( gfile );
     mongo_destroy( conn );
     free( buf );
     free( small );
@@ -383,6 +384,7 @@ void test_random_write2( void ) {
     test_gridfile( gfs, buf, LARGE, "random_access", "text/html" );
 
     gridfs_destroy( gfs );
+    gridfile_destroy( gfile );
     mongo_destroy( conn );
 
     free( buf );

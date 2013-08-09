@@ -204,10 +204,10 @@ deps:
 	$(MAKE) CFLAGS="-m32" LDFLAGS="-pg"
 
 test_%: test/%_test.c test/test.h $(MONGO_STLIBNAME)
-	$(CC) -o $@ -L. -Isrc $(TEST_DEFINES) $(ALL_LDFLAGS) $< $(MONGO_STLIBNAME)
+	$(CC) -o $@ -L. -Isrc $(TEST_DEFINES) $(ALL_CFLAGS) $(ALL_LDFLAGS) $< $(MONGO_STLIBNAME)
 
 example_%: docs/examples/%.c $(MONGO_STLIBNAME)
-	$(CC) -o $@ -L. -Isrc $(TEST_DEFINES) $(ALL_LDFLAGS) $< $(MONGO_STLIBNAME)
+	$(CC) -o $@ -L. -Isrc $(TEST_DEFINES) $(ALL_CFLAGS) $(ALL_LDFLAGS) $< $(MONGO_STLIBNAME)
 
 %.o: %.c
 	$(CC) -o $@ -c $(ALL_CFLAGS) $<
