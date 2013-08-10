@@ -1382,8 +1382,10 @@ MONGO_EXPORT int mongo_cursor_next( mongo_cursor *cursor ) {
             }
         }
 
-        else
+        else {
+            cursor->err = MONGO_CURSOR_INVALID;
             return MONGO_ERROR;
+        }
     }
 
     /* first */
