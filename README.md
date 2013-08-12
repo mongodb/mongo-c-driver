@@ -1,5 +1,7 @@
 # MongoDB C Driver
 
+Important note - please see [HISTORY.md](HISTORY.md) for API changes.
+
 This is then 10gen-supported MongoDB C driver. There are two goals for this driver.
 The first is to provide a strict, default compilation option for ultimate portability,
 no dependencies, and generic embeddability.

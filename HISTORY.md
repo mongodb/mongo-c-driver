@@ -1,9 +1,9 @@
 # MongoDB C Driver History
 
 ## 0.8
-2013-8-9
+2013-8-12
 
-Featuring: uniform init/destroy pairing, improved support for 64-bit architectures and Windows, enhanced GridFS
+This release features uniform init/destroy pairing, improved support for 64-bit architectures and Windows, and enhanced GridFS.
 
 ** API CHANGE **
 
@@ -17,18 +17,18 @@ Please see the API docs for full details.
 The following functions have been replaced or modified, other than just for _size_t_.
 
 Old Function/Signature | New Function/Signature
-bson* __bson_create__( void ) | bson* __bson_alloc__( void )
-void __bson_dispose__(bson* b) | void __bson_dealloc__( bson* b )
-bson *__bson_empty__( bson *obj ) | const bson *__bson_shared_empty__( void )
-void __bson_init__( bson *b ) | int __bson_init__( bson *b )
-void __bson_iterator_code_scope__( const bson_iterator *i, bson *scope ) | void __bson_iterator_code_scope_init__( const bson_iterator *i, bson *scope, bson_bool_t copyData )
-bson_iterator* __bson_iterator_create__( void ) | bson_iterator* __bson_iterator_alloc__( void )
-void __bson_iterator_dispose__(bson_iterator*) | void __bson_iterator_dealloc__(bson_iterator*)
-void __bson_iterator_subobject__( const bson_iterator *i, bson *sub ) | void __bson_iterator_subobject_init__( const bson_iterator *i, bson *sub, bson_bool_t copyData )
-mongo* __mongo_create__( void ) | mongo* __mongo_alloc__( void )
-mongo_cursor* __mongo_cursor_create__( void ) | mongo_cursor* __mongo_cursor_alloc__( void )
-void __mongo_cursor_dispose__(mongo_cursor* cursor) | void __mongo_cursor_dealloc__(mongo_cursor* cursor)
-void __mongo_dispose__(mongo* conn) | void __mongo_dealloc__(mongo* conn)
+- bson* __bson_create__( void ) | bson* __bson_alloc__( void )
+- void __bson_dispose__(bson* b) | void __bson_dealloc__( bson* b )
+- bson *__bson_empty__( bson *obj ) | const bson *__bson_shared_empty__( void )
+- void __bson_init__( bson *b ) | int __bson_init__( bson *b )
+- void __bson_iterator_code_scope__( const bson_iterator *i, bson *scope ) | void __bson_iterator_code_scope_init__( const bson_iterator *i, bson *scope, bson_bool_t copyData )
+- bson_iterator* __bson_iterator_create__( void ) | bson_iterator* __bson_iterator_alloc__( void )
+- void __bson_iterator_dispose__(bson_iterator*) | void __bson_iterator_dealloc__(bson_iterator*)
+- void __bson_iterator_subobject__( const bson_iterator *i, bson *sub ) | void __bson_iterator_subobject_init__( const bson_iterator *i, bson *sub, bson_bool_t copyData )
+- mongo* __mongo_create__( void ) | mongo* __mongo_alloc__( void )
+- mongo_cursor* __mongo_cursor_create__( void ) | mongo_cursor* __mongo_cursor_alloc__( void )
+- void __mongo_cursor_dispose__(mongo_cursor* cursor) | void __mongo_cursor_dealloc__(mongo_cursor* cursor)
+- void __mongo_dispose__(mongo* conn) | void __mongo_dealloc__(mongo* conn)
 
 The following functions are new.
 
@@ -44,7 +44,7 @@ The following functions are new.
 Fixes
 
 * Many fixes in pull requests back to January 8, 2013 with special thanks to all of the contributors and reviewers
-* Please see [https://github.com/mongodb/mongo-c-driver/commits/v0.8]
+* Please see https://github.com/mongodb/mongo-c-driver/commits/v0.8
 
 ## 0.7.1
 2013-1-7
