@@ -80,15 +80,34 @@ mongoc_cursor_new (mongoc_client_t      *client,
 }
 
 
+static void
+mongoc_cursor_kill_cursor (mongoc_cursor_t *cursor,
+                           bson_int64_t     cursor_id)
+{
+   mongoc_rpc_t rpc = {{ 0 }};
+
+   bson_return_if_fail(cursor);
+   bson_return_if_fail(cursor_id);
+
+   rpc.kill_cursors.msg_len = 0;
+   rpc.kill_cursors.request_id = 0;
+   rpc.kill_cursors.response_to = -1;
+   rpc.kill_cursors.opcode = MONGOC_OPCODE_KILL_CURSORS;
+   rpc.kill_cursors.zero = 0;
+   rpc.kill_cursors.cursors = &cursor_id;
+   rpc.kill_cursors.n_cursors = 1;
+
+   mongoc_client_sendv(cursor->client, &rpc, 1, 0, NULL, NULL, NULL);
+}
+
+
 void
 mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
    bson_return_if_fail(cursor);
 
    if (cursor->rpc.reply.cursor_id) {
-      /*
-       * TODO: Call kill cursor on the server.
-       */
+      mongoc_cursor_kill_cursor(cursor, cursor->rpc.reply.cursor_id);
    }
 
    /*
