@@ -167,7 +167,7 @@ mongoc_host_list_from_string (mongoc_host_list_t *host_list,
 {
    bson_uint16_t port;
    const char *end_host;
-   char *hostname;
+   char *hostname = NULL;
 
    bson_return_val_if_fail(host_list, FALSE);
    bson_return_val_if_fail(host_and_port, FALSE);
@@ -195,6 +195,8 @@ mongoc_host_list_from_string (mongoc_host_list_t *host_list,
 
    host_list->port = port;
    host_list->family = AF_INET;
+
+   bson_free(hostname);
 
    return TRUE;
 }
