@@ -26,6 +26,7 @@ test-load
 test-mock-server
 test-mongoc-array
 test-mongoc-buffer
+test-mongoc-client
 test-mongoc-client-pool
 test-mongoc-collection
 test-mongoc-event
