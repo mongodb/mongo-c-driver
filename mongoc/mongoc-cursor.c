@@ -299,9 +299,10 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    return TRUE;
 
 failure:
-      cursor->done = TRUE;
-      cursor->failed = TRUE;
-      return FALSE;
+   cursor->done = TRUE;
+   cursor->failed = TRUE;
+
+   return FALSE;
 }
 
 
