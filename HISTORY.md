@@ -19,7 +19,7 @@ The following functions have been replaced or modified, other than just for _siz
 Old Function/Signature | New Function/Signature
 - bson* __bson_create__( void ) | bson* __bson_alloc__( void )
 - void __bson_dispose__(bson* b) | void __bson_dealloc__( bson* b )
-- bson *__bson_empty__( bson *obj ) | const bson *__bson_shared_empty__( void )
+- bson* __bson_empty__( bson *obj ) | const bson* __bson_shared_empty__( void )
 - void __bson_init__( bson *b ) | int __bson_init__( bson *b )
 - void __bson_iterator_code_scope__( const bson_iterator *i, bson *scope ) | void __bson_iterator_code_scope_init__( const bson_iterator *i, bson *scope, bson_bool_t copyData )
 - bson_iterator* __bson_iterator_create__( void ) | bson_iterator* __bson_iterator_alloc__( void )
@@ -32,14 +32,14 @@ Old Function/Signature | New Function/Signature
 
 The following functions are new.
 
-- bson_bool_t bson_init_empty( bson *obj )
-- void __bson_init_zero__( bson *b )
-- int bson_append_maxkey( bson *b, const char *name )
-- int bson_append_minkey( bson *b, const char *name )
-- int bson_has_data( const bson *b )
-- bson_init_finished_data
-- bson_init_finished_data_with_copy
-- mongo_write_concern_*
+- __bson_init_empty__
+- __bson_init_zero__
+- __bson_append_maxkey__
+- __bson_append_minkey__
+- __bson_has_data__
+- __bson_init_finished_data__
+- __bson_init_finished_data_with_copy__
+- __mongo_write_concern_*__
 
 Fixes
 
