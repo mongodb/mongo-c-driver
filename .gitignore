@@ -23,6 +23,7 @@ mongoc-stat
 stamp-h1
 *.swp
 test-load
+test-mock-server
 test-mongoc-array
 test-mongoc-buffer
 test-mongoc-client-pool
