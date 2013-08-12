@@ -48,4 +48,8 @@ Uniform init/destroy pairing, improved support for 64-bit architectures and Wind
    tutorial
    building
    bson
+   bcon
    connections
+   write_concern
+   errors
+
