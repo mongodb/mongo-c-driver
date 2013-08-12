@@ -31,6 +31,8 @@ test_mongoc_buffer_basic (void)
    mongoc_buffer_destroy(&buf);
    mongoc_buffer_destroy(&buf);
    mongoc_buffer_destroy(&buf);
+
+   mongoc_stream_destroy(stream);
 }
 
 
