@@ -38,8 +38,6 @@ BSON_BEGIN_DECLS
 #define OPTIONAL(_check, _code)          _code
 
 
-#pragma pack(push, 1)
-
 #include "op-delete.def"
 #include "op-get-more.def"
 #include "op-header.def"
@@ -49,6 +47,7 @@ BSON_BEGIN_DECLS
 #include "op-query.def"
 #include "op-reply.def"
 #include "op-update.def"
+
 
 typedef union
 {
@@ -62,8 +61,6 @@ typedef union
    mongoc_rpc_reply_t        reply;
    mongoc_rpc_update_t       update;
 } mongoc_rpc_t;
-
-#pragma pack(pop)
 
 
 #undef RPC
