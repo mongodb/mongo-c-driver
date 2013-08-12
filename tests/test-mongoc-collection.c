@@ -106,6 +106,7 @@ test_update (void)
 
       bson_destroy(&b);
       bson_destroy(&q);
+      bson_destroy(&u);
    }
 
    mongoc_collection_destroy(collection);
