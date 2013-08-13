@@ -130,13 +130,11 @@ mongoc_cluster_select (mongoc_cluster_t       *cluster,
                        bson_error_t           *error)
 {
    mongoc_cluster_node_t *nodes[MONGOC_CLUSTER_MAX_NODES];
+   mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
    bson_uint32_t count;
    bson_uint32_t watermark;
    bson_int32_t nearest = -1;
-   bson_bool_t need_primary = FALSE;
-   //bson_iter_t iter;
-   //bson_iter_t child;
-   //const char *str;
+   bson_bool_t need_primary;
    size_t i;
 
    bson_return_val_if_fail(cluster, NULL);
@@ -152,19 +150,12 @@ mongoc_cluster_select (mongoc_cluster_t       *cluster,
    }
 
    /*
-    * Check if read preferences require a primary.
+    * Determine if our read preference requires communicating with PRIMARY.
     */
-#if 0
-   if (options &&
-       bson_iter_init_find_case(&iter, options, "$readPreference") &&
-       BSON_ITER_HOLDS_DOCUMENT(&iter) &&
-       bson_iter_recurse(&iter, &child) &&
-       bson_iter_find(&child, "mode") &&
-       BSON_ITER_HOLDS_UTF8(&child) &&
-       (str = bson_iter_utf8(&child, NULL))) {
-      need_primary = !strcasecmp(str, "PRIMARY");
+   if (read_prefs) {
+      read_mode = mongoc_read_prefs_get_mode(read_prefs);
    }
-#endif
+   need_primary = (read_mode == MONGOC_READ_PRIMARY);
 
    /*
     * Check to see if any RPCs require the primary. If so, we pin all
