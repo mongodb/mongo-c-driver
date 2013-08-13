@@ -36,8 +36,10 @@ mongoc_uri_t             *mongoc_uri_new                  (const char         *u
 const mongoc_host_list_t *mongoc_uri_get_hosts            (const mongoc_uri_t *uri);
 const char               *mongoc_uri_get_database         (const mongoc_uri_t *uri);
 const bson_t             *mongoc_uri_get_options          (const mongoc_uri_t *uri);
-const char               *mongoc_uri_get_string           (const mongoc_uri_t *uri);
+const char               *mongoc_uri_get_password         (const mongoc_uri_t *uri);
 const bson_t             *mongoc_uri_get_read_preferences (const mongoc_uri_t *uri);
+const char               *mongoc_uri_get_string           (const mongoc_uri_t *uri);
+const char               *mongoc_uri_get_username         (const mongoc_uri_t *uri);
 
 
 BSON_END_DECLS

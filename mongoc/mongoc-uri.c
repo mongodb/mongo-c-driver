@@ -473,6 +473,22 @@ mongoc_uri_new (const char *uri_string)
 
 
 const char *
+mongoc_uri_get_username (const mongoc_uri_t *uri)
+{
+   bson_return_val_if_fail(uri, NULL);
+   return uri->username;
+}
+
+
+const char *
+mongoc_uri_get_password (const mongoc_uri_t *uri)
+{
+   bson_return_val_if_fail(uri, NULL);
+   return uri->password;
+}
+
+
+const char *
 mongoc_uri_get_database (const mongoc_uri_t *uri)
 {
    bson_return_val_if_fail(uri, NULL);

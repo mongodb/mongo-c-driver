@@ -125,6 +125,12 @@ test_mongoc_uri_new (void)
    assert_cmpstr(mongoc_uri_get_hosts(uri)->next->host, "/tmp/mongodb.sock");
    assert(!mongoc_uri_get_hosts(uri)->next->next);
    mongoc_uri_destroy(uri);
+
+   uri = mongoc_uri_new("mongodb://christian:secret@localhost:27017?authSource=abcd");
+   assert(uri);
+   assert_cmpstr(mongoc_uri_get_username(uri), "christian");
+   assert_cmpstr(mongoc_uri_get_password(uri), "secret");
+   mongoc_uri_destroy(uri);
 }
 
 
