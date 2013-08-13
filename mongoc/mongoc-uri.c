@@ -496,6 +496,21 @@ mongoc_uri_get_database (const mongoc_uri_t *uri)
 }
 
 
+const char *
+mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
+{
+   bson_iter_t iter;
+
+   bson_return_val_if_fail(uri, NULL);
+
+   if (bson_iter_init_find_case(&iter, &uri->options, "authSource")) {
+      return bson_iter_utf8(&iter, NULL);
+   }
+
+   return "admin";
+}
+
+
 const bson_t *
 mongoc_uri_get_options (const mongoc_uri_t *uri)
 {
