@@ -60,10 +60,11 @@ typedef struct
    bson_uint32_t       index;
    mongoc_host_list_t  host;
    mongoc_stream_t    *stream;
-   bson_bool_t         primary;
    bson_int32_t        ping_msec;
    bson_uint32_t       stamp;
    bson_t              tags;
+   bson_bool_t         primary    : 1;
+   bson_bool_t         needs_auth : 1;
 } mongoc_cluster_node_t;
 
 
@@ -75,6 +76,8 @@ typedef struct
    bson_uint32_t           request_id;
 
    mongoc_uri_t           *uri;
+   bson_bool_t             needs_auth : 1;
+
    mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
    void                   *client;
    bson_uint32_t           max_bson_size;

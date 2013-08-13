@@ -32,6 +32,28 @@
 #endif
 
 
+static void
+mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster,
+                                mongoc_cluster_node_t *node)
+{
+   mongoc_stream_t *stream;
+
+   bson_return_if_fail(node);
+
+   stream = node->stream;
+   node->stream = NULL;
+   node->needs_auth = cluster->needs_auth;
+   node->ping_msec = -1;
+   node->stamp = 0;
+   node->primary = 0;
+   bson_destroy(&node->tags);
+   bson_init(&node->tags);
+
+   mongoc_stream_close(stream);
+   mongoc_stream_destroy(stream);
+}
+
+
 /**
  * mongoc_cluster_init:
  * @cluster: A mongoc_cluster_t.
@@ -76,6 +98,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    cluster->sec_latency_ms = 15;
    cluster->max_msg_size = 1024 * 1024 * 48;
    cluster->max_bson_size = 1024 * 1024 * 16;
+   cluster->needs_auth = !!mongoc_uri_get_username(uri);
 
    if (bson_iter_init_find_case(&iter, b, "secondaryacceptablelatencyms") &&
        BSON_ITER_HOLDS_INT32(&iter)) {
@@ -85,6 +108,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       cluster->nodes[i].index = i;
       cluster->nodes[i].ping_msec = -1;
+      cluster->nodes[i].needs_auth = cluster->needs_auth;
       bson_init(&cluster->nodes[i].tags);
    }
 
@@ -776,8 +800,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
     */
    pos = buffer->len;
    if (!mongoc_buffer_append_from_stream(buffer, node->stream, 4, error)) {
-      mongoc_stream_destroy(node->stream);
-      node->stream = NULL;
+      mongoc_cluster_disconnect_node(cluster, node);
       mongoc_counter_protocol_ingress_error_inc();
       return FALSE;
    }
@@ -792,8 +815,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                      MONGOC_ERROR_PROTOCOL,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                      "Corrupt or malicious reply received.");
-      mongoc_stream_destroy(node->stream);
-      node->stream = NULL;
+      mongoc_cluster_disconnect_node(cluster, node);
       mongoc_counter_protocol_ingress_error_inc();
       return FALSE;
    }
@@ -802,8 +824,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
     * Read the rest of the message from the stream.
     */
    if (!mongoc_buffer_append_from_stream(buffer, node->stream, msg_len - 4, error)) {
-      mongoc_stream_destroy(node->stream);
-      node->stream = NULL;
+      mongoc_cluster_disconnect_node(cluster, node);
       mongoc_counter_protocol_ingress_error_inc();
       return FALSE;
    }
@@ -816,8 +837,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                      MONGOC_ERROR_PROTOCOL,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                      "Failed to decode reply from server.");
-      mongoc_stream_destroy(node->stream);
-      node->stream = NULL;
+      mongoc_cluster_disconnect_node(cluster, node);
       mongoc_counter_protocol_ingress_error_inc();
       return FALSE;
    }
