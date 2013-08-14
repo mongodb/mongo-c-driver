@@ -76,7 +76,7 @@ typedef struct
    bson_uint32_t           request_id;
 
    mongoc_uri_t           *uri;
-   bson_bool_t             needs_auth : 1;
+   bson_bool_t             requires_auth : 1;
 
    mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
    void                   *client;

@@ -42,7 +42,7 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster,
 
    stream = node->stream;
    node->stream = NULL;
-   node->needs_auth = cluster->needs_auth;
+   node->needs_auth = cluster->requires_auth;
    node->ping_msec = -1;
    node->stamp = 0;
    node->primary = 0;
@@ -98,7 +98,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    cluster->sec_latency_ms = 15;
    cluster->max_msg_size = 1024 * 1024 * 48;
    cluster->max_bson_size = 1024 * 1024 * 16;
-   cluster->needs_auth = !!mongoc_uri_get_username(uri);
+   cluster->requires_auth = !!mongoc_uri_get_username(uri);
 
    if (bson_iter_init_find_case(&iter, b, "secondaryacceptablelatencyms") &&
        BSON_ITER_HOLDS_INT32(&iter)) {
@@ -108,7 +108,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       cluster->nodes[i].index = i;
       cluster->nodes[i].ping_msec = -1;
-      cluster->nodes[i].needs_auth = cluster->needs_auth;
+      cluster->nodes[i].needs_auth = cluster->requires_auth;
       bson_init(&cluster->nodes[i].tags);
    }
 
