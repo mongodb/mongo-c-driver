@@ -1498,11 +1498,15 @@ MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *ke
     p = strchr( idxns, '.' );
     if ( !p ) {
 	    bson_destroy( &b );
+        if( out )
+            bson_init_zero(out);
 	    return MONGO_ERROR;
     }
     strcpy( p, ".system.indexes" );
     if ( mongo_insert( conn, idxns, &b, NULL ) != MONGO_OK) {
 	    bson_destroy( &b );
+        if( out )
+            bson_init_zero(out);
 	    return MONGO_ERROR;
     }
     bson_destroy( &b );
