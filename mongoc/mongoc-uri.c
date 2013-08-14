@@ -507,7 +507,7 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
       return bson_iter_utf8(&iter, NULL);
    }
 
-   return "admin";
+   return uri->database ? uri->database : "admin";
 }
 
 
