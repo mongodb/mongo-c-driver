@@ -17,6 +17,7 @@
 #define _GNU_SOURCE
 
 #include <errno.h>
+#include <string.h>
 
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
@@ -30,6 +31,64 @@
 #ifndef MAX_RETRY_COUNT
 #define MAX_RETRY_COUNT 3
 #endif
+
+
+static char *
+hex_md5 (const char *input)
+{
+   bson_uint8_t digest[16];
+   bson_md5_t md5;
+   char digest_str[33];
+   int i;
+
+   bson_md5_init(&md5);
+   bson_md5_append(&md5, (const bson_uint8_t *)input, strlen(input));
+   bson_md5_finish(&md5, digest);
+
+   for (i = 0; i < sizeof digest; i++) {
+      snprintf(&digest_str[i*2], 3, "%02x", digest[i]);
+   }
+   digest_str[sizeof digest_str - 1] = '\0';
+
+   return bson_strdup(digest_str);
+}
+
+
+static char *
+mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster,
+                                        const char       *nonce)
+{
+   const char *username;
+   const char *password;
+   char *password_digest;
+   char *password_md5;
+   char *digest_in;
+   char *ret;
+
+   /*
+    * The following generates the digest to be used for basic authentication
+    * with a MongoDB server. More information on the format can be found
+    * at the following location:
+    *
+    * http://docs.mongodb.org/meta-driver/latest/legacy/
+    *   implement-authentication-in-driver/
+    */
+
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(cluster->uri);
+
+   username = mongoc_uri_get_username(cluster->uri);
+   password = mongoc_uri_get_password(cluster->uri);
+   password_digest = bson_strdup_printf("%s:mongo:%s", username, password);
+   password_md5 = hex_md5(password_digest);
+   digest_in = bson_strdup_printf("%s%s%s", nonce, username, password_md5);
+   ret = hex_md5(digest_in);
+   bson_free(digest_in);
+   bson_free(password_md5);
+   bson_free(password_digest);
+
+   return ret;
+}
 
 
 static void
@@ -291,6 +350,107 @@ mongoc_cluster_select (mongoc_cluster_t       *cluster,
 
 
 static bson_bool_t
+mongoc_cluster_node_run_command (mongoc_cluster_t      *cluster,
+                                 mongoc_cluster_node_t *node,
+                                 const char            *db_name,
+                                 const bson_t          *command,
+                                 bson_t                *reply,
+                                 bson_error_t          *error)
+{
+   mongoc_buffer_t buffer;
+   mongoc_array_t ar;
+   mongoc_rpc_t rpc;
+   bson_int32_t msg_len;
+   bson_t reply_local;
+   char ns[MONGOC_NAMESPACE_MAX];
+
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(node);
+   BSON_ASSERT(node->stream);
+   BSON_ASSERT(db_name);
+   BSON_ASSERT(command);
+
+   snprintf(ns, sizeof ns, "%s.$cmd", db_name);
+   ns[sizeof ns - 1] = '\0';
+
+   rpc.query.msg_len = 0;
+   rpc.query.request_id = ++cluster->request_id;
+   rpc.query.response_to = -1;
+   rpc.query.opcode = MONGOC_OPCODE_QUERY;
+   rpc.query.flags = MONGOC_QUERY_NONE;
+   rpc.query.collection = ns;
+   rpc.query.skip = 0;
+   rpc.query.n_return = -1;
+   rpc.query.query = bson_get_data(command);
+   rpc.query.fields = NULL;
+
+   mongoc_array_init(&ar, sizeof(struct iovec));
+   mongoc_buffer_init(&buffer, NULL, 0, NULL);
+   mongoc_rpc_gather(&rpc, &ar);
+   mongoc_rpc_swab(&rpc);
+
+   if (!mongoc_stream_writev(node->stream, ar.data, ar.len, 0)) {
+      goto failure;
+   }
+
+   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, 4, error)) {
+      goto failure;
+   }
+
+   BSON_ASSERT(buffer.len == 4);
+
+   memcpy(&msg_len, buffer.data, 4);
+   msg_len = BSON_UINT32_FROM_LE(msg_len);
+   if ((msg_len < 16) || (msg_len > (1024 * 1024 * 16))) {
+      goto invalid_reply;
+   }
+
+   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, msg_len - 4, error)) {
+      goto failure;
+   }
+
+   if (!mongoc_rpc_scatter(&rpc, buffer.data, buffer.len)) {
+      goto invalid_reply;
+   }
+
+   mongoc_rpc_swab(&rpc);
+
+   if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+      goto invalid_reply;
+   }
+
+   if (reply) {
+      if (!mongoc_rpc_reply_get_first(&rpc.reply, &reply_local)) {
+         goto failure;
+      }
+      bson_copy_to(&reply_local, reply);
+      bson_destroy(&reply_local);
+   }
+
+   mongoc_buffer_destroy(&buffer);
+   mongoc_array_destroy(&ar);
+
+   return TRUE;
+
+invalid_reply:
+   bson_set_error(error,
+                  MONGOC_ERROR_PROTOCOL,
+                  MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                  "Invalid reply from server.");
+
+failure:
+   mongoc_buffer_destroy(&buffer);
+   mongoc_array_destroy(&ar);
+
+   if (reply) {
+      bson_init(reply);
+   }
+
+   return FALSE;
+}
+
+
+static bson_bool_t
 mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
                          mongoc_cluster_node_t *node,
                          bson_error_t          *error)
@@ -396,10 +556,104 @@ failure:
 
 
 static bson_bool_t
+mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
+                          mongoc_cluster_node_t *node,
+                          bson_error_t          *error)
+{
+   bson_iter_t iter;
+   const char *auth_source;
+   bson_t command = { 0 };
+   bson_t reply = { 0 };
+   char *digest;
+   char *nonce;
+
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(node);
+
+   if (!(auth_source = mongoc_uri_get_auth_source(cluster->uri))) {
+      auth_source = "admin";
+   }
+
+   /*
+    * To authenticate a node using basic authentication, we need to first
+    * get the nonce from the server. We use that to hash our password which
+    * is sent as a reply to the server. If everything went good we get a
+    * success notification back from the server.
+    */
+
+   /*
+    * Execute the getnonce command to fetch the nonce used for generating
+    * md5 digest of our password information.
+    */
+   bson_init(&command);
+   bson_append_int32(&command, "getnonce", 8, 1);
+   if (!mongoc_cluster_node_run_command(cluster,
+                                        node,
+                                        auth_source,
+                                        &command,
+                                        &reply,
+                                        error)) {
+      bson_destroy(&command);
+      return FALSE;
+   }
+   bson_destroy(&command);
+   if (!bson_iter_init_find_case(&iter, &reply, "nonce")) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_GETNONCE,
+                     "Invalid reply from getnonce");
+      bson_destroy(&reply);
+      return FALSE;
+   }
+
+   /*
+    * Build our command to perform the authentication.
+    */
+   nonce = bson_iter_dup_utf8(&iter, NULL);
+   digest = mongoc_cluster_build_basic_auth_digest(cluster, nonce);
+   bson_init(&command);
+   bson_append_int32(&command, "authenticate", 12, 1);
+   bson_append_utf8(&command, "user", 4,
+                    mongoc_uri_get_username(cluster->uri), -1);
+   bson_append_utf8(&command, "nonce", 5, nonce, -1);
+   bson_append_utf8(&command, "key", 3, digest, -1);
+   bson_destroy(&reply);
+   bson_free(nonce);
+   bson_free(digest);
+
+   /*
+    * Execute the authenticate command and check for {ok:1}
+    */
+   if (!mongoc_cluster_node_run_command(cluster,
+                                        node,
+                                        auth_source,
+                                        &command,
+                                        &reply,
+                                        error)) {
+      bson_destroy(&command);
+      return FALSE;
+   }
+   if (!bson_iter_init_find_case(&iter, &reply, "ok") ||
+       !bson_iter_as_bool(&iter)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                     "Failed to authenticate credentials.");
+      bson_destroy(&reply);
+      return FALSE;
+   }
+   bson_destroy(&reply);
+
+   return TRUE;
+}
+
+
+static bson_bool_t
 mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
                                  bson_error_t     *error)
 {
    const mongoc_host_list_t *hosts;
+   mongoc_cluster_node_t *node;
    mongoc_stream_t *stream;
 
    bson_return_val_if_fail(cluster, FALSE);
@@ -413,26 +667,36 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
       return FALSE;
    }
 
-   cluster->nodes[0].index = 0;
-   cluster->nodes[0].host = *hosts;
-   cluster->nodes[0].primary = FALSE;
-   cluster->nodes[0].ping_msec = -1;
-   cluster->nodes[0].stream = NULL;
-   cluster->nodes[0].stamp = 0;
-   bson_init(&cluster->nodes[0].tags);
+   node = &cluster->nodes[0];
+
+   node->index = 0;
+   node->host = *hosts;
+   node->needs_auth = cluster->requires_auth;
+   node->primary = FALSE;
+   node->ping_msec = -1;
+   node->stream = NULL;
+   node->stamp = 0;
+   bson_init(&node->tags);
 
    stream = mongoc_client_create_stream(cluster->client, hosts, error);
    if (!stream) {
       return FALSE;
    }
 
-   cluster->nodes[0].stream = stream;
-   cluster->nodes[0].stamp++;
+   node->stream = stream;
+   node->stamp++;
 
-   if (!mongoc_cluster_ismaster(cluster, &cluster->nodes[0], error)) {
-      cluster->nodes[0].stream = NULL;
-      mongoc_stream_destroy(stream);
+   if (!mongoc_cluster_ismaster(cluster, node, error)) {
+      mongoc_cluster_disconnect_node(cluster, node);
       return FALSE;
+   }
+
+   if (node->needs_auth) {
+      if (!mongoc_cluster_auth_node(cluster, node, error)) {
+         mongoc_cluster_disconnect_node(cluster, node);
+         return FALSE;
+      }
+      node->needs_auth = FALSE;
    }
 
    return TRUE;
