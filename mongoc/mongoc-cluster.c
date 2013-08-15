@@ -650,6 +650,7 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
    const mongoc_host_list_t *hosts;
    mongoc_cluster_node_t *node;
    mongoc_stream_t *stream;
+   struct timeval timeout;
 
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(error, FALSE);
@@ -680,6 +681,13 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
 
    node->stream = stream;
    node->stamp++;
+
+   timeout.tv_sec = cluster->sockettimeoutms / 1000UL;
+   timeout.tv_usec = (cluster->sockettimeoutms % 1000UL) * 1000UL;
+   mongoc_stream_setsockopt(stream, SOL_SOCKET, SO_RCVTIMEO,
+                            &timeout, sizeof timeout);
+   mongoc_stream_setsockopt(stream, SOL_SOCKET, SO_SNDTIMEO,
+                            &timeout, sizeof timeout);
 
    if (!mongoc_cluster_ismaster(cluster, node, error)) {
       mongoc_cluster_disconnect_node(cluster, node);

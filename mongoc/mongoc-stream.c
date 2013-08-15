@@ -461,6 +461,19 @@ mongoc_stream_unix_uncork (mongoc_stream_t *stream)
 }
 
 
+static int
+mongoc_stream_unix_setsockopt (mongoc_stream_t *stream,
+                               int              level,
+                               int              optname,
+                               void            *optval,
+                               socklen_t        optlen)
+{
+   mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
+   bson_return_val_if_fail(file, -1);
+   return setsockopt(file->fd, level, optname, optval, optlen);
+}
+
+
 /**
  * mongoc_stream_close:
  * @stream: A mongoc_stream_t.
@@ -631,6 +644,23 @@ mongoc_stream_uncork (mongoc_stream_t *stream)
 }
 
 
+int
+mongoc_stream_setsockopt (mongoc_stream_t *stream,
+                          int              level,
+                          int              optname,
+                          void            *optval,
+                          socklen_t        optlen)
+{
+   bson_return_val_if_fail(stream, -1);
+
+   if (stream->setsockopt) {
+      return stream->setsockopt(stream, level, optname, optval, optlen);
+   }
+
+   return 0;
+}
+
+
 /**
  * mongoc_stream_unix_new:
  * @fd: A unix style file-descriptor.
@@ -675,6 +705,7 @@ mongoc_stream_unix_new (int fd)
    stream->stream.readv = mongoc_stream_unix_readv;
    stream->stream.cork = mongoc_stream_unix_cork;
    stream->stream.uncork = mongoc_stream_unix_uncork;
+   stream->stream.setsockopt = mongoc_stream_unix_setsockopt;
 
    mongoc_counter_streams_active_inc();
 

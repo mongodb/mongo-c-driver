@@ -21,6 +21,8 @@
 
 #include <bson.h>
 #include <sys/uio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 
 BSON_BEGIN_DECLS
@@ -31,19 +33,25 @@ typedef struct _mongoc_stream_t mongoc_stream_t;
 
 struct _mongoc_stream_t
 {
-   void    (*destroy) (mongoc_stream_t *stream);
-   int     (*close)   (mongoc_stream_t *stream);
-   int     (*flush)   (mongoc_stream_t *stream);
-   ssize_t (*writev)  (mongoc_stream_t *stream,
-                       struct iovec    *iov,
-                       size_t           iovcnt,
-                       bson_uint32_t    timeout_msec);
-   ssize_t (*readv)   (mongoc_stream_t *stream,
-                       struct iovec    *iov,
-                       size_t           iovcnt,
-                       bson_uint32_t    timeout_msec);
-   int     (*cork)    (mongoc_stream_t *stream);
-   int     (*uncork)  (mongoc_stream_t *stream);
+   void    (*destroy)    (mongoc_stream_t *stream);
+   int     (*close)      (mongoc_stream_t *stream);
+   int     (*flush)      (mongoc_stream_t *stream);
+   ssize_t (*writev)     (mongoc_stream_t *stream,
+                          struct iovec    *iov,
+                          size_t           iovcnt,
+                          bson_uint32_t    timeout_msec);
+   ssize_t (*readv)      (mongoc_stream_t *stream,
+                          struct iovec    *iov,
+                          size_t           iovcnt,
+                          bson_uint32_t    timeout_msec);
+   int     (*cork)       (mongoc_stream_t *stream);
+   int     (*uncork)     (mongoc_stream_t *stream);
+   int     (*setsockopt) (mongoc_stream_t *stream,
+                          int              level,
+                          int              optname,
+                          void            *optval,
+                          socklen_t        optlen);
+
 };
 
 
@@ -66,6 +74,11 @@ ssize_t          mongoc_stream_read          (mongoc_stream_t *stream,
                                               void            *buf,
                                               size_t           count,
                                               bson_uint32_t    timeout_msec);
+int              mongoc_stream_setsockopt    (mongoc_stream_t *stream,
+                                              int              level,
+                                              int              optname,
+                                              void            *optval,
+                                              socklen_t        optlen);
 
 
 BSON_END_DECLS
