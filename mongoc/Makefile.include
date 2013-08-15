@@ -70,9 +70,9 @@ libmongoc_1_0_la_CPPFLAGS =
 libmongoc_1_0_la_CPPFLAGS += $(BSON_CFLAGS)
 
 
-libmongoc_1_0_la_LIBS =
-libmongoc_1_0_la_LIBS += $(BSON_LIBS)
-libmongoc_1_0_la_LIBS += $(SHM_LIB)
+libmongoc_1_0_la_LIBADD =
+libmongoc_1_0_la_LIBADD += $(BSON_LIBS)
+libmongoc_1_0_la_LIBADD += $(SHM_LIB)
 
 
 EXTRA_DIST += $(top_srcdir)/mongoc/mongoc-counters.defs
