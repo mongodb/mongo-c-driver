@@ -18,7 +18,7 @@ test_mongoc_buffer_basic (void)
    fd = open("tests/binary/reply1.dat", O_RDONLY);
    assert(fd >= 0);
 
-   stream = mongoc_stream_new_from_unix(fd);
+   stream = mongoc_stream_unix_new(fd);
    assert(stream);
 
    mongoc_buffer_init(&buf, data, 1024, bson_realloc);

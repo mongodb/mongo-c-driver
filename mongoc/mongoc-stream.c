@@ -632,7 +632,7 @@ mongoc_stream_uncork (mongoc_stream_t *stream)
 
 
 /**
- * mongoc_stream_new_from_unix:
+ * mongoc_stream_unix_new:
  * @fd: A unix style file-descriptor.
  *
  * Create a new mongoc_stream_t for a UNIX file descriptor. This is
@@ -647,7 +647,7 @@ mongoc_stream_uncork (mongoc_stream_t *stream)
  *   mongoc_stream_destroy().
  */
 mongoc_stream_t *
-mongoc_stream_new_from_unix (int fd)
+mongoc_stream_unix_new (int fd)
 {
    mongoc_stream_unix_t *stream;
    int flags;

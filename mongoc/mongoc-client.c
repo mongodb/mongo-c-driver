@@ -122,7 +122,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
                      sfd, strerror(errno));
    }
 
-   return mongoc_stream_new_from_unix(sfd);
+   return mongoc_stream_unix_new(sfd);
 }
 
 
@@ -161,7 +161,7 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
       return NULL;
    }
 
-   return mongoc_stream_new_from_unix(sfd);
+   return mongoc_stream_unix_new(sfd);
 }
 
 

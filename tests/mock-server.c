@@ -180,7 +180,7 @@ mock_server_run (mock_server_t *server)
          return -1;
       }
 
-      stream = mongoc_stream_new_from_unix(cd);
+      stream = mongoc_stream_unix_new(cd);
       closure = bson_malloc0(sizeof(void*) * 2);
       closure[0] = server;
       closure[1] = stream;
