@@ -200,7 +200,7 @@ mongoc_stream_tls_readv (mongoc_stream_t *stream,       /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
-   BSON_ASSERT(stream);
+   BSON_ASSERT(tls);
 
    return -1;
 }
