@@ -171,7 +171,7 @@ mongoc_counters_print_info (mongoc_counters_t     *counters,
 
    value = mongoc_counters_get_value(counters, info, &ctr);
 
-   fprintf(file, "%24s : %-24s : %-48s : %lld\n",
+   fprintf(file, "%24s : %-24s : %-50s : %lld\n",
            info->category, info->name, info->description,
            (long long)value);
 }
