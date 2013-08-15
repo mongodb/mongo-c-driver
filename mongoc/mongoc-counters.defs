@@ -54,3 +54,7 @@ COUNTER(61, client_pools_disposed,  "Client Pools", "Disposed",            "The 
 
 
 COUNTER(70, protocol_ingress_error, "Protocol",     "Ingress Errors",      "The number of protocol errors on ingress.")
+
+
+COUNTER(80, auth_failure,           "Auth",         "Failures",            "The number of failed authentication requests.")
+COUNTER(81, auth_success,           "Auth",         "Success",             "The number of successful authentication requests.")

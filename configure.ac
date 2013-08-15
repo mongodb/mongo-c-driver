@@ -63,9 +63,16 @@ AM_CONDITIONAL([HAVE_PYTHON], [test x$ax_python_header != xno])
 
 
 dnl **************************************************************************
-dnl Check for libbson # TODO: use git submodule as fallback
+dnl Check for libbson
 dnl **************************************************************************
 PKG_CHECK_MODULES(BSON, libbson-1.0 >= 0.1.10)
+
+
+dnl **************************************************************************
+dnl Optionally check for OpenSSL to support TLS streams.
+dnl **************************************************************************
+PKG_CHECK_MODULES(SSL,  openssl, [enable_ssl=yes], [enable_ssl=no])
+AM_CONDITIONAL(HAVE_SSL, test "x$enable_ssl" = "xyes")
 
 
 dnl **************************************************************************
@@ -169,4 +176,5 @@ echo ""
 echo "  Prefix ....................: ${prefix}"
 echo "  Debug Level ...............: ${enable_debug}"
 echo "  CFLAGS ....................: ${CFLAGS}"
+echo "  SSL .......................: ${enable_ssl}"
 echo ""

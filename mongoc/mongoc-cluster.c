@@ -615,6 +615,7 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
    }
    if (!bson_iter_init_find_case(&iter, &reply, "ok") ||
        !bson_iter_as_bool(&iter)) {
+      mongoc_counter_auth_failure_inc();
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
@@ -623,6 +624,8 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
       return FALSE;
    }
    bson_destroy(&reply);
+
+   mongoc_counter_auth_success_inc();
 
    return TRUE;
 }
