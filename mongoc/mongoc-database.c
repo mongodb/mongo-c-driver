@@ -16,11 +16,13 @@
 
 
 #include "mongoc-client-private.h"
+#include "mongoc-collection.h"
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-database.h"
 #include "mongoc-database-private.h"
 #include "mongoc-error.h"
+#include "mongoc-util-private.h"
 
 
 mongoc_database_t *
@@ -144,6 +146,81 @@ mongoc_database_drop (mongoc_database_t *database,
    bson_append_int32(&cmd, "dropDatabase", 12, 1);
    ret = mongoc_database_command_simple(database, &cmd, error);
    bson_destroy(&cmd);
+
+   return ret;
+}
+
+
+bson_bool_t
+mongoc_database_add_user (mongoc_database_t *database,
+                          const char        *username,
+                          const char        *password,
+                          bson_error_t      *error)
+{
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor = NULL;
+   const bson_t *doc;
+   bson_bool_t ret = FALSE;
+   bson_t query;
+   bson_t user;
+   char *input;
+   char *pwd = NULL;
+
+   bson_return_val_if_fail(database, FALSE);
+   bson_return_val_if_fail(username, FALSE);
+   bson_return_val_if_fail(password, FALSE);
+
+   /*
+    * Users are stored in the <dbname>.system.users virtual collection.
+    * However, this will likely change to a command soon.
+    */
+   collection = mongoc_client_get_collection(database->client,
+                                             database->name,
+                                             "system.users");
+   BSON_ASSERT(collection);
+
+   /*
+    * Hash the users password.
+    */
+   input = bson_strdup_printf("%s:mongo:%s", username, password);
+   pwd = mongoc_hex_md5(input);
+   bson_free(input);
+
+   /*
+    * Check to see if the user exists. If so, we will update the
+    * password instead of inserting a new user.
+    */
+   bson_init(&query);
+   bson_append_utf8(&query, "user", 4, username, -1);
+   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1,
+                                   &query, NULL, NULL);
+   if (!mongoc_cursor_next(cursor, &doc)) {
+      if (mongoc_cursor_error(cursor, error)) {
+         goto failure;
+      }
+      bson_init(&user);
+      bson_append_utf8(&user, "user", 4, username, -1);
+      bson_append_bool(&user, "readOnly", 8, FALSE);
+      bson_append_utf8(&user, "pwd", 3, pwd, -1);
+   } else {
+      bson_copy_to_excluding(doc, &user, "pwd", NULL);
+      bson_append_utf8(&user, "pwd", 3, pwd, -1);
+   }
+
+   if (!mongoc_collection_save(collection, &user, NULL, error)) {
+      goto failure;
+   }
+
+   ret = TRUE;
+
+failure:
+   if (cursor) {
+      mongoc_cursor_destroy(cursor);
+   }
+   mongoc_collection_destroy(collection);
+   bson_destroy(&query);
+   bson_destroy(&user);
+   bson_free(pwd);
 
    return ret;
 }

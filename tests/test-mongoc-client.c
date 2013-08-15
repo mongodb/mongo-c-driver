@@ -3,19 +3,47 @@
 #include "mongoc-tests.h"
 
 
-#define MONGOC_TEST_URI "mongodb://testuser:testpass@localhost:27017/?authSource=auth"
+#define MONGOC_TEST_URI               "mongodb://localhost:27017/"
+#define MONGOC_TEST_URI_WITH_PASSWORD "mongodb://testuser:testpass@localhost:27017/test"
 
 
 static void
 test_mongoc_client_authenticate (void)
 {
+   mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bson_error_t error;
+   bson_bool_t r;
+   bson_t q;
 
+   /*
+    * Add a user to the test database.
+    */
    client = mongoc_client_new(MONGOC_TEST_URI);
-   database = mongoc_client_get_database(client, "auth");
-
+   database = mongoc_client_get_database(client, "test");
+   r = mongoc_database_add_user(database, "testuser", "testpass", &error);
+   assert_cmpint(r, ==, 1);
    mongoc_database_destroy(database);
+   mongoc_client_destroy(client);
+
+   /*
+    * Try authenticating with that user.
+    */
+   bson_init(&q);
+   client = mongoc_client_new(MONGOC_TEST_URI_WITH_PASSWORD);
+   collection = mongoc_client_get_collection(client, "test", "test");
+   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1,
+                                   &q, NULL, NULL);
+   r = mongoc_cursor_next(cursor, &doc);
+   if (!r) {
+      r = mongoc_cursor_error(cursor, NULL);
+      assert(!r);
+   }
+   mongoc_cursor_destroy(cursor);
+   mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
 }
 
