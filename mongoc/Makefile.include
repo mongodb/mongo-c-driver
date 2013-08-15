@@ -21,6 +21,9 @@ INST_H_FILES += $(top_srcdir)/mongoc/mongoc-opcode.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-read-prefs.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stdint.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream.h
+if HAVE_SSL
+INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream-tls.h
+endif
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-uri.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-version.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-write-concern.h
@@ -61,6 +64,9 @@ libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-queue.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-read-prefs.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-rpc.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream.c
+if HAVE_SSL
+libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream-tls.c
+endif
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-uri.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-util.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-write-concern.c
@@ -68,11 +74,17 @@ libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-write-concern.c
 
 libmongoc_1_0_la_CPPFLAGS =
 libmongoc_1_0_la_CPPFLAGS += $(BSON_CFLAGS)
+if HAVE_SSL
+libmongoc_1_0_la_CPPFLAGS += $(SSL_CFLAGS)
+endif
 
 
 libmongoc_1_0_la_LIBADD =
 libmongoc_1_0_la_LIBADD += $(BSON_LIBS)
 libmongoc_1_0_la_LIBADD += $(SHM_LIB)
+if HAVE_SSL
+libmongoc_1_0_la_LIBADD += $(SSL_LIBS)
+endif
 
 
 EXTRA_DIST += $(top_srcdir)/mongoc/mongoc-counters.defs
