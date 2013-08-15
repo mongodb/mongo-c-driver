@@ -134,6 +134,7 @@ mongoc_buffer_clear (mongoc_buffer_t *buffer,
  * @buffer; A mongoc_buffer_t.
  * @stream: The stream to read from.
  * @size: The number of bytes to read.
+ * @timeout_msec: The number of milliseconds to wait.
  * @error: A location for a bson_error_t, or NULL.
  *
  * Reads from stream @size bytes and stores them in @buffer. This can be used
@@ -146,6 +147,7 @@ bson_bool_t
 mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
                                   mongoc_stream_t *stream,
                                   size_t           size,
+                                  bson_uint32_t    timeout_msec,
                                   bson_error_t    *error)
 {
    bson_uint8_t *buf;
@@ -169,7 +171,7 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
    }
 
    buf = &buffer->data[buffer->off + buffer->len];
-   ret = mongoc_stream_read(stream, buf, size, 0);
+   ret = mongoc_stream_read(stream, buf, size, timeout_msec);
    if (ret != size) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,

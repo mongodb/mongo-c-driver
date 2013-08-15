@@ -74,6 +74,7 @@ typedef struct
    mongoc_cluster_state_t  state;
 
    bson_uint32_t           request_id;
+   bson_uint32_t           sockettimeoutms;
 
    mongoc_uri_t           *uri;
    bson_bool_t             requires_auth : 1;

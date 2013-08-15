@@ -62,7 +62,7 @@ mock_server_worker (void *data)
 
 again:
    buffer.off = 0;
-   if (!mongoc_buffer_append_from_stream(&buffer, stream, 4, NULL)) {
+   if (!mongoc_buffer_append_from_stream(&buffer, stream, 4, 0, NULL)) {
       goto failure;
    }
 
@@ -72,7 +72,7 @@ again:
       goto failure;
    }
 
-   if (!mongoc_buffer_append_from_stream(&buffer, stream, msg_len - 4, NULL)) {
+   if (!mongoc_buffer_append_from_stream(&buffer, stream, msg_len - 4, 0, NULL)) {
       goto failure;
    }
 

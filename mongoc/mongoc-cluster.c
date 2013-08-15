@@ -109,6 +109,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
                      void               *client)
 {
    const mongoc_host_list_t *hosts;
+   bson_uint32_t sockettimeoutms = 60 * 60 * 1000UL;
    bson_uint32_t i;
    const bson_t *b;
    bson_iter_t iter;
@@ -132,12 +133,17 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
       MONGOC_INFO("Client initialized in direct mode.");
    }
 
+   if (bson_iter_init_find_case(&iter, b, "sockettimeoutms")) {
+      sockettimeoutms = bson_iter_int32(&iter);
+   }
+
    cluster->uri = mongoc_uri_copy(uri);
    cluster->client = client;
    cluster->sec_latency_ms = 15;
    cluster->max_msg_size = 1024 * 1024 * 48;
    cluster->max_bson_size = 1024 * 1024 * 16;
    cluster->requires_auth = !!mongoc_uri_get_username(uri);
+   cluster->sockettimeoutms = sockettimeoutms;
 
    if (bson_iter_init_find_case(&iter, b, "secondaryacceptablelatencyms") &&
        BSON_ITER_HOLDS_INT32(&iter)) {
@@ -369,11 +375,13 @@ mongoc_cluster_node_run_command (mongoc_cluster_t      *cluster,
    mongoc_rpc_gather(&rpc, &ar);
    mongoc_rpc_swab(&rpc);
 
-   if (!mongoc_stream_writev(node->stream, ar.data, ar.len, 0)) {
+   if (!mongoc_stream_writev(node->stream, ar.data, ar.len,
+                             cluster->sockettimeoutms)) {
       goto failure;
    }
 
-   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, 4, error)) {
+   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, 4,
+                                         cluster->sockettimeoutms, error)) {
       goto failure;
    }
 
@@ -385,7 +393,8 @@ mongoc_cluster_node_run_command (mongoc_cluster_t      *cluster,
       goto invalid_reply;
    }
 
-   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, msg_len - 4, error)) {
+   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, msg_len - 4,
+                                         cluster->sockettimeoutms, error)) {
       goto failure;
    }
 
@@ -466,11 +475,13 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
    mongoc_rpc_gather(&rpc, &ar);
    mongoc_rpc_swab(&rpc);
 
-   if (!mongoc_stream_writev(node->stream, ar.data, ar.len, 0)) {
+   if (!mongoc_stream_writev(node->stream, ar.data, ar.len,
+                             cluster->sockettimeoutms)) {
       goto failure;
    }
 
-   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, 4, error)) {
+   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, 4,
+                                         cluster->sockettimeoutms, error)) {
       goto failure;
    }
 
@@ -482,7 +493,8 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
       goto invalid_reply;
    }
 
-   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, msg_len - 4, error)) {
+   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, msg_len - 4,
+                                         cluster->sockettimeoutms, error)) {
       goto failure;
    }
 
@@ -901,7 +913,8 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
 
    BSON_ASSERT(cluster->iov.len);
 
-   if (!mongoc_stream_writev(node->stream, iov, iovcnt, 0)) {
+   if (!mongoc_stream_writev(node->stream, iov, iovcnt,
+                             cluster->sockettimeoutms)) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
                      MONGOC_ERROR_STREAM_SOCKET,
@@ -985,7 +998,8 @@ mongoc_cluster_try_sendv (mongoc_cluster_t       *cluster,
    iovcnt = cluster->iov.len;
    errno = 0;
 
-   if (!mongoc_stream_writev(node->stream, iov, iovcnt, 0)) {
+   if (!mongoc_stream_writev(node->stream, iov, iovcnt,
+                             cluster->sockettimeoutms)) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
                      MONGOC_ERROR_STREAM_SOCKET,
@@ -1046,7 +1060,8 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
     * Buffer the message length to determine how much more to read.
     */
    pos = buffer->len;
-   if (!mongoc_buffer_append_from_stream(buffer, node->stream, 4, error)) {
+   if (!mongoc_buffer_append_from_stream(buffer, node->stream, 4,
+                                         cluster->sockettimeoutms, error)) {
       mongoc_cluster_disconnect_node(cluster, node);
       mongoc_counter_protocol_ingress_error_inc();
       return FALSE;
@@ -1070,7 +1085,8 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    /*
     * Read the rest of the message from the stream.
     */
-   if (!mongoc_buffer_append_from_stream(buffer, node->stream, msg_len - 4, error)) {
+   if (!mongoc_buffer_append_from_stream(buffer, node->stream, msg_len - 4,
+                                         cluster->sockettimeoutms, error)) {
       mongoc_cluster_disconnect_node(cluster, node);
       mongoc_counter_protocol_ingress_error_inc();
       return FALSE;
