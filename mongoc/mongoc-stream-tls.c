@@ -255,6 +255,45 @@ mongoc_stream_tls_uncork (mongoc_stream_t *stream) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_stream_tls_setsockopt --
+ *
+ *       Perform a setsockopt on the underlying socket.
+ *
+ * Returns:
+ *       -1 on failure, otherwise opt specific value.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static int
+mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,  /* IN */
+                              int              level,   /* IN */
+                              int              optname, /* IN */
+                              void            *optval,  /* IN */
+                              socklen_t        optlen)  /* IN */
+{
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+   int fd = -1;
+
+   BSON_ASSERT(tls);
+
+   if (tls->bio) {
+      BIO_get_fd(tls->bio, &fd);
+      if (fd != -1) {
+         return setsockopt(fd, level, optname, optval, optlen);
+      }
+   }
+
+   return -1;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_stream_tls_new --
  *
  *       Creates a new mongoc_stream_tls_t to communicate with a remote
@@ -325,6 +364,7 @@ mongoc_stream_tls_new (const char    *hostname,        /* IN */
    tls->parent.readv = mongoc_stream_tls_readv;
    tls->parent.cork = mongoc_stream_tls_cork;
    tls->parent.uncork = mongoc_stream_tls_uncork;
+   tls->parent.setsockopt = mongoc_stream_tls_setsockopt;
 
    return (mongoc_stream_t *)tls;
 
