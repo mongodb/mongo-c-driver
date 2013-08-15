@@ -444,6 +444,48 @@ mongoc_collection_update (mongoc_collection_t    *collection,
 
 
 bson_bool_t
+mongoc_collection_save (mongoc_collection_t    *collection,
+                        const bson_t           *document,
+                        mongoc_write_concern_t *write_concern,
+                        bson_error_t           *error)
+{
+   bson_iter_t iter;
+   bson_bool_t ret;
+   bson_t selector;
+   bson_t set;
+
+   bson_return_val_if_fail(collection, FALSE);
+   bson_return_val_if_fail(document, FALSE);
+
+   if (!bson_iter_init_find(&iter, document, "_id")) {
+      return mongoc_collection_insert(collection,
+                                      MONGOC_INSERT_NONE,
+                                      document,
+                                      write_concern,
+                                      error);
+   }
+
+   bson_init(&selector);
+   bson_append_iter(&selector, NULL, 0, &iter);
+
+   bson_init(&set);
+   bson_append_document(&set, "$set", 4, document);
+
+   ret = mongoc_collection_update(collection,
+                                  MONGOC_UPDATE_NONE,
+                                  &selector,
+                                  &set,
+                                  write_concern,
+                                  error);
+
+   bson_destroy(&set);
+   bson_destroy(&selector);
+
+   return ret;
+}
+
+
+bson_bool_t
 mongoc_collection_delete (mongoc_collection_t    *collection,
                           mongoc_delete_flags_t   flags,
                           const bson_t           *selector,
