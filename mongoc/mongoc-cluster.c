@@ -25,33 +25,13 @@
 #include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
+#include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
 
 
 #ifndef MAX_RETRY_COUNT
 #define MAX_RETRY_COUNT 3
 #endif
-
-
-static char *
-hex_md5 (const char *input)
-{
-   bson_uint8_t digest[16];
-   bson_md5_t md5;
-   char digest_str[33];
-   int i;
-
-   bson_md5_init(&md5);
-   bson_md5_append(&md5, (const bson_uint8_t *)input, strlen(input));
-   bson_md5_finish(&md5, digest);
-
-   for (i = 0; i < sizeof digest; i++) {
-      snprintf(&digest_str[i*2], 3, "%02x", digest[i]);
-   }
-   digest_str[sizeof digest_str - 1] = '\0';
-
-   return bson_strdup(digest_str);
-}
 
 
 static char *
@@ -80,9 +60,9 @@ mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster,
    username = mongoc_uri_get_username(cluster->uri);
    password = mongoc_uri_get_password(cluster->uri);
    password_digest = bson_strdup_printf("%s:mongo:%s", username, password);
-   password_md5 = hex_md5(password_digest);
+   password_md5 = mongoc_hex_md5(password_digest);
    digest_in = bson_strdup_printf("%s%s%s", nonce, username, password_md5);
-   ret = hex_md5(digest_in);
+   ret = mongoc_hex_md5(digest_in);
    bson_free(digest_in);
    bson_free(password_md5);
    bson_free(password_digest);

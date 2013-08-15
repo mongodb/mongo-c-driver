@@ -39,6 +39,7 @@ NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-list-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-queue-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-read-prefs-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-rpc-private.h
+NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-util-private.h
 NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-write-concern-private.h
 
 
@@ -61,6 +62,7 @@ libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-read-prefs.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-rpc.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-uri.c
+libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-util.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-write-concern.c
 
 
