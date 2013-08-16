@@ -55,10 +55,30 @@ struct _mongoc_client_t
 };
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_connect_tcp --
+ *
+ *       Connect to a host using a TCP socket.
+ *
+ *       This will be performed synchronously and return a mongoc_stream_t
+ *       that can be used to connect with the remote host.
+ *
+ * Returns:
+ *       A newly allocated mongoc_stream_t if successful; otherwise
+ *       NULL and @error is set.
+ *
+ * Side effects:
+ *       @error is set if return value is NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static mongoc_stream_t *
-mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
-                           const mongoc_host_list_t *host,
-                           bson_error_t             *error)
+mongoc_client_connect_tcp (const mongoc_uri_t       *uri,   /* IN */
+                           const mongoc_host_list_t *host,  /* IN */
+                           bson_error_t             *error) /* OUT */
 {
    struct addrinfo hints;
    struct addrinfo *result, *rp;
@@ -126,10 +146,27 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_connect_unix --
+ *
+ *       Connect to a MongoDB server using a UNIX domain socket.
+ *
+ * Returns:
+ *       A newly allocated mongoc_stream_t if successful; otherwise
+ *       NULL and @error is set.
+ *
+ * Side effects:
+ *       @error is set if return value is NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static mongoc_stream_t *
-mongoc_client_connect_unix (const mongoc_uri_t       *uri,
-                            const mongoc_host_list_t *host,
-                            bson_error_t             *error)
+mongoc_client_connect_unix (const mongoc_uri_t       *uri,   /* IN */
+                            const mongoc_host_list_t *host,  /* IN */
+                            bson_error_t             *error) /* OUT */
 {
    struct sockaddr_un saddr;
    int sfd;
@@ -165,11 +202,31 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_default_stream_initiator --
+ *
+ *       A mongoc_stream_initiator_t that will handle the various type
+ *       of supported sockets by MongoDB including TCP and UNIX.
+ *
+ *       Language binding authors may want to implement an alternate
+ *       version of this method to use their native stream format.
+ *
+ * Returns:
+ *       A mongoc_stream_t if successful; otherwise NULL and @error is set.
+ *
+ * Side effects:
+ *       @error is set if return value is NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static mongoc_stream_t *
-mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
-                                        const mongoc_host_list_t *host,
-                                        void                     *user_data,
-                                        bson_error_t             *error)
+mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,       /* IN */
+                                        const mongoc_host_list_t *host,      /* IN */
+                                        void                     *user_data, /* IN */
+                                        bson_error_t             *error)     /* OUT */
 {
    mongoc_stream_t *base_stream = NULL;
 
@@ -207,10 +264,33 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_create_stream --
+ *
+ *       INTERNAL API
+ *
+ *       This function is used by the mongoc_cluster_t to initiate a
+ *       new stream. This is done because cluster is private API and
+ *       those using mongoc_client_t may need to override this process.
+ *
+ *       This function calls the default initiator for new streams.
+ *
+ * Returns:
+ *       A newly allocated mongoc_stream_t if successful; otherwise
+ *       NULL and @error is set.
+ *
+ * Side effects:
+ *       @error is set if return value is NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_stream_t *
-mongoc_client_create_stream (mongoc_client_t          *client,
-                             const mongoc_host_list_t *host,
-                             bson_error_t             *error)
+mongoc_client_create_stream (mongoc_client_t          *client, /* IN */
+                             const mongoc_host_list_t *host,   /* IN */
+                             bson_error_t             *error)  /* OUT */
 {
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(host, NULL);
@@ -220,14 +300,38 @@ mongoc_client_create_stream (mongoc_client_t          *client,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_sendv --
+ *
+ *       INTERNAL API
+ *
+ *       This function is used to deliver one or more RPCs to the remote
+ *       MongoDB server.
+ *
+ *       Based on the cluster state and operation type, the request may
+ *       be retried. This is handled by the cluster instance.
+ *
+ * Returns:
+ *       0 upon failure and @error is set. Otherwise non-zero indicating
+ *       the cluster node that performed the request.
+ *
+ * Side effects:
+ *       @error is set if return value is 0.
+ *       @rpcs is mutated and therefore invalid after calling.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_uint32_t
-mongoc_client_sendv (mongoc_client_t        *client,
-                     mongoc_rpc_t           *rpcs,
-                     size_t                  rpcs_len,
-                     bson_uint32_t           hint,
-                     mongoc_write_concern_t *write_concern,
-                     mongoc_read_prefs_t    *read_prefs,
-                     bson_error_t           *error)
+mongoc_client_sendv (mongoc_client_t        *client,         /* IN */
+                     mongoc_rpc_t           *rpcs,           /* INOUT */
+                     size_t                  rpcs_len,       /* IN */
+                     bson_uint32_t           hint,           /* IN */
+                     mongoc_write_concern_t *write_concern,  /* IN */
+                     mongoc_read_prefs_t    *read_prefs,     /* IN */
+                     bson_error_t           *error)          /* OUT */
 {
    size_t i;
 
@@ -261,12 +365,30 @@ mongoc_client_sendv (mongoc_client_t        *client,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_recv --
+ *
+ *       Receives a RPC from a remote MongoDB cluster node. @hint should
+ *       be the result from a previous call to mongoc_client_sendv() to
+ *       signify which node to recv from.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @error is set if return value is FALSE.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_client_recv (mongoc_client_t *client,
-                    mongoc_rpc_t    *rpc,
-                    mongoc_buffer_t *buffer,
-                    bson_uint32_t    hint,
-                    bson_error_t    *error)
+mongoc_client_recv (mongoc_client_t *client, /* IN */
+                    mongoc_rpc_t    *rpc,    /* OUT */
+                    mongoc_buffer_t *buffer, /* INOUT */
+                    bson_uint32_t    hint,   /* IN */
+                    bson_error_t    *error)  /* OUT */
 {
    bson_return_val_if_fail(client, FALSE);
    bson_return_val_if_fail(rpc, FALSE);
@@ -278,9 +400,25 @@ mongoc_client_recv (mongoc_client_t *client,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _bson_to_error --
+ *
+ *       A helper routine to convert a bson document to a bson_error_t.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       @error is set if non-null.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static void
-_bson_to_error (const bson_t *b,
-                bson_error_t *error)
+_bson_to_error (const bson_t *b,     /* IN */
+                bson_error_t *error) /* OUT */
 {
    bson_iter_t iter;
    int code = 0;
@@ -320,10 +458,35 @@ _bson_to_error (const bson_t *b,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_recv_gle --
+ *
+ *       INTERNAL API
+ *
+ *       This function is used to receive the next RPC from a cluster
+ *       node, expecting it to be the response to a getlasterror command.
+ *
+ *       The RPC is parsed into @error if it is an error and FALSE is
+ *       returned.
+ *
+ *       If the operation was successful, TRUE is returned.
+ *
+ * Returns:
+ *       TRUE if getlasterror was success; otherwise FALSE and @error
+ *       is set.
+ *
+ * Side effects:
+ *       @error if return value is FALSE.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_client_recv_gle (mongoc_client_t *client,
-                        bson_uint32_t    hint,
-                        bson_error_t    *error)
+mongoc_client_recv_gle (mongoc_client_t *client, /* IN */
+                        bson_uint32_t    hint,   /* IN */
+                        bson_error_t    *error)  /* OUT */
 {
    mongoc_buffer_t buffer;
    mongoc_rpc_t rpc;
@@ -376,8 +539,29 @@ cleanup:
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_new --
+ *
+ *       Create a new mongoc_client_t using the URI provided.
+ *
+ *       @uri should be a MongoDB URI string such as "mongodb://localhost/"
+ *       More information on the format can be found at
+ *       http://docs.mongodb.org/manual/reference/connection-string/
+ *
+ * Returns:
+ *       A newly allocated mongoc_client_t or NULL if @uri_string is
+ *       invalid.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_client_t *
-mongoc_client_new (const char *uri_string)
+mongoc_client_new (const char *uri_string) /* IN */
 {
    mongoc_client_t *client;
    mongoc_uri_t *uri;
@@ -402,8 +586,24 @@ mongoc_client_new (const char *uri_string)
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_new_from_uri --
+ *
+ *       Create a new mongoc_client_t for a mongoc_uri_t.
+ *
+ * Returns:
+ *       A newly allocated mongoc_client_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_client_t *
-mongoc_client_new_from_uri (const mongoc_uri_t *uri)
+mongoc_client_new_from_uri (const mongoc_uri_t *uri) /* IN */
 {
    const char *uristr;
 
@@ -414,41 +614,119 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 }
 
 
-void
-mongoc_client_destroy (mongoc_client_t *client)
-{
-   /*
-    * TODO: Implement destruction.
-    */
-   mongoc_cluster_destroy(&client->cluster);
-   mongoc_uri_destroy(client->uri);
-   bson_free(client);
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_destroy --
+ *
+ *       Destroys a mongoc_client_t and cleans up all resources associated
+ *       with the client instance.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       @client is destroyed.
+ *
+ *--------------------------------------------------------------------------
+ */
 
-   mongoc_counter_clients_active_dec();
-   mongoc_counter_clients_disposed_inc();
+void
+mongoc_client_destroy (mongoc_client_t *client) /* IN */
+{
+   if (client) {
+      /*
+       * TODO: Implement destruction.
+       */
+
+      mongoc_cluster_destroy(&client->cluster);
+      mongoc_uri_destroy(client->uri);
+      bson_free(client);
+
+      mongoc_counter_clients_active_dec();
+      mongoc_counter_clients_disposed_inc();
+   }
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_get_uri --
+ *
+ *       Fetch the URI used for @client.
+ *
+ * Returns:
+ *       A mongoc_uri_t that should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 const mongoc_uri_t *
-mongoc_client_get_uri (const mongoc_client_t *client)
+mongoc_client_get_uri (const mongoc_client_t *client) /* IN */
 {
    bson_return_val_if_fail(client, NULL);
    return client->uri;
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_stamp --
+ *
+ *       INTERNAL API
+ *
+ *       Fetch the stamp for @node within @client. This is used to track
+ *       if there have been changes or disconnects from a node between
+ *       the last operation.
+ *
+ * Returns:
+ *       A 32-bit monotonic stamp.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_uint32_t
-mongoc_client_stamp (mongoc_client_t *client,
-                     bson_uint32_t    node)
+mongoc_client_stamp (mongoc_client_t *client, /* IN */
+                     bson_uint32_t    node)   /* IN */
 {
    bson_return_val_if_fail(client, 0);
    return mongoc_cluster_stamp(&client->cluster, node);
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_get_database --
+ *
+ *       Fetches a newly allocated database structure to communicate with
+ *       a database over @client.
+ *
+ *       @database should be a db name such as "test".
+ *
+ *       This structure should be freed when the caller is done with it
+ *       using mongoc_database_destroy().
+ *
+ * Returns:
+ *       A newly allocated mongoc_database_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_database_t *
-mongoc_client_get_database (mongoc_client_t *client,
-                            const char      *name)
+mongoc_client_get_database (mongoc_client_t *client, /* IN */
+                            const char      *name)   /* IN */
 {
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(name, NULL);
@@ -457,10 +735,35 @@ mongoc_client_get_database (mongoc_client_t *client,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_get_collection --
+ *
+ *       This function returns a newly allocated collection structure.
+ *
+ *       @db should be the name of the database, such as "test".
+ *       @collection should be the name of the collection such as "test".
+ *
+ *       The above would result in the namespace "test.test".
+ *
+ *       You should free this structure when you are done with it using
+ *       mongoc_collection_destroy().
+ *
+ * Returns:
+ *       A newly allocated mongoc_collection_t that should be freed with
+ *       mongoc_collection_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_collection_t *
-mongoc_client_get_collection (mongoc_client_t *client,
-                              const char      *db,
-                              const char      *collection)
+mongoc_client_get_collection (mongoc_client_t *client,     /* IN */
+                              const char      *db,         /* IN */
+                              const char      *collection) /* IN */
 {
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(db, NULL);
@@ -471,17 +774,50 @@ mongoc_client_get_collection (mongoc_client_t *client,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_get_write_concern --
+ *
+ *       Fetches the default write concern for @client.
+ *
+ * Returns:
+ *       A mongoc_write_concern_t that should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 const mongoc_write_concern_t *
-mongoc_client_get_write_concern (mongoc_client_t *client)
+mongoc_client_get_write_concern (const mongoc_client_t *client) /* IN */
 {
    bson_return_val_if_fail(client, NULL);
    return client->write_concern;
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_set_write_concern --
+ *
+ *       Sets the default write concern for @client.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
-mongoc_client_set_write_concern (mongoc_client_t              *client,
-                                 const mongoc_write_concern_t *write_concern)
+mongoc_client_set_write_concern (
+      mongoc_client_t              *client,        /* IN */
+      const mongoc_write_concern_t *write_concern) /* IN */
 {
    bson_return_if_fail(client);
 
@@ -496,17 +832,49 @@ mongoc_client_set_write_concern (mongoc_client_t              *client,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_get_read_prefs --
+ *
+ *       Fetch the default read preferences for @client.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 const mongoc_read_prefs_t *
-mongoc_client_get_read_prefs (mongoc_client_t *client)
+mongoc_client_get_read_prefs (const mongoc_client_t *client) /* IN */
 {
    bson_return_val_if_fail(client, NULL);
    return client->read_prefs;
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_set_read_prefs --
+ *
+ *       Set the default read preferences for @client.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
-mongoc_client_set_read_prefs (mongoc_client_t           *client,
-                              const mongoc_read_prefs_t *read_prefs)
+mongoc_client_set_read_prefs (mongoc_client_t           *client,     /* IN */
+                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
    bson_return_if_fail(client);
 
