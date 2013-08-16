@@ -416,7 +416,7 @@ mongoc_cluster_select (mongoc_cluster_t       *cluster,       /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_node_run_command --
+ * mongoc_cluster_run_command --
  *
  *       Helper to run a command on a given mongoc_cluster_node_t.
  *
@@ -430,12 +430,12 @@ mongoc_cluster_select (mongoc_cluster_t       *cluster,       /* IN */
  */
 
 static bson_bool_t
-mongoc_cluster_node_run_command (mongoc_cluster_t      *cluster, /* IN */
-                                 mongoc_cluster_node_t *node,    /* IN */
-                                 const char            *db_name, /* IN */
-                                 const bson_t          *command, /* IN */
-                                 bson_t                *reply,   /* OUT */
-                                 bson_error_t          *error)   /* OUT */
+mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
+                            mongoc_cluster_node_t *node,    /* IN */
+                            const char            *db_name, /* IN */
+                            const bson_t          *command, /* IN */
+                            bson_t                *reply,   /* OUT */
+                            bson_error_t          *error)   /* OUT */
 {
    mongoc_buffer_t buffer;
    mongoc_array_t ar;
@@ -569,8 +569,12 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
    bson_init(&command);
    bson_append_int32(&command, "isMaster", 8, 1);
 
-   if (!mongoc_cluster_node_run_command(cluster, node, "admin",
-                                        &command, &reply, error)) {
+   if (!mongoc_cluster_run_command(cluster,
+                                   node,
+                                   "admin",
+                                   &command,
+                                   &reply,
+                                   error)) {
       goto failure;
    }
 
@@ -650,12 +654,12 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
     */
    bson_init(&command);
    bson_append_int32(&command, "getnonce", 8, 1);
-   if (!mongoc_cluster_node_run_command(cluster,
-                                        node,
-                                        auth_source,
-                                        &command,
-                                        &reply,
-                                        error)) {
+   if (!mongoc_cluster_run_command(cluster,
+                                   node,
+                                   auth_source,
+                                   &command,
+                                   &reply,
+                                   error)) {
       bson_destroy(&command);
       return FALSE;
    }
@@ -687,12 +691,12 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
    /*
     * Execute the authenticate command and check for {ok:1}
     */
-   if (!mongoc_cluster_node_run_command(cluster,
-                                        node,
-                                        auth_source,
-                                        &command,
-                                        &reply,
-                                        error)) {
+   if (!mongoc_cluster_run_command(cluster,
+                                   node,
+                                   auth_source,
+                                   &command,
+                                   &reply,
+                                   error)) {
       bson_destroy(&command);
       return FALSE;
    }
