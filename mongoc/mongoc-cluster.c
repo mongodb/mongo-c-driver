@@ -25,6 +25,7 @@
 #include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
+#include "mongoc-rpc-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
 
@@ -846,36 +847,6 @@ mongoc_cluster_reconnect (mongoc_cluster_t *cluster, /* IN */
 }
 
 
-static bson_bool_t
-mongoc_cluster_needs_gle (mongoc_cluster_t       *cluster,
-                          mongoc_rpc_t           *rpc,
-                          mongoc_write_concern_t *write_concern)
-{
-   BSON_ASSERT(cluster);
-   BSON_ASSERT(rpc);
-
-   switch (rpc->header.opcode) {
-   case MONGOC_OPCODE_REPLY:
-   case MONGOC_OPCODE_QUERY:
-   case MONGOC_OPCODE_MSG:
-   case MONGOC_OPCODE_GET_MORE:
-   case MONGOC_OPCODE_KILL_CURSORS:
-      return FALSE;
-   case MONGOC_OPCODE_INSERT:
-   case MONGOC_OPCODE_UPDATE:
-   case MONGOC_OPCODE_DELETE:
-   default:
-      break;
-   }
-
-   if (!write_concern || !mongoc_write_concern_get_w(write_concern)) {
-      return FALSE;
-   }
-
-   return TRUE;
-}
-
-
 static BSON_INLINE void
 mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
 {
@@ -992,7 +963,7 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
    for (i = 0; i < rpcs_len; i++) {
       mongoc_cluster_inc_egress_rpc(&rpcs[i]);
       rpcs[i].header.request_id = ++cluster->request_id;
-      need_gle = mongoc_cluster_needs_gle(cluster, &rpcs[i], write_concern);
+      need_gle = mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       mongoc_rpc_gather(&rpcs[i], &cluster->iov);
       mongoc_rpc_swab(&rpcs[i]);
       if (need_gle) {
@@ -1079,7 +1050,7 @@ mongoc_cluster_try_sendv (mongoc_cluster_t       *cluster,
    for (i = 0; i < rpcs_len; i++) {
       mongoc_cluster_inc_egress_rpc(&rpcs[i]);
       rpcs[i].header.request_id = ++cluster->request_id;
-      need_gle = mongoc_cluster_needs_gle(cluster, &rpcs[i], write_concern);
+      need_gle = mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       mongoc_rpc_gather(&rpcs[i], &cluster->iov);
       mongoc_rpc_swab(&rpcs[i]);
       if (need_gle) {
