@@ -1125,13 +1125,13 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
  */
 
 bson_uint32_t
-mongoc_cluster_try_sendv (mongoc_cluster_t       *cluster,
-                          mongoc_rpc_t           *rpcs,
-                          size_t                  rpcs_len,
-                          bson_uint32_t           hint,
-                          mongoc_write_concern_t *write_concern,
-                          mongoc_read_prefs_t    *read_prefs,
-                          bson_error_t           *error)
+mongoc_cluster_try_sendv (mongoc_cluster_t       *cluster,       /* IN */
+                          mongoc_rpc_t           *rpcs,          /* INOUT */
+                          size_t                  rpcs_len,      /* IN */
+                          bson_uint32_t           hint,          /* IN */
+                          mongoc_write_concern_t *write_concern, /* IN */
+                          mongoc_read_prefs_t    *read_prefs,    /* IN */
+                          bson_error_t           *error)         /* OUT */
 {
    mongoc_cluster_node_t *node;
    struct iovec *iov;
@@ -1209,27 +1209,38 @@ mongoc_cluster_try_sendv (mongoc_cluster_t       *cluster,
 }
 
 
-/**
- * bson_cluster_try_recv:
- * @cluster: A bson_cluster_t.
- * @rpc: (out): A mongoc_rpc_t to scatter into.
- * @buffer: (inout): A mongoc_buffer_t to fill with contents.
- * @hint: The node to receive from, returned from mongoc_cluster_send().
- * @error: (out): A location for a bson_error_t or NULL.
+/*
+ *--------------------------------------------------------------------------
  *
- * Tries to receive the next event from the node in the cluster specified by
- * @hint. The contents are loaded into @buffer and then scattered into the
- * @rpc structure. @rpc is valid as long as @buffer contains the contents
- * read into it.
+ * mongoc_cluster_try_recv --
  *
- * Returns: TRUE if an event was read, otherwise FALSE and @error is set.
+ *       Tries to receive the next event from the node in the cluster
+ *       specified by @hint. The contents are loaded into @buffer and then
+ *       scattered into the @rpc structure. @rpc is valid as long as
+ *       @buffer contains the contents read into it.
+ *
+ *       Callers that can optimize a reuse of @buffer should do so. It
+ *       can save many memory allocations.
+ *
+ * Returns:
+ *       0 on failure and @error is set.
+ *       non-zero on success where the value is the hint of the connection
+ *       that was used.
+ *
+ * Side effects:
+ *       @error if return value is zero.
+ *       @rpc is set if result is non-zero.
+ *       @buffer will be filled with the input data.
+ *
+ *--------------------------------------------------------------------------
  */
+
 bson_bool_t
-mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
-                         mongoc_rpc_t     *rpc,
-                         mongoc_buffer_t  *buffer,
-                         bson_uint32_t     hint,
-                         bson_error_t     *error)
+mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
+                         mongoc_rpc_t     *rpc,     /* OUT */
+                         mongoc_buffer_t  *buffer,  /* INOUT */
+                         bson_uint32_t     hint,    /* IN */
+                         bson_error_t     *error)   /* OUT */
 {
    mongoc_cluster_node_t *node;
    bson_int32_t msg_len;
@@ -1326,9 +1337,30 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
  *
  * Returns: A 32-bit stamp indiciating the node version.
  */
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_stamp --
+ *
+ *       Returns the stamp of the node provided. The stamp is a monotonic
+ *       counter that tracks changes to a node within the cluster. As
+ *       changes to the node instance are made, the value is incremented.
+ *       This helps cursors and other connection sensitive portions fail
+ *       gracefully (or reset) upon loss of connection.
+ *
+ * Returns:
+ *       A 32-bit stamp indiciting the number of times a modification to
+ *       the node structure has occured.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_uint32_t
-mongoc_cluster_stamp (mongoc_cluster_t *cluster,
-                      bson_uint32_t     node)
+mongoc_cluster_stamp (const mongoc_cluster_t *cluster, /* IN */
+                      bson_uint32_t           node)    /* IN */
 {
    bson_return_val_if_fail(cluster, 0);
    bson_return_val_if_fail(node > 0, 0);

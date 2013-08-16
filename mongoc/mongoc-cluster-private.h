@@ -111,7 +111,7 @@ bson_bool_t   mongoc_cluster_try_recv     (mongoc_cluster_t       *cluster,
                                            mongoc_buffer_t        *buffer,
                                            bson_uint32_t           hint,
                                            bson_error_t           *error);
-bson_uint32_t mongoc_cluster_stamp        (mongoc_cluster_t       *cluster,
+bson_uint32_t mongoc_cluster_stamp        (const mongoc_cluster_t *cluster,
                                            bson_uint32_t           node);
 
 
