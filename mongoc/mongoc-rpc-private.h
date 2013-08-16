@@ -22,6 +22,7 @@
 #include <bson.h>
 
 #include "mongoc-array-private.h"
+#include "mongoc-write-concern.h"
 
 
 BSON_BEGIN_DECLS
@@ -74,15 +75,17 @@ typedef union
 #undef RAW_BUFFER_FIELD
 
 
-void        mongoc_rpc_gather          (mongoc_rpc_t       *rpc,
-                                        mongoc_array_t     *array);
-void        mongoc_rpc_swab            (mongoc_rpc_t       *rpc);
-void        mongoc_rpc_printf          (mongoc_rpc_t       *rpc);
-bson_bool_t mongoc_rpc_scatter         (mongoc_rpc_t       *rpc,
-                                        const bson_uint8_t *buf,
-                                        size_t              buflen);
-bson_bool_t mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply,
-                                        bson_t             *bson);
+void        mongoc_rpc_gather          (mongoc_rpc_t                 *rpc,
+                                        mongoc_array_t               *array);
+bson_bool_t mongoc_rpc_needs_gle       (mongoc_rpc_t                 *rpc,
+                                        const mongoc_write_concern_t *write_concern);
+void        mongoc_rpc_swab            (mongoc_rpc_t                 *rpc);
+void        mongoc_rpc_printf          (mongoc_rpc_t                 *rpc);
+bson_bool_t mongoc_rpc_scatter         (mongoc_rpc_t                 *rpc,
+                                        const bson_uint8_t           *buf,
+                                        size_t                        buflen);
+bson_bool_t mongoc_rpc_reply_get_first (mongoc_rpc_reply_t           *reply,
+                                        bson_t                       *bson);
 
 
 BSON_END_DECLS

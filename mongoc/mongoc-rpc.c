@@ -522,3 +522,51 @@ mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply,
 
    return bson_init_static(bson, reply->documents, len);
 }
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_rpc_needs_gle --
+ *
+ *       Checks to see if an rpc requires a getlasterror command to
+ *       determine the success of the rpc.
+ *
+ *       The write_concern is checked to ensure that the caller wants
+ *       to know about a failure.
+ *
+ * Returns:
+ *       TRUE if a getlasterror should be delivered; otherwise FALSE.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bson_bool_t
+mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,           /* IN */
+                      const mongoc_write_concern_t *write_concern) /* IN */
+{
+   bson_return_val_if_fail(rpc, FALSE);
+
+   switch (rpc->header.opcode) {
+   case MONGOC_OPCODE_REPLY:
+   case MONGOC_OPCODE_QUERY:
+   case MONGOC_OPCODE_MSG:
+   case MONGOC_OPCODE_GET_MORE:
+   case MONGOC_OPCODE_KILL_CURSORS:
+      return FALSE;
+   case MONGOC_OPCODE_INSERT:
+   case MONGOC_OPCODE_UPDATE:
+   case MONGOC_OPCODE_DELETE:
+   default:
+      break;
+   }
+
+   if (!write_concern || !mongoc_write_concern_get_w(write_concern)) {
+      return FALSE;
+   }
+
+   return TRUE;
+}
