@@ -34,9 +34,29 @@
 #endif
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_build_basic_auth_digest --
+ *
+ *       Computes the Basic Authentication digest using the credentials
+ *       configured for @cluster and the @nonce provided.
+ *
+ *       The result should be freed by the caller using bson_free() when
+ *       they are finished with it.
+ *
+ * Returns:
+ *       A newly allocated string containing the digest.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static char *
-mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster,
-                                        const char       *nonce)
+mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster, /* IN */
+                                        const char       *nonce)   /* IN */
 {
    const char *username;
    const char *password;
@@ -71,9 +91,28 @@ mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_disconnect_node --
+ *
+ *       Disconnects a cluster node and reinitializes it so it may be
+ *       connected to again in the future.
+ *
+ *       The stream is closed and destroyed.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static void
-mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster,
-                                mongoc_cluster_node_t *node)
+mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
+                                mongoc_cluster_node_t *node)    /* INOUT */
 {
    mongoc_stream_t *stream;
 
@@ -93,20 +132,29 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster,
 }
 
 
-/**
- * mongoc_cluster_init:
- * @cluster: A mongoc_cluster_t.
- * @uri: The uri defining the cluster.
- * @client: A mongoc_client_t.
+/*
+ *--------------------------------------------------------------------------
  *
- * Initializes the cluster instance using the uri and client.
- * The uri will define the mode the cluster is in, such as replica set,
- * sharded cluster, or direct connection.
+ * mongoc_cluster_init --
+ *
+ *       Initializes @cluster using the @uri and @client provided. The
+ *       @uri is used to determine the "mode" of the cluster. Based on the
+ *       uri we can determine if we are connected to a single host, a
+ *       replicaSet, or a shardedCluster.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       @cluster is initialized.
+ *
+ *--------------------------------------------------------------------------
  */
+
 void
-mongoc_cluster_init (mongoc_cluster_t   *cluster,
-                     const mongoc_uri_t *uri,
-                     void               *client)
+mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
+                     const mongoc_uri_t *uri,     /* IN */
+                     void               *client)  /* IN */
 {
    const mongoc_host_list_t *hosts;
    bson_uint32_t sockettimeoutms = 60 * 60 * 1000UL;
@@ -161,15 +209,25 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
 }
 
 
-/**
- * mongoc_cluster_destroy:
- * @cluster: A mongoc_cluster_t.
+/*
+ *--------------------------------------------------------------------------
  *
- * Cleans up a mongoc_cluster_t structure. This should only be called by
- * the owner of the cluster structure, such as mongoc_client_t.
+ * mongoc_cluster_destroy --
+ *
+ *       Clean up after @cluster and destroy all active connections.
+ *       All resources for @cluster are released.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Everything.
+ *
+ *--------------------------------------------------------------------------
  */
+
 void
-mongoc_cluster_destroy (mongoc_cluster_t *cluster)
+mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 {
    bson_uint32_t i;
 
@@ -189,14 +247,34 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster)
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_select --
+ *
+ *       Selects a cluster node that is suitable for handling the required
+ *       set of rpc messages. The read_prefs are taken into account.
+ *
+ *       If any operation is a write, primary will be forced.
+ *
+ * Returns:
+ *       A mongoc_cluster_node_t if successful; otherwise NULL and
+ *       @error is set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static mongoc_cluster_node_t *
-mongoc_cluster_select (mongoc_cluster_t       *cluster,
-                       mongoc_rpc_t           *rpcs,
-                       size_t                  rpcs_len,
-                       bson_uint32_t           hint,
-                       mongoc_write_concern_t *write_concern,
-                       mongoc_read_prefs_t    *read_prefs,
-                       bson_error_t           *error)
+mongoc_cluster_select (mongoc_cluster_t       *cluster,       /* IN */
+                       mongoc_rpc_t           *rpcs,          /* IN */
+                       size_t                  rpcs_len,      /* IN */
+                       bson_uint32_t           hint,          /* IN */
+                       mongoc_write_concern_t *write_concern, /* IN */
+                       mongoc_read_prefs_t    *read_prefs,    /* IN */
+                       bson_error_t           *error)         /* OUT */
 {
    mongoc_cluster_node_t *nodes[MONGOC_CLUSTER_MAX_NODES];
    mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
@@ -335,13 +413,29 @@ mongoc_cluster_select (mongoc_cluster_t       *cluster,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_node_run_command --
+ *
+ *       Helper to run a command on a given mongoc_cluster_node_t.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @reply is set and should ALWAYS be released with bson_destroy().
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-mongoc_cluster_node_run_command (mongoc_cluster_t      *cluster,
-                                 mongoc_cluster_node_t *node,
-                                 const char            *db_name,
-                                 const bson_t          *command,
-                                 bson_t                *reply,
-                                 bson_error_t          *error)
+mongoc_cluster_node_run_command (mongoc_cluster_t      *cluster, /* IN */
+                                 mongoc_cluster_node_t *node,    /* IN */
+                                 const char            *db_name, /* IN */
+                                 const bson_t          *command, /* IN */
+                                 bson_t                *reply,   /* OUT */
+                                 bson_error_t          *error)   /* OUT */
 {
    mongoc_buffer_t buffer;
    mongoc_array_t ar;
@@ -439,10 +533,29 @@ failure:
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_ismaster --
+ *
+ *       Executes an isMaster command on a given mongoc_cluster_node_t.
+ *
+ *       node->primary will be set to TRUE if the node is discovered to
+ *       be a primary node.
+ *
+ * Returns:
+ *       TRUE if successful; otehrwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
-                         mongoc_cluster_node_t *node,
-                         bson_error_t          *error)
+mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
+                         mongoc_cluster_node_t *node,    /* INOUT */
+                         bson_error_t          *error)   /* OUT */
 {
    mongoc_buffer_t buffer;
    mongoc_array_t ar;
@@ -508,6 +621,8 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
       goto invalid_reply;
    }
 
+   node->primary = FALSE;
+
    if (mongoc_rpc_reply_get_first(&rpc.reply, &r)) {
       if (bson_iter_init_find_case(&iter, &r, "isMaster") &&
           BSON_ITER_HOLDS_BOOL(&iter) &&
@@ -547,10 +662,28 @@ failure:
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_auth_node --
+ *
+ *       Performs authentication of @node using the credentials provided
+ *       when configuring the @cluster instance.
+ *
+ * Returns:
+ *       TRUE if authentication was successful; otherwise FALSE and
+ *       @error is set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
-                          mongoc_cluster_node_t *node,
-                          bson_error_t          *error)
+mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
+                          mongoc_cluster_node_t *node,    /* INOUT */
+                          bson_error_t          *error)   /* OUT */
 {
    bson_iter_t iter;
    const char *auth_source;
