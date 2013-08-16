@@ -718,9 +718,26 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_reconnect_direct --
+ *
+ *       Reconnect to our only configured node. "isMaster" is run after
+ *       connecting to determine PRIMARY status.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
-                                 bson_error_t     *error)
+mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
+                                 bson_error_t     *error)   /* OUT */
 {
    const mongoc_host_list_t *hosts;
    mongoc_cluster_node_t *node;
@@ -781,9 +798,28 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_reconnect --
+ *
+ *       Reconnect to the cluster nodes.
+ *
+ *       This is called when no nodes were available to execute an
+ *       operation on.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
-                          bson_error_t     *error)
+mongoc_cluster_reconnect (mongoc_cluster_t *cluster, /* IN */
+                          bson_error_t     *error)   /* OUT */
 {
    bson_return_val_if_fail(cluster, FALSE);
 
