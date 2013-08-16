@@ -66,10 +66,7 @@ mongoc_cursor_new (mongoc_client_t      *client,
    }
 
    if (read_prefs) {
-      /*
-       * TODO: copy read prefs.
-       */
-      cursor->read_prefs = read_prefs;
+      cursor->read_prefs = mongoc_read_prefs_copy(read_prefs);
    }
 
    mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL);
@@ -110,15 +107,12 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       mongoc_cursor_kill_cursor(cursor, cursor->rpc.reply.cursor_id);
    }
 
-   /*
-    * TODO: Clear cursor->read_prefs once copied.
-    */
-
    bson_destroy(&cursor->query);
    bson_destroy(&cursor->fields);
    bson_reader_destroy(&cursor->reader);
    bson_error_destroy(&cursor->error);
    mongoc_buffer_destroy(&cursor->buffer);
+   mongoc_read_prefs_destroy(cursor->read_prefs);
 
    bson_free(cursor);
 
