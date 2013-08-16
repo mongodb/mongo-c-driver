@@ -847,6 +847,23 @@ mongoc_cluster_reconnect (mongoc_cluster_t *cluster, /* IN */
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_inc_egress_rpc --
+ *
+ *       Helper to increment the counter for a particular RPC based on
+ *       it's opcode.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static BSON_INLINE void
 mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
 {
@@ -880,6 +897,23 @@ mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
    }
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_inc_ingress_rpc --
+ *
+ *       Helper to increment the counter for a particular RPC based on
+ *       it's opcode.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 static BSON_INLINE void
 mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
@@ -915,6 +949,50 @@ mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_sendv --
+ *
+ *       Deliver an RPC to the MongoDB server.
+ *
+ *       If @hint is non-zero, the connection matching that hint will be
+ *       used or the operation will fail. This is primarily used to force
+ *       sending an RPC on the same connection as a previous RPC. This
+ *       is often the case with OP_QUERY followed by OP_GETMORE.
+ *
+ *       @rpcs should be an array of mongoc_rpc_t that have not yet been
+ *       gathered or swab'ed. The state of @rpcs is undefined after calling
+ *       this function and should not be used afterwards.
+ *
+ *       @write_concern is optional. Providing it may cause this function
+ *       to block until an operation has completed on the remote MongoDB
+ *       server.
+ *
+ *       @read_prefs is optional and can be used to dictate which machines
+ *       may be used to perform a query upon.
+ *
+ *       This function will continue to try to deliver an RPC until
+ *       successful or the retry count has surprased.
+ *
+ * Returns:
+ *       Zero on failure. A non-zero value is the hint of the connection
+ *       that was used to communicate with a remote MongoDB server. This
+ *       value may be passed as @hint in future calls to use the same
+ *       connection.
+ *
+ *       If the result is zero, then @error will be set with information
+ *       about the failure.
+ *
+ * Side effects:
+ *       @rpcs may be muted and should be considered invalid after calling
+ *       this function.
+ *
+ *       @error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_uint32_t
 mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
                       mongoc_rpc_t           *rpcs,
@@ -943,6 +1021,9 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
     */
    while (!(node = mongoc_cluster_select(cluster, rpcs, rpcs_len, hint,
                                          write_concern, read_prefs, error))) {
+      /*
+       * TODO: Use local error and propagate to avoid leak.
+       */
       if ((retry_count++ == MAX_RETRY_COUNT) ||
           !mongoc_cluster_reconnect(cluster, error)) {
          return FALSE;
@@ -1016,6 +1097,32 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
    return node->index + 1;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_try_sendv --
+ *
+ *       Deliver an RPC to a remote MongoDB instance.
+ *
+ *       This function is similar to mongoc_cluster_sendv() except that it
+ *       will not try to reconnect until a connection has been made.
+ *
+ *       This is useful if you want to fire-and-forget ignoring network
+ *       errors. Kill Cursors would be a candidate for this.
+ *
+ * Returns:
+ *       0 on failure and @error is set.
+ *
+ *       Non-zero on success. The return value is a hint for the
+ *       connection that was used to communicate with the server.
+ *
+ * Side effects:
+ *       @rpcs will be invalid after calling this function.
+ *       @error may be set if 0 is returned.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 bson_uint32_t
 mongoc_cluster_try_sendv (mongoc_cluster_t       *cluster,
