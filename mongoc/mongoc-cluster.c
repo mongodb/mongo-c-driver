@@ -557,108 +557,46 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
                          mongoc_cluster_node_t *node,    /* INOUT */
                          bson_error_t          *error)   /* OUT */
 {
-   mongoc_buffer_t buffer;
-   mongoc_array_t ar;
-   mongoc_rpc_t rpc;
-   bson_int32_t msg_len;
+   bson_bool_t ret = FALSE;
    bson_iter_t iter;
-   bson_t q;
-   bson_t r;
+   bson_t command;
+   bson_t reply;
 
    BSON_ASSERT(cluster);
    BSON_ASSERT(node);
    BSON_ASSERT(node->stream);
 
-   bson_init(&q);
-   bson_append_int32(&q, "ismaster", 8, 1);
+   bson_init(&command);
+   bson_append_int32(&command, "isMaster", 8, 1);
 
-   rpc.query.msg_len = 0;
-   rpc.query.request_id = ++cluster->request_id;
-   rpc.query.response_to = -1;
-   rpc.query.opcode = MONGOC_OPCODE_QUERY;
-   rpc.query.flags = MONGOC_QUERY_NONE;
-   rpc.query.collection = "admin.$cmd";
-   rpc.query.skip = 0;
-   rpc.query.n_return = 1;
-   rpc.query.query = bson_get_data(&q);
-   rpc.query.fields = NULL;
-
-   mongoc_array_init(&ar, sizeof(struct iovec));
-   mongoc_buffer_init(&buffer, NULL, 0, NULL);
-   mongoc_rpc_gather(&rpc, &ar);
-   mongoc_rpc_swab(&rpc);
-
-   if (!mongoc_stream_writev(node->stream, ar.data, ar.len,
-                             cluster->sockettimeoutms)) {
+   if (!mongoc_cluster_node_run_command(cluster, node, "admin",
+                                        &command, &reply, error)) {
       goto failure;
-   }
-
-   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, 4,
-                                         cluster->sockettimeoutms, error)) {
-      goto failure;
-   }
-
-   BSON_ASSERT(buffer.len == 4);
-
-   memcpy(&msg_len, buffer.data, 4);
-   msg_len = BSON_UINT32_FROM_LE(msg_len);
-   if ((msg_len < 16) || (msg_len > (1024 * 1024 * 16))) {
-      goto invalid_reply;
-   }
-
-   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, msg_len - 4,
-                                         cluster->sockettimeoutms, error)) {
-      goto failure;
-   }
-
-   if (!mongoc_rpc_scatter(&rpc, buffer.data, buffer.len)) {
-      goto invalid_reply;
-   }
-
-   mongoc_rpc_swab(&rpc);
-
-   if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
-      goto invalid_reply;
    }
 
    node->primary = FALSE;
 
-   if (mongoc_rpc_reply_get_first(&rpc.reply, &r)) {
-      if (bson_iter_init_find_case(&iter, &r, "isMaster") &&
-          BSON_ITER_HOLDS_BOOL(&iter) &&
-          bson_iter_bool(&iter)) {
-         node->primary = TRUE;
-      }
-
-      if (bson_iter_init_find_case(&iter, &r, "maxMessageSizeBytes")) {
-         cluster->max_msg_size = bson_iter_int32(&iter);
-      }
-
-      if (bson_iter_init_find_case(&iter, &r, "maxBsonObjectSize")) {
-         cluster->max_bson_size = bson_iter_int32(&iter);
-      }
-
-      bson_destroy(&r);
+   if (bson_iter_init_find_case(&iter, &reply, "isMaster") &&
+       BSON_ITER_HOLDS_BOOL(&iter) &&
+       bson_iter_bool(&iter)) {
+      node->primary = TRUE;
    }
 
-   mongoc_buffer_destroy(&buffer);
-   mongoc_array_destroy(&ar);
-   bson_destroy(&q);
+   if (bson_iter_init_find_case(&iter, &reply, "maxMessageSizeBytes")) {
+      cluster->max_msg_size = bson_iter_int32(&iter);
+   }
 
-   return TRUE;
+   if (bson_iter_init_find_case(&iter, &reply, "maxBsonObjectSize")) {
+      cluster->max_bson_size = bson_iter_int32(&iter);
+   }
 
-invalid_reply:
-   bson_set_error(error,
-                  MONGOC_ERROR_PROTOCOL,
-                  MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                  "Invalid reply from server.");
+   ret = TRUE;
 
 failure:
-   mongoc_buffer_destroy(&buffer);
-   mongoc_array_destroy(&ar);
-   bson_destroy(&q);
+   bson_destroy(&command);
+   bson_destroy(&reply);
 
-   return FALSE;
+   return ret;
 }
 
 
