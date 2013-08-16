@@ -25,9 +25,31 @@
 #include "mongoc-util-private.h"
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_new --
+ *
+ *       INTERNAL API
+ *
+ *       Create a new instance of mongoc_database_t for @client.
+ *
+ *       @client must stay valid for the life of the resulting
+ *       database structure.
+ *
+ * Returns:
+ *       A newly allocated mongoc_database_t that should be freed with
+ *       mongoc_database_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_database_t *
-mongoc_database_new (mongoc_client_t *client,
-                     const char      *name)
+mongoc_database_new (mongoc_client_t *client, /* IN */
+                     const char      *name)   /* IN */
 {
    mongoc_database_t *db;
 
@@ -43,8 +65,24 @@ mongoc_database_new (mongoc_client_t *client,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_destroy --
+ *
+ *       Releases resources associated with @database.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Everything.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
-mongoc_database_destroy (mongoc_database_t *database)
+mongoc_database_destroy (mongoc_database_t *database) /* IN */
 {
    bson_return_if_fail(database);
 
@@ -62,14 +100,35 @@ mongoc_database_destroy (mongoc_database_t *database)
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_command --
+ *
+ *       Executes a command on @database. This is performed lazily after
+ *       calling mongoc_cursor_next() on the resulting cursor structure.f
+ *
+ *       This function will always return a mongoc_cursor_t with the
+ *       exception of invalid API use.
+ *
+ * Returns:
+ *       A new mongoc_cursor_t that should be freed with
+ *       mongoc_cursor_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_cursor_t *
-mongoc_database_command (mongoc_database_t    *database,
-                         mongoc_query_flags_t  flags,
-                         bson_uint32_t         skip,
-                         bson_uint32_t         n_return,
-                         const bson_t         *command,
-                         const bson_t         *fields,
-                         mongoc_read_prefs_t  *read_prefs)
+mongoc_database_command (mongoc_database_t    *database,   /* IN */
+                         mongoc_query_flags_t  flags,      /* IN */
+                         bson_uint32_t         skip,       /* IN */
+                         bson_uint32_t         n_return,   /* IN */
+                         const bson_t         *command,    /* IN */
+                         const bson_t         *fields,     /* IN */
+                         mongoc_read_prefs_t  *read_prefs) /* IN */
 {
    char ns[140];
 
@@ -86,10 +145,28 @@ mongoc_database_command (mongoc_database_t    *database,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_command_simple --
+ *
+ *       A simplified function for running a simple command with no
+ *       response using mongoc_database_command().
+ *
+ * Returns:
+ *       TRUE if command executed successfully with a response of
+ *       {ok: 1}. Otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_database_command_simple (mongoc_database_t *database,
-                                const bson_t      *cmd,
-                                bson_error_t      *error)
+mongoc_database_command_simple (mongoc_database_t *database, /* IN */
+                                const bson_t      *cmd,      /* IN */
+                                bson_error_t      *error)    /* OUT */
 {
    mongoc_cursor_t *cursor;
    const bson_t *b;
@@ -133,9 +210,28 @@ mongoc_database_command_simple (mongoc_database_t *database,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_drop --
+ *
+ *       Requests that the MongoDB server drops @database, including all
+ *       collections and indexes associated with @database.
+ *
+ *       Make sure this is really what you want!
+ *
+ * Returns:
+ *       TRUE if @database was dropped.
+ *
+ * Side effects:
+ *       @error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_database_drop (mongoc_database_t *database,
-                      bson_error_t      *error)
+mongoc_database_drop (mongoc_database_t *database, /* IN */
+                      bson_error_t      *error)    /* OUT */
 {
    bson_bool_t ret;
    bson_t cmd;
@@ -151,11 +247,27 @@ mongoc_database_drop (mongoc_database_t *database,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_add_user --
+ *
+ *       A helper to add a user or update their password on @database.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_database_add_user (mongoc_database_t *database,
-                          const char        *username,
-                          const char        *password,
-                          bson_error_t      *error)
+mongoc_database_add_user (mongoc_database_t *database, /* IN */
+                          const char        *username, /* IN */
+                          const char        *password, /* IN */
+                          bson_error_t      *error)    /* OUT */
 {
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor = NULL;
@@ -226,17 +338,49 @@ failure:
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_get_read_prefs --
+ *
+ *       Fetch the read preferences for @database.
+ *
+ * Returns:
+ *       A mongoc_read_prefs_t that should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 const mongoc_read_prefs_t *
-mongoc_database_get_read_prefs (const mongoc_database_t *database)
+mongoc_database_get_read_prefs (const mongoc_database_t *database) /* IN */
 {
    bson_return_val_if_fail(database, NULL);
    return database->read_prefs;
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_set_read_prefs --
+ *
+ *       Sets the default read preferences for @database.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
-mongoc_database_set_read_prefs (mongoc_database_t         *database,
-                                const mongoc_read_prefs_t *read_prefs)
+mongoc_database_set_read_prefs (mongoc_database_t         *database,   /* IN */
+                                const mongoc_read_prefs_t *read_prefs) /* IN */
 {
    bson_return_if_fail(database);
 
@@ -251,17 +395,50 @@ mongoc_database_set_read_prefs (mongoc_database_t         *database,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_get_write_concern --
+ *
+ *       Fetches the write concern for @database.
+ *
+ * Returns:
+ *       A mongoc_write_concern_t that should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 const mongoc_write_concern_t *
-mongoc_database_get_write_concern (const mongoc_database_t *database)
+mongoc_database_get_write_concern (const mongoc_database_t *database) /* IN */
 {
    bson_return_val_if_fail(database, NULL);
    return database->write_concern;
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_set_write_concern --
+ *
+ *       Set the default write concern for @database.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
-mongoc_database_set_write_concern (mongoc_database_t            *database,
-                                   const mongoc_write_concern_t *write_concern)
+mongoc_database_set_write_concern (
+      mongoc_database_t            *database,      /* IN */
+      const mongoc_write_concern_t *write_concern) /* IN */
 {
    bson_return_if_fail(database);
 
