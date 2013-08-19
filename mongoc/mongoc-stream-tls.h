@@ -27,9 +27,8 @@
 BSON_BEGIN_DECLS
 
 
-mongoc_stream_t *mongoc_stream_tls_new (const char    *hostname,
-                                        bson_uint16_t  port,
-                                        const char    *trust_store_dir);
+mongoc_stream_t *mongoc_stream_tls_new (mongoc_stream_t *base_stream,
+                                        const char      *trust_store_dir);
 
 
 BSON_END_DECLS

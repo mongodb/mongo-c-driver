@@ -30,11 +30,142 @@
 
 typedef struct
 {
-   mongoc_stream_t parent;
-   SSL_CTX *ctx;
-   SSL *ssl;
-   BIO *bio;
+   mongoc_stream_t  parent;
+   mongoc_stream_t *base_stream;
+   BIO             *bio;
 } mongoc_stream_tls_t;
+
+
+static int  mongoc_stream_tls_bio_create  (BIO *b);
+static int  mongoc_stream_tls_bio_destroy (BIO *b);
+static int  mongoc_stream_tls_bio_read    (BIO *b, char *buf, int len);
+static int  mongoc_stream_tls_bio_write   (BIO *b, const char *buf, int len);
+static long mongoc_stream_tls_bio_ctrl    (BIO *b, int cmd, long num,
+                                           void *ptr);
+static int  mongoc_stream_tls_bio_gets    (BIO *b, char *buf, int len);
+static int  mongoc_stream_tls_bio_puts    (BIO *b, const char *str);
+
+
+static BIO_METHOD gMongocStreamTlsRawMethods = {
+   BIO_TYPE_MEM,
+   "mongoc-stream-tls-glue",
+   mongoc_stream_tls_bio_write,
+   mongoc_stream_tls_bio_read,
+   mongoc_stream_tls_bio_puts,
+   mongoc_stream_tls_bio_gets,
+   mongoc_stream_tls_bio_ctrl,
+   mongoc_stream_tls_bio_create,
+   mongoc_stream_tls_bio_destroy
+};
+
+
+static int
+mongoc_stream_tls_bio_create (BIO *b) /* IN */
+{
+   BSON_ASSERT(b);
+
+   b->init = 1;
+   b->num = 0;
+   b->ptr = NULL;
+   b->flags = 0;
+
+   return 1;
+}
+
+
+static int
+mongoc_stream_tls_bio_destroy (BIO *b) /* IN */
+{
+   mongoc_stream_tls_t *tls;
+
+   BSON_ASSERT(b);
+
+   if (!(tls = b->ptr)) {
+      return -1;
+   }
+
+   b->ptr = NULL;
+   b->init = 0;
+   b->flags = 0;
+
+   tls->bio = NULL;
+
+   return 1;
+}
+
+
+static int
+mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
+                            char *buf, /* OUT */
+                            int   len) /* IN */
+{
+   mongoc_stream_tls_t *tls;
+   struct iovec iov;
+
+   BSON_ASSERT(b);
+   BSON_ASSERT(buf);
+
+   if (!(tls = b->ptr)) {
+      return -1;
+   }
+
+   iov.iov_base = buf;
+   iov.iov_len = len;
+
+   return mongoc_stream_readv(tls->base_stream, &iov, 1, 0);
+}
+
+
+static int
+mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
+                             const char *buf, /* IN */
+                             int         len) /* IN */
+{
+   mongoc_stream_tls_t *tls;
+   struct iovec iov;
+
+   BSON_ASSERT(b);
+   BSON_ASSERT(buf);
+
+   if (!(tls = b->ptr)) {
+      return -1;
+   }
+
+   iov.iov_base = (void *)buf;
+   iov.iov_len = len;
+
+   return mongoc_stream_writev(tls->base_stream, &iov, 1, 0);
+}
+
+
+static long
+mongoc_stream_tls_bio_ctrl (BIO  *b,   /* IN */
+                            int   cmd, /* IN */
+                            long  num, /* IN */
+                            void *ptr) /* INOUT */
+{
+   if (cmd == BIO_CTRL_FLUSH) {
+      return 1;
+   }
+   return 0;
+}
+
+
+static int
+mongoc_stream_tls_bio_gets (BIO  *b,   /* IN */
+                            char *buf, /* OUT */
+                            int   len) /* IN */
+{
+   return -1;
+}
+
+
+static int
+mongoc_stream_tls_bio_puts (BIO        *b,   /* IN */
+                            const char *str) /* IN */
+{
+   return mongoc_stream_tls_bio_write(b, str, strlen(str));
+}
 
 
 /*
@@ -58,21 +189,11 @@ static void
 mongoc_stream_tls_destroy (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   int fd;
 
    BSON_ASSERT(tls);
 
-   BIO_get_fd(tls->bio, &fd);
-   close(fd);
-
    BIO_free_all(tls->bio);
    tls->bio = NULL;
-
-   /*
-    * TODO: Do these need to be freed individually?
-    */
-   tls->ssl = NULL;
-   tls->ctx = NULL;
 
    bson_free(stream);
 }
@@ -299,11 +420,8 @@ mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,  /* IN */
  *       Creates a new mongoc_stream_tls_t to communicate with a remote
  *       server using a TLS stream.
  *
- *       @hostname should be the hostname to connect to. This may be either
- *       a DNS hostname or a IPv4 style address such as "127.0.0.1".
- *
- *       @port should be the port to communicate with on the remote
- *       server. If @port is 0, then 27017 will be used.
+ *       @base_stream should be a stream that will become owned by the
+ *       resulting tls stream. It will be used for raw I/O.
  *
  *       @trust_store_dir should be a path to the SSL cert db to use for
  *       verifying trust of the remote server.
@@ -318,45 +436,18 @@ mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,  /* IN */
  */
 
 mongoc_stream_t *
-mongoc_stream_tls_new (const char    *hostname,        /* IN */
-                       bson_uint16_t  port,            /* IN */
-                       const char    *trust_store_dir) /* IN */
+mongoc_stream_tls_new (mongoc_stream_t *base_stream,     /* IN */
+                       const char      *trust_store_dir) /* IN */
 {
    mongoc_stream_tls_t *tls;
-   SSL_CTX *ctx;
-   SSL *ssl;
-   BIO *bio;
 
-   if (!hostname) {
-      hostname = "127.0.0.1";
-   }
-
-   if (!port) {
-      port = 27017;
-   }
+   bson_return_val_if_fail(base_stream, NULL);
 
    if (!trust_store_dir) {
       trust_store_dir = MONGOC_TLS_TRUST_STORE;
    }
 
-   ctx = SSL_CTX_new(SSLv23_client_method());
-
-   bio = BIO_new_ssl_connect(ctx);
-   BIO_get_ssl(bio, &ssl);
-   SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
-
-   BIO_set_conn_hostname(bio, hostname);
-   BIO_set_conn_port(bio, port);
-
-   if (BIO_do_connect(bio) <= 0) {
-      goto failure;
-   }
-
    tls = bson_malloc0(sizeof *tls);
-   tls->ctx = ctx;
-   tls->bio = bio;
-   tls->ssl = ssl;
-
    tls->parent.destroy = mongoc_stream_tls_destroy;
    tls->parent.close = mongoc_stream_tls_close;
    tls->parent.flush = mongoc_stream_tls_flush;
@@ -366,11 +457,8 @@ mongoc_stream_tls_new (const char    *hostname,        /* IN */
    tls->parent.uncork = mongoc_stream_tls_uncork;
    tls->parent.setsockopt = mongoc_stream_tls_setsockopt;
 
+   tls->bio = BIO_new(&gMongocStreamTlsRawMethods);
+   tls->bio->ptr = tls;
+
    return (mongoc_stream_t *)tls;
-
-failure:
-   SSL_CTX_free(ctx);
-   BIO_free_all(bio);
-
-   return NULL;
 }
