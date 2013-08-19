@@ -325,13 +325,13 @@ mongoc_client_create_stream (mongoc_client_t          *client, /* IN */
  */
 
 bson_uint32_t
-mongoc_client_sendv (mongoc_client_t        *client,         /* IN */
-                     mongoc_rpc_t           *rpcs,           /* INOUT */
-                     size_t                  rpcs_len,       /* IN */
-                     bson_uint32_t           hint,           /* IN */
-                     mongoc_write_concern_t *write_concern,  /* IN */
-                     mongoc_read_prefs_t    *read_prefs,     /* IN */
-                     bson_error_t           *error)          /* OUT */
+mongoc_client_sendv (mongoc_client_t              *client,         /* IN */
+                     mongoc_rpc_t                 *rpcs,           /* INOUT */
+                     size_t                        rpcs_len,       /* IN */
+                     bson_uint32_t                 hint,           /* IN */
+                     const mongoc_write_concern_t *write_concern,  /* IN */
+                     const mongoc_read_prefs_t    *read_prefs,     /* IN */
+                     bson_error_t                 *error)          /* OUT */
 {
    size_t i;
 

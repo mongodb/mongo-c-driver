@@ -269,13 +269,13 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
  */
 
 static mongoc_cluster_node_t *
-mongoc_cluster_select (mongoc_cluster_t       *cluster,       /* IN */
-                       mongoc_rpc_t           *rpcs,          /* IN */
-                       size_t                  rpcs_len,      /* IN */
-                       bson_uint32_t           hint,          /* IN */
-                       mongoc_write_concern_t *write_concern, /* IN */
-                       mongoc_read_prefs_t    *read_prefs,    /* IN */
-                       bson_error_t           *error)         /* OUT */
+mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
+                       mongoc_rpc_t                 *rpcs,          /* IN */
+                       size_t                        rpcs_len,      /* IN */
+                       bson_uint32_t                 hint,          /* IN */
+                       const mongoc_write_concern_t *write_concern, /* IN */
+                       const mongoc_read_prefs_t    *read_prefs,    /* IN */
+                       bson_error_t                 *error)         /* OUT */
 {
    mongoc_cluster_node_t *nodes[MONGOC_CLUSTER_MAX_NODES];
    mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
@@ -994,13 +994,13 @@ mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
  */
 
 bson_uint32_t
-mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
-                      mongoc_rpc_t           *rpcs,
-                      size_t                  rpcs_len,
-                      bson_uint32_t           hint,
-                      mongoc_write_concern_t *write_concern,
-                      mongoc_read_prefs_t    *read_prefs,
-                      bson_error_t           *error)
+mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
+                      mongoc_rpc_t                 *rpcs,          /* INOUT */
+                      size_t                        rpcs_len,      /* IN */
+                      bson_uint32_t                 hint,          /* IN */
+                      const mongoc_write_concern_t *write_concern, /* IN */
+                      const mongoc_read_prefs_t    *read_prefs,    /* IN */
+                      bson_error_t                 *error)         /* OUT */
 {
    mongoc_cluster_node_t *node;
    const bson_t *b;
@@ -1070,7 +1070,7 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
          }
          gle.query.skip = 0;
          gle.query.n_return = 1;
-         b = mongoc_write_concern_freeze(write_concern);
+         b = mongoc_write_concern_freeze((void*)write_concern);
          gle.query.query = bson_get_data(b);
          gle.query.fields = NULL;
          mongoc_rpc_gather(&gle, &cluster->iov);
@@ -1125,13 +1125,14 @@ mongoc_cluster_sendv (mongoc_cluster_t       *cluster,
  */
 
 bson_uint32_t
-mongoc_cluster_try_sendv (mongoc_cluster_t       *cluster,       /* IN */
-                          mongoc_rpc_t           *rpcs,          /* INOUT */
-                          size_t                  rpcs_len,      /* IN */
-                          bson_uint32_t           hint,          /* IN */
-                          mongoc_write_concern_t *write_concern, /* IN */
-                          mongoc_read_prefs_t    *read_prefs,    /* IN */
-                          bson_error_t           *error)         /* OUT */
+mongoc_cluster_try_sendv (
+      mongoc_cluster_t             *cluster,       /* IN */
+      mongoc_rpc_t                 *rpcs,          /* INOUT */
+      size_t                        rpcs_len,      /* IN */
+      bson_uint32_t                 hint,          /* IN */
+      const mongoc_write_concern_t *write_concern, /* IN */
+      const mongoc_read_prefs_t    *read_prefs,    /* IN */
+      bson_error_t                 *error)         /* OUT */
 {
    mongoc_cluster_node_t *node;
    struct iovec *iov;
@@ -1183,7 +1184,7 @@ mongoc_cluster_try_sendv (mongoc_cluster_t       *cluster,       /* IN */
          }
          gle.query.skip = 0;
          gle.query.n_return = 1;
-         b = mongoc_write_concern_freeze(write_concern);
+         b = mongoc_write_concern_freeze((void *)write_concern);
          gle.query.query = bson_get_data(b);
          gle.query.fields = NULL;
          mongoc_rpc_gather(&gle, &cluster->iov);

@@ -88,31 +88,31 @@ typedef struct
 } mongoc_cluster_t;
 
 
-void          mongoc_cluster_destroy      (mongoc_cluster_t       *cluster);
-void          mongoc_cluster_init         (mongoc_cluster_t       *cluster,
-                                           const mongoc_uri_t     *uri,
-                                           void                   *client);
-bson_uint32_t mongoc_cluster_sendv        (mongoc_cluster_t       *cluster,
-                                           mongoc_rpc_t           *rpcs,
-                                           size_t                  rpcs_len,
-                                           bson_uint32_t           hint,
-                                           mongoc_write_concern_t *write_concern,
-                                           mongoc_read_prefs_t    *read_prefs,
-                                           bson_error_t           *error);
-bson_uint32_t mongoc_cluster_try_sendv    (mongoc_cluster_t       *cluster,
-                                           mongoc_rpc_t           *rpcs,
-                                           size_t                  rpcs_len,
-                                           bson_uint32_t           hint,
-                                           mongoc_write_concern_t *write_concern,
-                                           mongoc_read_prefs_t    *read_prefs,
-                                           bson_error_t           *error);
-bson_bool_t   mongoc_cluster_try_recv     (mongoc_cluster_t       *cluster,
-                                           mongoc_rpc_t           *rpc,
-                                           mongoc_buffer_t        *buffer,
-                                           bson_uint32_t           hint,
-                                           bson_error_t           *error);
-bson_uint32_t mongoc_cluster_stamp        (const mongoc_cluster_t *cluster,
-                                           bson_uint32_t           node);
+void          mongoc_cluster_destroy      (mongoc_cluster_t             *cluster);
+void          mongoc_cluster_init         (mongoc_cluster_t             *cluster,
+                                           const mongoc_uri_t           *uri,
+                                           void                         *client);
+bson_uint32_t mongoc_cluster_sendv        (mongoc_cluster_t             *cluster,
+                                           mongoc_rpc_t                 *rpcs,
+                                           size_t                        rpcs_len,
+                                           bson_uint32_t                 hint,
+                                           const mongoc_write_concern_t *write_concern,
+                                           const mongoc_read_prefs_t    *read_prefs,
+                                           bson_error_t                 *error);
+bson_uint32_t mongoc_cluster_try_sendv    (mongoc_cluster_t             *cluster,
+                                           mongoc_rpc_t                 *rpcs,
+                                           size_t                        rpcs_len,
+                                           bson_uint32_t                 hint,
+                                           const mongoc_write_concern_t *write_concern,
+                                           const mongoc_read_prefs_t    *read_prefs,
+                                           bson_error_t                 *error);
+bson_bool_t   mongoc_cluster_try_recv     (mongoc_cluster_t             *cluster,
+                                           mongoc_rpc_t                 *rpc,
+                                           mongoc_buffer_t              *buffer,
+                                           bson_uint32_t                 hint,
+                                           bson_error_t                 *error);
+bson_uint32_t mongoc_cluster_stamp        (const mongoc_cluster_t       *cluster,
+                                           bson_uint32_t                 node);
 
 
 BSON_END_DECLS

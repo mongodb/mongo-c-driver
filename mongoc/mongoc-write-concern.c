@@ -305,7 +305,7 @@ mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
  * Returns: TRUE if a getlasterror command should be sent.
  */
 bson_bool_t
-mongoc_write_concern_has_gle (mongoc_write_concern_t *write_concern)
+mongoc_write_concern_has_gle (const mongoc_write_concern_t *write_concern) /* IN */
 {
    if (write_concern) {
       return ((write_concern->w != 0) && (write_concern->w != -1));

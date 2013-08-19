@@ -25,29 +25,37 @@
 #include "mongoc-write-concern-private.h"
 
 
-/**
- * mongoc_collection_new:
- * @client: A mongoc_client_t.
- * @db: The name of the database.
- * @collection: The name of the collection.
- * @write_concern: An optional write concern to apply as the default.
+/*
+ *--------------------------------------------------------------------------
  *
- * This is an internal function.
+ * mongoc_collection_new --
  *
- * This function will create a new mongoc_collection_t using @client to
- * communicate.
+ *       INTERNAL API
  *
- * @client must be valid for the life of the resulting collection.
+ *       Create a new mongoc_collection_t structure for the given client.
  *
- * Returns: A new mongoc_collection_t that should be freed with
- *    mongoc_collection_destroy().
+ *       @client must remain valid during the lifetime of this structure.
+ *       @db is the db name of the collection.
+ *       @collection is the name of the collection.
+ *       @read_prefs is the default read preferences to apply or NULL.
+ *       @write_concern is the default write concern to apply or NULL.
+ *
+ * Returns:
+ *       A newly allocated mongoc_collection_t that should be freed with
+ *       mongoc_collection_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
  */
+
 mongoc_collection_t *
-mongoc_collection_new (mongoc_client_t              *client,
-                       const char                   *db,
-                       const char                   *collection,
-                       const mongoc_read_prefs_t    *read_prefs,
-                       const mongoc_write_concern_t *write_concern)
+mongoc_collection_new (mongoc_client_t              *client,        /* IN */
+                       const char                   *db,            /* IN */
+                       const char                   *collection,    /* IN */
+                       const mongoc_read_prefs_t    *read_prefs,    /* IN */
+                       const mongoc_write_concern_t *write_concern) /* IN */
 {
    mongoc_collection_t *col;
 
@@ -83,14 +91,25 @@ mongoc_collection_new (mongoc_client_t              *client,
 }
 
 
-/**
- * mongoc_collection_destroy:
- * @collection: (in): A mongoc_collection_t.
+/*
+ *--------------------------------------------------------------------------
  *
- * Destroyes @collection and releases any associated resources.
+ * mongoc_collection_destroy --
+ *
+ *       Release resources associated with @collection and frees the
+ *       structure.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Everything.
+ *
+ *--------------------------------------------------------------------------
  */
+
 void
-mongoc_collection_destroy (mongoc_collection_t *collection)
+mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
 {
    bson_return_if_fail(collection);
 
@@ -110,41 +129,56 @@ mongoc_collection_destroy (mongoc_collection_t *collection)
 }
 
 
-/**
- * mongoc_collection_find:
- * @collection: (in): A mongoc_collection_t.
- * @flags: (in): A bitwise or of mongoc_query_flags_t.
- * @skip: (in): The number of documents to skip.
- * @limit: (in): The maximum number of items.
- * @query: (in): The query to locate matching documents.
- * @fields: (in) (allow-none): The fields to return, or NULL for all fields.
- * @read_prefs: (in) (allow-none): Read preferences to choose cluster node.
+/*
+ *--------------------------------------------------------------------------
  *
- * Performs a query against the configured MongoDB server. If @read_prefs is
- * provided, it will be used to locate a MongoDB node in the cluster to deliver
- * the query to.
+ * mongoc_collection_find --
  *
- * @flags may be bitwise-or'd flags or MONGOC_QUERY_NONE.
+ *       Performs a query against the configured MongoDB server. If @read_prefs
+ *       is provided, it will be used to locate a MongoDB node in the cluster
+ *       to deliver the query to.
  *
- * @skip may contain the number of documents to skip before returning the
- * matching document.
+ *       @flags may be bitwise-or'd flags or MONGOC_QUERY_NONE.
  *
- * @limit may contain the maximum number of documents that may be returned.
+ *       @skip may contain the number of documents to skip before returning the
+ *       matching document.
  *
- * This function will always return a cursor, with the exception of invalid
- * API use.
+ *       @limit may contain the maximum number of documents that may be
+ *       returned.
  *
- * Returns: A newly created mongoc_cursor_t that should be freed with
- *    mongoc_cursor_destroy().
+ *       This function will always return a cursor, with the exception of
+ *       invalid API use.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @flags: A bitwise or of mongoc_query_flags_t.
+ *       @skip: The number of documents to skip.
+ *       @limit: The maximum number of items.
+ *       @query: The query to locate matching documents.
+ *       @fields: The fields to return, or NULL for all fields.
+ *       @read_prefs: Read preferences to choose cluster node.
+ *
+ * Returns:
+ *       A newly allocated mongoc_cursor_t that should be freed with
+ *       mongoc_cursor_destroy().
+ *
+ *       The client used by mongoc_collection_t must be valid for the
+ *       lifetime of the resulting mongoc_cursor_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
  */
+
 mongoc_cursor_t *
-mongoc_collection_find (mongoc_collection_t  *collection,
-                        mongoc_query_flags_t  flags,
-                        bson_uint32_t         skip,
-                        bson_uint32_t         limit,
-                        const bson_t         *query,
-                        const bson_t         *fields,
-                        mongoc_read_prefs_t  *read_prefs)
+mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
+                        mongoc_query_flags_t       flags,      /* IN */
+                        bson_uint32_t              skip,       /* IN */
+                        bson_uint32_t              limit,      /* IN */
+                        const bson_t              *query,      /* IN */
+                        const bson_t              *fields,     /* IN */
+                        const mongoc_read_prefs_t *read_prefs) /* IN */
 {
    bson_return_val_if_fail(collection, NULL);
    bson_return_val_if_fail(query, NULL);
@@ -158,33 +192,43 @@ mongoc_collection_find (mongoc_collection_t  *collection,
 }
 
 
-/**
- * mongoc_collection_command:
- * @collection: (in): A mongoc_collection_t.
- * @flags: (in): Bitwise-or'd flags for command.
- * @skip: (in): Number of documents to skip, typically 0.
- * @n_return: (in): Number of documents to return, typically 1.
- * @query: (in): The command to execute.
- * @fields: (in) (allow-none): The fields to return, or NULL.
- * @read_prefs: (in) (allow-none): Command read preferences or NULL.
+/*
+ *--------------------------------------------------------------------------
  *
- * Executes a command on a cluster node matching @read_prefs. If @read_prefs
- * is not provided, it will be run on the primary node.
+ * mongoc_collection_new --
  *
- * This function will always return a mongoc_cursor_t with the exception of
- * invalid API use.
+ *       Executes a command on a cluster node matching @read_prefs. If
+ *       @read_prefs is not provided, it will be run on the primary node.
  *
- * Returns: A mongoc_cursor_t that should be freed with
- *    mongoc_cursor_destroy().
+ *       This function will always return a mongoc_cursor_t with the exception
+ *       of invalid API use.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @flags: Bitwise-or'd flags for command.
+ *       @skip: Number of documents to skip, typically 0.
+ *       @n_return: Number of documents to return, typically 1.
+ *       @query: The command to execute.
+ *       @fields: The fields to return, or NULL.
+ *       @read_prefs: Command read preferences or NULL.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
  */
+
 mongoc_cursor_t *
-mongoc_collection_command (mongoc_collection_t  *collection,
-                           mongoc_query_flags_t  flags,
-                           bson_uint32_t         skip,
-                           bson_uint32_t         n_return,
-                           const bson_t         *query,
-                           const bson_t         *fields,
-                           mongoc_read_prefs_t  *read_prefs)
+mongoc_collection_command (mongoc_collection_t       *collection, /* IN */
+                           mongoc_query_flags_t       flags,      /* IN */
+                           bson_uint32_t              skip,       /* IN */
+                           bson_uint32_t              n_return,   /* IN */
+                           const bson_t              *query,      /* IN */
+                           const bson_t              *fields,     /* IN */
+                           const mongoc_read_prefs_t *read_prefs) /* IN */
 {
    char ns[MONGOC_NAMESPACE_MAX+4];
 
@@ -203,12 +247,39 @@ mongoc_collection_command (mongoc_collection_t  *collection,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_command_simple --
+ *
+ *       Helper to execute a command on a collection.
+ *
+ *       @reply is always set even upon failure.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @command: A bson containing the command to execute.
+ *       @read_prefs: The read preferences or NULL.
+ *       @reply: A location to store the result document or NULL.
+ *       @error: A location for an error or NULL.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @reply is always set if non-NULL and should be freed with
+ *       bson_destroy().
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_collection_command_simple (mongoc_collection_t *collection,
-                                  const bson_t        *command,
-                                  mongoc_read_prefs_t *read_prefs,
-                                  bson_t              *reply,
-                                  bson_error_t        *error)
+mongoc_collection_command_simple (
+      mongoc_collection_t       *collection, /* IN */
+      const bson_t              *command,    /* IN */
+      const mongoc_read_prefs_t *read_prefs, /* IN */
+      bson_t                    *reply,      /* OUT */
+      bson_error_t              *error)      /* OUT */
 {
    mongoc_cursor_t *cursor;
    const bson_t *b;
@@ -260,14 +331,38 @@ mongoc_collection_command_simple (mongoc_collection_t *collection,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_count --
+ *
+ *       Count the number of documents matching @query.
+ *
+ * Parameters:
+ *       @flags: A mongoc_query_flags_t describing the query flags or 0.
+ *       @query: The query to perform or NULL for {}.
+ *       @skip: The $skip to perform within the query or 0.
+ *       @limit: The $limit to perform within the query or 0.
+ *       @read_prefs: desired read preferences or NULL.
+ *       @error: A location for an error or NULL.
+ *
+ * Returns:
+ *       -1 on failure; otherwise the number of matching documents.
+ *
+ * Side effects:
+ *       @error is set upon failure if non-NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_int64_t
-mongoc_collection_count (mongoc_collection_t  *collection,
-                         mongoc_query_flags_t  flags,
-                         const bson_t         *query,
-                         bson_int64_t          skip,
-                         bson_int64_t          limit,
-                         mongoc_read_prefs_t  *read_prefs,
-                         bson_error_t         *error)
+mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
+                         mongoc_query_flags_t       flags,       /* IN */
+                         const bson_t              *query,       /* IN */
+                         bson_int64_t               skip,        /* IN */
+                         bson_int64_t               limit,       /* IN */
+                         const mongoc_read_prefs_t *read_prefs,  /* IN */
+                         bson_error_t              *error)       /* OUT */
 {
    bson_int64_t ret = -1;
    bson_iter_t iter;
@@ -305,9 +400,25 @@ mongoc_collection_count (mongoc_collection_t  *collection,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_drop --
+ *
+ *       Request the MongoDB server drop the collection.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @error is set upon failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_collection_drop (mongoc_collection_t *collection,
-                        bson_error_t        *error)
+mongoc_collection_drop (mongoc_collection_t *collection, /* IN */
+                        bson_error_t        *error)      /* OUT */
 {
    bson_bool_t ret;
    bson_t cmd;
@@ -324,10 +435,26 @@ mongoc_collection_drop (mongoc_collection_t *collection,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_drop_index --
+ *
+ *       Request the MongoDB server drop the named index.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @error is setup upon failure if non-NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_collection_drop_index (mongoc_collection_t *collection,
-                              const char          *index_name,
-                              bson_error_t        *error)
+mongoc_collection_drop_index (mongoc_collection_t *collection, /* IN */
+                              const char          *index_name, /* IN */
+                              bson_error_t        *error)      /* OUT */
 {
    bson_bool_t ret;
    bson_t cmd;
@@ -346,12 +473,40 @@ mongoc_collection_drop_index (mongoc_collection_t *collection,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_insert --
+ *
+ *       Insert a document into a MongoDB collection.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @flags: flags for the insert or 0.
+ *       @document: The document to insert.
+ *       @write_concern: A write concern or NULL.
+ *       @error: a location for an error or NULL.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ *       If the write concern does not dictate checking the result of the
+ *       insert, then TRUE may be returned even though the document was
+ *       not actually inserted on the MongoDB server or cluster.
+ *
+ * Side effects:
+ *       @error may be set upon failure if non-NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_collection_insert (mongoc_collection_t    *collection,
-                          mongoc_insert_flags_t   flags,
-                          const bson_t           *document,
-                          mongoc_write_concern_t *write_concern,
-                          bson_error_t           *error)
+mongoc_collection_insert (
+      mongoc_collection_t          *collection,    /* IN */
+      mongoc_insert_flags_t         flags,         /* IN */
+      const bson_t                 *document,      /* IN */
+      const mongoc_write_concern_t *write_concern, /* IN */
+      bson_error_t                 *error)         /* OUT */
 {
    mongoc_buffer_t buffer;
    bson_uint32_t hint;
@@ -399,13 +554,37 @@ mongoc_collection_insert (mongoc_collection_t    *collection,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_update --
+ *
+ *       Updates one or more documents matching @selector with @update.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @flags: The flags for the update.
+ *       @selector: A bson_t containing your selector.
+ *       @update: A bson_t containing your update document.
+ *       @write_concern: The write concern or NULL.
+ *       @error: A location for an error or NULL.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @error is setup upon failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_collection_update (mongoc_collection_t    *collection,
-                          mongoc_update_flags_t   flags,
-                          const bson_t           *selector,
-                          const bson_t           *update,
-                          mongoc_write_concern_t *write_concern,
-                          bson_error_t           *error)
+mongoc_collection_update (mongoc_collection_t          *collection,    /* IN */
+                          mongoc_update_flags_t         flags,         /* IN */
+                          const bson_t                 *selector,      /* IN */
+                          const bson_t                 *update,        /* IN */
+                          const mongoc_write_concern_t *write_concern, /* IN */
+                          bson_error_t                 *error)         /* OUT */
 {
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
@@ -443,11 +622,30 @@ mongoc_collection_update (mongoc_collection_t    *collection,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_save --
+ *
+ *       Save @document to @collection.
+ *
+ *       If the document has an _id field, it will be updated. Otherwise,
+ *       the document will be inserted into the collection.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @error is set upon failure if non-NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_collection_save (mongoc_collection_t    *collection,
-                        const bson_t           *document,
-                        mongoc_write_concern_t *write_concern,
-                        bson_error_t           *error)
+mongoc_collection_save (mongoc_collection_t          *collection,    /* IN */
+                        const bson_t                 *document,      /* IN */
+                        const mongoc_write_concern_t *write_concern, /* IN */
+                        bson_error_t                 *error)         /* OUT */
 {
    bson_iter_t iter;
    bson_bool_t ret;
@@ -485,12 +683,41 @@ mongoc_collection_save (mongoc_collection_t    *collection,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_delete --
+ *
+ *       Delete one or more items from a collection. If you want to
+ *       limit to a single delete, provided MONGOC_DELETE_SINGLE_REMOVE
+ *       for @flags.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @flags: the delete flags or 0.
+ *       @selector: A selector of documents to delete.
+ *       @write_concern: A write concern or NULL. If NULL, the default
+ *                       write concern for the collection will be used.
+ *       @error: A location for an error or NULL.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and error is set.
+ *
+ *       If the write concern does not dictate checking the result, this
+ *       function may return TRUE even if it failed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_collection_delete (mongoc_collection_t    *collection,
-                          mongoc_delete_flags_t   flags,
-                          const bson_t           *selector,
-                          mongoc_write_concern_t *write_concern,
-                          bson_error_t           *error)
+mongoc_collection_delete (mongoc_collection_t          *collection,    /* IN */
+                          mongoc_delete_flags_t         flags,         /* IN */
+                          const bson_t                 *selector,      /* IN */
+                          const mongoc_write_concern_t *write_concern, /* IN */
+                          bson_error_t                 *error)         /* OUT */
 {
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
@@ -526,17 +753,51 @@ mongoc_collection_delete (mongoc_collection_t    *collection,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_get_read_prefs --
+ *
+ *       Fetch the default read preferences for the collection.
+ *
+ * Returns:
+ *       A mongoc_read_prefs_t that should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 const mongoc_read_prefs_t *
-mongoc_collection_get_read_prefs (const mongoc_collection_t *collection)
+mongoc_collection_get_read_prefs (
+      const mongoc_collection_t *collection) /* IN */
 {
    bson_return_val_if_fail(collection, NULL);
    return collection->read_prefs;
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_set_read_prefs --
+ *
+ *       Sets the default read preferences for the collection instance.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
-mongoc_collection_set_read_prefs (mongoc_collection_t       *collection,
-                                  const mongoc_read_prefs_t *read_prefs)
+mongoc_collection_set_read_prefs (
+      mongoc_collection_t       *collection, /* IN */
+      const mongoc_read_prefs_t *read_prefs) /* IN */
 {
    bson_return_if_fail(collection);
 
@@ -551,17 +812,51 @@ mongoc_collection_set_read_prefs (mongoc_collection_t       *collection,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_get_write_concern --
+ *
+ *       Fetches the default write concern for the collection instance.
+ *
+ * Returns:
+ *       A mongoc_write_concern_t that should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 const mongoc_write_concern_t *
-mongoc_collection_get_write_concern (const mongoc_collection_t *collection)
+mongoc_collection_get_write_concern (
+      const mongoc_collection_t *collection) /* IN */
 {
    bson_return_val_if_fail(collection, NULL);
    return collection->write_concern;
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_set_write_concern --
+ *
+ *       Sets the default write concern for the collection instance.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
-mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
-                                     const mongoc_write_concern_t *write_concern)
+mongoc_collection_set_write_concern (
+      mongoc_collection_t          *collection,    /* IN */
+      const mongoc_write_concern_t *write_concern) /* IN */
 {
    bson_return_if_fail(collection);
 
