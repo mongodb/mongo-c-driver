@@ -61,14 +61,6 @@ typedef struct
 } mongoc_stream_unix_t;
 
 
-typedef struct
-{
-   mongoc_stream_t  stream;
-   mongoc_stream_t *base_stream;
-   mongoc_buffer_t  buffer;
-} mongoc_stream_buffered_t;
-
-
 static void
 mongoc_stream_unix_destroy (mongoc_stream_t *stream)
 {
@@ -706,98 +698,6 @@ mongoc_stream_unix_new (int fd)
    stream->stream.cork = mongoc_stream_unix_cork;
    stream->stream.uncork = mongoc_stream_unix_uncork;
    stream->stream.setsockopt = mongoc_stream_unix_setsockopt;
-
-   mongoc_counter_streams_active_inc();
-
-   return (mongoc_stream_t *)stream;
-}
-
-
-static void
-mongoc_stream_buffered_destroy (mongoc_stream_t *stream)
-{
-   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-
-   bson_return_if_fail(stream);
-
-   mongoc_stream_destroy(buffered->base_stream);
-   mongoc_buffer_destroy(&buffered->buffer);
-   bson_free(stream);
-
-   mongoc_counter_streams_active_dec();
-   mongoc_counter_streams_disposed_inc();
-}
-
-
-static int
-mongoc_stream_buffered_close (mongoc_stream_t *stream)
-{
-   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   bson_return_val_if_fail(stream, -1);
-   return mongoc_stream_close(buffered->base_stream);
-}
-
-
-static int
-mongoc_stream_buffered_flush (mongoc_stream_t *stream)
-{
-   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   bson_return_val_if_fail(buffered, -1);
-   return mongoc_stream_flush(buffered->base_stream);
-}
-
-
-static ssize_t
-mongoc_stream_buffered_writev (mongoc_stream_t *stream,
-                               struct iovec    *iov,
-                               size_t           iovcnt,
-                               bson_uint32_t    timeout_msec)
-{
-   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-
-   bson_return_val_if_fail(buffered, -1);
-
-   /*
-    * TODO: Implement buffering.
-    */
-
-   return mongoc_stream_writev(buffered->base_stream, iov, iovcnt, timeout_msec);
-}
-
-
-static ssize_t
-mongoc_stream_buffered_readv (mongoc_stream_t *stream,
-                              struct iovec    *iov,
-                              size_t           iovcnt,
-                              bson_uint32_t    timeout_msec)
-{
-   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-
-   bson_return_val_if_fail(buffered, -1);
-
-   /*
-    * TODO: Implement buffering.
-    */
-
-   return mongoc_stream_readv(buffered->base_stream, iov, iovcnt, timeout_msec);
-}
-
-
-mongoc_stream_t *
-mongoc_stream_buffered_new (mongoc_stream_t *base_stream)
-{
-   mongoc_stream_buffered_t *stream;
-
-   bson_return_val_if_fail(base_stream, NULL);
-
-   stream = bson_malloc0(sizeof *stream);
-   stream->stream.destroy = mongoc_stream_buffered_destroy;
-   stream->stream.close = mongoc_stream_buffered_close;
-   stream->stream.flush = mongoc_stream_buffered_flush;
-   stream->stream.writev = mongoc_stream_buffered_writev;
-   stream->stream.readv = mongoc_stream_buffered_readv;
-   stream->base_stream = base_stream;
-   mongoc_buffer_init(&stream->buffer, NULL, 0, NULL);
 
    mongoc_counter_streams_active_inc();
 

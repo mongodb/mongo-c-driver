@@ -1,0 +1,245 @@
+/*
+ * Copyright 2013 10gen Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+#define _GNU_SOURCE
+
+#include "mongoc-buffer-private.h"
+#include "mongoc-counters-private.h"
+#include "mongoc-stream-buffered.h"
+
+
+typedef struct
+{
+   mongoc_stream_t  stream;
+   mongoc_stream_t *base_stream;
+   mongoc_buffer_t  buffer;
+} mongoc_stream_buffered_t;
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_buffered_destroy --
+ *
+ *       Clean up after a mongoc_stream_buffered_t. Free all allocated
+ *       resources and release the base stream.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Everything.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+mongoc_stream_buffered_destroy (mongoc_stream_t *stream) /* IN */
+{
+   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+
+   bson_return_if_fail(stream);
+
+   mongoc_stream_destroy(buffered->base_stream);
+   buffered->base_stream = NULL;
+
+   mongoc_buffer_destroy(&buffered->buffer);
+
+   bson_free(stream);
+
+   mongoc_counter_streams_active_dec();
+   mongoc_counter_streams_disposed_inc();
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_buffered_close --
+ *
+ *       Close the underlying stream. The buffered content is still
+ *       valid.
+ *
+ * Returns:
+ *       The return value of mongoc_stream_close() on the underlying
+ *       stream.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static int
+mongoc_stream_buffered_close (mongoc_stream_t *stream) /* IN */
+{
+   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+   bson_return_val_if_fail(stream, -1);
+   return mongoc_stream_close(buffered->base_stream);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_buffered_flush --
+ *
+ *       Flushes the underlying stream.
+ *
+ * Returns:
+ *       The result of flush on the base stream.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static int
+mongoc_stream_buffered_flush (mongoc_stream_t *stream) /* IN */
+{
+   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+   bson_return_val_if_fail(buffered, -1);
+   return mongoc_stream_flush(buffered->base_stream);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_buffered_writev --
+ *
+ *       Write an iovec to the underlying stream. This write is not
+ *       buffered, it passes through to the base stream directly.
+ *
+ *       timeout_msec should be the number of milliseconds to wait before
+ *       considering the writev as failed.
+ *
+ * Returns:
+ *       The number of bytes written or -1 on failure.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static ssize_t
+mongoc_stream_buffered_writev (mongoc_stream_t *stream,       /* IN */
+                               struct iovec    *iov,          /* IN */
+                               size_t           iovcnt,       /* IN */
+                               bson_uint32_t    timeout_msec) /* IN */
+{
+   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+
+   bson_return_val_if_fail(buffered, -1);
+
+   return mongoc_stream_writev(buffered->base_stream,
+                               iov,
+                               iovcnt,
+                               timeout_msec);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_buffered_readv --
+ *
+ *       Read from the underlying stream. The data will be buffered based
+ *       on the buffered streams target buffer size.
+ *
+ *       TODO: This has not yet been implemented and therefore no
+ *             buffering is performed.
+ *
+ * Returns:
+ *       The number of bytes read or -1 on failure.
+ *
+ * Side effects:
+ *       iov[*]->iov_base buffers are filled.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static ssize_t
+mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
+                              struct iovec    *iov,          /* INOUT */
+                              size_t           iovcnt,       /* IN */
+                              bson_uint32_t    timeout_msec) /* IN */
+{
+   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+
+   bson_return_val_if_fail(buffered, -1);
+
+   /*
+    * TODO: Implement buffering.
+    */
+
+   return mongoc_stream_readv(buffered->base_stream,
+                              iov,
+                              iovcnt,
+                              timeout_msec);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_buffered_new --
+ *
+ *       Creates a new mongoc_stream_buffered_t.
+ *
+ *       This stream will read from an underlying stream and try to read
+ *       more data than necessary. It can help lower the number of read()
+ *       or recv() syscalls performed.
+ *
+ *       @base_stream is considered owned by the resulting stream after
+ *       calling this function.
+ *
+ * Returns:
+ *       A newly allocated mongoc_stream_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_stream_t *
+mongoc_stream_buffered_new (mongoc_stream_t *base_stream, /* IN */
+                            size_t           buffer_size) /* IN */
+{
+   mongoc_stream_buffered_t *stream;
+   void *buffer;
+
+   bson_return_val_if_fail(base_stream, NULL);
+
+   stream = bson_malloc0(sizeof *stream);
+   stream->stream.destroy = mongoc_stream_buffered_destroy;
+   stream->stream.close = mongoc_stream_buffered_close;
+   stream->stream.flush = mongoc_stream_buffered_flush;
+   stream->stream.writev = mongoc_stream_buffered_writev;
+   stream->stream.readv = mongoc_stream_buffered_readv;
+   stream->base_stream = base_stream;
+
+   buffer = bson_malloc0(buffer_size);
+   mongoc_buffer_init(&stream->buffer, buffer, buffer_size, bson_realloc);
+
+   mongoc_counter_streams_active_inc();
+
+   return (mongoc_stream_t *)stream;
+}

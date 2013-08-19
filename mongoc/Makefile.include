@@ -21,6 +21,7 @@ INST_H_FILES += $(top_srcdir)/mongoc/mongoc-opcode.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-read-prefs.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stdint.h
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream.h
+INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream-buffered.h
 if HAVE_SSL
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream-tls.h
 endif
@@ -64,6 +65,7 @@ libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-queue.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-read-prefs.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-rpc.c
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream.c
+libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream-buffered.c
 if HAVE_SSL
 libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream-tls.c
 endif
