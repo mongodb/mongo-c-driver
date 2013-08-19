@@ -378,7 +378,7 @@ mongoc_stream_tls_uncork (mongoc_stream_t *stream) /* IN */
  *
  * mongoc_stream_tls_setsockopt --
  *
- *       Perform a setsockopt on the underlying socket.
+ *       Perform a setsockopt on the underlying stream.
  *
  * Returns:
  *       -1 on failure, otherwise opt specific value.
@@ -393,22 +393,18 @@ static int
 mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,  /* IN */
                               int              level,   /* IN */
                               int              optname, /* IN */
-                              void            *optval,  /* IN */
+                              void            *optval,  /* INOUT */
                               socklen_t        optlen)  /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   int fd = -1;
 
    BSON_ASSERT(tls);
 
-   if (tls->bio) {
-      BIO_get_fd(tls->bio, &fd);
-      if (fd != -1) {
-         return setsockopt(fd, level, optname, optval, optlen);
-      }
-   }
-
-   return -1;
+   return mongoc_stream_setsockopt(tls->base_stream,
+                                   level,
+                                   optname,
+                                   optval,
+                                   optlen);
 }
 
 
