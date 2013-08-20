@@ -332,6 +332,12 @@ mongoc_stream_tls_destroy (mongoc_stream_t *stream) /* IN */
    BIO_free_all(tls->bio);
    tls->bio = NULL;
 
+   SSL_CTX_free(tls->ssl_ctx);
+   tls->ssl_ctx = NULL;
+
+   SSL_free(tls->ssl);
+   tls->ssl = NULL;
+
    bson_free(stream);
 }
 
@@ -636,6 +642,12 @@ mongoc_stream_tls_new (mongoc_stream_t *base_stream,     /* IN */
 
    tls->bio = BIO_new(&gMongocStreamTlsRawMethods);
    tls->bio->ptr = tls;
+
+   tls->ssl_ctx = SSL_CTX_new(SSLv23_method());
+   SSL_CTX_set_options(tls->ssl_ctx, (SSL_OP_ALL | SSL_OP_NO_SSLv2));
+   SSL_CTX_set_mode(tls->ssl_ctx, SSL_MODE_AUTO_RETRY);
+
+   tls->ssl = SSL_new(tls->ssl_ctx);
 
    return (mongoc_stream_t *)tls;
 }
