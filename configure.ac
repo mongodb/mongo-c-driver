@@ -58,8 +58,19 @@ AC_NEED_STDINT_H(mongoc/mongoc-stdint.h)
 dnl **************************************************************************
 dnl Check for Python Support
 dnl **************************************************************************
-AX_PYTHON
-AM_CONDITIONAL([HAVE_PYTHON], [test x$ax_python_header != xno])
+AC_ARG_ENABLE(
+	[python],
+	[AC_HELP_STRING([--enable-python=@<:no/yes@:>@],
+			[Enable support for experimental python bindings. @<:@default=no@:>@])],
+	[], [
+		enable_python=no
+		ax_python_header=no
+	]
+)
+AS_IF([test "x$enable_python" = "xyes"], [
+	AX_PYTHON
+])
+AM_CONDITIONAL([HAVE_PYTHON], [test "x$ax_python_header" != "xno"])
 
 
 dnl **************************************************************************
@@ -82,12 +93,6 @@ AC_CHECK_FUNCS([shm_open], [SHM_LIB=],
 	       [AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt],
 			     [SHM_LIB=])])
 AC_SUBST([SHM_LIB])
-
-
-dnl **************************************************************************
-dnl Check for Python Support
-dnl **************************************************************************
-AX_PYTHON
 
 
 dnl **************************************************************************
@@ -177,4 +182,8 @@ echo "  Prefix ....................: ${prefix}"
 echo "  Debug Level ...............: ${enable_debug}"
 echo "  CFLAGS ....................: ${CFLAGS}"
 echo "  SSL .......................: ${enable_ssl}"
+echo ""
+echo "Bindings"
+echo ""
+echo "  Python ....................: ${ax_python_header}"
 echo ""
