@@ -144,10 +144,12 @@ mongoc_stream_tls_bio_ctrl (BIO  *b,   /* IN */
                             long  num, /* IN */
                             void *ptr) /* INOUT */
 {
-   if (cmd == BIO_CTRL_FLUSH) {
+   switch (cmd) {
+   case BIO_CTRL_FLUSH:
       return 1;
+   default:
+      return 0;
    }
-   return 0;
 }
 
 
@@ -223,18 +225,10 @@ static int
 mongoc_stream_tls_close (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   int fd = -1;
 
    BSON_ASSERT(tls);
 
-   if (tls->bio) {
-      BIO_get_fd(tls->bio, &fd);
-      if (fd != -1) {
-         close(fd);
-      }
-   }
-
-   return 0;
+   return mongoc_stream_close(tls->base_stream);
 }
 
 
@@ -346,7 +340,11 @@ mongoc_stream_tls_readv (mongoc_stream_t *stream,       /* IN */
 static int
 mongoc_stream_tls_cork (mongoc_stream_t *stream) /* IN */
 {
-   return 0;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+
+   BSON_ASSERT(stream);
+
+   return mongoc_stream_cork(tls->base_stream);
 }
 
 
@@ -369,7 +367,11 @@ mongoc_stream_tls_cork (mongoc_stream_t *stream) /* IN */
 static int
 mongoc_stream_tls_uncork (mongoc_stream_t *stream) /* IN */
 {
-   return 0;
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+
+   BSON_ASSERT(stream);
+
+   return mongoc_stream_uncork(tls->base_stream);
 }
 
 
