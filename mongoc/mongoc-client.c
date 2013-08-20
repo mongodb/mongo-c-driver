@@ -565,6 +565,8 @@ mongoc_client_new (const char *uri_string) /* IN */
 {
    mongoc_client_t *client;
    mongoc_uri_t *uri;
+   const bson_t *options;
+   bson_iter_t iter;
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
@@ -572,6 +574,13 @@ mongoc_client_new (const char *uri_string) /* IN */
 
    if (!(uri = mongoc_uri_new(uri_string))) {
       return NULL;
+   }
+
+   options = mongoc_uri_get_options(uri);
+   if (bson_iter_init_find(&iter, options, "ssl") &&
+       BSON_ITER_HOLDS_BOOL(&iter) &&
+       bson_iter_bool(&iter)) {
+      MONGOC_WARNING("SSL is not yet supported!");
    }
 
    client = bson_malloc0(sizeof *client);
