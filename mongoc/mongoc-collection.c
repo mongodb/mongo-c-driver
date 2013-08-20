@@ -136,6 +136,11 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
  *
  *       Send an "aggregate" command to the MongoDB server.
  *
+ *       This function REQUIRES MongoDB 2.5.0 or higher. Sadly, there is not
+ *       currently a way to auto-discover this feature. If you need
+ *       support for older MongoDB versions, see
+ *       mongoc_collection_aggregate_legacy().
+ *
  *       This function will always return a new mongoc_cursor_t that should
  *       be freed with mongoc_cursor_destroy().
  *
@@ -144,6 +149,9 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
  *
  *       See http://docs.mongodb.org/manual/aggregation/ for more
  *       information on how to build aggregation pipelines.
+ *
+ * Requires:
+ *       MongoDB >= 2.5.0
  *
  * Parameters:
  *       @flags: bitwise or of mongoc_query_flags_t or 0.
@@ -176,11 +184,73 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    bson_init(&command);
    bson_append_int32(&command, "aggregate", 9, 1);
    bson_append_array(&command, "pipeline", 8, pipeline);
+   bson_append_int32(&command, "cursor", 6, 1);
    cursor = mongoc_collection_command(collection, flags, 0, 0, &command,
                                       NULL, read_prefs);
    bson_destroy(&command);
 
    return cursor;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_aggregate_legacy --
+ *
+ *       Support for legacy MongoDB versions that do not support commands
+ *       returning cursors.
+ *
+ *       This function is similar to mongoc_collection_aggregate()
+ *       except it returns the command document containing the "result"
+ *       field for all pipeline results. This means that the result
+ *       is limited to 16 Mb as that is the maximum BSON size of
+ *       MongoDB (unless configured higher).
+ *
+ * Requires:
+ *       MongoDB >= 2.1.0
+ *
+ * See Also:
+ *       mongoc_collection_aggregate()
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @reply is always set in both success and failure cases.
+ *       @error is set in case of failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bson_bool_t
+mongoc_collection_aggregate_legacy (
+      mongoc_collection_t       *collection, /* IN */
+      mongoc_query_flags_t       flags,      /* IN */
+      const bson_t              *pipeline,   /* IN */
+      const mongoc_read_prefs_t *read_prefs, /* IN */
+      bson_t                    *reply,      /* OUT */
+      bson_error_t              *error)      /* OUT */
+{
+   bson_bool_t ret;
+   bson_t command;
+
+   bson_return_val_if_fail(collection, FALSE);
+   bson_return_val_if_fail(pipeline, FALSE);
+
+   bson_init(&command);
+   bson_append_int32(&command, "aggregate", 9, 1);
+   bson_append_array(&command, "pipeline", 8, pipeline);
+
+   ret = mongoc_collection_command_simple(collection,
+                                          &command,
+                                          read_prefs,
+                                          reply,
+                                          error);
+
+   bson_destroy(&command);
+
+   return ret;
 }
 
 
