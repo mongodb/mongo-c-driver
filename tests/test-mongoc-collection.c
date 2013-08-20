@@ -199,6 +199,33 @@ test_count (void)
 
 
 static void
+test_drop (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_bool_t r;
+
+   client = mongoc_client_new(TEST_HOST);
+   assert(client);
+
+   collection = mongoc_client_get_collection(client, "test", "test");
+   assert(collection);
+
+   r = mongoc_collection_drop(collection, &error);
+   assert(r == TRUE);
+
+   r = mongoc_collection_drop(collection, &error);
+   assert(r == FALSE);
+
+   bson_error_destroy(&error);
+
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+}
+
+
+static void
 log_handler (mongoc_log_level_t  log_level,
              const char         *domain,
              const char         *message,
@@ -220,6 +247,7 @@ main (int   argc,
    run_test("/mongoc/collection/update", test_update);
    run_test("/mongoc/collection/delete", test_delete);
    run_test("/mongoc/collection/count", test_count);
+   run_test("/mongoc/collection/drop", test_drop);
 
    return 0;
 }
