@@ -287,6 +287,56 @@ test_aggregate (void)
 
 
 static void
+test_aggregate_legacy (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_bool_t r;
+   bson_t b;
+   bson_t match;
+   bson_t pipeline;
+   bson_t reply;
+
+   bson_init(&b);
+   bson_append_utf8(&b, "hello", -1, "world", -1);
+
+   bson_init(&match);
+   bson_append_document(&match, "$match", -1, &b);
+
+   bson_init(&pipeline);
+   bson_append_document(&pipeline, "0", -1, &match);
+
+   client = mongoc_client_new(TEST_HOST);
+   assert(client);
+
+   collection = mongoc_client_get_collection(client, "test", "test");
+   assert(collection);
+
+   mongoc_collection_drop(collection, &error);
+
+   r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
+   assert(r);
+
+   r = mongoc_collection_aggregate_legacy(collection, MONGOC_QUERY_NONE, &pipeline, NULL, &reply, &error);
+   assert(r);
+
+   r = bson_has_field(&reply, "ok");
+   assert(r);
+
+   r = bson_has_field(&reply, "result");
+   assert(r);
+
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+   bson_destroy(&b);
+   bson_destroy(&pipeline);
+   bson_destroy(&match);
+   bson_destroy(&reply);
+}
+
+
+static void
 log_handler (mongoc_log_level_t  log_level,
              const char         *domain,
              const char         *message,
@@ -310,6 +360,7 @@ main (int   argc,
    run_test("/mongoc/collection/count", test_count);
    run_test("/mongoc/collection/drop", test_drop);
    run_test("/mongoc/collection/aggregate", test_aggregate);
+   run_test("/mongoc/collection/aggregate_legacy", test_aggregate_legacy);
 
    return 0;
 }
