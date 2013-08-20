@@ -101,6 +101,7 @@ mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
 {
    mongoc_stream_tls_t *tls;
    struct iovec iov;
+   int ret;
 
    BSON_ASSERT(b);
    BSON_ASSERT(buf);
@@ -112,7 +113,15 @@ mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
    iov.iov_base = buf;
    iov.iov_len = len;
 
-   return mongoc_stream_readv(tls->base_stream, &iov, 1, 0);
+   errno = 0;
+   ret = mongoc_stream_readv(tls->base_stream, &iov, 1, 0);
+   if (ret < 0) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+         BIO_set_retry_read(b);
+      }
+   }
+
+   return ret;
 }
 
 
@@ -123,6 +132,7 @@ mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
 {
    mongoc_stream_tls_t *tls;
    struct iovec iov;
+   int ret;
 
    BSON_ASSERT(b);
    BSON_ASSERT(buf);
@@ -134,7 +144,16 @@ mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
    iov.iov_base = (void *)buf;
    iov.iov_len = len;
 
-   return mongoc_stream_writev(tls->base_stream, &iov, 1, 0);
+   errno = 0;
+   ret = mongoc_stream_writev(tls->base_stream, &iov, 1, 0);
+   BIO_clear_retry_flags(b);
+   if (ret < 0) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+         BIO_set_retry_write(b);
+      }
+   }
+
+   return ret;
 }
 
 
