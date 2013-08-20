@@ -51,7 +51,8 @@ mongoc_cursor_t              *mongoc_collection_command           (mongoc_collec
                                                                    bson_uint32_t                 n_return,
                                                                    const bson_t                 *query,
                                                                    const bson_t                 *fields,
-                                                                   const mongoc_read_prefs_t    *read_prefs);
+                                                                   const mongoc_read_prefs_t    *read_prefs)
+                                                                     BSON_GNUC_WARN_UNUSED_RESULT;
 bson_bool_t                   mongoc_collection_command_simple    (mongoc_collection_t          *collection,
                                                                    const bson_t                 *command,
                                                                    const mongoc_read_prefs_t    *read_prefs,
@@ -75,7 +76,8 @@ mongoc_cursor_t              *mongoc_collection_find              (mongoc_collec
                                                                    bson_uint32_t                 n_return,
                                                                    const bson_t                 *query,
                                                                    const bson_t                 *fields,
-                                                                   const mongoc_read_prefs_t    *read_prefs);
+                                                                   const mongoc_read_prefs_t    *read_prefs)
+                                                                     BSON_GNUC_WARN_UNUSED_RESULT;
 bson_bool_t                   mongoc_collection_insert            (mongoc_collection_t          *collection,
                                                                    mongoc_insert_flags_t         flags,
                                                                    const bson_t                 *document,
