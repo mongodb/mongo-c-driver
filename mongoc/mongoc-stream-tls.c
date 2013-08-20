@@ -18,6 +18,7 @@
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "mongoc-stream-tls.h"
@@ -33,6 +34,8 @@ typedef struct
    mongoc_stream_t  parent;
    mongoc_stream_t *base_stream;
    BIO             *bio;
+   SSL_CTX         *ssl_ctx;
+   SSL             *ssl;
 } mongoc_stream_tls_t;
 
 
@@ -59,6 +62,22 @@ static BIO_METHOD gMongocStreamTlsRawMethods = {
 };
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_tls_bio_create --
+ *
+ *       BIO callback to create a new BIO instance.
+ *
+ * Returns:
+ *       1 if successful.
+ *
+ * Side effects:
+ *       @b is initialized.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static int
 mongoc_stream_tls_bio_create (BIO *b) /* IN */
 {
@@ -72,6 +91,22 @@ mongoc_stream_tls_bio_create (BIO *b) /* IN */
    return 1;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_tls_bio_destroy --
+ *
+ *       Release resources associated with BIO.
+ *
+ * Returns:
+ *       1 if successful.
+ *
+ * Side effects:
+ *       @b is destroyed.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 static int
 mongoc_stream_tls_bio_destroy (BIO *b) /* IN */
@@ -93,6 +128,22 @@ mongoc_stream_tls_bio_destroy (BIO *b) /* IN */
    return 1;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_tls_bio_read --
+ *
+ *       Read from the underlying stream to BIO.
+ *
+ * Returns:
+ *       -1 on failure; otherwise the number of bytes read.
+ *
+ * Side effects:
+ *       @buf is filled with data read from underlying stream.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 static int
 mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
@@ -124,6 +175,22 @@ mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
    return ret;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_tls_bio_write --
+ *
+ *       Write to the underlying stream on behalf of BIO.
+ *
+ * Returns:
+ *       -1 on failure; otherwise the number of bytes written.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 static int
 mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
@@ -157,6 +224,22 @@ mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_tls_bio_ctrl --
+ *
+ *       Handle ctrl callback for BIO.
+ *
+ * Returns:
+ *       ioctl dependent.
+ *
+ * Side effects:
+ *       ioctl dependent.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static long
 mongoc_stream_tls_bio_ctrl (BIO  *b,   /* IN */
                             int   cmd, /* IN */
@@ -172,6 +255,22 @@ mongoc_stream_tls_bio_ctrl (BIO  *b,   /* IN */
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_tls_bio_gets --
+ *
+ *       BIO callback for gets(). Not supported.
+ *
+ * Returns:
+ *       -1 always.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static int
 mongoc_stream_tls_bio_gets (BIO  *b,   /* IN */
                             char *buf, /* OUT */
@@ -180,6 +279,23 @@ mongoc_stream_tls_bio_gets (BIO  *b,   /* IN */
    return -1;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_tls_bio_puts --
+ *
+ *       BIO callback to perform puts(). Just calls the actual write
+ *       callback.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 static int
 mongoc_stream_tls_bio_puts (BIO        *b,   /* IN */
@@ -271,7 +387,9 @@ static int
 mongoc_stream_tls_flush (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+
    BSON_ASSERT(tls);
+
    return BIO_flush(tls->bio);
 }
 
@@ -301,10 +419,34 @@ mongoc_stream_tls_writev (mongoc_stream_t *stream,       /* IN */
                           bson_uint32_t    timeout_msec) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+   ssize_t ret = 0;
+   size_t i;
+   int write_ret;
+
+   /*
+    * TODO: Do we need to plumb through timeout_msec? In most cases,
+    *       it will actually be set on the underlying socket using the
+    *       setsockopt().
+    */
 
    BSON_ASSERT(tls);
+   BSON_ASSERT(iov);
+   BSON_ASSERT(iovcnt);
 
-   return -1;
+   for (i = 0; i < iovcnt; i++) {
+      /*
+       * TODO: This might be a bit brittle, but I think since our stream
+       *       implementations try really hard to return what you asked
+       *       for, I think it is fine. Warrants further experimentation.
+       */
+      write_ret = SSL_write(tls->ssl, iov[i].iov_base, iov[i].iov_len);
+      if (write_ret != iov[i].iov_len) {
+         return write_ret;
+      }
+      ret += write_ret;
+   }
+
+   return ret;
 }
 
 
@@ -333,10 +475,28 @@ mongoc_stream_tls_readv (mongoc_stream_t *stream,       /* IN */
                          bson_uint32_t    timeout_msec) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+   ssize_t ret = 0;
+   size_t i;
+   int read_ret;
 
    BSON_ASSERT(tls);
+   BSON_ASSERT(iov);
+   BSON_ASSERT(iovcnt);
 
-   return -1;
+   for (i = 0; i < iovcnt; i++) {
+      /*
+       * TODO: This might be a bit brittle, but I think since our stream
+       *       implementations try really hard to return what you asked
+       *       for, I think it is fine. Warrants further experimentation.
+       */
+      read_ret = SSL_read(tls->ssl, iov[i].iov_base, iov[i].iov_len);
+      if (read_ret != iov[i].iov_len) {
+         return read_ret;
+      }
+      ret += read_ret;
+   }
+
+   return ret;
 }
 
 
