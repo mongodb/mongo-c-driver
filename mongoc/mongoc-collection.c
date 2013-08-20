@@ -132,6 +132,61 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_collection_aggregate --
+ *
+ *       Send an "aggregate" command to the MongoDB server.
+ *
+ *       This function will always return a new mongoc_cursor_t that should
+ *       be freed with mongoc_cursor_destroy().
+ *
+ *       The cursor may fail once iterated upon, so check
+ *       mongoc_cursor_error() if mongoc_cursor_next() returns FALSE.
+ *
+ *       See http://docs.mongodb.org/manual/aggregation/ for more
+ *       information on how to build aggregation pipelines.
+ *
+ * Parameters:
+ *       @flags: bitwise or of mongoc_query_flags_t or 0.
+ *       @pipeline: A bson_t containing the pipeline request. @pipeline
+ *                  will be sent as an array type in the request.
+ *       @read_prefs: Optional read preferences for the command.
+ *
+ * Returns:
+ *       A newly allocated mongoc_cursor_t that should be freed with
+ *       mongoc_cursor_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_cursor_t *
+mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
+                             mongoc_query_flags_t       flags,      /* IN */
+                             const bson_t              *pipeline,   /* IN */
+                             const mongoc_read_prefs_t *read_prefs) /* IN */
+{
+   mongoc_cursor_t *cursor;
+   bson_t command;
+
+   bson_return_val_if_fail(collection, NULL);
+   bson_return_val_if_fail(pipeline, NULL);
+
+   bson_init(&command);
+   bson_append_int32(&command, "aggregate", 9, 1);
+   bson_append_array(&command, "pipeline", 8, pipeline);
+   cursor = mongoc_collection_command(collection, flags, 0, 0, &command,
+                                      NULL, read_prefs);
+   bson_destroy(&command);
+
+   return cursor;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_collection_find --
  *
  *       Performs a query against the configured MongoDB server. If @read_prefs

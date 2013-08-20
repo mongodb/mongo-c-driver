@@ -33,6 +33,10 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_collection_t mongoc_collection_t;
 
 
+mongoc_cursor_t              *mongoc_collection_aggregate         (mongoc_collection_t          *collection,
+                                                                   mongoc_query_flags_t          flags,
+                                                                   const bson_t                 *pipeline,
+                                                                   const mongoc_read_prefs_t    *read_prefs);
 void                          mongoc_collection_destroy           (mongoc_collection_t          *collection);
 mongoc_cursor_t              *mongoc_collection_command           (mongoc_collection_t          *collection,
                                                                    mongoc_query_flags_t          flags,
