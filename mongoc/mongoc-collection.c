@@ -182,7 +182,9 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    bson_return_val_if_fail(pipeline, NULL);
 
    bson_init(&command);
-   bson_append_int32(&command, "aggregate", 9, 1);
+   bson_append_utf8(&command, "aggregate", 9,
+                    collection->collection,
+                    collection->collectionlen);
    bson_append_array(&command, "pipeline", 8, pipeline);
    bson_append_int32(&command, "cursor", 6, 1);
    cursor = mongoc_collection_command(collection, flags, 0, -1, &command,
@@ -239,7 +241,9 @@ mongoc_collection_aggregate_legacy (
    bson_return_val_if_fail(pipeline, FALSE);
 
    bson_init(&command);
-   bson_append_int32(&command, "aggregate", 9, 1);
+   bson_append_utf8(&command, "aggregate", 9,
+                    collection->collection,
+                    collection->collectionlen);
    bson_append_array(&command, "pipeline", 8, pipeline);
 
    ret = mongoc_collection_command_simple(collection,
