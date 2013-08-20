@@ -185,7 +185,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    bson_append_int32(&command, "aggregate", 9, 1);
    bson_append_array(&command, "pipeline", 8, pipeline);
    bson_append_int32(&command, "cursor", 6, 1);
-   cursor = mongoc_collection_command(collection, flags, 0, 0, &command,
+   cursor = mongoc_collection_command(collection, flags, 0, -1, &command,
                                       NULL, read_prefs);
    bson_destroy(&command);
 

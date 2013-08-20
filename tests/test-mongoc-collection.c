@@ -226,6 +226,67 @@ test_drop (void)
 
 
 static void
+test_aggregate (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bson_error_t error;
+   bson_bool_t r;
+   bson_t b;
+   bson_t match;
+   bson_t pipeline;
+
+   bson_init(&b);
+   bson_append_utf8(&b, "hello", -1, "world", -1);
+
+   bson_init(&match);
+   bson_append_document(&match, "$match", -1, &b);
+
+   bson_init(&pipeline);
+   bson_append_document(&pipeline, "0", -1, &match);
+
+   client = mongoc_client_new(TEST_HOST);
+   assert(client);
+
+   collection = mongoc_client_get_collection(client, "test", "test");
+   assert(collection);
+
+   mongoc_collection_drop(collection, &error);
+
+   r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
+   assert(r);
+
+   cursor = mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, &pipeline, NULL);
+   assert(cursor);
+
+   r = mongoc_cursor_next(cursor, &doc);
+   if (mongoc_cursor_error(cursor, &error)) {
+      MONGOC_WARNING("%s", error.message);
+      bson_error_destroy(&error);
+   }
+   assert(r);
+   assert(doc);
+
+   r = mongoc_cursor_next(cursor, &doc);
+   if (mongoc_cursor_error(cursor, &error)) {
+      MONGOC_WARNING("%s", error.message);
+      bson_error_destroy(&error);
+   }
+   assert(!r);
+   assert(!doc);
+
+   mongoc_cursor_destroy(cursor);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+   bson_destroy(&b);
+   bson_destroy(&pipeline);
+   bson_destroy(&match);
+}
+
+
+static void
 log_handler (mongoc_log_level_t  log_level,
              const char         *domain,
              const char         *message,
@@ -248,6 +309,7 @@ main (int   argc,
    run_test("/mongoc/collection/delete", test_delete);
    run_test("/mongoc/collection/count", test_count);
    run_test("/mongoc/collection/drop", test_drop);
+   run_test("/mongoc/collection/aggregate", test_aggregate);
 
    return 0;
 }
