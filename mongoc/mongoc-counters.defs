@@ -47,6 +47,7 @@ COUNTER(50, streams_active,         "Streams",      "Active",              "The 
 COUNTER(51, streams_disposed,       "Streams",      "Disposed",            "The number of disposed streams.")
 COUNTER(52, streams_egress,         "Streams",      "Egress Bytes",        "The number of bytes sent.")
 COUNTER(53, streams_ingress,        "Streams",      "Ingress Bytes",       "The number of bytes received.")
+COUNTER(54, streams_timeout,        "Streams",      "N Socket Timeouts",   "The number of socket timeouts.")
 
 
 COUNTER(60, client_pools_active,    "Client Pools", "Active",              "The number of active client pools.")

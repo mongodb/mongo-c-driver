@@ -250,6 +250,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        */
       now = bson_get_monotonic_time();
       if (((expire - now) < 0) && (r == 0)) {
+         mongoc_counter_streams_timeout_inc();
          return -1;
       }
 
@@ -287,6 +288,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
          return -1;
       } else if (r == 0) {
          errno = ETIMEDOUT;
+         mongoc_counter_streams_timeout_inc();
          return -1;
       }
    }
@@ -427,6 +429,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
          return -1;
       } else if (r == 0) {
          errno = ETIMEDOUT;
+         mongoc_counter_streams_timeout_inc();
          return -1;
       }
    }
