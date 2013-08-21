@@ -34,6 +34,18 @@
 #define MAX_RETRY_COUNT 3
 #endif
 
+#ifndef DEFAULT_SOCKET_TIMEOUT_MSEC
+/*
+ * NOTE: The default socket timeout for connections is 5 minutes. This
+ *       means that if your MongoDB server dies or becomes unavailable
+ *       it will take 5 minutes to detect this.
+ *
+ *       You can change this by providing sockettimeoutms= in your
+ *       connection URI.
+ */
+#define DEFAULT_SOCKET_TIMEOUT_MSEC (1000L * 60L * 5L)
+#endif
+
 
 /*
  *--------------------------------------------------------------------------
@@ -158,7 +170,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
                      void               *client)  /* IN */
 {
    const mongoc_host_list_t *hosts;
-   bson_uint32_t sockettimeoutms = 60 * 60 * 1000UL;
+   bson_uint32_t sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC;
    bson_uint32_t i;
    const bson_t *b;
    bson_iter_t iter;
