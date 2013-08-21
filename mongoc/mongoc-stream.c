@@ -39,18 +39,13 @@
 #include "mongoc-stream.h"
 
 
-#ifndef TEMP_FAILURE_RETRY
-#define TEMP_FAILURE_RETRY(_f) _f
-#endif
-
-
 #ifndef USEC_PER_SEC
 #define USEC_PER_SEC 1000000
 #endif
 
 
 #ifndef MONGOC_DEFAULT_TIMEOUT_MSEC
-#define MONGOC_DEFAULT_TIMEOUT_MSEC (60 * 60 * 1000)
+#define MONGOC_DEFAULT_TIMEOUT_MSEC (60L * 60L * 1000L)
 #endif
 
 
@@ -201,7 +196,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
     * our peer hang-up.
     */
    fds.fd = file->fd;
-   fds.events = (POLLIN | POLLERR);
+   fds.events = (POLLIN | POLLERR | POLLHUP | POLLNVAL);
 #ifdef POLLRDHUP
    fds.events |= POLLRDHUP;
 #endif
@@ -227,12 +222,17 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        * out this is not a socket, fall back to readv(). This should only
        * happen during unit tests.
        */
+   again:
       errno = 0;
-      r = TEMP_FAILURE_RETRY(recvmsg(file->fd, &msg, flags));
-      if (r == -1 && errno == ENOTSOCK) {
-         r = TEMP_FAILURE_RETRY(readv(file->fd, iov + cur, iovcnt - cur));
-         if (!r) {
-            return ret;
+      r = recvmsg(file->fd, &msg, flags);
+      if (r == -1) {
+         if (errno == EAGAIN) {
+            goto again;
+         } else if (errno == ENOTSOCK) {
+            r = readv(file->fd, iov + cur, iovcnt - cur);
+            if (!r) {
+               return ret;
+            }
          }
       }
 
@@ -243,6 +243,14 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
          return r;
       } else {
          ret += r;
+      }
+
+      /*
+       * Handle the case where we ran out of time and no data was read.
+       */
+      now = bson_get_monotonic_time();
+      if (((expire - now) < 0) && (r == 0)) {
+         return -1;
       }
 
       /*
@@ -266,8 +274,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       /*
        * Determine number of milliseconds until timeout expires.
        */
-      now = bson_get_monotonic_time();
-      timeout = MAX(0, (expire - now) / 1000UL);
+      timeout = MAX(0, (expire - now) / 1000L);
 
       /*
        * Block on poll() until data is available or timeout. Upont timeout,
@@ -337,7 +344,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
     * our peer hang-up.
     */
    fds.fd = file->fd;
-   fds.events = (POLLOUT | POLLERR | POLLHUP);
+   fds.events = (POLLOUT | POLLERR | POLLHUP | POLLNVAL);
 
    for (;;) {
       /*
@@ -360,12 +367,17 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        * out this is not a socket, fall back to writev(). This should only
        * happen during unit tests.
        */
+   again:
       errno = 0;
-      r = TEMP_FAILURE_RETRY(sendmsg(file->fd, &msg, flags));
-      if (r == -1 && errno == ENOTSOCK) {
-         r = TEMP_FAILURE_RETRY(writev(file->fd, iov + cur, iovcnt - cur));
-         if (!r) {
-            return ret;
+      r = sendmsg(file->fd, &msg, flags);
+      if (r == -1) {
+         if (errno == EAGAIN) {
+            goto again;
+         } else if (errno == ENOTSOCK) {
+            r = writev(file->fd, iov + cur, iovcnt - cur);
+            if (!r) {
+               return ret;
+            }
          }
       }
 
