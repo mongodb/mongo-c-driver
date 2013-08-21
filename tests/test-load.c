@@ -113,7 +113,7 @@ main (int   argc,
          return 1;
       }
    } else {
-      uri = mongoc_uri_new("mongodb://127.0.0.1:27017/");
+      uri = mongoc_uri_new("mongodb://127.0.0.1:27017/?sockettimeoutms=500");
    }
 
    if (argc > 2) {
