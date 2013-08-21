@@ -337,7 +337,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
     * such as during timezone changes. The monotonic clock is in microseconds
     * since an unknown epoch (but often system startup).
     */
-   expire = bson_get_monotonic_time() + (timeout_msec * 1000UL);
+   expire = bson_get_monotonic_time() + (timeout_msec * 1000L);
 
    /*
     * Prepare our pollfd. If POLLRDHUP is supported, we can get notified of
@@ -414,7 +414,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        * Determine number of milliseconds until timeout expires.
        */
       now = bson_get_monotonic_time();
-      timeout = MAX(0, (expire - now) / 1000UL);
+      timeout = MAX(0, (expire - now) / 1000L);
 
       /*
        * Block on poll() until data is available or timeout. Upont timeout,
