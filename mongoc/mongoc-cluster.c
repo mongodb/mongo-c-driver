@@ -135,7 +135,7 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
    node->stream = NULL;
    node->needs_auth = cluster->requires_auth;
    node->ping_msec = -1;
-   node->stamp = 0;
+   node->stamp++;
    node->primary = 0;
    bson_destroy(&node->tags);
    bson_init(&node->tags);
@@ -776,7 +776,7 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
    node->primary = FALSE;
    node->ping_msec = -1;
    node->stream = NULL;
-   node->stamp = 0;
+   node->stamp++;
    bson_init(&node->tags);
 
    stream = mongoc_client_create_stream(cluster->client, hosts, error);
