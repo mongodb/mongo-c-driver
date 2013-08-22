@@ -74,7 +74,6 @@ test_mongoc_client_authenticate_failure (void)
    assert(r);
    assert(error.domain == MONGOC_ERROR_CLIENT);
    assert(error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
-   bson_error_destroy(&error);
    mongoc_cursor_destroy(cursor);
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);

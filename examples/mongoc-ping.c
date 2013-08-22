@@ -39,7 +39,6 @@ main (int   argc,
       bson_free(str);
    } else if (mongoc_cursor_error(cursor, &error)) {
       fprintf(stderr, "Ping failure: %s\n", error.message);
-      bson_error_destroy(&error);
       return 3;
    }
 

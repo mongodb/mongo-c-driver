@@ -37,7 +37,6 @@ test_insert (void)
                                    &error);
       if (!r) {
          MONGOC_WARNING("%s\n", error.message);
-         bson_error_destroy(&error);
       }
       assert(r);
       bson_destroy(&b);
@@ -85,7 +84,6 @@ test_update (void)
       r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
       if (!r) {
          MONGOC_WARNING("%s\n", error.message);
-         bson_error_destroy(&error);
       }
       assert(r);
 
@@ -100,7 +98,6 @@ test_update (void)
       r = mongoc_collection_update(collection, MONGOC_UPDATE_NONE, &q, &u, NULL, &error);
       if (!r) {
          MONGOC_WARNING("%s\n", error.message);
-         bson_error_destroy(&error);
       }
       assert(r);
 
@@ -145,7 +142,6 @@ test_delete (void)
                                    &error);
       if (!r) {
          MONGOC_WARNING("%s\n", error.message);
-         bson_error_destroy(&error);
       }
       assert(r);
       bson_destroy(&b);
@@ -156,7 +152,6 @@ test_delete (void)
                                    &error);
       if (!r) {
          MONGOC_WARNING("%s\n", error.message);
-         bson_error_destroy(&error);
       }
       assert(r);
       bson_destroy(&b);
@@ -189,7 +184,6 @@ test_count (void)
 
    if (count == -1) {
       MONGOC_WARNING("%s\n", error.message);
-      bson_error_destroy(&error);
    }
    assert(count != -1);
 
@@ -217,8 +211,6 @@ test_drop (void)
 
    r = mongoc_collection_drop(collection, &error);
    assert(r == FALSE);
-
-   bson_error_destroy(&error);
 
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
@@ -264,7 +256,6 @@ test_aggregate (void)
    r = mongoc_cursor_next(cursor, &doc);
    if (mongoc_cursor_error(cursor, &error)) {
       MONGOC_WARNING("%s", error.message);
-      bson_error_destroy(&error);
    }
    assert(r);
    assert(doc);
@@ -272,7 +263,6 @@ test_aggregate (void)
    r = mongoc_cursor_next(cursor, &doc);
    if (mongoc_cursor_error(cursor, &error)) {
       MONGOC_WARNING("%s", error.message);
-      bson_error_destroy(&error);
    }
    assert(!r);
    assert(!doc);

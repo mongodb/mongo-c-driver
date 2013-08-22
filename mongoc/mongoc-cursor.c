@@ -110,7 +110,6 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    bson_destroy(&cursor->query);
    bson_destroy(&cursor->fields);
    bson_reader_destroy(&cursor->reader);
-   bson_error_destroy(&cursor->error);
    mongoc_buffer_destroy(&cursor->buffer);
    mongoc_read_prefs_destroy(cursor->read_prefs);
 

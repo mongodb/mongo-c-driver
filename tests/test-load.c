@@ -28,7 +28,6 @@ ping (mongoc_database_t *db,
    }
    if (mongoc_cursor_error(cursor, &error)) {
       MONGOC_WARNING("Cursor error: %s", error.message);
-      bson_error_destroy(&error);
    }
    mongoc_cursor_destroy(cursor);
 }
@@ -49,7 +48,6 @@ fetch (mongoc_collection_t *col,
    }
    if (mongoc_cursor_error(cursor, &error)) {
       MONGOC_WARNING("Cursor error: %s", error.message);
-      bson_error_destroy(&error);
    }
    mongoc_cursor_destroy(cursor);
 }
@@ -81,7 +79,6 @@ test_load (mongoc_client_t *client,
 
    if (!mongoc_collection_drop(col, &error)) {
       MONGOC_WARNING("Failed to drop collection: %s", error.message);
-      bson_error_destroy(&error);
    }
 
    mongoc_database_destroy(db);
@@ -89,7 +86,6 @@ test_load (mongoc_client_t *client,
 
    if (!mongoc_database_drop(db, &error)) {
       MONGOC_WARNING("Failed to drop database: %s", error.message);
-      bson_error_destroy(&error);
    }
 
    mongoc_database_destroy(db);
