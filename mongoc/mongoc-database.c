@@ -320,10 +320,13 @@ mongoc_database_add_user (mongoc_database_t *database, /* IN */
    }
 
    if (!mongoc_collection_save(collection, &user, NULL, error)) {
-      goto failure;
+      goto failure_with_user;
    }
 
    ret = TRUE;
+
+failure_with_user:
+   bson_destroy(&user);
 
 failure:
    if (cursor) {
@@ -331,7 +334,6 @@ failure:
    }
    mongoc_collection_destroy(collection);
    bson_destroy(&query);
-   bson_destroy(&user);
    bson_free(pwd);
 
    return ret;
