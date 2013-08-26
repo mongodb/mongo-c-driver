@@ -40,6 +40,11 @@
 #include "mongoc-queue-private.h"
 
 
+#ifndef DEFAULT_CONNECTTIMEOUTMS
+#define DEFAULT_CONNECTTIMEOUTMS (10 * 1000L)
+#endif
+
+
 struct _mongoc_client_t
 {
    bson_uint32_t              request_id;
@@ -82,6 +87,9 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,   /* IN */
 {
    struct addrinfo hints;
    struct addrinfo *result, *rp;
+   bson_uint32_t connecttimeoutms = 0;
+   const bson_t *options;
+   bson_iter_t iter;
    char portstr[8];
    int flag;
    int r;
@@ -91,6 +99,15 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,   /* IN */
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
    bson_return_val_if_fail(error, NULL);
+
+   options = mongoc_uri_get_options(uri);
+   if (bson_iter_init_find(&iter, options, "connecttimeoutms") &&
+       BSON_ITER_HOLDS_INT32(&iter)) {
+      connecttimeoutms = bson_iter_int32(&iter);
+   }
+   if (!connecttimeoutms) {
+      connecttimeoutms = DEFAULT_CONNECTTIMEOUTMS;
+   }
 
    snprintf(portstr, sizeof portstr, "%hu", host->port);
 
@@ -114,6 +131,14 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,   /* IN */
       sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
       if (sfd == -1) {
          continue;
+      }
+
+      /*
+       * TODO: Respect connecttimeoutms!
+       */
+
+      if (connecttimeoutms) {
+         MONGOC_WARNING("connecttimeoutms is not yet supported.");
       }
 
       if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
