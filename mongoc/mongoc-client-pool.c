@@ -126,6 +126,12 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
     * TODO: Shutdown old client connections.
     */
 
+   /*
+    * TODO: We should try to make a client healthy again if it
+    *       is unhealthy since this is typically where a thread
+    *       is done with its work.
+    */
+
    bson_mutex_lock(&pool->mutex);
    mongoc_queue_push_head(&pool->queue, client);
    bson_cond_signal(&pool->cond);
