@@ -600,11 +600,17 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
    }
 
    if (bson_iter_init_find_case(&iter, &reply, "maxMessageSizeBytes")) {
-      cluster->max_msg_size = bson_iter_int32(&iter);
+      v32 = bson_iter_int32(&iter);
+      if (!cluster->max_msg_size || (v32 < cluster->max_msg_size)) {
+         cluster->max_msg_size = v32;
+      }
    }
 
    if (bson_iter_init_find_case(&iter, &reply, "maxBsonObjectSize")) {
-      cluster->max_bson_size = bson_iter_int32(&iter);
+      v32 = bson_iter_int32(&iter);
+      if (!cluster->max_bson_size || (v32 < cluster->max_bson_size)) {
+         cluster->max_bson_size = v32;
+      }
    }
 
    ret = TRUE;
