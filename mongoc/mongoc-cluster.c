@@ -50,6 +50,72 @@
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_cluster_add_peer --
+ *
+ *       Adds a peer to the list of peers that should be potentially
+ *       connected to as part of a replicaSet.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+mongoc_cluster_add_peer (mongoc_cluster_t *cluster, /* IN */
+                         const char       *peer)    /* IN */
+{
+   mongoc_list_t *iter;
+
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(peer);
+
+   MONGOC_DEBUG("Registering potential peer: %s\n", peer);
+
+   for (iter = cluster->peers; iter; iter = iter->next) {
+      if (!strcmp(iter->data, peer)) {
+         return;
+      }
+   }
+
+   cluster->peers = mongoc_list_prepend(cluster->peers, bson_strdup(peer));
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_clear_peers --
+ *
+ *       Clears list of cached potential peers that we've seen in the
+ *       "hosts" field of replicaSet nodes.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+mongoc_cluster_clear_peers (mongoc_cluster_t *cluster) /* IN */
+{
+   BSON_ASSERT(cluster);
+
+   mongoc_list_foreach(cluster->peers, (void *)bson_free, NULL);
+   mongoc_list_destroy(cluster->peers);
+   cluster->peers = NULL;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_cluster_build_basic_auth_digest --
  *
  *       Computes the Basic Authentication digest using the credentials
@@ -255,6 +321,8 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
          cluster->nodes[i].stamp++;
       }
    }
+
+   mongoc_cluster_clear_peers(cluster);
 
    mongoc_array_destroy(&cluster->iov);
 }
@@ -570,7 +638,9 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
                          mongoc_cluster_node_t *node,    /* INOUT */
                          bson_error_t          *error)   /* OUT */
 {
+   bson_int32_t v32;
    bson_bool_t ret = FALSE;
+   bson_iter_t child;
    bson_iter_t iter;
    bson_t command;
    bson_t reply;
@@ -610,6 +680,19 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
       v32 = bson_iter_int32(&iter);
       if (!cluster->max_bson_size || (v32 < cluster->max_bson_size)) {
          cluster->max_bson_size = v32;
+      }
+   }
+
+   /*
+    * If we are in replicaSet mode, we need to track our potential peers for
+    * further connections.
+    */
+   if (cluster->mode == MONGOC_CLUSTER_REPLICA_SET) {
+      if (bson_iter_init_find(&iter, &reply, "hosts") &&
+          bson_iter_recurse(&iter, &child)) {
+         while (bson_iter_next(&child) && BSON_ITER_HOLDS_UTF8(&child)) {
+            mongoc_cluster_add_peer(cluster, bson_iter_utf8(&child, NULL));
+         }
       }
    }
 
@@ -742,8 +825,12 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
  *
  * mongoc_cluster_reconnect_direct --
  *
- *       Reconnect to our only configured node. "isMaster" is run after
- *       connecting to determine PRIMARY status.
+ *       Reconnect to our only configured node.
+ *
+ *       "isMaster" is run after connecting to determine PRIMARY status.
+ *
+ *       If the node is valid, we will also greedily authenticate the
+ *       configured user if available.
  *
  * Returns:
  *       TRUE if successful; otherwise FALSE and @error is set.
@@ -763,8 +850,7 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
    mongoc_stream_t *stream;
    struct timeval timeout;
 
-   bson_return_val_if_fail(cluster, FALSE);
-   bson_return_val_if_fail(error, FALSE);
+   BSON_ASSERT(cluster);
 
    if (!(hosts = mongoc_uri_get_hosts(cluster->uri))) {
       bson_set_error(error,
@@ -820,6 +906,115 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_cluster_reconnect_replica_set --
+ *
+ *       Reconnect to replicaSet members that are unhealthy.
+ *
+ *       Each of them will be checked for matching replicaSet name
+ *       and capabilities via an "isMaster" command.
+ *
+ *       The nodes will also be greedily authenticated with the
+ *       configured user if available.
+ *
+ * Returns:
+ *       TRUE if there is an established stream that may be used,
+ *       otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @error is set upon failure if non-NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bson_bool_t
+mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
+                                      bson_error_t     *error)   /* OUT */
+{
+   const mongoc_host_list_t *hosts;
+   const mongoc_host_list_t *iter;
+   mongoc_cluster_node_t node;
+   mongoc_stream_t *stream;
+
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(cluster->mode == MONGOC_CLUSTER_REPLICA_SET);
+
+   if (!(hosts = mongoc_uri_get_hosts(cluster->uri))) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_NOT_READY,
+                     "Invalid host list supplied.");
+      return FALSE;
+   }
+
+   /*
+    * Replica Set (Re)Connection Strategy
+    * ===================================
+    *
+    * First we break all existing connections. This may change.
+    *
+    * To perform the replica set connection, we connect to each of the
+    * pre-configured replicaSet nodes. (There may in fact only be one).
+    *
+    * TODO: We should perform this initial connection in parallel.
+    *
+    * Using the result of an "isMaster" on each of these nodes, we can
+    * prime the cluster nodes we want to connect to.
+    *
+    * We then connect to all of these nodes in parallel. Once we have
+    * all of the working nodes established, we can complete the process.
+    *
+    * We return TRUE if any of the connections were successful, however
+    * we must update the cluster health appropriately so that callers
+    * that need a PRIMARY node can force reconnection.
+    *
+    * TODO: At some point in the future, we will need to authenticate
+    *       before calling an "isMaster". But that is dependent on a
+    *       few server "features" first.
+    */
+
+   mongoc_cluster_clear_peers(cluster);
+
+   for (iter = hosts; iter; iter = iter->next) {
+      stream = mongoc_client_create_stream(cluster->client, iter, error);
+      if (!stream) {
+         MONGOC_WARNING("Failed connection to %s", iter->host_and_port);
+         continue;
+      }
+
+      memset(&node, 0, sizeof node);
+
+      node.index = 0;
+      node.host = *iter;
+      node.stream = stream;
+      node.ping_msec = -1;
+      node.stamp = 0;
+      bson_init(&node.tags);
+      node.primary = 0;
+      node.needs_auth = 0;
+
+      if (!mongoc_cluster_ismaster(cluster, &node, error)) {
+         mongoc_stream_close(stream);
+         mongoc_stream_destroy(stream);
+         continue;
+      }
+
+      printf("Looks like %s is connectable.\n", iter->host_and_port);
+
+      /*
+       * TODO: Get the host list, to seed further connections.
+       */
+
+      mongoc_stream_close(stream);
+      mongoc_stream_destroy(stream);
+   }
+
+   return TRUE;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_cluster_reconnect --
  *
  *       Reconnect to the cluster nodes.
@@ -846,8 +1041,7 @@ mongoc_cluster_reconnect (mongoc_cluster_t *cluster, /* IN */
    case MONGOC_CLUSTER_DIRECT:
       return mongoc_cluster_reconnect_direct(cluster, error);
    case MONGOC_CLUSTER_REPLICA_SET:
-      /* TODO */
-      break;
+      return mongoc_cluster_reconnect_replica_set(cluster, error);
    case MONGOC_CLUSTER_SHARDED_CLUSTER:
       /* TODO */
       break;

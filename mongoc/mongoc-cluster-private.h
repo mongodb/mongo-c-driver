@@ -24,6 +24,7 @@
 #include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-host-list.h"
+#include "mongoc-list-private.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
@@ -85,6 +86,8 @@ typedef struct
    bson_uint32_t           max_msg_size;
    bson_uint32_t           sec_latency_ms;
    mongoc_array_t          iov;
+
+   mongoc_list_t          *peers;
 } mongoc_cluster_t;
 
 
