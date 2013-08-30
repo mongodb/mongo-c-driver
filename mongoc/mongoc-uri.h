@@ -38,6 +38,7 @@ const char               *mongoc_uri_get_database         (const mongoc_uri_t *u
 const bson_t             *mongoc_uri_get_options          (const mongoc_uri_t *uri);
 const char               *mongoc_uri_get_password         (const mongoc_uri_t *uri);
 const bson_t             *mongoc_uri_get_read_preferences (const mongoc_uri_t *uri);
+const char               *mongoc_uri_get_replica_set      (const mongoc_uri_t *uri);
 const char               *mongoc_uri_get_string           (const mongoc_uri_t *uri);
 const char               *mongoc_uri_get_username         (const mongoc_uri_t *uri);
 const char               *mongoc_uri_get_auth_source      (const mongoc_uri_t *uri);
