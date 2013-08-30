@@ -1003,7 +1003,9 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
    const mongoc_host_list_t *hosts;
    const mongoc_host_list_t *iter;
    mongoc_cluster_node_t node;
+   mongoc_host_list_t host;
    mongoc_stream_t *stream;
+   mongoc_list_t *list;
    const char *replSet;
 
    BSON_ASSERT(cluster);
@@ -1048,6 +1050,9 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
 
    mongoc_cluster_clear_peers(cluster);
 
+   /*
+    * Discover all the potential peers from our seeds.
+    */
    for (iter = hosts; iter; iter = iter->next) {
       stream = mongoc_client_create_stream(cluster->client, iter, error);
       if (!stream) {
@@ -1066,15 +1071,23 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
 
       if (!node.replSet || !!strcmp(node.replSet, replSet)) {
          MONGOC_INFO("%s: Got replicaSet \"%s\" expected \"%s\".",
-                     iter->host_and_port,
-                     node.replSet, replSet);
+                     iter->host_and_port, node.replSet, replSet);
       }
 
-      /*
-       * TODO: Get the host list, to seed further connections.
-       */
-
       mongoc_cluster_node_destroy(&node);
+   }
+
+   /*
+    * Go connect to all potential peers.
+    */
+   for (list = cluster->peers; list; list = list->next) {
+      if (!mongoc_host_list_from_string(&host, list->data)) {
+         MONGOC_WARNING("Failed to parse host and port: \"%s\"",
+                        (char *)list->data);
+         continue;
+      }
+
+      printf("try to connect to: %s\n", host.host_and_port);
    }
 
    return TRUE;
