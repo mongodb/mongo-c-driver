@@ -756,6 +756,9 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
    if (cluster->mode == MONGOC_CLUSTER_REPLICA_SET) {
       if (bson_iter_init_find(&iter, &reply, "hosts") &&
           bson_iter_recurse(&iter, &child)) {
+         if (node->primary) {
+            mongoc_cluster_clear_peers(cluster);
+         }
          while (bson_iter_next(&child) && BSON_ITER_HOLDS_UTF8(&child)) {
             mongoc_cluster_add_peer(cluster, bson_iter_utf8(&child, NULL));
          }
@@ -1006,6 +1009,8 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
    mongoc_host_list_t host;
    mongoc_stream_t *stream;
    mongoc_list_t *list;
+   mongoc_list_t *liter;
+   bson_uint32_t i;
    const char *replSet;
 
    BSON_ASSERT(cluster);
@@ -1074,21 +1079,58 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
                      iter->host_and_port, node.replSet, replSet);
       }
 
+      if (node.primary) {
+         mongoc_cluster_node_destroy(&node);
+         break;
+      }
+
       mongoc_cluster_node_destroy(&node);
    }
 
-   /*
-    * Go connect to all potential peers.
-    */
-   for (list = cluster->peers; list; list = list->next) {
-      if (!mongoc_host_list_from_string(&host, list->data)) {
+   list = cluster->peers;
+   cluster->peers = NULL;
+
+   for (liter = list, i = 0;
+        liter && (i < MONGOC_CLUSTER_MAX_NODES);
+        liter = liter->next) {
+
+      if (!mongoc_host_list_from_string(&host, liter->data)) {
          MONGOC_WARNING("Failed to parse host and port: \"%s\"",
-                        (char *)list->data);
+                        (char *)liter->data);
          continue;
       }
 
-      printf("try to connect to: %s\n", host.host_and_port);
+      stream = mongoc_client_create_stream(cluster->client, &host, error);
+      if (!stream) {
+         MONGOC_WARNING("Failed connection to %s", host.host_and_port);
+         continue;
+      }
+
+      mongoc_cluster_node_init(&cluster->nodes[i]);
+      cluster->nodes[i].host = host;
+      cluster->nodes[i].index = i;
+      cluster->nodes[i].stream = stream;
+
+      if (!mongoc_cluster_ismaster(cluster, &cluster->nodes[i], error)) {
+         mongoc_cluster_node_destroy(&cluster->nodes[i]);
+         continue;
+      }
+
+      if (!cluster->nodes[i].replSet ||
+          !!strcmp(cluster->nodes[i].replSet, replSet)) {
+         MONGOC_INFO("%s: Got replicaSet \"%s\" expected \"%s\".",
+                     host.host_and_port,
+                     cluster->nodes[i].replSet,
+                     replSet);
+         mongoc_cluster_node_destroy(&cluster->nodes[i]);
+         continue;
+      }
+
+      i++;
    }
+
+   mongoc_list_foreach(list, (void *)bson_free, NULL);
+   mongoc_list_destroy(list);
 
    return TRUE;
 }
