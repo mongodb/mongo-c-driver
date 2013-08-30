@@ -13,7 +13,7 @@ endif
 ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
 DISTCHECK_CONFIGURE_FLAGS = --enable-silent-rules
 
-mongocdocdir = ${datadir}/doc/libmongoc-@VERSION@
+mongocdocdir = ${docdir}
 mongocdoc_DATA =
 mongocdoc_DATA += COPYING
 mongocdoc_DATA += NEWS
