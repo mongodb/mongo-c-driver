@@ -257,21 +257,20 @@ static void
 mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
                                 mongoc_cluster_node_t *node)    /* INOUT */
 {
-   mongoc_stream_t *stream;
-
    bson_return_if_fail(node);
 
-   stream = node->stream;
+   mongoc_stream_close(node->stream);
+   mongoc_stream_destroy(node->stream);
    node->stream = NULL;
+
    node->needs_auth = cluster->requires_auth;
    node->ping_msec = -1;
    node->stamp++;
    node->primary = 0;
+
    bson_destroy(&node->tags);
    bson_init(&node->tags);
 
-   mongoc_stream_close(stream);
-   mongoc_stream_destroy(stream);
 }
 
 
