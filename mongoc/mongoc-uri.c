@@ -460,7 +460,7 @@ mongoc_uri_get_replica_set (const mongoc_uri_t *uri)
 
    if (bson_iter_init_find_case(&iter, &uri->options, "replicaSet") &&
        BSON_ITER_HOLDS_UTF8(&iter)) {
-      bson_iter_utf8(&iter, NULL);
+      return bson_iter_utf8(&iter, NULL);
    }
 
    return NULL;
