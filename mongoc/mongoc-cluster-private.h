@@ -66,6 +66,7 @@ typedef struct
    bson_t              tags;
    bson_bool_t         primary    : 1;
    bson_bool_t         needs_auth : 1;
+   char               *replSet;
 } mongoc_cluster_node_t;
 
 

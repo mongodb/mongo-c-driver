@@ -116,6 +116,70 @@ mongoc_cluster_clear_peers (mongoc_cluster_t *cluster) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_cluster_node_init --
+ *
+ *       Initialize a mongoc_cluster_node_t.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+mongoc_cluster_node_init (mongoc_cluster_node_t *node) /* IN */
+{
+   BSON_ASSERT(node);
+
+   memset(node, 0, sizeof *node);
+
+   node->index = 0;
+   node->ping_msec = -1;
+   node->stamp = 0;
+   bson_init(&node->tags);
+   node->primary = 0;
+   node->needs_auth = 0;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_node_destroy --
+ *
+ *       Destroy allocated resources within @node.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+mongoc_cluster_node_destroy (mongoc_cluster_node_t *node) /* IN */
+{
+   BSON_ASSERT(node);
+
+   if (node->stream) {
+      mongoc_stream_close(node->stream);
+      mongoc_stream_destroy(node->stream);
+      node->stream = NULL;
+   }
+
+   bson_destroy(&node->tags);
+   bson_free(node->replSet);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_cluster_build_basic_auth_digest --
  *
  *       Computes the Basic Authentication digest using the credentials
@@ -278,10 +342,10 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
    }
 
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      mongoc_cluster_node_init(&cluster->nodes[i]);
       cluster->nodes[i].index = i;
       cluster->nodes[i].ping_msec = -1;
       cluster->nodes[i].needs_auth = cluster->requires_auth;
-      bson_init(&cluster->nodes[i].tags);
    }
 
    mongoc_array_init(&cluster->iov, sizeof(struct iovec));
@@ -663,6 +727,9 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
 
    node->primary = FALSE;
 
+   bson_free(node->replSet);
+   node->replSet = NULL;
+
    if (bson_iter_init_find_case(&iter, &reply, "isMaster") &&
        BSON_ITER_HOLDS_BOOL(&iter) &&
        bson_iter_bool(&iter)) {
@@ -693,6 +760,10 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
          while (bson_iter_next(&child) && BSON_ITER_HOLDS_UTF8(&child)) {
             mongoc_cluster_add_peer(cluster, bson_iter_utf8(&child, NULL));
          }
+      }
+      if (bson_iter_init_find(&iter, &reply, "setName") &&
+          BSON_ITER_HOLDS_UTF8(&iter)) {
+         node->replSet = bson_iter_dup_utf8(&iter, NULL);
       }
    }
 
@@ -934,6 +1005,7 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
    const mongoc_host_list_t *iter;
    mongoc_cluster_node_t node;
    mongoc_stream_t *stream;
+   const char *replSet;
 
    BSON_ASSERT(cluster);
    BSON_ASSERT(cluster->mode == MONGOC_CLUSTER_REPLICA_SET);
@@ -945,6 +1017,9 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
                      "Invalid host list supplied.");
       return FALSE;
    }
+
+   replSet = mongoc_uri_get_replica_set(cluster->uri);
+   BSON_ASSERT(replSet);
 
    /*
     * Replica Set (Re)Connection Strategy
@@ -981,31 +1056,26 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
          continue;
       }
 
-      memset(&node, 0, sizeof node);
-
-      node.index = 0;
+      mongoc_cluster_node_init(&node);
       node.host = *iter;
       node.stream = stream;
-      node.ping_msec = -1;
-      node.stamp = 0;
-      bson_init(&node.tags);
-      node.primary = 0;
-      node.needs_auth = 0;
 
       if (!mongoc_cluster_ismaster(cluster, &node, error)) {
-         mongoc_stream_close(stream);
-         mongoc_stream_destroy(stream);
+         mongoc_cluster_node_destroy(&node);
          continue;
       }
 
-      printf("Looks like %s is connectable.\n", iter->host_and_port);
+      if (!node.replSet || !!strcmp(node.replSet, replSet)) {
+         MONGOC_INFO("%s: Got replicaSet \"%s\" expected \"%s\".",
+                     iter->host_and_port,
+                     node.replSet, replSet);
+      }
 
       /*
        * TODO: Get the host list, to seed further connections.
        */
 
-      mongoc_stream_close(stream);
-      mongoc_stream_destroy(stream);
+      mongoc_cluster_node_destroy(&node);
    }
 
    return TRUE;
