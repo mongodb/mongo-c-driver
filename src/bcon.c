@@ -27,7 +27,7 @@
 
 #define ARRAY_INDEX_BUFFER_SIZE 9
 
-char *bcon_errstr[] = {
+const char *bcon_errstr[] = {
     "OK",
     "ERROR",
     "bcon document or nesting incomplete",
