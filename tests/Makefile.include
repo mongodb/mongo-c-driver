@@ -98,7 +98,7 @@ test_mongoc_write_concern_LDADD = $(TEST_LIBS)
 
 test: $(TEST_PROGS)
 	@ echo "Checking if MongoDB is available on 27017."
-	@ nc 127.0.0.1 27017 </dev/null
+	@ $(NETCAT) 127.0.0.1 27017 </dev/null
 	@ for TEST_PROG in $(TEST_PROGS) ; do \
 		./$$TEST_PROG ; \
 	done
