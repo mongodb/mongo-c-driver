@@ -43,10 +43,6 @@ I am thinking about and need a place to write them down.
  * Finish support for mongoc_stream_tls_t.
  * Apply TLS stream if ssl=true in URI.
 
-## Counters
-
- * We can remove the need for integer keys by generating an enum.
-
 ## Authentication
 
  * X509 Certificate Authentication
