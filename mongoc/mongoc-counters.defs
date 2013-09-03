@@ -15,47 +15,47 @@
  */
 
 
-COUNTER(10, op_egress_total,        "Operations",   "Egress Total",        "The number of sent operations.")
-COUNTER(11, op_ingress_total,       "Operations",   "Ingress Total",       "The number of received operations.")
-COUNTER(12, op_egress_query,        "Operations",   "Egress Queries",      "The number of sent Query operations.")
-COUNTER(13, op_ingress_query,       "Operations",   "Ingress Queries",     "The number of received Query operations.")
-COUNTER(14, op_egress_getmore,      "Operations",   "Egress GetMore",      "The number of sent GetMore operations.")
-COUNTER(15, op_ingress_getmore,     "Operations",   "Ingress GetMore",     "The number of received GetMore operations.")
-COUNTER(16, op_egress_insert,       "Operations",   "Egress Insert",       "The number of sent Insert operations.")
-COUNTER(17, op_ingress_insert,      "Operations",   "Ingress Insert",      "The number of received Insert operations.")
-COUNTER(18, op_egress_delete,       "Operations",   "Egress Delete",       "The number of sent Delete operations.")
-COUNTER(19, op_ingress_delete,      "Operations",   "Ingress Delete",      "The number of received Delete operations.")
-COUNTER(20, op_egress_update,       "Operations",   "Egress Update",       "The number of sent Update operations.")
-COUNTER(21, op_ingress_update,      "Operations",   "Ingress Update",      "The number of received Update operations.")
-COUNTER(22, op_egress_killcursors,  "Operations",   "Egress KillCursors",  "The number of sent KillCursors operations.")
-COUNTER(23, op_ingress_killcursors, "Operations",   "Ingress KillCursors", "The number of received KillCursors operations.")
-COUNTER(24, op_egress_msg,          "Operations",   "Egress Msg",          "The number of sent Msg operations.")
-COUNTER(25, op_ingress_msg,         "Operations",   "Ingress Msg",         "The number of received Msg operations.")
-COUNTER(26, op_egress_reply,        "Operations",   "Egress Reply",        "The number of sent Reply operations.")
-COUNTER(27, op_ingress_reply,       "Operations",   "Ingress Reply",       "The number of received Reply operations.")
+COUNTER(op_egress_total,        "Operations",   "Egress Total",        "The number of sent operations.")
+COUNTER(op_ingress_total,       "Operations",   "Ingress Total",       "The number of received operations.")
+COUNTER(op_egress_query,        "Operations",   "Egress Queries",      "The number of sent Query operations.")
+COUNTER(op_ingress_query,       "Operations",   "Ingress Queries",     "The number of received Query operations.")
+COUNTER(op_egress_getmore,      "Operations",   "Egress GetMore",      "The number of sent GetMore operations.")
+COUNTER(op_ingress_getmore,     "Operations",   "Ingress GetMore",     "The number of received GetMore operations.")
+COUNTER(op_egress_insert,       "Operations",   "Egress Insert",       "The number of sent Insert operations.")
+COUNTER(op_ingress_insert,      "Operations",   "Ingress Insert",      "The number of received Insert operations.")
+COUNTER(op_egress_delete,       "Operations",   "Egress Delete",       "The number of sent Delete operations.")
+COUNTER(op_ingress_delete,      "Operations",   "Ingress Delete",      "The number of received Delete operations.")
+COUNTER(op_egress_update,       "Operations",   "Egress Update",       "The number of sent Update operations.")
+COUNTER(op_ingress_update,      "Operations",   "Ingress Update",      "The number of received Update operations.")
+COUNTER(op_egress_killcursors,  "Operations",   "Egress KillCursors",  "The number of sent KillCursors operations.")
+COUNTER(op_ingress_killcursors, "Operations",   "Ingress KillCursors", "The number of received KillCursors operations.")
+COUNTER(op_egress_msg,          "Operations",   "Egress Msg",          "The number of sent Msg operations.")
+COUNTER(op_ingress_msg,         "Operations",   "Ingress Msg",         "The number of received Msg operations.")
+COUNTER(op_egress_reply,        "Operations",   "Egress Reply",        "The number of sent Reply operations.")
+COUNTER(op_ingress_reply,       "Operations",   "Ingress Reply",       "The number of received Reply operations.")
 
 
-COUNTER(30, cursors_active,         "Cursors",      "Active",              "The number of active cursors.")
-COUNTER(31, cursors_disposed,       "Cursors",      "Disposed",            "The number of disposed cursors.")
+COUNTER(cursors_active,         "Cursors",      "Active",              "The number of active cursors.")
+COUNTER(cursors_disposed,       "Cursors",      "Disposed",            "The number of disposed cursors.")
 
 
-COUNTER(40, clients_active,         "Clients",      "Active",              "The number of active clients.")
-COUNTER(41, clients_disposed,       "Clients",      "Disposed",            "The number of disposed clients.")
+COUNTER(clients_active,         "Clients",      "Active",              "The number of active clients.")
+COUNTER(clients_disposed,       "Clients",      "Disposed",            "The number of disposed clients.")
 
 
-COUNTER(50, streams_active,         "Streams",      "Active",              "The number of active streams.")
-COUNTER(51, streams_disposed,       "Streams",      "Disposed",            "The number of disposed streams.")
-COUNTER(52, streams_egress,         "Streams",      "Egress Bytes",        "The number of bytes sent.")
-COUNTER(53, streams_ingress,        "Streams",      "Ingress Bytes",       "The number of bytes received.")
-COUNTER(54, streams_timeout,        "Streams",      "N Socket Timeouts",   "The number of socket timeouts.")
+COUNTER(streams_active,         "Streams",      "Active",              "The number of active streams.")
+COUNTER(streams_disposed,       "Streams",      "Disposed",            "The number of disposed streams.")
+COUNTER(streams_egress,         "Streams",      "Egress Bytes",        "The number of bytes sent.")
+COUNTER(streams_ingress,        "Streams",      "Ingress Bytes",       "The number of bytes received.")
+COUNTER(streams_timeout,        "Streams",      "N Socket Timeouts",   "The number of socket timeouts.")
 
 
-COUNTER(60, client_pools_active,    "Client Pools", "Active",              "The number of active client pools.")
-COUNTER(61, client_pools_disposed,  "Client Pools", "Disposed",            "The number of disposed client pools.")
+COUNTER(client_pools_active,    "Client Pools", "Active",              "The number of active client pools.")
+COUNTER(client_pools_disposed,  "Client Pools", "Disposed",            "The number of disposed client pools.")
 
 
-COUNTER(70, protocol_ingress_error, "Protocol",     "Ingress Errors",      "The number of protocol errors on ingress.")
+COUNTER(protocol_ingress_error, "Protocol",     "Ingress Errors",      "The number of protocol errors on ingress.")
 
 
-COUNTER(80, auth_failure,           "Auth",         "Failures",            "The number of failed authentication requests.")
-COUNTER(81, auth_success,           "Auth",         "Success",             "The number of successful authentication requests.")
+COUNTER(auth_failure,           "Auth",         "Failures",            "The number of failed authentication requests.")
+COUNTER(auth_success,           "Auth",         "Success",             "The number of successful authentication requests.")

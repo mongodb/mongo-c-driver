@@ -62,8 +62,8 @@ typedef struct
 } mongoc_counter_t;
 
 
-#define COUNTER(N, ident, Category, Name, Description) \
-   extern mongoc_counter_t __mongoc_counter_##N;
+#define COUNTER(ident, Category, Name, Description) \
+   extern mongoc_counter_t __mongoc_counter_##ident;
 #include "mongoc-counters.defs"
 #undef COUNTER
 
@@ -75,21 +75,31 @@ _mongoc_get_n_cpu (void)
 }
 
 
-#define COUNTER(N, ident, Category, Name, Description) \
+enum
+{
+#define COUNTER(ident, Category, Name, Description) \
+   COUNTER_##ident,
+#include "mongoc-counters.defs"
+#undef COUNTER
+   LAST_COUNTER
+};
+
+
+#define COUNTER(ident, Category, Name, Description) \
 static inline void \
 mongoc_counter_##ident##_add (bson_int64_t val) \
 { \
-   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N%SLOTS_PER_CACHELINE], val); \
+   ADD(__mongoc_counter_##ident.cpus[CURCPU].slots[COUNTER_##ident%SLOTS_PER_CACHELINE], val); \
 } \
 static inline void \
 mongoc_counter_##ident##_inc (void) \
 { \
-   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N%SLOTS_PER_CACHELINE], 1); \
+   ADD(__mongoc_counter_##ident.cpus[CURCPU].slots[COUNTER_##ident%SLOTS_PER_CACHELINE], 1); \
 } \
 static inline void \
 mongoc_counter_##ident##_dec (void) \
 { \
-   ADD(__mongoc_counter_##N.cpus[CURCPU].slots[N%SLOTS_PER_CACHELINE], -1); \
+   ADD(__mongoc_counter_##ident.cpus[CURCPU].slots[COUNTER_##ident%SLOTS_PER_CACHELINE], -1); \
 }
 #include "mongoc-counters.defs"
 #undef COUNTER

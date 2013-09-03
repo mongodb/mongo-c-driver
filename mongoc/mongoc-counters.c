@@ -61,8 +61,8 @@ typedef struct
 BSON_STATIC_ASSERT(sizeof(mongoc_counters_t) == 64);
 
 
-#define COUNTER(N, ident, Category, Name, Description) \
-   mongoc_counter_t __mongoc_counter_##N;
+#define COUNTER(ident, Category, Name, Description) \
+   mongoc_counter_t __mongoc_counter_##ident;
 #include "mongoc-counters.defs"
 #undef COUNTER
 
@@ -82,27 +82,6 @@ mongoc_counters_use_shm (void)
 
 
 /**
- * mongoc_counters_get_n_counters:
- *
- * Fetches the number of counters for the process.
- *
- * Returns: An integer containing the number of counters.
- */
-static bson_uint32_t
-mongoc_counters_get_n_counters (void)
-{
-   bson_uint32_t n_counters = 0;
-
-#define COUNTER(_n, ident, _category, _name, _desc) \
-   n_counters = MAX(n_counters, _n);
-#include "mongoc-counters.defs"
-#undef COUNTER
-
-   return n_counters;
-}
-
-
-/**
  * mongoc_counters_calc_size:
  *
  * Returns the number of bytes required for the shared memory segment of
@@ -114,16 +93,14 @@ mongoc_counters_get_n_counters (void)
 static size_t
 mongoc_counters_calc_size (void)
 {
-   size_t n_counters = 0;
    size_t n_cpu;
    size_t n_groups;
    size_t size;
 
-   n_counters = mongoc_counters_get_n_counters();
    n_cpu = _mongoc_get_n_cpu();
-   n_groups = (n_counters / SLOTS_PER_CACHELINE) + 1;
+   n_groups = (LAST_COUNTER / SLOTS_PER_CACHELINE) + 1;
    size = (sizeof(mongoc_counters_t) +
-           (n_counters * sizeof(mongoc_counter_info_t)) +
+           (LAST_COUNTER * sizeof(mongoc_counter_info_t)) +
            (n_cpu * n_groups * sizeof(mongoc_counter_slots_t)));
 
    return MAX(getpagesize(), size);
@@ -273,7 +250,7 @@ mongoc_counters_init (void)
 
    size = mongoc_counters_calc_size();
    segment = mongoc_counters_alloc(size);
-   infos_size = mongoc_counters_get_n_counters() * sizeof *info;
+   infos_size = LAST_COUNTER * sizeof *info;
 
    counters = (mongoc_counters_t *)segment;
    counters->size = size;
@@ -282,9 +259,9 @@ mongoc_counters_init (void)
    counters->infos_offset = sizeof *counters;
    counters->values_offset = counters->infos_offset + infos_size;
 
-#define COUNTER(N, ident, Category, Name, Desc) \
-   off = mongoc_counters_register(counters, N, Category, Name, Desc); \
-   __mongoc_counter_##N.cpus = (void *)(segment + off);
+#define COUNTER(ident, Category, Name, Desc) \
+   off = mongoc_counters_register(counters, COUNTER_##ident, Category, Name, Desc); \
+   __mongoc_counter_##ident.cpus = (void *)(segment + off);
 #include "mongoc-counters.defs"
 #undef COUNTER
 
