@@ -292,7 +292,7 @@ bcon_error_t bson_from_bcon(bson *b, const bcon *bc) {
 
 void bcon_print(const bcon *bc) { /* prints internal representation, not JSON */
     char *typespec = 0;
-    char *delim = "";
+    const char *delim = "";
     int end_of_data;
     bcon *bcp;
     putchar('{');
