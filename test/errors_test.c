@@ -253,7 +253,7 @@ int test_get_last_error_commands( void ) {
     mongo_destroy( conn );
 
     /* for bson_has_data */
-    ASSERT( MONGO_ERROR == mongo_create_index( conn, "testbar", bson_shared_empty(), NULL, MONGO_INDEX_SPARSE | MONGO_INDEX_UNIQUE, &obj ));
+    ASSERT( MONGO_ERROR == mongo_create_index( conn, "testbar", bson_shared_empty(), NULL, MONGO_INDEX_SPARSE | MONGO_INDEX_UNIQUE, -1, &obj ));
     ASSERT( !bson_has_data( &obj) );
 
     return 0;

@@ -1459,7 +1459,7 @@ MONGO_EXPORT int mongo_cursor_destroy( mongo_cursor *cursor ) {
 #define INDEX_NAME_BUFFER_SIZE 255
 #define INDEX_NAME_MAX_LENGTH (INDEX_NAME_BUFFER_SIZE - 1)
 
-MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *key, const char *name, int options, bson *out ) {
+MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *key, const char *name, int options, int ttl, bson *out ) {
     bson b;
     bson_iterator it;
     char default_name[INDEX_NAME_BUFFER_SIZE] = {'\0'};
@@ -1492,6 +1492,10 @@ MONGO_EXPORT int mongo_create_index( mongo *conn, const char *ns, const bson *ke
         bson_append_bool( &b, "background", 1 );
     if ( options & MONGO_INDEX_SPARSE )
         bson_append_bool( &b, "sparse", 1 );
+	
+    if( ttl > 0 )
+        bson_append_int( &b, "expireAfterSeconds", ttl );
+
     bson_finish( &b );
 
     strncpy( idxns, ns, 1024-16 );
@@ -1523,7 +1527,7 @@ MONGO_EXPORT bson_bool_t mongo_create_simple_index( mongo *conn, const char *ns,
     bson_append_int( b, field, 1 );
     bson_finish( b );
 
-    success = mongo_create_index( conn, ns, b, NULL, options, out );
+    success = mongo_create_index( conn, ns, b, NULL, options, -1, out );
     bson_destroy( b );
     return success;
 }
