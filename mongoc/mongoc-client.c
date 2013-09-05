@@ -22,8 +22,9 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <sys/types.h>
+#include <poll.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
 
@@ -91,8 +92,10 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,   /* IN */
    bson_uint32_t connecttimeoutms = 0;
    const bson_t *options;
    bson_iter_t iter;
+   socklen_t optlen;
    char portstr[8];
-   int flag;
+   int optval;
+   int flags;
    int r;
    int s;
    int sfd;
@@ -135,17 +138,52 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,   /* IN */
       }
 
       /*
-       * TODO: Respect connecttimeoutms!
+       * Set the socket non-blocking so we can detect failure to
+       * connect by waiting for POLLIN on the socket fd.
        */
-
-      if (connecttimeoutms) {
-         MONGOC_WARNING("connecttimeoutms is not yet supported.");
+      flags = fcntl(sfd, F_GETFL);
+      if ((flags & O_NONBLOCK) != O_NONBLOCK) {
+         flags = flags | O_NONBLOCK;
+         if (fcntl(sfd, F_SETFL, flags | O_NONBLOCK) != 0) {
+            MONGOC_WARNING("O_NONBLOCK on socket failed. "
+                           "Cannot respect connecttimeoutms.");
+            if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
+               break;
+            }
+            close(sfd);
+            continue;
+         }
       }
 
-      if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
+      r = connect(sfd, rp->ai_addr, rp->ai_addrlen);
+      if (r != -1) {
          break;
       }
 
+      if (errno == EINPROGRESS) {
+         struct pollfd fds;
+
+again:
+         fds.fd = sfd;
+         fds.events = POLLOUT;
+         fds.revents = 0;
+         r = poll(&fds, 1, connecttimeoutms);
+         if (r > 0) {
+            optval = 0;
+            optlen = sizeof optval;
+            r = getsockopt(sfd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+            if ((r == -1) || optval != 0) {
+               goto cleanup;
+            }
+            break;
+         } else if (r == 0) {
+            goto cleanup;
+         }
+
+         goto again;
+      }
+
+cleanup:
       close(sfd);
    }
 
@@ -160,9 +198,9 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,   /* IN */
 
    freeaddrinfo(result);
 
-   flag = 1;
+   flags = 1;
    errno = 0;
-   r = setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof flag);
+   r = setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, (char *)&flags, sizeof flags);
    if (r < 0) {
       MONGOC_WARNING("Failed to set TCP_NODELAY on fd %u: %s\n",
                      sfd, strerror(errno));
