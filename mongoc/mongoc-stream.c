@@ -715,9 +715,9 @@ mongoc_stream_unix_new (int fd)
     * If we cannot put the file-descriptor in O_NONBLOCK mode, there isn't much
     * we can do. Just fail.
     */
-   flags = fcntl(fd, F_GETFD);
+   flags = fcntl(fd, F_GETFL);
    if ((flags & O_NONBLOCK) != O_NONBLOCK) {
-      if (fcntl(fd, F_SETFD, flags | O_NONBLOCK) == -1) {
+      if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
          MONGOC_WARNING("Failed to set O_NONBLOCK on file descriptor!");
          return NULL;
       }
