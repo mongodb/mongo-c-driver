@@ -5,8 +5,6 @@ I am thinking about and need a place to write them down.
 
 ## Clients
 
- * Respect connectiontimeoutms.
-   This requires using poll() and non-blocking I/O for connect().
  * Test what happens during mongoc_client_destroy() with active work.
 
 ## Client Pooling
