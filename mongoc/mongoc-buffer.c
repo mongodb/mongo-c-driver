@@ -205,7 +205,7 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
                     bson_error_t    *error)
 {
    ssize_t ret;
-   size_t size;
+   size_t avail_bytes;
 
    bson_return_val_if_fail(buffer, FALSE);
    bson_return_val_if_fail(stream, FALSE);
@@ -214,14 +214,27 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
    BSON_ASSERT(buffer->data);
    BSON_ASSERT(buffer->datalen);
 
-   memmove(&buffer->data[0], &buffer->data[buffer->off], buffer->len);
-   buffer->off = 0;
-   size = buffer->datalen - buffer->len;
-   ret = mongoc_stream_read(stream, &buffer->data[buffer->off + buffer->len], size, min_bytes, 0);
-   if (ret >= 0) {
-      buffer->len += ret;
+   if ((min_bytes > 0) && (buffer->len >= min_bytes)) {
       return buffer->len;
    }
 
-   return ret;
+   if (buffer->len) {
+      memmove(&buffer->data[0], &buffer->data[buffer->off], buffer->len);
+   }
+
+   buffer->off = 0;
+
+   avail_bytes = buffer->datalen - buffer->len;
+
+   ret = mongoc_stream_read(stream,
+                            &buffer->data[buffer->off + buffer->len],
+                            avail_bytes, min_bytes, 0);
+
+   if (ret == -1) {
+      return -1;
+   }
+
+   buffer->len += ret;
+
+   return (buffer->len < min_bytes) ? -1 : buffer->len;
 }
