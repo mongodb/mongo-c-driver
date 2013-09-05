@@ -135,6 +135,7 @@ static ssize_t
 mongoc_stream_unix_readv (mongoc_stream_t *stream,
                           struct iovec    *iov,
                           size_t           iovcnt,
+                          ssize_t          min_bytes,
                           bson_uint32_t    timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
@@ -271,6 +272,14 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       iov[cur].iov_len -= r;
       BSON_ASSERT(iovcnt - cur);
       BSON_ASSERT(iov[cur].iov_len);
+
+      /*
+       * If we got enough bytes to satisfy the minimum requirement, short
+       * circuit so we don't potentially block on poll().
+       */
+      if (ret >= min_bytes) {
+         break;
+      }
 
       /*
        * Determine number of milliseconds until timeout expires.
@@ -559,9 +568,14 @@ mongoc_stream_writev (mongoc_stream_t *stream,
  * @stream: A mongoc_stream_t.
  * @iov: An array of iovec containing the location and sizes to read.
  * @iovcnt: the number of elements in @iov.
+ * @min_bytes: the minumum number of bytes to return, or -1.
  *
  * Reads into the various buffers pointed to by @iov and associated
  * buffer lengths.
+ *
+ * If @min_bytes is specified, then at least that number of bytes will
+ * be returned or -1 for failure. This is useful for opportunistic
+ * buffering.
  *
  * Returns: the number of bytes read or -1 on failure.
  */
@@ -569,6 +583,7 @@ ssize_t
 mongoc_stream_readv (mongoc_stream_t *stream,
                      struct iovec    *iov,
                      size_t           iovcnt,
+                     ssize_t          min_bytes,
                      bson_uint32_t    timeout_msec)
 {
    bson_return_val_if_fail(stream, -1);
@@ -577,7 +592,7 @@ mongoc_stream_readv (mongoc_stream_t *stream,
 
    BSON_ASSERT(stream->readv);
 
-   return stream->readv(stream, iov, iovcnt, timeout_msec);
+   return stream->readv(stream, iov, iovcnt, min_bytes, timeout_msec);
 }
 
 
@@ -586,9 +601,13 @@ mongoc_stream_readv (mongoc_stream_t *stream,
  * @stream: A mongoc_stream_t.
  * @buf: A buffer to write into.
  * @count: The number of bytes to write into @buf.
+ * @min_bytes: The minimum number of bytes to receive, or -1.
  *
  * Simplified access to mongoc_stream_readv(). Creates a single iovec
  * with the buffer provided.
+ *
+ * If @min_bytes is not -1, the minimum number of bytes to receive
+ * or an error is returned. This is useful for opportunistic buffering.
  *
  * Returns: -1 on failure, otherwise the number of bytes read.
  */
@@ -596,6 +615,7 @@ ssize_t
 mongoc_stream_read (mongoc_stream_t *stream,
                     void            *buf,
                     size_t           count,
+                    ssize_t          min_bytes,
                     bson_uint32_t    timeout_msec)
 {
    struct iovec iov;
@@ -612,7 +632,7 @@ mongoc_stream_read (mongoc_stream_t *stream,
 
    BSON_ASSERT(stream->readv);
 
-   return stream->readv(stream, &iov, 1, timeout_msec);
+   return stream->readv(stream, &iov, 1, min_bytes, timeout_msec);
 }
 
 

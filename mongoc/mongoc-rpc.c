@@ -190,15 +190,16 @@
    } while (0);
 #define BSON_ARRAY_FIELD(_name) \
    do { \
-      bson_reader_t __r; \
+      bson_reader_t *__r; \
       bson_bool_t __eof; \
       const bson_t *__b; \
-      bson_reader_init_from_data(&__r, rpc->_name, rpc->_name##_len); \
-      while ((__b = bson_reader_read(&__r, &__eof))) { \
+      __r = bson_reader_new_from_data(rpc->_name, rpc->_name##_len); \
+      while ((__b = bson_reader_read(__r, &__eof))) { \
          char *s = bson_as_json(__b, NULL); \
          printf("  "#_name" : %s\n", s); \
          bson_free(s); \
       } \
+      bson_reader_destroy(__r); \
    } while (0);
 #define OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }

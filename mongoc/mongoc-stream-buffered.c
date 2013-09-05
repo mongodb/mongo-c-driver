@@ -181,6 +181,7 @@ static ssize_t
 mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
                               struct iovec    *iov,          /* INOUT */
                               size_t           iovcnt,       /* IN */
+                              ssize_t          min_bytes,    /* IN */
                               bson_uint32_t    timeout_msec) /* IN */
 {
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
@@ -194,6 +195,7 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
    return mongoc_stream_readv(buffered->base_stream,
                               iov,
                               iovcnt,
+                              min_bytes,
                               timeout_msec);
 }
 

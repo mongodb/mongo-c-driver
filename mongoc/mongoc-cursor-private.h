@@ -57,7 +57,7 @@ struct _mongoc_cursor_t
 
    mongoc_rpc_t         rpc;
    mongoc_buffer_t      buffer;
-   bson_reader_t        reader;
+   bson_reader_t       *reader;
 };
 
 

@@ -212,7 +212,7 @@ test_mongoc_rpc_insert_gather (void)
 static void
 test_mongoc_rpc_insert_scatter (void)
 {
-   bson_reader_t reader;
+   bson_reader_t *reader;
    bson_uint8_t *data;
    const bson_t *b;
    mongoc_rpc_t rpc;
@@ -236,8 +236,8 @@ test_mongoc_rpc_insert_scatter (void)
    assert(rpc.insert.opcode == MONGOC_OPCODE_INSERT);
    assert(rpc.insert.flags == MONGOC_INSERT_CONTINUE_ON_ERROR);
    assert(!strcmp("test.test", rpc.insert.collection));
-   bson_reader_init_from_data(&reader, rpc.insert.documents, rpc.insert.documents_len);
-   while ((b = bson_reader_read(&reader, &eof))) {
+   reader = bson_reader_new_from_data(rpc.insert.documents, rpc.insert.documents_len);
+   while ((b = bson_reader_read(reader, &eof))) {
       r = bson_equal(b, &empty);
       assert(r);
       count++;
@@ -247,7 +247,7 @@ test_mongoc_rpc_insert_scatter (void)
 
    assert_rpc_equal("insert1.dat", &rpc);
    bson_free(data);
-   bson_reader_destroy(&reader);
+   bson_reader_destroy(reader);
    bson_destroy(&empty);
 }
 
@@ -446,7 +446,7 @@ test_mongoc_rpc_reply_gather (void)
 static void
 test_mongoc_rpc_reply_scatter (void)
 {
-   bson_reader_t reader;
+   bson_reader_t *reader;
    bson_uint8_t *data;
    mongoc_rpc_t rpc;
    const bson_t *b;
@@ -473,8 +473,8 @@ test_mongoc_rpc_reply_scatter (void)
    assert(rpc.reply.start_from == 50);
    assert(rpc.reply.n_returned == 100);
    assert(rpc.reply.documents_len == 500);
-   bson_reader_init_from_data(&reader, rpc.reply.documents, rpc.reply.documents_len);
-   while ((b = bson_reader_read(&reader, &eof))) {
+   reader = bson_reader_new_from_data(rpc.reply.documents, rpc.reply.documents_len);
+   while ((b = bson_reader_read(reader, &eof))) {
       r = bson_equal(b, &empty);
       assert(r);
       count++;
@@ -483,7 +483,7 @@ test_mongoc_rpc_reply_scatter (void)
    assert(count == 100);
 
    assert_rpc_equal("reply1.dat", &rpc);
-   bson_reader_destroy(&reader);
+   bson_reader_destroy(reader);
    bson_free(data);
 }
 

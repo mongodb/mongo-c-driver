@@ -107,9 +107,13 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       mongoc_cursor_kill_cursor(cursor, cursor->rpc.reply.cursor_id);
    }
 
+   if (cursor->reader) {
+      bson_reader_destroy(cursor->reader);
+      cursor->reader = NULL;
+   }
+
    bson_destroy(&cursor->query);
    bson_destroy(&cursor->fields);
-   bson_reader_destroy(&cursor->reader);
    mongoc_buffer_destroy(&cursor->buffer);
    mongoc_read_prefs_destroy(cursor->read_prefs);
 
@@ -222,10 +226,12 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
       goto failure;
    }
 
-   bson_reader_destroy(&cursor->reader);
-   bson_reader_init_from_data(&cursor->reader,
-                              cursor->rpc.reply.documents,
-                              cursor->rpc.reply.documents_len);
+   if (cursor->reader) {
+      bson_reader_destroy(cursor->reader);
+   }
+
+   cursor->reader = bson_reader_new_from_data(cursor->rpc.reply.documents,
+                                              cursor->rpc.reply.documents_len);
 
    cursor->done = FALSE;
    cursor->end_of_event = FALSE;
@@ -301,10 +307,12 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       goto failure;
    }
 
-   bson_reader_destroy(&cursor->reader);
-   bson_reader_init_from_data(&cursor->reader,
-                              cursor->rpc.reply.documents,
-                              cursor->rpc.reply.documents_len);
+   if (cursor->reader) {
+      bson_reader_destroy(cursor->reader);
+   }
+
+   cursor->reader = bson_reader_new_from_data(cursor->rpc.reply.documents,
+                                              cursor->rpc.reply.documents_len);
 
    cursor->end_of_event = FALSE;
 
@@ -374,7 +382,7 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
     * Read the next BSON document from the event.
     */
    eof = FALSE;
-   b = bson_reader_read(&cursor->reader, &eof);
+   b = bson_reader_read(cursor->reader, &eof);
    cursor->end_of_event = eof;
    cursor->done = cursor->end_of_event && !b;
 

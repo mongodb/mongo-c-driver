@@ -171,7 +171,7 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
    }
 
    buf = &buffer->data[buffer->off + buffer->len];
-   ret = mongoc_stream_read(stream, buf, size, timeout_msec);
+   ret = mongoc_stream_read(stream, buf, size, -1, timeout_msec);
    if (ret != size) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
@@ -191,15 +191,17 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
  * mongoc_buffer_fill:
  * @buffer: A mongoc_buffer_t.
  * @stream: A stream to read from.
+ * @min_bytes: The minumum number of bytes to read.
  * @error: A location for a bson_error_t or NULL.
  *
- * Attempts to fill the entire buffer.
+ * Attempts to fill the entire buffer, or at least @min_bytes.
  *
  * Returns: The number of buffered bytes, or -1 on failure.
  */
 ssize_t
 mongoc_buffer_fill (mongoc_buffer_t *buffer,
                     mongoc_stream_t *stream,
+                    ssize_t          min_bytes,
                     bson_error_t    *error)
 {
    ssize_t ret;
@@ -207,6 +209,7 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    bson_return_val_if_fail(buffer, FALSE);
    bson_return_val_if_fail(stream, FALSE);
+   bson_return_val_if_fail(min_bytes >= -1, FALSE);
 
    BSON_ASSERT(buffer->data);
    BSON_ASSERT(buffer->datalen);
@@ -214,7 +217,7 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
    memmove(&buffer->data[0], &buffer->data[buffer->off], buffer->len);
    buffer->off = 0;
    size = buffer->datalen - buffer->len;
-   ret = mongoc_stream_read(stream, &buffer->data[buffer->off + buffer->len], size, 0);
+   ret = mongoc_stream_read(stream, &buffer->data[buffer->off + buffer->len], size, min_bytes, 0);
    if (ret >= 0) {
       buffer->len += ret;
       return buffer->len;
