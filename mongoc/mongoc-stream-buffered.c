@@ -21,6 +21,7 @@
 
 #include "mongoc-buffer-private.h"
 #include "mongoc-counters-private.h"
+#include "mongoc-log.h"
 #include "mongoc-stream-buffered.h"
 
 
@@ -165,8 +166,15 @@ mongoc_stream_buffered_writev (mongoc_stream_t *stream,       /* IN */
  *       Read from the underlying stream. The data will be buffered based
  *       on the buffered streams target buffer size.
  *
- *       TODO: This has not yet been implemented and therefore no
- *             buffering is performed.
+ *       When reading from the underlying stream, we read at least the
+ *       requested number of bytes, but try to also fill the stream to
+ *       the size of the underlying buffer.
+ *
+ * Note:
+ *       This isn't actually a huge savings since we never have more than
+ *       one reply waiting for us, but perhaps someday that will be
+ *       different. It should help for small replies, however that will
+ *       reduce our read() syscalls by 50%.
  *
  * Returns:
  *       The number of bytes read or -1 on failure.
@@ -185,18 +193,37 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
                               bson_uint32_t    timeout_msec) /* IN */
 {
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+   bson_error_t error = { 0 };
+   size_t total_bytes = 0;
+   size_t i;
 
    bson_return_val_if_fail(buffered, -1);
 
-   /*
-    * TODO: Implement buffering.
-    */
+   for (i = 0; i < iovcnt; i++) {
+      total_bytes += iov[i].iov_len;
+   }
 
-   return mongoc_stream_readv(buffered->base_stream,
-                              iov,
-                              iovcnt,
-                              min_bytes,
-                              timeout_msec);
+   if (-1 == mongoc_buffer_fill(&buffered->buffer,
+                                buffered->base_stream,
+                                total_bytes,
+                                &error)) {
+      MONGOC_WARNING("Failure to buffer %u bytes: %s",
+                     (unsigned)total_bytes,
+                     error.message);
+      return -1;
+   }
+
+   BSON_ASSERT(buffered->buffer.len >= total_bytes);
+
+   for (i = 0; i < iovcnt; i++) {
+      memcpy(iov[i].iov_base,
+             buffered->buffer.data + buffered->buffer.off,
+             iov[i].iov_len);
+      buffered->buffer.off += iov[i].iov_len;
+      buffered->buffer.len -= iov[i].iov_len;
+   }
+
+   return total_bytes;
 }
 
 

@@ -38,6 +38,7 @@
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
 #include "mongoc-queue-private.h"
+#include "mongoc-stream-buffered.h"
 
 
 #ifndef DEFAULT_CONNECTTIMEOUTMS
@@ -284,8 +285,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,       /* 
       break;
    }
 
-   //return base_stream ? mongoc_stream_buffered_new(base_stream) : NULL;
-   return base_stream;
+   return base_stream ? mongoc_stream_buffered_new(base_stream, 1024) : NULL;
 }
 
 
