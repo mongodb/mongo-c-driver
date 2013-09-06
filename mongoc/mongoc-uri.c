@@ -546,13 +546,18 @@ mongoc_uri_destroy (mongoc_uri_t *uri)
          uri->hosts = tmp->next;
          bson_free(tmp);
       }
+
       bson_free(uri->str);
       bson_free(uri->database);
-      bson_free(uri->password);
       bson_free(uri->username);
       bson_destroy(&uri->options);
       bson_destroy(&uri->read_prefs);
       bson_destroy(&uri->write_concern);
+
+      if (uri->password) {
+         bson_zero_free(uri->password, strlen(uri->password));
+      }
+
       bson_free(uri);
    }
 }
