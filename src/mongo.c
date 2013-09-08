@@ -1387,6 +1387,7 @@ MONGO_EXPORT int mongo_cursor_next( mongo_cursor *cursor ) {
             if( already_sent ) {
                 cursor->err = MONGO_CURSOR_INVALID;
             }
+            /* else preserve the MONGO_CURSOR_EXHAUSTED error flag set by mongo_cursor_get_more */
             return MONGO_ERROR;
         }
     }
