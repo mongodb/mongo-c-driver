@@ -1371,7 +1371,6 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
    now = bson_get_monotonic_time();
    if ((cluster->state == MONGOC_CLUSTER_STATE_DEAD) ||
        ((cluster->state == MONGOC_CLUSTER_STATE_UNHEALTHY) &&
-        (cluster->last_reconnect != 0) &&
         (cluster->last_reconnect + UNHEALTHY_RECONNECT_TIMEOUT_USEC) <= now)) {
       if (!mongoc_cluster_reconnect(cluster, error)) {
          return FALSE;
