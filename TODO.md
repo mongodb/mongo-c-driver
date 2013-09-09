@@ -46,7 +46,7 @@ I am thinking about and need a place to write them down.
 
 ## Documentation
 
- * mongoc-state is really useful, needs documentation.
+ * mongoc-status is really useful, needs documentation.
  * man pages for basic documentation.
  * Generate API docs.
 
@@ -54,12 +54,6 @@ I am thinking about and need a place to write them down.
 
  * Build an example application using the library.
    Probably something basic that uses HTTP to push data into MongoDB.
-
-## Build System and Library
-
- * Support library versioning (soname)
- * Add ABI checks for symbols
- * Clean up Makefiles
 
 ## Asynchronous Support
 
