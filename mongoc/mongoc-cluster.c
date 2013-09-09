@@ -46,6 +46,13 @@
 #define DEFAULT_SOCKET_TIMEOUT_MSEC (1000L * 60L * 5L)
 #endif
 
+#ifndef UNHEALTHY_RECONNECT_TIMEOUT_USEC
+/*
+ * Try reconnect every 20 seconds if we are unhealthy.
+ */
+#define UNHEALTHY_RECONNECT_TIMEOUT_USEC (1000L * 1000L * 20L)
+#endif
+
 
 /*
  *--------------------------------------------------------------------------
@@ -1343,6 +1350,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
                       bson_error_t                 *error)         /* OUT */
 {
    mongoc_cluster_node_t *node;
+   bson_int64_t now;
    const bson_t *b;
    mongoc_rpc_t gle;
    struct iovec *iov;
@@ -1354,6 +1362,21 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(rpcs, FALSE);
    bson_return_val_if_fail(rpcs_len, FALSE);
+
+   /*
+    * If we are in an unhealthy state, and enough time has elapsed since
+    * our last reconnection, go ahead and try to perform reconnection
+    * immediately.
+    */
+   now = bson_get_monotonic_time();
+   if ((cluster->state == MONGOC_CLUSTER_STATE_DEAD) ||
+       ((cluster->state == MONGOC_CLUSTER_STATE_UNHEALTHY) &&
+        (cluster->last_reconnect != 0) &&
+        (cluster->last_reconnect + UNHEALTHY_RECONNECT_TIMEOUT_USEC) <= now)) {
+      if (!mongoc_cluster_reconnect(cluster, error)) {
+         return FALSE;
+      }
+   }
 
    /*
     * Try to find a node to deliver to. Since we are allowed to block in this
