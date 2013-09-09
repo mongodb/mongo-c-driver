@@ -78,6 +78,8 @@ typedef struct
    bson_uint32_t           request_id;
    bson_uint32_t           sockettimeoutms;
 
+   bson_int64_t            last_reconnect;
+
    mongoc_uri_t           *uri;
    bson_bool_t             requires_auth : 1;
 

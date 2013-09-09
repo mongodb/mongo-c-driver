@@ -933,6 +933,8 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
       return FALSE;
    }
 
+   cluster->last_reconnect = bson_get_monotonic_time();
+
    node = &cluster->nodes[0];
 
    node->index = 0;
@@ -1052,6 +1054,8 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
     *       before calling an "isMaster". But that is dependent on a
     *       few server "features" first.
     */
+
+   cluster->last_reconnect = bson_get_monotonic_time();
 
    mongoc_cluster_clear_peers(cluster);
 
