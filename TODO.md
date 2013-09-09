@@ -5,61 +5,61 @@ I am thinking about and need a place to write them down.
 
 ## Clients
 
- * Test what happens during mongoc_client_destroy() with active work.
-
 ## Client Pooling
 
- * Shutdown clients when we no longer need them (on push())
- * Try to keep more recently used (if healthy) and discard old ones.
+ * [M2] Shutdown clients when we no longer need them (on push())
+ * [M2] Try to keep more recently used (if healthy) and discard old ones.
 
 ## Cluster
 
- * Use local bson_error_t when appropriate.
- * Drop use of sendv() since we handle write-concern now.
+See Replica Sets and Sharded Cluster.
 
 ## Cursors
 
- * Detect commands as cursors if possible.
+ * [M2] Detect commands as cursors if possible.
 
 ## Bulk API
 
- * The server is getting new bulk commands for insert/update/etc.
+ * [M2] The server is getting new bulk commands for insert/update/etc.
    If we detect that the server supports these, use them instead.
 
 ## Replica Sets
 
- * Needs more testing on reconnection strategies.
+ * [M1] Needs more testing on reconnection strategies.
+ * [M1] Occasionally perform reconnect when in unhealthy state and
+   time period has elapsed. This means keeping the monotonic time we
+   last performed a reconnect.
 
 ## Sharded Cluster
 
- * Still needs implementation, reconnect strategies.
+ * [M1] Still needs implementation, reconnect strategies.
 
 ## TLS
 
- * Finish support for mongoc_stream_tls_t.
- * Apply TLS stream if ssl=true in URI.
+ * [M2] Finish support for mongoc_stream_tls_t.
+ * [M2] Apply TLS stream if ssl=true in URI.
 
 ## Authentication
 
- * X509 Certificate Authentication
- * Kerberos Authentication
+ * [M2] X509 Certificate Authentication
+ * [M2] Kerberos Authentication
 
 ## Documentation
 
- * mongoc-status is really useful, needs documentation.
- * man pages for basic documentation.
- * Generate API docs.
+ * [M1] mongoc-stat is really useful, needs documentation.
+ * [M1] man pages for basic documentation.
+ * [M1] Generate API docs.
 
 ## Examples
 
- * Build an example application using the library.
-   Probably something basic that uses HTTP to push data into MongoDB.
+ * [M2] Build an example application using the library.
+   Probably something basic that uses HTTP to push data into MongoDB.   
 
 ## Asynchronous Support
 
- * mongoc_client_async_t
- * mongoc_collection_async_t
- * mongoc_database_async_t
- * mongoc_client_pool_async_t
- * Be careful with timeouts
- * Support for GLib main loop, libev, etc.
+ * [M4] mongoc_client_async_t
+ * [M4] mongoc_collection_async_t
+ * [M4] mongoc_database_async_t
+ * [M4] mongoc_client_pool_async_t
+ * [M4] Be careful with timeouts
+ * [M4] Support for GLib main loop, libev, etc.
