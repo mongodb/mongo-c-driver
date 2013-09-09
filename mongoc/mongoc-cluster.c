@@ -1355,11 +1355,13 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
     * Try to find a node to deliver to. Since we are allowed to block in this
     * version of sendv, we try to reconnect if we cannot select a node.
     */
-   while (!(node = mongoc_cluster_select(cluster, rpcs, rpcs_len, hint,
-                                         write_concern, read_prefs, error))) {
-      /*
-       * TODO: Use local error and propagate to avoid leak.
-       */
+   while (!(node = mongoc_cluster_select(cluster,
+                                         rpcs,
+                                         rpcs_len,
+                                         hint,
+                                         write_concern,
+                                         read_prefs,
+                                         error))) {
       if ((retry_count++ == MAX_RETRY_COUNT) ||
           !mongoc_cluster_reconnect(cluster, error)) {
          return FALSE;
