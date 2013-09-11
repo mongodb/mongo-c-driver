@@ -88,7 +88,7 @@ mongoc_cursor_kill_cursor (mongoc_cursor_t *cursor,
 
    rpc.kill_cursors.msg_len = 0;
    rpc.kill_cursors.request_id = 0;
-   rpc.kill_cursors.response_to = -1;
+   rpc.kill_cursors.response_to = 0;
    rpc.kill_cursors.opcode = MONGOC_OPCODE_KILL_CURSORS;
    rpc.kill_cursors.zero = 0;
    rpc.kill_cursors.cursors = &cursor_id;
@@ -185,7 +185,7 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
 
    rpc.query.msg_len = 0;
    rpc.query.request_id = 0;
-   rpc.query.response_to = -1;
+   rpc.query.response_to = 0;
    rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = cursor->flags;
    rpc.query.collection = cursor->ns;
@@ -264,7 +264,7 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
    rpc.get_more.msg_len = 0;
    rpc.get_more.request_id = 0;
-   rpc.get_more.response_to = -1;
+   rpc.get_more.response_to = 0;
    rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
    rpc.get_more.zero = 0;
    rpc.get_more.collection = cursor->ns;

@@ -606,7 +606,7 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
 
    rpc.query.msg_len = 0;
    rpc.query.request_id = ++cluster->request_id;
-   rpc.query.response_to = -1;
+   rpc.query.response_to = 0;
    rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = MONGOC_QUERY_NONE;
    rpc.query.collection = ns;
@@ -1414,7 +1414,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
       if (need_gle) {
          gle.query.msg_len = 0;
          gle.query.request_id = ++cluster->request_id;
-         gle.query.response_to = -1;
+         gle.query.response_to = 0;
          gle.query.opcode = MONGOC_OPCODE_QUERY;
          gle.query.flags = MONGOC_QUERY_NONE;
          switch (rpcs[i].header.opcode) {
@@ -1528,7 +1528,7 @@ mongoc_cluster_try_sendv (
       if (need_gle) {
          gle.query.msg_len = 0;
          gle.query.request_id = ++cluster->request_id;
-         gle.query.response_to = -1;
+         gle.query.response_to = 0;
          gle.query.opcode = MONGOC_OPCODE_QUERY;
          gle.query.flags = MONGOC_QUERY_NONE;
          switch (rpcs[i].header.opcode) {

@@ -655,7 +655,7 @@ mongoc_collection_insert (
     */
    rpc.insert.msg_len = 0;
    rpc.insert.request_id = 0;
-   rpc.insert.response_to = -1;
+   rpc.insert.response_to = 0;
    rpc.insert.opcode = MONGOC_OPCODE_INSERT;
    rpc.insert.flags = flags;
    rpc.insert.collection = collection->ns;
@@ -728,7 +728,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,    /* IN */
 
    rpc.update.msg_len = 0;
    rpc.update.request_id = 0;
-   rpc.update.response_to = -1;
+   rpc.update.response_to = 0;
    rpc.update.opcode = MONGOC_OPCODE_UPDATE;
    rpc.update.zero = 0;
    rpc.update.collection = collection->ns;
@@ -860,7 +860,7 @@ mongoc_collection_delete (mongoc_collection_t          *collection,    /* IN */
 
    rpc.delete.msg_len = 0;
    rpc.delete.request_id = 0;
-   rpc.delete.response_to = -1;
+   rpc.delete.response_to = 0;
    rpc.delete.opcode = MONGOC_OPCODE_DELETE;
    rpc.delete.zero = 0;
    rpc.delete.collection = collection->ns;
