@@ -477,6 +477,10 @@ mongoc_uri_new (const char *uri_string)
    bson_init(&uri->read_prefs);
    bson_init(&uri->write_concern);
 
+   if (!uri_string) {
+      uri_string = "mongodb://127.0.0.1/";
+   }
+
    if (!mongoc_uri_parse(uri, uri_string)) {
       mongoc_uri_destroy(uri);
       return NULL;
