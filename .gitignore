@@ -8,6 +8,7 @@ configure
 depcomp
 .deps
 INSTALL
+index-source
 install-sh
 *.la
 .libs

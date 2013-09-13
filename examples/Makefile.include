@@ -1,6 +1,12 @@
+
 noinst_PROGRAMS += mongoc-ping
-
-
 mongoc_ping_SOURCES = $(top_srcdir)/examples/mongoc-ping.c
 mongoc_ping_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 mongoc_ping_LDADD = libmongoc-1.0.la
+
+if HAVE_CLANG
+noinst_PROGRAMS += index-source
+index_source_SOURCES = $(top_srcdir)/examples/index-source.c
+index_source_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+index_source_LDADD = libmongoc-1.0.la -lclang
+endif
