@@ -38,3 +38,4 @@ test-mongoc-read-prefs
 test-mongoc-rpc
 test-mongoc-uri
 test-mongoc-write-concern
+test-secondary

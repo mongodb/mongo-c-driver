@@ -11,6 +11,7 @@ noinst_PROGRAMS += test-mongoc-read-prefs
 noinst_PROGRAMS += test-mongoc-rpc
 noinst_PROGRAMS += test-mongoc-uri
 noinst_PROGRAMS += test-mongoc-write-concern
+noinst_PROGRAMS += test-secondary
 
 
 TEST_PROGS =
@@ -94,6 +95,11 @@ test_mongoc_uri_LDADD = $(TEST_LIBS)
 test_mongoc_write_concern_SOURCES = $(top_srcdir)/tests/test-mongoc-write-concern.c
 test_mongoc_write_concern_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_mongoc_write_concern_LDADD = $(TEST_LIBS)
+
+
+test_secondary_SOURCES = $(top_srcdir)/tests/test-secondary.c
+test_secondary_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+test_secondary_LDADD = $(TEST_LIBS)
 
 
 test: $(TEST_PROGS)
