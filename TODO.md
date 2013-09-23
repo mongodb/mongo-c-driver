@@ -18,6 +18,12 @@ See Replica Sets and Sharded Cluster.
 
  * [M2] Detect commands as cursors if possible.
 
+## GridFS
+
+ * [M2] GridFS support adding new mongoc_gridfs_t structure.
+   We can add mongoc_client_get_gridfs() to access the structure
+   in a similar fashion to get_collection().
+
 ## Bulk API
 
  * [M2] The server is getting new bulk commands for insert/update/etc.
