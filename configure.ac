@@ -1,15 +1,18 @@
 dnl **************************************************************************
 dnl Versioning Macros
 dnl **************************************************************************
+
 m4_define([mongoc_major_version], [0])
 m4_define([mongoc_minor_version], [1])
-m4_define([mongoc_micro_version], [0])
-m4_define([mongoc_version],
-          [mongoc_major_version.mongoc_minor_version.mongoc_micro_version])
-m4_define([mongoc_binary_age], [m4_eval(100 * mongoc_minor_version +
-           mongoc_micro_version)])
-m4_define([lt_current], [m4_eval(100 * mongoc_minor_version +
-           mongoc_micro_version - mongoc_interface_age)])
+m4_define([mongoc_micro_version], [3])
+m4_define([mongoc_version], [mongoc_major_version.mongoc_minor_version.mongoc_micro_version])
+
+# bump up by 1 for every micro release with no API changes, otherwise
+# set to 0. after release, bump up by 1
+m4_define([mongoc_interface_age], [0])
+m4_define([mongoc_binary_age], [m4_eval(100 * mongoc_minor_version + mongoc_micro_version)])
+
+m4_define([lt_current], [m4_eval(100 * mongoc_minor_version + mongoc_micro_version - mongoc_interface_age)])
 m4_define([lt_revision], [mongoc_interface_age])
 m4_define([lt_age], [m4_eval(mongoc_binary_age - mongoc_interface_age)])
 
@@ -18,19 +21,20 @@ dnl **************************************************************************
 dnl Initialize Automake
 dnl **************************************************************************
 AC_PREREQ([2.64])
-AC_INIT([mongoc],[mongoc_version],[https://github.com/chergert/libmongoc])
+AC_INIT([mongoc], [mongoc_version], [https://github.com/chergert/libmongoc/issues])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES],
+	 [AC_SUBST([AM_DEFAULT_VERBOSITY], [1])])
 AS_AM_REALLY_SILENT
 
 # Initialize libtool
 LT_PREREQ([2.2])
 LT_INIT
 
-AM_INIT_AUTOMAKE([1.11.1 no-dist-gzip dist-xz])
+AM_INIT_AUTOMAKE([1.10])
 AM_PROG_CC_C_O
 
 
@@ -48,12 +52,72 @@ AC_SUBST(MONGOC_MICRO_VERSION)
 AC_SUBST(MONGOC_API_VERSION)
 AC_SUBST(MONGOC_VERSION)
 
+MONGOC_LT_CURRENT=lt_current
+MONGOC_LT_REVISION=lt_revision
+MONGOC_LT_AGE=lt_age
+MONGOC_LT_VERSION="$MONGOC_LT_CURRENT:$MONGOC_LT_REVISION:$MONGOC_LT_AGE"
+MONGOC_LT_LDFLAGS="-version-info $MONGOC_LT_VERSION"
+
 
 dnl **************************************************************************
 dnl Check for programs.
 dnl **************************************************************************
 AC_PATH_PROG([NETCAT], [nc])
 AC_SUBST([NETCAT])
+
+
+dnl **************************************************************************
+dnl Platform Checks
+dnl **************************************************************************
+platform_linux=no
+platform_win32=no
+
+AC_CANONICAL_HOST
+AC_MSG_CHECKING([if building for some Win32 platform])
+AS_CASE([$host],
+	[*-*-mingw*|*-*-cygwin*],
+	[
+		MONGOC_LT_LDFLAGS="$MONGOC_LT_LDFLAGS -no-undefined"
+		platform_win32=yes
+	],
+
+	[*-*-linux*],
+	[
+		platform_linux=yes
+	],
+
+	[]
+)
+AC_MSG_RESULT([$platform_win32])
+
+AM_CONDITIONAL(OS_LINUX, [test "$platform_linux" = "yes"])
+AM_CONDITIONAL(OS_WIN32, [test "$platform_win32" = "yes"])
+
+# Check for -Bsymbolic-functions to avoid intra-library PLT jumps
+AC_ARG_ENABLE([Bsymbolic],
+              [AS_HELP_STRING([--disable-Bsymbolic],
+                              [Avoid linking with -Bsymbolic])],
+              [],
+              [
+                saved_LDFLAGS="${LDFLAGS}"
+                AC_MSG_CHECKING([for -Bsymbolic-functions linker flag])
+                LDFLAGS=-Wl,-Bsymbolic-functions
+                AC_TRY_LINK([], [int main (void) { return 0; }],
+                            [
+                              AC_MSG_RESULT([yes])
+                              enable_Bsymbolic=yes
+                            ],
+                            [
+                              AC_MSG_RESULT([no])
+                              enable_Bsymbolic=no
+                            ])
+                LDFLAGS="${saved_LDFLAGS}"
+              ])
+
+AS_IF([test "x$enable_Bsymbolic" = "xyes"], [MONGOC_LINK_FLAGS=-Wl[,]-Bsymbolic-functions])
+MONGOC_LT_LDFLAGS="$MONGOC_LT_LDFLAGS $MONGOC_LINK_FLAGS"
+
+AC_SUBST(MONGOC_LT_LDFLAGS)
 
 
 dnl **************************************************************************
@@ -153,6 +217,8 @@ AS_CASE([$enable_debug],
 		CFLAGS="$CFLAGS -Wuninitialized"
 	],
 	[no], [
+		CFLAGS="$CFLAGS -DBSON_DISABLE_ASSERT"
+		CFLAGS="$CFLAGS -DBSON_DISABLE_CHECKS"
 	],
 	[AC_MSG_ERROR([Unknown argument to --enable-debug])]
 )

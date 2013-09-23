@@ -1,93 +1,104 @@
-headerdir = $(prefix)/include/libmongoc-1.0
+headerdir = $(prefix)/include/libmongoc-@MONGOC_API_VERSION@
 header_DATA = $(INST_H_FILES)
 
 
-lib_LTLIBRARIES =
-lib_LTLIBRARIES += libmongoc-1.0.la
+# Use a private library so we have all symbols in unit tests.
+noinst_LTLIBRARIES = libmongoc-priv.la
 
 
-INST_H_FILES =
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-client.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-client-pool.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-collection.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-cursor.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-database.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-error.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-flags.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-host-list.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-log.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-opcode.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-read-prefs.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stdint.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream-buffered.h
+# With a public library with reduced symbols.
+lib_LTLIBRARIES = libmongoc-1.0.la
+
+
+INST_H_FILES = \
+	$(top_srcdir)/mongoc/mongoc.h \
+	$(top_srcdir)/mongoc/mongoc-client.h \
+	$(top_srcdir)/mongoc/mongoc-client-pool.h \
+	$(top_srcdir)/mongoc/mongoc-collection.h \
+	$(top_srcdir)/mongoc/mongoc-cursor.h \
+	$(top_srcdir)/mongoc/mongoc-database.h \
+	$(top_srcdir)/mongoc/mongoc-error.h \
+	$(top_srcdir)/mongoc/mongoc-flags.h \
+	$(top_srcdir)/mongoc/mongoc-host-list.h \
+	$(top_srcdir)/mongoc/mongoc-log.h \
+	$(top_srcdir)/mongoc/mongoc-opcode.h \
+	$(top_srcdir)/mongoc/mongoc-read-prefs.h \
+	$(top_srcdir)/mongoc/mongoc-stdint.h \
+	$(top_srcdir)/mongoc/mongoc-stream.h \
+	$(top_srcdir)/mongoc/mongoc-stream-buffered.h \
+	$(top_srcdir)/mongoc/mongoc-uri.h \
+	$(top_srcdir)/mongoc/mongoc-version.h \
+	$(top_srcdir)/mongoc/mongoc-write-concern.h
 if HAVE_SSL
 INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream-tls.h
 endif
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-uri.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-version.h
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-write-concern.h
 
 
-NOINST_H_FILES =
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-array-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-buffer-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-client-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-collection-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-counters-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-cursor-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-cluster-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-database-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-list-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-queue-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-read-prefs-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-rpc-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-util-private.h
-NOINST_H_FILES += $(top_srcdir)/mongoc/mongoc-write-concern-private.h
+NOINST_H_FILES = \
+	$(top_srcdir)/mongoc/mongoc-array-private.h \
+	$(top_srcdir)/mongoc/mongoc-buffer-private.h \
+	$(top_srcdir)/mongoc/mongoc-client-private.h \
+	$(top_srcdir)/mongoc/mongoc-collection-private.h \
+	$(top_srcdir)/mongoc/mongoc-counters-private.h \
+	$(top_srcdir)/mongoc/mongoc-cursor-private.h \
+	$(top_srcdir)/mongoc/mongoc-cluster-private.h \
+	$(top_srcdir)/mongoc/mongoc-database-private.h \
+	$(top_srcdir)/mongoc/mongoc-list-private.h \
+	$(top_srcdir)/mongoc/mongoc-queue-private.h \
+	$(top_srcdir)/mongoc/mongoc-read-prefs-private.h \
+	$(top_srcdir)/mongoc/mongoc-rpc-private.h \
+	$(top_srcdir)/mongoc/mongoc-util-private.h \
+	$(top_srcdir)/mongoc/mongoc-write-concern-private.h
 
 
-libmongoc_1_0_la_SOURCES =
-libmongoc_1_0_la_SOURCES += $(INST_H_FILES)
-libmongoc_1_0_la_SOURCES += $(NOINST_H_FILES)
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-array.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-buffer.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-client.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-client-pool.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-cluster.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-collection.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-counters.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-cursor.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-database.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-list.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-log.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-queue.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-read-prefs.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-rpc.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream-buffered.c
+libmongoc_priv_la_SOURCES = \
+	$(INST_H_FILES) \
+	$(NOINST_H_FILES) \
+	$(top_srcdir)/mongoc/mongoc-array.c \
+	$(top_srcdir)/mongoc/mongoc-buffer.c \
+	$(top_srcdir)/mongoc/mongoc-client.c \
+	$(top_srcdir)/mongoc/mongoc-client-pool.c \
+	$(top_srcdir)/mongoc/mongoc-cluster.c \
+	$(top_srcdir)/mongoc/mongoc-collection.c \
+	$(top_srcdir)/mongoc/mongoc-counters.c \
+	$(top_srcdir)/mongoc/mongoc-cursor.c \
+	$(top_srcdir)/mongoc/mongoc-database.c \
+	$(top_srcdir)/mongoc/mongoc-list.c \
+	$(top_srcdir)/mongoc/mongoc-log.c \
+	$(top_srcdir)/mongoc/mongoc-queue.c \
+	$(top_srcdir)/mongoc/mongoc-read-prefs.c \
+	$(top_srcdir)/mongoc/mongoc-rpc.c \
+	$(top_srcdir)/mongoc/mongoc-stream.c \
+	$(top_srcdir)/mongoc/mongoc-stream-buffered.c \
+	$(top_srcdir)/mongoc/mongoc-uri.c \
+	$(top_srcdir)/mongoc/mongoc-util.c \
+	$(top_srcdir)/mongoc/mongoc-write-concern.c
 if HAVE_SSL
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream-tls.c
-endif
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-uri.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-util.c
-libmongoc_1_0_la_SOURCES += $(top_srcdir)/mongoc/mongoc-write-concern.c
-
-
-libmongoc_1_0_la_CPPFLAGS =
-libmongoc_1_0_la_CPPFLAGS += $(BSON_CFLAGS)
-if HAVE_SSL
-libmongoc_1_0_la_CPPFLAGS += $(SSL_CFLAGS)
+libmongoc_priv_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream-tls.c
 endif
 
 
-libmongoc_1_0_la_LIBADD =
-libmongoc_1_0_la_LIBADD += $(BSON_LIBS)
-libmongoc_1_0_la_LIBADD += $(SHM_LIB)
-if HAVE_SSL
-libmongoc_1_0_la_LIBADD += $(SSL_LIBS)
-endif
+libmongoc_priv_la_CPPFLAGS = \
+	$(BSON_CFLAGS) \
+	$(SSL_CFLAGS)
 
 
-EXTRA_DIST += $(top_srcdir)/mongoc/mongoc-counters.defs
+libmongoc_priv_la_LIBADD = \
+	$(BSON_LIBS) \
+	$(SHM_LIB) \
+	$(SSL_LIBS)
+
+
+libmongoc_1_0_la_SOURCES = 
+libmongoc_1_0_la_LIBADD = libmongoc-priv.la
+libmongoc_1_0_la_LDFLAGS = \
+	$(MONGOC_LT_LDFLAGS) \
+	-no-undefined \
+	-export-symbols $(top_srcdir)/mongoc/libmongoc.symbols \
+	-rpath $(libdir)
+
+
+EXTRA_DIST += \
+	$(top_srcdir)/mongoc/mongoc-counters.defs \
+	$(top_srcdir)/mongoc/libmongoc.symbols
 
