@@ -1143,6 +1143,14 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
    mongoc_list_foreach(list, (void *)bson_free, NULL);
    mongoc_list_destroy(list);
 
+   if (i == 0) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
+                     "No acceptable peer could be found.");
+      return FALSE;
+   }
+
    return TRUE;
 }
 
