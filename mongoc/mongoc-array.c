@@ -18,21 +18,6 @@
 #include "mongoc-array-private.h"
 
 
-static BSON_INLINE bson_uint32_t
-npow2 (bson_uint32_t v)
-{
-   v--;
-   v |= v >> 1;
-   v |= v >> 2;
-   v |= v >> 4;
-   v |= v >> 8;
-   v |= v >> 16;
-   v++;
-
-   return v;
-}
-
-
 void
 mongoc_array_init (mongoc_array_t *array,
                    size_t          element_size)
@@ -71,7 +56,7 @@ mongoc_array_append_vals (mongoc_array_t *array,
    off = array->element_size * array->len;
    len = (size_t)n_elements * array->element_size;
    if ((off + len) > array->allocated) {
-      next_size = npow2(off + len);
+      next_size = bson_next_power_of_two(off + len);
       array->data = bson_realloc(array->data, next_size);
       array->allocated = next_size;
    }

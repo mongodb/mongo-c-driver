@@ -30,21 +30,6 @@
 #define SPACE_FOR(_b, _sz) (((ssize_t)(_b)->datalen - (ssize_t)(_b)->off - (ssize_t)(_b)->len) >= _sz)
 
 
-static BSON_INLINE bson_uint32_t
-npow2 (bson_uint32_t v)
-{
-   v--;
-   v |= v >> 1;
-   v |= v >> 2;
-   v |= v >> 4;
-   v |= v >> 8;
-   v |= v >> 16;
-   v++;
-
-   return v;
-}
-
-
 /**
  * mongoc_buffer_init:
  * @buffer: A mongoc_buffer_t to initialize.
@@ -165,7 +150,7 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       }
       buffer->off = 0;
       if (!SPACE_FOR(buffer, size)) {
-         buffer->datalen = npow2(size);
+         buffer->datalen = bson_next_power_of_two(size);
          buffer->data = bson_realloc(buffer->data, buffer->datalen);
       }
    }
