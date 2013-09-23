@@ -43,11 +43,11 @@ struct _mongoc_collection_t
 
 
 mongoc_collection_t *
-mongoc_collection_new (mongoc_client_t              *client,
-                       const char                   *db,
-                       const char                   *collection,
-                       const mongoc_read_prefs_t    *read_prefs,
-                       const mongoc_write_concern_t *write_concern);
+_mongoc_collection_new (mongoc_client_t              *client,
+                        const char                   *db,
+                        const char                   *collection,
+                        const mongoc_read_prefs_t    *read_prefs,
+                        const mongoc_write_concern_t *write_concern);
 
 
 BSON_END_DECLS

@@ -841,8 +841,8 @@ mongoc_client_get_collection (mongoc_client_t *client,     /* IN */
    bson_return_val_if_fail(db, NULL);
    bson_return_val_if_fail(collection, NULL);
 
-   return mongoc_collection_new(client, db, collection, client->read_prefs,
-                                client->write_concern);
+   return _mongoc_collection_new(client, db, collection, client->read_prefs,
+                                 client->write_concern);
 }
 
 
