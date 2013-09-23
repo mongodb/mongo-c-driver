@@ -154,11 +154,26 @@ test_mongoc_host_list_from_string (void)
 }
 
 
+static void
+test_mongoc_uri_new_for_host_port (void)
+{
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new_for_host_port("uber", 555);
+   assert(uri);
+   assert(!strcmp("uber", mongoc_uri_get_hosts(uri)->host));
+   assert(!strcmp("uber:555", mongoc_uri_get_hosts(uri)->host_and_port));
+   assert(555 == mongoc_uri_get_hosts(uri)->port);
+   mongoc_uri_destroy(uri);
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
    run_test("/mongoc/uri/new", test_mongoc_uri_new);
+   run_test("/mongoc/uri/new_for_host_port", test_mongoc_uri_new_for_host_port);
    run_test("/mongoc/host_list/from_string", test_mongoc_host_list_from_string);
 
    return 0;

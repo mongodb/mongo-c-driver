@@ -76,6 +76,7 @@ mongoc_uri_get_replica_set
 mongoc_uri_get_string
 mongoc_uri_get_username
 mongoc_uri_new
+mongoc_uri_new_for_host_port
 mongoc_write_concern_copy
 mongoc_write_concern_destroy
 mongoc_write_concern_get_fsync

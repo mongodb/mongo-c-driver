@@ -492,6 +492,24 @@ mongoc_uri_new (const char *uri_string)
 }
 
 
+mongoc_uri_t *
+mongoc_uri_new_for_host_port (const char    *hostname,
+                              bson_uint16_t  port)
+{
+   mongoc_uri_t *uri;
+   char *str;
+
+   bson_return_val_if_fail(hostname, NULL);
+   bson_return_val_if_fail(port, NULL);
+
+   str = bson_strdup_printf("mongodb://%s:%hu/", hostname, port);
+   uri = mongoc_uri_new(str);
+   bson_free(str);
+
+   return uri;
+}
+
+
 const char *
 mongoc_uri_get_username (const mongoc_uri_t *uri)
 {
