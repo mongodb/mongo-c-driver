@@ -70,7 +70,7 @@ _mongoc_collection_new (mongoc_client_t                       *client,
       mongoc_write_concern_new();
    col->read_prefs = read_prefs ?
       mongoc_read_prefs_copy(read_prefs) :
-      mongoc_read_prefs_new();
+      mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
    snprintf(col->ns, sizeof col->ns - 1, "%s.%s",
             db, collection);

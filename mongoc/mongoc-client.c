@@ -956,6 +956,6 @@ mongoc_client_set_read_prefs (mongoc_client_t           *client,     /* IN */
       }
       client->read_prefs = read_prefs ?
          mongoc_read_prefs_copy(read_prefs) :
-         mongoc_read_prefs_new();
+         mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
    }
 }

@@ -22,13 +22,12 @@
 
 
 mongoc_read_prefs_t *
-mongoc_read_prefs_new (void)
+mongoc_read_prefs_new (mongoc_read_mode_t mode)
 {
    mongoc_read_prefs_t *read_prefs;
 
-
    read_prefs = bson_malloc0(sizeof *read_prefs);
-   read_prefs->mode = MONGOC_READ_PRIMARY;
+   read_prefs->mode = mode;
    bson_init(&read_prefs->tags);
 
    return read_prefs;
@@ -281,8 +280,7 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
    mongoc_read_prefs_t *ret = NULL;
 
    if (read_prefs) {
-      ret = mongoc_read_prefs_new();
-      ret->mode = read_prefs->mode;
+      ret = mongoc_read_prefs_new(read_prefs->mode);
       bson_copy_to(&read_prefs->tags, &ret->tags);
    }
 

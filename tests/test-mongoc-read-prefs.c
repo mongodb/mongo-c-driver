@@ -18,7 +18,7 @@ test_mongoc_read_prefs_score (void)
    valid = mongoc_read_prefs_is_valid(r); \
    assert_cmpint(valid, ==, 1)
 
-   read_prefs = mongoc_read_prefs_new();
+   read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY);
    ASSERT_VALID(read_prefs);
