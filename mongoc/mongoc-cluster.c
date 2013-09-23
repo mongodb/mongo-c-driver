@@ -25,6 +25,7 @@
 #include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
+#include "mongoc-read-prefs-private.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
@@ -433,6 +434,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
    bson_uint32_t watermark;
    bson_int32_t nearest = -1;
    bson_bool_t need_primary;
+   bson_bool_t need_secondary;
    size_t i;
 
    bson_return_val_if_fail(cluster, NULL);
@@ -450,16 +452,16 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
    /*
     * Determine if our read preference requires communicating with PRIMARY.
     */
-   if (read_prefs) {
+   if (read_prefs)
       read_mode = mongoc_read_prefs_get_mode(read_prefs);
-   }
    need_primary = (read_mode == MONGOC_READ_PRIMARY);
+   need_secondary = (read_mode == MONGOC_READ_SECONDARY);
 
    /*
     * Check to see if any RPCs require the primary. If so, we pin all
     * of the RPCs to the primary.
     */
-   for (i = 0; !need_primary && i < rpcs_len; i++) {
+   for (i = 0; !need_primary && (i < rpcs_len); i++) {
       switch (rpcs[i].header.opcode) {
       case MONGOC_OPCODE_KILL_CURSORS:
       case MONGOC_OPCODE_GET_MORE:
@@ -467,6 +469,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
       case MONGOC_OPCODE_REPLY:
          break;
       case MONGOC_OPCODE_QUERY:
+         rpcs[i].query.flags |= need_secondary ? MONGOC_QUERY_SLAVE_OK : 0;
          if (!(rpcs[i].query.flags & MONGOC_QUERY_SLAVE_OK)) {
             need_primary = TRUE;
          }
@@ -487,7 +490,10 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (need_primary && cluster->nodes[i].primary)
          return &cluster->nodes[i];
-      nodes[i] = cluster->nodes[i].stream ? &cluster->nodes[i] : NULL;
+      else if (need_secondary && cluster->nodes[i].primary)
+         nodes[i] = NULL;
+      else
+         nodes[i] = cluster->nodes[i].stream ? &cluster->nodes[i] : NULL;
    }
 
    /*
@@ -515,6 +521,11 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     * - Select a leftover node at random.
     */
 
+   /*
+    * TODO: This whole section is ripe for optimization. It is very much
+    *       in the fast path of command dispatching.
+    */
+
 #define IS_NEARER_THAN(n, msec) \
    ((msec < 0 && (n)->ping_msec >= 0) || ((n)->ping_msec < msec))
 
@@ -522,10 +533,13 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
 
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (nodes[i]) {
-#if 0
          if (read_prefs) {
+            int score = _mongoc_read_prefs_score(read_prefs, nodes[i]);
+            if (score < 0) {
+               nodes[i] = NULL;
+               continue;
+            }
          }
-#endif
          if (IS_NEARER_THAN(nodes[i], nearest)) {
             nearest = nodes[i]->ping_msec;
          }
@@ -541,8 +555,10 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
    if (nearest != -1) {
       watermark = nearest + cluster->sec_latency_ms;
       for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
-         if (nodes[i]->ping_msec > watermark) {
-            nodes[i] = NULL;
+         if (nodes[i]) {
+            if (nodes[i]->ping_msec > watermark) {
+               nodes[i] = NULL;
+            }
          }
       }
    }
