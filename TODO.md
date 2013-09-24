@@ -35,6 +35,7 @@ See Replica Sets and Sharded Cluster.
  * [M1] Occasionally perform reconnect when in unhealthy state and
    time period has elapsed. This means keeping the monotonic time we
    last performed a reconnect.
+ * [M1] Don't discard ping times when reconnecting to nodes.
 
 ## Sharded Cluster
 
