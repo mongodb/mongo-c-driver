@@ -805,6 +805,50 @@ failure:
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_cluster_ping_node --
+ *
+ *       Ping a remote node and return the round-trip latency.
+ *
+ * Returns:
+ *       A 32-bit integer counting the number of milliseconds to complete.
+ *       -1 if there was a failure to communicate.
+ *
+ * Side effects:
+ *       @error is set of -1 is returned.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bson_int32_t
+mongoc_cluster_ping_node (mongoc_cluster_t      *cluster, /* IN */
+                          mongoc_cluster_node_t *node,    /* IN */
+                          bson_error_t          *error)   /* OUT */
+{
+   bson_int64_t t_begin;
+   bson_int64_t t_end;
+   bson_bool_t r;
+   bson_t cmd;
+
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(node);
+   BSON_ASSERT(node->stream);
+
+   bson_init(&cmd);
+   bson_append_int32(&cmd, "ping", 4, 1);
+
+   t_begin = bson_get_monotonic_time();
+   r = mongoc_cluster_run_command(cluster, node, "admin", &cmd, NULL, error);
+   t_end = bson_get_monotonic_time();
+
+   bson_destroy(&cmd);
+
+   return r ? (bson_int32_t) ((t_end - t_begin) / 1000L) : -1;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_cluster_auth_node --
  *
  *       Performs authentication of @node using the credentials provided
@@ -1036,6 +1080,7 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
    mongoc_list_t *list;
    mongoc_list_t *liter;
    bson_uint32_t i;
+   bson_int32_t ping;
    const char *replSet;
 
    BSON_ASSERT(cluster);
@@ -1152,6 +1197,17 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
          mongoc_cluster_node_destroy(&cluster->nodes[i]);
          continue;
       }
+
+      if (-1 == (ping = mongoc_cluster_ping_node(cluster,
+                                                 &cluster->nodes[i],
+                                                 error))) {
+         MONGOC_INFO("%s: Lost connection during ping.",
+                     host.host_and_port);
+         mongoc_cluster_node_destroy(&cluster->nodes[i]);
+         continue;
+      }
+
+      cluster->nodes[i].ping_msec = ping;
 
       i++;
    }
