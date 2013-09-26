@@ -1361,10 +1361,11 @@ MONGO_EXPORT const bson *mongo_cursor_bson( mongo_cursor *cursor ) {
 MONGO_EXPORT int mongo_cursor_next( mongo_cursor *cursor ) {
     char *next_object;
     char *message_end;
+    int already_sent = ( cursor->flags & MONGO_CURSOR_QUERY_SENT ) == MONGO_CURSOR_QUERY_SENT;
 
     if( cursor == NULL ) return MONGO_ERROR;
 
-    if( ! ( cursor->flags & MONGO_CURSOR_QUERY_SENT ) )
+    if( ! already_sent )
         if( mongo_cursor_op_query( cursor ) != MONGO_OK )
             return MONGO_ERROR;
 
@@ -1383,7 +1384,10 @@ MONGO_EXPORT int mongo_cursor_next( mongo_cursor *cursor ) {
         }
 
         else {
-            cursor->err = MONGO_CURSOR_INVALID;
+            if( already_sent ) {
+                cursor->err = MONGO_CURSOR_INVALID;
+            }
+            /* else preserve the MONGO_CURSOR_EXHAUSTED error flag set by mongo_cursor_get_more */
             return MONGO_ERROR;
         }
     }
