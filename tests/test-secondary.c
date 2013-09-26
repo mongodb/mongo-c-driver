@@ -1,6 +1,9 @@
 #include <mongoc.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+static volatile bson_bool_t gShutdown;
 
 static void
 query_collection (mongoc_collection_t *col)
@@ -41,15 +44,22 @@ static void
 test_secondary (mongoc_client_t *client)
 {
    mongoc_collection_t *col;
-   int i;
 
    col = mongoc_client_get_collection(client, "test", "test");
 
-   for (i = 0; i < 1000; i++) {
+   while (!gShutdown) {
       query_collection(col);
    }
 
    mongoc_collection_destroy(col);
+}
+
+static void
+sighandler (int signum)
+{
+   if (signum == SIGUSR1) {
+      gShutdown = TRUE;
+   }
 }
 
 int
@@ -70,6 +80,8 @@ main (int   argc,
       fprintf(stderr, "Invalid URI: \"%s\"\n", argv[1]);
       return EXIT_FAILURE;
    }
+
+   signal(SIGUSR1, sighandler);
 
    client = mongoc_client_new_from_uri(uri);
 
