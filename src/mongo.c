@@ -54,13 +54,14 @@ MONGO_EXPORT int mongo_get_op_timeout(mongo* conn) {
 }
 
 
-static const char* _get_host_port(mongo_host_port* hp) {
-    static char _hp[sizeof(hp->host)+12];
+static const char* _get_host_port(mongo_host_port* hp) {    
+    char *_hp = (char*) bson_malloc(sizeof(hp->host)+12);
     bson_sprintf(_hp, "%s:%d", hp->host, hp->port);
     return _hp;
 }
 
 
+/* Memory returned by this function MUST be freed with bson_free */
 MONGO_EXPORT const char* mongo_get_primary(mongo* conn) {
     mongo* conn_ = (mongo*)conn;
     if( !(conn_->connected) || (conn_->primary->host[0] == '\0') )
@@ -86,6 +87,7 @@ MONGO_EXPORT int mongo_get_host_count(mongo* conn) {
 }
 
 
+/* Memory returned by this function MUST be freed with bson_free */
 MONGO_EXPORT const char* mongo_get_host(mongo* conn, int i) {
     mongo_replica_set* r = conn->replica_set;
     mongo_host_port* hp;
