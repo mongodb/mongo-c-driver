@@ -469,8 +469,9 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
       case MONGOC_OPCODE_REPLY:
          break;
       case MONGOC_OPCODE_QUERY:
-         rpcs[i].query.flags |= need_secondary ? MONGOC_QUERY_SLAVE_OK : 0;
-         if (!(rpcs[i].query.flags & MONGOC_QUERY_SLAVE_OK)) {
+         if ((read_mode & MONGOC_READ_SECONDARY) != 0) {
+            rpcs[i].query.flags |= MONGOC_QUERY_SLAVE_OK;
+         } else if (!(rpcs[i].query.flags & MONGOC_QUERY_SLAVE_OK)) {
             need_primary = TRUE;
          }
          break;
@@ -624,7 +625,7 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
    rpc.query.request_id = ++cluster->request_id;
    rpc.query.response_to = 0;
    rpc.query.opcode = MONGOC_OPCODE_QUERY;
-   rpc.query.flags = MONGOC_QUERY_NONE;
+   rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
    rpc.query.collection = ns;
    rpc.query.skip = 0;
    rpc.query.n_return = -1;
