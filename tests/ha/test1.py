@@ -209,16 +209,29 @@ def test1():
         p = runHelper('test-secondary', replSet.uri)
         time.sleep(1)
 
-        # Kill a replicaSet node.
+        # Notify our test process to expect a failure.
+        p.send_signal(signal.SIGUSR1)
+
+        # Kill a node.
         r2.kill()
 
-        # Tell test-secondary to run a few more tests then exit.
+        time.sleep(.1)
+
+        # Tell our test process to expect another failure.
         p.send_signal(signal.SIGUSR1)
+
+        # Kill another node.
+        r3.kill()
+
+        p.wait()
+        assert p.returncode == 0
+
+        # TODO: bring things back up.
+        # TODO: kill two nodes, ensure failure.
     finally:
         replSet.kill()
 
+    print 'Test1 completed successfullly.'
+
 if __name__ == '__main__':
-    #test1()
-    p = runHelper('test-secondary', 'mongodb://localhost:27017/')
-    p.wait()
-    print p.returncode
+    test1()

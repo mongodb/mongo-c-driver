@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static volatile bson_bool_t gShutdown;
+static bson_bool_t gExpectingFailure;
+static bson_bool_t gShutdown;
 
 static void
 query_collection (mongoc_collection_t *col)
@@ -33,8 +34,16 @@ query_collection (mongoc_collection_t *col)
    }
 
    if (mongoc_cursor_error(cursor, &error)) {
-      fprintf(stderr, "ERROR: %s\n", error.message);
-      abort();
+      if (gExpectingFailure) {
+         if ((error.domain != MONGOC_ERROR_STREAM) ||
+             (error.code != MONGOC_ERROR_STREAM_SOCKET)) {
+            abort();
+         }
+         gExpectingFailure = FALSE;
+      } else {
+         MONGOC_WARNING("%s", error.message);
+         abort();
+      }
    }
 
    bson_destroy(&q);
@@ -58,6 +67,8 @@ static void
 sighandler (int signum)
 {
    if (signum == SIGUSR1) {
+      gExpectingFailure = TRUE;
+   } else if (signum == SIGUSR2) {
       gShutdown = TRUE;
    }
 }
@@ -82,6 +93,7 @@ main (int   argc,
    }
 
    signal(SIGUSR1, sighandler);
+   signal(SIGUSR2, sighandler);
 
    client = mongoc_client_new_from_uri(uri);
 
