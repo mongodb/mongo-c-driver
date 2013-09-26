@@ -81,7 +81,7 @@ mongoc_cluster_add_peer (mongoc_cluster_t *cluster, /* IN */
    BSON_ASSERT(cluster);
    BSON_ASSERT(peer);
 
-   MONGOC_DEBUG("Registering potential peer: %s\n", peer);
+   MONGOC_DEBUG("Registering potential peer: %s", peer);
 
    for (iter = cluster->peers; iter; iter = iter->next) {
       if (!strcmp(iter->data, peer)) {
