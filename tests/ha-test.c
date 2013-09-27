@@ -16,6 +16,7 @@
 
 
 #include <dirent.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <mongoc.h>
 #include <signal.h>
@@ -128,10 +129,25 @@ ha_node_restart (ha_node_t *node)
    }
 
    if (!pid) {
+      int fd;
+
       if (0 != chdir(node->dbpath)) {
          perror("Failed to chdir");
          abort();
       }
+
+      fd = open("/dev/null", O_RDWR);
+      if (fd == -1) {
+         perror("Failed to open /dev/null");
+         abort();
+      }
+
+      dup2(fd, STDIN_FILENO);
+      dup2(fd, STDOUT_FILENO);
+      dup2(fd, STDERR_FILENO);
+
+      close(fd);
+
       if (-1 == execvp(argv[0], argv)) {
          perror("Failed to spawn process");
          abort();
