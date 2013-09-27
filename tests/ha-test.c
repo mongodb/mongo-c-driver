@@ -74,8 +74,8 @@ void
 ha_node_setup (ha_node_t *node)
 {
    if (!!mkdir(node->dbpath, 0750)) {
-      fprintf(stderr, "Failed to create directory \"%s\"\n",
-              node->dbpath);
+      MONGOC_WARNING("Failed to create directory \"%s\"",
+                     node->dbpath);
       abort();
    }
 }
@@ -282,7 +282,7 @@ ha_replica_set_configure (ha_replica_set_t *replica_set,
    bson_append_document_end(&cmd, &config);
 
    str = bson_as_json(&cmd, NULL);
-   printf("%s\n", str);
+   MONGOC_DEBUG("Config: %s", str);
    bson_free(str);
 
    database = mongoc_client_get_database(client, "admin");
@@ -298,14 +298,13 @@ again:
 
    while (mongoc_cursor_next(cursor, &doc)) {
       str = bson_as_json(doc, NULL);
-      fprintf(stderr, "%s\n", str);
+      MONGOC_DEBUG("Reply: %s", str);
       bson_free(str);
    }
 
    if (mongoc_cursor_error(cursor, &error)) {
-      fprintf(stderr, "%s\n", error.message);
       mongoc_cursor_destroy(cursor);
-      fprintf(stderr, "Retrying in 1 second.\n");
+      MONGOC_WARNING("%s. Retrying in 1 second.", error.message);
       sleep(1);
       goto again;
    }
@@ -437,27 +436,32 @@ ha_replica_set_wait_for_healthy (ha_replica_set_t *replica_set)
    bson_iter_t member;
    const char *stateStr;
    bson_t status;
-   char *str;
 
 again:
    sleep(1);
 
    if (!ha_replica_set_get_status(replica_set, &status)) {
-      fprintf(stderr, "Failed to get replicaSet status. "
-                      "Sleeping 1 second.\n");
+      MONGOC_INFO("Failed to get replicaSet status. "
+                  "Sleeping 1 second.");
       goto again;
    }
 
-   str = bson_as_json(&status, NULL);
-   printf("%s\n", str);
-   bson_free(str);
+#if 0
+   {
+      char *str;
+
+      str = bson_as_json(&status, NULL);
+      printf("%s\n", str);
+      bson_free(str);
+   }
+#endif
 
    if (!bson_iter_init_find(&iter, &status, "members") ||
        !BSON_ITER_HOLDS_ARRAY(&iter) ||
        !bson_iter_recurse(&iter, &ar)) {
       bson_destroy(&status);
-      fprintf(stderr, "ReplicaSet has not yet come online. "
-                      "Sleeping 1 second.\n");
+      MONGOC_INFO("ReplicaSet has not yet come online. "
+                  "Sleeping 1 second.");
       goto again;
    }
 
@@ -470,8 +474,7 @@ again:
              !!strcmp(stateStr, "SECONDARY") &&
              !!strcmp(stateStr, "ARBITER")) {
             bson_destroy(&status);
-            fprintf(stderr, "Found unhealthy node. "
-                            "Sleeping 1 second.\n");
+            MONGOC_INFO("Found unhealthy node. Sleeping 1 second.");
             goto again;
          }
       }
