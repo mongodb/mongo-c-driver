@@ -12,6 +12,7 @@ noinst_PROGRAMS += test-mongoc-rpc
 noinst_PROGRAMS += test-mongoc-uri
 noinst_PROGRAMS += test-mongoc-write-concern
 noinst_PROGRAMS += test-secondary
+noinst_PROGRAMS += test-replica-set
 
 
 TEST_PROGS =
@@ -105,6 +106,13 @@ test_mongoc_write_concern_LDADD = $(TEST_LIBS)
 test_secondary_SOURCES = $(top_srcdir)/tests/test-secondary.c
 test_secondary_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_secondary_LDADD = libmongoc-1.0.la
+
+test_replica_set_SOURCES = \
+	$(top_srcdir)/tests/test-replica-set.c \
+	$(top_srcdir)/tests/ha-test.c \
+	$(top_srcdir)/tests/ha-test.h
+test_replica_set_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+test_replica_set_LDADD = libmongoc-1.0.la
 
 
 test: $(TEST_PROGS)

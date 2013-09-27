@@ -24,6 +24,7 @@ mongoc-stat
 *.pc
 stamp-h1
 *.swp
+test1
 test-load
 test-mock-server
 test-mongoc-array
@@ -38,4 +39,5 @@ test-mongoc-read-prefs
 test-mongoc-rpc
 test-mongoc-uri
 test-mongoc-write-concern
+test-replica-set
 test-secondary
