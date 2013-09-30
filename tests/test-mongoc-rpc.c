@@ -28,7 +28,7 @@ get_test_file (const char *filename,
       abort();
    }
 
-   len = 4096;
+   len = 40960;
    buf = bson_malloc0(len);
    len = read(fd, buf, len);
    assert(len > 0);
@@ -489,6 +489,49 @@ test_mongoc_rpc_reply_scatter (void)
 
 
 static void
+test_mongoc_rpc_reply_scatter2 (void)
+{
+   bson_reader_t *reader;
+   bson_uint8_t *data;
+   mongoc_rpc_t rpc;
+   const bson_t *b;
+   bson_bool_t r;
+   bson_bool_t eof = FALSE;
+   bson_t empty;
+   size_t length;
+   int count = 0;
+
+   bson_init(&empty);
+
+   memset(&rpc, 0xFFFFFFFF, sizeof rpc);
+
+   data = get_test_file("reply2.dat", &length);
+   r = mongoc_rpc_scatter(&rpc, data, length);
+   assert(r);
+
+   assert(rpc.reply.msg_len == 16236);
+   assert(rpc.reply.request_id == 0);
+   assert(rpc.reply.response_to == 1234);
+   assert(rpc.reply.opcode == MONGOC_OPCODE_REPLY);
+   assert(rpc.reply.flags == 0);
+   assert(rpc.reply.cursor_id == 12345678);
+   assert(rpc.reply.start_from == 0);
+   assert(rpc.reply.n_returned == 100);
+   assert(rpc.reply.documents_len == 16200);
+   reader = bson_reader_new_from_data(rpc.reply.documents, rpc.reply.documents_len);
+   while ((b = bson_reader_read(reader, &eof))) {
+      count++;
+   }
+   assert(eof == TRUE);
+   assert(count == 100);
+
+   assert_rpc_equal("reply2.dat", &rpc);
+   bson_reader_destroy(reader);
+   bson_free(data);
+}
+
+
+static void
 test_mongoc_rpc_update_gather (void)
 {
    mongoc_rpc_t rpc;
@@ -581,6 +624,7 @@ main (int   argc,
    run_test("/mongoc/rpc/query/scatter", test_mongoc_rpc_query_scatter);
    run_test("/mongoc/rpc/reply/gather", test_mongoc_rpc_reply_gather);
    run_test("/mongoc/rpc/reply/scatter", test_mongoc_rpc_reply_scatter);
+   run_test("/mongoc/rpc/reply/scatter2", test_mongoc_rpc_reply_scatter2);
    run_test("/mongoc/rpc/update/gather", test_mongoc_rpc_update_gather);
    run_test("/mongoc/rpc/update/scatter", test_mongoc_rpc_update_scatter);
 
