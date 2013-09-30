@@ -151,7 +151,7 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       buffer->off = 0;
       if (!SPACE_FOR(buffer, size)) {
          buffer->datalen = bson_next_power_of_two(size);
-         buffer->data = bson_realloc(buffer->data, buffer->datalen);
+         buffer->data = buffer->realloc_func(buffer->data, buffer->datalen);
       }
    }
 
@@ -210,8 +210,12 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    buffer->off = 0;
 
-   avail_bytes = buffer->datalen - buffer->len;
+   if (!SPACE_FOR(buffer, min_bytes)) {
+      buffer->datalen = bson_next_power_of_two(buffer->len + min_bytes);
+      buffer->data = bson_realloc(buffer->data, buffer->datalen);
+   }
 
+   avail_bytes = buffer->datalen - buffer->len;
 
    ret = mongoc_stream_read(stream,
                             &buffer->data[buffer->off + buffer->len],
