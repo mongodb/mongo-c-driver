@@ -30,24 +30,37 @@
 #include "ha-test.h"
 
 
-struct _ha_replica_set_t
+mongoc_client_t *
+ha_replica_set_create_client (ha_replica_set_t *replica_set)
 {
-   char      *name;
-   ha_node_t *nodes;
-   int        next_port;
-};
+   mongoc_client_t *client;
+   bson_string_t *str;
+   ha_node_t *iter;
+   char *portstr;
 
+   str = bson_string_new("mongodb://");
 
-struct _ha_node_t
-{
-   ha_node_t     *next;
-   char          *name;
-   char          *repl_set;
-   char          *dbpath;
-   bson_bool_t    is_arbiter;
-   pid_t          pid;
-   bson_uint16_t  port;
-};
+   for (iter = replica_set->nodes; iter; iter = iter->next) {
+      bson_string_append(str, "127.0.0.1:");
+
+      portstr = bson_strdup_printf("%hu", iter->port);
+      bson_string_append(str, portstr);
+      bson_free(portstr);
+
+      if (iter->next) {
+         bson_string_append(str, ",");
+      }
+   }
+
+   bson_string_append(str, "/?replicaSet=");
+   bson_string_append(str, replica_set->name);
+
+   client = mongoc_client_new(str->str);
+
+   bson_string_free(str, TRUE);
+
+   return client;
+}
 
 
 static ha_node_t *

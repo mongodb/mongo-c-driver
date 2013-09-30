@@ -20,6 +20,7 @@
 
 
 #include <bson.h>
+#include <mongoc.h>
 
 
 BSON_BEGIN_DECLS
@@ -29,11 +30,32 @@ typedef struct _ha_replica_set_t ha_replica_set_t;
 typedef struct _ha_node_t        ha_node_t;
 
 
+struct _ha_replica_set_t
+{
+   char      *name;
+   ha_node_t *nodes;
+   int        next_port;
+};
+
+
+struct _ha_node_t
+{
+   ha_node_t     *next;
+   char          *name;
+   char          *repl_set;
+   char          *dbpath;
+   bson_bool_t    is_arbiter;
+   pid_t          pid;
+   bson_uint16_t  port;
+};
+
+
 ha_replica_set_t *ha_replica_set_new              (const char       *name);
 ha_node_t        *ha_replica_set_add_arbiter      (ha_replica_set_t *replica_set,
                                                    const char       *name);
 ha_node_t        *ha_replica_set_add_replica      (ha_replica_set_t *replica_set,
                                                    const char       *name);
+mongoc_client_t  *ha_replica_set_create_client    (ha_replica_set_t *replica_set);
 void              ha_replica_set_start            (ha_replica_set_t *replica_set);
 void              ha_replica_set_shutdown         (ha_replica_set_t *replica_set);
 void              ha_replica_set_destroy          (ha_replica_set_t *replica_set);
