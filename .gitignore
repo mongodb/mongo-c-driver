@@ -37,6 +37,7 @@ test-mongoc-list
 test-mongoc-queue
 test-mongoc-read-prefs
 test-mongoc-rpc
+test-mongoc-stream
 test-mongoc-uri
 test-mongoc-write-concern
 test-replica-set
