@@ -33,6 +33,7 @@
 #include "mongoc-opcode.h"
 #include "mongoc-log.h"
 #include "mongoc-stream.h"
+#include "mongoc-stream-buffered.h"
 #include "mongoc-stdint.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
