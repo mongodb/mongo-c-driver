@@ -187,6 +187,7 @@ ssize_t
 mongoc_buffer_fill (mongoc_buffer_t *buffer,
                     mongoc_stream_t *stream,
                     ssize_t          min_bytes,
+                    bson_uint32_t    timeout_msec,
                     bson_error_t    *error)
 {
    ssize_t ret;
@@ -211,9 +212,10 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    avail_bytes = buffer->datalen - buffer->len;
 
+
    ret = mongoc_stream_read(stream,
                             &buffer->data[buffer->off + buffer->len],
-                            avail_bytes, min_bytes, 0);
+                            avail_bytes, min_bytes, timeout_msec);
 
    if (ret == -1) {
       return -1;

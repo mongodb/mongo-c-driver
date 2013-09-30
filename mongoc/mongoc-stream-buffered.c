@@ -206,6 +206,7 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
    if (-1 == mongoc_buffer_fill(&buffered->buffer,
                                 buffered->base_stream,
                                 total_bytes,
+                                timeout_msec,
                                 &error)) {
       MONGOC_WARNING("Failure to buffer %u bytes: %s",
                      (unsigned)total_bytes,

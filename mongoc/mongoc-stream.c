@@ -223,12 +223,12 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        * out this is not a socket, fall back to readv(). This should only
        * happen during unit tests.
        */
-   again:
       errno = 0;
       r = recvmsg(file->fd, &msg, flags);
       if (r == -1) {
          if (errno == EAGAIN) {
-            goto again;
+            r = 0;
+            goto prepare_wait_poll;
          } else if (errno == ENOTSOCK) {
             r = readv(file->fd, iov + cur, iovcnt - cur);
             if (!r) {
@@ -249,9 +249,11 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       /*
        * Handle the case where we ran out of time and no data was read.
        */
+prepare_wait_poll:
       now = bson_get_monotonic_time();
       if (((expire - now) < 0) && (r == 0)) {
          mongoc_counter_streams_timeout_inc();
+         errno = ETIMEDOUT;
          return -1;
       }
 
