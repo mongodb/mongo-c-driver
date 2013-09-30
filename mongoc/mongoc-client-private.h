@@ -23,6 +23,7 @@
 
 #include "mongoc-buffer-private.h"
 #include "mongoc-client.h"
+#include "mongoc-cluster-private.h"
 #include "mongoc-host-list.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
@@ -31,6 +32,21 @@
 
 
 BSON_BEGIN_DECLS
+
+
+struct _mongoc_client_t
+{
+   bson_uint32_t              request_id;
+   mongoc_list_t             *conns;
+   mongoc_uri_t              *uri;
+   mongoc_cluster_t           cluster;
+
+   mongoc_stream_initiator_t  initiator;
+   void                      *initiator_data;
+
+   mongoc_read_prefs_t       *read_prefs;
+   mongoc_write_concern_t    *write_concern;
+};
 
 
 mongoc_stream_t *mongoc_client_create_stream (mongoc_client_t              *client,
