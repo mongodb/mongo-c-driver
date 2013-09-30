@@ -257,6 +257,7 @@ ha_replica_set_configure (ha_replica_set_t *replica_set,
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
+   bson_iter_t iter;
    ha_node_t *node;
    bson_t ar;
    bson_t cmd;
@@ -313,15 +314,20 @@ again:
       str = bson_as_json(doc, NULL);
       MONGOC_DEBUG("Reply: %s", str);
       bson_free(str);
+      if (bson_iter_init_find(&iter, doc, "ok") &&
+          bson_iter_as_bool(&iter)) {
+         goto cleanup;
+      }
    }
 
    if (mongoc_cursor_error(cursor, &error)) {
       mongoc_cursor_destroy(cursor);
-      MONGOC_WARNING("%s. Retrying in 1 second.", error.message);
+      MONGOC_WARNING("%s: Retrying in 1 second.", error.message);
       sleep(1);
       goto again;
    }
 
+cleanup:
    mongoc_cursor_destroy(cursor);
    mongoc_database_destroy(database);
    mongoc_client_destroy(client);
