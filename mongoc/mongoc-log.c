@@ -16,6 +16,7 @@
 
 
 #include <stdarg.h>
+#include <time.h>
 
 #include "mongoc-log.h"
 
@@ -93,7 +94,20 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
                             const char         *message,
                             void               *user_data)
 {
-   fprintf(stderr, "%s: %s: %s\n",
+   struct timeval tv;
+   struct tm tt;
+   time_t t;
+   char nowstr[32];
+
+   gettimeofday(&tv, NULL);
+   t = tv.tv_sec;
+   tt = *localtime(&t);
+
+   strftime(nowstr, sizeof nowstr, "%Y/%m/%d %H:%M:%S", &tt);
+
+   fprintf(stderr, "%s.%04ld: %s: %s: %s\n",
+           nowstr,
+           tv.tv_usec / 1000L,
            log_level_str(log_level),
            log_domain,
            message);
