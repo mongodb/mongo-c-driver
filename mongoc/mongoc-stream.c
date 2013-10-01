@@ -225,7 +225,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        */
       errno = 0;
       r = recvmsg(file->fd, &msg, flags);
-      if (r == -1) {
+      if (r < 0) {
          if (errno == EAGAIN) {
             r = 0;
             goto prepare_wait_poll;
@@ -240,7 +240,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       /*
        * If our recvmsg() failed, we can't do much now can we?
        */
-      if (r == -1) {
+      if (r < 0) {
          return r;
       } else {
          ret += r;
