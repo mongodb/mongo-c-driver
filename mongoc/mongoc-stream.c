@@ -629,6 +629,10 @@ mongoc_stream_read (mongoc_stream_t *stream,
       return 0;
    }
 
+   if (min_bytes <= 0) {
+      min_bytes = count;
+   }
+
    iov.iov_base = buf;
    iov.iov_len = count;
 
