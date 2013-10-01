@@ -201,6 +201,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
 #ifdef POLLRDHUP
    fds.events |= POLLRDHUP;
 #endif
+   fds.revents = 0;
 
    for (;;) {
       /*
@@ -242,6 +243,11 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        */
       if (r < 0) {
          return r;
+      } else if ((r == 0) && (fds.revents & POLLIN)) {
+         /*
+          * We expected input data and got zero. client closed?
+          */
+         return ret;
       } else {
          ret += r;
       }
