@@ -99,10 +99,13 @@ test1 (void)
    client = ha_replica_set_create_client(replica_set);
    collection = mongoc_client_get_collection(client, "test1", "test1");
 
+   MONGOC_DEBUG("Inserting test documents.");
    insert_test_docs(collection);
+   MONGOC_INFO("Test documents inserted.");
 
    read_prefs = mongoc_read_prefs_new(MONGOC_READ_SECONDARY);
 
+   MONGOC_DEBUG("Sending query to a SECONDARY.");
    cursor = mongoc_collection_find(collection,
                                    MONGOC_QUERY_NONE,
                                    0,
@@ -117,6 +120,7 @@ test1 (void)
    /*
     * Send OP_QUERY to server and get first document back.
     */
+   MONGOC_INFO("Sending OP_QUERY.");
    r = mongoc_cursor_next(cursor, &doc);
    BSON_ASSERT(r);
    BSON_ASSERT(cursor->hint);
@@ -127,6 +131,7 @@ test1 (void)
    /*
     * Exhaust the items in our first OP_REPLY.
     */
+   MONGOC_DEBUG("Exhausting OP_REPLY.");
    for (i = 0; i < 98; i++) {
       r = mongoc_cursor_next(cursor, &doc);
       BSON_ASSERT(r);
@@ -138,6 +143,7 @@ test1 (void)
    /*
     * Finish off the last item in this OP_REPLY.
     */
+   MONGOC_INFO("Fetcing last doc from OP_REPLY.");
    r = mongoc_cursor_next(cursor, &doc);
    BSON_ASSERT(r);
    BSON_ASSERT(cursor->hint);
@@ -156,11 +162,13 @@ test1 (void)
    /*
     * Kill the node we are communicating with.
     */
+   MONGOC_INFO("Killing replicaSet node to synthesize failure.");
    ha_node_kill(replica);
 
    /*
     * Try to fetch the next result set, expect failure.
     */
+   MONGOC_DEBUG("Checking for expected failure.");
    r = mongoc_cursor_next(cursor, &doc);
    BSON_ASSERT(!r);
 
