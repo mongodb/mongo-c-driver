@@ -195,12 +195,13 @@ mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    bson_return_val_if_fail(buffer, FALSE);
    bson_return_val_if_fail(stream, FALSE);
-   bson_return_val_if_fail(min_bytes >= -1, FALSE);
+   bson_return_val_if_fail(min_bytes >= 0, FALSE);
 
    BSON_ASSERT(buffer->data);
    BSON_ASSERT(buffer->datalen);
 
-   if ((min_bytes > 0) && (buffer->len >= min_bytes)) {
+   min_bytes -= buffer->len;
+   if (min_bytes <= 0) {
       return buffer->len;
    }
 
