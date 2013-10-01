@@ -301,6 +301,8 @@ prepare_wait_poll:
          errno = ETIMEDOUT;
          mongoc_counter_streams_timeout_inc();
          return -1;
+      } else if ((fds.revents & POLLIN) != POLLIN) {
+         return -1;
       }
    }
 
