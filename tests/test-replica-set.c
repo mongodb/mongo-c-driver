@@ -21,10 +21,15 @@ static ha_node_t *a1;
 static void
 insert_test_docs (mongoc_collection_t *collection)
 {
+   mongoc_write_concern_t *write_concern;
    bson_error_t error;
    bson_oid_t oid;
    bson_t b;
    int i;
+
+   write_concern = mongoc_write_concern_new();
+   mongoc_write_concern_set_w(write_concern, 3);
+   mongoc_write_concern_set_fsync(write_concern, TRUE);
 
    for (i = 0; i < 200; i++) {
       bson_init(&b);
@@ -33,13 +38,15 @@ insert_test_docs (mongoc_collection_t *collection)
       if (!mongoc_collection_insert(collection,
                                     MONGOC_INSERT_NONE,
                                     &b,
-                                    NULL,
+                                    write_concern,
                                     &error)) {
          MONGOC_ERROR("%s", error.message);
          abort();
       }
       bson_destroy(&b);
    }
+
+   mongoc_write_concern_destroy(write_concern);
 }
 
 
