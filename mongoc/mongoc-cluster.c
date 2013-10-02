@@ -58,6 +58,58 @@
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_cluster_update_state --
+ *
+ *       Check the all peer nodes to update the cluster state.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+mongoc_cluster_update_state (mongoc_cluster_t *cluster) /* IN */
+{
+   mongoc_cluster_state_t state;
+   mongoc_cluster_node_t *node;
+   int up_nodes = 0;
+   int down_nodes = 0;
+   int i;
+
+   BSON_ASSERT(cluster);
+
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      node = &cluster->nodes[i];
+      if (node->stamp && !node->stream) {
+         down_nodes++;
+      } else if (node->stream) {
+         up_nodes++;
+      }
+   }
+
+   if (!up_nodes && !down_nodes) {
+      state = MONGOC_CLUSTER_STATE_BORN;
+   } else if (!up_nodes && down_nodes) {
+      state = MONGOC_CLUSTER_STATE_DEAD;
+   } else if (up_nodes && !down_nodes) {
+      state = MONGOC_CLUSTER_STATE_HEALTHY;
+   } else {
+      BSON_ASSERT(up_nodes);
+      BSON_ASSERT(down_nodes);
+      state = MONGOC_CLUSTER_STATE_UNHEALTHY;
+   }
+
+   cluster->state = state;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_cluster_add_peer --
  *
  *       Adds a peer to the list of peers that should be potentially
@@ -279,6 +331,7 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
    bson_destroy(&node->tags);
    bson_init(&node->tags);
 
+   mongoc_cluster_update_state(cluster);
 }
 
 
@@ -447,6 +500,15 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     */
    if (cluster->mode == MONGOC_CLUSTER_DIRECT) {
       return cluster->nodes[0].stream ? &cluster->nodes[0] : NULL;
+   }
+
+   /*
+    * If there is a hint, we need to connect to a specific node. If we have
+    * already connected and do not have a connection to that node, we need
+    * to fail immediately since a reconnection may not help.
+    */
+   if (hint && cluster->last_reconnect && !cluster->nodes[hint - 1].stream) {
+      return NULL;
    }
 
    /*
@@ -696,6 +758,8 @@ failure:
    if (reply) {
       bson_init(reply);
    }
+
+   mongoc_cluster_disconnect_node(cluster, node);
 
    return FALSE;
 }
@@ -1042,6 +1106,8 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
       node->needs_auth = FALSE;
    }
 
+   mongoc_cluster_update_state(cluster);
+
    return TRUE;
 }
 
@@ -1223,6 +1289,8 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
                      "No acceptable peer could be found.");
       return FALSE;
    }
+
+   mongoc_cluster_update_state(cluster);
 
    return TRUE;
 }
@@ -1542,6 +1610,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
                      MONGOC_ERROR_STREAM_SOCKET,
                      "Failure during socket delivery: %s",
                      strerror(errno));
+      mongoc_cluster_disconnect_node(cluster, node);
       return 0;
    }
 
@@ -1654,6 +1723,7 @@ mongoc_cluster_try_sendv (
                      MONGOC_ERROR_STREAM_SOCKET,
                      "Failure during socket delivery: %s",
                      strerror(errno));
+      mongoc_cluster_disconnect_node(cluster, node);
       return 0;
    }
 
