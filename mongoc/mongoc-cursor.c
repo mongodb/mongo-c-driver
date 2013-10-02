@@ -42,6 +42,8 @@ mongoc_cursor_new (mongoc_client_t           *client,
    bson_return_val_if_fail(db_and_collection, NULL);
    bson_return_val_if_fail(query, NULL);
 
+   limit = MAX(1, limit);
+
    /*
     * Cursors execute their query lazily. This sadly means that we must copy
     * some extra data around between the bson_t structures. This should be
@@ -56,7 +58,7 @@ mongoc_cursor_new (mongoc_client_t           *client,
    cursor->flags = flags;
    cursor->skip = skip;
    cursor->limit = limit;
-   cursor->batch_size = batch_size;
+   cursor->batch_size = batch_size ? batch_size : limit;
    bson_copy_to(query, &cursor->query);
 
    if (fields) {
@@ -190,7 +192,7 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
    rpc.query.flags = cursor->flags;
    rpc.query.collection = cursor->ns;
    rpc.query.skip = cursor->skip;
-   rpc.query.n_return = cursor->limit;
+   rpc.query.n_return = cursor->batch_size;
    rpc.query.query = bson_get_data(&cursor->query);
    rpc.query.fields = bson_get_data(&cursor->fields);
 
