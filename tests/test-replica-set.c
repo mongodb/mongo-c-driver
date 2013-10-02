@@ -133,7 +133,13 @@ test1 (void)
    BSON_ASSERT(cursor->hint);
    BSON_ASSERT(cursor->sent);
    BSON_ASSERT(!cursor->done);
+   BSON_ASSERT(cursor->rpc.reply.n_returned == 100);
    BSON_ASSERT(!cursor->end_of_event);
+
+   /*
+    * Make sure we queried a secondary.
+    */
+   BSON_ASSERT(!client->cluster.nodes[cursor->hint - 1].primary);
 
    /*
     * Exhaust the items in our first OP_REPLY.
@@ -178,6 +184,9 @@ test1 (void)
    MONGOC_DEBUG("Checking for expected failure.");
    r = mongoc_cursor_next(cursor, &doc);
    BSON_ASSERT(!r);
+
+   BSON_ASSERT(cursor->client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
+   BSON_ASSERT(!client->cluster.nodes[cursor->hint - 1].stream);
 
    mongoc_cursor_destroy(cursor);
    mongoc_read_prefs_destroy(read_prefs);
