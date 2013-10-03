@@ -191,6 +191,7 @@ AS_CASE([$enable_debug],
 	[yes], [
 		CFLAGS="$CFLAGS -Wall"
 		CFLAGS="$CFLAGS -Werror"
+		CFLAGS="$CFLAGS -DMONGOC_TRACE"
 	],
 	[minimum], [
 		CFLAGS="$CFLAGS -Wold-style-definition"

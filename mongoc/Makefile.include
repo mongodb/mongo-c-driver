@@ -48,6 +48,7 @@ NOINST_H_FILES = \
 	$(top_srcdir)/mongoc/mongoc-read-prefs-private.h \
 	$(top_srcdir)/mongoc/mongoc-rpc-private.h \
 	$(top_srcdir)/mongoc/mongoc-util-private.h \
+	$(top_srcdir)/mongoc/mongoc-trace.h \
 	$(top_srcdir)/mongoc/mongoc-write-concern-private.h
 
 
