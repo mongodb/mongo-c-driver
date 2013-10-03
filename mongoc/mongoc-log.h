@@ -46,6 +46,7 @@ typedef enum
    MONGOC_LOG_LEVEL_MESSAGE  = 1 << 5,
    MONGOC_LOG_LEVEL_INFO     = 1 << 6,
    MONGOC_LOG_LEVEL_DEBUG    = 1 << 7,
+   MONGOC_LOG_LEVEL_TRACE    = 1 << 8,
 } mongoc_log_level_t;
 
 

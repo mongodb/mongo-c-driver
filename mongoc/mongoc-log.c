@@ -82,6 +82,8 @@ log_level_str (mongoc_log_level_t log_level)
       return "INFO";
    case MONGOC_LOG_LEVEL_DEBUG:
       return "DEBUG";
+   case MONGOC_LOG_LEVEL_TRACE:
+      return "TRACE";
    default:
       return "UNKNOWN";
    }
