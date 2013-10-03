@@ -22,7 +22,13 @@
 #include "mongoc-client-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-error.h"
+#include "mongoc-log.h"
 #include "mongoc-opcode.h"
+#include "mongoc-trace.h"
+
+
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "cursor"
 
 
 mongoc_cursor_t *
@@ -37,6 +43,8 @@ mongoc_cursor_new (mongoc_client_t           *client,
                    const mongoc_read_prefs_t *read_prefs)
 {
    mongoc_cursor_t *cursor;
+
+   ENTRY;
 
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(db_and_collection, NULL);
@@ -75,7 +83,7 @@ mongoc_cursor_new (mongoc_client_t           *client,
 
    mongoc_counter_cursors_active_inc();
 
-   return cursor;
+   RETURN(cursor);
 }
 
 
@@ -84,6 +92,8 @@ mongoc_cursor_kill_cursor (mongoc_cursor_t *cursor,
                            bson_int64_t     cursor_id)
 {
    mongoc_rpc_t rpc = {{ 0 }};
+
+   ENTRY;
 
    bson_return_if_fail(cursor);
    bson_return_if_fail(cursor_id);
@@ -97,12 +107,16 @@ mongoc_cursor_kill_cursor (mongoc_cursor_t *cursor,
    rpc.kill_cursors.n_cursors = 1;
 
    mongoc_client_sendv(cursor->client, &rpc, 1, 0, NULL, NULL, NULL);
+
+   EXIT;
 }
 
 
 void
 mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
+   ENTRY;
+
    bson_return_if_fail(cursor);
 
    if (cursor->rpc.reply.cursor_id) {
@@ -123,6 +137,8 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
    mongoc_counter_cursors_active_dec();
    mongoc_counter_cursors_disposed_inc();
+
+   EXIT;
 }
 
 
@@ -134,6 +150,8 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
    const char *msg = "Unknown query failure";
    bson_t b;
 
+   ENTRY;
+
    bson_return_val_if_fail(cursor, FALSE);
 
    if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
@@ -141,7 +159,7 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
                      MONGOC_ERROR_PROTOCOL,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                      "Received rpc other than OP_REPLY.");
-      return TRUE;
+      RETURN(TRUE);
    }
 
    if ((cursor->rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
@@ -161,7 +179,7 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
                      code,
                      "%s",
                      msg);
-      return TRUE;
+      RETURN(TRUE);
    }
 
    if ((cursor->rpc.reply.flags & MONGOC_REPLY_CURSOR_NOT_FOUND)) {
@@ -169,10 +187,10 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
                      MONGOC_ERROR_CURSOR,
                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                      "The cursor is invalid or has expired.");
-      return TRUE;
+      RETURN(TRUE);
    }
 
-   return FALSE;
+   RETURN(FALSE);
 }
 
 
@@ -182,6 +200,8 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
    bson_uint32_t hint;
    bson_uint32_t request_id;
    mongoc_rpc_t rpc;
+
+   ENTRY;
 
    bson_return_val_if_fail(cursor, FALSE);
 
@@ -238,12 +258,12 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
    cursor->done = FALSE;
    cursor->end_of_event = FALSE;
    cursor->sent = TRUE;
-   return TRUE;
+   RETURN(TRUE);
 
 failure:
    cursor->failed = TRUE;
    cursor->done = TRUE;
-   return FALSE;
+   RETURN(FALSE);
 }
 
 
@@ -253,6 +273,8 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    bson_uint64_t cursor_id;
    bson_uint32_t request_id;
    mongoc_rpc_t rpc;
+
+   ENTRY;
 
    bson_return_val_if_fail(cursor, FALSE);
 
@@ -281,7 +303,7 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
                             NULL, cursor->read_prefs, &cursor->error)) {
       cursor->done = TRUE;
       cursor->failed = TRUE;
-      return FALSE;
+      RETURN(FALSE);
    }
 
    mongoc_buffer_clear(&cursor->buffer, FALSE);
@@ -318,13 +340,13 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
    cursor->end_of_event = FALSE;
 
-   return TRUE;
+   RETURN(TRUE);
 
 failure:
    cursor->done = TRUE;
    cursor->failed = TRUE;
 
-   return FALSE;
+   RETURN(FALSE);
 }
 
 
@@ -332,6 +354,8 @@ bson_bool_t
 mongoc_cursor_error (mongoc_cursor_t *cursor,
                      bson_error_t    *error)
 {
+   ENTRY;
+
    bson_return_val_if_fail(cursor, FALSE);
 
    if (BSON_UNLIKELY(cursor->failed)) {
@@ -340,10 +364,10 @@ mongoc_cursor_error (mongoc_cursor_t *cursor,
                      cursor->error.code,
                      "%s",
                      cursor->error.message);
-      return TRUE;
+      RETURN(TRUE);
    }
 
-   return FALSE;
+   RETURN(FALSE);
 }
 
 
@@ -353,6 +377,8 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
 {
    const bson_t *b;
    bson_bool_t eof;
+
+   ENTRY;
 
    bson_return_val_if_fail(cursor, FALSE);
 
@@ -364,7 +390,7 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
     * Short circuit if we are finished already.
     */
    if (BSON_UNLIKELY(cursor->done)) {
-      return FALSE;
+      RETURN(FALSE);
    }
 
    /*
@@ -372,11 +398,11 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
     */
    if (!cursor->sent) {
       if (!mongoc_cursor_query(cursor)) {
-         return FALSE;
+         RETURN(FALSE);
       }
    } else if (BSON_UNLIKELY(cursor->end_of_event)) {
       if (!mongoc_cursor_get_more(cursor)) {
-         return FALSE;
+         RETURN(FALSE);
       }
    }
 
@@ -398,12 +424,12 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
                      MONGOC_ERROR_CURSOR,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                      "The reply was corrupt.");
-      return FALSE;
+      RETURN(FALSE);
    }
 
    if (bson) {
       *bson = b;
    }
 
-   return !!b;
+   RETURN(!!b);
 }
