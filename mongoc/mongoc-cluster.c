@@ -568,6 +568,10 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     * Check if we failed to locate a primary.
     */
    if (need_primary) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
+                     "Requested PRIMARY node is not available.");
       RETURN(NULL);
    }
 
@@ -576,6 +580,13 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     * communicating with.
     */
    if (hint) {
+      if (!nodes[hint]) {
+         bson_set_error(error,
+                        MONGOC_ERROR_CLIENT,
+                        MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
+                        "Requested node (%u) is not available.",
+                        hint);
+      }
       RETURN(nodes[hint]);
    }
 
