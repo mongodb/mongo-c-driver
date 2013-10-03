@@ -636,7 +636,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (nodes[i]) {
          if (!count) {
-            return nodes[i];
+            RETURN(nodes[i]);
          }
          count--;
       }
