@@ -1792,8 +1792,8 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
    pos = buffer->len;
    if (!mongoc_buffer_append_from_stream(buffer, node->stream, 4,
                                          cluster->sockettimeoutms, error)) {
-      mongoc_cluster_disconnect_node(cluster, node);
       mongoc_counter_protocol_ingress_error_inc();
+      mongoc_cluster_disconnect_node(cluster, node);
       return FALSE;
    }
 
