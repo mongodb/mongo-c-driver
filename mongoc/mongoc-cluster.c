@@ -28,6 +28,7 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-trace.h"
 #include "mongoc-write-concern-private.h"
 
 
@@ -79,6 +80,8 @@ mongoc_cluster_update_state (mongoc_cluster_t *cluster) /* IN */
    int up_nodes = 0;
    int down_nodes = 0;
    int i;
+
+   ENTRY;
 
    BSON_ASSERT(cluster);
 
@@ -403,6 +406,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
 
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       mongoc_cluster_node_init(&cluster->nodes[i]);
+      cluster->nodes[i].stamp = 0;
       cluster->nodes[i].index = i;
       cluster->nodes[i].ping_msec = -1;
       cluster->nodes[i].needs_auth = cluster->requires_auth;
@@ -490,6 +494,8 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
    bson_bool_t need_secondary;
    size_t i;
 
+   ENTRY;
+
    bson_return_val_if_fail(cluster, NULL);
    bson_return_val_if_fail(rpcs, NULL);
    bson_return_val_if_fail(rpcs_len, NULL);
@@ -499,16 +505,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     * If we are in direct mode, short cut and take the first node.
     */
    if (cluster->mode == MONGOC_CLUSTER_DIRECT) {
-      return cluster->nodes[0].stream ? &cluster->nodes[0] : NULL;
-   }
-
-   /*
-    * If there is a hint, we need to connect to a specific node. If we have
-    * already connected and do not have a connection to that node, we need
-    * to fail immediately since a reconnection may not help.
-    */
-   if (hint && cluster->last_reconnect && !cluster->nodes[hint - 1].stream) {
-      return NULL;
+      RETURN(cluster->nodes[0].stream ? &cluster->nodes[0] : NULL);
    }
 
    /*
@@ -552,7 +549,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     */
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (need_primary && cluster->nodes[i].primary)
-         return &cluster->nodes[i];
+         RETURN(&cluster->nodes[i]);
       else if (need_secondary && cluster->nodes[i].primary)
          nodes[i] = NULL;
       else
@@ -563,7 +560,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     * Check if we failed to locate a primary.
     */
    if (need_primary) {
-      return NULL;
+      RETURN(NULL);
    }
 
    /*
@@ -571,7 +568,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     * communicating with.
     */
    if (hint) {
-      return nodes[hint];
+      RETURN(nodes[hint]);
    }
 
    /*
@@ -639,7 +636,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
       }
    }
 
-   return NULL;
+   RETURN(NULL);
 }
 
 
@@ -809,6 +806,7 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
                                    &command,
                                    &reply,
                                    error)) {
+      mongoc_cluster_disconnect_node(cluster, node);
       goto failure;
    }
 
@@ -1152,6 +1150,8 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
 
    BSON_ASSERT(cluster);
    BSON_ASSERT(cluster->mode == MONGOC_CLUSTER_REPLICA_SET);
+
+   MONGOC_DEBUG("Reconnecting to replica set.");
 
    if (!(hosts = mongoc_uri_get_hosts(cluster->uri))) {
       bson_set_error(error,
@@ -1668,6 +1668,9 @@ mongoc_cluster_try_sendv (
 
    if (!(node = mongoc_cluster_select(cluster, rpcs, rpcs_len, hint,
                                       write_concern, read_prefs, error))) {
+      if (cluster->state != MONGOC_CLUSTER_STATE_DEAD) {
+         cluster->state = MONGOC_CLUSTER_STATE_UNHEALTHY;
+      }
       return 0;
    }
 
