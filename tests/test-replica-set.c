@@ -198,7 +198,7 @@ test1 (void)
 
    r = mongoc_cursor_error(cursor, &error);
    BSON_ASSERT(r);
-   printf("%s\n", error.message);
+   MONGOC_WARNING("%s", error.message);
 
    BSON_ASSERT(cursor->client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
    BSON_ASSERT(client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
