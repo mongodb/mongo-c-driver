@@ -196,6 +196,7 @@ test1 (void)
    BSON_ASSERT(!r);
 
    BSON_ASSERT(cursor->client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
+   BSON_ASSERT(client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
    BSON_ASSERT(!client->cluster.nodes[cursor->hint - 1].stream);
 
    mongoc_cursor_destroy(cursor);
