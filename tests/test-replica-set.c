@@ -9,6 +9,7 @@
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-tests.h"
+#include "mongoc-write-concern-private.h"
 
 
 static ha_replica_set_t *replica_set;
@@ -29,7 +30,16 @@ insert_test_docs (mongoc_collection_t *collection)
 
    write_concern = mongoc_write_concern_new();
    mongoc_write_concern_set_w(write_concern, 3);
-   mongoc_write_concern_set_fsync(write_concern, TRUE);
+
+   {
+      const bson_t *wc;
+      char *str;
+
+      wc = mongoc_write_concern_freeze(write_concern);
+      str = bson_as_json(wc, NULL);
+      fprintf(stderr, "Write Concern: %s\n", str);
+      bson_free(str);
+   }
 
    for (i = 0; i < 200; i++) {
       bson_init(&b);
