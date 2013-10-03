@@ -113,6 +113,8 @@ mongoc_cluster_update_state (mongoc_cluster_t *cluster) /* IN */
    }
 
    cluster->state = state;
+
+   EXIT;
 }
 
 
