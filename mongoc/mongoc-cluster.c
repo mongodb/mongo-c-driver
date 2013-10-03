@@ -500,7 +500,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
    bson_int32_t nearest = -1;
    bson_bool_t need_primary;
    bson_bool_t need_secondary;
-   size_t i;
+   int i;
 
    ENTRY;
 
