@@ -22,7 +22,12 @@
 #include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
+#include "mongoc-trace.h"
 #include "mongoc-write-concern-private.h"
+
+
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "collection"
 
 
 /*
@@ -59,6 +64,8 @@ _mongoc_collection_new (mongoc_client_t                       *client,
 {
    mongoc_collection_t *col;
 
+   ENTRY;
+
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(db, NULL);
    bson_return_val_if_fail(collection, NULL);
@@ -87,7 +94,7 @@ _mongoc_collection_new (mongoc_client_t                       *client,
 
    mongoc_buffer_init(&col->buffer, NULL, 0, NULL);
 
-   return col;
+   RETURN(col);
 }
 
 
@@ -111,6 +118,8 @@ _mongoc_collection_new (mongoc_client_t                       *client,
 void
 mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
 {
+   ENTRY;
+
    bson_return_if_fail(collection);
 
    mongoc_buffer_destroy(&collection->buffer);
@@ -126,6 +135,8 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
    }
 
    bson_free(collection);
+
+   EXIT;
 }
 
 
