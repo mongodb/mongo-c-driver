@@ -42,6 +42,10 @@
 #include "mongoc-stream-buffered.h"
 
 
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "client"
+
+
 #ifndef DEFAULT_CONNECTTIMEOUTMS
 #define DEFAULT_CONNECTTIMEOUTMS (10 * 1000L)
 #endif
