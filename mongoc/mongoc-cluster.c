@@ -32,9 +32,14 @@
 #include "mongoc-write-concern-private.h"
 
 
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "cluster"
+
+
 #ifndef MAX_RETRY_COUNT
 #define MAX_RETRY_COUNT 3
 #endif
+
 
 #ifndef DEFAULT_SOCKET_TIMEOUT_MSEC
 /*
@@ -47,6 +52,7 @@
  */
 #define DEFAULT_SOCKET_TIMEOUT_MSEC (1000L * 60L * 5L)
 #endif
+
 
 #ifndef UNHEALTHY_RECONNECT_TIMEOUT_USEC
 /*
