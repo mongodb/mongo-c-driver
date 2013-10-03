@@ -1864,6 +1864,8 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
       RETURN(FALSE);
    }
 
+   DUMP_BYTES(buffer, buffer->data + buffer->off, buffer->len);
+
    /*
     * Convert endianness of the message.
     */
