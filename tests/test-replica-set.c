@@ -106,6 +106,7 @@ test1 (void)
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
    const bson_t *doc;
+   bson_error_t error;
    bson_bool_t r;
    ha_node_t *replica;
    bson_t q;
@@ -194,6 +195,10 @@ test1 (void)
    MONGOC_DEBUG("Checking for expected failure.");
    r = mongoc_cursor_next(cursor, &doc);
    BSON_ASSERT(!r);
+
+   r = mongoc_cursor_error(cursor, &error);
+   BSON_ASSERT(r);
+   printf("%s\n", error.message);
 
    BSON_ASSERT(cursor->client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
    BSON_ASSERT(client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);

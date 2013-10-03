@@ -61,7 +61,6 @@ int              mongoc_stream_cork          (mongoc_stream_t *stream);
 int              mongoc_stream_uncork        (mongoc_stream_t *stream);
 void             mongoc_stream_destroy       (mongoc_stream_t *stream);
 int              mongoc_stream_flush         (mongoc_stream_t *stream);
-mongoc_stream_t *mongoc_stream_unix_new      (int fd);
 ssize_t          mongoc_stream_writev        (mongoc_stream_t *stream,
                                               struct iovec    *iov,
                                               size_t           iovcnt,

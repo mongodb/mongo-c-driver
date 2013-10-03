@@ -26,6 +26,7 @@ INST_H_FILES = \
 	$(top_srcdir)/mongoc/mongoc-stdint.h \
 	$(top_srcdir)/mongoc/mongoc-stream.h \
 	$(top_srcdir)/mongoc/mongoc-stream-buffered.h \
+	$(top_srcdir)/mongoc/mongoc-stream-unix.h \
 	$(top_srcdir)/mongoc/mongoc-uri.h \
 	$(top_srcdir)/mongoc/mongoc-version.h \
 	$(top_srcdir)/mongoc/mongoc-write-concern.h
@@ -71,6 +72,7 @@ libmongoc_priv_la_SOURCES = \
 	$(top_srcdir)/mongoc/mongoc-rpc.c \
 	$(top_srcdir)/mongoc/mongoc-stream.c \
 	$(top_srcdir)/mongoc/mongoc-stream-buffered.c \
+	$(top_srcdir)/mongoc/mongoc-stream-unix.c \
 	$(top_srcdir)/mongoc/mongoc-uri.c \
 	$(top_srcdir)/mongoc/mongoc-util.c \
 	$(top_srcdir)/mongoc/mongoc-write-concern.c

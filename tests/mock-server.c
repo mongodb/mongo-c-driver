@@ -31,6 +31,7 @@
 
 #include "mock-server.h"
 #include "mongoc-buffer-private.h"
+#include "mongoc-stream-unix.h"
 
 
 struct _mock_server_t

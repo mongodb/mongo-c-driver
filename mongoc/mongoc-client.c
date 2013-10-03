@@ -40,6 +40,7 @@
 #include "mongoc-opcode.h"
 #include "mongoc-queue-private.h"
 #include "mongoc-stream-buffered.h"
+#include "mongoc-stream-unix.h"
 
 
 #undef MONGOC_LOG_DOMAIN

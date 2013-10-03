@@ -15,31 +15,22 @@
  */
 
 
-#ifndef MONGOC_H
-#define MONGOC_H
+#ifndef MONGOC_STREAM_UNIX_H
+#define MONGOC_STREAM_UNIX_H
 
 
 #include <bson.h>
 
-#define MONGOC_INSIDE
-#include "mongoc-client.h"
-#include "mongoc-client-pool.h"
-#include "mongoc-collection.h"
-#include "mongoc-cursor.h"
-#include "mongoc-database.h"
-#include "mongoc-error.h"
-#include "mongoc-flags.h"
-#include "mongoc-host-list.h"
-#include "mongoc-opcode.h"
-#include "mongoc-log.h"
 #include "mongoc-stream.h"
-#include "mongoc-stream-buffered.h"
-#include "mongoc-stream-unix.h"
-#include "mongoc-stdint.h"
-#include "mongoc-uri.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-version.h"
-#undef MONGOC_INSIDE
 
 
-#endif /* MONGOC_H */
+BSON_BEGIN_DECLS
+
+
+mongoc_stream_t *mongoc_stream_unix_new (int fd);
+
+
+BSON_END_DECLS
+
+
+#endif /* MONGOC_STREAM_UNIX_H */
