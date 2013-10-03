@@ -107,7 +107,7 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
 
    strftime(nowstr, sizeof nowstr, "%Y/%m/%d %H:%M:%S", &tt);
 
-   fprintf(stderr, "%s.%04ld: %8s: %s: %s\n",
+   fprintf(stderr, "%s.%04ld: %8s: %12s: %s\n",
            nowstr,
            tv.tv_usec / 1000L,
            log_level_str(log_level),
