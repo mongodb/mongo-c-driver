@@ -379,6 +379,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
     */
    fds.fd = file->fd;
    fds.events = (POLLOUT | POLLERR | POLLHUP | POLLNVAL);
+   fds.revents = 0;
 
    for (;;) {
       /*
@@ -420,6 +421,11 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        */
       if (r == -1) {
          RETURN(r);
+      } else if ((r == 0) && (fds.revents & POLLOUT)) {
+         /*
+          * We expected output data and got zero. client closed?
+          */
+         RETURN(ret);
       } else {
          ret += r;
       }
