@@ -690,6 +690,8 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
    bson_t reply_local;
    char ns[MONGOC_NAMESPACE_MAX];
 
+   ENTRY;
+
    BSON_ASSERT(cluster);
    BSON_ASSERT(node);
    BSON_ASSERT(node->stream);
@@ -717,12 +719,12 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
 
    if (!mongoc_stream_writev(node->stream, ar.data, ar.len,
                              cluster->sockettimeoutms)) {
-      goto failure;
+      GOTO(failure);
    }
 
    if (!mongoc_buffer_append_from_stream(&buffer, node->stream, 4,
                                          cluster->sockettimeoutms, error)) {
-      goto failure;
+      GOTO(failure);
    }
 
    BSON_ASSERT(buffer.len == 4);
@@ -730,27 +732,27 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
    memcpy(&msg_len, buffer.data, 4);
    msg_len = BSON_UINT32_FROM_LE(msg_len);
    if ((msg_len < 16) || (msg_len > (1024 * 1024 * 16))) {
-      goto invalid_reply;
+      GOTO(invalid_reply);
    }
 
    if (!mongoc_buffer_append_from_stream(&buffer, node->stream, msg_len - 4,
                                          cluster->sockettimeoutms, error)) {
-      goto failure;
+      GOTO(failure);
    }
 
    if (!mongoc_rpc_scatter(&rpc, buffer.data, buffer.len)) {
-      goto invalid_reply;
+      GOTO(invalid_reply);
    }
 
    mongoc_rpc_swab(&rpc);
 
    if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
-      goto invalid_reply;
+      GOTO(invalid_reply);
    }
 
    if (reply) {
       if (!mongoc_rpc_reply_get_first(&rpc.reply, &reply_local)) {
-         goto failure;
+         GOTO(failure);
       }
       bson_copy_to(&reply_local, reply);
       bson_destroy(&reply_local);
@@ -759,7 +761,7 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
    mongoc_buffer_destroy(&buffer);
    mongoc_array_destroy(&ar);
 
-   return TRUE;
+   RETURN(TRUE);
 
 invalid_reply:
    bson_set_error(error,
@@ -777,7 +779,7 @@ failure:
 
    mongoc_cluster_disconnect_node(cluster, node);
 
-   return FALSE;
+   RETURN(FALSE);
 }
 
 
@@ -812,6 +814,8 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
    bson_t command;
    bson_t reply;
 
+   ENTRY;
+
    BSON_ASSERT(cluster);
    BSON_ASSERT(node);
    BSON_ASSERT(node->stream);
@@ -826,7 +830,7 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
                                    &reply,
                                    error)) {
       mongoc_cluster_disconnect_node(cluster, node);
-      goto failure;
+      GOTO(failure);
    }
 
    node->primary = FALSE;
@@ -880,7 +884,7 @@ failure:
    bson_destroy(&command);
    bson_destroy(&reply);
 
-   return ret;
+   RETURN(ret);
 }
 
 
@@ -1533,6 +1537,8 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
    size_t i;
    int retry_count = 0;
 
+   ENTRY;
+
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(rpcs, FALSE);
    bson_return_val_if_fail(rpcs_len, FALSE);
@@ -1547,7 +1553,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
        ((cluster->state == MONGOC_CLUSTER_STATE_UNHEALTHY) &&
         (cluster->last_reconnect + UNHEALTHY_RECONNECT_TIMEOUT_USEC) <= now)) {
       if (!mongoc_cluster_reconnect(cluster, error)) {
-         return FALSE;
+         RETURN(FALSE);
       }
    }
 
@@ -1564,7 +1570,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
                                          error))) {
       if ((retry_count++ == MAX_RETRY_COUNT) ||
           !mongoc_cluster_reconnect(cluster, error)) {
-         return FALSE;
+         RETURN(FALSE);
       }
    }
 
@@ -1630,10 +1636,10 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
                      "Failure during socket delivery: %s",
                      strerror(errno));
       mongoc_cluster_disconnect_node(cluster, node);
-      return 0;
+      RETURN(0);
    }
 
-   return node->index + 1;
+   RETURN(node->index + 1);
 }
 
 
@@ -1681,16 +1687,15 @@ mongoc_cluster_try_sendv (
    size_t iovcnt;
    size_t i;
 
+   ENTRY;
+
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(rpcs, FALSE);
    bson_return_val_if_fail(rpcs_len, FALSE);
 
    if (!(node = mongoc_cluster_select(cluster, rpcs, rpcs_len, hint,
                                       write_concern, read_prefs, error))) {
-      if (cluster->state != MONGOC_CLUSTER_STATE_DEAD) {
-         cluster->state = MONGOC_CLUSTER_STATE_UNHEALTHY;
-      }
-      return 0;
+      RETURN(0);
    }
 
    BSON_ASSERT(node->stream);
@@ -1746,10 +1751,10 @@ mongoc_cluster_try_sendv (
                      "Failure during socket delivery: %s",
                      strerror(errno));
       mongoc_cluster_disconnect_node(cluster, node);
-      return 0;
+      RETURN(0);
    }
 
-   return node->index + 1;
+   RETURN(node->index + 1);
 }
 
 
@@ -1790,6 +1795,8 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
    bson_int32_t msg_len;
    off_t pos;
 
+   ENTRY;
+
    bson_return_val_if_fail(cluster, FALSE);
    bson_return_val_if_fail(rpc, FALSE);
    bson_return_val_if_fail(buffer, FALSE);
@@ -1805,7 +1812,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_NOT_READY,
                      "Failed to receive message, lost connection to node.");
-      return FALSE;
+      RETURN(FALSE);
    }
 
    /*
@@ -1816,7 +1823,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
                                          cluster->sockettimeoutms, error)) {
       mongoc_counter_protocol_ingress_error_inc();
       mongoc_cluster_disconnect_node(cluster, node);
-      return FALSE;
+      RETURN(FALSE);
    }
 
    /*
@@ -1831,7 +1838,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
                      "Corrupt or malicious reply received.");
       mongoc_cluster_disconnect_node(cluster, node);
       mongoc_counter_protocol_ingress_error_inc();
-      return FALSE;
+      RETURN(FALSE);
    }
 
    /*
@@ -1841,7 +1848,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
                                          cluster->sockettimeoutms, error)) {
       mongoc_cluster_disconnect_node(cluster, node);
       mongoc_counter_protocol_ingress_error_inc();
-      return FALSE;
+      RETURN(FALSE);
    }
 
    /*
@@ -1854,7 +1861,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
                      "Failed to decode reply from server.");
       mongoc_cluster_disconnect_node(cluster, node);
       mongoc_counter_protocol_ingress_error_inc();
-      return FALSE;
+      RETURN(FALSE);
    }
 
    /*
@@ -1864,7 +1871,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
 
    mongoc_cluster_inc_ingress_rpc(rpc);
 
-   return TRUE;
+   RETURN(TRUE);
 }
 
 
