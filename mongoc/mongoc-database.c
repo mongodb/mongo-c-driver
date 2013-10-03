@@ -22,7 +22,13 @@
 #include "mongoc-database.h"
 #include "mongoc-database-private.h"
 #include "mongoc-error.h"
+#include "mongoc-log.h"
+#include "mongoc-trace.h"
 #include "mongoc-util-private.h"
+
+
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "database"
 
 
 /*
@@ -53,6 +59,8 @@ mongoc_database_new (mongoc_client_t *client, /* IN */
 {
    mongoc_database_t *db;
 
+   ENTRY;
+
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(name, NULL);
 
@@ -61,7 +69,7 @@ mongoc_database_new (mongoc_client_t *client, /* IN */
    strncpy(db->name, name, sizeof db->name);
    db->name[sizeof db->name-1] = '\0';
 
-   return db;
+   RETURN(db);
 }
 
 
@@ -84,6 +92,8 @@ mongoc_database_new (mongoc_client_t *client, /* IN */
 void
 mongoc_database_destroy (mongoc_database_t *database) /* IN */
 {
+   ENTRY;
+
    bson_return_if_fail(database);
 
    if (database->read_prefs) {
@@ -97,6 +107,8 @@ mongoc_database_destroy (mongoc_database_t *database) /* IN */
    }
 
    bson_free(database);
+
+   EXIT;
 }
 
 
