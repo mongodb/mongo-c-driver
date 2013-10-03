@@ -119,7 +119,7 @@ test_replica_set_SOURCES = \
 	$(top_srcdir)/tests/ha-test.c \
 	$(top_srcdir)/tests/ha-test.h
 test_replica_set_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_replica_set_LDADD = libmongoc-1.0.la
+test_replica_set_LDADD = libmongoc-priv.la
 
 
 test: $(TEST_PROGS)
