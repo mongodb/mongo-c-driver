@@ -61,11 +61,16 @@ mongoc_stream_unix_destroy (mongoc_stream_t *stream)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
 
+   ENTRY;
+
    bson_return_if_fail(stream);
 
    if (mongoc_stream_close(stream) != 0) {
       /*
-       * TODO: Handle close failure.
+       * On Linux the close() system call can be pre-empted. However,
+       * Linux says that you should not handle the failure since it can
+       * cause a new file-descriptor being open()'d that raced with you
+       * to be closed as well. Fun!
        */
    }
 
@@ -75,6 +80,8 @@ mongoc_stream_unix_destroy (mongoc_stream_t *stream)
 
    mongoc_counter_streams_active_dec();
    mongoc_counter_streams_disposed_inc();
+
+   EXIT;
 }
 
 
@@ -84,6 +91,8 @@ mongoc_stream_unix_close (mongoc_stream_t *stream)
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    int ret = 0;
 
+   ENTRY;
+
    bson_return_val_if_fail(stream, -1);
 
    if (file->fd != -1) {
@@ -92,7 +101,7 @@ mongoc_stream_unix_close (mongoc_stream_t *stream)
       }
    }
 
-   return ret;
+   RETURN(ret);
 }
 
 static int
@@ -100,6 +109,8 @@ mongoc_stream_unix_flush (mongoc_stream_t *stream)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    int ret = 0;
+
+   ENTRY;
 
    bson_return_val_if_fail(stream, -1);
 
@@ -114,7 +125,7 @@ mongoc_stream_unix_flush (mongoc_stream_t *stream)
 #endif
    }
 
-   return ret;
+   RETURN(ret);
 }
 
 
@@ -122,8 +133,6 @@ static BSON_INLINE void
 timeval_add_msec (struct timeval *tv,
                   bson_uint32_t   msec)
 {
-   BSON_ASSERT(tv);
-
    tv->tv_sec += msec / 1000U;
    tv->tv_usec += msec % 1000U;
    tv->tv_sec += tv->tv_usec / USEC_PER_SEC;
@@ -148,6 +157,8 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
    ssize_t ret = 0;
    int flags = 0;
    int timeout;
+
+   ENTRY;
 
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
@@ -177,7 +188,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
 
    if (file->fd == -1) {
       errno = EBADF;
-      return -1;
+      RETURN(-1);
    }
 
    if (!timeout_msec) {
@@ -229,11 +240,11 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       if (r < 0) {
          if (errno == EAGAIN) {
             r = 0;
-            goto prepare_wait_poll;
+            GOTO(prepare_wait_poll);
          } else if (errno == ENOTSOCK) {
             r = readv(file->fd, iov + cur, iovcnt - cur);
             if (!r) {
-               return ret;
+               RETURN(ret);
             }
          }
       }
@@ -242,12 +253,12 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        * If our recvmsg() failed, we can't do much now can we?
        */
       if (r < 0) {
-         return r;
+         RETURN(r);
       } else if ((r == 0) && (fds.revents & POLLIN)) {
          /*
           * We expected input data and got zero. client closed?
           */
-         return ret;
+         RETURN(ret);
       } else {
          ret += r;
       }
@@ -260,7 +271,7 @@ prepare_wait_poll:
       if (((expire - now) < 0) && (r == 0)) {
          mongoc_counter_streams_timeout_inc();
          errno = ETIMEDOUT;
-         return -1;
+         RETURN(-1);
       }
 
       /*
@@ -302,19 +313,19 @@ prepare_wait_poll:
       fds.revents = 0;
       r = poll(&fds, 1, timeout);
       if (r == -1) {
-         return -1;
+         RETURN(-1);
       } else if (r == 0) {
          errno = ETIMEDOUT;
          mongoc_counter_streams_timeout_inc();
-         return -1;
+         RETURN(-1);
       } else if ((fds.revents & POLLIN) != POLLIN) {
-         return -1;
+         RETURN(-1);
       }
    }
 
    mongoc_counter_streams_ingress_add(ret);
 
-   return ret;
+   RETURN(ret);
 }
 
 
@@ -335,6 +346,8 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
    int flags = 0;
    int timeout;
 
+   ENTRY;
+
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
@@ -345,7 +358,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
 
    if (file->fd == -1) {
       errno = EBADF;
-      return -1;
+      RETURN(-1);
    }
 
    if (!timeout_msec) {
@@ -393,11 +406,11 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       r = sendmsg(file->fd, &msg, flags);
       if (r == -1) {
          if (errno == EAGAIN) {
-            goto again;
+            GOTO(again);
          } else if (errno == ENOTSOCK) {
             r = writev(file->fd, iov + cur, iovcnt - cur);
             if (!r) {
-               return ret;
+               RETURN(ret);
             }
          }
       }
@@ -406,7 +419,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        * If our recvmsg() failed, we can't do much now can we.
        */
       if (r == -1) {
-         return r;
+         RETURN(r);
       } else {
          ret += r;
       }
@@ -445,17 +458,17 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       fds.revents = 0;
       r = poll(&fds, 1, timeout);
       if (r == -1) {
-         return -1;
+         RETURN(-1);
       } else if (r == 0) {
          errno = ETIMEDOUT;
          mongoc_counter_streams_timeout_inc();
-         return -1;
+         RETURN(-1);
       }
    }
 
    mongoc_counter_streams_egress_add(ret);
 
-   return ret;
+   RETURN(ret);
 }
 
 
@@ -464,12 +477,19 @@ mongoc_stream_unix_cork (mongoc_stream_t *stream)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    int state = 1;
+   int ret;
+
+   ENTRY;
+
    bson_return_val_if_fail(stream, -1);
+
 #ifdef __linux__
-   return setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+   ret = setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
 #else
-   return setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
+   ret = setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
 #endif
+
+   RETURN(ret);
 }
 
 
@@ -478,12 +498,19 @@ mongoc_stream_unix_uncork (mongoc_stream_t *stream)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    int state = 0;
+   int ret;
+
+   ENTRY;
+
    bson_return_val_if_fail(stream, -1);
+
 #ifdef __linux__
-   return setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+   ret = setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
 #else
-   return setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
+   ret = setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
 #endif
+
+   RETURN(ret);
 }
 
 
@@ -495,8 +522,15 @@ mongoc_stream_unix_setsockopt (mongoc_stream_t *stream,
                                socklen_t        optlen)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
+   int ret;
+
+   ENTRY;
+
    bson_return_val_if_fail(file, -1);
-   return setsockopt(file->fd, level, optname, optval, optlen);
+
+   ret = setsockopt(file->fd, level, optname, optval, optlen);
+
+   RETURN(ret);
 }
 
 
@@ -521,6 +555,8 @@ mongoc_stream_unix_new (int fd)
    mongoc_stream_unix_t *stream;
    int flags;
 
+   ENTRY;
+
    bson_return_val_if_fail(fd != -1, NULL);
 
    /*
@@ -531,7 +567,7 @@ mongoc_stream_unix_new (int fd)
    if ((flags & O_NONBLOCK) != O_NONBLOCK) {
       if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
          MONGOC_WARNING("Failed to set O_NONBLOCK on file descriptor!");
-         return NULL;
+         RETURN(NULL);
       }
    }
 
@@ -548,5 +584,5 @@ mongoc_stream_unix_new (int fd)
 
    mongoc_counter_streams_active_inc();
 
-   return (mongoc_stream_t *)stream;
+   RETURN((mongoc_stream_t *)stream);
 }
