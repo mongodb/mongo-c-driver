@@ -23,6 +23,7 @@
 
 #include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
+#include "mongoc-client.h"
 #include "mongoc-host-list.h"
 #include "mongoc-list-private.h"
 #include "mongoc-read-prefs.h"
@@ -84,7 +85,7 @@ typedef struct
    bson_bool_t             requires_auth : 1;
 
    mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
-   void                   *client;
+   mongoc_client_t        *client;
    bson_uint32_t           max_bson_size;
    bson_uint32_t           max_msg_size;
    bson_uint32_t           sec_latency_ms;
