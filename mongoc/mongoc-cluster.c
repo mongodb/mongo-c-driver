@@ -141,6 +141,8 @@ mongoc_cluster_add_peer (mongoc_cluster_t *cluster, /* IN */
 {
    mongoc_list_t *iter;
 
+   ENTRY;
+
    BSON_ASSERT(cluster);
    BSON_ASSERT(peer);
 
@@ -148,11 +150,13 @@ mongoc_cluster_add_peer (mongoc_cluster_t *cluster, /* IN */
 
    for (iter = cluster->peers; iter; iter = iter->next) {
       if (!strcmp(iter->data, peer)) {
-         return;
+         EXIT;
       }
    }
 
    cluster->peers = mongoc_list_prepend(cluster->peers, bson_strdup(peer));
+
+   EXIT;
 }
 
 
@@ -176,11 +180,15 @@ mongoc_cluster_add_peer (mongoc_cluster_t *cluster, /* IN */
 static void
 mongoc_cluster_clear_peers (mongoc_cluster_t *cluster) /* IN */
 {
+   ENTRY;
+
    BSON_ASSERT(cluster);
 
    mongoc_list_foreach(cluster->peers, (void *)bson_free, NULL);
    mongoc_list_destroy(cluster->peers);
    cluster->peers = NULL;
+
+   EXIT;
 }
 
 
@@ -203,6 +211,8 @@ mongoc_cluster_clear_peers (mongoc_cluster_t *cluster) /* IN */
 static void
 mongoc_cluster_node_init (mongoc_cluster_node_t *node) /* IN */
 {
+   ENTRY;
+
    BSON_ASSERT(node);
 
    memset(node, 0, sizeof *node);
@@ -213,6 +223,8 @@ mongoc_cluster_node_init (mongoc_cluster_node_t *node) /* IN */
    bson_init(&node->tags);
    node->primary = 0;
    node->needs_auth = 0;
+
+   EXIT;
 }
 
 
@@ -235,6 +247,8 @@ mongoc_cluster_node_init (mongoc_cluster_node_t *node) /* IN */
 static void
 mongoc_cluster_node_destroy (mongoc_cluster_node_t *node) /* IN */
 {
+   ENTRY;
+
    BSON_ASSERT(node);
 
    if (node->stream) {
@@ -245,6 +259,8 @@ mongoc_cluster_node_destroy (mongoc_cluster_node_t *node) /* IN */
 
    bson_destroy(&node->tags);
    bson_free(node->replSet);
+
+   EXIT;
 }
 
 
@@ -279,6 +295,8 @@ mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster, /* IN */
    char *digest_in;
    char *ret;
 
+   ENTRY;
+
    /*
     * The following generates the digest to be used for basic authentication
     * with a MongoDB server. More information on the format can be found
@@ -301,7 +319,7 @@ mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster, /* IN */
    bson_free(password_md5);
    bson_free(password_digest);
 
-   return ret;
+   RETURN(ret);
 }
 
 
@@ -328,6 +346,8 @@ static void
 mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
                                 mongoc_cluster_node_t *node)    /* INOUT */
 {
+   ENTRY;
+
    bson_return_if_fail(node);
 
    mongoc_stream_close(node->stream);
@@ -343,6 +363,8 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
    bson_init(&node->tags);
 
    mongoc_cluster_update_state(cluster);
+
+   EXIT;
 }
 
 
@@ -375,6 +397,8 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
    bson_uint32_t i;
    const bson_t *b;
    bson_iter_t iter;
+
+   ENTRY;
 
    bson_return_if_fail(cluster);
    bson_return_if_fail(uri);
@@ -421,6 +445,8 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
    }
 
    mongoc_array_init(&cluster->iov, sizeof(struct iovec));
+
+   EXIT;
 }
 
 
@@ -446,6 +472,8 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 {
    bson_uint32_t i;
 
+   ENTRY;
+
    bson_return_if_fail(cluster);
 
    mongoc_uri_destroy(cluster->uri);
@@ -461,6 +489,8 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
    mongoc_cluster_clear_peers(cluster);
 
    mongoc_array_destroy(&cluster->iov);
+
+   EXIT;
 }
 
 
@@ -556,12 +586,14 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     * we require a primary and we found one.
     */
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
-      if (need_primary && cluster->nodes[i].primary)
+      if (need_primary && cluster->nodes[i].primary) {
          RETURN(&cluster->nodes[i]);
-      else if (need_secondary && cluster->nodes[i].primary)
+      } else if (need_secondary && cluster->nodes[i].primary) {
          nodes[i] = NULL;
-      else
+      } else {
+         MONGOC_DEBUG("NODE(%d): No stream, dropping.", i);
          nodes[i] = cluster->nodes[i].stream ? &cluster->nodes[i] : NULL;
+      }
    }
 
    /*
@@ -912,8 +944,11 @@ mongoc_cluster_ping_node (mongoc_cluster_t      *cluster, /* IN */
 {
    bson_int64_t t_begin;
    bson_int64_t t_end;
+   bson_int32_t ret;
    bson_bool_t r;
    bson_t cmd;
+
+   ENTRY;
 
    BSON_ASSERT(cluster);
    BSON_ASSERT(node);
@@ -928,7 +963,9 @@ mongoc_cluster_ping_node (mongoc_cluster_t      *cluster, /* IN */
 
    bson_destroy(&cmd);
 
-   return r ? (bson_int32_t) ((t_end - t_begin) / 1000L) : -1;
+   ret = r ? (bson_int32_t) ((t_end - t_begin) / 1000L) : -1;
+
+   RETURN(ret);
 }
 
 
@@ -962,6 +999,8 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
    char *digest;
    char *nonce;
 
+   ENTRY;
+
    BSON_ASSERT(cluster);
    BSON_ASSERT(node);
 
@@ -989,7 +1028,7 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
                                    &reply,
                                    error)) {
       bson_destroy(&command);
-      return FALSE;
+      RETURN(FALSE);
    }
    bson_destroy(&command);
    if (!bson_iter_init_find_case(&iter, &reply, "nonce")) {
@@ -998,7 +1037,7 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
                      MONGOC_ERROR_CLIENT_GETNONCE,
                      "Invalid reply from getnonce");
       bson_destroy(&reply);
-      return FALSE;
+      RETURN(FALSE);
    }
 
    /*
@@ -1026,8 +1065,9 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
                                    &reply,
                                    error)) {
       bson_destroy(&command);
-      return FALSE;
+      RETURN(FALSE);
    }
+
    if (!bson_iter_init_find_case(&iter, &reply, "ok") ||
        !bson_iter_as_bool(&iter)) {
       mongoc_counter_auth_failure_inc();
@@ -1036,13 +1076,14 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
                      "Failed to authenticate credentials.");
       bson_destroy(&reply);
-      return FALSE;
+      RETURN(FALSE);
    }
+
    bson_destroy(&reply);
 
    mongoc_counter_auth_success_inc();
 
-   return TRUE;
+   RETURN(TRUE);
 }
 
 
@@ -1076,6 +1117,8 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
    mongoc_stream_t *stream;
    struct timeval timeout;
 
+   ENTRY;
+
    BSON_ASSERT(cluster);
 
    if (!(hosts = mongoc_uri_get_hosts(cluster->uri))) {
@@ -1083,7 +1126,7 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_NOT_READY,
                      "Invalid host list supplied.");
-      return FALSE;
+      RETURN(FALSE);
    }
 
    cluster->last_reconnect = bson_get_monotonic_time();
@@ -1101,7 +1144,7 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
 
    stream = mongoc_client_create_stream(cluster->client, hosts, error);
    if (!stream) {
-      return FALSE;
+      RETURN(FALSE);
    }
 
    node->stream = stream;
@@ -1116,20 +1159,20 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
 
    if (!mongoc_cluster_ismaster(cluster, node, error)) {
       mongoc_cluster_disconnect_node(cluster, node);
-      return FALSE;
+      RETURN(FALSE);
    }
 
    if (node->needs_auth) {
       if (!mongoc_cluster_auth_node(cluster, node, error)) {
          mongoc_cluster_disconnect_node(cluster, node);
-         return FALSE;
+         RETURN(FALSE);
       }
       node->needs_auth = FALSE;
    }
 
    mongoc_cluster_update_state(cluster);
 
-   return TRUE;
+   RETURN(TRUE);
 }
 
 
@@ -1171,6 +1214,8 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
    bson_int32_t ping;
    const char *replSet;
 
+   ENTRY;
+
    BSON_ASSERT(cluster);
    BSON_ASSERT(cluster->mode == MONGOC_CLUSTER_REPLICA_SET);
 
@@ -1181,7 +1226,7 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_NOT_READY,
                      "Invalid host list supplied.");
-      return FALSE;
+      RETURN(FALSE);
    }
 
    replSet = mongoc_uri_get_replica_set(cluster->uri);
@@ -1310,12 +1355,12 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
                      "No acceptable peer could be found.");
-      return FALSE;
+      RETURN(FALSE);
    }
 
    mongoc_cluster_update_state(cluster);
 
-   return TRUE;
+   RETURN(TRUE);
 }
 
 
@@ -1342,13 +1387,19 @@ static bson_bool_t
 mongoc_cluster_reconnect (mongoc_cluster_t *cluster, /* IN */
                           bson_error_t     *error)   /* OUT */
 {
+   bson_bool_t ret;
+
+   ENTRY;
+
    bson_return_val_if_fail(cluster, FALSE);
 
    switch (cluster->mode) {
    case MONGOC_CLUSTER_DIRECT:
-      return mongoc_cluster_reconnect_direct(cluster, error);
+      ret = mongoc_cluster_reconnect_direct(cluster, error);
+      RETURN(ret);
    case MONGOC_CLUSTER_REPLICA_SET:
-      return mongoc_cluster_reconnect_replica_set(cluster, error);
+      ret = mongoc_cluster_reconnect_replica_set(cluster, error);
+      RETURN(ret);
    case MONGOC_CLUSTER_SHARDED_CLUSTER:
       /* TODO */
       break;
