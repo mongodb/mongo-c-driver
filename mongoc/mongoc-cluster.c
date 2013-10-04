@@ -612,14 +612,14 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     * communicating with.
     */
    if (hint) {
-      if (!nodes[hint]) {
+      if (!nodes[hint - 1]) {
          bson_set_error(error,
                         MONGOC_ERROR_CLIENT,
                         MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
                         "Requested node (%u) is not available.",
                         hint);
       }
-      RETURN(nodes[hint]);
+      RETURN(nodes[hint - 1]);
    }
 
    /*
