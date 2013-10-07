@@ -637,7 +637,6 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
       } else if (need_secondary && cluster->nodes[i].primary) {
          nodes[i] = NULL;
       } else {
-         MONGOC_DEBUG("NODE(%d): No stream, dropping.", i);
          nodes[i] = cluster->nodes[i].stream ? &cluster->nodes[i] : NULL;
       }
    }
