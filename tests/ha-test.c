@@ -110,6 +110,7 @@ ha_node_kill (ha_node_t *node)
 void
 ha_node_restart (ha_node_t *node)
 {
+   struct stat st;
    pid_t pid;
    char portstr[12];
    char *argv[14];
@@ -147,6 +148,10 @@ ha_node_restart (ha_node_t *node)
       if (0 != chdir(node->dbpath)) {
          perror("Failed to chdir");
          abort();
+      }
+
+      if (0 == stat("mongod.lock", &st)) {
+         unlink("mongod.lock");
       }
 
       fd = open("/dev/null", O_RDWR);

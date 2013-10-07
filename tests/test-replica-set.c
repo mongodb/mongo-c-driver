@@ -209,6 +209,8 @@ test1 (void)
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
    bson_destroy(&q);
+
+   ha_node_restart(replica);
 }
 
 
@@ -242,6 +244,7 @@ main (int   argc,   /* IN */
    ha_replica_set_wait_for_healthy(replica_set);
 
    run_test("/ReplicaSet/lose_node_during_cursor", test1);
+   ha_replica_set_wait_for_healthy(replica_set);
 
    ha_replica_set_shutdown(replica_set);
    ha_replica_set_destroy(replica_set);
