@@ -37,6 +37,7 @@ BSON_BEGIN_DECLS
 
 
 #define MONGOC_CLUSTER_MAX_NODES 12
+#define MONGOC_CLUSTER_PING_NUM_SAMPLES 5
 
 
 typedef enum
@@ -62,7 +63,9 @@ typedef struct
    bson_uint32_t       index;
    mongoc_host_list_t  host;
    mongoc_stream_t    *stream;
-   bson_int32_t        ping_msec;
+   bson_int32_t        ping_avg_msec;
+   bson_int32_t        pings[MONGOC_CLUSTER_PING_NUM_SAMPLES];
+   bson_int32_t        pings_pos;
    bson_uint32_t       stamp;
    bson_t              tags;
    bson_bool_t         primary    : 1;

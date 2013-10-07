@@ -218,13 +218,57 @@ mongoc_cluster_node_init (mongoc_cluster_node_t *node) /* IN */
    memset(node, 0, sizeof *node);
 
    node->index = 0;
-   node->ping_msec = -1;
+   node->ping_avg_msec = -1;
+   memset(node->pings, 0xFF, sizeof node->pings);
+   node->pings_pos = 0;
    node->stamp = 0;
    bson_init(&node->tags);
    node->primary = 0;
    node->needs_auth = 0;
 
    EXIT;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_node_track_ping --
+ *
+ *       Add the ping time to the mongoc_cluster_node_t.
+ *       Increment the position in the ring buffer and update the
+ *       rolling average.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+mongoc_cluster_node_track_ping (mongoc_cluster_node_t *node, /* IN */
+                                bson_int32_t           ping) /* IN */
+{
+   int total = 0;
+   int count = 0;
+   int i;
+
+   BSON_ASSERT(node);
+
+   node->pings[node->pings_pos] = ping;
+   node->pings_pos = (node->pings_pos + 1) % MONGOC_CLUSTER_PING_NUM_SAMPLES;
+
+   for (i = 0; i < MONGOC_CLUSTER_PING_NUM_SAMPLES; i++) {
+      if (node->pings[i] != -1) {
+         total += node->pings[i];
+         count++;
+      }
+   }
+
+   node->ping_avg_msec = count ? (total / (double)count) : -1;
 }
 
 
@@ -355,7 +399,9 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
    node->stream = NULL;
 
    node->needs_auth = cluster->requires_auth;
-   node->ping_msec = -1;
+   node->ping_avg_msec = -1;
+   memset(node->pings, 0xFF, sizeof node->pings);
+   node->pings_pos = 0;
    node->stamp++;
    node->primary = 0;
 
@@ -440,7 +486,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
       mongoc_cluster_node_init(&cluster->nodes[i]);
       cluster->nodes[i].stamp = 0;
       cluster->nodes[i].index = i;
-      cluster->nodes[i].ping_msec = -1;
+      cluster->nodes[i].ping_avg_msec = -1;
       cluster->nodes[i].needs_auth = cluster->requires_auth;
    }
 
@@ -638,7 +684,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
     */
 
 #define IS_NEARER_THAN(n, msec) \
-   ((msec < 0 && (n)->ping_msec >= 0) || ((n)->ping_msec < msec))
+   ((msec < 0 && (n)->ping_avg_msec >= 0) || ((n)->ping_avg_msec < msec))
 
    count = 0;
 
@@ -652,7 +698,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
             }
          }
          if (IS_NEARER_THAN(nodes[i], nearest)) {
-            nearest = nodes[i]->ping_msec;
+            nearest = nodes[i]->ping_avg_msec;
          }
          count++;
       }
@@ -667,7 +713,7 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
       watermark = nearest + cluster->sec_latency_ms;
       for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
          if (nodes[i]) {
-            if (nodes[i]->ping_msec > watermark) {
+            if (nodes[i]->ping_avg_msec > watermark) {
                nodes[i] = NULL;
             }
          }
@@ -1137,7 +1183,9 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
    node->host = *hosts;
    node->needs_auth = cluster->requires_auth;
    node->primary = FALSE;
-   node->ping_msec = -1;
+   node->ping_avg_msec = -1;
+   memset(node->pings, 0xFF, sizeof node->pings);
+   node->pings_pos = 0;
    node->stream = NULL;
    node->stamp++;
    bson_init(&node->tags);
@@ -1342,7 +1390,7 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
          continue;
       }
 
-      cluster->nodes[i].ping_msec = ping;
+      mongoc_cluster_node_track_ping(&cluster->nodes[i], ping);
 
       i++;
    }
