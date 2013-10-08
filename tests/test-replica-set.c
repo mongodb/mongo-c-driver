@@ -214,6 +214,61 @@ test1 (void)
 }
 
 
+static void
+test2 (void)
+{
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   mongoc_client_t *client;
+   const bson_t *doc;
+   bson_error_t error;
+   bson_bool_t r;
+   bson_t q;
+
+   bson_init(&q);
+
+   /*
+    * Start by killing 2 of the replica set nodes.
+    */
+   ha_node_kill(r1);
+   ha_node_kill(r2);
+
+   client = ha_replica_set_create_client(replica_set);
+   collection = mongoc_client_get_collection(client, "test2", "test2");
+
+   /*
+    * Perform a query and ensure it fails with no nodes available.
+    */
+   read_prefs = mongoc_read_prefs_new(MONGOC_READ_SECONDARY_PREFERRED);
+   cursor = mongoc_collection_find(collection,
+                                   MONGOC_QUERY_NONE,
+                                   0,
+                                   100,
+                                   &q,
+                                   NULL,
+                                   read_prefs);
+
+   /*
+    * Try to submit OP_QUERY. Since it is SECONDARY PREFERRED, it should
+    * succeed if there is any node up (which r3 is up).
+    */
+   r = mongoc_cursor_next(cursor, &doc);
+   BSON_ASSERT(!r); /* No docs */
+   r = mongoc_cursor_error(cursor, &error);
+   BSON_ASSERT(!r); /* No error, slaveOk was set */
+
+   mongoc_read_prefs_destroy(read_prefs);
+   mongoc_cursor_destroy(cursor);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+   bson_destroy(&q);
+
+   ha_node_restart(r1);
+   ha_node_restart(r2);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -241,9 +296,13 @@ main (int   argc,   /* IN */
    a1 = ha_replica_set_add_arbiter(replica_set, "arbiter1");
 
    ha_replica_set_start(replica_set);
-   ha_replica_set_wait_for_healthy(replica_set);
 
+   ha_replica_set_wait_for_healthy(replica_set);
    run_test("/ReplicaSet/lose_node_during_cursor", test1);
+
+   ha_replica_set_wait_for_healthy(replica_set);
+   run_test("/ReplicaSet/cursor_with_2_of_3_replicas_down", test2);
+
    ha_replica_set_wait_for_healthy(replica_set);
 
    ha_replica_set_shutdown(replica_set);
