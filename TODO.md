@@ -3,6 +3,12 @@
 This is just a general TODO. It does not imply a roadmap, just things that
 I am thinking about and need a place to write them down.
 
+## Builds
+
+ * $(NETCAT) => nc has different options on difference hosts. For example,
+   on debian we need to do something like (echo -n '' | nc -q 0 ...) where
+   as with GNU nc we can just do nc ... </dev/null
+
 ## Clients
 
 ## Client Pooling
