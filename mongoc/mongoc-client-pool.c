@@ -18,6 +18,7 @@
 #include "mongoc-counters-private.h"
 #include "mongoc-client-pool.h"
 #include "mongoc-queue-private.h"
+#include "mongoc-trace.h"
 
 
 struct _mongoc_client_pool_t
@@ -38,6 +39,8 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    mongoc_client_pool_t *pool;
    const bson_t *b;
    bson_iter_t iter;
+
+   ENTRY;
 
    bson_return_val_if_fail(uri, NULL);
 
@@ -65,7 +68,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 
    mongoc_counter_client_pools_active_inc();
 
-   return pool;
+   RETURN(pool);
 }
 
 
@@ -74,11 +77,14 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 {
    mongoc_client_t *client;
 
+   ENTRY;
+
    bson_return_if_fail(pool);
 
    while ((client = mongoc_queue_pop_head(&pool->queue))) {
       mongoc_client_destroy(client);
    }
+
    mongoc_uri_destroy(pool->uri);
    bson_mutex_destroy(&pool->mutex);
    bson_cond_destroy(&pool->cond);
@@ -86,6 +92,8 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 
    mongoc_counter_client_pools_active_dec();
    mongoc_counter_client_pools_disposed_inc();
+
+   EXIT;
 }
 
 
@@ -93,6 +101,8 @@ mongoc_client_t *
 mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 {
    mongoc_client_t *client;
+
+   ENTRY;
 
    bson_return_val_if_fail(pool, NULL);
 
@@ -105,13 +115,13 @@ again:
          pool->size++;
       } else {
          bson_cond_wait(&pool->cond, &pool->mutex);
-         goto again;
+         GOTO(again);
       }
    }
 
    bson_mutex_unlock(&pool->mutex);
 
-   return client;
+   RETURN(client);
 }
 
 
@@ -119,6 +129,8 @@ void
 mongoc_client_pool_push (mongoc_client_pool_t *pool,
                          mongoc_client_t      *client)
 {
+   ENTRY;
+
    bson_return_if_fail(pool);
    bson_return_if_fail(client);
 
@@ -136,4 +148,6 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    mongoc_queue_push_head(&pool->queue, client);
    bson_cond_signal(&pool->cond);
    bson_mutex_unlock(&pool->mutex);
+
+   EXIT;
 }
