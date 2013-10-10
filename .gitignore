@@ -20,6 +20,7 @@ Makefile.in
 missing
 mongoc-ping
 mongoc-stat
+mongoc-tail
 *.o
 *.pc
 stamp-h1
