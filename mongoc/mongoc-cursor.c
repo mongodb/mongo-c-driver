@@ -210,7 +210,11 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
    rpc.query.flags = cursor->flags;
    rpc.query.collection = cursor->ns;
    rpc.query.skip = cursor->skip;
-   rpc.query.n_return = cursor->batch_size;
+   if ((cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR)) {
+      rpc.query.n_return = 0;
+   } else {
+      rpc.query.n_return = cursor->limit;
+   }
    rpc.query.query = bson_get_data(&cursor->query);
    rpc.query.fields = bson_get_data(&cursor->fields);
 
@@ -290,7 +294,15 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
    rpc.get_more.zero = 0;
    rpc.get_more.collection = cursor->ns;
-   rpc.get_more.n_return = cursor->batch_size;
+   if ((cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR)) {
+      rpc.get_more.n_return = 0;
+   } else {
+      /*
+       * TODO: We need to apply the limit to this so we don't
+       * overshoot our target.
+       */
+      rpc.get_more.n_return = cursor->batch_size;
+   }
    rpc.get_more.cursor_id = cursor_id;
 
    /*
