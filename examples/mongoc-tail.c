@@ -22,12 +22,15 @@ query_collection (mongoc_collection_t *collection,
 {
    mongoc_cursor_t *cursor;
    bson_t query;
+   bson_t gt;
 
    BSON_ASSERT(collection);
-   BSON_ASSERT(last_time);
 
    bson_init(&query);
-   bson_append_timestamp(&query, "ts", 2, last_time, 0);
+   bson_append_document_begin(&query, "ts", 2, &gt);
+   bson_append_timestamp(&gt, "$gt", 3, last_time, 0);
+   bson_append_document_end(&query, &gt);
+
    cursor = mongoc_collection_find(collection,
                                    (MONGOC_QUERY_TAILABLE_CURSOR |
                                     MONGOC_QUERY_AWAIT_DATA |
@@ -37,6 +40,7 @@ query_collection (mongoc_collection_t *collection,
                                    &query,
                                    NULL,
                                    NULL);
+
    bson_destroy(&query);
 
    return cursor;
