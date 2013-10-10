@@ -71,6 +71,7 @@ dnl Platform Checks
 dnl **************************************************************************
 platform_linux=no
 platform_win32=no
+platform_solaris=no
 
 AC_CANONICAL_HOST
 AC_MSG_CHECKING([if building for some Win32 platform])
@@ -86,11 +87,21 @@ AS_CASE([$host],
 		platform_linux=yes
 	],
 
+	[*-*-solaris*],
+	[
+		platform_solaris=yes
+		CFLAGS="$CFLAGS -D__EXTENSIONS__"
+		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=1"
+		CFLAGS="$CFLAGS -D_XOPEN_SOURCE_EXTENDED=1"
+		LDFLAGS="$LDFLAGS -lsocket"
+	],
+
 	[]
 )
 AC_MSG_RESULT([$platform_win32])
 
 AM_CONDITIONAL(OS_LINUX, [test "$platform_linux" = "yes"])
+AM_CONDITIONAL(OS_SOLARIS, [test "$platform_solaris" = "yes"])
 AM_CONDITIONAL(OS_WIN32, [test "$platform_win32" = "yes"])
 
 # Check for -Bsymbolic-functions to avoid intra-library PLT jumps
