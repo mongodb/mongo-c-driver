@@ -34,13 +34,13 @@
       _code \
    }
 #define INT32_FIELD(_name) \
-   iov.iov_base = &rpc->_name; \
+   iov.iov_base = (void *)&rpc->_name; \
    iov.iov_len = 4; \
    assert(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define INT64_FIELD(_name) \
-   iov.iov_base = &rpc->_name; \
+   iov.iov_base = (void *)&rpc->_name; \
    iov.iov_len = 8; \
    assert(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
@@ -78,7 +78,7 @@
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define INT64_ARRAY_FIELD(_len, _name) \
-   iov.iov_base = &rpc->_len; \
+   iov.iov_base = (void *)&rpc->_len; \
    iov.iov_len = 4; \
    assert(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
