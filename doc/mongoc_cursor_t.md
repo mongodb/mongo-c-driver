@@ -10,6 +10,21 @@ typedef struct _mongoc_cursor_t mongoc_cursor_t;
 
 ## Destructors
 
+### mongoc_cursor_destroy
+
+```c
+void
+mongoc_cursor_destroy (mongoc_cursor_t *cursor);
+```
+
+This function releases the resources associated with `cursor`. It is a programming error to use `cursor` after calling this function.
+
+#### Parameters
+
+ * `cursor`: `IN`: A `mongoc_cursor_t`.
+
+**Since**: 0.90.0
+
 ----------
 
 ## Functions 
