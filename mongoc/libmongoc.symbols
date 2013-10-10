@@ -60,7 +60,6 @@ mongoc_stream_flush
 mongoc_stream_read
 mongoc_stream_readv
 mongoc_stream_setsockopt
-mongoc_stream_tls_new
 mongoc_stream_uncork
 mongoc_stream_unix_new
 mongoc_stream_writev
