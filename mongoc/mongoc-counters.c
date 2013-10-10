@@ -30,7 +30,7 @@
 #include "mongoc-counters-private.h"
 
 
-#pragma pack(push, 1)
+#pragma pack(1)
 typedef struct
 {
    bson_uint32_t offset;
@@ -39,13 +39,13 @@ typedef struct
    char          name[32];
    char          description[64];
 } mongoc_counter_info_t;
-#pragma pack(pop)
+#pragma pack()
 
 
 BSON_STATIC_ASSERT(sizeof(mongoc_counter_info_t) == 128);
 
 
-#pragma pack(push, 1)
+#pragma pack(1)
 typedef struct
 {
    bson_uint32_t size;
@@ -55,7 +55,7 @@ typedef struct
    bson_uint32_t values_offset;
    bson_uint8_t  padding[44];
 } mongoc_counters_t;
-#pragma pack(pop)
+#pragma pack()
 
 
 BSON_STATIC_ASSERT(sizeof(mongoc_counters_t) == 64);

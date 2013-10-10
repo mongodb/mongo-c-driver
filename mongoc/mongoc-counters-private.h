@@ -39,7 +39,10 @@ BSON_BEGIN_DECLS
 #define CURCPU sched_getcpu()
 #define NCPU   get_nprocs()
 #else
-#define ADD(v, count) __sync_fetch_and_add(&v, count)
+/*
+ * TODO: Not safe on non-Linux yet.
+ */
+#define ADD(v, count) v += count
 #define CURCPU 0
 #define NCPU   1
 #endif
