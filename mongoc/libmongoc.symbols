@@ -31,6 +31,7 @@ mongoc_collection_set_write_concern
 mongoc_collection_update
 mongoc_cursor_destroy
 mongoc_cursor_error
+mongoc_cursor_more
 mongoc_cursor_new
 mongoc_cursor_next
 mongoc_database_add_user
