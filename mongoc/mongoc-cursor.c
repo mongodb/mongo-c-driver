@@ -410,7 +410,9 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
    eof = FALSE;
    b = bson_reader_read(cursor->reader, &eof);
    cursor->end_of_event = eof;
-   cursor->done = cursor->end_of_event && !b;
+   cursor->done = (cursor->end_of_event &&
+                   !b &&
+                   !(cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR));
 
    /*
     * Do a supplimental check to see if we had a corrupted reply in the
