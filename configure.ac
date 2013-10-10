@@ -20,7 +20,7 @@ m4_define([lt_age], [m4_eval(mongoc_binary_age - mongoc_interface_age)])
 dnl **************************************************************************
 dnl Initialize Automake
 dnl **************************************************************************
-AC_PREREQ([2.64])
+AC_PREREQ([2.63])
 AC_INIT([mongoc], [mongoc_version], [https://github.com/chergert/libmongoc/issues])
 
 AC_CONFIG_HEADERS([config.h])
