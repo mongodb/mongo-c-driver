@@ -219,13 +219,11 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        * Build our message for recvmsg() taking into account that we may have
        * already done a short-read and must increment the iovec.
        */
+      memset(&msg, 0, sizeof msg);
       msg.msg_name = NULL;
       msg.msg_namelen = 0;
       msg.msg_iov = iov + cur;
       msg.msg_iovlen = iovcnt - cur;
-      msg.msg_control = NULL;
-      msg.msg_controllen = 0;
-      msg.msg_flags = 0;
 
       BSON_ASSERT(msg.msg_iov->iov_len);
       BSON_ASSERT(cur < iovcnt);
@@ -386,13 +384,11 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        * Build our message for recvmsg() taking into account that we may have
        * already done a short-read and must increment the iovec.
        */
+      memset(&msg, 0, sizeof msg);
       msg.msg_name = NULL;
       msg.msg_namelen = 0;
       msg.msg_iov = iov + cur;
       msg.msg_iovlen = iovcnt - cur;
-      msg.msg_control = NULL;
-      msg.msg_controllen = 0;
-      msg.msg_flags = 0;
 
       BSON_ASSERT(msg.msg_iov->iov_len);
       BSON_ASSERT(cur < iovcnt);
@@ -481,42 +477,50 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
 static int
 mongoc_stream_unix_cork (mongoc_stream_t *stream)
 {
+#if defined(__linux__) || defined(TCP_NOPUSH)
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    int state = 1;
-   int ret;
+   int ret = 0;
 
    ENTRY;
 
    bson_return_val_if_fail(stream, -1);
 
-#ifdef __linux__
+#if defined(__linux__)
    ret = setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
-#else
+#elif defined(TCP_NOPUSH)
    ret = setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
 #endif
 
    RETURN(ret);
+#else
+   RETURN(0);
+#endif
 }
 
 
 static int
 mongoc_stream_unix_uncork (mongoc_stream_t *stream)
 {
+#if defined(__linux__) || defined(TCP_NOPUSH)
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    int state = 0;
-   int ret;
+   int ret = 0;
 
    ENTRY;
 
    bson_return_val_if_fail(stream, -1);
 
-#ifdef __linux__
+#if defined(__linux__)
    ret = setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
-#else
+#elif defined(TCP_NOPUSH)
    ret = setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
 #endif
 
    RETURN(ret);
+#else
+   RETURN(0);
+#endif
 }
 
 
