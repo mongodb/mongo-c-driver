@@ -50,8 +50,6 @@ mongoc_cursor_new (mongoc_client_t           *client,
    bson_return_val_if_fail(db_and_collection, NULL);
    bson_return_val_if_fail(query, NULL);
 
-   limit = MAX(1, limit);
-
    /*
     * Cursors execute their query lazily. This sadly means that we must copy
     * some extra data around between the bson_t structures. This should be
