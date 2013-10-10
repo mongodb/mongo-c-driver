@@ -54,7 +54,7 @@ tail_collection (mongoc_collection_t *collection)
 
    BSON_ASSERT(collection);
 
-   last_time = time(NULL) * 1000;
+   last_time = time(NULL);
 
    while (TRUE) {
       cursor = query_collection(collection, last_time);
