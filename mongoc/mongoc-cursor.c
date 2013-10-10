@@ -431,3 +431,12 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
 
    RETURN(!!b);
 }
+
+
+bson_bool_t
+mongoc_cursor_more (mongoc_cursor_t *cursor)
+{
+   bson_return_val_if_fail(cursor, FALSE);
+
+   return ((!cursor->sent) || (cursor->rpc.reply.cursor_id));
+}
