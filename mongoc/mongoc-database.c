@@ -327,7 +327,7 @@ mongoc_database_add_user (mongoc_database_t *database, /* IN */
       bson_append_bool(&user, "readOnly", 8, FALSE);
       bson_append_utf8(&user, "pwd", 3, pwd, -1);
    } else {
-      bson_copy_to_excluding(doc, &user, "pwd", NULL);
+      bson_copy_to_excluding(doc, &user, "pwd", (char *)NULL);
       bson_append_utf8(&user, "pwd", 3, pwd, -1);
    }
 
