@@ -50,6 +50,7 @@ BSON_BEGIN_DECLS
 #include "op-update.def"
 
 
+#pragma pack(1)
 typedef union
 {
    mongoc_rpc_delete_t       delete;
@@ -62,6 +63,7 @@ typedef union
    mongoc_rpc_reply_t        reply;
    mongoc_rpc_update_t       update;
 } mongoc_rpc_t;
+#pragma pack()
 
 
 #undef RPC
