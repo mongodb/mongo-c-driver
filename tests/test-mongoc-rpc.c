@@ -114,13 +114,13 @@ test_mongoc_rpc_delete_scatter (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(rpc.delete.msg_len == 39);
-   assert(rpc.delete.request_id == 1234);
-   assert(rpc.delete.response_to == -1);
-   assert(rpc.delete.opcode == MONGOC_OPCODE_DELETE);
+   assert(BSON_UINT32_FROM_LE(rpc.delete.msg_len) == 39);
+   assert(BSON_UINT32_FROM_LE(rpc.delete.request_id) == 1234);
+   assert(BSON_UINT32_FROM_LE(rpc.delete.response_to) == -1);
+   assert(BSON_UINT32_FROM_LE(rpc.delete.opcode) == MONGOC_OPCODE_DELETE);
    assert(rpc.delete.zero == 0);
    assert(!strcmp("test.test", rpc.delete.collection));
-   assert(rpc.delete.flags == MONGOC_DELETE_SINGLE_REMOVE);
+   assert(BSON_UINT32_FROM_LE(rpc.delete.flags) == MONGOC_DELETE_SINGLE_REMOVE);
    assert(!memcmp(rpc.delete.selector, bson_get_data(&sel), sel.len));
 
    assert_rpc_equal("delete1.dat", &rpc);
@@ -162,14 +162,14 @@ test_mongoc_rpc_get_more_scatter (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(rpc.get_more.msg_len == 42);
-   assert(rpc.get_more.request_id == 1234);
-   assert(rpc.get_more.response_to == -1);
-   assert(rpc.get_more.opcode == MONGOC_OPCODE_GET_MORE);
+   assert(BSON_UINT32_FROM_LE(rpc.get_more.msg_len) == 42);
+   assert(BSON_UINT32_FROM_LE(rpc.get_more.request_id) == 1234);
+   assert(BSON_UINT32_FROM_LE(rpc.get_more.response_to) == -1);
+   assert(BSON_UINT32_FROM_LE(rpc.get_more.opcode) == MONGOC_OPCODE_GET_MORE);
    assert(rpc.get_more.zero == 0);
    assert(!strcmp("test.test", rpc.get_more.collection));
-   assert(rpc.get_more.n_return == 5);
-   assert(rpc.get_more.cursor_id == 12345678);
+   assert(BSON_UINT32_FROM_LE(rpc.get_more.n_return) == 5);
+   assert(BSON_UINT64_FROM_LE(rpc.get_more.cursor_id) == 12345678);
 
    assert_rpc_equal("get_more1.dat", &rpc);
    bson_free(data);
@@ -230,11 +230,11 @@ test_mongoc_rpc_insert_scatter (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(rpc.insert.msg_len == 130);
-   assert(rpc.insert.request_id == 1234);
-   assert(rpc.insert.response_to == -1);
-   assert(rpc.insert.opcode == MONGOC_OPCODE_INSERT);
-   assert(rpc.insert.flags == MONGOC_INSERT_CONTINUE_ON_ERROR);
+   assert(BSON_UINT32_FROM_LE(rpc.insert.msg_len) == 130);
+   assert(BSON_UINT32_FROM_LE(rpc.insert.request_id) == 1234);
+   assert(BSON_UINT32_FROM_LE(rpc.insert.response_to) == (bson_uint32_t)-1);
+   assert(BSON_UINT32_FROM_LE(rpc.insert.opcode) == MONGOC_OPCODE_INSERT);
+   assert(BSON_UINT32_FROM_LE(rpc.insert.flags) == MONGOC_INSERT_CONTINUE_ON_ERROR);
    assert(!strcmp("test.test", rpc.insert.collection));
    reader = bson_reader_new_from_data(rpc.insert.documents, rpc.insert.documents_len);
    while ((b = bson_reader_read(reader, &eof))) {
@@ -295,12 +295,12 @@ test_mongoc_rpc_kill_cursors_scatter (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(rpc.kill_cursors.msg_len == 64);
-   assert(rpc.kill_cursors.request_id == 1234);
-   assert(rpc.kill_cursors.response_to == -1);
-   assert(rpc.kill_cursors.opcode == MONGOC_OPCODE_KILL_CURSORS);
+   assert(BSON_UINT32_FROM_LE(rpc.kill_cursors.msg_len) == 64);
+   assert(BSON_UINT32_FROM_LE(rpc.kill_cursors.request_id) == 1234);
+   assert(BSON_UINT32_FROM_LE(rpc.kill_cursors.response_to) == -1);
+   assert(BSON_UINT32_FROM_LE(rpc.kill_cursors.opcode) == MONGOC_OPCODE_KILL_CURSORS);
    assert(rpc.kill_cursors.zero == 0);
-   assert(rpc.kill_cursors.n_cursors == 5);
+   assert(BSON_UINT32_FROM_LE(rpc.kill_cursors.n_cursors) == 5);
    assert(!memcmp(rpc.kill_cursors.cursors, cursors, 5 * 8));
 
    assert_rpc_equal("kill_cursors1.dat", &rpc);
@@ -339,10 +339,10 @@ test_mongoc_rpc_msg_scatter (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(rpc.msg.msg_len == 40);
-   assert(rpc.msg.request_id == 1234);
-   assert(rpc.msg.response_to == -1);
-   assert(rpc.msg.opcode == MONGOC_OPCODE_MSG);
+   assert(BSON_UINT32_FROM_LE(rpc.msg.msg_len) == 40);
+   assert(BSON_UINT32_FROM_LE(rpc.msg.request_id) == 1234);
+   assert(BSON_UINT32_FROM_LE(rpc.msg.response_to) == -1);
+   assert(BSON_UINT32_FROM_LE(rpc.msg.opcode) == MONGOC_OPCODE_MSG);
    assert(!strcmp(rpc.msg.msg, "this is a test message."));
 
    assert_rpc_equal("msg1.dat", &rpc);
@@ -392,14 +392,14 @@ test_mongoc_rpc_query_scatter (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(rpc.query.msg_len == 48);
-   assert(rpc.query.request_id == 1234);
-   assert(rpc.query.response_to == -1);
-   assert(rpc.query.opcode == MONGOC_OPCODE_QUERY);
-   assert(rpc.query.flags == MONGOC_QUERY_SLAVE_OK);
+   assert(BSON_UINT32_FROM_LE(rpc.query.msg_len) == 48);
+   assert(BSON_UINT32_FROM_LE(rpc.query.request_id) == 1234);
+   assert(BSON_UINT32_FROM_LE(rpc.query.response_to) == (bson_uint32_t)-1);
+   assert(BSON_UINT32_FROM_LE(rpc.query.opcode) == MONGOC_OPCODE_QUERY);
+   assert(BSON_UINT32_FROM_LE(rpc.query.flags) == MONGOC_QUERY_SLAVE_OK);
    assert(!strcmp(rpc.query.collection, "test.test"));
-   assert(rpc.query.skip == 5);
-   assert(rpc.query.n_return == 1);
+   assert(BSON_UINT32_FROM_LE(rpc.query.skip) == 5);
+   assert(BSON_UINT32_FROM_LE(rpc.query.n_return) == 1);
    assert(!memcmp(rpc.query.query, bson_get_data(&empty), 5));
    assert(!memcmp(rpc.query.fields, bson_get_data(&empty), 5));
 
@@ -464,14 +464,14 @@ test_mongoc_rpc_reply_scatter (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(rpc.reply.msg_len == 536);
-   assert(rpc.reply.request_id == 1234);
-   assert(rpc.reply.response_to == -1);
-   assert(rpc.reply.opcode == MONGOC_OPCODE_REPLY);
-   assert(rpc.reply.flags == MONGOC_REPLY_AWAIT_CAPABLE);
-   assert(rpc.reply.cursor_id == 12345678);
-   assert(rpc.reply.start_from == 50);
-   assert(rpc.reply.n_returned == 100);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.msg_len) == 536);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.request_id) == 1234);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.response_to) == -1);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.opcode) == MONGOC_OPCODE_REPLY);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.flags) == MONGOC_REPLY_AWAIT_CAPABLE);
+   assert(BSON_UINT64_FROM_LE(rpc.reply.cursor_id) == 12345678);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.start_from) == 50);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.n_returned) == 100);
    assert(rpc.reply.documents_len == 500);
    reader = bson_reader_new_from_data(rpc.reply.documents, rpc.reply.documents_len);
    while ((b = bson_reader_read(reader, &eof))) {
@@ -509,14 +509,14 @@ test_mongoc_rpc_reply_scatter2 (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(rpc.reply.msg_len == 16236);
-   assert(rpc.reply.request_id == 0);
-   assert(rpc.reply.response_to == 1234);
-   assert(rpc.reply.opcode == MONGOC_OPCODE_REPLY);
-   assert(rpc.reply.flags == 0);
-   assert(rpc.reply.cursor_id == 12345678);
-   assert(rpc.reply.start_from == 0);
-   assert(rpc.reply.n_returned == 100);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.msg_len) == 16236);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.request_id) == 0);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.response_to) == 1234);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.opcode) == MONGOC_OPCODE_REPLY);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.flags) == 0);
+   assert(BSON_UINT64_FROM_LE(rpc.reply.cursor_id) == 12345678);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.start_from) == 0);
+   assert(BSON_UINT32_FROM_LE(rpc.reply.n_returned) == 100);
    assert(rpc.reply.documents_len == 16200);
    reader = bson_reader_new_from_data(rpc.reply.documents, rpc.reply.documents_len);
    while ((b = bson_reader_read(reader, &eof))) {
@@ -576,11 +576,11 @@ test_mongoc_rpc_update_scatter (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(rpc.update.msg_len == 44);
-   assert(rpc.update.request_id == 1234);
-   assert(rpc.update.response_to == -1);
-   assert(rpc.update.opcode == MONGOC_OPCODE_UPDATE);
-   assert(rpc.update.flags == MONGOC_UPDATE_MULTI_UPDATE);
+   assert(BSON_UINT32_FROM_LE(rpc.update.msg_len) == 44);
+   assert(BSON_UINT32_FROM_LE(rpc.update.request_id) == 1234);
+   assert(BSON_UINT32_FROM_LE(rpc.update.response_to) == -1);
+   assert(BSON_UINT32_FROM_LE(rpc.update.opcode) == MONGOC_OPCODE_UPDATE);
+   assert(BSON_UINT32_FROM_LE(rpc.update.flags) == MONGOC_UPDATE_MULTI_UPDATE);
    assert(!strcmp(rpc.update.collection, "test.test"));
 
    memcpy(&len, rpc.update.selector, 4);
