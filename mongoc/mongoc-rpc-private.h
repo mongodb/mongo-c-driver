@@ -20,6 +20,7 @@
 
 
 #include <bson.h>
+#include <stddef.h>
 
 #include "mongoc-array-private.h"
 #include "mongoc-write-concern.h"
@@ -50,7 +51,6 @@ BSON_BEGIN_DECLS
 #include "op-update.def"
 
 
-#pragma pack(1)
 typedef union
 {
    mongoc_rpc_delete_t       delete;
@@ -63,7 +63,11 @@ typedef union
    mongoc_rpc_reply_t        reply;
    mongoc_rpc_update_t       update;
 } mongoc_rpc_t;
-#pragma pack()
+
+
+BSON_STATIC_ASSERT(sizeof(mongoc_rpc_header_t) == 16);
+BSON_STATIC_ASSERT(offsetof(mongoc_rpc_header_t, opcode) ==
+                   offsetof(mongoc_rpc_reply_t, opcode));
 
 
 #undef RPC
