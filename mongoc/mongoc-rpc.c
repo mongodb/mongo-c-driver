@@ -467,6 +467,8 @@ mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
                     const bson_uint8_t *buf,
                     size_t              buflen)
 {
+   mongoc_opcode_t opcode;
+
    bson_return_val_if_fail(rpc, FALSE);
    bson_return_val_if_fail(buf, FALSE);
    bson_return_val_if_fail(buflen, FALSE);
@@ -475,10 +477,13 @@ mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
       return FALSE;
    }
 
-   mongoc_rpc_scatter_header(&rpc->header, buf, 16);
-   mongoc_rpc_swab_header(&rpc->header);
+   if (!mongoc_rpc_scatter_header(&rpc->header, buf, 16)) {
+      return FALSE;
+   }
 
-   switch ((mongoc_opcode_t)rpc->header.opcode) {
+   opcode = BSON_UINT32_FROM_LE(rpc->header.opcode);
+
+   switch (opcode) {
    case MONGOC_OPCODE_REPLY:
       return mongoc_rpc_scatter_reply(&rpc->reply, buf, buflen);
    case MONGOC_OPCODE_MSG:
