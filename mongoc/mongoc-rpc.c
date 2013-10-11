@@ -501,7 +501,7 @@ mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
    case MONGOC_OPCODE_KILL_CURSORS:
       return mongoc_rpc_scatter_kill_cursors(&rpc->kill_cursors, buf, buflen);
    default:
-      MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.opcode);
+      MONGOC_WARNING("Unknown rpc type: 0x%08x", opcode);
       return FALSE;
    }
 }
