@@ -36,20 +36,20 @@
 #define INT32_FIELD(_name) \
    iov.iov_base = (void *)&rpc->_name; \
    iov.iov_len = 4; \
-   assert(iov.iov_len); \
+   BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define INT64_FIELD(_name) \
    iov.iov_base = (void *)&rpc->_name; \
    iov.iov_len = 8; \
-   assert(iov.iov_len); \
+   BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define CSTRING_FIELD(_name) \
-   assert(rpc->_name); \
+   BSON_ASSERT(rpc->_name); \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = strlen(rpc->_name) + 1; \
-   assert(iov.iov_len); \
+   BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define BSON_FIELD(_name) \
@@ -59,7 +59,7 @@
       __l = BSON_UINT32_FROM_LE(__l); \
       iov.iov_base = (void *)rpc->_name; \
       iov.iov_len = __l; \
-      assert(iov.iov_len); \
+      BSON_ASSERT(iov.iov_len); \
       rpc->msg_len += iov.iov_len; \
       mongoc_array_append_val(array, iov); \
    } while (0);
@@ -68,24 +68,24 @@
 #define BSON_ARRAY_FIELD(_name) \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_name##_len; \
-   assert(iov.iov_len); \
+   BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define RAW_BUFFER_FIELD(_name) \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_name##_len; \
-   assert(iov.iov_len); \
+   BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 #define INT64_ARRAY_FIELD(_len, _name) \
    iov.iov_base = (void *)&rpc->_len; \
    iov.iov_len = 4; \
-   assert(iov.iov_len); \
+   BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov); \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_len * 8; \
-   assert(iov.iov_len); \
+   BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
 
