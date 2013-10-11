@@ -394,9 +394,11 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
 
    bson_return_if_fail(node);
 
-   mongoc_stream_close(node->stream);
-   mongoc_stream_destroy(node->stream);
-   node->stream = NULL;
+   if (node->stream) {
+      mongoc_stream_close(node->stream);
+      mongoc_stream_destroy(node->stream);
+      node->stream = NULL;
+   }
 
    node->needs_auth = cluster->requires_auth;
    node->ping_avg_msec = -1;
