@@ -196,9 +196,22 @@ ha_replica_set_t *
 ha_replica_set_new (const char *name)
 {
    ha_replica_set_t *repl_set;
+   unsigned seed;
+   int fd;
 
-   srand(getpid());
-   fprintf(stderr, "srand(%d)\n", (int)getpid());
+   fd = open("/dev/urandom", O_RDONLY);
+   if (fd == -1) {
+      fprintf(stderr, "Failed to open /dev/urandom\n");
+      exit(1);
+   }
+
+   if (4 != read(fd, &seed, 4)) {
+      fprintf(stderr, "Failed to read from /dev/urandom\n");
+      exit(2);
+   }
+
+   srand(seed);
+   printf("srand(%u)\n", seed);
 
    repl_set = bson_malloc0(sizeof *repl_set);
    repl_set->name = strdup(name);
