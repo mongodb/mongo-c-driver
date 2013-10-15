@@ -289,7 +289,7 @@ int
 main (int   argc,   /* IN */
       char *argv[]) /* IN */
 {
-   replica_set = ha_replica_set_new("test1");
+   replica_set = ha_replica_set_new("repltest1");
    r1 = ha_replica_set_add_replica(replica_set, "replica1");
    r2 = ha_replica_set_add_replica(replica_set, "replica2");
    r3 = ha_replica_set_add_replica(replica_set, "replica3");
