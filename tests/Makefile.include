@@ -14,6 +14,7 @@ noinst_PROGRAMS += test-mongoc-uri
 noinst_PROGRAMS += test-mongoc-write-concern
 noinst_PROGRAMS += test-secondary
 noinst_PROGRAMS += test-replica-set
+noinst_PROGRAMS += test-sharded-cluster
 
 
 TEST_PROGS =
@@ -120,6 +121,14 @@ test_replica_set_SOURCES = \
 	$(top_srcdir)/tests/ha-test.h
 test_replica_set_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_replica_set_LDADD = libmongoc-priv.la
+
+
+test_sharded_cluster_SOURCES = \
+	$(top_srcdir)/tests/test-sharded-cluster.c \
+	$(top_srcdir)/tests/ha-test.c \
+	$(top_srcdir)/tests/ha-test.h
+test_sharded_cluster_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+test_sharded_cluster_LDADD = libmongoc-priv.la
 
 
 test: $(TEST_PROGS)

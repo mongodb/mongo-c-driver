@@ -25,7 +25,9 @@ mongoc-tail
 *.pc
 stamp-h1
 *.swp
-test1
+repltest1
+shardtest1
+shardtest2
 test-load
 test-mock-server
 test-mongoc-array
@@ -43,3 +45,4 @@ test-mongoc-uri
 test-mongoc-write-concern
 test-replica-set
 test-secondary
+test-sharded-cluster
