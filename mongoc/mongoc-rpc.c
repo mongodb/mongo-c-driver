@@ -125,8 +125,7 @@
    rpc->_name = BSON_UINT64_FROM_LE(rpc->_name);
 #define CSTRING_FIELD(_name)
 #define BSON_FIELD(_name)
-#define BSON_ARRAY_FIELD(_name) \
-   rpc->_name##_len = BSON_UINT32_FROM_LE(rpc->_name##_len);
+#define BSON_ARRAY_FIELD(_name)
 #define OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
 #define RAW_BUFFER_FIELD(_name)
