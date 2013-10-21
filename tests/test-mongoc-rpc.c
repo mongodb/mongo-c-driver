@@ -38,6 +38,90 @@ get_test_file (const char *filename,
 }
 
 
+#define RPC(_name, _code) \
+static inline bson_bool_t \
+test_mongoc_rpc_##_name##_equal (const mongoc_rpc_##_name##_t *a, \
+                                 const mongoc_rpc_##_name##_t *b) \
+{ \
+   _code \
+}
+
+#define INT32_FIELD(_name)             if (a->_name != b->_name) return FALSE;
+#define INT64_FIELD(_name)             if (a->_name != b->_name) return FALSE;
+#define CSTRING_FIELD(_name)           if (!!strcmp(a->_name, b->_name)) return FALSE;
+#define BSON_FIELD(_name) \
+   { \
+      bson_uint32_t alen; \
+      bson_uint32_t blen; \
+      memcpy(&alen, a->_name, 4); \
+      memcpy(&blen, b->_name, 4); \
+      alen = BSON_UINT32_FROM_LE(alen); \
+      blen = BSON_UINT32_FROM_LE(blen); \
+      if (!!memcmp(a->_name, b->_name, alen)) { \
+         return FALSE; \
+      } \
+   }
+#define BSON_ARRAY_FIELD(_name)        if ((a->_name##_len != b->_name##_len) || !!memcmp(a->_name, b->_name, a->_name##_len)) return FALSE;
+#define INT64_ARRAY_FIELD(_len, _name) if ((a->_len != b->_len) || !!memcmp(a->_name, b->_name, a->_len * 8)) return FALSE;
+#define RAW_BUFFER_FIELD(_name)        if ((a->_name##_len != b->_name##_len) || !!memcmp(a->_name, b->_name, a->_name##_len)) return FALSE;
+#define OPTIONAL(_check, _code)        if (!!a->_check != !!b->_check) { return FALSE; } _code
+
+
+#include "op-reply.def"
+#include "op-msg.def"
+#include "op-update.def"
+#include "op-insert.def"
+#include "op-query.def"
+#include "op-get-more.def"
+#include "op-delete.def"
+#include "op-kill-cursors.def"
+
+
+#undef RPC
+#undef INT32_FIELD
+#undef INT64_FIELD
+#undef INT64_ARRAY_FIELD
+#undef CSTRING_FIELD
+#undef BSON_FIELD
+#undef BSON_ARRAY_FIELD
+#undef OPTIONAL
+#undef RAW_BUFFER_FIELD
+
+
+static inline bson_bool_t
+test_mongoc_rpc_equal (const mongoc_rpc_t *a,
+                       const mongoc_rpc_t *b)
+{
+   if (a->header.opcode != b->header.opcode) {
+      return FALSE;
+   }
+
+   switch (a->header.opcode) {
+   case MONGOC_OPCODE_REPLY:
+      return test_mongoc_rpc_reply_equal(&a->reply, &b->reply);
+   case MONGOC_OPCODE_MSG:
+      return test_mongoc_rpc_msg_equal(&a->msg, &b->msg);
+   case MONGOC_OPCODE_UPDATE:
+      return test_mongoc_rpc_update_equal(&a->update, &b->update);
+   case MONGOC_OPCODE_INSERT:
+      return test_mongoc_rpc_insert_equal(&a->insert, &b->insert);
+   case MONGOC_OPCODE_QUERY:
+      return test_mongoc_rpc_query_equal(&a->query, &b->query);
+   case MONGOC_OPCODE_GET_MORE:
+      return test_mongoc_rpc_get_more_equal(&a->get_more, &b->get_more);
+   case MONGOC_OPCODE_DELETE:
+      return test_mongoc_rpc_delete_equal(&a->delete, &b->delete);
+   case MONGOC_OPCODE_KILL_CURSORS:
+      return test_mongoc_rpc_kill_cursors_equal(&a->kill_cursors, &b->kill_cursors);
+   default:
+      return FALSE;
+   }
+}
+
+
+/*
+ * This function expects that @rpc is in HOST ENDIAN format.
+ */
 static void
 assert_rpc_equal (const char   *filename,
                   mongoc_rpc_t *rpc)
@@ -52,11 +136,26 @@ assert_rpc_equal (const char   *filename,
 
    data = get_test_file(filename, &length);
    mongoc_array_init(&ar, sizeof(struct iovec));
+
+   /*
+    * Gather our RPC into a series of iovec that can be compared
+    * to the buffer from the RCP snapshot file.
+    */
    mongoc_rpc_gather(rpc, &ar);
+
 #if 0
+   printf("Before swabbing\n");
+   printf("=========================\n");
    mongoc_rpc_printf(rpc);
 #endif
+
    mongoc_rpc_swab(rpc);
+
+#if 0
+   printf("After swabbing\n");
+   printf("=========================\n");
+   mongoc_rpc_printf(rpc);
+#endif
 
    for (i = 0; i < ar.len; i++) {
       iov = &mongoc_array_index(&ar, struct iovec, i);
@@ -113,14 +212,15 @@ test_mongoc_rpc_delete_scatter (void)
    data = get_test_file("delete1.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
+   mongoc_rpc_swab(&rpc);
 
-   assert(BSON_UINT32_FROM_LE(rpc.delete.msg_len) == 39);
-   assert(BSON_UINT32_FROM_LE(rpc.delete.request_id) == 1234);
-   assert(BSON_UINT32_FROM_LE(rpc.delete.response_to) == -1);
-   assert(BSON_UINT32_FROM_LE(rpc.delete.opcode) == MONGOC_OPCODE_DELETE);
+   assert(rpc.delete.msg_len == 39);
+   assert(rpc.delete.request_id == 1234);
+   assert(rpc.delete.response_to == -1);
+   assert(rpc.delete.opcode == MONGOC_OPCODE_DELETE);
    assert(rpc.delete.zero == 0);
    assert(!strcmp("test.test", rpc.delete.collection));
-   assert(BSON_UINT32_FROM_LE(rpc.delete.flags) == MONGOC_DELETE_SINGLE_REMOVE);
+   assert(rpc.delete.flags == MONGOC_DELETE_SINGLE_REMOVE);
    assert(!memcmp(rpc.delete.selector, bson_get_data(&sel), sel.len));
 
    assert_rpc_equal("delete1.dat", &rpc);
@@ -161,15 +261,16 @@ test_mongoc_rpc_get_more_scatter (void)
    data = get_test_file("get_more1.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
+   mongoc_rpc_swab(&rpc);
 
-   assert(BSON_UINT32_FROM_LE(rpc.get_more.msg_len) == 42);
-   assert(BSON_UINT32_FROM_LE(rpc.get_more.request_id) == 1234);
-   assert(BSON_UINT32_FROM_LE(rpc.get_more.response_to) == -1);
-   assert(BSON_UINT32_FROM_LE(rpc.get_more.opcode) == MONGOC_OPCODE_GET_MORE);
+   assert(rpc.get_more.msg_len == 42);
+   assert(rpc.get_more.request_id == 1234);
+   assert(rpc.get_more.response_to == -1);
+   assert(rpc.get_more.opcode == MONGOC_OPCODE_GET_MORE);
    assert(rpc.get_more.zero == 0);
    assert(!strcmp("test.test", rpc.get_more.collection));
-   assert(BSON_UINT32_FROM_LE(rpc.get_more.n_return) == 5);
-   assert(BSON_UINT64_FROM_LE(rpc.get_more.cursor_id) == 12345678);
+   assert(rpc.get_more.n_return == 5);
+   assert(rpc.get_more.cursor_id == 12345678);
 
    assert_rpc_equal("get_more1.dat", &rpc);
    bson_free(data);
@@ -230,11 +331,11 @@ test_mongoc_rpc_insert_scatter (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(BSON_UINT32_FROM_LE(rpc.insert.msg_len) == 130);
-   assert(BSON_UINT32_FROM_LE(rpc.insert.request_id) == 1234);
-   assert(BSON_UINT32_FROM_LE(rpc.insert.response_to) == (bson_uint32_t)-1);
-   assert(BSON_UINT32_FROM_LE(rpc.insert.opcode) == MONGOC_OPCODE_INSERT);
-   assert(BSON_UINT32_FROM_LE(rpc.insert.flags) == MONGOC_INSERT_CONTINUE_ON_ERROR);
+   assert(rpc.insert.msg_len == 130);
+   assert(rpc.insert.request_id == 1234);
+   assert(rpc.insert.response_to == (bson_uint32_t)-1);
+   assert(rpc.insert.opcode == MONGOC_OPCODE_INSERT);
+   assert(rpc.insert.flags == MONGOC_INSERT_CONTINUE_ON_ERROR);
    assert(!strcmp("test.test", rpc.insert.collection));
    reader = bson_reader_new_from_data(rpc.insert.documents, rpc.insert.documents_len);
    while ((b = bson_reader_read(reader, &eof))) {
