@@ -62,6 +62,21 @@
 #endif
 
 
+#define DB_AND_CMD_FROM_COLLECTION(outstr, name) \
+   do { \
+      const char *dot = strchr(name, '.'); \
+      if (!dot || ((dot - name) > (sizeof outstr - 6))) { \
+         snprintf(outstr, sizeof outstr, "admin.$cmd"); \
+         outstr[sizeof outstr - 1] = '\0'; \
+      } else { \
+         strncpy(outstr, name, dot - name); \
+         outstr[dot - name] = '\0'; \
+         strncat(outstr, ".$cmd", 5); \
+         outstr[sizeof outstr - 1] = '\0'; \
+      } \
+   } while (0)
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -1635,6 +1650,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
    bson_bool_t need_gle;
    size_t iovcnt;
    size_t i;
+   char cmdname[140];
    int retry_count = 0;
 
    ENTRY;
@@ -1699,19 +1715,20 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
          gle.query.flags = MONGOC_QUERY_NONE;
          switch (rpcs[i].header.opcode) {
          case MONGOC_OPCODE_INSERT:
-            gle.query.collection = rpcs[i].insert.collection;
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].insert.collection);
             break;
          case MONGOC_OPCODE_DELETE:
-            gle.query.collection = rpcs[i].delete.collection;
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].delete.collection);
             break;
          case MONGOC_OPCODE_UPDATE:
-            gle.query.collection = rpcs[i].update.collection;
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].update.collection);
             break;
          default:
             BSON_ASSERT(FALSE);
-            gle.query.collection = "";
+            DB_AND_CMD_FROM_COLLECTION(cmdname, "admin.$cmd");
             break;
          }
+         gle.query.collection = cmdname;
          gle.query.skip = 0;
          gle.query.n_return = 1;
          b = mongoc_write_concern_freeze((void*)write_concern);
