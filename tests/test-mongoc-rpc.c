@@ -330,6 +330,7 @@ test_mongoc_rpc_insert_scatter (void)
    data = get_test_file("insert1.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
+   mongoc_rpc_swab_from_le(&rpc);
 
    assert_cmpint(rpc.insert.msg_len, ==, 130);
    assert_cmpint(rpc.insert.request_id, ==, 1234);
@@ -395,6 +396,7 @@ test_mongoc_rpc_kill_cursors_scatter (void)
    data = get_test_file("kill_cursors1.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
+   mongoc_rpc_swab_from_le(&rpc);
 
    assert(BSON_UINT32_FROM_LE(rpc.kill_cursors.msg_len) == 64);
    assert(BSON_UINT32_FROM_LE(rpc.kill_cursors.request_id) == 1234);
@@ -439,6 +441,7 @@ test_mongoc_rpc_msg_scatter (void)
    data = get_test_file("msg1.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
+   mongoc_rpc_swab_from_le(&rpc);
 
    assert(BSON_UINT32_FROM_LE(rpc.msg.msg_len) == 40);
    assert(BSON_UINT32_FROM_LE(rpc.msg.request_id) == 1234);
@@ -492,6 +495,7 @@ test_mongoc_rpc_query_scatter (void)
    data = get_test_file("query1.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
+   mongoc_rpc_swab_from_le(&rpc);
 
    assert(BSON_UINT32_FROM_LE(rpc.query.msg_len) == 48);
    assert(BSON_UINT32_FROM_LE(rpc.query.request_id) == 1234);
@@ -564,6 +568,7 @@ test_mongoc_rpc_reply_scatter (void)
    data = get_test_file("reply1.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
+   mongoc_rpc_swab_from_le(&rpc);
 
    assert(BSON_UINT32_FROM_LE(rpc.reply.msg_len) == 536);
    assert(BSON_UINT32_FROM_LE(rpc.reply.request_id) == 1234);
@@ -609,6 +614,7 @@ test_mongoc_rpc_reply_scatter2 (void)
    data = get_test_file("reply2.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
+   mongoc_rpc_swab_from_le(&rpc);
 
    assert(BSON_UINT32_FROM_LE(rpc.reply.msg_len) == 16236);
    assert(BSON_UINT32_FROM_LE(rpc.reply.request_id) == 0);
@@ -676,6 +682,7 @@ test_mongoc_rpc_update_scatter (void)
    data = get_test_file("update1.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
+   mongoc_rpc_swab_from_le(&rpc);
 
    assert(BSON_UINT32_FROM_LE(rpc.update.msg_len) == 44);
    assert(BSON_UINT32_FROM_LE(rpc.update.request_id) == 1234);
