@@ -41,8 +41,10 @@ BSON_BEGIN_DECLS
 #define assert_cmpint(a, eq, b)                                         \
    do {                                                                 \
       if (!((a) eq (b))) {                                              \
-         fprintf(stderr, "FAIL\n\nAssert Failure: %d %s %d\n",          \
-                         a, #eq, b);                                    \
+         fprintf(stderr, "FAIL\n\nAssert Failure: %d %s %d\n"           \
+                         "%s:%d  %s()\n",                               \
+                         a, #eq, b,                                     \
+                         __FILE__, __LINE__, __FUNCTION__);             \
          abort();                                                       \
       }                                                                 \
    } while (0)
