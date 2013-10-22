@@ -81,7 +81,7 @@ again:
       goto failure;
    }
 
-   mongoc_rpc_swab(&rpc);
+   mongoc_rpc_swab_from_le(&rpc);
 
    server->handler(server, stream, &rpc, server->handler_data);
 

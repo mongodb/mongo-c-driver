@@ -389,11 +389,56 @@ mongoc_rpc_gather (mongoc_rpc_t   *rpc,
 
 
 void
-mongoc_rpc_swab (mongoc_rpc_t *rpc)
+mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
 {
+   mongoc_opcode_t opcode;
+
    bson_return_if_fail(rpc);
 
-   switch ((mongoc_opcode_t)rpc->header.opcode) {
+   opcode = rpc->header.opcode;
+
+   switch (opcode) {
+   case MONGOC_OPCODE_REPLY:
+      mongoc_rpc_swab_reply(&rpc->reply);
+      break;
+   case MONGOC_OPCODE_MSG:
+      mongoc_rpc_swab_msg(&rpc->msg);
+      break;
+   case MONGOC_OPCODE_UPDATE:
+      mongoc_rpc_swab_update(&rpc->update);
+      break;
+   case MONGOC_OPCODE_INSERT:
+      mongoc_rpc_swab_insert(&rpc->insert);
+      break;
+   case MONGOC_OPCODE_QUERY:
+      mongoc_rpc_swab_query(&rpc->query);
+      break;
+   case MONGOC_OPCODE_GET_MORE:
+      mongoc_rpc_swab_get_more(&rpc->get_more);
+      break;
+   case MONGOC_OPCODE_DELETE:
+      mongoc_rpc_swab_delete(&rpc->delete);
+      break;
+   case MONGOC_OPCODE_KILL_CURSORS:
+      mongoc_rpc_swab_kill_cursors(&rpc->kill_cursors);
+      break;
+   default:
+      MONGOC_WARNING("Unknown rpc type: 0x%08x", opcode);
+      break;
+   }
+}
+
+
+void
+mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
+{
+   mongoc_opcode_t opcode;
+
+   bson_return_if_fail(rpc);
+
+   opcode = BSON_UINT32_FROM_LE(rpc->header.opcode);
+
+   switch (opcode) {
    case MONGOC_OPCODE_REPLY:
       mongoc_rpc_swab_reply(&rpc->reply);
       break;

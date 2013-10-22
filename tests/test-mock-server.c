@@ -42,7 +42,7 @@ handler_cb (mock_server_t   *server,
       r.reply.documents_len = ok.len;
 
       mongoc_rpc_gather(&r, &ar);
-      mongoc_rpc_swab(&r);
+      mongoc_rpc_swab_to_le(&r);
 
       iov = ar.data;
       iovcnt = ar.len;

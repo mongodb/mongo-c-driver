@@ -149,7 +149,7 @@ assert_rpc_equal (const char   *filename,
    mongoc_rpc_printf(rpc);
 #endif
 
-   mongoc_rpc_swab(rpc);
+   mongoc_rpc_swab_to_le(rpc);
 
 #if 0
    printf("After swabbing\n");
@@ -212,7 +212,7 @@ test_mongoc_rpc_delete_scatter (void)
    data = get_test_file("delete1.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab(&rpc);
+   mongoc_rpc_swab_from_le(&rpc);
 
    assert_cmpint(rpc.delete.msg_len, ==, 39);
    assert_cmpint(rpc.delete.request_id, ==, 1234);
@@ -261,7 +261,7 @@ test_mongoc_rpc_get_more_scatter (void)
    data = get_test_file("get_more1.dat", &length);
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab(&rpc);
+   mongoc_rpc_swab_from_le(&rpc);
 
    assert(rpc.get_more.msg_len == 42);
    assert(rpc.get_more.request_id == 1234);

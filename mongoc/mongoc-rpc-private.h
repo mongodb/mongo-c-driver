@@ -85,7 +85,8 @@ void        mongoc_rpc_gather          (mongoc_rpc_t                 *rpc,
                                         mongoc_array_t               *array);
 bson_bool_t mongoc_rpc_needs_gle       (mongoc_rpc_t                 *rpc,
                                         const mongoc_write_concern_t *write_concern);
-void        mongoc_rpc_swab            (mongoc_rpc_t                 *rpc);
+void        mongoc_rpc_swab_to_le      (mongoc_rpc_t                 *rpc);
+void        mongoc_rpc_swab_from_le    (mongoc_rpc_t                 *rpc);
 void        mongoc_rpc_printf          (mongoc_rpc_t                 *rpc);
 bson_bool_t mongoc_rpc_scatter         (mongoc_rpc_t                 *rpc,
                                         const bson_uint8_t           *buf,

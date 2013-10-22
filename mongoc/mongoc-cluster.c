@@ -809,7 +809,7 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
    mongoc_array_init(&ar, sizeof(struct iovec));
    mongoc_buffer_init(&buffer, NULL, 0, NULL);
    mongoc_rpc_gather(&rpc, &ar);
-   mongoc_rpc_swab(&rpc);
+   mongoc_rpc_swab_to_le(&rpc);
 
    if (!mongoc_stream_writev(node->stream, ar.data, ar.len,
                              cluster->sockettimeoutms)) {
@@ -838,7 +838,7 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
       GOTO(invalid_reply);
    }
 
-   mongoc_rpc_swab(&rpc);
+   mongoc_rpc_swab_from_le(&rpc);
 
    if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       GOTO(invalid_reply);
@@ -1706,7 +1706,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
       rpcs[i].header.request_id = ++cluster->request_id;
       need_gle = mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       mongoc_rpc_gather(&rpcs[i], &cluster->iov);
-      mongoc_rpc_swab(&rpcs[i]);
+      mongoc_rpc_swab_to_le(&rpcs[i]);
       if (need_gle) {
          gle.query.msg_len = 0;
          gle.query.request_id = ++cluster->request_id;
@@ -1735,7 +1735,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
          gle.query.query = bson_get_data(b);
          gle.query.fields = NULL;
          mongoc_rpc_gather(&gle, &cluster->iov);
-         mongoc_rpc_swab(&gle);
+         mongoc_rpc_swab_to_le(&gle);
       }
    }
 
@@ -1824,7 +1824,7 @@ mongoc_cluster_try_sendv (
       rpcs[i].header.request_id = ++cluster->request_id;
       need_gle = mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       mongoc_rpc_gather(&rpcs[i], &cluster->iov);
-      mongoc_rpc_swab(&rpcs[i]);
+      mongoc_rpc_swab_to_le(&rpcs[i]);
       if (need_gle) {
          gle.query.msg_len = 0;
          gle.query.request_id = ++cluster->request_id;
@@ -1852,7 +1852,7 @@ mongoc_cluster_try_sendv (
          gle.query.query = bson_get_data(b);
          gle.query.fields = NULL;
          mongoc_rpc_gather(&gle, &cluster->iov);
-         mongoc_rpc_swab(&gle);
+         mongoc_rpc_swab_to_le(&gle);
       }
    }
 
@@ -1983,10 +1983,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
 
    DUMP_BYTES(buffer, buffer->data + buffer->off, buffer->len);
 
-   /*
-    * Convert endianness of the message.
-    */
-   mongoc_rpc_swab(rpc);
+   mongoc_rpc_swab_from_le(rpc);
 
    mongoc_cluster_inc_ingress_rpc(rpc);
 
