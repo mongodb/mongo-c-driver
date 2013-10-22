@@ -17,11 +17,11 @@ test_mongoc_queue_basic (void)
 
    assert_cmpint(mongoc_queue_get_length(&q), ==, 5);
 
-   assert_cmpint(mongoc_queue_pop_head(&q), ==, (void *)5);
-   assert_cmpint(mongoc_queue_pop_head(&q), ==, (void *)3);
-   assert_cmpint(mongoc_queue_pop_head(&q), ==, (void *)1);
-   assert_cmpint(mongoc_queue_pop_head(&q), ==, (void *)2);
-   assert_cmpint(mongoc_queue_pop_head(&q), ==, (void *)4);
+   assert(mongoc_queue_pop_head(&q) == (void *)5);
+   assert(mongoc_queue_pop_head(&q) == (void *)3);
+   assert(mongoc_queue_pop_head(&q) == (void *)1);
+   assert(mongoc_queue_pop_head(&q) == (void *)2);
+   assert(mongoc_queue_pop_head(&q) == (void *)4);
    assert(!mongoc_queue_pop_head(&q));
 }
 

@@ -214,13 +214,13 @@ test_mongoc_rpc_delete_scatter (void)
    assert(r);
    mongoc_rpc_swab(&rpc);
 
-   assert(rpc.delete.msg_len == 39);
-   assert(rpc.delete.request_id == 1234);
-   assert(rpc.delete.response_to == -1);
-   assert(rpc.delete.opcode == MONGOC_OPCODE_DELETE);
-   assert(rpc.delete.zero == 0);
+   assert_cmpint(rpc.delete.msg_len, ==, 39);
+   assert_cmpint(rpc.delete.request_id, ==, 1234);
+   assert_cmpint(rpc.delete.response_to, ==, -1);
+   assert_cmpint(rpc.delete.opcode, ==, MONGOC_OPCODE_DELETE);
+   assert_cmpint(rpc.delete.zero, ==, 0);
    assert(!strcmp("test.test", rpc.delete.collection));
-   assert(rpc.delete.flags == MONGOC_DELETE_SINGLE_REMOVE);
+   assert_cmpint(rpc.delete.flags, ==, MONGOC_DELETE_SINGLE_REMOVE);
    assert(!memcmp(rpc.delete.selector, bson_get_data(&sel), sel.len));
 
    assert_rpc_equal("delete1.dat", &rpc);
@@ -331,11 +331,11 @@ test_mongoc_rpc_insert_scatter (void)
    r = mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
 
-   assert(rpc.insert.msg_len == 130);
-   assert(rpc.insert.request_id == 1234);
-   assert(rpc.insert.response_to == (bson_uint32_t)-1);
-   assert(rpc.insert.opcode == MONGOC_OPCODE_INSERT);
-   assert(rpc.insert.flags == MONGOC_INSERT_CONTINUE_ON_ERROR);
+   assert_cmpint(rpc.insert.msg_len, ==, 130);
+   assert_cmpint(rpc.insert.request_id, ==, 1234);
+   assert_cmpint(rpc.insert.response_to, ==, (bson_uint32_t)-1);
+   assert_cmpint(rpc.insert.opcode, ==, MONGOC_OPCODE_INSERT);
+   assert_cmpint(rpc.insert.flags, ==, MONGOC_INSERT_CONTINUE_ON_ERROR);
    assert(!strcmp("test.test", rpc.insert.collection));
    reader = bson_reader_new_from_data(rpc.insert.documents, rpc.insert.documents_len);
    while ((b = bson_reader_read(reader, &eof))) {

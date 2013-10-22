@@ -27,7 +27,7 @@ test_mongoc_buffer_basic (void)
    assert_cmpint(r, ==, -1);
    r = mongoc_buffer_fill(&buf, stream, 536, 0, &error);
    assert_cmpint(r, ==, 536);
-   assert_cmpint(buf.len, ==, 536);
+   assert(buf.len == 536);
 
    mongoc_buffer_destroy(&buf);
    mongoc_buffer_destroy(&buf);
