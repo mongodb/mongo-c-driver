@@ -1803,6 +1803,7 @@ mongoc_cluster_try_sendv (
    bson_bool_t need_gle;
    size_t iovcnt;
    size_t i;
+   char cmdname[140];
 
    ENTRY;
 
@@ -1832,19 +1833,21 @@ mongoc_cluster_try_sendv (
          gle.query.flags = MONGOC_QUERY_NONE;
          switch (rpcs[i].header.opcode) {
          case MONGOC_OPCODE_INSERT:
-            gle.query.collection = rpcs[i].insert.collection;
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].insert.collection);
             break;
          case MONGOC_OPCODE_DELETE:
-            gle.query.collection = rpcs[i].delete.collection;
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].delete.collection);
             break;
          case MONGOC_OPCODE_UPDATE:
             gle.query.collection = rpcs[i].update.collection;
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].update.collection);
             break;
          default:
             BSON_ASSERT(FALSE);
-            gle.query.collection = "";
+            DB_AND_CMD_FROM_COLLECTION(cmdname, "admin.$cmd");
             break;
          }
+         gle.query.collection = cmdname;
          gle.query.skip = 0;
          gle.query.n_return = 1;
          b = mongoc_write_concern_freeze((void *)write_concern);
