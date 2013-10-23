@@ -3,9 +3,12 @@
 #include "mongoc-tests.h"
 
 
-#define MONGOC_TEST_URI                   "mongodb://localhost:27017/"
-#define MONGOC_TEST_URI_WITH_PASSWORD     "mongodb://testuser:testpass@localhost:27017/test"
-#define MONGOC_TEST_URI_WITH_BAD_PASSWORD "mongodb://baduser:badpass@localhost:27017/test"
+#define HOST "localhost"
+
+
+#define MONGOC_TEST_URI                   "mongodb://"HOST":27017/"
+#define MONGOC_TEST_URI_WITH_PASSWORD     "mongodb://testuser:testpass@"HOST":27017/test"
+#define MONGOC_TEST_URI_WITH_BAD_PASSWORD "mongodb://baduser:badpass@"HOST":27017/test"
 
 
 static void
