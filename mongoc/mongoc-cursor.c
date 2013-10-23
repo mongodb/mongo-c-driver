@@ -247,6 +247,10 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
    }
 
    if (mongoc_cursor_unwrap_failure(cursor)) {
+      if ((cursor->error.domain == MONGOC_ERROR_QUERY) &&
+          (cursor->error.code == MONGOC_ERROR_QUERY_NOT_TAILABLE)) {
+         cursor->failed = TRUE;
+      }
       goto failure;
    }
 
