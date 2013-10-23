@@ -11,6 +11,9 @@
 #include "mongoc-tests.h"
 #include "mongoc-write-concern-private.h"
 
+#undef G_LOG_DOMAIN
+#define G_LOG_DOMAIN "test"
+
 
 static ha_replica_set_t *replica_set;
 static ha_node_t *r1;
