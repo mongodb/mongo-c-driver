@@ -72,6 +72,13 @@ tail_collection (mongoc_collection_t *collection)
             print_bson(doc);
          }
       }
+      if (mongoc_cursor_error(cursor, &error)) {
+         if ((error.domain == MONGOC_ERROR_QUERY) &&
+             (error.code == MONGOC_ERROR_QUERY_NOT_TAILABLE)) {
+            fprintf(stderr, "%s\n", error.message);
+            exit(1);
+         }
+      }
       mongoc_cursor_destroy(cursor);
       sleep(1);
    }
