@@ -583,7 +583,6 @@ mongoc_client_recv_gle (mongoc_client_t *client, /* IN */
          _bson_to_error(&b, error);
       }
       bson_destroy(&b);
-      goto cleanup;
    }
 
    ret = TRUE;
