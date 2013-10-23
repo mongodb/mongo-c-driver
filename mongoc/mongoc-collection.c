@@ -729,6 +729,8 @@ mongoc_collection_update (mongoc_collection_t          *collection,    /* IN */
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
 
+   ENTRY;
+
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(selector, FALSE);
    bson_return_val_if_fail(update, FALSE);
@@ -749,16 +751,16 @@ mongoc_collection_update (mongoc_collection_t          *collection,    /* IN */
 
    if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0,
                                     write_concern, NULL, error))) {
-      return FALSE;
+      RETURN(FALSE);
    }
 
    if (mongoc_write_concern_has_gle(write_concern)) {
       if (!mongoc_client_recv_gle(collection->client, hint, error)) {
-         return FALSE;
+         RETURN(FALSE);
       }
    }
 
-   return TRUE;
+   RETURN(TRUE);
 }
 
 

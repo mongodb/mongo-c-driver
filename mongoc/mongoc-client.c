@@ -41,6 +41,7 @@
 #include "mongoc-queue-private.h"
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-unix.h"
+#include "mongoc-trace.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -547,6 +548,8 @@ mongoc_client_recv_gle (mongoc_client_t *client, /* IN */
    bson_bool_t ret = FALSE;
    bson_t b;
 
+   ENTRY;
+
    bson_return_val_if_fail(client, FALSE);
    bson_return_val_if_fail(hint, FALSE);
    bson_return_val_if_fail(error, FALSE);
@@ -554,7 +557,7 @@ mongoc_client_recv_gle (mongoc_client_t *client, /* IN */
    mongoc_buffer_init(&buffer, NULL, 0, NULL);
 
    if (!mongoc_cluster_try_recv(&client->cluster, &rpc, &buffer, hint, error)) {
-      goto cleanup;
+      GOTO(cleanup);
    }
 
    if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
@@ -562,14 +565,14 @@ mongoc_client_recv_gle (mongoc_client_t *client, /* IN */
                      MONGOC_ERROR_PROTOCOL,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                      "Received message other than OP_REPLY.");
-      goto cleanup;
+      GOTO(cleanup);
    }
 
    if ((rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
       if (mongoc_rpc_reply_get_first(&rpc.reply, &b)) {
          _bson_to_error(&b, error);
          bson_destroy(&b);
-         goto cleanup;
+         GOTO(cleanup);
       }
    }
 
@@ -588,7 +591,7 @@ mongoc_client_recv_gle (mongoc_client_t *client, /* IN */
 cleanup:
    mongoc_buffer_destroy(&buffer);
 
-   return ret;
+   RETURN(ret);
 }
 
 
