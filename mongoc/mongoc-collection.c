@@ -56,11 +56,11 @@
  */
 
 mongoc_collection_t *
-_mongoc_collection_new (mongoc_client_t                       *client,
-                        /* IN */ const char                   *db,
-                        /* IN */ const char                   *collection,
-                        /* IN */ const mongoc_read_prefs_t    *read_prefs,
-                        /* IN */ const mongoc_write_concern_t *write_concern) /* IN */
+_mongoc_collection_new (mongoc_client_t              *client,        /* IN */
+                        const char                   *db,            /* IN */
+                        const char                   *collection,    /* IN */
+                        const mongoc_read_prefs_t    *read_prefs,    /* IN */
+                        const mongoc_write_concern_t *write_concern) /* IN */
 {
    mongoc_collection_t *col;
 
