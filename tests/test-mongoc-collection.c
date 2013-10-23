@@ -4,7 +4,10 @@
 #include "mongoc-tests.h"
 
 
-#define TEST_HOST (getenv("MONGOC_TEST_URI") ?: "mongodb://127.0.0.1:27017/")
+#define HOST (getenv("MONGOC_TEST_HOST") ? getenv("MONGOC_TEST_HOST") : "localhost")
+
+
+static char *gTestUri;
 
 
 static void
@@ -19,7 +22,7 @@ test_insert (void)
    unsigned i;
    bson_t b;
 
-   client = mongoc_client_new(TEST_HOST);
+   client = mongoc_client_new(gTestUri);
    assert(client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
@@ -63,7 +66,7 @@ test_update (void)
    bson_t u;
    bson_t set;
 
-   client = mongoc_client_new(TEST_HOST);
+   client = mongoc_client_new(gTestUri);
    assert(client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
@@ -124,7 +127,7 @@ test_delete (void)
    bson_t b;
    int i;
 
-   client = mongoc_client_new(TEST_HOST);
+   client = mongoc_client_new(gTestUri);
    assert(client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
@@ -171,7 +174,7 @@ test_count (void)
    bson_int64_t count;
    bson_t b;
 
-   client = mongoc_client_new(TEST_HOST);
+   client = mongoc_client_new(gTestUri);
    assert(client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
@@ -200,7 +203,7 @@ test_drop (void)
    bson_error_t error;
    bson_bool_t r;
 
-   client = mongoc_client_new(TEST_HOST);
+   client = mongoc_client_new(gTestUri);
    assert(client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
@@ -239,7 +242,7 @@ test_aggregate (void)
    bson_init(&pipeline);
    bson_append_document(&pipeline, "0", -1, &match);
 
-   client = mongoc_client_new(TEST_HOST);
+   client = mongoc_client_new(gTestUri);
    assert(client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
@@ -297,7 +300,7 @@ test_aggregate_legacy (void)
    bson_init(&pipeline);
    bson_append_document(&pipeline, "0", -1, &match);
 
-   client = mongoc_client_new(TEST_HOST);
+   client = mongoc_client_new(gTestUri);
    assert(client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
@@ -344,6 +347,8 @@ main (int   argc,
       mongoc_log_set_handler(log_handler, NULL);
    }
 
+   gTestUri = bson_strdup_printf("mongodb://%s/", HOST);
+
    run_test("/mongoc/collection/insert", test_insert);
    run_test("/mongoc/collection/update", test_update);
    run_test("/mongoc/collection/delete", test_delete);
@@ -351,6 +356,8 @@ main (int   argc,
    run_test("/mongoc/collection/drop", test_drop);
    run_test("/mongoc/collection/aggregate", test_aggregate);
    run_test("/mongoc/collection/aggregate_legacy", test_aggregate_legacy);
+
+   bson_free(gTestUri);
 
    return 0;
 }
