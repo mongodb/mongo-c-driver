@@ -3,12 +3,13 @@
 #include "mongoc-tests.h"
 
 
-#define HOST "localhost"
+#define HOSTENV "MONGOC_TEST_HOST"
+#define HOST (getenv(HOSTENV) ? getenv(HOSTENV) : "localhost")
 
 
-#define MONGOC_TEST_URI                   "mongodb://"HOST":27017/"
-#define MONGOC_TEST_URI_WITH_PASSWORD     "mongodb://testuser:testpass@"HOST":27017/test"
-#define MONGOC_TEST_URI_WITH_BAD_PASSWORD "mongodb://baduser:badpass@"HOST":27017/test"
+static char *gTestUri;
+static char *gTestUriWithPassword;
+static char *gTestUriWithBadPassword;
 
 
 static void
@@ -26,7 +27,7 @@ test_mongoc_client_authenticate (void)
    /*
     * Add a user to the test database.
     */
-   client = mongoc_client_new(MONGOC_TEST_URI);
+   client = mongoc_client_new(gTestUri);
    database = mongoc_client_get_database(client, "test");
    r = mongoc_database_add_user(database, "testuser", "testpass", &error);
    assert_cmpint(r, ==, 1);
@@ -37,13 +38,14 @@ test_mongoc_client_authenticate (void)
     * Try authenticating with that user.
     */
    bson_init(&q);
-   client = mongoc_client_new(MONGOC_TEST_URI_WITH_PASSWORD);
+   client = mongoc_client_new(gTestUriWithPassword);
    collection = mongoc_client_get_collection(client, "test", "test");
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1,
                                    &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    if (!r) {
-      r = mongoc_cursor_error(cursor, NULL);
+      r = mongoc_cursor_error(cursor, &error);
+      if (r) MONGOC_ERROR("%s", error.message);
       assert(!r);
    }
    mongoc_cursor_destroy(cursor);
@@ -67,7 +69,7 @@ test_mongoc_client_authenticate_failure (void)
     * Try authenticating with that user.
     */
    bson_init(&q);
-   client = mongoc_client_new(MONGOC_TEST_URI_WITH_BAD_PASSWORD);
+   client = mongoc_client_new(gTestUriWithBadPassword);
    collection = mongoc_client_get_collection(client, "test", "test");
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1,
                                    &q, NULL, NULL);
@@ -101,8 +103,16 @@ main (int   argc,
       mongoc_log_set_handler(log_handler, NULL);
    }
 
+   gTestUri = bson_strdup_printf("mongodb://%s:27017/", HOST);
+   gTestUriWithPassword = bson_strdup_printf("mongodb://testuser:testpass@%s:27017/test", HOST);
+   gTestUriWithBadPassword = bson_strdup_printf("mongodb://baduser:badpass@%s:27017/test", HOST);
+
    run_test("/mongoc/client/authenticate", test_mongoc_client_authenticate);
    run_test("/mongoc/client/authenticate_failure", test_mongoc_client_authenticate_failure);
+
+   bson_free(gTestUri);
+   bson_free(gTestUriWithPassword);
+   bson_free(gTestUriWithBadPassword);
 
    return 0;
 }
