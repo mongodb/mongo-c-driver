@@ -79,7 +79,7 @@ test_update (void)
       bson_init(&b);
       bson_oid_init(&oid, context);
       bson_append_oid(&b, "_id", 3, &oid);
-      bson_append_utf8(&b, "utf8", 4, "utf8 string", sizeof "utf8 string");
+      bson_append_utf8(&b, "utf8", 4, "utf8 string", 11);
       bson_append_int32(&b, "int32", 5, 1234);
       bson_append_int64(&b, "int64", 5, 12345678);
       bson_append_bool(&b, "bool", 4, 1);
