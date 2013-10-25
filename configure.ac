@@ -200,40 +200,60 @@ AC_ARG_ENABLE([debug],
 	      		      [enable_debug=debug_default])
 AS_CASE([$enable_debug],
 	[yes], [
-		CFLAGS="$CFLAGS -Wall"
-		CFLAGS="$CFLAGS -Werror"
-		CFLAGS="$CFLAGS -DMONGOC_TRACE"
+		MONGOC_DEBUG_CFLAGS="-DBSON_ENABLE_DEBUG"
+		MONGOC_DEBUG_CFLAGS="-DMONGOC_TRACE"
 	],
 	[minimum], [
-		CFLAGS="$CFLAGS -Wold-style-definition"
-		CFLAGS="$CFLAGS -Wdeclaration-after-statement"
-		CFLAGS="$CFLAGS -Wredundant-decls"
-		CFLAGS="$CFLAGS -Wmissing-noreturn"
-		CFLAGS="$CFLAGS -Wcast-align"
-		CFLAGS="$CFLAGS -Wwrite-strings"
-		CFLAGS="$CFLAGS -Winline"
-		CFLAGS="$CFLAGS -Wformat"
-		CFLAGS="$CFLAGS -Wformat-nonliteral"
-		CFLAGS="$CFLAGS -Wformat-security"
-		CFLAGS="$CFLAGS -Wswitch-enum"
-		CFLAGS="$CFLAGS -Wswitch-default"
-		CFLAGS="$CFLAGS -Winit-self"
-		CFLAGS="$CFLAGS -Wmissing-include-dirs"
-		CFLAGS="$CFLAGS -Wundef"
-		CFLAGS="$CFLAGS -Waggregate-return"
-		CFLAGS="$CFLAGS -Wmissing-format-attribute"
-		CFLAGS="$CFLAGS -Wnested-externs"
-		CFLAGS="$CFLAGS -Wshadow"
-		CFLAGS="$CFLAGS -Wreturn-type"
-		CFLAGS="$CFLAGS -Wunused-but-set-parameter"
-		CFLAGS="$CFLAGS -Wuninitialized"
+		MONGOC_DEBUG_CFLAGS="-DBSON_ENABLE_DEBUG"
+		MONGOC_DEBUG_CFLAGS="-DBSON_DISABLE_ASSERT"
 	],
 	[no], [
-		CFLAGS="$CFLAGS -DBSON_DISABLE_ASSERT"
-		CFLAGS="$CFLAGS -DBSON_DISABLE_CHECKS"
+		MONGOC_DEBUG_CFLAGS="-DBSON_DISABLE_ASSERT"
+		MONGOC_DEBUG_CFLAGS="-DBSON_DISABLE_CHECKS"
 	],
 	[AC_MSG_ERROR([Unknown argument to --enable-debug])]
 )
+AC_SUBST([MONGOC_DEBUG_CFLAGS])
+
+
+dnl **************************************************************************
+dnl Enable strict compiler flags
+dnl **************************************************************************
+# use strict compiler flags only on development releases
+m4_define([maintainer_flags_default], [m4_if(m4_eval(mongoc_minor_version % 2), [1], [yes], [no])])
+AC_ARG_ENABLE([maintainer-flags],
+              [AS_HELP_STRING([--enable-maintainer-flags=@<:@no/yes@:>@],
+                              [Use strict compiler flags @<:@default=]maintainer_flags_default[@:>@])],
+              [],
+              [enable_maintainer_flags=maintainer_flags_default])
+
+AS_IF([test "x$enable_maintainer_flags" = "xyes" && test "x$GCC" = "xyes"],
+      [AS_COMPILER_FLAGS([MAINTAINER_CFLAGS],
+                         ["-Wall
+                           -Waggregate-return
+                           -Wcast-align
+                           -Wdeclaration-after-statement
+                           -Wempty-body
+                           -Wformat
+                           -Wformat-nonliteral
+                           -Wformat-security
+                           -Winit-self
+                           -Winline
+                           -Wmissing-include-dirs
+                           -Wno-strict-aliasing
+                           -Wno-uninitialized
+                           -Wredundant-decls
+                           -Wreturn-type
+                           -Wshadow
+                           -Wswitch-default
+                           -Wswitch-enum
+                           -Wundef
+                           -Wunused-but-set-parameter
+                           -Wuninitialized
+                          "])]
+)
+MAINTAINER_CFLAGS="${MAINTAINER_CFLAGS#*  }"
+AC_SUBST([MAINTAINER_CFLAGS])
 
 
 dnl **************************************************************************
@@ -275,6 +295,7 @@ echo "libmongoc-$VERSION"
 echo ""
 echo "  Prefix ....................: ${prefix}"
 echo "  Debug Level ...............: ${enable_debug}"
+echo "  Maintainer ................: ${enable_maintainer_flags}"
 echo "  CFLAGS ....................: ${CFLAGS}"
 echo "  SSL .......................: ${enable_ssl}"
 echo ""

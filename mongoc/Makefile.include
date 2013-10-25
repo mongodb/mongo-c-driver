@@ -83,6 +83,8 @@ endif
 
 libmongoc_priv_la_CPPFLAGS = \
 	$(BSON_CFLAGS) \
+	$(MONGOC_DEBUG_CFLAGS) \
+	$(MAINTAINER_CFLAGS) \
 	$(SSL_CFLAGS)
 
 
