@@ -3,6 +3,7 @@
 #include "mongoc-tests.h"
 #include "ha-test.h"
 
+static ha_sharded_cluster_t *cluster;
 static ha_replica_set_t *repl_1;
 static ha_replica_set_t *repl_2;
 static ha_node_t *node_1_1;
@@ -31,16 +32,17 @@ main (int argc,
    node_2_2 = ha_replica_set_add_replica(repl_2, "shardtest2_2");
    node_2_3 = ha_replica_set_add_replica(repl_2, "shardtest2_3");
 
-   ha_replica_set_start(repl_1);
-   ha_replica_set_start(repl_2);
+   cluster = ha_sharded_cluster_new();
+   ha_sharded_cluster_add_replica_set(cluster, repl_1);
+   ha_sharded_cluster_add_replica_set(cluster, repl_2);
+   ha_sharded_cluster_add_config(cluster, "config1");
 
-   ha_replica_set_wait_for_healthy(repl_1);
-   ha_replica_set_wait_for_healthy(repl_2);
+   ha_sharded_cluster_start(cluster);
+   ha_sharded_cluster_wait_for_healthy(cluster);
 
    run_test("/ShardedCluster/basic", test1);
 
-   ha_replica_set_shutdown(repl_1);
-   ha_replica_set_shutdown(repl_2);
+   ha_sharded_cluster_shutdown(cluster);
 
    return 0;
 }

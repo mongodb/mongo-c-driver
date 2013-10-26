@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <mongoc.h>
+#include <pthread.h>
 #include <signal.h>
 #include <spawn.h>
 #include <stdio.h>
@@ -192,11 +193,10 @@ ha_node_destroy (ha_node_t *node)
 }
 
 
-ha_replica_set_t *
-ha_replica_set_new (const char *name)
+static void
+random_init (void)
 {
-   ha_replica_set_t *repl_set;
-   unsigned seed;
+   int seed;
    int fd;
 
    fd = open("/dev/urandom", O_RDONLY);
@@ -210,12 +210,36 @@ ha_replica_set_new (const char *name)
       exit(2);
    }
 
+   fprintf(stderr, "srand(%d)\n", seed);
    srand(seed);
-   printf("srand(%u)\n", seed);
+}
+
+
+static int
+random_int (void)
+{
+   static pthread_once_t once = PTHREAD_ONCE_INIT;
+   pthread_once(&once, random_init);
+   return rand();
+}
+
+
+static int
+random_int_range (int low,
+                  int high)
+{
+   return low + (random_int() % (high - low));
+}
+
+
+ha_replica_set_t *
+ha_replica_set_new (const char *name)
+{
+   ha_replica_set_t *repl_set;
 
    repl_set = bson_malloc0(sizeof *repl_set);
    repl_set->name = strdup(name);
-   repl_set->next_port = 30000 + (rand() % 10000);
+   repl_set->next_port = random_int_range(30000, 40000);
 
    return repl_set;
 }
@@ -518,4 +542,97 @@ again:
    }
 
    bson_destroy(&status);
+}
+
+
+ha_sharded_cluster_t *
+ha_sharded_cluster_new (void)
+{
+   ha_sharded_cluster_t *cluster;
+
+   cluster = bson_malloc0(sizeof *cluster);
+   cluster->next_port = random_int_range(40000, 41000);
+
+   return cluster;
+}
+
+
+void
+ha_sharded_cluster_add_replica_set (ha_sharded_cluster_t *cluster,
+                                    ha_replica_set_t     *replica_set)
+{
+   int i;
+
+   bson_return_if_fail(cluster);
+   bson_return_if_fail(replica_set);
+
+   for (i = 0; i < 12; i++) {
+      if (!cluster->replicas[i]) {
+         cluster->replicas[i] = replica_set;
+         break;
+      }
+   }
+}
+
+
+void
+ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
+                               const char           *name)
+{
+   ha_node_t *node;
+   int fd;
+
+   bson_return_if_fail(cluster);
+
+   node = bson_malloc0(sizeof *node);
+   node->is_config = TRUE;
+   node->port = cluster->next_port++;
+
+   node->next = cluster->configs;
+   cluster->configs = node;
+}
+
+
+void
+ha_sharded_cluster_start (ha_sharded_cluster_t *cluster)
+{
+   int i;
+
+   bson_return_if_fail(cluster);
+
+   for (i = 0; i < 12; i++) {
+      if (cluster->replicas[i]) {
+         ha_replica_set_start(cluster->replicas[i]);
+      }
+   }
+}
+
+
+void
+ha_sharded_cluster_wait_for_healthy (ha_sharded_cluster_t *cluster)
+{
+   int i;
+
+   bson_return_if_fail(cluster);
+
+   for (i = 0; i < 12; i++) {
+      if (cluster->replicas[i]) {
+         ha_replica_set_wait_for_healthy(cluster->replicas[i]);
+      }
+   }
+}
+
+
+void
+ha_sharded_cluster_shutdown (ha_sharded_cluster_t *cluster)
+{
+   int i;
+
+   bson_return_if_fail(cluster);
+
+   for (i = 0; i < 12; i++) {
+      if (cluster->replicas[i]) {
+         ha_replica_set_shutdown(cluster->replicas[i]);
+      }
+   }
 }

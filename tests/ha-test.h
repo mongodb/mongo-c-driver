@@ -26,8 +26,19 @@
 BSON_BEGIN_DECLS
 
 
-typedef struct _ha_replica_set_t ha_replica_set_t;
-typedef struct _ha_node_t        ha_node_t;
+typedef struct _ha_sharded_cluster_t ha_sharded_cluster_t;
+typedef struct _ha_replica_set_t     ha_replica_set_t;
+typedef struct _ha_node_t            ha_node_t;
+
+
+struct _ha_sharded_cluster_t
+{
+   char             *name;
+   ha_replica_set_t *replicas[12];
+   ha_node_t        *configs;
+   ha_node_t        *mongos;
+   int               next_port;
+};
 
 
 struct _ha_replica_set_t
@@ -44,7 +55,8 @@ struct _ha_node_t
    char          *name;
    char          *repl_set;
    char          *dbpath;
-   bson_bool_t    is_arbiter;
+   bson_bool_t    is_arbiter : 1;
+   bson_bool_t    is_config : 1;
    pid_t          pid;
    bson_uint16_t  port;
 };
@@ -64,6 +76,13 @@ void              ha_replica_set_wait_for_healthy (ha_replica_set_t *replica_set
 
 void              ha_node_kill                    (ha_node_t        *node);
 void              ha_node_restart                 (ha_node_t        *node);
+
+
+ha_sharded_cluster_t *ha_sharded_cluster_new              (void);
+void                  ha_sharded_cluster_start            (ha_sharded_cluster_t *cluster);
+void                  ha_sharded_cluster_wait_for_healthy (ha_sharded_cluster_t *cluster);
+void                  ha_sharded_cluster_add_config       (ha_sharded_cluster_t *cluster,
+                                                           const char           *name);
 
 
 BSON_END_DECLS
