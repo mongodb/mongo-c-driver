@@ -78,7 +78,7 @@ void              ha_node_kill                    (ha_node_t        *node);
 void              ha_node_restart                 (ha_node_t        *node);
 
 
-ha_sharded_cluster_t *ha_sharded_cluster_new              (void);
+ha_sharded_cluster_t *ha_sharded_cluster_new              (const char           *name);
 void                  ha_sharded_cluster_start            (ha_sharded_cluster_t *cluster);
 void                  ha_sharded_cluster_wait_for_healthy (ha_sharded_cluster_t *cluster);
 void                  ha_sharded_cluster_add_config       (ha_sharded_cluster_t *cluster,

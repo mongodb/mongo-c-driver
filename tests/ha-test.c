@@ -69,15 +69,17 @@ ha_node_new (const char    *name,
              const char    *repl_set,
              const char    *dbpath,
              bson_bool_t    is_arbiter,
+             bson_bool_t    is_config,
              bson_uint16_t  port)
 {
    ha_node_t *node;
 
    node = bson_malloc0(sizeof *node);
-   node->name = strdup(name);
-   node->repl_set = strdup(repl_set);
-   node->dbpath = strdup(dbpath);
+   node->name = bson_strdup(name);
+   node->repl_set = bson_strdup(repl_set);
+   node->dbpath = bson_strdup(dbpath);
    node->is_arbiter = is_arbiter;
+   node->is_config = is_config;
    node->port = port;
 
    return node;
@@ -127,14 +129,19 @@ ha_node_restart (ha_node_t *node)
    argv[2] = (char *) ".";
    argv[3] = (char *) "--port";
    argv[4] = portstr;
-   argv[5] = (char *) "--replSet";
-   argv[6] = node->repl_set;
-   argv[7] = (char *) "--nojournal";
-   argv[8] = (char *) "--noprealloc";
-   argv[9] = (char *) "--smallfiles";
-   argv[10] = (char *) "--nohttpinterface";
-   argv[11] = (char *) "--bind_ip";
-   argv[12] = (char *) "127.0.0.1";
+   argv[5] = (char *) "--nojournal";
+   argv[6] = (char *) "--noprealloc";
+   argv[7] = (char *) "--smallfiles";
+   argv[8] = (char *) "--nohttpinterface";
+   argv[9] = (char *) "--bind_ip";
+   argv[10] = (char *) "127.0.0.1";
+   if (node->is_config) {
+      argv[11] = (char *) "--configsvr";
+      argv[12] = NULL;
+   } else {
+      argv[11] = (char *) "--replSet";
+      argv[12] = node->repl_set;
+   }
    argv[13] = NULL;
 
    pid = fork();
@@ -238,7 +245,7 @@ ha_replica_set_new (const char *name)
    ha_replica_set_t *repl_set;
 
    repl_set = bson_malloc0(sizeof *repl_set);
-   repl_set->name = strdup(name);
+   repl_set->name = bson_strdup(name);
    repl_set->next_port = random_int_range(30000, 40000);
 
    return repl_set;
@@ -261,6 +268,7 @@ ha_replica_set_add_node (ha_replica_set_t *replica_set,
                       replica_set->name,
                       dbpath,
                       is_arbiter,
+                      FALSE,
                       replica_set->next_port++);
 
    if (!replica_set->nodes) {
@@ -546,12 +554,13 @@ again:
 
 
 ha_sharded_cluster_t *
-ha_sharded_cluster_new (void)
+ha_sharded_cluster_new (const char *name)
 {
    ha_sharded_cluster_t *cluster;
 
    cluster = bson_malloc0(sizeof *cluster);
    cluster->next_port = random_int_range(40000, 41000);
+   cluster->name = bson_strdup(name);
 
    return cluster;
 }
@@ -580,14 +589,20 @@ ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
                                const char           *name)
 {
    ha_node_t *node;
+   char dbpath[PATH_MAX];
    int fd;
 
    bson_return_if_fail(cluster);
 
-   node = bson_malloc0(sizeof *node);
-   node->is_config = TRUE;
-   node->port = cluster->next_port++;
+   snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
+   dbpath[sizeof dbpath - 1] = '\0';
 
+   node = ha_node_new(name,
+                      NULL,
+                      dbpath,
+                      FALSE,
+                      TRUE,
+                      cluster->next_port++);
    node->next = cluster->configs;
    cluster->configs = node;
 }
@@ -596,14 +611,38 @@ ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
 void
 ha_sharded_cluster_start (ha_sharded_cluster_t *cluster)
 {
+   struct stat st;
+   ha_node_t *iter;
+   char *cmd;
    int i;
 
    bson_return_if_fail(cluster);
+
+   if (!stat(cluster->name, &st)) {
+      if (S_ISDIR(st.st_mode)) {
+         /* Ayyyeeeeeee */
+         cmd = bson_strdup_printf("rm -rf \"%s\"", cluster->name);
+         fprintf(stderr, "%s\n", cmd);
+         system(cmd);
+         bson_free(cmd);
+      }
+   }
+
+   if (!!mkdir(cluster->name, 0750)) {
+      fprintf(stderr, "Failed to create directory \"%s\"\n",
+              cluster->name);
+      abort();
+   }
 
    for (i = 0; i < 12; i++) {
       if (cluster->replicas[i]) {
          ha_replica_set_start(cluster->replicas[i]);
       }
+   }
+
+   for (iter = cluster->configs; iter; iter = iter->next) {
+      ha_node_setup(iter);
+      ha_node_restart(iter);
    }
 }
 
@@ -626,6 +665,7 @@ ha_sharded_cluster_wait_for_healthy (ha_sharded_cluster_t *cluster)
 void
 ha_sharded_cluster_shutdown (ha_sharded_cluster_t *cluster)
 {
+   ha_node_t *iter;
    int i;
 
    bson_return_if_fail(cluster);
@@ -634,5 +674,9 @@ ha_sharded_cluster_shutdown (ha_sharded_cluster_t *cluster)
       if (cluster->replicas[i]) {
          ha_replica_set_shutdown(cluster->replicas[i]);
       }
+   }
+
+   for (iter = cluster->configs; iter; iter = iter->next) {
+      ha_node_kill(iter);
    }
 }

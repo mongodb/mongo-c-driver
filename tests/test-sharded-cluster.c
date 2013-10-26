@@ -32,7 +32,7 @@ main (int argc,
    node_2_2 = ha_replica_set_add_replica(repl_2, "shardtest2_2");
    node_2_3 = ha_replica_set_add_replica(repl_2, "shardtest2_3");
 
-   cluster = ha_sharded_cluster_new();
+   cluster = ha_sharded_cluster_new("cluster1");
    ha_sharded_cluster_add_replica_set(cluster, repl_1);
    ha_sharded_cluster_add_replica_set(cluster, repl_2);
    ha_sharded_cluster_add_config(cluster, "config1");
