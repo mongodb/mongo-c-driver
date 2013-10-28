@@ -70,6 +70,7 @@ ha_node_new (const char    *name,
              const char    *dbpath,
              bson_bool_t    is_arbiter,
              bson_bool_t    is_config,
+             bson_bool_t    is_router,
              bson_uint16_t  port)
 {
    ha_node_t *node;
@@ -80,6 +81,7 @@ ha_node_new (const char    *name,
    node->dbpath = bson_strdup(dbpath);
    node->is_arbiter = is_arbiter;
    node->is_config = is_config;
+   node->is_router = is_router;
    node->port = port;
 
    return node;
@@ -124,25 +126,34 @@ ha_node_restart (ha_node_t *node)
 
    ha_node_kill(node);
 
-   argv[0] = (char *) "mongod";
-   argv[1] = (char *) "--dbpath";
-   argv[2] = (char *) ".";
-   argv[3] = (char *) "--port";
-   argv[4] = portstr;
-   argv[5] = (char *) "--nojournal";
-   argv[6] = (char *) "--noprealloc";
-   argv[7] = (char *) "--smallfiles";
-   argv[8] = (char *) "--nohttpinterface";
-   argv[9] = (char *) "--bind_ip";
-   argv[10] = (char *) "127.0.0.1";
-   if (node->is_config) {
-      argv[11] = (char *) "--configsvr";
-      argv[12] = NULL;
+   if (!node->is_router) {
+      argv[0] = (char *) "mongod";
+      argv[1] = (char *) "--dbpath";
+      argv[2] = (char *) ".";
+      argv[3] = (char *) "--port";
+      argv[4] = portstr;
+      argv[5] = (char *) "--nojournal";
+      argv[6] = (char *) "--noprealloc";
+      argv[7] = (char *) "--smallfiles";
+      argv[8] = (char *) "--nohttpinterface";
+      argv[9] = (char *) "--bind_ip";
+      argv[10] = (char *) "127.0.0.1";
+      if (node->is_config) {
+         argv[11] = (char *) "--configsvr";
+         argv[12] = NULL;
+      } else {
+         argv[11] = (char *) "--replSet";
+         argv[12] = node->repl_set;
+      }
+      argv[13] = NULL;
    } else {
-      argv[11] = (char *) "--replSet";
-      argv[12] = node->repl_set;
+      argv[0] = (char *) "mongos";
+      argv[1] = (char *) "--configdb";
+      argv[2] = node->configopt;
+      argv[3] = (char *) "--port";
+      argv[4] = (char *) portstr;
+      argv[5] = NULL;
    }
-   argv[13] = NULL;
 
    pid = fork();
    if (pid < 0) {
@@ -196,6 +207,7 @@ ha_node_destroy (ha_node_t *node)
    bson_free(node->name);
    bson_free(node->repl_set);
    bson_free(node->dbpath);
+   bson_free(node->configopt);
    bson_free(node);
 }
 
@@ -268,6 +280,7 @@ ha_replica_set_add_node (ha_replica_set_t *replica_set,
                       replica_set->name,
                       dbpath,
                       is_arbiter,
+                      FALSE,
                       FALSE,
                       replica_set->next_port++);
 
@@ -584,7 +597,7 @@ ha_sharded_cluster_add_replica_set (ha_sharded_cluster_t *cluster,
 }
 
 
-void
+ha_node_t *
 ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
                                const char           *name)
 {
@@ -602,9 +615,39 @@ ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
                       dbpath,
                       FALSE,
                       TRUE,
+                      FALSE,
                       cluster->next_port++);
    node->next = cluster->configs;
    cluster->configs = node;
+
+   return node;
+}
+
+
+ha_node_t *
+ha_sharded_cluster_add_router (ha_sharded_cluster_t *cluster,
+                               const char           *name)
+{
+   ha_node_t *node;
+   char dbpath[PATH_MAX];
+   int fd;
+
+   bson_return_if_fail(cluster);
+
+   snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
+   dbpath[sizeof dbpath - 1] = '\0';
+
+   node = ha_node_new(name,
+                      NULL,
+                      dbpath,
+                      FALSE,
+                      FALSE,
+                      TRUE,
+                      cluster->next_port++);
+   node->next = cluster->routers;
+   cluster->routers = node;
+
+   return node;
 }
 
 
@@ -644,6 +687,11 @@ ha_sharded_cluster_start (ha_sharded_cluster_t *cluster)
       ha_node_setup(iter);
       ha_node_restart(iter);
    }
+
+   for (iter = cluster->routers; iter; iter = iter->next) {
+      ha_node_setup(iter);
+      ha_node_restart(iter);
+   }
 }
 
 
@@ -677,6 +725,10 @@ ha_sharded_cluster_shutdown (ha_sharded_cluster_t *cluster)
    }
 
    for (iter = cluster->configs; iter; iter = iter->next) {
+      ha_node_kill(iter);
+   }
+
+   for (iter = cluster->routers; iter; iter = iter->next) {
       ha_node_kill(iter);
    }
 }

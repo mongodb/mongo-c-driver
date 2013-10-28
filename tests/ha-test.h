@@ -36,7 +36,7 @@ struct _ha_sharded_cluster_t
    char             *name;
    ha_replica_set_t *replicas[12];
    ha_node_t        *configs;
-   ha_node_t        *mongos;
+   ha_node_t        *routers;
    int               next_port;
 };
 
@@ -55,8 +55,10 @@ struct _ha_node_t
    char          *name;
    char          *repl_set;
    char          *dbpath;
+   char          *configopt;
    bson_bool_t    is_arbiter : 1;
    bson_bool_t    is_config : 1;
+   bson_bool_t    is_router : 1;
    pid_t          pid;
    bson_uint16_t  port;
 };
@@ -81,7 +83,9 @@ void              ha_node_restart                 (ha_node_t        *node);
 ha_sharded_cluster_t *ha_sharded_cluster_new              (const char           *name);
 void                  ha_sharded_cluster_start            (ha_sharded_cluster_t *cluster);
 void                  ha_sharded_cluster_wait_for_healthy (ha_sharded_cluster_t *cluster);
-void                  ha_sharded_cluster_add_config       (ha_sharded_cluster_t *cluster,
+ha_node_t *           ha_sharded_cluster_add_config       (ha_sharded_cluster_t *cluster,
+                                                           const char           *name);
+ha_node_t *           ha_sharded_cluster_add_router       (ha_sharded_cluster_t *cluster,
                                                            const char           *name);
 
 
