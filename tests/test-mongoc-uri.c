@@ -168,12 +168,49 @@ test_mongoc_uri_new_for_host_port (void)
 }
 
 
+static void
+test_mongoc_uri_unescape (void)
+{
+#define ASSERT_URIDECODE_STR(_s, _e) \
+   do { \
+      char *str = mongoc_uri_unescape(_s); \
+      assert(!strcmp(str, _e)); \
+      bson_free(str); \
+   } while (0)
+#define ASSERT_URIDECODE_FAIL(_s) \
+   do { \
+      char *str = mongoc_uri_unescape(_s); \
+      assert(!str); \
+   } while (0)
+
+   ASSERT_URIDECODE_STR("", "");
+   ASSERT_URIDECODE_STR("%40", "@");
+   ASSERT_URIDECODE_STR("me%40localhost@localhost", "me@localhost@localhost");
+   ASSERT_URIDECODE_STR("%20", " ");
+   ASSERT_URIDECODE_STR("%24%21%40%2A%26%5E%21%40%2A%23%26%5E%21%40%23%2A%26"
+                        "%5E%21%40%2A%23%26%5E%21%40%2A%26%23%5E%7D%7B%7D%7B"
+                        "%22%22%27%7D%7B%5B%5D%3C%3E%3F",
+                        "$!@*&^!@*#&^!@#*&^!@*#&^!@*&#^}{}{\"\"'}{[]<>?");
+
+   ASSERT_URIDECODE_FAIL("%");
+   ASSERT_URIDECODE_FAIL("%%");
+   ASSERT_URIDECODE_FAIL("%%%");
+   ASSERT_URIDECODE_FAIL("%FF");
+   ASSERT_URIDECODE_FAIL("%CC");
+   ASSERT_URIDECODE_FAIL("%00");
+
+#undef ASSERT_URIDECODE_STR
+#undef ASSERT_URIDECODE_FAIL
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
    run_test("/mongoc/uri/new", test_mongoc_uri_new);
    run_test("/mongoc/uri/new_for_host_port", test_mongoc_uri_new_for_host_port);
+   run_test("/mongoc/uri/unescape", test_mongoc_uri_unescape);
    run_test("/mongoc/host_list/from_string", test_mongoc_host_list_from_string);
 
    return 0;

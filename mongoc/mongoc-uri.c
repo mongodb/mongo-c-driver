@@ -21,6 +21,7 @@
 #include <sys/types.h>
 
 #include "mongoc-host-list.h"
+#include "mongoc-log.h"
 #include "mongoc-uri.h"
 
 
@@ -605,4 +606,76 @@ mongoc_uri_get_read_preferences (const mongoc_uri_t *uri)
 {
    bson_return_val_if_fail(uri, NULL);
    return &uri->read_prefs;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_uri_unescape --
+ *
+ *       Escapes an UTF-8 encoded string containing URI escaped segments
+ *       such as %20.
+ *
+ *       It is a programming error to call this function with a string
+ *       that is not UTF-8 encoded!
+ *
+ * Returns:
+ *       A newly allocated string that should be freed with bson_free().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+char *
+mongoc_uri_unescape (const char *escaped_string)
+{
+   bson_unichar_t c;
+   bson_string_t *str;
+   unsigned int hex = 0;
+   const char *ptr;
+   const char *end;
+   size_t len;
+
+   bson_return_val_if_fail(escaped_string, NULL);
+
+   len = strlen(escaped_string);
+
+   /*
+    * Double check that this is a UTF-8 valid string. Bail out if necessary.
+    */
+   if (!bson_utf8_validate(escaped_string, len, FALSE)) {
+      MONGOC_WARNING("%s(): escaped_string contains invalid UTF-8",
+                     __FUNCTION__);
+      return FALSE;
+   }
+
+   ptr = escaped_string;
+   end = ptr + len;
+   str = bson_string_new(NULL);
+
+   for (; *ptr; ptr = bson_utf8_next_char(ptr)) {
+      c = bson_utf8_get_char(ptr);
+      switch (c) {
+      case '%':
+         if (((end - ptr) < 2) ||
+             !isxdigit(ptr[1]) ||
+             !isxdigit(ptr[2]) ||
+             (1 != sscanf(&ptr[1], "%02x", &hex)) ||
+             !isprint(hex)) {
+            bson_string_free(str, TRUE);
+            return NULL;
+         }
+         bson_string_append_c(str, hex);
+         ptr += 2;
+         break;
+      default:
+         bson_string_append_unichar(str, c);
+         break;
+      }
+   }
+
+   return bson_string_free(str, FALSE);
 }
