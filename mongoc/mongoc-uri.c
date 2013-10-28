@@ -172,6 +172,7 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
       port = MONGOC_DEFAULT_PORT;
    }
 
+   mongoc_uri_do_unescape(&hostname);
    mongoc_uri_append_host(uri, hostname, port);
    bson_free(hostname);
 
@@ -305,6 +306,8 @@ mongoc_uri_parse_database (mongoc_uri_t  *uri,
       *end = str + strlen(str);
    }
 
+   mongoc_uri_do_unescape(&uri->database);
+
    return TRUE;
 }
 
@@ -360,6 +363,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
    }
 
    value = strdup(end_key + 1);
+   mongoc_uri_do_unescape(&value);
 
    if (!strcasecmp(key, "connecttimeoutms") ||
        !strcasecmp(key, "sockettimeoutms") ||

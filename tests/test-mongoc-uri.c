@@ -147,6 +147,25 @@ test_mongoc_uri_new (void)
    assert(uri);
    assert_cmpstr(mongoc_uri_get_username(uri), "christian@realm");
    mongoc_uri_destroy(uri);
+
+   /* while you shouldn't do this, lets test for it */
+   uri = mongoc_uri_new("mongodb://christian%40realm@localhost:27017/db%2ename");
+   assert(uri);
+   assert_cmpstr(mongoc_uri_get_database(uri), "db.name");
+   mongoc_uri_destroy(uri);
+   uri = mongoc_uri_new("mongodb://christian%40realm@localhost:27017/db%2Ename");
+   assert(uri);
+   assert_cmpstr(mongoc_uri_get_database(uri), "db.name");
+   mongoc_uri_destroy(uri);
+
+   uri = mongoc_uri_new("mongodb://christian%40realm@localhost:27017/?abcd=%20");
+   assert(uri);
+   options = mongoc_uri_get_options(uri);
+   assert(options);
+   assert(bson_iter_init_find(&iter, options, "abcd"));
+   assert(BSON_ITER_HOLDS_UTF8(&iter));
+   assert_cmpstr(bson_iter_utf8(&iter, NULL), " ");
+   mongoc_uri_destroy(uri);
 }
 
 
