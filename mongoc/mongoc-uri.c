@@ -44,6 +44,18 @@ struct _mongoc_uri_t
 
 
 static void
+mongoc_uri_do_unescape (char **str)
+{
+   char *tmp;
+
+   if ((tmp = *str)) {
+      *str = mongoc_uri_unescape(tmp);
+      bson_free(tmp);
+   }
+}
+
+
+static void
 mongoc_uri_append_host (mongoc_uri_t  *uri,
                         const char    *host,
                         bson_uint16_t  port)
@@ -123,10 +135,15 @@ mongoc_uri_parse_userpass (mongoc_uri_t  *uri,
    if ((s = scan_to_unichar(str, '@', &end_userpass))) {
       if ((uri->username = scan_to_unichar(s, ':', &end_user))) {
          uri->password = strdup(end_user + 1);
-         *end = end_userpass + 1;
-         ret = TRUE;
+      } else {
+         uri->username = strndup(str, end_userpass - str);
+         uri->password = NULL;
       }
+      mongoc_uri_do_unescape(&uri->username);
+      mongoc_uri_do_unescape(&uri->password);
+      *end = end_userpass + 1;
       bson_free(s);
+      ret = TRUE;
    } else {
       ret = TRUE;
    }
