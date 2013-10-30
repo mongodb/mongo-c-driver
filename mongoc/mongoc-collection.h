@@ -23,6 +23,7 @@
 
 #include "mongoc-flags.h"
 #include "mongoc-cursor.h"
+#include "mongoc-index.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-write-concern.h"
 
@@ -70,6 +71,12 @@ bson_bool_t                   mongoc_collection_drop              (mongoc_collec
 bson_bool_t                   mongoc_collection_drop_index        (mongoc_collection_t          *collection,
                                                                    const char                   *index_name,
                                                                    bson_error_t                 *error);
+bson_bool_t
+mongoc_collection_ensure_index (mongoc_collection_t      *collection,
+                                const bson_t             *keys,
+                                const mongoc_index_opt_t *opt,
+                                bson_error_t             *error);
+
 mongoc_cursor_t              *mongoc_collection_find              (mongoc_collection_t          *collection,
                                                                    mongoc_query_flags_t          flags,
                                                                    bson_uint32_t                 skip,

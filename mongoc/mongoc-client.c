@@ -34,6 +34,7 @@
 #include "mongoc-cluster-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-database-private.h"
+#include "mongoc-gridfs-private.h"
 #include "mongoc-error.h"
 #include "mongoc-list-private.h"
 #include "mongoc-log.h"
@@ -835,6 +836,48 @@ mongoc_client_get_collection (mongoc_client_t *client,     /* IN */
 
    return _mongoc_collection_new(client, db, collection, client->read_prefs,
                                  client->write_concern);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_get_gridfs --
+ *
+ *       This function returns a newly allocated collection structure.
+ *
+ *       @db should be the name of the database, such as "test".
+ *       @collection should be the name of the collection such as "test".
+ *
+ *       The above would result in the namespace "test.test".
+ *
+ *       You should free this structure when you are done with it using
+ *       mongoc_collection_destroy().
+ *
+ * Returns:
+ *       A newly allocated mongoc_collection_t that should be freed with
+ *       mongoc_collection_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_gridfs_t *
+mongoc_client_get_gridfs (mongoc_client_t *client,
+                          const char      *db,
+                          const char      *prefix,
+                          bson_error_t    *error)
+{
+   bson_return_val_if_fail(client, NULL);
+   bson_return_val_if_fail(db, NULL);
+
+   if (! prefix) {
+      prefix = "fs";
+   }
+
+   return _mongoc_gridfs_new(client, db, prefix, error);
 }
 
 

@@ -15,11 +15,14 @@
  */
 
 
+#include <stdio.h>
+
 #include "mongoc-client-private.h"
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-error.h"
+#include "mongoc-index.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
 #include "mongoc-trace.h"
@@ -612,6 +615,110 @@ mongoc_collection_drop_index (mongoc_collection_t *collection, /* IN */
    return ret;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_ensure_index --
+ *
+ *       Request the MongoDB server create the named index.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       @error is setup upon failure if non-NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+char *
+mongoc_collection_keys_to_index_string(const bson_t *keys)
+{
+   bson_string_t *s;
+   bson_iter_t iter;
+   int i = 0;
+
+   s = bson_string_new(NULL);
+
+   bson_iter_init(&iter, keys);
+
+   while(bson_iter_next(&iter)) {
+      bson_string_append_printf(s, (i++ ? "_%s_%d" : "%s_%d"), bson_iter_key(&iter), bson_iter_int32(&iter));
+   }
+
+   return bson_string_free(s, 0);
+}
+
+bson_bool_t
+mongoc_collection_ensure_index (mongoc_collection_t      *collection, /* IN */
+                                const bson_t             *keys,  /* IN */
+                                const mongoc_index_opt_t *opt,         /* IN */
+                                bson_error_t             *error) /* OUT */
+{
+   /** TODO: this is supposed to be cached and cheap... make it that way */
+
+   bson_bool_t ret;
+   bson_t insert;
+   char * name;
+   mongoc_collection_t * col;
+
+   bson_return_val_if_fail(collection, FALSE);
+
+   opt = opt ? opt : MONGOC_DEFAULT_INDEX_OPT;
+   bson_return_val_if_fail(opt->is_initialized, FALSE);
+
+   bson_init(&insert);
+
+   bson_append_document(&insert, "key", -1, keys);
+   bson_append_utf8(&insert, "ns", -1, collection->ns, -1);
+
+   if (opt->background != MONGOC_DEFAULT_INDEX_OPT->background)
+      bson_append_bool(&insert, "background", -1, opt->background);
+
+   if (opt->unique != MONGOC_DEFAULT_INDEX_OPT->unique)
+      bson_append_bool(&insert, "unique", -1, opt->unique);
+
+   if (opt->name != MONGOC_DEFAULT_INDEX_OPT->name) {
+      bson_append_utf8(&insert, "name", -1, opt->name, -1);
+   } else {
+      name = mongoc_collection_keys_to_index_string(keys);
+      bson_append_utf8(&insert, "name", -1, name, -1);
+      free(name);
+   }
+
+   if (opt->drop_dups != MONGOC_DEFAULT_INDEX_OPT->drop_dups)
+      bson_append_bool(&insert, "dropDups", -1, opt->drop_dups);
+
+   if (opt->sparse != MONGOC_DEFAULT_INDEX_OPT->sparse)
+      bson_append_bool(&insert, "sparse", -1, opt->sparse);
+
+   if (opt->expire_after_seconds != MONGOC_DEFAULT_INDEX_OPT->expire_after_seconds)
+      bson_append_int32(&insert, "expireAfterSeconds", -1, opt->expire_after_seconds);
+
+   if (opt->v != MONGOC_DEFAULT_INDEX_OPT->v)
+      bson_append_int32(&insert, "v", -1, opt->v);
+
+   if (opt->weights != MONGOC_DEFAULT_INDEX_OPT->weights)
+      bson_append_document(&insert, "weights", -1, opt->weights);
+
+   if (opt->default_language != MONGOC_DEFAULT_INDEX_OPT->default_language)
+      bson_append_utf8(&insert, "defaultLanguage", -1, opt->default_language, -1);
+
+   if (opt->language_override != MONGOC_DEFAULT_INDEX_OPT->language_override)
+      bson_append_utf8(&insert, "languageOverride", -1, opt->language_override, -1);
+
+   col = mongoc_client_get_collection (collection->client, collection->db,
+                                       "system.indexes");
+
+   ret = mongoc_collection_insert (col, MONGOC_INSERT_NONE, &insert, NULL, error);
+
+   mongoc_collection_destroy(col);
+
+   bson_destroy(&insert);
+
+   return ret;
+}
 
 /*
  *--------------------------------------------------------------------------

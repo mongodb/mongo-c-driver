@@ -39,6 +39,8 @@ test-mongoc-collection
 test-mongoc-cursor
 test-mongoc-database
 test-mongoc-event
+test-mongoc-gridfs
+test-mongoc-gridfs-file-page
 test-mongoc-list
 test-mongoc-queue
 test-mongoc-read-prefs
