@@ -261,7 +261,7 @@ dnl Output
 dnl **************************************************************************
 AC_CONFIG_FILES([
 	Makefile
-	libmongoc-1.0.pc
+	mongoc/libmongoc-1.0.pc
 	mongoc/mongoc-version.h
 ])
 AC_OUTPUT
