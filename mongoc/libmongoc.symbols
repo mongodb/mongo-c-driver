@@ -10,6 +10,7 @@ mongoc_client_pool_destroy
 mongoc_client_pool_new
 mongoc_client_pool_pop
 mongoc_client_pool_push
+mongoc_client_pool_try_pop
 mongoc_client_set_read_prefs
 mongoc_client_set_write_concern
 mongoc_collection_aggregate

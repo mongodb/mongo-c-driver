@@ -36,6 +36,7 @@ void                  mongoc_client_pool_destroy (mongoc_client_pool_t *pool);
 mongoc_client_t      *mongoc_client_pool_pop     (mongoc_client_pool_t *pool);
 void                  mongoc_client_pool_push    (mongoc_client_pool_t *pool,
                                                   mongoc_client_t      *client);
+mongoc_client_t      *mongoc_client_pool_try_pop (mongoc_client_pool_t *pool);
 
 
 BSON_END_DECLS

@@ -125,6 +125,30 @@ again:
 }
 
 
+mongoc_client_t *
+mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
+{
+   mongoc_client_t *client;
+
+   ENTRY;
+
+   bson_return_val_if_fail(pool, NULL);
+
+   bson_mutex_lock(&pool->mutex);
+
+   if (!(client = mongoc_queue_pop_head(&pool->queue))) {
+      if (pool->size < pool->max_pool_size) {
+         client = mongoc_client_new_from_uri(pool->uri);
+         pool->size++;
+      }
+   }
+
+   bson_mutex_unlock(&pool->mutex);
+
+   RETURN(client);
+}
+
+
 void
 mongoc_client_pool_push (mongoc_client_pool_t *pool,
                          mongoc_client_t      *client)
