@@ -87,8 +87,12 @@ ha_node_t *           ha_sharded_cluster_add_config       (ha_sharded_cluster_t 
                                                            const char           *name);
 ha_node_t *           ha_sharded_cluster_add_router       (ha_sharded_cluster_t *cluster,
                                                            const char           *name);
+void
+ha_sharded_cluster_add_replica_set (ha_sharded_cluster_t *cluster,
+                                    ha_replica_set_t     *replica_set);
 
-
+void
+ha_sharded_cluster_shutdown (ha_sharded_cluster_t *cluster);
 BSON_END_DECLS
 
 
