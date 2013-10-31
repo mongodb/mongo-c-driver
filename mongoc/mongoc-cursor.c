@@ -458,3 +458,23 @@ mongoc_cursor_more (mongoc_cursor_t *cursor)
 
    return ((!cursor->sent) || (cursor->rpc.reply.cursor_id));
 }
+
+
+void
+mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
+                        mongoc_host_list_t *host)
+{
+   bson_return_if_fail(cursor);
+   bson_return_if_fail(host);
+
+   memset(host, 0, sizeof *host);
+
+   if (!cursor->hint) {
+      MONGOC_WARNING("%s(): Must send query before fetching peer.",
+                     __FUNCTION__);
+      return;
+   }
+
+   *host = cursor->client->cluster.nodes[cursor->hint - 1].host;
+   host->next = NULL;
+}

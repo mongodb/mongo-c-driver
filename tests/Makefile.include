@@ -5,6 +5,7 @@ noinst_PROGRAMS += test-mongoc-buffer
 noinst_PROGRAMS += test-mongoc-client
 noinst_PROGRAMS += test-mongoc-client-pool
 noinst_PROGRAMS += test-mongoc-collection
+noinst_PROGRAMS += test-mongoc-cursor
 noinst_PROGRAMS += test-mongoc-list
 noinst_PROGRAMS += test-mongoc-queue
 noinst_PROGRAMS += test-mongoc-read-prefs
@@ -23,6 +24,7 @@ TEST_PROGS += test-mongoc-buffer
 TEST_PROGS += test-mongoc-client
 TEST_PROGS += test-mongoc-client-pool
 TEST_PROGS += test-mongoc-collection
+TEST_PROGS += test-mongoc-cursor
 TEST_PROGS += test-mongoc-list
 TEST_PROGS += test-mongoc-queue
 TEST_PROGS += test-mongoc-read-prefs
@@ -74,6 +76,11 @@ test_mongoc_client_pool_LDADD = $(TEST_LIBS)
 test_mongoc_collection_SOURCES = $(top_srcdir)/tests/test-mongoc-collection.c
 test_mongoc_collection_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_mongoc_collection_LDADD = $(TEST_LIBS)
+
+
+test_mongoc_cursor_SOURCES = $(top_srcdir)/tests/test-mongoc-cursor.c
+test_mongoc_cursor_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+test_mongoc_cursor_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_list_SOURCES = $(top_srcdir)/tests/test-mongoc-list.c
