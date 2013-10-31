@@ -603,9 +603,8 @@ ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
 {
    ha_node_t *node;
    char dbpath[PATH_MAX];
-   int fd;
 
-   bson_return_if_fail(cluster);
+   bson_return_val_if_fail(cluster, NULL);
 
    snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
    dbpath[sizeof dbpath - 1] = '\0';
@@ -630,9 +629,8 @@ ha_sharded_cluster_add_router (ha_sharded_cluster_t *cluster,
 {
    ha_node_t *node;
    char dbpath[PATH_MAX];
-   int fd;
 
-   bson_return_if_fail(cluster);
+   bson_return_val_if_fail(cluster, NULL);
 
    snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
    dbpath[sizeof dbpath - 1] = '\0';
