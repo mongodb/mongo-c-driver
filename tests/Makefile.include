@@ -44,7 +44,7 @@ TEST_LIBS = libmongoc-priv.la $(BSON_LIBS) $(SHM_LIB)
 
 test_load_SOURCES = $(top_srcdir)/tests/test-load.c
 test_load_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_load_LDADD = libmongoc-1.0.la
+test_load_LDADD = $(TEST_LIBS)
 
 
 test_mock_server_SOURCES = $(top_srcdir)/tests/test-mock-server.c
@@ -120,7 +120,7 @@ test_mongoc_write_concern_LDADD = $(TEST_LIBS)
 
 test_secondary_SOURCES = $(top_srcdir)/tests/test-secondary.c
 test_secondary_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-test_secondary_LDADD = libmongoc-1.0.la
+test_secondary_LDADD = $(TEST_LIBS)
 
 test_replica_set_SOURCES = \
 	$(top_srcdir)/tests/test-replica-set.c \
