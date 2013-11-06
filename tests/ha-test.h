@@ -38,29 +38,38 @@ struct _ha_sharded_cluster_t
    ha_node_t        *configs;
    ha_node_t        *routers;
    int               next_port;
+#ifdef MONGOC_HAVE_SSL
+   mongoc_ssl_opt_t *ssl_opt;
+#endif
 };
 
 
 struct _ha_replica_set_t
 {
-   char      *name;
-   ha_node_t *nodes;
-   int        next_port;
+   char             *name;
+   ha_node_t        *nodes;
+   int               next_port;
+#ifdef MONGOC_HAVE_SSL
+   mongoc_ssl_opt_t *ssl_opt;
+#endif
 };
 
 
 struct _ha_node_t
 {
-   ha_node_t     *next;
-   char          *name;
-   char          *repl_set;
-   char          *dbpath;
-   char          *configopt;
-   bson_bool_t    is_arbiter : 1;
-   bson_bool_t    is_config : 1;
-   bson_bool_t    is_router : 1;
-   pid_t          pid;
-   bson_uint16_t  port;
+   ha_node_t        *next;
+   char             *name;
+   char             *repl_set;
+   char             *dbpath;
+   char             *configopt;
+   bson_bool_t       is_arbiter : 1;
+   bson_bool_t       is_config  : 1;
+   bson_bool_t       is_router  : 1;
+   pid_t             pid;
+   bson_uint16_t     port;
+#ifdef MONGOC_HAVE_SSL
+   mongoc_ssl_opt_t *ssl_opt;
+#endif
 };
 
 
@@ -74,6 +83,10 @@ void              ha_replica_set_start            (ha_replica_set_t *replica_set
 void              ha_replica_set_shutdown         (ha_replica_set_t *replica_set);
 void              ha_replica_set_destroy          (ha_replica_set_t *replica_set);
 void              ha_replica_set_wait_for_healthy (ha_replica_set_t *replica_set);
+#ifdef MONGOC_HAVE_SSL
+void              ha_replica_set_ssl              (ha_replica_set_t *repl_set,
+                                                   mongoc_ssl_opt_t *opt);
+#endif
 
 
 void              ha_node_kill                    (ha_node_t        *node);
