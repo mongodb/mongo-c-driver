@@ -47,12 +47,12 @@ void        mongoc_buffer_init               (mongoc_buffer_t   *buffer,
 bson_bool_t mongoc_buffer_append_from_stream (mongoc_buffer_t   *buffer,
                                               mongoc_stream_t   *stream,
                                               size_t             size,
-                                              bson_uint32_t      timeout_msec,
+                                              bson_int32_t       timeout_msec,
                                               bson_error_t      *error);
 ssize_t     mongoc_buffer_fill               (mongoc_buffer_t   *buffer,
                                               mongoc_stream_t   *stream,
-                                              ssize_t            min_bytes,
-                                              bson_uint32_t      timeout_msec,
+                                              size_t             min_bytes,
+                                              bson_int32_t       timeout_msec,
                                               bson_error_t      *error);
 void        mongoc_buffer_destroy            (mongoc_buffer_t   *buffer);
 void        mongoc_buffer_clear              (mongoc_buffer_t   *buffer,

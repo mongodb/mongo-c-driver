@@ -47,7 +47,7 @@ handler_cb (mock_server_t   *server,
       iov = ar.data;
       iovcnt = ar.len;
 
-      mongoc_stream_writev(stream, iov, iovcnt, 0);
+      mongoc_stream_writev(stream, iov, iovcnt, -1);
 
       mongoc_array_destroy(&ar);
    }

@@ -151,7 +151,6 @@ mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
                             int   len) /* IN */
 {
    mongoc_stream_tls_t *tls;
-   struct iovec iov;
    int ret;
 
    BSON_ASSERT(b);
@@ -161,11 +160,9 @@ mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
       return -1;
    }
 
-   iov.iov_base = buf;
-   iov.iov_len = len;
 
    errno = 0;
-   ret = mongoc_stream_readv(tls->base_stream, &iov, 1, -1, 0);
+   ret = mongoc_stream_read(tls->base_stream, buf, len, 0, -1);
    if (ret < 0) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
          BIO_set_retry_read(b);
@@ -212,7 +209,7 @@ mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
    iov.iov_len = len;
 
    errno = 0;
-   ret = mongoc_stream_writev(tls->base_stream, &iov, 1, 0);
+   ret = mongoc_stream_writev(tls->base_stream, &iov, 1, -1);
    BIO_clear_retry_flags(b);
    if (ret < 0) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -422,7 +419,7 @@ static ssize_t
 mongoc_stream_tls_writev (mongoc_stream_t *stream,       /* IN */
                           struct iovec    *iov,          /* IN */
                           size_t           iovcnt,       /* IN */
-                          bson_uint32_t    timeout_msec) /* IN */
+                          bson_int32_t     timeout_msec) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    ssize_t ret = 0;
@@ -478,8 +475,8 @@ static ssize_t
 mongoc_stream_tls_readv (mongoc_stream_t *stream,       /* IN */
                          struct iovec    *iov,          /* INOUT */
                          size_t           iovcnt,       /* IN */
-                         ssize_t          min_bytes,    /* IN */
-                         bson_uint32_t    timeout_msec) /* IN */
+                         size_t           min_bytes,    /* IN */
+                         bson_int32_t     timeout_msec) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    ssize_t ret = 0;

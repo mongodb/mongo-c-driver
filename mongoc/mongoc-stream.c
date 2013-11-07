@@ -38,6 +38,11 @@
 #include "mongoc-stream.h"
 
 
+#ifndef MONGOC_DEFAULT_TIMEOUT_MSEC
+#define MONGOC_DEFAULT_TIMEOUT_MSEC (60L * 60L * 1000L)
+#endif
+
+
 /**
  * mongoc_stream_close:
  * @stream: A mongoc_stream_t.
@@ -99,13 +104,17 @@ ssize_t
 mongoc_stream_writev (mongoc_stream_t *stream,
                       struct iovec    *iov,
                       size_t           iovcnt,
-                      bson_uint32_t    timeout_msec)
+                      bson_int32_t     timeout_msec)
 {
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
 
    BSON_ASSERT(stream->writev);
+
+   if (timeout_msec < 0) {
+      timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
+   }
 
    return stream->writev(stream, iov, iovcnt, timeout_msec);
 }
@@ -121,9 +130,8 @@ mongoc_stream_writev (mongoc_stream_t *stream,
  * Reads into the various buffers pointed to by @iov and associated
  * buffer lengths.
  *
- * If @min_bytes is specified, then at least that number of bytes will
- * be returned or -1 for failure. This is useful for opportunistic
- * buffering.
+ * If @min_bytes is specified, then at least min_bytes will be returned unless
+ * eof is encountered.  This may result in ETIMEDOUT
  *
  * Returns: the number of bytes read or -1 on failure.
  */
@@ -131,14 +139,18 @@ ssize_t
 mongoc_stream_readv (mongoc_stream_t *stream,
                      struct iovec    *iov,
                      size_t           iovcnt,
-                     ssize_t          min_bytes,
-                     bson_uint32_t    timeout_msec)
+                     size_t           min_bytes,
+                     bson_int32_t     timeout_msec)
 {
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
 
    BSON_ASSERT(stream->readv);
+
+   if (timeout_msec < 0) {
+      timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
+   }
 
    return stream->readv(stream, iov, iovcnt, min_bytes, timeout_msec);
 }
@@ -149,13 +161,13 @@ mongoc_stream_readv (mongoc_stream_t *stream,
  * @stream: A mongoc_stream_t.
  * @buf: A buffer to write into.
  * @count: The number of bytes to write into @buf.
- * @min_bytes: The minimum number of bytes to receive, or -1.
+ * @min_bytes: The minimum number of bytes to receive
  *
  * Simplified access to mongoc_stream_readv(). Creates a single iovec
  * with the buffer provided.
  *
- * If @min_bytes is not -1, the minimum number of bytes to receive
- * or an error is returned. This is useful for opportunistic buffering.
+ * If @min_bytes is specified, then at least min_bytes will be returned unless
+ * eof is encountered.  This may result in ETIMEDOUT
  *
  * Returns: -1 on failure, otherwise the number of bytes read.
  */
@@ -163,28 +175,20 @@ ssize_t
 mongoc_stream_read (mongoc_stream_t *stream,
                     void            *buf,
                     size_t           count,
-                    ssize_t          min_bytes,
-                    bson_uint32_t    timeout_msec)
+                    size_t           min_bytes,
+                    bson_int32_t     timeout_msec)
 {
    struct iovec iov;
 
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(buf, -1);
 
-   if (!count) {
-      return 0;
-   }
-
-   if (min_bytes <= 0) {
-      min_bytes = count;
-   }
-
    iov.iov_base = buf;
    iov.iov_len = count;
 
    BSON_ASSERT(stream->readv);
 
-   return stream->readv(stream, &iov, 1, min_bytes, timeout_msec);
+   return mongoc_stream_readv(stream, &iov, 1, min_bytes, timeout_msec);
 }
 
 

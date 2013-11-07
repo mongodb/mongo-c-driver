@@ -44,11 +44,6 @@
 #endif
 
 
-#ifndef MONGOC_DEFAULT_TIMEOUT_MSEC
-#define MONGOC_DEFAULT_TIMEOUT_MSEC (60L * 60L * 1000L)
-#endif
-
-
 typedef struct
 {
    mongoc_stream_t  stream;
@@ -144,8 +139,8 @@ static ssize_t
 mongoc_stream_unix_readv (mongoc_stream_t *stream,
                           struct iovec    *iov,
                           size_t           iovcnt,
-                          ssize_t          min_bytes,
-                          bson_uint32_t    timeout_msec)
+                          size_t           min_bytes,
+                          bson_int32_t     timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    struct msghdr msg;
@@ -157,6 +152,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
    ssize_t ret = 0;
    int flags = 0;
    int timeout;
+   int successful_read = 0;
 
    ENTRY;
 
@@ -189,10 +185,6 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
    if (file->fd == -1) {
       errno = EBADF;
       RETURN(-1);
-   }
-
-   if (!timeout_msec) {
-      timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
    }
 
    /*
@@ -247,6 +239,8 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
          }
       }
 
+      successful_read = 1;
+
       /*
        * If our recvmsg() failed, we can't do much now can we?
        */
@@ -294,7 +288,7 @@ prepare_wait_poll:
        * If we got enough bytes to satisfy the minimum requirement, short
        * circuit so we don't potentially block on poll().
        */
-      if (ret >= min_bytes) {
+      if (successful_read && ret >= min_bytes) {
          break;
       }
 
@@ -331,7 +325,7 @@ static ssize_t
 mongoc_stream_unix_writev (mongoc_stream_t *stream,
                            struct iovec    *iov,
                            size_t           iovcnt,
-                           bson_uint32_t    timeout_msec)
+                           bson_int32_t     timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
    struct msghdr msg;
@@ -357,10 +351,6 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
    if (file->fd == -1) {
       errno = EBADF;
       RETURN(-1);
-   }
-
-   if (!timeout_msec) {
-      timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
    }
 
    /*

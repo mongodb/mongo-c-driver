@@ -39,12 +39,12 @@ struct _mongoc_stream_t
    ssize_t (*writev)     (mongoc_stream_t *stream,
                           struct iovec    *iov,
                           size_t           iovcnt,
-                          bson_uint32_t    timeout_msec);
+                          bson_int32_t     timeout_msec);
    ssize_t (*readv)      (mongoc_stream_t *stream,
                           struct iovec    *iov,
                           size_t           iovcnt,
-                          ssize_t          min_bytes,
-                          bson_uint32_t    timeout_msec);
+                          size_t           min_bytes,
+                          bson_int32_t     timeout_msec);
    int     (*cork)       (mongoc_stream_t *stream);
    int     (*uncork)     (mongoc_stream_t *stream);
    int     (*setsockopt) (mongoc_stream_t *stream,
@@ -64,17 +64,17 @@ int              mongoc_stream_flush         (mongoc_stream_t *stream);
 ssize_t          mongoc_stream_writev        (mongoc_stream_t *stream,
                                               struct iovec    *iov,
                                               size_t           iovcnt,
-                                              bson_uint32_t    timeout_msec);
+                                              bson_int32_t     timeout_msec);
 ssize_t          mongoc_stream_readv         (mongoc_stream_t *stream,
                                               struct iovec    *iov,
                                               size_t           iovcnt,
-                                              ssize_t          min_bytes,
-                                              bson_uint32_t    timeout_msec);
+                                              size_t           min_bytes,
+                                              bson_int32_t     timeout_msec);
 ssize_t          mongoc_stream_read          (mongoc_stream_t *stream,
                                               void            *buf,
                                               size_t           count,
-                                              ssize_t          min_bytes,
-                                              bson_uint32_t    timeout_msec);
+                                              size_t           min_bytes,
+                                              bson_int32_t     timeout_msec);
 int              mongoc_stream_setsockopt    (mongoc_stream_t *stream,
                                               int              level,
                                               int              optname,
