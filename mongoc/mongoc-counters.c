@@ -119,7 +119,7 @@ mongoc_counters_destroy (void)
    int pid;
 
    pid = getpid();
-   snprintf(name, sizeof name, "/mongoc-%hu", pid);
+   snprintf(name, sizeof name, "/mongoc-%u", pid);
    name[sizeof name - 1] = '\0';
    shm_unlink(name);
 }
@@ -147,7 +147,7 @@ mongoc_counters_alloc (size_t size)
    }
 
    pid = getpid();
-   snprintf(name, sizeof name, "/mongoc-%hu", pid);
+   snprintf(name, sizeof name, "/mongoc-%u", pid);
    name[sizeof name - 1] = '\0';
 
    if (-1 == (fd = shm_open(name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR))) {
