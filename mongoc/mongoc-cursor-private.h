@@ -35,6 +35,7 @@ struct _mongoc_cursor_t
    bson_uint32_t        hint;
    bson_uint32_t        stamp;
 
+   bson_bool_t          is_command   : 1;
    bson_bool_t          sent         : 1;
    bson_bool_t          done         : 1;
    bson_bool_t          failed       : 1;
@@ -68,6 +69,7 @@ mongoc_cursor_new (mongoc_client_t           *client,
                    bson_uint32_t              skip,
                    bson_uint32_t              limit,
                    bson_uint32_t              batch_size,
+                   bson_bool_t                is_command,
                    const bson_t              *query,
                    const bson_t              *fields,
                    const mongoc_read_prefs_t *read_prefs);

@@ -38,6 +38,7 @@ mongoc_cursor_new (mongoc_client_t           *client,
                    bson_uint32_t              skip,
                    bson_uint32_t              limit,
                    bson_uint32_t              batch_size,
+                   bson_bool_t                is_command,
                    const bson_t              *query,
                    const bson_t              *fields,
                    const mongoc_read_prefs_t *read_prefs)
@@ -65,6 +66,7 @@ mongoc_cursor_new (mongoc_client_t           *client,
    cursor->skip = skip;
    cursor->limit = limit;
    cursor->batch_size = batch_size ? batch_size : limit;
+   cursor->is_command = is_command;
    bson_copy_to(query, &cursor->query);
 
    if (fields) {
@@ -140,12 +142,37 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 }
 
 
-static bson_bool_t
-mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
+static void
+mongoc_cursor_populate_error (mongoc_cursor_t *cursor,
+                              const bson_t    *doc,
+                              bson_error_t    *error)
 {
    bson_uint32_t code = MONGOC_ERROR_QUERY_FAILURE;
    bson_iter_t iter;
    const char *msg = "Unknown query failure";
+
+   BSON_ASSERT(cursor);
+   BSON_ASSERT(doc);
+   BSON_ASSERT(error);
+
+   if (bson_iter_init_find(&iter, doc, "code") &&
+       BSON_ITER_HOLDS_INT32(&iter)) {
+      code = bson_iter_int32(&iter);
+   }
+
+   if (bson_iter_init_find(&iter, doc, "$err") &&
+       BSON_ITER_HOLDS_UTF8(&iter)) {
+      msg = bson_iter_utf8(&iter, NULL);
+   }
+
+   bson_set_error(error, MONGOC_ERROR_QUERY, code, "%s", msg);
+}
+
+
+static bson_bool_t
+mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
+{
+   bson_iter_t iter;
    bson_t b;
 
    ENTRY;
@@ -162,22 +189,23 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 
    if ((cursor->rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
       if (mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b)) {
-         if (bson_iter_init_find(&iter, &b, "code") &&
-             BSON_ITER_HOLDS_INT32(&iter)) {
-            code = bson_iter_int32(&iter);
-         }
-         if (bson_iter_init_find(&iter, &b, "$err") &&
-             BSON_ITER_HOLDS_UTF8(&iter)) {
-            msg = bson_iter_utf8(&iter, NULL);
-         }
+         mongoc_cursor_populate_error(cursor, &b, &cursor->error);
          bson_destroy(&b);
+      } else {
+         bson_set_error(&cursor->error,
+                        MONGOC_ERROR_QUERY,
+                        MONGOC_ERROR_QUERY_FAILURE,
+                        "Unknown query failure.");
       }
-      bson_set_error(&cursor->error,
-                     MONGOC_ERROR_QUERY,
-                     code,
-                     "%s",
-                     msg);
       RETURN(TRUE);
+   } else if (cursor->is_command) {
+      if (!mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b) ||
+          !bson_iter_init_find(&iter, &b, "ok") ||
+          !bson_iter_as_bool(&iter)) {
+         mongoc_cursor_populate_error(cursor, &b, &cursor->error);
+         bson_destroy(&b);
+         RETURN(TRUE);
+      }
    }
 
    if ((cursor->rpc.reply.flags & MONGOC_REPLY_CURSOR_NOT_FOUND)) {
