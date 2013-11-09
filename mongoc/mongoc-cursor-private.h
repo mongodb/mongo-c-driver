@@ -32,6 +32,7 @@ BSON_BEGIN_DECLS
 struct _mongoc_cursor_t
 {
    mongoc_client_t     *client;
+
    bson_uint32_t        hint;
    bson_uint32_t        stamp;
 

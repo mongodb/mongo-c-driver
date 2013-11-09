@@ -506,3 +506,38 @@ mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
    *host = cursor->client->cluster.nodes[cursor->hint - 1].host;
    host->next = NULL;
 }
+
+
+mongoc_cursor_t *
+mongoc_cursor_clone (const mongoc_cursor_t *cursor)
+{
+   mongoc_cursor_t *clone;
+
+   ENTRY;
+
+   BSON_ASSERT (cursor);
+
+   clone = bson_malloc0 (sizeof *clone);
+
+   clone->client = cursor->client;
+   clone->is_command = cursor->is_command;
+   clone->flags = cursor->flags;
+   clone->skip = cursor->skip;
+   clone->batch_size = cursor->batch_size;
+   clone->nslen = cursor->nslen;
+
+   if (cursor->read_prefs) {
+      clone->read_prefs = mongoc_read_prefs_copy (cursor->read_prefs);
+   }
+
+   bson_copy_to (&cursor->query, &clone->query);
+   bson_copy_to (&cursor->fields, &clone->fields);
+
+   memcpy (clone->ns, cursor->ns, sizeof clone->ns);
+
+   mongoc_buffer_init (&clone->buffer, NULL, 0, NULL);
+
+   mongoc_counter_cursors_active_inc ();
+
+   RETURN(clone);
+}
