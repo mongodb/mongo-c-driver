@@ -23,6 +23,9 @@
 #include <signal.h>
 #include <spawn.h>
 #include <stdio.h>
+#ifdef __linux
+#include <sys/prctl.h>
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -163,6 +166,10 @@ ha_node_restart (ha_node_t *node)
 
    if (!pid) {
       int fd;
+
+#ifdef __linux
+      prctl (PR_SET_PDEATHSIG, 15);
+#endif
 
       if (0 != chdir(node->dbpath)) {
          perror("Failed to chdir");
