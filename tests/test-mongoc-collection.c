@@ -52,6 +52,41 @@ test_insert (void)
 
 
 static void
+test_regex (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error = { 0 };
+   bson_int64_t count;
+   bson_bool_t r;
+   bson_t q = BSON_INITIALIZER;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+   assert (collection);
+
+   bson_append_regex (&q, "hello", -1, "^wo", NULL);
+
+   count = mongoc_collection_count (collection,
+                                    MONGOC_QUERY_NONE,
+                                    &q,
+                                    0,
+                                    0,
+                                    NULL,
+                                    &error);
+
+   assert (count > 0);
+   assert (!error.domain);
+
+   bson_destroy (&q);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_update (void)
 {
    mongoc_collection_t *collection;
@@ -350,6 +385,7 @@ main (int   argc,
    gTestUri = bson_strdup_printf("mongodb://%s/", HOST);
 
    run_test("/mongoc/collection/insert", test_insert);
+   run_test("/mongoc/collection/regex", test_regex);
    run_test("/mongoc/collection/update", test_update);
    run_test("/mongoc/collection/delete", test_delete);
    run_test("/mongoc/collection/count", test_count);
