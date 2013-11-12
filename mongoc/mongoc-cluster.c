@@ -952,6 +952,16 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
       }
    }
 
+   if (bson_iter_init_find_case(&iter, &reply, "maxWireVersion") &&
+       BSON_ITER_HOLDS_INT32(&iter)) {
+      node->max_wire_version = bson_iter_int32(&iter);
+   }
+
+   if (bson_iter_init_find_case(&iter, &reply, "minWireVersion") &&
+       BSON_ITER_HOLDS_INT32(&iter)) {
+      node->min_wire_version = bson_iter_int32(&iter);
+   }
+
    /*
     * If we are in replicaSet mode, we need to track our potential peers for
     * further connections.
