@@ -464,3 +464,76 @@ mongoc_database_set_write_concern (
       database->write_concern = mongoc_write_concern_copy(write_concern);
    }
 }
+
+
+/**
+ * mongoc_database_has_collection:
+ * @database: (in): A #mongoc_database_t.
+ * @name: (in): The name of the collection to check for.
+ * @error: (out) (allow-none): A location for a #bson_error_t, or %NULL.
+ *
+ * Checks to see if a collection exists within the database on the MongoDB
+ * server.
+ *
+ * This will return %FALSE if their was an error communicating with the
+ * server, or if the collection does not exist.
+ *
+ * If @error is provided, it will first be zeroed. Upon error, error.domain
+ * will be set.
+ *
+ * Returns: %TRUE if @name exists, otherwise %FALSE. @error may be set.
+ */
+bson_bool_t
+mongoc_database_has_collection (mongoc_database_t *database,
+                                const char        *name,
+                                bson_error_t      *error)
+{
+   mongoc_collection_t *collection;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bson_iter_t iter;
+   bson_bool_t ret = FALSE;
+   const char *cur_name;
+   bson_t q = BSON_INITIALIZER;
+   char ns[140];
+
+   ENTRY;
+
+   BSON_ASSERT (database);
+   BSON_ASSERT (name);
+
+   if (error) {
+      memset (error, 0, sizeof *error);
+   }
+
+   snprintf (ns, sizeof ns, "%s.%s", database->name, name);
+   ns[sizeof ns - 1] = '\0';
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   collection = mongoc_client_get_collection (database->client,
+                                              database->name,
+                                              "system.namespaces");
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 100, &q,
+                                    NULL, read_prefs);
+
+   while (!mongoc_cursor_error (cursor, error) &&
+          mongoc_cursor_more (cursor)) {
+      while (mongoc_cursor_next (cursor, &doc) &&
+          bson_iter_init_find (&iter, doc, "name") &&
+          BSON_ITER_HOLDS_UTF8 (&iter)) {
+         cur_name = bson_iter_utf8(&iter, NULL);
+         if (!strcmp(cur_name, ns)) {
+            ret = TRUE;
+            GOTO(cleanup);
+         }
+      }
+   }
+
+cleanup:
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_read_prefs_destroy (read_prefs);
+
+   RETURN(ret);
+}

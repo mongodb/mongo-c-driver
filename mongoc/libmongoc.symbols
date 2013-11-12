@@ -43,6 +43,7 @@ mongoc_database_destroy
 mongoc_database_drop
 mongoc_database_get_read_prefs
 mongoc_database_get_write_concern
+mongoc_database_has_collection
 mongoc_database_set_read_prefs
 mongoc_database_set_write_concern
 mongoc_host_list_from_string

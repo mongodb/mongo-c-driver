@@ -49,6 +49,9 @@ bson_bool_t                   mongoc_database_command_simple    (mongoc_database
                                                                  bson_error_t                 *error);
 bson_bool_t                   mongoc_database_drop              (mongoc_database_t            *database,
                                                                  bson_error_t                 *error);
+bson_bool_t                   mongoc_database_has_collection    (mongoc_database_t            *database,
+                                                                 const char                   *name,
+                                                                 bson_error_t                 *error);
 const mongoc_read_prefs_t    *mongoc_database_get_read_prefs    (const mongoc_database_t      *database);
 void                          mongoc_database_set_read_prefs    (mongoc_database_t            *database,
                                                                  const mongoc_read_prefs_t    *read_prefs);

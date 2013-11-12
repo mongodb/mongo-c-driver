@@ -37,6 +37,7 @@ test-mongoc-client
 test-mongoc-client-pool
 test-mongoc-collection
 test-mongoc-cursor
+test-mongoc-database
 test-mongoc-event
 test-mongoc-list
 test-mongoc-queue
