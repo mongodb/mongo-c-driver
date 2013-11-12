@@ -1716,6 +1716,18 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
       rpcs[i].header.request_id = ++cluster->request_id;
       need_gle = mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       mongoc_rpc_gather(&rpcs[i], &cluster->iov);
+
+      if (rpcs[i].header.msg_len > cluster->max_msg_size) {
+         bson_set_error(error,
+                        MONGOC_ERROR_CLIENT,
+                        MONGOC_ERROR_CLIENT_TOO_BIG,
+                        "Attempted to send an RPC larger than the "
+                        "max allowed message size. Was %u, allowed %u.",
+                        rpcs[i].header.msg_len,
+                        cluster->max_msg_size);
+         RETURN(0);
+      }
+
       if (need_gle) {
          gle.query.msg_len = 0;
          gle.query.request_id = ++cluster->request_id;
@@ -1746,6 +1758,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
          mongoc_rpc_gather(&gle, &cluster->iov);
          mongoc_rpc_swab_to_le(&gle);
       }
+
       mongoc_rpc_swab_to_le(&rpcs[i]);
    }
 
@@ -1835,6 +1848,18 @@ mongoc_cluster_try_sendv (
       rpcs[i].header.request_id = ++cluster->request_id;
       need_gle = mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       mongoc_rpc_gather(&rpcs[i], &cluster->iov);
+
+      if (rpcs[i].header.msg_len > cluster->max_msg_size) {
+         bson_set_error(error,
+                        MONGOC_ERROR_CLIENT,
+                        MONGOC_ERROR_CLIENT_TOO_BIG,
+                        "Attempted to send an RPC larger than the "
+                        "max allowed message size. Was %u, allowed %u.",
+                        rpcs[i].header.msg_len,
+                        cluster->max_msg_size);
+         RETURN(0);
+      }
+
       if (need_gle) {
          gle.query.msg_len = 0;
          gle.query.request_id = ++cluster->request_id;
@@ -1866,6 +1891,7 @@ mongoc_cluster_try_sendv (
          mongoc_rpc_gather(&gle, &cluster->iov);
          mongoc_rpc_swab_to_le(&gle);
       }
+
       mongoc_rpc_swab_to_le(&rpcs[i]);
    }
 
