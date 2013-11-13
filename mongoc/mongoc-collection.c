@@ -648,17 +648,40 @@ mongoc_collection_insert (
       const mongoc_write_concern_t *write_concern, /* IN */
       bson_error_t                 *error)         /* OUT */
 {
+   mongoc_cluster_node_t *primary;
    mongoc_buffer_t buffer;
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
    mongoc_rpc_t reply;
    char ns[MONGOC_NAMESPACE_MAX];
 
-   bson_return_val_if_fail(collection, FALSE);
-   bson_return_val_if_fail(document, FALSE);
+   bson_return_val_if_fail (collection, FALSE);
+   bson_return_val_if_fail (document, FALSE);
 
    if (!write_concern) {
       write_concern = collection->write_concern;
+   }
+
+   /*
+    * WARNING:
+    *
+    *    Because we do lazy connections, we potentially have a situation
+    *    here for which we have not connected to a master and determined
+    *    the wire versions.
+    *
+    *    We might need to ensure we have a connection at this point.
+    */
+
+   primary = mongoc_cluster_get_primary (&collection->client->cluster);
+
+   if (!primary || !primary->wire_version) {
+      /*
+       * TODO: Do old-style write commands.
+       */
+   } else {
+      /*
+       * TODO: Do new style write commands.
+       */
    }
 
    /*

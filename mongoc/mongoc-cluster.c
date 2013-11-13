@@ -2118,3 +2118,28 @@ mongoc_cluster_stamp (const mongoc_cluster_t *cluster, /* IN */
 
    return cluster->nodes[node].stamp;
 }
+
+
+/**
+ * mongoc_cluster_get_primary:
+ * @cluster: A #mongoc_cluster_t.
+ *
+ * Fetches the node we currently believe is PRIMARY.
+ *
+ * Returns: A #mongoc_cluster_node_t or %NULL.
+ */
+mongoc_cluster_node_t *
+mongoc_cluster_get_primary (mongoc_cluster_t *cluster)
+{
+   bson_uint32_t i;
+
+   BSON_ASSERT (cluster);
+
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      if (cluster->nodes[i].primary) {
+         return &cluster->nodes[i];
+      }
+   }
+
+   return NULL;
+}

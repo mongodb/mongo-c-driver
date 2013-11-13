@@ -127,6 +127,8 @@ bson_bool_t   mongoc_cluster_try_recv     (mongoc_cluster_t             *cluster
 bson_uint32_t mongoc_cluster_stamp        (const mongoc_cluster_t       *cluster,
                                            bson_uint32_t                 node);
 
+mongoc_cluster_node_t *mongoc_cluster_get_primary (mongoc_cluster_t *cluster);
+
 
 BSON_END_DECLS
 
