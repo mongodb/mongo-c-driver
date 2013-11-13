@@ -72,6 +72,7 @@ typedef struct
    bson_bool_t         needs_auth : 1;
    bson_int32_t        min_wire_version;
    bson_int32_t        max_wire_version;
+   bson_int32_t        wire_version;
    char               *replSet;
 } mongoc_cluster_node_t;
 

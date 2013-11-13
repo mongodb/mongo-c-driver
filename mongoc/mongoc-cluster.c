@@ -41,6 +41,10 @@
 #endif
 
 
+#define MIN_WIRE_VERSION 0
+#define MAX_WIRE_VERSION 0
+
+
 #ifndef DEFAULT_SOCKET_TIMEOUT_MSEC
 /*
  * NOTE: The default socket timeout for connections is 5 minutes. This
@@ -75,6 +79,33 @@
          outstr[sizeof outstr - 1] = '\0'; \
       } \
    } while (0)
+
+
+/**
+ * mongoc_cluster_negotiate_caps:
+ * @node: A #mongoc_cluster_node_t.
+ *
+ * Negotiate our wire-protocol version based on what @node supports.
+ * We are greedy towards negotiating the highest supported value.
+ *
+ * Upon failure, %FALSE is returned.
+ *
+ * Returns: %TRUE if we negotiated, otherwise %FALSE.
+ */
+static bson_int32_t
+mongoc_cluster_node_negotiate_caps (mongoc_cluster_node_t *node)
+{
+   BSON_ASSERT (node);
+
+   if ((node->min_wire_version > MAX_WIRE_VERSION) ||
+       (node->max_wire_version < MIN_WIRE_VERSION)) {
+      return FALSE;
+   }
+
+   node->wire_version = MIN (node->max_wire_version, MAX_WIRE_VERSION);
+
+   return TRUE;
+}
 
 
 /*
@@ -960,6 +991,19 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
    if (bson_iter_init_find_case(&iter, &reply, "minWireVersion") &&
        BSON_ITER_HOLDS_INT32(&iter)) {
       node->min_wire_version = bson_iter_int32(&iter);
+   }
+
+   if (!mongoc_cluster_node_negotiate_caps (node)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                      "Protocol negotiation failure: "
+                      "Ours [%u, %u], theirs [%u, %u].",
+                      MIN_WIRE_VERSION,
+                      MAX_WIRE_VERSION,
+                      node->min_wire_version,
+                      node->max_wire_version);
+      GOTO (failure);
    }
 
    /*
