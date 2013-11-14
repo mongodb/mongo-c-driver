@@ -1,4 +1,6 @@
 #include <mongoc.h>
+#include <mongoc-client-private.h>
+#include <mongoc-cursor-private.h>
 #include <mongoc-log.h>
 
 #include "mongoc-tests.h"
@@ -291,12 +293,20 @@ test_aggregate (void)
    cursor = mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, &pipeline, NULL);
    assert(cursor);
 
+   /*
+    * This can fail if we are connecting to a pre-2.5.x MongoDB instance.
+    */
    r = mongoc_cursor_next(cursor, &doc);
    if (mongoc_cursor_error(cursor, &error)) {
       MONGOC_WARNING("%s", error.message);
    }
-   assert(r);
-   assert(doc);
+   if (!client->cluster.nodes[cursor->hint - 1].wire_version) {
+      assert(!r);
+      assert(!doc);
+   } else {
+      assert(r);
+      assert(doc);
+   }
 
    r = mongoc_cursor_next(cursor, &doc);
    if (mongoc_cursor_error(cursor, &error)) {
