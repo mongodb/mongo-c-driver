@@ -6,5 +6,5 @@ RPC(
   INT32_FIELD(opcode)
   INT32_FIELD(flags)
   CSTRING_FIELD(collection)
-  RAW_BUFFER_FIELD(documents)
+  IOVEC_ARRAY_FIELD(documents)
 )

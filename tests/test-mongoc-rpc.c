@@ -64,6 +64,26 @@ test_mongoc_rpc_##_name##_equal (const mongoc_rpc_##_name##_t *a, \
 #define BSON_ARRAY_FIELD(_name)        if ((a->_name##_len != b->_name##_len) || !!memcmp(a->_name, b->_name, a->_name##_len)) return FALSE;
 #define INT64_ARRAY_FIELD(_len, _name) if ((a->_len != b->_len) || !!memcmp(a->_name, b->_name, a->_len * 8)) return FALSE;
 #define RAW_BUFFER_FIELD(_name)        if ((a->_name##_len != b->_name##_len) || !!memcmp(a->_name, b->_name, a->_name##_len)) return FALSE;
+#define IOVEC_ARRAY_FIELD(_name) \
+   do { \
+      mongoc_array_t a_buf; \
+      mongoc_array_t b_buf; \
+      mongoc_array_init(&a_buf, 1); \
+      mongoc_array_init(&b_buf, 1); \
+      size_t _i; \
+      bson_bool_t is_equal; \
+      for (_i = 0; _i < a->n_##_name; _i++) { \
+         mongoc_array_append_vals(&a_buf, a->_name[_i].iov_base, a->_name[_i].iov_len); \
+      } \
+      for (_i = 0; _i < b->n_##_name; _i++) { \
+         mongoc_array_append_vals(&b_buf, b->_name[_i].iov_base, b->_name[_i].iov_len); \
+      } \
+      is_equal = (a_buf.len == b_buf.len) \
+              && (memcmp(a_buf.data, b_buf.data, a_buf.len) == 0); \
+      mongoc_array_destroy(&a_buf); \
+      mongoc_array_destroy(&b_buf); \
+      return is_equal; \
+   } while(0);
 #define OPTIONAL(_check, _code)        if (!!a->_check != !!b->_check) { return FALSE; } _code
 
 
@@ -86,6 +106,7 @@ test_mongoc_rpc_##_name##_equal (const mongoc_rpc_##_name##_t *a, \
 #undef BSON_ARRAY_FIELD
 #undef OPTIONAL
 #undef RAW_BUFFER_FIELD
+#undef IOVEC_ARRAY_FIELD
 
 
 static inline bson_bool_t
@@ -280,19 +301,18 @@ test_mongoc_rpc_get_more_scatter (void)
 static void
 test_mongoc_rpc_insert_gather (void)
 {
-   bson_writer_t *writer;
    mongoc_rpc_t rpc;
-   bson_uint8_t *buf = NULL;
-   size_t len = 0;
-   bson_t *b;
+   struct iovec iov[20];
+   bson_t b;
    int i;
 
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
 
-   writer = bson_writer_new(&buf, &len, 0, bson_realloc);
+   bson_init(&b);
+
    for (i = 0; i < 20; i++) {
-      bson_writer_begin(writer, &b);
-      bson_writer_end(writer);
+      iov[i].iov_base = (void *)bson_get_data(&b);
+      iov[i].iov_len = b.len;
    }
 
    rpc.insert.msg_len = 0;
@@ -301,12 +321,11 @@ test_mongoc_rpc_insert_gather (void)
    rpc.insert.opcode = MONGOC_OPCODE_INSERT;
    rpc.insert.flags = MONGOC_INSERT_CONTINUE_ON_ERROR;
    rpc.insert.collection = "test.test";
-   rpc.insert.documents = buf;
-   rpc.insert.documents_len = bson_writer_get_length(writer);
+   rpc.insert.documents = iov;
+   rpc.insert.n_documents = 20;
 
    assert_rpc_equal("insert1.dat", &rpc);
-   bson_writer_destroy(writer);
-   bson_free(buf);
+   bson_destroy(&b);
 }
 
 
@@ -338,7 +357,7 @@ test_mongoc_rpc_insert_scatter (void)
    assert_cmpint(rpc.insert.opcode, ==, MONGOC_OPCODE_INSERT);
    assert_cmpint(rpc.insert.flags, ==, MONGOC_INSERT_CONTINUE_ON_ERROR);
    assert(!strcmp("test.test", rpc.insert.collection));
-   reader = bson_reader_new_from_data(rpc.insert.documents, rpc.insert.documents_len);
+   reader = bson_reader_new_from_data(rpc.insert.documents[0].iov_base, rpc.insert.documents[0].iov_len);
    while ((b = bson_reader_read(reader, &eof))) {
       r = bson_equal(b, &empty);
       assert(r);

@@ -20,6 +20,7 @@
 
 
 #include <bson.h>
+#include <sys/uio.h>
 
 #include "mongoc-flags.h"
 #include "mongoc-cursor.h"
@@ -88,6 +89,12 @@ mongoc_cursor_t              *mongoc_collection_find              (mongoc_collec
 bson_bool_t                   mongoc_collection_insert            (mongoc_collection_t          *collection,
                                                                    mongoc_insert_flags_t         flags,
                                                                    const bson_t                 *document,
+                                                                   const mongoc_write_concern_t *write_concern,
+                                                                   bson_error_t                 *error);
+bson_bool_t                   mongoc_collection_insert_bulk       (mongoc_collection_t          *collection,
+                                                                   mongoc_insert_flags_t         flags,
+                                                                   const bson_t                **documents,
+                                                                   bson_uint32_t                 n_documents,
                                                                    const mongoc_write_concern_t *write_concern,
                                                                    bson_error_t                 *error);
 bson_bool_t                   mongoc_collection_update            (mongoc_collection_t          *collection,

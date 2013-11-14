@@ -137,6 +137,8 @@ handle_ismaster (mock_server_t   *server,
    reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply_doc);
 
    bson_destroy (&reply_doc);
+
+   return TRUE;
 }
 
 

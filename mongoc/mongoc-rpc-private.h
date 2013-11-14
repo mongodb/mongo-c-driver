@@ -36,6 +36,7 @@ BSON_BEGIN_DECLS
 #define CSTRING_FIELD(_name)             const char *_name;
 #define BSON_FIELD(_name)                const bson_uint8_t *_name;
 #define BSON_ARRAY_FIELD(_name)          const bson_uint8_t *_name; bson_int32_t _name##_len;
+#define IOVEC_ARRAY_FIELD(_name)         const struct iovec *_name; bson_int32_t n_##_name; struct iovec _name##_recv;
 #define RAW_BUFFER_FIELD(_name)          const bson_uint8_t *_name; bson_int32_t _name##_len;
 #define OPTIONAL(_check, _code)          _code
 
@@ -77,6 +78,7 @@ BSON_STATIC_ASSERT(offsetof(mongoc_rpc_header_t, opcode) ==
 #undef CSTRING_FIELD
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
+#undef IOVEC_ARRAY_FIELD
 #undef OPTIONAL
 #undef RAW_BUFFER_FIELD
 

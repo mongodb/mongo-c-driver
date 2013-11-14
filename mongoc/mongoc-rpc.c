@@ -71,6 +71,16 @@
    BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
    mongoc_array_append_val(array, iov);
+#define IOVEC_ARRAY_FIELD(_name) \
+   do { \
+      size_t _i; \
+      BSON_ASSERT(rpc->n_##_name); \
+      for (_i = 0; _i < rpc->n_##_name; _i++) { \
+         BSON_ASSERT(rpc->_name[_i].iov_len); \
+         rpc->msg_len += rpc->_name[_i].iov_len; \
+         mongoc_array_append_val(array, rpc->_name[_i]); \
+      } \
+   } while (0);
 #define RAW_BUFFER_FIELD(_name) \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_name##_len; \
@@ -108,6 +118,7 @@
 #undef CSTRING_FIELD
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
+#undef IOVEC_ARRAY_FIELD
 #undef RAW_BUFFER_FIELD
 #undef OPTIONAL
 
@@ -126,6 +137,7 @@
 #define CSTRING_FIELD(_name)
 #define BSON_FIELD(_name)
 #define BSON_ARRAY_FIELD(_name)
+#define IOVEC_ARRAY_FIELD(_name)
 #define OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
 #define RAW_BUFFER_FIELD(_name)
@@ -187,6 +199,7 @@
 #undef CSTRING_FIELD
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
+#undef IOVEC_ARRAY_FIELD
 #undef OPTIONAL
 #undef RAW_BUFFER_FIELD
 
@@ -230,6 +243,20 @@
       } \
       bson_reader_destroy(__r); \
    } while (0);
+#define IOVEC_ARRAY_FIELD(_name) \
+   do { \
+      size_t _i; \
+      size_t _j; \
+      for (_i = 0; _i < rpc->n_##_name; _i++) { \
+         printf("  "#_name" : "); \
+         for (_j = 0; _j < rpc->_name[_i].iov_len; _j++) { \
+            bson_uint8_t u; \
+            u = ((char *)rpc->_name[_i].iov_base)[_j]; \
+            printf(" %02x", u); \
+         } \
+         printf("\n"); \
+      } \
+   } while (0);
 #define OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
 #define RAW_BUFFER_FIELD(_name) \
@@ -271,6 +298,7 @@
 #undef CSTRING_FIELD
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
+#undef IOVEC_ARRAY_FIELD
 #undef OPTIONAL
 #undef RAW_BUFFER_FIELD
 
@@ -359,6 +387,13 @@
    if (buflen) { \
       _code \
    }
+#define IOVEC_ARRAY_FIELD(_name) \
+   rpc->_name##_recv.iov_base = (void *)buf; \
+   rpc->_name##_recv.iov_len = buflen; \
+   rpc->_name = &rpc->_name##_recv; \
+   rpc->n_##_name = 1; \
+   buf = NULL; \
+   buflen = 0;
 #define RAW_BUFFER_FIELD(_name) \
    rpc->_name = (void *)buf; \
    rpc->_name##_len = buflen; \
@@ -384,6 +419,7 @@
 #undef CSTRING_FIELD
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
+#undef IOVEC_ARRAY_FIELD
 #undef OPTIONAL
 #undef RAW_BUFFER_FIELD
 

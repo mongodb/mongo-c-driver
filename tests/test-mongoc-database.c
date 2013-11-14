@@ -19,7 +19,6 @@ test_has_collection (void)
    bson_error_t error;
    bson_bool_t r;
    bson_oid_t oid;
-   unsigned i;
    bson_t b;
 
    client = mongoc_client_new (gTestUri);

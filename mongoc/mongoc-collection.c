@@ -720,49 +720,29 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection, /* IN */
    return ret;
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_insert --
- *
- *       Insert a document into a MongoDB collection.
- *
- * Parameters:
- *       @collection: A mongoc_collection_t.
- *       @flags: flags for the insert or 0.
- *       @document: The document to insert.
- *       @write_concern: A write concern or NULL.
- *       @error: a location for an error or NULL.
- *
- * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
- *
- *       If the write concern does not dictate checking the result of the
- *       insert, then TRUE may be returned even though the document was
- *       not actually inserted on the MongoDB server or cluster.
- *
- * Side effects:
- *       @error may be set upon failure if non-NULL.
- *
- *--------------------------------------------------------------------------
- */
 
-bson_bool_t
-mongoc_collection_insert (
-      mongoc_collection_t          *collection,    /* IN */
-      mongoc_insert_flags_t         flags,         /* IN */
-      const bson_t                 *document,      /* IN */
-      const mongoc_write_concern_t *write_concern, /* IN */
-      bson_error_t                 *error)         /* OUT */
+static bson_bool_t
+mongoc_collection_insert_bulk_raw (
+   mongoc_collection_t          *collection,       /* IN */
+   mongoc_insert_flags_t         flags,            /* IN */
+   const struct iovec           *documents,        /* IN */
+   bson_uint32_t                 n_documents,      /* IN */
+   const mongoc_write_concern_t *write_concern,    /* IN */
+   bson_error_t                 *error)            /* OUT */
 {
    mongoc_buffer_t buffer;
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
    mongoc_rpc_t reply;
    char ns[MONGOC_NAMESPACE_MAX];
+   bson_t reply_bson;
+   bson_iter_t reply_iter;
+   int code = 0;
+   const char * errmsg;
 
-   bson_return_val_if_fail (collection, FALSE);
-   bson_return_val_if_fail (document, FALSE);
+   BSON_ASSERT(collection);
+   BSON_ASSERT(documents);
+   BSON_ASSERT(n_documents);
 
    if (!write_concern) {
       write_concern = collection->write_concern;
@@ -801,8 +781,8 @@ mongoc_collection_insert (
    rpc.insert.opcode = MONGOC_OPCODE_INSERT;
    rpc.insert.flags = flags;
    rpc.insert.collection = collection->ns;
-   rpc.insert.documents = bson_get_data(document);
-   rpc.insert.documents_len = document->len;
+   rpc.insert.documents = documents;
+   rpc.insert.n_documents = n_documents;
 
    snprintf(ns, sizeof ns, "%s.$cmd", collection->db);
    ns[sizeof ns - 1] = '\0';
@@ -812,16 +792,140 @@ mongoc_collection_insert (
       return FALSE;
    }
 
-   if (mongoc_write_concern_has_gle(write_concern)) {
-      mongoc_buffer_init(&buffer, NULL, 0, NULL);
-      if (!mongoc_client_recv(collection->client, &reply, &buffer, hint, error)) {
-         mongoc_buffer_destroy(&buffer);
+   if (mongoc_write_concern_has_gle (write_concern)) {
+      mongoc_buffer_init (&buffer, NULL, 0, NULL);
+
+      if (!mongoc_client_recv (collection->client, &reply, &buffer, hint, error)) {
+         mongoc_buffer_destroy (&buffer);
          return FALSE;
       }
-      mongoc_buffer_destroy(&buffer);
+
+      bson_init_static (&reply_bson, reply.reply.documents,
+                        reply.reply.documents_len);
+
+      if (bson_iter_init_find (&reply_iter, &reply_bson, "err") &&
+          BSON_ITER_HOLDS_UTF8 (&reply_iter)) {
+         errmsg = bson_iter_utf8 (&reply_iter, NULL);
+
+         if (bson_iter_init_find (&reply_iter, &reply_bson, "code") &&
+             BSON_ITER_HOLDS_INT32 (&reply_iter)) {
+            code = bson_iter_int32 (&reply_iter);
+         }
+
+         bson_set_error (error,
+                         MONGOC_ERROR_INSERT,
+                         code,
+                         "%s", errmsg ? errmsg : "Unknown insert failure");
+         return FALSE;
+      }
+
+      mongoc_buffer_destroy (&buffer);
    }
 
    return TRUE;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_insert_bulk --
+ *
+ *       Bulk insert documents into a MongoDB collection.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @flags: flags for the insert or 0.
+ *       @documents: The documents to insert.
+ *       @n_documents: The number of documents to insert.
+ *       @write_concern: A write concern or NULL.
+ *       @error: a location for an error or NULL.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ *       If the write concern does not dictate checking the result of the
+ *       insert, then TRUE may be returned even though the document was
+ *       not actually inserted on the MongoDB server or cluster.
+ *
+ * Side effects:
+ *       @error may be set upon failure if non-NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bson_bool_t
+mongoc_collection_insert_bulk (
+   mongoc_collection_t          *collection,       /* IN */
+   mongoc_insert_flags_t         flags,            /* IN */
+   const bson_t                **documents,        /* IN */
+   bson_uint32_t                 n_documents,      /* IN */
+   const mongoc_write_concern_t *write_concern,    /* IN */
+   bson_error_t                 *error)            /* OUT */
+{
+   struct iovec *iov;
+   size_t i;
+   bson_bool_t r;
+
+   BSON_ASSERT (documents);
+   BSON_ASSERT (n_documents);
+
+   iov = bson_malloc (sizeof (*iov) * n_documents);
+
+   for (i = 0; i < n_documents; i++) {
+      iov[i].iov_base = (void *)bson_get_data (documents[i]);
+      iov[i].iov_len = documents[i]->len;
+   }
+
+   r = mongoc_collection_insert_bulk_raw (collection, flags, iov, n_documents,
+                                          write_concern, error);
+
+   bson_free (iov);
+
+   return r;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_insert --
+ *
+ *       Insert a document into a MongoDB collection.
+ *
+ * Parameters:
+ *       @collection: A mongoc_collection_t.
+ *       @flags: flags for the insert or 0.
+ *       @document: The document to insert.
+ *       @write_concern: A write concern or NULL.
+ *       @error: a location for an error or NULL.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ *       If the write concern does not dictate checking the result of the
+ *       insert, then TRUE may be returned even though the document was
+ *       not actually inserted on the MongoDB server or cluster.
+ *
+ * Side effects:
+ *       @error may be set upon failure if non-NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bson_bool_t
+mongoc_collection_insert (
+      mongoc_collection_t          *collection,    /* IN */
+      mongoc_insert_flags_t         flags,         /* IN */
+      const bson_t                 *document,      /* IN */
+      const mongoc_write_concern_t *write_concern, /* IN */
+      bson_error_t                 *error)         /* OUT */
+{
+   bson_return_val_if_fail (collection, FALSE);
+   bson_return_val_if_fail (document, FALSE);
+
+   return mongoc_collection_insert_bulk (collection, flags, &document, 1,
+                                         write_concern, error);
 }
 
 

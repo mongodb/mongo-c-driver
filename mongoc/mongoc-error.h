@@ -32,6 +32,7 @@ typedef enum
    MONGOC_ERROR_PROTOCOL,
    MONGOC_ERROR_CURSOR,
    MONGOC_ERROR_QUERY,
+   MONGOC_ERROR_INSERT,
 } mongoc_error_domain_t;
 
 

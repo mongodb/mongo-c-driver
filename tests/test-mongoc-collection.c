@@ -30,6 +30,9 @@ test_insert (void)
    collection = mongoc_client_get_collection(client, "test", "test");
    assert(collection);
 
+   r = mongoc_collection_drop(collection, &error);
+   assert(r);
+
    context = bson_context_new(BSON_CONTEXT_NONE);
    assert(context);
 
@@ -54,13 +57,98 @@ test_insert (void)
 
 
 static void
+test_insert_bulk (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_context_t *context;
+   bson_error_t error;
+   bson_bool_t r;
+   bson_oid_t oid;
+   unsigned i;
+   bson_t q;
+   bson_t b[10];
+   bson_t *bptr[10];
+   bson_int64_t count;
+
+   client = mongoc_client_new(gTestUri);
+   assert(client);
+
+   collection = mongoc_client_get_collection(client, "test", "test");
+   assert(collection);
+
+   r = mongoc_collection_drop(collection, &error);
+   assert(r);
+
+   context = bson_context_new(BSON_CONTEXT_NONE);
+   assert(context);
+
+   bson_init(&q);
+   bson_append_int32(&q, "n", -1, 0);
+
+   for (i = 0; i < 10; i++) {
+      bson_init(&b[i]);
+      bson_oid_init(&oid, context);
+      bson_append_oid(&b[i], "_id", -1, &oid);
+      bson_append_int32(&b[i], "n", -1, i % 2);
+      bptr[i] = &b[i];
+   }
+
+   r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
+                                     (const bson_t **)bptr, 10, NULL, &error);
+
+   if (!r) {
+      MONGOC_WARNING("%s\n", error.message);
+   }
+   assert(r);
+
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
+   assert(count == 5);
+
+   for (i = 8; i < 10; i++) {
+      bson_destroy(&b[i]);
+      bson_init(&b[i]);
+      bson_oid_init(&oid, context);
+      bson_append_oid(&b[i], "_id", -1, &oid);
+      bson_append_int32(&b[i], "n", -1, i % 2);
+      bptr[i] = &b[i];
+   }
+
+   r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
+                                     (const bson_t **)bptr, 10, NULL, &error);
+
+   assert(!r);
+   assert(error.code == 11000);
+
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
+   assert(count == 5);
+
+   r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_CONTINUE_ON_ERROR,
+                                     (const bson_t **)bptr, 10, NULL, &error);
+   assert(!r);
+   assert(error.code == 11000);
+
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
+   assert(count == 6);
+
+   bson_destroy(&q);
+   for (i = 0; i < 10; i++) {
+      bson_destroy(&b[i]);
+   }
+
+   mongoc_collection_destroy(collection);
+   bson_context_destroy(context);
+   mongoc_client_destroy(client);
+}
+
+
+static void
 test_regex (void)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bson_error_t error = { 0 };
    bson_int64_t count;
-   bson_bool_t r;
    bson_t q = BSON_INITIALIZER;
 
    client = mongoc_client_new (gTestUri);
@@ -394,6 +482,7 @@ main (int   argc,
 
    gTestUri = bson_strdup_printf("mongodb://%s/", HOST);
 
+   run_test("/mongoc/collection/insert_bulk", test_insert_bulk);
    run_test("/mongoc/collection/insert", test_insert);
    run_test("/mongoc/collection/regex", test_regex);
    run_test("/mongoc/collection/update", test_update);
