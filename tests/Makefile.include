@@ -65,7 +65,9 @@ test_mongoc_buffer_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_mongoc_buffer_LDADD = $(TEST_LIBS)
 
 
-test_mongoc_client_SOURCES = $(top_srcdir)/tests/test-mongoc-client.c
+test_mongoc_client_SOURCES = \
+	$(top_srcdir)/tests/test-mongoc-client.c \
+	$(top_srcdir)/tests/mock-server.c
 test_mongoc_client_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_mongoc_client_LDADD = $(TEST_LIBS)
 

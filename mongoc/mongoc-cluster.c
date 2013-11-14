@@ -95,16 +95,18 @@
 static bson_int32_t
 mongoc_cluster_node_negotiate_caps (mongoc_cluster_node_t *node)
 {
+   ENTRY;
+
    BSON_ASSERT (node);
 
    if ((node->min_wire_version > MAX_WIRE_VERSION) ||
        (node->max_wire_version < MIN_WIRE_VERSION)) {
-      return FALSE;
+      RETURN (FALSE);
    }
 
    node->wire_version = MIN (node->max_wire_version, MAX_WIRE_VERSION);
 
-   return TRUE;
+   RETURN (TRUE);
 }
 
 
