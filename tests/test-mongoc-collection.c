@@ -35,7 +35,7 @@ test_insert (void)
       bson_init(&b);
       bson_oid_init(&oid, context);
       bson_append_oid(&b, "_id", 3, &oid);
-      bson_append_utf8(&b, "hello", 5, "world", 5);
+      bson_append_utf8(&b, "hello", 5, "/world", 5);
       r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL,
                                    &error);
       if (!r) {
@@ -67,7 +67,7 @@ test_regex (void)
    collection = mongoc_client_get_collection (client, "test", "test");
    assert (collection);
 
-   bson_append_regex (&q, "hello", -1, "^wo", NULL);
+   bson_append_regex (&q, "hello", -1, "^/wo", NULL);
 
    count = mongoc_collection_count (collection,
                                     MONGOC_QUERY_NONE,
