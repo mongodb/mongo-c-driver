@@ -29,6 +29,11 @@
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
 #include "mongoc-write-concern.h"
+#include "mongoc-build.h"
+
+#ifdef MONGOC_HAVE_SSL
+#include "mongoc-ssl.h"
+#endif
 
 
 BSON_BEGIN_DECLS
@@ -43,6 +48,9 @@ struct _mongoc_client_t
 
    mongoc_stream_initiator_t  initiator;
    void                      *initiator_data;
+#ifdef MONGOC_HAVE_SSL
+   mongoc_ssl_opt_t           ssl_opts;
+#endif
 
    mongoc_read_prefs_t       *read_prefs;
    mongoc_write_concern_t    *write_concern;

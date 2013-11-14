@@ -10,8 +10,33 @@ noinst_LTLIBRARIES = libmongoc-priv.la
 lib_LTLIBRARIES = libmongoc-1.0.la
 
 
+BUILT_SOURCES = \
+	$(top_srcdir)/mongoc/mongoc-build.h \
+	$(top_srcdir)/mongoc/libmongoc.symbols
+
+EXPORT_SYMBOLS = \
+	$(top_srcdir)/mongoc/libmongoc-base.symbols
+
+if HAVE_SSL
+EXPORT_SYMBOLS += \
+	$(top_srcdir)/mongoc/libmongoc-ssl.symbols
+endif
+
+$(top_srcdir)/mongoc/libmongoc.symbols: $(EXPORT_SYMBOLS)
+	cat $^ > $@
+
+$(top_srcdir)/mongoc/mongoc-build.h: Makefile
+	echo "" > $@
+if HAVE_SSL
+	echo "#ifndef MONGOC_BUILD_H" >> $@
+	echo "#define MONGOC_BUILD_H" >> $@
+	echo "#define MONGOC_HAVE_SSL" >> $@
+	echo "#endif" >> $@
+endif
+
 INST_H_FILES = \
 	$(top_srcdir)/mongoc/mongoc.h \
+	$(top_srcdir)/mongoc/mongoc-build.h \
 	$(top_srcdir)/mongoc/mongoc-client.h \
 	$(top_srcdir)/mongoc/mongoc-client-pool.h \
 	$(top_srcdir)/mongoc/mongoc-collection.h \
@@ -20,6 +45,7 @@ INST_H_FILES = \
 	$(top_srcdir)/mongoc/mongoc-error.h \
 	$(top_srcdir)/mongoc/mongoc-flags.h \
 	$(top_srcdir)/mongoc/mongoc-host-list.h \
+	$(top_srcdir)/mongoc/mongoc-init.h \
 	$(top_srcdir)/mongoc/mongoc-log.h \
 	$(top_srcdir)/mongoc/mongoc-opcode.h \
 	$(top_srcdir)/mongoc/mongoc-read-prefs.h \
@@ -31,7 +57,9 @@ INST_H_FILES = \
 	$(top_srcdir)/mongoc/mongoc-version.h \
 	$(top_srcdir)/mongoc/mongoc-write-concern.h
 if HAVE_SSL
-INST_H_FILES += $(top_srcdir)/mongoc/mongoc-stream-tls.h
+INST_H_FILES += \
+	$(top_srcdir)/mongoc/mongoc-stream-tls.h \
+	$(top_srcdir)/mongoc/mongoc-ssl.h
 endif
 
 
@@ -44,6 +72,7 @@ NOINST_H_FILES = \
 	$(top_srcdir)/mongoc/mongoc-cursor-private.h \
 	$(top_srcdir)/mongoc/mongoc-cluster-private.h \
 	$(top_srcdir)/mongoc/mongoc-database-private.h \
+	$(top_srcdir)/mongoc/mongoc-init-private.h \
 	$(top_srcdir)/mongoc/mongoc-list-private.h \
 	$(top_srcdir)/mongoc/mongoc-queue-private.h \
 	$(top_srcdir)/mongoc/mongoc-read-prefs-private.h \
@@ -51,6 +80,10 @@ NOINST_H_FILES = \
 	$(top_srcdir)/mongoc/mongoc-util-private.h \
 	$(top_srcdir)/mongoc/mongoc-trace.h \
 	$(top_srcdir)/mongoc/mongoc-write-concern-private.h
+if HAVE_SSL
+NOINST_H_FILES += \
+        $(top_srcdir)/mongoc/mongoc-ssl-private.h
+endif
 
 
 libmongoc_priv_la_SOURCES = \
@@ -65,6 +98,7 @@ libmongoc_priv_la_SOURCES = \
 	$(top_srcdir)/mongoc/mongoc-counters.c \
 	$(top_srcdir)/mongoc/mongoc-cursor.c \
 	$(top_srcdir)/mongoc/mongoc-database.c \
+	$(top_srcdir)/mongoc/mongoc-init.c \
 	$(top_srcdir)/mongoc/mongoc-list.c \
 	$(top_srcdir)/mongoc/mongoc-log.c \
 	$(top_srcdir)/mongoc/mongoc-queue.c \
@@ -77,7 +111,9 @@ libmongoc_priv_la_SOURCES = \
 	$(top_srcdir)/mongoc/mongoc-util.c \
 	$(top_srcdir)/mongoc/mongoc-write-concern.c
 if HAVE_SSL
-libmongoc_priv_la_SOURCES += $(top_srcdir)/mongoc/mongoc-stream-tls.c
+libmongoc_priv_la_SOURCES += \
+	$(top_srcdir)/mongoc/mongoc-stream-tls.c \
+	$(top_srcdir)/mongoc/mongoc-ssl.c
 endif
 
 

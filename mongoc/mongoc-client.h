@@ -27,6 +27,11 @@
 #include "mongoc-stream.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
+#include "mongoc-build.h"
+
+#ifdef MONGOC_HAVE_SSL
+#include "mongoc-ssl.h"
+#endif
 
 
 BSON_BEGIN_DECLS
@@ -82,6 +87,12 @@ void                          mongoc_client_set_write_concern (mongoc_client_t  
 const mongoc_read_prefs_t    *mongoc_client_get_read_prefs    (const mongoc_client_t        *client);
 void                          mongoc_client_set_read_prefs    (mongoc_client_t              *client,
                                                                const mongoc_read_prefs_t    *read_prefs);
+
+#ifdef MONGOC_HAVE_SSL
+void
+mongoc_client_set_ssl_opts (mongoc_client_t        *client,
+                            const mongoc_ssl_opt_t *opts);
+#endif
 
 
 BSON_END_DECLS

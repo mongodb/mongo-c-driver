@@ -1,2 +1,4 @@
 mongoc-stdint.h
 mongoc-version.h
+mongoc-build.h
+libmongoc.symbols

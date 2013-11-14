@@ -17,6 +17,10 @@ noinst_PROGRAMS += test-mongoc-write-concern
 noinst_PROGRAMS += test-secondary
 noinst_PROGRAMS += test-replica-set
 noinst_PROGRAMS += test-sharded-cluster
+if HAVE_SSL
+noinst_PROGRAMS += test-mongoc-stream-tls
+noinst_PROGRAMS += test-replica-set-ssl
+endif
 
 
 TEST_PROGS =
@@ -34,6 +38,9 @@ TEST_PROGS += test-mongoc-rpc
 TEST_PROGS += test-mongoc-stream
 TEST_PROGS += test-mongoc-uri
 TEST_PROGS += test-mongoc-write-concern
+if HAVE_SSL
+TEST_PROGS += test-mongoc-stream-tls
+endif
 
 
 if OS_LINUX
@@ -117,6 +124,16 @@ test_mongoc_stream_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_mongoc_stream_LDADD = $(TEST_LIBS)
 
 
+test_mongoc_stream_tls_SOURCES = \
+	$(top_srcdir)/tests/test-mongoc-stream-tls.c \
+	$(top_srcdir)/tests/ssl-test.c \
+	$(top_srcdir)/tests/ssl-test.h \
+	$(top_srcdir)/tests/ha-test.c \
+	$(top_srcdir)/tests/ha-test.h
+test_mongoc_stream_tls_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+test_mongoc_stream_tls_LDADD = $(TEST_LIBS)
+
+
 test_mongoc_uri_SOURCES = $(top_srcdir)/tests/test-mongoc-uri.c
 test_mongoc_uri_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_mongoc_uri_LDADD = $(TEST_LIBS)
@@ -139,6 +156,14 @@ test_replica_set_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_replica_set_LDADD = libmongoc-priv.la
 
 
+test_replica_set_ssl_SOURCES = \
+	$(top_srcdir)/tests/test-replica-set-ssl.c \
+	$(top_srcdir)/tests/ha-test.c \
+	$(top_srcdir)/tests/ha-test.h
+test_replica_set_ssl_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+test_replica_set_ssl_LDADD = libmongoc-priv.la
+
+
 test_sharded_cluster_SOURCES = \
 	$(top_srcdir)/tests/test-sharded-cluster.c \
 	$(top_srcdir)/tests/ha-test.c \
@@ -146,10 +171,21 @@ test_sharded_cluster_SOURCES = \
 test_sharded_cluster_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 test_sharded_cluster_LDADD = libmongoc-priv.la
 
+test_certs: $(top_srcdir)/tests/trust_dir/done
 
+$(top_srcdir)/tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_dir.cnf
+	$< $(top_srcdir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
+	touch $(top_srcdir)/tests/trust_dir/done
+
+if HAVE_SSL
+test: $(TEST_PROGS) test_certs
+else
 test: $(TEST_PROGS)
+endif
 	@ echo "Checking if MongoDB is available on 27017."
 	@ $(NETCAT) 127.0.0.1 27017 </dev/null
 	@ for TEST_PROG in $(TEST_PROGS) ; do \
 		./$$TEST_PROG ; \
 	done
+
+.PHONY: test_certs

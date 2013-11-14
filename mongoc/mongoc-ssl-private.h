@@ -15,31 +15,30 @@
  */
 
 
-#ifndef MONGOC_STREAM_TLS_H
-#define MONGOC_STREAM_TLS_H
+#ifndef MONGOC_SSL_PRIVATE_H
+#define MONGOC_SSL_PRIVATE_H
 
 
 #include <bson.h>
+#include <openssl/bio.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include "mongoc-ssl.h"
-#include "mongoc-stream.h"
-
 
 BSON_BEGIN_DECLS
 
 bson_bool_t
-mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
-                                bson_int32_t     timeout_msec);
+mongoc_ssl_check_cert (SSL        *ssl,
+                       const char *host,
+                       bson_bool_t weak_cert_validation);
 
-bson_bool_t
-mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
-                              const char      *host);
+SSL_CTX *
+mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt);
 
-mongoc_stream_t *
-mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
-                       mongoc_ssl_opt_t *opt,
-                       int               client);
+void
+mongoc_ssl_init (void);
 
 BSON_END_DECLS
 
 
-#endif /* MONGOC_STREAM_TLS_H */
+#endif /* MONGOC_SSL_PRIVATE_H */

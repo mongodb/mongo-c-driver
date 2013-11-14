@@ -22,6 +22,7 @@
 #include <bson.h>
 
 #define MONGOC_INSIDE
+#include "mongoc-build.h"
 #include "mongoc-client.h"
 #include "mongoc-client-pool.h"
 #include "mongoc-collection.h"
@@ -30,6 +31,7 @@
 #include "mongoc-error.h"
 #include "mongoc-flags.h"
 #include "mongoc-host-list.h"
+#include "mongoc-init.h"
 #include "mongoc-opcode.h"
 #include "mongoc-log.h"
 #include "mongoc-stream.h"
@@ -39,6 +41,12 @@
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-version.h"
+
+#ifdef MONGOC_HAVE_SSL
+#include "mongoc-stream-tls.h"
+#include "mongoc-ssl.h"
+#endif
+
 #undef MONGOC_INSIDE
 
 

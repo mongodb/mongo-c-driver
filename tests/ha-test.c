@@ -60,6 +60,11 @@ ha_replica_set_create_client (ha_replica_set_t *replica_set)
    bson_string_append(str, replica_set->name);
 
    client = mongoc_client_new(str->str);
+#ifdef MONGOC_HAVE_SSL
+   if (replica_set->ssl_opt) {
+      mongoc_client_set_ssl_opts(client, replica_set->ssl_opt);
+   }
+#endif
 
    bson_string_free(str, TRUE);
 
@@ -68,13 +73,13 @@ ha_replica_set_create_client (ha_replica_set_t *replica_set)
 
 
 static ha_node_t *
-ha_node_new (const char    *name,
-             const char    *repl_set,
-             const char    *dbpath,
-             bson_bool_t    is_arbiter,
-             bson_bool_t    is_config,
-             bson_bool_t    is_router,
-             bson_uint16_t  port)
+ha_node_new (const char       *name,
+             const char       *repl_set,
+             const char       *dbpath,
+             bson_bool_t       is_arbiter,
+             bson_bool_t       is_config,
+             bson_bool_t       is_router,
+             bson_uint16_t     port)
 {
    ha_node_t *node;
 
@@ -121,8 +126,8 @@ ha_node_restart (ha_node_t *node)
    struct stat st;
    pid_t pid;
    char portstr[12];
-   char *argv[14];
-   int i;
+   char *argv[30];
+   int i = 0;
 
    snprintf(portstr, sizeof portstr, "%hu", node->port);
    portstr[sizeof portstr - 1] = '\0';
@@ -130,32 +135,50 @@ ha_node_restart (ha_node_t *node)
    ha_node_kill(node);
 
    if (!node->is_router) {
-      argv[0] = (char *) "mongod";
-      argv[1] = (char *) "--dbpath";
-      argv[2] = (char *) ".";
-      argv[3] = (char *) "--port";
-      argv[4] = portstr;
-      argv[5] = (char *) "--nojournal";
-      argv[6] = (char *) "--noprealloc";
-      argv[7] = (char *) "--smallfiles";
-      argv[8] = (char *) "--nohttpinterface";
-      argv[9] = (char *) "--bind_ip";
-      argv[10] = (char *) "127.0.0.1";
+      argv[i++] = (char *) "mongod";
+      argv[i++] = (char *) "--dbpath";
+      argv[i++] = (char *) ".";
+      argv[i++] = (char *) "--port";
+      argv[i++] = portstr;
+      argv[i++] = (char *) "--nojournal";
+      argv[i++] = (char *) "--noprealloc";
+      argv[i++] = (char *) "--smallfiles";
+      argv[i++] = (char *) "--nohttpinterface";
+      argv[i++] = (char *) "--bind_ip";
+      argv[i++] = (char *) "127.0.0.1";
       if (node->is_config) {
-         argv[11] = (char *) "--configsvr";
-         argv[12] = NULL;
+         argv[i++] = (char *) "--configsvr";
       } else {
-         argv[11] = (char *) "--replSet";
-         argv[12] = node->repl_set;
+         argv[i++] = (char *) "--replSet";
+         argv[i++] = node->repl_set;
       }
-      argv[13] = NULL;
+
+#ifdef MONGOC_HAVE_SSL
+      if (node->ssl_opt) {
+         if (node->ssl_opt->pem_file) {
+            argv[i++] = (char *) "--sslPEMKeyFile";
+            argv[i++] = (char *)(node->ssl_opt->pem_file);
+            argv[i++] = (char *) "--sslClusterFile";
+            argv[i++] = (char *)(node->ssl_opt->pem_file);
+         }
+         if (node->ssl_opt->ca_file) {
+            argv[i++] = (char *) "--sslCAFile";
+            argv[i++] = (char *)(node->ssl_opt->ca_file);
+         }
+         argv[i++] = (char *) "--sslOnNormalPorts";
+      }
+#endif
+      argv[i++] = "--logpath";
+      argv[i++] = "log";
+
+      argv[i++] = NULL;
    } else {
-      argv[0] = (char *) "mongos";
-      argv[1] = (char *) "--configdb";
-      argv[2] = node->configopt;
-      argv[3] = (char *) "--port";
-      argv[4] = (char *) portstr;
-      argv[5] = NULL;
+      argv[i++] = (char *) "mongos";
+      argv[i++] = (char *) "--configdb";
+      argv[i++] = node->configopt;
+      argv[i++] = (char *) "--port";
+      argv[i++] = (char *) portstr;
+      argv[i++] = NULL;
    }
 
    pid = fork();
@@ -258,6 +281,16 @@ random_int_range (int low,
 }
 
 
+#ifdef MONGOC_HAVE_SSL
+void
+ha_replica_set_ssl (ha_replica_set_t *repl_set,
+                    mongoc_ssl_opt_t *opt)
+{
+   repl_set->ssl_opt = opt;
+}
+#endif
+
+
 ha_replica_set_t *
 ha_replica_set_new (const char *name)
 {
@@ -290,6 +323,9 @@ ha_replica_set_add_node (ha_replica_set_t *replica_set,
                       FALSE,
                       FALSE,
                       replica_set->next_port++);
+#ifdef MONGOC_HAVE_SSL
+   node->ssl_opt = replica_set->ssl_opt;
+#endif
 
    if (!replica_set->nodes) {
       replica_set->nodes = node;
@@ -341,6 +377,11 @@ ha_replica_set_configure (ha_replica_set_t *replica_set,
 
    uristr = bson_strdup_printf("mongodb://127.0.0.1:%hu/", primary->port);
    client = mongoc_client_new(uristr);
+#ifdef MONGOC_HAVE_SSL
+   if (replica_set->ssl_opt) {
+      mongoc_client_set_ssl_opts(client, replica_set->ssl_opt);
+   }
+#endif
    bson_free(uristr);
 
    bson_init(&cmd);
@@ -491,6 +532,11 @@ ha_replica_set_get_status (ha_replica_set_t *replica_set,
       uristr = bson_strdup_printf("mongodb://127.0.0.1:%hu/?slaveOk=true",
                                   node->port);
       client = mongoc_client_new(uristr);
+#ifdef MONGOC_HAVE_SSL
+      if (replica_set->ssl_opt) {
+         mongoc_client_set_ssl_opts(client, replica_set->ssl_opt);
+      }
+#endif
       bson_free(uristr);
 
       db = mongoc_client_get_database(client, "admin");
@@ -623,6 +669,9 @@ ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
                       TRUE,
                       FALSE,
                       cluster->next_port++);
+#ifdef MONGOC_HAVE_SSL
+   node->ssl_opt = cluster->ssl_opt;
+#endif
    node->next = cluster->configs;
    cluster->configs = node;
 
@@ -649,6 +698,9 @@ ha_sharded_cluster_add_router (ha_sharded_cluster_t *cluster,
                       FALSE,
                       TRUE,
                       cluster->next_port++);
+#ifdef MONGOC_HAVE_SSL
+   node->ssl_opt = cluster->ssl_opt;
+#endif
    node->next = cluster->routers;
    cluster->routers = node;
 

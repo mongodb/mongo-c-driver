@@ -42,6 +42,11 @@
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-unix.h"
 #include "mongoc-trace.h"
+#include "mongoc-build.h"
+
+#ifdef MONGOC_HAVE_SSL
+#include "mongoc-stream-tls.h"
+#endif
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -285,19 +290,12 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,       /* 
 {
    mongoc_stream_t *base_stream = NULL;
 
+#ifdef MONGOC_HAVE_SSL
+   mongoc_ssl_opt_t *ssl_opts = (mongoc_ssl_opt_t *)user_data;
+#endif
+
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
-
-   /*
-    * TODO:
-    *
-    *   if ssl option is set, we need to wrap our mongoc_stream_t in
-    *   a TLS stream (which needs to be written).
-    *
-    *   Something like:
-    *
-    *      mongoc_stream_t *mongoc_stream_new_tls (mongoc_stream_t *)
-    */
 
    switch (host->family) {
    case AF_INET:
@@ -313,6 +311,18 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,       /* 
                      "Invalid address family: 0x%02x", host->family);
       break;
    }
+
+#ifdef MONGOC_HAVE_SSL
+   if (ssl_opts) {
+      base_stream = mongoc_stream_tls_new (base_stream, ssl_opts, 1);
+
+      if (!(mongoc_stream_tls_do_handshake (base_stream, -1) &&
+           (mongoc_stream_tls_check_cert (base_stream, host->host)))) {
+         mongoc_stream_destroy (base_stream);
+         base_stream = NULL;
+      }
+   }
+#endif
 
    return base_stream ? mongoc_stream_buffered_new(base_stream, 1024) : NULL;
 }
@@ -622,6 +632,7 @@ mongoc_client_new (const char *uri_string) /* IN */
    mongoc_uri_t *uri;
    const bson_t *options;
    bson_iter_t iter;
+   bson_bool_t has_ssl = FALSE;
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
@@ -631,12 +642,19 @@ mongoc_client_new (const char *uri_string) /* IN */
       return NULL;
    }
 
-   options = mongoc_uri_get_options(uri);
-   if (bson_iter_init_find(&iter, options, "ssl") &&
-       BSON_ITER_HOLDS_BOOL(&iter) &&
-       bson_iter_bool(&iter)) {
-      MONGOC_WARNING("SSL is not yet supported!");
+   options = mongoc_uri_get_options (uri);
+
+   if (bson_iter_init_find (&iter, options, "ssl") &&
+       BSON_ITER_HOLDS_BOOL (&iter) &&
+       bson_iter_bool (&iter)) {
+      has_ssl = TRUE;
    }
+#ifndef MONGOC_HAVE_SSL
+   if (has_ssl) {
+      MONGOC_WARNING ("SSL is not supported in this build!");
+      return NULL;
+   }
+#endif
 
    client = bson_malloc0(sizeof *client);
    client->uri = uri;
@@ -646,8 +664,45 @@ mongoc_client_new (const char *uri_string) /* IN */
 
    mongoc_counter_clients_active_inc();
 
+#ifdef MONGOC_HAVE_SSL
+   if (has_ssl) {
+      mongoc_client_set_ssl_opts(client, mongoc_ssl_opt_get_default());
+   }
+#endif
+
    return client;
 }
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_set_ssl_opts
+ *
+ *       set ssl opts for a client
+ *
+ * Returns:
+ *       Nothing
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+#ifdef MONGOC_HAVE_SSL
+void
+mongoc_client_set_ssl_opts (mongoc_client_t        *client,
+                            const mongoc_ssl_opt_t *opts)
+{
+
+   BSON_ASSERT(client);
+   BSON_ASSERT(opts);
+
+   memcpy(&client->ssl_opts, opts, sizeof(client->ssl_opts));
+   client->initiator_data = &client->ssl_opts;
+}
+#endif
 
 
 /*

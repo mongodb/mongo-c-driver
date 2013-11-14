@@ -14,32 +14,22 @@
  * limitations under the License.
  */
 
-
-#ifndef MONGOC_STREAM_TLS_H
-#define MONGOC_STREAM_TLS_H
-
-
-#include <bson.h>
+#include "mongoc-build.h"
 #include "mongoc-ssl.h"
-#include "mongoc-stream.h"
+#include "mongoc-ssl-private.h"
+#include "mongoc-init.h"
+#include "mongoc-init-private.h"
 
+bson_bool_t gMongocIsInitialized;
 
-BSON_BEGIN_DECLS
+void
+mongoc_init (void)
+{
+   BSON_ASSERT (!gMongocIsInitialized);
 
-bson_bool_t
-mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
-                                bson_int32_t     timeout_msec);
+#ifdef MONGOC_HAVE_SSL
+   mongoc_ssl_init();
+#endif
 
-bson_bool_t
-mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
-                              const char      *host);
-
-mongoc_stream_t *
-mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
-                       mongoc_ssl_opt_t *opt,
-                       int               client);
-
-BSON_END_DECLS
-
-
-#endif /* MONGOC_STREAM_TLS_H */
+   gMongocIsInitialized = 1;
+}

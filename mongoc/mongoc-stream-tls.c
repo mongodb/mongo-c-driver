@@ -14,43 +14,71 @@
  * limitations under the License.
  */
 
+#define _GNU_SOURCE
 
+#include <string.h>
+#include <unistd.h>
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
-#include <string.h>
-#include <unistd.h>
 
+#include "mongoc-counters-private.h"
 #include "mongoc-stream-tls.h"
+#include "mongoc-ssl-private.h"
+#include "mongoc-trace.h"
+#include "mongoc-log.h"
 
 
-#ifndef MONGOC_TLS_TRUST_STORE
-#define MONGOC_TLS_TRUST_STORE "/etc/ssl/certs"
-#endif
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "stream-tls"
 
-
+/** Private storage for handling callbacks from mongoc_stream and BIO_*
+ *
+ * The one funny wrinkle comes with timeout, which we use statefully to
+ * statefully pass timeouts through from the mongoc-stream api.
+ *
+ * TODO: is there a cleaner way to manage that?
+ */
 typedef struct
 {
    mongoc_stream_t  parent;
    mongoc_stream_t *base_stream;
    BIO             *bio;
-   SSL_CTX         *ssl_ctx;
-   SSL             *ssl;
+   SSL_CTX         *ctx;
+   bson_int32_t     timeout;
+   bson_bool_t      weak_cert_validation;
 } mongoc_stream_tls_t;
 
 
-static int  mongoc_stream_tls_bio_create  (BIO *b);
-static int  mongoc_stream_tls_bio_destroy (BIO *b);
-static int  mongoc_stream_tls_bio_read    (BIO *b, char *buf, int len);
-static int  mongoc_stream_tls_bio_write   (BIO *b, const char *buf, int len);
-static long mongoc_stream_tls_bio_ctrl    (BIO *b, int cmd, long num,
-                                           void *ptr);
-static int  mongoc_stream_tls_bio_gets    (BIO *b, char *buf, int len);
-static int  mongoc_stream_tls_bio_puts    (BIO *b, const char *str);
+static int
+mongoc_stream_tls_bio_create (BIO *b);
+static int
+mongoc_stream_tls_bio_destroy (BIO *b);
+static int
+mongoc_stream_tls_bio_read (BIO  *b,
+                            char *buf,
+                            int   len);
+static int
+mongoc_stream_tls_bio_write (BIO        *b,
+                             const char *buf,
+                             int         len);
+static long
+mongoc_stream_tls_bio_ctrl (BIO  *b,
+                            int   cmd,
+                            long  num,
+                            void *ptr);
+static int
+mongoc_stream_tls_bio_gets (BIO  *b,
+                            char *buf,
+                            int   len);
+static int
+mongoc_stream_tls_bio_puts (BIO        *b,
+                            const char *str);
 
 
+/* Magic vtable to make our BIO shim */
 static BIO_METHOD gMongocStreamTlsRawMethods = {
-   BIO_TYPE_MEM,
+   BIO_TYPE_FILTER,
    "mongoc-stream-tls-glue",
    mongoc_stream_tls_bio_write,
    mongoc_stream_tls_bio_read,
@@ -81,7 +109,7 @@ static BIO_METHOD gMongocStreamTlsRawMethods = {
 static int
 mongoc_stream_tls_bio_create (BIO *b) /* IN */
 {
-   BSON_ASSERT(b);
+   BSON_ASSERT (b);
 
    b->init = 1;
    b->num = 0;
@@ -113,7 +141,7 @@ mongoc_stream_tls_bio_destroy (BIO *b) /* IN */
 {
    mongoc_stream_tls_t *tls;
 
-   BSON_ASSERT(b);
+   BSON_ASSERT (b);
 
    if (!(tls = b->ptr)) {
       return -1;
@@ -153,20 +181,19 @@ mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
    mongoc_stream_tls_t *tls;
    int ret;
 
-   BSON_ASSERT(b);
-   BSON_ASSERT(buf);
+   BSON_ASSERT (b);
+   BSON_ASSERT (buf);
 
    if (!(tls = b->ptr)) {
       return -1;
    }
 
-
    errno = 0;
-   ret = mongoc_stream_read(tls->base_stream, buf, len, 0, -1);
-   if (ret < 0) {
-      if (errno == EAGAIN || errno == EWOULDBLOCK) {
-         BIO_set_retry_read(b);
-      }
+   ret = mongoc_stream_read (tls->base_stream, buf, len, 0, tls->timeout);
+   BIO_clear_retry_flags (b);
+
+   if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+      BIO_set_retry_read (b);
    }
 
    return ret;
@@ -198,8 +225,8 @@ mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
    struct iovec iov;
    int ret;
 
-   BSON_ASSERT(b);
-   BSON_ASSERT(buf);
+   BSON_ASSERT (b);
+   BSON_ASSERT (buf);
 
    if (!(tls = b->ptr)) {
       return -1;
@@ -209,12 +236,11 @@ mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
    iov.iov_len = len;
 
    errno = 0;
-   ret = mongoc_stream_writev(tls->base_stream, &iov, 1, -1);
-   BIO_clear_retry_flags(b);
-   if (ret < 0) {
-      if (errno == EAGAIN || errno == EWOULDBLOCK) {
-         BIO_set_retry_write(b);
-      }
+   ret = mongoc_stream_writev (tls->base_stream, &iov, 1, tls->timeout);
+   BIO_clear_retry_flags (b);
+
+   if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+      BIO_set_retry_write (b);
    }
 
    return ret;
@@ -298,7 +324,7 @@ static int
 mongoc_stream_tls_bio_puts (BIO        *b,   /* IN */
                             const char *str) /* IN */
 {
-   return mongoc_stream_tls_bio_write(b, str, strlen(str));
+   return mongoc_stream_tls_bio_write (b, str, strlen (str));
 }
 
 
@@ -324,18 +350,21 @@ mongoc_stream_tls_destroy (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
-   BSON_ASSERT(tls);
+   BSON_ASSERT (tls);
 
-   BIO_free_all(tls->bio);
+   BIO_free_all (tls->bio);
    tls->bio = NULL;
 
-   SSL_CTX_free(tls->ssl_ctx);
-   tls->ssl_ctx = NULL;
+   mongoc_stream_destroy (tls->base_stream);
+   tls->base_stream = NULL;
 
-   SSL_free(tls->ssl);
-   tls->ssl = NULL;
+   SSL_CTX_free (tls->ctx);
+   tls->ctx = NULL;
 
-   bson_free(stream);
+   bson_free (stream);
+
+   mongoc_counter_streams_active_dec();
+   mongoc_counter_streams_disposed_inc();
 }
 
 
@@ -364,9 +393,9 @@ mongoc_stream_tls_close (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
-   BSON_ASSERT(tls);
+   BSON_ASSERT (tls);
 
-   return mongoc_stream_close(tls->base_stream);
+   return mongoc_stream_close (tls->base_stream);
 }
 
 
@@ -391,9 +420,9 @@ mongoc_stream_tls_flush (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
-   BSON_ASSERT(tls);
+   BSON_ASSERT (tls);
 
-   return BIO_flush(tls->bio);
+   return BIO_flush (tls->bio);
 }
 
 
@@ -426,27 +455,24 @@ mongoc_stream_tls_writev (mongoc_stream_t *stream,       /* IN */
    size_t i;
    int write_ret;
 
-   /*
-    * TODO: Do we need to plumb through timeout_msec? In most cases,
-    *       it will actually be set on the underlying socket using the
-    *       setsockopt().
-    */
+   BSON_ASSERT (tls);
+   BSON_ASSERT (iov);
+   BSON_ASSERT (iovcnt);
 
-   BSON_ASSERT(tls);
-   BSON_ASSERT(iov);
-   BSON_ASSERT(iovcnt);
+   tls->timeout = timeout_msec;
 
    for (i = 0; i < iovcnt; i++) {
-      /*
-       * TODO: This might be a bit brittle, but I think since our stream
-       *       implementations try really hard to return what you asked
-       *       for, I think it is fine. Warrants further experimentation.
-       */
-      write_ret = SSL_write(tls->ssl, iov[i].iov_base, iov[i].iov_len);
+      write_ret = BIO_write (tls->bio, iov[i].iov_base, iov[i].iov_len);
+
       if (write_ret != iov[i].iov_len) {
          return write_ret;
       }
+
       ret += write_ret;
+   }
+
+   if (ret >= 0) {
+      mongoc_counter_streams_egress_add(ret);
    }
 
    return ret;
@@ -482,28 +508,51 @@ mongoc_stream_tls_readv (mongoc_stream_t *stream,       /* IN */
    ssize_t ret = 0;
    size_t i;
    int read_ret;
+   int iov_pos = 0;
+   bson_int64_t now;
+   bson_int64_t expire;
 
-   BSON_ASSERT(tls);
-   BSON_ASSERT(iov);
-   BSON_ASSERT(iovcnt);
+   BSON_ASSERT (tls);
+   BSON_ASSERT (iov);
+   BSON_ASSERT (iovcnt);
+
+   tls->timeout = timeout_msec;
+
+   expire = bson_get_monotonic_time () + (timeout_msec * 1000UL);
 
    for (i = 0; i < iovcnt; i++) {
-      /*
-       * TODO: This might be a bit brittle, but I think since our stream
-       *       implementations try really hard to return what you asked
-       *       for, I think it is fine. Warrants further experimentation.
-       */
-      read_ret = SSL_read(tls->ssl, iov[i].iov_base, iov[i].iov_len);
-      if (read_ret == -1) {
-         return read_ret;
-      }
-      ret += read_ret;
-      if (read_ret != iov[i].iov_len) {
-         if (read_ret >= min_bytes) {
+      iov_pos = 0;
+
+      while (iov_pos < iov[i].iov_len - 1) {
+         read_ret = BIO_read (tls->bio, iov[i].iov_base + iov_pos,
+                              iov[i].iov_len - iov_pos);
+
+         now = bson_get_monotonic_time ();
+
+         if (((expire - now) < 0) && (read_ret == 0)) {
+            mongoc_counter_streams_timeout_inc();
+            errno = ETIMEDOUT;
+            return -1;
+         }
+
+         if (read_ret == -1) {
             return read_ret;
          }
-         return -1;
+
+         ret += read_ret;
+
+         if (read_ret != iov[i].iov_len) {
+            if (read_ret >= min_bytes) {
+               return read_ret;
+            }
+
+            iov_pos += read_ret;
+         }
       }
+   }
+
+   if (ret >= 0) {
+      mongoc_counter_streams_ingress_add(ret);
    }
 
    return ret;
@@ -531,9 +580,9 @@ mongoc_stream_tls_cork (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
-   BSON_ASSERT(stream);
+   BSON_ASSERT (stream);
 
-   return mongoc_stream_cork(tls->base_stream);
+   return mongoc_stream_cork (tls->base_stream);
 }
 
 
@@ -558,9 +607,9 @@ mongoc_stream_tls_uncork (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
-   BSON_ASSERT(stream);
+   BSON_ASSERT (stream);
 
-   return mongoc_stream_uncork(tls->base_stream);
+   return mongoc_stream_uncork (tls->base_stream);
 }
 
 
@@ -589,13 +638,48 @@ mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,  /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
-   BSON_ASSERT(tls);
+   BSON_ASSERT (tls);
 
-   return mongoc_stream_setsockopt(tls->base_stream,
-                                   level,
-                                   optname,
-                                   optval,
-                                   optlen);
+   return mongoc_stream_setsockopt (tls->base_stream,
+                                    level,
+                                    optname,
+                                    optval,
+                                    optlen);
+}
+
+
+/** force an ssl handshake
+ *
+ * This will happen on the first read or write otherwise
+ */
+bson_bool_t
+mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
+                                bson_int32_t     timeout_msec)
+{
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+
+   BSON_ASSERT (tls);
+
+   tls->timeout = timeout_msec;
+
+   return BIO_do_handshake (tls->bio) == 1;
+}
+
+
+/** check the cert returned by the other party */
+bson_bool_t
+mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
+                              const char      *host)
+{
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+   SSL *ssl;
+
+   BSON_ASSERT (tls);
+   BSON_ASSERT (host);
+
+   BIO_get_ssl (tls->bio, &ssl);
+
+   return mongoc_ssl_check_cert (ssl, host, tls->weak_cert_validation);
 }
 
 
@@ -623,18 +707,32 @@ mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,  /* IN */
  */
 
 mongoc_stream_t *
-mongoc_stream_tls_new (mongoc_stream_t *base_stream,     /* IN */
-                       const char      *trust_store_dir) /* IN */
+mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
+                       mongoc_ssl_opt_t *opt,
+                       int               client)
 {
    mongoc_stream_tls_t *tls;
+   SSL_CTX *ssl_ctx = NULL;
 
-   bson_return_val_if_fail(base_stream, NULL);
+   BIO *bio_ssl = NULL;
+   BIO *bio_mongoc_shim = NULL;
 
-   if (!trust_store_dir) {
-      trust_store_dir = MONGOC_TLS_TRUST_STORE;
+   BSON_ASSERT(base_stream);
+   BSON_ASSERT(opt);
+
+   ssl_ctx = mongoc_ssl_ctx_new (opt);
+
+   if (!ssl_ctx) {
+      return NULL;
    }
 
-   tls = bson_malloc0(sizeof *tls);
+   bio_ssl = BIO_new_ssl (ssl_ctx, client);
+   bio_mongoc_shim = BIO_new (&gMongocStreamTlsRawMethods);
+
+   BIO_push (bio_ssl, bio_mongoc_shim);
+
+   tls = bson_malloc0 (sizeof *tls);
+   tls->base_stream = base_stream;
    tls->parent.destroy = mongoc_stream_tls_destroy;
    tls->parent.close = mongoc_stream_tls_close;
    tls->parent.flush = mongoc_stream_tls_flush;
@@ -643,15 +741,13 @@ mongoc_stream_tls_new (mongoc_stream_t *base_stream,     /* IN */
    tls->parent.cork = mongoc_stream_tls_cork;
    tls->parent.uncork = mongoc_stream_tls_uncork;
    tls->parent.setsockopt = mongoc_stream_tls_setsockopt;
+   tls->weak_cert_validation = opt->weak_cert_validation;
+   tls->bio = bio_ssl;
+   tls->ctx = ssl_ctx;
+   tls->timeout = -1;
+   bio_mongoc_shim->ptr = tls;
 
-   tls->bio = BIO_new(&gMongocStreamTlsRawMethods);
-   tls->bio->ptr = tls;
-
-   tls->ssl_ctx = SSL_CTX_new(SSLv23_method());
-   SSL_CTX_set_options(tls->ssl_ctx, (SSL_OP_ALL | SSL_OP_NO_SSLv2));
-   SSL_CTX_set_mode(tls->ssl_ctx, SSL_MODE_AUTO_RETRY);
-
-   tls->ssl = SSL_new(tls->ssl_ctx);
+   mongoc_counter_streams_active_inc();
 
    return (mongoc_stream_t *)tls;
 }
