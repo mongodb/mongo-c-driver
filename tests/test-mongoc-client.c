@@ -108,7 +108,7 @@ test_wire_version (void)
    mock_server_set_wire_version (server, 10, 11);
    mock_server_run_in_thread (server);
 
-   sleep (1);
+   usleep (5000);
 
    uristr = bson_strdup_printf ("mongodb://127.0.0.1:%hu/", port);
    client = mongoc_client_new (uristr);
