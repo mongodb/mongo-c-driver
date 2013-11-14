@@ -14,31 +14,22 @@
  * limitations under the License.
  */
 
-
-#ifndef MONGOC_SSL_PRIVATE_H
-#define MONGOC_SSL_PRIVATE_H
-
-
-#include <bson.h>
-#include <openssl/bio.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+#include "mongoc-build.h"
 #include "mongoc-ssl.h"
+#include "mongoc-ssl-private.h"
+#include "mongoc-init.h"
+#include "mongoc-init-private.h"
 
-BSON_BEGIN_DECLS
-
-bson_bool_t
-mongoc_ssl_check_cert (SSL        *ssl,
-                       const char *host,
-                       bson_bool_t weak_cert_validation);
-
-SSL_CTX *
-mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt);
+bson_bool_t gMongocIsInitialized;
 
 void
-mongoc_ssl_init (void);
+mongoc_init (void)
+{
+   BSON_ASSERT (!gMongocIsInitialized);
 
-BSON_END_DECLS
+#ifdef MONGOC_HAVE_SSL
+   mongoc_ssl_init();
+#endif
 
-
-#endif /* MONGOC_SSL_PRIVATE_H */
+   gMongocIsInitialized = 1;
+}

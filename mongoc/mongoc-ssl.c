@@ -23,29 +23,42 @@
 #include <openssl/x509v3.h>
 #include <arpa/inet.h>
 
+#include "mongoc-init.h"
+#include "mongoc-init-private.h"
 #include "mongoc-ssl.h"
 #include "mongoc-trace.h"
 
-#define MONGOC_SSL_DEFAULT_TRUST_DIR "/etc/ssl/certs"
+/* TODO: we could populate these from a config or something further down the
+ * road for providing defaults */
+#ifndef MONGOC_SSL_DEFAULT_TRUST_FILE
+#define MONGOC_SSL_DEFAULT_TRUST_FILE NULL
+#endif
+#ifndef MONGOC_SSL_DEFAULT_TRUST_DIR
+#define MONGOC_SSL_DEFAULT_TRUST_DIR NULL
+#endif
 
-int mongoc_ssl_initalized = 0;
-
+static
 mongoc_ssl_opt_t mongoc_ssl_default_opt = {
    NULL,
    NULL,
-   NULL,
+   MONGOC_SSL_DEFAULT_TRUST_FILE,
    MONGOC_SSL_DEFAULT_TRUST_DIR,
    NULL,
    0
 };
 
 
-/**
- * intialization function for SSL
+const mongoc_ssl_opt_t *
+mongoc_ssl_opt_get_default (void)
+{
+   return &mongoc_ssl_default_opt;
+}
+
+/** mongoc_ssl_init
+ * initialization function for SSL
  *
- * This needs to get called early on and is not threadsafe
- *
- * TODO: do we have any other global intitalization to do?
+ * This needs to get called early on and is not threadsafe.  Called by
+ * mongoc_init
  */
 void
 mongoc_ssl_init (void)
@@ -54,8 +67,6 @@ mongoc_ssl_init (void)
    SSL_load_error_strings ();
    ERR_load_BIO_strings ();
    OpenSSL_add_all_algorithms ();
-
-   mongoc_ssl_initalized = 1;
 }
 
 
@@ -63,20 +74,22 @@ static int
 mongoc_ssl_password_cb (char *buf,
                         int   num,
                         int   rwflag,
-                        void *userdata)
+                        void *user_data)
 {
-   char *pass = (char *)userdata;
+   char *pass = (char *)user_data;
+   int pass_len = strlen (pass);
 
-   if (num < strlen (pass) + 1) {
+   if (num < pass_len + 1) {
       return 0;
    }
 
    strcpy (buf, pass);
-   return strlen (pass);
+   return pass_len;
 }
 
 
-/**
+/** mongoc_ssl_hostcheck
+ *
  * rfc 6125 match a given hostname against a given pattern
  *
  * Patterns come from DNS common names or subjectAltNames.
@@ -88,8 +101,11 @@ bson_bool_t
 mongoc_ssl_hostcheck (const char *pattern,
                       const char *hostname)
 {
-   const char *pattern_label_end, *pattern_wildcard, *hostname_label_end;
-   size_t prefixlen, suffixlen;
+   const char *pattern_label_end;
+   const char *pattern_wildcard;
+   const char *hostname_label_end;
+   size_t prefixlen;
+   size_t suffixlen;
 
    pattern_wildcard = strchr (pattern, '*');
 
@@ -121,7 +137,7 @@ mongoc_ssl_hostcheck (const char *pattern,
 
    /* The wildcard must match at least one character, so the left part of the
     * hostname is at least as large as the left part of the pattern. */
-   if (hostname_label_end - hostname < pattern_label_end - pattern) {
+   if ((hostname_label_end - hostname) < (pattern_label_end - pattern)) {
       return 0;
    }
 
@@ -164,7 +180,7 @@ mongoc_ssl_check_cert (SSL        *ssl,
    BSON_ASSERT (host);
 
    if (weak_cert_validation) {
-      return 1;
+      return TRUE;
    }
 
    /** if the host looks like an IP address, match that, otherwise we assume we
@@ -177,7 +193,7 @@ mongoc_ssl_check_cert (SSL        *ssl,
    peer = SSL_get_peer_certificate (ssl);
 
    if (!peer) {
-      return 0;
+      return FALSE;
    }
 
    verify_status = SSL_get_verify_result (ssl);
@@ -199,13 +215,13 @@ mongoc_ssl_check_cert (SSL        *ssl,
              * DNS host */
             if (name->type == target) {
                check = (char *)ASN1_STRING_data (name->d.ia5);
-               length = (size_t)ASN1_STRING_length (name->d.ia5);
+               length = ASN1_STRING_length (name->d.ia5);
 
                switch (target) {
                case GEN_DNS:
 
                   /* check that we don't have an embedded null byte */
-                  if ((length == strlen (check)) &&
+                  if ((length == strnlen (check, length)) &&
                       mongoc_ssl_hostcheck (check, host)) {
                      r = 1;
                   }
@@ -274,6 +290,9 @@ mongoc_ssl_setup_ca (SSL_CTX    *ctx,
                      const char *cert,
                      const char *cert_dir)
 {
+   BSON_ASSERT(ctx);
+   BSON_ASSERT(cert || cert_dir);
+
    if (!SSL_CTX_load_verify_locations (ctx, cert, cert_dir)) {
       return 0;
    }
@@ -306,7 +325,7 @@ mongoc_ssl_setup_pem_file (SSL_CTX    *ctx,
                            const char *pem_file,
                            const char *password)
 {
-   if (!(SSL_CTX_use_certificate_chain_file (ctx, pem_file))) {
+   if (!SSL_CTX_use_certificate_chain_file (ctx, pem_file)) {
       return 0;
    }
 
@@ -327,32 +346,37 @@ mongoc_ssl_setup_pem_file (SSL_CTX    *ctx,
 }
 
 
-/** Create a new ssl context declaratively */
+/** Create a new ssl context declaratively
+ *
+ * The opt.pem_pwd parameter, if passed, must exist for the life of this
+ * context object (for storing and loading the associated pem file)
+ *
+ */
 SSL_CTX *
 mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt)
 {
    SSL_CTX *ctx = NULL;
 
-   assert (mongoc_ssl_initalized);
+   BSON_ASSERT(gMongocIsInitialized);
 
    ctx = SSL_CTX_new (SSLv23_method ());
 
-   // SSL_OP_ALL - Activate all bug workaround options, to support buggy client SSL's.
-   // SSL_OP_NO_SSLv2 - Disable SSL v2 support
+   /* SSL_OP_ALL - Activate all bug workaround options, to support buggy client SSL's.
+    * SSL_OP_NO_SSLv2 - Disable SSL v2 support */
    SSL_CTX_set_options (ctx, (SSL_OP_ALL | SSL_OP_NO_SSLv2));
 
-   // HIGH - Enable strong ciphers
-   // !EXPORT - Disable export ciphers (40/56 bit)
-   // !aNULL - Disable anonymous auth ciphers
-   // @STRENGTH - Sort ciphers based on strength
+   /* HIGH - Enable strong ciphers
+    * !EXPORT - Disable export ciphers (40/56 bit)
+    * !aNULL - Disable anonymous auth ciphers
+    * @STRENGTH - Sort ciphers based on strength */
    SSL_CTX_set_cipher_list (ctx, "HIGH:!EXPORT:!aNULL@STRENGTH");
 
-   // If renegotiation is needed, don't return from recv() or send() until it's successful.
-   // Note: this is for blocking sockets only.
+   /* If renegotiation is needed, don't return from recv() or send() until it's successful.
+    * Note: this is for blocking sockets only. */
    SSL_CTX_set_mode (ctx, SSL_MODE_AUTO_RETRY);
 
-   // TODO: does this cargo cult actually matter?
-   // Disable session caching (see SERVER-10261)
+   /* TODO: does this cargo cult actually matter?
+    * Disable session caching (see SERVER-10261) */
    SSL_CTX_set_session_cache_mode (ctx, SSL_SESS_CACHE_OFF);
 
    /* Load in verification certs, private keys and revocation lists */

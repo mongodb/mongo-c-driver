@@ -31,6 +31,7 @@
 #include "mongoc-error.h"
 #include "mongoc-flags.h"
 #include "mongoc-host-list.h"
+#include "mongoc-init.h"
 #include "mongoc-opcode.h"
 #include "mongoc-log.h"
 #include "mongoc-stream.h"

@@ -45,6 +45,7 @@ INST_H_FILES = \
 	$(top_srcdir)/mongoc/mongoc-error.h \
 	$(top_srcdir)/mongoc/mongoc-flags.h \
 	$(top_srcdir)/mongoc/mongoc-host-list.h \
+	$(top_srcdir)/mongoc/mongoc-init.h \
 	$(top_srcdir)/mongoc/mongoc-log.h \
 	$(top_srcdir)/mongoc/mongoc-opcode.h \
 	$(top_srcdir)/mongoc/mongoc-read-prefs.h \
@@ -71,6 +72,7 @@ NOINST_H_FILES = \
 	$(top_srcdir)/mongoc/mongoc-cursor-private.h \
 	$(top_srcdir)/mongoc/mongoc-cluster-private.h \
 	$(top_srcdir)/mongoc/mongoc-database-private.h \
+	$(top_srcdir)/mongoc/mongoc-init-private.h \
 	$(top_srcdir)/mongoc/mongoc-list-private.h \
 	$(top_srcdir)/mongoc/mongoc-queue-private.h \
 	$(top_srcdir)/mongoc/mongoc-read-prefs-private.h \
@@ -96,6 +98,7 @@ libmongoc_priv_la_SOURCES = \
 	$(top_srcdir)/mongoc/mongoc-counters.c \
 	$(top_srcdir)/mongoc/mongoc-cursor.c \
 	$(top_srcdir)/mongoc/mongoc-database.c \
+	$(top_srcdir)/mongoc/mongoc-init.c \
 	$(top_srcdir)/mongoc/mongoc-list.c \
 	$(top_srcdir)/mongoc/mongoc-log.c \
 	$(top_srcdir)/mongoc/mongoc-queue.c \

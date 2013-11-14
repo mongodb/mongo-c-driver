@@ -15,30 +15,15 @@
  */
 
 
-#ifndef MONGOC_SSL_PRIVATE_H
-#define MONGOC_SSL_PRIVATE_H
-
+#ifndef MONGOC_INIT_PRIVATE_H
+#define MONGOC_INIT_PRIVATE_H
 
 #include <bson.h>
-#include <openssl/bio.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include "mongoc-ssl.h"
 
 BSON_BEGIN_DECLS
 
-bson_bool_t
-mongoc_ssl_check_cert (SSL        *ssl,
-                       const char *host,
-                       bson_bool_t weak_cert_validation);
-
-SSL_CTX *
-mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt);
-
-void
-mongoc_ssl_init (void);
+extern bson_bool_t gMongocIsInitialized;
 
 BSON_END_DECLS
 
-
-#endif /* MONGOC_SSL_PRIVATE_H */
+#endif /* MONGOC_INIT_PRIVATE_H */

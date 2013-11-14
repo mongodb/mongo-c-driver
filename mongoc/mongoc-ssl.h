@@ -23,9 +23,6 @@
 
 BSON_BEGIN_DECLS
 
-void
-mongoc_ssl_init (void);
-
 typedef struct mongoc_ssl_opt
 {
    const char *pem_file;
@@ -36,7 +33,8 @@ typedef struct mongoc_ssl_opt
    bson_bool_t weak_cert_validation;
 } mongoc_ssl_opt_t;
 
-extern mongoc_ssl_opt_t mongoc_ssl_default_opt;
+const mongoc_ssl_opt_t *
+mongoc_ssl_opt_get_default (void) BSON_GNUC_CONST;
 
 BSON_END_DECLS
 

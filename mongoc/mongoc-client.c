@@ -314,10 +314,11 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,       /* 
 
 #ifdef MONGOC_HAVE_SSL
    if (ssl_opts) {
-      base_stream = mongoc_stream_tls_new(base_stream, ssl_opts, 1);
-      if (! (mongoc_stream_tls_do_handshake(base_stream, -1) &&
-               (mongoc_stream_tls_check_cert(base_stream, host->host)))) {
-         mongoc_stream_destroy(base_stream);
+      base_stream = mongoc_stream_tls_new (base_stream, ssl_opts, 1);
+
+      if (!(mongoc_stream_tls_do_handshake (base_stream, -1) &&
+           (mongoc_stream_tls_check_cert (base_stream, host->host)))) {
+         mongoc_stream_destroy (base_stream);
          base_stream = NULL;
       }
    }
@@ -631,7 +632,7 @@ mongoc_client_new (const char *uri_string) /* IN */
    mongoc_uri_t *uri;
    const bson_t *options;
    bson_iter_t iter;
-   bson_bool_t has_ssl = 0;
+   bson_bool_t has_ssl = FALSE;
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
@@ -646,11 +647,12 @@ mongoc_client_new (const char *uri_string) /* IN */
    if (bson_iter_init_find (&iter, options, "ssl") &&
        BSON_ITER_HOLDS_BOOL (&iter) &&
        bson_iter_bool (&iter)) {
-      has_ssl = 1;
+      has_ssl = TRUE;
    }
 #ifndef MONGOC_HAVE_SSL
    if (has_ssl) {
       MONGOC_WARNING ("SSL is not supported in this build!");
+      return NULL;
    }
 #endif
 
@@ -664,7 +666,7 @@ mongoc_client_new (const char *uri_string) /* IN */
 
 #ifdef MONGOC_HAVE_SSL
    if (has_ssl) {
-      mongoc_client_set_ssl_opts(client, &mongoc_ssl_default_opt);
+      mongoc_client_set_ssl_opts(client, mongoc_ssl_opt_get_default());
    }
 #endif
 
@@ -690,9 +692,13 @@ mongoc_client_new (const char *uri_string) /* IN */
 
 #ifdef MONGOC_HAVE_SSL
 void
-mongoc_client_set_ssl_opts (mongoc_client_t  *client,
-                            mongoc_ssl_opt_t *opts)
+mongoc_client_set_ssl_opts (mongoc_client_t        *client,
+                            const mongoc_ssl_opt_t *opts)
 {
+
+   BSON_ASSERT(client);
+   BSON_ASSERT(opts);
+
    memcpy(&client->ssl_opts, opts, sizeof(client->ssl_opts));
    client->initiator_data = &client->ssl_opts;
 }

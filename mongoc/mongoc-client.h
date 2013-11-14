@@ -90,8 +90,8 @@ void                          mongoc_client_set_read_prefs    (mongoc_client_t  
 
 #ifdef MONGOC_HAVE_SSL
 void
-mongoc_client_set_ssl_opts (mongoc_client_t  *client,
-                            mongoc_ssl_opt_t *opts);
+mongoc_client_set_ssl_opts (mongoc_client_t        *client,
+                            const mongoc_ssl_opt_t *opts);
 #endif
 
 

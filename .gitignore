@@ -23,8 +23,6 @@ missing
 mongoc-ping
 mongoc-stat
 mongoc-tail
-mongoc/mongoc-build.h
-mongoc/libmongoc.symbols
 *.o
 *.pc
 stamp-h1
@@ -54,4 +52,3 @@ test-replica-set
 test-replica-set-ssl
 test-secondary
 test-sharded-cluster
-tests/trust_dir/*

@@ -85,7 +85,7 @@ main (int   argc,   /* IN */
       mongoc_log_set_handler (log_handler, NULL);
    }
 
-   mongoc_ssl_init ();
+   mongoc_init ();
 
    char *cwd;
    char buf[1024];

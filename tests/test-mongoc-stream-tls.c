@@ -253,7 +253,7 @@ main (int   argc,
       mongoc_log_set_handler (log_handler, NULL);
    }
 
-   mongoc_ssl_init ();
+   mongoc_init ();
 
    run_test ("/mongoc/tls/altname", test_mongoc_tls_altname);
    run_test ("/mongoc/tls/bad_password", test_mongoc_tls_bad_password);
