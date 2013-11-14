@@ -38,14 +38,18 @@ typedef void (*mock_server_handler_t) (mock_server_t   *server,
                                        void            *user_data);
 
 
-mock_server_t *mock_server_new           (const char            *address,
-                                          bson_uint16_t          port,
-                                          mock_server_handler_t  handler,
-                                          void                  *handler_data);
-int            mock_server_run           (mock_server_t         *server);
-void           mock_server_quit          (mock_server_t         *server,
-                                          int                    code);
-void           mock_server_destroy       (mock_server_t         *server);
+mock_server_t *mock_server_new              (const char            *address,
+                                             bson_uint16_t          port,
+                                             mock_server_handler_t  handler,
+                                             void                  *handler_data);
+void           mock_server_set_wire_version (mock_server_t         *server,
+                                             bson_int32_t           min_wire_version,
+                                             bson_int32_t           max_wire_version);
+int            mock_server_run              (mock_server_t         *server);
+void           mock_server_run_in_thread    (mock_server_t         *server);
+void           mock_server_quit             (mock_server_t         *server,
+                                             int                    code);
+void           mock_server_destroy          (mock_server_t         *server);
 
 
 BSON_END_DECLS

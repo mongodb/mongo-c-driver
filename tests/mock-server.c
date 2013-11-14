@@ -38,10 +38,145 @@ struct _mock_server_t
 {
    mock_server_handler_t  handler;
    void                  *handler_data;
+
+   pthread_t              main_thread;
+   bson_bool_t            using_main_thread;
+
    const char            *address;
+
    bson_uint16_t          port;
    int                    socket;
+
+   int                    last_response_id;
+
+   bson_bool_t            isMaster;
+   int                    minWireVersion;
+   int                    maxWireVersion;
+   int                    maxBsonObjectSize;
+   int                    maxMessageSizeBytes;
 };
+
+
+static void
+reply_simple (mock_server_t        *server,
+              mongoc_stream_t      *client,
+              const mongoc_rpc_t   *request,
+              mongoc_reply_flags_t  flags,
+              const bson_t         *doc)
+{
+   struct iovec *iov;
+   mongoc_array_t ar;
+   mongoc_rpc_t r = {{ 0 }};
+   size_t expected = 0;
+   size_t n_written;
+   int iovcnt;
+   int i;
+
+   BSON_ASSERT (server);
+   BSON_ASSERT (request);
+   BSON_ASSERT (client);
+   BSON_ASSERT (doc);
+
+   mongoc_array_init (&ar, sizeof (struct iovec));
+
+   r.reply.msg_len = 0;
+   r.reply.request_id = ++server->last_response_id;
+   r.reply.response_to = request->header.request_id;
+   r.reply.opcode = MONGOC_OPCODE_REPLY;
+   r.reply.flags = 0;
+   r.reply.cursor_id = 0;
+   r.reply.start_from = 0;
+   r.reply.n_returned = 1;
+   r.reply.documents = bson_get_data (doc);
+   r.reply.documents_len = doc->len;
+
+   mongoc_rpc_gather (&r, &ar);
+   mongoc_rpc_swab_to_le (&r);
+
+   iov = ar.data;
+   iovcnt = ar.len;
+
+   for (i = 0; i < iovcnt; i++) {
+      expected += iov[i].iov_len;
+   }
+
+   n_written = mongoc_stream_writev (client, iov, iovcnt, -1);
+
+   assert (n_written == expected);
+
+   mongoc_array_destroy (&ar);
+}
+
+
+static bson_bool_t
+handle_ismaster (mock_server_t   *server,
+                 mongoc_stream_t *client,
+                 mongoc_rpc_t    *rpc,
+                 const bson_t    *doc)
+{
+   bson_t reply_doc = BSON_INITIALIZER;
+   time_t now = time (NULL);
+
+   BSON_ASSERT (server);
+   BSON_ASSERT (client);
+   BSON_ASSERT (rpc);
+   BSON_ASSERT (doc);
+
+   bson_append_bool (&reply_doc, "ismaster", -1, server->isMaster);
+   bson_append_int32 (&reply_doc, "maxBsonObjectSize", -1,
+                      server->maxBsonObjectSize);
+   bson_append_int32 (&reply_doc, "maxMessageSizeBytes", -1,
+                      server->maxMessageSizeBytes);
+   bson_append_int32 (&reply_doc, "minWireVersion", -1,
+                      server->minWireVersion);
+   bson_append_int32 (&reply_doc, "maxWireVersion", -1,
+                      server->maxWireVersion);
+   bson_append_double (&reply_doc, "ok", -1, 1.0);
+   bson_append_time_t (&reply_doc, "localtime", -1, now);
+
+   reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply_doc);
+
+   bson_destroy (&reply_doc);
+}
+
+
+static bson_bool_t
+handle_command (mock_server_t   *server,
+                mongoc_stream_t *client,
+                mongoc_rpc_t    *rpc)
+{
+   bson_int32_t len;
+   bson_bool_t ret = FALSE;
+   bson_iter_t iter;
+   const char *key;
+   bson_t doc;
+
+   BSON_ASSERT (rpc);
+
+   if (rpc->header.opcode != MONGOC_OPCODE_QUERY) {
+      return FALSE;
+   }
+
+   memcpy (&len, rpc->query.query, 4);
+   len = BSON_UINT32_FROM_LE (len);
+   if (!bson_init_static (&doc, rpc->query.query, len)) {
+      return FALSE;
+   }
+
+   if (!bson_iter_init (&iter, &doc) || !bson_iter_next (&iter)) {
+      return FALSE;
+   }
+
+   key = bson_iter_key (&iter);
+
+   if (!strcasecmp (key, "ismaster")) {
+      ret = handle_ismaster (server, client, rpc, &doc);
+   }
+
+   bson_destroy (&doc);
+
+   return ret;
+}
 
 
 static void *
@@ -83,7 +218,9 @@ again:
 
    mongoc_rpc_swab_from_le(&rpc);
 
-   server->handler(server, stream, &rpc, server->handler_data);
+   if (!handle_command(server, stream, &rpc)) {
+      server->handler(server, stream, &rpc, server->handler_data);
+   }
 
    goto again;
 
@@ -96,6 +233,14 @@ failure:
 }
 
 
+static void
+dummy_handler (mock_server_t   *server,
+               mongoc_stream_t *stream,
+               mongoc_rpc_t    *rpc,
+               void            *user_data)
+{
+}
+
 
 mock_server_t *
 mock_server_new (const char            *address,
@@ -104,8 +249,6 @@ mock_server_new (const char            *address,
                  void                  *handler_data)
 {
    mock_server_t *server;
-
-   bson_return_val_if_fail(handler, NULL);
 
    if (!address) {
       address = "127.0.0.1";
@@ -116,10 +259,16 @@ mock_server_new (const char            *address,
    }
 
    server = bson_malloc0(sizeof *server);
-   server->handler = handler;
+   server->handler = handler ? handler : dummy_handler;
    server->handler_data = handler_data;
    server->socket = -1;
    server->port = port;
+
+   server->minWireVersion = 0;
+   server->maxWireVersion = 0;
+   server->isMaster = TRUE;
+   server->maxBsonObjectSize = 16777216;
+   server->maxMessageSizeBytes = 48000000;
 
    return server;
 }
@@ -196,6 +345,27 @@ mock_server_run (mock_server_t *server)
 }
 
 
+static void *
+main_thread (void *data)
+{
+   mock_server_t *server = data;
+
+   mock_server_run (server);
+
+   return NULL;
+}
+
+
+void
+mock_server_run_in_thread (mock_server_t *server)
+{
+   BSON_ASSERT (server);
+
+   server->using_main_thread = TRUE;
+   pthread_create (&server->main_thread, NULL, main_thread, server);
+}
+
+
 void
 mock_server_quit (mock_server_t *server,
                   int            code)
@@ -214,4 +384,16 @@ mock_server_destroy (mock_server_t *server)
    if (server) {
       bson_free(server);
    }
+}
+
+
+void
+mock_server_set_wire_version (mock_server_t *server,
+                              bson_int32_t   min_wire_version,
+                              bson_int32_t   max_wire_version)
+{
+   BSON_ASSERT (server);
+
+   server->minWireVersion = min_wire_version;
+   server->maxWireVersion = max_wire_version;
 }
