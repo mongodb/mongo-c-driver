@@ -21,6 +21,7 @@
 
 #include <bson.h>
 
+#include "mongoc-buffer-private.h"
 #include "mongoc-client.h"
 
 

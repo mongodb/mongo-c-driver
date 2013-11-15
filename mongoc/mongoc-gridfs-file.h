@@ -1,0 +1,89 @@
+/*
+ * Copyright 2013 MongoDB Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+#ifndef MONGOC_GRIDFS_FILE_H
+#define MONGOC_GRIDFS_FILE_H
+
+
+#include <bson.h>
+#include <sys/uio.h>
+
+BSON_BEGIN_DECLS
+
+#define MONGOC_GRIDFS_FILE_STR_HEADER(name) \
+   const char * \
+   mongoc_gridfs_file_get_##name (mongoc_gridfs_file_t * file); \
+   void \
+      mongoc_gridfs_file_set_##name (mongoc_gridfs_file_t * file, \
+                                     const char           *str);
+
+#define MONGOC_GRIDFS_FILE_BSON_HEADER(name) \
+   const bson_t * \
+   mongoc_gridfs_file_get_##name (mongoc_gridfs_file_t * file); \
+   void \
+      mongoc_gridfs_file_set_##name (mongoc_gridfs_file_t * file, \
+                                     const bson_t * bson);
+
+typedef struct _mongoc_gridfs_file mongoc_gridfs_file_t;
+
+typedef struct _mongoc_gridfs_file_opt
+{
+   const char   *md5;
+   const char   *filename;
+   const char   *content_type;
+   const bson_t *aliases;
+   const bson_t *metadata;
+   bson_uint32_t chunk_size;
+} mongoc_gridfs_file_opt_t;
+
+MONGOC_GRIDFS_FILE_STR_HEADER (md5);
+MONGOC_GRIDFS_FILE_STR_HEADER (filename);
+MONGOC_GRIDFS_FILE_STR_HEADER (content_type);
+MONGOC_GRIDFS_FILE_BSON_HEADER (aliases);
+MONGOC_GRIDFS_FILE_BSON_HEADER (metadata);
+
+ssize_t
+mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
+                           struct iovec         *iov,
+                           size_t                iovcnt,
+                           bson_uint32_t         timeout_msec);
+
+ssize_t
+mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
+                          struct iovec         *iov,
+                          size_t                iovcnt,
+                          ssize_t               min_bytes,
+                          bson_uint32_t         timeout_msec);
+
+
+int
+mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
+                         bson_uint64_t         delta,
+                         int                   whence);
+
+bson_bool_t
+mongoc_gridfs_file_save (mongoc_gridfs_file_t *file);
+
+
+void
+mongoc_gridfs_file_destroy (mongoc_gridfs_file_t *gridfs_file);
+
+
+BSON_END_DECLS
+
+
+#endif /* MONGOC_GRIDFS_FILE_H */
