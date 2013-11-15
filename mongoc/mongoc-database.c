@@ -261,9 +261,10 @@ mongoc_database_drop (mongoc_database_t *database, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_database_add_user --
+ * mongoc_database_add_user_legacy --
  *
  *       A helper to add a user or update their password on @database.
+ *       This uses the legacy protocol by inserting into system.users.
  *
  * Returns:
  *       TRUE if successful; otherwise FALSE and @error is set.
@@ -274,11 +275,11 @@ mongoc_database_drop (mongoc_database_t *database, /* IN */
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
-mongoc_database_add_user (mongoc_database_t *database, /* IN */
-                          const char        *username, /* IN */
-                          const char        *password, /* IN */
-                          bson_error_t      *error)    /* OUT */
+static bson_bool_t
+mongoc_database_add_user_legacy (mongoc_database_t *database, /* IN */
+                                 const char        *username, /* IN */
+                                 const char        *password, /* IN */
+                                 bson_error_t      *error)    /* OUT */
 {
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor = NULL;
@@ -348,6 +349,49 @@ failure:
    bson_free(pwd);
 
    return ret;
+}
+
+
+/**
+ * mongoc_database_add_user:
+ * @database: A #mongoc_database_t.
+ * @username: A string containing the username.
+ * @password: (allow-none): A string containing password, or NULL.
+ * @roles: (allow-none): An optional bson_t of roles.
+ * @custom_data: (allow-none): An optional bson_t of data to store.
+ * @error: (out) (allow-none): A location for a bson_error_t or %NULL.
+ *
+ * Creates a new user with access to @database.
+ *
+ * Returns: None.
+ * Side effects: None.
+ */
+bson_bool_t
+mongoc_database_add_user (mongoc_database_t *database,
+                          const char        *username,
+                          const char        *password,
+                          const bson_t      *roles,
+                          const bson_t      *custom_data,
+                          bson_error_t      *error)
+{
+   bson_bool_t ret = FALSE;
+
+   ENTRY;
+
+   BSON_ASSERT (database);
+   BSON_ASSERT (username);
+
+   /*
+    * TODO: CDRIVER-232
+    *
+    * We need to first submit a command to the target system to manipulate
+    * the user using commands. If the command fails, we fallback to legacy
+    * user manipulation.
+    */
+
+   ret = mongoc_database_add_user_legacy (database, username, password, error);
+
+   RETURN (ret);
 }
 
 
