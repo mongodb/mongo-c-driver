@@ -1494,6 +1494,14 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
          continue;
       }
 
+      if (cluster->nodes[i].needs_auth) {
+         if (!mongoc_cluster_auth_node (cluster, &cluster->nodes[i], error)) {
+            mongoc_cluster_node_destroy (&cluster->nodes[i]);
+            RETURN (FALSE);
+         }
+         cluster->nodes[i].needs_auth = FALSE;
+      }
+
       if (-1 == (ping = mongoc_cluster_ping_node(cluster,
                                                  &cluster->nodes[i],
                                                  error))) {
