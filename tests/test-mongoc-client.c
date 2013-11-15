@@ -15,6 +15,64 @@ static char *gTestUriWithPassword;
 static char *gTestUriWithBadPassword;
 
 
+#define MONGOD_VERSION_HEX(a, b, c) ((a << 16) | (b << 8) | (c))
+
+
+static bson_uint32_t
+get_version_hex (mongoc_client_t *client)
+{
+   mongoc_database_t *database;
+   mongoc_cursor_t *cursor;
+   bson_uint32_t version = 0;
+   const bson_t *doc;
+   bson_iter_t child;
+   bson_iter_t iter;
+   bson_t cmd = BSON_INITIALIZER;
+   int i;
+
+   bson_append_int32 (&cmd, "buildInfo", -1, 1);
+
+   database = mongoc_client_get_database (client, "admin");
+   cursor = mongoc_database_command (database,
+                                     MONGOC_QUERY_NONE,
+                                     0,
+                                     1,
+                                     &cmd,
+                                     NULL,
+                                     NULL);
+
+   if (mongoc_cursor_next (cursor, &doc)) {
+      if (bson_iter_init_find (&iter, doc, "versionArray") &&
+          bson_iter_recurse (&iter, &child)) {
+         for (i = 0; i < 3; i++) {
+            if (bson_iter_next (&child) && BSON_ITER_HOLDS_INT32 (&child)) {
+               version = (version << 8) | (bson_iter_int32 (&child) & 0xFF);
+            }
+         }
+      }
+   }
+
+   mongoc_database_destroy (database);
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (&cmd);
+
+   return version;
+}
+
+
+static bson_bool_t
+version_check (mongoc_client_t *client,
+               int              a,
+               int              b,
+               int              c)
+{
+   int version;
+
+   version = get_version_hex (client);
+   return version >= MONGOD_VERSION_HEX (a, b, c);
+}
+
+
 static void
 test_mongoc_client_authenticate (void)
 {
@@ -26,6 +84,14 @@ test_mongoc_client_authenticate (void)
    bson_error_t error;
    bson_bool_t r;
    bson_t q;
+
+   client = mongoc_client_new (gTestUri);
+   if (version_check (client, 2, 5, 0)) {
+      MONGOC_DEBUG ("Skipping test, 2.5.x not yet implemented.");
+      mongoc_client_destroy (client);
+      return;
+   }
+   mongoc_client_destroy (client);
 
    /*
     * Add a user to the test database.
