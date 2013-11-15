@@ -300,7 +300,7 @@ test_aggregate (void)
    if (mongoc_cursor_error(cursor, &error)) {
       MONGOC_WARNING("%s", error.message);
    }
-   if (!client->cluster.nodes[cursor->hint - 1].wire_version) {
+   if (client->cluster.wire_version == 0) {
       assert(!r);
       assert(!doc);
    } else {

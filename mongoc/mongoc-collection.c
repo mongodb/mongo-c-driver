@@ -755,7 +755,6 @@ mongoc_collection_insert (
       const mongoc_write_concern_t *write_concern, /* IN */
       bson_error_t                 *error)         /* OUT */
 {
-   mongoc_cluster_node_t *primary;
    mongoc_buffer_t buffer;
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
@@ -770,6 +769,10 @@ mongoc_collection_insert (
    }
 
    /*
+    * TODO: Warm up client so we have valid wire version to work with.
+    */
+
+   /*
     * WARNING:
     *
     *    Because we do lazy connections, we potentially have a situation
@@ -779,11 +782,9 @@ mongoc_collection_insert (
     *    We might need to ensure we have a connection at this point.
     */
 
-   primary = mongoc_cluster_get_primary (&collection->client->cluster);
-
-   if (!primary || !primary->wire_version) {
+   if (collection->client->cluster.wire_version == 0) {
       /*
-       * TODO: Do old-style write commands.
+       * TODO: Do old style write commands.
        */
    } else {
       /*
