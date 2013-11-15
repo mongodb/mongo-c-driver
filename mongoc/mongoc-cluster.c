@@ -636,10 +636,18 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
    bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, NULL);
 
    /*
-    * If we are in direct mode, short cut and take the first node.
+    * We can take a few short-cut's if we are not talking to a replica set.
     */
-   if (cluster->mode == MONGOC_CLUSTER_DIRECT) {
-      RETURN(cluster->nodes[0].stream ? &cluster->nodes[0] : NULL);
+   switch (cluster->mode) {
+   case MONGOC_CLUSTER_DIRECT:
+      RETURN (cluster->nodes[0].stream ? &cluster->nodes[0] : NULL);
+   case MONGOC_CLUSTER_SHARDED_CLUSTER:
+      need_primary = FALSE;
+      need_secondary = FALSE;
+      GOTO (dispatch);
+   case MONGOC_CLUSTER_REPLICA_SET:
+   default:
+      break;
    }
 
    /*
@@ -676,6 +684,8 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
          break;
       }
    }
+
+dispatch:
 
    /*
     * Build our list of nodes with established connections. Short circuit if
@@ -1006,6 +1016,14 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
                       node->min_wire_version,
                       node->max_wire_version);
       GOTO (failure);
+   }
+
+   if (bson_iter_init_find (&iter, &reply, "msg") &&
+       BSON_ITER_HOLDS_UTF8 (&iter) &&
+       (strcmp ("isdbgrid", bson_iter_utf8 (&iter, NULL)) == 0)) {
+      /*
+       * TODO: This is actually a sharded cluster!
+       */
    }
 
    /*
@@ -1484,6 +1502,94 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
 }
 
 
+static bson_bool_t
+mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
+                                          bson_error_t     *error)
+{
+   const mongoc_host_list_t *hosts;
+   const mongoc_host_list_t *iter;
+   mongoc_stream_t *stream;
+   bson_uint32_t i;
+   bson_int32_t ping;
+
+   ENTRY;
+
+   BSON_ASSERT (cluster);
+
+   MONGOC_DEBUG ("Reconnecting to sharded cluster.");
+
+   /*
+    * Sharded Cluster (Re)Connection Strategy
+    * =======================================
+    *
+    * First we break all existing connections. This may and probably
+    * should change.
+    *
+    * Sharded cluster connection is pretty simple, in that we just need
+    * to connect to all of the nodes that we are configured to know
+    * about. The reconnect_direct case will also update things if it
+    * discovers that the node it connected to was a sharded cluster.
+    *
+    * We need to check for "msg" field of the "isMaster" command to
+    * ensure that we have connected to an "isdbgrid".
+    *
+    * If we can connect to all of the nodes, we are in a good state,
+    * otherwise we are in an unhealthy state. If no connections were
+    * established then we are in a failed state.
+    */
+
+   cluster->last_reconnect = bson_get_monotonic_time ();
+
+   hosts = mongoc_uri_get_hosts (cluster->uri);
+
+   /*
+    * Reconnect to each of our configured hosts.
+    */
+   for (iter = hosts, i = 0; iter; iter = iter->next) {
+      stream = mongoc_client_create_stream (cluster->client, iter, error);
+
+      if (!stream) {
+         MONGOC_WARNING ("Failed connection to %s", iter->host_and_port);
+         continue;
+      }
+
+      mongoc_cluster_node_init (&cluster->nodes[i]);
+
+      cluster->nodes[i].host = *iter;
+      cluster->nodes[i].index = i;
+      cluster->nodes[i].stream = stream;
+
+      if (!mongoc_cluster_ismaster (cluster, &cluster->nodes[i], error)) {
+         mongoc_cluster_node_destroy (&cluster->nodes[i]);
+         continue;
+      }
+
+      if (-1 == (ping = mongoc_cluster_ping_node (cluster,
+                                                  &cluster->nodes[i],
+                                                  error))) {
+         MONGOC_INFO ("%s: Lost connection during ping.",
+                      iter->host_and_port);
+         mongoc_cluster_node_destroy (&cluster->nodes[i]);
+         continue;
+      }
+
+      mongoc_cluster_node_track_ping (&cluster->nodes[i], ping);
+
+      i++;
+   }
+
+   if (i == 0) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
+                      "No acceptable peer could be found.");
+      RETURN (FALSE);
+   }
+
+   RETURN (TRUE);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -1521,8 +1627,8 @@ mongoc_cluster_reconnect (mongoc_cluster_t *cluster, /* IN */
       ret = mongoc_cluster_reconnect_replica_set(cluster, error);
       RETURN(ret);
    case MONGOC_CLUSTER_SHARDED_CLUSTER:
-      /* TODO */
-      break;
+      ret = mongoc_cluster_reconnect_sharded_cluster(cluster, error);
+      RETURN(ret);
    default:
       break;
    }

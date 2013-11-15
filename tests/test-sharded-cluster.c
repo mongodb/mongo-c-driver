@@ -16,6 +16,34 @@ static ha_node_t *node_2_3;
 static void
 test1 (void)
 {
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error = { 0 };
+   bson_bool_t r;
+   bson_t q = BSON_INITIALIZER;
+   int i;
+
+   BSON_ASSERT (cluster);
+
+   bson_append_utf8 (&q, "hello", -1, "world", -1);
+
+   client = ha_sharded_cluster_get_client (cluster);
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   for (i = 0; i < 100; i++) {
+      r = mongoc_collection_insert (collection,
+                                    MONGOC_INSERT_NONE,
+                                    &q,
+                                    NULL,
+                                    &error);
+      BSON_ASSERT (r);
+      BSON_ASSERT (!error.domain);
+      BSON_ASSERT (!error.code);
+   }
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&q);
 }
 
 int
@@ -36,6 +64,8 @@ main (int argc,
    ha_sharded_cluster_add_replica_set(cluster, repl_1);
    ha_sharded_cluster_add_replica_set(cluster, repl_2);
    ha_sharded_cluster_add_config(cluster, "config1");
+   ha_sharded_cluster_add_router(cluster, "router1");
+   ha_sharded_cluster_add_router(cluster, "router2");
 
    ha_sharded_cluster_start(cluster);
    ha_sharded_cluster_wait_for_healthy(cluster);

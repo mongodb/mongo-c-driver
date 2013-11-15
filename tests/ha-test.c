@@ -134,7 +134,7 @@ ha_node_restart (ha_node_t *node)
 
    ha_node_kill(node);
 
-   if (!node->is_router) {
+   if (!node->is_router && !node->is_config) {
       argv[i++] = (char *) "mongod";
       argv[i++] = (char *) "--dbpath";
       argv[i++] = (char *) ".";
@@ -146,12 +146,8 @@ ha_node_restart (ha_node_t *node)
       argv[i++] = (char *) "--nohttpinterface";
       argv[i++] = (char *) "--bind_ip";
       argv[i++] = (char *) "127.0.0.1";
-      if (node->is_config) {
-         argv[i++] = (char *) "--configsvr";
-      } else {
-         argv[i++] = (char *) "--replSet";
-         argv[i++] = node->repl_set;
-      }
+      argv[i++] = (char *) "--replSet";
+      argv[i++] = node->repl_set;
 
 #ifdef MONGOC_HAVE_SSL
       if (node->ssl_opt) {
@@ -168,16 +164,27 @@ ha_node_restart (ha_node_t *node)
          argv[i++] = (char *) "--sslOnNormalPorts";
       }
 #endif
+
       argv[i++] = "--logpath";
       argv[i++] = "log";
-
+      argv[i++] = NULL;
+   } else if (node->is_config) {
+      argv[i++] = (char *) "mongod";
+      argv[i++] = (char *) "--configsvr";
+      argv[i++] = (char *) "--dbpath";
+      argv[i++] = (char *) ".";
+      argv[i++] = (char *) "--port";
+      argv[i++] = (char *) portstr;
       argv[i++] = NULL;
    } else {
       argv[i++] = (char *) "mongos";
-      argv[i++] = (char *) "--configdb";
-      argv[i++] = node->configopt;
+      argv[i++] = (char *) "--bind_ip";
+      argv[i++] = (char *) "127.0.0.1";
+      argv[i++] = (char *) "--nohttpinterface";
       argv[i++] = (char *) "--port";
       argv[i++] = (char *) portstr;
+      argv[i++] = (char *) "--configdb";
+      argv[i++] = node->configopt;
       argv[i++] = NULL;
    }
 
@@ -708,9 +715,64 @@ ha_sharded_cluster_add_router (ha_sharded_cluster_t *cluster,
 }
 
 
+static void
+ha_config_add_shard (ha_node_t        *node,
+                     ha_replica_set_t *replica_set)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_string_t *shardstr;
+   bson_error_t error;
+   bson_bool_t r;
+   bson_t reply;
+   bson_t cmd = BSON_INITIALIZER;
+   char *uristr;
+
+   uristr = bson_strdup_printf ("mongodb://127.0.0.1:%hu/", node->port);
+   client = mongoc_client_new (uristr);
+   collection = mongoc_client_get_collection (client, "admin", "fake");
+
+   shardstr = bson_string_new (NULL);
+   bson_string_append_printf (shardstr, "%s/127.0.0.1:%hu",
+                              replica_set->name,
+                              replica_set->nodes->port);
+
+   bson_append_utf8 (&cmd, "addShard", -1, shardstr->str, shardstr->len);
+
+   bson_string_free (shardstr, TRUE);
+
+again:
+   sleep (1);
+
+   r = mongoc_collection_command_simple (collection, &cmd, NULL, &reply, &error);
+
+   if (!r) {
+      fprintf (stderr, "%s\n", error.message);
+      goto again;
+   }
+
+#if 1
+   {
+      char *str;
+
+      str = bson_as_json (&reply, NULL);
+      printf ("%s\n", str);
+      bson_free (str);
+   }
+#endif
+
+   bson_destroy (&reply);
+   bson_destroy (&cmd);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_free (uristr);
+}
+
+
 void
 ha_sharded_cluster_start (ha_sharded_cluster_t *cluster)
 {
+   bson_string_t *configopt;
    struct stat st;
    ha_node_t *iter;
    char *cmd;
@@ -740,15 +802,34 @@ ha_sharded_cluster_start (ha_sharded_cluster_t *cluster)
       }
    }
 
+   configopt = bson_string_new (NULL);
+
    for (iter = cluster->configs; iter; iter = iter->next) {
       ha_node_setup(iter);
       ha_node_restart(iter);
+      bson_string_append_printf (configopt, "127.0.0.1:%hu%s",
+                                 iter->port,
+                                 iter->next ? "," : "");
    }
 
+   sleep (5);
+
    for (iter = cluster->routers; iter; iter = iter->next) {
-      ha_node_setup(iter);
-      ha_node_restart(iter);
+      bson_free (iter->configopt);
+      iter->configopt = bson_strdup (configopt->str);
+      ha_node_setup (iter);
+      ha_node_restart (iter);
    }
+
+   ha_sharded_cluster_wait_for_healthy (cluster);
+
+   for (i = 0; i < 12; i++) {
+      if (cluster->replicas[i]) {
+         ha_config_add_shard (cluster->routers, cluster->replicas[i]);
+      }
+   }
+
+   bson_string_free (configopt, TRUE);
 }
 
 
@@ -788,4 +869,32 @@ ha_sharded_cluster_shutdown (ha_sharded_cluster_t *cluster)
    for (iter = cluster->routers; iter; iter = iter->next) {
       ha_node_kill(iter);
    }
+}
+
+
+mongoc_client_t *
+ha_sharded_cluster_get_client (ha_sharded_cluster_t *cluster)
+{
+   const ha_node_t *iter;
+   mongoc_client_t *client;
+   bson_string_t *str;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (cluster->routers);
+
+   str = bson_string_new ("mongodb://");
+
+   for (iter = cluster->routers; iter; iter = iter->next) {
+      bson_string_append_printf (str, "127.0.0.1:%hu%s",
+                                 iter->port,
+                                 iter->next ? "," : "");
+   }
+
+   bson_string_append (str, "/");
+
+   client = mongoc_client_new (str->str);
+
+   bson_string_free (str, TRUE);
+
+   return client;
 }

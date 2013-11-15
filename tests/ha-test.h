@@ -106,6 +106,12 @@ ha_sharded_cluster_add_replica_set (ha_sharded_cluster_t *cluster,
 
 void
 ha_sharded_cluster_shutdown (ha_sharded_cluster_t *cluster);
+
+
+mongoc_client_t *
+ha_sharded_cluster_get_client (ha_sharded_cluster_t *cluster);
+
+
 BSON_END_DECLS
 
 
