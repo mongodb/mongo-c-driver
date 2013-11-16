@@ -57,26 +57,39 @@ struct _mongoc_client_t
 };
 
 
-mongoc_stream_t *mongoc_client_create_stream (mongoc_client_t              *client,
-                                              const mongoc_host_list_t     *host,
-                                              bson_error_t                 *error);
-bson_uint32_t    mongoc_client_sendv         (mongoc_client_t              *client,
-                                              mongoc_rpc_t                 *rpcs,
-                                              size_t                        rpcs_len,
-                                              bson_uint32_t                 hint,
-                                              const mongoc_write_concern_t *write_concern,
-                                              const mongoc_read_prefs_t    *read_prefs,
-                                              bson_error_t                 *error);
-bson_bool_t      mongoc_client_recv          (mongoc_client_t              *client,
-                                              mongoc_rpc_t                 *rpc,
-                                              mongoc_buffer_t              *buffer,
-                                              bson_uint32_t                 hint,
-                                              bson_error_t                 *error);
-bson_bool_t      mongoc_client_recv_gle      (mongoc_client_t              *client,
-                                              bson_uint32_t                 hint,
-                                              bson_error_t                 *error);
-bson_uint32_t    mongoc_client_stamp         (mongoc_client_t              *client,
-                                              bson_uint32_t                 node);
+mongoc_stream_t *
+mongoc_client_create_stream (mongoc_client_t          *client,
+                             const mongoc_host_list_t *host,
+                             bson_error_t             *error);
+
+
+bson_uint32_t
+mongoc_client_sendv (mongoc_client_t              *client,
+                     mongoc_rpc_t                 *rpcs,
+                     size_t                        rpcs_len,
+                     bson_uint32_t                 hint,
+                     const mongoc_write_concern_t *write_concern,
+                     const mongoc_read_prefs_t    *read_prefs,
+                     bson_error_t                 *error);
+
+
+bson_bool_t
+mongoc_client_recv (mongoc_client_t *client,
+                    mongoc_rpc_t    *rpc,
+                    mongoc_buffer_t *buffer,
+                    bson_uint32_t    hint,
+                    bson_error_t    *error);
+
+
+bson_bool_t
+mongoc_client_recv_gle (mongoc_client_t *client,
+                        bson_uint32_t    hint,
+                        bson_error_t    *error);
+
+
+bson_uint32_t
+mongoc_client_stamp (mongoc_client_t *client,
+                     bson_uint32_t    node);
 
 
 BSON_END_DECLS
