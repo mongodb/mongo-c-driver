@@ -154,6 +154,12 @@ mongoc_counters_alloc (size_t size)
       goto use_malloc;
    }
 
+   /*
+    * NOTE:
+    *
+    * ftruncate() will cause reads to be zero. Therefore, we don't need to
+    * do write() of zeroes to initialize the shared memory area.
+    */
    if (-1 == ftruncate(fd, size)) {
       goto failure;
    }
@@ -265,7 +271,6 @@ mongoc_counters_init (void)
    infos_size = LAST_COUNTER * sizeof *info;
 
    counters = (mongoc_counters_t *)segment;
-   counters->size = size;
    counters->n_cpu = _mongoc_get_n_cpu();
    counters->n_counters = 0;
    counters->infos_offset = sizeof *counters;
@@ -279,4 +284,13 @@ mongoc_counters_init (void)
 #include "mongoc-counters.defs"
 #undef COUNTER
 
+   /*
+    * NOTE:
+    *
+    * Only update the size of the shared memory area for the client after
+    * we have initialized the rest of the counters. Don't forget our memory
+    * barrier to prevent compiler reordering.
+    */
+   __sync_synchronize ();
+   counters->size = size;
 }
