@@ -103,6 +103,15 @@ static inline void \
 mongoc_counter_##ident##_dec (void) \
 { \
    ADD(__mongoc_counter_##ident.cpus[CURCPU].slots[COUNTER_##ident%SLOTS_PER_CACHELINE], -1); \
+} \
+static inline void \
+mongoc_counter_##ident##_reset (void) \
+{ \
+   int i; \
+   for (i = 0; i < NCPU; i++) { \
+      __mongoc_counter_##ident.cpus[i].slots[COUNTER_##ident%SLOTS_PER_CACHELINE] = 0; \
+   } \
+   __sync_synchronize (); \
 }
 #include "mongoc-counters.defs"
 #undef COUNTER
