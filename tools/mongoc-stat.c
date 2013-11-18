@@ -73,6 +73,7 @@ static mongoc_counters_t *
 mongoc_counters_new_from_pid (unsigned pid)
 {
    mongoc_counters_t *counters;
+   bson_int32_t len;
    size_t size;
    void *mem;
    char name[32];
@@ -86,7 +87,17 @@ mongoc_counters_new_from_pid (unsigned pid)
       return NULL;
    }
 
-   size = getpagesize();
+   if (4 != pread (fd, &len, 4, 0)) {
+      perror("Failed to load shared memory segment");
+      return NULL;
+   }
+
+   if (!len) {
+      perror("Shared memory area is not yet initialized by owning process.");
+      return NULL;
+   }
+
+   size = len;
 
    if (MAP_FAILED == (mem = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0))) {
       fprintf(stderr, "Failed to mmap shared memory segment of size: %u",
@@ -96,17 +107,11 @@ mongoc_counters_new_from_pid (unsigned pid)
    }
 
    counters = (mongoc_counters_t *)mem;
-   size = counters->size;
-   munmap(mem, getpagesize());
-
-   if (MAP_FAILED == (mem = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0))) {
-      fprintf(stderr, "Failed to mmap shared memory segment of size: %u",
-             (unsigned)size);
-      close(fd);
+   if (counters->size != len) {
+      perror("Corrupted shared memory segment.");
       return NULL;
    }
 
-   counters = (mongoc_counters_t *)mem;
    close(fd);
 
    return counters;
