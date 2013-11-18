@@ -207,11 +207,19 @@ mongoc_counters_register (mongoc_counters_t *counters,
    BSON_ASSERT(name);
    BSON_ASSERT(description);
 
+   /*
+    * Implementation Note:
+    *
+    * The memory barrier is required so that all of the above has been
+    * completed. Then increment the n_counters so that a reading application
+    * only knows about the counter after we have initialized it.
+    */
+
    n_cpu = _mongoc_get_n_cpu();
    segment = (char *)counters;
 
    infos = (mongoc_counter_info_t *)(segment + counters->infos_offset);
-   infos = &infos[counters->n_counters++];
+   infos = &infos[counters->n_counters];
    infos->slot = num % SLOTS_PER_CACHELINE;
    infos->offset = (counters->values_offset +
                     ((num / SLOTS_PER_CACHELINE) *
@@ -223,6 +231,10 @@ mongoc_counters_register (mongoc_counters_t *counters,
    infos->category[sizeof infos->category-1] = '\0';
    infos->name[sizeof infos->name-1] = '\0';
    infos->description[sizeof infos->description-1] = '\0';
+
+   __sync_synchronize ();
+
+   counters->n_counters++;
 
    return infos->offset;
 }
@@ -258,6 +270,8 @@ mongoc_counters_init (void)
    counters->n_counters = 0;
    counters->infos_offset = sizeof *counters;
    counters->values_offset = counters->infos_offset + infos_size;
+
+   BSON_ASSERT ((counters->values_offset % 64) == 0);
 
 #define COUNTER(ident, Category, Name, Desc) \
    off = mongoc_counters_register(counters, COUNTER_##ident, Category, Name, Desc); \
