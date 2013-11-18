@@ -1,0 +1,69 @@
+mongoc_collection_aggregate(3)
+==============================
+
+
+NAME
+----
+mongoc_collection_aggregate, mongoc_collection_aggregate_legacy - Execute an
+'aggregation' query
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_cursor_t *
+mongoc_collection_aggregate (mongoc_collection_t       *collection,
+                             mongoc_query_flags_t       flags,
+                             const bson_t              *pipeline,
+                             const mongoc_read_prefs_t *read_prefs)
+
+bson_bool_t
+mongoc_collection_aggregate_legacy (mongoc_collection_t       *collection,
+                                    mongoc_query_flags_t       flags,
+                                    const bson_t              *pipeline,
+                                    const mongoc_read_prefs_t *read_prefs,
+                                    bson_t                    *reply,
+                                    bson_error_t              *error);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_collection_aggregate()_ function shall execute an aggregation query
+on the underlying 'collection'.  The bson 'pipeline' is not validated, simply
+passed along as appropriate to the server.  As such, compatibility and errors
+should be validated in the appropriate server documentation.
+
+'flags' are the same as in linkmongoc:mongoc_collection_find[3].
+
+The difference between _mongoc_collection_aggregate()_ and
+_mongoc_collection_aggregate_legacy()_ has to do with currenly non-discoverable
+changes in the aggegation api between mongodb 2.4 and 2.6.  The legacy api
+returns values in 'reply', the non-legacy version returns a cursor.
+
+RETURN VALUE
+------------
+The _mongoc_collection_aggregate()_ function returns a new
+linkmongoc:mongoc_cursor[7] if successful.  It returns NULL in the event of
+failure.
+
+The _mongoc_collection_aggregate_legacy()_ function returns true if successful
+and places the output value in 'reply'.
+
+ERRORS
+------
+errors are detected through active use of the linkmongoc:mongoc_cursor[7] or
+through 'error'.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_read_preferences[7]
+http://docs.mongodb.org/manual/aggregation/
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

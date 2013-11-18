@@ -1,0 +1,66 @@
+mongoc_client_get_read_prefs(3)
+===============================
+
+
+NAME
+----
+mongoc_client_get_write_concern, mongoc_client_get_read_prefs, mongoc_client_set_read_prefs, mongoc_client_set_write_concern - get/set read preference and
+write concern
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+const mongoc_write_concern_t * mongoc_client_get_write_concern (
+   const mongoc_client_t *client);
+
+void mongoc_client_set_write_concern (
+   mongoc_client_t              *client,
+   const mongoc_write_concern_t *write_concern);
+
+const mongoc_read_prefs_t * mongoc_client_get_read_prefs (
+   const mongoc_client_t *client);
+
+void mongoc_client_set_read_prefs (
+   mongoc_client_t           *client,
+   const mongoc_read_prefs_t *read_prefs);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_client_get_write_concern()_ function shall return a pointer to a
+linkmongoc:mongoc_write_concern[7].
+
+The _mongoc_client_get_read_prefs()_ function shall return a pointer to a
+linkmongoc:mongoc_read_preference[7].
+
+The _mongoc_client_set_write_concern()_ function shall copy the provided
+'write_concern' into the given 'client'.
+
+The _mongoc_client_set_read_prefs()_ function shall copy the provided
+'read_prefs' into the given 'client'.
+
+RETURN VALUE
+------------
+The _mongoc_client_get_*()_ functions return a pointer to their namesake.
+
+The _mongoc_client_set_*()_ functions return no value.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_client[7]
+linkmongoc:mongoc_read_preference[7]
+linkmongoc:mongoc_write_concern[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

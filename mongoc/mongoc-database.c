@@ -52,8 +52,10 @@
  */
 
 mongoc_database_t *
-_mongoc_database_new (mongoc_client_t *client,
-                      const char      *name)
+_mongoc_database_new (mongoc_client_t              *client,
+                      const char                   *name,
+                      const mongoc_read_prefs_t    *read_prefs,
+                      const mongoc_write_concern_t *write_concern)
 {
    mongoc_database_t *db;
 
@@ -64,6 +66,13 @@ _mongoc_database_new (mongoc_client_t *client,
 
    db = bson_malloc0(sizeof *db);
    db->client = client;
+   db->write_concern = write_concern ?
+      mongoc_write_concern_copy(write_concern) :
+      mongoc_write_concern_new();
+   db->read_prefs = read_prefs ?
+      mongoc_read_prefs_copy(read_prefs) :
+      mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
+
    strncpy(db->name, name, sizeof db->name);
    db->name[sizeof db->name-1] = '\0';
 
@@ -110,27 +119,6 @@ mongoc_database_destroy (mongoc_database_t *database)
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_database_command --
- *
- *       Executes a command on @database. This is performed lazily after
- *       calling mongoc_cursor_next() on the resulting cursor structure.f
- *
- *       This function will always return a mongoc_cursor_t with the
- *       exception of invalid API use.
- *
- * Returns:
- *       A new mongoc_cursor_t that should be freed with
- *       mongoc_cursor_destroy().
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 mongoc_cursor_t *
 mongoc_database_command (mongoc_database_t         *database,
                          mongoc_query_flags_t       flags,
@@ -152,24 +140,6 @@ mongoc_database_command (mongoc_database_t         *database,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_database_command_simple --
- *
- *       A simplified function for running a simple command with no
- *       response using mongoc_database_command().
- *
- * Returns:
- *       TRUE if command executed successfully with a response of
- *       {ok: 1}. Otherwise FALSE and @error is set.
- *
- * Side effects:
- *       @error may be set.
- *
- *--------------------------------------------------------------------------
- */
-
 bson_bool_t
 mongoc_database_command_simple (mongoc_database_t         *database,
                                 const bson_t              *command,
@@ -187,7 +157,6 @@ mongoc_database_command_simple (mongoc_database_t         *database,
    return mongoc_client_command_simple (database->client, database->name,
                                         command, read_prefs, reply, error);
 }
-
 
 /*
  *--------------------------------------------------------------------------

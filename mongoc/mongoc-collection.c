@@ -383,33 +383,6 @@ mongoc_collection_command (mongoc_collection_t       *collection,
                                  skip, n_return, query, fields, read_prefs);
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_command_simple --
- *
- *       Helper to execute a command on a collection.
- *
- *       @reply is always set even upon failure.
- *
- * Parameters:
- *       @collection: A mongoc_collection_t.
- *       @command: A bson containing the command to execute.
- *       @read_prefs: The read preferences or NULL.
- *       @reply: A location to store the result document or NULL.
- *       @error: A location for an error or NULL.
- *
- * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
- *
- * Side effects:
- *       @reply is always set if non-NULL and should be freed with
- *       bson_destroy().
- *
- *--------------------------------------------------------------------------
- */
-
 bson_bool_t
 mongoc_collection_command_simple (mongoc_collection_t       *collection,
                                   const bson_t              *command,
@@ -423,7 +396,6 @@ mongoc_collection_command_simple (mongoc_collection_t       *collection,
    return mongoc_client_command_simple (collection->client, collection->db,
                                         command, read_prefs, reply, error);
 }
-
 
 /*
  *--------------------------------------------------------------------------
@@ -557,9 +529,9 @@ mongoc_collection_drop_index (mongoc_collection_t *collection, /* IN */
    bson_return_val_if_fail(index_name, FALSE);
 
    bson_init(&cmd);
-   bson_append_utf8(&cmd, "dropIndexes", 9, collection->collection,
+   bson_append_utf8(&cmd, "dropIndexes", -1, collection->collection,
                     collection->collectionlen);
-   bson_append_utf8(&cmd, "index", 5, index_name, -1);
+   bson_append_utf8(&cmd, "index", -1, index_name, -1);
    ret = mongoc_collection_command_simple(collection, &cmd, NULL, NULL, error);
    bson_destroy(&cmd);
 

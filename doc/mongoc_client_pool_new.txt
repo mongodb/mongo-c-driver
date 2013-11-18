@@ -1,0 +1,43 @@
+mongoc_client_pool_new(3)
+=========================
+
+
+NAME
+----
+mongoc_client_pool_new - create a new mongoc client pool
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_client_pool_t * mongoc_client_pool_new (const mongoc_uri_t *uri);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_client_pool_new()_ function shall create a new
+linkmongoc:mongoc_client_pool[7].  The 'uri' should conform to
+linkmongoc:mongoc_uri[7].
+
+RETURN VALUE
+------------
+The _mongoc_client_pool_new()_ function returns a new
+linkmongoc:mongoc_client_pool[7].  If the 'uri' cannot be parsed, NULL is
+returned.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_client_pool[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

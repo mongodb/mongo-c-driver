@@ -1,0 +1,83 @@
+mongoc_collection(7)
+====================
+
+
+NAME
+----
+mongoc_collection - MongoDB collection abstraction
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+#include <mongoc.h>
+
+mongoc_client_t * client;
+mongoc_collection_t * collection;
+
+client = mongoc_client_new(uri_string);
+
+collection =
+   mongoc_client_get_collection (client, "db_name", "collection_name");
+---------------
+
+
+DESCRIPTION
+-----------
+_mongoc_collection_ provides access to a MongoDB collection.  This handle is useful
+for actions for most CRUD operations, I.e. insert, update, delete, find, etc.
+
+
+READ PREFERENCES & WRITE CONCERNS
+---------------------------------
+
+Read preferences and write concerns are inherited from the parent client.  They
+can be overridden by set_* commands if so desired.
+
+LIFECYCLE
+---------
+
+It is an error to call linkmongoc:mongoc_collection_destroy[3] on a collection
+that has operations pending. It is required that you release
+linkmongoc:mongoc_cursor[7] structures before calling
+linkmongoc:mongoc_collection_destroy[3].
+
+
+SEE ALSO
+--------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_collection_aggregate[3]
+linkmongoc:mongoc_collection_aggregate_legacy[3]
+linkmongoc:mongoc_collection_destroy[3]
+linkmongoc:mongoc_collection_command[3]
+linkmongoc:mongoc_collection_command_simple[3]
+linkmongoc:mongoc_collection_count[3]
+linkmongoc:mongoc_collection_drop[3]
+linkmongoc:mongoc_collection_drop_index[3]
+linkmongoc:mongoc_collection_ensure_index[3]
+linkmongoc:mongoc_collection_find[3]
+linkmongoc:mongoc_collection_insert[3]
+linkmongoc:mongoc_collection_insert_bulk[3]
+linkmongoc:mongoc_collection_update[3]
+linkmongoc:mongoc_collection_delete[3]
+linkmongoc:mongoc_collection_save[3]
+linkmongoc:mongoc_collection_get_read_prefs[3]
+linkmongoc:mongoc_collection_set_read_prefs[3]
+linkmongoc:mongoc_collection_get_write_concern[3]
+linkmongoc:mongoc_collection_set_write_concern[3]
+
+RELATED
+~~~~~~~
+
+linkmongoc:mongoc_client[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

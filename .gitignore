@@ -27,6 +27,7 @@ mongoc-tail
 *.pc
 stamp-h1
 *.swp
+example-client
 repltest1
 shardtest1
 shardtest2

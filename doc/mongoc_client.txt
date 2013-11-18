@@ -1,0 +1,98 @@
+mongoc_client(7)
+================
+
+
+NAME
+----
+mongoc_client - MongoDB client connection abstraction
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+#include <mongoc.h>
+
+mongoc_client_t * client;
+
+client = mongoc_client_new(uri_string);
+---------------
+
+
+DESCRIPTION
+-----------
+_mongoc_client_ provides access to a MongoDB node, replica-set, or
+sharded-cluster. It maintains management of underlying sockets and routing to
+individual nodes based on linkmongoc:mongoc_read_prefs[7] or
+linkmongoc:mongoc_write_concern[7]
+
+
+STREAMS
+-------
+The underlying transport for a given client can be customized, wrapped or
+replaced by any implementation that fulfills linkmongoc:mongoc_stream[7].  A
+custom transport can be set with
+linkmongoc:mongoc_client_set_stream_initiator[3].
+
+
+THREAD SAFETY
+-------------
+
+_mongoc_client_ is *NOT* thread-safe and should only be used from one thread at
+a time. When used in multi-threaded scenarios, it is recommended that you use
+linkmongoc:mongoc_client_pool[7] to retrieve a _mongoc_client_ for your thread.
+
+LIFECYCLE
+---------
+
+It is an error to call linkmongoc:mongoc_client_destroy[3] on a client that has
+operations pending. It is required that you release
+linkmongoc:mongoc_collection[7] and linkmongoc:mongoc_database[7] structures
+before calling linkmongoc:mongoc_client_destroy[3].
+
+
+EXAMPLE
+-------
+
+The following example connects to a single MongoDB instance and performs a
+simple query against it. The resulting documents are printed as 'JSON' to
+standard output.
+
+[source,c]
+---------------
+include::{examples}/example-client.c[]
+---------------
+
+
+SEE ALSO
+--------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_client_new[3]
+linkmongoc:mongoc_client_new_from_uri[3]
+linkmongoc:mongoc_client_destroy[3]
+linkmongoc:mongoc_client_set_stream_initiator[3]
+linkmongoc:mongoc_client_set_read_prefs[3]
+linkmongoc:mongoc_client_set_write_concern[3]
+linkmongoc:mongoc_client_get_collection[3]
+linkmongoc:mongoc_client_get_database[3]
+linkmongoc:mongoc_client_get_gridfs[3]
+linkmongoc:mongoc_client_get_read_prefs[3]
+linkmongoc:mongoc_client_get_uri[3]
+linkmongoc:mongoc_client_get_write_concern[3]
+
+RELATED
+~~~~~~~
+
+linkmongoc:mongoc_client_pool[7]
+linkmongoc:mongoc_collection[7]
+linkmongoc:mongoc_database[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

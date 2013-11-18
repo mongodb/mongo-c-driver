@@ -1,0 +1,55 @@
+mongoc_collection_delete(3)
+===========================
+
+
+NAME
+----
+mongoc_collection_delete - Delete documents that match a query
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bson_bool_t
+mongoc_collection_delete (mongoc_collection_t          *collection,
+                          mongoc_delete_flags_t         flags,
+                          const bson_t                 *selector,
+                          const mongoc_write_concern_t *write_concern,
+                          bson_error_t                 *error);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_collection_delete()_ function shall delete documents in the given
+'collection' that match 'selector'.  The bson 'selector' is not validated,
+simply passed along as appropriate to the server.  As such, compatibility and
+errors should be validated in the appropriate server documentation.
+
+If you want to limit deletes to a single document, provide
+MONGOC_DELETE_SINGLE_REMOVE in 'flags'
+
+'flags' are the same as in linkmongoc:mongoc_collection_find[3].
+'selector' is the same as in linkmongoc:mongoc_collection_find[3].
+
+RETURN VALUE
+------------
+The _mongoc_collection_delete()_ function returns true if successful
+
+ERRORS
+------
+errors are returned through 'error'
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_collection_find[3]
+linkmongoc:mongoc_write_concern[7]
+http://docs.mongodb.org/manual/reference/operator/query/
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

@@ -51,7 +51,7 @@ mongoc_cursor_t              *mongoc_collection_command           (mongoc_collec
                                                                    mongoc_query_flags_t          flags,
                                                                    bson_uint32_t                 skip,
                                                                    bson_uint32_t                 n_return,
-                                                                   const bson_t                 *query,
+                                                                   const bson_t                 *command,
                                                                    const bson_t                 *fields,
                                                                    const mongoc_read_prefs_t    *read_prefs)
                                                                      BSON_GNUC_WARN_UNUSED_RESULT;
@@ -118,6 +118,8 @@ void                          mongoc_collection_set_read_prefs    (mongoc_collec
 const mongoc_write_concern_t *mongoc_collection_get_write_concern (const mongoc_collection_t    *collection);
 void                          mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
                                                                    const mongoc_write_concern_t *write_concern);
+
+char                        * mongoc_collection_keys_to_index_string (const bson_t *keys);
 
 
 BSON_END_DECLS

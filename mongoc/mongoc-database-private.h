@@ -40,8 +40,10 @@ struct _mongoc_database_t
 
 
 mongoc_database_t *
-_mongoc_database_new (mongoc_client_t *client,
-                      const char      *name)
+_mongoc_database_new (mongoc_client_t              *client,
+                      const char                   *name,
+                      const mongoc_read_prefs_t    *read_prefs,
+                      const mongoc_write_concern_t *write_concern)
    BSON_GNUC_INTERNAL;
 
 

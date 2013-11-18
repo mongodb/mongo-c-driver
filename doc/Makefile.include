@@ -1,0 +1,48 @@
+MAN3 = $(MONGOC_SYMBOLS)
+
+MAN7 = \
+	$(top_srcdir)/doc/mongoc_client.7 \
+	$(top_srcdir)/doc/mongoc_client_pool.7 \
+	$(top_srcdir)/doc/mongoc_collection.7 \
+	$(top_srcdir)/doc/mongoc_database.7 \
+	$(top_srcdir)/doc/mongoc_uri.7
+
+MAN_DOC = $(MAN1) $(MAN3) $(MAN7)
+
+MAN_TXT = \
+	$(MAN3:%.3=%.txt) \
+	$(MAN7:%.7=%.txt)
+
+MAN_HTML = $(MAN_TXT:%.txt=%.html)
+
+if INSTALL_MAN
+dist_man_MANS = $(MAN_DOC)
+endif
+
+EXTRA_DIST += $(top_srcdir)/doc/asciidoc.conf $(MAN_TXT)
+if BUILD_DOC
+EXTRA_DIST += $(MAN_HTML)
+endif
+
+MAINTAINERCLEANFILES = $(MAN_DOC) $(MAN_HTML)
+
+doc : $(top_srcdir)/doc/asciidoc.conf $(DOC_EXAMPLES) $(MAN_DOC) $(MAN_HTML)
+dist-hook : doc
+
+if BUILD_DOC
+SUFFIXES=.html .txt .xml .3 .7
+
+EXAMPLE_DIR = $(abs_top_srcdir)/examples
+
+.txt.html:
+	asciidoc -d manpage -b xhtml11 -f $(top_srcdir)/doc/asciidoc.conf \
+           -aexamples=$(EXAMPLE_DIR) -amongoc_version=@PACKAGE_VERSION@ -o$@ $<
+.txt.xml:
+	asciidoc -d manpage -b docbook -f $(top_srcdir)/doc/asciidoc.conf \
+           -aexamples=$(EXAMPLE_DIR) -amongoc_version=@PACKAGE_VERSION@ \
+           -amongoc_manname=$(*F) -o$@ $<
+.xml.3:
+	xmlto man -o $(top_srcdir)/doc $<
+.xml.7:
+	xmlto man -o $(top_srcdir)/doc $<
+endif

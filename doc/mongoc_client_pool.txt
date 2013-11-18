@@ -1,0 +1,88 @@
+mongoc_client_pool(7)
+=====================
+
+NAME
+----
+mongoc_client_pool - MongoDB client connection pool abstraction
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+mongoc_client_pool_t *pool;
+
+pool = mongoc_client_pool_new (uri);
+---------------
+
+DESCRIPTION
+-----------
+
+'mongoc_client_pool' forms a threadsafe abstraction over a pool of clients.  It
+can be used to safely reuse database connects across multiple consumers.  See
+linkmongoc:mongoc_uri[7] for more details related to pooling.
+
+Thread Safety
+-------------
+
+_mongoc_client_pool_ is thread-safe. You may use it from multiple threads so
+long as linkmongoc:mongoc_client_pool_destroy[3] has not been called.
+
+Lifecycle
+---------
+
+It is a programming error to release the _mongoc_client_pool_ before pushing
+the _mongoc_client_ back into the pool.
+
+Examples
+--------
+
+[source, c]
+---------------
+#include <mongoc.h>
+
+int
+main (int   argc,
+      char *argv[])
+{
+   mongoc_client_pool_t *client_pool;
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new ("mongodb://localhost:27017/");
+   client_pool = mongoc_client_pool_new (uri);
+
+   /* You may consider doing this in a worker thread. */
+   client = mongoc_client_pool_pop (client_pool);
+   do_something (client);
+   mongoc_client_pool_push (client_pool, client);
+
+   mongoc_client_pool_destroy (client_pool);
+   mongoc_uri_destroy (uri);
+
+   return 0;
+}
+---------------
+
+SEE ALSO
+--------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_client_pool_destroy[3]
+linkmongoc:mongoc_client_pool_new[3]
+linkmongoc:mongoc_client_pool_pop[3]
+linkmongoc:mongoc_client_pool_push[3]
+linkmongoc:mongoc_client_pool_try_pop[3]
+
+RELATED
+~~~~~~~
+
+linkmongoc:mongoc_client[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

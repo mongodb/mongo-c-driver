@@ -1,0 +1,113 @@
+mongoc_client_set_stream_initiator(3)
+=====================================
+
+
+NAME
+----
+mongoc_client_set_stream_initiator - Set the stream initiator for a given client
+
+
+SYNOPSIS
+--------
+[source,c]
+--------------------
+void mongoc_client_set_stream_initiator (
+   mongoc_client_t          *client,
+   mongoc_stream_initiator_t initiator,
+   void                     *user_data);
+
+typedef mongoc_stream_t *(*mongoc_stream_initiator_t) (
+   const mongoc_uri_t       *uri,
+   const mongoc_host_list_t *host,
+   void                     *user_data,
+   bson_error_t             *error);
+
+typedef struct
+{
+   char                host[HOST_NAME_MAX + 1];
+   char                host_and_port[HOST_NAME_MAX + 7];
+   bson_uint16_t       port;
+   int                 family;
+} mongoc_host_list_t;
+--------------------
+
+mongoc_client_set_stream_initiator::
+   Function definition for setting the stream initiator
+
+mongoc_stream_initiator_t::
+   Type of the stream initiator
+
+mongoc_host_list_t::
+   Type of the host param in the stream initiator
+
+DESCRIPTION
+-----------
+The _mongoc_client_set_stream_initiator()_ function shall associate a given
+linkmongoc:mongoc_client[7] with a new stream initiator.  This will completely
+replace the default transport (buffered TCP, possibly with TLS).  The
+'initiator' should fulfill the linkmongoc:mongoc_stream[7] contract.
+'user_data' is passed through to the 'initiator' callback and may be used for
+whatever run time customization is necessary.
+
+
+STREAM_INITIATOR
+~~~~~~~~~~~~~~~~
+
+uri::
+   the uri initially used in the creation of the parent
+   linkmongoc:mongoc_client[7].  It can be used to check for options passed in
+   the uri string, but it's probably best to stash those in 'user_data' when
+   possible.
+
+error::
+   an out parameter, meant for lifting error conditions to whatever call site
+   initiated the ultimately failed connect attempt.
+
+host::
+   the host to connect to.  See the host subsection for more on what
+   information is available.
+
+
+HOST
+~~~~
+
+host::
+port::
+host_and_port::
+   These members are self explanatory, holding represenations of the host and
+   port passed in via the uri.
+
+family::
+   The family in this case refers to the 'domain' parameter as it is
+   conventionally passed to 'socket(2)'.  Currently only the AF_INET and AF_UNIX
+   family types are supported.
+
+
+RETURN VALUE
+------------
+The _mongoc_client_set_stream_initiator()_ function has no return value.
+
+
+ERRORS
+------
+No errors are defined.
+
+
+LIFE CYCLE
+----------
+This callback is invoked every time the client needs a stream to a given
+'host'.  That means that the 'user_data' passed to the callback needs to remain
+valid for potential reconnects as well as the initial connect, and thus for the
+life time of the client.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_client[7]
+linkmongoc:mongoc_stream[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

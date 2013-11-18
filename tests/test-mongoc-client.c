@@ -4,6 +4,7 @@
 
 #include "mongoc-tests.h"
 #include "mock-server.h"
+#include "mongoc-client-private.h"
 
 
 #define HOSTENV "MONGOC_TEST_HOST"
@@ -296,7 +297,6 @@ test_mongoc_client_read_prefs (void)
    bson_uint16_t port;
    const bson_t *doc;
    bson_error_t error;
-   bson_bool_t r;
    bson_bool_t success = FALSE;
    bson_t b = BSON_INITIALIZER;
    bson_t q = BSON_INITIALIZER;
@@ -333,7 +333,7 @@ test_mongoc_client_read_prefs (void)
                                     NULL,
                                     read_prefs);
 
-   r = mongoc_cursor_next (cursor, &doc);
+   mongoc_cursor_next (cursor, &doc);
 
    usleep (50000);
 

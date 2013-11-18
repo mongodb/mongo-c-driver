@@ -291,6 +291,42 @@ test_delete (void)
 }
 
 static void
+test_index (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_index_opt_t opt;
+   bson_error_t error;
+   bson_bool_t r;
+   bson_t keys;
+
+   mongoc_index_opt_init(&opt);
+
+   client = mongoc_client_new(gTestUri);
+   assert(client);
+
+   collection = mongoc_client_get_collection(client, "test", "test");
+   assert(collection);
+
+   bson_init(&keys);
+   bson_append_int32(&keys, "hello", -1, 1);
+   r = mongoc_collection_ensure_index(collection, &keys, &opt, &error);
+   assert(r);
+
+   r = mongoc_collection_ensure_index(collection, &keys, &opt, &error);
+   assert(r);
+
+   r = mongoc_collection_drop_index(collection, "hello_1", &error);
+   assert(r);
+
+   bson_destroy(&keys);
+
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+}
+
+
+static void
 test_count (void)
 {
    mongoc_collection_t *collection;
@@ -484,6 +520,7 @@ main (int   argc,
 
    run_test("/mongoc/collection/insert_bulk", test_insert_bulk);
    run_test("/mongoc/collection/insert", test_insert);
+   run_test("/mongoc/collection/index", test_index);
    run_test("/mongoc/collection/regex", test_regex);
    run_test("/mongoc/collection/update", test_update);
    run_test("/mongoc/collection/delete", test_delete);

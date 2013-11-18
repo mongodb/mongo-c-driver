@@ -857,7 +857,7 @@ mongoc_client_get_database (mongoc_client_t *client,
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(name, NULL);
 
-   return _mongoc_database_new(client, name);
+   return _mongoc_database_new(client, name, client->read_prefs, client->write_concern);
 }
 
 

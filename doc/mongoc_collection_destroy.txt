@@ -1,0 +1,39 @@
+mongoc_collection_destroy(3)
+============================
+
+
+NAME
+----
+mongoc_collection_destroy - destroy a mongoc collection
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+void mongoc_collection_destroy (mongoc_collection_t *collection);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_collection_destroy()_ function shall destroy a linkmongoc:mongoc_collection[7].
+
+RETURN VALUE
+------------
+The _mongoc_collection_destroy()_ function has no return value.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_collection[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

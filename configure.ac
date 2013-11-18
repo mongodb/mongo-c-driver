@@ -174,6 +174,23 @@ AC_SUBST([MONGOC_ENABLE_SSL])
 
 
 dnl **************************************************************************
+dnl Optionally check for Asciidoc and xmlto for documentation
+dnl **************************************************************************
+AC_ARG_VAR([XMLTO], [Path to xmlto command])
+AC_PATH_PROG([XMLTO], [xmlto])
+AC_ARG_VAR([ASCIIDOC], [Path to asciidoc command])
+AC_PATH_PROG([ASCIIDOC], [asciidoc])
+
+MONGOC_CHECK_DOC_BUILD
+
+
+dnl **************************************************************************
+dnl Create (3) doc targets for each public symbol
+dnl **************************************************************************
+MONGOC_SYMBOLS=`sed -e 's/.*/$(top_srcdir)\/doc\/&.3/' < mongoc/libmongoc.symbols | xargs`
+AC_SUBST([MONGOC_SYMBOLS])
+
+dnl **************************************************************************
 dnl Check for necessary libraries.
 dnl **************************************************************************
 AC_CHECK_FUNCS([shm_open], [SHM_LIB=],

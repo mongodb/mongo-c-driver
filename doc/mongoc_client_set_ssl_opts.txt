@@ -1,0 +1,45 @@
+mongoc_client_set_ssl_opts(3)
+=============================
+
+
+NAME
+----
+mongoc_client_set_ssl_opts - set SSL options for a client
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+void
+mongoc_client_set_ssl_opts (mongoc_client_t        *client,
+                            const mongoc_ssl_opt_t *opts);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_client_set_ssl_opts()_ function shall set ssl options for a given
+linkmongoc:mongoc_client[7].  For more detail on ssl options available within
+mongoc, see linkmongoc:mongoc_ssl[7].
+
+RETURN VALUE
+------------
+The _mongoc_client_set_ssl_opts()_ function return no value.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_client[7]
+linkmongoc:mongoc_read_preference[7]
+linkmongoc:mongoc_write_concern[7]
+linkmongoc:mongoc_ssl[7]
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.
