@@ -1682,6 +1682,38 @@ mongoc_cluster_reconnect (mongoc_cluster_t *cluster, /* IN */
 }
 
 
+bson_bool_t
+_mongoc_cluster_command_early (mongoc_cluster_t *cluster,
+                               const char       *dbname,
+                               const bson_t     *command,
+                               bson_t           *reply,
+                               bson_error_t     *error)
+{
+   mongoc_cluster_node_t *node;
+   int i;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (cluster->state == MONGOC_CLUSTER_STATE_BORN);
+   BSON_ASSERT (dbname);
+   BSON_ASSERT (command);
+
+   if (!mongoc_cluster_reconnect (cluster, error)) {
+      return FALSE;
+   }
+
+   node = mongoc_cluster_get_primary (cluster);
+
+   for (i = 0; !node && i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      if (cluster->nodes[i].stream) {
+         node = &cluster->nodes[i];
+      }
+   }
+
+   return mongoc_cluster_run_command (cluster, node, dbname, command,
+                                      reply, error);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *

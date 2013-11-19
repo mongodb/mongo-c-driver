@@ -149,6 +149,14 @@ mongoc_cluster_node_t *
 mongoc_cluster_get_primary (mongoc_cluster_t *cluster);
 
 
+bson_bool_t
+_mongoc_cluster_command_early (mongoc_cluster_t *cluster,
+                               const char       *dbname,
+                               const bson_t     *command,
+                               bson_t           *reply,
+                               bson_error_t     *error);
+
+
 BSON_END_DECLS
 
 
