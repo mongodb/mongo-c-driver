@@ -207,6 +207,148 @@ test_wire_version (void)
 
 
 static void
+read_prefs_handler (mock_server_t   *server,
+                    mongoc_stream_t *stream,
+                    mongoc_rpc_t    *rpc,
+                    void            *user_data)
+{
+   bson_bool_t *success = user_data;
+   bson_int32_t len;
+   bson_iter_t iter;
+   bson_iter_t child;
+   bson_iter_t child2;
+   bson_iter_t child3;
+   bson_t b;
+   bson_t reply = BSON_INITIALIZER;
+   int r;
+
+   if (rpc->header.opcode == MONGOC_OPCODE_QUERY) {
+      memcpy (&len, rpc->query.query, 4);
+      len = BSON_UINT32_FROM_LE (len);
+
+      r = bson_init_static (&b, rpc->query.query, len);
+      assert (r);
+
+      r = bson_iter_init_find (&iter, &b, "$query");
+      assert (r);
+      assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
+
+      r = bson_iter_init_find (&iter, &b, "$readPreference");
+      assert (r);
+      assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
+
+      r = bson_iter_recurse (&iter, &child);
+      assert (r);
+
+      r = bson_iter_next (&child);
+      assert (r);
+      assert (BSON_ITER_HOLDS_UTF8 (&child));
+      assert (!strcmp ("mode", bson_iter_key (&child)));
+      assert (!strcmp ("secondaryPreferred", bson_iter_utf8 (&child, NULL)));
+
+      r = bson_iter_next (&child);
+      assert (r);
+      assert (BSON_ITER_HOLDS_ARRAY (&child));
+
+      r = bson_iter_recurse (&child, &child2);
+      assert (r);
+
+      r = bson_iter_next (&child2);
+      assert (r);
+      assert (BSON_ITER_HOLDS_DOCUMENT (&child2));
+
+      r = bson_iter_recurse (&child2, &child3);
+      assert (r);
+
+      r = bson_iter_next (&child3);
+      assert (r);
+      assert (BSON_ITER_HOLDS_UTF8 (&child3));
+      assert (!strcmp ("dc", bson_iter_key (&child3)));
+      assert (!strcmp ("ny", bson_iter_utf8 (&child3, NULL)));
+      r = bson_iter_next (&child3);
+      assert (!r);
+
+      r = bson_iter_next (&child2);
+      assert (r);
+
+      r = bson_iter_recurse (&child2, &child3);
+      assert (r);
+
+      r = bson_iter_next (&child3);
+      assert (!r);
+
+      mock_server_reply_simple (server, stream, rpc, MONGOC_REPLY_NONE, &reply);
+
+      *success = TRUE;
+   }
+}
+
+
+static void
+test_mongoc_client_read_prefs (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_cursor_t *cursor;
+   mongoc_client_t *client;
+   mock_server_t *server;
+   bson_uint16_t port;
+   const bson_t *doc;
+   bson_error_t error;
+   bson_bool_t r;
+   bson_bool_t success = FALSE;
+   bson_t b = BSON_INITIALIZER;
+   bson_t q = BSON_INITIALIZER;
+   char *uristr;
+
+   port = 20000 + (rand () % 1000);
+
+   server = mock_server_new ("127.0.0.1", port, read_prefs_handler, &success);
+   mock_server_run_in_thread (server);
+
+   usleep (5000);
+
+   uristr = bson_strdup_printf ("mongodb://127.0.0.1:%hu/", port);
+   client = mongoc_client_new (uristr);
+
+   if (!_mongoc_client_warm_up (client, &error)) {
+      assert (FALSE);
+   }
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   bson_append_utf8 (&b, "dc", 2, "ny", 2);
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
+   mongoc_read_prefs_add_tag (read_prefs, &b);
+   mongoc_read_prefs_add_tag (read_prefs, NULL);
+   mongoc_collection_set_read_prefs (collection, read_prefs);
+
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0,
+                                    1,
+                                    &q,
+                                    NULL,
+                                    read_prefs);
+
+   r = mongoc_cursor_next (cursor, &doc);
+
+   usleep (50000);
+
+   assert (success);
+
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_quit (server, 0);
+   bson_destroy (&b);
+   bson_free (uristr);
+}
+
+
+static void
 log_handler (mongoc_log_level_t  log_level,
              const char         *domain,
              const char         *message,
@@ -251,6 +393,7 @@ main (int   argc,
    run_test("/mongoc/client/wire_version", test_wire_version);
    run_test("/mongoc/client/authenticate", test_mongoc_client_authenticate);
    run_test("/mongoc/client/authenticate_failure", test_mongoc_client_authenticate_failure);
+   run_test("/mongoc/client/read_prefs", test_mongoc_client_read_prefs);
 
    bson_free(gTestUri);
    bson_free(gTestUriWithPassword);
