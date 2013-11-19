@@ -20,6 +20,7 @@
 #include <bson.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <mongoc.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -32,6 +33,7 @@
 #include "mock-server.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-stream-unix.h"
+#include "mongoc-trace.h"
 
 
 struct _mock_server_t
@@ -57,12 +59,12 @@ struct _mock_server_t
 };
 
 
-static void
-reply_simple (mock_server_t        *server,
-              mongoc_stream_t      *client,
-              const mongoc_rpc_t   *request,
-              mongoc_reply_flags_t  flags,
-              const bson_t         *doc)
+void
+mock_server_reply_simple (mock_server_t        *server,
+                          mongoc_stream_t      *client,
+                          const mongoc_rpc_t   *request,
+                          mongoc_reply_flags_t  flags,
+                          const bson_t         *doc)
 {
    struct iovec *iov;
    mongoc_array_t ar;
@@ -117,7 +119,7 @@ handle_ping (mock_server_t   *server,
    bson_t reply = BSON_INITIALIZER;
 
    bson_append_int32 (&reply, "ok", 2, 1);
-   reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply);
+   mock_server_reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply);
    bson_destroy (&reply);
 
    return TRUE;
@@ -150,7 +152,7 @@ handle_ismaster (mock_server_t   *server,
    bson_append_double (&reply_doc, "ok", -1, 1.0);
    bson_append_time_t (&reply_doc, "localtime", -1, now);
 
-   reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply_doc);
+   mock_server_reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply_doc);
 
    bson_destroy (&reply_doc);
 
@@ -218,7 +220,7 @@ mock_server_worker (void *data)
    mongoc_buffer_init(&buffer, NULL, 0, NULL);
 
 again:
-   if (mongoc_buffer_fill (&buffer, stream, 4, 0, &error) == -1) {
+   if (mongoc_buffer_fill (&buffer, stream, 4, INT_MAX, &error) == -1) {
       MONGOC_WARNING ("%s", error.message);
       goto failure;
    }
@@ -233,12 +235,14 @@ again:
       goto failure;
    }
 
-   if (mongoc_buffer_fill (&buffer, stream, msg_len, 0, &error) == -1) {
+   if (mongoc_buffer_fill (&buffer, stream, msg_len, INT_MAX, &error) == -1) {
       MONGOC_WARNING ("%s", error.message);
       goto failure;
    }
 
    assert (buffer.len >= msg_len);
+
+   DUMP_BYTES (buffer, buffer.data + buffer.off, buffer.len);
 
    if (!mongoc_rpc_scatter(&rpc, buffer.data + buffer.off, msg_len)) {
       MONGOC_WARNING ("Failed to scatter");

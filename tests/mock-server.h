@@ -45,6 +45,11 @@ mock_server_t *mock_server_new              (const char            *address,
 void           mock_server_set_wire_version (mock_server_t         *server,
                                              bson_int32_t           min_wire_version,
                                              bson_int32_t           max_wire_version);
+void           mock_server_reply_simple     (mock_server_t        *server,
+                                             mongoc_stream_t      *client,
+                                             const mongoc_rpc_t   *request,
+                                             mongoc_reply_flags_t  flags,
+                                             const bson_t         *doc);
 int            mock_server_run              (mock_server_t         *server);
 void           mock_server_run_in_thread    (mock_server_t         *server);
 void           mock_server_quit             (mock_server_t         *server,
