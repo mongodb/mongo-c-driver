@@ -109,6 +109,22 @@ reply_simple (mock_server_t        *server,
 
 
 static bson_bool_t
+handle_ping (mock_server_t   *server,
+             mongoc_stream_t *client,
+             mongoc_rpc_t    *rpc,
+             const bson_t    *doc)
+{
+   bson_t reply = BSON_INITIALIZER;
+
+   bson_append_int32 (&reply, "ok", 2, 1);
+   reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply);
+   bson_destroy (&reply);
+
+   return TRUE;
+}
+
+
+static bson_bool_t
 handle_ismaster (mock_server_t   *server,
                  mongoc_stream_t *client,
                  mongoc_rpc_t    *rpc,
@@ -173,6 +189,8 @@ handle_command (mock_server_t   *server,
 
    if (!strcasecmp (key, "ismaster")) {
       ret = handle_ismaster (server, client, rpc, &doc);
+   } else if (!strcasecmp (key, "ping")) {
+      ret = handle_ping (server, client, rpc, &doc);
    }
 
    bson_destroy (&doc);
@@ -188,6 +206,7 @@ mock_server_worker (void *data)
    mongoc_stream_t *stream;
    mock_server_t *server;
    mongoc_rpc_t rpc;
+   bson_error_t error;
    bson_int32_t msg_len;
    void **closure = data;
 
@@ -199,22 +218,30 @@ mock_server_worker (void *data)
    mongoc_buffer_init(&buffer, NULL, 0, NULL);
 
 again:
-   buffer.off = 0;
-   if (!mongoc_buffer_append_from_stream(&buffer, stream, 4, 0, NULL)) {
+   if (mongoc_buffer_fill (&buffer, stream, 4, 0, &error) == -1) {
+      MONGOC_WARNING ("%s", error.message);
       goto failure;
    }
 
-   memcpy(&msg_len, buffer.data, 4);
+   assert (buffer.len >= 4);
+
+   memcpy(&msg_len, buffer.data + buffer.off, 4);
    msg_len = BSON_UINT32_FROM_LE(msg_len);
+
    if (msg_len < 16) {
+      MONGOC_WARNING ("No data");
       goto failure;
    }
 
-   if (!mongoc_buffer_append_from_stream(&buffer, stream, msg_len - 4, 0, NULL)) {
+   if (mongoc_buffer_fill (&buffer, stream, msg_len, 0, &error) == -1) {
+      MONGOC_WARNING ("%s", error.message);
       goto failure;
    }
 
-   if (!mongoc_rpc_scatter(&rpc, buffer.data, msg_len)) {
+   assert (buffer.len >= msg_len);
+
+   if (!mongoc_rpc_scatter(&rpc, buffer.data + buffer.off, msg_len)) {
+      MONGOC_WARNING ("Failed to scatter");
       goto failure;
    }
 
@@ -223,6 +250,11 @@ again:
    if (!handle_command(server, stream, &rpc)) {
       server->handler(server, stream, &rpc, server->handler_data);
    }
+
+   memmove (buffer.data, buffer.data + buffer.off + msg_len,
+            buffer.len - msg_len);
+   buffer.off = 0;
+   buffer.len -= msg_len;
 
    goto again;
 
