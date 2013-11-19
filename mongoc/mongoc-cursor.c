@@ -31,6 +31,16 @@
 #define MONGOC_LOG_DOMAIN "cursor"
 
 
+static const char *gReadModes[] = {
+   "primary",
+   "secondary",
+   "primaryPreferred",
+   "secondaryPreferred",
+   "nearest"
+};
+
+
+
 mongoc_cursor_t *
 mongoc_cursor_new (mongoc_client_t           *client,
                    const char                *db_and_collection,
@@ -43,7 +53,10 @@ mongoc_cursor_new (mongoc_client_t           *client,
                    const bson_t              *fields,
                    const mongoc_read_prefs_t *read_prefs)
 {
+   mongoc_read_mode_t mode;
    mongoc_cursor_t *cursor;
+   const bson_t *tags;
+   bson_t child;
 
    ENTRY;
 
@@ -54,8 +67,8 @@ mongoc_cursor_new (mongoc_client_t           *client,
    /*
     * Cursors execute their query lazily. This sadly means that we must copy
     * some extra data around between the bson_t structures. This should be
-    * small in most cases those so it reduces to a pure memcpy. The benefit
-    * to this design is simplified error handling by API consumers.
+    * small in most cases, so it reduces to a pure memcpy. The benefit to this
+    * design is simplified error handling by API consumers.
     */
 
    cursor = bson_malloc0(sizeof *cursor);
@@ -67,16 +80,39 @@ mongoc_cursor_new (mongoc_client_t           *client,
    cursor->limit = limit;
    cursor->batch_size = batch_size ? batch_size : limit;
    cursor->is_command = is_command;
-   bson_copy_to(query, &cursor->query);
+
+   if (!bson_has_field (query, "$query")) {
+      bson_init (&cursor->query);
+      bson_append_document (&cursor->query, "$query", 6, query);
+   } else {
+      bson_copy_to (query, &cursor->query);
+   }
+
+   if (read_prefs) {
+      cursor->read_prefs = mongoc_read_prefs_copy (read_prefs);
+
+      mode = mongoc_read_prefs_get_mode (read_prefs);
+      tags = mongoc_read_prefs_get_tags (read_prefs);
+
+      if (mode != MONGOC_READ_PRIMARY) {
+         flags |= MONGOC_QUERY_SLAVE_OK;
+
+         if ((mode != MONGOC_READ_SECONDARY_PREFERRED) || tags) {
+            bson_append_document_begin (&cursor->query, "$readPreference",
+                                        15, &child);
+            bson_append_utf8 (&child, "mode", 4, gReadModes[mode], -1);
+            if (tags) {
+               bson_append_array (&child, "tags", 4, tags);
+            }
+            bson_append_document_end (&cursor->query, &child);
+         }
+      }
+   }
 
    if (fields) {
       bson_copy_to(fields, &cursor->fields);
    } else {
       bson_init(&cursor->fields);
-   }
-
-   if (read_prefs) {
-      cursor->read_prefs = mongoc_read_prefs_copy(read_prefs);
    }
 
    mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL);
