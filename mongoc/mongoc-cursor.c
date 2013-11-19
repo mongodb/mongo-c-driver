@@ -31,15 +31,24 @@
 #define MONGOC_LOG_DOMAIN "cursor"
 
 
-static const char *gReadModes[] = {
-   "primary",
-   "secondary",
-   "primaryPreferred",
-   "secondaryPreferred",
-   "nearest"
-};
-
-
+static const char *
+mongoc_cursor_get_read_mode_string (mongoc_read_mode_t mode)
+{
+   switch (mode) {
+   case MONGOC_READ_PRIMARY:
+      return "primary";
+   case MONGOC_READ_PRIMARY_PREFERRED:
+      return "primaryPreferred";
+   case MONGOC_READ_SECONDARY:
+      return "secondary";
+   case MONGOC_READ_SECONDARY_PREFERRED:
+      return "secondaryPreferred";
+   case MONGOC_READ_NEAREST:
+      return "nearest";
+   default:
+      return "";
+   }
+}
 
 mongoc_cursor_t *
 mongoc_cursor_new (mongoc_client_t           *client,
@@ -56,6 +65,7 @@ mongoc_cursor_new (mongoc_client_t           *client,
    mongoc_read_mode_t mode;
    mongoc_cursor_t *cursor;
    const bson_t *tags;
+   const char *mode_str;
    bson_t child;
 
    ENTRY;
@@ -100,7 +110,8 @@ mongoc_cursor_new (mongoc_client_t           *client,
          if ((mode != MONGOC_READ_SECONDARY_PREFERRED) || tags) {
             bson_append_document_begin (&cursor->query, "$readPreference",
                                         15, &child);
-            bson_append_utf8 (&child, "mode", 4, gReadModes[mode], -1);
+            mode_str = mongoc_cursor_get_read_mode_string (mode);
+            bson_append_utf8 (&child, "mode", 4, mode_str, -1);
             if (tags) {
                bson_append_array (&child, "tags", 4, tags);
             }
