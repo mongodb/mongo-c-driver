@@ -927,11 +927,27 @@ mongoc_collection_insert (
       const mongoc_write_concern_t *write_concern, /* IN */
       bson_error_t                 *error)         /* OUT */
 {
+   bson_bool_t ret;
+   bson_iter_t iter;
+   bson_oid_t oid;
+   bson_t copy = BSON_INITIALIZER;
+
    bson_return_val_if_fail (collection, FALSE);
    bson_return_val_if_fail (document, FALSE);
 
-   return mongoc_collection_insert_bulk (collection, flags, &document, 1,
-                                         write_concern, error);
+   if (!bson_iter_init_find (&iter, document, "_id")) {
+      bson_oid_init (&oid, NULL);
+      bson_append_oid (&copy, "_id", 3, &oid);
+      bson_concat (&copy, document);
+      document = &copy;
+   }
+
+   ret = mongoc_collection_insert_bulk (collection, flags, &document, 1,
+                                        write_concern, error);
+
+   bson_destroy (&copy);
+
+   return ret;
 }
 
 
