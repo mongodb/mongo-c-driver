@@ -48,6 +48,8 @@ void                 mongoc_read_prefs_set_mode (mongoc_read_prefs_t       *read
 const bson_t        *mongoc_read_prefs_get_tags (const mongoc_read_prefs_t *read_prefs);
 void                 mongoc_read_prefs_set_tags (mongoc_read_prefs_t       *read_prefs,
                                                  const bson_t              *tags);
+void                 mongoc_read_prefs_add_tag  (mongoc_read_prefs_t       *read_prefs,
+                                                 const bson_t              *tag);
 bson_bool_t          mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs);
 
 

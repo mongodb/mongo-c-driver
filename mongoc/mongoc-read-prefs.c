@@ -68,10 +68,33 @@ mongoc_read_prefs_set_tags (mongoc_read_prefs_t *read_prefs,
    bson_return_if_fail(read_prefs);
 
    bson_destroy(&read_prefs->tags);
+
    if (tags) {
       bson_copy_to(tags, &read_prefs->tags);
    } else {
       bson_init(&read_prefs->tags);
+   }
+}
+
+
+void
+mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
+                           const bson_t        *tag)
+{
+   bson_t empty = BSON_INITIALIZER;
+   char str[12];
+   int key;
+
+   BSON_ASSERT (read_prefs);
+
+   key = bson_count_keys (&read_prefs->tags);
+   snprintf (str, sizeof str, "%d", key);
+   str[sizeof str - 1] = '\0';
+
+   if (tag) {
+      bson_append_document (&read_prefs->tags, str, -1, tag);
+   } else {
+      bson_append_document (&read_prefs->tags, str, -1, &empty);
    }
 }
 
