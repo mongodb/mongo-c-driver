@@ -231,6 +231,11 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
 
    bson_return_val_if_fail(cursor, FALSE);
 
+   if (!_mongoc_client_warm_up (cursor->client, &cursor->error)) {
+      cursor->failed = TRUE;
+      RETURN (FALSE);
+   }
+
    rpc.query.msg_len = 0;
    rpc.query.request_id = 0;
    rpc.query.response_to = 0;
@@ -311,6 +316,11 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    ENTRY;
 
    bson_return_val_if_fail(cursor, FALSE);
+
+   if (!_mongoc_client_warm_up (cursor->client, &cursor->error)) {
+      cursor->failed = TRUE;
+      RETURN (FALSE);
+   }
 
    if (!(cursor_id = cursor->rpc.reply.cursor_id)) {
       bson_set_error(&cursor->error,

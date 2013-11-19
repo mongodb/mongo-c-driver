@@ -92,6 +92,11 @@ mongoc_client_stamp (mongoc_client_t *client,
                      bson_uint32_t    node);
 
 
+bson_bool_t
+_mongoc_client_warm_up (mongoc_client_t *client,
+                        bson_error_t    *error);
+
+
 BSON_END_DECLS
 
 

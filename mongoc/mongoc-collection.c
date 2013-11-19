@@ -338,7 +338,7 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_collection_new --
+ * mongoc_collection_command --
  *
  *       Executes a command on a cluster node matching @read_prefs. If
  *       @read_prefs is not provided, it will be run on the primary node.
@@ -748,9 +748,9 @@ mongoc_collection_insert_bulk_raw (
       write_concern = collection->write_concern;
    }
 
-   /*
-    * TODO: Warm up client so we have valid wire version to work with.
-    */
+   if (!_mongoc_client_warm_up (collection->client, error)) {
+      return FALSE;
+   }
 
    /*
     * WARNING:
@@ -867,8 +867,14 @@ mongoc_collection_insert_bulk (
    size_t i;
    bson_bool_t r;
 
+   ENTRY;
+
    BSON_ASSERT (documents);
    BSON_ASSERT (n_documents);
+
+   if (!_mongoc_client_warm_up (collection->client, error)) {
+      RETURN (FALSE);
+   }
 
    iov = bson_malloc (sizeof (*iov) * n_documents);
 
@@ -882,7 +888,7 @@ mongoc_collection_insert_bulk (
 
    bson_free (iov);
 
-   return r;
+   RETURN (r);
 }
 
 
@@ -972,6 +978,10 @@ mongoc_collection_update (mongoc_collection_t          *collection,    /* IN */
 
    if (!write_concern) {
       write_concern = collection->write_concern;
+   }
+
+   if (!_mongoc_client_warm_up (collection->client, error)) {
+      RETURN (FALSE);
    }
 
    rpc.update.msg_len = 0;
@@ -1104,6 +1114,10 @@ mongoc_collection_delete (mongoc_collection_t          *collection,    /* IN */
 
    if (!write_concern) {
       write_concern = collection->write_concern;
+   }
+
+   if (!_mongoc_client_warm_up (collection->client, error)) {
+      return FALSE;
    }
 
    rpc.delete.msg_len = 0;

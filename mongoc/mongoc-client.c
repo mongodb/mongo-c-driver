@@ -1049,3 +1049,24 @@ mongoc_client_set_read_prefs (mongoc_client_t           *client,     /* IN */
          mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
    }
 }
+
+
+bson_bool_t
+_mongoc_client_warm_up (mongoc_client_t *client,
+                        bson_error_t    *error)
+{
+   bson_bool_t ret = TRUE;
+   bson_t cmd;
+
+   BSON_ASSERT (client);
+
+   if (client->cluster.state == MONGOC_CLUSTER_STATE_BORN) {
+      bson_init (&cmd);
+      bson_append_int32 (&cmd, "ping", 4, 1);
+      ret = _mongoc_cluster_command_early (&client->cluster, "admin", &cmd,
+                                           NULL, error);
+      bson_destroy (&cmd);
+   }
+
+   return ret;
+}
