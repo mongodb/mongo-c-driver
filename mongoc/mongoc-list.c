@@ -28,8 +28,8 @@
  * Returns: @list or a new list if @list is NULL.
  */
 mongoc_list_t *
-mongoc_list_append (mongoc_list_t *list,
-                    void          *data)
+_mongoc_list_append (mongoc_list_t *list,
+                     void          *data)
 {
    mongoc_list_t *item;
    mongoc_list_t *iter;
@@ -57,8 +57,8 @@ mongoc_list_append (mongoc_list_t *list,
  * Returns: A new link containing data with @list following.
  */
 mongoc_list_t *
-mongoc_list_prepend (mongoc_list_t *list,
-                     void          *data)
+_mongoc_list_prepend (mongoc_list_t *list,
+                      void          *data)
 {
    mongoc_list_t *item;
 
@@ -80,8 +80,8 @@ mongoc_list_prepend (mongoc_list_t *list,
  * Returns: @list with the link containing @data removed.
  */
 mongoc_list_t *
-mongoc_list_remove (mongoc_list_t *list,
-                    void          *data)
+_mongoc_list_remove (mongoc_list_t *list,
+                     void          *data)
 {
    mongoc_list_t *iter;
    mongoc_list_t *prev = NULL;
@@ -115,9 +115,9 @@ mongoc_list_remove (mongoc_list_t *list,
  * Calls @func for each item in @list.
  */
 void
-mongoc_list_foreach (mongoc_list_t *list,
-                     void (*func) (void *data, void *user_data),
-                     void          *user_data)
+_mongoc_list_foreach (mongoc_list_t *list,
+                      void (*func) (void *data, void *user_data),
+                      void          *user_data)
 {
    mongoc_list_t *iter;
 
@@ -136,7 +136,7 @@ mongoc_list_foreach (mongoc_list_t *list,
  * Destroys @list and releases any resources.
  */
 void
-mongoc_list_destroy (mongoc_list_t *list)
+_mongoc_list_destroy (mongoc_list_t *list)
 {
    mongoc_list_t *tmp = list;
 

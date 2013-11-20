@@ -223,7 +223,7 @@ mongoc_cluster_add_peer (mongoc_cluster_t *cluster, /* IN */
       }
    }
 
-   cluster->peers = mongoc_list_prepend(cluster->peers, bson_strdup(peer));
+   cluster->peers = _mongoc_list_prepend(cluster->peers, bson_strdup(peer));
 
    EXIT;
 }
@@ -253,8 +253,8 @@ mongoc_cluster_clear_peers (mongoc_cluster_t *cluster) /* IN */
 
    BSON_ASSERT(cluster);
 
-   mongoc_list_foreach(cluster->peers, (void *)bson_free, NULL);
-   mongoc_list_destroy(cluster->peers);
+   _mongoc_list_foreach(cluster->peers, (void *)bson_free, NULL);
+   _mongoc_list_destroy(cluster->peers);
    cluster->peers = NULL;
 
    EXIT;
@@ -1517,8 +1517,8 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
       i++;
    }
 
-   mongoc_list_foreach(list, (void *)bson_free, NULL);
-   mongoc_list_destroy(list);
+   _mongoc_list_foreach(list, (void *)bson_free, NULL);
+   _mongoc_list_destroy(list);
 
    if (i == 0) {
       bson_set_error(error,

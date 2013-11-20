@@ -9,10 +9,10 @@ test_mongoc_list_basic (void)
 {
    mongoc_list_t *l;
 
-   l = mongoc_list_append(NULL, (void *)1ULL);
-   l = mongoc_list_append(l, (void *)2ULL);
-   l = mongoc_list_append(l, (void *)3ULL);
-   l = mongoc_list_prepend(l, (void *)4ULL);
+   l = _mongoc_list_append(NULL, (void *)1ULL);
+   l = _mongoc_list_append(l, (void *)2ULL);
+   l = _mongoc_list_append(l, (void *)3ULL);
+   l = _mongoc_list_prepend(l, (void *)4ULL);
 
    assert(l);
    assert(l->next);
@@ -25,24 +25,24 @@ test_mongoc_list_basic (void)
    assert(l->next->next->data == (void *)2ULL);
    assert(l->next->next->next->data == (void *)3ULL);
 
-   l = mongoc_list_remove(l, (void *)4ULL);
+   l = _mongoc_list_remove(l, (void *)4ULL);
    assert(l->data == (void *)1ULL);
    assert(l->next->data == (void *)2ULL);
    assert(l->next->next->data == (void *)3ULL);
 
-   l = mongoc_list_remove(l, (void *)2ULL);
+   l = _mongoc_list_remove(l, (void *)2ULL);
    assert(l->data == (void *)1ULL);
    assert(l->next->data == (void *)3ULL);
    assert(!l->next->next);
 
-   l = mongoc_list_remove(l, (void *)1ULL);
+   l = _mongoc_list_remove(l, (void *)1ULL);
    assert(l->data == (void *)3ULL);
    assert(!l->next);
 
-   l = mongoc_list_remove(l, (void *)3ULL);
+   l = _mongoc_list_remove(l, (void *)3ULL);
    assert(!l);
 
-   mongoc_list_destroy(l);
+   _mongoc_list_destroy(l);
 }
 
 
