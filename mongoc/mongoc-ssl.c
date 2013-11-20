@@ -54,14 +54,16 @@ mongoc_ssl_opt_get_default (void)
    return &mongoc_ssl_default_opt;
 }
 
-/** mongoc_ssl_init
+/**
+ * _mongoc_ssl_init:
+ *
  * initialization function for SSL
  *
  * This needs to get called early on and is not threadsafe.  Called by
- * mongoc_init
+ * mongoc_init.
  */
 void
-mongoc_ssl_init (void)
+_mongoc_ssl_init (void)
 {
    SSL_library_init ();
    SSL_load_error_strings ();
@@ -154,9 +156,9 @@ mongoc_ssl_hostcheck (const char *pattern,
 /** check if a provided cert matches a passed hostname
  */
 bson_bool_t
-mongoc_ssl_check_cert (SSL        *ssl,
-                       const char *host,
-                       bson_bool_t weak_cert_validation)
+_mongoc_ssl_check_cert (SSL        *ssl,
+                        const char *host,
+                        bson_bool_t weak_cert_validation)
 {
    X509 *peer;
    X509_NAME *subject_name;
@@ -286,9 +288,9 @@ mongoc_ssl_check_cert (SSL        *ssl,
 
 
 static bson_bool_t
-mongoc_ssl_setup_ca (SSL_CTX    *ctx,
-                     const char *cert,
-                     const char *cert_dir)
+_mongoc_ssl_setup_ca (SSL_CTX    *ctx,
+                      const char *cert,
+                      const char *cert_dir)
 {
    BSON_ASSERT(ctx);
    BSON_ASSERT(cert || cert_dir);
@@ -302,8 +304,8 @@ mongoc_ssl_setup_ca (SSL_CTX    *ctx,
 
 
 static bson_bool_t
-mongoc_ssl_setup_crl (SSL_CTX    *ctx,
-                      const char *crlfile)
+_mongoc_ssl_setup_crl (SSL_CTX    *ctx,
+                       const char *crlfile)
 {
    X509_STORE *store;
    X509_LOOKUP *lookup;
@@ -321,9 +323,9 @@ mongoc_ssl_setup_crl (SSL_CTX    *ctx,
 
 
 static bson_bool_t
-mongoc_ssl_setup_pem_file (SSL_CTX    *ctx,
-                           const char *pem_file,
-                           const char *password)
+_mongoc_ssl_setup_pem_file (SSL_CTX    *ctx,
+                            const char *pem_file,
+                            const char *password)
 {
    if (!SSL_CTX_use_certificate_chain_file (ctx, pem_file)) {
       return 0;
@@ -346,14 +348,16 @@ mongoc_ssl_setup_pem_file (SSL_CTX    *ctx,
 }
 
 
-/** Create a new ssl context declaratively
+/**
+ * _mongoc_ssl_ctx_new:
+ *
+ * Create a new ssl context declaratively
  *
  * The opt.pem_pwd parameter, if passed, must exist for the life of this
  * context object (for storing and loading the associated pem file)
- *
  */
 SSL_CTX *
-mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt)
+_mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt)
 {
    SSL_CTX *ctx = NULL;
 
@@ -381,11 +385,11 @@ mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt)
 
    /* Load in verification certs, private keys and revocation lists */
    if ((!opt->pem_file ||
-        mongoc_ssl_setup_pem_file (ctx, opt->pem_file, opt->pem_pwd))
+        _mongoc_ssl_setup_pem_file (ctx, opt->pem_file, opt->pem_pwd))
        && (!(opt->ca_file ||
              opt->ca_dir) ||
-           mongoc_ssl_setup_ca (ctx, opt->ca_file, opt->ca_dir))
-       && (!opt->crl_file || mongoc_ssl_setup_crl (ctx, opt->crl_file))
+           _mongoc_ssl_setup_ca (ctx, opt->ca_file, opt->ca_dir))
+       && (!opt->crl_file || _mongoc_ssl_setup_crl (ctx, opt->crl_file))
        ) {
       return ctx;
    } else {

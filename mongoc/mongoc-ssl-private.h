@@ -27,16 +27,23 @@
 
 BSON_BEGIN_DECLS
 
+
 bson_bool_t
-mongoc_ssl_check_cert (SSL        *ssl,
-                       const char *host,
-                       bson_bool_t weak_cert_validation);
+_mongoc_ssl_check_cert (SSL         *ssl,
+                        const char  *host,
+                        bson_bool_t  weak_cert_validation)
+   BSON_GNUC_INTERNAL;
+
 
 SSL_CTX *
-mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt);
+_mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt)
+   BSON_GNUC_INTERNAL;
+
 
 void
-mongoc_ssl_init (void);
+_mongoc_ssl_init (void)
+   BSON_GNUC_INTERNAL;
+
 
 BSON_END_DECLS
 

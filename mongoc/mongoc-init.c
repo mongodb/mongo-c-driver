@@ -28,7 +28,7 @@ mongoc_init (void)
    BSON_ASSERT (!gMongocIsInitialized);
 
 #ifdef MONGOC_HAVE_SSL
-   mongoc_ssl_init();
+   _mongoc_ssl_init();
 #endif
 
    gMongocIsInitialized = 1;

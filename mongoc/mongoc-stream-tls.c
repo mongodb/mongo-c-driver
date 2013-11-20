@@ -32,7 +32,11 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-tls"
 
-/** Private storage for handling callbacks from mongoc_stream and BIO_*
+
+/**
+ * mongoc_stream_tls_t:
+ *
+ * Private storage for handling callbacks from mongoc_stream and BIO_*
  *
  * The one funny wrinkle comes with timeout, which we use statefully to
  * statefully pass timeouts through from the mongoc-stream api.
@@ -51,49 +55,55 @@ typedef struct
 
 
 static int
-mongoc_stream_tls_bio_create (BIO *b);
+_mongoc_stream_tls_bio_create (BIO *b);
+
 static int
-mongoc_stream_tls_bio_destroy (BIO *b);
+_mongoc_stream_tls_bio_destroy (BIO *b);
+
 static int
-mongoc_stream_tls_bio_read (BIO  *b,
-                            char *buf,
-                            int   len);
+_mongoc_stream_tls_bio_read (BIO  *b,
+                             char *buf,
+                             int   len);
+
 static int
-mongoc_stream_tls_bio_write (BIO        *b,
-                             const char *buf,
-                             int         len);
+_mongoc_stream_tls_bio_write (BIO        *b,
+                              const char *buf,
+                              int         len);
+
 static long
-mongoc_stream_tls_bio_ctrl (BIO  *b,
-                            int   cmd,
-                            long  num,
-                            void *ptr);
+_mongoc_stream_tls_bio_ctrl (BIO  *b,
+                             int   cmd,
+                             long  num,
+                             void *ptr);
+
 static int
-mongoc_stream_tls_bio_gets (BIO  *b,
-                            char *buf,
-                            int   len);
+_mongoc_stream_tls_bio_gets (BIO  *b,
+                             char *buf,
+                             int   len);
+
 static int
-mongoc_stream_tls_bio_puts (BIO        *b,
-                            const char *str);
+_mongoc_stream_tls_bio_puts (BIO        *b,
+                             const char *str);
 
 
 /* Magic vtable to make our BIO shim */
 static BIO_METHOD gMongocStreamTlsRawMethods = {
    BIO_TYPE_FILTER,
    "mongoc-stream-tls-glue",
-   mongoc_stream_tls_bio_write,
-   mongoc_stream_tls_bio_read,
-   mongoc_stream_tls_bio_puts,
-   mongoc_stream_tls_bio_gets,
-   mongoc_stream_tls_bio_ctrl,
-   mongoc_stream_tls_bio_create,
-   mongoc_stream_tls_bio_destroy
+   _mongoc_stream_tls_bio_write,
+   _mongoc_stream_tls_bio_read,
+   _mongoc_stream_tls_bio_puts,
+   _mongoc_stream_tls_bio_gets,
+   _mongoc_stream_tls_bio_ctrl,
+   _mongoc_stream_tls_bio_create,
+   _mongoc_stream_tls_bio_destroy
 };
 
 
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_bio_create --
+ * _mongoc_stream_tls_bio_create --
  *
  *       BIO callback to create a new BIO instance.
  *
@@ -107,7 +117,7 @@ static BIO_METHOD gMongocStreamTlsRawMethods = {
  */
 
 static int
-mongoc_stream_tls_bio_create (BIO *b) /* IN */
+_mongoc_stream_tls_bio_create (BIO *b)
 {
    BSON_ASSERT (b);
 
@@ -123,7 +133,7 @@ mongoc_stream_tls_bio_create (BIO *b) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_bio_destroy --
+ * _mongoc_stream_tls_bio_destroy --
  *
  *       Release resources associated with BIO.
  *
@@ -137,7 +147,7 @@ mongoc_stream_tls_bio_create (BIO *b) /* IN */
  */
 
 static int
-mongoc_stream_tls_bio_destroy (BIO *b) /* IN */
+_mongoc_stream_tls_bio_destroy (BIO *b)
 {
    mongoc_stream_tls_t *tls;
 
@@ -160,7 +170,7 @@ mongoc_stream_tls_bio_destroy (BIO *b) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_bio_read --
+ * _mongoc_stream_tls_bio_read --
  *
  *       Read from the underlying stream to BIO.
  *
@@ -174,9 +184,9 @@ mongoc_stream_tls_bio_destroy (BIO *b) /* IN */
  */
 
 static int
-mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
-                            char *buf, /* OUT */
-                            int   len) /* IN */
+_mongoc_stream_tls_bio_read (BIO  *b,
+                             char *buf,
+                             int   len)
 {
    mongoc_stream_tls_t *tls;
    int ret;
@@ -203,7 +213,7 @@ mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_bio_write --
+ * _mongoc_stream_tls_bio_write --
  *
  *       Write to the underlying stream on behalf of BIO.
  *
@@ -217,9 +227,9 @@ mongoc_stream_tls_bio_read (BIO  *b,   /* IN */
  */
 
 static int
-mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
-                             const char *buf, /* IN */
-                             int         len) /* IN */
+_mongoc_stream_tls_bio_write (BIO        *b,
+                              const char *buf,
+                              int         len)
 {
    mongoc_stream_tls_t *tls;
    struct iovec iov;
@@ -250,7 +260,7 @@ mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_bio_ctrl --
+ * _mongoc_stream_tls_bio_ctrl --
  *
  *       Handle ctrl callback for BIO.
  *
@@ -264,10 +274,10 @@ mongoc_stream_tls_bio_write (BIO        *b,   /* IN */
  */
 
 static long
-mongoc_stream_tls_bio_ctrl (BIO  *b,   /* IN */
-                            int   cmd, /* IN */
-                            long  num, /* IN */
-                            void *ptr) /* INOUT */
+_mongoc_stream_tls_bio_ctrl (BIO  *b,
+                             int   cmd,
+                             long  num,
+                             void *ptr)
 {
    switch (cmd) {
    case BIO_CTRL_FLUSH:
@@ -281,7 +291,7 @@ mongoc_stream_tls_bio_ctrl (BIO  *b,   /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_bio_gets --
+ * _mongoc_stream_tls_bio_gets --
  *
  *       BIO callback for gets(). Not supported.
  *
@@ -295,9 +305,9 @@ mongoc_stream_tls_bio_ctrl (BIO  *b,   /* IN */
  */
 
 static int
-mongoc_stream_tls_bio_gets (BIO  *b,   /* IN */
-                            char *buf, /* OUT */
-                            int   len) /* IN */
+_mongoc_stream_tls_bio_gets (BIO  *b,
+                             char *buf,
+                             int   len)
 {
    return -1;
 }
@@ -306,7 +316,7 @@ mongoc_stream_tls_bio_gets (BIO  *b,   /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_bio_puts --
+ * _mongoc_stream_tls_bio_puts --
  *
  *       BIO callback to perform puts(). Just calls the actual write
  *       callback.
@@ -321,17 +331,17 @@ mongoc_stream_tls_bio_gets (BIO  *b,   /* IN */
  */
 
 static int
-mongoc_stream_tls_bio_puts (BIO        *b,   /* IN */
-                            const char *str) /* IN */
+_mongoc_stream_tls_bio_puts (BIO        *b,
+                             const char *str)
 {
-   return mongoc_stream_tls_bio_write (b, str, strlen (str));
+   return _mongoc_stream_tls_bio_write (b, str, strlen (str));
 }
 
 
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_destroy --
+ * _mongoc_stream_tls_destroy --
  *
  *       Cleanup after usage of a mongoc_stream_tls_t. Free all allocated
  *       resources and ensure connections are closed.
@@ -346,7 +356,7 @@ mongoc_stream_tls_bio_puts (BIO        *b,   /* IN */
  */
 
 static void
-mongoc_stream_tls_destroy (mongoc_stream_t *stream) /* IN */
+_mongoc_stream_tls_destroy (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
@@ -371,7 +381,7 @@ mongoc_stream_tls_destroy (mongoc_stream_t *stream) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_close --
+ * _mongoc_stream_tls_close --
  *
  *       Close the underlying socket.
  *
@@ -389,7 +399,7 @@ mongoc_stream_tls_destroy (mongoc_stream_t *stream) /* IN */
  */
 
 static int
-mongoc_stream_tls_close (mongoc_stream_t *stream) /* IN */
+_mongoc_stream_tls_close (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
@@ -402,7 +412,7 @@ mongoc_stream_tls_close (mongoc_stream_t *stream) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_flush --
+ * _mongoc_stream_tls_flush --
  *
  *       Flush the underlying stream.
  *
@@ -416,7 +426,7 @@ mongoc_stream_tls_close (mongoc_stream_t *stream) /* IN */
  */
 
 static int
-mongoc_stream_tls_flush (mongoc_stream_t *stream) /* IN */
+_mongoc_stream_tls_flush (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
@@ -429,7 +439,7 @@ mongoc_stream_tls_flush (mongoc_stream_t *stream) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_writev --
+ * _mongoc_stream_tls_writev --
  *
  *       Write the iovec to the stream. This function will try to write
  *       all of the bytes or fail. If the number of bytes is not equal
@@ -445,10 +455,10 @@ mongoc_stream_tls_flush (mongoc_stream_t *stream) /* IN */
  */
 
 static ssize_t
-mongoc_stream_tls_writev (mongoc_stream_t *stream,       /* IN */
-                          struct iovec    *iov,          /* IN */
-                          size_t           iovcnt,       /* IN */
-                          bson_int32_t     timeout_msec) /* IN */
+_mongoc_stream_tls_writev (mongoc_stream_t *stream,
+                           struct iovec    *iov,
+                           size_t           iovcnt,
+                           bson_int32_t     timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    ssize_t ret = 0;
@@ -482,7 +492,7 @@ mongoc_stream_tls_writev (mongoc_stream_t *stream,       /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_readv --
+ * _mongoc_stream_tls_readv --
  *
  *       Read from the stream into iov. This function will try to read
  *       all of the bytes or fail. If the number of bytes is not equal
@@ -498,11 +508,11 @@ mongoc_stream_tls_writev (mongoc_stream_t *stream,       /* IN */
  */
 
 static ssize_t
-mongoc_stream_tls_readv (mongoc_stream_t *stream,       /* IN */
-                         struct iovec    *iov,          /* INOUT */
-                         size_t           iovcnt,       /* IN */
-                         size_t           min_bytes,    /* IN */
-                         bson_int32_t     timeout_msec) /* IN */
+_mongoc_stream_tls_readv (mongoc_stream_t *stream,
+                          struct iovec    *iov,
+                          size_t           iovcnt,
+                          size_t           min_bytes,
+                          bson_int32_t     timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    ssize_t ret = 0;
@@ -562,7 +572,7 @@ mongoc_stream_tls_readv (mongoc_stream_t *stream,       /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_cork --
+ * _mongoc_stream_tls_cork --
  *
  *       This function is not supported on mongoc_stream_tls_t.
  *
@@ -576,7 +586,7 @@ mongoc_stream_tls_readv (mongoc_stream_t *stream,       /* IN */
  */
 
 static int
-mongoc_stream_tls_cork (mongoc_stream_t *stream) /* IN */
+_mongoc_stream_tls_cork (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
@@ -589,7 +599,7 @@ mongoc_stream_tls_cork (mongoc_stream_t *stream) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_uncork --
+ * _mongoc_stream_tls_uncork --
  *
  *       The function is not supported on mongoc_stream_tls_t.
  *
@@ -603,7 +613,7 @@ mongoc_stream_tls_cork (mongoc_stream_t *stream) /* IN */
  */
 
 static int
-mongoc_stream_tls_uncork (mongoc_stream_t *stream) /* IN */
+_mongoc_stream_tls_uncork (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
@@ -616,7 +626,7 @@ mongoc_stream_tls_uncork (mongoc_stream_t *stream) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_stream_tls_setsockopt --
+ * _mongoc_stream_tls_setsockopt --
  *
  *       Perform a setsockopt on the underlying stream.
  *
@@ -630,11 +640,11 @@ mongoc_stream_tls_uncork (mongoc_stream_t *stream) /* IN */
  */
 
 static int
-mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,  /* IN */
-                              int              level,   /* IN */
-                              int              optname, /* IN */
-                              void            *optval,  /* INOUT */
-                              socklen_t        optlen)  /* IN */
+_mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,
+                               int              level,
+                               int              optname,
+                               void            *optval,
+                               socklen_t        optlen)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
@@ -648,7 +658,10 @@ mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,  /* IN */
 }
 
 
-/** force an ssl handshake
+/**
+ * mongoc_stream_tls_do_handshake:
+ *
+ * force an ssl handshake
  *
  * This will happen on the first read or write otherwise
  */
@@ -666,7 +679,11 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
 }
 
 
-/** check the cert returned by the other party */
+/**
+ * mongoc_stream_tls_check_cert:
+ *
+ * check the cert returned by the other party
+ */
 bson_bool_t
 mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
                               const char      *host)
@@ -679,7 +696,7 @@ mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
 
    BIO_get_ssl (tls->bio, &ssl);
 
-   return mongoc_ssl_check_cert (ssl, host, tls->weak_cert_validation);
+   return _mongoc_ssl_check_cert (ssl, host, tls->weak_cert_validation);
 }
 
 
@@ -720,7 +737,7 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
    BSON_ASSERT(base_stream);
    BSON_ASSERT(opt);
 
-   ssl_ctx = mongoc_ssl_ctx_new (opt);
+   ssl_ctx = _mongoc_ssl_ctx_new (opt);
 
    if (!ssl_ctx) {
       return NULL;
@@ -733,14 +750,14 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
 
    tls = bson_malloc0 (sizeof *tls);
    tls->base_stream = base_stream;
-   tls->parent.destroy = mongoc_stream_tls_destroy;
-   tls->parent.close = mongoc_stream_tls_close;
-   tls->parent.flush = mongoc_stream_tls_flush;
-   tls->parent.writev = mongoc_stream_tls_writev;
-   tls->parent.readv = mongoc_stream_tls_readv;
-   tls->parent.cork = mongoc_stream_tls_cork;
-   tls->parent.uncork = mongoc_stream_tls_uncork;
-   tls->parent.setsockopt = mongoc_stream_tls_setsockopt;
+   tls->parent.destroy = _mongoc_stream_tls_destroy;
+   tls->parent.close = _mongoc_stream_tls_close;
+   tls->parent.flush = _mongoc_stream_tls_flush;
+   tls->parent.writev = _mongoc_stream_tls_writev;
+   tls->parent.readv = _mongoc_stream_tls_readv;
+   tls->parent.cork = _mongoc_stream_tls_cork;
+   tls->parent.uncork = _mongoc_stream_tls_uncork;
+   tls->parent.setsockopt = _mongoc_stream_tls_setsockopt;
    tls->weak_cert_validation = opt->weak_cert_validation;
    tls->bio = bio_ssl;
    tls->ctx = ssl_ctx;
