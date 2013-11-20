@@ -82,7 +82,7 @@
 
 
 /**
- * mongoc_cluster_negotiate_wire_version:
+ * _mongoc_cluster_negotiate_wire_version:
  * @node: A #mongoc_cluster_t.
  *
  * Negotiate the wire-protocol version between all of our connected
@@ -98,7 +98,7 @@
  * Returns: %TRUE if we negotiated, otherwise %FALSE.
  */
 static bson_int32_t
-mongoc_cluster_negotiate_wire_version (mongoc_cluster_t *cluster)
+_mongoc_cluster_negotiate_wire_version (mongoc_cluster_t *cluster)
 {
    mongoc_cluster_node_t *node;
    bson_int32_t min_wire_version = MIN_WIRE_VERSION;
@@ -148,7 +148,7 @@ mongoc_cluster_negotiate_wire_version (mongoc_cluster_t *cluster)
  */
 
 static void
-mongoc_cluster_update_state (mongoc_cluster_t *cluster) /* IN */
+_mongoc_cluster_update_state (mongoc_cluster_t *cluster)
 {
    mongoc_cluster_state_t state;
    mongoc_cluster_node_t *node;
@@ -205,8 +205,8 @@ mongoc_cluster_update_state (mongoc_cluster_t *cluster) /* IN */
  */
 
 static void
-mongoc_cluster_add_peer (mongoc_cluster_t *cluster, /* IN */
-                         const char       *peer)    /* IN */
+_mongoc_cluster_add_peer (mongoc_cluster_t *cluster,
+                          const char       *peer)
 {
    mongoc_list_t *iter;
 
@@ -232,7 +232,7 @@ mongoc_cluster_add_peer (mongoc_cluster_t *cluster, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_clear_peers --
+ * _mongoc_cluster_clear_peers --
  *
  *       Clears list of cached potential peers that we've seen in the
  *       "hosts" field of replicaSet nodes.
@@ -247,7 +247,7 @@ mongoc_cluster_add_peer (mongoc_cluster_t *cluster, /* IN */
  */
 
 static void
-mongoc_cluster_clear_peers (mongoc_cluster_t *cluster) /* IN */
+_mongoc_cluster_clear_peers (mongoc_cluster_t *cluster)
 {
    ENTRY;
 
@@ -264,7 +264,7 @@ mongoc_cluster_clear_peers (mongoc_cluster_t *cluster) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_node_init --
+ * _mongoc_cluster_node_init --
  *
  *       Initialize a mongoc_cluster_node_t.
  *
@@ -278,7 +278,7 @@ mongoc_cluster_clear_peers (mongoc_cluster_t *cluster) /* IN */
  */
 
 static void
-mongoc_cluster_node_init (mongoc_cluster_node_t *node) /* IN */
+_mongoc_cluster_node_init (mongoc_cluster_node_t *node)
 {
    ENTRY;
 
@@ -302,7 +302,7 @@ mongoc_cluster_node_init (mongoc_cluster_node_t *node) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_node_track_ping --
+ * _mongoc_cluster_node_track_ping --
  *
  *       Add the ping time to the mongoc_cluster_node_t.
  *       Increment the position in the ring buffer and update the
@@ -318,8 +318,8 @@ mongoc_cluster_node_init (mongoc_cluster_node_t *node) /* IN */
  */
 
 static void
-mongoc_cluster_node_track_ping (mongoc_cluster_node_t *node, /* IN */
-                                bson_int32_t           ping) /* IN */
+_mongoc_cluster_node_track_ping (mongoc_cluster_node_t *node,
+                                 bson_int32_t           ping)
 {
    int total = 0;
    int count = 0;
@@ -358,7 +358,7 @@ mongoc_cluster_node_track_ping (mongoc_cluster_node_t *node, /* IN */
  */
 
 static void
-mongoc_cluster_node_destroy (mongoc_cluster_node_t *node) /* IN */
+_mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
 {
    ENTRY;
 
@@ -398,8 +398,8 @@ mongoc_cluster_node_destroy (mongoc_cluster_node_t *node) /* IN */
  */
 
 static char *
-mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster, /* IN */
-                                        const char       *nonce)   /* IN */
+_mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster,
+                                         const char       *nonce)
 {
    const char *username;
    const char *password;
@@ -456,8 +456,8 @@ mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster, /* IN */
  */
 
 static void
-mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
-                                mongoc_cluster_node_t *node)    /* INOUT */
+_mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster,
+                                 mongoc_cluster_node_t *node)
 {
    ENTRY;
 
@@ -476,10 +476,10 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
    node->stamp++;
    node->primary = 0;
 
-   bson_destroy(&node->tags);
-   bson_init(&node->tags);
+   bson_destroy (&node->tags);
+   bson_init (&node->tags);
 
-   mongoc_cluster_update_state(cluster);
+   _mongoc_cluster_update_state (cluster);
 
    EXIT;
 }
@@ -488,7 +488,7 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_init --
+ * _mongoc_cluster_init --
  *
  *       Initializes @cluster using the @uri and @client provided. The
  *       @uri is used to determine the "mode" of the cluster. Based on the
@@ -505,9 +505,9 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster, /* IN */
  */
 
 void
-mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
-                     const mongoc_uri_t *uri,     /* IN */
-                     void               *client)  /* IN */
+_mongoc_cluster_init (mongoc_cluster_t   *cluster,
+                      const mongoc_uri_t *uri,
+                      void               *client)
 {
    const mongoc_host_list_t *hosts;
    bson_uint32_t sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC;
@@ -555,7 +555,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
    }
 
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
-      mongoc_cluster_node_init(&cluster->nodes[i]);
+      _mongoc_cluster_node_init(&cluster->nodes[i]);
       cluster->nodes[i].stamp = 0;
       cluster->nodes[i].index = i;
       cluster->nodes[i].ping_avg_msec = -1;
@@ -571,7 +571,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_destroy --
+ * _mongoc_cluster_destroy --
  *
  *       Clean up after @cluster and destroy all active connections.
  *       All resources for @cluster are released.
@@ -586,27 +586,27 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster, /* OUT */
  */
 
 void
-mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
+_mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 {
    bson_uint32_t i;
 
    ENTRY;
 
-   bson_return_if_fail(cluster);
+   bson_return_if_fail (cluster);
 
-   mongoc_uri_destroy(cluster->uri);
+   mongoc_uri_destroy (cluster->uri);
 
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (cluster->nodes[i].stream) {
-         mongoc_stream_destroy(cluster->nodes[i].stream);
+         mongoc_stream_destroy (cluster->nodes[i].stream);
          cluster->nodes[i].stream = NULL;
          cluster->nodes[i].stamp++;
       }
    }
 
-   mongoc_cluster_clear_peers(cluster);
+   _mongoc_cluster_clear_peers (cluster);
 
-   mongoc_array_destroy(&cluster->iov);
+   mongoc_array_destroy (&cluster->iov);
 
    EXIT;
 }
@@ -615,7 +615,7 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_select --
+ * _mongoc_cluster_select --
  *
  *       Selects a cluster node that is suitable for handling the required
  *       set of rpc messages. The read_prefs are taken into account.
@@ -633,13 +633,13 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
  */
 
 static mongoc_cluster_node_t *
-mongoc_cluster_select (mongoc_cluster_t             *cluster,       /* IN */
-                       mongoc_rpc_t                 *rpcs,          /* IN */
-                       size_t                        rpcs_len,      /* IN */
-                       bson_uint32_t                 hint,          /* IN */
-                       const mongoc_write_concern_t *write_concern, /* IN */
-                       const mongoc_read_prefs_t    *read_prefs,    /* IN */
-                       bson_error_t                 *error)         /* OUT */
+_mongoc_cluster_select (mongoc_cluster_t             *cluster,
+                        mongoc_rpc_t                 *rpcs,
+                        size_t                        rpcs_len,
+                        bson_uint32_t                 hint,
+                        const mongoc_write_concern_t *write_concern,
+                        const mongoc_read_prefs_t    *read_prefs,
+                        bson_error_t                 *error)
 {
    mongoc_cluster_node_t *nodes[MONGOC_CLUSTER_MAX_NODES];
    mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
@@ -821,7 +821,7 @@ dispatch:
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_run_command --
+ * _mongoc_cluster_run_command --
  *
  *       Helper to run a command on a given mongoc_cluster_node_t.
  *
@@ -835,12 +835,12 @@ dispatch:
  */
 
 static bson_bool_t
-mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
-                            mongoc_cluster_node_t *node,    /* IN */
-                            const char            *db_name, /* IN */
-                            const bson_t          *command, /* IN */
-                            bson_t                *reply,   /* OUT */
-                            bson_error_t          *error)   /* OUT */
+_mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
+                             mongoc_cluster_node_t *node,
+                             const char            *db_name,
+                             const bson_t          *command,
+                             bson_t                *reply,
+                             bson_error_t          *error)
 {
    mongoc_buffer_t buffer;
    mongoc_array_t ar;
@@ -937,7 +937,7 @@ failure:
       bson_init(reply);
    }
 
-   mongoc_cluster_disconnect_node(cluster, node);
+   _mongoc_cluster_disconnect_node(cluster, node);
 
    RETURN(FALSE);
 }
@@ -946,7 +946,7 @@ failure:
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_ismaster --
+ * _mongoc_cluster_ismaster --
  *
  *       Executes an isMaster command on a given mongoc_cluster_node_t.
  *
@@ -963,9 +963,9 @@ failure:
  */
 
 static bson_bool_t
-mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
-                         mongoc_cluster_node_t *node,    /* INOUT */
-                         bson_error_t          *error)   /* OUT */
+_mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
+                         mongoc_cluster_node_t *node,
+                         bson_error_t          *error)
 {
    bson_int32_t v32;
    bson_bool_t ret = FALSE;
@@ -983,24 +983,20 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
    bson_init(&command);
    bson_append_int32(&command, "isMaster", 8, 1);
 
-   if (!mongoc_cluster_run_command(cluster,
-                                   node,
-                                   "admin",
-                                   &command,
-                                   &reply,
-                                   error)) {
-      mongoc_cluster_disconnect_node(cluster, node);
-      GOTO(failure);
+   if (!_mongoc_cluster_run_command (cluster, node, "admin", &command, &reply,
+                                     error)) {
+      _mongoc_cluster_disconnect_node (cluster, node);
+      GOTO (failure);
    }
 
    node->primary = FALSE;
 
-   bson_free(node->replSet);
+   bson_free (node->replSet);
    node->replSet = NULL;
 
-   if (bson_iter_init_find_case(&iter, &reply, "isMaster") &&
-       BSON_ITER_HOLDS_BOOL(&iter) &&
-       bson_iter_bool(&iter)) {
+   if (bson_iter_init_find_case (&iter, &reply, "isMaster") &&
+       BSON_ITER_HOLDS_BOOL (&iter) &&
+       bson_iter_bool (&iter)) {
       node->primary = TRUE;
    }
 
@@ -1028,7 +1024,7 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
       node->min_wire_version = bson_iter_int32(&iter);
    }
 
-   if (!mongoc_cluster_negotiate_wire_version (cluster)) {
+   if (!_mongoc_cluster_negotiate_wire_version (cluster)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
@@ -1055,13 +1051,13 @@ mongoc_cluster_ismaster (mongoc_cluster_t      *cluster, /* IN */
     * further connections.
     */
    if (cluster->mode == MONGOC_CLUSTER_REPLICA_SET) {
-      if (bson_iter_init_find(&iter, &reply, "hosts") &&
-          bson_iter_recurse(&iter, &child)) {
+      if (bson_iter_init_find (&iter, &reply, "hosts") &&
+          bson_iter_recurse (&iter, &child)) {
          if (node->primary) {
-            mongoc_cluster_clear_peers(cluster);
+            _mongoc_cluster_clear_peers (cluster);
          }
-         while (bson_iter_next(&child) && BSON_ITER_HOLDS_UTF8(&child)) {
-            mongoc_cluster_add_peer(cluster, bson_iter_utf8(&child, NULL));
+         while (bson_iter_next (&child) && BSON_ITER_HOLDS_UTF8 (&child)) {
+            _mongoc_cluster_add_peer (cluster, bson_iter_utf8(&child, NULL));
          }
       }
       if (bson_iter_init_find(&iter, &reply, "setName") &&
@@ -1083,7 +1079,7 @@ failure:
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_ping_node --
+ * _mongoc_cluster_ping_node --
  *
  *       Ping a remote node and return the round-trip latency.
  *
@@ -1098,9 +1094,9 @@ failure:
  */
 
 static bson_int32_t
-mongoc_cluster_ping_node (mongoc_cluster_t      *cluster, /* IN */
-                          mongoc_cluster_node_t *node,    /* IN */
-                          bson_error_t          *error)   /* OUT */
+_mongoc_cluster_ping_node (mongoc_cluster_t      *cluster,
+                           mongoc_cluster_node_t *node,
+                           bson_error_t          *error)
 {
    bson_int64_t t_begin;
    bson_int64_t t_end;
@@ -1117,9 +1113,9 @@ mongoc_cluster_ping_node (mongoc_cluster_t      *cluster, /* IN */
    bson_init(&cmd);
    bson_append_int32(&cmd, "ping", 4, 1);
 
-   t_begin = bson_get_monotonic_time();
-   r = mongoc_cluster_run_command(cluster, node, "admin", &cmd, NULL, error);
-   t_end = bson_get_monotonic_time();
+   t_begin = bson_get_monotonic_time ();
+   r = _mongoc_cluster_run_command (cluster, node, "admin", &cmd, NULL, error);
+   t_end = bson_get_monotonic_time ();
 
    bson_destroy(&cmd);
 
@@ -1132,7 +1128,7 @@ mongoc_cluster_ping_node (mongoc_cluster_t      *cluster, /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_auth_node --
+ * _mongoc_cluster_auth_node --
  *
  *       Performs authentication of @node using the credentials provided
  *       when configuring the @cluster instance.
@@ -1148,9 +1144,9 @@ mongoc_cluster_ping_node (mongoc_cluster_t      *cluster, /* IN */
  */
 
 static bson_bool_t
-mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
-                          mongoc_cluster_node_t *node,    /* INOUT */
-                          bson_error_t          *error)   /* OUT */
+_mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
+                           mongoc_cluster_node_t *node,
+                           bson_error_t          *error)
 {
    bson_iter_t iter;
    const char *auth_source;
@@ -1179,32 +1175,28 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
     * Execute the getnonce command to fetch the nonce used for generating
     * md5 digest of our password information.
     */
-   bson_init(&command);
-   bson_append_int32(&command, "getnonce", 8, 1);
-   if (!mongoc_cluster_run_command(cluster,
-                                   node,
-                                   auth_source,
-                                   &command,
-                                   &reply,
-                                   error)) {
-      bson_destroy(&command);
-      RETURN(FALSE);
+   bson_init (&command);
+   bson_append_int32 (&command, "getnonce", 8, 1);
+   if (!_mongoc_cluster_run_command (cluster, node, auth_source, &command,
+                                     &reply, error)) {
+      bson_destroy (&command);
+      RETURN (FALSE);
    }
-   bson_destroy(&command);
-   if (!bson_iter_init_find_case(&iter, &reply, "nonce")) {
-      bson_set_error(error,
-                     MONGOC_ERROR_CLIENT,
-                     MONGOC_ERROR_CLIENT_GETNONCE,
-                     "Invalid reply from getnonce");
-      bson_destroy(&reply);
-      RETURN(FALSE);
+   bson_destroy (&command);
+   if (!bson_iter_init_find_case (&iter, &reply, "nonce")) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_GETNONCE,
+                      "Invalid reply from getnonce");
+      bson_destroy (&reply);
+      RETURN (FALSE);
    }
 
    /*
     * Build our command to perform the authentication.
     */
    nonce = bson_iter_dup_utf8(&iter, NULL);
-   digest = mongoc_cluster_build_basic_auth_digest(cluster, nonce);
+   digest = _mongoc_cluster_build_basic_auth_digest(cluster, nonce);
    bson_init(&command);
    bson_append_int32(&command, "authenticate", 12, 1);
    bson_append_utf8(&command, "user", 4,
@@ -1218,14 +1210,10 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
    /*
     * Execute the authenticate command and check for {ok:1}
     */
-   if (!mongoc_cluster_run_command(cluster,
-                                   node,
-                                   auth_source,
-                                   &command,
-                                   &reply,
-                                   error)) {
-      bson_destroy(&command);
-      RETURN(FALSE);
+   if (!_mongoc_cluster_run_command (cluster, node, auth_source, &command,
+                                     &reply, error)) {
+      bson_destroy (&command);
+      RETURN (FALSE);
    }
 
    if (!bson_iter_init_find_case(&iter, &reply, "ok") ||
@@ -1269,8 +1257,8 @@ mongoc_cluster_auth_node (mongoc_cluster_t      *cluster, /* IN */
  */
 
 static bson_bool_t
-mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
-                                 bson_error_t     *error)   /* OUT */
+_mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
+                                  bson_error_t     *error)
 {
    const mongoc_host_list_t *hosts;
    mongoc_cluster_node_t *node;
@@ -1314,34 +1302,34 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
 
    timeout.tv_sec = cluster->sockettimeoutms / 1000UL;
    timeout.tv_usec = (cluster->sockettimeoutms % 1000UL) * 1000UL;
-   mongoc_stream_setsockopt(stream, SOL_SOCKET, SO_RCVTIMEO,
-                            &timeout, sizeof timeout);
-   mongoc_stream_setsockopt(stream, SOL_SOCKET, SO_SNDTIMEO,
-                            &timeout, sizeof timeout);
+   mongoc_stream_setsockopt (stream, SOL_SOCKET, SO_RCVTIMEO,
+                             &timeout, sizeof timeout);
+   mongoc_stream_setsockopt (stream, SOL_SOCKET, SO_SNDTIMEO,
+                             &timeout, sizeof timeout);
 
-   if (!mongoc_cluster_ismaster(cluster, node, error)) {
-      mongoc_cluster_disconnect_node(cluster, node);
-      RETURN(FALSE);
+   if (!_mongoc_cluster_ismaster (cluster, node, error)) {
+      _mongoc_cluster_disconnect_node (cluster, node);
+      RETURN (FALSE);
    }
 
    if (node->needs_auth) {
-      if (!mongoc_cluster_auth_node(cluster, node, error)) {
-         mongoc_cluster_disconnect_node(cluster, node);
-         RETURN(FALSE);
+      if (!_mongoc_cluster_auth_node (cluster, node, error)) {
+         _mongoc_cluster_disconnect_node (cluster, node);
+         RETURN (FALSE);
       }
       node->needs_auth = FALSE;
    }
 
-   mongoc_cluster_update_state(cluster);
+   _mongoc_cluster_update_state (cluster);
 
-   RETURN(TRUE);
+   RETURN (TRUE);
 }
 
 
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_reconnect_replica_set --
+ * _mongoc_cluster_reconnect_replica_set --
  *
  *       Reconnect to replicaSet members that are unhealthy.
  *
@@ -1362,8 +1350,8 @@ mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster, /* IN */
  */
 
 static bson_bool_t
-mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
-                                      bson_error_t     *error)   /* OUT */
+_mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
+                                       bson_error_t     *error)
 {
    const mongoc_host_list_t *hosts;
    const mongoc_host_list_t *iter;
@@ -1422,7 +1410,7 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
 
    cluster->last_reconnect = bson_get_monotonic_time();
 
-   mongoc_cluster_clear_peers(cluster);
+   _mongoc_cluster_clear_peers (cluster);
 
    /*
     * Discover all the potential peers from our seeds.
@@ -1434,26 +1422,26 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
          continue;
       }
 
-      mongoc_cluster_node_init(&node);
+      _mongoc_cluster_node_init(&node);
       node.host = *iter;
       node.stream = stream;
 
-      if (!mongoc_cluster_ismaster(cluster, &node, error)) {
-         mongoc_cluster_node_destroy(&node);
+      if (!_mongoc_cluster_ismaster (cluster, &node, error)) {
+         _mongoc_cluster_node_destroy (&node);
          continue;
       }
 
-      if (!node.replSet || !!strcmp(node.replSet, replSet)) {
+      if (!node.replSet || !!strcmp (node.replSet, replSet)) {
          MONGOC_INFO("%s: Got replicaSet \"%s\" expected \"%s\".",
                      iter->host_and_port, node.replSet, replSet);
       }
 
       if (node.primary) {
-         mongoc_cluster_node_destroy(&node);
+         _mongoc_cluster_node_destroy (&node);
          break;
       }
 
-      mongoc_cluster_node_destroy(&node);
+      _mongoc_cluster_node_destroy (&node);
    }
 
    list = cluster->peers;
@@ -1475,44 +1463,45 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
          continue;
       }
 
-      mongoc_cluster_node_init(&cluster->nodes[i]);
+      _mongoc_cluster_node_init(&cluster->nodes[i]);
+
       cluster->nodes[i].host = host;
       cluster->nodes[i].index = i;
       cluster->nodes[i].stream = stream;
 
-      if (!mongoc_cluster_ismaster(cluster, &cluster->nodes[i], error)) {
-         mongoc_cluster_node_destroy(&cluster->nodes[i]);
+      if (!_mongoc_cluster_ismaster(cluster, &cluster->nodes[i], error)) {
+         _mongoc_cluster_node_destroy(&cluster->nodes[i]);
          continue;
       }
 
       if (!cluster->nodes[i].replSet ||
-          !!strcmp(cluster->nodes[i].replSet, replSet)) {
-         MONGOC_INFO("%s: Got replicaSet \"%s\" expected \"%s\".",
-                     host.host_and_port,
-                     cluster->nodes[i].replSet,
-                     replSet);
-         mongoc_cluster_node_destroy(&cluster->nodes[i]);
+          !!strcmp (cluster->nodes[i].replSet, replSet)) {
+         MONGOC_INFO ("%s: Got replicaSet \"%s\" expected \"%s\".",
+                      host.host_and_port,
+                      cluster->nodes[i].replSet,
+                      replSet);
+         _mongoc_cluster_node_destroy (&cluster->nodes[i]);
          continue;
       }
 
       if (cluster->nodes[i].needs_auth) {
-         if (!mongoc_cluster_auth_node (cluster, &cluster->nodes[i], error)) {
-            mongoc_cluster_node_destroy (&cluster->nodes[i]);
+         if (!_mongoc_cluster_auth_node (cluster, &cluster->nodes[i], error)) {
+            _mongoc_cluster_node_destroy (&cluster->nodes[i]);
             RETURN (FALSE);
          }
          cluster->nodes[i].needs_auth = FALSE;
       }
 
-      if (-1 == (ping = mongoc_cluster_ping_node(cluster,
-                                                 &cluster->nodes[i],
-                                                 error))) {
+      if (-1 == (ping = _mongoc_cluster_ping_node (cluster,
+                                                   &cluster->nodes[i],
+                                                   error))) {
          MONGOC_INFO("%s: Lost connection during ping.",
                      host.host_and_port);
-         mongoc_cluster_node_destroy(&cluster->nodes[i]);
+         _mongoc_cluster_node_destroy (&cluster->nodes[i]);
          continue;
       }
 
-      mongoc_cluster_node_track_ping(&cluster->nodes[i], ping);
+      _mongoc_cluster_node_track_ping(&cluster->nodes[i], ping);
 
       i++;
    }
@@ -1528,15 +1517,15 @@ mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster, /* IN */
       RETURN(FALSE);
    }
 
-   mongoc_cluster_update_state(cluster);
+   _mongoc_cluster_update_state (cluster);
 
    RETURN(TRUE);
 }
 
 
 static bson_bool_t
-mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
-                                          bson_error_t     *error)
+_mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
+                                           bson_error_t     *error)
 {
    const mongoc_host_list_t *hosts;
    const mongoc_host_list_t *iter;
@@ -1585,35 +1574,35 @@ mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
          continue;
       }
 
-      mongoc_cluster_node_init (&cluster->nodes[i]);
+      _mongoc_cluster_node_init (&cluster->nodes[i]);
 
       cluster->nodes[i].host = *iter;
       cluster->nodes[i].index = i;
       cluster->nodes[i].stream = stream;
 
-      if (!mongoc_cluster_ismaster (cluster, &cluster->nodes[i], error)) {
-         mongoc_cluster_node_destroy (&cluster->nodes[i]);
+      if (!_mongoc_cluster_ismaster (cluster, &cluster->nodes[i], error)) {
+         _mongoc_cluster_node_destroy (&cluster->nodes[i]);
          continue;
       }
 
       if (cluster->nodes[i].needs_auth) {
-         if (!mongoc_cluster_auth_node (cluster, &cluster->nodes[i], error)) {
-            mongoc_cluster_node_destroy (&cluster->nodes[i]);
+         if (!_mongoc_cluster_auth_node (cluster, &cluster->nodes[i], error)) {
+            _mongoc_cluster_node_destroy (&cluster->nodes[i]);
             RETURN (FALSE);
          }
          cluster->nodes[i].needs_auth = FALSE;
       }
 
-      if (-1 == (ping = mongoc_cluster_ping_node (cluster,
-                                                  &cluster->nodes[i],
-                                                  error))) {
+      if (-1 == (ping = _mongoc_cluster_ping_node (cluster,
+                                                   &cluster->nodes[i],
+                                                   error))) {
          MONGOC_INFO ("%s: Lost connection during ping.",
                       iter->host_and_port);
-         mongoc_cluster_node_destroy (&cluster->nodes[i]);
+         _mongoc_cluster_node_destroy (&cluster->nodes[i]);
          continue;
       }
 
-      mongoc_cluster_node_track_ping (&cluster->nodes[i], ping);
+      _mongoc_cluster_node_track_ping (&cluster->nodes[i], ping);
 
       i++;
    }
@@ -1650,25 +1639,25 @@ mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
  */
 
 static bson_bool_t
-mongoc_cluster_reconnect (mongoc_cluster_t *cluster, /* IN */
-                          bson_error_t     *error)   /* OUT */
+_mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
+                           bson_error_t     *error)
 {
    bson_bool_t ret;
 
    ENTRY;
 
-   bson_return_val_if_fail(cluster, FALSE);
+   bson_return_val_if_fail (cluster, FALSE);
 
    switch (cluster->mode) {
    case MONGOC_CLUSTER_DIRECT:
-      ret = mongoc_cluster_reconnect_direct(cluster, error);
-      RETURN(ret);
+      ret = _mongoc_cluster_reconnect_direct (cluster, error);
+      RETURN (ret);
    case MONGOC_CLUSTER_REPLICA_SET:
-      ret = mongoc_cluster_reconnect_replica_set(cluster, error);
-      RETURN(ret);
+      ret = _mongoc_cluster_reconnect_replica_set (cluster, error);
+      RETURN (ret);
    case MONGOC_CLUSTER_SHARDED_CLUSTER:
-      ret = mongoc_cluster_reconnect_sharded_cluster(cluster, error);
-      RETURN(ret);
+      ret = _mongoc_cluster_reconnect_sharded_cluster (cluster, error);
+      RETURN (ret);
    default:
       break;
    }
@@ -1679,7 +1668,7 @@ mongoc_cluster_reconnect (mongoc_cluster_t *cluster, /* IN */
                   "Unsupported cluster mode: %02x",
                   cluster->mode);
 
-   return FALSE;
+   RETURN (FALSE);
 }
 
 
@@ -1698,11 +1687,11 @@ _mongoc_cluster_command_early (mongoc_cluster_t *cluster,
    BSON_ASSERT (dbname);
    BSON_ASSERT (command);
 
-   if (!mongoc_cluster_reconnect (cluster, error)) {
+   if (!_mongoc_cluster_reconnect (cluster, error)) {
       return FALSE;
    }
 
-   node = mongoc_cluster_get_primary (cluster);
+   node = _mongoc_cluster_get_primary (cluster);
 
    for (i = 0; !node && i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (cluster->nodes[i].stream) {
@@ -1710,15 +1699,15 @@ _mongoc_cluster_command_early (mongoc_cluster_t *cluster,
       }
    }
 
-   return mongoc_cluster_run_command (cluster, node, dbname, command,
-                                      reply, error);
+   return _mongoc_cluster_run_command (cluster, node, dbname, command,
+                                       reply, error);
 }
 
 
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_inc_egress_rpc --
+ * _mongoc_cluster_inc_egress_rpc --
  *
  *       Helper to increment the counter for a particular RPC based on
  *       it's opcode.
@@ -1733,7 +1722,7 @@ _mongoc_cluster_command_early (mongoc_cluster_t *cluster,
  */
 
 static BSON_INLINE void
-mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
+_mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
 {
    mongoc_counter_op_egress_total_inc();
 
@@ -1772,7 +1761,7 @@ mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_inc_ingress_rpc --
+ * _mongoc_cluster_inc_ingress_rpc --
  *
  *       Helper to increment the counter for a particular RPC based on
  *       it's opcode.
@@ -1787,37 +1776,37 @@ mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
  */
 
 static BSON_INLINE void
-mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
+_mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
 {
-   mongoc_counter_op_ingress_total_inc();
+   mongoc_counter_op_ingress_total_inc ();
 
    switch (rpc->header.opcode) {
    case MONGOC_OPCODE_DELETE:
-      mongoc_counter_op_ingress_delete_inc();
+      mongoc_counter_op_ingress_delete_inc ();
       break;
    case MONGOC_OPCODE_UPDATE:
-      mongoc_counter_op_ingress_update_inc();
+      mongoc_counter_op_ingress_update_inc ();
       break;
    case MONGOC_OPCODE_INSERT:
-      mongoc_counter_op_ingress_insert_inc();
+      mongoc_counter_op_ingress_insert_inc ();
       break;
    case MONGOC_OPCODE_KILL_CURSORS:
-      mongoc_counter_op_ingress_killcursors_inc();
+      mongoc_counter_op_ingress_killcursors_inc ();
       break;
    case MONGOC_OPCODE_GET_MORE:
-      mongoc_counter_op_ingress_getmore_inc();
+      mongoc_counter_op_ingress_getmore_inc ();
       break;
    case MONGOC_OPCODE_REPLY:
-      mongoc_counter_op_ingress_reply_inc();
+      mongoc_counter_op_ingress_reply_inc ();
       break;
    case MONGOC_OPCODE_MSG:
-      mongoc_counter_op_ingress_msg_inc();
+      mongoc_counter_op_ingress_msg_inc ();
       break;
    case MONGOC_OPCODE_QUERY:
-      mongoc_counter_op_ingress_query_inc();
+      mongoc_counter_op_ingress_query_inc ();
       break;
    default:
-      BSON_ASSERT(FALSE);
+      BSON_ASSERT (FALSE);
       break;
    }
 }
@@ -1826,7 +1815,7 @@ mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_sendv --
+ * _mongoc_cluster_sendv --
  *
  *       Deliver an RPC to the MongoDB server.
  *
@@ -1868,13 +1857,13 @@ mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
  */
 
 bson_uint32_t
-mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
-                      mongoc_rpc_t                 *rpcs,          /* INOUT */
-                      size_t                        rpcs_len,      /* IN */
-                      bson_uint32_t                 hint,          /* IN */
-                      const mongoc_write_concern_t *write_concern, /* IN */
-                      const mongoc_read_prefs_t    *read_prefs,    /* IN */
-                      bson_error_t                 *error)         /* OUT */
+_mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
+                       mongoc_rpc_t                 *rpcs,
+                       size_t                        rpcs_len,
+                       bson_uint32_t                 hint,
+                       const mongoc_write_concern_t *write_concern,
+                       const mongoc_read_prefs_t    *read_prefs,
+                       bson_error_t                 *error)
 {
    mongoc_cluster_node_t *node;
    bson_int64_t now;
@@ -1902,7 +1891,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
    if ((cluster->state == MONGOC_CLUSTER_STATE_DEAD) ||
        ((cluster->state == MONGOC_CLUSTER_STATE_UNHEALTHY) &&
         (cluster->last_reconnect + UNHEALTHY_RECONNECT_TIMEOUT_USEC) <= now)) {
-      if (!mongoc_cluster_reconnect(cluster, error)) {
+      if (!_mongoc_cluster_reconnect(cluster, error)) {
          RETURN(FALSE);
       }
    }
@@ -1911,16 +1900,12 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
     * Try to find a node to deliver to. Since we are allowed to block in this
     * version of sendv, we try to reconnect if we cannot select a node.
     */
-   while (!(node = mongoc_cluster_select(cluster,
-                                         rpcs,
-                                         rpcs_len,
-                                         hint,
-                                         write_concern,
-                                         read_prefs,
-                                         error))) {
+   while (!(node = _mongoc_cluster_select (cluster, rpcs, rpcs_len, hint,
+                                           write_concern, read_prefs,
+                                           error))) {
       if ((retry_count++ == MAX_RETRY_COUNT) ||
-          !mongoc_cluster_reconnect(cluster, error)) {
-         RETURN(FALSE);
+          !_mongoc_cluster_reconnect (cluster, error)) {
+         RETURN (FALSE);
       }
    }
 
@@ -1936,10 +1921,10 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
     */
 
    for (i = 0; i < rpcs_len; i++) {
-      mongoc_cluster_inc_egress_rpc(&rpcs[i]);
+      _mongoc_cluster_inc_egress_rpc (&rpcs[i]);
       rpcs[i].header.request_id = ++cluster->request_id;
       need_gle = _mongoc_rpc_needs_gle(&rpcs[i], write_concern);
-      _mongoc_rpc_gather(&rpcs[i], &cluster->iov);
+      _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
 
       if (rpcs[i].header.msg_len > cluster->max_msg_size) {
          bson_set_error(error,
@@ -1990,31 +1975,31 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
    iovcnt = cluster->iov.len;
    errno = 0;
 
-   BSON_ASSERT(cluster->iov.len);
+   BSON_ASSERT (cluster->iov.len);
 
-   if (!mongoc_stream_writev(node->stream, iov, iovcnt,
-                             cluster->sockettimeoutms)) {
-      bson_set_error(error,
-                     MONGOC_ERROR_STREAM,
-                     MONGOC_ERROR_STREAM_SOCKET,
-                     "Failure during socket delivery: %s",
-                     strerror(errno));
-      mongoc_cluster_disconnect_node(cluster, node);
-      RETURN(0);
+   if (!mongoc_stream_writev (node->stream, iov, iovcnt,
+                              cluster->sockettimeoutms)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failure during socket delivery: %s",
+                      strerror (errno));
+      _mongoc_cluster_disconnect_node (cluster, node);
+      RETURN (0);
    }
 
-   RETURN(node->index + 1);
+   RETURN (node->index + 1);
 }
 
 
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_try_sendv --
+ * _mongoc_cluster_try_sendv --
  *
  *       Deliver an RPC to a remote MongoDB instance.
  *
- *       This function is similar to mongoc_cluster_sendv() except that it
+ *       This function is similar to _mongoc_cluster_sendv() except that it
  *       will not try to reconnect until a connection has been made.
  *
  *       This is useful if you want to fire-and-forget ignoring network
@@ -2034,14 +2019,13 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
  */
 
 bson_uint32_t
-mongoc_cluster_try_sendv (
-      mongoc_cluster_t             *cluster,       /* IN */
-      mongoc_rpc_t                 *rpcs,          /* INOUT */
-      size_t                        rpcs_len,      /* IN */
-      bson_uint32_t                 hint,          /* IN */
-      const mongoc_write_concern_t *write_concern, /* IN */
-      const mongoc_read_prefs_t    *read_prefs,    /* IN */
-      bson_error_t                 *error)         /* OUT */
+_mongoc_cluster_try_sendv (mongoc_cluster_t             *cluster,
+                           mongoc_rpc_t                 *rpcs,
+                           size_t                        rpcs_len,
+                           bson_uint32_t                 hint,
+                           const mongoc_write_concern_t *write_concern,
+                           const mongoc_read_prefs_t    *read_prefs,
+                           bson_error_t                 *error)
 {
    mongoc_cluster_node_t *node;
    struct iovec *iov;
@@ -2058,30 +2042,30 @@ mongoc_cluster_try_sendv (
    bson_return_val_if_fail(rpcs, FALSE);
    bson_return_val_if_fail(rpcs_len, FALSE);
 
-   if (!(node = mongoc_cluster_select(cluster, rpcs, rpcs_len, hint,
-                                      write_concern, read_prefs, error))) {
-      RETURN(0);
+   if (!(node = _mongoc_cluster_select(cluster, rpcs, rpcs_len, hint,
+                                       write_concern, read_prefs, error))) {
+      RETURN (0);
    }
 
-   BSON_ASSERT(node->stream);
+   BSON_ASSERT (node->stream);
 
-   mongoc_array_clear(&cluster->iov);
+   mongoc_array_clear (&cluster->iov);
 
    for (i = 0; i < rpcs_len; i++) {
-      mongoc_cluster_inc_egress_rpc(&rpcs[i]);
+      _mongoc_cluster_inc_egress_rpc (&rpcs[i]);
       rpcs[i].header.request_id = ++cluster->request_id;
-      need_gle = _mongoc_rpc_needs_gle(&rpcs[i], write_concern);
-      _mongoc_rpc_gather(&rpcs[i], &cluster->iov);
+      need_gle = _mongoc_rpc_needs_gle (&rpcs[i], write_concern);
+      _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
 
       if (rpcs[i].header.msg_len > cluster->max_msg_size) {
-         bson_set_error(error,
-                        MONGOC_ERROR_CLIENT,
-                        MONGOC_ERROR_CLIENT_TOO_BIG,
-                        "Attempted to send an RPC larger than the "
-                        "max allowed message size. Was %u, allowed %u.",
-                        rpcs[i].header.msg_len,
-                        cluster->max_msg_size);
-         RETURN(0);
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_TOO_BIG,
+                         "Attempted to send an RPC larger than the "
+                         "max allowed message size. Was %u, allowed %u.",
+                         rpcs[i].header.msg_len,
+                         cluster->max_msg_size);
+         RETURN (0);
       }
 
       if (need_gle) {
@@ -2090,6 +2074,7 @@ mongoc_cluster_try_sendv (
          gle.query.response_to = 0;
          gle.query.opcode = MONGOC_OPCODE_QUERY;
          gle.query.flags = MONGOC_QUERY_NONE;
+
          switch (rpcs[i].header.opcode) {
          case MONGOC_OPCODE_INSERT:
             DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].insert.collection);
@@ -2106,32 +2091,36 @@ mongoc_cluster_try_sendv (
             DB_AND_CMD_FROM_COLLECTION(cmdname, "admin.$cmd");
             break;
          }
+
          gle.query.collection = cmdname;
          gle.query.skip = 0;
          gle.query.n_return = 1;
-         b = _mongoc_write_concern_freeze((void *)write_concern);
-         gle.query.query = bson_get_data(b);
+
+         b = _mongoc_write_concern_freeze ((void *)write_concern);
+
+         gle.query.query = bson_get_data (b);
          gle.query.fields = NULL;
-         _mongoc_rpc_gather(&gle, &cluster->iov);
-         _mongoc_rpc_swab_to_le(&gle);
+
+         _mongoc_rpc_gather (&gle, &cluster->iov);
+         _mongoc_rpc_swab_to_le (&gle);
       }
 
-      _mongoc_rpc_swab_to_le(&rpcs[i]);
+      _mongoc_rpc_swab_to_le (&rpcs[i]);
    }
 
    iov = cluster->iov.data;
    iovcnt = cluster->iov.len;
    errno = 0;
 
-   if (!mongoc_stream_writev(node->stream, iov, iovcnt,
-                             cluster->sockettimeoutms)) {
-      bson_set_error(error,
-                     MONGOC_ERROR_STREAM,
-                     MONGOC_ERROR_STREAM_SOCKET,
-                     "Failure during socket delivery: %s",
-                     strerror(errno));
-      mongoc_cluster_disconnect_node(cluster, node);
-      RETURN(0);
+   if (!mongoc_stream_writev (node->stream, iov, iovcnt,
+                              cluster->sockettimeoutms)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failure during socket delivery: %s",
+                      strerror(errno));
+      _mongoc_cluster_disconnect_node (cluster, node);
+      RETURN (0);
    }
 
    RETURN(node->index + 1);
@@ -2141,7 +2130,7 @@ mongoc_cluster_try_sendv (
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_try_recv --
+ * _mongoc_cluster_try_recv --
  *
  *       Tries to receive the next event from the node in the cluster
  *       specified by @hint. The contents are loaded into @buffer and then
@@ -2165,11 +2154,11 @@ mongoc_cluster_try_sendv (
  */
 
 bson_bool_t
-mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
-                         mongoc_rpc_t     *rpc,     /* OUT */
-                         mongoc_buffer_t  *buffer,  /* INOUT */
-                         bson_uint32_t     hint,    /* IN */
-                         bson_error_t     *error)   /* OUT */
+_mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
+                          mongoc_rpc_t     *rpc,
+                          mongoc_buffer_t  *buffer,
+                          bson_uint32_t     hint,
+                          bson_error_t     *error)
 {
    mongoc_cluster_node_t *node;
    bson_int32_t msg_len;
@@ -2177,85 +2166,85 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail(cluster, FALSE);
-   bson_return_val_if_fail(rpc, FALSE);
-   bson_return_val_if_fail(buffer, FALSE);
-   bson_return_val_if_fail(hint, FALSE);
-   bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, FALSE);
+   bson_return_val_if_fail (cluster, FALSE);
+   bson_return_val_if_fail (rpc, FALSE);
+   bson_return_val_if_fail (buffer, FALSE);
+   bson_return_val_if_fail (hint, FALSE);
+   bson_return_val_if_fail (hint <= MONGOC_CLUSTER_MAX_NODES, FALSE);
 
    /*
     * Fetch the node to communicate over.
     */
    node = &cluster->nodes[hint-1];
    if (!node->stream) {
-      bson_set_error(error,
-                     MONGOC_ERROR_CLIENT,
-                     MONGOC_ERROR_CLIENT_NOT_READY,
-                     "Failed to receive message, lost connection to node.");
-      RETURN(FALSE);
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_NOT_READY,
+                      "Failed to receive message, lost connection to node.");
+      RETURN (FALSE);
    }
 
    /*
     * Buffer the message length to determine how much more to read.
     */
    pos = buffer->len;
-   if (!mongoc_buffer_append_from_stream(buffer, node->stream, 4,
-                                         cluster->sockettimeoutms, error)) {
-      mongoc_counter_protocol_ingress_error_inc();
-      mongoc_cluster_disconnect_node(cluster, node);
-      RETURN(FALSE);
+   if (!mongoc_buffer_append_from_stream (buffer, node->stream, 4,
+                                          cluster->sockettimeoutms, error)) {
+      mongoc_counter_protocol_ingress_error_inc ();
+      _mongoc_cluster_disconnect_node (cluster, node);
+      RETURN (FALSE);
    }
 
    /*
     * Read the msg length from the buffer.
     */
-   memcpy(&msg_len, &buffer->data[buffer->off + pos], 4);
-   msg_len = BSON_UINT32_FROM_LE(msg_len);
+   memcpy (&msg_len, &buffer->data[buffer->off + pos], 4);
+   msg_len = BSON_UINT32_FROM_LE (msg_len);
    if ((msg_len < 16) || (msg_len > cluster->max_bson_size)) {
-      bson_set_error(error,
-                     MONGOC_ERROR_PROTOCOL,
-                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                     "Corrupt or malicious reply received.");
-      mongoc_cluster_disconnect_node(cluster, node);
-      mongoc_counter_protocol_ingress_error_inc();
-      RETURN(FALSE);
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Corrupt or malicious reply received.");
+      _mongoc_cluster_disconnect_node (cluster, node);
+      mongoc_counter_protocol_ingress_error_inc ();
+      RETURN (FALSE);
    }
 
    /*
     * Read the rest of the message from the stream.
     */
-   if (!mongoc_buffer_append_from_stream(buffer, node->stream, msg_len - 4,
-                                         cluster->sockettimeoutms, error)) {
-      mongoc_cluster_disconnect_node(cluster, node);
-      mongoc_counter_protocol_ingress_error_inc();
-      RETURN(FALSE);
+   if (!mongoc_buffer_append_from_stream (buffer, node->stream, msg_len - 4,
+                                          cluster->sockettimeoutms, error)) {
+      _mongoc_cluster_disconnect_node (cluster, node);
+      mongoc_counter_protocol_ingress_error_inc ();
+      RETURN (FALSE);
    }
 
    /*
     * Scatter the buffer into the rpc structure.
     */
-   if (!_mongoc_rpc_scatter(rpc, &buffer->data[buffer->off + pos], msg_len)) {
-      bson_set_error(error,
-                     MONGOC_ERROR_PROTOCOL,
-                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                     "Failed to decode reply from server.");
-      mongoc_cluster_disconnect_node(cluster, node);
-      mongoc_counter_protocol_ingress_error_inc();
-      RETURN(FALSE);
+   if (!_mongoc_rpc_scatter (rpc, &buffer->data[buffer->off + pos], msg_len)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Failed to decode reply from server.");
+      _mongoc_cluster_disconnect_node (cluster, node);
+      mongoc_counter_protocol_ingress_error_inc ();
+      RETURN (FALSE);
    }
 
-   DUMP_BYTES(buffer, buffer->data + buffer->off, buffer->len);
+   DUMP_BYTES (buffer, buffer->data + buffer->off, buffer->len);
 
-   _mongoc_rpc_swab_from_le(rpc);
+   _mongoc_rpc_swab_from_le (rpc);
 
-   mongoc_cluster_inc_ingress_rpc(rpc);
+   _mongoc_cluster_inc_ingress_rpc (rpc);
 
    RETURN(TRUE);
 }
 
 
 /**
- * mongoc_cluster_stamp:
+ * _mongoc_cluster_stamp:
  * @cluster: A mongoc_cluster_t.
  * @node: The node identifier.
  *
@@ -2267,30 +2256,9 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
  *
  * Returns: A 32-bit stamp indiciating the node version.
  */
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_stamp --
- *
- *       Returns the stamp of the node provided. The stamp is a monotonic
- *       counter that tracks changes to a node within the cluster. As
- *       changes to the node instance are made, the value is incremented.
- *       This helps cursors and other connection sensitive portions fail
- *       gracefully (or reset) upon loss of connection.
- *
- * Returns:
- *       A 32-bit stamp indiciting the number of times a modification to
- *       the node structure has occured.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 bson_uint32_t
-mongoc_cluster_stamp (const mongoc_cluster_t *cluster, /* IN */
-                      bson_uint32_t           node)    /* IN */
+_mongoc_cluster_stamp (const mongoc_cluster_t *cluster,
+                       bson_uint32_t           node)
 {
    bson_return_val_if_fail(cluster, 0);
    bson_return_val_if_fail(node > 0, 0);
@@ -2301,7 +2269,7 @@ mongoc_cluster_stamp (const mongoc_cluster_t *cluster, /* IN */
 
 
 /**
- * mongoc_cluster_get_primary:
+ * _mongoc_cluster_get_primary:
  * @cluster: A #mongoc_cluster_t.
  *
  * Fetches the node we currently believe is PRIMARY.
@@ -2309,7 +2277,7 @@ mongoc_cluster_stamp (const mongoc_cluster_t *cluster, /* IN */
  * Returns: A #mongoc_cluster_node_t or %NULL.
  */
 mongoc_cluster_node_t *
-mongoc_cluster_get_primary (mongoc_cluster_t *cluster)
+_mongoc_cluster_get_primary (mongoc_cluster_t *cluster)
 {
    bson_uint32_t i;
 

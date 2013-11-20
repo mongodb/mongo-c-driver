@@ -411,12 +411,12 @@ mongoc_client_sendv (mongoc_client_t              *client,         /* IN */
 
    switch (client->cluster.state) {
    case MONGOC_CLUSTER_STATE_BORN:
-      return mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint,
-                                  write_concern, read_prefs, error);
+      return _mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint,
+                                   write_concern, read_prefs, error);
    case MONGOC_CLUSTER_STATE_HEALTHY:
    case MONGOC_CLUSTER_STATE_UNHEALTHY:
-      return mongoc_cluster_try_sendv(&client->cluster, rpcs, rpcs_len, hint,
-                                      write_concern, read_prefs, error);
+      return _mongoc_cluster_try_sendv(&client->cluster, rpcs, rpcs_len, hint,
+                                       write_concern, read_prefs, error);
    case MONGOC_CLUSTER_STATE_DEAD:
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
@@ -461,7 +461,8 @@ mongoc_client_recv (mongoc_client_t *client, /* IN */
    bson_return_val_if_fail(hint, FALSE);
    bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, FALSE);
 
-   return mongoc_cluster_try_recv(&client->cluster, rpc, buffer, hint, error);
+   return _mongoc_cluster_try_recv (&client->cluster, rpc, buffer, hint,
+                                    error);
 }
 
 
@@ -561,47 +562,48 @@ mongoc_client_recv_gle (mongoc_client_t *client, /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail(client, FALSE);
-   bson_return_val_if_fail(hint, FALSE);
-   bson_return_val_if_fail(error, FALSE);
+   bson_return_val_if_fail (client, FALSE);
+   bson_return_val_if_fail (hint, FALSE);
+   bson_return_val_if_fail (error, FALSE);
 
-   mongoc_buffer_init(&buffer, NULL, 0, NULL);
+   mongoc_buffer_init (&buffer, NULL, 0, NULL);
 
-   if (!mongoc_cluster_try_recv(&client->cluster, &rpc, &buffer, hint, error)) {
-      GOTO(cleanup);
+   if (!_mongoc_cluster_try_recv (&client->cluster, &rpc, &buffer,
+                                  hint, error)) {
+      GOTO (cleanup);
    }
 
    if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
-      bson_set_error(error,
-                     MONGOC_ERROR_PROTOCOL,
-                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                     "Received message other than OP_REPLY.");
-      GOTO(cleanup);
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Received message other than OP_REPLY.");
+      GOTO (cleanup);
    }
 
    if ((rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
-      if (_mongoc_rpc_reply_get_first(&rpc.reply, &b)) {
-         _bson_to_error(&b, error);
-         bson_destroy(&b);
-         GOTO(cleanup);
+      if (_mongoc_rpc_reply_get_first (&rpc.reply, &b)) {
+         _bson_to_error (&b, error);
+         bson_destroy (&b);
+         GOTO (cleanup);
       }
    }
 
-   if (_mongoc_rpc_reply_get_first(&rpc.reply, &b)) {
-      if (!bson_iter_init_find(&iter, &b, "ok") ||
-          !BSON_ITER_HOLDS_DOUBLE(&iter) ||
-          (bson_iter_double(&iter) == 0.0)) {
-         _bson_to_error(&b, error);
+   if (_mongoc_rpc_reply_get_first (&rpc.reply, &b)) {
+      if (!bson_iter_init_find (&iter, &b, "ok") ||
+          !BSON_ITER_HOLDS_DOUBLE (&iter) ||
+          (bson_iter_double (&iter) == 0.0)) {
+         _bson_to_error (&b, error);
       }
-      bson_destroy(&b);
+      bson_destroy (&b);
    }
 
    ret = TRUE;
 
 cleanup:
-   mongoc_buffer_destroy(&buffer);
+   mongoc_buffer_destroy (&buffer);
 
-   RETURN(ret);
+   RETURN (ret);
 }
 
 
@@ -659,15 +661,16 @@ mongoc_client_new (const char *uri_string) /* IN */
 
    client = bson_malloc0(sizeof *client);
    client->uri = uri;
-   client->request_id = rand();
+   client->request_id = rand ();
    client->initiator = mongoc_client_default_stream_initiator;
-   mongoc_cluster_init(&client->cluster, client->uri, client);
 
-   mongoc_counter_clients_active_inc();
+   _mongoc_cluster_init (&client->cluster, client->uri, client);
+
+   mongoc_counter_clients_active_inc ();
 
 #ifdef MONGOC_HAVE_SSL
    if (has_ssl) {
-      mongoc_client_set_ssl_opts(client, mongoc_ssl_opt_get_default());
+      mongoc_client_set_ssl_opts (client, mongoc_ssl_opt_get_default ());
    }
 #endif
 
@@ -752,19 +755,19 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri) /* IN */
  */
 
 void
-mongoc_client_destroy (mongoc_client_t *client) /* IN */
+mongoc_client_destroy (mongoc_client_t *client)
 {
    if (client) {
       /*
        * TODO: Implement destruction.
        */
 
-      mongoc_cluster_destroy(&client->cluster);
-      mongoc_uri_destroy(client->uri);
-      bson_free(client);
+      _mongoc_cluster_destroy (&client->cluster);
+      mongoc_uri_destroy (client->uri);
+      bson_free (client);
 
-      mongoc_counter_clients_active_dec();
-      mongoc_counter_clients_disposed_inc();
+      mongoc_counter_clients_active_dec ();
+      mongoc_counter_clients_disposed_inc ();
    }
 }
 
@@ -817,8 +820,9 @@ bson_uint32_t
 mongoc_client_stamp (mongoc_client_t *client, /* IN */
                      bson_uint32_t    node)   /* IN */
 {
-   bson_return_val_if_fail(client, 0);
-   return mongoc_cluster_stamp(&client->cluster, node);
+   bson_return_val_if_fail (client, 0);
+
+   return _mongoc_cluster_stamp (&client->cluster, node);
 }
 
 

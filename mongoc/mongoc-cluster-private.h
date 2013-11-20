@@ -103,50 +103,57 @@ typedef struct
 
 
 void
-mongoc_cluster_destroy (mongoc_cluster_t *cluster);
+_mongoc_cluster_destroy (mongoc_cluster_t *cluster)
+   BSON_GNUC_INTERNAL;
 
 
 void
-mongoc_cluster_init (mongoc_cluster_t   *cluster,
-                     const mongoc_uri_t *uri,
-                     void               *client);
+_mongoc_cluster_init (mongoc_cluster_t   *cluster,
+                      const mongoc_uri_t *uri,
+                      void               *client)
+   BSON_GNUC_INTERNAL;
 
 
 bson_uint32_t
-mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
-                      mongoc_rpc_t                 *rpcs,
-                      size_t                        rpcs_len,
-                      bson_uint32_t                 hint,
-                      const mongoc_write_concern_t *write_concern,
-                      const mongoc_read_prefs_t    *read_prefs,
-                      bson_error_t                 *error);
+_mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
+                       mongoc_rpc_t                 *rpcs,
+                       size_t                        rpcs_len,
+                       bson_uint32_t                 hint,
+                       const mongoc_write_concern_t *write_concern,
+                       const mongoc_read_prefs_t    *read_prefs,
+                       bson_error_t                 *error)
+   BSON_GNUC_INTERNAL;
 
 
 bson_uint32_t
-mongoc_cluster_try_sendv (mongoc_cluster_t             *cluster,
-                          mongoc_rpc_t                 *rpcs,
-                          size_t                        rpcs_len,
-                          bson_uint32_t                 hint,
-                          const mongoc_write_concern_t *write_concern,
-                          const mongoc_read_prefs_t    *read_prefs,
-                          bson_error_t                 *error);
+_mongoc_cluster_try_sendv (mongoc_cluster_t             *cluster,
+                           mongoc_rpc_t                 *rpcs,
+                           size_t                        rpcs_len,
+                           bson_uint32_t                 hint,
+                           const mongoc_write_concern_t *write_concern,
+                           const mongoc_read_prefs_t    *read_prefs,
+                           bson_error_t                 *error)
+   BSON_GNUC_INTERNAL;
 
 
 bson_bool_t
-mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
-                         mongoc_rpc_t     *rpc,
-                         mongoc_buffer_t  *buffer,
-                         bson_uint32_t     hint,
-                         bson_error_t     *error);
+_mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
+                          mongoc_rpc_t     *rpc,
+                          mongoc_buffer_t  *buffer,
+                          bson_uint32_t     hint,
+                          bson_error_t     *error)
+   BSON_GNUC_INTERNAL;
 
 
 bson_uint32_t
-mongoc_cluster_stamp (const mongoc_cluster_t *cluster,
-                      bson_uint32_t           node);
+_mongoc_cluster_stamp (const mongoc_cluster_t *cluster,
+                       bson_uint32_t           node)
+   BSON_GNUC_INTERNAL;
 
 
 mongoc_cluster_node_t *
-mongoc_cluster_get_primary (mongoc_cluster_t *cluster);
+_mongoc_cluster_get_primary (mongoc_cluster_t *cluster)
+   BSON_GNUC_INTERNAL;
 
 
 bson_bool_t
@@ -154,7 +161,8 @@ _mongoc_cluster_command_early (mongoc_cluster_t *cluster,
                                const char       *dbname,
                                const bson_t     *command,
                                bson_t           *reply,
-                               bson_error_t     *error);
+                               bson_error_t     *error)
+   BSON_GNUC_INTERNAL;
 
 
 BSON_END_DECLS
