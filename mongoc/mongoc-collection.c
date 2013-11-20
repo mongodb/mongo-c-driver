@@ -59,11 +59,11 @@
  */
 
 mongoc_collection_t *
-_mongoc_collection_new (mongoc_client_t              *client,        /* IN */
-                        const char                   *db,            /* IN */
-                        const char                   *collection,    /* IN */
-                        const mongoc_read_prefs_t    *read_prefs,    /* IN */
-                        const mongoc_write_concern_t *write_concern) /* IN */
+_mongoc_collection_new (mongoc_client_t              *client,
+                        const char                   *db,
+                        const char                   *collection,
+                        const mongoc_read_prefs_t    *read_prefs,
+                        const mongoc_write_concern_t *write_concern)
 {
    mongoc_collection_t *col;
 
@@ -633,96 +633,127 @@ mongoc_collection_drop_index (mongoc_collection_t *collection, /* IN */
  */
 
 char *
-mongoc_collection_keys_to_index_string(const bson_t *keys)
+mongoc_collection_keys_to_index_string (const bson_t *keys)
 {
    bson_string_t *s;
    bson_iter_t iter;
    int i = 0;
 
-   s = bson_string_new(NULL);
+   BSON_ASSERT (keys);
 
-   bson_iter_init(&iter, keys);
-
-   while(bson_iter_next(&iter)) {
-      bson_string_append_printf(s, (i++ ? "_%s_%d" : "%s_%d"), bson_iter_key(&iter), bson_iter_int32(&iter));
+   if (!bson_iter_init (&iter, keys)) {
+      return NULL;
    }
 
-   return bson_string_free(s, 0);
+   s = bson_string_new (NULL);
+
+   while (bson_iter_next (&iter)) {
+      bson_string_append_printf (s,
+                                 (i++ ? "_%s_%d" : "%s_%d"),
+                                 bson_iter_key (&iter),
+                                 bson_iter_int32 (&iter));
+   }
+
+   return bson_string_free (s, FALSE);
 }
 
 bson_bool_t
-mongoc_collection_ensure_index (mongoc_collection_t      *collection, /* IN */
-                                const bson_t             *keys,  /* IN */
-                                const mongoc_index_opt_t *opt,         /* IN */
-                                bson_error_t             *error) /* OUT */
+mongoc_collection_ensure_index (mongoc_collection_t      *collection,
+                                const bson_t             *keys,
+                                const mongoc_index_opt_t *opt,
+                                bson_error_t             *error)
 {
-   /** TODO: this is supposed to be cached and cheap... make it that way */
-
+   const mongoc_index_opt_t *def_opt;
+   mongoc_collection_t *col;
    bson_bool_t ret;
    bson_t insert;
-   char * name;
-   mongoc_collection_t * col;
+   char *name;
 
-   bson_return_val_if_fail(collection, FALSE);
+   bson_return_val_if_fail (collection, FALSE);
 
-   opt = opt ? opt : MONGOC_DEFAULT_INDEX_OPT;
-   bson_return_val_if_fail(opt->is_initialized, FALSE);
+   /*
+    * TODO: this is supposed to be cached and cheap... make it that way
+    */
 
-   bson_init(&insert);
+   def_opt = mongoc_index_opt_get_default ();
+   opt = opt ? opt : def_opt;
 
-   bson_append_document(&insert, "key", -1, keys);
-   bson_append_utf8(&insert, "ns", -1, collection->ns, -1);
-
-   if (opt->background != MONGOC_DEFAULT_INDEX_OPT->background)
-      bson_append_bool(&insert, "background", -1, opt->background);
-
-   if (opt->unique != MONGOC_DEFAULT_INDEX_OPT->unique)
-      bson_append_bool(&insert, "unique", -1, opt->unique);
-
-   if (opt->name != MONGOC_DEFAULT_INDEX_OPT->name) {
-      bson_append_utf8(&insert, "name", -1, opt->name, -1);
-   } else {
-      name = mongoc_collection_keys_to_index_string(keys);
-      bson_append_utf8(&insert, "name", -1, name, -1);
-      free(name);
+   if (!opt->is_initialized) {
+      MONGOC_WARNING("Options have not yet been initialized");
+      return FALSE;
    }
 
-   if (opt->drop_dups != MONGOC_DEFAULT_INDEX_OPT->drop_dups)
-      bson_append_bool(&insert, "dropDups", -1, opt->drop_dups);
+   bson_init (&insert);
 
-   if (opt->sparse != MONGOC_DEFAULT_INDEX_OPT->sparse)
-      bson_append_bool(&insert, "sparse", -1, opt->sparse);
+   bson_append_document (&insert, "key", -1, keys);
+   bson_append_utf8 (&insert, "ns", -1, collection->ns, -1);
 
-   if (opt->expire_after_seconds != MONGOC_DEFAULT_INDEX_OPT->expire_after_seconds)
-      bson_append_int32(&insert, "expireAfterSeconds", -1, opt->expire_after_seconds);
+   if (opt->background != def_opt->background) {
+      bson_append_bool (&insert, "background", -1, opt->background);
+   }
 
-   if (opt->v != MONGOC_DEFAULT_INDEX_OPT->v)
-      bson_append_int32(&insert, "v", -1, opt->v);
+   if (opt->unique != def_opt->unique) {
+      bson_append_bool (&insert, "unique", -1, opt->unique);
+   }
 
-   if (opt->weights != MONGOC_DEFAULT_INDEX_OPT->weights)
-      bson_append_document(&insert, "weights", -1, opt->weights);
+   if (opt->name != def_opt->name) {
+      bson_append_utf8 (&insert, "name", -1, opt->name, -1);
+   } else {
+      name = mongoc_collection_keys_to_index_string(keys);
+      bson_append_utf8 (&insert, "name", -1, name, -1);
+      bson_free (name);
+   }
 
-   if (opt->default_language != MONGOC_DEFAULT_INDEX_OPT->default_language)
-      bson_append_utf8(&insert, "defaultLanguage", -1, opt->default_language, -1);
+   if (opt->drop_dups != def_opt->drop_dups) {
+      bson_append_bool (&insert, "dropDups", -1, opt->drop_dups);
+   }
 
-   if (opt->language_override != MONGOC_DEFAULT_INDEX_OPT->language_override)
-      bson_append_utf8(&insert, "languageOverride", -1, opt->language_override, -1);
+   if (opt->sparse != def_opt->sparse) {
+      bson_append_bool (&insert, "sparse", -1, opt->sparse);
+   }
+
+   if (opt->expire_after_seconds != def_opt->expire_after_seconds) {
+      bson_append_int32 (&insert,
+                         "expireAfterSeconds", -1,
+                         opt->expire_after_seconds);
+   }
+
+   if (opt->v != def_opt->v) {
+      bson_append_int32 (&insert, "v", -1, opt->v);
+   }
+
+   if (opt->weights != def_opt->weights) {
+      bson_append_document (&insert, "weights", -1, opt->weights);
+   }
+
+   if (opt->default_language != def_opt->default_language) {
+      bson_append_utf8 (&insert,
+                        "defaultLanguage", -1,
+                        opt->default_language, -1);
+   }
+
+   if (opt->language_override != def_opt->language_override) {
+      bson_append_utf8 (&insert,
+                        "languageOverride", -1,
+                        opt->language_override, -1);
+   }
 
    col = mongoc_client_get_collection (collection->client, collection->db,
                                        "system.indexes");
 
-   ret = mongoc_collection_insert (col, MONGOC_INSERT_NONE, &insert, NULL, error);
+   ret = mongoc_collection_insert (col, MONGOC_INSERT_NONE, &insert, NULL,
+                                   error);
 
    mongoc_collection_destroy(col);
 
-   bson_destroy(&insert);
+   bson_destroy (&insert);
 
    return ret;
 }
 
 
 static bson_bool_t
-mongoc_collection_insert_bulk_raw (
+_mongoc_collection_insert_bulk_raw (
    mongoc_collection_t          *collection,       /* IN */
    mongoc_insert_flags_t         flags,            /* IN */
    const struct iovec           *documents,        /* IN */
@@ -883,8 +914,8 @@ mongoc_collection_insert_bulk (
       iov[i].iov_len = documents[i]->len;
    }
 
-   r = mongoc_collection_insert_bulk_raw (collection, flags, iov, n_documents,
-                                          write_concern, error);
+   r = _mongoc_collection_insert_bulk_raw (collection, flags, iov, n_documents,
+                                           write_concern, error);
 
    bson_free (iov);
 

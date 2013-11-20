@@ -48,7 +48,8 @@ _mongoc_collection_new (mongoc_client_t              *client,
                         const char                   *db,
                         const char                   *collection,
                         const mongoc_read_prefs_t    *read_prefs,
-                        const mongoc_write_concern_t *write_concern);
+                        const mongoc_write_concern_t *write_concern)
+   BSON_GNUC_INTERNAL;
 
 
 BSON_END_DECLS
