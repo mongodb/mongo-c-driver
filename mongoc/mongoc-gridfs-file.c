@@ -112,7 +112,7 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
       return 1;
    }
 
-   if (file->page && mongoc_gridfs_file_page_is_dirty (file->page)) {
+   if (file->page && _mongoc_gridfs_file_page_is_dirty (file->page)) {
       mongoc_gridfs_file_flush_page (file);
    }
 
@@ -288,7 +288,7 @@ mongoc_gridfs_file_destroy (mongoc_gridfs_file_t *file)
    BSON_ASSERT (file);
 
    if (file->page) {
-      mongoc_gridfs_file_page_destroy (file->page);
+      _mongoc_gridfs_file_page_destroy (file->page);
    }
 
    if (file->bson.len) {
@@ -363,7 +363,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
       iov_pos = 0;
 
       for (;; ) {
-         r = mongoc_gridfs_file_page_read (file->page,
+         r = _mongoc_gridfs_file_page_read (file->page,
                                            iov[i].iov_base + iov_pos,
                                            iov[i].iov_len - iov_pos);
          BSON_ASSERT (r >= 0);
@@ -421,7 +421,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
             mongoc_gridfs_file_refresh_page (file);
          }
 
-         r = mongoc_gridfs_file_page_write (file->page,
+         r = _mongoc_gridfs_file_page_write (file->page,
                                             iov[i].iov_base + iov_pos,
                                             iov[i].iov_len - iov_pos);
          BSON_ASSERT (r >= 0);
@@ -468,8 +468,8 @@ mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    BSON_ASSERT (file);
    BSON_ASSERT (file->page);
 
-   buf = mongoc_gridfs_file_page_get_data (file->page);
-   len = mongoc_gridfs_file_page_get_len (file->page);
+   buf = _mongoc_gridfs_file_page_get_data (file->page);
+   len = _mongoc_gridfs_file_page_get_len (file->page);
 
    selector = bson_new ();
 
@@ -489,7 +489,7 @@ mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    bson_destroy (update);
 
    if (r) {
-      mongoc_gridfs_file_page_destroy (file->page);
+      _mongoc_gridfs_file_page_destroy (file->page);
       file->page = NULL;
       r = mongoc_gridfs_file_save (file);
    }
@@ -522,7 +522,7 @@ mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    n = file->pos / file->chunk_size;
 
    if (file->page) {
-      mongoc_gridfs_file_page_destroy (file->page);
+      _mongoc_gridfs_file_page_destroy (file->page);
       file->page = NULL;
    }
 
@@ -609,10 +609,10 @@ mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       }
    }
 
-   file->page = mongoc_gridfs_file_page_new (data, len, file->chunk_size);
+   file->page = _mongoc_gridfs_file_page_new (data, len, file->chunk_size);
 
    /* seek in the page towards wherever we're supposed to be */
-   RETURN (mongoc_gridfs_file_page_seek (file->page, file->pos %
+   RETURN (_mongoc_gridfs_file_page_seek (file->page, file->pos %
                                          file->chunk_size));
 }
 
@@ -651,16 +651,16 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
       /** no longer on the same page */
 
       if (file->page) {
-         if (mongoc_gridfs_file_page_is_dirty (file->page)) {
+         if (_mongoc_gridfs_file_page_is_dirty (file->page)) {
             mongoc_gridfs_file_flush_page (file);
          } else {
-            mongoc_gridfs_file_page_destroy (file->page);
+            _mongoc_gridfs_file_page_destroy (file->page);
          }
       }
 
       /** we'll pick up the seek when we fetch a page on the next action.  We lazily load */
    } else {
-      mongoc_gridfs_file_page_seek (file->page, offset % file->chunk_size);
+      _mongoc_gridfs_file_page_seek (file->page, offset % file->chunk_size);
    }
 
    file->pos = offset;

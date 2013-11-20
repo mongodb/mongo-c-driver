@@ -29,9 +29,9 @@
  * The buffer should stick around for the life of the page
  */
 mongoc_gridfs_file_page_t *
-mongoc_gridfs_file_page_new (const bson_uint8_t *data,
-                             bson_uint32_t       len,
-                             bson_uint32_t       chunk_size)
+_mongoc_gridfs_file_page_new (const bson_uint8_t *data,
+                              bson_uint32_t       len,
+                              bson_uint32_t       chunk_size)
 {
    mongoc_gridfs_file_page_t *page;
 
@@ -51,8 +51,8 @@ mongoc_gridfs_file_page_new (const bson_uint8_t *data,
 
 
 bson_bool_t
-mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page,
-                              bson_uint32_t              offset)
+_mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page,
+                               bson_uint32_t              offset)
 {
    ENTRY;
 
@@ -67,9 +67,9 @@ mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page,
 
 
 bson_int32_t
-mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
-                              void                      *dst,
-                              bson_uint32_t              len)
+_mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
+                               void                      *dst,
+                               bson_uint32_t              len)
 {
    int bytes_read;
    const bson_uint8_t *src;
@@ -91,16 +91,19 @@ mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
 }
 
 
-/** writes to a page
+/**
+ * _mongoc_gridfs_file_page_write:
+ *
+ * writes to a page
  *
  * writes are copy on write as regards the buf passed during construction.
  * I.e. the first write allocs a buf large enough for the chunk_size, which
  * because authoritative from then on out
  */
 bson_int32_t
-mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
-                               const void                *src,
-                               bson_uint32_t              len)
+_mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
+                                const void                *src,
+                                bson_uint32_t              len)
 {
    int bytes_written;
 
@@ -126,7 +129,7 @@ mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
 
 
 const bson_uint8_t *
-mongoc_gridfs_file_page_get_data (mongoc_gridfs_file_page_t *page)
+_mongoc_gridfs_file_page_get_data (mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
 
@@ -137,7 +140,7 @@ mongoc_gridfs_file_page_get_data (mongoc_gridfs_file_page_t *page)
 
 
 bson_uint32_t
-mongoc_gridfs_file_page_get_len (mongoc_gridfs_file_page_t *page)
+_mongoc_gridfs_file_page_get_len (mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
 
@@ -148,7 +151,7 @@ mongoc_gridfs_file_page_get_len (mongoc_gridfs_file_page_t *page)
 
 
 bson_uint32_t
-mongoc_gridfs_file_page_tell (mongoc_gridfs_file_page_t *page)
+_mongoc_gridfs_file_page_tell (mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
 
@@ -159,7 +162,7 @@ mongoc_gridfs_file_page_tell (mongoc_gridfs_file_page_t *page)
 
 
 bson_bool_t
-mongoc_gridfs_file_page_is_dirty (mongoc_gridfs_file_page_t *page)
+_mongoc_gridfs_file_page_is_dirty (mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
 
@@ -170,7 +173,7 @@ mongoc_gridfs_file_page_is_dirty (mongoc_gridfs_file_page_t *page)
 
 
 void
-mongoc_gridfs_file_page_destroy (mongoc_gridfs_file_page_t *page)
+_mongoc_gridfs_file_page_destroy (mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
 

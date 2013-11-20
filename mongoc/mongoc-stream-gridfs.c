@@ -17,15 +17,17 @@
 
 #define _GNU_SOURCE
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "stream-gridfs"
-
 #include <limits.h>
+
 #include "mongoc-counters-private.h"
 #include "mongoc-stream.h"
 #include "mongoc-gridfs-file.h"
 #include "mongoc-gridfs-file-private.h"
 #include "mongoc-trace.h"
+
+
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "stream-gridfs"
 
 
 typedef struct
@@ -35,8 +37,8 @@ typedef struct
 } mongoc_stream_gridfs_t;
 
 
-void
-mongoc_stream_gridfs_destroy (mongoc_stream_t *stream)
+static void
+_mongoc_stream_gridfs_destroy (mongoc_stream_t *stream)
 {
    mongoc_stream_gridfs_t *gridfs = (mongoc_stream_gridfs_t *)stream;
 
@@ -57,8 +59,8 @@ mongoc_stream_gridfs_destroy (mongoc_stream_t *stream)
 }
 
 
-int
-mongoc_stream_gridfs_close (mongoc_stream_t *stream)
+static int
+_mongoc_stream_gridfs_close (mongoc_stream_t *stream)
 {
    mongoc_stream_gridfs_t *gridfs = (mongoc_stream_gridfs_t *)stream;
    int ret = 0;
@@ -72,8 +74,8 @@ mongoc_stream_gridfs_close (mongoc_stream_t *stream)
    RETURN (ret);
 }
 
-int
-mongoc_stream_gridfs_flush (mongoc_stream_t *stream)
+static int
+_mongoc_stream_gridfs_flush (mongoc_stream_t *stream)
 {
    mongoc_stream_gridfs_t *gridfs = (mongoc_stream_gridfs_t *)stream;
    int ret = 0;
@@ -88,12 +90,12 @@ mongoc_stream_gridfs_flush (mongoc_stream_t *stream)
 }
 
 
-ssize_t
-mongoc_stream_gridfs_readv (mongoc_stream_t *stream,
-                            struct iovec    *iov,
-                            size_t           iovcnt,
-                            size_t           min_bytes,
-                            bson_int32_t     timeout_msec)
+static ssize_t
+_mongoc_stream_gridfs_readv (mongoc_stream_t *stream,
+                             struct iovec    *iov,
+                             size_t           iovcnt,
+                             size_t           min_bytes,
+                             bson_int32_t     timeout_msec)
 {
    mongoc_stream_gridfs_t *file = (mongoc_stream_gridfs_t *)stream;
    ssize_t ret = 0;
@@ -114,11 +116,11 @@ mongoc_stream_gridfs_readv (mongoc_stream_t *stream,
 }
 
 
-ssize_t
-mongoc_stream_gridfs_writev (mongoc_stream_t *stream,
-                             struct iovec    *iov,
-                             size_t           iovcnt,
-                             bson_int32_t     timeout_msec)
+static ssize_t
+_mongoc_stream_gridfs_writev (mongoc_stream_t *stream,
+                              struct iovec    *iov,
+                              size_t           iovcnt,
+                              bson_int32_t     timeout_msec)
 {
    mongoc_stream_gridfs_t *file = (mongoc_stream_gridfs_t *)stream;
    ssize_t ret = 0;
@@ -152,11 +154,11 @@ mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file)
 
    stream = bson_malloc0 (sizeof *stream);
    stream->file = file;
-   stream->stream.destroy = mongoc_stream_gridfs_destroy;
-   stream->stream.close = mongoc_stream_gridfs_close;
-   stream->stream.flush = mongoc_stream_gridfs_flush;
-   stream->stream.writev = mongoc_stream_gridfs_writev;
-   stream->stream.readv = mongoc_stream_gridfs_readv;
+   stream->stream.destroy = _mongoc_stream_gridfs_destroy;
+   stream->stream.close = _mongoc_stream_gridfs_close;
+   stream->stream.flush = _mongoc_stream_gridfs_flush;
+   stream->stream.writev = _mongoc_stream_gridfs_writev;
+   stream->stream.readv = _mongoc_stream_gridfs_readv;
 
    mongoc_counter_streams_active_inc ();
 

@@ -11,11 +11,11 @@ test_create (void)
 
    mongoc_gridfs_file_page_t *page;
 
-   page = mongoc_gridfs_file_page_new (fox, len, 4096);
+   page = _mongoc_gridfs_file_page_new (fox, len, 4096);
 
    assert (page);
 
-   mongoc_gridfs_file_page_destroy (page);
+   _mongoc_gridfs_file_page_destroy (page);
 }
 
 
@@ -28,19 +28,19 @@ test_is_dirty (void)
 
    mongoc_gridfs_file_page_t *page;
 
-   page = mongoc_gridfs_file_page_new (buf, len, 10);
+   page = _mongoc_gridfs_file_page_new (buf, len, 10);
    assert (page);
 
-   r = mongoc_gridfs_file_page_is_dirty (page);
+   r = _mongoc_gridfs_file_page_is_dirty (page);
    assert (!r);
 
-   r = mongoc_gridfs_file_page_write (page, "foo", 3);
+   r = _mongoc_gridfs_file_page_write (page, "foo", 3);
    assert (r == 3);
 
-   r = mongoc_gridfs_file_page_is_dirty (page);
+   r = _mongoc_gridfs_file_page_is_dirty (page);
    assert (r);
 
-   mongoc_gridfs_file_page_destroy (page);
+   _mongoc_gridfs_file_page_destroy (page);
 }
 
 
@@ -54,19 +54,19 @@ test_get_data (void)
 
    mongoc_gridfs_file_page_t *page;
 
-   page = mongoc_gridfs_file_page_new (buf, len, 10);
+   page = _mongoc_gridfs_file_page_new (buf, len, 10);
    assert (page);
 
-   ptr = mongoc_gridfs_file_page_get_data (page);
+   ptr = _mongoc_gridfs_file_page_get_data (page);
    assert (ptr == buf);
 
-   r = mongoc_gridfs_file_page_write (page, "foo", 3);
+   r = _mongoc_gridfs_file_page_write (page, "foo", 3);
    assert (r == 3);
 
-   ptr = mongoc_gridfs_file_page_get_data (page);
+   ptr = _mongoc_gridfs_file_page_get_data (page);
    assert (ptr != buf);
 
-   mongoc_gridfs_file_page_destroy (page);
+   _mongoc_gridfs_file_page_destroy (page);
 }
 
 
@@ -79,13 +79,13 @@ test_get_len (void)
 
    mongoc_gridfs_file_page_t *page;
 
-   page = mongoc_gridfs_file_page_new (buf, len, 10);
+   page = _mongoc_gridfs_file_page_new (buf, len, 10);
    assert (page);
 
-   r = mongoc_gridfs_file_page_get_len (page);
+   r = _mongoc_gridfs_file_page_get_len (page);
    assert (r == 6);
 
-   mongoc_gridfs_file_page_destroy (page);
+   _mongoc_gridfs_file_page_destroy (page);
 }
 
 
@@ -99,20 +99,20 @@ test_read (void)
 
    mongoc_gridfs_file_page_t *page;
 
-   page = mongoc_gridfs_file_page_new (fox, len, 4096);
+   page = _mongoc_gridfs_file_page_new (fox, len, 4096);
 
    assert (page);
 
-   r = mongoc_gridfs_file_page_read (page, buf, 3);
+   r = _mongoc_gridfs_file_page_read (page, buf, 3);
    assert (r == 3);
    assert (memcmp ("the", buf, 3) == 0);
    assert (page->offset == 3);
 
-   r = mongoc_gridfs_file_page_read (page, buf, 50);
+   r = _mongoc_gridfs_file_page_read (page, buf, 50);
    assert (r == len - 3);
    assert (memcmp (fox + 3, buf, len - 3) == 0);
 
-   mongoc_gridfs_file_page_destroy (page);
+   _mongoc_gridfs_file_page_destroy (page);
 }
 
 
@@ -125,18 +125,18 @@ test_seek (void)
 
    mongoc_gridfs_file_page_t *page;
 
-   page = mongoc_gridfs_file_page_new (fox, len, 4096);
+   page = _mongoc_gridfs_file_page_new (fox, len, 4096);
 
    assert (page);
 
-   r = mongoc_gridfs_file_page_seek (page, 4);
+   r = _mongoc_gridfs_file_page_seek (page, 4);
    assert (r);
    assert (page->offset == 4);
 
-   r = mongoc_gridfs_file_page_tell (page);
+   r = _mongoc_gridfs_file_page_tell (page);
    assert (r = 4);
 
-   mongoc_gridfs_file_page_destroy (page);
+   _mongoc_gridfs_file_page_destroy (page);
 }
 
 
@@ -149,35 +149,35 @@ test_write (void)
 
    mongoc_gridfs_file_page_t *page;
 
-   page = mongoc_gridfs_file_page_new (buf, len, 10);
+   page = _mongoc_gridfs_file_page_new (buf, len, 10);
 
    assert (page);
    assert (page->len == len);
    assert (!page->buf);
 
-   r = mongoc_gridfs_file_page_write (page, "1", 1);
+   r = _mongoc_gridfs_file_page_write (page, "1", 1);
    assert (r == 1);
    assert (page->buf);
    assert (memcmp (page->buf, "1bcde", len) == 0);
    assert (page->offset == 1);
    assert (page->len == len);
 
-   r = mongoc_gridfs_file_page_write (page, "234567", 6);
+   r = _mongoc_gridfs_file_page_write (page, "234567", 6);
    assert (r == 6);
    assert (memcmp (page->buf, "1234567", 7) == 0);
    assert (page->offset == 7);
    assert (page->len == 7);
 
-   r = mongoc_gridfs_file_page_write (page, "8910", 4);
+   r = _mongoc_gridfs_file_page_write (page, "8910", 4);
    assert (r == 3);
    assert (memcmp (page->buf, "1234567891", 10) == 0);
    assert (page->offset == 10);
    assert (page->len == 10);
 
-   r = mongoc_gridfs_file_page_write (page, "foo", 3);
+   r = _mongoc_gridfs_file_page_write (page, "foo", 3);
    assert (r == 0);
 
-   mongoc_gridfs_file_page_destroy (page);
+   _mongoc_gridfs_file_page_destroy (page);
 }
 
 
