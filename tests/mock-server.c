@@ -217,10 +217,10 @@ mock_server_worker (void *data)
    server = closure[0];
    stream = closure[1];
 
-   mongoc_buffer_init(&buffer, NULL, 0, NULL);
+   _mongoc_buffer_init(&buffer, NULL, 0, NULL);
 
 again:
-   if (mongoc_buffer_fill (&buffer, stream, 4, INT_MAX, &error) == -1) {
+   if (_mongoc_buffer_fill (&buffer, stream, 4, INT_MAX, &error) == -1) {
       MONGOC_WARNING ("%s", error.message);
       goto failure;
    }
@@ -235,7 +235,7 @@ again:
       goto failure;
    }
 
-   if (mongoc_buffer_fill (&buffer, stream, msg_len, INT_MAX, &error) == -1) {
+   if (_mongoc_buffer_fill (&buffer, stream, msg_len, INT_MAX, &error) == -1) {
       MONGOC_WARNING ("%s", error.message);
       goto failure;
    }

@@ -126,7 +126,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
       bson_init(&cursor->fields);
    }
 
-   mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL);
+   _mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL);
 
    mongoc_counter_cursors_active_inc();
 
@@ -177,7 +177,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
    bson_destroy(&cursor->query);
    bson_destroy(&cursor->fields);
-   mongoc_buffer_destroy(&cursor->buffer);
+   _mongoc_buffer_destroy(&cursor->buffer);
    mongoc_read_prefs_destroy(cursor->read_prefs);
 
    bson_free(cursor);
@@ -307,7 +307,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    cursor->hint = hint;
    request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
 
-   mongoc_buffer_clear(&cursor->buffer, FALSE);
+   _mongoc_buffer_clear(&cursor->buffer, FALSE);
 
    if (!_mongoc_client_recv(cursor->client,
                             &cursor->rpc,
@@ -405,7 +405,7 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       RETURN(FALSE);
    }
 
-   mongoc_buffer_clear(&cursor->buffer, FALSE);
+   _mongoc_buffer_clear(&cursor->buffer, FALSE);
 
    request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
 
@@ -592,7 +592,7 @@ mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 
    memcpy (clone->ns, cursor->ns, sizeof clone->ns);
 
-   mongoc_buffer_init (&clone->buffer, NULL, 0, NULL);
+   _mongoc_buffer_init (&clone->buffer, NULL, 0, NULL);
 
    mongoc_counter_cursors_active_inc ();
 

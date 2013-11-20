@@ -40,23 +40,37 @@ struct _mongoc_buffer_t
 };
 
 
-void        mongoc_buffer_init               (mongoc_buffer_t   *buffer,
-                                              bson_uint8_t      *buf,
-                                              size_t             buflen,
-                                              bson_realloc_func  realloc_func);
-bson_bool_t mongoc_buffer_append_from_stream (mongoc_buffer_t   *buffer,
-                                              mongoc_stream_t   *stream,
-                                              size_t             size,
-                                              bson_int32_t       timeout_msec,
-                                              bson_error_t      *error);
-ssize_t     mongoc_buffer_fill               (mongoc_buffer_t   *buffer,
-                                              mongoc_stream_t   *stream,
-                                              size_t             min_bytes,
-                                              bson_int32_t       timeout_msec,
-                                              bson_error_t      *error);
-void        mongoc_buffer_destroy            (mongoc_buffer_t   *buffer);
-void        mongoc_buffer_clear              (mongoc_buffer_t   *buffer,
-                                              bson_bool_t        zero);
+void
+_mongoc_buffer_init (mongoc_buffer_t   *buffer,
+                     bson_uint8_t      *buf,
+                     size_t             buflen,
+                     bson_realloc_func  realloc_func)
+   BSON_GNUC_INTERNAL;
+
+bson_bool_t
+_mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
+                                   mongoc_stream_t *stream,
+                                   size_t           size,
+                                   bson_int32_t     timeout_msec,
+                                   bson_error_t    *error)
+   BSON_GNUC_INTERNAL;
+
+ssize_t
+_mongoc_buffer_fill (mongoc_buffer_t *buffer,
+                     mongoc_stream_t *stream,
+                     size_t           min_bytes,
+                     bson_int32_t     timeout_msec,
+                     bson_error_t    *error)
+   BSON_GNUC_INTERNAL;
+
+void
+_mongoc_buffer_destroy (mongoc_buffer_t *buffer)
+   BSON_GNUC_INTERNAL;
+
+void
+_mongoc_buffer_clear (mongoc_buffer_t *buffer,
+                      bson_bool_t      zero)
+   BSON_GNUC_INTERNAL;
 
 
 BSON_END_DECLS

@@ -95,7 +95,7 @@ _mongoc_collection_new (mongoc_client_t              *client,
    col->collectionlen = strlen(col->collection);
    col->nslen = strlen(col->ns);
 
-   mongoc_buffer_init(&col->buffer, NULL, 0, NULL);
+   _mongoc_buffer_init(&col->buffer, NULL, 0, NULL);
 
    RETURN(col);
 }
@@ -125,7 +125,7 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
 
    bson_return_if_fail(collection);
 
-   mongoc_buffer_destroy(&collection->buffer);
+   _mongoc_buffer_destroy(&collection->buffer);
 
    if (collection->read_prefs) {
       mongoc_read_prefs_destroy(collection->read_prefs);
@@ -753,13 +753,12 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
 
 
 static bson_bool_t
-_mongoc_collection_insert_bulk_raw (
-   mongoc_collection_t          *collection,       /* IN */
-   mongoc_insert_flags_t         flags,            /* IN */
-   const struct iovec           *documents,        /* IN */
-   bson_uint32_t                 n_documents,      /* IN */
-   const mongoc_write_concern_t *write_concern,    /* IN */
-   bson_error_t                 *error)            /* OUT */
+_mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
+                                    mongoc_insert_flags_t         flags,
+                                    const struct iovec           *documents,
+                                    bson_uint32_t                 n_documents,
+                                    const mongoc_write_concern_t *write_concern,
+                                    bson_error_t                 *error)
 {
    mongoc_buffer_t buffer;
    bson_uint32_t hint;
@@ -824,11 +823,11 @@ _mongoc_collection_insert_bulk_raw (
    }
 
    if (_mongoc_write_concern_has_gle (write_concern)) {
-      mongoc_buffer_init (&buffer, NULL, 0, NULL);
+      _mongoc_buffer_init (&buffer, NULL, 0, NULL);
 
       if (!_mongoc_client_recv (collection->client, &reply, &buffer,
                                 hint, error)) {
-         mongoc_buffer_destroy (&buffer);
+         _mongoc_buffer_destroy (&buffer);
          return FALSE;
       }
 
@@ -851,7 +850,7 @@ _mongoc_collection_insert_bulk_raw (
          return FALSE;
       }
 
-      mongoc_buffer_destroy (&buffer);
+      _mongoc_buffer_destroy (&buffer);
    }
 
    return TRUE;
@@ -887,13 +886,12 @@ _mongoc_collection_insert_bulk_raw (
  */
 
 bson_bool_t
-mongoc_collection_insert_bulk (
-   mongoc_collection_t          *collection,       /* IN */
-   mongoc_insert_flags_t         flags,            /* IN */
-   const bson_t                **documents,        /* IN */
-   bson_uint32_t                 n_documents,      /* IN */
-   const mongoc_write_concern_t *write_concern,    /* IN */
-   bson_error_t                 *error)            /* OUT */
+mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
+                               mongoc_insert_flags_t          flags,
+                               const bson_t                 **documents,
+                               bson_uint32_t                  n_documents,
+                               const mongoc_write_concern_t  *write_concern,
+                               bson_error_t                  *error)
 {
    struct iovec *iov;
    size_t i;
@@ -952,12 +950,11 @@ mongoc_collection_insert_bulk (
  */
 
 bson_bool_t
-mongoc_collection_insert (
-      mongoc_collection_t          *collection,    /* IN */
-      mongoc_insert_flags_t         flags,         /* IN */
-      const bson_t                 *document,      /* IN */
-      const mongoc_write_concern_t *write_concern, /* IN */
-      bson_error_t                 *error)         /* OUT */
+mongoc_collection_insert (mongoc_collection_t          *collection,
+                          mongoc_insert_flags_t         flags,
+                          const bson_t                 *document,
+                          const mongoc_write_concern_t *write_concern,
+                          bson_error_t                 *error)
 {
    bson_bool_t ret;
    bson_iter_t iter;
@@ -1008,12 +1005,12 @@ mongoc_collection_insert (
  */
 
 bson_bool_t
-mongoc_collection_update (mongoc_collection_t          *collection,    /* IN */
-                          mongoc_update_flags_t         flags,         /* IN */
-                          const bson_t                 *selector,      /* IN */
-                          const bson_t                 *update,        /* IN */
-                          const mongoc_write_concern_t *write_concern, /* IN */
-                          bson_error_t                 *error)         /* OUT */
+mongoc_collection_update (mongoc_collection_t          *collection,
+                          mongoc_update_flags_t         flags,
+                          const bson_t                 *selector,
+                          const bson_t                 *update,
+                          const mongoc_write_concern_t *write_concern,
+                          bson_error_t                 *error)
 {
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
@@ -1077,10 +1074,10 @@ mongoc_collection_update (mongoc_collection_t          *collection,    /* IN */
  */
 
 bson_bool_t
-mongoc_collection_save (mongoc_collection_t          *collection,    /* IN */
-                        const bson_t                 *document,      /* IN */
-                        const mongoc_write_concern_t *write_concern, /* IN */
-                        bson_error_t                 *error)         /* OUT */
+mongoc_collection_save (mongoc_collection_t          *collection,
+                        const bson_t                 *document,
+                        const mongoc_write_concern_t *write_concern,
+                        bson_error_t                 *error)
 {
    bson_iter_t iter;
    bson_bool_t ret;
@@ -1148,11 +1145,11 @@ mongoc_collection_save (mongoc_collection_t          *collection,    /* IN */
  */
 
 bson_bool_t
-mongoc_collection_delete (mongoc_collection_t          *collection,    /* IN */
-                          mongoc_delete_flags_t         flags,         /* IN */
-                          const bson_t                 *selector,      /* IN */
-                          const mongoc_write_concern_t *write_concern, /* IN */
-                          bson_error_t                 *error)         /* OUT */
+mongoc_collection_delete (mongoc_collection_t          *collection,
+                          mongoc_delete_flags_t         flags,
+                          const bson_t                 *selector,
+                          const mongoc_write_concern_t *write_concern,
+                          bson_error_t                 *error)
 {
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
@@ -1209,8 +1206,7 @@ mongoc_collection_delete (mongoc_collection_t          *collection,    /* IN */
  */
 
 const mongoc_read_prefs_t *
-mongoc_collection_get_read_prefs (
-      const mongoc_collection_t *collection) /* IN */
+mongoc_collection_get_read_prefs (const mongoc_collection_t *collection)
 {
    bson_return_val_if_fail(collection, NULL);
    return collection->read_prefs;
@@ -1234,9 +1230,8 @@ mongoc_collection_get_read_prefs (
  */
 
 void
-mongoc_collection_set_read_prefs (
-      mongoc_collection_t       *collection, /* IN */
-      const mongoc_read_prefs_t *read_prefs) /* IN */
+mongoc_collection_set_read_prefs (mongoc_collection_t       *collection,
+                                  const mongoc_read_prefs_t *read_prefs)
 {
    bson_return_if_fail(collection);
 
@@ -1268,10 +1263,10 @@ mongoc_collection_set_read_prefs (
  */
 
 const mongoc_write_concern_t *
-mongoc_collection_get_write_concern (
-      const mongoc_collection_t *collection) /* IN */
+mongoc_collection_get_write_concern (const mongoc_collection_t *collection)
 {
-   bson_return_val_if_fail(collection, NULL);
+   bson_return_val_if_fail (collection, NULL);
+
    return collection->write_concern;
 }
 
@@ -1293,9 +1288,8 @@ mongoc_collection_get_write_concern (
  */
 
 void
-mongoc_collection_set_write_concern (
-      mongoc_collection_t          *collection,    /* IN */
-      const mongoc_write_concern_t *write_concern) /* IN */
+mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
+                                     const mongoc_write_concern_t *write_concern)
 {
    bson_return_if_fail(collection);
 

@@ -31,7 +31,7 @@
 
 
 /**
- * mongoc_buffer_init:
+ * _mongoc_buffer_init:
  * @buffer: A mongoc_buffer_t to initialize.
  * @buf: A data buffer to attach to @buffer.
  * @buflen: The size of @buflen.
@@ -44,10 +44,10 @@
  * cleaning up the data structure.
  */
 void
-mongoc_buffer_init (mongoc_buffer_t   *buffer,
-                    bson_uint8_t      *buf,
-                    size_t             buflen,
-                    bson_realloc_func  realloc_func)
+_mongoc_buffer_init (mongoc_buffer_t   *buffer,
+                     bson_uint8_t      *buf,
+                     size_t             buflen,
+                     bson_realloc_func  realloc_func)
 {
    bson_return_if_fail(buffer);
    bson_return_if_fail(buf || !buflen);
@@ -72,13 +72,13 @@ mongoc_buffer_init (mongoc_buffer_t   *buffer,
 
 
 /**
- * mongoc_buffer_destroy:
+ * _mongoc_buffer_destroy:
  * @buffer: A mongoc_buffer_t.
  *
  * Cleanup after @buffer and release any allocated resources.
  */
 void
-mongoc_buffer_destroy (mongoc_buffer_t *buffer)
+_mongoc_buffer_destroy (mongoc_buffer_t *buffer)
 {
    bson_return_if_fail(buffer);
 
@@ -91,7 +91,7 @@ mongoc_buffer_destroy (mongoc_buffer_t *buffer)
 
 
 /**
- * mongoc_buffer_clear:
+ * _mongoc_buffer_clear:
  * @buffer: A mongoc_buffer_t.
  * @zero: If the memory should be zeroed.
  *
@@ -100,8 +100,8 @@ mongoc_buffer_destroy (mongoc_buffer_t *buffer)
  * contain security related information.
  */
 void
-mongoc_buffer_clear (mongoc_buffer_t *buffer,
-                     bson_bool_t      zero)
+_mongoc_buffer_clear (mongoc_buffer_t *buffer,
+                      bson_bool_t      zero)
 {
    bson_return_if_fail(buffer);
 
@@ -129,11 +129,11 @@ mongoc_buffer_clear (mongoc_buffer_t *buffer,
  * Returns: TRUE if successful; otherwise FALSE and @error is set.
  */
 bson_bool_t
-mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
-                                  mongoc_stream_t *stream,
-                                  size_t           size,
-                                  bson_int32_t     timeout_msec,
-                                  bson_error_t    *error)
+_mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
+                                   mongoc_stream_t *stream,
+                                   size_t           size,
+                                   bson_int32_t     timeout_msec,
+                                   bson_error_t    *error)
 {
    bson_uint8_t *buf;
    ssize_t ret;
@@ -173,7 +173,7 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
 
 
 /**
- * mongoc_buffer_fill:
+ * _mongoc_buffer_fill:
  * @buffer: A mongoc_buffer_t.
  * @stream: A stream to read from.
  * @min_bytes: The minumum number of bytes to read.
@@ -184,11 +184,11 @@ mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
  * Returns: The number of buffered bytes, or -1 on failure.
  */
 ssize_t
-mongoc_buffer_fill (mongoc_buffer_t *buffer,
-                    mongoc_stream_t *stream,
-                    size_t           min_bytes,
-                    bson_int32_t     timeout_msec,
-                    bson_error_t    *error)
+_mongoc_buffer_fill (mongoc_buffer_t *buffer,
+                     mongoc_stream_t *stream,
+                     size_t           min_bytes,
+                     bson_int32_t     timeout_msec,
+                     bson_error_t    *error)
 {
    ssize_t ret;
    size_t avail_bytes;

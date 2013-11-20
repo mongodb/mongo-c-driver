@@ -872,7 +872,7 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    rpc.query.fields = NULL;
 
    mongoc_array_init(&ar, sizeof(struct iovec));
-   mongoc_buffer_init(&buffer, NULL, 0, NULL);
+   _mongoc_buffer_init(&buffer, NULL, 0, NULL);
 
    _mongoc_rpc_gather(&rpc, &ar);
    _mongoc_rpc_swab_to_le(&rpc);
@@ -882,8 +882,8 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
       GOTO(failure);
    }
 
-   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, 4,
-                                         cluster->sockettimeoutms, error)) {
+   if (!_mongoc_buffer_append_from_stream(&buffer, node->stream, 4,
+                                          cluster->sockettimeoutms, error)) {
       GOTO(failure);
    }
 
@@ -895,8 +895,8 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
       GOTO(invalid_reply);
    }
 
-   if (!mongoc_buffer_append_from_stream(&buffer, node->stream, msg_len - 4,
-                                         cluster->sockettimeoutms, error)) {
+   if (!_mongoc_buffer_append_from_stream(&buffer, node->stream, msg_len - 4,
+                                          cluster->sockettimeoutms, error)) {
       GOTO(failure);
    }
 
@@ -918,7 +918,7 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
       bson_destroy(&reply_local);
    }
 
-   mongoc_buffer_destroy(&buffer);
+   _mongoc_buffer_destroy(&buffer);
    mongoc_array_destroy(&ar);
 
    RETURN(TRUE);
@@ -930,7 +930,7 @@ invalid_reply:
                   "Invalid reply from server.");
 
 failure:
-   mongoc_buffer_destroy(&buffer);
+   _mongoc_buffer_destroy(&buffer);
    mongoc_array_destroy(&ar);
 
    if (reply) {
@@ -2188,8 +2188,8 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
     * Buffer the message length to determine how much more to read.
     */
    pos = buffer->len;
-   if (!mongoc_buffer_append_from_stream (buffer, node->stream, 4,
-                                          cluster->sockettimeoutms, error)) {
+   if (!_mongoc_buffer_append_from_stream (buffer, node->stream, 4,
+                                           cluster->sockettimeoutms, error)) {
       mongoc_counter_protocol_ingress_error_inc ();
       _mongoc_cluster_disconnect_node (cluster, node);
       RETURN (FALSE);
@@ -2213,8 +2213,8 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    /*
     * Read the rest of the message from the stream.
     */
-   if (!mongoc_buffer_append_from_stream (buffer, node->stream, msg_len - 4,
-                                          cluster->sockettimeoutms, error)) {
+   if (!_mongoc_buffer_append_from_stream (buffer, node->stream, msg_len - 4,
+                                           cluster->sockettimeoutms, error)) {
       _mongoc_cluster_disconnect_node (cluster, node);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (FALSE);

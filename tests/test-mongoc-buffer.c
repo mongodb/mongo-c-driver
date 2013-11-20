@@ -21,18 +21,18 @@ test_mongoc_buffer_basic (void)
    stream = mongoc_stream_unix_new(fd);
    assert(stream);
 
-   mongoc_buffer_init(&buf, data, 1024, bson_realloc);
+   _mongoc_buffer_init(&buf, data, 1024, bson_realloc);
 
-   r = mongoc_buffer_fill(&buf, stream, 537, 0, &error);
+   r = _mongoc_buffer_fill(&buf, stream, 537, 0, &error);
    assert_cmpint(r, ==, -1);
-   r = mongoc_buffer_fill(&buf, stream, 536, 0, &error);
+   r = _mongoc_buffer_fill(&buf, stream, 536, 0, &error);
    assert_cmpint(r, ==, 536);
    assert(buf.len == 536);
 
-   mongoc_buffer_destroy(&buf);
-   mongoc_buffer_destroy(&buf);
-   mongoc_buffer_destroy(&buf);
-   mongoc_buffer_destroy(&buf);
+   _mongoc_buffer_destroy(&buf);
+   _mongoc_buffer_destroy(&buf);
+   _mongoc_buffer_destroy(&buf);
+   _mongoc_buffer_destroy(&buf);
 
    mongoc_stream_destroy(stream);
 }

@@ -565,7 +565,7 @@ _mongoc_client_recv_gle (mongoc_client_t *client,
    bson_return_val_if_fail (hint, FALSE);
    bson_return_val_if_fail (error, FALSE);
 
-   mongoc_buffer_init (&buffer, NULL, 0, NULL);
+   _mongoc_buffer_init (&buffer, NULL, 0, NULL);
 
    if (!_mongoc_cluster_try_recv (&client->cluster, &rpc, &buffer,
                                   hint, error)) {
@@ -600,7 +600,7 @@ _mongoc_client_recv_gle (mongoc_client_t *client,
    ret = TRUE;
 
 cleanup:
-   mongoc_buffer_destroy (&buffer);
+   _mongoc_buffer_destroy (&buffer);
 
    RETURN (ret);
 }

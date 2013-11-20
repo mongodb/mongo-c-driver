@@ -60,7 +60,7 @@ mongoc_stream_buffered_destroy (mongoc_stream_t *stream) /* IN */
    mongoc_stream_destroy(buffered->base_stream);
    buffered->base_stream = NULL;
 
-   mongoc_buffer_destroy(&buffered->buffer);
+   _mongoc_buffer_destroy (&buffered->buffer);
 
    bson_free(stream);
 
@@ -203,14 +203,14 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
       total_bytes += iov[i].iov_len;
    }
 
-   if (-1 == mongoc_buffer_fill(&buffered->buffer,
-                                buffered->base_stream,
-                                total_bytes,
-                                timeout_msec,
-                                &error)) {
-      MONGOC_WARNING("Failure to buffer %u bytes: %s",
-                     (unsigned)total_bytes,
-                     error.message);
+   if (-1 == _mongoc_buffer_fill (&buffered->buffer,
+                                  buffered->base_stream,
+                                  total_bytes,
+                                  timeout_msec,
+                                  &error)) {
+      MONGOC_WARNING ("Failure to buffer %u bytes: %s",
+                      (unsigned)total_bytes,
+                      error.message);
       return -1;
    }
 
@@ -322,7 +322,7 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream, /* IN */
    stream->base_stream = base_stream;
 
    buffer = bson_malloc0(buffer_size);
-   mongoc_buffer_init(&stream->buffer, buffer, buffer_size, bson_realloc);
+   _mongoc_buffer_init (&stream->buffer, buffer, buffer_size, bson_realloc);
 
    mongoc_counter_streams_active_inc();
 
