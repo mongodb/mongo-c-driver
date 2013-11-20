@@ -37,17 +37,25 @@ struct _mongoc_array_t
 };
 
 
-#define mongoc_array_append_val(a, v) mongoc_array_append_vals(a, &v, 1)
-#define mongoc_array_index(a, t, i)   (((t*)(a)->data)[i])
-#define mongoc_array_clear(a)         (a)->len = 0
+#define _mongoc_array_append_val(a, v) _mongoc_array_append_vals(a, &v, 1)
+#define _mongoc_array_index(a, t, i)   (((t*)(a)->data)[i])
+#define _mongoc_array_clear(a)         (a)->len = 0
 
 
-void            mongoc_array_init        (mongoc_array_t *array,
-                                          size_t          element_size);
-void            mongoc_array_append_vals (mongoc_array_t *array,
-                                          const void     *data,
-                                          bson_uint32_t   n_elements);
-void            mongoc_array_destroy     (mongoc_array_t *array);
+void
+_mongoc_array_init (mongoc_array_t *array,
+                    size_t          element_size)
+   BSON_GNUC_INTERNAL;
+
+void
+_mongoc_array_append_vals (mongoc_array_t *array,
+                           const void     *data,
+                           bson_uint32_t   n_elements)
+   BSON_GNUC_INTERNAL;
+
+void
+_mongoc_array_destroy (mongoc_array_t *array)
+   BSON_GNUC_INTERNAL;
 
 
 BSON_END_DECLS

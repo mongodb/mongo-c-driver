@@ -68,20 +68,20 @@ test_mongoc_rpc_##_name##_equal (const mongoc_rpc_##_name##_t *a, \
    do { \
       mongoc_array_t a_buf; \
       mongoc_array_t b_buf; \
-      mongoc_array_init(&a_buf, 1); \
-      mongoc_array_init(&b_buf, 1); \
+      _mongoc_array_init(&a_buf, 1); \
+      _mongoc_array_init(&b_buf, 1); \
       size_t _i; \
       bson_bool_t is_equal; \
       for (_i = 0; _i < a->n_##_name; _i++) { \
-         mongoc_array_append_vals(&a_buf, a->_name[_i].iov_base, a->_name[_i].iov_len); \
+         _mongoc_array_append_vals(&a_buf, a->_name[_i].iov_base, a->_name[_i].iov_len); \
       } \
       for (_i = 0; _i < b->n_##_name; _i++) { \
-         mongoc_array_append_vals(&b_buf, b->_name[_i].iov_base, b->_name[_i].iov_len); \
+         _mongoc_array_append_vals(&b_buf, b->_name[_i].iov_base, b->_name[_i].iov_len); \
       } \
       is_equal = (a_buf.len == b_buf.len) \
               && (memcmp(a_buf.data, b_buf.data, a_buf.len) == 0); \
-      mongoc_array_destroy(&a_buf); \
-      mongoc_array_destroy(&b_buf); \
+      _mongoc_array_destroy(&a_buf); \
+      _mongoc_array_destroy(&b_buf); \
       return is_equal; \
    } while(0);
 #define OPTIONAL(_check, _code)        if (!!a->_check != !!b->_check) { return FALSE; } _code
@@ -156,7 +156,7 @@ assert_rpc_equal (const char   *filename,
    int i;
 
    data = get_test_file(filename, &length);
-   mongoc_array_init(&ar, sizeof(struct iovec));
+   _mongoc_array_init(&ar, sizeof(struct iovec));
 
    /*
     * Gather our RPC into a series of iovec that can be compared
@@ -179,7 +179,7 @@ assert_rpc_equal (const char   *filename,
 #endif
 
    for (i = 0; i < ar.len; i++) {
-      iov = &mongoc_array_index(&ar, struct iovec, i);
+      iov = &_mongoc_array_index(&ar, struct iovec, i);
       assert(iov->iov_len <= (length - off));
       r = memcmp(&data[off], iov->iov_base, iov->iov_len);
       if (r) {
@@ -189,7 +189,7 @@ assert_rpc_equal (const char   *filename,
       off += iov->iov_len;
    }
 
-   mongoc_array_destroy(&ar);
+   _mongoc_array_destroy(&ar);
    bson_free(data);
 }
 

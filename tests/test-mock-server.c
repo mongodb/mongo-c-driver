@@ -21,7 +21,7 @@ handler_cb (mock_server_t   *server,
 
    if ((rpc->header.opcode == MONGOC_OPCODE_QUERY) ||
        (rpc->header.opcode == MONGOC_OPCODE_REPLY)) {
-      mongoc_array_init(&ar, sizeof(struct iovec));
+      _mongoc_array_init(&ar, sizeof(struct iovec));
 
       printf("========\n");
       printf("MsgLen: %d\n", rpc->header.msg_len);
@@ -49,7 +49,7 @@ handler_cb (mock_server_t   *server,
 
       mongoc_stream_writev(stream, iov, iovcnt, -1);
 
-      mongoc_array_destroy(&ar);
+      _mongoc_array_destroy(&ar);
    }
 }
 

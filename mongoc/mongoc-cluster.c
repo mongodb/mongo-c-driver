@@ -562,7 +562,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
       cluster->nodes[i].needs_auth = cluster->requires_auth;
    }
 
-   mongoc_array_init(&cluster->iov, sizeof(struct iovec));
+   _mongoc_array_init (&cluster->iov, sizeof(struct iovec));
 
    EXIT;
 }
@@ -606,7 +606,7 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 
    _mongoc_cluster_clear_peers (cluster);
 
-   mongoc_array_destroy (&cluster->iov);
+   _mongoc_array_destroy (&cluster->iov);
 
    EXIT;
 }
@@ -871,8 +871,8 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    rpc.query.query = bson_get_data(command);
    rpc.query.fields = NULL;
 
-   mongoc_array_init(&ar, sizeof(struct iovec));
-   _mongoc_buffer_init(&buffer, NULL, 0, NULL);
+   _mongoc_array_init (&ar, sizeof (struct iovec));
+   _mongoc_buffer_init (&buffer, NULL, 0, NULL);
 
    _mongoc_rpc_gather(&rpc, &ar);
    _mongoc_rpc_swab_to_le(&rpc);
@@ -919,7 +919,7 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    }
 
    _mongoc_buffer_destroy(&buffer);
-   mongoc_array_destroy(&ar);
+   _mongoc_array_destroy(&ar);
 
    RETURN(TRUE);
 
@@ -931,7 +931,7 @@ invalid_reply:
 
 failure:
    _mongoc_buffer_destroy(&buffer);
-   mongoc_array_destroy(&ar);
+   _mongoc_array_destroy(&ar);
 
    if (reply) {
       bson_init(reply);
@@ -1911,7 +1911,7 @@ _mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
 
    BSON_ASSERT(node->stream);
 
-   mongoc_array_clear(&cluster->iov);
+   _mongoc_array_clear (&cluster->iov);
 
    /*
     * TODO: We can probably remove the need for sendv and just do send since
@@ -2049,7 +2049,7 @@ _mongoc_cluster_try_sendv (mongoc_cluster_t             *cluster,
 
    BSON_ASSERT (node->stream);
 
-   mongoc_array_clear (&cluster->iov);
+   _mongoc_array_clear (&cluster->iov);
 
    for (i = 0; i < rpcs_len; i++) {
       _mongoc_cluster_inc_egress_rpc (&rpcs[i]);

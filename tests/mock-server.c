@@ -79,7 +79,7 @@ mock_server_reply_simple (mock_server_t        *server,
    BSON_ASSERT (client);
    BSON_ASSERT (doc);
 
-   mongoc_array_init (&ar, sizeof (struct iovec));
+   _mongoc_array_init (&ar, sizeof (struct iovec));
 
    r.reply.msg_len = 0;
    r.reply.request_id = ++server->last_response_id;
@@ -106,7 +106,7 @@ mock_server_reply_simple (mock_server_t        *server,
 
    assert (n_written == expected);
 
-   mongoc_array_destroy (&ar);
+   _mongoc_array_destroy (&ar);
 }
 
 

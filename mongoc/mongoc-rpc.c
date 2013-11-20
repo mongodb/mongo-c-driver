@@ -38,20 +38,20 @@
    iov.iov_len = 4; \
    BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
-   mongoc_array_append_val(array, iov);
+   _mongoc_array_append_val(array, iov);
 #define INT64_FIELD(_name) \
    iov.iov_base = (void *)&rpc->_name; \
    iov.iov_len = 8; \
    BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
-   mongoc_array_append_val(array, iov);
+   _mongoc_array_append_val(array, iov);
 #define CSTRING_FIELD(_name) \
    BSON_ASSERT(rpc->_name); \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = strlen(rpc->_name) + 1; \
    BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
-   mongoc_array_append_val(array, iov);
+   _mongoc_array_append_val(array, iov);
 #define BSON_FIELD(_name) \
    do { \
       bson_int32_t __l; \
@@ -61,7 +61,7 @@
       iov.iov_len = __l; \
       BSON_ASSERT(iov.iov_len); \
       rpc->msg_len += iov.iov_len; \
-      mongoc_array_append_val(array, iov); \
+      _mongoc_array_append_val(array, iov); \
    } while (0);
 #define OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
@@ -70,7 +70,7 @@
    iov.iov_len = rpc->_name##_len; \
    BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
-   mongoc_array_append_val(array, iov);
+   _mongoc_array_append_val(array, iov);
 #define IOVEC_ARRAY_FIELD(_name) \
    do { \
       size_t _i; \
@@ -78,7 +78,7 @@
       for (_i = 0; _i < rpc->n_##_name; _i++) { \
          BSON_ASSERT(rpc->_name[_i].iov_len); \
          rpc->msg_len += rpc->_name[_i].iov_len; \
-         mongoc_array_append_val(array, rpc->_name[_i]); \
+         _mongoc_array_append_val(array, rpc->_name[_i]); \
       } \
    } while (0);
 #define RAW_BUFFER_FIELD(_name) \
@@ -86,18 +86,18 @@
    iov.iov_len = rpc->_name##_len; \
    BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
-   mongoc_array_append_val(array, iov);
+   _mongoc_array_append_val(array, iov);
 #define INT64_ARRAY_FIELD(_len, _name) \
    iov.iov_base = (void *)&rpc->_len; \
    iov.iov_len = 4; \
    BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
-   mongoc_array_append_val(array, iov); \
+   _mongoc_array_append_val(array, iov); \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_len * 8; \
    BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += iov.iov_len; \
-   mongoc_array_append_val(array, iov);
+   _mongoc_array_append_val(array, iov);
 
 
 
@@ -426,7 +426,7 @@
 
 void
 _mongoc_rpc_gather (mongoc_rpc_t   *rpc,
-                   mongoc_array_t *array)
+                    mongoc_array_t *array)
 {
    bson_return_if_fail(rpc);
    bson_return_if_fail(array);

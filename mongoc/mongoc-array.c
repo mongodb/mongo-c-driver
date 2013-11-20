@@ -19,8 +19,8 @@
 
 
 void
-mongoc_array_init (mongoc_array_t *array,
-                   size_t          element_size)
+_mongoc_array_init (mongoc_array_t *array,
+                    size_t          element_size)
 {
    bson_return_if_fail(array);
    bson_return_if_fail(element_size);
@@ -33,7 +33,7 @@ mongoc_array_init (mongoc_array_t *array,
 
 
 void
-mongoc_array_destroy (mongoc_array_t *array)
+_mongoc_array_destroy (mongoc_array_t *array)
 {
    if (array && array->data) {
       bson_free(array->data);
@@ -42,9 +42,9 @@ mongoc_array_destroy (mongoc_array_t *array)
 
 
 void
-mongoc_array_append_vals (mongoc_array_t *array,
-                          const void     *data,
-                          bson_uint32_t   n_elements)
+_mongoc_array_append_vals (mongoc_array_t *array,
+                           const void     *data,
+                           bson_uint32_t   n_elements)
 {
    size_t len;
    size_t off;
