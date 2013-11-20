@@ -873,8 +873,9 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
 
    mongoc_array_init(&ar, sizeof(struct iovec));
    mongoc_buffer_init(&buffer, NULL, 0, NULL);
-   mongoc_rpc_gather(&rpc, &ar);
-   mongoc_rpc_swab_to_le(&rpc);
+
+   _mongoc_rpc_gather(&rpc, &ar);
+   _mongoc_rpc_swab_to_le(&rpc);
 
    if (!mongoc_stream_writev(node->stream, ar.data, ar.len,
                              cluster->sockettimeoutms)) {
@@ -899,18 +900,18 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster, /* IN */
       GOTO(failure);
    }
 
-   if (!mongoc_rpc_scatter(&rpc, buffer.data, buffer.len)) {
+   if (!_mongoc_rpc_scatter(&rpc, buffer.data, buffer.len)) {
       GOTO(invalid_reply);
    }
 
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       GOTO(invalid_reply);
    }
 
    if (reply) {
-      if (!mongoc_rpc_reply_get_first(&rpc.reply, &reply_local)) {
+      if (!_mongoc_rpc_reply_get_first(&rpc.reply, &reply_local)) {
          GOTO(failure);
       }
       bson_copy_to(&reply_local, reply);
@@ -1937,8 +1938,8 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
    for (i = 0; i < rpcs_len; i++) {
       mongoc_cluster_inc_egress_rpc(&rpcs[i]);
       rpcs[i].header.request_id = ++cluster->request_id;
-      need_gle = mongoc_rpc_needs_gle(&rpcs[i], write_concern);
-      mongoc_rpc_gather(&rpcs[i], &cluster->iov);
+      need_gle = _mongoc_rpc_needs_gle(&rpcs[i], write_concern);
+      _mongoc_rpc_gather(&rpcs[i], &cluster->iov);
 
       if (rpcs[i].header.msg_len > cluster->max_msg_size) {
          bson_set_error(error,
@@ -1978,11 +1979,11 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,       /* IN */
          b = _mongoc_write_concern_freeze((void*)write_concern);
          gle.query.query = bson_get_data(b);
          gle.query.fields = NULL;
-         mongoc_rpc_gather(&gle, &cluster->iov);
-         mongoc_rpc_swab_to_le(&gle);
+         _mongoc_rpc_gather(&gle, &cluster->iov);
+         _mongoc_rpc_swab_to_le(&gle);
       }
 
-      mongoc_rpc_swab_to_le(&rpcs[i]);
+      _mongoc_rpc_swab_to_le(&rpcs[i]);
    }
 
    iov = cluster->iov.data;
@@ -2069,8 +2070,8 @@ mongoc_cluster_try_sendv (
    for (i = 0; i < rpcs_len; i++) {
       mongoc_cluster_inc_egress_rpc(&rpcs[i]);
       rpcs[i].header.request_id = ++cluster->request_id;
-      need_gle = mongoc_rpc_needs_gle(&rpcs[i], write_concern);
-      mongoc_rpc_gather(&rpcs[i], &cluster->iov);
+      need_gle = _mongoc_rpc_needs_gle(&rpcs[i], write_concern);
+      _mongoc_rpc_gather(&rpcs[i], &cluster->iov);
 
       if (rpcs[i].header.msg_len > cluster->max_msg_size) {
          bson_set_error(error,
@@ -2111,11 +2112,11 @@ mongoc_cluster_try_sendv (
          b = _mongoc_write_concern_freeze((void *)write_concern);
          gle.query.query = bson_get_data(b);
          gle.query.fields = NULL;
-         mongoc_rpc_gather(&gle, &cluster->iov);
-         mongoc_rpc_swab_to_le(&gle);
+         _mongoc_rpc_gather(&gle, &cluster->iov);
+         _mongoc_rpc_swab_to_le(&gle);
       }
 
-      mongoc_rpc_swab_to_le(&rpcs[i]);
+      _mongoc_rpc_swab_to_le(&rpcs[i]);
    }
 
    iov = cluster->iov.data;
@@ -2233,7 +2234,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
    /*
     * Scatter the buffer into the rpc structure.
     */
-   if (!mongoc_rpc_scatter(rpc, &buffer->data[buffer->off + pos], msg_len)) {
+   if (!_mongoc_rpc_scatter(rpc, &buffer->data[buffer->off + pos], msg_len)) {
       bson_set_error(error,
                      MONGOC_ERROR_PROTOCOL,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -2245,7 +2246,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster, /* IN */
 
    DUMP_BYTES(buffer, buffer->data + buffer->off, buffer->len);
 
-   mongoc_rpc_swab_from_le(rpc);
+   _mongoc_rpc_swab_from_le(rpc);
 
    mongoc_cluster_inc_ingress_rpc(rpc);
 

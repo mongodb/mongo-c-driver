@@ -162,7 +162,7 @@ assert_rpc_equal (const char   *filename,
     * Gather our RPC into a series of iovec that can be compared
     * to the buffer from the RCP snapshot file.
     */
-   mongoc_rpc_gather(rpc, &ar);
+   _mongoc_rpc_gather(rpc, &ar);
 
 #if 0
    printf("Before swabbing\n");
@@ -170,7 +170,7 @@ assert_rpc_equal (const char   *filename,
    mongoc_rpc_printf(rpc);
 #endif
 
-   mongoc_rpc_swab_to_le(rpc);
+   _mongoc_rpc_swab_to_le(rpc);
 
 #if 0
    printf("After swabbing\n");
@@ -231,9 +231,9 @@ test_mongoc_rpc_delete_scatter (void)
    bson_init(&sel);
 
    data = get_test_file("delete1.dat", &length);
-   r = mongoc_rpc_scatter(&rpc, data, length);
+   r = _mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    assert_cmpint(rpc.delete.msg_len, ==, 39);
    assert_cmpint(rpc.delete.request_id, ==, 1234);
@@ -280,9 +280,9 @@ test_mongoc_rpc_get_more_scatter (void)
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
 
    data = get_test_file("get_more1.dat", &length);
-   r = mongoc_rpc_scatter(&rpc, data, length);
+   r = _mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    assert(rpc.get_more.msg_len == 42);
    assert(rpc.get_more.request_id == 1234);
@@ -347,9 +347,9 @@ test_mongoc_rpc_insert_scatter (void)
    bson_init(&empty);
 
    data = get_test_file("insert1.dat", &length);
-   r = mongoc_rpc_scatter(&rpc, data, length);
+   r = _mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    assert_cmpint(rpc.insert.msg_len, ==, 130);
    assert_cmpint(rpc.insert.request_id, ==, 1234);
@@ -405,9 +405,9 @@ test_mongoc_rpc_kill_cursors_scatter (void)
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
 
    data = get_test_file("kill_cursors1.dat", &length);
-   r = mongoc_rpc_scatter(&rpc, data, length);
+   r = _mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    assert_cmpint(rpc.kill_cursors.msg_len, ==, 64);
    assert_cmpint(rpc.kill_cursors.request_id, ==, 1234);
@@ -450,9 +450,9 @@ test_mongoc_rpc_msg_scatter (void)
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
 
    data = get_test_file("msg1.dat", &length);
-   r = mongoc_rpc_scatter(&rpc, data, length);
+   r = _mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    assert(rpc.msg.msg_len == 40);
    assert(rpc.msg.request_id == 1234);
@@ -504,9 +504,9 @@ test_mongoc_rpc_query_scatter (void)
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
 
    data = get_test_file("query1.dat", &length);
-   r = mongoc_rpc_scatter(&rpc, data, length);
+   r = _mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    assert(rpc.query.msg_len == 48);
    assert(rpc.query.request_id == 1234);
@@ -577,9 +577,9 @@ test_mongoc_rpc_reply_scatter (void)
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
 
    data = get_test_file("reply1.dat", &length);
-   r = mongoc_rpc_scatter(&rpc, data, length);
+   r = _mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    assert_cmpint(rpc.reply.msg_len, ==, 536);
    assert_cmpint(rpc.reply.request_id, ==, 1234);
@@ -623,9 +623,9 @@ test_mongoc_rpc_reply_scatter2 (void)
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
 
    data = get_test_file("reply2.dat", &length);
-   r = mongoc_rpc_scatter(&rpc, data, length);
+   r = _mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    assert(rpc.reply.msg_len == 16236);
    assert(rpc.reply.request_id == 0);
@@ -691,9 +691,9 @@ test_mongoc_rpc_update_scatter (void)
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
 
    data = get_test_file("update1.dat", &length);
-   r = mongoc_rpc_scatter(&rpc, data, length);
+   r = _mongoc_rpc_scatter(&rpc, data, length);
    assert(r);
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    assert_cmpint(rpc.update.msg_len, ==, 44);
    assert_cmpint(rpc.update.request_id, ==, 1234);

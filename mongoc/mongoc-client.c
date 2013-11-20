@@ -580,14 +580,14 @@ mongoc_client_recv_gle (mongoc_client_t *client, /* IN */
    }
 
    if ((rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
-      if (mongoc_rpc_reply_get_first(&rpc.reply, &b)) {
+      if (_mongoc_rpc_reply_get_first(&rpc.reply, &b)) {
          _bson_to_error(&b, error);
          bson_destroy(&b);
          GOTO(cleanup);
       }
    }
 
-   if (mongoc_rpc_reply_get_first(&rpc.reply, &b)) {
+   if (_mongoc_rpc_reply_get_first(&rpc.reply, &b)) {
       if (!bson_iter_init_find(&iter, &b, "ok") ||
           !BSON_ITER_HOLDS_DOUBLE(&iter) ||
           (bson_iter_double(&iter) == 0.0)) {

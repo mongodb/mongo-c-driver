@@ -92,8 +92,8 @@ mock_server_reply_simple (mock_server_t        *server,
    r.reply.documents = bson_get_data (doc);
    r.reply.documents_len = doc->len;
 
-   mongoc_rpc_gather (&r, &ar);
-   mongoc_rpc_swab_to_le (&r);
+   _mongoc_rpc_gather (&r, &ar);
+   _mongoc_rpc_swab_to_le (&r);
 
    iov = ar.data;
    iovcnt = ar.len;
@@ -244,12 +244,12 @@ again:
 
    DUMP_BYTES (buffer, buffer.data + buffer.off, buffer.len);
 
-   if (!mongoc_rpc_scatter(&rpc, buffer.data + buffer.off, msg_len)) {
+   if (!_mongoc_rpc_scatter(&rpc, buffer.data + buffer.off, msg_len)) {
       MONGOC_WARNING ("Failed to scatter");
       goto failure;
    }
 
-   mongoc_rpc_swab_from_le(&rpc);
+   _mongoc_rpc_swab_from_le(&rpc);
 
    if (!handle_command(server, stream, &rpc)) {
       server->handler(server, stream, &rpc, server->handler_data);

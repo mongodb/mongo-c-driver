@@ -66,9 +66,9 @@ typedef union
 } mongoc_rpc_t;
 
 
-BSON_STATIC_ASSERT(sizeof(mongoc_rpc_header_t) == 16);
-BSON_STATIC_ASSERT(offsetof(mongoc_rpc_header_t, opcode) ==
-                   offsetof(mongoc_rpc_reply_t, opcode));
+BSON_STATIC_ASSERT (sizeof (mongoc_rpc_header_t) == 16);
+BSON_STATIC_ASSERT (offsetof (mongoc_rpc_header_t, opcode) ==
+                    offsetof (mongoc_rpc_reply_t, opcode));
 
 
 #undef RPC
@@ -83,18 +83,38 @@ BSON_STATIC_ASSERT(offsetof(mongoc_rpc_header_t, opcode) ==
 #undef RAW_BUFFER_FIELD
 
 
-void        mongoc_rpc_gather          (mongoc_rpc_t                 *rpc,
-                                        mongoc_array_t               *array);
-bson_bool_t mongoc_rpc_needs_gle       (mongoc_rpc_t                 *rpc,
-                                        const mongoc_write_concern_t *write_concern);
-void        mongoc_rpc_swab_to_le      (mongoc_rpc_t                 *rpc);
-void        mongoc_rpc_swab_from_le    (mongoc_rpc_t                 *rpc);
-void        mongoc_rpc_printf          (mongoc_rpc_t                 *rpc);
-bson_bool_t mongoc_rpc_scatter         (mongoc_rpc_t                 *rpc,
-                                        const bson_uint8_t           *buf,
-                                        size_t                        buflen);
-bson_bool_t mongoc_rpc_reply_get_first (mongoc_rpc_reply_t           *reply,
-                                        bson_t                       *bson);
+void
+_mongoc_rpc_gather (mongoc_rpc_t   *rpc,
+                    mongoc_array_t *array)
+   BSON_GNUC_INTERNAL;
+
+bson_bool_t
+_mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,
+                       const mongoc_write_concern_t *write_concern)
+   BSON_GNUC_INTERNAL;
+
+void
+_mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
+   BSON_GNUC_INTERNAL;
+
+void
+_mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
+   BSON_GNUC_INTERNAL;
+
+void
+_mongoc_rpc_printf (mongoc_rpc_t *rpc)
+   BSON_GNUC_INTERNAL;
+
+bson_bool_t
+_mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
+                     const bson_uint8_t *buf,
+                     size_t              buflen)
+   BSON_GNUC_INTERNAL;
+
+bson_bool_t
+_mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply,
+                             bson_t             *bson)
+   BSON_GNUC_INTERNAL;
 
 
 BSON_END_DECLS

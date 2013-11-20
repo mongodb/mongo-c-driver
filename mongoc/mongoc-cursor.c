@@ -235,7 +235,7 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
    }
 
    if ((cursor->rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
-      if (mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b)) {
+      if (_mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b)) {
          mongoc_cursor_populate_error(cursor, &b, &cursor->error);
          bson_destroy(&b);
       } else {
@@ -246,7 +246,7 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
       }
       RETURN(TRUE);
    } else if (cursor->is_command) {
-      if (!mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b) ||
+      if (!_mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b) ||
           !bson_iter_init_find(&iter, &b, "ok") ||
           !bson_iter_as_bool(&iter)) {
          mongoc_cursor_populate_error(cursor, &b, &cursor->error);
