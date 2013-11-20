@@ -21,7 +21,7 @@
 
 
 char *
-mongoc_hex_md5 (const char *input)
+_mongoc_hex_md5 (const char *input)
 {
    bson_uint8_t digest[16];
    bson_md5_t md5;

@@ -425,9 +425,9 @@ mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster, /* IN */
    username = mongoc_uri_get_username(cluster->uri);
    password = mongoc_uri_get_password(cluster->uri);
    password_digest = bson_strdup_printf("%s:mongo:%s", username, password);
-   password_md5 = mongoc_hex_md5(password_digest);
+   password_md5 = _mongoc_hex_md5(password_digest);
    digest_in = bson_strdup_printf("%s%s%s", nonce, username, password_md5);
-   ret = mongoc_hex_md5(digest_in);
+   ret = _mongoc_hex_md5(digest_in);
    bson_free(digest_in);
    bson_free(password_md5);
    bson_free(password_digest);

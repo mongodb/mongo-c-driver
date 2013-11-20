@@ -307,7 +307,7 @@ mongoc_database_add_user_legacy (mongoc_database_t *database, /* IN */
     * Hash the users password.
     */
    input = bson_strdup_printf("%s:mongo:%s", username, password);
-   pwd = mongoc_hex_md5(input);
+   pwd = _mongoc_hex_md5(input);
    bson_free(input);
 
    /*
