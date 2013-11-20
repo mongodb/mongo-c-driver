@@ -232,7 +232,7 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
    BSON_ASSERT (gridfs);
    BSON_ASSERT (stream);
 
-   file = mongoc_gridfs_file_new (gridfs, opt);
+   file = _mongoc_gridfs_file_new (gridfs, opt);
 
    for (;; ) {
       r = mongoc_stream_read (stream, iov.iov_base, MONGOC_GRIDFS_STREAM_CHUNK,
@@ -268,7 +268,7 @@ mongoc_gridfs_create_file (mongoc_gridfs_t          *gridfs,
 
    BSON_ASSERT (gridfs);
 
-   file = mongoc_gridfs_file_new (gridfs, opt);
+   file = _mongoc_gridfs_file_new (gridfs, opt);
 
    RETURN (file);
 }

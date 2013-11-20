@@ -18,15 +18,17 @@
 #ifndef MONGOC_GRIDFS_FILE_PRIVATE_H
 #define MONGOC_GRIDFS_FILE_PRIVATE_H
 
+
 #include "mongoc-gridfs.h"
 #include "mongoc-gridfs-file.h"
 #include "mongoc-gridfs-file-page.h"
 #include "mongoc-cursor.h"
 
-
 #include <bson.h>
 
+
 BSON_BEGIN_DECLS
+
 
 struct _mongoc_gridfs_file
 {
@@ -56,14 +58,19 @@ struct _mongoc_gridfs_file
    bson_t      bson_metadata;
 };
 
-mongoc_gridfs_file_t *
-mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
-                                  const bson_t    *data);
-
 
 mongoc_gridfs_file_t *
-mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
-                        mongoc_gridfs_file_opt_t *opt);
+_mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
+                                   const bson_t    *data)
+   BSON_GNUC_INTERNAL;
+
+mongoc_gridfs_file_t *
+_mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
+                         mongoc_gridfs_file_opt_t *opt)
+   BSON_GNUC_INTERNAL;
+
 
 BSON_END_DECLS
+
+
 #endif /* MONGOC_GRIDFS_FILE_PRIVATE_H */

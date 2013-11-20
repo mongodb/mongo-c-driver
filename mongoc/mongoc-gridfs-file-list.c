@@ -62,7 +62,7 @@ mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list)
    BSON_ASSERT (list);
 
    if (mongoc_cursor_next (list->cursor, &bson)) {
-      return mongoc_gridfs_file_new_from_bson (list->gridfs, bson);
+      return _mongoc_gridfs_file_new_from_bson (list->gridfs, bson);
    } else {
       return NULL;
    }

@@ -165,14 +165,17 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
 }
 
 
-/** creates a gridfs file from a bson object
+/**
+ * _mongoc_gridfs_file_new_from_bson:
+ *
+ * creates a gridfs file from a bson object
  *
  * This is only really useful for instantiating a gridfs file from a server
  * side object
  */
 mongoc_gridfs_file_t *
-mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
-                                  const bson_t    *data)
+_mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
+                                   const bson_t    *data)
 {
    mongoc_gridfs_file_t *file;
    const char *key;
@@ -225,10 +228,14 @@ mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
 }
 
 
-/** Create a new empty gridfs file */
+/**
+ * _mongoc_gridfs_file_new:
+ *
+ * Create a new empty gridfs file
+ */
 mongoc_gridfs_file_t *
-mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
-                        mongoc_gridfs_file_opt_t *opt)
+_mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
+                         mongoc_gridfs_file_opt_t *opt)
 {
    mongoc_gridfs_file_t *file;
    mongoc_gridfs_file_opt_t default_opt = { 0 };
