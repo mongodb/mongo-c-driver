@@ -32,7 +32,7 @@
 
 
 static const char *
-mongoc_cursor_get_read_mode_string (mongoc_read_mode_t mode)
+_mongoc_cursor_get_read_mode_string (mongoc_read_mode_t mode)
 {
    switch (mode) {
    case MONGOC_READ_PRIMARY:
@@ -51,16 +51,16 @@ mongoc_cursor_get_read_mode_string (mongoc_read_mode_t mode)
 }
 
 mongoc_cursor_t *
-mongoc_cursor_new (mongoc_client_t           *client,
-                   const char                *db_and_collection,
-                   mongoc_query_flags_t       flags,
-                   bson_uint32_t              skip,
-                   bson_uint32_t              limit,
-                   bson_uint32_t              batch_size,
-                   bson_bool_t                is_command,
-                   const bson_t              *query,
-                   const bson_t              *fields,
-                   const mongoc_read_prefs_t *read_prefs)
+_mongoc_cursor_new (mongoc_client_t           *client,
+                    const char                *db_and_collection,
+                    mongoc_query_flags_t       flags,
+                    bson_uint32_t              skip,
+                    bson_uint32_t              limit,
+                    bson_uint32_t              batch_size,
+                    bson_bool_t                is_command,
+                    const bson_t              *query,
+                    const bson_t              *fields,
+                    const mongoc_read_prefs_t *read_prefs)
 {
    mongoc_read_mode_t mode;
    mongoc_cursor_t *cursor;
@@ -110,7 +110,7 @@ mongoc_cursor_new (mongoc_client_t           *client,
          if ((mode != MONGOC_READ_SECONDARY_PREFERRED) || tags) {
             bson_append_document_begin (&cursor->query, "$readPreference",
                                         15, &child);
-            mode_str = mongoc_cursor_get_read_mode_string (mode);
+            mode_str = _mongoc_cursor_get_read_mode_string (mode);
             bson_append_utf8 (&child, "mode", 4, mode_str, -1);
             if (tags) {
                bson_append_array (&child, "tags", 4, tags);
@@ -135,8 +135,8 @@ mongoc_cursor_new (mongoc_client_t           *client,
 
 
 static void
-mongoc_cursor_kill_cursor (mongoc_cursor_t *cursor,
-                           bson_int64_t     cursor_id)
+_mongoc_cursor_kill_cursor (mongoc_cursor_t *cursor,
+                            bson_int64_t     cursor_id)
 {
    mongoc_rpc_t rpc = {{ 0 }};
 
@@ -167,7 +167,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    bson_return_if_fail(cursor);
 
    if (cursor->rpc.reply.cursor_id) {
-      mongoc_cursor_kill_cursor(cursor, cursor->rpc.reply.cursor_id);
+      _mongoc_cursor_kill_cursor(cursor, cursor->rpc.reply.cursor_id);
    }
 
    if (cursor->reader) {
@@ -190,9 +190,9 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
 
 static void
-mongoc_cursor_populate_error (mongoc_cursor_t *cursor,
-                              const bson_t    *doc,
-                              bson_error_t    *error)
+_mongoc_cursor_populate_error (mongoc_cursor_t *cursor,
+                               const bson_t    *doc,
+                               bson_error_t    *error)
 {
    bson_uint32_t code = MONGOC_ERROR_QUERY_FAILURE;
    bson_iter_t iter;
@@ -217,7 +217,7 @@ mongoc_cursor_populate_error (mongoc_cursor_t *cursor,
 
 
 static bson_bool_t
-mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
+_mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 {
    bson_iter_t iter;
    bson_t b;
@@ -236,7 +236,7 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 
    if ((cursor->rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
       if (_mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b)) {
-         mongoc_cursor_populate_error(cursor, &b, &cursor->error);
+         _mongoc_cursor_populate_error(cursor, &b, &cursor->error);
          bson_destroy(&b);
       } else {
          bson_set_error(&cursor->error,
@@ -249,7 +249,7 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
       if (!_mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b) ||
           !bson_iter_init_find(&iter, &b, "ok") ||
           !bson_iter_as_bool(&iter)) {
-         mongoc_cursor_populate_error(cursor, &b, &cursor->error);
+         _mongoc_cursor_populate_error(cursor, &b, &cursor->error);
          bson_destroy(&b);
          RETURN(TRUE);
       }
@@ -268,7 +268,7 @@ mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 
 
 static bson_bool_t
-mongoc_cursor_query (mongoc_cursor_t *cursor)
+_mongoc_cursor_query (mongoc_cursor_t *cursor)
 {
    bson_uint32_t hint;
    bson_uint32_t request_id;
@@ -326,7 +326,7 @@ mongoc_cursor_query (mongoc_cursor_t *cursor)
       goto failure;
    }
 
-   if (mongoc_cursor_unwrap_failure(cursor)) {
+   if (_mongoc_cursor_unwrap_failure(cursor)) {
       if ((cursor->error.domain == MONGOC_ERROR_QUERY) &&
           (cursor->error.code == MONGOC_ERROR_QUERY_NOT_TAILABLE)) {
          cursor->failed = TRUE;
@@ -354,7 +354,7 @@ failure:
 
 
 static bson_bool_t
-mongoc_cursor_get_more (mongoc_cursor_t *cursor)
+_mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 {
    bson_uint64_t cursor_id;
    bson_uint32_t request_id;
@@ -426,7 +426,7 @@ mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       goto failure;
    }
 
-   if (mongoc_cursor_unwrap_failure(cursor)) {
+   if (_mongoc_cursor_unwrap_failure(cursor)) {
       goto failure;
    }
 
@@ -496,11 +496,11 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
     * Check to see if we need to send a GET_MORE for more results.
     */
    if (!cursor->sent) {
-      if (!mongoc_cursor_query(cursor)) {
+      if (!_mongoc_cursor_query(cursor)) {
          RETURN(FALSE);
       }
    } else if (BSON_UNLIKELY(cursor->end_of_event)) {
-      if (!mongoc_cursor_get_more(cursor)) {
+      if (!_mongoc_cursor_get_more(cursor)) {
          RETURN(FALSE);
       }
    }

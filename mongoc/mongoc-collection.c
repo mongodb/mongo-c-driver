@@ -330,8 +330,8 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
       read_prefs = collection->read_prefs;
    }
 
-   return mongoc_cursor_new(collection->client, collection->ns, flags, skip,
-                            limit, 0, FALSE, query, fields, read_prefs);
+   return _mongoc_cursor_new(collection->client, collection->ns, flags, skip,
+                             limit, 0, FALSE, query, fields, read_prefs);
 }
 
 
@@ -385,8 +385,8 @@ mongoc_collection_command (mongoc_collection_t       *collection, /* IN */
       read_prefs = collection->read_prefs;
    }
 
-   return mongoc_cursor_new(collection->client, ns, flags, skip,
-                            n_return, 0, TRUE, query, fields, read_prefs);
+   return _mongoc_cursor_new(collection->client, ns, flags, skip,
+                             n_return, 0, TRUE, query, fields, read_prefs);
 }
 
 

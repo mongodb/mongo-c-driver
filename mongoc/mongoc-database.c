@@ -150,8 +150,8 @@ mongoc_database_command (mongoc_database_t    *database,
    }
 
    snprintf(ns, sizeof ns, "%s.$cmd", database->name);
-   return mongoc_cursor_new(database->client, ns, flags, skip, n_return, 0,
-                            TRUE, command, fields, read_prefs);
+   return _mongoc_cursor_new(database->client, ns, flags, skip, n_return, 0,
+                             TRUE, command, fields, read_prefs);
 }
 
 
@@ -191,8 +191,8 @@ mongoc_database_command_simple (mongoc_database_t *database,
    snprintf(ns, sizeof ns, "%s.$cmd", database->name);
    ns[sizeof ns-1] = '\0';
 
-   cursor = mongoc_cursor_new(database->client, ns, MONGOC_QUERY_NONE, 0, 1, 0,
-                              TRUE, cmd, NULL, database->read_prefs);
+   cursor = _mongoc_cursor_new(database->client, ns, MONGOC_QUERY_NONE, 0, 1,
+                               0, TRUE, cmd, NULL, database->read_prefs);
 
    if (mongoc_cursor_next(cursor, &b) &&
        bson_iter_init_find(&iter, b, "ok") &&

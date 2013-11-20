@@ -26,8 +26,8 @@ test_get_host (void)
    hosts = mongoc_uri_get_hosts(uri);
 
    client = mongoc_client_new_from_uri(uri);
-   cursor = mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
-                              FALSE, &q, NULL, NULL);
+   cursor = _mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
+                               FALSE, &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    if (!r && mongoc_cursor_error(cursor, &error)) {
       MONGOC_ERROR("%s", error.message);
@@ -63,8 +63,8 @@ test_clone (void)
    client = mongoc_client_new_from_uri(uri);
    BSON_ASSERT(client);
 
-   cursor = mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
-                              FALSE, &q, NULL, NULL);
+   cursor = _mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
+                               FALSE, &q, NULL, NULL);
    BSON_ASSERT(cursor);
 
    r = mongoc_cursor_next(cursor, &doc);

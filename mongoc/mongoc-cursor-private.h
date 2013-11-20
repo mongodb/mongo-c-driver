@@ -64,16 +64,17 @@ struct _mongoc_cursor_t
 
 
 mongoc_cursor_t *
-mongoc_cursor_new (mongoc_client_t           *client,
-                   const char                *db_and_collection,
-                   mongoc_query_flags_t       flags,
-                   bson_uint32_t              skip,
-                   bson_uint32_t              limit,
-                   bson_uint32_t              batch_size,
-                   bson_bool_t                is_command,
-                   const bson_t              *query,
-                   const bson_t              *fields,
-                   const mongoc_read_prefs_t *read_prefs);
+_mongoc_cursor_new (mongoc_client_t           *client,
+                    const char                *db_and_collection,
+                    mongoc_query_flags_t       flags,
+                    bson_uint32_t              skip,
+                    bson_uint32_t              limit,
+                    bson_uint32_t              batch_size,
+                    bson_bool_t                is_command,
+                    const bson_t              *query,
+                    const bson_t              *fields,
+                    const mongoc_read_prefs_t *read_prefs)
+   BSON_GNUC_INTERNAL;
 
 
 BSON_END_DECLS
