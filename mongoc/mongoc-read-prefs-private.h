@@ -35,8 +35,10 @@ struct _mongoc_read_prefs_t
 };
 
 
-int _mongoc_read_prefs_score (const mongoc_read_prefs_t   *read_prefs,
-                              const mongoc_cluster_node_t *node);
+int
+_mongoc_read_prefs_score (const mongoc_read_prefs_t   *read_prefs,
+                          const mongoc_cluster_node_t *node)
+   BSON_GNUC_INTERNAL;
 
 
 BSON_END_DECLS
