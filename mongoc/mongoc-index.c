@@ -15,13 +15,15 @@
  */
 
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "gridfs_index"
-
 #include "mongoc-index.h"
 #include "mongoc-trace.h"
 
-static mongoc_index_opt_t default_opts = {
+
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "gridfs_index"
+
+
+static mongoc_index_opt_t gMongocIndexOptDefault = {
    1,
    0,
    0,
@@ -30,17 +32,20 @@ static mongoc_index_opt_t default_opts = {
    0,
    -1,
    -1,
-   NULL,
-   NULL,
-   NULL
 };
 
-const mongoc_index_opt_t * MONGOC_DEFAULT_INDEX_OPT = &default_opts;
+
+const mongoc_index_opt_t *
+mongoc_index_opt_get_default (void)
+{
+   return &gMongocIndexOptDefault;
+}
+
 
 void
-mongoc_index_opt_init(mongoc_index_opt_t *opt)
+mongoc_index_opt_init (mongoc_index_opt_t *opt)
 {
-   if (!opt) return;
+   BSON_ASSERT (opt);
 
-   memcpy(opt, &default_opts, sizeof(*opt));
+   memcpy (opt, &gMongocIndexOptDefault, sizeof *opt);
 }

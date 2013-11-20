@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-
 #ifndef MONGOC_INDEX_H
 #define MONGOC_INDEX_H
 
+
 #include <bson.h>
+
 
 BSON_BEGIN_DECLS
 
-typedef struct mongoc_index_opt
+
+typedef struct
 {
    bson_bool_t   is_initialized;
    bson_bool_t   background;
@@ -35,12 +37,16 @@ typedef struct mongoc_index_opt
    const bson_t *weights;
    const char   *default_language;
    const char   *language_override;
+   void         *padding[8];
 } mongoc_index_opt_t;
 
-extern const mongoc_index_opt_t * MONGOC_DEFAULT_INDEX_OPT;
+
+const mongoc_index_opt_t *
+mongoc_index_opt_get_default (void) BSON_GNUC_CONST;
 
 void
-mongoc_index_opt_init(mongoc_index_opt_t *opt);
+mongoc_index_opt_init (mongoc_index_opt_t *opt);
+
 
 BSON_END_DECLS
 
