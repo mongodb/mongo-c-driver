@@ -15,9 +15,6 @@
  */
 
 
-#undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "gridfs_file_list"
-
 #include <limits.h>
 
 #include "mongoc-cursor.h"
@@ -30,10 +27,15 @@
 #include "mongoc-gridfs-file-list-private.h"
 #include "mongoc-trace.h"
 
+
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "gridfs_file_list"
+
+
 mongoc_gridfs_file_list_t *
-mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
-                             const bson_t    *query,
-                             bson_uint32_t    limit)
+_mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
+                              const bson_t    *query,
+                              bson_uint32_t    limit)
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_cursor_t *cursor;

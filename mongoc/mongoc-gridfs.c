@@ -168,7 +168,7 @@ mongoc_gridfs_file_list_t *
 mongoc_gridfs_find (mongoc_gridfs_t *gridfs,
                     const bson_t    *query)
 {
-   return mongoc_gridfs_file_list_new (gridfs, query, 0);
+   return _mongoc_gridfs_file_list_new (gridfs, query, 0);
 }
 
 
@@ -182,7 +182,7 @@ mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
 
    ENTRY;
 
-   list = mongoc_gridfs_file_list_new (gridfs, query, 1);
+   list = _mongoc_gridfs_file_list_new (gridfs, query, 1);
 
    file = mongoc_gridfs_file_list_next (list);
 

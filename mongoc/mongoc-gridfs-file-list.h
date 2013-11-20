@@ -21,10 +21,12 @@
 
 #include <bson.h>
 
+
 BSON_BEGIN_DECLS
 
 
 typedef struct _mongoc_gridfs_file_list mongoc_gridfs_file_list_t;
+
 
 mongoc_gridfs_file_t *
 mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list);
@@ -32,5 +34,8 @@ mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list);
 void
 mongoc_gridfs_file_list_destroy (mongoc_gridfs_file_list_t *list);
 
+
 BSON_END_DECLS
+
+
 #endif /* MONGOC_GRIDFS_FILE_LIST_H */
