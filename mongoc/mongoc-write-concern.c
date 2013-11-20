@@ -21,7 +21,7 @@
 
 
 static BSON_INLINE bson_bool_t
-mongoc_write_concern_warn_frozen (mongoc_write_concern_t *write_concern)
+_mongoc_write_concern_warn_frozen (mongoc_write_concern_t *write_concern)
 {
    if (write_concern->frozen) {
       MONGOC_WARNING("Cannot modify a frozen write-concern.");
@@ -116,7 +116,7 @@ mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern,
 {
    bson_return_if_fail(write_concern);
 
-   if (!mongoc_write_concern_warn_frozen(write_concern)) {
+   if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->fsync_ = fsync_;
    }
 }
@@ -144,7 +144,7 @@ mongoc_write_concern_set_journal (mongoc_write_concern_t *write_concern,
 {
    bson_return_if_fail(write_concern);
 
-   if (!mongoc_write_concern_warn_frozen(write_concern)) {
+   if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->journal = journal;
    }
 }
@@ -175,7 +175,7 @@ mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern,
    bson_return_if_fail(write_concern);
    bson_return_if_fail(w >= -3);
 
-   if (!mongoc_write_concern_warn_frozen(write_concern)) {
+   if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->w = w;
    }
 }
@@ -203,7 +203,7 @@ mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
 {
    bson_return_if_fail(write_concern);
 
-   if (!mongoc_write_concern_warn_frozen(write_concern)) {
+   if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->wtimeout = wtimeout_msec;
    }
 }
@@ -232,7 +232,7 @@ mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
 {
    bson_return_if_fail(write_concern);
 
-   if (!mongoc_write_concern_warn_frozen(write_concern)) {
+   if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
       write_concern->wtimeout = wtimeout_msec;
    }
@@ -254,7 +254,7 @@ mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
  *    the mongoc_write_concern_t instance.
  */
 const bson_t *
-mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
+_mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
 {
    bson_t *b;
 
@@ -305,7 +305,7 @@ mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
  * Returns: TRUE if a getlasterror command should be sent.
  */
 bson_bool_t
-mongoc_write_concern_has_gle (const mongoc_write_concern_t *write_concern) /* IN */
+_mongoc_write_concern_has_gle (const mongoc_write_concern_t *write_concern)
 {
    if (write_concern) {
       return ((write_concern->w != 0) && (write_concern->w != -1));

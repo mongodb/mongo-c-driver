@@ -792,7 +792,7 @@ mongoc_collection_insert_bulk_raw (
       return FALSE;
    }
 
-   if (mongoc_write_concern_has_gle (write_concern)) {
+   if (_mongoc_write_concern_has_gle (write_concern)) {
       mongoc_buffer_init (&buffer, NULL, 0, NULL);
 
       if (!mongoc_client_recv (collection->client, &reply, &buffer, hint, error)) {
@@ -1015,7 +1015,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,    /* IN */
       RETURN(FALSE);
    }
 
-   if (mongoc_write_concern_has_gle(write_concern)) {
+   if (_mongoc_write_concern_has_gle(write_concern)) {
       if (!mongoc_client_recv_gle(collection->client, hint, error)) {
          RETURN(FALSE);
       }
@@ -1150,7 +1150,7 @@ mongoc_collection_delete (mongoc_collection_t          *collection,    /* IN */
       return FALSE;
    }
 
-   if (mongoc_write_concern_has_gle(write_concern)) {
+   if (_mongoc_write_concern_has_gle(write_concern)) {
       if (!mongoc_client_recv_gle(collection->client, hint, error)) {
          return FALSE;
       }

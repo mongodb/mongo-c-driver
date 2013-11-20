@@ -55,7 +55,7 @@ test_write_concern_basic (void)
     */
    mongoc_write_concern_set_fsync(write_concern, TRUE);
    mongoc_write_concern_set_journal(write_concern, TRUE);
-   b = mongoc_write_concern_freeze(write_concern);
+   b = _mongoc_write_concern_freeze(write_concern);
    assert(bson_iter_init_find(&iter, b, "fsync") && BSON_ITER_HOLDS_BOOL(&iter) && bson_iter_bool(&iter));
    assert(bson_iter_init_find(&iter, b, "j") && BSON_ITER_HOLDS_BOOL(&iter) && bson_iter_bool(&iter));
    assert(bson_iter_init_find(&iter, b, "w") && BSON_ITER_HOLDS_INT32(&iter) && bson_iter_int32(&iter) == 3);
