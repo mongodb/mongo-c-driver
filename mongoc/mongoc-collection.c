@@ -818,15 +818,16 @@ _mongoc_collection_insert_bulk_raw (
    snprintf(ns, sizeof ns, "%s.$cmd", collection->db);
    ns[sizeof ns - 1] = '\0';
 
-   if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0,
-                                    write_concern, NULL, error))) {
+   if (!(hint = _mongoc_client_sendv(collection->client, &rpc, 1, 0,
+                                     write_concern, NULL, error))) {
       return FALSE;
    }
 
    if (_mongoc_write_concern_has_gle (write_concern)) {
       mongoc_buffer_init (&buffer, NULL, 0, NULL);
 
-      if (!mongoc_client_recv (collection->client, &reply, &buffer, hint, error)) {
+      if (!_mongoc_client_recv (collection->client, &reply, &buffer,
+                                hint, error)) {
          mongoc_buffer_destroy (&buffer);
          return FALSE;
       }
@@ -1041,13 +1042,13 @@ mongoc_collection_update (mongoc_collection_t          *collection,    /* IN */
    rpc.update.selector = bson_get_data(selector);
    rpc.update.update = bson_get_data(update);
 
-   if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0,
-                                    write_concern, NULL, error))) {
+   if (!(hint = _mongoc_client_sendv (collection->client, &rpc, 1, 0,
+                                      write_concern, NULL, error))) {
       RETURN(FALSE);
    }
 
-   if (_mongoc_write_concern_has_gle(write_concern)) {
-      if (!mongoc_client_recv_gle(collection->client, hint, error)) {
+   if (_mongoc_write_concern_has_gle (write_concern)) {
+      if (!_mongoc_client_recv_gle (collection->client, hint, error)) {
          RETURN(FALSE);
       }
    }
@@ -1176,13 +1177,13 @@ mongoc_collection_delete (mongoc_collection_t          *collection,    /* IN */
    rpc.delete.flags = flags;
    rpc.delete.selector = bson_get_data(selector);
 
-   if (!(hint = mongoc_client_sendv(collection->client, &rpc, 1, 0,
-                                    write_concern, NULL, error))) {
+   if (!(hint = _mongoc_client_sendv(collection->client, &rpc, 1, 0,
+                                     write_concern, NULL, error))) {
       return FALSE;
    }
 
    if (_mongoc_write_concern_has_gle(write_concern)) {
-      if (!mongoc_client_recv_gle(collection->client, hint, error)) {
+      if (!_mongoc_client_recv_gle(collection->client, hint, error)) {
          return FALSE;
       }
    }

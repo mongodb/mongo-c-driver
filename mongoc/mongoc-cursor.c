@@ -153,7 +153,7 @@ _mongoc_cursor_kill_cursor (mongoc_cursor_t *cursor,
    rpc.kill_cursors.cursors = &cursor_id;
    rpc.kill_cursors.n_cursors = 1;
 
-   mongoc_client_sendv(cursor->client, &rpc, 1, 0, NULL, NULL, NULL);
+   _mongoc_client_sendv (cursor->client, &rpc, 1, 0, NULL, NULL, NULL);
 
    EXIT;
 }
@@ -298,9 +298,9 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    rpc.query.query = bson_get_data(&cursor->query);
    rpc.query.fields = bson_get_data(&cursor->fields);
 
-   if (!(hint = mongoc_client_sendv(cursor->client, &rpc, 1, 0,
-                                    NULL, cursor->read_prefs,
-                                    &cursor->error))) {
+   if (!(hint = _mongoc_client_sendv (cursor->client, &rpc, 1, 0,
+                                      NULL, cursor->read_prefs,
+                                      &cursor->error))) {
       goto failure;
    }
 
@@ -309,11 +309,11 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
 
    mongoc_buffer_clear(&cursor->buffer, FALSE);
 
-   if (!mongoc_client_recv(cursor->client,
-                           &cursor->rpc,
-                           &cursor->buffer,
-                           hint,
-                           &cursor->error)) {
+   if (!_mongoc_client_recv(cursor->client,
+                            &cursor->rpc,
+                            &cursor->buffer,
+                            hint,
+                            &cursor->error)) {
       goto failure;
    }
 
@@ -398,8 +398,8 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
     * TODO: Stamp protections for disconnections.
     */
 
-   if (!mongoc_client_sendv(cursor->client, &rpc, 1, cursor->hint,
-                            NULL, cursor->read_prefs, &cursor->error)) {
+   if (!_mongoc_client_sendv(cursor->client, &rpc, 1, cursor->hint,
+                             NULL, cursor->read_prefs, &cursor->error)) {
       cursor->done = TRUE;
       cursor->failed = TRUE;
       RETURN(FALSE);
@@ -409,11 +409,11 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
    request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
 
-   if (!mongoc_client_recv(cursor->client,
-                           &cursor->rpc,
-                           &cursor->buffer,
-                           cursor->hint,
-                           &cursor->error)) {
+   if (!_mongoc_client_recv(cursor->client,
+                            &cursor->rpc,
+                            &cursor->buffer,
+                            cursor->hint,
+                            &cursor->error)) {
       goto failure;
    }
 

@@ -1292,9 +1292,9 @@ _mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
    node->stamp++;
    bson_init(&node->tags);
 
-   stream = mongoc_client_create_stream(cluster->client, hosts, error);
+   stream = _mongoc_client_create_stream (cluster->client, hosts, error);
    if (!stream) {
-      RETURN(FALSE);
+      RETURN (FALSE);
    }
 
    node->stream = stream;
@@ -1416,7 +1416,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
     * Discover all the potential peers from our seeds.
     */
    for (iter = hosts; iter; iter = iter->next) {
-      stream = mongoc_client_create_stream(cluster->client, iter, error);
+      stream = _mongoc_client_create_stream(cluster->client, iter, error);
       if (!stream) {
          MONGOC_WARNING("Failed connection to %s", iter->host_and_port);
          continue;
@@ -1457,7 +1457,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
          continue;
       }
 
-      stream = mongoc_client_create_stream(cluster->client, &host, error);
+      stream = _mongoc_client_create_stream (cluster->client, &host, error);
       if (!stream) {
          MONGOC_WARNING("Failed connection to %s", host.host_and_port);
          continue;
@@ -1567,7 +1567,7 @@ _mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
     * Reconnect to each of our configured hosts.
     */
    for (iter = hosts, i = 0; iter; iter = iter->next) {
-      stream = mongoc_client_create_stream (cluster->client, iter, error);
+      stream = _mongoc_client_create_stream (cluster->client, iter, error);
 
       if (!stream) {
          MONGOC_WARNING ("Failed connection to %s", iter->host_and_port);

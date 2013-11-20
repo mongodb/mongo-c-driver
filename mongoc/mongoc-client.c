@@ -80,9 +80,9 @@
  */
 
 static mongoc_stream_t *
-mongoc_client_connect_tcp (const mongoc_uri_t       *uri,   /* IN */
-                           const mongoc_host_list_t *host,  /* IN */
-                           bson_error_t             *error) /* OUT */
+mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
+                           const mongoc_host_list_t *host,
+                           bson_error_t             *error)
 {
    struct addrinfo hints;
    struct addrinfo *result, *rp;
@@ -225,9 +225,9 @@ cleanup:
  */
 
 static mongoc_stream_t *
-mongoc_client_connect_unix (const mongoc_uri_t       *uri,   /* IN */
-                            const mongoc_host_list_t *host,  /* IN */
-                            bson_error_t             *error) /* OUT */
+mongoc_client_connect_unix (const mongoc_uri_t       *uri,
+                            const mongoc_host_list_t *host,
+                            bson_error_t             *error)
 {
    struct sockaddr_un saddr;
    int sfd;
@@ -284,32 +284,31 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,   /* IN */
  */
 
 static mongoc_stream_t *
-mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,       /* IN */
-                                        const mongoc_host_list_t *host,      /* IN */
-                                        void                     *user_data, /* IN */
-                                        bson_error_t             *error)     /* OUT */
+mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
+                                        const mongoc_host_list_t *host,
+                                        void                     *user_data,
+                                        bson_error_t             *error)
 {
    mongoc_stream_t *base_stream = NULL;
-
 #ifdef MONGOC_HAVE_SSL
    mongoc_ssl_opt_t *ssl_opts = (mongoc_ssl_opt_t *)user_data;
 #endif
 
-   bson_return_val_if_fail(uri, NULL);
-   bson_return_val_if_fail(host, NULL);
+   bson_return_val_if_fail (uri, NULL);
+   bson_return_val_if_fail (host, NULL);
 
    switch (host->family) {
    case AF_INET:
-      base_stream = mongoc_client_connect_tcp(uri, host, error);
+      base_stream = mongoc_client_connect_tcp (uri, host, error);
       break;
    case AF_UNIX:
-      base_stream = mongoc_client_connect_unix(uri, host, error);
+      base_stream = mongoc_client_connect_unix (uri, host, error);
       break;
    default:
-      bson_set_error(error,
-                     MONGOC_ERROR_STREAM,
-                     MONGOC_ERROR_STREAM_INVALID_TYPE,
-                     "Invalid address family: 0x%02x", host->family);
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_INVALID_TYPE,
+                      "Invalid address family: 0x%02x", host->family);
       break;
    }
 
@@ -325,14 +324,14 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,       /* 
    }
 #endif
 
-   return base_stream ? mongoc_stream_buffered_new(base_stream, 1024) : NULL;
+   return base_stream ? mongoc_stream_buffered_new (base_stream, 1024) : NULL;
 }
 
 
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_client_create_stream --
+ * _mongoc_client_create_stream --
  *
  *       INTERNAL API
  *
@@ -353,22 +352,22 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,       /* 
  */
 
 mongoc_stream_t *
-mongoc_client_create_stream (mongoc_client_t          *client, /* IN */
-                             const mongoc_host_list_t *host,   /* IN */
-                             bson_error_t             *error)  /* OUT */
+_mongoc_client_create_stream (mongoc_client_t          *client,
+                              const mongoc_host_list_t *host,
+                              bson_error_t             *error)
 {
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(host, NULL);
    bson_return_val_if_fail(error, NULL);
 
-   return client->initiator(client->uri, host, client->initiator_data, error);
+   return client->initiator (client->uri, host, client->initiator_data, error);
 }
 
 
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_client_sendv --
+ * _mongoc_client_sendv --
  *
  *       INTERNAL API
  *
@@ -390,13 +389,13 @@ mongoc_client_create_stream (mongoc_client_t          *client, /* IN */
  */
 
 bson_uint32_t
-mongoc_client_sendv (mongoc_client_t              *client,         /* IN */
-                     mongoc_rpc_t                 *rpcs,           /* INOUT */
-                     size_t                        rpcs_len,       /* IN */
-                     bson_uint32_t                 hint,           /* IN */
-                     const mongoc_write_concern_t *write_concern,  /* IN */
-                     const mongoc_read_prefs_t    *read_prefs,     /* IN */
-                     bson_error_t                 *error)          /* OUT */
+_mongoc_client_sendv (mongoc_client_t              *client,
+                      mongoc_rpc_t                 *rpcs,
+                      size_t                        rpcs_len,
+                      bson_uint32_t                 hint,
+                      const mongoc_write_concern_t *write_concern,
+                      const mongoc_read_prefs_t    *read_prefs,
+                      bson_error_t                 *error)
 {
    size_t i;
 
@@ -433,7 +432,7 @@ mongoc_client_sendv (mongoc_client_t              *client,         /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_client_recv --
+ * _mongoc_client_recv --
  *
  *       Receives a RPC from a remote MongoDB cluster node. @hint should
  *       be the result from a previous call to mongoc_client_sendv() to
@@ -449,11 +448,11 @@ mongoc_client_sendv (mongoc_client_t              *client,         /* IN */
  */
 
 bson_bool_t
-mongoc_client_recv (mongoc_client_t *client, /* IN */
-                    mongoc_rpc_t    *rpc,    /* OUT */
-                    mongoc_buffer_t *buffer, /* INOUT */
-                    bson_uint32_t    hint,   /* IN */
-                    bson_error_t    *error)  /* OUT */
+_mongoc_client_recv (mongoc_client_t *client,
+                     mongoc_rpc_t    *rpc,
+                     mongoc_buffer_t *buffer,
+                     bson_uint32_t    hint,
+                     bson_error_t    *error)
 {
    bson_return_val_if_fail(client, FALSE);
    bson_return_val_if_fail(rpc, FALSE);
@@ -483,8 +482,8 @@ mongoc_client_recv (mongoc_client_t *client, /* IN */
  */
 
 static void
-_bson_to_error (const bson_t *b,     /* IN */
-                bson_error_t *error) /* OUT */
+_bson_to_error (const bson_t *b,
+                bson_error_t *error)
 {
    bson_iter_t iter;
    int code = 0;
@@ -550,9 +549,9 @@ _bson_to_error (const bson_t *b,     /* IN */
  */
 
 bson_bool_t
-mongoc_client_recv_gle (mongoc_client_t *client, /* IN */
-                        bson_uint32_t    hint,   /* IN */
-                        bson_error_t    *error)  /* OUT */
+_mongoc_client_recv_gle (mongoc_client_t *client,
+                         bson_uint32_t    hint,
+                         bson_error_t    *error)
 {
    mongoc_buffer_t buffer;
    mongoc_rpc_t rpc;
@@ -629,7 +628,7 @@ cleanup:
  */
 
 mongoc_client_t *
-mongoc_client_new (const char *uri_string) /* IN */
+mongoc_client_new (const char *uri_string)
 {
    mongoc_client_t *client;
    mongoc_uri_t *uri;
@@ -726,7 +725,7 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
  */
 
 mongoc_client_t *
-mongoc_client_new_from_uri (const mongoc_uri_t *uri) /* IN */
+mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 {
    const char *uristr;
 
@@ -789,9 +788,10 @@ mongoc_client_destroy (mongoc_client_t *client)
  */
 
 const mongoc_uri_t *
-mongoc_client_get_uri (const mongoc_client_t *client) /* IN */
+mongoc_client_get_uri (const mongoc_client_t *client)
 {
    bson_return_val_if_fail(client, NULL);
+
    return client->uri;
 }
 
@@ -817,8 +817,8 @@ mongoc_client_get_uri (const mongoc_client_t *client) /* IN */
  */
 
 bson_uint32_t
-mongoc_client_stamp (mongoc_client_t *client, /* IN */
-                     bson_uint32_t    node)   /* IN */
+_mongoc_client_stamp (mongoc_client_t *client,
+                      bson_uint32_t    node)
 {
    bson_return_val_if_fail (client, 0);
 
@@ -849,8 +849,8 @@ mongoc_client_stamp (mongoc_client_t *client, /* IN */
  */
 
 mongoc_database_t *
-mongoc_client_get_database (mongoc_client_t *client, /* IN */
-                            const char      *name)   /* IN */
+mongoc_client_get_database (mongoc_client_t *client,
+                            const char      *name)
 {
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(name, NULL);
@@ -885,9 +885,9 @@ mongoc_client_get_database (mongoc_client_t *client, /* IN */
  */
 
 mongoc_collection_t *
-mongoc_client_get_collection (mongoc_client_t *client,     /* IN */
-                              const char      *db,         /* IN */
-                              const char      *collection) /* IN */
+mongoc_client_get_collection (mongoc_client_t *client,
+                              const char      *db,
+                              const char      *collection)
 {
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(db, NULL);
@@ -957,9 +957,10 @@ mongoc_client_get_gridfs (mongoc_client_t *client,
  */
 
 const mongoc_write_concern_t *
-mongoc_client_get_write_concern (const mongoc_client_t *client) /* IN */
+mongoc_client_get_write_concern (const mongoc_client_t *client)
 {
    bson_return_val_if_fail(client, NULL);
+
    return client->write_concern;
 }
 
@@ -981,9 +982,8 @@ mongoc_client_get_write_concern (const mongoc_client_t *client) /* IN */
  */
 
 void
-mongoc_client_set_write_concern (
-      mongoc_client_t              *client,        /* IN */
-      const mongoc_write_concern_t *write_concern) /* IN */
+mongoc_client_set_write_concern (mongoc_client_t              *client,
+                                 const mongoc_write_concern_t *write_concern)
 {
    bson_return_if_fail(client);
 
@@ -1015,9 +1015,10 @@ mongoc_client_set_write_concern (
  */
 
 const mongoc_read_prefs_t *
-mongoc_client_get_read_prefs (const mongoc_client_t *client) /* IN */
+mongoc_client_get_read_prefs (const mongoc_client_t *client)
 {
-   bson_return_val_if_fail(client, NULL);
+   bson_return_val_if_fail (client, NULL);
+
    return client->read_prefs;
 }
 
@@ -1039,10 +1040,10 @@ mongoc_client_get_read_prefs (const mongoc_client_t *client) /* IN */
  */
 
 void
-mongoc_client_set_read_prefs (mongoc_client_t           *client,     /* IN */
-                              const mongoc_read_prefs_t *read_prefs) /* IN */
+mongoc_client_set_read_prefs (mongoc_client_t           *client,
+                              const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_if_fail(client);
+   bson_return_if_fail (client);
 
    if (read_prefs != client->read_prefs) {
       if (client->read_prefs) {
