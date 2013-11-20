@@ -41,7 +41,8 @@ mongoc_gridfs_t *
 _mongoc_gridfs_new (mongoc_client_t *client,
                     const char      *db,
                     const char      *prefix,
-                    bson_error_t    *error);
+                    bson_error_t    *error)
+   BSON_GNUC_INTERNAL;
 
 
 BSON_END_DECLS

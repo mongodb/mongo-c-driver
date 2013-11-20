@@ -33,14 +33,17 @@
 #define MONGOC_GRIDFS_STREAM_CHUNK 4096
 
 
-/** ensure gridfs indexes
+/**
+ * _mongoc_gridfs_ensure_index:
+ *
+ * ensure gridfs indexes
  *
  * Ensure fast searches for chunks via [ files_id, n ]
  * Ensure fast searches for files via [ filename ]
  */
-bson_bool_t
-mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs,
-                            bson_error_t    *error)
+static bson_bool_t
+_mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs,
+                             bson_error_t    *error)
 {
    bson_t keys;
    mongoc_index_opt_t opt;
@@ -114,7 +117,7 @@ _mongoc_gridfs_new (mongoc_client_t *client,
    sprintf (buf, "%s.files", prefix);
    gridfs->files = _mongoc_collection_new (client, db, buf, NULL, NULL);
 
-   r = mongoc_gridfs_ensure_index (gridfs, error);
+   r = _mongoc_gridfs_ensure_index (gridfs, error);
 
    if (!r) { return NULL; }
 
