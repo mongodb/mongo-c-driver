@@ -34,9 +34,7 @@
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_database_new --
- *
- *       INTERNAL API
+ * _mongoc_database_new --
  *
  *       Create a new instance of mongoc_database_t for @client.
  *
@@ -54,8 +52,8 @@
  */
 
 mongoc_database_t *
-mongoc_database_new (mongoc_client_t *client, /* IN */
-                     const char      *name)   /* IN */
+_mongoc_database_new (mongoc_client_t *client,
+                      const char      *name)
 {
    mongoc_database_t *db;
 
@@ -90,7 +88,7 @@ mongoc_database_new (mongoc_client_t *client, /* IN */
  */
 
 void
-mongoc_database_destroy (mongoc_database_t *database) /* IN */
+mongoc_database_destroy (mongoc_database_t *database)
 {
    ENTRY;
 
@@ -134,13 +132,13 @@ mongoc_database_destroy (mongoc_database_t *database) /* IN */
  */
 
 mongoc_cursor_t *
-mongoc_database_command (mongoc_database_t    *database,   /* IN */
-                         mongoc_query_flags_t  flags,      /* IN */
-                         bson_uint32_t         skip,       /* IN */
-                         bson_uint32_t         n_return,   /* IN */
-                         const bson_t         *command,    /* IN */
-                         const bson_t         *fields,     /* IN */
-                         mongoc_read_prefs_t  *read_prefs) /* IN */
+mongoc_database_command (mongoc_database_t    *database,
+                         mongoc_query_flags_t  flags,
+                         bson_uint32_t         skip,
+                         bson_uint32_t         n_return,
+                         const bson_t         *command,
+                         const bson_t         *fields,
+                         mongoc_read_prefs_t  *read_prefs)
 {
    char ns[140];
 
@@ -176,9 +174,9 @@ mongoc_database_command (mongoc_database_t    *database,   /* IN */
  */
 
 bson_bool_t
-mongoc_database_command_simple (mongoc_database_t *database, /* IN */
-                                const bson_t      *cmd,      /* IN */
-                                bson_error_t      *error)    /* OUT */
+mongoc_database_command_simple (mongoc_database_t *database,
+                                const bson_t      *cmd,
+                                bson_error_t      *error)
 {
    mongoc_cursor_t *cursor;
    const bson_t *b;
@@ -241,8 +239,8 @@ mongoc_database_command_simple (mongoc_database_t *database, /* IN */
  */
 
 bson_bool_t
-mongoc_database_drop (mongoc_database_t *database, /* IN */
-                      bson_error_t      *error)    /* OUT */
+mongoc_database_drop (mongoc_database_t *database,
+                      bson_error_t      *error)
 {
    bson_bool_t ret;
    bson_t cmd;
@@ -276,10 +274,10 @@ mongoc_database_drop (mongoc_database_t *database, /* IN */
  */
 
 static bson_bool_t
-mongoc_database_add_user_legacy (mongoc_database_t *database, /* IN */
-                                 const char        *username, /* IN */
-                                 const char        *password, /* IN */
-                                 bson_error_t      *error)    /* OUT */
+mongoc_database_add_user_legacy (mongoc_database_t *database,
+                                 const char        *username,
+                                 const char        *password,
+                                 bson_error_t      *error)
 {
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor = NULL;
@@ -436,8 +434,8 @@ mongoc_database_get_read_prefs (const mongoc_database_t *database) /* IN */
  */
 
 void
-mongoc_database_set_read_prefs (mongoc_database_t         *database,   /* IN */
-                                const mongoc_read_prefs_t *read_prefs) /* IN */
+mongoc_database_set_read_prefs (mongoc_database_t         *database,
+                                const mongoc_read_prefs_t *read_prefs)
 {
    bson_return_if_fail(database);
 
@@ -469,9 +467,10 @@ mongoc_database_set_read_prefs (mongoc_database_t         *database,   /* IN */
  */
 
 const mongoc_write_concern_t *
-mongoc_database_get_write_concern (const mongoc_database_t *database) /* IN */
+mongoc_database_get_write_concern (const mongoc_database_t *database)
 {
    bson_return_val_if_fail(database, NULL);
+
    return database->write_concern;
 }
 
@@ -493,9 +492,8 @@ mongoc_database_get_write_concern (const mongoc_database_t *database) /* IN */
  */
 
 void
-mongoc_database_set_write_concern (
-      mongoc_database_t            *database,      /* IN */
-      const mongoc_write_concern_t *write_concern) /* IN */
+mongoc_database_set_write_concern (mongoc_database_t            *database,
+                                   const mongoc_write_concern_t *write_concern)
 {
    bson_return_if_fail(database);
 

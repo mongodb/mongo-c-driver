@@ -39,8 +39,10 @@ struct _mongoc_database_t
 };
 
 
-mongoc_database_t *mongoc_database_new (mongoc_client_t *client,
-                                        const char      *name);
+mongoc_database_t *
+_mongoc_database_new (mongoc_client_t *client,
+                      const char      *name)
+   BSON_GNUC_INTERNAL;
 
 
 BSON_END_DECLS
