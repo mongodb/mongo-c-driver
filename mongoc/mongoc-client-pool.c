@@ -46,7 +46,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 
    pool = bson_malloc0(sizeof *pool);
    bson_mutex_init(&pool->mutex, NULL);
-   mongoc_queue_init(&pool->queue);
+   _mongoc_queue_init(&pool->queue);
    pool->uri = mongoc_uri_copy(uri);
    pool->min_pool_size = 0;
    pool->max_pool_size = 100;
@@ -81,7 +81,7 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 
    bson_return_if_fail(pool);
 
-   while ((client = mongoc_queue_pop_head(&pool->queue))) {
+   while ((client = _mongoc_queue_pop_head(&pool->queue))) {
       mongoc_client_destroy(client);
    }
 
@@ -109,7 +109,7 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
    bson_mutex_lock(&pool->mutex);
 
 again:
-   if (!(client = mongoc_queue_pop_head(&pool->queue))) {
+   if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = mongoc_client_new_from_uri(pool->uri);
          pool->size++;
@@ -136,7 +136,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    bson_mutex_lock(&pool->mutex);
 
-   if (!(client = mongoc_queue_pop_head(&pool->queue))) {
+   if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = mongoc_client_new_from_uri(pool->uri);
          pool->size++;
@@ -169,7 +169,7 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
     */
 
    bson_mutex_lock(&pool->mutex);
-   mongoc_queue_push_head(&pool->queue, client);
+   _mongoc_queue_push_head(&pool->queue, client);
    bson_cond_signal(&pool->cond);
    bson_mutex_unlock(&pool->mutex);
 

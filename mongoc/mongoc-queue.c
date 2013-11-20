@@ -15,20 +15,23 @@
  */
 
 
+#include <string.h>
+
 #include "mongoc-queue-private.h"
 
 
 void
-mongoc_queue_init (mongoc_queue_t *queue)
+_mongoc_queue_init (mongoc_queue_t *queue)
 {
    bson_return_if_fail(queue);
-   memset(queue, 0, sizeof *queue);
+
+   memset (queue, 0, sizeof *queue);
 }
 
 
 void
-mongoc_queue_push_head (mongoc_queue_t *queue,
-                        void           *data)
+_mongoc_queue_push_head (mongoc_queue_t *queue,
+                         void           *data)
 {
    mongoc_queue_item_t *item;
 
@@ -48,8 +51,8 @@ mongoc_queue_push_head (mongoc_queue_t *queue,
 
 
 void
-mongoc_queue_push_tail (mongoc_queue_t *queue,
-                        void           *data)
+_mongoc_queue_push_tail (mongoc_queue_t *queue,
+                         void           *data)
 {
    mongoc_queue_item_t *item;
 
@@ -70,7 +73,7 @@ mongoc_queue_push_tail (mongoc_queue_t *queue,
 
 
 void *
-mongoc_queue_pop_head (mongoc_queue_t *queue)
+_mongoc_queue_pop_head (mongoc_queue_t *queue)
 {
    mongoc_queue_item_t *item;
    void *data = NULL;
@@ -91,7 +94,7 @@ mongoc_queue_pop_head (mongoc_queue_t *queue)
 
 
 bson_uint32_t
-mongoc_queue_get_length (const mongoc_queue_t *queue)
+_mongoc_queue_get_length (const mongoc_queue_t *queue)
 {
    mongoc_queue_item_t *item;
    bson_uint32_t count = 0;
