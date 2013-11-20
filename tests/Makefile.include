@@ -203,3 +203,8 @@ endif
 	done
 
 .PHONY: test_certs
+
+EXTRA_DIST += \
+	tests/mock-server.c \
+	tests/mock-server.h \
+	tests/mongoc-tests.h

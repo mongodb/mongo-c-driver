@@ -133,6 +133,17 @@ libmongoc_1_0_la_LDFLAGS = \
 
 
 EXTRA_DIST += \
+	mongoc/libmongoc.symbols \
 	mongoc/mongoc-counters.defs \
-	mongoc/libmongoc.symbols
+	mongoc/op-delete.def \
+	mongoc/op-get-more.def \
+	mongoc/op-header.def \
+	mongoc/op-insert.def \
+	mongoc/op-kill-cursors.def \
+	mongoc/op-msg.def \
+	mongoc/op-query.def \
+	mongoc/op-reply.def \
+	mongoc/op-update.def
 
+DISTCLEANFILES = \
+	mongoc/mongoc-stdint.h
