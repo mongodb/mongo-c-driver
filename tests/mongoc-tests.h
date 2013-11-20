@@ -50,6 +50,9 @@ BSON_BEGIN_DECLS
    } while (0)
 
 
+static char *TEST_RESULT;
+
+
 static void
 run_test (const char *name,
           void (*func) (void))
@@ -60,12 +63,14 @@ run_test (const char *name,
    bson_int64_t usec;
    double format;
 
+   TEST_RESULT = "PASS";
+
    fprintf(stdout, "%-42s : ", name);
    fflush(stdout);
    gettimeofday(&begin, NULL);
    func();
    gettimeofday(&end, NULL);
-   fprintf(stdout, "PASS");
+   fprintf(stdout, TEST_RESULT);
 
    diff.tv_sec = end.tv_sec - begin.tv_sec;
    diff.tv_usec = usec = end.tv_usec - begin.tv_usec;

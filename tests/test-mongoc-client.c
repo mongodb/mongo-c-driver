@@ -88,6 +88,7 @@ test_mongoc_client_authenticate (void)
    client = mongoc_client_new (gTestUri);
    if (version_check (client, 2, 5, 0)) {
       MONGOC_DEBUG ("Skipping test, 2.5.x not yet implemented.");
+      TEST_RESULT = "SKIP";
       mongoc_client_destroy (client);
       return;
    }
