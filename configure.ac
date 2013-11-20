@@ -267,6 +267,7 @@ dnl **************************************************************************
 AC_CONFIG_FILES([
 	Makefile
 	mongoc/libmongoc-1.0.pc
+	mongoc/libmongoc-ssl-1.0.pc
 	mongoc/mongoc-config.h
 	mongoc/mongoc-version.h
 ])

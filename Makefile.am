@@ -24,6 +24,9 @@ mongocdoc_DATA += README
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA =
 pkgconfig_DATA += $(top_builddir)/mongoc/libmongoc-1.0.pc
+if HAVE_SSL
+pkgconfig_DATA += $(top_builddir)/mongoc/libmongoc-ssl-1.0.pc
+endif
 
 EXTRA_DIST += $(mongocdoc_DATA)
 
