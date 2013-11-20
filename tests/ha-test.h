@@ -38,7 +38,8 @@ struct _ha_sharded_cluster_t
    ha_node_t        *configs;
    ha_node_t        *routers;
    int               next_port;
-#ifdef MONGOC_HAVE_SSL
+
+#ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opt;
 #endif
 };
@@ -49,7 +50,8 @@ struct _ha_replica_set_t
    char             *name;
    ha_node_t        *nodes;
    int               next_port;
-#ifdef MONGOC_HAVE_SSL
+
+#ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opt;
 #endif
 };
@@ -67,7 +69,8 @@ struct _ha_node_t
    bson_bool_t       is_router  : 1;
    pid_t             pid;
    bson_uint16_t     port;
-#ifdef MONGOC_HAVE_SSL
+
+#ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opt;
 #endif
 };
@@ -83,14 +86,14 @@ void              ha_replica_set_start            (ha_replica_set_t *replica_set
 void              ha_replica_set_shutdown         (ha_replica_set_t *replica_set);
 void              ha_replica_set_destroy          (ha_replica_set_t *replica_set);
 void              ha_replica_set_wait_for_healthy (ha_replica_set_t *replica_set);
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
 void              ha_replica_set_ssl              (ha_replica_set_t *repl_set,
                                                    mongoc_ssl_opt_t *opt);
 #endif
 
 
-void              ha_node_kill                    (ha_node_t        *node);
-void              ha_node_restart                 (ha_node_t        *node);
+void ha_node_kill    (ha_node_t *node);
+void ha_node_restart (ha_node_t *node);
 
 
 ha_sharded_cluster_t *ha_sharded_cluster_new              (const char           *name);
@@ -100,16 +103,10 @@ ha_node_t *           ha_sharded_cluster_add_config       (ha_sharded_cluster_t 
                                                            const char           *name);
 ha_node_t *           ha_sharded_cluster_add_router       (ha_sharded_cluster_t *cluster,
                                                            const char           *name);
-void
-ha_sharded_cluster_add_replica_set (ha_sharded_cluster_t *cluster,
-                                    ha_replica_set_t     *replica_set);
-
-void
-ha_sharded_cluster_shutdown (ha_sharded_cluster_t *cluster);
-
-
-mongoc_client_t *
-ha_sharded_cluster_get_client (ha_sharded_cluster_t *cluster);
+void                  ha_sharded_cluster_add_replica_set  (ha_sharded_cluster_t *cluster,
+                                                           ha_replica_set_t     *replica_set);
+void                  ha_sharded_cluster_shutdown         (ha_sharded_cluster_t *cluster);
+mongoc_client_t      *ha_sharded_cluster_get_client       (ha_sharded_cluster_t *cluster);
 
 
 BSON_END_DECLS

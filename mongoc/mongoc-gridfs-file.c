@@ -32,11 +32,11 @@
 #include "mongoc-gridfs-file-page-private.h"
 #include "mongoc-trace.h"
 
-bson_bool_t
-mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);
+static bson_bool_t
+_mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);
 
-bson_bool_t
-mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file);
+static bson_bool_t
+_mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file);
 
 
 /*****************************************************************
@@ -113,7 +113,7 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
    }
 
    if (file->page && _mongoc_gridfs_file_page_is_dirty (file->page)) {
-      mongoc_gridfs_file_flush_page (file);
+      _mongoc_gridfs_file_flush_page (file);
    }
 
    md5 = mongoc_gridfs_file_get_md5 (file);
@@ -363,7 +363,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
    /* TODO: we should probably do something about timeout_msec here */
 
    if (!file->page) {
-      mongoc_gridfs_file_refresh_page (file);
+      _mongoc_gridfs_file_refresh_page (file);
    }
 
    for (i = 0; i < iovcnt; i++) {
@@ -390,7 +390,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
             RETURN (bytes_read);
          } else {
             /* more to read, just on a new page */
-            mongoc_gridfs_file_refresh_page (file);
+            _mongoc_gridfs_file_refresh_page (file);
          }
       }
    }
@@ -425,7 +425,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 
       for (;; ) {
          if (!file->page) {
-            mongoc_gridfs_file_refresh_page (file);
+            _mongoc_gridfs_file_refresh_page (file);
          }
 
          r = _mongoc_gridfs_file_page_write (file->page,
@@ -450,7 +450,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
              * This is a little hacky
              */
             file->pos--;
-            mongoc_gridfs_file_flush_page (file);
+            _mongoc_gridfs_file_flush_page (file);
             file->pos++;
          }
       }
@@ -463,8 +463,8 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 
 
 /** flush a gridfs file's current page to the db */
-bson_bool_t
-mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
+static bson_bool_t
+_mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 {
    bson_t *selector, *update;
    bson_bool_t r;
@@ -510,8 +510,8 @@ mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
  * This unconditionally fetches the current page, even if the current page
  * covers the same theoretical chunk.
  */
-bson_bool_t
-mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
+static bson_bool_t
+_mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 {
    bson_t *query, *fields, child;
    const bson_t *chunk;
@@ -659,7 +659,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
 
       if (file->page) {
          if (_mongoc_gridfs_file_page_is_dirty (file->page)) {
-            mongoc_gridfs_file_flush_page (file);
+            _mongoc_gridfs_file_flush_page (file);
          } else {
             _mongoc_gridfs_file_page_destroy (file->page);
          }

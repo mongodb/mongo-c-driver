@@ -30,8 +30,9 @@
 
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"
-#include "mongoc-collection-private.h"
 #include "mongoc-cluster-private.h"
+#include "mongoc-collection-private.h"
+#include "mongoc-config.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-gridfs-private.h"
@@ -43,9 +44,8 @@
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-unix.h"
 #include "mongoc-trace.h"
-#include "mongoc-build.h"
 
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
 #endif
 
@@ -290,7 +290,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
                                         bson_error_t             *error)
 {
    mongoc_stream_t *base_stream = NULL;
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts = (mongoc_ssl_opt_t *)user_data;
 #endif
 
@@ -312,7 +312,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
       break;
    }
 
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
    if (ssl_opts) {
       base_stream = mongoc_stream_tls_new (base_stream, ssl_opts, 1);
 
@@ -651,7 +651,8 @@ mongoc_client_new (const char *uri_string)
        bson_iter_bool (&iter)) {
       has_ssl = TRUE;
    }
-#ifndef MONGOC_HAVE_SSL
+
+#ifndef MONGOC_ENABLE_SSL
    if (has_ssl) {
       MONGOC_WARNING ("SSL is not supported in this build!");
       return NULL;
@@ -667,7 +668,7 @@ mongoc_client_new (const char *uri_string)
 
    mongoc_counter_clients_active_inc ();
 
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
    if (has_ssl) {
       mongoc_client_set_ssl_opts (client, mongoc_ssl_opt_get_default ());
    }
@@ -693,16 +694,16 @@ mongoc_client_new (const char *uri_string)
  *--------------------------------------------------------------------------
  */
 
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
 void
 mongoc_client_set_ssl_opts (mongoc_client_t        *client,
                             const mongoc_ssl_opt_t *opts)
 {
 
-   BSON_ASSERT(client);
-   BSON_ASSERT(opts);
+   BSON_ASSERT (client);
+   BSON_ASSERT (opts);
 
-   memcpy(&client->ssl_opts, opts, sizeof(client->ssl_opts));
+   memcpy (&client->ssl_opts, opts, sizeof client->ssl_opts);
    client->initiator_data = &client->ssl_opts;
 }
 #endif

@@ -166,6 +166,11 @@ dnl Optionally check for OpenSSL to support TLS streams.
 dnl **************************************************************************
 PKG_CHECK_MODULES(SSL,  openssl, [enable_ssl=yes], [enable_ssl=no])
 AM_CONDITIONAL(HAVE_SSL, test "x$enable_ssl" = "xyes")
+MONGOC_ENABLE_SSL=0
+if test "x$enable_ssl" = "xyes"; then
+	MONGOC_ENABLE_SSL=1
+fi
+AC_SUBST([MONGOC_ENABLE_SSL])
 
 
 dnl **************************************************************************
@@ -262,6 +267,7 @@ dnl **************************************************************************
 AC_CONFIG_FILES([
 	Makefile
 	mongoc/libmongoc-1.0.pc
+	mongoc/mongoc-config.h
 	mongoc/mongoc-version.h
 ])
 AC_OUTPUT

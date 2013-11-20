@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 10gen Inc.
+ * Copyright 2013 MongoDB Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
-#include "mongoc-ssl.h"
-#include "mongoc-ssl-private.h"
-#include "mongoc-init.h"
-#include "mongoc-init-private.h"
 
-bson_bool_t gMongocIsInitialized;
+#ifndef MONGOC_CONFIG_H
+#define MONGOC_CONFIG_H
 
-void
-mongoc_init (void)
-{
-   BSON_ASSERT (!gMongocIsInitialized);
 
-#ifdef MONGOC_ENABLE_SSL
-   _mongoc_ssl_init();
+/*
+ * MONGOC_ENABLE_SSL is set from configure to determine if we are
+ * compiled with SSL support.
+ */
+#define MONGOC_ENABLE_SSL @MONGOC_ENABLE_SSL@
+
+
+#if MONGOC_ENABLE_SSL != 1
+#  undef MONGOC_ENABLE_SSL
 #endif
 
-   gMongocIsInitialized = 1;
-}
+
+#endif /* MONGOC_CONFIG_H */

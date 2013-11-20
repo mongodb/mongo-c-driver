@@ -60,7 +60,8 @@ ha_replica_set_create_client (ha_replica_set_t *replica_set)
    bson_string_append(str, replica_set->name);
 
    client = mongoc_client_new(str->str);
-#ifdef MONGOC_HAVE_SSL
+
+#ifdef MONGOC_ENABLE_SSL
    if (replica_set->ssl_opt) {
       mongoc_client_set_ssl_opts(client, replica_set->ssl_opt);
    }
@@ -149,7 +150,7 @@ ha_node_restart (ha_node_t *node)
       argv[i++] = (char *) "--replSet";
       argv[i++] = node->repl_set;
 
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
       if (node->ssl_opt) {
          if (node->ssl_opt->pem_file) {
             argv[i++] = (char *) "--sslPEMKeyFile";
@@ -288,7 +289,7 @@ random_int_range (int low,
 }
 
 
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
 void
 ha_replica_set_ssl (ha_replica_set_t *repl_set,
                     mongoc_ssl_opt_t *opt)
@@ -330,7 +331,7 @@ ha_replica_set_add_node (ha_replica_set_t *replica_set,
                       FALSE,
                       FALSE,
                       replica_set->next_port++);
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
    node->ssl_opt = replica_set->ssl_opt;
 #endif
 
@@ -384,7 +385,7 @@ ha_replica_set_configure (ha_replica_set_t *replica_set,
 
    uristr = bson_strdup_printf("mongodb://127.0.0.1:%hu/", primary->port);
    client = mongoc_client_new(uristr);
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
    if (replica_set->ssl_opt) {
       mongoc_client_set_ssl_opts(client, replica_set->ssl_opt);
    }
@@ -539,7 +540,7 @@ ha_replica_set_get_status (ha_replica_set_t *replica_set,
       uristr = bson_strdup_printf("mongodb://127.0.0.1:%hu/?slaveOk=true",
                                   node->port);
       client = mongoc_client_new(uristr);
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
       if (replica_set->ssl_opt) {
          mongoc_client_set_ssl_opts(client, replica_set->ssl_opt);
       }
@@ -676,7 +677,7 @@ ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
                       TRUE,
                       FALSE,
                       cluster->next_port++);
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
    node->ssl_opt = cluster->ssl_opt;
 #endif
    node->next = cluster->configs;
@@ -705,7 +706,7 @@ ha_sharded_cluster_add_router (ha_sharded_cluster_t *cluster,
                       FALSE,
                       TRUE,
                       cluster->next_port++);
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
    node->ssl_opt = cluster->ssl_opt;
 #endif
    node->next = cluster->routers;

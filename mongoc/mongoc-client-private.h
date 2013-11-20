@@ -24,14 +24,14 @@
 #include "mongoc-buffer-private.h"
 #include "mongoc-client.h"
 #include "mongoc-cluster-private.h"
+#include "mongoc-config.h"
 #include "mongoc-host-list.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
 #include "mongoc-write-concern.h"
-#include "mongoc-build.h"
 
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #endif
 
@@ -48,7 +48,8 @@ struct _mongoc_client_t
 
    mongoc_stream_initiator_t  initiator;
    void                      *initiator_data;
-#ifdef MONGOC_HAVE_SSL
+
+#ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t           ssl_opts;
 #endif
 

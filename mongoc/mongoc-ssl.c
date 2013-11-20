@@ -38,20 +38,18 @@
 #endif
 
 static
-mongoc_ssl_opt_t mongoc_ssl_default_opt = {
+mongoc_ssl_opt_t gMongocSslOptDefault = {
    NULL,
    NULL,
    MONGOC_SSL_DEFAULT_TRUST_FILE,
    MONGOC_SSL_DEFAULT_TRUST_DIR,
-   NULL,
-   0
 };
 
 
 const mongoc_ssl_opt_t *
 mongoc_ssl_opt_get_default (void)
 {
-   return &mongoc_ssl_default_opt;
+   return &gMongocSslOptDefault;
 }
 
 /**
@@ -73,10 +71,10 @@ _mongoc_ssl_init (void)
 
 
 static int
-mongoc_ssl_password_cb (char *buf,
-                        int   num,
-                        int   rwflag,
-                        void *user_data)
+_mongoc_ssl_password_cb (char *buf,
+                         int   num,
+                         int   rwflag,
+                         void *user_data)
 {
    char *pass = (char *)user_data;
    int pass_len = strlen (pass);
@@ -99,9 +97,9 @@ mongoc_ssl_password_cb (char *buf,
  * This code is meant to implement RFC 6125 6.4.[1-3]
  *
  */
-bson_bool_t
-mongoc_ssl_hostcheck (const char *pattern,
-                      const char *hostname)
+static bson_bool_t
+_mongoc_ssl_hostcheck (const char *pattern,
+                       const char *hostname)
 {
    const char *pattern_label_end;
    const char *pattern_wildcard;
@@ -224,7 +222,7 @@ _mongoc_ssl_check_cert (SSL        *ssl,
 
                   /* check that we don't have an embedded null byte */
                   if ((length == strnlen (check, length)) &&
-                      mongoc_ssl_hostcheck (check, host)) {
+                      _mongoc_ssl_hostcheck (check, host)) {
                      r = 1;
                   }
 
@@ -270,7 +268,7 @@ _mongoc_ssl_check_cert (SSL        *ssl,
                   if (length >= 0) {
                      /* check for embedded nulls */
                      if ((length == strnlen (check, length)) &&
-                         mongoc_ssl_hostcheck (check, host)) {
+                         _mongoc_ssl_hostcheck (check, host)) {
                         r = 1;
                      }
 
@@ -333,7 +331,7 @@ _mongoc_ssl_setup_pem_file (SSL_CTX    *ctx,
 
    if (password) {
       SSL_CTX_set_default_passwd_cb_userdata (ctx, (void *)password);
-      SSL_CTX_set_default_passwd_cb (ctx, &mongoc_ssl_password_cb);
+      SSL_CTX_set_default_passwd_cb (ctx, _mongoc_ssl_password_cb);
    }
 
    if (!(SSL_CTX_use_PrivateKey_file (ctx, pem_file, SSL_FILETYPE_PEM))) {

@@ -22,6 +22,7 @@
 #include <bson.h>
 
 #include "mongoc-collection.h"
+#include "mongoc-config.h"
 #include "mongoc-database.h"
 #include "mongoc-gridfs.h"
 #include "mongoc-index.h"
@@ -29,9 +30,8 @@
 #include "mongoc-stream.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
-#include "mongoc-build.h"
 
-#ifdef MONGOC_HAVE_SSL
+#ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #endif
 
@@ -70,31 +70,53 @@ typedef mongoc_stream_t *(*mongoc_stream_initiator_t) (const mongoc_uri_t       
                                                        bson_error_t             *error);
 
 
-mongoc_client_t     *mongoc_client_new                  (const char *uri_string);
-mongoc_client_t     *mongoc_client_new_from_uri         (const mongoc_uri_t *uri);
-const mongoc_uri_t  *mongoc_client_get_uri              (const mongoc_client_t *client);
-void                 mongoc_client_set_stream_initiator (mongoc_client_t           *client,
-                                                         mongoc_stream_initiator_t  initiator,
-                                                         void                      *user_data);
-void                 mongoc_client_destroy              (mongoc_client_t *client);
-mongoc_database_t   *mongoc_client_get_database         (mongoc_client_t *client,
-                                                         const char      *name);
-mongoc_gridfs_t     *mongoc_client_get_gridfs           (mongoc_client_t *client,
-                                                         const char      *db,
-                                                         const char      *prefix,
-                                                         bson_error_t    *error);
-mongoc_collection_t *mongoc_client_get_collection       (mongoc_client_t *client,
-                                                         const char      *db,
-                                                         const char      *collection);
+mongoc_client_t *
+mongoc_client_new (const char *uri_string);
 
-const mongoc_write_concern_t *mongoc_client_get_write_concern (const mongoc_client_t        *client);
-void                          mongoc_client_set_write_concern (mongoc_client_t              *client,
-                                                               const mongoc_write_concern_t *write_concern);
-const mongoc_read_prefs_t    *mongoc_client_get_read_prefs    (const mongoc_client_t        *client);
-void                          mongoc_client_set_read_prefs    (mongoc_client_t              *client,
-                                                               const mongoc_read_prefs_t    *read_prefs);
+mongoc_client_t *
+mongoc_client_new_from_uri (const mongoc_uri_t *uri);
 
-#ifdef MONGOC_HAVE_SSL
+const mongoc_uri_t *
+mongoc_client_get_uri (const mongoc_client_t *client);
+
+void
+mongoc_client_set_stream_initiator (mongoc_client_t           *client,
+                                    mongoc_stream_initiator_t  initiator,
+                                    void                      *user_data);
+
+void
+mongoc_client_destroy (mongoc_client_t *client);
+
+mongoc_database_t *
+mongoc_client_get_database (mongoc_client_t *client,
+                            const char      *name);
+
+mongoc_gridfs_t *
+mongoc_client_get_gridfs (mongoc_client_t *client,
+                          const char      *db,
+                          const char      *prefix,
+                          bson_error_t    *error);
+
+mongoc_collection_t *
+mongoc_client_get_collection (mongoc_client_t *client,
+                              const char      *db,
+                              const char      *collection);
+
+const mongoc_write_concern_t *
+mongoc_client_get_write_concern (const mongoc_client_t *client);
+
+void
+mongoc_client_set_write_concern (mongoc_client_t              *client,
+                                 const mongoc_write_concern_t *write_concern);
+
+const mongoc_read_prefs_t *
+mongoc_client_get_read_prefs (const mongoc_client_t *client);
+
+void
+mongoc_client_set_read_prefs (mongoc_client_t           *client,
+                              const mongoc_read_prefs_t *read_prefs);
+
+#ifdef MONGOC_ENABLE_SSL
 void
 mongoc_client_set_ssl_opts (mongoc_client_t        *client,
                             const mongoc_ssl_opt_t *opts);

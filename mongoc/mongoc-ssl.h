@@ -21,7 +21,9 @@
 
 #include <bson.h>
 
+
 BSON_BEGIN_DECLS
+
 
 typedef struct mongoc_ssl_opt
 {
@@ -33,8 +35,10 @@ typedef struct mongoc_ssl_opt
    bson_bool_t weak_cert_validation;
 } mongoc_ssl_opt_t;
 
+
 const mongoc_ssl_opt_t *
 mongoc_ssl_opt_get_default (void) BSON_GNUC_CONST;
+
 
 BSON_END_DECLS
 
