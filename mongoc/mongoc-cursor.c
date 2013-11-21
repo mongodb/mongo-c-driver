@@ -198,18 +198,24 @@ _mongoc_cursor_populate_error (mongoc_cursor_t *cursor,
    bson_iter_t iter;
    const char *msg = "Unknown query failure";
 
-   BSON_ASSERT(cursor);
-   BSON_ASSERT(doc);
-   BSON_ASSERT(error);
+   BSON_ASSERT (cursor);
+   BSON_ASSERT (doc);
+   BSON_ASSERT (error);
 
-   if (bson_iter_init_find(&iter, doc, "code") &&
-       BSON_ITER_HOLDS_INT32(&iter)) {
-      code = bson_iter_int32(&iter);
+   if (bson_iter_init_find (&iter, doc, "code") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+      code = bson_iter_int32 (&iter);
    }
 
-   if (bson_iter_init_find(&iter, doc, "$err") &&
-       BSON_ITER_HOLDS_UTF8(&iter)) {
-      msg = bson_iter_utf8(&iter, NULL);
+   if (bson_iter_init_find (&iter, doc, "$err") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      msg = bson_iter_utf8 (&iter, NULL);
+   }
+
+   if (cursor->is_command &&
+       bson_iter_init_find (&iter, doc, "errmsg") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      msg = bson_iter_utf8 (&iter, NULL);
    }
 
    bson_set_error(error, MONGOC_ERROR_QUERY, code, "%s", msg);
