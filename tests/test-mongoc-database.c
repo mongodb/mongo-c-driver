@@ -58,15 +58,20 @@ test_command (void)
    mongoc_database_t *database;
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
+   bson_error_t error;
    const bson_t *doc;
    bson_bool_t r;
    bson_t cmd = BSON_INITIALIZER;
+   bson_t reply;
 
    client = mongoc_client_new (gTestUri);
    assert (client);
 
    database = mongoc_client_get_database (client, "admin");
 
+   /*
+    * Test a known working command, "ping".
+    */
    bson_append_int32 (&cmd, "ping", 4, 1);
 
    cursor = mongoc_database_command (database, MONGOC_QUERY_NONE, 0, 1, &cmd, NULL, NULL);
@@ -81,6 +86,20 @@ test_command (void)
    assert (!doc);
 
    mongoc_cursor_destroy (cursor);
+
+
+   /*
+    * Test a non-existing command to ensure we get the failure.
+    */
+   bson_reinit (&cmd);
+   bson_append_int32 (&cmd, "a_non_existing_command", -1, 1);
+
+   r = mongoc_database_command_simple (database, &cmd, NULL, &reply, &error);
+   assert (!r);
+   assert (error.domain == MONGOC_ERROR_QUERY);
+   assert (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
+   assert (!strcmp ("no such cmd: a_non_existing_command", error.message));
+
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
    bson_destroy (&cmd);
