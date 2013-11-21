@@ -373,6 +373,7 @@ test_mongoc_client_command (void)
    assert (!r);
    assert (!doc);
 
+   mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
    bson_destroy (&cmd);
 }
