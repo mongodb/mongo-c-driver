@@ -132,26 +132,23 @@ mongoc_database_destroy (mongoc_database_t *database)
  */
 
 mongoc_cursor_t *
-mongoc_database_command (mongoc_database_t    *database,
-                         mongoc_query_flags_t  flags,
-                         bson_uint32_t         skip,
-                         bson_uint32_t         n_return,
-                         const bson_t         *command,
-                         const bson_t         *fields,
-                         mongoc_read_prefs_t  *read_prefs)
+mongoc_database_command (mongoc_database_t         *database,
+                         mongoc_query_flags_t       flags,
+                         bson_uint32_t              skip,
+                         bson_uint32_t              n_return,
+                         const bson_t              *command,
+                         const bson_t              *fields,
+                         const mongoc_read_prefs_t *read_prefs)
 {
-   char ns[140];
-
-   bson_return_val_if_fail(database, NULL);
-   bson_return_val_if_fail(command, NULL);
+   BSON_ASSERT (database);
+   BSON_ASSERT (command);
 
    if (!read_prefs) {
       read_prefs = database->read_prefs;
    }
 
-   snprintf(ns, sizeof ns, "%s.$cmd", database->name);
-   return _mongoc_cursor_new(database->client, ns, flags, skip, n_return, 0,
-                             TRUE, command, fields, read_prefs);
+   return mongoc_client_command (database->client, database->name, flags, skip,
+                                 n_return, command, fields, read_prefs);
 }
 
 

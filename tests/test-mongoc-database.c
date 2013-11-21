@@ -53,6 +53,41 @@ test_has_collection (void)
 
 
 static void
+test_command (void)
+{
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bson_bool_t r;
+   bson_t cmd = BSON_INITIALIZER;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   database = mongoc_client_get_database (client, "admin");
+
+   bson_append_int32 (&cmd, "ping", 4, 1);
+
+   cursor = mongoc_database_command (database, MONGOC_QUERY_NONE, 0, 1, &cmd, NULL, NULL);
+   assert (cursor);
+
+   r = mongoc_cursor_next (cursor, &doc);
+   assert (r);
+   assert (doc);
+
+   r = mongoc_cursor_next (cursor, &doc);
+   assert (!r);
+   assert (!doc);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+   bson_destroy (&cmd);
+}
+
+
+static void
 log_handler (mongoc_log_level_t  log_level,
              const char         *domain,
              const char         *message,
@@ -73,6 +108,7 @@ main (int   argc,
    gTestUri = bson_strdup_printf("mongodb://%s/", HOST);
 
    run_test("/mongoc/database/has_collection", test_has_collection);
+   run_test("/mongoc/database/command", test_command);
 
    bson_free(gTestUri);
 

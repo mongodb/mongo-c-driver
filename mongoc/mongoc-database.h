@@ -45,7 +45,7 @@ mongoc_cursor_t              *mongoc_database_command           (mongoc_database
                                                                  bson_uint32_t                 n_return,
                                                                  const bson_t                 *command,
                                                                  const bson_t                 *fields,
-                                                                 mongoc_read_prefs_t          *read_prefs);
+                                                                 const mongoc_read_prefs_t    *read_prefs);
 bson_bool_t                   mongoc_database_command_simple    (mongoc_database_t            *database,
                                                                  const bson_t                 *command,
                                                                  bson_error_t                 *error);
