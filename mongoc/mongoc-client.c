@@ -1105,3 +1105,66 @@ mongoc_client_command (mongoc_client_t           *client,
    return _mongoc_cursor_new (client, ns, flags, skip, n_return, 100, TRUE,
                               query, fields, read_prefs);
 }
+
+
+/**
+ * mongoc_client_command_simple:
+ * @client: A mongoc_client_t.
+ * @db_name: The namespace, such as "admin".
+ * @command: The command to execute.
+ * @read_prefs: The read preferences or NULL.
+ * @reply: A location for the reply document or NULL.
+ * @error: A location for the error, or NULL.
+ *
+ * This wrapper around mongoc_client_command() aims to make it simpler to
+ * run a command and check the output result.
+ *
+ * FALSE is returned if the command failed to be delivered or if the execution
+ * of the command failed. For example, a command that returns {'ok': 0} will
+ * result in this function returning FALSE.
+ *
+ * To allow the caller to disambiguate between command execution failure and
+ * failure to send the command, reply will always be set if non-NULL. The
+ * caller should release this with bson_destroy().
+ *
+ * Returns: TRUE if the command executed and resulted in success. Otherwise
+ *   FALSE and @error is set. @reply is always set, either to the resulting
+ *   document or an empty bson document upon failure.
+ */
+bson_bool_t
+mongoc_client_command_simple (mongoc_client_t           *client,
+                              const char                *db_name,
+                              const bson_t              *command,
+                              const mongoc_read_prefs_t *read_prefs,
+                              bson_t                    *reply,
+                              bson_error_t              *error)
+{
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bson_bool_t ret;
+
+   BSON_ASSERT (client);
+   BSON_ASSERT (db_name);
+   BSON_ASSERT (command);
+
+   cursor = mongoc_client_command (client, db_name, MONGOC_QUERY_NONE, 0, 1,
+                                   command, NULL, read_prefs);
+
+   ret = mongoc_cursor_next (cursor, &doc);
+
+   if (reply) {
+      if (ret) {
+         bson_copy_to (doc, reply);
+      } else {
+         bson_init (reply);
+      }
+   }
+
+   if (!ret) {
+      mongoc_cursor_error (cursor, error);
+   }
+
+   mongoc_cursor_destroy (cursor);
+
+   return ret;
+}

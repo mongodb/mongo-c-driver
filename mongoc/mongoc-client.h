@@ -95,6 +95,14 @@ mongoc_client_command (mongoc_client_t           *client,
                        const bson_t              *fields,
                        const mongoc_read_prefs_t *read_prefs);
 
+bson_bool_t
+mongoc_client_command_simple (mongoc_client_t           *client,
+                              const char                *db_name,
+                              const bson_t              *command,
+                              const mongoc_read_prefs_t *read_prefs,
+                              bson_t                    *reply,
+                              bson_error_t              *error);
+
 void
 mongoc_client_destroy (mongoc_client_t *client);
 
