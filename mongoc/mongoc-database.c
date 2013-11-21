@@ -171,48 +171,21 @@ mongoc_database_command (mongoc_database_t         *database,
  */
 
 bson_bool_t
-mongoc_database_command_simple (mongoc_database_t *database,
-                                const bson_t      *cmd,
-                                bson_error_t      *error)
+mongoc_database_command_simple (mongoc_database_t         *database,
+                                const bson_t              *command,
+                                const mongoc_read_prefs_t *read_prefs,
+                                bson_t                    *reply,
+                                bson_error_t              *error)
 {
-   mongoc_cursor_t *cursor;
-   const bson_t *b;
-   bson_iter_t iter;
-   bson_bool_t ret = FALSE;
-   const char *errmsg = "unknown error";
-   char ns[140];
+   BSON_ASSERT (database);
+   BSON_ASSERT (command);
 
-   bson_return_val_if_fail(database, FALSE);
-   bson_return_val_if_fail(cmd, FALSE);
-
-   snprintf(ns, sizeof ns, "%s.$cmd", database->name);
-   ns[sizeof ns-1] = '\0';
-
-   cursor = _mongoc_cursor_new(database->client, ns, MONGOC_QUERY_NONE, 0, 1,
-                               0, TRUE, cmd, NULL, database->read_prefs);
-
-   if (mongoc_cursor_next(cursor, &b) &&
-       bson_iter_init_find(&iter, b, "ok") &&
-       BSON_ITER_HOLDS_DOUBLE(&iter)) {
-      if (bson_iter_double(&iter) == 1.0) {
-         ret = TRUE;
-      } else {
-         if (bson_iter_init_find(&iter, b, "errmsg")) {
-            errmsg = bson_iter_utf8(&iter, NULL);
-         }
-      }
+   if (!read_prefs) {
+      read_prefs = database->read_prefs;
    }
 
-   if (!ret) {
-      bson_set_error(error,
-                     MONGOC_ERROR_QUERY,
-                     MONGOC_ERROR_QUERY_FAILURE,
-                     "%s", errmsg);
-   }
-
-   mongoc_cursor_destroy(cursor);
-
-   return ret;
+   return mongoc_client_command_simple (database->client, database->name,
+                                        command, read_prefs, reply, error);
 }
 
 
@@ -246,7 +219,7 @@ mongoc_database_drop (mongoc_database_t *database,
 
    bson_init(&cmd);
    bson_append_int32(&cmd, "dropDatabase", 12, 1);
-   ret = mongoc_database_command_simple(database, &cmd, error);
+   ret = mongoc_database_command_simple(database, &cmd, NULL, NULL, error);
    bson_destroy(&cmd);
 
    return ret;

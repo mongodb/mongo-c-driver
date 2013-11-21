@@ -88,6 +88,29 @@ test_command (void)
 
 
 static void
+test_drop (void)
+{
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   bson_error_t error = { 0 };
+   bson_bool_t r;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   database = mongoc_client_get_database (client, "some_random_database");
+
+   r = mongoc_database_drop (database, &error);
+   assert (r);
+   assert (!error.domain);
+   assert (!error.code);
+
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 log_handler (mongoc_log_level_t  log_level,
              const char         *domain,
              const char         *message,
@@ -109,6 +132,7 @@ main (int   argc,
 
    run_test("/mongoc/database/has_collection", test_has_collection);
    run_test("/mongoc/database/command", test_command);
+   run_test("/mongoc/database/drop", test_drop);
 
    bson_free(gTestUri);
 

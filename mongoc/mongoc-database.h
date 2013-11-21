@@ -48,6 +48,8 @@ mongoc_cursor_t              *mongoc_database_command           (mongoc_database
                                                                  const mongoc_read_prefs_t    *read_prefs);
 bson_bool_t                   mongoc_database_command_simple    (mongoc_database_t            *database,
                                                                  const bson_t                 *command,
+                                                                 const mongoc_read_prefs_t    *read_prefs,
+                                                                 bson_t                       *reply,
                                                                  bson_error_t                 *error);
 bson_bool_t                   mongoc_database_drop              (mongoc_database_t            *database,
                                                                  bson_error_t                 *error);
