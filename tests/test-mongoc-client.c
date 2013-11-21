@@ -350,6 +350,35 @@ test_mongoc_client_read_prefs (void)
 
 
 static void
+test_mongoc_client_command (void)
+{
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bson_bool_t r;
+   bson_t cmd = BSON_INITIALIZER;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   bson_append_int32 (&cmd, "ping", 4, 1);
+
+   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, &cmd, NULL, NULL);
+
+   r = mongoc_cursor_next (cursor, &doc);
+   assert (r);
+   assert (doc);
+
+   r = mongoc_cursor_next (cursor, &doc);
+   assert (!r);
+   assert (!doc);
+
+   mongoc_client_destroy (client);
+   bson_destroy (&cmd);
+}
+
+
+static void
 log_handler (mongoc_log_level_t  log_level,
              const char         *domain,
              const char         *message,
@@ -395,6 +424,7 @@ main (int   argc,
    run_test("/mongoc/client/authenticate", test_mongoc_client_authenticate);
    run_test("/mongoc/client/authenticate_failure", test_mongoc_client_authenticate_failure);
    run_test("/mongoc/client/read_prefs", test_mongoc_client_read_prefs);
+   run_test("/mongoc/client/command", test_mongoc_client_command);
 
    bson_free(gTestUri);
    bson_free(gTestUriWithPassword);

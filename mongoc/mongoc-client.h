@@ -23,6 +23,7 @@
 
 #include "mongoc-collection.h"
 #include "mongoc-config.h"
+#include "mongoc-cursor.h"
 #include "mongoc-database.h"
 #include "mongoc-gridfs.h"
 #include "mongoc-index.h"
@@ -83,6 +84,16 @@ void
 mongoc_client_set_stream_initiator (mongoc_client_t           *client,
                                     mongoc_stream_initiator_t  initiator,
                                     void                      *user_data);
+
+mongoc_cursor_t *
+mongoc_client_command (mongoc_client_t           *client,
+                       const char                *db_name,
+                       mongoc_query_flags_t       flags,
+                       bson_uint32_t              skip,
+                       bson_uint32_t              n_return,
+                       const bson_t              *query,
+                       const bson_t              *fields,
+                       const mongoc_read_prefs_t *read_prefs);
 
 void
 mongoc_client_destroy (mongoc_client_t *client);

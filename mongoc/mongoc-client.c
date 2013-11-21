@@ -34,6 +34,7 @@
 #include "mongoc-collection-private.h"
 #include "mongoc-config.h"
 #include "mongoc-counters-private.h"
+#include "mongoc-cursor-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-gridfs-private.h"
 #include "mongoc-error.h"
@@ -1075,4 +1076,32 @@ _mongoc_client_warm_up (mongoc_client_t *client,
    }
 
    return ret;
+}
+
+
+mongoc_cursor_t *
+mongoc_client_command (mongoc_client_t           *client,
+                       const char                *db_name,
+                       mongoc_query_flags_t       flags,
+                       bson_uint32_t              skip,
+                       bson_uint32_t              n_return,
+                       const bson_t              *query,
+                       const bson_t              *fields,
+                       const mongoc_read_prefs_t *read_prefs)
+{
+   char ns[MONGOC_NAMESPACE_MAX];
+
+   BSON_ASSERT (client);
+   BSON_ASSERT (db_name);
+   BSON_ASSERT (query);
+
+   if (!read_prefs) {
+      read_prefs = client->read_prefs;
+   }
+
+   snprintf (ns, sizeof ns, "%s.$cmd", db_name);
+   ns[sizeof ns - 1] = '\0';
+
+   return _mongoc_cursor_new (client, ns, flags, skip, n_return, 100, TRUE,
+                              query, fields, read_prefs);
 }
