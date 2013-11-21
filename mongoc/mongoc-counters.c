@@ -238,7 +238,7 @@ mongoc_counters_register (mongoc_counters_t *counters,
    infos->name[sizeof infos->name-1] = '\0';
    infos->description[sizeof infos->description-1] = '\0';
 
-   __sync_synchronize ();
+   bson_sync_synchronize();
 
    counters->n_counters++;
 
@@ -291,6 +291,6 @@ mongoc_counters_init (void)
     * we have initialized the rest of the counters. Don't forget our memory
     * barrier to prevent compiler reordering.
     */
-   __sync_synchronize ();
+   bson_sync_synchronize();
    counters->size = size;
 }

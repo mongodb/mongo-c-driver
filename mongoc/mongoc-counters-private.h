@@ -111,7 +111,7 @@ mongoc_counter_##ident##_reset (void) \
    for (i = 0; i < NCPU; i++) { \
       __mongoc_counter_##ident.cpus[i].slots[COUNTER_##ident%SLOTS_PER_CACHELINE] = 0; \
    } \
-   __sync_synchronize (); \
+   bson_sync_synchronize(); \
 }
 #include "mongoc-counters.defs"
 #undef COUNTER
