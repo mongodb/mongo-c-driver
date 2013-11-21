@@ -343,8 +343,7 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
  *       Executes a command on a cluster node matching @read_prefs. If
  *       @read_prefs is not provided, it will be run on the primary node.
  *
- *       This function will always return a mongoc_cursor_t with the exception
- *       of invalid API use.
+ *       This function will always return a mongoc_cursor_t.
  *
  * Parameters:
  *       @collection: A mongoc_collection_t.
@@ -365,28 +364,23 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
  */
 
 mongoc_cursor_t *
-mongoc_collection_command (mongoc_collection_t       *collection, /* IN */
-                           mongoc_query_flags_t       flags,      /* IN */
-                           bson_uint32_t              skip,       /* IN */
-                           bson_uint32_t              n_return,   /* IN */
-                           const bson_t              *query,      /* IN */
-                           const bson_t              *fields,     /* IN */
-                           const mongoc_read_prefs_t *read_prefs) /* IN */
+mongoc_collection_command (mongoc_collection_t       *collection,
+                           mongoc_query_flags_t       flags,
+                           bson_uint32_t              skip,
+                           bson_uint32_t              n_return,
+                           const bson_t              *query,
+                           const bson_t              *fields,
+                           const mongoc_read_prefs_t *read_prefs)
 {
-   char ns[MONGOC_NAMESPACE_MAX+4];
-
-   bson_return_val_if_fail(collection, NULL);
-   bson_return_val_if_fail(query, NULL);
-
-   snprintf(ns, sizeof ns, "%s.$cmd", collection->db);
-   ns[sizeof ns - 1] = '\0';
+   BSON_ASSERT (collection);
+   BSON_ASSERT (query);
 
    if (!read_prefs) {
       read_prefs = collection->read_prefs;
    }
 
-   return _mongoc_cursor_new(collection->client, ns, flags, skip,
-                             n_return, 0, TRUE, query, fields, read_prefs);
+   return mongoc_client_command (collection->client, collection->db, flags,
+                                 skip, n_return, query, fields, read_prefs);
 }
 
 
@@ -417,60 +411,17 @@ mongoc_collection_command (mongoc_collection_t       *collection, /* IN */
  */
 
 bson_bool_t
-mongoc_collection_command_simple (
-      mongoc_collection_t       *collection, /* IN */
-      const bson_t              *command,    /* IN */
-      const mongoc_read_prefs_t *read_prefs, /* IN */
-      bson_t                    *reply,      /* OUT */
-      bson_error_t              *error)      /* OUT */
+mongoc_collection_command_simple (mongoc_collection_t       *collection,
+                                  const bson_t              *command,
+                                  const mongoc_read_prefs_t *read_prefs,
+                                  bson_t                    *reply,
+                                  bson_error_t              *error)
 {
-   mongoc_cursor_t *cursor;
-   const bson_t *b;
-   bson_bool_t ret = FALSE;
-   bson_iter_t iter;
-   const char *errmsg = NULL;
-   int code = 0;
+   BSON_ASSERT (collection);
+   BSON_ASSERT (command);
 
-   bson_return_val_if_fail(collection, FALSE);
-   bson_return_val_if_fail(command, FALSE);
-
-   cursor = mongoc_collection_command(collection, MONGOC_QUERY_NONE, 0,
-                                      1, command, NULL, read_prefs);
-
-   if (!mongoc_cursor_next(cursor, &b)) {
-      mongoc_cursor_error(cursor, error);
-      mongoc_cursor_destroy(cursor);
-      if (reply) {
-         bson_init(reply);
-      }
-      return FALSE;
-   }
-
-   if (reply) {
-      bson_copy_to(b, reply);
-   }
-
-   if (!bson_iter_init_find(&iter, b, "ok") || !bson_iter_as_bool(&iter)) {
-      if (bson_iter_init_find(&iter, b, "code") &&
-          BSON_ITER_HOLDS_INT32(&iter)) {
-         code = bson_iter_int32(&iter);
-      }
-      if (bson_iter_init_find(&iter, b, "errmsg") &&
-          BSON_ITER_HOLDS_UTF8(&iter)) {
-         errmsg = bson_iter_utf8(&iter, NULL);
-      }
-      bson_set_error(error,
-                     MONGOC_ERROR_QUERY,
-                     code,
-                     "%s", errmsg ? errmsg : "Unknown command failure");
-      ret = FALSE;
-   } else {
-      ret = TRUE;
-   }
-
-   mongoc_cursor_destroy(cursor);
-
-   return ret;
+   return mongoc_client_command_simple (collection->client, collection->db,
+                                        command, read_prefs, reply, error);
 }
 
 
