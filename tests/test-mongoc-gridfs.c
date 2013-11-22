@@ -76,6 +76,8 @@ test_list (void)
    bson_append_document_begin (&query, "$orderby", -1, &child);
    bson_append_int32 (&child, "filename", -1, 1);
    bson_append_document_end (&query, &child);
+   bson_append_document_begin (&query, "$query", -1, &child);
+   bson_append_document_end (&query, &child);
 
    list = mongoc_gridfs_find (gridfs, &query);
 
@@ -89,16 +91,17 @@ test_list (void)
 
       mongoc_gridfs_file_destroy (file);
    }
+   assert(i == 3);
    mongoc_gridfs_file_list_destroy (list);
 
    bson_init (&query);
    bson_append_utf8 (&query, "filename", -1, "file.1", -1);
-   file = mongoc_gridfs_find_one (gridfs, &query);
+   file = mongoc_gridfs_find_one (gridfs, &query, &error);
    assert (file);
    assert (strcmp (mongoc_gridfs_file_get_filename (file), "file.1") == 0);
    mongoc_gridfs_file_destroy (file);
 
-   file = mongoc_gridfs_find_one_by_filename (gridfs, "file.1");
+   file = mongoc_gridfs_find_one_by_filename (gridfs, "file.1", &error);
    assert (file);
    assert (strcmp (mongoc_gridfs_file_get_filename (file), "file.1") == 0);
    mongoc_gridfs_file_destroy (file);
@@ -225,6 +228,9 @@ test_write (void)
 
    r = mongoc_gridfs_file_seek (file, 0, SEEK_SET);
    assert (!r);
+
+   r = mongoc_gridfs_file_tell (file);
+   assert (r == 0);
 
    r = mongoc_gridfs_file_readv (file, &riov, 1, -1, 0);
    assert (r == len);

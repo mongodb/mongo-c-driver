@@ -29,6 +29,8 @@ mongoc-tail
 *.pc
 stamp-h1
 *.swp
+example-client
+example-gridfs
 repltest1
 shardtest1
 shardtest2

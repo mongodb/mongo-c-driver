@@ -37,12 +37,13 @@ struct _mongoc_gridfs_file
    mongoc_gridfs_file_page_t *page;
    bson_uint64_t              pos;
    bson_error_t               error;
+   bson_bool_t                failed;
    mongoc_cursor_t           *cursor;
    bson_uint32_t              cursor_range[2];
    bson_bool_t                is_dirty;
 
    bson_oid_t   files_id;
-   bson_int32_t length;
+   bson_int64_t length;
    bson_int32_t chunk_size;
    bson_int64_t upload_date;
 

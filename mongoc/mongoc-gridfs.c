@@ -175,7 +175,8 @@ mongoc_gridfs_find (mongoc_gridfs_t *gridfs,
 /** find a single gridfs file */
 mongoc_gridfs_file_t *
 mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
-                        const bson_t    *query)
+                        const bson_t    *query,
+                        bson_error_t    *error)
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_gridfs_file_t *file;
@@ -185,6 +186,7 @@ mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
    list = _mongoc_gridfs_file_list_new (gridfs, query, 1);
 
    file = mongoc_gridfs_file_list_next (list);
+   mongoc_gridfs_file_list_error(list, error);
 
    mongoc_gridfs_file_list_destroy (list);
 
@@ -195,7 +197,8 @@ mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
 /** find a single gridfs file by filename */
 mongoc_gridfs_file_t *
 mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
-                                    const char      *filename)
+                                    const char      *filename,
+                                    bson_error_t    *error)
 {
    mongoc_gridfs_file_t *file;
 
@@ -205,7 +208,7 @@ mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
 
    bson_append_utf8 (&query, "filename", -1, filename, -1);
 
-   file = mongoc_gridfs_find_one (gridfs, &query);
+   file = mongoc_gridfs_find_one (gridfs, &query, error);
 
    bson_destroy (&query);
 

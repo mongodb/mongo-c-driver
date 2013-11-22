@@ -1,1 +1,76 @@
-todo.txt
+mongoc_gridfs_file_seek(3)
+==========================
+
+
+NAME
+----
+mongoc_gridfs_file_seek - seek() for gridfs files
+
+
+SYNOPSIS
+--------
+[source,c]
+------------------------
+int
+mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
+                         bson_uint64_t         delta,
+                         int                   whence);
+
+bson_uint64_t
+mongoc_gridfs_file_tell (mongoc_gridfs_file_t *file);
+------------------------
+
+
+DESCRIPTION
+-----------
+
+mongoc_gridfs_file_seek()
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The _mongoc_gridfs_file_seek()_ function mimics linkmongoc:fseek[3].
+
+delta::
+   The relative offset into the file.  Correlates with 'whence'
+
+whence::
+   An linkmongoc:fseek[3] style whence.
+
+   SEEK_SET;;
+      Relative to the start of the file
+
+   SEEK_CUR;;
+      Relative to the current position indicator
+
+   SEEK_END;;
+      Relative to the end of file
+
+mongoc_gridfs_file_tell()
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The _mongoc_gridfs_file_tell()_ function returns the current value of the file
+position indicator in 'file'.
+
+RETURN VALUE
+------------
+The _mongoc_gridfs_file_seek()_ function returns 0 on success, -1 on failure.
+
+The _mongoc_gridfs_file_tell()_ function returns the current offset.
+
+ERRORS
+------
+
+EINVAL::
+   The 'whence' argument to _mongoc_gridfs_file_seek()_ was not *SEEK_SET*,
+   *SEEK_END* or *SEEK_CUR*.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_gridfs_file[7]
+linkmongoc:fseek[3]
+linkmongoc:ftell[3]
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

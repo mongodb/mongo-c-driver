@@ -228,14 +228,15 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
       errno = 0;
       r = recvmsg(file->fd, &msg, flags);
       if (r < 0) {
-         if (errno == EAGAIN) {
-            r = 0;
-            GOTO(prepare_wait_poll);
-         } else if (errno == ENOTSOCK) {
+         if (errno == ENOTSOCK) {
             r = readv(file->fd, iov + cur, iovcnt - cur);
             if (!r) {
                RETURN(ret);
             }
+         }
+         if (errno == EAGAIN) {
+            r = 0;
+            GOTO(prepare_wait_poll);
          }
       }
 

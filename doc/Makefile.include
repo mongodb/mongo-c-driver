@@ -1,10 +1,14 @@
-MAN3 = $(MONGOC_SYMBOLS)
+MAN3 = $(top_srcdir)/doc/todo.3 $(MONGOC_SYMBOLS)
 
 MAN7 = \
 	$(top_srcdir)/doc/mongoc_client.7 \
 	$(top_srcdir)/doc/mongoc_client_pool.7 \
 	$(top_srcdir)/doc/mongoc_collection.7 \
+	$(top_srcdir)/doc/mongoc_cursor.7 \
 	$(top_srcdir)/doc/mongoc_database.7 \
+	$(top_srcdir)/doc/mongoc_gridfs.7 \
+	$(top_srcdir)/doc/mongoc_gridfs_file.7 \
+	$(top_srcdir)/doc/mongoc_gridfs_file_list.7 \
 	$(top_srcdir)/doc/mongoc_uri.7
 
 MAN_DOC = $(MAN1) $(MAN3) $(MAN7)
@@ -35,14 +39,30 @@ SUFFIXES=.html .txt .xml .3 .7
 EXAMPLE_DIR = $(abs_top_srcdir)/examples
 
 .txt.html:
-	asciidoc -d manpage -b xhtml11 -f $(top_srcdir)/doc/asciidoc.conf \
-           -aexamples=$(EXAMPLE_DIR) -amongoc_version=@PACKAGE_VERSION@ -o$@ $<
+	if [ -L $< ]; then \
+	   ln -fs `basename \`readlink $<\` .txt`.html $@; \
+	else \
+	   asciidoc -d manpage -b xhtml11 -f $(top_srcdir)/doc/asciidoc.conf \
+	      -aexamples=$(EXAMPLE_DIR) -amongoc_version=@PACKAGE_VERSION@ -o$@ $<; \
+	fi
 .txt.xml:
-	asciidoc -d manpage -b docbook -f $(top_srcdir)/doc/asciidoc.conf \
-           -aexamples=$(EXAMPLE_DIR) -amongoc_version=@PACKAGE_VERSION@ \
-           -amongoc_manname=$(*F) -o$@ $<
+	if [ -L $< ]; then \
+	   ln -fs `basename \`readlink $<\` .txt`.xml $@; \
+	else \
+	   asciidoc -d manpage -b docbook -f $(top_srcdir)/doc/asciidoc.conf \
+	      -aexamples=$(EXAMPLE_DIR) -amongoc_version=@PACKAGE_VERSION@ \
+	      -amongoc_manname=$(*F) -o$@ $<; \
+	fi
 .xml.3:
-	xmlto man -o $(top_srcdir)/doc $<
+	if [ -L $< ]; then \
+	   ln -fs `basename \`readlink $<\` .xml`.3 $@; \
+        else \
+	   xmlto man -o $(top_srcdir)/doc $<; \
+	fi
 .xml.7:
-	xmlto man -o $(top_srcdir)/doc $<
+	if [ -L $< ]; then \
+	   ln -fs `basename \`readlink $<\` .xml`.3 $@; \
+        else \
+	   xmlto man -o $(top_srcdir)/doc $<; \
+        fi
 endif

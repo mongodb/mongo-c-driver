@@ -20,6 +20,7 @@
 
 #include <limits.h>
 #include <time.h>
+#include <errno.h>
 
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
@@ -127,7 +128,7 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
 
    update = bson_new ();
    bson_append_document_begin (update, "$set", -1, &child);
-   bson_append_int32 (&child, "length", -1, file->length);
+   bson_append_int64 (&child, "length", -1, file->length);
    bson_append_int32 (&child, "chunkSize", -1, file->chunk_size);
    bson_append_date_time (&child, "uploadDate", -1, file->upload_date);
 
@@ -155,6 +156,9 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
 
    r = mongoc_collection_update (file->gridfs->files, MONGOC_UPDATE_UPSERT,
                                  selector, update, NULL, &file->error);
+   
+   file->failed = !r;
+
 
    bson_destroy (selector);
    bson_destroy (update);
@@ -201,7 +205,7 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
       if (0 == strcmp (key, "_id")) {
          bson_oid_copy (bson_iter_oid (&iter), &file->files_id);
       } else if (0 == strcmp (key, "length")) {
-         file->length = bson_iter_int32 (&iter);
+         file->length = bson_iter_int64 (&iter);
       } else if (0 == strcmp (key, "chunkSize")) {
          file->chunk_size = bson_iter_int32 (&iter);
       } else if (0 == strcmp (key, "uploadDate")) {
@@ -492,6 +496,8 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    r = mongoc_collection_update (file->gridfs->chunks, MONGOC_UPDATE_UPSERT,
                                  selector, update, NULL, &file->error);
 
+   file->failed = !r;
+
    bson_destroy (selector);
    bson_destroy (update);
 
@@ -582,6 +588,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
             if (file->cursor->failed) {
                memcpy (&(file->error), &(file->cursor->error),
                        sizeof (bson_error_t));
+               file->failed = TRUE;
             }
 
             RETURN (0);
@@ -636,6 +643,8 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
 {
    bson_uint64_t offset;
 
+   BSON_ASSERT(file);
+
    switch (whence) {
    case SEEK_SET:
       offset = delta;
@@ -647,6 +656,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
       offset = (file->length - 1) + delta;
       break;
    default:
+      errno = EINVAL;
       return -1;
 
       break;
@@ -673,4 +683,49 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
    file->pos = offset;
 
    return 0;
+}
+
+bson_uint64_t
+mongoc_gridfs_file_tell (mongoc_gridfs_file_t *file)
+{
+   BSON_ASSERT(file);
+
+   return file->pos;
+}
+
+bson_bool_t
+mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
+                          bson_error_t         *error)
+{
+   BSON_ASSERT(file);
+   BSON_ASSERT(error);
+
+   if (BSON_UNLIKELY(file->failed)) {
+      bson_set_error(error,
+                     file->error.domain,
+                     file->error.code,
+                     "%s",
+                     file->error.message);
+      RETURN(TRUE);
+   }
+
+   RETURN(FALSE);
+}
+
+bson_int64_t
+mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file)
+{
+   return file->length;
+}
+
+bson_int32_t
+mongoc_gridfs_file_get_chunk_size (mongoc_gridfs_file_t *file)
+{
+   return file->chunk_size;
+}
+
+bson_int64_t
+mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file)
+{
+   return file->upload_date;
 }

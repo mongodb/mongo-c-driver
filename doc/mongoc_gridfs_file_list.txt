@@ -1,0 +1,76 @@
+mongoc_gridfs_file_list(7)
+==========================
+
+
+NAME
+----
+mongoc_gridfs_file_list - MongoDB gridfs file listing
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+mongoc_gridfs_file_list_t *list;
+mongoc_gridfs_file_t *file;
+
+list = mongoc_gridfs_find (gridfs, query);
+
+while ((file = mongoc_gridfs_file_list_next (list))) {
+   do_something(file);
+
+   mongoc_gridfs_file_destroy (file);
+}
+
+mongoc_gridfs_file_list_destroy (list);
+---------------
+
+
+DESCRIPTION
+-----------
+_mongoc_gridfs_file_list_ provides a gridfs file list abstraction.  It provides
+iteration and basic marshalling on top of a regular
+linkmongoc:mongoc_collection_find[3] style query.  In interface, it's styled
+after linkmongoc:mongoc_cursor[7].
+
+
+THREAD SAFETY
+-------------
+
+_mongoc_gridfs_file_list_ is *NOT* thread-safe and should only be used from one
+thread at a time. 
+
+LIFECYCLE
+---------
+
+The linkmongoc:mongoc_gridfs_file[7]s produced by the 'list' are independent
+and can be freed and stored separately from the list iteration.
+
+
+EXAMPLE
+-------
+
+For an example, see linkmongoc:mongoc_gridfs[7]
+
+SEE ALSO
+--------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_gridfs_file_list_destroy[3]
+linkmongoc:mongoc_gridfs_file_list_error[3]
+linkmongoc:mongoc_gridfs_file_list_next[3]
+
+RELATED
+~~~~~~~
+
+linkmongoc:mongoc_gridfs[7]
+linkmongoc:mongoc_gridfs_file[7]
+http://docs.mongodb.org/manual/core/gridfs/
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

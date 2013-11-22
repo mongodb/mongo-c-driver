@@ -69,6 +69,14 @@ mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list)
 }
 
 
+bson_bool_t
+mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list,
+                               bson_error_t              *error)
+{
+   return mongoc_cursor_error(list->cursor, error);
+}
+
+
 void
 mongoc_gridfs_file_list_destroy (mongoc_gridfs_file_list_t *list)
 {

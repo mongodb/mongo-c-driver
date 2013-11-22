@@ -1,1 +1,43 @@
-todo.txt
+mongoc_gridfs_file_save(3)
+==========================
+
+
+NAME
+----
+mongoc_gridfs_file_save - saves a gridfs file to MongoDB
+
+
+SYNOPSIS
+--------
+[source,c]
+------------------------
+bson_bool_t
+mongoc_gridfs_file_save (mongoc_gridfs_file_t *file);
+------------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_gridfs_file_save()_ function saves the 'file' to the gridfs
+database it was created or queried from.
+
+RETURN VALUE
+------------
+The _mongoc_gridfs_file_save()_ function returns true if successful
+
+
+ERRORS
+------
+On error, the _mongoc_gridfs_file_save()_ function returns false and
+linkmongoc:mongoc_gridfs_file_error[3] can be used to extract the error.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_gridfs_file[7]
+linkmongoc:mongoc_gridfs_file_error[3]
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

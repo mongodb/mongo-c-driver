@@ -1,1 +1,41 @@
-todo.txt
+mongoc_cursor_destroy(3)
+========================
+
+
+NAME
+----
+mongoc_cursor_destroy - destroy a mongoc cursor
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+void
+mongoc_cursor_destroy (mongoc_cursor_t *cursor);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_cursor_destroy()_ function shall destroy the cursor referenced by
+the 'cursor' argument and any resources associated with the cursor.
+
+RETURN VALUE
+------------
+The _mongoc_cursor_destroy()_ function has no return value.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_cursor[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.
