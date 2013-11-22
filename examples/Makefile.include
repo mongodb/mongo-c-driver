@@ -14,6 +14,12 @@ mongoc_ping_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 mongoc_ping_LDADD = libmongoc-1.0.la $(BSON_LIBS)
 
 
+noinst_PROGRAMS += mongoc-rpc-validate
+mongoc_rpc_validate_SOURCES = $(top_srcdir)/examples/mongoc-rpc-validate.c
+mongoc_rpc_validate_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+mongoc_rpc_validate_LDADD = libmongoc-priv.la $(BSON_LIBS)
+
+
 noinst_PROGRAMS += mongoc-tail
 mongoc_tail_SOURCES = $(top_srcdir)/examples/mongoc-tail.c
 mongoc_tail_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)

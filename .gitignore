@@ -8,6 +8,7 @@ config.*
 configure
 depcomp
 .deps
+example-client
 INSTALL
 tags
 index-source
@@ -21,13 +22,13 @@ Makefile
 Makefile.in
 missing
 mongoc-ping
+mongoc-rpc-validate
 mongoc-stat
 mongoc-tail
 *.o
 *.pc
 stamp-h1
 *.swp
-example-client
 repltest1
 shardtest1
 shardtest2
