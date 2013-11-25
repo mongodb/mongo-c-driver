@@ -1,1 +1,41 @@
-todo.txt
+mongoc_write_concern_destroy(3)
+===============================
+
+
+NAME
+----
+mongoc_write_concern_destroy - destroy a mongoc write_concern
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+void
+mongoc_write_concern_destroy (mongoc_write_concern_t *write_concern);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_write_concern_destroy()_ function shall destroy a
+linkmongoc:mongoc_write_concern[7].
+
+RETURN VALUE
+------------
+The _mongoc_write_concern_destroy()_ function has no return value.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_write_concern[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

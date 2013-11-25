@@ -1,6 +1,8 @@
 #include <mongoc.h>
 #include <netdb.h>
 
+#include "mongoc-host-list-private.h"
+
 #include "mongoc-tests.h"
 
 
@@ -73,7 +75,7 @@ test_mongoc_uri_new (void)
 
    uri = mongoc_uri_new("mongodb://localhost:27017/?readPreferenceTags=dc:ny&readPreferenceTags=");
    assert(uri);
-   options = mongoc_uri_get_read_preferences(uri);
+   options = mongoc_uri_get_read_prefs(uri);
    assert(options);
    assert_cmpint(bson_count_keys(options), ==, 2);
    assert(bson_iter_init_find(&iter, options, "0"));
@@ -174,7 +176,7 @@ test_mongoc_host_list_from_string (void)
 {
    mongoc_host_list_t host_list = { 0 };
 
-   assert(mongoc_host_list_from_string(&host_list, "localhost:27019"));
+   assert(_mongoc_host_list_from_string(&host_list, "localhost:27019"));
    assert(!strcmp(host_list.host_and_port, "localhost:27019"));
    assert(!strcmp(host_list.host, "localhost"));
    assert(host_list.port == 27019);

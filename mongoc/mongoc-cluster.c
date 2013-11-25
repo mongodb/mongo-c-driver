@@ -23,6 +23,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-error.h"
+#include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
 #include "mongoc-read-prefs-private.h"
@@ -1451,7 +1452,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
         liter && (i < MONGOC_CLUSTER_MAX_NODES);
         liter = liter->next) {
 
-      if (!mongoc_host_list_from_string(&host, liter->data)) {
+      if (!_mongoc_host_list_from_string(&host, liter->data)) {
          MONGOC_WARNING("Failed to parse host and port: \"%s\"",
                         (char *)liter->data);
          continue;

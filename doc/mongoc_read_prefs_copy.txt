@@ -1,1 +1,42 @@
-todo.txt
+mongoc_read_prefs_copy(3)
+=========================
+
+
+NAME
+----
+mongoc_read_prefs_copy - copy a mongoc read pref
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_read_prefs_t *
+mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_read_prefs_copy()_ function shall copy a
+linkmongoc:mongoc_read_prefs[7].
+
+RETURN VALUE
+------------
+The _mongoc_read_prefs_copy()_ function returns a new
+linkmongoc:mongoc_read_prefs[7]
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_read_prefs[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

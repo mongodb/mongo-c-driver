@@ -1,1 +1,93 @@
-todo.txt
+mongoc_log(3)
+=============
+
+
+NAME
+----
+mongoc_log - Log a message in the mongoc log framework
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+void mongoc_log (mongoc_log_level_t  log_level,
+                 const char         *log_domain,
+                 const char         *format,
+                 ...);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_log()_ function shall log a message to the mongoc log framework.
+
+It is a printf style function, accepting a:
+
+log_level::
+   The log level to log at.  This correlates to the degree of verbosity
+   expected before the log is surfaced.
+
+log_domain::
+   A namspace for the log message.  This allows for easy isolation of subsystem
+   logging.
+
+format::
+   A printf style format string
+
+...::
+   variadic printf style arguments
+
+LOG LEVELS
+~~~~~~~~~~
+
+There are a variety of supported log levels within the mongoc framework and each
+level is inclusive of those below it, I.e. WARNING includes CRITICAL and ERROR.
+The mongoc driver delivers these diagnostics through internal calls to
+_mongoc_log()_.  In turn, these messages may be consumed in whatever
+application appropriate way through setting
+linkmongoc:mongoc_log_set_handler[3].
+
+.LEVELS
+MONGOC_LOG_LEVEL_ERROR::
+   Major API errors.  These are fatal and represent unrecoverable states.
+   
+MONGOC_LOG_LEVEL_CRITICAL::
+   Critical errors.  The driver can countinue operation, but may be in a
+   degraded mode.
+
+MONGOC_LOG_LEVEL_WARNING::
+   Regular warnings.  These don't require immediate attention, but probably
+   warrant semi-regular review.
+   
+MONGOC_LOG_LEVEL_MESSAGE::
+   System messages, these include high level state transitions.
+
+MONGOC_LOG_LEVEL_INFO::
+   Arbitrary application level information.
+
+MONGOC_LOG_LEVEL_DEBUG::
+   Debugging information.  You probably don't want this unless you're actively
+   debugging.
+
+MONGOC_LOG_LEVEL_TRACE::
+   Tracing that includes information such as function entry and exit.
+
+RETURN VALUE
+------------
+The _mongoc_log()_ function has no return value.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_log_set_handler[3]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

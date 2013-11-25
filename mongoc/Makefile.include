@@ -59,6 +59,7 @@ NOINST_H_FILES = \
 	mongoc/mongoc-gridfs-file-private.h \
 	mongoc/mongoc-gridfs-file-page-private.h \
 	mongoc/mongoc-gridfs-file-list-private.h \
+	mongoc/mongoc-host-list-private.h \
 	mongoc/mongoc-list-private.h \
 	mongoc/mongoc-queue-private.h \
 	mongoc/mongoc-read-prefs-private.h \

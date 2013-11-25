@@ -1,1 +1,57 @@
-todo.txt
+mongoc_init(3)
+==============
+
+
+NAME
+----
+mongoc_init - Initialize mongoc
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+void
+mongoc_init(void);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_init()_ function shall initialize the mongoc library.  While much
+of mongoc library functionality is available without _monogc_init()_, some
+functions require global initialization and use this hook as the opportunity to
+run their initialization code.
+
+It is a programming error not to call this function before use of any dependent
+subsytems.  Those functions will _assert()_ in the absence of proper
+initialization.
+
+The _mongoc_init()_ function is *NOT* thread-safe.  It should be called early
+and in a single threaded environment.  Ideally as one of the first activities
+in _main()_.
+
+
+RETURN VALUE
+------------
+The _mongoc_init()_ function has no return value.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc[7]
+
+DEPENDENT SUBSYSTEMS
+~~~~~~~~~~~~~~~~~~~~
+
+linkmongoc:mongoc_ssl[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

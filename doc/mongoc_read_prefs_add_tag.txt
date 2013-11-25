@@ -1,1 +1,43 @@
-todo.txt
+mongoc_read_prefs_add_tag(3)
+============================
+
+
+NAME
+----
+mongoc_read_prefs_add_tag - add a tag to a mongoc read_prefs
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+void
+mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
+                           const bson_t        *tag);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_read_prefs_add_tag()_ function shall add a tag to a
+linkmongoc:mongoc_read_prefs[7].  For more on 'tags', see
+linkmongoc:mongoc_read_prefs[7].
+
+RETURN VALUE
+------------
+The _mongoc_read_prefs_add_tag()_ function has no return value.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_read_prefs[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

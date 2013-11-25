@@ -9,7 +9,9 @@ MAN7 = \
 	$(top_srcdir)/doc/mongoc_gridfs.7 \
 	$(top_srcdir)/doc/mongoc_gridfs_file.7 \
 	$(top_srcdir)/doc/mongoc_gridfs_file_list.7 \
-	$(top_srcdir)/doc/mongoc_uri.7
+	$(top_srcdir)/doc/mongoc_read_prefs.7 \
+	$(top_srcdir)/doc/mongoc_uri.7 \
+	$(top_srcdir)/doc/mongoc_write_concern.7
 
 MAN_DOC = $(MAN1) $(MAN3) $(MAN7)
 

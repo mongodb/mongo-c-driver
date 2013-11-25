@@ -1,1 +1,61 @@
-todo.txt
+mongoc_write_concern_get_fysnc(3)
+=================================
+
+
+NAME
+----
+mongoc_write_concern_get_fsync - access various elements of the write_concern
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bson_bool_t  mongoc_write_concern_get_fsync     (const mongoc_write_concern_t *write_concern);
+void         mongoc_write_concern_set_fsync     (mongoc_write_concern_t       *write_concern,
+                                                 bson_bool_t                   fsync_);
+bson_bool_t  mongoc_write_concern_get_journal   (const mongoc_write_concern_t *write_concern);
+void         mongoc_write_concern_set_journal   (mongoc_write_concern_t       *write_concern,
+                                                 bson_bool_t                   journal);
+bson_int32_  mongoc_write_concern_get_w         (const mongoc_write_concern_t *write_concern);
+void         mongoc_write_concern_set_w         (mongoc_write_concern_t       *write_concern,
+                                                 bson_int32_t                  w);
+bson_int32_  mongoc_write_concern_get_wtimeout  (const mongoc_write_concern_t *write_concern);
+void         mongoc_write_concern_set_wtimeout  (mongoc_write_concern_t       *write_concern,
+                                                 bson_int32_t                  wtimeout_msec);
+bson_bool_t  mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern);
+void         mongoc_write_concern_set_wmajority (mongoc_write_concern_t       *write_concern,
+                                                 bson_int32_t                  wtimeout_msec);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_write_concern_get()_ functions shall return values from the write_concern.
+
+The _mongoc_write_concern_set()_ functions set attributes from the write_concern.
+
+For more on valid values for _w_, see linkmongoc:mongoc_write_concern[7].
+
+_wtimeout_msec_ is the timeout, in milliseconds, for write acknowledgments.
+
+RETURN VALUE
+------------
+The _mongoc_write_concern_get()_ functions returns appropriate read only types.
+
+The _mongoc_write_concern_set()_ functions set their attribute.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_write_concern[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

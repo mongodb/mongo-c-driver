@@ -73,7 +73,7 @@ errors are returned through 'error'
 
 SEE ALSO
 --------
-linkmongoc:mongoc_read_preferences[7]
+linkmongoc:mongoc_read_prefs[7]
 http://docs.mongodb.org/manual/reference/operator/query/
 
 

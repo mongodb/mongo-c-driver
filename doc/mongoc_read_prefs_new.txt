@@ -1,1 +1,43 @@
-todo.txt
+mongoc_read_prefs_new(3)
+========================
+
+
+NAME
+----
+mongoc_read_prefs_new - create a new mongoc read_prefs
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_read_prefs_t *
+mongoc_read_prefs_new (mongoc_read_mode_t read_mode);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_read_prefs_new()_ function shall create a new
+linkmongoc:mongoc_read_prefs[7].  For more on 'read_mode', see
+linkmongoc:mongoc_read_prefs[7].
+
+RETURN VALUE
+------------
+The _mongoc_read_prefs_new()_ function returns a new
+linkmongoc:mongoc_read_prefs[7].
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_read_prefs[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

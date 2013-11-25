@@ -181,8 +181,8 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
 
 
 bson_bool_t
-mongoc_host_list_from_string (mongoc_host_list_t *host_list,
-                              const char         *host_and_port)
+_mongoc_host_list_from_string (mongoc_host_list_t *host_list,
+                               const char         *host_and_port)
 {
    bson_uint16_t port;
    const char *end_host;
@@ -623,7 +623,7 @@ mongoc_uri_get_string (const mongoc_uri_t *uri)
 
 
 const bson_t *
-mongoc_uri_get_read_preferences (const mongoc_uri_t *uri)
+mongoc_uri_get_read_prefs (const mongoc_uri_t *uri)
 {
    bson_return_val_if_fail(uri, NULL);
    return &uri->read_prefs;
