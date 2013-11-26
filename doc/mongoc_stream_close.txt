@@ -1,1 +1,44 @@
-todo.txt
+mongoc_stream_close(3)
+======================
+
+
+NAME
+----
+mongoc_stream_close - close a mongoc stream
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+int
+mongoc_stream_close (mongoc_stream_t *stream);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_stream_close()_ function shall close a linkmongoc:mongoc_stream[7].
+
+_mongoc_stream_close()_ mimics the linkmongoc:close[2] api.
+
+RETURN VALUE
+------------
+The _mongoc_stream_close()_ function returns zero on success. On error, -1 is
+returned and 'errno' is set appropriately.
+
+ERRORS
+------
+Errors are specific to the underlying stream type.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_uri[7]
+linkmongoc:close[2]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

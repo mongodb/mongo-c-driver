@@ -1,1 +1,42 @@
-todo.txt
+mongoc_ssl_opt_get_default(3)
+=============================
+
+
+NAME
+----
+mongoc_ssl_opt_get_default - return the default ssl options
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+const mongoc_ssl_opt_t *
+mongoc_ssl_opt_get_default (void);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_ssl_opt_get_default()_ function shall return the default ssl
+options.
+
+RETURN VALUE
+------------
+The _mongoc_ssl_opt_get_default()_ function returns a const pointer to the
+default ssl options.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_ssl[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

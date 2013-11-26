@@ -1,1 +1,67 @@
-todo.txt
+mongoc_stream_writev(3)
+=======================
+
+
+NAME
+----
+mongoc_stream_writev - write to a mongoc stream
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+ssize_t
+mongoc_stream_writev (mongoc_stream_t *stream,
+                      struct iovec    *iov,
+                      size_t           iovcnt,
+                      bson_int32_t     timeout_msec);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_stream_writev()_ function shall perform a write to a
+linkmongoc:mongoc_stream[7].  It's modeled on the API and semantics of
+linkmongoc:writev[2], though the parameters map only loosely.
+
+iov::
+   An array of 'struct iovec *'.  These are the same as those used in
+   linkmongoc:writev[2].
+
+iovcnt::
+   The number of iov's in 'iov'.
+
+timeout_msec::
+   The timeout, in milliseconds, to attempt to fully write 'iov'.  If negative,
+   use the default timeout.  A timeout of 0 implies a non-blocking write.
+
+All stream implementations implement _writev()_.
+
+RETURN VALUE
+------------
+The _mongoc_stream_writev()_ function returns the number of bytes written on
+success and -1 on failure.
+
+ERRORS
+------
+
+
+errno may be set by the underlying transport.
+
+There are also _mongoc_stream_writev()_ specific errors:
+
+ETIMEDOUT::
+   'iov' could not be written in 'timeout_msec'.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_stream[7]
+linkmongoc:writev[2]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

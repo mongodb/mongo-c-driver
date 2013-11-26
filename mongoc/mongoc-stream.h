@@ -31,31 +31,6 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_stream_t mongoc_stream_t;
 
 
-struct _mongoc_stream_t
-{
-   void    (*destroy)    (mongoc_stream_t *stream);
-   int     (*close)      (mongoc_stream_t *stream);
-   int     (*flush)      (mongoc_stream_t *stream);
-   ssize_t (*writev)     (mongoc_stream_t *stream,
-                          struct iovec    *iov,
-                          size_t           iovcnt,
-                          bson_int32_t     timeout_msec);
-   ssize_t (*readv)      (mongoc_stream_t *stream,
-                          struct iovec    *iov,
-                          size_t           iovcnt,
-                          size_t           min_bytes,
-                          bson_int32_t     timeout_msec);
-   int     (*cork)       (mongoc_stream_t *stream);
-   int     (*uncork)     (mongoc_stream_t *stream);
-   int     (*setsockopt) (mongoc_stream_t *stream,
-                          int              level,
-                          int              optname,
-                          void            *optval,
-                          socklen_t        optlen);
-
-};
-
-
 int              mongoc_stream_close         (mongoc_stream_t *stream);
 int              mongoc_stream_cork          (mongoc_stream_t *stream);
 int              mongoc_stream_uncork        (mongoc_stream_t *stream);

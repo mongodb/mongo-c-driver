@@ -190,6 +190,9 @@ dnl **************************************************************************
 MONGOC_SYMBOLS=`sed -e 's/.*/$(top_srcdir)\/doc\/&.3/' < mongoc/libmongoc.symbols | xargs`
 AC_SUBST([MONGOC_SYMBOLS])
 
+MONGOC_API=`sed -e 's/.*/$(top_srcdir)\/doc\/&.7/' < doc/mongoc_api | xargs`
+AC_SUBST([MONGOC_API])
+
 dnl **************************************************************************
 dnl Check for necessary libraries.
 dnl **************************************************************************

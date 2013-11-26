@@ -32,6 +32,7 @@
 #include "mongoc-counters-private.h"
 #include "mongoc-log.h"
 #include "mongoc-stream-unix.h"
+#include "mongoc-stream-private.h"
 #include "mongoc-trace.h"
 
 

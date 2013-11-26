@@ -1,0 +1,96 @@
+mongoc_ssl(7)
+=============
+
+
+NAME
+----
+mongoc_ssl - MongoDB ssl abstraction
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+#include <mongoc.h>
+
+mongoc_stream_t * unix_stream;
+mongoc_stream_t * tls_stream;
+mongoc_ssl_opt_t opt = { 0 };
+
+opt.pem_file = "path/to/pk.pem";
+opt.pem_pwd = "super secret password";
+opt.ca_file = "path/to/ca.cert";
+
+unix_stream = mongoc_stram_unix_new(fd);
+ssl_stream = mongoc_stream_tls_new(sock_stream, &opt, is_client);
+---------------
+
+
+DESCRIPTION
+-----------
+_mongoc_ssl_ provides a wrapper on top of OpenSSL.  Specifically, it provides:
+
+* Sensible defaults for an internal SSL_CTX in terms of ciphers and versions
+* Loading of various artifacts in a declerative rather than imperative manner.
+  I.e. certificate chains, private keys, crl's, etc.
+* Hooks for the _mongoc_stream_tls_ abstraction to manage handshakes and cert
+  verification.
+
+
+OPTIONS
+-------
+
+[source, c]
+---------------------
+typedef struct mongoc_ssl_opt
+{
+   const char *pem_file;
+   const char *pem_pwd;
+   const char *ca_file;
+   const char *ca_dir;
+   const char *crl_file;
+   bson_bool_t weak_cert_validation;
+} mongoc_ssl_opt_t;
+---------------------
+
+pem_file::
+   A PEM file containing the private key and certificate chain
+
+pem_pwd::
+   The pass phrase needed to access the passed pem_file.  You only need to pass
+   this if the associated pem_file requires a pass phrase.
+
+ca_file::
+   A certificate authority file.  I.e. any needed root certificates that may be
+   needed to authenticate that returned by a peer.
+
+ca_dir::
+   A directory as that laid out by _c_rehash_.  See
+   linkmongoc:SSL_CTX_load_verify_locations[3] for more on the layout.
+
+crl_file::
+   A certificate revocation list file
+
+weak_cert_validation::
+   If the library should bother performing certificate verification on the cert
+   returned by the peer.
+
+SEE ALSO
+--------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_ssl_opt_get_default[3]
+
+RELATED
+~~~~~~~
+
+linkmongoc:mongoc_stream[7]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

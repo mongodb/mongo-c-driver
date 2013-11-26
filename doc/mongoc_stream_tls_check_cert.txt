@@ -1,1 +1,51 @@
-todo.txt
+mongoc_stream_tls_check_cert(3)
+===============================
+
+
+NAME
+----
+mongoc_stream_tls_check_cert - Verify the server certifate
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bson_bool_t
+mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
+                              const char      *host);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_stream_tls_check_cert()_ function shall perform a rfc 6125
+certificate verification.
+
+host::
+   A UTF-8 string holding the hostname used in socket creation.  This value is
+   what will be matched against the server provided certificate.
+
+RETURN VALUE
+------------
+The _mongoc_stream_tls_check_cert()_ function returns true if the certificate
+is valid was successful.  If false, openssl errors may be set.
+
+ERRORS
+------
+
+SSL errors are accessed through OpenSSL's API.  See
+linkmongoc:SSL_get_error[3].
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_stream[7]
+linkmongoc:mongoc_ssl[7]
+linkmongoc:SSL_get_error[3]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

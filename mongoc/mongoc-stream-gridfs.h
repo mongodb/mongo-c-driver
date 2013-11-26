@@ -21,6 +21,7 @@
 
 #include <bson.h>
 
+#include "mongoc-gridfs.h"
 #include "mongoc-stream.h"
 
 

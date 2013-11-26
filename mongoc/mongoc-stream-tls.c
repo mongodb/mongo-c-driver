@@ -24,6 +24,7 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-stream-tls.h"
+#include "mongoc-stream-private.h"
 #include "mongoc-ssl-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-log.h"

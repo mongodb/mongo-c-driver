@@ -23,6 +23,7 @@
 #include "mongoc-counters-private.h"
 #include "mongoc-log.h"
 #include "mongoc-stream-buffered.h"
+#include "mongoc-stream-private.h"
 
 
 typedef struct

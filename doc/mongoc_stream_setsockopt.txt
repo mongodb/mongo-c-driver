@@ -1,1 +1,50 @@
-todo.txt
+mongoc_stream_setsockopt(3)
+===========================
+
+
+NAME
+----
+mongoc_stream_setsockopt - set socket options on a mongoc stream
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+int
+mongoc_stream_setsockopt (mongoc_stream_t *stream,
+                          int              level,
+                          int              optname,
+                          void            *optval,
+                          socklen_t        optlen);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_stream_setsockopt()_ function shall set socket options on a
+linkmongoc:mongoc_stream[7].  It's modeled on the API and semantics of
+linkmongoc:setsockopt[2].
+
+Any given stream implementation may or may not implement _setsockopt()_.
+
+RETURN VALUE
+------------
+The _mongoc_stream_setsockopt()_ function returns zero on success.  On error -1
+is returned and errno is set appropriately.
+
+ERRORS
+------
+
+Errors are specific to the underlying stream type.
+
+SEE ALSO
+--------
+linkmongoc:mongoc_stream[7]
+linkmongoc:setsockopt[2]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

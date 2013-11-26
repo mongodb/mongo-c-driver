@@ -21,6 +21,7 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-stream.h"
+#include "mongoc-stream-private.h"
 #include "mongoc-gridfs-file.h"
 #include "mongoc-gridfs-file-private.h"
 #include "mongoc-trace.h"

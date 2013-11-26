@@ -36,6 +36,7 @@
 #include "mongoc-opcode.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
+#include "mongoc-stream-private.h"
 
 
 #ifndef MONGOC_DEFAULT_TIMEOUT_MSEC

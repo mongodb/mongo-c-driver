@@ -1,17 +1,12 @@
-MAN3 = $(top_srcdir)/doc/todo.3 $(MONGOC_SYMBOLS)
+MAN3 = $(MONGOC_SYMBOLS)
 
-MAN7 = \
-	$(top_srcdir)/doc/mongoc_client.7 \
-	$(top_srcdir)/doc/mongoc_client_pool.7 \
-	$(top_srcdir)/doc/mongoc_collection.7 \
-	$(top_srcdir)/doc/mongoc_cursor.7 \
-	$(top_srcdir)/doc/mongoc_database.7 \
-	$(top_srcdir)/doc/mongoc_gridfs.7 \
-	$(top_srcdir)/doc/mongoc_gridfs_file.7 \
-	$(top_srcdir)/doc/mongoc_gridfs_file_list.7 \
-	$(top_srcdir)/doc/mongoc_read_prefs.7 \
-	$(top_srcdir)/doc/mongoc_uri.7 \
-	$(top_srcdir)/doc/mongoc_write_concern.7
+$(top_srcdir)/doc/mongoc_symbols.txt: $(top_srcdir)/mongoc/libmongoc.symbols
+	sed -e 's/.*/linkmongoc:&[3] +/' < $< > $@
+
+$(top_srcdir)/doc/mongoc_api.txt: $(top_srcdir)/doc/mongoc_api
+	sed -e 's/.*/linkmongoc:&[7] +/' < $< > $@
+
+MAN7 = $(MONGOC_API)
 
 MAN_DOC = $(MAN1) $(MAN3) $(MAN7)
 
@@ -32,7 +27,14 @@ endif
 
 MAINTAINERCLEANFILES = $(MAN_DOC) $(MAN_HTML)
 
-doc : $(top_srcdir)/doc/asciidoc.conf $(DOC_EXAMPLES) $(MAN_DOC) $(MAN_HTML)
+doc : \
+	$(top_srcdir)/doc/mongoc_api.txt \
+	$(top_srcdir)/doc/mongoc_symbols.txt \
+	$(top_srcdir)/doc/asciidoc.conf \
+	$(DOC_EXAMPLES) \
+	$(MAN_DOC) \
+	$(MAN_HTML)
+
 dist-hook : doc
 
 if BUILD_DOC
@@ -45,6 +47,7 @@ EXAMPLE_DIR = $(abs_top_srcdir)/examples
 	   ln -fs `basename \`readlink $<\` .txt`.html $@; \
 	else \
 	   asciidoc -d manpage -b xhtml11 -f $(top_srcdir)/doc/asciidoc.conf \
+	      -adocs=$(abs_top_srcdir)/doc \
 	      -aexamples=$(EXAMPLE_DIR) -amongoc_version=@PACKAGE_VERSION@ -o$@ $<; \
 	fi
 .txt.xml:
@@ -52,6 +55,7 @@ EXAMPLE_DIR = $(abs_top_srcdir)/examples
 	   ln -fs `basename \`readlink $<\` .txt`.xml $@; \
 	else \
 	   asciidoc -d manpage -b docbook -f $(top_srcdir)/doc/asciidoc.conf \
+	      -adocs=$(abs_top_srcdir)/doc \
 	      -aexamples=$(EXAMPLE_DIR) -amongoc_version=@PACKAGE_VERSION@ \
 	      -amongoc_manname=$(*F) -o$@ $<; \
 	fi

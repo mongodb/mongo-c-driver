@@ -1,1 +1,47 @@
-todo.txt
+mongoc_stream_cork(3)
+=====================
+
+
+NAME
+----
+mongoc_stream_cork - cork a mongoc stream
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+int
+mongoc_stream_cork (mongoc_stream_t *stream);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_stream_cork()_ function shall cork a linkmongoc:mongoc_stream[7].
+
+This is meant to mimic the affect of TCP_CORK.  I.e. avoid sending partial
+frames.  This may or may not have an implementation in any given stream type.
+
+Call linkmongoc:mongoc_stream_uncork[3] after writing your data.
+
+RETURN VALUE
+------------
+The _mongoc_stream_cork()_ function returns zero on success. On error, -1 is
+returned and 'errno' is set appropriately.
+
+ERRORS
+------
+Errors are specific to the underlying stream type.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_stream[7]
+linkmongoc:mongoc_stream_uncork[3]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.
