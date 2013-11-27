@@ -30,8 +30,7 @@ test_insert (void)
    collection = mongoc_client_get_collection(client, "test", "test");
    assert(collection);
 
-   r = mongoc_collection_drop(collection, &error);
-   assert(r);
+   mongoc_collection_drop(collection, &error);
 
    context = bson_context_new(BSON_CONTEXT_NONE);
    assert(context);
@@ -77,8 +76,7 @@ test_insert_bulk (void)
    collection = mongoc_client_get_collection(client, "test", "test");
    assert(collection);
 
-   r = mongoc_collection_drop(collection, &error);
-   assert(r);
+   mongoc_collection_drop(collection, &error);
 
    context = bson_context_new(BSON_CONTEXT_NONE);
    assert(context);
@@ -393,6 +391,7 @@ test_aggregate (void)
    bson_t b;
    bson_t match;
    bson_t pipeline;
+   bson_iter_t iter;
 
    bson_init(&b);
    bson_append_utf8(&b, "hello", -1, "world", -1);
@@ -424,13 +423,12 @@ test_aggregate (void)
    if (mongoc_cursor_error(cursor, &error)) {
       MONGOC_WARNING("%s", error.message);
    }
-   if (client->cluster.wire_version == 0) {
-      assert(!r);
-      assert(!doc);
-   } else {
-      assert(r);
-      assert(doc);
-   }
+
+   assert(r);
+   assert(doc);
+
+   assert (bson_iter_init_find (&iter, doc, "hello") &&
+           BSON_ITER_HOLDS_UTF8 (&iter));
 
    r = mongoc_cursor_next(cursor, &doc);
    if (mongoc_cursor_error(cursor, &error)) {
@@ -445,56 +443,6 @@ test_aggregate (void)
    bson_destroy(&b);
    bson_destroy(&pipeline);
    bson_destroy(&match);
-}
-
-
-static void
-test_aggregate_legacy (void)
-{
-   mongoc_collection_t *collection;
-   mongoc_client_t *client;
-   bson_error_t error;
-   bson_bool_t r;
-   bson_t b;
-   bson_t match;
-   bson_t pipeline;
-   bson_t reply;
-
-   bson_init(&b);
-   bson_append_utf8(&b, "hello", -1, "world", -1);
-
-   bson_init(&match);
-   bson_append_document(&match, "$match", -1, &b);
-
-   bson_init(&pipeline);
-   bson_append_document(&pipeline, "0", -1, &match);
-
-   client = mongoc_client_new(gTestUri);
-   assert(client);
-
-   collection = mongoc_client_get_collection(client, "test", "test");
-   assert(collection);
-
-   mongoc_collection_drop(collection, &error);
-
-   r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
-   assert(r);
-
-   r = mongoc_collection_aggregate_legacy(collection, MONGOC_QUERY_NONE, &pipeline, NULL, &reply, &error);
-   assert(r);
-
-   r = bson_has_field(&reply, "ok");
-   assert(r);
-
-   r = bson_has_field(&reply, "result");
-   assert(r);
-
-   mongoc_collection_destroy(collection);
-   mongoc_client_destroy(client);
-   bson_destroy(&b);
-   bson_destroy(&pipeline);
-   bson_destroy(&match);
-   bson_destroy(&reply);
 }
 
 
@@ -527,7 +475,6 @@ main (int   argc,
    run_test("/mongoc/collection/count", test_count);
    run_test("/mongoc/collection/drop", test_drop);
    run_test("/mongoc/collection/aggregate", test_aggregate);
-   run_test("/mongoc/collection/aggregate_legacy", test_aggregate_legacy);
 
    bson_free(gTestUri);
 

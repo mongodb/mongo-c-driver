@@ -52,6 +52,8 @@ NOINST_H_FILES = \
 	mongoc/mongoc-collection-private.h \
 	mongoc/mongoc-counters-private.h \
 	mongoc/mongoc-cursor-private.h \
+	mongoc/mongoc-cursor-array-private.h \
+	mongoc/mongoc-cursor-cursorid-private.h \
 	mongoc/mongoc-cluster-private.h \
 	mongoc/mongoc-database-private.h \
 	mongoc/mongoc-init-private.h \
@@ -84,6 +86,8 @@ libmongoc_priv_la_SOURCES = \
 	mongoc/mongoc-collection.c \
 	mongoc/mongoc-counters.c \
 	mongoc/mongoc-cursor.c \
+	mongoc/mongoc-cursor-array.c \
+	mongoc/mongoc-cursor-cursorid.c \
 	mongoc/mongoc-database.c \
 	mongoc/mongoc-init.c \
 	mongoc/mongoc-gridfs.c \

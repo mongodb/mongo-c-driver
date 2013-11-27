@@ -29,6 +29,25 @@
 BSON_BEGIN_DECLS
 
 
+typedef struct mongoc_cursor_interface
+{
+   mongoc_cursor_t * (*clone)(const mongoc_cursor_t * cursor);
+
+   void (*destroy)(mongoc_cursor_t *cursor);
+
+   bson_bool_t (*more)(mongoc_cursor_t *cursor);
+
+   bson_bool_t (*next)(mongoc_cursor_t *cursor,
+                       const bson_t   **bson);
+
+   bson_bool_t (*error)(mongoc_cursor_t *cursor,
+                        bson_error_t    *error);
+
+   void (*get_host)(mongoc_cursor_t    *cursor,
+                    mongoc_host_list_t *host);
+} mongoc_cursor_interface_t;
+
+
 struct _mongoc_cursor_t
 {
    mongoc_client_t     *client;
@@ -60,6 +79,9 @@ struct _mongoc_cursor_t
    mongoc_rpc_t         rpc;
    mongoc_buffer_t      buffer;
    bson_reader_t       *reader;
+
+   mongoc_cursor_interface_t  interface;
+   void                      *interface_data;
 };
 
 
@@ -74,7 +96,39 @@ _mongoc_cursor_new (mongoc_client_t           *client,
                     const bson_t              *query,
                     const bson_t              *fields,
                     const mongoc_read_prefs_t *read_prefs)
-   BSON_GNUC_INTERNAL;
+BSON_GNUC_INTERNAL;
+
+mongoc_cursor_t *
+_mongoc_cursor_clone (const mongoc_cursor_t *cursor)
+BSON_GNUC_INTERNAL;
+
+
+void
+_mongoc_cursor_destroy (mongoc_cursor_t *cursor)
+BSON_GNUC_INTERNAL;
+
+
+bson_bool_t
+_mongoc_cursor_more (mongoc_cursor_t *cursor)
+BSON_GNUC_INTERNAL;
+
+
+bson_bool_t
+_mongoc_cursor_next (mongoc_cursor_t  *cursor,
+                     const bson_t    **bson)
+BSON_GNUC_INTERNAL;
+
+
+bson_bool_t
+_mongoc_cursor_error (mongoc_cursor_t *cursor,
+                     bson_error_t    *error)
+BSON_GNUC_INTERNAL;
+
+
+void
+_mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
+                         mongoc_host_list_t *host)
+BSON_GNUC_INTERNAL;
 
 
 BSON_END_DECLS

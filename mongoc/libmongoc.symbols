@@ -18,7 +18,6 @@ mongoc_client_set_read_prefs
 mongoc_client_set_ssl_opts
 mongoc_client_set_write_concern
 mongoc_collection_aggregate
-mongoc_collection_aggregate_legacy
 mongoc_collection_command
 mongoc_collection_command_simple
 mongoc_collection_count

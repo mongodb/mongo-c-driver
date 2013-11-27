@@ -43,7 +43,7 @@
 
 
 #define MIN_WIRE_VERSION 0
-#define MAX_WIRE_VERSION 0
+#define MAX_WIRE_VERSION 2
 
 
 #ifndef DEFAULT_SOCKET_TIMEOUT_MSEC
@@ -113,13 +113,15 @@ _mongoc_cluster_negotiate_wire_version (mongoc_cluster_t *cluster)
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       node = &cluster->nodes[i];
 
-      if ((node->min_wire_version > max_wire_version) ||
-          (node->max_wire_version < min_wire_version)) {
-         RETURN (FALSE);
-      }
+      if (node->stream) {
+         if ((node->min_wire_version > max_wire_version) ||
+             (node->max_wire_version < min_wire_version)) {
+            RETURN (FALSE);
+         }
 
-      min_wire_version = MAX (min_wire_version, node->min_wire_version);
-      max_wire_version = MIN (max_wire_version, node->max_wire_version);
+         min_wire_version = MAX (min_wire_version, node->min_wire_version);
+         max_wire_version = MIN (max_wire_version, node->max_wire_version);
+      }
    }
 
    BSON_ASSERT (min_wire_version <= max_wire_version);

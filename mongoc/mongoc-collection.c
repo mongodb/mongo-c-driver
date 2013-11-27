@@ -21,6 +21,8 @@
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-cursor-private.h"
+#include "mongoc-cursor-cursorid-private.h"
+#include "mongoc-cursor-array-private.h"
 #include "mongoc-error.h"
 #include "mongoc-index.h"
 #include "mongoc-log.h"
@@ -150,10 +152,10 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
  *
  *       Send an "aggregate" command to the MongoDB server.
  *
- *       This function REQUIRES MongoDB 2.5.0 or higher. Sadly, there is not
- *       currently a way to auto-discover this feature. If you need
- *       support for older MongoDB versions, see
- *       mongoc_collection_aggregate_legacy().
+ *       This varies it's behavior based on the wire version.  If we're on
+ *       wire_version > 0, we use the new aggregate command, which returns a
+ *       database cursor.  On wire_version == 0, we create synthetic cursor on
+ *       top of the array returned in result.
  *
  *       This function will always return a new mongoc_cursor_t that should
  *       be freed with mongoc_cursor_destroy().
@@ -165,7 +167,7 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
  *       information on how to build aggregation pipelines.
  *
  * Requires:
- *       MongoDB >= 2.5.0
+ *       MongoDB >= 2.1.0
  *
  * Parameters:
  *       @flags: bitwise or of mongoc_query_flags_t or 0.
@@ -191,84 +193,43 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 {
    mongoc_cursor_t *cursor;
    bson_t command;
+   bson_t child;
+   bson_int32_t wire_version;
 
    bson_return_val_if_fail(collection, NULL);
    bson_return_val_if_fail(pipeline, NULL);
 
+   wire_version = collection->client->cluster.wire_version;
+
    bson_init(&command);
    bson_append_utf8(&command, "aggregate", 9,
                     collection->collection,
                     collection->collectionlen);
    bson_append_array(&command, "pipeline", 8, pipeline);
-   bson_append_int32(&command, "cursor", 6, 1);
+
+   /* for newer version, we include a cursor subdocument */
+   if (wire_version > 0) {
+      bson_append_document_begin(&command, "cursor", 6, &child);
+      bson_append_int32(&child, "batchSize", 9, 0);
+      bson_append_document_end(&command, &child);
+   }
+
    cursor = mongoc_collection_command(collection, flags, 0, -1, &command,
                                       NULL, read_prefs);
+
+   if (wire_version > 0) {
+      /* even for newer versions, we get back a cursor document, that we have
+       * to patch in */
+      _mongoc_cursor_cursorid_init(cursor);
+   } else {
+      /* for older versions we get an array that we can create a synthetic
+       * cursor on top of */
+      _mongoc_cursor_array_init(cursor);
+   }
+
    bson_destroy(&command);
 
    return cursor;
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_aggregate_legacy --
- *
- *       Support for legacy MongoDB versions that do not support commands
- *       returning cursors.
- *
- *       This function is similar to mongoc_collection_aggregate()
- *       except it returns the command document containing the "result"
- *       field for all pipeline results. This means that the result
- *       is limited to 16 Mb as that is the maximum BSON size of
- *       MongoDB (unless configured higher).
- *
- * Requires:
- *       MongoDB >= 2.1.0
- *
- * See Also:
- *       mongoc_collection_aggregate()
- *
- * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
- *
- * Side effects:
- *       @reply is always set in both success and failure cases.
- *       @error is set in case of failure.
- *
- *--------------------------------------------------------------------------
- */
-
-bson_bool_t
-mongoc_collection_aggregate_legacy (
-      mongoc_collection_t       *collection, /* IN */
-      mongoc_query_flags_t       flags,      /* IN */
-      const bson_t              *pipeline,   /* IN */
-      const mongoc_read_prefs_t *read_prefs, /* IN */
-      bson_t                    *reply,      /* OUT */
-      bson_error_t              *error)      /* OUT */
-{
-   bson_bool_t ret;
-   bson_t command;
-
-   bson_return_val_if_fail(collection, FALSE);
-   bson_return_val_if_fail(pipeline, FALSE);
-
-   bson_init(&command);
-   bson_append_utf8(&command, "aggregate", 9,
-                    collection->collection,
-                    collection->collectionlen);
-   bson_append_array(&command, "pipeline", 8, pipeline);
-
-   ret = mongoc_collection_command_simple(collection,
-                                          &command,
-                                          read_prefs,
-                                          reply,
-                                          error);
-
-   bson_destroy(&command);
-
-   return ret;
 }
 
 
@@ -770,6 +731,9 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
                          MONGOC_ERROR_INSERT,
                          code,
                          "%s", errmsg ? errmsg : "Unknown insert failure");
+
+         _mongoc_buffer_destroy (&buffer);
+
          return FALSE;
       }
 

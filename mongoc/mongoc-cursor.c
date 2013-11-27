@@ -162,6 +162,20 @@ _mongoc_cursor_kill_cursor (mongoc_cursor_t *cursor,
 void
 mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
+   BSON_ASSERT(cursor);
+
+   if (cursor->interface.destroy) {
+      cursor->interface.destroy(cursor);
+   } else {
+      _mongoc_cursor_destroy(cursor);
+   }
+
+   EXIT;
+}
+
+void
+_mongoc_cursor_destroy (mongoc_cursor_t *cursor)
+{
    ENTRY;
 
    bson_return_if_fail(cursor);
@@ -459,6 +473,24 @@ bson_bool_t
 mongoc_cursor_error (mongoc_cursor_t *cursor,
                      bson_error_t    *error)
 {
+   bson_bool_t ret;
+
+   BSON_ASSERT(cursor);
+
+   if (cursor->interface.error) {
+      ret = cursor->interface.error(cursor, error);
+   } else {
+      ret = _mongoc_cursor_error(cursor, error);
+   }
+
+   RETURN(ret);
+}
+
+
+bson_bool_t
+_mongoc_cursor_error (mongoc_cursor_t *cursor,
+                      bson_error_t    *error)
+{
    ENTRY;
 
    bson_return_val_if_fail(cursor, FALSE);
@@ -478,7 +510,26 @@ mongoc_cursor_error (mongoc_cursor_t *cursor,
 
 bson_bool_t
 mongoc_cursor_next (mongoc_cursor_t  *cursor,
-                    const bson_t    **bson)
+                     const bson_t    **bson)
+{
+   bson_bool_t ret;
+
+   BSON_ASSERT(cursor);
+   BSON_ASSERT(bson);
+
+   if (cursor->interface.next) {
+      ret = cursor->interface.next(cursor, bson);
+   } else {
+      ret = _mongoc_cursor_next(cursor, bson);
+   }
+
+   RETURN(ret);
+}
+
+
+bson_bool_t
+_mongoc_cursor_next (mongoc_cursor_t  *cursor,
+                     const bson_t    **bson)
 {
    const bson_t *b;
    bson_bool_t eof;
@@ -545,6 +596,23 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
 bson_bool_t
 mongoc_cursor_more (mongoc_cursor_t *cursor)
 {
+   bson_bool_t ret;
+
+   BSON_ASSERT(cursor);
+
+   if (cursor->interface.more) {
+      ret = cursor->interface.more(cursor);
+   } else {
+      ret = _mongoc_cursor_more(cursor);
+   }
+
+   RETURN(ret);
+}
+
+
+bson_bool_t
+_mongoc_cursor_more (mongoc_cursor_t *cursor)
+{
    bson_return_val_if_fail(cursor, FALSE);
 
    return ((!cursor->sent) || (cursor->rpc.reply.cursor_id));
@@ -554,6 +622,23 @@ mongoc_cursor_more (mongoc_cursor_t *cursor)
 void
 mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
                         mongoc_host_list_t *host)
+{
+   BSON_ASSERT(cursor);
+   BSON_ASSERT(host);
+
+   if (cursor->interface.get_host) {
+      cursor->interface.get_host(cursor, host);
+   } else {
+      _mongoc_cursor_get_host(cursor, host);
+   }
+
+   EXIT;
+}
+
+
+void
+_mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
+                         mongoc_host_list_t *host)
 {
    bson_return_if_fail(cursor);
    bson_return_if_fail(host);
@@ -573,6 +658,23 @@ mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
 
 mongoc_cursor_t *
 mongoc_cursor_clone (const mongoc_cursor_t *cursor)
+{
+   mongoc_cursor_t *ret;
+
+   BSON_ASSERT(cursor);
+
+   if (cursor->interface.clone) {
+      ret = cursor->interface.clone(cursor);
+   } else {
+      ret = _mongoc_cursor_clone(cursor);
+   }
+
+   RETURN(ret);
+}
+
+
+mongoc_cursor_t *
+_mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 {
    mongoc_cursor_t *clone;
 
