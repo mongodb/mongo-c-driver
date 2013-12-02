@@ -1045,6 +1045,10 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
       /*
        * TODO: This is actually a sharded cluster!
        */
+      if (cluster->mode != MONGOC_CLUSTER_SHARDED_CLUSTER) {
+         MONGOC_INFO ("Unexpectedly connected to sharded cluster: %s",
+                      node->host.host_and_port);
+      }
    }
 
    /*
