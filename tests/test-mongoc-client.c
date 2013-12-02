@@ -404,6 +404,8 @@ seed_rand (void)
 
    fprintf (stderr, "srand(%u)\n", seed);
    srand (seed);
+
+   close (fd);
 }
 
 
