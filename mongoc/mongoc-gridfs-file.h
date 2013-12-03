@@ -75,7 +75,7 @@ ssize_t
 mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
                           struct iovec         *iov,
                           size_t                iovcnt,
-                          ssize_t               min_bytes,
+                          size_t                min_bytes,
                           bson_uint32_t         timeout_msec);
 
 

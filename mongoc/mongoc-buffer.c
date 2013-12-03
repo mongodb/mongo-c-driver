@@ -156,7 +156,7 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
    }
 
    buf = &buffer->data[buffer->off + buffer->len];
-   ret = mongoc_stream_read(stream, buf, size, -1, timeout_msec);
+   ret = mongoc_stream_read(stream, buf, size, size, timeout_msec);
    if (ret != size) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
@@ -200,10 +200,11 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
    BSON_ASSERT(buffer->data);
    BSON_ASSERT(buffer->datalen);
 
-   min_bytes -= buffer->len;
-   if (min_bytes <= 0) {
+   if (min_bytes <= buffer->len) {
       return buffer->len;
    }
+
+   min_bytes -= buffer->len;
 
    if (buffer->len) {
       memmove(&buffer->data[0], &buffer->data[buffer->off], buffer->len);

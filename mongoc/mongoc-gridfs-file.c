@@ -349,7 +349,7 @@ ssize_t
 mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
                           struct iovec         *iov,
                           size_t                iovcnt,
-                          ssize_t               min_bytes,
+                          size_t                min_bytes,
                           bson_uint32_t         timeout_msec)
 {
    bson_uint32_t bytes_read = 0;
@@ -389,7 +389,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
          } else if (file->length == file->pos) {
             /* we're at the end of the file.  So we're done */
             RETURN (bytes_read);
-         } else if (min_bytes > -1 && bytes_read >= min_bytes) {
+         } else if (bytes_read >= min_bytes) {
             /* we need a new page, but we've read enough bytes to stop */
             RETURN (bytes_read);
          } else {

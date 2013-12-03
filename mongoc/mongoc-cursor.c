@@ -70,9 +70,15 @@ _mongoc_cursor_new (mongoc_client_t           *client,
 
    ENTRY;
 
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(db_and_collection, NULL);
-   bson_return_val_if_fail(query, NULL);
+   BSON_ASSERT(client);
+   BSON_ASSERT(db_and_collection);
+   BSON_ASSERT(query);
+
+   /* we can't have exhaust queries with limits */
+   BSON_ASSERT (!((flags & MONGOC_QUERY_EXHAUST) && limit));
+
+   /* we can't have exhaust queries with sharded clusters */
+   BSON_ASSERT (!((flags & MONGOC_QUERY_EXHAUST) && client->cluster.isdbgrid));
 
    /*
     * Cursors execute their query lazily. This sadly means that we must copy
@@ -180,7 +186,15 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
    bson_return_if_fail(cursor);
 
-   if (cursor->rpc.reply.cursor_id) {
+   if (cursor->in_exhaust) {
+      cursor->client->in_exhaust = FALSE;
+
+      if (!cursor->done) {
+         _mongoc_cluster_disconnect_node (
+            &cursor->client->cluster,
+            &cursor->client->cluster.nodes[cursor->hint - 1]);
+      }
+   } else if (cursor->rpc.reply.cursor_id) {
       _mongoc_cursor_kill_cursor(cursor, cursor->rpc.reply.cursor_id);
    }
 
@@ -361,6 +375,11 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    cursor->reader = bson_reader_new_from_data(cursor->rpc.reply.documents,
                                               cursor->rpc.reply.documents_len);
 
+   if (cursor->flags & MONGOC_QUERY_EXHAUST) {
+      cursor->in_exhaust = TRUE;
+      cursor->client->in_exhaust = TRUE;
+   }
+
    cursor->done = FALSE;
    cursor->end_of_event = FALSE;
    cursor->sent = TRUE;
@@ -382,52 +401,56 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   bson_return_val_if_fail(cursor, FALSE);
+   BSON_ASSERT(cursor);
 
-   if (!_mongoc_client_warm_up (cursor->client, &cursor->error)) {
-      cursor->failed = TRUE;
-      RETURN (FALSE);
-   }
+   if (! cursor->in_exhaust) {
+      if (!_mongoc_client_warm_up (cursor->client, &cursor->error)) {
+         cursor->failed = TRUE;
+         RETURN (FALSE);
+      }
 
-   if (!(cursor_id = cursor->rpc.reply.cursor_id)) {
-      bson_set_error(&cursor->error,
-                     MONGOC_ERROR_CURSOR,
-                     MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                     "No valid cursor was provided.");
-      goto failure;
-   }
+      if (!(cursor_id = cursor->rpc.reply.cursor_id)) {
+         bson_set_error(&cursor->error,
+                        MONGOC_ERROR_CURSOR,
+                        MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                        "No valid cursor was provided.");
+         goto failure;
+      }
 
-   rpc.get_more.msg_len = 0;
-   rpc.get_more.request_id = 0;
-   rpc.get_more.response_to = 0;
-   rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
-   rpc.get_more.zero = 0;
-   rpc.get_more.collection = cursor->ns;
-   if ((cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR)) {
-      rpc.get_more.n_return = 0;
-   } else {
+      rpc.get_more.msg_len = 0;
+      rpc.get_more.request_id = 0;
+      rpc.get_more.response_to = 0;
+      rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
+      rpc.get_more.zero = 0;
+      rpc.get_more.collection = cursor->ns;
+      if ((cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR)) {
+         rpc.get_more.n_return = 0;
+      } else {
+         /*
+          * TODO: We need to apply the limit to this so we don't
+          * overshoot our target.
+          */
+         rpc.get_more.n_return = cursor->batch_size;
+      }
+      rpc.get_more.cursor_id = cursor_id;
+
       /*
-       * TODO: We need to apply the limit to this so we don't
-       * overshoot our target.
+       * TODO: Stamp protections for disconnections.
        */
-      rpc.get_more.n_return = cursor->batch_size;
-   }
-   rpc.get_more.cursor_id = cursor_id;
 
-   /*
-    * TODO: Stamp protections for disconnections.
-    */
+      if (!_mongoc_client_sendv(cursor->client, &rpc, 1, cursor->hint,
+                                NULL, cursor->read_prefs, &cursor->error)) {
+         cursor->done = TRUE;
+         cursor->failed = TRUE;
+         RETURN(FALSE);
+      }
 
-   if (!_mongoc_client_sendv(cursor->client, &rpc, 1, cursor->hint,
-                             NULL, cursor->read_prefs, &cursor->error)) {
-      cursor->done = TRUE;
-      cursor->failed = TRUE;
-      RETURN(FALSE);
+      request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
+   } else {
+      request_id = BSON_UINT32_FROM_LE(cursor->rpc.header.request_id);
    }
 
    _mongoc_buffer_clear(&cursor->buffer, FALSE);
-
-   request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
 
    if (!_mongoc_client_recv(cursor->client,
                             &cursor->rpc,
@@ -536,7 +559,17 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
 
    ENTRY;
 
-   bson_return_val_if_fail(cursor, FALSE);
+   BSON_ASSERT(cursor);
+
+
+   if (cursor->client->in_exhaust && ! cursor->in_exhaust) {
+      bson_set_error(&cursor->error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_IN_EXHAUST,
+                     "Another cursor derived from this client is in exhaust.");
+      cursor->failed = TRUE;
+      RETURN(FALSE);
+   }
 
    if (bson) {
       *bson = NULL;
@@ -568,9 +601,11 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
    eof = FALSE;
    b = bson_reader_read(cursor->reader, &eof);
    cursor->end_of_event = eof;
-   cursor->done = (cursor->end_of_event &&
-                   !b &&
-                   !(cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR));
+
+   cursor->done = cursor->end_of_event && (
+      (cursor->in_exhaust && !cursor->rpc.reply.cursor_id) ||
+      (!b && !(cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR))
+      );
 
    /*
     * Do a supplimental check to see if we had a corrupted reply in the

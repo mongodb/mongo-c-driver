@@ -90,6 +90,7 @@ typedef struct
    bson_bool_t             requires_auth : 1;
 
    bson_int32_t            wire_version;
+   bson_bool_t             isdbgrid;
 
    mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
    mongoc_client_t        *client;
@@ -164,6 +165,15 @@ _mongoc_cluster_command_early (mongoc_cluster_t *cluster,
                                bson_error_t     *error)
    BSON_GNUC_INTERNAL;
 
+void
+_mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster,
+                                 mongoc_cluster_node_t *node)
+   BSON_GNUC_INTERNAL;
+
+bson_bool_t
+_mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
+                           bson_error_t     *error)
+   BSON_GNUC_INTERNAL;
 
 BSON_END_DECLS
 

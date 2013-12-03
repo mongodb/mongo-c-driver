@@ -60,6 +60,7 @@ struct _mongoc_cursor_t
    bson_bool_t          done         : 1;
    bson_bool_t          failed       : 1;
    bson_bool_t          end_of_event : 1;
+   bson_bool_t          in_exhaust   : 1;
 
    bson_t               query;
    bson_t               fields;

@@ -177,7 +177,7 @@ test_read (void)
    assert (file);
    assert (mongoc_gridfs_file_save (file));
 
-   r = mongoc_gridfs_file_readv (file, iov, 2, -1, 0);
+   r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
    assert (r == 20);
    assert (memcmp (iov[0].iov_base, "Bacon ipsu", 10) == 0);
    assert (memcmp (iov[1].iov_base, "m dolor si", 10) == 0);
@@ -232,7 +232,7 @@ test_write (void)
    r = mongoc_gridfs_file_tell (file);
    assert (r == 0);
 
-   r = mongoc_gridfs_file_readv (file, &riov, 1, -1, 0);
+   r = mongoc_gridfs_file_readv (file, &riov, 1, len, 0);
    assert (r == len);
    assert (memcmp (buf3, "foo bar baz", len) == 0);
 
@@ -277,7 +277,7 @@ test_stream (void)
 
    stream = mongoc_stream_gridfs_new (file);
 
-   r = mongoc_stream_readv (stream, &iov, 1, -1, 0);
+   r = mongoc_stream_readv (stream, &iov, 1, file->length, 0);
    assert (r == file->length);
 
    /* cleanup */

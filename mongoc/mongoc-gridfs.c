@@ -239,7 +239,7 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
 
    for (;; ) {
       r = mongoc_stream_read (stream, iov.iov_base, MONGOC_GRIDFS_STREAM_CHUNK,
-                              -1, 0);
+                              0, 0);
 
       if (r > 0) {
          iov.iov_len = r;

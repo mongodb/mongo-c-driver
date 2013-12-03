@@ -458,7 +458,7 @@ _mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster,
  *--------------------------------------------------------------------------
  */
 
-static void
+void
 _mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster,
                                  mongoc_cluster_node_t *node)
 {
@@ -1044,6 +1044,9 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
    if (bson_iter_init_find (&iter, &reply, "msg") &&
        BSON_ITER_HOLDS_UTF8 (&iter) &&
        (strcmp ("isdbgrid", bson_iter_utf8 (&iter, NULL)) == 0)) {
+      /* TODO: is this sufficient to detect sharded clusters? */
+
+      cluster->isdbgrid = TRUE;
       /*
        * TODO: This is actually a sharded cluster!
        */
@@ -1051,6 +1054,8 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
          MONGOC_INFO ("Unexpectedly connected to sharded cluster: %s",
                       node->host.host_and_port);
       }
+   } else {
+      cluster->isdbgrid = FALSE;
    }
 
    /*
@@ -1645,7 +1650,7 @@ _mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+bson_bool_t
 _mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
                            bson_error_t     *error)
 {

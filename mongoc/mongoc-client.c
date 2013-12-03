@@ -404,6 +404,14 @@ _mongoc_client_sendv (mongoc_client_t              *client,
    bson_return_val_if_fail(rpcs, FALSE);
    bson_return_val_if_fail(rpcs_len, FALSE);
 
+   if (client->in_exhaust) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_IN_EXHAUST,
+                     "A cursor derived from this client is in exhaust.");
+      RETURN(FALSE);
+   }
+
    for (i = 0; i < rpcs_len; i++) {
       rpcs[i].header.msg_len = 0;
       rpcs[i].header.request_id = ++client->request_id;
@@ -1073,6 +1081,8 @@ _mongoc_client_warm_up (mongoc_client_t *client,
       ret = _mongoc_cluster_command_early (&client->cluster, "admin", &cmd,
                                            NULL, error);
       bson_destroy (&cmd);
+   } else if (client->cluster.state == MONGOC_CLUSTER_STATE_DEAD) {
+      ret = _mongoc_cluster_reconnect(&client->cluster, error);
    }
 
    return ret;

@@ -2,6 +2,7 @@
 #include <mongoc.h>
 #include <unistd.h>
 
+#include "mongoc-cursor-private.h"
 #include "mongoc-tests.h"
 #include "mock-server.h"
 #include "mongoc-client-private.h"
@@ -380,6 +381,162 @@ test_mongoc_client_command (void)
 
 
 static void
+test_exhaust_cursor (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   mongoc_cursor_t *cursor2;
+   mongoc_stream_t *stream;
+   mongoc_cluster_node_t *node;
+   const bson_t *doc;
+   bson_t q;
+   bson_t b[10];
+   bson_t *bptr[10];
+   int i;
+   bson_bool_t r;
+   bson_error_t error;
+   bson_oid_t oid;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   collection = mongoc_client_get_collection(client, "test", "test");
+   assert(collection);
+
+   mongoc_collection_drop(collection, &error);
+
+   /* bulk insert some records to work on */
+   {
+      bson_init(&q);
+
+      for (i = 0; i < 10; i++) {
+         bson_init(&b[i]);
+         bson_oid_init(&oid, NULL);
+         bson_append_oid(&b[i], "_id", -1, &oid);
+         bson_append_int32(&b[i], "n", -1, i % 2);
+         bptr[i] = &b[i];
+      }
+
+      r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
+                                         (const bson_t **)bptr, 10, NULL, &error);
+
+      if (!r) {
+         MONGOC_WARNING("%s\n", error.message);
+      }
+      assert(r);
+   }
+
+   /* create a couple of cursors */
+   {
+      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, &q,
+                                       NULL, NULL);
+
+      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, &q,
+                                        NULL, NULL);
+   }
+
+   /* Read from the exhaust cursor, ensure that we're in exhaust where we
+    * should be and ensure that an early destroy properly causes a disconnect
+    * */
+   {
+      r = mongoc_cursor_next (cursor, &doc);
+      assert (r);
+      assert (doc);
+      assert (cursor->in_exhaust);
+      assert (client->in_exhaust);
+      node = &client->cluster.nodes[cursor->hint - 1];
+      stream = node->stream;
+
+      mongoc_cursor_destroy (cursor);
+      /* make sure a disconnect happened */
+      assert (stream != node->stream);
+      assert (! client->in_exhaust);
+   }
+
+   /* Grab a new exhaust cursor, then verify that reading from that cursor
+    * (putting the client into exhaust), breaks a mid-stream read from a
+    * regular cursor */
+   {
+      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, &q,
+                                       NULL, NULL);
+
+      for (i = 0; i < 5; i++) {
+         r = mongoc_cursor_next (cursor2, &doc);
+         assert (r);
+         assert (doc);
+      }
+
+      r = mongoc_cursor_next (cursor, &doc);
+      assert (r);
+      assert (doc);
+
+      doc = NULL;
+      r = mongoc_cursor_next (cursor2, &doc);
+      assert (!r);
+      assert (!doc);
+
+      mongoc_cursor_error(cursor2, &error);
+      assert (error.domain == MONGOC_ERROR_CLIENT);
+      assert (error.code == MONGOC_ERROR_CLIENT_IN_EXHAUST);
+
+      mongoc_cursor_destroy (cursor2);
+   }
+
+   /* make sure writes fail as well */
+   {
+      r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
+                                         (const bson_t **)bptr, 10, NULL, &error);
+      assert (!r);
+      assert (error.domain == MONGOC_ERROR_CLIENT);
+      assert (error.code == MONGOC_ERROR_CLIENT_IN_EXHAUST);
+   }
+
+   /* we're still in exhaust.
+    *
+    * 1. check that we can create a new cursor, as long as we don't read from it
+    * 2. fully exhaust the exhaust cursor
+    * 3. make sure that we don't disconnect at destroy
+    * 4. make sure we can read the cursor we made during the exhuast
+    */
+   {
+      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, &q,
+                                        NULL, NULL);
+
+      node = &client->cluster.nodes[cursor->hint - 1];
+      stream = node->stream;
+
+      for (i = 1; i < 10; i++) {
+         r = mongoc_cursor_next (cursor, &doc);
+         assert (r);
+         assert (doc);
+      }
+
+      r = mongoc_cursor_next (cursor, &doc);
+      assert (!r);
+      assert (!doc);
+
+      mongoc_cursor_destroy (cursor);
+
+      assert (stream == node->stream);
+
+      r = mongoc_cursor_next (cursor2, &doc);
+      assert (r);
+      assert (doc);
+   }
+
+   bson_destroy(&q);
+   for (i = 0; i < 10; i++) {
+      bson_destroy(&b[i]);
+   }
+
+   mongoc_cursor_destroy (cursor2);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 log_handler (mongoc_log_level_t  log_level,
              const char         *domain,
              const char         *message,
@@ -428,6 +585,7 @@ main (int   argc,
    run_test("/mongoc/client/authenticate_failure", test_mongoc_client_authenticate_failure);
    run_test("/mongoc/client/read_prefs", test_mongoc_client_read_prefs);
    run_test("/mongoc/client/command", test_mongoc_client_command);
+   run_test("/mongoc/client/exhaust_cursor", test_exhaust_cursor);
 
    bson_free(gTestUri);
    bson_free(gTestUriWithPassword);

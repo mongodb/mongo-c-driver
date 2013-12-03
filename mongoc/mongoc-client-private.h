@@ -45,6 +45,7 @@ struct _mongoc_client_t
    mongoc_list_t             *conns;
    mongoc_uri_t              *uri;
    mongoc_cluster_t           cluster;
+   bson_bool_t                in_exhaust;
 
    mongoc_stream_initiator_t  initiator;
    void                      *initiator_data;
