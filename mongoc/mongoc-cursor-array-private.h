@@ -20,12 +20,17 @@
 
 
 #include <bson.h>
+
 #include "mongoc-cursor-private.h"
+
 
 BSON_BEGIN_DECLS
 
+
 void
-_mongoc_cursor_array_init (mongoc_cursor_t *cursor);
+_mongoc_cursor_array_init (mongoc_cursor_t *cursor)
+   BSON_GNUC_INTERNAL;
+
 
 BSON_END_DECLS
 

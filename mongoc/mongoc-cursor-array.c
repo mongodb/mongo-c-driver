@@ -18,6 +18,7 @@
 #define _GNU_SOURCE
 
 #include "mongoc-cursor.h"
+#include "mongoc-cursor-array-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-counters-private.h"
@@ -30,7 +31,8 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cursor-array"
 
-typedef struct mongoc_cursor_array
+
+typedef struct
 {
    const bson_t       *result;
    bson_bool_t         has_array;
@@ -143,13 +145,11 @@ _mongoc_cursor_array_more (mongoc_cursor_t *cursor)
 }
 
 
-static mongoc_cursor_interface_t _mongoc_cursor_array = {
-   &_mongoc_cursor_array_clone,
-   &_mongoc_cursor_array_destroy,
-   &_mongoc_cursor_array_more,
-   &_mongoc_cursor_array_next,
-   NULL,
-   NULL,
+static mongoc_cursor_interface_t gMongocCursorArray = {
+   _mongoc_cursor_array_clone,
+   _mongoc_cursor_array_destroy,
+   _mongoc_cursor_array_more,
+   _mongoc_cursor_array_next,
 };
 
 
@@ -160,7 +160,7 @@ _mongoc_cursor_array_init (mongoc_cursor_t *cursor)
 
    cursor->interface_data = _mongoc_cursor_array_new ();
 
-   memcpy (&cursor->interface, &_mongoc_cursor_array,
+   memcpy (&cursor->interface, &gMongocCursorArray,
            sizeof (mongoc_cursor_interface_t));
 
    EXIT;

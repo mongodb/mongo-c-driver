@@ -19,6 +19,7 @@
 
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
+#include "mongoc-cursor-cursorid-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-error.h"
@@ -30,7 +31,8 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cursor-cursorid"
 
-typedef struct mongoc_cursor_cursorid
+
+typedef struct
 {
    bson_bool_t has_cursor;
 } mongoc_cursor_cursorid_t;
@@ -118,13 +120,11 @@ _mongoc_cursor_cursorid_clone (const mongoc_cursor_t *cursor)
 }
 
 
-static mongoc_cursor_interface_t _mongoc_cursor_cursorid = {
-   &_mongoc_cursor_cursorid_clone,
-   &_mongoc_cursor_cursorid_destroy,
+static mongoc_cursor_interface_t gMongocCursorCursorid = {
+   _mongoc_cursor_cursorid_clone,
+   _mongoc_cursor_cursorid_destroy,
    NULL,
-   &_mongoc_cursor_cursorid_next,
-   NULL,
-   NULL,
+   _mongoc_cursor_cursorid_next,
 };
 
 
@@ -135,7 +135,7 @@ _mongoc_cursor_cursorid_init (mongoc_cursor_t *cursor)
 
    cursor->interface_data = _mongoc_cursor_cursorid_new ();
 
-   memcpy (&cursor->interface, &_mongoc_cursor_cursorid,
+   memcpy (&cursor->interface, &gMongocCursorCursorid,
            sizeof (mongoc_cursor_interface_t));
 
    EXIT;
