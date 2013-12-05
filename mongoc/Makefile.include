@@ -66,6 +66,7 @@ NOINST_H_FILES = \
 	mongoc/mongoc-queue-private.h \
 	mongoc/mongoc-read-prefs-private.h \
 	mongoc/mongoc-rpc-private.h \
+	mongoc/mongoc-stream-private.h \
 	mongoc/mongoc-util-private.h \
 	mongoc/mongoc-trace.h \
 	mongoc/mongoc-write-concern-private.h
