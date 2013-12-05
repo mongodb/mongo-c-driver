@@ -1,0 +1,19 @@
+Libmongoc 0.90.0
+================
+
+This is the initial release of the new Libmongoc. We chose 0.90.0 for the
+release version to differentiate ourselves from the, now legacy, version of
+libmongoc. We will rapidly work towards reaching an API/ABI stable library fit
+for a 1.0.0 release.
+
+Libmongoc is Apache licensed so it can be embedded in a multitude of scenarios.
+
+The API of 0.90.0 is completely different from the previous versions. We think
+this allowed us to create a high-quality library that you will enjoy using in
+your applications.
+
+Many outstanding bugs were closed in the process of creating Libbson 0.90.0. So
+if you had a pet issue, please take a look to see if it was resolved as part of
+this effort!
+
+Thanks, and enjoy developing your applications with libmongoc!
