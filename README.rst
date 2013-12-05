@@ -5,9 +5,12 @@ libmongoc
 About
 =====
 
-This is a prototype for a new MongoDB C library.
+Libmongoc is a client library written in C for MongoDB.
 
 There are absolutely no guarantees of API/ABI stability at this point.
+But generally, we won't break API/ABI unless we have good reason.
+
+Libmongoc depends on `Libbson<https://github.com/mongodb/libbson>`_.
 
 Support / Feedback
 ==================
