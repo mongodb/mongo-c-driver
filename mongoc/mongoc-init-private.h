@@ -18,12 +18,17 @@
 #ifndef MONGOC_INIT_PRIVATE_H
 #define MONGOC_INIT_PRIVATE_H
 
+
 #include <bson.h>
+
 
 BSON_BEGIN_DECLS
 
+
 extern bson_bool_t gMongocIsInitialized;
 
+
 BSON_END_DECLS
+
 
 #endif /* MONGOC_INIT_PRIVATE_H */

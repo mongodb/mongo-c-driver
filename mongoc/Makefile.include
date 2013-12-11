@@ -117,6 +117,7 @@ endif
 
 
 libmongoc_priv_la_CPPFLAGS = \
+	-DMONGOC_COMPILATION \
 	$(BSON_CFLAGS) \
 	$(MONGOC_DEBUG_CFLAGS) \
 	$(MAINTAINER_CFLAGS) \

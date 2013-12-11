@@ -15,16 +15,26 @@
  */
 
 
+#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
+#endif
+
+
 #ifndef MONGOC_INIT_H
 #define MONGOC_INIT_H
 
+
 #include <bson.h>
 
+
 BSON_BEGIN_DECLS
+
 
 void
 mongoc_init(void);
 
+
 BSON_END_DECLS
+
 
 #endif /* MONGOC_INIT_H */

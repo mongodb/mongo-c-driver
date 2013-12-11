@@ -15,6 +15,11 @@
  */
 
 
+#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
+#endif
+
+
 #ifndef MONGOC_DATABASE_H
 #define MONGOC_DATABASE_H
 
@@ -24,6 +29,7 @@
 #include "mongoc-cursor.h"
 #include "mongoc-flags.h"
 #include "mongoc-read-prefs.h"
+#include "mongoc-write-concern.h"
 
 
 BSON_BEGIN_DECLS
