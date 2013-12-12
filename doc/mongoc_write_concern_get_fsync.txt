@@ -39,6 +39,18 @@ For more on valid values for _w_, see linkmongoc:mongoc_write_concern[7].
 
 _wtimeout_msec_ is the timeout, in milliseconds, for write acknowledgments.
 
+
+FSYNC
+-----
+
+The _fsync_ attribute has special meaning to the MongoDB server.
+The _fysnc_ attribute is *deprecated*, but for those using it, please follow the following guidelines.
+
+ * _fsync_ is identical to _journal_ if MongoDB is running with a journal.
+ * _fsync_ requests that the write be fsync()'d to disk only if _mongod_ is not running with a journal.
+ * _fsync_ cannot be used simultaneously with the _journal_ flag.
+
+
 RETURN VALUE
 ------------
 The _mongoc_write_concern_get()_ functions returns appropriate read only types.
