@@ -31,7 +31,6 @@ BSON_BEGIN_DECLS
 
 
 typedef struct _mongoc_read_prefs_t mongoc_read_prefs_t;
-typedef enum   _mongoc_read_mode_t  mongoc_read_mode_t;
 
 
 enum _mongoc_read_mode_t
@@ -43,6 +42,7 @@ enum _mongoc_read_mode_t
    MONGOC_READ_NEAREST             = (1 << 3) | MONGOC_READ_SECONDARY,
 };
 
+typedef enum   _mongoc_read_mode_t  mongoc_read_mode_t;
 
 mongoc_read_prefs_t *mongoc_read_prefs_new      (mongoc_read_mode_t         read_mode);
 mongoc_read_prefs_t *mongoc_read_prefs_copy     (const mongoc_read_prefs_t *read_prefs);
