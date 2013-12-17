@@ -519,7 +519,7 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 static bson_bool_t
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 {
-   bson_t *query, *fields, child;
+   bson_t *query, *fields, child, child2;
    const bson_t *chunk;
    const char *key;
    bson_iter_t iter;
@@ -557,10 +557,17 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       if (!file->cursor) {
          query = bson_new ();
 
-         bson_append_oid (query, "files_id", -1, &file->files_id);
-         bson_append_document_begin (query, "n", -1, &child);
-         bson_append_int32 (&child, "$gte", -1, file->pos / file->chunk_size);
-         bson_append_document_end (query, &child);
+         bson_append_document_begin(query, "$query", -1, &child);
+            bson_append_oid (&child, "files_id", -1, &file->files_id);
+
+            bson_append_document_begin (&child, "n", -1, &child2);
+               bson_append_int32 (&child2, "$gte", -1, file->pos / file->chunk_size);
+            bson_append_document_end (&child, &child2);
+         bson_append_document_end(query, &child);
+
+         bson_append_document_begin(query, "$orderby", -1, &child);
+            bson_append_int32 (&child, "n", -1, 1);
+         bson_append_document_end(query, &child);
 
          fields = bson_new ();
          bson_append_int32 (fields, "n", -1, 1);
