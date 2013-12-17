@@ -1,4 +1,5 @@
 #include <mongoc.h>
+#include <mongoc-client-private.h>
 #include <mongoc-log.h>
 
 #include "mongoc-tests.h"

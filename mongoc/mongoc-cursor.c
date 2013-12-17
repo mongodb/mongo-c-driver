@@ -506,6 +506,19 @@ mongoc_cursor_error (mongoc_cursor_t *cursor,
       ret = _mongoc_cursor_error(cursor, error);
    }
 
+   if (ret && error) {
+      /*
+       * Rewrite the error code if we are talking to an older mongod
+       * and the command was not found. It used to simply return an
+       * error code of 17 and we can synthesize 59.
+       */
+      if (cursor->is_command &&
+          (cursor->client->cluster.wire_version == 0) &&
+          (error->code == MONGOC_ERROR_PROTOCOL_ERROR)) {
+         error->code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
+      }
+   }
+
    RETURN(ret);
 }
 
@@ -533,7 +546,7 @@ _mongoc_cursor_error (mongoc_cursor_t *cursor,
 
 bson_bool_t
 mongoc_cursor_next (mongoc_cursor_t  *cursor,
-                     const bson_t    **bson)
+                    const bson_t    **bson)
 {
    bson_bool_t ret;
 
