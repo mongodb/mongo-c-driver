@@ -63,24 +63,40 @@ test_clone (void)
    client = mongoc_client_new_from_uri(uri);
    BSON_ASSERT(client);
 
+   {
+      /*
+       * Ensure test.test has a document.
+       */
+
+      mongoc_collection_t *col;
+
+      col = mongoc_client_get_collection (client, "test", "test");
+      r = mongoc_collection_insert (col, MONGOC_INSERT_NONE, &q, NULL, &error);
+      BSON_ASSERT (r);
+
+      mongoc_collection_destroy (col);
+   }
+
    cursor = _mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
                                FALSE, &q, NULL, NULL);
    BSON_ASSERT(cursor);
 
    r = mongoc_cursor_next(cursor, &doc);
-   if (!r && mongoc_cursor_error(cursor, &error)) {
+   if (!r || mongoc_cursor_error(cursor, &error)) {
       MONGOC_ERROR("%s", error.message);
       abort();
    }
+   BSON_ASSERT (doc);
 
    clone = mongoc_cursor_clone(cursor);
    BSON_ASSERT(cursor);
 
    r = mongoc_cursor_next(clone, &doc);
-   if (!r && mongoc_cursor_error(clone, &error)) {
+   if (!r || mongoc_cursor_error(clone, &error)) {
       MONGOC_ERROR("%s", error.message);
       abort();
    }
+   BSON_ASSERT (doc);
 
    mongoc_cursor_destroy(cursor);
    mongoc_cursor_destroy(clone);
