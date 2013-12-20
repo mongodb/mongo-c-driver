@@ -214,7 +214,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       bson_append_document_end(&command, &child);
    }
 
-   cursor = mongoc_collection_command(collection, flags, 0, -1, &command,
+   cursor = mongoc_collection_command(collection, flags, 0, 1, 0, &command,
                                       NULL, read_prefs);
 
    if (wire_version > 0) {
@@ -258,6 +258,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
  *       @flags: A bitwise or of mongoc_query_flags_t.
  *       @skip: The number of documents to skip.
  *       @limit: The maximum number of items.
+ *       @batch_size: The batch size
  *       @query: The query to locate matching documents.
  *       @fields: The fields to return, or NULL for all fields.
  *       @read_prefs: Read preferences to choose cluster node.
@@ -280,6 +281,7 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
                         mongoc_query_flags_t       flags,      /* IN */
                         bson_uint32_t              skip,       /* IN */
                         bson_uint32_t              limit,      /* IN */
+                        bson_uint32_t              batch_size, /* IN */
                         const bson_t              *query,      /* IN */
                         const bson_t              *fields,     /* IN */
                         const mongoc_read_prefs_t *read_prefs) /* IN */
@@ -292,7 +294,7 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
    }
 
    return _mongoc_cursor_new(collection->client, collection->ns, flags, skip,
-                             limit, 0, FALSE, query, fields, read_prefs);
+                             limit, batch_size, FALSE, query, fields, read_prefs);
 }
 
 
@@ -310,7 +312,8 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
  *       @collection: A mongoc_collection_t.
  *       @flags: Bitwise-or'd flags for command.
  *       @skip: Number of documents to skip, typically 0.
- *       @n_return: Number of documents to return, typically 1.
+ *       @limit : Number of documents to return
+ *       @batch_size : Batch size
  *       @query: The command to execute.
  *       @fields: The fields to return, or NULL.
  *       @read_prefs: Command read preferences or NULL.
@@ -328,7 +331,8 @@ mongoc_cursor_t *
 mongoc_collection_command (mongoc_collection_t       *collection,
                            mongoc_query_flags_t       flags,
                            bson_uint32_t              skip,
-                           bson_uint32_t              n_return,
+                           bson_uint32_t              limit,
+                           bson_uint32_t              batch_size,
                            const bson_t              *query,
                            const bson_t              *fields,
                            const mongoc_read_prefs_t *read_prefs)
@@ -341,7 +345,7 @@ mongoc_collection_command (mongoc_collection_t       *collection,
    }
 
    return mongoc_client_command (collection->client, collection->db, flags,
-                                 skip, n_return, query, fields, read_prefs);
+                                 skip, limit, batch_size, query, fields, read_prefs);
 }
 
 bson_bool_t

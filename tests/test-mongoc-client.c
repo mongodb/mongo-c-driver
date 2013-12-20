@@ -39,6 +39,7 @@ get_version_hex (mongoc_client_t *client)
                                      MONGOC_QUERY_NONE,
                                      0,
                                      1,
+                                     0,
                                      &cmd,
                                      NULL,
                                      NULL);
@@ -112,7 +113,7 @@ test_mongoc_client_authenticate (void)
    bson_init(&q);
    client = mongoc_client_new(gTestUriWithPassword);
    collection = mongoc_client_get_collection(client, "test", "test");
-   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1,
+   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    if (!r) {
@@ -143,7 +144,7 @@ test_mongoc_client_authenticate_failure (void)
    bson_init(&q);
    client = mongoc_client_new(gTestUriWithBadPassword);
    collection = mongoc_client_get_collection(client, "test", "test");
-   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1,
+   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    assert(!r);
@@ -188,6 +189,7 @@ test_wire_version (void)
                                     MONGOC_QUERY_NONE,
                                     0,
                                     1,
+                                    0,
                                     &q,
                                     NULL,
                                     NULL);
@@ -330,6 +332,7 @@ test_mongoc_client_read_prefs (void)
                                     MONGOC_QUERY_NONE,
                                     0,
                                     1,
+                                    0,
                                     &q,
                                     NULL,
                                     read_prefs);
@@ -364,7 +367,7 @@ test_mongoc_client_command (void)
 
    bson_append_int32 (&cmd, "ping", 4, 1);
 
-   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, &cmd, NULL, NULL);
+   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, NULL);
 
    r = mongoc_cursor_next (cursor, &doc);
    assert (r);
@@ -429,10 +432,10 @@ test_exhaust_cursor (void)
 
    /* create a couple of cursors */
    {
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, &q,
+      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q,
                                        NULL, NULL);
 
-      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, &q,
+      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
                                         NULL, NULL);
    }
 
@@ -458,7 +461,7 @@ test_exhaust_cursor (void)
     * (putting the client into exhaust), breaks a mid-stream read from a
     * regular cursor */
    {
-      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, &q,
+      cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q,
                                        NULL, NULL);
 
       for (i = 0; i < 5; i++) {
@@ -500,7 +503,7 @@ test_exhaust_cursor (void)
     * 4. make sure we can read the cursor we made during the exhuast
     */
    {
-      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, &q,
+      cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
                                         NULL, NULL);
 
       node = &client->cluster.nodes[cursor->hint - 1];

@@ -32,6 +32,7 @@ main (int   argc,
                                     MONGOC_QUERY_NONE,
                                     0,
                                     0,
+                                    0,
                                     &query,
                                     NULL,  /* Fields, NULL for all. */
                                     NULL); /* Read Prefs, NULL for default */

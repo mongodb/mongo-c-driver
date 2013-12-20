@@ -21,6 +21,7 @@ query_collection (mongoc_collection_t *col)
                                    MONGOC_QUERY_NONE,
                                    0,
                                    0,
+                                   0,
                                    &q,
                                    NULL,
                                    NULL);

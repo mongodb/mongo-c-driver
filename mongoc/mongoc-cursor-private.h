@@ -70,6 +70,7 @@ struct _mongoc_cursor_t
    mongoc_query_flags_t flags;
    bson_uint32_t        skip;
    bson_uint32_t        limit;
+   bson_uint32_t        count;
    bson_uint32_t        batch_size;
 
    char                 ns[140];

@@ -21,7 +21,7 @@ ping (mongoc_database_t *db,
    const bson_t *b;
    bson_error_t error;
 
-   cursor = mongoc_database_command(db, MONGOC_QUERY_NONE, 0, 1, cmd, NULL, NULL);
+   cursor = mongoc_database_command(db, MONGOC_QUERY_NONE, 0, 1, 0, cmd, NULL, NULL);
    while (mongoc_cursor_next(cursor, &b)) {
       BSON_ASSERT(b);
       print_doc(b);
@@ -41,7 +41,7 @@ fetch (mongoc_collection_t *col,
    const bson_t *b;
    bson_error_t error;
 
-   cursor = mongoc_collection_find(col, MONGOC_QUERY_NONE, 0, 0, spec, NULL, NULL);
+   cursor = mongoc_collection_find(col, MONGOC_QUERY_NONE, 0, 0, 0, spec, NULL, NULL);
    while (mongoc_cursor_next(cursor, &b)) {
       BSON_ASSERT(b);
       print_doc(b);

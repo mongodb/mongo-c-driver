@@ -425,6 +425,7 @@ again:
                                     MONGOC_QUERY_NONE,
                                     0,
                                     1,
+                                    0,
                                     &cmd,
                                     NULL,
                                     NULL);
@@ -553,6 +554,7 @@ ha_replica_set_get_status (ha_replica_set_t *replica_set,
                                             MONGOC_QUERY_SLAVE_OK,
                                             0,
                                             1,
+                                            0,
                                             &cmd,
                                             NULL,
                                             NULL))) {

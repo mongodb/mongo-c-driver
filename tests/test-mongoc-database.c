@@ -75,7 +75,7 @@ test_command (void)
     */
    bson_append_int32 (&cmd, "ping", 4, 1);
 
-   cursor = mongoc_database_command (database, MONGOC_QUERY_NONE, 0, 1, &cmd, NULL, NULL);
+   cursor = mongoc_database_command (database, MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, NULL);
    assert (cursor);
 
    r = mongoc_cursor_next (cursor, &doc);

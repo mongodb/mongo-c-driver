@@ -32,7 +32,7 @@ main (int   argc,
    bson_init(&ping);
    bson_append_int32(&ping, "ping", 4, 1);
    database = mongoc_client_get_database(client, "test");
-   cursor = mongoc_database_command(database, 0, 0, 1, &ping, NULL, NULL);
+   cursor = mongoc_database_command(database, 0, 0, 1, 0, &ping, NULL, NULL);
    if (mongoc_cursor_next(cursor, &reply)) {
       str = bson_as_json(reply, NULL);
       fprintf(stdout, "%s\n", str);

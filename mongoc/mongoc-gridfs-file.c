@@ -576,7 +576,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 
          /* find all chunks greater than or equal to our current file pos */
          file->cursor = mongoc_collection_find (file->gridfs->chunks,
-                                                MONGOC_QUERY_NONE, 0, 0, query,
+                                                MONGOC_QUERY_NONE, 0, 0, 0, query,
                                                 fields, NULL);
 
          file->cursor_range[0] = n;

@@ -37,6 +37,7 @@ query_collection (mongoc_collection_t *collection,
                                     MONGOC_QUERY_SLAVE_OK),
                                    0,
                                    0,
+                                   0,
                                    &query,
                                    NULL,
                                    NULL);

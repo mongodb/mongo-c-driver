@@ -40,7 +40,7 @@ _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
    mongoc_gridfs_file_list_t *list;
    mongoc_cursor_t *cursor;
 
-   cursor = mongoc_collection_find (gridfs->files, MONGOC_QUERY_NONE, 0, limit,
+   cursor = mongoc_collection_find (gridfs->files, MONGOC_QUERY_NONE, 0, limit, 0,
                                     query, NULL, NULL);
 
    BSON_ASSERT (cursor);

@@ -131,6 +131,7 @@ test1 (void)
                                    MONGOC_QUERY_NONE,
                                    0,
                                    100,
+                                   0,
                                    &q,
                                    NULL,
                                    read_prefs);
@@ -248,6 +249,7 @@ test2 (void)
                                    MONGOC_QUERY_NONE,
                                    0,
                                    100,
+                                   0,
                                    &q,
                                    NULL,
                                    read_prefs);

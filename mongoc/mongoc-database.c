@@ -123,7 +123,8 @@ mongoc_cursor_t *
 mongoc_database_command (mongoc_database_t         *database,
                          mongoc_query_flags_t       flags,
                          bson_uint32_t              skip,
-                         bson_uint32_t              n_return,
+                         bson_uint32_t              limit,
+                         bson_uint32_t              batch_size,
                          const bson_t              *command,
                          const bson_t              *fields,
                          const mongoc_read_prefs_t *read_prefs)
@@ -136,7 +137,7 @@ mongoc_database_command (mongoc_database_t         *database,
    }
 
    return mongoc_client_command (database->client, database->name, flags, skip,
-                                 n_return, command, fields, read_prefs);
+                                 limit, batch_size, command, fields, read_prefs);
 }
 
 
@@ -253,7 +254,7 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
     */
    bson_init(&query);
    bson_append_utf8(&query, "user", 4, username, -1);
-   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1,
+   cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &query, NULL, NULL);
    if (!mongoc_cursor_next(cursor, &doc)) {
       if (mongoc_cursor_error(cursor, error)) {
@@ -495,7 +496,7 @@ mongoc_database_has_collection (mongoc_database_t *database,
    collection = mongoc_client_get_collection (database->client,
                                               database->name,
                                               "system.namespaces");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 100, &q,
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
                                     NULL, read_prefs);
 
    while (!mongoc_cursor_error (cursor, error) &&

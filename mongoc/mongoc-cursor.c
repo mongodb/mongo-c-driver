@@ -50,6 +50,32 @@ _mongoc_cursor_get_read_mode_string (mongoc_read_mode_t mode)
    }
 }
 
+static bson_int32_t
+_mongoc_n_return (mongoc_cursor_t * cursor)
+{
+   /* by default, use the batch size */
+   bson_uint32_t r = cursor->batch_size;
+
+   /* if we have a limit */
+   if (cursor->limit) {
+      /* calculate remaining */
+      bson_uint32_t remaining = cursor->limit - cursor->count;
+
+      /* if we had a batch size */
+      if (r) {
+         /* use min of batch or remaining */
+         r = MIN(r, remaining);
+      } else {
+         /* if we didn't, just use the remaining */
+         r = remaining;
+      }
+
+      r = -r;
+   }
+
+   return r;
+}
+
 mongoc_cursor_t *
 _mongoc_cursor_new (mongoc_client_t           *client,
                     const char                *db_and_collection,
@@ -94,7 +120,8 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    cursor->flags = flags;
    cursor->skip = skip;
    cursor->limit = limit;
-   cursor->batch_size = batch_size ? batch_size : limit;
+   cursor->batch_size = cursor->batch_size;
+
    cursor->is_command = is_command;
 
    if (!bson_has_field (query, "$query")) {
@@ -280,12 +307,17 @@ _mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
       }
       RETURN(TRUE);
    } else if (cursor->is_command) {
-      if (!_mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b) ||
-          !bson_iter_init_find(&iter, &b, "ok") ||
-          !bson_iter_as_bool(&iter)) {
-         _mongoc_cursor_populate_error(cursor, &b, &cursor->error);
-         bson_destroy(&b);
-         RETURN(TRUE);
+      if (_mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b)) {
+         if ( bson_iter_init_find(&iter, &b, "ok") &&
+              bson_iter_as_bool(&iter)) {
+            return FALSE;
+         } else {
+            _mongoc_cursor_populate_error(cursor, &b, &cursor->error);
+            bson_destroy(&b);
+            return TRUE;
+         }
+      } else {
+         return TRUE;
       }
    }
 
@@ -327,7 +359,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    if ((cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR)) {
       rpc.query.n_return = 0;
    } else {
-      rpc.query.n_return = cursor->limit;
+      rpc.query.n_return = _mongoc_n_return(cursor);
    }
    rpc.query.query = bson_get_data(&cursor->query);
    rpc.query.fields = bson_get_data(&cursor->fields);
@@ -426,11 +458,7 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       if ((cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR)) {
          rpc.get_more.n_return = 0;
       } else {
-         /*
-          * TODO: We need to apply the limit to this so we don't
-          * overshoot our target.
-          */
-         rpc.get_more.n_return = cursor->batch_size;
+         rpc.get_more.n_return = _mongoc_n_return(cursor);
       }
       rpc.get_more.cursor_id = cursor_id;
 
@@ -559,6 +587,8 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
       ret = _mongoc_cursor_next(cursor, bson);
    }
 
+   cursor->count++;
+
    RETURN(ret);
 }
 
@@ -586,6 +616,10 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
 
    if (bson) {
       *bson = NULL;
+   }
+
+   if (cursor->limit && cursor->count >= cursor->limit) {
+      return FALSE;
    }
 
    /*
@@ -737,6 +771,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
    clone->flags = cursor->flags;
    clone->skip = cursor->skip;
    clone->batch_size = cursor->batch_size;
+   clone->limit = cursor->limit;
    clone->nslen = cursor->nslen;
 
    if (cursor->read_prefs) {

@@ -1094,7 +1094,8 @@ mongoc_client_command (mongoc_client_t           *client,
                        const char                *db_name,
                        mongoc_query_flags_t       flags,
                        bson_uint32_t              skip,
-                       bson_uint32_t              n_return,
+                       bson_uint32_t              limit,
+                       bson_uint32_t              batch_size,
                        const bson_t              *query,
                        const bson_t              *fields,
                        const mongoc_read_prefs_t *read_prefs)
@@ -1112,7 +1113,7 @@ mongoc_client_command (mongoc_client_t           *client,
    snprintf (ns, sizeof ns, "%s.$cmd", db_name);
    ns[sizeof ns - 1] = '\0';
 
-   return _mongoc_cursor_new (client, ns, flags, skip, n_return, 100, TRUE,
+   return _mongoc_cursor_new (client, ns, flags, skip, limit, batch_size, TRUE,
                               query, fields, read_prefs);
 }
 
@@ -1157,7 +1158,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
    BSON_ASSERT (db_name);
    BSON_ASSERT (command);
 
-   cursor = mongoc_client_command (client, db_name, MONGOC_QUERY_NONE, 0, 1,
+   cursor = mongoc_client_command (client, db_name, MONGOC_QUERY_NONE, 0, 1, 0,
                                    command, NULL, read_prefs);
 
    ret = mongoc_cursor_next (cursor, &doc);
