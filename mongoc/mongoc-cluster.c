@@ -374,7 +374,9 @@ _mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
    }
 
    bson_destroy(&node->tags);
+
    bson_free(node->replSet);
+   node->replSet = NULL;
 
    EXIT;
 }
@@ -1368,13 +1370,15 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
    const mongoc_host_list_t *hosts;
    const mongoc_host_list_t *iter;
    mongoc_cluster_node_t node;
+   mongoc_cluster_node_t saved_nodes [MONGOC_CLUSTER_MAX_NODES];
    mongoc_host_list_t host;
    mongoc_stream_t *stream;
    mongoc_list_t *list;
    mongoc_list_t *liter;
-   bson_uint32_t i;
    bson_int32_t ping;
    const char *replSet;
+   int i;
+   int j;
 
    ENTRY;
 
@@ -1459,6 +1463,22 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
    list = cluster->peers;
    cluster->peers = NULL;
 
+   /*
+    * To avoid reconnecting to all of the peers, we will save the
+    * functional connections (and save their ping times) so that
+    * we don't waste time doing that again.
+    */
+
+   memset (saved_nodes, 0, sizeof saved_nodes);
+
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      if (cluster->nodes [i].stream) {
+         saved_nodes [i].host = cluster->nodes [i].host;
+         saved_nodes [i].stream = cluster->nodes [i].stream;
+         cluster->nodes [i].stream = NULL;
+      }
+   }
+
    for (liter = list, i = 0;
         liter && (i < MONGOC_CLUSTER_MAX_NODES);
         liter = liter->next) {
@@ -1469,10 +1489,23 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
          continue;
       }
 
-      stream = _mongoc_client_create_stream (cluster->client, &host, error);
+      stream = NULL;
+
+      for (j = 0; j < MONGOC_CLUSTER_MAX_NODES; j++) {
+         if (0 == strcmp (saved_nodes [j].host.host_and_port,
+                          host.host_and_port)) {
+            stream = saved_nodes [j].stream;
+            saved_nodes [j].stream = NULL;
+         }
+      }
+
       if (!stream) {
-         MONGOC_WARNING("Failed connection to %s", host.host_and_port);
-         continue;
+         stream = _mongoc_client_create_stream (cluster->client, &host, error);
+
+         if (!stream) {
+            MONGOC_WARNING("Failed connection to %s", host.host_and_port);
+            continue;
+         }
       }
 
       _mongoc_cluster_node_init(&cluster->nodes[i]);
@@ -1520,6 +1553,17 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
 
    _mongoc_list_foreach(list, (void *)bson_free, NULL);
    _mongoc_list_destroy(list);
+
+   /*
+    * Cleanup all potential saved connections that were not used.
+    */
+
+   for (j = 0; j < MONGOC_CLUSTER_MAX_NODES; j++) {
+      if (saved_nodes [j].stream) {
+         mongoc_stream_destroy (saved_nodes [j].stream);
+         saved_nodes [j].stream = NULL;
+      }
+   }
 
    if (i == 0) {
       bson_set_error(error,
