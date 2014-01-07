@@ -12,8 +12,8 @@ But generally, we won't break API/ABI unless we have good reason.
 
 Libmongoc depends on `Libbson <https://github.com/mongodb/libbson>`_.
 
-If you are looking for the legacy C driver, it can be found at
-`mongo-c-driver-legacy <https://github.com/mongodb/mongo-c-driver-legacy>`_.
+If you are looking for the legacy C driver, it can be found in the
+`legacy branch <https://github.com/mongodb/mongo-c-driver/tree/legacy>`_.
 
 Support / Feedback
 ==================
