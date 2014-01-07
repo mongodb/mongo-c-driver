@@ -32,9 +32,3 @@ mongoc_tail_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 mongoc_tail_LDADD = libmongoc-1.0.la $(BSON_LIBS)
 
 
-if HAVE_CLANG
-noinst_PROGRAMS += index-source
-index_source_SOURCES = $(top_srcdir)/examples/index-source.c
-index_source_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
-index_source_LDADD = libmongoc-1.0.la -lclang $(BSON_LIBS)
-endif

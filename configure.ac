@@ -203,16 +203,6 @@ AC_SUBST([SHM_LIB])
 
 
 dnl **************************************************************************
-dnl Check for optional components for examples.
-dnl **************************************************************************
-AC_CHECK_LIB([clang],
-	     [clang_createIndex],
-	     [enable_libclang=yes],
-	     [enable_libclang=no])
-AM_CONDITIONAL(HAVE_CLANG, test "x$enable_libclang" = "xyes")
-
-
-dnl **************************************************************************
 dnl Enable extra debugging options
 dnl **************************************************************************
 m4_define([debug_default],
@@ -328,8 +318,8 @@ echo "  SSL .......................: ${enable_ssl}"
 echo ""
 echo "Examples"
 echo ""
-echo "  index-source ..............: ${enable_libclang}"
 echo "  mongoc-ping ...............: yes"
+echo "  mongoc-tail ...............: yes"
 echo ""
 echo "Bindings"
 echo ""
