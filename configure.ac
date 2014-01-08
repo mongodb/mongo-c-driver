@@ -162,6 +162,18 @@ PKG_CHECK_MODULES(BSON, libbson-1.0 >= 0.4.0)
 
 
 dnl **************************************************************************
+dnl Optionally check for SASL
+dnl **************************************************************************
+PKG_CHECK_MODULES(SASL, libsasl2 >= 2.1.6, enable_sasl=yes, enable_sasl=no)
+AM_CONDITIONAL(HAVE_SASL, [test "$enable_sasl" = "yes"])
+MONGOC_ENABLE_SASL=0
+if test "x$enable_sasl" = "xyes"; then
+	MONGOC_ENABLE_SASL=1
+fi
+AC_SUBST([MONGOC_ENABLE_SASL])
+
+
+dnl **************************************************************************
 dnl Optionally check for OpenSSL to support TLS streams.
 dnl **************************************************************************
 PKG_CHECK_MODULES(SSL,  openssl, [enable_ssl=yes], [enable_ssl=no])
@@ -315,6 +327,7 @@ echo "  Debug Level ...............: ${enable_debug}"
 echo "  Maintainer ................: ${enable_maintainer_flags}"
 echo "  CFLAGS ....................: ${CFLAGS}"
 echo "  SSL .......................: ${enable_ssl}"
+echo "  SASL ......................: ${enable_sasl}"
 echo ""
 echo "Examples"
 echo ""

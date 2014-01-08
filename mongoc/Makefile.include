@@ -66,13 +66,18 @@ NOINST_H_FILES = \
 	mongoc/mongoc-queue-private.h \
 	mongoc/mongoc-read-prefs-private.h \
 	mongoc/mongoc-rpc-private.h \
+	mongoc/mongoc-sasl-private.h \
 	mongoc/mongoc-stream-private.h \
 	mongoc/mongoc-util-private.h \
 	mongoc/mongoc-trace.h \
 	mongoc/mongoc-write-concern-private.h
+
 if HAVE_SSL
-NOINST_H_FILES += \
-        mongoc/mongoc-ssl-private.h
+NOINST_H_FILES += mongoc/mongoc-ssl-private.h
+endif
+
+if HAVE_SASL
+NOINST_H_FILES += mongoc/mongoc-sasl-private.h
 endif
 
 
@@ -115,19 +120,25 @@ libmongoc_priv_la_SOURCES += \
 	mongoc/mongoc-ssl.c
 endif
 
+if HAVE_SASL
+libmongoc_priv_la_SOURCES += mongoc/mongoc-sasl.c
+endif
+
 
 libmongoc_priv_la_CPPFLAGS = \
 	-DMONGOC_COMPILATION \
 	$(BSON_CFLAGS) \
 	$(MONGOC_DEBUG_CFLAGS) \
 	$(MAINTAINER_CFLAGS) \
-	$(SSL_CFLAGS)
+	$(SSL_CFLAGS) \
+	$(SASL_CFLAGS)
 
 
 libmongoc_priv_la_LIBADD = \
 	$(BSON_LIBS) \
 	$(SHM_LIB) \
-	$(SSL_LIBS)
+	$(SSL_LIBS) \
+	$(SASL_LIBS)
 
 
 libmongoc_1_0_la_SOURCES = 

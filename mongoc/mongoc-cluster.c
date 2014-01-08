@@ -550,7 +550,8 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
    cluster->sec_latency_ms = 15;
    cluster->max_msg_size = 1024 * 1024 * 48;
    cluster->max_bson_size = 1024 * 1024 * 16;
-   cluster->requires_auth = !!mongoc_uri_get_username(uri);
+   cluster->requires_auth = (mongoc_uri_get_username (uri) ||
+                             mongoc_uri_get_mechanism (uri));
    cluster->sockettimeoutms = sockettimeoutms;
    cluster->wire_version = MAX_WIRE_VERSION;
 
@@ -1142,10 +1143,12 @@ _mongoc_cluster_ping_node (mongoc_cluster_t      *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_auth_node --
+ * _mongoc_cluster_auth_node_cr --
  *
  *       Performs authentication of @node using the credentials provided
  *       when configuring the @cluster instance.
+ *
+ *       This is the Challenge-Response mode of authentication.
  *
  * Returns:
  *       TRUE if authentication was successful; otherwise FALSE and
@@ -1158,9 +1161,9 @@ _mongoc_cluster_ping_node (mongoc_cluster_t      *cluster,
  */
 
 static bson_bool_t
-_mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
-                           mongoc_cluster_node_t *node,
-                           bson_error_t          *error)
+_mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
+                              mongoc_cluster_node_t *node,
+                              bson_error_t          *error)
 {
    bson_iter_t iter;
    const char *auth_source;
@@ -1246,6 +1249,153 @@ _mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
    mongoc_counter_auth_success_inc();
 
    RETURN(TRUE);
+}
+
+
+#ifdef MONGOC_ENABLE_SASL
+static bson_bool_t
+_mongoc_cluster_auth_node_gssapi (mongoc_cluster_t      *cluster,
+                                  mongoc_cluster_node_t *node,
+                                  bson_error_t          *error)
+{
+   return FALSE;
+}
+#endif
+
+
+#ifdef MONGOC_ENABLE_SASL
+static bson_bool_t
+_mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
+                                 mongoc_cluster_node_t *node,
+                                 bson_error_t          *error)
+{
+   char buf[4096];
+   unsigned buflen = 0;
+   bson_iter_t iter;
+   const char *username;
+   const char *password;
+   const char *errmsg = "Unknown authentication error.";
+   bson_t b = BSON_INITIALIZER;
+   bson_t reply;
+   size_t len;
+   char *str;
+   int ret;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (node);
+
+   username = mongoc_uri_get_username (cluster->uri);
+   if (!username) {
+      username = "";
+   }
+
+   password = mongoc_uri_get_password (cluster->uri);
+   if (!password) {
+      password = "";
+   }
+
+   str = bson_strdup_printf ("%c%s%c%s", '\0', username, '\0', password);
+   len = strlen (username) + strlen (password) + 2;
+   ret = sasl_encode64 (str, len, buf, sizeof buf, &buflen);
+   bson_free (str);
+
+   if (ret != SASL_OK) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "sasl_encode64() returned %d.",
+                      ret);
+      return FALSE;
+   }
+
+   BSON_APPEND_INT32 (&b, "saslStart", 1);
+   BSON_APPEND_UTF8 (&b, "mechanism", "PLAIN");
+   BSON_APPEND_BINARY (&b, "payload", BSON_SUBTYPE_BINARY, buf, buflen);
+   BSON_APPEND_INT32 (&b, "autoAuthorize", 1);
+
+   if (!_mongoc_cluster_run_command (cluster, node, "$external", &b, &reply, error)) {
+      bson_destroy (&b);
+      return FALSE;
+   }
+
+   bson_destroy (&b);
+
+   if (!bson_iter_init_find_case (&iter, &reply, "ok") ||
+       !bson_iter_as_bool (&iter)) {
+      if (bson_iter_init_find_case (&iter, &reply, "errmsg") &&
+          BSON_ITER_HOLDS_UTF8 (&iter)) {
+         errmsg = bson_iter_utf8 (&iter, NULL);
+      }
+      bson_destroy (&reply);
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "%s", errmsg);
+      return FALSE;
+   }
+
+   bson_destroy (&reply);
+
+   return TRUE;
+}
+#endif
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_auth_node --
+ *
+ *       Authenticate a cluster node depending on the required mechanism.
+ *
+ * Returns:
+ *       TRUE if authenticated. FALSE on failure and @error is set.
+ *
+ * Side effects:
+ *       @error is set on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bson_bool_t
+_mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
+                           mongoc_cluster_node_t *node,
+                           bson_error_t          *error)
+{
+   const char *mechanism;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (node);
+
+   mechanism = mongoc_uri_get_mechanism (cluster->uri);
+
+   if (!mechanism) {
+      mechanism = "MONGODB-CR";
+   }
+
+   if (0 == strcasecmp (mechanism, "MONGODB-CR")) {
+      return _mongoc_cluster_auth_node_cr (cluster, node, error);
+   } else if (0 == strcasecmp (mechanism, "MONGODB-X509")) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "X509 authentication is not yet supported.");
+      return FALSE;
+#ifdef MONGOC_ENABLE_SASL
+   } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
+      return _mongoc_cluster_auth_node_gssapi (cluster, node, error);
+   } else if (0 == strcasecmp (mechanism, "PLAIN")) {
+      return _mongoc_cluster_auth_node_plain (cluster, node, error);
+#endif /* MONGOC_ENABLE_SASL */
+   }
+
+   bson_set_error (error,
+                   MONGOC_ERROR_CLIENT,
+                   MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                   "The authentication mechanism \"%s\" is not supported.",
+                   mechanism);
+
+   return FALSE;
 }
 
 
