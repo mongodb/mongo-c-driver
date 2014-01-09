@@ -22,6 +22,7 @@
 #include "mongoc-cluster-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-counters-private.h"
+#include "mongoc-config.h"
 #include "mongoc-error.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
@@ -31,6 +32,11 @@
 #include "mongoc-util-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-write-concern-private.h"
+
+
+#ifdef MONGOC_ENABLE_SASL
+#include <sasl/sasl.h>
+#endif
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -1253,12 +1259,236 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
 
 
 #ifdef MONGOC_ENABLE_SASL
+static void
+_mongoc_cluster_sasl_init (void)
+{
+   sasl_client_init (NULL);
+}
+#endif
+
+
+#ifdef MONGOC_ENABLE_SASL
 static bson_bool_t
 _mongoc_cluster_auth_node_gssapi (mongoc_cluster_t      *cluster,
                                   mongoc_cluster_node_t *node,
                                   bson_error_t          *error)
 {
-   return FALSE;
+   static pthread_once_t once = PTHREAD_ONCE_INIT;
+   char payload[4096];
+   sasl_interact_t *interact = NULL;
+   const bson_t *options;
+   bson_int32_t conv_id = 0;
+   sasl_conn_t *conn = NULL;
+   bson_iter_t iter;
+   bson_bool_t ret = FALSE;
+   bson_bool_t is_continue = FALSE;
+   const char *mechanism = "GSSAPI";
+   const char *service_name = "mongodb";
+   const char *errmsg;
+   const char *raw = NULL;
+   unsigned payload_len = 0;
+   unsigned raw_len = 0;
+   bson_t cmd;
+   bson_t reply;
+   int status;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (node);
+
+#if 0
+   /* TODO: Look at threading requirements for SASL. */
+   pthread_once (&once, _mongoc_cluster_sasl_init);
+#else
+   _mongoc_cluster_sasl_init ();
+#endif
+
+   options = mongoc_uri_get_options (cluster->uri);
+
+   if (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      service_name = bson_iter_utf8 (&iter, NULL);
+   }
+
+   status = sasl_client_new (service_name, node->host.host,
+                             NULL, NULL, NULL, 0, &conn);
+
+   if (status != SASL_OK) {
+      switch (status) {
+      case SASL_NOMEM:
+         errmsg = "Not enough memory for SASL client.";
+         break;
+      case SASL_NOMECH:
+         errmsg = "No mechanism meets SASL requirement.";
+         break;
+      case SASL_BADPARAM:
+         errmsg = "SASL programming error, please report this "
+                  "error to the mongo-c-driver github issues.";
+         break;
+      default:
+         errmsg = "Unknown SASL initialization error.";
+         break;
+      }
+
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "%s", errmsg);
+
+      goto failure;
+   }
+
+   status = sasl_client_start (conn, mechanism, &interact, &raw, &raw_len,
+                               &mechanism);
+
+   if (status < 0) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "%s",
+                      sasl_errdetail (conn));
+      goto failure;
+   }
+
+   if ((status != SASL_CONTINUE) || (0 != strcmp (mechanism, "GSSAPI"))) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "Could not negotiate SASL mechanism.");
+      goto failure;
+   }
+
+   status = sasl_encode64 (raw, raw_len, payload, sizeof payload, &payload_len);
+
+   if (status < 0) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "%s",
+                      sasl_errdetail (conn));
+      goto failure;
+   }
+
+again:
+   bson_init (&cmd);
+
+   if (!is_continue) {
+      BSON_APPEND_INT32 (&cmd, "saslStart", 1);
+      BSON_APPEND_UTF8 (&cmd, "mechanism", "GSSAPI");
+      bson_append_utf8 (&cmd, "payload", 7, payload, payload_len);
+      BSON_APPEND_INT32 (&cmd, "autoAuthorize", 1);
+      is_continue = TRUE;
+   } else {
+      BSON_APPEND_INT32 (&cmd, "saslContinue", 1);
+      BSON_APPEND_INT32 (&cmd, "conversationId", conv_id);
+      bson_append_utf8 (&cmd, "payload", 7, payload, payload_len);
+   }
+
+   if (!_mongoc_cluster_run_command (cluster, node, "$external", &cmd, &reply, error)) {
+      goto failure;
+   }
+
+   bson_destroy (&cmd);
+
+   if (!bson_iter_init_find_case (&iter, &reply, "ok") ||
+       !bson_iter_as_bool (&iter)) {
+      if (bson_iter_init_find (&iter, &reply, "errmsg")) {
+         errmsg = bson_iter_utf8 (&iter, NULL);
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "%s", errmsg);
+         bson_destroy (&reply);
+         goto failure;
+      }
+   }
+
+   if (bson_iter_init_find_case (&iter, &reply, "conversationId") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+      conv_id = bson_iter_int32 (&iter);
+   } else {
+      bson_destroy (&reply);
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "Failed to retrieve converstation id from MongoDB.");
+      goto failure;
+   }
+
+   if (bson_iter_init_find_case (&iter, &reply, "payload") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      bson_uint32_t tmplen;
+      const char *tmpstr;
+
+      tmpstr = bson_iter_utf8 (&iter, &tmplen);
+
+      if (tmplen > sizeof payload) {
+         bson_destroy (&reply);
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "Payload received is too large.");
+         goto failure;
+      }
+
+      status = sasl_decode64 (tmpstr, tmplen, payload, sizeof payload, &payload_len);
+
+      if (status < 0) {
+         bson_destroy (&reply);
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "Failure decoding SASL contents.");
+         goto failure;
+      }
+
+      status = sasl_client_step (conn, payload, payload_len, &interact, &raw, &raw_len);
+
+      if (status < 0) {
+         bson_destroy (&reply);
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "%s", sasl_errdetail (conn));
+         goto failure;
+      }
+
+      /* TODO: Deal with interaction */
+
+      if (status == SASL_OK) {
+         goto complete;
+      }
+
+      status = sasl_encode64 (raw, raw_len, payload, sizeof payload, &payload_len);
+
+      if (status < 0) {
+         bson_destroy (&reply);
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "Failure encoding SASL contents.");
+         goto failure;
+      }
+
+      goto again;
+
+   } else {
+      bson_destroy (&reply);
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "Failed to retrieve payload from MongoDB.");
+      goto failure;
+   }
+
+complete:
+   ret = TRUE;
+
+failure:
+   bson_destroy (&cmd);
+   sasl_dispose (&conn);
+   sasl_client_done ();
+
+   return ret;
 }
 #endif
 

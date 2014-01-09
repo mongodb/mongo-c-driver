@@ -33,10 +33,6 @@
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 
-#ifdef MONGOC_ENABLE_SASL
-#include "mongoc-sasl-private.h"
-#endif
-
 
 BSON_BEGIN_DECLS
 
@@ -78,10 +74,6 @@ typedef struct
    bson_int32_t        min_wire_version;
    bson_int32_t        max_wire_version;
    char               *replSet;
-#ifdef MONGOC_ENABLE_SASL
-   mongoc_sasl_client_t sasl;
-   bson_bool_t          sasl_init;
-#endif
 } mongoc_cluster_node_t;
 
 

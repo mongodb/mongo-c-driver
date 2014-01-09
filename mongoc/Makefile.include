@@ -66,7 +66,6 @@ NOINST_H_FILES = \
 	mongoc/mongoc-queue-private.h \
 	mongoc/mongoc-read-prefs-private.h \
 	mongoc/mongoc-rpc-private.h \
-	mongoc/mongoc-sasl-private.h \
 	mongoc/mongoc-stream-private.h \
 	mongoc/mongoc-util-private.h \
 	mongoc/mongoc-trace.h \
@@ -74,10 +73,6 @@ NOINST_H_FILES = \
 
 if HAVE_SSL
 NOINST_H_FILES += mongoc/mongoc-ssl-private.h
-endif
-
-if HAVE_SASL
-NOINST_H_FILES += mongoc/mongoc-sasl-private.h
 endif
 
 
@@ -118,10 +113,6 @@ if HAVE_SSL
 libmongoc_priv_la_SOURCES += \
 	mongoc/mongoc-stream-tls.c \
 	mongoc/mongoc-ssl.c
-endif
-
-if HAVE_SASL
-libmongoc_priv_la_SOURCES += mongoc/mongoc-sasl.c
 endif
 
 
