@@ -1259,12 +1259,40 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
 
 
 #ifdef MONGOC_ENABLE_SASL
-static void
-_mongoc_cluster_sasl_init (void)
+static int
+_sasl_get_simple (void        *context,
+                  int          id,
+                  const char **result,
+                  unsigned    *result_len)
 {
-   sasl_client_init (NULL);
+   mongoc_cluster_t *cluster = context;
+   const char *user;
+
+   switch (id) {
+   case SASL_CB_AUTHNAME:
+   case SASL_CB_USER:
+      user = mongoc_uri_get_username (cluster->uri);
+      if (user) {
+         if (result) {
+            *result = user;
+         }
+         if (result_len) {
+            *result_len = strlen (user);
+         }
+         return SASL_OK;
+      }
+      break;
+   default:
+      MONGOC_WARNING ("Unknown SASL parameter: %d\n", id);
+      break;
+   }
+
+   return SASL_FAIL;
 }
+
 #endif
+
+#define SASL_CALLBACK_FN(_f) ((int (*) (void))(_f))
 
 
 #ifdef MONGOC_ENABLE_SASL
@@ -1273,7 +1301,11 @@ _mongoc_cluster_auth_node_gssapi (mongoc_cluster_t      *cluster,
                                   mongoc_cluster_node_t *node,
                                   bson_error_t          *error)
 {
-   static pthread_once_t once = PTHREAD_ONCE_INIT;
+   const sasl_callback_t callbacks[] = {
+      { SASL_CB_AUTHNAME, SASL_CALLBACK_FN (_sasl_get_simple), cluster },
+      { SASL_CB_USER, SASL_CALLBACK_FN (_sasl_get_simple), cluster },
+      { SASL_CB_LIST_END }
+   };
    char payload[4096];
    sasl_interact_t *interact = NULL;
    const bson_t *options;
@@ -1282,6 +1314,7 @@ _mongoc_cluster_auth_node_gssapi (mongoc_cluster_t      *cluster,
    bson_iter_t iter;
    bson_bool_t ret = FALSE;
    bson_bool_t is_continue = FALSE;
+   bson_bool_t done = FALSE;
    const char *mechanism = "GSSAPI";
    const char *service_name = "mongodb";
    const char *errmsg;
@@ -1295,12 +1328,7 @@ _mongoc_cluster_auth_node_gssapi (mongoc_cluster_t      *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (node);
 
-#if 0
-   /* TODO: Look at threading requirements for SASL. */
-   pthread_once (&once, _mongoc_cluster_sasl_init);
-#else
-   _mongoc_cluster_sasl_init ();
-#endif
+   sasl_client_init (NULL);
 
    options = mongoc_uri_get_options (cluster->uri);
 
@@ -1310,7 +1338,7 @@ _mongoc_cluster_auth_node_gssapi (mongoc_cluster_t      *cluster,
    }
 
    status = sasl_client_new (service_name, node->host.host,
-                             NULL, NULL, NULL, 0, &conn);
+                             NULL, NULL, callbacks, 0, &conn);
 
    if (status != SASL_OK) {
       switch (status) {
@@ -1414,6 +1442,13 @@ again:
       goto failure;
    }
 
+   done = (bson_iter_init_find (&iter, &reply, "done") &&
+           bson_iter_as_bool (&iter));
+
+   if (done) {
+      goto complete;
+   }
+
    if (bson_iter_init_find_case (&iter, &reply, "payload") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       bson_uint32_t tmplen;
@@ -1454,10 +1489,6 @@ again:
 
       /* TODO: Deal with interaction */
 
-      if (status == SASL_OK) {
-         goto complete;
-      }
-
       status = sasl_encode64 (raw, raw_len, payload, sizeof payload, &payload_len);
 
       if (status < 0) {
@@ -1484,7 +1515,6 @@ complete:
    ret = TRUE;
 
 failure:
-   bson_destroy (&cmd);
    sasl_dispose (&conn);
    sasl_client_done ();
 
