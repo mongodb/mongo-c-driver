@@ -490,13 +490,13 @@ mongoc_uri_get_replica_set (const mongoc_uri_t *uri)
 
 
 const char *
-mongoc_uri_get_mechanism (const mongoc_uri_t *uri)
+mongoc_uri_get_auth_mechanism (const mongoc_uri_t *uri)
 {
    bson_iter_t iter;
 
    bson_return_val_if_fail (uri, NULL);
 
-   if (bson_iter_init_find_case (&iter, &uri->options, "mechanism") &&
+   if (bson_iter_init_find_case (&iter, &uri->options, "authMechanism") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
       return bson_iter_utf8 (&iter, NULL);
    }

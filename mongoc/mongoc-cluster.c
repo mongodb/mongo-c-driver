@@ -557,7 +557,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
    cluster->max_msg_size = 1024 * 1024 * 48;
    cluster->max_bson_size = 1024 * 1024 * 16;
    cluster->requires_auth = (mongoc_uri_get_username (uri) ||
-                             mongoc_uri_get_mechanism (uri));
+                             mongoc_uri_get_auth_mechanism (uri));
    cluster->sockettimeoutms = sockettimeoutms;
    cluster->wire_version = MAX_WIRE_VERSION;
 
@@ -1597,7 +1597,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (node);
 
-   mechanism = mongoc_uri_get_mechanism (cluster->uri);
+   mechanism = mongoc_uri_get_auth_mechanism (cluster->uri);
 
    if (!mechanism) {
       mechanism = "MONGODB-CR";

@@ -49,7 +49,7 @@ const char               *mongoc_uri_get_replica_set      (const mongoc_uri_t *u
 const char               *mongoc_uri_get_string           (const mongoc_uri_t *uri);
 const char               *mongoc_uri_get_username         (const mongoc_uri_t *uri);
 const char               *mongoc_uri_get_auth_source      (const mongoc_uri_t *uri);
-const char               *mongoc_uri_get_mechanism        (const mongoc_uri_t *uri);
+const char               *mongoc_uri_get_auth_mechanism   (const mongoc_uri_t *uri);
 char                     *mongoc_uri_unescape             (const char         *escaped_string);
 
 

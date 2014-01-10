@@ -169,11 +169,11 @@ test_mongoc_uri_new (void)
    assert_cmpstr(bson_iter_utf8(&iter, NULL), " ");
    mongoc_uri_destroy(uri);
 
-   uri = mongoc_uri_new("mongodb://christian%40realm.cc@localhost:27017/?mechanism=GSSAPI&gssapiservicename=blah");
+   uri = mongoc_uri_new("mongodb://christian%40realm.cc@localhost:27017/?authmechanism=GSSAPI&gssapiservicename=blah");
    assert(uri);
    options = mongoc_uri_get_options(uri);
    assert(options);
-   assert (0 == strcmp (mongoc_uri_get_mechanism (uri), "GSSAPI"));
+   assert (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
    assert (0 == strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
    assert (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
            BSON_ITER_HOLDS_UTF8 (&iter) &&
