@@ -1,5 +1,7 @@
 /* gcc example.c -o example $(pkg-config --cflags --libs libmongoc-1.0) */
 
+/* ./example-client [CONNECTION_STRING [COLLECTION_NAME]] */
+
 #include <mongoc.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,10 +15,20 @@ main (int   argc,
    mongoc_cursor_t *cursor;
    bson_error_t error;
    const bson_t *doc;
+   const char *uristr = "mongodb://127.0.0.1/";
+   const char *collection_name = "test";
    bson_t query;
    char *str;
 
-   client = mongoc_client_new ("mongodb://localhost:27017/");
+   if (argc > 0) {
+      uristr = argv [1];
+   }
+
+   if (argc > 1) {
+      collection_name = argv [2];
+   }
+
+   client = mongoc_client_new (uristr);
 
    if (!client) {
       fprintf (stderr, "Failed to parse URI.\n");
@@ -24,10 +36,12 @@ main (int   argc,
    }
 
    bson_init (&query);
+
+#if 0
    bson_append_utf8 (&query, "hello", -1, "world", -1);
+#endif
 
-
-   collection = mongoc_client_get_collection (client, "test", "test");
+   collection = mongoc_client_get_collection (client, collection_name, "test");
    cursor = mongoc_collection_find (collection,
                                     MONGOC_QUERY_NONE,
                                     0,
@@ -37,14 +51,18 @@ main (int   argc,
                                     NULL,  /* Fields, NULL for all. */
                                     NULL); /* Read Prefs, NULL for default */
 
-   while (mongoc_cursor_next (cursor, &doc)) {
-      str = bson_as_json (doc, NULL);
-      fprintf (stdout, "%s\n", str);
-      bson_free (str);
+   while (!mongoc_cursor_error (cursor, &error) &&
+          mongoc_cursor_more (cursor)) {
+      if (mongoc_cursor_next (cursor, &doc)) {
+         str = bson_as_json (doc, NULL);
+         fprintf (stdout, "%s\n", str);
+         bson_free (str);
+      }
    }
 
    if (mongoc_cursor_error (cursor, &error)) {
       fprintf (stderr, "Cursor Failure: %s\n", error.message);
+      return EXIT_FAILURE;
    }
 
    bson_destroy (&query);
