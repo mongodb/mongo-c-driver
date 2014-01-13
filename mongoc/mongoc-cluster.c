@@ -1343,6 +1343,7 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t      *cluster,
 
       if (bson_iter_init_find (&iter, &reply, "done") &&
           bson_iter_as_bool (&iter)) {
+         bson_destroy (&reply);
          break;
       }
 
