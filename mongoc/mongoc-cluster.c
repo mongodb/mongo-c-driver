@@ -1239,7 +1239,6 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
 
    if (!bson_iter_init_find_case(&iter, &reply, "ok") ||
        !bson_iter_as_bool(&iter)) {
-      mongoc_counter_auth_failure_inc();
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
@@ -1249,8 +1248,6 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
    }
 
    bson_destroy(&reply);
-
-   mongoc_counter_auth_success_inc();
 
    RETURN(TRUE);
 }
@@ -1503,6 +1500,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
                            mongoc_cluster_node_t *node,
                            bson_error_t          *error)
 {
+   bson_bool_t ret = FALSE;
    const char *mechanism;
 
    BSON_ASSERT (cluster);
@@ -1515,7 +1513,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
    }
 
    if (0 == strcasecmp (mechanism, "MONGODB-CR")) {
-      return _mongoc_cluster_auth_node_cr (cluster, node, error);
+      ret = _mongoc_cluster_auth_node_cr (cluster, node, error);
    } else if (0 == strcasecmp (mechanism, "MONGODB-X509")) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
@@ -1524,19 +1522,25 @@ _mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
       return FALSE;
 #ifdef MONGOC_ENABLE_SASL
    } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
-      return _mongoc_cluster_auth_node_sasl (cluster, node, error);
+      ret = _mongoc_cluster_auth_node_sasl (cluster, node, error);
    } else if (0 == strcasecmp (mechanism, "PLAIN")) {
-      return _mongoc_cluster_auth_node_plain (cluster, node, error);
+      ret = _mongoc_cluster_auth_node_plain (cluster, node, error);
 #endif
+   } else {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "The authentication mechanism \"%s\" is not supported.",
+                      mechanism);
    }
 
-   bson_set_error (error,
-                   MONGOC_ERROR_CLIENT,
-                   MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                   "The authentication mechanism \"%s\" is not supported.",
-                   mechanism);
+   if (!ret) {
+      mongoc_counter_auth_failure_inc ();
+   } else {
+      mongoc_counter_auth_success_inc ();
+   }
 
-   return FALSE;
+   return ret;
 }
 
 
