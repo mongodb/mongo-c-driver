@@ -29,14 +29,12 @@
 #include "mongoc-opcode.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-rpc-private.h"
+#ifdef MONGOC_ENABLE_SASL
+#include "mongoc-sasl-private.h"
+#endif
 #include "mongoc-util-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-write-concern-private.h"
-
-
-#ifdef MONGOC_ENABLE_SASL
-#include <sasl/sasl.h>
-#endif
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -1259,264 +1257,129 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
 
 
 #ifdef MONGOC_ENABLE_SASL
-static int
-_sasl_get_simple (void        *context,
-                  int          id,
-                  const char **result,
-                  unsigned    *result_len)
-{
-   mongoc_cluster_t *cluster = context;
-   const char *user;
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_auth_node_sasl --
+ *
+ *       Perform authentication for a cluster node using SASL. This is
+ *       only supported for GSSAPI at the moment.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and @error is set.
+ *
+ * Side effects:
+ *       error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
 
-   switch (id) {
-   case SASL_CB_AUTHNAME:
-   case SASL_CB_USER:
-      user = mongoc_uri_get_username (cluster->uri);
-      if (user) {
-         if (result) {
-            *result = user;
-         }
-         if (result_len) {
-            *result_len = strlen (user);
-         }
-         return SASL_OK;
-      }
-      break;
-   default:
-      MONGOC_WARNING ("Unknown SASL parameter: %d\n", id);
-      break;
-   }
-
-   return SASL_FAIL;
-}
-
-#endif
-
-#define SASL_CALLBACK_FN(_f) ((int (*) (void))(_f))
-
-
-#ifdef MONGOC_ENABLE_SASL
 static bson_bool_t
-_mongoc_cluster_auth_node_gssapi (mongoc_cluster_t      *cluster,
-                                  mongoc_cluster_node_t *node,
-                                  bson_error_t          *error)
+_mongoc_cluster_auth_node_sasl (mongoc_cluster_t      *cluster,
+                                mongoc_cluster_node_t *node,
+                                bson_error_t          *error)
 {
-   const sasl_callback_t callbacks[] = {
-      { SASL_CB_AUTHNAME, SASL_CALLBACK_FN (_sasl_get_simple), cluster },
-      { SASL_CB_USER, SASL_CALLBACK_FN (_sasl_get_simple), cluster },
-      { SASL_CB_LIST_END }
-   };
-   char payload[4096];
-   sasl_interact_t *interact = NULL;
+   bson_uint32_t buflen = 0;
+   bson_uint32_t tmpstrlen = 0;
+   mongoc_sasl_t sasl;
    const bson_t *options;
-   bson_int32_t conv_id = 0;
-   sasl_conn_t *conn = NULL;
    bson_iter_t iter;
    bson_bool_t ret = FALSE;
-   bson_bool_t is_continue = FALSE;
-   bson_bool_t done = FALSE;
-   const char *mechanism = "GSSAPI";
-   const char *service_name = "mongodb";
-   const char *errmsg;
-   const char *raw = NULL;
-   unsigned payload_len = 0;
-   unsigned raw_len = 0;
+   const char *service_name;
+   const char *mechanism;
+   const char *key = "saslStart";
+   const char *tmpstr;
+   bson_uint8_t buf[4096] = { 0 };
+   size_t payload_len;
    bson_t cmd;
    bson_t reply;
-   int status;
+   int conv_id = 0;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (node);
 
-   sasl_client_init (NULL);
-
    options = mongoc_uri_get_options (cluster->uri);
 
+   _mongoc_sasl_init (&sasl);
+
+   if ((mechanism = mongoc_uri_get_auth_mechanism (cluster->uri))) {
+      _mongoc_sasl_set_mechanism (&sasl, mechanism);
+   }
+
    if (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
-      service_name = bson_iter_utf8 (&iter, NULL);
+       BSON_ITER_HOLDS_UTF8 (&iter) &&
+       (service_name = bson_iter_utf8 (&iter, NULL))) {
+      _mongoc_sasl_set_service_name (&sasl, service_name);
    }
 
-   status = sasl_client_new (service_name, node->host.host,
-                             NULL, NULL, callbacks, 0, &conn);
+   _mongoc_sasl_set_pass (&sasl, mongoc_uri_get_password (cluster->uri));
+   _mongoc_sasl_set_user (&sasl, mongoc_uri_get_username (cluster->uri));
+   _mongoc_sasl_set_service_host (&sasl, node->host.host);
 
-   if (status != SASL_OK) {
-      switch (status) {
-      case SASL_NOMEM:
-         errmsg = "Not enough memory for SASL client.";
-         break;
-      case SASL_NOMECH:
-         errmsg = "No mechanism meets SASL requirement.";
-         break;
-      case SASL_BADPARAM:
-         errmsg = "SASL programming error, please report this "
-                  "error to the mongo-c-driver github issues.";
-         break;
-      default:
-         errmsg = "Unknown SASL initialization error.";
+   for (;;) {
+      if (!_mongoc_sasl_step (&sasl, buf, buflen, buf, sizeof buf, &buflen, error)) {
+         goto failure;
+      }
+
+      bson_init (&cmd);
+
+      if (sasl.step == 1) {
+         BSON_APPEND_INT32 (&cmd, "saslStart", 1);
+         BSON_APPEND_UTF8 (&cmd, "mechanism", mechanism ? mechanism : "GSSAPI");
+         bson_append_utf8 (&cmd, "payload", 7, buf, buflen);
+         BSON_APPEND_INT32 (&cmd, "autoAuthorize", 1);
+      } else {
+         BSON_APPEND_INT32 (&cmd, "saslContinue", 1);
+         BSON_APPEND_INT32 (&cmd, "conversationId", conv_id);
+         bson_append_utf8 (&cmd, "payload", 7, buf, buflen);
+      }
+
+      if (!_mongoc_cluster_run_command (cluster, node, "$external", &cmd, &reply, error)) {
+         bson_destroy (&cmd);
+         goto failure;
+      }
+
+      bson_destroy (&cmd);
+
+      if (bson_iter_init_find (&iter, &reply, "done") &&
+          bson_iter_as_bool (&iter)) {
          break;
       }
 
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "%s", errmsg);
-
-      goto failure;
-   }
-
-   status = sasl_client_start (conn, mechanism, &interact, &raw, &raw_len,
-                               &mechanism);
-
-   if (status < 0) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "%s",
-                      sasl_errdetail (conn));
-      goto failure;
-   }
-
-   if ((status != SASL_CONTINUE) || (0 != strcmp (mechanism, "GSSAPI"))) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "Could not negotiate SASL mechanism.");
-      goto failure;
-   }
-
-   status = sasl_encode64 (raw, raw_len, payload, sizeof payload, &payload_len);
-
-   if (status < 0) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "%s",
-                      sasl_errdetail (conn));
-      goto failure;
-   }
-
-again:
-   bson_init (&cmd);
-
-   if (!is_continue) {
-      BSON_APPEND_INT32 (&cmd, "saslStart", 1);
-      BSON_APPEND_UTF8 (&cmd, "mechanism", "GSSAPI");
-      bson_append_utf8 (&cmd, "payload", 7, payload, payload_len);
-      BSON_APPEND_INT32 (&cmd, "autoAuthorize", 1);
-      is_continue = TRUE;
-   } else {
-      BSON_APPEND_INT32 (&cmd, "saslContinue", 1);
-      BSON_APPEND_INT32 (&cmd, "conversationId", conv_id);
-      bson_append_utf8 (&cmd, "payload", 7, payload, payload_len);
-   }
-
-   if (!_mongoc_cluster_run_command (cluster, node, "$external", &cmd, &reply, error)) {
-      goto failure;
-   }
-
-   bson_destroy (&cmd);
-
-   if (!bson_iter_init_find_case (&iter, &reply, "ok") ||
-       !bson_iter_as_bool (&iter)) {
-      if (bson_iter_init_find (&iter, &reply, "errmsg")) {
-         errmsg = bson_iter_utf8 (&iter, NULL);
+      if (!bson_iter_init_find (&iter, &reply, "ok") ||
+          !bson_iter_as_bool (&iter) ||
+          !bson_iter_init_find (&iter, &reply, "conversationId") ||
+          !BSON_ITER_HOLDS_INT32 (&iter) ||
+          !(conv_id = bson_iter_int32 (&iter)) ||
+          !bson_iter_init_find (&iter, &reply, "payload") ||
+          !BSON_ITER_HOLDS_UTF8 (&iter)) {
+         bson_destroy (&reply);
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "%s", errmsg);
-         bson_destroy (&reply);
+                         "Received invalid SASL reply from MongoDB server.");
          goto failure;
       }
-   }
 
-   if (bson_iter_init_find_case (&iter, &reply, "conversationId") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      conv_id = bson_iter_int32 (&iter);
-   } else {
+      tmpstr = bson_iter_utf8 (&iter, &buflen);
+
+      if (buflen > sizeof buf) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "SASL reply from MongoDB is too large.");
+         goto failure;
+      }
+
+      memcpy (buf, tmpstr, buflen);
+
       bson_destroy (&reply);
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "Failed to retrieve converstation id from MongoDB.");
-      goto failure;
    }
 
-   done = (bson_iter_init_find (&iter, &reply, "done") &&
-           bson_iter_as_bool (&iter));
-
-   if (done) {
-      goto complete;
-   }
-
-   if (bson_iter_init_find_case (&iter, &reply, "payload") &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
-      bson_uint32_t tmplen;
-      const char *tmpstr;
-
-      tmpstr = bson_iter_utf8 (&iter, &tmplen);
-
-      if (tmplen > sizeof payload) {
-         bson_destroy (&reply);
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "Payload received is too large.");
-         goto failure;
-      }
-
-      status = sasl_decode64 (tmpstr, tmplen, payload, sizeof payload, &payload_len);
-
-      if (status < 0) {
-         bson_destroy (&reply);
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "Failure decoding SASL contents.");
-         goto failure;
-      }
-
-      status = sasl_client_step (conn, payload, payload_len, &interact, &raw, &raw_len);
-
-      if (status < 0) {
-         bson_destroy (&reply);
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "%s", sasl_errdetail (conn));
-         goto failure;
-      }
-
-      /* TODO: Deal with interaction */
-
-      status = sasl_encode64 (raw, raw_len, payload, sizeof payload, &payload_len);
-
-      if (status < 0) {
-         bson_destroy (&reply);
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "Failure encoding SASL contents.");
-         goto failure;
-      }
-
-      goto again;
-
-   } else {
-      bson_destroy (&reply);
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "Failed to retrieve payload from MongoDB.");
-      goto failure;
-   }
-
-complete:
    ret = TRUE;
 
 failure:
-   sasl_dispose (&conn);
-   sasl_client_done ();
+   _mongoc_sasl_destroy (&sasl);
 
    return ret;
 }
@@ -1524,6 +1387,23 @@ failure:
 
 
 #ifdef MONGOC_ENABLE_SASL
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_auth_node_plain --
+ *
+ *       Perform SASL PLAIN authentication for @node. We do this manually
+ *       instead of using the SASL module because its rather simplistic.
+ *
+ * Returns:
+ *       TRUE if successful; otherwise FALSE and error is set.
+ *
+ * Side effects:
+ *       error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
 _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
                                  mongoc_cluster_node_t *node,
@@ -1643,10 +1523,10 @@ _mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
       return FALSE;
 #ifdef MONGOC_ENABLE_SASL
    } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
-      return _mongoc_cluster_auth_node_gssapi (cluster, node, error);
+      return _mongoc_cluster_auth_node_sasl (cluster, node, error);
    } else if (0 == strcasecmp (mechanism, "PLAIN")) {
       return _mongoc_cluster_auth_node_plain (cluster, node, error);
-#endif /* MONGOC_ENABLE_SASL */
+#endif
    }
 
    bson_set_error (error,

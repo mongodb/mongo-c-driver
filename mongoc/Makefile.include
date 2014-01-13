@@ -70,9 +70,11 @@ NOINST_H_FILES = \
 	mongoc/mongoc-util-private.h \
 	mongoc/mongoc-trace.h \
 	mongoc/mongoc-write-concern-private.h
-
 if HAVE_SSL
 NOINST_H_FILES += mongoc/mongoc-ssl-private.h
+endif
+if HAVE_SASL
+NOINST_H_FILES += mongoc/mongoc-sasl-private.h
 endif
 
 
@@ -108,11 +110,13 @@ libmongoc_priv_la_SOURCES = \
 	mongoc/mongoc-uri.c \
 	mongoc/mongoc-util.c \
 	mongoc/mongoc-write-concern.c
-
 if HAVE_SSL
 libmongoc_priv_la_SOURCES += \
 	mongoc/mongoc-stream-tls.c \
 	mongoc/mongoc-ssl.c
+endif
+if HAVE_SASL
+libmongoc_priv_la_SOURCES += mongoc/mongoc-sasl.c
 endif
 
 
