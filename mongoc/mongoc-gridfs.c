@@ -88,12 +88,9 @@ _mongoc_gridfs_new (mongoc_client_t *client,
 {
    mongoc_gridfs_t *gridfs;
    char buf[128];
-   bson_uint32_t prefix_len;
    bson_bool_t r;
 
    ENTRY;
-
-   prefix_len = strlen (prefix);
 
    BSON_ASSERT (client);
    BSON_ASSERT (db);
@@ -105,7 +102,13 @@ _mongoc_gridfs_new (mongoc_client_t *client,
    /* make sure prefix is short enough to bucket the chunks and files
     * collections
     */
-   BSON_ASSERT (prefix_len + sizeof (".chunks") < sizeof (buf));
+#ifndef BSON_DISABLE_ASSERT
+   {
+      bson_uint32_t prefix_len;
+      prefix_len = strlen (prefix);
+      BSON_ASSERT (prefix_len + sizeof (".chunks") < sizeof (buf));
+   }
+#endif
 
    gridfs = bson_malloc0 (sizeof *gridfs);
 
