@@ -20,11 +20,11 @@ main (int   argc,
    bson_t query;
    char *str;
 
-   if (argc > 0) {
+   if (argc > 1) {
       uristr = argv [1];
    }
 
-   if (argc > 1) {
+   if (argc > 2) {
       collection_name = argv [2];
    }
 
