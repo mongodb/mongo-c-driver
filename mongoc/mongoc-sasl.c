@@ -229,8 +229,6 @@ _mongoc_sasl_start (mongoc_sasl_t      *sasl,
    int status;
 
    BSON_ASSERT (sasl);
-   BSON_ASSERT (inbuf);
-   BSON_ASSERT (inbuflen);
    BSON_ASSERT (outbuf);
    BSON_ASSERT (outbufmax);
    BSON_ASSERT (outbuflen);
@@ -267,7 +265,7 @@ _mongoc_sasl_start (mongoc_sasl_t      *sasl,
    }
 
 
-   status = sasl_encode64 (raw, raw_len, outbuf, outbufmax, outbuflen);
+   status = sasl_encode64 (raw, raw_len, (char *)outbuf, outbufmax, outbuflen);
    if (_mongoc_sasl_is_failure (status, error)) {
       return FALSE;
    }
@@ -316,18 +314,19 @@ _mongoc_sasl_step (mongoc_sasl_t      *sasl,
       return FALSE;
    }
 
-   status = sasl_decode64 (inbuf, inbuflen, outbuf, outbufmax, outbuflen);
+   status = sasl_decode64 ((char *)inbuf, inbuflen, (char *)outbuf, outbufmax,
+                           outbuflen);
    if (_mongoc_sasl_is_failure (status, error)) {
       return FALSE;
    }
 
-   status = sasl_client_step (sasl->conn, outbuf, *outbuflen, &sasl->interact,
-                              &raw, &rawlen);
+   status = sasl_client_step (sasl->conn, (char *)outbuf, *outbuflen,
+                              &sasl->interact, &raw, &rawlen);
    if (_mongoc_sasl_is_failure (status, error)) {
       return FALSE;
    }
 
-   status = sasl_encode64 (raw, rawlen, outbuf, outbufmax, outbuflen);
+   status = sasl_encode64 (raw, rawlen, (char *)outbuf, outbufmax, outbuflen);
    if (_mongoc_sasl_is_failure (status, error)) {
       return FALSE;
    }
