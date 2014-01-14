@@ -359,9 +359,13 @@ _mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt)
 {
    SSL_CTX *ctx = NULL;
 
-   BSON_ASSERT(gMongocIsInitialized);
+   if (!gMongocIsInitialized) {
+      mongoc_init ();
+   }
 
    ctx = SSL_CTX_new (SSLv23_method ());
+
+   BSON_ASSERT (ctx);
 
    /* SSL_OP_ALL - Activate all bug workaround options, to support buggy client SSL's.
     * SSL_OP_NO_SSLv2 - Disable SSL v2 support */
