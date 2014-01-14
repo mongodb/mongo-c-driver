@@ -399,3 +399,53 @@ _mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt)
       return NULL;
    }
 }
+
+
+char *
+_mongoc_ssl_extract_subject (const char *filename)
+{
+   X509_NAME *subject = NULL;
+   X509 *cert = NULL;
+   BIO *certbio = NULL;
+   BIO *strbio = NULL;
+   char *str = NULL;
+   int ret;
+
+   if (!filename) {
+      return NULL;
+   }
+
+   certbio = BIO_new (BIO_s_file ());
+   strbio = BIO_new (BIO_s_mem ());;
+
+   BSON_ASSERT (certbio);
+   BSON_ASSERT (strbio);
+
+   BIO_read_filename (certbio, filename);
+
+   if ((cert = PEM_read_bio_X509 (certbio, NULL, 0, NULL))) {
+      if ((subject = X509_get_subject_name (cert))) {
+         ret = X509_NAME_print_ex (strbio, subject, 0, XN_FLAG_RFC2253);
+
+         if ((ret > 0) && (ret < INT_MAX)) {
+            str = bson_malloc (ret + 1);
+            BIO_gets (strbio, str, ret);
+            str [ret] = '\0';
+         }
+      }
+   }
+
+   if (cert) {
+      X509_free (cert);
+   }
+
+   if (certbio) {
+      BIO_free (certbio);
+   }
+
+   if (strbio) {
+      BIO_free (strbio);
+   }
+
+   return str;
+}

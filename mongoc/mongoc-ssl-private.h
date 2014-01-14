@@ -40,6 +40,11 @@ _mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt)
    BSON_GNUC_INTERNAL;
 
 
+char *
+_mongoc_ssl_extract_subject (const char *filename)
+   BSON_GNUC_INTERNAL;
+
+
 void
 _mongoc_ssl_init (void)
    BSON_GNUC_INTERNAL;

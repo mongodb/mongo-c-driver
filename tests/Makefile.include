@@ -22,6 +22,7 @@ noinst_PROGRAMS += test-sharded-cluster
 if HAVE_SSL
 noinst_PROGRAMS += test-mongoc-stream-tls
 noinst_PROGRAMS += test-replica-set-ssl
+noinst_PROGRAMS += test-x509
 endif
 
 
@@ -136,6 +137,11 @@ test_mongoc_rpc_LDADD = $(TEST_LIBS)
 test_mongoc_stream_SOURCES = $(top_srcdir)/tests/test-mongoc-stream.c
 test_mongoc_stream_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
 test_mongoc_stream_LDADD = $(TEST_LIBS)
+
+
+test_x509_SOURCES = $(top_srcdir)/tests/test-x509.c
+test_x509_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
+test_x509_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_stream_tls_SOURCES = \
