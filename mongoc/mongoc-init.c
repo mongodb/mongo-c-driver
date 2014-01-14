@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
+#include <pthread.h>
+
 #include "mongoc-config.h"
 #include "mongoc-ssl.h"
 #include "mongoc-ssl-private.h"
 #include "mongoc-init.h"
-#include "mongoc-init-private.h"
 
-bson_bool_t gMongocIsInitialized;
+static void
+_mongoc_do_init (void)
+{
+#ifdef MONGOC_ENABLE_SSL
+   _mongoc_ssl_init();
+#endif
+}
 
 void
 mongoc_init (void)
 {
-   BSON_ASSERT (!gMongocIsInitialized);
-
-#ifdef MONGOC_ENABLE_SSL
-   _mongoc_ssl_init();
-#endif
-
-   gMongocIsInitialized = 1;
+   static pthread_once_t once = PTHREAD_ONCE_INIT;
+   pthread_once (&once, _mongoc_do_init);
 }

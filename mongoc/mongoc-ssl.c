@@ -24,7 +24,6 @@
 #include <arpa/inet.h>
 
 #include "mongoc-init.h"
-#include "mongoc-init-private.h"
 #include "mongoc-ssl.h"
 #include "mongoc-trace.h"
 
@@ -359,9 +358,10 @@ _mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt)
 {
    SSL_CTX *ctx = NULL;
 
-   if (!gMongocIsInitialized) {
-      mongoc_init ();
-   }
+   /*
+    * Ensure we are initialized. This is safe to call multiple times.
+    */
+   mongoc_init ();
 
    ctx = SSL_CTX_new (SSLv23_method ());
 

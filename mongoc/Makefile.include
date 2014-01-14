@@ -56,7 +56,6 @@ NOINST_H_FILES = \
 	mongoc/mongoc-cursor-cursorid-private.h \
 	mongoc/mongoc-cluster-private.h \
 	mongoc/mongoc-database-private.h \
-	mongoc/mongoc-init-private.h \
 	mongoc/mongoc-gridfs-private.h \
 	mongoc/mongoc-gridfs-file-private.h \
 	mongoc/mongoc-gridfs-file-page-private.h \
