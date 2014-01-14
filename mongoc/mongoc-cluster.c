@@ -17,6 +17,10 @@
 #define _GNU_SOURCE
 
 #include <errno.h>
+#ifdef MONGOC_ENABLE_SASL
+#include <sasl/sasl.h>
+#include <sasl/saslutil.h>
+#endif
 #include <string.h>
 
 #include "mongoc-cluster-private.h"
@@ -1277,17 +1281,14 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t      *cluster,
                                 bson_error_t          *error)
 {
    bson_uint32_t buflen = 0;
-   bson_uint32_t tmpstrlen = 0;
    mongoc_sasl_t sasl;
    const bson_t *options;
    bson_iter_t iter;
    bson_bool_t ret = FALSE;
    const char *service_name;
    const char *mechanism;
-   const char *key = "saslStart";
    const char *tmpstr;
    bson_uint8_t buf[4096] = { 0 };
-   size_t payload_len;
    bson_t cmd;
    bson_t reply;
    int conv_id = 0;
@@ -1323,12 +1324,12 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t      *cluster,
       if (sasl.step == 1) {
          BSON_APPEND_INT32 (&cmd, "saslStart", 1);
          BSON_APPEND_UTF8 (&cmd, "mechanism", mechanism ? mechanism : "GSSAPI");
-         bson_append_utf8 (&cmd, "payload", 7, buf, buflen);
+         bson_append_utf8 (&cmd, "payload", 7, (const char *)buf, buflen);
          BSON_APPEND_INT32 (&cmd, "autoAuthorize", 1);
       } else {
          BSON_APPEND_INT32 (&cmd, "saslContinue", 1);
          BSON_APPEND_INT32 (&cmd, "conversationId", conv_id);
-         bson_append_utf8 (&cmd, "payload", 7, buf, buflen);
+         bson_append_utf8 (&cmd, "payload", 7, (const char *)buf, buflen);
       }
 
       if (!_mongoc_cluster_run_command (cluster, node, "$external", &cmd, &reply, error)) {
@@ -1448,7 +1449,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
 
    BSON_APPEND_INT32 (&b, "saslStart", 1);
    BSON_APPEND_UTF8 (&b, "mechanism", "PLAIN");
-   BSON_APPEND_BINARY (&b, "payload", BSON_SUBTYPE_BINARY, buf, buflen);
+   bson_append_utf8 (&b, "payload", 7, (const char *)buf, buflen);
    BSON_APPEND_INT32 (&b, "autoAuthorize", 1);
 
    if (!_mongoc_cluster_run_command (cluster, node, "$external", &b, &reply, error)) {
