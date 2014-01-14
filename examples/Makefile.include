@@ -30,5 +30,3 @@ noinst_PROGRAMS += mongoc-tail
 mongoc_tail_SOURCES = $(top_srcdir)/examples/mongoc-tail.c
 mongoc_tail_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 mongoc_tail_LDADD = libmongoc-1.0.la $(BSON_LIBS)
-
-

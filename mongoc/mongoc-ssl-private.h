@@ -23,6 +23,7 @@
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+
 #include "mongoc-ssl.h"
 
 BSON_BEGIN_DECLS

@@ -428,8 +428,8 @@ _mongoc_ssl_extract_subject (const char *filename)
          ret = X509_NAME_print_ex (strbio, subject, 0, XN_FLAG_RFC2253);
 
          if ((ret > 0) && (ret < INT_MAX)) {
-            str = bson_malloc (ret + 1);
-            BIO_gets (strbio, str, ret);
+            str = bson_malloc (ret + 2);
+            BIO_gets (strbio, str, ret + 1);
             str [ret] = '\0';
          }
       }

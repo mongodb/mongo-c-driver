@@ -58,3 +58,4 @@ test-replica-set
 test-replica-set-ssl
 test-secondary
 test-sharded-cluster
+test-x509

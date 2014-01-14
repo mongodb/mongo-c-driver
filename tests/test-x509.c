@@ -10,7 +10,7 @@ test_extract_subject (void)
    char *subject;
 
    subject = _mongoc_ssl_extract_subject ("tests/certificates/client.pem");
-   assert (0 == strcmp (subject, "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=U"));
+   assert (0 == strcmp (subject, "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US"));
    bson_free (subject);
 }
 

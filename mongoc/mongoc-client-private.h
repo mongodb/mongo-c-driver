@@ -52,6 +52,7 @@ struct _mongoc_client_t
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t           ssl_opts;
+   char                      *pem_subject;
 #endif
 
    mongoc_read_prefs_t       *read_prefs;

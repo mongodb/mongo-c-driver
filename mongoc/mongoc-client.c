@@ -48,6 +48,7 @@
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
+#include "mongoc-ssl-private.h"
 #endif
 
 
@@ -292,7 +293,10 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 {
    mongoc_stream_t *base_stream = NULL;
 #ifdef MONGOC_ENABLE_SSL
-   mongoc_ssl_opt_t *ssl_opts = (mongoc_ssl_opt_t *)user_data;
+   mongoc_client_t *client = user_data;
+   const bson_t *options;
+   bson_iter_t iter;
+   const char *mechanism;
 #endif
 
    bson_return_val_if_fail (uri, NULL);
@@ -314,13 +318,32 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
    }
 
 #ifdef MONGOC_ENABLE_SSL
-   if (ssl_opts) {
-      base_stream = mongoc_stream_tls_new (base_stream, ssl_opts, 1);
+   options = mongoc_uri_get_options (uri);
+   mechanism = mongoc_uri_get_auth_mechanism (uri);
 
-      if (!(mongoc_stream_tls_do_handshake (base_stream, -1) &&
-           (mongoc_stream_tls_check_cert (base_stream, host->host)))) {
+   if ((bson_iter_init_find_case (&iter, options, "ssl") &&
+        bson_iter_as_bool (&iter)) ||
+       (mechanism && (0 == strcmp (mechanism, "MONGODB-X509")))) {
+      base_stream = mongoc_stream_tls_new (base_stream, &client->ssl_opts,
+                                           TRUE);
+
+      if (!base_stream) {
+         bson_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "Failed initialize TLS state.");
+         return NULL;
+      }
+
+      if (!mongoc_stream_tls_do_handshake (base_stream, -1) ||
+          !mongoc_stream_tls_check_cert (base_stream, host->host)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "Failed to handshake and validate TLS certificate.");
          mongoc_stream_destroy (base_stream);
          base_stream = NULL;
+         return NULL;
       }
    }
 #endif
@@ -672,6 +695,7 @@ mongoc_client_new (const char *uri_string)
    client->uri = uri;
    client->request_id = rand ();
    client->initiator = mongoc_client_default_stream_initiator;
+   client->initiator_data = client;
 
    _mongoc_cluster_init (&client->cluster, client->uri, client);
 
@@ -713,7 +737,13 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
    BSON_ASSERT (opts);
 
    memcpy (&client->ssl_opts, opts, sizeof client->ssl_opts);
-   client->initiator_data = &client->ssl_opts;
+
+   bson_free (client->pem_subject);
+   client->pem_subject = NULL;
+
+   if (opts->pem_file) {
+      client->pem_subject = _mongoc_ssl_extract_subject (opts->pem_file);
+   }
 }
 #endif
 
@@ -767,9 +797,9 @@ void
 mongoc_client_destroy (mongoc_client_t *client)
 {
    if (client) {
-      /*
-       * TODO: Implement destruction.
-       */
+#if MONGOC_ENABLE_SSL
+      bson_free (client->pem_subject);
+#endif
 
       _mongoc_cluster_destroy (&client->cluster);
       mongoc_uri_destroy (client->uri);

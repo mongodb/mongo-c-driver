@@ -1480,6 +1480,71 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
 #endif
 
 
+#ifdef MONGOC_ENABLE_SSL
+static bson_bool_t
+_mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
+                                mongoc_cluster_node_t *node,
+                                bson_error_t          *error)
+{
+   const char *username = "";
+   const char *errmsg = "X509 authentication failure";
+   bson_iter_t iter;
+   bson_bool_t ret = FALSE;
+   bson_t cmd;
+   bson_t reply;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (node);
+
+   if (!cluster->client->ssl_opts.pem_file) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "mongoc_client_set_ssl_opts() must be called "
+                      "with pem file for X-509 auth.");
+      return FALSE;
+   }
+
+   if (cluster->client->pem_subject) {
+      username = cluster->client->pem_subject;
+   }
+
+   bson_init (&cmd);
+   BSON_APPEND_INT32 (&cmd, "authenticate", 1);
+   BSON_APPEND_UTF8 (&cmd, "mechanism", "MONGODB-X509");
+   BSON_APPEND_UTF8 (&cmd, "user", username);
+
+   if (!_mongoc_cluster_run_command (cluster, node, "$external", &cmd, &reply,
+                                     error)) {
+      bson_destroy (&cmd);
+      return FALSE;
+   }
+
+   if (!bson_iter_init_find (&iter, &reply, "ok") ||
+       !bson_iter_as_bool (&iter)) {
+      if (bson_iter_init_find (&iter, &reply, "errmsg") &&
+          BSON_ITER_HOLDS_UTF8 (&iter)) {
+         errmsg = bson_iter_utf8 (&iter, NULL);
+      }
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "%s", errmsg);
+      goto failure;
+   }
+
+   ret = TRUE;
+
+failure:
+
+   bson_destroy (&cmd);
+   bson_destroy (&reply);
+
+   return ret;
+}
+#endif
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -1515,12 +1580,10 @@ _mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
 
    if (0 == strcasecmp (mechanism, "MONGODB-CR")) {
       ret = _mongoc_cluster_auth_node_cr (cluster, node, error);
+#ifdef MONGOC_ENABLE_SSL
    } else if (0 == strcasecmp (mechanism, "MONGODB-X509")) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "X509 authentication is not yet supported.");
-      return FALSE;
+      ret = _mongoc_cluster_auth_node_x509 (cluster, node, error);
+#endif
 #ifdef MONGOC_ENABLE_SASL
    } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
       ret = _mongoc_cluster_auth_node_sasl (cluster, node, error);
