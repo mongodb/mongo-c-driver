@@ -55,11 +55,11 @@ typedef struct _mongoc_gridfs_file_opt
    bson_uint32_t chunk_size;
 } mongoc_gridfs_file_opt_t;
 
-MONGOC_GRIDFS_FILE_STR_HEADER (md5);
-MONGOC_GRIDFS_FILE_STR_HEADER (filename);
-MONGOC_GRIDFS_FILE_STR_HEADER (content_type);
-MONGOC_GRIDFS_FILE_BSON_HEADER (aliases);
-MONGOC_GRIDFS_FILE_BSON_HEADER (metadata);
+MONGOC_GRIDFS_FILE_STR_HEADER (md5)
+MONGOC_GRIDFS_FILE_STR_HEADER (filename)
+MONGOC_GRIDFS_FILE_STR_HEADER (content_type)
+MONGOC_GRIDFS_FILE_BSON_HEADER (aliases)
+MONGOC_GRIDFS_FILE_BSON_HEADER (metadata)
 
 bson_int64_t
 mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file);
