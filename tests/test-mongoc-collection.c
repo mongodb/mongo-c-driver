@@ -49,6 +49,15 @@ test_insert (void)
       bson_destroy(&b);
    }
 
+   bson_init (&b);
+   BSON_APPEND_INT32 (&b, "$hello", 1);
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &b, NULL,
+                                 &error);
+   assert (!r);
+   assert (error.domain == MONGOC_ERROR_BSON);
+   assert (error.code == MONGOC_ERROR_BSON_INVALID);
+   bson_destroy (&b);
+
    mongoc_collection_destroy(collection);
    bson_context_destroy(context);
    mongoc_client_destroy(client);
@@ -231,6 +240,27 @@ test_update (void)
       bson_destroy(&q);
       bson_destroy(&u);
    }
+
+   bson_init(&q);
+   bson_init(&u);
+   BSON_APPEND_INT32 (&u, "abcd", 1);
+   BSON_APPEND_INT32 (&u, "$hi", 1);
+   r = mongoc_collection_update(collection, MONGOC_UPDATE_NONE, &q, &u, NULL, &error);
+   assert (!r);
+   assert (error.domain == MONGOC_ERROR_BSON);
+   assert (error.code == MONGOC_ERROR_BSON_INVALID);
+   bson_destroy(&q);
+   bson_destroy(&u);
+
+   bson_init(&q);
+   bson_init(&u);
+   BSON_APPEND_INT32 (&u, "a.b.c.d", 1);
+   r = mongoc_collection_update(collection, MONGOC_UPDATE_NONE, &q, &u, NULL, &error);
+   assert (!r);
+   assert (error.domain == MONGOC_ERROR_BSON);
+   assert (error.code == MONGOC_ERROR_BSON_INVALID);
+   bson_destroy(&q);
+   bson_destroy(&u);
 
    mongoc_collection_destroy(collection);
    bson_context_destroy(context);

@@ -786,12 +786,31 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
 {
    struct iovec *iov;
    size_t i;
+   size_t err_offset;
    bson_bool_t r;
 
    ENTRY;
 
    BSON_ASSERT (documents);
    BSON_ASSERT (n_documents);
+
+   if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
+      for (i = 0; i < n_documents; i++) {
+         if (!bson_validate (documents [i],
+                             (BSON_VALIDATE_UTF8 |
+                              BSON_VALIDATE_UTF8_ALLOW_NULL |
+                              BSON_VALIDATE_DOLLAR_KEYS |
+                              BSON_VALIDATE_DOT_KEYS),
+                             &err_offset)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "A document was corrupt or contained "
+                            "invalid characters . or $");
+            return FALSE;
+         }
+      }
+   }
 
    if (!_mongoc_client_warm_up (collection->client, error)) {
       RETURN (FALSE);
@@ -905,12 +924,32 @@ mongoc_collection_update (mongoc_collection_t          *collection,
 {
    bson_uint32_t hint;
    mongoc_rpc_t rpc;
+   bson_iter_t iter;
+   size_t err_offset;
 
    ENTRY;
 
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(selector, FALSE);
    bson_return_val_if_fail(update, FALSE);
+
+   if (!(flags & MONGOC_UPDATE_NO_VALIDATE) &&
+       bson_iter_init (&iter, update) &&
+       bson_iter_next (&iter) &&
+       (bson_iter_key (&iter) [0] != '$') &&
+       !bson_validate (update,
+                       (BSON_VALIDATE_UTF8 |
+                        BSON_VALIDATE_UTF8_ALLOW_NULL |
+                        BSON_VALIDATE_DOLLAR_KEYS |
+                        BSON_VALIDATE_DOT_KEYS),
+                       &err_offset)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "update document is corrupt or contains "
+                      "invalid keys including $ or .");
+      return FALSE;
+   }
 
    if (!write_concern) {
       write_concern = collection->write_concern;
