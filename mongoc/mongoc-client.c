@@ -101,7 +101,6 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
 
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
-   bson_return_val_if_fail(error, NULL);
 
    options = mongoc_uri_get_options(uri);
    if (bson_iter_init_find(&iter, options, "connecttimeoutms") &&
@@ -236,7 +235,6 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
 
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
-   bson_return_val_if_fail(error, NULL);
 
    memset(&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
@@ -382,7 +380,6 @@ _mongoc_client_create_stream (mongoc_client_t          *client,
 {
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(host, NULL);
-   bson_return_val_if_fail(error, NULL);
 
    return client->initiator (client->uri, host, client->initiator_data, error);
 }
@@ -595,7 +592,6 @@ _mongoc_client_recv_gle (mongoc_client_t *client,
 
    bson_return_val_if_fail (client, FALSE);
    bson_return_val_if_fail (hint, FALSE);
-   bson_return_val_if_fail (error, FALSE);
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL);
 
