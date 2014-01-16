@@ -15,13 +15,14 @@
  */
 
 
-#include <string.h>
-#include <unistd.h>
+#include <arpa/inet.h>
+#include <limits.h>
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
-#include <arpa/inet.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "mongoc-init.h"
 #include "mongoc-ssl.h"
