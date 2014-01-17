@@ -810,6 +810,8 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
             return FALSE;
          }
       }
+   } else {
+      flags &= ~MONGOC_INSERT_NO_VALIDATE;
    }
 
    if (!_mongoc_client_warm_up (collection->client, error)) {
@@ -949,6 +951,8 @@ mongoc_collection_update (mongoc_collection_t          *collection,
                       "update document is corrupt or contains "
                       "invalid keys including $ or .");
       return FALSE;
+   } else {
+      flags &= ~MONGOC_UPDATE_NO_VALIDATE;
    }
 
    if (!write_concern) {
