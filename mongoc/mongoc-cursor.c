@@ -680,6 +680,8 @@ mongoc_cursor_more (mongoc_cursor_t *cursor)
 {
    bson_bool_t ret;
 
+   ENTRY;
+
    BSON_ASSERT(cursor);
 
    if (cursor->interface.more) {
@@ -697,7 +699,9 @@ _mongoc_cursor_more (mongoc_cursor_t *cursor)
 {
    bson_return_val_if_fail(cursor, FALSE);
 
-   return ((!cursor->sent) || (cursor->rpc.reply.cursor_id));
+   return ((!cursor->sent) ||
+           (cursor->rpc.reply.cursor_id) ||
+           !cursor->end_of_event);
 }
 
 
