@@ -66,8 +66,13 @@ mongoc_uri_append_host (mongoc_uri_t  *uri,
    link_ = bson_malloc0(sizeof *link_);
    strncpy(link_->host, host, sizeof link_->host);
    link_->host[sizeof link_->host - 1] = '\0';
-   snprintf(link_->host_and_port, sizeof link_->host_and_port,
-            "%s:%hu", host, port);
+   if (strchr (host, ':')) {
+      snprintf(link_->host_and_port, sizeof link_->host_and_port,
+               "[%s]:%hu", host, port);
+   } else {
+      snprintf(link_->host_and_port, sizeof link_->host_and_port,
+               "%s:%hu", host, port);
+   }
    link_->host_and_port[sizeof link_->host_and_port - 1] = '\0';
    link_->port = port;
    link_->family = strstr(host, ".sock") ? AF_UNIX : AF_INET;
@@ -153,12 +158,39 @@ mongoc_uri_parse_userpass (mongoc_uri_t  *uri,
 
 
 static bson_bool_t
+mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
+                        const char    *str)
+{
+   bson_uint16_t port = 27017;
+   const char *portstr;
+   const char *end_host;
+   char *hostname;
+
+   if ((portstr = strrchr (str, ':')) && !strstr (portstr, "]")) {
+      sscanf (portstr, ":%hu", &port);
+   }
+
+   hostname = scan_to_unichar (str + 1, ']', &end_host);
+
+   mongoc_uri_do_unescape (&hostname);
+   mongoc_uri_append_host (uri, hostname, port);
+   bson_free (hostname);
+
+   return TRUE;
+}
+
+
+static bson_bool_t
 mongoc_uri_parse_host (mongoc_uri_t  *uri,
                        const char    *str)
 {
    bson_uint16_t port;
    const char *end_host;
    char *hostname;
+
+   if (*str == '[' && strchr (str, ']')) {
+      return mongoc_uri_parse_host6 (uri, str);
+   }
 
    if ((hostname = scan_to_unichar(str, ':', &end_host))) {
       end_host++;

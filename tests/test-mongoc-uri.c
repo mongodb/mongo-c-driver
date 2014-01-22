@@ -26,10 +26,14 @@ test_mongoc_uri_new (void)
    assert(!mongoc_uri_new("mongodb://localhost::27017/"));
    assert(!mongoc_uri_new("mongodb://localhost::27017,abc"));
 
-   /*
-    * TODO: Support IPv6.
-    */
-   assert(!mongoc_uri_new("mongodb://[::1]/?ipv6=true&safe=true"));
+   uri = mongoc_uri_new("mongodb://[::1]:27888,[::2]:27999/?ipv6=true&safe=true");
+   assert (uri);
+   hosts = mongoc_uri_get_hosts(uri);
+   assert (hosts);
+   assert_cmpstr (hosts->host, "::1");
+   assert (hosts->port == 27888);
+   assert_cmpstr (hosts->host_and_port, "[::1]:27888");
+   mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new("mongodb:///tmp/mongodb.sock/?");
    assert(uri);
@@ -178,6 +182,15 @@ test_mongoc_uri_new (void)
    assert (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
            BSON_ITER_HOLDS_UTF8 (&iter) &&
            (0 == strcmp (bson_iter_utf8 (&iter, NULL), "blah")));
+   mongoc_uri_destroy(uri);
+
+   uri = mongoc_uri_new("mongodb://christian%40realm@[::6]:27017/?abcd=%20");
+   assert(uri);
+   options = mongoc_uri_get_options(uri);
+   assert(options);
+   assert(bson_iter_init_find(&iter, options, "abcd"));
+   assert(BSON_ITER_HOLDS_UTF8(&iter));
+   assert_cmpstr(bson_iter_utf8(&iter, NULL), " ");
    mongoc_uri_destroy(uri);
 }
 
