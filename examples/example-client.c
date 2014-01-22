@@ -41,7 +41,7 @@ main (int   argc,
    bson_append_utf8 (&query, "hello", -1, "world", -1);
 #endif
 
-   collection = mongoc_client_get_collection (client, collection_name, "test");
+   collection = mongoc_client_get_collection (client, "test", collection_name);
    cursor = mongoc_collection_find (collection,
                                     MONGOC_QUERY_NONE,
                                     0,
