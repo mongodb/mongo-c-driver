@@ -1016,7 +1016,6 @@ mongoc_collection_save (mongoc_collection_t          *collection,
    bson_iter_t iter;
    bson_bool_t ret;
    bson_t selector;
-   bson_t set;
 
    bson_return_val_if_fail(collection, FALSE);
    bson_return_val_if_fail(document, FALSE);
@@ -1032,17 +1031,13 @@ mongoc_collection_save (mongoc_collection_t          *collection,
    bson_init(&selector);
    bson_append_iter(&selector, NULL, 0, &iter);
 
-   bson_init(&set);
-   bson_append_document(&set, "$set", 4, document);
-
    ret = mongoc_collection_update(collection,
-                                  MONGOC_UPDATE_NONE,
+                                  MONGOC_UPDATE_UPSERT,
                                   &selector,
-                                  &set,
+                                  document,
                                   write_concern,
                                   error);
 
-   bson_destroy(&set);
    bson_destroy(&selector);
 
    return ret;

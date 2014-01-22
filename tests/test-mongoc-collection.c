@@ -150,6 +150,50 @@ test_insert_bulk (void)
 
 
 static void
+test_save (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_context_t *context;
+   bson_error_t error;
+   bson_bool_t r;
+   bson_oid_t oid;
+   unsigned i;
+   bson_t b;
+
+   client = mongoc_client_new(gTestUri);
+   assert(client);
+
+   collection = mongoc_client_get_collection(client, "test", "test");
+   assert(collection);
+
+   mongoc_collection_drop(collection, &error);
+
+   context = bson_context_new(BSON_CONTEXT_NONE);
+   assert(context);
+
+   for (i = 0; i < 10; i++) {
+      bson_init(&b);
+      bson_oid_init(&oid, context);
+      bson_append_oid(&b, "_id", 3, &oid);
+      bson_append_utf8(&b, "hello", 5, "/world", 5);
+      r = mongoc_collection_save(collection, &b, NULL, &error);
+      if (!r) {
+         MONGOC_WARNING("%s\n", error.message);
+      }
+      assert(r);
+      bson_destroy(&b);
+   }
+
+   bson_destroy (&b);
+
+   mongoc_collection_destroy(collection);
+   bson_context_destroy(context);
+   mongoc_client_destroy(client);
+}
+
+
+static void
 test_regex (void)
 {
    mongoc_collection_t *collection;
@@ -498,6 +542,7 @@ main (int   argc,
 
    run_test("/mongoc/collection/insert_bulk", test_insert_bulk);
    run_test("/mongoc/collection/insert", test_insert);
+   run_test("/mongoc/collection/save", test_save);
    run_test("/mongoc/collection/index", test_index);
    run_test("/mongoc/collection/regex", test_regex);
    run_test("/mongoc/collection/update", test_update);
