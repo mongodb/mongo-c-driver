@@ -23,7 +23,6 @@
 
 #include "mongoc-matcher-op-private.h"
 
-
 BSON_BEGIN_DECLS
 
 

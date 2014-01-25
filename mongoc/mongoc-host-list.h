@@ -47,7 +47,7 @@ struct _mongoc_host_list_t
    mongoc_host_list_t *next;
    char                host[HOST_NAME_MAX + 1];
    char                host_and_port[HOST_NAME_MAX + 7];
-   bson_uint16_t       port;
+   uint16_t       port;
    int                 family;
    void               *padding[4];
 };

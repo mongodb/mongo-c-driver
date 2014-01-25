@@ -31,11 +31,11 @@
 
 BSON_BEGIN_DECLS
 
-bson_bool_t
+bool
 mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
-                                bson_int32_t     timeout_msec);
+                                int32_t     timeout_msec);
 
-bson_bool_t
+bool
 mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
                               const char      *host);
 

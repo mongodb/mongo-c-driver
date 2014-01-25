@@ -33,12 +33,12 @@ struct _mongoc_stream_t
    ssize_t (*writev)     (mongoc_stream_t *stream,
                           struct iovec    *iov,
                           size_t           iovcnt,
-                          bson_int32_t     timeout_msec);
+                          int32_t     timeout_msec);
    ssize_t (*readv)      (mongoc_stream_t *stream,
                           struct iovec    *iov,
                           size_t           iovcnt,
                           size_t           min_bytes,
-                          bson_int32_t     timeout_msec);
+                          int32_t     timeout_msec);
    int     (*cork)       (mongoc_stream_t *stream);
    int     (*uncork)     (mongoc_stream_t *stream);
    int     (*setsockopt) (mongoc_stream_t *stream,

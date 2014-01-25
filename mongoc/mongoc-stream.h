@@ -24,10 +24,7 @@
 #define MONGOC_STREAM_H
 
 
-#include <bson.h>
-#include <sys/uio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include "mongoc-compat.h"
 
 
 BSON_BEGIN_DECLS
@@ -44,17 +41,17 @@ int              mongoc_stream_flush         (mongoc_stream_t *stream);
 ssize_t          mongoc_stream_writev        (mongoc_stream_t *stream,
                                               struct iovec    *iov,
                                               size_t           iovcnt,
-                                              bson_int32_t     timeout_msec);
+                                              int32_t     timeout_msec);
 ssize_t          mongoc_stream_readv         (mongoc_stream_t *stream,
                                               struct iovec    *iov,
                                               size_t           iovcnt,
                                               size_t           min_bytes,
-                                              bson_int32_t     timeout_msec);
+                                              int32_t     timeout_msec);
 ssize_t          mongoc_stream_read          (mongoc_stream_t *stream,
                                               void            *buf,
                                               size_t           count,
                                               size_t           min_bytes,
-                                              bson_int32_t     timeout_msec);
+                                              int32_t     timeout_msec);
 int              mongoc_stream_setsockopt    (mongoc_stream_t *stream,
                                               int              level,
                                               int              optname,

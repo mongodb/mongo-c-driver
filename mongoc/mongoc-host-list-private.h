@@ -25,7 +25,7 @@
 BSON_BEGIN_DECLS
 
 
-bson_bool_t
+bool
 _mongoc_host_list_from_string (mongoc_host_list_t *host_list,
                                const char         *host_and_port);
 

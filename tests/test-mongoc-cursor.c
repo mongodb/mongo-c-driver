@@ -2,8 +2,7 @@
 #include <mongoc-cursor-private.h>
 
 #include "TestSuite.h"
-
-#define HOST (getenv("MONGOC_TEST_HOST") ? getenv("MONGOC_TEST_HOST") : "localhost")
+#include "test-libmongoc.h"
 
 static void
 test_get_host (void)
@@ -15,11 +14,11 @@ test_get_host (void)
    mongoc_uri_t *uri;
    const bson_t *doc;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_t q = BSON_INITIALIZER;
    char *uristr;
 
-   uristr = bson_strdup_printf("mongodb://%s/", HOST);
+   uristr = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
    uri = mongoc_uri_new(uristr);
    bson_free(uristr);
 
@@ -27,7 +26,7 @@ test_get_host (void)
 
    client = mongoc_client_new_from_uri(uri);
    cursor = _mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
-                               FALSE, &q, NULL, NULL);
+                               false, &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
    if (!r && mongoc_cursor_error(cursor, &error)) {
       MONGOC_ERROR("%s", error.message);
@@ -52,11 +51,11 @@ test_clone (void)
    const bson_t *doc;
    bson_error_t error;
    mongoc_uri_t *uri;
-   bson_bool_t r;
+   bool r;
    bson_t q = BSON_INITIALIZER;
    char *uristr;
 
-   uristr = bson_strdup_printf("mongodb://%s/", HOST);
+   uristr = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
    uri = mongoc_uri_new(uristr);
    bson_free(uristr);
 
@@ -78,7 +77,7 @@ test_clone (void)
    }
 
    cursor = _mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
-                               FALSE, &q, NULL, NULL);
+                               false, &q, NULL, NULL);
    ASSERT(cursor);
 
    r = mongoc_cursor_next(cursor, &doc);

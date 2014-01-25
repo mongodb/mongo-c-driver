@@ -17,16 +17,7 @@
 
 #define _GNU_SOURCE
 
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <bson.h>
 
 #include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
@@ -105,7 +96,7 @@ ssize_t
 mongoc_stream_writev (mongoc_stream_t *stream,
                       struct iovec    *iov,
                       size_t           iovcnt,
-                      bson_int32_t     timeout_msec)
+                      int32_t     timeout_msec)
 {
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
@@ -141,7 +132,7 @@ mongoc_stream_readv (mongoc_stream_t *stream,
                      struct iovec    *iov,
                      size_t           iovcnt,
                      size_t           min_bytes,
-                     bson_int32_t     timeout_msec)
+                     int32_t     timeout_msec)
 {
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
@@ -177,7 +168,7 @@ mongoc_stream_read (mongoc_stream_t *stream,
                     void            *buf,
                     size_t           count,
                     size_t           min_bytes,
-                    bson_int32_t     timeout_msec)
+                    int32_t     timeout_msec)
 {
    struct iovec iov;
 

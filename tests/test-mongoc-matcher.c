@@ -100,7 +100,7 @@ test_mongoc_matcher_eq_utf8 (void)
    bson_t *spec;
    bson_error_t error;
    mongoc_matcher_t *matcher;
-   bson_bool_t r;
+   bool r;
 
    spec = BCON_NEW("hello", "world");
    matcher = mongoc_matcher_new (spec, &error);
@@ -139,7 +139,7 @@ test_mongoc_matcher_eq_int32 (void)
    bson_t *doc;
    bson_error_t error;
    mongoc_matcher_t *matcher;
-   bson_bool_t r;
+   bool r;
 
    spec = BCON_NEW ("hello", BCON_INT32 (1234));
    matcher = mongoc_matcher_new (spec, &error);
@@ -178,7 +178,7 @@ test_mongoc_matcher_eq_int64 (void)
    bson_t *doc;
    bson_error_t error;
    mongoc_matcher_t *matcher;
-   bson_bool_t r;
+   bool r;
 
    spec = BCON_NEW ("hello", BCON_INT64 (1234));
    matcher = mongoc_matcher_new (spec, &error);
@@ -215,7 +215,7 @@ test_mongoc_matcher_in_basic (void)
 {
    mongoc_matcher_t *matcher;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_t *spec;
    bson_t doc = BSON_INITIALIZER;
 

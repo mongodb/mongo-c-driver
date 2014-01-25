@@ -17,26 +17,99 @@
 
 #include <assert.h>
 #include <fcntl.h>
-#include <inttypes.h>
+
 #if defined(__APPLE__)
 #include <mach/mach_time.h>
 #endif
-#include <pthread.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/utsname.h>
 #if !defined(_WIN32)
+# include <sys/types.h>
+# include <inttypes.h>
+# include <sys/utsname.h>
 # include <sys/wait.h>
+# include <unistd.h>
+# include <sys/time.h>
 #else
 # include <windows.h>
 #endif
-#include <unistd.h>
 
 #include "TestSuite.h"
 
+#if !defined(_WIN32)
+#  include <pthread.h>
+#  define TestSuite_mutex_t                 pthread_mutex_t
+#  define TestSuite_mutex_init(_n)          pthread_mutex_init((_n), NULL)
+#  define TestSuite_mutex_lock              pthread_mutex_lock
+#  define TestSuite_mutex_unlock            pthread_mutex_unlock
+#  define TestSuite_mutex_destroy           pthread_mutex_destroy
+#  define TestSuite_thread_t                pthread_t
+#  define TestSuite_thread_create(_t,_f,_d) pthread_create((_t), NULL, (_f), (_d))
+#  define TestSuite_thread_join(_n)         pthread_join((_n), NULL)
+#  define TestSuite_strdup                  strdup
+#  define TestSuite_snprintf                snprintf
+#else
+#  define TestSuite_mutex_t                    CRITICAL_SECTION
+#  define TestSuite_mutex_init                 InitializeCriticalSection
+#  define TestSuite_mutex_lock                 EnterCriticalSection
+#  define TestSuite_mutex_unlock               LeaveCriticalSection
+#  define TestSuite_mutex_destroy              DeleteCriticalSection
+#  define TestSuite_thread_t                   HANDLE
+static int
+TestSuite_thread_create (TestSuite_thread_t *thread,
+                         void                *(*cb)(void *),
+                         void               *arg)
+{
+   *thread = CreateThread (NULL, 0, (void *)cb, arg, 0, NULL);
+   return 0;
+}
+#  define TestSuite_thread_join(_n)            WaitForSingleObject ((_n), \
+                                                                    INFINITE)
+struct timespec { time_t tv_sec; long tv_nsec; };
+#  define TestSuite_strdup                     _strdup
+
+int
+TestSuite_vsnprintf (char       *str,
+                     size_t      size,
+                     const char *format,
+                     va_list     ap)
+{
+#ifdef _WIN32
+   int r = -1;
+
+   if (size != 0) {
+      r = _vsnprintf_s (str, size, _TRUNCATE, format, ap);
+   }
+
+   if (r == -1) {
+      r = _vscprintf (format, ap);
+   }
+
+   return r;
+#else
+   return vsnprintf (str, size, format, ap);
+#endif
+}
+
+int
+TestSuite_snprintf (char       *str,
+                    size_t      size,
+                    const char *format,
+                    ...)
+{
+   int r;
+   va_list ap;
+
+   va_start (ap, format);
+   r = TestSuite_vsnprintf (str, size, format, ap);
+   va_end (ap);
+
+   return r;
+}
+
+#endif
 
 #define TEST_VERBOSE   (1 << 0)
 #define TEST_NOFORK    (1 << 1)
@@ -72,8 +145,7 @@ _Clock_GetMonotonic (struct timespec *ts) /* OUT */
     defined(__FreeBSD__) || \
     defined(__OpenBSD__) || \
     defined(__NetBSD__) || \
-    defined(__DragonFly__) || \
-    (defined(_WIN32) && defined(__GNUC__))
+    defined(__DragonFly__)
    clock_gettime (CLOCK_MONOTONIC, ts);
 #elif defined(__APPLE__)
    static mach_timebase_info_data_t info = { 0 };
@@ -89,8 +161,8 @@ _Clock_GetMonotonic (struct timespec *ts) /* OUT */
    ts->tv_sec = atime * 1e-9;
    ts->tv_nsec = atime - (ts->tv_sec * 1e9);
 #elif defined(_WIN32)
-   uint64_t ticks = GetTickCount64 ();
-   tv->tv_sec = ticks / NANOSEC_PER_SEC;
+   ULONGLONG ticks = GetTickCount64 ();
+   ts->tv_sec = ticks / NANOSEC_PER_SEC;
    ts->tv_nsec = ticks % NANOSEC_PER_SEC;
 #else
 # warning "Monotonic clock is not yet supported on your platform."
@@ -129,9 +201,9 @@ TestSuite_Init (TestSuite *suite,
 
    memset (suite, 0, sizeof *suite);
 
-   suite->name = strdup (name);
+   suite->name = TestSuite_strdup (name);
    suite->flags = 0;
-   suite->prgname = strdup (argv [0]);
+   suite->prgname = TestSuite_strdup (argv [0]);
 
    for (i = 0; i < argc; i++) {
       if (0 == strcmp ("-v", argv [i])) {
@@ -148,7 +220,7 @@ TestSuite_Init (TestSuite *suite,
             fprintf (stderr, "-l requires an argument.\n");
             exit (EXIT_FAILURE);
          }
-         suite->testname = strdup (argv [++i]);
+         suite->testname = TestSuite_strdup (argv [++i]);
       }
    }
 }
@@ -180,7 +252,7 @@ TestSuite_AddFull (TestSuite  *suite,   /* IN */
    Test *iter;
 
    test = calloc (1, sizeof *test);
-   test->name = strdup (name);
+   test->name = TestSuite_strdup (name);
    test->func = func;
    test->check = check;
    test->next = NULL;
@@ -229,7 +301,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
 static void
 TestSuite_RunTest (TestSuite *suite,       /* IN */
                    Test *test,             /* IN */
-                   pthread_mutex_t *mutex, /* IN */
+                   TestSuite_mutex_t *mutex, /* IN */
                    int *count)             /* INOUT */
 {
    struct timespec ts1;
@@ -239,7 +311,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
    char buf[256];
    int status;
 
-   snprintf (name, sizeof name, "%s%s", suite->name, test->name);
+   TestSuite_snprintf (name, sizeof name, "%s%s", suite->name, test->name);
    name [sizeof name - 1] = '\0';
 
    if (!test->check || test->check ()) {
@@ -249,7 +321,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
        * TODO: If not verbose, close()/dup(/dev/null) for stdout.
        */
 
-#if !defined(PLATFORM_POSIX)
+#if defined(_WIN32)
       test->func ();
       status = 0;
 #else
@@ -264,8 +336,8 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       _Clock_GetMonotonic (&ts2);
       _Clock_Subtract (&ts3, &ts2, &ts1);
 
-      pthread_mutex_lock (mutex);
-      snprintf (buf, sizeof buf,
+      TestSuite_mutex_lock (mutex);
+      TestSuite_snprintf (buf, sizeof buf,
                 "    { \"status\": \"%s\", "
                       "\"name\": \"%s\", "
                       "\"elapsed\": %u.%09u }%s\n",
@@ -276,13 +348,13 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
                ((*count) == 1) ? "" : ",");
       buf [sizeof buf - 1] = 0;
       fprintf (stdout, "%s", buf);
-      pthread_mutex_unlock (mutex);
+      TestSuite_mutex_unlock (mutex);
    } else {
-      pthread_mutex_lock (mutex);
-      snprintf (buf, sizeof buf, "    { \"status\": \"SKIP\", \"name\": \"%s\" },\n", test->name);
+      TestSuite_mutex_lock (mutex);
+      TestSuite_snprintf (buf, sizeof buf, "    { \"status\": \"SKIP\", \"name\": \"%s\" },\n", test->name);
       buf [sizeof buf - 1] = '\0';
       fprintf (stdout, "%s", buf);
-      pthread_mutex_unlock (mutex);
+      TestSuite_mutex_unlock (mutex);
    }
 }
 
@@ -317,6 +389,48 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
 static void
 TestSuite_PrintJsonHeader (TestSuite *suite) /* IN */
 {
+#ifdef _WIN32
+#  define INFO_BUFFER_SIZE 32767
+
+   SYSTEM_INFO si;
+   DWORD version = 0;
+   DWORD major_version = 0;
+   DWORD minor_version = 0;
+   DWORD build = 0;
+
+   GetSystemInfo(&si);
+   version = GetVersion();
+
+   major_version = (DWORD)(LOBYTE(LOWORD(version)));
+   minor_version = (DWORD)(HIBYTE(LOWORD(version)));
+
+   if (version < 0x80000000) {
+      build = (DWORD)(HIWORD(version));
+   }
+
+   fprintf (stdout,
+            "{\n"
+            "  \"host\": {\n"
+            "    \"sysname\": \"Windows\",\n"
+            "    \"release\": \"%ld.%ld (%ld)\",\n"
+            "    \"machine\": \"%ld\",\n"
+            "    \"memory\": {\n"
+            "      \"pagesize\": %ld,\n"
+            "      \"npages\": %d\n"
+            "    }\n"
+            "  },\n"
+            "  \"options\": {\n"
+            "    \"parallel\": \"%s\",\n"
+            "    \"fork\": \"%s\"\n"
+            "  },\n"
+            "  \"tests\": [\n",
+            major_version, minor_version, build,
+            si.dwProcessorType,
+            si.dwPageSize,
+            0,
+            (suite->flags & TEST_NOTHREADS) ? "false" : "true",
+            (suite->flags & TEST_NOFORK) ? "false" : "true");
+#else
    struct utsname u;
    uint64_t pagesize;
    uint64_t npages = 0;
@@ -329,9 +443,9 @@ TestSuite_PrintJsonHeader (TestSuite *suite) /* IN */
    }
 
    pagesize = sysconf (_SC_PAGE_SIZE);
-#ifdef __linux__
+#  ifdef __linux__
    npages = sysconf (_SC_PHYS_PAGES);
-#endif
+#  endif
 
    fprintf (stdout,
             "{\n"
@@ -356,6 +470,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite) /* IN */
             npages,
             (suite->flags & TEST_NOTHREADS) ? "false" : "true",
             (suite->flags & TEST_NOFORK) ? "false" : "true");
+#endif
 
    fflush (stdout);
 }
@@ -372,7 +487,7 @@ typedef struct
 {
    TestSuite *suite;
    Test *test;
-   pthread_mutex_t *mutex;
+   TestSuite_mutex_t *mutex;
    int *count;
 } ParallelInfo;
 
@@ -399,15 +514,15 @@ static void
 TestSuite_RunParallel (TestSuite *suite) /* IN */
 {
    ParallelInfo *info;
-   pthread_t *threads;
-   pthread_mutex_t mutex;
+   TestSuite_thread_t *threads;
+   TestSuite_mutex_t mutex;
    Test *test;
    int count = 0;
    int i;
 
    ASSERT (suite);
 
-   assert (0 == pthread_mutex_init (&mutex, NULL));
+   TestSuite_mutex_init (&mutex);
 
    for (test = suite->tests; test; test = test->next) {
       count++;
@@ -423,10 +538,14 @@ TestSuite_RunParallel (TestSuite *suite) /* IN */
       info->test = test;
       info->count = &count;
       info->mutex = &mutex;
-      pthread_create (&threads [i], NULL, TestSuite_ParallelWorker, info);
+      TestSuite_thread_create (&threads [i], TestSuite_ParallelWorker, info);
    }
 
+#ifdef _WIN32
+   Sleep (30000);
+#else
    sleep (30);
+#endif
 
    fprintf (stderr, "Timed out, aborting!\n");
 
@@ -438,10 +557,10 @@ static void
 TestSuite_RunSerial (TestSuite *suite) /* IN */
 {
    Test *test;
-   pthread_mutex_t mutex;
+   TestSuite_mutex_t mutex;
    int count = 0;
 
-   pthread_mutex_init (&mutex, NULL);
+   TestSuite_mutex_init (&mutex);
 
    for (test = suite->tests; test; test = test->next) {
       count++;
@@ -454,7 +573,7 @@ TestSuite_RunSerial (TestSuite *suite) /* IN */
 
    TestSuite_PrintJsonFooter ();
 
-   pthread_mutex_destroy (&mutex);
+   TestSuite_mutex_destroy (&mutex);
 }
 
 
@@ -462,7 +581,7 @@ static void
 TestSuite_RunNamed (TestSuite *suite,     /* IN */
                     const char *testname) /* IN */
 {
-   pthread_mutex_t mutex;
+   TestSuite_mutex_t mutex;
    char name[128];
    Test *test;
    int count = 1;
@@ -470,10 +589,10 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
    ASSERT (suite);
    ASSERT (testname);
 
-   pthread_mutex_init (&mutex, NULL);
+   TestSuite_mutex_init (&mutex);
 
    for (test = suite->tests; test; test = test->next) {
-      snprintf (name, sizeof name, "%s%s",
+      TestSuite_snprintf (name, sizeof name, "%s%s",
                 suite->name, test->name);
       name [sizeof name - 1] = '\0';
 
@@ -484,7 +603,7 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
 
    TestSuite_PrintJsonFooter ();
 
-   pthread_mutex_destroy (&mutex);
+   TestSuite_mutex_destroy (&mutex);
 }
 
 

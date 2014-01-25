@@ -15,19 +15,19 @@
  */
 
 
+#include <bson.h>
 #include <errno.h>
 #include <stdarg.h>
 
 #include "mongoc-error.h"
 #include "mongoc-buffer-private.h"
 
-
 #ifndef MONGOC_BUFFER_DEFAULT_SIZE
 #define MONGOC_BUFFER_DEFAULT_SIZE 1024
 #endif
 
 
-#define SPACE_FOR(_b, _sz) (((ssize_t)(_b)->datalen - (ssize_t)(_b)->off - (ssize_t)(_b)->len) >= _sz)
+#define SPACE_FOR(_b, _sz) (((ssize_t)(_b)->datalen - (ssize_t)(_b)->off - (ssize_t)(_b)->len) >= (ssize_t)(_sz))
 
 
 /**
@@ -45,7 +45,7 @@
  */
 void
 _mongoc_buffer_init (mongoc_buffer_t   *buffer,
-                     bson_uint8_t      *buf,
+                     uint8_t      *buf,
                      size_t             buflen,
                      bson_realloc_func  realloc_func)
 {
@@ -101,7 +101,7 @@ _mongoc_buffer_destroy (mongoc_buffer_t *buffer)
  */
 void
 _mongoc_buffer_clear (mongoc_buffer_t *buffer,
-                      bson_bool_t      zero)
+                      bool      zero)
 {
    bson_return_if_fail(buffer);
 
@@ -126,21 +126,21 @@ _mongoc_buffer_clear (mongoc_buffer_t *buffer,
  * in conjunction with reading RPCs from a stream. You read from the stream
  * into this buffer and then scatter the buffer into the RPC.
  *
- * Returns: TRUE if successful; otherwise FALSE and @error is set.
+ * Returns: true if successful; otherwise false and @error is set.
  */
-bson_bool_t
+bool
 _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
                                    mongoc_stream_t *stream,
-                                   size_t           size,
-                                   bson_int32_t     timeout_msec,
+                                   size_t      size,
+                                   int32_t     timeout_msec,
                                    bson_error_t    *error)
 {
-   bson_uint8_t *buf;
+   uint8_t *buf;
    ssize_t ret;
 
-   bson_return_val_if_fail(buffer, FALSE);
-   bson_return_val_if_fail(stream, FALSE);
-   bson_return_val_if_fail(size, FALSE);
+   bson_return_val_if_fail(buffer, false);
+   bson_return_val_if_fail(stream, false);
+   bson_return_val_if_fail(size, false);
 
    BSON_ASSERT(buffer->datalen);
 
@@ -150,7 +150,7 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       }
       buffer->off = 0;
       if (!SPACE_FOR(buffer, size)) {
-         buffer->datalen = bson_next_power_of_two(size);
+         buffer->datalen = bson_next_power_of_two((uint32_t)size);
          buffer->data = buffer->realloc_func(buffer->data, buffer->datalen);
       }
    }
@@ -161,14 +161,14 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
                      MONGOC_ERROR_STREAM_SOCKET,
-                     "Failed to read %llu bytes from socket.",
-                     (unsigned long long)size);
-      return FALSE;
+                     "Failed to read %" PRIu64 " bytes from socket.",
+                     (uint64_t)size);
+      return false;
    }
 
    buffer->len += ret;
 
-   return TRUE;
+   return true;
 }
 
 
@@ -187,15 +187,15 @@ ssize_t
 _mongoc_buffer_fill (mongoc_buffer_t *buffer,
                      mongoc_stream_t *stream,
                      size_t           min_bytes,
-                     bson_int32_t     timeout_msec,
+                     int32_t     timeout_msec,
                      bson_error_t    *error)
 {
    ssize_t ret;
    size_t avail_bytes;
 
-   bson_return_val_if_fail(buffer, FALSE);
-   bson_return_val_if_fail(stream, FALSE);
-   bson_return_val_if_fail(min_bytes >= 0, FALSE);
+   bson_return_val_if_fail(buffer, false);
+   bson_return_val_if_fail(stream, false);
+   bson_return_val_if_fail(min_bytes >= 0, false);
 
    BSON_ASSERT(buffer->data);
    BSON_ASSERT(buffer->datalen);
@@ -213,7 +213,7 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
    buffer->off = 0;
 
    if (!SPACE_FOR(buffer, min_bytes)) {
-      buffer->datalen = bson_next_power_of_two(buffer->len + min_bytes);
+      buffer->datalen = bson_next_power_of_two((uint32_t)(buffer->len + min_bytes));
       buffer->data = bson_realloc(buffer->data, buffer->datalen);
    }
 

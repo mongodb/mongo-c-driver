@@ -23,14 +23,14 @@ test_write_concern_basic (void)
    ASSERT(!mongoc_write_concern_get_wtimeout(write_concern));
    ASSERT(!mongoc_write_concern_get_wmajority(write_concern));
 
-   mongoc_write_concern_set_fsync(write_concern, TRUE);
+   mongoc_write_concern_set_fsync(write_concern, true);
    ASSERT(mongoc_write_concern_get_fsync(write_concern));
-   mongoc_write_concern_set_fsync(write_concern, FALSE);
+   mongoc_write_concern_set_fsync(write_concern, false);
    ASSERT(!mongoc_write_concern_get_fsync(write_concern));
 
-   mongoc_write_concern_set_journal(write_concern, TRUE);
+   mongoc_write_concern_set_journal(write_concern, true);
    ASSERT(mongoc_write_concern_get_journal(write_concern));
-   mongoc_write_concern_set_journal(write_concern, FALSE);
+   mongoc_write_concern_set_journal(write_concern, false);
    ASSERT(!mongoc_write_concern_get_journal(write_concern));
 
    /*
@@ -53,8 +53,8 @@ test_write_concern_basic (void)
    /*
     * Check generated bson.
     */
-   mongoc_write_concern_set_fsync(write_concern, TRUE);
-   mongoc_write_concern_set_journal(write_concern, TRUE);
+   mongoc_write_concern_set_fsync(write_concern, true);
+   mongoc_write_concern_set_journal(write_concern, true);
    b = _mongoc_write_concern_freeze(write_concern);
    ASSERT(bson_iter_init_find(&iter, b, "fsync") && BSON_ITER_HOLDS_BOOL(&iter) && bson_iter_bool(&iter));
    ASSERT(bson_iter_init_find(&iter, b, "j") && BSON_ITER_HOLDS_BOOL(&iter) && bson_iter_bool(&iter));

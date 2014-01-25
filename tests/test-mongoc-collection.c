@@ -1,13 +1,8 @@
 #include <mongoc.h>
-#include <mongoc-client-private.h>
-#include <mongoc-cursor-private.h>
-#include <mongoc-log.h>
 
 #include "TestSuite.h"
 
-
-#define HOST (getenv("MONGOC_TEST_HOST") ? getenv("MONGOC_TEST_HOST") : "localhost")
-
+#include "test-libmongoc.h"
 
 static char *gTestUri;
 
@@ -19,7 +14,7 @@ test_insert (void)
    mongoc_client_t *client;
    bson_context_t *context;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_oid_t oid;
    unsigned i;
    bson_t b;
@@ -71,13 +66,13 @@ test_insert_bulk (void)
    mongoc_client_t *client;
    bson_context_t *context;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_oid_t oid;
    unsigned i;
    bson_t q;
    bson_t b[10];
    bson_t *bptr[10];
-   bson_int64_t count;
+   int64_t count;
 
    client = mongoc_client_new(gTestUri);
    ASSERT (client);
@@ -156,7 +151,7 @@ test_save (void)
    mongoc_client_t *client;
    bson_context_t *context;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_oid_t oid;
    unsigned i;
    bson_t b;
@@ -199,7 +194,7 @@ test_regex (void)
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bson_error_t error = { 0 };
-   bson_int64_t count;
+   int64_t count;
    bson_t q = BSON_INITIALIZER;
 
    client = mongoc_client_new (gTestUri);
@@ -234,7 +229,7 @@ test_update (void)
    mongoc_client_t *client;
    bson_context_t *context;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_oid_t oid;
    unsigned i;
    bson_t b;
@@ -319,7 +314,7 @@ test_delete (void)
    mongoc_client_t *client;
    bson_context_t *context;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_oid_t oid;
    bson_t b;
    int i;
@@ -369,7 +364,7 @@ test_index (void)
    mongoc_client_t *client;
    mongoc_index_opt_t opt;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_t keys;
 
    mongoc_index_opt_init(&opt);
@@ -404,7 +399,7 @@ test_count (void)
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bson_error_t error;
-   bson_int64_t count;
+   int64_t count;
    bson_t b;
 
    client = mongoc_client_new(gTestUri);
@@ -434,7 +429,7 @@ test_drop (void)
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
 
    client = mongoc_client_new(gTestUri);
    ASSERT (client);
@@ -443,10 +438,10 @@ test_drop (void)
    ASSERT (collection);
 
    r = mongoc_collection_drop(collection, &error);
-   ASSERT (r == TRUE);
+   assert(r == true);
 
    r = mongoc_collection_drop(collection, &error);
-   ASSERT (r == FALSE);
+   assert(r == false);
 
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
@@ -461,7 +456,7 @@ test_aggregate (void)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_t b;
    bson_t match;
    bson_t pipeline;
@@ -530,7 +525,7 @@ cleanup_globals (void)
 void
 test_collection_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf("mongodb://%s/", HOST);
+   gTestUri = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
 
    TestSuite_Add (suite, "/Collection/insert_bulk", test_insert_bulk);
    TestSuite_Add (suite, "/Collection/insert", test_insert);

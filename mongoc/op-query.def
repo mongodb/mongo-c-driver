@@ -9,5 +9,5 @@ RPC(
   INT32_FIELD(skip)
   INT32_FIELD(n_return)
   BSON_FIELD(query)
-  OPTIONAL(fields, BSON_FIELD(fields))
+  BSON_OPTIONAL(fields, BSON_FIELD(fields))
 )

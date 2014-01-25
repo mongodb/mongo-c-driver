@@ -20,6 +20,8 @@ main (int   argc,
    bson_t query;
    char *str;
 
+   mongoc_init();
+
    if (argc > 1) {
       uristr = argv [1];
    }

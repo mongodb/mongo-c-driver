@@ -18,17 +18,6 @@
 #define _GNU_SOURCE
 
 #include <bson.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <mongoc.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
 
 #include "mock-server.h"
 #include "mongoc-buffer-private.h"
@@ -41,17 +30,17 @@ struct _mock_server_t
    mock_server_handler_t  handler;
    void                  *handler_data;
 
-   pthread_t              main_thread;
-   bson_bool_t            using_main_thread;
+   mongoc_thread_t          main_thread;
+   bool            using_main_thread;
 
    const char            *address;
 
-   bson_uint16_t          port;
-   int                    socket;
+   uint16_t          port;
+   mongoc_fd_t              socket;
 
    int                    last_response_id;
 
-   bson_bool_t            isMaster;
+   bool            isMaster;
    int                    minWireVersion;
    int                    maxWireVersion;
    int                    maxBsonObjectSize;
@@ -96,7 +85,7 @@ mock_server_reply_simple (mock_server_t        *server,
    _mongoc_rpc_swab_to_le (&r);
 
    iov = ar.data;
-   iovcnt = ar.len;
+   iovcnt = (int)ar.len;
 
    for (i = 0; i < iovcnt; i++) {
       expected += iov[i].iov_len;
@@ -110,7 +99,7 @@ mock_server_reply_simple (mock_server_t        *server,
 }
 
 
-static bson_bool_t
+static bool
 handle_ping (mock_server_t   *server,
              mongoc_stream_t *client,
              mongoc_rpc_t    *rpc,
@@ -122,11 +111,11 @@ handle_ping (mock_server_t   *server,
    mock_server_reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply);
    bson_destroy (&reply);
 
-   return TRUE;
+   return true;
 }
 
 
-static bson_bool_t
+static bool
 handle_ismaster (mock_server_t   *server,
                  mongoc_stream_t *client,
                  mongoc_rpc_t    *rpc,
@@ -156,17 +145,17 @@ handle_ismaster (mock_server_t   *server,
 
    bson_destroy (&reply_doc);
 
-   return TRUE;
+   return true;
 }
 
 
-static bson_bool_t
+static bool
 handle_command (mock_server_t   *server,
                 mongoc_stream_t *client,
                 mongoc_rpc_t    *rpc)
 {
-   bson_int32_t len;
-   bson_bool_t ret = FALSE;
+   int32_t len;
+   bool ret = false;
    bson_iter_t iter;
    const char *key;
    bson_t doc;
@@ -174,17 +163,17 @@ handle_command (mock_server_t   *server,
    BSON_ASSERT (rpc);
 
    if (rpc->header.opcode != MONGOC_OPCODE_QUERY) {
-      return FALSE;
+      return false;
    }
 
    memcpy (&len, rpc->query.query, 4);
    len = BSON_UINT32_FROM_LE (len);
    if (!bson_init_static (&doc, rpc->query.query, len)) {
-      return FALSE;
+      return false;
    }
 
    if (!bson_iter_init (&iter, &doc) || !bson_iter_next (&iter)) {
-      return FALSE;
+      return false;
    }
 
    key = bson_iter_key (&iter);
@@ -209,7 +198,7 @@ mock_server_worker (void *data)
    mock_server_t *server;
    mongoc_rpc_t rpc;
    bson_error_t error;
-   bson_int32_t msg_len;
+   int32_t msg_len;
    void **closure = data;
 
    BSON_ASSERT(closure);
@@ -282,7 +271,7 @@ dummy_handler (mock_server_t   *server,
 
 mock_server_t *
 mock_server_new (const char            *address,
-                 bson_uint16_t          port,
+                 uint16_t          port,
                  mock_server_handler_t  handler,
                  void                  *handler_data)
 {
@@ -299,12 +288,13 @@ mock_server_new (const char            *address,
    server = bson_malloc0(sizeof *server);
    server->handler = handler ? handler : dummy_handler;
    server->handler_data = handler_data;
-   server->socket = -1;
+   server->socket = MONGOC_FD_INVALID;
+   server->address = address;
    server->port = port;
 
    server->minWireVersion = 0;
    server->maxWireVersion = 0;
-   server->isMaster = TRUE;
+   server->isMaster = true;
    server->maxBsonObjectSize = 16777216;
    server->maxMessageSizeBytes = 48000000;
 
@@ -317,30 +307,25 @@ mock_server_run (mock_server_t *server)
 {
    struct sockaddr_in saddr;
    mongoc_stream_t *stream;
-   pthread_attr_t attr;
-   pthread_t thread;
+   mongoc_thread_t thread;
    void **closure;
    int optval;
-   int sd;
-   int cd;
+   mongoc_fd_t sd;
+   mongoc_fd_t cd;
 
    bson_return_val_if_fail(server, -1);
-   bson_return_val_if_fail(server->socket == -1, -1);
+   bson_return_val_if_fail(! mongoc_fd_is_valid(server->socket), -1);
 
-   sd = socket(AF_INET, SOCK_STREAM, 0);
-   if (sd == -1) {
+   sd = mongoc_socket(AF_INET, SOCK_STREAM, 0);
+   if (! mongoc_fd_is_valid(sd)) {
       perror("Failed to create socket.");
       return -1;
    }
 
    optval = 1;
-   setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+   mongoc_setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
    memset(&saddr, 0, sizeof saddr);
-   memset(&attr, 0, sizeof attr);
-
-   pthread_attr_init(&attr);
-   pthread_attr_setstacksize(&attr, 512 * 1024);
 
    saddr.sin_family = AF_INET;
    saddr.sin_port = htons(server->port);
@@ -349,12 +334,12 @@ mock_server_run (mock_server_t *server)
     */
    saddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-   if (-1 == bind(sd, (struct sockaddr *)&saddr, sizeof saddr)) {
+   if (-1 == mongoc_bind(sd, (struct sockaddr *)&saddr, sizeof saddr)) {
       perror("Failed to bind socket");
       return -1;
    }
 
-   if (-1 == listen(sd, 10)) {
+   if (-1 == mongoc_listen(sd, 10)) {
       perror("Failed to put socket into listen mode");
       return 3;
    }
@@ -362,8 +347,8 @@ mock_server_run (mock_server_t *server)
    server->socket = sd;
 
    for (;;) {
-      cd = accept(server->socket, NULL, NULL);
-      if (cd == -1) {
+      cd = mongoc_accept(server->socket, NULL, NULL);
+      if (! mongoc_fd_is_valid(cd)) {
          perror("Failed to accept client socket");
          return -1;
       }
@@ -373,11 +358,11 @@ mock_server_run (mock_server_t *server)
       closure[0] = server;
       closure[1] = stream;
 
-      pthread_create(&thread, &attr, mock_server_worker, closure);
+      mongoc_thread_create(&thread, mock_server_worker, closure);
    }
 
-   close(server->socket);
-   server->socket = -1;
+   mongoc_close(server->socket);
+   server->socket = MONGOC_FD_INVALID;
 
    return 0;
 }
@@ -399,8 +384,8 @@ mock_server_run_in_thread (mock_server_t *server)
 {
    BSON_ASSERT (server);
 
-   server->using_main_thread = TRUE;
-   pthread_create (&server->main_thread, NULL, main_thread, server);
+   server->using_main_thread = true;
+   mongoc_thread_create (&server->main_thread, main_thread, server);
 }
 
 
@@ -427,8 +412,8 @@ mock_server_destroy (mock_server_t *server)
 
 void
 mock_server_set_wire_version (mock_server_t *server,
-                              bson_int32_t   min_wire_version,
-                              bson_int32_t   max_wire_version)
+                              int32_t   min_wire_version,
+                              int32_t   max_wire_version)
 {
    BSON_ASSERT (server);
 

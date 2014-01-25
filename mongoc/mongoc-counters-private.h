@@ -42,6 +42,8 @@
 
 BSON_BEGIN_DECLS
 
+void
+_mongoc_counters_init (void) BSON_GNUC_INTERNAL;
 
 static BSON_INLINE unsigned
 _mongoc_get_cpu_count (void)
@@ -86,7 +88,7 @@ _mongoc_get_cpu_count (void)
  static BSON_INLINE unsigned
  _mongoc_sched_getcpu (void)
  {
-    volatile bson_uint32_t rax, rdx, aux;
+    volatile uint32_t rax, rdx, aux;
     __asm__ volatile ("rdtscp\n" : "=a" (rax), "=d" (rdx), "=c" (aux) : : );
     return aux;
  }
@@ -106,7 +108,7 @@ _mongoc_get_cpu_count (void)
 
 typedef struct
 {
-   bson_int64_t slots [SLOTS_PER_CACHELINE];
+   int64_t slots [SLOTS_PER_CACHELINE];
 } mongoc_counter_slots_t;
 
 
@@ -122,11 +124,6 @@ typedef struct
 #undef COUNTER
 
 
-#if defined(__GNUC__) && !defined(MemoryBarrier)
-# define MemoryBarrier __sync_synchronize
-#endif
-
-
 enum
 {
 #define COUNTER(ident, Category, Name, Description) \
@@ -138,27 +135,27 @@ enum
 
 
 #define COUNTER(ident, Category, Name, Description) \
-static inline void \
-mongoc_counter_##ident##_add (bson_int64_t val) \
+static BSON_INLINE void \
+mongoc_counter_##ident##_add (int64_t val) \
 { \
    _mongoc_counter_add(\
       __mongoc_counter_##ident.cpus[_mongoc_sched_getcpu()].slots[ \
          COUNTER_##ident%SLOTS_PER_CACHELINE], val); \
 } \
-static inline void \
+static BSON_INLINE void \
 mongoc_counter_##ident##_inc (void) \
 { \
    mongoc_counter_##ident##_add (1); \
 } \
-static inline void \
+static BSON_INLINE void \
 mongoc_counter_##ident##_dec (void) \
 { \
    mongoc_counter_##ident##_add (-1); \
 } \
-static inline void \
+static BSON_INLINE void \
 mongoc_counter_##ident##_reset (void) \
 { \
-   int i; \
+   uint32_t i; \
    for (i = 0; i < _mongoc_get_cpu_count(); i++) { \
       __mongoc_counter_##ident.cpus [i].slots [\
          COUNTER_##ident%SLOTS_PER_CACHELINE] = 0; \

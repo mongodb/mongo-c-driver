@@ -35,7 +35,7 @@
 mongoc_gridfs_file_list_t *
 _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
                               const bson_t    *query,
-                              bson_uint32_t    limit)
+                              uint32_t    limit)
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_cursor_t *cursor;
@@ -69,7 +69,7 @@ mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list)
 }
 
 
-bson_bool_t
+bool
 mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list,
                                bson_error_t              *error)
 {

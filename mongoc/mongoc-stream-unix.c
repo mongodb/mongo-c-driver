@@ -17,19 +17,10 @@
 
 #define _GNU_SOURCE
 
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-
+#include <bson.h>
 
 #include "mongoc-counters-private.h"
+#include "mongoc-compat.h"
 #include "mongoc-log.h"
 #include "mongoc-stream-unix.h"
 #include "mongoc-stream-private.h"
@@ -48,15 +39,13 @@
 typedef struct
 {
    mongoc_stream_t  stream;
-   int              fd;
+   mongoc_fd_t        fd;
 } mongoc_stream_unix_t;
 
 
 static void
 mongoc_stream_unix_destroy (mongoc_stream_t *stream)
 {
-   mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
-
    ENTRY;
 
    bson_return_if_fail(stream);
@@ -69,8 +58,6 @@ mongoc_stream_unix_destroy (mongoc_stream_t *stream)
        * to be closed as well. Fun!
        */
    }
-
-   file->fd = -1;
 
    bson_free(stream);
 
@@ -91,9 +78,9 @@ mongoc_stream_unix_close (mongoc_stream_t *stream)
 
    bson_return_val_if_fail(stream, -1);
 
-   if (file->fd != -1) {
-      if (!(ret = close(file->fd))) {
-         file->fd = -1;
+   if (mongoc_fd_is_valid(file->fd)) {
+      if (!(ret = mongoc_close(file->fd))) {
+         file->fd = MONGOC_FD_INVALID;
       }
    }
 
@@ -110,7 +97,7 @@ mongoc_stream_unix_flush (mongoc_stream_t *stream)
 
    bson_return_val_if_fail(stream, -1);
 
-   if (file->fd != -1) {
+   if (mongoc_fd_is_valid(file->fd)) {
       /*
        * TODO: You can't use fsync() with a socket (AFAIK). So we might
        *       need to select() for a writable condition or something to
@@ -127,7 +114,7 @@ mongoc_stream_unix_flush (mongoc_stream_t *stream)
 
 static BSON_INLINE void
 timeval_add_msec (struct timeval *tv,
-                  bson_uint32_t   msec)
+                  uint32_t   msec)
 {
    tv->tv_sec += msec / 1000U;
    tv->tv_usec += msec % 1000U;
@@ -141,13 +128,13 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
                           struct iovec    *iov,
                           size_t           iovcnt,
                           size_t           min_bytes,
-                          bson_int32_t     timeout_msec)
+                          int32_t     timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
-   struct msghdr msg;
-   struct pollfd fds;
-   bson_int64_t now;
-   bson_int64_t expire;
+   mongoc_msghdr_t msg;
+   mongoc_pollfd_t fds;
+   int64_t now;
+   int64_t expire;
    size_t cur = 0;
    ssize_t r;
    ssize_t ret = 0;
@@ -183,7 +170,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
     * is one hour. If this is not sufficient, try TCP over bongo drums.
     */
 
-   if (file->fd == -1) {
+   if (! mongoc_fd_is_valid(file->fd)) {
       errno = EBADF;
       RETURN(-1);
    }
@@ -227,10 +214,10 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
        * happen during unit tests.
        */
       errno = 0;
-      r = recvmsg(file->fd, &msg, flags);
+      r = mongoc_recvmsg(file->fd, &msg, flags);
       if (r < 0) {
          if (errno == ENOTSOCK) {
-            r = readv(file->fd, iov + cur, iovcnt - cur);
+            r = mongoc_readv(file->fd, iov + cur, (int)(iovcnt - cur));
             if (!r) {
                RETURN(ret);
             }
@@ -272,7 +259,7 @@ prepare_wait_poll:
        * Increment iovec's in the case we got a short read. Break out if
        * we have read all our expected data.
        */
-      while ((cur < iovcnt) && (r >= iov[cur].iov_len)) {
+      while ((cur < iovcnt) && (r >= (ssize_t)iov[cur].iov_len)) {
          BSON_ASSERT(iov[cur].iov_len);
          r -= iov[cur++].iov_len;
          BSON_ASSERT(cur <= iovcnt);
@@ -281,7 +268,7 @@ prepare_wait_poll:
          break;
       }
       BSON_ASSERT(cur < iovcnt);
-      iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + r;
+      iov[cur].iov_base = ((uint8_t *)iov[cur].iov_base) + r;
       iov[cur].iov_len -= r;
       BSON_ASSERT(iovcnt - cur);
       BSON_ASSERT(iov[cur].iov_len);
@@ -290,14 +277,14 @@ prepare_wait_poll:
        * If we got enough bytes to satisfy the minimum requirement, short
        * circuit so we don't potentially block on poll().
        */
-      if (successful_read && ret >= min_bytes) {
+      if (successful_read && ret >= (ssize_t)min_bytes) {
          break;
       }
 
       /*
        * Determine number of milliseconds until timeout expires.
        */
-      timeout = MAX(0, (expire - now) / 1000L);
+      timeout = (int)MAX(0, (expire - now) / 1000L);
 
       /*
        * Block on poll() until data is available or timeout. Upont timeout,
@@ -305,7 +292,7 @@ prepare_wait_poll:
        */
       errno = 0;
       fds.revents = 0;
-      r = poll(&fds, 1, timeout);
+      r = mongoc_poll(&fds, 1, timeout);
       if (r == -1) {
          RETURN(-1);
       } else if (r == 0) {
@@ -327,13 +314,13 @@ static ssize_t
 mongoc_stream_unix_writev (mongoc_stream_t *stream,
                            struct iovec    *iov,
                            size_t           iovcnt,
-                           bson_int32_t     timeout_msec)
+                           int32_t     timeout_msec)
 {
    mongoc_stream_unix_t *file = (mongoc_stream_unix_t *)stream;
-   struct msghdr msg;
-   struct pollfd fds;
-   bson_int64_t now;
-   bson_int64_t expire;
+   mongoc_msghdr_t msg;
+   mongoc_pollfd_t fds;
+   int64_t now;
+   int64_t expire;
    size_t cur = 0;
    ssize_t r;
    ssize_t ret = 0;
@@ -350,7 +337,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
     * NOTE: See notes from mongoc_stream_unix_readv(), the apply here too.
     */
 
-   if (file->fd == -1) {
+   if (! mongoc_fd_is_valid(file->fd)) {
       errno = EBADF;
       RETURN(-1);
    }
@@ -392,12 +379,12 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        */
    again:
       errno = 0;
-      r = sendmsg(file->fd, &msg, flags);
+      r = mongoc_sendmsg(file->fd, &msg, flags);
       if (r == -1) {
          if (errno == EAGAIN) {
             GOTO(again);
          } else if (errno == ENOTSOCK) {
-            r = writev(file->fd, iov + cur, iovcnt - cur);
+            r = mongoc_writev(file->fd, iov + cur, (int)(iovcnt - cur));
             if (!r) {
                RETURN(ret);
             }
@@ -424,7 +411,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        * Increment iovec's in the case we got a short read. Break out if
        * we have read all our expected data.
        */
-      while ((cur < iovcnt) && (r >= iov[cur].iov_len)) {
+      while ((cur < iovcnt) && (r >= (ssize_t)iov[cur].iov_len)) {
          BSON_ASSERT(iov[cur].iov_len);
          r -= iov[cur++].iov_len;
          BSON_ASSERT(cur <= iovcnt);
@@ -432,7 +419,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       if (cur == iovcnt) {
          break;
       }
-      iov[cur].iov_base = ((bson_uint8_t *)iov[cur].iov_base) + r;
+      iov[cur].iov_base = ((uint8_t *)iov[cur].iov_base) + r;
       iov[cur].iov_len -= r;
 
       BSON_ASSERT(iovcnt - cur);
@@ -442,7 +429,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        * Determine number of milliseconds until timeout expires.
        */
       now = bson_get_monotonic_time();
-      timeout = MAX(0, (expire - now) / 1000L);
+      timeout = (int)MAX(0, (expire - now) / 1000L);
 
       /*
        * Block on poll() until data is available or timeout. Upont timeout,
@@ -450,7 +437,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
        */
       errno = 0;
       fds.revents = 0;
-      r = poll(&fds, 1, timeout);
+      r = mongoc_poll(&fds, 1, timeout);
       if (r == -1) {
          RETURN(-1);
       } else if (r == 0) {
@@ -479,9 +466,9 @@ mongoc_stream_unix_cork (mongoc_stream_t *stream)
    bson_return_val_if_fail(stream, -1);
 
 #if defined(__linux__)
-   ret = setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+   ret = mongoc_setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
 #elif defined(TCP_NOPUSH)
-   ret = setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
+   ret = mongoc_setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
 #endif
 
    RETURN(ret);
@@ -504,9 +491,9 @@ mongoc_stream_unix_uncork (mongoc_stream_t *stream)
    bson_return_val_if_fail(stream, -1);
 
 #if defined(__linux__)
-   ret = setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
+   ret = mongoc_setsockopt(file->fd, IPPROTO_TCP, TCP_CORK, &state, sizeof(state));
 #elif defined(TCP_NOPUSH)
-   ret = setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
+   ret = mongoc_setsockopt(file->fd, IPPROTO_TCP, TCP_NOPUSH, &state, sizeof(state));
 #endif
 
    RETURN(ret);
@@ -530,7 +517,7 @@ mongoc_stream_unix_setsockopt (mongoc_stream_t *stream,
 
    bson_return_val_if_fail(file, -1);
 
-   ret = setsockopt(file->fd, level, optname, optval, optlen);
+   ret = mongoc_setsockopt(file->fd, level, optname, optval, optlen);
 
    RETURN(ret);
 }
@@ -552,25 +539,19 @@ mongoc_stream_unix_setsockopt (mongoc_stream_t *stream,
  *   mongoc_stream_destroy().
  */
 mongoc_stream_t *
-mongoc_stream_unix_new (int fd)
+mongoc_stream_unix_new (mongoc_fd_t fd)
 {
    mongoc_stream_unix_t *stream;
-   int flags;
 
    ENTRY;
-
-   bson_return_val_if_fail(fd != -1, NULL);
 
    /*
     * If we cannot put the file-descriptor in O_NONBLOCK mode, there isn't much
     * we can do. Just fail.
     */
-   flags = fcntl(fd, F_GETFL);
-   if ((flags & O_NONBLOCK) != O_NONBLOCK) {
-      if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+   if (mongoc_fd_set_nonblock(fd) == -1) {
          MONGOC_WARNING("Failed to set O_NONBLOCK on file descriptor!");
          RETURN(NULL);
-      }
    }
 
    stream = bson_malloc0(sizeof *stream);

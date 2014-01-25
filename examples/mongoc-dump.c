@@ -18,10 +18,12 @@
 #include <bson.h>
 #include <fcntl.h>
 #include <mongoc.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <unistd.h>
+
+#ifdef _WIN32
+#define mongoc_mkdir(_a, _b) mkdir(_a)
+#else
+#define mongoc_mkdir mkdir
+#endif
 
 
 static int
@@ -38,12 +40,16 @@ mongoc_dump_collection (mongoc_client_t *client,
    bson_t query = BSON_INITIALIZER;
    char *path;
    int ret = EXIT_SUCCESS;
-   int fd;
+   mongoc_fd_t fd;
 
    path = bson_strdup_printf ("dump/%s/%s.bson", database, collection);
    if (0 == access (path, F_OK))
       unlink (path);
-   fd = open (path, O_RDWR | O_CREAT, 0664);
+#ifdef _WIN32
+   fd = mongoc_open (path, O_RDWR | O_CREAT);
+#else
+   fd = mongoc_open (path, O_RDWR | O_CREAT, 0664);
+#endif
    stream = mongoc_stream_unix_new (fd);
    col = mongoc_client_get_collection (client, database, collection);
    cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0,
@@ -93,7 +99,7 @@ mongoc_dump_database (mongoc_client_t *client,
    BSON_ASSERT (database);
 
    path = bson_strdup_printf ("dump/%s", database);
-   if (0 != access (path, F_OK) && 0 != mkdir (path, 0750)) {
+   if (0 != access (path, F_OK) && 0 != mongoc_mkdir (path, 0750)) {
       fprintf (stderr, "failed to create directory \"%s\"", path);
       bson_free (path);
       return EXIT_FAILURE;
@@ -118,7 +124,7 @@ cleanup:
    mongoc_database_destroy (db);
    bson_strfreev (str);
 
-   return EXIT_SUCCESS;
+   return ret;
 }
 
 
@@ -131,7 +137,7 @@ mongoc_dump (mongoc_client_t *client,
    char **str;
    int i;
 
-   if (0 != access ("dump", F_OK) && 0 != mkdir ("dump", 0750)) {
+   if (0 != access ("dump", F_OK) && 0 != mongoc_mkdir ("dump", 0750)) {
       perror ("Failed to create directory \"dump\"");
       return EXIT_FAILURE;
    }
@@ -184,8 +190,8 @@ main (int argc,
    const char *collection = NULL;
    const char *database = NULL;
    const char *host = "127.0.0.1";
-   bson_uint16_t port = 27017;
-   bson_bool_t ssl = FALSE;
+   uint16_t port = 27017;
+   bool ssl = false;
    char *uri;
    int ret;
    int i;
@@ -201,7 +207,7 @@ main (int argc,
       } else if (0 == strcmp (argv [i], "-h") && ((i + 1) < argc)) {
          host = argv [++i];
       } else if (0 == strcmp (argv [i], "--ssl")) {
-         ssl = TRUE;
+         ssl = true;
       } else if (0 == strcmp (argv [i], "-p") && ((i + 1) < argc)) {
          port = atoi (argv [++i]);
          if (!port) {

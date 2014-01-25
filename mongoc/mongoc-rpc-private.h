@@ -19,6 +19,7 @@
 #define MONGOC_RPC_PRIVATE_H
 
 
+#include "mongoc-compat.h"
 #include <bson.h>
 #include <stddef.h>
 
@@ -30,15 +31,15 @@ BSON_BEGIN_DECLS
 
 
 #define RPC(_name, _code)                typedef struct { _code } mongoc_rpc_##_name##_t;
-#define INT32_FIELD(_name)               bson_int32_t _name;
-#define INT64_FIELD(_name)               bson_int64_t _name;
-#define INT64_ARRAY_FIELD(_len, _name)   bson_int32_t _len; bson_int64_t *_name;
+#define INT32_FIELD(_name)               int32_t _name;
+#define INT64_FIELD(_name)               int64_t _name;
+#define INT64_ARRAY_FIELD(_len, _name)   int32_t _len; int64_t *_name;
 #define CSTRING_FIELD(_name)             const char *_name;
-#define BSON_FIELD(_name)                const bson_uint8_t *_name;
-#define BSON_ARRAY_FIELD(_name)          const bson_uint8_t *_name; bson_int32_t _name##_len;
-#define IOVEC_ARRAY_FIELD(_name)         const struct iovec *_name; bson_int32_t n_##_name; struct iovec _name##_recv;
-#define RAW_BUFFER_FIELD(_name)          const bson_uint8_t *_name; bson_int32_t _name##_len;
-#define OPTIONAL(_check, _code)          _code
+#define BSON_FIELD(_name)                const uint8_t *_name;
+#define BSON_ARRAY_FIELD(_name)          const uint8_t *_name; int32_t _name##_len;
+#define IOVEC_ARRAY_FIELD(_name)         const struct iovec *_name; int32_t n_##_name; struct iovec _name##_recv;
+#define RAW_BUFFER_FIELD(_name)          const uint8_t *_name; int32_t _name##_len;
+#define BSON_OPTIONAL(_check, _code)          _code
 
 
 #include "op-delete.def"
@@ -79,7 +80,7 @@ BSON_STATIC_ASSERT (offsetof (mongoc_rpc_header_t, opcode) ==
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
-#undef OPTIONAL
+#undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 
 
@@ -88,7 +89,7 @@ _mongoc_rpc_gather (mongoc_rpc_t   *rpc,
                     mongoc_array_t *array)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,
                        const mongoc_write_concern_t *write_concern)
    BSON_GNUC_INTERNAL;
@@ -105,13 +106,13 @@ void
 _mongoc_rpc_printf (mongoc_rpc_t *rpc)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
-                     const bson_uint8_t *buf,
+                     const uint8_t *buf,
                      size_t              buflen)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply,
                              bson_t             *bson)
    BSON_GNUC_INTERNAL;

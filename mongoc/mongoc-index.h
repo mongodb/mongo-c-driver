@@ -32,14 +32,14 @@ BSON_BEGIN_DECLS
 
 typedef struct
 {
-   bson_bool_t   is_initialized;
-   bson_bool_t   background;
-   bson_bool_t   unique;
+   bool   is_initialized;
+   bool   background;
+   bool   unique;
    const char   *name;
-   bson_bool_t   drop_dups;
-   bson_bool_t   sparse;
-   bson_int32_t  expire_after_seconds;
-   bson_int32_t  v;
+   bool   drop_dups;
+   bool   sparse;
+   int32_t  expire_after_seconds;
+   int32_t  v;
    const bson_t *weights;
    const char   *default_language;
    const char   *language_override;

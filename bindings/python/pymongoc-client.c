@@ -128,14 +128,14 @@ cleanup:
 PyTypeObject *
 pymongoc_client_get_type (void)
 {
-   static bson_bool_t initialized;
+   static bool initialized;
 
    if (!initialized) {
       pymongoc_client_type.tp_new = pymongoc_client_tp_new;
       if (PyType_Ready(&pymongoc_client_type) < 0) {
          return NULL;
       }
-      initialized = TRUE;
+      initialized = true;
    }
 
    return &pymongoc_client_type;

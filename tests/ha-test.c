@@ -15,24 +15,49 @@
  */
 
 
-#include <dirent.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <mongoc.h>
-#include <pthread.h>
-#include <signal.h>
-#include <spawn.h>
 #include <stdio.h>
 #ifdef __linux
 #include <sys/prctl.h>
+#include <sys/wait.h>
 #endif
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
 #include "ha-test.h"
 
+#ifdef BSON_OS_WIN32
+#include <shlwapi.h>
+#ifdef _MSC_VER
+#define PATH_MAX 1024
+#define S_ISREG(b) ((b)&_S_IFREG)
+#define S_ISDIR(b) ((b)&_S_IFDIR)
+#endif
+#define bson_chdir _chdir
+#define bson_unlink _unlink
+#define bson_mkdir(_d, _m) _mkdir(_d)
+#define sleep(_n) Sleep((_n) * 1000)
+#else
+#include <dirent.h>
+#define bson_mkdir mkdir
+#define bson_chdir chdir
+#define bson_unlink unlink
+#endif
+
+
+void ha_mkdir(const char * name)
+{
+   char buf[1024];
+   if (bson_mkdir(name, 0750)) {
+      char * err = bson_strerror_r(errno, buf, sizeof buf);
+      fprintf(stderr, "Failed to create directory \"%s\" because of %s\n",
+              name, err);
+
+      abort();
+   }
+}
 
 mongoc_client_t *
 ha_replica_set_create_client (ha_replica_set_t *replica_set)
@@ -67,7 +92,7 @@ ha_replica_set_create_client (ha_replica_set_t *replica_set)
    }
 #endif
 
-   bson_string_free(str, TRUE);
+   bson_string_free(str, true);
 
    return client;
 }
@@ -77,10 +102,10 @@ static ha_node_t *
 ha_node_new (const char       *name,
              const char       *repl_set,
              const char       *dbpath,
-             bson_bool_t       is_arbiter,
-             bson_bool_t       is_config,
-             bson_bool_t       is_router,
-             bson_uint16_t     port)
+             bool       is_arbiter,
+             bool       is_config,
+             bool       is_router,
+             uint16_t     port)
 {
    ha_node_t *node;
 
@@ -100,37 +125,93 @@ ha_node_new (const char       *name,
 void
 ha_node_setup (ha_node_t *node)
 {
-   if (!!mkdir(node->dbpath, 0750)) {
-      MONGOC_WARNING("Failed to create directory \"%s\"",
-                     node->dbpath);
-      abort();
-   }
+   ha_mkdir(node->dbpath);
 }
 
 
 void
 ha_node_kill (ha_node_t *node)
 {
+#ifdef BSON_OS_UNIX
    if (node->pid) {
       int status;
 
       kill(node->pid, SIGKILL);
       waitpid(node->pid, &status, 0);
+
       node->pid = 0;
    }
+#else
+   if (node->pid.is_alive) {
+      if (! TerminateProcess(node->pid.proc, 0)) {
+         fprintf(stderr, "Couldn't kill: %d\n", (int)GetLastError());
+         abort();
+      }
+      WaitForSingleObject(node->pid.proc, INFINITE);
+      CloseHandle(node->pid.proc);
+      CloseHandle(node->pid.thread);
+      node->pid.is_alive = 0;
+   }
+#endif
 }
 
+#ifdef BSON_OS_WIN32
+bson_ha_pid_t ha_spawn_win32_node(char **argv)
+{
+   char ** argn;
+   char path[MAX_PATH];
+   bson_string_t *args;
+   STARTUPINFO si = { 0 };
+   PROCESS_INFORMATION pi = { 0 };
+
+   si.cb = sizeof(si);
+
+   bool r;
+   bson_ha_pid_t out;
+
+   out.is_alive = true;
+
+   args = bson_string_new("");
+
+   bson_snprintf(path, sizeof path, "%s.exe", argv[0]);
+
+   if (! PathFindOnPath(path, NULL)) {
+      fprintf(stderr, "Failed to find path to binary: %s - %s\n", path, argv[0]);
+      abort();
+   }
+   bson_string_append_printf(args, "\"%s\"", path);
+
+   for (argn = argv + 1; *argn != NULL; argn++) {
+      bson_string_append_printf(args, " \"%s\"", *argn);
+   }
+
+   r = CreateProcess(path, args->str, NULL, NULL, false, 0, NULL, NULL, &si, &pi);
+
+   if (r) {
+      out.proc = pi.hProcess;
+      out.thread = pi.hThread;
+   } else {
+      out.is_alive = false;
+      fprintf(stderr, "Failed to create %s - %s: %d\n", path, args->str, (int)GetLastError());
+      abort();
+   }
+
+   bson_string_free(args, true);
+
+   return out;
+}
+#endif
 
 void
 ha_node_restart (ha_node_t *node)
 {
    struct stat st;
-   pid_t pid;
+   bson_ha_pid_t pid;
    char portstr[12];
    char *argv[30];
    int i = 0;
 
-   snprintf(portstr, sizeof portstr, "%hu", node->port);
+   bson_snprintf(portstr, sizeof portstr, "%hu", node->port);
    portstr[sizeof portstr - 1] = '\0';
 
    ha_node_kill(node);
@@ -189,6 +270,8 @@ ha_node_restart (ha_node_t *node)
       argv[i++] = NULL;
    }
 
+#ifdef BSON_OS_UNIX
+
    pid = fork();
    if (pid < 0) {
       perror("Failed to fork process");
@@ -224,15 +307,44 @@ ha_node_restart (ha_node_t *node)
       close(fd);
 
       if (-1 == execvp(argv[0], argv)) {
-         perror("Failed to spawn process");
+         perror("Failed to spawn unix process");
          abort();
       }
    }
 
    fprintf(stderr, "[%d]: ", (int)pid);
+#else
+   {
+      char pathbuf[1024];
+      GetCurrentDirectory(sizeof pathbuf, pathbuf);
+
+      if (0 != bson_chdir(node->dbpath)) {
+         perror("Failed to chdir");
+         abort();
+      }
+
+      if (0 == stat("mongod.lock", &st)) {
+         bson_unlink("mongod.lock");
+      }
+
+      pid = ha_spawn_win32_node(argv);
+
+      if (! pid.is_alive) {
+         perror("Failed to launch win32 process");
+         abort();
+      }
+
+      if (0 != bson_chdir(pathbuf)) {
+         perror("Failed to chdir");
+         abort();
+      }
+   }
+#endif
+
    for (i = 0; argv[i]; i++)
       fprintf(stderr, "%s ", argv[i]);
    fprintf(stderr, "\n");
+
 
    node->pid = pid;
 }
@@ -250,33 +362,18 @@ ha_node_destroy (ha_node_t *node)
 }
 
 
-static void
-random_init (void)
+static MONGOC_ONCE_FUN(random_init)
 {
-   int seed;
-   int fd;
-
-   fd = open("/dev/urandom", O_RDONLY);
-   if (fd == -1) {
-      fprintf(stderr, "Failed to open /dev/urandom\n");
-      exit(1);
-   }
-
-   if (4 != read(fd, &seed, 4)) {
-      fprintf(stderr, "Failed to read from /dev/urandom\n");
-      exit(2);
-   }
-
-   fprintf(stderr, "srand(%d)\n", seed);
-   srand(seed);
+   srand((unsigned)time(NULL));
+   MONGOC_ONCE_RETURN;
 }
 
 
 static int
 random_int (void)
 {
-   static pthread_once_t once = PTHREAD_ONCE_INIT;
-   pthread_once(&once, random_init);
+   static mongoc_once_t once = MONGOC_ONCE_INIT;
+   mongoc_once(&once, random_init);
    return rand();
 }
 
@@ -315,21 +412,21 @@ ha_replica_set_new (const char *name)
 static ha_node_t *
 ha_replica_set_add_node (ha_replica_set_t *replica_set,
                          const char       *name,
-                         bson_bool_t       is_arbiter)
+                         bool       is_arbiter)
 {
    ha_node_t *node;
    ha_node_t *iter;
    char dbpath[PATH_MAX];
 
-   snprintf(dbpath, sizeof dbpath, "%s/%s", replica_set->name, name);
+   bson_snprintf(dbpath, sizeof dbpath, "%s/%s", replica_set->name, name);
    dbpath[sizeof dbpath - 1] = '\0';
 
    node = ha_node_new(name,
                       replica_set->name,
                       dbpath,
                       is_arbiter,
-                      FALSE,
-                      FALSE,
+                      false,
+                      false,
                       replica_set->next_port++);
 #ifdef MONGOC_ENABLE_SSL
    node->ssl_opt = replica_set->ssl_opt;
@@ -350,7 +447,7 @@ ha_node_t *
 ha_replica_set_add_arbiter (ha_replica_set_t *replica_set,
                             const char       *name)
 {
-   return ha_replica_set_add_node(replica_set, name, TRUE);
+   return ha_replica_set_add_node(replica_set, name, true);
 }
 
 
@@ -358,7 +455,7 @@ ha_node_t *
 ha_replica_set_add_replica (ha_replica_set_t *replica_set,
                             const char       *name)
 {
-   return ha_replica_set_add_node(replica_set, name, FALSE);
+   return ha_replica_set_add_node(replica_set, name, false);
 }
 
 
@@ -397,10 +494,10 @@ ha_replica_set_configure (ha_replica_set_t *replica_set,
    bson_append_utf8(&config, "_id", 3, replica_set->name, -1);
    bson_append_array_begin(&config, "members", -1, &ar);
    for (node = replica_set->nodes; node; node = node->next) {
-      snprintf(key, sizeof key, "%u", i);
+      bson_snprintf(key, sizeof key, "%u", i);
       key[sizeof key - 1] = '\0';
 
-      snprintf(hoststr, sizeof hoststr, "127.0.0.1:%hu", node->port);
+      bson_snprintf(hoststr, sizeof hoststr, "127.0.0.1:%hu", node->port);
       hoststr[sizeof hoststr - 1] = '\0';
 
       bson_append_document_begin(&ar, key, -1, &member);
@@ -454,6 +551,36 @@ cleanup:
    bson_destroy(&cmd);
 }
 
+void ha_rm_dir(const char * name)
+{
+#ifdef BSON_OS_UNIX
+   char * cmd;
+   cmd = bson_strdup_printf("rm -rf \"%s\"", name);
+   fprintf(stderr, "%s\n", cmd);
+   system(cmd);
+   bson_free(cmd);
+#else
+   SHFILEOPSTRUCT fos = { 0 };
+   char path[MAX_PATH+1] = { 0 };
+   int r;
+   char curdir[1024];
+   GetCurrentDirectory(sizeof curdir, curdir);
+   bson_snprintf(path, sizeof path, "%s\\%s", curdir, name);
+   path[strlen(path)+1] = '\0';
+
+   fos.wFunc = FO_DELETE;
+   fos.pFrom = path;
+   fos.fFlags = FOF_SILENT | FOF_NOERRORUI | FOF_NOCONFIRMATION;
+   fprintf(stderr, "win32 removing \"%s\"\n", path);
+   r = SHFileOperation(&fos);
+   /* file not found isn't an error.  I.e. the 2 */
+   if (r && r != 2) {
+      fprintf(stderr, "failure to delete %s with %d\n", name, r);
+      abort();
+   }
+#endif
+}
+
 
 void
 ha_replica_set_start (ha_replica_set_t *replica_set)
@@ -461,23 +588,14 @@ ha_replica_set_start (ha_replica_set_t *replica_set)
    struct stat st;
    ha_node_t *primary = NULL;
    ha_node_t *node;
-   char *cmd;
 
    if (!stat(replica_set->name, &st)) {
       if (S_ISDIR(st.st_mode)) {
-         /* Ayyyeeeeeee */
-         cmd = bson_strdup_printf("rm -rf \"%s\"", replica_set->name);
-         fprintf(stderr, "%s\n", cmd);
-         system(cmd);
-         bson_free(cmd);
+         ha_rm_dir(replica_set->name);
       }
    }
 
-   if (!!mkdir(replica_set->name, 0750)) {
-      fprintf(stderr, "Failed to create directory \"%s\"\n",
-              replica_set->name);
-      abort();
-   }
+   ha_mkdir(replica_set->name);
 
    for (node = replica_set->nodes; node; node = node->next) {
       if (!primary && !node->is_arbiter) {
@@ -521,7 +639,7 @@ ha_replica_set_destroy (ha_replica_set_t *replica_set)
 }
 
 
-static bson_bool_t
+static bool
 ha_replica_set_get_status (ha_replica_set_t *replica_set,
                            bson_t           *status)
 {
@@ -529,7 +647,7 @@ ha_replica_set_get_status (ha_replica_set_t *replica_set,
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
-   bson_bool_t ret = FALSE;
+   bool ret = false;
    ha_node_t *node;
    bson_t cmd;
    char *uristr;
@@ -560,7 +678,7 @@ ha_replica_set_get_status (ha_replica_set_t *replica_set,
                                             NULL))) {
          if (mongoc_cursor_next(cursor, &doc)) {
             bson_copy_to(doc, status);
-            ret = TRUE;
+            ret = true;
          }
          mongoc_cursor_destroy(cursor);
       }
@@ -669,15 +787,15 @@ ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
 
    bson_return_val_if_fail(cluster, NULL);
 
-   snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
+   bson_snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
    dbpath[sizeof dbpath - 1] = '\0';
 
    node = ha_node_new(name,
                       NULL,
                       dbpath,
-                      FALSE,
-                      TRUE,
-                      FALSE,
+                      false,
+                      true,
+                      false,
                       cluster->next_port++);
 #ifdef MONGOC_ENABLE_SSL
    node->ssl_opt = cluster->ssl_opt;
@@ -698,15 +816,15 @@ ha_sharded_cluster_add_router (ha_sharded_cluster_t *cluster,
 
    bson_return_val_if_fail(cluster, NULL);
 
-   snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
+   bson_snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
    dbpath[sizeof dbpath - 1] = '\0';
 
    node = ha_node_new(name,
                       NULL,
                       dbpath,
-                      FALSE,
-                      FALSE,
-                      TRUE,
+                      false,
+                      false,
+                      true,
                       cluster->next_port++);
 #ifdef MONGOC_ENABLE_SSL
    node->ssl_opt = cluster->ssl_opt;
@@ -726,7 +844,7 @@ ha_config_add_shard (ha_node_t        *node,
    mongoc_client_t *client;
    bson_string_t *shardstr;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_t reply;
    bson_t cmd = BSON_INITIALIZER;
    char *uristr;
@@ -742,7 +860,7 @@ ha_config_add_shard (ha_node_t        *node,
 
    bson_append_utf8 (&cmd, "addShard", -1, shardstr->str, shardstr->len);
 
-   bson_string_free (shardstr, TRUE);
+   bson_string_free (shardstr, true);
 
 again:
    sleep (1);
@@ -771,33 +889,23 @@ again:
    bson_free (uristr);
 }
 
-
 void
 ha_sharded_cluster_start (ha_sharded_cluster_t *cluster)
 {
    bson_string_t *configopt;
    struct stat st;
    ha_node_t *iter;
-   char *cmd;
    int i;
 
    bson_return_if_fail(cluster);
 
    if (!stat(cluster->name, &st)) {
       if (S_ISDIR(st.st_mode)) {
-         /* Ayyyeeeeeee */
-         cmd = bson_strdup_printf("rm -rf \"%s\"", cluster->name);
-         fprintf(stderr, "%s\n", cmd);
-         system(cmd);
-         bson_free(cmd);
+         ha_rm_dir(cluster->name);
       }
    }
 
-   if (!!mkdir(cluster->name, 0750)) {
-      fprintf(stderr, "Failed to create directory \"%s\"\n",
-              cluster->name);
-      abort();
-   }
+   ha_mkdir(cluster->name);
 
    for (i = 0; i < 12; i++) {
       if (cluster->replicas[i]) {
@@ -832,7 +940,7 @@ ha_sharded_cluster_start (ha_sharded_cluster_t *cluster)
       }
    }
 
-   bson_string_free (configopt, TRUE);
+   bson_string_free (configopt, true);
 }
 
 
@@ -897,7 +1005,7 @@ ha_sharded_cluster_get_client (ha_sharded_cluster_t *cluster)
 
    client = mongoc_client_new (str->str);
 
-   bson_string_free (str, TRUE);
+   bson_string_free (str, true);
 
    return client;
 }

@@ -5,138 +5,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "TestSuite.h"
 
 
-static bson_uint8_t *
+static uint8_t *
 get_test_file (const char *filename,
                size_t     *length)
 {
-   bson_uint32_t len;
-   bson_uint8_t *buf;
+   ssize_t len;
+   uint8_t *buf;
    char real_filename[256];
-   int fd;
+   mongoc_fd_t fd;
 
-   snprintf(real_filename, sizeof real_filename,
+   bson_snprintf(real_filename, sizeof real_filename,
             "tests/binary/%s", filename);
    real_filename[sizeof real_filename - 1] = '\0';
 
-   if (-1 == (fd = open(real_filename, O_RDONLY))) {
+   if (! mongoc_fd_is_valid((fd = mongoc_open(real_filename, O_RDONLY)))) {
       fprintf(stderr, "Failed to open: %s\n", real_filename);
       abort();
    }
 
    len = 40960;
    buf = bson_malloc0(len);
-   len = read(fd, buf, len);
+   len = mongoc_read(fd, buf, (uint32_t)len);
    ASSERT(len > 0);
 
    *length = len;
    return buf;
-}
-
-
-#define RPC(_name, _code) \
-static inline bson_bool_t \
-test_mongoc_rpc_##_name##_equal (const mongoc_rpc_##_name##_t *a, \
-                                 const mongoc_rpc_##_name##_t *b) \
-{ \
-   _code \
-}
-
-#define INT32_FIELD(_name)             if (a->_name != b->_name) return FALSE;
-#define INT64_FIELD(_name)             if (a->_name != b->_name) return FALSE;
-#define CSTRING_FIELD(_name)           if (!!strcmp(a->_name, b->_name)) return FALSE;
-#define BSON_FIELD(_name) \
-   { \
-      bson_uint32_t alen; \
-      bson_uint32_t blen; \
-      memcpy(&alen, a->_name, 4); \
-      memcpy(&blen, b->_name, 4); \
-      alen = BSON_UINT32_FROM_LE(alen); \
-      blen = BSON_UINT32_FROM_LE(blen); \
-      if (!!memcmp(a->_name, b->_name, alen)) { \
-         return FALSE; \
-      } \
-   }
-#define BSON_ARRAY_FIELD(_name)        if ((a->_name##_len != b->_name##_len) || !!memcmp(a->_name, b->_name, a->_name##_len)) return FALSE;
-#define INT64_ARRAY_FIELD(_len, _name) if ((a->_len != b->_len) || !!memcmp(a->_name, b->_name, a->_len * 8)) return FALSE;
-#define RAW_BUFFER_FIELD(_name)        if ((a->_name##_len != b->_name##_len) || !!memcmp(a->_name, b->_name, a->_name##_len)) return FALSE;
-#define IOVEC_ARRAY_FIELD(_name) \
-   do { \
-      mongoc_array_t a_buf; \
-      mongoc_array_t b_buf; \
-      _mongoc_array_init(&a_buf, 1); \
-      _mongoc_array_init(&b_buf, 1); \
-      size_t _i; \
-      bson_bool_t is_equal; \
-      for (_i = 0; _i < a->n_##_name; _i++) { \
-         _mongoc_array_append_vals(&a_buf, a->_name[_i].iov_base, a->_name[_i].iov_len); \
-      } \
-      for (_i = 0; _i < b->n_##_name; _i++) { \
-         _mongoc_array_append_vals(&b_buf, b->_name[_i].iov_base, b->_name[_i].iov_len); \
-      } \
-      is_equal = (a_buf.len == b_buf.len) \
-              && (memcmp(a_buf.data, b_buf.data, a_buf.len) == 0); \
-      _mongoc_array_destroy(&a_buf); \
-      _mongoc_array_destroy(&b_buf); \
-      return is_equal; \
-   } while(0);
-#define OPTIONAL(_check, _code)        if (!!a->_check != !!b->_check) { return FALSE; } _code
-
-
-#include "op-reply.def"
-#include "op-msg.def"
-#include "op-update.def"
-#include "op-insert.def"
-#include "op-query.def"
-#include "op-get-more.def"
-#include "op-delete.def"
-#include "op-kill-cursors.def"
-
-
-#undef RPC
-#undef INT32_FIELD
-#undef INT64_FIELD
-#undef INT64_ARRAY_FIELD
-#undef CSTRING_FIELD
-#undef BSON_FIELD
-#undef BSON_ARRAY_FIELD
-#undef OPTIONAL
-#undef RAW_BUFFER_FIELD
-#undef IOVEC_ARRAY_FIELD
-
-
-static inline bson_bool_t
-test_mongoc_rpc_equal (const mongoc_rpc_t *a,
-                       const mongoc_rpc_t *b)
-{
-   if (a->header.opcode != b->header.opcode) {
-      return FALSE;
-   }
-
-   switch (a->header.opcode) {
-   case MONGOC_OPCODE_REPLY:
-      return test_mongoc_rpc_reply_equal(&a->reply, &b->reply);
-   case MONGOC_OPCODE_MSG:
-      return test_mongoc_rpc_msg_equal(&a->msg, &b->msg);
-   case MONGOC_OPCODE_UPDATE:
-      return test_mongoc_rpc_update_equal(&a->update, &b->update);
-   case MONGOC_OPCODE_INSERT:
-      return test_mongoc_rpc_insert_equal(&a->insert, &b->insert);
-   case MONGOC_OPCODE_QUERY:
-      return test_mongoc_rpc_query_equal(&a->query, &b->query);
-   case MONGOC_OPCODE_GET_MORE:
-      return test_mongoc_rpc_get_more_equal(&a->get_more, &b->get_more);
-   case MONGOC_OPCODE_DELETE:
-      return test_mongoc_rpc_delete_equal(&a->delete, &b->delete);
-   case MONGOC_OPCODE_KILL_CURSORS:
-      return test_mongoc_rpc_kill_cursors_equal(&a->kill_cursors, &b->kill_cursors);
-   default:
-      return FALSE;
-   }
 }
 
 
@@ -148,7 +45,7 @@ assert_rpc_equal (const char   *filename,
                   mongoc_rpc_t *rpc)
 {
    mongoc_array_t ar;
-   bson_uint8_t *data;
+   uint8_t *data;
    struct iovec *iov;
    size_t length;
    off_t off = 0;
@@ -220,9 +117,9 @@ test_mongoc_rpc_delete_gather (void)
 static void
 test_mongoc_rpc_delete_scatter (void)
 {
-   bson_uint8_t *data;
+   uint8_t *data;
    mongoc_rpc_t rpc;
-   bson_bool_t r;
+   bool r;
    bson_t sel;
    size_t length;
 
@@ -272,9 +169,9 @@ test_mongoc_rpc_get_more_gather (void)
 static void
 test_mongoc_rpc_get_more_scatter (void)
 {
-   bson_uint8_t *data;
+   uint8_t *data;
    mongoc_rpc_t rpc;
-   bson_bool_t r;
+   bool r;
    size_t length;
 
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
@@ -333,11 +230,11 @@ static void
 test_mongoc_rpc_insert_scatter (void)
 {
    bson_reader_t *reader;
-   bson_uint8_t *data;
+   uint8_t *data;
    const bson_t *b;
    mongoc_rpc_t rpc;
-   bson_bool_t r;
-   bson_bool_t eof = FALSE;
+   bool r;
+   bool eof = false;
    size_t length;
    bson_t empty;
    int count = 0;
@@ -353,7 +250,7 @@ test_mongoc_rpc_insert_scatter (void)
 
    ASSERT_CMPINT(rpc.insert.msg_len, ==, 130);
    ASSERT_CMPINT(rpc.insert.request_id, ==, 1234);
-   ASSERT_CMPINT(rpc.insert.response_to, ==, (bson_uint32_t)-1);
+   ASSERT_CMPINT(rpc.insert.response_to, ==, (uint32_t)-1);
    ASSERT_CMPINT(rpc.insert.opcode, ==, MONGOC_OPCODE_INSERT);
    ASSERT_CMPINT(rpc.insert.flags, ==, MONGOC_INSERT_CONTINUE_ON_ERROR);
    ASSERT(!strcmp("test.test", rpc.insert.collection));
@@ -363,7 +260,7 @@ test_mongoc_rpc_insert_scatter (void)
       ASSERT(r);
       count++;
    }
-   ASSERT(eof == TRUE);
+   ASSERT(eof == true);
    ASSERT(count == 20);
 
    assert_rpc_equal("insert1.dat", &rpc);
@@ -377,7 +274,7 @@ static void
 test_mongoc_rpc_kill_cursors_gather (void)
 {
    mongoc_rpc_t rpc;
-   bson_int64_t cursors[] = { 1, 2, 3, 4, 5 };
+   int64_t cursors[] = { 1, 2, 3, 4, 5 };
 
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
 
@@ -396,10 +293,10 @@ test_mongoc_rpc_kill_cursors_gather (void)
 static void
 test_mongoc_rpc_kill_cursors_scatter (void)
 {
-   bson_uint8_t *data;
-   const bson_int64_t cursors[] = { 1, 2, 3, 4, 5 };
+   uint8_t *data;
+   const int64_t cursors[] = { 1, 2, 3, 4, 5 };
    mongoc_rpc_t rpc;
-   bson_bool_t r;
+   bool r;
    size_t length;
 
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
@@ -442,9 +339,9 @@ test_mongoc_rpc_msg_gather (void)
 static void
 test_mongoc_rpc_msg_scatter (void)
 {
-   bson_uint8_t *data;
+   uint8_t *data;
    mongoc_rpc_t rpc;
-   bson_bool_t r;
+   bool r;
    size_t length;
 
    memset(&rpc, 0xFFFFFFFF, sizeof rpc);
@@ -493,9 +390,9 @@ test_mongoc_rpc_query_gather (void)
 static void
 test_mongoc_rpc_query_scatter (void)
 {
-   bson_uint8_t *data;
+   uint8_t *data;
    mongoc_rpc_t rpc;
-   bson_bool_t r;
+   bool r;
    bson_t empty;
    size_t length;
 
@@ -510,7 +407,7 @@ test_mongoc_rpc_query_scatter (void)
 
    ASSERT(rpc.query.msg_len == 48);
    ASSERT(rpc.query.request_id == 1234);
-   ASSERT(rpc.query.response_to == (bson_uint32_t)-1);
+   ASSERT(rpc.query.response_to == (uint32_t)-1);
    ASSERT(rpc.query.opcode == MONGOC_OPCODE_QUERY);
    ASSERT(rpc.query.flags == MONGOC_QUERY_SLAVE_OK);
    ASSERT(!strcmp(rpc.query.collection, "test.test"));
@@ -529,7 +426,7 @@ test_mongoc_rpc_reply_gather (void)
 {
    bson_writer_t *writer;
    mongoc_rpc_t rpc;
-   bson_uint8_t *buf = NULL;
+   uint8_t *buf = NULL;
    size_t len = 0;
    bson_t *b;
    int i;
@@ -551,7 +448,7 @@ test_mongoc_rpc_reply_gather (void)
    rpc.reply.start_from = 50;
    rpc.reply.n_returned = 100;
    rpc.reply.documents = buf;
-   rpc.reply.documents_len = bson_writer_get_length(writer);
+   rpc.reply.documents_len = (int32_t)bson_writer_get_length(writer);
 
    assert_rpc_equal("reply1.dat", &rpc);
    bson_writer_destroy(writer);
@@ -563,11 +460,11 @@ static void
 test_mongoc_rpc_reply_scatter (void)
 {
    bson_reader_t *reader;
-   bson_uint8_t *data;
+   uint8_t *data;
    mongoc_rpc_t rpc;
    const bson_t *b;
-   bson_bool_t r;
-   bson_bool_t eof = FALSE;
+   bool r;
+   bool eof = false;
    bson_t empty;
    size_t length;
    int count = 0;
@@ -596,7 +493,7 @@ test_mongoc_rpc_reply_scatter (void)
       ASSERT(r);
       count++;
    }
-   ASSERT(eof == TRUE);
+   ASSERT(eof == true);
    ASSERT(count == 100);
 
    assert_rpc_equal("reply1.dat", &rpc);
@@ -609,11 +506,11 @@ static void
 test_mongoc_rpc_reply_scatter2 (void)
 {
    bson_reader_t *reader;
-   bson_uint8_t *data;
+   uint8_t *data;
    mongoc_rpc_t rpc;
    const bson_t *b;
-   bson_bool_t r;
-   bson_bool_t eof = FALSE;
+   bool r;
+   bool eof = false;
    bson_t empty;
    size_t length;
    int count = 0;
@@ -640,7 +537,7 @@ test_mongoc_rpc_reply_scatter2 (void)
    while ((b = bson_reader_read(reader, &eof))) {
       count++;
    }
-   ASSERT(eof == TRUE);
+   ASSERT(eof == true);
    ASSERT(count == 100);
 
    assert_rpc_equal("reply2.dat", &rpc);
@@ -678,13 +575,13 @@ test_mongoc_rpc_update_gather (void)
 static void
 test_mongoc_rpc_update_scatter (void)
 {
-   bson_uint8_t *data;
+   uint8_t *data;
    mongoc_rpc_t rpc;
-   bson_bool_t r;
+   bool r;
    bson_t b;
    bson_t empty;
    size_t length;
-   bson_int32_t len;
+   int32_t len;
 
    bson_init(&empty);
 

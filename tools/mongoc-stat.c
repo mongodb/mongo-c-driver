@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#ifdef BSON_OS_UNIX
+
 
 #include <bson.h>
 #include <fcntl.h>
@@ -26,8 +28,8 @@
 #pragma pack(1)
 typedef struct
 {
-   bson_uint32_t offset;
-   bson_uint32_t slot;
+   uint32_t offset;
+   uint32_t slot;
    char          category[24];
    char          name[32];
    char          description[64];
@@ -41,12 +43,12 @@ BSON_STATIC_ASSERT(sizeof(mongoc_counter_info_t) == 128);
 #pragma pack(1)
 typedef struct
 {
-   bson_uint32_t size;
-   bson_uint32_t n_cpu;
-   bson_uint32_t n_counters;
-   bson_uint32_t infos_offset;
-   bson_uint32_t values_offset;
-   bson_uint8_t  padding[44];
+   uint32_t size;
+   uint32_t n_cpu;
+   uint32_t n_counters;
+   uint32_t infos_offset;
+   uint32_t values_offset;
+   uint8_t  padding[44];
 } mongoc_counters_t;
 #pragma pack()
 
@@ -56,7 +58,7 @@ BSON_STATIC_ASSERT(sizeof(mongoc_counters_t) == 64);
 
 typedef struct
 {
-   bson_int64_t slots[8];
+   int64_t slots[8];
 } mongoc_counter_slots_t;
 
 
@@ -73,7 +75,7 @@ static mongoc_counters_t *
 mongoc_counters_new_from_pid (unsigned pid)
 {
    mongoc_counters_t *counters;
-   bson_int32_t len;
+   int32_t len;
    size_t size;
    void *mem;
    char name[32];
@@ -128,7 +130,7 @@ mongoc_counters_destroy (mongoc_counters_t *counters)
 
 static mongoc_counter_info_t *
 mongoc_counters_get_infos (mongoc_counters_t *counters,
-                           bson_uint32_t     *n_infos)
+                           uint32_t     *n_infos)
 {
    mongoc_counter_info_t *info;
    char *base = (char *)counters;
@@ -143,12 +145,12 @@ mongoc_counters_get_infos (mongoc_counters_t *counters,
 }
 
 
-static bson_int64_t
+static int64_t
 mongoc_counters_get_value (mongoc_counters_t     *counters,
                            mongoc_counter_info_t *info,
                            mongoc_counter_t      *counter)
 {
-   bson_int64_t value = 0;
+   int64_t value = 0;
    unsigned i;
 
    for (i = 0; i < counters->n_cpu; i++) {
@@ -165,7 +167,7 @@ mongoc_counters_print_info (mongoc_counters_t     *counters,
                             FILE                  *file)
 {
    mongoc_counter_t ctr;
-   bson_int64_t value;
+   int64_t value;
    char *base;
 
    BSON_ASSERT(info);
@@ -188,7 +190,7 @@ main (int   argc,
 {
    mongoc_counter_info_t *infos;
    mongoc_counters_t *counters;
-   bson_uint32_t n_counters = 0;
+   uint32_t n_counters = 0;
    unsigned i;
    int pid;
 
@@ -209,5 +211,14 @@ main (int   argc,
 
    mongoc_counters_destroy(counters);
 
+   return 0;
+}
+
+#endif
+
+int
+main (int   argc,
+      char *argv[])
+{
    return 0;
 }

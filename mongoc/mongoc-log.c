@@ -18,6 +18,7 @@
 #include <stdarg.h>
 #include <time.h>
 
+#include "mongoc-compat.h"
 #include "mongoc-log.h"
 
 
@@ -28,18 +29,27 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
                             void               *user_data);
 
 
-static bson_mutex_t       gLogMutex = BSON_MUTEX_INITIALIZER;
+static mongoc_mutex_t       gLogMutex;
 static mongoc_log_func_t  gLogFunc = mongoc_log_default_handler;
 static void              *gLogData;
 
+static MONGOC_ONCE_FUN( _mongoc_ensure_mutex_once)
+{
+   mongoc_mutex_init(&gLogMutex);
+
+   MONGOC_ONCE_RETURN;
+}
 
 void
 mongoc_log_set_handler (mongoc_log_func_t  log_func,
                         void              *user_data)
 {
-   bson_mutex_lock(&gLogMutex);
+   mongoc_once_t once = MONGOC_ONCE_INIT;
+   mongoc_once(&once, &_mongoc_ensure_mutex_once);
+
+   mongoc_mutex_lock(&gLogMutex);
    gLogFunc = log_func;
-   bson_mutex_unlock(&gLogMutex);
+   mongoc_mutex_unlock(&gLogMutex);
 }
 
 
@@ -51,6 +61,9 @@ mongoc_log (mongoc_log_level_t  log_level,
 {
    va_list args;
    char *message;
+   static mongoc_once_t once = MONGOC_ONCE_INIT;
+
+   mongoc_once(&once, &_mongoc_ensure_mutex_once);
 
    bson_return_if_fail(format);
 
@@ -58,9 +71,9 @@ mongoc_log (mongoc_log_level_t  log_level,
    message = bson_strdupv_printf(format, args);
    va_end(args);
 
-   bson_mutex_lock(&gLogMutex);
+   mongoc_mutex_lock(&gLogMutex);
    gLogFunc(log_level, log_domain, message, gLogData);
-   bson_mutex_unlock(&gLogMutex);
+   mongoc_mutex_unlock(&gLogMutex);
 
    bson_free(message);
 }
@@ -102,9 +115,18 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
    FILE *stream;
    char nowstr[32];
 
-   gettimeofday(&tv, NULL);
+   bson_gettimeofday(&tv, NULL);
    t = tv.tv_sec;
-   tt = *localtime(&t);
+
+#ifdef _WIN32
+#  ifdef _MSC_VER
+     localtime_s(&tt, &t);
+#  else
+     tt = *(localtime(&t));
+#  endif
+#else
+   localtime_r(&t, &tt);
+#endif
 
    strftime (nowstr, sizeof nowstr, "%Y/%m/%d %H:%M:%S", &tt);
 

@@ -1,7 +1,6 @@
 #include <fcntl.h>
 #include <mongoc.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "TestSuite.h"
 
@@ -14,10 +13,10 @@ test_buffered_basic (void)
    ssize_t r;
    struct iovec iov;
    char buf[16236];
-   int fd;
+   mongoc_fd_t fd;
 
-   fd = open("tests/binary/reply2.dat", O_RDONLY);
-   ASSERT (fd != -1);
+   fd = mongoc_open("tests/binary/reply2.dat", O_RDONLY);
+   assert(mongoc_fd_is_valid(fd));
 
    /* stream assumes ownership of fd */
    stream = mongoc_stream_unix_new(fd);
@@ -44,10 +43,10 @@ test_buffered_oversized (void)
    ssize_t r;
    struct iovec iov;
    char buf[16236];
-   int fd;
+   mongoc_fd_t fd;
 
-   fd = open("tests/binary/reply2.dat", O_RDONLY);
-   ASSERT (fd != -1);
+   fd = mongoc_open("tests/binary/reply2.dat", O_RDONLY);
+   assert(mongoc_fd_is_valid(fd));
 
    /* stream assumes ownership of fd */
    stream = mongoc_stream_unix_new(fd);

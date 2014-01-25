@@ -10,7 +10,7 @@ main (int   argc,
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
    const bson_t *reply;
-   bson_uint16_t port;
+   uint16_t port;
    bson_error_t error;
    bson_t ping;
    char *host_and_port;
@@ -20,6 +20,8 @@ main (int   argc,
       fprintf(stderr, "usage: %s HOSTNAME [PORT]\n", argv[0]);
       return 1;
    }
+
+   mongoc_init();
 
    port = (argc == 3) ? atoi(argv[2]) : 27017;
    host_and_port = bson_strdup_printf("mongodb://%s:%hu", argv[1], port);

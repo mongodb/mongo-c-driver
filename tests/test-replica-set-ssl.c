@@ -1,5 +1,4 @@
 #include <string.h>
-#include <unistd.h>
 
 #include "ha-test.h"
 

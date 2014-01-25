@@ -25,7 +25,6 @@
 
 
 #include <bson.h>
-#include <sys/uio.h>
 
 BSON_BEGIN_DECLS
 
@@ -52,7 +51,7 @@ typedef struct _mongoc_gridfs_file_opt
    const char   *content_type;
    const bson_t *aliases;
    const bson_t *metadata;
-   bson_uint32_t chunk_size;
+   uint32_t chunk_size;
 } mongoc_gridfs_file_opt_t;
 
 MONGOC_GRIDFS_FILE_STR_HEADER (md5)
@@ -61,45 +60,45 @@ MONGOC_GRIDFS_FILE_STR_HEADER (content_type)
 MONGOC_GRIDFS_FILE_BSON_HEADER (aliases)
 MONGOC_GRIDFS_FILE_BSON_HEADER (metadata)
 
-bson_int64_t
+int64_t
 mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file);
 
-bson_int32_t
+int32_t
 mongoc_gridfs_file_get_chunk_size (mongoc_gridfs_file_t *file);
 
-bson_int64_t
+int64_t
 mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file);
 
 ssize_t
 mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
                            struct iovec         *iov,
                            size_t                iovcnt,
-                           bson_uint32_t         timeout_msec);
+                           uint32_t         timeout_msec);
 
 ssize_t
 mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
                           struct iovec         *iov,
                           size_t                iovcnt,
                           size_t                min_bytes,
-                          bson_uint32_t         timeout_msec);
+                          uint32_t         timeout_msec);
 
 
 int
 mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
-                         bson_uint64_t         delta,
+                         uint64_t         delta,
                          int                   whence);
 
-bson_uint64_t
+uint64_t
 mongoc_gridfs_file_tell (mongoc_gridfs_file_t *file);
 
-bson_bool_t
+bool
 mongoc_gridfs_file_save (mongoc_gridfs_file_t *file);
 
 
 void
 mongoc_gridfs_file_destroy (mongoc_gridfs_file_t *file);
 
-bson_bool_t
+bool
 mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
                           bson_error_t         *error);
 

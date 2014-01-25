@@ -1,16 +1,12 @@
 #include <fcntl.h>
 #include <mongoc.h>
-#include <unistd.h>
 
 #include "mongoc-cursor-private.h"
 #include "mock-server.h"
 #include "mongoc-client-private.h"
 #include "TestSuite.h"
 
-
-#define HOSTENV "MONGOC_TEST_HOST"
-#define HOST (getenv(HOSTENV) ? getenv(HOSTENV) : "localhost")
-
+#include "test-libmongoc.h"
 
 static char *gTestUri;
 static char *gTestUriWithPassword;
@@ -19,61 +15,21 @@ static char *gTestUriWithBadPassword;
 
 #define MONGOD_VERSION_HEX(a, b, c) ((a << 16) | (b << 8) | (c))
 
-
-static bson_uint32_t
-get_version_hex (mongoc_client_t *client)
+#ifdef _WIN32
+static void
+usleep (int64_t usec)
 {
-   mongoc_database_t *database;
-   mongoc_cursor_t *cursor;
-   bson_uint32_t version = 0;
-   const bson_t *doc;
-   bson_iter_t child;
-   bson_iter_t iter;
-   bson_t cmd = BSON_INITIALIZER;
-   int i;
+    HANDLE timer;
+    LARGE_INTEGER ft;
 
-   bson_append_int32 (&cmd, "buildInfo", -1, 1);
+    ft.QuadPart = -(10 * usec);
 
-   database = mongoc_client_get_database (client, "admin");
-   cursor = mongoc_database_command (database,
-                                     MONGOC_QUERY_NONE,
-                                     0,
-                                     1,
-                                     0,
-                                     &cmd,
-                                     NULL,
-                                     NULL);
-
-   if (mongoc_cursor_next (cursor, &doc)) {
-      if (bson_iter_init_find (&iter, doc, "versionArray") &&
-          bson_iter_recurse (&iter, &child)) {
-         for (i = 0; i < 3; i++) {
-            if (bson_iter_next (&child) && BSON_ITER_HOLDS_INT32 (&child)) {
-               version = (version << 8) | (bson_iter_int32 (&child) & 0xFF);
-            }
-         }
-      }
-   }
-
-   mongoc_database_destroy (database);
-   mongoc_cursor_destroy (cursor);
-   bson_destroy (&cmd);
-
-   return version;
+    timer = CreateWaitableTimer(NULL, true, NULL);
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
 }
-
-
-static bson_bool_t
-version_check (mongoc_client_t *client,
-               int              a,
-               int              b,
-               int              c)
-{
-   int version;
-
-   version = get_version_hex (client);
-   return version >= MONGOD_VERSION_HEX (a, b, c);
-}
+#endif
 
 
 static void
@@ -85,7 +41,7 @@ test_mongoc_client_authenticate (void)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_t q;
 
    /*
@@ -126,7 +82,7 @@ test_mongoc_client_authenticate_failure (void)
    mongoc_client_t *client;
    const bson_t *doc;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_t q;
 
    /*
@@ -156,10 +112,10 @@ test_wire_version (void)
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
    mock_server_t *server;
-   bson_uint16_t port;
+   uint16_t port;
    const bson_t *doc;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_t q = BSON_INITIALIZER;
    char *uristr;
 
@@ -208,8 +164,8 @@ read_prefs_handler (mock_server_t   *server,
                     mongoc_rpc_t    *rpc,
                     void            *user_data)
 {
-   bson_bool_t *success = user_data;
-   bson_int32_t len;
+   bool *success = user_data;
+   int32_t len;
    bson_iter_t iter;
    bson_iter_t child;
    bson_iter_t child2;
@@ -275,7 +231,7 @@ read_prefs_handler (mock_server_t   *server,
 
       mock_server_reply_simple (server, stream, rpc, MONGOC_REPLY_NONE, &reply);
 
-      *success = TRUE;
+      *success = true;
    }
 }
 
@@ -288,10 +244,10 @@ test_mongoc_client_read_prefs (void)
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
    mock_server_t *server;
-   bson_uint16_t port;
+   uint16_t port;
    const bson_t *doc;
    bson_error_t error;
-   bson_bool_t success = FALSE;
+   bool success = false;
    bson_t b = BSON_INITIALIZER;
    bson_t q = BSON_INITIALIZER;
    char *uristr;
@@ -307,7 +263,7 @@ test_mongoc_client_read_prefs (void)
    client = mongoc_client_new (uristr);
 
    if (!_mongoc_client_warm_up (client, &error)) {
-      assert (FALSE);
+      assert (false);
    }
 
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -350,7 +306,7 @@ test_mongoc_client_command (void)
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
-   bson_bool_t r;
+   bool r;
    bson_t cmd = BSON_INITIALIZER;
 
    client = mongoc_client_new (gTestUri);
@@ -388,7 +344,7 @@ test_exhaust_cursor (void)
    bson_t b[10];
    bson_t *bptr[10];
    int i;
-   bson_bool_t r;
+   bool r;
    bson_error_t error;
    bson_oid_t oid;
 
@@ -542,9 +498,9 @@ cleanup_globals (void)
 void
 test_client_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf("mongodb://%s:27017/", HOST);
-   gTestUriWithPassword = bson_strdup_printf("mongodb://testuser:testpass@%s:27017/test", HOST);
-   gTestUriWithBadPassword = bson_strdup_printf("mongodb://baduser:badpass@%s:27017/test", HOST);
+   gTestUri = bson_strdup_printf("mongodb://%s:27017/", MONGOC_TEST_HOST);
+   gTestUriWithPassword = bson_strdup_printf("mongodb://testuser:testpass@%s:27017/test", MONGOC_TEST_HOST);
+   gTestUriWithBadPassword = bson_strdup_printf("mongodb://baduser:badpass@%s:27017/test", MONGOC_TEST_HOST);
 
    TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
    TestSuite_Add (suite, "/Client/authenticate", test_mongoc_client_authenticate);

@@ -34,7 +34,7 @@
 
 typedef struct
 {
-   bson_bool_t has_cursor;
+   bool has_cursor;
 } mongoc_cursor_cursorid_t;
 
 
@@ -56,18 +56,18 @@ _mongoc_cursor_cursorid_destroy (mongoc_cursor_t *cursor)
 {
    ENTRY;
 
-   bson_free (cursor->interface_data);
+   bson_free (cursor->iface_data);
    _mongoc_cursor_destroy (cursor);
 
    EXIT;
 }
 
 
-bson_bool_t
+bool
 _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
                               const bson_t   **bson)
 {
-   bson_bool_t ret;
+   bool ret;
    mongoc_cursor_cursorid_t *cid;
    bson_iter_t iter;
    bson_iter_t child;
@@ -75,12 +75,12 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
 
    ENTRY;
 
-   cid = cursor->interface_data;
+   cid = cursor->iface_data;
 
    ret = _mongoc_cursor_next (cursor, bson);
 
    if (!cid->has_cursor) {
-      cid->has_cursor = TRUE;
+      cid->has_cursor = true;
 
       if (ret &&
           bson_iter_init_find (&iter, *bson, "cursor") &&
@@ -91,11 +91,11 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
                cursor->rpc.reply.cursor_id = bson_iter_int64 (&child);
             } else if (strcmp (bson_iter_key (&child), "ns") == 0) {
                ns = bson_iter_utf8 (&child, &cursor->nslen);
-               strncpy (cursor->ns, ns, sizeof cursor->ns - 1);
+               bson_strcpy_w_null (cursor->ns, ns, sizeof cursor->ns);
             }
          }
 
-         cursor->is_command = FALSE;
+         cursor->is_command = false;
 
          ret = _mongoc_cursor_next (cursor, bson);
       }
@@ -133,9 +133,9 @@ _mongoc_cursor_cursorid_init (mongoc_cursor_t *cursor)
 {
    ENTRY;
 
-   cursor->interface_data = _mongoc_cursor_cursorid_new ();
+   cursor->iface_data = _mongoc_cursor_cursorid_new ();
 
-   memcpy (&cursor->interface, &gMongocCursorCursorid,
+   memcpy (&cursor->iface, &gMongocCursorCursorid,
            sizeof (mongoc_cursor_interface_t));
 
    EXIT;

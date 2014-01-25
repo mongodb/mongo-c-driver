@@ -66,7 +66,7 @@ _mongoc_queue_push_tail (mongoc_queue_t *queue,
                          void           *data)
    BSON_GNUC_INTERNAL;
 
-bson_uint32_t
+uint32_t
 _mongoc_queue_get_length (const mongoc_queue_t *queue)
    BSON_GNUC_INTERNAL;
 

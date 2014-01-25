@@ -55,12 +55,37 @@ log_handler (mongoc_log_level_t  log_level,
 }
 
 
+char MONGOC_TEST_HOST[1024];
+
+static void
+set_mongoc_test_host(void)
+{
+#ifdef _MSC_VER
+   size_t buflen;
+
+   if (!getenv_s(&buflen, MONGOC_TEST_HOST, sizeof MONGOC_TEST_HOST, "MONGOC_TEST_HOST")) {
+      bson_strcpy_w_null(MONGOC_TEST_HOST, "localhost", sizeof MONGOC_TEST_HOST);
+   }
+#else
+   if (getenv("MONGOC_TEST_HOST")) {
+      bson_strcpy_w_null(MONGOC_TEST_HOST, getenv("MONGOC_TEST_HOST"), sizeof MONGOC_TEST_HOST);
+   } else {
+      bson_strcpy_w_null(MONGOC_TEST_HOST, "localhost", sizeof MONGOC_TEST_HOST);
+   }
+#endif
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
    TestSuite suite;
    int ret;
+
+   mongoc_init();
+
+   set_mongoc_test_host();
 
    mongoc_log_set_handler (log_handler, NULL);
 

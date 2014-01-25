@@ -40,7 +40,7 @@ struct _mongoc_gridfs_file_list
 mongoc_gridfs_file_list_t *
 _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
                               const bson_t    *query,
-                              bson_uint32_t    limit);
+                              uint32_t    limit);
 
 
 BSON_END_DECLS

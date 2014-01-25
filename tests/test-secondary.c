@@ -1,10 +1,9 @@
 #include <mongoc.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-static bson_bool_t gExpectingFailure;
-static bson_bool_t gShutdown;
+static bool gExpectingFailure;
+static bool gShutdown;
 
 static void
 query_collection (mongoc_collection_t *col)
@@ -40,7 +39,7 @@ query_collection (mongoc_collection_t *col)
              (error.code != MONGOC_ERROR_STREAM_SOCKET)) {
             abort();
          }
-         gExpectingFailure = FALSE;
+         gExpectingFailure = false;
       } else {
          MONGOC_WARNING("%s", error.message);
          abort();
@@ -64,16 +63,6 @@ test_secondary (mongoc_client_t *client)
    mongoc_collection_destroy(col);
 }
 
-static void
-sighandler (int signum)
-{
-   if (signum == SIGUSR1) {
-      gExpectingFailure = TRUE;
-   } else if (signum == SIGUSR2) {
-      gShutdown = TRUE;
-   }
-}
-
 int
 main (int   argc,
       char *argv[])
@@ -92,9 +81,6 @@ main (int   argc,
       fprintf(stderr, "Invalid URI: \"%s\"\n", argv[1]);
       return EXIT_FAILURE;
    }
-
-   signal(SIGUSR1, sighandler);
-   signal(SIGUSR2, sighandler);
 
    client = mongoc_client_new_from_uri(uri);
 

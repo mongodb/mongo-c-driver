@@ -27,11 +27,11 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_write_concern_t
 {
-   bson_bool_t  fsync_;
-   bson_bool_t  journal;
-   bson_int32_t w;
-   bson_int32_t wtimeout;
-   bson_bool_t  frozen;
+   bool  fsync_;
+   bool  journal;
+   int32_t w;
+   int32_t wtimeout;
+   bool  frozen;
    bson_t       tags;
    bson_t       compiled;
 };
@@ -41,7 +41,7 @@ const bson_t *
 _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_write_concern_has_gle (const mongoc_write_concern_t *write_concern)
    BSON_GNUC_INTERNAL;
 

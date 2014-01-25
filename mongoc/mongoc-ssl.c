@@ -15,18 +15,22 @@
  */
 
 
-#include <arpa/inet.h>
+#include "mongoc-compat.h"
+#include <bson.h>
 #include <limits.h>
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "mongoc-init.h"
 #include "mongoc-ssl.h"
 #include "mongoc-trace.h"
+
+#ifdef _WIN32
+#define strncasecmp _strnicmp
+#endif
 
 /* TODO: we could populate these from a config or something further down the
  * road for providing defaults */
@@ -77,13 +81,13 @@ _mongoc_ssl_password_cb (char *buf,
                          void *user_data)
 {
    char *pass = (char *)user_data;
-   int pass_len = strlen (pass);
+   int pass_len = (int)strlen (pass);
 
    if (num < pass_len + 1) {
       return 0;
    }
 
-   strcpy (buf, pass);
+   bson_strcpy_w_null (buf, pass, num);
    return pass_len;
 }
 
@@ -97,7 +101,7 @@ _mongoc_ssl_password_cb (char *buf,
  * This code is meant to implement RFC 6125 6.4.[1-3]
  *
  */
-static bson_bool_t
+static bool
 _mongoc_ssl_hostcheck (const char *pattern,
                        const char *hostname)
 {
@@ -153,10 +157,10 @@ _mongoc_ssl_hostcheck (const char *pattern,
 
 /** check if a provided cert matches a passed hostname
  */
-bson_bool_t
+bool
 _mongoc_ssl_check_cert (SSL        *ssl,
                         const char *host,
-                        bson_bool_t weak_cert_validation)
+                        bool weak_cert_validation)
 {
    X509 *peer;
    X509_NAME *subject_name;
@@ -180,7 +184,7 @@ _mongoc_ssl_check_cert (SSL        *ssl,
    BSON_ASSERT (host);
 
    if (weak_cert_validation) {
-      return TRUE;
+      return true;
    }
 
    /** if the host looks like an IP address, match that, otherwise we assume we
@@ -193,7 +197,7 @@ _mongoc_ssl_check_cert (SSL        *ssl,
    peer = SSL_get_peer_certificate (ssl);
 
    if (!peer) {
-      return FALSE;
+      return false;
    }
 
    verify_status = SSL_get_verify_result (ssl);
@@ -285,7 +289,7 @@ _mongoc_ssl_check_cert (SSL        *ssl,
 }
 
 
-static bson_bool_t
+static bool
 _mongoc_ssl_setup_ca (SSL_CTX    *ctx,
                       const char *cert,
                       const char *cert_dir)
@@ -301,7 +305,7 @@ _mongoc_ssl_setup_ca (SSL_CTX    *ctx,
 }
 
 
-static bson_bool_t
+static bool
 _mongoc_ssl_setup_crl (SSL_CTX    *ctx,
                        const char *crlfile)
 {
@@ -320,7 +324,7 @@ _mongoc_ssl_setup_crl (SSL_CTX    *ctx,
 }
 
 
-static bson_bool_t
+static bool
 _mongoc_ssl_setup_pem_file (SSL_CTX    *ctx,
                             const char *pem_file,
                             const char *password)

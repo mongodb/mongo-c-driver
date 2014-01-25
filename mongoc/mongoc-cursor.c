@@ -50,21 +50,21 @@ _mongoc_cursor_get_read_mode_string (mongoc_read_mode_t mode)
    }
 }
 
-static bson_int32_t
+static int32_t
 _mongoc_n_return (mongoc_cursor_t * cursor)
 {
    /* by default, use the batch size */
-   bson_uint32_t r = cursor->batch_size;
+   int32_t r = cursor->batch_size;
 
    /* if we have a limit */
    if (cursor->limit) {
       /* calculate remaining */
-      bson_uint32_t remaining = cursor->limit - cursor->count;
+      uint32_t remaining = cursor->limit - cursor->count;
 
       /* if we had a batch size */
       if (r) {
          /* use min of batch or remaining */
-         r = MIN(r, remaining);
+         r = MIN(r, (int32_t)remaining);
       } else {
          /* if we didn't, just use the remaining */
          r = remaining;
@@ -80,10 +80,10 @@ mongoc_cursor_t *
 _mongoc_cursor_new (mongoc_client_t           *client,
                     const char                *db_and_collection,
                     mongoc_query_flags_t       flags,
-                    bson_uint32_t              skip,
-                    bson_uint32_t              limit,
-                    bson_uint32_t              batch_size,
-                    bson_bool_t                is_command,
+                    uint32_t              skip,
+                    uint32_t              limit,
+                    uint32_t              batch_size,
+                    bool                is_command,
                     const bson_t              *query,
                     const bson_t              *fields,
                     const mongoc_read_prefs_t *read_prefs)
@@ -115,12 +115,12 @@ _mongoc_cursor_new (mongoc_client_t           *client,
 
    cursor = bson_malloc0(sizeof *cursor);
    cursor->client = client;
-   strncpy(cursor->ns, db_and_collection, sizeof cursor->ns - 1);
-   cursor->nslen = strlen(cursor->ns);
+   bson_strcpy_w_null(cursor->ns, db_and_collection, sizeof cursor->ns);
+   cursor->nslen = (uint32_t)strlen(cursor->ns);
    cursor->flags = flags;
    cursor->skip = skip;
    cursor->limit = limit;
-   cursor->batch_size = cursor->batch_size;
+   cursor->batch_size = batch_size;
 
    cursor->is_command = is_command;
 
@@ -169,7 +169,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
 
 static void
 _mongoc_cursor_kill_cursor (mongoc_cursor_t *cursor,
-                            bson_int64_t     cursor_id)
+                            int64_t     cursor_id)
 {
    mongoc_rpc_t rpc = {{ 0 }};
 
@@ -197,8 +197,8 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
    BSON_ASSERT(cursor);
 
-   if (cursor->interface.destroy) {
-      cursor->interface.destroy(cursor);
+   if (cursor->iface.destroy) {
+      cursor->iface.destroy(cursor);
    } else {
       _mongoc_cursor_destroy(cursor);
    }
@@ -214,7 +214,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    bson_return_if_fail(cursor);
 
    if (cursor->in_exhaust) {
-      cursor->client->in_exhaust = FALSE;
+      cursor->client->in_exhaust = false;
 
       if (!cursor->done) {
          _mongoc_cluster_disconnect_node (
@@ -249,7 +249,7 @@ _mongoc_cursor_populate_error (mongoc_cursor_t *cursor,
                                const bson_t    *doc,
                                bson_error_t    *error)
 {
-   bson_uint32_t code = MONGOC_ERROR_QUERY_FAILURE;
+   uint32_t code = MONGOC_ERROR_QUERY_FAILURE;
    bson_iter_t iter;
    const char *msg = "Unknown query failure";
 
@@ -277,7 +277,7 @@ _mongoc_cursor_populate_error (mongoc_cursor_t *cursor,
 }
 
 
-static bson_bool_t
+static bool
 _mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 {
    bson_iter_t iter;
@@ -285,14 +285,14 @@ _mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   bson_return_val_if_fail(cursor, FALSE);
+   bson_return_val_if_fail(cursor, false);
 
    if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_PROTOCOL,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                      "Received rpc other than OP_REPLY.");
-      RETURN(TRUE);
+      RETURN(true);
    }
 
    if ((cursor->rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
@@ -305,19 +305,19 @@ _mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
                         MONGOC_ERROR_QUERY_FAILURE,
                         "Unknown query failure.");
       }
-      RETURN(TRUE);
+      RETURN(true);
    } else if (cursor->is_command) {
       if (_mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b)) {
          if ( bson_iter_init_find(&iter, &b, "ok") &&
               bson_iter_as_bool(&iter)) {
-            return FALSE;
+            return false;
          } else {
             _mongoc_cursor_populate_error(cursor, &b, &cursor->error);
             bson_destroy(&b);
-            return TRUE;
+            return true;
          }
       } else {
-         return TRUE;
+         return true;
       }
    }
 
@@ -326,27 +326,27 @@ _mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
                      MONGOC_ERROR_CURSOR,
                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                      "The cursor is invalid or has expired.");
-      RETURN(TRUE);
+      RETURN(true);
    }
 
-   RETURN(FALSE);
+   RETURN(false);
 }
 
 
-static bson_bool_t
+static bool
 _mongoc_cursor_query (mongoc_cursor_t *cursor)
 {
-   bson_uint32_t hint;
-   bson_uint32_t request_id;
+   uint32_t hint;
+   uint32_t request_id;
    mongoc_rpc_t rpc;
 
    ENTRY;
 
-   bson_return_val_if_fail(cursor, FALSE);
+   bson_return_val_if_fail(cursor, false);
 
    if (!_mongoc_client_warm_up (cursor->client, &cursor->error)) {
-      cursor->failed = TRUE;
-      RETURN (FALSE);
+      cursor->failed = true;
+      RETURN (false);
    }
 
    rpc.query.msg_len = 0;
@@ -373,7 +373,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    cursor->hint = hint;
    request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
 
-   _mongoc_buffer_clear(&cursor->buffer, FALSE);
+   _mongoc_buffer_clear(&cursor->buffer, false);
 
    if (!_mongoc_client_recv(cursor->client,
                             &cursor->rpc,
@@ -395,7 +395,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    if (_mongoc_cursor_unwrap_failure(cursor)) {
       if ((cursor->error.domain == MONGOC_ERROR_QUERY) &&
           (cursor->error.code == MONGOC_ERROR_QUERY_NOT_TAILABLE)) {
-         cursor->failed = TRUE;
+         cursor->failed = true;
       }
       goto failure;
    }
@@ -408,27 +408,27 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
                                               cursor->rpc.reply.documents_len);
 
    if (cursor->flags & MONGOC_QUERY_EXHAUST) {
-      cursor->in_exhaust = TRUE;
-      cursor->client->in_exhaust = TRUE;
+      cursor->in_exhaust = true;
+      cursor->client->in_exhaust = true;
    }
 
-   cursor->done = FALSE;
-   cursor->end_of_event = FALSE;
-   cursor->sent = TRUE;
-   RETURN(TRUE);
+   cursor->done = false;
+   cursor->end_of_event = false;
+   cursor->sent = true;
+   RETURN(true);
 
 failure:
-   cursor->failed = TRUE;
-   cursor->done = TRUE;
-   RETURN(FALSE);
+   cursor->failed = true;
+   cursor->done = true;
+   RETURN(false);
 }
 
 
-static bson_bool_t
+static bool
 _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 {
-   bson_uint64_t cursor_id;
-   bson_uint32_t request_id;
+   uint64_t cursor_id;
+   uint32_t request_id;
    mongoc_rpc_t rpc;
 
    ENTRY;
@@ -437,8 +437,8 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
    if (! cursor->in_exhaust) {
       if (!_mongoc_client_warm_up (cursor->client, &cursor->error)) {
-         cursor->failed = TRUE;
-         RETURN (FALSE);
+         cursor->failed = true;
+         RETURN (false);
       }
 
       if (!(cursor_id = cursor->rpc.reply.cursor_id)) {
@@ -468,9 +468,9 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
       if (!_mongoc_client_sendv(cursor->client, &rpc, 1, cursor->hint,
                                 NULL, cursor->read_prefs, &cursor->error)) {
-         cursor->done = TRUE;
-         cursor->failed = TRUE;
-         RETURN(FALSE);
+         cursor->done = true;
+         cursor->failed = true;
+         RETURN(false);
       }
 
       request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
@@ -478,7 +478,7 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       request_id = BSON_UINT32_FROM_LE(cursor->rpc.header.request_id);
    }
 
-   _mongoc_buffer_clear(&cursor->buffer, FALSE);
+   _mongoc_buffer_clear(&cursor->buffer, false);
 
    if (!_mongoc_client_recv(cursor->client,
                             &cursor->rpc,
@@ -508,28 +508,28 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    cursor->reader = bson_reader_new_from_data(cursor->rpc.reply.documents,
                                               cursor->rpc.reply.documents_len);
 
-   cursor->end_of_event = FALSE;
+   cursor->end_of_event = false;
 
-   RETURN(TRUE);
+   RETURN(true);
 
 failure:
-   cursor->done = TRUE;
-   cursor->failed = TRUE;
+   cursor->done = true;
+   cursor->failed = true;
 
-   RETURN(FALSE);
+   RETURN(false);
 }
 
 
-bson_bool_t
+bool
 mongoc_cursor_error (mongoc_cursor_t *cursor,
                      bson_error_t    *error)
 {
-   bson_bool_t ret;
+   bool ret;
 
    BSON_ASSERT(cursor);
 
-   if (cursor->interface.error) {
-      ret = cursor->interface.error(cursor, error);
+   if (cursor->iface.error) {
+      ret = cursor->iface.error(cursor, error);
    } else {
       ret = _mongoc_cursor_error(cursor, error);
    }
@@ -551,13 +551,13 @@ mongoc_cursor_error (mongoc_cursor_t *cursor,
 }
 
 
-bson_bool_t
+bool
 _mongoc_cursor_error (mongoc_cursor_t *cursor,
                       bson_error_t    *error)
 {
    ENTRY;
 
-   bson_return_val_if_fail(cursor, FALSE);
+   bson_return_val_if_fail(cursor, false);
 
    if (BSON_UNLIKELY(cursor->failed)) {
       bson_set_error(error,
@@ -565,24 +565,24 @@ _mongoc_cursor_error (mongoc_cursor_t *cursor,
                      cursor->error.code,
                      "%s",
                      cursor->error.message);
-      RETURN(TRUE);
+      RETURN(true);
    }
 
-   RETURN(FALSE);
+   RETURN(false);
 }
 
 
-bson_bool_t
+bool
 mongoc_cursor_next (mongoc_cursor_t  *cursor,
                     const bson_t    **bson)
 {
-   bson_bool_t ret;
+   bool ret;
 
    BSON_ASSERT(cursor);
    BSON_ASSERT(bson);
 
-   if (cursor->interface.next) {
-      ret = cursor->interface.next(cursor, bson);
+   if (cursor->iface.next) {
+      ret = cursor->iface.next(cursor, bson);
    } else {
       ret = _mongoc_cursor_next(cursor, bson);
    }
@@ -593,12 +593,12 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
 }
 
 
-bson_bool_t
+bool
 _mongoc_cursor_next (mongoc_cursor_t  *cursor,
                      const bson_t    **bson)
 {
    const bson_t *b;
-   bson_bool_t eof;
+   bool eof;
 
    ENTRY;
 
@@ -610,8 +610,8 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_IN_EXHAUST,
                      "Another cursor derived from this client is in exhaust.");
-      cursor->failed = TRUE;
-      RETURN(FALSE);
+      cursor->failed = true;
+      RETURN(false);
    }
 
    if (bson) {
@@ -619,14 +619,14 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
    }
 
    if (cursor->limit && cursor->count >= cursor->limit) {
-      return FALSE;
+      return false;
    }
 
    /*
     * Short circuit if we are finished already.
     */
    if (BSON_UNLIKELY(cursor->done)) {
-      RETURN(FALSE);
+      RETURN(false);
    }
 
    /*
@@ -634,18 +634,18 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
     */
    if (!cursor->sent) {
       if (!_mongoc_cursor_query(cursor)) {
-         RETURN(FALSE);
+         RETURN(false);
       }
    } else if (BSON_UNLIKELY(cursor->end_of_event)) {
       if (!_mongoc_cursor_get_more(cursor)) {
-         RETURN(FALSE);
+         RETURN(false);
       }
    }
 
    /*
     * Read the next BSON document from the event.
     */
-   eof = FALSE;
+   eof = false;
    b = bson_reader_read(cursor->reader, &eof);
    cursor->end_of_event = eof;
 
@@ -659,12 +659,12 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
     * document stream.
     */
    if (!b && !eof) {
-      cursor->failed = TRUE;
+      cursor->failed = true;
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_CURSOR,
                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                      "The reply was corrupt.");
-      RETURN(FALSE);
+      RETURN(false);
    }
 
    if (bson) {
@@ -675,17 +675,17 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
 }
 
 
-bson_bool_t
+bool
 mongoc_cursor_more (mongoc_cursor_t *cursor)
 {
-   bson_bool_t ret;
+   bool ret;
 
    ENTRY;
 
    BSON_ASSERT(cursor);
 
-   if (cursor->interface.more) {
-      ret = cursor->interface.more(cursor);
+   if (cursor->iface.more) {
+      ret = cursor->iface.more(cursor);
    } else {
       ret = _mongoc_cursor_more(cursor);
    }
@@ -694,10 +694,10 @@ mongoc_cursor_more (mongoc_cursor_t *cursor)
 }
 
 
-bson_bool_t
+bool
 _mongoc_cursor_more (mongoc_cursor_t *cursor)
 {
-   bson_return_val_if_fail(cursor, FALSE);
+   bson_return_val_if_fail(cursor, false);
 
    return ((!cursor->sent) ||
            (cursor->rpc.reply.cursor_id) ||
@@ -712,8 +712,8 @@ mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
    BSON_ASSERT(cursor);
    BSON_ASSERT(host);
 
-   if (cursor->interface.get_host) {
-      cursor->interface.get_host(cursor, host);
+   if (cursor->iface.get_host) {
+      cursor->iface.get_host(cursor, host);
    } else {
       _mongoc_cursor_get_host(cursor, host);
    }
@@ -749,8 +749,8 @@ mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 
    BSON_ASSERT(cursor);
 
-   if (cursor->interface.clone) {
-      ret = cursor->interface.clone(cursor);
+   if (cursor->iface.clone) {
+      ret = cursor->iface.clone(cursor);
    } else {
       ret = _mongoc_cursor_clone(cursor);
    }
@@ -785,7 +785,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
    bson_copy_to (&cursor->query, &clone->query);
    bson_copy_to (&cursor->fields, &clone->fields);
 
-   memcpy (clone->ns, cursor->ns, sizeof clone->ns);
+   bson_strcpy_w_null(clone->ns, cursor->ns, sizeof clone->ns);
 
    _mongoc_buffer_init (&clone->buffer, NULL, 0, NULL);
 

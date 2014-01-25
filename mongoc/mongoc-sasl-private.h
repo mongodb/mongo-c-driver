@@ -34,7 +34,7 @@ struct _mongoc_sasl_t
 {
    sasl_callback_t  callbacks [4];
    sasl_conn_t     *conn;
-   bson_bool_t      done;
+   bool      done;
    int              step;
    char            *mechanism;
    char            *user;
@@ -78,13 +78,13 @@ void
 _mongoc_sasl_destroy (mongoc_sasl_t *sasl)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_sasl_step (mongoc_sasl_t      *sasl,
-                   const bson_uint8_t *inbuf,
-                   bson_uint32_t       inbuflen,
-                   bson_uint8_t       *outbuf,
-                   bson_uint32_t       outbufmax,
-                   bson_uint32_t      *outbuflen,
+                   const uint8_t *inbuf,
+                   uint32_t       inbuflen,
+                   uint8_t       *outbuf,
+                   uint32_t       outbufmax,
+                   uint32_t      *outbuflen,
                    bson_error_t       *error)
    BSON_GNUC_INTERNAL;
 

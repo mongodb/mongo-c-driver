@@ -14,27 +14,34 @@
  * limitations under the License.
  */
 
-#include <pthread.h>
+#include "mongoc-counters-private.h"
+#include "mongoc-compat.h"
+
+#include <bson.h>
 
 #include "mongoc-config.h"
-#include "mongoc-init.h"
 
 #ifdef MONGOC_ENABLE_SSL
-# include "mongoc-ssl.h"
-# include "mongoc-ssl-private.h"
+#include "mongoc-ssl.h"
+#include "mongoc-ssl-private.h"
 #endif
 
-static void
-_mongoc_do_init (void)
+#include "mongoc-init.h"
+
+static MONGOC_ONCE_FUN( _mongoc_do_init)
 {
 #ifdef MONGOC_ENABLE_SSL
    _mongoc_ssl_init();
 #endif
+   _mongoc_counters_init();
+   _mongoc_compat_init();
+
+   MONGOC_ONCE_RETURN;
 }
 
 void
 mongoc_init (void)
 {
-   static pthread_once_t once = PTHREAD_ONCE_INIT;
-   pthread_once (&once, _mongoc_do_init);
+   static mongoc_once_t once = MONGOC_ONCE_INIT;
+   mongoc_once (&once, _mongoc_do_init);
 }

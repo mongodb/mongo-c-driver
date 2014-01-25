@@ -40,7 +40,7 @@ mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list);
 void
 mongoc_gridfs_file_list_destroy (mongoc_gridfs_file_list_t *list);
 
-bson_bool_t
+bool
 mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list,
                                bson_error_t              *error);
 

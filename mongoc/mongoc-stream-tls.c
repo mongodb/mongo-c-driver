@@ -16,8 +16,9 @@
 
 #define _GNU_SOURCE
 
+#include <bson.h>
+
 #include <string.h>
-#include <unistd.h>
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -50,8 +51,8 @@ typedef struct
    mongoc_stream_t *base_stream;
    BIO             *bio;
    SSL_CTX         *ctx;
-   bson_int32_t     timeout;
-   bson_bool_t      weak_cert_validation;
+   int32_t     timeout;
+   bool      weak_cert_validation;
 } mongoc_stream_tls_t;
 
 
@@ -200,7 +201,7 @@ _mongoc_stream_tls_bio_read (BIO  *b,
    }
 
    errno = 0;
-   ret = mongoc_stream_read (tls->base_stream, buf, len, 0, tls->timeout);
+   ret = (int)mongoc_stream_read (tls->base_stream, buf, len, 0, tls->timeout);
    BIO_clear_retry_flags (b);
 
    if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -247,7 +248,7 @@ _mongoc_stream_tls_bio_write (BIO        *b,
    iov.iov_len = len;
 
    errno = 0;
-   ret = mongoc_stream_writev (tls->base_stream, &iov, 1, tls->timeout);
+   ret = (int)mongoc_stream_writev (tls->base_stream, &iov, 1, tls->timeout);
    BIO_clear_retry_flags (b);
 
    if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -335,7 +336,7 @@ static int
 _mongoc_stream_tls_bio_puts (BIO        *b,
                              const char *str)
 {
-   return _mongoc_stream_tls_bio_write (b, str, strlen (str));
+   return _mongoc_stream_tls_bio_write (b, str, (int)strlen (str));
 }
 
 
@@ -459,7 +460,7 @@ static ssize_t
 _mongoc_stream_tls_writev (mongoc_stream_t *stream,
                            struct iovec    *iov,
                            size_t           iovcnt,
-                           bson_int32_t     timeout_msec)
+                           int32_t     timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    ssize_t ret = 0;
@@ -473,7 +474,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
    tls->timeout = timeout_msec;
 
    for (i = 0; i < iovcnt; i++) {
-      write_ret = BIO_write (tls->bio, iov[i].iov_base, iov[i].iov_len);
+      write_ret = BIO_write (tls->bio, iov[i].iov_base, (int)iov[i].iov_len);
 
       if (write_ret != iov[i].iov_len) {
          return write_ret;
@@ -513,15 +514,15 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
                           struct iovec    *iov,
                           size_t           iovcnt,
                           size_t           min_bytes,
-                          bson_int32_t     timeout_msec)
+                          int32_t     timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    ssize_t ret = 0;
    size_t i;
    int read_ret;
    int iov_pos = 0;
-   bson_int64_t now;
-   bson_int64_t expire;
+   int64_t now;
+   int64_t expire;
 
    BSON_ASSERT (tls);
    BSON_ASSERT (iov);
@@ -535,8 +536,8 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
       iov_pos = 0;
 
       while (iov_pos < iov[i].iov_len - 1) {
-         read_ret = BIO_read (tls->bio, iov[i].iov_base + iov_pos,
-                              iov[i].iov_len - iov_pos);
+         read_ret = BIO_read (tls->bio, (char *)iov[i].iov_base + iov_pos,
+                              (int)(iov[i].iov_len - iov_pos));
 
          now = bson_get_monotonic_time ();
 
@@ -666,9 +667,9 @@ _mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,
  *
  * This will happen on the first read or write otherwise
  */
-bson_bool_t
+bool
 mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
-                                bson_int32_t     timeout_msec)
+                                int32_t     timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
@@ -685,7 +686,7 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
  *
  * check the cert returned by the other party
  */
-bson_bool_t
+bool
 mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
                               const char      *host)
 {

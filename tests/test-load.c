@@ -103,6 +103,8 @@ main (int   argc,
    mongoc_uri_t *uri;
    unsigned count = 10000;
 
+   mongoc_init();
+
    if (argc > 1) {
       if (!(uri = mongoc_uri_new(argv[1]))) {
          fprintf(stderr, "Failed to parse uri: %s\n", argv[1]);

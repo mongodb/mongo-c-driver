@@ -139,7 +139,7 @@ _mongoc_sasl_init (mongoc_sasl_t *sasl)
 
    memcpy (&sasl->callbacks, callbacks, sizeof callbacks);
 
-   sasl->done = FALSE;
+   sasl->done = false;
    sasl->step = 0;
    sasl->conn = NULL;
    sasl->mechanism = NULL;
@@ -172,11 +172,11 @@ _mongoc_sasl_destroy (mongoc_sasl_t *sasl)
 }
 
 
-static bson_bool_t
+static bool
 _mongoc_sasl_is_failure (int           status,
                          bson_error_t *error)
 {
-   bson_bool_t ret = (status < 0);
+   bool ret = (status < 0);
 
    if (ret) {
       switch (status) {
@@ -214,11 +214,11 @@ _mongoc_sasl_is_failure (int           status,
 }
 
 
-static bson_bool_t
+static bool
 _mongoc_sasl_start (mongoc_sasl_t      *sasl,
-                    bson_uint8_t       *outbuf,
-                    bson_uint32_t       outbufmax,
-                    bson_uint32_t      *outbuflen,
+                    uint8_t       *outbuf,
+                    uint32_t       outbufmax,
+                    uint32_t      *outbuflen,
                     bson_error_t       *error)
 {
    const char *service_name = "mongodb";
@@ -244,14 +244,14 @@ _mongoc_sasl_start (mongoc_sasl_t      *sasl,
    status = sasl_client_new (service_name, service_host, NULL, NULL,
                              sasl->callbacks, 0, &sasl->conn);
    if (_mongoc_sasl_is_failure (status, error)) {
-      return FALSE;
+      return false;
    }
 
    status = sasl_client_start (sasl->conn, sasl->mechanism,
                                &sasl->interact, &raw, &raw_len,
                                &mechanism);
    if (_mongoc_sasl_is_failure (status, error)) {
-      return FALSE;
+      return false;
    }
 
    if ((0 != strcasecmp (mechanism, "GSSAPI")) &&
@@ -261,26 +261,26 @@ _mongoc_sasl_start (mongoc_sasl_t      *sasl,
                       SASL_NOMECH,
                       "SASL Failure: invalid mechanism \"%s\"",
                       mechanism);
-      return FALSE;
+      return false;
    }
 
 
    status = sasl_encode64 (raw, raw_len, (char *)outbuf, outbufmax, outbuflen);
    if (_mongoc_sasl_is_failure (status, error)) {
-      return FALSE;
+      return false;
    }
 
-   return TRUE;
+   return true;
 }
 
 
-bson_bool_t
+bool
 _mongoc_sasl_step (mongoc_sasl_t      *sasl,
-                   const bson_uint8_t *inbuf,
-                   bson_uint32_t       inbuflen,
-                   bson_uint8_t       *outbuf,
-                   bson_uint32_t       outbufmax,
-                   bson_uint32_t      *outbuflen,
+                   const uint8_t *inbuf,
+                   uint32_t       inbuflen,
+                   uint8_t       *outbuf,
+                   uint32_t       outbufmax,
+                   uint32_t      *outbuflen,
                    bson_error_t       *error)
 {
    const char *raw = NULL;
@@ -303,7 +303,7 @@ _mongoc_sasl_step (mongoc_sasl_t      *sasl,
                       MONGOC_ERROR_SASL,
                       SASL_NOTDONE,
                       "SASL Failure: maximum steps detected");
-      return FALSE;
+      return false;
    }
 
    if (!inbuflen) {
@@ -311,25 +311,25 @@ _mongoc_sasl_step (mongoc_sasl_t      *sasl,
                       MONGOC_ERROR_SASL,
                       MONGOC_ERROR_CLIENT_AUTHENTICATE,
                       "SASL Failure: no payload provided from server.");
-      return FALSE;
+      return false;
    }
 
    status = sasl_decode64 ((char *)inbuf, inbuflen, (char *)outbuf, outbufmax,
                            outbuflen);
    if (_mongoc_sasl_is_failure (status, error)) {
-      return FALSE;
+      return false;
    }
 
    status = sasl_client_step (sasl->conn, (char *)outbuf, *outbuflen,
                               &sasl->interact, &raw, &rawlen);
    if (_mongoc_sasl_is_failure (status, error)) {
-      return FALSE;
+      return false;
    }
 
    status = sasl_encode64 (raw, rawlen, (char *)outbuf, outbufmax, outbuflen);
    if (_mongoc_sasl_is_failure (status, error)) {
-      return FALSE;
+      return false;
    }
 
-   return TRUE;
+   return true;
 }

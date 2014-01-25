@@ -73,8 +73,7 @@ _mongoc_database_new (mongoc_client_t              *client,
       mongoc_read_prefs_copy(read_prefs) :
       mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
-   strncpy(db->name, name, sizeof db->name);
-   db->name[sizeof db->name-1] = '\0';
+   bson_strcpy_w_null(db->name, name, sizeof db->name);
 
    RETURN(db);
 }
@@ -122,9 +121,9 @@ mongoc_database_destroy (mongoc_database_t *database)
 mongoc_cursor_t *
 mongoc_database_command (mongoc_database_t         *database,
                          mongoc_query_flags_t       flags,
-                         bson_uint32_t              skip,
-                         bson_uint32_t              limit,
-                         bson_uint32_t              batch_size,
+                         uint32_t              skip,
+                         uint32_t              limit,
+                         uint32_t              batch_size,
                          const bson_t              *command,
                          const bson_t              *fields,
                          const mongoc_read_prefs_t *read_prefs)
@@ -141,7 +140,7 @@ mongoc_database_command (mongoc_database_t         *database,
 }
 
 
-bson_bool_t
+bool
 mongoc_database_command_simple (mongoc_database_t         *database,
                                 const bson_t              *command,
                                 const mongoc_read_prefs_t *read_prefs,
@@ -170,7 +169,7 @@ mongoc_database_command_simple (mongoc_database_t         *database,
  *       Make sure this is really what you want!
  *
  * Returns:
- *       TRUE if @database was dropped.
+ *       true if @database was dropped.
  *
  * Side effects:
  *       @error may be set.
@@ -178,14 +177,14 @@ mongoc_database_command_simple (mongoc_database_t         *database,
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 mongoc_database_drop (mongoc_database_t *database,
                       bson_error_t      *error)
 {
-   bson_bool_t ret;
+   bool ret;
    bson_t cmd;
 
-   bson_return_val_if_fail(database, FALSE);
+   bson_return_val_if_fail(database, false);
 
    bson_init(&cmd);
    bson_append_int32(&cmd, "dropDatabase", 12, 1);
@@ -205,7 +204,7 @@ mongoc_database_drop (mongoc_database_t *database,
  *       This uses the legacy protocol by inserting into system.users.
  *
  * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
+ *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
  *       @error may be set.
@@ -213,7 +212,7 @@ mongoc_database_drop (mongoc_database_t *database,
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 mongoc_database_add_user_legacy (mongoc_database_t *database,
                                  const char        *username,
                                  const char        *password,
@@ -222,15 +221,15 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor = NULL;
    const bson_t *doc;
-   bson_bool_t ret = FALSE;
+   bool ret = false;
    bson_t query;
    bson_t user;
    char *input;
    char *pwd = NULL;
 
-   bson_return_val_if_fail(database, FALSE);
-   bson_return_val_if_fail(username, FALSE);
-   bson_return_val_if_fail(password, FALSE);
+   bson_return_val_if_fail(database, false);
+   bson_return_val_if_fail(username, false);
+   bson_return_val_if_fail(password, false);
 
    /*
     * Users are stored in the <dbname>.system.users virtual collection.
@@ -262,7 +261,7 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
       }
       bson_init(&user);
       bson_append_utf8(&user, "user", 4, username, -1);
-      bson_append_bool(&user, "readOnly", 8, FALSE);
+      bson_append_bool(&user, "readOnly", 8, false);
       bson_append_utf8(&user, "pwd", 3, pwd, -1);
    } else {
       bson_copy_to_excluding(doc, &user, "pwd", (char *)NULL);
@@ -273,7 +272,7 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
       goto failure_with_user;
    }
 
-   ret = TRUE;
+   ret = true;
 
 failure_with_user:
    bson_destroy(&user);
@@ -304,7 +303,7 @@ failure:
  * Returns: None.
  * Side effects: None.
  */
-bson_bool_t
+bool
 mongoc_database_add_user (mongoc_database_t *database,
                           const char        *username,
                           const char        *password,
@@ -312,7 +311,7 @@ mongoc_database_add_user (mongoc_database_t *database,
                           const bson_t      *custom_data,
                           bson_error_t      *error)
 {
-   bson_bool_t ret = FALSE;
+   bool ret = false;
 
    ENTRY;
 
@@ -457,15 +456,15 @@ mongoc_database_set_write_concern (mongoc_database_t            *database,
  * Checks to see if a collection exists within the database on the MongoDB
  * server.
  *
- * This will return %FALSE if their was an error communicating with the
+ * This will return %false if their was an error communicating with the
  * server, or if the collection does not exist.
  *
  * If @error is provided, it will first be zeroed. Upon error, error.domain
  * will be set.
  *
- * Returns: %TRUE if @name exists, otherwise %FALSE. @error may be set.
+ * Returns: %true if @name exists, otherwise %false. @error may be set.
  */
-bson_bool_t
+bool
 mongoc_database_has_collection (mongoc_database_t *database,
                                 const char        *name,
                                 bson_error_t      *error)
@@ -475,7 +474,7 @@ mongoc_database_has_collection (mongoc_database_t *database,
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_iter_t iter;
-   bson_bool_t ret = FALSE;
+   bool ret = false;
    const char *cur_name;
    bson_t q = BSON_INITIALIZER;
    char ns[140];
@@ -489,7 +488,7 @@ mongoc_database_has_collection (mongoc_database_t *database,
       memset (error, 0, sizeof *error);
    }
 
-   snprintf (ns, sizeof ns, "%s.%s", database->name, name);
+   bson_snprintf (ns, sizeof ns, "%s.%s", database->name, name);
    ns[sizeof ns - 1] = '\0';
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
@@ -506,7 +505,7 @@ mongoc_database_has_collection (mongoc_database_t *database,
           BSON_ITER_HOLDS_UTF8 (&iter)) {
          cur_name = bson_iter_utf8(&iter, NULL);
          if (!strcmp(cur_name, ns)) {
-            ret = TRUE;
+            ret = true;
             GOTO(cleanup);
          }
       }
@@ -527,7 +526,7 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
 {
    mongoc_collection_t *col;
    mongoc_cursor_t *cursor;
-   bson_uint32_t len;
+   uint32_t len;
    const bson_t *doc;
    bson_iter_t iter;
    const char *name;

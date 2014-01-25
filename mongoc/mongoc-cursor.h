@@ -43,16 +43,16 @@ void
 mongoc_cursor_destroy (mongoc_cursor_t *cursor);
 
 
-bson_bool_t
+bool
 mongoc_cursor_more (mongoc_cursor_t *cursor);
 
 
-bson_bool_t
+bool
 mongoc_cursor_next (mongoc_cursor_t  *cursor,
                     const bson_t    **bson);
 
 
-bson_bool_t
+bool
 mongoc_cursor_error (mongoc_cursor_t *cursor,
                      bson_error_t    *error);
 

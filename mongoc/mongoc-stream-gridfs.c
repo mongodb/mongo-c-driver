@@ -96,7 +96,7 @@ _mongoc_stream_gridfs_readv (mongoc_stream_t *stream,
                              struct iovec    *iov,
                              size_t           iovcnt,
                              size_t           min_bytes,
-                             bson_int32_t     timeout_msec)
+                             int32_t     timeout_msec)
 {
    mongoc_stream_gridfs_t *file = (mongoc_stream_gridfs_t *)stream;
    ssize_t ret = 0;
@@ -121,7 +121,7 @@ static ssize_t
 _mongoc_stream_gridfs_writev (mongoc_stream_t *stream,
                               struct iovec    *iov,
                               size_t           iovcnt,
-                              bson_int32_t     timeout_msec)
+                              int32_t     timeout_msec)
 {
    mongoc_stream_gridfs_t *file = (mongoc_stream_gridfs_t *)stream;
    ssize_t ret = 0;
