@@ -30,3 +30,9 @@ noinst_PROGRAMS += mongoc-tail
 mongoc_tail_SOURCES = $(top_srcdir)/examples/mongoc-tail.c
 mongoc_tail_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 mongoc_tail_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+
+
+noinst_PROGRAMS += find-and-modify
+find_and_modify_SOURCES = $(top_srcdir)/examples/find-and-modify.c
+find_and_modify_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+find_and_modify_LDADD = libmongoc-1.0.la $(BSON_LIBS)

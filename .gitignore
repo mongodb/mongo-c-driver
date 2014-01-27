@@ -9,6 +9,7 @@ configure
 depcomp
 .deps
 example-client
+find-and-modify
 INSTALL
 tags
 index-source
