@@ -1231,3 +1231,28 @@ mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
       collection->write_concern = mongoc_write_concern_copy(write_concern);
    }
 }
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_get_name --
+ *
+ *       Returns the name of the collection, excluding the database name.
+ *
+ * Returns:
+ *       A string which should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const char *
+mongoc_collection_get_name (mongoc_collection_t *collection)
+{
+   BSON_ASSERT (collection);
+
+   return collection->collection;
+}

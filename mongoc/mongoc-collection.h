@@ -119,6 +119,7 @@ void                          mongoc_collection_set_read_prefs    (mongoc_collec
 const mongoc_write_concern_t *mongoc_collection_get_write_concern (const mongoc_collection_t    *collection);
 void                          mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
                                                                    const mongoc_write_concern_t *write_concern);
+const char                   *mongoc_collection_get_name          (mongoc_collection_t          *collection);
 
 char                        * mongoc_collection_keys_to_index_string (const bson_t *keys);
 

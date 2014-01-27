@@ -1,0 +1,34 @@
+mongoc_collection_get_name(3)
+=============================
+
+
+NAME
+----
+mongoc_collection_get_name - Get the name of a collection
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+const char *
+mongoc_collection_get_name (mongoc_collection_t *collection);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_collection_get_name()_ function shall return the name of the
+collection as used to create the _mongoc_collection_t_ instance.
+
+
+RETURN VALUE
+------------
+The _mongoc_collection_get_name()_ function returns a string which should
+not be modified or freed.
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.
