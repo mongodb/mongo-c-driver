@@ -17,9 +17,12 @@
 #include <pthread.h>
 
 #include "mongoc-config.h"
-#include "mongoc-ssl.h"
-#include "mongoc-ssl-private.h"
 #include "mongoc-init.h"
+
+#ifdef MONGOC_ENABLE_SSL
+# include "mongoc-ssl.h"
+# include "mongoc-ssl-private.h"
+#endif
 
 static void
 _mongoc_do_init (void)
