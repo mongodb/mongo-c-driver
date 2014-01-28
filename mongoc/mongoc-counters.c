@@ -27,6 +27,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifdef _MSC_VER
+# include <windows.h>
+#endif
+
 #include "mongoc-counters-private.h"
 
 
@@ -238,7 +242,7 @@ mongoc_counters_register (mongoc_counters_t *counters,
    infos->name[sizeof infos->name-1] = '\0';
    infos->description[sizeof infos->description-1] = '\0';
 
-   bson_sync_synchronize();
+   MemoryBarrier ();
 
    counters->n_counters++;
 
@@ -291,6 +295,6 @@ mongoc_counters_init (void)
     * we have initialized the rest of the counters. Don't forget our memory
     * barrier to prevent compiler reordering.
     */
-   bson_sync_synchronize();
+   MemoryBarrier ();
    counters->size = size;
 }

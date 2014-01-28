@@ -71,6 +71,11 @@ typedef struct
 #undef COUNTER
 
 
+#if defined(__GNUC__) && !defined(MemoryBarrier)
+# define MemoryBarrier __sync_synchronize
+#endif
+
+
 static inline int
 _mongoc_get_n_cpu (void)
 {
@@ -111,7 +116,7 @@ mongoc_counter_##ident##_reset (void) \
    for (i = 0; i < NCPU; i++) { \
       __mongoc_counter_##ident.cpus[i].slots[COUNTER_##ident%SLOTS_PER_CACHELINE] = 0; \
    } \
-   bson_sync_synchronize(); \
+   MemoryBarrier (); \
 }
 #include "mongoc-counters.defs"
 #undef COUNTER
