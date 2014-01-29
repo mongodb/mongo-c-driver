@@ -284,6 +284,19 @@ AC_SUBST([MAINTAINER_CFLAGS])
 
 
 dnl **************************************************************************
+dnl Enable rdtscp instruction for fast counters
+dnl **************************************************************************
+AC_ARG_ENABLE([rdtscp],
+	      [AS_HELP_STRING([--enable-rdtscp=@<:@no/yes@:>@],
+	      		      [use rdtscp counters @<:@default=no@:>@])],
+	      		      [],
+	      		      [enable_rdtscp=no])
+if test "x$enable_rdtscp" != "xno"; then
+	CFLAGS="$CFLAGS -DENABLE_RDTSCP"
+fi
+
+
+dnl **************************************************************************
 dnl Output
 dnl **************************************************************************
 AC_CONFIG_FILES([
@@ -328,11 +341,8 @@ echo "  Maintainer ................: ${enable_maintainer_flags}"
 echo "  CFLAGS ....................: ${CFLAGS}"
 echo "  SSL .......................: ${enable_ssl}"
 echo "  SASL ......................: ${enable_sasl}"
+echo "  Fast Counters (rdtscp).....: ${enable_rdtscp}"
 echo ""
-echo "Examples"
-echo ""
-echo "  mongoc-ping ...............: yes"
-echo "  mongoc-tail ...............: yes"
 echo ""
 echo "Bindings"
 echo ""
