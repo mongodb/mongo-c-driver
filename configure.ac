@@ -213,6 +213,8 @@ AC_CHECK_FUNCS([shm_open], [SHM_LIB=],
 			     [SHM_LIB=])])
 AC_SUBST([SHM_LIB])
 
+AC_CHECK_FUNCS([sched_getcpu])
+
 
 dnl **************************************************************************
 dnl Enable extra debugging options

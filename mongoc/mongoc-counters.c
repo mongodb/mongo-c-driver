@@ -101,7 +101,7 @@ mongoc_counters_calc_size (void)
    size_t n_groups;
    size_t size;
 
-   n_cpu = _mongoc_get_n_cpu();
+   n_cpu = _mongoc_get_cpu_count();
    n_groups = (LAST_COUNTER / SLOTS_PER_CACHELINE) + 1;
    size = (sizeof(mongoc_counters_t) +
            (LAST_COUNTER * sizeof(mongoc_counter_info_t)) +
@@ -225,7 +225,7 @@ mongoc_counters_register (mongoc_counters_t *counters,
     * only knows about the counter after we have initialized it.
     */
 
-   n_cpu = _mongoc_get_n_cpu();
+   n_cpu = _mongoc_get_cpu_count();
    segment = (char *)counters;
 
    infos = (mongoc_counter_info_t *)(segment + counters->infos_offset);
@@ -242,7 +242,7 @@ mongoc_counters_register (mongoc_counters_t *counters,
    infos->name[sizeof infos->name-1] = '\0';
    infos->description[sizeof infos->description-1] = '\0';
 
-   MemoryBarrier ();
+   bson_memory_barrier ();
 
    counters->n_counters++;
 
@@ -275,7 +275,7 @@ mongoc_counters_init (void)
    infos_size = LAST_COUNTER * sizeof *info;
 
    counters = (mongoc_counters_t *)segment;
-   counters->n_cpu = _mongoc_get_n_cpu();
+   counters->n_cpu = _mongoc_get_cpu_count();
    counters->n_counters = 0;
    counters->infos_offset = sizeof *counters;
    counters->values_offset = counters->infos_offset + infos_size;
@@ -295,6 +295,6 @@ mongoc_counters_init (void)
     * we have initialized the rest of the counters. Don't forget our memory
     * barrier to prevent compiler reordering.
     */
-   MemoryBarrier ();
+   bson_memory_barrier ();
    counters->size = size;
 }

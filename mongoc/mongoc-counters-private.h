@@ -19,10 +19,15 @@
 #define MONGOC_COUNTERS_H
 
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+
 #ifdef __linux__
-#define _GNU_SOURCE
-#include <sched.h>
-#include <sys/sysinfo.h>
+# define _GNU_SOURCE
+# include <sched.h>
+# include <sys/sysinfo.h>
 #endif
 
 #include <bson.h>
@@ -31,31 +36,70 @@
 BSON_BEGIN_DECLS
 
 
-#ifdef __linux__
-/*
- * TODO: Use rdtscp when available.
- */
-#define ADD(v, count) v += count
-#define CURCPU sched_getcpu()
-#define NCPU   get_nprocs()
+static BSON_INLINE unsigned
+_mongoc_get_cpu_count (void)
+{
+#if defined(__linux__)
+   return get_nprocs ();
+#elif defined(__FreeBSD__) || \
+      defined(__NetBSD__) || \
+      defined(__DragonFly__) || \
+      defined(__OpenBSD__)
+   int mib[2];
+   int maxproc;
+   size_t len;
+
+   mib[0] = CTL_HW;
+   mib[1] = HW_NCPU;
+   len = sizeof (maxproc);
+
+   if (-1 == sysctl (mib, 2, &maxproc, &len, NULL, 0)) {
+      return 1;
+   }
+
+   return len;
+#elif defined(__APPLE__) || defined(__sun)
+   int ncpu;
+
+   ncpu = sysconf (_SC_NPROCESSORS_ONLN);
+   return (ncpu > 0) ? ncpu : 1;
+#elif defined(_MSC_VER) || defined(_WIN32)
+   SYSTEM_INFO si;
+   GetSystemInfo (&si);
+   return si.dwNumberOfProcessors;
 #else
-/*
- * TODO: Not safe on non-Linux yet.
- */
-#define ADD(v, count) v += count
-#define CURCPU 0
-#define NCPU   1
+# warning "_mongoc_get_cpu_count() not supported, defaulting to 1."
+   return 1;
+#endif
+}
+
+
+#if defined(ENABLE_RDTSCP)
+# define _mongoc_counter_add(v,count) (v += count)
+ static BSON_INLINE unsigned
+ _mongoc_sched_getcpu (void)
+ {
+    bson_uint32_t rax, rdx, aux;
+    __asm__ volatile ("rdtscp\n" : "=a" (rax), "=d" (rdx), "=c" (aux) : : );
+    return aux;
+ }
+#elif defined(HAVE_SCHED_GETCPU)
+# define _mongoc_counter_add(v,count) (v += count)
+# define _mongoc_sched_getcpu sched_getcpu
+#else
+# define _mongoc_counter_add(v,count) (bson_atomic_int64_add(&(v), count))
+# define _mongoc_sched_getcpu() (0)
 #endif
 
 
 #ifndef SLOTS_PER_CACHELINE
-#define SLOTS_PER_CACHELINE 8
+# define SLOTS_PER_CACHELINE 8
 #endif
 
 
 typedef struct
 {
-   bson_int64_t slots[SLOTS_PER_CACHELINE];
+   bson_int64_t slots [SLOTS_PER_CACHELINE];
 } mongoc_counter_slots_t;
 
 
@@ -76,13 +120,6 @@ typedef struct
 #endif
 
 
-static inline int
-_mongoc_get_n_cpu (void)
-{
-   return NCPU;
-}
-
-
 enum
 {
 #define COUNTER(ident, Category, Name, Description) \
@@ -97,34 +134,32 @@ enum
 static inline void \
 mongoc_counter_##ident##_add (bson_int64_t val) \
 { \
-   ADD(__mongoc_counter_##ident.cpus[CURCPU].slots[COUNTER_##ident%SLOTS_PER_CACHELINE], val); \
+   _mongoc_counter_add(\
+      __mongoc_counter_##ident.cpus[_mongoc_sched_getcpu()].slots[ \
+         COUNTER_##ident%SLOTS_PER_CACHELINE], val); \
 } \
 static inline void \
 mongoc_counter_##ident##_inc (void) \
 { \
-   ADD(__mongoc_counter_##ident.cpus[CURCPU].slots[COUNTER_##ident%SLOTS_PER_CACHELINE], 1); \
+   mongoc_counter_##ident##_add (1); \
 } \
 static inline void \
 mongoc_counter_##ident##_dec (void) \
 { \
-   ADD(__mongoc_counter_##ident.cpus[CURCPU].slots[COUNTER_##ident%SLOTS_PER_CACHELINE], -1); \
+   mongoc_counter_##ident##_add (-1); \
 } \
 static inline void \
 mongoc_counter_##ident##_reset (void) \
 { \
    int i; \
-   for (i = 0; i < NCPU; i++) { \
-      __mongoc_counter_##ident.cpus[i].slots[COUNTER_##ident%SLOTS_PER_CACHELINE] = 0; \
+   for (i = 0; i < _mongoc_get_cpu_count(); i++) { \
+      __mongoc_counter_##ident.cpus [i].slots [\
+         COUNTER_##ident%SLOTS_PER_CACHELINE] = 0; \
    } \
-   MemoryBarrier (); \
+   bson_memory_barrier (); \
 }
 #include "mongoc-counters.defs"
 #undef COUNTER
-
-
-#undef ADD
-#undef NCPU
-#undef CURCPU
 
 
 BSON_END_DECLS
