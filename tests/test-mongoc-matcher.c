@@ -21,12 +21,9 @@ test_mongoc_matcher_basic (void)
       "name", "{", "$not", "invalid", "}",
 //      "zip", "{", "$in", "[", BCON_INT32(11201), BCON_INT32(90210), "]", "}",
       "$or", "[",
-         "{", "age", BCON_INT32(65), "}",
+         "{", "age", "{", "$lt", BCON_INT32(18), "}", "}",
+         "{", "age", "{", "$gt", BCON_INT32(45), "}", "}",
       "]"
-//      "$or", "[",
-//         "{", "age", "{", "$lt", BCON_INT32(18), "}", "}",
-//         "{", "age", "{", "$gt", BCON_INT32(45), "}", "}",
-//      "]"
    );
 
    mongoc_matcher_t * matcher = mongoc_matcher_new(query);

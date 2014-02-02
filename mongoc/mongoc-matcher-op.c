@@ -205,7 +205,7 @@ mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,
 
 #define _TYPE_CODE(l, r) ((((int)(l)) << 8) | ((int)(r)))
 #define _NATIVE_COMPARE(op, t1, t2) \
-   (bson_iter_##t1(&compare->iter) op bson_iter_##t2(iter))
+   (bson_iter_##t1(iter) op bson_iter_##t2(&compare->iter))
 #define _EQ_COMPARE(t1, t2)  _NATIVE_COMPARE(==, t1, t2)
 #define _NE_COMPARE(t1, t2)  _NATIVE_COMPARE(!=, t1, t2)
 #define _GT_COMPARE(t1, t2)  _NATIVE_COMPARE(>,  t1, t2)
