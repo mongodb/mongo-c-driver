@@ -104,6 +104,7 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,
       assert(bson_iter_type(iter) == BSON_TYPE_DOCUMENT);
 
       bson_iter_recurse(iter, &child);
+      bson_iter_next(&child);
 
       left = _mongoc_matcher_parse(&child);
    }
@@ -117,6 +118,7 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,
       assert(bson_iter_type(iter) == BSON_TYPE_DOCUMENT);
 
       bson_iter_recurse(iter, &child);
+      bson_iter_next(&child);
 
       right = _mongoc_matcher_parse(&child);
    }
@@ -140,18 +142,28 @@ mongoc_matcher_new (const bson_t *query)
    mongoc_matcher_op_t * op;
    mongoc_matcher_t * matcher;
    
-   r = bson_iter_init(&iter, query);
-
-   if (!r) return NULL;
-
-   op = _mongoc_matcher_parse_logical(MONGOC_MATCHER_OPCODE_AND, &iter, TRUE);
-
    matcher = calloc(sizeof *matcher, 1);
    bson_copy_to(query, &matcher->query);
+
+   r = bson_iter_init(&iter, &matcher->query);
+
+   if (!r) {
+      bson_destroy(&matcher->query);
+      free(matcher);
+      return NULL;
+   }
+
+   op = _mongoc_matcher_parse_logical(MONGOC_MATCHER_OPCODE_AND, &iter, TRUE);
 
    matcher->optree = op;
 
    return matcher;
+}
+
+bson_bool_t
+mongoc_matcher_match(const mongoc_matcher_t * matcher, const bson_t * bson)
+{
+   return mongoc_matcher_op_match(matcher->optree, bson);
 }
 
 void
