@@ -28,6 +28,7 @@ INST_H_FILES = \
 	mongoc/mongoc-init.h \
 	mongoc/mongoc-index.h \
 	mongoc/mongoc-log.h \
+	mongoc/mongoc-matcher.h \
 	mongoc/mongoc-opcode.h \
 	mongoc/mongoc-read-prefs.h \
 	mongoc/mongoc-stdint.h \
@@ -63,6 +64,7 @@ NOINST_H_FILES = \
 	mongoc/mongoc-host-list-private.h \
 	mongoc/mongoc-list-private.h \
 	mongoc/mongoc-matcher-op-private.h \
+	mongoc/mongoc-matcher-private.h \
 	mongoc/mongoc-queue-private.h \
 	mongoc/mongoc-read-prefs-private.h \
 	mongoc/mongoc-rpc-private.h \
@@ -101,6 +103,7 @@ libmongoc_priv_la_SOURCES = \
 	mongoc/mongoc-list.c \
 	mongoc/mongoc-log.c \
 	mongoc/mongoc-matcher-op.c \
+	mongoc/mongoc-matcher.c \
 	mongoc/mongoc-queue.c \
 	mongoc/mongoc-read-prefs.c \
 	mongoc/mongoc-rpc.c \

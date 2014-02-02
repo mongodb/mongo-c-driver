@@ -373,7 +373,7 @@ mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,
 
    switch (op->base.opcode) {
    case MONGOC_MATCHER_OPCODE_EQ:
-      bson_append_iter (&child, op->compare.path, -1, &op->compare.iter);
+      bson_append_iter (bson, op->compare.path, -1, &op->compare.iter);
       break;
    case MONGOC_MATCHER_OPCODE_GT:
    case MONGOC_MATCHER_OPCODE_GTE:

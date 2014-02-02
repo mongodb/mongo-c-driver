@@ -37,6 +37,7 @@
 #include "mongoc-gridfs-file-page.h"
 #include "mongoc-host-list.h"
 #include "mongoc-init.h"
+#include "mongoc-matcher.h"
 #include "mongoc-opcode.h"
 #include "mongoc-log.h"
 #include "mongoc-stream.h"

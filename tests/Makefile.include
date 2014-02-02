@@ -10,6 +10,7 @@ noinst_PROGRAMS += test-mongoc-database
 noinst_PROGRAMS += test-mongoc-gridfs
 noinst_PROGRAMS += test-mongoc-gridfs-file-page
 noinst_PROGRAMS += test-mongoc-list
+noinst_PROGRAMS += test-mongoc-matcher
 noinst_PROGRAMS += test-mongoc-queue
 noinst_PROGRAMS += test-mongoc-read-prefs
 noinst_PROGRAMS += test-mongoc-rpc
@@ -37,6 +38,7 @@ TEST_PROGS += test-mongoc-database
 TEST_PROGS += test-mongoc-gridfs
 TEST_PROGS += test-mongoc-gridfs-file-page
 TEST_PROGS += test-mongoc-list
+TEST_PROGS += test-mongoc-matcher
 TEST_PROGS += test-mongoc-queue
 TEST_PROGS += test-mongoc-read-prefs
 TEST_PROGS += test-mongoc-rpc
@@ -117,6 +119,11 @@ test_mongoc_gridfs_file_page_LDADD = $(TEST_LIBS)
 test_mongoc_list_SOURCES = $(top_srcdir)/tests/test-mongoc-list.c
 test_mongoc_list_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
 test_mongoc_list_LDADD = $(TEST_LIBS)
+
+
+test_mongoc_matcher_SOURCES = $(top_srcdir)/tests/test-mongoc-matcher.c
+test_mongoc_matcher_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
+test_mongoc_matcher_LDADD = $(TEST_LIBS)
 
 
 test_mongoc_queue_SOURCES = $(top_srcdir)/tests/test-mongoc-queue.c
