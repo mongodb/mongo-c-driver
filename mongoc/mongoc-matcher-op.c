@@ -408,11 +408,11 @@ mongoc_matcher_op_match (mongoc_matcher_op_t *op,
    case MONGOC_MATCHER_OPCODE_LTE:
    case MONGOC_MATCHER_OPCODE_NE:
    case MONGOC_MATCHER_OPCODE_NIN:
-      return mongoc_matcher_op_logical_match (&op->logical, bson);
+      return mongoc_matcher_op_compare_match (&op->compare, bson);
    case MONGOC_MATCHER_OPCODE_OR:
    case MONGOC_MATCHER_OPCODE_AND:
    case MONGOC_MATCHER_OPCODE_NOR:
-      return mongoc_matcher_op_compare_match (&op->compare, bson);
+      return mongoc_matcher_op_logical_match (&op->logical, bson);
    case MONGOC_MATCHER_OPCODE_NOT:
       return mongoc_matcher_op_not_match (&op->not, bson);
    case MONGOC_MATCHER_OPCODE_EXISTS:
