@@ -397,6 +397,7 @@ static bson_bool_t
 mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare,
                             bson_iter_t *iter)
 {
+   MONGOC_WARNING ("$in is not yet implemented");
    return FALSE;
 }
 
@@ -523,7 +524,7 @@ static bson_bool_t
 mongoc_matcher_op_nin_match (mongoc_matcher_op_compare_t *compare,
                              bson_iter_t *iter)
 {
-   return FALSE;
+   return !mongoc_matcher_op_in_match (compare, iter);
 }
 
 
