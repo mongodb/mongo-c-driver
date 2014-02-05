@@ -219,6 +219,30 @@ mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
 
    switch (eqcode) {
 
+   /* Double on Left Side */
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
+      return _EQ_COMPARE (double, double);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_BOOL):
+      return _EQ_COMPARE (double, bool);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT32):
+      return _EQ_COMPARE (double, int32);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT64):
+      return _EQ_COMPARE (double, int64);
+
+   /* UTF8 on Left Side */
+   case _TYPE_CODE(BSON_TYPE_UTF8, BSON_TYPE_UTF8):
+      {
+         bson_uint32_t llen;
+         bson_uint32_t rlen;
+         const char *lstr;
+         const char *rstr;
+
+         lstr = bson_iter_utf8 (&compare->iter, &llen);
+         rstr = bson_iter_utf8 (iter, &rlen);
+
+         return ((llen == rlen) && (0 == memcmp (lstr, rstr, llen)));
+      }
+
    /* Int32 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_DOUBLE):
       return _EQ_COMPARE (int32, double);
@@ -228,6 +252,16 @@ mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
       return _EQ_COMPARE (int32, int32);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT64):
       return _EQ_COMPARE (int32, int64);
+
+   /* Int64 on Left Side */
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_DOUBLE):
+      return _EQ_COMPARE (int64, double);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_BOOL):
+      return _EQ_COMPARE (int64, bool);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT32):
+      return _EQ_COMPARE (int64, int32);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
+      return _EQ_COMPARE (int64, int64);
 
    default:
       break;
