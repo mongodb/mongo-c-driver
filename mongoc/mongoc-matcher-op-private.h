@@ -25,11 +25,12 @@
 BSON_BEGIN_DECLS
 
 
+typedef union  _mongoc_matcher_op_t         mongoc_matcher_op_t;
 typedef struct _mongoc_matcher_op_base_t    mongoc_matcher_op_base_t;
-typedef struct _mongoc_matcher_op_logical_t mongoc_matcher_logical_t;
-typedef struct _mongoc_matcher_op_compare_t mongoc_matcher_compare_t;
-typedef struct _mongoc_matcher_op_exists_t  mongoc_matcher_exists_t;
-typedef struct _mongoc_matcher_op_type_t    mongoc_matcher_exists_t;
+typedef struct _mongoc_matcher_op_logical_t mongoc_matcher_op_logical_t;
+typedef struct _mongoc_matcher_op_compare_t mongoc_matcher_op_compare_t;
+typedef struct _mongoc_matcher_op_exists_t  mongoc_matcher_op_exists_t;
+typedef struct _mongoc_matcher_op_type_t    mongoc_matcher_op_type_t;
 
 
 typedef enum
@@ -84,6 +85,16 @@ struct _mongoc_matcher_op_type_t
    mongoc_matcher_op_base_t base;
    bson_type_t type;
    char *path;
+};
+
+
+union _mongoc_matcher_op_t
+{
+   mongoc_matcher_op_base_t    base;
+   mongoc_matcher_op_logical_t logical;
+   mongoc_matcher_op_compare_t compare;
+   mongoc_matcher_op_exists_t  exists;
+   mongoc_matcher_op_type_t    type;
 };
 
 
