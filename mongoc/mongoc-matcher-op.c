@@ -19,7 +19,8 @@
 
 
 mongoc_matcher_op_t *
-mongoc_matcher_op_exists_new (const char *path)
+mongoc_matcher_op_exists_new (const char *path,
+                              bson_bool_t exists)
 {
    mongoc_matcher_op_t *op;
 
@@ -28,6 +29,7 @@ mongoc_matcher_op_exists_new (const char *path)
    op = bson_malloc0 (sizeof *op);
    op->exists.base.opcode = MONGOC_MATCHER_OPCODE_EXISTS;
    op->exists.path = bson_strdup (path);
+   op->exists.exists = exists;
 
    return op;
 }

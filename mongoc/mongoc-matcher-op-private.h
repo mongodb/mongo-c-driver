@@ -77,6 +77,7 @@ struct _mongoc_matcher_op_exists_t
 {
    mongoc_matcher_op_base_t base;
    char *path;
+   bson_bool_t exists;
 };
 
 
@@ -104,7 +105,8 @@ mongoc_matcher_op_t *mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t opco
 mongoc_matcher_op_t *mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t opcode,
                                                     const char *path,
                                                     const bson_iter_t *iter);
-mongoc_matcher_op_t *mongoc_matcher_op_exists_new  (const char *path);
+mongoc_matcher_op_t *mongoc_matcher_op_exists_new  (const char *path,
+                                                    bson_bool_t exists);
 mongoc_matcher_op_t *mongoc_matcher_op_type_new    (const char *path,
                                                     bson_type_t type);
 bson_bool_t          mongoc_matcher_op_match       (mongoc_matcher_op_t *op,
