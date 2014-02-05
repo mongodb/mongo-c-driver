@@ -221,7 +221,21 @@ mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical,
    BSON_ASSERT (logical);
    BSON_ASSERT (bson);
 
-TODO:
+   switch ((int)logical->base.opcode) {
+   case MONGOC_MATCHER_OPCODE_OR:
+      return (mongoc_matcher_op_match (logical->left, bson) ||
+              mongoc_matcher_op_match (logical->right, bson));
+   case MONGOC_MATCHER_OPCODE_AND:
+      return (mongoc_matcher_op_match (logical->left, bson) &&
+              mongoc_matcher_op_match (logical->right, bson));
+   case MONGOC_MATCHER_OPCODE_NOR:
+      return !(mongoc_matcher_op_match (logical->left, bson) ||
+               mongoc_matcher_op_match (logical->right, bson));
+   default:
+      BSON_ASSERT (FALSE);
+      break;
+   }
+
    return FALSE;
 }
 
