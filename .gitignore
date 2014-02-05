@@ -48,6 +48,7 @@ test-mongoc-event
 test-mongoc-gridfs
 test-mongoc-gridfs-file-page
 test-mongoc-list
+test-mongoc-matcher
 test-mongoc-queue
 test-mongoc-read-prefs
 test-mongoc-rpc
