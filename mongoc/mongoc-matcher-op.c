@@ -313,7 +313,7 @@ mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,
       BSON_APPEND_INT32 (bson, "$type", (int)op->type.type);
       break;
    default:
-      ASSERT (FALSE);
+      BSON_ASSERT (FALSE);
       break;
    }
 }
