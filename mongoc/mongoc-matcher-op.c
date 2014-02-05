@@ -203,13 +203,98 @@ mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,
 
 
 static bson_bool_t
+mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
+                            const bson_t *bson)
+{
+   return FALSE;
+}
+
+
+static bson_bool_t
+mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare,
+                            const bson_t *bson)
+{
+   return FALSE;
+}
+
+
+static bson_bool_t
+mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare,
+                             const bson_t *bson)
+{
+   return FALSE;
+}
+
+
+static bson_bool_t
+mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare,
+                            const bson_t *bson)
+{
+   return FALSE;
+}
+
+
+static bson_bool_t
+mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare,
+                            const bson_t *bson)
+{
+   return FALSE;
+}
+
+
+static bson_bool_t
+mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare,
+                             const bson_t *bson)
+{
+   return FALSE;
+}
+
+
+static bson_bool_t
+mongoc_matcher_op_ne_match (mongoc_matcher_op_compare_t *compare,
+                            const bson_t *bson)
+{
+   return FALSE;
+}
+
+
+static bson_bool_t
+mongoc_matcher_op_nin_match (mongoc_matcher_op_compare_t *compare,
+                             const bson_t *bson)
+{
+   return FALSE;
+}
+
+
+static bson_bool_t
 mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare,
                                  const bson_t *bson)
 {
    BSON_ASSERT (compare);
    BSON_ASSERT (bson);
 
-TODO:
+   switch ((int)compare->base.opcode) {
+   case MONGOC_MATCHER_OPCODE_EQ:
+      return mongoc_matcher_op_eq_match (compare, bson);
+   case MONGOC_MATCHER_OPCODE_GT:
+      return mongoc_matcher_op_gt_match (compare, bson);
+   case MONGOC_MATCHER_OPCODE_GTE:
+      return mongoc_matcher_op_gte_match (compare, bson);
+   case MONGOC_MATCHER_OPCODE_IN:
+      return mongoc_matcher_op_in_match (compare, bson);
+   case MONGOC_MATCHER_OPCODE_LT:
+      return mongoc_matcher_op_lt_match (compare, bson);
+   case MONGOC_MATCHER_OPCODE_LTE:
+      return mongoc_matcher_op_lte_match (compare, bson);
+   case MONGOC_MATCHER_OPCODE_NE:
+      return mongoc_matcher_op_ne_match (compare, bson);
+   case MONGOC_MATCHER_OPCODE_NIN:
+      return mongoc_matcher_op_nin_match (compare, bson);
+   default:
+      BSON_ASSERT (FALSE);
+      break;
+   }
+
    return FALSE;
 }
 
