@@ -33,6 +33,66 @@ mongoc_matcher_op_exists_new (const char *path)
 }
 
 
+mongoc_matcher_op_t *
+mongoc_matcher_op_type_new (const char *path,
+                            bson_type_t type)
+{
+   mongoc_matcher_op_t *op;
+
+   BSON_ASSERT (path);
+   BSON_ASSERT (type);
+
+   op = bson_malloc0 (sizeof *op);
+   op->type.base.opcode = MONGOC_MATCHER_OPCODE_TYPE;
+   op->type.path = bson_strdup (path);
+   op->type.type = type;
+
+   return op;
+}
+
+
+mongoc_matcher_op_t *
+mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t opcode,
+                               mongoc_matcher_op_t *left,
+                               mongoc_matcher_op_t *right)
+{
+   mongoc_matcher_op_t *op;
+
+   BSON_ASSERT (left);
+   BSON_ASSERT (right);
+   BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_GT) &&
+                (opcode <= MONGOC_MATCHER_OPCODE_NIN));
+
+   op = bson_malloc0 (sizeof *op);
+   op->logical.base.opcode = opcode;
+   op->logical.left = left;
+   op->logical.right = right;
+
+   return op;
+}
+
+
+mongoc_matcher_op_t *
+mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t opcode,
+                               const char *path,
+                               const bson_iter_t *iter)
+{
+   mongoc_matcher_op_t *op;
+
+   BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_OR) &&
+                (opcode <= MONGOC_MATCHER_OPCODE_NOR));
+   BSON_ASSERT (path);
+   BSON_ASSERT (iter);
+
+   op = bson_malloc0 (sizeof *op);
+   op->compare.base.opcode = opcode;
+   op->compare.path = bson_strdup (path);
+   memcpy (&op->compare.iter, iter, sizeof *iter);
+
+   return op;
+}
+
+
 void
 mongoc_matcher_op_free (mongoc_matcher_op_t *op)
 {
