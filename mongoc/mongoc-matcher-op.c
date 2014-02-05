@@ -130,12 +130,15 @@ mongoc_matcher_op_free (mongoc_matcher_op_t *op)
       break;
    case MONGOC_MATCHER_OPCODE_OR:
    case MONGOC_MATCHER_OPCODE_AND:
-   case MONGOC_MATCHER_OPCODE_NOT:
    case MONGOC_MATCHER_OPCODE_NOR:
       if (op->logical.left)
          mongoc_matcher_op_free (op->logical.left);
       if (op->logical.right)
          mongoc_matcher_op_free (op->logical.right);
+      break;
+   case MONGOC_MATCHER_OPCODE_NOT:
+      mongoc_matcher_op_free (op->not.child);
+      bson_free (op->not.path);
       break;
    case MONGOC_MATCHER_OPCODE_EXISTS:
       bson_free (op->exists.path);
