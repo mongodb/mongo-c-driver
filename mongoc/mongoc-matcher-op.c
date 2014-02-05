@@ -143,11 +143,31 @@ mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists,
    bson_bool_t found;
 
    BSON_ASSERT (exists);
+   BSON_ASSERT (bson);
 
    found = (bson_iter_init (&iter, bson) &&
             bson_iter_find_descendant (&iter, exists->path, &desc));
 
    return (found == exists->exists);
+}
+
+
+static bson_bool_t
+mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type,
+                              const bson_t *bson)
+{
+   bson_iter_t iter;
+   bson_iter_t desc;
+
+   BSON_ASSERT (type);
+   BSON_ASSERT (bson);
+
+   if (bson_iter_init (&iter, bson) &&
+       bson_iter_find_descendant (&iter, type->path, &desc)) {
+      return (bson_iter_type (&iter) == type->type);
+   }
+
+   return FALSE;
 }
 
 
@@ -175,6 +195,7 @@ mongoc_matcher_op_match (mongoc_matcher_op_t *op,
    case MONGOC_MATCHER_OPCODE_EXISTS:
       return mongoc_matcher_op_exists_match (&op->exists, bson);
    case MONGOC_MATCHER_OPCODE_TYPE:
+      return mongoc_matcher_op_type_match (&op->type, bson);
    default:
       break;
    }
