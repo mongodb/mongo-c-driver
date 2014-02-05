@@ -113,6 +113,8 @@ mongoc_matcher_op_t *mongoc_matcher_op_type_new    (const char *path,
 bson_bool_t          mongoc_matcher_op_match       (mongoc_matcher_op_t *op,
                                                     const bson_t *bson);
 void                 mongoc_matcher_op_free        (mongoc_matcher_op_t *op);
+void                 mongoc_matcher_op_to_bson     (mongoc_matcher_op_t *op,
+                                                    bson_t *bson);
 
 
 BSON_END_DECLS

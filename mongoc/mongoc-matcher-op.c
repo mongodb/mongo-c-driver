@@ -201,3 +201,36 @@ mongoc_matcher_op_match (mongoc_matcher_op_t *op,
 
    return FALSE;
 }
+
+
+void
+mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,
+                           bson_t *bson)
+{
+   BSON_ASSERT (op);
+   BSON_ASSERT (bson);
+
+   switch (op->base.opcode) {
+   case MONGOC_MATCHER_OPCODE_EQ:
+   case MONGOC_MATCHER_OPCODE_GT:
+   case MONGOC_MATCHER_OPCODE_GTE:
+   case MONGOC_MATCHER_OPCODE_IN:
+   case MONGOC_MATCHER_OPCODE_LT:
+   case MONGOC_MATCHER_OPCODE_LTE:
+   case MONGOC_MATCHER_OPCODE_NE:
+   case MONGOC_MATCHER_OPCODE_NIN:
+   case MONGOC_MATCHER_OPCODE_OR:
+   case MONGOC_MATCHER_OPCODE_AND:
+   case MONGOC_MATCHER_OPCODE_NOT:
+   case MONGOC_MATCHER_OPCODE_NOR:
+      break;
+   case MONGOC_MATCHER_OPCODE_EXISTS:
+      BSON_APPEND_BOOL (bson, "$exists", op->exists.exists);
+      break;
+   case MONGOC_MATCHER_OPCODE_TYPE:
+      BSON_APPEND_INT32 (bson, "$type", (int)op->type.type);
+      break;
+   default:
+      break;
+   }
+}
