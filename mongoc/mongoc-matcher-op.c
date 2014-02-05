@@ -217,15 +217,15 @@ static bson_bool_t
 mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
                             bson_iter_t *iter)
 {
-   int eqcode;
+   int code;
 
    BSON_ASSERT (compare);
    BSON_ASSERT (iter);
 
-   eqcode = _TYPE_CODE (bson_iter_type (&compare->iter),
-                        bson_iter_type (iter));
+   code = _TYPE_CODE (bson_iter_type (&compare->iter),
+                      bson_iter_type (iter));
 
-   switch (eqcode) {
+   switch (code) {
 
    /* Double on Left Side */
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
@@ -499,7 +499,7 @@ static bson_bool_t
 mongoc_matcher_op_ne_match (mongoc_matcher_op_compare_t *compare,
                             bson_iter_t *iter)
 {
-   return FALSE;
+   return !mongoc_matcher_op_eq_match (compare, iter);
 }
 
 
