@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-log.h"
 #include "mongoc-matcher-op-private.h"
 
 
@@ -272,6 +273,9 @@ mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
       return _EQ_COMPARE (int64, int64);
 
    default:
+      MONGOC_WARNING ("Implement for (Type(%d) == Type(%d))",
+                      bson_iter_type (&compare->iter),
+                      bson_iter_type (iter));
       break;
    }
 
@@ -324,6 +328,9 @@ mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare,
       return _GT_COMPARE (int64, int64);
 
    default:
+      MONGOC_WARNING ("Implement for (Type(%d) > Type(%d))",
+                      bson_iter_type (&compare->iter),
+                      bson_iter_type (iter));
       break;
    }
 
@@ -376,6 +383,9 @@ mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare,
       return _GTE_COMPARE (int64, int64);
 
    default:
+      MONGOC_WARNING ("Implement for (Type(%d) >= Type(%d))",
+                      bson_iter_type (&compare->iter),
+                      bson_iter_type (iter));
       break;
    }
 
@@ -436,6 +446,9 @@ mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare,
       return _LT_COMPARE (int64, int64);
 
    default:
+      MONGOC_WARNING ("Implement for (Type(%d) < Type(%d))",
+                      bson_iter_type (&compare->iter),
+                      bson_iter_type (iter));
       break;
    }
 
@@ -488,6 +501,9 @@ mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare,
       return _LTE_COMPARE (int64, int64);
 
    default:
+      MONGOC_WARNING ("Implement for (Type(%d) <= Type(%d))",
+                      bson_iter_type (&compare->iter),
+                      bson_iter_type (iter));
       break;
    }
 
