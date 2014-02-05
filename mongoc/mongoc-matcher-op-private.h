@@ -35,7 +35,8 @@ typedef struct _mongoc_matcher_op_type_t    mongoc_matcher_op_type_t;
 
 typedef enum
 {
-   MONGOC_MATCHER_OPCODE_GT = 1,
+   MONGOC_MATCHER_OPCODE_EQ,
+   MONGOC_MATCHER_OPCODE_GT,
    MONGOC_MATCHER_OPCODE_GTE,
    MONGOC_MATCHER_OPCODE_IN,
    MONGOC_MATCHER_OPCODE_LT,

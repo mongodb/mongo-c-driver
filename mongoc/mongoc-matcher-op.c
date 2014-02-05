@@ -62,8 +62,8 @@ mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t opcode,
 
    BSON_ASSERT (left);
    BSON_ASSERT (right);
-   BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_GT) &&
-                (opcode <= MONGOC_MATCHER_OPCODE_NIN));
+   BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_OR) &&
+                (opcode <= MONGOC_MATCHER_OPCODE_NOR));
 
    op = bson_malloc0 (sizeof *op);
    op->logical.base.opcode = opcode;
@@ -81,8 +81,8 @@ mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t opcode,
 {
    mongoc_matcher_op_t *op;
 
-   BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_OR) &&
-                (opcode <= MONGOC_MATCHER_OPCODE_NOR));
+   BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_EQ) &&
+                (opcode <= MONGOC_MATCHER_OPCODE_NIN));
    BSON_ASSERT (path);
    BSON_ASSERT (iter);
 
@@ -101,6 +101,7 @@ mongoc_matcher_op_free (mongoc_matcher_op_t *op)
    BSON_ASSERT (op);
 
    switch (op->base.opcode) {
+   case MONGOC_MATCHER_OPCODE_EQ:
    case MONGOC_MATCHER_OPCODE_GT:
    case MONGOC_MATCHER_OPCODE_GTE:
    case MONGOC_MATCHER_OPCODE_IN:
@@ -133,6 +134,23 @@ mongoc_matcher_op_free (mongoc_matcher_op_t *op)
 }
 
 
+static bson_bool_t
+mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists,
+                                const bson_t *bson)
+{
+   bson_iter_t iter;
+   bson_iter_t desc;
+   bson_bool_t found;
+
+   BSON_ASSERT (exists);
+
+   found = (bson_iter_init (&iter, bson) &&
+            bson_iter_find_descendant (&iter, exists->path, &desc));
+
+   return (found == exists->exists);
+}
+
+
 bson_bool_t
 mongoc_matcher_op_match (mongoc_matcher_op_t *op,
                          const bson_t *bson)
@@ -141,6 +159,7 @@ mongoc_matcher_op_match (mongoc_matcher_op_t *op,
    BSON_ASSERT (bson);
 
    switch (op->base.opcode) {
+   case MONGOC_MATCHER_OPCODE_EQ:
    case MONGOC_MATCHER_OPCODE_GT:
    case MONGOC_MATCHER_OPCODE_GTE:
    case MONGOC_MATCHER_OPCODE_IN:
@@ -152,7 +171,9 @@ mongoc_matcher_op_match (mongoc_matcher_op_t *op,
    case MONGOC_MATCHER_OPCODE_AND:
    case MONGOC_MATCHER_OPCODE_NOT:
    case MONGOC_MATCHER_OPCODE_NOR:
+      break;
    case MONGOC_MATCHER_OPCODE_EXISTS:
+      return mongoc_matcher_op_exists_match (&op->exists, bson);
    case MONGOC_MATCHER_OPCODE_TYPE:
    default:
       break;
