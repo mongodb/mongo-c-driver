@@ -129,3 +129,32 @@ mongoc_matcher_op_free (mongoc_matcher_op_t *op)
 
    bson_free (op);
 }
+
+
+bson_bool_t
+mongoc_matcher_op_match (mongoc_matcher_op_t *op,
+                         const bson_t *bson)
+{
+   BSON_ASSERT (op);
+   BSON_ASSERT (bson);
+
+   switch (op->base.opcode) {
+   case MONGOC_MATCHER_OPCODE_GT:
+   case MONGOC_MATCHER_OPCODE_GTE:
+   case MONGOC_MATCHER_OPCODE_IN:
+   case MONGOC_MATCHER_OPCODE_LT:
+   case MONGOC_MATCHER_OPCODE_LTE:
+   case MONGOC_MATCHER_OPCODE_NE:
+   case MONGOC_MATCHER_OPCODE_NIN:
+   case MONGOC_MATCHER_OPCODE_OR:
+   case MONGOC_MATCHER_OPCODE_AND:
+   case MONGOC_MATCHER_OPCODE_NOT:
+   case MONGOC_MATCHER_OPCODE_NOR:
+   case MONGOC_MATCHER_OPCODE_EXISTS:
+   case MONGOC_MATCHER_OPCODE_TYPE:
+   default:
+      break;
+   }
+
+   return FALSE;
+}
