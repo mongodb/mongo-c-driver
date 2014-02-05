@@ -272,6 +272,11 @@ mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
       return _EQ_COMPARE (int64, int64);
 
+   /* Null on Left Side */
+   case _TYPE_CODE(BSON_TYPE_NULL, BSON_TYPE_NULL):
+   case _TYPE_CODE(BSON_TYPE_NULL, BSON_TYPE_UNDEFINED):
+      return TRUE;
+
    default:
       MONGOC_WARNING ("Implement for (Type(%d) == Type(%d))",
                       bson_iter_type (&compare->iter),
