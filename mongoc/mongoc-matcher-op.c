@@ -94,6 +94,24 @@ mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t opcode,
 }
 
 
+mongoc_matcher_op_t *
+mongoc_matcher_op_not_new (const char *path,
+                           mongoc_matcher_op_t *child)
+{
+   mongoc_matcher_op_t *op;
+
+   BSON_ASSERT (path);
+   BSON_ASSERT (child);
+
+   op = bson_malloc0 (sizeof *op);
+   op->not.base.opcode = MONGOC_MATCHER_OPCODE_NOT;
+   op->not.path = bson_strdup (path);
+   op->not.child = child;
+
+   return op;
+}
+
+
 void
 mongoc_matcher_op_free (mongoc_matcher_op_t *op)
 {
@@ -207,6 +225,10 @@ void
 mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,
                            bson_t *bson)
 {
+   const char *str;
+   bson_t child;
+   bson_t child2;
+
    BSON_ASSERT (op);
    BSON_ASSERT (bson);
 
@@ -219,10 +241,37 @@ mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,
    case MONGOC_MATCHER_OPCODE_LTE:
    case MONGOC_MATCHER_OPCODE_NE:
    case MONGOC_MATCHER_OPCODE_NIN:
+      break;
    case MONGOC_MATCHER_OPCODE_OR:
    case MONGOC_MATCHER_OPCODE_AND:
-   case MONGOC_MATCHER_OPCODE_NOT:
    case MONGOC_MATCHER_OPCODE_NOR:
+      if (op->base.opcode == MONGOC_MATCHER_OPCODE_OR) {
+         str = "$or";
+      } else if (op->base.opcode == MONGOC_MATCHER_OPCODE_AND) {
+         str = "$and";
+      } else if (op->base.opcode == MONGOC_MATCHER_OPCODE_NOR) {
+         str = "$nor";
+      } else {
+         BSON_ASSERT (FALSE);
+         str = NULL;
+      }
+      bson_append_array_begin (bson, str, -1, &child);
+      bson_append_document_begin (&child, "0", 1, &child2);
+      mongoc_matcher_op_to_bson (op->logical.left, &child2);
+      bson_append_document_end (&child, &child2);
+      if (op->logical.right) {
+         bson_append_document_begin (&child, "1", 1, &child2);
+         mongoc_matcher_op_to_bson (op->logical.right, &child2);
+         bson_append_document_end (&child, &child2);
+      }
+      bson_append_array_end (bson, &child);
+      break;
+   case MONGOC_MATCHER_OPCODE_NOT:
+      bson_append_document_begin (bson, op->not.path, -1, &child);
+      bson_append_document_begin (&child, "$not", 4, &child2);
+      mongoc_matcher_op_to_bson (op->not.child, &child2);
+      bson_append_document_end (&child, &child2);
+      bson_append_document_end (bson, &child);
       break;
    case MONGOC_MATCHER_OPCODE_EXISTS:
       BSON_APPEND_BOOL (bson, "$exists", op->exists.exists);

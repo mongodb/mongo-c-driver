@@ -31,6 +31,7 @@ typedef struct _mongoc_matcher_op_logical_t mongoc_matcher_op_logical_t;
 typedef struct _mongoc_matcher_op_compare_t mongoc_matcher_op_compare_t;
 typedef struct _mongoc_matcher_op_exists_t  mongoc_matcher_op_exists_t;
 typedef struct _mongoc_matcher_op_type_t    mongoc_matcher_op_type_t;
+typedef struct _mongoc_matcher_op_not_t     mongoc_matcher_op_not_t;
 
 
 typedef enum
@@ -90,6 +91,14 @@ struct _mongoc_matcher_op_type_t
 };
 
 
+struct _mongoc_matcher_op_not_t
+{
+   mongoc_matcher_op_base_t base;
+   mongoc_matcher_op_t *child;
+   char *path;
+};
+
+
 union _mongoc_matcher_op_t
 {
    mongoc_matcher_op_base_t base;
@@ -97,6 +106,7 @@ union _mongoc_matcher_op_t
    mongoc_matcher_op_compare_t compare;
    mongoc_matcher_op_exists_t exists;
    mongoc_matcher_op_type_t type;
+   mongoc_matcher_op_not_t not;
 };
 
 
@@ -110,6 +120,8 @@ mongoc_matcher_op_t *mongoc_matcher_op_exists_new  (const char *path,
                                                     bson_bool_t exists);
 mongoc_matcher_op_t *mongoc_matcher_op_type_new    (const char *path,
                                                     bson_type_t type);
+mongoc_matcher_op_t *mongoc_matcher_op_not_new     (const char *path,
+                                                    mongoc_matcher_op_t *child);
 bson_bool_t          mongoc_matcher_op_match       (mongoc_matcher_op_t *op,
                                                     const bson_t *bson);
 void                 mongoc_matcher_op_free        (mongoc_matcher_op_t *op);
