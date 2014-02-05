@@ -61,7 +61,6 @@ mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t opcode,
    mongoc_matcher_op_t *op;
 
    BSON_ASSERT (left);
-   BSON_ASSERT (right);
    BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_OR) &&
                 (opcode <= MONGOC_MATCHER_OPCODE_NOR));
 
