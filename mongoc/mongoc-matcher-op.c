@@ -237,6 +237,8 @@ mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,
 
    switch (op->base.opcode) {
    case MONGOC_MATCHER_OPCODE_EQ:
+      bson_append_iter (&child, op->compare.path, -1, &op->compare.iter);
+      break;
    case MONGOC_MATCHER_OPCODE_GT:
    case MONGOC_MATCHER_OPCODE_GTE:
    case MONGOC_MATCHER_OPCODE_IN:
@@ -244,6 +246,34 @@ mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,
    case MONGOC_MATCHER_OPCODE_LTE:
    case MONGOC_MATCHER_OPCODE_NE:
    case MONGOC_MATCHER_OPCODE_NIN:
+      switch ((int)op->base.opcode) {
+      case MONGOC_MATCHER_OPCODE_GT:
+         str = "$gt";
+         break;
+      case MONGOC_MATCHER_OPCODE_GTE:
+         str = "$gte";
+         break;
+      case MONGOC_MATCHER_OPCODE_IN:
+         str = "$in";
+         break;
+      case MONGOC_MATCHER_OPCODE_LT:
+         str = "$lt";
+         break;
+      case MONGOC_MATCHER_OPCODE_LTE:
+         str = "$lte";
+         break;
+      case MONGOC_MATCHER_OPCODE_NE:
+         str = "$ne";
+         break;
+      case MONGOC_MATCHER_OPCODE_NIN:
+         str = "$nin";
+         break;
+      default:
+         break;
+      }
+      bson_append_document_begin (bson, op->compare.path, -1, &child);
+      bson_append_iter (&child, str, -1, &op->compare.iter);
+      bson_append_document_end (bson, &child);
       break;
    case MONGOC_MATCHER_OPCODE_OR:
    case MONGOC_MATCHER_OPCODE_AND:
@@ -283,6 +313,7 @@ mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,
       BSON_APPEND_INT32 (bson, "$type", (int)op->type.type);
       break;
    default:
+      ASSERT (FALSE);
       break;
    }
 }
