@@ -203,19 +203,27 @@ mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,
 
 
 #define _TYPE_CODE(l, r) ((((int)(l)) << 8) | ((int)(r)))
-#define _EQ_COMPARE(t1,t2) \
-   (bson_iter_##t1(&compare->iter) == bson_iter_##t2(iter))
+#define _NATIVE_COMPARE(op, t1, t2) \
+   (bson_iter_##t1(&compare->iter) op bson_iter_##t2(iter))
+#define _EQ_COMPARE(t1, t2)  _NATIVE_COMPARE(==, t1, t2)
+#define _NE_COMPARE(t1, t2)  _NATIVE_COMPARE(!=, t1, t2)
+#define _GT_COMPARE(t1, t2)  _NATIVE_COMPARE(>,  t1, t2)
+#define _GTE_COMPARE(t1, t2) _NATIVE_COMPARE(>=, t1, t2)
+#define _LT_COMPARE(t1, t2)  _NATIVE_COMPARE(<,  t1, t2)
+#define _LTE_COMPARE(t1, t2) _NATIVE_COMPARE(<=, t1, t2)
 
 
 static bson_bool_t
 mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
                             bson_iter_t *iter)
 {
-   int leftcode = bson_iter_type (&compare->iter);
-   int rightcode = bson_iter_type (iter);
    int eqcode;
 
-   eqcode = (leftcode << 8) | rightcode;
+   BSON_ASSERT (compare);
+   BSON_ASSERT (iter);
+
+   eqcode = _TYPE_CODE (bson_iter_type (&compare->iter),
+                        bson_iter_type (iter));
 
    switch (eqcode) {
 
@@ -275,6 +283,50 @@ static bson_bool_t
 mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare,
                             bson_iter_t *iter)
 {
+   int code;
+
+   BSON_ASSERT (compare);
+   BSON_ASSERT (iter);
+
+   code = _TYPE_CODE (bson_iter_type (&compare->iter),
+                      bson_iter_type (iter));
+
+   switch (code) {
+
+   /* Double on Left Side */
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
+      return _GT_COMPARE (double, double);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_BOOL):
+      return _GT_COMPARE (double, bool);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT32):
+      return _GT_COMPARE (double, int32);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT64):
+      return _GT_COMPARE (double, int64);
+
+   /* Int32 on Left Side */
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_DOUBLE):
+      return _GT_COMPARE (int32, double);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_BOOL):
+      return _GT_COMPARE (int32, bool);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT32):
+      return _GT_COMPARE (int32, int32);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT64):
+      return _GT_COMPARE (int32, int64);
+
+   /* Int64 on Left Side */
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_DOUBLE):
+      return _GT_COMPARE (int64, double);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_BOOL):
+      return _GT_COMPARE (int64, bool);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT32):
+      return _GT_COMPARE (int64, int32);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
+      return _GT_COMPARE (int64, int64);
+
+   default:
+      break;
+   }
+
    return FALSE;
 }
 
@@ -283,6 +335,50 @@ static bson_bool_t
 mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare,
                              bson_iter_t *iter)
 {
+   int code;
+
+   BSON_ASSERT (compare);
+   BSON_ASSERT (iter);
+
+   code = _TYPE_CODE (bson_iter_type (&compare->iter),
+                      bson_iter_type (iter));
+
+   switch (code) {
+
+   /* Double on Left Side */
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
+      return _GTE_COMPARE (double, double);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_BOOL):
+      return _GTE_COMPARE (double, bool);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT32):
+      return _GTE_COMPARE (double, int32);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT64):
+      return _GTE_COMPARE (double, int64);
+
+   /* Int32 on Left Side */
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_DOUBLE):
+      return _GTE_COMPARE (int32, double);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_BOOL):
+      return _GTE_COMPARE (int32, bool);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT32):
+      return _GTE_COMPARE (int32, int32);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT64):
+      return _GTE_COMPARE (int32, int64);
+
+   /* Int64 on Left Side */
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_DOUBLE):
+      return _GTE_COMPARE (int64, double);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_BOOL):
+      return _GTE_COMPARE (int64, bool);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT32):
+      return _GTE_COMPARE (int64, int32);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
+      return _GTE_COMPARE (int64, int64);
+
+   default:
+      break;
+   }
+
    return FALSE;
 }
 
@@ -299,6 +395,50 @@ static bson_bool_t
 mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare,
                             bson_iter_t *iter)
 {
+   int code;
+
+   BSON_ASSERT (compare);
+   BSON_ASSERT (iter);
+
+   code = _TYPE_CODE (bson_iter_type (&compare->iter),
+                      bson_iter_type (iter));
+
+   switch (code) {
+
+   /* Double on Left Side */
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
+      return _LT_COMPARE (double, double);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_BOOL):
+      return _LT_COMPARE (double, bool);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT32):
+      return _LT_COMPARE (double, int32);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT64):
+      return _LT_COMPARE (double, int64);
+
+   /* Int32 on Left Side */
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_DOUBLE):
+      return _LT_COMPARE (int32, double);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_BOOL):
+      return _LT_COMPARE (int32, bool);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT32):
+      return _LT_COMPARE (int32, int32);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT64):
+      return _LT_COMPARE (int32, int64);
+
+   /* Int64 on Left Side */
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_DOUBLE):
+      return _LT_COMPARE (int64, double);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_BOOL):
+      return _LT_COMPARE (int64, bool);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT32):
+      return _LT_COMPARE (int64, int32);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
+      return _LT_COMPARE (int64, int64);
+
+   default:
+      break;
+   }
+
    return FALSE;
 }
 
@@ -307,6 +447,50 @@ static bson_bool_t
 mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare,
                              bson_iter_t *iter)
 {
+   int code;
+
+   BSON_ASSERT (compare);
+   BSON_ASSERT (iter);
+
+   code = _TYPE_CODE (bson_iter_type (&compare->iter),
+                      bson_iter_type (iter));
+
+   switch (code) {
+
+   /* Double on Left Side */
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
+      return _LTE_COMPARE (double, double);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_BOOL):
+      return _LTE_COMPARE (double, bool);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT32):
+      return _LTE_COMPARE (double, int32);
+   case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT64):
+      return _LTE_COMPARE (double, int64);
+
+   /* Int32 on Left Side */
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_DOUBLE):
+      return _LTE_COMPARE (int32, double);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_BOOL):
+      return _LTE_COMPARE (int32, bool);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT32):
+      return _LTE_COMPARE (int32, int32);
+   case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT64):
+      return _LTE_COMPARE (int32, int64);
+
+   /* Int64 on Left Side */
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_DOUBLE):
+      return _LTE_COMPARE (int64, double);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_BOOL):
+      return _LTE_COMPARE (int64, bool);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT32):
+      return _LTE_COMPARE (int64, int32);
+   case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
+      return _LTE_COMPARE (int64, int64);
+
+   default:
+      break;
+   }
+
    return FALSE;
 }
 
