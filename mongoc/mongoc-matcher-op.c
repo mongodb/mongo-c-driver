@@ -191,6 +191,41 @@ mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type,
 }
 
 
+static bson_bool_t
+mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,
+                             const bson_t *bson)
+{
+   BSON_ASSERT (not);
+   BSON_ASSERT (bson);
+
+   return !mongoc_matcher_op_match (not->child, bson);
+}
+
+
+static bson_bool_t
+mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare,
+                                 const bson_t *bson)
+{
+   BSON_ASSERT (compare);
+   BSON_ASSERT (bson);
+
+TODO:
+   return FALSE;
+}
+
+
+static bson_bool_t
+mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical,
+                                 const bson_t *bson)
+{
+   BSON_ASSERT (logical);
+   BSON_ASSERT (bson);
+
+TODO:
+   return FALSE;
+}
+
+
 bson_bool_t
 mongoc_matcher_op_match (mongoc_matcher_op_t *op,
                          const bson_t *bson)
@@ -207,11 +242,13 @@ mongoc_matcher_op_match (mongoc_matcher_op_t *op,
    case MONGOC_MATCHER_OPCODE_LTE:
    case MONGOC_MATCHER_OPCODE_NE:
    case MONGOC_MATCHER_OPCODE_NIN:
+      return mongoc_matcher_op_logical_match (&op->logical, bson);
    case MONGOC_MATCHER_OPCODE_OR:
    case MONGOC_MATCHER_OPCODE_AND:
-   case MONGOC_MATCHER_OPCODE_NOT:
    case MONGOC_MATCHER_OPCODE_NOR:
-      break;
+      return mongoc_matcher_op_compare_match (&op->compare, bson);
+   case MONGOC_MATCHER_OPCODE_NOT:
+      return mongoc_matcher_op_not_match (&op->not, bson);
    case MONGOC_MATCHER_OPCODE_EXISTS:
       return mongoc_matcher_op_exists_match (&op->exists, bson);
    case MONGOC_MATCHER_OPCODE_TYPE:
