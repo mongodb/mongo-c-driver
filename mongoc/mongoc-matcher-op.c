@@ -20,8 +20,8 @@
 
 
 mongoc_matcher_op_t *
-_mongoc_matcher_op_exists_new (const char *path,
-                               bson_bool_t exists)
+_mongoc_matcher_op_exists_new (const char  *path,
+                               bson_bool_t  exists)
 {
    mongoc_matcher_op_t *op;
 
@@ -37,8 +37,8 @@ _mongoc_matcher_op_exists_new (const char *path,
 
 
 mongoc_matcher_op_t *
-_mongoc_matcher_op_type_new (const char *path,
-                             bson_type_t type)
+_mongoc_matcher_op_type_new (const char  *path,
+                             bson_type_t  type)
 {
    mongoc_matcher_op_t *op;
 
@@ -55,9 +55,9 @@ _mongoc_matcher_op_type_new (const char *path,
 
 
 mongoc_matcher_op_t *
-_mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t opcode,
-                                mongoc_matcher_op_t *left,
-                                mongoc_matcher_op_t *right)
+_mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t  opcode,
+                                mongoc_matcher_op_t     *left,
+                                mongoc_matcher_op_t     *right)
 {
    mongoc_matcher_op_t *op;
 
@@ -75,9 +75,9 @@ _mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t opcode,
 
 
 mongoc_matcher_op_t *
-_mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t opcode,
-                                const char *path,
-                                const bson_iter_t *iter)
+_mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t  opcode,
+                                const char              *path,
+                                const bson_iter_t       *iter)
 {
    mongoc_matcher_op_t *op;
 
@@ -96,7 +96,7 @@ _mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t opcode,
 
 
 mongoc_matcher_op_t *
-_mongoc_matcher_op_not_new (const char *path,
+_mongoc_matcher_op_not_new (const char          *path,
                             mongoc_matcher_op_t *child)
 {
    mongoc_matcher_op_t *op;
@@ -157,7 +157,7 @@ _mongoc_matcher_op_free (mongoc_matcher_op_t *op)
 
 static bson_bool_t
 _mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists,
-                                 const bson_t *bson)
+                                 const bson_t               *bson)
 {
    bson_iter_t iter;
    bson_iter_t desc;
@@ -175,7 +175,7 @@ _mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists,
 
 static bson_bool_t
 _mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type,
-                               const bson_t *bson)
+                               const bson_t             *bson)
 {
    bson_iter_t iter;
    bson_iter_t desc;
@@ -194,7 +194,7 @@ _mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type,
 
 static bson_bool_t
 _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,
-                              const bson_t *bson)
+                              const bson_t            *bson)
 {
    BSON_ASSERT (not);
    BSON_ASSERT (bson);
@@ -216,7 +216,7 @@ _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,
 
 static bson_bool_t
 _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
-                             bson_iter_t *iter)
+                             bson_iter_t                 *iter)
 {
    int code;
 
@@ -290,7 +290,7 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
 
 static bson_bool_t
 _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare,
-                             bson_iter_t *iter)
+                             bson_iter_t                 *iter)
 {
    int code;
 
@@ -345,7 +345,7 @@ _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare,
 
 static bson_bool_t
 _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare,
-                              bson_iter_t *iter)
+                              bson_iter_t                 *iter)
 {
    int code;
 
@@ -400,7 +400,7 @@ _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare,
 
 static bson_bool_t
 _mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare,
-                             bson_iter_t *iter)
+                             bson_iter_t                 *iter)
 {
    MONGOC_WARNING ("$in is not yet implemented");
    return FALSE;
@@ -409,7 +409,7 @@ _mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare,
 
 static bson_bool_t
 _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare,
-                             bson_iter_t *iter)
+                             bson_iter_t                 *iter)
 {
    int code;
 
@@ -464,7 +464,7 @@ _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare,
 
 static bson_bool_t
 _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare,
-                              bson_iter_t *iter)
+                              bson_iter_t                 *iter)
 {
    int code;
 
@@ -519,7 +519,7 @@ _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare,
 
 static bson_bool_t
 _mongoc_matcher_op_ne_match (mongoc_matcher_op_compare_t *compare,
-                             bson_iter_t *iter)
+                             bson_iter_t                 *iter)
 {
    return !_mongoc_matcher_op_eq_match (compare, iter);
 }
@@ -527,7 +527,7 @@ _mongoc_matcher_op_ne_match (mongoc_matcher_op_compare_t *compare,
 
 static bson_bool_t
 _mongoc_matcher_op_nin_match (mongoc_matcher_op_compare_t *compare,
-                              bson_iter_t *iter)
+                              bson_iter_t                 *iter)
 {
    return !_mongoc_matcher_op_in_match (compare, iter);
 }
@@ -535,7 +535,7 @@ _mongoc_matcher_op_nin_match (mongoc_matcher_op_compare_t *compare,
 
 static bson_bool_t
 _mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare,
-                                  const bson_t *bson)
+                                  const bson_t                *bson)
 {
    bson_iter_t iter;
 
@@ -574,7 +574,7 @@ _mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare,
 
 static bson_bool_t
 _mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical,
-                                  const bson_t *bson)
+                                  const bson_t                *bson)
 {
    BSON_ASSERT (logical);
    BSON_ASSERT (bson);
@@ -600,7 +600,7 @@ _mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical,
 
 bson_bool_t
 _mongoc_matcher_op_match (mongoc_matcher_op_t *op,
-                          const bson_t *bson)
+                          const bson_t        *bson)
 {
    BSON_ASSERT (op);
    BSON_ASSERT (bson);
@@ -635,7 +635,7 @@ _mongoc_matcher_op_match (mongoc_matcher_op_t *op,
 
 void
 _mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,
-                            bson_t *bson)
+                            bson_t              *bson)
 {
    const char *str;
    bson_t child;

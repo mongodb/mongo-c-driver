@@ -10,6 +10,7 @@ test_mongoc_matcher_basic (void)
 {
    bson_t matcher_query;
    bson_t * query, *to_match, *should_fail;
+   bson_error_t error;
    char * out;
 
    bson_init(&matcher_query);
@@ -26,7 +27,9 @@ test_mongoc_matcher_basic (void)
       "]"
    );
 
-   mongoc_matcher_t * matcher = mongoc_matcher_new(query);
+   mongoc_matcher_t * matcher = mongoc_matcher_new (query, &error);
+
+   assert (matcher);
 
    _mongoc_matcher_op_to_bson(matcher->optree, &matcher_query);
 
