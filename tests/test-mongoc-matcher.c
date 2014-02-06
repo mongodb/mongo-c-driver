@@ -171,6 +171,45 @@ test_mongoc_matcher_eq_int32 (void)
 }
 
 
+static void
+test_mongoc_matcher_eq_int64 (void)
+{
+   bson_t *spec;
+   bson_t *doc;
+   bson_error_t error;
+   mongoc_matcher_t *matcher;
+   bson_bool_t r;
+
+   spec = BCON_NEW ("hello", BCON_INT64 (1234));
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   r = mongoc_matcher_match (matcher, spec);
+   BSON_ASSERT (r);
+   bson_destroy (spec);
+   mongoc_matcher_destroy (matcher);
+
+   spec = BCON_NEW ("hello", BCON_INT64 (1234));
+   doc = BCON_NEW ("hello", BCON_INT64 (1234));
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   r = mongoc_matcher_match (matcher, doc);
+   BSON_ASSERT (r);
+   bson_destroy (spec);
+   bson_destroy (doc);
+   mongoc_matcher_destroy (matcher);
+
+   spec = BCON_NEW ("hello", BCON_INT64 (1234));
+   doc = BCON_NEW ("hello", BCON_INT32 (4321));
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   r = mongoc_matcher_match (matcher, doc);
+   BSON_ASSERT (!r);
+   bson_destroy (spec);
+   bson_destroy (doc);
+   mongoc_matcher_destroy (matcher);
+}
+
+
 int
 main (int argc,
       char *argv[])
@@ -179,6 +218,7 @@ main (int argc,
    run_test ("/mongoc/matcher/bad_spec", test_mongoc_matcher_bad_spec);
    run_test ("/mongoc/matcher/eq/utf8", test_mongoc_matcher_eq_utf8);
    run_test ("/mongoc/matcher/eq/int32", test_mongoc_matcher_eq_int32);
+   run_test ("/mongoc/matcher/eq/int64", test_mongoc_matcher_eq_int64);
 
    return 0;
 }
