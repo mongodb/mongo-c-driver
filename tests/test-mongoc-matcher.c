@@ -9,9 +9,11 @@ static void
 test_mongoc_matcher_basic (void)
 {
    bson_t matcher_query;
-   bson_t * query, *to_match, *should_fail;
+   bson_t *query;
+   bson_t *to_match;
+   bson_t *should_fail;
    bson_error_t error;
-   char * out;
+   char *out;
 
    bson_init(&matcher_query);
 
@@ -66,11 +68,53 @@ test_mongoc_matcher_basic (void)
 }
 
 
+static void
+test_mongoc_matcher_bad_spec (void)
+{
+   bson_t *spec;
+   bson_error_t error;
+   mongoc_matcher_t *matcher;
+
+   spec = BCON_NEW("name", "{", "$abc", "invalid", "}");
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (!matcher);
+   BSON_ASSERT (error.domain == MONGOC_ERROR_MATCHER);
+   BSON_ASSERT (error.code == MONGOC_ERROR_MATCHER_INVALID);
+   bson_destroy (spec);
+
+   spec = BCON_NEW("name", "{", "$or", "", "}");
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (!matcher);
+   BSON_ASSERT (error.domain == MONGOC_ERROR_MATCHER);
+   BSON_ASSERT (error.code == MONGOC_ERROR_MATCHER_INVALID);
+   bson_destroy (spec);
+}
+
+
+static void
+test_mongoc_matcher_eq_utf8_utf8 (void)
+{
+   bson_t *spec;
+   bson_error_t error;
+   mongoc_matcher_t *matcher;
+   bson_bool_t r;
+
+   spec = BCON_NEW("hello", "world");
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   r = mongoc_matcher_match (matcher, spec);
+   BSON_ASSERT (r);
+   bson_destroy (spec);
+}
+
+
 int
 main (int   argc,
       char *argv[])
 {
-   run_test("/mongoc/matcher/basic", test_mongoc_matcher_basic);
+   run_test ("/mongoc/matcher/basic", test_mongoc_matcher_basic);
+   run_test ("/mongoc/matcher/bad_spec", test_mongoc_matcher_bad_spec);
+   run_test ("/mongoc/matcher/eq/utf8_utf8", test_mongoc_matcher_eq_utf8_utf8);
 
    return 0;
 }
