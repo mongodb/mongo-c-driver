@@ -32,6 +32,7 @@ stamp-h1
 *.swp
 example-client
 example-gridfs
+filter-bsondump
 repltest1
 shardtest1
 shardtest2
