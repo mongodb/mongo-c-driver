@@ -19,9 +19,26 @@
 #include "mongoc-matcher-op-private.h"
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_exists_new --
+ *
+ *       Create a new op for checking {$exists: bool}.
+ *
+ * Returns:
+ *       A newly allocated mongoc_matcher_op_t that should be freed with
+ *       _mongoc_matcher_op_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_matcher_op_t *
-_mongoc_matcher_op_exists_new (const char  *path,
-                               bson_bool_t  exists)
+_mongoc_matcher_op_exists_new (const char  *path,   /* IN */
+                               bson_bool_t  exists) /* IN */
 {
    mongoc_matcher_op_t *op;
 
@@ -36,9 +53,26 @@ _mongoc_matcher_op_exists_new (const char  *path,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_type_new --
+ *
+ *       Create a new op for checking {$type: int}.
+ *
+ * Returns:
+ *       A newly allocated mongoc_matcher_op_t that should be freed with
+ *       _mongoc_matcher_op_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_matcher_op_t *
-_mongoc_matcher_op_type_new (const char  *path,
-                             bson_type_t  type)
+_mongoc_matcher_op_type_new (const char  *path, /* IN */
+                             bson_type_t  type) /* IN */
 {
    mongoc_matcher_op_t *op;
 
@@ -54,10 +88,31 @@ _mongoc_matcher_op_type_new (const char  *path,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_logical_new --
+ *
+ *       Create a new op for checking any of:
+ *
+ *          {$or: []}
+ *          {$nor: []}
+ *          {$and: []}
+ *
+ * Returns:
+ *       A newly allocated mongoc_matcher_op_t that should be freed with
+ *       _mongoc_matcher_op_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_matcher_op_t *
-_mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t  opcode,
-                                mongoc_matcher_op_t     *left,
-                                mongoc_matcher_op_t     *right)
+_mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t  opcode, /* IN */
+                                mongoc_matcher_op_t     *left,   /* IN */
+                                mongoc_matcher_op_t     *right)  /* IN */
 {
    mongoc_matcher_op_t *op;
 
@@ -74,10 +129,36 @@ _mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t  opcode,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_compare_new --
+ *
+ *       Create a new op for checking any of:
+ *
+ *          {"abc": "def"}
+ *          {$gt: {...}
+ *          {$gte: {...}
+ *          {$lt: {...}
+ *          {$lte: {...}
+ *          {$ne: {...}
+ *          {$in: [...]}
+ *          {$nin: [...]}
+ *
+ * Returns:
+ *       A newly allocated mongoc_matcher_op_t that should be freed with
+ *       _mongoc_matcher_op_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_matcher_op_t *
-_mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t  opcode,
-                                const char              *path,
-                                const bson_iter_t       *iter)
+_mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t  opcode, /* IN */
+                                const char              *path,   /* IN */
+                                const bson_iter_t       *iter)   /* IN */
 {
    mongoc_matcher_op_t *op;
 
@@ -95,9 +176,26 @@ _mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t  opcode,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_not_new --
+ *
+ *       Create a new op for checking {$not: {...}}
+ *
+ * Returns:
+ *       A newly allocated mongoc_matcher_op_t that should be freed with
+ *       _mongoc_matcher_op_destroy().
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_matcher_op_t *
-_mongoc_matcher_op_not_new (const char          *path,
-                            mongoc_matcher_op_t *child)
+_mongoc_matcher_op_not_new (const char          *path,  /* IN */
+                            mongoc_matcher_op_t *child) /* IN */
 {
    mongoc_matcher_op_t *op;
 
@@ -113,8 +211,23 @@ _mongoc_matcher_op_not_new (const char          *path,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_destroy --
+ *
+ *       Free a mongoc_matcher_op_t structure and all children structures.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 void
-_mongoc_matcher_op_free (mongoc_matcher_op_t *op)
+_mongoc_matcher_op_destroy (mongoc_matcher_op_t *op) /* IN */
 {
    BSON_ASSERT (op);
 
@@ -133,12 +246,12 @@ _mongoc_matcher_op_free (mongoc_matcher_op_t *op)
    case MONGOC_MATCHER_OPCODE_AND:
    case MONGOC_MATCHER_OPCODE_NOR:
       if (op->logical.left)
-         _mongoc_matcher_op_free (op->logical.left);
+         _mongoc_matcher_op_destroy (op->logical.left);
       if (op->logical.right)
-         _mongoc_matcher_op_free (op->logical.right);
+         _mongoc_matcher_op_destroy (op->logical.right);
       break;
    case MONGOC_MATCHER_OPCODE_NOT:
-      _mongoc_matcher_op_free (op->not.child);
+      _mongoc_matcher_op_destroy (op->not.child);
       bson_free (op->not.path);
       break;
    case MONGOC_MATCHER_OPCODE_EXISTS:
@@ -155,9 +268,30 @@ _mongoc_matcher_op_free (mongoc_matcher_op_t *op)
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_exists_match --
+ *
+ *       Checks to see if @bson matches @exists requirements. The
+ *       {$exists: bool} query can be either true or fase so we must
+ *       handle false as "not exists".
+ *
+ * Returns:
+ *       TRUE if the field exists and the spec expected it.
+ *       TRUE if the field does not exist and the spec expected it to not
+ *       exist.
+ *       Otherwise, FALSE.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists,
-                                 const bson_t               *bson)
+_mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists, /* IN */
+                                 const bson_t               *bson)   /* IN */
 {
    bson_iter_t iter;
    bson_iter_t desc;
@@ -173,9 +307,26 @@ _mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_type_match --
+ *
+ *       Checks if @bson matches the {$type: ...} op.
+ *
+ * Returns:
+ *       TRUE if the requested field was found and the type matched
+ *       the requested type.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type,
-                               const bson_t             *bson)
+_mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type, /* IN */
+                               const bson_t             *bson) /* IN */
 {
    bson_iter_t iter;
    bson_iter_t desc;
@@ -192,9 +343,27 @@ _mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_not_match --
+ *
+ *       Checks if the {$not: ...} expression matches by negating the
+ *       child expression.
+ *
+ * Returns:
+ *       TRUE if the child expression returned FALSE.
+ *       Otherwise FALSE.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,
-                              const bson_t            *bson)
+_mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,  /* IN */
+                              const bson_t            *bson) /* IN */
 {
    BSON_ASSERT (not);
    BSON_ASSERT (bson);
@@ -219,9 +388,38 @@ _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,
 #define _LTE_COMPARE(t1, t2) _NATIVE_COMPARE(>, t1, t2)
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_eq_match --
+ *
+ *       Performs equality match for all types on either left or right
+ *       side of the equation.
+ *
+ *       We try to default to what the compiler would do for comparing
+ *       things like integers. Therefore, we just have MACRO'tized
+ *       everything so that the compiler sees the native values. (Such
+ *       as (double == int64).
+ *
+ *       The _TYPE_CODE() stuff allows us to shove the type of the left
+ *       and the right into a single integer and then do a jump table
+ *       with a switch/case for all our supported types.
+ *
+ *       I imagine a bunch more of these will need to be added, so feel
+ *       free to submit patches.
+ *
+ * Returns:
+ *       TRUE if the equality match succeeded.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
-                             bson_iter_t                 *iter)
+_mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
+                             bson_iter_t                 *iter)    /* IN */
 {
    int code;
 
@@ -287,6 +485,25 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
    }
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_gt_match --
+ *
+ *       Perform {$gt: ...} match using @compare.
+ *
+ *       In general, we try to default to what the compiler would do
+ *       for comparison between different types.
+ *
+ * Returns:
+ *       TRUE if the document field was > the spec value.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 static bson_bool_t
 _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare,

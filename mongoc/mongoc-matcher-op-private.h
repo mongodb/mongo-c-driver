@@ -124,7 +124,7 @@ mongoc_matcher_op_t *_mongoc_matcher_op_not_new     (const char              *pa
                                                      mongoc_matcher_op_t     *child);
 bson_bool_t          _mongoc_matcher_op_match       (mongoc_matcher_op_t     *op,
                                                      const bson_t            *bson);
-void                 _mongoc_matcher_op_free        (mongoc_matcher_op_t     *op);
+void                 _mongoc_matcher_op_destroy     (mongoc_matcher_op_t     *op);
 void                 _mongoc_matcher_op_to_bson     (mongoc_matcher_op_t     *op,
                                                      bson_t                  *bson);
 

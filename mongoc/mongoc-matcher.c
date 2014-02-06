@@ -282,7 +282,7 @@ mongoc_matcher_destroy (mongoc_matcher_t *matcher)
 {
    BSON_ASSERT (matcher);
 
-   _mongoc_matcher_op_free (matcher->optree);
+   _mongoc_matcher_op_destroy (matcher->optree);
    bson_destroy (&matcher->query);
    bson_free (matcher);
 }
