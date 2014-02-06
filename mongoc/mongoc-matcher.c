@@ -22,34 +22,34 @@ _mongoc_matcher_parse_compare(bson_iter_t * iter, const char * path)
       key = bson_iter_key(&child);
 
       if (key[0] != '$') {
-         op = mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_EQ, path, iter);
+         op = _mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_EQ, path, iter);
       } else if (strcmp(key, "$not") == 0) {
          op_child = _mongoc_matcher_parse_compare(&child, path);
-         op = mongoc_matcher_op_not_new(path, op_child);
+         op = _mongoc_matcher_op_not_new(path, op_child);
       } else if (strcmp(key, "$gt") == 0) {
-         op = mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_GT, path, &child);
+         op = _mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_GT, path, &child);
       } else if (strcmp(key, "$gte") == 0) {
-         op = mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_GTE, path, &child);
+         op = _mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_GTE, path, &child);
       } else if (strcmp(key, "$in") == 0) {
-         op = mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_IN, path, &child);
+         op = _mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_IN, path, &child);
       } else if (strcmp(key, "$lt") == 0) {
-         op = mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_LT, path, &child);
+         op = _mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_LT, path, &child);
       } else if (strcmp(key, "$lte") == 0) {
-         op = mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_LTE, path, &child);
+         op = _mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_LTE, path, &child);
       } else if (strcmp(key, "$ne") == 0) {
-         op = mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_NE, path, &child);
+         op = _mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_NE, path, &child);
       } else if (strcmp(key, "$nin") == 0) {
-         op = mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_NIN, path, &child);
+         op = _mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_NIN, path, &child);
       } else if (strcmp(key, "$exists") == 0) {
-         op = mongoc_matcher_op_exists_new(path, bson_iter_bool(&child));
+         op = _mongoc_matcher_op_exists_new(path, bson_iter_bool(&child));
       } else if (strcmp(key, "$type") == 0) {
-         op = mongoc_matcher_op_type_new(path, bson_iter_type(&child));
+         op = _mongoc_matcher_op_type_new(path, bson_iter_type(&child));
       } else {
          fprintf(stderr, "Invalid operator '%s'. Unknown or invalid position\n", key);
          abort();
       }
    } else {
-      op = mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_EQ, path, iter);
+      op = _mongoc_matcher_op_compare_new(MONGOC_MATCHER_OPCODE_EQ, path, iter);
    }
 
    return op;
@@ -126,11 +126,11 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,
    more = _mongoc_matcher_parse_logical(opcode, iter, is_root);
 
    if (more) {
-      more_wrap = mongoc_matcher_op_logical_new(opcode, right, more);
+      more_wrap = _mongoc_matcher_op_logical_new(opcode, right, more);
 
-      return mongoc_matcher_op_logical_new(opcode, left, more_wrap);
+      return _mongoc_matcher_op_logical_new(opcode, left, more_wrap);
    } else {
-      return mongoc_matcher_op_logical_new(opcode, left, right);
+      return _mongoc_matcher_op_logical_new(opcode, left, right);
    }
 }
 
@@ -141,7 +141,7 @@ mongoc_matcher_new (const bson_t *query)
    bson_bool_t r;
    mongoc_matcher_op_t * op;
    mongoc_matcher_t * matcher;
-   
+
    matcher = calloc(sizeof *matcher, 1);
    bson_copy_to(query, &matcher->query);
 
@@ -163,13 +163,13 @@ mongoc_matcher_new (const bson_t *query)
 bson_bool_t
 mongoc_matcher_match(const mongoc_matcher_t * matcher, const bson_t * bson)
 {
-   return mongoc_matcher_op_match(matcher->optree, bson);
+   return _mongoc_matcher_op_match(matcher->optree, bson);
 }
 
 void
 mongoc_matcher_destroy(mongoc_matcher_t * matcher)
 {
-   mongoc_matcher_op_free(matcher->optree);
+   _mongoc_matcher_op_free(matcher->optree);
    bson_destroy(&matcher->query);
    free(matcher);
 }

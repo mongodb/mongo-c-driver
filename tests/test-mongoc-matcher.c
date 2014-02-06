@@ -13,7 +13,7 @@ test_mongoc_matcher_basic (void)
    char * out;
 
    bson_init(&matcher_query);
-   
+
    query = BCON_NEW(
       "city", "New York",
       "state", "New York",
@@ -28,7 +28,7 @@ test_mongoc_matcher_basic (void)
 
    mongoc_matcher_t * matcher = mongoc_matcher_new(query);
 
-   mongoc_matcher_op_to_bson(matcher->optree, &matcher_query);
+   _mongoc_matcher_op_to_bson(matcher->optree, &matcher_query);
 
    out = bson_as_json(&matcher_query, NULL);
 
