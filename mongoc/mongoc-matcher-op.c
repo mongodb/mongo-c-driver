@@ -203,15 +203,20 @@ _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,
 }
 
 
+/*
+ * NOTE: The compare operators are opposite since the left and right are
+ * somewhat inverted being that the spec is on the left and the value on the
+ * right.
+ */
 #define _TYPE_CODE(l, r) ((((int)(l)) << 8) | ((int)(r)))
 #define _NATIVE_COMPARE(op, t1, t2) \
-   (bson_iter_##t1(iter) op bson_iter_##t2(&compare->iter))
+   (bson_iter_##t1(&compare->iter) op bson_iter_##t2(iter))
 #define _EQ_COMPARE(t1, t2)  _NATIVE_COMPARE(==, t1, t2)
 #define _NE_COMPARE(t1, t2)  _NATIVE_COMPARE(!=, t1, t2)
-#define _GT_COMPARE(t1, t2)  _NATIVE_COMPARE(>,  t1, t2)
-#define _GTE_COMPARE(t1, t2) _NATIVE_COMPARE(>=, t1, t2)
-#define _LT_COMPARE(t1, t2)  _NATIVE_COMPARE(<,  t1, t2)
-#define _LTE_COMPARE(t1, t2) _NATIVE_COMPARE(<=, t1, t2)
+#define _GT_COMPARE(t1, t2)  _NATIVE_COMPARE(<=, t1, t2)
+#define _GTE_COMPARE(t1, t2) _NATIVE_COMPARE(<, t1, t2)
+#define _LT_COMPARE(t1, t2)  _NATIVE_COMPARE(>=, t1, t2)
+#define _LTE_COMPARE(t1, t2) _NATIVE_COMPARE(>, t1, t2)
 
 
 static bson_bool_t
@@ -278,13 +283,8 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare,
       return TRUE;
 
    default:
-      MONGOC_WARNING ("Implement for (Type(%d) == Type(%d))",
-                      bson_iter_type (&compare->iter),
-                      bson_iter_type (iter));
-      break;
+      return FALSE;
    }
-
-   return FALSE;
 }
 
 

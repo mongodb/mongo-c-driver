@@ -13,7 +13,6 @@ test_mongoc_matcher_basic (void)
    bson_t *to_match;
    bson_t *should_fail;
    bson_error_t error;
-   char *out;
 
    bson_init(&matcher_query);
 
@@ -35,10 +34,13 @@ test_mongoc_matcher_basic (void)
 
    _mongoc_matcher_op_to_bson(matcher->optree, &matcher_query);
 
-   out = bson_as_json(&matcher_query, NULL);
-
-   printf("bson: %s\n", out);
-   free(out);
+#if 0
+   {
+      char *out = bson_as_json(&matcher_query, NULL);
+      printf("bson: %s\n", out);
+      free(out);
+   }
+#endif
 
    to_match = BCON_NEW(
       "city", "New York",
@@ -92,8 +94,9 @@ test_mongoc_matcher_bad_spec (void)
 
 
 static void
-test_mongoc_matcher_eq_utf8_utf8 (void)
+test_mongoc_matcher_eq_utf8 (void)
 {
+   bson_t *doc;
    bson_t *spec;
    bson_error_t error;
    mongoc_matcher_t *matcher;
@@ -105,16 +108,77 @@ test_mongoc_matcher_eq_utf8_utf8 (void)
    r = mongoc_matcher_match (matcher, spec);
    BSON_ASSERT (r);
    bson_destroy (spec);
+   mongoc_matcher_destroy (matcher);
+
+   spec = BCON_NEW ("hello", "world");
+   doc = BCON_NEW ("hello", BCON_NULL);
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   r = mongoc_matcher_match (matcher, doc);
+   BSON_ASSERT (!r);
+   bson_destroy (spec);
+   bson_destroy (doc);
+   mongoc_matcher_destroy (matcher);
+
+   spec = BCON_NEW ("hello", "world");
+   doc = BCON_NEW ("hello", BCON_UNDEFINED);
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   r = mongoc_matcher_match (matcher, doc);
+   BSON_ASSERT (!r);
+   bson_destroy (spec);
+   bson_destroy (doc);
+   mongoc_matcher_destroy (matcher);
+}
+
+
+static void
+test_mongoc_matcher_eq_int32 (void)
+{
+   bson_t *spec;
+   bson_t *doc;
+   bson_error_t error;
+   mongoc_matcher_t *matcher;
+   bson_bool_t r;
+
+   spec = BCON_NEW ("hello", BCON_INT32 (1234));
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   r = mongoc_matcher_match (matcher, spec);
+   BSON_ASSERT (r);
+   bson_destroy (spec);
+   mongoc_matcher_destroy (matcher);
+
+   spec = BCON_NEW ("hello", BCON_INT32 (1234));
+   doc = BCON_NEW ("hello", BCON_INT64 (1234));
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   r = mongoc_matcher_match (matcher, doc);
+   BSON_ASSERT (r);
+   bson_destroy (spec);
+   bson_destroy (doc);
+   mongoc_matcher_destroy (matcher);
+
+   spec = BCON_NEW ("hello", BCON_INT32 (1234));
+   doc = BCON_NEW ("hello", BCON_INT64 (4321));
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   r = mongoc_matcher_match (matcher, doc);
+   BSON_ASSERT (!r);
+   bson_destroy (spec);
+   bson_destroy (doc);
+   mongoc_matcher_destroy (matcher);
 }
 
 
 int
-main (int   argc,
+main (int argc,
       char *argv[])
 {
    run_test ("/mongoc/matcher/basic", test_mongoc_matcher_basic);
    run_test ("/mongoc/matcher/bad_spec", test_mongoc_matcher_bad_spec);
-   run_test ("/mongoc/matcher/eq/utf8_utf8", test_mongoc_matcher_eq_utf8_utf8);
+   run_test ("/mongoc/matcher/eq/utf8", test_mongoc_matcher_eq_utf8);
+   run_test ("/mongoc/matcher/eq/int32", test_mongoc_matcher_eq_int32);
 
    return 0;
 }
