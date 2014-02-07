@@ -127,6 +127,10 @@ mongoc_client_get_collection (mongoc_client_t *client,
                               const char      *db,
                               const char      *collection);
 
+char **
+mongoc_client_get_database_names (mongoc_client_t *client,
+                                  bson_error_t    *error);
+
 const mongoc_write_concern_t *
 mongoc_client_get_write_concern (const mongoc_client_t *client);
 

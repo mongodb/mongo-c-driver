@@ -1205,3 +1205,54 @@ mongoc_client_command_simple (mongoc_client_t           *client,
 
    return ret;
 }
+
+
+char **
+mongoc_client_get_database_names (mongoc_client_t *client,
+                                  bson_error_t    *error)
+{
+   bson_iter_t iter;
+   bson_iter_t child;
+   bson_iter_t child2;
+   const char *name;
+   bson_t cmd = BSON_INITIALIZER;
+   bson_t reply;
+   char **ret = NULL;
+   int i = 0;
+
+   BSON_ASSERT (client);
+
+   BSON_APPEND_INT32 (&cmd, "listDatabases", 1);
+
+   if (!mongoc_client_command_simple (client, "admin", &cmd, NULL,
+                                      &reply, error)) {
+      bson_destroy (&cmd);
+      return NULL;
+   }
+
+   if (bson_iter_init_find (&iter, &reply, "databases") &&
+       BSON_ITER_HOLDS_ARRAY (&iter) &&
+       bson_iter_recurse (&iter, &child)) {
+      while (bson_iter_next (&child)) {
+         if (BSON_ITER_HOLDS_DOCUMENT (&child) &&
+             bson_iter_recurse (&child, &child2) &&
+             bson_iter_find (&child2, "name") &&
+             BSON_ITER_HOLDS_UTF8 (&child2) &&
+             (name = bson_iter_utf8 (&child2, NULL)) &&
+             (0 != strcmp (name, "local"))) {
+            ret = bson_realloc (ret, sizeof(char*) * (i + 2));
+            ret [i] = bson_strdup (name);
+            ret [++i] = NULL;
+         }
+      }
+   }
+
+   if (!ret) {
+      ret = bson_malloc0 (sizeof (void*));
+   }
+
+   bson_destroy (&cmd);
+   bson_destroy (&reply);
+
+   return ret;
+}
