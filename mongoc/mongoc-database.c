@@ -519,3 +519,54 @@ cleanup:
 
    RETURN(ret);
 }
+
+
+char **
+mongoc_database_get_collection_names (mongoc_database_t *database,
+                                      bson_error_t      *error)
+{
+   mongoc_collection_t *col;
+   mongoc_cursor_t *cursor;
+   bson_uint32_t len;
+   const bson_t *doc;
+   bson_iter_t iter;
+   const char *name;
+   bson_t q = BSON_INITIALIZER;
+   char **ret = NULL;
+   int i = 0;
+
+   BSON_ASSERT (database);
+
+   col = mongoc_client_get_collection (database->client,
+                                       database->name,
+                                       "system.namespaces");
+
+   cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0, &q,
+                                    NULL, NULL);
+
+   len = strlen (database->name) + 1;
+
+   while (mongoc_cursor_more (cursor) &&
+          !mongoc_cursor_error (cursor, error)) {
+      if (mongoc_cursor_next (cursor, &doc)) {
+         if (bson_iter_init_find (&iter, doc, "name") &&
+             BSON_ITER_HOLDS_UTF8 (&iter) &&
+             (name = bson_iter_utf8 (&iter, NULL)) &&
+             !strchr (name, '$') &&
+             (0 == strncmp (name, database->name, len - 1))) {
+            ret = bson_realloc (ret, sizeof(char*) * (i + 2));
+            ret [i] = bson_strdup (bson_iter_utf8 (&iter, NULL) + len);
+            ret [++i] = NULL;
+         }
+      }
+   }
+
+   if (!ret && !mongoc_cursor_error (cursor, error)) {
+      ret = bson_malloc0 (sizeof (void*));
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (col);
+
+   return ret;
+}

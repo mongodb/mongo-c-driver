@@ -69,6 +69,9 @@ void                          mongoc_database_set_read_prefs    (mongoc_database
 const mongoc_write_concern_t *mongoc_database_get_write_concern (const mongoc_database_t      *database);
 void                          mongoc_database_set_write_concern (mongoc_database_t            *database,
                                                                  const mongoc_write_concern_t *write_concern);
+char                        **mongoc_database_get_collection_names
+                                                                (mongoc_database_t            *database,
+                                                                 bson_error_t                 *error);
 
 
 BSON_END_DECLS

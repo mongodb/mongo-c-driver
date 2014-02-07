@@ -48,6 +48,7 @@ mongoc_database_command
 mongoc_database_command_simple
 mongoc_database_destroy
 mongoc_database_drop
+mongoc_database_get_collection_names
 mongoc_database_get_read_prefs
 mongoc_database_get_write_concern
 mongoc_database_has_collection
