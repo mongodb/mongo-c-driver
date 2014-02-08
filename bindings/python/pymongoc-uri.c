@@ -15,6 +15,8 @@
  */
 
 
+#include <string.h>
+
 #include "pymongoc-uri.h"
 
 
@@ -24,6 +26,22 @@ pymongoc_uri_tp_dealloc (PyObject *self)
    pymongoc_uri_t *uri = (pymongoc_uri_t *)self;
    mongoc_uri_destroy (uri->uri);
    self->ob_type->tp_free (self);
+}
+
+
+static PyObject *
+pymongoc_uri_tp_repr (PyObject *obj)
+{
+   pymongoc_uri_t *uri = (pymongoc_uri_t *)obj;
+   PyObject *ret;
+   const char *str;
+   char *repr;
+
+   str = mongoc_uri_get_string (uri->uri);
+   repr = bson_strdup_printf ("URI(\"%s\")", str);
+   ret = PyString_FromStringAndSize (repr, strlen (repr));
+   bson_free (repr);
+   return ret;
 }
 
 
@@ -38,7 +56,7 @@ static PyTypeObject pymongoc_uri_type = {
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
+    pymongoc_uri_tp_repr,      /*tp_repr*/
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/
