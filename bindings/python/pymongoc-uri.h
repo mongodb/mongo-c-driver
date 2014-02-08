@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 10gen Inc.
+ * Copyright 2014 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@
  */
 
 
-#ifndef PYMONGOC_CLIENT_H
-#define PYMONGOC_CLIENT_H
+#ifndef PYMONGOC_URI_H
+#define PYMONGOC_URI_H
 
 
 #include <bson.h>
@@ -34,14 +34,14 @@ BSON_BEGIN_DECLS
 
 typedef struct {
    PyObject_HEAD
-   mongoc_client_t *client;
-} pymongoc_client_t;
+   mongoc_uri_t *uri;
+} pymongoc_uri_t;
 
 
-PyTypeObject *pymongoc_client_get_type (void);
+PyTypeObject *pymongoc_uri_get_type (void);
 
 
 BSON_END_DECLS
 
 
-#endif /* PYMONGOC_CLIENT_H */
+#endif /* PYMONGOC_URI_H */
