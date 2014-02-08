@@ -26,7 +26,7 @@ pymongoc_client_tp_dealloc (PyObject *self)
 
    ENTRY;
 
-   if (client->owns_client) {
+   if (client->owns_client && client->client) {
       mongoc_client_destroy (client->client);
    }
 

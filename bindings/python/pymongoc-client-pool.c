@@ -137,10 +137,43 @@ pymongoc_client_pool_pop (PyObject *self,
 }
 
 
+static PyObject *
+pymongoc_client_pool_push (PyObject *self,
+                           PyObject *args)
+{
+   pymongoc_client_pool_t *client_pool = (pymongoc_client_pool_t *)self;
+   pymongoc_client_t *pyclient = NULL;
+
+   if (!PyArg_ParseTuple (args, "O", &pyclient)) {
+      return NULL;
+   }
+
+   if (!pymongoc_client_check (pyclient)) {
+      PyErr_SetString (PyExc_TypeError,
+                       "pymongoc.ClientPool.push only accepts a "
+                       "pymongoc.Client.");
+      return NULL;
+   }
+
+   if (pyclient->client) {
+      mongoc_client_pool_push (client_pool->client_pool,
+                               pyclient->client);
+      pyclient->client = NULL;
+   }
+
+   Py_INCREF (Py_None);
+
+   return Py_None;
+}
+
+
 static PyMethodDef pymongoc_client_pool_methods[] = {
    { "pop", pymongoc_client_pool_pop, METH_VARARGS,
      "Pop a pymongoc.Client from the client pool, possibly blocking "
      "until one is available." },
+   { "push", pymongoc_client_pool_push, METH_VARARGS,
+     "Return a pymongoc.Client to the client pool, possibly allowing "
+     "another thread to steal the client." },
    { NULL }
 };
 

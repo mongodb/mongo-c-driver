@@ -31,6 +31,9 @@
 BSON_BEGIN_DECLS
 
 
+#define pymongoc_client_check(o) (Py_TYPE(o) == pymongoc_client_get_type())
+
+
 typedef struct {
    PyObject_HEAD
    mongoc_client_t *client;
