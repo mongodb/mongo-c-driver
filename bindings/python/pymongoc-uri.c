@@ -45,6 +45,20 @@ pymongoc_uri_tp_repr (PyObject *obj)
 }
 
 
+static PyObject *
+pymongoc_uri_tp_str (PyObject *obj)
+{
+   pymongoc_uri_t *uri = (pymongoc_uri_t *)obj;
+   PyObject *ret;
+   const char *str;
+
+   str = mongoc_uri_get_string (uri->uri);
+   ret = PyString_FromStringAndSize (str, strlen (str));
+
+   return ret;
+}
+
+
 static PyTypeObject pymongoc_uri_type = {
     PyObject_HEAD_INIT(NULL)
     0,                         /*ob_size*/
@@ -62,7 +76,7 @@ static PyTypeObject pymongoc_uri_type = {
     0,                         /*tp_as_mapping*/
     0,                         /*tp_hash */
     0,                         /*tp_call*/
-    0,                         /*tp_str*/
+    pymongoc_uri_tp_str,       /*tp_str*/
     0,                         /*tp_getattro*/
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
