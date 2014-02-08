@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-trace.h"
 #include "pymongoc-client.h"
 
 
@@ -23,11 +24,15 @@ pymongoc_client_tp_dealloc (PyObject *self)
 {
    pymongoc_client_t *client = (pymongoc_client_t *)self;
 
+   ENTRY;
+
    if (client->owns_client) {
       mongoc_client_destroy (client->client);
    }
 
    self->ob_type->tp_free(self);
+
+   EXIT;
 }
 
 

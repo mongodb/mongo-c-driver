@@ -24,4 +24,5 @@ pymongoc_la_LDFLAGS = -module
 pymongoc_la_CPPFLAGS = \
 	$(BSON_CFLAGS) \
 	-I$(top_srcdir)/mongoc \
-	-I$(PYTHON_INCLUDE_DIR)
+	-I$(PYTHON_INCLUDE_DIR) \
+	-DMONGOC_COMPILATION

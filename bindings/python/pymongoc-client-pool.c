@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-trace.h"
 #include "pymongoc-client.h"
 #include "pymongoc-client-pool.h"
 
@@ -23,8 +24,14 @@ static void
 pymongoc_client_pool_tp_dealloc (PyObject *self)
 {
    pymongoc_client_pool_t *pool = (pymongoc_client_pool_t *)self;
+
+   ENTRY;
+
    mongoc_client_pool_destroy (pool->client_pool);
+
    self->ob_type->tp_free (self);
+
+   EXIT;
 }
 
 
