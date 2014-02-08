@@ -18,6 +18,7 @@
 #include <Python.h>
 
 #include "pymongoc-client.h"
+#include "pymongoc-client-pool.h"
 #include "pymongoc-uri.h"
 
 
@@ -49,5 +50,6 @@ initpymongoc (void)
     * Register cmongo types.
     */
    PyModule_AddObject (module, "Client", (PyObject *)pymongoc_client_get_type ());
+   PyModule_AddObject (module, "ClientPool", (PyObject *)pymongoc_client_pool_get_type ());
    PyModule_AddObject (module, "URI", (PyObject *)pymongoc_uri_get_type ());
 }
