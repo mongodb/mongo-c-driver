@@ -15,6 +15,7 @@
  */
 
 
+#include "pymongoc-client.h"
 #include "pymongoc-client-pool.h"
 
 
@@ -107,6 +108,36 @@ cleanup:
 }
 
 
+static PyObject *
+pymongoc_client_pool_pop (PyObject *self,
+                          PyObject *args)
+{
+   pymongoc_client_pool_t *client_pool = (pymongoc_client_pool_t *)self;
+   mongoc_client_t *client;
+   PyObject *pyclient;
+
+   if (!pymongoc_client_pool_check (self)) {
+      PyErr_SetString (PyExc_TypeError,
+                       "self must be a pymongoc.ClientPool");
+      return NULL;
+   }
+
+   BSON_ASSERT (client_pool->client_pool);
+
+   client = mongoc_client_pool_pop (client_pool->client_pool);
+
+   return pymongoc_client_new (client, FALSE);
+}
+
+
+static PyMethodDef pymongoc_client_pool_methods[] = {
+   { "pop", pymongoc_client_pool_pop, METH_VARARGS,
+     "Pop a pymongoc.Client from the client pool, possibly blocking "
+     "until one is available." },
+   { NULL }
+};
+
+
 PyTypeObject *
 pymongoc_client_pool_get_type (void)
 {
@@ -114,6 +145,7 @@ pymongoc_client_pool_get_type (void)
 
    if (!initialized) {
       pymongoc_client_pool_type.tp_new = pymongoc_client_pool_tp_new;
+      pymongoc_client_pool_type.tp_methods = pymongoc_client_pool_methods;
       if (PyType_Ready (&pymongoc_client_pool_type) < 0) {
          return NULL;
       }

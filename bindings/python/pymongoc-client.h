@@ -22,23 +22,25 @@
 #include <bson.h>
 #include <mongoc.h>
 
-
-BSON_BEGIN_DECLS
-
-
 #ifdef _POSIX_C_SOURCE
 # undef _POSIX_C_SOURCE
 #endif
 #include <Python.h>
 
 
+BSON_BEGIN_DECLS
+
+
 typedef struct {
    PyObject_HEAD
    mongoc_client_t *client;
+   bson_bool_t      owns_client;
 } pymongoc_client_t;
 
 
 PyTypeObject *pymongoc_client_get_type (void);
+PyObject     *pymongoc_client_new      (mongoc_client_t *client,
+                                        bson_bool_t      owns_client);
 
 
 BSON_END_DECLS

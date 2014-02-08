@@ -22,14 +22,17 @@
 #include <bson.h>
 #include <mongoc.h>
 
-
-BSON_BEGIN_DECLS
-
-
 #ifdef _POSIX_C_SOURCE
 # undef _POSIX_C_SOURCE
 #endif
 #include <Python.h>
+
+
+BSON_BEGIN_DECLS
+
+
+#define pymongoc_client_pool_check(o) \
+   (Py_TYPE(o) == pymongoc_client_pool_get_type())
 
 
 typedef struct {

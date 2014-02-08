@@ -22,7 +22,11 @@ static void
 pymongoc_client_tp_dealloc (PyObject *self)
 {
    pymongoc_client_t *client = (pymongoc_client_t *)self;
-   mongoc_client_destroy(client->client);
+
+   if (client->owns_client) {
+      mongoc_client_destroy (client->client);
+   }
+
    self->ob_type->tp_free(self);
 }
 
@@ -53,12 +57,34 @@ static PyTypeObject pymongoc_client_type = {
 };
 
 
+PyObject *
+pymongoc_client_new (mongoc_client_t *client,
+                     bson_bool_t      owns_client)
+{
+   pymongoc_client_t *pyclient;
+
+   BSON_ASSERT (client);
+
+   pyclient = (pymongoc_client_t *)
+      PyType_GenericNew (&pymongoc_client_type, NULL, NULL);
+   if (!pyclient) {
+      return NULL;
+   }
+
+   pyclient->client = client;
+   pyclient->owns_client = owns_client;
+
+   return (PyObject *)pyclient;
+}
+
+
 static PyObject *
 pymongoc_client_tp_new (PyTypeObject *self,
                         PyObject     *args,
                         PyObject     *kwargs)
 {
    pymongoc_client_t *pyclient;
+   mongoc_client_t *client;
    const char *uri_str;
    PyObject *key = NULL;
    PyObject *uri = NULL;
@@ -78,21 +104,13 @@ pymongoc_client_tp_new (PyTypeObject *self,
 
    uri_str = uri ? PyString_AsString(uri) : NULL;
 
-   pyclient = (pymongoc_client_t *)
-      PyType_GenericNew(&pymongoc_client_type, NULL, NULL);
-   if (!pyclient) {
+   if (!(client = mongoc_client_new (uri_str))) {
+      PyErr_SetString (PyExc_ValueError,
+                       "Failed to create client, check URI.");
       goto cleanup;
    }
 
-   pyclient->client = mongoc_client_new(uri_str);
-   if (!pyclient->client) {
-      PyErr_SetString(PyExc_TypeError, "Invalid URI string.");
-      Py_DECREF(pyclient);
-      pyclient = NULL;
-      goto cleanup;
-   }
-
-   ret = (PyObject *)pyclient;
+   ret = pymongoc_client_new (client, TRUE);
 
 cleanup:
    Py_XDECREF(key);
