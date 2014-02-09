@@ -221,7 +221,7 @@ _mongoc_ssl_check_cert (SSL        *ssl,
                case GEN_DNS:
 
                   /* check that we don't have an embedded null byte */
-                  if ((length == strnlen (check, length)) &&
+                  if ((length == bson_strnlen (check, length)) &&
                       _mongoc_ssl_hostcheck (check, host)) {
                      r = 1;
                   }
@@ -267,7 +267,7 @@ _mongoc_ssl_check_cert (SSL        *ssl,
 
                   if (length >= 0) {
                      /* check for embedded nulls */
-                     if ((length == strnlen (check, length)) &&
+                     if ((length == bson_strnlen (check, length)) &&
                          _mongoc_ssl_hostcheck (check, host)) {
                         r = 1;
                      }
