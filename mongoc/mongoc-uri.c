@@ -139,9 +139,9 @@ mongoc_uri_parse_userpass (mongoc_uri_t  *uri,
 
    if ((s = scan_to_unichar(str, '@', &end_userpass))) {
       if ((uri->username = scan_to_unichar(s, ':', &end_user))) {
-         uri->password = strdup(end_user + 1);
+         uri->password = bson_strdup(end_user + 1);
       } else {
-         uri->username = strndup(str, end_userpass - str);
+         uri->username = bson_strndup(str, end_userpass - str);
          uri->password = NULL;
       }
       mongoc_uri_do_unescape(&uri->username);
