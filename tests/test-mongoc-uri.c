@@ -3,7 +3,7 @@
 
 #include "mongoc-host-list-private.h"
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 static void
@@ -15,168 +15,168 @@ test_mongoc_uri_new (void)
    bson_iter_t iter;
    bson_iter_t child;
 
-   assert(!mongoc_uri_new("mongodb://"));
-   assert(!mongoc_uri_new("mongodb://::"));
-   assert(!mongoc_uri_new("mongodb://localhost::27017"));
-   assert(!mongoc_uri_new("mongodb://localhost,localhost::"));
-   assert(!mongoc_uri_new("mongodb://local1,local2,local3/d?k"));
-   assert(!mongoc_uri_new(""));
-   assert(!mongoc_uri_new("mongo://localhost:27017"));
-   assert(!mongoc_uri_new("mongodb://localhost::27017"));
-   assert(!mongoc_uri_new("mongodb://localhost::27017/"));
-   assert(!mongoc_uri_new("mongodb://localhost::27017,abc"));
+   ASSERT(!mongoc_uri_new("mongodb://"));
+   ASSERT(!mongoc_uri_new("mongodb://::"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost::27017"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost,localhost::"));
+   ASSERT(!mongoc_uri_new("mongodb://local1,local2,local3/d?k"));
+   ASSERT(!mongoc_uri_new(""));
+   ASSERT(!mongoc_uri_new("mongo://localhost:27017"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost::27017"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost::27017/"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost::27017,abc"));
 
    uri = mongoc_uri_new("mongodb://[::1]:27888,[::2]:27999/?ipv6=true&safe=true");
    assert (uri);
    hosts = mongoc_uri_get_hosts(uri);
    assert (hosts);
-   assert_cmpstr (hosts->host, "::1");
+   ASSERT_CMPSTR (hosts->host, "::1");
    assert (hosts->port == 27888);
-   assert_cmpstr (hosts->host_and_port, "[::1]:27888");
+   ASSERT_CMPSTR (hosts->host_and_port, "[::1]:27888");
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new("mongodb:///tmp/mongodb.sock/?");
-   assert(uri);
+   ASSERT(uri);
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://localhost/?");
-   assert(uri);
+   ASSERT(uri);
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://localhost:27017/test?q=1");
-   assert(uri);
+   ASSERT(uri);
    hosts = mongoc_uri_get_hosts(uri);
-   assert(hosts);
-   assert(!hosts->next);
-   assert_cmpstr(hosts->host, "localhost");
-   assert_cmpint(hosts->port, ==, 27017);
-   assert_cmpstr(hosts->host_and_port, "localhost:27017");
-   assert_cmpstr(mongoc_uri_get_database(uri), "test");
+   ASSERT(hosts);
+   ASSERT(!hosts->next);
+   ASSERT_CMPSTR(hosts->host, "localhost");
+   ASSERT_CMPINT(hosts->port, ==, 27017);
+   ASSERT_CMPSTR(hosts->host_and_port, "localhost:27017");
+   ASSERT_CMPSTR(mongoc_uri_get_database(uri), "test");
    options = mongoc_uri_get_options(uri);
-   assert(options);
-   assert(bson_iter_init_find(&iter, options, "q"));
-   assert_cmpstr(bson_iter_utf8(&iter, NULL), "1");
+   ASSERT(options);
+   ASSERT(bson_iter_init_find(&iter, options, "q"));
+   ASSERT_CMPSTR(bson_iter_utf8(&iter, NULL), "1");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://local1,local2:999,local3?q=1");
-   assert(uri);
+   ASSERT(uri);
    hosts = mongoc_uri_get_hosts(uri);
-   assert(hosts);
-   assert(hosts->next);
-   assert(hosts->next->next);
-   assert(!hosts->next->next->next);
-   assert_cmpstr(hosts->host, "local1");
-   assert_cmpint(hosts->port, ==, 27017);
-   assert_cmpstr(hosts->next->host, "local2");
-   assert_cmpint(hosts->next->port, ==, 999);
-   assert_cmpstr(hosts->next->next->host, "local3");
-   assert_cmpint(hosts->next->next->port, ==, 27017);
+   ASSERT(hosts);
+   ASSERT(hosts->next);
+   ASSERT(hosts->next->next);
+   ASSERT(!hosts->next->next->next);
+   ASSERT_CMPSTR(hosts->host, "local1");
+   ASSERT_CMPINT(hosts->port, ==, 27017);
+   ASSERT_CMPSTR(hosts->next->host, "local2");
+   ASSERT_CMPINT(hosts->next->port, ==, 999);
+   ASSERT_CMPSTR(hosts->next->next->host, "local3");
+   ASSERT_CMPINT(hosts->next->next->port, ==, 27017);
    options = mongoc_uri_get_options(uri);
-   assert(options);
-   assert(bson_iter_init_find(&iter, options, "q"));
-   assert_cmpstr(bson_iter_utf8(&iter, NULL), "1");
+   ASSERT(options);
+   ASSERT(bson_iter_init_find(&iter, options, "q"));
+   ASSERT_CMPSTR(bson_iter_utf8(&iter, NULL), "1");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://localhost:27017/?readPreferenceTags=dc:ny&readPreferenceTags=");
-   assert(uri);
+   ASSERT(uri);
    options = mongoc_uri_get_read_prefs(uri);
-   assert(options);
-   assert_cmpint(bson_count_keys(options), ==, 2);
-   assert(bson_iter_init_find(&iter, options, "0"));
-   assert(BSON_ITER_HOLDS_DOCUMENT(&iter));
-   assert(bson_iter_recurse(&iter, &child));
-   assert(bson_iter_next(&child));
-   assert_cmpstr(bson_iter_key(&child), "dc");
-   assert_cmpstr(bson_iter_utf8(&child, NULL), "ny");
-   assert(!bson_iter_next(&child));
-   assert(bson_iter_next(&iter));
-   assert(BSON_ITER_HOLDS_DOCUMENT(&iter));
-   assert(bson_iter_recurse(&iter, &child));
-   assert(!bson_iter_next(&child));
-   assert(!bson_iter_next(&iter));
+   ASSERT(options);
+   ASSERT_CMPINT(bson_count_keys(options), ==, 2);
+   ASSERT(bson_iter_init_find(&iter, options, "0"));
+   ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
+   ASSERT(bson_iter_recurse(&iter, &child));
+   ASSERT(bson_iter_next(&child));
+   ASSERT_CMPSTR(bson_iter_key(&child), "dc");
+   ASSERT_CMPSTR(bson_iter_utf8(&child, NULL), "ny");
+   ASSERT(!bson_iter_next(&child));
+   ASSERT(bson_iter_next(&iter));
+   ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
+   ASSERT(bson_iter_recurse(&iter, &child));
+   ASSERT(!bson_iter_next(&child));
+   ASSERT(!bson_iter_next(&iter));
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://localhost/a?slaveok=true&ssl=false&journal=true");
    options = mongoc_uri_get_options(uri);
-   assert(options);
-   assert_cmpint(bson_count_keys(options), ==, 3);
-   assert(bson_iter_init(&iter, options));
-   assert(bson_iter_find_case(&iter, "slaveok"));
-   assert(BSON_ITER_HOLDS_BOOL(&iter));
-   assert(bson_iter_bool(&iter));
-   assert(bson_iter_find_case(&iter, "ssl"));
-   assert(BSON_ITER_HOLDS_BOOL(&iter));
-   assert(!bson_iter_bool(&iter));
-   assert(bson_iter_find_case(&iter, "journal"));
-   assert(BSON_ITER_HOLDS_BOOL(&iter));
-   assert(bson_iter_bool(&iter));
-   assert(!bson_iter_next(&iter));
+   ASSERT(options);
+   ASSERT_CMPINT(bson_count_keys(options), ==, 3);
+   ASSERT(bson_iter_init(&iter, options));
+   ASSERT(bson_iter_find_case(&iter, "slaveok"));
+   ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
+   ASSERT(bson_iter_bool(&iter));
+   ASSERT(bson_iter_find_case(&iter, "ssl"));
+   ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
+   ASSERT(!bson_iter_bool(&iter));
+   ASSERT(bson_iter_find_case(&iter, "journal"));
+   ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
+   ASSERT(bson_iter_bool(&iter));
+   ASSERT(!bson_iter_next(&iter));
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb:///tmp/mongodb.sock/?ssl=false");
-   assert(uri);
-   assert_cmpstr(mongoc_uri_get_hosts(uri)->host, "/tmp/mongodb.sock");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host, "/tmp/mongodb.sock");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb:///tmp/mongodb.sock,localhost:27017/?ssl=false");
-   assert(uri);
-   assert_cmpstr(mongoc_uri_get_hosts(uri)->host, "/tmp/mongodb.sock");
-   assert_cmpstr(mongoc_uri_get_hosts(uri)->next->host_and_port, "localhost:27017");
-   assert(!mongoc_uri_get_hosts(uri)->next->next);
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host, "/tmp/mongodb.sock");
+   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->next->host_and_port, "localhost:27017");
+   ASSERT(!mongoc_uri_get_hosts(uri)->next->next);
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://localhost:27017,/tmp/mongodb.sock/?ssl=false");
-   assert(uri);
-   assert_cmpstr(mongoc_uri_get_hosts(uri)->host_and_port, "localhost:27017");
-   assert_cmpstr(mongoc_uri_get_hosts(uri)->next->host, "/tmp/mongodb.sock");
-   assert(!mongoc_uri_get_hosts(uri)->next->next);
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host_and_port, "localhost:27017");
+   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->next->host, "/tmp/mongodb.sock");
+   ASSERT(!mongoc_uri_get_hosts(uri)->next->next);
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://christian:secret@localhost:27017?authSource=abcd");
-   assert(uri);
-   assert_cmpstr(mongoc_uri_get_username(uri), "christian");
-   assert_cmpstr(mongoc_uri_get_password(uri), "secret");
-   assert_cmpstr(mongoc_uri_get_auth_source(uri), "abcd");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_username(uri), "christian");
+   ASSERT_CMPSTR(mongoc_uri_get_password(uri), "secret");
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "abcd");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://christian:secret@localhost:27017");
-   assert(uri);
-   assert_cmpstr(mongoc_uri_get_auth_source(uri), "admin");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "admin");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://christian@localhost:27017");
-   assert(uri);
-   assert_cmpstr(mongoc_uri_get_username(uri), "christian");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_username(uri), "christian");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://christian%40realm@localhost:27017");
-   assert(uri);
-   assert_cmpstr(mongoc_uri_get_username(uri), "christian@realm");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_username(uri), "christian@realm");
    mongoc_uri_destroy(uri);
 
    /* while you shouldn't do this, lets test for it */
    uri = mongoc_uri_new("mongodb://christian%40realm@localhost:27017/db%2ename");
-   assert(uri);
-   assert_cmpstr(mongoc_uri_get_database(uri), "db.name");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_database(uri), "db.name");
    mongoc_uri_destroy(uri);
    uri = mongoc_uri_new("mongodb://christian%40realm@localhost:27017/db%2Ename");
-   assert(uri);
-   assert_cmpstr(mongoc_uri_get_database(uri), "db.name");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_database(uri), "db.name");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://christian%40realm@localhost:27017/?abcd=%20");
-   assert(uri);
+   ASSERT(uri);
    options = mongoc_uri_get_options(uri);
-   assert(options);
-   assert(bson_iter_init_find(&iter, options, "abcd"));
-   assert(BSON_ITER_HOLDS_UTF8(&iter));
-   assert_cmpstr(bson_iter_utf8(&iter, NULL), " ");
+   ASSERT(options);
+   ASSERT(bson_iter_init_find(&iter, options, "abcd"));
+   ASSERT(BSON_ITER_HOLDS_UTF8(&iter));
+   ASSERT_CMPSTR(bson_iter_utf8(&iter, NULL), " ");
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://christian%40realm.cc@localhost:27017/?authmechanism=GSSAPI&gssapiservicename=blah");
-   assert(uri);
+   ASSERT(uri);
    options = mongoc_uri_get_options(uri);
-   assert(options);
+   ASSERT(options);
    assert (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
    assert (0 == strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
    assert (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
@@ -185,12 +185,12 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy(uri);
 
    uri = mongoc_uri_new("mongodb://christian%40realm@[::6]:27017/?abcd=%20");
-   assert(uri);
+   ASSERT(uri);
    options = mongoc_uri_get_options(uri);
-   assert(options);
-   assert(bson_iter_init_find(&iter, options, "abcd"));
-   assert(BSON_ITER_HOLDS_UTF8(&iter));
-   assert_cmpstr(bson_iter_utf8(&iter, NULL), " ");
+   ASSERT(options);
+   ASSERT(bson_iter_init_find(&iter, options, "abcd"));
+   ASSERT(BSON_ITER_HOLDS_UTF8(&iter));
+   ASSERT_CMPSTR(bson_iter_utf8(&iter, NULL), " ");
    mongoc_uri_destroy(uri);
 }
 
@@ -200,12 +200,12 @@ test_mongoc_host_list_from_string (void)
 {
    mongoc_host_list_t host_list = { 0 };
 
-   assert(_mongoc_host_list_from_string(&host_list, "localhost:27019"));
-   assert(!strcmp(host_list.host_and_port, "localhost:27019"));
-   assert(!strcmp(host_list.host, "localhost"));
-   assert(host_list.port == 27019);
-   assert(host_list.family == AF_INET);
-   assert(!host_list.next);
+   ASSERT(_mongoc_host_list_from_string(&host_list, "localhost:27019"));
+   ASSERT(!strcmp(host_list.host_and_port, "localhost:27019"));
+   ASSERT(!strcmp(host_list.host, "localhost"));
+   ASSERT(host_list.port == 27019);
+   ASSERT(host_list.family == AF_INET);
+   ASSERT(!host_list.next);
 }
 
 
@@ -215,10 +215,10 @@ test_mongoc_uri_new_for_host_port (void)
    mongoc_uri_t *uri;
 
    uri = mongoc_uri_new_for_host_port("uber", 555);
-   assert(uri);
-   assert(!strcmp("uber", mongoc_uri_get_hosts(uri)->host));
-   assert(!strcmp("uber:555", mongoc_uri_get_hosts(uri)->host_and_port));
-   assert(555 == mongoc_uri_get_hosts(uri)->port);
+   ASSERT(uri);
+   ASSERT(!strcmp("uber", mongoc_uri_get_hosts(uri)->host));
+   ASSERT(!strcmp("uber:555", mongoc_uri_get_hosts(uri)->host_and_port));
+   ASSERT(555 == mongoc_uri_get_hosts(uri)->port);
    mongoc_uri_destroy(uri);
 }
 
@@ -229,13 +229,13 @@ test_mongoc_uri_unescape (void)
 #define ASSERT_URIDECODE_STR(_s, _e) \
    do { \
       char *str = mongoc_uri_unescape(_s); \
-      assert(!strcmp(str, _e)); \
+      ASSERT(!strcmp(str, _e)); \
       bson_free(str); \
    } while (0)
 #define ASSERT_URIDECODE_FAIL(_s) \
    do { \
       char *str = mongoc_uri_unescape(_s); \
-      assert(!str); \
+      ASSERT(!str); \
    } while (0)
 
    ASSERT_URIDECODE_STR("", "");
@@ -259,14 +259,11 @@ test_mongoc_uri_unescape (void)
 }
 
 
-int
-main (int   argc,
-      char *argv[])
+void
+test_uri_install (TestSuite *suite)
 {
-   run_test("/mongoc/uri/new", test_mongoc_uri_new);
-   run_test("/mongoc/uri/new_for_host_port", test_mongoc_uri_new_for_host_port);
-   run_test("/mongoc/uri/unescape", test_mongoc_uri_unescape);
-   run_test("/mongoc/host_list/from_string", test_mongoc_host_list_from_string);
-
-   return 0;
+   TestSuite_Add (suite, "/Uri/new", test_mongoc_uri_new);
+   TestSuite_Add (suite, "/Uri/new_for_host_port", test_mongoc_uri_new_for_host_port);
+   TestSuite_Add (suite, "/Uri/unescape", test_mongoc_uri_unescape);
+   TestSuite_Add (suite, "/HostList/from_string", test_mongoc_host_list_from_string);
 }

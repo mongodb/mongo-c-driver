@@ -3,7 +3,7 @@
 #include <mongoc-cluster-private.h>
 #include <mongoc-read-prefs-private.h>
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 static void
@@ -16,35 +16,35 @@ test_mongoc_read_prefs_score (void)
 
 #define ASSERT_VALID(r) \
    valid = mongoc_read_prefs_is_valid(r); \
-   assert_cmpint(valid, ==, 1)
+   ASSERT_CMPINT(valid, ==, 1)
 
    read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
-   assert_cmpint(score, ==, 0);
+   ASSERT_CMPINT(score, ==, 0);
 
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY_PREFERRED);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
-   assert_cmpint(score, ==, 1);
+   ASSERT_CMPINT(score, ==, 1);
 
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_SECONDARY_PREFERRED);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
-   assert_cmpint(score, ==, 1);
+   ASSERT_CMPINT(score, ==, 1);
 
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_SECONDARY);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
-   assert_cmpint(score, ==, 1);
+   ASSERT_CMPINT(score, ==, 1);
 
    node.primary = TRUE;
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
-   assert_cmpint(score, ==, INT_MAX);
+   ASSERT_CMPINT(score, ==, INT_MAX);
 
    mongoc_read_prefs_destroy(read_prefs);
 
@@ -52,11 +52,8 @@ test_mongoc_read_prefs_score (void)
 }
 
 
-int
-main (int   argc,
-      char *argv[])
+void
+test_read_prefs_install (TestSuite *suite)
 {
-   run_test("/mongoc/read_prefs/score", test_mongoc_read_prefs_score);
-
-   return 0;
+   TestSuite_Add (suite, "/ReadPrefs/score", test_mongoc_read_prefs_score);
 }

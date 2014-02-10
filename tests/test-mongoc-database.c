@@ -2,7 +2,7 @@
 #include <mongoc-client-private.h>
 #include <mongoc-log.h>
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 #define HOST (getenv("MONGOC_TEST_HOST") ? getenv("MONGOC_TEST_HOST") : "localhost")
@@ -131,30 +131,20 @@ test_drop (void)
 
 
 static void
-log_handler (mongoc_log_level_t  log_level,
-             const char         *domain,
-             const char         *message,
-             void               *user_data)
+cleanup_globals (void)
 {
-   /* Do Nothing */
+   bson_free (gTestUri);
 }
 
 
-int
-main (int   argc,
-      char *argv[])
+void
+test_database_install (TestSuite *suite)
 {
-   if (argc <= 1 || !!strcmp(argv[1], "-v")) {
-      mongoc_log_set_handler(log_handler, NULL);
-   }
+   gTestUri = bson_strdup_printf ("mongodb://%s/", HOST);
 
-   gTestUri = bson_strdup_printf("mongodb://%s/", HOST);
+   TestSuite_Add (suite, "/Database/has_collection", test_has_collection);
+   TestSuite_Add (suite, "/Database/command", test_command);
+   TestSuite_Add (suite, "/Database/drop", test_drop);
 
-   run_test("/mongoc/database/has_collection", test_has_collection);
-   run_test("/mongoc/database/command", test_command);
-   run_test("/mongoc/database/drop", test_drop);
-
-   bson_free(gTestUri);
-
-   return 0;
+   atexit (cleanup_globals);
 }

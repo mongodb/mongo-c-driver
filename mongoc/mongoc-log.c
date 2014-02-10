@@ -99,18 +99,33 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
    struct timeval tv;
    struct tm tt;
    time_t t;
+   FILE *stream;
    char nowstr[32];
 
    gettimeofday(&tv, NULL);
    t = tv.tv_sec;
    tt = *localtime(&t);
 
-   strftime(nowstr, sizeof nowstr, "%Y/%m/%d %H:%M:%S", &tt);
+   strftime (nowstr, sizeof nowstr, "%Y/%m/%d %H:%M:%S", &tt);
 
-   fprintf(stderr, "%s.%04ld: %8s: %12s: %s\n",
-           nowstr,
-           tv.tv_usec / 1000L,
-           log_level_str(log_level),
-           log_domain,
-           message);
+   switch (log_level) {
+   case MONGOC_LOG_LEVEL_ERROR:
+   case MONGOC_LOG_LEVEL_CRITICAL:
+   case MONGOC_LOG_LEVEL_WARNING:
+      stream = stderr;
+   case MONGOC_LOG_LEVEL_MESSAGE:
+   case MONGOC_LOG_LEVEL_INFO:
+   case MONGOC_LOG_LEVEL_DEBUG:
+   case MONGOC_LOG_LEVEL_TRACE:
+   default:
+      stream = stdout;
+   }
+
+   fprintf (stream,
+            "%s.%04ld: %8s: %12s: %s\n",
+            nowstr,
+            tv.tv_usec / 1000L,
+            log_level_str(log_level),
+            log_domain,
+            message);
 }

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 static void
@@ -17,7 +17,7 @@ test_buffered_basic (void)
    int fd;
 
    fd = open("tests/binary/reply2.dat", O_RDONLY);
-   assert(fd != -1);
+   ASSERT (fd != -1);
 
    /* stream assumes ownership of fd */
    stream = mongoc_stream_unix_new(fd);
@@ -47,7 +47,7 @@ test_buffered_oversized (void)
    int fd;
 
    fd = open("tests/binary/reply2.dat", O_RDONLY);
-   assert(fd != -1);
+   ASSERT (fd != -1);
 
    /* stream assumes ownership of fd */
    stream = mongoc_stream_unix_new(fd);
@@ -66,26 +66,9 @@ test_buffered_oversized (void)
 }
 
 
-static void
-log_handler (mongoc_log_level_t  log_level,
-             const char         *domain,
-             const char         *message,
-             void               *user_data)
+void
+test_stream_install (TestSuite *suite)
 {
-   /* Do Nothing */
-}
-
-
-int
-main (int argc,
-      char *argv[])
-{
-   if (argc <= 1 || !!strcmp(argv[1], "-v")) {
-      mongoc_log_set_handler(log_handler, NULL);
-   }
-
-   run_test("/mongoc/stream/buffered/basic", test_buffered_basic);
-   run_test("/mongoc/stream/buffered/oversized", test_buffered_oversized);
-
-   return 0;
+   TestSuite_Add (suite, "/Stream/buffered/basic", test_buffered_basic);
+   TestSuite_Add (suite, "/Stream/buffered/oversized", test_buffered_oversized);
 }

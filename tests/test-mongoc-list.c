@@ -1,7 +1,7 @@
 #include <mongoc.h>
 #include <mongoc-list-private.h>
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 static void
@@ -14,43 +14,40 @@ test_mongoc_list_basic (void)
    l = _mongoc_list_append(l, (void *)3ULL);
    l = _mongoc_list_prepend(l, (void *)4ULL);
 
-   assert(l);
-   assert(l->next);
-   assert(l->next->next);
-   assert(l->next->next->next);
-   assert(!l->next->next->next->next);
+   ASSERT(l);
+   ASSERT(l->next);
+   ASSERT(l->next->next);
+   ASSERT(l->next->next->next);
+   ASSERT(!l->next->next->next->next);
 
-   assert(l->data == (void *)4ULL);
-   assert(l->next->data == (void *)1ULL);
-   assert(l->next->next->data == (void *)2ULL);
-   assert(l->next->next->next->data == (void *)3ULL);
+   ASSERT(l->data == (void *)4ULL);
+   ASSERT(l->next->data == (void *)1ULL);
+   ASSERT(l->next->next->data == (void *)2ULL);
+   ASSERT(l->next->next->next->data == (void *)3ULL);
 
    l = _mongoc_list_remove(l, (void *)4ULL);
-   assert(l->data == (void *)1ULL);
-   assert(l->next->data == (void *)2ULL);
-   assert(l->next->next->data == (void *)3ULL);
+   ASSERT(l->data == (void *)1ULL);
+   ASSERT(l->next->data == (void *)2ULL);
+   ASSERT(l->next->next->data == (void *)3ULL);
 
    l = _mongoc_list_remove(l, (void *)2ULL);
-   assert(l->data == (void *)1ULL);
-   assert(l->next->data == (void *)3ULL);
-   assert(!l->next->next);
+   ASSERT(l->data == (void *)1ULL);
+   ASSERT(l->next->data == (void *)3ULL);
+   ASSERT(!l->next->next);
 
    l = _mongoc_list_remove(l, (void *)1ULL);
-   assert(l->data == (void *)3ULL);
-   assert(!l->next);
+   ASSERT(l->data == (void *)3ULL);
+   ASSERT(!l->next);
 
    l = _mongoc_list_remove(l, (void *)3ULL);
-   assert(!l);
+   ASSERT(!l);
 
    _mongoc_list_destroy(l);
 }
 
 
-int
-main (int   argc,
-      char *argv[])
+void
+test_list_install (TestSuite *suite)
 {
-   run_test("/mongoc/list/basic", test_mongoc_list_basic);
-
-   return 0;
+   TestSuite_Add (suite, "/List/Basic", test_mongoc_list_basic);
 }

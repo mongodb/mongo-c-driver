@@ -2,7 +2,7 @@
 #include <mongoc.h>
 #include <mongoc-matcher-private.h>
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 static void
@@ -210,15 +210,12 @@ test_mongoc_matcher_eq_int64 (void)
 }
 
 
-int
-main (int argc,
-      char *argv[])
+void
+test_matcher_install (TestSuite *suite)
 {
-   run_test ("/mongoc/matcher/basic", test_mongoc_matcher_basic);
-   run_test ("/mongoc/matcher/bad_spec", test_mongoc_matcher_bad_spec);
-   run_test ("/mongoc/matcher/eq/utf8", test_mongoc_matcher_eq_utf8);
-   run_test ("/mongoc/matcher/eq/int32", test_mongoc_matcher_eq_int32);
-   run_test ("/mongoc/matcher/eq/int64", test_mongoc_matcher_eq_int64);
-
-   return 0;
+   TestSuite_Add (suite, "/Matcher/basic", test_mongoc_matcher_basic);
+   TestSuite_Add (suite, "/Matcher/bad_spec", test_mongoc_matcher_bad_spec);
+   TestSuite_Add (suite, "/Matcher/eq/utf8", test_mongoc_matcher_eq_utf8);
+   TestSuite_Add (suite, "/Matcher/eq/int32", test_mongoc_matcher_eq_int32);
+   TestSuite_Add (suite, "/Matcher/eq/int64", test_mongoc_matcher_eq_int64);
 }

@@ -1,7 +1,7 @@
 #include <mongoc.h>
 #include <mongoc-ssl-private.h>
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 static void
@@ -10,18 +10,13 @@ test_extract_subject (void)
    char *subject;
 
    subject = _mongoc_ssl_extract_subject ("tests/certificates/client.pem");
-   assert (0 == strcmp (subject, "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US"));
+   ASSERT (0 == strcmp (subject, "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US"));
    bson_free (subject);
 }
 
 
-int
-main (int argc,
-      char *argv[])
+void
+test_x509_install (TestSuite *suite)
 {
-   mongoc_init ();
-
-   run_test ("/SSL/extract_subject", test_extract_subject);
-
-   return 0;
+   TestSuite_Add (suite, "/SSL/extract_subject", test_extract_subject);
 }

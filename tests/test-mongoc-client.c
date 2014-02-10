@@ -3,9 +3,9 @@
 #include <unistd.h>
 
 #include "mongoc-cursor-private.h"
-#include "mongoc-tests.h"
 #include "mock-server.h"
 #include "mongoc-client-private.h"
+#include "TestSuite.h"
 
 
 #define HOSTENV "MONGOC_TEST_HOST"
@@ -88,22 +88,13 @@ test_mongoc_client_authenticate (void)
    bson_bool_t r;
    bson_t q;
 
-   client = mongoc_client_new (gTestUri);
-   if (version_check (client, 2, 5, 0)) {
-      MONGOC_DEBUG ("Skipping test, 2.5.x not yet implemented.");
-      TEST_RESULT = "SKIP";
-      mongoc_client_destroy (client);
-      return;
-   }
-   mongoc_client_destroy (client);
-
    /*
     * Add a user to the test database.
     */
    client = mongoc_client_new(gTestUri);
    database = mongoc_client_get_database(client, "test");
    r = mongoc_database_add_user(database, "testuser", "testpass", NULL, NULL, &error);
-   assert_cmpint(r, ==, 1);
+   ASSERT_CMPINT(r, ==, 1);
    mongoc_database_destroy(database);
    mongoc_client_destroy(client);
 
@@ -540,59 +531,27 @@ test_exhaust_cursor (void)
 
 
 static void
-log_handler (mongoc_log_level_t  log_level,
-             const char         *domain,
-             const char         *message,
-             void               *user_data)
+cleanup_globals (void)
 {
-   /* Do Nothing */
+   bson_free(gTestUri);
+   bson_free(gTestUriWithPassword);
+   bson_free(gTestUriWithBadPassword);
 }
 
 
-static void
-seed_rand (void)
+void
+test_client_install (TestSuite *suite)
 {
-   int seed;
-   int fd;
-   int n_read;
-
-   fd = open ("/dev/urandom", O_RDONLY);
-   assert (fd != -1);
-
-   n_read = read (fd, &seed, 4);
-   assert (n_read == 4);
-
-   fprintf (stderr, "srand(%u)\n", seed);
-   srand (seed);
-
-   close (fd);
-}
-
-
-int
-main (int   argc,
-      char *argv[])
-{
-   if (argc <= 1 || !!strcmp(argv[1], "-v")) {
-      mongoc_log_set_handler(log_handler, NULL);
-   }
-
    gTestUri = bson_strdup_printf("mongodb://%s:27017/", HOST);
    gTestUriWithPassword = bson_strdup_printf("mongodb://testuser:testpass@%s:27017/test", HOST);
    gTestUriWithBadPassword = bson_strdup_printf("mongodb://baduser:badpass@%s:27017/test", HOST);
 
-   seed_rand ();
+   TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
+   TestSuite_Add (suite, "/Client/authenticate", test_mongoc_client_authenticate);
+   TestSuite_Add (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure);
+   TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
+   TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
+   TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
 
-   run_test("/mongoc/client/wire_version", test_wire_version);
-   run_test("/mongoc/client/authenticate", test_mongoc_client_authenticate);
-   run_test("/mongoc/client/authenticate_failure", test_mongoc_client_authenticate_failure);
-   run_test("/mongoc/client/read_prefs", test_mongoc_client_read_prefs);
-   run_test("/mongoc/client/command", test_mongoc_client_command);
-   run_test("/mongoc/client/exhaust_cursor", test_exhaust_cursor);
-
-   bson_free(gTestUri);
-   bson_free(gTestUriWithPassword);
-   bson_free(gTestUriWithBadPassword);
-
-   return 0;
+   atexit (cleanup_globals);
 }

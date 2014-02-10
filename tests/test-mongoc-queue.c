@@ -1,7 +1,7 @@
 #include <mongoc.h>
 #include <mongoc-queue-private.h>
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 static void
@@ -15,22 +15,19 @@ test_mongoc_queue_basic (void)
    _mongoc_queue_push_tail(&q, (void *)4);
    _mongoc_queue_push_head(&q, (void *)5);
 
-   assert_cmpint(_mongoc_queue_get_length(&q), ==, 5);
+   ASSERT_CMPINT(_mongoc_queue_get_length(&q), ==, 5);
 
-   assert(_mongoc_queue_pop_head(&q) == (void *)5);
-   assert(_mongoc_queue_pop_head(&q) == (void *)3);
-   assert(_mongoc_queue_pop_head(&q) == (void *)1);
-   assert(_mongoc_queue_pop_head(&q) == (void *)2);
-   assert(_mongoc_queue_pop_head(&q) == (void *)4);
-   assert(!_mongoc_queue_pop_head(&q));
+   ASSERT(_mongoc_queue_pop_head(&q) == (void *)5);
+   ASSERT(_mongoc_queue_pop_head(&q) == (void *)3);
+   ASSERT(_mongoc_queue_pop_head(&q) == (void *)1);
+   ASSERT(_mongoc_queue_pop_head(&q) == (void *)2);
+   ASSERT(_mongoc_queue_pop_head(&q) == (void *)4);
+   ASSERT(!_mongoc_queue_pop_head(&q));
 }
 
 
-int
-main (int   argc,
-      char *argv[])
+void
+test_queue_install (TestSuite *suite)
 {
-   run_test("/mongoc/queue/basic", test_mongoc_queue_basic);
-
-   return 0;
+   TestSuite_Add (suite, "/mongoc/queue/basic", test_mongoc_queue_basic);
 }

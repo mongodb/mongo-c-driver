@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 #define HOST (getenv ("MONGOC_TEST_HOST") ? getenv ("MONGOC_TEST_HOST") : \
@@ -289,33 +289,23 @@ test_stream (void)
 
 
 static void
-log_handler (mongoc_log_level_t log_level,
-             const char        *domain,
-             const char        *message,
-             void              *user_data)
+cleanup_globals (void)
 {
-   /* Do Nothing */
+   bson_free (gTestUri);
 }
 
 
-int
-main (int   argc,
-      char *argv[])
+void
+test_gridfs_install (TestSuite *suite)
 {
-   if (argc <= 1 || !!strcmp (argv[1], "-v")) {
-      mongoc_log_set_handler (log_handler, NULL);
-   }
-
    gTestUri = bson_strdup_printf ("mongodb://%s/", HOST);
 
-   run_test ("/mongoc/gridfs/create", test_create);
-   run_test ("/mongoc/gridfs/create_from_stream", test_create_from_stream);
-   run_test ("/mongoc/gridfs/list", test_list);
-   run_test ("/mongoc/gridfs/read", test_read);
-   run_test ("/mongoc/gridfs/stream", test_stream);
-   run_test ("/mongoc/gridfs/write", test_write);
+   TestSuite_Add (suite, "/GridFS/create", test_create);
+   TestSuite_Add (suite, "/GridFS/create_from_stream", test_create_from_stream);
+   TestSuite_Add (suite, "/GridFS/list", test_list);
+   TestSuite_Add (suite, "/GridFS/read", test_read);
+   TestSuite_Add (suite, "/GridFS/stream", test_stream);
+   TestSuite_Add (suite, "/GridFS/write", test_write);
 
-   bson_free (gTestUri);
-
-   return 0;
+   atexit (cleanup_globals);
 }

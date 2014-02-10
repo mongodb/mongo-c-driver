@@ -2,7 +2,7 @@
 #include <mongoc.h>
 #include <mongoc-buffer-private.h>
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 static void
@@ -16,18 +16,18 @@ test_mongoc_buffer_basic (void)
    int fd;
 
    fd = open("tests/binary/reply1.dat", O_RDONLY);
-   assert(fd >= 0);
+   ASSERT(fd >= 0);
 
    stream = mongoc_stream_unix_new(fd);
-   assert(stream);
+   ASSERT(stream);
 
    _mongoc_buffer_init(&buf, data, 1024, bson_realloc);
 
    r = _mongoc_buffer_fill(&buf, stream, 537, 0, &error);
-   assert_cmpint(r, ==, -1);
+   ASSERT_CMPINT(r, ==, -1);
    r = _mongoc_buffer_fill(&buf, stream, 536, 0, &error);
-   assert_cmpint(r, ==, 536);
-   assert(buf.len == 536);
+   ASSERT_CMPINT(r, ==, 536);
+   ASSERT(buf.len == 536);
 
    _mongoc_buffer_destroy(&buf);
    _mongoc_buffer_destroy(&buf);
@@ -38,25 +38,8 @@ test_mongoc_buffer_basic (void)
 }
 
 
-static void
-log_handler (mongoc_log_level_t  log_level,
-             const char         *domain,
-             const char         *message,
-             void               *user_data)
+void
+test_buffer_install (TestSuite *suite)
 {
-   /* Do Nothing */
-}
-
-
-int
-main (int   argc,
-      char *argv[])
-{
-   if (argc <= 1 || !!strcmp(argv[1], "-v")) {
-      mongoc_log_set_handler(log_handler, NULL);
-   }
-
-   run_test("/mongoc/buffer/basic", test_mongoc_buffer_basic);
-
-   return 0;
+   TestSuite_Add (suite, "/Buffer/Basic", test_mongoc_buffer_basic);
 }

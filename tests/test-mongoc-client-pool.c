@@ -1,6 +1,6 @@
 #include <mongoc.h>
 
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 static void
@@ -38,26 +38,9 @@ test_mongoc_client_pool_try_pop (void)
 }
 
 
-static void
-log_handler (mongoc_log_level_t  log_level,
-             const char         *domain,
-             const char         *message,
-             void               *user_data)
+void
+test_client_pool_install (TestSuite *suite)
 {
-   /* Do Nothing */
-}
-
-
-int
-main (int   argc,
-      char *argv[])
-{
-   if (argc <= 1 || !!strcmp(argv[1], "-v")) {
-      mongoc_log_set_handler(log_handler, NULL);
-   }
-
-   run_test("/mongoc/client/pool/basic", test_mongoc_client_pool_basic);
-   run_test("/mongoc/client/pool/try_pop", test_mongoc_client_pool_try_pop);
-
-   return 0;
+   TestSuite_Add (suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
+   TestSuite_Add (suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
 }

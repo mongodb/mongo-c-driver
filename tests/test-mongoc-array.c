@@ -1,5 +1,5 @@
 #include "mongoc-array-private.h"
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 
 static void
@@ -37,11 +37,8 @@ test_array (void)
 }
 
 
-int
-main (int argc,
-      char *argv[])
+void
+test_array_install (TestSuite *suite)
 {
-   run_test("/mongoc/array/basic", test_array);
-
-   return 0;
+   TestSuite_Add (suite, "/Array/Basic", test_array);
 }
