@@ -96,8 +96,6 @@ test: $(TEST_PROGS) test_certs
 else
 test: $(TEST_PROGS)
 endif
-	@ echo "Checking if MongoDB is available on 27017."
-	@ $(NETCAT) 127.0.0.1 27017 </dev/null
 	@ for TEST_PROG in $(TEST_PROGS) ; do \
 		./$$TEST_PROG -f -p; \
 	done
