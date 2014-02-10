@@ -33,6 +33,7 @@ stamp-h1
 *.swp
 example-client
 example-gridfs
+filter-bsondump
 repltest1
 shardtest1
 shardtest2
@@ -49,6 +50,7 @@ test-mongoc-event
 test-mongoc-gridfs
 test-mongoc-gridfs-file-page
 test-mongoc-list
+test-mongoc-matcher
 test-mongoc-queue
 test-mongoc-read-prefs
 test-mongoc-rpc

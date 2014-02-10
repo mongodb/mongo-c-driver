@@ -14,6 +14,12 @@ mongoc_dump_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
 mongoc_dump_LDADD = libmongoc-1.0.la $(BSON_LIBS)
 
 
+noinst_PROGRAMS += filter-bsondump
+filter_bsondump_SOURCES = $(top_srcdir)/examples/filter-bsondump.c
+filter_bsondump_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)
+filter_bsondump_LDADD = libmongoc-1.0.la $(BSON_LIBS)
+
+
 noinst_PROGRAMS += example-client
 example_client_SOURCES = $(top_srcdir)/examples/example-client.c
 example_client_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS)

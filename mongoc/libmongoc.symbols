@@ -90,6 +90,9 @@ mongoc_index_opt_init
 mongoc_init
 mongoc_log
 mongoc_log_set_handler
+mongoc_matcher_destroy
+mongoc_matcher_match
+mongoc_matcher_new
 mongoc_read_prefs_add_tag
 mongoc_read_prefs_copy
 mongoc_read_prefs_destroy
