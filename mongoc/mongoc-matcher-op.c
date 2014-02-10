@@ -506,8 +506,8 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
  */
 
 static bson_bool_t
-_mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare,
-                             bson_iter_t                 *iter)
+_mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare, /* IN */
+                             bson_iter_t                 *iter)    /* IN */
 {
    int code;
 
@@ -560,9 +560,25 @@ _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_gte_match --
+ *
+ *       Perform a match of {"path": {"$gte": value}}.
+ *
+ * Returns:
+ *       TRUE if the the spec matches, otherwise FALSE.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare,
-                              bson_iter_t                 *iter)
+_mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare, /* IN */
+                              bson_iter_t                 *iter)    /* IN */
 {
    int code;
 
@@ -615,18 +631,54 @@ _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_in_match --
+ *
+ *       Checks the spec {"path": {"$in": [value1, value2, ...]}}.
+ *
+ * TODO:
+ *       Check match on each of the array children using a stack created
+ *       mongoc_matcher_op_compare_t.
+ *
+ * Returns:
+ *       TRUE if the spec matched, otherwise FALSE.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare,
-                             bson_iter_t                 *iter)
+_mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare, /* IN */
+                             bson_iter_t                 *iter)    /* IN */
 {
    MONGOC_WARNING ("$in is not yet implemented");
    return FALSE;
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_lt_match --
+ *
+ *       Perform a {"path": "$lt": {value}} match.
+ *
+ * Returns:
+ *       TRUE if the spec matched, otherwise FALSE.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare,
-                             bson_iter_t                 *iter)
+_mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare, /* IN */
+                             bson_iter_t                 *iter)    /* IN */
 {
    int code;
 
@@ -679,9 +731,25 @@ _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_lte_match --
+ *
+ *       Perform a {"$path": {"$lte": value}} match.
+ *
+ * Returns:
+ *       TRUE if the spec matched, otherwise FALSE.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare,
-                              bson_iter_t                 *iter)
+_mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare, /* IN */
+                              bson_iter_t                 *iter)    /* IN */
 {
    int code;
 
@@ -734,25 +802,75 @@ _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_ne_match --
+ *
+ *       Perform a {"path": {"$ne": value}} match.
+ *
+ * Returns:
+ *       TRUE if the field "path" was not found or the value is not-equal
+ *       to value.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_ne_match (mongoc_matcher_op_compare_t *compare,
-                             bson_iter_t                 *iter)
+_mongoc_matcher_op_ne_match (mongoc_matcher_op_compare_t *compare, /* IN */
+                             bson_iter_t                 *iter)    /* IN */
 {
    return !_mongoc_matcher_op_eq_match (compare, iter);
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_nin_match --
+ *
+ *       Perform a {"path": {"$nin": value}} match.
+ *
+ * Returns:
+ *       TRUE if value was not found in the array at "path".
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_nin_match (mongoc_matcher_op_compare_t *compare,
-                              bson_iter_t                 *iter)
+_mongoc_matcher_op_nin_match (mongoc_matcher_op_compare_t *compare, /* IN */
+                              bson_iter_t                 *iter)    /* IN */
 {
    return !_mongoc_matcher_op_in_match (compare, iter);
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_compare_match --
+ *
+ *       Dispatch function for mongoc_matcher_op_compare_t operations
+ *       to perform a match.
+ *
+ * Returns:
+ *       Opcode dependent.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare,
-                                  const bson_t                *bson)
+_mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare, /* IN */
+                                  const bson_t                *bson)    /* IN */
 {
    bson_iter_t iter;
 
@@ -789,9 +907,26 @@ _mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_logical_match --
+ *
+ *       Dispatch function for mongoc_matcher_op_logical_t operations
+ *       to perform a match.
+ *
+ * Returns:
+ *       Opcode specific.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static bson_bool_t
-_mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical,
-                                  const bson_t                *bson)
+_mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical, /* IN */
+                                  const bson_t                *bson)    /* IN */
 {
    BSON_ASSERT (logical);
    BSON_ASSERT (bson);
@@ -815,9 +950,25 @@ _mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_match --
+ *
+ *       Dispatch function for all operation types to perform a match.
+ *
+ * Returns:
+ *       Opcode specific.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-_mongoc_matcher_op_match (mongoc_matcher_op_t *op,
-                          const bson_t        *bson)
+_mongoc_matcher_op_match (mongoc_matcher_op_t *op,   /* IN */
+                          const bson_t        *bson) /* IN */
 {
    BSON_ASSERT (op);
    BSON_ASSERT (bson);
@@ -850,9 +1001,28 @@ _mongoc_matcher_op_match (mongoc_matcher_op_t *op,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_to_bson --
+ *
+ *       Convert the optree specified by @op to a bson document similar
+ *       to what the query would have been. This is not perfectly the
+ *       same, and so should not be used as such.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       @bson is appended to, and therefore must be initialized before
+ *       calling this function.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
-_mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,
-                            bson_t              *bson)
+_mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,   /* IN */
+                            bson_t              *bson) /* IN */
 {
    const char *str;
    bson_t child;
