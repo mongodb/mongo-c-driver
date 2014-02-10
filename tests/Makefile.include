@@ -4,15 +4,11 @@ noinst_PROGRAMS += test-replica-set
 noinst_PROGRAMS += test-sharded-cluster
 noinst_PROGRAMS += test-libmongoc
 if HAVE_SSL
-noinst_PROGRAMS += test-mongoc-stream-tls
 noinst_PROGRAMS += test-replica-set-ssl
 endif
 
 
 TEST_PROGS = test-libmongoc
-if HAVE_SSL
-TEST_PROGS += test-mongoc-stream-tls
-endif
 
 
 if OS_LINUX
@@ -26,16 +22,6 @@ TEST_LIBS = libmongoc-priv.la $(BSON_LIBS) $(SHM_LIB)
 test_load_SOURCES = $(top_srcdir)/tests/test-load.c
 test_load_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
 test_load_LDADD = $(TEST_LIBS)
-
-
-test_mongoc_stream_tls_SOURCES = \
-	$(top_srcdir)/tests/test-mongoc-stream-tls.c \
-	$(top_srcdir)/tests/ssl-test.c \
-	$(top_srcdir)/tests/ssl-test.h \
-	$(top_srcdir)/tests/ha-test.c \
-	$(top_srcdir)/tests/ha-test.h
-test_mongoc_stream_tls_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
-test_mongoc_stream_tls_LDADD = $(TEST_LIBS)
 
 
 test_secondary_SOURCES = $(top_srcdir)/tests/test-secondary.c
@@ -82,7 +68,11 @@ test_libmongoc_SOURCES = \
 	tests/TestSuite.c \
 	tests/TestSuite.h
 if HAVE_SSL
-test_libmongoc_SOURCES += tests/test-x509.c
+test_libmongoc_SOURCES += \
+	tests/test-x509.c \
+	tests/test-mongoc-stream-tls.c \
+	tests/ssl-test.c \
+	tests/ssl-test.h
 endif
 test_libmongoc_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
 test_libmongoc_LDADD = libmongoc-priv.la

@@ -2,7 +2,7 @@
 #include <mongoc.h>
 
 #include "ssl-test.h"
-#include "mongoc-tests.h"
+#include "TestSuite.h"
 
 #define HOST "mongodb.com"
 
@@ -27,8 +27,8 @@ test_mongoc_tls_no_certs (void)
 
    ssl_test (&copt, &sopt, "doesnt_matter", &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SSL_HANDSHAKE);
-   assert (sr.result == SSL_TEST_SSL_HANDSHAKE);
+   ASSERT (cr.result == SSL_TEST_SSL_HANDSHAKE);
+   ASSERT (sr.result == SSL_TEST_SSL_HANDSHAKE);
 }
 
 
@@ -48,8 +48,8 @@ test_mongoc_tls_password (void)
 
    ssl_test (&copt, &sopt, "pass.mongodb.com", &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SUCCESS);
-   assert (sr.result == SSL_TEST_SUCCESS);
+   ASSERT (cr.result == SSL_TEST_SUCCESS);
+   ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
 
 static void
@@ -68,8 +68,8 @@ test_mongoc_tls_bad_password (void)
 
    ssl_test (&copt, &sopt, "pass.mongodb.com", &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SSL_HANDSHAKE);
-   assert (sr.result == SSL_TEST_SSL_INIT);
+   ASSERT (cr.result == SSL_TEST_SSL_HANDSHAKE);
+   ASSERT (sr.result == SSL_TEST_SSL_INIT);
 }
 
 
@@ -89,8 +89,8 @@ test_mongoc_tls_no_verify (void)
 
    ssl_test (&copt, &sopt, "bad_domain.com", &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SUCCESS);
-   assert (sr.result == SSL_TEST_SUCCESS);
+   ASSERT (cr.result == SSL_TEST_SUCCESS);
+   ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
 
 
@@ -109,8 +109,8 @@ test_mongoc_tls_bad_verify (void)
 
    ssl_test (&copt, &sopt, "bad_domain.com", &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SSL_VERIFY);
-   assert (sr.result == SSL_TEST_TIMEOUT);
+   ASSERT (cr.result == SSL_TEST_SSL_VERIFY);
+   ASSERT (sr.result == SSL_TEST_TIMEOUT);
 }
 
 
@@ -129,8 +129,8 @@ test_mongoc_tls_basic (void)
 
    ssl_test (&copt, &sopt, HOST, &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SUCCESS);
-   assert (sr.result == SSL_TEST_SUCCESS);
+   ASSERT (cr.result == SSL_TEST_SUCCESS);
+   ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
 
 
@@ -150,8 +150,8 @@ test_mongoc_tls_crl (void)
 
    ssl_test (&copt, &sopt, "rev.mongodb.com", &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SSL_VERIFY);
-   assert (sr.result == SSL_TEST_TIMEOUT);
+   ASSERT (cr.result == SSL_TEST_SSL_VERIFY);
+   ASSERT (sr.result == SSL_TEST_TIMEOUT);
 }
 
 
@@ -170,8 +170,8 @@ test_mongoc_tls_altname (void)
 
    ssl_test (&copt, &sopt, "alt2.mongodb.com", &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SUCCESS);
-   assert (sr.result == SSL_TEST_SUCCESS);
+   ASSERT (cr.result == SSL_TEST_SUCCESS);
+   ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
 
 
@@ -190,8 +190,8 @@ test_mongoc_tls_wild (void)
 
    ssl_test (&copt, &sopt, "unicorn.wild.mongodb.com", &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SUCCESS);
-   assert (sr.result == SSL_TEST_SUCCESS);
+   ASSERT (cr.result == SSL_TEST_SUCCESS);
+   ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
 
 
@@ -210,8 +210,8 @@ test_mongoc_tls_ip (void)
 
    ssl_test (&copt, &sopt, "10.0.0.1", &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SUCCESS);
-   assert (sr.result == SSL_TEST_SUCCESS);
+   ASSERT (cr.result == SSL_TEST_SUCCESS);
+   ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
 
 
@@ -230,42 +230,23 @@ test_mongoc_tls_trust_dir (void)
 
    ssl_test (&copt, &sopt, HOST, &cr, &sr);
 
-   assert (cr.result == SSL_TEST_SUCCESS);
-   assert (sr.result == SSL_TEST_SUCCESS);
+   ASSERT (cr.result == SSL_TEST_SUCCESS);
+   ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
 
 
-static void
-log_handler (mongoc_log_level_t log_level,
-             const char        *domain,
-             const char        *message,
-             void              *user_data)
+void
+test_stream_tls_install (TestSuite *suite)
 {
-   /* Do Nothing */
-}
-
-
-int
-main (int   argc,
-      char *argv[])
-{
-   if (argc <= 1 || !!strcmp (argv[1], "-v")) {
-      mongoc_log_set_handler (log_handler, NULL);
-   }
-
-   mongoc_init ();
-
-   run_test ("/mongoc/tls/altname", test_mongoc_tls_altname);
-   run_test ("/mongoc/tls/bad_password", test_mongoc_tls_bad_password);
-   run_test ("/mongoc/tls/bad_verify", test_mongoc_tls_bad_verify);
-   run_test ("/mongoc/tls/basic", test_mongoc_tls_basic);
-   run_test ("/mongoc/tls/crl", test_mongoc_tls_crl);
-   run_test ("/mongoc/tls/ip", test_mongoc_tls_ip);
-   run_test ("/mongoc/tls/no_certs", test_mongoc_tls_no_certs);
-   run_test ("/mongoc/tls/no_verify", test_mongoc_tls_no_verify);
-   run_test ("/mongoc/tls/password", test_mongoc_tls_password);
-   run_test ("/mongoc/tls/trust_dir", test_mongoc_tls_trust_dir);
-   run_test ("/mongoc/tls/wild", test_mongoc_tls_wild);
-
-   return 0;
+   TestSuite_Add (suite, "/TLS/altname", test_mongoc_tls_altname);
+   TestSuite_Add (suite, "/TLS/bad_password", test_mongoc_tls_bad_password);
+   TestSuite_Add (suite, "/TLS/bad_verify", test_mongoc_tls_bad_verify);
+   TestSuite_Add (suite, "/TLS/basic", test_mongoc_tls_basic);
+   TestSuite_Add (suite, "/TLS/crl", test_mongoc_tls_crl);
+   TestSuite_Add (suite, "/TLS/ip", test_mongoc_tls_ip);
+   TestSuite_Add (suite, "/TLS/no_certs", test_mongoc_tls_no_certs);
+   TestSuite_Add (suite, "/TLS/no_verify", test_mongoc_tls_no_verify);
+   TestSuite_Add (suite, "/TLS/password", test_mongoc_tls_password);
+   TestSuite_Add (suite, "/TLS/trust_dir", test_mongoc_tls_trust_dir);
+   TestSuite_Add (suite, "/TLS/wild", test_mongoc_tls_wild);
 }

@@ -29,5 +29,5 @@ test_mongoc_queue_basic (void)
 void
 test_queue_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/mongoc/queue/basic", test_mongoc_queue_basic);
+   TestSuite_Add (suite, "/Queue/basic", test_mongoc_queue_basic);
 }
