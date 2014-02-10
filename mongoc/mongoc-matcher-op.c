@@ -638,10 +638,6 @@ _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *
  *       Checks the spec {"path": {"$in": [value1, value2, ...]}}.
  *
- * TODO:
- *       Check match on each of the array children using a stack created
- *       mongoc_matcher_op_compare_t.
- *
  * Returns:
  *       TRUE if the spec matched, otherwise FALSE.
  *
@@ -655,7 +651,22 @@ static bson_bool_t
 _mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare, /* IN */
                              bson_iter_t                 *iter)    /* IN */
 {
-   MONGOC_WARNING ("$in is not yet implemented");
+   mongoc_matcher_op_compare_t op;
+
+   op.base.opcode = MONGOC_MATCHER_OPCODE_EQ;
+   op.path = compare->path;
+
+   if (!BSON_ITER_HOLDS_ARRAY (&compare->iter) ||
+       !bson_iter_recurse (&compare->iter, &op.iter)) {
+      return FALSE;
+   }
+
+   while (bson_iter_next (&op.iter)) {
+      if (_mongoc_matcher_op_eq_match (&op, iter)) {
+         return TRUE;
+      }
+   }
+
    return FALSE;
 }
 

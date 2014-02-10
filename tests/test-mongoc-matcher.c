@@ -210,6 +210,53 @@ test_mongoc_matcher_eq_int64 (void)
 }
 
 
+static void
+test_mongoc_matcher_in_basic (void)
+{
+   mongoc_matcher_t *matcher;
+   bson_error_t error;
+   bson_bool_t r;
+   bson_t *spec;
+   bson_t doc = BSON_INITIALIZER;
+
+   spec = BCON_NEW ("key", "{",
+                       "$in", "[",
+                          BCON_INT32 (1),
+                          BCON_INT32 (2),
+                          BCON_INT32 (3),
+                       "]",
+                    "}");
+
+   matcher = mongoc_matcher_new (spec, &error);
+   r = mongoc_matcher_match (matcher, &doc);
+   ASSERT (!r);
+
+   bson_reinit (&doc);
+   bson_append_int32 (&doc, "key", 3, 1);
+   r = mongoc_matcher_match (matcher, &doc);
+   ASSERT (r);
+
+   bson_reinit (&doc);
+   bson_append_int32 (&doc, "key", 3, 2);
+   r = mongoc_matcher_match (matcher, &doc);
+   ASSERT (r);
+
+   bson_reinit (&doc);
+   bson_append_int32 (&doc, "key", 3, 3);
+   r = mongoc_matcher_match (matcher, &doc);
+   ASSERT (r);
+
+   bson_reinit (&doc);
+   bson_append_int32 (&doc, "key", 3, 4);
+   r = mongoc_matcher_match (matcher, &doc);
+   ASSERT (!r);
+
+   bson_destroy (&doc);
+   bson_destroy (spec);
+   mongoc_matcher_destroy (matcher);
+}
+
+
 void
 test_matcher_install (TestSuite *suite)
 {
@@ -218,4 +265,5 @@ test_matcher_install (TestSuite *suite)
    TestSuite_Add (suite, "/Matcher/eq/utf8", test_mongoc_matcher_eq_utf8);
    TestSuite_Add (suite, "/Matcher/eq/int32", test_mongoc_matcher_eq_int32);
    TestSuite_Add (suite, "/Matcher/eq/int64", test_mongoc_matcher_eq_int64);
+   TestSuite_Add (suite, "/Matcher/in/basic", test_mongoc_matcher_in_basic);
 }
