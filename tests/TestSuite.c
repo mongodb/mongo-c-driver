@@ -344,12 +344,18 @@ TestSuite_PrintJsonHeader (TestSuite *suite) /* IN */
             "      \"npages\": %"PRIu64"\n"
             "    }\n"
             "  },\n"
+            "  \"options\": {\n"
+            "    \"parallel\": \"%s\",\n"
+            "    \"fork\": \"%s\"\n"
+            "  },\n"
             "  \"tests\": [\n",
             u.sysname,
             u.release,
             u.machine,
             pagesize,
-            npages);
+            npages,
+            (suite->flags & TEST_NOTHREADS) ? "false" : "true",
+            (suite->flags & TEST_NOFORK) ? "false" : "true");
 
    fflush (stdout);
 }
