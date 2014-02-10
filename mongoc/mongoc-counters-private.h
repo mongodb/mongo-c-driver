@@ -79,7 +79,7 @@ _mongoc_get_cpu_count (void)
  static BSON_INLINE unsigned
  _mongoc_sched_getcpu (void)
  {
-    bson_uint32_t rax, rdx, aux;
+    volatile bson_uint32_t rax, rdx, aux;
     __asm__ volatile ("rdtscp\n" : "=a" (rax), "=d" (rdx), "=c" (aux) : : );
     return aux;
  }
