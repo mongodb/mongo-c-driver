@@ -19,12 +19,16 @@
 #include <limits.h>
 #include <mongoc.h>
 #include <stdio.h>
+#include <signal.h>
 #ifdef __linux
 #include <sys/prctl.h>
 #include <sys/wait.h>
 #endif
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifdef __FreeBSD__
+#include <sys/wait.h>
+#endif
 
 #include "ha-test.h"
 
