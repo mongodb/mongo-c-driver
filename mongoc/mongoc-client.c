@@ -793,7 +793,7 @@ void
 mongoc_client_destroy (mongoc_client_t *client)
 {
    if (client) {
-#if MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_SSL
       bson_free (client->pem_subject);
 #endif
 
