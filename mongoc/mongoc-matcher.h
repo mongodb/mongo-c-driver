@@ -25,7 +25,7 @@
 BSON_BEGIN_DECLS
 
 
-typedef struct _mongoc_matcher mongoc_matcher_t;
+typedef struct _mongoc_matcher_t mongoc_matcher_t;
 
 
 mongoc_matcher_t *mongoc_matcher_new     (const bson_t           *query,

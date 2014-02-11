@@ -18,7 +18,9 @@
 #include <stdlib.h>
 
 #include "mongoc-error.h"
+#include "mongoc-matcher.h"
 #include "mongoc-matcher-private.h"
+#include "mongoc-matcher-op-private.h"
 
 
 static mongoc_matcher_op_t *
