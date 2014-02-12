@@ -30,10 +30,31 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,
                                bson_error_t            *error);
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_parse_compare --
+ *
+ *       Parse a compare spec such as $gt or $in.
+ *
+ *       See the following link for more information.
+ *
+ *          http://docs.mongodb.org/manual/reference/operator/query/
+ *
+ * Returns:
+ *       A newly allocated mongoc_matcher_op_t if successful; otherwise
+ *       NULL and @error is set.
+ *
+ * Side effects:
+ *       @error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static mongoc_matcher_op_t *
-_mongoc_matcher_parse_compare (bson_iter_t  *iter,
-                               const char   *path,
-                               bson_error_t *error)
+_mongoc_matcher_parse_compare (bson_iter_t  *iter,  /* IN */
+                               const char   *path,  /* IN */
+                               bson_error_t *error) /* OUT */
 {
    const char * key;
    mongoc_matcher_op_t * op = NULL, * op_child;
@@ -106,9 +127,26 @@ _mongoc_matcher_parse_compare (bson_iter_t  *iter,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_parse --
+ *
+ *       Parse a query spec observed by the current key of @iter.
+ *
+ * Returns:
+ *       A newly allocated mongoc_matcher_op_t if successful; otherwise
+ *       NULL an @error is set.
+ *
+ * Side effects:
+ *       @error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static mongoc_matcher_op_t *
-_mongoc_matcher_parse (bson_iter_t  *iter,
-                       bson_error_t *error)
+_mongoc_matcher_parse (bson_iter_t  *iter,  /* IN */
+                       bson_error_t *error) /* OUT */
 {
    bson_iter_t child;
    const char *key;
@@ -153,11 +191,33 @@ _mongoc_matcher_parse (bson_iter_t  *iter,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_parse_logical --
+ *
+ *       Parse a query spec containing a logical operator such as
+ *       $or, $and, $not, and $nor.
+ *
+ *       See the following link for more information.
+ *
+ *       http://docs.mongodb.org/manual/reference/operator/query/
+ *
+ * Returns:
+ *       A newly allocated mongoc_matcher_op_t if successful; otherwise
+ *       NULL and @error is set.
+ *
+ * Side effects:
+ *       @error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static mongoc_matcher_op_t *
-_mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,
-                               bson_iter_t             *iter,
-                               bson_bool_t              is_root,
-                               bson_error_t            *error)
+_mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,  /* IN */
+                               bson_iter_t             *iter,    /* IN */
+                               bson_bool_t              is_root, /* IN */
+                               bson_error_t            *error)   /* OUT */
 {
    mongoc_matcher_op_t *left;
    mongoc_matcher_op_t *right;
@@ -234,9 +294,33 @@ _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_matcher_new --
+ *
+ *       Create a new mongoc_matcher_t using the query specification
+ *       provided in @query.
+ *
+ *       This will build an operation tree that can be applied to arbitrary
+ *       bson documents using mongoc_matcher_match().
+ *
+ * Returns:
+ *       A newly allocated mongoc_matcher_t if successful; otherwise NULL
+ *       and @error is set.
+ *
+ *       The mongoc_matcher_t should be freed with
+ *       mongoc_matcher_destroy().
+ *
+ * Side effects:
+ *       @error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 mongoc_matcher_t *
-mongoc_matcher_new (const bson_t *query,
-                    bson_error_t *error)
+mongoc_matcher_new (const bson_t *query, /* IN */
+                    bson_error_t *error) /* OUT */
 {
    mongoc_matcher_op_t *op;
    mongoc_matcher_t *matcher;
@@ -267,9 +351,26 @@ failure:
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_matcher_match --
+ *
+ *       Checks to see if @bson matches the query specified when creating
+ *       @matcher.
+ *
+ * Returns:
+ *       TRUE if @bson matched the query, otherwise FALSE.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 bson_bool_t
-mongoc_matcher_match (const mongoc_matcher_t *matcher,
-                      const bson_t           *bson)
+mongoc_matcher_match (const mongoc_matcher_t *matcher, /* IN */
+                      const bson_t           *bson)    /* IN */
 {
    BSON_ASSERT (matcher);
    BSON_ASSERT (matcher->optree);
@@ -279,8 +380,24 @@ mongoc_matcher_match (const mongoc_matcher_t *matcher,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_matcher_destroy --
+ *
+ *       Release all resources associated with @matcher.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
-mongoc_matcher_destroy (mongoc_matcher_t *matcher)
+mongoc_matcher_destroy (mongoc_matcher_t *matcher) /* IN */
 {
    BSON_ASSERT (matcher);
 
