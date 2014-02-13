@@ -133,7 +133,7 @@ pymongoc_client_pool_pop (PyObject *self,
 
    client = mongoc_client_pool_pop (client_pool->client_pool);
 
-   return pymongoc_client_new (client, FALSE);
+   return pymongoc_client_new (client, false);
 }
 
 
@@ -181,7 +181,7 @@ static PyMethodDef pymongoc_client_pool_methods[] = {
 PyTypeObject *
 pymongoc_client_pool_get_type (void)
 {
-   static bson_bool_t initialized;
+   static bool initialized;
 
    if (!initialized) {
       pymongoc_client_pool_type.tp_new = pymongoc_client_pool_tp_new;
@@ -189,7 +189,7 @@ pymongoc_client_pool_get_type (void)
       if (PyType_Ready (&pymongoc_client_pool_type) < 0) {
          return NULL;
       }
-      initialized = TRUE;
+      initialized = true;
    }
 
    return &pymongoc_client_pool_type;

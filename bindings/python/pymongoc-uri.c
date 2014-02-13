@@ -119,14 +119,14 @@ pymongoc_uri_tp_new (PyTypeObject *self,
 PyTypeObject *
 pymongoc_uri_get_type (void)
 {
-   static bson_bool_t initialized;
+   static bool initialized;
 
    if (!initialized) {
       pymongoc_uri_type.tp_new = pymongoc_uri_tp_new;
       if (PyType_Ready(&pymongoc_uri_type) < 0) {
          return NULL;
       }
-      initialized = TRUE;
+      initialized = true;
    }
 
    return &pymongoc_uri_type;

@@ -64,7 +64,7 @@ static PyTypeObject pymongoc_client_type = {
 
 PyObject *
 pymongoc_client_new (mongoc_client_t *client,
-                     bson_bool_t      owns_client)
+                     bool             owns_client)
 {
    pymongoc_client_t *pyclient;
 
@@ -115,7 +115,7 @@ pymongoc_client_tp_new (PyTypeObject *self,
       goto cleanup;
    }
 
-   ret = pymongoc_client_new (client, TRUE);
+   ret = pymongoc_client_new (client, true);
 
 cleanup:
    Py_XDECREF(key);

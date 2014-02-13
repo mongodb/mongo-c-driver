@@ -37,13 +37,13 @@ BSON_BEGIN_DECLS
 typedef struct {
    PyObject_HEAD
    mongoc_client_t *client;
-   bson_bool_t      owns_client;
+   bool             owns_client;
 } pymongoc_client_t;
 
 
 PyTypeObject *pymongoc_client_get_type (void);
 PyObject     *pymongoc_client_new      (mongoc_client_t *client,
-                                        bson_bool_t      owns_client);
+                                        bool      owns_client);
 
 
 BSON_END_DECLS
