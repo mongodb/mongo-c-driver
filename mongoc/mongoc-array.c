@@ -44,7 +44,7 @@ _mongoc_array_destroy (mongoc_array_t *array)
 void
 _mongoc_array_append_vals (mongoc_array_t *array,
                            const void     *data,
-                           bson_uint32_t   n_elements)
+                           uint32_t   n_elements)
 {
    size_t len;
    size_t off;
@@ -56,12 +56,12 @@ _mongoc_array_append_vals (mongoc_array_t *array,
    off = array->element_size * array->len;
    len = (size_t)n_elements * array->element_size;
    if ((off + len) > array->allocated) {
-      next_size = bson_next_power_of_two(off + len);
+      next_size = bson_next_power_of_two((uint32_t)(off + len));
       array->data = bson_realloc(array->data, next_size);
       array->allocated = next_size;
    }
 
-   memcpy(array->data + off, data, len);
+   memcpy((uint8_t *)array->data + off, data, len);
 
    array->len += n_elements;
 }

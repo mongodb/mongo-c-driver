@@ -1,12 +1,7 @@
 #include <mongoc.h>
-#include <mongoc-client-private.h>
-#include <mongoc-log.h>
 
 #include "TestSuite.h"
-
-
-#define HOST (getenv("MONGOC_TEST_HOST") ? getenv("MONGOC_TEST_HOST") : "localhost")
-
+#include "test-libmongoc.h"
 
 static char *gTestUri;
 
@@ -18,7 +13,7 @@ test_has_collection (void)
    mongoc_database_t *database;
    mongoc_client_t *client;
    bson_error_t error;
-   bson_bool_t r;
+   bool r;
    bson_oid_t oid;
    bson_t b;
 
@@ -61,7 +56,7 @@ test_command (void)
    mongoc_cursor_t *cursor;
    bson_error_t error;
    const bson_t *doc;
-   bson_bool_t r;
+   bool r;
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
 
@@ -113,7 +108,7 @@ test_drop (void)
    mongoc_database_t *database;
    mongoc_client_t *client;
    bson_error_t error = { 0 };
-   bson_bool_t r;
+   bool r;
 
    client = mongoc_client_new (gTestUri);
    assert (client);
@@ -140,7 +135,7 @@ cleanup_globals (void)
 void
 test_database_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf ("mongodb://%s/", HOST);
+   gTestUri = bson_strdup_printf ("mongodb://%s/", MONGOC_TEST_HOST);
 
    TestSuite_Add (suite, "/Database/has_collection", test_has_collection);
    TestSuite_Add (suite, "/Database/command", test_command);

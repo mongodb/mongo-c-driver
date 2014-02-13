@@ -20,6 +20,7 @@
 
 
 #include <bson.h>
+#include "mongoc-compat.h"
 
 
 BSON_BEGIN_DECLS
@@ -79,7 +80,7 @@ struct _mongoc_matcher_op_exists_t
 {
    mongoc_matcher_op_base_t base;
    char *path;
-   bson_bool_t exists;
+   bool exists;
 };
 
 
@@ -117,12 +118,12 @@ mongoc_matcher_op_t *_mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t  op
                                                      const char              *path,
                                                      const bson_iter_t       *iter);
 mongoc_matcher_op_t *_mongoc_matcher_op_exists_new  (const char              *path,
-                                                     bson_bool_t              exists);
+                                                     bool                     exists);
 mongoc_matcher_op_t *_mongoc_matcher_op_type_new    (const char              *path,
                                                      bson_type_t              type);
 mongoc_matcher_op_t *_mongoc_matcher_op_not_new     (const char              *path,
                                                      mongoc_matcher_op_t     *child);
-bson_bool_t          _mongoc_matcher_op_match       (mongoc_matcher_op_t     *op,
+bool                 _mongoc_matcher_op_match       (mongoc_matcher_op_t     *op,
                                                      const bson_t            *bson);
 void                 _mongoc_matcher_op_destroy     (mongoc_matcher_op_t     *op);
 void                 _mongoc_matcher_op_to_bson     (mongoc_matcher_op_t     *op,

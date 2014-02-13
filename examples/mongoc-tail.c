@@ -2,7 +2,10 @@
 #include <mongoc.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+
+#ifdef _WIN32
+#define sleep(_n) Sleep((_n) * 1000)
+#endif
 
 
 static void
@@ -18,7 +21,7 @@ print_bson (const bson_t *b)
 
 static mongoc_cursor_t *
 query_collection (mongoc_collection_t *collection,
-                  bson_uint32_t        last_time)
+                  uint32_t        last_time)
 {
    mongoc_cursor_t *cursor;
    bson_t query;
@@ -52,16 +55,16 @@ static void
 tail_collection (mongoc_collection_t *collection)
 {
    mongoc_cursor_t *cursor;
-   bson_uint32_t last_time;
+   uint32_t last_time;
    const bson_t *doc;
    bson_error_t error;
    bson_iter_t iter;
 
    BSON_ASSERT(collection);
 
-   last_time = time(NULL);
+   last_time = (uint32_t)time(NULL);
 
-   while (TRUE) {
+   while (true) {
       cursor = query_collection(collection, last_time);
       while (!mongoc_cursor_error(cursor, &error) &&
              mongoc_cursor_more(cursor)) {
@@ -97,6 +100,8 @@ main (int   argc,
       fprintf(stderr, "usage: %s MONGO_URI\n", argv[0]);
       return EXIT_FAILURE;
    }
+
+   mongoc_init();
 
    client = mongoc_client_new(argv[1]);
    if (!client) {

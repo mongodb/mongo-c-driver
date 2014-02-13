@@ -41,11 +41,11 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_client_t
 {
-   bson_uint32_t              request_id;
+   uint32_t              request_id;
    mongoc_list_t             *conns;
    mongoc_uri_t              *uri;
    mongoc_cluster_t           cluster;
-   bson_bool_t                in_exhaust;
+   bool                in_exhaust;
 
    mongoc_stream_initiator_t  initiator;
    void                      *initiator_data;
@@ -66,36 +66,36 @@ _mongoc_client_create_stream (mongoc_client_t          *client,
                               bson_error_t             *error)
    BSON_GNUC_INTERNAL;
 
-bson_uint32_t
+uint32_t
 _mongoc_client_sendv (mongoc_client_t              *client,
                       mongoc_rpc_t                 *rpcs,
                       size_t                        rpcs_len,
-                      bson_uint32_t                 hint,
+                      uint32_t                 hint,
                       const mongoc_write_concern_t *write_concern,
                       const mongoc_read_prefs_t    *read_prefs,
                       bson_error_t                 *error)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_client_recv (mongoc_client_t *client,
                      mongoc_rpc_t    *rpc,
                      mongoc_buffer_t *buffer,
-                     bson_uint32_t    hint,
+                     uint32_t    hint,
                      bson_error_t    *error)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_client_recv_gle (mongoc_client_t *client,
-                         bson_uint32_t    hint,
+                         uint32_t    hint,
                          bson_error_t    *error)
    BSON_GNUC_INTERNAL;
 
-bson_uint32_t
+uint32_t
 _mongoc_client_stamp (mongoc_client_t *client,
-                      bson_uint32_t    node)
+                      uint32_t    node)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_client_warm_up (mongoc_client_t *client,
                         bson_error_t    *error)
    BSON_GNUC_INTERNAL;

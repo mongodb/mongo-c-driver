@@ -15,6 +15,9 @@ INST_H_FILES = \
 	mongoc/mongoc-client.h \
 	mongoc/mongoc-client-pool.h \
 	mongoc/mongoc-collection.h \
+	mongoc/mongoc-compat.h \
+	mongoc/mongoc-compat-socket-win32.h \
+	mongoc/mongoc-compat-socket-unix.h \
 	mongoc/mongoc-config.h \
 	mongoc/mongoc-cursor.h \
 	mongoc/mongoc-database.h \
@@ -31,7 +34,6 @@ INST_H_FILES = \
 	mongoc/mongoc-matcher.h \
 	mongoc/mongoc-opcode.h \
 	mongoc/mongoc-read-prefs.h \
-	mongoc/mongoc-stdint.h \
 	mongoc/mongoc-stream.h \
 	mongoc/mongoc-stream-buffered.h \
 	mongoc/mongoc-stream-gridfs.h \
@@ -89,6 +91,10 @@ libmongoc_priv_la_SOURCES = \
 	mongoc/mongoc-client-pool.c \
 	mongoc/mongoc-cluster.c \
 	mongoc/mongoc-collection.c \
+	mongoc/mongoc-compat-unix.c \
+	mongoc/mongoc-compat-win32.c \
+	mongoc/mongoc-compat-socket-unix.c \
+	mongoc/mongoc-compat-socket-win32.c \
 	mongoc/mongoc-counters.c \
 	mongoc/mongoc-cursor.c \
 	mongoc/mongoc-cursor-array.c \
@@ -161,6 +167,3 @@ EXTRA_DIST += \
 	mongoc/op-query.def \
 	mongoc/op-reply.def \
 	mongoc/op-update.def
-
-DISTCLEANFILES = \
-	mongoc/mongoc-stdint.h

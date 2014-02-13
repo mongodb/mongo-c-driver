@@ -29,9 +29,9 @@
  * The buffer should stick around for the life of the page
  */
 mongoc_gridfs_file_page_t *
-_mongoc_gridfs_file_page_new (const bson_uint8_t *data,
-                              bson_uint32_t       len,
-                              bson_uint32_t       chunk_size)
+_mongoc_gridfs_file_page_new (const uint8_t *data,
+                              uint32_t       len,
+                              uint32_t       chunk_size)
 {
    mongoc_gridfs_file_page_t *page;
 
@@ -50,9 +50,9 @@ _mongoc_gridfs_file_page_new (const bson_uint8_t *data,
 }
 
 
-bson_bool_t
+bool
 _mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page,
-                               bson_uint32_t              offset)
+                               uint32_t              offset)
 {
    ENTRY;
 
@@ -66,13 +66,13 @@ _mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page,
 }
 
 
-bson_int32_t
+int32_t
 _mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
                                void                      *dst,
-                               bson_uint32_t              len)
+                               uint32_t              len)
 {
    int bytes_read;
-   const bson_uint8_t *src;
+   const uint8_t *src;
 
    ENTRY;
 
@@ -100,10 +100,10 @@ _mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
  * I.e. the first write allocs a buf large enough for the chunk_size, which
  * because authoritative from then on out
  */
-bson_int32_t
+int32_t
 _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
                                 const void                *src,
-                                bson_uint32_t              len)
+                                uint32_t              len)
 {
    int bytes_written;
 
@@ -128,7 +128,7 @@ _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
 }
 
 
-const bson_uint8_t *
+const uint8_t *
 _mongoc_gridfs_file_page_get_data (mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
@@ -139,7 +139,7 @@ _mongoc_gridfs_file_page_get_data (mongoc_gridfs_file_page_t *page)
 }
 
 
-bson_uint32_t
+uint32_t
 _mongoc_gridfs_file_page_get_len (mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
@@ -150,7 +150,7 @@ _mongoc_gridfs_file_page_get_len (mongoc_gridfs_file_page_t *page)
 }
 
 
-bson_uint32_t
+uint32_t
 _mongoc_gridfs_file_page_tell (mongoc_gridfs_file_page_t *page)
 {
    ENTRY;
@@ -161,7 +161,7 @@ _mongoc_gridfs_file_page_tell (mongoc_gridfs_file_page_t *page)
 }
 
 
-bson_bool_t
+bool
 _mongoc_gridfs_file_page_is_dirty (mongoc_gridfs_file_page_t *page)
 {
    ENTRY;

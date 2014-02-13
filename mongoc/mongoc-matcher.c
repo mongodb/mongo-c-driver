@@ -26,7 +26,7 @@
 static mongoc_matcher_op_t *
 _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,
                                bson_iter_t             *iter,
-                               bson_bool_t              is_root,
+                               bool                     is_root,
                                bson_error_t            *error);
 
 
@@ -171,13 +171,13 @@ _mongoc_matcher_parse (bson_iter_t  *iter,  /* IN */
 
       if (strcmp (key, "$or") == 0) {
          return _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_OR,
-                                               &child, FALSE, error);
+                                               &child, false, error);
       } else if (strcmp(key, "$and") == 0) {
          return _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_AND,
-                                               &child, FALSE, error);
+                                               &child, false, error);
       } else if (strcmp(key, "$nor") == 0) {
          return _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_NOR,
-                                               &child, FALSE, error);
+                                               &child, false, error);
       }
    }
 
@@ -216,7 +216,7 @@ _mongoc_matcher_parse (bson_iter_t  *iter,  /* IN */
 static mongoc_matcher_op_t *
 _mongoc_matcher_parse_logical (mongoc_matcher_opcode_t  opcode,  /* IN */
                                bson_iter_t             *iter,    /* IN */
-                               bson_bool_t              is_root, /* IN */
+                               bool                     is_root, /* IN */
                                bson_error_t            *error)   /* OUT */
 {
    mongoc_matcher_op_t *left;
@@ -336,7 +336,7 @@ mongoc_matcher_new (const bson_t *query, /* IN */
    }
 
    if (!(op = _mongoc_matcher_parse_logical (MONGOC_MATCHER_OPCODE_AND, &iter,
-                                             TRUE, error))) {
+                                             true, error))) {
       goto failure;
    }
 
@@ -368,7 +368,7 @@ failure:
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 mongoc_matcher_match (const mongoc_matcher_t *matcher, /* IN */
                       const bson_t           *bson)    /* IN */
 {

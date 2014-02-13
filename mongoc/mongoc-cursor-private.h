@@ -35,12 +35,12 @@ typedef struct mongoc_cursor_interface
 
    void (*destroy)(mongoc_cursor_t *cursor);
 
-   bson_bool_t (*more)(mongoc_cursor_t *cursor);
+   bool (*more)(mongoc_cursor_t *cursor);
 
-   bson_bool_t (*next)(mongoc_cursor_t *cursor,
+   bool (*next)(mongoc_cursor_t *cursor,
                        const bson_t   **bson);
 
-   bson_bool_t (*error)(mongoc_cursor_t *cursor,
+   bool (*error)(mongoc_cursor_t *cursor,
                         bson_error_t    *error);
 
    void (*get_host)(mongoc_cursor_t    *cursor,
@@ -52,15 +52,15 @@ struct _mongoc_cursor_t
 {
    mongoc_client_t     *client;
 
-   bson_uint32_t        hint;
-   bson_uint32_t        stamp;
+   uint32_t        hint;
+   uint32_t        stamp;
 
-   bson_bool_t          is_command   : 1;
-   bson_bool_t          sent         : 1;
-   bson_bool_t          done         : 1;
-   bson_bool_t          failed       : 1;
-   bson_bool_t          end_of_event : 1;
-   bson_bool_t          in_exhaust   : 1;
+   bool          is_command   : 1;
+   bool          sent         : 1;
+   bool          done         : 1;
+   bool          failed       : 1;
+   bool          end_of_event : 1;
+   bool          in_exhaust   : 1;
 
    bson_t               query;
    bson_t               fields;
@@ -68,13 +68,13 @@ struct _mongoc_cursor_t
    mongoc_read_prefs_t *read_prefs;
 
    mongoc_query_flags_t flags;
-   bson_uint32_t        skip;
-   bson_uint32_t        limit;
-   bson_uint32_t        count;
-   bson_uint32_t        batch_size;
+   uint32_t        skip;
+   uint32_t        limit;
+   uint32_t        count;
+   uint32_t        batch_size;
 
    char                 ns[140];
-   bson_uint32_t        nslen;
+   uint32_t        nslen;
 
    bson_error_t         error;
 
@@ -82,8 +82,8 @@ struct _mongoc_cursor_t
    mongoc_buffer_t      buffer;
    bson_reader_t       *reader;
 
-   mongoc_cursor_interface_t  interface;
-   void                      *interface_data;
+   mongoc_cursor_interface_t  iface;
+   void                      *iface_data;
 };
 
 
@@ -91,10 +91,10 @@ mongoc_cursor_t *
 _mongoc_cursor_new (mongoc_client_t           *client,
                     const char                *db_and_collection,
                     mongoc_query_flags_t       flags,
-                    bson_uint32_t              skip,
-                    bson_uint32_t              limit,
-                    bson_uint32_t              batch_size,
-                    bson_bool_t                is_command,
+                    uint32_t              skip,
+                    uint32_t              limit,
+                    uint32_t              batch_size,
+                    bool                is_command,
                     const bson_t              *query,
                     const bson_t              *fields,
                     const mongoc_read_prefs_t *read_prefs)
@@ -110,18 +110,18 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 BSON_GNUC_INTERNAL;
 
 
-bson_bool_t
+bool
 _mongoc_cursor_more (mongoc_cursor_t *cursor)
 BSON_GNUC_INTERNAL;
 
 
-bson_bool_t
+bool
 _mongoc_cursor_next (mongoc_cursor_t  *cursor,
                      const bson_t    **bson)
 BSON_GNUC_INTERNAL;
 
 
-bson_bool_t
+bool
 _mongoc_cursor_error (mongoc_cursor_t *cursor,
                      bson_error_t    *error)
 BSON_GNUC_INTERNAL;

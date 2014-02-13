@@ -17,16 +17,7 @@
 
 #define _GNU_SOURCE
 
-#include <errno.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/un.h>
-#include <unistd.h>
+#include <bson.h>
 
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"
@@ -88,7 +79,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
 {
    struct addrinfo hints;
    struct addrinfo *result, *rp;
-   bson_uint32_t connecttimeoutms = 0;
+   uint32_t connecttimeoutms = 0;
    const bson_t *options;
    bson_iter_t iter;
    socklen_t optlen;
@@ -97,7 +88,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    int flags;
    int r;
    int s;
-   int sfd;
+   mongoc_fd_t sfd;
 
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
@@ -111,7 +102,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
       connecttimeoutms = DEFAULT_CONNECTTIMEOUTMS;
    }
 
-   snprintf(portstr, sizeof portstr, "%hu", host->port);
+   bson_snprintf(portstr, sizeof portstr, "%hu", host->port);
 
    memset(&hints, 0, sizeof hints);
    hints.ai_family = host->family;
@@ -130,8 +121,8 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    }
 
    for (rp = result; rp; rp = rp->ai_next) {
-      sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-      if (sfd == -1) {
+      sfd = mongoc_socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+      if (! mongoc_fd_is_valid(sfd)) {
          continue;
       }
 
@@ -139,6 +130,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
        * Set the socket non-blocking so we can detect failure to
        * connect by waiting for POLLIN on the socket fd.
        */
+#ifdef BSON_OS_UNIX
       flags = fcntl(sfd, F_GETFL);
       if ((flags & O_NONBLOCK) != O_NONBLOCK) {
          flags = flags | O_NONBLOCK;
@@ -152,24 +144,25 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
             continue;
          }
       }
+#endif
 
-      r = connect(sfd, rp->ai_addr, rp->ai_addrlen);
+      r = mongoc_connect(sfd, rp->ai_addr, (socklen_t)rp->ai_addrlen);
       if (r != -1) {
          break;
       }
 
       if (errno == EINPROGRESS) {
-         struct pollfd fds;
+         mongoc_pollfd_t fds;
 
 again:
          fds.fd = sfd;
          fds.events = POLLOUT;
          fds.revents = 0;
-         r = poll(&fds, 1, connecttimeoutms);
+         r = mongoc_poll(&fds, 1, connecttimeoutms);
          if (r > 0) {
             optval = 0;
             optlen = sizeof optval;
-            r = getsockopt(sfd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+            r = mongoc_getsockopt(sfd, SOL_SOCKET, SO_ERROR, (char *)&optval, &optlen);
             if ((r == -1) || optval != 0) {
                goto cleanup;
             }
@@ -182,7 +175,7 @@ again:
       }
 
 cleanup:
-      close(sfd);
+      mongoc_close(sfd);
    }
 
    if (!rp) {
@@ -198,10 +191,17 @@ cleanup:
 
    flags = 1;
    errno = 0;
-   r = setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, (char *)&flags, sizeof flags);
+   r = mongoc_setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, (char *)&flags, sizeof flags);
    if (r < 0) {
+      char buf[128];
+      char * errstr = bson_strerror_r(errno, buf, sizeof buf);
+#ifdef BSON_OS_UNIX
       MONGOC_WARNING("Failed to set TCP_NODELAY on fd %u: %s\n",
-                     sfd, strerror(errno));
+                     sfd, errstr);
+#else
+      MONGOC_WARNING("Failed to set TCP_NODELAY on socket : %s\n",
+                     errstr);
+#endif
    }
 
    return mongoc_stream_unix_new(sfd);
@@ -230,18 +230,19 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
                             const mongoc_host_list_t *host,
                             bson_error_t             *error)
 {
+#ifdef BSON_OS_UNIX
    struct sockaddr_un saddr;
-   int sfd;
+   mongoc_fd_t sfd;
 
    bson_return_val_if_fail(uri, NULL);
    bson_return_val_if_fail(host, NULL);
 
    memset(&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
-   snprintf(saddr.sun_path, sizeof saddr.sun_path - 1,
+   bson_snprintf(saddr.sun_path, sizeof saddr.sun_path - 1,
             "%s", host->host_and_port);
 
-   sfd = socket(AF_UNIX, SOCK_STREAM, 0);
+   sfd = mongoc_socket(AF_UNIX, SOCK_STREAM, 0);
    if (sfd == -1) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
@@ -250,8 +251,8 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
       return NULL;
    }
 
-   if (connect(sfd, (struct sockaddr *)&saddr, sizeof saddr) == -1) {
-      close(sfd);
+   if (mongoc_connect(sfd, (struct sockaddr *)&saddr, sizeof saddr) == -1) {
+      mongoc_close(sfd);
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
                      MONGOC_ERROR_STREAM_CONNECT,
@@ -260,6 +261,9 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
    }
 
    return mongoc_stream_unix_new(sfd);
+#else
+   return NULL;
+#endif
 }
 
 
@@ -323,7 +327,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
         bson_iter_as_bool (&iter)) ||
        (mechanism && (0 == strcmp (mechanism, "MONGODB-X509")))) {
       base_stream = mongoc_stream_tls_new (base_stream, &client->ssl_opts,
-                                           TRUE);
+                                           true);
 
       if (!base_stream) {
          bson_set_error (error,
@@ -409,27 +413,27 @@ _mongoc_client_create_stream (mongoc_client_t          *client,
  *--------------------------------------------------------------------------
  */
 
-bson_uint32_t
+uint32_t
 _mongoc_client_sendv (mongoc_client_t              *client,
                       mongoc_rpc_t                 *rpcs,
                       size_t                        rpcs_len,
-                      bson_uint32_t                 hint,
+                      uint32_t                 hint,
                       const mongoc_write_concern_t *write_concern,
                       const mongoc_read_prefs_t    *read_prefs,
                       bson_error_t                 *error)
 {
    size_t i;
 
-   bson_return_val_if_fail(client, FALSE);
-   bson_return_val_if_fail(rpcs, FALSE);
-   bson_return_val_if_fail(rpcs_len, FALSE);
+   bson_return_val_if_fail(client, false);
+   bson_return_val_if_fail(rpcs, false);
+   bson_return_val_if_fail(rpcs_len, false);
 
    if (client->in_exhaust) {
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_IN_EXHAUST,
                      "A cursor derived from this client is in exhaust.");
-      RETURN(FALSE);
+      RETURN(false);
    }
 
    for (i = 0; i < rpcs_len; i++) {
@@ -450,9 +454,9 @@ _mongoc_client_sendv (mongoc_client_t              *client,
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_NOT_READY,
                      "No healthy connections.");
-      return FALSE;
+      return false;
    default:
-      BSON_ASSERT(FALSE);
+      BSON_ASSERT(false);
       return 0;
    }
 }
@@ -468,26 +472,26 @@ _mongoc_client_sendv (mongoc_client_t              *client,
  *       signify which node to recv from.
  *
  * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
+ *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
- *       @error is set if return value is FALSE.
+ *       @error is set if return value is false.
  *
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 _mongoc_client_recv (mongoc_client_t *client,
                      mongoc_rpc_t    *rpc,
                      mongoc_buffer_t *buffer,
-                     bson_uint32_t    hint,
+                     uint32_t    hint,
                      bson_error_t    *error)
 {
-   bson_return_val_if_fail(client, FALSE);
-   bson_return_val_if_fail(rpc, FALSE);
-   bson_return_val_if_fail(buffer, FALSE);
-   bson_return_val_if_fail(hint, FALSE);
-   bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, FALSE);
+   bson_return_val_if_fail(client, false);
+   bson_return_val_if_fail(rpc, false);
+   bson_return_val_if_fail(buffer, false);
+   bson_return_val_if_fail(hint, false);
+   bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, false);
 
    return _mongoc_cluster_try_recv (&client->cluster, rpc, buffer, hint,
                                     error);
@@ -562,36 +566,36 @@ _bson_to_error (const bson_t *b,
  *       This function is used to receive the next RPC from a cluster
  *       node, expecting it to be the response to a getlasterror command.
  *
- *       The RPC is parsed into @error if it is an error and FALSE is
+ *       The RPC is parsed into @error if it is an error and false is
  *       returned.
  *
- *       If the operation was successful, TRUE is returned.
+ *       If the operation was successful, true is returned.
  *
  * Returns:
- *       TRUE if getlasterror was success; otherwise FALSE and @error
+ *       true if getlasterror was success; otherwise false and @error
  *       is set.
  *
  * Side effects:
- *       @error if return value is FALSE.
+ *       @error if return value is false.
  *
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 _mongoc_client_recv_gle (mongoc_client_t *client,
-                         bson_uint32_t    hint,
+                         uint32_t    hint,
                          bson_error_t    *error)
 {
    mongoc_buffer_t buffer;
    mongoc_rpc_t rpc;
    bson_iter_t iter;
-   bson_bool_t ret = FALSE;
+   bool ret = false;
    bson_t b;
 
    ENTRY;
 
-   bson_return_val_if_fail (client, FALSE);
-   bson_return_val_if_fail (hint, FALSE);
+   bson_return_val_if_fail (client, false);
+   bson_return_val_if_fail (hint, false);
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL);
 
@@ -625,7 +629,7 @@ _mongoc_client_recv_gle (mongoc_client_t *client,
       bson_destroy (&b);
    }
 
-   ret = TRUE;
+   ret = true;
 
 cleanup:
    _mongoc_buffer_destroy (&buffer);
@@ -662,7 +666,7 @@ mongoc_client_new (const char *uri_string)
    mongoc_uri_t *uri;
    const bson_t *options;
    bson_iter_t iter;
-   bson_bool_t has_ssl = FALSE;
+   bool has_ssl = false;
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
@@ -677,7 +681,7 @@ mongoc_client_new (const char *uri_string)
    if (bson_iter_init_find (&iter, options, "ssl") &&
        BSON_ITER_HOLDS_BOOL (&iter) &&
        bson_iter_bool (&iter)) {
-      has_ssl = TRUE;
+      has_ssl = true;
    }
 
 #ifndef MONGOC_ENABLE_SSL
@@ -852,9 +856,9 @@ mongoc_client_get_uri (const mongoc_client_t *client)
  *--------------------------------------------------------------------------
  */
 
-bson_uint32_t
+uint32_t
 _mongoc_client_stamp (mongoc_client_t *client,
-                      bson_uint32_t    node)
+                      uint32_t    node)
 {
    bson_return_val_if_fail (client, 0);
 
@@ -1092,11 +1096,11 @@ mongoc_client_set_read_prefs (mongoc_client_t           *client,
 }
 
 
-bson_bool_t
+bool
 _mongoc_client_warm_up (mongoc_client_t *client,
                         bson_error_t    *error)
 {
-   bson_bool_t ret = TRUE;
+   bool ret = true;
    bson_t cmd;
 
    BSON_ASSERT (client);
@@ -1119,9 +1123,9 @@ mongoc_cursor_t *
 mongoc_client_command (mongoc_client_t           *client,
                        const char                *db_name,
                        mongoc_query_flags_t       flags,
-                       bson_uint32_t              skip,
-                       bson_uint32_t              limit,
-                       bson_uint32_t              batch_size,
+                       uint32_t              skip,
+                       uint32_t              limit,
+                       uint32_t              batch_size,
                        const bson_t              *query,
                        const bson_t              *fields,
                        const mongoc_read_prefs_t *read_prefs)
@@ -1136,10 +1140,10 @@ mongoc_client_command (mongoc_client_t           *client,
       read_prefs = client->read_prefs;
    }
 
-   snprintf (ns, sizeof ns, "%s.$cmd", db_name);
+   bson_snprintf (ns, sizeof ns, "%s.$cmd", db_name);
    ns[sizeof ns - 1] = '\0';
 
-   return _mongoc_cursor_new (client, ns, flags, skip, limit, batch_size, TRUE,
+   return _mongoc_cursor_new (client, ns, flags, skip, limit, batch_size, true,
                               query, fields, read_prefs);
 }
 
@@ -1156,19 +1160,19 @@ mongoc_client_command (mongoc_client_t           *client,
  * This wrapper around mongoc_client_command() aims to make it simpler to
  * run a command and check the output result.
  *
- * FALSE is returned if the command failed to be delivered or if the execution
+ * false is returned if the command failed to be delivered or if the execution
  * of the command failed. For example, a command that returns {'ok': 0} will
- * result in this function returning FALSE.
+ * result in this function returning false.
  *
  * To allow the caller to disambiguate between command execution failure and
  * failure to send the command, reply will always be set if non-NULL. The
  * caller should release this with bson_destroy().
  *
- * Returns: TRUE if the command executed and resulted in success. Otherwise
- *   FALSE and @error is set. @reply is always set, either to the resulting
+ * Returns: true if the command executed and resulted in success. Otherwise
+ *   false and @error is set. @reply is always set, either to the resulting
  *   document or an empty bson document upon failure.
  */
-bson_bool_t
+bool
 mongoc_client_command_simple (mongoc_client_t           *client,
                               const char                *db_name,
                               const bson_t              *command,
@@ -1178,7 +1182,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
 {
    mongoc_cursor_t *cursor;
    const bson_t *doc;
-   bson_bool_t ret;
+   bool ret;
 
    BSON_ASSERT (client);
    BSON_ASSERT (db_name);

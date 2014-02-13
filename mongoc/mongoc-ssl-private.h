@@ -29,10 +29,10 @@
 BSON_BEGIN_DECLS
 
 
-bson_bool_t
+bool
 _mongoc_ssl_check_cert (SSL         *ssl,
                         const char  *host,
-                        bson_bool_t  weak_cert_validation)
+                        bool  weak_cert_validation)
    BSON_GNUC_INTERNAL;
 
 

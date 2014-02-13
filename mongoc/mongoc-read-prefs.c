@@ -88,7 +88,7 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
    BSON_ASSERT (read_prefs);
 
    key = bson_count_keys (&read_prefs->tags);
-   snprintf (str, sizeof str, "%d", key);
+   bson_snprintf (str, sizeof str, "%d", key);
    str[sizeof str - 1] = '\0';
 
    if (tag) {
@@ -99,25 +99,25 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
 }
 
 
-bson_bool_t
+bool
 mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_val_if_fail(read_prefs, FALSE);
+   bson_return_val_if_fail(read_prefs, false);
 
    /*
     * Tags are not supported with PRIMARY mode.
     */
    if (read_prefs->mode == MONGOC_READ_PRIMARY) {
       if (!bson_empty(&read_prefs->tags)) {
-         return FALSE;
+         return false;
       }
    }
 
-   return TRUE;
+   return true;
 }
 
 
-static bson_bool_t
+static bool
 _contains_tag (const bson_t *b,
                const char   *key,
                const char   *value,
@@ -125,17 +125,17 @@ _contains_tag (const bson_t *b,
 {
    bson_iter_t iter;
 
-   bson_return_val_if_fail(b, FALSE);
-   bson_return_val_if_fail(key, FALSE);
-   bson_return_val_if_fail(value, FALSE);
+   bson_return_val_if_fail(b, false);
+   bson_return_val_if_fail(key, false);
+   bson_return_val_if_fail(value, false);
 
    if (bson_iter_init_find(&iter, b, key) &&
        BSON_ITER_HOLDS_UTF8(&iter) &&
        !strncmp(value, bson_iter_utf8(&iter, NULL), value_len)) {
-      return TRUE;
+      return true;
    }
 
-   return FALSE;
+   return false;
 }
 
 
@@ -143,7 +143,7 @@ static int
 _score_tags (const bson_t *read_tags,
              const bson_t *node_tags)
 {
-   bson_uint32_t len;
+   uint32_t len;
    bson_iter_t iter;
    const char *key;
    const char *str;
@@ -281,7 +281,7 @@ _mongoc_read_prefs_score (const mongoc_read_prefs_t   *read_prefs,
    case MONGOC_READ_NEAREST:
       return _mongoc_read_prefs_score_nearest(read_prefs, node);
    default:
-      BSON_ASSERT(FALSE);
+      BSON_ASSERT(false);
       return -1;
    }
 }

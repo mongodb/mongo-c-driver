@@ -19,19 +19,24 @@ endif
 TEST_LIBS = libmongoc-priv.la $(BSON_LIBS) $(SHM_LIB)
 
 
-test_load_SOURCES = $(top_srcdir)/tests/test-load.c
+test_load_SOURCES = \
+	$(top_srcdir)/tests/test-load.c \
+	$(top_srcdir)/tests/mongoc-tests.c
 test_load_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
 test_load_LDADD = $(TEST_LIBS)
 
 
-test_secondary_SOURCES = $(top_srcdir)/tests/test-secondary.c
+test_secondary_SOURCES = \
+        $(top_srcdir)/tests/test-secondary.c \
+	$(top_srcdir)/tests/mongoc-tests.c
 test_secondary_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
 test_secondary_LDADD = $(TEST_LIBS)
 
 test_replica_set_SOURCES = \
 	$(top_srcdir)/tests/test-replica-set.c \
 	$(top_srcdir)/tests/ha-test.c \
-	$(top_srcdir)/tests/ha-test.h
+	$(top_srcdir)/tests/ha-test.h \
+	$(top_srcdir)/tests/mongoc-tests.c
 test_replica_set_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
 test_replica_set_LDADD = libmongoc-priv.la
 
@@ -39,7 +44,8 @@ test_replica_set_LDADD = libmongoc-priv.la
 test_replica_set_ssl_SOURCES = \
 	$(top_srcdir)/tests/test-replica-set-ssl.c \
 	$(top_srcdir)/tests/ha-test.c \
-	$(top_srcdir)/tests/ha-test.h
+	$(top_srcdir)/tests/ha-test.h \
+	$(top_srcdir)/tests/mongoc-tests.c
 test_replica_set_ssl_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
 test_replica_set_ssl_LDADD = libmongoc-priv.la
 
@@ -65,6 +71,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-stream.c \
 	tests/test-mongoc-uri.c \
 	tests/test-mongoc-write-concern.c \
+	tests/test-libmongoc.h \
 	tests/TestSuite.c \
 	tests/TestSuite.h
 if HAVE_SSL
@@ -81,7 +88,8 @@ test_libmongoc_LDADD = libmongoc-priv.la
 test_sharded_cluster_SOURCES = \
 	$(top_srcdir)/tests/test-sharded-cluster.c \
 	$(top_srcdir)/tests/ha-test.c \
-	$(top_srcdir)/tests/ha-test.h
+	$(top_srcdir)/tests/ha-test.h \
+	$(top_srcdir)/tests/mongoc-tests.c
 test_sharded_cluster_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
 test_sharded_cluster_LDADD = libmongoc-priv.la
 
@@ -105,4 +113,5 @@ endif
 EXTRA_DIST += \
 	tests/mock-server.c \
 	tests/mock-server.h \
+	tests/mongoc-tests.c \
 	tests/mongoc-tests.h

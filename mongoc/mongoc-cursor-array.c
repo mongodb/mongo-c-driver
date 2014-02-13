@@ -35,11 +35,11 @@
 typedef struct
 {
    const bson_t       *result;
-   bson_bool_t         has_array;
+   bool         has_array;
    bson_iter_t         iter;
    bson_t              bson;
-   bson_uint32_t       document_len;
-   const bson_uint8_t *document;
+   uint32_t       document_len;
+   const uint8_t *document;
 } mongoc_cursor_array_t;
 
 
@@ -61,28 +61,28 @@ _mongoc_cursor_array_destroy (mongoc_cursor_t *cursor)
 {
    ENTRY;
 
-   bson_free (cursor->interface_data);
+   bson_free (cursor->iface_data);
    _mongoc_cursor_destroy (cursor);
 
    EXIT;
 }
 
 
-bson_bool_t
+bool
 _mongoc_cursor_array_next (mongoc_cursor_t *cursor,
                            const bson_t   **bson)
 {
-   bson_bool_t ret = TRUE;
+   bool ret = true;
    mongoc_cursor_array_t *arr;
    bson_iter_t iter;
 
    ENTRY;
 
-   arr = cursor->interface_data;
+   arr = cursor->iface_data;
    *bson = NULL;
 
    if (!arr->has_array) {
-      arr->has_array = TRUE;
+      arr->has_array = true;
 
       ret = _mongoc_cursor_next (cursor, &arr->result);
 
@@ -91,7 +91,7 @@ _mongoc_cursor_array_next (mongoc_cursor_t *cursor,
             BSON_ITER_HOLDS_ARRAY (&iter) &&
             bson_iter_recurse (&iter, &arr->iter) &&
             bson_iter_next (&arr->iter))) {
-         ret = FALSE;
+         ret = false;
       }
    } else {
       ret = bson_iter_next (&arr->iter);
@@ -122,23 +122,23 @@ _mongoc_cursor_array_clone (const mongoc_cursor_t *cursor)
 }
 
 
-bson_bool_t
+bool
 _mongoc_cursor_array_more (mongoc_cursor_t *cursor)
 {
-   bson_bool_t ret;
+   bool ret;
    mongoc_cursor_array_t *arr;
    bson_iter_t iter;
 
    ENTRY;
 
-   arr = cursor->interface_data;
+   arr = cursor->iface_data;
 
    if (arr->has_array) {
       memcpy (&iter, &arr->iter, sizeof iter);
 
       ret = bson_iter_next (&iter);
    } else {
-      ret = TRUE;
+      ret = true;
    }
 
    RETURN (ret);
@@ -158,9 +158,9 @@ _mongoc_cursor_array_init (mongoc_cursor_t *cursor)
 {
    ENTRY;
 
-   cursor->interface_data = _mongoc_cursor_array_new ();
+   cursor->iface_data = _mongoc_cursor_array_new ();
 
-   memcpy (&cursor->interface, &gMongocCursorArray,
+   memcpy (&cursor->iface, &gMongocCursorArray,
            sizeof (mongoc_cursor_interface_t));
 
    EXIT;

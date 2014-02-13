@@ -35,17 +35,17 @@ struct _mongoc_gridfs_file
    mongoc_gridfs_t           *gridfs;
    bson_t                     bson;
    mongoc_gridfs_file_page_t *page;
-   bson_uint64_t              pos;
+   uint64_t              pos;
    bson_error_t               error;
-   bson_bool_t                failed;
+   bool                failed;
    mongoc_cursor_t           *cursor;
-   bson_uint32_t              cursor_range[2];
-   bson_bool_t                is_dirty;
+   uint32_t              cursor_range[2];
+   bool                is_dirty;
 
    bson_oid_t   files_id;
-   bson_int64_t length;
-   bson_int32_t chunk_size;
-   bson_int64_t upload_date;
+   int64_t length;
+   int32_t chunk_size;
+   int64_t upload_date;
 
    char       *md5;
    char       *filename;

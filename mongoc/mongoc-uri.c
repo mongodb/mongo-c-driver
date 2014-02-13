@@ -17,9 +17,9 @@
 
 #include <ctype.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 
+#include "mongoc-compat.h"
 #include "mongoc-host-list.h"
 #include "mongoc-log.h"
 #include "mongoc-uri.h"
@@ -58,19 +58,18 @@ mongoc_uri_do_unescape (char **str)
 static void
 mongoc_uri_append_host (mongoc_uri_t  *uri,
                         const char    *host,
-                        bson_uint16_t  port)
+                        uint16_t  port)
 {
    mongoc_host_list_t *iter;
    mongoc_host_list_t *link_;
 
    link_ = bson_malloc0(sizeof *link_);
-   strncpy(link_->host, host, sizeof link_->host);
-   link_->host[sizeof link_->host - 1] = '\0';
+   bson_strcpy_w_null(link_->host, host, sizeof link_->host);
    if (strchr (host, ':')) {
-      snprintf(link_->host_and_port, sizeof link_->host_and_port,
+      bson_snprintf(link_->host_and_port, sizeof link_->host_and_port,
                "[%s]:%hu", host, port);
    } else {
-      snprintf(link_->host_and_port, sizeof link_->host_and_port,
+      bson_snprintf(link_->host_and_port, sizeof link_->host_and_port,
                "%s:%hu", host, port);
    }
    link_->host_and_port[sizeof link_->host_and_port - 1] = '\0';
@@ -113,26 +112,26 @@ scan_to_unichar (const char      *str,
 }
 
 
-static bson_bool_t
+static bool
 mongoc_uri_parse_scheme (const char    *str,
                          const char   **end)
 {
    if (!!strncmp(str, "mongodb://", 10)) {
-      return FALSE;
+      return false;
    }
 
    *end = str + 10;
 
-   return TRUE;
+   return true;
 }
 
 
-static bson_bool_t
+static bool
 mongoc_uri_parse_userpass (mongoc_uri_t  *uri,
                            const char    *str,
                            const char   **end)
 {
-   bson_bool_t ret = FALSE;
+   bool ret = false;
    const char *end_userpass;
    const char *end_user;
    char *s;
@@ -148,26 +147,30 @@ mongoc_uri_parse_userpass (mongoc_uri_t  *uri,
       mongoc_uri_do_unescape(&uri->password);
       *end = end_userpass + 1;
       bson_free(s);
-      ret = TRUE;
+      ret = true;
    } else {
-      ret = TRUE;
+      ret = true;
    }
 
    return ret;
 }
 
 
-static bson_bool_t
+static bool
 mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
                         const char    *str)
 {
-   bson_uint16_t port = 27017;
+   uint16_t port = 27017;
    const char *portstr;
    const char *end_host;
    char *hostname;
 
    if ((portstr = strrchr (str, ':')) && !strstr (portstr, "]")) {
+#ifdef _MSC_VER
+      sscanf_s (portstr, ":%hu", &port);
+#else
       sscanf (portstr, ":%hu", &port);
+#endif
    }
 
    hostname = scan_to_unichar (str + 1, ']', &end_host);
@@ -176,15 +179,15 @@ mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
    mongoc_uri_append_host (uri, hostname, port);
    bson_free (hostname);
 
-   return TRUE;
+   return true;
 }
 
 
-static bson_bool_t
+static bool
 mongoc_uri_parse_host (mongoc_uri_t  *uri,
                        const char    *str)
 {
-   bson_uint16_t port;
+   uint16_t port;
    const char *end_host;
    char *hostname;
 
@@ -196,9 +199,13 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
       end_host++;
       if (!isdigit(*end_host)) {
          bson_free(hostname);
-         return FALSE;
+         return false;
       }
-      sscanf(end_host, "%hu", &port);
+#ifdef _MSC_VER
+      sscanf_s (end_host, "%hu", &port);
+#else
+      sscanf (end_host, "%hu", &port);
+#endif
    } else {
       hostname = bson_strdup(str);
       port = MONGOC_DEFAULT_PORT;
@@ -208,20 +215,20 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
    mongoc_uri_append_host(uri, hostname, port);
    bson_free(hostname);
 
-   return TRUE;
+   return true;
 }
 
 
-bson_bool_t
+bool
 _mongoc_host_list_from_string (mongoc_host_list_t *host_list,
                                const char         *host_and_port)
 {
-   bson_uint16_t port;
+   uint16_t port;
    const char *end_host;
    char *hostname = NULL;
 
-   bson_return_val_if_fail(host_list, FALSE);
-   bson_return_val_if_fail(host_and_port, FALSE);
+   bson_return_val_if_fail(host_list, false);
+   bson_return_val_if_fail(host_and_port, false);
 
    memset(host_list, 0, sizeof *host_list);
 
@@ -229,36 +236,38 @@ _mongoc_host_list_from_string (mongoc_host_list_t *host_list,
       end_host++;
       if (!isdigit(*end_host)) {
          bson_free(hostname);
-         return FALSE;
+         return false;
       }
-      sscanf(end_host, "%hu", &port);
+#ifdef _MSC_VER
+      sscanf_s (end_host, "%hu", &port);
+#else
+      sscanf (end_host, "%hu", &port);
+#endif
    } else {
       hostname = bson_strdup(host_and_port);
       port = MONGOC_DEFAULT_PORT;
    }
 
-   strncpy(host_list->host_and_port, host_and_port,
+   bson_strcpy_w_null(host_list->host_and_port, host_and_port,
            sizeof host_list->host_and_port - 1);
-   host_list->host_and_port[sizeof host_list->host_and_port-1] = '\0';
 
-   strncpy(host_list->host, hostname, sizeof host_list->host - 1);
-   host_list->host[sizeof host_list->host-1] = '\0';
+   bson_strcpy_w_null(host_list->host, hostname, sizeof host_list->host - 1);
 
    host_list->port = port;
    host_list->family = AF_INET;
 
    bson_free(hostname);
 
-   return TRUE;
+   return true;
 }
 
 
-static bson_bool_t
+static bool
 mongoc_uri_parse_hosts (mongoc_uri_t  *uri,
                         const char    *str,
                         const char   **end)
 {
-   bson_bool_t ret = FALSE;
+   bool ret = false;
    const char *end_hostport;
    const char *sock;
    const char *tmp;
@@ -285,11 +294,11 @@ again:
       s = bson_strndup(str, sock + 5 - str);
       if (!mongoc_uri_parse_host(uri, s)) {
          bson_free(s);
-         return FALSE;
+         return false;
       }
       bson_free(s);
       str = sock + 5;
-      ret = TRUE;
+      ret = true;
       if (*str == ',') {
          str++;
          goto again;
@@ -297,34 +306,34 @@ again:
    } else if ((s = scan_to_unichar(str, ',', &end_hostport))) {
       if (!mongoc_uri_parse_host(uri, s)) {
          bson_free(s);
-         return FALSE;
+         return false;
       }
       bson_free(s);
       str = end_hostport + 1;
-      ret = TRUE;
+      ret = true;
       goto again;
    } else if ((s = scan_to_unichar(str, '/', &end_hostport)) ||
               (s = scan_to_unichar(str, '?', &end_hostport))) {
       if (!mongoc_uri_parse_host(uri, s)) {
          bson_free(s);
-         return FALSE;
+         return false;
       }
       bson_free(s);
       *end = end_hostport;
-      return TRUE;
+      return true;
    } else if (*str) {
       if (!mongoc_uri_parse_host(uri, str)) {
-         return FALSE;
+         return false;
       }
       *end = str + strlen(str);
-      return TRUE;
+      return true;
    }
 
    return ret;
 }
 
 
-static bson_bool_t
+static bool
 mongoc_uri_parse_database (mongoc_uri_t  *uri,
                            const char    *str,
                            const char   **end)
@@ -334,13 +343,13 @@ mongoc_uri_parse_database (mongoc_uri_t  *uri,
    if ((uri->database = scan_to_unichar(str, '?', &end_database))) {
       *end = end_database;
    } else if (*str) {
-      uri->database = strdup(str);
+      uri->database = bson_strdup(str);
       *end = str + strlen(str);
    }
 
    mongoc_uri_do_unescape(&uri->database);
 
-   return TRUE;
+   return true;
 }
 
 
@@ -375,26 +384,26 @@ again:
    }
 
    i = bson_count_keys(&uri->read_prefs);
-   snprintf(keystr, sizeof keystr, "%u", i);
+   bson_snprintf(keystr, sizeof keystr, "%u", i);
    bson_append_document(&uri->read_prefs, keystr, -1, &b);
    bson_destroy(&b);
 }
 
 
-static bson_bool_t
+static bool
 mongoc_uri_parse_option (mongoc_uri_t *uri,
                          const char   *str)
 {
-   bson_int32_t v_int;
+   int32_t v_int;
    const char *end_key;
    char *key;
    char *value;
 
    if (!(key = scan_to_unichar(str, '=', &end_key))) {
-      return FALSE;
+      return false;
    }
 
-   value = strdup(end_key + 1);
+   value = bson_strdup(end_key + 1);
    mongoc_uri_do_unescape(&value);
 
    if (!strcasecmp(key, "connecttimeoutms") ||
@@ -427,11 +436,11 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
    bson_free(key);
    bson_free(value);
 
-   return TRUE;
+   return true;
 }
 
 
-static bson_bool_t
+static bool
 mongoc_uri_parse_options (mongoc_uri_t *uri,
                           const char   *str)
 {
@@ -442,42 +451,42 @@ again:
    if ((option = scan_to_unichar(str, '&', &end_option))) {
       if (!mongoc_uri_parse_option(uri, option)) {
          bson_free(option);
-         return FALSE;
+         return false;
       }
       bson_free(option);
       str = end_option + 1;
       goto again;
    } else if (*str) {
       if (!mongoc_uri_parse_option(uri, str)) {
-         return FALSE;
+         return false;
       }
    }
 
-   return TRUE;
+   return true;
 }
 
 
-static bson_bool_t
+static bool
 mongoc_uri_parse (mongoc_uri_t *uri,
                   const char   *str)
 {
    if (!mongoc_uri_parse_scheme(str, &str)) {
-      return FALSE;
+      return false;
    }
 
    if (!*str || !mongoc_uri_parse_userpass(uri, str, &str)) {
-      return FALSE;
+      return false;
    }
 
    if (!*str || !mongoc_uri_parse_hosts(uri, str, &str)) {
-      return FALSE;
+      return false;
    }
 
    switch (*str) {
    case '/':
       str++;
       if (*str && !mongoc_uri_parse_database(uri, str, &str)) {
-         return FALSE;
+         return false;
       }
       if (!*str) {
          break;
@@ -486,14 +495,14 @@ mongoc_uri_parse (mongoc_uri_t *uri,
    case '?':
       str++;
       if (*str && !mongoc_uri_parse_options(uri, str)) {
-         return FALSE;
+         return false;
       }
       break;
    default:
       break;
    }
 
-   return TRUE;
+   return true;
 }
 
 
@@ -556,7 +565,7 @@ mongoc_uri_new (const char *uri_string)
       return NULL;
    }
 
-   uri->str = strdup(uri_string);
+   uri->str = bson_strdup(uri_string);
 
    return uri;
 }
@@ -564,7 +573,7 @@ mongoc_uri_new (const char *uri_string)
 
 mongoc_uri_t *
 mongoc_uri_new_for_host_port (const char    *hostname,
-                              bson_uint16_t  port)
+                              uint16_t  port)
 {
    mongoc_uri_t *uri;
    char *str;
@@ -715,10 +724,10 @@ mongoc_uri_unescape (const char *escaped_string)
    /*
     * Double check that this is a UTF-8 valid string. Bail out if necessary.
     */
-   if (!bson_utf8_validate(escaped_string, len, FALSE)) {
+   if (!bson_utf8_validate(escaped_string, len, false)) {
       MONGOC_WARNING("%s(): escaped_string contains invalid UTF-8",
                      __FUNCTION__);
-      return FALSE;
+      return false;
    }
 
    ptr = escaped_string;
@@ -732,9 +741,13 @@ mongoc_uri_unescape (const char *escaped_string)
          if (((end - ptr) < 2) ||
              !isxdigit(ptr[1]) ||
              !isxdigit(ptr[2]) ||
+#ifdef _MSC_VER
+             (1 != sscanf_s(&ptr[1], "%02x", &hex)) ||
+#else
              (1 != sscanf(&ptr[1], "%02x", &hex)) ||
+#endif
              !isprint(hex)) {
-            bson_string_free(str, TRUE);
+            bson_string_free(str, true);
             return NULL;
          }
          bson_string_append_c(str, hex);
@@ -746,5 +759,5 @@ mongoc_uri_unescape (const char *escaped_string)
       }
    }
 
-   return bson_string_free(str, FALSE);
+   return bson_string_free(str, false);
 }

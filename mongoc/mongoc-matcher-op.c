@@ -38,7 +38,7 @@
 
 mongoc_matcher_op_t *
 _mongoc_matcher_op_exists_new (const char  *path,   /* IN */
-                               bson_bool_t  exists) /* IN */
+                               bool  exists) /* IN */
 {
    mongoc_matcher_op_t *op;
 
@@ -278,10 +278,10 @@ _mongoc_matcher_op_destroy (mongoc_matcher_op_t *op) /* IN */
  *       handle false as "not exists".
  *
  * Returns:
- *       TRUE if the field exists and the spec expected it.
- *       TRUE if the field does not exist and the spec expected it to not
+ *       true if the field exists and the spec expected it.
+ *       true if the field does not exist and the spec expected it to not
  *       exist.
- *       Otherwise, FALSE.
+ *       Otherwise, false.
  *
  * Side effects:
  *       None.
@@ -289,13 +289,13 @@ _mongoc_matcher_op_destroy (mongoc_matcher_op_t *op) /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists, /* IN */
                                  const bson_t               *bson)   /* IN */
 {
    bson_iter_t iter;
    bson_iter_t desc;
-   bson_bool_t found;
+   bool found;
 
    BSON_ASSERT (exists);
    BSON_ASSERT (bson);
@@ -315,7 +315,7 @@ _mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists, /* IN */
  *       Checks if @bson matches the {$type: ...} op.
  *
  * Returns:
- *       TRUE if the requested field was found and the type matched
+ *       true if the requested field was found and the type matched
  *       the requested type.
  *
  * Side effects:
@@ -324,7 +324,7 @@ _mongoc_matcher_op_exists_match (mongoc_matcher_op_exists_t *exists, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type, /* IN */
                                const bson_t             *bson) /* IN */
 {
@@ -339,7 +339,7 @@ _mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type, /* IN */
       return (bson_iter_type (&iter) == type->type);
    }
 
-   return FALSE;
+   return false;
 }
 
 
@@ -352,8 +352,8 @@ _mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type, /* IN */
  *       child expression.
  *
  * Returns:
- *       TRUE if the child expression returned FALSE.
- *       Otherwise FALSE.
+ *       true if the child expression returned false.
+ *       Otherwise false.
  *
  * Side effects:
  *       None.
@@ -361,7 +361,7 @@ _mongoc_matcher_op_type_match (mongoc_matcher_op_type_t *type, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,  /* IN */
                               const bson_t            *bson) /* IN */
 {
@@ -409,7 +409,7 @@ _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,  /* IN */
  *       free to submit patches.
  *
  * Returns:
- *       TRUE if the equality match succeeded.
+ *       true if the equality match succeeded.
  *
  * Side effects:
  *       None.
@@ -417,7 +417,7 @@ _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,  /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
                              bson_iter_t                 *iter)    /* IN */
 {
@@ -444,8 +444,8 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
    /* UTF8 on Left Side */
    case _TYPE_CODE(BSON_TYPE_UTF8, BSON_TYPE_UTF8):
       {
-         bson_uint32_t llen;
-         bson_uint32_t rlen;
+         uint32_t llen;
+         uint32_t rlen;
          const char *lstr;
          const char *rstr;
 
@@ -478,10 +478,10 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
    /* Null on Left Side */
    case _TYPE_CODE(BSON_TYPE_NULL, BSON_TYPE_NULL):
    case _TYPE_CODE(BSON_TYPE_NULL, BSON_TYPE_UNDEFINED):
-      return TRUE;
+      return true;
 
    default:
-      return FALSE;
+      return false;
    }
 }
 
@@ -497,7 +497,7 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *       for comparison between different types.
  *
  * Returns:
- *       TRUE if the document field was > the spec value.
+ *       true if the document field was > the spec value.
  *
  * Side effects:
  *       None.
@@ -505,7 +505,7 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare, /* IN */
                              bson_iter_t                 *iter)    /* IN */
 {
@@ -556,7 +556,7 @@ _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare, /* IN */
       break;
    }
 
-   return FALSE;
+   return false;
 }
 
 
@@ -568,7 +568,7 @@ _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *       Perform a match of {"path": {"$gte": value}}.
  *
  * Returns:
- *       TRUE if the the spec matches, otherwise FALSE.
+ *       true if the the spec matches, otherwise false.
  *
  * Side effects:
  *       None.
@@ -576,7 +576,7 @@ _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare, /* IN */
                               bson_iter_t                 *iter)    /* IN */
 {
@@ -627,7 +627,7 @@ _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare, /* IN */
       break;
    }
 
-   return FALSE;
+   return false;
 }
 
 
@@ -639,7 +639,7 @@ _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *       Checks the spec {"path": {"$in": [value1, value2, ...]}}.
  *
  * Returns:
- *       TRUE if the spec matched, otherwise FALSE.
+ *       true if the spec matched, otherwise false.
  *
  * Side effects:
  *       None.
@@ -647,7 +647,7 @@ _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare, /* IN */
                              bson_iter_t                 *iter)    /* IN */
 {
@@ -658,16 +658,16 @@ _mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    if (!BSON_ITER_HOLDS_ARRAY (&compare->iter) ||
        !bson_iter_recurse (&compare->iter, &op.iter)) {
-      return FALSE;
+      return false;
    }
 
    while (bson_iter_next (&op.iter)) {
       if (_mongoc_matcher_op_eq_match (&op, iter)) {
-         return TRUE;
+         return true;
       }
    }
 
-   return FALSE;
+   return false;
 }
 
 
@@ -679,7 +679,7 @@ _mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *       Perform a {"path": "$lt": {value}} match.
  *
  * Returns:
- *       TRUE if the spec matched, otherwise FALSE.
+ *       true if the spec matched, otherwise false.
  *
  * Side effects:
  *       None.
@@ -687,7 +687,7 @@ _mongoc_matcher_op_in_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare, /* IN */
                              bson_iter_t                 *iter)    /* IN */
 {
@@ -738,7 +738,7 @@ _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare, /* IN */
       break;
    }
 
-   return FALSE;
+   return false;
 }
 
 
@@ -750,7 +750,7 @@ _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *       Perform a {"$path": {"$lte": value}} match.
  *
  * Returns:
- *       TRUE if the spec matched, otherwise FALSE.
+ *       true if the spec matched, otherwise false.
  *
  * Side effects:
  *       None.
@@ -758,7 +758,7 @@ _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare, /* IN */
                               bson_iter_t                 *iter)    /* IN */
 {
@@ -809,7 +809,7 @@ _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare, /* IN */
       break;
    }
 
-   return FALSE;
+   return false;
 }
 
 
@@ -821,7 +821,7 @@ _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *       Perform a {"path": {"$ne": value}} match.
  *
  * Returns:
- *       TRUE if the field "path" was not found or the value is not-equal
+ *       true if the field "path" was not found or the value is not-equal
  *       to value.
  *
  * Side effects:
@@ -830,7 +830,7 @@ _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_ne_match (mongoc_matcher_op_compare_t *compare, /* IN */
                              bson_iter_t                 *iter)    /* IN */
 {
@@ -846,7 +846,7 @@ _mongoc_matcher_op_ne_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *       Perform a {"path": {"$nin": value}} match.
  *
  * Returns:
- *       TRUE if value was not found in the array at "path".
+ *       true if value was not found in the array at "path".
  *
  * Side effects:
  *       None.
@@ -854,7 +854,7 @@ _mongoc_matcher_op_ne_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_nin_match (mongoc_matcher_op_compare_t *compare, /* IN */
                               bson_iter_t                 *iter)    /* IN */
 {
@@ -879,7 +879,7 @@ _mongoc_matcher_op_nin_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare, /* IN */
                                   const bson_t                *bson)    /* IN */
 {
@@ -889,7 +889,7 @@ _mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare, /* IN */
    BSON_ASSERT (bson);
 
    if (!bson_iter_init_find (&iter, bson, compare->path)) {
-      return FALSE;
+      return false;
    }
 
    switch ((int)compare->base.opcode) {
@@ -910,11 +910,11 @@ _mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare, /* IN */
    case MONGOC_MATCHER_OPCODE_NIN:
       return _mongoc_matcher_op_nin_match (compare, &iter);
    default:
-      BSON_ASSERT (FALSE);
+      BSON_ASSERT (false);
       break;
    }
 
-   return FALSE;
+   return false;
 }
 
 
@@ -935,7 +935,7 @@ _mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 _mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical, /* IN */
                                   const bson_t                *bson)    /* IN */
 {
@@ -953,11 +953,11 @@ _mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical, /* IN */
       return !(_mongoc_matcher_op_match (logical->left, bson) ||
                _mongoc_matcher_op_match (logical->right, bson));
    default:
-      BSON_ASSERT (FALSE);
+      BSON_ASSERT (false);
       break;
    }
 
-   return FALSE;
+   return false;
 }
 
 
@@ -977,7 +977,7 @@ _mongoc_matcher_op_logical_match (mongoc_matcher_op_logical_t *logical, /* IN */
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 _mongoc_matcher_op_match (mongoc_matcher_op_t *op,   /* IN */
                           const bson_t        *bson) /* IN */
 {
@@ -1008,7 +1008,7 @@ _mongoc_matcher_op_match (mongoc_matcher_op_t *op,   /* IN */
       break;
    }
 
-   return FALSE;
+   return false;
 }
 
 
@@ -1076,6 +1076,7 @@ _mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,   /* IN */
          str = "$nin";
          break;
       default:
+         str = "???";
          break;
       }
       bson_append_document_begin (bson, op->compare.path, -1, &child);
@@ -1092,7 +1093,7 @@ _mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,   /* IN */
       } else if (op->base.opcode == MONGOC_MATCHER_OPCODE_NOR) {
          str = "$nor";
       } else {
-         BSON_ASSERT (FALSE);
+         BSON_ASSERT (false);
          str = NULL;
       }
       bson_append_array_begin (bson, str, -1, &child);
@@ -1120,7 +1121,7 @@ _mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,   /* IN */
       BSON_APPEND_INT32 (bson, "$type", (int)op->type.type);
       break;
    default:
-      BSON_ASSERT (FALSE);
+      BSON_ASSERT (false);
       break;
    }
 }

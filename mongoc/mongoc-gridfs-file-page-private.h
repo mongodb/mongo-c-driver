@@ -29,53 +29,53 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_gridfs_file_page
 {
-   const bson_uint8_t *read_buf;
-   bson_uint8_t       *buf;
-   bson_uint32_t       len;
-   bson_uint32_t       chunk_size;
-   bson_uint32_t       offset;
+   const uint8_t *read_buf;
+   uint8_t       *buf;
+   uint32_t       len;
+   uint32_t       chunk_size;
+   uint32_t       offset;
 };
 
 mongoc_gridfs_file_page_t *
-_mongoc_gridfs_file_page_new (const bson_uint8_t *data,
-                              bson_uint32_t       len,
-                              bson_uint32_t       chunk_size)
+_mongoc_gridfs_file_page_new (const uint8_t *data,
+                              uint32_t       len,
+                              uint32_t       chunk_size)
    BSON_GNUC_INTERNAL;
 
 void
 _mongoc_gridfs_file_page_destroy (mongoc_gridfs_file_page_t *page)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page,
-                               bson_uint32_t              offset)
+                               uint32_t              offset)
    BSON_GNUC_INTERNAL;
 
-bson_int32_t
+int32_t
 _mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
                                void                      *dst,
-                               bson_uint32_t              len)
+                               uint32_t              len)
    BSON_GNUC_INTERNAL;
 
-bson_int32_t
+int32_t
 _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
                                 const void                *src,
-                                bson_uint32_t              len)
+                                uint32_t              len)
    BSON_GNUC_INTERNAL;
 
-bson_uint32_t
+uint32_t
 _mongoc_gridfs_file_page_tell (mongoc_gridfs_file_page_t *page)
    BSON_GNUC_INTERNAL;
 
-const bson_uint8_t *
+const uint8_t *
 _mongoc_gridfs_file_page_get_data (mongoc_gridfs_file_page_t *page)
    BSON_GNUC_INTERNAL;
 
-bson_uint32_t
+uint32_t
 _mongoc_gridfs_file_page_get_len (mongoc_gridfs_file_page_t *page)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_gridfs_file_page_is_dirty (mongoc_gridfs_file_page_t *page)
    BSON_GNUC_INTERNAL;
 

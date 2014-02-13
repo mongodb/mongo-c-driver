@@ -27,12 +27,13 @@
 #include <bson.h>
 
 #include "mongoc-stream.h"
+#include "mongoc-compat.h"
 
 
 BSON_BEGIN_DECLS
 
 
-mongoc_stream_t *mongoc_stream_unix_new (int fd);
+mongoc_stream_t *mongoc_stream_unix_new (mongoc_fd_t fd);
 
 
 BSON_END_DECLS

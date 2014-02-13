@@ -76,13 +76,15 @@ platform_solaris=no
 AC_CANONICAL_HOST
 AC_MSG_CHECKING([if building for some Win32 platform])
 AS_CASE([$host],
-	[*-*-mingw*|*-*-cygwin*],
+	[*-*-mingw*],
 	[
 		MONGOC_LT_LDFLAGS="$MONGOC_LT_LDFLAGS -no-undefined"
+		CFLAGS="$CFLAGS -D_WIN32_WINNT=0x0600"
+                LDFLAGS="$LDFLAGS -lshlwapi"
 		platform_win32=yes
 	],
 
-	[*-*-linux*],
+	[*-*-linux*|*-*-cygwin*],
 	[
 		platform_linux=yes
 	],
@@ -129,12 +131,6 @@ AS_IF([test "x$enable_Bsymbolic" = "xyes"], [MONGOC_LINK_FLAGS=-Wl[,]-Bsymbolic-
 MONGOC_LT_LDFLAGS="$MONGOC_LT_LDFLAGS $MONGOC_LINK_FLAGS"
 
 AC_SUBST(MONGOC_LT_LDFLAGS)
-
-
-dnl **************************************************************************
-dnl Check for Required Headers
-dnl **************************************************************************
-AC_NEED_STDINT_H(mongoc/mongoc-stdint.h)
 
 
 dnl **************************************************************************

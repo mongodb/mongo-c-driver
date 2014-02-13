@@ -247,6 +247,8 @@ test_stream_tls_install (TestSuite *suite)
    TestSuite_Add (suite, "/TLS/no_certs", test_mongoc_tls_no_certs);
    TestSuite_Add (suite, "/TLS/no_verify", test_mongoc_tls_no_verify);
    TestSuite_Add (suite, "/TLS/password", test_mongoc_tls_password);
+#ifndef _WIN32
    TestSuite_Add (suite, "/TLS/trust_dir", test_mongoc_tls_trust_dir);
+#endif
    TestSuite_Add (suite, "/TLS/wild", test_mongoc_tls_wild);
 }

@@ -15,8 +15,7 @@
  */
 
 
-#include <sys/uio.h>
-
+#include <bson.h>
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
 #include "mongoc-rpc-private.h"
@@ -37,39 +36,39 @@
    iov.iov_base = (void *)&rpc->_name; \
    iov.iov_len = 4; \
    BSON_ASSERT(iov.iov_len); \
-   rpc->msg_len += iov.iov_len; \
+   rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 #define INT64_FIELD(_name) \
    iov.iov_base = (void *)&rpc->_name; \
    iov.iov_len = 8; \
    BSON_ASSERT(iov.iov_len); \
-   rpc->msg_len += iov.iov_len; \
+   rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 #define CSTRING_FIELD(_name) \
    BSON_ASSERT(rpc->_name); \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = strlen(rpc->_name) + 1; \
    BSON_ASSERT(iov.iov_len); \
-   rpc->msg_len += iov.iov_len; \
+   rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 #define BSON_FIELD(_name) \
    do { \
-      bson_int32_t __l; \
+      int32_t __l; \
       memcpy(&__l, rpc->_name, 4); \
       __l = BSON_UINT32_FROM_LE(__l); \
       iov.iov_base = (void *)rpc->_name; \
       iov.iov_len = __l; \
       BSON_ASSERT(iov.iov_len); \
-      rpc->msg_len += iov.iov_len; \
+      rpc->msg_len += (int32_t)iov.iov_len; \
       _mongoc_array_append_val(array, iov); \
    } while (0);
-#define OPTIONAL(_check, _code) \
+#define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
 #define BSON_ARRAY_FIELD(_name) \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_name##_len; \
    BSON_ASSERT(iov.iov_len); \
-   rpc->msg_len += iov.iov_len; \
+   rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 #define IOVEC_ARRAY_FIELD(_name) \
    do { \
@@ -77,7 +76,7 @@
       BSON_ASSERT(rpc->n_##_name); \
       for (_i = 0; _i < rpc->n_##_name; _i++) { \
          BSON_ASSERT(rpc->_name[_i].iov_len); \
-         rpc->msg_len += rpc->_name[_i].iov_len; \
+         rpc->msg_len += (int32_t)rpc->_name[_i].iov_len; \
          _mongoc_array_append_val(array, rpc->_name[_i]); \
       } \
    } while (0);
@@ -85,18 +84,18 @@
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_name##_len; \
    BSON_ASSERT(iov.iov_len); \
-   rpc->msg_len += iov.iov_len; \
+   rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 #define INT64_ARRAY_FIELD(_len, _name) \
    iov.iov_base = (void *)&rpc->_len; \
    iov.iov_len = 4; \
    BSON_ASSERT(iov.iov_len); \
-   rpc->msg_len += iov.iov_len; \
+   rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov); \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_len * 8; \
    BSON_ASSERT(iov.iov_len); \
-   rpc->msg_len += iov.iov_len; \
+   rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 
 
@@ -120,7 +119,7 @@
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
 #undef RAW_BUFFER_FIELD
-#undef OPTIONAL
+#undef BSON_OPTIONAL
 
 
 #define RPC(_name, _code) \
@@ -138,12 +137,12 @@
 #define BSON_FIELD(_name)
 #define BSON_ARRAY_FIELD(_name)
 #define IOVEC_ARRAY_FIELD(_name)
-#define OPTIONAL(_check, _code) \
+#define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
 #define RAW_BUFFER_FIELD(_name)
 #define INT64_ARRAY_FIELD(_len, _name) \
    do { \
-      typeof(rpc->_len) i; \
+      size_t i; \
       for (i = 0; i < rpc->_len; i++) { \
          rpc->_name[i] = BSON_UINT64_FROM_LE(rpc->_name[i]); \
       } \
@@ -173,7 +172,7 @@
    }
 #define INT64_ARRAY_FIELD(_len, _name) \
    do { \
-      typeof(rpc->_len) i; \
+      size_t i; \
       rpc->_len = BSON_UINT32_FROM_LE(rpc->_len); \
       for (i = 0; i < rpc->_len; i++) { \
          rpc->_name[i] = BSON_UINT64_FROM_LE(rpc->_name[i]); \
@@ -200,9 +199,8 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
-#undef OPTIONAL
+#undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
-
 
 #define RPC(_name, _code) \
    static BSON_INLINE void \
@@ -214,14 +212,14 @@
 #define INT32_FIELD(_name) \
    printf("  "#_name" : %d\n", rpc->_name);
 #define INT64_FIELD(_name) \
-   printf("  "#_name" : %lld\n", (long long)rpc->_name);
+   printf("  "#_name" : %" PRIi64 "\n", (int64_t)rpc->_name);
 #define CSTRING_FIELD(_name) \
    printf("  "#_name" : %s\n", rpc->_name);
 #define BSON_FIELD(_name) \
    do { \
       bson_t b; \
       char *s; \
-      bson_int32_t __l; \
+      int32_t __l; \
       memcpy(&__l, rpc->_name, 4); \
       __l = BSON_UINT32_FROM_LE(__l); \
       bson_init_static(&b, rpc->_name, __l); \
@@ -233,7 +231,7 @@
 #define BSON_ARRAY_FIELD(_name) \
    do { \
       bson_reader_t *__r; \
-      bson_bool_t __eof; \
+      bool __eof; \
       const bson_t *__b; \
       __r = bson_reader_new_from_data(rpc->_name, rpc->_name##_len); \
       while ((__b = bson_reader_read(__r, &__eof))) { \
@@ -250,21 +248,21 @@
       for (_i = 0; _i < rpc->n_##_name; _i++) { \
          printf("  "#_name" : "); \
          for (_j = 0; _j < rpc->_name[_i].iov_len; _j++) { \
-            bson_uint8_t u; \
+            uint8_t u; \
             u = ((char *)rpc->_name[_i].iov_base)[_j]; \
             printf(" %02x", u); \
          } \
          printf("\n"); \
       } \
    } while (0);
-#define OPTIONAL(_check, _code) \
+#define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
 #define RAW_BUFFER_FIELD(_name) \
    { \
       size_t __i; \
       printf("  "#_name" :"); \
       for (__i = 0; __i < rpc->_name##_len; __i++) { \
-         bson_uint8_t u; \
+         uint8_t u; \
          u = ((char *)rpc->_name)[__i]; \
          printf(" %02x", u); \
       } \
@@ -272,9 +270,9 @@
    }
 #define INT64_ARRAY_FIELD(_len, _name) \
    do { \
-      typeof(rpc->_len) i; \
+      size_t i; \
       for (i = 0; i < rpc->_len; i++) { \
-         printf("  "#_name" : %lld\n", (long long)rpc->_name[i]); \
+         printf("  "#_name" : %" PRIi64 "\n", (int64_t)rpc->_name[i]); \
       } \
       rpc->_len = BSON_UINT32_FROM_LE(rpc->_len); \
    } while (0);
@@ -299,32 +297,32 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
-#undef OPTIONAL
+#undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 
 
 #define RPC(_name, _code) \
-   static bson_bool_t \
+   static bool \
    _mongoc_rpc_scatter_##_name (mongoc_rpc_##_name##_t *rpc, \
-                                const bson_uint8_t *buf, \
+                                const uint8_t *buf, \
                                 size_t buflen) \
    { \
       BSON_ASSERT(rpc); \
       BSON_ASSERT(buf); \
       BSON_ASSERT(buflen); \
       _code \
-      return TRUE; \
+      return true; \
    }
 #define INT32_FIELD(_name) \
    if (buflen < 4) { \
-      return FALSE; \
+      return false; \
    } \
    memcpy(&rpc->_name, buf, 4); \
    buflen -= 4; \
    buf += 4;
 #define INT64_FIELD(_name) \
    if (buflen < 8) { \
-      return FALSE; \
+      return false; \
    } \
    memcpy(&rpc->_name, buf, 8); \
    buflen -= 8; \
@@ -333,14 +331,14 @@
    do { \
       size_t needed; \
       if (buflen < 4) { \
-         return FALSE; \
+         return false; \
       } \
       memcpy(&rpc->_len, buf, 4); \
       buflen -= 4; \
       buf += 4; \
       needed = BSON_UINT32_FROM_LE(rpc->_len) * 8; \
       if (needed > buflen) { \
-         return FALSE; \
+         return false; \
       } \
       rpc->_name = (void *)buf; \
       buf += needed; \
@@ -349,41 +347,41 @@
 #define CSTRING_FIELD(_name) \
    do { \
       size_t __i; \
-      bson_bool_t found = FALSE; \
+      bool found = false; \
       for (__i = 0; __i < buflen; __i++) { \
          if (!buf[__i]) { \
             rpc->_name = (const char *)buf; \
             buflen -= __i + 1; \
             buf += __i + 1; \
-            found = TRUE; \
+            found = true; \
             break; \
          } \
       } \
       if (!found) { \
-         return FALSE; \
+         return false; \
       } \
    } while (0);
 #define BSON_FIELD(_name) \
    do { \
-      bson_int32_t __l; \
+      int32_t __l; \
       if (buflen < 4) { \
-         return FALSE; \
+         return false; \
       } \
       memcpy(&__l, buf, 4); \
       __l = BSON_UINT32_FROM_LE(__l); \
       if (__l < 5 || __l > buflen) { \
-         return FALSE; \
+         return false; \
       } \
-      rpc->_name = (bson_uint8_t *)buf; \
+      rpc->_name = (uint8_t *)buf; \
       buf += __l; \
       buflen -= __l; \
    } while (0);
 #define BSON_ARRAY_FIELD(_name) \
-   rpc->_name = (bson_uint8_t *)buf; \
-   rpc->_name##_len = buflen; \
+   rpc->_name = (uint8_t *)buf; \
+   rpc->_name##_len = (int32_t)buflen; \
    buf = NULL; \
    buflen = 0;
-#define OPTIONAL(_check, _code) \
+#define BSON_OPTIONAL(_check, _code) \
    if (buflen) { \
       _code \
    }
@@ -396,7 +394,7 @@
    buflen = 0;
 #define RAW_BUFFER_FIELD(_name) \
    rpc->_name = (void *)buf; \
-   rpc->_name##_len = buflen; \
+   rpc->_name##_len = (int32_t)buflen; \
    buf = NULL; \
    buflen = 0;
 
@@ -420,7 +418,7 @@
 #undef BSON_FIELD
 #undef BSON_ARRAY_FIELD
 #undef IOVEC_ARRAY_FIELD
-#undef OPTIONAL
+#undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 
 
@@ -433,21 +431,29 @@ _mongoc_rpc_gather (mongoc_rpc_t   *rpc,
 
    switch ((mongoc_opcode_t)rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
-      return _mongoc_rpc_gather_reply(&rpc->reply, array);
+      _mongoc_rpc_gather_reply(&rpc->reply, array);
+      return;
    case MONGOC_OPCODE_MSG:
-      return _mongoc_rpc_gather_msg(&rpc->msg, array);
+      _mongoc_rpc_gather_msg(&rpc->msg, array);
+      return;
    case MONGOC_OPCODE_UPDATE:
-      return _mongoc_rpc_gather_update(&rpc->update, array);
+      _mongoc_rpc_gather_update(&rpc->update, array);
+      return;
    case MONGOC_OPCODE_INSERT:
-      return _mongoc_rpc_gather_insert(&rpc->insert, array);
+      _mongoc_rpc_gather_insert(&rpc->insert, array);
+      return;
    case MONGOC_OPCODE_QUERY:
-      return _mongoc_rpc_gather_query(&rpc->query, array);
+      _mongoc_rpc_gather_query(&rpc->query, array);
+      return;
    case MONGOC_OPCODE_GET_MORE:
-      return _mongoc_rpc_gather_get_more(&rpc->get_more, array);
+      _mongoc_rpc_gather_get_more(&rpc->get_more, array);
+      return;
    case MONGOC_OPCODE_DELETE:
-      return _mongoc_rpc_gather_delete(&rpc->delete, array);
+      _mongoc_rpc_gather_delete(&rpc->delete, array);
+      return;
    case MONGOC_OPCODE_KILL_CURSORS:
-      return _mongoc_rpc_gather_kill_cursors(&rpc->kill_cursors, array);
+      _mongoc_rpc_gather_kill_cursors(&rpc->kill_cursors, array);
+      return;
    default:
       MONGOC_WARNING("Unknown rpc type: 0x%08x", rpc->header.opcode);
       break;
@@ -578,23 +584,23 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
 }
 
 
-bson_bool_t
+bool
 _mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
-                     const bson_uint8_t *buf,
+                     const uint8_t *buf,
                      size_t              buflen)
 {
    mongoc_opcode_t opcode;
 
-   bson_return_val_if_fail(rpc, FALSE);
-   bson_return_val_if_fail(buf, FALSE);
-   bson_return_val_if_fail(buflen, FALSE);
+   bson_return_val_if_fail(rpc, false);
+   bson_return_val_if_fail(buf, false);
+   bson_return_val_if_fail(buflen, false);
 
    if (BSON_UNLIKELY(buflen < 16)) {
-      return FALSE;
+      return false;
    }
 
    if (!_mongoc_rpc_scatter_header(&rpc->header, buf, 16)) {
-      return FALSE;
+      return false;
    }
 
    opcode = BSON_UINT32_FROM_LE(rpc->header.opcode);
@@ -618,28 +624,28 @@ _mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
       return _mongoc_rpc_scatter_kill_cursors(&rpc->kill_cursors, buf, buflen);
    default:
       MONGOC_WARNING("Unknown rpc type: 0x%08x", opcode);
-      return FALSE;
+      return false;
    }
 }
 
 
-bson_bool_t
+bool
 _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply,
                              bson_t             *bson)
 {
-   bson_int32_t len;
+   int32_t len;
 
-   bson_return_val_if_fail(reply, FALSE);
-   bson_return_val_if_fail(bson, FALSE);
+   bson_return_val_if_fail(reply, false);
+   bson_return_val_if_fail(bson, false);
 
    if (!reply->documents || reply->documents_len < 4) {
-      return FALSE;
+      return false;
    }
 
    memcpy(&len, reply->documents, 4);
    len = BSON_UINT32_FROM_LE(len);
    if (reply->documents_len < len) {
-      return FALSE;
+      return false;
    }
 
    return bson_init_static(bson, reply->documents, len);
@@ -658,7 +664,7 @@ _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply,
  *       to know about a failure.
  *
  * Returns:
- *       TRUE if a getlasterror should be delivered; otherwise FALSE.
+ *       true if a getlasterror should be delivered; otherwise false.
  *
  * Side effects:
  *       None.
@@ -666,11 +672,11 @@ _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply,
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 _mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,
                        const mongoc_write_concern_t *write_concern)
 {
-   bson_return_val_if_fail(rpc, FALSE);
+   bson_return_val_if_fail(rpc, false);
 
    switch (rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
@@ -678,7 +684,7 @@ _mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,
    case MONGOC_OPCODE_MSG:
    case MONGOC_OPCODE_GET_MORE:
    case MONGOC_OPCODE_KILL_CURSORS:
-      return FALSE;
+      return false;
    case MONGOC_OPCODE_INSERT:
    case MONGOC_OPCODE_UPDATE:
    case MONGOC_OPCODE_DELETE:
@@ -687,8 +693,8 @@ _mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,
    }
 
    if (!write_concern || !mongoc_write_concern_get_w(write_concern)) {
-      return FALSE;
+      return false;
    }
 
-   return TRUE;
+   return true;
 }

@@ -39,12 +39,12 @@ typedef void (*mock_server_handler_t) (mock_server_t   *server,
 
 
 mock_server_t *mock_server_new              (const char            *address,
-                                             bson_uint16_t          port,
+                                             uint16_t          port,
                                              mock_server_handler_t  handler,
                                              void                  *handler_data);
 void           mock_server_set_wire_version (mock_server_t         *server,
-                                             bson_int32_t           min_wire_version,
-                                             bson_int32_t           max_wire_version);
+                                             int32_t           min_wire_version,
+                                             int32_t           max_wire_version);
 void           mock_server_reply_simple     (mock_server_t        *server,
                                              mongoc_stream_t      *client,
                                              const mongoc_rpc_t   *request,

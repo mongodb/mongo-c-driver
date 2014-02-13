@@ -1,15 +1,12 @@
 #include <mongoc.h>
+#define MONGOC_INSIDE
 #include <mongoc-gridfs-file-private.h>
-#include <mongoc-log.h>
+#undef MONGOC_INSIDE
 #include <stdlib.h>
-#include <unistd.h>
 #include <fcntl.h>
 
+#include "test-libmongoc.h"
 #include "TestSuite.h"
-
-
-#define HOST (getenv ("MONGOC_TEST_HOST") ? getenv ("MONGOC_TEST_HOST") : \
-              "localhost")
 
 
 static char *gTestUri;
@@ -64,7 +61,7 @@ test_list (void)
    mongoc_gridfs_drop (gridfs, &error);
 
    for (i = 0; i < 3; i++) {
-      sprintf (buf, "file.%d", i);
+      bson_snprintf (buf, sizeof buf, "file.%d", i);
       opt.filename = buf;
       file = mongoc_gridfs_create_file (gridfs, &opt);
       assert (file);
@@ -85,7 +82,7 @@ test_list (void)
 
    i = 0;
    while ((file = mongoc_gridfs_file_list_next (list))) {
-      sprintf (buf, "file.%d", i++);
+      bson_snprintf (buf, sizeof buf, "file.%d", i++);
 
       assert (strcmp (mongoc_gridfs_file_get_filename (file), buf) == 0);
 
@@ -120,7 +117,7 @@ test_create_from_stream (void)
    mongoc_stream_t *stream;
    mongoc_client_t *client;
    bson_error_t error;
-   int fd;
+   mongoc_fd_t fd;
 
    client = mongoc_client_new (gTestUri);
    assert (client);
@@ -130,8 +127,8 @@ test_create_from_stream (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   fd = open ("tests/binary/gridfs.dat", O_RDONLY);
-   assert (fd != -1);
+   fd = mongoc_open ("tests/binary/gridfs.dat", O_RDONLY);
+   assert (mongoc_fd_is_valid(fd));
 
    stream = mongoc_stream_unix_new (fd);
 
@@ -158,7 +155,7 @@ test_read (void)
    ssize_t r;
    char buf[10], buf2[10];
    struct iovec iov[] = { { buf, 10 }, { buf2, 10 } };
-   int fd;
+   mongoc_fd_t fd;
 
    client = mongoc_client_new (gTestUri);
    assert (client);
@@ -168,8 +165,8 @@ test_read (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   fd = open ("tests/binary/gridfs.dat", O_RDONLY);
-   assert (fd != -1);
+   fd = mongoc_open ("tests/binary/gridfs.dat", O_RDONLY);
+   assert (mongoc_fd_is_valid(fd));
 
    stream = mongoc_stream_unix_new (fd);
 
@@ -253,7 +250,7 @@ test_stream (void)
    mongoc_stream_t *stream;
    mongoc_stream_t *in_stream;
    bson_error_t error;
-   int fd;
+   mongoc_fd_t fd;
    ssize_t r;
    char buf[4096];
    struct iovec iov = { buf, sizeof buf };
@@ -266,8 +263,8 @@ test_stream (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   fd = open ("tests/binary/gridfs.dat", O_RDONLY);
-   assert (fd != -1);
+   fd = mongoc_open ("tests/binary/gridfs.dat", O_RDONLY);
+   assert (mongoc_fd_is_valid(fd));
 
    in_stream = mongoc_stream_unix_new (fd);
 
@@ -298,7 +295,7 @@ cleanup_globals (void)
 void
 test_gridfs_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf ("mongodb://%s/", HOST);
+   gTestUri = bson_strdup_printf ("mongodb://%s/", MONGOC_TEST_HOST);
 
    TestSuite_Add (suite, "/GridFS/create", test_create);
    TestSuite_Add (suite, "/GridFS/create_from_stream", test_create_from_stream);

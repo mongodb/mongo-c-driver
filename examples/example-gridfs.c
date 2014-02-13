@@ -1,7 +1,6 @@
 #include <mongoc.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <fcntl.h>
 
 int main (int argc, char *argv[])
@@ -15,7 +14,7 @@ int main (int argc, char *argv[])
    bson_t query;
    bson_t child;
    bson_error_t error;
-   int fd;
+   mongoc_fd_t fd;
    ssize_t r;
    char buf[4096];
    struct iovec iov = { buf, sizeof buf };
@@ -26,6 +25,8 @@ int main (int argc, char *argv[])
       fprintf(stderr, "usage - %s command ...\n", argv[0]);
       return 1;
    }
+
+   mongoc_init();
 
    /* connect to localhost client */
    client = mongoc_client_new ("mongodb://127.0.0.1:27017");
@@ -88,8 +89,8 @@ int main (int argc, char *argv[])
          return 1;
       }
 
-      fd = open (argv[3], O_RDONLY);
-      assert (fd != -1);
+      fd = mongoc_open (argv[3], O_RDONLY);
+      assert(mongoc_fd_is_valid(fd));
 
       /* we'll pull our file from stdin */
       stream = mongoc_stream_unix_new (fd);

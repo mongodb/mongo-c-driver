@@ -11,7 +11,7 @@ test_mongoc_read_prefs_score (void)
 {
    mongoc_read_prefs_t *read_prefs;
    mongoc_cluster_node_t node = { 0 };
-   bson_bool_t valid;
+   bool valid;
    int score;
 
 #define ASSERT_VALID(r) \
@@ -40,7 +40,7 @@ test_mongoc_read_prefs_score (void)
    score = _mongoc_read_prefs_score(read_prefs, &node);
    ASSERT_CMPINT(score, ==, 1);
 
-   node.primary = TRUE;
+   node.primary = true;
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);

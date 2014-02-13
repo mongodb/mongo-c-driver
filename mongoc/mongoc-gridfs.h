@@ -60,7 +60,7 @@ mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
                                     bson_error_t    *error);
 
 
-bson_bool_t
+bool
 mongoc_gridfs_drop (mongoc_gridfs_t *gridfs,
                     bson_error_t    *error);
 

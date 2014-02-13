@@ -33,10 +33,10 @@
 #include "mongoc-gridfs-file-page-private.h"
 #include "mongoc-trace.h"
 
-static bson_bool_t
+static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);
 
-static bson_bool_t
+static bool
 _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file);
 
 
@@ -61,7 +61,7 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file);
       if (file->name) { \
          bson_free (file->name); \
       } \
-      file->name = strdup (str); \
+      file->name = bson_strdup (str); \
       file->is_dirty = 1; \
    }
 
@@ -96,7 +96,7 @@ MONGOC_GRIDFS_FILE_BSON_ACCESSOR (metadata);
 
 
 /** save a gridfs file */
-bson_bool_t
+bool
 mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
 {
    bson_t *selector, *update, child;
@@ -105,7 +105,7 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
    const char *content_type;
    const bson_t *aliases;
    const bson_t *metadata;
-   bson_bool_t r;
+   bool r;
 
    ENTRY;
 
@@ -184,8 +184,8 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
    mongoc_gridfs_file_t *file;
    const char *key;
    bson_iter_t iter;
-   const bson_uint8_t *buf;
-   bson_uint32_t buf_len;
+   const uint8_t *buf;
+   uint32_t buf_len;
 
    ENTRY;
 
@@ -269,15 +269,15 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
    file->upload_date = time (NULL) * 1000;
 
    if (opt->md5) {
-      file->md5 = strdup (opt->md5);
+      file->md5 = bson_strdup (opt->md5);
    }
 
    if (opt->filename) {
-      file->filename = strdup (opt->filename);
+      file->filename = bson_strdup (opt->filename);
    }
 
    if (opt->content_type) {
-      file->content_type = strdup (opt->content_type);
+      file->content_type = bson_strdup (opt->content_type);
    }
 
    if (opt->aliases) {
@@ -350,12 +350,12 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
                           struct iovec         *iov,
                           size_t                iovcnt,
                           size_t                min_bytes,
-                          bson_uint32_t         timeout_msec)
+                          uint32_t         timeout_msec)
 {
-   bson_uint32_t bytes_read = 0;
-   bson_int32_t r;
+   uint32_t bytes_read = 0;
+   int32_t r;
    int i;
-   bson_uint32_t iov_pos;
+   uint32_t iov_pos;
 
    ENTRY;
 
@@ -375,8 +375,8 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
       for (;; ) {
          r = _mongoc_gridfs_file_page_read (file->page,
-                                           iov[i].iov_base + iov_pos,
-                                           iov[i].iov_len - iov_pos);
+                                           (uint8_t *)iov[i].iov_base + iov_pos,
+                                           (uint32_t)(iov[i].iov_len - iov_pos));
          BSON_ASSERT (r >= 0);
 
          iov_pos += r;
@@ -408,12 +408,12 @@ ssize_t
 mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
                            struct iovec         *iov,
                            size_t                iovcnt,
-                           bson_uint32_t         timeout_msec)
+                           uint32_t         timeout_msec)
 {
-   bson_uint32_t bytes_written = 0;
-   bson_int32_t r;
+   uint32_t bytes_written = 0;
+   int32_t r;
    int i;
-   bson_uint32_t iov_pos;
+   uint32_t iov_pos;
 
    ENTRY;
 
@@ -433,15 +433,15 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
          }
 
          r = _mongoc_gridfs_file_page_write (file->page,
-                                            iov[i].iov_base + iov_pos,
-                                            iov[i].iov_len - iov_pos);
+                                            (uint8_t *)iov[i].iov_base + iov_pos,
+                                            (uint32_t)(iov[i].iov_len - iov_pos));
          BSON_ASSERT (r >= 0);
 
          iov_pos += r;
          file->pos += r;
          bytes_written += r;
 
-         file->length = MAX (file->length, file->pos);
+         file->length = MAX (file->length, (int64_t)file->pos);
 
          if (iov_pos == iov[i].iov_len) {
             /** filled a bucket, keep going */
@@ -467,13 +467,13 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 
 
 /** flush a gridfs file's current page to the db */
-static bson_bool_t
+static bool
 _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 {
    bson_t *selector, *update;
-   bson_bool_t r;
-   const bson_uint8_t *buf;
-   bson_uint32_t len;
+   bool r;
+   const uint8_t *buf;
+   uint32_t len;
 
    ENTRY;
    BSON_ASSERT (file);
@@ -485,12 +485,12 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    selector = bson_new ();
 
    bson_append_oid (selector, "files_id", -1, &(file->files_id));
-   bson_append_int32 (selector, "n", -1, file->pos / file->chunk_size);
+   bson_append_int32 (selector, "n", -1, (int32_t)(file->pos / file->chunk_size));
 
    update = bson_sized_new (file->chunk_size + 100);
 
    bson_append_oid (update, "files_id", -1, &(file->files_id));
-   bson_append_int32 (update, "n", -1, file->pos / file->chunk_size);
+   bson_append_int32 (update, "n", -1, (int32_t)(file->pos / file->chunk_size));
    bson_append_binary (update, "data", -1, BSON_SUBTYPE_BINARY, buf, len);
 
    r = mongoc_collection_update (file->gridfs->chunks, MONGOC_UPDATE_UPSERT,
@@ -516,7 +516,7 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
  * This unconditionally fetches the current page, even if the current page
  * covers the same theoretical chunk.
  */
-static bson_bool_t
+static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 {
    bson_t *query, *fields, child, child2;
@@ -524,15 +524,15 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    const char *key;
    bson_iter_t iter;
 
-   bson_uint32_t n;
-   const bson_uint8_t *data;
-   bson_uint32_t len;
+   uint32_t n;
+   const uint8_t *data;
+   uint32_t len;
 
    ENTRY;
 
    BSON_ASSERT (file);
 
-   n = file->pos / file->chunk_size;
+   n = (uint32_t)(file->pos / file->chunk_size);
 
    if (file->page) {
       _mongoc_gridfs_file_page_destroy (file->page);
@@ -542,8 +542,8 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    /* if the file pointer is past the end of the current file (I.e. pointing to
     * a new chunk) and we're on a chunk boundary, we'll pass the page
     * constructor a new empty page */
-   if (file->pos >= file->length && !(file->pos % file->chunk_size)) {
-      data = (bson_uint8_t *)"";
+   if ((int64_t)file->pos >= file->length && !(file->pos % file->chunk_size)) {
+      data = (uint8_t *)"";
       len = 0;
    } else {
       /* if we have a cursor, but the cursor doesn't have the chunk we're going
@@ -561,7 +561,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
             bson_append_oid (&child, "files_id", -1, &file->files_id);
 
             bson_append_document_begin (&child, "n", -1, &child2);
-               bson_append_int32 (&child2, "$gte", -1, file->pos / file->chunk_size);
+               bson_append_int32 (&child2, "$gte", -1, (int32_t)(file->pos / file->chunk_size));
             bson_append_document_end (&child, &child2);
          bson_append_document_end(query, &child);
 
@@ -580,7 +580,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
                                                 fields, NULL);
 
          file->cursor_range[0] = n;
-         file->cursor_range[1] = file->length / file->chunk_size;
+         file->cursor_range[1] = (uint32_t)(file->length / file->chunk_size);
 
          bson_destroy (query);
          bson_destroy (fields);
@@ -595,7 +595,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
             if (file->cursor->failed) {
                memcpy (&(file->error), &(file->cursor->error),
                        sizeof (bson_error_t));
-               file->failed = TRUE;
+               file->failed = true;
             }
 
             RETURN (0);
@@ -645,10 +645,10 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
  */
 int
 mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
-                         bson_uint64_t         delta,
+                         uint64_t         delta,
                          int                   whence)
 {
-   bson_uint64_t offset;
+   uint64_t offset;
 
    BSON_ASSERT(file);
 
@@ -669,7 +669,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
       break;
    }
 
-   BSON_ASSERT (file->length > offset);
+   BSON_ASSERT (file->length > (int64_t)offset);
 
    if (offset % file->chunk_size != file->pos % file->chunk_size) {
       /** no longer on the same page */
@@ -692,7 +692,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
    return 0;
 }
 
-bson_uint64_t
+uint64_t
 mongoc_gridfs_file_tell (mongoc_gridfs_file_t *file)
 {
    BSON_ASSERT(file);
@@ -700,7 +700,7 @@ mongoc_gridfs_file_tell (mongoc_gridfs_file_t *file)
    return file->pos;
 }
 
-bson_bool_t
+bool
 mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
                           bson_error_t         *error)
 {
@@ -713,25 +713,25 @@ mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
                      file->error.code,
                      "%s",
                      file->error.message);
-      RETURN(TRUE);
+      RETURN(true);
    }
 
-   RETURN(FALSE);
+   RETURN(false);
 }
 
-bson_int64_t
+int64_t
 mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file)
 {
    return file->length;
 }
 
-bson_int32_t
+int32_t
 mongoc_gridfs_file_get_chunk_size (mongoc_gridfs_file_t *file)
 {
    return file->chunk_size;
 }
 
-bson_int64_t
+int64_t
 mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file)
 {
    return file->upload_date;

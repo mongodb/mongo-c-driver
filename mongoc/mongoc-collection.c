@@ -84,18 +84,18 @@ _mongoc_collection_new (mongoc_client_t              *client,
       mongoc_read_prefs_copy(read_prefs) :
       mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
-   snprintf(col->ns, sizeof col->ns - 1, "%s.%s",
+   bson_snprintf(col->ns, sizeof col->ns - 1, "%s.%s",
             db, collection);
-   snprintf(col->db, sizeof col->db - 1, "%s", db);
-   snprintf(col->collection, sizeof col->collection - 1,
+   bson_snprintf(col->db, sizeof col->db - 1, "%s", db);
+   bson_snprintf(col->collection, sizeof col->collection - 1,
             "%s", collection);
 
    col->ns[sizeof col->ns-1] = '\0';
    col->db[sizeof col->db-1] = '\0';
    col->collection[sizeof col->collection-1] = '\0';
 
-   col->collectionlen = strlen(col->collection);
-   col->nslen = strlen(col->ns);
+   col->collectionlen = (uint32_t)strlen(col->collection);
+   col->nslen = (uint32_t)strlen(col->ns);
 
    _mongoc_buffer_init(&col->buffer, NULL, 0, NULL);
 
@@ -161,7 +161,7 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
  *       be freed with mongoc_cursor_destroy().
  *
  *       The cursor may fail once iterated upon, so check
- *       mongoc_cursor_error() if mongoc_cursor_next() returns FALSE.
+ *       mongoc_cursor_error() if mongoc_cursor_next() returns false.
  *
  *       See http://docs.mongodb.org/manual/aggregation/ for more
  *       information on how to build aggregation pipelines.
@@ -194,7 +194,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    mongoc_cursor_t *cursor;
    bson_t command;
    bson_t child;
-   bson_int32_t wire_version;
+   int32_t wire_version;
 
    bson_return_val_if_fail(collection, NULL);
    bson_return_val_if_fail(pipeline, NULL);
@@ -279,9 +279,9 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 mongoc_cursor_t *
 mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
                         mongoc_query_flags_t       flags,      /* IN */
-                        bson_uint32_t              skip,       /* IN */
-                        bson_uint32_t              limit,      /* IN */
-                        bson_uint32_t              batch_size, /* IN */
+                        uint32_t              skip,       /* IN */
+                        uint32_t              limit,      /* IN */
+                        uint32_t              batch_size, /* IN */
                         const bson_t              *query,      /* IN */
                         const bson_t              *fields,     /* IN */
                         const mongoc_read_prefs_t *read_prefs) /* IN */
@@ -294,7 +294,7 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
    }
 
    return _mongoc_cursor_new(collection->client, collection->ns, flags, skip,
-                             limit, batch_size, FALSE, query, fields, read_prefs);
+                             limit, batch_size, false, query, fields, read_prefs);
 }
 
 
@@ -330,9 +330,9 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
 mongoc_cursor_t *
 mongoc_collection_command (mongoc_collection_t       *collection,
                            mongoc_query_flags_t       flags,
-                           bson_uint32_t              skip,
-                           bson_uint32_t              limit,
-                           bson_uint32_t              batch_size,
+                           uint32_t              skip,
+                           uint32_t              limit,
+                           uint32_t              batch_size,
                            const bson_t              *query,
                            const bson_t              *fields,
                            const mongoc_read_prefs_t *read_prefs)
@@ -348,7 +348,7 @@ mongoc_collection_command (mongoc_collection_t       *collection,
                                  skip, limit, batch_size, query, fields, read_prefs);
 }
 
-bson_bool_t
+bool
 mongoc_collection_command_simple (mongoc_collection_t       *collection,
                                   const bson_t              *command,
                                   const mongoc_read_prefs_t *read_prefs,
@@ -386,16 +386,16 @@ mongoc_collection_command_simple (mongoc_collection_t       *collection,
  *--------------------------------------------------------------------------
  */
 
-bson_int64_t
+int64_t
 mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
                          mongoc_query_flags_t       flags,       /* IN */
                          const bson_t              *query,       /* IN */
-                         bson_int64_t               skip,        /* IN */
-                         bson_int64_t               limit,       /* IN */
+                         int64_t               skip,        /* IN */
+                         int64_t               limit,       /* IN */
                          const mongoc_read_prefs_t *read_prefs,  /* IN */
                          bson_error_t              *error)       /* OUT */
 {
-   bson_int64_t ret = -1;
+   int64_t ret = -1;
    bson_iter_t iter;
    bson_t reply;
    bson_t cmd;
@@ -439,7 +439,7 @@ mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
  *       Request the MongoDB server drop the collection.
  *
  * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
+ *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
  *       @error is set upon failure.
@@ -447,14 +447,14 @@ mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 mongoc_collection_drop (mongoc_collection_t *collection, /* IN */
                         bson_error_t        *error)      /* OUT */
 {
-   bson_bool_t ret;
+   bool ret;
    bson_t cmd;
 
-   bson_return_val_if_fail(collection, FALSE);
+   bson_return_val_if_fail(collection, false);
 
    bson_init(&cmd);
    bson_append_utf8(&cmd, "drop", 4, collection->collection,
@@ -474,7 +474,7 @@ mongoc_collection_drop (mongoc_collection_t *collection, /* IN */
  *       Request the MongoDB server drop the named index.
  *
  * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
+ *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
  *       @error is setup upon failure if non-NULL.
@@ -482,16 +482,16 @@ mongoc_collection_drop (mongoc_collection_t *collection, /* IN */
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 mongoc_collection_drop_index (mongoc_collection_t *collection, /* IN */
                               const char          *index_name, /* IN */
                               bson_error_t        *error)      /* OUT */
 {
-   bson_bool_t ret;
+   bool ret;
    bson_t cmd;
 
-   bson_return_val_if_fail(collection, FALSE);
-   bson_return_val_if_fail(index_name, FALSE);
+   bson_return_val_if_fail(collection, false);
+   bson_return_val_if_fail(index_name, false);
 
    bson_init(&cmd);
    bson_append_utf8(&cmd, "dropIndexes", -1, collection->collection,
@@ -512,7 +512,7 @@ mongoc_collection_drop_index (mongoc_collection_t *collection, /* IN */
  *       Request the MongoDB server create the named index.
  *
  * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
+ *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
  *       @error is setup upon failure if non-NULL.
@@ -542,10 +542,10 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
                                  bson_iter_int32 (&iter));
    }
 
-   return bson_string_free (s, FALSE);
+   return bson_string_free (s, false);
 }
 
-bson_bool_t
+bool
 mongoc_collection_ensure_index (mongoc_collection_t      *collection,
                                 const bson_t             *keys,
                                 const mongoc_index_opt_t *opt,
@@ -553,11 +553,11 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
 {
    const mongoc_index_opt_t *def_opt;
    mongoc_collection_t *col;
-   bson_bool_t ret;
+   bool ret;
    bson_t insert;
    char *name;
 
-   bson_return_val_if_fail (collection, FALSE);
+   bson_return_val_if_fail (collection, false);
 
    /*
     * TODO: this is supposed to be cached and cheap... make it that way
@@ -568,7 +568,7 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
 
    if (!opt->is_initialized) {
       MONGOC_WARNING("Options have not yet been initialized");
-      return FALSE;
+      return false;
    }
 
    bson_init (&insert);
@@ -640,16 +640,16 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
 }
 
 
-static bson_bool_t
+static bool
 _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
                                     mongoc_insert_flags_t         flags,
                                     const struct iovec           *documents,
-                                    bson_uint32_t                 n_documents,
+                                    uint32_t                 n_documents,
                                     const mongoc_write_concern_t *write_concern,
                                     bson_error_t                 *error)
 {
    mongoc_buffer_t buffer;
-   bson_uint32_t hint;
+   uint32_t hint;
    mongoc_rpc_t rpc;
    mongoc_rpc_t reply;
    char ns[MONGOC_NAMESPACE_MAX];
@@ -667,7 +667,7 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
    }
 
    if (!_mongoc_client_warm_up (collection->client, error)) {
-      return FALSE;
+      return false;
    }
 
    /*
@@ -702,12 +702,12 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
    rpc.insert.documents = documents;
    rpc.insert.n_documents = n_documents;
 
-   snprintf(ns, sizeof ns, "%s.$cmd", collection->db);
+   bson_snprintf(ns, sizeof ns, "%s.$cmd", collection->db);
    ns[sizeof ns - 1] = '\0';
 
    if (!(hint = _mongoc_client_sendv(collection->client, &rpc, 1, 0,
                                      write_concern, NULL, error))) {
-      return FALSE;
+      return false;
    }
 
    if (_mongoc_write_concern_has_gle (write_concern)) {
@@ -716,7 +716,7 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
       if (!_mongoc_client_recv (collection->client, &reply, &buffer,
                                 hint, error)) {
          _mongoc_buffer_destroy (&buffer);
-         return FALSE;
+         return false;
       }
 
       bson_init_static (&reply_bson, reply.reply.documents,
@@ -738,13 +738,13 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
 
          _mongoc_buffer_destroy (&buffer);
 
-         return FALSE;
+         return false;
       }
 
       _mongoc_buffer_destroy (&buffer);
    }
 
-   return TRUE;
+   return true;
 }
 
 
@@ -764,10 +764,10 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
  *       @error: a location for an error or NULL.
  *
  * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
+ *       true if successful; otherwise false and @error is set.
  *
  *       If the write concern does not dictate checking the result of the
- *       insert, then TRUE may be returned even though the document was
+ *       insert, then true may be returned even though the document was
  *       not actually inserted on the MongoDB server or cluster.
  *
  * Side effects:
@@ -776,18 +776,18 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
                                mongoc_insert_flags_t          flags,
                                const bson_t                 **documents,
-                               bson_uint32_t                  n_documents,
+                               uint32_t                  n_documents,
                                const mongoc_write_concern_t  *write_concern,
                                bson_error_t                  *error)
 {
    struct iovec *iov;
    size_t i;
    size_t err_offset;
-   bson_bool_t r;
+   bool r;
 
    ENTRY;
 
@@ -807,7 +807,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
                             MONGOC_ERROR_BSON_INVALID,
                             "A document was corrupt or contained "
                             "invalid characters . or $");
-            return FALSE;
+            return false;
          }
       }
    } else {
@@ -815,7 +815,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
    }
 
    if (!_mongoc_client_warm_up (collection->client, error)) {
-      RETURN (FALSE);
+      RETURN (false);
    }
 
    iov = bson_malloc (sizeof (*iov) * n_documents);
@@ -849,10 +849,10 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
  *       @error: a location for an error or NULL.
  *
  * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
+ *       true if successful; otherwise false and @error is set.
  *
  *       If the write concern does not dictate checking the result of the
- *       insert, then TRUE may be returned even though the document was
+ *       insert, then true may be returned even though the document was
  *       not actually inserted on the MongoDB server or cluster.
  *
  * Side effects:
@@ -861,20 +861,20 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 mongoc_collection_insert (mongoc_collection_t          *collection,
                           mongoc_insert_flags_t         flags,
                           const bson_t                 *document,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
-   bson_bool_t ret;
+   bool ret;
    bson_iter_t iter;
    bson_oid_t oid;
    bson_t copy = BSON_INITIALIZER;
 
-   bson_return_val_if_fail (collection, FALSE);
-   bson_return_val_if_fail (document, FALSE);
+   bson_return_val_if_fail (collection, false);
+   bson_return_val_if_fail (document, false);
 
    if (!bson_iter_init_find (&iter, document, "_id")) {
       bson_oid_init (&oid, NULL);
@@ -908,7 +908,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
  *       @error: A location for an error or NULL.
  *
  * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
+ *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
  *       @error is setup upon failure.
@@ -916,7 +916,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 mongoc_collection_update (mongoc_collection_t          *collection,
                           mongoc_update_flags_t         flags,
                           const bson_t                 *selector,
@@ -924,16 +924,16 @@ mongoc_collection_update (mongoc_collection_t          *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
-   bson_uint32_t hint;
+   uint32_t hint;
    mongoc_rpc_t rpc;
    bson_iter_t iter;
    size_t err_offset;
 
    ENTRY;
 
-   bson_return_val_if_fail(collection, FALSE);
-   bson_return_val_if_fail(selector, FALSE);
-   bson_return_val_if_fail(update, FALSE);
+   bson_return_val_if_fail(collection, false);
+   bson_return_val_if_fail(selector, false);
+   bson_return_val_if_fail(update, false);
 
    if (!(flags & MONGOC_UPDATE_NO_VALIDATE) &&
        bson_iter_init (&iter, update) &&
@@ -950,7 +950,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
                       MONGOC_ERROR_BSON_INVALID,
                       "update document is corrupt or contains "
                       "invalid keys including $ or .");
-      return FALSE;
+      return false;
    } else {
       flags &= ~MONGOC_UPDATE_NO_VALIDATE;
    }
@@ -960,7 +960,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
    }
 
    if (!_mongoc_client_warm_up (collection->client, error)) {
-      RETURN (FALSE);
+      RETURN (false);
    }
 
    rpc.update.msg_len = 0;
@@ -975,16 +975,16 @@ mongoc_collection_update (mongoc_collection_t          *collection,
 
    if (!(hint = _mongoc_client_sendv (collection->client, &rpc, 1, 0,
                                       write_concern, NULL, error))) {
-      RETURN(FALSE);
+      RETURN(false);
    }
 
    if (_mongoc_write_concern_has_gle (write_concern)) {
       if (!_mongoc_client_recv_gle (collection->client, hint, error)) {
-         RETURN(FALSE);
+         RETURN(false);
       }
    }
 
-   RETURN(TRUE);
+   RETURN(true);
 }
 
 
@@ -999,7 +999,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
  *       the document will be inserted into the collection.
  *
  * Returns:
- *       TRUE if successful; otherwise FALSE and @error is set.
+ *       true if successful; otherwise false and @error is set.
  *
  * Side effects:
  *       @error is set upon failure if non-NULL.
@@ -1007,18 +1007,18 @@ mongoc_collection_update (mongoc_collection_t          *collection,
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 mongoc_collection_save (mongoc_collection_t          *collection,
                         const bson_t                 *document,
                         const mongoc_write_concern_t *write_concern,
                         bson_error_t                 *error)
 {
    bson_iter_t iter;
-   bson_bool_t ret;
+   bool ret;
    bson_t selector;
 
-   bson_return_val_if_fail(collection, FALSE);
-   bson_return_val_if_fail(document, FALSE);
+   bson_return_val_if_fail(collection, false);
+   bson_return_val_if_fail(document, false);
 
    if (!bson_iter_init_find(&iter, document, "_id")) {
       return mongoc_collection_insert(collection,
@@ -1062,10 +1062,10 @@ mongoc_collection_save (mongoc_collection_t          *collection,
  *       @error: A location for an error or NULL.
  *
  * Returns:
- *       TRUE if successful; otherwise FALSE and error is set.
+ *       true if successful; otherwise false and error is set.
  *
  *       If the write concern does not dictate checking the result, this
- *       function may return TRUE even if it failed.
+ *       function may return true even if it failed.
  *
  * Side effects:
  *       None.
@@ -1073,25 +1073,25 @@ mongoc_collection_save (mongoc_collection_t          *collection,
  *--------------------------------------------------------------------------
  */
 
-bson_bool_t
+bool
 mongoc_collection_delete (mongoc_collection_t          *collection,
                           mongoc_delete_flags_t         flags,
                           const bson_t                 *selector,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
-   bson_uint32_t hint;
+   uint32_t hint;
    mongoc_rpc_t rpc;
 
-   bson_return_val_if_fail(collection, FALSE);
-   bson_return_val_if_fail(selector, FALSE);
+   bson_return_val_if_fail(collection, false);
+   bson_return_val_if_fail(selector, false);
 
    if (!write_concern) {
       write_concern = collection->write_concern;
    }
 
    if (!_mongoc_client_warm_up (collection->client, error)) {
-      return FALSE;
+      return false;
    }
 
    rpc.delete.msg_len = 0;
@@ -1105,16 +1105,16 @@ mongoc_collection_delete (mongoc_collection_t          *collection,
 
    if (!(hint = _mongoc_client_sendv(collection->client, &rpc, 1, 0,
                                      write_concern, NULL, error))) {
-      return FALSE;
+      return false;
    }
 
    if (_mongoc_write_concern_has_gle(write_concern)) {
       if (!_mongoc_client_recv_gle(collection->client, hint, error)) {
-         return FALSE;
+         return false;
       }
    }
 
-   return TRUE;
+   return true;
 }
 
 

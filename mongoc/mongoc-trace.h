@@ -41,8 +41,8 @@ BSON_BEGIN_DECLS
 #define DUMP_BYTES(_n, _b, _l) \
    do { \
       bson_string_t *str, *astr; \
-      bson_int32_t _i; \
-      bson_uint8_t _v; \
+      int32_t _i; \
+      uint8_t _v; \
       mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, \
                  " %s = %p [%d]", #_n, _b, (int)_l); \
       str = bson_string_new(NULL); \
@@ -72,8 +72,8 @@ BSON_BEGIN_DECLS
          mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, \
                     "%-56s %s", str->str, astr->str); \
       } \
-      bson_string_free(str, TRUE); \
-      bson_string_free(astr, TRUE); \
+      bson_string_free(str, true); \
+      bson_string_free(astr, true); \
    } while (0)
 #else
 #define ENTRY

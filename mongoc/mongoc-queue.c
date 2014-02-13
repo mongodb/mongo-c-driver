@@ -93,11 +93,11 @@ _mongoc_queue_pop_head (mongoc_queue_t *queue)
 }
 
 
-bson_uint32_t
+uint32_t
 _mongoc_queue_get_length (const mongoc_queue_t *queue)
 {
    mongoc_queue_item_t *item;
-   bson_uint32_t count = 0;
+   uint32_t count = 0;
 
    bson_return_val_if_fail(queue, 0);
 

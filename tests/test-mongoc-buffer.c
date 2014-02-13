@@ -10,13 +10,13 @@ test_mongoc_buffer_basic (void)
 {
    mongoc_stream_t *stream;
    mongoc_buffer_t buf;
-   bson_uint8_t *data = bson_malloc0(1024);
+   uint8_t *data = bson_malloc0(1024);
    bson_error_t error = { 0 };
-   bson_bool_t r;
-   int fd;
+   ssize_t r;
+   mongoc_fd_t fd;
 
-   fd = open("tests/binary/reply1.dat", O_RDONLY);
-   ASSERT(fd >= 0);
+   fd = mongoc_open("tests/binary/reply1.dat", O_RDONLY);
+   ASSERT(mongoc_fd_is_valid(fd));
 
    stream = mongoc_stream_unix_new(fd);
    ASSERT(stream);
@@ -24,9 +24,9 @@ test_mongoc_buffer_basic (void)
    _mongoc_buffer_init(&buf, data, 1024, bson_realloc);
 
    r = _mongoc_buffer_fill(&buf, stream, 537, 0, &error);
-   ASSERT_CMPINT(r, ==, -1);
+   ASSERT_CMPINT((int)r, ==, -1);
    r = _mongoc_buffer_fill(&buf, stream, 536, 0, &error);
-   ASSERT_CMPINT(r, ==, 536);
+   ASSERT_CMPINT((int)r, ==, 536);
    ASSERT(buf.len == 536);
 
    _mongoc_buffer_destroy(&buf);

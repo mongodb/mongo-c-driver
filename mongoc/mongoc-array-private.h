@@ -50,7 +50,7 @@ _mongoc_array_init (mongoc_array_t *array,
 void
 _mongoc_array_append_vals (mongoc_array_t *array,
                            const void     *data,
-                           bson_uint32_t   n_elements)
+                           uint32_t   n_elements)
    BSON_GNUC_INTERNAL;
 
 void

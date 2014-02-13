@@ -29,10 +29,8 @@
 
 BSON_BEGIN_DECLS
 
-
 void
 mongoc_init(void);
-
 
 BSON_END_DECLS
 

@@ -6,8 +6,8 @@
 static void
 test_create (void)
 {
-   bson_uint8_t fox[] = "the quick brown fox jumped over the laxy dog";
-   bson_uint32_t len = sizeof fox;
+   uint8_t fox[] = "the quick brown fox jumped over the laxy dog";
+   uint32_t len = sizeof fox;
 
    mongoc_gridfs_file_page_t *page;
 
@@ -22,9 +22,9 @@ test_create (void)
 static void
 test_is_dirty (void)
 {
-   bson_uint8_t buf[] = "abcde";
-   bson_uint32_t len = sizeof buf;
-   bson_int32_t r;
+   uint8_t buf[] = "abcde";
+   uint32_t len = sizeof buf;
+   int32_t r;
 
    mongoc_gridfs_file_page_t *page;
 
@@ -47,10 +47,10 @@ test_is_dirty (void)
 static void
 test_get_data (void)
 {
-   bson_uint8_t buf[] = "abcde";
-   bson_uint32_t len = sizeof buf;
-   const bson_uint8_t *ptr;
-   bson_int32_t r;
+   uint8_t buf[] = "abcde";
+   uint32_t len = sizeof buf;
+   const uint8_t *ptr;
+   int32_t r;
 
    mongoc_gridfs_file_page_t *page;
 
@@ -73,9 +73,9 @@ test_get_data (void)
 static void
 test_get_len (void)
 {
-   bson_uint8_t buf[] = "abcde";
-   bson_uint32_t len = sizeof buf;
-   bson_int32_t r;
+   uint8_t buf[] = "abcde";
+   uint32_t len = sizeof buf;
+   int32_t r;
 
    mongoc_gridfs_file_page_t *page;
 
@@ -92,9 +92,9 @@ test_get_len (void)
 static void
 test_read (void)
 {
-   bson_uint8_t fox[] = "the quick brown fox jumped over the laxy dog";
-   bson_uint32_t len = sizeof fox;
-   bson_int32_t r;
+   uint8_t fox[] = "the quick brown fox jumped over the laxy dog";
+   uint32_t len = sizeof fox;
+   int32_t r;
    char buf[100];
 
    mongoc_gridfs_file_page_t *page;
@@ -119,9 +119,9 @@ test_read (void)
 static void
 test_seek (void)
 {
-   bson_uint8_t fox[] = "the quick brown fox jumped over the laxy dog";
-   bson_uint32_t len = sizeof fox;
-   bson_int32_t r;
+   uint8_t fox[] = "the quick brown fox jumped over the laxy dog";
+   uint32_t len = sizeof fox;
+   int32_t r;
 
    mongoc_gridfs_file_page_t *page;
 
@@ -143,9 +143,9 @@ test_seek (void)
 static void
 test_write (void)
 {
-   bson_uint8_t buf[] = "abcde";
-   bson_uint32_t len = sizeof buf;
-   bson_int32_t r;
+   uint8_t buf[] = "abcde";
+   uint32_t len = sizeof buf;
+   int32_t r;
 
    mongoc_gridfs_file_page_t *page;
 

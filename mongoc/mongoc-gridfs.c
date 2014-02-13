@@ -41,13 +41,13 @@
  * Ensure fast searches for chunks via [ files_id, n ]
  * Ensure fast searches for files via [ filename ]
  */
-static bson_bool_t
+static bool
 _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs,
                              bson_error_t    *error)
 {
    bson_t keys;
    mongoc_index_opt_t opt;
-   bson_bool_t r;
+   bool r;
 
    ENTRY;
 
@@ -88,7 +88,7 @@ _mongoc_gridfs_new (mongoc_client_t *client,
 {
    mongoc_gridfs_t *gridfs;
    char buf[128];
-   bson_bool_t r;
+   bool r;
 
    ENTRY;
 
@@ -104,8 +104,8 @@ _mongoc_gridfs_new (mongoc_client_t *client,
     */
 #ifndef BSON_DISABLE_ASSERT
    {
-      bson_uint32_t prefix_len;
-      prefix_len = strlen (prefix);
+      uint32_t prefix_len;
+      prefix_len = (uint32_t)strlen (prefix);
       BSON_ASSERT (prefix_len + sizeof (".chunks") < sizeof (buf));
    }
 #endif
@@ -114,10 +114,10 @@ _mongoc_gridfs_new (mongoc_client_t *client,
 
    gridfs->client = client;
 
-   sprintf (buf, "%s.chunks", prefix);
+   bson_snprintf (buf, sizeof(buf), "%s.chunks", prefix);
    gridfs->chunks = _mongoc_collection_new (client, db, buf, NULL, NULL);
 
-   sprintf (buf, "%s.files", prefix);
+   bson_snprintf (buf, sizeof(buf), "%s.files", prefix);
    gridfs->files = _mongoc_collection_new (client, db, buf, NULL, NULL);
 
    r = _mongoc_gridfs_ensure_index (gridfs, error);
@@ -128,11 +128,11 @@ _mongoc_gridfs_new (mongoc_client_t *client,
 }
 
 
-bson_bool_t
+bool
 mongoc_gridfs_drop (mongoc_gridfs_t *gridfs,
                     bson_error_t    *error)
 {
-   bson_bool_t r;
+   bool r;
 
    ENTRY;
 
@@ -230,7 +230,7 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
 {
    mongoc_gridfs_file_t *file;
    ssize_t r;
-   bson_uint8_t buf[MONGOC_GRIDFS_STREAM_CHUNK];
+   uint8_t buf[MONGOC_GRIDFS_STREAM_CHUNK];
    struct iovec iov = { buf, 0 };
 
    ENTRY;

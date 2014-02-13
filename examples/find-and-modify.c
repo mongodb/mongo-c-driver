@@ -13,12 +13,12 @@
  *       If @reply is not NULL, then the result document will be placed
  *       in reply and should be released with bson_destroy().
  *
- *       If @remove is TRUE, then the matching documents will be removed.
+ *       If @remove is true, then the matching documents will be removed.
  *
  *       If @fields is not NULL, it will be used to select the desired
  *       resulting fields.
  *
- *       If @_new is TRUE, then the new version of the document is returned
+ *       If @_new is true, then the new version of the document is returned
  *       instead of the old document.
  *
  *       See http://docs.mongodb.org/manual/reference/command/findAndModify/
@@ -33,20 +33,20 @@
  *--------------------------------------------------------------------------
  */
 
-static bson_bool_t
+static bool
 find_and_modify (mongoc_collection_t *collection, /* IN */
                  const bson_t *query,             /* IN */
                  const bson_t *sort,              /* IN */
                  const bson_t *update,            /* IN */
                  const bson_t *fields,            /* IN */
-                 bson_bool_t remove,              /* IN */
-                 bson_bool_t upsert,              /* IN */
-                 bson_bool_t _new,                /* IN */
+                 bool remove,              /* IN */
+                 bool upsert,              /* IN */
+                 bool _new,                /* IN */
                  bson_t *reply,                   /* OUT */
                  bson_error_t *error)             /* OUT */
 {
    const char *name;
-   bson_bool_t ret;
+   bool ret;
    bson_t command;
 
    BSON_ASSERT (collection);
@@ -121,7 +121,7 @@ main (int   argc,
    /*
     * Submit the findAndModify.
     */
-   if (!find_and_modify (collection, &query, NULL, &update, NULL, FALSE, FALSE, TRUE, &reply, &error)) {
+   if (!find_and_modify (collection, &query, NULL, &update, NULL, false, false, true, &reply, &error)) {
       fprintf (stderr, "find_and_modify() failure: %s\n", error.message);
       return 1;
    }

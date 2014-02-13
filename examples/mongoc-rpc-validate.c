@@ -29,19 +29,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <unistd.h>
 
 
 static void
 validate (const char *name,
-          int         fd)
+          mongoc_fd_t   fd)
 {
-   bson_uint8_t *buf;
+   uint8_t *buf;
    mongoc_rpc_t rpc;
-   bson_int32_t len;
+   int32_t len;
    struct stat st;
 
-   if (fstat (fd, &st) != 0) {
+   if (mongoc_fstat (fd, &st) != 0) {
       fprintf (stderr, "%s: Failed to fstat.\n", name);
       return;
    }
@@ -58,7 +57,7 @@ validate (const char *name,
       return;
    }
 
-   if (st.st_size != read (fd, buf, st.st_size)) {
+   if (st.st_size != mongoc_read (fd, buf, st.st_size)) {
       fprintf (stderr, "%s: Failed to read %d bytes into buffer.\n",
                name, (int)st.st_size);
       goto cleanup;
@@ -87,7 +86,7 @@ int
 main (int   argc,
       char *argv[])
 {
-   int fd;
+   mongoc_fd_t fd;
    int i;
 
    if (argc < 2) {
@@ -95,14 +94,16 @@ main (int   argc,
       return EXIT_FAILURE;
    }
 
+   mongoc_init();
+
    for (i = 1; i < argc; i++) {
-      fd = open (argv[i], O_RDONLY);
-      if (fd == -1) {
+      fd = mongoc_open (argv[i], O_RDONLY);
+      if (! mongoc_fd_is_valid(fd)) {
          fprintf (stderr, "Failed to open \"%s\"\n", argv[i]);
          continue;
       }
       validate (argv[i], fd);
-      close (fd);
+      mongoc_close (fd);
    }
 
    return EXIT_SUCCESS;

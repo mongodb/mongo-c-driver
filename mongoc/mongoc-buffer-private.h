@@ -32,7 +32,7 @@ typedef struct _mongoc_buffer_t mongoc_buffer_t;
 
 struct _mongoc_buffer_t
 {
-   bson_uint8_t       *data;
+   uint8_t       *data;
    size_t              datalen;
    off_t               off;
    size_t              len;
@@ -42,16 +42,16 @@ struct _mongoc_buffer_t
 
 void
 _mongoc_buffer_init (mongoc_buffer_t   *buffer,
-                     bson_uint8_t      *buf,
+                     uint8_t      *buf,
                      size_t             buflen,
                      bson_realloc_func  realloc_func)
    BSON_GNUC_INTERNAL;
 
-bson_bool_t
+bool
 _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
                                    mongoc_stream_t *stream,
                                    size_t           size,
-                                   bson_int32_t     timeout_msec,
+                                   int32_t     timeout_msec,
                                    bson_error_t    *error)
    BSON_GNUC_INTERNAL;
 
@@ -59,7 +59,7 @@ ssize_t
 _mongoc_buffer_fill (mongoc_buffer_t *buffer,
                      mongoc_stream_t *stream,
                      size_t           min_bytes,
-                     bson_int32_t     timeout_msec,
+                     int32_t     timeout_msec,
                      bson_error_t    *error)
    BSON_GNUC_INTERNAL;
 
@@ -69,7 +69,7 @@ _mongoc_buffer_destroy (mongoc_buffer_t *buffer)
 
 void
 _mongoc_buffer_clear (mongoc_buffer_t *buffer,
-                      bson_bool_t      zero)
+                      bool      zero)
    BSON_GNUC_INTERNAL;
 
 

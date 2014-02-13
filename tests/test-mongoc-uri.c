@@ -1,5 +1,4 @@
 #include <mongoc.h>
-#include <netdb.h>
 
 #include "mongoc-host-list-private.h"
 

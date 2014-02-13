@@ -97,7 +97,6 @@ void TestSuite_AddFull (TestSuite *suite,
 int  TestSuite_Run     (TestSuite *suite);
 void TestSuite_Destroy (TestSuite *suite);
 
-
 #ifdef __cplusplus
 }
 #endif

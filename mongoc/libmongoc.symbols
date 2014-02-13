@@ -55,6 +55,7 @@ mongoc_database_get_write_concern
 mongoc_database_has_collection
 mongoc_database_set_read_prefs
 mongoc_database_set_write_concern
+mongoc_fd_set_nonblock
 mongoc_gridfs_create_file
 mongoc_gridfs_create_file_from_stream
 mongoc_gridfs_destroy
