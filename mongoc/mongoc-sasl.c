@@ -168,7 +168,11 @@ _mongoc_sasl_destroy (mongoc_sasl_t *sasl)
    free (sasl->service_name);
    free (sasl->service_host);
 
+#if (SASL_VERSION_MAJOR >= 2) && \
+    (SASL_VERSION_MINOR >= 1) && \
+    (SASL_VERSION_STEP >= 24)
    sasl_client_done ();
+#endif
 }
 
 
