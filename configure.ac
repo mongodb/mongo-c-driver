@@ -195,10 +195,10 @@ MONGOC_CHECK_DOC_BUILD
 dnl **************************************************************************
 dnl Create (3) doc targets for each public symbol
 dnl **************************************************************************
-MONGOC_SYMBOLS=`sed -e 's/.*/$(top_srcdir)\/doc\/&.3/' < mongoc/libmongoc.symbols | xargs`
+MONGOC_SYMBOLS=`sed -e 's/.*/$(top_srcdir)\/doc\/&.3/' < mongoc/libmongoc.symbols | tr '\n' ' '`
 AC_SUBST([MONGOC_SYMBOLS])
 
-MONGOC_API=`sed -e 's/.*/$(top_srcdir)\/doc\/&.7/' < doc/mongoc_api | xargs`
+MONGOC_API=`sed -e 's/.*/$(top_srcdir)\/doc\/&.7/' < doc/mongoc_api | tr '\n' ' '`
 AC_SUBST([MONGOC_API])
 
 dnl **************************************************************************

@@ -1,0 +1,41 @@
+mongoc_fd_set_nonblock(3)
+=========================
+
+
+NAME
+----
+mongoc_fd_set_nonblock - set a mongo_fd_t to nonblocking mode
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+int
+mongoc_fd_set_nonblock (mongoc_fd_t fd);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_fd_set_nonblock()_ function shall set the underlying mongoc_fd_t to
+nonblocking mode.  Due to the mongoc_fd_t abstraction between windows and *nix,
+this function is needed to provide a nonblocking abstraction.
+
+RETURN VALUE
+------------
+Returns 0 on success, -1 on error
+
+ERRORS
+------
+On error, errno will be set and relevant to the underlying platform
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc[7]
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.
