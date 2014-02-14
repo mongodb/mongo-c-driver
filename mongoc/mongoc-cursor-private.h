@@ -31,20 +31,15 @@ BSON_BEGIN_DECLS
 
 typedef struct mongoc_cursor_interface
 {
-   mongoc_cursor_t * (*clone)(const mongoc_cursor_t * cursor);
-
-   void (*destroy)(mongoc_cursor_t *cursor);
-
-   bool (*more)(mongoc_cursor_t *cursor);
-
-   bool (*next)(mongoc_cursor_t *cursor,
-                       const bson_t   **bson);
-
-   bool (*error)(mongoc_cursor_t *cursor,
-                        bson_error_t    *error);
-
-   void (*get_host)(mongoc_cursor_t    *cursor,
-                    mongoc_host_list_t *host);
+   mongoc_cursor_t *(*clone)    (const mongoc_cursor_t  *cursor);
+   void             (*destroy)  (mongoc_cursor_t        *cursor);
+   bool             (*more)     (mongoc_cursor_t        *cursor);
+   bool             (*next)     (mongoc_cursor_t        *cursor,
+                                 const bson_t          **bson);
+   bool             (*error)    (mongoc_cursor_t        *cursor,
+                                 bson_error_t           *error);
+   void             (*get_host) (mongoc_cursor_t        *cursor,
+                                 mongoc_host_list_t     *host);
 } mongoc_cursor_interface_t;
 
 
@@ -52,15 +47,15 @@ struct _mongoc_cursor_t
 {
    mongoc_client_t     *client;
 
-   uint32_t        hint;
-   uint32_t        stamp;
+   uint32_t             hint;
+   uint32_t             stamp;
 
-   bool          is_command   : 1;
-   bool          sent         : 1;
-   bool          done         : 1;
-   bool          failed       : 1;
-   bool          end_of_event : 1;
-   bool          in_exhaust   : 1;
+   unsigned             is_command   : 1;
+   unsigned             sent         : 1;
+   unsigned             done         : 1;
+   unsigned             failed       : 1;
+   unsigned             end_of_event : 1;
+   unsigned             in_exhaust   : 1;
 
    bson_t               query;
    bson_t               fields;
@@ -68,13 +63,13 @@ struct _mongoc_cursor_t
    mongoc_read_prefs_t *read_prefs;
 
    mongoc_query_flags_t flags;
-   uint32_t        skip;
-   uint32_t        limit;
-   uint32_t        count;
-   uint32_t        batch_size;
+   uint32_t             skip;
+   uint32_t             limit;
+   uint32_t             count;
+   uint32_t             batch_size;
 
    char                 ns[140];
-   uint32_t        nslen;
+   uint32_t             nslen;
 
    bson_error_t         error;
 
@@ -91,10 +86,10 @@ mongoc_cursor_t *
 _mongoc_cursor_new (mongoc_client_t           *client,
                     const char                *db_and_collection,
                     mongoc_query_flags_t       flags,
-                    uint32_t              skip,
-                    uint32_t              limit,
-                    uint32_t              batch_size,
-                    bool                is_command,
+                    uint32_t                   skip,
+                    uint32_t                   limit,
+                    uint32_t                   batch_size,
+                    bool                       is_command,
                     const bson_t              *query,
                     const bson_t              *fields,
                     const mongoc_read_prefs_t *read_prefs)

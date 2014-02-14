@@ -61,18 +61,18 @@ typedef enum
 
 typedef struct
 {
-   uint32_t       index;
+   uint32_t            index;
    mongoc_host_list_t  host;
    mongoc_stream_t    *stream;
-   int32_t        ping_avg_msec;
-   int32_t        pings[MONGOC_CLUSTER_PING_NUM_SAMPLES];
-   int32_t        pings_pos;
-   uint32_t       stamp;
+   int32_t             ping_avg_msec;
+   int32_t             pings[MONGOC_CLUSTER_PING_NUM_SAMPLES];
+   int32_t             pings_pos;
+   uint32_t            stamp;
    bson_t              tags;
-   bool         primary    : 1;
-   bool         needs_auth : 1;
-   int32_t        min_wire_version;
-   int32_t        max_wire_version;
+   unsigned            primary    : 1;
+   unsigned            needs_auth : 1;
+   int32_t             min_wire_version;
+   int32_t             max_wire_version;
    char               *replSet;
 } mongoc_cluster_node_t;
 
@@ -82,22 +82,23 @@ typedef struct
    mongoc_cluster_mode_t   mode;
    mongoc_cluster_state_t  state;
 
-   uint32_t           request_id;
-   uint32_t           sockettimeoutms;
+   uint32_t                request_id;
+   uint32_t                sockettimeoutms;
 
-   int64_t            last_reconnect;
+   int64_t                 last_reconnect;
 
    mongoc_uri_t           *uri;
-   bool             requires_auth : 1;
 
-   int32_t            wire_version;
-   bool             isdbgrid;
+   unsigned                requires_auth : 1;
+   unsigned                isdbgrid      : 1;
+
+   int32_t                 wire_version;
 
    mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
    mongoc_client_t        *client;
-   uint32_t           max_bson_size;
-   uint32_t           max_msg_size;
-   uint32_t           sec_latency_ms;
+   uint32_t                max_bson_size;
+   uint32_t                max_msg_size;
+   uint32_t                sec_latency_ms;
    mongoc_array_t          iov;
 
    mongoc_list_t          *peers;
