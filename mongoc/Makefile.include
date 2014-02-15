@@ -38,6 +38,7 @@ INST_H_FILES = \
 	mongoc/mongoc-stream-buffered.h \
 	mongoc/mongoc-stream-gridfs.h \
 	mongoc/mongoc-stream-unix.h \
+	mongoc/mongoc-thread.h \
 	mongoc/mongoc-uri.h \
 	mongoc/mongoc-version.h \
 	mongoc/mongoc-write-concern.h
