@@ -101,6 +101,8 @@ main (int   argc,
    bson_t reply;
    char *str;
 
+   mongoc_init ();
+
    client = mongoc_client_new ("mongodb://127.0.0.1:27017/");
    collection = mongoc_client_get_collection (client, "test", "test");
 

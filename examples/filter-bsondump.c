@@ -47,6 +47,8 @@ main (int argc,
    bson_t *spec;
    char *str;
 
+   mongoc_init ();
+
    reader = bson_reader_new_from_handle ((void *)&MONGOC_STDIN_FILENO, &_read_cb, &_destroy_cb);
    spec = BCON_NEW ("hello", "world");
    matcher = mongoc_matcher_new (spec, NULL);

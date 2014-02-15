@@ -45,3 +45,17 @@ mongoc_init (void)
    static mongoc_once_t once = MONGOC_ONCE_INIT;
    mongoc_once (&once, _mongoc_do_init);
 }
+
+
+/*
+ * On GCC, just use __attribute__((constructor)) to perform initialization
+ * automatically for the application.
+ */
+#ifdef __GNUC__
+static void _mongoc_init_ctor (void) __attribute__((constructor));
+static void
+_mongoc_init_ctor (void)
+{
+   mongoc_init ();
+}
+#endif
