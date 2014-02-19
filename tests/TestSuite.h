@@ -69,6 +69,7 @@ struct _Test
    char *name;
    TestFunc func;
    int exit_code;
+   unsigned seed;
    int (*check) (void);
 };
 

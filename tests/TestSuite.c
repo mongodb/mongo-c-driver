@@ -191,6 +191,32 @@ _Clock_Subtract (struct timespec *ts, /* OUT */
 }
 
 
+static void
+TestSuite_SeedRand (TestSuite *suite, /* IN */
+                    Test *test)       /* IN */
+{
+   int seed;
+   int fd;
+   int n_read;
+
+   fd = open ("/dev/urandom", O_RDONLY);
+   if (fd != -1) {
+      n_read = read (fd, &seed, 4);
+      assert (n_read == 4);
+   } else {
+      seed = time (NULL) * (int)getpid ();
+   }
+
+   srand (seed);
+
+   if (fd != -1) {
+      close (fd);
+   }
+
+   test->seed = seed;
+}
+
+
 void
 TestSuite_Init (TestSuite *suite,
                 const char *name,
@@ -271,7 +297,7 @@ TestSuite_AddFull (TestSuite  *suite,   /* IN */
 #if !defined(_WIN32)
 static int
 TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
-                          TestFunc func)    /* IN */
+                          Test *test)       /* IN */
 {
    pid_t child;
    int exit_code = -1;
@@ -285,7 +311,8 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
       fd = open ("/dev/null", O_WRONLY);
       dup2 (fd, STDOUT_FILENO);
       close (fd);
-      func ();
+      TestSuite_SeedRand (suite, test);
+      test->func ();
       exit (0);
    }
 
@@ -322,14 +349,16 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
        */
 
 #if defined(_WIN32)
+      TestSuite_SeedRand (suite, test);
       test->func ();
       status = 0;
 #else
       if ((suite->flags & TEST_NOFORK)) {
+         TestSuite_SeedRand (suite, test);
          test->func ();
          status = 0;
       } else {
-         status = TestSuite_RunFuncInChild (suite, test->func);
+         status = TestSuite_RunFuncInChild (suite, test);
       }
 #endif
 
@@ -340,9 +369,11 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       TestSuite_snprintf (buf, sizeof buf,
                 "    { \"status\": \"%s\", "
                       "\"name\": \"%s\", "
+                      "\"seed\": \"%u\", "
                       "\"elapsed\": %u.%09u }%s\n",
                (status == 0) ? "PASS" : "FAIL",
                name,
+               test->seed,
                (unsigned)ts3.tv_sec,
                (unsigned)ts3.tv_nsec,
                ((*count) == 1) ? "" : ",");
@@ -649,24 +680,3 @@ TestSuite_Destroy (TestSuite *suite)
    free (suite->prgname);
    free (suite->testname);
 }
-
-#if 0
-static void
-seed_rand (void)
-{
-   int seed;
-   int fd;
-   int n_read;
-
-   fd = open ("/dev/urandom", O_RDONLY);
-   assert (fd != -1);
-
-   n_read = read (fd, &seed, 4);
-   assert (n_read == 4);
-
-   fprintf (stderr, "srand(%u)\n", seed);
-   srand (seed);
-
-   close (fd);
-}
-#endif
