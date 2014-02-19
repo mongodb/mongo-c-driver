@@ -468,7 +468,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite) /* IN */
 
    ASSERT (suite);
 
-   if (0 != uname (&u)) {
+   if (uname (&u) == -1) {
       perror ("uname()");
       return;
    }
