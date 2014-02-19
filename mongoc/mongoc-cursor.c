@@ -541,7 +541,6 @@ mongoc_cursor_error (mongoc_cursor_t *cursor,
        * error code of 17 and we can synthesize 59.
        */
       if (cursor->is_command &&
-          (cursor->client->cluster.wire_version == 0) &&
           (error->code == MONGOC_ERROR_PROTOCOL_ERROR)) {
          error->code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
       }
