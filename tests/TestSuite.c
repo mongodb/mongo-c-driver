@@ -207,8 +207,6 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
       seed = time (NULL) * (int)getpid ();
    }
 
-   srand (seed);
-
    if (fd != -1) {
       close (fd);
    }
@@ -282,6 +280,7 @@ TestSuite_AddFull (TestSuite  *suite,   /* IN */
    test->func = func;
    test->check = check;
    test->next = NULL;
+   TestSuite_SeedRand (suite, test);
 
    if (!suite->tests) {
       suite->tests = test;
@@ -311,7 +310,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
       fd = open ("/dev/null", O_WRONLY);
       dup2 (fd, STDOUT_FILENO);
       close (fd);
-      TestSuite_SeedRand (suite, test);
+      srand (test->seed);
       test->func ();
       exit (0);
    }
@@ -349,12 +348,12 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
        */
 
 #if defined(_WIN32)
-      TestSuite_SeedRand (suite, test);
+      srand (test->seed);
       test->func ();
       status = 0;
 #else
       if ((suite->flags & TEST_NOFORK)) {
-         TestSuite_SeedRand (suite, test);
+         srand (test->seed);
          test->func ();
          status = 0;
       } else {
