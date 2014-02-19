@@ -233,6 +233,7 @@ ssl_test_client (void * ptr)
    assert(r == wiov.iov_len);
 
    r = mongoc_stream_readv(ssl_stream, &riov, 1, 4, TIMEOUT);
+   assert(r > 0);
    assert(r == wiov.iov_len);
    assert(strcmp(riov.iov_base, wiov.iov_base) == 0);
 
