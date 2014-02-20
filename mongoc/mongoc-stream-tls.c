@@ -18,6 +18,7 @@
 
 #include <bson.h>
 
+#include <errno.h>
 #include <string.h>
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
@@ -677,7 +678,15 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
 
    tls->timeout = timeout_msec;
 
-   return BIO_do_handshake (tls->bio) == 1;
+   if (BIO_do_handshake (tls->bio) == 1) {
+      return true;
+   }
+
+   if (!errno) {
+      errno = ETIMEDOUT;
+   }
+
+   return false;
 }
 
 

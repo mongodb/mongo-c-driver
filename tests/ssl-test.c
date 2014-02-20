@@ -1,10 +1,11 @@
 #include <bson.h>
+#include <errno.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
 #include "ssl-test.h"
 
-#define TIMEOUT 100
+#define TIMEOUT 1000
 
 #define LOCALHOST "127.0.0.1"
 
@@ -194,6 +195,7 @@ ssl_test_client (void * ptr)
    }
    assert(ssl_stream);
 
+   errno = 0;
    r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
    if (! r) {
       unsigned long err = ERR_get_error();
