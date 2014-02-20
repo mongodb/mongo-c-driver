@@ -37,6 +37,7 @@ filter-bsondump
 repltest1
 shardtest1
 shardtest2
+test.log
 test-libmongoc
 test-load
 test-mock-server
