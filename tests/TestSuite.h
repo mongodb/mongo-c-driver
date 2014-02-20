@@ -80,6 +80,7 @@ struct _TestSuite
    char *name;
    char *testname;
    Test *tests;
+   FILE *outfile;
    int flags;
 };
 

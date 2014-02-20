@@ -217,6 +217,7 @@ TestSuite_Init (TestSuite *suite,
                 int argc,
                 char **argv)
 {
+   const char *filename;
    int i;
 
    memset (suite, 0, sizeof *suite);
@@ -232,6 +233,18 @@ TestSuite_Init (TestSuite *suite,
          suite->flags |= TEST_NOFORK;
       } else if (0 == strcmp ("-p", argv [i])) {
          suite->flags |= TEST_NOTHREADS;
+      } else if (0 == strcmp ("-F", argv [i])) {
+         if (argc - 1 == i) {
+            fprintf (stderr, "-F requires a filename argument.\n");
+            exit (EXIT_FAILURE);
+         }
+         filename = argv [++i];
+         if (0 != strcmp ("-", filename)) {
+            suite->outfile = fopen (filename, "w");
+            if (!suite->outfile) {
+               fprintf (stderr, "Failed to open log file: %s\n", filename);
+            }
+         }
       } else if ((0 == strcmp ("-h", argv [i])) ||
                  (0 == strcmp ("--help", argv [i]))) {
          suite->flags |= TEST_HELPONLY;
@@ -298,11 +311,19 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
    int exit_code = -1;
    int fd;
 
+   if (suite->outfile) {
+      fflush (suite->outfile);
+   }
+
    if (-1 == (child = fork())) {
       return -1;
    }
 
    if (!child) {
+      if (suite->outfile) {
+         fclose (suite->outfile);
+         suite->outfile = NULL;
+      }
       fd = open ("/dev/null", O_WRONLY);
       dup2 (fd, STDOUT_FILENO);
       close (fd);
@@ -374,6 +395,10 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
                ((*count) == 1) ? "" : ",");
       buf [sizeof buf - 1] = 0;
       fprintf (stdout, "%s", buf);
+      if (suite->outfile) {
+         fprintf (suite->outfile, "%s", buf);
+         fflush (suite->outfile);
+      }
       Mutex_Unlock (mutex);
    } else {
       Mutex_Lock (mutex);
@@ -382,6 +407,10 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
                 test->name);
       buf [sizeof buf - 1] = '\0';
       fprintf (stdout, "%s", buf);
+      if (suite->outfile) {
+         fprintf (suite->outfile, "%s", buf);
+         fflush (suite->outfile);
+      }
       Mutex_Unlock (mutex);
    }
 }
@@ -415,7 +444,8 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
 
 
 static void
-TestSuite_PrintJsonHeader (TestSuite *suite) /* IN */
+TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
+                           FILE *stream)     /* IN */
 {
 #ifdef _WIN32
 #  define INFO_BUFFER_SIZE 32767
@@ -436,7 +466,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite) /* IN */
       build = (DWORD)(HIWORD(version));
    }
 
-   fprintf (stdout,
+   fprintf (stream,
             "{\n"
             "  \"host\": {\n"
             "    \"sysname\": \"Windows\",\n"
@@ -475,7 +505,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite) /* IN */
    npages = sysconf (_SC_PHYS_PAGES);
 #  endif
 
-   fprintf (stdout,
+   fprintf (stream,
             "{\n"
             "  \"host\": {\n"
             "    \"sysname\": \"%s\",\n"
@@ -500,14 +530,15 @@ TestSuite_PrintJsonHeader (TestSuite *suite) /* IN */
             (suite->flags & TEST_NOFORK) ? "false" : "true");
 #endif
 
-   fflush (stdout);
+   fflush (stream);
 }
 
 
 static void
-TestSuite_PrintJsonFooter (void) /* IN */
+TestSuite_PrintJsonFooter (FILE *stream) /* IN */
 {
-   fprintf (stdout, "  ]\n}\n");
+   fprintf (stream, "  ]\n}\n");
+   fflush (stream);
 }
 
 
@@ -530,7 +561,10 @@ TestSuite_ParallelWorker (void *data) /* IN */
    TestSuite_RunTest (info->suite, info->test, info->mutex, info->count);
 
    if (AtomicInt_DecrementAndTest (info->count)) {
-      TestSuite_PrintJsonFooter ();
+      TestSuite_PrintJsonFooter (stdout);
+      if (info->suite->outfile) {
+         TestSuite_PrintJsonFooter (info->suite->outfile);
+      }
       exit (0);
    }
 
@@ -599,7 +633,10 @@ TestSuite_RunSerial (TestSuite *suite) /* IN */
       count--;
    }
 
-   TestSuite_PrintJsonFooter ();
+   TestSuite_PrintJsonFooter (stdout);
+   if (suite->outfile) {
+      TestSuite_PrintJsonFooter (suite->outfile);
+   }
 
    Mutex_Destroy (&mutex);
 }
@@ -629,7 +666,10 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
       }
    }
 
-   TestSuite_PrintJsonFooter ();
+   TestSuite_PrintJsonFooter (stdout);
+   if (suite->outfile) {
+      TestSuite_PrintJsonFooter (suite->outfile);
+   }
 
    Mutex_Destroy (&mutex);
 }
@@ -643,7 +683,10 @@ TestSuite_Run (TestSuite *suite) /* IN */
       return 0;
    }
 
-   TestSuite_PrintJsonHeader (suite);
+   TestSuite_PrintJsonHeader (suite, stdout);
+   if (suite->outfile) {
+      TestSuite_PrintJsonHeader (suite, suite->outfile);
+   }
 
    if (suite->tests) {
       if (suite->testname) {
@@ -654,7 +697,10 @@ TestSuite_Run (TestSuite *suite) /* IN */
          TestSuite_RunParallel (suite);
       }
    } else {
-      TestSuite_PrintJsonFooter ();
+      TestSuite_PrintJsonFooter (stdout);
+      if (suite->outfile) {
+         TestSuite_PrintJsonFooter (suite->outfile);
+      }
    }
 
    return 0;
@@ -671,6 +717,10 @@ TestSuite_Destroy (TestSuite *suite)
       tmp = test->next;
       free (test->name);
       free (test);
+   }
+
+   if (suite->outfile) {
+      fclose (suite->outfile);
    }
 
    free (suite->name);
