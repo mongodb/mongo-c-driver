@@ -73,6 +73,7 @@ typedef struct
    unsigned            needs_auth : 1;
    int32_t             min_wire_version;
    int32_t             max_wire_version;
+   int32_t             max_write_batch_size;
    char               *replSet;
 } mongoc_cluster_node_t;
 

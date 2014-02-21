@@ -1028,6 +1028,11 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
       }
    }
 
+   if (bson_iter_init_find_case (&iter, &reply, "maxWriteBatchSize")) {
+      v32 = bson_iter_int32 (&iter);
+      node->max_write_batch_size = v32;
+   }
+
    if (bson_iter_init_find_case(&iter, &reply, "maxWireVersion") &&
        BSON_ITER_HOLDS_INT32(&iter)) {
       node->max_wire_version = bson_iter_int32(&iter);
