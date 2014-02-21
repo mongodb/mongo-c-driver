@@ -12,7 +12,7 @@ SYNOPSIS
 [source,c]
 -----------------------
 mongoc_stream_t *
-mongoc_stream_unix_new (int fd);
+mongoc_stream_unix_new (mongoc_fd_t fd);
 -----------------------
 
 

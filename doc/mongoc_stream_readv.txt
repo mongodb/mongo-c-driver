@@ -16,7 +16,7 @@ mongoc_stream_readv (mongoc_stream_t *stream,
                      struct iovec    *iov,
                      size_t           iovcnt,
                      size_t           min_bytes,
-                     bson_int32_t     timeout_msec);
+                     int32_t          timeout_msec);
 -----------------------
 
 

@@ -11,7 +11,7 @@ SYNOPSIS
 --------
 [source,c]
 -----------------------
-bson_bool_t
+bool
 mongoc_cursor_next (mongoc_cursor_t  *cursor,
                     const bson_t    **bson);
 -----------------------

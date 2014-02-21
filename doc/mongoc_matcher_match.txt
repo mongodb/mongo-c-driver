@@ -13,7 +13,7 @@ SYNOPSIS
 -----------------------
 bool
 mongoc_matcher_match (const mongoc_matcher_t *matcher,
-                      const bson_t           *query);
+                      const bson_t           *bson);
 
 -----------------------
 

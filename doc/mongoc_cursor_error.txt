@@ -11,7 +11,7 @@ SYNOPSIS
 --------
 [source,c]
 -----------------------
-bson_bool_t
+bool
 mongoc_cursor_error (mongoc_cursor_t *cursor,
                      bson_error_t    *error);
 -----------------------

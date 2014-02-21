@@ -11,7 +11,7 @@ SYNOPSIS
 --------
 [source,c]
 -----------------------
-bson_bool_t
+bool
 mongoc_gridfs_drop (mongoc_gridfs_t *gridfs,
                     bson_error_t    *error);
 

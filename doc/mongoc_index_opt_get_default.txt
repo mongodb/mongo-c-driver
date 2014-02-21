@@ -14,11 +14,11 @@ SYNOPSIS
 -----------------------
 typedef struct
 {
-   bson_bool_t   background;
-   bson_bool_t   unique;
+   bool   background;
+   bool   unique;
    const char   *name;
-   bson_bool_t   drop_dups;
-   bson_bool_t   sparse;
+   bool   drop_dups;
+   bool   sparse;
    bson_int32_t  expire_after_seconds;
    bson_int32_t  v;
    const bson_t *weights;

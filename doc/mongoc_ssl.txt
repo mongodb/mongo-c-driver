@@ -50,7 +50,7 @@ typedef struct mongoc_ssl_opt
    const char *ca_file;
    const char *ca_dir;
    const char *crl_file;
-   bson_bool_t weak_cert_validation;
+   bool weak_cert_validation;
 } mongoc_ssl_opt_t;
 ---------------------
 

@@ -16,7 +16,7 @@ mongoc_stream_read (mongoc_stream_t *stream,
                     void            *buf,
                     size_t           count,
                     size_t           min_bytes,
-                    bson_int32_t     timeout_msec);
+                    int32_t          timeout_msec);
 -----------------------
 
 

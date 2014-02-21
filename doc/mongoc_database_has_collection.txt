@@ -11,7 +11,7 @@ SYNOPSIS
 --------
 [source,c]
 -----------------------
-bson_bool_t
+bool
 mongoc_database_has_collection (mongoc_database_t *database,
                                 const char        *name,
                                 bson_error_t      *error);

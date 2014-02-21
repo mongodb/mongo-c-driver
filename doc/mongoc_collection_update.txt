@@ -11,7 +11,7 @@ SYNOPSIS
 --------
 [source,c]
 -----------------------
-bson_bool_t
+bool
 mongoc_collection_update (mongoc_collection_t          *collection,
                           mongoc_update_flags_t         flags,
                           const bson_t                 *selector,

@@ -11,7 +11,7 @@ SYNOPSIS
 --------
 [source,c]
 -----------------------
-bson_bool_t
+bool
 mongoc_database_add_user (mongoc_database_t *database,
                           const char        *username,
                           const char        *password,

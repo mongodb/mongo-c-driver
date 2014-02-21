@@ -11,7 +11,7 @@ SYNOPSIS
 --------
 [source,c]
 -----------------------
-bson_bool_t
+bool
 mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
                               const char      *host);
 -----------------------

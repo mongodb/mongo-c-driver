@@ -13,9 +13,9 @@ SYNOPSIS
 -----------------------
 mongoc_uri_t * mongoc_uri_new (const char *uri_string);
 
-mongoc_uri_t * mongoc_uri_new_for_host_port (
-   const char   *uri_string,
-   bson_uint16_t port);
+mongoc_uri_t *
+mongoc_uri_new_for_host_port (const char *hostname,
+                              uint16_t    port);
 -----------------------
 
 

@@ -15,7 +15,7 @@ ssize_t
 mongoc_stream_writev (mongoc_stream_t *stream,
                       struct iovec    *iov,
                       size_t           iovcnt,
-                      bson_int32_t     timeout_msec);
+                      int32_t          timeout_msec);
 -----------------------
 
 

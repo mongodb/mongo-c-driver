@@ -11,7 +11,7 @@ SYNOPSIS
 --------
 [source,c]
 -----------------------
-bson_bool_t
+bool
 mongoc_cursor_more (mongoc_cursor_t *cursor);
 -----------------------
 

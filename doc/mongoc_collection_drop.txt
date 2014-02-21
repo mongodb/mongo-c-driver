@@ -11,7 +11,7 @@ SYNOPSIS
 --------
 [source,c]
 -----------------------
-bson_bool_t
+bool
 mongoc_collection_drop (mongoc_collection_t *collection,
                         bson_error_t        *error);
 -----------------------

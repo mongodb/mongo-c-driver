@@ -12,19 +12,19 @@ SYNOPSIS
 [source,c]
 -----------------------
 mongoc_cursor_t *
-mongoc_client_command (mongoc_client_t     *client,
-                       const char          *db,
-                       mongoc_query_flags_t flags,
-                       bson_uint32_t        skip,
-                       bson_uint32_t        limit,
-                       bson_uint32_t        batch_size,
-                       const bson_t        *query,
-                       const bson_t        *fields,
-                       mongoc_read_prefs_t *read_prefs);
+mongoc_client_command (mongoc_client_t           *client,
+                       const char                *db_name,
+                       mongoc_query_flags_t       flags,
+                       uint32_t                   skip,
+                       uint32_t                   limit,
+                       uint32_t                   batch_size,
+                       const bson_t              *query,
+                       const bson_t              *fields,
+                       const mongoc_read_prefs_t *read_prefs);
 
-bson_bool_t
+bool
 mongoc_client_command_simple (mongoc_client_t           *client,
-                              const char                *db,
+                              const char                *db_name,
                               const bson_t              *command,
                               const mongoc_read_prefs_t *read_prefs,
                               bson_t                    *reply,

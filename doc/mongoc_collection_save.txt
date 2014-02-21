@@ -11,7 +11,7 @@ SYNOPSIS
 --------
 [source,c]
 -----------------------
-bson_bool_t
+bool
 mongoc_collection_save (mongoc_collection_t          *collection,
                         const bson_t                 *document,
                         const mongoc_write_concern_t *write_concern,

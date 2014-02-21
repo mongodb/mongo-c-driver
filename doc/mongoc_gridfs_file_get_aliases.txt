@@ -16,9 +16,9 @@ const char *   mongoc_gridfs_file_get_filename     (mongoc_gridfs_file_t *file);
 const char *   mongoc_gridfs_file_get_content_type (mongoc_gridfs_file_t *file);
 const bson_t * mongoc_gridfs_file_get_aliases      (mongoc_gridfs_file_t *file);
 const bson_t * mongoc_gridfs_file_get_metadata     (mongoc_gridfs_file_t *file);
-bson_int64_t   mongoc_gridfs_file_get_length       (mongoc_gridfs_file_t *file);
-bson_int32_t   mongoc_gridfs_file_get_chunk_size   (mongoc_gridfs_file_t *file);
-bson_int64_t   mongoc_gridfs_file_get_upload_date  (mongoc_gridfs_file_t *file);
+int64_t        mongoc_gridfs_file_get_length       (mongoc_gridfs_file_t *file);
+int32_t        mongoc_gridfs_file_get_chunk_size   (mongoc_gridfs_file_t *file);
+int64_t        mongoc_gridfs_file_get_upload_date  (mongoc_gridfs_file_t *file);
 
 void mongoc_gridfs_file_set_md5          (mongoc_gridfs_file_t *file, const char *str);
 void mongoc_gridfs_file_set_filename     (mongoc_gridfs_file_t *file, const char *str);
