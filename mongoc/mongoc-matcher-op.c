@@ -379,7 +379,7 @@ _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,  /* IN */
  */
 #define _TYPE_CODE(l, r) ((((int)(l)) << 8) | ((int)(r)))
 #define _NATIVE_COMPARE(op, t1, t2) \
-   (bson_iter_##t1(&compare->iter) op bson_iter_##t2(iter))
+   (bson_iter##t1(&compare->iter) op bson_iter##t2(iter))
 #define _EQ_COMPARE(t1, t2)  _NATIVE_COMPARE(==, t1, t2)
 #define _NE_COMPARE(t1, t2)  _NATIVE_COMPARE(!=, t1, t2)
 #define _GT_COMPARE(t1, t2)  _NATIVE_COMPARE(<=, t1, t2)
@@ -433,13 +433,13 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    /* Double on Left Side */
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
-      return _EQ_COMPARE (double, double);
+      return _EQ_COMPARE (_double, _double);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_BOOL):
-      return _EQ_COMPARE (double, bool);
+      return _EQ_COMPARE (_double, _bool);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT32):
-      return _EQ_COMPARE (double, int32);
+      return _EQ_COMPARE (_double, _int32);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT64):
-      return _EQ_COMPARE (double, int64);
+      return _EQ_COMPARE (_double, _int64);
 
    /* UTF8 on Left Side */
    case _TYPE_CODE(BSON_TYPE_UTF8, BSON_TYPE_UTF8):
@@ -457,23 +457,23 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    /* Int32 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_DOUBLE):
-      return _EQ_COMPARE (int32, double);
+      return _EQ_COMPARE (_int32, _double);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_BOOL):
-      return _EQ_COMPARE (int32, bool);
+      return _EQ_COMPARE (_int32, _bool);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT32):
-      return _EQ_COMPARE (int32, int32);
+      return _EQ_COMPARE (_int32, _int32);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT64):
-      return _EQ_COMPARE (int32, int64);
+      return _EQ_COMPARE (_int32, _int64);
 
    /* Int64 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_DOUBLE):
-      return _EQ_COMPARE (int64, double);
+      return _EQ_COMPARE (_int64, _double);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_BOOL):
-      return _EQ_COMPARE (int64, bool);
+      return _EQ_COMPARE (_int64, _bool);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT32):
-      return _EQ_COMPARE (int64, int32);
+      return _EQ_COMPARE (_int64, _int32);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
-      return _EQ_COMPARE (int64, int64);
+      return _EQ_COMPARE (_int64, _int64);
 
    /* Null on Left Side */
    case _TYPE_CODE(BSON_TYPE_NULL, BSON_TYPE_NULL):
@@ -521,33 +521,33 @@ _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    /* Double on Left Side */
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
-      return _GT_COMPARE (double, double);
+      return _GT_COMPARE (_double, _double);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_BOOL):
-      return _GT_COMPARE (double, bool);
+      return _GT_COMPARE (_double, _bool);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT32):
-      return _GT_COMPARE (double, int32);
+      return _GT_COMPARE (_double, _int32);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT64):
-      return _GT_COMPARE (double, int64);
+      return _GT_COMPARE (_double, _int64);
 
    /* Int32 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_DOUBLE):
-      return _GT_COMPARE (int32, double);
+      return _GT_COMPARE (_int32, _double);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_BOOL):
-      return _GT_COMPARE (int32, bool);
+      return _GT_COMPARE (_int32, _bool);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT32):
-      return _GT_COMPARE (int32, int32);
+      return _GT_COMPARE (_int32, _int32);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT64):
-      return _GT_COMPARE (int32, int64);
+      return _GT_COMPARE (_int32, _int64);
 
    /* Int64 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_DOUBLE):
-      return _GT_COMPARE (int64, double);
+      return _GT_COMPARE (_int64, _double);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_BOOL):
-      return _GT_COMPARE (int64, bool);
+      return _GT_COMPARE (_int64, _bool);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT32):
-      return _GT_COMPARE (int64, int32);
+      return _GT_COMPARE (_int64, _int32);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
-      return _GT_COMPARE (int64, int64);
+      return _GT_COMPARE (_int64, _int64);
 
    default:
       MONGOC_WARNING ("Implement for (Type(%d) > Type(%d))",
@@ -592,33 +592,33 @@ _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    /* Double on Left Side */
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
-      return _GTE_COMPARE (double, double);
+      return _GTE_COMPARE (_double, _double);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_BOOL):
-      return _GTE_COMPARE (double, bool);
+      return _GTE_COMPARE (_double, _bool);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT32):
-      return _GTE_COMPARE (double, int32);
+      return _GTE_COMPARE (_double, _int32);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT64):
-      return _GTE_COMPARE (double, int64);
+      return _GTE_COMPARE (_double, _int64);
 
    /* Int32 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_DOUBLE):
-      return _GTE_COMPARE (int32, double);
+      return _GTE_COMPARE (_int32, _double);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_BOOL):
-      return _GTE_COMPARE (int32, bool);
+      return _GTE_COMPARE (_int32, _bool);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT32):
-      return _GTE_COMPARE (int32, int32);
+      return _GTE_COMPARE (_int32, _int32);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT64):
-      return _GTE_COMPARE (int32, int64);
+      return _GTE_COMPARE (_int32, _int64);
 
    /* Int64 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_DOUBLE):
-      return _GTE_COMPARE (int64, double);
+      return _GTE_COMPARE (_int64, _double);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_BOOL):
-      return _GTE_COMPARE (int64, bool);
+      return _GTE_COMPARE (_int64, _bool);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT32):
-      return _GTE_COMPARE (int64, int32);
+      return _GTE_COMPARE (_int64, _int32);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
-      return _GTE_COMPARE (int64, int64);
+      return _GTE_COMPARE (_int64, _int64);
 
    default:
       MONGOC_WARNING ("Implement for (Type(%d) >= Type(%d))",
@@ -703,33 +703,33 @@ _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    /* Double on Left Side */
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
-      return _LT_COMPARE (double, double);
+      return _LT_COMPARE (_double, _double);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_BOOL):
-      return _LT_COMPARE (double, bool);
+      return _LT_COMPARE (_double, _bool);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT32):
-      return _LT_COMPARE (double, int32);
+      return _LT_COMPARE (_double, _int32);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT64):
-      return _LT_COMPARE (double, int64);
+      return _LT_COMPARE (_double, _int64);
 
    /* Int32 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_DOUBLE):
-      return _LT_COMPARE (int32, double);
+      return _LT_COMPARE (_int32, _double);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_BOOL):
-      return _LT_COMPARE (int32, bool);
+      return _LT_COMPARE (_int32, _bool);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT32):
-      return _LT_COMPARE (int32, int32);
+      return _LT_COMPARE (_int32, _int32);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT64):
-      return _LT_COMPARE (int32, int64);
+      return _LT_COMPARE (_int32, _int64);
 
    /* Int64 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_DOUBLE):
-      return _LT_COMPARE (int64, double);
+      return _LT_COMPARE (_int64, _double);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_BOOL):
-      return _LT_COMPARE (int64, bool);
+      return _LT_COMPARE (_int64, _bool);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT32):
-      return _LT_COMPARE (int64, int32);
+      return _LT_COMPARE (_int64, _int32);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
-      return _LT_COMPARE (int64, int64);
+      return _LT_COMPARE (_int64, _int64);
 
    default:
       MONGOC_WARNING ("Implement for (Type(%d) < Type(%d))",
@@ -774,33 +774,33 @@ _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    /* Double on Left Side */
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_DOUBLE):
-      return _LTE_COMPARE (double, double);
+      return _LTE_COMPARE (_double, _double);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_BOOL):
-      return _LTE_COMPARE (double, bool);
+      return _LTE_COMPARE (_double, _bool);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT32):
-      return _LTE_COMPARE (double, int32);
+      return _LTE_COMPARE (_double, _int32);
    case _TYPE_CODE(BSON_TYPE_DOUBLE, BSON_TYPE_INT64):
-      return _LTE_COMPARE (double, int64);
+      return _LTE_COMPARE (_double, _int64);
 
    /* Int32 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_DOUBLE):
-      return _LTE_COMPARE (int32, double);
+      return _LTE_COMPARE (_int32, _double);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_BOOL):
-      return _LTE_COMPARE (int32, bool);
+      return _LTE_COMPARE (_int32, _bool);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT32):
-      return _LTE_COMPARE (int32, int32);
+      return _LTE_COMPARE (_int32, _int32);
    case _TYPE_CODE(BSON_TYPE_INT32, BSON_TYPE_INT64):
-      return _LTE_COMPARE (int32, int64);
+      return _LTE_COMPARE (_int32, _int64);
 
    /* Int64 on Left Side */
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_DOUBLE):
-      return _LTE_COMPARE (int64, double);
+      return _LTE_COMPARE (_int64, _double);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_BOOL):
-      return _LTE_COMPARE (int64, bool);
+      return _LTE_COMPARE (_int64, _bool);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT32):
-      return _LTE_COMPARE (int64, int32);
+      return _LTE_COMPARE (_int64, _int32);
    case _TYPE_CODE(BSON_TYPE_INT64, BSON_TYPE_INT64):
-      return _LTE_COMPARE (int64, int64);
+      return _LTE_COMPARE (_int64, _int64);
 
    default:
       MONGOC_WARNING ("Implement for (Type(%d) <= Type(%d))",
