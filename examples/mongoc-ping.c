@@ -24,8 +24,15 @@ main (int   argc,
    mongoc_init();
 
    port = (argc == 3) ? atoi(argv[2]) : 27017;
-   host_and_port = bson_strdup_printf("mongodb://%s:%hu", argv[1], port);
+
+   if (strncmp (argv[1], "mongodb://", 10) == 0) {
+      host_and_port = bson_strdup (argv [1]);
+   } else {
+      host_and_port = bson_strdup_printf("mongodb://%s:%hu", argv[1], port);
+   }
+
    client = mongoc_client_new(host_and_port);
+
    if (!client) {
       fprintf(stderr, "Invalid hostname or port: %s\n", host_and_port);
       return 2;
