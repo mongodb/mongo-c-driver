@@ -353,6 +353,9 @@ mock_server_run (mock_server_t *server)
          return -1;
       }
 
+      optval = 1;
+      mongoc_setsockopt(cd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof optval);
+
       stream = mongoc_stream_unix_new(cd);
       closure = bson_malloc0(sizeof(void*) * 2);
       closure[0] = server;
