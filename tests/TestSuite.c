@@ -15,12 +15,16 @@
  */
 
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <assert.h>
 #include <fcntl.h>
 #include <stdarg.h>
 
 #if defined(__APPLE__)
-#include <mach/mach_time.h>
+# include <mach/mach_time.h>
 #endif
 
 #include <stdio.h>
@@ -35,6 +39,11 @@
 # include <sys/time.h>
 #else
 # include <windows.h>
+#endif
+
+#if defined(HAVE_CLOCK_GETTIME)
+# include <time.h>
+# include <sys/time.h>
 #endif
 
 #include "TestSuite.h"
@@ -110,7 +119,7 @@ Thread_Create (Thread *thread,
 #endif
 
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(HAVE_SNPRINTF)
 static int
 snprintf (char *str,
           size_t size,
@@ -137,11 +146,7 @@ snprintf (char *str,
 void
 _Clock_GetMonotonic (struct timespec *ts) /* OUT */
 {
-#if defined(__linux__) || \
-    defined(__FreeBSD__) || \
-    defined(__OpenBSD__) || \
-    defined(__NetBSD__) || \
-    defined(__DragonFly__)
+#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
    clock_gettime (CLOCK_MONOTONIC, ts);
 #elif defined(__APPLE__)
    static mach_timebase_info_data_t info = { 0 };
@@ -501,7 +506,8 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
    }
 
    pagesize = sysconf (_SC_PAGE_SIZE);
-#  ifdef __linux__
+
+#  if defined(_SC_PHYS_PAGES)
    npages = sysconf (_SC_PHYS_PAGES);
 #  endif
 
