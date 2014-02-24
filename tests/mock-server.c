@@ -30,17 +30,17 @@ struct _mock_server_t
    mock_server_handler_t  handler;
    void                  *handler_data;
 
-   mongoc_thread_t          main_thread;
-   bool            using_main_thread;
+   mongoc_thread_t        main_thread;
+   bool                   using_main_thread;
 
    const char            *address;
 
-   uint16_t          port;
-   mongoc_fd_t              socket;
+   uint16_t               port;
+   mongoc_fd_t            socket;
 
    int                    last_response_id;
 
-   bool            isMaster;
+   bool                   isMaster;
    int                    minWireVersion;
    int                    maxWireVersion;
    int                    maxBsonObjectSize;
