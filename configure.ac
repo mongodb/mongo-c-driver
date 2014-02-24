@@ -211,6 +211,13 @@ AC_SUBST([SHM_LIB])
 
 AC_CHECK_FUNCS([sched_getcpu])
 
+AC_SEARCH_LIBS([clock_gettime], [rt], [
+	AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Have clock_gettime])
+])
+if test "$ac_cv_search_clock_gettime" = "-lrt"; then
+	LDFLAGS="$LDFLAGS -lrt"
+fi
+
 
 dnl **************************************************************************
 dnl Enable extra debugging options
