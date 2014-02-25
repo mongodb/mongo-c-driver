@@ -75,12 +75,62 @@ BSON_BEGIN_DECLS
       bson_string_free(str, true); \
       bson_string_free(astr, true); \
    } while (0)
+#define DUMP_IOVEC(_n, _iov, _iovcnt) \
+   do { \
+      bson_string_t *str, *astr; \
+      const char *_b; \
+      unsigned _i = 0; \
+      unsigned _j = 0; \
+      unsigned _k = 0; \
+      size_t _l = 0; \
+      uint8_t _v; \
+      for (_i = 0; _i < _iovcnt; _i++) { \
+         _l += _iov[_i].iov_len; \
+      } \
+      mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, \
+                 " %s = %p [%d]", #_n, _iov, (int)_l); \
+      _i = 0; \
+      str = bson_string_new(NULL); \
+      astr = bson_string_new(NULL); \
+      for (_j = 0; _j < _iovcnt; _j++) { \
+         _b = (char *)_iov[_j].iov_base; \
+         _l = _iov[_j].iov_len; \
+         for (_k = 0; _k < _l; _k++, _i++) { \
+            _v = *(_b + _k); \
+            if ((_i % 16) == 0) { \
+               bson_string_append_printf(str, "%06x: ", _i); \
+            } \
+            bson_string_append_printf(str, " %02x", _v); \
+            if (isprint(_v)) { \
+               bson_string_append_printf(astr, " %c", _v); \
+            } else { \
+               bson_string_append(astr, " ."); \
+            } \
+            if ((_i % 16) == 15) { \
+               mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, \
+                          "%s %s", str->str, astr->str); \
+               bson_string_truncate(str, 0); \
+               bson_string_truncate(astr, 0); \
+            } else if ((_i % 16) == 7) { \
+               bson_string_append(str, " "); \
+               bson_string_append(astr, " "); \
+            } \
+         } \
+      } \
+      if (_i != 16) { \
+         mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, \
+                    "%-56s %s", str->str, astr->str); \
+      } \
+      bson_string_free(str, true); \
+      bson_string_free(astr, true); \
+   } while (0)
 #else
 #define ENTRY
 #define EXIT        return
 #define RETURN(ret) return ret
 #define GOTO(label) goto label
 #define DUMP_BYTES(_n, _b, _l)
+#define DUMP_IOVEC(_n, _iov, _iovcnt)
 #endif
 
 

@@ -2536,6 +2536,8 @@ _mongoc_cluster_try_sendv (mongoc_cluster_t             *cluster,
    iovcnt = cluster->iov.len;
    errno = 0;
 
+   DUMP_IOVEC (iov, iov, iovcnt);
+
    if (!mongoc_stream_writev (node->stream, iov, iovcnt,
                               cluster->sockettimeoutms)) {
       char buf[128];
