@@ -222,7 +222,7 @@ mongoc_stream_unix_readv (mongoc_stream_t *stream,
                RETURN(ret);
             }
          }
-         if (errno == EAGAIN) {
+         if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
             r = 0;
             GOTO(prepare_wait_poll);
          }
@@ -381,7 +381,7 @@ mongoc_stream_unix_writev (mongoc_stream_t *stream,
       errno = 0;
       r = mongoc_sendmsg(file->fd, &msg, flags);
       if (r == -1) {
-         if (errno == EAGAIN) {
+         if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
             GOTO(again);
          } else if (errno == ENOTSOCK) {
             r = mongoc_writev(file->fd, iov + cur, (int)(iovcnt - cur));
