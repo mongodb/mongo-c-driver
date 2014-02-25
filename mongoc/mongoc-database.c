@@ -338,7 +338,7 @@ mongoc_database_add_user (mongoc_database_t *database,
 
    if (!ret && (lerror.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
       ret = mongoc_database_add_user_legacy (database, username, password, error);
-   } else {
+   } else if (ret) {
       input = bson_strdup_printf ("%s:mongo:%s", username, password);
       hashed_password = _mongoc_hex_md5 (input);
       bson_free (input);
@@ -357,6 +357,8 @@ mongoc_database_add_user (mongoc_database_t *database,
       ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, error);
 
       bson_destroy (&cmd);
+   } else if (error) {
+      memcpy (error, &lerror, sizeof *error);
    }
 
    RETURN (ret);
