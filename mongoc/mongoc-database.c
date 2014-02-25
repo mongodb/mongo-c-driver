@@ -291,6 +291,48 @@ failure:
 }
 
 
+bool
+mongoc_database_remove_user (mongoc_database_t *database,
+                             const char        *username,
+                             bson_error_t      *error)
+{
+   mongoc_collection_t *col;
+   bson_error_t lerror;
+   bson_t cmd;
+   bool ret;
+
+   ENTRY;
+
+   bson_return_val_if_fail (database, false);
+   bson_return_val_if_fail (username, false);
+
+   bson_init (&cmd);
+   BSON_APPEND_UTF8 (&cmd, "dropUser", username);
+   ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, &lerror);
+   bson_destroy (&cmd);
+
+   if (!ret && (lerror.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
+      bson_init (&cmd);
+      BSON_APPEND_UTF8 (&cmd, "user", username);
+
+      col = mongoc_client_get_collection (database->client, database->name,
+                                          "system.users");
+      BSON_ASSERT (col);
+
+      ret = mongoc_collection_delete (col,
+                                      MONGOC_DELETE_SINGLE_REMOVE,
+                                      &cmd,
+                                      NULL,
+                                      error);
+
+      bson_destroy (&cmd);
+      mongoc_collection_destroy (col);
+   }
+
+   RETURN (ret);
+}
+
+
 /**
  * mongoc_database_add_user:
  * @database: A #mongoc_database_t.
@@ -315,6 +357,7 @@ mongoc_database_add_user (mongoc_database_t *database,
 {
    bson_error_t lerror;
    bson_t cmd;
+   bson_t ar;
    char *input;
    char *hashed_password;
    bool ret = false;
@@ -332,7 +375,7 @@ mongoc_database_add_user (mongoc_database_t *database,
     * perform legacy insertion into users collection.
     */
    bson_init (&cmd);
-   BSON_APPEND_UTF8 (&cmd, "userInfo", username);
+   BSON_APPEND_UTF8 (&cmd, "usersInfo", username);
    ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, &lerror);
    bson_destroy (&cmd);
 
@@ -352,9 +395,14 @@ mongoc_database_add_user (mongoc_database_t *database,
       }
       if (roles) {
          BSON_APPEND_ARRAY (&cmd, "roles", roles);
+      } else {
+         bson_append_array_begin (&cmd, "roles", 5, &ar);
+         bson_append_array_end (&cmd, &ar);
       }
 
       ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, error);
+
+      if (!ret) fprintf (stderr, "%s\n", error->message);
 
       bson_destroy (&cmd);
    } else if (error) {

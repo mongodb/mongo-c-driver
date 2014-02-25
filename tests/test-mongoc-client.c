@@ -49,6 +49,7 @@ test_mongoc_client_authenticate (void)
     */
    client = mongoc_client_new(gTestUri);
    database = mongoc_client_get_database(client, "test");
+   mongoc_database_remove_user (database, "testuser", &error);
    r = mongoc_database_add_user(database, "testuser", "testpass", NULL, NULL, &error);
    ASSERT_CMPINT(r, ==, 1);
    mongoc_database_destroy(database);

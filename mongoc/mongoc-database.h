@@ -38,7 +38,10 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_database_t mongoc_database_t;
 
 
-bool                   mongoc_database_add_user          (mongoc_database_t            *database,
+bool                          mongoc_database_remove_user       (mongoc_database_t            *database,
+                                                                 const char                   *username,
+                                                                 bson_error_t                 *error);
+bool                          mongoc_database_add_user          (mongoc_database_t            *database,
                                                                  const char                   *username,
                                                                  const char                   *password,
                                                                  const bson_t                 *roles,
