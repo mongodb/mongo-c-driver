@@ -313,6 +313,10 @@ mongoc_database_add_user (mongoc_database_t *database,
                           const bson_t      *custom_data,
                           bson_error_t      *error)
 {
+   bson_error_t lerror;
+   bson_t cmd;
+   char *input;
+   char *hashed_password;
    bool ret = false;
 
    ENTRY;
@@ -321,14 +325,39 @@ mongoc_database_add_user (mongoc_database_t *database,
    BSON_ASSERT (username);
 
    /*
-    * TODO: CDRIVER-232
+    * CDRIVER-232:
     *
-    * We need to first submit a command to the target system to manipulate
-    * the user using commands. If the command fails, we fallback to legacy
-    * user manipulation.
+    * Perform a (slow and tedious) round trip to mongod to determine if
+    * we can safely call createUser. Otherwise, we will fallback and
+    * perform legacy insertion into users collection.
     */
+   bson_init (&cmd);
+   BSON_APPEND_UTF8 (&cmd, "userInfo", username);
+   ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, &lerror);
+   bson_destroy (&cmd);
 
-   ret = mongoc_database_add_user_legacy (database, username, password, error);
+   if (!ret && (lerror.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
+      ret = mongoc_database_add_user_legacy (database, username, password, error);
+   } else {
+      input = bson_strdup_printf ("%s:mongo:%s", username, password);
+      hashed_password = _mongoc_hex_md5 (input);
+      bson_free (input);
+
+      bson_init (&cmd);
+      BSON_APPEND_UTF8 (&cmd, "createUser", username);
+      BSON_APPEND_UTF8 (&cmd, "pwd", hashed_password);
+      BSON_APPEND_BOOL (&cmd, "digestPassword", false);
+      if (custom_data) {
+         BSON_APPEND_DOCUMENT (&cmd, "customData", custom_data);
+      }
+      if (roles) {
+         BSON_APPEND_ARRAY (&cmd, "roles", roles);
+      }
+
+      ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, error);
+
+      bson_destroy (&cmd);
+   }
 
    RETURN (ret);
 }
