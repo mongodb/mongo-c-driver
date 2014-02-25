@@ -227,6 +227,8 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
    char *input;
    char *pwd = NULL;
 
+   ENTRY;
+
    bson_return_val_if_fail(database, false);
    bson_return_val_if_fail(username, false);
    bson_return_val_if_fail(password, false);
@@ -257,7 +259,7 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
                                    &query, NULL, NULL);
    if (!mongoc_cursor_next(cursor, &doc)) {
       if (mongoc_cursor_error(cursor, error)) {
-         goto failure;
+         GOTO (failure);
       }
       bson_init(&user);
       bson_append_utf8(&user, "user", 4, username, -1);
@@ -269,7 +271,7 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
    }
 
    if (!mongoc_collection_save(collection, &user, NULL, error)) {
-      goto failure_with_user;
+      GOTO (failure_with_user);
    }
 
    ret = true;
@@ -285,7 +287,7 @@ failure:
    bson_destroy(&query);
    bson_free(pwd);
 
-   return ret;
+   RETURN (ret);
 }
 
 
