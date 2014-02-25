@@ -124,7 +124,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
 
    cursor->is_command = is_command;
 
-   if (!bson_has_field (query, "$query")) {
+   if (!cursor->is_command && !bson_has_field (query, "$query")) {
       bson_init (&cursor->query);
       bson_append_document (&cursor->query, "$query", 6, query);
    } else {
