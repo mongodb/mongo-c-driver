@@ -54,6 +54,7 @@ linkmongoc:mongoc_database_get_collection_names[3] +
 linkmongoc:mongoc_database_get_read_prefs[3] +
 linkmongoc:mongoc_database_get_write_concern[3] +
 linkmongoc:mongoc_database_has_collection[3] +
+linkmongoc:mongoc_database_remove_user[3] +
 linkmongoc:mongoc_database_set_read_prefs[3] +
 linkmongoc:mongoc_database_set_write_concern[3] +
 linkmongoc:mongoc_fd_set_nonblock[3] +
