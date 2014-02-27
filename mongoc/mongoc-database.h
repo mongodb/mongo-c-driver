@@ -38,43 +38,42 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_database_t mongoc_database_t;
 
 
-bool                          mongoc_database_remove_user       (mongoc_database_t            *database,
-                                                                 const char                   *username,
-                                                                 bson_error_t                 *error);
-bool                          mongoc_database_add_user          (mongoc_database_t            *database,
-                                                                 const char                   *username,
-                                                                 const char                   *password,
-                                                                 const bson_t                 *roles,
-                                                                 const bson_t                 *custom_data,
-                                                                 bson_error_t                 *error);
-void                          mongoc_database_destroy           (mongoc_database_t            *database);
-mongoc_cursor_t              *mongoc_database_command           (mongoc_database_t            *database,
-                                                                 mongoc_query_flags_t          flags,
-                                                                 uint32_t                 skip,
-                                                                 uint32_t                 limit,
-                                                                 uint32_t                 batch_size,
-                                                                 const bson_t                 *command,
-                                                                 const bson_t                 *fields,
-                                                                 const mongoc_read_prefs_t    *read_prefs);
-bool                   mongoc_database_command_simple    (mongoc_database_t            *database,
-                                                                 const bson_t                 *command,
-                                                                 const mongoc_read_prefs_t    *read_prefs,
-                                                                 bson_t                       *reply,
-                                                                 bson_error_t                 *error);
-bool                   mongoc_database_drop              (mongoc_database_t            *database,
-                                                                 bson_error_t                 *error);
-bool                   mongoc_database_has_collection    (mongoc_database_t            *database,
-                                                                 const char                   *name,
-                                                                 bson_error_t                 *error);
-const mongoc_read_prefs_t    *mongoc_database_get_read_prefs    (const mongoc_database_t      *database);
-void                          mongoc_database_set_read_prefs    (mongoc_database_t            *database,
-                                                                 const mongoc_read_prefs_t    *read_prefs);
-const mongoc_write_concern_t *mongoc_database_get_write_concern (const mongoc_database_t      *database);
-void                          mongoc_database_set_write_concern (mongoc_database_t            *database,
-                                                                 const mongoc_write_concern_t *write_concern);
-char                        **mongoc_database_get_collection_names
-                                                                (mongoc_database_t            *database,
-                                                                 bson_error_t                 *error);
+bool                          mongoc_database_remove_user          (mongoc_database_t            *database,
+                                                                    const char                   *username,
+                                                                    bson_error_t                 *error);
+bool                          mongoc_database_add_user             (mongoc_database_t            *database,
+                                                                    const char                   *username,
+                                                                    const char                   *password,
+                                                                    const bson_t                 *roles,
+                                                                    const bson_t                 *custom_data,
+                                                                    bson_error_t                 *error);
+void                          mongoc_database_destroy              (mongoc_database_t            *database);
+mongoc_cursor_t              *mongoc_database_command              (mongoc_database_t            *database,
+                                                                    mongoc_query_flags_t          flags,
+                                                                    uint32_t                 skip,
+                                                                    uint32_t                 limit,
+                                                                    uint32_t                 batch_size,
+                                                                    const bson_t                 *command,
+                                                                    const bson_t                 *fields,
+                                                                    const mongoc_read_prefs_t    *read_prefs);
+bool                          mongoc_database_command_simple       (mongoc_database_t            *database,
+                                                                    const bson_t                 *command,
+                                                                    const mongoc_read_prefs_t    *read_prefs,
+                                                                    bson_t                       *reply,
+                                                                    bson_error_t                 *error);
+bool                          mongoc_database_drop                 (mongoc_database_t            *database,
+                                                                    bson_error_t                 *error);
+bool                          mongoc_database_has_collection       (mongoc_database_t            *database,
+                                                                    const char                   *name,
+                                                                    bson_error_t                 *error);
+const mongoc_read_prefs_t    *mongoc_database_get_read_prefs       (const mongoc_database_t      *database);
+void                          mongoc_database_set_read_prefs       (mongoc_database_t            *database,
+                                                                    const mongoc_read_prefs_t    *read_prefs);
+const mongoc_write_concern_t *mongoc_database_get_write_concern    (const mongoc_database_t      *database);
+void                          mongoc_database_set_write_concern    (mongoc_database_t            *database,
+                                                                    const mongoc_write_concern_t *write_concern);
+char                        **mongoc_database_get_collection_names (mongoc_database_t            *database,
+                                                                    bson_error_t                 *error);
 
 
 BSON_END_DECLS
