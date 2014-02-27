@@ -74,7 +74,7 @@ _mongoc_database_new (mongoc_client_t              *client,
       mongoc_read_prefs_copy(read_prefs) :
       mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
-   bson_strcpy_w_null(db->name, name, sizeof db->name);
+   bson_strncpy (db->name, name, sizeof db->name);
 
    RETURN(db);
 }

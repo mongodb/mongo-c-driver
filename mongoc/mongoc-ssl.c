@@ -87,7 +87,7 @@ _mongoc_ssl_password_cb (char *buf,
       return 0;
    }
 
-   bson_strcpy_w_null (buf, pass, num);
+   bson_strncpy (buf, pass, num);
    return pass_len;
 }
 

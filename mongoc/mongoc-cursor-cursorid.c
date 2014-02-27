@@ -91,7 +91,7 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
                cursor->rpc.reply.cursor_id = bson_iter_int64 (&child);
             } else if (strcmp (bson_iter_key (&child), "ns") == 0) {
                ns = bson_iter_utf8 (&child, &cursor->nslen);
-               bson_strcpy_w_null (cursor->ns, ns, sizeof cursor->ns);
+               bson_strncpy (cursor->ns, ns, sizeof cursor->ns);
             }
          }
 

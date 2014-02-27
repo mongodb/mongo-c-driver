@@ -64,7 +64,7 @@ mongoc_uri_append_host (mongoc_uri_t  *uri,
    mongoc_host_list_t *link_;
 
    link_ = bson_malloc0(sizeof *link_);
-   bson_strcpy_w_null(link_->host, host, sizeof link_->host);
+   bson_strncpy (link_->host, host, sizeof link_->host);
    if (strchr (host, ':')) {
       bson_snprintf(link_->host_and_port, sizeof link_->host_and_port,
                "[%s]:%hu", host, port);
@@ -248,10 +248,10 @@ _mongoc_host_list_from_string (mongoc_host_list_t *host_list,
       port = MONGOC_DEFAULT_PORT;
    }
 
-   bson_strcpy_w_null(host_list->host_and_port, host_and_port,
+   bson_strncpy (host_list->host_and_port, host_and_port,
            sizeof host_list->host_and_port - 1);
 
-   bson_strcpy_w_null(host_list->host, hostname, sizeof host_list->host - 1);
+   bson_strncpy (host_list->host, hostname, sizeof host_list->host - 1);
 
    host_list->port = port;
    host_list->family = AF_INET;

@@ -115,7 +115,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
 
    cursor = bson_malloc0(sizeof *cursor);
    cursor->client = client;
-   bson_strcpy_w_null(cursor->ns, db_and_collection, sizeof cursor->ns);
+   bson_strncpy (cursor->ns, db_and_collection, sizeof cursor->ns);
    cursor->nslen = (uint32_t)strlen(cursor->ns);
    cursor->flags = flags;
    cursor->skip = skip;
@@ -784,7 +784,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
    bson_copy_to (&cursor->query, &clone->query);
    bson_copy_to (&cursor->fields, &clone->fields);
 
-   bson_strcpy_w_null(clone->ns, cursor->ns, sizeof clone->ns);
+   bson_strncpy (clone->ns, cursor->ns, sizeof clone->ns);
 
    _mongoc_buffer_init (&clone->buffer, NULL, 0, NULL);
 

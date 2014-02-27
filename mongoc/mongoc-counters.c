@@ -247,9 +247,9 @@ mongoc_counters_register (mongoc_counters_t *counters,
                     ((num / SLOTS_PER_CACHELINE) *
                      n_cpu * sizeof(mongoc_counter_slots_t)));
 
-   bson_strcpy_w_null(infos->category, category, sizeof infos->category);
-   bson_strcpy_w_null(infos->name, name, sizeof infos->name);
-   bson_strcpy_w_null(infos->description, description, sizeof infos->description);
+   bson_strncpy (infos->category, category, sizeof infos->category);
+   bson_strncpy (infos->name, name, sizeof infos->name);
+   bson_strncpy (infos->description, description, sizeof infos->description);
 
    bson_memory_barrier ();
 
