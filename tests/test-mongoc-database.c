@@ -126,6 +126,48 @@ test_drop (void)
 
 
 static void
+test_create_collection (void)
+{
+   mongoc_database_t *database;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error = { 0 };
+   unsigned t;
+   unsigned p;
+   bson_t options;
+   char dbname [32];
+   bool r;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   t = time (NULL);
+   p = getpid ();
+   bson_snprintf (dbname, sizeof dbname, "test%u_%u", t, p);
+   dbname [sizeof dbname - 1] = '\0';
+
+   database = mongoc_client_get_database (client, dbname);
+   assert (database);
+
+   bson_init (&options);
+   BSON_APPEND_INT32 (&options, "size", 1234);
+   BSON_APPEND_INT32 (&options, "max", 4567);
+   BSON_APPEND_BOOL (&options, "capped", true);
+   BSON_APPEND_BOOL (&options, "autoIndexId", true);
+
+   collection = mongoc_database_create_collection (database, "createCollectionTest", &options, &error);
+   assert (collection);
+
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -140,6 +182,7 @@ test_database_install (TestSuite *suite)
    TestSuite_Add (suite, "/Database/has_collection", test_has_collection);
    TestSuite_Add (suite, "/Database/command", test_command);
    TestSuite_Add (suite, "/Database/drop", test_drop);
+   TestSuite_Add (suite, "/Database/create_collection", test_create_collection);
 
    atexit (cleanup_globals);
 }

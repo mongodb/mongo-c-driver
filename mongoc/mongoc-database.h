@@ -66,6 +66,10 @@ bool                          mongoc_database_drop                 (mongoc_datab
 bool                          mongoc_database_has_collection       (mongoc_database_t            *database,
                                                                     const char                   *name,
                                                                     bson_error_t                 *error);
+mongoc_collection_t          *mongoc_database_create_collection    (mongoc_database_t            *database,
+                                                                    const char                   *name,
+                                                                    const bson_t                 *options,
+                                                                    bson_error_t                 *error);
 const mongoc_read_prefs_t    *mongoc_database_get_read_prefs       (const mongoc_database_t      *database);
 void                          mongoc_database_set_read_prefs       (mongoc_database_t            *database,
                                                                     const mongoc_read_prefs_t    *read_prefs);

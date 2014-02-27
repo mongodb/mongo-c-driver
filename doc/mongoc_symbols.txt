@@ -47,6 +47,7 @@ linkmongoc:mongoc_cursor_next[3] +
 linkmongoc:mongoc_database_add_user[3] +
 linkmongoc:mongoc_database_command[3] +
 linkmongoc:mongoc_database_command_simple[3] +
+linkmongoc:mongoc_database_create_collection[3] +
 linkmongoc:mongoc_database_destroy[3] +
 linkmongoc:mongoc_database_drop[3] +
 linkmongoc:mongoc_database_get_collection_names[3] +

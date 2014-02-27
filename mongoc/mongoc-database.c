@@ -17,6 +17,7 @@
 
 #include "mongoc-client-private.h"
 #include "mongoc-collection.h"
+#include "mongoc-collection-private.h"
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-database.h"
@@ -649,4 +650,124 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
    mongoc_collection_destroy (col);
 
    return ret;
+}
+
+
+mongoc_collection_t *
+mongoc_database_create_collection (mongoc_database_t *database,
+                                   const char        *name,
+                                   const bson_t      *options,
+                                   bson_error_t      *error)
+{
+   mongoc_collection_t *collection = NULL;
+   bson_iter_t iter;
+   bson_t cmd;
+   bool capped = false;
+
+   bson_return_val_if_fail (database, NULL);
+   bson_return_val_if_fail (name, NULL);
+
+   if (strchr (name, '$')) {
+      bson_set_error (error,
+                      MONGOC_ERROR_NAMESPACE,
+                      MONGOC_ERROR_NAMESPACE_INVALID,
+                      "The namespace \"%s\" is invalid.",
+                      name);
+      return NULL;
+   }
+
+   if (options) {
+      if (bson_iter_init_find (&iter, options, "capped")) {
+         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The argument \"capped\" must be a boolean.");
+            return NULL;
+         }
+         capped = bson_iter_bool (&iter);
+      }
+
+      if (bson_iter_init_find (&iter, options, "autoIndexId") &&
+          !BSON_ITER_HOLDS_BOOL (&iter)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "The argument \"autoIndexId\" must be a boolean.");
+         return NULL;
+      }
+
+      if (bson_iter_init_find (&iter, options, "size")) {
+         if (!BSON_ITER_HOLDS_INT32 (&iter) &&
+             !BSON_ITER_HOLDS_INT64 (&iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The argument \"size\" must be an integer.");
+            return NULL;
+         }
+         if (!capped) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The \"size\" parameter requires {\"capped\": true}");
+            return NULL;
+         }
+      }
+
+      if (bson_iter_init_find (&iter, options, "max")) {
+         if (!BSON_ITER_HOLDS_INT32 (&iter) &&
+             !BSON_ITER_HOLDS_INT64 (&iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The argument \"max\" must be an integer.");
+            return NULL;
+         }
+         if (!capped) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The \"size\" parameter requires {\"capped\": true}");
+            return NULL;
+         }
+      }
+   }
+
+   bson_init (&cmd);
+   BSON_APPEND_UTF8 (&cmd, "create", name);
+
+   if (options) {
+      if (!bson_iter_init (&iter, options)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "The argument \"options\" is corrupt or invalid.");
+         bson_destroy (&cmd);
+         return NULL;
+      }
+
+      while (bson_iter_next (&iter)) {
+         if (!bson_append_iter (&cmd, bson_iter_key (&iter), -1, &iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Failed to append \"options\" to create command.");
+            bson_destroy (&cmd);
+            return NULL;
+         }
+      }
+   }
+
+   if (mongoc_database_command_simple (database, &cmd, NULL, NULL, error)) {
+      collection = _mongoc_collection_new (database->client,
+                                           database->name,
+                                           name,
+                                           database->read_prefs,
+                                           database->write_concern);
+   }
+
+   bson_destroy (&cmd);
+
+   return collection;
 }
