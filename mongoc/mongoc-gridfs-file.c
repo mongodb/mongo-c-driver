@@ -205,7 +205,7 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
       if (0 == strcmp (key, "_id")) {
          bson_oid_copy (bson_iter_oid (&iter), &file->files_id);
       } else if (0 == strcmp (key, "length")) {
-         file->length = bson_iter_int64 (&iter);
+         file->length = bson_iter_as_int64 (&iter);
       } else if (0 == strcmp (key, "chunkSize")) {
          file->chunk_size = bson_iter_int32 (&iter);
       } else if (0 == strcmp (key, "uploadDate")) {
