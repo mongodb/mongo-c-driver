@@ -43,3 +43,44 @@ Security Vulnerabilities
 If you’ve identified a security vulnerability in a driver or any other
 MongoDB project, please report it according to the `instructions here
 <http://docs.mongodb.org/manual/tutorial/create-a-vulnerability-report>`_.
+
+
+Building From Git
+=================
+
+The following example will install both libbson and mongo-c-driver from git.
+It assumes you do not yet have libbson installed and are on a 64-bit system.
+
+Dependencies
+------------
+
+Fedora::
+
+  $ sudo yum install git gcc automake autoconf libtool
+
+FreeBSD::
+
+  $ pkg install git gcc automake autoconf libtool
+
+
+Clone Repositories
+------------------
+
+You can use the following to checkout and build libbson and mongo-c-driver.::
+
+  $ for name in "libbson mongo-c-driver"
+
+  $ git clone https://github.com/mongodb/libbson.git
+  $ git clone https://github.com/mongodb/mongo-c-driver.git
+
+  $ cd libbson
+  $ ./autogen.sh --prefix=/usr --libdir=/usr/lib64
+  $ make
+  $ sudo make install
+  $ cd -
+  $ cd mongo-c-driver
+  $ ./autogen.sh --prefix=/usr --libdir=/usr/lib64
+  $ make
+  $ sudo make install
+
+

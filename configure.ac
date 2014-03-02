@@ -1,46 +1,12 @@
-dnl **************************************************************************
-dnl Versioning Macros
-dnl **************************************************************************
+AC_PREREQ(2.60)
 
-m4_define([mongoc_major_version], [0])
-m4_define([mongoc_minor_version], [90])
-m4_define([mongoc_micro_version], [1])
-m4_define([mongoc_version], [mongoc_major_version.mongoc_minor_version.mongoc_micro_version])
+m4_include([build/autotools/Versions.m4])
 
-# bump up by 1 for every micro release with no API changes, otherwise
-# set to 0. after release, bump up by 1
-m4_define([mongoc_interface_age], [0])
-m4_define([mongoc_binary_age], [m4_eval(100 * mongoc_minor_version + mongoc_micro_version)])
+AC_INIT([mongo-c-driver],[mongoc_version],[https://jira.mongodb.org/browse/CDRIVER])
+AC_CONFIG_MACRO_DIR([build/autotools/m4])
+AC_CONFIG_AUX_DIR([build/autotools])
+AC_SUBST(ACLOCAL_AMFLAGS, "-I build/autotools")
 
-m4_define([lt_current], [m4_eval(100 * mongoc_minor_version + mongoc_micro_version - mongoc_interface_age)])
-m4_define([lt_revision], [mongoc_interface_age])
-m4_define([lt_age], [m4_eval(mongoc_binary_age - mongoc_interface_age)])
-
-
-dnl **************************************************************************
-dnl Initialize Automake
-dnl **************************************************************************
-AC_PREREQ([2.63])
-AC_INIT([libmongoc], [mongoc_version], [https://github.com/chergert/libmongoc/issues])
-
-AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_MACRO_DIR([m4])
-
-m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES],
-	 [AC_SUBST([AM_DEFAULT_VERBOSITY], [1])])
-AS_AM_REALLY_SILENT
-
-# Initialize libtool
-LT_PREREQ([2.2])
-LT_INIT
-
-AM_INIT_AUTOMAKE([1.10])
-AM_PROG_CC_C_O
-
-
-dnl **************************************************************************
-dnl Versioning Definitions
-dnl **************************************************************************
 MONGOC_MAJOR_VERSION=mongoc_major_version
 MONGOC_MINOR_VERSION=mongoc_minor_version
 MONGOC_MICRO_VERSION=mongoc_micro_version
@@ -52,121 +18,54 @@ AC_SUBST(MONGOC_MICRO_VERSION)
 AC_SUBST(MONGOC_API_VERSION)
 AC_SUBST(MONGOC_VERSION)
 
+m4_include([build/autotools/CheckCompiler.m4])
+m4_include([build/autotools/CheckHeaders.m4])
+m4_include([build/autotools/CheckProgs.m4])
+m4_include([build/autotools/CheckHost.m4])
+m4_include([build/autotools/CheckTarget.m4])
+
+m4_include([build/autotools/SetupLibtool.m4])
+LT_INIT
 MONGOC_LT_CURRENT=lt_current
 MONGOC_LT_REVISION=lt_revision
 MONGOC_LT_AGE=lt_age
 MONGOC_LT_VERSION="$MONGOC_LT_CURRENT:$MONGOC_LT_REVISION:$MONGOC_LT_AGE"
 MONGOC_LT_LDFLAGS="-version-info $MONGOC_LT_VERSION"
 
+m4_include([build/autotools/ReadCommandLineArguments.m4])
+m4_include([build/autotools/FindDependencies.m4])
+m4_include([build/autotools/AutoHarden.m4])
+m4_include([build/autotools/Optimizations.m4])
+m4_include([build/autotools/Python.m4])
 
-dnl **************************************************************************
-dnl Check for programs.
-dnl **************************************************************************
-AC_PATH_PROG([NETCAT], [nc])
-AC_SUBST([NETCAT])
+# We would put AM_INIT_AUTOMAKE into SetupAutomake.m4, but seems to cause
+# autoconf errors.
+AM_INIT_AUTOMAKE([foreign subdir-objects tar-ustar])
+AM_MAINTAINER_MODE([enable])
+m4_include([build/autotools/SetupAutomake.m4])
 
-
-dnl **************************************************************************
-dnl Platform Checks
-dnl **************************************************************************
-platform_linux=no
-platform_win32=no
-platform_solaris=no
-
-AC_CANONICAL_HOST
-AC_MSG_CHECKING([if building for some Win32 platform])
-AS_CASE([$host],
-	[*-*-mingw*],
-	[
-		MONGOC_LT_LDFLAGS="$MONGOC_LT_LDFLAGS -no-undefined"
-		CFLAGS="$CFLAGS -D_WIN32_WINNT=0x0600"
-                LDFLAGS="$LDFLAGS -lshlwapi"
-		platform_win32=yes
-	],
-
-	[*-*-linux*|*-*-cygwin*],
-	[
-		platform_linux=yes
-	],
-
-	[*-*-solaris*],
-	[
-		platform_solaris=yes
-		CFLAGS="$CFLAGS -D__EXTENSIONS__"
-		CFLAGS="$CFLAGS -D_XOPEN_SOURCE=1"
-		CFLAGS="$CFLAGS -D_XOPEN_SOURCE_EXTENDED=1"
-		LDFLAGS="$LDFLAGS -lsocket -lnsl"
-	],
-
-	[]
-)
-AC_MSG_RESULT([$platform_win32])
-
-AM_CONDITIONAL(OS_LINUX, [test "$platform_linux" = "yes"])
-AM_CONDITIONAL(OS_SOLARIS, [test "$platform_solaris" = "yes"])
-AM_CONDITIONAL(OS_WIN32, [test "$platform_win32" = "yes"])
-
-# Check for -Bsymbolic-functions to avoid intra-library PLT jumps
-AC_ARG_ENABLE([Bsymbolic],
-              [AS_HELP_STRING([--disable-Bsymbolic],
-                              [Avoid linking with -Bsymbolic])],
-              [],
-              [
-                saved_LDFLAGS="${LDFLAGS}"
-                AC_MSG_CHECKING([for -Bsymbolic-functions linker flag])
-                LDFLAGS=-Wl,-Bsymbolic-functions
-                AC_TRY_LINK([], [int main (void) { return 0; }],
-                            [
-                              AC_MSG_RESULT([yes])
-                              enable_Bsymbolic=yes
-                            ],
-                            [
-                              AC_MSG_RESULT([no])
-                              enable_Bsymbolic=no
-                            ])
-                LDFLAGS="${saved_LDFLAGS}"
-              ])
-
-AS_IF([test "x$enable_Bsymbolic" = "xyes"], [MONGOC_LINK_FLAGS=-Wl[,]-Bsymbolic-functions])
-MONGOC_LT_LDFLAGS="$MONGOC_LT_LDFLAGS $MONGOC_LINK_FLAGS"
-
-AC_SUBST(MONGOC_LT_LDFLAGS)
-
-
-dnl **************************************************************************
-dnl Check for Python Support
-dnl **************************************************************************
-AC_ARG_ENABLE(
-	[python],
-	[AC_HELP_STRING([--enable-python=@<:no/yes@:>@],
-			[Enable support for experimental python bindings. @<:@default=no@:>@])],
-	[], [
-		enable_python=no
-		ax_python_header=no
-	]
-)
-AS_IF([test "x$enable_python" = "xyes"], [
-	AX_PYTHON
+AC_CONFIG_FILES([
+    Makefile
+    src/libmongoc-1.0.pc
+    src/libmongoc-ssl-1.0.pc
+    src/mongoc/mongoc-config.h
+    src/mongoc/mongoc-version.h
 ])
-AM_CONDITIONAL([HAVE_PYTHON], [test "x$ax_python_header" != "xno"])
 
-
-dnl **************************************************************************
-dnl Check for libbson
-dnl **************************************************************************
-PKG_CHECK_MODULES(BSON, libbson-1.0 >= 0.5.0)
-
-
-dnl **************************************************************************
-dnl Optionally check for SASL
-dnl **************************************************************************
-PKG_CHECK_MODULES(SASL, libsasl2 >= 2.1.6, enable_sasl=yes, enable_sasl=no)
-AM_CONDITIONAL(HAVE_SASL, [test "$enable_sasl" = "yes"])
-MONGOC_ENABLE_SASL=0
-if test "x$enable_sasl" = "xyes"; then
-	MONGOC_ENABLE_SASL=1
+if test "$with_libbson" = "bundled"; then
+    echo "TODO: submodule init if on git"
+    m4_include([src/libbson/build/autotools/Endian.m4])
+    AC_CONFIG_FILES([
+        src/libbson/src/bson/libbson-1.0.pc
+    ])
 fi
-AC_SUBST([MONGOC_ENABLE_SASL])
+
+m4_include([build/autotools/PrintBuildConfiguration.m4])
+
+
+
+
+
 
 
 dnl **************************************************************************

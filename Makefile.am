@@ -1,34 +1,42 @@
 EXTRA_DIST =
-noinst_PROGRAMS =
+CLEANFILES =
+DISTCLEANFILES =
 
-include mongoc/Makefile.include
-include examples/Makefile.include
-include tests/Makefile.include
-include tools/Makefile.include
-include doc/Makefile.include
+bin_PROGRAMS =
+lib_LTLIBRARIES =
+noinst_LTLIBRARIES =
 
-if HAVE_PYTHON
-include bindings/python/Makefile.include
-endif
+AM_CPPFLAGS = \
+	-DMONGOC_COMPILATION \
+	-D_BSD_SOURCE \
+	-D_GNUC_SOURCE \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/mongoc \
+	-I$(top_builddir)/src/mongoc
 
-ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
-DISTCHECK_CONFIGURE_FLAGS = --enable-silent-rules
+AM_CFLAGS = $(BSON_CFLAGS)
+
+AM_LDFLAGS = $(BSON_LDFLAGS)
+
+AM_LIBADD = \
+	$(BSON_LIBS) \
+	$(SHM_LIB)
 
 AM_CTAGSFLAGS = --fields=+l --languages=c
 
+include doc/Makefile.am
+include examples/Makefile.am
+include src/Makefile.am
+include tests/Makefile.am
+
+ACLOCAL_AMFLAGS = -I build/autotools/m4 ${ACLOCAL_FLAGS}
+DISTCHECK_CONFIGURE_FLAGS = --enable-silent-rules
+
 mongocdocdir = ${docdir}
-mongocdoc_DATA =
-mongocdoc_DATA += COPYING
-mongocdoc_DATA += NEWS
-mongocdoc_DATA += README
-
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA =
-pkgconfig_DATA += $(top_builddir)/mongoc/libmongoc-1.0.pc
-if HAVE_SSL
-pkgconfig_DATA += $(top_builddir)/mongoc/libmongoc-ssl-1.0.pc
-endif
-
+mongocdoc_DATA = \
+	COPYING \
+	NEWS \
+	README.rst
 EXTRA_DIST += $(mongocdoc_DATA)
 
 dist-hook:
