@@ -8,7 +8,7 @@ if test "$os_solaris" = "yes"; then
 fi
 
 # Check if we should enable the bundled libbson.
-if "$with_libbson" = "auto"; then
+if test "$with_libbson" = "auto"; then
    PKG_CHECK_MODULES(BSON, libbson-1.0 >= 0.5.0,
                      [with_libbson=system], [with_libbson=bundled])
 fi

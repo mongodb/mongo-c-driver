@@ -19,7 +19,6 @@ AC_SUBST(MONGOC_API_VERSION)
 AC_SUBST(MONGOC_VERSION)
 
 m4_include([build/autotools/CheckCompiler.m4])
-m4_include([build/autotools/CheckHeaders.m4])
 m4_include([build/autotools/CheckProgs.m4])
 m4_include([build/autotools/CheckHost.m4])
 m4_include([build/autotools/CheckTarget.m4])

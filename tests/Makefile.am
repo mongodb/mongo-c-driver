@@ -3,7 +3,7 @@ noinst_PROGRAMS += test-secondary
 noinst_PROGRAMS += test-replica-set
 noinst_PROGRAMS += test-sharded-cluster
 noinst_PROGRAMS += test-libmongoc
-if HAVE_SSL
+if ENABLE_SSL
 noinst_PROGRAMS += test-replica-set-ssl
 endif
 
@@ -74,7 +74,7 @@ test_libmongoc_SOURCES = \
 	tests/test-libmongoc.h \
 	tests/TestSuite.c \
 	tests/TestSuite.h
-if HAVE_SSL
+if ENABLE_SSL
 test_libmongoc_SOURCES += \
 	tests/test-x509.c \
 	tests/test-mongoc-stream-tls.c \
@@ -99,7 +99,7 @@ $(top_srcdir)/tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)
 	$< $(top_srcdir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
 	touch $(top_srcdir)/tests/trust_dir/done
 
-if HAVE_SSL
+if ENABLE_SSL
 test: $(TEST_PROGS) test_certs
 else
 test: $(TEST_PROGS)

@@ -1,6 +1,6 @@
 MAN3 = $(MONGOC_SYMBOLS)
 
-$(top_srcdir)/doc/mongoc_symbols.txt: $(top_srcdir)/mongoc/libmongoc.symbols
+$(top_srcdir)/doc/mongoc_symbols.txt: $(top_srcdir)/src/libmongoc.symbols
 	sed -e 's/.*/linkmongoc:&[3] +/' < $< > $@
 
 $(top_srcdir)/doc/mongoc_api.txt: $(top_srcdir)/doc/mongoc_api
