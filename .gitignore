@@ -1,7 +1,9 @@
 *~
 *.a
 aclocal.m4
+AUTHORS
 autom4te.cache
+ChangeLog
 cluster1
 compile
 config.*
@@ -29,6 +31,7 @@ mongoc-stat
 mongoc-tail
 *.o
 *.pc
+README
 stamp-h1
 *.swp
 example-client

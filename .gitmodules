@@ -1,0 +1,3 @@
+[submodule "src/libbson"]
+	path = src/libbson
+	url = git://github.com/mongodb/libbson.git
