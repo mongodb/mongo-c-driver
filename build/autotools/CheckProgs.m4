@@ -20,4 +20,9 @@ AC_PATH_PROG([XMLTO], [xmlto])
 AC_ARG_VAR([ASCIIDOC], [Path to asciidoc command])
 AC_PATH_PROG([ASCIIDOC], [asciidoc])
 
-BSON_CHECK_DOC_BUILD
+MONGOC_CHECK_DOC_BUILD
+MONGOC_SYMBOLS=`sed -e 's/.*/$(top_srcdir)\/doc\/&.3/' < src/mongoc/libmongoc.symbols | tr '\n' ' '`
+AC_SUBST([MONGOC_SYMBOLS])
+
+MONGOC_API=`sed -e 's/.*/$(top_srcdir)\/doc\/&.7/' < doc/mongoc_api | tr '\n' ' '`
+AC_SUBST([MONGOC_API])

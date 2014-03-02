@@ -50,3 +50,17 @@ AC_ARG_ENABLE(with_libbson,
                    [use system installed libbson or bundled libbson. default=auto])
     [],
     [with_libbson=auto])
+
+AC_ARG_ENABLE([rdtscp],
+	      [AS_HELP_STRING([--enable-rdtscp=@<:@no/yes@:>@],
+	      		      [use rdtscp counters @<:@default=no@:>@])],
+	      		      [],
+	      		      [enable_rdtscp=no])
+
+# use strict compiler flags only on development releases
+m4_define([maintainer_flags_default], [m4_if(m4_eval(mongoc_minor_version % 2), [1], [yes], [no])])
+AC_ARG_ENABLE([maintainer-flags],
+              [AS_HELP_STRING([--enable-maintainer-flags=@<:@no/yes@:>@],
+                              [Use strict compiler flags @<:@default=]maintainer_flags_default[@:>@])],
+              [],
+              [enable_maintainer_flags=maintainer_flags_default])

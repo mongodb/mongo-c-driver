@@ -29,3 +29,23 @@ AC_SUBST(MONGOC_ENABLE_SSL, 0)
 if test "x$enable_ssl" = "xyes"; then
     AC_SUBST(MONGOC_ENABLE_SSL, 1)
 fi
+
+# Check for shm functions.
+AC_CHECK_FUNCS([shm_open], [SHM_LIB=],
+               [AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt], [SHM_LIB=])])
+AC_SUBST([SHM_LIB])
+
+# Check for sched_getcpu
+AC_CHECK_FUNCS([sched_getcpu])
+
+# Check for clock_gettime
+AC_SEARCH_LIBS([clock_gettime], [rt], [
+    AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Have clock_gettime])
+])
+if test "$ac_cv_search_clock_gettime" = "-lrt"; then
+    LDFLAGS="$LDFLAGS -lrt"
+fi
+
+if test "x$enable_rdtscp" != "xno"; then
+	CPPFLAGS="$CPPFLAGS -DENABLE_RDTSCP"
+fi

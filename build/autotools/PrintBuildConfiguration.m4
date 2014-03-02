@@ -1,10 +1,10 @@
 AC_OUTPUT
 
-if test $(( ${BSON_MINOR_VERSION} % 2 )) -eq 1; then
+if test $(( ${MONGOC_MINOR_VERSION} % 2 )) -eq 1; then
 cat << EOF
  *** IMPORTANT *** 
 
- This is an unstable version of libbson.
+ This is an unstable version of libmongoc.
  It is for test purposes only.
 
  Please, DO NOT use it in a production environment.
@@ -15,7 +15,7 @@ cat << EOF
 
  Thanks,
 
-   The libbson team.
+   The libmongoc team.
 
  *** END OF WARNING ***
 
@@ -23,7 +23,7 @@ EOF
 fi
 
 echo "
-libbson was configured with the following options:
+libmongoc was configured with the following options:
 
 Build configuration:
   Enable debugging (slow)                          : ${enable_debug}
@@ -33,6 +33,9 @@ Build configuration:
   Code coverage support                            : ${enable_coverage}
   Cross Compiling                                  : ${enable_crosscompile}
   Big endian                                       : ${enable_bigendian}
+  Fast counters                                    : ${enable_rdtscp}
+  SASL                                             : ${enable_sasl}
+  SSL                                              : ${enable_ssl}
 
 Documentation:
   Generate man pages                               : ${bson_build_doc}
