@@ -19,15 +19,7 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc
 
-LIBS = $(SHM_LIB)
-
-if WITH_LIBBSON
-AM_CPPFLAGS += -I$(top_srcdir)/src/libbson/src/bson
-LIBS += libbson-1.0.la
-else
-AM_CPPFLAGS += $(BSON_CFLAGS)
-LIBS += $(BSON_LIBS)
-endif
+LIBS = $(SHM_LIB) $(BSON_LIBS)
 
 AM_CTAGSFLAGS = --fields=+l --languages=c
 
