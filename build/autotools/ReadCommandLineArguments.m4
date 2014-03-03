@@ -43,19 +43,11 @@ AC_ARG_ENABLE(debug_symbols,
     ])
 AC_MSG_RESULT([$enable_debug_symbols])
 
-
-AC_MSG_CHECKING([whether to use bundled libbson.])
-AC_ARG_ENABLE(with_libbson,
-    AC_HELP_STRING([--with-libbson=auto|system|bundled],
-                   [use system installed libbson or bundled libbson. default=auto])
-    [],
-    [with_libbson=auto])
-
 AC_ARG_ENABLE([rdtscp],
-	      [AS_HELP_STRING([--enable-rdtscp=@<:@no/yes@:>@],
-	      		      [use rdtscp counters @<:@default=no@:>@])],
-	      		      [],
-	      		      [enable_rdtscp=no])
+              [AS_HELP_STRING([--enable-rdtscp=@<:@no/yes@:>@],
+                              [use rdtscp counters @<:@default=no@:>@])],
+              [],
+              [enable_rdtscp=no])
 
 # use strict compiler flags only on development releases
 m4_define([maintainer_flags_default], [m4_if(m4_eval(mongoc_minor_version % 2), [1], [yes], [no])])
@@ -64,3 +56,14 @@ AC_ARG_ENABLE([maintainer-flags],
                               [Use strict compiler flags @<:@default=]maintainer_flags_default[@:>@])],
               [],
               [enable_maintainer_flags=maintainer_flags_default])
+
+
+# Check if we should use the bundled (git submodule) libbson
+AC_MSG_CHECKING([whether to use bundled libbson.])
+AC_ARG_WITH(libbson,
+    AC_HELP_STRING([--with-libbson=@<:@auto/system/bundled@:>@],
+                   [use system installed libbson or bundled libbson. default=auto])
+    [],
+    [with_libbson=auto])
+AS_IF([test "x$with_libbson" != "bundled" && test "x$with_libbson" != "system"],
+      [with_libbson=auto])

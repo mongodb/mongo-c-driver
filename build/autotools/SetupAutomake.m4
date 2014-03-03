@@ -23,4 +23,7 @@ AM_CONDITIONAL([ENABLE_PYTHON],[test "$enable_python" = "yes"])
 AM_CONDITIONAL([ENABLE_STDBOOL],[test "$enable_stdbool" = "yes"])
 
 # Should we use pthreads
-AM_CONDITIONAL([ENABLE_PTHREADS], test "$enable_pthreads" = "yes")
+AM_CONDITIONAL([ENABLE_PTHREADS],[test "$enable_pthreads" = "yes"])
+
+# Should we compile the bundled libbson
+AM_CONDITIONAL([WITH_LIBBSON],[test "$with_libbson" = "bundled"])

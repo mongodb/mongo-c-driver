@@ -45,6 +45,11 @@ libmongoc_1_0_la_LDFLAGS = \
 	-export-symbols-regex "^mongoc_" \
 	-rpath $(libdir)
 
+if WITH_LIBBSON
+libbson_srcdir=$(top_srcdir)/src/libbson
+libbson_builddir=$(top_builddir)/src/libbson
+include src/libbson/src/Makefile.am
+endif
 include src/bindings/Makefile.am
 include src/mongoc/Makefile.am
 include src/tools/Makefile.am

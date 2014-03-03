@@ -1,7 +1,7 @@
 AC_ARG_ENABLE(
 	[python],
-	[AC_HELP_STRING([--enable-python=@<:no/yes@:>@],
-			[Enable support for experimental python bindings. @<:@default=no@:>@])],
+	[AC_HELP_STRING([--enable-python=@<:@no/yes@:>@],
+			[Enable support for experimental python bindings. default=no])],
 	[], [
 		enable_python=no
 		ax_python_header=no
