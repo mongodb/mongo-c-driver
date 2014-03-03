@@ -20,33 +20,29 @@ TEST_LIBS = libmongoc-priv.la $(BSON_LIBS) $(SHM_LIB)
 
 
 test_load_SOURCES = \
-	$(top_srcdir)/tests/test-load.c \
-	$(top_srcdir)/tests/mongoc-tests.c
-test_load_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
+	tests/test-load.c \
+	tests/mongoc-tests.c
 test_load_LDADD = $(TEST_LIBS)
 
 
 test_secondary_SOURCES = \
-        $(top_srcdir)/tests/test-secondary.c \
-	$(top_srcdir)/tests/mongoc-tests.c
-test_secondary_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
+	tests/test-secondary.c \
+	tests/mongoc-tests.c
 test_secondary_LDADD = $(TEST_LIBS)
 
 test_replica_set_SOURCES = \
-	$(top_srcdir)/tests/test-replica-set.c \
-	$(top_srcdir)/tests/ha-test.c \
-	$(top_srcdir)/tests/ha-test.h \
-	$(top_srcdir)/tests/mongoc-tests.c
-test_replica_set_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
+	tests/test-replica-set.c \
+	tests/ha-test.c \
+	tests/ha-test.h \
+	tests/mongoc-tests.c
 test_replica_set_LDADD = libmongoc-priv.la
 
 
 test_replica_set_ssl_SOURCES = \
-	$(top_srcdir)/tests/test-replica-set-ssl.c \
-	$(top_srcdir)/tests/ha-test.c \
-	$(top_srcdir)/tests/ha-test.h \
-	$(top_srcdir)/tests/mongoc-tests.c
-test_replica_set_ssl_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
+	tests/test-replica-set-ssl.c \
+	tests/ha-test.c \
+	tests/ha-test.h \
+	tests/mongoc-tests.c
 test_replica_set_ssl_LDADD = libmongoc-priv.la
 
 
@@ -86,16 +82,16 @@ test_libmongoc_LDADD = libmongoc-priv.la
 
 
 test_sharded_cluster_SOURCES = \
-	$(top_srcdir)/tests/test-sharded-cluster.c \
-	$(top_srcdir)/tests/ha-test.c \
-	$(top_srcdir)/tests/ha-test.h \
-	$(top_srcdir)/tests/mongoc-tests.c
+	tests/test-sharded-cluster.c \
+	tests/ha-test.c \
+	tests/ha-test.h \
+	tests/mongoc-tests.c
 test_sharded_cluster_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
 test_sharded_cluster_LDADD = libmongoc-priv.la
 
-test_certs: $(top_srcdir)/tests/trust_dir/done
+test_certs: $(top_builddir)/tests/trust_dir/done
 
-$(top_srcdir)/tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_dir.cnf
+tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_dir.cnf
 	$< $(top_srcdir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
 	touch $(top_srcdir)/tests/trust_dir/done
 

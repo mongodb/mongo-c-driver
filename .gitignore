@@ -10,6 +10,7 @@ config.*
 configure
 depcomp
 .deps
+.dirstamp
 example-client
 find-and-modify
 INSTALL
