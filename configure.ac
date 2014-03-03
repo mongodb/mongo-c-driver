@@ -37,7 +37,6 @@ m4_include([build/autotools/AutoHarden.m4])
 m4_include([build/autotools/MaintainerFlags.m4])
 m4_include([build/autotools/Optimizations.m4])
 m4_include([build/autotools/Python.m4])
-m4_include([build/autotools/Libbson.m4])
 
 # We would put AM_INIT_AUTOMAKE into SetupAutomake.m4, but seems to cause
 # autoconf errors.
@@ -52,5 +51,7 @@ AC_CONFIG_FILES([
     src/mongoc/mongoc-config.h
     src/mongoc/mongoc-version.h
 ])
+
+m4_include([build/autotools/Libbson.m4])
 
 m4_include([build/autotools/PrintBuildConfiguration.m4])

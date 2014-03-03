@@ -11,3 +11,5 @@ m4_define([mongoc_binary_age], [m4_eval(100 * mongoc_minor_version + mongoc_micr
 m4_define([lt_current], [m4_eval(100 * mongoc_minor_version + mongoc_micro_version - mongoc_interface_age)])
 m4_define([lt_revision], [mongoc_interface_age])
 m4_define([lt_age], [m4_eval(mongoc_binary_age - mongoc_interface_age)])
+
+m4_define([libbson_required_version], [0.5.0])
