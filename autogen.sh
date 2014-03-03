@@ -19,6 +19,11 @@ fi
 touch ChangeLog
 touch AUTHORS
 
+if [ -d .git ]; then
+    git submodule init
+    git submodule update
+fi
+
 if test -z `which autoreconf`; then
     echo "Error: autoreconf not found, please install it."
     exit 1
