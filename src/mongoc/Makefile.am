@@ -39,8 +39,8 @@ endif
 
 if ENABLE_SSL
 INST_H_FILES += \
-	mongoc/mongoc-stream-tls.h \
-	mongoc/mongoc-ssl.h
+	src/mongoc/mongoc-stream-tls.h \
+	src/mongoc/mongoc-ssl.h
 endif
 
 libmongoc_priv_la_SOURCES = \
