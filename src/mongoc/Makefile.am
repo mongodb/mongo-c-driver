@@ -88,12 +88,12 @@ endif
 
 if ENABLE_SSL
 libmongoc_priv_la_SOURCES += \
-	mongoc/mongoc-stream-tls.c \
-	mongoc/mongoc-ssl.c
+	src/mongoc/mongoc-stream-tls.c \
+	src/mongoc/mongoc-ssl.c
 endif
 
 if ENABLE_SASL
-libmongoc_priv_la_SOURCES += mongoc/mongoc-sasl.c
+libmongoc_priv_la_SOURCES += src/mongoc/mongoc-sasl.c
 endif
 
 EXTRA_DIST += \
