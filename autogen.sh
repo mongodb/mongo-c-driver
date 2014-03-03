@@ -22,6 +22,7 @@ touch AUTHORS
 if [ -d .git ]; then
     git submodule init
     git submodule update
+    cd src/libbson && NOCONFIGURE=1 ./autogen.sh
 fi
 
 if test -z `which autoreconf`; then
