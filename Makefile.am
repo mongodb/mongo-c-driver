@@ -7,6 +7,10 @@ lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 noinst_PROGRAMS =
 
+if WITH_LIBBSON
+SUBDIRS = src/libbson
+endif
+
 AM_CPPFLAGS = \
 	-DMONGOC_COMPILATION \
 	-D_BSD_SOURCE \
@@ -15,13 +19,15 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc
 
-AM_CFLAGS = $(BSON_CFLAGS)
+LIBS = $(SHM_LIB)
 
-AM_LDFLAGS = $(BSON_LDFLAGS)
-
-LIBS = \
-	$(BSON_LIBS) \
-	$(SHM_LIB)
+if WITH_LIBBSON
+AM_CPPFLAGS += -I$(top_srcdir)/src/libbson/src/bson
+LIBS += libbson-1.0.la
+else
+AM_CPPFLAGS += $(BSON_CFLAGS)
+LIBS += $(BSON_LIBS)
+endif
 
 AM_CTAGSFLAGS = --fields=+l --languages=c
 
