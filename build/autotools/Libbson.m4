@@ -12,7 +12,5 @@ AS_IF([test "$with_libbson" = "system"],
 # If we are using the bundled libbson, recurse into its configure.
 AS_IF([test "$with_libbson" = "bundled"],
       [AC_CONFIG_SUBDIRS([src/libbson])
-       AC_DEFINE(BSON_CFLAGS, [-Isrc/libbson/src/bson])
-       AC_DEFINE(BSON_LIBS, [libbson-1.0.la])
-       AC_SUBST(BSON_CFLAGS)
-       AC_SUBST(BSON_LIBS)])
+       AC_SUBST(BSON_CFLAGS, [-Isrc/libbson/src/bson])
+       AC_SUBST(BSON_LIBS, [libbson-1.0.la])])
