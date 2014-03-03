@@ -285,7 +285,6 @@
 
 #include "op-delete.def"
 #include "op-get-more.def"
-#include "op-header.def"
 #include "op-insert.def"
 #include "op-kill-cursors.def"
 #include "op-msg.def"
