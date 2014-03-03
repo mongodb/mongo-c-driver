@@ -22,7 +22,7 @@
 
 
 #define RPC(_name, _code) \
-   static BSON_INLINE void \
+   static void \
    _mongoc_rpc_gather_##_name (mongoc_rpc_##_name##_t *rpc, \
                                mongoc_array_t *array) \
    { \
@@ -122,8 +122,10 @@
 #undef BSON_OPTIONAL
 
 
+#if BSON_BYTE_ORDER == BSON_BIG_ENDIAN
+
 #define RPC(_name, _code) \
-   static BSON_INLINE void \
+   static void \
    _mongoc_rpc_swab_to_le_##_name (mongoc_rpc_##_name##_t *rpc) \
    { \
       BSON_ASSERT(rpc); \
@@ -164,7 +166,7 @@
 #undef INT64_ARRAY_FIELD
 
 #define RPC(_name, _code) \
-   static BSON_INLINE void \
+   static void \
    _mongoc_rpc_swab_from_le_##_name (mongoc_rpc_##_name##_t *rpc) \
    { \
       BSON_ASSERT(rpc); \
@@ -202,8 +204,11 @@
 #undef BSON_OPTIONAL
 #undef RAW_BUFFER_FIELD
 
+#endif /* BSON_BYTE_ORDER == BSON_BIG_ENDIAN */
+
+
 #define RPC(_name, _code) \
-   static BSON_INLINE void \
+   static void \
    _mongoc_rpc_printf_##_name (mongoc_rpc_##_name##_t *rpc) \
    { \
       BSON_ASSERT(rpc); \

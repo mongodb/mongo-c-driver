@@ -13,4 +13,4 @@ AS_IF([test "$with_libbson" = "system"],
 AS_IF([test "$with_libbson" = "bundled"],
       [AC_CONFIG_SUBDIRS([src/libbson])
        AC_SUBST(BSON_CFLAGS, [-Isrc/libbson/src/bson])
-       AC_SUBST(BSON_LIBS, [libbson-1.0.la])])
+       AC_SUBST(BSON_LIBS, [src/libbson/libbson-1.0.la])])

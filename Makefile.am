@@ -19,6 +19,9 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc
 
+AM_CFLAGS = \
+	-DMONGOC_COMPILATION
+
 LIBS = $(SHM_LIB) $(BSON_LIBS)
 
 AM_CTAGSFLAGS = --fields=+l --languages=c
