@@ -19,21 +19,35 @@
 #  error "Only <mongoc.h> can be included directly."
 #endif
 
+
 #ifndef MONGOC_COMPAT_H
 #define MONGOC_COMPAT_H
 
+
 #ifdef _WIN32
-#  include <winsock2.h>
-#  include <stdio.h>
-#  include <share.h>
-#  include <ws2tcpip.h>
-#  include <bson.h>
-#  include "mongoc-compat-socket-win32.h"
-#  define strcasecmp _stricmp
+# if defined(_WIN32_WINNT) && (_WIN32_WINNT < 0x0600)
+#  undef _WIN32_WINNT
+# endif
+# ifndef _WIN32_WINNT
+#  define _WIN32_WINNT 0x0600
+# endif
+# include <winsock2.h>
+# include <stdio.h>
+# include <share.h>
+# include <ws2tcpip.h>
+# include <bson.h>
+# include "mongoc-compat-socket-win32.h"
+# define strcasecmp _stricmp
 #else
-#  include <bson.h>
-#  include "mongoc-compat-socket-unix.h"
+# include <bson.h>
+# include "mongoc-compat-socket-unix.h"
 #endif
+
+#include "mongoc-thread.h"
+
+
+BSON_BEGIN_DECLS
+
 
 void
 _mongoc_compat_init (void);
@@ -41,6 +55,8 @@ _mongoc_compat_init (void);
 void
 _mongoc_compat_shutdown (void);
 
-#include "mongoc-thread.h"
+
+BSON_END_DECLS
+
 
 #endif /* MONGOC_COMPAT_H */
