@@ -8,6 +8,7 @@ cluster1
 compile
 config.*
 configure
+COPYING
 depcomp
 .deps
 .dirstamp
