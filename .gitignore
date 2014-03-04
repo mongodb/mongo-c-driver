@@ -5,6 +5,9 @@ AUTHORS
 autom4te.cache
 ChangeLog
 cluster1
+*.cmake
+CMakeCache.txt
+CMakeFiles
 compile
 config.*
 configure
@@ -34,6 +37,8 @@ mongoc-tail
 *.o
 *.pc
 README
+*.so
+*.so.*
 stamp-h1
 *.swp
 example-client
