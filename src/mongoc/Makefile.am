@@ -1,4 +1,4 @@
-headerdir = $(prefix)/include/libmongoc-@BSON_API_VERSION@
+headerdir = $(prefix)/include/libmongoc-@MONGOC_API_VERSION@
 header_DATA = $(INST_H_FILES)
 
 INST_H_FILES = \
