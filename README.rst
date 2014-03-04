@@ -68,8 +68,8 @@ FreeBSD::
   $ su -c 'pkg install git gcc automake autoconf libtool'
 
 
-Clone Repositories
-------------------
+Fetch Sources and Build
+-----------------------
 
 You can use the following to checkout and build mongo-c-driver::
 
