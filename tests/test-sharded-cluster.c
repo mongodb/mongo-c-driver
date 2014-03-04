@@ -1,6 +1,7 @@
+#include "mongoc-tests.h"
+
 #include <mongoc.h>
 
-#include "mongoc-tests.h"
 #include "ha-test.h"
 
 static ha_sharded_cluster_t *cluster;

@@ -1,3 +1,5 @@
+#include "mongoc-tests.h"
+
 #include <bcon.h>
 #include <mongoc.h>
 #include <mongoc-matcher-private.h>

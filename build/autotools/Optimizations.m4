@@ -1,13 +1,20 @@
-# Enable Link-Time-Optimization
 OPTIMIZE_CFLAGS=""
 OPTIMIZE_LDFLAGS=""
+
+# Check if we should use -Bsymbolic
 AS_IF([test "$enable_optimizations" != "no"], [
-    check_cc_cxx_flag([-flto], [OPTIMIZE_CFLAGS="$OPTIMIZE_CFLAGS -flto"])
-    check_link_flag([-flto], [OPTIMIZE_LDFLAGS="$OPTIMIZE_LDFLAGS -flto"])
     check_link_flag([-Wl,-Bsymbolic], [OPTIMIZE_LDFLAGS="$OPTIMIZE_LDFLAGS -Wl,-Bsymbolic"])
 ])
+
+# Check if we should use link-time-optimization.
+#AS_IF([test "$enable_optimizations" != "no"], [
+#    check_cc_cxx_flag([-flto], [OPTIMIZE_CFLAGS="$OPTIMIZE_CFLAGS -flto"])
+#    check_link_flag([-flto], [OPTIMIZE_LDFLAGS="$OPTIMIZE_LDFLAGS -flto"])
+#])
+
 AC_SUBST(OPTIMIZE_CFLAGS)
 AC_SUBST(OPTIMIZE_LDFLAGS)
+
 
 # Add '-g' flag to gcc to build with debug symbols.
 if test "$enable_debug_symbols" = "min"; then

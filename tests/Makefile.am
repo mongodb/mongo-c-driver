@@ -16,18 +16,25 @@ TEST_PROGS += tests/abicheck.sh
 endif
 
 
+TEST_CFLAGS = \
+	-DMONGOC_COMPILATION \
+	$(BSON_CFLAGS) \
+	-I$(top_srcdir)/src/mongoc \
+	-I$(top_builddir)/src/mongoc
 TEST_LIBS = libmongoc-priv.la $(BSON_LIBS) $(SHM_LIB)
 
 
 test_load_SOURCES = \
 	tests/test-load.c \
 	tests/mongoc-tests.c
+test_load_CFLAGS = $(TEST_CFLAGS)
 test_load_LDADD = $(TEST_LIBS)
 
 
 test_secondary_SOURCES = \
 	tests/test-secondary.c \
 	tests/mongoc-tests.c
+test_secondary_CFLAGS = $(TEST_CFLAGS)
 test_secondary_LDADD = $(TEST_LIBS)
 
 test_replica_set_SOURCES = \
@@ -35,7 +42,8 @@ test_replica_set_SOURCES = \
 	tests/ha-test.c \
 	tests/ha-test.h \
 	tests/mongoc-tests.c
-test_replica_set_LDADD = libmongoc-priv.la
+test_replica_set_CFLAGS = $(TEST_CFLAGS)
+test_replica_set_LDADD = $(TEST_LIBS)
 
 
 test_replica_set_ssl_SOURCES = \
@@ -43,7 +51,8 @@ test_replica_set_ssl_SOURCES = \
 	tests/ha-test.c \
 	tests/ha-test.h \
 	tests/mongoc-tests.c
-test_replica_set_ssl_LDADD = libmongoc-priv.la
+test_replica_set_ssl_CFLAGS = $(TEST_CFLAGS)
+test_replica_set_ssl_LDADD = $(TEST_LIBS)
 
 
 test_libmongoc_SOURCES = \
@@ -77,8 +86,8 @@ test_libmongoc_SOURCES += \
 	tests/ssl-test.c \
 	tests/ssl-test.h
 endif
-test_libmongoc_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
-test_libmongoc_LDADD = libmongoc-priv.la
+test_libmongoc_CFLAGS = $(TEST_CFLAGS)
+test_libmongoc_LDADD = $(TEST_LIBS)
 
 
 test_sharded_cluster_SOURCES = \
@@ -86,8 +95,8 @@ test_sharded_cluster_SOURCES = \
 	tests/ha-test.c \
 	tests/ha-test.h \
 	tests/mongoc-tests.c
-test_sharded_cluster_CPPFLAGS = -I$(top_srcdir)/mongoc $(BSON_CFLAGS) -DMONGOC_COMPILATION
-test_sharded_cluster_LDADD = libmongoc-priv.la
+test_sharded_cluster_CFLAGS = $(TEST_CFLAGS)
+test_sharded_cluster_LDADD = $(TEST_LIBS)
 
 test_certs: $(top_builddir)/tests/trust_dir/done
 

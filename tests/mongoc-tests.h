@@ -19,6 +19,16 @@
 #define MONGOC_TESTS_H
 
 
+#ifdef BSON_DISABLE_ASSERT
+# undef BSON_DISABLE_ASSERT
+#endif
+
+
+#ifdef BSON_DISABLE_CHECKS
+# undef BSON_DISABLE_CHECKS
+#endif
+
+
 #include <assert.h>
 #include <bson.h>
 #include <stdio.h>

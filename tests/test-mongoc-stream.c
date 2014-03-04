@@ -1,3 +1,5 @@
+#include "mongoc-tests.h"
+
 #include <fcntl.h>
 #include <mongoc.h>
 #include <stdlib.h>

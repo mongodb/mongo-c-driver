@@ -561,7 +561,9 @@ void ha_rm_dir(const char * name)
    char * cmd;
    cmd = bson_strdup_printf("rm -rf \"%s\"", name);
    fprintf(stderr, "%s\n", cmd);
-   system(cmd);
+   if (0 != system(cmd)) {
+      fprintf (stderr, "%s failed\n", cmd);
+   }
    bson_free(cmd);
 #else
    SHFILEOPSTRUCT fos = { 0 };

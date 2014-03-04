@@ -1,3 +1,5 @@
+#include "mongoc-tests.h"
+
 #include <string.h>
 
 #include "ha-test.h"
@@ -7,7 +9,6 @@
 #include "mongoc-cluster-private.h"
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
-#include "mongoc-tests.h"
 #include "mongoc-write-concern-private.h"
 
 #undef G_LOG_DOMAIN
