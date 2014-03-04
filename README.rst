@@ -48,8 +48,9 @@ MongoDB project, please report it according to the `instructions here
 Building From Git
 =================
 
-The following example will install both libbson and mongo-c-driver from git.
-It assumes you do not yet have libbson installed and are on a 64-bit system.
+mongo-c-driver contains a copy of libbson in the case that your system does
+not already have libbson installed. The configure script will detect if
+libbson is not installed and install it too.
 
 Dependencies
 ------------
@@ -57,6 +58,10 @@ Dependencies
 Fedora::
 
   $ sudo yum install git gcc automake autoconf libtool
+
+Debian::
+
+  $ sudo apt-get install git gcc automake autoconf libtool
 
 FreeBSD::
 
@@ -66,7 +71,7 @@ FreeBSD::
 Clone Repositories
 ------------------
 
-You can use the following to checkout and build mongo-c-driver.::
+You can use the following to checkout and build mongo-c-driver::
 
   $ git clone https://github.com/mongodb/mongo-c-driver.git
   $ cd mongo-c-driver
@@ -76,4 +81,4 @@ You can use the following to checkout and build mongo-c-driver.::
 
 In standard automake fasion, ./autogen.sh only needs to be run once.
 You can use ./configure directly going forward.
-Also see ./configure --help for all configure options.
+Also, see ./configure --help for all configure options.
