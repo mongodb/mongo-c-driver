@@ -5,12 +5,12 @@ mongo-c-driver
 About
 =====
 
-Libmongoc is a client library written in C for MongoDB.
+mongo-c-driver is a client library written in C for MongoDB.
 
 There are absolutely no guarantees of API/ABI stability at this point.
 But generally, we won't break API/ABI unless we have good reason.
 
-Libmongoc depends on `Libbson <https://github.com/mongodb/libbson>`_.
+mongo-c-driver depends on `Libbson <https://github.com/mongodb/libbson>`_.
 
 If you are looking for the legacy C driver, it can be found in the
 `legacy branch <https://github.com/mongodb/mongo-c-driver/tree/legacy>`_.
