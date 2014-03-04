@@ -15,20 +15,23 @@ fi
 AM_CONDITIONAL(ENABLE_LIBBSON, [test "$with_libbson" = "bundled"])
 
 # Check for libsasl2
-PKG_CHECK_MODULES(SASL, libsasl2 >= 2.1.6, [enable_sasl=yes], [enable_sasl=no])
-AM_CONDITIONAL(ENABLE_SASL, [test "$enable_sasl" = "yes"])
 AC_SUBST(MONGOC_ENABLE_SASL, 0)
-if test "x$enable_sasl" = "xyes"; then
-    AC_SUBST(MONGOC_ENABLE_SASL, 1)
-fi
+AS_IF([test "$enable_sasl" = "auto"],
+      [PKG_CHECK_MODULES(SASL, libsasl2 >= sasl_required_version,
+                         [enable_sasl=yes], [enable_sasl=no])])
+AS_IF([test "$enable_sasl" = "yes"],
+      [PKG_CHECK_MODULES(SASL, libsasl2 >= sasl_required_version)
+       AC_SUBST(MONGOC_ENABLE_SASL, 1)])
+AM_CONDITIONAL(ENABLE_SASL, test "$enable_sasl" = "yes")
 
 # Check for openssl
-PKG_CHECK_MODULES(SSL,  openssl, [enable_ssl=yes], [enable_ssl=no])
-AM_CONDITIONAL(ENABLE_SSL, test "x$enable_ssl" = "xyes")
 AC_SUBST(MONGOC_ENABLE_SSL, 0)
-if test "x$enable_ssl" = "xyes"; then
-    AC_SUBST(MONGOC_ENABLE_SSL, 1)
-fi
+AS_IF([test "$enable_ssl" = "auto"],
+      [PKG_CHECK_MODULES(SSL, openssl, [enable_ssl=yes], [enable_ssl=no])])
+AS_IF([test "$enable_ssl" = "yes"],
+      [PKG_CHECK_MODULES(SSL, openssl)
+       AC_SUBST(MONGOC_ENABLE_SSL, 1)])
+AM_CONDITIONAL(ENABLE_SSL, test "$enable_ssl" = "yes")
 
 # Check for shm functions.
 AC_CHECK_FUNCS([shm_open], [SHM_LIB=],
@@ -42,10 +45,8 @@ AC_CHECK_FUNCS([sched_getcpu])
 AC_SEARCH_LIBS([clock_gettime], [rt], [
     AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Have clock_gettime])
 ])
-if test "$ac_cv_search_clock_gettime" = "-lrt"; then
-    LDFLAGS="$LDFLAGS -lrt"
-fi
+AS_IF([test "$ac_cv_search_clock_gettime" = "-lrt"],
+      [LDFLAGS="$LDFLAGS -lrt"])
 
-if test "x$enable_rdtscp" != "xno"; then
-	CPPFLAGS="$CPPFLAGS -DENABLE_RDTSCP"
-fi
+AS_IF([test "$enable_rdtscp" = "yes"],
+      [CPPFLAGS="$CPPFLAGS -DENABLE_RDTSCP"])

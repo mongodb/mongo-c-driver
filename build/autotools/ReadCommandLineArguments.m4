@@ -45,7 +45,7 @@ AC_MSG_RESULT([$enable_debug_symbols])
 
 AC_ARG_ENABLE([rdtscp],
               [AS_HELP_STRING([--enable-rdtscp=@<:@no/yes@:>@],
-                              [use rdtscp counters @<:@default=no@:>@])],
+                              [Use rdtscp for per-cpu counters @<:@default=no@:>@])],
               [],
               [enable_rdtscp=no])
 
@@ -67,3 +67,19 @@ AC_ARG_WITH(libbson,
     [with_libbson=auto])
 AS_IF([test "x$with_libbson" != "bundled" && test "x$with_libbson" != "system"],
       [with_libbson=auto])
+
+
+AC_MSG_CHECKING([whether to enable SSL.])
+AC_ARG_ENABLE([ssl],
+              [AS_HELP_STRING([--enable-ssl=@<:@auto/yes/no@:>@],
+                              [Use OpenSSL for TLS connections.])],
+              [],
+              [enable_ssl=auto])
+
+
+AC_MSG_CHECKING([whether to enable SASL.])
+AC_ARG_ENABLE([sasl],
+              [AS_HELP_STRING([--enable-sasl=@<:@auto/yes/no@:>@],
+                              [Use libsasl2 for Kerberos.])],
+              [],
+              [enable_sasl=auto])

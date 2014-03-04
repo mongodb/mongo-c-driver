@@ -13,3 +13,5 @@ m4_define([lt_revision], [mongoc_interface_age])
 m4_define([lt_age], [m4_eval(mongoc_binary_age - mongoc_interface_age)])
 
 m4_define([libbson_required_version], [0.5.0])
+
+m4_define([sasl_required_version], [2.1.6])
