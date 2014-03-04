@@ -21,8 +21,11 @@ TEST_CFLAGS = \
 	$(BSON_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc
-TEST_LIBS = libmongoc-priv.la $(BSON_LIBS) $(SHM_LIB)
 
+TEST_LIBS = libmongoc-priv.la $(BSON_LIBS) $(SHM_LIB)
+if OS_WIN32
+TEST_LIBS += -lshlwapi
+endif
 
 test_load_SOURCES = \
 	tests/test-load.c \
