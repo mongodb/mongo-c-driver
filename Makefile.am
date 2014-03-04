@@ -15,14 +15,6 @@ BSON_CFLAGS = \
 BSON_LIBS = $(top_builddir)/src/libbson/libbson-1.0.la
 endif
 
-AM_CPPFLAGS = \
-	-DMONGOC_COMPILATION \
-	-D_BSD_SOURCE \
-	-D_GNUC_SOURCE \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/mongoc \
-	-I$(top_builddir)/src/mongoc
-
 AM_CTAGSFLAGS = --fields=+l --languages=c
 
 include doc/Makefile.am

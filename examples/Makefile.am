@@ -30,7 +30,7 @@ mongoc_ping_LDADD = $(EXAMPLE_LDADD)
 
 noinst_PROGRAMS += mongoc-rpc-validate
 mongoc_rpc_validate_SOURCES = examples/mongoc-rpc-validate.c
-mongoc_rpc_validate_CFLAGS = $(EXAMPLE_CFLAGS)
+mongoc_rpc_validate_CFLAGS = -DMONGOC_COMPILATION $(EXAMPLE_CFLAGS)
 mongoc_rpc_validate_LDADD = libmongoc-priv.la
 
 noinst_PROGRAMS += mongoc-tail
