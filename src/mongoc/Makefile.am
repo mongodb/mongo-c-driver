@@ -43,6 +43,34 @@ INST_H_FILES += \
 	src/mongoc/mongoc-ssl.h
 endif
 
+NOINST_H_FILES = \
+	src/mongoc/mongoc-array-private.h \
+	src/mongoc/mongoc-buffer-private.h \
+	src/mongoc/mongoc-client-private.h \
+	src/mongoc/mongoc-cluster-private.h \
+	src/mongoc/mongoc-collection-private.h \
+	src/mongoc/mongoc-counters-private.h \
+	src/mongoc/mongoc-cursor-array-private.h \
+	src/mongoc/mongoc-cursor-cursorid-private.h \
+	src/mongoc/mongoc-cursor-private.h \
+	src/mongoc/mongoc-database-private.h \
+	src/mongoc/mongoc-gridfs-file-list-private.h \
+	src/mongoc/mongoc-gridfs-file-page-private.h \
+	src/mongoc/mongoc-gridfs-file-private.h \
+	src/mongoc/mongoc-gridfs-private.h \
+	src/mongoc/mongoc-host-list-private.h \
+	src/mongoc/mongoc-list-private.h \
+	src/mongoc/mongoc-matcher-op-private.h \
+	src/mongoc/mongoc-matcher-private.h \
+	src/mongoc/mongoc-queue-private.h \
+	src/mongoc/mongoc-read-prefs-private.h \
+	src/mongoc/mongoc-rpc-private.h \
+	src/mongoc/mongoc-sasl-private.h \
+	src/mongoc/mongoc-ssl-private.h \
+	src/mongoc/mongoc-stream-private.h \
+	src/mongoc/mongoc-util-private.h \
+	src/mongoc/mongoc-write-concern-private.h
+
 libmongoc_priv_la_SOURCES = \
 	$(INST_H_FILES) \
 	$(NOINST_H_FILES) \

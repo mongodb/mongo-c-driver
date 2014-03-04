@@ -4,7 +4,7 @@ mongoc_database_add_user(3)
 
 NAME
 ----
-mongoc_database_add_user - add a user to a database
+mongoc_database_add_user, mongoc_database_remove_user - manage users in a database
 
 
 SYNOPSIS
@@ -18,6 +18,11 @@ mongoc_database_add_user (mongoc_database_t *database,
                           const bson_t      *roles,
                           const bson_t      *custom_data,
                           bson_error_t      *error);
+
+bool
+mongoc_database_remove_user (mongoc_database_t *database,
+                             const char        *username,
+                             bson_error_t      *error);
 -----------------------
 
 
