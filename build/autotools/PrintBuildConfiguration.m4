@@ -38,8 +38,8 @@ Build configuration:
   Libbson                                          : ${with_libbson}
 
 Documentation:
-  Generate man pages                               : ${bson_build_doc}
-  Install man pages                                : ${bson_install_man}
+  Generate man pages                               : ${mongoc_build_doc}
+  Install man pages                                : ${mongoc_install_man}
 
 Bindings:
   Python (experimental)                            : ${ax_python_header}
