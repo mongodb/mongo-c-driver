@@ -69,7 +69,7 @@ Clone Repositories
 You can use the following to checkout and build mongo-c-driver.::
 
   $ git clone https://github.com/mongodb/mongo-c-driver.git
-  $ cd libbson
+  $ cd mongo-c-driver
   $ ./autogen.sh
   $ make
   $ sudo make install
