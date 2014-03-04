@@ -66,21 +66,14 @@ FreeBSD::
 Clone Repositories
 ------------------
 
-You can use the following to checkout and build libbson and mongo-c-driver.::
+You can use the following to checkout and build mongo-c-driver.::
 
-  $ for name in "libbson mongo-c-driver"
-
-  $ git clone https://github.com/mongodb/libbson.git
   $ git clone https://github.com/mongodb/mongo-c-driver.git
-
   $ cd libbson
-  $ ./autogen.sh --prefix=/usr --libdir=/usr/lib64
-  $ make
-  $ sudo make install
-  $ cd -
-  $ cd mongo-c-driver
-  $ ./autogen.sh --prefix=/usr --libdir=/usr/lib64
+  $ ./autogen.sh
   $ make
   $ sudo make install
 
-
+In standard automake fasion, ./autogen.sh only needs to be run once.
+You can use ./configure directly going forward.
+Also see ./configure --help for all configure options.
