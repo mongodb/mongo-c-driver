@@ -65,7 +65,7 @@ Debian::
 
 FreeBSD::
 
-  $ pkg install git gcc automake autoconf libtool
+  $ su -c 'pkg install git gcc automake autoconf libtool'
 
 
 Clone Repositories
