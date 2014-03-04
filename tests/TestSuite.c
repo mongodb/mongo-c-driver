@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB Inc.
+ * Copyright 2014 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <bson.h>
 
 #include <assert.h>
 #include <fcntl.h>
@@ -41,7 +38,7 @@
 # include <windows.h>
 #endif
 
-#if defined(HAVE_CLOCK_GETTIME)
+#if defined(BSON_HAVE_CLOCK_GETTIME)
 # include <time.h>
 # include <sys/time.h>
 #endif
@@ -98,7 +95,7 @@
 #endif
 
 
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 struct timespec
 {
    time_t tv_sec;
@@ -119,7 +116,7 @@ Thread_Create (Thread *thread,
 #endif
 
 
-#if defined(_WIN32) && !defined(HAVE_SNPRINTF)
+#if defined(_WIN32) && !defined(BSON_HAVE_SNPRINTF)
 static int
 snprintf (char *str,
           size_t size,
@@ -146,7 +143,7 @@ snprintf (char *str,
 void
 _Clock_GetMonotonic (struct timespec *ts) /* OUT */
 {
-#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+#if defined(BSON_HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
    clock_gettime (CLOCK_MONOTONIC, ts);
 #elif defined(__APPLE__)
    static mach_timebase_info_data_t info = { 0 };
@@ -197,22 +194,20 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
                     Test *test)       /* IN */
 {
    int seed;
-   int fd;
-   int n_read;
 
-   fd = open ("/dev/urandom", O_RDONLY);
+#ifndef BSON_OS_WIN32
+   int fd = open ("/dev/urandom", O_RDONLY);
+   int n_read;
    if (fd != -1) {
       n_read = read (fd, &seed, 4);
       assert (n_read == 4);
-   } else {
-      seed = time (NULL) * (int)getpid ();
-   }
-
-   if (fd != -1) {
       close (fd);
+      test->seed = seed;
+      return;
    }
+#endif
 
-   test->seed = seed;
+   test->seed = time (NULL) * (int)getpid ();
 }
 
 
