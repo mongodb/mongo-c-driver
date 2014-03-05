@@ -36,6 +36,7 @@
 #include "mongoc-queue-private.h"
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-unix.h"
+#include "mongoc-thread.h"
 #include "mongoc-trace.h"
 
 #ifdef MONGOC_ENABLE_SSL

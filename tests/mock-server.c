@@ -22,6 +22,7 @@
 #include "mock-server.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-stream-unix.h"
+#include "mongoc-thread.h"
 #include "mongoc-trace.h"
 
 

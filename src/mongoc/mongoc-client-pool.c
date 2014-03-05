@@ -19,6 +19,7 @@
 #include "mongoc-compat.h"
 #include "mongoc-client-pool.h"
 #include "mongoc-queue-private.h"
+#include "mongoc-thread.h"
 #include "mongoc-trace.h"
 
 

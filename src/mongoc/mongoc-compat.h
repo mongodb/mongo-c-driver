@@ -43,8 +43,6 @@
 # include "mongoc-compat-socket-unix.h"
 #endif
 
-#include "mongoc-thread.h"
-
 
 BSON_BEGIN_DECLS
 

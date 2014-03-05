@@ -3,6 +3,8 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+#include <mongoc-thread.h>
+
 #include "ssl-test.h"
 
 #define TIMEOUT 1000

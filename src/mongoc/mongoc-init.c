@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-#include "mongoc-counters-private.h"
-#include "mongoc-compat.h"
 
 #include <bson.h>
 
+#include "mongoc-compat.h"
 #include "mongoc-config.h"
-
+#include "mongoc-counters-private.h"
+#include "mongoc-init.h"
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #include "mongoc-ssl-private.h"
 #endif
-
-#include "mongoc-init.h"
+#include "mongoc-thread.h"
 
 static MONGOC_ONCE_FUN( _mongoc_do_init)
 {
