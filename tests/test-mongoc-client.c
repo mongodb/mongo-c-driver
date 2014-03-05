@@ -499,14 +499,20 @@ cleanup_globals (void)
 void
 test_client_install (TestSuite *suite)
 {
+   bool local;
+
    gTestUri = bson_strdup_printf("mongodb://%s:27017/", MONGOC_TEST_HOST);
    gTestUriWithPassword = bson_strdup_printf("mongodb://testuser:testpass@%s:27017/test", MONGOC_TEST_HOST);
    gTestUriWithBadPassword = bson_strdup_printf("mongodb://baduser:badpass@%s:27017/test", MONGOC_TEST_HOST);
 
-   TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
+   local = !getenv ("MONGOC_DISABLE_MOCK_SERVER");
+
+   if (!local) {
+      TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
+      TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
+   }
    TestSuite_Add (suite, "/Client/authenticate", test_mongoc_client_authenticate);
    TestSuite_Add (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure);
-   TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
 
