@@ -118,6 +118,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-unix.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-thread.h
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.h
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
 )
