@@ -3,7 +3,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#include <mongoc-thread.h>
+#include <mongoc-thread-private.h>
 
 #include "ssl-test.h"
 

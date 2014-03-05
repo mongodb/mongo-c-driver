@@ -25,7 +25,7 @@
 #include "mongoc-ssl.h"
 #include "mongoc-ssl-private.h"
 #endif
-#include "mongoc-thread.h"
+#include "mongoc-thread-private.h"
 
 static MONGOC_ONCE_FUN( _mongoc_do_init)
 {

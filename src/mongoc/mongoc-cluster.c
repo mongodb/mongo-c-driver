@@ -37,7 +37,7 @@
 #ifdef MONGOC_ENABLE_SASL
 #include "mongoc-sasl-private.h"
 #endif
-#include "mongoc-thread.h"
+#include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"

@@ -20,7 +20,7 @@
 
 #include "mongoc-compat.h"
 #include "mongoc-log.h"
-#include "mongoc-thread.h"
+#include "mongoc-thread-private.h"
 
 
 static void

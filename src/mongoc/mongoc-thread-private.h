@@ -16,14 +16,16 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <bson.h> can be included directly."
+# error "Only <bson.h> can be included directly."
 #endif
 
 
-#ifndef MONGOC_THREAD_H
-#define MONGOC_THREAD_H
+#ifndef MONGOC_THREAD_PRIVATE_H
+#define MONGOC_THREAD_PRIVATE_H
+
 
 #include <bson.h>
+
 #include "mongoc-compat.h"
 #include "mongoc-config.h"
 
@@ -85,4 +87,5 @@ static BSON_INLINE int mongoc_cond_destroy(mongoc_cond_t * _ignored) { return 0;
 #  define MONGOC_ONCE_RETURN                return true
 #endif
 
-#endif /* MONGOC_THREAD_H */
+
+#endif /* MONGOC_THREAD_PRIVATE_H */

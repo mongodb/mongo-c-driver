@@ -28,7 +28,6 @@ INST_H_FILES = \
 	src/mongoc/mongoc-stream-buffered.h \
 	src/mongoc/mongoc-stream-gridfs.h \
 	src/mongoc/mongoc-stream-unix.h \
-	src/mongoc/mongoc-thread.h \
 	src/mongoc/mongoc-uri.h \
 	src/mongoc/mongoc-version.h \
 	src/mongoc/mongoc-write-concern.h
@@ -68,6 +67,7 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-sasl-private.h \
 	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-private.h \
+	src/mongoc/mongoc-thread-private.h \
 	src/mongoc/mongoc-trace.h \
 	src/mongoc/mongoc-util-private.h \
 	src/mongoc/mongoc-write-concern-private.h

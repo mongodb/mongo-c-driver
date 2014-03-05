@@ -21,7 +21,7 @@
 
 #include <bson.h>
 #include <mongoc.h>
-#include <mongoc-thread.h>
+#include <mongoc-thread-private.h>
 
 
 BSON_BEGIN_DECLS
