@@ -15,8 +15,6 @@
  */
 
 
-#define _GNU_SOURCE
-
 #include <bson.h>
 
 #include "mock-server.h"

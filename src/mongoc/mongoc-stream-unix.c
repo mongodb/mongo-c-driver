@@ -15,8 +15,6 @@
  */
 
 
-#define _GNU_SOURCE
-
 #include <bson.h>
 
 #include "mongoc-counters-private.h"

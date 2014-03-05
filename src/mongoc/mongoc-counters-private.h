@@ -25,7 +25,6 @@
 
 
 #ifdef __linux__
-# define _GNU_SOURCE
 # include <sched.h>
 # include <sys/sysinfo.h>
 #elif defined(__FreeBSD__) || \

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#define _GNU_SOURCE
 
 #include "mongoc-config.h"
 

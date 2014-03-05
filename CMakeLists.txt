@@ -51,6 +51,9 @@ if (UNIX AND NOT APPLE)
    set(LIBS ${LIBS} rt)
 endif()
 
+add_definitions(-D_GNU_SOURCE)
+add_definitions(-D_BSD_SOURCE)
+
 set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c

@@ -15,8 +15,6 @@
  */
 
 
-#define _GNU_SOURCE
-
 #include <limits.h>
 
 #include "mongoc-counters-private.h"

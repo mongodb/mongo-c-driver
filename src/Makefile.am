@@ -9,6 +9,8 @@ lib_LTLIBRARIES += libmongoc-1.0.la
 
 libmongoc_priv_la_CPPFLAGS = \
 	-DMONGOC_COMPILATION \
+	-D_BSD_SOURCE \
+	-D_GNU_SOURCE \
 	$(OPTIMIZE_CFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/mongoc \

@@ -15,8 +15,6 @@
  */
 
 
-#define _GNU_SOURCE
-
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-array-private.h"
 #include "mongoc-cursor-private.h"
