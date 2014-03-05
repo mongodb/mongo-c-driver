@@ -15,8 +15,6 @@
  */
 
 
-#define _GNU_SOURCE
-
 #include <errno.h>
 
 #include "mongoc-buffer-private.h"
