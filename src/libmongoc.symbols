@@ -57,7 +57,6 @@ mongoc_database_has_collection
 mongoc_database_remove_user
 mongoc_database_set_read_prefs
 mongoc_database_set_write_concern
-mongoc_fd_set_nonblock
 mongoc_gridfs_create_file
 mongoc_gridfs_create_file_from_stream
 mongoc_gridfs_destroy
@@ -110,6 +109,7 @@ mongoc_socket_bind
 mongoc_socket_close
 mongoc_socket_connect
 mongoc_socket_destroy
+mongoc_socket_getsockname
 mongoc_socket_listen
 mongoc_socket_new
 mongoc_socket_recv
@@ -121,6 +121,9 @@ mongoc_stream_buffered_new
 mongoc_stream_close
 mongoc_stream_cork
 mongoc_stream_destroy
+mongoc_stream_file_get_fd
+mongoc_stream_file_new
+mongoc_stream_file_new_for_path
 mongoc_stream_flush
 mongoc_stream_gridfs_new
 mongoc_stream_read
@@ -131,7 +134,6 @@ mongoc_stream_tls_check_cert
 mongoc_stream_tls_do_handshake
 mongoc_stream_tls_new
 mongoc_stream_uncork
-mongoc_stream_unix_new
 mongoc_stream_writev
 mongoc_uri_copy
 mongoc_uri_destroy
