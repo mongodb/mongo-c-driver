@@ -174,7 +174,7 @@ again:
 #endif
 
    if (failed && try_again) {
-      if (_mongoc_socket_wait (sd, POLLIN, timeout_msec)) {
+      if (_mongoc_socket_wait (sock->sd, POLLIN, timeout_msec)) {
          GOTO (again);
       }
       RETURN (NULL);
