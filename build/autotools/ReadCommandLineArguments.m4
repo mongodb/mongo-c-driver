@@ -4,6 +4,12 @@ AC_ARG_ENABLE(debug,
     [],[enable_debug="no"])
 AC_MSG_RESULT([$enable_debug])
 
+AC_MSG_CHECKING([whether to enable tracing])
+AC_ARG_ENABLE(tracing, 
+    AC_HELP_STRING([--enable-tracing], [turn on tracing [default=no]]),
+    [],[enable_tracing="no"])
+AC_MSG_RESULT([$enable_tracing])
+
 AC_MSG_CHECKING([whether to enable optimized builds])
 AC_ARG_ENABLE(optimizations, 
     AC_HELP_STRING([--enable-optimizations], [turn on build-time optimizations [default=yes]]),

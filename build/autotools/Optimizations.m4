@@ -34,11 +34,9 @@ else
     CFLAGS="$CFLAGS -O0"
 fi
 
-# TODO: Make this yes/minimum/no
-if test "$enable_debug" = "yes"; then
-    CPPFLAGS="$CPPFLAGS -DBSON_ENABLE_DEBUG"
-    CPPFLAGS="$CPPFLAGS -DMONGOC_TRACE"
-else
-    CPPFLAGS="$CPPFLAGS -DBSON_DISABLE_ASSERT"
-    CPPFLAGS="$CPPFLAGS -DBSON_DISABLE_CHECKS"
-fi
+AS_IF([test $"enable_debug" = "no"],
+      [CPPFLAGS="$CPPFLAGS -DBSON_DISABLE_ASSERT"
+       CPPFLAGS="$CPPFLAGS -DBSON_DISABLE_CHECKS"])
+
+AS_IF([test "$enable_tracing" = "yes"],
+      [CPPFLAGS="$CPPFLAGS -DMONGOC_TRACE"])
