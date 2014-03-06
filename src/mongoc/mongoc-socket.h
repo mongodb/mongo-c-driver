@@ -27,8 +27,6 @@
 
 #include <bson.h>
 
-#include "mongoc-iovec.h"
-
 #ifdef _WIN32
 # include <winsock2.h>
 # include <ws2tcpip.h>
@@ -39,6 +37,8 @@
 # include <sys/uio.h>
 # include <sys/un.h>
 #endif
+
+#include "mongoc-iovec.h"
 
 
 BSON_BEGIN_DECLS

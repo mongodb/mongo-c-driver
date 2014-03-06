@@ -32,8 +32,8 @@ BSON_BEGIN_DECLS
 #ifdef _WIN32
 typedef struct
 {
-   u_long  len;
-   char   *buf;
+   u_long  iov_len;
+   char   *iov_base;
 } mongoc_iovec_t;
 #else
 typedef struct iovec mongoc_iovec_t;

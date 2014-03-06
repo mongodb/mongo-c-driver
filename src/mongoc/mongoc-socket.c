@@ -331,7 +331,8 @@ again:
       try_again = ((errno == EAGAIN) || (errno == EINPROGRESS));
 #endif
       if (try_again) {
-         ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+         ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR,
+                           (char *)&optval, &optlen);
          failed = ((ret == -1) || (optval != 0));
       }
    }
@@ -747,7 +748,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,         /* IN */
        * Increment the current iovec buffer to its proper offset and adjust
        * the number of bytes to write.
        */
-      iov [cur].iov_base = ((uint8_t *)iov [cur].iov_base) + sent;
+      iov [cur].iov_base = ((char *)iov [cur].iov_base) + sent;
       iov [cur].iov_len -= sent;
 
       BSON_ASSERT (iovcnt - cur);

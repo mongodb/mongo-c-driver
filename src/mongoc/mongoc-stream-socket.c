@@ -146,7 +146,7 @@ _mongoc_stream_socket_readv (mongoc_stream_t *stream,
          RETURN (ret);
       }
 
-      iov [cur].iov_base = ((uint8_t *)iov [cur].iov_base) + nread;
+      iov [cur].iov_base = ((char *)iov [cur].iov_base) + nread;
       iov [cur].iov_len -= nread;
 
       BSON_ASSERT (iovcnt - cur);

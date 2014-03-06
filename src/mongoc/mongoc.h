@@ -44,7 +44,7 @@
 #include "mongoc-stream.h"
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-gridfs.h"
-#include "mongoc-stream-unix.h"
+#include "mongoc-stream-socket.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 #include "mongoc-version.h"

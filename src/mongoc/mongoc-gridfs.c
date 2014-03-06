@@ -231,12 +231,15 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
    mongoc_gridfs_file_t *file;
    ssize_t r;
    uint8_t buf[MONGOC_GRIDFS_STREAM_CHUNK];
-   struct iovec iov = { buf, 0 };
+   mongoc_iovec_t iov;
 
    ENTRY;
 
    BSON_ASSERT (gridfs);
    BSON_ASSERT (stream);
+
+   iov.iov_base = (void *)buf;
+   iov.iov_len = 0;
 
    file = _mongoc_gridfs_file_new (gridfs, opt);
 

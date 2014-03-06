@@ -19,11 +19,11 @@
 #define MONGOC_RPC_PRIVATE_H
 
 
-#include "mongoc-compat.h"
 #include <bson.h>
 #include <stddef.h>
 
 #include "mongoc-array-private.h"
+#include "mongoc-iovec.h"
 #include "mongoc-write-concern.h"
 
 
@@ -37,9 +37,9 @@ BSON_BEGIN_DECLS
 #define CSTRING_FIELD(_name)             const char *_name;
 #define BSON_FIELD(_name)                const uint8_t *_name;
 #define BSON_ARRAY_FIELD(_name)          const uint8_t *_name; int32_t _name##_len;
-#define IOVEC_ARRAY_FIELD(_name)         const struct iovec *_name; int32_t n_##_name; struct iovec _name##_recv;
+#define IOVEC_ARRAY_FIELD(_name)         const mongoc_iovec_t *_name; int32_t n_##_name; mongoc_iovec_t _name##_recv;
 #define RAW_BUFFER_FIELD(_name)          const uint8_t *_name; int32_t _name##_len;
-#define BSON_OPTIONAL(_check, _code)          _code
+#define BSON_OPTIONAL(_check, _code)     _code
 
 
 #include "op-delete.def"

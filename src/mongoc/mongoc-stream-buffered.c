@@ -142,9 +142,9 @@ mongoc_stream_buffered_flush (mongoc_stream_t *stream) /* IN */
 
 static ssize_t
 mongoc_stream_buffered_writev (mongoc_stream_t *stream,       /* IN */
-                               struct iovec    *iov,          /* IN */
+                               mongoc_iovec_t  *iov,          /* IN */
                                size_t           iovcnt,       /* IN */
-                               int32_t     timeout_msec) /* IN */
+                               int32_t          timeout_msec) /* IN */
 {
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
 
@@ -186,10 +186,10 @@ mongoc_stream_buffered_writev (mongoc_stream_t *stream,       /* IN */
 
 static ssize_t
 mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
-                              struct iovec    *iov,          /* INOUT */
+                              mongoc_iovec_t  *iov,          /* INOUT */
                               size_t           iovcnt,       /* IN */
                               size_t           min_bytes,    /* IN */
-                              int32_t     timeout_msec) /* IN */
+                              int32_t          timeout_msec) /* IN */
 {
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
    bson_error_t error = { 0 };

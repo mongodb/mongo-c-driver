@@ -161,8 +161,8 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
                      MONGOC_ERROR_STREAM_SOCKET,
-                     "Failed to read %" PRIu64 " bytes from socket.",
-                     (uint64_t)size);
+                     "Failed to read %u bytes from socket.",
+                     (unsigned)size);
       return false;
    }
 

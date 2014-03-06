@@ -19,7 +19,6 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "mongoc-compat.h"
 #include "mongoc-host-list.h"
 #include "mongoc-log.h"
 #include "mongoc-uri.h"

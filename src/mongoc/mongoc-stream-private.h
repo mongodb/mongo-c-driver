@@ -19,6 +19,7 @@
 #define MONGOC_STREAM_PRIVATE_H
 
 
+#include "mongoc-iovec.h"
 #include "mongoc-stream.h"
 
 
@@ -31,11 +32,11 @@ struct _mongoc_stream_t
    int     (*close)      (mongoc_stream_t *stream);
    int     (*flush)      (mongoc_stream_t *stream);
    ssize_t (*writev)     (mongoc_stream_t *stream,
-                          struct iovec    *iov,
+                          mongoc_iovec_t  *iov,
                           size_t           iovcnt,
-                          int32_t     timeout_msec);
+                          int32_t          timeout_msec);
    ssize_t (*readv)      (mongoc_stream_t *stream,
-                          struct iovec    *iov,
+                          mongoc_iovec_t  *iov,
                           size_t           iovcnt,
                           size_t           min_bytes,
                           int32_t     timeout_msec);

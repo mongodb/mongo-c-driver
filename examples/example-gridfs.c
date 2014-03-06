@@ -17,7 +17,7 @@ int main (int argc, char *argv[])
    mongoc_fd_t fd;
    ssize_t r;
    char buf[4096];
-   struct iovec iov = { buf, sizeof buf };
+   mongoc_iovec_t iov;
    const char * filename;
    const char * command;
 
@@ -27,6 +27,9 @@ int main (int argc, char *argv[])
    }
 
    mongoc_init();
+
+   iov.iov_base = (void *)buf;
+   iov.iov_len = sizeof buf;
 
    /* connect to localhost client */
    client = mongoc_client_new ("mongodb://127.0.0.1:27017");

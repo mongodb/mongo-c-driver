@@ -26,6 +26,8 @@
 
 #include <bson.h>
 
+#include "mongoc-socket.h"
+
 BSON_BEGIN_DECLS
 
 #define MONGOC_GRIDFS_FILE_STR_HEADER(name) \
@@ -71,16 +73,16 @@ mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file);
 
 ssize_t
 mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
-                           struct iovec         *iov,
+                           mongoc_iovec_t       *iov,
                            size_t                iovcnt,
-                           uint32_t         timeout_msec);
+                           uint32_t              timeout_msec);
 
 ssize_t
 mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
-                          struct iovec         *iov,
+                          mongoc_iovec_t       *iov,
                           size_t                iovcnt,
                           size_t                min_bytes,
-                          uint32_t         timeout_msec);
+                          uint32_t              timeout_msec);
 
 
 int

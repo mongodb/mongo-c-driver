@@ -643,8 +643,8 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
 static bool
 _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
                                     mongoc_insert_flags_t         flags,
-                                    const struct iovec           *documents,
-                                    uint32_t                 n_documents,
+                                    const mongoc_iovec_t         *documents,
+                                    uint32_t                      n_documents,
                                     const mongoc_write_concern_t *write_concern,
                                     bson_error_t                 *error)
 {
@@ -784,7 +784,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
                                const mongoc_write_concern_t  *write_concern,
                                bson_error_t                  *error)
 {
-   struct iovec *iov;
+   mongoc_iovec_t *iov;
    size_t i;
    size_t err_offset;
    bool r;
@@ -818,11 +818,11 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
       RETURN (false);
    }
 
-   iov = bson_malloc (sizeof (*iov) * n_documents);
+   iov = bson_malloc (sizeof (mongoc_iovec_t) * n_documents);
 
    for (i = 0; i < n_documents; i++) {
-      iov[i].iov_base = (void *)bson_get_data (documents[i]);
-      iov[i].iov_len = documents[i]->len;
+      iov [i].iov_base = (void *)bson_get_data (documents [i]);
+      iov [i].iov_len = documents [i]->len;
    }
 
    r = _mongoc_collection_insert_bulk_raw (collection, flags, iov, n_documents,

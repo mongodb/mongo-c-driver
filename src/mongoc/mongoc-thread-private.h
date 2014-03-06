@@ -26,7 +26,6 @@
 
 #include <bson.h>
 
-#include "mongoc-compat.h"
 #include "mongoc-config.h"
 
 
@@ -63,7 +62,7 @@
 #    define MONGOC_ONCE_INIT       PTHREAD_ONCE_INIT
 #  endif
 #else
-#  define mongoc_thread_t                   HANDLE
+#  define mongoc_thread_t          HANDLE
 static BSON_INLINE int mongoc_thread_create(mongoc_thread_t *thread, void *(*cb)(void *), void *arg)
 {
    *thread = CreateThread(NULL, 0, (void *)cb, arg, 0, NULL);

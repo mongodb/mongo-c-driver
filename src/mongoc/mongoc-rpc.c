@@ -16,6 +16,7 @@
 
 
 #include <bson.h>
+
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
 #include "mongoc-rpc-private.h"
@@ -26,7 +27,7 @@
    _mongoc_rpc_gather_##_name (mongoc_rpc_##_name##_t *rpc, \
                                mongoc_array_t *array) \
    { \
-      struct iovec iov; \
+      mongoc_iovec_t iov; \
       BSON_ASSERT(rpc); \
       BSON_ASSERT(array); \
       rpc->msg_len = 0; \

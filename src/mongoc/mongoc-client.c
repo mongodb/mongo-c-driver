@@ -21,7 +21,6 @@
 #include "mongoc-client-private.h"
 #include "mongoc-cluster-private.h"
 #include "mongoc-collection-private.h"
-#include "mongoc-compat.h"
 #include "mongoc-config.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-cursor-private.h"

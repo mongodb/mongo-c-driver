@@ -20,7 +20,6 @@
 
 
 #include <bson.h>
-#include "mongoc-compat.h"
 
 
 BSON_BEGIN_DECLS

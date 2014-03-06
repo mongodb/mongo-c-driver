@@ -31,6 +31,7 @@
 #include "mongoc-gridfs-file-private.h"
 #include "mongoc-gridfs-file-page.h"
 #include "mongoc-gridfs-file-page-private.h"
+#include "mongoc-iovec.h"
 #include "mongoc-trace.h"
 
 static bool
@@ -156,7 +157,7 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
 
    r = mongoc_collection_update (file->gridfs->files, MONGOC_UPDATE_UPSERT,
                                  selector, update, NULL, &file->error);
-   
+
    file->failed = !r;
 
 
@@ -347,10 +348,10 @@ mongoc_gridfs_file_destroy (mongoc_gridfs_file_t *file)
 /** readv against a gridfs file */
 ssize_t
 mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
-                          struct iovec         *iov,
+                          mongoc_iovec_t       *iov,
                           size_t                iovcnt,
                           size_t                min_bytes,
-                          uint32_t         timeout_msec)
+                          uint32_t              timeout_msec)
 {
    uint32_t bytes_read = 0;
    int32_t r;
@@ -406,9 +407,9 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 /** writev against a gridfs file */
 ssize_t
 mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
-                           struct iovec         *iov,
+                           mongoc_iovec_t       *iov,
                            size_t                iovcnt,
-                           uint32_t         timeout_msec)
+                           uint32_t              timeout_msec)
 {
    uint32_t bytes_written = 0;
    int32_t r;

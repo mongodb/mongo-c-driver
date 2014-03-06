@@ -18,7 +18,6 @@
 #include <stdarg.h>
 #include <time.h>
 
-#include "mongoc-compat.h"
 #include "mongoc-log.h"
 #include "mongoc-thread-private.h"
 

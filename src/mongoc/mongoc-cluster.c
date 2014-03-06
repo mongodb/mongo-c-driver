@@ -576,7 +576,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
       cluster->nodes[i].needs_auth = cluster->requires_auth;
    }
 
-   _mongoc_array_init (&cluster->iov, sizeof(struct iovec));
+   _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
 
    EXIT;
 }
@@ -885,7 +885,7 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    rpc.query.query = bson_get_data(command);
    rpc.query.fields = NULL;
 
-   _mongoc_array_init (&ar, sizeof (struct iovec));
+   _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
    _mongoc_buffer_init (&buffer, NULL, 0, NULL);
 
    _mongoc_rpc_gather(&rpc, &ar);
@@ -2286,13 +2286,13 @@ _mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
                        bson_error_t                 *error)
 {
    mongoc_cluster_node_t *node;
-   int64_t now;
+   mongoc_iovec_t *iov;
    const bson_t *b;
    mongoc_rpc_t gle;
-   struct iovec *iov;
-   bool need_gle;
+   int64_t now;
    size_t iovcnt;
    size_t i;
+   bool need_gle;
    char cmdname[140];
    int retry_count = 0;
 
@@ -2452,7 +2452,7 @@ _mongoc_cluster_try_sendv (mongoc_cluster_t             *cluster,
                            bson_error_t                 *error)
 {
    mongoc_cluster_node_t *node;
-   struct iovec *iov;
+   mongoc_iovec_t *iov;
    const bson_t *b;
    mongoc_rpc_t gle;
    bool need_gle;

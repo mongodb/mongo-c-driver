@@ -25,6 +25,7 @@
 
 
 #include "mongoc-iovec.h"
+#include "mongoc-socket.h"
 
 
 BSON_BEGIN_DECLS

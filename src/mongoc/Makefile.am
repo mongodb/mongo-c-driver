@@ -6,8 +6,6 @@ INST_H_FILES = \
 	src/mongoc/mongoc-client.h \
 	src/mongoc/mongoc-client-pool.h \
 	src/mongoc/mongoc-collection.h \
-	src/mongoc/mongoc-compat.h \
-	src/mongoc/mongoc-compat-socket-unix.h \
 	src/mongoc/mongoc-config.h \
 	src/mongoc/mongoc-cursor.h \
 	src/mongoc/mongoc-database.h \
@@ -29,15 +27,10 @@ INST_H_FILES = \
 	src/mongoc/mongoc-stream.h \
 	src/mongoc/mongoc-stream-buffered.h \
 	src/mongoc/mongoc-stream-gridfs.h \
-	src/mongoc/mongoc-stream-unix.h \
 	src/mongoc/mongoc-stream-socket.h \
 	src/mongoc/mongoc-uri.h \
 	src/mongoc/mongoc-version.h \
 	src/mongoc/mongoc-write-concern.h
-
-if OS_WIN32
-	INST_H_FILES += src/mongoc/mongoc-compat-socket-win32.h
-endif
 
 if ENABLE_SSL
 INST_H_FILES += \
@@ -84,8 +77,6 @@ libmongoc_priv_la_SOURCES = \
 	src/mongoc/mongoc-client-pool.c \
 	src/mongoc/mongoc-cluster.c \
 	src/mongoc/mongoc-collection.c \
-	src/mongoc/mongoc-compat-unix.c \
-	src/mongoc/mongoc-compat-socket-unix.c \
 	src/mongoc/mongoc-counters.c \
 	src/mongoc/mongoc-cursor.c \
 	src/mongoc/mongoc-cursor-array.c \
@@ -109,16 +100,9 @@ libmongoc_priv_la_SOURCES = \
 	src/mongoc/mongoc-stream-buffered.c \
 	src/mongoc/mongoc-stream-gridfs.c \
 	src/mongoc/mongoc-stream-socket.c \
-	src/mongoc/mongoc-stream-unix.c \
 	src/mongoc/mongoc-uri.c \
 	src/mongoc/mongoc-util.c \
 	src/mongoc/mongoc-write-concern.c
-
-if OS_WIN32
-libmongoc_priv_la_SOURCES += \
-	src/mongoc/mongoc-compat-win32.c \
-	src/mongoc/mongoc-compat-socket-win32.c
-endif
 
 if ENABLE_SSL
 libmongoc_priv_la_SOURCES += \

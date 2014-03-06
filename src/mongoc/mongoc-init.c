@@ -17,13 +17,12 @@
 
 #include <bson.h>
 
-#include "mongoc-compat.h"
 #include "mongoc-config.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-init.h"
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl.h"
-#include "mongoc-ssl-private.h"
+# include "mongoc-ssl.h"
+# include "mongoc-ssl-private.h"
 #endif
 #include "mongoc-thread-private.h"
 
@@ -32,8 +31,26 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
 #ifdef MONGOC_ENABLE_SSL
    _mongoc_ssl_init();
 #endif
+
    _mongoc_counters_init();
-   _mongoc_compat_init();
+
+#ifdef _WIN32
+   {
+      WORD wVersionRequested;
+      WSADATA wsaData;
+      int err;
+
+      wVersionRequested = MAKEWORD (2, 2);
+
+      err = WSAStartup (wVersionRequested, &wsaData);
+
+      /* check the version perhaps? */
+
+      assert (err == 0);
+
+      atexit ((void(*)(void))WSACleanup);
+   }
+#endif
 
    MONGOC_ONCE_RETURN;
 }
