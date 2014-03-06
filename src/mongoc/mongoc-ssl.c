@@ -15,7 +15,6 @@
  */
 
 
-#include "mongoc-compat.h"
 #include <bson.h>
 #include <limits.h>
 #include <openssl/bio.h>
@@ -25,6 +24,7 @@
 #include <string.h>
 
 #include "mongoc-init.h"
+#include "mongoc-socket.h"
 #include "mongoc-ssl.h"
 #include "mongoc-trace.h"
 

@@ -780,3 +780,14 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,         /* IN */
 
    RETURN (ret);
 }
+
+
+int
+mongoc_socket_getsockname (mongoc_socket_t *sock,    /* IN */
+                           struct sockaddr *addr,    /* OUT */
+                           socklen_t       *addrlen) /* INOUT */
+{
+   bson_return_val_if_fail (sock, -1);
+
+   return getsockname (sock->sd, addr, addrlen);
+}

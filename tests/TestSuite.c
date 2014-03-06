@@ -211,7 +211,7 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
 #ifdef _WIN32
    pid = (int)_getpid ();
 #else
-   pid = gettpid ();
+   pid = getpid ();
 #endif
 
    test->seed = time (NULL) * pid;

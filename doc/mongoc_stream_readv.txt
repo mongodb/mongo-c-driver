@@ -13,7 +13,7 @@ SYNOPSIS
 -----------------------
 ssize_t
 mongoc_stream_readv (mongoc_stream_t *stream,
-                     struct iovec    *iov,
+                     mongoc_iovec_t    *iov,
                      size_t           iovcnt,
                      size_t           min_bytes,
                      int32_t          timeout_msec);
@@ -27,7 +27,7 @@ linkmongoc:mongoc_stream[7].  It's modeled on the API and semantics of
 linkmongoc:readv[2], though the parameters map only loosely.
 
 iov::
-   An array of 'struct iovec *'.  These are the same as those used in
+   An array of 'mongoc_iovec_t *'.  These are the same as those used in
    linkmongoc:readv[2].
 
 iovcnt::

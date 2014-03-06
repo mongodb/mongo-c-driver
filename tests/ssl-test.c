@@ -42,29 +42,34 @@ ssl_test_server (void * ptr)
 
    mongoc_stream_t *sock_stream;
    mongoc_stream_t *ssl_stream;
-   mongoc_fd_t conn_fd;
-   mongoc_fd_t listen_fd;
+   mongoc_socket_t *listen_sock;
+   mongoc_socket_t *conn_sock;
    socklen_t sock_len;
    char buf[1024];
    ssize_t r;
-   struct iovec iov = { buf, sizeof(buf) };
+   mongoc_iovec_t iov;
    struct sockaddr_in server_addr = { 0 };
 
-   listen_fd = mongoc_socket(AF_INET, SOCK_STREAM, 0);
-   assert(mongoc_fd_is_valid(listen_fd));
+   iov.iov_base = buf;
+   iov.iov_len = sizeof buf;
+
+   listen_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
+   assert (listen_sock);
 
    server_addr.sin_family = AF_INET;
-   server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-   server_addr.sin_port = htons(0);
+   server_addr.sin_addr.s_addr = htonl (INADDR_ANY);
+   server_addr.sin_port = htons (0);
 
-   r = mongoc_bind(listen_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-   assert(r == 0);
+   r = mongoc_socket_bind (listen_sock,
+                           (struct sockaddr *)&server_addr,
+                           sizeof server_addr);
+   assert (r == 0);
 
    sock_len = sizeof(server_addr);
-   r = mongoc_getsockname(listen_fd, (struct sockaddr *)&server_addr, &sock_len);
+   r = mongoc_socket_getsockname (listen_sock, (struct sockaddr *)&server_addr, &sock_len);
    assert(r == 0);
 
-   r = mongoc_listen(listen_fd, 10);
+   r = mongoc_socket_listen (listen_sock, 10);
    assert(r == 0);
 
    mongoc_mutex_lock(&data->cond_mutex);
@@ -72,11 +77,11 @@ ssl_test_server (void * ptr)
    mongoc_cond_signal(&data->cond);
    mongoc_mutex_unlock(&data->cond_mutex);
 
-   conn_fd = mongoc_accept(listen_fd, (struct sockaddr*)NULL, NULL);
-   assert(mongoc_fd_is_valid(conn_fd));
+   conn_sock = mongoc_socket_accept (listen_sock, -1);
+   assert (conn_sock);
 
-   sock_stream = mongoc_stream_unix_new(conn_fd);
-   assert(sock_stream);
+   sock_stream = mongoc_stream_socket_new (conn_sock);
+   assert (sock_stream);
    ssl_stream = mongoc_stream_tls_new(sock_stream, data->server, 0);
    if (! ssl_stream) {
       unsigned long err = ERR_get_error();
@@ -85,9 +90,8 @@ ssl_test_server (void * ptr)
       data->server_result->ssl_err = err;
       data->server_result->result = SSL_TEST_SSL_INIT;
 
-      mongoc_stream_destroy(sock_stream);
-
-      mongoc_close(listen_fd);
+      mongoc_stream_destroy (sock_stream);
+      mongoc_socket_destroy (listen_sock);
 
       return NULL;
    }
@@ -101,8 +105,8 @@ ssl_test_server (void * ptr)
       data->server_result->ssl_err = err;
       data->server_result->result = SSL_TEST_SSL_HANDSHAKE;
 
+      mongoc_socket_destroy (listen_sock);
       mongoc_stream_destroy(ssl_stream);
-      mongoc_close(listen_fd);
 
       return NULL;
    }
@@ -116,7 +120,7 @@ ssl_test_server (void * ptr)
       data->server_result->result = SSL_TEST_TIMEOUT;
 
       mongoc_stream_destroy(ssl_stream);
-      mongoc_close(listen_fd);
+      mongoc_socket_destroy (listen_sock);
 
       return NULL;
    }
@@ -132,7 +136,7 @@ ssl_test_server (void * ptr)
 
    mongoc_stream_destroy(ssl_stream);
 
-   mongoc_close(listen_fd);
+   mongoc_socket_destroy (listen_sock);
 
    data->server_result->result = SSL_TEST_SUCCESS;
 
@@ -157,15 +161,18 @@ ssl_test_client (void * ptr)
    ssl_test_data_t *data = (ssl_test_data_t *)ptr;
    mongoc_stream_t *sock_stream;
    mongoc_stream_t *ssl_stream;
-   mongoc_fd_t conn_fd;
+   mongoc_socket_t *conn_sock;
    char buf[1024];
    ssize_t r;
-   struct iovec riov = { buf, sizeof(buf) };
+   struct iovec riov;
    struct iovec wiov = { 0 };
    struct sockaddr_in server_addr = { 0 };
 
-   conn_fd = mongoc_socket(AF_INET, SOCK_STREAM, 0);
-   assert(mongoc_fd_is_valid(conn_fd));
+   riov.iov_base = buf;
+   riov.iov_len = sizeof buf;
+
+   conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
+   assert (conn_sock);
 
    mongoc_mutex_lock(&data->cond_mutex);
    while (! data->server_port) {
@@ -178,10 +185,10 @@ ssl_test_client (void * ptr)
    r = inet_pton(AF_INET, LOCALHOST, &server_addr.sin_addr);
    assert (r > 0);
 
-   r = mongoc_connect(conn_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+   r = mongoc_socket_connect (conn_sock, (struct sockaddr *)&server_addr, sizeof(server_addr), -1);
    assert (r == 0);
 
-   sock_stream = mongoc_stream_unix_new(conn_fd);
+   sock_stream = mongoc_stream_socket_new (conn_sock);
    assert(sock_stream);
    ssl_stream = mongoc_stream_tls_new(sock_stream, data->client, 1);
    if (! ssl_stream) {

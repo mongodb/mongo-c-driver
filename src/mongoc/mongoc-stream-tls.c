@@ -234,7 +234,7 @@ _mongoc_stream_tls_bio_write (BIO        *b,
                               int         len)
 {
    mongoc_stream_tls_t *tls;
-   struct iovec iov;
+   mongoc_iovec_t iov;
    int ret;
 
    BSON_ASSERT (b);
@@ -458,9 +458,9 @@ _mongoc_stream_tls_flush (mongoc_stream_t *stream)
 
 static ssize_t
 _mongoc_stream_tls_writev (mongoc_stream_t *stream,
-                           struct iovec    *iov,
+                           mongoc_iovec_t  *iov,
                            size_t           iovcnt,
-                           int32_t     timeout_msec)
+                           int32_t          timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    ssize_t ret = 0;
@@ -511,10 +511,10 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
 
 static ssize_t
 _mongoc_stream_tls_readv (mongoc_stream_t *stream,
-                          struct iovec    *iov,
+                          mongoc_iovec_t  *iov,
                           size_t           iovcnt,
                           size_t           min_bytes,
-                          int32_t     timeout_msec)
+                          int32_t          timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    ssize_t ret = 0;

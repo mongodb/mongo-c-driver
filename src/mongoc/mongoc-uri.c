@@ -21,6 +21,7 @@
 
 #include "mongoc-host-list.h"
 #include "mongoc-log.h"
+#include "mongoc-socket.h"
 #include "mongoc-uri.h"
 
 

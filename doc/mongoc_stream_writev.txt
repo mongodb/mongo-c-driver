@@ -13,7 +13,7 @@ SYNOPSIS
 -----------------------
 ssize_t
 mongoc_stream_writev (mongoc_stream_t *stream,
-                      struct iovec    *iov,
+                      mongoc_iovec_t    *iov,
                       size_t           iovcnt,
                       int32_t          timeout_msec);
 -----------------------
@@ -26,7 +26,7 @@ linkmongoc:mongoc_stream[7].  It's modeled on the API and semantics of
 linkmongoc:writev[2], though the parameters map only loosely.
 
 iov::
-   An array of 'struct iovec *'.  These are the same as those used in
+   An array of 'mongoc_iovec_t *'.  These are the same as those used in
    linkmongoc:writev[2].
 
 iovcnt::

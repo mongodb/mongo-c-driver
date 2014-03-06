@@ -16,6 +16,10 @@
 
 
 #include <bson.h>
+#ifndef _WIN32
+# include <netdb.h>
+# include <netinet/tcp.h>
+#endif
 
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"

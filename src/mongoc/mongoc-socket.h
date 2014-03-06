@@ -31,7 +31,10 @@
 # include <winsock2.h>
 # include <ws2tcpip.h>
 #else
+# include <arpa/inet.h>
 # include <poll.h>
+# include <netdb.h>
+# include <netinet/tcp.h>
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <sys/uio.h>
@@ -58,6 +61,9 @@ int              mongoc_socket_connect    (mongoc_socket_t       *sock,
                                            socklen_t              addrlen,
                                            int                    timeout_msec);
 void             mongoc_socket_destroy    (mongoc_socket_t       *sock);
+int              mongoc_socket_getsockname(mongoc_socket_t       *sock,
+                                           struct sockaddr       *addr,
+                                           socklen_t             *addrlen);
 int              mongoc_socket_listen     (mongoc_socket_t       *sock,
                                            unsigned int           backlog);
 mongoc_socket_t *mongoc_socket_new        (int                    domain,
