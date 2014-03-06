@@ -146,6 +146,22 @@ _mongoc_socket_wait (int      sd,           /* IN */
 }
 
 
+bool
+#ifdef _WIN32
+_mongoc_socket_setnodelay (SOCKET sd) /* IN */
+#else
+_mongoc_socket_setnodelay (int sd)    /* IN */
+#endif
+{
+   int optval = 1;
+   int ret;
+
+   ret = setsockopt (sd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof optval);
+
+   return (ret == 0);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -212,6 +228,10 @@ again:
 
    client = bson_malloc0 (sizeof *client);
    client->sd = sd;
+
+   if (!_mongoc_socket_setnodelay (sd)) {
+      MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
+   }
 
    RETURN (sock);
 }
@@ -481,6 +501,10 @@ mongoc_socket_new (int domain,   /* IN */
 
    if (!_mongoc_socket_setnonblock (sd)) {
       GOTO (fail);
+   }
+
+   if (!_mongoc_socket_setnodelay (sd)) {
+      MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
    }
 
    sock = bson_malloc0 (sizeof *sock);
