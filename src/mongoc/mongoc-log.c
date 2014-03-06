@@ -15,6 +15,13 @@
  */
 
 
+#if defined(__linux__)
+# include <sys/syscall.h>
+#elif defined(_WIN32)
+# include <process.h>
+#else
+# include <unistd.h>
+#endif
 #include <stdarg.h>
 #include <time.h>
 
@@ -114,6 +121,7 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
    time_t t;
    FILE *stream;
    char nowstr[32];
+   int pid;
 
    bson_gettimeofday(&tv, NULL);
    t = tv.tv_sec;
@@ -143,10 +151,19 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
       stream = stdout;
    }
 
+#ifdef __linux__
+   pid = syscall (SYS_gettid);
+#elif defined(_WIN32)
+   pid = (int)_getpid ();
+#else
+   pid = (int)getpid ();
+#endif
+
    fprintf (stream,
-            "%s.%04ld: %8s: %12s: %s\n",
+            "%s.%04ld: [%5d]: %8s: %12s: %s\n",
             nowstr,
             tv.tv_usec / 1000L,
+            pid,
             log_level_str(log_level),
             log_domain,
             message);
