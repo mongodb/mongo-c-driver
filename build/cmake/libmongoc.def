@@ -106,6 +106,7 @@ mongoc_socket_bind
 mongoc_socket_close
 mongoc_socket_connect
 mongoc_socket_destroy
+mongoc_socket_getsockname
 mongoc_socket_listen
 mongoc_socket_new
 mongoc_socket_recv
@@ -116,6 +117,9 @@ mongoc_stream_buffered_new
 mongoc_stream_close
 mongoc_stream_cork
 mongoc_stream_destroy
+mongoc_stream_file_get_fd
+mongoc_stream_file_new
+mongoc_stream_file_new_for_path
 mongoc_stream_flush
 mongoc_stream_gridfs_new
 mongoc_stream_read
@@ -123,7 +127,6 @@ mongoc_stream_readv
 mongoc_stream_setsockopt
 mongoc_stream_socket_new
 mongoc_stream_uncork
-mongoc_stream_unix_new
 mongoc_stream_writev
 mongoc_uri_copy
 mongoc_uri_destroy
