@@ -107,6 +107,7 @@ libmongoc_priv_la_SOURCES = \
 	src/mongoc/mongoc-stream.c \
 	src/mongoc/mongoc-stream-buffered.c \
 	src/mongoc/mongoc-stream-gridfs.c \
+	src/mongoc/mongoc-stream-socket.c \
 	src/mongoc/mongoc-stream-unix.c \
 	src/mongoc/mongoc-uri.c \
 	src/mongoc/mongoc-util.c \
