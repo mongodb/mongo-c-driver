@@ -50,7 +50,7 @@ BSON_BEGIN_DECLS
       for (_i = 0; _i < _l; _i++) { \
          _v = *(_b + _i); \
          if ((_i % 16) == 0) { \
-            bson_string_append_printf(str, "%06x: ", _i); \
+            bson_string_append_printf(str, "%05x: ", _i); \
          } \
          bson_string_append_printf(str, " %02x", _v); \
          if (isprint(_v)) { \
@@ -98,7 +98,7 @@ BSON_BEGIN_DECLS
          for (_k = 0; _k < _l; _k++, _i++) { \
             _v = *(_b + _k); \
             if ((_i % 16) == 0) { \
-               bson_string_append_printf(str, "%06x: ", _i); \
+               bson_string_append_printf(str, "%05x: ", _i); \
             } \
             bson_string_append_printf(str, " %02x", _v); \
             if (isprint(_v)) { \
