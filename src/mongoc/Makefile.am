@@ -24,6 +24,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-matcher.h \
 	src/mongoc/mongoc-opcode.h \
 	src/mongoc/mongoc-read-prefs.h \
+	src/mongoc/mongoc-socket.h \
 	src/mongoc/mongoc-stream.h \
 	src/mongoc/mongoc-stream-buffered.h \
 	src/mongoc/mongoc-stream-gridfs.h \
@@ -101,6 +102,7 @@ libmongoc_priv_la_SOURCES = \
 	src/mongoc/mongoc-queue.c \
 	src/mongoc/mongoc-read-prefs.c \
 	src/mongoc/mongoc-rpc.c \
+	src/mongoc/mongoc-socket.c \
 	src/mongoc/mongoc-stream.c \
 	src/mongoc/mongoc-stream-buffered.c \
 	src/mongoc/mongoc-stream-gridfs.c \
