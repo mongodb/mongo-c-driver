@@ -27,6 +27,19 @@ typedef struct
 } mongoc_stream_socket_t;
 
 
+static BSON_INLINE int64_t
+get_expiration (int timeout_msec)
+{
+   switch (timeout_msec) {
+   case -1:
+   case 0:
+      return timeout_msec;
+   default:
+      return (bson_get_monotonic_time () * (timeout_msec * 1000L));
+   }
+}
+
+
 static int
 _mongoc_stream_socket_close (mongoc_stream_t *stream)
 {
@@ -103,6 +116,7 @@ _mongoc_stream_socket_readv (mongoc_stream_t *stream,
                              int32_t          timeout_msec)
 {
    mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
+   int64_t expire_at;
    ssize_t ret = 0;
    ssize_t nread;
    size_t cur = 0;
@@ -111,6 +125,8 @@ _mongoc_stream_socket_readv (mongoc_stream_t *stream,
 
    bson_return_val_if_fail (ss, -1);
    bson_return_val_if_fail (ss->sock, -1);
+
+   expire_at = get_expiration (timeout_msec);
 
    /*
     * This isn't ideal, we should plumb through to recvmsg(), but we
@@ -123,7 +139,7 @@ _mongoc_stream_socket_readv (mongoc_stream_t *stream,
                                   iov [cur].iov_base,
                                   iov [cur].iov_len,
                                   0,
-                                  timeout_msec);
+                                  expire_at);
 
       if (nread == -1) {
          if (ret >= min_bytes) {
@@ -164,12 +180,14 @@ _mongoc_stream_socket_writev (mongoc_stream_t *stream,
                               int32_t          timeout_msec)
 {
    mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
+   int64_t expire_at;
    ssize_t ret;
 
    ENTRY;
 
    if (ss->sock) {
-      ret = mongoc_socket_sendv (ss->sock, iov, iovcnt, timeout_msec);
+      expire_at = get_expiration (timeout_msec);
+      ret = mongoc_socket_sendv (ss->sock, iov, iovcnt, expire_at);
       RETURN (ret);
    }
 
