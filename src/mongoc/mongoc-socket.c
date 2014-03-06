@@ -229,7 +229,7 @@ again:
    client = bson_malloc0 (sizeof *client);
    client->sd = sd;
 
-   if (!_mongoc_socket_setnodelay (sd)) {
+   if (!_mongoc_socket_setnodelay (client->sd)) {
       MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
    }
 
@@ -307,6 +307,7 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
    }
 #else
    if (sock->sd != -1) {
+      shutdown (sock->sd, SHUT_WR);
       ret = close (sock->sd);
    }
 #endif
