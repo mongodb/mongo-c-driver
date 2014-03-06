@@ -19,6 +19,8 @@
 
 #include "mock-server.h"
 #include "mongoc-buffer-private.h"
+#include "mongoc-stream-socket.h"
+#include "mongoc-socket.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 
@@ -34,7 +36,7 @@ struct _mock_server_t
    const char            *address;
 
    uint16_t               port;
-   mongoc_fd_t            socket;
+   mongoc_socket_t       *sock;
 
    int                    last_response_id;
 
@@ -53,7 +55,7 @@ mock_server_reply_simple (mock_server_t        *server,
                           mongoc_reply_flags_t  flags,
                           const bson_t         *doc)
 {
-   struct iovec *iov;
+   mongoc_iovec_t *iov;
    mongoc_array_t ar;
    mongoc_rpc_t r = {{ 0 }};
    size_t expected = 0;
@@ -66,7 +68,7 @@ mock_server_reply_simple (mock_server_t        *server,
    BSON_ASSERT (client);
    BSON_ASSERT (doc);
 
-   _mongoc_array_init (&ar, sizeof (struct iovec));
+   _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
 
    r.reply.msg_len = 0;
    r.reply.request_id = ++server->last_response_id;
@@ -286,7 +288,7 @@ mock_server_new (const char            *address,
    server = bson_malloc0(sizeof *server);
    server->handler = handler ? handler : dummy_handler;
    server->handler_data = handler_data;
-   server->socket = MONGOC_FD_INVALID;
+   server->sock = NULL;
    server->address = address;
    server->port = port;
 
@@ -306,64 +308,64 @@ mock_server_run (mock_server_t *server)
    struct sockaddr_in saddr;
    mongoc_stream_t *stream;
    mongoc_thread_t thread;
+   mongoc_socket_t *ssock;
+   mongoc_socket_t *csock;
    void **closure;
    int optval;
-   mongoc_fd_t sd;
-   mongoc_fd_t cd;
 
-   bson_return_val_if_fail(server, -1);
-   bson_return_val_if_fail(! mongoc_fd_is_valid(server->socket), -1);
+   bson_return_val_if_fail (server, -1);
+   bson_return_val_if_fail (server->sock, -1);
 
-   sd = mongoc_socket(AF_INET, SOCK_STREAM, 0);
-   if (! mongoc_fd_is_valid(sd)) {
+   ssock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
+   if (!ssock) {
       perror("Failed to create socket.");
       return -1;
    }
 
    optval = 1;
-   mongoc_setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+   mongoc_socket_setsockopt (ssock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 
-   memset(&saddr, 0, sizeof saddr);
+   memset (&saddr, 0, sizeof saddr);
 
    saddr.sin_family = AF_INET;
    saddr.sin_port = htons(server->port);
    /*
     * TODO: Parse server->address.
     */
-   saddr.sin_addr.s_addr = htonl(INADDR_ANY);
+   saddr.sin_addr.s_addr = htonl (INADDR_ANY);
 
-   if (-1 == mongoc_bind(sd, (struct sockaddr *)&saddr, sizeof saddr)) {
+   if (-1 == mongoc_socket_bind (ssock, (struct sockaddr *)&saddr, sizeof saddr)) {
       perror("Failed to bind socket");
       return -1;
    }
 
-   if (-1 == mongoc_listen(sd, 10)) {
+   if (-1 == mongoc_socket_listen (ssock, 10)) {
       perror("Failed to put socket into listen mode");
       return 3;
    }
 
-   server->socket = sd;
+   server->sock = ssock;
 
    for (;;) {
-      cd = mongoc_accept(server->socket, NULL, NULL);
-      if (! mongoc_fd_is_valid(cd)) {
-         perror("Failed to accept client socket");
+      csock = mongoc_socket_accept (server->sock, -1);
+      if (!csock) {
+         perror ("Failed to accept client socket");
          return -1;
       }
 
       optval = 1;
-      mongoc_setsockopt(cd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof optval);
+      mongoc_socket_setsockopt (csock, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof optval);
 
-      stream = mongoc_stream_unix_new(cd);
-      closure = bson_malloc0(sizeof(void*) * 2);
+      stream = mongoc_stream_socket_new (csock);
+      closure = bson_malloc0 (sizeof(void*) * 2);
       closure[0] = server;
       closure[1] = stream;
 
-      mongoc_thread_create(&thread, mock_server_worker, closure);
+      mongoc_thread_create (&thread, mock_server_worker, closure);
    }
 
-   mongoc_close(server->socket);
-   server->socket = MONGOC_FD_INVALID;
+   mongoc_socket_close (server->sock);
+   server->sock = NULL;
 
    return 0;
 }
