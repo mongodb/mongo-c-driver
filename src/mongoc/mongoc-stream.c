@@ -26,6 +26,7 @@
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
 #include "mongoc-stream-private.h"
+#include "mongoc-trace.h"
 
 
 #ifndef MONGOC_DEFAULT_TIMEOUT_MSEC
@@ -44,8 +45,15 @@
 int
 mongoc_stream_close (mongoc_stream_t *stream)
 {
+   int ret;
+
+   ENTRY;
+
    bson_return_val_if_fail(stream, -1);
-   return stream->close(stream);
+
+   ret = stream->close(stream);
+
+   RETURN (ret);
 }
 
 
@@ -59,8 +67,13 @@ mongoc_stream_close (mongoc_stream_t *stream)
 void
 mongoc_stream_destroy (mongoc_stream_t *stream)
 {
+   ENTRY;
+
    bson_return_if_fail(stream);
+
    stream->destroy(stream);
+
+   EXIT;
 }
 
 
@@ -96,6 +109,10 @@ mongoc_stream_writev (mongoc_stream_t *stream,
                       size_t           iovcnt,
                       int32_t          timeout_msec)
 {
+   ssize_t ret;
+
+   ENTRY;
+
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
@@ -106,7 +123,9 @@ mongoc_stream_writev (mongoc_stream_t *stream,
       timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
    }
 
-   return stream->writev(stream, iov, iovcnt, timeout_msec);
+   ret = stream->writev(stream, iov, iovcnt, timeout_msec);
+
+   RETURN (ret);
 }
 
 
@@ -132,6 +151,10 @@ mongoc_stream_readv (mongoc_stream_t *stream,
                      size_t           min_bytes,
                      int32_t          timeout_msec)
 {
+   ssize_t ret;
+
+   ENTRY;
+
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
    bson_return_val_if_fail(iovcnt, -1);
@@ -142,7 +165,9 @@ mongoc_stream_readv (mongoc_stream_t *stream,
       timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
    }
 
-   return stream->readv (stream, iov, iovcnt, min_bytes, timeout_msec);
+   ret = stream->readv (stream, iov, iovcnt, min_bytes, timeout_msec);
+
+   RETURN (ret);
 }
 
 
@@ -169,6 +194,9 @@ mongoc_stream_read (mongoc_stream_t *stream,
                     int32_t          timeout_msec)
 {
    mongoc_iovec_t iov;
+   ssize_t ret;
+
+   ENTRY;
 
    bson_return_val_if_fail (stream, -1);
    bson_return_val_if_fail (buf, -1);
@@ -178,7 +206,9 @@ mongoc_stream_read (mongoc_stream_t *stream,
 
    BSON_ASSERT (stream->readv);
 
-   return mongoc_stream_readv (stream, &iov, 1, min_bytes, timeout_msec);
+   ret = mongoc_stream_readv (stream, &iov, 1, min_bytes, timeout_msec);
+
+   RETURN (ret);
 }
 
 
