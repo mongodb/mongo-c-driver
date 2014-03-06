@@ -14,7 +14,6 @@ int main (int argc, char *argv[])
    bson_t query;
    bson_t child;
    bson_error_t error;
-   mongoc_fd_t fd;
    ssize_t r;
    char buf[4096];
    mongoc_iovec_t iov;
@@ -92,12 +91,8 @@ int main (int argc, char *argv[])
          return 1;
       }
 
-      fd = mongoc_open (argv[3], O_RDONLY);
-      assert(mongoc_fd_is_valid(fd));
-
-      /* we'll pull our file from stdin */
-      stream = mongoc_stream_unix_new (fd);
-      assert(stream);
+      stream = mongoc_stream_file_new_for_path (argv [3], O_RDONLY, 0);
+      assert (stream);
 
       opt.filename = filename;
 

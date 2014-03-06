@@ -34,23 +34,19 @@ mongoc_dump_collection (mongoc_client_t *client,
    mongoc_collection_t *col;
    mongoc_cursor_t *cursor;
    mongoc_stream_t *stream;
+   mongoc_iovec_t iov;
    const bson_t *doc;
-   struct iovec iov;
    bson_error_t error;
    bson_t query = BSON_INITIALIZER;
    char *path;
    int ret = EXIT_SUCCESS;
-   mongoc_fd_t fd;
 
    path = bson_strdup_printf ("dump/%s/%s.bson", database, collection);
-   if (0 == access (path, F_OK))
+   if (0 == access (path, F_OK)) {
       unlink (path);
-#ifdef _WIN32
-   fd = mongoc_open (path, O_RDWR | O_CREAT);
-#else
-   fd = mongoc_open (path, O_RDWR | O_CREAT, 0664);
-#endif
-   stream = mongoc_stream_unix_new (fd);
+   }
+
+   stream = mongoc_stream_file_new_for_path (path, O_RDWR|O_CREAT, 0664);
    col = mongoc_client_get_collection (client, database, collection);
    cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0,
                                     &query, NULL, NULL);

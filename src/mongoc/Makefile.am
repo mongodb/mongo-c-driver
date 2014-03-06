@@ -26,6 +26,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-socket.h \
 	src/mongoc/mongoc-stream.h \
 	src/mongoc/mongoc-stream-buffered.h \
+	src/mongoc/mongoc-stream-file.h \
 	src/mongoc/mongoc-stream-gridfs.h \
 	src/mongoc/mongoc-stream-socket.h \
 	src/mongoc/mongoc-uri.h \
@@ -98,6 +99,7 @@ libmongoc_priv_la_SOURCES = \
 	src/mongoc/mongoc-socket.c \
 	src/mongoc/mongoc-stream.c \
 	src/mongoc/mongoc-stream-buffered.c \
+	src/mongoc/mongoc-stream-file.c \
 	src/mongoc/mongoc-stream-gridfs.c \
 	src/mongoc/mongoc-stream-socket.c \
 	src/mongoc/mongoc-uri.c \
