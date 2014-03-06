@@ -19,10 +19,8 @@
 #define MONGOC_COUNTERS_H
 
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-
+#include <bson.h>
+#include <windows.h>
 
 #ifdef __linux__
 # include <sched.h>
@@ -36,10 +34,9 @@
 # include <sys/param.h>
 #endif
 
-#include <bson.h>
-
 
 BSON_BEGIN_DECLS
+
 
 void
 _mongoc_counters_init (void) BSON_GNUC_INTERNAL;

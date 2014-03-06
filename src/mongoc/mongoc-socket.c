@@ -57,6 +57,7 @@ _mongoc_socket_setnonblock (int sd)
 #endif
 {
 #ifdef _WIN32
+   u_long io_mode = 1;
    return (NO_ERROR == ioctlsocket (sd, FIONBIO, &io_mode));
 #else
    int flags;
@@ -70,7 +71,7 @@ _mongoc_socket_setnonblock (int sd)
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_socket_poll --
+ * _mongoc_socket_wait --
  *
  *       A single socket poll helper.
  *
@@ -88,9 +89,9 @@ _mongoc_socket_setnonblock (int sd)
 
 bool
 #ifdef _WIN32
-_mongoc_socket_poll (SOCKET sd,           /* IN */
+_mongoc_socket_wait (SOCKET sd,           /* IN */
 #else
-_mongoc_socket_poll (int    sd,           /* IN */
+_mongoc_socket_wait (int    sd,           /* IN */
 #endif
                      int    events,       /* IN */
                      int    timeout_msec) /* IN */
@@ -173,7 +174,7 @@ again:
 #endif
 
    if (failed && try_again) {
-      if (_mongoc_socket_poll (sd, POLLIN, timeout_msec)) {
+      if (_mongoc_socket_wait (sd, POLLIN, timeout_msec)) {
          goto again;
       }
       RETURN (NULL);
@@ -211,16 +212,22 @@ again:
  *--------------------------------------------------------------------------
  */
 
-bool
+int
 mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
                     const struct sockaddr *addr,    /* IN */
                     socklen_t              addrlen) /* IN */
 {
+   int ret;
+
+   ENTRY;
+
    bson_return_val_if_fail (sock, false);
    bson_return_val_if_fail (addr, false);
    bson_return_val_if_fail (addrlen, false);
 
-   RETURN (0 == bind (sock->sd, addr, addrlen));
+   ret = bind (sock->sd, addr, addrlen);
+
+   RETURN (ret);
 }
 
 
@@ -236,8 +243,7 @@ mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
  *       during system call (EINTR).
  *
  * Returns:
- *       true on success.
- *       false on failure.
+ *       0 on success, -1 on failure.
  *
  * Side effects:
  *       None.
@@ -245,7 +251,7 @@ mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
  *--------------------------------------------------------------------------
  */
 
-bool
+int
 mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 {
    int ret = 0;
@@ -270,10 +276,10 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 #else
       sock->sd = -1;
 #endif
-      RETURN (true);
+      RETURN (0);
    }
 
-   RETURN (false);
+   RETURN (-1);
 }
 
 
@@ -294,7 +300,7 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
  *--------------------------------------------------------------------------
  */
 
-bool
+int
 mongoc_socket_connect (mongoc_socket_t       *sock,         /* IN */
                        const struct sockaddr *addr,         /* IN */
                        socklen_t              addrlen,      /* IN */
@@ -303,6 +309,10 @@ mongoc_socket_connect (mongoc_socket_t       *sock,         /* IN */
    bool try_again = false;
    bool failed = false;
    int ret;
+#ifndef _WIN32
+   int optval = 0;
+   socklen_t optlen = sizeof optval;
+#endif
 
    ENTRY;
 
@@ -316,17 +326,25 @@ again:
 #ifdef _WIN32
    if (ret == SOCKET_ERROR) {
       failed = true;
-      try_again == (WSAGetLastError () == WSAEINPROGRESS);
+      try_again = (WSAGetLastError () == WSAEINPROGRESS);
    }
 #else
    if (ret == -1) {
       failed = true;
       try_again = ((errno == EAGAIN) || (errno == EINPROGRESS));
+
+      if (try_again) {
+         ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+         if ((ret == -1) || (optval != 0)) {
+            failed = true;
+            try_again = false;
+         }
+      }
    }
 #endif
 
    if (failed && try_again) {
-      if (_mongoc_socket_poll (sock->sd, POLLOUT, timeout_msec)) {
+      if (_mongoc_socket_wait (sock->sd, POLLOUT, timeout_msec)) {
          GOTO (again);
       }
       RETURN (false);
@@ -334,7 +352,7 @@ again:
       RETURN (false);
    }
 
-   RETURN (ret == 0);
+   RETURN (ret);
 }
 
 
@@ -383,7 +401,7 @@ mongoc_socket_destroy (mongoc_socket_t *sock) /* IN */
  *--------------------------------------------------------------------------
  */
 
-bool
+int
 mongoc_socket_listen (mongoc_socket_t *sock,    /* IN */
                       unsigned int     backlog) /* IN */
 {
@@ -399,7 +417,7 @@ mongoc_socket_listen (mongoc_socket_t *sock,    /* IN */
 
    ret = listen (sock->sd, backlog);
 
-   RETURN (ret == 0);
+   RETURN (ret);
 }
 
 
@@ -430,7 +448,6 @@ mongoc_socket_new (int domain,   /* IN */
    mongoc_socket_t *sock;
 #ifdef _WIN32
    SOCKET sd;
-   int io_mode = 1;
 #else
    int sd;
 #endif
@@ -516,7 +533,7 @@ again:
 #endif
 
    if (failed && try_again) {
-      if (_mongoc_socket_poll (sock->sd, POLLIN, timeout_msec)) {
+      if (_mongoc_socket_wait (sock->sd, POLLIN, timeout_msec)) {
          goto again;
       }
    }
@@ -533,7 +550,7 @@ again:
  *       A wrapper around setsockopt().
  *
  * Returns:
- *       true on success; false on failure.
+ *       0 on success, -1 on failure.
  *
  * Side effects:
  *       None.
@@ -541,7 +558,7 @@ again:
  *--------------------------------------------------------------------------
  */
 
-bool
+int
 mongoc_socket_setsockopt (mongoc_socket_t *sock,    /* IN */
                           int              level,   /* IN */
                           int              optname, /* IN */
@@ -550,7 +567,7 @@ mongoc_socket_setsockopt (mongoc_socket_t *sock,    /* IN */
 {
    bson_return_val_if_fail (sock, false);
 
-   return (0 == setsockopt (sock->sd, level, optname, optval, optlen));
+   return setsockopt (sock->sd, level, optname, optval, optlen);
 }
 
 
@@ -576,7 +593,7 @@ mongoc_socket_send (mongoc_socket_t *sock,         /* IN */
                     size_t           buflen,       /* IN */
                     int              timeout_msec) /* IN */
 {
-   struct iovec iov;
+   mongoc_socket_iovec_t iov;
 
    bson_return_val_if_fail (sock, -1);
    bson_return_val_if_fail (buf, -1);
@@ -755,7 +772,7 @@ mongoc_socket_sendv (mongoc_socket_t       *sock,         /* IN */
       /*
        * Block on poll() until our desired condition is met.
        */
-      if (!_mongoc_socket_poll (sock->sd, POLLOUT, timeout)) {
+      if (!_mongoc_socket_wait (sock->sd, POLLOUT, timeout)) {
          if (ret == 0){
             errno = ETIMEDOUT;
          }

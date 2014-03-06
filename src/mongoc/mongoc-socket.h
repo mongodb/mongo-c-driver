@@ -35,6 +35,7 @@
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <sys/uio.h>
+# include <sys/un.h>
 #endif
 
 
@@ -57,16 +58,16 @@ typedef struct iovec mongoc_socket_iovec_t;
 
 mongoc_socket_t *mongoc_socket_accept     (mongoc_socket_t       *sock,
                                            int                    timeout_msec);
-bool             mongoc_socket_bind       (mongoc_socket_t       *sock,
+int              mongoc_socket_bind       (mongoc_socket_t       *sock,
                                            const struct sockaddr *addr,
                                            socklen_t              addrlen);
-bool             mongoc_socket_close      (mongoc_socket_t       *socket);
-bool             mongoc_socket_connect    (mongoc_socket_t       *sock,
+int              mongoc_socket_close      (mongoc_socket_t       *socket);
+int              mongoc_socket_connect    (mongoc_socket_t       *sock,
                                            const struct sockaddr *addr,
                                            socklen_t              addrlen,
                                            int                    timeout_msec);
 void             mongoc_socket_destroy    (mongoc_socket_t       *sock);
-bool             mongoc_socket_listen     (mongoc_socket_t       *sock,
+int              mongoc_socket_listen     (mongoc_socket_t       *sock,
                                            unsigned int           backlog);
 mongoc_socket_t *mongoc_socket_new        (int                    domain,
                                            int                    type,
@@ -76,7 +77,7 @@ ssize_t          mongoc_socket_recv       (mongoc_socket_t       *sock,
                                            size_t                 buflen,
                                            int                    flags,
                                            int                    timeout_msec);
-bool             mongoc_socket_setsockopt (mongoc_socket_t       *sock,
+int              mongoc_socket_setsockopt (mongoc_socket_t       *sock,
                                            int                    level,
                                            int                    optname,
                                            const void            *optval,

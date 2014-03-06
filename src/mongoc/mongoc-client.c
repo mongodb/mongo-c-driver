@@ -32,8 +32,9 @@
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
 #include "mongoc-queue-private.h"
+#include "mongoc-socket.h"
 #include "mongoc-stream-buffered.h"
-#include "mongoc-stream-unix.h"
+#include "mongoc-stream-socket.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 
@@ -77,134 +78,90 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
                            const mongoc_host_list_t *host,
                            bson_error_t             *error)
 {
+   mongoc_socket_t *sock;
    struct addrinfo hints;
    struct addrinfo *result, *rp;
-   uint32_t connecttimeoutms = 0;
+   uint32_t connecttimeoutms = DEFAULT_CONNECTTIMEOUTMS;
    const bson_t *options;
    bson_iter_t iter;
-   socklen_t optlen;
-   char portstr[8];
+   char portstr [8];
    int optval;
-   int flags;
-   int r;
    int s;
-   mongoc_fd_t sfd;
 
-   bson_return_val_if_fail(uri, NULL);
-   bson_return_val_if_fail(host, NULL);
+   ENTRY;
 
-   options = mongoc_uri_get_options(uri);
-   if (bson_iter_init_find(&iter, options, "connecttimeoutms") &&
-       BSON_ITER_HOLDS_INT32(&iter)) {
+   bson_return_val_if_fail (uri, NULL);
+   bson_return_val_if_fail (host, NULL);
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find (&iter, options, "connecttimeoutms") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
       connecttimeoutms = bson_iter_int32(&iter);
    }
-   if (!connecttimeoutms) {
-      connecttimeoutms = DEFAULT_CONNECTTIMEOUTMS;
-   }
 
-   bson_snprintf(portstr, sizeof portstr, "%hu", host->port);
+   bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
 
-   memset(&hints, 0, sizeof hints);
+   memset (&hints, 0, sizeof hints);
    hints.ai_family = host->family;
    hints.ai_socktype = SOCK_STREAM;
    hints.ai_flags = 0;
    hints.ai_protocol = 0;
 
-   s = getaddrinfo(host->host, portstr, &hints, &result);
+   s = getaddrinfo (host->host, portstr, &hints, &result);
+
    if (s != 0) {
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,
                      "Failed to resolve %s",
                      host->host);
-      return NULL;
+      RETURN (NULL);
    }
 
    for (rp = result; rp; rp = rp->ai_next) {
-      sfd = mongoc_socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-      if (! mongoc_fd_is_valid(sfd)) {
+      /*
+       * Create a new non-blocking socket.
+       */
+      if (!(sock = mongoc_socket_new (rp->ai_family,
+                                      rp->ai_socktype,
+                                      rp->ai_protocol))) {
          continue;
       }
 
       /*
-       * Set the socket non-blocking so we can detect failure to
-       * connect by waiting for POLLIN on the socket fd.
+       * Try to connect to the peer.
        */
-#ifdef BSON_OS_UNIX
-      flags = fcntl(sfd, F_GETFL);
-      if ((flags & O_NONBLOCK) != O_NONBLOCK) {
-         flags = flags | O_NONBLOCK;
-         if (fcntl(sfd, F_SETFL, flags | O_NONBLOCK) != 0) {
-            MONGOC_WARNING("O_NONBLOCK on socket failed. "
-                           "Cannot respect connecttimeoutms.");
-            if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
-               break;
-            }
-            close(sfd);
-            continue;
-         }
-      }
-#endif
-
-      r = mongoc_connect(sfd, rp->ai_addr, (socklen_t)rp->ai_addrlen);
-      if (r != -1) {
-         break;
+      if (!mongoc_socket_connect (sock,
+                                  rp->ai_addr,
+                                  (socklen_t)rp->ai_addrlen,
+                                  connecttimeoutms)) {
+         mongoc_socket_destroy (sock);
+         sock = NULL;
+         continue;
       }
 
-      if (errno == EINPROGRESS) {
-         mongoc_pollfd_t fds;
-
-again:
-         fds.fd = sfd;
-         fds.events = POLLOUT;
-         fds.revents = 0;
-         r = mongoc_poll(&fds, 1, connecttimeoutms);
-         if (r > 0) {
-            optval = 0;
-            optlen = sizeof optval;
-            r = mongoc_getsockopt(sfd, SOL_SOCKET, SO_ERROR, (char *)&optval, &optlen);
-            if ((r == -1) || optval != 0) {
-               goto cleanup;
-            }
-            break;
-         } else if (r == 0) {
-            goto cleanup;
-         }
-
-         goto again;
-      }
-
-cleanup:
-      mongoc_close(sfd);
+      break;
    }
 
-   if (!rp) {
-      bson_set_error(error,
-                     MONGOC_ERROR_STREAM,
-                     MONGOC_ERROR_STREAM_CONNECT,
-                     "Failed to connect to target host.");
-      freeaddrinfo(result);
-      return NULL;
+   if (!sock) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_CONNECT,
+                      "Failed to connect to target host.");
+      freeaddrinfo (result);
+      RETURN (NULL);
    }
 
-   freeaddrinfo(result);
+   freeaddrinfo (result);
 
-   flags = 1;
-   errno = 0;
-   r = mongoc_setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, (char *)&flags, sizeof flags);
-   if (r < 0) {
-      char buf[128];
-      char * errstr = bson_strerror_r(errno, buf, sizeof buf);
-#ifdef BSON_OS_UNIX
-      MONGOC_WARNING("Failed to set TCP_NODELAY on fd %u: %s\n",
-                     sfd, errstr);
-#else
-      MONGOC_WARNING("Failed to set TCP_NODELAY on socket : %s\n",
-                     errstr);
-#endif
+   optval = 1;
+
+   if (0 != mongoc_socket_setsockopt (sock, IPPROTO_TCP, TCP_NODELAY,
+                                      &optval, sizeof optval)) {
+      MONGOC_WARNING ("Failed to set TCP_NODELAY");
    }
 
-   return mongoc_stream_unix_new(sfd);
+   return mongoc_stream_socket_new (sock);
 }
 
 
@@ -230,39 +187,53 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
                             const mongoc_host_list_t *host,
                             bson_error_t             *error)
 {
-#ifdef BSON_OS_UNIX
-   struct sockaddr_un saddr;
-   mongoc_fd_t sfd;
-
-   bson_return_val_if_fail(uri, NULL);
-   bson_return_val_if_fail(host, NULL);
-
-   memset(&saddr, 0, sizeof saddr);
-   saddr.sun_family = AF_UNIX;
-   bson_snprintf(saddr.sun_path, sizeof saddr.sun_path - 1,
-            "%s", host->host_and_port);
-
-   sfd = mongoc_socket(AF_UNIX, SOCK_STREAM, 0);
-   if (sfd == -1) {
-      bson_set_error(error,
-                     MONGOC_ERROR_STREAM,
-                     MONGOC_ERROR_STREAM_SOCKET,
-                     "Failed to create socket.");
-      return NULL;
-   }
-
-   if (mongoc_connect(sfd, (struct sockaddr *)&saddr, sizeof saddr) == -1) {
-      mongoc_close(sfd);
-      bson_set_error(error,
-                     MONGOC_ERROR_STREAM,
-                     MONGOC_ERROR_STREAM_CONNECT,
-                     "Failed to connect to UNIX domain socket.");
-      return NULL;
-   }
-
-   return mongoc_stream_unix_new(sfd);
+#ifdef _WIN32
+   ENTRY;
+   bson_set_error (error,
+                   MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_CONNECT,
+                   "UNIX domain sockets not supported on win32.");
+   RETURN (NULL);
 #else
-   return NULL;
+   struct sockaddr_un saddr;
+   mongoc_socket_t *sock;
+   mongoc_stream_t *ret = NULL;
+
+   ENTRY;
+
+   bson_return_val_if_fail (uri, NULL);
+   bson_return_val_if_fail (host, NULL);
+
+   memset (&saddr, 0, sizeof saddr);
+   saddr.sun_family = AF_UNIX;
+   bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1,
+                  "%s", host->host_and_port);
+
+   sock = mongoc_socket_new (AF_UNIX, SOCK_STREAM, 0);
+
+   if (sock == NULL) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failed to create socket.");
+      RETURN (NULL);
+   }
+
+   if (-1 == mongoc_socket_connect (sock,
+                                    (struct sockaddr *)&saddr,
+                                    sizeof saddr,
+                                    -1)) {
+      mongoc_socket_destroy (sock);
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_CONNECT,
+                      "Failed to connect to UNIX domain socket.");
+      RETURN (NULL);
+   }
+
+   ret = mongoc_stream_socket_new (sock);
+
+   RETURN (ret);
 #endif
 }
 
