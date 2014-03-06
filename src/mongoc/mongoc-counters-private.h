@@ -20,7 +20,6 @@
 
 
 #include <bson.h>
-#include <windows.h>
 
 #ifdef __linux__
 # include <sched.h>
