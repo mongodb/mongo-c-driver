@@ -15,6 +15,7 @@ COPYING
 depcomp
 .deps
 .dirstamp
+echo-server
 example-client
 find-and-modify
 INSTALL
