@@ -98,7 +98,7 @@ ssl_test_server (void * ptr)
    assert(ssl_stream);
 
    r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
-   if (! r) {
+   if (!r) {
       unsigned long err = ERR_get_error();
       assert(err);
 
