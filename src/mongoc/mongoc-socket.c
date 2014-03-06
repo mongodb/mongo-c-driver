@@ -233,7 +233,7 @@ again:
       MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
    }
 
-   RETURN (sock);
+   RETURN (client);
 }
 
 
