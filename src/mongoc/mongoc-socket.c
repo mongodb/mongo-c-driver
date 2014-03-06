@@ -341,11 +341,11 @@ again:
       if (_mongoc_socket_wait (sock->sd, POLLOUT, timeout_msec)) {
          GOTO (again);
       }
-      RETURN (false);
+      RETURN (-1);
    } else if (failed) {
-      RETURN (false);
+      RETURN (-1);
    } else {
-      RETURN (ret);
+      RETURN (0);
    }
 }
 
