@@ -29,56 +29,72 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 
 static void
-validate (const char *name,
-          mongoc_fd_t   fd)
+validate (const char *name) /* IN */
 {
-   uint8_t *buf;
+   mongoc_stream_t *stream;
    mongoc_rpc_t rpc;
-   int32_t len;
+#ifdef _WIN32
+   struct _stat st;
+#else
    struct stat st;
+#endif
+   uint8_t *buf;
+   int32_t len;
+   int ret;
 
-   if (mongoc_fstat (fd, &st) != 0) {
-      fprintf (stderr, "%s: Failed to fstat.\n", name);
-      return;
+   stream = mongoc_stream_file_new_for_path (name, O_RDONLY, 0);
+   if (!stream) {
+      perror ("failed to open file");
+      exit (EXIT_FAILURE);
    }
 
-   if (st.st_size > (100 * 1024 * 1024)) {
+#ifdef _WIN32
+   ret = _stat (name, &st);
+#else
+   ret = stat (name, &st);
+#endif
+   if (ret != 0) {
+      perror ("failed to stat() file.");
+      exit (EXIT_FAILURE);
+   }
+
+   if ((st.st_size > (100 * 1024 * 1024)) || (st.st_size < 16)) {
       fprintf (stderr, "%s: unreasonable message size\n", name);
-      return;
+      exit (EXIT_FAILURE);
    }
 
    buf = malloc (st.st_size);
    if (buf == NULL) {
       fprintf (stderr, "%s: Failed to malloc %d bytes.\n",
                name, (int)st.st_size);
-      return;
+      exit (EXIT_FAILURE);
    }
 
-   if (st.st_size != mongoc_read (fd, buf, st.st_size)) {
+   if (st.st_size != mongoc_stream_read (stream, buf, st.st_size, st.st_size, -1)) {
       fprintf (stderr, "%s: Failed to read %d bytes into buffer.\n",
                name, (int)st.st_size);
-      goto cleanup;
+      exit (EXIT_FAILURE);
    }
 
    memcpy (&len, buf, 4);
    len = BSON_UINT32_FROM_LE (len);
    if (len != st.st_size) {
       fprintf (stderr, "%s is invalid. Invalid Length.\n", name);
-      goto cleanup;
+      exit (EXIT_FAILURE);
    }
 
    if (!_mongoc_rpc_scatter (&rpc, buf, st.st_size)) {
       fprintf (stderr, "%s is invalid. Invalid Format.\n", name);
-      goto cleanup;
+      exit (EXIT_FAILURE);
    }
 
    fprintf (stdout, "%s is valid.\n", name);
 
-cleanup:
-   free (buf);
+   bson_free (buf);
 }
 
 
@@ -86,7 +102,6 @@ int
 main (int   argc,
       char *argv[])
 {
-   mongoc_fd_t fd;
    int i;
 
    if (argc < 2) {
@@ -94,16 +109,10 @@ main (int   argc,
       return EXIT_FAILURE;
    }
 
-   mongoc_init();
+   mongoc_init ();
 
    for (i = 1; i < argc; i++) {
-      fd = mongoc_open (argv[i], O_RDONLY);
-      if (! mongoc_fd_is_valid(fd)) {
-         fprintf (stderr, "Failed to open \"%s\"\n", argv[i]);
-         continue;
-      }
-      validate (argv[i], fd);
-      mongoc_close (fd);
+      validate (argv [i]);
    }
 
    return EXIT_SUCCESS;

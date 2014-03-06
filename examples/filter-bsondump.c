@@ -18,18 +18,8 @@
 #include <bcon.h>
 #include <bson.h>
 #include <mongoc.h>
+#include <stdio.h>
 
-static ssize_t
-_read_cb(void * handle, void * buf, size_t len)
-{
-   return mongoc_read(*(mongoc_fd_t *)handle, buf, len);
-}
-
-static void
-_destroy_cb(void * handle)
-{
-   mongoc_close(*(mongoc_fd_t *)handle);
-}
 
 /*
  * This is an example that reads BSON documents from STDIN and prints them
@@ -38,7 +28,7 @@ _destroy_cb(void * handle)
 
 
 int
-main (int argc,
+main (int   argc,
       char *argv[])
 {
    mongoc_matcher_t *matcher;
@@ -46,10 +36,18 @@ main (int argc,
    const bson_t *bson;
    bson_t *spec;
    char *str;
+   int fd;
 
    mongoc_init ();
 
-   reader = bson_reader_new_from_handle ((void *)&MONGOC_STDIN_FILENO, &_read_cb, &_destroy_cb);
+#ifdef _WIN32
+   fd = fileno (stdin);
+#else
+   fd = STDIN_FILENO;
+#endif
+
+   reader = bson_reader_new_from_fd (fd, false);
+
    spec = BCON_NEW ("hello", "world");
    matcher = mongoc_matcher_new (spec, NULL);
 

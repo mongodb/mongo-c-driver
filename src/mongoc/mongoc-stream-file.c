@@ -146,3 +146,12 @@ mongoc_stream_file_new_for_path (const char *path,  /* IN */
 
    return mongoc_stream_file_new (fd);
 }
+
+
+int
+mongoc_stream_file_get_fd (mongoc_stream_t *stream)
+{
+   mongoc_stream_file_t *file = (mongoc_stream_file_t *)stream;
+   bson_return_val_if_fail (file, -1);
+   return file->fd;
+}
