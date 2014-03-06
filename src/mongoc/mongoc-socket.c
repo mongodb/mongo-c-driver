@@ -558,6 +558,8 @@ mongoc_socket_recv (mongoc_socket_t *sock,      /* IN */
    bool failed = false;
    bool try_again = false;
 
+   ENTRY;
+
    bson_return_val_if_fail (sock, -1);
    bson_return_val_if_fail (buf, -1);
    bson_return_val_if_fail (buflen, -1);
