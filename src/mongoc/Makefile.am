@@ -20,6 +20,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-host-list.h \
 	src/mongoc/mongoc-init.h \
 	src/mongoc/mongoc-index.h \
+	src/mongoc/mongoc-iovec.h \
 	src/mongoc/mongoc-log.h \
 	src/mongoc/mongoc-matcher.h \
 	src/mongoc/mongoc-opcode.h \

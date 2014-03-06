@@ -175,7 +175,7 @@ again:
 
    if (failed && try_again) {
       if (_mongoc_socket_wait (sd, POLLIN, timeout_msec)) {
-         goto again;
+         GOTO (again);
       }
       RETURN (NULL);
    } else if (failed) {
@@ -309,10 +309,8 @@ mongoc_socket_connect (mongoc_socket_t       *sock,         /* IN */
    bool try_again = false;
    bool failed = false;
    int ret;
-#ifndef _WIN32
    int optval = 0;
    socklen_t optlen = sizeof optval;
-#endif
 
    ENTRY;
 
@@ -320,28 +318,23 @@ mongoc_socket_connect (mongoc_socket_t       *sock,         /* IN */
    bson_return_val_if_fail (addr, false);
    bson_return_val_if_fail (addrlen, false);
 
-again:
    ret = connect (sock->sd, addr, addrlen);
 
+again:
 #ifdef _WIN32
    if (ret == SOCKET_ERROR) {
       failed = true;
       try_again = (WSAGetLastError () == WSAEINPROGRESS);
-   }
 #else
    if (ret == -1) {
       failed = true;
       try_again = ((errno == EAGAIN) || (errno == EINPROGRESS));
-
+#endif
       if (try_again) {
          ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR, &optval, &optlen);
-         if ((ret == -1) || (optval != 0)) {
-            failed = true;
-            try_again = false;
-         }
+         failed = ((ret == -1) || (optval != 0));
       }
    }
-#endif
 
    if (failed && try_again) {
       if (_mongoc_socket_wait (sock->sd, POLLOUT, timeout_msec)) {
@@ -350,9 +343,9 @@ again:
       RETURN (false);
    } else if (failed) {
       RETURN (false);
+   } else {
+      RETURN (ret);
    }
-
-   RETURN (ret);
 }
 
 
@@ -538,7 +531,11 @@ again:
       }
    }
 
-   return failed ? -1 : ret;
+   if (failed) {
+      RETURN (-1);
+   }
+
+   RETURN (ret);
 }
 
 
@@ -593,7 +590,7 @@ mongoc_socket_send (mongoc_socket_t *sock,         /* IN */
                     size_t           buflen,       /* IN */
                     int              timeout_msec) /* IN */
 {
-   mongoc_socket_iovec_t iov;
+   mongoc_iovec_t iov;
 
    bson_return_val_if_fail (sock, -1);
    bson_return_val_if_fail (buf, -1);
@@ -626,9 +623,9 @@ mongoc_socket_send (mongoc_socket_t *sock,         /* IN */
  */
 
 ssize_t
-_mongoc_socket_try_sendv (mongoc_socket_t       *sock,   /* IN */
-                          mongoc_socket_iovec_t *iov,    /* IN */
-                          size_t                 iovcnt) /* IN */
+_mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
+                          mongoc_iovec_t  *iov,    /* IN */
+                          size_t           iovcnt) /* IN */
 {
 #ifdef _WIN32
    WSAMSG msg;
@@ -687,10 +684,10 @@ _mongoc_socket_try_sendv (mongoc_socket_t       *sock,   /* IN */
  */
 
 ssize_t
-mongoc_socket_sendv (mongoc_socket_t       *sock,         /* IN */
-                     mongoc_socket_iovec_t *iov,          /* IN */
-                     size_t                 iovcnt,       /* IN */
-                     int                    timeout_msec) /* IN */
+mongoc_socket_sendv (mongoc_socket_t  *sock,         /* IN */
+                     mongoc_iovec_t   *iov,          /* IN */
+                     size_t            iovcnt,       /* IN */
+                     int               timeout_msec) /* IN */
 {
    int64_t expire = 0;
    int64_t now;

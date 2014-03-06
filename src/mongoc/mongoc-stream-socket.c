@@ -17,6 +17,7 @@
 
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-socket.h"
+#include "mongoc-trace.h"
 
 
 typedef struct
@@ -30,12 +31,18 @@ static int
 _mongoc_stream_socket_close (mongoc_stream_t *stream)
 {
    mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
+   int ret;
+
+   ENTRY;
+
+   bson_return_val_if_fail (ss, -1);
 
    if (ss->sock) {
-      return mongoc_socket_close (ss->sock);
+      ret = mongoc_socket_close (ss->sock);
+      RETURN (ret);
    }
 
-   return 0;
+   RETURN (0);
 }
 
 
@@ -44,12 +51,18 @@ _mongoc_stream_socket_destroy (mongoc_stream_t *stream)
 {
    mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
 
+   ENTRY;
+
+   bson_return_if_fail (ss);
+
    if (ss->sock) {
       mongoc_socket_destroy (ss->sock);
       ss->sock = NULL;
    }
 
    bson_free (ss);
+
+   EXIT;
 }
 
 
@@ -61,36 +74,106 @@ _mongoc_stream_socket_setsockopt (mongoc_stream_t *stream,
                                   socklen_t        optlen)
 {
    mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
+   int ret;
 
-   if (ss->sock) {
-      return mongoc_socket_setsockopt (ss->sock, level, optname,
-                                       optval, optlen);
-   }
+   ENTRY;
 
-   return 0;
+   bson_return_val_if_fail (ss, -1);
+   bson_return_val_if_fail (ss->sock, -1);
+
+   ret = mongoc_socket_setsockopt (ss->sock, level, optname, optval, optlen);
+
+   RETURN (ret);
 }
 
 
 static int
 _mongoc_stream_socket_flush (mongoc_stream_t *stream)
 {
-   return 0;
+   ENTRY;
+   RETURN (0);
+}
+
+
+static ssize_t
+_mongoc_stream_socket_readv (mongoc_stream_t *stream,
+                             mongoc_iovec_t  *iov,
+                             size_t           iovcnt,
+                             size_t           min_bytes,
+                             int32_t          timeout_msec)
+{
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
+   ssize_t ret = 0;
+   ssize_t nread;
+   size_t cur = 0;
+
+   ENTRY;
+
+   bson_return_val_if_fail (ss, -1);
+   bson_return_val_if_fail (ss->sock, -1);
+
+   /*
+    * This isn't ideal, we should plumb through to recvmsg(), but we
+    * don't actually use this in any way but to a single buffer
+    * currently anyway, so should be just fine.
+    */
+
+   for (;;) {
+      nread = mongoc_socket_recv (ss->sock,
+                                  iov [cur].iov_base,
+                                  iov [cur].iov_len,
+                                  0,
+                                  timeout_msec);
+
+      if (nread == -1) {
+         if (ret >= min_bytes) {
+            RETURN (ret);
+         }
+         RETURN (-1);
+      }
+
+      ret += nread;
+
+      while ((cur < iovcnt) && (nread >= (ssize_t)iov [cur].iov_len)) {
+         nread -= iov [cur++].iov_len;
+      }
+
+      if (cur == iovcnt) {
+         break;
+      }
+
+      if (ret >= min_bytes) {
+         RETURN (ret);
+      }
+
+      iov [cur].iov_base = ((uint8_t *)iov [cur].iov_base) + nread;
+      iov [cur].iov_len -= nread;
+
+      BSON_ASSERT (iovcnt - cur);
+      BSON_ASSERT (iov [cur].iov_len);
+   }
+
+   RETURN (ret);
 }
 
 
 static ssize_t
 _mongoc_stream_socket_writev (mongoc_stream_t *stream,
-                              struct iovec    *iov,
+                              mongoc_iovec_t  *iov,
                               size_t           iovcnt,
                               int32_t          timeout_msec)
 {
    mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
+   ssize_t ret;
+
+   ENTRY;
 
    if (ss->sock) {
-      return mongoc_socket_sendv (ss->sock, iov, iovcnt, timeout_msec);
+      ret = mongoc_socket_sendv (ss->sock, iov, iovcnt, timeout_msec);
+      RETURN (ret);
    }
 
-   return -1;
+   RETURN (-1);
 }
 
 
@@ -122,8 +205,10 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
    stream->vtable.close = _mongoc_stream_socket_close;
    stream->vtable.destroy = _mongoc_stream_socket_destroy;
    stream->vtable.flush = _mongoc_stream_socket_flush;
+   stream->vtable.readv = _mongoc_stream_socket_readv;
    stream->vtable.writev = _mongoc_stream_socket_writev;
    stream->vtable.setsockopt = _mongoc_stream_socket_setsockopt;
+   stream->sock = sock;
 
    return (mongoc_stream_t *)stream;
 }

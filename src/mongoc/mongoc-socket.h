@@ -27,6 +27,8 @@
 
 #include <bson.h>
 
+#include "mongoc-iovec.h"
+
 #ifdef _WIN32
 # include <winsock2.h>
 # include <ws2tcpip.h>
@@ -43,17 +45,6 @@ BSON_BEGIN_DECLS
 
 
 typedef struct _mongoc_socket_t mongoc_socket_t;
-
-
-#ifdef _WIN32
-typedef struct
-{
-   u_long  iov_len;
-   void   *iov_base;
-} mongoc_socket_iovec_t;
-#else
-typedef struct iovec mongoc_socket_iovec_t;
-#endif
 
 
 mongoc_socket_t *mongoc_socket_accept     (mongoc_socket_t       *sock,
@@ -87,7 +78,7 @@ ssize_t          mongoc_socket_send       (mongoc_socket_t       *sock,
                                            size_t                 buflen,
                                            int                    timeout_msec);
 ssize_t          mongoc_socket_sendv      (mongoc_socket_t       *sock,
-                                           mongoc_socket_iovec_t *iov,
+                                           mongoc_iovec_t        *iov,
                                            size_t                 iovcnt,
                                            int                    timeout_msec);
 

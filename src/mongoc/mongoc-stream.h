@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2013-2014 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -24,7 +24,7 @@
 #define MONGOC_STREAM_H
 
 
-#include "mongoc-compat.h"
+#include "mongoc-iovec.h"
 
 
 BSON_BEGIN_DECLS
@@ -33,30 +33,30 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_stream_t mongoc_stream_t;
 
 
-int              mongoc_stream_close         (mongoc_stream_t *stream);
-int              mongoc_stream_cork          (mongoc_stream_t *stream);
-int              mongoc_stream_uncork        (mongoc_stream_t *stream);
-void             mongoc_stream_destroy       (mongoc_stream_t *stream);
-int              mongoc_stream_flush         (mongoc_stream_t *stream);
-ssize_t          mongoc_stream_writev        (mongoc_stream_t *stream,
-                                              struct iovec    *iov,
-                                              size_t           iovcnt,
-                                              int32_t          timeout_msec);
-ssize_t          mongoc_stream_readv         (mongoc_stream_t *stream,
-                                              struct iovec    *iov,
-                                              size_t           iovcnt,
-                                              size_t           min_bytes,
-                                              int32_t          timeout_msec);
-ssize_t          mongoc_stream_read          (mongoc_stream_t *stream,
-                                              void            *buf,
-                                              size_t           count,
-                                              size_t           min_bytes,
-                                              int32_t          timeout_msec);
-int              mongoc_stream_setsockopt    (mongoc_stream_t *stream,
-                                              int              level,
-                                              int              optname,
-                                              void            *optval,
-                                              socklen_t        optlen);
+int              mongoc_stream_close         (mongoc_stream_t       *stream);
+int              mongoc_stream_cork          (mongoc_stream_t       *stream);
+int              mongoc_stream_uncork        (mongoc_stream_t       *stream);
+void             mongoc_stream_destroy       (mongoc_stream_t       *stream);
+int              mongoc_stream_flush         (mongoc_stream_t       *stream);
+ssize_t          mongoc_stream_writev        (mongoc_stream_t       *stream,
+                                              mongoc_iovec_t        *iov,
+                                              size_t                 iovcnt,
+                                              int32_t                timeout_msec);
+ssize_t          mongoc_stream_readv         (mongoc_stream_t       *stream,
+                                              mongoc_iovec_t        *iov,
+                                              size_t                 iovcnt,
+                                              size_t                 min_bytes,
+                                              int32_t                timeout_msec);
+ssize_t          mongoc_stream_read          (mongoc_stream_t       *stream,
+                                              void                  *buf,
+                                              size_t                 count,
+                                              size_t                 min_bytes,
+                                              int32_t                timeout_msec);
+int              mongoc_stream_setsockopt    (mongoc_stream_t       *stream,
+                                              int                    level,
+                                              int                    optname,
+                                              void                  *optval,
+                                              socklen_t              optlen);
 
 
 BSON_END_DECLS

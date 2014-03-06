@@ -105,6 +105,17 @@ mongoc_read_prefs_is_valid
 mongoc_read_prefs_new
 mongoc_read_prefs_set_mode
 mongoc_read_prefs_set_tags
+mongoc_socket_accept
+mongoc_socket_bind
+mongoc_socket_close
+mongoc_socket_connect
+mongoc_socket_destroy
+mongoc_socket_listen
+mongoc_socket_new
+mongoc_socket_recv
+mongoc_socket_send
+mongoc_socket_sendv
+mongoc_socket_setsockopt
 mongoc_ssl_opt_get_default
 mongoc_stream_buffered_new
 mongoc_stream_close
@@ -115,6 +126,7 @@ mongoc_stream_gridfs_new
 mongoc_stream_read
 mongoc_stream_readv
 mongoc_stream_setsockopt
+mongoc_stream_socket_new
 mongoc_stream_tls_check_cert
 mongoc_stream_tls_do_handshake
 mongoc_stream_tls_new

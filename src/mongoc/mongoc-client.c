@@ -131,10 +131,10 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
       /*
        * Try to connect to the peer.
        */
-      if (!mongoc_socket_connect (sock,
-                                  rp->ai_addr,
-                                  (socklen_t)rp->ai_addrlen,
-                                  connecttimeoutms)) {
+      if (0 != mongoc_socket_connect (sock,
+                                      rp->ai_addr,
+                                      (socklen_t)rp->ai_addrlen,
+                                      connecttimeoutms)) {
          mongoc_socket_destroy (sock);
          sock = NULL;
          continue;

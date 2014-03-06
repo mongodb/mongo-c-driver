@@ -92,9 +92,9 @@ mongoc_stream_flush (mongoc_stream_t *stream)
  */
 ssize_t
 mongoc_stream_writev (mongoc_stream_t *stream,
-                      struct iovec    *iov,
+                      mongoc_iovec_t  *iov,
                       size_t           iovcnt,
-                      int32_t     timeout_msec)
+                      int32_t          timeout_msec)
 {
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
@@ -127,10 +127,10 @@ mongoc_stream_writev (mongoc_stream_t *stream,
  */
 ssize_t
 mongoc_stream_readv (mongoc_stream_t *stream,
-                     struct iovec    *iov,
+                     mongoc_iovec_t  *iov,
                      size_t           iovcnt,
                      size_t           min_bytes,
-                     int32_t     timeout_msec)
+                     int32_t          timeout_msec)
 {
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(iov, -1);
@@ -166,9 +166,9 @@ mongoc_stream_read (mongoc_stream_t *stream,
                     void            *buf,
                     size_t           count,
                     size_t           min_bytes,
-                    int32_t     timeout_msec)
+                    int32_t          timeout_msec)
 {
-   struct iovec iov;
+   mongoc_iovec_t iov;
 
    bson_return_val_if_fail(stream, -1);
    bson_return_val_if_fail(buf, -1);
