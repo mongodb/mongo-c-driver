@@ -155,15 +155,11 @@ mongoc_stream_readv (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail(stream, -1);
-   bson_return_val_if_fail(iov, -1);
-   bson_return_val_if_fail(iovcnt, -1);
+   bson_return_val_if_fail (stream, -1);
+   bson_return_val_if_fail (iov, -1);
+   bson_return_val_if_fail (iovcnt, -1);
 
    BSON_ASSERT (stream->readv);
-
-   if (timeout_msec < 0) {
-      timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
-   }
 
    ret = stream->readv (stream, iov, iovcnt, min_bytes, timeout_msec);
 

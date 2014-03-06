@@ -1,4 +1,5 @@
 #include <mongoc.h>
+#include <mongoc-trace.h>
 #include <mongoc-thread-private.h>
 #include <stdlib.h>
 
@@ -10,6 +11,8 @@ client_thread (void *data)
    mongoc_iovec_t iov;
    ssize_t ret;
    char buf [1024];
+
+   ENTRY;
 
    BSON_ASSERT (stream);
 
@@ -23,7 +26,7 @@ client_thread (void *data)
 
    mongoc_stream_destroy (stream);
 
-   return NULL;
+   RETURN (NULL);
 }
 
 

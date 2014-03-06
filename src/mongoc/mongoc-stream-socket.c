@@ -28,14 +28,14 @@ typedef struct
 
 
 static BSON_INLINE int64_t
-get_expiration (int timeout_msec)
+get_expiration (int32_t timeout_msec)
 {
-   switch (timeout_msec) {
-   case -1:
-   case 0:
-      return timeout_msec;
-   default:
-      return (bson_get_monotonic_time () * (timeout_msec * 1000L));
+   if (timeout_msec < 0) {
+      return -1;
+   } else if (timeout_msec == 0) {
+      return 0;
+   } else {
+      return (bson_get_monotonic_time () + ((int64_t)timeout_msec * 1000L));
    }
 }
 
