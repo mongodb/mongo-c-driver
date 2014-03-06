@@ -2,6 +2,7 @@
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
+#include "mongoc-tests.h"
 
 static char *gTestUri;
 
@@ -142,7 +143,8 @@ test_create_collection (void)
    assert (client);
 
    t = time (NULL);
-   p = getpid ();
+
+   p = gettestpid ();
    bson_snprintf (dbname, sizeof dbname, "test%u_%u", t, p);
    dbname [sizeof dbname - 1] = '\0';
 

@@ -33,9 +33,19 @@
 #include <bson.h>
 #include <stdio.h>
 #include <time.h>
+#ifdef _WIN32
+# include <process.h>
+#endif
 
 
 BSON_BEGIN_DECLS
+
+
+#ifdef _WIN32
+# define gettestpid _getpid
+#else
+# define gettestpid getpid
+#endif
 
 
 #define assert_cmpstr(a, b)                                             \

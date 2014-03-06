@@ -10,15 +10,11 @@ test_mongoc_buffer_basic (void)
 {
    mongoc_stream_t *stream;
    mongoc_buffer_t buf;
-   uint8_t *data = bson_malloc0(1024);
    bson_error_t error = { 0 };
+   uint8_t *data = bson_malloc0(1024);
    ssize_t r;
-   mongoc_fd_t fd;
 
-   fd = mongoc_open("tests/binary/reply1.dat", O_RDONLY);
-   ASSERT(mongoc_fd_is_valid(fd));
-
-   stream = mongoc_stream_unix_new(fd);
+   stream = mongoc_stream_file_new_for_path ("tests/binary/reply1.dat", O_RDONLY, 0);
    ASSERT(stream);
 
    _mongoc_buffer_init(&buf, data, 1024, bson_realloc);

@@ -117,7 +117,6 @@ test_create_from_stream (void)
    mongoc_stream_t *stream;
    mongoc_client_t *client;
    bson_error_t error;
-   mongoc_fd_t fd;
 
    client = mongoc_client_new (gTestUri);
    assert (client);
@@ -127,10 +126,7 @@ test_create_from_stream (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   fd = mongoc_open ("tests/binary/gridfs.dat", O_RDONLY);
-   assert (mongoc_fd_is_valid(fd));
-
-   stream = mongoc_stream_unix_new (fd);
+   stream = mongoc_stream_file_new_for_path ("tests/binary/gridfs.dat", O_RDONLY, 0);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
    assert (file);
@@ -154,8 +150,13 @@ test_read (void)
    bson_error_t error;
    ssize_t r;
    char buf[10], buf2[10];
-   struct iovec iov[] = { { buf, 10 }, { buf2, 10 } };
-   mongoc_fd_t fd;
+   mongoc_iovec_t iov[2];
+
+   iov[0].iov_base = buf;
+   iov[0].iov_len = 10;
+
+   iov[1].iov_base = buf2;
+   iov[1].iov_len = 10;
 
    client = mongoc_client_new (gTestUri);
    assert (client);
@@ -165,10 +166,7 @@ test_read (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   fd = mongoc_open ("tests/binary/gridfs.dat", O_RDONLY);
-   assert (mongoc_fd_is_valid(fd));
-
-   stream = mongoc_stream_unix_new (fd);
+   stream = mongoc_stream_file_new_for_path ("tests/binary/gridfs.dat", O_RDONLY, 0);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
    assert (file);
@@ -199,11 +197,17 @@ test_write (void)
    char buf2[] = " baz";
    char buf3[1000];
    mongoc_gridfs_file_opt_t opt = { 0 };
-
-   struct iovec iov[] =
-   { { buf, sizeof (buf) - 1 }, { buf2, sizeof (buf2) - 1 } };
-   struct iovec riov = { buf3, sizeof (buf3) };
+   mongoc_iovec_t iov[2];
+   mongoc_iovec_t riov;
    int len = sizeof buf + sizeof buf2 - 2;
+
+   iov [0].iov_base = buf;
+   iov [0].iov_len = sizeof (buf) - 1;
+   iov [1].iov_base = buf2;
+   iov [1].iov_len = sizeof (buf2) - 1;
+
+   riov.iov_base = buf3;
+   riov.iov_len = sizeof (buf3);
 
    opt.chunk_size = 2;
 
@@ -250,10 +254,12 @@ test_stream (void)
    mongoc_stream_t *stream;
    mongoc_stream_t *in_stream;
    bson_error_t error;
-   mongoc_fd_t fd;
    ssize_t r;
    char buf[4096];
-   struct iovec iov = { buf, sizeof buf };
+   mongoc_iovec_t iov;
+
+   iov.iov_base = buf;
+   iov.iov_len = sizeof buf;
 
    client = mongoc_client_new (gTestUri);
    assert (client);
@@ -263,10 +269,7 @@ test_stream (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   fd = mongoc_open ("tests/binary/gridfs.dat", O_RDONLY);
-   assert (mongoc_fd_is_valid(fd));
-
-   in_stream = mongoc_stream_unix_new (fd);
+   in_stream = mongoc_stream_file_new_for_path ("tests/binary/gridfs.dat", O_RDONLY, 0);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, in_stream, NULL);
    assert (file);
