@@ -12,16 +12,12 @@ test_buffered_basic (void)
 {
    mongoc_stream_t *stream;
    mongoc_stream_t *buffered;
+   mongoc_iovec_t iov;
    ssize_t r;
-   struct iovec iov;
    char buf[16236];
-   mongoc_fd_t fd;
 
-   fd = mongoc_open("tests/binary/reply2.dat", O_RDONLY);
-   assert(mongoc_fd_is_valid(fd));
-
-   /* stream assumes ownership of fd */
-   stream = mongoc_stream_unix_new(fd);
+   stream = mongoc_stream_file_new_for_path ("tests/binary/reply2.dat", O_RDONLY, 0);
+   assert (stream);
 
    /* buffered assumes ownership of stream */
    buffered = mongoc_stream_buffered_new(stream, 1024);
@@ -42,16 +38,12 @@ test_buffered_oversized (void)
 {
    mongoc_stream_t *stream;
    mongoc_stream_t *buffered;
+   mongoc_iovec_t iov;
    ssize_t r;
-   struct iovec iov;
    char buf[16236];
-   mongoc_fd_t fd;
 
-   fd = mongoc_open("tests/binary/reply2.dat", O_RDONLY);
-   assert(mongoc_fd_is_valid(fd));
-
-   /* stream assumes ownership of fd */
-   stream = mongoc_stream_unix_new(fd);
+   stream = mongoc_stream_file_new_for_path ("tests/binary/reply2.dat", O_RDONLY, 0);
+   assert (stream);
 
    /* buffered assumes ownership of stream */
    buffered = mongoc_stream_buffered_new(stream, 20000);

@@ -36,6 +36,7 @@
 # include <sys/time.h>
 #else
 # include <windows.h>
+# include <process.h>
 #endif
 
 #if defined(BSON_HAVE_CLOCK_GETTIME)
@@ -193,11 +194,11 @@ static void
 TestSuite_SeedRand (TestSuite *suite, /* IN */
                     Test *test)       /* IN */
 {
-   int seed;
-
+   int pid;
 #ifndef BSON_OS_WIN32
    int fd = open ("/dev/urandom", O_RDONLY);
    int n_read;
+   int seed;
    if (fd != -1) {
       n_read = read (fd, &seed, 4);
       assert (n_read == 4);
@@ -207,7 +208,13 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
    }
 #endif
 
-   test->seed = time (NULL) * (int)getpid ();
+#ifdef _WIN32
+   pid = (int)_getpid ();
+#else
+   pid = gettpid ();
+#endif
+
+   test->seed = time (NULL) * pid;
 }
 
 

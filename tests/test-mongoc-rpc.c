@@ -16,20 +16,29 @@ get_test_file (const char *filename,
    ssize_t len;
    uint8_t *buf;
    char real_filename[256];
-   mongoc_fd_t fd;
+   int fd;
 
-   bson_snprintf(real_filename, sizeof real_filename,
-            "tests/binary/%s", filename);
-   real_filename[sizeof real_filename - 1] = '\0';
+   bson_snprintf (real_filename, sizeof real_filename,
+                  "tests/binary/%s", filename);
 
-   if (! mongoc_fd_is_valid((fd = mongoc_open(real_filename, O_RDONLY)))) {
+#ifdef _WIN32
+   fd = _open (real_filename, O_RDONLY | _O_BINARY);
+#else
+   fd = open (real_filename, O_RDONLY);
+#endif
+
+   if (fd == -1) {
       fprintf(stderr, "Failed to open: %s\n", real_filename);
       abort();
    }
 
    len = 40960;
    buf = bson_malloc0(len);
-   len = mongoc_read(fd, buf, (uint32_t)len);
+#ifdef _WIN32
+   len = _read (fd, buf, (uint32_t)len);
+#else
+   len = read (fd, buf, (uint32_t)len);
+#endif
    ASSERT(len > 0);
 
    *length = len;
@@ -46,14 +55,14 @@ assert_rpc_equal (const char   *filename,
 {
    mongoc_array_t ar;
    uint8_t *data;
-   struct iovec *iov;
+   mongoc_iovec_t *iov;
    size_t length;
    off_t off = 0;
    int r;
    int i;
 
    data = get_test_file(filename, &length);
-   _mongoc_array_init(&ar, sizeof(struct iovec));
+   _mongoc_array_init(&ar, sizeof(mongoc_iovec_t));
 
    /*
     * Gather our RPC into a series of iovec that can be compared
@@ -76,7 +85,7 @@ assert_rpc_equal (const char   *filename,
 #endif
 
    for (i = 0; i < ar.len; i++) {
-      iov = &_mongoc_array_index(&ar, struct iovec, i);
+      iov = &_mongoc_array_index(&ar, mongoc_iovec_t, i);
       ASSERT(iov->iov_len <= (length - off));
       r = memcmp(&data[off], iov->iov_base, iov->iov_len);
       if (r) {
@@ -199,7 +208,7 @@ static void
 test_mongoc_rpc_insert_gather (void)
 {
    mongoc_rpc_t rpc;
-   struct iovec iov[20];
+   mongoc_iovec_t iov[20];
    bson_t b;
    int i;
 
@@ -254,7 +263,7 @@ test_mongoc_rpc_insert_scatter (void)
    ASSERT_CMPINT(rpc.insert.opcode, ==, MONGOC_OPCODE_INSERT);
    ASSERT_CMPINT(rpc.insert.flags, ==, MONGOC_INSERT_CONTINUE_ON_ERROR);
    ASSERT(!strcmp("test.test", rpc.insert.collection));
-   reader = bson_reader_new_from_data(rpc.insert.documents[0].iov_base, rpc.insert.documents[0].iov_len);
+   reader = bson_reader_new_from_data ((uint8_t *)rpc.insert.documents[0].iov_base, rpc.insert.documents[0].iov_len);
    while ((b = bson_reader_read(reader, &eof))) {
       r = bson_equal(b, &empty);
       ASSERT(r);
