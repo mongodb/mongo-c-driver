@@ -536,6 +536,8 @@ again:
       RETURN (-1);
    }
 
+   DUMP_BYTES (recvbuf, (uint8_t *)buf, ret);
+
    RETURN (ret);
 }
 
