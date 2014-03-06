@@ -20,7 +20,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #endif
 ])], [c_compiler="gcc"], [])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
-#if !(defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 3))
+#if !(defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 3)))
 #error Not a supported Clang compiler
 #endif
 ])], [c_compiler="clang"], [])
