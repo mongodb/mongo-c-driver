@@ -20,6 +20,12 @@
 #include "mongoc-trace.h"
 
 
+/*
+ * TODO: This does not respect timeouts or set O_NONBLOCK.
+ *       But that should be fine until it isn't :-)
+ */
+
+
 typedef struct
 {
    mongoc_stream_t vtable;
@@ -92,7 +98,25 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream,       /* IN */
                            size_t           min_bytes,    /* IN */
                            int32_t          timeout_msec) /* IN */
 {
-   return -1;
+   mongoc_stream_file_t *file = (mongoc_stream_file_t *)stream;
+
+#ifdef _WIN32
+   ssize_t ret = 0;
+   ssize_t nread;
+   size_t i;
+
+   for (i = 0; i < iovcnt; i++) {
+      nread = _read (file->fd, iov [i].iov_base, iov [i].iov_len);
+      if (nread != iov [i].iov_len) {
+         return ret ? ret : -1;
+      }
+      ret += nread;
+   }
+
+   return ret;
+#else
+   return readv (file->fd, iov, iovcnt);
+#endif
 }
 
 
@@ -102,7 +126,25 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream,       /* IN */
                             size_t           iovcnt,       /* IN */
                             int32_t          timeout_msec) /* IN */
 {
-   return -1;
+   mongoc_stream_file_t *file = (mongoc_stream_file_t *)stream;
+
+#ifdef _WIN32
+   ssize_t ret = 0;
+   ssize_t nwrite;
+   size_t i;
+
+   for (i = 0; i < iovcnt; i++) {
+      nwrite = _write (file->fd, iov [i].iov_base, iov [i].iov_len);
+      if (nwrite != iov [i].iov_len) {
+         return ret ? ret : -1;
+      }
+      ret += nwrite;
+   }
+
+   return ret;
+#else
+   return writev (file->fd, iov, iovcnt);
+#endif
 }
 
 
