@@ -51,7 +51,7 @@ typedef struct _mongoc_socket_t mongoc_socket_t;
 
 
 mongoc_socket_t *mongoc_socket_accept     (mongoc_socket_t       *sock,
-                                           int                    timeout_msec);
+                                           int64_t                expire_at);
 int              mongoc_socket_bind       (mongoc_socket_t       *sock,
                                            const struct sockaddr *addr,
                                            socklen_t              addrlen);
@@ -59,7 +59,7 @@ int              mongoc_socket_close      (mongoc_socket_t       *socket);
 int              mongoc_socket_connect    (mongoc_socket_t       *sock,
                                            const struct sockaddr *addr,
                                            socklen_t              addrlen,
-                                           int                    timeout_msec);
+                                           int64_t                expire_at);
 void             mongoc_socket_destroy    (mongoc_socket_t       *sock);
 int              mongoc_socket_getsockname(mongoc_socket_t       *sock,
                                            struct sockaddr       *addr,
@@ -73,7 +73,7 @@ ssize_t          mongoc_socket_recv       (mongoc_socket_t       *sock,
                                            void                  *buf,
                                            size_t                 buflen,
                                            int                    flags,
-                                           int                    timeout_msec);
+                                           int64_t                expire_at);
 int              mongoc_socket_setsockopt (mongoc_socket_t       *sock,
                                            int                    level,
                                            int                    optname,
@@ -82,11 +82,11 @@ int              mongoc_socket_setsockopt (mongoc_socket_t       *sock,
 ssize_t          mongoc_socket_send       (mongoc_socket_t       *sock,
                                            const void            *buf,
                                            size_t                 buflen,
-                                           int                    timeout_msec);
+                                           int64_t                expire_at);
 ssize_t          mongoc_socket_sendv      (mongoc_socket_t       *sock,
                                            mongoc_iovec_t        *iov,
                                            size_t                 iovcnt,
-                                           int                    timeout_msec);
+                                           int64_t                expire_at);
 
 
 BSON_END_DECLS

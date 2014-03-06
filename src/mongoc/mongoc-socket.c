@@ -33,6 +33,10 @@ struct _mongoc_socket_t
 };
 
 
+#define OPERATION_EXPIRED(expire_at) \
+   ((expire_at >= 0) && (expire_at < (bson_get_monotonic_time())))
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -77,6 +81,11 @@ _mongoc_socket_setnonblock (int sd)
  *
  *       @events: in most cases should be POLLIN or POLLOUT.
  *
+ *       @expire_at should be an absolute time at which to expire using
+ *       the monotonic clock (bson_get_monotonic_time(), which is in
+ *       microseconds). Or zero to not block at all. Or -1 to block
+ *       forever.
+ *
  * Returns:
  *       true if an event matched. otherwise false.
  *       a timeout will return false.
@@ -89,12 +98,12 @@ _mongoc_socket_setnonblock (int sd)
 
 bool
 #ifdef _WIN32
-_mongoc_socket_wait (SOCKET sd,           /* IN */
+_mongoc_socket_wait (SOCKET   sd,           /* IN */
 #else
-_mongoc_socket_wait (int    sd,           /* IN */
+_mongoc_socket_wait (int      sd,           /* IN */
 #endif
-                     int    events,       /* IN */
-                     int    timeout_msec) /* IN */
+                     int      events,       /* IN */
+                     int64_t  expire_at)    /* IN */
 {
 #ifdef _WIN32
    WSAPOLLFD pfd;
@@ -102,19 +111,31 @@ _mongoc_socket_wait (int    sd,           /* IN */
    struct pollfd pfd;
 #endif
    int ret;
+   int timeout;
 
    ENTRY;
 
    bson_return_val_if_fail (events, false);
+
+   if (expire_at < 0) {
+      timeout = -1;
+   } else if (expire_at == 0) {
+      timeout = 0;
+   } else {
+      timeout = (bson_get_monotonic_time () - expire_at) / 1000L;
+      if (timeout < 0) {
+         timeout = 0;
+      }
+   }
 
    pfd.fd = sd;
    pfd.events = events | POLLERR | POLLHUP;
    pfd.revents = 0;
 
 #ifdef _WIN32
-   ret = WSAPoll (&pfd, 1, timeout_msec);
+   ret = WSAPoll (&pfd, 1, timeout);
 #else
-   ret = poll (&pfd, 1, timeout_msec);
+   ret = poll (&pfd, 1, timeout);
 #endif
 
    if (ret > 0) {
@@ -144,8 +165,8 @@ _mongoc_socket_wait (int    sd,           /* IN */
  */
 
 mongoc_socket_t *
-mongoc_socket_accept (mongoc_socket_t *sock,         /* IN */
-                      int              timeout_msec) /* IN */
+mongoc_socket_accept (mongoc_socket_t *sock,      /* IN */
+                      int64_t          expire_at) /* IN */
 {
    mongoc_socket_t *client;
    struct sockaddr addr;
@@ -174,7 +195,7 @@ again:
 #endif
 
    if (failed && try_again) {
-      if (_mongoc_socket_wait (sock->sd, POLLIN, timeout_msec)) {
+      if (_mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
          GOTO (again);
       }
       RETURN (NULL);
@@ -288,8 +309,8 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
  *
  * mongoc_socket_connect --
  *
- *       Performs a socket connection but will fail after @timeout_msec
- *       milliseconds. If @timeout_msec is zero, it will block.
+ *       Performs a socket connection but will fail if @expire_at is
+ *       reached by the monotonic clock.
  *
  * Returns:
  *       true if successful, false if not.
@@ -301,10 +322,10 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
  */
 
 int
-mongoc_socket_connect (mongoc_socket_t       *sock,         /* IN */
-                       const struct sockaddr *addr,         /* IN */
-                       socklen_t              addrlen,      /* IN */
-                       int                    timeout_msec) /* IN */
+mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
+                       const struct sockaddr *addr,      /* IN */
+                       socklen_t              addrlen,   /* IN */
+                       int64_t                expire_at) /* IN */
 {
    bool try_again = false;
    bool failed = false;
@@ -338,7 +359,7 @@ again:
    }
 
    if (failed && try_again) {
-      if (_mongoc_socket_wait (sock->sd, POLLOUT, timeout_msec)) {
+      if (_mongoc_socket_wait (sock->sd, POLLOUT, expire_at)) {
          GOTO (again);
       }
       RETURN (-1);
@@ -486,8 +507,9 @@ fail:
  *       A portable wrapper around recv() that also respects an absolute
  *       timeout.
  *
- *       @timeout_msec should be the timeout in milliseconds.
- *       If @timeout_msec is zero, then no timeout will be performed.
+ *       @expire_at is 0 for no blocking, -1 for infinite blocking,
+ *       or a time using the monotonic clock to expire. Calculate this
+ *       using bson_get_monotonic_time() + N_MICROSECONDS.
  *
  * Returns:
  *       The number of bytes received on success.
@@ -501,11 +523,11 @@ fail:
  */
 
 ssize_t
-mongoc_socket_recv (mongoc_socket_t *sock,         /* IN */
-                    void            *buf,          /* OUT */
-                    size_t           buflen,       /* IN */
-                    int              flags,        /* IN */
-                    int              timeout_msec) /* IN */
+mongoc_socket_recv (mongoc_socket_t *sock,      /* IN */
+                    void            *buf,       /* OUT */
+                    size_t           buflen,    /* IN */
+                    int              flags,     /* IN */
+                    int64_t          expire_at) /* IN */
 {
    ssize_t ret = 0;
    bool failed = false;
@@ -527,7 +549,7 @@ again:
 #endif
 
    if (failed && try_again) {
-      if (_mongoc_socket_wait (sock->sd, POLLIN, timeout_msec)) {
+      if (_mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
          goto again;
       }
    }
@@ -578,6 +600,10 @@ mongoc_socket_setsockopt (mongoc_socket_t *sock,    /* IN */
  *
  *       A simplified wrapper around mongoc_socket_sendv().
  *
+ *       @expire_at is 0 for no blocking, -1 for infinite blocking,
+ *       or a time using the monotonic clock to expire. Calculate this
+ *       using bson_get_monotonic_time() + N_MICROSECONDS.
+ *
  * Returns:
  *       -1 on failure. number of bytes written on success.
  *
@@ -588,10 +614,10 @@ mongoc_socket_setsockopt (mongoc_socket_t *sock,    /* IN */
  */
 
 ssize_t
-mongoc_socket_send (mongoc_socket_t *sock,         /* IN */
-                    const void      *buf,          /* IN */
-                    size_t           buflen,       /* IN */
-                    int              timeout_msec) /* IN */
+mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
+                    const void      *buf,       /* IN */
+                    size_t           buflen,    /* IN */
+                    int64_t          expire_at) /* IN */
 {
    mongoc_iovec_t iov;
 
@@ -602,7 +628,7 @@ mongoc_socket_send (mongoc_socket_t *sock,         /* IN */
    iov.iov_base = (void *)buf;
    iov.iov_len = buflen;
 
-   return mongoc_socket_sendv (sock, &iov, 1, timeout_msec);
+   return mongoc_socket_sendv (sock, &iov, 1, expire_at);
 }
 
 
@@ -676,6 +702,10 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
  *       This also deals with the structure differences between
  *       WSABUF and struct iovec.
  *
+ *       @expire_at is 0 for no blocking, -1 for infinite blocking,
+ *       or a time using the monotonic clock to expire. Calculate this
+ *       using bson_get_monotonic_time() + N_MICROSECONDS.
+ *
  * Returns:
  *       -1 on failure.
  *       the number of bytes written on success.
@@ -687,27 +717,20 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
  */
 
 ssize_t
-mongoc_socket_sendv (mongoc_socket_t  *sock,         /* IN */
-                     mongoc_iovec_t   *iov,          /* IN */
-                     size_t            iovcnt,       /* IN */
-                     int               timeout_msec) /* IN */
+mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
+                     mongoc_iovec_t   *iov,       /* IN */
+                     size_t            iovcnt,    /* IN */
+                     int64_t           expire_at) /* IN */
 {
-   int64_t expire = 0;
-   int64_t now;
    ssize_t ret = 0;
    ssize_t sent;
    size_t cur = 0;
-   int timeout = 0;
 
    ENTRY;
 
    bson_return_val_if_fail (sock, -1);
    bson_return_val_if_fail (iov, -1);
    bson_return_val_if_fail (iovcnt, -1);
-
-   if (timeout_msec) {
-      expire = (bson_get_monotonic_time () / 1000UL) + timeout_msec;
-   }
 
    for (;;) {
       sent = _mongoc_socket_try_sendv (sock, &iov [cur], iovcnt - cur);
@@ -729,6 +752,9 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,         /* IN */
       if (sent > 0) {
          ret += sent;
          mongoc_counter_streams_egress_add (sent);
+      } else if (OPERATION_EXPIRED (expire_at)) {
+         errno = ETIMEDOUT;
+         RETURN (ret ? ret : -1);
       }
 
       /*
@@ -757,22 +783,9 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,         /* IN */
       BSON_ASSERT (iov [cur].iov_len);
 
       /*
-       * Determine how long we can block for in poll().
-       */
-      if (timeout_msec) {
-         now = (bson_get_monotonic_time () / 1000UL);
-         if ((timeout = (int)(expire - now)) < 0) {
-            if (ret == 0) {
-               errno = ETIMEDOUT;
-            }
-            RETURN (ret ? ret : -1);
-         }
-      }
-
-      /*
        * Block on poll() until our desired condition is met.
        */
-      if (!_mongoc_socket_wait (sock->sd, POLLOUT, timeout)) {
+      if (!_mongoc_socket_wait (sock->sd, POLLOUT, expire_at)) {
          if (ret == 0){
             errno = ETIMEDOUT;
          }
