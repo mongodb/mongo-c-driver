@@ -133,11 +133,19 @@ _mongoc_socket_wait (int      sd,           /* IN */
    }
 
    pfd.fd = sd;
+#ifdef _WIN32
+   pfd.events = events;
+#else
    pfd.events = events | POLLERR | POLLHUP;
+#endif
    pfd.revents = 0;
 
 #ifdef _WIN32
    ret = WSAPoll (&pfd, 1, timeout);
+   if (ret == SOCKET_ERROR) {
+      MONGOC_WARNING ("WSAGetLastError(): %d", WSAGetLastError ());
+      ret = -1;
+   }
 #else
    ret = poll (&pfd, 1, timeout);
 #endif
