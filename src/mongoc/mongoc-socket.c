@@ -23,6 +23,10 @@
 #include "mongoc-trace.h"
 
 
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "socket"
+
+
 struct _mongoc_socket_t
 {
 #ifdef _WIN32
@@ -122,7 +126,7 @@ _mongoc_socket_wait (int      sd,           /* IN */
    } else if (expire_at == 0) {
       timeout = 0;
    } else {
-      timeout = (bson_get_monotonic_time () - expire_at) / 1000L;
+      timeout = (expire_at - bson_get_monotonic_time ()) / 1000L;
       if (timeout < 0) {
          timeout = 0;
       }

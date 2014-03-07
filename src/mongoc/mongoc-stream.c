@@ -29,8 +29,11 @@
 #include "mongoc-trace.h"
 
 
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "stream"
+
 #ifndef MONGOC_DEFAULT_TIMEOUT_MSEC
-#define MONGOC_DEFAULT_TIMEOUT_MSEC (60L * 60L * 1000L)
+# define MONGOC_DEFAULT_TIMEOUT_MSEC (60L * 60L * 1000L)
 #endif
 
 

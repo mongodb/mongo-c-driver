@@ -20,6 +20,10 @@
 #include "mongoc-trace.h"
 
 
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "stream"
+
+
 typedef struct
 {
    mongoc_stream_t  vtable;
