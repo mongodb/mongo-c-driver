@@ -371,7 +371,7 @@ again:
 #ifdef _WIN32
    if (ret == SOCKET_ERROR) {
       failed = true;
-      try_again = (WSAGetLastError () == WSAEINPROGRESS);
+      try_again = (WSAGetLastError () == WSAEWOULDBLOCK);
 #else
    if (ret == -1) {
       failed = true;
