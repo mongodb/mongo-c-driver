@@ -730,6 +730,9 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    } else {
       ret = -1;
    }
+   if (WSAGetLastError () == WSAEWOULDBLOCK) {
+      errno = EWOULDBLOCK;
+   }
 #else
    msg.msg_iov = iov;
    msg.msg_iovlen = iovcnt;
