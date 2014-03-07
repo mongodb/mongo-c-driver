@@ -692,6 +692,65 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
  *
  * _mongoc_socket_try_sendv --
  *
+ *       Win32 variant of vectored write. Does not actually perform
+ *       vectored write.
+ *
+ *       Helper to send a vector of data on Windows since it does not
+ *       allow doing so with WSASendMsg unless the socket is an
+ *       overlapped io socket (which they are not).
+ *
+ * Returns:
+ *       the number of bytes sent or -1.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+#ifdef _WIN32
+ssize_t
+_mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
+                          mongoc_iovec_t  *iov,    /* IN */
+                          size_t           iovcnt) /* IN */
+{
+   ssize_t ret = 0;
+   int wrote;
+   int i;
+
+   ENTRY;
+
+   BSON_ASSERT (sock);
+   BSON_ASSERT (iov);
+   BSON_ASSERT (iovcnt);
+
+   for (i = 0; i < iovcnt; i++) {
+      wrote = send (sock->sd, iov [i].iov_base, iov [i].iov_len, 0);
+      if (wrote == SOCKET_ERROR) {
+         if (WSAGetLastError () == WSAEWOULDBLOCK) {
+            errno = EWOULDBLOCK;
+            RETURN (-1);
+         }
+         RETURN (ret ? ret : -1);
+      }
+
+      ret += wrote;
+
+      if (wrote != iov [i].iov_len) {
+         RETURN (ret);
+      }
+   }
+
+   RETURN (ret);
+}
+#endif
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_socket_try_sendv --
+ *
  *       Helper used by mongoc_socket_sendv() to try to write as many
  *       bytes to the underlying socket until the socket buffer is full.
  *
@@ -706,17 +765,13 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
  *--------------------------------------------------------------------------
  */
 
+#ifndef _WIN32
 ssize_t
 _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
                           mongoc_iovec_t  *iov,    /* IN */
                           size_t           iovcnt) /* IN */
 {
-#ifdef _WIN32
-   WSAMSG msg;
-   DWORD dwNumberOfBytesSent = 0;
-#else
    struct msghdr msg;
-#endif
    ssize_t ret = -1;
 
    ENTRY;
@@ -729,26 +784,13 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 
    DUMP_IOVEC (sendbuf, iov, iovcnt);
 
-#ifdef _WIN32
-   msg.lpBuffers = (LPWSABUF)iov;
-   msg.dwBufferCount = (DWORD)iovcnt;
-   ret = WSASendMsg (sock->sd, &msg, 0, &dwNumberOfBytesSent, NULL, NULL);
-   if (ret == 0) {
-      ret = dwNumberOfBytesSent;
-   } else {
-      ret = -1;
-   }
-   if ((ret == -1) && (WSAGetLastError () == WSAEWOULDBLOCK)) {
-      errno = EWOULDBLOCK;
-   }
-#else
    msg.msg_iov = iov;
    msg.msg_iovlen = iovcnt;
    ret = sendmsg (sock->sd, &msg, 0);
-#endif
 
    RETURN (ret);
 }
+#endif
 
 
 /*
