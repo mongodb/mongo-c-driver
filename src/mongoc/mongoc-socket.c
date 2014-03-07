@@ -160,7 +160,8 @@ _mongoc_socket_setnodelay (int sd)    /* IN */
    int optval = 1;
    int ret;
 
-   ret = setsockopt (sd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof optval);
+   ret = setsockopt (sd, IPPROTO_TCP, TCP_NODELAY,
+                     (char *)&optval, sizeof optval);
 
    return (ret == 0);
 }
@@ -380,6 +381,9 @@ again:
          ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR,
                            (char *)&optval, &optlen);
          failed = ((ret == -1) || (optval != 0));
+         if (failed) {
+            errno = optval;
+         }
       }
    }
 

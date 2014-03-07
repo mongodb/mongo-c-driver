@@ -84,7 +84,8 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    mongoc_socket_t *sock;
    struct addrinfo hints;
    struct addrinfo *result, *rp;
-   uint32_t connecttimeoutms = DEFAULT_CONNECTTIMEOUTMS;
+   int32_t connecttimeoutms = DEFAULT_CONNECTTIMEOUTMS;
+   int64_t expire_at;
    const bson_t *options;
    bson_iter_t iter;
    char portstr [8];
@@ -99,8 +100,13 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    if ((options = mongoc_uri_get_options (uri)) &&
        bson_iter_init_find (&iter, options, "connecttimeoutms") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
-      connecttimeoutms = bson_iter_int32(&iter);
+      if (!(connecttimeoutms = bson_iter_int32(&iter))) {
+         connecttimeoutms = DEFAULT_CONNECTTIMEOUTMS;
+      }
    }
+
+   BSON_ASSERT (connecttimeoutms);
+   expire_at = bson_get_monotonic_time () + (connecttimeoutms * 1000L);
 
    bson_snprintf (portstr, sizeof portstr, "%hu", host->port);
 
@@ -137,7 +143,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
       if (0 != mongoc_socket_connect (sock,
                                       rp->ai_addr,
                                       (socklen_t)rp->ai_addrlen,
-                                      connecttimeoutms)) {
+                                      expire_at)) {
          mongoc_socket_destroy (sock);
          sock = NULL;
          continue;
