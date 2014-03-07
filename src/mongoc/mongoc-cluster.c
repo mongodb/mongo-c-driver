@@ -530,10 +530,10 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    ENTRY;
 
-   bson_return_if_fail(cluster);
-   bson_return_if_fail(uri);
+   bson_return_if_fail (cluster);
+   bson_return_if_fail (uri);
 
-   memset(cluster, 0, sizeof *cluster);
+   memset (cluster, 0, sizeof *cluster);
 
    b = mongoc_uri_get_options(uri);
    hosts = mongoc_uri_get_hosts(uri);
@@ -550,7 +550,9 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
    }
 
    if (bson_iter_init_find_case(&iter, b, "sockettimeoutms")) {
-      sockettimeoutms = bson_iter_int32(&iter);
+      if (!(sockettimeoutms = bson_iter_int32 (&iter))) {
+         sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC;
+      }
    }
 
    cluster->uri = mongoc_uri_copy(uri);
@@ -2587,7 +2589,7 @@ bool
 _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                           mongoc_rpc_t     *rpc,
                           mongoc_buffer_t  *buffer,
-                          uint32_t     hint,
+                          uint32_t          hint,
                           bson_error_t     *error)
 {
    mongoc_cluster_node_t *node;

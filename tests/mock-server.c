@@ -201,6 +201,8 @@ mock_server_worker (void *data)
    int32_t msg_len;
    void **closure = data;
 
+   ENTRY;
+
    BSON_ASSERT(closure);
 
    server = closure[0];
@@ -209,24 +211,24 @@ mock_server_worker (void *data)
    _mongoc_buffer_init(&buffer, NULL, 0, NULL);
 
 again:
-   if (_mongoc_buffer_fill (&buffer, stream, 4, INT_MAX, &error) == -1) {
+   if (_mongoc_buffer_fill (&buffer, stream, 4, -1, &error) == -1) {
       MONGOC_WARNING ("%s", error.message);
-      goto failure;
+      GOTO (failure);
    }
 
    assert (buffer.len >= 4);
 
-   memcpy(&msg_len, buffer.data + buffer.off, 4);
-   msg_len = BSON_UINT32_FROM_LE(msg_len);
+   memcpy (&msg_len, buffer.data + buffer.off, 4);
+   msg_len = BSON_UINT32_FROM_LE (msg_len);
 
    if (msg_len < 16) {
       MONGOC_WARNING ("No data");
-      goto failure;
+      GOTO (failure);
    }
 
-   if (_mongoc_buffer_fill (&buffer, stream, msg_len, INT_MAX, &error) == -1) {
+   if (_mongoc_buffer_fill (&buffer, stream, msg_len, -1, &error) == -1) {
       MONGOC_WARNING ("%s", error.message);
-      goto failure;
+      GOTO (failure);
    }
 
    assert (buffer.len >= msg_len);
@@ -249,14 +251,14 @@ again:
    buffer.off = 0;
    buffer.len -= msg_len;
 
-   goto again;
+   GOTO (again);
 
 failure:
-   mongoc_stream_close(stream);
-   mongoc_stream_destroy(stream);
+   mongoc_stream_close (stream);
+   mongoc_stream_destroy (stream);
    bson_free(closure);
 
-   return NULL;
+   RETURN (NULL);
 }
 
 
@@ -352,9 +354,6 @@ mock_server_run (mock_server_t *server)
          perror ("Failed to accept client socket");
          return -1;
       }
-
-      optval = 1;
-      mongoc_socket_setsockopt (csock, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof optval);
 
       stream = mongoc_stream_socket_new (csock);
       closure = bson_malloc0 (sizeof(void*) * 2);

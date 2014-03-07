@@ -577,7 +577,7 @@ again:
 
    if (failed && try_again) {
       if (_mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
-         goto again;
+         GOTO (again);
       }
    }
 
