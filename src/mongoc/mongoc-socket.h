@@ -34,6 +34,7 @@
 # include <arpa/inet.h>
 # include <poll.h>
 # include <netdb.h>
+# include <netinet/in.h>
 # include <netinet/tcp.h>
 # include <sys/types.h>
 # include <sys/socket.h>
