@@ -738,7 +738,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    } else {
       ret = -1;
    }
-   if (WSAGetLastError () == WSAEWOULDBLOCK) {
+   if ((ret == -1) && (WSAGetLastError () == WSAEWOULDBLOCK)) {
       errno = EWOULDBLOCK;
    }
 #else
