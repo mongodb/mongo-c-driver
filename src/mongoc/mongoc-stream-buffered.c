@@ -22,6 +22,7 @@
 #include "mongoc-log.h"
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-private.h"
+#include "mongoc-trace.h"
 
 
 typedef struct
@@ -147,13 +148,16 @@ mongoc_stream_buffered_writev (mongoc_stream_t *stream,       /* IN */
                                int32_t          timeout_msec) /* IN */
 {
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
+   ssize_t ret;
+
+   ENTRY;
 
    bson_return_val_if_fail(buffered, -1);
 
-   return mongoc_stream_writev(buffered->base_stream,
-                               iov,
-                               iovcnt,
-                               timeout_msec);
+   ret = mongoc_stream_writev(buffered->base_stream, iov, iovcnt,
+                              timeout_msec);
+
+   RETURN (ret);
 }
 
 
@@ -196,6 +200,8 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
    size_t total_bytes = 0;
    size_t i;
 
+   ENTRY;
+
    bson_return_val_if_fail(buffered, -1);
 
    for (i = 0; i < iovcnt; i++) {
@@ -210,7 +216,7 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
       MONGOC_WARNING ("Failure to buffer %u bytes: %s",
                       (unsigned)total_bytes,
                       error.message);
-      return -1;
+      RETURN (-1);
    }
 
    BSON_ASSERT(buffered->buffer.len >= total_bytes);
@@ -223,7 +229,7 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
       buffered->buffer.len -= iov[i].iov_len;
    }
 
-   return total_bytes;
+   RETURN (total_bytes);
 }
 
 
