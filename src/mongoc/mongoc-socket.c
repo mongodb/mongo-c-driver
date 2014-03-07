@@ -157,13 +157,25 @@ _mongoc_socket_setnodelay (SOCKET sd) /* IN */
 _mongoc_socket_setnodelay (int sd)    /* IN */
 #endif
 {
+#if _WIN32
+   BOOL optval = 1;
+#else
    int optval = 1;
+#endif
    int ret;
+
+   ENTRY;
 
    ret = setsockopt (sd, IPPROTO_TCP, TCP_NODELAY,
                      (char *)&optval, sizeof optval);
 
-   return (ret == 0);
+#ifdef _WIN32
+   if (ret == SOCKET_ERROR) {
+      MONGOC_WARNING ("WSAGetLastError(): %d", (int)WSAGetLastError ());
+   }
+#endif
+
+   RETURN (ret == 0);
 }
 
 

@@ -89,7 +89,6 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    const bson_t *options;
    bson_iter_t iter;
    char portstr [8];
-   int optval;
    int s;
 
    ENTRY;
@@ -162,13 +161,6 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    }
 
    freeaddrinfo (result);
-
-   optval = 1;
-
-   if (0 != mongoc_socket_setsockopt (sock, IPPROTO_TCP, TCP_NODELAY,
-                                      &optval, sizeof optval)) {
-      MONGOC_WARNING ("Failed to set TCP_NODELAY");
-   }
 
    return mongoc_stream_socket_new (sock);
 }
