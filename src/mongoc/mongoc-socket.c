@@ -157,7 +157,7 @@ _mongoc_socket_setnodelay (SOCKET sd) /* IN */
 _mongoc_socket_setnodelay (int sd)    /* IN */
 #endif
 {
-#if _WIN32
+#ifdef _WIN32
    BOOL optval = 1;
 #else
    int optval = 1;
