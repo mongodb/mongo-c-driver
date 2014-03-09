@@ -99,23 +99,27 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream,       /* IN */
                            int32_t          timeout_msec) /* IN */
 {
    mongoc_stream_file_t *file = (mongoc_stream_file_t *)stream;
+   ssize_t ret = 0;
 
 #ifdef _WIN32
-   ssize_t ret = 0;
    ssize_t nread;
    size_t i;
+
+   ENTRY;
 
    for (i = 0; i < iovcnt; i++) {
       nread = _read (file->fd, iov [i].iov_base, iov [i].iov_len);
       if (nread != iov [i].iov_len) {
-         return ret ? ret : -1;
+         RETURN (ret ? ret : -1);
       }
       ret += nread;
    }
 
-   return ret;
+   RETURN (ret);
 #else
-   return readv (file->fd, iov, iovcnt);
+   ENTRY;
+   ret = readv (file->fd, iov, iovcnt);
+   RETURN (ret);
 #endif
 }
 
