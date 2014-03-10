@@ -19,11 +19,27 @@
 #include <fcntl.h>
 #include <mongoc.h>
 
+
+static bool
+mongoc_dump_mkdir_p (const char *path,
+int         mode)
+{
 #ifdef _WIN32
-#define mongoc_mkdir(_a, _b) mkdir(_a)
+   if (0 != _access (path, 0)) {
+      if (0 != _mkdir (path)) {
+         return false;
+      }
+   }
 #else
-#define mongoc_mkdir mkdir
+   if (0 != access (path, F_OK)) {
+      if (0 != mkdir (path, mode)) {
+         return false;
+      }
+   }
 #endif
+
+   return true;
+}
 
 
 static int
@@ -42,9 +58,15 @@ mongoc_dump_collection (mongoc_client_t *client,
    int ret = EXIT_SUCCESS;
 
    path = bson_strdup_printf ("dump/%s/%s.bson", database, collection);
+#ifdef _WIN32
+   if (0 == _access (path, 0)) {
+      _unlink (path);
+   }
+#else
    if (0 == access (path, F_OK)) {
       unlink (path);
    }
+#endif
 
    stream = mongoc_stream_file_new_for_path (path, O_RDWR|O_CREAT, 0664);
    col = mongoc_client_get_collection (client, database, collection);
@@ -95,7 +117,7 @@ mongoc_dump_database (mongoc_client_t *client,
    BSON_ASSERT (database);
 
    path = bson_strdup_printf ("dump/%s", database);
-   if (0 != access (path, F_OK) && 0 != mongoc_mkdir (path, 0750)) {
+   if (!mongoc_dump_mkdir_p (path, 0750)) {
       fprintf (stderr, "failed to create directory \"%s\"", path);
       bson_free (path);
       return EXIT_FAILURE;
@@ -133,7 +155,7 @@ mongoc_dump (mongoc_client_t *client,
    char **str;
    int i;
 
-   if (0 != access ("dump", F_OK) && 0 != mongoc_mkdir ("dump", 0750)) {
+   if (!mongoc_dump_mkdir_p ("dump", 0750)) {
       perror ("Failed to create directory \"dump\"");
       return EXIT_FAILURE;
    }

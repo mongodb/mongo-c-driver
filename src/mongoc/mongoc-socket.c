@@ -126,7 +126,7 @@ _mongoc_socket_wait (int      sd,           /* IN */
    } else if (expire_at == 0) {
       timeout = 0;
    } else {
-      timeout = (expire_at - bson_get_monotonic_time ()) / 1000L;
+      timeout = (int)((expire_at - bson_get_monotonic_time ()) / 1000L);
       if (timeout < 0) {
          timeout = 0;
       }
@@ -716,7 +716,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 {
    ssize_t ret = 0;
    int wrote;
-   int i;
+   size_t i;
 
    ENTRY;
 

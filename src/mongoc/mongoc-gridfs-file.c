@@ -355,7 +355,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 {
    uint32_t bytes_read = 0;
    int32_t r;
-   int i;
+   size_t i;
    uint32_t iov_pos;
 
    ENTRY;
@@ -413,7 +413,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 {
    uint32_t bytes_written = 0;
    int32_t r;
-   int i;
+   size_t i;
    uint32_t iov_pos;
 
    ENTRY;

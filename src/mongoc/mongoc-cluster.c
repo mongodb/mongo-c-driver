@@ -47,6 +47,10 @@
 #define MONGOC_LOG_DOMAIN "cluster"
 
 
+#ifdef _WIN32
+# define strcasecmp _stricmp
+#endif
+
 #ifndef MAX_RETRY_COUNT
 #define MAX_RETRY_COUNT 3
 #endif
@@ -664,7 +668,7 @@ _mongoc_cluster_select (mongoc_cluster_t             *cluster,
    int32_t nearest = -1;
    bool need_primary;
    bool need_secondary;
-   int i;
+   unsigned i;
 
    ENTRY;
 

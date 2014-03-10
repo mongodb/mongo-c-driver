@@ -520,7 +520,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
    ssize_t ret = 0;
    size_t i;
    int read_ret;
-   int iov_pos = 0;
+   size_t iov_pos = 0;
    int64_t now;
    int64_t expire;
 
@@ -554,7 +554,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
          ret += read_ret;
 
          if (read_ret != iov[i].iov_len) {
-            if (read_ret >= min_bytes) {
+            if ((size_t)read_ret >= min_bytes) {
                return read_ret;
             }
 
