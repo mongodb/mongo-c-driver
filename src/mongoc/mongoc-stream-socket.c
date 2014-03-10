@@ -145,15 +145,11 @@ _mongoc_stream_socket_readv (mongoc_stream_t *stream,
                                   0,
                                   expire_at);
 
-      if (nread == -1) {
+      if (nread <= 0) {
          if (ret >= (ssize_t)min_bytes) {
             RETURN (ret);
          }
          RETURN (-1);
-      }
-
-      if (ret == 0) {
-         RETURN (ret);
       }
 
       ret += nread;
