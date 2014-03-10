@@ -15,6 +15,11 @@
  */
 
 
+#ifdef _WIN32
+# include <io.h>
+# include <share.h>
+#endif
+
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-file.h"
 #include "mongoc-trace.h"
@@ -44,7 +49,11 @@ _mongoc_stream_file_close (mongoc_stream_t *stream)
    bson_return_val_if_fail (file, -1);
 
    if (file->fd != -1) {
+#ifdef _WIN32
+      ret = _close (file->fd);
+#else
       ret = close (file->fd);
+#endif
       file->fd = -1;
       RETURN (ret);
    }
@@ -176,12 +185,14 @@ mongoc_stream_file_new_for_path (const char *path,  /* IN */
                                  int         flags, /* IN */
                                  int         mode)  /* IN */
 {
-   int fd;
+   int fd = -1;
 
    bson_return_val_if_fail (path, NULL);
 
 #ifdef _WIN32
-   fd = _open (path, (flags | _O_BINARY), mode);
+   if (_sopen_s (&fd, path, (_O_RDONLY | _O_BINARY), _SH_DENYNO, 0) != 0) {
+      fd = -1;
+   }
 #else
    fd = open (path, flags, mode);
 #endif

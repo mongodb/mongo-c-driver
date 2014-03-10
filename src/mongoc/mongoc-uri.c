@@ -26,7 +26,12 @@
 
 
 #ifndef MONGOC_DEFAULT_PORT
-#define MONGOC_DEFAULT_PORT 27017
+# define MONGOC_DEFAULT_PORT 27017
+#endif
+
+
+#if defined(_WIN32) && !defined(strcasecmp)
+# define strcasecmp _stricmp
 #endif
 
 
