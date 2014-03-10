@@ -61,10 +61,6 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cluster.c
    ${SOURCE_DIR}/src/mongoc/mongoc-collection.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-compat-unix.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-compat-win32.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-compat-socket-unix.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-compat-socket-win32.c
    ${SOURCE_DIR}/src/mongoc/mongoc-counters.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
@@ -85,8 +81,9 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-stream-unix.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.c
    ${SOURCE_DIR}/src/mongoc/mongoc-util.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
@@ -99,9 +96,6 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.h
    ${SOURCE_DIR}/src/mongoc/mongoc-collection.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-compat.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-compat-socket-win32.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-compat-socket-unix.h
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor.h
    ${SOURCE_DIR}/src/mongoc/mongoc-database.h
    ${SOURCE_DIR}/src/mongoc/mongoc-error.h
@@ -119,8 +113,9 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-stream-unix.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.h
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
 )
