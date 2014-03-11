@@ -52,6 +52,9 @@ log_handler (mongoc_log_level_t  log_level,
              const char         *message,
              void               *user_data)
 {
+   if (log_level < MONGOC_LOG_LEVEL_INFO) {
+      mongoc_log_default_handler (log_level, log_domain, message, NULL);
+   }
 }
 
 
