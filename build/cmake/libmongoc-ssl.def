@@ -127,7 +127,7 @@ mongoc_stream_readv
 mongoc_stream_setsockopt
 mongoc_stream_socket_new
 mongoc_stream_tls_check_cert
-mongoc_stream_tls_do_handleshake
+mongoc_stream_tls_do_handshake
 mongoc_stream_tls_new
 mongoc_stream_uncork
 mongoc_stream_writev
