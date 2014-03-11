@@ -237,6 +237,8 @@ mongoc_add_test(test-sharded-cluster FALSE
    ${SOURCE_DIR}/tests/test-sharded-cluster.c
    ${SOURCE_DIR}/tests/mongoc-tests.c
    ${SOURCE_DIR}/tests/ha-test.c)
+mongoc_add_test(echo-server FALSE
+   ${SOURCE_DIR}/tests/echo-server.c)
 
 mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
 add_test(NAME test-libmongoc COMMAND test-libmongoc -f -p)
