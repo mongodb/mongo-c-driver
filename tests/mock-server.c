@@ -219,7 +219,7 @@ mock_server_worker (void *data)
 
 again:
    if (_mongoc_buffer_fill (&buffer, stream, 4, -1, &error) == -1) {
-      MONGOC_WARNING ("%s", error.message);
+      MONGOC_WARNING ("%s(): %s", __FUNCTION__, error.message);
       GOTO (failure);
    }
 
@@ -234,7 +234,7 @@ again:
    }
 
    if (_mongoc_buffer_fill (&buffer, stream, msg_len, -1, &error) == -1) {
-      MONGOC_WARNING ("%s", error.message);
+      MONGOC_WARNING ("%s(): %s", __FUNCTION__, error.message);
       GOTO (failure);
    }
 
@@ -243,7 +243,7 @@ again:
    DUMP_BYTES (buffer, buffer.data + buffer.off, buffer.len);
 
    if (!_mongoc_rpc_scatter(&rpc, buffer.data + buffer.off, msg_len)) {
-      MONGOC_WARNING ("Failed to scatter");
+      MONGOC_WARNING ("%s(): Failed to scatter", __FUNCTION__);
       goto failure;
    }
 
@@ -327,6 +327,8 @@ mock_server_run (mock_server_t *server)
 
    bson_return_val_if_fail (server, -1);
    bson_return_val_if_fail (!server->sock, -1);
+
+   MONGOC_INFO ("Starting mock server on port %d.", server->port);
 
    ssock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
    if (!ssock) {
