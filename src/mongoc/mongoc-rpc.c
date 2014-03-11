@@ -73,7 +73,7 @@
    _mongoc_array_append_val(array, iov);
 #define IOVEC_ARRAY_FIELD(_name) \
    do { \
-      size_t _i; \
+      ssize_t _i; \
       BSON_ASSERT(rpc->n_##_name); \
       for (_i = 0; _i < rpc->n_##_name; _i++) { \
          BSON_ASSERT(rpc->_name[_i].iov_len); \
@@ -145,7 +145,7 @@
 #define RAW_BUFFER_FIELD(_name)
 #define INT64_ARRAY_FIELD(_len, _name) \
    do { \
-      size_t i; \
+      ssize_t i; \
       for (i = 0; i < rpc->_len; i++) { \
          rpc->_name[i] = BSON_UINT64_FROM_LE(rpc->_name[i]); \
       } \
@@ -175,7 +175,7 @@
    }
 #define INT64_ARRAY_FIELD(_len, _name) \
    do { \
-      size_t i; \
+      ssize_t i; \
       rpc->_len = BSON_UINT32_FROM_LE(rpc->_len); \
       for (i = 0; i < rpc->_len; i++) { \
          rpc->_name[i] = BSON_UINT64_FROM_LE(rpc->_name[i]); \
@@ -249,7 +249,7 @@
    } while (0);
 #define IOVEC_ARRAY_FIELD(_name) \
    do { \
-      size_t _i; \
+      ssize_t _i; \
       size_t _j; \
       for (_i = 0; _i < rpc->n_##_name; _i++) { \
          printf("  "#_name" : "); \
@@ -265,7 +265,7 @@
    if (rpc->_check) { _code }
 #define RAW_BUFFER_FIELD(_name) \
    { \
-      size_t __i; \
+      ssize_t __i; \
       printf("  "#_name" :"); \
       for (__i = 0; __i < rpc->_name##_len; __i++) { \
          uint8_t u; \
@@ -276,7 +276,7 @@
    }
 #define INT64_ARRAY_FIELD(_len, _name) \
    do { \
-      size_t i; \
+      ssize_t i; \
       for (i = 0; i < rpc->_len; i++) { \
          printf("  "#_name" : %" PRIi64 "\n", (int64_t)rpc->_name[i]); \
       } \
@@ -368,7 +368,7 @@
    } while (0);
 #define BSON_FIELD(_name) \
    do { \
-      int32_t __l; \
+      uint32_t __l; \
       if (buflen < 4) { \
          return false; \
       } \
@@ -590,9 +590,9 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
 
 
 bool
-_mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
+_mongoc_rpc_scatter (mongoc_rpc_t  *rpc,
                      const uint8_t *buf,
-                     size_t              buflen)
+                     size_t         buflen)
 {
    mongoc_opcode_t opcode;
 
