@@ -100,5 +100,7 @@ main (int   argc,   /* IN */
    bson_free(gTestCAFile);
    bson_free(gTestPEMFileLocalhost);
 
+   mongoc_cleanup();
+
    return 0;
 }

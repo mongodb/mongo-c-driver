@@ -80,5 +80,7 @@ main (int   argc,
       mongoc_thread_create (&thread, client_thread, client_stream);
    }
 
+   mongoc_cleanup();
+
    return 0;
 }

@@ -125,5 +125,7 @@ main (int   argc,
    mongoc_uri_destroy(uri);
    mongoc_client_pool_destroy(pool);
 
+   mongoc_cleanup();
+
    return 0;
 }

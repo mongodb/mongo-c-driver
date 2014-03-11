@@ -62,6 +62,25 @@ mongoc_init (void)
    mongoc_once (&once, _mongoc_do_init);
 }
 
+static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
+{
+#ifdef MONGOC_ENABLE_SSL
+   _mongoc_ssl_cleanup();
+#endif
+
+#ifdef _WIN32
+   WSASCleanup ();
+#endif
+
+   MONGOC_ONCE_RETURN;
+}
+
+void
+mongoc_cleanup (void)
+{
+   static mongoc_once_t once = MONGOC_ONCE_INIT;
+   mongoc_once (&once, _mongoc_do_cleanup);
+}
 
 /*
  * On GCC, just use __attribute__((constructor)) to perform initialization
@@ -73,5 +92,12 @@ static void
 _mongoc_init_ctor (void)
 {
    mongoc_init ();
+}
+
+static void _mongoc_init_dtor (void) __attribute__((destructor));
+static void
+_mongoc_init_dtor (void)
+{
+   mongoc_cleanup ();
 }
 #endif

@@ -50,6 +50,9 @@ void
 _mongoc_ssl_init (void)
    BSON_GNUC_INTERNAL;
 
+void
+_mongoc_ssl_cleanup (void)
+   BSON_GNUC_INTERNAL;
 
 BSON_END_DECLS
 
