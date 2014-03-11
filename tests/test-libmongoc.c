@@ -63,7 +63,7 @@ set_mongoc_test_host(void)
 #ifdef _MSC_VER
    size_t buflen;
 
-   if (!getenv_s(&buflen, MONGOC_TEST_HOST, sizeof MONGOC_TEST_HOST, "MONGOC_TEST_HOST")) {
+   if (0 != getenv_s (&buflen, MONGOC_TEST_HOST, sizeof MONGOC_TEST_HOST, "MONGOC_TEST_HOST")) {
       bson_strncpy (MONGOC_TEST_HOST, "localhost", sizeof MONGOC_TEST_HOST);
    }
 #else
@@ -85,7 +85,7 @@ main (int   argc,
 
    mongoc_init();
 
-   set_mongoc_test_host();
+   set_mongoc_test_host ();
 
    mongoc_log_set_handler (log_handler, NULL);
 
