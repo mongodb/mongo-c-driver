@@ -39,9 +39,9 @@ find_and_modify (mongoc_collection_t *collection, /* IN */
                  const bson_t *sort,              /* IN */
                  const bson_t *update,            /* IN */
                  const bson_t *fields,            /* IN */
-                 bool remove,              /* IN */
-                 bool upsert,              /* IN */
-                 bool _new,                /* IN */
+                 bool _remove,                    /* IN */
+                 bool upsert,                     /* IN */
+                 bool _new,                       /* IN */
                  bson_t *reply,                   /* OUT */
                  bson_error_t *error)             /* OUT */
 {
@@ -51,7 +51,7 @@ find_and_modify (mongoc_collection_t *collection, /* IN */
 
    BSON_ASSERT (collection);
    BSON_ASSERT (query);
-   BSON_ASSERT (update || remove);
+   BSON_ASSERT (update || _remove);
 
    name = mongoc_collection_get_name (collection);
 
@@ -67,8 +67,8 @@ find_and_modify (mongoc_collection_t *collection, /* IN */
       bson_append_document (&command, "update", -1, update);
    if (fields)
       bson_append_document (&command, "fields", -1, fields);
-   if (remove)
-      bson_append_bool (&command, "remove", -1, remove);
+   if (_remove)
+      bson_append_bool (&command, "remove", -1, _remove);
    if (upsert)
       bson_append_bool (&command, "upsert", -1, upsert);
    if (_new)
