@@ -233,10 +233,26 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
                              avail_bytes, min_bytes, timeout_msec);
 
    if (ret == -1) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failed to buffer %u bytes within %d milliseconds.",
+                      (unsigned)min_bytes, (int)timeout_msec);
       RETURN (-1);
    }
 
    buffer->len += ret;
 
-   RETURN ((buffer->len < min_bytes) ? -1 : buffer->len);
+   if (buffer->len < min_bytes) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Could only buffer %u of %u bytes in %d milliseconds.",
+                      (unsigned)buffer->len,
+                      (unsigned)min_bytes,
+                      (int)timeout_msec);
+      RETURN (-1);
+   }
+
+   RETURN (buffer->len);
 }
