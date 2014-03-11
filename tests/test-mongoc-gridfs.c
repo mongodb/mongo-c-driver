@@ -127,6 +127,7 @@ test_create_from_stream (void)
    mongoc_gridfs_drop (gridfs, &error);
 
    stream = mongoc_stream_file_new_for_path ("tests/binary/gridfs.dat", O_RDONLY, 0);
+   assert (stream);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
    assert (file);
