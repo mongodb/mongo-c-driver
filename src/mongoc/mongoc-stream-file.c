@@ -190,7 +190,7 @@ mongoc_stream_file_new_for_path (const char *path,  /* IN */
    bson_return_val_if_fail (path, NULL);
 
 #ifdef _WIN32
-   if (_sopen_s (&fd, path, (_O_RDONLY | _O_BINARY), _SH_DENYNO, 0) != 0) {
+   if (_sopen_s (&fd, path, (flags | _O_BINARY), _SH_DENYNO, 0) != 0) {
       fd = -1;
    }
 #else
