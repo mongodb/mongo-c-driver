@@ -458,7 +458,7 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
    bool try_again = false;
    bool failed = false;
    int ret;
-   int optval = 0;
+   int optval;
    socklen_t optlen = sizeof optval;
 
    ENTRY;
@@ -471,7 +471,6 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
 
    _mongoc_socket_capture_errno (sock);
 
-again:
 #ifdef _WIN32
    if (ret == SOCKET_ERROR) {
 #else
@@ -479,19 +478,16 @@ again:
 #endif
       failed = true;
       try_again = _mongoc_socket_errno_is_again (sock);
-      if (try_again) {
-         ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR,
-                           (char *)&optval, &optlen);
-         failed = ((ret == -1) || (optval != 0));
-         if (failed) {
-            sock->errno_ = optval;
-         }
-      }
    }
 
    if (failed && try_again) {
       if (_mongoc_socket_wait (sock->sd, POLLOUT, expire_at)) {
-         GOTO (again);
+         optval = -1;
+         ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR,
+                           (char *)&optval, &optlen);
+         if ((ret == 0) && (optval == 0)) {
+            RETURN (0);
+         }
       }
       RETURN (-1);
    } else if (failed) {
