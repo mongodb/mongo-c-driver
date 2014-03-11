@@ -168,8 +168,8 @@ ssl_test_client (void * ptr)
    mongoc_socket_t *conn_sock;
    char buf[1024];
    ssize_t r;
-   struct iovec riov;
-   struct iovec wiov = { 0 };
+   mongoc_iovec_t riov;
+   mongoc_iovec_t wiov;
    struct sockaddr_in server_addr = { 0 };
 
    riov.iov_base = buf;
@@ -236,7 +236,7 @@ ssl_test_client (void * ptr)
 
    int len = 4;
 
-   wiov.iov_base = &len;
+   wiov.iov_base = (void *)&len;
    wiov.iov_len = 4;
    r = mongoc_stream_writev(ssl_stream, &wiov, 1, TIMEOUT);
 

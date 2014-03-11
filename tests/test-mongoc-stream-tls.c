@@ -215,6 +215,7 @@ test_mongoc_tls_ip (void)
 }
 
 
+#ifndef _WIN32
 static void
 test_mongoc_tls_trust_dir (void)
 {
@@ -233,6 +234,7 @@ test_mongoc_tls_trust_dir (void)
    ASSERT (cr.result == SSL_TEST_SUCCESS);
    ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
+#endif
 
 
 void
