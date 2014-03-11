@@ -149,6 +149,7 @@ _mongoc_stream_socket_readv (mongoc_stream_t *stream,
          if (ret >= (ssize_t)min_bytes) {
             RETURN (ret);
          }
+         errno = mongoc_socket_errno (ss->sock);
          RETURN (-1);
       }
 
@@ -192,6 +193,7 @@ _mongoc_stream_socket_writev (mongoc_stream_t *stream,
    if (ss->sock) {
       expire_at = get_expiration (timeout_msec);
       ret = mongoc_socket_sendv (ss->sock, iov, iovcnt, expire_at);
+      errno = mongoc_socket_errno (ss->sock);
       RETURN (ret);
    }
 

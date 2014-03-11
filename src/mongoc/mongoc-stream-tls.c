@@ -24,6 +24,7 @@
 #include <openssl/err.h>
 
 #include "mongoc-counters-private.h"
+#include "mongoc-errno-private.h"
 #include "mongoc-stream-tls.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-ssl-private.h"
@@ -204,7 +205,7 @@ _mongoc_stream_tls_bio_read (BIO  *b,
    ret = (int)mongoc_stream_read (tls->base_stream, buf, len, 0, tls->timeout);
    BIO_clear_retry_flags (b);
 
-   if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+   if ((ret < 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
       BIO_set_retry_read (b);
    }
 
@@ -251,7 +252,7 @@ _mongoc_stream_tls_bio_write (BIO        *b,
    ret = (int)mongoc_stream_writev (tls->base_stream, &iov, 1, tls->timeout);
    BIO_clear_retry_flags (b);
 
-   if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+   if ((ret < 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
       BIO_set_retry_write (b);
    }
 

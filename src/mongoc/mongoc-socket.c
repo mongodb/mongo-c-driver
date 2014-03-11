@@ -206,7 +206,7 @@ _mongoc_socket_setnodelay (int sd)    /* IN */
  */
 
 int
-_mongoc_socket_errno (mongoc_socket_t *sock) /* IN */
+mongoc_socket_errno (mongoc_socket_t *sock) /* IN */
 {
    BSON_ASSERT (sock);
    return sock->errno_;
