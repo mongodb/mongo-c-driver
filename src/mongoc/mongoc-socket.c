@@ -675,15 +675,15 @@ mongoc_socket_recv (mongoc_socket_t *sock,      /* IN */
    bson_return_val_if_fail (buflen, -1);
 
 again:
+   sock->errno_ = 0;
 #ifdef _WIN32
    ret = recv (sock->sd, (char *)buf, (int)buflen, flags);
-   _mongoc_socket_capture_errno (sock);
    failed = (ret == SOCKET_ERROR);
 #else
    ret = recv (sock->sd, buf, buflen, flags);
-   _mongoc_socket_capture_errno (sock);
    failed = (ret == -1);
 #endif
+   _mongoc_socket_capture_errno (sock);
    try_again = (failed && _mongoc_socket_errno_is_again (sock));
 
    if (failed && try_again) {
@@ -781,17 +781,15 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_socket_try_sendv --
+ * _mongoc_socket_try_sendv_slow --
  *
- *       Win32 variant of vectored write. Does not actually perform
- *       vectored write.
- *
- *       Helper to send a vector of data on Windows since it does not
- *       allow doing so with WSASendMsg unless the socket is an
- *       overlapped io socket (which they are not).
+ *       A slow variant of _mongoc_socket_try_sendv() that sends each
+ *       iovec entry one by one. This can happen if we hit EMSGSIZE on
+ *       with sendmsg() on various POSIX systems (such as Solaris), or
+ *       on WinXP.
  *
  * Returns:
- *       the number of bytes sent or -1.
+ *       the number of bytes sent or -1 and errno is set.
  *
  * Side effects:
  *       None.
@@ -799,15 +797,14 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
  *--------------------------------------------------------------------------
  */
 
-#ifdef _WIN32
 ssize_t
-_mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
-                          mongoc_iovec_t  *iov,    /* IN */
-                          size_t           iovcnt) /* IN */
+_mongoc_socket_try_sendv_slow (mongoc_socket_t *sock,   /* IN */
+                               mongoc_iovec_t  *iov,    /* IN */
+                               size_t           iovcnt) /* IN */
 {
    ssize_t ret = 0;
-   int wrote;
    size_t i;
+   int wrote;
 
    ENTRY;
 
@@ -818,7 +815,11 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    for (i = 0; i < iovcnt; i++) {
       wrote = send (sock->sd, iov [i].iov_base, iov [i].iov_len, 0);
       _mongoc_socket_capture_errno (sock);
+#ifdef _WIN32
       if (wrote == SOCKET_ERROR) {
+#else
+      if (wrote == -1) {
+#endif
          if (!_mongoc_socket_errno_is_again (sock)) {
             RETURN (-1);
          }
@@ -834,7 +835,6 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 
    RETURN (ret);
 }
-#endif
 
 
 /*
@@ -856,13 +856,16 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
  *--------------------------------------------------------------------------
  */
 
-#ifndef _WIN32
 ssize_t
 _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
                           mongoc_iovec_t  *iov,    /* IN */
                           size_t           iovcnt) /* IN */
 {
+#ifdef _WIN32
+   DWORD dwNumberofBytesSent = 0;
+#else
    struct msghdr msg;
+#endif
    ssize_t ret = -1;
 
    ENTRY;
@@ -871,19 +874,36 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
 
-   memset (&msg, 0, sizeof msg);
-
    DUMP_IOVEC (sendbuf, iov, iovcnt);
 
+#ifdef _WIN32
+   ret = WSASend (sock->sd, (LPWSABUF)iov, iovcnt, &dwNumberofBytesSent,
+                  0, NULL, NULL);
+   ret = ret ? -1 : dwNumberofBytesSent;
+#else
+   memset (&msg, 0, sizeof msg);
    msg.msg_iov = iov;
    msg.msg_iovlen = iovcnt;
    ret = sendmsg (sock->sd, &msg, 0);
+#endif
+
+   /*
+    * Check to see if we have sent an iovec too large for sendmsg to
+    * complete. If so, we need to fallback to the slow path of multiple
+    * send() commands.
+    */
+#ifdef _WIN32
+   if ((ret == -1) && (errno == WSAEMSGSIZE)) {
+#else
+   if ((ret == -1) && (errno == EMSGSIZE)) {
+#endif
+      _mongoc_socket_try_sendv_slow (sock, iov, iovcnt);
+   }
 
    _mongoc_socket_capture_errno (sock);
 
    RETURN (ret);
 }
-#endif
 
 
 /*
