@@ -88,10 +88,13 @@ mongoc_gridfs_file_writev
 mongoc_gridfs_find
 mongoc_gridfs_find_one
 mongoc_gridfs_find_one_by_filename
+mongoc_gridfs_get_chunks
+mongoc_gridfs_get_files
 mongoc_index_opt_get_default
 mongoc_index_opt_init
 mongoc_init
 mongoc_log
+mongoc_log_default_handler
 mongoc_log_set_handler
 mongoc_read_prefs_add_tag
 mongoc_read_prefs_copy
