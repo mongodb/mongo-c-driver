@@ -80,14 +80,14 @@ int
 main (int   argc,   /* IN */
       char *argv[]) /* IN */
 {
+   char *cwd;
+   char buf[1024];
+
    if (argc <= 1 || !!strcmp (argv[1], "-v")) {
       mongoc_log_set_handler (log_handler, NULL);
    }
 
    mongoc_init ();
-
-   char *cwd;
-   char buf[1024];
 
    cwd = getcwd(buf, sizeof(buf));
    assert(cwd);

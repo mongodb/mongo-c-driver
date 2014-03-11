@@ -167,12 +167,12 @@ bson_ha_pid_t ha_spawn_win32_node(char **argv)
    bson_string_t *args;
    STARTUPINFO si = { 0 };
    PROCESS_INFORMATION pi = { 0 };
-
-   si.cb = sizeof(si);
-
    bool r;
    bson_ha_pid_t out;
 
+   si.cb = sizeof(si);
+
+   
    out.is_alive = true;
 
    args = bson_string_new("");

@@ -17,8 +17,8 @@ typedef struct ssl_test_data
    mongoc_ssl_opt_t  *server;
    const char        *host;
    unsigned short     server_port;
-   mongoc_cond_t        cond;
-   mongoc_mutex_t       cond_mutex;
+   mongoc_cond_t      cond;
+   mongoc_mutex_t     cond_mutex;
    ssl_test_result_t *client_result;
    ssl_test_result_t *server_result;
 } ssl_test_data_t;
@@ -49,6 +49,7 @@ ssl_test_server (void * ptr)
    ssize_t r;
    mongoc_iovec_t iov;
    struct sockaddr_in server_addr = { 0 };
+   int len;
 
    iov.iov_base = buf;
    iov.iov_len = sizeof buf;
@@ -110,8 +111,7 @@ ssl_test_server (void * ptr)
 
       return NULL;
    }
-
-   int len;
+   
    r = mongoc_stream_readv(ssl_stream, &iov, 1, 4, TIMEOUT);
    if (r < 0) {
 #ifdef _WIN32
@@ -171,6 +171,7 @@ ssl_test_client (void * ptr)
    mongoc_iovec_t riov;
    mongoc_iovec_t wiov;
    struct sockaddr_in server_addr = { 0 };
+   int len;
 
    riov.iov_base = buf;
    riov.iov_len = sizeof buf;
@@ -234,7 +235,7 @@ ssl_test_client (void * ptr)
       return NULL;
    }
 
-   int len = 4;
+   len = 4;
 
    wiov.iov_base = (void *)&len;
    wiov.iov_len = 4;
