@@ -69,6 +69,11 @@ mongoc_dump_collection (mongoc_client_t *client,
 #endif
 
    stream = mongoc_stream_file_new_for_path (path, O_RDWR|O_CREAT, 0664);
+   if (!stream) {
+      fprintf (stderr, "Failed to open \"%s\", aborting.\n", path);
+      exit (EXIT_FAILURE);
+   }
+
    col = mongoc_client_get_collection (client, database, collection);
    cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0,
                                     &query, NULL, NULL);
