@@ -214,6 +214,8 @@ main (int argc,
    int ret;
    int i;
 
+   mongoc_init ();
+
    for (i = 1; i < argc; i++) {
       if (0 == strcmp (argv [i], "-c") && ((i + 1) < argc)) {
          collection = argv [++i];
