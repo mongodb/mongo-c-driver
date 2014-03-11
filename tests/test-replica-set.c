@@ -315,5 +315,7 @@ main (int   argc,   /* IN */
    ha_replica_set_shutdown(replica_set);
    ha_replica_set_destroy(replica_set);
 
+   mongoc_cleanup();
+
    return 0;
 }

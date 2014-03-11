@@ -1,3 +1,4 @@
+mongoc_cleanup
 mongoc_client_command
 mongoc_client_command_simple
 mongoc_client_destroy

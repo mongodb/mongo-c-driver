@@ -21,12 +21,15 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
+#include <openssl/crypto.h>
+
 #include <string.h>
 
 #include "mongoc-init.h"
 #include "mongoc-socket.h"
 #include "mongoc-ssl.h"
 #include "mongoc-trace.h"
+#include "mongoc-thread-private.h"
 
 #ifdef _WIN32
 # define strncasecmp _strnicmp
@@ -50,6 +53,10 @@ mongoc_ssl_opt_t gMongocSslOptDefault = {
    MONGOC_SSL_DEFAULT_TRUST_DIR,
 };
 
+static mongoc_mutex_t * gMongocSslThreadLocks;
+
+static void _mongoc_ssl_thread_startup(void);
+static void _mongoc_ssl_thread_cleanup(void);
 
 const mongoc_ssl_opt_t *
 mongoc_ssl_opt_get_default (void)
@@ -72,8 +79,14 @@ _mongoc_ssl_init (void)
    SSL_load_error_strings ();
    ERR_load_BIO_strings ();
    OpenSSL_add_all_algorithms ();
+   _mongoc_ssl_thread_startup ();
 }
 
+void
+_mongoc_ssl_cleanup (void)
+{
+   _mongoc_ssl_thread_cleanup ();
+}
 
 static int
 _mongoc_ssl_password_cb (char *buf,
@@ -454,4 +467,69 @@ _mongoc_ssl_extract_subject (const char *filename)
    }
 
    return str;
+}
+
+#ifdef _WIN32
+
+static unsigned long
+_mongoc_ssl_thread_id_callback (void)
+{
+   unsigned long ret;
+
+   ret = (unsigned long)GetCurrentThreadId ();
+   return ret;
+}
+
+#else
+
+static unsigned long
+_mongoc_ssl_thread_id_callback (void)
+{
+   unsigned long ret;
+
+   ret = (unsigned long)pthread_self ();
+   return ret;
+}
+
+#endif
+
+static void
+_mongoc_ssl_thread_locking_callback (int         mode,
+                                     int         type,
+                                     const char *file,
+                                     int         line)
+{
+   if (mode & CRYPTO_LOCK) {
+      mongoc_mutex_lock (&gMongocSslThreadLocks[type]);
+   } else {
+      mongoc_mutex_unlock (&gMongocSslThreadLocks[type]);
+   }
+}
+
+static void
+_mongoc_ssl_thread_startup (void)
+{
+   int i;
+
+   gMongocSslThreadLocks = OPENSSL_malloc (CRYPTO_num_locks () * sizeof (mongoc_mutex_t));
+
+   for (i = 0; i < CRYPTO_num_locks (); i++) {
+      mongoc_mutex_init(&gMongocSslThreadLocks[i]);
+   }
+
+   CRYPTO_set_locking_callback (_mongoc_ssl_thread_locking_callback);
+   CRYPTO_set_id_callback (_mongoc_ssl_thread_id_callback);
+}
+
+static void
+_mongoc_ssl_thread_cleanup (void)
+{
+   int i;
+
+   CRYPTO_set_locking_callback (NULL);
+
+   for (i = 0; i < CRYPTO_num_locks (); i++) {
+      mongoc_mutex_destroy (&gMongocSslThreadLocks[i]);
+   }
+   OPENSSL_free (gMongocSslThreadLocks);
 }

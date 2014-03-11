@@ -32,6 +32,9 @@ BSON_BEGIN_DECLS
 void
 mongoc_init(void);
 
+void
+mongoc_cleanup(void);
+
 BSON_END_DECLS
 
 

@@ -77,5 +77,7 @@ main (int argc,
 
    ha_sharded_cluster_shutdown(cluster);
 
+   mongoc_cleanup();
+
    return 0;
 }

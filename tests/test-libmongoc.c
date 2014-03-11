@@ -116,5 +116,7 @@ main (int   argc,
 
    TestSuite_Destroy (&suite);
 
+   mongoc_cleanup();
+
    return ret;
 }
