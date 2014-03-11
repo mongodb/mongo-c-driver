@@ -15,6 +15,11 @@ static char *gTestUriWithBadPassword;
 
 #define MONGOD_VERSION_HEX(a, b, c) ((a << 16) | (b << 8) | (c))
 
+
+#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "client-test"
+
+
 #ifdef _WIN32
 static void
 usleep (int64_t usec)
@@ -66,7 +71,9 @@ test_mongoc_client_authenticate (void)
    r = mongoc_cursor_next(cursor, &doc);
    if (!r) {
       r = mongoc_cursor_error(cursor, &error);
-      if (r) MONGOC_ERROR("%s", error.message);
+      if (r) {
+         MONGOC_ERROR("Authentication failure: \"%s\"", error.message);
+      }
       assert(!r);
    }
    mongoc_cursor_destroy(cursor);
@@ -373,7 +380,7 @@ test_exhaust_cursor (void)
                                          (const bson_t **)bptr, 10, NULL, &error);
 
       if (!r) {
-         MONGOC_WARNING("%s\n", error.message);
+         MONGOC_WARNING("Insert bulk failure: %s\n", error.message);
       }
       assert(r);
    }
