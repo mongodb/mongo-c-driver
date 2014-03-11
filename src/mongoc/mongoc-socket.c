@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "mongoc-counters-private.h"
+#include "mongoc-errno-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-trace.h"
 
@@ -229,10 +230,10 @@ again:
 
 #ifdef _WIN32
    failed = (sd == INVALID_SOCKET);
-   try_again = (failed && (WSAGetLastError () == WSAEWOULDBLOCK));
+   try_again = (failed && MONGOC_ERRNO_IS_AGAIN (WSAGetLastError ()));
 #else
    failed = (sd == -1);
-   try_again = (failed && ((errno == EWOULDBLOCK) || (errno == EAGAIN)));
+   try_again = (failed && MONGOC_ERRNO_IS_AGAIN (errno));
 #endif
 
    if (failed && try_again) {
@@ -391,11 +392,11 @@ again:
 #ifdef _WIN32
    if (ret == SOCKET_ERROR) {
       failed = true;
-      try_again = (WSAGetLastError () == WSAEWOULDBLOCK);
+      try_again = MONGOC_ERRNO_IS_AGAIN (WSAGetLastError ());
 #else
    if (ret == -1) {
       failed = true;
-      try_again = ((errno == EAGAIN) || (errno == EINPROGRESS));
+      try_again = MONGOC_ERRNO_IS_AGAIN (errno);
 #endif
       if (try_again) {
          ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR,

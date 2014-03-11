@@ -50,6 +50,7 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-cursor-cursorid-private.h \
 	src/mongoc/mongoc-cursor-private.h \
 	src/mongoc/mongoc-database-private.h \
+	src/mongoc/mongoc-errno-private.h \
 	src/mongoc/mongoc-gridfs-file-list-private.h \
 	src/mongoc/mongoc-gridfs-file-page-private.h \
 	src/mongoc/mongoc-gridfs-file-private.h \
