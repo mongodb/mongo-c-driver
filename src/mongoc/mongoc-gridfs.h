@@ -25,6 +25,7 @@
 
 #include "mongoc-stream.h"
 #include "mongoc-gridfs-file.h"
+#include "mongoc-collection.h"
 #include "mongoc-gridfs-file-list.h"
 
 #include <bson.h>
@@ -64,8 +65,18 @@ bool
 mongoc_gridfs_drop (mongoc_gridfs_t *gridfs,
                     bson_error_t    *error);
 
+
 void
 mongoc_gridfs_destroy (mongoc_gridfs_t *gridfs);
+
+
+mongoc_collection_t *
+mongoc_gridfs_get_files (mongoc_gridfs_t *file);
+
+
+mongoc_collection_t *
+mongoc_gridfs_get_chunks (mongoc_gridfs_t *file);
+
 
 BSON_END_DECLS
 

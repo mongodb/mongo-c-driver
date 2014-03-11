@@ -278,9 +278,26 @@ mongoc_gridfs_create_file (mongoc_gridfs_t          *gridfs,
 
    ENTRY;
 
-   BSON_ASSERT (gridfs);
+   bson_return_val_if_fail (gridfs, NULL);
 
    file = _mongoc_gridfs_file_new (gridfs, opt);
 
    RETURN (file);
+}
+
+/** accessor functions for collections */
+mongoc_collection_t *
+mongoc_gridfs_get_files (mongoc_gridfs_t *gridfs)
+{
+   bson_return_val_if_fail (gridfs, NULL);
+
+   return gridfs->files;
+}
+
+mongoc_collection_t *
+mongoc_gridfs_get_chunks (mongoc_gridfs_t *gridfs)
+{
+   bson_return_val_if_fail (gridfs, NULL);
+
+   return gridfs->chunks;
 }
