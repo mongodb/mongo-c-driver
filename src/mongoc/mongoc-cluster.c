@@ -2620,6 +2620,8 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       RETURN (false);
    }
 
+   TRACE ("Waiting for reply from \"%s\"", node->host.host_and_port);
+
    /*
     * Buffer the message length to determine how much more to read.
     */

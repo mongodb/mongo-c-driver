@@ -34,6 +34,8 @@ BSON_BEGIN_DECLS
 
 
 #ifdef MONGOC_TRACE
+#define TRACE(msg, ...) \
+                    do { mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, "TRACE: %s():%d " msg, __FUNCTION__, __LINE__, __VA_ARGS__); } while (0)
 #define ENTRY       do { mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, "ENTRY: %s():%d", __FUNCTION__, __LINE__); } while (0)
 #define EXIT        do { mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", __FUNCTION__, __LINE__); return; } while (0)
 #define RETURN(ret) do { mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, " EXIT: %s():%d", __FUNCTION__, __LINE__); return ret; } while (0)
@@ -125,6 +127,7 @@ BSON_BEGIN_DECLS
       bson_string_free(astr, true); \
    } while (0)
 #else
+#define TRACE(msg,...)
 #define ENTRY
 #define EXIT        return
 #define RETURN(ret) return ret
