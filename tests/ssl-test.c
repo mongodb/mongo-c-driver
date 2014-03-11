@@ -114,7 +114,11 @@ ssl_test_server (void * ptr)
    int len;
    r = mongoc_stream_readv(ssl_stream, &iov, 1, 4, TIMEOUT);
    if (r < 0) {
+#ifdef _WIN32
+      assert(errno == WSAETIMEDOUT);
+#else
       assert(errno == ETIMEDOUT);
+#endif
 
       data->server_result->err = errno;
       data->server_result->result = SSL_TEST_TIMEOUT;

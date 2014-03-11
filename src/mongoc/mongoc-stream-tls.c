@@ -22,6 +22,10 @@
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#ifdef _WIN32
+# include <winsock2.h>
+# include <winerror.h>
+#endif
 
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
@@ -544,7 +548,11 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
 
          if (((expire - now) < 0) && (read_ret == 0)) {
             mongoc_counter_streams_timeout_inc();
+#ifdef _WIN32
+            errno = WSAETIMEDOUT;
+#else
             errno = ETIMEDOUT;
+#endif
             return -1;
          }
 

@@ -986,7 +986,11 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
        */
       if (!_mongoc_socket_wait (sock->sd, POLLOUT, expire_at)) {
          if (ret == 0){
+#ifdef _WIN32
+            errno = WSAETIMEDOUT;
+#else
             errno = ETIMEDOUT;
+#endif
          }
          RETURN (ret  ? ret : -1);
       }
