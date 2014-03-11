@@ -669,7 +669,7 @@ _mongoc_stream_tls_setsockopt (mongoc_stream_t *stream,
  */
 bool
 mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
-                                int32_t     timeout_msec)
+                                int32_t          timeout_msec)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
 
