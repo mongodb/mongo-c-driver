@@ -118,10 +118,12 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream,       /* IN */
 
    for (i = 0; i < iovcnt; i++) {
       nread = _read (file->fd, iov [i].iov_base, iov [i].iov_len);
+      if (nread > 0) {
+         ret += nread;
+      }
       if (nread != iov [i].iov_len) {
          RETURN (ret ? ret : -1);
       }
-      ret += nread;
    }
 
    RETURN (ret);
