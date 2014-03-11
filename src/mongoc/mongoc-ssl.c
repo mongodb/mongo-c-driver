@@ -29,7 +29,8 @@
 #include "mongoc-trace.h"
 
 #ifdef _WIN32
-#define strncasecmp _strnicmp
+# define strncasecmp _strnicmp
+# define strcasecmp  _stricmp
 #endif
 
 /* TODO: we could populate these from a config or something further down the
