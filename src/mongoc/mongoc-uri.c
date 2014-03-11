@@ -63,7 +63,7 @@ mongoc_uri_do_unescape (char **str)
 static void
 mongoc_uri_append_host (mongoc_uri_t  *uri,
                         const char    *host,
-                        uint16_t  port)
+                        uint16_t       port)
 {
    mongoc_host_list_t *iter;
    mongoc_host_list_t *link_;
@@ -72,14 +72,15 @@ mongoc_uri_append_host (mongoc_uri_t  *uri,
    bson_strncpy (link_->host, host, sizeof link_->host);
    if (strchr (host, ':')) {
       bson_snprintf(link_->host_and_port, sizeof link_->host_and_port,
-               "[%s]:%hu", host, port);
+                    "[%s]:%hu", host, port);
+      link_->family = AF_INET6;
    } else {
       bson_snprintf(link_->host_and_port, sizeof link_->host_and_port,
-               "%s:%hu", host, port);
+                    "%s:%hu", host, port);
+      link_->family = strstr (host, ".sock") ? AF_UNIX : AF_INET;
    }
    link_->host_and_port[sizeof link_->host_and_port - 1] = '\0';
    link_->port = port;
-   link_->family = strstr(host, ".sock") ? AF_UNIX : AF_INET;
 
    if ((iter = uri->hosts)) {
       for (; iter && iter->next; iter = iter->next) {}
