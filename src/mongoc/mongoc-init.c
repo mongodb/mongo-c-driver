@@ -69,7 +69,7 @@ static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
 #endif
 
 #ifdef _WIN32
-   WSASCleanup ();
+   WSACleanup ();
 #endif
 
    MONGOC_ONCE_RETURN;
