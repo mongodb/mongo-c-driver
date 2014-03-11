@@ -36,6 +36,8 @@ struct _mock_server_t
    void                  *handler_data;
 
    mongoc_thread_t        main_thread;
+   mongoc_cond_t          cond;
+   mongoc_mutex_t         mutex;
    bool                   using_main_thread;
 
    const char            *address;
@@ -305,6 +307,9 @@ mock_server_new (const char            *address,
    server->maxBsonObjectSize = 16777216;
    server->maxMessageSizeBytes = 48000000;
 
+   mongoc_mutex_init (&server->mutex);
+   mongoc_cond_init (&server->cond);
+
    return server;
 }
 
@@ -321,7 +326,7 @@ mock_server_run (mock_server_t *server)
    int optval;
 
    bson_return_val_if_fail (server, -1);
-   bson_return_val_if_fail (server->sock, -1);
+   bson_return_val_if_fail (!server->sock, -1);
 
    ssock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
    if (!ssock) {
@@ -352,6 +357,10 @@ mock_server_run (mock_server_t *server)
    }
 
    server->sock = ssock;
+
+   mongoc_mutex_lock (&server->mutex);
+   mongoc_cond_signal (&server->cond);
+   mongoc_mutex_unlock (&server->mutex);
 
    for (;;) {
       csock = mongoc_socket_accept (server->sock, -1);
@@ -392,7 +401,11 @@ mock_server_run_in_thread (mock_server_t *server)
    BSON_ASSERT (server);
 
    server->using_main_thread = true;
+
+   mongoc_mutex_lock (&server->mutex);
    mongoc_thread_create (&server->main_thread, main_thread, server);
+   mongoc_cond_wait (&server->cond, &server->mutex);
+   mongoc_mutex_unlock (&server->mutex);
 }
 
 
@@ -412,6 +425,8 @@ void
 mock_server_destroy (mock_server_t *server)
 {
    if (server) {
+      mongoc_cond_destroy (&server->cond);
+      mongoc_mutex_destroy (&server->mutex);
       bson_free(server);
    }
 }
