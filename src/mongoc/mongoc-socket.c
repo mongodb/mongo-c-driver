@@ -176,6 +176,7 @@ _mongoc_socket_setnodelay (int sd)    /* IN */
 
    ENTRY;
 
+   errno = 0;
    ret = setsockopt (sd, IPPROTO_TCP, TCP_NODELAY,
                      (char *)&optval, sizeof optval);
 
@@ -302,6 +303,7 @@ mongoc_socket_accept (mongoc_socket_t *sock,      /* IN */
    bson_return_val_if_fail (sock, NULL);
 
 again:
+   errno = 0;
    sd = accept (sock->sd, &addr, &addrlen);
 
    _mongoc_socket_capture_errno (sock);
