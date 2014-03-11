@@ -234,7 +234,7 @@ static void
 _mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
 {
 #ifdef _WIN32
-   sock->errno_ = WSAGetLastError ();
+   errno = sock->errno_ = WSAGetLastError ();
 #else
    sock->errno_ = errno;
 #endif
