@@ -30,8 +30,11 @@
 BSON_BEGIN_DECLS
 
 
-#ifdef _WIN32
+#if defined(_WIN32)
 # define MONGOC_ERRNO_IS_AGAIN(errno) ((errno == EAGAIN) || (errno == WSAEWOULDBLOCK) || (errno == WSAEINPROGRESS))
+#elif defined(__sun)
+/* for some reason, accept() returns -1 and errno of 0 */
+# define MONGOC_ERRNO_IS_AGAIN(errno) ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS) || (errno == 0))
 #else
 # define MONGOC_ERRNO_IS_AGAIN(errno) ((errno == EINTR) || (errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINPROGRESS))
 #endif

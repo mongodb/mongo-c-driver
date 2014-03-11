@@ -412,7 +412,7 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
    }
 #else
    if (sock->sd != -1) {
-      shutdown (sock->sd, SHUT_WR);
+      shutdown (sock->sd, SHUT_RDWR);
       ret = close (sock->sd);
    }
 #endif
