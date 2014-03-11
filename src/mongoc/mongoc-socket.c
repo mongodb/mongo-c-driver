@@ -455,6 +455,7 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
                        socklen_t              addrlen,   /* IN */
                        int64_t                expire_at) /* IN */
 {
+   struct linger ling;
    bool try_again = false;
    bool failed = false;
    int ret;
@@ -486,15 +487,24 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
          ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR,
                            (char *)&optval, &optlen);
          if ((ret == 0) && (optval == 0)) {
-            RETURN (0);
+            GOTO (success);
          }
       }
       RETURN (-1);
    } else if (failed) {
       RETURN (-1);
-   } else {
-      RETURN (0);
    }
+
+success:
+   /*
+    * Ensure that RST is sent if we do a close().
+    */
+   ling.l_onoff = 1;
+   ling.l_linger = 0;
+   mongoc_socket_setsockopt (sock, SOL_SOCKET, SO_LINGER,
+                             &ling, sizeof ling);
+
+   RETURN (0);
 }
 
 
