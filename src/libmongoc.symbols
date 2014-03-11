@@ -109,6 +109,7 @@ mongoc_socket_bind
 mongoc_socket_close
 mongoc_socket_connect
 mongoc_socket_destroy
+mongoc_socket_errno
 mongoc_socket_getsockname
 mongoc_socket_listen
 mongoc_socket_new

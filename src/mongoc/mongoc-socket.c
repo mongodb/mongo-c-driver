@@ -35,6 +35,7 @@ struct _mongoc_socket_t
 #else
    int sd;
 #endif
+   int errno_;
 };
 
 
@@ -191,6 +192,81 @@ _mongoc_socket_setnodelay (int sd)    /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_socket_errno --
+ *
+ *       Returns the last error on the socket.
+ *
+ * Returns:
+ *       An integer errno, or 0 on no error.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int
+_mongoc_socket_errno (mongoc_socket_t *sock) /* IN */
+{
+   BSON_ASSERT (sock);
+   return sock->errno_;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_socket_capture_errno --
+ *
+ *       Save the errno state for contextual use.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
+{
+#ifdef _WIN32
+   sock->errno_ = WSAGetLastError ();
+#else
+   sock->errno_ = errno;
+#endif
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_socket_errno_is_again --
+ *
+ *       Check to see if we should attempt to make further progress
+ *       based on the error of the last operation.
+ *
+ * Returns:
+ *       true if we should try again. otherwise false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_socket_errno_is_again (mongoc_socket_t *sock) /* IN */
+{
+   return MONGOC_ERRNO_IS_AGAIN (sock->errno_);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_socket_accept --
  *
  *       Wrapper for BSD socket accept(). Handles portability between
@@ -228,13 +304,14 @@ mongoc_socket_accept (mongoc_socket_t *sock,      /* IN */
 again:
    sd = accept (sock->sd, &addr, &addrlen);
 
+   _mongoc_socket_capture_errno (sock);
+
 #ifdef _WIN32
    failed = (sd == INVALID_SOCKET);
-   try_again = (failed && MONGOC_ERRNO_IS_AGAIN (WSAGetLastError ()));
 #else
    failed = (sd == -1);
-   try_again = (failed && MONGOC_ERRNO_IS_AGAIN (errno));
 #endif
+   try_again = (failed && _mongoc_socket_errno_is_again (sock));
 
    if (failed && try_again) {
       if (_mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
@@ -294,6 +371,8 @@ mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
 
    ret = bind (sock->sd, addr, addrlen);
 
+   _mongoc_socket_capture_errno (sock);
+
    RETURN (ret);
 }
 
@@ -337,6 +416,8 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
       ret = close (sock->sd);
    }
 #endif
+
+   _mongoc_socket_capture_errno (sock);
 
    if (ret == 0) {
 #ifdef _WIN32
@@ -388,22 +469,22 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
 
    ret = connect (sock->sd, addr, addrlen);
 
+   _mongoc_socket_capture_errno (sock);
+
 again:
 #ifdef _WIN32
    if (ret == SOCKET_ERROR) {
-      failed = true;
-      try_again = MONGOC_ERRNO_IS_AGAIN (WSAGetLastError ());
 #else
    if (ret == -1) {
-      failed = true;
-      try_again = MONGOC_ERRNO_IS_AGAIN (errno);
 #endif
+      failed = true;
+      try_again = _mongoc_socket_errno_is_again (sock);
       if (try_again) {
          ret = getsockopt (sock->sd, SOL_SOCKET, SO_ERROR,
                            (char *)&optval, &optlen);
          failed = ((ret == -1) || (optval != 0));
          if (failed) {
-            errno = optval;
+            sock->errno_ = optval;
          }
       }
    }
@@ -481,6 +562,8 @@ mongoc_socket_listen (mongoc_socket_t *sock,    /* IN */
    }
 
    ret = listen (sock->sd, backlog);
+
+   _mongoc_socket_capture_errno (sock);
 
    RETURN (ret);
 }
@@ -596,13 +679,14 @@ mongoc_socket_recv (mongoc_socket_t *sock,      /* IN */
 again:
 #ifdef _WIN32
    ret = recv (sock->sd, (char *)buf, (int)buflen, flags);
+   _mongoc_socket_capture_errno (sock);
    failed = (ret == SOCKET_ERROR);
-   try_again = (failed && (WSAGetLastError () == WSAEWOULDBLOCK));
 #else
    ret = recv (sock->sd, buf, buflen, flags);
+   _mongoc_socket_capture_errno (sock);
    failed = (ret == -1);
-   try_again = (failed && ((errno == EAGAIN) || (errno == EWOULDBLOCK)));
 #endif
+   try_again = (failed && _mongoc_socket_errno_is_again (sock));
 
    if (failed && try_again) {
       if (_mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
@@ -643,9 +727,17 @@ mongoc_socket_setsockopt (mongoc_socket_t *sock,    /* IN */
                           const void      *optval,  /* IN */
                           socklen_t        optlen)  /* IN */
 {
+   int ret;
+
+   ENTRY;
+
    bson_return_val_if_fail (sock, false);
 
-   return setsockopt (sock->sd, level, optname, optval, optlen);
+   ret = setsockopt (sock->sd, level, optname, optval, optlen);
+
+   _mongoc_socket_capture_errno (sock);
+
+   RETURN (ret);
 }
 
 
@@ -727,9 +819,9 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 
    for (i = 0; i < iovcnt; i++) {
       wrote = send (sock->sd, iov [i].iov_base, iov [i].iov_len, 0);
+      _mongoc_socket_capture_errno (sock);
       if (wrote == SOCKET_ERROR) {
-         if (WSAGetLastError () == WSAEWOULDBLOCK) {
-            errno = EWOULDBLOCK;
+         if (!_mongoc_socket_errno_is_again (sock)) {
             RETURN (-1);
          }
          RETURN (ret ? ret : -1);
@@ -789,6 +881,8 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    msg.msg_iovlen = iovcnt;
    ret = sendmsg (sock->sd, &msg, 0);
 
+   _mongoc_socket_capture_errno (sock);
+
    RETURN (ret);
 }
 #endif
@@ -842,7 +936,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
        * underlying socket.
        */
       if (sent == -1) {
-         if ((errno != EAGAIN) && (errno != EWOULDBLOCK)) {
+         if (!_mongoc_socket_errno_is_again (sock)) {
             RETURN (ret ? ret : -1);
          }
       }
@@ -854,7 +948,11 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
          ret += sent;
          mongoc_counter_streams_egress_add (sent);
       } else if (OPERATION_EXPIRED (expire_at)) {
+#ifdef _WIN32
+         errno = WSAETIMEDOUT;
+#else
          errno = ETIMEDOUT;
+#endif
          RETURN (ret ? ret : -1);
       }
 
@@ -903,7 +1001,15 @@ mongoc_socket_getsockname (mongoc_socket_t *sock,    /* IN */
                            struct sockaddr *addr,    /* OUT */
                            socklen_t       *addrlen) /* INOUT */
 {
+   int ret;
+
+   ENTRY;
+
    bson_return_val_if_fail (sock, -1);
 
-   return getsockname (sock->sd, addr, addrlen);
+   ret = getsockname (sock->sd, addr, addrlen);
+
+   _mongoc_socket_capture_errno (sock);
+
+   RETURN (ret);
 }
