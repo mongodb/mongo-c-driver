@@ -18,6 +18,7 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "gridfs"
 
+#include "mongoc-client-private.h"
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-index.h"
@@ -232,6 +233,7 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
    ssize_t r;
    uint8_t buf[MONGOC_GRIDFS_STREAM_CHUNK];
    mongoc_iovec_t iov;
+   int timeout;
 
    ENTRY;
 
@@ -242,14 +244,15 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
    iov.iov_len = 0;
 
    file = _mongoc_gridfs_file_new (gridfs, opt);
+   timeout = gridfs->client->cluster.sockettimeoutms;
 
    for (;; ) {
       r = mongoc_stream_read (stream, iov.iov_base, MONGOC_GRIDFS_STREAM_CHUNK,
-                              0, 0);
+                              0, timeout);
 
       if (r > 0) {
          iov.iov_len = r;
-         mongoc_gridfs_file_writev (file, &iov, 1, 0);
+         mongoc_gridfs_file_writev (file, &iov, 1, timeout);
       } else if (r == 0) {
          break;
       } else {
