@@ -4,6 +4,7 @@ mongoc_client_command_simple
 mongoc_client_destroy
 mongoc_client_get_collection
 mongoc_client_get_database
+mongoc_client_get_database_names
 mongoc_client_get_gridfs
 mongoc_client_get_read_prefs
 mongoc_client_get_uri
@@ -49,6 +50,7 @@ mongoc_database_command_simple
 mongoc_database_create_collection
 mongoc_database_destroy
 mongoc_database_drop
+mongoc_database_get_collection_names
 mongoc_database_get_read_prefs
 mongoc_database_get_write_concern
 mongoc_database_has_collection

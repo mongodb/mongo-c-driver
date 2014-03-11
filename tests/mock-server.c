@@ -25,6 +25,11 @@
 #include "mongoc-trace.h"
 
 
+#ifdef _WIN32
+# define strcasecmp _stricmp
+#endif
+
+
 struct _mock_server_t
 {
    mock_server_handler_t  handler;
@@ -231,7 +236,7 @@ again:
       GOTO (failure);
    }
 
-   assert (buffer.len >= msg_len);
+   assert (buffer.len >= (unsigned)msg_len);
 
    DUMP_BYTES (buffer, buffer.data + buffer.off, buffer.len);
 
