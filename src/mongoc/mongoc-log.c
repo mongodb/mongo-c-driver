@@ -29,13 +29,6 @@
 #include "mongoc-thread-private.h"
 
 
-static void
-mongoc_log_default_handler (mongoc_log_level_t  log_level,
-                            const char         *log_domain,
-                            const char         *message,
-                            void               *user_data);
-
-
 static mongoc_mutex_t       gLogMutex;
 static mongoc_log_func_t  gLogFunc = mongoc_log_default_handler;
 static void              *gLogData;
@@ -110,7 +103,7 @@ log_level_str (mongoc_log_level_t log_level)
 }
 
 
-static void
+void
 mongoc_log_default_handler (mongoc_log_level_t  log_level,
                             const char         *log_domain,
                             const char         *message,

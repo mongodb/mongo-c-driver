@@ -103,6 +103,13 @@ void mongoc_log (mongoc_log_level_t  log_level,
    BSON_GNUC_PRINTF(3, 4);
 
 
+
+void mongoc_log_default_handler (mongoc_log_level_t  log_level,
+                                 const char         *log_domain,
+                                 const char         *message,
+                                 void               *user_data);
+
+
 BSON_END_DECLS
 
 
