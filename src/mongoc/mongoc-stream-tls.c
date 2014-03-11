@@ -691,7 +691,11 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
    }
 
    if (!errno) {
+#ifdef _WIN32
+      errno = WSAETIMEDOUT;
+#else
       errno = ETIMEDOUT;
+#endif
    }
 
    return false;
