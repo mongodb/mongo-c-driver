@@ -71,11 +71,11 @@ mongoc_gridfs_destroy (mongoc_gridfs_t *gridfs);
 
 
 mongoc_collection_t *
-mongoc_gridfs_get_files (mongoc_gridfs_t *file);
+mongoc_gridfs_get_files (mongoc_gridfs_t *gridfs);
 
 
 mongoc_collection_t *
-mongoc_gridfs_get_chunks (mongoc_gridfs_t *file);
+mongoc_gridfs_get_chunks (mongoc_gridfs_t *gridfs);
 
 
 BSON_END_DECLS
