@@ -125,6 +125,17 @@ endif
 .PHONY: test_certs
 
 EXTRA_DIST += \
+	tests/binary/delete1.dat \
+	tests/binary/get_more1.dat \
+	tests/binary/gridfs.dat \
+	tests/binary/insert1.dat \
+	tests/binary/kill_cursors1.dat \
+	tests/binary/msg1.dat \
+	tests/binary/query1.dat \
+	tests/binary/query2.dat \
+	tests/binary/reply1.dat \
+	tests/binary/reply2.dat \
+	tests/binary/update1.dat \
 	tests/mock-server.c \
 	tests/mock-server.h \
 	tests/mongoc-tests.c \
