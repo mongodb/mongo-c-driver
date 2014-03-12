@@ -1,0 +1,45 @@
+mongoc_stream_socket_t(3)
+=========================
+
+
+NAME
+----
+mongoc_stream_socket_t, mongoc_stream_socket_new - create a new mongoc socket stream
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_stream_t *mongoc_stream_socket_new (mongoc_socket_t *sock);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_stream_socket_new()_ function shall create a new 
+linkmongoc:mongoc_stream[7], taking ownership of the _mongoc_socket_t_.
+
+sock::
+   A _mognoc_socket_t to take ownership of.
+
+
+RETURN VALUE
+------------
+The _mongoc_stream_socket_new()_ shall return a new
+linkmongoc:mongoc_stream[7]
+using the provided _mongoc_socket_t_.
+
+ERRORS
+------
+No errors are defined.
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_stream[7]
+
+
+AUTHORS
+-------
+This page was written by MongoDB, Inc.
