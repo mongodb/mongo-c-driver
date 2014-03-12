@@ -19,6 +19,13 @@ fi
 touch ChangeLog
 touch AUTHORS
 
+if test -z "$(which libtoolize)" && test -z "$(which glibtoolize)"; then
+    echo "Error: libtoolize was not found on your system. Cannot continue."
+    if test "$(uname)" = "Darwin"; then
+        echo "On Darwin, this is named glibtoolize"
+    fi
+fi
+
 if [ -d .git ]; then
     git submodule init
     git submodule update
