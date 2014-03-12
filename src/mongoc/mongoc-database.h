@@ -38,6 +38,7 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_database_t mongoc_database_t;
 
 
+const char                   *mongoc_database_get_name             (mongoc_database_t            *database);
 bool                          mongoc_database_remove_user          (mongoc_database_t            *database,
                                                                     const char                   *username,
                                                                     bson_error_t                 *error);
@@ -78,6 +79,8 @@ void                          mongoc_database_set_write_concern    (mongoc_datab
                                                                     const mongoc_write_concern_t *write_concern);
 char                        **mongoc_database_get_collection_names (mongoc_database_t            *database,
                                                                     bson_error_t                 *error);
+mongoc_collection_t          *mongoc_database_get_collection       (mongoc_database_t            *database,
+                                                                    const char                   *name);
 
 
 BSON_END_DECLS

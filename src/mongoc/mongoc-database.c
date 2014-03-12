@@ -771,3 +771,24 @@ mongoc_database_create_collection (mongoc_database_t *database,
 
    return collection;
 }
+
+
+mongoc_collection_t *
+mongoc_database_get_collection (mongoc_database_t *database,
+                                const char        *collection)
+{
+   bson_return_val_if_fail (database, NULL);
+   bson_return_val_if_fail (collection, NULL);
+
+   return mongoc_client_get_collection (database->client, database->name,
+                                        collection);
+}
+
+
+const char *
+mongoc_database_get_name (mongoc_database_t *database)
+{
+   bson_return_val_if_fail (database, NULL);
+
+   return database->name;
+}
