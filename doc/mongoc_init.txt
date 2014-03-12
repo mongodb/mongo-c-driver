@@ -4,15 +4,15 @@ mongoc_init(3)
 
 NAME
 ----
-mongoc_init - Initialize mongoc
+mongoc_init, mongoc_cleanup - Initialize and cleanup libmongoc-1.0.
 
 
 SYNOPSIS
 --------
 [source,c]
 -----------------------
-void
-mongoc_init(void);
+void mongoc_init    (void);
+void mongoc_cleanup (void);
 -----------------------
 
 
@@ -21,7 +21,7 @@ DESCRIPTION
 The _mongoc_init()_ function shall initialize the mongoc library.  While much
 of mongoc library functionality is available without _monogc_init()_, some
 functions require global initialization and use this hook as the opportunity to
-run their initialization code.
+run their initialization code. On Windows, this calls _WSAStartup()_.
 
 It is a programming error not to call this function before use of any dependent
 subsytems.  Those functions will _assert()_ in the absence of proper
@@ -30,6 +30,12 @@ initialization.
 The _mongoc_init()_ function is *NOT* thread-safe.  It should be called early
 and in a single threaded environment.  Ideally as one of the first activities
 in _main()_.
+
+
+_mongoc_cleanup()_ should only be called after all code paths using
+libmongoc-1.0 have completed executing. If you are using libmongoc through
+_dlopen()_ facilities, you should do this before calling dlclose().
+On Windows, this calls _WSACleanup()_.
 
 
 RETURN VALUE
