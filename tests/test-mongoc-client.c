@@ -4,6 +4,7 @@
 #include "mongoc-cursor-private.h"
 #include "mock-server.h"
 #include "mongoc-client-private.h"
+#include "mongoc-tests.h"
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
@@ -355,11 +356,15 @@ test_exhaust_cursor (void)
    bool r;
    bson_error_t error;
    bson_oid_t oid;
+   char dbname [32];
 
    client = mongoc_client_new (gTestUri);
    assert (client);
 
-   collection = mongoc_client_get_collection(client, "test", "test");
+   bson_snprintf (dbname, sizeof dbname, "tests%u_%d",
+                  (unsigned)time (NULL), gettestpid ());
+
+   collection = mongoc_client_get_collection(client, dbname, "test_exhaust_cursor");
    assert(collection);
 
    mongoc_collection_drop(collection, &error);
