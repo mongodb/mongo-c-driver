@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -35,31 +35,15 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_cursor_t mongoc_cursor_t;
 
 
-mongoc_cursor_t *
-mongoc_cursor_clone (const mongoc_cursor_t *cursor);
-
-
-void
-mongoc_cursor_destroy (mongoc_cursor_t *cursor);
-
-
-bool
-mongoc_cursor_more (mongoc_cursor_t *cursor);
-
-
-bool
-mongoc_cursor_next (mongoc_cursor_t  *cursor,
-                    const bson_t    **bson);
-
-
-bool
-mongoc_cursor_error (mongoc_cursor_t *cursor,
-                     bson_error_t    *error);
-
-
-void
-mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
-                        mongoc_host_list_t *host);
+mongoc_cursor_t *mongoc_cursor_clone    (const mongoc_cursor_t  *cursor);
+void             mongoc_cursor_destroy  (mongoc_cursor_t        *cursor);
+bool             mongoc_cursor_more     (mongoc_cursor_t        *cursor);
+bool             mongoc_cursor_next     (mongoc_cursor_t        *cursor,
+                                         const bson_t          **bson);
+bool             mongoc_cursor_error    (mongoc_cursor_t        *cursor,
+                                         bson_error_t           *error);
+void             mongoc_cursor_get_host (mongoc_cursor_t        *cursor,
+                                         mongoc_host_list_t     *host);
 
 
 BSON_END_DECLS

@@ -15,6 +15,11 @@
  */
 
 
+#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
+# error "Only <mongoc.h> can be included directly."
+#endif
+
+
 #ifndef MONGOC_MATCHER_H
 #define MONGOC_MATCHER_H
 
@@ -32,7 +37,7 @@ mongoc_matcher_t *mongoc_matcher_new     (const bson_t           *query,
                                           bson_error_t           *error);
 bool              mongoc_matcher_match   (const mongoc_matcher_t *matcher,
                                           const bson_t           *query);
-void              mongoc_matcher_destroy (mongoc_matcher_t     *matcher);
+void              mongoc_matcher_destroy (mongoc_matcher_t       *matcher);
 
 
 BSON_END_DECLS

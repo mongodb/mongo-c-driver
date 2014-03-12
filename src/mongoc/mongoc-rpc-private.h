@@ -84,38 +84,18 @@ BSON_STATIC_ASSERT (offsetof (mongoc_rpc_header_t, opcode) ==
 #undef RAW_BUFFER_FIELD
 
 
-void
-_mongoc_rpc_gather (mongoc_rpc_t   *rpc,
-                    mongoc_array_t *array)
-   BSON_GNUC_INTERNAL;
-
-bool
-_mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,
-                       const mongoc_write_concern_t *write_concern)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_rpc_printf (mongoc_rpc_t *rpc)
-   BSON_GNUC_INTERNAL;
-
-bool
-_mongoc_rpc_scatter (mongoc_rpc_t       *rpc,
-                     const uint8_t *buf,
-                     size_t              buflen)
-   BSON_GNUC_INTERNAL;
-
-bool
-_mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply,
-                             bson_t             *bson)
-   BSON_GNUC_INTERNAL;
+void _mongoc_rpc_gather          (mongoc_rpc_t                 *rpc,
+                                  mongoc_array_t               *array);
+bool _mongoc_rpc_needs_gle       (mongoc_rpc_t                 *rpc,
+                                  const mongoc_write_concern_t *write_concern);
+void _mongoc_rpc_swab_to_le      (mongoc_rpc_t                 *rpc);
+void _mongoc_rpc_swab_from_le    (mongoc_rpc_t                 *rpc);
+void _mongoc_rpc_printf          (mongoc_rpc_t                 *rpc);
+bool _mongoc_rpc_scatter         (mongoc_rpc_t                 *rpc,
+                                  const uint8_t                *buf,
+                                  size_t                        buflen);
+bool _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t           *reply,
+                                  bson_t                       *bson);
 
 
 BSON_END_DECLS

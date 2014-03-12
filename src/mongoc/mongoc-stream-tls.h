@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -31,18 +31,15 @@
 
 BSON_BEGIN_DECLS
 
-bool
-mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
-                                int32_t          timeout_msec);
 
-bool
-mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
-                              const char      *host);
+bool             mongoc_stream_tls_do_handshake  (mongoc_stream_t  *stream,
+                                                  int32_t           timeout_msec);
+bool             mongoc_stream_tls_check_cert    (mongoc_stream_t  *stream,
+                                                  const char       *host);
+mongoc_stream_t *mongoc_stream_tls_new           (mongoc_stream_t  *base_stream,
+                                                  mongoc_ssl_opt_t *opt,
+                                                  int               client);
 
-mongoc_stream_t *
-mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
-                       mongoc_ssl_opt_t *opt,
-                       int               client);
 
 BSON_END_DECLS
 

@@ -27,9 +27,7 @@
 BSON_BEGIN_DECLS
 
 
-void
-_mongoc_cursor_cursorid_init (mongoc_cursor_t *cursor)
-   BSON_GNUC_INTERNAL;
+void _mongoc_cursor_cursorid_init (mongoc_cursor_t *cursor);
 
 
 BSON_END_DECLS

@@ -42,20 +42,12 @@ struct _mongoc_array_t
 #define _mongoc_array_clear(a)         (a)->len = 0
 
 
-void
-_mongoc_array_init (mongoc_array_t *array,
-                    size_t          element_size)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_array_append_vals (mongoc_array_t *array,
-                           const void     *data,
-                           uint32_t   n_elements)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_array_destroy (mongoc_array_t *array)
-   BSON_GNUC_INTERNAL;
+void _mongoc_array_init        (mongoc_array_t *array,
+                                size_t          element_size);
+void _mongoc_array_append_vals (mongoc_array_t *array,
+                                const void     *data,
+                                uint32_t        n_elements);
+void _mongoc_array_destroy     (mongoc_array_t *array);
 
 
 BSON_END_DECLS

@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -40,29 +40,16 @@ struct _mongoc_list_t
 };
 
 
-mongoc_list_t *
-_mongoc_list_append (mongoc_list_t *list,
-                     void          *data)
-   BSON_GNUC_INTERNAL;
-
-mongoc_list_t *
-_mongoc_list_prepend (mongoc_list_t *list,
-                      void          *data)
-   BSON_GNUC_INTERNAL;
-
-mongoc_list_t *
-_mongoc_list_remove (mongoc_list_t *list,
-                     void          *data)
-   BSON_GNUC_INTERNAL;
-
-void _mongoc_list_foreach (mongoc_list_t *list,
-                           void (*func) (void *data, void *user_data),
-                           void *         user_data)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_list_destroy (mongoc_list_t *list)
-   BSON_GNUC_INTERNAL;
+mongoc_list_t *_mongoc_list_append  (mongoc_list_t *list,
+                                     void          *data);
+mongoc_list_t *_mongoc_list_prepend (mongoc_list_t *list,
+                                     void          *data);
+mongoc_list_t *_mongoc_list_remove  (mongoc_list_t *list,
+                                     void          *data);
+void           _mongoc_list_foreach (mongoc_list_t *list,
+                                     void (*func) (void *data, void *user_data),
+                                     void *         user_data);
+void           _mongoc_list_destroy (mongoc_list_t *list);
 
 
 BSON_END_DECLS

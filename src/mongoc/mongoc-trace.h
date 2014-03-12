@@ -15,13 +15,8 @@
  */
 
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
-#endif
-
-
-#ifndef MONGOC_TRACE_H
-#define MONGOC_TRACE_H
+#ifndef MONGOC_TRACE_PRIVATE_H
+#define MONGOC_TRACE_PRIVATE_H
 
 
 #include <bson.h>
@@ -140,4 +135,4 @@ BSON_BEGIN_DECLS
 BSON_END_DECLS
 
 
-#endif /* MONGOC_TRACE_H */
+#endif /* MONGOC_TRACE_PRIVATE_H */

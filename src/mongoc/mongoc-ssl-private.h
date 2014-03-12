@@ -26,33 +26,18 @@
 
 #include "mongoc-ssl.h"
 
+
 BSON_BEGIN_DECLS
 
 
-bool
-_mongoc_ssl_check_cert (SSL         *ssl,
-                        const char  *host,
-                        bool  weak_cert_validation)
-   BSON_GNUC_INTERNAL;
+bool     _mongoc_ssl_check_cert      (SSL              *ssl,
+                                      const char       *host,
+                                      bool              weak_cert_validation);
+SSL_CTX *_mongoc_ssl_ctx_new         (mongoc_ssl_opt_t *opt);
+char    *_mongoc_ssl_extract_subject (const char       *filename);
+void     _mongoc_ssl_init            (void);
+void     _mongoc_ssl_cleanup         (void);
 
-
-SSL_CTX *
-_mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt)
-   BSON_GNUC_INTERNAL;
-
-
-char *
-_mongoc_ssl_extract_subject (const char *filename)
-   BSON_GNUC_INTERNAL;
-
-
-void
-_mongoc_ssl_init (void)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_ssl_cleanup (void)
-   BSON_GNUC_INTERNAL;
 
 BSON_END_DECLS
 

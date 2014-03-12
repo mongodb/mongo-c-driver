@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -30,19 +30,22 @@
 BSON_BEGIN_DECLS
 
 
-typedef struct mongoc_ssl_opt
+typedef struct _mongoc_ssl_opt_t mongoc_ssl_opt_t;
+
+
+struct _mongoc_ssl_opt_t
 {
    const char *pem_file;
    const char *pem_pwd;
    const char *ca_file;
    const char *ca_dir;
    const char *crl_file;
-   bool weak_cert_validation;
-} mongoc_ssl_opt_t;
+   bool        weak_cert_validation;
+   void       *padding [8];
+};
 
 
-const mongoc_ssl_opt_t *
-mongoc_ssl_opt_get_default (void) BSON_GNUC_CONST;
+const mongoc_ssl_opt_t *mongoc_ssl_opt_get_default (void) BSON_GNUC_CONST;
 
 
 BSON_END_DECLS

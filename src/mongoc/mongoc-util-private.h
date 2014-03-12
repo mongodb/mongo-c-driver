@@ -25,9 +25,7 @@
 BSON_BEGIN_DECLS
 
 
-char *
-_mongoc_hex_md5 (const char *input)
-   BSON_GNUC_INTERNAL;
+char *_mongoc_hex_md5 (const char *input);
 
 
 BSON_END_DECLS

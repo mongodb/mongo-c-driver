@@ -29,7 +29,7 @@
 BSON_BEGIN_DECLS
 
 
-struct _mongoc_gridfs
+struct _mongoc_gridfs_t
 {
    mongoc_client_t     *client;
    mongoc_collection_t *files;
@@ -37,12 +37,10 @@ struct _mongoc_gridfs
 };
 
 
-mongoc_gridfs_t *
-_mongoc_gridfs_new (mongoc_client_t *client,
-                    const char      *db,
-                    const char      *prefix,
-                    bson_error_t    *error)
-   BSON_GNUC_INTERNAL;
+mongoc_gridfs_t *_mongoc_gridfs_new (mongoc_client_t *client,
+                                     const char      *db,
+                                     const char      *prefix,
+                                     bson_error_t    *error);
 
 
 BSON_END_DECLS

@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -29,11 +29,10 @@
 
 BSON_BEGIN_DECLS
 
-void
-mongoc_init(void);
 
-void
-mongoc_cleanup(void);
+void mongoc_init   (void);
+void mongoc_cleanup(void);
+
 
 BSON_END_DECLS
 

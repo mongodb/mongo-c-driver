@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -31,11 +31,13 @@ BSON_BEGIN_DECLS
 
 
 #ifndef HOST_NAME_MAX
-#ifdef _POSIX_HOST_NAME_MAX
-#define HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+# ifdef _POSIX_HOST_NAME_MAX
+#  define BSON_HOST_NAME_MAX _POSIX_HOST_NAME_MAX
+# else
+#  define BSON_HOST_NAME_MAX 255
+# endif
 #else
-#define HOST_NAME_MAX 255
-#endif
+# define BSON_HOST_NAME_MAX HOST_NAME_MAX
 #endif
 
 
@@ -45,11 +47,11 @@ typedef struct _mongoc_host_list_t mongoc_host_list_t;
 struct _mongoc_host_list_t
 {
    mongoc_host_list_t *next;
-   char                host[HOST_NAME_MAX + 1];
-   char                host_and_port[HOST_NAME_MAX + 7];
-   uint16_t       port;
+   char                host [BSON_HOST_NAME_MAX + 1];
+   char                host_and_port [BSON_HOST_NAME_MAX + 7];
+   uint16_t            port;
    int                 family;
-   void               *padding[4];
+   void               *padding [4];
 };
 
 

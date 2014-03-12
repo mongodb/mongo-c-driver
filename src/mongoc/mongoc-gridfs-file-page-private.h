@@ -27,7 +27,7 @@
 BSON_BEGIN_DECLS
 
 
-struct _mongoc_gridfs_file_page
+struct _mongoc_gridfs_file_page_t
 {
    const uint8_t *read_buf;
    uint8_t       *buf;
@@ -36,48 +36,23 @@ struct _mongoc_gridfs_file_page
    uint32_t       offset;
 };
 
-mongoc_gridfs_file_page_t *
-_mongoc_gridfs_file_page_new (const uint8_t *data,
-                              uint32_t       len,
-                              uint32_t       chunk_size)
-   BSON_GNUC_INTERNAL;
 
-void
-_mongoc_gridfs_file_page_destroy (mongoc_gridfs_file_page_t *page)
-   BSON_GNUC_INTERNAL;
-
-bool
-_mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page,
-                               uint32_t              offset)
-   BSON_GNUC_INTERNAL;
-
-int32_t
-_mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
-                               void                      *dst,
-                               uint32_t              len)
-   BSON_GNUC_INTERNAL;
-
-int32_t
-_mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
-                                const void                *src,
-                                uint32_t              len)
-   BSON_GNUC_INTERNAL;
-
-uint32_t
-_mongoc_gridfs_file_page_tell (mongoc_gridfs_file_page_t *page)
-   BSON_GNUC_INTERNAL;
-
-const uint8_t *
-_mongoc_gridfs_file_page_get_data (mongoc_gridfs_file_page_t *page)
-   BSON_GNUC_INTERNAL;
-
-uint32_t
-_mongoc_gridfs_file_page_get_len (mongoc_gridfs_file_page_t *page)
-   BSON_GNUC_INTERNAL;
-
-bool
-_mongoc_gridfs_file_page_is_dirty (mongoc_gridfs_file_page_t *page)
-   BSON_GNUC_INTERNAL;
+mongoc_gridfs_file_page_t *_mongoc_gridfs_file_page_new      (const uint8_t             *data,
+                                                              uint32_t                   len,
+                                                              uint32_t                   chunk_size);
+void                       _mongoc_gridfs_file_page_destroy  (mongoc_gridfs_file_page_t *page);
+bool                       _mongoc_gridfs_file_page_seek     (mongoc_gridfs_file_page_t *page,
+                                                              uint32_t                   offset);
+int32_t                    _mongoc_gridfs_file_page_read     (mongoc_gridfs_file_page_t *page,
+                                                              void                      *dst,
+                                                              uint32_t                   len);
+int32_t                    _mongoc_gridfs_file_page_write    (mongoc_gridfs_file_page_t *page,
+                                                              const void                *src,
+                                                              uint32_t                   len);
+uint32_t                   _mongoc_gridfs_file_page_tell     (mongoc_gridfs_file_page_t *page);
+const uint8_t             *_mongoc_gridfs_file_page_get_data (mongoc_gridfs_file_page_t *page);
+uint32_t                   _mongoc_gridfs_file_page_get_len  (mongoc_gridfs_file_page_t *page);
+bool                       _mongoc_gridfs_file_page_is_dirty (mongoc_gridfs_file_page_t *page);
 
 
 BSON_END_DECLS

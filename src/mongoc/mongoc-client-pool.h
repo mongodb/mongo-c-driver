@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -36,21 +36,12 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_client_pool_t mongoc_client_pool_t;
 
 
-mongoc_client_pool_t *
-mongoc_client_pool_new (const mongoc_uri_t *uri);
-
-void
-mongoc_client_pool_destroy (mongoc_client_pool_t *pool);
-
-mongoc_client_t *
-mongoc_client_pool_pop (mongoc_client_pool_t *pool);
-
-void
-mongoc_client_pool_push (mongoc_client_pool_t *pool,
-                         mongoc_client_t      *client);
-
-mongoc_client_t *
-mongoc_client_pool_try_pop (mongoc_client_pool_t *pool);
+mongoc_client_pool_t *mongoc_client_pool_new     (const mongoc_uri_t   *uri);
+void                  mongoc_client_pool_destroy (mongoc_client_pool_t *pool);
+mongoc_client_t      *mongoc_client_pool_pop     (mongoc_client_pool_t *pool);
+void                  mongoc_client_pool_push    (mongoc_client_pool_t *pool,
+                                                  mongoc_client_t      *client);
+mongoc_client_t      *mongoc_client_pool_try_pop (mongoc_client_pool_t *pool);
 
 
 BSON_END_DECLS

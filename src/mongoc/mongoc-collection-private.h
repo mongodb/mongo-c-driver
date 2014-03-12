@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2013-2014 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,13 +43,11 @@ struct _mongoc_collection_t
 };
 
 
-mongoc_collection_t *
-_mongoc_collection_new (mongoc_client_t              *client,
-                        const char                   *db,
-                        const char                   *collection,
-                        const mongoc_read_prefs_t    *read_prefs,
-                        const mongoc_write_concern_t *write_concern)
-   BSON_GNUC_INTERNAL;
+mongoc_collection_t *_mongoc_collection_new (mongoc_client_t              *client,
+                                             const char                   *db,
+                                             const char                   *collection,
+                                             const mongoc_read_prefs_t    *read_prefs,
+                                             const mongoc_write_concern_t *write_concern);
 
 
 BSON_END_DECLS

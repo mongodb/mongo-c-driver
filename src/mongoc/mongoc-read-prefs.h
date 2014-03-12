@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -33,16 +33,15 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_read_prefs_t mongoc_read_prefs_t;
 
 
-enum _mongoc_read_mode_t
+typedef enum
 {
    MONGOC_READ_PRIMARY             = (1 << 0),
    MONGOC_READ_SECONDARY           = (1 << 1),
    MONGOC_READ_PRIMARY_PREFERRED   = (1 << 2) | MONGOC_READ_PRIMARY,
    MONGOC_READ_SECONDARY_PREFERRED = (1 << 2) | MONGOC_READ_SECONDARY,
    MONGOC_READ_NEAREST             = (1 << 3) | MONGOC_READ_SECONDARY,
-};
+} mongoc_read_mode_t;
 
-typedef enum   _mongoc_read_mode_t  mongoc_read_mode_t;
 
 mongoc_read_prefs_t *mongoc_read_prefs_new      (mongoc_read_mode_t         read_mode);
 mongoc_read_prefs_t *mongoc_read_prefs_copy     (const mongoc_read_prefs_t *read_prefs);
@@ -55,7 +54,7 @@ void                 mongoc_read_prefs_set_tags (mongoc_read_prefs_t       *read
                                                  const bson_t              *tags);
 void                 mongoc_read_prefs_add_tag  (mongoc_read_prefs_t       *read_prefs,
                                                  const bson_t              *tag);
-bool          mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs);
+bool                 mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs);
 
 
 BSON_END_DECLS

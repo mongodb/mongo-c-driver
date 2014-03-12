@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -32,14 +32,14 @@ BSON_BEGIN_DECLS
 
 typedef struct
 {
-   bool   is_initialized;
-   bool   background;
-   bool   unique;
+   bool          is_initialized;
+   bool          background;
+   bool          unique;
    const char   *name;
-   bool   drop_dups;
-   bool   sparse;
-   int32_t  expire_after_seconds;
-   int32_t  v;
+   bool          drop_dups;
+   bool          sparse;
+   int32_t       expire_after_seconds;
+   int32_t       v;
    const bson_t *weights;
    const char   *default_language;
    const char   *language_override;
@@ -47,11 +47,8 @@ typedef struct
 } mongoc_index_opt_t;
 
 
-const mongoc_index_opt_t *
-mongoc_index_opt_get_default (void) BSON_GNUC_CONST;
-
-void
-mongoc_index_opt_init (mongoc_index_opt_t *opt);
+const mongoc_index_opt_t *mongoc_index_opt_get_default (void) BSON_GNUC_CONST;
+void                      mongoc_index_opt_init        (mongoc_index_opt_t *opt);
 
 
 BSON_END_DECLS

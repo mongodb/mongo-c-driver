@@ -19,17 +19,17 @@
 #define MONGOC_GRIDFS_FILE_LIST_PRIVATE_H
 
 
+#include <bson.h>
+
 #include "mongoc-gridfs.h"
 #include "mongoc-gridfs-file.h"
 #include "mongoc-cursor.h"
-
-#include <bson.h>
 
 
 BSON_BEGIN_DECLS
 
 
-struct _mongoc_gridfs_file_list
+struct _mongoc_gridfs_file_list_t
 {
    mongoc_gridfs_t *gridfs;
    mongoc_cursor_t *cursor;
@@ -37,10 +37,9 @@ struct _mongoc_gridfs_file_list
 };
 
 
-mongoc_gridfs_file_list_t *
-_mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
-                              const bson_t    *query,
-                              uint32_t    limit);
+mongoc_gridfs_file_list_t *_mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
+                                                         const bson_t    *query,
+                                                         uint32_t         limit);
 
 
 BSON_END_DECLS

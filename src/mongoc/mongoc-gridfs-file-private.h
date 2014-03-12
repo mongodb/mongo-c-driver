@@ -19,56 +19,51 @@
 #define MONGOC_GRIDFS_FILE_PRIVATE_H
 
 
+#include <bson.h>
+
 #include "mongoc-gridfs.h"
 #include "mongoc-gridfs-file.h"
 #include "mongoc-gridfs-file-page.h"
 #include "mongoc-cursor.h"
 
-#include <bson.h>
-
 
 BSON_BEGIN_DECLS
 
 
-struct _mongoc_gridfs_file
+struct _mongoc_gridfs_file_t
 {
    mongoc_gridfs_t           *gridfs;
    bson_t                     bson;
    mongoc_gridfs_file_page_t *page;
-   uint64_t              pos;
+   uint64_t                   pos;
    bson_error_t               error;
-   bool                failed;
+   bool                       failed;
    mongoc_cursor_t           *cursor;
-   uint32_t              cursor_range[2];
-   bool                is_dirty;
+   uint32_t                   cursor_range[2];
+   bool                       is_dirty;
 
-   bson_oid_t   files_id;
-   int64_t length;
-   int32_t chunk_size;
-   int64_t upload_date;
+   bson_oid_t                 files_id;
+   int64_t                    length;
+   int32_t                    chunk_size;
+   int64_t                    upload_date;
 
-   char       *md5;
-   char       *filename;
-   char       *content_type;
-   bson_t      aliases;
-   bson_t      metadata;
-   const char *bson_md5;
-   const char *bson_filename;
-   const char *bson_content_type;
-   bson_t      bson_aliases;
-   bson_t      bson_metadata;
+   char                      *md5;
+   char                      *filename;
+   char                      *content_type;
+   bson_t                     aliases;
+   bson_t                     metadata;
+   const char                *bson_md5;
+   const char                *bson_filename;
+   const char                *bson_content_type;
+   bson_t                     bson_aliases;
+   bson_t                     bson_metadata;
 };
 
 
-mongoc_gridfs_file_t *
-_mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
-                                   const bson_t    *data)
-   BSON_GNUC_INTERNAL;
-
-mongoc_gridfs_file_t *
-_mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
-                         mongoc_gridfs_file_opt_t *opt)
-   BSON_GNUC_INTERNAL;
+mongoc_gridfs_file_t *_mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t          *gridfs,
+                                                         const bson_t             *data);
+mongoc_gridfs_file_t *_mongoc_gridfs_file_new           (mongoc_gridfs_t          *gridfs,
+                                                         mongoc_gridfs_file_opt_t *opt);
 
 
 BSON_END_DECLS

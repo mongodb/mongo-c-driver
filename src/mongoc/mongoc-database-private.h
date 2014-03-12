@@ -31,20 +31,17 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_database_t
 {
-   mongoc_client_t *client;
-   char name[128];
-
+   mongoc_client_t        *client;
+   char                    name [128];
    mongoc_write_concern_t *write_concern;
    mongoc_read_prefs_t    *read_prefs;
 };
 
 
-mongoc_database_t *
-_mongoc_database_new (mongoc_client_t              *client,
-                      const char                   *name,
-                      const mongoc_read_prefs_t    *read_prefs,
-                      const mongoc_write_concern_t *write_concern)
-   BSON_GNUC_INTERNAL;
+mongoc_database_t *_mongoc_database_new (mongoc_client_t              *client,
+                                         const char                   *name,
+                                         const mongoc_read_prefs_t    *read_prefs,
+                                         const mongoc_write_concern_t *write_concern);
 
 
 BSON_END_DECLS

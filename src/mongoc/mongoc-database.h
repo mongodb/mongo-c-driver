@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -51,9 +51,9 @@ bool                          mongoc_database_add_user             (mongoc_datab
 void                          mongoc_database_destroy              (mongoc_database_t            *database);
 mongoc_cursor_t              *mongoc_database_command              (mongoc_database_t            *database,
                                                                     mongoc_query_flags_t          flags,
-                                                                    uint32_t                 skip,
-                                                                    uint32_t                 limit,
-                                                                    uint32_t                 batch_size,
+                                                                    uint32_t                      skip,
+                                                                    uint32_t                      limit,
+                                                                    uint32_t                      batch_size,
                                                                     const bson_t                 *command,
                                                                     const bson_t                 *fields,
                                                                     const mongoc_read_prefs_t    *read_prefs);

@@ -16,7 +16,7 @@
 
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+# error "Only <mongoc.h> can be included directly."
 #endif
 
 
@@ -31,7 +31,7 @@ BSON_BEGIN_DECLS
 
 
 #ifndef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "mongoc"
+# define MONGOC_LOG_DOMAIN "mongoc"
 #endif
 
 

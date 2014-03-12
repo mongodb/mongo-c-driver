@@ -45,48 +45,25 @@ struct _mongoc_sasl_t
 };
 
 
-void
-_mongoc_sasl_init (mongoc_sasl_t *sasl)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_sasl_set_pass (mongoc_sasl_t *sasl,
-                       const char    *pass)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_sasl_set_user (mongoc_sasl_t *sasl,
-                       const char    *user)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
-                            const char    *mechanism)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_sasl_set_service_name (mongoc_sasl_t *sasl,
-                               const char    *service_name)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_sasl_set_service_host (mongoc_sasl_t *sasl,
-                               const char    *service_host)
-   BSON_GNUC_INTERNAL;
-
-void
-_mongoc_sasl_destroy (mongoc_sasl_t *sasl)
-   BSON_GNUC_INTERNAL;
-
-bool
-_mongoc_sasl_step (mongoc_sasl_t      *sasl,
-                   const uint8_t *inbuf,
-                   uint32_t       inbuflen,
-                   uint8_t       *outbuf,
-                   uint32_t       outbufmax,
-                   uint32_t      *outbuflen,
-                   bson_error_t       *error)
-   BSON_GNUC_INTERNAL;
+void _mongoc_sasl_init             (mongoc_sasl_t      *sasl);
+void _mongoc_sasl_set_pass         (mongoc_sasl_t      *sasl,
+                                    const char         *pass);
+void _mongoc_sasl_set_user         (mongoc_sasl_t      *sasl,
+                                    const char         *user);
+void _mongoc_sasl_set_mechanism    (mongoc_sasl_t      *sasl,
+                                    const char         *mechanism);
+void _mongoc_sasl_set_service_name (mongoc_sasl_t      *sasl,
+                                    const char         *service_name);
+void _mongoc_sasl_set_service_host (mongoc_sasl_t      *sasl,
+                                    const char         *service_host);
+void _mongoc_sasl_destroy          (mongoc_sasl_t      *sasl);
+bool _mongoc_sasl_step             (mongoc_sasl_t      *sasl,
+                                    const uint8_t      *inbuf,
+                                    uint32_t            inbuflen,
+                                    uint8_t            *outbuf,
+                                    uint32_t            outbufmax,
+                                    uint32_t           *outbuflen,
+                                    bson_error_t       *error);
 
 
 BSON_END_DECLS

@@ -15,8 +15,8 @@
  */
 
 
-#ifndef MONGOC_COUNTERS_H
-#define MONGOC_COUNTERS_H
+#ifndef MONGOC_COUNTERS_PRIVATE_H
+#define MONGOC_COUNTERS_PRIVATE_H
 
 
 #include <bson.h>
@@ -37,8 +37,8 @@
 BSON_BEGIN_DECLS
 
 
-void
-_mongoc_counters_init (void) BSON_GNUC_INTERNAL;
+void _mongoc_counters_init (void);
+
 
 static BSON_INLINE unsigned
 _mongoc_get_cpu_count (void)
@@ -164,4 +164,4 @@ mongoc_counter_##ident##_reset (void) \
 BSON_END_DECLS
 
 
-#endif /* MONGOC_COUNTERS_H */
+#endif /* MONGOC_COUNTERS_PRIVATE_H */
