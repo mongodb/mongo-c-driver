@@ -1,1 +1,35 @@
-mongoc_socket.txt
+mongoc_socket_getsockname(3)
+============================
+
+
+NAME
+----
+mongoc_socket_getsockname, mongoc_socket_setsockopt - Get and set socket options.
+
+
+SYNOPSIS
+--------
+
+[source, c]
+---------------
+#include <mongoc.h>
+
+int mongoc_socket_getsockname (mongoc_socket_t *sock,
+                               struct sockaddr *addr,
+                               socklen_t       *addrlen);
+int mongoc_socket_setsockopt  (mongoc_socket_t *sock,
+                               int              level,
+                               int              optname,
+                               const void      *optval,
+                               socklen_t        optlen);
+---------------
+
+
+DESCRIPTION
+-----------
+TODO
+
+
+AUTHORS
+-------
+This page was written by MongoDB, Inc.
