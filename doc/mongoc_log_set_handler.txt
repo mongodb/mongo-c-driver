@@ -4,7 +4,7 @@ mongoc_log_set_handler(3)
 
 NAME
 ----
-mongoc_log_set_handler - set the log handler for mongoc
+mongoc_log_set_handler, mongoc_log_default_handler - set the log handler for mongoc
 
 
 SYNOPSIS
@@ -18,6 +18,11 @@ typedef void (*mongoc_log_func_t) (mongoc_log_level_t  log_level,
 
 void mongoc_log_set_handler (mongoc_log_func_t  log_func,
                              void              *user_data);
+
+void mongoc_log_default_handler (mongoc_log_level_t  log_level,
+                                 const char         *log_domain,
+                                 const char         *message,
+                                 void               *user_data);
 -----------------------
 
 
@@ -27,7 +32,7 @@ The _mongoc_log_set_handler()_ function shall set the log handler for mongoc.
 This log handler receives all log messages and is responsible for whatever
 handling is application appropriate.
 
-The default log handler simply writes to *STDERR*.
+_mongoc_log_default_handler()_ writes the formatted log message to *stderr*.
 
 RETURN VALUE
 ------------
