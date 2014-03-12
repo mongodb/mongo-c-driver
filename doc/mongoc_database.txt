@@ -14,12 +14,13 @@ SYNOPSIS
 ---------------
 #include <mongoc.h>
 
-mongoc_client_t * client;
-mongoc_database_t * database;
+{
+   mongoc_database_t *database;
+   mongoc_client_t *client;
 
-client = mongoc_client_new(uri_string);
-
-database = mongoc_client_get_database(client, "db_name");
+   client = mongoc_client_new (uri_string);
+   database = mongoc_client_get_database (client, "db_name");
+}
 ---------------
 
 
@@ -57,6 +58,8 @@ linkmongoc:mongoc_database_command[3]
 linkmongoc:mongoc_database_command_simple[3]
 linkmongoc:mongoc_database_drop[3]
 linkmongoc:mongoc_database_has_collection[3]
+linkmongoc:mongoc_database_get_collection[3]
+linkmongoc:mongoc_database_get_name[3]
 linkmongoc:mongoc_database_get_read_prefs[3]
 linkmongoc:mongoc_database_set_read_prefs[3]
 linkmongoc:mongoc_database_get_write_concern[3]
