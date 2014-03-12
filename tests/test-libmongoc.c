@@ -21,6 +21,8 @@
 #include <stdio.h>
 
 #include "TestSuite.h"
+#include "test-libmongoc.h"
+#include "mongoc-tests.h"
 
 
 extern void test_array_install            (TestSuite *suite);
@@ -58,7 +60,8 @@ log_handler (mongoc_log_level_t  log_level,
 }
 
 
-char MONGOC_TEST_HOST[1024];
+char MONGOC_TEST_HOST [1024];
+char MONGOC_TEST_UNIQUE [32];
 
 static void
 set_mongoc_test_host(void)
@@ -86,7 +89,11 @@ main (int   argc,
    TestSuite suite;
    int ret;
 
-   mongoc_init();
+   mongoc_init ();
+
+   bson_snprintf (MONGOC_TEST_UNIQUE, sizeof MONGOC_TEST_UNIQUE,
+                  "test_%u_%u", (unsigned)time (NULL),
+                  (unsigned)gettestpid ());
 
    set_mongoc_test_host ();
 

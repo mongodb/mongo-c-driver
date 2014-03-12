@@ -6,10 +6,23 @@
 #include <fcntl.h>
 
 #include "test-libmongoc.h"
+#include "mongoc-tests.h"
 #include "TestSuite.h"
 
 
 static char *gTestUri;
+
+
+static mongoc_gridfs_t *
+get_test_gridfs (mongoc_client_t *client,
+                 const char      *name,
+                 bson_error_t    *error)
+{
+   char n [32];
+
+   bson_snprintf (n, sizeof n, "fs_%s", name);
+   return mongoc_client_get_gridfs (client, MONGOC_TEST_UNIQUE, n, error);
+}
 
 
 static void
@@ -55,7 +68,7 @@ test_list (void)
    client = mongoc_client_new (gTestUri);
    assert (client);
 
-   gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error);
+   gridfs = get_test_gridfs (client, "list", &error);
    assert (gridfs);
 
    mongoc_gridfs_drop (gridfs, &error);
@@ -121,7 +134,7 @@ test_create_from_stream (void)
    client = mongoc_client_new (gTestUri);
    assert (client);
 
-   gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error);
+   gridfs = get_test_gridfs (client, "from_stream", &error);
    assert (gridfs);
 
    mongoc_gridfs_drop (gridfs, &error);
@@ -162,7 +175,7 @@ test_read (void)
    client = mongoc_client_new (gTestUri);
    assert (client);
 
-   gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error);
+   gridfs = get_test_gridfs (client, "read", &error);
    assert (gridfs);
 
    mongoc_gridfs_drop (gridfs, &error);
@@ -215,7 +228,7 @@ test_write (void)
    client = mongoc_client_new (gTestUri);
    assert (client);
 
-   gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error);
+   gridfs = get_test_gridfs (client, "write", &error);
    assert (gridfs);
 
    mongoc_gridfs_drop (gridfs, &error);
@@ -265,7 +278,7 @@ test_stream (void)
    client = mongoc_client_new (gTestUri);
    assert (client);
 
-   gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error);
+   gridfs = get_test_gridfs (client, "fs", &error);
    assert (gridfs);
 
    mongoc_gridfs_drop (gridfs, &error);
