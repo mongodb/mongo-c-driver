@@ -1,10 +1,10 @@
-mongoc_stream_file(7)
+mongoc_stream_file(3)
 =====================
 
 
 NAME
 ----
-mongoc_stream_file_t, mongoc_stream_file_new, mongoc_stream_file_new_for_path, mongoc_stream_file_get_fd - create a new mongoc file stream
+mongoc_stream_file_new, mongoc_stream_file_new_for_path, mongoc_stream_file_get_fd - create a new mongoc file stream
 
 
 SYNOPSIS

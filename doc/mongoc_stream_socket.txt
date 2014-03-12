@@ -1,4 +1,4 @@
-mongoc_stream_socket(7)
+mongoc_stream_socket(3)
 =======================
 
 

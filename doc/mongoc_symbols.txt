@@ -51,7 +51,9 @@ linkmongoc:mongoc_database_command_simple[3] +
 linkmongoc:mongoc_database_create_collection[3] +
 linkmongoc:mongoc_database_destroy[3] +
 linkmongoc:mongoc_database_drop[3] +
+linkmongoc:mongoc_database_get_collection[3] +
 linkmongoc:mongoc_database_get_collection_names[3] +
+linkmongoc:mongoc_database_get_name[3] +
 linkmongoc:mongoc_database_get_read_prefs[3] +
 linkmongoc:mongoc_database_get_write_concern[3] +
 linkmongoc:mongoc_database_has_collection[3] +
