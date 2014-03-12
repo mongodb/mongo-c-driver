@@ -22,6 +22,9 @@ include examples/Makefile.am
 include src/Makefile.am
 include tests/Makefile.am
 
+# for EXTRA_DIST
+include build/cmake/Makefile.am
+
 ACLOCAL_AMFLAGS = -I build/autotools/m4 ${ACLOCAL_FLAGS}
 DISTCHECK_CONFIGURE_FLAGS = --enable-silent-rules
 
@@ -31,6 +34,8 @@ mongocdoc_DATA = \
 	NEWS \
 	README.rst
 EXTRA_DIST += $(mongocdoc_DATA)
+
+EXTRA_DIST += CMakeLists.txt
 
 dist-hook:
 	@if test -d "$(srcdir)/.git"; then                              \
