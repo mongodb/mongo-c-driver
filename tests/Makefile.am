@@ -114,7 +114,7 @@ tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_d
 	touch $(top_srcdir)/tests/trust_dir/done
 
 if OS_SOLARIS
-TEST_ARGS = "-f -p"
+TEST_ARGS = -f -p
 endif
 
 if ENABLE_SSL
