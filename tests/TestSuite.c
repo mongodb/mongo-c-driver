@@ -612,12 +612,14 @@ TestSuite_RunParallel (TestSuite *suite) /* IN */
    }
 
 #ifdef _WIN32
-   Sleep (30000);
+   Sleep (60000);
 #else
-   sleep (30);
+   sleep (60);
 #endif
 
    fprintf (stderr, "Timed out, aborting!\n");
+
+   exit (EXIT_FAILURE);
 
    abort ();
 }
