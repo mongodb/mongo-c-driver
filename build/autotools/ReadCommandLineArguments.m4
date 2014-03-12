@@ -65,17 +65,15 @@ AC_ARG_ENABLE([maintainer-flags],
 
 
 # Check if we should use the bundled (git submodule) libbson
-AC_MSG_CHECKING([whether to use bundled libbson.])
 AC_ARG_WITH(libbson,
     AC_HELP_STRING([--with-libbson=@<:@auto/system/bundled@:>@],
-                   [use system installed libbson or bundled libbson. default=auto])
+                   [use system installed libbson or bundled libbson. default=auto]),
     [],
     [with_libbson=auto])
-AS_IF([test "x$with_libbson" != "bundled" && test "x$with_libbson" != "system"],
+AS_IF([test "x$with_libbson" != xbundled && test "x$with_libbson" != xsystem],
       [with_libbson=auto])
 
 
-AC_MSG_CHECKING([whether to enable SSL.])
 AC_ARG_ENABLE([ssl],
               [AS_HELP_STRING([--enable-ssl=@<:@auto/yes/no@:>@],
                               [Use OpenSSL for TLS connections.])],
@@ -83,7 +81,6 @@ AC_ARG_ENABLE([ssl],
               [enable_ssl=auto])
 
 
-AC_MSG_CHECKING([whether to enable SASL.])
 AC_ARG_ENABLE([sasl],
               [AS_HELP_STRING([--enable-sasl=@<:@auto/yes/no@:>@],
                               [Use libsasl2 for Kerberos.])],
