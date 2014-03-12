@@ -113,9 +113,7 @@ tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_d
 	$< $(top_srcdir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
 	touch $(top_srcdir)/tests/trust_dir/done
 
-if OS_SOLARIS
 TEST_ARGS = -f -p
-endif
 
 if ENABLE_SSL
 test: $(TEST_PROGS) test_certs
