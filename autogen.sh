@@ -12,10 +12,6 @@ if [ ! -f README ]; then
     ln -s README.rst README
 fi
 
-if [ ! -f COPYING ]; then
-    ln -s LICENSE COPYING
-fi
-
 touch ChangeLog
 touch AUTHORS
 
