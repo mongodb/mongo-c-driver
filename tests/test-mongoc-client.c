@@ -493,6 +493,9 @@ test_exhaust_cursor (void)
       bson_destroy(&b[i]);
    }
 
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
    mongoc_cursor_destroy (cursor2);
    mongoc_collection_destroy(collection);
    mongoc_client_destroy (client);
