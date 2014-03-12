@@ -18,10 +18,22 @@ get_test_gridfs (mongoc_client_t *client,
                  const char      *name,
                  bson_error_t    *error)
 {
-   char n [32];
+   char *gen;
+   char n [48];
 
-   bson_snprintf (n, sizeof n, "fs_%s", name);
-   return mongoc_client_get_gridfs (client, MONGOC_TEST_UNIQUE, n, error);
+   gen = gen_collection_name ("fs");
+   bson_snprintf (n, sizeof n, "%s_%s", gen, name);
+   bson_free (gen);
+
+   return mongoc_client_get_gridfs (client, "test", n, error);
+}
+
+bool
+drop_collections (mongoc_gridfs_t *gridfs,
+                  bson_error_t    *error)
+{
+   return (mongoc_collection_drop (mongoc_gridfs_get_files (gridfs), error) &&
+           mongoc_collection_drop (mongoc_gridfs_get_chunks (gridfs), error));
 }
 
 
@@ -46,6 +58,8 @@ test_create (void)
    assert (mongoc_gridfs_file_save (file));
 
    mongoc_gridfs_file_destroy (file);
+
+   drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
 
    mongoc_client_destroy (client);
@@ -116,6 +130,7 @@ test_list (void)
    assert (strcmp (mongoc_gridfs_file_get_filename (file), "file.1") == 0);
    mongoc_gridfs_file_destroy (file);
 
+   drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
 
    mongoc_client_destroy (client);
@@ -148,6 +163,7 @@ test_create_from_stream (void)
 
    mongoc_gridfs_file_destroy (file);
 
+   drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
 
    mongoc_client_destroy (client);
@@ -193,6 +209,7 @@ test_read (void)
 
    mongoc_gridfs_file_destroy (file);
 
+   drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
 
    mongoc_client_destroy (client);
@@ -253,6 +270,7 @@ test_write (void)
 
    mongoc_gridfs_file_destroy (file);
 
+   drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
 
    mongoc_client_destroy (client);
@@ -297,6 +315,7 @@ test_stream (void)
    /* cleanup */
    mongoc_stream_destroy (stream);
 
+   drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
    mongoc_client_destroy (client);
 }

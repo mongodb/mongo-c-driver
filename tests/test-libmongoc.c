@@ -63,6 +63,16 @@ log_handler (mongoc_log_level_t  log_level,
 char MONGOC_TEST_HOST [1024];
 char MONGOC_TEST_UNIQUE [32];
 
+char *
+gen_collection_name (const char *str)
+{
+   return bson_strdup_printf ("%s_%u_%u",
+                              str,
+                              (unsigned)time(NULL),
+                              (unsigned)gettestpid());
+
+}
+
 static void
 set_mongoc_test_host(void)
 {

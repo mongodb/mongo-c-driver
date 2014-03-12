@@ -10,7 +10,6 @@
 #include "test-libmongoc.h"
 
 static char *gTestUri;
-static char *gTestUriWithPassword;
 static char *gTestUriWithBadPassword;
 
 
@@ -38,6 +37,39 @@ usleep (int64_t usec)
 #endif
 
 
+static mongoc_collection_t *
+get_test_collection (mongoc_client_t *client,
+                     const char      *name)
+{
+   mongoc_collection_t *ret;
+   char *str;
+
+   str = gen_collection_name (name);
+   ret = mongoc_client_get_collection (client, "test", str);
+   bson_free (str);
+
+   return ret;
+}
+
+
+static char *
+gen_test_user (void)
+{
+   return bson_strdup_printf ("testuser_%u_%u",
+                              (unsigned)time(NULL),
+                              (unsigned)gettestpid());
+}
+
+
+static char *
+gen_good_uri (const char *username)
+{
+   return bson_strdup_printf("mongodb://%s:testpass@%s:27017/test",
+                             username,
+                             MONGOC_TEST_HOST);
+}
+
+
 static void
 test_mongoc_client_authenticate (void)
 {
@@ -47,16 +79,21 @@ test_mongoc_client_authenticate (void)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
+   char *username;
+   char *uri;
    bool r;
    bson_t q;
+
+   username = gen_test_user ();
+   uri = gen_good_uri (username);
 
    /*
     * Add a user to the test database.
     */
    client = mongoc_client_new(gTestUri);
    database = mongoc_client_get_database(client, "test");
-   mongoc_database_remove_user (database, "testuser", &error);
-   r = mongoc_database_add_user(database, "testuser", "testpass", NULL, NULL, &error);
+   mongoc_database_remove_user (database, username, &error);
+   r = mongoc_database_add_user(database, username, "testpass", NULL, NULL, &error);
    ASSERT_CMPINT(r, ==, 1);
    mongoc_database_destroy(database);
    mongoc_client_destroy(client);
@@ -65,7 +102,7 @@ test_mongoc_client_authenticate (void)
     * Try authenticating with that user.
     */
    bson_init(&q);
-   client = mongoc_client_new(gTestUriWithPassword);
+   client = mongoc_client_new(uri);
    collection = mongoc_client_get_collection(client, "test", "test");
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &q, NULL, NULL);
@@ -80,6 +117,9 @@ test_mongoc_client_authenticate (void)
    mongoc_cursor_destroy(cursor);
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
+
+   bson_free (username);
+   bson_free (uri);
 }
 
 
@@ -342,6 +382,7 @@ test_mongoc_client_command (void)
 static void
 test_exhaust_cursor (void)
 {
+   mongoc_write_concern_t *wr;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
@@ -356,18 +397,17 @@ test_exhaust_cursor (void)
    bool r;
    bson_error_t error;
    bson_oid_t oid;
-   char dbname [32];
 
    client = mongoc_client_new (gTestUri);
    assert (client);
 
-   bson_snprintf (dbname, sizeof dbname, "tests%u_%d",
-                  (unsigned)time (NULL), gettestpid ());
-
-   collection = mongoc_client_get_collection(client, dbname, "test_exhaust_cursor");
-   assert(collection);
+   collection = get_test_collection (client, "test_exhaust_cursor");
+   assert (collection);
 
    mongoc_collection_drop(collection, &error);
+
+   wr = mongoc_write_concern_new ();
+   mongoc_write_concern_set_journal (wr, true);
 
    /* bulk insert some records to work on */
    {
@@ -382,7 +422,7 @@ test_exhaust_cursor (void)
       }
 
       r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
-                                         (const bson_t **)bptr, 10, NULL, &error);
+                                         (const bson_t **)bptr, 10, wr, &error);
 
       if (!r) {
          MONGOC_WARNING("Insert bulk failure: %s\n", error.message);
@@ -449,7 +489,7 @@ test_exhaust_cursor (void)
    /* make sure writes fail as well */
    {
       r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
-                                         (const bson_t **)bptr, 10, NULL, &error);
+                                         (const bson_t **)bptr, 10, wr, &error);
       assert (!r);
       assert (error.domain == MONGOC_ERROR_CLIENT);
       assert (error.code == MONGOC_ERROR_CLIENT_IN_EXHAUST);
@@ -496,6 +536,7 @@ test_exhaust_cursor (void)
    r = mongoc_collection_drop (collection, &error);
    assert (r);
 
+   mongoc_write_concern_destroy (wr);
    mongoc_cursor_destroy (cursor2);
    mongoc_collection_destroy(collection);
    mongoc_client_destroy (client);
@@ -506,7 +547,6 @@ static void
 cleanup_globals (void)
 {
    bson_free(gTestUri);
-   bson_free(gTestUriWithPassword);
    bson_free(gTestUriWithBadPassword);
 }
 
@@ -517,7 +557,6 @@ test_client_install (TestSuite *suite)
    bool local;
 
    gTestUri = bson_strdup_printf("mongodb://%s:27017/", MONGOC_TEST_HOST);
-   gTestUriWithPassword = bson_strdup_printf("mongodb://testuser:testpass@%s:27017/test", MONGOC_TEST_HOST);
    gTestUriWithBadPassword = bson_strdup_printf("mongodb://baduser:badpass@%s:27017/test", MONGOC_TEST_HOST);
 
    local = !getenv ("MONGOC_DISABLE_MOCK_SERVER");

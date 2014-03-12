@@ -133,22 +133,14 @@ test_create_collection (void)
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bson_error_t error = { 0 };
-   unsigned t;
-   unsigned p;
    bson_t options;
-   char dbname [32];
+   char *name;
    bool r;
 
    client = mongoc_client_new (gTestUri);
    assert (client);
 
-   t = time (NULL);
-
-   p = gettestpid ();
-   bson_snprintf (dbname, sizeof dbname, "test%u_%u", t, p);
-   dbname [sizeof dbname - 1] = '\0';
-
-   database = mongoc_client_get_database (client, dbname);
+   database = mongoc_client_get_database (client, "test");
    assert (database);
 
    bson_init (&options);
@@ -157,8 +149,10 @@ test_create_collection (void)
    BSON_APPEND_BOOL (&options, "capped", true);
    BSON_APPEND_BOOL (&options, "autoIndexId", true);
 
-   collection = mongoc_database_create_collection (database, "createCollectionTest", &options, &error);
+   name = gen_collection_name ("create_collection");
+   collection = mongoc_database_create_collection (database, name, &options, &error);
    assert (collection);
+   bson_free (name);
 
    r = mongoc_collection_drop (collection, &error);
    assert (r);

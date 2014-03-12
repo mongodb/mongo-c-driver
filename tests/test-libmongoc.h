@@ -19,6 +19,7 @@
 #define TEST_LIBMONGOC_H
 
 extern char MONGOC_TEST_HOST [1024];
-extern char MONGOC_TEST_UNIQUE [32];
+
+char *gen_collection_name (const char *prefix);
 
 #endif
