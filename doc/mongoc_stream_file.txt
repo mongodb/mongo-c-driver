@@ -1,5 +1,5 @@
-mongoc_stream_file_t(3)
-======================
+mongoc_stream_file(7)
+=====================
 
 
 NAME

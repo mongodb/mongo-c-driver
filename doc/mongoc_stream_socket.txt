@@ -1,5 +1,5 @@
-mongoc_stream_socket_t(3)
-=========================
+mongoc_stream_socket(7)
+=======================
 
 
 NAME
