@@ -163,6 +163,9 @@ test_create_collection (void)
    r = mongoc_collection_drop (collection, &error);
    assert (r);
 
+   r = mongoc_database_drop (database, &error);
+   assert (r);
+
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
