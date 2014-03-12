@@ -119,7 +119,7 @@ else
 test: $(TEST_PROGS)
 endif
 	@ for TEST_PROG in $(TEST_PROGS) ; do \
-		./$$TEST_PROG -f -p -F test.log; \
+		./$$TEST_PROG -F test.log; \
 	done
 
 .PHONY: test_certs
