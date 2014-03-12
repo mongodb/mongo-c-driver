@@ -759,34 +759,34 @@ mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 mongoc_cursor_t *
 _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 {
-   mongoc_cursor_t *clone;
+   mongoc_cursor_t *_clone;
 
    ENTRY;
 
    BSON_ASSERT (cursor);
 
-   clone = bson_malloc0 (sizeof *clone);
+   _clone = bson_malloc0 (sizeof *_clone);
 
-   clone->client = cursor->client;
-   clone->is_command = cursor->is_command;
-   clone->flags = cursor->flags;
-   clone->skip = cursor->skip;
-   clone->batch_size = cursor->batch_size;
-   clone->limit = cursor->limit;
-   clone->nslen = cursor->nslen;
+   _clone->client = cursor->client;
+   _clone->is_command = cursor->is_command;
+   _clone->flags = cursor->flags;
+   _clone->skip = cursor->skip;
+   _clone->batch_size = cursor->batch_size;
+   _clone->limit = cursor->limit;
+   _clone->nslen = cursor->nslen;
 
    if (cursor->read_prefs) {
-      clone->read_prefs = mongoc_read_prefs_copy (cursor->read_prefs);
+      _clone->read_prefs = mongoc_read_prefs_copy (cursor->read_prefs);
    }
 
-   bson_copy_to (&cursor->query, &clone->query);
-   bson_copy_to (&cursor->fields, &clone->fields);
+   bson_copy_to (&cursor->query, &_clone->query);
+   bson_copy_to (&cursor->fields, &_clone->fields);
 
-   bson_strncpy (clone->ns, cursor->ns, sizeof clone->ns);
+   bson_strncpy (_clone->ns, cursor->ns, sizeof _clone->ns);
 
-   _mongoc_buffer_init (&clone->buffer, NULL, 0, NULL);
+   _mongoc_buffer_init (&_clone->buffer, NULL, 0, NULL);
 
    mongoc_counter_cursors_active_inc ();
 
-   RETURN(clone);
+   RETURN (_clone);
 }
