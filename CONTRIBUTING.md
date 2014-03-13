@@ -47,10 +47,12 @@ The basics are, in vim:
 
 Place a space between the function name and the parameter as such:
 
-  static void
-  my_func (Param *p)
+```c
+static void
+my_func (Param *p)
 
-  my_func (p);
+my_func (p);
+```
 
 Not all of the code does this today, but it should be cleaned up at some point.
 
