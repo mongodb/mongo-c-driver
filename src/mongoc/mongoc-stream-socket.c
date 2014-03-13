@@ -24,11 +24,11 @@
 #define MONGOC_LOG_DOMAIN "stream"
 
 
-typedef struct
+struct _mongoc_stream_socket_t
 {
    mongoc_stream_t  vtable;
    mongoc_socket_t *sock;
-} mongoc_stream_socket_t;
+};
 
 
 static BSON_INLINE int64_t
