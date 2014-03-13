@@ -35,7 +35,9 @@ mongocdoc_DATA = \
 	README.rst
 EXTRA_DIST += $(mongocdoc_DATA)
 
-EXTRA_DIST += CMakeLists.txt
+EXTRA_DIST += \
+	CMakeLists.txt \
+	CONTRIBUTING.md
 
 dist-hook:
 	@if test -d "$(srcdir)/.git"; then                              \
