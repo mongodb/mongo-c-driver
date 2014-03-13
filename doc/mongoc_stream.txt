@@ -53,11 +53,16 @@ OpenSSL based TLS support with x509 certificate verification.
 The TLS stream type has a few non-standard methods that involve negotiating the
 SSL handshake and cert verification.
 
-UNIX
+FILE
 ~~~~
 
-The bread and butter stream type.  This can correlate to a unix domain socket
-or a tcp socket.
+A stream for communicating with local files on disk.
+
+SOCKET
+~~~~~~
+
+The primary stream interface. This is used for communicating with a a peer
+over an AF_INET, AF_INET6, or AF_UNIX socket.
 
 
 SEE ALSO
@@ -70,10 +75,13 @@ linkmongoc:mongoc_stream_buffered_new[3]
 linkmongoc:mongoc_stream_close[3]
 linkmongoc:mongoc_stream_cork[3]
 linkmongoc:mongoc_stream_destroy[3]
+linkmongoc:mongoc_stream_file_new[3]
+linkmongoc:mongoc_stream_file_new_for_path[3]
 linkmongoc:mongoc_stream_flush[3]
 linkmongoc:mongoc_stream_gridfs_new[3]
 linkmongoc:mongoc_stream_read[3]
 linkmongoc:mongoc_stream_readv[3]
+linkmongoc:mongoc_stream_socket_new[3]
 linkmongoc:mongoc_stream_setsockopt[3]
 linkmongoc:mongoc_stream_tls_check_cert[3]
 linkmongoc:mongoc_stream_tls_do_handshake[3]
@@ -86,6 +94,9 @@ RELATED
 ~~~~~~~
 
 linkmongoc:mongoc_client[7]
+linkmongoc:mongoc_socket[7]
+linkmongoc:mongoc_stream_file[7]
+linkmongoc:mongoc_stream_socket[7]
 
 
 AUTHORS

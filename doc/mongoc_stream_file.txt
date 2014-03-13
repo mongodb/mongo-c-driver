@@ -1,57 +1,47 @@
-mongoc_stream_file(3)
+mongoc_stream_file(7)
 =====================
 
 
 NAME
 ----
-mongoc_stream_file_new, mongoc_stream_file_new_for_path, mongoc_stream_file_get_fd - create a new mongoc file stream
+mongoc_stream_file - MongoDB stream IO abstraction for local files
 
 
 SYNOPSIS
 --------
-[source,c]
------------------------
-mongoc_stream_t *mongoc_stream_file_new          (int              fd);
-mongoc_stream_t *mongoc_stream_file_new_for_path (const char      *path,
-                                                  int              flags,
-                                                  int              mode);
-int              mongoc_stream_file_get_fd       (mongoc_stream_t *stream);
------------------------
+
+[source, c]
+---------------
+#include <mongoc.h>
+
+typedef struct _mongoc_stream_file_t mongoc_stream_file_t;
+---------------
 
 
 DESCRIPTION
 -----------
-The _mongoc_stream_file_new()_ function shall create a new 
-linkmongoc:mongoc_stream[7], taking ownership of the file-descriptor _fd_.
-
-fd::
-   The file descriptor to take ownership of.
-   fd will be closed when the stream is disposed.
-
-
-The _mongoc_stream_file_new_for_path()_ function shall create a new 
-linkmongoc:mongoc_stream[7], using the path, flags and mode provided.
-This calls _open()_ and the semantics are the same.
-
-
-RETURN VALUE
-------------
-The _mongoc_stream_file_new()_ and _mongoc_stream_file_new_for_path()_
-functions return a new linkmongoc:mongoc_stream[7].
-
-The _mongoc_stream_file_get_fd()_ returns the underlying file-descriptor.
-
-ERRORS
-------
-No errors are defined.
+_mongoc_stream_file_t_ can be considered a subclass of _mongoc_stream_t_. It
+is used for local files using a UNIX style file-descriptor.
 
 
 SEE ALSO
 --------
+
+FUNCTIONS
+~~~~~~~~~
+
+linkmongoc:mongoc_stream_file_new[3]
+linkmongoc:mongoc_stream_file_new_for_path[3]
+linkmongoc:mongoc_stream_file_new_get_fd[3]
+
+
+RELATED
+~~~~~~~
+
 linkmongoc:mongoc_stream[7]
+linkmongoc:mongoc_client[7]
 
 
 AUTHORS
 -------
-
 This page was written by MongoDB, Inc.
