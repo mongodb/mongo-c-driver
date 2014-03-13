@@ -129,9 +129,7 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
 
    bson_return_if_fail(collection);
 
-   if (collection->gle) {
-      bson_destroy(collection->gle);
-   }
+   bson_clear (&collection->gle);
 
    _mongoc_buffer_destroy(&collection->buffer);
 
@@ -295,12 +293,10 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
    bson_return_val_if_fail(collection, NULL);
    bson_return_val_if_fail(query, NULL);
 
+   bson_clear (&collection->gle);
+
    if (!read_prefs) {
       read_prefs = collection->read_prefs;
-   }
-
-   if (collection->gle) {
-      bson_destroy(collection->gle);
    }
 
    return _mongoc_cursor_new(collection->client, collection->ns, flags, skip,
@@ -354,9 +350,7 @@ mongoc_collection_command (mongoc_collection_t       *collection,
       read_prefs = collection->read_prefs;
    }
 
-   if (collection->gle) {
-      bson_destroy(collection->gle);
-   }
+   bson_clear (&collection->gle);
 
    return mongoc_client_command (collection->client, collection->db, flags,
                                  skip, limit, batch_size, query, fields, read_prefs);
@@ -372,9 +366,7 @@ mongoc_collection_command_simple (mongoc_collection_t       *collection,
    BSON_ASSERT (collection);
    BSON_ASSERT (command);
 
-   if (collection->gle) {
-      bson_destroy(collection->gle);
-   }
+   bson_clear (&collection->gle);
 
    return mongoc_client_command_simple (collection->client, collection->db,
                                         command, read_prefs, reply, error);
@@ -680,6 +672,8 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
    BSON_ASSERT(documents);
    BSON_ASSERT(n_documents);
 
+   bson_clear (&collection->gle);
+
    if (!write_concern) {
       write_concern = collection->write_concern;
    }
@@ -740,9 +734,6 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
       bson_init_static (&reply_bson, reply.reply.documents,
                         reply.reply.documents_len);
 
-      if (collection->gle) {
-         bson_destroy (collection->gle);
-      }
       collection->gle = bson_copy (&reply_bson);
 
       if (bson_iter_init_find (&reply_iter, &reply_bson, "err") &&
@@ -817,6 +808,8 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
 
    BSON_ASSERT (documents);
    BSON_ASSERT (n_documents);
+
+   bson_clear (&collection->gle);
 
    if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
       for (i = 0; i < n_documents; i++) {
@@ -901,6 +894,8 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    bson_return_val_if_fail (collection, false);
    bson_return_val_if_fail (document, false);
 
+   bson_clear (&collection->gle);
+
    if (!bson_iter_init_find (&iter, document, "_id")) {
       bson_oid_init (&oid, NULL);
       bson_append_oid (&copy, "_id", 3, &oid);
@@ -961,6 +956,8 @@ mongoc_collection_update (mongoc_collection_t          *collection,
    bson_return_val_if_fail(selector, false);
    bson_return_val_if_fail(update, false);
 
+   bson_clear (&collection->gle);
+
    if (!(flags & MONGOC_UPDATE_NO_VALIDATE) &&
        bson_iter_init (&iter, update) &&
        bson_iter_next (&iter) &&
@@ -1005,7 +1002,8 @@ mongoc_collection_update (mongoc_collection_t          *collection,
    }
 
    if (_mongoc_write_concern_has_gle (write_concern)) {
-      if (!_mongoc_client_recv_gle (collection, hint, error)) {
+      if (!_mongoc_client_recv_gle (collection->client, hint,
+                                    &collection->gle, error)) {
          RETURN(false);
       }
    }
@@ -1113,6 +1111,8 @@ mongoc_collection_delete (mongoc_collection_t          *collection,
    bson_return_val_if_fail(collection, false);
    bson_return_val_if_fail(selector, false);
 
+   bson_clear (&collection->gle);
+
    if (!write_concern) {
       write_concern = collection->write_concern;
    }
@@ -1136,7 +1136,8 @@ mongoc_collection_delete (mongoc_collection_t          *collection,
    }
 
    if (_mongoc_write_concern_has_gle(write_concern)) {
-      if (!_mongoc_client_recv_gle (collection, hint, error)) {
+      if (!_mongoc_client_recv_gle (collection->client, hint,
+                                    &collection->gle, error)) {
          return false;
       }
    }
@@ -1294,8 +1295,10 @@ mongoc_collection_get_name (mongoc_collection_t *collection)
  *       executed command for current collection instance.
  *
  * Returns:
- *       A newly allocated bson_t getLastError document, that *must* be
- *       destroyed with bson_destroy(). Or NULL if no getLastError present.
+ *       NULL or a bson_t that should not be modified or freed. This value
+ *       is not guaranteed to be persistent between calls into the
+ *       mongoc_collection_t instance, and therefore must be copied if
+ *       you would like to keep it around.
  *
  * Side effects:
  *       None.
@@ -1303,10 +1306,10 @@ mongoc_collection_get_name (mongoc_collection_t *collection)
  *--------------------------------------------------------------------------
  */
 
-bson_t *
-mongoc_collection_get_last_error (const mongoc_collection_t *collection)
+const bson_t *
+mongoc_collection_get_last_error (const mongoc_collection_t *collection) /* IN */
 {
    bson_return_val_if_fail (collection, NULL);
 
-   return collection->gle ? bson_copy (collection->gle) : NULL;
+   return collection->gle;
 }

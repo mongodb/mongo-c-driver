@@ -543,22 +543,27 @@ _bson_to_error (const bson_t *b,
  *
  *       If the operation was successful, true is returned.
  *
+ *       if @gle_doc is not NULL, then the actual response document for
+ *       the gle command will be stored as an out parameter. The caller
+ *       is responsible for freeing it in this case.
+ *
  * Returns:
  *       true if getlasterror was success; otherwise false and @error
  *       is set.
  *
  * Side effects:
  *       @error if return value is false.
+ *       @gle_doc will be set if non NULL and a reply was received.
  *
  *--------------------------------------------------------------------------
  */
 
 bool
-_mongoc_client_recv_gle (mongoc_collection_t    *collection,
-                         uint32_t    hint,
-                         bson_error_t    *error)
+_mongoc_client_recv_gle (mongoc_client_t  *client,
+                         uint32_t          hint,
+                         bson_t          **gle_doc,
+                         bson_error_t     *error)
 {
-   mongoc_client_t *client;
    mongoc_buffer_t buffer;
    mongoc_rpc_t rpc;
    bson_iter_t iter;
@@ -567,10 +572,12 @@ _mongoc_client_recv_gle (mongoc_collection_t    *collection,
 
    ENTRY;
 
-   bson_return_val_if_fail (collection, false);
-   client = collection->client;
    bson_return_val_if_fail (client, false);
    bson_return_val_if_fail (hint, false);
+
+   if (gle_doc) {
+      *gle_doc = NULL;
+   }
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL);
 
@@ -587,25 +594,24 @@ _mongoc_client_recv_gle (mongoc_collection_t    *collection,
       GOTO (cleanup);
    }
 
-   if ((rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
-      if (_mongoc_rpc_reply_get_first (&rpc.reply, &b)) {
+   if (_mongoc_rpc_reply_get_first (&rpc.reply, &b)) {
+      if (gle_doc) {
+         *gle_doc = bson_copy (&b);
+      }
+
+      if ((rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
          _bson_to_error (&b, error);
          bson_destroy (&b);
          GOTO (cleanup);
       }
-   }
 
-   if (_mongoc_rpc_reply_get_first (&rpc.reply, &b)) {
       if (!bson_iter_init_find (&iter, &b, "ok") ||
           BSON_ITER_HOLDS_DOUBLE (&iter)) {
         if (bson_iter_double (&iter) == 0.0) {
           _bson_to_error (&b, error);
         }
-        if (collection->gle) {
-          bson_destroy (collection->gle);
-        }
-        collection->gle = bson_copy (&b);
       }
+
       bson_destroy (&b);
    }
 
