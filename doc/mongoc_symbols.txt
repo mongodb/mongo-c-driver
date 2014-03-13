@@ -29,6 +29,7 @@ linkmongoc:mongoc_collection_drop[3] +
 linkmongoc:mongoc_collection_drop_index[3] +
 linkmongoc:mongoc_collection_ensure_index[3] +
 linkmongoc:mongoc_collection_find[3] +
+linkmongoc:mongoc_collection_get_last_error[3] +
 linkmongoc:mongoc_collection_get_name[3] +
 linkmongoc:mongoc_collection_get_read_prefs[3] +
 linkmongoc:mongoc_collection_get_write_concern[3] +

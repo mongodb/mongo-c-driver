@@ -40,6 +40,7 @@ struct _mongoc_collection_t
 
    mongoc_read_prefs_t    *read_prefs;
    mongoc_write_concern_t *write_concern;
+   bson_t *gle;
 };
 
 
