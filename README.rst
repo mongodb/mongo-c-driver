@@ -73,12 +73,39 @@ Fetch Sources and Build
 
 You can use the following to checkout and build mongo-c-driver::
 
-  $ git clone https://github.com/mongodb/mongo-c-driver.git
-  $ cd mongo-c-driver
-  $ ./autogen.sh
-  $ make
-  $ sudo make install
+  git clone https://github.com/mongodb/mongo-c-driver.git
+  cd mongo-c-driver
+  ./autogen.sh
+  make
+  sudo make install
 
 In standard automake fasion, ./autogen.sh only needs to be run once.
 You can use ./configure directly going forward.
 Also, see ./configure --help for all configure options.
+
+
+Building on Windows
+===================
+
+Currently, the cmake build system for mongo-c-driver does not build the libbson
+package as well. This needs to be done manually with cmake.
+
+If you are building from git, and not a release tarball, you also need to
+initialize the git submodule for libbson::
+
+  git submodule init
+  git submodule update
+
+Then proceed to build and install libbson using cmake and Visual Studio's
+command line tool, msbuild.exe. You can of course open these project files
+from Visual Studio as well::
+
+  cd src\libbson
+  cmake -DCMAKE_INSTALL_PREFIX=C:\usr .
+  msbuild.exe ALL_BUILD.vcxproj
+  msbuild.exe INSTALL.vcxproj
+  cd ..\..
+  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -DBSON_ROOT_DIR=C:\usr .
+  msbuild.exe ALL_BUILD.vcxproj
+  msbuild.exe INSTALL.vcxproj
+
