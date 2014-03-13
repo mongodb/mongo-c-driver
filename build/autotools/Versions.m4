@@ -1,5 +1,5 @@
 m4_define([mongoc_major_version], [0])
-m4_define([mongoc_minor_version], [92])
+m4_define([mongoc_minor_version], [93])
 m4_define([mongoc_micro_version], [0])
 m4_define([mongoc_version], [mongoc_major_version.mongoc_minor_version.mongoc_micro_version])
 
