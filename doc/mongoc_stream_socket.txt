@@ -1,42 +1,30 @@
-mongoc_stream_socket(3)
+mongoc_stream_socket(7)
 =======================
 
 
 NAME
 ----
-mongoc_stream_socket_t, mongoc_stream_socket_new - create a new mongoc socket stream
+mongoc_stream_socket_t - Stream IO abstraction for sockets
 
 
 SYNOPSIS
 --------
 [source,c]
 -----------------------
-mongoc_stream_t *mongoc_stream_socket_new (mongoc_socket_t *sock);
+typedef struct _mongoc_stream_socket_t mongoc_stream_socket_t;
 -----------------------
 
 
 DESCRIPTION
 -----------
-The _mongoc_stream_socket_new()_ function shall create a new 
-linkmongoc:mongoc_stream[7], taking ownership of the _mongoc_socket_t_.
-
-sock::
-   A _mognoc_socket_t to take ownership of.
-
-
-RETURN VALUE
-------------
-The _mongoc_stream_socket_new()_ shall return a new
-linkmongoc:mongoc_stream[7]
-using the provided _mongoc_socket_t_.
-
-ERRORS
-------
-No errors are defined.
+The _mongoc_stream_socket_t_ type is a subclass of _mongoc_stream_t_ for 
+communicating with a peer socket. It is primarily used for communicating
+with a MongoDB server and should rarely need to be used directly.
 
 
 SEE ALSO
 --------
+linkmongoc:mongoc_socket[7]
 linkmongoc:mongoc_stream[7]
 
 
