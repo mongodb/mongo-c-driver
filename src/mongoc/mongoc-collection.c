@@ -84,15 +84,11 @@ _mongoc_collection_new (mongoc_client_t              *client,
       mongoc_read_prefs_copy(read_prefs) :
       mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
-   bson_snprintf(col->ns, sizeof col->ns - 1, "%s.%s",
-            db, collection);
-   bson_snprintf(col->db, sizeof col->db - 1, "%s", db);
-   bson_snprintf(col->collection, sizeof col->collection - 1,
-            "%s", collection);
-
-   col->ns[sizeof col->ns-1] = '\0';
-   col->db[sizeof col->db-1] = '\0';
-   col->collection[sizeof col->collection-1] = '\0';
+   bson_snprintf (col->ns, sizeof col->ns - 1, "%s.%s",
+                  db, collection);
+   bson_snprintf (col->db, sizeof col->db - 1, "%s", db);
+   bson_snprintf (col->collection, sizeof col->collection - 1,
+                  "%s", collection);
 
    col->collectionlen = (uint32_t)strlen(col->collection);
    col->nslen = (uint32_t)strlen(col->ns);
@@ -714,8 +710,7 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
    rpc.insert.documents = documents;
    rpc.insert.n_documents = n_documents;
 
-   bson_snprintf(ns, sizeof ns, "%s.$cmd", collection->db);
-   ns[sizeof ns - 1] = '\0';
+   bson_snprintf (ns, sizeof ns, "%s.$cmd", collection->db);
 
    if (!(hint = _mongoc_client_sendv(collection->client, &rpc, 1, 0,
                                      write_concern, NULL, error))) {

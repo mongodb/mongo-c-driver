@@ -1127,7 +1127,6 @@ mongoc_client_command (mongoc_client_t           *client,
    }
 
    bson_snprintf (ns, sizeof ns, "%s.$cmd", db_name);
-   ns[sizeof ns - 1] = '\0';
 
    return _mongoc_cursor_new (client, ns, flags, skip, limit, batch_size, true,
                               query, fields, read_prefs);

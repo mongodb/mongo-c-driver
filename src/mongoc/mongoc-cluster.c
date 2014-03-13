@@ -86,7 +86,6 @@
       const char *dot = strchr(name, '.'); \
       if (!dot || ((dot - name) > (sizeof outstr - 6))) { \
          bson_snprintf(outstr, sizeof outstr, "admin.$cmd"); \
-         outstr[sizeof outstr - 1] = '\0'; \
       } else { \
          memcpy(outstr, name, dot - name); \
          memcpy(outstr + (dot - name), ".$cmd", 6); \
@@ -878,7 +877,6 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    BSON_ASSERT(command);
 
    bson_snprintf(ns, sizeof ns, "%s.$cmd", db_name);
-   ns[sizeof ns - 1] = '\0';
 
    rpc.query.msg_len = 0;
    rpc.query.request_id = ++cluster->request_id;

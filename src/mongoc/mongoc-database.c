@@ -571,7 +571,6 @@ mongoc_database_has_collection (mongoc_database_t *database,
    }
 
    bson_snprintf (ns, sizeof ns, "%s.%s", database->name, name);
-   ns[sizeof ns - 1] = '\0';
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    collection = mongoc_client_get_collection (database->client,

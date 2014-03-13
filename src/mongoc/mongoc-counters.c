@@ -126,13 +126,12 @@ mongoc_counters_calc_size (void)
 static void
 mongoc_counters_destroy (void)
 {
-   char name[32];
+   char name [32];
    int pid;
 
-   pid = getpid();
-   bson_snprintf(name, sizeof name, "/mongoc-%u", pid);
-   name[sizeof name - 1] = '\0';
-   shm_unlink(name);
+   pid = getpid ();
+   bson_snprintf (name, sizeof name, "/mongoc-%u", pid);
+   shm_unlink (name);
 }
 #endif
 
@@ -159,9 +158,8 @@ mongoc_counters_alloc (size_t size)
       goto use_malloc;
    }
 
-   pid = getpid();
-   bson_snprintf(name, sizeof name, "/mongoc-%u", pid);
-   name[sizeof name - 1] = '\0';
+   pid = getpid ();
+   bson_snprintf (name, sizeof name, "/mongoc-%u", pid);
 
    if (-1 == (fd = shm_open(name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR))) {
       goto use_malloc;
