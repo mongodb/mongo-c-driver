@@ -90,6 +90,12 @@ Building on Windows
 Currently, the cmake build system for mongo-c-driver does not build the libbson
 package as well. This needs to be done manually with cmake.
 
+SSL is supported through the use of OpenSSL. SASL is not currently supported
+but is planned. To enable OpenSSL support, install the appropriate OpenSSL for
+Windows from `here <http://slproweb.com/products/Win32OpenSSL.html>`_. The
+instructions below assume 64-bit builds, so you would want to get the version
+for "Win64 OpenSSL 1.0.1f" which includes libraries and headers.
+
 If you are building from git, and not a release tarball, you also need to
 initialize the git submodule for libbson::
 
@@ -101,11 +107,11 @@ command line tool, msbuild.exe. You can of course open these project files
 from Visual Studio as well::
 
   cd src\libbson
-  cmake -DCMAKE_INSTALL_PREFIX=C:\usr .
+  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -G "Visual Studio 10 Win64" .
   msbuild.exe ALL_BUILD.vcxproj
   msbuild.exe INSTALL.vcxproj
   cd ..\..
-  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -DBSON_ROOT_DIR=C:\usr .
+  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -DBSON_ROOT_DIR=C:\usr -G "Visual Studio 10 Win64" .
   msbuild.exe ALL_BUILD.vcxproj
   msbuild.exe INSTALL.vcxproj
 
