@@ -65,9 +65,10 @@ test_mongoc_matcher_basic (void)
 
    assert(! mongoc_matcher_match(matcher, should_fail));
 
-   bson_destroy(query);
-   bson_destroy(to_match);
-   bson_destroy(should_fail);
+   bson_destroy (query);
+   bson_destroy (to_match);
+   bson_destroy (should_fail);
+   bson_destroy (&matcher_query);
 
    mongoc_matcher_destroy(matcher);
 }

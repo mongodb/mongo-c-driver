@@ -40,6 +40,8 @@ test_get_host (void)
    ASSERT_CMPINT (host.family, ==, hosts->family);
 
    mongoc_uri_destroy(uri);
+   mongoc_client_destroy (client);
+   mongoc_cursor_destroy (cursor);
 }
 
 static void
