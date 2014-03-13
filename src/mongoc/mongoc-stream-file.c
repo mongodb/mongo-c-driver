@@ -31,11 +31,11 @@
  */
 
 
-typedef struct
+struct _mongoc_stream_file_t
 {
    mongoc_stream_t vtable;
    int             fd;
-} mongoc_stream_file_t;
+};
 
 
 static int
@@ -212,9 +212,9 @@ mongoc_stream_file_new_for_path (const char *path,  /* IN */
 
 
 int
-mongoc_stream_file_get_fd (mongoc_stream_t *stream)
+mongoc_stream_file_get_fd (mongoc_stream_file_t *stream)
 {
-   mongoc_stream_file_t *file = (mongoc_stream_file_t *)stream;
-   bson_return_val_if_fail (file, -1);
-   return file->fd;
+   bson_return_val_if_fail (stream, -1);
+
+   return stream->fd;
 }

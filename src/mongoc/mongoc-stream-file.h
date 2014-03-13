@@ -30,11 +30,14 @@
 BSON_BEGIN_DECLS
 
 
-mongoc_stream_t *mongoc_stream_file_new          (int              fd);
-mongoc_stream_t *mongoc_stream_file_new_for_path (const char      *path,
-                                                  int              flags,
-                                                  int              mode);
-int              mongoc_stream_file_get_fd       (mongoc_stream_t *stream);
+typedef struct _mongoc_stream_file_t mongoc_stream_file_t;
+
+
+mongoc_stream_t *mongoc_stream_file_new          (int                   fd);
+mongoc_stream_t *mongoc_stream_file_new_for_path (const char           *path,
+                                                  int                   flags,
+                                                  int                   mode);
+int              mongoc_stream_file_get_fd       (mongoc_stream_file_t *stream);
 
 
 BSON_END_DECLS
