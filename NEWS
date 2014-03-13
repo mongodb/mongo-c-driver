@@ -1,3 +1,44 @@
+mongo-c-driver 0.92.0
+=====================
+
+The mongo-c-driver team is proud to announce the release of 0.92.0. This
+release is the culimation of a few months work and has many bug fixes and
+new features. It contains over 350 commits from 4 authors since the 0.90.0
+release.
+
+The mongo-c-driver release tarballs now contain a bundled copy of libbson.
+If you do not have libbson installed or the system installed libbson is too
+old, the bundled copy of libbson will be installed.
+
+ * Revamped build system to simplify installation.
+ * Windows Vista and newer support.
+ * Various GridFS fixes and features.
+ * Kerberos support via cyrus-sasl.
+ * Various SSL improvements.
+ * Support for Solaris 11, FreeBSD 10, RHEL 5+, and SmartOS.
+ * A new client side expression matcher to perform basic query processing.
+   It can perform queries such as {'field': {'$in': [1,2,3]}}. See
+   mongoc_matcher_t for more information.
+ * A new socket abstraction for platform independent network sockets.
+ * A new mongoc-dump example for how to write a simple mongodump replacement.
+ * Counters can use rdtscp instruction on Core iX systems for very fast
+   counters.
+ * configure has new options. If in doubt, the defaults are sensible.
+   * --enable-coverage=yes|no
+   * --enable-debug=yes|no
+   * --enable-debug-symbols=yes|no
+   * --enable-hardening=yes|no
+   * --enable-optimizations=yes|no
+   * --enable-ssl=yes|no
+   * --enable-sasl=yes|no
+   * --enable-tracing=yes|no
+   * --with-libbson=auto|system|bundled
+
+mongo-c-driver 0.92.0 requires libbson 0.6.4 or newer.
+
+Happy Hacking!
+
+
 Libmongoc 0.90.0
 ================
 
