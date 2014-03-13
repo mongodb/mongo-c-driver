@@ -108,7 +108,13 @@ tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_d
 	$< $(top_srcdir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
 	touch $(top_srcdir)/tests/trust_dir/done
 
+if WITH_LIBBSON
+libbson_check:
+	@ $(MAKE) -C src/libbson check
+check: libbson_check test
+else
 check: test
+endif
 
 TEST_ARGS = -f -p
 
@@ -121,7 +127,7 @@ endif
 		./$$TEST_PROG $(TEST_ARGS) -F test.log; \
 	done
 if OS_LINUX
-	@ $(top_srcdir)/tests/abicheck.sh "$(top_srcdir)/src/libmongoc.symbols"
+	@ $(srcdir)/tests/abicheck.sh "$(srcdir)/src/libmongoc.symbols"
 endif
 
 DISTCLEANFILES += test.log
