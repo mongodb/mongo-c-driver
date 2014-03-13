@@ -134,11 +134,55 @@ else
 abicheck:
 endif
 
-DISTCLEANFILES += test.log
+DISTCLEANFILES += \
+	test.log \
+	tests/trust_dir/ca.db.serial \
+	tests/trust_dir/done \
+	tests/trust_dir/keys/rev.mongodb.com.pem \
+	tests/trust_dir/keys/mongodb.com.pem \
+	tests/trust_dir/keys/pass.mongodb.com.pem \
+	tests/trust_dir/keys/127.0.0.1.pem \
+	tests/trust_dir/keys/alt.mongodb.com.pem \
+	tests/trust_dir/ca.db.certs/01.pem \
+	tests/trust_dir/ca.db.certs/04.pem \
+	tests/trust_dir/ca.db.certs/05.pem \
+	tests/trust_dir/ca.db.certs/02.pem \
+	tests/trust_dir/ca.db.certs/03.pem \
+	tests/trust_dir/ca.db.index.attr \
+	tests/trust_dir/ca.db.index \
+	tests/trust_dir/build/mongodb.com.crt \
+	tests/trust_dir/build/127.0.0.1.req \
+	tests/trust_dir/build/mongodb.com.key \
+	tests/trust_dir/build/rev.mongodb.com.req \
+	tests/trust_dir/build/alt.mongodb.com.req \
+	tests/trust_dir/build/pass.mongodb.com.key \
+	tests/trust_dir/build/rev.mongodb.com.key \
+	tests/trust_dir/build/127.0.0.1.crt \
+	tests/trust_dir/build/pass.mongodb.com.req \
+	tests/trust_dir/build/rev.mongodb.com.crt \
+	tests/trust_dir/build/pass.mongodb.com.crt \
+	tests/trust_dir/build/mongodb.com.req \
+	tests/trust_dir/build/127.0.0.1.key \
+	tests/trust_dir/build/alt.mongodb.com.crt \
+	tests/trust_dir/build/alt.mongodb.com.key \
+	tests/trust_dir/verify/mongo_root.pem \
+	tests/trust_dir/verify/rev.mongodb.com.pem \
+	tests/trust_dir/verify/mongodb.com.pem \
+	tests/trust_dir/verify/pass.mongodb.com.pem \
+	tests/trust_dir/verify/127.0.0.1.pem \
+	tests/trust_dir/verify/alt.mongodb.com.pem \
+	tests/trust_dir/ca.db.index.old \
+	tests/trust_dir/ca.db.rand \
+	tests/trust_dir/signing-ca.key \
+	tests/trust_dir/signing-ca.crt \
+	tests/trust_dir/ca.db.index.attr.old \
+	tests/trust_dir/ca.db.serial.old \
+	tests/trust_dir/crl/root.crl.pem
 
 .PHONY: test_certs
 
 EXTRA_DIST += \
+	tests/abicheck.sh \
 	tests/binary/delete1.dat \
 	tests/binary/get_more1.dat \
 	tests/binary/gridfs.dat \
