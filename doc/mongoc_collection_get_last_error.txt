@@ -1,0 +1,46 @@
+mongoc_collection_get_last_error(3)
+=============================
+
+
+NAME
+----
+mongoc_collection_get_last_error - Returns getLastError document.
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+bson_t *
+mongoc_collection_get_last_error (const mongoc_collection_t *collection);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_collection_get_last_error()_ function shall return getLastError
+document, according to write_concern on last executed command for current
+collection instance.
+
+write_concern must be at least MONGOC_WRITE_CONCERN_W_DEFAULT (1) in
+last command execution for getLastError to be available.
+
+Last executed command must be any of:
+_mongoc_collection_insert()_
+_mongoc_collection_insert_bulk()_
+_mongoc_collection_update()_
+_mongoc_collection_delete()_
+_mongoc_collection_save()_
+_mongoc_collection_ensure_index()_
+
+
+RETURN VALUE
+------------
+A newly allocated bson_t getLastError document, that *must* be destroyed
+with _bson_destroy()_. Or NULL if no getLastError present.
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB Inc.

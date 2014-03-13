@@ -554,10 +554,11 @@ _bson_to_error (const bson_t *b,
  */
 
 bool
-_mongoc_client_recv_gle (mongoc_client_t *client,
+_mongoc_client_recv_gle (mongoc_collection_t    *collection,
                          uint32_t    hint,
                          bson_error_t    *error)
 {
+   mongoc_client_t *client;
    mongoc_buffer_t buffer;
    mongoc_rpc_t rpc;
    bson_iter_t iter;
@@ -566,6 +567,8 @@ _mongoc_client_recv_gle (mongoc_client_t *client,
 
    ENTRY;
 
+   bson_return_val_if_fail (collection, false);
+   client = collection->client;
    bson_return_val_if_fail (client, false);
    bson_return_val_if_fail (hint, false);
 
@@ -594,9 +597,14 @@ _mongoc_client_recv_gle (mongoc_client_t *client,
 
    if (_mongoc_rpc_reply_get_first (&rpc.reply, &b)) {
       if (!bson_iter_init_find (&iter, &b, "ok") ||
-          !BSON_ITER_HOLDS_DOUBLE (&iter) ||
-          (bson_iter_double (&iter) == 0.0)) {
-         _bson_to_error (&b, error);
+          BSON_ITER_HOLDS_DOUBLE (&iter)) {
+        if (bson_iter_double (&iter) == 0.0) {
+          _bson_to_error (&b, error);
+        }
+        if (collection->gle) {
+          bson_destroy (collection->gle);
+        }
+        collection->gle = bson_copy (&b);
       }
       bson_destroy (&b);
    }

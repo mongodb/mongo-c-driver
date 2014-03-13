@@ -74,7 +74,7 @@ bool             _mongoc_client_recv          (mongoc_client_t              *cli
                                                mongoc_buffer_t              *buffer,
                                                uint32_t                      hint,
                                                bson_error_t                 *error);
-bool             _mongoc_client_recv_gle      (mongoc_client_t              *client,
+bool             _mongoc_client_recv_gle      (mongoc_collection_t          *collection,
                                                uint32_t                      hint,
                                                bson_error_t                 *error);
 uint32_t         _mongoc_client_stamp         (mongoc_client_t              *client,
