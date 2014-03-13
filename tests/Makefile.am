@@ -12,11 +12,6 @@ endif
 TEST_PROGS = test-libmongoc
 
 
-if OS_LINUX
-TEST_PROGS += tests/abicheck.sh
-endif
-
-
 TEST_CFLAGS = \
 	-DMONGOC_COMPILATION \
 	$(BSON_CFLAGS) \
@@ -113,6 +108,8 @@ tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_d
 	$< $(top_srcdir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
 	touch $(top_srcdir)/tests/trust_dir/done
 
+check: test
+
 TEST_ARGS = -f -p
 
 if ENABLE_SSL
@@ -123,6 +120,11 @@ endif
 	@ for TEST_PROG in $(TEST_PROGS) ; do \
 		./$$TEST_PROG $(TEST_ARGS) -F test.log; \
 	done
+if OS_LINUX
+	@ $(top_srcdir)/tests/abicheck.sh "$(top_srcdir)/src/libmongoc.symbols"
+endif
+
+DISTCLEANFILES += test.log
 
 .PHONY: test_certs
 
