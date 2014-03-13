@@ -1252,6 +1252,8 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
       RETURN (false);
    }
 
+   bson_destroy (&command);
+
    if (!bson_iter_init_find_case(&iter, &reply, "ok") ||
        !bson_iter_as_bool(&iter)) {
       bson_set_error(error,
