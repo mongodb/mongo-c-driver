@@ -14,7 +14,7 @@ test_mongoc_buffer_basic (void)
    uint8_t *data = bson_malloc0(1024);
    ssize_t r;
 
-   stream = mongoc_stream_file_new_for_path ("tests/binary/reply1.dat", O_RDONLY, 0);
+   stream = mongoc_stream_file_new_for_path (BINARY_DIR"/reply1.dat", O_RDONLY, 0);
    ASSERT(stream);
 
    _mongoc_buffer_init(&buf, data, 1024, bson_realloc);

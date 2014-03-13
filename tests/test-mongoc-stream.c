@@ -16,7 +16,7 @@ test_buffered_basic (void)
    ssize_t r;
    char buf[16236];
 
-   stream = mongoc_stream_file_new_for_path ("tests/binary/reply2.dat", O_RDONLY, 0);
+   stream = mongoc_stream_file_new_for_path (BINARY_DIR"/reply2.dat", O_RDONLY, 0);
    assert (stream);
 
    /* buffered assumes ownership of stream */
@@ -42,7 +42,7 @@ test_buffered_oversized (void)
    ssize_t r;
    char buf[16236];
 
-   stream = mongoc_stream_file_new_for_path ("tests/binary/reply2.dat", O_RDONLY, 0);
+   stream = mongoc_stream_file_new_for_path (BINARY_DIR"/reply2.dat", O_RDONLY, 0);
    assert (stream);
 
    /* buffered assumes ownership of stream */

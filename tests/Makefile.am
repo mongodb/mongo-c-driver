@@ -14,6 +14,7 @@ TEST_PROGS = test-libmongoc
 
 TEST_CFLAGS = \
 	-DMONGOC_COMPILATION \
+	-DBINARY_DIR="\"$(srcdir)/tests/binary\"" \
 	$(BSON_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc
@@ -102,19 +103,18 @@ test_sharded_cluster_SOURCES = \
 test_sharded_cluster_CFLAGS = $(TEST_CFLAGS)
 test_sharded_cluster_LDADD = $(TEST_LIBS)
 
-test_certs: $(top_builddir)/tests/trust_dir/done
+test_certs: tests/trust_dir/done
 
 tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_dir.cnf
-	$< $(top_srcdir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
-	touch $(top_srcdir)/tests/trust_dir/done
+	$< $(top_builddir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
+	touch $(top_builddir)/tests/trust_dir/done
 
-if WITH_LIBBSON
 libbson_check:
+if WITH_LIBBSON
 	@ $(MAKE) -C src/libbson check
-check: libbson_check test
-else
-check: test
 endif
+
+check: libbson_check test abicheck
 
 TEST_ARGS = -f -p
 
@@ -126,8 +126,12 @@ endif
 	@ for TEST_PROG in $(TEST_PROGS) ; do \
 		./$$TEST_PROG $(TEST_ARGS) -F test.log; \
 	done
+
 if OS_LINUX
+abicheck:
 	@ $(srcdir)/tests/abicheck.sh "$(srcdir)/src/libmongoc.symbols"
+else
+abicheck:
 endif
 
 DISTCLEANFILES += test.log
@@ -146,7 +150,10 @@ EXTRA_DIST += \
 	tests/binary/reply1.dat \
 	tests/binary/reply2.dat \
 	tests/binary/update1.dat \
+	tests/certificates/ca.pem \
+	tests/certificates/client.pem \
 	tests/mock-server.c \
 	tests/mock-server.h \
 	tests/mongoc-tests.c \
-	tests/mongoc-tests.h
+	tests/mongoc-tests.h \
+	tests/trust_dir.cnf

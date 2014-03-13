@@ -19,7 +19,7 @@ get_test_file (const char *filename,
    int fd;
 
    bson_snprintf (real_filename, sizeof real_filename,
-                  "tests/binary/%s", filename);
+                  BINARY_DIR"/%s", filename);
 
 #ifdef _WIN32
    fd = _open (real_filename, O_RDONLY | _O_BINARY);
