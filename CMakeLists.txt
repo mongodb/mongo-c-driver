@@ -53,7 +53,7 @@ endif()
 
 add_definitions(-D_GNU_SOURCE)
 add_definitions(-D_BSD_SOURCE)
-add_definitions("-DBINARY_DIR=${SOURCE_DIR}/tests/binary")
+add_definitions("-DBINARY_DIR=\"${SOURCE_DIR}/tests/binary\"")
 
 set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-array.c
