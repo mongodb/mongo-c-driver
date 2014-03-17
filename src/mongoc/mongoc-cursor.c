@@ -36,17 +36,22 @@
 
 static const char *gSecondaryOkCommands [] = {
    "aggregate",
+   "authenticate",
    "collstats",
    "count",
    "dbstats",
    "distinct",
    "geonear",
+   "geosearch",
    "geowalk",
+   "getnonce",
    "group",
    "ismaster",
    "mapreduce",
+   "parallelcollectionscan",
    "ping",
    "replsetgetstatus",
+   "text",
    NULL
 };
 
