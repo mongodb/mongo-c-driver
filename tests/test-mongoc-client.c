@@ -364,6 +364,7 @@ test_mongoc_client_command (void)
    bson_append_int32 (&cmd, "ping", 4, 1);
 
    cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, NULL);
+   assert (!cursor->redir_primary);
 
    r = mongoc_cursor_next (cursor, &doc);
    assert (r);
