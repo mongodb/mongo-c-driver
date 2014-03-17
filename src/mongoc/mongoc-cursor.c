@@ -130,19 +130,6 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    BSON_ASSERT (db_and_collection);
    BSON_ASSERT (query);
 
-   /*
-    * TODO: These two following assertions should be runtime catchable since
-    *       they rely on system configuration that could be dynamic.
-    *       Change to set internal error and return a valid cursor that
-    *       fails on first _next() call.
-    */
-
-   /* we can't have exhaust queries with limits */
-   BSON_ASSERT (!((flags & MONGOC_QUERY_EXHAUST) && limit));
-
-   /* we can't have exhaust queries with sharded clusters */
-   BSON_ASSERT (!((flags & MONGOC_QUERY_EXHAUST) && client->cluster.isdbgrid));
-
    if (!read_prefs) {
       read_prefs = client->read_prefs;
    }
@@ -191,8 +178,33 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    cursor->skip = skip;
    cursor->limit = limit;
    cursor->batch_size = batch_size;
-
    cursor->is_command = is_command;
+
+   /* we can't have exhaust queries with limits */
+   if ((flags & MONGOC_QUERY_EXHAUST) && limit) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                      "Cannot specify MONGOC_QUERY_EXHAUST and set a limit.");
+      cursor->failed = true;
+      cursor->done = true;
+      cursor->end_of_event = true;
+      cursor->sent = true;
+      GOTO (finish);
+   }
+
+   /* we can't have exhaust queries with sharded clusters */
+   if ((flags & MONGOC_QUERY_EXHAUST) && client->cluster.isdbgrid) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                      "Cannot specify MONGOC_QUERY_EXHAUST with sharded cluster.");
+      cursor->failed = true;
+      cursor->done = true;
+      cursor->end_of_event = true;
+      cursor->sent = true;
+      GOTO (finish);
+   }
 
    if (!cursor->is_command && !bson_has_field (query, "$query")) {
       bson_init (&cursor->query);
@@ -231,13 +243,14 @@ _mongoc_cursor_new (mongoc_client_t           *client,
 
    _mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL);
 
+finish:
    mongoc_counter_cursors_active_inc();
 
    if (local_read_prefs) {
       mongoc_read_prefs_destroy (local_read_prefs);
    }
 
-   RETURN(cursor);
+   RETURN (cursor);
 }
 
 
