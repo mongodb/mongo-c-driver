@@ -98,6 +98,13 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    BSON_ASSERT(db_and_collection);
    BSON_ASSERT(query);
 
+   /*
+    * TODO: These two following assertions should be runtime catchable since
+    *       they rely on system configuration that could be dynamic.
+    *       Change to set internal error and return a valid cursor that
+    *       fails on first _next() call.
+    */
+
    /* we can't have exhaust queries with limits */
    BSON_ASSERT (!((flags & MONGOC_QUERY_EXHAUST) && limit));
 
