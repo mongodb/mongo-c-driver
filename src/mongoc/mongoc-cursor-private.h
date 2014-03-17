@@ -59,6 +59,7 @@ struct _mongoc_cursor_t
    unsigned                   failed       : 1;
    unsigned                   end_of_event : 1;
    unsigned                   in_exhaust   : 1;
+   unsigned                   redir_primary: 1;
 
    bson_t                     query;
    bson_t                     fields;

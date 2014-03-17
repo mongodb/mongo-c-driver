@@ -29,6 +29,28 @@
 #define MONGOC_LOG_DOMAIN "cursor"
 
 
+#ifdef _WIN32
+# define strcasecmp _stricmp
+#endif
+
+
+static const char *gSecondaryOkCommands [] = {
+   "aggregate",
+   "collstats",
+   "count",
+   "dbstats",
+   "distinct",
+   "geonear",
+   "geowalk",
+   "group",
+   "ismaster",
+   "mapreduce",
+   "ping",
+   "replsetgetstatus",
+   NULL
+};
+
+
 static const char *
 _mongoc_cursor_get_read_mode_string (mongoc_read_mode_t mode)
 {
@@ -86,17 +108,22 @@ _mongoc_cursor_new (mongoc_client_t           *client,
                     const bson_t              *fields,
                     const mongoc_read_prefs_t *read_prefs)
 {
+   mongoc_read_prefs_t *local_read_prefs = NULL;
    mongoc_read_mode_t mode;
    mongoc_cursor_t *cursor;
    const bson_t *tags;
+   bson_iter_t iter;
+   const char *key;
    const char *mode_str;
    bson_t child;
+   bool found = false;
+   int i;
 
    ENTRY;
 
-   BSON_ASSERT(client);
-   BSON_ASSERT(db_and_collection);
-   BSON_ASSERT(query);
+   BSON_ASSERT (client);
+   BSON_ASSERT (db_and_collection);
+   BSON_ASSERT (query);
 
    /*
     * TODO: These two following assertions should be runtime catchable since
@@ -111,6 +138,40 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    /* we can't have exhaust queries with sharded clusters */
    BSON_ASSERT (!((flags & MONGOC_QUERY_EXHAUST) && client->cluster.isdbgrid));
 
+   if (!read_prefs) {
+      read_prefs = client->read_prefs;
+   }
+
+   cursor = bson_malloc0 (sizeof *cursor);
+
+   /*
+    * CDRIVER-244:
+    *
+    * If this is a command, we need to verify we can send it to the location
+    * specified by the read preferences. Otherwise, log a warning that we
+    * are rerouting to the primary instance.
+    */
+   if (is_command &&
+       read_prefs &&
+       (mongoc_read_prefs_get_mode (read_prefs) != MONGOC_READ_PRIMARY) &&
+       bson_iter_init (&iter, query) &&
+       bson_iter_next (&iter) &&
+       (key = bson_iter_key (&iter))) {
+      for (i = 0; gSecondaryOkCommands [i]; i++) {
+         if (0 == strcasecmp (key, gSecondaryOkCommands [i])) {
+            found = true;
+            break;
+         }
+      }
+      if (!found) {
+         cursor->redir_primary = true;
+         local_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+         read_prefs = local_read_prefs;
+         MONGOC_WARNING ("Database command \"%s\" rerouted to primary node",
+                         key);
+      }
+   }
+
    /*
     * Cursors execute their query lazily. This sadly means that we must copy
     * some extra data around between the bson_t structures. This should be
@@ -118,7 +179,6 @@ _mongoc_cursor_new (mongoc_client_t           *client,
     * design is simplified error handling by API consumers.
     */
 
-   cursor = bson_malloc0(sizeof *cursor);
    cursor->client = client;
    bson_strncpy (cursor->ns, db_and_collection, sizeof cursor->ns);
    cursor->nslen = (uint32_t)strlen(cursor->ns);
@@ -167,6 +227,10 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    _mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL);
 
    mongoc_counter_cursors_active_inc();
+
+   if (local_read_prefs) {
+      mongoc_read_prefs_destroy (local_read_prefs);
+   }
 
    RETURN(cursor);
 }

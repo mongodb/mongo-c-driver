@@ -380,6 +380,37 @@ test_mongoc_client_command (void)
 
 
 static void
+test_mongoc_client_command_secondary (void)
+{
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   mongoc_read_prefs_t *read_prefs;
+   const bson_t *doc;
+   bool r;
+   bson_t cmd = BSON_INITIALIZER;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   BSON_APPEND_INT32 (&cmd, "invalid_command_here", 1);
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+
+   suppress_one_message ();
+   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, read_prefs);
+
+   mongoc_read_prefs_destroy (read_prefs);
+
+   /* ensure we detected this must go to primary */
+   assert (cursor->redir_primary);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+   bson_destroy (&cmd);
+}
+
+
+static void
 test_exhaust_cursor (void)
 {
    mongoc_write_concern_t *wr;
@@ -568,6 +599,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/authenticate", test_mongoc_client_authenticate);
    TestSuite_Add (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
+   TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
 
    atexit (cleanup_globals);
