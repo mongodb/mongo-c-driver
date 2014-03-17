@@ -21,5 +21,6 @@
 extern char MONGOC_TEST_HOST [1024];
 
 char *gen_collection_name (const char *prefix);
+void suppress_one_message (void);
 
 #endif

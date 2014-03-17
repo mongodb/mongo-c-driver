@@ -48,12 +48,26 @@ extern void test_stream_tls_install       (TestSuite *suite);
 #endif
 
 
+static int gSuppressCount;
+
+
+void
+suppress_one_message (void)
+{
+   gSuppressCount++;
+}
+
+
 static void
 log_handler (mongoc_log_level_t  log_level,
              const char         *log_domain,
              const char         *message,
              void               *user_data)
 {
+   if (gSuppressCount) {
+      gSuppressCount--;
+      return;
+   }
    if (log_level < MONGOC_LOG_LEVEL_INFO) {
       mongoc_log_default_handler (log_level, log_domain, message, NULL);
    }
