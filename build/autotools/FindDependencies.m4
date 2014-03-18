@@ -9,7 +9,7 @@ fi
 
 # Check if we should enable the bundled libbson.
 if test "$with_libbson" = "auto"; then
-   PKG_CHECK_MODULES(BSON, libbson-1.0 >= 0.5.0,
+   PKG_CHECK_MODULES(BSON, libbson-1.0 >= libbson_required_version,
                      [with_libbson=system], [with_libbson=bundled])
 fi
 AM_CONDITIONAL(ENABLE_LIBBSON, [test "$with_libbson" = "bundled"])
