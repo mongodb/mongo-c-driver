@@ -42,7 +42,7 @@ struct _mongoc_gridfs_file_t
    uint32_t                   cursor_range[2];
    bool                       is_dirty;
 
-   bson_oid_t                 files_id;
+   bson_value_t               files_id;
    int64_t                    length;
    int32_t                    chunk_size;
    int64_t                    upload_date;

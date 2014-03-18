@@ -125,7 +125,7 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
    metadata = mongoc_gridfs_file_get_metadata (file);
 
    selector = bson_new ();
-   bson_append_oid (selector, "_id", -1, &file->files_id);
+   bson_append_value (selector, "_id", -1, &file->files_id);
 
    update = bson_new ();
    bson_append_document_begin (update, "$set", -1, &child);
@@ -183,6 +183,7 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
                                    const bson_t    *data)
 {
    mongoc_gridfs_file_t *file;
+   const bson_value_t *value;
    const char *key;
    bson_iter_t iter;
    const uint8_t *buf;
@@ -204,23 +205,55 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
       key = bson_iter_key (&iter);
 
       if (0 == strcmp (key, "_id")) {
-         bson_oid_copy (bson_iter_oid (&iter), &file->files_id);
+         value = bson_iter_value (&iter);
+         bson_value_copy (value, &file->files_id);
       } else if (0 == strcmp (key, "length")) {
+         if (!BSON_ITER_HOLDS_INT32 (&iter) &&
+             !BSON_ITER_HOLDS_INT64 (&iter) &&
+             !BSON_ITER_HOLDS_DOUBLE (&iter)) {
+            GOTO (failure);
+         }
          file->length = bson_iter_as_int64 (&iter);
       } else if (0 == strcmp (key, "chunkSize")) {
-         file->chunk_size = bson_iter_int32 (&iter);
+         if (!BSON_ITER_HOLDS_INT32 (&iter) &&
+             !BSON_ITER_HOLDS_INT64 (&iter) &&
+             !BSON_ITER_HOLDS_DOUBLE (&iter)) {
+            GOTO (failure);
+         }
+         if (bson_iter_as_int64 (&iter) > INT32_MAX) {
+            GOTO (failure);
+         }
+         file->chunk_size = (int32_t)bson_iter_as_int64 (&iter);
       } else if (0 == strcmp (key, "uploadDate")) {
+         if (!BSON_ITER_HOLDS_DATE_TIME (&iter)){
+            GOTO (failure);
+         }
          file->upload_date = bson_iter_date_time (&iter);
       } else if (0 == strcmp (key, "md5")) {
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+            GOTO (failure);
+         }
          file->bson_md5 = bson_iter_utf8 (&iter, NULL);
       } else if (0 == strcmp (key, "filename")) {
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+            GOTO (failure);
+         }
          file->bson_filename = bson_iter_utf8 (&iter, NULL);
       } else if (0 == strcmp (key, "contentType")) {
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+            GOTO (failure);
+         }
          file->bson_content_type = bson_iter_utf8 (&iter, NULL);
       } else if (0 == strcmp (key, "aliases")) {
+         if (!BSON_ITER_HOLDS_ARRAY (&iter)) {
+            GOTO  (failure);
+         }
          bson_iter_array (&iter, &buf_len, &buf);
          bson_init_static (&file->bson_aliases, buf, buf_len);
       } else if (0 == strcmp (key, "metadata")) {
+         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+            GOTO (failure);
+         }
          bson_iter_document (&iter, &buf_len, &buf);
          bson_init_static (&file->bson_metadata, buf, buf_len);
       }
@@ -230,6 +263,11 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
     * actually have here? */
 
    RETURN (file);
+
+failure:
+   bson_destroy (&file->bson);
+
+   RETURN (NULL);
 }
 
 
@@ -244,6 +282,7 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
 {
    mongoc_gridfs_file_t *file;
    mongoc_gridfs_file_opt_t default_opt = { 0 };
+   bson_oid_t oid;
 
    ENTRY;
 
@@ -265,7 +304,8 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
       file->chunk_size = 2 << 17;
    }
 
-   bson_oid_init (&file->files_id, NULL);
+   file->files_id.value_type = BSON_TYPE_OID;
+   bson_oid_init (&file->files_id.value.v_oid, NULL);
 
    file->upload_date = time (NULL) * 1000;
 
@@ -485,12 +525,12 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 
    selector = bson_new ();
 
-   bson_append_oid (selector, "files_id", -1, &(file->files_id));
+   bson_append_value (selector, "files_id", -1, &file->files_id);
    bson_append_int32 (selector, "n", -1, (int32_t)(file->pos / file->chunk_size));
 
    update = bson_sized_new (file->chunk_size + 100);
 
-   bson_append_oid (update, "files_id", -1, &(file->files_id));
+   bson_append_value (update, "files_id", -1, &file->files_id);
    bson_append_int32 (update, "n", -1, (int32_t)(file->pos / file->chunk_size));
    bson_append_binary (update, "data", -1, BSON_SUBTYPE_BINARY, buf, len);
 
@@ -559,7 +599,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
          query = bson_new ();
 
          bson_append_document_begin(query, "$query", -1, &child);
-            bson_append_oid (&child, "files_id", -1, &file->files_id);
+            bson_append_value (&child, "files_id", -1, &file->files_id);
 
             bson_append_document_begin (&child, "n", -1, &child2);
                bson_append_int32 (&child2, "$gte", -1, (int32_t)(file->pos / file->chunk_size));
