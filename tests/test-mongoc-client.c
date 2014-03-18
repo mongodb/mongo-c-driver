@@ -115,6 +115,15 @@ test_mongoc_client_authenticate (void)
       assert(!r);
    }
    mongoc_cursor_destroy(cursor);
+
+   /*
+    * Remove all test users.
+    */
+   database = mongoc_client_get_database (client, "test");
+   r = mongoc_database_remove_all_users (database, &error);
+   assert (r);
+   mongoc_database_destroy (database);
+
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
 

@@ -334,6 +334,43 @@ mongoc_database_remove_user (mongoc_database_t *database,
 }
 
 
+bool
+mongoc_database_remove_all_users (mongoc_database_t *database,
+                                  bson_error_t      *error)
+{
+   mongoc_collection_t *col;
+   bson_error_t lerror;
+   bson_t cmd;
+   bool ret;
+
+   ENTRY;
+
+   bson_return_val_if_fail (database, false);
+   bson_return_val_if_fail (username, false);
+
+   bson_init (&cmd);
+   BSON_APPEND_INT32 (&cmd, "dropAllUsersFromDatabase", 1);
+   ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, &lerror);
+   bson_destroy (&cmd);
+
+   if (!ret && (lerror.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
+      bson_init (&cmd);
+
+      col = mongoc_client_get_collection (database->client, database->name,
+                                          "system.users");
+      BSON_ASSERT (col);
+
+      ret = mongoc_collection_delete (col, MONGOC_DELETE_NONE, &cmd, NULL,
+                                      error);
+
+      bson_destroy (&cmd);
+      mongoc_collection_destroy (col);
+   }
+
+   RETURN (ret);
+}
+
+
 /**
  * mongoc_database_add_user:
  * @database: A #mongoc_database_t.
