@@ -346,7 +346,6 @@ mongoc_database_remove_all_users (mongoc_database_t *database,
    ENTRY;
 
    bson_return_val_if_fail (database, false);
-   bson_return_val_if_fail (username, false);
 
    bson_init (&cmd);
    BSON_APPEND_INT32 (&cmd, "dropAllUsersFromDatabase", 1);

@@ -395,8 +395,6 @@ test_mongoc_client_command_secondary (void)
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
    mongoc_read_prefs_t *read_prefs;
-   const bson_t *doc;
-   bool r;
    bson_t cmd = BSON_INITIALIZER;
 
    client = mongoc_client_new (gTestUri);

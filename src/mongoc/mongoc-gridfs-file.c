@@ -282,7 +282,6 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
 {
    mongoc_gridfs_file_t *file;
    mongoc_gridfs_file_opt_t default_opt = { 0 };
-   bson_oid_t oid;
 
    ENTRY;
 
