@@ -4,7 +4,7 @@ mongoc_database_add_user(3)
 
 NAME
 ----
-mongoc_database_add_user, mongoc_database_remove_user - manage users in a database
+mongoc_database_add_user, mongoc_database_remove_user, mongoc_database_remove_all_users - manage users in a database
 
 
 SYNOPSIS
@@ -23,6 +23,10 @@ bool
 mongoc_database_remove_user (mongoc_database_t *database,
                              const char        *username,
                              bson_error_t      *error);
+
+bool
+mongoc_database_remove_all_users (mongoc_database_t *database,
+                                  bson_error_t      *error);
 -----------------------
 
 
@@ -41,11 +45,20 @@ custom_data:: an optional bson_t of custom data to store
 
 error:: an optional error pointer to store any error data
 
+The _mongoc_database_remove_user()_ function shall remove the specified user
+from 'database'.
+
+The _mongoc_database_remove_all_users()_ function shall remove all users
+from 'database'.
+
 RETURN VALUE
 ------------
 The _mongoc_database_add_user()_ function returns true if the user was
 successfully added.  In the event of an error it returns false an 'error' is
 set.
+
+The _mongoc_database_remove_user()_ and _mongoc_database_remove_all_users()_
+functions shall return true if successful, otherwise false and _error_ is set.
 
 ERRORS
 ------
@@ -59,5 +72,4 @@ linkmongoc:mongoc_database[7]
 
 AUTHORS
 -------
-
-This page was written by MongoDB Inc.
+This page was written by MongoDB, Inc.
