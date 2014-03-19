@@ -350,6 +350,10 @@ mongoc_gridfs_file_destroy (mongoc_gridfs_file_t *file)
       mongoc_cursor_destroy (file->cursor);
    }
 
+   if (file->files_id.value_type) {
+      bson_value_destroy (&file->files_id);
+   }
+
    if (file->md5) {
       bson_free (file->md5);
    }
