@@ -629,6 +629,55 @@ test_aggregate (void)
 
 
 static void
+test_validate (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_iter_t iter;
+   bson_error_t error;
+   bson_t doc = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
+   bson_t reply;
+   bool r;
+
+   client = mongoc_client_new (gTestUri);
+   ASSERT (client);
+
+   collection = get_test_collection (client, "test_validate");
+   ASSERT (collection);
+
+   r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
+   assert (r);
+
+   BSON_APPEND_BOOL (&opts, "full", true);
+
+   r = mongoc_collection_validate (collection, &opts, &reply, &error);
+   assert (r);
+
+   assert (bson_iter_init_find (&iter, &reply, "ns"));
+   assert (bson_iter_init_find (&iter, &reply, "valid"));
+
+   bson_destroy (&reply);
+
+   bson_reinit (&opts);
+   BSON_APPEND_UTF8 (&opts, "full", "bad_value");
+
+   r = mongoc_collection_validate (collection, &opts, &reply, &error);
+   assert (!r);
+   assert (error.domain == MONGOC_ERROR_BSON);
+   assert (error.code == MONGOC_ERROR_BSON_INVALID);
+
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&doc);
+   bson_destroy (&opts);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -650,6 +699,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/count", test_count);
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
+   TestSuite_Add (suite, "/Collection/validate", test_validate);
 
    atexit (cleanup_globals);
 }

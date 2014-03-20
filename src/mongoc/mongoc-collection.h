@@ -116,6 +116,10 @@ void                          mongoc_collection_set_write_concern    (mongoc_col
 const char                   *mongoc_collection_get_name             (mongoc_collection_t           *collection);
 const bson_t                 *mongoc_collection_get_last_error       (const mongoc_collection_t     *collection);
 char                         *mongoc_collection_keys_to_index_string (const bson_t                  *keys);
+bool                          mongoc_collection_validate             (mongoc_collection_t           *collection,
+                                                                      const bson_t                  *options,
+                                                                      bson_t                        *reply,
+                                                                      bson_error_t                  *error);
 
 
 BSON_END_DECLS

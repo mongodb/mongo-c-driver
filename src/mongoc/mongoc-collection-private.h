@@ -32,10 +32,10 @@ struct _mongoc_collection_t
 {
    mongoc_client_t *client;
    char             ns[128];
-   uint32_t    nslen;
+   uint32_t         nslen;
    char             db[128];
    char             collection[128];
-   uint32_t    collectionlen;
+   uint32_t         collectionlen;
    mongoc_buffer_t  buffer;
 
    mongoc_read_prefs_t    *read_prefs;
