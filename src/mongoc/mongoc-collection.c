@@ -35,6 +35,20 @@
 #define MONGOC_LOG_DOMAIN "collection"
 
 
+static bool
+validate_name (const char *str)
+{
+   return (str &&
+           *str &&
+           (strlen (str) < 123) &&
+           !strstr (str, "..") &&
+           !!strncmp (str, "$cmd", 4) &&
+           !!strncmp (str, "oplog.$main", 11) &&
+           (*str != '.') &&
+           (*(str + strlen (str) - 1) != '.'));
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -84,11 +98,9 @@ _mongoc_collection_new (mongoc_client_t              *client,
       mongoc_read_prefs_copy(read_prefs) :
       mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
-   bson_snprintf (col->ns, sizeof col->ns - 1, "%s.%s",
-                  db, collection);
-   bson_snprintf (col->db, sizeof col->db - 1, "%s", db);
-   bson_snprintf (col->collection, sizeof col->collection - 1,
-                  "%s", collection);
+   bson_snprintf (col->ns, sizeof col->ns, "%s.%s", db, collection);
+   bson_snprintf (col->db, sizeof col->db, "%s", db);
+   bson_snprintf (col->collection, sizeof col->collection, "%s", collection);
 
    col->collectionlen = (uint32_t)strlen(col->collection);
    col->nslen = (uint32_t)strlen(col->ns);
@@ -1369,6 +1381,85 @@ mongoc_collection_validate (mongoc_collection_t *collection, /* IN */
    }
 
    ret = mongoc_collection_command_simple (collection, &cmd, NULL, reply, error);
+
+   bson_destroy (&cmd);
+
+   return ret;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_rename --
+ *
+ *       Rename the collection to @new_name.
+ *
+ *       If @new_db is NULL, the same db will be used.
+ *
+ *       If @drop_target_before_rename is true, then a collection named
+ *       @new_name will be dropped before renaming @collection to
+ *       @new_name.
+ *
+ * Returns:
+ *       true on success; false on failure and @error is set.
+ *
+ * Side effects:
+ *       @error is set on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_collection_rename (mongoc_collection_t *collection,
+                          const char          *new_db,
+                          const char          *new_name,
+                          bool                 drop_target_before_rename,
+                          bson_error_t        *error)
+{
+   bson_t cmd = BSON_INITIALIZER;
+   char newns [MONGOC_NAMESPACE_MAX + 1];
+   bool ret;
+
+   bson_return_val_if_fail (collection, false);
+   bson_return_val_if_fail (new_name, false);
+
+   if (!validate_name (new_name)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_NAMESPACE,
+                      MONGOC_ERROR_NAMESPACE_INVALID,
+                      "\"%s\" is an invalid collection name.",
+                      new_name);
+      return false;
+   }
+
+   bson_snprintf (newns, sizeof newns, "%s.%s",
+                  new_db ? new_db : collection->db,
+                  new_name);
+
+   BSON_APPEND_UTF8 (&cmd, "renameCollection", collection->ns);
+   BSON_APPEND_UTF8 (&cmd, "to", newns);
+
+   if (drop_target_before_rename) {
+      BSON_APPEND_BOOL (&cmd, "dropTarget", true);
+   }
+
+   ret = mongoc_client_command_simple (collection->client, "admin",
+                                       &cmd, NULL, NULL, error);
+
+   if (ret) {
+      if (new_db) {
+         bson_snprintf (collection->db, sizeof collection->db, "%s", new_db);
+      }
+
+      bson_snprintf (collection->collection, sizeof collection->collection,
+                     "%s", new_name);
+      collection->collectionlen = strlen (collection->collection);
+
+      bson_snprintf (collection->ns, sizeof collection->ns,
+                     "%s.%s", collection->db, new_name);
+      collection->nslen = strlen (collection->ns);
+   }
 
    bson_destroy (&cmd);
 

@@ -678,6 +678,36 @@ test_validate (void)
 
 
 static void
+test_rename (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t doc = BSON_INITIALIZER;
+   bool r;
+
+   client = mongoc_client_new (gTestUri);
+   ASSERT (client);
+
+   collection = get_test_collection (client, "test_rename");
+   ASSERT (collection);
+
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
+   assert (r);
+
+   r = mongoc_collection_rename (collection, "test", "test_rename_2", false, &error);
+   assert (r);
+
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&doc);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -700,6 +730,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
    TestSuite_Add (suite, "/Collection/validate", test_validate);
+   TestSuite_Add (suite, "/Collection/rename", test_rename);
 
    atexit (cleanup_globals);
 }
