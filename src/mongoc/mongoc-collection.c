@@ -635,7 +635,7 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
    col = mongoc_client_get_collection (collection->client, collection->db,
                                        "system.indexes");
 
-   ret = mongoc_collection_insert (col, MONGOC_INSERT_NONE, &insert, NULL,
+   ret = mongoc_collection_insert (col, MONGOC_INSERT_NO_VALIDATE, &insert, NULL,
                                    error);
 
    mongoc_collection_destroy(col);
