@@ -907,3 +907,34 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 
    RETURN (_clone);
 }
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cursor_is_alive --
+ *
+ *       Checks to see if a cursor is alive.
+ *
+ *       This is primarily useful with tailable cursors.
+ *
+ * Returns:
+ *       true if the cursor is alive.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_cursor_is_alive (mongoc_cursor_t *cursor) /* IN */
+{
+   bson_return_val_if_fail (cursor, false);
+
+   return (!cursor->sent ||
+           (!cursor->failed &&
+            !cursor->done &&
+            (cursor->rpc.header.opcode == MONGOC_OPCODE_REPLY) &&
+            cursor->rpc.reply.cursor_id));
+}

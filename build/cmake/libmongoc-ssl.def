@@ -45,6 +45,7 @@ mongoc_cursor_clone
 mongoc_cursor_destroy
 mongoc_cursor_error
 mongoc_cursor_get_host
+mongoc_cursor_is_alive
 mongoc_cursor_more
 mongoc_cursor_next
 mongoc_database_add_user
