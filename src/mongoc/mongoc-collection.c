@@ -279,9 +279,9 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 mongoc_cursor_t *
 mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
                         mongoc_query_flags_t       flags,      /* IN */
-                        uint32_t              skip,       /* IN */
-                        uint32_t              limit,      /* IN */
-                        uint32_t              batch_size, /* IN */
+                        uint32_t                   skip,       /* IN */
+                        uint32_t                   limit,      /* IN */
+                        uint32_t                   batch_size, /* IN */
                         const bson_t              *query,      /* IN */
                         const bson_t              *fields,     /* IN */
                         const mongoc_read_prefs_t *read_prefs) /* IN */

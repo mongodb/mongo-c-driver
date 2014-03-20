@@ -180,16 +180,21 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    cursor->batch_size = batch_size;
    cursor->is_command = is_command;
 
+#define MARK_FAILED(c) \
+   do { \
+      (c)->failed = true; \
+      (c)->done = true; \
+      (c)->end_of_event = true; \
+      (c)->sent = true; \
+   } while (0)
+
    /* we can't have exhaust queries with limits */
    if ((flags & MONGOC_QUERY_EXHAUST) && limit) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_CURSOR,
                       MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                       "Cannot specify MONGOC_QUERY_EXHAUST and set a limit.");
-      cursor->failed = true;
-      cursor->done = true;
-      cursor->end_of_event = true;
-      cursor->sent = true;
+      MARK_FAILED (cursor);
       GOTO (finish);
    }
 
@@ -199,11 +204,34 @@ _mongoc_cursor_new (mongoc_client_t           *client,
                       MONGOC_ERROR_CURSOR,
                       MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                       "Cannot specify MONGOC_QUERY_EXHAUST with sharded cluster.");
-      cursor->failed = true;
-      cursor->done = true;
-      cursor->end_of_event = true;
-      cursor->sent = true;
+      MARK_FAILED (cursor);
       GOTO (finish);
+   }
+
+   /*
+    * Check types of various optional parameters.
+    */
+   if (!is_command) {
+      if (bson_iter_init_find (&iter, query, "$explain") &&
+          !(BSON_ITER_HOLDS_BOOL (&iter) || BSON_ITER_HOLDS_INT32 (&iter))) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                         "$explain must be a boolean.");
+         MARK_FAILED (cursor);
+         GOTO (finish);
+      }
+
+      if (bson_iter_init_find (&iter, query, "$snapshot") &&
+          !BSON_ITER_HOLDS_BOOL (&iter) &&
+          !BSON_ITER_HOLDS_INT32 (&iter)) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                         "$snapshot must be a boolean.");
+         MARK_FAILED (cursor);
+         GOTO (finish);
+      }
    }
 
    if (!cursor->is_command && !bson_has_field (query, "$query")) {
