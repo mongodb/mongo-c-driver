@@ -236,7 +236,6 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
 
    /*
     * Users are stored in the <dbname>.system.users virtual collection.
-    * However, this will likely change to a command soon.
     */
    collection = mongoc_client_get_collection(database->client,
                                              database->name,
