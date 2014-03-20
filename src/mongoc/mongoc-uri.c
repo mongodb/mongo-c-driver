@@ -44,7 +44,6 @@ struct _mongoc_uri_t
    char               *database;
    bson_t              options;
    bson_t              read_prefs;
-   bson_t              write_concern;
 };
 
 
@@ -430,6 +429,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
          bson_append_utf8(&uri->options, key, -1, value, -1);
       }
    } else if (!strcasecmp(key, "journal") ||
+              !strcasecmp(key, "safe") ||
               !strcasecmp(key, "slaveok") ||
               !strcasecmp(key, "ssl")) {
       bson_append_bool(&uri->options, key, -1, !strcasecmp(value, "true"));
@@ -560,7 +560,6 @@ mongoc_uri_new (const char *uri_string)
    uri = bson_malloc0(sizeof *uri);
    bson_init(&uri->options);
    bson_init(&uri->read_prefs);
-   bson_init(&uri->write_concern);
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
@@ -659,7 +658,6 @@ mongoc_uri_destroy (mongoc_uri_t *uri)
       bson_free(uri->username);
       bson_destroy(&uri->options);
       bson_destroy(&uri->read_prefs);
-      bson_destroy(&uri->write_concern);
 
       if (uri->password) {
          bson_zero_free(uri->password, strlen(uri->password));
