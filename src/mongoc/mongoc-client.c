@@ -389,7 +389,7 @@ uint32_t
 _mongoc_client_sendv (mongoc_client_t              *client,
                       mongoc_rpc_t                 *rpcs,
                       size_t                        rpcs_len,
-                      uint32_t                 hint,
+                      uint32_t                      hint,
                       const mongoc_write_concern_t *write_concern,
                       const mongoc_read_prefs_t    *read_prefs,
                       bson_error_t                 *error)
@@ -648,6 +648,7 @@ cleanup:
 mongoc_client_t *
 mongoc_client_new (const char *uri_string)
 {
+   const mongoc_write_concern_t *write_concern;
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    const bson_t *options;
@@ -683,15 +684,18 @@ mongoc_client_new (const char *uri_string)
    client->initiator = mongoc_client_default_stream_initiator;
    client->initiator_data = client;
 
-   _mongoc_cluster_init (&client->cluster, client->uri, client);
+   write_concern = mongoc_uri_get_write_concern (uri);
+   client->write_concern = mongoc_write_concern_copy (write_concern);
 
-   mongoc_counter_clients_active_inc ();
+   _mongoc_cluster_init (&client->cluster, client->uri, client);
 
 #ifdef MONGOC_ENABLE_SSL
    if (has_ssl) {
       mongoc_client_set_ssl_opts (client, mongoc_ssl_opt_get_default ());
    }
 #endif
+
+   mongoc_counter_clients_active_inc ();
 
    return client;
 }
