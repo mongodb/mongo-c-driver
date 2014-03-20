@@ -109,6 +109,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-host-list.h
    ${SOURCE_DIR}/src/mongoc/mongoc-init.h
    ${SOURCE_DIR}/src/mongoc/mongoc-index.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-iovec.h
    ${SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
