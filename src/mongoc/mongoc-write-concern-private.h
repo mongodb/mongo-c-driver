@@ -31,8 +31,8 @@ struct _mongoc_write_concern_t
    bool      journal;
    int32_t   w;
    int32_t   wtimeout;
+   char     *wtag;
    bool      frozen;
-   bson_t    tags;
    bson_t    compiled;
 };
 

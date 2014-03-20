@@ -46,7 +46,7 @@ mongoc_write_concern_new (void)
 
    write_concern = bson_malloc0(sizeof *write_concern);
    write_concern->w = -2;
-   bson_init(&write_concern->tags);
+
    return write_concern;
 }
 
@@ -63,8 +63,7 @@ mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern)
       ret->w = write_concern->w;
       ret->wtimeout = write_concern->wtimeout;
       ret->frozen = false;
-      bson_destroy(&ret->tags);
-      bson_copy_to(&write_concern->tags, &ret->tags);
+      ret->wtag = bson_strdup (write_concern->wtag);
    }
 
    return ret;
@@ -82,14 +81,11 @@ mongoc_write_concern_destroy (mongoc_write_concern_t *write_concern)
 {
    if (write_concern) {
       if (write_concern->compiled.len) {
-         bson_destroy(&write_concern->compiled);
+         bson_destroy (&write_concern->compiled);
       }
 
-      if (write_concern->tags.len) {
-         bson_destroy(&write_concern->tags);
-      }
-
-      bson_free(write_concern);
+      bson_free (write_concern->wtag);
+      bson_free (write_concern);
    }
 }
 
@@ -228,13 +224,40 @@ mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern)
  */
 void
 mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
-                                    int32_t            wtimeout_msec)
+                                    int32_t                 wtimeout_msec)
 {
    bson_return_if_fail(write_concern);
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
       write_concern->wtimeout = wtimeout_msec;
+   }
+}
+
+
+const char *
+mongoc_write_concern_get_wtag (const mongoc_write_concern_t *write_concern)
+{
+   bson_return_val_if_fail (write_concern, NULL);
+
+   if (write_concern->w == MONGOC_WRITE_CONCERN_W_TAG) {
+      return write_concern->wtag;
+   }
+
+   return NULL;
+}
+
+
+void
+mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern,
+                               const char             *wtag)
+{
+   bson_return_if_fail (write_concern);
+
+   if (!_mongoc_write_concern_warn_frozen (write_concern)) {
+      bson_free (write_concern->wtag);
+      write_concern->wtag = bson_strdup (wtag);
+      write_concern->w = MONGOC_WRITE_CONCERN_W_TAG;
    }
 }
 
@@ -265,17 +288,19 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
    if (!write_concern->frozen) {
       write_concern->frozen = true;
 
-      bson_init(b);
-      bson_append_int32(b, "getlasterror", 12, 1);
+      bson_init (b);
 
-      if (!bson_empty(&write_concern->tags)) {
-         bson_append_document(b, "w", 1, &write_concern->tags);
+      BSON_APPEND_INT32 (b, "getlasterror", 1);
+
+      if (write_concern->w == MONGOC_WRITE_CONCERN_W_TAG) {
+         BSON_ASSERT (write_concern->wtag);
+         BSON_APPEND_UTF8 (b, "w", write_concern->wtag);
       } else if (write_concern->w == MONGOC_WRITE_CONCERN_W_MAJORITY) {
-         bson_append_utf8(b, "w", 1, "majority", 8);
+         BSON_APPEND_UTF8 (b, "w", "majority");
       } else if (write_concern->w == MONGOC_WRITE_CONCERN_W_DEFAULT) {
          /* Do Nothing */
       } else if (write_concern->w > 0) {
-         bson_append_int32(b, "w", 1, write_concern->w);
+         BSON_APPEND_INT32 (b, "w", write_concern->w);
       }
 
       if (write_concern->fsync_) {

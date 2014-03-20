@@ -30,10 +30,11 @@
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED 0
+#define MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED  0
 #define MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED -1
-#define MONGOC_WRITE_CONCERN_W_DEFAULT  -2
-#define MONGOC_WRITE_CONCERN_W_MAJORITY -3
+#define MONGOC_WRITE_CONCERN_W_DEFAULT        -2
+#define MONGOC_WRITE_CONCERN_W_MAJORITY       -3
+#define MONGOC_WRITE_CONCERN_W_TAG            -4
 
 
 typedef struct _mongoc_write_concern_t mongoc_write_concern_t;
@@ -51,6 +52,9 @@ void                    mongoc_write_concern_set_journal   (mongoc_write_concern
 int32_t                 mongoc_write_concern_get_w         (const mongoc_write_concern_t *write_concern);
 void                    mongoc_write_concern_set_w         (mongoc_write_concern_t       *write_concern,
                                                             int32_t                       w);
+const char             *mongoc_write_concern_get_wtag      (const mongoc_write_concern_t *write_concern);
+void                    mongoc_write_concern_set_wtag      (mongoc_write_concern_t       *write_concern,
+                                                            const char                   *tag);
 int32_t                 mongoc_write_concern_get_wtimeout  (const mongoc_write_concern_t *write_concern);
 void                    mongoc_write_concern_set_wtimeout  (mongoc_write_concern_t       *write_concern,
                                                             int32_t                       wtimeout_msec);
