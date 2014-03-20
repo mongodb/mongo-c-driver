@@ -37,13 +37,14 @@
 
 struct _mongoc_uri_t
 {
-   char               *str;
-   mongoc_host_list_t *hosts;
-   char               *username;
-   char               *password;
-   char               *database;
-   bson_t              options;
-   bson_t              read_prefs;
+   char                   *str;
+   mongoc_host_list_t     *hosts;
+   char                   *username;
+   char                   *password;
+   char                   *database;
+   bson_t                  options;
+   bson_t                  read_prefs;
+   mongoc_write_concern_t *write_concern;
 };
 
 
@@ -359,8 +360,9 @@ mongoc_uri_parse_database (mongoc_uri_t  *uri,
 
 
 static void
-mongoc_uri_parse_read_prefs (mongoc_uri_t *uri,
-                             const char   *str)
+mongoc_uri_parse_tags (mongoc_uri_t *uri, /* IN */
+                       const char   *str, /* IN */
+                       bson_t       *doc) /* IN */
 {
    const char *end_keyval;
    const char *end_key;
@@ -388,9 +390,9 @@ again:
       }
    }
 
-   i = bson_count_keys(&uri->read_prefs);
+   i = bson_count_keys(doc);
    bson_snprintf(keystr, sizeof keystr, "%u", i);
-   bson_append_document(&uri->read_prefs, keystr, -1, &b);
+   bson_append_document(doc, keystr, -1, &b);
    bson_destroy(&b);
 }
 
@@ -423,10 +425,12 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       bson_append_int32(&uri->options, key, -1, v_int);
    } else if (!strcasecmp(key, "w")) {
       if (*value == '-' || isdigit(*value)) {
-         v_int = strtol(value, NULL, 10);
-         bson_append_int32(&uri->options, key, -1, v_int);
-      } else {
-         bson_append_utf8(&uri->options, key, -1, value, -1);
+         v_int = strtol (value, NULL, 10);
+         BSON_APPEND_INT32 (&uri->options, "w", v_int);
+      } else if (0 == strcasecmp (value, "majority")) {
+         BSON_APPEND_UTF8 (&uri->options, "w", "majority");
+      } else if (*value) {
+         BSON_APPEND_UTF8 (&uri->options, "W", value);
       }
    } else if (!strcasecmp(key, "journal") ||
               !strcasecmp(key, "safe") ||
@@ -434,7 +438,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
               !strcasecmp(key, "ssl")) {
       bson_append_bool(&uri->options, key, -1, !strcasecmp(value, "true"));
    } else if (!strcasecmp(key, "readpreferencetags")) {
-      mongoc_uri_parse_read_prefs(uri, value);
+      mongoc_uri_parse_tags(uri, value, &uri->read_prefs);
    } else {
       bson_append_utf8(&uri->options, key, -1, value, -1);
    }
@@ -552,6 +556,73 @@ mongoc_uri_get_auth_mechanism (const mongoc_uri_t *uri)
 }
 
 
+static void
+_mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
+{
+   mongoc_write_concern_t *write_concern;
+   const char *str;
+   bson_iter_t iter;
+   int32_t wtimeoutms = 0;
+   int value;
+
+   BSON_ASSERT (uri);
+
+   write_concern = mongoc_write_concern_new ();
+
+   if (bson_iter_init_find_case (&iter, &uri->options, "safe") &&
+       BSON_ITER_HOLDS_BOOL (&iter) &&
+       !bson_iter_bool (&iter)) {
+      mongoc_write_concern_set_w (write_concern,
+                                  MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+   }
+
+   if (bson_iter_init_find_case (&iter, &uri->options, "wtimeoutms") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+      wtimeoutms = bson_iter_int32 (&iter);
+   }
+
+   if (bson_iter_init_find_case (&iter, &uri->options, "w")) {
+      if (BSON_ITER_HOLDS_INT32 (&iter)) {
+         value = bson_iter_int32 (&iter);
+
+         switch (value) {
+         case -1:
+            mongoc_write_concern_set_w (write_concern,
+                                        MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED);
+            break;
+         case 0:
+            mongoc_write_concern_set_w (write_concern,
+                                        MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+            break;
+         case 1:
+            mongoc_write_concern_set_w (write_concern,
+                                        MONGOC_WRITE_CONCERN_W_DEFAULT);
+            break;
+         default:
+            if (value > 1) {
+               mongoc_write_concern_set_w (write_concern, value);
+               break;
+            }
+            MONGOC_WARNING ("Unsupported w value [w=%d].", value);
+            break;
+         }
+      } else if (BSON_ITER_HOLDS_UTF8 (&iter)) {
+         str = bson_iter_utf8 (&iter, NULL);
+
+         if (0 == strcasecmp ("majority", str)) {
+            mongoc_write_concern_set_wmajority (write_concern, wtimeoutms);
+         } else {
+            mongoc_write_concern_set_wtag (write_concern, str);
+         }
+      } else {
+         BSON_ASSERT (false);
+      }
+   }
+
+   uri->write_concern = write_concern;
+}
+
+
 mongoc_uri_t *
 mongoc_uri_new (const char *uri_string)
 {
@@ -572,13 +643,15 @@ mongoc_uri_new (const char *uri_string)
 
    uri->str = bson_strdup(uri_string);
 
+   _mongoc_uri_build_write_concern (uri);
+
    return uri;
 }
 
 
 mongoc_uri_t *
-mongoc_uri_new_for_host_port (const char    *hostname,
-                              uint16_t  port)
+mongoc_uri_new_for_host_port (const char *hostname,
+                              uint16_t    port)
 {
    mongoc_uri_t *uri;
    char *str;
@@ -764,4 +837,13 @@ mongoc_uri_unescape (const char *escaped_string)
    }
 
    return bson_string_free(str, false);
+}
+
+
+const mongoc_write_concern_t *
+mongoc_uri_get_write_concern (const mongoc_uri_t *uri) /* IN */
+{
+   bson_return_val_if_fail (uri, NULL);
+
+   return uri->write_concern;
 }

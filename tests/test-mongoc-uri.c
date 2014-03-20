@@ -258,11 +258,69 @@ test_mongoc_uri_unescape (void)
 }
 
 
+typedef struct
+{
+   const char *uri;
+   bool        parses;
+   int32_t     w;
+   const char *wtag;
+} write_concern_test;
+
+
+static void
+test_mongoc_uri_write_concern (void)
+{
+   const mongoc_write_concern_t *wr;
+   mongoc_uri_t *uri;
+   const write_concern_test *t;
+   int i;
+   static const write_concern_test tests [] = {
+      { "mongodb://localhost/?safe=false", true, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED },
+      { "mongodb://localhost/?safe=true", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?w=-1", true, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED },
+      { "mongodb://localhost/?w=0", true, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED },
+      { "mongodb://localhost/?w=1", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?w=2", true, 2 },
+      { "mongodb://localhost/?w=majority", true, MONGOC_WRITE_CONCERN_W_MAJORITY },
+      { "mongodb://localhost/?w=10", true, 10 },
+      { "mongodb://localhost/?w=", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?w=mytag", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag" },
+      { "mongodb://localhost/?w=mytag&safe=false", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag" },
+      { "mongodb://localhost/?w=1&safe=false", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { NULL }
+   };
+
+   for (i = 0; tests [i].uri; i++) {
+      t = &tests [i];
+
+      uri = mongoc_uri_new (t->uri);
+      if (t->parses) {
+         assert (uri);
+      } else {
+         assert (!uri);
+         continue;
+      }
+
+      wr = mongoc_uri_get_write_concern (uri);
+      assert (wr);
+
+      assert (t->w == mongoc_write_concern_get_w (wr));
+
+      if (t->wtag) {
+         assert (0 == strcmp (t->wtag, mongoc_write_concern_get_wtag (wr)));
+      }
+
+      mongoc_uri_destroy (uri);
+   }
+}
+
+
 void
 test_uri_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Uri/new", test_mongoc_uri_new);
    TestSuite_Add (suite, "/Uri/new_for_host_port", test_mongoc_uri_new_for_host_port);
    TestSuite_Add (suite, "/Uri/unescape", test_mongoc_uri_unescape);
+   TestSuite_Add (suite, "/Uri/write_concern", test_mongoc_uri_write_concern);
    TestSuite_Add (suite, "/HostList/from_string", test_mongoc_host_list_from_string);
 }
