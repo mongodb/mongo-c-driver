@@ -9,10 +9,6 @@ noinst_PROGRAMS =
 
 if WITH_LIBBSON
 SUBDIRS = src/libbson
-BSON_CFLAGS = \
-	-I$(top_srcdir)/src/libbson/src/bson \
-	-I$(top_builddir)/src/libbson/src/bson
-BSON_LIBS = $(top_builddir)/src/libbson/libbson-1.0.la
 endif
 
 AM_CTAGSFLAGS = --fields=+l --languages=c

@@ -21,5 +21,8 @@ AS_IF([test "x${with_libbson}" = xsystem],
 ])])])
 
 # If we are using the bundled libbson, recurse into its configure.
-AS_IF([test "x${with_libbson}" = xbundled],
-      [AC_CONFIG_SUBDIRS([src/libbson])])
+AS_IF([test "x${with_libbson}" = xbundled],[
+   AC_CONFIG_SUBDIRS([src/libbson])
+   AC_SUBST(BSON_CFLAGS, "-I${srcdir}/src/libbson/src/bson -Isrc/libbson/src/bson")
+   AC_SUBST(BSON_LIBS, "src/libbson/libbson-1.0.la")
+])
