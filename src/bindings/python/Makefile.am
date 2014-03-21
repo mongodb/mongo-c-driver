@@ -10,6 +10,8 @@ pymongoc_la_SOURCES = \
 	src/bindings/python/pymongoc-client.h \
 	src/bindings/python/pymongoc-client-pool.c \
 	src/bindings/python/pymongoc-client-pool.h \
+	src/bindings/python/pymongoc-cursor.c \
+	src/bindings/python/pymongoc-cursor.h \
 	src/bindings/python/pymongoc-uri.c \
 	src/bindings/python/pymongoc-uri.h
 
