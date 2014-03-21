@@ -93,58 +93,6 @@
    } while (0)
 
 
-/**
- * _mongoc_cluster_negotiate_wire_version:
- * @node: A #mongoc_cluster_t.
- *
- * Negotiate the wire-protocol version between all of our connected
- * cluster nodes.
- *
- * If we cannot negotiate a wire-version amongst all of the nodes,
- * then %false is returned and the connection should be dropped.
- *
- * If we can negotiate the wire-version amongst all of the nodes,
- * then %true is returned and the clusters wire-version will be
- * updated to reflect the coordinated version.
- *
- * Returns: %true if we negotiated, otherwise %false.
- */
-static int32_t
-_mongoc_cluster_negotiate_wire_version (mongoc_cluster_t *cluster)
-{
-   mongoc_cluster_node_t *node;
-   int32_t min_wire_version = MIN_WIRE_VERSION;
-   int32_t max_wire_version = MAX_WIRE_VERSION;
-   int i;
-
-   ENTRY;
-
-   BSON_ASSERT (cluster);
-
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
-      node = &cluster->nodes[i];
-
-      if (node->stream) {
-         if ((node->min_wire_version > max_wire_version) ||
-             (node->max_wire_version < min_wire_version)) {
-            RETURN (false);
-         }
-
-         min_wire_version = MAX (min_wire_version, node->min_wire_version);
-         max_wire_version = MIN (max_wire_version, node->max_wire_version);
-      }
-   }
-
-   BSON_ASSERT (min_wire_version <= max_wire_version);
-   BSON_ASSERT (min_wire_version <= MAX_WIRE_VERSION);
-   BSON_ASSERT (max_wire_version >= MIN_WIRE_VERSION);
-
-   cluster->wire_version = MAX (min_wire_version, max_wire_version);
-
-   RETURN (true);
-}
-
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -570,7 +518,6 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
    cluster->requires_auth = (mongoc_uri_get_username (uri) ||
                              mongoc_uri_get_auth_mechanism (uri));
    cluster->sockettimeoutms = sockettimeoutms;
-   cluster->wire_version = MAX_WIRE_VERSION;
 
    if (bson_iter_init_find_case(&iter, b, "secondaryacceptablelatencyms") &&
        BSON_ITER_HOLDS_INT32(&iter)) {
@@ -1079,17 +1026,19 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
       node->min_wire_version = bson_iter_int32(&iter);
    }
 
-   if (!_mongoc_cluster_negotiate_wire_version (cluster)) {
+   if ((node->min_wire_version > MAX_WIRE_VERSION) ||
+       (node->max_wire_version < MIN_WIRE_VERSION)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                      "Failed to negotiate wire version among all "
-                      "cluster peers. Current wire version is %u. "
-                      "%s is [%u,%u].",
-                      cluster->wire_version,
+                      "Failed to negotiate wire version with "
+                      "cluster peer. %s is [%u,%u]. I support "
+                      "[%u,%u].",
                       node->host.host_and_port,
                       node->min_wire_version,
-                      node->max_wire_version);
+                      node->max_wire_version,
+                      MIN_WIRE_VERSION,
+                      MAX_WIRE_VERSION);
       GOTO (failure);
    }
 

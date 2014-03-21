@@ -94,8 +94,6 @@ typedef struct
 
    unsigned                requires_auth : 1;
 
-   int32_t                 wire_version;
-
    mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
    mongoc_client_t        *client;
    uint32_t                max_bson_size;

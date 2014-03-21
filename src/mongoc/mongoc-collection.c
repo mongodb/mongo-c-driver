@@ -49,6 +49,47 @@ validate_name (const char *str)
 }
 
 
+static uint32_t
+_mongoc_collection_preselect (mongoc_collection_t          *collection,
+                              mongoc_opcode_t               opcode,
+                              const mongoc_write_concern_t *write_concern,
+                              const mongoc_read_prefs_t    *read_prefs,
+                              uint32_t                     *min_wire_version,
+                              uint32_t                     *max_wire_version,
+                              bson_error_t                 *error)
+{
+   mongoc_cluster_node_t *node;
+   uint32_t hint;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (opcode);
+   BSON_ASSERT (min_wire_version);
+   BSON_ASSERT (max_wire_version);
+
+   /*
+    * Try to discover the wire version of the server. Default to 1 so
+    * we can return a valid cursor structure.
+    */
+
+   *min_wire_version = 0;
+   *max_wire_version = 1;
+
+   hint = _mongoc_client_preselect (collection->client,
+                                    opcode,
+                                    write_concern,
+                                    read_prefs,
+                                    error);
+
+   if (hint) {
+      node = &collection->client->cluster.nodes [hint - 1];
+      *min_wire_version = node->min_wire_version;
+      *max_wire_version = node->max_wire_version;
+   }
+
+   return hint;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -204,14 +245,22 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
    mongoc_cursor_t *cursor;
+   uint32_t max_wire_version = 0;
+   uint32_t min_wire_version = 0;
+   uint32_t hint;
    bson_t command;
    bson_t child;
-   int32_t wire_version;
 
-   bson_return_val_if_fail(collection, NULL);
-   bson_return_val_if_fail(pipeline, NULL);
+   bson_return_val_if_fail (collection, NULL);
+   bson_return_val_if_fail (pipeline, NULL);
 
-   wire_version = collection->client->cluster.wire_version;
+   hint = _mongoc_collection_preselect (collection,
+                                        MONGOC_OPCODE_QUERY,
+                                        NULL,
+                                        read_prefs,
+                                        &min_wire_version,
+                                        &max_wire_version,
+                                        NULL);
 
    bson_init(&command);
    bson_append_utf8(&command, "aggregate", 9,
@@ -220,7 +269,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    bson_append_array(&command, "pipeline", 8, pipeline);
 
    /* for newer version, we include a cursor subdocument */
-   if (wire_version > 0) {
+   if (max_wire_version) {
       bson_append_document_begin(&command, "cursor", 6, &child);
       bson_append_int32(&child, "batchSize", 9, 0);
       bson_append_document_end(&command, &child);
@@ -228,8 +277,9 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 
    cursor = mongoc_collection_command(collection, flags, 0, 1, 0, &command,
                                       NULL, read_prefs);
+   cursor->hint = hint;
 
-   if (wire_version > 0) {
+   if (max_wire_version > 0) {
       /* even for newer versions, we get back a cursor document, that we have
        * to patch in */
       _mongoc_cursor_cursorid_init(cursor);
@@ -344,9 +394,9 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
 mongoc_cursor_t *
 mongoc_collection_command (mongoc_collection_t       *collection,
                            mongoc_query_flags_t       flags,
-                           uint32_t              skip,
-                           uint32_t              limit,
-                           uint32_t              batch_size,
+                           uint32_t                   skip,
+                           uint32_t                   limit,
+                           uint32_t                   batch_size,
                            const bson_t              *query,
                            const bson_t              *fields,
                            const mongoc_read_prefs_t *read_prefs)
@@ -675,6 +725,8 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
    bson_iter_t reply_iter;
    int code = 0;
    const char * errmsg;
+   uint32_t max_wire_version;
+   uint32_t min_wire_version;
 
    BSON_ASSERT(collection);
    BSON_ASSERT(documents);
@@ -686,7 +738,14 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
       write_concern = collection->write_concern;
    }
 
-   if (!_mongoc_client_warm_up (collection->client, error)) {
+   hint = _mongoc_collection_preselect (collection,
+                                        MONGOC_OPCODE_INSERT,
+                                        write_concern,
+                                        NULL,
+                                        &min_wire_version,
+                                        &max_wire_version,
+                                        error);
+   if (!hint) {
       return false;
    }
 
@@ -700,7 +759,7 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
     *    We might need to ensure we have a connection at this point.
     */
 
-   if (collection->client->cluster.wire_version == 0) {
+   if (max_wire_version == 0) {
       /*
        * TODO: Do old style write commands.
        */
@@ -724,7 +783,7 @@ _mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
 
    bson_snprintf (ns, sizeof ns, "%s.$cmd", collection->db);
 
-   if (!(hint = _mongoc_client_sendv(collection->client, &rpc, 1, 0,
+   if (!(hint = _mongoc_client_sendv(collection->client, &rpc, 1, hint,
                                      write_concern, NULL, error))) {
       return false;
    }

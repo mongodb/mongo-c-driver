@@ -480,8 +480,9 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    rpc.query.query = bson_get_data(&cursor->query);
    rpc.query.fields = bson_get_data(&cursor->fields);
 
-   if (!(hint = _mongoc_client_sendv (cursor->client, &rpc, 1, 0,
-                                      NULL, cursor->read_prefs,
+   if (!(hint = _mongoc_client_sendv (cursor->client, &rpc, 1,
+                                      cursor->hint, NULL,
+                                      cursor->read_prefs,
                                       &cursor->error))) {
       goto failure;
    }
