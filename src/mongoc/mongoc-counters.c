@@ -64,6 +64,8 @@ typedef struct
 
 BSON_STATIC_ASSERT(sizeof(mongoc_counters_t) == 64);
 
+static void *gCounterFallback = NULL;
+
 
 #define COUNTER(ident, Category, Name, Description) \
    mongoc_counter_t __mongoc_counter_##ident;
@@ -122,25 +124,23 @@ mongoc_counters_calc_size (void)
  *
  * Removes the shared memory segment for the current processes counters.
  */
-#ifdef BSON_OS_UNIX
 static void
 mongoc_counters_destroy (void)
 {
-   char name [32];
-   int pid;
+   if (gCounterFallback) {
+      bson_free (gCounterFallback);
+      gCounterFallback = NULL;
+#ifndef _WIN32
+   } else {
+      char name [32];
+      int pid;
 
-   pid = getpid ();
-   bson_snprintf (name, sizeof name, "/mongoc-%u", pid);
-   shm_unlink (name);
-}
-#else
-static void * mongoc_counters_memory = NULL;
-static void
-mongoc_counters_destroy (void)
-{
-    bson_free(mongoc_counters_memory);
-}
+      pid = getpid ();
+      bson_snprintf (name, sizeof name, "/mongoc-%u", pid);
+      shm_unlink (name);
 #endif
+   }
+}
 
 
 /**
@@ -200,9 +200,10 @@ failure:
 use_malloc:
 #endif
 
-   mongoc_counters_memory = bson_malloc0(size);
+   gCounterFallback = bson_malloc0(size);
    atexit(mongoc_counters_destroy);
-   return mongoc_counters_memory;
+
+   return gCounterFallback;
 }
 
 
