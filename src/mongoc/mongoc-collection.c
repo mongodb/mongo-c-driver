@@ -1465,3 +1465,61 @@ mongoc_collection_rename (mongoc_collection_t *collection,
 
    return ret;
 }
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_stats --
+ *
+ *       Fetches statistics about the collection.
+ *
+ *       The result is stored in @stats, which should NOT be an initialized
+ *       bson_t or a leak will occur.
+ *
+ *       @stats, @options, and @error are optional.
+ *
+ * Returns:
+ *       true on success and @stats is set.
+ *       false on failure and @error is set.
+ *
+ * Side effects:
+ *       @stats and @error.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_collection_stats (mongoc_collection_t *collection,
+                         const bson_t        *options,
+                         bson_t              *stats,
+                         bson_error_t        *error)
+{
+   bson_iter_t iter;
+   bson_t cmd = BSON_INITIALIZER;
+   bool ret;
+
+   bson_return_val_if_fail (collection, false);
+
+   if (options &&
+       bson_iter_init_find (&iter, options, "scale") &&
+       !BSON_ITER_HOLDS_INT32 (&iter)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "'sacle' must be an int32 value.");
+      return false;
+   }
+
+   BSON_APPEND_UTF8 (&cmd, "collStats", collection->collection);
+
+   if (options) {
+      bson_concat (&cmd, options);
+   }
+
+   ret = mongoc_collection_command_simple (collection, &cmd, NULL, stats, error);
+
+   bson_destroy (&cmd);
+
+   return ret;
+}

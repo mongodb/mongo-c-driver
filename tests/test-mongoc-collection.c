@@ -708,6 +708,45 @@ test_rename (void)
 
 
 static void
+test_stats (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_iter_t iter;
+   bson_t stats;
+   bson_t doc = BSON_INITIALIZER;
+   bool r;
+
+   client = mongoc_client_new (gTestUri);
+   ASSERT (client);
+
+   collection = get_test_collection (client, "test_stats");
+   ASSERT (collection);
+
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
+   assert (r);
+
+   r = mongoc_collection_stats (collection, NULL, &stats, &error);
+   assert (r);
+
+   assert (bson_iter_init_find (&iter, &stats, "ns"));
+
+   assert (bson_iter_init_find (&iter, &stats, "count"));
+   assert (bson_iter_as_int64 (&iter) >= 1);
+
+   bson_destroy (&stats);
+
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&doc);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -731,6 +770,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
    TestSuite_Add (suite, "/Collection/validate", test_validate);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
+   TestSuite_Add (suite, "/Collection/stats", test_stats);
 
    atexit (cleanup_globals);
 }

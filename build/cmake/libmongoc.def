@@ -41,6 +41,7 @@ mongoc_collection_rename
 mongoc_collection_save
 mongoc_collection_set_read_prefs
 mongoc_collection_set_write_concern
+mongoc_collection_stats
 mongoc_collection_update
 mongoc_collection_validate
 mongoc_cursor_clone

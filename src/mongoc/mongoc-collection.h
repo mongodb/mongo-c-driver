@@ -112,6 +112,10 @@ bool                          mongoc_collection_rename               (mongoc_col
                                                                       const char                    *new_name,
                                                                       bool                           drop_target_before_rename,
                                                                       bson_error_t                  *error);
+bool                          mongoc_collection_stats                (mongoc_collection_t           *collection,
+                                                                      const bson_t                  *options,
+                                                                      bson_t                        *reply,
+                                                                      bson_error_t                  *error);
 const mongoc_read_prefs_t    *mongoc_collection_get_read_prefs       (const mongoc_collection_t     *collection);
 void                          mongoc_collection_set_read_prefs       (mongoc_collection_t           *collection,
                                                                       const mongoc_read_prefs_t     *read_prefs);
