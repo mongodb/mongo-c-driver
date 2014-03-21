@@ -21,7 +21,9 @@ pymongoc_la_LIBADD = \
 pymongoc_la_LDFLAGS = -module
 
 pymongoc_la_CPPFLAGS = \
-	-DBSON_COMPILATION \
+	-DMONGOC_COMPILATION \
+	-include Python.h \
+	$(BSON_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc \
 	-I$(PYTHON_INCLUDE_DIR)

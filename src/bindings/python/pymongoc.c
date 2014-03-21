@@ -15,8 +15,6 @@
  */
 
 
-#include <Python.h>
-
 #include "pymongoc-client.h"
 #include "pymongoc-client-pool.h"
 #include "pymongoc-uri.h"

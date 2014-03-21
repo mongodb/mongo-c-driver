@@ -19,17 +19,10 @@
 #define PYMONGOC_URI_H
 
 
-#include <bson.h>
 #include <mongoc.h>
 
 
 BSON_BEGIN_DECLS
-
-
-#ifdef _POSIX_C_SOURCE
-# undef _POSIX_C_SOURCE
-#endif
-#include <Python.h>
 
 
 typedef struct {

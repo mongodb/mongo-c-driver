@@ -19,13 +19,7 @@
 #define PYMONGOC_CLIENT_POOL_H
 
 
-#include <bson.h>
 #include <mongoc.h>
-
-#ifdef _POSIX_C_SOURCE
-# undef _POSIX_C_SOURCE
-#endif
-#include <Python.h>
 
 
 BSON_BEGIN_DECLS

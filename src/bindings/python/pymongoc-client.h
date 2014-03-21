@@ -19,13 +19,7 @@
 #define PYMONGOC_CLIENT_H
 
 
-#include <bson.h>
 #include <mongoc.h>
-
-#ifdef _POSIX_C_SOURCE
-# undef _POSIX_C_SOURCE
-#endif
-#include <Python.h>
 
 
 BSON_BEGIN_DECLS
@@ -34,14 +28,15 @@ BSON_BEGIN_DECLS
 #define pymongoc_client_check(o) (Py_TYPE(o) == pymongoc_client_get_type())
 
 
-typedef struct {
+typedef struct
+{
    PyObject_HEAD
    mongoc_client_t *client;
    bool             owns_client;
 } pymongoc_client_t;
 
 
-PyTypeObject *pymongoc_client_get_type (void);
+PyTypeObject *pymongoc_client_get_type (void) BSON_GNUC_CONST;
 PyObject     *pymongoc_client_new      (mongoc_client_t *client,
                                         bool      owns_client);
 

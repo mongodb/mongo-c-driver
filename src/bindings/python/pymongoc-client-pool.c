@@ -121,7 +121,6 @@ pymongoc_client_pool_pop (PyObject *self,
 {
    pymongoc_client_pool_t *client_pool = (pymongoc_client_pool_t *)self;
    mongoc_client_t *client;
-   PyObject *pyclient;
 
    if (!pymongoc_client_pool_check (self)) {
       PyErr_SetString (PyExc_TypeError,

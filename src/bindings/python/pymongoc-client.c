@@ -88,7 +88,6 @@ pymongoc_client_tp_new (PyTypeObject *self,
                         PyObject     *args,
                         PyObject     *kwargs)
 {
-   pymongoc_client_t *pyclient;
    mongoc_client_t *client;
    const char *uri_str;
    PyObject *key = NULL;
