@@ -27,6 +27,7 @@
 #include "mongoc-client.h"
 #include "mongoc-host-list.h"
 #include "mongoc-list-private.h"
+#include "mongoc-opcode.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream.h"
@@ -142,6 +143,11 @@ bool                   _mongoc_cluster_command_early   (mongoc_cluster_t        
 void                   _mongoc_cluster_disconnect_node (mongoc_cluster_t             *cluster,
                                                         mongoc_cluster_node_t        *node);
 bool                   _mongoc_cluster_reconnect       (mongoc_cluster_t             *cluster,
+                                                        bson_error_t                 *error);
+uint32_t               _mongoc_cluster_preselect       (mongoc_cluster_t             *cluster,
+                                                        mongoc_opcode_t               opcode,
+                                                        mongoc_write_concern_t       *write_concern,
+                                                        mongoc_read_prefs_t          *read_prefs,
                                                         bson_error_t                 *error);
 
 

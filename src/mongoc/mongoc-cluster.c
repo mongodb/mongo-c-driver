@@ -660,7 +660,7 @@ static mongoc_cluster_node_t *
 _mongoc_cluster_select (mongoc_cluster_t             *cluster,
                         mongoc_rpc_t                 *rpcs,
                         size_t                        rpcs_len,
-                        uint32_t                 hint,
+                        uint32_t                      hint,
                         const mongoc_write_concern_t *write_concern,
                         const mongoc_read_prefs_t    *read_prefs,
                         bson_error_t                 *error)
@@ -839,6 +839,33 @@ dispatch:
    }
 
    RETURN(NULL);
+}
+
+
+uint32_t
+_mongoc_cluster_preselect (mongoc_cluster_t       *cluster,       /* IN */
+                           mongoc_opcode_t         opcode,        /* IN */
+                           mongoc_write_concern_t *write_concern, /* IN */
+                           mongoc_read_prefs_t    *read_prefs,    /* IN */
+                           bson_error_t           *error)         /* OUT */
+{
+   mongoc_cluster_node_t *node;
+   mongoc_rpc_t rpc = { 0 };
+   int retry_count = 0;
+
+   BSON_ASSERT (cluster);
+
+   rpc.header.opcode = opcode;
+
+   while (!(node = _mongoc_cluster_select (cluster, &rpc, 1, 0, write_concern,
+                                           read_prefs, error))) {
+      if ((retry_count++ == MAX_RETRY_COUNT) ||
+          !_mongoc_cluster_reconnect (cluster, error)) {
+         break;
+      }
+   }
+
+   return node ? (node->index + 1) : 0;
 }
 
 
