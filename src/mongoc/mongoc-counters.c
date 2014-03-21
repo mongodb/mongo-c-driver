@@ -133,6 +133,13 @@ mongoc_counters_destroy (void)
    bson_snprintf (name, sizeof name, "/mongoc-%u", pid);
    shm_unlink (name);
 }
+#else
+static void * mongoc_counters_memory = NULL;
+static void
+mongoc_counters_destroy (void)
+{
+    bson_free(mongoc_counters_memory);
+}
 #endif
 
 
@@ -193,7 +200,9 @@ failure:
 use_malloc:
 #endif
 
-   return bson_malloc0(size);
+   mongoc_counters_memory = bson_malloc0(size);
+   atexit(mongoc_counters_destroy);
+   return mongoc_counters_memory;
 }
 
 
