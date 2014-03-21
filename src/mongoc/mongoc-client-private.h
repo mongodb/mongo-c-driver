@@ -85,8 +85,8 @@ bool             _mongoc_client_warm_up       (mongoc_client_t              *cli
                                                bson_error_t                 *error);
 uint32_t         _mongoc_client_preselect     (mongoc_client_t              *client,
                                                mongoc_opcode_t               opcode,
-                                               mongoc_write_concern_t       *write_concern,
-                                               mongoc_read_prefs_t          *read_prefs,
+                                               const mongoc_write_concern_t *write_concern,
+                                               const mongoc_read_prefs_t    *read_prefs,
                                                bson_error_t                 *error);
 
 

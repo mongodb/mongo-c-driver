@@ -843,11 +843,11 @@ dispatch:
 
 
 uint32_t
-_mongoc_cluster_preselect (mongoc_cluster_t       *cluster,       /* IN */
-                           mongoc_opcode_t         opcode,        /* IN */
-                           mongoc_write_concern_t *write_concern, /* IN */
-                           mongoc_read_prefs_t    *read_prefs,    /* IN */
-                           bson_error_t           *error)         /* OUT */
+_mongoc_cluster_preselect (mongoc_cluster_t             *cluster,       /* IN */
+                           mongoc_opcode_t               opcode,        /* IN */
+                           const mongoc_write_concern_t *write_concern, /* IN */
+                           const mongoc_read_prefs_t    *read_prefs,    /* IN */
+                           bson_error_t                 *error)         /* OUT */
 {
    mongoc_cluster_node_t *node;
    mongoc_rpc_t rpc = { 0 };

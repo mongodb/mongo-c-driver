@@ -1110,11 +1110,11 @@ _mongoc_client_warm_up (mongoc_client_t *client,
 
 
 uint32_t
-_mongoc_client_preselect (mongoc_client_t        *client,        /* IN */
-                          mongoc_opcode_t         opcode,        /* IN */
-                          mongoc_write_concern_t *write_concern, /* IN */
-                          mongoc_read_prefs_t    *read_prefs,    /* IN */
-                          bson_error_t           *error)         /* OUT */
+_mongoc_client_preselect (mongoc_client_t              *client,        /* IN */
+                          mongoc_opcode_t               opcode,        /* IN */
+                          const mongoc_write_concern_t *write_concern, /* IN */
+                          const mongoc_read_prefs_t    *read_prefs,    /* IN */
+                          bson_error_t                 *error)         /* OUT */
 {
 
    BSON_ASSERT (client);

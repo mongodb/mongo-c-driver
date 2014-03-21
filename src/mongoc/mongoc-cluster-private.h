@@ -146,8 +146,8 @@ bool                   _mongoc_cluster_reconnect       (mongoc_cluster_t        
                                                         bson_error_t                 *error);
 uint32_t               _mongoc_cluster_preselect       (mongoc_cluster_t             *cluster,
                                                         mongoc_opcode_t               opcode,
-                                                        mongoc_write_concern_t       *write_concern,
-                                                        mongoc_read_prefs_t          *read_prefs,
+                                                        const mongoc_write_concern_t *write_concern,
+                                                        const mongoc_read_prefs_t    *read_prefs,
                                                         bson_error_t                 *error);
 
 
