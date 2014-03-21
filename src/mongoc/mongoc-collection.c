@@ -242,14 +242,18 @@ mongoc_cursor_t *
 mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                              mongoc_query_flags_t       flags,      /* IN */
                              const bson_t              *pipeline,   /* IN */
+                             const bson_t              *options,    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
    mongoc_cursor_t *cursor;
+   bson_iter_t iter;
    uint32_t max_wire_version = 0;
    uint32_t min_wire_version = 0;
    uint32_t hint;
    bson_t command;
    bson_t child;
+   int32_t batch_size;
+   bool did_batch_size = false;
 
    bson_return_val_if_fail (collection, NULL);
    bson_return_val_if_fail (pipeline, NULL);
@@ -270,9 +274,35 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 
    /* for newer version, we include a cursor subdocument */
    if (max_wire_version) {
-      bson_append_document_begin(&command, "cursor", 6, &child);
-      bson_append_int32(&child, "batchSize", 9, 0);
-      bson_append_document_end(&command, &child);
+      bson_append_document_begin (&command, "cursor", 6, &child);
+
+      if (options && bson_iter_init (&iter, options)) {
+         while (bson_iter_next (&iter)) {
+            if (BSON_ITER_IS_KEY (&iter, "batchSize") &&
+                (BSON_ITER_HOLDS_INT32 (&iter) ||
+                 BSON_ITER_HOLDS_INT64 (&iter) ||
+                 BSON_ITER_HOLDS_DOUBLE (&iter))) {
+               did_batch_size = true;
+               batch_size = (int32_t)bson_iter_as_int64 (&iter);
+               BSON_APPEND_INT32 (&child, "batchSize", batch_size);
+            } else if (BSON_ITER_IS_KEY (&iter, "allowDiskUse") &&
+                       BSON_ITER_HOLDS_BOOL (&iter)) {
+               BSON_APPEND_BOOL (&child, "allowDiskUse",
+                                 bson_iter_bool (&iter));
+            } else {
+               /*
+                * Just pass it through if we don't know what it is.
+                */
+               bson_append_iter (&child, bson_iter_key (&iter), -1, &iter);
+            }
+         }
+      }
+
+      if (!did_batch_size) {
+         BSON_APPEND_INT32 (&child, "batchSize", 0);
+      }
+
+      bson_append_document_end (&command, &child);
    }
 
    cursor = mongoc_collection_command(collection, flags, 0, 1, 0, &command,

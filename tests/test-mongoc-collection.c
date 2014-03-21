@@ -564,9 +564,11 @@ test_aggregate (void)
    bson_error_t error;
    bool r;
    bson_t b;
+   bson_t opts;
    bson_t match;
    bson_t pipeline;
    bson_iter_t iter;
+   int i;
 
    bson_init(&b);
    bson_append_utf8(&b, "hello", -1, "world", -1);
@@ -591,29 +593,42 @@ test_aggregate (void)
    r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
    ASSERT (r);
 
-   cursor = mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, &pipeline, NULL);
-   ASSERT (cursor);
+   for (i = 0; i < 2; i++) {
+      if (i % 2 == 0) {
+         cursor = mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, &pipeline, NULL, NULL);
+         ASSERT (cursor);
+      } else {
+         bson_init (&opts);
+         BSON_APPEND_INT32 (&opts, "batchSize", 10);
+         BSON_APPEND_BOOL (&opts, "allowDiskUse", true);
 
-   /*
-    * This can fail if we are connecting to a pre-2.5.x MongoDB instance.
-    */
-   r = mongoc_cursor_next(cursor, &doc);
-   if (mongoc_cursor_error(cursor, &error)) {
-      MONGOC_WARNING("%s", error.message);
+         cursor = mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, &pipeline, &opts, NULL);
+         ASSERT (cursor);
+
+         bson_destroy (&opts);
+      }
+
+      /*
+       * This can fail if we are connecting to a pre-2.5.x MongoDB instance.
+       */
+      r = mongoc_cursor_next(cursor, &doc);
+      if (mongoc_cursor_error(cursor, &error)) {
+         MONGOC_WARNING("%s", error.message);
+      }
+
+      ASSERT (r);
+      ASSERT (doc);
+
+      ASSERT (bson_iter_init_find (&iter, doc, "hello") &&
+              BSON_ITER_HOLDS_UTF8 (&iter));
+
+      r = mongoc_cursor_next(cursor, &doc);
+      if (mongoc_cursor_error(cursor, &error)) {
+         MONGOC_WARNING("%s", error.message);
+      }
+      ASSERT (!r);
+      ASSERT (!doc);
    }
-
-   ASSERT (r);
-   ASSERT (doc);
-
-   ASSERT (bson_iter_init_find (&iter, doc, "hello") &&
-           BSON_ITER_HOLDS_UTF8 (&iter));
-
-   r = mongoc_cursor_next(cursor, &doc);
-   if (mongoc_cursor_error(cursor, &error)) {
-      MONGOC_WARNING("%s", error.message);
-   }
-   ASSERT (!r);
-   ASSERT (!doc);
 
    r = mongoc_collection_drop(collection, &error);
    ASSERT (r);

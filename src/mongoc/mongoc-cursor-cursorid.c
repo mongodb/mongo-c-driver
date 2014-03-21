@@ -32,7 +32,10 @@
 
 typedef struct
 {
-   bool has_cursor;
+   bool        has_cursor;
+   bool        in_first_batch;
+   bson_iter_t first_batch_iter;
+   bson_t      first_batch_inline;
 } mongoc_cursor_cursorid_t;
 
 
@@ -70,10 +73,32 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
    bson_iter_t iter;
    bson_iter_t child;
    const char *ns;
+   const uint8_t *data = NULL;
+   uint32_t data_len = 0;
 
    ENTRY;
 
    cid = cursor->iface_data;
+
+   if (cid->in_first_batch) {
+process_first_batch:
+      while (bson_iter_next (&cid->first_batch_iter)) {
+         if (BSON_ITER_HOLDS_DOCUMENT (&cid->first_batch_iter)) {
+            bson_iter_document (&cid->first_batch_iter, &data_len, &data);
+            if (bson_init_static (&cid->first_batch_inline, data, data_len)) {
+               *bson = &cid->first_batch_inline;
+               return true;
+            }
+         }
+      }
+      cid->in_first_batch = false;
+      cursor->end_of_event = true;
+      if (!cursor->rpc.reply.cursor_id) {
+         cursor->done = true;
+         *bson = NULL;
+         return false;
+      }
+   }
 
    ret = _mongoc_cursor_next (cursor, bson);
 
@@ -85,17 +110,27 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
           BSON_ITER_HOLDS_DOCUMENT (&iter) &&
           bson_iter_recurse (&iter, &child)) {
          while (bson_iter_next (&child)) {
-            if (strcmp (bson_iter_key (&child), "id") == 0) {
+            if (BSON_ITER_IS_KEY (&child, "id")) {
                cursor->rpc.reply.cursor_id = bson_iter_int64 (&child);
-            } else if (strcmp (bson_iter_key (&child), "ns") == 0) {
+            } else if (BSON_ITER_IS_KEY (&child, "ns")) {
                ns = bson_iter_utf8 (&child, &cursor->nslen);
                bson_strncpy (cursor->ns, ns, sizeof cursor->ns);
+            } else if (BSON_ITER_IS_KEY (&child, "firstBatch")) {
+               if (BSON_ITER_HOLDS_ARRAY (&child) &&
+                   bson_iter_recurse (&child, &cid->first_batch_iter)) {
+                  cid->in_first_batch = true;
+               }
             }
          }
 
          cursor->is_command = false;
 
-         ret = _mongoc_cursor_next (cursor, bson);
+         if (cursor->rpc.reply.cursor_id) {
+            ret = _mongoc_cursor_next (cursor, bson);
+         } else if (cid->in_first_batch) {
+            cursor->end_of_event = false;
+            goto process_first_batch;
+         }
       }
    }
 
