@@ -40,11 +40,11 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_client_t
 {
-   uint32_t              request_id;
+   uint32_t                   request_id;
    mongoc_list_t             *conns;
    mongoc_uri_t              *uri;
    mongoc_cluster_t           cluster;
-   bool                in_exhaust;
+   bool                       in_exhaust;
 
    mongoc_stream_initiator_t  initiator;
    void                      *initiator_data;
