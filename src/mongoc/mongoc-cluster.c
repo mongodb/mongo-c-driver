@@ -797,7 +797,7 @@ _mongoc_cluster_preselect (mongoc_cluster_t             *cluster,       /* IN */
                            bson_error_t                 *error)         /* OUT */
 {
    mongoc_cluster_node_t *node;
-   mongoc_rpc_t rpc = { 0 };
+   mongoc_rpc_t rpc = {{ 0 }};
    int retry_count = 0;
 
    BSON_ASSERT (cluster);
