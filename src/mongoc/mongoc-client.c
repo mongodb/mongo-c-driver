@@ -1109,6 +1109,21 @@ _mongoc_client_warm_up (mongoc_client_t *client,
 }
 
 
+uint32_t
+_mongoc_client_preselect (mongoc_client_t        *client,        /* IN */
+                          mongoc_opcode_t         opcode,        /* IN */
+                          mongoc_write_concern_t *write_concern, /* IN */
+                          mongoc_read_prefs_t    *read_prefs,    /* IN */
+                          bson_error_t           *error)         /* OUT */
+{
+
+   BSON_ASSERT (client);
+
+   return _mongoc_cluster_preselect (&client->cluster, opcode,
+                                     write_concern, read_prefs, error);
+}
+
+
 mongoc_cursor_t *
 mongoc_client_command (mongoc_client_t           *client,
                        const char                *db_name,

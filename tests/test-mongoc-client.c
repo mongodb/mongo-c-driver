@@ -417,6 +417,23 @@ test_mongoc_client_command_secondary (void)
    bson_destroy (&cmd);
 }
 
+static void
+test_mongoc_client_preselect (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   uint32_t node;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   node = _mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
+                                    NULL, NULL, &error);
+   assert (node > 0);
+
+   mongoc_client_destroy (client);
+}
+
 
 static void
 test_exhaust_cursor (void)
@@ -608,6 +625,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
+   TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
 
    atexit (cleanup_globals);

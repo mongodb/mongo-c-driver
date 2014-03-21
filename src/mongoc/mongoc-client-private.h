@@ -28,6 +28,7 @@
 #include "mongoc-host-list.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
+#include "mongoc-opcode.h"
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #endif
@@ -81,6 +82,11 @@ bool             _mongoc_client_recv_gle      (mongoc_client_t              *cli
 uint32_t         _mongoc_client_stamp         (mongoc_client_t              *client,
                                                uint32_t                      node);
 bool             _mongoc_client_warm_up       (mongoc_client_t              *client,
+                                               bson_error_t                 *error);
+uint32_t         _mongoc_client_preselect     (mongoc_client_t              *client,
+                                               mongoc_opcode_t               opcode,
+                                               mongoc_write_concern_t       *write_concern,
+                                               mongoc_read_prefs_t          *read_prefs,
                                                bson_error_t                 *error);
 
 
