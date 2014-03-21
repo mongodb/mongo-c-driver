@@ -384,9 +384,12 @@ _mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
       node->stream = NULL;
    }
 
-   bson_destroy(&node->tags);
+   if (node->tags.len) {
+      bson_destroy (&node->tags);
+      memset (&node->tags, 0, sizeof node->tags);
+   }
 
-   bson_free(node->replSet);
+   bson_free (node->replSet);
    node->replSet = NULL;
 
    EXIT;
@@ -541,8 +544,9 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
    b = mongoc_uri_get_options(uri);
    hosts = mongoc_uri_get_hosts(uri);
 
-   if (bson_iter_init_find_case(&iter, b, "replicaSet")) {
+   if (bson_iter_init_find_case (&iter, b, "replicaSet")) {
       cluster->mode = MONGOC_CLUSTER_REPLICA_SET;
+      cluster->replSet = bson_iter_dup_utf8 (&iter, NULL);
       MONGOC_INFO("Client initialized in replica set mode.");
    } else if (hosts->next) {
       cluster->mode = MONGOC_CLUSTER_SHARDED_CLUSTER;
@@ -617,11 +621,12 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (cluster->nodes[i].stream) {
-         mongoc_stream_destroy (cluster->nodes[i].stream);
-         cluster->nodes[i].stream = NULL;
-         cluster->nodes[i].stamp++;
+         _mongoc_cluster_node_destroy (&cluster->nodes [i]);
       }
    }
+
+   bson_free (cluster->replSet);
+   cluster->replSet = NULL;
 
    _mongoc_cluster_clear_peers (cluster);
 
@@ -982,8 +987,8 @@ failure:
 
 static bool
 _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
-                         mongoc_cluster_node_t *node,
-                         bson_error_t          *error)
+                          mongoc_cluster_node_t *node,
+                          bson_error_t          *error)
 {
    int32_t v32;
    bool ret = false;
@@ -1063,19 +1068,14 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
 
    if (bson_iter_init_find (&iter, &reply, "msg") &&
        BSON_ITER_HOLDS_UTF8 (&iter) &&
-       (strcmp ("isdbgrid", bson_iter_utf8 (&iter, NULL)) == 0)) {
-      /* TODO: is this sufficient to detect sharded clusters? */
-
-      cluster->isdbgrid = true;
-      /*
-       * TODO: This is actually a sharded cluster!
-       */
+       (0 == strcasecmp ("isdbgrid", bson_iter_utf8 (&iter, NULL)))) {
+      node->isdbgrid = true;
       if (cluster->mode != MONGOC_CLUSTER_SHARDED_CLUSTER) {
          MONGOC_INFO ("Unexpectedly connected to sharded cluster: %s",
                       node->host.host_and_port);
       }
    } else {
-      cluster->isdbgrid = false;
+      node->isdbgrid = false;
    }
 
    /*
@@ -2029,6 +2029,23 @@ _mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
       }
 
       _mongoc_cluster_node_track_ping (&cluster->nodes[i], ping);
+
+      /*
+       * If this node is not a mongos, we should fail unless no
+       * replicaSet was specified. If that is the case, we will assume
+       * the caller meant they wanted a replicaSet and migrate to that
+       * reconnection strategy.
+       */
+      if ((i == 0) &&
+          !cluster->nodes [i].isdbgrid &&
+          !mongoc_uri_get_replica_set (cluster->uri) &&
+          cluster->nodes [i].replSet) {
+         MONGOC_WARNING ("Found replicaSet, expected sharded cluster. "
+                         "Reconnecting as replicaSet.");
+         cluster->mode = MONGOC_CLUSTER_REPLICA_SET;
+         cluster->replSet = bson_strdup (cluster->nodes [i].replSet);
+         return _mongoc_cluster_reconnect_replica_set (cluster, error);
+      }
 
       i++;
    }

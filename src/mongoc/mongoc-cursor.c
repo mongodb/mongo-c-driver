@@ -199,7 +199,8 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    }
 
    /* we can't have exhaust queries with sharded clusters */
-   if ((flags & MONGOC_QUERY_EXHAUST) && client->cluster.isdbgrid) {
+   if ((flags & MONGOC_QUERY_EXHAUST) &&
+       (client->cluster.mode == MONGOC_CLUSTER_SHARDED_CLUSTER)) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_CURSOR,
                       MONGOC_ERROR_CURSOR_INVALID_CURSOR,

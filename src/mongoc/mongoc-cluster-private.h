@@ -71,6 +71,7 @@ typedef struct
    bson_t              tags;
    unsigned            primary    : 1;
    unsigned            needs_auth : 1;
+   unsigned            isdbgrid   : 1;
    int32_t             min_wire_version;
    int32_t             max_wire_version;
    int32_t             max_write_batch_size;
@@ -91,7 +92,6 @@ typedef struct
    mongoc_uri_t           *uri;
 
    unsigned                requires_auth : 1;
-   unsigned                isdbgrid      : 1;
 
    int32_t                 wire_version;
 
@@ -103,6 +103,8 @@ typedef struct
    mongoc_array_t          iov;
 
    mongoc_list_t          *peers;
+
+   char                   *replSet;
 } mongoc_cluster_t;
 
 
