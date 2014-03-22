@@ -600,6 +600,31 @@ test_exhaust_cursor (void)
 
 
 static void
+test_server_status (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_iter_t iter;
+   bson_t reply;
+   bool r;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   r = mongoc_client_get_server_status (client, NULL, &reply, &error);
+   assert (r);
+
+   assert (bson_iter_init_find (&iter, &reply, "host"));
+   assert (bson_iter_init_find (&iter, &reply, "version"));
+   assert (bson_iter_init_find (&iter, &reply, "ok"));
+
+   bson_destroy (&reply);
+
+   mongoc_client_destroy (client);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free(gTestUri);
@@ -627,6 +652,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
+   TestSuite_Add (suite, "/Client/server_status", test_server_status);
 
    atexit (cleanup_globals);
 }

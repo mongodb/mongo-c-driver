@@ -1282,3 +1282,23 @@ mongoc_client_get_max_bson_size (mongoc_client_t *client) /* IN */
 
    return client->cluster.max_bson_size;
 }
+
+
+bool
+mongoc_client_get_server_status (mongoc_client_t     *client,     /* IN */
+                                 mongoc_read_prefs_t *read_prefs, /* IN */
+                                 bson_t              *reply,      /* OUT */
+                                 bson_error_t        *error)      /* OUT */
+{
+   bson_t cmd = BSON_INITIALIZER;
+   bool ret = false;
+
+   bson_return_val_if_fail (client, false);
+
+   BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
+   ret = mongoc_client_command_simple (client, "admin", &cmd, read_prefs,
+                                       reply, error);
+   bson_destroy (&cmd);
+
+   return ret;
+}

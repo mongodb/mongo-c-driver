@@ -108,6 +108,10 @@ mongoc_collection_t           *mongoc_client_get_collection       (mongoc_client
                                                                    const char                   *collection);
 char                         **mongoc_client_get_database_names   (mongoc_client_t              *client,
                                                                    bson_error_t                 *error);
+bool                           mongoc_client_get_server_status    (mongoc_client_t              *client,
+                                                                   mongoc_read_prefs_t          *read_prefs,
+                                                                   bson_t                       *reply,
+                                                                   bson_error_t                 *error);
 int32_t                        mongoc_client_get_max_message_size (mongoc_client_t              *client);
 int32_t                        mongoc_client_get_max_bson_size    (mongoc_client_t              *client);
 const mongoc_write_concern_t  *mongoc_client_get_write_concern    (const mongoc_client_t        *client);
