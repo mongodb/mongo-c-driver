@@ -299,8 +299,13 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
    if (opt->chunk_size) {
       file->chunk_size = opt->chunk_size;
    } else {
-      /** default chunk size is 256k */
-      file->chunk_size = 2 << 17;
+      /*
+       * The default chunk size is now 255kb. This used to be 256k but has been
+       * reduced to allow for them to fit within power of two sizes in mongod.
+       *
+       * See CDRIVER-322.
+       */
+      file->chunk_size = (1 << 18) - 1024;
    }
 
    file->files_id.value_type = BSON_TYPE_OID;
