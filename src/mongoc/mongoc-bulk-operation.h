@@ -43,7 +43,8 @@ void mongoc_bulk_operation_insert      (mongoc_bulk_operation_t *bulk,
                                         const bson_t            *document);
 void mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
                                         const bson_t            *selector,
-                                        const bson_t            *document);
+                                        const bson_t            *document,
+                                        bool                     upsert);
 void mongoc_bulk_operation_update      (mongoc_bulk_operation_t *bulk,
                                         const bson_t            *selector,
                                         const bson_t            *document,

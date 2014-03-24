@@ -19,6 +19,7 @@
 #define MONGOC_BULK_OPERATION_PRIVATE_H
 
 
+#include "mongoc-array-private.h"
 #include "mongoc-client.h"
 
 
@@ -31,8 +32,43 @@ struct _mongoc_bulk_operation_t
    mongoc_client_t *client;
    bool             ordered;
    uint32_t         hint;
-   bson_t           command;
+   mongoc_array_t   commands;
 };
+
+
+typedef enum
+{
+   MONGOC_BULK_COMMAND_INSERT = 1,
+   MONGOC_BULK_COMMAND_UPDATE,
+   MONGOC_BULK_COMMAND_DELETE,
+   MONGOC_BULK_COMMAND_REPLACE,
+} mongoc_bulk_command_type_t;
+
+
+typedef struct
+{
+   int type;
+   union {
+      struct {
+         bson_t *document;
+      } insert;
+      struct {
+         uint8_t   upsert : 1;
+         uint8_t   multi  : 1;
+         bson_t   *selector;
+         bson_t   *document;
+      } update;
+      struct {
+         uint8_t  multi : 1;
+         bson_t  *selector;
+      } delete;
+      struct {
+         uint8_t  upsert : 1;
+         bson_t *selector;
+         bson_t *document;
+      } replace;
+   } u;
+} mongoc_bulk_command_t;
 
 
 mongoc_bulk_operation_t *_mongoc_bulk_operation_new (mongoc_client_t *client,
