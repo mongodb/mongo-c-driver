@@ -703,6 +703,8 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
       ret = _mongoc_cursor_next(cursor, bson);
    }
 
+   cursor->current = *bson;
+
    cursor->count++;
 
    RETURN(ret);
@@ -939,4 +941,13 @@ mongoc_cursor_is_alive (mongoc_cursor_t *cursor) /* IN */
             !cursor->done &&
             (cursor->rpc.header.opcode == MONGOC_OPCODE_REPLY) &&
             cursor->rpc.reply.cursor_id));
+}
+
+
+const bson_t *
+mongoc_cursor_current (const mongoc_cursor_t *cursor) /* IN */
+{
+   bson_return_val_if_fail (cursor, NULL);
+
+   return cursor->current;
 }

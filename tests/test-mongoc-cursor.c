@@ -33,6 +33,8 @@ test_get_host (void)
       abort();
    }
 
+   assert (doc == mongoc_cursor_current (cursor));
+
    mongoc_cursor_get_host(cursor, &host);
    ASSERT_CMPSTR (host.host, hosts->host);
    ASSERT_CMPSTR (host.host_and_port, hosts->host_and_port);

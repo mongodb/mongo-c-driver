@@ -81,6 +81,8 @@ struct _mongoc_cursor_t
    mongoc_buffer_t            buffer;
    bson_reader_t             *reader;
 
+   const bson_t              *current;
+
    mongoc_cursor_interface_t  iface;
    void                      *iface_data;
 };
