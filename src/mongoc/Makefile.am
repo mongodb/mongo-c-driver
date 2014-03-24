@@ -3,6 +3,7 @@ header_DATA = $(INST_H_FILES)
 
 INST_H_FILES = \
 	src/mongoc/mongoc.h \
+	src/mongoc/mongoc-bulk-operation.h \
 	src/mongoc/mongoc-client.h \
 	src/mongoc/mongoc-client-pool.h \
 	src/mongoc/mongoc-collection.h \
@@ -42,6 +43,7 @@ endif
 NOINST_H_FILES = \
 	src/mongoc/mongoc-array-private.h \
 	src/mongoc/mongoc-buffer-private.h \
+	src/mongoc/mongoc-bulk-operation-private.h \
 	src/mongoc/mongoc-client-private.h \
 	src/mongoc/mongoc-cluster-private.h \
 	src/mongoc/mongoc-collection-private.h \
@@ -75,6 +77,7 @@ libmongoc_priv_la_SOURCES = \
 	$(NOINST_H_FILES) \
 	src/mongoc/mongoc-array.c \
 	src/mongoc/mongoc-buffer.c \
+	src/mongoc/mongoc-bulk-operation.c \
 	src/mongoc/mongoc-client.c \
 	src/mongoc/mongoc-client-pool.c \
 	src/mongoc/mongoc-cluster.c \
