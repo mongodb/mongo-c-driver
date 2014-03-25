@@ -68,10 +68,6 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
          case MONGOC_BULK_COMMAND_DELETE:
             bson_destroy (c->u.delete.selector);
             break;
-         case MONGOC_BULK_COMMAND_REPLACE:
-            bson_destroy (c->u.replace.selector);
-            bson_destroy (c->u.replace.document);
-            break;
          default:
             BSON_ASSERT (false);
             break;
@@ -144,15 +140,26 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
                                    bool                     upsert)
 {
    mongoc_bulk_command_t command = { 0 };
+   size_t err_off;
 
    bson_return_if_fail (bulk);
    bson_return_if_fail (selector);
    bson_return_if_fail (document);
 
-   command.type = MONGOC_BULK_COMMAND_REPLACE;
-   command.u.replace.upsert = upsert;
-   command.u.replace.selector = bson_copy (selector);
-   command.u.replace.document = bson_copy (document);
+   if (!bson_validate (document,
+                       (BSON_VALIDATE_DOT_KEYS | BSON_VALIDATE_DOLLAR_KEYS),
+                       &err_off)) {
+      MONGOC_WARNING ("%s(): replacement document may not contain "
+                      "$ or . in keys. Ingoring document.",
+                      __FUNCTION__);
+      return;
+   }
+
+   command.type = MONGOC_BULK_COMMAND_UPDATE;
+   command.u.update.upsert = upsert;
+   command.u.update.multi = false;
+   command.u.update.selector = bson_copy (selector);
+   command.u.update.document = bson_copy (document);
 
    _mongoc_array_append_val (&bulk->commands, command);
 }
@@ -170,7 +177,7 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
    bson_return_if_fail (selector);
    bson_return_if_fail (document);
 
-   command.type = MONGOC_BULK_COMMAND_REPLACE;
+   command.type = MONGOC_BULK_COMMAND_UPDATE;
    command.u.update.upsert = upsert;
    command.u.update.multi = true;
    command.u.update.selector = bson_copy (selector);
@@ -241,6 +248,7 @@ _mongoc_bulk_operation_build (mongoc_bulk_operation_t *bulk,    /* IN */
       bson_append_array_begin (bson, "updates", 7, &ar);
       bson_append_document_begin (&ar, "0", 1, &child);
       BSON_APPEND_DOCUMENT (&child, "q", command->u.update.selector);
+      BSON_APPEND_DOCUMENT (&child, "u", command->u.update.document);
       BSON_APPEND_BOOL (&child, "multi", command->u.update.multi);
       BSON_APPEND_BOOL (&child, "upsert", command->u.update.upsert);
       bson_append_document_end (&ar, &child);
@@ -256,11 +264,6 @@ _mongoc_bulk_operation_build (mongoc_bulk_operation_t *bulk,    /* IN */
       BSON_APPEND_INT32 (&child, "limit", command->u.delete.multi ? 0 : 1);
       bson_append_document_end (&ar, &child);
       bson_append_array_end (bson, &ar);
-      break;
-   case MONGOC_BULK_COMMAND_REPLACE:
-      BSON_APPEND_UTF8 (bson, "update", bulk->collection);
-      BSON_APPEND_DOCUMENT (bson, "writeConcern", wc);
-      BSON_APPEND_BOOL (bson, "ordered", bulk->ordered);
       break;
    default:
       BSON_ASSERT (false);

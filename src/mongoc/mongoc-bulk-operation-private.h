@@ -42,7 +42,6 @@ typedef enum
    MONGOC_BULK_COMMAND_INSERT = 1,
    MONGOC_BULK_COMMAND_UPDATE,
    MONGOC_BULK_COMMAND_DELETE,
-   MONGOC_BULK_COMMAND_REPLACE,
 } mongoc_bulk_command_type_t;
 
 
@@ -63,11 +62,6 @@ typedef struct
          uint8_t  multi : 1;
          bson_t  *selector;
       } delete;
-      struct {
-         uint8_t  upsert : 1;
-         bson_t *selector;
-         bson_t *document;
-      } replace;
    } u;
 } mongoc_bulk_command_t;
 
