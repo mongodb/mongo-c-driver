@@ -1,4 +1,12 @@
 EXPORTS
+mongoc_bulk_operation_delete
+mongoc_bulk_operation_delete_one
+mongoc_bulk_operation_destroy
+mongoc_bulk_operation_execute
+mongoc_bulk_operation_insert
+mongoc_bulk_operation_replace_one
+mongoc_bulk_operation_update
+mongoc_bulk_operation_update_one
 mongoc_client_command
 mongoc_client_command_simple
 mongoc_client_destroy
@@ -25,6 +33,7 @@ mongoc_collection_aggregate
 mongoc_collection_command
 mongoc_collection_command_simple
 mongoc_collection_count
+mongoc_collection_create_bulk_operation
 mongoc_collection_delete
 mongoc_collection_destroy
 mongoc_collection_drop
@@ -46,6 +55,7 @@ mongoc_collection_stats
 mongoc_collection_update
 mongoc_collection_validate
 mongoc_cursor_clone
+mongoc_cursor_current
 mongoc_cursor_destroy
 mongoc_cursor_error
 mongoc_cursor_get_host
