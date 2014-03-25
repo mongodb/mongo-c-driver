@@ -71,10 +71,11 @@ typedef struct
 } mongoc_bulk_command_t;
 
 
-mongoc_bulk_operation_t *_mongoc_bulk_operation_new (mongoc_client_t *client,
-                                                     const char      *collection,
-                                                     uint32_t         hint,
-                                                     bool             ordered);
+mongoc_bulk_operation_t *_mongoc_bulk_operation_new (mongoc_client_t              *client,
+                                                     const char                   *collection,
+                                                     uint32_t                      hint,
+                                                     bool                          ordered,
+                                                     const mongoc_write_concern_t *write_concern);
 
 
 BSON_END_DECLS

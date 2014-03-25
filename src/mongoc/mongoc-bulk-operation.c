@@ -20,10 +20,11 @@
 
 
 mongoc_bulk_operation_t *
-_mongoc_bulk_operation_new (mongoc_client_t *client,     /* IN */
-                            const char      *collection, /* IN */
-                            uint32_t         hint,       /* IN */
-                            bool             ordered)    /* IN */
+_mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN */
+                            const char                   *collection,    /* IN */
+                            uint32_t                      hint,          /* IN */
+                            bool                          ordered,       /* IN */
+                            const mongoc_write_concern_t *write_concern) /* IN */
 {
    mongoc_bulk_operation_t *bulk;
 
@@ -192,4 +193,13 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
    command.u.update.document = bson_copy (document);
 
    _mongoc_array_append_val (&bulk->commands, command);
+}
+
+
+bool
+mongoc_bulk_operation_execute (mongoc_bulk_operation_t      *bulk,          /* IN */
+                               bson_t                       *reply,         /* OUT */
+                               bson_error_t                 *error)         /* OUT */
+{
+   return false;
 }
