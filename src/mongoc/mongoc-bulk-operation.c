@@ -284,18 +284,54 @@ _mongoc_bulk_operation_build (mongoc_bulk_operation_t *bulk,    /* IN */
 
 
 bool
+_mongoc_bulk_operation_send (mongoc_bulk_operation_t *bulk,    /* IN */
+                             const bson_t            *command, /* IN */
+                             bson_t                  *reply,   /* OUT */
+                             bson_error_t            *error)
+{
+   mongoc_read_prefs_t *read_prefs;
+   bool ret;
+
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (command);
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   ret = mongoc_client_command_simple (bulk->client,
+                                       bulk->database,
+                                       command,
+                                       read_prefs,
+                                       reply,
+                                       error);
+
+   mongoc_read_prefs_destroy (read_prefs);
+
+   return ret;
+}
+
+
+bool
 mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                bson_t                  *reply, /* OUT */
                                bson_error_t            *error) /* OUT */
 {
    mongoc_bulk_command_t *c;
    bson_t command;
+   bson_t local_reply;
    bool ret = false;
    int i;
 
    ENTRY;
 
    bson_return_val_if_fail (bulk, false);
+
+   bson_init (reply);
+
+   /*
+    * TODO: This is a naive implementation that does not take unordered into
+    *       account. We will optimize for that after a working ordered
+    *       version.
+    */
 
    if (!bulk->commands.len) {
       bson_set_error (error,
@@ -308,8 +344,12 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
    for (i = 0; i < bulk->commands.len; i++) {
       c = &_mongoc_array_index (&bulk->commands, mongoc_bulk_command_t, i);
       _mongoc_bulk_operation_build (bulk, c, &command);
+      if (!_mongoc_bulk_operation_send (bulk, &command, &local_reply, error)) {
+      }
       bson_destroy (&command);
    }
+
+   ret = true;
 
    RETURN (ret);
 }
