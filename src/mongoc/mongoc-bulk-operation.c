@@ -250,6 +250,12 @@ _mongoc_bulk_operation_build (mongoc_bulk_operation_t *bulk,    /* IN */
       BSON_APPEND_UTF8 (bson, "delete", bulk->collection);
       BSON_APPEND_DOCUMENT (bson, "writeConcern", wc);
       BSON_APPEND_BOOL (bson, "ordered", bulk->ordered);
+      bson_append_array_begin (bson, "deletes", 7, &ar);
+      bson_append_document_begin (&ar, "0", 1, &child);
+      BSON_APPEND_DOCUMENT (&child, "q", command->u.delete.selector);
+      BSON_APPEND_INT32 (&child, "limit", command->u.delete.multi ? 0 : 1);
+      bson_append_document_end (&ar, &child);
+      bson_append_array_end (bson, &ar);
       break;
    case MONGOC_BULK_COMMAND_REPLACE:
       BSON_APPEND_UTF8 (bson, "update", bulk->collection);
