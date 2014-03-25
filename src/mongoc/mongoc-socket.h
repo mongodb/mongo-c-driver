@@ -61,6 +61,7 @@ int              mongoc_socket_connect    (mongoc_socket_t       *sock,
                                            const struct sockaddr *addr,
                                            socklen_t              addrlen,
                                            int64_t                expire_at);
+char            *mongoc_socket_getnameinfo(mongoc_socket_t       *sock);
 void             mongoc_socket_destroy    (mongoc_socket_t       *sock);
 int              mongoc_socket_errno      (mongoc_socket_t       *sock);
 int              mongoc_socket_getsockname(mongoc_socket_t       *sock,

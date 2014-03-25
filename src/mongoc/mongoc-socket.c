@@ -20,6 +20,7 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
+#include "mongoc-host-list.h"
 #include "mongoc-socket.h"
 #include "mongoc-trace.h"
 
@@ -36,6 +37,7 @@ struct _mongoc_socket_t
    int sd;
 #endif
    int errno_;
+   int domain;
 };
 
 
@@ -620,6 +622,7 @@ mongoc_socket_new (int domain,   /* IN */
 
    sock = bson_malloc0 (sizeof *sock);
    sock->sd = sd;
+   sock->domain = domain;
 
    RETURN (sock);
 
@@ -1034,4 +1037,26 @@ mongoc_socket_getsockname (mongoc_socket_t *sock,    /* IN */
    _mongoc_socket_capture_errno (sock);
 
    RETURN (ret);
+}
+
+
+char *
+mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
+{
+   struct sockaddr addr;
+   socklen_t len = sizeof addr;
+   char *ret;
+   char host [BSON_HOST_NAME_MAX + 1];
+
+   ENTRY;
+
+   bson_return_val_if_fail (sock, NULL);
+
+   if ((0 == getpeername (sock->sd, &addr, &len)) &&
+       (0 == getnameinfo (&addr, len, host, sizeof host, NULL, 0, 0))) {
+      ret = bson_strdup (host);
+      RETURN (ret);
+   }
+
+   RETURN (NULL);
 }
