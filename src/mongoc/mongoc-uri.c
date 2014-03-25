@@ -432,7 +432,8 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       } else if (*value) {
          BSON_APPEND_UTF8 (&uri->options, "W", value);
       }
-   } else if (!strcasecmp(key, "journal") ||
+   } else if (!strcasecmp(key, "canonicalizeHostname") ||
+              !strcasecmp(key, "journal") ||
               !strcasecmp(key, "safe") ||
               !strcasecmp(key, "slaveok") ||
               !strcasecmp(key, "ssl")) {
