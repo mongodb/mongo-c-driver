@@ -152,6 +152,7 @@ mongoc_stream_gridfs_new
 mongoc_stream_read
 mongoc_stream_readv
 mongoc_stream_setsockopt
+mongoc_stream_socket_get_socket
 mongoc_stream_socket_new
 mongoc_stream_tls_check_cert
 mongoc_stream_tls_do_handshake
