@@ -42,6 +42,10 @@ _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN *
    bulk->hint = hint;
    bulk->write_concern = mongoc_write_concern_copy (write_concern);
 
+   if (!bulk->write_concern) {
+      bulk->write_concern = mongoc_write_concern_new ();
+   }
+
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_bulk_command_t));
 
    return bulk;
