@@ -805,14 +805,18 @@ test_bulk (void)
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
 
-
    assert (bson_iter_init_find (&iter, &reply, "nInserted"));
    assert (BSON_ITER_HOLDS_INT32 (&iter));
    assert (bson_iter_int32 (&iter) == 4);
 
-   assert (bson_iter_init_find (&iter, &reply, "nModified"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 4);
+   /*
+    * This may be omitted if we talked to a (<= 2.4.x) node, or a mongos
+    * talked to a (<= 2.4.x) node.
+    */
+   if (bson_iter_init_find (&iter, &reply, "nModified")) {
+      assert (BSON_ITER_HOLDS_INT32 (&iter));
+      assert (bson_iter_int32 (&iter) == 4);
+   }
 
    assert (bson_iter_init_find (&iter, &reply, "nRemoved"));
    assert (BSON_ITER_HOLDS_INT32 (&iter));

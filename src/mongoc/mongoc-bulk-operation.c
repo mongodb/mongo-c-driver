@@ -17,7 +17,9 @@
 
 #include "mongoc-bulk-operation.h"
 #include "mongoc-bulk-operation-private.h"
+#include "mongoc-client-private.h"
 #include "mongoc-error.h"
+#include "mongoc-opcode.h"
 #include "mongoc-trace.h"
 #include "mongoc-write-concern-private.h"
 
@@ -120,6 +122,36 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
 
       bson_free (bulk);
    }
+}
+
+
+static uint32_t
+_mongoc_bulk_operation_preselect (mongoc_bulk_operation_t *bulk,
+                                  uint32_t                *min_wire_version,
+                                  uint32_t                *max_wire_version,
+                                  bson_error_t            *error)
+{
+   uint32_t hint;
+
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (min_wire_version);
+   BSON_ASSERT (max_wire_version);
+
+   *min_wire_version = 0;
+   *max_wire_version = 0;
+
+   hint = _mongoc_client_preselect (bulk->client,
+                                    MONGOC_OPCODE_INSERT,
+                                    bulk->write_concern,
+                                    NULL,
+                                    error);
+
+   if (hint) {
+      *min_wire_version = bulk->client->cluster.nodes [hint].min_wire_version;
+      *max_wire_version = bulk->client->cluster.nodes [hint].max_wire_version;
+   }
+
+   return hint;
 }
 
 
@@ -325,7 +357,7 @@ _mongoc_bulk_operation_build (mongoc_bulk_operation_t *bulk,    /* IN */
 }
 
 
-bool
+static bool
 _mongoc_bulk_operation_send (mongoc_bulk_operation_t *bulk,    /* IN */
                              const bson_t            *command, /* IN */
                              bson_t                  *reply,   /* OUT */
@@ -347,6 +379,100 @@ _mongoc_bulk_operation_send (mongoc_bulk_operation_t *bulk,    /* IN */
                                        error);
 
    mongoc_read_prefs_destroy (read_prefs);
+
+   return ret;
+}
+
+
+static bool
+_mongoc_bulk_operation_send_legacy (mongoc_bulk_operation_t *bulk,       /* IN */
+                                    mongoc_collection_t     *collection, /* IN */
+                                    mongoc_bulk_command_t   *command,    /* IN */
+                                    bson_t                  *reply,      /* OUT */
+                                    bson_error_t            *error)      /* OUT */
+{
+   const bson_t *gle;
+   bson_iter_t iter;
+   int32_t n = -1;
+   bool ret = false;
+   int flags;
+
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (command);
+   BSON_ASSERT (reply);
+
+   bson_init (reply);
+
+   switch (command->type) {
+   case MONGOC_BULK_COMMAND_DELETE:
+      flags = command->u.delete.multi ? MONGOC_DELETE_NONE
+                                      : MONGOC_DELETE_SINGLE_REMOVE;
+      ret = mongoc_collection_delete (collection,
+                                      (mongoc_delete_flags_t)flags,
+                                      command->u.delete.selector,
+                                      bulk->write_concern,
+                                      error);
+      break;
+   case MONGOC_BULK_COMMAND_INSERT:
+      flags = bulk->ordered ? MONGOC_INSERT_NONE
+                            : MONGOC_INSERT_CONTINUE_ON_ERROR;
+      ret = mongoc_collection_insert (collection,
+                                      (mongoc_insert_flags_t)flags,
+                                      command->u.insert.document,
+                                      bulk->write_concern,
+                                      error);
+      break;
+   case MONGOC_BULK_COMMAND_UPDATE:
+      bulk->omit_n_modified = true;
+      flags = 0;
+      flags |= command->u.update.multi ? MONGOC_UPDATE_MULTI_UPDATE : 0;
+      flags |= command->u.update.upsert ? MONGOC_UPDATE_UPSERT : 0;
+      ret = mongoc_collection_update (collection,
+                                      (mongoc_update_flags_t)flags,
+                                      command->u.update.selector,
+                                      command->u.update.document,
+                                      bulk->write_concern,
+                                      error);
+      break;
+   default:
+      BSON_ASSERT (false);
+      break;
+   }
+
+   gle = mongoc_collection_get_last_error (collection);
+
+   if (gle) {
+      if (bson_iter_init_find (&iter, gle, "n") &&
+          BSON_ITER_HOLDS_INT32 (&iter)) {
+         n = bson_iter_int32 (&iter);
+      }
+
+      switch (command->type) {
+      case MONGOC_BULK_COMMAND_DELETE:
+         if (n > 0) {
+            bulk->n_removed += n;
+         }
+         break;
+      case MONGOC_BULK_COMMAND_INSERT:
+         if (n > 0) {
+            bulk->n_inserted += n;
+         } else if (ret) {
+            bulk->n_inserted += 1;
+         }
+         break;
+      case MONGOC_BULK_COMMAND_UPDATE:
+         if (bson_iter_init_find (&iter, gle, "upserted") &&
+             BSON_ITER_HOLDS_ARRAY (&iter)) {
+            bulk->n_upserted += n;
+         } else {
+            bulk->n_matched += n;
+         }
+         break;
+      default:
+         BSON_ASSERT (false);
+         break;
+      }
+   }
 
    return ret;
 }
@@ -458,6 +584,9 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                bson_error_t            *error) /* OUT */
 {
    mongoc_bulk_command_t *c;
+   mongoc_collection_t *collection = NULL;
+   uint32_t min_wire_version;
+   uint32_t max_wire_version;
    bson_t command;
    bson_t local_reply;
    bool ret = false;
@@ -469,6 +598,13 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
    bson_init (reply);
 
+   if (!_mongoc_bulk_operation_preselect (bulk,
+                                          &min_wire_version,
+                                          &max_wire_version,
+                                          error)) {
+      RETURN (false);
+   }
+
    if (!bulk->commands.len) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
@@ -477,25 +613,38 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
       RETURN (false);
    }
 
+   if (!collection) {
+      collection = mongoc_client_get_collection (bulk->client,
+                                                 bulk->database,
+                                                 bulk->collection);
+   }
+
    for (i = 0; i < bulk->commands.len; i++) {
       c = &_mongoc_array_index (&bulk->commands, mongoc_bulk_command_t, i);
 
-      _mongoc_bulk_operation_build (bulk, c, &command);
-
-      ret = _mongoc_bulk_operation_send (bulk, &command, &local_reply, error);
+      if (max_wire_version >= 2) {
+         _mongoc_bulk_operation_build (bulk, c, &command);
+         ret = _mongoc_bulk_operation_send (bulk, &command, &local_reply,
+                                            error);
+         bson_destroy (&command);
+      } else {
+         ret = _mongoc_bulk_operation_send_legacy (bulk, collection, c,
+                                                   &local_reply, error);
+      }
 
       _mongoc_bulk_operation_process_reply (bulk, c->type, &local_reply);
-
-      bson_destroy (&command);
       bson_destroy (&local_reply);
 
       if (!ret && bulk->ordered) {
          _mongoc_bulk_operation_build_reply (bulk, reply);
-         RETURN (false);
+         GOTO (cleanup);
       }
    }
 
+   ret = true;
+
+cleanup:
    _mongoc_bulk_operation_build_reply (bulk, reply);
 
-   RETURN (true);
+   RETURN (ret);
 }
