@@ -28,6 +28,7 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_bulk_operation_t
 {
+   char                   *database;
    char                   *collection;
    mongoc_client_t        *client;
    bool                    ordered;
@@ -67,6 +68,7 @@ typedef struct
 
 
 mongoc_bulk_operation_t *_mongoc_bulk_operation_new (mongoc_client_t              *client,
+                                                     const char                   *database,
                                                      const char                   *collection,
                                                      uint32_t                      hint,
                                                      bool                          ordered,

@@ -24,6 +24,7 @@
 
 mongoc_bulk_operation_t *
 _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN */
+                            const char                   *database,      /* IN */
                             const char                   *collection,    /* IN */
                             uint32_t                      hint,          /* IN */
                             bool                          ordered,       /* IN */
@@ -37,6 +38,7 @@ _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN *
    bulk = bson_malloc0 (sizeof *bulk);
 
    bulk->client = client;
+   bulk->database = bson_strdup (database);
    bulk->collection = bson_strdup (collection);
    bulk->ordered = ordered;
    bulk->hint = hint;
@@ -78,8 +80,11 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
          }
       }
 
+      bson_free (bulk->database);
       bson_free (bulk->collection);
+
       _mongoc_array_destroy (&bulk->commands);
+
       mongoc_write_concern_destroy (bulk->write_concern);
 
       bson_free (bulk);
