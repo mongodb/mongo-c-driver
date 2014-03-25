@@ -762,6 +762,53 @@ test_stats (void)
 
 
 static void
+test_bulk (void)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_iter_t iter;
+   bson_t reply;
+   bson_t doc = BSON_INITIALIZER;
+   bool r;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   collection = get_test_collection (client, "test_bulk");
+   assert (collection);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   assert (bulk);
+
+   mongoc_bulk_operation_insert (bulk, &doc);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   mongoc_bulk_operation_insert (bulk, &doc);
+   mongoc_bulk_operation_update (bulk, &doc, &doc, false);
+   mongoc_bulk_operation_update (bulk, &doc, &doc, false);
+   mongoc_bulk_operation_update (bulk, &doc, &doc, false);
+   mongoc_bulk_operation_delete (bulk, &doc);
+
+   r = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   assert (r);
+
+   assert (bson_iter_init_find (&iter, &reply, "ok"));
+   assert (bson_iter_as_bool (&iter));
+
+   bson_destroy (&reply);
+
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&doc);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -786,6 +833,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/validate", test_validate);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
    TestSuite_Add (suite, "/Collection/stats", test_stats);
+   TestSuite_Add (suite, "/Collection/create_bulk_operation", test_bulk);
 
    atexit (cleanup_globals);
 }
