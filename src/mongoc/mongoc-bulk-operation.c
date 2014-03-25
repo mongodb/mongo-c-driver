@@ -357,6 +357,68 @@ _mongoc_bulk_operation_build (mongoc_bulk_operation_t *bulk,    /* IN */
 }
 
 
+static void
+_mongoc_bulk_operation_do_append_upserted (mongoc_bulk_operation_t *bulk,
+                                           uint32_t                 idx,
+                                           const bson_value_t      *_id)
+{
+   const char *key = NULL;
+   uint32_t count;
+   bson_t child;
+   char str [16];
+
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (_id);
+
+   if (!bulk->upserted) {
+      bulk->upserted = bson_new ();
+   }
+
+   count = bson_count_keys (bulk->upserted);
+   bson_uint32_to_string (count, &key, str, sizeof str);
+
+   bson_append_document_begin (bulk->upserted, key, -1, &child);
+   BSON_APPEND_INT32 (&child, "index", bulk->offset + idx);
+   BSON_APPEND_VALUE (&child, "_id", _id);
+   bson_append_document_end (bulk->upserted, &child);
+}
+
+
+static void
+_mongoc_bulk_operation_append_upserted (mongoc_bulk_operation_t *bulk, /* IN */
+                                        const bson_iter_t       *iter) /* IN */
+{
+   const bson_value_t *vptr;
+   bson_value_t value = { 0 };
+   bson_iter_t citer;
+   int idx = 0;
+
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (iter);
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (iter) ||
+       !bson_iter_recurse (iter, &citer)) {
+      return;
+   }
+
+   while (bson_iter_next (&citer)) {
+      if (BSON_ITER_IS_KEY (&citer, "index") &&
+          BSON_ITER_HOLDS_INT32 (&citer)) {
+         idx = bson_iter_int32 (&citer);
+      } else if (BSON_ITER_IS_KEY (&citer, "_id")) {
+         if ((vptr = bson_iter_value (&citer))) {
+            bson_value_copy (vptr, &value);
+         }
+      }
+   }
+
+   if (value.value_type) {
+      _mongoc_bulk_operation_do_append_upserted (bulk, idx, &value);
+      bson_value_destroy (&value);
+   }
+}
+
+
 static bool
 _mongoc_bulk_operation_send (mongoc_bulk_operation_t *bulk,    /* IN */
                              const bson_t            *command, /* IN */
@@ -391,6 +453,7 @@ _mongoc_bulk_operation_send_legacy (mongoc_bulk_operation_t *bulk,       /* IN *
                                     bson_t                  *reply,      /* OUT */
                                     bson_error_t            *error)      /* OUT */
 {
+   const bson_value_t *vptr;
    const bson_t *gle;
    bson_iter_t iter;
    int32_t n = -1;
@@ -464,6 +527,11 @@ _mongoc_bulk_operation_send_legacy (mongoc_bulk_operation_t *bulk,       /* IN *
          if (bson_iter_init_find (&iter, gle, "upserted") &&
              BSON_ITER_HOLDS_ARRAY (&iter)) {
             bulk->n_upserted += n;
+         } else if (bson_iter_init_find (&iter, gle, "upserted") &&
+                    BSON_ITER_HOLDS_OID (&iter)) {
+            vptr = bson_iter_value (&iter);
+            _mongoc_bulk_operation_do_append_upserted (bulk, 0, vptr);
+            bulk->n_upserted += 1;
          } else {
             if (n > 0) {
                bulk->n_matched += n;
@@ -477,55 +545,6 @@ _mongoc_bulk_operation_send_legacy (mongoc_bulk_operation_t *bulk,       /* IN *
    }
 
    return ret;
-}
-
-
-static void
-_mongoc_bulk_operation_append_upserted (mongoc_bulk_operation_t *bulk, /* IN */
-                                        const bson_iter_t       *iter) /* IN */
-{
-   const bson_value_t *vptr;
-   bson_value_t value = { 0 };
-   const char *key = NULL;
-   bson_iter_t citer;
-   bson_t child;
-   char str [16];
-   int count;
-   int idx = 0;
-
-   BSON_ASSERT (bulk);
-   BSON_ASSERT (iter);
-
-   if (!bulk->upserted) {
-      bulk->upserted = bson_new ();
-   }
-
-   if (!BSON_ITER_HOLDS_DOCUMENT (iter) ||
-       !bson_iter_recurse (iter, &citer)) {
-      return;
-   }
-
-   while (bson_iter_next (&citer)) {
-      if (BSON_ITER_IS_KEY (&citer, "index") &&
-          BSON_ITER_HOLDS_INT32 (&citer)) {
-         idx = bson_iter_int32 (&citer);
-      } else if (BSON_ITER_IS_KEY (&citer, "_id")) {
-         if ((vptr = bson_iter_value (&citer))) {
-            bson_value_copy (vptr, &value);
-         }
-      }
-   }
-
-   count = bson_count_keys (bulk->upserted);
-   bson_uint32_to_string (count, &key, str, sizeof str);
-
-   bson_append_document_begin (bulk->upserted, key, -1, &child);
-   BSON_APPEND_INT32 (&child, "index", bulk->offset + idx);
-   if (value.value_type) {
-      BSON_APPEND_VALUE (&child, "_id", &value);
-      bson_value_destroy (&value);
-   }
-   bson_append_document_end (bulk->upserted, &child);
 }
 
 
