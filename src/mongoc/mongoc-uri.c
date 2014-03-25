@@ -436,7 +436,10 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
               !strcasecmp(key, "safe") ||
               !strcasecmp(key, "slaveok") ||
               !strcasecmp(key, "ssl")) {
-      bson_append_bool(&uri->options, key, -1, !strcasecmp(value, "true"));
+      bson_append_bool (&uri->options, key, -1,
+                        (0 == strcasecmp (value, "true")) ||
+                        (0 == strcasecmp (value, "t")) ||
+                        (0 == strcmp (value, "1")));
    } else if (!strcasecmp(key, "readpreferencetags")) {
       mongoc_uri_parse_tags(uri, value, &uri->read_prefs);
    } else {
