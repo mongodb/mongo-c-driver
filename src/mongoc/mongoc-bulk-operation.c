@@ -106,6 +106,18 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
 
       mongoc_write_concern_destroy (bulk->write_concern);
 
+      if (bulk->upserted) {
+         bson_destroy (bulk->upserted);
+      }
+
+      if (bulk->write_errors) {
+         bson_destroy (bulk->write_errors);
+      }
+
+      if (bulk->write_concern_errors) {
+         bson_destroy (bulk->write_concern_errors);
+      }
+
       bson_free (bulk);
    }
 }
@@ -341,6 +353,19 @@ _mongoc_bulk_operation_send (mongoc_bulk_operation_t *bulk,    /* IN */
 
 
 static void
+_mongoc_bulk_operation_append_upserted (mongoc_bulk_operation_t *bulk, /* IN */
+                                        const bson_iter_t       *iter) /* IN */
+{
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (iter);
+
+   if (!bulk->upserted) {
+      bulk->upserted = bson_new ();
+   }
+}
+
+
+static void
 _mongoc_bulk_operation_process_reply (mongoc_bulk_operation_t *bulk,   /* IN */
                                       int                      type,   /* IN */
                                       const bson_t            *reply)  /* IN */
@@ -369,7 +394,7 @@ _mongoc_bulk_operation_process_reply (mongoc_bulk_operation_t *bulk,   /* IN */
             if (BSON_ITER_HOLDS_ARRAY (&iter) &&
                 bson_iter_recurse (&iter, &ar)) {
                while (bson_iter_next (&ar)) {
-                  /* TODO: Copy to upserted result list */
+                  _mongoc_bulk_operation_append_upserted (bulk, &ar);
                   n_upserted++;
                }
             } else {
