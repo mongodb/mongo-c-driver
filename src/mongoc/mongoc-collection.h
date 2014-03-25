@@ -26,6 +26,7 @@
 
 #include <bson.h>
 
+#include "mongoc-bulk-operation.h"
 #include "mongoc-flags.h"
 #include "mongoc-cursor.h"
 #include "mongoc-index.h"
@@ -117,6 +118,9 @@ bool                          mongoc_collection_stats                (mongoc_col
                                                                       const bson_t                  *options,
                                                                       bson_t                        *reply,
                                                                       bson_error_t                  *error);
+mongoc_bulk_operation_t      *mongoc_collection_create_bulk_operation(mongoc_collection_t           *collection,
+                                                                      bool                           ordered,
+                                                                      const mongoc_write_concern_t  *write_concern);
 const mongoc_read_prefs_t    *mongoc_collection_get_read_prefs       (const mongoc_collection_t     *collection);
 void                          mongoc_collection_set_read_prefs       (mongoc_collection_t           *collection,
                                                                       const mongoc_read_prefs_t     *read_prefs);

@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 
+#include "mongoc-bulk-operation-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
@@ -1611,4 +1612,24 @@ mongoc_collection_stats (mongoc_collection_t *collection,
    bson_destroy (&cmd);
 
    return ret;
+}
+
+
+mongoc_bulk_operation_t *
+mongoc_collection_create_bulk_operation (
+      mongoc_collection_t          *collection,
+      bool                          ordered,
+      const mongoc_write_concern_t *write_concern)
+{
+   bson_return_val_if_fail (collection, NULL);
+
+   /*
+    * TODO: where should we discover if we can do new or old style bulk ops?
+    */
+
+   return _mongoc_bulk_operation_new (collection->client,
+                                      collection->collection,
+                                      0,
+                                      ordered,
+                                      write_concern);
 }
