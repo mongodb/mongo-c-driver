@@ -25,6 +25,7 @@
 
 
 #include <bson.h>
+
 #include "mongoc-ssl.h"
 #include "mongoc-stream.h"
 

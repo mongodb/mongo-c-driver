@@ -723,6 +723,13 @@ mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
 }
 
 
+static mongoc_stream_t *
+_mongoc_stream_tls_get_base_stream (mongoc_stream_t *stream)
+{
+   return ((mongoc_stream_tls_t *)stream)->base_stream;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -773,6 +780,7 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
 
    tls = bson_malloc0 (sizeof *tls);
    tls->base_stream = base_stream;
+   tls->parent.type = MONGOC_STREAM_TLS;
    tls->parent.destroy = _mongoc_stream_tls_destroy;
    tls->parent.close = _mongoc_stream_tls_close;
    tls->parent.flush = _mongoc_stream_tls_flush;
@@ -781,6 +789,7 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
    tls->parent.cork = _mongoc_stream_tls_cork;
    tls->parent.uncork = _mongoc_stream_tls_uncork;
    tls->parent.setsockopt = _mongoc_stream_tls_setsockopt;
+   tls->parent.get_base_stream = _mongoc_stream_tls_get_base_stream;
    tls->weak_cert_validation = opt->weak_cert_validation;
    tls->bio = bio_ssl;
    tls->ctx = ssl_ctx;

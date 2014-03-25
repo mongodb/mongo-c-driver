@@ -34,30 +34,31 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_stream_t mongoc_stream_t;
 
 
-int              mongoc_stream_close         (mongoc_stream_t       *stream);
-int              mongoc_stream_cork          (mongoc_stream_t       *stream);
-int              mongoc_stream_uncork        (mongoc_stream_t       *stream);
-void             mongoc_stream_destroy       (mongoc_stream_t       *stream);
-int              mongoc_stream_flush         (mongoc_stream_t       *stream);
-ssize_t          mongoc_stream_writev        (mongoc_stream_t       *stream,
-                                              mongoc_iovec_t        *iov,
-                                              size_t                 iovcnt,
-                                              int32_t                timeout_msec);
-ssize_t          mongoc_stream_readv         (mongoc_stream_t       *stream,
-                                              mongoc_iovec_t        *iov,
-                                              size_t                 iovcnt,
-                                              size_t                 min_bytes,
-                                              int32_t                timeout_msec);
-ssize_t          mongoc_stream_read          (mongoc_stream_t       *stream,
-                                              void                  *buf,
-                                              size_t                 count,
-                                              size_t                 min_bytes,
-                                              int32_t                timeout_msec);
-int              mongoc_stream_setsockopt    (mongoc_stream_t       *stream,
-                                              int                    level,
-                                              int                    optname,
-                                              void                  *optval,
-                                              socklen_t              optlen);
+mongoc_stream_t *mongoc_stream_get_base_stream (mongoc_stream_t       *stream);
+int              mongoc_stream_close           (mongoc_stream_t       *stream);
+int              mongoc_stream_cork            (mongoc_stream_t       *stream);
+int              mongoc_stream_uncork          (mongoc_stream_t       *stream);
+void             mongoc_stream_destroy         (mongoc_stream_t       *stream);
+int              mongoc_stream_flush           (mongoc_stream_t       *stream);
+ssize_t          mongoc_stream_writev          (mongoc_stream_t       *stream,
+                                                mongoc_iovec_t        *iov,
+                                                size_t                 iovcnt,
+                                                int32_t                timeout_msec);
+ssize_t          mongoc_stream_readv           (mongoc_stream_t       *stream,
+                                                mongoc_iovec_t        *iov,
+                                                size_t                 iovcnt,
+                                                size_t                 min_bytes,
+                                                int32_t                timeout_msec);
+ssize_t          mongoc_stream_read            (mongoc_stream_t       *stream,
+                                                void                  *buf,
+                                                size_t                 count,
+                                                size_t                 min_bytes,
+                                                int32_t                timeout_msec);
+int              mongoc_stream_setsockopt      (mongoc_stream_t       *stream,
+                                                int                    level,
+                                                int                    optname,
+                                                void                  *optval,
+                                                socklen_t              optlen);
 
 
 BSON_END_DECLS

@@ -34,7 +34,8 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_stream_socket_t mongoc_stream_socket_t;
 
 
-mongoc_stream_t *mongoc_stream_socket_new (mongoc_socket_t *socket);
+mongoc_stream_t *mongoc_stream_socket_new        (mongoc_socket_t        *socket);
+mongoc_socket_t *mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream);
 
 
 BSON_END_DECLS

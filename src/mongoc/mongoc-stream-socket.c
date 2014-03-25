@@ -201,6 +201,15 @@ _mongoc_stream_socket_writev (mongoc_stream_t *stream,
 }
 
 
+mongoc_socket_t *
+mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream) /* IN */
+{
+   bson_return_val_if_fail (stream, NULL);
+
+   return stream->sock;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -226,6 +235,7 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
    bson_return_val_if_fail (sock, NULL);
 
    stream = bson_malloc0 (sizeof *stream);
+   stream->vtable.type = MONGOC_STREAM_SOCKET;
    stream->vtable.close = _mongoc_stream_socket_close;
    stream->vtable.destroy = _mongoc_stream_socket_destroy;
    stream->vtable.flush = _mongoc_stream_socket_flush;

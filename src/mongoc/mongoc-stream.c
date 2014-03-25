@@ -261,3 +261,16 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
 
    return 0;
 }
+
+
+mongoc_stream_t *
+mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
+{
+   bson_return_val_if_fail (stream, NULL);
+
+   if (stream->get_base_stream) {
+      return stream->get_base_stream (stream);
+   }
+
+   return NULL;
+}

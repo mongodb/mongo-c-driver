@@ -175,6 +175,7 @@ mongoc_stream_file_new (int fd) /* IN */
    bson_return_val_if_fail (fd != -1, NULL);
 
    stream = bson_malloc0 (sizeof *stream);
+   stream->vtable.type = MONGOC_STREAM_FILE;
    stream->vtable.close = _mongoc_stream_file_close;
    stream->vtable.destroy = _mongoc_stream_file_destroy;
    stream->vtable.flush = _mongoc_stream_file_flush;

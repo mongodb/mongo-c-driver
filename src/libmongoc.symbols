@@ -152,6 +152,7 @@ mongoc_stream_file_get_fd
 mongoc_stream_file_new
 mongoc_stream_file_new_for_path
 mongoc_stream_flush
+mongoc_stream_get_base_stream
 mongoc_stream_gridfs_new
 mongoc_stream_read
 mongoc_stream_readv

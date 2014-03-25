@@ -287,6 +287,13 @@ mongoc_stream_buffered_uncork (mongoc_stream_t *stream) /* IN */
 }
 
 
+static mongoc_stream_t *
+_mongoc_stream_buffered_get_base_stream (mongoc_stream_t *stream) /* IN */
+{
+   return ((mongoc_stream_buffered_t *)stream)->base_stream;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -320,6 +327,7 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream, /* IN */
    bson_return_val_if_fail(base_stream, NULL);
 
    stream = bson_malloc0(sizeof *stream);
+   stream->stream.type = MONGOC_STREAM_BUFFERED;
    stream->stream.destroy = mongoc_stream_buffered_destroy;
    stream->stream.close = mongoc_stream_buffered_close;
    stream->stream.flush = mongoc_stream_buffered_flush;
@@ -327,6 +335,7 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream, /* IN */
    stream->stream.readv = mongoc_stream_buffered_readv;
    stream->stream.cork = mongoc_stream_buffered_cork;
    stream->stream.uncork = mongoc_stream_buffered_uncork;
+   stream->stream.get_base_stream = _mongoc_stream_buffered_get_base_stream;
 
    stream->base_stream = base_stream;
 
