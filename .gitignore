@@ -12,6 +12,7 @@ compile
 config.*
 configure
 COPYING
+data
 depcomp
 .deps
 .dirstamp
