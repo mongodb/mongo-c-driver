@@ -297,6 +297,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Cannot do an empty bulk write");
+      return false;
    }
 
    for (i = 0; i < bulk->commands.len; i++) {
