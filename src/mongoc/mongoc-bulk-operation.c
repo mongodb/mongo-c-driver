@@ -514,6 +514,7 @@ _mongoc_bulk_operation_send_legacy (mongoc_bulk_operation_t *bulk,       /* IN *
       case MONGOC_BULK_COMMAND_DELETE:
          if (n > 0) {
             bulk->n_removed += n;
+            bulk->offset += n;
          }
          break;
       case MONGOC_BULK_COMMAND_INSERT:
@@ -555,6 +556,7 @@ _mongoc_bulk_operation_process_reply (mongoc_bulk_operation_t *bulk,   /* IN */
 {
    bson_iter_t iter;
    bson_iter_t ar;
+   int32_t n_matched = 0;
    int32_t n = 0;
    int32_t n_upserted = 0;
 
@@ -564,54 +566,55 @@ _mongoc_bulk_operation_process_reply (mongoc_bulk_operation_t *bulk,   /* IN */
    if (bson_iter_init_find (&iter, reply, "n") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
       n = bson_iter_int32 (&iter);
+   }
 
-      switch (type) {
-      case MONGOC_BULK_COMMAND_DELETE:
-         bulk->n_removed += n;
-         bulk->offset += n;
-         break;
-      case MONGOC_BULK_COMMAND_INSERT:
-         bulk->n_inserted += n;
-         bulk->offset += n;
-         break;
-      case MONGOC_BULK_COMMAND_UPDATE:
-         if (bson_iter_init_find (&iter, reply, "upserted")) {
-            if (BSON_ITER_HOLDS_ARRAY (&iter) &&
-                bson_iter_recurse (&iter, &ar)) {
-               while (bson_iter_next (&ar)) {
-                  _mongoc_bulk_operation_append_upserted (bulk, &ar);
-                  n_upserted++;
-               }
-            } else {
-               n_upserted = 1;
+   switch (type) {
+   case MONGOC_BULK_COMMAND_DELETE:
+      bulk->n_removed += n;
+      bulk->offset += n;
+      break;
+   case MONGOC_BULK_COMMAND_INSERT:
+      bulk->n_inserted += n;
+      bulk->offset += n;
+      break;
+   case MONGOC_BULK_COMMAND_UPDATE:
+      if (bson_iter_init_find (&iter, reply, "upserted")) {
+         if (BSON_ITER_HOLDS_ARRAY (&iter) &&
+             bson_iter_recurse (&iter, &ar)) {
+            while (bson_iter_next (&ar)) {
+               _mongoc_bulk_operation_append_upserted (bulk, &ar);
+               n_upserted++;
             }
-            bulk->n_upserted += n_upserted;
-            bulk->n_matched += MAX (0, (n - n_upserted));
          } else {
-            bulk->n_matched += n;
+            n_upserted = 1;
          }
-
-         bulk->offset += bulk->n_matched;
-
-         /*
-          * In a mixed sharded cluster, a call to update() could return
-          * nModified (>= 2.6) or not (<= 2.4). If any call does not return
-          * nModified we can't report a valid final count so omit the field
-          * completely from the result.
-          *
-          * See SERVER-13001 for more information.
-          */
-         if (!bson_iter_init_find (&iter, reply, "nModified")) {
-            bulk->omit_n_modified = true;
-         } else {
-            bulk->n_modified += bson_iter_int32 (&iter);
-         }
-
-         break;
-      default:
-         BSON_ASSERT (false);
-         break;
+         bulk->n_upserted += n_upserted;
+         n_matched = MAX (0, (n - n_upserted));
+      } else {
+         n_matched = n;
       }
+
+      bulk->n_matched += n_matched;
+      bulk->offset += n_matched + n_upserted;
+
+      /*
+       * In a mixed sharded cluster, a call to update() could return
+       * nModified (>= 2.6) or not (<= 2.4). If any call does not return
+       * nModified we can't report a valid final count so omit the field
+       * completely from the result.
+       *
+       * See SERVER-13001 for more information.
+       */
+      if (!bson_iter_init_find (&iter, reply, "nModified")) {
+         bulk->omit_n_modified = true;
+      } else {
+         bulk->n_modified += bson_iter_int32 (&iter);
+      }
+
+      break;
+   default:
+      BSON_ASSERT (false);
+      break;
    }
 }
 
@@ -695,13 +698,13 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
          _mongoc_bulk_operation_build (bulk, c, &command);
          ret = _mongoc_bulk_operation_send (bulk, &command, &local_reply,
                                             error);
+         _mongoc_bulk_operation_process_reply (bulk, c->type, &local_reply);
          bson_destroy (&command);
       } else {
          ret = _mongoc_bulk_operation_send_legacy (bulk, collection, c,
                                                    &local_reply, error);
       }
 
-      _mongoc_bulk_operation_process_reply (bulk, c->type, &local_reply);
       bson_destroy (&local_reply);
 
       if (!ret && bulk->ordered) {
