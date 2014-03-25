@@ -549,9 +549,11 @@ _mongoc_bulk_operation_process_reply (mongoc_bulk_operation_t *bulk,   /* IN */
       switch (type) {
       case MONGOC_BULK_COMMAND_DELETE:
          bulk->n_removed += n;
+         bulk->offset += n;
          break;
       case MONGOC_BULK_COMMAND_INSERT:
          bulk->n_inserted += n;
+         bulk->offset += n;
          break;
       case MONGOC_BULK_COMMAND_UPDATE:
          if (bson_iter_init_find (&iter, reply, "upserted")) {
@@ -569,6 +571,8 @@ _mongoc_bulk_operation_process_reply (mongoc_bulk_operation_t *bulk,   /* IN */
          } else {
             bulk->n_matched += n;
          }
+
+         bulk->offset += bulk->n_matched;
 
          /*
           * In a mixed sharded cluster, a call to update() could return
