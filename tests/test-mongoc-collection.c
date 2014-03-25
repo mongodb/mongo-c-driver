@@ -770,6 +770,9 @@ test_bulk (void)
    bson_error_t error;
    bson_iter_t iter;
    bson_t reply;
+   bson_t child;
+   bson_t del;
+   bson_t up;
    bson_t doc = BSON_INITIALIZER;
    bool r;
 
@@ -786,31 +789,40 @@ test_bulk (void)
    mongoc_bulk_operation_insert (bulk, &doc);
    mongoc_bulk_operation_insert (bulk, &doc);
    mongoc_bulk_operation_insert (bulk, &doc);
-   mongoc_bulk_operation_update (bulk, &doc, &doc, false);
-   mongoc_bulk_operation_update (bulk, &doc, &doc, false);
-   mongoc_bulk_operation_update (bulk, &doc, &doc, false);
-   mongoc_bulk_operation_delete (bulk, &doc);
+
+   bson_init (&up);
+   bson_append_document_begin (&up, "$set", -1, &child);
+   bson_append_int32 (&child, "hello", -1, 123);
+   bson_append_document_end (&up, &child);
+   mongoc_bulk_operation_update (bulk, &doc, &up, false);
+   bson_destroy (&up);
+
+   bson_init (&del);
+   BSON_APPEND_INT32 (&del, "hello", 123);
+   mongoc_bulk_operation_delete (bulk, &del);
+   bson_destroy (&del);
 
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
 
+
+   assert (bson_iter_init_find (&iter, &reply, "nInserted"));
+   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   assert (bson_iter_int32 (&iter) == 4);
+
    assert (bson_iter_init_find (&iter, &reply, "nModified"));
    assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (!bson_iter_int32 (&iter));
-
-   assert (bson_iter_init_find (&iter, &reply, "nUpserted"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (!bson_iter_int32 (&iter));
-
-   assert (bson_iter_init_find (&iter, &reply, "nMatched"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (!bson_iter_int32 (&iter));
+   assert (bson_iter_int32 (&iter) == 4);
 
    assert (bson_iter_init_find (&iter, &reply, "nRemoved"));
    assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (!bson_iter_int32 (&iter));
+   assert (4 == bson_iter_int32 (&iter));
 
-   assert (bson_iter_init_find (&iter, &reply, "nInserted"));
+   assert (bson_iter_init_find (&iter, &reply, "nMatched"));
+   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   assert (4 == bson_iter_int32 (&iter));
+
+   assert (bson_iter_init_find (&iter, &reply, "nUpserted"));
    assert (BSON_ITER_HOLDS_INT32 (&iter));
    assert (!bson_iter_int32 (&iter));
 

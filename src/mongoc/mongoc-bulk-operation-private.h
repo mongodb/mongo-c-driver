@@ -33,6 +33,7 @@ struct _mongoc_bulk_operation_t
    mongoc_client_t        *client;
    mongoc_write_concern_t *write_concern;
    bool                    ordered;
+   bool                    omit_n_modified;
    mongoc_array_t          commands;
    uint32_t                hint;
    uint32_t                n_modified;

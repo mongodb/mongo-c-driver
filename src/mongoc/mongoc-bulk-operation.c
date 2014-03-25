@@ -1,4 +1,4 @@
-/*
+/*inserted = value;
  * Copyright 2014 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -200,10 +200,21 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
                               bool                     upsert)
 {
    mongoc_bulk_command_t command = { 0 };
+   bson_iter_t iter;
 
    bson_return_if_fail (bulk);
    bson_return_if_fail (selector);
    bson_return_if_fail (document);
+
+   if (bson_iter_init (&iter, document)) {
+      while (bson_iter_next (&iter)) {
+         if (!strchr (bson_iter_key (&iter), '$')) {
+            MONGOC_WARNING ("%s(): update only works with $ operators.",
+                            __FUNCTION__);
+            return;
+         }
+      }
+   }
 
    command.type = MONGOC_BULK_COMMAND_UPDATE;
    command.u.update.upsert = upsert;
@@ -331,10 +342,65 @@ _mongoc_bulk_operation_send (mongoc_bulk_operation_t *bulk,    /* IN */
 
 static void
 _mongoc_bulk_operation_process_reply (mongoc_bulk_operation_t *bulk,   /* IN */
+                                      int                      type,   /* IN */
                                       const bson_t            *reply)  /* IN */
 {
+   bson_iter_t iter;
+   bson_iter_t ar;
+   int32_t n = 0;
+   int32_t n_upserted = 0;
+
    BSON_ASSERT (bulk);
    BSON_ASSERT (reply);
+
+   if (bson_iter_init_find (&iter, reply, "n") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+      n = bson_iter_int32 (&iter);
+
+      switch (type) {
+      case MONGOC_BULK_COMMAND_DELETE:
+         bulk->n_removed += n;
+         break;
+      case MONGOC_BULK_COMMAND_INSERT:
+         bulk->n_inserted += n;
+         break;
+      case MONGOC_BULK_COMMAND_UPDATE:
+         if (bson_iter_init_find (&iter, reply, "upserted")) {
+            if (BSON_ITER_HOLDS_ARRAY (&iter) &&
+                bson_iter_recurse (&iter, &ar)) {
+               while (bson_iter_next (&ar)) {
+                  /* TODO: Copy to upserted result list */
+                  n_upserted++;
+               }
+            } else {
+               n_upserted = 1;
+            }
+            bulk->n_upserted += n_upserted;
+            bulk->n_matched += (n - n_upserted);
+         } else {
+            bulk->n_matched += n;
+         }
+
+         /*
+          * In a mixed sharded cluster, a call to update() could return
+          * nModified (>= 2.6) or not (<= 2.4). If any call does not return
+          * nModified we can't report a valid final count so omit the field
+          * completely from the result.
+          *
+          * See SERVER-13001 for more information.
+          */
+         if (!bson_iter_init_find (&iter, reply, "nModified")) {
+            bulk->omit_n_modified = true;
+         } else {
+            bulk->n_modified += bson_iter_int32 (&iter);
+         }
+
+         break;
+      default:
+         BSON_ASSERT (false);
+         break;
+      }
+   }
 }
 
 
@@ -345,7 +411,9 @@ _mongoc_bulk_operation_build_reply (mongoc_bulk_operation_t *bulk,  /* IN */
    BSON_ASSERT (bulk);
 
    if (reply) {
-      BSON_APPEND_INT32 (reply, "nModified", bulk->n_modified);
+      if (!bulk->omit_n_modified) {
+         BSON_APPEND_INT32 (reply, "nModified", bulk->n_modified);
+      }
       BSON_APPEND_INT32 (reply, "nUpserted", bulk->n_upserted);
       BSON_APPEND_INT32 (reply, "nMatched", bulk->n_matched);
       BSON_APPEND_INT32 (reply, "nRemoved", bulk->n_removed);
@@ -391,7 +459,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
       ret = _mongoc_bulk_operation_send (bulk, &command, &local_reply, error);
 
-      _mongoc_bulk_operation_process_reply (bulk, &local_reply);
+      _mongoc_bulk_operation_process_reply (bulk, c->type, &local_reply);
 
       bson_destroy (&command);
       bson_destroy (&local_reply);
