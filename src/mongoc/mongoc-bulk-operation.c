@@ -330,13 +330,32 @@ _mongoc_bulk_operation_send (mongoc_bulk_operation_t *bulk,    /* IN */
 
 
 static void
-_mongoc_bulk_operation_merge_reply (mongoc_bulk_operation_t *bulk,   /* IN */
-                                    bson_t                  *result, /* IN */
-                                    const bson_t            *reply)  /* IN */
+_mongoc_bulk_operation_process_reply (mongoc_bulk_operation_t *bulk,   /* IN */
+                                      const bson_t            *reply)  /* IN */
 {
    BSON_ASSERT (bulk);
-   BSON_ASSERT (result);
    BSON_ASSERT (reply);
+}
+
+
+static void
+_mongoc_bulk_operation_build_reply (mongoc_bulk_operation_t *bulk,  /* IN */
+                                    bson_t                  *reply) /* IN */
+{
+   BSON_ASSERT (bulk);
+
+   if (reply) {
+      BSON_APPEND_INT32 (reply, "nModified", bulk->n_modified);
+      BSON_APPEND_INT32 (reply, "nUpserted", bulk->n_upserted);
+      BSON_APPEND_INT32 (reply, "nMatched", bulk->n_matched);
+      BSON_APPEND_INT32 (reply, "nRemoved", bulk->n_removed);
+      BSON_APPEND_INT32 (reply, "nInserted", bulk->n_inserted);
+#if 0
+      BSON_APPEND_DOCUMENT (reply, "writeErrors", bulk->writeErrors);
+      BSON_APPEND_DOCUMENT (reply, "writeConcernErrors", bulk->upserted);
+      BSON_APPEND_DOCUMENT (reply, "upserted", bulk->upserted);
+#endif
+   }
 }
 
 
@@ -372,20 +391,18 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
       ret = _mongoc_bulk_operation_send (bulk, &command, &local_reply, error);
 
-      _mongoc_bulk_operation_merge_reply (bulk, reply, &local_reply);
+      _mongoc_bulk_operation_process_reply (bulk, &local_reply);
 
       bson_destroy (&command);
       bson_destroy (&local_reply);
 
       if (!ret && bulk->ordered) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "One or more operations failed. "
-                         "See result document for more information.");
+         _mongoc_bulk_operation_build_reply (bulk, reply);
          RETURN (false);
       }
    }
+
+   _mongoc_bulk_operation_build_reply (bulk, reply);
 
    RETURN (true);
 }

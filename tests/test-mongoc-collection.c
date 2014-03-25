@@ -794,14 +794,32 @@ test_bulk (void)
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
 
-   assert (bson_iter_init_find (&iter, &reply, "ok"));
-   assert (bson_iter_as_bool (&iter));
+   assert (bson_iter_init_find (&iter, &reply, "nModified"));
+   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   assert (!bson_iter_int32 (&iter));
+
+   assert (bson_iter_init_find (&iter, &reply, "nUpserted"));
+   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   assert (!bson_iter_int32 (&iter));
+
+   assert (bson_iter_init_find (&iter, &reply, "nMatched"));
+   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   assert (!bson_iter_int32 (&iter));
+
+   assert (bson_iter_init_find (&iter, &reply, "nRemoved"));
+   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   assert (!bson_iter_int32 (&iter));
+
+   assert (bson_iter_init_find (&iter, &reply, "nInserted"));
+   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   assert (!bson_iter_int32 (&iter));
 
    bson_destroy (&reply);
 
    r = mongoc_collection_drop (collection, &error);
    assert (r);
 
+   mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    bson_destroy (&doc);

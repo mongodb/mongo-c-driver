@@ -31,10 +31,15 @@ struct _mongoc_bulk_operation_t
    char                   *database;
    char                   *collection;
    mongoc_client_t        *client;
-   bool                    ordered;
-   uint32_t                hint;
-   mongoc_array_t          commands;
    mongoc_write_concern_t *write_concern;
+   bool                    ordered;
+   mongoc_array_t          commands;
+   uint32_t                hint;
+   uint32_t                n_modified;
+   uint32_t                n_upserted;
+   uint32_t                n_matched;
+   uint32_t                n_removed;
+   uint32_t                n_inserted;
 };
 
 
