@@ -37,6 +37,9 @@
 #ifdef MONGOC_ENABLE_SASL
 #include "mongoc-sasl-private.h"
 #endif
+#include "mongoc-socket.h"
+#include "mongoc-stream-private.h"
+#include "mongoc-stream-socket.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-util-private.h"
@@ -1248,6 +1251,77 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_cluster_get_canonicalized_name --
+ *
+ *       Query the node to get the canonicalized name. This may happen if
+ *       the node has been accessed via an alias.
+ *
+ *       The gssapi code will use this if canonicalizeHostname is true.
+ *
+ *       Some underlying layers of krb might do this for us, but they can
+ *       be disabled in krb.conf.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_cluster_get_canonicalized_name (mongoc_cluster_t      *cluster, /* IN */
+                                        mongoc_cluster_node_t *node,    /* IN */
+                                        char                  *name,    /* OUT */
+                                        size_t                 namelen, /* IN */
+                                        bson_error_t          *error)   /* OUT */
+{
+   mongoc_stream_t *stream;
+   mongoc_stream_t *tmp;
+   mongoc_socket_t *socket = NULL;
+   char *canonicalized;
+
+   ENTRY;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (node);
+   BSON_ASSERT (name);
+
+   /*
+    * Find the underlying socket used in the stream chain.
+    */
+   for (stream = node->stream; stream;) {
+      if ((tmp = mongoc_stream_get_base_stream (stream))) {
+         stream = tmp;
+         continue;
+      }
+      break;
+   }
+
+   BSON_ASSERT (stream);
+
+   if (stream->type == MONGOC_STREAM_SOCKET) {
+      socket = mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *)stream);
+      if (socket) {
+         canonicalized = mongoc_socket_getnameinfo (socket);
+         if (canonicalized) {
+            bson_snprintf (name, namelen, "%s", canonicalized);
+            bson_free (canonicalized);
+            RETURN (true);
+         }
+      }
+   }
+
+   RETURN (false);
+}
+#endif
+
+
+#ifdef MONGOC_ENABLE_SASL
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_cluster_auth_node_sasl --
  *
  *       Perform authentication for a cluster node using SASL. This is
@@ -1272,6 +1346,7 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t      *cluster,
    const bson_t *options;
    bson_iter_t iter;
    bool ret = false;
+   char real_name [BSON_HOST_NAME_MAX + 1];
    const char *service_name;
    const char *mechanism;
    const char *tmpstr;
@@ -1299,7 +1374,30 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t      *cluster,
 
    _mongoc_sasl_set_pass (&sasl, mongoc_uri_get_password (cluster->uri));
    _mongoc_sasl_set_user (&sasl, mongoc_uri_get_username (cluster->uri));
-   _mongoc_sasl_set_service_host (&sasl, node->host.host);
+
+   /*
+    * If the URI requested canonicalizeHostname, we need to resolve the real
+    * hostname for the IP Address and pass that to the SASL layer. Some
+    * underlying GSSAPI layers will do this for us, but can be disabled in
+    * their config (krb.conf).
+    *
+    * This allows the consumer to specify canonicalizeHostname=true in the URI
+    * and have us do that for them.
+    *
+    * See CDRIVER-323 for more information.
+    */
+   if (bson_iter_init_find_case (&iter, options, "canonicalizeHostname") &&
+       BSON_ITER_HOLDS_BOOL (&iter) &&
+       bson_iter_bool (&iter)) {
+      if (_mongoc_cluster_get_canonicalized_name (cluster, node, real_name,
+                                                  sizeof real_name, error)) {
+         _mongoc_sasl_set_service_host (&sasl, real_name);
+      } else {
+         _mongoc_sasl_set_service_host (&sasl, node->host.host);
+      }
+   } else {
+      _mongoc_sasl_set_service_host (&sasl, node->host.host);
+   }
 
    for (;;) {
       if (!_mongoc_sasl_step (&sasl, buf, buflen, buf, sizeof buf, &buflen, error)) {
