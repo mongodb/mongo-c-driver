@@ -329,6 +329,17 @@ _mongoc_bulk_operation_send (mongoc_bulk_operation_t *bulk,    /* IN */
 }
 
 
+static void
+_mongoc_bulk_operation_merge_reply (mongoc_bulk_operation_t *bulk,   /* IN */
+                                    bson_t                  *result, /* IN */
+                                    const bson_t            *reply)  /* IN */
+{
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (result);
+   BSON_ASSERT (reply);
+}
+
+
 bool
 mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                bson_t                  *reply, /* OUT */
@@ -346,29 +357,35 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
    bson_init (reply);
 
-   /*
-    * TODO: This is a naive implementation that does not take unordered into
-    *       account. We will optimize for that after a working ordered
-    *       version.
-    */
-
    if (!bulk->commands.len) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Cannot do an empty bulk write");
-      return false;
+      RETURN (false);
    }
 
    for (i = 0; i < bulk->commands.len; i++) {
       c = &_mongoc_array_index (&bulk->commands, mongoc_bulk_command_t, i);
+
       _mongoc_bulk_operation_build (bulk, c, &command);
-      if (!_mongoc_bulk_operation_send (bulk, &command, &local_reply, error)) {
-      }
+
+      ret = _mongoc_bulk_operation_send (bulk, &command, &local_reply, error);
+
+      _mongoc_bulk_operation_merge_reply (bulk, reply, &local_reply);
+
       bson_destroy (&command);
+      bson_destroy (&local_reply);
+
+      if (!ret && bulk->ordered) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "One or more operations failed. "
+                         "See result document for more information.");
+         RETURN (false);
+      }
    }
 
-   ret = true;
-
-   RETURN (ret);
+   RETURN (true);
 }
