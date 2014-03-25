@@ -28,11 +28,12 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_bulk_operation_t
 {
-   char            *collection;
-   mongoc_client_t *client;
-   bool             ordered;
-   uint32_t         hint;
-   mongoc_array_t   commands;
+   char                   *collection;
+   mongoc_client_t        *client;
+   bool                    ordered;
+   uint32_t                hint;
+   mongoc_array_t          commands;
+   mongoc_write_concern_t *write_concern;
 };
 
 

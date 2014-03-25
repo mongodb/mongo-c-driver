@@ -37,6 +37,7 @@ _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN *
    bulk->collection = bson_strdup (collection);
    bulk->ordered = ordered;
    bulk->hint = hint;
+   bulk->write_concern = mongoc_write_concern_copy (write_concern);
 
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_bulk_command_t));
 
@@ -76,6 +77,8 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
 
       bson_free (bulk->collection);
       _mongoc_array_destroy (&bulk->commands);
+      mongoc_write_concern_destroy (bulk->write_concern);
+
       bson_free (bulk);
    }
 }
