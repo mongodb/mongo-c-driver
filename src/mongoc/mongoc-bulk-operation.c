@@ -22,6 +22,25 @@
 #include "mongoc-write-concern-private.h"
 
 
+/*
+ * This is the implementation of both write commands and bulk write commands.
+ * They are all implemented as one contiguous set since we'd like to cut down
+ * on code duplication here.
+ *
+ * This implementation is currently naive.
+ *
+ * Some interesting optimizations might be:
+ *
+ *   - If unordered mode, send operations as we get them instead of waiting
+ *     for execute() to be called. This could save us memcpy()'s too.
+ *   - If there is no acknowledgement desired, keep a count of how many
+ *     replies we need and ask the socket layer to skip that many bytes
+ *     when reading.
+ *   - Try to use iovec to send write commands with subdocuments rather than
+ *     copying them into the write command document.
+ */
+
+
 mongoc_bulk_operation_t *
 _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN */
                             const char                   *database,      /* IN */
