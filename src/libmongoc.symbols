@@ -1,3 +1,11 @@
+mongoc_bulk_operation_delete
+mongoc_bulk_operation_delete_one
+mongoc_bulk_operation_destroy
+mongoc_bulk_operation_execute
+mongoc_bulk_operation_insert
+mongoc_bulk_operation_replace_one
+mongoc_bulk_operation_update
+mongoc_bulk_operation_update_one
 mongoc_cleanup
 mongoc_client_command
 mongoc_client_command_simple
@@ -26,6 +34,7 @@ mongoc_collection_aggregate
 mongoc_collection_command
 mongoc_collection_command_simple
 mongoc_collection_count
+mongoc_collection_create_bulk_operation
 mongoc_collection_delete
 mongoc_collection_destroy
 mongoc_collection_drop
@@ -47,6 +56,7 @@ mongoc_collection_stats
 mongoc_collection_update
 mongoc_collection_validate
 mongoc_cursor_clone
+mongoc_cursor_current
 mongoc_cursor_destroy
 mongoc_cursor_error
 mongoc_cursor_get_host
@@ -76,12 +86,12 @@ mongoc_gridfs_drop
 mongoc_gridfs_file_destroy
 mongoc_gridfs_file_error
 mongoc_gridfs_file_get_aliases
+mongoc_gridfs_file_get_chunk_size
 mongoc_gridfs_file_get_content_type
 mongoc_gridfs_file_get_filename
+mongoc_gridfs_file_get_length
 mongoc_gridfs_file_get_md5
 mongoc_gridfs_file_get_metadata
-mongoc_gridfs_file_get_length
-mongoc_gridfs_file_get_chunk_size
 mongoc_gridfs_file_get_upload_date
 mongoc_gridfs_file_list_destroy
 mongoc_gridfs_file_list_error
@@ -153,8 +163,8 @@ mongoc_stream_uncork
 mongoc_stream_writev
 mongoc_uri_copy
 mongoc_uri_destroy
-mongoc_uri_get_auth_source
 mongoc_uri_get_auth_mechanism
+mongoc_uri_get_auth_source
 mongoc_uri_get_database
 mongoc_uri_get_hosts
 mongoc_uri_get_options
