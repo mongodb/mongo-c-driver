@@ -22,6 +22,7 @@
 #include <bson.h>
 
 #define MONGOC_INSIDE
+#include "mongoc-bulk-operation.h"
 #include "mongoc-client.h"
 #include "mongoc-client-pool.h"
 #include "mongoc-collection.h"
