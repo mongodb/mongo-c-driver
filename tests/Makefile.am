@@ -64,6 +64,7 @@ test_libmongoc_SOURCES = \
 	tests/mock-server.c \
 	tests/mock-server.h \
 	tests/test-libmongoc.c \
+	tests/test-bulk.c \
 	tests/test-mongoc-array.c \
 	tests/test-mongoc-buffer.c \
 	tests/test-mongoc-client.c \

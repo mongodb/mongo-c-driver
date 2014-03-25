@@ -198,6 +198,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-buffer.c
    ${SOURCE_DIR}/tests/test-mongoc-client.c
    ${SOURCE_DIR}/tests/mock-server.c
+   ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-mongoc-client-pool.c
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
    ${SOURCE_DIR}/tests/test-mongoc-cursor.c

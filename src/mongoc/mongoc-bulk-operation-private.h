@@ -41,6 +41,7 @@ struct _mongoc_bulk_operation_t
    uint32_t                n_matched;
    uint32_t                n_removed;
    uint32_t                n_inserted;
+   uint32_t                offset;
    bson_t                 *upserted;
    bson_t                 *write_errors;
    bson_t                 *write_concern_errors;

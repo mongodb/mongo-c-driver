@@ -762,87 +762,6 @@ test_stats (void)
 
 
 static void
-test_bulk (void)
-{
-   mongoc_bulk_operation_t *bulk;
-   mongoc_collection_t *collection;
-   mongoc_client_t *client;
-   bson_error_t error;
-   bson_iter_t iter;
-   bson_t reply;
-   bson_t child;
-   bson_t del;
-   bson_t up;
-   bson_t doc = BSON_INITIALIZER;
-   bool r;
-
-   client = mongoc_client_new (gTestUri);
-   assert (client);
-
-   collection = get_test_collection (client, "test_bulk");
-   assert (collection);
-
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
-
-   mongoc_bulk_operation_insert (bulk, &doc);
-   mongoc_bulk_operation_insert (bulk, &doc);
-   mongoc_bulk_operation_insert (bulk, &doc);
-   mongoc_bulk_operation_insert (bulk, &doc);
-
-   bson_init (&up);
-   bson_append_document_begin (&up, "$set", -1, &child);
-   bson_append_int32 (&child, "hello", -1, 123);
-   bson_append_document_end (&up, &child);
-   mongoc_bulk_operation_update (bulk, &doc, &up, false);
-   bson_destroy (&up);
-
-   bson_init (&del);
-   BSON_APPEND_INT32 (&del, "hello", 123);
-   mongoc_bulk_operation_delete (bulk, &del);
-   bson_destroy (&del);
-
-   r = mongoc_bulk_operation_execute (bulk, &reply, &error);
-   assert (r);
-
-   assert (bson_iter_init_find (&iter, &reply, "nInserted"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 4);
-
-   /*
-    * This may be omitted if we talked to a (<= 2.4.x) node, or a mongos
-    * talked to a (<= 2.4.x) node.
-    */
-   if (bson_iter_init_find (&iter, &reply, "nModified")) {
-      assert (BSON_ITER_HOLDS_INT32 (&iter));
-      assert (bson_iter_int32 (&iter) == 4);
-   }
-
-   assert (bson_iter_init_find (&iter, &reply, "nRemoved"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (4 == bson_iter_int32 (&iter));
-
-   assert (bson_iter_init_find (&iter, &reply, "nMatched"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (4 == bson_iter_int32 (&iter));
-
-   assert (bson_iter_init_find (&iter, &reply, "nUpserted"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (!bson_iter_int32 (&iter));
-
-   bson_destroy (&reply);
-
-   r = mongoc_collection_drop (collection, &error);
-   assert (r);
-
-   mongoc_bulk_operation_destroy (bulk);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   bson_destroy (&doc);
-}
-
-
-static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -867,7 +786,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/validate", test_validate);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
    TestSuite_Add (suite, "/Collection/stats", test_stats);
-   TestSuite_Add (suite, "/Collection/create_bulk_operation", test_bulk);
 
    atexit (cleanup_globals);
 }

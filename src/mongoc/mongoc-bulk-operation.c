@@ -147,8 +147,8 @@ _mongoc_bulk_operation_preselect (mongoc_bulk_operation_t *bulk,
                                     error);
 
    if (hint) {
-      *min_wire_version = bulk->client->cluster.nodes [hint].min_wire_version;
-      *max_wire_version = bulk->client->cluster.nodes [hint].max_wire_version;
+      *min_wire_version = bulk->client->cluster.nodes [hint-1].min_wire_version;
+      *max_wire_version = bulk->client->cluster.nodes [hint-1].max_wire_version;
    }
 
    return hint;
@@ -465,7 +465,9 @@ _mongoc_bulk_operation_send_legacy (mongoc_bulk_operation_t *bulk,       /* IN *
              BSON_ITER_HOLDS_ARRAY (&iter)) {
             bulk->n_upserted += n;
          } else {
-            bulk->n_matched += n;
+            if (n > 0) {
+               bulk->n_matched += n;
+            }
          }
          break;
       default:
@@ -482,12 +484,48 @@ static void
 _mongoc_bulk_operation_append_upserted (mongoc_bulk_operation_t *bulk, /* IN */
                                         const bson_iter_t       *iter) /* IN */
 {
+   const bson_value_t *vptr;
+   bson_value_t value = { 0 };
+   const char *key = NULL;
+   bson_iter_t citer;
+   bson_t child;
+   char str [16];
+   int count;
+   int idx = 0;
+
    BSON_ASSERT (bulk);
    BSON_ASSERT (iter);
 
    if (!bulk->upserted) {
       bulk->upserted = bson_new ();
    }
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (iter) ||
+       !bson_iter_recurse (iter, &citer)) {
+      return;
+   }
+
+   while (bson_iter_next (&citer)) {
+      if (BSON_ITER_IS_KEY (&citer, "index") &&
+          BSON_ITER_HOLDS_INT32 (&citer)) {
+         idx = bson_iter_int32 (&citer);
+      } else if (BSON_ITER_IS_KEY (&citer, "_id")) {
+         if ((vptr = bson_iter_value (&citer))) {
+            bson_value_copy (vptr, &value);
+         }
+      }
+   }
+
+   count = bson_count_keys (bulk->upserted);
+   bson_uint32_to_string (count, &key, str, sizeof str);
+
+   bson_append_document_begin (bulk->upserted, key, -1, &child);
+   BSON_APPEND_INT32 (&child, "index", bulk->offset + idx);
+   if (value.value_type) {
+      BSON_APPEND_VALUE (&child, "_id", &value);
+      bson_value_destroy (&value);
+   }
+   bson_append_document_end (bulk->upserted, &child);
 }
 
 
@@ -527,7 +565,7 @@ _mongoc_bulk_operation_process_reply (mongoc_bulk_operation_t *bulk,   /* IN */
                n_upserted = 1;
             }
             bulk->n_upserted += n_upserted;
-            bulk->n_matched += (n - n_upserted);
+            bulk->n_matched += MAX (0, (n - n_upserted));
          } else {
             bulk->n_matched += n;
          }
@@ -559,6 +597,8 @@ static void
 _mongoc_bulk_operation_build_reply (mongoc_bulk_operation_t *bulk,  /* IN */
                                     bson_t                  *reply) /* IN */
 {
+   static const bson_t empty_ar = BSON_INITIALIZER;
+
    BSON_ASSERT (bulk);
 
    if (reply) {
@@ -569,8 +609,14 @@ _mongoc_bulk_operation_build_reply (mongoc_bulk_operation_t *bulk,  /* IN */
       BSON_APPEND_INT32 (reply, "nMatched", bulk->n_matched);
       BSON_APPEND_INT32 (reply, "nRemoved", bulk->n_removed);
       BSON_APPEND_INT32 (reply, "nInserted", bulk->n_inserted);
+      BSON_APPEND_ARRAY (reply, "writeErrors", &empty_ar);
+
+      if (bulk->upserted) {
+         BSON_APPEND_ARRAY (reply, "upserted", bulk->upserted);
+      }
+
 #if 0
-      BSON_APPEND_DOCUMENT (reply, "writeErrors", bulk->writeErrors);
+      BSON_APPEND_ARRAY (reply, "writeErrors", bulk->writeErrors);
       BSON_APPEND_DOCUMENT (reply, "writeConcernErrors", bulk->upserted);
       BSON_APPEND_DOCUMENT (reply, "upserted", bulk->upserted);
 #endif
