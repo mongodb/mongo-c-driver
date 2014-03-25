@@ -17,6 +17,9 @@
 
 #include "mongoc-bulk-operation.h"
 #include "mongoc-bulk-operation-private.h"
+#include "mongoc-error.h"
+#include "mongoc-trace.h"
+#include "mongoc-write-concern-private.h"
 
 
 mongoc_bulk_operation_t *
@@ -199,10 +202,95 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
 }
 
 
-bool
-mongoc_bulk_operation_execute (mongoc_bulk_operation_t      *bulk,          /* IN */
-                               bson_t                       *reply,         /* OUT */
-                               bson_error_t                 *error)         /* OUT */
+static void
+_mongoc_bulk_operation_build (mongoc_bulk_operation_t *bulk,    /* IN */
+                              mongoc_bulk_command_t   *command, /* IN */
+                              bson_t                  *bson)    /* OUT */
 {
-   return false;
+   const bson_t *wc;
+   bson_t ar;
+   bson_t child;
+
+   ENTRY;
+
+   bson_return_if_fail (bulk);
+   bson_return_if_fail (command);
+   bson_return_if_fail (bson);
+
+   wc = _mongoc_write_concern_freeze ((void *)bulk->write_concern);
+
+   bson_init (bson);
+
+   /*
+    * TODO: Allow insert to be an array of documents.
+    */
+
+   switch (command->type) {
+   case MONGOC_BULK_COMMAND_INSERT:
+      BSON_APPEND_UTF8 (bson, "insert", bulk->collection);
+      BSON_APPEND_DOCUMENT (bson, "writeConcern", wc);
+      BSON_APPEND_BOOL (bson, "ordered", bulk->ordered);
+      bson_append_array_begin (bson, "documents", 9, &ar);
+      BSON_APPEND_DOCUMENT (&ar, "0", command->u.insert.document);
+      bson_append_array_end (bson, &ar);
+      break;
+   case MONGOC_BULK_COMMAND_UPDATE:
+      BSON_APPEND_UTF8 (bson, "update", bulk->collection);
+      BSON_APPEND_DOCUMENT (bson, "writeConcern", wc);
+      BSON_APPEND_BOOL (bson, "ordered", bulk->ordered);
+      bson_append_array_begin (bson, "updates", 7, &ar);
+      bson_append_document_begin (&ar, "0", 1, &child);
+      BSON_APPEND_DOCUMENT (&child, "q", command->u.update.selector);
+      BSON_APPEND_BOOL (&child, "multi", command->u.update.multi);
+      BSON_APPEND_BOOL (&child, "upsert", command->u.update.upsert);
+      bson_append_document_end (&ar, &child);
+      bson_append_array_end (bson, &ar);
+      break;
+   case MONGOC_BULK_COMMAND_DELETE:
+      BSON_APPEND_UTF8 (bson, "delete", bulk->collection);
+      BSON_APPEND_DOCUMENT (bson, "writeConcern", wc);
+      BSON_APPEND_BOOL (bson, "ordered", bulk->ordered);
+      break;
+   case MONGOC_BULK_COMMAND_REPLACE:
+      BSON_APPEND_UTF8 (bson, "update", bulk->collection);
+      BSON_APPEND_DOCUMENT (bson, "writeConcern", wc);
+      BSON_APPEND_BOOL (bson, "ordered", bulk->ordered);
+      break;
+   default:
+      BSON_ASSERT (false);
+      break;
+   }
+
+   EXIT;
+}
+
+
+bool
+mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
+                               bson_t                  *reply, /* OUT */
+                               bson_error_t            *error) /* OUT */
+{
+   mongoc_bulk_command_t *c;
+   bson_t command;
+   bool ret = false;
+   int i;
+
+   ENTRY;
+
+   bson_return_val_if_fail (bulk, false);
+
+   if (!bulk->commands.len) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Cannot do an empty bulk write");
+   }
+
+   for (i = 0; i < bulk->commands.len; i++) {
+      c = &_mongoc_array_index (&bulk->commands, mongoc_bulk_command_t, i);
+      _mongoc_bulk_operation_build (bulk, c, &command);
+      bson_destroy (&command);
+   }
+
+   RETURN (ret);
 }
