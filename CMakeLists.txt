@@ -57,6 +57,7 @@ add_definitions("-DBINARY_DIR=\"${SOURCE_DIR}/tests/binary\"")
 
 set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-array.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.c
    ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.c
@@ -95,6 +96,7 @@ set (HEADERS
    ${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h
    ${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h
    ${SOURCE_DIR}/src/mongoc/mongoc.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.h
    ${SOURCE_DIR}/src/mongoc/mongoc-collection.h
