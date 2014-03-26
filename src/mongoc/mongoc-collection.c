@@ -892,7 +892,7 @@ bool
 mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
                                mongoc_insert_flags_t          flags,
                                const bson_t                 **documents,
-                               uint32_t                  n_documents,
+                               uint32_t                       n_documents,
                                const mongoc_write_concern_t  *write_concern,
                                bson_error_t                  *error)
 {

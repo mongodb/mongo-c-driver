@@ -30,17 +30,16 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_collection_t
 {
-   mongoc_client_t *client;
-   char             ns[128];
-   uint32_t         nslen;
-   char             db[128];
-   char             collection[128];
-   uint32_t         collectionlen;
-   mongoc_buffer_t  buffer;
-
+   mongoc_client_t        *client;
+   char                    ns[128];
+   uint32_t                nslen;
+   char                    db[128];
+   char                    collection[128];
+   uint32_t                collectionlen;
+   mongoc_buffer_t         buffer;
    mongoc_read_prefs_t    *read_prefs;
    mongoc_write_concern_t *write_concern;
-   bson_t *gle;
+   bson_t                 *gle;
 };
 
 
