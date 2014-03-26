@@ -793,6 +793,8 @@ mongoc_client_destroy (mongoc_client_t *client)
       bson_free (client->pem_subject);
 #endif
 
+      mongoc_write_concern_destroy (client->write_concern);
+      mongoc_read_prefs_destroy (client->read_prefs);
       _mongoc_cluster_destroy (&client->cluster);
       mongoc_uri_destroy (client->uri);
       bson_free (client);
