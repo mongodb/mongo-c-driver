@@ -48,35 +48,6 @@ struct _mongoc_bulk_operation_t
 };
 
 
-typedef enum
-{
-   MONGOC_BULK_COMMAND_INSERT = 1,
-   MONGOC_BULK_COMMAND_UPDATE,
-   MONGOC_BULK_COMMAND_DELETE,
-} mongoc_bulk_command_type_t;
-
-
-typedef struct
-{
-   int type;
-   union {
-      struct {
-         bson_t *document;
-      } insert;
-      struct {
-         uint8_t   upsert : 1;
-         uint8_t   multi  : 1;
-         bson_t   *selector;
-         bson_t   *document;
-      } update;
-      struct {
-         uint8_t  multi : 1;
-         bson_t  *selector;
-      } delete;
-   } u;
-} mongoc_bulk_command_t;
-
-
 mongoc_bulk_operation_t *_mongoc_bulk_operation_new (mongoc_client_t              *client,
                                                      const char                   *database,
                                                      const char                   *collection,

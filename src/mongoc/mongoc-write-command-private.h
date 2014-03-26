@@ -21,35 +21,66 @@
 
 #include <bson.h>
 
+#include "mongoc-client.h"
 #include "mongoc-write-concern.h"
 
 
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_WRITE_COMMANDS_SUPPORTED(min_ver, max_ver) \
-   ((min_ver <= 2) && (max_ver >= 2))
+#define MONGOC_WRITE_COMMAND_DELETE 0
+#define MONGOC_WRITE_COMMAND_INSERT 1
+#define MONGOC_WRITE_COMMAND_UPDATE 2
 
 
-void _mongoc_write_command_insert (bson_t                       *command,
-                                   const char                   *collection,
-                                   bool                          ordered,
-                                   const bson_t                 *document,
-                                   const mongoc_write_concern_t *write_concern);
-void _mongoc_write_command_update (bson_t                       *command,
-                                   const char                   *collection,
-                                   const bson_t                 *selector,
-                                   const bson_t                 *document,
-                                   bool                          ordered,
-                                   bool                          multi,
-                                   bool                          upsert,
-                                   const mongoc_write_concern_t *write_concern);
-void _mongoc_write_command_delete (bson_t                       *command,
-                                   const char                   *collection,
-                                   const bson_t                 *selector,
-                                   bool                          ordered,
-                                   bool                          multi,
-                                   const mongoc_write_concern_t *write_concern);
+typedef struct
+{
+   int type;
+   union {
+      struct {
+         uint8_t   ordered : 1;
+         uint8_t   multi : 1;
+         bson_t   *selector;
+      } delete;
+      struct {
+         uint8_t   ordered : 1;
+         bson_t   *documents;
+         uint32_t  n_documents;
+      } insert;
+      struct {
+         uint8_t   ordered : 1;
+         uint8_t   upsert : 1;
+         uint8_t   multi  : 1;
+         bson_t   *selector;
+         bson_t   *update;
+      } update;
+   } u;
+} mongoc_write_command_t;
+
+
+void _mongoc_write_command_destroy     (mongoc_write_command_t       *command);
+void _mongoc_write_command_init_insert (mongoc_write_command_t       *command,
+                                        const bson_t * const         *documents,
+                                        uint32_t                      n_documents,
+                                        bool                          ordered);
+void _mongoc_write_command_init_delete (mongoc_write_command_t       *command,
+                                        const bson_t                 *selector,
+                                        bool                          multi,
+                                        bool                          ordered);
+void _mongoc_write_command_init_update (mongoc_write_command_t       *command,
+                                        const bson_t                 *selector,
+                                        const bson_t                 *update,
+                                        bool                          upsert,
+                                        bool                          multi,
+                                        bool                          ordered);
+bool _mongoc_write_command_execute     (mongoc_write_command_t       *command,
+                                        mongoc_client_t              *client,
+                                        uint32_t                      hint,
+                                        const char                   *database,
+                                        const char                   *collection,
+                                        const mongoc_write_concern_t *write_concern,
+                                        bson_t                       *reply,
+                                        bson_error_t                 *error);
 
 
 BSON_END_DECLS
