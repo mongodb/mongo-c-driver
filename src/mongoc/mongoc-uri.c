@@ -735,6 +735,7 @@ mongoc_uri_destroy (mongoc_uri_t *uri)
       bson_free(uri->username);
       bson_destroy(&uri->options);
       bson_destroy(&uri->read_prefs);
+      mongoc_write_concern_destroy(uri->write_concern);
 
       if (uri->password) {
          bson_zero_free(uri->password, strlen(uri->password));
