@@ -27,7 +27,9 @@
 #define SUPPORTS_WRITE_COMMANDS(n) \
    (((n)->min_wire_version <= 2) && ((n)->max_wire_version >= 2))
 #define WRITE_CONCERN_DOC(wc) \
-   _mongoc_write_concern_freeze((mongoc_write_concern_t*)(wc))
+   (wc) ? \
+   (_mongoc_write_concern_freeze((mongoc_write_concern_t*)(wc))) : \
+   (&gEmptyWriteConcern)
 
 
 typedef bool (*mongoc_write_op_t) (mongoc_write_command_t       *command,
@@ -38,6 +40,9 @@ typedef bool (*mongoc_write_op_t) (mongoc_write_command_t       *command,
                                    const mongoc_write_concern_t *write_concern,
                                    bson_t                       *reply,
                                    bson_error_t                 *error);
+
+
+static bson_t gEmptyWriteConcern = BSON_INITIALIZER;
 
 
 void
@@ -358,6 +363,7 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    bson_append_document_begin (&ar, "0", 1, &child);
    BSON_APPEND_DOCUMENT (&child, "q", command->u.delete.selector);
    BSON_APPEND_INT32 (&child, "limit", command->u.delete.multi ? 0 : 1);
+   bson_append_document_end (&ar, &child);
    bson_append_array_end (&cmd, &ar);
 
    ret = mongoc_client_command_simple (client, database, &cmd, NULL,

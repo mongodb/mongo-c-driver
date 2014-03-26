@@ -21,6 +21,7 @@
 
 #include "mongoc-array-private.h"
 #include "mongoc-client.h"
+#include "mongoc-write-command-private.h"
 
 
 BSON_BEGIN_DECLS

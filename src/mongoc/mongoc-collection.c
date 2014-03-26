@@ -740,126 +740,6 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
 }
 
 
-static bool
-_mongoc_collection_insert_bulk_raw (mongoc_collection_t          *collection,
-                                    mongoc_insert_flags_t         flags,
-                                    const mongoc_iovec_t         *documents,
-                                    uint32_t                      n_documents,
-                                    const mongoc_write_concern_t *write_concern,
-                                    bson_error_t                 *error)
-{
-   mongoc_buffer_t buffer;
-   uint32_t hint;
-   mongoc_rpc_t rpc;
-   mongoc_rpc_t reply;
-   char ns[MONGOC_NAMESPACE_MAX];
-   bson_t reply_bson;
-   bson_iter_t reply_iter;
-   int code = 0;
-   const char * errmsg;
-   uint32_t max_wire_version;
-   uint32_t min_wire_version;
-
-   BSON_ASSERT(collection);
-   BSON_ASSERT(documents);
-   BSON_ASSERT(n_documents);
-
-   bson_clear (&collection->gle);
-
-   if (!write_concern) {
-      write_concern = collection->write_concern;
-   }
-
-   hint = _mongoc_collection_preselect (collection,
-                                        MONGOC_OPCODE_INSERT,
-                                        write_concern,
-                                        NULL,
-                                        &min_wire_version,
-                                        &max_wire_version,
-                                        error);
-   if (!hint) {
-      return false;
-   }
-
-   /*
-    * WARNING:
-    *
-    *    Because we do lazy connections, we potentially have a situation
-    *    here for which we have not connected to a master and determined
-    *    the wire versions.
-    *
-    *    We might need to ensure we have a connection at this point.
-    */
-
-   if (max_wire_version == 0) {
-      /*
-       * TODO: Do old style write commands.
-       */
-   } else {
-      /*
-       * TODO: Do new style write commands.
-       */
-   }
-
-   /*
-    * Build our insert RPC.
-    */
-   rpc.insert.msg_len = 0;
-   rpc.insert.request_id = 0;
-   rpc.insert.response_to = 0;
-   rpc.insert.opcode = MONGOC_OPCODE_INSERT;
-   rpc.insert.flags = flags;
-   rpc.insert.collection = collection->ns;
-   rpc.insert.documents = documents;
-   rpc.insert.n_documents = n_documents;
-
-   bson_snprintf (ns, sizeof ns, "%s.$cmd", collection->db);
-
-   if (!(hint = _mongoc_client_sendv(collection->client, &rpc, 1, hint,
-                                     write_concern, NULL, error))) {
-      return false;
-   }
-
-   if (_mongoc_write_concern_has_gle (write_concern)) {
-      _mongoc_buffer_init (&buffer, NULL, 0, NULL);
-
-      if (!_mongoc_client_recv (collection->client, &reply, &buffer,
-                                hint, error)) {
-         _mongoc_buffer_destroy (&buffer);
-         return false;
-      }
-
-      bson_init_static (&reply_bson, reply.reply.documents,
-                        reply.reply.documents_len);
-
-      collection->gle = bson_copy (&reply_bson);
-
-      if (bson_iter_init_find (&reply_iter, &reply_bson, "err") &&
-          BSON_ITER_HOLDS_UTF8 (&reply_iter)) {
-         errmsg = bson_iter_utf8 (&reply_iter, NULL);
-
-         if (bson_iter_init_find (&reply_iter, &reply_bson, "code") &&
-             BSON_ITER_HOLDS_INT32 (&reply_iter)) {
-            code = bson_iter_int32 (&reply_iter);
-         }
-
-         bson_set_error (error,
-                         MONGOC_ERROR_INSERT,
-                         code,
-                         "%s", errmsg ? errmsg : "Unknown insert failure");
-
-         _mongoc_buffer_destroy (&buffer);
-
-         return false;
-      }
-
-      _mongoc_buffer_destroy (&buffer);
-   }
-
-   return true;
-}
-
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -897,55 +777,28 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
                                const mongoc_write_concern_t  *write_concern,
                                bson_error_t                  *error)
 {
-   mongoc_iovec_t *iov;
-   size_t i;
-   size_t err_offset;
-   bool r;
+   mongoc_write_command_t command;
+   bson_t reply;
+   bool ordered;
+   bool ret;
 
-   ENTRY;
-
-   BSON_ASSERT (documents);
-   BSON_ASSERT (n_documents);
+   bson_return_val_if_fail (collection, false);
+   bson_return_val_if_fail (documents, false);
 
    bson_clear (&collection->gle);
 
-   if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
-      for (i = 0; i < n_documents; i++) {
-         if (!bson_validate (documents [i],
-                             (BSON_VALIDATE_UTF8 |
-                              BSON_VALIDATE_UTF8_ALLOW_NULL |
-                              BSON_VALIDATE_DOLLAR_KEYS |
-                              BSON_VALIDATE_DOT_KEYS),
-                             &err_offset)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "A document was corrupt or contained "
-                            "invalid characters . or $");
-            return false;
-         }
-      }
-   } else {
-      flags &= ~MONGOC_INSERT_NO_VALIDATE;
-   }
+   ordered = !(flags & MONGOC_INSERT_CONTINUE_ON_ERROR);
+   _mongoc_write_command_init_insert (&command, documents, n_documents,
+                                      ordered);
+   ret = _mongoc_write_command_execute (&command, collection->client, 0,
+                                        collection->db, collection->collection,
+                                        write_concern, &reply, error);
+   _mongoc_write_command_destroy (&command);
 
-   if (!_mongoc_client_warm_up (collection->client, error)) {
-      RETURN (false);
-   }
+   collection->gle = bson_copy (&reply);
+   bson_destroy (&reply);
 
-   iov = bson_malloc (sizeof (mongoc_iovec_t) * n_documents);
-
-   for (i = 0; i < n_documents; i++) {
-      iov [i].iov_base = (void *)bson_get_data (documents [i]);
-      iov [i].iov_len = documents [i]->len;
-   }
-
-   r = _mongoc_collection_insert_bulk_raw (collection, flags, iov, n_documents,
-                                           write_concern, error);
-
-   bson_free (iov);
-
-   RETURN (r);
+   return ret;
 }
 
 
@@ -984,78 +837,23 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
-   const bson_t *wc = NULL;
-   bson_iter_t iter;
-   bson_oid_t oid;
-   uint32_t hint;
-   uint32_t max_wire_version = 0;
-   uint32_t min_wire_version = 0;
-   bson_t copy = BSON_INITIALIZER;
-   bson_t command;
+   mongoc_write_command_t command;
    bson_t reply;
    bool ret;
 
    bson_return_val_if_fail (collection, false);
    bson_return_val_if_fail (document, false);
 
-   if (!write_concern) {
-      write_concern = collection->write_concern;
-   }
-
    bson_clear (&collection->gle);
 
-   if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
-      if (!bson_validate (document,
-                          (BSON_VALIDATE_UTF8 |
-                           BSON_VALIDATE_UTF8_ALLOW_NULL |
-                           BSON_VALIDATE_DOLLAR_KEYS |
-                           BSON_VALIDATE_DOT_KEYS),
-                          NULL)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "A document was corrupt or contained "
-                         "invalid characters . or $");
-         return false;
-      }
-   } else {
-      flags &= ~MONGOC_INSERT_NO_VALIDATE;
-   }
+   _mongoc_write_command_init_insert (&command, &document, 1, true);
+   ret = _mongoc_write_command_execute (&command, collection->client, 0,
+                                        collection->db, collection->collection,
+                                        write_concern, &reply, error);
+   _mongoc_write_command_destroy (&command);
 
-   if (!(hint = _mongoc_collection_preselect (collection,
-                                              MONGOC_OPCODE_INSERT,
-                                              write_concern,
-                                              NULL,
-                                              &min_wire_version,
-                                              &max_wire_version,
-                                              error))) {
-      RETURN (false);
-   }
-
-   if (!bson_iter_init_find (&iter, document, "_id")) {
-      bson_oid_init (&oid, NULL);
-      bson_append_oid (&copy, "_id", 3, &oid);
-      bson_concat (&copy, document);
-      document = &copy;
-   }
-
-   if (MONGOC_WRITE_COMMANDS_SUPPORTED (min_wire_version, max_wire_version)) {
-      _mongoc_write_command_insert (&command,
-                                    collection->collection,
-                                    true,
-                                    document,
-                                    write_concern);
-      ret = mongoc_collection_command_simple (collection, &command, NULL,
-                                              &reply, error);
-      collection->gle = bson_copy (&reply);
-      bson_destroy (&reply);
-      bson_destroy (&command);
-   } else {
-      ret = mongoc_collection_insert_bulk (collection, flags, &document, 1,
-                                           write_concern, error);
-   }
-
-   bson_destroy (&copy);
+   collection->gle = bson_copy (&reply);
+   bson_destroy (&reply);
 
    return ret;
 }
@@ -1094,10 +892,9 @@ mongoc_collection_update (mongoc_collection_t          *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
-   uint32_t hint;
-   mongoc_rpc_t rpc;
-   bson_iter_t iter;
-   size_t err_offset;
+   mongoc_write_command_t command;
+   bson_t reply;
+   bool ret;
 
    ENTRY;
 
@@ -1107,57 +904,21 @@ mongoc_collection_update (mongoc_collection_t          *collection,
 
    bson_clear (&collection->gle);
 
-   if (!(flags & MONGOC_UPDATE_NO_VALIDATE) &&
-       bson_iter_init (&iter, update) &&
-       bson_iter_next (&iter) &&
-       (bson_iter_key (&iter) [0] != '$') &&
-       !bson_validate (update,
-                       (BSON_VALIDATE_UTF8 |
-                        BSON_VALIDATE_UTF8_ALLOW_NULL |
-                        BSON_VALIDATE_DOLLAR_KEYS |
-                        BSON_VALIDATE_DOT_KEYS),
-                       &err_offset)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "update document is corrupt or contains "
-                      "invalid keys including $ or .");
-      return false;
-   } else {
-      flags &= ~MONGOC_UPDATE_NO_VALIDATE;
-   }
+   _mongoc_write_command_init_update (&command,
+                                      selector,
+                                      update,
+                                      !!(flags & MONGOC_UPDATE_UPSERT),
+                                      !!(flags & MONGOC_UPDATE_MULTI_UPDATE),
+                                      true);
+   ret = _mongoc_write_command_execute (&command, collection->client, 0,
+                                        collection->db, collection->collection,
+                                        write_concern, &reply, error);
+   _mongoc_write_command_destroy (&command);
 
-   if (!write_concern) {
-      write_concern = collection->write_concern;
-   }
+   collection->gle = bson_copy (&reply);
+   bson_destroy (&reply);
 
-   if (!_mongoc_client_warm_up (collection->client, error)) {
-      RETURN (false);
-   }
-
-   rpc.update.msg_len = 0;
-   rpc.update.request_id = 0;
-   rpc.update.response_to = 0;
-   rpc.update.opcode = MONGOC_OPCODE_UPDATE;
-   rpc.update.zero = 0;
-   rpc.update.collection = collection->ns;
-   rpc.update.flags = flags;
-   rpc.update.selector = bson_get_data(selector);
-   rpc.update.update = bson_get_data(update);
-
-   if (!(hint = _mongoc_client_sendv (collection->client, &rpc, 1, 0,
-                                      write_concern, NULL, error))) {
-      RETURN(false);
-   }
-
-   if (_mongoc_write_concern_has_gle (write_concern)) {
-      if (!_mongoc_client_recv_gle (collection->client, hint,
-                                    &collection->gle, error)) {
-         RETURN(false);
-      }
-   }
-
-   RETURN(true);
+   RETURN (ret);
 }
 
 
