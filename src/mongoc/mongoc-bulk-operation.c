@@ -1,4 +1,4 @@
-/*inserted = value;
+/*
  * Copyright 2014 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +21,7 @@
 #include "mongoc-error.h"
 #include "mongoc-opcode.h"
 #include "mongoc-trace.h"
+#include "mongoc-write-command-private.h"
 #include "mongoc-write-concern-private.h"
 
 
@@ -317,36 +318,29 @@ _mongoc_bulk_operation_build (mongoc_bulk_operation_t *bulk,    /* IN */
 
    switch (command->type) {
    case MONGOC_BULK_COMMAND_INSERT:
-      BSON_APPEND_UTF8 (bson, "insert", bulk->collection);
-      BSON_APPEND_DOCUMENT (bson, "writeConcern", wc);
-      BSON_APPEND_BOOL (bson, "ordered", bulk->ordered);
-      bson_append_array_begin (bson, "documents", 9, &ar);
-      BSON_APPEND_DOCUMENT (&ar, "0", command->u.insert.document);
-      bson_append_array_end (bson, &ar);
+      _mongoc_write_command_insert (bson,
+                                    bulk->collection,
+                                    bulk->ordered,
+                                    command->u.insert.document,
+                                    bulk->write_concern);
       break;
    case MONGOC_BULK_COMMAND_UPDATE:
-      BSON_APPEND_UTF8 (bson, "update", bulk->collection);
-      BSON_APPEND_DOCUMENT (bson, "writeConcern", wc);
-      BSON_APPEND_BOOL (bson, "ordered", bulk->ordered);
-      bson_append_array_begin (bson, "updates", 7, &ar);
-      bson_append_document_begin (&ar, "0", 1, &child);
-      BSON_APPEND_DOCUMENT (&child, "q", command->u.update.selector);
-      BSON_APPEND_DOCUMENT (&child, "u", command->u.update.document);
-      BSON_APPEND_BOOL (&child, "multi", command->u.update.multi);
-      BSON_APPEND_BOOL (&child, "upsert", command->u.update.upsert);
-      bson_append_document_end (&ar, &child);
-      bson_append_array_end (bson, &ar);
+      _mongoc_write_command_update (bson,
+                                    bulk->collection,
+                                    command->u.update.selector,
+                                    command->u.update.document,
+                                    bulk->ordered,
+                                    command->u.update.multi,
+                                    command->u.update.upsert,
+                                    bulk->write_concern);
       break;
    case MONGOC_BULK_COMMAND_DELETE:
-      BSON_APPEND_UTF8 (bson, "delete", bulk->collection);
-      BSON_APPEND_DOCUMENT (bson, "writeConcern", wc);
-      BSON_APPEND_BOOL (bson, "ordered", bulk->ordered);
-      bson_append_array_begin (bson, "deletes", 7, &ar);
-      bson_append_document_begin (&ar, "0", 1, &child);
-      BSON_APPEND_DOCUMENT (&child, "q", command->u.delete.selector);
-      BSON_APPEND_INT32 (&child, "limit", command->u.delete.multi ? 0 : 1);
-      bson_append_document_end (&ar, &child);
-      bson_append_array_end (bson, &ar);
+      _mongoc_write_command_delete (bson,
+                                    bulk->collection,
+                                    command->u.delete.selector,
+                                    bulk->ordered,
+                                    command->u.delete.multi,
+                                    bulk->write_concern);
       break;
    default:
       BSON_ASSERT (false);

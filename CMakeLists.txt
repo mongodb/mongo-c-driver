@@ -89,6 +89,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.c
    ${SOURCE_DIR}/src/mongoc/mongoc-util.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
 )
 

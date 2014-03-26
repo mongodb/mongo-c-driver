@@ -70,6 +70,7 @@ NOINST_H_FILES = \
 	src/mongoc/mongoc-thread-private.h \
 	src/mongoc/mongoc-trace.h \
 	src/mongoc/mongoc-util-private.h \
+	src/mongoc/mongoc-write-command-private.h \
 	src/mongoc/mongoc-write-concern-private.h
 
 libmongoc_priv_la_SOURCES = \
@@ -108,6 +109,7 @@ libmongoc_priv_la_SOURCES = \
 	src/mongoc/mongoc-stream-socket.c \
 	src/mongoc/mongoc-uri.c \
 	src/mongoc/mongoc-util.c \
+	src/mongoc/mongoc-write-command.c \
 	src/mongoc/mongoc-write-concern.c
 
 if ENABLE_SSL
