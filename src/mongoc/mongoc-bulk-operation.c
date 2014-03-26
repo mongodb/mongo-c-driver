@@ -671,12 +671,6 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
       RETURN (false);
    }
 
-   if (!collection) {
-      collection = mongoc_client_get_collection (bulk->client,
-                                                 bulk->database,
-                                                 bulk->collection);
-   }
-
    for (i = 0; i < bulk->commands.len; i++) {
       c = &_mongoc_array_index (&bulk->commands, mongoc_bulk_command_t, i);
 
@@ -687,6 +681,11 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
          _mongoc_bulk_operation_process_reply (bulk, c->type, &local_reply);
          bson_destroy (&command);
       } else {
+         if (!collection) {
+            collection = mongoc_client_get_collection (bulk->client,
+                                                       bulk->database,
+                                                       bulk->collection);
+         }
          ret = _mongoc_bulk_operation_send_legacy (bulk, collection, c,
                                                    &local_reply, error);
       }
@@ -703,6 +702,10 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
 cleanup:
    _mongoc_bulk_operation_build_reply (bulk, reply);
+
+   if (collection) {
+      mongoc_collection_destroy (collection);
+   }
 
    RETURN (ret);
 }
