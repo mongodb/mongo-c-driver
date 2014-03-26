@@ -93,7 +93,7 @@ bool                          mongoc_collection_insert_bulk          (mongoc_col
                                                                       const bson_t                 **documents,
                                                                       uint32_t                       n_documents,
                                                                       const mongoc_write_concern_t  *write_concern,
-                                                                      bson_error_t                  *error);
+                                                                      bson_error_t                  *error) BSON_GNUC_DEPRECATED_FOR (mongoc_collection_create_bulk_operation);
 bool                          mongoc_collection_update               (mongoc_collection_t           *collection,
                                                                       mongoc_update_flags_t          flags,
                                                                       const bson_t                  *selector,
