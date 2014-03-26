@@ -983,15 +983,51 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
-   bool ret;
+   mongoc_read_prefs_t *read_prefs;
+   const bson_t *wc = NULL;
    bson_iter_t iter;
    bson_oid_t oid;
+   uint32_t hint;
+   uint32_t max_wire_version = 0;
+   uint32_t min_wire_version = 0;
    bson_t copy = BSON_INITIALIZER;
+   bson_t command;
+   bson_t ar;
+   bson_t reply;
+   bool ret;
 
    bson_return_val_if_fail (collection, false);
    bson_return_val_if_fail (document, false);
 
    bson_clear (&collection->gle);
+
+   if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
+      if (!bson_validate (document,
+                          (BSON_VALIDATE_UTF8 |
+                           BSON_VALIDATE_UTF8_ALLOW_NULL |
+                           BSON_VALIDATE_DOLLAR_KEYS |
+                           BSON_VALIDATE_DOT_KEYS),
+                          NULL)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "A document was corrupt or contained "
+                         "invalid characters . or $");
+         return false;
+      }
+   } else {
+      flags &= ~MONGOC_INSERT_NO_VALIDATE;
+   }
+
+   if (!(hint = _mongoc_collection_preselect (collection,
+                                              MONGOC_OPCODE_INSERT,
+                                              write_concern,
+                                              NULL,
+                                              &min_wire_version,
+                                              &max_wire_version,
+                                              error))) {
+      RETURN (false);
+   }
 
    if (!bson_iter_init_find (&iter, document, "_id")) {
       bson_oid_init (&oid, NULL);
@@ -1000,8 +1036,33 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
       document = &copy;
    }
 
-   ret = mongoc_collection_insert_bulk (collection, flags, &document, 1,
-                                        write_concern, error);
+   if (max_wire_version < 2) {
+      ret = mongoc_collection_insert_bulk (collection, flags, &document, 1,
+                                           write_concern, error);
+   } else {
+      if (write_concern) {
+         wc = _mongoc_write_concern_freeze ((mongoc_write_concern_t *)write_concern);
+      }
+
+      read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+      bson_init (&command);
+      BSON_APPEND_UTF8 (&command, "insert", collection->collection);
+      if (wc) {
+         BSON_APPEND_DOCUMENT (&command, "writeConcern", wc);
+      }
+      BSON_APPEND_BOOL (&command, "ordered", false);
+      bson_append_array_begin (&command, "documents", 9, &ar);
+      BSON_APPEND_DOCUMENT (&ar, "0", document);
+      bson_append_array_end (&command, &ar);
+
+      ret = mongoc_collection_command_simple (collection, &command, read_prefs, &reply, error);
+
+      collection->gle = bson_copy (&reply);
+
+      bson_destroy (&reply);
+      mongoc_read_prefs_destroy (read_prefs);
+   }
 
    bson_destroy (&copy);
 
