@@ -688,7 +688,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
    for (i = 0; i < bulk->commands.len; i++) {
       c = &_mongoc_array_index (&bulk->commands, mongoc_bulk_command_t, i);
 
-      if (max_wire_version >= 2) {
+      if (MONGOC_WRITE_COMMANDS_SUPPORTED (min_wire_version, max_wire_version)) {
          _mongoc_bulk_operation_build (bulk, c, &command);
          ret = _mongoc_bulk_operation_send (bulk, &command, &local_reply,
                                             error);
