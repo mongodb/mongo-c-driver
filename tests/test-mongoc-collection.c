@@ -628,12 +628,13 @@ test_aggregate (void)
       }
       ASSERT (!r);
       ASSERT (!doc);
+
+      mongoc_cursor_destroy(cursor);
    }
 
    r = mongoc_collection_drop(collection, &error);
    ASSERT (r);
 
-   mongoc_cursor_destroy(cursor);
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    mongoc_client_destroy(client);
