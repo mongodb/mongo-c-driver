@@ -438,8 +438,7 @@ mongoc_database_add_user (mongoc_database_t *database,
 
       ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, error);
 
-      if (!ret) fprintf (stderr, "%s\n", error->message);
-
+      bson_free (hashed_password);
       bson_destroy (&cmd);
    } else if (error) {
       memcpy (error, &lerror, sizeof *error);
