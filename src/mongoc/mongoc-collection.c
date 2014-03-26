@@ -984,7 +984,6 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
-   mongoc_read_prefs_t *read_prefs;
    const bson_t *wc = NULL;
    bson_iter_t iter;
    bson_oid_t oid;
@@ -1046,7 +1045,8 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
                                     true,
                                     document,
                                     write_concern);
-      ret = mongoc_collection_command_simple (collection, &command, read_prefs, &reply, error);
+      ret = mongoc_collection_command_simple (collection, &command, NULL,
+                                              &reply, error);
       collection->gle = bson_copy (&reply);
       bson_destroy (&reply);
       bson_destroy (&command);
