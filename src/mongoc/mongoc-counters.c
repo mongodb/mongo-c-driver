@@ -32,6 +32,7 @@
 #endif
 
 #include "mongoc-counters-private.h"
+#include "mongoc-log.h"
 
 
 #pragma pack(1)
@@ -161,14 +162,14 @@ mongoc_counters_alloc (size_t size)
    int pid;
    int fd;
 
-   if (!mongoc_counters_use_shm()) {
+   if (!mongoc_counters_use_shm ()) {
       goto use_malloc;
    }
 
    pid = getpid ();
    bson_snprintf (name, sizeof name, "/mongoc-%u", pid);
 
-   if (-1 == (fd = shm_open(name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR))) {
+   if (-1 == (fd = shm_open (name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR))) {
       goto use_malloc;
    }
 
@@ -178,30 +179,32 @@ mongoc_counters_alloc (size_t size)
     * ftruncate() will cause reads to be zero. Therefore, we don't need to
     * do write() of zeroes to initialize the shared memory area.
     */
-   if (-1 == ftruncate(fd, size)) {
+   if (-1 == ftruncate (fd, size)) {
       goto failure;
    }
 
-   mem = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+   mem = mmap (NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
    if (mem == MAP_FAILED) {
       goto failure;
    }
 
-   close(fd);
-   memset(mem, 0, size);
-   atexit(mongoc_counters_destroy);
+   close (fd);
+   memset (mem, 0, size);
+   atexit (mongoc_counters_destroy);
 
    return mem;
 
 failure:
-   shm_unlink(name);
-   close(fd);
+   shm_unlink (name);
+   close (fd);
 
 use_malloc:
 #endif
 
-   gCounterFallback = bson_malloc0(size);
-   atexit(mongoc_counters_destroy);
+   MONGOC_WARNING ("Falling back to malloc for counters.");
+
+   gCounterFallback = bson_malloc0 (size);
+   atexit (mongoc_counters_destroy);
 
    return gCounterFallback;
 }

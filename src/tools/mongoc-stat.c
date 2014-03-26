@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-#ifdef BSON_OS_UNIX
-
 
 #include <bson.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+
+#ifdef BSON_OS_UNIX
 
 
 #pragma pack(1)
@@ -81,8 +83,8 @@ mongoc_counters_new_from_pid (unsigned pid)
    char name[32];
    int fd;
 
-   snprintf(name, sizeof name, "/mongoc-%hu", pid);
-   name[sizeof name-1] = '\0';
+   snprintf (name, sizeof name, "/mongoc-%u", pid);
+   name [sizeof name-1] = '\0';
 
    if (-1 == (fd = shm_open(name, O_RDONLY, 0))) {
       perror("Failed to load shared memory segment");
@@ -130,7 +132,7 @@ mongoc_counters_destroy (mongoc_counters_t *counters)
 
 static mongoc_counter_info_t *
 mongoc_counters_get_infos (mongoc_counters_t *counters,
-                           uint32_t     *n_infos)
+                           uint32_t          *n_infos)
 {
    mongoc_counter_info_t *info;
    char *base = (char *)counters;
@@ -200,25 +202,29 @@ main (int   argc,
    }
 
    pid = strtol(argv[1], NULL, 10);
-   if (!(counters = mongoc_counters_new_from_pid(pid))) {
-      return 1;
+   if (!(counters = mongoc_counters_new_from_pid (pid))) {
+      fprintf (stderr, "Failed to load shared memory for pid %u.\n", pid);
+      return EXIT_FAILURE;
    }
 
-   infos = mongoc_counters_get_infos(counters, &n_counters);
+   infos = mongoc_counters_get_infos (counters, &n_counters);
    for (i = 0; i < n_counters; i++) {
-      mongoc_counters_print_info(counters, &infos[i], stdout);
+      mongoc_counters_print_info (counters, &infos[i], stdout);
    }
 
-   mongoc_counters_destroy(counters);
+   mongoc_counters_destroy (counters);
 
-   return 0;
+   return EXIT_SUCCESS;
 }
 
-#endif
+#else
 
 int
 main (int   argc,
       char *argv[])
 {
-   return 0;
+   fprintf (stderr, "mongoc-stat is not supported on your platform.\n");
+   return EXIT_FAILURE;
 }
+
+#endif
