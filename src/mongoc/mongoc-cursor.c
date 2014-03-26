@@ -159,8 +159,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
          cursor->redir_primary = true;
          local_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
          read_prefs = local_read_prefs;
-         MONGOC_WARNING ("Database command \"%s\" rerouted to primary node",
-                         key);
+         MONGOC_INFO ("Database command \"%s\" rerouted to primary node", key);
       }
    }
 
