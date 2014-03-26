@@ -47,6 +47,7 @@ _mongoc_write_command_insert (bson_t                       *command,
    BSON_ASSERT (collection);
    BSON_ASSERT (document);
 
+   bson_init (command);
    BSON_APPEND_UTF8 (command, "insert", collection);
    _add_write_concern (command, write_concern);
    BSON_APPEND_BOOL (command, "ordered", ordered);
@@ -74,6 +75,7 @@ _mongoc_write_command_update (bson_t                       *command,
    BSON_ASSERT (selector);
    BSON_ASSERT (document);
 
+   bson_init (command);
    BSON_APPEND_UTF8 (command, "update", collection);
    _add_write_concern (command, write_concern);
    BSON_APPEND_BOOL (command, "ordered", ordered);
@@ -103,6 +105,7 @@ _mongoc_write_command_delete (bson_t                       *command,
    BSON_ASSERT (collection);
    BSON_ASSERT (selector);
 
+   bson_init (command);
    BSON_APPEND_UTF8 (command, "delete", collection);
    _add_write_concern (command, write_concern);
    BSON_APPEND_BOOL (command, "ordered", ordered);

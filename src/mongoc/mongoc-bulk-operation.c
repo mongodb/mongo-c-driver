@@ -298,19 +298,11 @@ _mongoc_bulk_operation_build (mongoc_bulk_operation_t *bulk,    /* IN */
                               mongoc_bulk_command_t   *command, /* IN */
                               bson_t                  *bson)    /* OUT */
 {
-   const bson_t *wc;
-   bson_t ar;
-   bson_t child;
-
    ENTRY;
 
    bson_return_if_fail (bulk);
    bson_return_if_fail (command);
    bson_return_if_fail (bson);
-
-   wc = _mongoc_write_concern_freeze ((void *)bulk->write_concern);
-
-   bson_init (bson);
 
    /*
     * TODO: Allow insert to be an array of documents.

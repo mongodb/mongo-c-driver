@@ -687,6 +687,8 @@ mongoc_client_new (const char *uri_string)
    write_concern = mongoc_uri_get_write_concern (uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
 
+   client->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
    _mongoc_cluster_init (&client->cluster, client->uri, client);
 
 #ifdef MONGOC_ENABLE_SSL

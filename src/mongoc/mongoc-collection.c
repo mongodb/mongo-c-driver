@@ -29,6 +29,7 @@
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
 #include "mongoc-trace.h"
+#include "mongoc-write-command-private.h"
 #include "mongoc-write-concern-private.h"
 
 
@@ -992,12 +993,15 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    uint32_t min_wire_version = 0;
    bson_t copy = BSON_INITIALIZER;
    bson_t command;
-   bson_t ar;
    bson_t reply;
    bool ret;
 
    bson_return_val_if_fail (collection, false);
    bson_return_val_if_fail (document, false);
+
+   if (!write_concern) {
+      write_concern = collection->write_concern;
+   }
 
    bson_clear (&collection->gle);
 
@@ -1036,32 +1040,19 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
       document = &copy;
    }
 
-   if (max_wire_version < 2) {
+   if (MONGOC_WRITE_COMMANDS_SUPPORTED (min_wire_version, max_wire_version)) {
+      _mongoc_write_command_insert (&command,
+                                    collection->collection,
+                                    true,
+                                    document,
+                                    write_concern);
+      ret = mongoc_collection_command_simple (collection, &command, read_prefs, &reply, error);
+      collection->gle = bson_copy (&reply);
+      bson_destroy (&reply);
+      bson_destroy (&command);
+   } else {
       ret = mongoc_collection_insert_bulk (collection, flags, &document, 1,
                                            write_concern, error);
-   } else {
-      if (write_concern) {
-         wc = _mongoc_write_concern_freeze ((mongoc_write_concern_t *)write_concern);
-      }
-
-      read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-
-      bson_init (&command);
-      BSON_APPEND_UTF8 (&command, "insert", collection->collection);
-      if (wc) {
-         BSON_APPEND_DOCUMENT (&command, "writeConcern", wc);
-      }
-      BSON_APPEND_BOOL (&command, "ordered", false);
-      bson_append_array_begin (&command, "documents", 9, &ar);
-      BSON_APPEND_DOCUMENT (&ar, "0", document);
-      bson_append_array_end (&command, &ar);
-
-      ret = mongoc_collection_command_simple (collection, &command, read_prefs, &reply, error);
-
-      collection->gle = bson_copy (&reply);
-
-      bson_destroy (&reply);
-      mongoc_read_prefs_destroy (read_prefs);
    }
 
    bson_destroy (&copy);
