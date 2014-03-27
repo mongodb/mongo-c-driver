@@ -476,9 +476,19 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
                               mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
-   bson_t cmd = BSON_INITIALIZER;
+   const uint8_t *data;
+   bson_iter_t iter;
+   const char *key;
+   uint32_t len;
+   bson_t tmp;
+   bson_t ar;
+   bson_t cmd;
    bson_t reply;
+   char str [12];
+   size_t overhead;
+   bool has_more;
    bool ret;
+   int i;
 
    ENTRY;
 
@@ -489,7 +499,9 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
 
-   if (!command->u.insert.n_documents) {
+   if (!command->u.insert.n_documents ||
+       !bson_iter_init (&iter, command->u.insert.documents) ||
+       !bson_iter_next (&iter)) {
       bson_set_error (error,
                       MONGOC_ERROR_COLLECTION,
                       MONGOC_ERROR_COLLECTION_INSERT_FAILED,
@@ -498,12 +510,54 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
       EXIT;
    }
 
+   overhead = 1 + strlen ("documents") + 1;
+
+again:
+   bson_init (&cmd);
+   has_more = false;
+   i = 0;
+
    BSON_APPEND_UTF8 (&cmd, "insert", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
                          WRITE_CONCERN_DOC (write_concern));
    BSON_APPEND_BOOL (&cmd, "ordered", command->u.insert.ordered);
-   BSON_APPEND_ARRAY (&cmd, "documents", command->u.insert.documents);
 
+   if ((command->u.insert.documents->len < client->cluster.max_bson_size) &&
+       (command->u.insert.documents->len < client->cluster.max_msg_size)) {
+      BSON_APPEND_ARRAY (&cmd, "documents", command->u.insert.documents);
+      GOTO (fast_path);
+   } else {
+      bson_append_array_begin (&cmd, "documents", 9, &ar);
+
+      do {
+         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+            BSON_ASSERT (false);
+         }
+
+         bson_iter_document (&iter, &len, &data);
+
+         if (len > (client->cluster.max_msg_size - cmd.len - overhead)) {
+            has_more = true;
+            break;
+         }
+
+         bson_uint32_to_string (i, &key, str, sizeof str);
+
+         if (!bson_init_static (&tmp, data, len)) {
+            BSON_ASSERT (false);
+         }
+
+         BSON_APPEND_DOCUMENT (&ar, key, &tmp);
+
+         bson_destroy (&tmp);
+
+         i++;
+      } while (bson_iter_next (&iter));
+
+      bson_append_array_end (&cmd, &ar);
+   }
+
+fast_path:
    ret = mongoc_client_command_simple (client, database, &cmd, NULL,
                                        &reply, error);
 
@@ -513,8 +567,12 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
 
    _mongoc_write_result_merge (result, command, &reply);
 
-   bson_destroy (&reply);
    bson_destroy (&cmd);
+   bson_destroy (&reply);
+
+   if (has_more && (ret || !command->u.insert.ordered)) {
+      GOTO (again);
+   }
 
    EXIT;
 }
