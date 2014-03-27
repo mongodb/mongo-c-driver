@@ -243,8 +243,9 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
    bson_return_val_if_fail (bulk, false);
 
+   bson_init (reply);
+
    if (!bulk->commands.len) {
-      bson_init (reply);
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,

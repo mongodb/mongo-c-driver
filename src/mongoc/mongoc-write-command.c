@@ -906,7 +906,6 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
           bson_empty0 (&result->writeErrors));
 
    if (bson) {
-      bson_init (bson);
       BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
       BSON_APPEND_INT32 (bson, "nMatched", result->nMatched);
       if (!result->omit_nModified) {
