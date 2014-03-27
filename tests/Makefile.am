@@ -83,6 +83,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-uri.c \
 	tests/test-mongoc-write-concern.c \
 	tests/test-libmongoc.h \
+	tests/test-write-commands.c \
 	tests/TestSuite.c \
 	tests/TestSuite.h
 if ENABLE_SSL

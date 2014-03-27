@@ -42,6 +42,7 @@ extern void test_read_prefs_install       (TestSuite *suite);
 extern void test_rpc_install              (TestSuite *suite);
 extern void test_stream_install           (TestSuite *suite);
 extern void test_uri_install              (TestSuite *suite);
+extern void test_write_command_install    (TestSuite *suite);
 extern void test_write_concern_install    (TestSuite *suite);
 #ifdef MONGOC_ENABLE_SSL
 extern void test_x509_install             (TestSuite *suite);
@@ -127,10 +128,11 @@ main (int   argc,
    TestSuite_Init (&suite, "", argc, argv);
 
    test_array_install (&suite);
-   test_bulk_install (&suite);
    test_buffer_install (&suite);
    test_client_install (&suite);
    test_client_pool_install (&suite);
+   test_write_command_install (&suite);
+   test_bulk_install (&suite);
    test_collection_install (&suite);
    test_cursor_install (&suite);
    test_database_install (&suite);
