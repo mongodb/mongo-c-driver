@@ -276,6 +276,17 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
    bson_return_val_if_fail (uri, NULL);
    bson_return_val_if_fail (host, NULL);
 
+#ifndef MONGOC_ENABLE_SSL
+   if (mongoc_uri_get_ssl (uri)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
+                      "SSL is not enabled in this build of mongo-c-driver.");
+      return NULL;
+   }
+#endif
+
+
    switch (host->family) {
    case AF_INET:
       base_stream = mongoc_client_connect_tcp (uri, host, error);
@@ -670,13 +681,6 @@ mongoc_client_new (const char *uri_string)
        bson_iter_bool (&iter)) {
       has_ssl = true;
    }
-
-#ifndef MONGOC_ENABLE_SSL
-   if (has_ssl) {
-      MONGOC_WARNING ("SSL is not supported in this build!");
-      return NULL;
-   }
-#endif
 
    client = bson_malloc0(sizeof *client);
    client->uri = uri;
