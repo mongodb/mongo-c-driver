@@ -32,6 +32,7 @@
  */
 
 
+#define MAX_INSERT_BATCH 1000
 #define SUPPORTS_WRITE_COMMANDS(n) \
    (((n)->min_wire_version <= 2) && ((n)->max_wire_version >= 2))
 #define WRITE_CONCERN_DOC(wc) \
@@ -200,8 +201,11 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    bson_iter_t iter;
    uint32_t len;
    bson_t *gle = NULL;
+   size_t size = 0;
+   bool has_more = false;
    char ns [MONGOC_NAMESPACE_MAX + 1];
-   int i = 0;
+   bool r;
+   int i;
 
    ENTRY;
 
@@ -212,7 +216,13 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (collection);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
 
-   if (!command->u.insert.n_documents) {
+   r = bson_iter_init (&iter, command->u.insert.documents);
+   if (!r) {
+      BSON_ASSERT (false);
+      EXIT;
+   }
+
+   if (!command->u.insert.n_documents || !bson_iter_next (&iter)) {
       bson_set_error (error,
                       MONGOC_ERROR_COLLECTION,
                       MONGOC_ERROR_COLLECTION_INSERT_FAILED,
@@ -225,16 +235,50 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
 
    iov = bson_malloc ((sizeof *iov) * command->u.insert.n_documents);
 
-   bson_iter_init (&iter, command->u.insert.documents);
+again:
+   has_more = false;
+   i = 0;
+   size = (sizeof (mongoc_rpc_header_t) +
+           4 +
+           strlen (database) +
+           1 +
+           strlen (collection) +
+           1);
 
-   while (bson_iter_next (&iter)) {
+   do {
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
       BSON_ASSERT (i < command->u.insert.n_documents);
+
       bson_iter_document (&iter, &len, &data);
+
+      /*
+       * Check that the server can receive this document.
+       */
+      if ((len > client->cluster.max_bson_size) ||
+          (len > client->cluster.max_msg_size)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Document %u is too large for the cluster. "
+                         "Document is %u bytes, max is %u.",
+                         i, (unsigned)len, client->cluster.max_bson_size);
+      }
+
+      /*
+       * Check that we will not overflow our max message size.
+       */
+      if ((i == MAX_INSERT_BATCH) ||
+          (size > (client->cluster.max_msg_size - len))) {
+         has_more = true;
+         break;
+      }
+
       iov [i].iov_base = (void *)data;
       iov [i].iov_len = len;
+
+      size += len;
       i++;
-   }
+   } while (bson_iter_next (&iter));
 
    rpc.insert.msg_len = 0;
    rpc.insert.request_id = 0;
@@ -244,7 +288,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
       (command->u.insert.ordered ? 0 : MONGOC_INSERT_CONTINUE_ON_ERROR);
    rpc.insert.collection = ns;
    rpc.insert.documents = iov;
-   rpc.insert.n_documents = command->u.insert.n_documents;
+   rpc.insert.n_documents = i;
 
    hint = _mongoc_client_sendv (client, &rpc, 1, hint, write_concern,
                                 NULL, error);
@@ -255,9 +299,21 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    }
 
    if (_mongoc_write_concern_has_gle (write_concern)) {
+      bson_iter_t iter;
+
       if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
          result->failed = true;
          GOTO (cleanup);
+      }
+
+      /*
+       * Overwrite the "n" field since it will be zero. Otherwise, our
+       * merge_legacy code will not know how many we tried in this batch.
+       */
+      if (bson_iter_init_find (&iter, gle, "n") &&
+          BSON_ITER_HOLDS_INT32 (&iter) &&
+          !bson_iter_int32 (&iter)) {
+         bson_iter_overwrite_int32 (&iter, i);
       }
    }
 
@@ -265,6 +321,11 @@ cleanup:
    if (gle) {
       _mongoc_write_result_merge_legacy (result, command, gle);
       bson_destroy (gle);
+      gle = NULL;
+   }
+
+   if (has_more) {
+      GOTO (again);
    }
 
    bson_free (iov);
@@ -542,6 +603,10 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
    BSON_ASSERT (collection);
    BSON_ASSERT (result);
 
+   if (!write_concern) {
+      write_concern = client->write_concern;
+   }
+
    if (!hint) {
       hint = _mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
                                        write_concern, NULL, &result->error);
@@ -686,9 +751,6 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result, /* IN */
    case MONGOC_WRITE_COMMAND_INSERT:
       if (n) {
          result->nInserted += n;
-      } else if (bson_iter_init_find (&iter, reply, "ok") &&
-                 bson_iter_as_bool (&iter)) {
-         result->nInserted += command->u.insert.n_documents;
       }
       break;
    case MONGOC_WRITE_COMMAND_DELETE:
