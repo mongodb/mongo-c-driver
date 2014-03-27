@@ -83,6 +83,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-uri.c \
 	tests/test-mongoc-write-concern.c \
 	tests/test-libmongoc.h \
+	tests/test-write-commands.c \
 	tests/TestSuite.c \
 	tests/TestSuite.h
 if ENABLE_SSL
@@ -202,3 +203,6 @@ EXTRA_DIST += \
 	tests/mongoc-tests.c \
 	tests/mongoc-tests.h \
 	tests/trust_dir.cnf
+
+debug: test-libmongoc
+	$(LIBTOOL) --mode=execute gdb --args test-libmongoc -f -p
