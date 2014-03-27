@@ -235,7 +235,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                bson_error_t            *error) /* OUT */
 {
    mongoc_write_command_t *command;
-   uint32_t hint;
+   uint32_t hint = 0;
    bool ret = false;
    int i;
 
