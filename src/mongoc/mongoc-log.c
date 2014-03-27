@@ -80,8 +80,8 @@ mongoc_log (mongoc_log_level_t  log_level,
 }
 
 
-static const char *
-log_level_str (mongoc_log_level_t log_level)
+const char *
+mongoc_log_level_str (mongoc_log_level_t log_level)
 {
    switch (log_level) {
    case MONGOC_LOG_LEVEL_ERROR:
@@ -158,7 +158,7 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
             nowstr,
             tv.tv_usec / 1000L,
             pid,
-            log_level_str(log_level),
+            mongoc_log_level_str(log_level),
             log_domain,
             message);
 }

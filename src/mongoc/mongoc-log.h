@@ -110,6 +110,15 @@ void mongoc_log_default_handler (mongoc_log_level_t  log_level,
                                  void               *user_data);
 
 
+/**
+ * mongoc_log_level_str:
+ * @log_level: The log level.
+ *
+ * Returns: The string representation of log_level
+ */
+const char *
+mongoc_log_level_str (mongoc_log_level_t log_level);
+
 BSON_END_DECLS
 
 
