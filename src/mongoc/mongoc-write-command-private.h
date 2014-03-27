@@ -36,6 +36,7 @@ BSON_BEGIN_DECLS
 typedef struct
 {
    int type;
+   uint32_t hint;
    union {
       struct {
          uint8_t   ordered : 1;
@@ -60,16 +61,18 @@ typedef struct
 
 typedef struct
 {
-   bool     omit_nModified;
-   uint32_t nInserted;
-   uint32_t nMatched;
-   uint32_t nModified;
-   uint32_t nRemoved;
-   uint32_t nUpserted;
-   uint32_t offset;
-   bson_t   upserted;
-   bson_t   write_errors;
-   bson_t   write_concern_errors;
+   bool         omit_nModified;
+   uint32_t     nInserted;
+   uint32_t     nMatched;
+   uint32_t     nModified;
+   uint32_t     nRemoved;
+   uint32_t     nUpserted;
+   uint32_t     offset;
+   bson_t       upserted;
+   bson_t       writeErrors;
+   bson_t       writeConcernErrors;
+   bool         failed;
+   bson_error_t error;
 } mongoc_write_result_t;
 
 
@@ -100,10 +103,10 @@ void _mongoc_write_result_merge        (mongoc_write_result_t         *result,
                                         const bson_t                  *reply);
 void _mongoc_write_result_merge_legacy (mongoc_write_result_t         *result,
                                         const bson_t                  *reply);
-void _mongoc_write_result_to_bson      (mongoc_write_result_t        *result,
-                                        bson_t                        *bson);
+bool _mongoc_write_result_complete     (mongoc_write_result_t         *result,
+                                        bson_t                        *reply,
+                                        bson_error_t                  *error);
 void _mongoc_write_result_destroy      (mongoc_write_result_t         *result);
-bool _mongoc_write_result_is_success   (mongoc_write_result_t         *result);
 
 
 BSON_END_DECLS

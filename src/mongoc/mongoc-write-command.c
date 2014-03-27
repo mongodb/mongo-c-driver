@@ -118,7 +118,6 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
    mongoc_rpc_t rpc;
    bson_t *gle = NULL;
    char ns [MONGOC_NAMESPACE_MAX + 1];
-   bool ret = false;
 
    ENTRY;
 
@@ -152,8 +151,6 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       }
    }
 
-   ret = true;
-
 cleanup:
    if (gle) {
       _mongoc_write_result_merge_legacy (result, gle);
@@ -180,7 +177,6 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    bson_iter_t iter;
    uint32_t len;
    bson_t *gle = NULL;
-   bool ret = false;
    char ns [MONGOC_NAMESPACE_MAX + 1];
    int i = 0;
 
@@ -233,8 +229,6 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
       }
    }
 
-   ret = true;
-
 cleanup:
    if (gle) {
       _mongoc_write_result_merge_legacy (result, gle);
@@ -262,7 +256,6 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
    bson_t *gle;
    size_t err_offset;
    char ns [MONGOC_NAMESPACE_MAX + 1];
-   bool ret = false;
 
    ENTRY;
 
@@ -281,12 +274,13 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
                         BSON_VALIDATE_DOLLAR_KEYS |
                         BSON_VALIDATE_DOT_KEYS),
                        &err_offset)) {
+      result->failed = true;
       bson_set_error (error,
                       MONGOC_ERROR_BSON,
                       MONGOC_ERROR_BSON_INVALID,
                       "update document is corrupt or contains "
                       "invalid keys including $ or .");
-      RETURN (false);
+      EXIT;
    }
 
    bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
@@ -307,16 +301,16 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
                                 NULL, error);
 
    if (!hint) {
+      result->failed = true;
       GOTO (cleanup);
    }
 
    if (_mongoc_write_concern_has_gle (write_concern)) {
       if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
+         result->failed = true;
          GOTO (cleanup);
       }
    }
-
-   ret = true;
 
 cleanup:
    if (gle) {
@@ -324,7 +318,7 @@ cleanup:
       bson_destroy (gle);
    }
 
-   RETURN (ret);
+   EXIT;
 }
 
 
@@ -343,6 +337,8 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    bson_t child;
    bson_t reply;
    bool ret;
+
+   ENTRY;
 
    BSON_ASSERT (command);
    BSON_ASSERT (client);
@@ -364,10 +360,14 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    ret = mongoc_client_command_simple (client, database, &cmd, NULL,
                                        &reply, error);
 
+   if (!ret) {
+      result->failed = true;
+   }
+
    bson_destroy (&reply);
    bson_destroy (&cmd);
 
-   return ret;
+   EXIT;
 }
 
 
@@ -385,6 +385,8 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    bson_t reply;
    bool ret;
 
+   ENTRY;
+
    BSON_ASSERT (command);
    BSON_ASSERT (client);
    BSON_ASSERT (database);
@@ -400,12 +402,16 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    ret = mongoc_client_command_simple (client, database, &cmd, NULL,
                                        &reply, error);
 
+   if (!ret) {
+      result->failed = true;
+   }
+
    _mongoc_write_result_merge (result, &reply);
 
    bson_destroy (&reply);
    bson_destroy (&cmd);
 
-   return ret;
+   EXIT;
 }
 
 
@@ -424,6 +430,8 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
    bson_t ar;
    bson_t child;
    bool ret;
+
+   ENTRY;
 
    BSON_ASSERT (command);
    BSON_ASSERT (client);
@@ -447,12 +455,16 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
    ret = mongoc_client_command_simple (client, database, &cmd, NULL,
                                        &reply, error);
 
+   if (!ret) {
+      result->failed = true;
+   }
+
    _mongoc_write_result_merge (result, &reply);
 
    bson_destroy (&reply);
    bson_destroy (&cmd);
 
-   return ret;
+   EXIT;
 }
 
 
@@ -466,7 +478,7 @@ static mongoc_write_op_t gWriteOps [2][3] = {
 };
 
 
-bool
+void
 _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* IN */
                                mongoc_client_t              *client,        /* IN */
                                uint32_t                      hint,          /* IN */
@@ -476,12 +488,6 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
                                mongoc_write_result_t        *result)        /* OUT */
 {
    mongoc_cluster_node_t *node;
-   bson_error_t error;
-   const char *key;
-   uint32_t idx;
-   bson_t child;
-   char str[12];
-   bool ret = false;
    int mode = 0;
 
    ENTRY;
@@ -494,23 +500,21 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
 
    if (!hint) {
       hint = _mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
-                                       write_concern, NULL, &error);
+                                       write_concern, NULL, &result->error);
       if (!hint) {
-         idx = bson_count_keys (&result->write_errors);
-         bson_uint32_to_string (idx, &key, str, sizeof str);
-         bson_append_document_begin (&result->write_errors, key, -1, &child);
-         BSON_APPEND_INT32 (&child, "code", error.code);
-         BSON_APPEND_UTF8 (&child, "msg", error.message);
-         bson_append_document_end (&result->write_errors, &child);
+         result->failed = true;
          EXIT;
       }
    }
+
+   command->hint = hint;
 
    node = &client->cluster.nodes [hint - 1];
    mode = SUPPORTS_WRITE_COMMANDS (node);
 
    gWriteOps [mode][command->type] (command, client, hint, database,
-                                    collection, write_concern, result);
+                                    collection, write_concern, result,
+                                    &result->error);
 
    EXIT;
 }
@@ -547,8 +551,8 @@ _mongoc_write_result_init (mongoc_write_result_t *result) /* IN */
    memset (result, 0, sizeof *result);
 
    bson_init (&result->upserted);
-   bson_init (&result->write_concern_errors);
-   bson_init (&result->write_errors);
+   bson_init (&result->writeConcernErrors);
+   bson_init (&result->writeErrors);
 }
 
 
@@ -558,8 +562,8 @@ _mongoc_write_result_destroy (mongoc_write_result_t *result)
    BSON_ASSERT (result);
 
    bson_destroy (&result->upserted);
-   bson_destroy (&result->write_concern_errors);
-   bson_destroy (&result->write_errors);
+   bson_destroy (&result->writeConcernErrors);
+   bson_destroy (&result->writeErrors);
 }
 
 
@@ -606,20 +610,19 @@ _mongoc_write_result_merge (mongoc_write_result_t *result, /* IN */
 
 
 bool
-_mongoc_write_result_is_success (mongoc_write_result_t *result)
+_mongoc_write_result_complete (mongoc_write_result_t *result,
+                               bson_t                *bson,
+                               bson_error_t          *error)
 {
+   bool ret;
+
+   ENTRY;
+
    BSON_ASSERT (result);
 
-   return (bson_empty0 (&result->write_concern_errors) &&
-           bson_empty0 (&result->write_errors));
-}
-
-
-void
-_mongoc_write_result_to_bson (mongoc_write_result_t *result,
-                              bson_t                *bson)
-{
-   BSON_ASSERT (result);
+   ret = (!result->failed &&
+          bson_empty0 (&result->writeConcernErrors) &&
+          bson_empty0 (&result->writeErrors));
 
    if (bson) {
       bson_init (bson);
@@ -634,12 +637,18 @@ _mongoc_write_result_to_bson (mongoc_write_result_t *result,
       if (!bson_empty0 (&result->upserted)) {
          BSON_APPEND_ARRAY (bson, "upserted", &result->upserted);
       }
-      if (!bson_empty0 (&result->write_errors)) {
-         BSON_APPEND_ARRAY (bson, "writeErrors", &result->write_errors);
+      if (!bson_empty0 (&result->writeErrors)) {
+         BSON_APPEND_ARRAY (bson, "writeErrors", &result->writeErrors);
       }
-      if (!bson_empty0 (&result->write_concern_errors)) {
+      if (!bson_empty0 (&result->writeConcernErrors)) {
          BSON_APPEND_ARRAY (bson, "writeConcernErrors",
-                            &result->write_concern_errors);
+                            &result->writeConcernErrors);
       }
    }
+
+   if (error) {
+      memcpy (error, &result->error, sizeof *error);
+   }
+
+   RETURN (ret);
 }

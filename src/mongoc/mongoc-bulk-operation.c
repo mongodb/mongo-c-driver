@@ -252,15 +252,6 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
       RETURN (false);
    }
 
-   hint = _mongoc_client_preselect (bulk->client,
-                                    MONGOC_OPCODE_INSERT,
-                                    bulk->write_concern,
-                                    NULL,
-                                    error);
-   if (!hint) {
-      GOTO (cleanup);
-   }
-
    for (i = 0; i < bulk->commands.len; i++) {
       command = &_mongoc_array_index (&bulk->commands,
                                       mongoc_write_command_t, i);
@@ -269,14 +260,15 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                      bulk->database, bulk->collection,
                                      bulk->write_concern, &bulk->result);
 
+      hint = command->hint;
+
       if (!ret && bulk->ordered) {
          GOTO (cleanup);
       }
    }
 
 cleanup:
-   ret = _mongoc_write_result_is_success (&bulk->result);
-   _mongoc_write_result_to_bson (&bulk->result, reply);
+   ret = _mongoc_write_result_complete (&bulk->result, reply, error);
 
    RETURN (ret);
 }
