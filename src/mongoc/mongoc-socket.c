@@ -887,7 +887,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    memset (&msg, 0, sizeof msg);
    msg.msg_iov = iov;
    msg.msg_iovlen = iovcnt;
-   ret = sendmsg (sock->sd, &msg, 0);
+   ret = sendmsg (sock->sd, &msg, MSG_NOSIGNAL);
 #endif
 
    /*
