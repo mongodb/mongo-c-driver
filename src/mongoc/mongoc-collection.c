@@ -927,6 +927,8 @@ mongoc_collection_update (mongoc_collection_t          *collection,
 {
    mongoc_write_command_t command;
    mongoc_write_result_t result;
+   bson_iter_t iter;
+   size_t err_offset;
    bool ret;
 
    ENTRY;
@@ -936,6 +938,26 @@ mongoc_collection_update (mongoc_collection_t          *collection,
    bson_return_val_if_fail(update, false);
 
    bson_clear (&collection->gle);
+
+   if (!(flags & MONGOC_UPDATE_NO_VALIDATE) &&
+       bson_iter_init (&iter, update) &&
+       bson_iter_next (&iter) &&
+       (bson_iter_key (&iter) [0] != '$') &&
+       !bson_validate (update,
+                       (BSON_VALIDATE_UTF8 |
+                        BSON_VALIDATE_UTF8_ALLOW_NULL |
+                        BSON_VALIDATE_DOLLAR_KEYS |
+                        BSON_VALIDATE_DOT_KEYS),
+                       &err_offset)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "update document is corrupt or contains "
+                      "invalid keys including $ or .");
+      return false;
+   } else {
+      flags &= ~MONGOC_UPDATE_NO_VALIDATE;
+   }
 
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_update (&command,

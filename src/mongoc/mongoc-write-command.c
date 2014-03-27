@@ -396,6 +396,8 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
       result->failed = true;
    }
 
+   _mongoc_write_result_merge (result, command, &reply);
+
    bson_destroy (&reply);
    bson_destroy (&cmd);
 
@@ -448,7 +450,7 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
       result->failed = true;
    }
 
-   _mongoc_write_result_merge (result, &reply);
+   _mongoc_write_result_merge (result, command, &reply);
 
    bson_destroy (&reply);
    bson_destroy (&cmd);
@@ -501,7 +503,7 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
       result->failed = true;
    }
 
-   _mongoc_write_result_merge (result, &reply);
+   _mongoc_write_result_merge (result, command, &reply);
 
    bson_destroy (&reply);
    bson_destroy (&cmd);
@@ -749,36 +751,136 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result, /* IN */
 }
 
 
-void
-_mongoc_write_result_merge (mongoc_write_result_t *result, /* IN */
-                            const bson_t          *reply)  /* IN */
+static int32_t
+_mongoc_write_result_merge_arrays (mongoc_write_result_t *result, /* IN */
+                                   bson_t                *dest,   /* IN */
+                                   bson_iter_t           *iter)   /* IN */
 {
+   const bson_value_t *value;
+   bson_iter_t ar;
+   bson_iter_t citer;
+   int32_t idx;
+   int32_t count = 0;
+   bson_t child;
+
+   ENTRY;
+
+   BSON_ASSERT (result);
+   BSON_ASSERT (dest);
+   BSON_ASSERT (iter);
+   BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (iter));
+
+   if (bson_iter_recurse (iter, &ar)) {
+      while (bson_iter_next (&ar)) {
+         if (BSON_ITER_HOLDS_DOCUMENT (&ar) &&
+             bson_iter_recurse (&ar, &citer)) {
+            bson_append_document_begin (dest, "", 0, &child);
+            while (bson_iter_next (&citer)) {
+               if (BSON_ITER_IS_KEY (&citer, "index")) {
+                  idx = bson_iter_int32 (&citer) + result->offset;
+                  BSON_APPEND_INT32 (&child, "index", idx);
+               } else {
+                  value = bson_iter_value (&citer);
+                  BSON_APPEND_VALUE (&child, bson_iter_key (&citer), value);
+               }
+            }
+            bson_append_document_end (dest, &child);
+            count++;
+         }
+      }
+   }
+
+   RETURN (count);
+}
+
+
+void
+_mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
+                            mongoc_write_command_t *command, /* IN */
+                            const bson_t           *reply)   /* IN */
+{
+   const bson_value_t *value;
    bson_iter_t iter;
-   int32_t v32;
+   int32_t n_upserted = 0;
+   int32_t affected = 0;
 
    ENTRY;
 
    BSON_ASSERT (result);
    BSON_ASSERT (reply);
 
-#define UPDATE_FIELD(name) \
-   if (bson_iter_init_find (&iter, reply, #name) && \
-       BSON_ITER_HOLDS_INT32 (&iter)) { \
-      v32 = bson_iter_int32 (&iter); \
-      result->name += v32; \
+   if (bson_iter_init_find (&iter, reply, "n") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+      affected = bson_iter_int32 (&iter);
    }
 
-   UPDATE_FIELD (nInserted);
-   UPDATE_FIELD (nMatched);
-   UPDATE_FIELD (nModified);
-   UPDATE_FIELD (nRemoved);
-   UPDATE_FIELD (nUpserted);
-
-   if (!bson_has_field (reply, "nModified")) {
-      result->omit_nModified = true;
+   switch (command->type) {
+   case MONGOC_WRITE_COMMAND_INSERT:
+      result->nInserted += affected;
+      break;
+   case MONGOC_WRITE_COMMAND_DELETE:
+      result->nRemoved += affected;
+      break;
+   case MONGOC_WRITE_COMMAND_UPDATE:
+      if (bson_iter_init_find (&iter, reply, "upserted")) {
+         if (BSON_ITER_HOLDS_ARRAY (&iter)) {
+            n_upserted = _mongoc_write_result_merge_arrays (result,
+                                                            &result->upserted,
+                                                            &iter);
+         } else {
+            value = bson_iter_value (&iter);
+            _mongoc_write_result_append_upsert (result, 0, value);
+            n_upserted = 1;
+         }
+         result->nUpserted += n_upserted;
+         /*
+          * XXX: The following addition to nMatched needs some checking.
+          *      I'm highly skeptical of it.
+          */
+         result->nMatched += MAX (0, (affected - n_upserted));
+      } else {
+         result->nMatched += affected;
+      }
+      /*
+       * SERVER-13001 - in a mixed sharded cluster a call to update could
+       * return nModified (>= 2.6) or not (<= 2.4).  If any call does not
+       * return nModified we can't report a valid final count so omit the
+       * field completely.
+       */
+      if (bson_iter_init_find (&iter, reply, "nModified") &&
+          BSON_ITER_HOLDS_INT32 (&iter)) {
+         result->nModified += bson_iter_int32 (&iter);
+      } else {
+         result->omit_nModified = true;
+      }
+      break;
+   default:
+      BSON_ASSERT (false);
+      break;
    }
 
-#undef UPDATE_FIELD
+   if (bson_iter_init_find (&iter, reply, "writeErrors") &&
+       BSON_ITER_HOLDS_ARRAY (&iter)) {
+      _mongoc_write_result_merge_arrays (result, &result->writeErrors, &iter);
+   }
+
+   if (bson_iter_init_find (&iter, reply, "writeConcernErrors") &&
+       BSON_ITER_HOLDS_ARRAY (&iter)) {
+      _mongoc_write_result_merge_arrays (result, &result->writeConcernErrors,
+                                         &iter);
+   }
+
+   switch (command->type) {
+   case MONGOC_WRITE_COMMAND_DELETE:
+   case MONGOC_WRITE_COMMAND_UPDATE:
+      result->offset += affected;
+      break;
+   case MONGOC_WRITE_COMMAND_INSERT:
+      result->offset += command->u.insert.n_documents;
+      break;
+   default:
+      break;
+   }
 
    EXIT;
 }
@@ -789,6 +891,10 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
                                bson_t                *bson,
                                bson_error_t          *error)
 {
+   bson_iter_t iter;
+   bson_iter_t citer;
+   const char *err = NULL;
+   uint32_t code = 0;
    bool ret;
 
    ENTRY;
@@ -820,6 +926,24 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
 
    if (error) {
       memcpy (error, &result->error, sizeof *error);
+   }
+
+   if (!ret &&
+       !bson_empty0 (&result->writeErrors) &&
+       bson_iter_init (&iter, &result->writeErrors) &&
+       bson_iter_next (&iter) &&
+       BSON_ITER_HOLDS_DOCUMENT (&iter) &&
+       bson_iter_recurse (&iter, &citer)) {
+      while (bson_iter_next (&citer)) {
+         if (BSON_ITER_IS_KEY (&citer, "errmsg")) {
+            err = bson_iter_utf8 (&citer, NULL);
+         } else if (BSON_ITER_IS_KEY (&citer, "code")) {
+            code = bson_iter_int32 (&citer);
+         }
+      }
+      if (err && code) {
+         bson_set_error (error, MONGOC_ERROR_COMMAND, code, "%s", err);
+      }
    }
 
    RETURN (ret);
