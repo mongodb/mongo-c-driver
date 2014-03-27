@@ -66,6 +66,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,     /* IN */
 
    command->type = MONGOC_WRITE_COMMAND_INSERT;
    command->u.insert.documents = bson_new ();
+   command->u.insert.n_documents = n_documents;
    command->u.insert.ordered = ordered;
 
    for (i = 0; i < n_documents; i++) {
