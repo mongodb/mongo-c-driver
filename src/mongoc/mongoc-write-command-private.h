@@ -102,6 +102,7 @@ void _mongoc_write_result_init         (mongoc_write_result_t         *result);
 void _mongoc_write_result_merge        (mongoc_write_result_t         *result,
                                         const bson_t                  *reply);
 void _mongoc_write_result_merge_legacy (mongoc_write_result_t         *result,
+                                        mongoc_write_command_t        *command,
                                         const bson_t                  *reply);
 bool _mongoc_write_result_complete     (mongoc_write_result_t         *result,
                                         bson_t                        *reply,

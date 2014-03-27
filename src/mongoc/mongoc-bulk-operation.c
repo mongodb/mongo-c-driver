@@ -236,7 +236,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 {
    mongoc_write_command_t *command;
    uint32_t hint = 0;
-   bool ret = false;
+   bool ret;
    int i;
 
    ENTRY;
@@ -262,7 +262,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
       hint = command->hint;
 
-      if (!ret && bulk->ordered) {
+      if (bulk->result.failed && bulk->ordered) {
          GOTO (cleanup);
       }
    }

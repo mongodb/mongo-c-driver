@@ -785,6 +785,10 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
    bson_return_val_if_fail (collection, false);
    bson_return_val_if_fail (documents, false);
 
+   if (!write_concern) {
+      write_concern = collection->write_concern;
+   }
+
    bson_clear (&collection->gle);
 
    _mongoc_write_result_init (&result);
@@ -846,10 +850,30 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    mongoc_write_result_t result;
    bool ret;
 
+   ENTRY;
+
    bson_return_val_if_fail (collection, false);
    bson_return_val_if_fail (document, false);
 
    bson_clear (&collection->gle);
+
+   if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
+      if (!bson_validate (document,
+                          (BSON_VALIDATE_UTF8 |
+                           BSON_VALIDATE_UTF8_ALLOW_NULL |
+                           BSON_VALIDATE_DOLLAR_KEYS |
+                           BSON_VALIDATE_DOT_KEYS),
+                          NULL)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "A document was corrupt or contained "
+                         "invalid characters . or $");
+         RETURN (false);
+      }
+   } else {
+      flags &= ~MONGOC_INSERT_NO_VALIDATE;
+   }
 
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_insert (&command, &document, 1, true);
@@ -864,7 +888,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    _mongoc_write_result_destroy (&result);
    _mongoc_write_command_destroy (&command);
 
-   return ret;
+   RETURN (ret);
 }
 
 

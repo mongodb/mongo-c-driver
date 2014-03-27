@@ -134,7 +134,7 @@ test_insert_bulk (void)
    }
 
    r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
-                                     (const bson_t **)bptr, 10, NULL, &error);
+                                      (const bson_t **)bptr, 10, NULL, &error);
 
    if (!r) {
       MONGOC_WARNING("%s\n", error.message);
