@@ -1423,7 +1423,7 @@ mongoc_collection_stats (mongoc_collection_t *collection,
       bson_set_error (error,
                       MONGOC_ERROR_BSON,
                       MONGOC_ERROR_BSON_INVALID,
-                      "'sacle' must be an int32 value.");
+                      "'scale' must be an int32 value.");
       return false;
    }
 
