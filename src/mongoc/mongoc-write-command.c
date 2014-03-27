@@ -62,7 +62,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,     /* IN */
 {
    const char *key;
    uint32_t i;
-   char keydata [12];
+   char keydata [16];
 
    ENTRY;
 
@@ -75,7 +75,12 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,     /* IN */
 
    for (i = 0; i < n_documents; i++) {
       BSON_ASSERT (documents [i]);
+      BSON_ASSERT (documents [i]->len >= 5);
+
+      key = NULL;
       bson_uint32_to_string (i, &key, keydata, sizeof keydata);
+      BSON_ASSERT (key);
+
       BSON_APPEND_DOCUMENT (command->u.insert.documents, key, documents [i]);
    }
 
