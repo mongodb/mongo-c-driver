@@ -74,6 +74,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,     /* IN */
    command->u.insert.ordered = ordered;
 
    for (i = 0; i < n_documents; i++) {
+      BSON_ASSERT (documents [i]);
       bson_uint32_to_string (i, &key, keydata, sizeof keydata);
       BSON_APPEND_DOCUMENT (command->u.insert.documents, key, documents [i]);
    }
@@ -536,7 +537,8 @@ again:
 
          bson_iter_document (&iter, &len, &data);
 
-         if (len > (client->cluster.max_msg_size - cmd.len - overhead)) {
+         if ((i == MAX_INSERT_BATCH) ||
+             (len > (client->cluster.max_msg_size - cmd.len - overhead))) {
             has_more = true;
             break;
          }

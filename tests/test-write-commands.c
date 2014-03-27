@@ -38,10 +38,7 @@ test_split_insert (void)
    bson_t **docs;
    bson_t reply = BSON_INITIALIZER;
    bson_error_t error;
-   const char *key;
-   char str [12];
    int i;
-   int j;
    bool r;
 
    client = mongoc_client_new (gTestUri);
@@ -56,10 +53,6 @@ test_split_insert (void)
       docs [i] = bson_new ();
       bson_oid_init (&oid, NULL);
       BSON_APPEND_OID (docs [i], "_id", &oid);
-      for (j = 0; j < 20; j++) {
-         bson_uint32_to_string (j, &key, str, sizeof str);
-         BSON_APPEND_INT64 (docs [i], key, 1234);
-      }
    }
 
    _mongoc_write_result_init (&result);
