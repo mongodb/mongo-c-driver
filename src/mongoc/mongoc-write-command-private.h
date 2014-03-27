@@ -88,14 +88,13 @@ void _mongoc_write_command_init_update (mongoc_write_command_t        *command,
                                         bool                           upsert,
                                         bool                           multi,
                                         bool                           ordered);
-bool _mongoc_write_command_execute     (mongoc_write_command_t        *command,
+void _mongoc_write_command_execute     (mongoc_write_command_t        *command,
                                         mongoc_client_t               *client,
                                         uint32_t                       hint,
                                         const char                    *database,
                                         const char                    *collection,
                                         const mongoc_write_concern_t  *write_concern,
-                                        mongoc_write_result_t *result,
-                                        bson_error_t                  *error);
+                                        mongoc_write_result_t         *result);
 void _mongoc_write_result_init         (mongoc_write_result_t         *result);
 void _mongoc_write_result_merge        (mongoc_write_result_t         *result,
                                         const bson_t                  *reply);
@@ -104,6 +103,7 @@ void _mongoc_write_result_merge_legacy (mongoc_write_result_t         *result,
 void _mongoc_write_result_to_bson      (mongoc_write_result_t        *result,
                                         bson_t                        *bson);
 void _mongoc_write_result_destroy      (mongoc_write_result_t         *result);
+bool _mongoc_write_result_is_success   (mongoc_write_result_t         *result);
 
 
 BSON_END_DECLS

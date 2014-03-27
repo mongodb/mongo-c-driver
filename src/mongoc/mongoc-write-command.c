@@ -32,7 +32,7 @@
    (&gEmptyWriteConcern)
 
 
-typedef bool (*mongoc_write_op_t) (mongoc_write_command_t       *command,
+typedef void (*mongoc_write_op_t) (mongoc_write_command_t       *command,
                                    mongoc_client_t              *client,
                                    uint32_t                      hint,
                                    const char                   *database,
@@ -105,7 +105,7 @@ _mongoc_write_command_init_update (mongoc_write_command_t *command,  /* IN */
 }
 
 
-static bool
+static void
 _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
                                      mongoc_client_t              *client,
                                      uint32_t                      hint,
@@ -160,11 +160,11 @@ cleanup:
       bson_destroy (gle);
    }
 
-   RETURN (ret);
+   EXIT;
 }
 
 
-static bool
+static void
 _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
                                      mongoc_client_t              *client,
                                      uint32_t                      hint,
@@ -198,7 +198,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
 
    if (!bson_iter_init (&iter, command->u.insert.documents)) {
       BSON_ASSERT (false);
-      RETURN (false);
+      EXIT;
    }
 
    while (bson_iter_next (&iter)) {
@@ -243,11 +243,11 @@ cleanup:
 
    bson_free (iov);
 
-   RETURN (ret);
+   EXIT;
 }
 
 
-static bool
+static void
 _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
                                      mongoc_client_t              *client,
                                      uint32_t                      hint,
@@ -328,7 +328,7 @@ cleanup:
 }
 
 
-static bool
+static void
 _mongoc_write_command_delete (mongoc_write_command_t       *command,
                               mongoc_client_t              *client,
                               uint32_t                      hint,
@@ -371,7 +371,7 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
 }
 
 
-static bool
+static void
 _mongoc_write_command_insert (mongoc_write_command_t       *command,
                               mongoc_client_t              *client,
                               uint32_t                      hint,
@@ -409,7 +409,7 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
 }
 
 
-static bool
+static void
 _mongoc_write_command_update (mongoc_write_command_t       *command,
                               mongoc_client_t              *client,
                               uint32_t                      hint,
@@ -473,10 +473,14 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
                                const char                   *database,      /* IN */
                                const char                   *collection,    /* IN */
                                const mongoc_write_concern_t *write_concern, /* IN */
-                               mongoc_write_result_t        *result,        /* OUT */
-                               bson_error_t                 *error)         /* OUT */
+                               mongoc_write_result_t        *result)        /* OUT */
 {
    mongoc_cluster_node_t *node;
+   bson_error_t error;
+   const char *key;
+   uint32_t idx;
+   bson_t child;
+   char str[12];
    bool ret = false;
    int mode = 0;
 
@@ -486,23 +490,29 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
    BSON_ASSERT (client);
    BSON_ASSERT (database);
    BSON_ASSERT (collection);
+   BSON_ASSERT (result);
 
    if (!hint) {
       hint = _mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
-                                       write_concern, NULL, error);
+                                       write_concern, NULL, &error);
       if (!hint) {
-         RETURN (false);
+         idx = bson_count_keys (&result->write_errors);
+         bson_uint32_to_string (idx, &key, str, sizeof str);
+         bson_append_document_begin (&result->write_errors, key, -1, &child);
+         BSON_APPEND_INT32 (&child, "code", error.code);
+         BSON_APPEND_UTF8 (&child, "msg", error.message);
+         bson_append_document_end (&result->write_errors, &child);
+         EXIT;
       }
    }
 
    node = &client->cluster.nodes [hint - 1];
    mode = SUPPORTS_WRITE_COMMANDS (node);
 
-   ret = gWriteOps [mode][command->type] (command, client, hint, database,
-                                          collection, write_concern, result,
-                                          error);
+   gWriteOps [mode][command->type] (command, client, hint, database,
+                                    collection, write_concern, result);
 
-   RETURN (ret);
+   EXIT;
 }
 
 
@@ -592,6 +602,16 @@ _mongoc_write_result_merge (mongoc_write_result_t *result, /* IN */
    }
 
 #undef UPDATE_FIELD
+}
+
+
+bool
+_mongoc_write_result_is_success (mongoc_write_result_t *result)
+{
+   BSON_ASSERT (result);
+
+   return (bson_empty0 (&result->write_concern_errors) &&
+           bson_empty0 (&result->write_errors));
 }
 
 

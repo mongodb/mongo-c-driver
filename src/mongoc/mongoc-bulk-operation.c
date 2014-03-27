@@ -244,11 +244,12 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
    bson_return_val_if_fail (bulk, false);
 
    if (!bulk->commands.len) {
+      bson_init (reply);
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Cannot do an empty bulk write");
-      GOTO (cleanup);
+      RETURN (false);
    }
 
    hint = _mongoc_client_preselect (bulk->client,
@@ -264,19 +265,17 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
       command = &_mongoc_array_index (&bulk->commands,
                                       mongoc_write_command_t, i);
 
-      ret = _mongoc_write_command_execute (command, bulk->client, hint,
-                                           bulk->database, bulk->collection,
-                                           bulk->write_concern, &bulk->result,
-                                           error);
+      _mongoc_write_command_execute (command, bulk->client, hint,
+                                     bulk->database, bulk->collection,
+                                     bulk->write_concern, &bulk->result);
 
       if (!ret && bulk->ordered) {
          GOTO (cleanup);
       }
    }
 
-   ret = true;
-
 cleanup:
+   ret = _mongoc_write_result_is_success (&bulk->result);
    _mongoc_write_result_to_bson (&bulk->result, reply);
 
    RETURN (ret);
