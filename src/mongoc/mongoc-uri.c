@@ -852,3 +852,16 @@ mongoc_uri_get_write_concern (const mongoc_uri_t *uri) /* IN */
 
    return uri->write_concern;
 }
+
+
+bool
+mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
+{
+   bson_iter_t iter;
+
+   bson_return_val_if_fail (uri, false);
+
+   return (bson_iter_init_find_case (&iter, &uri->options, "ssl") &&
+           BSON_ITER_HOLDS_BOOL (&iter) &&
+           bson_iter_bool (&iter));
+}

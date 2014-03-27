@@ -51,6 +51,7 @@ const char                   *mongoc_uri_get_string         (const mongoc_uri_t 
 const char                   *mongoc_uri_get_username       (const mongoc_uri_t *uri);
 const char                   *mongoc_uri_get_auth_source    (const mongoc_uri_t *uri);
 const char                   *mongoc_uri_get_auth_mechanism (const mongoc_uri_t *uri);
+bool                          mongoc_uri_get_ssl            (const mongoc_uri_t *uri);
 char                         *mongoc_uri_unescape           (const char         *escaped_string);
 const mongoc_write_concern_t *mongoc_uri_get_write_concern  (const mongoc_uri_t *uri);
 
