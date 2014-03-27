@@ -24,6 +24,13 @@
 #include "mongoc-write-concern-private.h"
 
 
+/*
+ * TODO:
+ *
+ *    - Remove error parameter to ops, favor result->error.
+ */
+
+
 #define SUPPORTS_WRITE_COMMANDS(n) \
    (((n)->min_wire_version <= 2) && ((n)->max_wire_version >= 2))
 #define WRITE_CONCERN_DOC(wc) \
@@ -187,6 +194,16 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (database);
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
+   BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
+
+   if (!command->u.insert.n_documents) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COLLECTION,
+                      MONGOC_ERROR_COLLECTION_INSERT_FAILED,
+                      "Cannot do an empty insert.");
+      result->failed = true;
+      EXIT;
+   }
 
    bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
 
@@ -388,10 +405,20 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    ENTRY;
 
    BSON_ASSERT (command);
+   BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
    BSON_ASSERT (client);
    BSON_ASSERT (database);
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
+
+   if (!command->u.insert.n_documents) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COLLECTION,
+                      MONGOC_ERROR_COLLECTION_INSERT_FAILED,
+                      "Cannot do an empty insert.");
+      result->failed = true;
+      EXIT;
+   }
 
    BSON_APPEND_UTF8 (&cmd, "insert", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
