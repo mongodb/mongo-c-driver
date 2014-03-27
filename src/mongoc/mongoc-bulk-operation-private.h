@@ -34,18 +34,9 @@ struct _mongoc_bulk_operation_t
    mongoc_client_t        *client;
    mongoc_write_concern_t *write_concern;
    bool                    ordered;
-   bool                    omit_n_modified;
-   mongoc_array_t          commands;
    uint32_t                hint;
-   uint32_t                n_modified;
-   uint32_t                n_upserted;
-   uint32_t                n_matched;
-   uint32_t                n_removed;
-   uint32_t                n_inserted;
-   uint32_t                offset;
-   bson_t                 *upserted;
-   bson_t                 *write_errors;
-   bson_t                 *write_concern_errors;
+   mongoc_array_t          commands;
+   mongoc_write_result_t   result;
 };
 
 

@@ -38,7 +38,7 @@ typedef bool (*mongoc_write_op_t) (mongoc_write_command_t       *command,
                                    const char                   *database,
                                    const char                   *collection,
                                    const mongoc_write_concern_t *write_concern,
-                                   bson_t                       *reply,
+                                   mongoc_write_result_t        *result,
                                    bson_error_t                 *error);
 
 
@@ -112,7 +112,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
                                      const char                   *database,
                                      const char                   *collection,
                                      const mongoc_write_concern_t *write_concern,
-                                     bson_t                       *reply,
+                                     mongoc_write_result_t        *result,
                                      bson_error_t                 *error)
 {
    mongoc_rpc_t rpc;
@@ -127,8 +127,6 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (database);
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
-
-   bson_init (reply);
 
    bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
 
@@ -158,7 +156,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
 
 cleanup:
    if (gle) {
-      bson_copy_to (gle, reply);
+      _mongoc_write_result_merge_legacy (result, gle);
       bson_destroy (gle);
    }
 
@@ -173,7 +171,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
                                      const char                   *database,
                                      const char                   *collection,
                                      const mongoc_write_concern_t *write_concern,
-                                     bson_t                       *reply,
+                                     mongoc_write_result_t        *result,
                                      bson_error_t                 *error)
 {
    mongoc_iovec_t *iov;
@@ -193,8 +191,6 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (database);
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
-
-   bson_init (reply);
 
    bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
 
@@ -241,7 +237,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
 
 cleanup:
    if (gle) {
-      bson_copy_to (gle, reply);
+      _mongoc_write_result_merge_legacy (result, gle);
       bson_destroy (gle);
    }
 
@@ -258,7 +254,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
                                      const char                   *database,
                                      const char                   *collection,
                                      const mongoc_write_concern_t *write_concern,
-                                     bson_t                       *reply,
+                                     mongoc_write_result_t        *result,
                                      bson_error_t                 *error)
 {
    mongoc_rpc_t rpc;
@@ -275,8 +271,6 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (database);
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
-
-   bson_init (reply);
 
    if (bson_iter_init (&iter, command->u.update.update) &&
        bson_iter_next (&iter) &&
@@ -326,7 +320,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
 
 cleanup:
    if (gle) {
-      bson_copy_to (gle, reply);
+      _mongoc_write_result_merge_legacy (result, gle);
       bson_destroy (gle);
    }
 
@@ -341,12 +335,13 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
                               const char                   *database,
                               const char                   *collection,
                               const mongoc_write_concern_t *write_concern,
-                              bson_t                       *reply,
+                              mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
    bson_t cmd = BSON_INITIALIZER;
    bson_t ar;
    bson_t child;
+   bson_t reply;
    bool ret;
 
    BSON_ASSERT (command);
@@ -367,8 +362,9 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    bson_append_array_end (&cmd, &ar);
 
    ret = mongoc_client_command_simple (client, database, &cmd, NULL,
-                                       reply, error);
+                                       &reply, error);
 
+   bson_destroy (&reply);
    bson_destroy (&cmd);
 
    return ret;
@@ -382,10 +378,11 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
                               const char                   *database,
                               const char                   *collection,
                               const mongoc_write_concern_t *write_concern,
-                              bson_t                       *reply,
+                              mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
    bson_t cmd = BSON_INITIALIZER;
+   bson_t reply;
    bool ret;
 
    BSON_ASSERT (command);
@@ -401,8 +398,11 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    BSON_APPEND_ARRAY (&cmd, "documents", command->u.insert.documents);
 
    ret = mongoc_client_command_simple (client, database, &cmd, NULL,
-                                       reply, error);
+                                       &reply, error);
 
+   _mongoc_write_result_merge (result, &reply);
+
+   bson_destroy (&reply);
    bson_destroy (&cmd);
 
    return ret;
@@ -416,10 +416,11 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
                               const char                   *database,
                               const char                   *collection,
                               const mongoc_write_concern_t *write_concern,
-                              bson_t                       *reply,
+                              mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
    bson_t cmd = BSON_INITIALIZER;
+   bson_t reply;
    bson_t ar;
    bson_t child;
    bool ret;
@@ -444,8 +445,11 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
    bson_append_array_end (&cmd, &ar);
 
    ret = mongoc_client_command_simple (client, database, &cmd, NULL,
-                                       reply, error);
+                                       &reply, error);
 
+   _mongoc_write_result_merge (result, &reply);
+
+   bson_destroy (&reply);
    bson_destroy (&cmd);
 
    return ret;
@@ -469,7 +473,7 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
                                const char                   *database,      /* IN */
                                const char                   *collection,    /* IN */
                                const mongoc_write_concern_t *write_concern, /* IN */
-                               bson_t                       *reply,         /* OUT */
+                               mongoc_write_result_t        *result,        /* OUT */
                                bson_error_t                 *error)         /* OUT */
 {
    mongoc_cluster_node_t *node;
@@ -495,7 +499,7 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
    mode = SUPPORTS_WRITE_COMMANDS (node);
 
    ret = gWriteOps [mode][command->type] (command, client, hint, database,
-                                          collection, write_concern, reply,
+                                          collection, write_concern, result,
                                           error);
 
    RETURN (ret);
@@ -520,6 +524,102 @@ _mongoc_write_command_destroy (mongoc_write_command_t *command)
       default:
          BSON_ASSERT (false);
          break;
+      }
+   }
+}
+
+
+void
+_mongoc_write_result_init (mongoc_write_result_t *result) /* IN */
+{
+   BSON_ASSERT (result);
+
+   memset (result, 0, sizeof *result);
+
+   bson_init (&result->upserted);
+   bson_init (&result->write_concern_errors);
+   bson_init (&result->write_errors);
+}
+
+
+void
+_mongoc_write_result_destroy (mongoc_write_result_t *result)
+{
+   BSON_ASSERT (result);
+
+   bson_destroy (&result->upserted);
+   bson_destroy (&result->write_concern_errors);
+   bson_destroy (&result->write_errors);
+}
+
+
+void
+_mongoc_write_result_merge_legacy (mongoc_write_result_t *result, /* IN */
+                                   const bson_t          *reply)  /* IN */
+{
+   BSON_ASSERT (result);
+   BSON_ASSERT (reply);
+
+   result->omit_nModified = true;
+}
+
+
+void
+_mongoc_write_result_merge (mongoc_write_result_t *result, /* IN */
+                            const bson_t          *reply)  /* IN */
+{
+   bson_iter_t iter;
+   int32_t v32;
+
+   BSON_ASSERT (result);
+   BSON_ASSERT (reply);
+
+#define UPDATE_FIELD(name) \
+   if (bson_iter_init_find (&iter, reply, #name) && \
+       BSON_ITER_HOLDS_INT32 (&iter)) { \
+      v32 = bson_iter_int32 (&iter); \
+      result->name += v32; \
+   }
+
+   UPDATE_FIELD (nInserted);
+   UPDATE_FIELD (nMatched);
+   UPDATE_FIELD (nModified);
+   UPDATE_FIELD (nRemoved);
+   UPDATE_FIELD (nUpserted);
+
+   if (!bson_has_field (reply, "nModified")) {
+      result->omit_nModified = true;
+   }
+
+#undef UPDATE_FIELD
+}
+
+
+void
+_mongoc_write_result_to_bson (mongoc_write_result_t *result,
+                              bson_t                *bson)
+{
+   BSON_ASSERT (result);
+
+   if (bson) {
+      bson_init (bson);
+
+      BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
+      BSON_APPEND_INT32 (bson, "nMatched", result->nMatched);
+      if (!result->omit_nModified) {
+         BSON_APPEND_INT32 (bson, "nModified", result->nModified);
+      }
+      BSON_APPEND_INT32 (bson, "nRemoved", result->nRemoved);
+      BSON_APPEND_INT32 (bson, "nUpserted", result->nUpserted);
+      if (!bson_empty0 (&result->upserted)) {
+         BSON_APPEND_ARRAY (bson, "upserted", &result->upserted);
+      }
+      if (!bson_empty0 (&result->write_errors)) {
+         BSON_APPEND_ARRAY (bson, "writeErrors", &result->write_errors);
+      }
+      if (!bson_empty0 (&result->write_concern_errors)) {
+         BSON_APPEND_ARRAY (bson, "writeConcernErrors",
+                            &result->write_concern_errors);
       }
    }
 }

@@ -70,6 +70,7 @@ _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN *
       bulk->write_concern = mongoc_write_concern_new ();
    }
 
+   _mongoc_write_result_init (&bulk->result);
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));
 
    return bulk;
@@ -91,11 +92,9 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
 
       bson_free (bulk->database);
       bson_free (bulk->collection);
-      _mongoc_array_destroy (&bulk->commands);
       mongoc_write_concern_destroy (bulk->write_concern);
-      bson_clear (&bulk->upserted);
-      bson_clear (&bulk->write_errors);
-      bson_clear (&bulk->write_concern_errors);
+      _mongoc_array_destroy (&bulk->commands);
+      _mongoc_write_result_destroy (&bulk->result);
 
       bson_free (bulk);
    }
@@ -230,75 +229,12 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
 }
 
 
-static void
-_mongoc_bulk_operation_do_append_upserted (mongoc_bulk_operation_t *bulk,
-                                           uint32_t                 idx,
-                                           const bson_value_t      *_id)
-{
-   const char *key = NULL;
-   uint32_t count;
-   bson_t child;
-   char str [16];
-
-   BSON_ASSERT (bulk);
-   BSON_ASSERT (_id);
-
-   if (!bulk->upserted) {
-      bulk->upserted = bson_new ();
-   }
-
-   count = bson_count_keys (bulk->upserted);
-   bson_uint32_to_string (count, &key, str, sizeof str);
-
-   bson_append_document_begin (bulk->upserted, key, -1, &child);
-   BSON_APPEND_INT32 (&child, "index", bulk->offset + idx);
-   BSON_APPEND_VALUE (&child, "_id", _id);
-   bson_append_document_end (bulk->upserted, &child);
-}
-
-
-static void
-_mongoc_bulk_operation_append_upserted (mongoc_bulk_operation_t *bulk, /* IN */
-                                        const bson_iter_t       *iter) /* IN */
-{
-   const bson_value_t *vptr;
-   bson_value_t value = { 0 };
-   bson_iter_t citer;
-   int idx = 0;
-
-   BSON_ASSERT (bulk);
-   BSON_ASSERT (iter);
-
-   if (!BSON_ITER_HOLDS_DOCUMENT (iter) ||
-       !bson_iter_recurse (iter, &citer)) {
-      return;
-   }
-
-   while (bson_iter_next (&citer)) {
-      if (BSON_ITER_IS_KEY (&citer, "index") &&
-          BSON_ITER_HOLDS_INT32 (&citer)) {
-         idx = bson_iter_int32 (&citer);
-      } else if (BSON_ITER_IS_KEY (&citer, "_id")) {
-         if ((vptr = bson_iter_value (&citer))) {
-            bson_value_copy (vptr, &value);
-         }
-      }
-   }
-
-   if (value.value_type) {
-      _mongoc_bulk_operation_do_append_upserted (bulk, idx, &value);
-      bson_value_destroy (&value);
-   }
-}
-
-
 bool
 mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                bson_t                  *reply, /* OUT */
                                bson_error_t            *error) /* OUT */
 {
    mongoc_write_command_t *command;
-   bson_t local_reply;
    uint32_t hint;
    bool ret = false;
    int i;
@@ -307,14 +243,12 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
    bson_return_val_if_fail (bulk, false);
 
-   bson_init (reply);
-
    if (!bulk->commands.len) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Cannot do an empty bulk write");
-      RETURN (false);
+      GOTO (cleanup);
    }
 
    hint = _mongoc_client_preselect (bulk->client,
@@ -323,7 +257,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                     NULL,
                                     error);
    if (!hint) {
-      RETURN (false);
+      GOTO (cleanup);
    }
 
    for (i = 0; i < bulk->commands.len; i++) {
@@ -332,10 +266,8 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
       ret = _mongoc_write_command_execute (command, bulk->client, hint,
                                            bulk->database, bulk->collection,
-                                           bulk->write_concern, &local_reply,
+                                           bulk->write_concern, &bulk->result,
                                            error);
-
-      bson_destroy (&local_reply);
 
       if (!ret && bulk->ordered) {
          GOTO (cleanup);
@@ -345,6 +277,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
    ret = true;
 
 cleanup:
+   _mongoc_write_result_to_bson (&bulk->result, reply);
 
    RETURN (ret);
 }

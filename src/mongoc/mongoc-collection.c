@@ -778,6 +778,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
                                bson_error_t                  *error)
 {
    mongoc_write_command_t command;
+   mongoc_write_result_t result;
    bson_t reply;
    bool ordered;
    bool ret;
@@ -787,16 +788,20 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
 
    bson_clear (&collection->gle);
 
+   _mongoc_write_result_init (&result);
+
    ordered = !(flags & MONGOC_INSERT_CONTINUE_ON_ERROR);
    _mongoc_write_command_init_insert (&command, documents, n_documents,
                                       ordered);
+
    ret = _mongoc_write_command_execute (&command, collection->client, 0,
                                         collection->db, collection->collection,
-                                        write_concern, &reply, error);
-   _mongoc_write_command_destroy (&command);
+                                        write_concern, &result, error);
 
-   collection->gle = bson_copy (&reply);
-   bson_destroy (&reply);
+   collection->gle = bson_new ();
+   _mongoc_write_result_to_bson (&result, collection->gle);
+   _mongoc_write_result_destroy (&result);
+   _mongoc_write_command_destroy (&command);
 
    return ret;
 }
@@ -838,7 +843,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
                           bson_error_t                 *error)
 {
    mongoc_write_command_t command;
-   bson_t reply;
+   mongoc_write_result_t result;
    bool ret;
 
    bson_return_val_if_fail (collection, false);
@@ -846,14 +851,18 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
 
    bson_clear (&collection->gle);
 
+   _mongoc_write_result_init (&result);
    _mongoc_write_command_init_insert (&command, &document, 1, true);
+
    ret = _mongoc_write_command_execute (&command, collection->client, 0,
                                         collection->db, collection->collection,
-                                        write_concern, &reply, error);
-   _mongoc_write_command_destroy (&command);
+                                        write_concern, &result, error);
 
-   collection->gle = bson_copy (&reply);
-   bson_destroy (&reply);
+   collection->gle = bson_new ();
+   _mongoc_write_result_to_bson (&result, collection->gle);
+
+   _mongoc_write_result_destroy (&result);
+   _mongoc_write_command_destroy (&command);
 
    return ret;
 }
@@ -893,7 +902,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
                           bson_error_t                 *error)
 {
    mongoc_write_command_t command;
-   bson_t reply;
+   mongoc_write_result_t result;
    bool ret;
 
    ENTRY;
@@ -904,19 +913,23 @@ mongoc_collection_update (mongoc_collection_t          *collection,
 
    bson_clear (&collection->gle);
 
+   _mongoc_write_result_init (&result);
    _mongoc_write_command_init_update (&command,
                                       selector,
                                       update,
                                       !!(flags & MONGOC_UPDATE_UPSERT),
                                       !!(flags & MONGOC_UPDATE_MULTI_UPDATE),
                                       true);
+
    ret = _mongoc_write_command_execute (&command, collection->client, 0,
                                         collection->db, collection->collection,
-                                        write_concern, &reply, error);
-   _mongoc_write_command_destroy (&command);
+                                        write_concern, &result, error);
 
-   collection->gle = bson_copy (&reply);
-   bson_destroy (&reply);
+   collection->gle = bson_new ();
+   _mongoc_write_result_to_bson (&result, collection->gle);
+
+   _mongoc_write_result_destroy (&result);
+   _mongoc_write_command_destroy (&command);
 
    RETURN (ret);
 }
