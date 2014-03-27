@@ -49,6 +49,7 @@ mongoc_log_set_handler (mongoc_log_func_t  log_func,
 
    mongoc_mutex_lock(&gLogMutex);
    gLogFunc = log_func;
+   gLogData = user_data;
    mongoc_mutex_unlock(&gLogMutex);
 }
 
