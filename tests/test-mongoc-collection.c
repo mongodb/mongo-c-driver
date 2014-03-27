@@ -609,11 +609,16 @@ test_aggregate (void)
       }
 
       /*
-       * This can fail if we are connecting to a pre-2.5.x MongoDB instance.
+       * This can fail if we are connecting to a 2.0 MongoDB instance.
        */
       r = mongoc_cursor_next(cursor, &doc);
       if (mongoc_cursor_error(cursor, &error)) {
-         MONGOC_WARNING("%s", error.message);
+         if ((error.domain == MONGOC_ERROR_QUERY) &&
+             (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
+            mongoc_cursor_destroy (cursor);
+            break;
+         }
+         MONGOC_WARNING("[%d.%d] %s", error.domain, error.code, error.message);
       }
 
       ASSERT (r);
