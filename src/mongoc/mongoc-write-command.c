@@ -300,7 +300,7 @@ again:
    }
 
    if (_mongoc_write_concern_has_gle (write_concern)) {
-      bson_iter_t iter;
+      bson_iter_t citer;
 
       if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
          result->failed = true;
@@ -311,10 +311,10 @@ again:
        * Overwrite the "n" field since it will be zero. Otherwise, our
        * merge_legacy code will not know how many we tried in this batch.
        */
-      if (bson_iter_init_find (&iter, gle, "n") &&
-          BSON_ITER_HOLDS_INT32 (&iter) &&
-          !bson_iter_int32 (&iter)) {
-         bson_iter_overwrite_int32 (&iter, i);
+      if (bson_iter_init_find (&citer, gle, "n") &&
+          BSON_ITER_HOLDS_INT32 (&citer) &&
+          !bson_iter_int32 (&citer)) {
+         bson_iter_overwrite_int32 (&citer, i);
       }
    }
 
