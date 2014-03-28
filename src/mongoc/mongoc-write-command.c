@@ -252,6 +252,9 @@ again:
 
       bson_iter_document (&iter, &len, &data);
 
+      BSON_ASSERT (data);
+      BSON_ASSERT (len >= 5);
+
       /*
        * Check that the server can receive this document.
        */
