@@ -35,6 +35,7 @@ mongoc_collection_command
 mongoc_collection_command_simple
 mongoc_collection_count
 mongoc_collection_create_bulk_operation
+mongoc_collection_create_index
 mongoc_collection_delete
 mongoc_collection_destroy
 mongoc_collection_drop

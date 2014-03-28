@@ -15,6 +15,7 @@
  */
 
 
+#include <bcon.h>
 #include <stdio.h>
 
 #include "mongoc-bulk-operation-private.h"
@@ -633,7 +634,7 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_collection_ensure_index --
+ * _mongoc_collection_create_index_legacy --
  *
  *       Request the MongoDB server create the named index.
  *
@@ -646,11 +647,11 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
  *--------------------------------------------------------------------------
  */
 
-bool
-mongoc_collection_ensure_index (mongoc_collection_t      *collection,
-                                const bson_t             *keys,
-                                const mongoc_index_opt_t *opt,
-                                bson_error_t             *error)
+static bool
+_mongoc_collection_create_index_legacy (mongoc_collection_t      *collection,
+                                        const bson_t             *keys,
+                                        const mongoc_index_opt_t *opt,
+                                        bson_error_t             *error)
 {
    const mongoc_index_opt_t *def_opt;
    mongoc_collection_t *col;
@@ -738,6 +739,110 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
    bson_destroy (&insert);
 
    return ret;
+}
+
+
+bool
+mongoc_collection_create_index (mongoc_collection_t      *collection,
+                                const bson_t             *keys,
+                                const mongoc_index_opt_t *opt,
+                                bson_error_t             *error)
+{
+   const mongoc_index_opt_t *def_opt;
+   bson_error_t local_error;
+   const char *name;
+   bson_t cmd = BSON_INITIALIZER;
+   bson_t ar;
+   bson_t doc;
+   bson_t reply;
+   char *alloc_name = NULL;
+   bool ret = false;
+
+   bson_return_val_if_fail (collection, false);
+   bson_return_val_if_fail (keys, false);
+   bson_return_val_if_fail (opt, false);
+
+   def_opt = mongoc_index_opt_get_default ();
+   opt = opt ? opt : def_opt;
+
+   /*
+    * Generate the key name if it was not provided.
+    */
+   name = (opt->name != def_opt->name) ? opt->name : NULL;
+   if (!name) {
+      alloc_name = mongoc_collection_keys_to_index_string (keys);
+      name = alloc_name;
+   }
+
+   /*
+    * Build our createIndexes command to send to the server.
+    */
+   BSON_APPEND_UTF8 (&cmd, "createIndexes", collection->collection);
+   bson_append_array_begin (&cmd, "indexes", 7, &ar);
+   bson_append_document_begin (&ar, "0", 1, &doc);
+   BSON_APPEND_DOCUMENT (&doc, "key", keys);
+   BSON_APPEND_UTF8 (&doc, "name", name);
+   if (opt->background) {
+      BSON_APPEND_BOOL (&doc, "background", true);
+   }
+   if (opt->unique) {
+      BSON_APPEND_BOOL (&doc, "unique", true);
+   }
+   if (opt->drop_dups) {
+      BSON_APPEND_BOOL (&doc, "dropDups", true);
+   }
+   if (opt->sparse) {
+      BSON_APPEND_BOOL (&doc, "sparse", true);
+   }
+   if (opt->expire_after_seconds != def_opt->expire_after_seconds) {
+      BSON_APPEND_INT32 (&doc, "expireAfterSeconds", opt->expire_after_seconds);
+   }
+   if (opt->v != def_opt->v) {
+      BSON_APPEND_INT32 (&doc, "v", opt->v);
+   }
+   if (opt->weights && (opt->weights != def_opt->weights)) {
+      BSON_APPEND_DOCUMENT (&doc, "weights", opt->weights);
+   }
+   if (opt->default_language != def_opt->default_language) {
+      BSON_APPEND_UTF8 (&doc, "default_language", opt->default_language);
+   }
+   if (opt->language_override != def_opt->language_override) {
+      BSON_APPEND_UTF8 (&doc, "language_override", opt->language_override);
+   }
+   bson_append_document_end (&ar, &doc);
+   bson_append_array_end (&cmd, &ar);
+
+   ret = mongoc_collection_command_simple (collection, &cmd, NULL, &reply,
+                                           &local_error);
+
+   /*
+    * If we failed due to the command not being found, then use the legacy
+    * version which performs an insert into the system.indexes collection.
+    */
+   if (!ret) {
+      if (local_error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
+         ret = _mongoc_collection_create_index_legacy (collection, keys, opt,
+                                                       error);
+      } else if (error) {
+         memcpy (error, &local_error, sizeof *error);
+      }
+   }
+
+   bson_destroy (&cmd);
+   bson_destroy (&reply);
+   bson_free (alloc_name);
+
+   return ret;
+}
+
+
+bool
+mongoc_collection_ensure_index (mongoc_collection_t      *collection,
+                                const bson_t             *keys,
+                                const mongoc_index_opt_t *opt,
+                                bson_error_t             *error)
+{
+   return mongoc_collection_create_index (collection, keys, opt, error);
 }
 
 

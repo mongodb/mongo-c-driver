@@ -71,6 +71,10 @@ bool                          mongoc_collection_drop                 (mongoc_col
 bool                          mongoc_collection_drop_index           (mongoc_collection_t           *collection,
                                                                       const char                    *index_name,
                                                                       bson_error_t                  *error);
+bool                          mongoc_collection_create_index         (mongoc_collection_t           *collection,
+                                                                      const bson_t                  *keys,
+                                                                      const mongoc_index_opt_t      *opt,
+                                                                      bson_error_t                  *error);
 bool                          mongoc_collection_ensure_index         (mongoc_collection_t           *collection,
                                                                       const bson_t                  *keys,
                                                                       const mongoc_index_opt_t      *opt,
