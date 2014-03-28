@@ -604,22 +604,6 @@ mongoc_collection_drop_index (mongoc_collection_t *collection, /* IN */
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_ensure_index --
- *
- *       Request the MongoDB server create the named index.
- *
- * Returns:
- *       true if successful; otherwise false and @error is set.
- *
- * Side effects:
- *       @error is setup upon failure if non-NULL.
- *
- *--------------------------------------------------------------------------
- */
-
 char *
 mongoc_collection_keys_to_index_string (const bson_t *keys)
 {
@@ -644,6 +628,23 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
 
    return bson_string_free (s, false);
 }
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_ensure_index --
+ *
+ *       Request the MongoDB server create the named index.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *       @error is setup upon failure if non-NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 bool
 mongoc_collection_ensure_index (mongoc_collection_t      *collection,
