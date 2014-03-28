@@ -96,8 +96,8 @@ typedef struct
 
    mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
    mongoc_client_t        *client;
-   uint32_t                max_bson_size;
-   uint32_t                max_msg_size;
+   int32_t                 max_bson_size;
+   int32_t                 max_msg_size;
    uint32_t                sec_latency_ms;
    mongoc_array_t          iov;
 
