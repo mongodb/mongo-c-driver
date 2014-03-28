@@ -527,9 +527,9 @@ again:
    BSON_APPEND_BOOL (&cmd, "ordered", command->u.insert.ordered);
 
    if ((command->u.insert.documents->len < client->cluster.max_bson_size) &&
-       (command->u.insert.documents->len < client->cluster.max_msg_size)) {
+       (command->u.insert.documents->len < client->cluster.max_msg_size) &&
+       (command->u.insert.n_documents <= MAX_INSERT_BATCH)) {
       BSON_APPEND_ARRAY (&cmd, "documents", command->u.insert.documents);
-      GOTO (fast_path);
    } else {
       bson_append_array_begin (&cmd, "documents", 9, &ar);
 
@@ -562,7 +562,6 @@ again:
       bson_append_array_end (&cmd, &ar);
    }
 
-fast_path:
    ret = mongoc_client_command_simple (client, database, &cmd, NULL,
                                        &reply, error);
 
