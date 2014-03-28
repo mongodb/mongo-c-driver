@@ -82,7 +82,7 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
                            const bson_t        *tag)
 {
    bson_t empty = BSON_INITIALIZER;
-   char str[12];
+   char str[16];
    int key;
 
    BSON_ASSERT (read_prefs);

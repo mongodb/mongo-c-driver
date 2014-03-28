@@ -493,7 +493,7 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    bson_t ar;
    bson_t cmd;
    bson_t reply;
-   char str [12];
+   char str [16];
    size_t overhead;
    bool has_more;
    bool ret;
