@@ -114,6 +114,7 @@ mongoc_index_opt_init
 mongoc_init
 mongoc_log
 mongoc_log_default_handler
+mongoc_log_level_str
 mongoc_log_set_handler
 mongoc_read_prefs_add_tag
 mongoc_read_prefs_copy
