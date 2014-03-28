@@ -1506,3 +1506,100 @@ mongoc_collection_create_bulk_operation (
                                       ordered,
                                       write_concern);
 }
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_find_and_modify --
+ *
+ *       Find a document in @collection matching @query and update it with
+ *       the update document @update.
+ *
+ *       If @reply is not NULL, then the result document will be placed
+ *       in reply and should be released with bson_destroy().
+ *
+ *       If @remove is true, then the matching documents will be removed.
+ *
+ *       If @fields is not NULL, it will be used to select the desired
+ *       resulting fields.
+ *
+ *       If @_new is true, then the new version of the document is returned
+ *       instead of the old document.
+ *
+ *       See http://docs.mongodb.org/manual/reference/command/findAndModify/
+ *       for more information.
+ *
+ * Returns:
+ *       true on success; false on failure.
+ *
+ * Side effects:
+ *       reply is initialized.
+ *       error is set if false is returned.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_collection_find_and_modify (mongoc_collection_t *collection,
+                                   const bson_t        *query,
+                                   const bson_t        *sort,
+                                   const bson_t        *update,
+                                   const bson_t        *fields,
+                                   bool                 _remove,
+                                   bool                 upsert,
+                                   bool                 _new,
+                                   bson_t              *reply,
+                                   bson_error_t        *error)
+{
+   const char *name;
+   bool ret;
+   bson_t command = BSON_INITIALIZER;
+
+   ENTRY;
+
+   bson_return_val_if_fail (collection, false);
+   bson_return_val_if_fail (query, false);
+   bson_return_val_if_fail (update || _remove, false);
+
+   name = mongoc_collection_get_name (collection);
+
+   BSON_APPEND_UTF8 (&command, "findAndModify", name);
+   BSON_APPEND_DOCUMENT (&command, "query", query);
+
+   if (sort) {
+      BSON_APPEND_DOCUMENT (&command, "sort", sort);
+   }
+
+   if (update) {
+      BSON_APPEND_DOCUMENT (&command, "update", update);
+   }
+
+   if (fields) {
+      BSON_APPEND_DOCUMENT (&command, "fields", fields);
+   }
+
+   if (_remove) {
+      BSON_APPEND_BOOL (&command, "remove", _remove);
+   }
+
+   if (upsert) {
+      BSON_APPEND_BOOL (&command, "upsert", upsert);
+   }
+
+   if (_new) {
+      BSON_APPEND_BOOL (&command, "new", _new);
+   }
+
+   /*
+    * Submit the command to MongoDB server.
+    */
+   ret = mongoc_collection_command_simple (collection, &command, NULL, reply, error);
+
+   /*
+    * Cleanup.
+    */
+   bson_destroy (&command);
+
+   RETURN (ret);
+}

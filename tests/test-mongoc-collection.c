@@ -768,6 +768,72 @@ test_stats (void)
 
 
 static void
+test_find_and_modify (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_iter_t iter;
+   bson_iter_t citer;
+   bson_t *update;
+   bson_t doc = BSON_INITIALIZER;
+   bson_t reply;
+   bool r;
+
+   client = mongoc_client_new (gTestUri);
+   ASSERT (client);
+
+   collection = get_test_collection (client, "test_find_and_modify");
+   ASSERT (collection);
+
+   BSON_APPEND_INT32 (&doc, "superduper", 77889);
+
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
+   assert (r);
+
+   update = BCON_NEW ("$set", "{",
+                         "superduper", BCON_INT32 (1234),
+                      "}");
+
+   r = mongoc_collection_find_and_modify (collection,
+                                          &doc,
+                                          NULL,
+                                          update,
+                                          NULL,
+                                          false,
+                                          false,
+                                          true,
+                                          &reply,
+                                          &error);
+   assert (r);
+
+   assert (bson_iter_init_find (&iter, &reply, "value"));
+   assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   assert (bson_iter_recurse (&iter, &citer));
+   assert (bson_iter_find (&citer, "superduper"));
+   assert (BSON_ITER_HOLDS_INT32 (&citer));
+   assert (bson_iter_int32 (&citer) == 1234);
+
+   assert (bson_iter_init_find (&iter, &reply, "lastErrorObject"));
+   assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   assert (bson_iter_recurse (&iter, &citer));
+   assert (bson_iter_find (&citer, "updatedExisting"));
+   assert (BSON_ITER_HOLDS_BOOL (&citer));
+   assert (bson_iter_bool (&citer));
+
+   bson_destroy (&reply);
+   bson_destroy (update);
+
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&doc);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -792,6 +858,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/validate", test_validate);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
    TestSuite_Add (suite, "/Collection/stats", test_stats);
+   TestSuite_Add (suite, "/Collection/find_and_modify", test_find_and_modify);
 
    atexit (cleanup_globals);
 }

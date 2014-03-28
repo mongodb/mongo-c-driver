@@ -114,6 +114,16 @@ bool                          mongoc_collection_rename               (mongoc_col
                                                                       const char                    *new_name,
                                                                       bool                           drop_target_before_rename,
                                                                       bson_error_t                  *error);
+bool                          mongoc_collection_find_and_modify      (mongoc_collection_t           *collection,
+                                                                      const bson_t                  *query,
+                                                                      const bson_t                  *sort,
+                                                                      const bson_t                  *update,
+                                                                      const bson_t                  *fields,
+                                                                      bool                           _remove,
+                                                                      bool                           upsert,
+                                                                      bool                           _new,
+                                                                      bson_t                        *reply,
+                                                                      bson_error_t                  *error);
 bool                          mongoc_collection_stats                (mongoc_collection_t           *collection,
                                                                       const bson_t                  *options,
                                                                       bson_t                        *reply,
