@@ -467,10 +467,10 @@ test_index (void)
 
    bson_init(&keys);
    bson_append_int32(&keys, "hello", -1, 1);
-   r = mongoc_collection_ensure_index(collection, &keys, &opt, &error);
+   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
    ASSERT (r);
 
-   r = mongoc_collection_ensure_index(collection, &keys, &opt, &error);
+   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
    ASSERT (r);
 
    r = mongoc_collection_drop_index(collection, "hello_1", &error);

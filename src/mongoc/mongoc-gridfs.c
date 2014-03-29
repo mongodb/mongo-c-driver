@@ -60,7 +60,7 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs,
    mongoc_index_opt_init (&opt);
    opt.unique = 1;
 
-   r = mongoc_collection_ensure_index (gridfs->chunks, &keys, &opt, error);
+   r = mongoc_collection_create_index (gridfs->chunks, &keys, &opt, error);
 
    bson_destroy (&keys);
 
@@ -71,7 +71,7 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs,
    bson_append_int32 (&keys, "filename", -1, 1);
    opt.unique = 0;
 
-   r = mongoc_collection_ensure_index (gridfs->chunks, &keys, &opt, error);
+   r = mongoc_collection_create_index (gridfs->chunks, &keys, &opt, error);
 
    bson_destroy (&keys);
 
