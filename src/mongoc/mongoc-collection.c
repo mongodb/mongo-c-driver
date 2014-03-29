@@ -41,14 +41,31 @@
 static bool
 validate_name (const char *str)
 {
-   return (str &&
-           *str &&
-           (strlen (str) < 123) &&
-           !strstr (str, "..") &&
-           !!strncmp (str, "$cmd", 4) &&
-           !!strncmp (str, "oplog.$main", 11) &&
-           (*str != '.') &&
-           (*(str + strlen (str) - 1) != '.'));
+   const char *c;
+
+   if (str && *str) {
+      for (c = str; *c; c++) {
+         switch (*c) {
+         case '/':
+         case '\\':
+         case '.':
+         case '"':
+         case '*':
+         case '<':
+         case '>':
+         case ':':
+         case '|':
+         case '?':
+            return false;
+         default:
+            break;
+         }
+      }
+      return ((0 != strcmp (str, "oplog.$main")) &&
+              (0 != strcmp (str, "$cmd")));
+   }
+
+   return false;
 }
 
 
