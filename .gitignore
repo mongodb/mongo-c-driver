@@ -19,6 +19,8 @@ depcomp
 echo-server
 example-client
 find-and-modify
+*.gcda
+*.gcno
 INSTALL
 tags
 index-source
