@@ -230,7 +230,7 @@ It has some overhead, but rarely do we find BSON document creation the bottlenec
 ```c
 bson_t *b;
 
-b = BCON_NEW ("hello", "world",
+b = BCON_NEW ("hello", BCON_UTF8 ("world"),
               "count", "{",
                  "$gt", BCON_INT32 (10),
               "}",
