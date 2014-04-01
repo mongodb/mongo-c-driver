@@ -59,7 +59,7 @@ test_split_insert (void)
 
    _mongoc_write_command_init_insert (&command,
                                       (const bson_t * const *)docs,
-                                      3000, true);
+                                      3000, true, true);
 
    _mongoc_write_command_execute (&command, client, 0, collection->db,
                                   collection->collection, NULL, &result);

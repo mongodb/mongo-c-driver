@@ -918,7 +918,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
 
    ordered = !(flags & MONGOC_INSERT_CONTINUE_ON_ERROR);
    _mongoc_write_command_init_insert (&command, documents, n_documents,
-                                      ordered);
+                                      ordered, true);
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
@@ -999,7 +999,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert (&command, &document, 1, true);
+   _mongoc_write_command_init_insert (&command, &document, 1, true, false);
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,

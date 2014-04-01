@@ -55,10 +55,12 @@ static bson_t gEmptyWriteConcern = BSON_INITIALIZER;
 
 
 void
-_mongoc_write_command_init_insert (mongoc_write_command_t *command,     /* IN */
-                                   const bson_t * const   *documents,   /* IN */
-                                   uint32_t                n_documents, /* IN */
-                                   bool                    ordered)     /* IN */
+_mongoc_write_command_init_insert
+      (mongoc_write_command_t *command,              /* IN */
+       const bson_t * const   *documents,            /* IN */
+       uint32_t                n_documents,          /* IN */
+       bool                    ordered,              /* IN */
+       bool                    allow_bulk_op_insert) /* IN */
 {
    const char *key;
    uint32_t i;
@@ -72,6 +74,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,     /* IN */
    command->u.insert.documents = bson_new ();
    command->u.insert.n_documents = n_documents;
    command->u.insert.ordered = ordered;
+   command->u.insert.allow_bulk_op_insert = allow_bulk_op_insert;
 
    for (i = 0; i < n_documents; i++) {
       BSON_ASSERT (documents [i]);
@@ -212,6 +215,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    char ns [MONGOC_NAMESPACE_MAX + 1];
    bool r;
    int i;
+   int max_docs = MAX_INSERT_BATCH;
 
    ENTRY;
 
@@ -221,6 +225,10 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
+
+   if (command->u.insert.ordered || !command->u.insert.allow_bulk_op_insert) {
+      max_docs = 1;
+   }
 
    r = bson_iter_init (&iter, command->u.insert.documents);
    if (!r) {
@@ -276,8 +284,7 @@ again:
       /*
        * Check that we will not overflow our max message size.
        */
-      if ((i == MAX_INSERT_BATCH) ||
-          (size > (client->cluster.max_msg_size - len))) {
+      if ((i == max_docs) || (size > (client->cluster.max_msg_size - len))) {
          has_more = true;
          break;
       }

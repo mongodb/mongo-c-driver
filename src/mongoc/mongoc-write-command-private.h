@@ -45,6 +45,7 @@ typedef struct
       } delete;
       struct {
          uint8_t   ordered : 1;
+         uint8_t   allow_bulk_op_insert : 1;
          bson_t   *documents;
          uint32_t  n_documents;
       } insert;
@@ -80,7 +81,8 @@ void _mongoc_write_command_destroy     (mongoc_write_command_t        *command);
 void _mongoc_write_command_init_insert (mongoc_write_command_t        *command,
                                         const bson_t * const          *documents,
                                         uint32_t                       n_documents,
-                                        bool                           ordered);
+                                        bool                           ordered,
+                                        bool                           allow_bulk_op_insert);
 void _mongoc_write_command_init_delete (mongoc_write_command_t        *command,
                                         const bson_t                  *selector,
                                         bool                           multi,

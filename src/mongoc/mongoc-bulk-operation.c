@@ -138,7 +138,8 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
    bson_return_if_fail (bulk);
    bson_return_if_fail (document);
 
-   _mongoc_write_command_init_insert (&command, &document, 1, bulk->ordered);
+   _mongoc_write_command_init_insert (&command, &document, 1, bulk->ordered,
+                                      false);
    _mongoc_array_append_val (&bulk->commands, command);
 }
 
