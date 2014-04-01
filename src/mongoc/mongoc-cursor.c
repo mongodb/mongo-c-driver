@@ -432,6 +432,10 @@ _mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
             RETURN (true);
          }
       } else {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Failed to decode document from the server.");
          RETURN (true);
       }
    }
