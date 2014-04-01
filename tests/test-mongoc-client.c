@@ -477,8 +477,10 @@ test_exhaust_cursor (void)
          bptr[i] = &b[i];
       }
 
+      BEGIN_IGNORE_DEPRECATIONS;
       r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
                                          (const bson_t **)bptr, 10, wr, &error);
+      END_IGNORE_DEPRECATIONS;
 
       if (!r) {
          MONGOC_WARNING("Insert bulk failure: %s\n", error.message);
@@ -544,8 +546,11 @@ test_exhaust_cursor (void)
 
    /* make sure writes fail as well */
    {
+      BEGIN_IGNORE_DEPRECATIONS;
       r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
                                          (const bson_t **)bptr, 10, wr, &error);
+      END_IGNORE_DEPRECATIONS;
+
       assert (!r);
       assert (error.domain == MONGOC_ERROR_CLIENT);
       assert (error.code == MONGOC_ERROR_CLIENT_IN_EXHAUST);

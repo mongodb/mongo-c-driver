@@ -133,8 +133,10 @@ test_insert_bulk (void)
       bptr[i] = &b[i];
    }
 
+   BEGIN_IGNORE_DEPRECATIONS;
    r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
                                       (const bson_t **)bptr, 10, NULL, &error);
+   END_IGNORE_DEPRECATIONS;
 
    if (!r) {
       MONGOC_WARNING("%s\n", error.message);
@@ -153,8 +155,10 @@ test_insert_bulk (void)
       bptr[i] = &b[i];
    }
 
+   BEGIN_IGNORE_DEPRECATIONS;
    r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
                                      (const bson_t **)bptr, 10, NULL, &error);
+   END_IGNORE_DEPRECATIONS;
 
    ASSERT (!r);
    ASSERT (error.code == 11000);
@@ -162,8 +166,10 @@ test_insert_bulk (void)
    count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
    ASSERT (count == 5);
 
+   BEGIN_IGNORE_DEPRECATIONS;
    r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_CONTINUE_ON_ERROR,
                                      (const bson_t **)bptr, 10, NULL, &error);
+   END_IGNORE_DEPRECATIONS;
    ASSERT (!r);
    ASSERT (error.code == 11000);
 
