@@ -766,10 +766,9 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
    b = bson_reader_read(cursor->reader, &eof);
    cursor->end_of_event = eof;
 
-   cursor->done = cursor->end_of_event && (
-      (cursor->in_exhaust && !cursor->rpc.reply.cursor_id) ||
-      (!b && !(cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR))
-      );
+   cursor->done = (cursor->end_of_event &&
+                   ((cursor->in_exhaust && !cursor->rpc.reply.cursor_id) ||
+                    (!b && !(cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR))));
 
    /*
     * Do a supplimental check to see if we had a corrupted reply in the
