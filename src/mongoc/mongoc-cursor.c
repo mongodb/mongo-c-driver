@@ -523,7 +523,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    cursor->reader = bson_reader_new_from_data(cursor->rpc.reply.documents,
                                               cursor->rpc.reply.documents_len);
 
-   if (cursor->flags & MONGOC_QUERY_EXHAUST) {
+   if ((cursor->flags & MONGOC_QUERY_EXHAUST)) {
       cursor->in_exhaust = true;
       cursor->client->in_exhaust = true;
    }
