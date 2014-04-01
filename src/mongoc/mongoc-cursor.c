@@ -725,7 +725,6 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
 
    BSON_ASSERT(cursor);
 
-
    if (cursor->client->in_exhaust && ! cursor->in_exhaust) {
       bson_set_error(&cursor->error,
                      MONGOC_ERROR_CLIENT,
