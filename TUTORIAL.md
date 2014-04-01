@@ -184,6 +184,9 @@ Most C bson implementations have been similar to this.
 In this model, we initialize a `bson_t`, and then add fields to it one at a time.
 
 ```c
+#include <bson.h>
+#include <bcon.h>
+
 bson_t *b;
 
 b = bson_new ();
@@ -246,6 +249,8 @@ Notice that you can create arrays, subdocuments, and arbitrary fields.
 Now that we know how to get a handle to a database and collection, let's insert a document and then query it back!
 
 ```c
+#include <bcon.h>
+#include <bson.h>
 #include <mongoc.h>
 #include <stdio.h>
 #include <stdlib.h>
