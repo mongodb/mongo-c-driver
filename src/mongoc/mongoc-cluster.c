@@ -912,6 +912,10 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
 
    if (reply) {
       if (!_mongoc_rpc_reply_get_first(&rpc.reply, &reply_local)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Failed to decode reply BSON document.");
          GOTO(failure);
       }
       bson_copy_to(&reply_local, reply);
