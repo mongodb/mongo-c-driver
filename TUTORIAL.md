@@ -223,7 +223,7 @@ See `bson.h` for all of the types you can append to a `bson_t`.
 
 The imperative model of creating documents is time consuming and a lot of code.
 For this reason, BCON was created.
-It stands for `BSON C Object Notation`.
+It stands for _BSON C Object Notation_.
 This uses variadic macros to simplify BSON document creation.
 It has some overhead, but rarely do we find BSON document creation the bottleneck.
 
