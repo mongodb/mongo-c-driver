@@ -980,6 +980,9 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
           BSON_ITER_HOLDS_INT32 (&iter)) {
          result->nModified += bson_iter_int32 (&iter);
       } else {
+         /*
+          * nModified could be BSON_TYPE_NULL, which should also be omitted.
+          */
          result->omit_nModified = true;
       }
       break;
