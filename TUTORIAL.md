@@ -176,6 +176,71 @@ mongoc_database_destroy (database);
 ```
 
 
+## Creating BSON documents
+
+There are two ways to create bson documents.
+The first, is the imperative way.
+Most C bson implementations have been similar to this.
+In this model, we initialize a `bson_t`, and then add fields to it one at a time.
+
+```c
+bson_t *b;
+
+b = bson_new ();
+
+/*
+ * append ("hello": "world") to the document.
+ * -1 means the string is \0 terminated.
+ */
+bson_append_utf8 (b, "hello", -1, "world", -1);
+
+/*
+ * This is equivalent and saves characters.
+ */
+BSON_APPEND_UTF8 (b, "hello", "world");
+
+/*
+ * Let's build a sub-document.
+ */
+bson_t child;
+
+BSON_APPEND_DOCUMENT_BEGIN (b, "subdoc", &child);
+BSON_APPEND_UTF8 (&child, "subkey", "value");
+BSON_APPEND_DOCUMENT_END (b, &child);
+
+/*
+ * Now let's print it as a JSON string.
+ */
+char *str = bson_as_json (b, NULL);
+printf ("%s\n", str);
+bson_free (str);
+```
+
+See `bson.h` for all of the types you can append to a `bson_t`.
+
+
+### Using BCON to build documents.
+
+The imperative model of creating documents is time consuming and a lot of code.
+For this reason, BCON was created.
+It stands for `BSON C Object Notation`.
+This uses variadic macros to simplify BSON document creation.
+It has some overhead, but rarely do we find BSON document creation the bottleneck.
+
+```c
+bson_t *b;
+
+b = BCON_NEW ("hello", "world",
+              "count", "{",
+                 "$gt", BCON_INT32 (10),
+              "}",
+              "array", "[", BCON_INT32 (1), BCON_INT32 (2), "]",
+              "another", BCON_UTF8 ("string"));
+```
+
+Notice that you can create arrays, subdocuments, and arbitrary fields.
+
+
 ## Inserting and querying a document
 
 Now that we know how to get a handle to a database and collection, let's insert a document and then query it back!
@@ -195,8 +260,8 @@ main (int argc,
    const bson_t *item;
    bson_error_t error;
    bson_oid_t oid;
-   bson_t query;
-   bson_t doc;
+   bson_t *query;
+   bson_t *doc;
    char *str;
    bool r;
 
@@ -205,22 +270,20 @@ main (int argc,
    collection = mongoc_client_get_collection (client, "test", "test");
 
    /* insert a document */
-   bson_init (&doc);
    bson_oid_init (&oid, NULL);
-   BSON_APPEND_OID (&doc, "_id", &oid);
-   BSON_APPEND_UTF8 (&doc, "hello", "world!");
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
+   doc = BCON_NEW ("_id", BCON_OID (&oid),
+                   "hello", BCON_UTF8 ("world!"));
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL, &error);
    if (!r) {
       fprintf (stderr, "%s\n", error.message);
       return EXIT_FAILURE;
    }
 
    /* build a query to execute */
-   bson_init (&query);
-   BSON_APPEND_OID (&query, "_id", &oid);
+   query = BCON_NEW ("_id", BCON_OID (&oid));
 
    /* execute the query and iterate the results */
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
    while (mongoc_cursor_next (cursor, &item)) {
       str = bson_as_json (item, NULL);
       printf ("%s\n", str);
@@ -231,8 +294,8 @@ main (int argc,
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   bson_destroy (&query);
-   bson_destroy (&doc);
+   bson_destroy (query);
+   bson_destroy (doc);
 
    return 0;
 }
