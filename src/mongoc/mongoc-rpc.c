@@ -66,11 +66,13 @@
 #define BSON_OPTIONAL(_check, _code) \
    if (rpc->_check) { _code }
 #define BSON_ARRAY_FIELD(_name) \
-   iov.iov_base = (void *)rpc->_name; \
-   iov.iov_len = rpc->_name##_len; \
-   BSON_ASSERT(iov.iov_len); \
-   rpc->msg_len += (int32_t)iov.iov_len; \
-   _mongoc_array_append_val(array, iov);
+   if (rpc->_name##_len) { \
+      iov.iov_base = (void *)rpc->_name; \
+      iov.iov_len = rpc->_name##_len; \
+      BSON_ASSERT(iov.iov_len); \
+      rpc->msg_len += (int32_t)iov.iov_len; \
+      _mongoc_array_append_val(array, iov); \
+   }
 #define IOVEC_ARRAY_FIELD(_name) \
    do { \
       ssize_t _i; \
@@ -599,6 +601,8 @@ _mongoc_rpc_scatter (mongoc_rpc_t  *rpc,
    bson_return_val_if_fail(rpc, false);
    bson_return_val_if_fail(buf, false);
    bson_return_val_if_fail(buflen, false);
+
+   memset (rpc, 0, sizeof *rpc);
 
    if (BSON_UNLIKELY(buflen < 16)) {
       return false;
