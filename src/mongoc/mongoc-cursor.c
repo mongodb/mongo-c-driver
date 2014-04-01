@@ -425,14 +425,14 @@ _mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
       if (_mongoc_rpc_reply_get_first(&cursor->rpc.reply, &b)) {
          if ( bson_iter_init_find(&iter, &b, "ok") &&
               bson_iter_as_bool(&iter)) {
-            return false;
+            RETURN (false);
          } else {
             _mongoc_cursor_populate_error(cursor, &b, &cursor->error);
             bson_destroy(&b);
-            return true;
+            RETURN (true);
          }
       } else {
-         return true;
+         RETURN (true);
       }
    }
 
