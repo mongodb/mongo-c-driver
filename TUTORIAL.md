@@ -206,7 +206,7 @@ bson_t child;
 
 BSON_APPEND_DOCUMENT_BEGIN (b, "subdoc", &child);
 BSON_APPEND_UTF8 (&child, "subkey", "value");
-BSON_APPEND_DOCUMENT_END (b, &child);
+bson_append_document_end (b, &child);
 
 /*
  * Now let's print it as a JSON string.
