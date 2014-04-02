@@ -503,13 +503,22 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
       goto failure;
    }
 
-   if ((cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) ||
-       (cursor->rpc.header.response_to != request_id)) {
-      bson_set_error(&cursor->error,
-                     MONGOC_ERROR_PROTOCOL,
-                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                     "A reply to an invalid request id was received.");
-      goto failure;
+   if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid opcode. Expected %d, got %d.",
+                      MONGOC_OPCODE_REPLY, cursor->rpc.header.opcode);
+      GOTO (failure);
+   }
+
+   if (cursor->rpc.header.response_to != request_id) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid response_to. Expected %d, got %d.",
+                      request_id, cursor->rpc.header.response_to);
+      GOTO (failure);
    }
 
    if (_mongoc_cursor_unwrap_failure(cursor)) {
