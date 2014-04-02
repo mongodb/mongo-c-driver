@@ -467,7 +467,7 @@ bool
 _mongoc_client_recv (mongoc_client_t *client,
                      mongoc_rpc_t    *rpc,
                      mongoc_buffer_t *buffer,
-                     uint32_t    hint,
+                     uint32_t         hint,
                      bson_error_t    *error)
 {
    bson_return_val_if_fail(client, false);
