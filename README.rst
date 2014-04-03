@@ -45,6 +45,38 @@ MongoDB project, please report it according to the `instructions here
 <http://docs.mongodb.org/manual/tutorial/create-a-vulnerability-report>`_.
 
 
+Building from Release Tarball
+=============================
+
+Unless you intend on contributing to the mongo-c-driver, you will want to build
+from a release tarball.
+
+The most current release is 0.92.2 which you can download here.
+`mongo-c-driver-0.92.2.tar.gz <https://github.com/mongodb/mongo-c-driver/releases/download/0.92.2/mongo-c-driver-0.92.2.tar.gz>`_.
+
+To build on UNIX-like systems, do the following::
+
+  $ tar xzf mongo-c-driver-0.92.2.tar.gz
+  $ cd mongo-c-driver-0.92.2
+  $ ./configure
+  $ make
+  $ sudo make install
+
+To see all of the options available to you during configuration, run::
+
+  $ ./configure --help
+
+To build on Windows Vista or newer with Visual Studio 2010, do the following::
+
+  cd src\libbson
+  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -G "Visual Studio 10 Win64" .
+  msbuild.exe ALL_BUILD.vcxproj
+  msbuild.exe INSTALL.vcxproj
+  cd ..\..
+  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -DBSON_ROOT_DIR=C:\usr -G "Visual Studio 10 Win64" .
+  msbuild.exe ALL_BUILD.vcxproj
+  msbuild.exe INSTALL.vcxproj
+
 Building From Git
 =================
 
