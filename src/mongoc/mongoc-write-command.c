@@ -937,6 +937,7 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
 {
    const bson_value_t *value;
    bson_iter_t iter;
+   bson_iter_t citer;
    int32_t n_upserted = 0;
    int32_t affected = 0;
 
@@ -948,6 +949,13 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
    if (bson_iter_init_find (&iter, reply, "n") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
       affected = bson_iter_int32 (&iter);
+   }
+
+   if (bson_iter_init_find (&iter, reply, "writeErrors") &&
+       BSON_ITER_HOLDS_ARRAY (&iter) &&
+       bson_iter_recurse (&iter, &citer) &&
+       bson_iter_next (&citer)) {
+      result->failed = true;
    }
 
    switch (command->type) {
