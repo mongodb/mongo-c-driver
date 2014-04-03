@@ -321,12 +321,15 @@ main (int argc,
 {
    bson_t *doc;
 
-   doc = BCON_NEW ("$set", "{",
-                      "name", BCON_UTF8 ("bambino"),
-                      "$push", "{",
-                         "wins", BCON_INT32 (1),
-                      "}",
-                   "}");
+   doc = BCON_NEW ("name", BCON_UTF8 ("Babe Ruth"),
+                   "batting_average", BCON_DOUBLE (.342),
+                   "hits", BCON_INT32 (2873),
+                   "home_runs", BCON_INT32 (714),
+                   "rbi", BCON_INT32 (2213),
+                   "nicknames", "[",
+                      BCON_UTF8 ("the Sultan of Swat"),
+                      BCON_UTF8 ("the Bambino"),
+                   "]");
 
    str = bson_as_json (doc, NULL);
    printf ("%s\n", str);
