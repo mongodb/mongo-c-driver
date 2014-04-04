@@ -248,10 +248,17 @@ ssl_test_client (void * ptr)
    r = mongoc_stream_writev(ssl_stream, &wiov, 1, TIMEOUT);
    assert(r == wiov.iov_len);
 
-   r = mongoc_stream_readv(ssl_stream, &riov, 1, 4, TIMEOUT);
-   assert(r > 0);
-   assert(r == wiov.iov_len);
-   assert(strcmp(riov.iov_base, wiov.iov_base) == 0);
+   riov.iov_len = 1;
+
+   r = mongoc_stream_readv(ssl_stream, &riov, 1, 1, TIMEOUT);
+   assert(r == 1);
+   assert(memcmp(riov.iov_base, "f", 1) == 0);
+
+   riov.iov_len = 3;
+
+   r = mongoc_stream_readv(ssl_stream, &riov, 1, 3, TIMEOUT);
+   assert(r == 3);
+   assert(memcmp(riov.iov_base, "oo", 3) == 0);
 
    mongoc_stream_destroy(ssl_stream);
 

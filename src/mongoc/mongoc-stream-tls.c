@@ -470,7 +470,11 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
    ssize_t ret = 0;
    size_t i;
+   size_t iov_pos = 0;
    int write_ret;
+
+   int64_t now;
+   int64_t expire = 0;
 
    BSON_ASSERT (tls);
    BSON_ASSERT (iov);
@@ -478,14 +482,44 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
 
    tls->timeout = timeout_msec;
 
+   if (timeout_msec >= 0) {
+      expire = bson_get_monotonic_time () + (timeout_msec * 1000UL);
+   }
+
    for (i = 0; i < iovcnt; i++) {
-      write_ret = BIO_write (tls->bio, iov[i].iov_base, (int)iov[i].iov_len);
+      iov_pos = 0;
 
-      if (write_ret != iov[i].iov_len) {
-         return write_ret;
+      while (iov_pos < iov[i].iov_len) {
+         write_ret = BIO_write (tls->bio, (char *)iov[i].iov_base + iov_pos,
+                              (int)(iov[i].iov_len - iov_pos));
+
+         if (write_ret < 0) {
+            return write_ret;
+         }
+
+         if (expire) {
+            now = bson_get_monotonic_time ();
+
+            if ((expire - now) < 0) {
+               if (write_ret == 0) {
+                  mongoc_counter_streams_timeout_inc();
+#ifdef _WIN32
+                  errno = WSAETIMEDOUT;
+#else
+                  errno = ETIMEDOUT;
+#endif
+                  return -1;
+               }
+
+               tls->timeout = 0;
+            } else {
+               tls->timeout = expire - now;
+            }
+         }
+
+         ret += write_ret;
+         iov_pos += write_ret;
       }
-
-      ret += write_ret;
    }
 
    if (ret >= 0) {
@@ -527,7 +561,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
    int read_ret;
    size_t iov_pos = 0;
    int64_t now;
-   int64_t expire;
+   int64_t expire = 0;
 
    BSON_ASSERT (tls);
    BSON_ASSERT (iov);
@@ -535,40 +569,49 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
 
    tls->timeout = timeout_msec;
 
-   expire = bson_get_monotonic_time () + (timeout_msec * 1000UL);
+   if (timeout_msec >= 0) {
+      expire = bson_get_monotonic_time () + (timeout_msec * 1000UL);
+   }
 
    for (i = 0; i < iovcnt; i++) {
       iov_pos = 0;
 
-      while (iov_pos < iov[i].iov_len - 1) {
+      while (iov_pos < iov[i].iov_len) {
          read_ret = BIO_read (tls->bio, (char *)iov[i].iov_base + iov_pos,
                               (int)(iov[i].iov_len - iov_pos));
 
-         now = bson_get_monotonic_time ();
-
-         if (((expire - now) < 0) && (read_ret == 0)) {
-            mongoc_counter_streams_timeout_inc();
-#ifdef _WIN32
-            errno = WSAETIMEDOUT;
-#else
-            errno = ETIMEDOUT;
-#endif
-            return -1;
+         if (read_ret < 0) {
+            return read_ret;
          }
 
-         if (read_ret == -1) {
-            return read_ret;
+         if (expire) {
+            now = bson_get_monotonic_time ();
+
+            if ((expire - now) < 0) {
+               if (read_ret == 0) {
+                  mongoc_counter_streams_timeout_inc();
+#ifdef _WIN32
+                  errno = WSAETIMEDOUT;
+#else
+                  errno = ETIMEDOUT;
+#endif
+                  return -1;
+               }
+
+               tls->timeout = 0;
+            } else {
+               tls->timeout = expire - now;
+            }
          }
 
          ret += read_ret;
 
-         if (read_ret != iov[i].iov_len) {
-            if ((size_t)read_ret >= min_bytes) {
-               return read_ret;
-            }
-
-            iov_pos += read_ret;
+         if ((size_t)ret >= min_bytes) {
+            mongoc_counter_streams_ingress_add(ret);
+            return ret;
          }
+
+         iov_pos += read_ret;
       }
    }
 
