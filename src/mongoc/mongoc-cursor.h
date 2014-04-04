@@ -44,7 +44,7 @@ bool             mongoc_cursor_error    (mongoc_cursor_t        *cursor,
                                          bson_error_t           *error);
 void             mongoc_cursor_get_host (mongoc_cursor_t        *cursor,
                                          mongoc_host_list_t     *host);
-bool             mongoc_cursor_is_alive (mongoc_cursor_t        *cursor);
+bool             mongoc_cursor_is_alive (const mongoc_cursor_t  *cursor);
 const bson_t    *mongoc_cursor_current  (const mongoc_cursor_t  *cursor);
 
 

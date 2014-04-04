@@ -951,7 +951,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
  */
 
 bool
-mongoc_cursor_is_alive (mongoc_cursor_t *cursor) /* IN */
+mongoc_cursor_is_alive (const mongoc_cursor_t *cursor) /* IN */
 {
    bson_return_val_if_fail (cursor, false);
 
