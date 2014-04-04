@@ -1,0 +1,55 @@
+mongoc_bulk_operation_update(3)
+===============================
+
+
+NAME
+----
+mongoc_bulk_operation_update - Add an update operation to a bulk operation
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+void mongoc_bulk_operation_update     (mongoc_bulk_operation_t *bulk,
+                                       const bson_t            *selector,
+                                       const bson_t            *document,
+                                       bool                     upsert);
+void mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
+                                       const bson_t            *selector,
+                                       const bson_t            *document,
+                                       bool                     upsert);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_bulk_operation_update()_ function will request all documents
+matching _selector_ be updated by applying the update document _document_.
+It is invalid to provide a document that does not contain _$_ keys. If you
+would like to do so, use _mongoc_bulk_operation_replace_one()_.
+
+_mongoc_bulk_operation_replace_one()_ is functionally similar to
+_mongoc_bulk_operation_replace()_ execept only one document will be modified.
+
+
+RETURN VALUE
+------------
+None.
+
+
+ERRORS
+------
+Errors are reported via the result from linkmongoc:mongoc_bulk_operation_execute[3].
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_bulk_operation_execute[3]
+linkmongoc:mongoc_bulk_operation_destroy[3]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB, Inc.
