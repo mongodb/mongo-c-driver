@@ -1,0 +1,1 @@
+mongoc_bulk_operation_delete.txt
