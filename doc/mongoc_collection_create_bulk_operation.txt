@@ -1,0 +1,74 @@
+mongoc_collection_create_bulk_operation(3)
+==========================================
+
+
+NAME
+----
+mongoc_collection_create_bulk_operation - begin a new bulk operation
+
+
+SYNOPSIS
+--------
+[source,c]
+-----------------------
+mongoc_bulk_operation_t *
+mongoc_collection_create_bulk_operation
+        (mongoc_collection_t          *collection,
+         bool                          ordered,
+         const mongoc_write_concern_t *write_concern);
+-----------------------
+
+
+DESCRIPTION
+-----------
+The _mongoc_collection_create_bulk_operation()_ function shall begin a new
+bulk operation. After creating this you may call various functions such as
+_mongoc_bulk_operation_update()_, _mongoc_bulk_operation_insert()_ and others.
+After calling _mongoc_bulk_operation_execute()_, the commands will be executed
+in as large as batches as reasonable by the client.
+
+If _ordered_ is true, then processing will stop at the first error.
+If _ordered_ is not true, then the bulk operation will attempt to continue
+processing even after the first failure.
+
+_write_concern_ should contain the write concern you wish to have applied
+to all operations within the bulk operation.
+
+
+NOTES
+-----
+In the future, operations may be opportunistically sent to the server as they
+are added to the bulk operation, but this has not yet been implemented.
+
+
+RETURN VALUE
+------------
+A newly allocated _mongoc_bulk_operation_t_ that should be destroyed with
+_mongoc_bulk_operation_destroy()_.
+
+
+ERRORS
+------
+get_database and create_bulk_operation are both lazy, and as such do not return any
+errors.  get_gridfs ensures relevant indexes, and as such returns errors as
+linkmongoc:mongoc_collection_ensure_index[3].
+
+
+SEE ALSO
+--------
+linkmongoc:mongoc_collection[7]
+linkmongoc:mongoc_bulk_operation[7]
+linkmongoc:mongoc_bulk_operation_execute[3]
+linkmongoc:mongoc_bulk_operation_insert[3]
+linkmongoc:mongoc_bulk_operation_delete[3]
+linkmongoc:mongoc_bulk_operation_delete_one[3]
+linkmongoc:mongoc_bulk_operation_replace_one[3]
+linkmongoc:mongoc_bulk_operation_update[3]
+linkmongoc:mongoc_bulk_operation_update_one[3]
+linkmongoc:mongoc_bulk_operation_destroy[3]
+
+
+AUTHORS
+-------
+
+This page was written by MongoDB, Inc.
