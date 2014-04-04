@@ -4,7 +4,7 @@ mongoc_socket_bind(3)
 
 NAME
 ----
-mongoc_socket_bind, mongoc_socket_listen, mongoc_socket_accept - Platform server socket abstractions.
+mongoc_socket_bind, mongoc_socket_listen, mongoc_socket_accept - server socket abstractions
 
 
 SYNOPSIS
