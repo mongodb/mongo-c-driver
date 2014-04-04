@@ -26,6 +26,9 @@ void     mongoc_write_concern_set_wtimeout  (mongoc_write_concern_t       *write
 bool     mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern);
 void     mongoc_write_concern_set_wmajority (mongoc_write_concern_t       *write_concern,
                                              int32_t                       wtimeout_msec);
+const char *mongoc_write_concern_get_wtag   (const mongoc_write_concern_t *write_concern);
+void        mongoc_write_concern_set_wtag   (mongoc_write_concern_t       *write_concern,
+                                             const char                   *tag);
 -----------------------
 
 
