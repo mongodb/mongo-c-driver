@@ -1,3 +1,26 @@
+mongo-c-driver 0.94.0
+=====================
+
+The mongo-c-driver team is proud to announce the release of 0.94.0. This
+release is a followup to the previous release adding more features to be found
+in MongoDB 2.6.
+
+You will find some new API's, bug fixes, and more documentation. Under the
+hood, 0.94.0 uses the new write-commands as part of MongoDB 2.6 when it
+discovers it is communicating with a MongoDB server. There is now a bulk
+operation API (See `mongoc-bulk-operation.h`).
+
+Helpers for common server commands have been added. You can find most of
+them `mongoc-collection.h`.
+
+To simply using mongo-c-driver from Windows, we've included pre-built binaries
+on the release page.
+
+Thanks to all of the contributors this release!
+
+Happy Hacking!
+
+
 mongo-c-driver 0.92.0
 =====================
 
