@@ -24,6 +24,11 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #error Not a supported Clang compiler
 #endif
 ])], [c_compiler="clang"], [])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#if !(defined(__SUNPRO_C))
+#error Not a supported Sun compiler
+#endif
+])], [c_compiler="sun"], [])
 AC_LANG_POP([C])
 
 if test "$c_compiler" = "unknown"; then
