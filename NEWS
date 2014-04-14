@@ -1,3 +1,18 @@
+mongo-c-driver 0.94.2
+=====================
+
+Hot on the heels of 0.94.0 is 0.94.2, a bugfix release.
+
+A bug has been fixed when using TLS streams and large result sets.
+
+In this release, we added support for Sun's C compiler (Sun Pro C) on Solaris.
+This allows for builds on Solaris 10 with SPARC using the native toolchain.
+
+This release contains a couple of fixes in libbson as well.
+
+Keep those bug reports coming, and as always, Happy Hacking!
+
+
 mongo-c-driver 0.94.0
 =====================
 
