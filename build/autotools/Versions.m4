@@ -1,6 +1,6 @@
 m4_define([mongoc_major_version], [0])
 m4_define([mongoc_minor_version], [94])
-m4_define([mongoc_micro_version], [2])
+m4_define([mongoc_micro_version], [3])
 m4_define([mongoc_version], [mongoc_major_version.mongoc_minor_version.mongoc_micro_version])
 
 # bump up by 1 for every micro release with no API changes, otherwise
