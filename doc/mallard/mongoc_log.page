@@ -1,8 +1,8 @@
 <page xmlns="http://projectmallard.org/1.0/"
       type="topic"
-      id="mongoc_client_t">
+      id="mongoc_log">
   <info>
     <link type="guide" xref="index#api-reference" />
   </info>
-  <title>mongoc_client_t</title>
+  <title>Logging</title>
 </page>
