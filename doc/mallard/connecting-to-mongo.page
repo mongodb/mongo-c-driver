@@ -24,7 +24,7 @@ connecting to: localhost:27017/test
 
     <p>
       The following code example creates a new <code>mongoc_client_t</code> that we will use to communicate with MongoDB.
-      The <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link> component is quite extensible.
+      The <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link> component is quite comprehensive.
     </p>
 
     <listing>
