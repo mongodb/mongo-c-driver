@@ -18,11 +18,12 @@
       <tr>
         <td><title>Operating Systems</title></td>
         <td><title>CPU Architectures</title></td>
+        <td><title>Compiler Toolchain</title></td>
       </tr>
       <tr>
         <td>
           <list>
-            <item><p>Linux (RedHat Enterprise 5 and newer)</p></item>
+            <item><p>Linux</p></item>
             <item><p>FreeBSD</p></item>
             <item><p>Dragonfly BSD</p></item>
             <item><p>Mac OS X 10.6 and newer</p></item>
@@ -36,6 +37,15 @@
             <item><p>ARM</p></item>
             <item><p>PPC</p></item>
             <item><p>SPARC</p></item>
+          </list>
+        </td>
+        <td>
+          <list>
+            <item><p>GCC 4.1</p></item>
+            <item><p>clang 3.3</p></item>
+            <item><p>Visual Studio 2010</p></item>
+            <item><p>Solaris 10 SunStudio</p></item>
+            <item><p>mingw</p></item>
           </list>
         </td>
       </tr>
