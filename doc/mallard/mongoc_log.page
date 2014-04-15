@@ -4,5 +4,85 @@
   <info>
     <link type="guide" xref="index#api-reference" />
   </info>
+
   <title>Logging</title>
+
+  <p>The MongoDB C Driver has a set of facilities that can aide you in logging, or interact with an alternate logging framework.</p>
+
+  <section id="logging-macros">
+    <listing>
+      <title>Logging Macros</title>
+      <desc>printf() style macros that are delivered to the logging framework.</desc>
+      <screen><![CDATA[#include <mongoc.h>
+
+#define MONGOC_ERROR(...)
+#define MONGOC_CRITICAL(...)
+#define MONGOC_WARNING(...)
+#define MONGOC_MESSAGE(...)
+#define MONGOC_INFO(...)
+#define MONGOC_DEBUG(...)
+]]></screen>
+    </listing>
+
+    <p>The above macros can be used just like <code>printf()</code>, except that they will be delivered to the logging framework.</p>
+    <code mime="text/x-csrc">MONGOC_WARNING ("Failed to connect to: %s", "hostname");</code>
+  </section>
+
+  <section id="custom-log-handler">
+    <title>Custom Log Handlers</title>
+
+    <p>The default logging handler for the MongoDB C Driver will print to <code>stdout</code> or <code>stderr</code> based on the severity. You may want to alter this to deliver log messages to a custom logging framework. This is done by setting a <code>mongoc_log_func_t</code> to receive the messages.</p>
+
+    <screen><![CDATA[#include <mongoc.h>
+
+typedef void (*mongoc_log_func_t) (mongoc_log_level_t  log_level,
+                                   const char         *log_domain,
+                                   const char         *message,
+                                   void               *user_data);
+
+void mongoc_log_default_handler (mongoc_log_level_t  log_level,
+                                 const char         *log_domain,
+                                 const char         *message,
+                                 void               *user_data);
+
+void mongoc_log_set_handler (mongoc_log_func_t  log_func,
+                             void              *user_data);
+]]></screen>
+
+    <p>
+      To set a custom handler, call <code>mongoc_log_set_handler</code> with an alternate callback.
+      You can re-enable the default handler by passing <code>mongoc_log_default_handler</code> at any time.
+    </p>
+
+  </section>
+
+  <section id="other-log-stuff">
+    <title>Additional Information</title>
+
+    <screen><![CDATA[#include <mongoc.h>
+
+#define MONGOC_LOG_DOMAIN "mongoc"
+
+typedef enum
+{
+   MONGOC_LOG_LEVEL_ERROR,
+   MONGOC_LOG_LEVEL_CRITICAL,
+   MONGOC_LOG_LEVEL_WARNING,
+   MONGOC_LOG_LEVEL_MESSAGE,
+   MONGOC_LOG_LEVEL_INFO,
+   MONGOC_LOG_LEVEL_DEBUG,
+   MONGOC_LOG_LEVEL_TRACE,
+} mongoc_log_level_t;
+
+void mongoc_log (mongoc_log_level_t  log_level,
+                 const char         *log_domain,
+                 const char         *format,
+                 ...)
+   BSON_GNUC_PRINTF(3, 4);
+
+const char *
+mongoc_log_level_str (mongoc_log_level_t log_level);
+]]></screen>
+  </section>
+
 </page>
