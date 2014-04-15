@@ -3,8 +3,16 @@
       id="index">
   <title>MongoDB C Driver</title>
 
+  <section id="installation">
+    <title>Installation</title>
+  </section>
+
   <section id="getting-started">
     <title>Getting Started</title>
+  </section>
+
+  <section id="advanced-connections">
+    <title>Advanced Connections</title>
   </section>
 
   <section id="api-reference" style="2column">

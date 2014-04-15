@@ -2,7 +2,7 @@
       type="topic"
       id="installing-mongo-c-driver">
   <info>
-    <link type="guide" xref="index#getting-started" />
+    <link type="guide" xref="index#installation" />
   </info>
 
   <title>Installing the MongoDB C Driver</title>
@@ -10,6 +10,10 @@
   <p>The following guide will step you through the process of downloading, building, and installing the current release of the MongoDB C Driver.</p>
 
   <section id="supported-platforms">
+    <info>
+      <link type="guide" xref="index#installation" />
+    </info>
+
     <title>Supported Platforms</title>
 
     <p>The MongoDB C Driver currently supports the following operating systems and CPU architectures.</p>
