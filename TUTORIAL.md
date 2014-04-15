@@ -75,6 +75,8 @@ main (int argc,
 {
    mongoc_client_t *client;
 
+   mongoc_init ();
+
    /* create a new client instance */
    client = mongoc_client_new ("mongodb://localhost:27017");
 
@@ -270,6 +272,8 @@ main (int argc,
    char *str;
    bool r;
 
+   mongoc_init ();
+
    /* get a handle to our collection */
    client = mongoc_client_new ("mongodb://localhost:27017");
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -362,6 +366,8 @@ main (int argc,
    bson_t query;
    bool r;
 
+   mongoc_init ();
+
    /* get a handle to our collection */
    client = mongoc_client_new ("mongodb://localhost:27017");
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -422,6 +428,8 @@ main (int argc,
    mongoc_uri_t *uri;
    pthread_t threads[N_THREADS];
 
+   mongoc_init ();
+
    uri = mongoc_uri_new ("mongodb://localhost/");
    pool = mongoc_client_pool_new (uri);
 
@@ -460,6 +468,8 @@ main (int argc,
    bson_t reply;
    char *str;
    bool r;
+
+   mongoc_init ();
 
    client = mongoc_client_new ("mongodb://localhost:27017/");
 
