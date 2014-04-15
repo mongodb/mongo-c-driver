@@ -4,5 +4,9 @@
   <info>
     <link type="guide" xref="index#api-reference" />
   </info>
+
   <title>mongoc_client_t</title>
+
+  <screen><include href="../../src/mongoc/mongoc-client.h" parse="text" xmlns="http://www.w3.org/2001/XInclude"/></screen>
+
 </page>
