@@ -1,0 +1,13 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      type="guide"
+      id="index">
+  <title>MongoDB C Driver</title>
+
+  <section id="getting-started">
+    <title>Getting Started</title>
+  </section>
+
+  <section id="api-reference" style="2column">
+    <title>API Reference</title>
+  </section>
+</page>

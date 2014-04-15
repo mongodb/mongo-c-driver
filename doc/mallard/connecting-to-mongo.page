@@ -1,0 +1,9 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      id="connecting-to-mongo">
+  <info>
+    <link type="guide" xref="index#getting-started" />
+  </info>
+  <title>Connecting to a MongoDB Server</title>
+  <p>This is some text.</p>
+</page>
