@@ -49,7 +49,10 @@ main (int   argc,
 ]]></code>
     </listing>
 
-
+    <note style="advanced">
+      <p>You can require that SSL is used by providing <code>ssl=true</code> to the URI options.</p>
+      <code>mongodb://localhost:27017/?ssl=true</code>
+    </note>
 
   </section>
 
