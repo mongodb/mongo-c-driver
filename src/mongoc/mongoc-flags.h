@@ -133,7 +133,7 @@ typedef enum
 } mongoc_update_flags_t;
 
 
-#define MONGOC_UPDATE_NO_VALIDATE (1 << 31)
+#define MONGOC_UPDATE_NO_VALIDATE (1U << 31)
 
 
 BSON_END_DECLS
