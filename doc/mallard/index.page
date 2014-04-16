@@ -11,8 +11,12 @@
     <title>Getting Started</title>
   </section>
 
-  <section id="advanced-connections">
+  <section id="advanced-connections" style="2column">
     <title>Advanced Connections</title>
+  </section>
+
+  <section id="authentication">
+    <title>Authentication</title>
   </section>
 
   <section id="api-reference" style="2column">

@@ -1,0 +1,43 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      id="authentication">
+
+  <title>Authentication</title>
+
+  <section id="basic-auth">
+    <info>
+      <link type="guide" xref="index#authentication" />
+    </info>
+
+    <title>Basic Authentication</title>
+
+    <p>
+      TODO:
+    </p>
+  </section>
+
+  <section id="kerberos">
+    <info>
+      <link type="guide" xref="index#authentication" />
+    </info>
+
+    <title>Kerberos Authentication</title>
+
+    <p>
+      TODO:
+    </p>
+  </section>
+
+  <section id="x509">
+    <info>
+      <link type="guide" xref="index#authentication" />
+    </info>
+
+    <title>X.509 Certificate Authentication</title>
+
+    <p>
+      TODO:
+    </p>
+  </section>
+
+</page>
