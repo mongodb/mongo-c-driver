@@ -21,7 +21,19 @@
       <link type="guide" xref="index#authentication" />
     </info>
 
-    <title>Kerberos Authentication</title>
+    <title>SASL Kerberos Authentication</title>
+
+    <p>
+      TODO:
+    </p>
+  </section>
+
+  <section id="plain">
+    <info>
+      <link type="guide" xref="index#authentication" />
+    </info>
+
+    <title>SASL Plain Authentication</title>
 
     <p>
       TODO:

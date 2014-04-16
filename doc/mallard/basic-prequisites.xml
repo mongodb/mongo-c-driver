@@ -1,0 +1,12 @@
+<section xmlns="http://projectmallard.org/1.0/">
+  <title>Prerequisites</title>
+  <p>
+    Before you start this guide, ensure you have installed the driver and MongoDB is running on <code>localhost</code>.
+    You can test that MongoDB is up and running by connecting to it with the MongoDB shell.
+  </p>
+
+  <screen>$ mongo --host localhost 
+MongoDB shell version: 2.4.10
+connecting to: localhost:27017/test
+> </screen>
+</section>

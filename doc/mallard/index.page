@@ -15,8 +15,12 @@
     <title>Advanced Connections</title>
   </section>
 
-  <section id="authentication">
+  <section id="authentication" style="2column">
     <title>Authentication</title>
+  </section>
+
+  <section id="debugging" style="2column">
+    <title>Troubleshooting</title>
   </section>
 
   <section id="api-reference" style="2column">

@@ -1,0 +1,21 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      id="debugging">
+
+    <section id="basic-troubleshooting">
+      <info>
+        <link type="guide" xref="index#debugging" />
+      </info>
+      <title>Basic Troubleshooting</title>
+      <p>TODO:</p>
+    </section>
+
+    <section id="perf-counters">
+      <info>
+        <link type="guide" xref="index#debugging" />
+      </info>
+      <title>Performance Counters</title>
+      <p>TODO:</p>
+    </section>
+
+</page>
