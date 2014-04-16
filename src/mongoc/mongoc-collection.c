@@ -1062,7 +1062,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
 
    bson_clear (&collection->gle);
 
-   if (!(flags & MONGOC_UPDATE_NO_VALIDATE) &&
+   if (!((uint32_t)flags & MONGOC_UPDATE_NO_VALIDATE) &&
        bson_iter_init (&iter, update) &&
        bson_iter_next (&iter) &&
        (bson_iter_key (&iter) [0] != '$') &&
@@ -1079,7 +1079,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
                       "invalid keys including $ or .");
       return false;
    } else {
-      flags &= ~MONGOC_UPDATE_NO_VALIDATE;
+      flags = (uint32_t)flags & ~MONGOC_UPDATE_NO_VALIDATE;
    }
 
    _mongoc_write_result_init (&result);
