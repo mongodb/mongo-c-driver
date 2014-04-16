@@ -39,6 +39,7 @@
    BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
+#define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name) \
    iov.iov_base = (void *)&rpc->_name; \
    iov.iov_len = 8; \
@@ -114,6 +115,7 @@
 
 
 #undef RPC
+#undef ENUM_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -136,6 +138,7 @@
    }
 #define INT32_FIELD(_name) \
    rpc->_name = BSON_UINT32_FROM_LE(rpc->_name);
+#define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name) \
    rpc->_name = BSON_UINT64_FROM_LE(rpc->_name);
 #define CSTRING_FIELD(_name)
@@ -197,6 +200,7 @@
 
 
 #undef RPC
+#undef ENUM_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -219,6 +223,8 @@
    }
 #define INT32_FIELD(_name) \
    printf("  "#_name" : %d\n", rpc->_name);
+#define ENUM_FIELD(_name) \
+   printf("  "#_name" : %u\n", rpc->_name);
 #define INT64_FIELD(_name) \
    printf("  "#_name" : %" PRIi64 "\n", (int64_t)rpc->_name);
 #define CSTRING_FIELD(_name) \
@@ -297,6 +303,7 @@
 
 
 #undef RPC
+#undef ENUM_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -327,6 +334,7 @@
    memcpy(&rpc->_name, buf, 4); \
    buflen -= 4; \
    buf += 4;
+#define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name) \
    if (buflen < 8) { \
       return false; \
@@ -418,6 +426,7 @@
 
 
 #undef RPC
+#undef ENUM_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD

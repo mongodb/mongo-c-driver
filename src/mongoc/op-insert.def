@@ -4,7 +4,7 @@ RPC(
   INT32_FIELD(request_id)
   INT32_FIELD(response_to)
   INT32_FIELD(opcode)
-  INT32_FIELD(flags)
+  ENUM_FIELD(flags)
   CSTRING_FIELD(collection)
   IOVEC_ARRAY_FIELD(documents)
 )

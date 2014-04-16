@@ -6,7 +6,7 @@ RPC(
   INT32_FIELD(opcode)
   INT32_FIELD(zero)
   CSTRING_FIELD(collection)
-  INT32_FIELD(flags)
+  ENUM_FIELD(flags)
   BSON_FIELD(selector)
   BSON_FIELD(update)
 )

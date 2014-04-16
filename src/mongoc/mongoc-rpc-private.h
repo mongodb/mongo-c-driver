@@ -31,6 +31,7 @@ BSON_BEGIN_DECLS
 
 
 #define RPC(_name, _code)                typedef struct { _code } mongoc_rpc_##_name##_t;
+#define ENUM_FIELD(_name)                uint32_t _name;
 #define INT32_FIELD(_name)               int32_t _name;
 #define INT64_FIELD(_name)               int64_t _name;
 #define INT64_ARRAY_FIELD(_len, _name)   int32_t _len; int64_t *_name;
@@ -73,6 +74,7 @@ BSON_STATIC_ASSERT (offsetof (mongoc_rpc_header_t, opcode) ==
 
 
 #undef RPC
+#undef ENUM_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
