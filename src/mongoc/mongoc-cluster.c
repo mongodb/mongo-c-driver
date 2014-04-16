@@ -218,7 +218,7 @@ _mongoc_cluster_clear_peers (mongoc_cluster_t *cluster)
 
    BSON_ASSERT(cluster);
 
-   _mongoc_list_foreach(cluster->peers, (void *)bson_free, NULL);
+   _mongoc_list_foreach(cluster->peers, (void(*)(void*,void*))bson_free, NULL);
    _mongoc_list_destroy(cluster->peers);
    cluster->peers = NULL;
 
@@ -1999,7 +1999,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
       i++;
    }
 
-   _mongoc_list_foreach(list, (void *)bson_free, NULL);
+   _mongoc_list_foreach(list, (void(*)(void*,void*))bson_free, NULL);
    _mongoc_list_destroy(list);
 
    /*
