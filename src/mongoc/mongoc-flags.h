@@ -57,8 +57,10 @@ typedef enum
 {
    MONGOC_INSERT_NONE              = 0,
    MONGOC_INSERT_CONTINUE_ON_ERROR = 1 << 0,
-   MONGOC_INSERT_NO_VALIDATE       = 1 << 31,
 } mongoc_insert_flags_t;
+
+
+#define MONGOC_INSERT_NO_VALIDATE (1U << 31)
 
 
 /**
@@ -128,8 +130,10 @@ typedef enum
    MONGOC_UPDATE_NONE         = 0,
    MONGOC_UPDATE_UPSERT       = 1 << 0,
    MONGOC_UPDATE_MULTI_UPDATE = 1 << 1,
-   MONGOC_UPDATE_NO_VALIDATE  = 1 << 31,
 } mongoc_update_flags_t;
+
+
+#define MONGOC_UPDATE_NO_VALIDATE (1 << 31)
 
 
 BSON_END_DECLS
