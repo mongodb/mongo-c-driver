@@ -89,11 +89,11 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file);
       file->is_dirty = 1; \
    }
 
-MONGOC_GRIDFS_FILE_STR_ACCESSOR (md5);
-MONGOC_GRIDFS_FILE_STR_ACCESSOR (filename);
-MONGOC_GRIDFS_FILE_STR_ACCESSOR (content_type);
-MONGOC_GRIDFS_FILE_BSON_ACCESSOR (aliases);
-MONGOC_GRIDFS_FILE_BSON_ACCESSOR (metadata);
+MONGOC_GRIDFS_FILE_STR_ACCESSOR (md5)
+MONGOC_GRIDFS_FILE_STR_ACCESSOR (filename)
+MONGOC_GRIDFS_FILE_STR_ACCESSOR (content_type)
+MONGOC_GRIDFS_FILE_BSON_ACCESSOR (aliases)
+MONGOC_GRIDFS_FILE_BSON_ACCESSOR (metadata)
 
 
 /** save a gridfs file */
