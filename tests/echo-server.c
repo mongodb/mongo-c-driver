@@ -78,6 +78,8 @@ main (int   argc,
       client_stream = mongoc_stream_socket_new (client);
 
       mongoc_thread_create (&thread, client_thread, client_stream);
+
+      if (false) break; /* fake noreturn */
    }
 
    mongoc_cleanup();

@@ -368,7 +368,7 @@ mock_server_run (mock_server_t *server)
       csock = mongoc_socket_accept (server->sock, -1);
       if (!csock) {
          perror ("Failed to accept client socket");
-         return -1;
+         break;
       }
 
       stream = mongoc_stream_socket_new (csock);
