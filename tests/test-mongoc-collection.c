@@ -840,6 +840,61 @@ test_find_and_modify (void)
 
 
 static void
+test_large_return (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc = NULL;
+   bson_oid_t oid;
+   bson_t insert_doc = BSON_INITIALIZER;
+   bson_t query = BSON_INITIALIZER;
+   size_t len;
+   char *str;
+   bool r;
+
+   client = mongoc_client_new (gTestUri);
+   ASSERT (client);
+
+   collection = get_test_collection (client, "test_find_and_modify");
+   ASSERT (collection);
+
+   len = 1024 * 1024 * 4;
+   str = bson_malloc (len);
+   memset (str, (int)' ', len);
+   str [len - 1] = '\0';
+
+   bson_oid_init (&oid, NULL);
+   BSON_APPEND_OID (&insert_doc, "_id", &oid);
+   BSON_APPEND_UTF8 (&insert_doc, "big", str);
+
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &insert_doc, NULL, &error);
+   assert (r);
+
+   bson_destroy (&insert_doc);
+
+   BSON_APPEND_OID (&query, "_id", &oid);
+
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);
+   assert (cursor);
+   bson_destroy (&query);
+
+   r = mongoc_cursor_next (cursor, &doc);
+   assert (r);
+   assert (doc);
+
+   r = mongoc_cursor_next (cursor, &doc);
+   assert (!r);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_free (str);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -865,6 +920,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/rename", test_rename);
    TestSuite_Add (suite, "/Collection/stats", test_stats);
    TestSuite_Add (suite, "/Collection/find_and_modify", test_find_and_modify);
+   TestSuite_Add (suite, "/Collection/large_return", test_large_return);
 
    atexit (cleanup_globals);
 }
