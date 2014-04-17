@@ -907,11 +907,9 @@ test_many_return (void)
    bson_error_t error;
    const bson_t *doc = NULL;
    bson_oid_t oid;
-   bson_t insert_doc;
    bson_t query = BSON_INITIALIZER;
    bson_t **docs;
    size_t len;
-   char *str;
    bool r;
    int i;
 
@@ -966,7 +964,6 @@ END_IGNORE_DEPRECATIONS;
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   bson_free (str);
 }
 
 
