@@ -20,6 +20,9 @@ TEST_CFLAGS = \
 	-I$(top_builddir)/src/mongoc
 
 TEST_LIBS = libmongoc-priv.la $(SHM_LIB)
+if EXPLICIT_LIBS
+TEST_LIBS += $(BSON_LIBS)
+endif
 if OS_WIN32
 TEST_LIBS += -lshlwapi
 endif

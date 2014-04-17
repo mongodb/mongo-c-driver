@@ -28,3 +28,6 @@ AM_CONDITIONAL([ENABLE_PTHREADS],[test "$enable_pthreads" = "yes"])
 
 # Should we compile the bundled libbson
 AM_CONDITIONAL([WITH_LIBBSON],[test "$with_libbson" = "bundled"])
+
+# Should we avoid extra BSON_LIBS when linking (SunStudio)
+AM_CONDITIONAL([EXPLICIT_LIBS],[test "$with_gnu_ld" = "yes"])
