@@ -142,14 +142,14 @@ process_first_batch:
 mongoc_cursor_t *
 _mongoc_cursor_cursorid_clone (const mongoc_cursor_t *cursor)
 {
-   mongoc_cursor_t *clone;
+   mongoc_cursor_t *clone_;
 
    ENTRY;
 
-   clone = _mongoc_cursor_clone (cursor);
-   _mongoc_cursor_cursorid_init (clone);
+   clone_ = _mongoc_cursor_clone (cursor);
+   _mongoc_cursor_cursorid_init (clone_);
 
-   RETURN (clone);
+   RETURN (clone_);
 }
 
 
