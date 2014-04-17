@@ -857,7 +857,7 @@ test_large_return (void)
    client = mongoc_client_new (gTestUri);
    ASSERT (client);
 
-   collection = get_test_collection (client, "test_find_and_modify");
+   collection = get_test_collection (client, "test_large_return");
    ASSERT (collection);
 
    len = 1024 * 1024 * 4;
@@ -888,6 +888,82 @@ test_large_return (void)
    assert (!r);
 
    mongoc_cursor_destroy (cursor);
+
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_free (str);
+}
+
+
+static void
+test_many_return (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc = NULL;
+   bson_oid_t oid;
+   bson_t insert_doc;
+   bson_t query = BSON_INITIALIZER;
+   bson_t **docs;
+   size_t len;
+   char *str;
+   bool r;
+   int i;
+
+   client = mongoc_client_new (gTestUri);
+   ASSERT (client);
+
+   collection = get_test_collection (client, "test_many_return");
+   ASSERT (collection);
+
+   docs = bson_malloc (sizeof(bson_t*) * 5000);
+
+   for (i = 0; i < 5000; i++) {
+      docs [i] = bson_new ();
+      bson_oid_init (&oid, NULL);
+      BSON_APPEND_OID (docs [i], "_id", &oid);
+   }
+
+BEGIN_IGNORE_DEPRECATIONS;
+
+   r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **)docs, 5000, NULL, &error);
+
+END_IGNORE_DEPRECATIONS;
+
+   assert (r);
+
+   for (i = 0; i < 5000; i++) {
+      bson_destroy (docs [i]);
+   }
+
+   bson_free (docs);
+
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 6000, &query, NULL, NULL);
+   assert (cursor);
+   bson_destroy (&query);
+
+   i = 0;
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      assert (doc);
+      i++;
+   }
+
+   assert (i == 5000);
+
+   r = mongoc_cursor_next (cursor, &doc);
+   assert (!r);
+
+   mongoc_cursor_destroy (cursor);
+
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    bson_free (str);
@@ -921,6 +997,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/stats", test_stats);
    TestSuite_Add (suite, "/Collection/find_and_modify", test_find_and_modify);
    TestSuite_Add (suite, "/Collection/large_return", test_large_return);
+   TestSuite_Add (suite, "/Collection/many_return", test_many_return);
 
    atexit (cleanup_globals);
 }
