@@ -205,7 +205,8 @@ EXTRA_DIST += \
 	tests/mock-server.h \
 	tests/mongoc-tests.c \
 	tests/mongoc-tests.h \
-	tests/trust_dir.cnf
+	tests/trust_dir.cnf \
+	tests/make_ca.pl
 
 debug: test-libmongoc
 	$(LIBTOOL) --mode=execute gdb --args test-libmongoc -f -p
