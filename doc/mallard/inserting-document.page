@@ -31,8 +31,9 @@
 
     <listing>
       <title><file>example3.c</file></title>
-      <desc>Insert a document into the a collection.</desc>
-      <code mime="text/x-csrc"><![CDATA[#include <bson.h>
+      <desc>Insert a document into the collection.</desc>
+      <code mime="text/x-csrc"><![CDATA[
+#include <bson.h>
 #include <mongoc.h>
 #include <stdio.h>
 
