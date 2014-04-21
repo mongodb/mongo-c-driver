@@ -111,7 +111,7 @@ Python (experimental)                            : no
     <screen>make</screen>
 
     <note>
-      <p>You can optionally build code objects in parallel using the <code>-j</code> option to GNU make. Some implementations of <code>make</code> do not support this option, such as Sun's make on Solaris 10. The build in parallel on an 8 core machine, you might use:</p>
+      <p>You can optionally build code objects in parallel using the <code>-j</code> option to GNU make. Some implementations of <code>make</code> do not support this option, such as Sun's make on Solaris 10. To build in parallel on an 8 core machine, you might use:</p>
       <screen>gmake -j8</screen>
     </note>
 
