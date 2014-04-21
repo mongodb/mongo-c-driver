@@ -78,8 +78,11 @@ _mongoc_get_cpu_count (void)
 }
 
 
+#define _mongoc_counter_add(v,count) \
+   bson_atomic_int64_add(&(v), (count))
+
+
 #if defined(ENABLE_RDTSCP)
-# define _mongoc_counter_add(v,count) (v += count)
  static BSON_INLINE unsigned
  _mongoc_sched_getcpu (void)
  {
@@ -88,10 +91,8 @@ _mongoc_get_cpu_count (void)
     return aux;
  }
 #elif defined(HAVE_SCHED_GETCPU)
-# define _mongoc_counter_add(v,count) (v += count)
 # define _mongoc_sched_getcpu sched_getcpu
 #else
-# define _mongoc_counter_add(v,count) (bson_atomic_int64_add(&(v), count))
 # define _mongoc_sched_getcpu() (0)
 #endif
 
