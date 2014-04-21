@@ -8,12 +8,13 @@
     <info>
       <link type="guide" xref="index#authentication" />
     </info>
-
     <title>Basic Authentication</title>
-
     <p>
-      TODO:
+      The MongoDB C driver supports challenge response authentication (sometimes known as <code>MONGO-CR</code> through the use of MongoDB connection URIs.
+      Simply provide the username and password as you would with an <code>HTTP URL</code>.
     </p>
+    <screen><code>mongoc_client_t *client = mongoc_client_new ("mongodb://user:password@localhost/");</code></screen>
+    <p>For more information on connection string URIs, see <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link>.</p>
   </section>
 
   <section id="kerberos">
