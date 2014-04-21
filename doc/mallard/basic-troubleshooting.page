@@ -9,7 +9,15 @@
 
       <title>Basic Troubleshooting</title>
 
-      <p>TODO:</p>
+      <p>The following is a short list of things to check when you have a problem.</p>
+
+      <list>
+        <item><p>Did you call <code>mongoc_init()</code> in <code>main()</code>? If not, you will likely see a segfault.</p></item>
+        <item><p>Have you leaked any clients or cursors as can be found with <code>mongoc-stat $PID</code>?</p></item>
+        <item><p>Have packets been delivered to the server? See egress bytes from <code>mongoc-stat $PID</code>.</p></item>
+        <item><p>Does <code>valgrind</code> show any leaks? Ensure you call <code>mongoc_cleanup()</code> at the end of your process to cleanup lingering allocations from the MongoDB C driver.</p></item>
+        <item><p>If compiling your own copy of MongoDB C driver, consider configuring with <code>--enable-tracing</code> to enable function tracing and hex dumps of network packets to <code>STDERR</code> and <code>STDOUT</code>.</p></item>
+      </list>
 
     </section>
 
@@ -76,6 +84,25 @@
          Auth : Failures            : The number of failed authentication requests.     : 0
          Auth : Success             : The number of successful authentication requests. : 0
 ]]></screen>
+
+    </section>
+
+    <section id="file-bug">
+      <info>
+        <link type="guide" xref="index#debugging" />
+      </info>
+
+      <title>Submitting a Bug Report</title>
+
+      <p>Think you’ve found a bug? Want to see a new feature in the MongoDB C driver? Please open a case in our issue management tool, JIRA:</p>
+
+      <list>
+        <item><p><link href="https://jira.mongodb.org">Create an account and login</link>.</p></item>
+        <item><p>Navigate to <link href="https://jira.mongodb.org/browse/CDRIVER">the CDRIVER project</link>.</p></item>
+        <item><p>Click <em>Create Issue</em> - Please provide as much information as possible about the issue type and how to reproduce it.</p></item>
+      </list>
+
+      <p>Bug reports in JIRA for all driver projects (i.e. CDRIVER, CSHARP, JAVA) and the Core Server (i.e. SERVER) project are <em>public</em>.</p>
 
     </section>
 
