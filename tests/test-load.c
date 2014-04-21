@@ -101,7 +101,7 @@ main (int   argc,
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
    mongoc_uri_t *uri;
-   unsigned count = 10000;
+   unsigned count = 10000000;
 
    mongoc_init();
 
