@@ -96,7 +96,7 @@ gcc -o test1 test.c $(pkg-config --cflags --libs libmongoc-1.0)
 Alternatively, if you don't have `pkg-config` on your system, you can manually manage your include paths and libraries.
 
 ```sh
-gcc -o test1 test.c -I/usr/local/include -lmongoc-1.0
+gcc -o test1 test.c -I/usr/local/include -lmongoc-1.0 -lbson-1.0
 ```
 
 It is important to note that creating a new instance of `mongoc_client_t` does not immediately connect to your MongoDB instance. This is performed lazily as needed.
