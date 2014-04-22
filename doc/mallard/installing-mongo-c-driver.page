@@ -33,6 +33,7 @@
             <item><p>Mac OS X 10.6 and newer</p></item>
             <item><p>Windows Vista, 7, and 8</p></item>
             <item><p>Solaris 10 and 11</p></item>
+            <item><p>OpenBSD 5.4</p></item>
           </list>
         </td>
         <td>
