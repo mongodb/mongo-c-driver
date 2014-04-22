@@ -10,7 +10,7 @@
     </info>
     <title>Basic Authentication</title>
     <p>
-      The MongoDB C driver supports challenge response authentication (sometimes known as <code>MONGO-CR</code> through the use of MongoDB connection URIs.
+      The MongoDB C driver supports challenge response authentication (sometimes known as <code>MONGODB-CR</code> through the use of MongoDB connection URIs.
       Simply provide the username and password as you would with an <code>HTTP URL</code>.
     </p>
     <screen><code>mongoc_client_t *client = mongoc_client_new ("mongodb://user:password@localhost/");</code></screen>
@@ -48,9 +48,30 @@
 
     <title>X.509 Certificate Authentication</title>
 
-    <p>
-      TODO:
-    </p>
+    <p>Authenticating with X.509 certificates requires one additional step to configure a client with the paths to required <code>PEM</code> files.</p>
+
+    <note style="warning"><p>You must build MongoDB C driver with SSL support for X.509 authentication support.</p></note>
+
+    <list>
+      <item><p>Create a client from connection string as normal, including <code>authMechanism=MONGODB-X509</code>.</p></item>
+      <item><p>Call <code>mongoc_client_set_ssl_opts()</code> with paths to the PEM files.</p></item>
+    </list>
+
+    <screen><code><![CDATA[
+mongoc_client_t *client;
+mongoc_ssl_opt_t ssl_opts = { 0 };
+
+ssl_opts.pem_file = "mycert.pem";
+ssl_opts.pem_pwd = "mycertpassword";
+ssl_opts.ca_file = "myca.pem";
+ssl_opts.ca_dir = "trust_dir";
+ssl_opts.weak_cert_validation = false;
+
+client = mongoc_client_new ("mongodb://localhost/?authMechanism=MONGODB-X509");
+mongoc_client_set_ssl_opts (client, &ssl_opts);
+]]></code></screen>
+
+    <p>For more information on connection string URIs, see <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link>.</p>
   </section>
 
 </page>
