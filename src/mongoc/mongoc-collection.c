@@ -333,10 +333,12 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       /* even for newer versions, we get back a cursor document, that we have
        * to patch in */
       _mongoc_cursor_cursorid_init(cursor);
+      cursor->limit = 0;
    } else {
       /* for older versions we get an array that we can create a synthetic
        * cursor on top of */
       _mongoc_cursor_array_init(cursor);
+      cursor->limit = 0;
    }
 
    bson_destroy(&command);

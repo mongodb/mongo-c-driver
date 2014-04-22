@@ -81,8 +81,10 @@ _mongoc_n_return (mongoc_cursor_t * cursor)
    /* by default, use the batch size */
    int32_t r = cursor->batch_size;
 
-   /* if we have a limit */
-   if (cursor->limit) {
+   if (cursor->is_command) {
+      /* commands always have n_return of 1 */
+      r = 1;
+   } else if (cursor->limit) {
       /* calculate remaining */
       uint32_t remaining = cursor->limit - cursor->count;
 
