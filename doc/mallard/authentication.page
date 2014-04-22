@@ -22,11 +22,37 @@
       <link type="guide" xref="index#authentication" />
     </info>
 
-    <title>SASL Kerberos Authentication</title>
+    <title>GSSAPI (Kerberos) Authentication</title>
 
-    <p>
-      TODO:
-    </p>
+    <p><code>GSSAPI</code> (Kerberos) authentication is available in the Enterprise Edition of MongoDB, version 2.4 and newer. To authenticate using <code>GSSAPI</code> you must first install the MongoDB C driver with SASL support. Make sure you run <code>kinit</code> before using the following authentication methods:</p>
+
+    <screen><output style="prompt">$ </output><input>kinit mongodbuser@EXAMPLE.COM</input>
+<output>mongodbuser@EXAMPLE.COM's Password:</output>
+<output style="prompt">$ </output><input>klist</input>
+<output>Credentials cache: FILE:/tmp/krb5cc_1000
+        Principal: mongodbuser@EXAMPLE.COM
+
+  Issued                Expires               Principal
+Feb  9 13:48:51 2013  Feb  9 23:48:51 2013  krbtgt/EXAMPLE.COM@EXAMPLE.COM</output></screen>
+
+    <p>Now authenticate using the MongoDB URI. <code>GSSAPI</code> authenticates against the <code>$external</code> virtual database so you do not have to specify a database in the URI:</p>
+
+    <screen><code><![CDATA[mongoc_client_t *client;
+
+client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?authMechanism=GSSAPI");
+]]></code></screen>
+
+    <note style="tip"><p>The kerberos principal must be url encoded.</p></note>
+
+    <p>The default service name used by MongoDB and the MongoDB C driver is <code>mongodb</code>. You can specify a custom service name with the <code>gssapiServiceName</code> option:</p>
+
+    <screen><code><![CDATA[mongoc_client_t *client;
+
+client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?authMechanism=GSSAPI&gssapiServiceName=myservicename");
+]]></code></screen>
+
+    <note style="warning"><p>Kerberos support is only provided in environments supported by the <code>cyrus-sasl</code> kerberos implementation. This currently limits support to UNIX-like environments.</p></note>
+
   </section>
 
   <section id="plain">
