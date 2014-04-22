@@ -596,8 +596,10 @@ test_aggregate (void)
 
    mongoc_collection_drop(collection, &error);
 
-   r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
-   ASSERT (r);
+   for (i = 0; i < 2; i++) {
+      r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
+      ASSERT (r);
+   }
 
    for (i = 0; i < 2; i++) {
       if (i % 2 == 0) {
@@ -614,24 +616,26 @@ test_aggregate (void)
          bson_destroy (&opts);
       }
 
-      /*
-       * This can fail if we are connecting to a 2.0 MongoDB instance.
-       */
-      r = mongoc_cursor_next(cursor, &doc);
-      if (mongoc_cursor_error(cursor, &error)) {
-         if ((error.domain == MONGOC_ERROR_QUERY) &&
-             (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
-            mongoc_cursor_destroy (cursor);
-            break;
+      for (i = 0; i < 2; i++) {
+         /*
+          * This can fail if we are connecting to a 2.0 MongoDB instance.
+          */
+         r = mongoc_cursor_next(cursor, &doc);
+         if (mongoc_cursor_error(cursor, &error)) {
+            if ((error.domain == MONGOC_ERROR_QUERY) &&
+                (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
+               mongoc_cursor_destroy (cursor);
+               break;
+            }
+            MONGOC_WARNING("[%d.%d] %s", error.domain, error.code, error.message);
          }
-         MONGOC_WARNING("[%d.%d] %s", error.domain, error.code, error.message);
+
+         ASSERT (r);
+         ASSERT (doc);
+
+         ASSERT (bson_iter_init_find (&iter, doc, "hello") &&
+                 BSON_ITER_HOLDS_UTF8 (&iter));
       }
-
-      ASSERT (r);
-      ASSERT (doc);
-
-      ASSERT (bson_iter_init_find (&iter, doc, "hello") &&
-              BSON_ITER_HOLDS_UTF8 (&iter));
 
       r = mongoc_cursor_next(cursor, &doc);
       if (mongoc_cursor_error(cursor, &error)) {
