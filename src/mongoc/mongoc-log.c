@@ -44,7 +44,7 @@ void
 mongoc_log_set_handler (mongoc_log_func_t  log_func,
                         void              *user_data)
 {
-   mongoc_once_t once = MONGOC_ONCE_INIT;
+   static mongoc_once_t once = MONGOC_ONCE_INIT;
    mongoc_once(&once, &_mongoc_ensure_mutex_once);
 
    mongoc_mutex_lock(&gLogMutex);
