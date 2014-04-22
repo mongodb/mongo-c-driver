@@ -1,5 +1,6 @@
 #include <bcon.h>
 #include <mongoc.h>
+#include <mongoc-client-private.h>
 
 #include "TestSuite.h"
 
@@ -157,18 +158,31 @@ test_insert_bulk (void)
 
    BEGIN_IGNORE_DEPRECATIONS;
    r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
-                                     (const bson_t **)bptr, 10, NULL, &error);
+                                      (const bson_t **)bptr, 10, NULL, &error);
    END_IGNORE_DEPRECATIONS;
 
    ASSERT (!r);
    ASSERT (error.code == 11000);
 
    count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
-   ASSERT (count == 5);
+
+   /*
+    * MongoDB <2.6 and 2.6 will return different values for this. This is a
+    * primary reason that mongoc_collection_insert_bulk() is deprecated.
+    * Instead, you should use the new bulk api which will hide the differences
+    * for you.  However, since the new bulk API is slower on 2.4 when write
+    * concern is needed for inserts, we will support this for a while, albeit
+    * deprecated.
+    */
+   if (client->cluster.nodes [0].max_wire_version == 0) {
+      ASSERT (count == 6);
+   } else {
+      ASSERT (count == 5);
+   }
 
    BEGIN_IGNORE_DEPRECATIONS;
    r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_CONTINUE_ON_ERROR,
-                                     (const bson_t **)bptr, 10, NULL, &error);
+                                      (const bson_t **)bptr, 10, NULL, &error);
    END_IGNORE_DEPRECATIONS;
    ASSERT (!r);
    ASSERT (error.code == 11000);
