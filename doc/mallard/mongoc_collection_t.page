@@ -1,8 +1,16 @@
 <page xmlns="http://projectmallard.org/1.0/"
-      type="topic"
+      type="guide"
       id="mongoc_collection_t">
   <info>
     <link type="guide" xref="index#api-reference" />
   </info>
+
   <title>mongoc_collection_t</title>
+
+  <code mime="text/x-csrc"><![CDATA[#include <mongoc.h>]]></code>
+
+  <section id="functions" style="2column">
+    <title>Functions</title>
+  </section>
+
 </page>
