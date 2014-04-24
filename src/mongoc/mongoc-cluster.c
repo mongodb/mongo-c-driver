@@ -498,13 +498,13 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
    if (bson_iter_init_find_case (&iter, b, "replicaSet")) {
       cluster->mode = MONGOC_CLUSTER_REPLICA_SET;
       cluster->replSet = bson_iter_dup_utf8 (&iter, NULL);
-      MONGOC_INFO("Client initialized in replica set mode.");
+      MONGOC_DEBUG ("Client initialized in replica set mode.");
    } else if (hosts->next) {
       cluster->mode = MONGOC_CLUSTER_SHARDED_CLUSTER;
-      MONGOC_INFO("Client initialized in sharded cluster mode.");
+      MONGOC_DEBUG ("Client initialized in sharded cluster mode.");
    } else {
       cluster->mode = MONGOC_CLUSTER_DIRECT;
-      MONGOC_INFO("Client initialized in direct mode.");
+      MONGOC_DEBUG ("Client initialized in direct mode.");
    }
 
    if (bson_iter_init_find_case(&iter, b, "sockettimeoutms")) {
