@@ -13,10 +13,13 @@
   </info>
   <title>mongoc_client_destroy()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[void
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_client_destroy (mongoc_client_t *client);
 ]]></code></synopsis>
-
+    <p>Release all resources associated with <code>client</code> and free the structure.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
@@ -24,11 +27,5 @@ mongoc_client_destroy (mongoc_client_t *client);
       <tr><td><p>client</p></td><td><p>A <link xref="mongoc_client_t">mongoc_client_t</link>.</p></td></tr>
     </table>
   </section>
-
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
-
 
 </page>
