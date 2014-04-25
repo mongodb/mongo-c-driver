@@ -7,17 +7,20 @@
       xmlns:ui="http://projectmallard.org/experimental/ui/"
       id="mongoc_matcher_new">
 
-
   <info>
     <link type="guide" xref="mongoc_matcher_t" group="function"/>
   </info>
+
   <title>mongoc_matcher_new()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_matcher_t *
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_matcher_t *
 mongoc_matcher_new (const bson_t *query,
                     bson_error_t *error);
 ]]></code></synopsis>
-
+    <p>Create a new <link xref="mongoc_matcher_t">mongoc_matcher_t</link> using the query specification provided.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
@@ -27,19 +30,14 @@ mongoc_matcher_new (const bson_t *query,
     </table>
   </section>
 
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
-
   <section id="errors">
     <title>Errors</title>
     <p>Errors are propagated via the <code>error</code> parameter.</p>
   </section>
+
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>A newly allocated <link xref="mongoc_matcher_t">mongoc_matcher_t</link> that should be freed with <link xref="mongoc_matcher_destroy">mongoc_matcher_destroy()</link> when no longer in use. Upon failure, <code>NULL</code> is returned and <code>error</code> is set. This could happen if <code>query</code> contains an invalid query specification.</p>
   </section>
-
 
 </page>

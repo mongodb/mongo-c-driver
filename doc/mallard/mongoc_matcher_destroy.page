@@ -13,10 +13,13 @@
   </info>
   <title>mongoc_matcher_destroy()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[void
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_matcher_destroy (mongoc_matcher_t *matcher);
 ]]></code></synopsis>
-
+    <p>Release all resources associated with <code>matcher</code> including freeing the structure.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
@@ -24,11 +27,6 @@ mongoc_matcher_destroy (mongoc_matcher_t *matcher);
       <tr><td><p>matcher</p></td><td><p>A <link xref="mongoc_matcher_t">mongoc_matcher_t</link>.</p></td></tr>
     </table>
   </section>
-
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
 
 
 </page>

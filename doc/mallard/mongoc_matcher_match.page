@@ -13,28 +13,26 @@
   </info>
   <title>mongoc_matcher_match()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[bool
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
 mongoc_matcher_match (const mongoc_matcher_t *matcher,
-                      const bson_t           *query);
+                      const bson_t           *document);
 ]]></code></synopsis>
-
+    <p>This function will check to see if the query compiled in <code>matcher</code> matches <code>document</code>.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
       <tr><td><p>matcher</p></td><td><p>A <link xref="mongoc_matcher_t">mongoc_matcher_t</link>.</p></td></tr>
-      <tr><td><p>query</p></td><td><p>A bson_t.</p></td></tr>
+      <tr><td><p>query</p></td><td><p>A bson_t that contains the query.</p></td></tr>
     </table>
-  </section>
-
-  <section id="description">
-    <p>TODO: WRite description</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p><code>true</code> if <code>document</code> matches the query specification provided to <link xref="mongoc_matcher_new">mongoc_matcher_new()</link>. Otherwise, <code>false</code>.</p>
   </section>
-
 
 </page>
