@@ -13,9 +13,13 @@
   </info>
   <title>mongoc_bulk_operation_destroy()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[void
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk);
 ]]></code></synopsis>
+    <p>Destroys a <link xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</link> and frees the structure.</p>
+  </section>
 
 
   <section id="parameters">
@@ -24,11 +28,5 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk);
       <tr><td><p>bulk</p></td><td><p>A <link xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</link>.</p></td></tr>
     </table>
   </section>
-
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
-
 
 </page>

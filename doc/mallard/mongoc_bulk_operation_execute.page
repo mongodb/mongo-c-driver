@@ -13,12 +13,17 @@
   </info>
   <title>mongoc_bulk_operation_execute()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[bool
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
 mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
                                bson_t                  *reply,
                                bson_error_t            *error);
 ]]></code></synopsis>
+    <p>This function executes all operations queued into the bulk operation. If <code>ordered</code> was specified to <link xref="mongoc_collection_create_bulk_operation">mongoc_collection_create_bulk_operation()</link>, then forward progress will be stopped upon the first error.</p>
 
+    <note style="warning"><p><code>reply</code> is always initialized, even upon failure. Callers <em>must</em> call <link xref="bson_destroy">bson_destroy()</link> to release this potential allocation.</p></note>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
@@ -29,18 +34,14 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
     </table>
   </section>
 
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
-
   <section id="errors">
     <title>Errors</title>
     <p>Errors are propagated via the <code>error</code> parameter.</p>
   </section>
+
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p><code>true</code> on success, otherwise <code>false</code> and <code>error</code> is set.</p>
   </section>
 
 

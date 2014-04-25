@@ -13,11 +13,14 @@
   </info>
   <title>mongoc_bulk_operation_delete()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[void
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_bulk_operation_delete (mongoc_bulk_operation_t *bulk,
                               const bson_t            *selector);
 ]]></code></synopsis>
-
+    <p>This function queues a delete operation as part of <code>bulk</code> that will delete all documents matching <code>selector</code>. To delete a single document, see <link xref="mongoc_bulk_operation_delete_one">mongoc_bulk_operation_delete_one()</link>.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
@@ -27,10 +30,9 @@ mongoc_bulk_operation_delete (mongoc_bulk_operation_t *bulk,
     </table>
   </section>
 
-  <section id="description">
-    <p>TODO: WRite description</p>
+  <section id="errors">
+    <title>Errors</title>
+    <p>Errors are propagated via <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link>.</p>
   </section>
-
-
 
 </page>

@@ -1,5 +1,4 @@
 <?xml version="1.0"?>
-
 <page xmlns="http://projectmallard.org/1.0/"
       type="topic"
       style="function"
@@ -7,17 +6,19 @@
       xmlns:ui="http://projectmallard.org/experimental/ui/"
       id="mongoc_bulk_operation_insert">
 
-
   <info>
     <link type="guide" xref="mongoc_bulk_operation_t" group="function"/>
   </info>
   <title>mongoc_bulk_operation_insert()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[void
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
                               const bson_t            *document);
 ]]></code></synopsis>
-
+    <p>Queue an insert of a single document into a bulk operation. The insert is not performed until <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link> is called.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
@@ -27,10 +28,9 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
     </table>
   </section>
 
-  <section id="description">
-    <p>TODO: WRite description</p>
+  <section id="errors">
+    <title>Errors</title>
+    <p>Errors are propagated via <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link>.</p>
   </section>
-
-
 
 </page>
