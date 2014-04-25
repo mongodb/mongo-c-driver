@@ -26,13 +26,19 @@ mongoc_stream_uncork (mongoc_stream_t *stream);
   </section>
 
   <section id="description">
-    <p>TODO: WRite description</p>
+    <p>This function shall allow a previously corked socket to pass bytes to the underlying socket.</p>
+    <note type="warning"><p>Not all streams implement this function. Buffering generally works better.</p></note>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p><code>0</code> on success, <code>-1</code> on failure and <code>errno</code> is set.</p>
   </section>
 
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link type="seealso" xref="mongoc_stream_buffered_new">mongoc_stream_buffered_new()</link>.</p>
+    <p><link type="seealso" xref="mongoc_stream_cork">mongoc_stream_cork()</link>.</p>
+  </section>
 
 </page>

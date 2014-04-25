@@ -21,17 +21,18 @@ mongoc_stream_file_new (int fd);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>fd</p></td><td><p>A (null).</p></td></tr>
+      <tr><td><p>fd</p></td><td><p>A UNIX style file-descriptor.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
-    <p>TODO: WRite description</p>
+    <p>Creates a new <link xref="mongoc_stream_file_t">mongoc_stream_file_t</link> using the file-descriptor provided.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p><code>NULL</code> upon failure, otherwise a newly allocated <link xref="mongoc_stream_file_t">mongoc_stream_file_t</link> that should be freed with <link xref="mongoc_stream_destroy">mongoc_stream_destroy()</link> when no longer in use.</p>
+    <p><code>errno</code> is set upon failure.</p>
   </section>
 
 

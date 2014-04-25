@@ -26,13 +26,17 @@ mongoc_stream_close (mongoc_stream_t *stream);
   </section>
 
   <section id="description">
-    <p>TODO: WRite description</p>
+    <p>This function shall close underlying file-descriptors of <code>stream</code>.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p><code>0</code> on success, otherwise <code>-1</code> and <code>errno</code> is set.</p>
   </section>
 
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link type="seealso" xref="mongoc_stream_destroy">mongoc_stream_destroy()</link></p>
+  </section>
 
 </page>
