@@ -22,19 +22,18 @@ mongoc_stream_tls_check_cert (mongoc_stream_t *stream,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_t">mongoc_stream_t</link>.</p></td></tr>
-      <tr><td><p>host</p></td><td><p>A (null).</p></td></tr>
+      <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_tls_t">mongoc_stream_tls_t</link>.</p></td></tr>
+      <tr><td><p>host</p></td><td><p>A UTF-8 string holding the hostname used in socket creation. This value is what will be matched against the server provided certificate.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
-    <p>TODO: WRite description</p>
+    <p>The <code>mongoc_stream_tls_check_cert()</code> function shall perform a RFC-6125 certificate verification.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>The <code>mongoc_stream_tls_check_cert()</code> function returns true if the certificate is valid was successful. If false, openssl errors may be set.</p>
   </section>
-
 
 </page>

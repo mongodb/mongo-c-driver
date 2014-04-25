@@ -6,11 +6,10 @@
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
       id="mongoc_stream_tls_do_handshake">
-
-
   <info>
     <link type="guide" xref="" group="function"/>
   </info>
+
   <title>mongoc_stream_tls_do_handshake()</title>
 
   <synopsis><code mime="text/x-csrc"><![CDATA[bool
@@ -22,19 +21,18 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_t">mongoc_stream_t</link>.</p></td></tr>
-      <tr><td><p>timeout_msec</p></td><td><p>A int32_t.</p></td></tr>
+      <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_tls_t">mongoc_stream_tls_t</link>.</p></td></tr>
+      <tr><td><p>timeout_msec</p></td><td><p>A timeout, in milliseconds, for the handshake.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
-    <p>TODO: WRite description</p>
+    <p>This function shall perform an SSL handshake on the underlying stream.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>The <code>mongoc_stream_tls_do_handshake()</code> function returns true if the handshake was successful. If false, errno or openssl errors may be set.</p>
   </section>
-
 
 </page>

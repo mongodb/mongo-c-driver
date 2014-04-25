@@ -9,10 +9,13 @@
   <info>
     <link type="guide" xref="index#api-reference" />
   </info>
+
   <title>mongoc_stream_socket_t</title>
+
   <section id="description">
     <title>Synopsis</title>
-    <p>Description</p>
+    <synopsis><code mime="text/x-csrc"><![CDATA[typedef struct _mongoc_stream_socket_t mongoc_stream_socket_t]]></code></synopsis>
+    <p><code>mongoc_stream_socket_t</code> should be considered a subclass of <link xref="mongoc_stream_t">mongoc_stream_t</link> that works upon socket streams.</p>
   </section>
 
   <links type="topic" groups="function" style="2column">

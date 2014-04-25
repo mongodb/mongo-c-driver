@@ -21,18 +21,18 @@ mongoc_stream_socket_new (mongoc_socket_t *socket);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>socket</p></td><td><p>A mongoc_socket_t.</p></td></tr>
+      <tr><td><p>socket</p></td><td><p>A <link xref="mongoc_socket_t">mongoc_socket_t</link>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
-    <p>TODO: WRite description</p>
+    <p>Creates a new <link xref="mongoc_stream_socket_t">mongoc_stream_socket_t</link> using the <link xref="mongoc_socket_t">mongoc_socket_t</link> provided.</p>
+    <note style="warning"><p>This function transfers ownership of <code>socket</code> to the newly allocated stream.</p></note>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>A newly allocated <link xref="mongoc_stream_socket_t">mongoc_stream_socket_t</link> that should be freed with <link xref="mongoc_stream_destroy">mongoc_stream_destroy()</link> when no longer in use.</p>
   </section>
-
 
 </page>
