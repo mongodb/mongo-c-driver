@@ -369,14 +369,14 @@ failure:
  */
 
 bool
-mongoc_matcher_match (const mongoc_matcher_t *matcher, /* IN */
-                      const bson_t           *bson)    /* IN */
+mongoc_matcher_match (const mongoc_matcher_t *matcher,  /* IN */
+                      const bson_t           *document) /* IN */
 {
    BSON_ASSERT (matcher);
    BSON_ASSERT (matcher->optree);
-   BSON_ASSERT (bson);
+   BSON_ASSERT (document);
 
-   return _mongoc_matcher_op_match (matcher->optree, bson);
+   return _mongoc_matcher_op_match (matcher->optree, document);
 }
 
 
