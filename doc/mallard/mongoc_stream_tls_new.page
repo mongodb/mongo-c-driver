@@ -23,7 +23,7 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>base_stream</p></td><td><p>A mongoc_stream_t.</p></td></tr>
+      <tr><td><p>base_stream</p></td><td><p>A <link xref="mongoc_stream_t">mongoc_stream_t</link>.</p></td></tr>
       <tr><td><p>opt</p></td><td><p>A mongoc_ssl_opt_t.</p></td></tr>
       <tr><td><p>client</p></td><td><p>A (null).</p></td></tr>
     </table>

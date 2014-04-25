@@ -25,7 +25,7 @@ mongoc_stream_readv (mongoc_stream_t *stream,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>stream</p></td><td><p>A mongoc_stream_t.</p></td></tr>
+      <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_t">mongoc_stream_t</link>.</p></td></tr>
       <tr><td><p>iov</p></td><td><p>A mongoc_iovec_t.</p></td></tr>
       <tr><td><p>iovcnt</p></td><td><p>A size_t.</p></td></tr>
       <tr><td><p>min_bytes</p></td><td><p>A size_t.</p></td></tr>

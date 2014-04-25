@@ -22,19 +22,19 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>base_stream</p></td><td><p>A mongoc_stream_t.</p></td></tr>
-      <tr><td><p>buffer_size</p></td><td><p>A size_t.</p></td></tr>
+      <tr><td><p>base_stream</p></td><td><p>A <link xref="mongoc_stream_t">mongoc_stream_t</link> to buffer.</p></td></tr>
+      <tr><td><p>buffer_size</p></td><td><p>A size_t containing the desired buffer size.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
-    <p>TODO: WRite description</p>
+    <p>This function shall create a new <link xref="mongoc_stream_t">mongoc_stream_t</link> that buffers bytes to and from the underlying <code>base_stream</code>.</p>
+    <p><code>buffer_size</code> will be used as the initial buffer size. It may grow past this size.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>A newly allocated <link xref="mongoc_stream_buffered_t">mongoc_stream_buffered_t</link> on success, otherwise <code>NULL</code>. This should be freed with <link xref="mongoc_stream_destroy">mongoc_stream_destroy()</link> when no longer in use.</p>
   </section>
-
 
 </page>

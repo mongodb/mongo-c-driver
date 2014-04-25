@@ -21,14 +21,12 @@ mongoc_stream_destroy (mongoc_stream_t *stream);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>stream</p></td><td><p>A mongoc_stream_t.</p></td></tr>
+      <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_t">mongoc_stream_t</link>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
-    <p>TODO: WRite description</p>
+    <p>This function shall release all resources associated with a <link xref="mongoc_stream_t">mongoc_stream_t</link>, including freeing the structure. It is invalid to use <code>stream</code> after calling this function.</p>
   </section>
-
-
 
 </page>
