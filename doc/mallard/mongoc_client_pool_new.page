@@ -13,10 +13,13 @@
   </info>
   <title>mongoc_client_pool_new()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_client_pool_t *
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_client_pool_t *
 mongoc_client_pool_new (const mongoc_uri_t *uri);
 ]]></code></synopsis>
-
+    <p>This function creates a new <link xref="mongoc_client_pool_t">mongoc_client_pool_t</link> using the <link xref="mongoc_uri_t">mongoc_uri_t</link> provided.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
@@ -25,14 +28,9 @@ mongoc_client_pool_new (const mongoc_uri_t *uri);
     </table>
   </section>
 
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>A newly allocated <link xref="mongoc_client_pool_t">mongoc_client_pool_t</link> that should be freed with <link xref="mongoc_client_pool_destroy">mongoc_client_pool_destroy()</link> when no longer in use.</p>
   </section>
-
 
 </page>

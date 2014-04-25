@@ -9,10 +9,33 @@
   <info>
     <link type="guide" xref="index#api-reference" />
   </info>
+
   <title>mongoc_client_pool_t</title>
+  <subtitle>Connection pooling abstraction</subtitle>
+
   <section id="description">
     <title>Synopsis</title>
-    <p>Description</p>
+    <synopsis><code mime="text/x-csrc"><![CDATA[typedef struct _mongoc_client_pool_t mongoc_client_pool_t]]></code></synopsis>
+    <p><code>mongoc_client_pool_t</code> is the basis for multi-threading in the MongoDB C driver. Since <link xref="mongoc_client_t">mongoc_client_t</link> structures are not thread-safe, this structure is used to retrieve a new <link xref="mongoc_client_t">mongoc_client_t</link> for a given thread. This structure <em>is thread-safe</em>.</p>
+  </section>
+
+  <section id="example">
+    <title>Example</title>
+    <screen><code mime="text/x-csrc"><![CDATA[{
+   mongoc_client_pool_t *pool;
+   mongoc_uri_t *uri;
+   pthread_t thread;
+   unsigned i;
+
+   uri = mongoc_uri_new ("mongodb://mdb1.example.com/?minPoolSize=16");
+   pool = mongoc_client_pool_new (uri);
+
+   for (i = 0; i < 10; i++) {
+      pthread_create (&thread, NULL, worker, pool);
+   }
+
+   mongoc_uri_destroy (uri);
+}]]></code></screen>
   </section>
 
   <links type="topic" groups="function" style="2column">
