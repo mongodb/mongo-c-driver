@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+
+<page id="logging"
+      type="guide"
+      style="class"
+      xmlns="http://projectmallard.org/1.0/"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/">
+
+  <info>
+    <link type="guide" xref="index#api-reference"/>
+  </info>
+
+  <title>Logging</title>
+  <subtitle>MongoDB C driver Logging Abstraction</subtitle>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <screen><code mime="text/x-csrc"><![CDATA[typedef enum
+{
+   MONGOC_LOG_LEVEL_ERROR,
+   MONGOC_LOG_LEVEL_CRITICAL,
+   MONGOC_LOG_LEVEL_WARNING,
+   MONGOC_LOG_LEVEL_MESSAGE,
+   MONGOC_LOG_LEVEL_INFO,
+   MONGOC_LOG_LEVEL_DEBUG,
+   MONGOC_LOG_LEVEL_TRACE,
+} mongoc_log_level_t;
+
+#define MONGOC_ERROR(...)    
+#define MONGOC_CRITICAL(...) 
+#define MONGOC_WARNING(...)  
+#define MONGOC_MESSAGE(...)  
+#define MONGOC_INFO(...)     
+#define MONGOC_DEBUG(...)    
+
+typedef void (*mongoc_log_func_t) (mongoc_log_level_t  log_level,
+                                   const char         *log_domain,
+                                   const char         *message,
+                                   void               *user_data);
+
+void        mongoc_log_set_handler     (mongoc_log_func_t   log_func,
+                                        void               *user_data);
+void        mongoc_log                 (mongoc_log_level_t  log_level,
+                                        const char         *log_domain,
+                                        const char         *format,
+                                        ...) BSON_GNUC_PRINTF(3, 4);
+const char *mongoc_log_level_str       (mongoc_log_level_t log_level);
+void        mongoc_log_default_handler (mongoc_log_level_t  log_level,
+                                        const char         *log_domain,
+                                        const char         *message,
+                                        void               *user_data);]]></code></screen>
+    <p>The MongoDB C driver comes with an abstraction for logging that you can use in your application, or integrate with an existing logging system. To integrate with an existing logging system use <code>mongoc_log_set_handler()</code> and provide a callback that will log to your external system.</p>
+  </section>
+
+  <section id="macros">
+    <title>Macros</title>
+    <p>To make logging a little less painful, various helper macros are provided. See the following example.</p>
+    <screen><code mime="text/x-csrc"><![CDATA[#undef MONGOC_LOG_DOMAIN
+#define MONGOC_LOG_DOMAIN "my-custom-domain"
+
+MONGOC_WARNING ("An error occurred: %s", strerror (errno));]]></code></screen>
+  </section>
+
+  <section id="handlers">
+    <title>Custom Log Handlers</title>
+    <p>To integrate with external logging systems, the MongoDB C driver allows for a custom log handler that can receive formatted log messages. By providing a <code>mongoc_log_func_t</code> to <code>mongoc_log_set_handler()</code> you will be called each time a new log message is received. This function is called within a mutex to ensure reduce potential thread-safety issues.</p>
+    <p>To reset to the default log handler, pass <code>mongoc_log_default_handler</code> to <code>mongoc_log_set_handler()</code> with <code>NULL</code> for <code>user_data</code>.</p>
+  </section>
+
+</page>
