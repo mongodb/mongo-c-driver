@@ -1,40 +1,36 @@
 <?xml version="1.0"?>
-
 <page xmlns="http://projectmallard.org/1.0/"
       type="topic"
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
       id="mongoc_client_get_database">
-
-
   <info>
     <link type="guide" xref="mongoc_client_t" group="function"/>
   </info>
   <title>mongoc_client_get_database()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_database_t *
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_database_t *
 mongoc_client_get_database (mongoc_client_t *client,
                             const char      *name);
 ]]></code></synopsis>
-
+    <p>Get a newly allocated <link xref="mongoc_database_t">mongoc_database_t</link> for the database named <code>name</code>.</p>
+    <note style="tip"><p>Database are automatically created on the MongoDB server upon insertion of the first document into a collection. There is no need to create a database manually.</p></note>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
       <tr><td><p>client</p></td><td><p>A <link xref="mongoc_client_t">mongoc_client_t</link>.</p></td></tr>
-      <tr><td><p>name</p></td><td><p>A (null).</p></td></tr>
+      <tr><td><p>name</p></td><td><p>The name of the database.</p></td></tr>
     </table>
-  </section>
-
-  <section id="description">
-    <p>TODO: WRite description</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>A newly allocated <code>mongoc_database_t</code> that should be freed with <link xref="mongoc_database_destroy">mongoc_database_destroy()</link> when no longer in use.</p>
   </section>
-
 
 </page>
