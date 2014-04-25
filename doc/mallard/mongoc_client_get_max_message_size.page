@@ -1,22 +1,22 @@
 <?xml version="1.0"?>
-
 <page xmlns="http://projectmallard.org/1.0/"
       type="topic"
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
       id="mongoc_client_get_max_message_size">
-
-
   <info>
     <link type="guide" xref="mongoc_client_t" group="function"/>
   </info>
   <title>mongoc_client_get_max_message_size()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[int32_t
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[int32_t
 mongoc_client_get_max_message_size (mongoc_client_t *client);
 ]]></code></synopsis>
-
+    <p>The <link xref="mongoc_client_get_max_message_size">mongoc_client_get_max_message_size()</link> returns the maximum message size allowed by the cluster. Until a connection has been made, this will be the default of 40Mb.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
@@ -25,14 +25,9 @@ mongoc_client_get_max_message_size (mongoc_client_t *client);
     </table>
   </section>
 
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>The server provided max message size, or 40Mb if no connection has been established.</p>
   </section>
-
 
 </page>
