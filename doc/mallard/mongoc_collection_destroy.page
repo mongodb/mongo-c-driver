@@ -21,7 +21,7 @@ mongoc_collection_destroy (mongoc_collection_t *collection);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>collection</p></td><td><p>A mongoc_collection_t.</p></td></tr>
+      <tr><td><p>collection</p></td><td><p>A <link xref="mongoc_collection_t">mongoc_collection_t</link>.</p></td></tr>
     </table>
   </section>
 

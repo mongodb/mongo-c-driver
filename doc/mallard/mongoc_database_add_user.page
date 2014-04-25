@@ -26,27 +26,28 @@ mongoc_database_add_user (mongoc_database_t *database,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>database</p></td><td><p>A mongoc_database_t.</p></td></tr>
-      <tr><td><p>username</p></td><td><p>A (null).</p></td></tr>
-      <tr><td><p>password</p></td><td><p>A (null).</p></td></tr>
-      <tr><td><p>roles</p></td><td><p>A bson_t.</p></td></tr>
-      <tr><td><p>custom_data</p></td><td><p>A bson_t.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>A bson_error_t.</p></td></tr>
+      <tr><td><p>database</p></td><td><p>A <link xref="mongoc_database_t">mongoc_database_t</link>.</p></td></tr>
+      <tr><td><p>username</p></td><td><p>The name of the user.</p></td></tr>
+      <tr><td><p>password</p></td><td><p>The cleartext password for the user.</p></td></tr>
+      <tr><td><p>roles</p></td><td><p>An optional bson_t for roles.</p></td></tr>
+      <tr><td><p>custom_data</p></td><td><p>A optional bson_t for extra data.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>A location for a <link xref="bson_error_t">bson_error_t</link> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
-    <p>TODO: WRite description</p>
+    <p>This function shall create a new user with access to <code>database</code>.</p>
+    <p>This function handles the difference between MongoDB <code>2.4</code> and <code>2.6</code>.</p>
   </section>
-
 
   <section id="errors">
     <title>Errors</title>
-    <p>Describe errors</p>
+    <p>Errors are returned through the <code>error</code> parameter and can include socket or other server side failures.</p>
   </section>
+
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>This function shall return <code>true</code> if the user was successfully added. In the event of an error, it returns <code>false</code> and <code>error</code> is set.</p>
   </section>
 
 

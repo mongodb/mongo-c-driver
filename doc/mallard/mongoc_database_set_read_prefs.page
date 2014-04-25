@@ -13,24 +13,21 @@
   </info>
   <title>mongoc_database_set_read_prefs()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[void
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_database_set_read_prefs (mongoc_database_t         *database,
                                 const mongoc_read_prefs_t *read_prefs);
 ]]></code></synopsis>
-
+    <p>This function sets the default read preferences to use on operations performed with <code>database</code>. Collections created with <link xref="mongoc_database_get_collection">mongoc_database_get_collection()</link> after this call will inherit these read preferences.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>database</p></td><td><p>A mongoc_database_t.</p></td></tr>
-      <tr><td><p>read_prefs</p></td><td><p>A mongoc_read_prefs_t.</p></td></tr>
+      <tr><td><p>database</p></td><td><p>A <link xref="mongoc_database_t">mongoc_database_t</link>.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p></td></tr>
     </table>
   </section>
-
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
-
 
 </page>

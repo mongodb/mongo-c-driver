@@ -21,7 +21,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>pool</p></td><td><p>A mongoc_client_pool_t.</p></td></tr>
+      <tr><td><p>pool</p></td><td><p>A <link xref="mongoc_client_pool_t">mongoc_client_pool_t</link>.</p></td></tr>
     </table>
   </section>
 

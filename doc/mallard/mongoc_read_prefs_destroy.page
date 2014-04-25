@@ -21,7 +21,7 @@ mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>read_prefs</p></td><td><p>A mongoc_read_prefs_t.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p></td></tr>
     </table>
   </section>
 

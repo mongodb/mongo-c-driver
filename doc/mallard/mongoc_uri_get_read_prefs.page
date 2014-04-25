@@ -21,7 +21,7 @@ mongoc_uri_get_read_prefs (const mongoc_uri_t *uri);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>uri</p></td><td><p>A mongoc_uri_t.</p></td></tr>
+      <tr><td><p>uri</p></td><td><p>A <link xref="mongoc_uri_t">mongoc_uri_t</link>.</p></td></tr>
     </table>
   </section>
 

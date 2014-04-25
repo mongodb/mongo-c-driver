@@ -13,24 +13,21 @@
   </info>
   <title>mongoc_database_set_write_concern()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[void
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_database_set_write_concern (mongoc_database_t            *database,
                                    const mongoc_write_concern_t *write_concern);
 ]]></code></synopsis>
-
+    <p>This function sets the default write concern to use on operations performed with <code>database</code>. Collections created with <link xref="mongoc_database_get_collection">mongoc_database_get_collection()</link> after this call will inherit this write concern.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>database</p></td><td><p>A mongoc_database_t.</p></td></tr>
-      <tr><td><p>write_concern</p></td><td><p>A mongoc_write_concern_t.</p></td></tr>
+      <tr><td><p>database</p></td><td><p>A <link xref="mongoc_database_t">mongoc_database_t</link>.</p></td></tr>
+      <tr><td><p>write_concern</p></td><td><p>A <link xref="mongoc_write_concern_t">mongoc_write_concern_t</link>.</p></td></tr>
     </table>
   </section>
-
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
-
 
 </page>

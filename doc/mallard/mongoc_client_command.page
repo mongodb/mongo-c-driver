@@ -29,15 +29,15 @@ mongoc_client_command (mongoc_client_t           *client,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>client</p></td><td><p>A mongoc_client_t.</p></td></tr>
+      <tr><td><p>client</p></td><td><p>A <link xref="mongoc_client_t">mongoc_client_t</link>.</p></td></tr>
       <tr><td><p>db_name</p></td><td><p>A (null).</p></td></tr>
-      <tr><td><p>flags</p></td><td><p>A mongoc_query_flags_t.</p></td></tr>
+      <tr><td><p>flags</p></td><td><p>A <link xref="mongoc_query_flags_t">mongoc_query_flags_t</link>.</p></td></tr>
       <tr><td><p>skip</p></td><td><p>A uint32_t.</p></td></tr>
       <tr><td><p>limit</p></td><td><p>A uint32_t.</p></td></tr>
       <tr><td><p>batch_size</p></td><td><p>A uint32_t.</p></td></tr>
       <tr><td><p>query</p></td><td><p>A bson_t.</p></td></tr>
       <tr><td><p>fields</p></td><td><p>A bson_t.</p></td></tr>
-      <tr><td><p>read_prefs</p></td><td><p>A mongoc_read_prefs_t.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p></td></tr>
     </table>
   </section>
 

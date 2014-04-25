@@ -13,22 +13,19 @@
   </info>
   <title>mongoc_database_destroy()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[void
+  <section id="description">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_database_destroy (mongoc_database_t *database);
 ]]></code></synopsis>
-
+    <p>Releases all resources associated with <code>database</code>, including freeing the structure.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>database</p></td><td><p>A mongoc_database_t.</p></td></tr>
+      <tr><td><p>database</p></td><td><p>A <link xref="mongoc_database_t">mongoc_database_t</link>.</p></td></tr>
     </table>
   </section>
-
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
-
 
 </page>

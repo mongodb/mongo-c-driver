@@ -13,15 +13,18 @@
   </info>
   <title>mongoc_database_get_collection()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_collection_t *
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_collection_t *
 mongoc_database_get_collection (mongoc_database_t *database,
                                 const char        *name);
 ]]></code></synopsis>
+    <p>Allocates a new <link xref="mongoc_collection_t">mongoc_collection_t</link> structure for the collection named <code>name</code> in <code>database</code>.</p>
+  </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>A newly allocated <link xref="mongoc_collection_t">mongoc_collection_t</link> that should be freed with <link xref="mongoc_collection_destroy">mongoc_collection_destroy()</link>.</p>
   </section>
-
 
 </page>
