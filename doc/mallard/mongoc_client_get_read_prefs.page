@@ -13,10 +13,12 @@
   </info>
   <title>mongoc_client_get_read_prefs()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[const mongoc_read_prefs_t *
-mongoc_client_get_read_prefs (const mongoc_client_t *client);
-]]></code></synopsis>
-
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[const mongoc_read_prefs_t *
+mongoc_client_get_read_prefs (const mongoc_client_t *client);]]></code></synopsis>
+    <p>Retrieves the default read preferences configured for the client instance. The result should not be modified or freed.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
@@ -25,14 +27,9 @@ mongoc_client_get_read_prefs (const mongoc_client_t *client);
     </table>
   </section>
 
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p>
   </section>
-
 
 </page>
