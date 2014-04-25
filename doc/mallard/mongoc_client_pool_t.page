@@ -21,11 +21,36 @@
 
   <section id="example">
     <title>Example</title>
-    <screen><code mime="text/x-csrc"><![CDATA[{
+    <screen><code mime="text/x-csrc"><![CDATA[#include <mongoc.h>
+
+static void *
+worker (void *data)
+{
+   mongoc_client_pool_t *pool = data;
+   mongoc_client_t *client;
+
+   do {
+      client = mongoc_client_pool_pop (pool);
+      /*
+       * Do something with client. If you are writing an HTTP server, you
+       * probably only want to hold onto the client for the portion of the
+       * request performing database queries.
+       */
+      mongoc_client_pool_push (pool, client);
+   } while (!inShutdown);
+
+   return NULL;
+}
+
+int main (int argc, char *argv[])
+{
    mongoc_client_pool_t *pool;
    mongoc_uri_t *uri;
-   pthread_t thread;
+   pthread_t thread[10];
    unsigned i;
+   void *ret;
+
+   mongoc_init ();
 
    uri = mongoc_uri_new ("mongodb://mdb1.example.com/?minPoolSize=16");
    pool = mongoc_client_pool_new (uri);
@@ -35,6 +60,14 @@
    }
 
    mongoc_uri_destroy (uri);
+
+   for (i = 0; i < 10; i++) {
+      pthread_join (threads [i], &ret);
+   }
+
+   mongoc_cleanup ();
+
+   return 0;
 }]]></code></screen>
   </section>
 
