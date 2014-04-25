@@ -10,9 +10,16 @@
     <link type="guide" xref="index#api-reference" />
   </info>
   <title>mongoc_client_t</title>
+
   <section id="description">
     <title>Synopsis</title>
-    <p>Description</p>
+    <synopsis><code mime="text/x-csrc"><![CDATA[#include <mongoc.h>
+
+typedef struct _mongoc_client_t mongoc_client_t;]]></code></synopsis>
+    <p><code>mongoc_client_t</code> is an opaque type that provides access to a MongoDB node,
+replica-set, or sharded-cluster. It maintains management of underlying sockets
+and routing to individual nodes based on <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link> or
+<link xref="mongoc_write_concern_t">mongoc_write_concern_t</link>.</p>
   </section>
 
   <links type="topic" groups="function" style="2column">
