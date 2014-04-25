@@ -13,7 +13,9 @@
   </info>
   <title>mongoc_client_command()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
 mongoc_client_command (mongoc_client_t           *client,
                        const char                *db_name,
                        mongoc_query_flags_t       flags,
@@ -24,31 +26,28 @@ mongoc_client_command (mongoc_client_t           *client,
                        const bson_t              *fields,
                        const mongoc_read_prefs_t *read_prefs);
 ]]></code></synopsis>
-
+    <p>This function executes a command on the server using the database and command specification provided.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
       <tr><td><p>client</p></td><td><p>A <link xref="mongoc_client_t">mongoc_client_t</link>.</p></td></tr>
-      <tr><td><p>db_name</p></td><td><p>A (null).</p></td></tr>
+      <tr><td><p>db_name</p></td><td><p>The name of the database to run the command on.</p></td></tr>
       <tr><td><p>flags</p></td><td><p>A <link xref="mongoc_query_flags_t">mongoc_query_flags_t</link>.</p></td></tr>
-      <tr><td><p>skip</p></td><td><p>A uint32_t.</p></td></tr>
-      <tr><td><p>limit</p></td><td><p>A uint32_t.</p></td></tr>
-      <tr><td><p>batch_size</p></td><td><p>A uint32_t.</p></td></tr>
-      <tr><td><p>query</p></td><td><p>A bson_t.</p></td></tr>
-      <tr><td><p>fields</p></td><td><p>A bson_t.</p></td></tr>
-      <tr><td><p>read_prefs</p></td><td><p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p></td></tr>
+      <tr><td><p>skip</p></td><td><p>The number of result documents to skip.</p></td></tr>
+      <tr><td><p>limit</p></td><td><p>The maximum number of documents to return.</p></td></tr>
+      <tr><td><p>batch_size</p></td><td><p>The batch size of documents to return from the MongoDB server.</p></td></tr>
+      <tr><td><p>query</p></td><td><p>A bson_t containing the command specification.</p></td></tr>
+      <tr><td><p>fields</p></td><td><p>An optional bson_t containing the fields to return in result documents.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>An optional <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p></td></tr>
     </table>
-  </section>
-
-  <section id="description">
-    <p>TODO: WRite description</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns blah</p>
+    <p>This function will always return a <link xref="mongoc_cursor_t">mongoc_cursor_t</link> if valid parameters are passed.</p>
+    <p>The cursor should be freed with <link xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</link>.</p>
   </section>
-
 
 </page>
