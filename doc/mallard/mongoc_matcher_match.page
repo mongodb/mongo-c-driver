@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_matcher_match">
+
+
+  <info>
+    <link type="guide" xref="mongoc_matcher_t" group="function"/>
+  </info>
+  <title>mongoc_matcher_match()</title>
+
+  <synopsis><code mime="text/x-csrc"><![CDATA[bool
+mongoc_matcher_match (const mongoc_matcher_t *matcher,
+                      const bson_t           *query);
+]]></code></synopsis>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>matcher</p></td><td><p>A mongoc_matcher_t.</p></td></tr>
+      <tr><td><p>query</p></td><td><p>A bson_t.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <p>TODO: WRite description</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns blah</p>
+  </section>
+
+
+</page>

@@ -1,39 +1,49 @@
+<?xml version="1.0"?>
+
 <page xmlns="http://projectmallard.org/1.0/"
-      type="guide"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
       id="mongoc_collection_aggregate">
 
-  <info>
-    <link type="guide" xref="mongoc_collection_t#functions"/>
-  </info>
 
+  <info>
+    <link type="guide" xref="mongoc_collection_t" group="function"/>
+  </info>
   <title>mongoc_collection_aggregate()</title>
 
-  <code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
+  <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
 mongoc_collection_aggregate (mongoc_collection_t       *collection,
                              mongoc_query_flags_t       flags,
                              const bson_t              *pipeline,
                              const bson_t              *options,
                              const mongoc_read_prefs_t *read_prefs)
-   BSON_GNUC_WARN_UNUSED_RESULT;]]></code>
+BSON_GNUC_WARN_UNUSED_RESULT;
+]]></code></synopsis>
+
 
   <section id="parameters">
-    <list>
-      <title>Parameters</title>
-      <item><p><code>collection</code> is a <link xref="mongoc_collection_t"><code>mongoc_collection_t</code></link>.</p></item>
-      <item><p><code>flags</code> is a <link xref="mongoc_query_flags_t"><code>mongoc_query_flags_t</code></link>.</p></item>
-      <item><p><code>pipeline</code> is a <link xref="bson_t"><code>bson_t</code></link> that contains the aggregation pipeline query.</p></item>
-      <item><p><code>options</code> is an optional <link xref="bson_t"><code>bson_t</code></link> that contains addtional options for the pipeline.</p></item>
-      <item><p><code>read_prefs</code> is an optional <link xref="mongoc_read_prefs_t"><code>mongoc_read_prefs_t</code></link> that contains the desired read preferences for the aggregation pipeline.</p></item>
-    </list>
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>collection</p></td><td><p>A mongoc_collection_t.</p></td></tr>
+      <tr><td><p>flags</p></td><td><p>A mongoc_query_flags_t.</p></td></tr>
+      <tr><td><p>pipeline</p></td><td><p>A bson_t.</p></td></tr>
+      <tr><td><p>options</p></td><td><p>A bson_t.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A mongoc_read_prefs_t.</p></td></tr>
+    </table>
   </section>
 
   <section id="description">
-    <p>
-      This function will perform a MongDB aggregation command using the arguments specified.
-      The result is a <link xref="mongoc_cursor_t"><code>mongoc_cursor_t</code></link> that should be freed by the caller when no longer in use with <link xref="mongoc_cursor_destroy"><code>mongoc_cursor_destroy</code></link>.
-    </p>
-    <p>For more information on the aggregate command, see <link type="seealso" href="http://docs.mongodb.org/manual/reference/command/aggregate/">MongoDB Aggregate Command</link> on the MongoDB website.</p>
-    <p>This function will return a <link xref="mongoc_cursor_t"><code>mongoc_cursor_t</code></link> even if the pipeline is non-sensical.</p>
+    <p>TODO: WRite description</p>
+    <note style="warning"><p>Failure to handle the result of this function is a programming error.</p></note>
+
   </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns blah</p>
+  </section>
+
 
 </page>

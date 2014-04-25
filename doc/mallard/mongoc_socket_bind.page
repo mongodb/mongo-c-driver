@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_socket_bind">
+
+
+  <info>
+    <link type="guide" xref="mongoc_socket_t" group="function"/>
+  </info>
+  <title>mongoc_socket_bind()</title>
+
+  <synopsis><code mime="text/x-csrc"><![CDATA[int
+mongoc_socket_bind (mongoc_socket_t       *sock,
+                    const struct sockaddr *addr,
+                    socklen_t              addrlen);
+]]></code></synopsis>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>sock</p></td><td><p>A mongoc_socket_t.</p></td></tr>
+      <tr><td><p>addr</p></td><td><p>A struct sockaddr.</p></td></tr>
+      <tr><td><p>addrlen</p></td><td><p>A socklen_t.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <p>TODO: WRite description</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns blah</p>
+  </section>
+
+
+</page>

@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_database_command">
+
+
+  <info>
+    <link type="guide" xref="mongoc_database_t" group="function"/>
+  </info>
+  <title>mongoc_database_command()</title>
+
+  <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
+mongoc_database_command (mongoc_database_t         *database,
+                         mongoc_query_flags_t       flags,
+                         uint32_t                   skip,
+                         uint32_t                   limit,
+                         uint32_t                   batch_size,
+                         const bson_t              *command,
+                         const bson_t              *fields,
+                         const mongoc_read_prefs_t *read_prefs);
+]]></code></synopsis>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>database</p></td><td><p>A mongoc_database_t.</p></td></tr>
+      <tr><td><p>flags</p></td><td><p>A mongoc_query_flags_t.</p></td></tr>
+      <tr><td><p>skip</p></td><td><p>A uint32_t.</p></td></tr>
+      <tr><td><p>limit</p></td><td><p>A uint32_t.</p></td></tr>
+      <tr><td><p>batch_size</p></td><td><p>A uint32_t.</p></td></tr>
+      <tr><td><p>command</p></td><td><p>A bson_t.</p></td></tr>
+      <tr><td><p>fields</p></td><td><p>A bson_t.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A mongoc_read_prefs_t.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <p>TODO: WRite description</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns blah</p>
+  </section>
+
+
+</page>

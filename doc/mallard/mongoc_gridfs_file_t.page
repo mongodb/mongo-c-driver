@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<page id="mongoc_gridfs_file_t"
+      type="guide"
+      style="class"
+      xmlns="http://projectmallard.org/1.0/"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/">
+  <info>
+    <link type="guide" xref="index#api-reference" />
+  </info>
+  <title>mongoc_gridfs_file_t</title>
+  <section id="description">
+    <title>Synopsis</title>
+    <p>Description</p>
+  </section>
+
+  <links type="topic" groups="function" style="2column">
+    <title>Functions</title>
+  </links>
+</page>

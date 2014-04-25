@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_cursor_get_host">
+
+
+  <info>
+    <link type="guide" xref="mongoc_cursor_t" group="function"/>
+  </info>
+  <title>mongoc_cursor_get_host()</title>
+
+  <synopsis><code mime="text/x-csrc"><![CDATA[void
+mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
+                        mongoc_host_list_t *host);
+]]></code></synopsis>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>cursor</p></td><td><p>A mongoc_cursor_t.</p></td></tr>
+      <tr><td><p>host</p></td><td><p>A mongoc_host_list_t.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <p>TODO: WRite description</p>
+  </section>
+
+
+
+</page>

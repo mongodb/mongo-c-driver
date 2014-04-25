@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_stream_buffered_new">
+
+
+  <info>
+    <link type="guide" xref="" group="function"/>
+  </info>
+  <title>mongoc_stream_buffered_new()</title>
+
+  <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_stream_t *
+mongoc_stream_buffered_new (mongoc_stream_t *base_stream,
+                            size_t           buffer_size);
+]]></code></synopsis>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>base_stream</p></td><td><p>A mongoc_stream_t.</p></td></tr>
+      <tr><td><p>buffer_size</p></td><td><p>A size_t.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <p>TODO: WRite description</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns blah</p>
+  </section>
+
+
+</page>

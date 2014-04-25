@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_collection_create_bulk_operation">
+
+
+  <info>
+    <link type="guide" xref="mongoc_collection_t" group="function"/>
+  </info>
+  <title>mongoc_collection_create_bulk_operation()</title>
+
+  <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_bulk_operation_t *
+mongoc_collection_create_bulk_operation (
+   mongoc_collection_t          *collection,
+   bool                          ordered,
+   const mongoc_write_concern_t *write_concern);
+]]></code></synopsis>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>collection</p></td><td><p>A mongoc_collection_t.</p></td></tr>
+      <tr><td><p>ordered</p></td><td><p>A (null).</p></td></tr>
+      <tr><td><p>write_concern</p></td><td><p>A mongoc_write_concern_t.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <p>TODO: WRite description</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns blah</p>
+  </section>
+
+
+</page>

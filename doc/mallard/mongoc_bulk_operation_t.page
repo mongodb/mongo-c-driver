@@ -1,14 +1,21 @@
-<page xmlns="http://projectmallard.org/1.0/"
-      type="topic"
-      id="mongoc_bulk_operation_t">
+<?xml version="1.0"?>
+
+<page id="mongoc_bulk_operation_t"
+      type="guide"
+      style="class"
+      xmlns="http://projectmallard.org/1.0/"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/">
   <info>
     <link type="guide" xref="index#api-reference" />
   </info>
-
   <title>mongoc_bulk_operation_t</title>
+  <section id="description">
+    <title>Synopsis</title>
+    <p>Description</p>
+  </section>
 
-  <p>The <code>mongoc_bulk_operation_t</code> structure helps application developers to batch multiple write operations into a single logical step. Note that this <em>IS NOT</em> the same thing as transactions. This primarily helps you gain efficiency when submitting a large amount of work to a MongoDB server.</p>
-
-  <screen><include href="../../src/mongoc/mongoc-bulk-operation.h" parse="text" xmlns="http://www.w3.org/2001/XInclude"/></screen>
-
+  <links type="topic" groups="function" style="2column">
+    <title>Functions</title>
+  </links>
 </page>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_cleanup">
+
+
+  <info>
+    <link type="guide" xref="" group="function"/>
+  </info>
+  <title>mongoc_cleanup()</title>
+
+  <synopsis><code mime="text/x-csrc"><![CDATA[void
+mongoc_cleanup (void);
+]]></code></synopsis>
+
+
+
+</page>

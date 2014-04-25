@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_gridfs_file_get_aliases">
+
+
+  <info>
+    <link type="guide" xref="mongoc_gridfs_file_t" group="function"/>
+  </info>
+  <title>mongoc_gridfs_file_get_aliases()</title>
+
+  <synopsis><code mime="text/x-csrc"><![CDATA[MONGOC_GRIDFS_FILE_BSON_HEADER (aliases);
+]]></code></synopsis>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>file</p></td><td><p>A mongoc_gridfs_file_t.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <p>TODO: WRite description</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns blah</p>
+  </section>
+
+
+</page>

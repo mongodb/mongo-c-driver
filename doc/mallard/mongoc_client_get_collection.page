@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_client_get_collection">
+
+
+  <info>
+    <link type="guide" xref="mongoc_client_t" group="function"/>
+  </info>
+  <title>mongoc_client_get_collection()</title>
+
+  <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_collection_t *
+mongoc_client_get_collection (mongoc_client_t *client,
+                              const char      *db,
+                              const char      *collection);
+]]></code></synopsis>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>client</p></td><td><p>A mongoc_client_t.</p></td></tr>
+      <tr><td><p>db</p></td><td><p>A (null).</p></td></tr>
+      <tr><td><p>collection</p></td><td><p>A (null).</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <p>TODO: WRite description</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns blah</p>
+  </section>
+
+
+</page>

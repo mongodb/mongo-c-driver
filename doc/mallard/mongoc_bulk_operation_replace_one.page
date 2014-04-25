@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_bulk_operation_replace_one">
+
+
+  <info>
+    <link type="guide" xref="mongoc_bulk_operation_t" group="function"/>
+  </info>
+  <title>mongoc_bulk_operation_replace_one()</title>
+
+  <synopsis><code mime="text/x-csrc"><![CDATA[void
+mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
+                                   const bson_t            *selector,
+                                   const bson_t            *document,
+                                   bool                     upsert);
+]]></code></synopsis>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>bulk</p></td><td><p>A mongoc_bulk_operation_t.</p></td></tr>
+      <tr><td><p>selector</p></td><td><p>A bson_t.</p></td></tr>
+      <tr><td><p>document</p></td><td><p>A bson_t.</p></td></tr>
+      <tr><td><p>upsert</p></td><td><p>A (null).</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <p>TODO: WRite description</p>
+  </section>
+
+
+
+</page>
