@@ -927,7 +927,6 @@ test_many_return (void)
    bson_oid_t oid;
    bson_t query = BSON_INITIALIZER;
    bson_t **docs;
-   size_t len;
    bool r;
    int i;
 
