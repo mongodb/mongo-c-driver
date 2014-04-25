@@ -32,7 +32,7 @@
     <listing>
       <title><file>example3.c</file></title>
       <desc>Insert a document into the collection.</desc>
-      <code mime="text/x-csrc"><![CDATA[
+      <screen><code mime="text/x-csrc"><![CDATA[
 #include <bson.h>
 #include <mongoc.h>
 #include <stdio.h>
@@ -68,7 +68,7 @@ main (int   argc,
 
     return 0;
 }
-]]></code>
+]]></code></screen>
     </listing>
 
     <p>Let's use <code>GCC</code> and <code>pkg-config</code> to compile <file>example3.c</file>.</p>
