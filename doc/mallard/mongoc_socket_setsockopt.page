@@ -25,7 +25,7 @@ mongoc_socket_setsockopt (mongoc_socket_t *sock,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>sock</p></td><td><p>A mongoc_socket_t.</p></td></tr>
+      <tr><td><p>sock</p></td><td><p>A <link xref="mongoc_socket_t">mongoc_socket_t</link>.</p></td></tr>
       <tr><td><p>level</p></td><td><p>A (null).</p></td></tr>
       <tr><td><p>optname</p></td><td><p>A (null).</p></td></tr>
       <tr><td><p>optval</p></td><td><p>A (null).</p></td></tr>

@@ -24,7 +24,7 @@ mongoc_socket_sendv (mongoc_socket_t *sock,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>sock</p></td><td><p>A mongoc_socket_t.</p></td></tr>
+      <tr><td><p>sock</p></td><td><p>A <link xref="mongoc_socket_t">mongoc_socket_t</link>.</p></td></tr>
       <tr><td><p>iov</p></td><td><p>A mongoc_iovec_t.</p></td></tr>
       <tr><td><p>iovcnt</p></td><td><p>A size_t.</p></td></tr>
       <tr><td><p>expire_at</p></td><td><p>A int64_t.</p></td></tr>
