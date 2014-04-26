@@ -13,26 +13,28 @@
   </info>
   <title>mongoc_client_set_stream_initiator()</title>
 
-  <synopsis><code mime="text/x-csrc"><![CDATA[void
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_client_set_stream_initiator (mongoc_client_t          *client,
                                     mongoc_stream_initiator_t initiator,
-                                    void                     *user_data);
-]]></code></synopsis>
-
+                                    void                     *user_data);]]></code></synopsis>
+    <p>The <link xref="mongoc_client_set_stream_initiator">mongoc_client_set_stream_initiator()</link>
+function shall associate a given <link xref="mongoc_client_t">mongoc_client_t</link>
+with a new stream initiator. This will completely replace the default transport
+(buffered TCP, possibly with TLS). The <code>initiator</code> should fulfill the
+<link xref="mongoc_stream_t">mongoc_stream_t</link> contract.
+<code>user_data</code> is passed through to the <code>initiator</code> callback and may
+be used for whatever run time customization is necessary.</p>
+  </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
       <tr><td><p>client</p></td><td><p>A <link xref="mongoc_client_t">mongoc_client_t</link>.</p></td></tr>
-      <tr><td><p>initiator</p></td><td><p>A mongoc_stream_initiator_t.</p></td></tr>
-      <tr><td><p>user_data</p></td><td><p>A (null).</p></td></tr>
+      <tr><td><p>initiator</p></td><td><p>A <link xref="mongoc_client_t">mongoc_stream_initiator_t</link>.</p></td></tr>
+      <tr><td><p>user_data</p></td><td><p>User supplied pointer for callback function.</p></td></tr>
     </table>
   </section>
-
-  <section id="description">
-    <p>TODO: WRite description</p>
-  </section>
-
-
 
 </page>

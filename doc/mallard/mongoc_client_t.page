@@ -16,7 +16,13 @@
 
   <section id="description">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[typedef struct _mongoc_client_t mongoc_client_t;]]></code></synopsis>
+    <synopsis><code mime="text/x-csrc"><![CDATA[typedef struct _mongoc_client_t mongoc_client_t;
+    
+typedef mongoc_stream_t *
+(*mongoc_stream_initiator_t) (const mongoc_uri_t       *uri,
+                              const mongoc_host_list_t *host,
+                              void                     *user_data,
+                              bson_error_t             *error);]]></code></synopsis>
     <p><code>mongoc_client_t</code> is an opaque type that provides access to a MongoDB node,
 replica-set, or sharded-cluster. It maintains management of underlying sockets
 and routing to individual nodes based on <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link> or
