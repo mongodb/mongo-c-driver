@@ -33,8 +33,8 @@ MONGO_EXTERN_C_START
 #endif
 
 #define MONGO_MAJOR 0
-#define MONGO_MINOR 7
-#define MONGO_PATCH 0
+#define MONGO_MINOR 8
+#define MONGO_PATCH 1
 
 #define MONGO_OK 0
 #define MONGO_ERROR -1
