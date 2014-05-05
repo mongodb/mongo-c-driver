@@ -16,10 +16,16 @@ TEST_CFLAGS = \
 	-DMONGOC_COMPILATION \
 	-DBINARY_DIR="\"$(srcdir)/tests/binary\"" \
 	$(BSON_CFLAGS) \
+	$(SSL_CFLAGS) \
+	$(SASL_CFLAGS) \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc
 
-TEST_LIBS = libmongoc-priv.la $(SHM_LIB)
+TEST_LIBS = \
+	libmongoc-priv.la \
+	$(SHM_LIB) \
+	$(SASL_LIBS) \
+	$(SSL_LIBS)
 if EXPLICIT_LIBS
 TEST_LIBS += $(BSON_LIBS)
 endif
