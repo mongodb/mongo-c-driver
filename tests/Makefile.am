@@ -117,7 +117,7 @@ test_sharded_cluster_LDADD = $(TEST_LIBS)
 test_certs: tests/trust_dir/done
 
 tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_dir.cnf
-	$< $(top_builddir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
+	PATH=tests:${PATH} $< $(top_builddir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
 	touch $(top_builddir)/tests/trust_dir/done
 
 libbson_check:
@@ -212,7 +212,8 @@ EXTRA_DIST += \
 	tests/mongoc-tests.c \
 	tests/mongoc-tests.h \
 	tests/trust_dir.cnf \
-	tests/make_ca.pl
+	tests/make_ca.pl \
+	tests/c_rehash
 
 debug: test-libmongoc
 	$(LIBTOOL) --mode=execute gdb --args test-libmongoc -f -p
