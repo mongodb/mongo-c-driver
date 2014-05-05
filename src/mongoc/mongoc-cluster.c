@@ -1178,7 +1178,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
    BSON_ASSERT(node);
 
    if (!(auth_source = mongoc_uri_get_auth_source(cluster->uri)) ||
-       *auth_source == '\0') {
+       (*auth_source == '\0')) {
       auth_source = "admin";
    }
 
