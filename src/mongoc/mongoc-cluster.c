@@ -1422,6 +1422,10 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t      *cluster,
          bson_append_utf8 (&cmd, "payload", 7, (const char *)buf, buflen);
       }
 
+      MONGOC_INFO ("SASL: authenticating \"%s\" (step %d)",
+                   mongoc_uri_get_username (cluster->uri),
+                   sasl.step);
+
       if (!_mongoc_cluster_run_command (cluster, node, "$external", &cmd, &reply, error)) {
          bson_destroy (&cmd);
          goto failure;
@@ -1442,6 +1446,8 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t      *cluster,
           !(conv_id = bson_iter_int32 (&iter)) ||
           !bson_iter_init_find (&iter, &reply, "payload") ||
           !BSON_ITER_HOLDS_UTF8 (&iter)) {
+         MONGOC_INFO ("SASL: authentication failed for \"%s\"",
+                      mongoc_uri_get_username (cluster->uri));
          bson_destroy (&reply);
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,
@@ -1464,6 +1470,9 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t      *cluster,
 
       bson_destroy (&reply);
    }
+
+   MONGOC_INFO ("SASL: \"%s\" authenticated",
+                mongoc_uri_get_username (cluster->uri));
 
    ret = true;
 
