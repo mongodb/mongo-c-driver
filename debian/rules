@@ -6,13 +6,14 @@ include /usr/share/cdbs/1/rules/utils.mk
 
 include /usr/share/dpkg/buildflags.mk
 
-DEB_COMPRESS_EXCLUDE = .c
 DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
                              --with-libbson=bundled \
                              --enable-man-pages \
                              --enable-debug-symbols \
                              --enable-optimizations \
                              --enable-hardening \
+                             --enable-ssl \
+                             --enable-sasl \
                              --enable-maintainer-flags
 DEB_DH_MAKESHLIBS_ARGS_libbson-1.0-0 += -V -- -c4
 

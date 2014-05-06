@@ -1,0 +1,12 @@
+cdbs-*
+*.debhelper*
+files
+libbson-1.0-0-dbg
+libbson-1.0-0
+libbson-dev
+libmongoc-1.0-0-dbg
+libmongoc-1.0-0
+libmongoc-dev
+stamp*
+*.substvars
+tmp
