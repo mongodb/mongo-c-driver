@@ -1,0 +1,4 @@
+usr/lib/*/libmongoc*.so
+usr/lib/*/pkgconfig/libmongoc*.pc
+usr/include/libmongoc-1.0/
+usr/share/man/man3/mongoc*

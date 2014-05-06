@@ -1,0 +1,4 @@
+usr/lib/*/libbson*.so
+usr/lib/*/pkgconfig/libbson*.pc
+usr/include/libbson-1.0/
+usr/share/man/man3/bson*
