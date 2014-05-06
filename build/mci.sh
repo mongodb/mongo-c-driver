@@ -173,6 +173,34 @@ EOF
 
 		;;
 
+	Linux-*-Debian|Linux-*-Ubuntu)
+		DPKG_BUILDPACKAGE=$(which dpkg-buildpackage 2>/dev/null)
+		if [ -z "${DPKG_BUILDPACKAGE}" ]; then
+			echo "Please install dpkg-dev."
+			exit 1
+		fi
+
+		if [ ! -e /usr/share/cdbs/1/class/autotools.mk ]; then
+			echo "Please install cdbs, debhelper, and build-essential"
+		fi
+
+		python -c 'import lxml.etree'
+		if [ $? -ne 0 ]; then
+			echo "Please install python-lxml"
+			exit 1
+		fi
+
+		# Bootstrap, build, and run unit tests.
+		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE}
+		${GMAKE} ${MAKEARGS} all
+		${GMAKE} ${MAKEARGS} check
+
+		dpkg-buildpackage
+		if [ $? -ne 0 ]; then
+			exit 1
+		fi
+
+		;;
 
 	*)
 		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${HARDEN} ${OPTIMIZE}
@@ -180,3 +208,5 @@ EOF
 		${GMAKE} ${MAKEARGS} check
 		;;
 esac
+
+exit 0
