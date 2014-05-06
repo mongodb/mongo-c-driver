@@ -28,12 +28,12 @@
         <td>
           <list>
             <item><p>Linux</p></item>
-            <item><p>FreeBSD</p></item>
-            <item><p>Dragonfly BSD</p></item>
+            <item><p><link xref="installing-mongo-c-driver#solaris">Solaris 10 and 11</link></p></item>
             <item><p>Mac OS X 10.6 and newer</p></item>
             <item><p>Windows Vista, 7, and 8</p></item>
-            <item><p>Solaris 10 and 11</p></item>
+            <item><p>FreeBSD</p></item>
             <item><p>OpenBSD 5.4</p></item>
+            <item><p>Dragonfly BSD</p></item>
           </list>
         </td>
         <td>
@@ -48,8 +48,8 @@
           <list>
             <item><p>GCC 4.1</p></item>
             <item><p>clang 3.3</p></item>
-            <item><p>Visual Studio 2010</p></item>
-            <item><p>Solaris 10 SunStudio</p></item>
+            <item><p><link href="http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs#DownloadFamilies_4">Microsoft Visual Studio 2010 Express</link></p></item>
+            <item><p><link href="http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.html">Oracle Solaris Studio</link></p></item>
             <item><p>mingw</p></item>
           </list>
         </td>
@@ -58,13 +58,116 @@
 
   </section>
 
+  <section id="solaris">
+    <title>Installing on Solaris 10 and 11</title>
+
+    <p>
+      Ensure you have a Solaris 10 or 11 installation for either x86 or SPARC.
+      The MongoDB C driver supports both GCC and Oracle Solaris Studio on Solaris, but Solaris Studio is recommended.
+      You can download <link href="http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.html">Oracle Solaris Studio here</link> for your given Solaris OS release.
+    </p>
+
+    <p>Let's start by downloading and extracting the most recent MongoDB C driver release.</p>
+
+    <screen><output style="prompt">$ </output><input>wget https://github.com/mongodb/mongo-c-driver/releases/download/0.94.2/mongo-c-driver-0.94.2.tar.gz</input>
+<output style="prompt">$ </output><input>gunzip mongo-c-driver-0.94.2.tar.gz</input>
+<output style="prompt">$ </output><input>tar -xf mongo-c-driver-0.94.2.tar</input>
+<output style="prompt">$ </output><input>cd mongo-c-driver-0.94.2/</input></screen>
+
+    <p>
+      To compile with support for TLS (sometimes referred to as SSL), ensure you have the <code>SUNWopenssl-include</code> and <code>SUNWopenssl-libraries</code> packages installed.
+      You can verify this with the <code>pkginfo</code> command on Solaris 10.
+    </p>
+
+    <screen><output style="prompt">$ </output><input>pkginfo | grep SUNWopenssl</input>
+<output>system      SUNWopenssl-commands             OpenSSL Commands (Usr)
+system      SUNWopenssl-include              OpenSSL Header Files
+system      SUNWopenssl-libraries            OpenSSL Libraries (Usr)
+system      SUNWopenssl-man                  OpenSSL Manual Pages
+system      SUNWopensslr                     OpenSSL (Root)</output></screen>
+
+    <p>
+      To compile with Kerberos (GSSAPI) support, ensure you have the <code>SUNWlibsasl</code> package installed.
+      You can verify this with the <code>pkginfo</code> command.
+    </p>
+
+    <screen><output style="prompt">$ </output><input>pkginfo | grep SUNWlibsasl</input>
+<output>system      SUNWlibsasl                      SASL v2</output></screen>
+
+    <p>
+      To let the MongoDB C driver know how to compile against <code>libsasl</code>, we need to export a couple of environment variables.
+    </p>
+
+    <screen><output style="prompt">$ </output><input>export SASL_CFLAGS="-I/usr/include"</input>
+<output style="prompt">$ </output><input>export SASL_LIBS="-L/usr/lib -lsasl"</input></screen>
+
+    <p>We can now run the MongoDB C driver configure script to detect the available features of our platform.</p>
+
+    <screen><output style="prompt">$ </output><input>./configure</input>
+<output>checking for gcc... no
+checking for cc... yes</output>
+... output snipped ...
+<output>
+libbson was configured with the following options:
+
+Build configuration:
+  Enable debugging (slow)                          : no
+  Compile with debug symbols (slow)                : no
+  Enable GCC build optimization                    : yes
+  Enable automatic binary hardening                : yes
+  Code coverage support                            : no
+  Cross Compiling                                  : no
+  Big endian                                       : no
+  Link Time Optimization (experimental)            : no
+
+Documentation:
+  Generate man pages                               : no
+  Install man pages                                : yes
+
+
+libmongoc was configured with the following options:
+
+Build configuration:
+  Enable debugging (slow)                          : no
+  Compile with debug symbols (slow)                : no
+  Enable GCC build optimization                    : yes
+  Enable automatic binary hardening                : yes
+  Code coverage support                            : no
+  Cross Compiling                                  : no
+  Fast counters                                    : no
+  SASL                                             : yes
+  SSL                                              : yes
+  Libbson                                          : bundled
+
+Documentation:
+  Generate man pages                               : no
+  Install man pages                                : yes
+
+</output>
+<input style="prompt">$ </input><input>make</input>
+<output>  CC       src/bson/libbson_la-bcon.lo
+  CC       src/bson/libbson_la-bson.lo</output>
+... output snipped ...
+
+<input style="prompt">$ </input><input>make install</input></screen>
+
+    <p>
+      By default, the MongoDB C driver will be installed to a prefix of <code>/usr/local</code>.
+      The headers can be found in <code>/usr/local/include/libbson-1.0</code> and <code>/usr/local/include/libmongoc-1.0</code>.
+      The libraries can be found in <code>/usr/local/lib</code>.
+    </p>
+
+    <note style="tip"><p>You can change the default installation prefix using the <code>--prefix=path</code> option to <code>./configure</code>. To see all of the options, run <code>./configure --help</code>.</p></note>
+
+  </section>
+
   <section id="downloading-mongo-c-driver">
     <title>Downloading</title>
     <p>The most recent release of the mongo-c-driver is 0.94.2 and can be downloaded <link href="https://github.com/mongodb/mongo-c-driver/releases/download/0.94.2/mongo-c-driver-0.94.2.tar.gz">here</link>. The following snippet will download and extract the current release of the driver.</p>
 
-    <screen>wget https://github.com/mongodb/mongo-c-driver/releases/download/0.94.2/mongo-c-driver-0.94.2.tar.gz
-tar -xzf mongo-c-driver-0.94.2.tar.gz
-cd mongo-c-driver-0.94.2/</screen>
+    <screen><output style="prompt">$ </output><input>wget https://github.com/mongodb/mongo-c-driver/releases/download/0.94.2/mongo-c-driver-0.94.2.tar.gz</input>
+<output style="prompt">$ </output><input>tar -xzf mongo-c-driver-0.94.2.tar.gz</input>
+<output style="prompt">$ </output><input>cd mongo-c-driver-0.94.2/</input></screen>
 
   </section>
 
