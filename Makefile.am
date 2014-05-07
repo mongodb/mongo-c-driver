@@ -49,6 +49,6 @@ dist-hook:
 uninstall-local:
 	-rm -r $(mongocdocdir)
 
-rpm: dist-gzip
+dist-rpm: dist-gzip
 	cp mongo-c-driver-$(MONGOC_VERSION).tar.gz ~/rpmbuild/SOURCES/
 	rpmbuild -bb build/rpm/mongo-c-driver.spec
