@@ -10,6 +10,7 @@ BuildRequires:  automake
 BuildRequires:  libbson-devel
 BuildRequires:  cyrus-sasl-devel
 BuildRequires:  openssl-devel
+BuildRequires:  pkgconfig
 
 %description
 mongo-c-driver is a library for building high-performance
@@ -31,7 +32,7 @@ developing applications that use %{name}.
 automake 
 
 %build
-%configure --disable-static --disable-silent-rules --enable-debug-symbols --enable-hardening --with-libbson=system --enable-ssl --enable-sasl --docdir=%{_pkgdocdir}
+%configure --disable-static --disable-silent-rules --enable-debug-symbols --docdir=%{_pkgdocdir}
 make %{?_smp_mflags}
 
 %check
@@ -52,9 +53,9 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 %{_libdir}/*.so.*
 
 %files devel
-%dir %{_includedir}/%{name}-1.0
-%{_includedir}/%{name}-1.0/*.h
-%{_libdir}/%{name}-1.0.so
+%dir %{_includedir}/libmongoc-1.0
+%{_includedir}/libmongoc-1.0/*.h
+%{_libdir}/libmongoc-1.0.so
 %{_libdir}/pkgconfig/libmongoc-1.0.pc
 %{_prefix}/share/man/man3/*
 %{_prefix}/share/man/man7/*
