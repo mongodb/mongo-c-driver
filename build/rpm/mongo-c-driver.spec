@@ -57,8 +57,8 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 %{_includedir}/libmongoc-1.0/*.h
 %{_libdir}/libmongoc-1.0.so
 %{_libdir}/pkgconfig/libmongoc-1.0.pc
-%{_prefix}/share/man/man3/*
-%{_prefix}/share/man/man7/*
+%{_libdir}/pkgconfig/libmongoc-ssl-1.0.pc
+%{_bindir}/mongoc-stat
 
 %changelog
 * Tue May 06 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.94.3-1
