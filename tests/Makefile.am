@@ -145,6 +145,9 @@ else
 abicheck:
 endif
 
+# TODO: run tests that do not need to talk to a server
+local-check:
+
 DISTCLEANFILES += \
 	test.log \
 	tests/trust_dir/ca.db.serial \
