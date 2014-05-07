@@ -15,6 +15,7 @@ libmongoc_priv_la_CPPFLAGS = \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc \
 	$(BSON_CFLAGS) \
+	$(PTHREAD_CFLAGS) \
 	$(SSL_CFLAGS) \
 	$(SASL_CFLAGS)
 
@@ -29,6 +30,7 @@ libmongoc_priv_la_LDFLAGS = \
 
 libmongoc_priv_la_LIBADD = \
 	$(BSON_LIBS) \
+	$(PTHREAD_LIBS) \
 	$(SHM_LIB) \
 	$(SSL_LIBS) \
 	$(SASL_LIBS)

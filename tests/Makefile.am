@@ -23,6 +23,7 @@ TEST_CFLAGS = \
 
 TEST_LIBS = \
 	libmongoc-priv.la \
+	$(PTHREAD_LIBS) \
 	$(SHM_LIB) \
 	$(SASL_LIBS) \
 	$(SSL_LIBS)
