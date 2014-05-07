@@ -102,7 +102,7 @@ make install
 # Find all files that belong in the package.
 #
 cd "${DIR}"
-perl -p -i -e 's#${DIR}#/usr#g' usr/lib/pkgconfig/*.pc usr/lib/${ARCH64}/pkgconfig/*.pc
+perl -p -i -e "s#${DIR}##g" usr/lib/pkgconfig/*.pc usr/lib/${ARCH64}/pkgconfig/*.pc
 echo "i pkginfo" > Prototype
 find "usr/" | grep -v bin$ | grep -v lib$ | grep -v include$ | grep -v share$ | grep -v doc$ | grep -v usr/$ | grep -v amd64$ | grep -v sparcv9$ | grep -v pkgconfig$ | pkgproto >> Prototype
 PSTAMP=$(date +%d%b%y)
