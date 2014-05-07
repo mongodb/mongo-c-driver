@@ -107,8 +107,6 @@ echo "i pkginfo" > Prototype
 find "usr/" | grep -v bin$ | grep -v lib$ | grep -v include$ | grep -v share$ | grep -v doc$ | grep -v usr/$ | grep -v amd64$ | grep -v sparcv9$ | grep -v pkgconfig$ | pkgproto >> Prototype
 PSTAMP=$(date +%d%b%y)
 
-perl -p -i -e 's#usr/##g' Prototype
-
 cat <<EOF > pkginfo
 PKG="${VENDOR}${NAME}"
 NAME="${VENDOR} ${NAME} ${VERSION}"
@@ -121,12 +119,12 @@ PSTAMP="${PSTAMP}"
 EMAIL="${EMAIL}"
 ISTATES="S s 1 2 3"
 RSTATES="S s 1 2 3"
-BASEDIR="/usr/"
+BASEDIR="/"
 
 EOF
 
 
-pkgmk -o -r / -b "${DIR}/usr" -d "${DIR}" -f Prototype
+pkgmk -o -r / -b "${DIR}" -d "${DIR}" -f Prototype
 
 tar -cf - "${VENDOR}${NAME}" | gzip -9 -c > "${VENDOR}${NAME}.${VERSION}.${ARCH}.pkg.tar.gz"
 
