@@ -1,5 +1,7 @@
 headerdir = $(prefix)/include/libmongoc-@MONGOC_API_VERSION@
-header_DATA = $(INST_H_FILES)
+header_DATA = \
+	$(INST_H_FILES) \
+	src/mongoc/mongoc-config.h
 
 INST_H_FILES = \
 	src/mongoc/mongoc.h \
@@ -7,7 +9,6 @@ INST_H_FILES = \
 	src/mongoc/mongoc-client.h \
 	src/mongoc/mongoc-client-pool.h \
 	src/mongoc/mongoc-collection.h \
-	src/mongoc/mongoc-config.h \
 	src/mongoc/mongoc-cursor.h \
 	src/mongoc/mongoc-database.h \
 	src/mongoc/mongoc-error.h \
