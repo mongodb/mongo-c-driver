@@ -81,7 +81,7 @@ export CC=cc
 export SASL_CFLAGS="-I/usr/include"
 export SASL_LIBS="-L/usr/lib -lsasl"
 export CFLAGS="-m32"
-./configure "--prefix=${DIR}/usr" "--libdir=${DIR}/usr/lib" --enable-debug-symbols --enable-sasl --enable-ssl --disable-static --disable-silent-rules --enable-maintainer-flags
+./configure "--prefix=${DIR}/usr" "--libdir=${DIR}/usr/lib" --enable-debug-symbols --enable-sasl --enable-ssl --disable-static --disable-silent-rules --enable-maintainer-flags --with-libbson=bundled
 make
 make install
 make clean
@@ -93,7 +93,7 @@ export PKG_CONFIG_PATH="/usr/lib/${ARCH64}/pkgconfig"
 export SASL_CFLAGS="-I/usr/include"
 export SASL_LIBS="-L/usr/lib/${ARCH64} -lsasl"
 export CFLAGS="-m64"
-./configure "--prefix=${DIR}/usr" "--libdir=${DIR}/usr/lib/${ARCH64}" --enable-debug-symbols --enable-sasl --enable-ssl --disable-static --disable-silent-rules --enable-maintainer-flags
+./configure "--prefix=${DIR}/usr" "--libdir=${DIR}/usr/lib/${ARCH64}" --enable-debug-symbols --enable-sasl --enable-ssl --disable-static --disable-silent-rules --enable-maintainer-flags --with-libbson=bundled
 make
 make install
 
