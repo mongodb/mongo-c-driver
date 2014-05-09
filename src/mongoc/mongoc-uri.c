@@ -20,6 +20,7 @@
 #include <sys/types.h>
 
 #include "mongoc-host-list.h"
+#include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
 #include "mongoc-socket.h"
 #include "mongoc-uri.h"
