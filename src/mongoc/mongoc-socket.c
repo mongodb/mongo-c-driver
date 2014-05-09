@@ -104,7 +104,7 @@ _mongoc_socket_setnonblock (int sd)
  *--------------------------------------------------------------------------
  */
 
-bool
+static bool
 #ifdef _WIN32
 _mongoc_socket_wait (SOCKET   sd,           /* IN */
 #else
@@ -162,7 +162,7 @@ _mongoc_socket_wait (int      sd,           /* IN */
 }
 
 
-bool
+static bool
 #ifdef _WIN32
 _mongoc_socket_setnodelay (SOCKET sd) /* IN */
 #else
@@ -802,7 +802,7 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
  *--------------------------------------------------------------------------
  */
 
-ssize_t
+static ssize_t
 _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock,   /* IN */
                                mongoc_iovec_t  *iov,    /* IN */
                                size_t           iovcnt) /* IN */

@@ -23,6 +23,7 @@
 #include "mongoc-gridfs-file.h"
 #include "mongoc-gridfs-file-private.h"
 #include "mongoc-trace.h"
+#include "mongoc-stream-gridfs.h"
 
 
 #undef MONGOC_LOG_DOMAIN
