@@ -51,7 +51,7 @@ _mongoc_sasl_get_pass (mongoc_sasl_t  *sasl,
    }
 
    if (result_len) {
-      *result_len = sasl->pass ? strlen (sasl->pass) : 0;
+      *result_len = sasl->pass ? (unsigned) strlen (sasl->pass) : 0;
    }
 
    return (sasl->pass != NULL) ? SASL_OK : SASL_FAIL;
@@ -83,7 +83,7 @@ _mongoc_sasl_get_user (mongoc_sasl_t  *sasl,
    }
 
    if (result_len) {
-      *result_len = sasl->user ? strlen (sasl->user) : 0;
+      *result_len = sasl->user ? (unsigned) strlen (sasl->user) : 0;
    }
 
    return (sasl->user != NULL) ? SASL_OK : SASL_FAIL;

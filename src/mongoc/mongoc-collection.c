@@ -1541,11 +1541,11 @@ mongoc_collection_rename (mongoc_collection_t *collection,
 
       bson_snprintf (collection->collection, sizeof collection->collection,
                      "%s", new_name);
-      collection->collectionlen = strlen (collection->collection);
+      collection->collectionlen = (int) strlen (collection->collection);
 
       bson_snprintf (collection->ns, sizeof collection->ns,
                      "%s.%s", collection->db, new_name);
-      collection->nslen = strlen (collection->ns);
+      collection->nslen = (int) strlen (collection->ns);
    }
 
    bson_destroy (&cmd);

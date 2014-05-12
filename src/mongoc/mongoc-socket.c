@@ -888,7 +888,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 #else
    memset (&msg, 0, sizeof msg);
    msg.msg_iov = iov;
-   msg.msg_iovlen = iovcnt;
+   msg.msg_iovlen = (int)iovcnt;
    ret = sendmsg (sock->sd, &msg,
 # ifdef MSG_NOSIGNAL
                   MSG_NOSIGNAL);

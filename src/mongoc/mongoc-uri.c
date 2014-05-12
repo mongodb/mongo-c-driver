@@ -422,11 +422,11 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
        !strcasecmp(key, "waitqueuemultiple") ||
        !strcasecmp(key, "waitqueuetimeoutms") ||
        !strcasecmp(key, "wtimeoutms")) {
-      v_int = strtol(value, NULL, 10);
+      v_int = atoi(value);
       bson_append_int32(&uri->options, key, -1, v_int);
    } else if (!strcasecmp(key, "w")) {
       if (*value == '-' || isdigit(*value)) {
-         v_int = strtol (value, NULL, 10);
+         v_int = atoi (value);
          BSON_APPEND_INT32 (&uri->options, "w", v_int);
       } else if (0 == strcasecmp (value, "majority")) {
          BSON_APPEND_UTF8 (&uri->options, "w", "majority");
