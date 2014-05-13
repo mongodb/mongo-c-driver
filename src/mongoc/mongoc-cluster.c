@@ -1971,6 +1971,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
       cluster->nodes[i].host = host;
       cluster->nodes[i].index = i;
       cluster->nodes[i].stream = stream;
+      cluster->nodes[i].needs_auth = cluster->requires_auth;
 
       if (!_mongoc_cluster_ismaster(cluster, &cluster->nodes[i], error)) {
          _mongoc_cluster_node_destroy(&cluster->nodes[i]);
@@ -2093,6 +2094,7 @@ _mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
       cluster->nodes[i].host = *iter;
       cluster->nodes[i].index = i;
       cluster->nodes[i].stream = stream;
+      cluster->nodes[i].needs_auth = cluster->requires_auth;
 
       if (!_mongoc_cluster_ismaster (cluster, &cluster->nodes[i], error)) {
          _mongoc_cluster_node_destroy (&cluster->nodes[i]);
