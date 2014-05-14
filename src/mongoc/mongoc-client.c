@@ -288,6 +288,9 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 
 
    switch (host->family) {
+#if defined(AF_INET6)
+   case AF_INET6:
+#endif
    case AF_INET:
       base_stream = mongoc_client_connect_tcp (uri, host, error);
       break;

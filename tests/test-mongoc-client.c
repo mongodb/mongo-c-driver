@@ -630,6 +630,31 @@ test_server_status (void)
 
 
 static void
+test_mongoc_client_ipv6 (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_iter_t iter;
+   bson_t reply;
+   bool r;
+
+   client = mongoc_client_new ("mongodb://[::1]/");
+   assert (client);
+
+   r = mongoc_client_get_server_status (client, NULL, &reply, &error);
+   assert (r);
+
+   assert (bson_iter_init_find (&iter, &reply, "host"));
+   assert (bson_iter_init_find (&iter, &reply, "version"));
+   assert (bson_iter_init_find (&iter, &reply, "ok"));
+
+   bson_destroy (&reply);
+
+   mongoc_client_destroy (client);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free(gTestUri);
@@ -650,6 +675,10 @@ test_client_install (TestSuite *suite)
    if (!local) {
       TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
       TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
+   }
+   if (strcmp (MONGOC_TEST_HOST, "localhost") == 0) {
+      /* try to validate ipv6 too */
+      TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);
    }
    TestSuite_Add (suite, "/Client/authenticate", test_mongoc_client_authenticate);
    TestSuite_Add (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure);
