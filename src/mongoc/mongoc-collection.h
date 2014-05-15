@@ -114,7 +114,7 @@ bool                          mongoc_collection_save                 (mongoc_col
                                                                       const mongoc_write_concern_t  *write_concern,
                                                                       bson_error_t                  *error);
 bool                          mongoc_collection_remove               (mongoc_collection_t           *collection,
-                                                                      mongoc_delete_flags_t          flags,
+                                                                      mongoc_remove_flags_t          flags,
                                                                       const bson_t                  *selector,
                                                                       const mongoc_write_concern_t  *write_concern,
                                                                       bson_error_t                  *error);

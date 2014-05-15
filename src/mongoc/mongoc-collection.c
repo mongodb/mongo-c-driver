@@ -1194,7 +1194,7 @@ mongoc_collection_save (mongoc_collection_t          *collection,
 
 bool
 mongoc_collection_remove (mongoc_collection_t          *collection,
-                          mongoc_delete_flags_t         flags,
+                          mongoc_remove_flags_t         flags,
                           const bson_t                 *selector,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
@@ -1247,8 +1247,8 @@ mongoc_collection_delete (mongoc_collection_t          *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
-   return mongoc_collection_remove (collection, flags, selector,
-                                    write_concern, error);
+   return mongoc_collection_remove (collection, (mongoc_remove_flags_t)flags,
+                                    selector, write_concern, error);
 }
 
 
