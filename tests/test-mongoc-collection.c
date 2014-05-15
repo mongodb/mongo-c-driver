@@ -406,7 +406,7 @@ test_update (void)
 
 
 static void
-test_delete (void)
+test_remove (void)
 {
    mongoc_collection_t *collection;
    mongoc_database_t *database;
@@ -424,7 +424,7 @@ test_delete (void)
    database = get_test_database (client);
    ASSERT (database);
 
-   collection = get_test_collection (client, "test_delete");
+   collection = get_test_collection (client, "test_remove");
    ASSERT (collection);
 
    context = bson_context_new(BSON_CONTEXT_NONE);
@@ -445,7 +445,7 @@ test_delete (void)
 
       bson_init(&b);
       bson_append_oid(&b, "_id", 3, &oid);
-      r = mongoc_collection_delete(collection, MONGOC_DELETE_NONE, &b, NULL,
+      r = mongoc_collection_remove(collection, MONGOC_DELETE_NONE, &b, NULL,
                                    &error);
       if (!r) {
          MONGOC_WARNING("%s\n", error.message);
@@ -1002,7 +1002,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/index", test_index);
    TestSuite_Add (suite, "/Collection/regex", test_regex);
    TestSuite_Add (suite, "/Collection/update", test_update);
-   TestSuite_Add (suite, "/Collection/delete", test_delete);
+   TestSuite_Add (suite, "/Collection/remove", test_remove);
    TestSuite_Add (suite, "/Collection/count", test_count);
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);

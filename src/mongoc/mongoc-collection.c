@@ -1165,7 +1165,7 @@ mongoc_collection_save (mongoc_collection_t          *collection,
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_collection_delete --
+ * mongoc_collection_remove --
  *
  *       Delete one or more items from a collection. If you want to
  *       limit to a single delete, provided MONGOC_DELETE_SINGLE_REMOVE
@@ -1193,7 +1193,7 @@ mongoc_collection_save (mongoc_collection_t          *collection,
  */
 
 bool
-mongoc_collection_delete (mongoc_collection_t          *collection,
+mongoc_collection_remove (mongoc_collection_t          *collection,
                           mongoc_delete_flags_t         flags,
                           const bson_t                 *selector,
                           const mongoc_write_concern_t *write_concern,
@@ -1237,6 +1237,18 @@ mongoc_collection_delete (mongoc_collection_t          *collection,
    }
 
    return true;
+}
+
+
+bool
+mongoc_collection_delete (mongoc_collection_t          *collection,
+                          mongoc_delete_flags_t         flags,
+                          const bson_t                 *selector,
+                          const mongoc_write_concern_t *write_concern,
+                          bson_error_t                 *error)
+{
+   return mongoc_collection_remove (collection, flags, selector,
+                                    write_concern, error);
 }
 
 

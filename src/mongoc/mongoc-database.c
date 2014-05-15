@@ -319,7 +319,7 @@ mongoc_database_remove_user (mongoc_database_t *database,
                                           "system.users");
       BSON_ASSERT (col);
 
-      ret = mongoc_collection_delete (col,
+      ret = mongoc_collection_remove (col,
                                       MONGOC_DELETE_SINGLE_REMOVE,
                                       &cmd,
                                       NULL,
@@ -358,7 +358,7 @@ mongoc_database_remove_all_users (mongoc_database_t *database,
                                           "system.users");
       BSON_ASSERT (col);
 
-      ret = mongoc_collection_delete (col, MONGOC_DELETE_NONE, &cmd, NULL,
+      ret = mongoc_collection_remove (col, MONGOC_DELETE_NONE, &cmd, NULL,
                                       error);
 
       bson_destroy (&cmd);

@@ -108,9 +108,14 @@ bool                          mongoc_collection_delete               (mongoc_col
                                                                       mongoc_delete_flags_t          flags,
                                                                       const bson_t                  *selector,
                                                                       const mongoc_write_concern_t  *write_concern,
-                                                                      bson_error_t                  *error);
+                                                                      bson_error_t                  *error) BSON_GNUC_DEPRECATED_FOR (mongoc_collection_remove);
 bool                          mongoc_collection_save                 (mongoc_collection_t           *collection,
                                                                       const bson_t                  *document,
+                                                                      const mongoc_write_concern_t  *write_concern,
+                                                                      bson_error_t                  *error);
+bool                          mongoc_collection_remove               (mongoc_collection_t           *collection,
+                                                                      mongoc_delete_flags_t          flags,
+                                                                      const bson_t                  *selector,
                                                                       const mongoc_write_concern_t  *write_concern,
                                                                       bson_error_t                  *error);
 bool                          mongoc_collection_rename               (mongoc_collection_t           *collection,

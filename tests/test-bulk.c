@@ -69,7 +69,7 @@ test_bulk (void)
 
    bson_init (&del);
    BSON_APPEND_INT32 (&del, "hello", 123);
-   mongoc_bulk_operation_delete (bulk, &del);
+   mongoc_bulk_operation_remove (bulk, &del);
    bson_destroy (&del);
 
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
@@ -231,7 +231,7 @@ test_index_offset (void)
    sel = BCON_NEW ("abcd", BCON_INT32 (1234));
    doc = BCON_NEW ("$set", "{", "hello", "there", "}");
 
-   mongoc_bulk_operation_delete_one (bulk, sel);
+   mongoc_bulk_operation_remove_one (bulk, sel);
    mongoc_bulk_operation_update (bulk, sel, doc, true);
 
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);

@@ -102,7 +102,7 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
 
 
 void
-mongoc_bulk_operation_delete (mongoc_bulk_operation_t *bulk,     /* IN */
+mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,     /* IN */
                               const bson_t            *selector) /* IN */
 {
    mongoc_write_command_t command = { 0 };
@@ -116,7 +116,7 @@ mongoc_bulk_operation_delete (mongoc_bulk_operation_t *bulk,     /* IN */
 
 
 void
-mongoc_bulk_operation_delete_one (mongoc_bulk_operation_t *bulk,     /* IN */
+mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk,     /* IN */
                                   const bson_t            *selector) /* IN */
 {
    mongoc_write_command_t command = { 0 };
@@ -126,6 +126,22 @@ mongoc_bulk_operation_delete_one (mongoc_bulk_operation_t *bulk,     /* IN */
 
    _mongoc_write_command_init_delete (&command, selector, false, bulk->ordered);
    _mongoc_array_append_val (&bulk->commands, command);
+}
+
+
+void
+mongoc_bulk_operation_delete (mongoc_bulk_operation_t *bulk,
+                              const bson_t            *selector)
+{
+   mongoc_bulk_operation_remove (bulk, selector);
+}
+
+
+void
+mongoc_bulk_operation_delete_one (mongoc_bulk_operation_t *bulk,
+                                  const bson_t            *selector)
+{
+   mongoc_bulk_operation_remove_one (bulk, selector);
 }
 
 
