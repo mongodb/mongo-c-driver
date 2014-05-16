@@ -1,74 +1,25 @@
-MAN3 = $(MONGOC_SYMBOLS)
+BUILT_MAN_FILES = $(patsubst %.page,%.3,$(wildcard doc/mongoc_*.page))
 
-$(top_srcdir)/doc/mongoc_symbols.txt: $(top_srcdir)/src/libmongoc.symbols
-	sed -e 's/.*/linkmongoc:&[3] +/' < $< > $@
+%.3: %.page
+	@ $(MKDIR_P) doc
+	$(AM_V_GEN)./doc/mallard2man.py 3 $^
 
-$(top_srcdir)/doc/mongoc_api.txt: $(top_srcdir)/doc/mongoc_api
-	sed -e 's/.*/linkmongoc:&[7] +/' < $< > $@
+MAINTAINERCLEANFILES += $(BUILT_MAN_FILES)
 
-MAN7 = $(MONGOC_API)
+man: $(BUILT_MAN_FILES)
 
-MAN_DOC = $(MAN1) $(MAN3) $(MAN7)
+html:
+	@ $(MKDIR_P) doc/html
+	$(AM_V_GEN)yelp-build html -o doc/html $(wildcard $(top_srcdir)/doc/*.page)
 
-MAN_TXT = \
-	$(MAN3:%.3=%.txt) \
-	$(MAN7:%.7=%.txt)
+dist-hook: man html
 
-MAN_HTML = $(MAN_TXT:%.txt=%.html)
+dist_man_MANS = $(BUILT_MAN_FILES)
 
-if INSTALL_MAN
-dist_man_MANS = $(MAN_DOC)
-endif
+EXTRA_DIST += $(dist_man_MANS)
 
-EXTRA_DIST += $(top_srcdir)/doc/asciidoc.conf $(MAN_TXT)
-if BUILD_DOC
-EXTRA_DIST += $(MAN_HTML)
-endif
-
-MAINTAINERCLEANFILES = $(MAN_DOC) $(MAN_HTML)
-
-doc : \
-	$(top_srcdir)/doc/mongoc_api.txt \
-	$(top_srcdir)/doc/mongoc_symbols.txt \
-	$(top_srcdir)/doc/asciidoc.conf \
-	$(DOC_EXAMPLES) \
-	$(MAN_DOC) \
-	$(MAN_HTML)
-
-dist-hook : doc
-
-if BUILD_DOC
-SUFFIXES=.html .txt .xml .3 .7
-
-EXAMPLE_DIR = $(abs_top_srcdir)/examples
-
-.txt.html:
-	if [ -L $< ]; then \
-	   ln -fs `basename \`readlink $<\` .txt`.html $@; \
-	else \
-	   asciidoc -d manpage -b xhtml11 -f $(top_srcdir)/doc/asciidoc.conf \
-	      -adocs=$(abs_top_srcdir)/doc \
-	      -aexamples=$(EXAMPLE_DIR) -amongoc_version=@PACKAGE_VERSION@ -o$@ $<; \
-	fi
-.txt.xml:
-	if [ -L $< ]; then \
-	   ln -fs `basename \`readlink $<\` .txt`.xml $@; \
-	else \
-	   asciidoc -d manpage -b docbook -f $(top_srcdir)/doc/asciidoc.conf \
-	      -adocs=$(abs_top_srcdir)/doc \
-	      -aexamples=$(EXAMPLE_DIR) -amongoc_version=@PACKAGE_VERSION@ \
-	      -amongoc_manname=$(*F) -o$@ $<; \
-	fi
-.xml.3:
-	if [ -L $< ]; then \
-	   ln -fs `basename \`readlink $<\` .xml`.3 $@; \
-        else \
-	   xmlto man -o $(top_srcdir)/doc $<; \
-	fi
-.xml.7:
-	if [ -L $< ]; then \
-	   ln -fs `basename \`readlink $<\` .xml`.3 $@; \
-        else \
-	   xmlto man -o $(top_srcdir)/doc $<; \
-        fi
-endif
+# Automake (at least up to 1.10) mishandles dist_man_MANS inside conditionals.
+# Unlike with other dist primaries, the files are not distributed if the
+# conditional is false.
+# Work the bug around until it is fixed:
+dist_noinst_DATA = $(dist_man_MANS)

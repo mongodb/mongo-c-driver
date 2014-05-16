@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_collection_aggregate">
+
+
+  <info>
+    <link type="guide" xref="mongoc_collection_t" group="function"/>
+  </info>
+  <title>mongoc_collection_aggregate()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
+mongoc_collection_aggregate (mongoc_collection_t       *collection,
+                             mongoc_query_flags_t       flags,
+                             const bson_t              *pipeline,
+                             const bson_t              *options,
+                             const mongoc_read_prefs_t *read_prefs)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+]]></code></synopsis>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>collection</p></td><td><p>A <link xref="mongoc_collection_t">mongoc_collection_t</link>.</p></td></tr>
+      <tr><td><p>flags</p></td><td><p>A <link xref="mongoc_query_flags_t">mongoc_query_flags_t</link>.</p></td></tr>
+      <tr><td><p>pipeline</p></td><td><p>A bson_t containing the pipeline array.</p></td></tr>
+      <tr><td><p>options</p></td><td><p>A bson_t containing options for the pipeline, or NULL.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link> or NULL.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+
+    <p>This function shall execute an aggregation query on the underlying 'collection'. The bson 'pipeline' is not validated, simply passed along as appropriate to the server.  As such, compatibility and errors should be validated in the appropriate server documentation.</p>
+
+    <p>In the case of older server versions, &lt; v2.5, the returned cursor is a synthetic iterator over the result set. This provides a limitation insofar as returned documents can be no larger than 16MB. When connecting to newer servers this limitation doesn't exist. The specific test is for wire_version &gt; 0.</p>
+
+    <p>For more information on building MongoDB pipelines, see <link href="http://docs.mongodb.org/manual/reference/command/aggregate/">MongoDB Aggregation Command</link> on the MongoDB website.</p>
+    <note style="info"><p>The <code>pipeline</code> parameter should be in BSON array format. This means keys should be "0", "1", etc for each stage of the pipeline.</p></note>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>This function returns a newly allocated <link xref="mongoc_cursor_t">mongoc_cursor_t</link> that should be freed with <link xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</link> when no longer in use. NULL may be returned if parameters are invalid.</p>
+    <note style="warning"><p>Failure to handle the result of this function is a programming error.</p></note>
+  </section>
+
+  <section id="example">
+    <title>Example</title>
+    <listing>
+      <title>Aggregation Example</title>
+      <code mime="text/x-csrc"><![CDATA[
+#include <bcon.h>
+#include <mongoc.h>
+
+static mongoc_cursor_t *
+pipeline_query (mongoc_collection_t *collection)
+{
+   mongoc_cursor_t *cursor;
+   bson_t *pipeline;
+
+   pipeline = BCON_NEW (
+      "0", "{", "$match", "{", "status", BCON_UTF8 ("A"), "}", "}",
+      "1", "{", "$match", "{", "checked", BCON_BOOL (false), "}", "}"
+   );
+
+   ret = mongoc_collection_aggregate (collection,
+                                      MONGOC_QUERY_NONE,
+                                      pipeline,
+                                      options,
+                                      NULL);
+
+   bson_destroy (pipeline);
+
+   return ret;
+}]]></code>
+    </listing>
+  </section>
+
+</page>

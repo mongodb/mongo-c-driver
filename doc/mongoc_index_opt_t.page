@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+
+<page id="mongoc_index_opt_t"
+      type="guide"
+      style="class"
+      xmlns="http://projectmallard.org/1.0/"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/">
+  <info>
+    <link type="guide" xref="index#api-reference" />
+  </info>
+  <title>mongoc_index_opt_t</title>
+  <section id="description">
+    <title>Synopsis</title>
+    <code mime="text/x-csrc"><![CDATA[#include <mongoc.h>
+
+typedef struct
+{
+   bool          is_initialized;
+   bool          background;
+   bool          unique;
+   const char   *name;
+   bool          drop_dups;
+   bool          sparse;
+   int32_t       expire_after_seconds;
+   int32_t       v;
+   const bson_t *weights;
+   const char   *default_language;
+   const char   *language_override;
+   void         *padding [8];
+} mongoc_index_opt_t;]]></code>
+  </section>
+
+  <section id="desc">
+    <title>Description</title>
+    <p>This structure contains the options that may be used for tuning a specific index.</p>
+  </section>
+
+  <links type="topic" groups="function" style="2column">
+    <title>Functions</title>
+  </links>
+
+</page>

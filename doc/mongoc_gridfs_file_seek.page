@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_gridfs_file_seek">
+  <info>
+    <link type="guide" xref="mongoc_gridfs_file_t" group="function"/>
+  </info>
+  <title>mongoc_gridfs_file_seek()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[int
+mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
+                         uint64_t              delta,
+                         int                   whence);
+]]></code></synopsis>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>file</p></td><td><p>A <link xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</link>.</p></td></tr>
+      <tr><td><p>delta</p></td><td><p>The relative offset to <code>whence</code>.</p></td></tr>
+      <tr><td><p>whence</p></td><td><p>A fseek() style whence such as SEEK_SET, SEEK_CUR, or SEEK_END.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+    <p>This function seeks within the underlying file by mimicing <code>fseek()</code>.</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns 0 if successful, otherwise -1 and errno is set.</p>
+  </section>
+</page>

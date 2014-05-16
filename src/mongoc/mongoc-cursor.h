@@ -35,7 +35,7 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_cursor_t mongoc_cursor_t;
 
 
-mongoc_cursor_t *mongoc_cursor_clone    (const mongoc_cursor_t  *cursor);
+mongoc_cursor_t *mongoc_cursor_clone    (const mongoc_cursor_t  *cursor) BSON_GNUC_WARN_UNUSED_RESULT;
 void             mongoc_cursor_destroy  (mongoc_cursor_t        *cursor);
 bool             mongoc_cursor_more     (mongoc_cursor_t        *cursor);
 bool             mongoc_cursor_next     (mongoc_cursor_t        *cursor,

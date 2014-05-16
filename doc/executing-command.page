@@ -1,0 +1,99 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      id="executing-command">
+
+  <info>
+    <link type="guide" xref="index#getting-started" />
+  </info>
+
+  <title>Executing a Command</title>
+
+  <p>The following guide will step you through the process of connecting to MongoDB and executing a command.</p>
+
+  <include href="basic-prequisites.xml" xmlns="http://www.w3.org/2001/XInclude" />
+
+  <section id="command-basics">
+    <title>The Basics</title>
+
+    <p>
+      The following code example creates a new <code>mongoc_client_t</code> that we will use to communicate with MongoDB.
+      The <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link> component is quite comprehensive.
+    </p>
+
+    <p>
+      Using our <code>mongoc_client_t</code>, we get a handle to a <code>mongoc_collection_t</code> which represents the remote collection.
+      <code>command</code> is initialized to a new BSON document that contains all of the fields necessary to call the <link href="http://docs.mongodb.org/manual/reference/command/collStats/">collStats</link> command.
+    </p>
+
+    <note style="tip"><p>Use <code>mongoc_collection_command()</code> instead of <code>mongoc_collection_command_simple()</code> if you need a cursor returned from the command.</p></note>
+
+    <p>Lastly, we release all of our heap allocated structures.</p>
+
+    <listing>
+      <title><file>example5.c</file></title>
+      <desc>Execute the collStats command.</desc>
+      <code mime="text/x-csrc"><![CDATA[#include <bson.h>
+#include <bcon.h>
+#include <mongoc.h>
+#include <stdio.h>
+
+static void
+run_command (void)
+{
+    mongoc_client_t *client;
+    mongoc_collection_t *collection;
+    bson_error_t error;
+    bson_t *command;
+    bson_t reply;
+    char *str;
+
+    client = mongoc_client_new ("mongodb://localhost:27017/");
+    collection = mongoc_client_get_collection (client, "test", "test");
+
+    command = BCON_NEW ("collStats", BCON_UTF8 ("test"));
+    if (mongoc_collection_command_simple (collection, command, NULL, &reply, &error)) {
+        str = bson_as_json (&reply, NULL);
+        printf ("%s\n", str);
+        bson_free (str);
+    } else {
+        fprintf (stderr, "Failed to run command: %s\n", error.message);
+    }
+
+    bson_destroy (command);
+    bson_destroy (&reply);
+    mongoc_collection_destroy (collection);
+    mongoc_client_destroy (client);
+}
+
+int
+main (int   argc,
+      char *argv[])
+{
+    mongoc_init ();
+    run_command ();
+    mongoc_cleanup ();
+
+    return 0;
+}
+]]></code>
+    </listing>
+
+    <p>Let's use <code>GCC</code> and <code>pkg-config</code> to compile <file>example5.c</file>.</p>
+    <screen>gcc -o example5 example5.c $(pkg-config --cflags --libs libmongoc-1.0)</screen>
+
+    <note style="warning">
+      <p>
+        When using the MongoDB C Driver, you must call <link xref="mongoc_init">mongoc_init()</link> at the beginning of your application.
+        This allows the driver to initialize it's required subsystems.
+        Failure to do so will result in a runtime crash.
+      </p>
+    </note>
+
+    <p>Now let's run it!</p>
+
+    <screen><input>./example5</input>
+<output>{ "ns" : "test.test", "count" : 1, "size" : 24, "avgObjSize" : 24.000000, "storageSize" : 4096, "numExtents" : 1, "nindexes" : 1, "lastExtentSize" : 4096, "paddingFactor" : 1.000000, "systemFlags" : 1, "userFlags" : 0, "totalIndexSize" : 8176, "indexSizes" : { "_id_" : 8176 }, "ok" : 1.000000 }</output></screen>
+
+  </section>
+
+</page>

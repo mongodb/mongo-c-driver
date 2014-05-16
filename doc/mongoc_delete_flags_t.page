@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_delete_flags_t">
+  <info>
+    <link type="guide" xref="index#api-reference"/>
+  </info>
+  <title>mongoc_delete_flags_t</title>
+  <subtitle>Flags for deletion operations</subtitle>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[
+typedef enum
+{
+   MONGOC_DELETE_NONE          = 0,
+   MONGOC_DELETE_SINGLE_REMOVE = 1 << 0,
+} mongoc_delete_flags_t;
+]]></code></synopsis>
+  </section>
+
+  <section id="deprecated">
+    <title>Deprecated</title>
+    <note style="warning"><p>These flags are deprecated and should not be used in new code.</p></note>
+    <p>Please use <link xref="mongoc_collection_remove">mongoc_collection_remove()</link> instead.</p>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+    <p>These flags are deprecated in favor of <link xref="mongoc_remove_flags_t">mongoc_remove_flags_t</link>. They exist for use in the deprecated delete functions such as <link xref="mongoc_collection_delete">mongoc_collection_delete()</link>.</p>
+  </section>
+
+</page>

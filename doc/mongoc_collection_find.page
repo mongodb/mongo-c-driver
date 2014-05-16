@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_collection_find">
+
+
+  <info>
+    <link type="guide" xref="mongoc_collection_t" group="function"/>
+  </info>
+  <title>mongoc_collection_find()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
+mongoc_collection_find (mongoc_collection_t       *collection,
+                        mongoc_query_flags_t       flags,
+                        uint32_t                   skip,
+                        uint32_t                   limit,
+                        uint32_t                   batch_size,
+                        const bson_t              *query,
+                        const bson_t              *fields,
+                        const mongoc_read_prefs_t *read_prefs)
+   BSON_GNUC_WARN_UNUSED_RESULT;
+]]></code></synopsis>
+  </section>
+
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>collection</p></td><td><p>A <link xref="mongoc_collection_t">mongoc_collection_t</link>.</p></td></tr>
+      <tr><td><p>flags</p></td><td><p>A <link xref="mongoc_query_flags_t">mongoc_query_flags_t</link>.</p></td></tr>
+      <tr><td><p>skip</p></td><td><p>A uint32_t of number of documents to skip or 0.</p></td></tr>
+      <tr><td><p>limit</p></td><td><p>A uint32_t of max number of documents to return or 0.</p></td></tr>
+      <tr><td><p>batch_size</p></td><td><p>A uint32_t containing batch size of document result sets or 0 for default. Default is 100.</p></td></tr>
+      <tr><td><p>query</p></td><td><p>A bson_t to execute.</p></td></tr>
+      <tr><td><p>fields</p></td><td><p>A bson_t containing fields to return or NULL.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link> or NULL for default read preferences.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+    <p>This function shall execute a query on the underlying <code>collection</code>.  The bson <code>query</code> is not validated, simply passed along as appropriate to the server.  As such, compatibility and errors should be validated in the appropriate server documentation.</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>A newly allocated <link xref="mongoc_cursor_t">mongoc_cursor_t</link> that should be freed with <link xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</link> when no longer in use. If invalid parameters are supplied, NULL may be returned.</p>
+    <note style="warning"><p>Failure to handle the result of this function is a programming error.</p></note>
+  </section>
+
+  <section id="example">
+    <title>Example</title>
+    <listing>
+      <title>Print All Documents in a Collection</title>
+      <code mime="text/x-csrc"><![CDATA[#include <mongoc.h>
+#include <stdio.h>
+
+static void
+print_all_documents (mongoc_collection_t *collection)
+{
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+   char *str;
+   bson_t *query;
+
+   query = bson_new ();
+   cursor = mongoc_collection_query (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
+
+   while (mongoc_cursor_more (cursor) && mongoc_cursor_next (cursor, &doc)) {
+      str = bson_as_json (doc, NULL);
+      printf ("%s\n", str);
+      bson_free (str);
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      fprintf (stderr, "An error occurred: %s\n", error.message);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (query);
+}
+]]></code>
+    </listing>
+  </section>
+
+</page>

@@ -352,7 +352,7 @@ again:
  *       A wrapper around bind().
  *
  * Returns:
- *       true if successful. false if not.
+ *       0 on success, -1 on failure and errno is set.
  *
  * Side effects:
  *       None.
@@ -445,7 +445,7 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
  *       reached by the monotonic clock.
  *
  * Returns:
- *       true if successful, false if not.
+ *       0 if success, otherwise -1 and errno is set.
  *
  * Side effects:
  *       None.

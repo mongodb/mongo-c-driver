@@ -38,9 +38,11 @@ typedef struct _mongoc_uri_t mongoc_uri_t;
 
 mongoc_uri_t                 *mongoc_uri_copy               (const mongoc_uri_t *uri);
 void                          mongoc_uri_destroy            (mongoc_uri_t       *uri);
-mongoc_uri_t                 *mongoc_uri_new                (const char         *uri_string);
+mongoc_uri_t                 *mongoc_uri_new                (const char         *uri_string)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 mongoc_uri_t                 *mongoc_uri_new_for_host_port  (const char         *hostname,
-                                                             uint16_t            port);
+                                                             uint16_t            port)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 const mongoc_host_list_t     *mongoc_uri_get_hosts          (const mongoc_uri_t *uri);
 const char                   *mongoc_uri_get_database       (const mongoc_uri_t *uri);
 const bson_t                 *mongoc_uri_get_options        (const mongoc_uri_t *uri);
