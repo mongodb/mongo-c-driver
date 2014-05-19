@@ -26,12 +26,37 @@ struct _mongoc_client_pool_t
 {
    mongoc_mutex_t    mutex;
    mongoc_cond_t     cond;
-   mongoc_queue_t  queue;
-   mongoc_uri_t   *uri;
-   uint32_t   min_pool_size;
-   uint32_t   max_pool_size;
-   uint32_t   size;
+   mongoc_queue_t    queue;
+   mongoc_uri_t     *uri;
+   uint32_t          min_pool_size;
+   uint32_t          max_pool_size;
+   uint32_t          size;
+   bool              ssl_opts_set;
+   mongoc_ssl_opt_t  ssl_opts;
 };
+
+
+#ifdef MONGOC_ENABLE_SSL
+void
+mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
+                                 const mongoc_ssl_opt_t *opts)
+{
+   bson_return_if_fail (pool);
+
+   mongoc_mutex_lock (&pool->mutex);
+
+   memset (&pool->ssl_opts, 0, sizeof pool->ssl_opts);
+   pool->ssl_opts_set = false;
+
+   if (opts) {
+      memcpy (&pool->ssl_opts, opts, sizeof pool->ssl_opts);
+      pool->ssl_opts_set = true;
+
+   }
+
+   mongoc_mutex_unlock (&pool->mutex);
+}
+#endif
 
 
 mongoc_client_pool_t *
@@ -113,6 +138,9 @@ again:
    if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = mongoc_client_new_from_uri(pool->uri);
+         if (pool->ssl_opts_set) {
+            mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
+         }
          pool->size++;
       } else {
          mongoc_cond_wait(&pool->cond, &pool->mutex);
@@ -140,6 +168,9 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
    if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = mongoc_client_new_from_uri(pool->uri);
+         if (pool->ssl_opts_set) {
+            mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
+         }
          pool->size++;
       }
    }

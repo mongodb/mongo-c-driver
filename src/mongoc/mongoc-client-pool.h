@@ -27,6 +27,8 @@
 #include <bson.h>
 
 #include "mongoc-client.h"
+#include "mongoc-config.h"
+#include "mongoc-ssl.h"
 #include "mongoc-uri.h"
 
 
@@ -42,6 +44,10 @@ mongoc_client_t      *mongoc_client_pool_pop     (mongoc_client_pool_t *pool);
 void                  mongoc_client_pool_push    (mongoc_client_pool_t *pool,
                                                   mongoc_client_t      *client);
 mongoc_client_t      *mongoc_client_pool_try_pop (mongoc_client_pool_t *pool);
+#ifdef MONGOC_ENABLE_SSL
+void                  mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
+                                                       const mongoc_ssl_opt_t *opts);
+#endif
 
 
 BSON_END_DECLS
