@@ -445,7 +445,7 @@ test_remove (void)
 
       bson_init(&b);
       bson_append_oid(&b, "_id", 3, &oid);
-      r = mongoc_collection_remove(collection, MONGOC_DELETE_NONE, &b, NULL,
+      r = mongoc_collection_remove(collection, MONGOC_REMOVE_NONE, &b, NULL,
                                    &error);
       if (!r) {
          MONGOC_WARNING("%s\n", error.message);
