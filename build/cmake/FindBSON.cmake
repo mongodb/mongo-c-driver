@@ -19,9 +19,7 @@ find_path(BSON_INCLUDE_DIR
     include
 )
 
-if(${BSON_INCLUDE_DIR})
 set(BSON_INCLUDE_DIR "${BSON_INCLUDE_DIR}/libbson-1.0")
-endif()
 
 if(WIN32 AND NOT CYGWIN)
   if(MSVC)
