@@ -138,9 +138,11 @@ again:
    if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = mongoc_client_new_from_uri(pool->uri);
+#ifdef MONGOC_ENABLE_SSL
          if (pool->ssl_opts_set) {
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
          }
+#endif
          pool->size++;
       } else {
          mongoc_cond_wait(&pool->cond, &pool->mutex);
@@ -168,9 +170,11 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
    if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = mongoc_client_new_from_uri(pool->uri);
+#ifdef MONGOC_ENABLE_SSL
          if (pool->ssl_opts_set) {
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
          }
+#endif
          pool->size++;
       }
    }
