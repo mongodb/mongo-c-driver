@@ -170,13 +170,19 @@ mongoc_counters_print_info (mongoc_counters_t     *counters,
 {
    mongoc_counter_t ctr;
    int64_t value;
-   char *base;
 
-   BSON_ASSERT(info);
-   BSON_ASSERT(file);
+   BSON_ASSERT (info);
+   BSON_ASSERT (file);
+   BSON_ASSERT ((info->offset & 0x7) == 0);
 
-   base = (char *)counters;
-   ctr.cpus = (mongoc_counter_slots_t *)(base + info->offset);
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-align"
+#endif
+   ctr.cpus = (mongoc_counter_slots_t *)(((char *)counters)+ info->offset);
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
    value = mongoc_counters_get_value(counters, info, &ctr);
 
