@@ -676,7 +676,7 @@ test_client_install (TestSuite *suite)
       TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
       TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
    }
-   if (strcmp (MONGOC_TEST_HOST, "localhost") == 0) {
+   if (getenv ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
       TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);
    }
