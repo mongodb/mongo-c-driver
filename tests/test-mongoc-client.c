@@ -64,7 +64,7 @@ gen_test_user (void)
 static char *
 gen_good_uri (const char *username)
 {
-   return bson_strdup_printf("mongodb://%s:testpass@%s:27017/test",
+   return bson_strdup_printf("mongodb://%s:testpass@%s/test",
                              username,
                              MONGOC_TEST_HOST);
 }
@@ -667,8 +667,8 @@ test_client_install (TestSuite *suite)
 {
    bool local;
 
-   gTestUri = bson_strdup_printf("mongodb://%s:27017/", MONGOC_TEST_HOST);
-   gTestUriWithBadPassword = bson_strdup_printf("mongodb://baduser:badpass@%s:27017/test", MONGOC_TEST_HOST);
+   gTestUri = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
+   gTestUriWithBadPassword = bson_strdup_printf("mongodb://baduser:badpass@%s/test", MONGOC_TEST_HOST);
 
    local = !getenv ("MONGOC_DISABLE_MOCK_SERVER");
 
