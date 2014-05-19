@@ -76,6 +76,12 @@ BSON_BEGIN_DECLS
    _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
 # define END_IGNORE_DEPRECATIONS \
    _Pragma ("GCC diagnostic pop")
+#elif defined(__clang__)
+# define BEGIN_IGNORE_DEPRECATIONS \
+   _Pragma ("clang diagnostic push") \
+   _Pragma ("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+# define END_IGNORE_DEPRECATIONS \
+   _Pragma ("clang diagnostic pop")
 #else
 # define BEGIN_IGNORE_DEPRECATIONS
 # define END_IGNORE_DEPRECATIONS
