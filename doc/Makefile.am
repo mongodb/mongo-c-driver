@@ -14,9 +14,11 @@ html:
 
 dist-hook: man html
 
+if INSTALL_MAN
 dist_man_MANS = $(BUILT_MAN_FILES)
+endif
 
-EXTRA_DIST += $(dist_man_MANS)
+EXTRA_DIST += $(BUILT_MAN_FILES)
 
 # Automake (at least up to 1.10) mishandles dist_man_MANS inside conditionals.
 # Unlike with other dist primaries, the files are not distributed if the
