@@ -28,11 +28,15 @@ This script is mean to convert a fairly basic mallard format documentation
 page to a groff styled man page.
 """
 
-import codecs
-from datetime import datetime
-from lxml import etree
 import os
 import sys
+
+try:
+    import codecs
+    from datetime import datetime
+    from lxml import etree
+except ImportError:
+    sys.exit(0)
 
 TITLE = '{http://projectmallard.org/1.0/}title'
 SUBTITLE = '{http://projectmallard.org/1.0/}subtitle'
