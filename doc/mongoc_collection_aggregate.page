@@ -44,7 +44,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection,
     <p>In the case of older server versions, &lt; v2.5, the returned cursor is a synthetic iterator over the result set. This provides a limitation insofar as returned documents can be no larger than 16MB. When connecting to newer servers this limitation doesn't exist. The specific test is for wire_version &gt; 0.</p>
 
     <p>For more information on building MongoDB pipelines, see <link href="http://docs.mongodb.org/manual/reference/command/aggregate/">MongoDB Aggregation Command</link> on the MongoDB website.</p>
-    <note style="info"><p>The <code>pipeline</code> parameter should be in BSON array format. This means keys should be "0", "1", etc for each stage of the pipeline.</p></note>
+    <note style="info"><p>The <code>pipeline</code> parameter should contain a field named <code>pipeline</code> containing a BSON array of pipeline stages.</p></note>
   </section>
 
   <section id="return">
@@ -67,20 +67,20 @@ pipeline_query (mongoc_collection_t *collection)
    mongoc_cursor_t *cursor;
    bson_t *pipeline;
 
-   pipeline = BCON_NEW (
-      "0", "{", "$match", "{", "status", BCON_UTF8 ("A"), "}", "}",
-      "1", "{", "$match", "{", "checked", BCON_BOOL (false), "}", "}"
-   );
+   pipeline = BCON_NEW ("pipeline", "[",
+                           "{", "$match", "{", "foo", BCON_UTF8 ("A"), "}", "}",
+                           "{", "$match", "{", "bar", BCON_BOOL (false), "}", "}",
+                        "]");
 
-   ret = mongoc_collection_aggregate (collection,
-                                      MONGOC_QUERY_NONE,
-                                      pipeline,
-                                      options,
-                                      NULL);
+   cursor = mongoc_collection_aggregate (collection,
+                                         MONGOC_QUERY_NONE,
+                                         pipeline,
+                                         options,
+                                         NULL);
 
    bson_destroy (pipeline);
 
-   return ret;
+   return cursor;
 }]]></code>
     </listing>
   </section>
