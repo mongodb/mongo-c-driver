@@ -40,8 +40,6 @@ typedef struct
 static void
 _mongoc_stream_gridfs_destroy (mongoc_stream_t *stream)
 {
-   mongoc_stream_gridfs_t *gridfs = (mongoc_stream_gridfs_t *)stream;
-
    ENTRY;
 
    BSON_ASSERT (stream);
