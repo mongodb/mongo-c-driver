@@ -45,3 +45,8 @@ noinst_PROGRAMS += find-and-modify
 find_and_modify_SOURCES = examples/find-and-modify.c
 find_and_modify_CFLAGS = $(EXAMPLE_CFLAGS)
 find_and_modify_LDADD = $(EXAMPLE_LDADD)
+
+noinst_PROGRAMS += example-matcher
+example_matcher_SOURCES = examples/example-matcher.c
+example_matcher_CFLAGS = $(EXAMPLE_CFLAGS)
+example_matcher_LDADD = $(EXAMPLE_LDADD)
