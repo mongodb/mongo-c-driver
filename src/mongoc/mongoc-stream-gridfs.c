@@ -48,8 +48,6 @@ _mongoc_stream_gridfs_destroy (mongoc_stream_t *stream)
 
    mongoc_stream_close (stream);
 
-   mongoc_gridfs_file_destroy (gridfs->file);
-
    bson_free (stream);
 
    mongoc_counter_streams_active_dec ();

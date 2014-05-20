@@ -29,7 +29,7 @@ mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file);
   </section>
 
   <section id="description">
-    <p>This function shall create a new <link xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</link>.</p>
+    <p>This function shall create a new <link xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</link>. This function does not transfer ownership of <code>file</code>. Therefore, <code>file</code> must remain valid for the lifetime of this stream.</p>
   </section>
 
   <section id="return">
