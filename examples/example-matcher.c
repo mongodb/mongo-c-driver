@@ -25,7 +25,6 @@ example (void)
    bson_error_t error;
    bson_t *query;
    bson_t *doc;
-   char *str;
 
    doc = BCON_NEW ("hello", "[", "{", "foo", BCON_UTF8 ("bar"), "}", "]");
    query = BCON_NEW ("hello.0.foo", BCON_UTF8 ("bar"));
