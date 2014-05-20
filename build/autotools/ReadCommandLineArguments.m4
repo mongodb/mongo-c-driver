@@ -73,13 +73,6 @@ AC_ARG_WITH(libbson,
 AS_IF([test "x$with_libbson" != xbundled && test "x$with_libbson" != xsystem],
       [with_libbson=auto])
 
-
-AC_ARG_ENABLE([ssl],
-              [AS_HELP_STRING([--enable-ssl=@<:@auto/yes/no@:>@],
-                              [Use OpenSSL for TLS connections.])],
-              [],
-              [enable_ssl=auto])
-
 AC_ARG_ENABLE([html-docs],
               [AS_HELP_STRING([--enable-html-docs=@<:@yes/no@:>@],
                               [Build HTML documentation.])],

@@ -14,15 +14,6 @@ if test "$with_libbson" = "auto"; then
 fi
 AM_CONDITIONAL(ENABLE_LIBBSON, [test "$with_libbson" = "bundled"])
 
-# Check for openssl
-AC_SUBST(MONGOC_ENABLE_SSL, 0)
-AS_IF([test "$enable_ssl" = "auto"],
-      [PKG_CHECK_MODULES(SSL, openssl, [enable_ssl=yes], [enable_ssl=no])])
-AS_IF([test "$enable_ssl" = "yes"],
-      [PKG_CHECK_MODULES(SSL, openssl)
-       AC_SUBST(MONGOC_ENABLE_SSL, 1)])
-AM_CONDITIONAL(ENABLE_SSL, test "$enable_ssl" = "yes")
-
 # Check for shm functions.
 AC_CHECK_FUNCS([shm_open], [SHM_LIB=],
                [AC_CHECK_LIB([rt], [shm_open], [SHM_LIB=-lrt], [SHM_LIB=])])
