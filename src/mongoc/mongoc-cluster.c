@@ -1284,7 +1284,7 @@ _mongoc_cluster_get_canonicalized_name (mongoc_cluster_t      *cluster, /* IN */
 {
    mongoc_stream_t *stream;
    mongoc_stream_t *tmp;
-   mongoc_socket_t *socket = NULL;
+   mongoc_socket_t *sock = NULL;
    char *canonicalized;
 
    ENTRY;
@@ -1307,9 +1307,9 @@ _mongoc_cluster_get_canonicalized_name (mongoc_cluster_t      *cluster, /* IN */
    BSON_ASSERT (stream);
 
    if (stream->type == MONGOC_STREAM_SOCKET) {
-      socket = mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *)stream);
-      if (socket) {
-         canonicalized = mongoc_socket_getnameinfo (socket);
+      sock = mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *)stream);
+      if (sock) {
+         canonicalized = mongoc_socket_getnameinfo (sock);
          if (canonicalized) {
             bson_snprintf (name, namelen, "%s", canonicalized);
             bson_free (canonicalized);
