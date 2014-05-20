@@ -35,6 +35,8 @@ example (void)
    matcher = mongoc_matcher_new (query, &error);
    if (!matcher) {
       fprintf (stderr, "Error: %s\n", error.message);
+      bson_destroy (query);
+      bson_destroy (doc);
       return;
    }
 
