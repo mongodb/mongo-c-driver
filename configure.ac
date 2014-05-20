@@ -32,6 +32,7 @@ MONGOC_LT_VERSION="$MONGOC_LT_CURRENT:$MONGOC_LT_REVISION:$MONGOC_LT_AGE"
 MONGOC_LT_LDFLAGS="-version-info $MONGOC_LT_VERSION"
 
 m4_include([build/autotools/ReadCommandLineArguments.m4])
+m4_include([build/autotools/CheckSasl.m4])
 m4_include([build/autotools/FindDependencies.m4])
 m4_include([build/autotools/AutoHarden.m4])
 m4_include([build/autotools/MaintainerFlags.m4])

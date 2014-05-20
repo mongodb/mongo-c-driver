@@ -80,13 +80,6 @@ AC_ARG_ENABLE([ssl],
               [],
               [enable_ssl=auto])
 
-
-AC_ARG_ENABLE([sasl],
-              [AS_HELP_STRING([--enable-sasl=@<:@auto/yes/no@:>@],
-                              [Use libsasl2 for Kerberos.])],
-              [],
-              [enable_sasl=auto])
-
 AC_ARG_ENABLE([html-docs],
               [AS_HELP_STRING([--enable-html-docs=@<:@yes/no@:>@],
                               [Build HTML documentation.])],
