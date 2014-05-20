@@ -883,12 +883,18 @@ static bool
 _mongoc_matcher_op_compare_match (mongoc_matcher_op_compare_t *compare, /* IN */
                                   const bson_t                *bson)    /* IN */
 {
+   bson_iter_t tmp;
    bson_iter_t iter;
 
    BSON_ASSERT (compare);
    BSON_ASSERT (bson);
 
-   if (!bson_iter_init_find (&iter, bson, compare->path)) {
+   if (strchr (compare->path, '.')) {
+      if (!bson_iter_init (&tmp, bson) ||
+          !bson_iter_find_descendant (&tmp, compare->path, &iter)) {
+         return false;
+      }
+   } else if (!bson_iter_init_find (&iter, bson, compare->path)) {
       return false;
    }
 
