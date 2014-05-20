@@ -111,7 +111,7 @@ ssl_test_server (void * ptr)
 
       return NULL;
    }
-   
+
    r = mongoc_stream_readv(ssl_stream, &iov, 1, 4, TIMEOUT);
    if (r < 0) {
 #ifdef _WIN32
@@ -166,6 +166,7 @@ ssl_test_client (void * ptr)
    mongoc_stream_t *sock_stream;
    mongoc_stream_t *ssl_stream;
    mongoc_socket_t *conn_sock;
+   int errno_captured;
    char buf[1024];
    ssize_t r;
    mongoc_iovec_t riov;
@@ -211,14 +212,16 @@ ssl_test_client (void * ptr)
 
    errno = 0;
    r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
+   errno_captured = errno;
+
    if (! r) {
       unsigned long err = ERR_get_error();
-      assert(err || errno);
+      assert(err || errno_captured);
 
       if (err) {
          data->client_result->ssl_err = err;
       } else {
-         data->client_result->err = errno;
+         data->client_result->err = errno_captured;
       }
 
       data->client_result->result = SSL_TEST_SSL_HANDSHAKE;
