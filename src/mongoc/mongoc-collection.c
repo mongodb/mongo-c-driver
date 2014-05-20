@@ -267,6 +267,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 {
    mongoc_cursor_t *cursor;
    bson_iter_t iter;
+   bson_iter_t citer;
    uint32_t max_wire_version = 0;
    uint32_t min_wire_version = 0;
    uint32_t hint;
@@ -286,11 +287,20 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                                         &max_wire_version,
                                         NULL);
 
-   bson_init(&command);
-   bson_append_utf8(&command, "aggregate", 9,
-                    collection->collection,
-                    collection->collectionlen);
-   bson_append_array(&command, "pipeline", 8, pipeline);
+   bson_init (&command);
+   BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);
+
+   /*
+    * The following will allow @pipeline to be either an array of
+    * items for the pipeline, or {"pipeline": [...]}.
+    */
+   if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
+       BSON_ITER_HOLDS_ARRAY (&iter) &&
+       bson_iter_recurse (&iter, &citer)) {
+      bson_append_iter (&command, "pipeline", 8, &citer);
+   } else {
+      BSON_APPEND_ARRAY (&command, "pipeline", pipeline);
+   }
 
    /* for newer version, we include a cursor subdocument */
    if (max_wire_version) {

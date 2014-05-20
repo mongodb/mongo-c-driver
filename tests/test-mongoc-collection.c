@@ -582,22 +582,17 @@ test_aggregate (void)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
+   bool did_alternate = false;
    bool r;
-   bson_t b;
    bson_t opts;
-   bson_t match;
-   bson_t pipeline;
+   bson_t *pipeline;
+   bson_t *b;
    bson_iter_t iter;
    int i;
 
-   bson_init(&b);
-   bson_append_utf8(&b, "hello", -1, "world", -1);
+   pipeline = BCON_NEW ("pipeline", "[", "{", "$match", "{", "hello", BCON_UTF8 ("world"), "}", "}", "]");
 
-   bson_init(&match);
-   bson_append_document(&match, "$match", -1, &b);
-
-   bson_init(&pipeline);
-   bson_append_document(&pipeline, "0", -1, &match);
+again:
 
    client = mongoc_client_new(gTestUri);
    ASSERT (client);
@@ -610,21 +605,23 @@ test_aggregate (void)
 
    mongoc_collection_drop(collection, &error);
 
+   b = BCON_NEW ("hello", BCON_UTF8 ("world"));
+
    for (i = 0; i < 2; i++) {
-      r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
+      r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, b, NULL, &error);
       ASSERT (r);
    }
 
    for (i = 0; i < 2; i++) {
       if (i % 2 == 0) {
-         cursor = mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, &pipeline, NULL, NULL);
+         cursor = mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
          ASSERT (cursor);
       } else {
          bson_init (&opts);
          BSON_APPEND_INT32 (&opts, "batchSize", 10);
          BSON_APPEND_BOOL (&opts, "allowDiskUse", true);
 
-         cursor = mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, &pipeline, &opts, NULL);
+         cursor = mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
          ASSERT (cursor);
 
          bson_destroy (&opts);
@@ -661,15 +658,21 @@ test_aggregate (void)
       mongoc_cursor_destroy(cursor);
    }
 
+   if (!did_alternate) {
+      did_alternate = true;
+      bson_destroy (pipeline);
+      pipeline = BCON_NEW ("0", "{", "$match", "{", "hello", BCON_UTF8 ("world"), "}", "}");
+      goto again;
+   }
+
    r = mongoc_collection_drop(collection, &error);
    ASSERT (r);
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    mongoc_client_destroy(client);
-   bson_destroy(&b);
-   bson_destroy(&pipeline);
-   bson_destroy(&match);
+   bson_destroy(b);
+   bson_destroy(pipeline);
 }
 
 
