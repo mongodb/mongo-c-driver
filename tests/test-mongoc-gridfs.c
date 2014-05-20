@@ -315,6 +315,8 @@ test_stream (void)
    /* cleanup */
    mongoc_stream_destroy (stream);
 
+   mongoc_gridfs_file_destroy (file);
+
    drop_collections (gridfs, &error);
    mongoc_gridfs_destroy (gridfs);
    mongoc_client_destroy (client);
