@@ -12,7 +12,13 @@ endif
 TEST_PROGS = test-libmongoc
 
 
-TEST_CFLAGS = \
+TEST_CFLAGS =
+
+if OS_SOLARIS
+TEST_CFLAGS += -D_REENTRANT
+endif
+
+TEST_CFLAGS += \
 	-DMONGOC_COMPILATION \
 	-DBINARY_DIR="\"$(srcdir)/tests/binary\"" \
 	$(BSON_CFLAGS) \

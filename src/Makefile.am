@@ -7,7 +7,13 @@ endif
 noinst_LTLIBRARIES += libmongoc-priv.la
 lib_LTLIBRARIES += libmongoc-1.0.la
 
-libmongoc_priv_la_CPPFLAGS = \
+libmongoc_priv_la_CPPFLAGS =
+
+if OS_SOLARIS
+libmongoc_priv_la_CPPFLAGS += -D_REENTRANT
+endif
+
+libmongoc_priv_la_CPPFLAGS += \
 	-DMONGOC_COMPILATION \
 	$(LIBC_FEATURES) \
 	$(OPTIMIZE_CFLAGS) \
