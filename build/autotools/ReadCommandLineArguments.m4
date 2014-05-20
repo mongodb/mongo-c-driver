@@ -86,3 +86,21 @@ AC_ARG_ENABLE([sasl],
                               [Use libsasl2 for Kerberos.])],
               [],
               [enable_sasl=auto])
+
+AC_ARG_ENABLE([html-docs],
+              [AS_HELP_STRING([--enable-html-docs=@<:@yes/no@:>@],
+                              [Build HTML documentation.])],
+              [],
+              [enable_html_docs=no])
+
+AC_ARG_ENABLE([man-pages],
+              [AS_HELP_STRING([--enable-man-pages=@<:@yes/no@:>@],
+                              [Build and install man-pages.])],
+              [],
+              [enable_man_pages=no])
+
+AC_ARG_ENABLE([yelp],
+              [AS_HELP_STRING([--enable-yelp=@<:@yes/no@:>@],
+                              [Install yelp manuals.])],
+              [],
+              [enable_yelp=no])

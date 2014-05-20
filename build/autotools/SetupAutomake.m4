@@ -31,3 +31,14 @@ AM_CONDITIONAL([WITH_LIBBSON],[test "$with_libbson" = "bundled"])
 
 # Should we avoid extra BSON_LIBS when linking (SunStudio)
 AM_CONDITIONAL([EXPLICIT_LIBS],[test "$with_gnu_ld" = "yes"])
+
+# Should we build man pages
+AM_CONDITIONAL([ENABLE_MAN_PAGES],[test "$enable_man_pages" = "yes"])
+
+# Should we build HTML documentation
+AM_CONDITIONAL([ENABLE_HTML_DOCS],[test "$enable_html_docs" = "yes"])
+AS_IF([test "$enable_html_docs" = "yes" && test -z "$YELP_BUILD"],
+      [AC_MSG_ERROR([yelp-build must be installed to generate HTML documentation.])])
+
+# Should we install Yelp documentation
+AM_CONDITIONAL([ENABLE_YELP],[test "$enable_yelp" = "yes"])

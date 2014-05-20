@@ -38,8 +38,9 @@ Build configuration:
   Libbson                                          : ${with_libbson}
 
 Documentation:
-  Generate man pages                               : ${mongoc_build_doc}
-  Install man pages                                : ${mongoc_install_man}
+  man                                              : ${enable_man_pages}
+  HTML                                             : ${enable_html_docs}
+  Yelp                                             : ${enable_yelp}
 
 Bindings:
   Python (experimental)                            : ${ax_python_header}
