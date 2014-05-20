@@ -8,28 +8,30 @@ SASL_CFLAGS=
 SASL_LIBS=
 sasl_mode=no
 
-PKG_CHECK_MODULES(SASL, [libsasl2], [sasl_mode=sasl2], [
-  AS_IF([test "$enable_sasl" != "no"],[
-    AC_CHECK_LIB([sasl2],[sasl_client_init],[have_sasl2_lib=yes],[have_sasl2_lib=no])
-    AC_CHECK_LIB([sasl],[sasl_client_init],[have_sasl_lib=yes],[have_sasl_lib=no])
-    if test "$have_sasl_lib" = "no" -a "$have_sasl2_lib" = "no" -a "$enable_sasl" = "yes" ; then
-      AC_MSG_ERROR([You must install the Cyrus SASL libraries and development headers to enable SASL support.])
-    fi
+AS_IF([test "$enable_sasl" != "no"],[
+  PKG_CHECK_MODULES(SASL, [libsasl2], [sasl_mode=sasl2], [
+    AS_IF([test "$enable_sasl" != "no"],[
+      AC_CHECK_LIB([sasl2],[sasl_client_init],[have_sasl2_lib=yes],[have_sasl2_lib=no])
+      AC_CHECK_LIB([sasl],[sasl_client_init],[have_sasl_lib=yes],[have_sasl_lib=no])
+      if test "$have_sasl_lib" = "no" -a "$have_sasl2_lib" = "no" -a "$enable_sasl" = "yes" ; then
+        AC_MSG_ERROR([You must install the Cyrus SASL libraries and development headers to enable SASL support.])
+      fi
 
-    AC_CHECK_HEADER([sasl/sasl.h],[have_sasl_headers=yes],[have_sasl_headers=no])
-    if test "$have_sasl_headers" = "no" -a "$enable_sasl" = "yes" ; then
-      AC_MSG_ERROR([You must install the Cyrus SASL development headers to enable SASL support.])
-    fi
+      AC_CHECK_HEADER([sasl/sasl.h],[have_sasl_headers=yes],[have_sasl_headers=no])
+      if test "$have_sasl_headers" = "no" -a "$enable_sasl" = "yes" ; then
+        AC_MSG_ERROR([You must install the Cyrus SASL development headers to enable SASL support.])
+      fi
 
-    if test "$have_sasl_headers" -a "$have_sasl2_lib" = "yes" ; then
-      sasl_mode=sasl2
-      SASL_LIBS=-lsasl2
-    fi
+      if test "$have_sasl_headers" -a "$have_sasl2_lib" = "yes" ; then
+        sasl_mode=sasl2
+        SASL_LIBS=-lsasl2
+      fi
 
-    if test "$have_sasl_headers" -a "$have_sasl_lib" = "yes" ; then
-      sasl_mode=sasl
-      SASL_LIBS=-lsasl
-    fi
+      if test "$have_sasl_headers" -a "$have_sasl_lib" = "yes" ; then
+        sasl_mode=sasl
+        SASL_LIBS=-lsasl
+      fi
+    ])
   ])
 ])
 
