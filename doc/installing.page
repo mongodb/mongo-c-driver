@@ -92,8 +92,8 @@ Enable automatic binary hardening                : yes
 Code coverage support                            : no
 Cross Compiling                                  : no
 Fast counters                                    : no
-SASL                                             : no
-SSL                                              : no
+SASL                                             : sasl2
+SSL                                              : yes
 Libbson                                          : bundled
 
 Documentation:
@@ -103,12 +103,6 @@ Install man pages                                : yes
 Bindings:
 Python (experimental)                            : no
 </screen>
-
-    <p>If you have installed <code>libsasl2</code> headers and SASL is still <code>no</code> you might have a system such as Solaris 10 where the file <file>libsasl2.pc</file> was not distributed with the libsasl2 development headers. <code>configure</code> uses this file to discover where the library is installed. In this case you need to set the <code>SASL_CFLAGS</code> and <code>SASL_LIBS</code> environment variables appropriately before running <code>./configure</code>. The following is used to compile SASL support on a 64-bit version of Solaris 10 on x86 based systems.</p>
-
-    <screen><input style="prompt">$ </input><input>export SASL_CFLAGS=-I/usr/include</input>
-<input style="prompt">$ </input><input>export SASL_LIBS="-L/usr/lib/amd64 -lsasl"</input>
-<input style="prompt">$ </input><input>./configure --prefix=/usr --libdir=/usr/lib/amd64</input></screen>
 
     <p>We can now build the driver with the venerable <code>make</code> program.</p>
 
