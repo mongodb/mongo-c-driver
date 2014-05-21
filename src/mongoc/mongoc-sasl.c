@@ -279,13 +279,13 @@ _mongoc_sasl_start (mongoc_sasl_t      *sasl,
 
 
 bool
-_mongoc_sasl_step (mongoc_sasl_t      *sasl,
+_mongoc_sasl_step (mongoc_sasl_t *sasl,
                    const uint8_t *inbuf,
                    uint32_t       inbuflen,
                    uint8_t       *outbuf,
                    uint32_t       outbufmax,
                    uint32_t      *outbuflen,
-                   bson_error_t       *error)
+                   bson_error_t  *error)
 {
    const char *raw = NULL;
    unsigned rawlen = 0;
@@ -295,7 +295,15 @@ _mongoc_sasl_step (mongoc_sasl_t      *sasl,
    BSON_ASSERT (inbuf);
    BSON_ASSERT (outbuf);
    BSON_ASSERT (outbuflen);
-   BSON_ASSERT (*outbuflen);
+
+   if (!sasl->step && !*outbuflen) {
+      bson_set_error (error,
+                      MONGOC_ERROR_SASL,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "SASL Failure: no data received from SASL request. "
+                      "Does server have SASL support enabled?");
+      return false;
+   }
 
    sasl->step++;
 
