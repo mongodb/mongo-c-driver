@@ -63,7 +63,10 @@ _mongoc_write_command_init_insert
        bool                    allow_bulk_op_insert) /* IN */
 {
    const char *key;
+   bson_iter_t iter;
+   bson_oid_t oid;
    uint32_t i;
+   bson_t tmp;
    char keydata [16];
 
    ENTRY;
@@ -84,7 +87,21 @@ _mongoc_write_command_init_insert
       bson_uint32_to_string (i, &key, keydata, sizeof keydata);
       BSON_ASSERT (key);
 
-      BSON_APPEND_DOCUMENT (command->u.insert.documents, key, documents [i]);
+      /*
+       * If the document does not contain an "_id" field, we need to generate
+       * a new oid for "_id".
+       */
+      if (!bson_iter_init_find (&iter, documents [i], "_id")) {
+         bson_init (&tmp);
+         bson_oid_init (&oid, NULL);
+         BSON_APPEND_OID (&tmp, "_id", &oid);
+         bson_concat (&tmp, documents [i]);
+         BSON_APPEND_DOCUMENT (command->u.insert.documents, key, &tmp);
+         bson_destroy (&tmp);
+      } else {
+         BSON_APPEND_DOCUMENT (command->u.insert.documents, key,
+                               documents [i]);
+      }
    }
 
    EXIT;
