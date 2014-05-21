@@ -10,6 +10,8 @@ dist_man_MANS = $(BUILT_MAN_FILES)
 # Work the bug around until it is fixed:
 dist_noinst_DATA = $(dist_man_MANS)
 
+man3_MANS = $(BUILT_MAN_FILES)
+
 %.3: %.page
 	@ $(MKDIR_P) doc
 	$(AM_V_GEN)./doc/mallard2man.py 3 $^
