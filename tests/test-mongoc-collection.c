@@ -911,6 +911,7 @@ test_large_return (void)
    mongoc_cursor_destroy (cursor);
 
    r = mongoc_collection_drop (collection, &error);
+   if (!r) fprintf (stderr, "ERROR: %s\n", error.message);
    assert (r);
 
    mongoc_collection_destroy (collection);
