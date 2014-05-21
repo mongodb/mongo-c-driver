@@ -65,6 +65,7 @@ _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN *
    bulk->ordered = ordered;
    bulk->hint = hint;
    bulk->write_concern = mongoc_write_concern_copy (write_concern);
+   bulk->executed = false;
 
    if (!bulk->write_concern) {
       bulk->write_concern = mongoc_write_concern_new ();
@@ -259,6 +260,17 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
    ENTRY;
 
    bson_return_val_if_fail (bulk, false);
+
+   if (bulk->executed) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "mongoc_bulk_operation_execute() may only be called "
+                      "once for a bulk operation.");
+      return false;
+   }
+
+   bulk->executed = true;
 
    bson_init (reply);
 
