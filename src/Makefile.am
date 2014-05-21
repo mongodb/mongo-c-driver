@@ -32,8 +32,7 @@ libmongoc_priv_la_CPPFLAGS += \
 endif
 
 libmongoc_priv_la_LDFLAGS = \
-	$(OPTIMIZE_LDFLAGS) \
-	-rpath $(libdir)
+	$(OPTIMIZE_LDFLAGS)
 
 libmongoc_priv_la_LIBADD = \
 	$(BSON_LIBS) \
