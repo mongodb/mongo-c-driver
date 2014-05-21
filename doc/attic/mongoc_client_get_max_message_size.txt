@@ -1,1 +1,0 @@
-mongoc_client_get_max_bson_size.txt
