@@ -56,8 +56,8 @@ typedef struct
    mongoc_stream_t *base_stream;
    BIO             *bio;
    SSL_CTX         *ctx;
-   int32_t     timeout;
-   bool      weak_cert_validation;
+   int32_t          timeout_msec;
+   bool             weak_cert_validation;
 } mongoc_stream_tls_t;
 
 
@@ -206,7 +206,8 @@ _mongoc_stream_tls_bio_read (BIO  *b,
    }
 
    errno = 0;
-   ret = (int)mongoc_stream_read (tls->base_stream, buf, len, 0, tls->timeout);
+   ret = (int)mongoc_stream_read (tls->base_stream, buf, len, 0,
+                                  tls->timeout_msec);
    BIO_clear_retry_flags (b);
 
    if ((ret < 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
@@ -253,7 +254,8 @@ _mongoc_stream_tls_bio_write (BIO        *b,
    iov.iov_len = len;
 
    errno = 0;
-   ret = (int)mongoc_stream_writev (tls->base_stream, &iov, 1, tls->timeout);
+   ret = (int)mongoc_stream_writev (tls->base_stream, &iov, 1,
+                                    tls->timeout_msec);
    BIO_clear_retry_flags (b);
 
    if ((ret < 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
@@ -480,7 +482,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
 
-   tls->timeout = timeout_msec;
+   tls->timeout_msec = timeout_msec;
 
    if (timeout_msec >= 0) {
       expire = bson_get_monotonic_time () + (timeout_msec * 1000UL);
@@ -511,9 +513,9 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
                   return -1;
                }
 
-               tls->timeout = 0;
+               tls->timeout_msec = 0;
             } else {
-               tls->timeout = expire - now;
+               tls->timeout_msec = (expire - now) / 1000L;
             }
          }
 
@@ -567,7 +569,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
 
-   tls->timeout = timeout_msec;
+   tls->timeout_msec = timeout_msec;
 
    if (timeout_msec >= 0) {
       expire = bson_get_monotonic_time () + (timeout_msec * 1000UL);
@@ -598,9 +600,9 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
                   return -1;
                }
 
-               tls->timeout = 0;
+               tls->timeout_msec = 0;
             } else {
-               tls->timeout = expire - now;
+               tls->timeout_msec = (expire - now) / 1000L;
             }
          }
 
@@ -727,7 +729,7 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
 
    BSON_ASSERT (tls);
 
-   tls->timeout = timeout_msec;
+   tls->timeout_msec = timeout_msec;
 
    if (BIO_do_handshake (tls->bio) == 1) {
       return true;
@@ -836,7 +838,7 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
    tls->weak_cert_validation = opt->weak_cert_validation;
    tls->bio = bio_ssl;
    tls->ctx = ssl_ctx;
-   tls->timeout = -1;
+   tls->timeout_msec = -1;
    bio_mongoc_shim->ptr = tls;
 
    mongoc_counter_streams_active_inc();
