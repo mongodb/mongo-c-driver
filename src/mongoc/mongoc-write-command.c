@@ -55,12 +55,9 @@ static bson_t gEmptyWriteConcern = BSON_INITIALIZER;
 
 
 void
-_mongoc_write_command_init_insert
-      (mongoc_write_command_t *command,              /* IN */
-       const bson_t * const   *documents,            /* IN */
-       uint32_t                n_documents,          /* IN */
-       bool                    ordered,              /* IN */
-       bool                    allow_bulk_op_insert) /* IN */
+_mongoc_write_command_insert_append (mongoc_write_command_t *command,
+                                     const bson_t * const   *documents,
+                                     uint32_t                n_documents)
 {
    const char *key;
    bson_iter_t iter;
@@ -72,12 +69,8 @@ _mongoc_write_command_init_insert
    ENTRY;
 
    BSON_ASSERT (command);
-
-   command->type = MONGOC_WRITE_COMMAND_INSERT;
-   command->u.insert.documents = bson_new ();
-   command->u.insert.n_documents = n_documents;
-   command->u.insert.ordered = ordered;
-   command->u.insert.allow_bulk_op_insert = allow_bulk_op_insert;
+   BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
+   BSON_ASSERT (!n_documents || documents);
 
    for (i = 0; i < n_documents; i++) {
       BSON_ASSERT (documents [i]);
@@ -102,6 +95,33 @@ _mongoc_write_command_init_insert
          BSON_APPEND_DOCUMENT (command->u.insert.documents, key,
                                documents [i]);
       }
+   }
+
+   EXIT;
+}
+
+
+void
+_mongoc_write_command_init_insert
+      (mongoc_write_command_t *command,              /* IN */
+       const bson_t * const   *documents,            /* IN */
+       uint32_t                n_documents,          /* IN */
+       bool                    ordered,              /* IN */
+       bool                    allow_bulk_op_insert) /* IN */
+{
+   ENTRY;
+
+   BSON_ASSERT (command);
+   BSON_ASSERT (!n_documents || documents);
+
+   command->type = MONGOC_WRITE_COMMAND_INSERT;
+   command->u.insert.documents = bson_new ();
+   command->u.insert.n_documents = n_documents;
+   command->u.insert.ordered = ordered;
+   command->u.insert.allow_bulk_op_insert = allow_bulk_op_insert;
+
+   if (n_documents) {
+      _mongoc_write_command_insert_append (command, documents, n_documents);
    }
 
    EXIT;

@@ -93,6 +93,9 @@ void _mongoc_write_command_init_update (mongoc_write_command_t        *command,
                                         bool                           upsert,
                                         bool                           multi,
                                         bool                           ordered);
+void _mongoc_write_command_insert_append (mongoc_write_command_t      *command,
+                                          const bson_t * const        *documents,
+                                          uint32_t                     n_documents);
 void _mongoc_write_command_execute     (mongoc_write_command_t        *command,
                                         mongoc_client_t               *client,
                                         uint32_t                       hint,

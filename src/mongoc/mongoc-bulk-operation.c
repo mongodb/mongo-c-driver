@@ -151,13 +151,28 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
                               const bson_t            *document)
 {
    mongoc_write_command_t command = { 0 };
+   mongoc_write_command_t *last;
+
+   ENTRY;
 
    bson_return_if_fail (bulk);
    bson_return_if_fail (document);
 
+   if (bulk->commands.len) {
+      last = &_mongoc_array_index (&bulk->commands,
+                                   mongoc_write_command_t,
+                                   bulk->commands.len - 1);
+      if (last->type == MONGOC_WRITE_COMMAND_INSERT) {
+         _mongoc_write_command_insert_append (last, &document, 1);
+         EXIT;
+      }
+   }
+
    _mongoc_write_command_init_insert (&command, &document, 1, bulk->ordered,
                                       false);
    _mongoc_array_append_val (&bulk->commands, command);
+
+   EXIT;
 }
 
 
