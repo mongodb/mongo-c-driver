@@ -1,0 +1,76 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      id="bulk">
+  <title>Bulk Write Operations</title>
+
+  <p>This tutorial explains how to take advantage of MongoDB C driver bulk write operation features. Executing write operations in batches reduces the number of network round trips, increasing write throughput.</p>
+
+  <section id="bulk-insert">
+    <info><link xref="index#bulk" type="guide"/></info>
+    <title>Bulk Insert</title>
+    <p><em>New in MongoDB C driver 0.94.2.</em></p>
+    <p>First we need to fetch a bulk operation handle from the <link xref="mongoc_collection_t">mongoc_collection_t</link>. This can be performed in either ordered or unordered mode. Unordered mode allows for greater parallelization when working with sharded clusters.</p>
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_bulk_operation_t *bulk = mongoc_collection_create_bulk_operation (collection, true, write_concern);]]></code></synopsis>
+    <p>We can now start inserting documents to the bulk operation. These will be buffered until we execute the operation.</p>
+    <p>The bulk operation will coalesce insertions as a single batch for each consecutive call to <link xref="mongoc_bulk_operation_insert">mongoc_bulk_operation_insert()</link>. This creates a pipelined effect when possible.</p>
+    <note style="tip"><p>The bulk operation API will automatically handle MongoDB servers &lt; 2.6 by speaking the old wire protocol. However, some performance degredation may occur.</p></note>
+    <p>To execute the bulk operation and receive the result we call <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link>.</p>
+    <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk1.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
+    <synopsis><code mime="text/x-json">{"nInserted"   : 10000,
+ "nMatched"    : 0,
+ "nModified"   : 0,
+ "nRemoved"    : 0,
+ "nUpserted"   : 0,
+ "writeErrors" : []}</code></synopsis>
+  </section>
+
+  <section id="mixed-bulk-write">
+    <info><link xref="index#bulk" type="guide"/></info>
+    <title>Mixed Bulk Write Operations</title>
+    <p><em>New in MongoDB C driver 0.94.2</em></p>
+    <p>MongoDB C driver also supports executing mixed bulk write operations. A batch of insert, update, and remove operations can be executed together using the bulk write operations API.</p>
+    <note style="tip"><p>Though the following API will work with all versions of MongoDB, it is designed to be used with MongoDB versions &gt;= 2.6. Much better bulk insert performance can be achieved with older versions of MongoDB through the deprecated <link xref="mongoc_collection_insert_bulk">mongoc_collection_insert_bulk()</link> method.</p></note>
+  </section>
+
+  <section id="ordered-bulk-write">
+    <info><link xref="index#bulk" type="guide"/></info>
+    <title>Ordered Bulk Write Operations</title>
+    <p>Ordered bulk write operations are batched and sent to the server in the order provided for serial execution. The return value is a document describing the type and count of operations performed.</p>
+    <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk2.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
+    <synopsis><code mime="text/x-json"><![CDATA[{ "nInserted"   : 3,
+  "nMatched"    : 2,
+  "nModified"   : 2,
+  "nRemoved"    : 10000,
+  "nUpserted"   : 1,
+  "upserted"    : [{"index" : 5, "_id" : 4}],
+  "writeErrors" : [] }]]></code></synopsis>
+    <note style="warning"><p><code>nModified</code> is only reported by MongoDB 2.6 and later. When connected to an earlier server version, or in certain mixed version sharding configurations, MongoDB C driver omits this field from the results of a bulk write operation.</p></note>
+  </section>
+
+  <section id="unordered-bulk-write">
+    <info><link xref="index#bulk" type="guide"/></info>
+    <title>Unordered Bulk Write Operations</title>
+    <p>Unordered bulk write operations are batched and sent to the server in <em>arbitrary order</em> where they may be executed in parallel. Any errors that occur are reported after all operations are attempted.</p>
+    <p>In the next example the first and third operations fail due to the unique constraint on <code>_id</code>. Since we are doing unordered execution the second and fourth operations succeed.</p>
+    <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk3.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
+    <synopsis><code mime="text/x-csrc"><![CDATA[{ "nInserted" : 0,
+  "nMatched" : 1,
+  "nModified" : 1,
+  "nRemoved" : 1,
+  "nUpserted" : 0,
+  "writeErrors" : [{ "index": 0,
+                     "code": 11000,
+                     "errmsg": "insertDocument :: caused by :: 11000 E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }" },
+                   { "index" : 2,
+                     "code" : 11000,
+                     "errmsg" : "insertDocument :: caused by :: 11000 E11000 duplicate key error index: test.test.$_id_  dup key: { : 3 }" }] }
+Error: insertDocument :: caused by :: 11000 E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }]]></code></synopsis>
+  </section>
+
+  <section id="bulk-write-concern">
+    <info><link xref="index#bulk" type="guide"/></info>
+    <title>Bulk Operations Write Concerns</title>
+    <p>By default bulk operations are executed with the <link xref="mongoc_write_concern_t">write_concern</link> of the collection they are executed against. A custom write concern can be passed to the <link xref="mongoc_collection_create_bulk_operation">mongoc_collection_create_bulk_operation()</link> method. Write concern errors (e.g. wtimeout) will be reported after all operations are attempted, regardless of execution order.</p>
+  </section>
+
+</page>

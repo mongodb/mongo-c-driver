@@ -23,6 +23,10 @@
     <title>Cursors</title>
   </section>
 
+  <section id="bulk" style="2column">
+    <title>Bulk Operations</title>
+  </section>
+
   <section id="aggregation" style="2column">
     <title>Aggregation Framework</title>
   </section>
