@@ -93,7 +93,7 @@ export PKG_CONFIG_PATH="/usr/lib/${ARCH64}/pkgconfig"
 export SASL_CFLAGS="-I/usr/include"
 export SASL_LIBS="-L/usr/lib/${ARCH64} -lsasl"
 export CFLAGS="-m64"
-./configure "--prefix=${DIR}/usr" "--libdir=${DIR}/usr/lib/${ARCH64}" --enable-debug-symbols --enable-sasl --enable-ssl --disable-static --disable-silent-rules --enable-maintainer-flags --with-libbson=bundled
+./configure "--prefix=${DIR}/usr" "--libdir=${DIR}/usr/lib/${ARCH64}" --enable-debug-symbols --enable-sasl --enable-ssl --disable-static --disable-silent-rules --enable-maintainer-flags --with-libbson=bundled --enable-man-pages
 make
 make install
 
@@ -104,7 +104,7 @@ make install
 cd "${DIR}"
 perl -p -i -e "s#${DIR}##g" usr/lib/pkgconfig/*.pc usr/lib/${ARCH64}/pkgconfig/*.pc
 echo "i pkginfo" > Prototype
-find "usr/" | grep -v bin$ | grep -v lib$ | grep -v include$ | grep -v share$ | grep -v doc$ | grep -v usr/$ | grep -v amd64$ | grep -v sparcv9$ | grep -v pkgconfig$ | pkgproto >> Prototype
+find "usr/" | grep -v bin$ | grep -v lib$ | grep -v include$ | grep -v share$ | grep -v doc$ | grep -v usr/$ | grep -v amd64$ | grep -v sparcv9$ | grep -v pkgconfig$ | pkgproto | perl -p -i -e "s/${USER}/root/g" | perl -p -i -e "s/ other/ root/g" >> Prototype
 PSTAMP=$(date +%d%b%y)
 
 cat <<EOF > pkginfo
