@@ -97,6 +97,10 @@ _mongoc_write_command_insert_append (mongoc_write_command_t *command,
       }
    }
 
+   if (command->u.insert.n_documents) {
+      command->u.insert.n_merged++;
+   }
+
    command->u.insert.n_documents += n_documents;
 
    EXIT;
@@ -119,6 +123,7 @@ _mongoc_write_command_init_insert
    command->type = MONGOC_WRITE_COMMAND_INSERT;
    command->u.insert.documents = bson_new ();
    command->u.insert.n_documents = 0;
+   command->u.insert.n_merged = 0;
    command->u.insert.ordered = ordered;
    command->u.insert.allow_bulk_op_insert = allow_bulk_op_insert;
 
@@ -913,29 +918,19 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result, /* IN */
           BSON_ITER_HOLDS_OID (&iter)) {
          result->nUpserted += 1;
          value = bson_iter_value (&iter);
-         _mongoc_write_result_append_upsert (result, result->offset, value);
+         _mongoc_write_result_append_upsert (result, result->n_commands, value);
       } else if (bson_iter_init_find (&iter, reply, "upserted") &&
                  BSON_ITER_HOLDS_ARRAY (&iter)) {
          result->nUpserted += n;
          if (bson_iter_recurse (&iter, &ar)) {
             while (bson_iter_next (&ar)) {
                if (BSON_ITER_HOLDS_DOCUMENT (&ar) &&
-                   bson_iter_recurse (&ar, &citer)) {
-                  idx = 0;
-                  value = NULL;
-                  while (bson_iter_next (&citer)) {
-                     if (BSON_ITER_IS_KEY (&citer, "index") &&
-                         BSON_ITER_HOLDS_INT32 (&citer)) {
-                        idx = bson_iter_int32 (&citer);
-                     } else if (BSON_ITER_IS_KEY (&citer, "_id")) {
-                        value = bson_iter_value (&citer);
-                     }
-                  }
-                  if (value) {
-                     _mongoc_write_result_append_upsert (result,
-                                                         result->offset + idx,
-                                                         value);
-                  }
+                   bson_iter_recurse (&ar, &citer) &&
+                   bson_iter_find (&citer, "_id")) {
+                  value = bson_iter_value (&citer);
+                  _mongoc_write_result_append_upsert (result,
+                                                      result->n_commands,
+                                                      value);
                }
             }
          }
@@ -959,6 +954,12 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result, /* IN */
       break;
    default:
       break;
+   }
+
+   result->n_commands++;
+
+   if (command->type == MONGOC_WRITE_COMMAND_INSERT) {
+      result->n_commands += command->u.insert.n_merged;
    }
 
    EXIT;
@@ -1016,6 +1017,7 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
    const bson_value_t *value;
    bson_iter_t iter;
    bson_iter_t citer;
+   bson_iter_t ar;
    int32_t n_upserted = 0;
    int32_t affected = 0;
 
@@ -1046,12 +1048,22 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
    case MONGOC_WRITE_COMMAND_UPDATE:
       if (bson_iter_init_find (&iter, reply, "upserted")) {
          if (BSON_ITER_HOLDS_ARRAY (&iter)) {
-            n_upserted = _mongoc_write_result_merge_arrays (result,
-                                                            &result->upserted,
-                                                            &iter);
+            if (bson_iter_recurse (&iter, &ar)) {
+               while (bson_iter_next (&ar)) {
+                  if (BSON_ITER_HOLDS_DOCUMENT (&ar) &&
+                      bson_iter_recurse (&ar, &citer) &&
+                      bson_iter_find (&citer, "_id")) {
+                     value = bson_iter_value (&citer);
+                     _mongoc_write_result_append_upsert (result,
+                                                         result->n_commands,
+                                                         value);
+                     n_upserted++;
+                  }
+               }
+            }
          } else {
             value = bson_iter_value (&iter);
-            _mongoc_write_result_append_upsert (result, 0, value);
+            _mongoc_write_result_append_upsert (result, result->n_commands, value);
             n_upserted = 1;
          }
          result->nUpserted += n_upserted;
@@ -1105,6 +1117,12 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
       break;
    default:
       break;
+   }
+
+   result->n_commands++;
+
+   if (command->type == MONGOC_WRITE_COMMAND_INSERT) {
+      result->n_commands += command->u.insert.n_merged;
    }
 
    EXIT;

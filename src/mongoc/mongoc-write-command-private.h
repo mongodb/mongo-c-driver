@@ -48,6 +48,7 @@ typedef struct
          uint8_t   allow_bulk_op_insert : 1;
          bson_t   *documents;
          uint32_t  n_documents;
+         uint32_t  n_merged;
       } insert;
       struct {
          uint8_t   ordered : 1;
@@ -69,6 +70,7 @@ typedef struct
    uint32_t     nRemoved;
    uint32_t     nUpserted;
    uint32_t     offset;
+   uint32_t     n_commands;
    bson_t       upserted;
    bson_t       writeErrors;
    bson_t       writeConcernErrors;
