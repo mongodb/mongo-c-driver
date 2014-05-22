@@ -97,6 +97,8 @@ _mongoc_write_command_insert_append (mongoc_write_command_t *command,
       }
    }
 
+   command->u.insert.n_documents += n_documents;
+
    EXIT;
 }
 
@@ -116,7 +118,7 @@ _mongoc_write_command_init_insert
 
    command->type = MONGOC_WRITE_COMMAND_INSERT;
    command->u.insert.documents = bson_new ();
-   command->u.insert.n_documents = n_documents;
+   command->u.insert.n_documents = 0;
    command->u.insert.ordered = ordered;
    command->u.insert.allow_bulk_op_insert = allow_bulk_op_insert;
 
