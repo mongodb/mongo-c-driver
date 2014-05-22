@@ -3,6 +3,9 @@
 aclocal.m4
 AUTHORS
 autom4te.cache
+bulk1
+bulk2
+bulk3
 ChangeLog
 cluster1
 *.cmake

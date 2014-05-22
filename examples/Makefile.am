@@ -50,3 +50,18 @@ noinst_PROGRAMS += example-matcher
 example_matcher_SOURCES = examples/example-matcher.c
 example_matcher_CFLAGS = $(EXAMPLE_CFLAGS)
 example_matcher_LDADD = $(EXAMPLE_LDADD)
+
+noinst_PROGRAMS += bulk1
+bulk1_SOURCES = examples/bulk/bulk1.c
+bulk1_CFLAGS = $(EXAMPLE_CFLAGS)
+bulk1_LDADD = $(EXAMPLE_LDADD)
+
+noinst_PROGRAMS += bulk2
+bulk2_SOURCES = examples/bulk/bulk2.c
+bulk2_CFLAGS = $(EXAMPLE_CFLAGS)
+bulk2_LDADD = $(EXAMPLE_LDADD)
+
+noinst_PROGRAMS += bulk3
+bulk3_SOURCES = examples/bulk/bulk3.c
+bulk3_CFLAGS = $(EXAMPLE_CFLAGS)
+bulk3_LDADD = $(EXAMPLE_LDADD)
