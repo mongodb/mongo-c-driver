@@ -8,7 +8,6 @@ bulk1 (mongoc_collection_t *collection)
 {
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
-   bson_oid_t oid;
    bson_t *doc;
    bson_t reply;
    char *str;
@@ -18,10 +17,7 @@ bulk1 (mongoc_collection_t *collection)
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
 
    for (i = 0; i < 10000; i++) {
-      bson_oid_init (&oid, NULL);
-      doc = BCON_NEW ("_id", BCON_OID (&oid),
-                      "hello", BCON_UTF8 ("world"),
-                      "i", BCON_INT32 (i));
+      doc = BCON_NEW ("i", BCON_INT32 (i));
       mongoc_bulk_operation_insert (bulk, doc);
       bson_destroy (doc);
    }
