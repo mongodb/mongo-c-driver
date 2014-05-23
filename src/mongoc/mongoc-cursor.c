@@ -842,8 +842,12 @@ _mongoc_cursor_more (mongoc_cursor_t *cursor)
 {
    bson_return_val_if_fail(cursor, false);
 
-   return ((!cursor->sent) ||
-           (cursor->rpc.reply.cursor_id) ||
+   if (cursor->failed) {
+      return false;
+   }
+
+   return (!cursor->sent ||
+           cursor->rpc.reply.cursor_id ||
            !cursor->end_of_event);
 }
 
