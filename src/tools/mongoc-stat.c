@@ -16,15 +16,17 @@
 
 
 #include <bson.h>
+
+
+#ifdef BSON_OS_UNIX
+
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-
-#ifdef BSON_OS_UNIX
 
 
 #pragma pack(1)
@@ -224,6 +226,8 @@ main (int   argc,
 }
 
 #else
+
+#include <stdio.h>
 
 int
 main (int   argc,
