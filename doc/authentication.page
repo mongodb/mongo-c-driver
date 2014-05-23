@@ -53,7 +53,7 @@ client = mongoc_client_new ("mongodb://mongodbuser%40EXAMPLE.COM@example.com/?au
 
     <note style="warning"><p>Kerberos support is only provided in environments supported by the <code>cyrus-sasl</code> kerberos implementation. This currently limits support to UNIX-like environments.</p></note>
 
-    <note style="info"><p>If you see an error such as <code>Invalid net address</code>, you might be behind a NAT (Network Address Translation) firewall. In this case, you might need to create a ticket that uses <code>forwardable</code> and <code>addressless</code> Kerberos tickets. This can be done by passing <code>-f -A</code> to <code>kinit</code>.</p><screen><input style="prompt">$ </input><input>kinit -f -A mongodbuser@EXAMPLE.COM</input></screen></note>
+    <note style="info"><p>If you see an error such as <code>Invalid net address</code>, you might be behind a NAT (Network Address Translation) firewall. In this case, you might need to create a ticket that uses <code>forwardable</code> and <code>addressless</code> Kerberos tickets. This can be done by passing <code>-f -A</code> to <code>kinit</code>.</p><screen><output style="prompt">$ </output><input>kinit -f -A mongodbuser@EXAMPLE.COM</input></screen></note>
 
   </section>
 

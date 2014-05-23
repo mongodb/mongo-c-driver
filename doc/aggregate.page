@@ -15,16 +15,16 @@
     <p>Let's check if everything is installed.</p>
     <p>Use the following command to load zips.json data set into mongod instance:</p>
 
-    <screen><input style="prompt">$ </input><input>mongoimport --drop -d test -c zipcodes zips.json</input></screen>
+    <screen><output style="prompt">$ </output><input>mongoimport --drop -d test -c zipcodes zips.json</input></screen>
 
     <p>Let's use the MongoDB shell to verify that everything was imported successfully.</p>
 
-    <screen><input style="prompt">$ </input><input>mongo test</input>
+    <screen><output style="prompt">$ </output><input>mongo test</input>
 <output>MongoDB shell version: 2.6.1
 connecting to: test</output>
-<input style="prompt">&gt; </input><input>db.zipcodes.count()</input>
+<output style="prompt">&gt; </output><input>db.zipcodes.count()</input>
 <output>29467</output>
-<input style="prompt">&gt; </input><input>db.zipcodes.findOne()</input>
+<output style="prompt">&gt; </output><input>db.zipcodes.findOne()</input>
 <output><![CDATA[{
 	"_id" : "35004",
 	"city" : "ACMAR",

@@ -27,12 +27,12 @@
     <p>To test this, perform a <code>mongodump</code> of a single collection and pipe it to the program.</p>
 
     <screen>
-<input style="prompt">$ </input><input>echo "db.test.insert({hello:'world'})" | mongo</input>
+<output style="prompt">$ </output><input>echo "db.test.insert({hello:'world'})" | mongo</input>
 <output>MongoDB shell version: 2.6.1
 connecting to: test
 WriteResult({ "nInserted" : 1 })
 bye</output>
-<input style="prompt">$ </input><input>mongodump -d test -c test -o - | filter-bsondump</input>
+<output style="prompt">$ </output><input>mongodump -d test -c test -o - | filter-bsondump</input>
 <output>{ "_id" : { "$oid" : "537afac9a70e5b4d556153bc" }, "hello" : "world" }</output></screen>
 
   </section>

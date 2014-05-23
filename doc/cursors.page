@@ -59,8 +59,8 @@ print_all_documents (mongoc_collection_t *collection)
 
     <p>Let's compile and run this example against a <link href="">replicaSet</link> to see updates as they are made.</p>
 
-    <screen><input style="prompt">$ </input><input>gcc -Wall -o mongoc-tail mongoc-tail.c $(pkg-config --cflags --libs libmongoc-1.0)</input>
-<input style="prompt">$ </input><input>./mongoc-tail mongodb://example.com/?replicaSet=myReplSet</input>
+    <screen><output style="prompt">$ </output><input>gcc -Wall -o mongoc-tail mongoc-tail.c $(pkg-config --cflags --libs libmongoc-1.0)</input>
+<output style="prompt">$ </output><input>./mongoc-tail mongodb://example.com/?replicaSet=myReplSet</input>
 <output>{ "ts" : { "$timestamp" : { "t" : 1400023818, "i" : 1 } }, "h" : -8458503739429355503, "v" : 2, "op" : "i", "ns" : "test.test", "o" : { "_id" : { "$oid" : "5372ab0a25164be923d10d50" } } }</output></screen>
 
     <note style="tip"><p>The line of output is a sample from performing <code>db.test.insert({})</code> from the mongo shell on the given replicaSet.</p></note>

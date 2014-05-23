@@ -106,16 +106,16 @@ Python (experimental)                            : no
 
     <p>We can now build the driver with the venerable <code>make</code> program.</p>
 
-    <screen><input style="prompt">$ </input><input>make</input></screen>
+    <screen><output style="prompt">$ </output><input>make</input></screen>
 
     <note>
       <p>You can optionally build code objects in parallel using the <code>-j</code> option to GNU make. Some implementations of <code>make</code> do not support this option, such as Sun's make on Solaris 10. To build in parallel on an 8 core machine, you might use:</p>
-      <screen><input style="prompt">$ </input><input>gmake -j8</input></screen>
+      <screen><output style="prompt">$ </output><input>gmake -j8</input></screen>
     </note>
 
     <p>To install the driver, we use <code>make</code> with the <code>install</code> target.</p>
 
-    <screen><input style="prompt">$ </input><input>sudo make install</input></screen>
+    <screen><output style="prompt">$ </output><input>sudo make install</input></screen>
 
     <note>
       <p>On systems that do not support the <code>sudo</code> command, we can use <code>su -c 'make install'</code>.</p>
