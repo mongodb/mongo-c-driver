@@ -13,7 +13,6 @@ bulk3 (mongoc_collection_t *collection)
    bson_t reply;
    char *str;
    bool ret;
-   int i;
 
    /* false indicates unordered */
    bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);

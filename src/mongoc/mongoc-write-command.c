@@ -874,7 +874,6 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result, /* IN */
    const char *err = NULL;
    int32_t code = 0;
    int32_t n = 0;
-   int idx;
 
    ENTRY;
 

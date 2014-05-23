@@ -30,7 +30,7 @@ bulk1 (mongoc_collection_t *collection)
    bson_destroy (&reply);
 
    if (!ret) {
-      fprintf (stderr, "Error: %s\n", error);
+      fprintf (stderr, "Error: %s\n", error.message);
    }
 }
 
