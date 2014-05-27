@@ -2,6 +2,7 @@
       type="guide"
       id="index">
   <title>MongoDB C Driver</title>
+  <subtitle>A Cross Platform MongoDB Client Library for C</subtitle>
 
   <section id="installation">
     <title>Installation</title>
