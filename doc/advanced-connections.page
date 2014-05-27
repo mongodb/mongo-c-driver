@@ -52,7 +52,12 @@ main (int   argc,
 
     mongoc_init ();
 
+    /* Create our MongoDB Client */
     client = mongoc_client_new ("mongodb://myreplset01:27017/?replicaSet=myreplset");
+
+    /* do something with client ... */
+
+    /* Free our client */
     mongoc_client_destroy (client);
 
     mongoc_cleanup ();
@@ -100,7 +105,12 @@ main (int   argc,
 
     mongoc_init ();
 
+    /* Create our MongoDB Client */
     client = mongoc_client_new ("mongodb://myshard01:27017/");
+
+    /* Do something with client ... */
+
+    /* Free the client */
     mongoc_client_destroy (client);
 
     mongoc_cleanup ();
