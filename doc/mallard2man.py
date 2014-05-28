@@ -38,6 +38,7 @@ try:
 except ImportError:
     sys.exit(0)
 
+INCLUDE = '{http://www.w3.org/2001/XInclude}include'
 TITLE = '{http://projectmallard.org/1.0/}title'
 SUBTITLE = '{http://projectmallard.org/1.0/}subtitle'
 SECTION = '{http://projectmallard.org/1.0/}section'
@@ -56,7 +57,7 @@ NOTE = '{http://projectmallard.org/1.0/}note'
 TABLE = '{http://projectmallard.org/1.0/}table'
 TR = '{http://projectmallard.org/1.0/}tr'
 TD = '{http://projectmallard.org/1.0/}td'
-INCLUDE = '{http://www.w3.org/2001/XInclude}include'
+OUTPUT = '{http://projectmallard.org/1.0/}output'
 
 class Convert(object):
     title = None
@@ -192,6 +193,9 @@ class Convert(object):
     def _generateEM(self, em):
         self._writeCommand('.BR %s' % em.text)
 
+    def _generateOutput(self, output):
+        self._generateCode(output)
+
     def _generateItem(self, item):
         self._writeCommand('.IP \\[bu] 2')
         for child in item.getchildren():
@@ -204,6 +208,8 @@ class Convert(object):
             self._generateSynopsis(ele)
         elif ele.tag == CODE:
             self._generateCode(ele)
+        elif ele.tag == OUTPUT:
+            self._generateOutput(ele)
         elif ele.tag == P:
             self._generateP(ele)
         elif ele.tag == EM:
