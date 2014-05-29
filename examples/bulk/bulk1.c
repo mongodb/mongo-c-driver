@@ -27,11 +27,13 @@ bulk1 (mongoc_collection_t *collection)
    str = bson_as_json (&reply, NULL);
    printf ("%s\n", str);
    bson_free (str);
-   bson_destroy (&reply);
 
    if (!ret) {
       fprintf (stderr, "Error: %s\n", error.message);
    }
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
 }
 
 int
