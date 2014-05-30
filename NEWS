@@ -1,3 +1,43 @@
+mongo-c-driver 0.96.0
+=====================
+
+It's that time again, time for another mongo-c-driver release!
+
+This release includes much new documentation, which can be found at
+http://docs.mongodb.org/ecosystem/drivers/c/.
+
+Additionally, this release improves support for various exotic systems.
+Solaris 10 is supported much better on SPARC and x86_64 based systems.
+
+Some workarounds for mixed-mode sharded-clusters have been added to improve
+resiliency when rolling upgrades are performed.
+
+Build improvements have been added to help us detect SASL and SSL
+implementations on platforms that do not support pkg-config. This should
+simplify building for some of you.
+
+We've added some more logging to SASL authentication to help debug
+authentication failures.
+
+A bug causing an abort() when SSL is used and a server is down has been fixed.
+
+We've renamed various _delete() functions to _remove() to provide consistency
+with other MongoDB drivers.
+
+You can now specify SSL options for client pools.
+
+-D_REENTRANT is always defined now on Solaris to help with errno detection.
+This may not have been done before if using a non-GCC platform with pthreads.
+
+A bug was fixed where timeouts could have been 1000x longer than expected
+due to failure to convert from microseconds to milliseconds.
+
+A bug was fixed with authentication in sharded cluster and replica set
+scenarios.
+
+Happy Hacking!
+
+
 mongo-c-driver 0.94.2
 =====================
 

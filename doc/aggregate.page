@@ -11,7 +11,7 @@
   <section id="requirements">
     <title>Requirements</title>
 
-    <p><link href="https://mongodb.org">MongoDB</link>, version 2.2.0 or later. <link href="https://github.com/mongodb/mongo-c-driver">MongoDB C driver</link>, version 0.94.4 or later.</p>
+    <p><link href="https://mongodb.org">MongoDB</link>, version 2.2.0 or later. <link href="https://github.com/mongodb/mongo-c-driver">MongoDB C driver</link>, version 0.96.0 or later.</p>
     <p>Let's check if everything is installed.</p>
     <p>Use the following command to load zips.json data set into mongod instance:</p>
 

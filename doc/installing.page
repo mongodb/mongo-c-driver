@@ -58,11 +58,11 @@
 
     <p>The following instructions are for UNIX-like systems such as GNU/Linux, FreeBSD, and Solaris. To build on Windows, see the instructions for <link xref="installing#building-windows">Building on Windows</link>.</p>
 
-    <p>The most recent release of the mongo-c-driver is 0.94.3 and can be <link href="https://github.com/mongodb/mongo-c-driver/releases/download/0.94.3/mongo-c-driver-0.94.3.tar.gz">downloaded here</link>. The following snippet will download and extract the current release of the driver.</p>
+    <p>The most recent release of the mongo-c-driver is 0.96.0 and can be <link href="https://github.com/mongodb/mongo-c-driver/releases/download/0.96.0/mongo-c-driver-0.96.0.tar.gz">downloaded here</link>. The following snippet will download and extract the current release of the driver.</p>
 
-    <screen><output style="prompt">$ </output><input>wget https://github.com/mongodb/mongo-c-driver/releases/download/0.94.3/mongo-c-driver-0.94.3.tar.gz</input>
-<output style="prompt">$ </output><input>tar -xzf mongo-c-driver-0.94.3.tar.gz</input>
-<output style="prompt">$ </output><input>cd mongo-c-driver-0.94.3/</input></screen>
+    <screen><output style="prompt">$ </output><input>wget https://github.com/mongodb/mongo-c-driver/releases/download/0.96.0/mongo-c-driver-0.96.0.tar.gz</input>
+<output style="prompt">$ </output><input>tar -xzf mongo-c-driver-0.96.0.tar.gz</input>
+<output style="prompt">$ </output><input>cd mongo-c-driver-0.96.0/</input></screen>
 
     <p>Minimal dependencies are needed to build the MongoDB C driver. Optionally, if you want Kerberos (GSSAPI) or SSL support, you need to install <code>libsasl2</code> and <code>OpenSSL</code> libraries and development headers respectively.</p>
 
@@ -132,8 +132,8 @@ Python (experimental)                            : no
     <p>The following commands will download the most recent MongoDB binary release and install it using the <code>pkgadd</code> command on Solaris 10.</p>
       <screen><output style="prompt">$ </output><input>bash</input>
 <output style="prompt">bash-3.2$ </output><input>export ARCH=`uname -m`</input>
-<output style="prompt">bash-3.2$ </output><input>/usr/sfw/bin/wget --no-check-certificate "https://github.com/mongodb/mongo-c-driver/releases/download/0.94.3/MONGOmongo-c-driver-0.94.3.${ARCH}.pkg.tar.gz"</input>
-<output style="prompt">bash-3.2$ </output><input>gunzip -c "MONGOmongo-c-driver-0.94.3.${ARCH}.pkg.tar.gz" | tar -xf -</input>
+<output style="prompt">bash-3.2$ </output><input>/usr/sfw/bin/wget --no-check-certificate "https://github.com/mongodb/mongo-c-driver/releases/download/0.96.0/MONGOmongo-c-driver-0.96.0.${ARCH}.pkg.tar.gz"</input>
+<output style="prompt">bash-3.2$ </output><input>gunzip -c "MONGOmongo-c-driver-0.96.0.${ARCH}.pkg.tar.gz" | tar -xf -</input>
 <output style="prompt">bash-3.2$ </output><input>pkgadd -d . MONGOmongo-c-driver</input></screen>
 
   </section>
@@ -145,7 +145,7 @@ Python (experimental)                            : no
 
     <p>Let's start by generating Visual Studio project files for libbson, a dependency of the C driver. The following assumes we are compiling for 64-bit Windows using Visual Studio 2010 Express which can be freely downloaded from Microsoft.</p>
 
-    <screen>cd mongo-c-driver-0.94.3\src\libbson
+    <screen>cd mongo-c-driver-0.96.0\src\libbson
 cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</screen>
 
     <p>Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program <code>msbuild.exe</code></p>
@@ -160,7 +160,7 @@ cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</sc
 
     <p>Now let's do the same for the MongoDB C driver.</p>
 
-    <screen>cd mongo-c-driver-0.94.3
+    <screen>cd mongo-c-driver-0.96.0
 cmake -G "Visual Studio 2010 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"
 msbuild.exe ALL_BUILD.vcxproj
 msbuild.exe INSTALL.vcxproj</screen>
