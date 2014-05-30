@@ -87,7 +87,7 @@ process_first_batch:
             bson_iter_document (&cid->first_batch_iter, &data_len, &data);
             if (bson_init_static (&cid->first_batch_inline, data, data_len)) {
                *bson = &cid->first_batch_inline;
-               return true;
+               RETURN (true);
             }
          }
       }
@@ -96,7 +96,7 @@ process_first_batch:
       if (!cursor->rpc.reply.cursor_id) {
          cursor->done = true;
          *bson = NULL;
-         return false;
+         RETURN (false);
       }
    }
 

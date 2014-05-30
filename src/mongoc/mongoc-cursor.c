@@ -457,13 +457,13 @@ _mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 static bool
 _mongoc_cursor_query (mongoc_cursor_t *cursor)
 {
+   mongoc_rpc_t rpc;
    uint32_t hint;
    uint32_t request_id;
-   mongoc_rpc_t rpc;
 
    ENTRY;
 
-   bson_return_val_if_fail(cursor, false);
+   bson_return_val_if_fail (cursor, false);
 
    if (!_mongoc_client_warm_up (cursor->client, &cursor->error)) {
       cursor->failed = true;
@@ -489,7 +489,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
                                       cursor->hint, NULL,
                                       cursor->read_prefs,
                                       &cursor->error))) {
-      goto failure;
+      GOTO (failure);
    }
 
    cursor->hint = hint;
@@ -502,7 +502,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
                             &cursor->buffer,
                             hint,
                             &cursor->error)) {
-      goto failure;
+      GOTO (failure);
    }
 
    if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
@@ -528,7 +528,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
           (cursor->error.code == MONGOC_ERROR_QUERY_NOT_TAILABLE)) {
          cursor->failed = true;
       }
-      goto failure;
+      GOTO (failure);
    }
 
    if (cursor->reader) {
@@ -546,12 +546,14 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    cursor->done = false;
    cursor->end_of_event = false;
    cursor->sent = true;
-   RETURN(true);
+
+   RETURN (true);
 
 failure:
    cursor->failed = true;
    cursor->done = true;
-   RETURN(false);
+
+   RETURN (false);
 }
 
 
@@ -564,9 +566,9 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   BSON_ASSERT(cursor);
+   BSON_ASSERT (cursor);
 
-   if (! cursor->in_exhaust) {
+   if (!cursor->in_exhaust) {
       if (!_mongoc_client_warm_up (cursor->client, &cursor->error)) {
          cursor->failed = true;
          RETURN (false);
@@ -577,7 +579,7 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
                         MONGOC_ERROR_CURSOR,
                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                         "No valid cursor was provided.");
-         goto failure;
+         GOTO (failure);
       }
 
       rpc.get_more.msg_len = 0;
@@ -601,7 +603,7 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
                                 NULL, cursor->read_prefs, &cursor->error)) {
          cursor->done = true;
          cursor->failed = true;
-         RETURN(false);
+         RETURN (false);
       }
 
       request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
@@ -721,8 +723,12 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
 {
    bool ret;
 
+   ENTRY;
+
    BSON_ASSERT(cursor);
    BSON_ASSERT(bson);
+
+   TRACE ("cursor_id(%"PRId64")", cursor->rpc.reply.cursor_id);
 
    if (cursor->iface.next) {
       ret = cursor->iface.next(cursor, bson);
@@ -747,52 +753,72 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
 
    ENTRY;
 
-   BSON_ASSERT(cursor);
-
-   if (cursor->client->in_exhaust && ! cursor->in_exhaust) {
-      bson_set_error(&cursor->error,
-                     MONGOC_ERROR_CLIENT,
-                     MONGOC_ERROR_CLIENT_IN_EXHAUST,
-                     "Another cursor derived from this client is in exhaust.");
-      cursor->failed = true;
-      RETURN(false);
-   }
+   BSON_ASSERT (cursor);
 
    if (bson) {
       *bson = NULL;
    }
 
-   if (cursor->limit && cursor->count >= cursor->limit) {
-      return false;
+   if (cursor->done || cursor->failed) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                      "Cannot advance a completed or failed cursor.");
+      RETURN (false);
    }
 
    /*
-    * Short circuit if we are finished already.
+    * We cannot proceed if another cursor is receiving results in exhaust mode.
     */
-   if (BSON_UNLIKELY(cursor->done)) {
-      RETURN(false);
+   if (cursor->client->in_exhaust && !cursor->in_exhaust) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_IN_EXHAUST,
+                      "Another cursor derived from this client is in exhaust.");
+      cursor->failed = true;
+      RETURN (false);
+   }
+
+   /*
+    * If we reached our limit, make sure we mark this as done and do not try to
+    * make further progress.
+    */
+   if (cursor->limit && cursor->count >= cursor->limit) {
+      cursor->done = true;
+      RETURN (false);
+   }
+
+   /*
+    * Try to read the next document from the reader if it exists, we might
+    * get NULL back and EOF, in which case we need to submit a getmore.
+    */
+   if (cursor->reader) {
+      eof = false;
+      b = bson_reader_read (cursor->reader, &eof);
+      cursor->end_of_event = eof;
+      if (b) {
+         GOTO (complete);
+      }
    }
 
    /*
     * Check to see if we need to send a GET_MORE for more results.
     */
    if (!cursor->sent) {
-      if (!_mongoc_cursor_query(cursor)) {
-         RETURN(false);
+      if (!_mongoc_cursor_query (cursor)) {
+         RETURN (false);
       }
-   } else if (BSON_UNLIKELY(cursor->end_of_event)) {
-      if (!_mongoc_cursor_get_more(cursor)) {
-         RETURN(false);
+   } else if (BSON_UNLIKELY (cursor->end_of_event) && cursor->rpc.reply.cursor_id) {
+      if (!_mongoc_cursor_get_more (cursor)) {
+         RETURN (false);
       }
    }
 
-   /*
-    * Read the next BSON document from the event.
-    */
    eof = false;
-   b = bson_reader_read(cursor->reader, &eof);
+   b = bson_reader_read (cursor->reader, &eof);
    cursor->end_of_event = eof;
 
+complete:
    cursor->done = (cursor->end_of_event &&
                    ((cursor->in_exhaust && !cursor->rpc.reply.cursor_id) ||
                     (!b && !(cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR))));
@@ -803,18 +829,18 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
     */
    if (!b && !eof) {
       cursor->failed = true;
-      bson_set_error(&cursor->error,
-                     MONGOC_ERROR_CURSOR,
-                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                     "The reply was corrupt.");
-      RETURN(false);
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "The reply was corrupt.");
+      RETURN (false);
    }
 
    if (bson) {
       *bson = b;
    }
 
-   RETURN(!!b);
+   RETURN (!!b);
 }
 
 
