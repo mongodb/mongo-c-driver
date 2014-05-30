@@ -68,3 +68,8 @@ noinst_PROGRAMS += bulk3
 bulk3_SOURCES = examples/bulk/bulk3.c
 bulk3_CFLAGS = $(EXAMPLE_CFLAGS)
 bulk3_LDADD = $(EXAMPLE_LDADD)
+
+noinst_PROGRAMS += aggregation1
+aggregation1_SOURCES = examples/aggregation/aggregation1.c
+aggregation1_CFLAGS = $(EXAMPLE_CFLAGS)
+aggregation1_LDADD = $(EXAMPLE_LDADD)

@@ -1,6 +1,7 @@
 *~
 *.a
 aclocal.m4
+aggregation1
 AUTHORS
 autom4te.cache
 bulk1
