@@ -1,3 +1,5 @@
+EXTRA_DIST += $(wildcard doc/*.page)
+
 if ENABLE_MAN_PAGES
 MAINTAINERCLEANFILES += $(BUILT_MAN_FILES)
 BUILT_MAN_FILES = $(patsubst %.page,%.3,$(wildcard doc/mongoc_*.page))
@@ -25,6 +27,7 @@ html:
 	$(AM_V_GEN)$(YELP_BUILD) html -o doc/html $(wildcard $(top_srcdir)/doc/*.page)
 
 EXTRA_DIST += $(wildcard doc/html/*)
+DISTCLEANFILES += $(wildcard doc/html/*)
 endif
 
 dist-hook: man html
