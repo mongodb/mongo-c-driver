@@ -39,6 +39,3 @@ AM_CONDITIONAL([ENABLE_MAN_PAGES],[test "$enable_man_pages" = "yes"])
 AM_CONDITIONAL([ENABLE_HTML_DOCS],[test "$enable_html_docs" = "yes"])
 AS_IF([test "$enable_html_docs" = "yes" && test -z "$YELP_BUILD"],
       [AC_MSG_ERROR([yelp-build must be installed to generate HTML documentation.])])
-
-# Should we install Yelp documentation
-AM_CONDITIONAL([ENABLE_YELP],[test "$enable_yelp" = "yes"])

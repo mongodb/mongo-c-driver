@@ -31,8 +31,3 @@ DISTCLEANFILES += $(wildcard doc/html/*)
 endif
 
 dist-hook: man html
-
-if ENABLE_YELP
-yelpdir = $(prefix)/share/help/C/mongo-c-driver
-yelp_DATA = $(top_srcdir)/doc/*.page
-endif

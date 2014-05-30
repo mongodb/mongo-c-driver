@@ -40,8 +40,4 @@ Build configuration:
 Documentation:
   man                                              : ${enable_man_pages}
   HTML                                             : ${enable_html_docs}
-  Yelp                                             : ${enable_yelp}
-
-Bindings:
-  Python (experimental)                            : ${ax_python_header}
 "
