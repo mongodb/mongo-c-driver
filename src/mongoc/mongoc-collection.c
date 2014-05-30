@@ -267,7 +267,6 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 {
    mongoc_cursor_t *cursor;
    bson_iter_t iter;
-   bson_iter_t citer;
    uint32_t max_wire_version = 0;
    uint32_t min_wire_version = 0;
    uint32_t hint;
@@ -295,9 +294,8 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
     * items for the pipeline, or {"pipeline": [...]}.
     */
    if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
-       BSON_ITER_HOLDS_ARRAY (&iter) &&
-       bson_iter_recurse (&iter, &citer)) {
-      bson_append_iter (&command, "pipeline", 8, &citer);
+       BSON_ITER_HOLDS_ARRAY (&iter)) {
+      bson_append_iter (&command, "pipeline", 8, &iter);
    } else {
       BSON_APPEND_ARRAY (&command, "pipeline", pipeline);
    }
@@ -335,8 +333,8 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       bson_append_document_end (&command, &child);
    }
 
-   cursor = mongoc_collection_command(collection, flags, 0, 1, 0, &command,
-                                      NULL, read_prefs);
+   cursor = mongoc_collection_command (collection, flags, 0, 0, 0, &command,
+                                       NULL, read_prefs);
    cursor->hint = hint;
 
    if (max_wire_version > 0) {
