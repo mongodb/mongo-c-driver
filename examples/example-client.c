@@ -53,13 +53,10 @@ main (int   argc,
                                     NULL,  /* Fields, NULL for all. */
                                     NULL); /* Read Prefs, NULL for default */
 
-   while (!mongoc_cursor_error (cursor, &error) &&
-          mongoc_cursor_more (cursor)) {
-      if (mongoc_cursor_next (cursor, &doc)) {
-         str = bson_as_json (doc, NULL);
-         fprintf (stdout, "%s\n", str);
-         bson_free (str);
-      }
+   while (mongoc_cursor_next (cursor, &doc)) {
+      str = bson_as_json (doc, NULL);
+      fprintf (stdout, "%s\n", str);
+      bson_free (str);
    }
 
    if (mongoc_cursor_error (cursor, &error)) {
