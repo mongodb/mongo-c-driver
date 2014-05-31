@@ -272,7 +272,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    uint32_t hint;
    bson_t command;
    bson_t child;
-   int32_t batch_size;
+   int32_t batch_size = 0;
    bool did_batch_size = false;
 
    bson_return_val_if_fail (collection, NULL);
@@ -333,8 +333,9 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       bson_append_document_end (&command, &child);
    }
 
-   cursor = mongoc_collection_command (collection, flags, 0, 0, 0, &command,
-                                       NULL, read_prefs);
+   cursor = mongoc_collection_command (collection, flags, 0, 0, batch_size,
+                                       &command, NULL, read_prefs);
+
    cursor->hint = hint;
 
    if (max_wire_version > 0) {
