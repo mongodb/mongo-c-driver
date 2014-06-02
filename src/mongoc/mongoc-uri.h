@@ -30,6 +30,11 @@
 #include "mongoc-write-concern.h"
 
 
+#ifndef MONGOC_DEFAULT_PORT
+# define MONGOC_DEFAULT_PORT 27017
+#endif
+
+
 BSON_BEGIN_DECLS
 
 
