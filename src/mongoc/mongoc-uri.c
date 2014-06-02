@@ -26,11 +26,6 @@
 #include "mongoc-uri.h"
 
 
-#ifndef MONGOC_DEFAULT_PORT
-# define MONGOC_DEFAULT_PORT 27017
-#endif
-
-
 #if defined(_WIN32) && !defined(strcasecmp)
 # define strcasecmp _stricmp
 #endif
@@ -167,7 +162,7 @@ static bool
 mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
                         const char    *str)
 {
-   uint16_t port = 27017;
+   uint16_t port = MONGOC_DEFAULT_PORT;
    const char *portstr;
    const char *end_host;
    char *hostname;
