@@ -658,7 +658,7 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
    cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0, &q,
                                     NULL, NULL);
 
-   len = strlen (database->name) + 1;
+   len = (int) strlen (database->name) + 1;
 
    while (mongoc_cursor_more (cursor) &&
           !mongoc_cursor_error (cursor, error)) {
