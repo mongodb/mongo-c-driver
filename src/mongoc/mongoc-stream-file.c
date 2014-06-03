@@ -133,7 +133,7 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream,       /* IN */
    RETURN (ret);
 #else
    ENTRY;
-   ret = readv (file->fd, iov, iovcnt);
+   ret = readv (file->fd, iov, (int)iovcnt);
    RETURN (ret);
 #endif
 }
@@ -162,7 +162,7 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream,       /* IN */
 
    return ret;
 #else
-   return writev (file->fd, iov, iovcnt);
+   return writev (file->fd, iov, (int)iovcnt);
 #endif
 }
 
