@@ -54,19 +54,22 @@ _mongoc_buffer_init (mongoc_buffer_t   *buffer,
                      size_t             buflen,
                      bson_realloc_func  realloc_func)
 {
-   bson_return_if_fail(buffer);
-   bson_return_if_fail(buf || !buflen);
+   bson_return_if_fail (buffer);
+   bson_return_if_fail (buflen || !buf);
 
    if (!realloc_func) {
       realloc_func = bson_realloc_ctx;
    }
 
-   if (!buf || !buflen) {
-      buf = realloc_func (NULL, MONGOC_BUFFER_DEFAULT_SIZE, NULL);
+   if (!buflen) {
       buflen = MONGOC_BUFFER_DEFAULT_SIZE;
    }
 
-   memset(buffer, 0, sizeof *buffer);
+   if (!buf) {
+      buf = realloc_func (NULL, buflen, NULL);
+   }
+
+   memset (buffer, 0, sizeof *buffer);
 
    buffer->data = buf;
    buffer->datalen = buflen;
