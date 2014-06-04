@@ -590,10 +590,6 @@ test_aggregate (void)
    bson_iter_t iter;
    int i;
 
-   pipeline = BCON_NEW ("pipeline", "[", "{", "$match", "{", "hello", BCON_UTF8 ("world"), "}", "}", "]");
-
-again:
-
    client = mongoc_client_new(gTestUri);
    ASSERT (client);
 
@@ -603,9 +599,11 @@ again:
    collection = get_test_collection (client, "test_aggregate");
    ASSERT (collection);
 
-   mongoc_collection_drop(collection, &error);
-
+   pipeline = BCON_NEW ("pipeline", "[", "{", "$match", "{", "hello", BCON_UTF8 ("world"), "}", "}", "]");
    b = BCON_NEW ("hello", BCON_UTF8 ("world"));
+
+again:
+   mongoc_collection_drop(collection, &error);
 
    for (i = 0; i < 2; i++) {
       r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, b, NULL, &error);
