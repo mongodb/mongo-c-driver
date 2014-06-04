@@ -127,12 +127,7 @@ tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_d
 	PATH=tests:${PATH} $(top_srcdir)/tests/make_ca.pl $(top_builddir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
 	touch $(top_builddir)/tests/trust_dir/done
 
-libbson_check:
-if WITH_LIBBSON
-	@ $(MAKE) -C src/libbson check
-endif
-
-check: libbson_check test abicheck
+check: test abicheck
 
 TEST_ARGS = -f -p
 
