@@ -155,6 +155,7 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
    bson_return_val_if_fail (size, false);
 
    BSON_ASSERT (buffer->datalen);
+   BSON_ASSERT ((buffer->datalen + size) < INT_MAX);
 
    if (!SPACE_FOR (buffer, size)) {
       if (buffer->len) {
@@ -162,19 +163,22 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       }
       buffer->off = 0;
       if (!SPACE_FOR (buffer, size)) {
-         buffer->datalen = bson_next_power_of_two ((uint32_t)size);
+         buffer->datalen = bson_next_power_of_two ((uint32_t)(size + buffer->len + buffer->off));
          buffer->data = buffer->realloc_func (buffer->data, buffer->datalen, NULL);
       }
    }
 
    buf = &buffer->data[buffer->off + buffer->len];
+
+   BSON_ASSERT ((buffer->off + buffer->len + size) <= buffer->datalen);
+
    ret = mongoc_stream_read (stream, buf, size, size, timeout_msec);
    if (ret != size) {
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to read %u bytes from socket.",
-                      (unsigned)size);
+                      "Failed to read %"PRIu64" bytes from socket.",
+                      (uint64_t)size);
       RETURN (false);
    }
 
