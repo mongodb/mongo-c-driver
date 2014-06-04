@@ -338,7 +338,7 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream, /* IN */
 
    stream->base_stream = base_stream;
 
-   _mongoc_buffer_init (&stream->buffer, NULL, buffer_size, bson_realloc_ctx);
+   _mongoc_buffer_init (&stream->buffer, NULL, buffer_size, NULL, NULL);
 
    mongoc_counter_streams_active_inc();
 

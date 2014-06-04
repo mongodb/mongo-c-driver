@@ -271,7 +271,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
       bson_init(&cursor->fields);
    }
 
-   _mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL);
+   _mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL, NULL);
 
 finish:
    mongoc_counter_cursors_active_inc();
@@ -960,7 +960,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 
    bson_strncpy (_clone->ns, cursor->ns, sizeof _clone->ns);
 
-   _mongoc_buffer_init (&_clone->buffer, NULL, 0, NULL);
+   _mongoc_buffer_init (&_clone->buffer, NULL, 0, NULL, NULL);
 
    mongoc_counter_cursors_active_inc ();
 

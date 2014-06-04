@@ -595,7 +595,7 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
       *gle_doc = NULL;
    }
 
-   _mongoc_buffer_init (&buffer, NULL, 0, NULL);
+   _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
 
    if (!_mongoc_cluster_try_recv (&client->cluster, &rpc, &buffer,
                                   hint, error)) {

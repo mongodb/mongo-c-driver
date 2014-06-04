@@ -17,7 +17,7 @@ test_mongoc_buffer_basic (void)
    stream = mongoc_stream_file_new_for_path (BINARY_DIR"/reply1.dat", O_RDONLY, 0);
    ASSERT(stream);
 
-   _mongoc_buffer_init(&buf, data, 1024, bson_realloc_ctx);
+   _mongoc_buffer_init(&buf, data, 1024, NULL, NULL);
 
    r = _mongoc_buffer_fill(&buf, stream, 537, 0, &error);
    ASSERT_CMPINT((int)r, ==, -1);

@@ -52,7 +52,8 @@ void
 _mongoc_buffer_init (mongoc_buffer_t   *buffer,
                      uint8_t           *buf,
                      size_t             buflen,
-                     bson_realloc_func  realloc_func)
+                     bson_realloc_func  realloc_func,
+                     void              *realloc_data)
 {
    bson_return_if_fail (buffer);
    bson_return_if_fail (buflen || !buf);
@@ -76,6 +77,7 @@ _mongoc_buffer_init (mongoc_buffer_t   *buffer,
    buffer->len = 0;
    buffer->off = 0;
    buffer->realloc_func = realloc_func;
+   buffer->realloc_data = realloc_data;
 }
 
 
@@ -91,7 +93,7 @@ _mongoc_buffer_destroy (mongoc_buffer_t *buffer)
    bson_return_if_fail(buffer);
 
    if (buffer->data && buffer->realloc_func) {
-      buffer->realloc_func(buffer->data, 0, NULL);
+      buffer->realloc_func (buffer->data, 0, buffer->realloc_data);
    }
 
    memset(buffer, 0, sizeof *buffer);
@@ -209,8 +211,8 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
    bson_return_val_if_fail(stream, false);
    bson_return_val_if_fail(min_bytes >= 0, false);
 
-   BSON_ASSERT(buffer->data);
-   BSON_ASSERT(buffer->datalen);
+   BSON_ASSERT (buffer->data);
+   BSON_ASSERT (buffer->datalen);
 
    if (min_bytes <= buffer->len) {
       RETURN (buffer->len);
@@ -226,7 +228,8 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    if (!SPACE_FOR (buffer, min_bytes)) {
       buffer->datalen = bson_next_power_of_two ((uint32_t)(buffer->len + min_bytes));
-      buffer->data = bson_realloc (buffer->data, buffer->datalen);
+      buffer->data = buffer->realloc_func (buffer->data, buffer->datalen,
+                                           buffer->realloc_data);
    }
 
    avail_bytes = buffer->datalen - buffer->len;

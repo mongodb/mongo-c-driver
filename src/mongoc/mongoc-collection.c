@@ -166,7 +166,7 @@ _mongoc_collection_new (mongoc_client_t              *client,
    col->collectionlen = (uint32_t)strlen(col->collection);
    col->nslen = (uint32_t)strlen(col->ns);
 
-   _mongoc_buffer_init(&col->buffer, NULL, 0, NULL);
+   _mongoc_buffer_init(&col->buffer, NULL, 0, NULL, NULL);
 
    col->gle = NULL;
 

@@ -872,7 +872,7 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    rpc.query.fields = NULL;
 
    _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
-   _mongoc_buffer_init (&buffer, NULL, 0, NULL);
+   _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
 
    _mongoc_rpc_gather(&rpc, &ar);
    _mongoc_rpc_swab_to_le(&rpc);

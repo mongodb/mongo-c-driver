@@ -215,7 +215,7 @@ mock_server_worker (void *data)
    server = closure[0];
    stream = closure[1];
 
-   _mongoc_buffer_init(&buffer, NULL, 0, NULL);
+   _mongoc_buffer_init(&buffer, NULL, 0, NULL, NULL);
 
 again:
    if (_mongoc_buffer_fill (&buffer, stream, 4, -1, &error) == -1) {

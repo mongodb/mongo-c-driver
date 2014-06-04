@@ -32,19 +32,21 @@ typedef struct _mongoc_buffer_t mongoc_buffer_t;
 
 struct _mongoc_buffer_t
 {
-   uint8_t       *data;
+   uint8_t            *data;
    size_t              datalen;
    off_t               off;
    size_t              len;
    bson_realloc_func   realloc_func;
+   void               *realloc_data;
 };
 
 
 void
 _mongoc_buffer_init (mongoc_buffer_t   *buffer,
-                     uint8_t      *buf,
+                     uint8_t           *buf,
                      size_t             buflen,
-                     bson_realloc_func  realloc_func)
+                     bson_realloc_func  realloc_func,
+                     void              *realloc_data)
    BSON_GNUC_INTERNAL;
 
 bool
