@@ -111,7 +111,7 @@ process_first_batch:
           bson_iter_recurse (&iter, &child)) {
          while (bson_iter_next (&child)) {
             if (BSON_ITER_IS_KEY (&child, "id")) {
-               cursor->rpc.reply.cursor_id = bson_iter_int64 (&child);
+               cursor->rpc.reply.cursor_id = bson_iter_as_int64 (&child);
             } else if (BSON_ITER_IS_KEY (&child, "ns")) {
                ns = bson_iter_utf8 (&child, &cursor->nslen);
                bson_strncpy (cursor->ns, ns, sizeof cursor->ns);
