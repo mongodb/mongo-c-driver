@@ -327,7 +327,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       }
 
       if (!did_batch_size) {
-         BSON_APPEND_INT32 (&child, "batchSize", 0);
+         BSON_APPEND_INT32 (&child, "batchSize", 100);
       }
 
       bson_append_document_end (&command, &child);
