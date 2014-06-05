@@ -56,7 +56,7 @@ _mongoc_array_append_vals (mongoc_array_t *array,
    off = array->element_size * array->len;
    len = (size_t)n_elements * array->element_size;
    if ((off + len) > array->allocated) {
-      next_size = bson_next_power_of_two((uint32_t)(off + len));
+      next_size = bson_next_power_of_two(off + len);
       array->data = bson_realloc(array->data, next_size);
       array->allocated = next_size;
    }
