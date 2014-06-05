@@ -287,7 +287,9 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
    bulk->executed = true;
 
-   bson_init (reply);
+   if (reply) {
+      bson_init (reply);
+   }
 
    if (!bulk->commands.len) {
       bson_set_error (error,
