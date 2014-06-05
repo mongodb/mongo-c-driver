@@ -933,6 +933,23 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result, /* IN */
                }
             }
          }
+      } else if ((n == 1) &&
+                 bson_iter_init_find (&iter, reply, "updatedExisting") &&
+                 BSON_ITER_HOLDS_BOOL (&iter) &&
+                 !bson_iter_bool (&iter)) {
+         /*
+          * CDRIVER-372:
+          *
+          * Versions of MongoDB before 2.6 don't return the _id for an
+          * upsert if _id is not an ObjectId.
+          */
+         result->nUpserted += 1;
+         if (bson_iter_init_find (&iter, command->u.update.update, "_id") ||
+             bson_iter_init_find (&iter, command->u.update.selector, "_id")) {
+            value = bson_iter_value (&iter);
+            _mongoc_write_result_append_upsert (result, result->n_commands,
+                                                value);
+         }
       } else {
          result->nMatched += n;
       }
