@@ -1,3 +1,23 @@
+mongo-c-driver 0.96.2
+=====================
+
+Hot on the heels of 0.96.0 we would like to present mongo-c-driver 0.96.2!
+
+This is primarily a bugfix release. Included in this release are:
+
+ * Ensure batchSize is used in cursor GETMORE operations with `aggregate`.
+ * Ensure enough buffer space is allocated for incoming RPC when buffering
+   from a stream.
+ * Require libbson 0.8.2 for more robust `bson_next_power_of_two()` when
+   using `size_t` and BCON compilation fix with C++.
+ * Handle cursor id's that are not 64-bit values in response from
+   `aggregate` command.
+ * Handle upsert on MongoDB < 2.6 when _id does not contain an `ObjectId`.
+ * Use 100 for default batchSize in `aggregate` command.
+
+Happy Hacking!
+
+
 mongo-c-driver 0.96.0
 =====================
 
