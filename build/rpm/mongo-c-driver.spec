@@ -1,11 +1,11 @@
 Name:           mongo-c-driver
-Version:        0.96.0
+Version:        0.96.2
 Release:        1%{?dist}
 Summary:        BSON library
 
 License:        ASL 2.0
 URL:            https://github.com/mongodb/mongo-c-driver
-Source0:        https://github.com/mongodb/mongo-c-driver/releases/download/0.96.0/mongo-c-driver-0.96.0.tar.gz
+Source0:        https://github.com/mongodb/mongo-c-driver/releases/download/0.96.2/mongo-c-driver-0.96.2.tar.gz
 BuildRequires:  automake
 BuildRequires:  libbson-devel
 BuildRequires:  cyrus-sasl-devel
@@ -61,6 +61,9 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 %{_bindir}/mongoc-stat
 
 %changelog
+* Thu Jun 05 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.96.2-1
+- Release 0.96.2
+
 * Fri May 30 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.96.0-1
 - Release 0.96.0
 

@@ -124,7 +124,7 @@ test_sharded_cluster_LDADD = $(TEST_LIBS)
 test_certs: tests/trust_dir/done
 
 tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_dir.cnf
-	PATH=tests:${PATH} $(top_srcdir)/tests/make_ca.pl $(top_builddir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
+	PATH=$(top_srcdir)/tests:${PATH} $(top_srcdir)/tests/make_ca.pl $(top_builddir)/tests/trust_dir $(top_srcdir)/tests/trust_dir.cnf
 	touch $(top_builddir)/tests/trust_dir/done
 
 check: test abicheck
