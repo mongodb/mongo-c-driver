@@ -117,7 +117,7 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
    char nowstr[32];
    int pid;
 
-   bson_gettimeofday(&tv, NULL);
+   bson_gettimeofday(&tv);
    t = tv.tv_sec;
 
 #ifdef _WIN32
