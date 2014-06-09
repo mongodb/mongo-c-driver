@@ -307,7 +307,6 @@ test_bulk_edge_case_372 (void)
    bson_t *update;
    bson_t reply;
    bool r;
-   int count;
    int vmaj = 0;
    int vmin = 0;
    int vmic = 0;
