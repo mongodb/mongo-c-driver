@@ -1,13 +1,19 @@
-Name:           mongo-c-driver
-Version:        0.96.3
+%define DriverName    mongo-c-driver
+%define DriverVersion 0.96.3
+%define BsonName      libbson
+%define BsonVersion   0.8.3
+
+Name:           %{DriverName}
+Version:        %{DriverVersion}
 Release:        1%{?dist}
-Summary:        BSON library
+Summary:        MongoDB C Driver
 
 License:        ASL 2.0
 URL:            https://github.com/mongodb/mongo-c-driver
-Source0:        https://github.com/mongodb/mongo-c-driver/releases/download/0.96.3/mongo-c-driver-0.96.3.tar.gz
+Source0:        https://github.com/mongodb/mongo-c-driver/releases/download/%{DriverVersion}/mongo-c-driver-%{DriverVersion}.tar.gz
+BuildRequires:  autoconf
 BuildRequires:  automake
-BuildRequires:  libbson-devel
+BuildRequires:  libtool
 BuildRequires:  cyrus-sasl-devel
 BuildRequires:  openssl-devel
 BuildRequires:  pkgconfig
@@ -19,20 +25,44 @@ database in the C language. It can also be used to write
 fast client implementations in languages such as Python,
 Ruby, or Perl.
 
-%package        devel
-Summary:        Development files for mongo-c-driver
-Requires:       %{name}%{?_isa} = %{version}-%{release}
 
-%description    devel
-The %{name}-devel package contains libraries and header files for
-developing applications that use %{name}.
+%package devel
+Summary: Development files for mongo-c-driver
+Requires: %{DriverName}%{?_isa} = %{DriverVersion}-%{release}
+
+%description devel
+The %{DriverName}-devel package contains libraries and header files for
+developing applications that use %{DriverName}.
+
+
+%package -n %{BsonName}
+Summary: A library for parsing and generating BSON documents.
+Version: %{BsonVersion}
+
+%description -n %{BsonName}
+Libbson is a library providing useful routines related to 
+building, parsing, and iterating BSON documents. It is a 
+useful base for those wanting to write high-performance 
+C extensions to higher level languages such as Python, 
+Ruby, or Perl.
+
+
+%package -n %{BsonName}-devel
+Summary: Development files for libbson
+Requires: %{BsonName}%{?_isa} = %{BsonVersion}-%{release}
+Version: %{BsonVersion}
+
+%description -n %{BsonName}-devel
+The %{BsonName}-devel package contains libraries and header files for
+developing applications that use %{BsonName}.
+
 
 %prep
-%setup -q -n %{name}-%{version}
-automake 
+%setup -q -n %{DriverName}-%{DriverVersion}
+automake
 
 %build
-%configure --disable-static --disable-silent-rules --enable-debug-symbols --docdir=%{_pkgdocdir} --enable-debug --enable-man-pages --enable-ssl --enable-sasl --with-libbson=system --enable-optimizations
+%configure --disable-static --disable-silent-rules --enable-debug-symbols --docdir=%{_pkgdocdir} --enable-man-pages --enable-ssl --enable-sasl --with-libbson=bundled--enable-optimizations
 make %{?_smp_mflags}
 
 %check
@@ -50,7 +80,13 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 %files
 %doc COPYING README NEWS
-%{_libdir}/*.so.*
+%{_libdir}/libmongoc-1.0.so.*
+
+
+%files -n %{BsonName}
+%doc src/libbson/COPYING src/libbson/README src/libbson/NEWS
+%{_libdir}/libbson-1.0.so.*
+
 
 %files devel
 %dir %{_includedir}/libmongoc-1.0
@@ -59,9 +95,18 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 %{_libdir}/pkgconfig/libmongoc-1.0.pc
 %{_libdir}/pkgconfig/libmongoc-ssl-1.0.pc
 %{_bindir}/mongoc-stat
-%{_prefix}/share/man/man3/*
+%{_prefix}/share/man/man3/mongoc*
 
-%changelog
+
+%files -n %{BsonName}-devel
+%dir %{_includedir}/libbson-1.0
+%{_includedir}/libbson-1.0/*.h
+%{_libdir}/libbson-1.0.so
+%{_libdir}/pkgconfig/libbson-1.0.pc
+%{_prefix}/share/man/man3/bson*
+
+
+%changelog -n %{DriverName}
 * Thu Jun 10 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.96.3-1
 - Enable automated builds of 0.96.3
 
@@ -73,3 +118,8 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 * Tue May 06 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.94.3-1
 - Initial package
+
+
+%changelog -n %{BsonName}
+* Thu Jun 10 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.8.3-1
+- Enable automated builds of 0.8.3

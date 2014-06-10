@@ -153,21 +153,12 @@ EOF
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 
-		# Build the libbson RPM packages.
-		cd src/libbson
-		rm -rf libbson-*.gz
-		${GMAKE} ${MAKEARGS} dist-gzip
-		mv libbson-*.tar.gz ~/rpmbuild/SOURCES
-		rpmbuild -bb build/rpm/libbson.spec
-
-		# Build the mongo-c-driver RPM packages.
+		# Build the libbson and mongo-c-driver RPM packages.
 		cd -
 		rm -rf mongo-c-driver-*.tar.gz
 		${GMAKE} ${MAKEARGS} dist-gzip
 		cp mongo-c-driver-*.tar.gz ~/rpmbuild/SOURCES
 		rpmbuild -bb build/rpm/mongo-c-driver.spec
-
-		cd -
 
 		;;
 
