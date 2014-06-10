@@ -15,7 +15,7 @@ MKDIR=$(which mkdir)
 PERL=$(which perl)
 
 # Try to get the OS distributor such as "Fedora"
-if [ -n "${LSB_RELEASE}" ]; then
+if [ "${OS}" = "Linux" -a -n "${LSB_RELEASE}" ]; then
 	DISTRIB="$(${LSB_RELEASE} -i -s)"
 fi
 
@@ -58,7 +58,19 @@ OPTIMIZE="--enable-optimizations"
 
 # Per-build-system build commands.
 case "${OS}-${ARCH}-${DISTRIB}" in
-	SunOS-sparc-*)
+	SunOS-*-*)
+		if [ "${ARCH}" = "sparc" ]; then
+			ALT_ARCH="sparcv9"
+		fi
+
+		if [ "${ARCH}" = "i86pc" ]; then
+			ALT_ARCH="amd64"
+		fi
+
+		export PATH="${PATH}:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
+
+                echo "PATH=${PATH}"
+
 		export CC="cc"
 		export SASL_CFLAGS="-I/usr/include"
 		export SASL_LIBS="-L/usr/lib -R/usr/lib -lsasl"
@@ -67,21 +79,21 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 
 		export CFLAGS="-m32"
 		export PKG_CONFIG_PATH=/usr/lib/pkgconfig
-		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=_install --libdir=_install/lib
+		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install --libdir=${PWD}/_install/lib
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 		${GMAKE} ${MAKEARGS} install
 		${GMAKE} ${MAKEARGS} clean
 
 		export CFLAGS="-m64"
-		export PKG_CONFIG_PATH=/usr/lib/sparcv9/pkgconfig
-		./configure ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=_install --libdir=_install/lib/sparcv9
+		export PKG_CONFIG_PATH=/usr/lib/${ALT_ARCH}/pkgconfig
+		./configure ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install --libdir=${PWD}/_install/lib/${ALT_ARCH}
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 		${GMAKE} ${MAKEARGS} install
 
 		cd _install
-		${PERL} -p -i -e "s#_install##g" usr/lib/pkgconfig/*.pc usr/lib/sparcv9/pkgconfig/*.pc
+		${PERL} -p -i -e "s#_install##g" usr/lib/pkgconfig/*.pc usr/lib/${ALT_ARCH}/pkgconfig/*.pc
 		echo "i pkginfo" > Prototype
 		find usr/ -type f | pkgproto >> Prototype
 		find usr/ -type l | pkgproto >> Prototype
