@@ -71,10 +71,11 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 		${GMAKE} ${MAKEARGS} install
+		${GMAKE} ${MAKEARGS} clean
 
 		export CFLAGS="-m64"
 		export PKG_CONFIG_PATH=/usr/lib/sparcv9/pkgconfig
-		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=_install --libdir=_install/lib/sparcv9
+		./configure ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=_install --libdir=_install/lib/sparcv9
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 		${GMAKE} ${MAKEARGS} install
