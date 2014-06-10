@@ -38,6 +38,8 @@ if [ -z "${MONGOC_TEST_HOST}" ]; then
 fi
 
 # Setup some convenience variables for configure options.
+STATIC="--disable-static"
+VERBOSE="--disable-silent-rules"
 DEBUG="--enable-debug --enable-debug-symbols --enable-maintainer-flags"
 SSL="--enable-ssl"
 SASL="--enable-sasl"
@@ -54,17 +56,17 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 		export SASL_CFLAGS="-I/usr/include"
 		export SASL_LIBS="-L/usr/lib -R/usr/lib -lsasl"
 		export PKG_CONFIG_PATH=/usr/lib/sparcv9/pkgconfig
-		./autogen.sh ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE}
+		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE}
 		${GMAKE} ${MAKEARGS} all
-		${GMAKE} ${MAKEARGS} distcheck
+		${GMAKE} ${MAKEARGS} check
 		;;
 	Linux-x86_64-Fedora)
-		./autogen.sh ${DEBUG} ${SSL} ${SASL} ${MAN} ${HTML} ${HARDEN} ${OPTIMIZE}
+		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HTML} ${HARDEN} ${OPTIMIZE}
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} distcheck
 		;;
 	*)
-		./autogen.sh ${DEBUG} ${SSL} ${SASL} ${HARDEN} ${OPTIMIZE}
+		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${HARDEN} ${OPTIMIZE}
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 		;;
