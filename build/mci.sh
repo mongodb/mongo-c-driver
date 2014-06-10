@@ -1,18 +1,27 @@
 #!/usr/bin/env bash
 
+
 #
 # This is a script to build mongo-c-driver on a few different platforms.
 # It is suitable for execution by an automated build system such as buildbot.
 #
 
+
+
+# Check that we are in the top-level directory.
 if [ ! -e "build/version.in" ]; then
 	echo "Please run this from the top-level directory of mongo-c-driver."
 	exit 1
 fi
 
+# Handle crazy path issues in Solaris
+if [ "$(uname)" = "SunOS" -a -e "/etc/release" ]; then
+	PATH=/usr/sbin:/usr/bin:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin
+fi
+
 GIT=$(which git)
 OS=$(uname -s)
-ARCH=$(uname -m)
+ARCH=$(uname -p)
 DISTRIB="unknown"
 LSB_RELEASE="$(which lsb_release 2>/dev/null)"
 GMAKE=$(which gmake)
@@ -72,9 +81,7 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 			ALT_ARCH="amd64"
 		fi
 
-		export PATH="${PATH}:/usr/ccs/bin:/usr/sfw/bin:/opt/csw/bin"
 
-                echo "PATH=${PATH}"
 
 		export CC="cc"
 		export SASL_CFLAGS="-I/usr/include"
@@ -86,7 +93,7 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 
 		export CFLAGS="-m32"
 		export PKG_CONFIG_PATH=/usr/lib/pkgconfig
-		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install/usr --libdir=${PWD}/_install/usr/lib
+		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install/usr --libdir=${PWD}/_install/usr/lib
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 		${GMAKE} ${MAKEARGS} install
@@ -94,7 +101,7 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 
 		export CFLAGS="-m64"
 		export PKG_CONFIG_PATH=/usr/lib/${ALT_ARCH}/pkgconfig
-		./configure ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install/usr --libdir=${PWD}/_install/usr/lib/${ALT_ARCH}
+		./configure ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install/usr --libdir=${PWD}/_install/usr/lib/${ALT_ARCH}
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 		${GMAKE} ${MAKEARGS} install
