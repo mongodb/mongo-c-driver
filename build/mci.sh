@@ -149,8 +149,26 @@ EOF
 
 	Linux-x86_64-Fedora)
 		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HTML} ${HARDEN} ${OPTIMIZE}
+		VERSION="$(cat build/version)"
 		${GMAKE} ${MAKEARGS} all
-		${GMAKE} ${MAKEARGS} distcheck
+		${GMAKE} ${MAKEARGS} check
+
+		# Build the libbson RPM packages.
+		cd src/libbson
+		rm -rf libbson-*.gz
+		${GMAKE} ${MAKEARGS} dist-gzip
+		mv libbson-*.tar.gz ~/rpmbuild/SOURCES
+		rpmbuild -bb build/rpm/libbson.spec
+
+		# Build the mongo-c-driver RPM packages.
+		cd -
+		rm -rf mongo-c-driver-*.tar.gz
+		${GMAKE} ${MAKEARGS} dist-gzip
+		cp mongo-c-driver-*.tar.gz ~/rpmbuild/SOURCES
+		rpmbuild -bb build/rpm/mongo-c-driver.spec
+
+		cd -
+
 		;;
 
 
