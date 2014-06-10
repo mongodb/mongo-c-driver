@@ -5,6 +5,11 @@
 # It is suitable for execution by an automated build system such as buildbot.
 #
 
+if [ ! -e "build/version.in" ]; then
+	echo "Please run this from the top-level directory of mongo-c-driver."
+	exit 1
+fi
+
 GIT=$(which git)
 OS=$(uname -s)
 ARCH=$(uname -m)
