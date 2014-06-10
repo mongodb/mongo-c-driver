@@ -75,11 +75,13 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 		export SASL_CFLAGS="-I/usr/include"
 		export SASL_LIBS="-L/usr/lib -R/usr/lib -lsasl"
 
+		rm -rf _install
+
 		${MKDIR} -p _install
 
 		export CFLAGS="-m32"
 		export PKG_CONFIG_PATH=/usr/lib/pkgconfig
-		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install --libdir=${PWD}/_install/lib
+		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install/usr --libdir=${PWD}/_install/usr/lib
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 		${GMAKE} ${MAKEARGS} install
@@ -87,13 +89,15 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 
 		export CFLAGS="-m64"
 		export PKG_CONFIG_PATH=/usr/lib/${ALT_ARCH}/pkgconfig
-		./configure ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install --libdir=${PWD}/_install/lib/${ALT_ARCH}
+		./configure ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install/usr --libdir=${PWD}/_install/usr/lib/${ALT_ARCH}
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 		${GMAKE} ${MAKEARGS} install
 
+		VERSION=$(cat build/version)
+
 		cd _install
-		${PERL} -p -i -e "s#_install##g" usr/lib/pkgconfig/*.pc usr/lib/${ALT_ARCH}/pkgconfig/*.pc
+		${PERL} -p -i -e "s#${PWD}##g" usr/lib/pkgconfig/*.pc usr/lib/${ALT_ARCH}/pkgconfig/*.pc
 		echo "i pkginfo" > Prototype
 		find usr/ -type f | pkgproto >> Prototype
 		find usr/ -type l | pkgproto >> Prototype
@@ -101,7 +105,6 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 		${PERL} -p -i -e "s# other# root#g" Prototype
 
 		PSTAMP=$(date +%d%b%y)
-		VERSION=$(cat build/version)
 
 		cat <<EOF > pkginfo
 PKG="MONGOmongo-c-driver"
@@ -120,10 +123,13 @@ EOF
 
 		cd -
 
-		pkgmk -o -r / -b _install/ -d _install/ -f Prototype
+		pkgmk -o -r / -b ${PWD}/_install/ -d ${PWD}/_install/ -f _install/Prototype
 
 		if [ $? -eq 0 ]; then
-			tar -cf - MONGOmongo-c-driver | gzip -9 -c > MONGOmongo-c-driver.
+			cd _install
+			OUTFILE="../MONGOmongo-c-driver.${VERSION}.${ARCH}.pkg.tar.gz"
+			tar -cf - MONGOmongo-c-driver | gzip -9 -c > ${OUTFILE}
+			cd -
 		fi
 
 		;;
