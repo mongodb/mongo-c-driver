@@ -99,6 +99,8 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 		${GMAKE} ${MAKEARGS} install
 		${GMAKE} ${MAKEARGS} clean
 
+		export SASL_CFLAGS="-I/usr/include"
+		export SASL_LIBS="-L/usr/lib/${ALT_ARCH} -R/usr/lib/${ALT_ARCH} -lsasl"
 		export CFLAGS="-m64"
 		export PKG_CONFIG_PATH=/usr/lib/${ALT_ARCH}/pkgconfig
 		./configure ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install/usr --libdir=${PWD}/_install/usr/lib/${ALT_ARCH}
