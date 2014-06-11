@@ -1,3 +1,5 @@
+# norootforbuild
+
 %define DriverName    mongo-c-driver
 %define DriverVersion 0.96.3
 %define BsonName      libbson
