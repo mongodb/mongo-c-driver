@@ -147,7 +147,7 @@ EOF
 		;;
 
 
-	Linux-*-Fedora|Linux-*-RedHat*|Linux-*-CentOS|SUSE*)
+	Linux-*-Fedora|Linux-*-RedHat*|Linux-*-CentOS|Linux-*-SUSE*)
 		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE}
 		VERSION="$(cat build/version)"
 		${GMAKE} ${MAKEARGS} all
