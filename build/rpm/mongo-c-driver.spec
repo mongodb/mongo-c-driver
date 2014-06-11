@@ -7,6 +7,7 @@ Name:           %{DriverName}
 Version:        %{DriverVersion}
 Release:        1%{?dist}
 Summary:        MongoDB C Driver
+Group:          System Environment/Libraries
 
 License:        ASL 2.0
 URL:            https://github.com/mongodb/mongo-c-driver
@@ -29,6 +30,7 @@ Ruby, or Perl.
 %package devel
 Summary: Development files for mongo-c-driver
 Requires: %{DriverName}%{?_isa} = %{DriverVersion}-%{release}
+Group: Development/Libraries
 
 %description devel
 The %{DriverName}-devel package contains libraries and header files for
@@ -38,6 +40,7 @@ developing applications that use %{DriverName}.
 %package -n %{BsonName}
 Summary: A library for parsing and generating BSON documents.
 Version: %{BsonVersion}
+Group: System Environment/Libraries
 
 %description -n %{BsonName}
 Libbson is a library providing useful routines related to 
@@ -51,6 +54,7 @@ Ruby, or Perl.
 Summary: Development files for libbson
 Requires: %{BsonName}%{?_isa} = %{BsonVersion}-%{release}
 Version: %{BsonVersion}
+Group: Development/Libraries
 
 %description -n %{BsonName}-devel
 The %{BsonName}-devel package contains libraries and header files for
