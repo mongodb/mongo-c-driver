@@ -194,8 +194,6 @@ EOF
 
 		# Bootstrap, build, and run unit tests.
 		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE}
-		${GMAKE} ${MAKEARGS} all
-		${GMAKE} ${MAKEARGS} check
 
 		dpkg-buildpackage
 		if [ $? -ne 0 ]; then
