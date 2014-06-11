@@ -148,14 +148,18 @@ EOF
 
 
 	Linux-*-Fedora|Linux-*-RedHat*|Linux-*-CentOS|Linux-*-SUSE*)
+		# Clean up any legacy tarballs.
+		rm -rf mongo-c-driver-*.tar.gz
+
+		# Bootstrap, build, and run unit tests.
 		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE}
-		VERSION="$(cat build/version)"
 		${GMAKE} ${MAKEARGS} all
 		${GMAKE} ${MAKEARGS} check
 
+		# Extract the major.minor.micro triplet.
+		VERSION="$(cat build/version)"
+
 		# Build the libbson and mongo-c-driver RPM packages.
-		cd -
-		rm -rf mongo-c-driver-*.tar.gz
 		${GMAKE} ${MAKEARGS} dist-gzip
 		cp mongo-c-driver-*.tar.gz ~/rpmbuild/SOURCES
 		rpmbuild -bb build/rpm/mongo-c-driver.spec
