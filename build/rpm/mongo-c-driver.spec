@@ -62,7 +62,7 @@ developing applications that use %{BsonName}.
 automake
 
 %build
-%configure --disable-static --disable-silent-rules --enable-debug-symbols --docdir=%{_pkgdocdir} --enable-man-pages --enable-ssl --enable-sasl --with-libbson=bundled--enable-optimizations
+%configure --disable-static --disable-silent-rules --enable-debug-symbols --enable-man-pages --enable-ssl --enable-sasl --with-libbson=bundled--enable-optimizations
 make %{?_smp_mflags}
 
 %check
@@ -79,12 +79,12 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %files
-%doc COPYING README NEWS
+%{_docdir}/mongo-c-driver/*
 %{_libdir}/libmongoc-1.0.so.*
 
 
 %files -n %{BsonName}
-%doc src/libbson/COPYING src/libbson/README src/libbson/NEWS
+%{_docdir}/libbson/*
 %{_libdir}/libbson-1.0.so.*
 
 
@@ -107,7 +107,7 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %changelog -n %{DriverName}
-* Thu Jun 10 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.96.3-1
+* Tue Jun 10 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.96.3-1
 - Enable automated builds of 0.96.3
 
 * Thu Jun 05 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.96.2-1
@@ -121,5 +121,5 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %changelog -n %{BsonName}
-* Thu Jun 10 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.8.3-1
+* Tue Jun 10 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.8.3-1
 - Enable automated builds of 0.8.3
