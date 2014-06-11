@@ -85,12 +85,12 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %files
-%{_docdir}/mongo-c-driver/*
+%{_prefix}/share/doc/mongo-c-driver/*
 %{_libdir}/libmongoc-1.0.so.*
 
 
 %files -n %{BsonName}
-%{_docdir}/libbson/*
+%{_prefix}/share/doc/libbson/*
 %{_libdir}/libbson-1.0.so.*
 
 
