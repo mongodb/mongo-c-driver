@@ -162,7 +162,7 @@ EOF
 		# Build the libbson and mongo-c-driver RPM packages.
 		${GMAKE} ${MAKEARGS} dist-gzip
 
-		if [ "${OS}" = "SUSE Linux" ]; then
+		if [ "${DISTRIB}" = "SUSE Linux" ]; then
 			mkdir -p /usr/src/packages/SOURCES
 			cp mongo-c-driver-*.tar.gz /usr/src/packages/SOURCES
 		else
