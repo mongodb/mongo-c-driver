@@ -112,5 +112,7 @@ int main (int argc, char *argv[])
    mongoc_gridfs_destroy (gridfs);
    mongoc_client_destroy (client);
 
+   mongoc_cleanup ();
+
    return 0;
 }
