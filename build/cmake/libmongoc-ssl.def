@@ -9,6 +9,7 @@ mongoc_bulk_operation_remove_one
 mongoc_bulk_operation_replace_one
 mongoc_bulk_operation_update
 mongoc_bulk_operation_update_one
+mongoc_cleanup
 mongoc_client_command
 mongoc_client_command_simple
 mongoc_client_destroy
