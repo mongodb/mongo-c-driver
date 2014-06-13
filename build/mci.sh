@@ -32,6 +32,7 @@ RUN_TESTS=yes
 
 if [ "$1" = "--notest" ]; then
 	RUN_TESTS=no
+	export DEB_BUILD_OPTIONS="$DEB_BUILD_OPTIONS nocheck"
 fi
 
 function make_check() {
