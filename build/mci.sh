@@ -28,6 +28,18 @@ GMAKE=$(which gmake)
 MKDIR=$(which mkdir)
 PERL=$(which perl)
 
+RUN_TESTS=yes
+
+if [ "$1" = "--notest" ]; then
+	RUN_TESTS=no
+fi
+
+function make_check() {
+	if [ "${RUN_TESTS}" = "yes" ]; then
+		${GMAKE} ${MAKEARGS} check
+	fi
+}
+
 # Try to get the OS distributor such as "Fedora"
 if [ "${OS}" = "Linux" -a -n "${LSB_RELEASE}" ]; then
 	DISTRIB="$(${LSB_RELEASE} -i -s)"
@@ -95,7 +107,7 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 		export PKG_CONFIG_PATH=/usr/lib/pkgconfig
 		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install/usr --libdir=${PWD}/_install/usr/lib
 		${GMAKE} ${MAKEARGS} all
-		${GMAKE} ${MAKEARGS} check
+		make_check
 		${GMAKE} ${MAKEARGS} install
 		${GMAKE} ${MAKEARGS} clean
 
@@ -105,7 +117,7 @@ case "${OS}-${ARCH}-${DISTRIB}" in
 		export PKG_CONFIG_PATH=/usr/lib/${ALT_ARCH}/pkgconfig
 		./configure ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${HARDEN} ${OPTIMIZE} --prefix=${PWD}/_install/usr --libdir=${PWD}/_install/usr/lib/${ALT_ARCH}
 		${GMAKE} ${MAKEARGS} all
-		${GMAKE} ${MAKEARGS} check
+		make_check
 		${GMAKE} ${MAKEARGS} install
 
 		VERSION=$(cat build/version)
@@ -156,7 +168,7 @@ EOF
 		# Bootstrap, build, and run unit tests.
 		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${MAN} ${HARDEN} ${OPTIMIZE}
 		${GMAKE} ${MAKEARGS} all
-		${GMAKE} ${MAKEARGS} check
+		make_check
 
 		# Extract the major.minor.micro triplet.
 		VERSION="$(cat build/version)"
@@ -205,7 +217,7 @@ EOF
 	*)
 		./autogen.sh ${STATIC} ${VERBOSE} ${DEBUG} ${SSL} ${SASL} ${HARDEN} ${OPTIMIZE}
 		${GMAKE} ${MAKEARGS} all
-		${GMAKE} ${MAKEARGS} check
+		make_check
 		;;
 esac
 
