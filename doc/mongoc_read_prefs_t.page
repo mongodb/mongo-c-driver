@@ -25,11 +25,11 @@
       </tr>
       <tr>
         <td><p>MONGOC_READ_SECONDARY</p></td>
-        <td><p>In most situations, operations read from the primary but if it is unavailable, operations read from secondary members.</p></td>
+        <td><p>All operations read from the secondary members of the replica set.</p></td>
       </tr>
       <tr>
         <td><p>MONGOC_READ_PRIMARY_PREFERRED</p></td>
-        <td><p>All operations read from the secondary members of the replica set.</p></td>
+        <td><p>In most situations, operations read from the primary but if it is unavailable, operations read from secondary members.</p></td>
       </tr>
       <tr>
         <td><p>MONGOC_READ_SECONDARY_PREFERRED</p></td>
