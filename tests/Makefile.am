@@ -140,6 +140,9 @@ endif
 		./$$TEST_PROG $(TEST_ARGS) -F test.log; \
 	done
 
+valgrind: $(TEST_PROGS)
+	$(LIBTOOL) --mode=execute valgrind --leak-check=full ./test-libmongoc -f -p
+
 if OS_LINUX
 abicheck:
 	@ $(srcdir)/tests/abicheck.sh "$(srcdir)/src/libmongoc.symbols"
