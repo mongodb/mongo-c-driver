@@ -108,9 +108,49 @@ test_clone (void)
 }
 
 
+static void
+test_invalid_query (void)
+{
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   mongoc_uri_t *uri;
+   bson_error_t error;
+   const bson_t *doc = NULL;
+   bson_t *q;
+   bool r;
+   char *uristr;
+
+   uristr = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
+   uri = mongoc_uri_new(uristr);
+   bson_free(uristr);
+
+   client = mongoc_client_new_from_uri (uri);
+   assert (client);
+
+   q = BCON_NEW ("foo", BCON_INT32 (1), "$orderby", "{", "}");
+
+   doc = q;
+
+   cursor = _mongoc_cursor_new (client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
+                                false, q, NULL, NULL);
+   r = mongoc_cursor_next (cursor, &doc);
+   assert (!r);
+   mongoc_cursor_error (cursor, &error);
+   assert (strstr (error.message, "$query"));
+   assert (error.domain == MONGOC_ERROR_CURSOR);
+   assert (error.code == MONGOC_ERROR_CURSOR_INVALID_CURSOR);
+   assert (doc == NULL);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy(uri);
+}
+
+
 void
 test_cursor_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Cursor/get_host", test_get_host);
    TestSuite_Add (suite, "/Cursor/clone", test_clone);
+   TestSuite_Add (suite, "/Cursor/invalid_query", test_invalid_query);
 }

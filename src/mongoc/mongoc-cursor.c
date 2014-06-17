@@ -183,6 +183,8 @@ _mongoc_cursor_new (mongoc_client_t           *client,
 
 #define MARK_FAILED(c) \
    do { \
+      bson_init (&(c)->query); \
+      bson_init (&(c)->fields); \
       (c)->failed = true; \
       (c)->done = true; \
       (c)->end_of_event = true; \
@@ -231,6 +233,33 @@ _mongoc_cursor_new (mongoc_client_t           *client,
                          MONGOC_ERROR_CURSOR,
                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                          "$snapshot must be a boolean.");
+         MARK_FAILED (cursor);
+         GOTO (finish);
+      }
+   }
+
+   /*
+    * Check if we have a mixed top-level query and dollar keys such
+    * as $orderby. This is not allowed (you must use {$query:{}}.
+    */
+   if (bson_iter_init (&iter, query)) {
+      bool found_dollar = false;
+      bool found_non_dollar = false;
+
+      while (bson_iter_next (&iter)) {
+         if (bson_iter_key (&iter)[0] == '$') {
+            found_dollar = true;
+         } else {
+            found_non_dollar = true;
+         }
+      }
+
+      if (found_dollar && found_non_dollar) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                         "Cannot mix top-level query with dollar keys such "
+                         "as $orderby. Use {$query: {},...} instead.");
          MARK_FAILED (cursor);
          GOTO (finish);
       }
@@ -729,6 +758,14 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
    BSON_ASSERT(bson);
 
    TRACE ("cursor_id(%"PRId64")", cursor->rpc.reply.cursor_id);
+
+   if (bson) {
+      *bson = NULL;
+   }
+
+   if (cursor->failed) {
+      return false;
+   }
 
    if (cursor->iface.next) {
       ret = cursor->iface.next(cursor, bson);
