@@ -1158,10 +1158,17 @@ mongoc_client_command (mongoc_client_t           *client,
       read_prefs = client->read_prefs;
    }
 
-   bson_snprintf (ns, sizeof ns, "%s.$cmd", db_name);
+   /*
+    * Allow a caller to provide a fully qualified namespace. Otherwise,
+    * querying something like "$cmd.sys.inprog" is not possible.
+    */
+   if (NULL == strstr (db_name, "$cmd")) {
+      bson_snprintf (ns, sizeof ns, "%s.$cmd", db_name);
+      db_name = ns;
+   }
 
-   return _mongoc_cursor_new (client, ns, flags, skip, limit, batch_size, true,
-                              query, fields, read_prefs);
+   return _mongoc_cursor_new (client, db_name, flags, skip, limit, batch_size,
+                              true, query, fields, read_prefs);
 }
 
 
