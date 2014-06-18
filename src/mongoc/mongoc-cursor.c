@@ -180,6 +180,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    cursor->limit = limit;
    cursor->batch_size = batch_size;
    cursor->is_command = is_command;
+   cursor->has_fields = !!fields;
 
 #define MARK_FAILED(c) \
    do { \
@@ -512,7 +513,12 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
       rpc.query.n_return = _mongoc_n_return(cursor);
    }
    rpc.query.query = bson_get_data(&cursor->query);
-   rpc.query.fields = bson_get_data(&cursor->fields);
+
+   if (cursor->has_fields) {
+      rpc.query.fields = bson_get_data (&cursor->fields);
+   } else {
+      rpc.query.fields = NULL;
+   }
 
    if (!(hint = _mongoc_client_sendv (cursor->client, &rpc, 1,
                                       cursor->hint, NULL,
