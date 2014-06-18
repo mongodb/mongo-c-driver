@@ -139,6 +139,18 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    cursor = bson_malloc0 (sizeof *cursor);
 
    /*
+    * DRIVERS-63:
+    *
+    * If this is a command and we have read_prefs other than PRIMARY, we need to
+    * set SlaveOK bit in the protocol.
+    */
+   if (is_command &&
+       read_prefs &&
+       (mongoc_read_prefs_get_mode (read_prefs) != MONGOC_READ_PRIMARY)) {
+      flags |= MONGOC_QUERY_SLAVE_OK;
+   }
+
+   /*
     * CDRIVER-244:
     *
     * If this is a command, we need to verify we can send it to the location
