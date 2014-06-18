@@ -987,6 +987,38 @@ END_IGNORE_DEPRECATIONS;
 
 
 static void
+test_command_fq (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc = NULL;
+   bson_t *cmd;
+   bool r;
+
+   client = mongoc_client_new (gTestUri);
+   ASSERT (client);
+
+   collection = get_test_collection (client, "$cmd.sys.inprog");
+   ASSERT (collection);
+
+   cmd = BCON_NEW ("query", "{", "}");
+
+   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 1, 0, cmd, NULL, NULL);
+   r = mongoc_cursor_next (cursor, &doc);
+   assert (r);
+
+   r = mongoc_cursor_next (cursor, &doc);
+   assert (!r);
+
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (cmd);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -1014,6 +1046,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/find_and_modify", test_find_and_modify);
    TestSuite_Add (suite, "/Collection/large_return", test_large_return);
    TestSuite_Add (suite, "/Collection/many_return", test_many_return);
+   TestSuite_Add (suite, "/Collection/command_fully_qualified", test_command_fq);
 
    atexit (cleanup_globals);
 }

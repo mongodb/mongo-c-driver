@@ -462,6 +462,8 @@ mongoc_collection_command (mongoc_collection_t       *collection,
                            const bson_t              *fields,
                            const mongoc_read_prefs_t *read_prefs)
 {
+   char ns[MONGOC_NAMESPACE_MAX];
+
    BSON_ASSERT (collection);
    BSON_ASSERT (query);
 
@@ -471,7 +473,14 @@ mongoc_collection_command (mongoc_collection_t       *collection,
 
    bson_clear (&collection->gle);
 
-   return mongoc_client_command (collection->client, collection->db, flags,
+   if (NULL == strstr (collection->collection, "$cmd")) {
+      bson_snprintf (ns, sizeof ns, "%s", collection->db);
+   } else {
+      bson_snprintf (ns, sizeof ns, "%s.%s",
+                     collection->db, collection->collection);
+   }
+
+   return mongoc_client_command (collection->client, ns, flags,
                                  skip, limit, batch_size, query, fields, read_prefs);
 }
 
