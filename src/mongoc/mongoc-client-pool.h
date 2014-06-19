@@ -28,7 +28,9 @@
 
 #include "mongoc-client.h"
 #include "mongoc-config.h"
-#include "mongoc-ssl.h"
+#ifdef MONGOC_ENABLE_SSL
+# include "mongoc-ssl.h"
+#endif
 #include "mongoc-uri.h"
 
 
