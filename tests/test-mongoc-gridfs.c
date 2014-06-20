@@ -324,6 +324,54 @@ test_stream (void)
 
 
 static void
+test_remove_by_filename (void)
+{
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+   mongoc_gridfs_file_opt_t opt = { 0 };
+   mongoc_client_t *client;
+   bson_error_t error;
+   bool ret;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   gridfs = get_test_gridfs (client, "fs_remove_by_filename", &error);
+   assert (gridfs);
+
+   mongoc_gridfs_drop (gridfs, &error);
+
+   opt.filename = "foo_file_1.txt";
+   file = mongoc_gridfs_create_file (gridfs, &opt);
+   assert (file);
+   assert (mongoc_gridfs_file_save (file));
+   mongoc_gridfs_file_destroy (file);
+
+   opt.filename = "foo_file_2.txt";
+   file = mongoc_gridfs_create_file (gridfs, &opt);
+   assert (file);
+   assert (mongoc_gridfs_file_save (file));
+
+   ret = mongoc_gridfs_remove_by_filename (gridfs, "foo_file_1.txt", &error);
+   if (!ret) fprintf (stderr, "ERROR: %s\n", error.message);
+   assert (ret);
+   mongoc_gridfs_file_destroy (file);
+
+   file = mongoc_gridfs_find_one_by_filename (gridfs, "foo_file_1.txt", &error);
+   assert (!file);
+
+   file = mongoc_gridfs_find_one_by_filename (gridfs, "foo_file_2.txt", &error);
+   assert (file);
+   mongoc_gridfs_file_destroy (file);
+
+   drop_collections (gridfs, &error);
+   mongoc_gridfs_destroy (gridfs);
+
+   mongoc_client_destroy (client);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -341,6 +389,7 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/read", test_read);
    TestSuite_Add (suite, "/GridFS/stream", test_stream);
    TestSuite_Add (suite, "/GridFS/write", test_write);
+   TestSuite_Add (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
 
    atexit (cleanup_globals);
 }

@@ -21,6 +21,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
+#include "mongoc-error.h"
 #include "mongoc-index.h"
 #include "mongoc-gridfs.h"
 #include "mongoc-gridfs-private.h"
@@ -300,4 +301,109 @@ mongoc_gridfs_get_chunks (mongoc_gridfs_t *gridfs)
    bson_return_val_if_fail (gridfs, NULL);
 
    return gridfs->chunks;
+}
+
+
+bool
+mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
+                                  const char      *filename,
+                                  bson_error_t    *error)
+{
+   mongoc_bulk_operation_t *bulk_files = NULL;
+   mongoc_bulk_operation_t *bulk_chunks = NULL;
+   mongoc_cursor_t *cursor = NULL;
+   bson_error_t files_error;
+   bson_error_t chunks_error;
+   const bson_t *doc;
+   const char *key;
+   char keybuf[16];
+   int count = 0;
+   bool chunks_ret;
+   bool files_ret;
+   bool ret = false;
+   bson_iter_t iter;
+   bson_t *files_q;
+   bson_t *chunks_q;
+   bson_t q = BSON_INITIALIZER;
+   bson_t fields = BSON_INITIALIZER;
+   bson_t ar = BSON_INITIALIZER;
+
+   bson_return_val_if_fail (gridfs, false);
+
+   if (!filename) {
+      bson_set_error (error,
+                      MONGOC_ERROR_GRIDFS,
+                      MONGOC_ERROR_GRIDFS_INVALID_FILENAME,
+                      "A non-NULL filename must be specified.");
+      return false;
+   }
+
+   /*
+    * Find all files matching this filename. Hopefully just one, but not
+    * strictly required!
+    */
+
+   BSON_APPEND_UTF8 (&q, "filename", filename);
+   BSON_APPEND_INT32 (&fields, "_id", 1);
+
+   cursor = mongoc_collection_find (gridfs->files, MONGOC_QUERY_NONE, 0, 0, 0,
+                                    &q, &fields, NULL);
+   BSON_ASSERT (cursor);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      if (bson_iter_init_find (&iter, doc, "_id")) {
+         const bson_value_t *value = bson_iter_value (&iter);
+
+         bson_uint32_to_string (count, &key, keybuf, sizeof keybuf);
+         BSON_APPEND_VALUE (&ar, key, value);
+      }
+   }
+
+   if (mongoc_cursor_error (cursor, error)) {
+      goto failure;
+   }
+
+   bulk_files = mongoc_collection_create_bulk_operation (gridfs->files, false, NULL);
+   bulk_chunks = mongoc_collection_create_bulk_operation (gridfs->chunks, false, NULL);
+
+   files_q = BCON_NEW ("_id", "{", "$in", BCON_ARRAY (&ar), "}");
+   chunks_q = BCON_NEW ("files_id", "{", "$in", BCON_ARRAY (&ar), "}");
+
+   mongoc_bulk_operation_remove (bulk_files, files_q);
+   mongoc_bulk_operation_remove (bulk_chunks, chunks_q);
+
+   files_ret = mongoc_bulk_operation_execute (bulk_files, NULL, &files_error);
+   chunks_ret = mongoc_bulk_operation_execute (bulk_chunks, NULL, &chunks_error);
+
+   if (error) {
+      if (!files_ret) {
+         memcpy (error, &files_error, sizeof *error);
+      } else if (!chunks_ret) {
+         memcpy (error, &chunks_error, sizeof *error);
+      }
+   }
+
+   ret = (files_ret && chunks_ret);
+
+failure:
+   if (cursor) {
+      mongoc_cursor_destroy (cursor);
+   }
+   if (bulk_files) {
+      mongoc_bulk_operation_destroy (bulk_files);
+   }
+   if (bulk_chunks) {
+      mongoc_bulk_operation_destroy (bulk_chunks);
+   }
+   bson_destroy (&q);
+   bson_destroy (&fields);
+   bson_destroy (&ar);
+   if (files_q) {
+      bson_destroy (files_q);
+   }
+   if (chunks_q) {
+      bson_destroy (chunks_q);
+   }
+
+   return ret;
 }
