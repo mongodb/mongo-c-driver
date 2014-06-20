@@ -1,3 +1,26 @@
+mongo-c-driver 0.96.4
+=====================
+
+Another incremental feature update and bugfix release!
+
+In this release, you will find the following changes:
+
+ * build/mci.sh script for automatically building Debian packages, RPMs, and
+   Solaris packaging based on the host operating system.
+ * Various libbson improvements, now depending on 0.8.4.
+ * Alignment fixes for Solaris Studio C compiler via libbson.
+ * Addition of mongoc_gridfs_remove_by_filename() for removing a file from
+   gridfs by filename.
+ * client command functions can now take a fully qualified namespace.
+ * collections can now support names that indicate a command namespace.
+ * Commands will no longer fail if they do not contain an "ok" field.
+ * OP_QUERY will now set the slaveOk bit in the wire protocol if
+ * readPreferences are set to non-PRIMARY.
+ * Various documentation and build fixes.
+
+Thanks again to all the contributors, and happy hacking!
+
+
 mongo-c-driver 0.96.2
 =====================
 
