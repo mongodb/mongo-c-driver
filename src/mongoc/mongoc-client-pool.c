@@ -31,8 +31,10 @@ struct _mongoc_client_pool_t
    uint32_t          min_pool_size;
    uint32_t          max_pool_size;
    uint32_t          size;
+#ifdef MONGOC_ENABLE_SSL
    bool              ssl_opts_set;
    mongoc_ssl_opt_t  ssl_opts;
+#endif
 };
 
 
