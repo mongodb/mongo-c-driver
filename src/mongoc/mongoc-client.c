@@ -81,7 +81,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
                            const mongoc_host_list_t *host,
                            bson_error_t             *error)
 {
-   mongoc_socket_t *sock;
+   mongoc_socket_t *sock = NULL;
    struct addrinfo hints;
    struct addrinfo *result, *rp;
    int32_t connecttimeoutms = DEFAULT_CONNECTTIMEOUTMS;
