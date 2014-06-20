@@ -18,6 +18,7 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "gridfs"
 
+#include "mongoc-bulk-operation.h"
 #include "mongoc-client-private.h"
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
