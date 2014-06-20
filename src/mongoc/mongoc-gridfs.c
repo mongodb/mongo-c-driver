@@ -323,8 +323,8 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
    bool files_ret;
    bool ret = false;
    bson_iter_t iter;
-   bson_t *files_q;
-   bson_t *chunks_q;
+   bson_t *files_q = NULL;
+   bson_t *chunks_q = NULL;
    bson_t q = BSON_INITIALIZER;
    bson_t fields = BSON_INITIALIZER;
    bson_t ar = BSON_INITIALIZER;
