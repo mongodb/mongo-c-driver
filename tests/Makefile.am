@@ -3,7 +3,6 @@ noinst_PROGRAMS += test-secondary
 noinst_PROGRAMS += test-replica-set
 noinst_PROGRAMS += test-sharded-cluster
 noinst_PROGRAMS += test-libmongoc
-noinst_PROGRAMS += echo-server
 if ENABLE_SSL
 noinst_PROGRAMS += test-replica-set-ssl
 endif
@@ -45,11 +44,6 @@ test_load_SOURCES = \
 	tests/mongoc-tests.c
 test_load_CFLAGS = $(TEST_CFLAGS)
 test_load_LDADD = $(TEST_LIBS)
-
-
-echo_server_SOURCES = tests/echo-server.c
-echo_server_CFLAGS = $(TEST_CFLAGS)
-echo_server_LDADD = $(TEST_LIBS)
 
 
 test_secondary_SOURCES = \
