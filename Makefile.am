@@ -15,9 +15,12 @@ endif
 AM_CTAGSFLAGS = --fields=+l --languages=c
 
 include doc/Makefile.am
-include examples/Makefile.am
 include src/Makefile.am
 include tests/Makefile.am
+
+if ENABLE_EXAMPLES
+include examples/Makefile.am
+endif
 
 # for EXTRA_DIST
 include build/cmake/Makefile.am

@@ -90,3 +90,9 @@ AC_ARG_ENABLE([yelp],
                               [Install yelp manuals.])],
               [],
               [enable_yelp=no])
+
+AC_ARG_ENABLE([examples],
+              [AS_HELP_STRING([--enable-examples=@<:@yes/no@:>@],
+                              [Build MongoDB C Driver examples.])],
+              [],
+              [enable_examples=yes])

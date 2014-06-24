@@ -32,6 +32,9 @@ AM_CONDITIONAL([WITH_LIBBSON],[test "$with_libbson" = "bundled"])
 # Should we avoid extra BSON_LIBS when linking (SunStudio)
 AM_CONDITIONAL([EXPLICIT_LIBS],[test "$with_gnu_ld" = "yes"])
 
+# Should we build the examples.
+AM_CONDITIONAL([ENABLE_EXAMPLES],[test "$enable_examples" = "yes"])
+
 # Should we build man pages
 AM_CONDITIONAL([ENABLE_MAN_PAGES],[test "$enable_man_pages" = "yes"])
 
