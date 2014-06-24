@@ -16,7 +16,10 @@ AM_CTAGSFLAGS = --fields=+l --languages=c
 
 include doc/Makefile.am
 include src/Makefile.am
+
+if ENABLE_TESTS
 include tests/Makefile.am
+endif
 
 if ENABLE_EXAMPLES
 include examples/Makefile.am

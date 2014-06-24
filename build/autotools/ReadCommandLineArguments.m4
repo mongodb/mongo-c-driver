@@ -96,3 +96,9 @@ AC_ARG_ENABLE([examples],
                               [Build MongoDB C Driver examples.])],
               [],
               [enable_examples=yes])
+
+AC_ARG_ENABLE([tests],
+              [AS_HELP_STRING([--enable-tests=@<:@yes/no@:>@],
+                              [Build MongoDB C Driver tests.])],
+              [],
+              [enable_tests=yes])
