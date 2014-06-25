@@ -1322,3 +1322,22 @@ mongoc_client_get_server_status (mongoc_client_t     *client,     /* IN */
 
    return ret;
 }
+
+
+void
+mongoc_client_set_stream_initiator (mongoc_client_t           *client,
+                                    mongoc_stream_initiator_t  initiator,
+                                    void                      *user_data)
+{
+   bson_return_if_fail (client);
+
+   if (!initiator) {
+      initiator = mongoc_client_default_stream_initiator;
+      user_data = client;
+   } else {
+      MONGOC_DEBUG ("Using custom stream initiator.");
+   }
+
+   client->initiator = initiator;
+   client->initiator_data = user_data;
+}
