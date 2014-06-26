@@ -36,7 +36,7 @@
 #define SUPPORTS_WRITE_COMMANDS(n) \
    (((n)->min_wire_version <= 2) && ((n)->max_wire_version >= 2))
 #define WRITE_CONCERN_DOC(wc) \
-   (wc) ? \
+   (wc && _mongoc_write_concern_has_gle ((wc))) ? \
    (_mongoc_write_concern_freeze((mongoc_write_concern_t*)(wc))) : \
    (&gEmptyWriteConcern)
 
