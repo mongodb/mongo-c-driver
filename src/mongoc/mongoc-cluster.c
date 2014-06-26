@@ -2149,6 +2149,7 @@ _mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
    }
 
    _mongoc_cluster_update_state (cluster);
+
    RETURN (true);
 }
 
@@ -2183,14 +2184,19 @@ _mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
 
    bson_return_val_if_fail (cluster, false);
 
-   //close old connections
+   /*
+    * Close any lingering connections.
+    *
+    * TODO: We could be better about reusing connections.
+    */
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
        if (cluster->nodes [i].stream) {
-           mongoc_stream_close(cluster->nodes [i].stream);
-           mongoc_stream_destroy(cluster->nodes [i].stream);
+           mongoc_stream_close (cluster->nodes [i].stream);
+           mongoc_stream_destroy (cluster->nodes [i].stream);
            cluster->nodes [i].stream = NULL;
        }
    }
+
    _mongoc_cluster_update_state (cluster);
 
    switch (cluster->mode) {
