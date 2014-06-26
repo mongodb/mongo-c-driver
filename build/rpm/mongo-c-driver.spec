@@ -76,7 +76,7 @@ make local-check
 make abicheck
 
 %install
-%make_install
+%makeinstall
 find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 %post -p /sbin/ldconfig
