@@ -2148,6 +2148,7 @@ _mongoc_cluster_reconnect_sharded_cluster (mongoc_cluster_t *cluster,
       RETURN (false);
    }
 
+   _mongoc_cluster_update_state (cluster);
    RETURN (true);
 }
 
@@ -2176,10 +2177,21 @@ _mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
                            bson_error_t     *error)
 {
    bool ret;
+   int i;
 
    ENTRY;
 
    bson_return_val_if_fail (cluster, false);
+
+   //close old connections
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+       if (cluster->nodes [i].stream) {
+           mongoc_stream_close(cluster->nodes [i].stream);
+           mongoc_stream_destroy(cluster->nodes [i].stream);
+           cluster->nodes [i].stream = NULL;
+       }
+   }
+   _mongoc_cluster_update_state (cluster);
 
    switch (cluster->mode) {
    case MONGOC_CLUSTER_DIRECT:
