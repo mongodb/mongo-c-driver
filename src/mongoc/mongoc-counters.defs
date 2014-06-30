@@ -59,3 +59,7 @@ COUNTER(protocol_ingress_error, "Protocol",     "Ingress Errors",      "The numb
 
 COUNTER(auth_failure,           "Auth",         "Failures",            "The number of failed authentication requests.")
 COUNTER(auth_success,           "Auth",         "Success",             "The number of successful authentication requests.")
+
+
+COUNTER(dns_failure,            "DNS",          "Failure",             "The number of failed DNS requests.")
+COUNTER(dns_success,            "DNS",          "Success",             "The number of successful DNS requests.")

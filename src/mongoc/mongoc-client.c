@@ -118,6 +118,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    s = getaddrinfo (host->host, portstr, &hints, &result);
 
    if (s != 0) {
+      mongoc_counter_dns_failure_inc ();
       bson_set_error(error,
                      MONGOC_ERROR_STREAM,
                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,
@@ -125,6 +126,8 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
                      host->host);
       RETURN (NULL);
    }
+
+   mongoc_counter_dns_success_inc ();
 
    for (rp = result; rp; rp = rp->ai_next) {
       /*
