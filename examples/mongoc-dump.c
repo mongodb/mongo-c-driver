@@ -49,7 +49,6 @@ mongoc_dump_collection (mongoc_client_t *client,
 {
    mongoc_collection_t *col;
    mongoc_cursor_t *cursor;
-   mongoc_iovec_t iov;
    const bson_t *doc;
    bson_error_t error;
    bson_t query = BSON_INITIALIZER;
@@ -240,14 +239,11 @@ main (int argc,
       }
    }
 
-#if 0
    uri = bson_strdup_printf ("mongodb://%s:%hu/%s?ssl=%s",
                              host,
                              port,
                              database ? database : "",
                              ssl ? "true" : "false");
-#endif
-   uri = NULL;
 
    if (!(client = mongoc_client_new (uri))) {
       fprintf (stderr, "Invalid connection URI: %s\n", uri);
