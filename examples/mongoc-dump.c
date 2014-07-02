@@ -49,11 +49,11 @@ mongoc_dump_collection (mongoc_client_t *client,
 {
    mongoc_collection_t *col;
    mongoc_cursor_t *cursor;
-   mongoc_stream_t *stream;
    mongoc_iovec_t iov;
    const bson_t *doc;
    bson_error_t error;
    bson_t query = BSON_INITIALIZER;
+   FILE *stream;
    char *path;
    int ret = EXIT_SUCCESS;
 
@@ -68,7 +68,7 @@ mongoc_dump_collection (mongoc_client_t *client,
    }
 #endif
 
-   stream = mongoc_stream_file_new_for_path (path, O_RDWR|O_CREAT, 0664);
+   stream = fopen (path, "w");
    if (!stream) {
       fprintf (stderr, "Failed to open \"%s\", aborting.\n", path);
       exit (EXIT_FAILURE);
@@ -78,28 +78,23 @@ mongoc_dump_collection (mongoc_client_t *client,
    cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0,
                                     &query, NULL, NULL);
 
-   while (mongoc_cursor_more (cursor) &&
-          !mongoc_cursor_error (cursor, &error)) {
-      if (mongoc_cursor_next (cursor, &doc)) {
-         iov.iov_len = doc->len;
-         iov.iov_base = (void *)bson_get_data (doc);
-         if (doc->len != mongoc_stream_writev (stream, &iov, 1, 0)) {
-            fprintf (stderr, "Failed to write %u bytes to %s\n",
-                     doc->len, path);
-            ret = EXIT_FAILURE;
-            goto cleanup;
-         }
+   while (mongoc_cursor_next (cursor, &doc)) {
+      if (BSON_UNLIKELY (doc->len != fwrite (bson_get_data (doc), 1, doc->len, stream))) {
+         fprintf (stderr, "Failed to write %u bytes to %s\n",
+                  doc->len, path);
+         ret = EXIT_FAILURE;
+         goto cleanup;
       }
    }
 
    if (mongoc_cursor_error (cursor, &error)) {
-      fprintf (stderr, "%s\n", error.message);
+      fprintf (stderr, "ERROR: %s\n", error.message);
       ret = EXIT_FAILURE;
    }
 
 cleanup:
    bson_free (path);
-   mongoc_stream_destroy (stream);
+   fclose (stream);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (col);
 
@@ -245,11 +240,14 @@ main (int argc,
       }
    }
 
+#if 0
    uri = bson_strdup_printf ("mongodb://%s:%hu/%s?ssl=%s",
                              host,
                              port,
                              database ? database : "",
                              ssl ? "true" : "false");
+#endif
+   uri = NULL;
 
    if (!(client = mongoc_client_new (uri))) {
       fprintf (stderr, "Invalid connection URI: %s\n", uri);
