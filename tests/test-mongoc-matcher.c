@@ -74,6 +74,44 @@ test_mongoc_matcher_basic (void)
 }
 
 
+typedef struct compare_check
+{
+   const char *op;
+   int32_t doc;
+   int32_t query;
+   bool expected;
+} compare_check;
+
+
+static void
+test_mongoc_matcher_compare (void)
+{
+   mongoc_matcher_t *matcher;
+   compare_check checks[] = {
+      { "$gt", 2, 2, false },
+      { "$gte", 2, 2, true},
+      { "$lt", 2, 2, false},
+      { "$lte", 2, 2, true},
+      { "$ne", 2, 2, false},
+      { NULL }
+   };
+   bson_t *doc;
+   bson_t *q;
+   int i;
+
+   for (i = 0; checks [i].op; i++) {
+      doc = BCON_NEW ("a", BCON_INT32 (checks[i].doc));
+      q = BCON_NEW ("a", "{", checks[i].op, BCON_INT32 (checks[i].query), "}");
+      matcher = mongoc_matcher_new (q, NULL);
+      assert (matcher);
+      assert (mongoc_matcher_match (matcher, doc) == checks[i].expected);
+      bson_destroy (q);
+      bson_destroy (doc);
+      mongoc_matcher_destroy (matcher);
+   }
+}
+
+
 static void
 test_mongoc_matcher_bad_spec (void)
 {
@@ -265,6 +303,7 @@ void
 test_matcher_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Matcher/basic", test_mongoc_matcher_basic);
+   TestSuite_Add (suite, "/Matcher/compare", test_mongoc_matcher_compare);
    TestSuite_Add (suite, "/Matcher/bad_spec", test_mongoc_matcher_bad_spec);
    TestSuite_Add (suite, "/Matcher/eq/utf8", test_mongoc_matcher_eq_utf8);
    TestSuite_Add (suite, "/Matcher/eq/int32", test_mongoc_matcher_eq_int32);
