@@ -771,17 +771,61 @@ mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
 int64_t
 mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file)
 {
+   bson_return_val_if_fail (file, -1);
+
    return file->length;
 }
 
 int32_t
 mongoc_gridfs_file_get_chunk_size (mongoc_gridfs_file_t *file)
 {
+   bson_return_val_if_fail (file, -1);
+
    return file->chunk_size;
 }
 
 int64_t
 mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file)
 {
+   bson_return_val_if_fail (file, -1);
+
    return file->upload_date;
+}
+
+bool
+mongoc_gridfs_file_remove (mongoc_gridfs_file_t *file,
+                           bson_error_t         *error)
+{
+   bson_t sel = BSON_INITIALIZER;
+   bool ret = false;
+
+   bson_return_val_if_fail (file, false);
+
+   BSON_APPEND_VALUE (&sel, "_id", &file->files_id);
+
+   if (!mongoc_collection_remove (file->gridfs->files,
+                                  MONGOC_REMOVE_SINGLE_REMOVE,
+                                  &sel,
+                                  NULL,
+                                  error)) {
+      goto cleanup;
+   }
+
+   bson_reinit (&sel);
+   BSON_APPEND_VALUE (&sel, "files_id", &file->files_id);
+
+   if (!mongoc_collection_remove (file->gridfs->chunks,
+                                  MONGOC_REMOVE_NONE,
+                                  &sel,
+                                  NULL,
+                                  error)) {
+      goto cleanup;
+   }
+
+   ret = true;
+
+cleanup:
+   bson_destroy (&sel);
+
+   return ret;
 }

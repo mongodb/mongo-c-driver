@@ -89,6 +89,8 @@ bool     mongoc_gridfs_file_save            (mongoc_gridfs_file_t *file);
 void     mongoc_gridfs_file_destroy         (mongoc_gridfs_file_t *file);
 bool     mongoc_gridfs_file_error           (mongoc_gridfs_file_t *file,
                                              bson_error_t         *error);
+bool     mongoc_gridfs_file_remove          (mongoc_gridfs_file_t *file,
+                                             bson_error_t         *error);
 
 
 BSON_END_DECLS

@@ -67,6 +67,49 @@ test_create (void)
 
 
 static void
+test_remove (void)
+{
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+   mongoc_gridfs_file_opt_t opts = { 0 };
+   mongoc_client_t *client;
+   bson_error_t error;
+   bool r;
+   char name[32];
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error);
+   assert (gridfs);
+
+   mongoc_gridfs_drop (gridfs, &error);
+
+
+   bson_snprintf (name, sizeof name, "test-remove.%u", rand ());
+   opts.filename = name;
+
+   file = mongoc_gridfs_create_file (gridfs, &opts);
+   assert (file);
+   assert (mongoc_gridfs_file_save (file));
+
+   r = mongoc_gridfs_file_remove (file, &error);
+   if (!r) fprintf (stderr, "%s\n", error.message);
+   assert (r);
+
+   mongoc_gridfs_file_destroy (file);
+
+   file = mongoc_gridfs_find_one_by_filename (gridfs, name, &error);
+   assert (!file);
+
+   drop_collections (gridfs, &error);
+   mongoc_gridfs_destroy (gridfs);
+
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_list (void)
 {
    mongoc_gridfs_t *gridfs;
@@ -388,6 +431,7 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/list", test_list);
    TestSuite_Add (suite, "/GridFS/read", test_read);
    TestSuite_Add (suite, "/GridFS/stream", test_stream);
+   TestSuite_Add (suite, "/GridFS/remove", test_remove);
    TestSuite_Add (suite, "/GridFS/write", test_write);
    TestSuite_Add (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
 
