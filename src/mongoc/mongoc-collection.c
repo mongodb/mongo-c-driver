@@ -797,7 +797,6 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
 
    bson_return_val_if_fail (collection, false);
    bson_return_val_if_fail (keys, false);
-   bson_return_val_if_fail (opt, false);
 
    def_opt = mongoc_index_opt_get_default ();
    opt = opt ? opt : def_opt;
