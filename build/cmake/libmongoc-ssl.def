@@ -7,6 +7,7 @@ mongoc_bulk_operation_insert
 mongoc_bulk_operation_remove
 mongoc_bulk_operation_remove_one
 mongoc_bulk_operation_replace_one
+mongoc_bulk_operation_set_write_concern
 mongoc_bulk_operation_update
 mongoc_bulk_operation_update_one
 mongoc_cleanup

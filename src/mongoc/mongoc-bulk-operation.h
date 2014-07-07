@@ -58,6 +58,8 @@ void mongoc_bulk_operation_update_one  (mongoc_bulk_operation_t       *bulk,
                                         const bson_t                  *selector,
                                         const bson_t                  *document,
                                         bool                           upsert);
+void mongoc_bulk_operation_set_write_concern (mongoc_bulk_operation_t      *bulk,
+                                              const mongoc_write_concern_t *write_concern);
 
 
 BSON_END_DECLS

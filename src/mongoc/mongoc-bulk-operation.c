@@ -319,3 +319,20 @@ cleanup:
 
    RETURN (ret);
 }
+
+void
+mongoc_bulk_operation_set_write_concern (mongoc_bulk_operation_t      *bulk,
+                                         const mongoc_write_concern_t *write_concern)
+{
+   bson_return_if_fail (bulk);
+
+   if (bulk->write_concern) {
+      mongoc_write_concern_destroy (bulk->write_concern);
+   }
+
+   if (write_concern) {
+      bulk->write_concern = mongoc_write_concern_copy (write_concern);
+   } else {
+      bulk->write_concern = mongoc_write_concern_new ();
+   }
+}
