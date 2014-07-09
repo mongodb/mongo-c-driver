@@ -581,6 +581,12 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
       wtimeoutms = bson_iter_int32 (&iter);
    }
 
+   if (bson_iter_init_find_case (&iter, &uri->options, "journal") &&
+       BSON_ITER_HOLDS_BOOL (&iter) &&
+       bson_iter_bool (&iter)) {
+      mongoc_write_concern_set_journal (write_concern, true);
+   }
+
    if (bson_iter_init_find_case (&iter, &uri->options, "w")) {
       if (BSON_ITER_HOLDS_INT32 (&iter)) {
          value = bson_iter_int32 (&iter);
