@@ -76,6 +76,7 @@ typedef struct
    bson_t       writeConcernErrors;
    bool         failed;
    bson_error_t error;
+   uint32_t     upsert_append_count;
 } mongoc_write_result_t;
 
 

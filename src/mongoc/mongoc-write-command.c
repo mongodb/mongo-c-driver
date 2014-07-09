@@ -851,14 +851,22 @@ _mongoc_write_result_append_upsert (mongoc_write_result_t *result,
                                     const bson_value_t    *value)
 {
    bson_t child;
+   const char *keyptr = NULL;
+   char key[12];
+   int len;
 
    BSON_ASSERT (result);
    BSON_ASSERT (value);
 
-   bson_append_document_begin (&result->upserted, "", -1, &child);
+   len = bson_uint32_to_string (result->upsert_append_count, &keyptr, key,
+                                sizeof key);
+
+   bson_append_document_begin (&result->upserted, keyptr, len, &child);
    BSON_APPEND_INT32 (&child, "index", idx);
    BSON_APPEND_VALUE (&child, "_id", value);
    bson_append_document_end (&result->upserted, &child);
+
+   result->upsert_append_count++;
 }
 
 
@@ -992,7 +1000,11 @@ _mongoc_write_result_merge_arrays (mongoc_write_result_t *result, /* IN */
    bson_iter_t citer;
    int32_t idx;
    int32_t count = 0;
+   int32_t aridx;
    bson_t child;
+   const char *keyptr = NULL;
+   char key[12];
+   int len;
 
    ENTRY;
 
@@ -1001,11 +1013,14 @@ _mongoc_write_result_merge_arrays (mongoc_write_result_t *result, /* IN */
    BSON_ASSERT (iter);
    BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (iter));
 
+   aridx = bson_count_keys (dest);
+
    if (bson_iter_recurse (iter, &ar)) {
       while (bson_iter_next (&ar)) {
          if (BSON_ITER_HOLDS_DOCUMENT (&ar) &&
              bson_iter_recurse (&ar, &citer)) {
-            bson_append_document_begin (dest, "", 0, &child);
+            len = bson_uint32_to_string (aridx++, &keyptr, key, sizeof key);
+            bson_append_document_begin (dest, keyptr, len, &child);
             while (bson_iter_next (&citer)) {
                if (BSON_ITER_IS_KEY (&citer, "index")) {
                   idx = bson_iter_int32 (&citer) + result->offset;
