@@ -422,7 +422,66 @@ test_bulk_edge_case_372 (void)
 
    bson_destroy (&reply);
 
+   mongoc_collection_drop (collection, NULL);
+
    mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_bulk_new (void)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t empty = BSON_INITIALIZER;
+   bool r;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   collection = get_test_collection (client, "bulk_new");
+   assert (collection);
+
+   bulk = mongoc_bulk_operation_new (true);
+   mongoc_bulk_operation_destroy (bulk);
+
+   bulk = mongoc_bulk_operation_new (true);
+
+   r = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   assert (!r);
+   assert (error.domain = MONGOC_ERROR_CLIENT);
+   assert (error.code = MONGOC_ERROR_COMMAND_INVALID_ARG);
+
+   mongoc_bulk_operation_set_database (bulk, "test");
+   r = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   assert (!r);
+   assert (error.domain = MONGOC_ERROR_CLIENT);
+   assert (error.code = MONGOC_ERROR_COMMAND_INVALID_ARG);
+
+   mongoc_bulk_operation_set_collection (bulk, "test");
+   r = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   assert (!r);
+   assert (error.domain = MONGOC_ERROR_CLIENT);
+   assert (error.code = MONGOC_ERROR_COMMAND_INVALID_ARG);
+
+   mongoc_bulk_operation_set_client (bulk, client);
+   r = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   assert (!r);
+   assert (error.domain = MONGOC_ERROR_CLIENT);
+   assert (error.code = MONGOC_ERROR_COMMAND_INVALID_ARG);
+
+   mongoc_bulk_operation_insert (bulk, &empty);
+   r = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   assert (r);
+
+   mongoc_bulk_operation_destroy (bulk);
+
+   mongoc_collection_drop (collection, NULL);
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -437,6 +496,7 @@ test_bulk_install (TestSuite *suite)
    TestSuite_Add (suite, "/BulkOperation/update_upserted", test_update_upserted);
    TestSuite_Add (suite, "/BulkOperation/index_offset", test_index_offset);
    TestSuite_Add (suite, "/BulkOperation/CDRIVER-372", test_bulk_edge_case_372);
+   TestSuite_Add (suite, "/BulkOperation/new", test_bulk_new);
 
    atexit (cleanup_globals);
 }

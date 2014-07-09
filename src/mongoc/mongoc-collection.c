@@ -18,6 +18,7 @@
 #include <bcon.h>
 #include <stdio.h>
 
+#include "mongoc-bulk-operation.h"
 #include "mongoc-bulk-operation-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-collection.h"
