@@ -628,60 +628,6 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_stream_tls_cork --
- *
- *       This function is not supported on mongoc_stream_tls_t.
- *
- * Returns:
- *       0 always.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static int
-_mongoc_stream_tls_cork (mongoc_stream_t *stream)
-{
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-
-   BSON_ASSERT (stream);
-
-   return mongoc_stream_cork (tls->base_stream);
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_stream_tls_uncork --
- *
- *       The function is not supported on mongoc_stream_tls_t.
- *
- * Returns:
- *       0 always.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static int
-_mongoc_stream_tls_uncork (mongoc_stream_t *stream)
-{
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-
-   BSON_ASSERT (stream);
-
-   return mongoc_stream_uncork (tls->base_stream);
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
  * _mongoc_stream_tls_setsockopt --
  *
  *       Perform a setsockopt on the underlying stream.
@@ -831,8 +777,6 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
    tls->parent.flush = _mongoc_stream_tls_flush;
    tls->parent.writev = _mongoc_stream_tls_writev;
    tls->parent.readv = _mongoc_stream_tls_readv;
-   tls->parent.cork = _mongoc_stream_tls_cork;
-   tls->parent.uncork = _mongoc_stream_tls_uncork;
    tls->parent.setsockopt = _mongoc_stream_tls_setsockopt;
    tls->parent.get_base_stream = _mongoc_stream_tls_get_base_stream;
    tls->weak_cert_validation = opt->weak_cert_validation;

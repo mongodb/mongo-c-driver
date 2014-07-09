@@ -211,41 +211,6 @@ mongoc_stream_read (mongoc_stream_t *stream,
 }
 
 
-/**
- * mongoc_stream_cork:
- * @stream: (in): A mongoc_stream_t.
- *
- * Corks a stream, preventing packets from being sent immediately. This is
- * useful if you need to send multiple messages together as a single packet.
- *
- * Call mongoc_stream_uncork() after writing your data.
- *
- * Returns: 0 on success, -1 on failure.
- */
-int
-mongoc_stream_cork (mongoc_stream_t *stream)
-{
-   bson_return_val_if_fail(stream, -1);
-   return stream->cork ? stream->cork(stream) : 0;
-}
-
-
-/**
- * mongoc_stream_uncork:
- * @stream: (in): A mongoc_stream_t.
- *
- * Uncorks a stream, previously corked with mongoc_stream_cork().
- *
- * Returns: 0 on success, -1 on failure.
- */
-int
-mongoc_stream_uncork (mongoc_stream_t *stream)
-{
-   bson_return_val_if_fail(stream, -1);
-   return stream->uncork ? stream->uncork(stream) : 0;
-}
-
-
 int
 mongoc_stream_setsockopt (mongoc_stream_t *stream,
                           int              level,

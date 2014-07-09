@@ -237,56 +237,6 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_stream_buffered_cork --
- *
- *       Cork the underlying stream.
- *
- * Returns:
- *       0 on success; -1 on failure and errno is set.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static int
-mongoc_stream_buffered_cork (mongoc_stream_t *stream) /* IN */
-{
-   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   bson_return_val_if_fail(stream, -1);
-   return mongoc_stream_cork(buffered->base_stream);
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_stream_buffered_uncork --
- *
- *       Uncork the underlying stream.
- *
- * Returns:
- *       0 on success; -1 on failure and errno is set.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-static int
-mongoc_stream_buffered_uncork (mongoc_stream_t *stream) /* IN */
-{
-   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   bson_return_val_if_fail(stream, -1);
-   return mongoc_stream_uncork(buffered->base_stream);
-}
-
-
 static mongoc_stream_t *
 _mongoc_stream_buffered_get_base_stream (mongoc_stream_t *stream) /* IN */
 {
@@ -332,8 +282,6 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream, /* IN */
    stream->stream.flush = mongoc_stream_buffered_flush;
    stream->stream.writev = mongoc_stream_buffered_writev;
    stream->stream.readv = mongoc_stream_buffered_readv;
-   stream->stream.cork = mongoc_stream_buffered_cork;
-   stream->stream.uncork = mongoc_stream_buffered_uncork;
    stream->stream.get_base_stream = _mongoc_stream_buffered_get_base_stream;
 
    stream->base_stream = base_stream;

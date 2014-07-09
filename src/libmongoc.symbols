@@ -157,7 +157,6 @@ mongoc_socket_setsockopt
 mongoc_ssl_opt_get_default
 mongoc_stream_buffered_new
 mongoc_stream_close
-mongoc_stream_cork
 mongoc_stream_destroy
 mongoc_stream_file_get_fd
 mongoc_stream_file_new
@@ -173,7 +172,6 @@ mongoc_stream_socket_new
 mongoc_stream_tls_check_cert
 mongoc_stream_tls_do_handshake
 mongoc_stream_tls_new
-mongoc_stream_uncork
 mongoc_stream_writev
 mongoc_uri_copy
 mongoc_uri_destroy
