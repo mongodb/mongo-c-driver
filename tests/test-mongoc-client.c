@@ -142,6 +142,7 @@ test_mongoc_client_authenticate_failure (void)
    bson_error_t error;
    bool r;
    bson_t q;
+   bson_t empty = BSON_INITIALIZER;
 
    /*
     * Try authenticating with that user.
@@ -158,6 +159,25 @@ test_mongoc_client_authenticate_failure (void)
    assert(error.domain == MONGOC_ERROR_CLIENT);
    assert(error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
    mongoc_cursor_destroy(cursor);
+
+   /*
+    * Try various commands while in the failed state to ensure we get the
+    * same sort of errors.
+    */
+   r = mongoc_collection_insert (collection, 0, &empty, NULL, &error);
+   assert (!r);
+   assert (error.domain == MONGOC_ERROR_CLIENT);
+   assert (error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
+
+   /*
+    * Try various commands while in the failed state to ensure we get the
+    * same sort of errors.
+    */
+   r = mongoc_collection_update (collection, 0, &q, &empty, NULL, &error);
+   assert (!r);
+   assert (error.domain == MONGOC_ERROR_CLIENT);
+   assert (error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
+
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
 }
