@@ -69,5 +69,7 @@ main (int   argc,
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 
+   mongoc_cleanup ();
+
    return EXIT_SUCCESS;
 }
