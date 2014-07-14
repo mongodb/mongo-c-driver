@@ -270,7 +270,7 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
 }
 
 
-bool
+uint32_t
 mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                bson_t                  *reply, /* OUT */
                                bson_error_t            *error) /* OUT */
@@ -349,7 +349,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 cleanup:
    ret = _mongoc_write_result_complete (&bulk->result, reply, error);
 
-   RETURN (ret);
+   RETURN (ret ? hint : 0);
 }
 
 void

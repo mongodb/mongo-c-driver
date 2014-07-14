@@ -15,7 +15,7 @@
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[bool
+    <synopsis><code mime="text/x-csrc"><![CDATA[uint32_t
 mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
                                bson_t                  *reply,
                                bson_error_t            *error);
@@ -43,7 +43,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
 
   <section id="return">
     <title>Returns</title>
-    <p><code>true</code> on success, otherwise <code>false</code> and <code>error</code> is set.</p>
+    <p>A non-zero <code>hint</code> of the peer node on success, otherwise <code>0</code> and <code>error</code> is set.</p>
   </section>
 
 

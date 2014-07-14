@@ -31,7 +31,7 @@ typedef struct _mongoc_bulk_operation_t mongoc_bulk_operation_t;
 
 
 void mongoc_bulk_operation_destroy     (mongoc_bulk_operation_t       *bulk);
-bool mongoc_bulk_operation_execute     (mongoc_bulk_operation_t       *bulk,
+uint32_t mongoc_bulk_operation_execute (mongoc_bulk_operation_t       *bulk,
                                         bson_t                        *reply,
                                         bson_error_t                  *error);
 void mongoc_bulk_operation_delete      (mongoc_bulk_operation_t       *bulk,
