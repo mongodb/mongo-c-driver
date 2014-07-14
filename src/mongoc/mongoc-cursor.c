@@ -1062,3 +1062,12 @@ mongoc_cursor_current (const mongoc_cursor_t *cursor) /* IN */
 
    return cursor->current;
 }
+
+
+uint32_t
+mongoc_cursor_get_hint (const mongoc_cursor_t *cursor)
+{
+   bson_return_val_if_fail (cursor, 0);
+
+   return cursor->hint;
+}
