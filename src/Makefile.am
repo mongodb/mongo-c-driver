@@ -55,7 +55,6 @@ libmongoc_1_0_la_LDFLAGS = \
 	-export-symbols-regex "^mongoc_" \
 	-rpath $(libdir)
 
-include src/bindings/Makefile.am
 include src/mongoc/Makefile.am
 include src/tools/Makefile.am
 
