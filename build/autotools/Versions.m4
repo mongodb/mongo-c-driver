@@ -1,6 +1,6 @@
 m4_define([mongoc_major_version], [0])
-m4_define([mongoc_minor_version], [96])
-m4_define([mongoc_micro_version], [5])
+m4_define([mongoc_minor_version], [98])
+m4_define([mongoc_micro_version], [0])
 m4_define([mongoc_version], [mongoc_major_version.mongoc_minor_version.mongoc_micro_version])
 
 # bump up by 1 for every micro release with no API changes, otherwise
@@ -12,6 +12,6 @@ m4_define([lt_current], [m4_eval(100 * mongoc_minor_version + mongoc_micro_versi
 m4_define([lt_revision], [mongoc_interface_age])
 m4_define([lt_age], [m4_eval(mongoc_binary_age - mongoc_interface_age)])
 
-m4_define([libbson_required_version], [0.8.5])
+m4_define([libbson_required_version], [0.98.0])
 
 m4_define([sasl_required_version], [2.1.6])

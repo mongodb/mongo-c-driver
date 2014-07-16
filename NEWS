@@ -1,3 +1,27 @@
+mongo-c-driver 0.98.0
+=====================
+
+Another step in the rapidly approaching path to 1.0!
+
+This release is primarily a bugfix release and stablization effort as we
+approach 1.0 of the MongoDB C driver.
+
+This release requires 0.98.0 of Libbson for improvements to the memory
+management system. You can now setup custom memory allocators at the
+start of the process.
+
+This is a RC release that with a few improvements will likely become 1.0.
+
+A special thanks to the following for patches in this cycle:
+
+ * Kyle Suarez
+ * yuqing
+
+See `git shortlog 0.96.4..0.98.0` for a list of all the changes.
+
+-- Christian Hergert
+
+
 mongo-c-driver 0.96.4
 =====================
 
