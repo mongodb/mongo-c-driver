@@ -197,6 +197,7 @@ EOF
 
 		if [ ! -e /usr/share/cdbs/1/class/autotools.mk ]; then
 			echo "Please install cdbs, debhelper, and build-essential"
+			exit 1
 		fi
 
 		python -c 'import lxml.etree'
