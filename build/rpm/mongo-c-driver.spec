@@ -87,6 +87,7 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 %files
 %{_prefix}/share/doc/mongo-c-driver/*
 %{_libdir}/libmongoc-1.0.so.*
+%{_libdir}/libmongoc-priv.so.*
 
 
 %files -n %{BsonName}

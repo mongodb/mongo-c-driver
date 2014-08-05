@@ -1,38 +1,82 @@
 headerdir = $(prefix)/include/libmongoc-@MONGOC_API_VERSION@
 header_DATA = \
 	$(INST_H_FILES) \
+	$(MONGOC_DEF_FILES) \
 	src/mongoc/mongoc-config.h
+
+MONGOC_DEF_FILES = \
+	src/mongoc/op-delete.def \
+	src/mongoc/op-get-more.def \
+	src/mongoc/op-header.def \
+	src/mongoc/op-insert.def \
+	src/mongoc/op-kill-cursors.def \
+	src/mongoc/op-msg.def \
+	src/mongoc/op-query.def \
+	src/mongoc/op-reply.def \
+	src/mongoc/op-update.def \
+	src/mongoc/mongoc-counters.defs
 
 INST_H_FILES = \
 	src/mongoc/mongoc.h \
+	src/mongoc/mongoc-array-private.h \
+	src/mongoc/mongoc-buffer-private.h \
+	src/mongoc/mongoc-bulk-operation-private.h \
 	src/mongoc/mongoc-bulk-operation.h \
-	src/mongoc/mongoc-client.h \
 	src/mongoc/mongoc-client-pool.h \
+	src/mongoc/mongoc-client-private.h \
+	src/mongoc/mongoc-client.h \
+	src/mongoc/mongoc-cluster-private.h \
+	src/mongoc/mongoc-collection-private.h \
 	src/mongoc/mongoc-collection.h \
+	src/mongoc/mongoc-counters-private.h \
+	src/mongoc/mongoc-cursor-array-private.h \
+	src/mongoc/mongoc-cursor-cursorid-private.h \
+	src/mongoc/mongoc-cursor-private.h \
 	src/mongoc/mongoc-cursor.h \
+	src/mongoc/mongoc-database-private.h \
 	src/mongoc/mongoc-database.h \
+	src/mongoc/mongoc-errno-private.h \
 	src/mongoc/mongoc-error.h \
 	src/mongoc/mongoc-flags.h \
-	src/mongoc/mongoc-gridfs.h \
-	src/mongoc/mongoc-gridfs-file.h \
-	src/mongoc/mongoc-gridfs-file-page.h \
+	src/mongoc/mongoc-gridfs-file-list-private.h \
 	src/mongoc/mongoc-gridfs-file-list.h \
+	src/mongoc/mongoc-gridfs-file-page-private.h \
+	src/mongoc/mongoc-gridfs-file-page.h \
+	src/mongoc/mongoc-gridfs-file-private.h \
+	src/mongoc/mongoc-gridfs-file.h \
+	src/mongoc/mongoc-gridfs-private.h \
+	src/mongoc/mongoc-gridfs.h \
+	src/mongoc/mongoc-host-list-private.h \
 	src/mongoc/mongoc-host-list.h \
-	src/mongoc/mongoc-init.h \
 	src/mongoc/mongoc-index.h \
+	src/mongoc/mongoc-init.h \
 	src/mongoc/mongoc-iovec.h \
+	src/mongoc/mongoc-list-private.h \
 	src/mongoc/mongoc-log.h \
+	src/mongoc/mongoc-matcher-op-private.h \
+	src/mongoc/mongoc-matcher-private.h \
 	src/mongoc/mongoc-matcher.h \
 	src/mongoc/mongoc-opcode.h \
+	src/mongoc/mongoc-queue-private.h \
+	src/mongoc/mongoc-read-prefs-private.h \
 	src/mongoc/mongoc-read-prefs.h \
+	src/mongoc/mongoc-rpc-private.h \
+	src/mongoc/mongoc-sasl-private.h \
 	src/mongoc/mongoc-socket.h \
-	src/mongoc/mongoc-stream.h \
+	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-buffered.h \
 	src/mongoc/mongoc-stream-file.h \
 	src/mongoc/mongoc-stream-gridfs.h \
+	src/mongoc/mongoc-stream-private.h \
 	src/mongoc/mongoc-stream-socket.h \
+	src/mongoc/mongoc-stream.h \
+	src/mongoc/mongoc-thread-private.h \
+	src/mongoc/mongoc-trace.h \
 	src/mongoc/mongoc-uri.h \
+	src/mongoc/mongoc-util-private.h \
 	src/mongoc/mongoc-version.h \
+	src/mongoc/mongoc-write-command-private.h \
+	src/mongoc/mongoc-write-concern-private.h \
 	src/mongoc/mongoc-write-concern.h
 
 if ENABLE_SSL
@@ -41,42 +85,8 @@ INST_H_FILES += \
 	src/mongoc/mongoc-ssl.h
 endif
 
-NOINST_H_FILES = \
-	src/mongoc/mongoc-array-private.h \
-	src/mongoc/mongoc-buffer-private.h \
-	src/mongoc/mongoc-bulk-operation-private.h \
-	src/mongoc/mongoc-client-private.h \
-	src/mongoc/mongoc-cluster-private.h \
-	src/mongoc/mongoc-collection-private.h \
-	src/mongoc/mongoc-counters-private.h \
-	src/mongoc/mongoc-cursor-array-private.h \
-	src/mongoc/mongoc-cursor-cursorid-private.h \
-	src/mongoc/mongoc-cursor-private.h \
-	src/mongoc/mongoc-database-private.h \
-	src/mongoc/mongoc-errno-private.h \
-	src/mongoc/mongoc-gridfs-file-list-private.h \
-	src/mongoc/mongoc-gridfs-file-page-private.h \
-	src/mongoc/mongoc-gridfs-file-private.h \
-	src/mongoc/mongoc-gridfs-private.h \
-	src/mongoc/mongoc-host-list-private.h \
-	src/mongoc/mongoc-list-private.h \
-	src/mongoc/mongoc-matcher-op-private.h \
-	src/mongoc/mongoc-matcher-private.h \
-	src/mongoc/mongoc-queue-private.h \
-	src/mongoc/mongoc-read-prefs-private.h \
-	src/mongoc/mongoc-rpc-private.h \
-	src/mongoc/mongoc-sasl-private.h \
-	src/mongoc/mongoc-ssl-private.h \
-	src/mongoc/mongoc-stream-private.h \
-	src/mongoc/mongoc-thread-private.h \
-	src/mongoc/mongoc-trace.h \
-	src/mongoc/mongoc-util-private.h \
-	src/mongoc/mongoc-write-command-private.h \
-	src/mongoc/mongoc-write-concern-private.h
-
-libmongoc_priv_la_SOURCES = \
+MONGOC_SOURCES_SHARED += \
 	$(INST_H_FILES) \
-	$(NOINST_H_FILES) \
 	src/mongoc/mongoc-array.c \
 	src/mongoc/mongoc-buffer.c \
 	src/mongoc/mongoc-bulk-operation.c \
@@ -114,23 +124,14 @@ libmongoc_priv_la_SOURCES = \
 	src/mongoc/mongoc-write-concern.c
 
 if ENABLE_SSL
-libmongoc_priv_la_SOURCES += \
+MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-stream-tls.c \
 	src/mongoc/mongoc-ssl.c
 endif
 
 if ENABLE_SASL
-libmongoc_priv_la_SOURCES += src/mongoc/mongoc-sasl.c
+MONGOC_SOURCES_SHARED += src/mongoc/mongoc-sasl.c
 endif
 
-EXTRA_DIST += \
-	src/mongoc/op-delete.def \
-	src/mongoc/op-get-more.def \
-	src/mongoc/op-header.def \
-	src/mongoc/op-insert.def \
-	src/mongoc/op-kill-cursors.def \
-	src/mongoc/op-msg.def \
-	src/mongoc/op-query.def \
-	src/mongoc/op-reply.def \
-	src/mongoc/op-update.def \
-	src/mongoc/mongoc-counters.defs
+EXTRA_DIST += $(MONGOC_DEF_FILES)
+
