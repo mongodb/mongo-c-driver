@@ -673,6 +673,7 @@ mongoc_client_new (const char *uri_string)
    const bson_t *options;
    bson_iter_t iter;
    bool has_ssl = false;
+   bool slave_okay = false;
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
@@ -690,6 +691,12 @@ mongoc_client_new (const char *uri_string)
       has_ssl = true;
    }
 
+   if (bson_iter_init_find_case (&iter, options, "slaveok") &&
+       BSON_ITER_HOLDS_BOOL (&iter) &&
+       bson_iter_bool (&iter)) {
+      slave_okay = true;
+   }
+
    client = bson_malloc0(sizeof *client);
    client->uri = uri;
    client->request_id = rand ();
@@ -699,7 +706,11 @@ mongoc_client_new (const char *uri_string)
    write_concern = mongoc_uri_get_write_concern (uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
 
-   client->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   if (slave_okay) {
+      client->read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
+   } else {
+      client->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   }
 
    _mongoc_cluster_init (&client->cluster, client->uri, client);
 
