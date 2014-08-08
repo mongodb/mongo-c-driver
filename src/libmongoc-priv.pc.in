@@ -8,4 +8,4 @@ Description: The libmongoc MongoDB client library, with access to private struct
 Version: @VERSION@
 Requires: libbson-1.0
 Libs: @SASL_LIBS@ @SSL_LIBS@ @SHM_LIB@ -L${libdir} -lmongoc-priv
-Cflags: -DMONGOC_COMPILATION -I${includedir}/libmongoc-@MONGOC_API_VERSION@
+Cflags: -DMONGOC_I_AM_A_DRIVER -I${includedir}/libmongoc-@MONGOC_API_VERSION@
