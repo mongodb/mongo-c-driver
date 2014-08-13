@@ -1,3 +1,23 @@
+mongo-c-driver 0.98.2
+=====================
+
+One final step before our journey to 1.0!
+
+This is a relatively small release, adding some features needed for drivers
+building on top of the C driver.
+
+A new libmongoc-priv.so library is installed that does not have symbols
+hidden. You can access private headers via the -private.h variants. This
+means you will need to recompile your project every time the library is
+changed (if you use those private headers, as they are subject to change).
+
+A special thanks to Hannes Magnusson for patches in this release.
+
+See `git shortlog 0.98.0..0.98.2` for a list of all the changes.
+
+-- Christian Hergert
+
+
 mongo-c-driver 0.98.0
 =====================
 

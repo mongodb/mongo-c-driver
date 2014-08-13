@@ -1,9 +1,9 @@
 # norootforbuild
 
 %define DriverName    mongo-c-driver
-%define DriverVersion 0.98.1
+%define DriverVersion 0.98.2
 %define BsonName      libbson
-%define BsonVersion   0.98.1
+%define BsonVersion   0.98.0
 
 Name:           %{DriverName}
 Version:        %{DriverVersion}
@@ -114,6 +114,9 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %changelog -n %{DriverName}
+* Tue Aug 13 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.98.2-1
+- Bump for 0.98.2.
+
 * Tue Jul 17 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.98.1-1
 - Bump for development release.
 
@@ -140,9 +143,6 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %changelog -n %{BsonName}
-* Tue Jul 17 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.98.1-1
-- Bump for development release.
-
 * Tue Jul 16 2014 Christian Hergert <christian.hergert@mongodb.com> - 0.98.0-1
 - Bump for 0.98.0.
 
