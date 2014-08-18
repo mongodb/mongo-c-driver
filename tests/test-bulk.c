@@ -291,6 +291,74 @@ test_index_offset (void)
    bson_destroy (sel);
 }
 
+static void
+test_bulk_edge_over_1000 (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t * bulk_op;
+   mongoc_write_concern_t * wc = mongoc_write_concern_new();
+   bson_iter_t iter, error_iter, index;
+   bson_t doc, result;
+   bson_error_t error;
+   int i;
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   collection = get_test_collection (client, "OVER_1000");
+   assert (collection);
+
+   mongoc_write_concern_set_w(wc, 1);
+
+   bulk_op = mongoc_collection_create_bulk_operation(collection, false, wc);
+
+   for (i = 0; i < 1010; i+=3) {
+      bson_init(&doc);
+      bson_append_int32(&doc, "_id", -1, i);
+
+      mongoc_bulk_operation_insert(bulk_op, &doc);
+
+      bson_destroy(&doc);
+   }
+
+   mongoc_bulk_operation_execute(bulk_op, NULL, &error);
+
+   mongoc_bulk_operation_destroy(bulk_op);
+
+   bulk_op = mongoc_collection_create_bulk_operation(collection, false, wc);
+   for (i = 0; i < 1010; i++) {
+      bson_init(&doc);
+      bson_append_int32(&doc, "_id", -1, i);
+
+      mongoc_bulk_operation_insert(bulk_op, &doc);
+
+      bson_destroy(&doc);
+   }
+
+   mongoc_bulk_operation_execute(bulk_op, &result, &error);
+
+   bson_iter_init_find(&iter, &result, "writeErrors");
+   assert(bson_iter_recurse(&iter, &error_iter));
+   assert(bson_iter_next(&error_iter));
+
+   for (i = 0; i < 1010; i+=3) {
+      assert(bson_iter_recurse(&error_iter, &index));
+      assert(bson_iter_find(&index, "index"));
+      if (bson_iter_int32(&index) != i) {
+          fprintf(stderr, "index should be %d, but is %d\n", i, bson_iter_int32(&index));
+      }
+      assert(bson_iter_int32(&index) == i);
+      bson_iter_next(&error_iter);
+   }
+
+   mongoc_bulk_operation_destroy(bulk_op);
+
+   mongoc_write_concern_destroy(wc);
+
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+}
 
 static void
 test_bulk_edge_case_372 (void)
@@ -497,6 +565,7 @@ test_bulk_install (TestSuite *suite)
    TestSuite_Add (suite, "/BulkOperation/index_offset", test_index_offset);
    TestSuite_Add (suite, "/BulkOperation/CDRIVER-372", test_bulk_edge_case_372);
    TestSuite_Add (suite, "/BulkOperation/new", test_bulk_new);
+   TestSuite_Add (suite, "/BulkOperation/over_1000", test_bulk_edge_over_1000);
 
    atexit (cleanup_globals);
 }

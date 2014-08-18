@@ -54,6 +54,7 @@ typedef struct
          bson_t   *documents;
          uint32_t  n_documents;
          uint32_t  n_merged;
+         uint32_t  current_n_documents;
       } insert;
       struct {
          uint8_t   ordered : 1;
