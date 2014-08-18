@@ -975,6 +975,31 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
       if (sent > 0) {
          ret += sent;
          mongoc_counter_streams_egress_add (sent);
+
+         /*
+          * Subtract the sent amount from what we still need to send.
+          */
+         while ((cur < iovcnt) && (sent >= (ssize_t)iov [cur].iov_len)) {
+            sent -= iov [cur++].iov_len;
+         }
+
+         /*
+          * Check if that made us finish all of the iovecs. If so, we are done
+          * sending data over the socket.
+          */
+         if (cur == iovcnt) {
+            break;
+         }
+
+         /*
+          * Increment the current iovec buffer to its proper offset and adjust
+          * the number of bytes to write.
+          */
+         iov [cur].iov_base = ((char *)iov [cur].iov_base) + sent;
+         iov [cur].iov_len -= sent;
+
+         BSON_ASSERT (iovcnt - cur);
+         BSON_ASSERT (iov [cur].iov_len);
       } else if (OPERATION_EXPIRED (expire_at)) {
 #ifdef _WIN32
          errno = WSAETIMEDOUT;
@@ -983,31 +1008,6 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
 #endif
          RETURN (ret ? ret : -1);
       }
-
-      /*
-       * Subtract the sent amount from what we still need to send.
-       */
-      while ((cur < iovcnt) && (sent >= (ssize_t)iov [cur].iov_len)) {
-         sent -= iov [cur++].iov_len;
-      }
-
-      /*
-       * Check if that made us finish all of the iovecs. If so, we are done
-       * sending data over the socket.
-       */
-      if (cur == iovcnt) {
-         break;
-      }
-
-      /*
-       * Increment the current iovec buffer to its proper offset and adjust
-       * the number of bytes to write.
-       */
-      iov [cur].iov_base = ((char *)iov [cur].iov_base) + sent;
-      iov [cur].iov_len -= sent;
-
-      BSON_ASSERT (iovcnt - cur);
-      BSON_ASSERT (iov [cur].iov_len);
 
       /*
        * Block on poll() until our desired condition is met.
