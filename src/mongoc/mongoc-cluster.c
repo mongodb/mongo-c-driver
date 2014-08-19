@@ -1906,8 +1906,10 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
       }
 
       if (!node.replSet || !!strcmp (node.replSet, replSet)) {
-         MONGOC_INFO("%s: Got replicaSet \"%s\" expected \"%s\".",
-                     iter->host_and_port, node.replSet, replSet);
+         MONGOC_INFO ("%s: Got replicaSet \"%s\" expected \"%s\".",
+                      iter->host_and_port,
+                      node.replSet ? node.replSet : "(null)",
+                      replSet);
       }
 
       if (node.primary) {
