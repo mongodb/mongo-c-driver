@@ -53,7 +53,10 @@ typedef void (*mongoc_write_op_t) (mongoc_write_command_t       *command,
 
 static bson_t gEmptyWriteConcern = BSON_INITIALIZER;
 
-
+static int32_t
+_mongoc_write_result_merge_arrays (mongoc_write_result_t *result,
+                                   bson_t                *dest,
+                                   bson_iter_t           *iter);
 void
 _mongoc_write_command_insert_append (mongoc_write_command_t *command,
                                      const bson_t * const   *documents,
@@ -379,6 +382,7 @@ again:
 
 cleanup:
    if (gle) {
+      command->u.insert.current_n_documents = i;
       _mongoc_write_result_merge_legacy (result, command, gle);
       bson_destroy (gle);
       gle = NULL;
@@ -651,6 +655,7 @@ again:
       result->failed = true;
    }
 
+   command->u.insert.current_n_documents = i;
    _mongoc_write_result_merge (result, command, &reply);
 
    bson_destroy (&cmd);
@@ -876,6 +881,7 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result, /* IN */
                                    const bson_t           *reply)  /* IN */
 {
    const bson_value_t *value;
+   bson_t holder, write_errors, child;
    bson_iter_t iter;
    bson_iter_t ar;
    bson_iter_t citer;
@@ -909,6 +915,21 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result, /* IN */
                       code,
                       "%s", err);
       result->failed = true;
+
+      bson_init(&holder);
+      bson_append_array_begin(&holder, "0", 1, &write_errors);
+      bson_append_document_begin(&write_errors, "0", 1, &child);
+      bson_append_int32(&child, "index", 5, 0);
+      bson_append_int32(&child, "code", 4, code);
+      bson_append_utf8(&child, "errmsg", 6, err, -1);
+      bson_append_document_end(&write_errors, &child);
+      bson_append_array_end(&holder, &write_errors);
+      bson_iter_init(&iter, &holder);
+      bson_iter_next(&iter);
+
+      _mongoc_write_result_merge_arrays (result, &result->writeErrors, &iter);
+
+      bson_destroy(&holder);
    }
 
    switch (command->type) {
@@ -974,7 +995,7 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result, /* IN */
       result->offset += 1;
       break;
    case MONGOC_WRITE_COMMAND_INSERT:
-      result->offset += command->u.insert.n_documents;
+      result->offset += command->u.insert.current_n_documents;
       break;
    default:
       break;
@@ -1144,7 +1165,7 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
       result->offset += affected;
       break;
    case MONGOC_WRITE_COMMAND_INSERT:
-      result->offset += command->u.insert.n_documents;
+      result->offset += command->u.insert.current_n_documents;
       break;
    default:
       break;
