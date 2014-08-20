@@ -16,9 +16,10 @@ Libbson will automatically be built if you do not have it installed on your syst
 If you are looking for the legacy C driver, it can be found in the
 `legacy branch <https://github.com/mongodb/mongo-c-driver/tree/legacy>`_.
 
-Support / Feedback
-==================
+Documentation / Support / Feedback
+==================================
 
+The documentation is available at http://api.mongodb.org/c/current/.
 For issues with, questions about, or feedback for libmongoc, please look into
 our `support channels <http://www.mongodb.org/about/support>`_. Please
 do not email any of the libmongoc developers directly with issues or
