@@ -96,8 +96,6 @@ _mongoc_n_return (mongoc_cursor_t * cursor)
          /* if we didn't, just use the remaining */
          r = remaining;
       }
-
-      r = -r;
    }
 
    return r;
