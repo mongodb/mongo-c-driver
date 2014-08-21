@@ -115,12 +115,30 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,     /* IN */
                               const bson_t            *selector) /* IN */
 {
    mongoc_write_command_t command = { 0 };
+   mongoc_write_command_t *last;
+
+   ENTRY;
 
    bson_return_if_fail (bulk);
    bson_return_if_fail (selector);
 
-   _mongoc_write_command_init_delete (&command, selector, true, bulk->ordered);
+   if (bulk->commands.len) {
+      last = &_mongoc_array_index (&bulk->commands,
+                                   mongoc_write_command_t,
+                                   bulk->commands.len - 1);
+      if ((last->type == MONGOC_WRITE_COMMAND_DELETE) &&
+          last->u.delete.multi) {
+         _mongoc_write_command_delete_append (last, &selector, 1);
+         EXIT;
+      }
+   }
+
+   _mongoc_write_command_init_delete (&command, &selector, 1, true,
+      bulk->ordered);
+
    _mongoc_array_append_val (&bulk->commands, command);
+
+   EXIT;
 }
 
 
@@ -129,12 +147,30 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk,     /* IN */
                                   const bson_t            *selector) /* IN */
 {
    mongoc_write_command_t command = { 0 };
+   mongoc_write_command_t *last;
+
+   ENTRY;
 
    bson_return_if_fail (bulk);
    bson_return_if_fail (selector);
 
-   _mongoc_write_command_init_delete (&command, selector, false, bulk->ordered);
+   if (bulk->commands.len) {
+      last = &_mongoc_array_index (&bulk->commands,
+                                   mongoc_write_command_t,
+                                   bulk->commands.len - 1);
+      if ((last->type == MONGOC_WRITE_COMMAND_DELETE) &&
+          !last->u.delete.multi) {
+         _mongoc_write_command_delete_append (last, &selector, 1);
+         EXIT;
+      }
+   }
+
+   _mongoc_write_command_init_delete (&command, &selector, 1, false,
+      bulk->ordered);
+
    _mongoc_array_append_val (&bulk->commands, command);
+
+   EXIT;
 }
 
 
