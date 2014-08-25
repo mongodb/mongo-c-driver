@@ -776,6 +776,17 @@ dispatch:
    }
 
    /*
+    * Mark the error as unable to locate a target node.
+    */
+   if (!count) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
+                      "Failed to locate a suitable MongoDB node.");
+      RETURN (NULL);
+   }
+
+   /*
     * Choose a cluster node within threshold at random.
     */
    count = count ? rand() % count : count;
