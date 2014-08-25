@@ -87,7 +87,7 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 %files
 %{_prefix}/share/doc/mongo-c-driver/*
 %{_libdir}/libmongoc-1.0.so.*
-%{_libdir}/libmongoc-priv.so.*
+%{_libdir}/libmongoc-priv.so*
 
 
 %files -n %{BsonName}
@@ -98,7 +98,10 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 %files devel
 %dir %{_includedir}/libmongoc-1.0
 %{_includedir}/libmongoc-1.0/*.h
+%{_includedir}/libmongoc-1.0/*.def
+%{_includedir}/libmongoc-1.0/*.defs
 %{_libdir}/libmongoc-1.0.so
+%{_libdir}/pkgconfig/libmongoc-priv.pc
 %{_libdir}/pkgconfig/libmongoc-1.0.pc
 %{_libdir}/pkgconfig/libmongoc-ssl-1.0.pc
 %{_bindir}/mongoc-stat
