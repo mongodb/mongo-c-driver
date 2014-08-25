@@ -669,6 +669,7 @@ mongoc_client_new (const char *uri_string)
 {
    const mongoc_write_concern_t *write_concern;
    mongoc_client_t *client;
+   const bson_t *read_prefs_tags;
    mongoc_uri_t *uri;
    const bson_t *options;
    bson_iter_t iter;
@@ -710,6 +711,11 @@ mongoc_client_new (const char *uri_string)
       client->read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
    } else {
       client->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   }
+
+   read_prefs_tags = mongoc_uri_get_read_prefs (client->uri);
+   if (!bson_empty (read_prefs_tags)) {
+      mongoc_read_prefs_set_tags (client->read_prefs, read_prefs_tags);
    }
 
    _mongoc_cluster_init (&client->cluster, client->uri, client);
