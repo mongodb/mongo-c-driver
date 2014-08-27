@@ -1,6 +1,6 @@
 <page xmlns="http://projectmallard.org/1.0/"
       type="topic"
-      id="aggregation">
+      id="aggregate">
   <info><link xref="index#aggregation" type="guide"/></info>
   <title>Aggregation Framework Examples</title>
 
