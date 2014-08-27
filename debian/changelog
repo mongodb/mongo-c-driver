@@ -1,3 +1,9 @@
+mongo-c-driver (1.0.0-0) unstable; urgency=low
+
+  * Release 1.0.0.
+
+ -- Christian Hergert <christian.hergert@mongodb.com>  Tue, 26 Aug 2014 17:50:46 -0700
+
 mongo-c-driver (0.98.2-0) unstable; urgency=low
 
   * Release 0.98.2.

@@ -1,3 +1,33 @@
+mongo-c-driver 1.0.0
+====================
+
+It is my very distinct pleasure to announce to you the 1.0 release of
+the MongoDB C driver!
+
+This is the culmination of just over a year of work and could not have
+been done without the help of our wonderful community.
+
+Thanks to everyone who contributed to the development of this driver!
+
+ * Christian Hergert
+ * Jason Carey
+ * Gary Murakami
+ * Christian Heckl
+ * Frank Watson Song
+ * Hannes Magnusson
+ * Jérôme Lebel
+ * Kyle Suarez
+ * Maga Napanga
+ * Michael Kuhn
+ * Vincent Giersch
+ * essentia44
+ * yuqing
+
+Happy Hacking!
+
+-- Christian Hergert
+
+
 mongo-c-driver 0.98.2
 =====================
 
