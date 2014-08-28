@@ -770,6 +770,7 @@ dispatch:
          if (nodes[i]) {
 			 if (nodes[i]->ping_avg_msec >(int32_t)watermark) {
                nodes[i] = NULL;
+               count--;
             }
          }
       }
