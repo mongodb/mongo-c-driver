@@ -2179,7 +2179,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
           !!strcmp (cluster->nodes[i].replSet, replSet)) {
          MONGOC_INFO ("%s: Got replicaSet \"%s\" expected \"%s\".",
                       host.host_and_port,
-                      cluster->nodes[i].replSet,
+                      cluster->nodes[i].replSet ? cluster->nodes[i].replSet : "(null)",
                       replSet);
          _mongoc_cluster_node_destroy (&cluster->nodes[i]);
          continue;
