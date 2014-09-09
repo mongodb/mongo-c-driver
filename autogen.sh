@@ -20,6 +20,7 @@ if test -z "$(which libtoolize)" && test -z "$(which glibtoolize)"; then
     if test "$(uname)" = "Darwin"; then
         echo "On Darwin, this is named glibtoolize"
     fi
+    exit 1
 fi
 
 if [ -d .git ]; then
