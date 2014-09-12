@@ -314,15 +314,6 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                did_batch_size = true;
                batch_size = (int32_t)bson_iter_as_int64 (&iter);
                BSON_APPEND_INT32 (&child, "batchSize", batch_size);
-            } else if (BSON_ITER_IS_KEY (&iter, "allowDiskUse") &&
-                       BSON_ITER_HOLDS_BOOL (&iter)) {
-               BSON_APPEND_BOOL (&child, "allowDiskUse",
-                                 bson_iter_bool (&iter));
-            } else {
-               /*
-                * Just pass it through if we don't know what it is.
-                */
-               bson_append_iter (&child, bson_iter_key (&iter), -1, &iter);
             }
          }
       }
@@ -332,6 +323,14 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       }
 
       bson_append_document_end (&command, &child);
+   }
+
+   if (options && bson_iter_init (&iter, options)) {
+      while (bson_iter_next (&iter)) {
+         if (! (BSON_ITER_IS_KEY (&iter, "batchSize") || BSON_ITER_IS_KEY (&iter, "cursor"))) {
+            bson_append_iter (&command, bson_iter_key (&iter), -1, &iter);
+         }
+      }
    }
 
    cursor = mongoc_collection_command (collection, flags, 0, 0, batch_size,
