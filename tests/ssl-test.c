@@ -58,7 +58,7 @@ ssl_test_server (void * ptr)
    assert (listen_sock);
 
    server_addr.sin_family = AF_INET;
-   server_addr.sin_addr.s_addr = htonl (INADDR_ANY);
+   server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
    server_addr.sin_port = htons (0);
 
    r = mongoc_socket_bind (listen_sock,
@@ -188,8 +188,7 @@ ssl_test_client (void * ptr)
 
    server_addr.sin_family = AF_INET;
    server_addr.sin_port = htons(data->server_port);
-   r = inet_pton(AF_INET, LOCALHOST, &server_addr.sin_addr);
-   assert (r > 0);
+   server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
    r = mongoc_socket_connect (conn_sock, (struct sockaddr *)&server_addr, sizeof(server_addr), -1);
    assert (r == 0);
