@@ -139,6 +139,9 @@ mongoc_log_level_str
 mongoc_log_set_handler
 mongoc_matcher_destroy
 mongoc_matcher_match
+mongoc_rand_seed
+mongoc_rand_add
+mongoc_rand_status
 mongoc_matcher_new
 mongoc_read_prefs_add_tag
 mongoc_read_prefs_copy

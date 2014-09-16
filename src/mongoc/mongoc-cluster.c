@@ -37,6 +37,7 @@
 #ifdef MONGOC_ENABLE_SASL
 #include "mongoc-sasl-private.h"
 #endif
+#include "mongoc-scram-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-socket.h"
@@ -1695,6 +1696,117 @@ failure:
 #endif
 
 
+#ifdef MONGOC_ENABLE_SSL
+static bool
+_mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
+                                 mongoc_cluster_node_t *node,
+                                 bson_error_t          *error)
+{
+   uint32_t buflen = 0;
+   mongoc_scram_t scram;
+   bson_iter_t iter;
+   bool ret = false;
+   const char *tmpstr;
+   const char *auth_source;
+   uint8_t buf[4096] = { 0 };
+   bson_t cmd;
+   bson_t reply;
+   int conv_id = 0;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (node);
+
+   if (!(auth_source = mongoc_uri_get_auth_source(cluster->uri)) ||
+       (*auth_source == '\0')) {
+      auth_source = "admin";
+   }
+
+   _mongoc_scram_init(&scram);
+
+   _mongoc_scram_set_pass (&scram, mongoc_uri_get_password (cluster->uri));
+   _mongoc_scram_set_user (&scram, mongoc_uri_get_username (cluster->uri));
+
+   for (;;) {
+      if (!_mongoc_scram_step (&scram, buf, buflen, buf, sizeof buf, &buflen, error)) {
+         goto failure;
+      }
+
+      bson_init (&cmd);
+
+      if (scram.step == 1) {
+         BSON_APPEND_INT32 (&cmd, "saslStart", 1);
+         BSON_APPEND_UTF8 (&cmd, "mechanism", "SCRAM-SHA-1");
+         bson_append_binary (&cmd, "payload", 7, BSON_SUBTYPE_BINARY, buf, buflen);
+         BSON_APPEND_INT32 (&cmd, "autoAuthorize", 1);
+      } else {
+         BSON_APPEND_INT32 (&cmd, "saslContinue", 1);
+         BSON_APPEND_INT32 (&cmd, "conversationId", conv_id);
+         bson_append_binary (&cmd, "payload", 7, BSON_SUBTYPE_BINARY, buf, buflen);
+      }
+
+      MONGOC_INFO ("SCRAM: authenticating \"%s\" (step %d)",
+                   mongoc_uri_get_username (cluster->uri),
+                   scram.step);
+
+      if (!_mongoc_cluster_run_command (cluster, node, auth_source, &cmd, &reply, error)) {
+         bson_destroy (&cmd);
+         goto failure;
+      }
+
+      bson_destroy (&cmd);
+
+      if (bson_iter_init_find (&iter, &reply, "done") &&
+          bson_iter_as_bool (&iter)) {
+         bson_destroy (&reply);
+         break;
+      }
+
+      if (!bson_iter_init_find (&iter, &reply, "ok") ||
+          !bson_iter_as_bool (&iter) ||
+          !bson_iter_init_find (&iter, &reply, "conversationId") ||
+          !BSON_ITER_HOLDS_INT32 (&iter) ||
+          !(conv_id = bson_iter_int32 (&iter)) ||
+          !bson_iter_init_find (&iter, &reply, "payload") ||
+          !BSON_ITER_HOLDS_BINARY(&iter)) {
+         MONGOC_INFO ("SCRAM: authentication failed for \"%s\"",
+                      mongoc_uri_get_username (cluster->uri));
+         bson_destroy (&reply);
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "Received invalid SCRAM reply from MongoDB server.");
+         goto failure;
+      }
+
+      bson_subtype_t btype;
+      bson_iter_binary (&iter, &btype, &buflen, (const uint8_t**)&tmpstr);
+
+      if (buflen > sizeof buf) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "SCRAM reply from MongoDB is too large.");
+         goto failure;
+      }
+
+      memcpy (buf, tmpstr, buflen);
+
+      bson_destroy (&reply);
+   }
+
+   MONGOC_INFO ("SCRAM: \"%s\" authenticated",
+                mongoc_uri_get_username (cluster->uri));
+
+   ret = true;
+
+failure:
+   _mongoc_scram_destroy (&scram);
+
+   return ret;
+}
+#endif
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -1725,7 +1837,11 @@ _mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
    mechanism = mongoc_uri_get_auth_mechanism (cluster->uri);
 
    if (!mechanism) {
-      mechanism = "MONGODB-CR";
+      if (node->max_wire_version < 3) {
+         mechanism = "MONGODB-CR";
+      } else {
+         mechanism = "SCRAM-SHA-1";
+      }
    }
 
    if (0 == strcasecmp (mechanism, "MONGODB-CR")) {
@@ -1733,6 +1849,8 @@ _mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
 #ifdef MONGOC_ENABLE_SSL
    } else if (0 == strcasecmp (mechanism, "MONGODB-X509")) {
       ret = _mongoc_cluster_auth_node_x509 (cluster, node, error);
+   } else if (0 == strcasecmp (mechanism, "SCRAM-SHA-1")) {
+      ret = _mongoc_cluster_auth_node_scram (cluster, node, error);
 #endif
 #ifdef MONGOC_ENABLE_SASL
    } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
