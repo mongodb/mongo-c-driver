@@ -1,0 +1,34 @@
+stepback: true
+pre:
+  - command: shell.exec
+    params:
+      script: |
+        rm -rf "c-driver"
+
+post:
+
+## tasks 
+tasks: 
+- name: compile
+  commands: 
+    - command: git.get_project
+      params:
+        directory: "c-driver"
+    - command: shell.exec
+      params:
+        working_dir: "c-driver"
+        script: |
+          set -o verbose
+          set -o errexit
+          ./autogen.sh
+          make ${compile_flags}
+
+buildvariants:
+- name: ubuntu-1404
+  display_name: "Ubuntu-1404"
+  expansions: 
+    compile_flags: -j$(grep -c ^processor /proc/cpuinfo)
+  run_on: 
+    - ubuntu1404-test
+  tasks:
+  - name: compile
