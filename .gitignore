@@ -23,6 +23,7 @@ depcomp
 .DS_Store
 echo-server
 example-client
+example-scram
 example-gridfs
 example-matcher
 filter-bsondump

@@ -21,6 +21,7 @@
 #include "mongoc-counters-private.h"
 #include "mongoc-init.h"
 #ifdef MONGOC_ENABLE_SSL
+# include "mongoc-scram-private.h"
 # include "mongoc-ssl.h"
 # include "mongoc-ssl-private.h"
 #endif
@@ -30,6 +31,7 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
 {
 #ifdef MONGOC_ENABLE_SSL
    _mongoc_ssl_init();
+   _mongoc_scram_startup();
 #endif
 
    _mongoc_counters_init();
