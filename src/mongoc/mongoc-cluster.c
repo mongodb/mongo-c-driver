@@ -743,14 +743,22 @@ dispatch:
 
    count = 0;
 
+   int scores[MONGOC_CLUSTER_MAX_NODES];
+   int max_score = 0;
+
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (nodes[i]) {
          if (read_prefs) {
             int score = _mongoc_read_prefs_score(read_prefs, nodes[i]);
+            scores[i] = score;
+
             if (score < 0) {
                nodes[i] = NULL;
                continue;
+            } else if (score > max_score) {
+                max_score = score;
             }
+
          }
          if (IS_NEARER_THAN(nodes[i], nearest)) {
             nearest = nodes[i]->ping_avg_msec;
@@ -775,6 +783,19 @@ dispatch:
          }
       }
    }
+
+   /*
+    * Filter nodes with score less than highest score.
+    */
+   if (max_score) {
+      for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+         if (nodes[i] && scores[i] < max_score) {
+             nodes[i] = NULL;
+             count--;
+         }
+      }
+   }
+
 
    /*
     * Mark the error as unable to locate a target node.
@@ -1090,6 +1111,18 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
       if (bson_iter_init_find(&iter, &reply, "setName") &&
           BSON_ITER_HOLDS_UTF8(&iter)) {
          node->replSet = bson_iter_dup_utf8(&iter, NULL);
+      }
+      if (bson_iter_init_find(&iter, &reply, "tags") &&
+          BSON_ITER_HOLDS_DOCUMENT(&iter)) {
+          bson_t tags;
+          uint32_t len;
+          const uint8_t *data;
+
+          bson_iter_document(&iter, &len, &data);
+
+          if (bson_init_static(&tags, data, len)) {
+              bson_copy_to(&tags, &(node->tags));
+          }
       }
    }
 
