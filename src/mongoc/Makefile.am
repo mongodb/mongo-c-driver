@@ -81,6 +81,7 @@ INST_H_FILES = \
 
 if ENABLE_SSL
 INST_H_FILES += \
+	src/mongoc/mongoc-rand.h \
 	src/mongoc/mongoc-stream-tls.h \
 	src/mongoc/mongoc-ssl.h
 endif
