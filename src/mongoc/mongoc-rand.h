@@ -15,13 +15,13 @@
  */
 
 
-#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
 
-#ifndef MONGOC_RAND_PRIVATE_H
-#define MONGOC_RAND_PRIVATE_H
+#ifndef MONGOC_RAND_H
+#define MONGOC_RAND_H
 
 
 #include <bson.h>
@@ -29,10 +29,11 @@
 
 BSON_BEGIN_DECLS
 
-int _mongoc_rand_bytes(uint8_t * buf, int num);
-int _mongoc_pseudo_rand_bytes(uint8_t * buf, int num);
+void mongoc_rand_seed(const void* buf, int num);
+void mongoc_rand_add(const void* buf, int num, double entropy);
+int mongoc_rand_status(void);
 
 BSON_END_DECLS
 
 
-#endif /* MONGOC_RAND_PRIVATE_H */
+#endif /* MONGOC_RAND_H */

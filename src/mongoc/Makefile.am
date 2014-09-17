@@ -110,7 +110,6 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-matcher-op.c \
 	src/mongoc/mongoc-matcher.c \
 	src/mongoc/mongoc-queue.c \
-	src/mongoc/mongoc-rand.c \
 	src/mongoc/mongoc-read-prefs.c \
 	src/mongoc/mongoc-rpc.c \
 	src/mongoc/mongoc-socket.c \
@@ -126,6 +125,7 @@ MONGOC_SOURCES_SHARED += \
 
 if ENABLE_SSL
 MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-rand.c \
 	src/mongoc/mongoc-scram.c \
 	src/mongoc/mongoc-stream-tls.c \
 	src/mongoc/mongoc-ssl.c

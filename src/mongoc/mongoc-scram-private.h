@@ -37,7 +37,6 @@ typedef struct _mongoc_scram_t
    int          step;
    char        *user;
    char        *pass;
-   unsigned int seed;
    uint8_t      salted_password[MONGOC_SCRAM_HASH_SIZE];
    char         encoded_nonce[48];
    int32_t      encoded_nonce_len;

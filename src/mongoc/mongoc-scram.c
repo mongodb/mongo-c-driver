@@ -49,8 +49,8 @@ _mongoc_scram_set_pass (mongoc_scram_t *scram,
 {
    BSON_ASSERT (scram);
 
-   free (scram->pass);
-   scram->pass = pass ? strdup (pass) : NULL;
+   bson_free (scram->pass);
+   scram->pass = pass ? bson_strdup (pass) : NULL;
 }
 
 
@@ -60,8 +60,8 @@ _mongoc_scram_set_user (mongoc_scram_t *scram,
 {
    BSON_ASSERT (scram);
 
-   free (scram->user);
-   scram->user = user ? strdup (user) : NULL;
+   bson_free (scram->user);
+   scram->user = user ? bson_strdup (user) : NULL;
 }
 
 
@@ -71,8 +71,6 @@ _mongoc_scram_init (mongoc_scram_t *scram)
    BSON_ASSERT (scram);
 
    memset (scram, 0, sizeof *scram);
-
-   scram->seed = _mongoc_rand_new_seed ();
 }
 
 
@@ -81,9 +79,9 @@ _mongoc_scram_destroy (mongoc_scram_t *scram)
 {
    BSON_ASSERT (scram);
 
-   free (scram->user);
-   free (scram->pass);
-   free (scram->auth_message);
+   bson_free (scram->user);
+   bson_free (scram->pass);
+   bson_free (scram->auth_message);
 }
 
 
@@ -123,8 +121,6 @@ _mongoc_scram_start (mongoc_scram_t *scram,
                      bson_error_t   *error)
 {
    uint8_t nonce[24];
-   uint32_t rand_num;
-   int i;
    const char *ptr;
    bool rval = true;
 
@@ -134,14 +130,16 @@ _mongoc_scram_start (mongoc_scram_t *scram,
    BSON_ASSERT (outbuflen);
 
    /* auth message is as big as the outbuf just because */
-   scram->auth_message = malloc (outbufmax);
+   scram->auth_message = bson_malloc (outbufmax);
    scram->auth_messagemax = outbufmax;
 
    /* the server uses a 24 byte random nonce.  so we do as well */
-   for (i = 0; i < 6; i++) {
-      rand_num = _mongoc_rand (&scram->seed);
-
-      memcpy (nonce + (i * 4), &rand_num, 4);
+   if (1 != _mongoc_rand_bytes (nonce, sizeof (nonce))) {
+      bson_set_error (error,
+                      MONGOC_ERROR_SCRAM,
+                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                      "SCRAM Failure: could not generate a cryptographically secure nonce in sasl step 1");
+      goto FAIL;
    }
 
    scram->encoded_nonce_len =
@@ -455,7 +453,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
          *current_val_len = (inbuf + inbuflen) - ptr;
       }
 
-      *current_val = malloc (*current_val_len + 1);
+      *current_val = bson_malloc (*current_val_len + 1);
       memcpy (*current_val, ptr, *current_val_len);
       (*current_val)[*current_val_len] = '\0';
 
@@ -585,10 +583,10 @@ FAIL:
    rval = false;
 
 CLEANUP:
-   free (val_r);
-   free (val_s);
-   free (val_i);
-   free (hashed_password);
+   bson_free (val_r);
+   bson_free (val_s);
+   bson_free (val_i);
+   bson_free (hashed_password);
 
    return rval;
 }
@@ -701,7 +699,7 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
          *current_val_len = (inbuf + inbuflen) - ptr;
       }
 
-      *current_val = malloc (*current_val_len + 1);
+      *current_val = bson_malloc (*current_val_len + 1);
       memcpy (*current_val, ptr, *current_val_len);
       (*current_val)[*current_val_len] = '\0';
 
@@ -745,8 +743,8 @@ FAIL:
    rval = false;
 
 CLEANUP:
-   free (val_e);
-   free (val_v);
+   bson_free (val_e);
+   bson_free (val_v);
 
    return rval;
 }

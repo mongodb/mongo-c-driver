@@ -17,47 +17,27 @@
 
 #include "mongoc-config.h"
 
+#include <openssl/rand.h>
+
+#include "mongoc-rand.h"
 #include "mongoc-rand-private.h"
 
-#ifndef MONGOC_OS_WIN32
-#include <unistd.h>
-#endif
-
-static uint16_t
-_mongoc_getpid (void)
-{
-   uint16_t pid;
-#ifdef MONGOC_OS_WIN32
-   DWORD real_pid;
-
-   real_pid = GetCurrentProcessId ();
-   pid = (real_pid & 0xFFFF) ^ ((real_pid >> 16) & 0xFFFF);
-#else
-   pid = getpid ();
-#endif
-
-   return pid;
+int _mongoc_rand_bytes(uint8_t * buf, int num) {
+    return RAND_bytes(buf, num);
 }
 
-uint32_t _mongoc_rand_new_seed() {
-   struct timeval tv;
-   unsigned int seed[3];
-
-   bson_gettimeofday (&tv);
-   seed[0] = (unsigned int)tv.tv_sec;
-   seed[1] = (unsigned int)tv.tv_usec;
-   seed[2] = _mongoc_getpid ();
-
-   return seed[0] ^ seed[1] ^ seed[2];
+int _mongoc_pseudo_rand_bytes(uint8_t * buf, int num) {
+    return RAND_pseudo_bytes(buf, num);
 }
 
-uint32_t _mongoc_rand(uint32_t * seed) {
-#ifdef BSON_OS_WIN32
-   /* ms's runtime is multithreaded by default, so no rand_r */
-   srand(*seed);
-   *seed = rand();
-   return seed;
-#else
-   return rand_r (seed);
-#endif
+void mongoc_rand_seed(const void* buf, int num) {
+    RAND_seed(buf, num);
+}
+
+void mongoc_rand_add(const void* buf, int num, double entropy) {
+    RAND_add(buf, num, entropy);
+}
+
+int mongoc_rand_status(void) {
+    return RAND_status();
 }
