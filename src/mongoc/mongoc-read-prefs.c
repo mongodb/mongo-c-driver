@@ -155,34 +155,36 @@ _score_tags (const bson_t *read_tags,
 
    count = bson_count_keys(read_tags);
 
-   // Execute this block if read tags were provided, else bail and return 0 (all nodes equal)
+   /* Execute this block if read tags were provided, else bail and return 0 (all nodes equal) */
    if (!bson_empty(read_tags) && bson_iter_init(&iter, read_tags)) {
 
-      // Iterate over array of read tag sets provided (each element is a tag set)
-      // Tag sets are provided in order of preference so return the count of the
-      // first set that matches the node or -1 if no set matched the node.
+      /*
+       * Iterate over array of read tag sets provided (each element is a tag set)
+       * Tag sets are provided in order of preference so return the count of the
+       * first set that matches the node or -1 if no set matched the node.
+       */
       while (count && bson_iter_next(&iter)) {
          if (BSON_ITER_HOLDS_DOCUMENT(&iter) && bson_iter_recurse(&iter, &sub_iter)) {
             node_matches_set = true;
 
-            // Iterate over the key/value pairs (tags) in the current set
+            /* Iterate over the key/value pairs (tags) in the current set */
             while (bson_iter_next(&sub_iter) && BSON_ITER_HOLDS_UTF8(&sub_iter)) {
                key = bson_iter_key(&sub_iter);
                str = bson_iter_utf8(&sub_iter, &len);
 
-               // If any of the tags do not match, this node cannot satisfy this tag set.
+               /* If any of the tags do not match, this node cannot satisfy this tag set. */
                if (!_contains_tag(node_tags, key, str, len)) {
                    node_matches_set = false;
                    break;
                }
             }
 
-            // This set matched, return the count as the score
+            /* This set matched, return the count as the score */
             if (node_matches_set) {
                 return count;
             }
 
-            // Decrement the score and try to match the next set.
+            /* Decrement the score and try to match the next set. */
             count--;
          }
       }

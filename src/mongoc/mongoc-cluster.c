@@ -617,6 +617,8 @@ _mongoc_cluster_select (mongoc_cluster_t             *cluster,
 {
    mongoc_cluster_node_t *nodes[MONGOC_CLUSTER_MAX_NODES];
    mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
+   int scores[MONGOC_CLUSTER_MAX_NODES];
+   int max_score = 0;
    uint32_t count;
    uint32_t watermark;
    int32_t nearest = -1;
@@ -742,9 +744,6 @@ dispatch:
    ((msec < 0 && (n)->ping_avg_msec >= 0) || ((n)->ping_avg_msec < msec))
 
    count = 0;
-
-   int scores[MONGOC_CLUSTER_MAX_NODES];
-   int max_score = 0;
 
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
       if (nodes[i]) {
