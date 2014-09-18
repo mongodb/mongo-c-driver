@@ -21,7 +21,7 @@
 #include "mongoc-rand-private.h"
 #include "mongoc-util-private.h"
 
-#include "b64_pton.h"
+#include "mongoc-b64-private.h"
 
 #include <openssl/sha.h>
 #include <openssl/evp.h>

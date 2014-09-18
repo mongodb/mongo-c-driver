@@ -19,6 +19,7 @@ MONGOC_DEF_FILES = \
 INST_H_FILES = \
 	src/mongoc/mongoc.h \
 	src/mongoc/mongoc-array-private.h \
+	src/mongoc/mongoc-b64-private.h \
 	src/mongoc/mongoc-buffer-private.h \
 	src/mongoc/mongoc-bulk-operation-private.h \
 	src/mongoc/mongoc-bulk-operation.h \
@@ -62,6 +63,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-read-prefs.h \
 	src/mongoc/mongoc-rpc-private.h \
 	src/mongoc/mongoc-sasl-private.h \
+	src/mongoc/mongoc-scram-private.h \
 	src/mongoc/mongoc-socket.h \
 	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-buffered.h \
@@ -82,6 +84,7 @@ INST_H_FILES = \
 if ENABLE_SSL
 INST_H_FILES += \
 	src/mongoc/mongoc-rand.h \
+	src/mongoc/mongoc-rand-private.h \
 	src/mongoc/mongoc-stream-tls.h \
 	src/mongoc/mongoc-ssl.h
 endif
