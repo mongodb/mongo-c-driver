@@ -788,7 +788,7 @@ dispatch:
     */
    if (max_score) {
       for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
-         if (nodes[i] && scores[i] < max_score) {
+         if (nodes[i] && (scores[i] < max_score)) {
              nodes[i] = NULL;
              count--;
          }
