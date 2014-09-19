@@ -740,9 +740,6 @@ dispatch:
     *       in the fast path of command dispatching.
     */
 
-#define IS_NEARER_THAN(n, msec) \
-   ((msec < 0 && (n)->ping_avg_msec >= 0) || ((n)->ping_avg_msec < msec))
-
    count = 0;
 
    for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
@@ -759,27 +756,7 @@ dispatch:
             }
 
          }
-         if (IS_NEARER_THAN(nodes[i], nearest)) {
-            nearest = nodes[i]->ping_avg_msec;
-         }
          count++;
-      }
-   }
-
-#undef IS_NEARAR_THAN
-
-   /*
-    * Filter nodes with latency outside threshold of nearest.
-    */
-   if (nearest != -1) {
-      watermark = nearest + cluster->sec_latency_ms;
-      for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
-         if (nodes[i]) {
-			 if (nodes[i]->ping_avg_msec >(int32_t)watermark) {
-               nodes[i] = NULL;
-               count--;
-            }
-         }
       }
    }
 
@@ -795,6 +772,36 @@ dispatch:
       }
    }
 
+   /*
+    * Get the nearest node among those which have not been filtered out
+    */
+#define IS_NEARER_THAN(n, msec) \
+   ((msec < 0 && (n)->ping_avg_msec >= 0) || ((n)->ping_avg_msec < msec))
+
+   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      if (nodes[i]) {
+         if (IS_NEARER_THAN(nodes[i], nearest)) {
+            nearest = nodes[i]->ping_avg_msec;
+         }
+      }
+   }
+
+#undef IS_NEARAR_THAN
+
+   /*
+    * Filter nodes with latency outside threshold of nearest.
+    */
+   if (nearest != -1) {
+      watermark = nearest + cluster->sec_latency_ms;
+      for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+         if (nodes[i]) {
+            if (nodes[i]->ping_avg_msec > (int32_t)watermark) {
+               nodes[i] = NULL;
+               count--;
+            }
+         }
+      }
+   }
 
    /*
     * Mark the error as unable to locate a target node.
