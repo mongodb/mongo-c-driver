@@ -154,11 +154,11 @@ from Visual Studio as well::
 Generating the Docs
 ===================
 
-To generate the documentation you must install the `yelp-tools` package.
+To generate the documentation you must install the :code:`yelp-tools` package.
 On Linux this package can be found in the package manager for your distribution,
-on OSX we recommend using [TingPing's homebrew-gnome tap](https://github.com/TingPing/homebrew-gnome).
+on OSX we recommend using `TingPing's homebrew-gnome tap <https://github.com/TingPing/homebrew-gnome>`_.
 
-Then use the following `./configure` options:
+Then use the following :code:`./configure` options:
 
-* `--enable-html-docs` - builds the HTML documentation
-* `--enable-man-pages` - builds and installs the man-pages.
+* :code:`--enable-html-docs` - builds the HTML documentation
+* :code:`--enable-man-pages` - builds and installs the man-pages.
