@@ -150,3 +150,15 @@ from Visual Studio as well::
   msbuild.exe ALL_BUILD.vcxproj
   msbuild.exe INSTALL.vcxproj
 
+
+Generating the Docs
+===================
+
+To generate the documentation you must install the `yelp-tools` package.
+On Linux this package can be found in the package manager for your distribution,
+on OSX we recommend using [TingPing's homebrew-gnome tap](https://github.com/TingPing/homebrew-gnome).
+
+Then use the following `./configure` options:
+
+* `--enable-html-docs` - builds the HTML documentation
+* `--enable-man-pages` - builds and installs the man-pages.
