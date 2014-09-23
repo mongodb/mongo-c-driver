@@ -22,6 +22,7 @@
 #endif
 
 #include "mongoc-client.h"
+#include "mongoc-client-observer.h"
 #include "mongoc-client-private.h"
 #include "mongoc-cluster-private.h"
 #include "mongoc-collection-private.h"
@@ -1189,6 +1190,9 @@ mongoc_client_command (mongoc_client_t           *client,
       bson_snprintf (ns, sizeof ns, "%s.$cmd", db_name);
       db_name = ns;
    }
+
+   // trigger PHP callback
+   trigger_command_callback(query, ns);
 
    return _mongoc_cursor_new (client, db_name, flags, skip, limit, batch_size,
                               true, query, fields, read_prefs);

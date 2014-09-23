@@ -24,6 +24,7 @@
 #define MONGOC_INSIDE
 #include "mongoc-bulk-operation.h"
 #include "mongoc-client.h"
+#include "mongoc-client-observer.h"
 #include "mongoc-client-pool.h"
 #include "mongoc-collection.h"
 #include "mongoc-config.h"

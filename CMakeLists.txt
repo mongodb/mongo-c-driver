@@ -60,6 +60,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.c
    ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-client-observer.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cluster.c
    ${SOURCE_DIR}/src/mongoc/mongoc-collection.c
@@ -198,6 +199,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-array.c
    ${SOURCE_DIR}/tests/test-mongoc-buffer.c
    ${SOURCE_DIR}/tests/test-mongoc-client.c
+   ${SOURCE_DIR}/tests/test-mongoc-client-observer.c
    ${SOURCE_DIR}/tests/mock-server.c
    ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-mongoc-client-pool.c

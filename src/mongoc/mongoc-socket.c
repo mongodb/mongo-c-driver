@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include "mongoc-client-observer.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
 #include "mongoc-host-list.h"
@@ -93,6 +94,7 @@ _mongoc_socket_setnonblock (int sd)
  *       the monotonic clock (bson_get_monotonic_time(), which is in
  *       microseconds). Or zero to not block at all. Or -1 to block
  *       forever.
+
  *
  * Returns:
  *       true if an event matched. otherwise false.
@@ -376,6 +378,9 @@ mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
    ret = bind (sock->sd, addr, addrlen);
 
    _mongoc_socket_capture_errno (sock);
+
+   // TEST: trigger a callback
+   trigger_socket_action_callback(sock, addr);
 
    RETURN (ret);
 }
