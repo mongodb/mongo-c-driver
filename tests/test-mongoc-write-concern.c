@@ -8,7 +8,8 @@ static void
 test_write_concern_basic (void)
 {
    mongoc_write_concern_t *write_concern;
-   const bson_t *b;
+   const bson_t *gle;
+   const bson_t *bson;
    bson_iter_t iter;
 
    write_concern = mongoc_write_concern_new();
@@ -55,11 +56,19 @@ test_write_concern_basic (void)
     */
    mongoc_write_concern_set_fsync(write_concern, true);
    mongoc_write_concern_set_journal(write_concern, true);
-   b = _mongoc_write_concern_freeze(write_concern);
-   ASSERT(bson_iter_init_find(&iter, b, "fsync") && BSON_ITER_HOLDS_BOOL(&iter) && bson_iter_bool(&iter));
-   ASSERT(bson_iter_init_find(&iter, b, "j") && BSON_ITER_HOLDS_BOOL(&iter) && bson_iter_bool(&iter));
-   ASSERT(bson_iter_init_find(&iter, b, "w") && BSON_ITER_HOLDS_INT32(&iter) && bson_iter_int32(&iter) == 3);
-   ASSERT(b);
+   gle = _mongoc_write_concern_get_gle(write_concern);
+   ASSERT(bson_iter_init_find(&iter, gle, "getlasterror") && BSON_ITER_HOLDS_INT32(&iter) && bson_iter_int32(&iter) == 1);
+   ASSERT(bson_iter_init_find(&iter, gle, "fsync") && BSON_ITER_HOLDS_BOOL(&iter) && bson_iter_bool(&iter));
+   ASSERT(bson_iter_init_find(&iter, gle, "j") && BSON_ITER_HOLDS_BOOL(&iter) && bson_iter_bool(&iter));
+   ASSERT(bson_iter_init_find(&iter, gle, "w") && BSON_ITER_HOLDS_INT32(&iter) && bson_iter_int32(&iter) == 3);
+   ASSERT(gle);
+
+   bson = _mongoc_write_concern_get_bson(write_concern);
+   ASSERT(!bson_iter_init_find(&iter, bson, "getlasterror"));
+   ASSERT(bson_iter_init_find(&iter, bson, "fsync") && BSON_ITER_HOLDS_BOOL(&iter) && bson_iter_bool(&iter));
+   ASSERT(bson_iter_init_find(&iter, bson, "j") && BSON_ITER_HOLDS_BOOL(&iter) && bson_iter_bool(&iter));
+   ASSERT(bson_iter_init_find(&iter, bson, "w") && BSON_ITER_HOLDS_INT32(&iter) && bson_iter_int32(&iter) == 3);
+   ASSERT(bson);
 
    mongoc_write_concern_destroy(write_concern);
 }

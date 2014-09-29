@@ -145,6 +145,7 @@ main (int   argc,
    test_rpc_install (&suite);
    test_stream_install (&suite);
    test_uri_install (&suite);
+   test_write_concern_install (&suite);
 #ifdef MONGOC_ENABLE_SSL
    test_x509_install (&suite);
    test_stream_tls_install (&suite);

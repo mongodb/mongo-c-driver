@@ -37,7 +37,7 @@
    (((n)->min_wire_version <= 2) && ((n)->max_wire_version >= 2))
 #define WRITE_CONCERN_DOC(wc) \
    (wc && _mongoc_write_concern_needs_gle ((wc))) ? \
-   (_mongoc_write_concern_freeze((mongoc_write_concern_t*)(wc))) : \
+   (_mongoc_write_concern_get_bson((mongoc_write_concern_t*)(wc))) : \
    (&gEmptyWriteConcern)
 
 

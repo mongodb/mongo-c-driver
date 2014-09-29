@@ -38,7 +38,7 @@ insert_test_docs (mongoc_collection_t *collection)
       const bson_t *wc;
       char *str;
 
-      wc = _mongoc_write_concern_freeze(write_concern);
+      wc = _mongoc_write_concern_get_gle(write_concern);
       str = bson_as_json(wc, NULL);
       fprintf(stderr, "Write Concern: %s\n", str);
       bson_free(str);

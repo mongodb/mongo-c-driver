@@ -2565,7 +2565,7 @@ _mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
          gle.query.collection = cmdname;
          gle.query.skip = 0;
          gle.query.n_return = 1;
-         b = _mongoc_write_concern_freeze((void*)write_concern);
+         b = _mongoc_write_concern_get_gle((void*)write_concern);
          gle.query.query = bson_get_data(b);
          gle.query.fields = NULL;
          _mongoc_rpc_gather(&gle, &cluster->iov);
@@ -2704,7 +2704,7 @@ _mongoc_cluster_try_sendv (mongoc_cluster_t             *cluster,
          gle.query.skip = 0;
          gle.query.n_return = 1;
 
-         b = _mongoc_write_concern_freeze ((void *)write_concern);
+         b = _mongoc_write_concern_get_gle ((void *)write_concern);
 
          gle.query.query = bson_get_data (b);
          gle.query.fields = NULL;

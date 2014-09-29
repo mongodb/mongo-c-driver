@@ -39,11 +39,12 @@ struct _mongoc_write_concern_t
    char     *wtag;
    bool      frozen;
    bson_t    compiled;
+   bson_t    compiled_gle;
 };
 
 
-const bson_t *_mongoc_write_concern_freeze  (mongoc_write_concern_t       *write_concern);
-
+const bson_t *_mongoc_write_concern_get_gle   (mongoc_write_concern_t       *write_cocnern);
+const bson_t *_mongoc_write_concern_get_bson  (mongoc_write_concern_t       *write_concern);
 bool          _mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern);
 
 BSON_END_DECLS
