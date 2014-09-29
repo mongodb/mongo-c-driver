@@ -5,7 +5,7 @@
 
 This page provides you with a little help getting started with the new MongoDB C driver.
 
-For more information on the C API, please refer to the [online API Documentation for the C driver](http://hergert.me/docs/mongo-c-driver/mongoc.html).
+For more information on the C API, please refer to the [online API Documentation for the C driver](http://api.mongodb.org/c/current/).
 
 
 ## Installation
