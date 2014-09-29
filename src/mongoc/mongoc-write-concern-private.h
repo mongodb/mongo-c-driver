@@ -43,8 +43,8 @@ struct _mongoc_write_concern_t
 
 
 const bson_t *_mongoc_write_concern_freeze  (mongoc_write_concern_t       *write_concern);
-bool          _mongoc_write_concern_has_gle (const mongoc_write_concern_t *write_concern);
 
+bool          _mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern);
 
 BSON_END_DECLS
 

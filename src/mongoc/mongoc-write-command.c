@@ -36,7 +36,7 @@
 #define SUPPORTS_WRITE_COMMANDS(n) \
    (((n)->min_wire_version <= 2) && ((n)->max_wire_version >= 2))
 #define WRITE_CONCERN_DOC(wc) \
-   (wc && _mongoc_write_concern_has_gle ((wc))) ? \
+   (wc && _mongoc_write_concern_needs_gle ((wc))) ? \
    (_mongoc_write_concern_freeze((mongoc_write_concern_t*)(wc))) : \
    (&gEmptyWriteConcern)
 
@@ -224,7 +224,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       GOTO (cleanup);
    }
 
-   if (_mongoc_write_concern_has_gle (write_concern)) {
+   if (_mongoc_write_concern_needs_gle (write_concern)) {
       if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
          result->failed = true;
          GOTO (cleanup);
@@ -361,7 +361,7 @@ again:
       GOTO (cleanup);
    }
 
-   if (_mongoc_write_concern_has_gle (write_concern)) {
+   if (_mongoc_write_concern_needs_gle (write_concern)) {
       bson_iter_t citer;
 
       if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
@@ -462,7 +462,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
       GOTO (cleanup);
    }
 
-   if (_mongoc_write_concern_has_gle (write_concern)) {
+   if (_mongoc_write_concern_needs_gle (write_concern)) {
       if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
          result->failed = true;
          GOTO (cleanup);
@@ -509,7 +509,7 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
     * a response from the server.
     */
    if ((client->cluster.nodes [hint - 1].min_wire_version == 0) &&
-       !_mongoc_write_concern_has_gle (write_concern)) {
+       !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_delete_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
@@ -582,7 +582,7 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
     * a response from the server.
     */
    if ((client->cluster.nodes [hint - 1].min_wire_version == 0) &&
-       !_mongoc_write_concern_has_gle (write_concern)) {
+       !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_insert_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
@@ -699,7 +699,7 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
     * a response from the server.
     */
    if ((client->cluster.nodes [hint - 1].min_wire_version == 0) &&
-       !_mongoc_write_concern_has_gle (write_concern)) {
+       !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_update_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);

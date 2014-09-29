@@ -177,7 +177,7 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_insert (&command, &document, 1, bulk->ordered,
-      !_mongoc_write_concern_has_gle (bulk->write_concern));
+      !_mongoc_write_concern_needs_gle (bulk->write_concern));
 
    _mongoc_array_append_val (&bulk->commands, command);
 

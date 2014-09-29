@@ -321,7 +321,7 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
 
 
 /**
- * mongoc_write_concern_has_gle:
+ * mongoc_write_concern_needs_gle:
  * @concern: (in): A mongoc_write_concern_t.
  *
  * Checks to see if @write_concern requests that a getlasterror command is to
@@ -330,7 +330,7 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
  * Returns: true if a getlasterror command should be sent.
  */
 bool
-_mongoc_write_concern_has_gle (const mongoc_write_concern_t *write_concern)
+_mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern)
 {
    if (write_concern) {
       return ((write_concern->w != 0) && (write_concern->w != -1));
