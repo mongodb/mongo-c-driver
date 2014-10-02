@@ -328,7 +328,7 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
    bson_t *compiled;
    bson_t *compiled_gle;
 
-   bson_return_val_if_fail(write_concern, NULL);
+   bson_return_if_fail(write_concern);
 
    compiled = &write_concern->compiled;
    compiled_gle = &write_concern->compiled_gle;
