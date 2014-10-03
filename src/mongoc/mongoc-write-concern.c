@@ -160,13 +160,14 @@ mongoc_write_concern_get_w (const mongoc_write_concern_t *write_concern)
 
 /**
  * mongoc_write_concern_set_w:
- * @w: The number of nodes for write or -1 for "majority".
+ * @w: The number of nodes for write or MONGOC_WRITE_CONCERN_W_MAJORITY
+ * for "majority".
  *
  * Sets the number of nodes that must acknowledge the write request before
  * acknowledging the write request to the client.
  *
- * You may specifiy @w as -1 to request that a "majority" of nodes
- * acknowledge the request.
+ * You may specifiy @w as MONGOC_WRITE_CONCERN_W_MAJORITY to request that
+ * a "majority" of nodes acknowledge the request.
  */
 void
 mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern,
