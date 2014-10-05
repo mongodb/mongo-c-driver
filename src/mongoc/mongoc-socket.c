@@ -861,7 +861,7 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock,   /* IN */
  *--------------------------------------------------------------------------
  */
 
-ssize_t
+static ssize_t
 _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
                           mongoc_iovec_t  *iov,    /* IN */
                           size_t           iovcnt) /* IN */
