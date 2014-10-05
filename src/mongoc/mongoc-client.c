@@ -51,11 +51,6 @@
 #define MONGOC_LOG_DOMAIN "client"
 
 
-#ifndef DEFAULT_CONNECTTIMEOUTMS
-#define DEFAULT_CONNECTTIMEOUTMS (10 * 1000L)
-#endif
-
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -84,7 +79,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    mongoc_socket_t *sock = NULL;
    struct addrinfo hints;
    struct addrinfo *result, *rp;
-   int32_t connecttimeoutms = DEFAULT_CONNECTTIMEOUTMS;
+   int32_t connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
    int64_t expire_at;
    const bson_t *options;
    bson_iter_t iter;
@@ -100,7 +95,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
        bson_iter_init_find (&iter, options, "connecttimeoutms") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
       if (!(connecttimeoutms = bson_iter_int32(&iter))) {
-         connecttimeoutms = DEFAULT_CONNECTTIMEOUTMS;
+         connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
       }
    }
 
