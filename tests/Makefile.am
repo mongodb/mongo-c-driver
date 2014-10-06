@@ -217,5 +217,11 @@ EXTRA_DIST += \
 	tests/make_ca.pl \
 	tests/c_rehash
 
+if OS_DARWIN
+DEBUGGER = lldb --
+else
+DEBUGGER = gdb --args
+endif
+
 debug: test-libmongoc
-	$(LIBTOOL) --mode=execute gdb --args test-libmongoc -f -p
+	$(LIBTOOL) --mode=execute $(DEBUGGER) test-libmongoc -f -p
