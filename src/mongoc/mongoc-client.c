@@ -55,6 +55,47 @@
 #define DEFAULT_CONNECTTIMEOUTMS (10 * 1000L)
 #endif
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * get_c_string_ip --
+ *
+ *       Convert the ip from addrinfo into a c string.
+ *
+ * Returns:
+ *       The value is returned into 'buffer'. The memory has to be allocated
+ *       by the caller
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static
+void get_c_string_ip (struct addrinfo    *rp,
+                      char               *buffer)
+{
+    void *ptr;
+    char tmp[256];
+
+    switch (rp->ai_family) {
+        case AF_INET:
+            ptr = &((struct sockaddr_in *) rp->ai_addr)->sin_addr;
+            inet_ntop (rp->ai_family, ptr, tmp, sizeof(tmp));
+            sprintf (buffer, "ipv4 %s", tmp);
+            break;
+        case AF_INET6:
+            ptr = &((struct sockaddr_in6 *) rp->ai_addr)->sin6_addr;
+            inet_ntop (rp->ai_family, ptr, tmp, sizeof(tmp));
+            sprintf (buffer, "ipv6 %s", tmp);
+            break;
+        default:
+            sprintf (buffer, "unknown ip %d", rp->ai_family);
+            break;
+    }
+}
+
 
 /*
  *--------------------------------------------------------------------------
@@ -146,6 +187,9 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
                                       rp->ai_addr,
                                       (socklen_t)rp->ai_addrlen,
                                       expire_at)) {
+         char ip[255];
+         get_c_string_ip (rp, ip);
+         MONGOC_WARNING ("Failed to connect to: %s:%d, error: %d, %s\n", ip, host->port, mongoc_socket_errno(sock), strerror(mongoc_socket_errno(sock)));
          mongoc_socket_destroy (sock);
          sock = NULL;
          continue;
@@ -158,7 +202,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_CONNECT,
-                      "Failed to connect to target host.");
+                      "Failed to connect to target host to %s.", host->host_and_port);
       freeaddrinfo (result);
       RETURN (NULL);
    }
