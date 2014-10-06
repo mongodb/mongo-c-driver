@@ -1087,9 +1087,10 @@ mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
  *--------------------------------------------------------------------------
  */
 
-void mongoc_socket_inet_ntop (struct addrinfo    *rp,     /* IN */
-                              char               *buf,    /* INOUT */
-                              size_t              buflen) /* IN */
+void
+mongoc_socket_inet_ntop (struct addrinfo    *rp,     /* IN */
+                         char               *buf,    /* INOUT */
+                         size_t              buflen) /* IN */
 {
     void *ptr;
     char tmp[256];
