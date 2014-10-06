@@ -90,6 +90,9 @@ ssize_t          mongoc_socket_sendv      (mongoc_socket_t       *sock,
                                            mongoc_iovec_t        *iov,
                                            size_t                 iovcnt,
                                            int64_t                expire_at);
+void             mongoc_socket_inet_ntop (struct addrinfo         *rp,
+                                          char                    *buf,
+                                          size_t                   buflen);
 
 
 BSON_END_DECLS
