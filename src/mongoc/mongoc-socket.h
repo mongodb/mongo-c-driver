@@ -87,6 +87,9 @@ ssize_t          mongoc_socket_sendv      (mongoc_socket_t       *sock,
                                            size_t                 iovcnt,
                                            int64_t                expire_at);
 bool             mongoc_socket_check_closed (mongoc_socket_t       *sock);
+void             mongoc_socket_inet_ntop  (struct addrinfo         *rp,
+                                           char                    *buf,
+                                           size_t                   buflen);
 
 
 BSON_END_DECLS

@@ -170,6 +170,7 @@ mongoc_socket_destroy
 mongoc_socket_errno
 mongoc_socket_getnameinfo
 mongoc_socket_getsockname
+mongoc_socket_inet_ntop
 mongoc_socket_listen
 mongoc_socket_new
 mongoc_socket_recv

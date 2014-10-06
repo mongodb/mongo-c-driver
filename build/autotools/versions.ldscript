@@ -234,6 +234,7 @@ LIBMONGOC_1.1 {
         mongoc_rand_add;
         mongoc_rand_seed;
         mongoc_rand_status;
+        mongoc_socket_inet_ntop
         mongoc_uri_get_credentials;
         mongoc_uri_get_mechanism_properties;
 } LIBMONGOC_1.0;
