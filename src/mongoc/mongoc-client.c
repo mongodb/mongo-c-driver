@@ -142,12 +142,15 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
                                       (socklen_t)rp->ai_addrlen,
                                       expire_at)) {
          char ip[255];
+         char errmsg[32];
+
          mongoc_socket_inet_ntop (rp, ip, sizeof ip);
+         bson_strerror_r (mongoc_socket_errno (sock), errmsg, sizeof errmsg);
          MONGOC_WARNING ("Failed to connect to: %s:%d, error: %d, %s\n",
                          ip,
                          host->port,
                          mongoc_socket_errno(sock),
-                         strerror(mongoc_socket_errno(sock)));
+                         errmsg);
          mongoc_socket_destroy (sock);
          sock = NULL;
          continue;
