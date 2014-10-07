@@ -141,6 +141,16 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
                                       rp->ai_addr,
                                       (socklen_t)rp->ai_addrlen,
                                       expire_at)) {
+         char ip[255];
+         char errmsg[32];
+
+         mongoc_socket_inet_ntop (rp, ip, sizeof ip);
+         bson_strerror_r (mongoc_socket_errno (sock), errmsg, sizeof errmsg);
+         MONGOC_WARNING ("Failed to connect to: %s:%d, error: %d, %s\n",
+                         ip,
+                         host->port,
+                         mongoc_socket_errno(sock),
+                         errmsg);
          mongoc_socket_destroy (sock);
          sock = NULL;
          continue;
@@ -153,7 +163,8 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_CONNECT,
-                      "Failed to connect to target host.");
+                      "Failed to connect to target host: %s",
+                      host->host_and_port);
       freeaddrinfo (result);
       RETURN (NULL);
    }
