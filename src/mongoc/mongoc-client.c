@@ -141,9 +141,10 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
                                       rp->ai_addr,
                                       (socklen_t)rp->ai_addrlen,
                                       expire_at)) {
-         char errmsg[32];
+         char errmsg_buf[32];
+         const char * errmsg;
 
-         bson_strerror_r (mongoc_socket_errno (sock), errmsg, sizeof errmsg);
+         errmsg = bson_strerror_r (mongoc_socket_errno (sock), errmsg_buf, sizeof errmsg_buf);
          MONGOC_WARNING ("Failed to connect, error: %d, %s\n",
                          mongoc_socket_errno(sock),
                          errmsg);
