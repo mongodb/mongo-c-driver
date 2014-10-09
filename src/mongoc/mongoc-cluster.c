@@ -63,19 +63,6 @@
 #define MAX_WIRE_VERSION 2
 
 
-#ifndef DEFAULT_SOCKET_TIMEOUT_MSEC
-/*
- * NOTE: The default socket timeout for connections is 5 minutes. This
- *       means that if your MongoDB server dies or becomes unavailable
- *       it will take 5 minutes to detect this.
- *
- *       You can change this by providing sockettimeoutms= in your
- *       connection URI.
- */
-#define DEFAULT_SOCKET_TIMEOUT_MSEC (1000L * 60L * 5L)
-#endif
-
-
 #ifndef UNHEALTHY_RECONNECT_TIMEOUT_USEC
 /*
  * Try reconnect every 20 seconds if we are unhealthy.
@@ -480,7 +467,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
                       void               *client)
 {
    const mongoc_host_list_t *hosts;
-   uint32_t sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC;
+   uint32_t sockettimeoutms = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
    uint32_t i;
    const bson_t *b;
    bson_iter_t iter;
@@ -509,7 +496,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    if (bson_iter_init_find_case(&iter, b, "sockettimeoutms")) {
       if (!(sockettimeoutms = bson_iter_int32 (&iter))) {
-         sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC;
+         sockettimeoutms = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
       }
    }
 
