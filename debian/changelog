@@ -1,3 +1,9 @@
+mongo-c-driver (1.0.2-0) unstable; urgency=low
+
+  * Release 1.0.2.
+
+ -- Jason Carey <jason.carey@mongodb.com>  Thu, 09 Oct 2014 09:35:59 -0400
+
 mongo-c-driver (1.0.1-0) unstable; urgency=low
 
   * Post-release bump to 1.0.1.

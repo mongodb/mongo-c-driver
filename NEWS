@@ -1,3 +1,32 @@
+mongo-c-driver 1.0.2
+====================
+
+It is my pleasure to announce to you the 1.0.2 release of the MongoDB C driver.
+
+This release is a minor point release with no ABI changes and mostly small
+bugfixes.
+
+Changes include:
+ * A variety of fixes for read preference based node selection
+ * Avoided inclusion of getLastError in 2.6 writeConcern
+ * Correct handling of pass through params for collection_aggregate
+ * Improved error reporting in socket connect
+ * Public MONGOC_DEFAULT_CONNECTTIMEOUTMS
+
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+ * Adam Midvidy
+ * Christian Hergert
+ * Denis Gladkikh
+ * Jason Carey
+ * Jeremy Mikola
+ * Jérôme Lebel
+ * Tyler Brock
+ * Wisdom Omuya
+
+-- Jason Carey
+
 mongo-c-driver 1.0.0
 ====================
 
