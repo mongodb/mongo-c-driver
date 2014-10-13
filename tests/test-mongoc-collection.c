@@ -1017,6 +1017,151 @@ test_command_fq (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_get_index_info (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_index_opt_t opt1;
+   mongoc_index_opt_t opt2;
+   bson_error_t error = { 0 };
+   bson_t *indexinfo = NULL;
+   bson_t indexkey1;
+   bson_t indexkey2;
+   bson_t dummy = BSON_INITIALIZER;
+   bson_iter_t idx_infos_iter;
+   bson_iter_t idx_arr_iter;
+   bson_iter_t idx_spec_iter;
+   bson_iter_t idx_spec_iter_copy;
+   bool r;
+   const char *cur_idx_name;
+   const char *idx1_name;
+   const char *idx2_name;
+   const char *id_idx_name = "_id_";
+   int num_idxs = 0;
+
+   client = mongoc_client_new (gTestUri);
+   ASSERT (client);
+
+   collection = get_test_collection (client, "test_get_index_info");
+   ASSERT (collection);
+
+   /*
+    * Try it on a collection that doesn't exist. We should just get
+    * {"indexes": []}
+    */
+   indexinfo = mongoc_collection_get_index_info (collection, &error);
+
+   ASSERT (indexinfo);
+   ASSERT (!error.domain);
+   ASSERT (!error.code);
+
+   if (bson_iter_init_find (&idx_infos_iter, indexinfo, "indexes") &&
+       BSON_ITER_HOLDS_ARRAY (&idx_infos_iter) &&
+       bson_iter_recurse (&idx_infos_iter, &idx_arr_iter)) {
+       if (bson_iter_next (&idx_arr_iter)) {
+           /* array should be empty */
+           assert (false);
+       }
+   }
+
+   /* insert a dummy document so that the collection actually exists */
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &dummy, NULL,
+                                 &error);
+   ASSERT (r);
+
+   /* Try it on a collection with no secondary indexes.
+    * We should just get back the index on _id.
+    */
+   indexinfo = mongoc_collection_get_index_info (collection, &error);
+   ASSERT (indexinfo);
+   ASSERT (!error.domain);
+   ASSERT (!error.code);
+
+   if (bson_iter_init_find (&idx_infos_iter, indexinfo, "indexes") &&
+       BSON_ITER_HOLDS_ARRAY (&idx_infos_iter) &&
+       bson_iter_recurse (&idx_infos_iter, &idx_arr_iter)) {
+      while (bson_iter_next (&idx_arr_iter)) {
+         if (BSON_ITER_HOLDS_DOCUMENT (&idx_arr_iter) &&
+             bson_iter_recurse (&idx_arr_iter, &idx_spec_iter) &&
+             bson_iter_find (&idx_spec_iter, "name") &&
+             BSON_ITER_HOLDS_UTF8 (&idx_spec_iter) &&
+             (cur_idx_name = bson_iter_utf8 (&idx_spec_iter, NULL))) {
+            assert (0 == strcmp (cur_idx_name, id_idx_name));
+            ++num_idxs;
+         } else {
+            assert (false);
+         }
+      }
+   }
+
+   assert (1 == num_idxs);
+
+   num_idxs = 0;
+   bson_destroy (indexinfo);
+   indexinfo = NULL;
+
+   bson_init (&indexkey1);
+   BSON_APPEND_INT32 (&indexkey1, "rasberry", 1);
+   idx1_name = mongoc_collection_keys_to_index_string (&indexkey1);
+   mongoc_index_opt_init (&opt1);
+   opt1.background = true;
+   r = mongoc_collection_create_index (collection, &indexkey1, &opt1, &error);
+   ASSERT (r);
+
+   bson_init (&indexkey2);
+   BSON_APPEND_INT32 (&indexkey2, "snozzberry", 1);
+   idx2_name = mongoc_collection_keys_to_index_string (&indexkey2);
+   mongoc_index_opt_init (&opt2);
+   opt2.unique = true;
+   r = mongoc_collection_create_index (collection, &indexkey2, &opt2, &error);
+   ASSERT (r);
+
+   /*
+    * Now we try again after creating two indexes.
+    */
+   indexinfo = mongoc_collection_get_index_info (collection, &error);
+   ASSERT (indexinfo);
+   ASSERT (!error.domain);
+   ASSERT (!error.code);
+
+   if (bson_iter_init_find (&idx_infos_iter, indexinfo, "indexes") &&
+       BSON_ITER_HOLDS_ARRAY (&idx_infos_iter) &&
+       bson_iter_recurse (&idx_infos_iter, &idx_arr_iter)) {
+      while (bson_iter_next (&idx_arr_iter)) {
+         if (BSON_ITER_HOLDS_DOCUMENT (&idx_arr_iter) &&
+             bson_iter_recurse (&idx_arr_iter, &idx_spec_iter) &&
+             (idx_spec_iter_copy = idx_spec_iter,    /* intentional assignment and use of comma */
+              bson_iter_find (&idx_spec_iter, "name")) &&
+             BSON_ITER_HOLDS_UTF8 (&idx_spec_iter) &&
+             (cur_idx_name = bson_iter_utf8 (&idx_spec_iter, NULL))) {
+            if (0 == strcmp (cur_idx_name, idx1_name)) {
+               /* need to use the copy of the iter since idx_spec_iter may have gone
+                * past the key we want */
+               ASSERT (bson_iter_find (&idx_spec_iter_copy, "background"));
+               ASSERT (BSON_ITER_HOLDS_BOOL (&idx_spec_iter_copy));
+               ASSERT (bson_iter_bool (&idx_spec_iter_copy));
+            } else if (0 == strcmp (cur_idx_name, idx2_name)) {
+               ASSERT (bson_iter_find (&idx_spec_iter_copy, "unique"));
+               ASSERT (BSON_ITER_HOLDS_BOOL (&idx_spec_iter_copy));
+               ASSERT (bson_iter_bool (&idx_spec_iter_copy));
+            } else {
+               ASSERT ((0 == strcmp (cur_idx_name, id_idx_name)));
+            }
+
+            ++num_idxs;
+         } else {
+            assert (false);
+         }
+      }
+   }
+
+   assert (3 == num_idxs);
+
+   bson_destroy (indexinfo);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
 
 static void
 cleanup_globals (void)
@@ -1047,6 +1192,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/large_return", test_large_return);
    TestSuite_Add (suite, "/Collection/many_return", test_many_return);
    TestSuite_Add (suite, "/Collection/command_fully_qualified", test_command_fq);
+   TestSuite_Add (suite, "/Collection/get_index_info", test_get_index_info);
 
    atexit (cleanup_globals);
 }

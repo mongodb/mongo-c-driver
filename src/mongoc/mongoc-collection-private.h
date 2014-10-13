@@ -48,11 +48,13 @@ struct _mongoc_collection_t
 };
 
 
-mongoc_collection_t *_mongoc_collection_new (mongoc_client_t              *client,
-                                             const char                   *db,
-                                             const char                   *collection,
-                                             const mongoc_read_prefs_t    *read_prefs,
-                                             const mongoc_write_concern_t *write_concern);
+mongoc_collection_t *_mongoc_collection_new                  (mongoc_client_t              *client,
+                                                              const char                   *db,
+                                                              const char                   *collection,
+                                                              const mongoc_read_prefs_t    *read_prefs,
+                                                              const mongoc_write_concern_t *write_concern);
+bson_t             *_mongoc_collection_get_index_info_legacy (mongoc_collection_t          *collection,
+                                                              bson_error_t                 *error);
 
 
 BSON_END_DECLS

@@ -881,6 +881,104 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
    return mongoc_collection_create_index (collection, keys, opt, error);
 }
 
+bson_t *
+_mongoc_collection_get_index_info_legacy (mongoc_collection_t *collection,
+                                          bson_error_t        *error)
+{
+   mongoc_database_t *db;
+   mongoc_collection_t *idx_collection;
+   mongoc_read_prefs_t *read_prefs;
+   bson_t query = BSON_INITIALIZER;
+   bson_t idx_array = BSON_INITIALIZER;
+   bson_t *ret = bson_new ();
+   const bson_t *idx;
+   mongoc_cursor_t *cursor;
+   const char *key;
+   char keystr[16];
+   uint32_t n_idxs = 0;
+
+   BSON_ASSERT (collection);
+
+   BSON_APPEND_UTF8 (&query, "ns", collection->ns);
+
+   db = mongoc_client_get_database (collection->client, collection->db);
+   BSON_ASSERT (db);
+
+   idx_collection = mongoc_database_get_collection (db, "system.indexes");
+   BSON_ASSERT (idx_collection);
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   cursor = mongoc_collection_find (idx_collection, MONGOC_QUERY_NONE, 0, 0, 0,
+                                    &query, NULL, read_prefs);
+
+   BSON_APPEND_ARRAY_BEGIN (ret, "indexes", &idx_array);
+
+   while (mongoc_cursor_more (cursor) &&
+          !mongoc_cursor_error (cursor, error)) {
+      if (mongoc_cursor_next (cursor, &idx)) {
+         bson_uint32_to_string (n_idxs, &key, keystr, sizeof (keystr));
+         BSON_APPEND_DOCUMENT (&idx_array, key, idx);
+         ++n_idxs;
+      }
+   }
+
+   bson_append_array_end (ret, &idx_array);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_collection_destroy (idx_collection);
+   mongoc_database_destroy (db);
+
+   return ret;
+}
+
+bson_t *
+mongoc_collection_get_index_info (mongoc_collection_t *collection,
+                                  bson_error_t        *error)
+{
+   bool cmd_success;
+   mongoc_read_prefs_t *read_prefs;
+   bson_t cmd = BSON_INITIALIZER;
+   bson_t *reply = bson_new ();
+
+   BSON_ASSERT (collection);
+
+   bson_append_utf8 (&cmd, "listIndexes", -1, collection->collection,
+                     collection->collectionlen);
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   cmd_success = mongoc_collection_command_simple (collection, &cmd, NULL,
+                                                   reply, error);
+
+   if (cmd_success) {
+       /* intentionally empty */
+   } else if (error->code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
+       bson_t empty_arr = BSON_INITIALIZER;
+       /* collection does not exist. in accordance with the spec we return
+       * an empty array. Also we need to clear out the error. */
+       error->code = 0;
+       error->domain = 0;
+       BSON_APPEND_ARRAY (reply, "indexes", &empty_arr);
+   } else if (error->code == MONGOC_ERROR_COMMAND_NOT_FOUND) {
+      /* talking to an old server. */
+      /* clear out error. */
+      error->code = 0;
+      error->domain = 0;
+      reply =
+         _mongoc_collection_get_index_info_legacy (collection, error);
+   } else {
+      /* network error */
+      bson_destroy (reply);
+      reply = NULL;
+   }
+
+   bson_destroy (&cmd);
+   mongoc_read_prefs_destroy (read_prefs);
+
+   return reply;
+}
 
 /*
  *--------------------------------------------------------------------------
