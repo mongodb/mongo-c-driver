@@ -308,7 +308,7 @@ again:
 
    do {
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
-      BSON_ASSERT (i < command->u.insert.n_documents);
+      BSON_ASSERT (i < (int)command->u.insert.n_documents);
 
       bson_iter_document (&iter, &len, &data);
 
