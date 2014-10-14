@@ -776,8 +776,8 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
    bson_return_val_if_fail (buf, -1);
    bson_return_val_if_fail (buflen, -1);
 
-   iov.iov_base = (void *)buf;
-   iov.iov_len = buflen;
+   iov.iov_base = (char *)buf;
+   iov.iov_len = (u_long)buflen;
 
    return mongoc_socket_sendv (sock, &iov, 1, expire_at);
 }
@@ -882,7 +882,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    DUMP_IOVEC (sendbuf, iov, iovcnt);
 
 #ifdef _WIN32
-   ret = WSASend (sock->sd, (LPWSABUF)iov, iovcnt, &dwNumberofBytesSent,
+   ret = (ssize_t)WSASend (sock->sd, (LPWSABUF)iov, (DWORD)iovcnt, &dwNumberofBytesSent,
                   0, NULL, NULL);
    ret = ret ? -1 : dwNumberofBytesSent;
 #else
@@ -996,7 +996,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
           * the number of bytes to write.
           */
          iov [cur].iov_base = ((char *)iov [cur].iov_base) + sent;
-         iov [cur].iov_len -= sent;
+         iov [cur].iov_len -= (u_long)sent;
 
          BSON_ASSERT (iovcnt - cur);
          BSON_ASSERT (iov [cur].iov_len);

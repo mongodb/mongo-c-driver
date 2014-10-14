@@ -49,7 +49,7 @@
 #define CSTRING_FIELD(_name) \
    BSON_ASSERT(rpc->_name); \
    iov.iov_base = (void *)rpc->_name; \
-   iov.iov_len = strlen(rpc->_name) + 1; \
+   iov.iov_len = (u_long)strlen(rpc->_name) + 1; \
    BSON_ASSERT(iov.iov_len); \
    rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
@@ -259,7 +259,7 @@
       size_t _j; \
       for (_i = 0; _i < rpc->n_##_name; _i++) { \
          printf("  "#_name" : "); \
-         for (_j = 0; _j < rpc->_name[_i].iov_len; _j++) { \
+         for (_j = 0; _j < (size_t)rpc->_name[_i].iov_len; _j++) { \
             uint8_t u; \
             u = ((char *)rpc->_name[_i].iov_base)[_j]; \
             printf(" %02x", u); \
@@ -400,7 +400,7 @@
    }
 #define IOVEC_ARRAY_FIELD(_name) \
    rpc->_name##_recv.iov_base = (void *)buf; \
-   rpc->_name##_recv.iov_len = buflen; \
+   rpc->_name##_recv.iov_len = (u_long)buflen; \
    rpc->_name = &rpc->_name##_recv; \
    rpc->n_##_name = 1; \
    buf = NULL; \

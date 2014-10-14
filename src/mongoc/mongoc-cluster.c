@@ -2803,7 +2803,7 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    /*
     * Buffer the message length to determine how much more to read.
     */
-   pos = buffer->len;
+   pos = (off_t)buffer->len;
    if (!_mongoc_buffer_append_from_stream (buffer, node->stream, 4,
                                            cluster->sockettimeoutms, error)) {
       mongoc_counter_protocol_ingress_error_inc ();

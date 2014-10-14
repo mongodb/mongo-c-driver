@@ -253,7 +253,7 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
                               0, timeout);
 
       if (r > 0) {
-         iov.iov_len = r;
+         iov.iov_len = (u_long)r;
          mongoc_gridfs_file_writev (file, &iov, 1, timeout);
       } else if (r == 0) {
          break;
