@@ -786,7 +786,7 @@ dispatch:
       }
    }
 
-#undef IS_NEARAR_THAN
+#undef IS_NEARER_THAN
 
    /*
     * Filter nodes with latency outside threshold of nearest.
