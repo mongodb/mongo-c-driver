@@ -199,9 +199,8 @@ failure:
    close (fd);
 
 use_malloc:
+   MONGOC_WARNING("Falling back to malloc for counters.");
 #endif
-
-   MONGOC_WARNING ("Falling back to malloc for counters.");
 
    gCounterFallback = bson_malloc0 (size);
    atexit (mongoc_counters_destroy);
