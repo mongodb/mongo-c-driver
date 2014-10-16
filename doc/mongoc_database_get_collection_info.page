@@ -15,7 +15,7 @@
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[char **
+    <synopsis><code mime="text/x-csrc"><![CDATA[bson_t *
 mongoc_database_get_collection_info (mongoc_database_t *database,
                                      const bson_t      *filter,
                                      bson_error_t      *error);
