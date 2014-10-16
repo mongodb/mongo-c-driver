@@ -780,17 +780,13 @@ char **
 mongoc_database_get_collection_names (mongoc_database_t *database,
                                       bson_error_t      *error)
 {
-   uint32_t len;
-   const bson_t *doc;
    bson_iter_t iter;
    bson_iter_t col_array;
    bson_iter_t col;
    const char *name;
-   char **ret = NULL;
    char *namecopy;
    bson_t *infos;
    mongoc_array_t strv_buf;
-   int i = 0;
 
    BSON_ASSERT (database);
 
