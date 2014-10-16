@@ -757,6 +757,7 @@ mongoc_database_get_collection_info (mongoc_database_t *database,
    if (cmd_success) {
        /* intentionally empty */
    } else if (error->code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
+      bson_destroy (reply);
       /* We are talking to a server that doesn' support listCollections. */
       /* clear out the error. */
       error->code = 0;
