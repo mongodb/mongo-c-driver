@@ -266,7 +266,8 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
       bson_append_bool(&user, "readOnly", 8, false);
       bson_append_utf8(&user, "pwd", 3, pwd, -1);
    } else {
-      bson_copy_to_excluding(doc, &user, "pwd", (char *)NULL);
+      bson_init(&user);
+      bson_copy_to_excluding_noinit(doc, &user, "pwd", (char *)NULL);
       bson_append_utf8(&user, "pwd", 3, pwd, -1);
    }
 
@@ -712,7 +713,7 @@ _mongoc_database_get_collection_info_legacy (mongoc_database_t *database,
              !strchr (name, '$') &&
              (0 == strncmp (name, database->name, dbname_len))) {
             bson_t col = BSON_INITIALIZER;
-            bson_copy_to_excluding (doc, &col, "name", NULL);
+            bson_copy_to_excluding_noinit (doc, &col, "name", NULL);
             BSON_APPEND_UTF8 (&col, "name", name + (dbname_len + 1));  /* +1 for the '.' */
             /* need to construct a key for this array element. */
             bson_uint32_to_string(n_cols, &key, keystr, sizeof (keystr));
