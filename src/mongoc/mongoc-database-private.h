@@ -43,10 +43,13 @@ struct _mongoc_database_t
 };
 
 
-mongoc_database_t *_mongoc_database_new (mongoc_client_t              *client,
-                                         const char                   *name,
-                                         const mongoc_read_prefs_t    *read_prefs,
-                                         const mongoc_write_concern_t *write_concern);
+mongoc_database_t *_mongoc_database_new                         (mongoc_client_t              *client,
+                                                                 const char                   *name,
+                                                                 const mongoc_read_prefs_t    *read_prefs,
+                                                                 const mongoc_write_concern_t *write_concern);
+bson_t            *_mongoc_database_get_collection_info_legacy  (mongoc_database_t            *database,
+                                                                 const bson_t                 *filter,
+                                                                 bson_error_t                 *error);
 
 
 BSON_END_DECLS

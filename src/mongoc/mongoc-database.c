@@ -634,20 +634,27 @@ cleanup:
    RETURN(ret);
 }
 
-
-char **
-mongoc_database_get_collection_names (mongoc_database_t *database,
-                                      bson_error_t      *error)
+/* Uses old way of querying system.namespaces. */
+bson_t *
+_mongoc_database_get_collection_info_legacy (mongoc_database_t *database,
+                                             const bson_t      *filter,
+                                             bson_error_t      *error)
 {
    mongoc_collection_t *col;
    mongoc_cursor_t *cursor;
-   uint32_t len;
+   mongoc_read_prefs_t *read_prefs;
+   uint32_t dbname_len;
    const bson_t *doc;
+   bson_t legacy_filter;
    bson_iter_t iter;
    const char *name;
+   const char *col_filter;
    bson_t q = BSON_INITIALIZER;
-   char **ret = NULL;
-   int i = 0;
+   bson_t *ret = NULL;
+   bson_t col_array = BSON_INITIALIZER;
+   const char *key;
+   char keystr[16];
+   uint32_t n_cols = 0;
 
    BSON_ASSERT (database);
 
@@ -655,34 +662,168 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
                                        database->name,
                                        "system.namespaces");
 
-   cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0, &q,
-                                    NULL, NULL);
+   BSON_ASSERT (col);
 
-   len = (int) strlen (database->name) + 1;
+   dbname_len = (uint32_t)strlen (database->name);
+
+   /* Filtering on name needs to be handled differently for old servers. */
+   if (filter && bson_iter_init_find (&iter, filter, "name")) {
+      /* on legacy servers, this must be a string (i.e. not a regex) */
+      if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_NAMESPACE,
+                         MONGOC_ERROR_NAMESPACE_INVALID_FILTER_TYPE,
+                         "On legacy servers, a filter on name can only be a string.");
+         goto cleanup_filter;
+      }
+      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+      col_filter = bson_iter_utf8 (&iter, NULL);
+      bson_init (&legacy_filter);
+      bson_copy_to_excluding_noinit (filter, &legacy_filter, "name", NULL);
+      /* We must db-qualify filters on name. */
+      bson_string_t *buf = bson_string_new (database->name);
+      bson_string_append_c (buf, '.');
+      bson_string_append (buf, col_filter);
+      BSON_APPEND_UTF8 (&legacy_filter, "name", buf->str);
+      bson_string_free (buf, true);
+      filter = &legacy_filter;
+   }
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   cursor = mongoc_collection_find (col, MONGOC_QUERY_NONE, 0, 0, 0,
+                                    filter ? filter : &q, NULL, read_prefs);
+
+   ret = bson_new();
+
+   BSON_APPEND_ARRAY_BEGIN (ret, "collections", &col_array);
 
    while (mongoc_cursor_more (cursor) &&
           !mongoc_cursor_error (cursor, error)) {
       if (mongoc_cursor_next (cursor, &doc)) {
+         /* 2 gotchas here.
+          * 1. need to ignore any system collections (prefixed with $)
+          * 2. need to remove the database name from the collection so that clients
+          *    don't need to specialize their logic for old versions of the server.
+          */
          if (bson_iter_init_find (&iter, doc, "name") &&
              BSON_ITER_HOLDS_UTF8 (&iter) &&
              (name = bson_iter_utf8 (&iter, NULL)) &&
              !strchr (name, '$') &&
-             (0 == strncmp (name, database->name, len - 1))) {
-            ret = bson_realloc (ret, sizeof(char*) * (i + 2));
-            ret [i] = bson_strdup (bson_iter_utf8 (&iter, NULL) + len);
-            ret [++i] = NULL;
+             (0 == strncmp (name, database->name, dbname_len))) {
+            bson_t col = BSON_INITIALIZER;
+            bson_copy_to_excluding (doc, &col, "name", NULL);
+            BSON_APPEND_UTF8 (&col, "name", name + (dbname_len + 1));  /* +1 for the '.' */
+            /* need to construct a key for this array element. */
+            bson_uint32_to_string(n_cols, &key, keystr, sizeof (keystr));
+            BSON_APPEND_DOCUMENT (&col_array, key, &col);
+            ++n_cols;
          }
       }
    }
 
-   if (!ret && !mongoc_cursor_error (cursor, error)) {
-      ret = bson_malloc0 (sizeof (void*));
-   }
+   bson_append_array_end (ret, &col_array);
 
    mongoc_cursor_destroy (cursor);
+   mongoc_read_prefs_destroy (read_prefs);
+ cleanup_filter:
    mongoc_collection_destroy (col);
-
    return ret;
+}
+
+bson_t *
+mongoc_database_get_collection_info (mongoc_database_t *database,
+                                     const bson_t      *filter,
+                                     bson_error_t      *error)
+{
+   mongoc_read_prefs_t *read_prefs;
+   bson_t *reply = bson_new();
+   bson_t cmd = BSON_INITIALIZER;
+   bool cmd_success;
+
+   BSON_ASSERT (database);
+
+   BSON_APPEND_INT32 (&cmd, "listCollections", 1);
+
+   if (filter) {
+      BSON_APPEND_DOCUMENT (&cmd, "filter", filter);
+   }
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   cmd_success = mongoc_database_command_simple (database, &cmd, read_prefs,
+                                                 reply, error);
+   if (cmd_success) {
+       /* intentionally empty */
+   } else if (error->code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
+      /* We are talking to a server that doesn' support listCollections. */
+      /* clear out the error. */
+      error->code = 0;
+      error->domain = 0;
+      /* try again with using system.namespaces */
+      reply =
+         _mongoc_database_get_collection_info_legacy (database, filter, error);
+   } else {
+      /* network error */
+      bson_destroy (reply);
+      reply = NULL;
+   }
+
+   bson_destroy (&cmd);
+   mongoc_read_prefs_destroy (read_prefs);
+
+   return reply;
+}
+
+char **
+mongoc_database_get_collection_names (mongoc_database_t *database,
+                                      bson_error_t      *error)
+{
+   uint32_t len;
+   const bson_t *doc;
+   bson_iter_t iter;
+   bson_iter_t col_array;
+   bson_iter_t col;
+   const char *name;
+   char **ret = NULL;
+   char *namecopy;
+   bson_t *infos;
+   mongoc_array_t strv_buf;
+   int i = 0;
+
+   BSON_ASSERT (database);
+
+   infos = mongoc_database_get_collection_info (database, NULL, error);
+
+   if (!infos) {
+      return NULL;
+   }
+
+   _mongoc_array_init (&strv_buf, sizeof (char *));
+
+   if (bson_iter_init_find (&iter, infos, "collections") &&
+       BSON_ITER_HOLDS_ARRAY (&iter) &&
+       bson_iter_recurse (&iter, &col_array)) {
+      while (bson_iter_next (&col_array)) {
+         if (BSON_ITER_HOLDS_DOCUMENT (&col_array) &&
+             bson_iter_recurse (&col_array, &col) &&
+             bson_iter_find (&col, "name") &&
+             BSON_ITER_HOLDS_UTF8 (&col) &&
+             (name = bson_iter_utf8 (&col, NULL))) {
+             namecopy = bson_strdup (name);
+             _mongoc_array_append_val (&strv_buf, namecopy);
+         }
+      }
+   }
+
+   /* append a null pointer for the last value. also handles the case
+    * of no values. */
+   namecopy = NULL;
+   _mongoc_array_append_val (&strv_buf, namecopy);
+
+   bson_destroy (infos);
+
+   return (char **) strv_buf.data;
 }
 
 
