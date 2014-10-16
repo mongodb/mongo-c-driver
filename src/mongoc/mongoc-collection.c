@@ -962,6 +962,7 @@ mongoc_collection_get_index_info (mongoc_collection_t *collection,
        error->domain = 0;
        BSON_APPEND_ARRAY (reply, "indexes", &empty_arr);
    } else if (error->code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
+      bson_destroy (reply);
       /* talking to an old server. */
       /* clear out error. */
       error->code = 0;
