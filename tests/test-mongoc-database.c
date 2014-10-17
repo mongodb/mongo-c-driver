@@ -188,7 +188,6 @@ test_get_collection_info (void)
    bson_t autoindexid_options = BSON_INITIALIZER;
    bson_t noopts_options = BSON_INITIALIZER;
    bson_t name_filter = BSON_INITIALIZER;
-   bson_t autoindexid_filter = BSON_INITIALIZER;
    int r;
    int num_infos = 0;
 
