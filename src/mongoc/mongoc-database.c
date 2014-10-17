@@ -586,15 +586,13 @@ mongoc_database_has_collection (mongoc_database_t *database,
                                 const char        *name,
                                 bson_error_t      *error)
 {
-   mongoc_collection_t *collection;
-   mongoc_read_prefs_t *read_prefs;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-   bson_iter_t iter;
+   bson_t *infos = NULL;
+   bson_iter_t info_iter;
+   bson_iter_t col_array_iter;
+   bson_iter_t col_iter;
    bool ret = false;
    const char *cur_name;
-   bson_t q = BSON_INITIALIZER;
-   char ns[140];
+   bson_t filter = BSON_INITIALIZER;
 
    ENTRY;
 
@@ -605,34 +603,38 @@ mongoc_database_has_collection (mongoc_database_t *database,
       memset (error, 0, sizeof *error);
    }
 
-   bson_snprintf (ns, sizeof ns, "%s.%s", database->name, name);
+   BSON_APPEND_UTF8 (&filter, "name", name);
 
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   collection = mongoc_client_get_collection (database->client,
-                                              database->name,
-                                              "system.namespaces");
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
-                                    NULL, read_prefs);
+   infos = mongoc_database_get_collection_info (database, &filter, error);
 
-   while (!mongoc_cursor_error (cursor, error) &&
-          mongoc_cursor_more (cursor)) {
-      while (mongoc_cursor_next (cursor, &doc) &&
-          bson_iter_init_find (&iter, doc, "name") &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
-         cur_name = bson_iter_utf8(&iter, NULL);
-         if (!strcmp(cur_name, ns)) {
-            ret = true;
-            GOTO(cleanup);
+   if (!infos ||
+       (error &&
+        ((error->domain != 0) ||
+         (error->code != 0)))) {
+      return ret;
+   }
+
+   if (bson_iter_init_find (&info_iter, infos, "collections") &&
+       BSON_ITER_HOLDS_ARRAY (&info_iter) &&
+       bson_iter_recurse (&info_iter, &col_array_iter)) {
+      while (bson_iter_next (&col_array_iter)) {
+         if (BSON_ITER_HOLDS_DOCUMENT (&col_array_iter) &&
+             bson_iter_recurse (&col_array_iter, &col_iter) &&
+             bson_iter_find (&col_iter, "name") &&
+             BSON_ITER_HOLDS_UTF8 (&col_iter) &&
+             (cur_name = bson_iter_utf8 (&col_iter, NULL))) {
+            if (!strcmp (cur_name, name)) {
+               ret = true;
+               GOTO (cleanup);
+            }
          }
       }
    }
 
 cleanup:
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_read_prefs_destroy (read_prefs);
+   bson_free (infos);
 
-   RETURN(ret);
+   RETURN (ret);
 }
 
 /* Uses old way of querying system.namespaces. */
