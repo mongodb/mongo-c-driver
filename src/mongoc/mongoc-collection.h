@@ -66,6 +66,14 @@ int64_t                       mongoc_collection_count                (mongoc_col
                                                                       int64_t                        limit,
                                                                       const mongoc_read_prefs_t     *read_prefs,
                                                                       bson_error_t                  *error);
+int64_t                       mongoc_collection_count_with_opts      (mongoc_collection_t           *collection,
+                                                                      mongoc_query_flags_t           flags,
+                                                                      const bson_t                  *query,
+                                                                      int64_t                        skip,
+                                                                      int64_t                        limit,
+                                                                      const bson_t                  *opts,
+                                                                      const mongoc_read_prefs_t     *read_prefs,
+                                                                      bson_error_t                  *error);
 bool                          mongoc_collection_drop                 (mongoc_collection_t           *collection,
                                                                       bson_error_t                  *error);
 bool                          mongoc_collection_drop_index           (mongoc_collection_t           *collection,

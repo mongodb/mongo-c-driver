@@ -533,6 +533,28 @@ mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
                          const mongoc_read_prefs_t *read_prefs,  /* IN */
                          bson_error_t              *error)       /* OUT */
 {
+   return mongoc_collection_count_with_opts (
+      collection,
+      flags,
+      query,
+      skip,
+      limit,
+      NULL,
+      read_prefs,
+      error);
+}
+
+
+int64_t
+mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN */
+                                   mongoc_query_flags_t       flags,       /* IN */
+                                   const bson_t              *query,       /* IN */
+                                   int64_t                    skip,        /* IN */
+                                   int64_t                    limit,       /* IN */
+                                   const bson_t               *opts,       /* IN */
+                                   const mongoc_read_prefs_t *read_prefs,  /* IN */
+                                   bson_error_t              *error)       /* OUT */
+{
    int64_t ret = -1;
    bson_iter_t iter;
    bson_t reply;
@@ -556,6 +578,9 @@ mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
    }
    if (skip) {
       bson_append_int64(&cmd, "skip", 4, skip);
+   }
+   if (opts) {
+       bson_concat(&cmd, opts);
    }
    if (mongoc_collection_command_simple(collection, &cmd, read_prefs,
                                         &reply, error) &&

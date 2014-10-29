@@ -538,6 +538,43 @@ test_count (void)
 
 
 static void
+test_count_with_opts (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   int64_t count;
+   bson_t b;
+   bson_t opts;
+
+   client = mongoc_client_new (gTestUri);
+   ASSERT (client);
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+   ASSERT (collection);
+
+   bson_init (&opts);
+
+   BSON_APPEND_UTF8 (&opts, "hint", "_id_");
+
+   bson_init (&b);
+   count = mongoc_collection_count_with_opts (collection, MONGOC_QUERY_NONE, &b,
+                                              0, 0, &opts, NULL, &error);
+   bson_destroy (&b);
+   bson_destroy (&opts);
+
+   if (count == -1) {
+      MONGOC_WARNING ("%s\n", error.message);
+   }
+
+   ASSERT (count != -1);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_drop (void)
 {
    mongoc_collection_t *collection;
@@ -1183,6 +1220,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/update", test_update);
    TestSuite_Add (suite, "/Collection/remove", test_remove);
    TestSuite_Add (suite, "/Collection/count", test_count);
+   TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
    TestSuite_Add (suite, "/Collection/validate", test_validate);
