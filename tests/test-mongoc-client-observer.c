@@ -8,12 +8,12 @@
 
 #include "TestSuite.h"
 
-// Global counters
+/* Global counters */
 bool cmd_flag_a = false;
 bool cmd_flag_b = false;
 bool sock_flag  = false;
 
-// Some test callback functions
+/* Some test callback functions */
 
 void
 command_callback_a(const bson_t *command, char ns[])
@@ -34,10 +34,12 @@ socket_bind_callback(mongoc_socket_t *sock,
     sock_flag = true;
 }
 
-// Trigger all actions that should call our callbacks.
-// These currently are:
-// - running a command
-// - binding a sock_flag to a new address
+/*
+ * Trigger all actions that should call our callbacks.
+ * These currently are:
+ * - running a command
+ * - binding a sock_flag to a new address
+ */
 void
 trigger_actions(mongoc_client_t *client,
                 mongoc_socket_t *sock,
@@ -46,18 +48,18 @@ trigger_actions(mongoc_client_t *client,
     const char *db_name = "admin";
     bson_t *command;
 
-    // reset our test flags
+    /* reset our test flags */
     cmd_flag_a = false;
     cmd_flag_b = false;
     sock_flag = false;
 
-    // run a command
+    /* run a command */
     command = bson_new();
     bson_append_int32(command, "ismaster", -1, 1);
     mongoc_client_command_simple(client, db_name, command,
                                  NULL, NULL, NULL);
 
-    // bind a socket
+    /* bind a socket */
     mongoc_socket_bind(sock, (struct sockaddr *)&saddr, sizeof saddr);
     mongoc_socket_close(sock);
 
@@ -70,19 +72,15 @@ test_mongoc_client_observer_basic (void)
 {
     mongoc_client_t *client;
     mongoc_socket_t *sock;
+    mongoc_client_observer_t *observer;
     struct sockaddr_in saddr;
-    const mongoc_client_observer_t table_a = {
-        command_callback_a,
-        observer_default_socket_bind_callback,
-    };
-    const mongoc_client_observer_t table_b = {
-        command_callback_b,
-        socket_bind_callback,
-    };
-    const mongoc_client_observer_t default_table = {
-        observer_default_command_callback,
-        observer_default_socket_bind_callback,
-    };
+
+    /* Sets of callback funtions for testing */
+    mongoc_client_observer_function_t table[] =
+        {
+            { MONGOC_CLIENT_OBSERVER_COMMAND, (mongoc_client_observer_callback_t)command_callback_a },
+            { MONGOC_CLIENT_OBSERVER_SOCKET_BIND, NULL }
+        };
 
     client = mongoc_client_new ("mongodb://localhost:27017/");
 
@@ -96,34 +94,22 @@ test_mongoc_client_observer_basic (void)
     saddr.sin_port = htons(12345);
     saddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    // for sanity, trigger actions, check counters
+    /* for sanity, trigger actions, check counters */
     trigger_actions(client, sock, saddr);
     assert(!cmd_flag_a && !cmd_flag_b && !sock_flag);
 
-    // hook up one custom function, one default
-    set_custom_observer_t(&table_a);
+    /* hook up two custom functions */
+    observer = mongoc_client_observer_new(table, 2, NULL);
+    mongoc_client_set_observer(client, observer);
 
-    // trigger actions, check counters
+    /* trigger actions, check counters */
     trigger_actions(client, sock, saddr);
     assert(cmd_flag_a);
     assert(!cmd_flag_b && !sock_flag);
 
-    // now hook up two custom functions
-    set_custom_observer_t(&table_b);
-
-    // trigger actions, check counters
-    trigger_actions(client, sock, saddr);
-    assert(!cmd_flag_a);
-    assert(cmd_flag_b && sock_flag);
-
-    // restore table to default
-    set_custom_observer_t(&default_table);
-
-    // trigger actions, check counters
-    trigger_actions(client, sock, saddr);
-    assert(!cmd_flag_a && !cmd_flag_b && !sock_flag);
-
+    /* clean up */
     mongoc_client_destroy(client);
+    mongoc_client_observer_destroy(observer);
     mongoc_cleanup();
 }
 

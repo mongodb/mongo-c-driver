@@ -24,16 +24,18 @@
 
 struct _mongoc_client_pool_t
 {
-   mongoc_mutex_t    mutex;
-   mongoc_cond_t     cond;
-   mongoc_queue_t    queue;
-   mongoc_uri_t     *uri;
-   uint32_t          min_pool_size;
-   uint32_t          max_pool_size;
-   uint32_t          size;
+   mongoc_mutex_t            mutex;
+   mongoc_cond_t             cond;
+   mongoc_queue_t            queue;
+   mongoc_uri_t             *uri;
+   uint32_t                  min_pool_size;
+   uint32_t                  max_pool_size;
+   uint32_t                  size;
+   mongoc_client_observer_t *observer;
+   bool                      observer_set;
 #ifdef MONGOC_ENABLE_SSL
-   bool              ssl_opts_set;
-   mongoc_ssl_opt_t  ssl_opts;
+   bool                      ssl_opts_set;
+   mongoc_ssl_opt_t          ssl_opts;
 #endif
 };
 
@@ -60,6 +62,21 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
 }
 #endif
 
+void
+mongoc_client_pool_set_observer (mongoc_client_pool_t     *pool,
+                                 mongoc_client_observer_t *observer)
+{
+    bson_return_if_fail (pool);
+
+    mongoc_mutex_lock (&pool->mutex);
+
+    if (!pool->observer_set) {
+        pool->observer = observer;
+        pool->observer_set = true;
+    }
+
+    mongoc_mutex_unlock (&pool->mutex);
+}
 
 mongoc_client_pool_t *
 mongoc_client_pool_new (const mongoc_uri_t *uri)
@@ -79,6 +96,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    pool->min_pool_size = 0;
    pool->max_pool_size = 100;
    pool->size = 0;
+   pool->observer = NULL;
 
    b = mongoc_uri_get_options(pool->uri);
 
@@ -116,6 +134,7 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
    mongoc_uri_destroy(pool->uri);
    mongoc_mutex_destroy(&pool->mutex);
    mongoc_cond_destroy(&pool->cond);
+
    bson_free(pool);
 
    mongoc_counter_client_pools_active_dec();
@@ -145,6 +164,9 @@ again:
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
          }
 #endif
+         if (pool->observer_set) {
+            mongoc_client_set_observer(client, pool->observer);
+         }
          pool->size++;
       } else {
          mongoc_cond_wait(&pool->cond, &pool->mutex);
@@ -177,6 +199,9 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
          }
 #endif
+         if (pool->observer_set) {
+            mongoc_client_set_observer (client, pool->observer);
+         }
          pool->size++;
       }
    }

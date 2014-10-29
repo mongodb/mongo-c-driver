@@ -14,60 +14,34 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include "mongoc-client-observer.h"
+#include "mongoc-client-observer-private.h"
 
-/*
- *--------------------------------------------------------------------------
- *
- * clientObserverTable, responsible for triggering callback functions that
- * are set by a user on meaninful events in the driver. Defaults to a set of
- * no-op callback functions.
- *
- *--------------------------------------------------------------------------
- */
-
-static mongoc_client_observer_t
-clientObserverTable =
+mongoc_client_observer_t
+*mongoc_client_observer_new(mongoc_client_observer_function_t *callbacks,
+                            int num_callbacks,
+                            void *user_data)
 {
-    observer_default_command_callback,
-    observer_default_socket_bind_callback,
-};
+    mongoc_client_observer_t *observer;
 
-/*
- *--------------------------------------------------------------------------
- *
- * set_custom_observer_t --
- *
- *      Set the client observer table to point to custom callback functions.
- *
- *      All functions outlined in the mongoc_client_observer_t must be
- *      present in @custom_table for this call to succeed. To 'skip' a
- *      callback for some event 'e', pass observer_default_e_callback(),
- *      which will be a no-op, as a placeholder.
- *
- *      If no custom table is set, then all callbacks will be no-ops.
- *
- * Returns:
- *
- *      0 on success, 1 on failure.
- *
- * Side effects:
- *
- *      Custom callback functions will be called when trigger points are
- *      hit in the client.
- *
- *      If 'custom_table' is not a valid mongoc_client_observer_t, this
- *      function will not change the clientObserverTable.
- *
- *--------------------------------------------------------------------------
- */
+    observer = bson_malloc0(sizeof *observer);
+    observer->user_data = user_data;
 
-int
-set_custom_observer_t (const mongoc_client_observer_t *custom_table)
-{
-    clientObserverTable = *custom_table;
-    return 0;
+    /* set all the callbacks to null */
+    for (int i = 0; i < MONGOC_CLIENT_OBSERVER_SIZE; i++) {
+        observer->callbacks[i] = NULL;
+    }
+
+    /* sort the custom callbacks into their respective rows in table */
+    for (int i = 0; i < num_callbacks; i++) {
+        mongoc_client_observer_function_t entry = callbacks[i];
+        observer->callbacks[entry.name] = entry.callback;
+    }
+    return observer;
+}
+
+void mongoc_client_observer_destroy(mongoc_client_observer_t *observer) {
+    bson_return_if_fail(observer);
+    bson_free(observer);
 }
 
 /*
@@ -81,37 +55,29 @@ set_custom_observer_t (const mongoc_client_observer_t *custom_table)
  */
 
 void
-trigger_command_callback (const bson_t *command, char ns[])
+mongoc_client_observer_trigger_command (mongoc_client_observer_t *table,
+                                        const bson_t *command,
+                                        char ns[])
 {
-    clientObserverTable.on_command(command, ns);
+    mongoc_client_observer_command_t callback =
+        (mongoc_client_observer_command_t)
+        table->callbacks[MONGOC_CLIENT_OBSERVER_COMMAND];
+
+    if (callback) {
+        callback(command, ns, table->user_data);
+    }
 }
 
 void
-trigger_socket_action_callback (mongoc_socket_t *sock,
-                                const struct sockaddr *addr)
+mongoc_client_observer_trigger_socket_bind (mongoc_client_observer_t *table,
+                                            mongoc_socket_t *sock,
+                                            const struct sockaddr *addr)
 {
-    clientObserverTable.on_socket_bind(sock, addr);
-}
+    mongoc_client_observer_socket_bind_t callback =
+        (mongoc_client_observer_socket_bind_t)
+        table->callbacks[MONGOC_CLIENT_OBSERVER_SOCKET_BIND];
 
-/*
- *--------------------------------------------------------------------------
- *
- * The following are no-op placeholder functions for our default client
- * observer table. These are meant to be called by the observer only, but
- * may be passed into set_custom_observer_t by the user as placeholders.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-observer_default_command_callback (const bson_t *command, char ns[])
-{
-    return;
-}
-
-void
-observer_default_socket_bind_callback (mongoc_socket_t *sock,
-                                         const struct sockaddr *addr)
-{
-    return;
+    if (callback) {
+        callback(sock, addr, table->user_data);
+    }
 }

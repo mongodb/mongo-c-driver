@@ -23,6 +23,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-bulk-operation-private.h \
 	src/mongoc/mongoc-bulk-operation.h \
 	src/mongoc/mongoc-client-observer.h \
+	src/mongoc/mongoc-client-observer-private.h \
 	src/mongoc/mongoc-client-pool.h \
 	src/mongoc/mongoc-client-private.h \
 	src/mongoc/mongoc-client.h \

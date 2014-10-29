@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "mongoc-client-observer.h"
+#include "mongoc-client-observer-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
 #include "mongoc-host-list.h"
@@ -379,8 +379,8 @@ mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
 
    _mongoc_socket_capture_errno (sock);
 
-   // TEST: trigger a callback
-   trigger_socket_action_callback(sock, addr);
+   /* trigger PHP callback: TODO fix this to check if observer is set */
+   //mongoc_client_trigger_socket_bind(sock, addr);
 
    RETURN (ret);
 }

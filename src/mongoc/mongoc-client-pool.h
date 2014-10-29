@@ -40,15 +40,17 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_client_pool_t mongoc_client_pool_t;
 
 
-mongoc_client_pool_t *mongoc_client_pool_new     (const mongoc_uri_t   *uri);
-void                  mongoc_client_pool_destroy (mongoc_client_pool_t *pool);
-mongoc_client_t      *mongoc_client_pool_pop     (mongoc_client_pool_t *pool);
-void                  mongoc_client_pool_push    (mongoc_client_pool_t *pool,
-                                                  mongoc_client_t      *client);
-mongoc_client_t      *mongoc_client_pool_try_pop (mongoc_client_pool_t *pool);
+mongoc_client_pool_t *mongoc_client_pool_new          (const mongoc_uri_t             *uri);
+void                  mongoc_client_pool_destroy      (mongoc_client_pool_t           *pool);
+mongoc_client_t      *mongoc_client_pool_pop          (mongoc_client_pool_t           *pool);
+void                  mongoc_client_pool_push         (mongoc_client_pool_t           *pool,
+                                                       mongoc_client_t                *client);
+mongoc_client_t      *mongoc_client_pool_try_pop      (mongoc_client_pool_t           *pool);
+void                  mongoc_client_pool_set_observer (mongoc_client_pool_t           *client,
+                                                       mongoc_client_observer_t       *custom_table);
 #ifdef MONGOC_ENABLE_SSL
-void                  mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
-                                                       const mongoc_ssl_opt_t *opts);
+void                  mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t           *pool,
+                                                       const mongoc_ssl_opt_t         *opts);
 #endif
 
 

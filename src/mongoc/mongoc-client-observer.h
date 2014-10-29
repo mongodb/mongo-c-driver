@@ -14,7 +14,53 @@
  * limitations under the License.
  */
 
-#include "mongoc-cluster-private.h"
+#ifndef MONGOC_CLIENT_OBSERVER_H
+#define MONGOC_CLIENT_OBSERVER_H
+
+#include "mongoc-socket.h"
+
+#define MONGOC_CLIENT_OBSERVER_SIZE 16
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * These are the supported observable events:
+ *
+ *--------------------------------------------------------------------------
+ */
+typedef enum
+{
+    MONGOC_CLIENT_OBSERVER_COMMAND,
+    MONGOC_CLIENT_OBSERVER_SOCKET_BIND,
+} mongoc_client_observer_event_name_t;
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * The supported callbacks' signatures:
+ *
+ *--------------------------------------------------------------------------
+ */
+typedef void (*mongoc_client_observer_callback_t)      (void);
+typedef void (*mongoc_client_observer_command_t)       (const bson_t *command,
+                                                        char ns[],
+                                                        void *user_data);
+typedef void (*mongoc_client_observer_socket_bind_t)   (mongoc_socket_t *sock,
+                                                        const struct sockaddr *adr,
+                                                        void *user_data);
+
+/*
+ *--------------------------------------------------------------------------
+ * mongoc_client_observer_function_t --
+ *
+ *      A callback function and its name.
+ *
+ *--------------------------------------------------------------------------
+ */
+typedef struct _mongoc_client_observer_function {
+    mongoc_client_observer_event_name_t name;
+    mongoc_client_observer_callback_t callback;
+} mongoc_client_observer_function_t;
 
 /*
  *--------------------------------------------------------------------------
@@ -22,71 +68,37 @@
  * mongoc_client_observer_t --
  *
  *      The mongoc_client_observer_t keeps a directory of callback functions
- *      to be triggered on certain key events.
+ *      to be triggered on certain key events.  It also contains some
+ *      arbitrary user data, and a destructor for that data.
  *
  *--------------------------------------------------------------------------
  */
-typedef struct _mongoc_client_observer {
-    void (*on_command) (const bson_t *command, char ns[]);
-    void (*on_socket_bind) (mongoc_socket_t *sock,
-                            const struct sockaddr *addr);
+typedef struct _mongoc_client_observer_t {
+    mongoc_client_observer_callback_t callbacks[MONGOC_CLIENT_OBSERVER_SIZE];
+    void *user_data;
 } mongoc_client_observer_t;
 
-/*
- *--------------------------------------------------------------------------
- *
- * set_custom_observer_t --
- *
- *      Set the client observer table to point to custom callback functions.
- *
- *      All functions outlined in the mongoc_client_observer_t must be
- *      present in @custom_table for this call to succeed. To 'skip' a
- *      callback for some event 'e', pass observer_default_e_callback(),
- *      which will be a no-op, as a placeholder.
- *
- *      If no custom table is set, then all callbacks will be no-ops.
- *
- * Returns:
- *
- *      1 on success, 0 on failure.
- *
- * Side effects:
- *
- *      Custom callback functions will be called when trigger points are
- *      hit in the client.
- *
- *      If 'custom_table' is not a valid mongoc_client_observer_t, this
- *      function will not change the clientObserverTable.
- *
- *--------------------------------------------------------------------------
- */
-
-int set_custom_observer_t (const mongoc_client_observer_t *custom_table);
 
 /*
  *--------------------------------------------------------------------------
  *
- * The following are trigger functions for various callbacks defined in the
- * clientObserverTable. These trigger functions are meant to be called
- * internally only.
+ * Initialize a new observer table with 'num_callbacks' callback functions.
+ * 'user_data' must outlive this table.
  *
  *--------------------------------------------------------------------------
  */
-
-void trigger_command_callback (const bson_t *command, char ns[]);
-void trigger_socket_bind_callback (mongoc_socket_t *sock,
-                                   const struct sockaddr *addr);
+mongoc_client_observer_t
+*mongoc_client_observer_new(mongoc_client_observer_function_t *callbacks,
+                            int num_callbacks,
+                            void *user_data);
 
 /*
  *--------------------------------------------------------------------------
  *
- * The following are no-op placeholder functions for our default client
- * observer table. These are meant to be called by the observer only, but
- * may be passed into set_custom_observer_t by the user as placeholders.
+ * destroy this observer table and its associated data.
  *
  *--------------------------------------------------------------------------
  */
+void mongoc_client_observer_destroy(mongoc_client_observer_t *table);
 
-void observer_default_command_callback (const bson_t *command, char ns[]);
-void observer_default_socket_bind_callback (mongoc_socket_t *sock,
-                                            const struct sockaddr *addr);
+#endif /* MONGOC_CLIENT_OBSERVER_H */
