@@ -34,6 +34,10 @@ typedef struct
   <section id="desc">
     <title>Description</title>
     <p>This structure contains the options that may be used for tuning a specific index.</p>
+
+    <p>NOTE: dropDups is deprecated as of MongoDB version 2.7.5.  This option is silently
+    ignored by the server and unique index builds using this option will fail if a duplicate
+    value is detected.</p>
   </section>
 
   <links type="topic" groups="function" style="2column">
