@@ -22,6 +22,7 @@
 #endif
 
 #include "mongoc-client.h"
+#include "mongoc-client-observer-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-cluster-private.h"
 #include "mongoc-collection-private.h"
@@ -1190,6 +1191,11 @@ mongoc_client_command (mongoc_client_t           *client,
       db_name = ns;
    }
 
+   /* trigger PHP callback */
+   if (client->observer_set) {
+       mongoc_client_observer_trigger_command(client->observer, query, ns);
+   }
+
    return _mongoc_cursor_new (client, db_name, flags, skip, limit, batch_size,
                               true, query, fields, read_prefs);
 }
@@ -1352,7 +1358,7 @@ mongoc_client_set_stream_initiator (mongoc_client_t           *client,
                                     mongoc_stream_initiator_t  initiator,
                                     void                      *user_data)
 {
-   bson_return_if_fail (client);
+    bson_return_if_fail (client);
 
    if (!initiator) {
       initiator = mongoc_client_default_stream_initiator;
@@ -1363,4 +1369,35 @@ mongoc_client_set_stream_initiator (mongoc_client_t           *client,
 
    client->initiator = initiator;
    client->initiator_data = user_data;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * set_custom_observer_t --
+ *
+ *      Set a custom observer table on this client.
+ *
+ * Returns:
+ *
+ *      nothing
+ *
+ * Side effects:
+ *
+ *      Custom callback functions will be called when trigger points are
+ *      hit within the client.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mongoc_client_set_observer (mongoc_client_t *client,
+                            mongoc_client_observer_t *table)
+{
+    /* Do we need to lock here? */
+    /* Should this error if table is already set? */
+    if (!client->observer_set) {
+        client->observer = table;
+        client->observer_set = true;
+    }
 }

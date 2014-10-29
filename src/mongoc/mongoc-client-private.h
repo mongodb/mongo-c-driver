@@ -52,6 +52,9 @@ struct _mongoc_client_t
    mongoc_cluster_t           cluster;
    bool                       in_exhaust;
 
+   mongoc_client_observer_t  *observer;
+   bool                       observer_set;
+
    mongoc_stream_initiator_t  initiator;
    void                      *initiator_data;
 
@@ -65,34 +68,34 @@ struct _mongoc_client_t
 };
 
 
-mongoc_stream_t *_mongoc_client_create_stream (mongoc_client_t              *client,
-                                               const mongoc_host_list_t     *host,
-                                               bson_error_t                 *error);
-uint32_t         _mongoc_client_sendv         (mongoc_client_t              *client,
-                                               mongoc_rpc_t                 *rpcs,
-                                               size_t                        rpcs_len,
-                                               uint32_t                      hint,
-                                               const mongoc_write_concern_t *write_concern,
-                                               const mongoc_read_prefs_t    *read_prefs,
-                                               bson_error_t                 *error);
-bool             _mongoc_client_recv          (mongoc_client_t              *client,
-                                               mongoc_rpc_t                 *rpc,
-                                               mongoc_buffer_t              *buffer,
-                                               uint32_t                      hint,
-                                               bson_error_t                 *error);
-bool             _mongoc_client_recv_gle      (mongoc_client_t              *client,
-                                               uint32_t                      hint,
-                                               bson_t                      **gle_doc,
-                                               bson_error_t                 *error);
-uint32_t         _mongoc_client_stamp         (mongoc_client_t              *client,
-                                               uint32_t                      node);
-bool             _mongoc_client_warm_up       (mongoc_client_t              *client,
-                                               bson_error_t                 *error);
-uint32_t         _mongoc_client_preselect     (mongoc_client_t              *client,
-                                               mongoc_opcode_t               opcode,
-                                               const mongoc_write_concern_t *write_concern,
-                                               const mongoc_read_prefs_t    *read_prefs,
-                                               bson_error_t                 *error);
+mongoc_stream_t *_mongoc_client_create_stream (mongoc_client_t                   *client,
+                                               const mongoc_host_list_t          *host,
+                                               bson_error_t                      *error);
+uint32_t         _mongoc_client_sendv         (mongoc_client_t                   *client,
+                                               mongoc_rpc_t                      *rpcs,
+                                               size_t                             rpcs_len,
+                                               uint32_t                           hint,
+                                               const mongoc_write_concern_t      *write_concern,
+                                               const mongoc_read_prefs_t         *read_prefs,
+                                               bson_error_t                      *error);
+bool             _mongoc_client_recv          (mongoc_client_t                   *client,
+                                               mongoc_rpc_t                      *rpc,
+                                               mongoc_buffer_t                   *buffer,
+                                               uint32_t                           hint,
+                                               bson_error_t                      *error);
+bool             _mongoc_client_recv_gle      (mongoc_client_t                   *client,
+                                               uint32_t                           hint,
+                                               bson_t                           **gle_doc,
+                                               bson_error_t                      *error);
+uint32_t         _mongoc_client_stamp         (mongoc_client_t                   *client,
+                                               uint32_t                           node);
+bool             _mongoc_client_warm_up       (mongoc_client_t                   *client,
+                                               bson_error_t                      *error);
+uint32_t         _mongoc_client_preselect     (mongoc_client_t                   *client,
+                                               mongoc_opcode_t                    opcode,
+                                               const mongoc_write_concern_t      *write_concern,
+                                               const mongoc_read_prefs_t         *read_prefs,
+                                               bson_error_t                      *error);
 
 
 BSON_END_DECLS
