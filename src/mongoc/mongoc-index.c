@@ -32,8 +32,15 @@ static mongoc_index_opt_t gMongocIndexOptDefault = {
    0,
    -1,
    -1,
+   NULL
 };
 
+static mongoc_index_opt_geo_t gMongocIndexOptGeoDefault = {
+   26,
+   -90,
+   90,
+   -1
+};
 
 const mongoc_index_opt_t *
 mongoc_index_opt_get_default (void)
@@ -41,6 +48,11 @@ mongoc_index_opt_get_default (void)
    return &gMongocIndexOptDefault;
 }
 
+const mongoc_index_opt_geo_t *
+mongoc_index_opt_geo_get_default (void)
+{
+   return &gMongocIndexOptGeoDefault;
+}
 
 void
 mongoc_index_opt_init (mongoc_index_opt_t *opt)
@@ -48,4 +60,12 @@ mongoc_index_opt_init (mongoc_index_opt_t *opt)
    BSON_ASSERT (opt);
 
    memcpy (opt, &gMongocIndexOptDefault, sizeof *opt);
+}
+
+void
+mongoc_index_opt_geo_init (mongoc_index_opt_geo_t *opt)
+{
+   BSON_ASSERT (opt);
+
+   memcpy (opt, &gMongocIndexOptGeoDefault, sizeof *opt);
 }

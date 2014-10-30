@@ -683,10 +683,24 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
    s = bson_string_new (NULL);
 
    while (bson_iter_next (&iter)) {
-      bson_string_append_printf (s,
-                                 (i++ ? "_%s_%d" : "%s_%d"),
-                                 bson_iter_key (&iter),
-                                 bson_iter_int32 (&iter));
+
+      // Index types can be strings or integers (direction)
+      if (bson_iter_type(&iter) == BSON_TYPE_UTF8)
+      {
+          bson_string_append_printf (s,
+                                     (i++ ? "_%s_%s" : "%s_%s"),
+                                     bson_iter_key (&iter),
+                                     bson_iter_utf8 (&iter, NULL));
+      }
+      else
+      {
+
+          bson_string_append_printf (s,
+                                     (i++ ? "_%s_%d" : "%s_%d"),
+                                     bson_iter_key (&iter),
+                                     bson_iter_int32 (&iter));
+      }
+
    }
 
    return bson_string_free (s, false);
@@ -811,12 +825,14 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
                                 bson_error_t             *error)
 {
    const mongoc_index_opt_t *def_opt;
+   const mongoc_index_opt_geo_t *def_geo;
    bson_error_t local_error;
    const char *name;
    bson_t cmd = BSON_INITIALIZER;
    bson_t ar;
    bson_t doc;
    bson_t reply;
+   const mongoc_index_opt_geo_t *geo_opt;
    char *alloc_name = NULL;
    bool ret = false;
 
@@ -869,6 +885,22 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    }
    if (opt->language_override != def_opt->language_override) {
       BSON_APPEND_UTF8 (&doc, "language_override", opt->language_override);
+   }
+   if (opt->geo_options) {
+       geo_opt = opt->geo_options;
+       def_geo = mongoc_index_opt_geo_get_default ();
+       if (geo_opt->twod_bits_precision != def_geo->twod_bits_precision) {
+          BSON_APPEND_INT32 (&doc, "bits", geo_opt->twod_bits_precision);
+       }
+       if (geo_opt->twod_location_min != def_geo->twod_location_min) {
+          BSON_APPEND_DOUBLE (&doc, "min", geo_opt->twod_location_min);
+       }
+       if (geo_opt->twod_location_max != def_geo->twod_location_max) {
+          BSON_APPEND_DOUBLE (&doc, "max", geo_opt->twod_location_max);
+       }
+       if (geo_opt->haystack_bucket_size != def_geo->haystack_bucket_size) {
+          BSON_APPEND_DOUBLE (&doc, "bucketSize", geo_opt->haystack_bucket_size);
+       }
    }
    bson_append_document_end (&ar, &doc);
    bson_append_array_end (&cmd, &ar);

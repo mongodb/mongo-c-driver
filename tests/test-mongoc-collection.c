@@ -506,6 +506,118 @@ test_index (void)
    mongoc_client_destroy(client);
 }
 
+static void
+test_index_compound (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   mongoc_index_opt_t opt;
+   bson_error_t error;
+   bool r;
+   bson_t keys;
+
+   mongoc_index_opt_init(&opt);
+
+   client = mongoc_client_new(gTestUri);
+   ASSERT (client);
+
+   database = get_test_database (client);
+   ASSERT (database);
+
+   collection = get_test_collection (client, "test_index_compound");
+   ASSERT (collection);
+
+   bson_init(&keys);
+   bson_append_int32(&keys, "hello", -1, 1);
+   bson_append_int32(&keys, "world", -1, -1);
+   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
+   ASSERT (r);
+
+   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
+   ASSERT (r);
+
+   r = mongoc_collection_drop_index(collection, "hello_1_world_-1", &error);
+   ASSERT (r);
+
+   bson_destroy(&keys);
+
+   r = mongoc_collection_drop (collection, &error);
+   ASSERT (r);
+
+   mongoc_collection_destroy(collection);
+   mongoc_database_destroy(database);
+   mongoc_client_destroy(client);
+}
+
+static void
+test_index_geo (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   mongoc_index_opt_t opt;
+   mongoc_index_opt_geo_t geo_opt;
+   bson_error_t error;
+   bool r;
+   bson_t keys;
+
+   mongoc_index_opt_init(&opt);
+   mongoc_index_opt_geo_init(&geo_opt);
+
+   client = mongoc_client_new(gTestUri);
+   ASSERT (client);
+
+   database = get_test_database (client);
+   ASSERT (database);
+
+   collection = get_test_collection (client, "test_geo_index");
+   ASSERT (collection);
+
+   /* Create a basic 2d index */
+   bson_init(&keys);
+   BSON_APPEND_UTF8(&keys, "location", "2d");
+   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
+   ASSERT (r);
+
+   r = mongoc_collection_drop_index(collection, "location_2d", &error);
+   ASSERT (r);
+
+   /* Create a 2d index with bells and whisltes */
+   bson_init(&keys);
+   BSON_APPEND_UTF8(&keys, "location", "2d");
+
+   geo_opt.twod_location_min = -123;
+   geo_opt.twod_location_max = +123;
+   geo_opt.twod_bits_precision = 30;
+   opt.geo_options = &geo_opt;
+
+   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
+   ASSERT (r);
+
+   r = mongoc_collection_drop_index(collection, "location_2d", &error);
+   ASSERT (r);
+
+   /* Create a Haystack index */
+   bson_init(&keys);
+   BSON_APPEND_UTF8(&keys, "location", "geoHaystack");
+   BSON_APPEND_INT32(&keys, "category", 1);
+
+   mongoc_index_opt_geo_init(&geo_opt);
+   geo_opt.haystack_bucket_size = 5;
+   opt.geo_options = &geo_opt;
+
+   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
+   ASSERT (r);
+
+   r = mongoc_collection_drop_index(collection, "location_geoHaystack_category_1", &error);
+   ASSERT (r);
+
+   mongoc_collection_destroy(collection);
+   mongoc_database_destroy(database);
+   mongoc_client_destroy(client);
+}
+
 
 static void
 test_count (void)
@@ -1216,6 +1328,8 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/insert", test_insert);
    TestSuite_Add (suite, "/Collection/save", test_save);
    TestSuite_Add (suite, "/Collection/index", test_index);
+   TestSuite_Add (suite, "/Collection/index_compound", test_index_compound);
+   TestSuite_Add (suite, "/Collection/index_geo", test_index_geo);
    TestSuite_Add (suite, "/Collection/regex", test_regex);
    TestSuite_Add (suite, "/Collection/update", test_update);
    TestSuite_Add (suite, "/Collection/remove", test_remove);
