@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
+#ifndef MONGOC_COUNTERS_PRIVATE_H
+#define MONGOC_COUNTERS_PRIVATE_H
 
 #if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
-
-
-#ifndef MONGOC_COUNTERS_PRIVATE_H
-#define MONGOC_COUNTERS_PRIVATE_H
-
 
 #include <bson.h>
 

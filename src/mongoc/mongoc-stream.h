@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
+#ifndef MONGOC_STREAM_H
+#define MONGOC_STREAM_H
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
 # error "Only <mongoc.h> can be included directly."
 #endif
-
-
-#ifndef MONGOC_STREAM_H
-#define MONGOC_STREAM_H
-
 
 #include "mongoc-iovec.h"
 #include "mongoc-socket.h"
