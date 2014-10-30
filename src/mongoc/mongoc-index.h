@@ -26,26 +26,38 @@
 
 BSON_BEGIN_DECLS
 
+typedef struct
+{
+   uint8_t twod_sphere_version;
+   uint8_t twod_bits_precision;
+   double  twod_location_min;
+   double  twod_location_max;
+   double  haystack_bucket_size;
+   uint8_t *padding[32];
+} mongoc_index_opt_geo_t;
 
 typedef struct
 {
-   bool          is_initialized;
-   bool          background;
-   bool          unique;
-   const char   *name;
-   bool          drop_dups;
-   bool          sparse;
-   int32_t       expire_after_seconds;
-   int32_t       v;
-   const bson_t *weights;
-   const char   *default_language;
-   const char   *language_override;
-   void         *padding[8];
+   bool                   is_initialized;
+   bool                   background;
+   bool                   unique;
+   const char             *name;
+   bool                   drop_dups;
+   bool                   sparse;
+   int32_t                expire_after_seconds;
+   int32_t                v;
+   const bson_t           *weights;
+   const char             *default_language;
+   const char             *language_override;
+   mongoc_index_opt_geo_t *geo_options;
+   void                   *padding[7];
 } mongoc_index_opt_t;
 
 
-const mongoc_index_opt_t *mongoc_index_opt_get_default (void) BSON_GNUC_CONST;
-void                      mongoc_index_opt_init        (mongoc_index_opt_t *opt);
+const mongoc_index_opt_t     *mongoc_index_opt_get_default     (void) BSON_GNUC_CONST;
+const mongoc_index_opt_geo_t *mongoc_index_opt_geo_get_default (void) BSON_GNUC_CONST;
+void                          mongoc_index_opt_init            (mongoc_index_opt_t *opt);
+void                          mongoc_index_opt_geo_init        (mongoc_index_opt_geo_t *opt);
 
 
 BSON_END_DECLS

@@ -1,3 +1,9 @@
+TODO: Existing complex index names may contain a zero instead of a type due to
+a bug in mongoc_collection_keys_to_index_string. As a result those indexes may 
+be hard to drop from the driver as they have a name you would not expect.
+
+-- Ask Tyler if you need more info.
+
 mongo-c-driver 1.0.2
 ====================
 

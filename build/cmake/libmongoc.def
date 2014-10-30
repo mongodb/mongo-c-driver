@@ -129,6 +129,8 @@ mongoc_gridfs_find_one_by_filename
 mongoc_gridfs_get_chunks
 mongoc_gridfs_get_files
 mongoc_gridfs_remove_by_filename
+mongoc_index_opt_geo_get_default
+mongoc_index_opt_geo_init
 mongoc_index_opt_get_default
 mongoc_index_opt_init
 mongoc_init
