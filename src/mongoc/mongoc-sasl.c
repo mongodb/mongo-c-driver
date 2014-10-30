@@ -170,7 +170,8 @@ _mongoc_sasl_destroy (mongoc_sasl_t *sasl)
 
 #if (SASL_VERSION_MAJOR >= 2) && \
     (SASL_VERSION_MINOR >= 1) && \
-    (SASL_VERSION_STEP >= 24)
+    (SASL_VERSION_STEP >= 24) && \
+    (!defined(__APPLE__))
    sasl_client_done ();
 #endif
 }
