@@ -129,8 +129,6 @@ test_invalid_query (void)
 
    q = BCON_NEW ("foo", BCON_INT32 (1), "$orderby", "{", "}");
 
-   doc = q;
-
    cursor = _mongoc_cursor_new (client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
                                 false, q, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
@@ -141,6 +139,7 @@ test_invalid_query (void)
    assert (error.code == MONGOC_ERROR_CURSOR_INVALID_CURSOR);
    assert (doc == NULL);
 
+   bson_destroy (q);
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
    mongoc_uri_destroy(uri);

@@ -632,7 +632,7 @@ mongoc_database_has_collection (mongoc_database_t *database,
    }
 
 cleanup:
-   bson_free (infos);
+   bson_destroy (infos);
 
    RETURN (ret);
 }
@@ -740,7 +740,8 @@ mongoc_database_get_collection_info (mongoc_database_t *database,
                                      bson_error_t      *error)
 {
    mongoc_read_prefs_t *read_prefs;
-   bson_t *reply = bson_new();
+   bson_t *reply = NULL;
+   bson_t command_reply;
    bson_t cmd = BSON_INITIALIZER;
    bool cmd_success;
 
@@ -755,11 +756,11 @@ mongoc_database_get_collection_info (mongoc_database_t *database,
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    cmd_success = mongoc_database_command_simple (database, &cmd, read_prefs,
-                                                 reply, error);
+                                                 &command_reply, error);
    if (cmd_success) {
        /* intentionally empty */
+      reply = bson_copy(&command_reply);
    } else if (error->code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
-      bson_destroy (reply);
       /* We are talking to a server that doesn' support listCollections. */
       /* clear out the error. */
       error->code = 0;
@@ -767,13 +768,10 @@ mongoc_database_get_collection_info (mongoc_database_t *database,
       /* try again with using system.namespaces */
       reply =
          _mongoc_database_get_collection_info_legacy (database, filter, error);
-   } else {
-      /* network error */
-      bson_destroy (reply);
-      reply = NULL;
    }
 
    bson_destroy (&cmd);
+   bson_destroy (&command_reply);
    mongoc_read_prefs_destroy (read_prefs);
 
    return reply;

@@ -1072,8 +1072,8 @@ test_get_index_info (void)
    bson_iter_t idx_spec_iter_copy;
    bool r;
    const char *cur_idx_name;
-   const char *idx1_name;
-   const char *idx2_name;
+   char *idx1_name = NULL;
+   char *idx2_name = NULL;
    const char *id_idx_name = "_id_";
    int num_idxs = 0;
 
@@ -1101,6 +1101,8 @@ test_get_index_info (void)
            assert (false);
        }
    }
+
+   bson_destroy(indexinfo);
 
    /* insert a dummy document so that the collection actually exists */
    r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &dummy, NULL,
@@ -1194,6 +1196,9 @@ test_get_index_info (void)
    }
 
    assert (3 == num_idxs);
+
+   bson_free (idx1_name);
+   bson_free (idx2_name);
 
    bson_destroy (indexinfo);
    mongoc_collection_destroy (collection);
