@@ -353,6 +353,7 @@ test_bulk_edge_over_1000 (void)
    }
 
    mongoc_bulk_operation_destroy(bulk_op);
+   bson_destroy (&result);
 
    mongoc_write_concern_destroy(wc);
 

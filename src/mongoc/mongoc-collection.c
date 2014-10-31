@@ -1000,7 +1000,8 @@ mongoc_collection_get_index_info (mongoc_collection_t *collection,
    bool cmd_success;
    mongoc_read_prefs_t *read_prefs;
    bson_t cmd = BSON_INITIALIZER;
-   bson_t *reply = bson_new ();
+   bson_t command_reply;
+   bson_t *reply = NULL;
 
    BSON_ASSERT (collection);
 
@@ -1010,32 +1011,30 @@ mongoc_collection_get_index_info (mongoc_collection_t *collection,
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    cmd_success = mongoc_collection_command_simple (collection, &cmd, NULL,
-                                                   reply, error);
+                                                   &command_reply, error);
 
    if (cmd_success) {
        /* intentionally empty */
+       reply = bson_copy (&command_reply);
    } else if (error->code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
        bson_t empty_arr = BSON_INITIALIZER;
        /* collection does not exist. in accordance with the spec we return
        * an empty array. Also we need to clear out the error. */
        error->code = 0;
        error->domain = 0;
-       BSON_APPEND_ARRAY (reply, "indexes", &empty_arr);
+       BSON_APPEND_ARRAY (&command_reply, "indexes", &empty_arr);
+       reply = bson_copy (&command_reply);
    } else if (error->code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
-      bson_destroy (reply);
       /* talking to an old server. */
       /* clear out error. */
       error->code = 0;
       error->domain = 0;
       reply =
          _mongoc_collection_get_index_info_legacy (collection, error);
-   } else {
-      /* network error */
-      bson_destroy (reply);
-      reply = NULL;
    }
 
    bson_destroy (&cmd);
+   bson_destroy (&command_reply);
    mongoc_read_prefs_destroy (read_prefs);
 
    return reply;
