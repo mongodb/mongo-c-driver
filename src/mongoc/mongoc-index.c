@@ -39,7 +39,8 @@ static mongoc_index_opt_geo_t gMongocIndexOptGeoDefault = {
    26,
    -90,
    90,
-   -1
+   -1,
+   2
 };
 
 const mongoc_index_opt_t *

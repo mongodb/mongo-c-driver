@@ -583,7 +583,7 @@ test_index_geo (void)
    r = mongoc_collection_drop_index(collection, "location_2d", &error);
    ASSERT (r);
 
-   /* Create a 2d index with bells and whisltes */
+   /* Create a 2d index with bells and whistles */
    bson_init(&keys);
    BSON_APPEND_UTF8(&keys, "location", "2d");
 

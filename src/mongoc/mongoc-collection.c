@@ -684,7 +684,7 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
 
    while (bson_iter_next (&iter)) {
 
-      // Index types can be strings or integers (direction)
+      /* Index type can be specified as a string ("2d") or as an integer representing direction */
       if (bson_iter_type(&iter) == BSON_TYPE_UTF8)
       {
           bson_string_append_printf (s,
@@ -889,6 +889,9 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    if (opt->geo_options) {
        geo_opt = opt->geo_options;
        def_geo = mongoc_index_opt_geo_get_default ();
+       if (geo_opt->twod_sphere_version != def_geo->twod_sphere_version) {
+          BSON_APPEND_INT32 (&doc, "2dsphereIndexVersion", geo_opt->twod_sphere_version);
+       }
        if (geo_opt->twod_bits_precision != def_geo->twod_bits_precision) {
           BSON_APPEND_INT32 (&doc, "bits", geo_opt->twod_bits_precision);
        }
