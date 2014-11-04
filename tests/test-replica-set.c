@@ -177,7 +177,7 @@ test1 (void)
    BSON_ASSERT(cursor->hint);
    BSON_ASSERT(cursor->sent);
    BSON_ASSERT(!cursor->done);
-   BSON_ASSERT(cursor->end_of_event);
+   BSON_ASSERT(!cursor->end_of_event);
 
    /*
     * Determine which node we queried by using the hint to

@@ -126,7 +126,7 @@ _mongoc_cluster_update_state (mongoc_cluster_t *cluster)
 
    BSON_ASSERT(cluster);
 
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   for (i = 0; i < cluster->nodes_len; i++) {
       node = &cluster->nodes[i];
       if (node->stamp && !node->stream) {
          down_nodes++;
@@ -481,6 +481,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
                       void               *client)
 {
    const mongoc_host_list_t *hosts;
+   const mongoc_host_list_t *host_iter;
    uint32_t sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC;
    uint32_t i;
    const bson_t *b;
@@ -528,7 +529,16 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
       cluster->sec_latency_ms = bson_iter_int32(&iter);
    }
 
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   if (cluster->mode == MONGOC_CLUSTER_DIRECT) {
+      i = 1;
+   } else {
+      for (host_iter = hosts, i = 0; host_iter; host_iter = host_iter->next, i++) {}
+   }
+
+   cluster->nodes = bson_malloc(i * sizeof(*cluster->nodes));
+   cluster->nodes_len = i;
+
+   for (i = 0; i < cluster->nodes_len; i++) {
       _mongoc_cluster_node_init(&cluster->nodes[i]);
       cluster->nodes[i].stamp = 0;
       cluster->nodes[i].index = i;
@@ -570,11 +580,13 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 
    mongoc_uri_destroy (cluster->uri);
 
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   for (i = 0; i < cluster->nodes_len; i++) {
       if (cluster->nodes[i].stream) {
          _mongoc_cluster_node_destroy (&cluster->nodes [i]);
       }
    }
+
+   bson_free (cluster->nodes);
 
    bson_free (cluster->replSet);
    cluster->replSet = NULL;
@@ -616,9 +628,9 @@ _mongoc_cluster_select (mongoc_cluster_t             *cluster,
                         const mongoc_read_prefs_t    *read_prefs,
                         bson_error_t                 *error)
 {
-   mongoc_cluster_node_t *nodes[MONGOC_CLUSTER_MAX_NODES];
+   mongoc_cluster_node_t **nodes;
    mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
-   int scores[MONGOC_CLUSTER_MAX_NODES];
+   int *scores;
    int max_score = 0;
    uint32_t count;
    uint32_t watermark;
@@ -626,20 +638,26 @@ _mongoc_cluster_select (mongoc_cluster_t             *cluster,
    bool need_primary;
    bool need_secondary;
    unsigned i;
+   mongoc_cluster_node_t *node = NULL;
 
    ENTRY;
 
    bson_return_val_if_fail(cluster, NULL);
    bson_return_val_if_fail(rpcs, NULL);
    bson_return_val_if_fail(rpcs_len, NULL);
-   bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, NULL);
+   bson_return_val_if_fail(hint <= cluster->nodes_len, NULL);
+
+   nodes = bson_malloc(sizeof(*nodes) * cluster->nodes_len);
+   scores = bson_malloc(sizeof(*scores) * cluster->nodes_len);
 
    /*
     * We can take a few short-cut's if we are not talking to a replica set.
     */
    switch (cluster->mode) {
-   case MONGOC_CLUSTER_DIRECT:
-      RETURN (cluster->nodes[0].stream ? &cluster->nodes[0] : NULL);
+   case MONGOC_CLUSTER_DIRECT: {
+      node = (cluster->nodes[0].stream ? &cluster->nodes[0] : NULL);
+      goto CLEANUP;
+   }
    case MONGOC_CLUSTER_SHARDED_CLUSTER:
       need_primary = false;
       need_secondary = false;
@@ -690,9 +708,10 @@ dispatch:
     * Build our list of nodes with established connections. Short circuit if
     * we require a primary and we found one.
     */
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   for (i = 0; i < cluster->nodes_len; i++) {
       if (need_primary && cluster->nodes[i].primary) {
-         RETURN(&cluster->nodes[i]);
+         node = &cluster->nodes[i];
+         goto CLEANUP;
       } else if (need_secondary && cluster->nodes[i].primary) {
          nodes[i] = NULL;
       } else {
@@ -708,7 +727,7 @@ dispatch:
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
                      "Requested PRIMARY node is not available.");
-      RETURN(NULL);
+      goto CLEANUP;
    }
 
    /*
@@ -723,7 +742,8 @@ dispatch:
                         "Requested node (%u) is not available.",
                         hint);
       }
-      RETURN(nodes[hint - 1]);
+      node = nodes[hint - 1];
+      goto CLEANUP;
    }
 
    /*
@@ -743,7 +763,7 @@ dispatch:
 
    count = 0;
 
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   for (i = 0; i < cluster->nodes_len; i++) {
       if (nodes[i]) {
          if (read_prefs) {
             int score = _mongoc_read_prefs_score(read_prefs, nodes[i]);
@@ -765,7 +785,7 @@ dispatch:
     * Filter nodes with score less than highest score.
     */
    if (max_score) {
-      for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      for (i = 0; i < cluster->nodes_len; i++) {
          if (nodes[i] && (scores[i] < max_score)) {
              nodes[i] = NULL;
              count--;
@@ -779,7 +799,7 @@ dispatch:
 #define IS_NEARER_THAN(n, msec) \
    ((msec < 0 && (n)->ping_avg_msec >= 0) || ((n)->ping_avg_msec < msec))
 
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   for (i = 0; i < cluster->nodes_len; i++) {
       if (nodes[i]) {
          if (IS_NEARER_THAN(nodes[i], nearest)) {
             nearest = nodes[i]->ping_avg_msec;
@@ -794,7 +814,7 @@ dispatch:
     */
    if (nearest != -1) {
       watermark = nearest + cluster->sec_latency_ms;
-      for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+      for (i = 0; i < cluster->nodes_len; i++) {
          if (nodes[i]) {
             if (nodes[i]->ping_avg_msec > (int32_t)watermark) {
                nodes[i] = NULL;
@@ -812,23 +832,29 @@ dispatch:
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
                       "Failed to locate a suitable MongoDB node.");
-      RETURN (NULL);
+      goto CLEANUP;
    }
 
    /*
     * Choose a cluster node within threshold at random.
     */
    count = count ? rand() % count : count;
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   for (i = 0; i < cluster->nodes_len; i++) {
       if (nodes[i]) {
          if (!count) {
-            RETURN(nodes[i]);
+            node = nodes[i];
+            goto CLEANUP;
          }
          count--;
       }
    }
 
-   RETURN(NULL);
+CLEANUP:
+
+   bson_free(nodes);
+   bson_free(scores);
+
+   RETURN(node);
 }
 
 
@@ -842,17 +868,22 @@ _mongoc_cluster_preselect (mongoc_cluster_t             *cluster,       /* IN */
    mongoc_cluster_node_t *node;
    mongoc_rpc_t rpc = {{ 0 }};
    int retry_count = 0;
+   bson_error_t scoped_error;
 
    BSON_ASSERT (cluster);
 
    rpc.header.opcode = opcode;
 
    while (!(node = _mongoc_cluster_select (cluster, &rpc, 1, 0, write_concern,
-                                           read_prefs, error))) {
+                                           read_prefs, &scoped_error))) {
       if ((retry_count++ == MAX_RETRY_COUNT) ||
           !_mongoc_cluster_reconnect (cluster, error)) {
          break;
       }
+   }
+
+   if (!node && error) {
+      memcpy (error, &scoped_error, sizeof (scoped_error));
    }
 
    return node ? (node->index + 1) : 0;
@@ -1997,7 +2028,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
    const mongoc_host_list_t *hosts;
    const mongoc_host_list_t *iter;
    mongoc_cluster_node_t node;
-   mongoc_cluster_node_t saved_nodes [MONGOC_CLUSTER_MAX_NODES];
+   mongoc_cluster_node_t *saved_nodes;
    mongoc_host_list_t host;
    mongoc_stream_t *stream;
    mongoc_list_t *list;
@@ -2006,11 +2037,14 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
    const char *replSet;
    int i;
    int j;
+   bool rval = false;
 
    ENTRY;
 
    BSON_ASSERT(cluster);
    BSON_ASSERT(cluster->mode == MONGOC_CLUSTER_REPLICA_SET);
+
+   saved_nodes = bson_malloc0(cluster->nodes_len * sizeof(*saved_nodes));
 
    MONGOC_DEBUG("Reconnecting to replica set.");
 
@@ -2019,7 +2053,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_NOT_READY,
                      "Invalid host list supplied.");
-      RETURN(false);
+      goto CLEANUP;
    }
 
    replSet = mongoc_uri_get_replica_set(cluster->uri);
@@ -2098,9 +2132,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
     * we don't waste time doing that again.
     */
 
-   memset (saved_nodes, 0, sizeof saved_nodes);
-
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   for (i = 0; i < cluster->nodes_len; i++) {
       if (cluster->nodes [i].stream) {
          saved_nodes [i].host = cluster->nodes [i].host;
          saved_nodes [i].stream = cluster->nodes [i].stream;
@@ -2109,7 +2141,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
    }
 
    for (liter = list, i = 0;
-        liter && (i < MONGOC_CLUSTER_MAX_NODES);
+        liter && (i < cluster->nodes_len);
         liter = liter->next) {
 
       if (!_mongoc_host_list_from_string(&host, liter->data)) {
@@ -2120,7 +2152,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
 
       stream = NULL;
 
-      for (j = 0; j < MONGOC_CLUSTER_MAX_NODES; j++) {
+      for (j = 0; j < cluster->nodes_len; j++) {
          if (0 == strcmp (saved_nodes [j].host.host_and_port,
                           host.host_and_port)) {
             stream = saved_nodes [j].stream;
@@ -2162,7 +2194,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
       if (cluster->nodes[i].needs_auth) {
          if (!_mongoc_cluster_auth_node (cluster, &cluster->nodes[i], error)) {
             _mongoc_cluster_node_destroy (&cluster->nodes[i]);
-            RETURN (false);
+            goto CLEANUP;
          }
          cluster->nodes[i].needs_auth = false;
       }
@@ -2188,7 +2220,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
     * Cleanup all potential saved connections that were not used.
     */
 
-   for (j = 0; j < MONGOC_CLUSTER_MAX_NODES; j++) {
+   for (j = 0; j < cluster->nodes_len; j++) {
       if (saved_nodes [j].stream) {
          mongoc_stream_destroy (saved_nodes [j].stream);
          saved_nodes [j].stream = NULL;
@@ -2200,12 +2232,18 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
                      MONGOC_ERROR_CLIENT,
                      MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
                      "No acceptable peer could be found.");
-      RETURN(false);
+      goto CLEANUP;
    }
 
    _mongoc_cluster_update_state (cluster);
 
-   RETURN(true);
+   rval = true;
+
+CLEANUP:
+
+   bson_free(saved_nodes);
+
+   RETURN(rval);
 }
 
 
@@ -2360,7 +2398,7 @@ _mongoc_cluster_reconnect (mongoc_cluster_t *cluster,
     *
     * TODO: We could be better about reusing connections.
     */
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   for (i = 0; i < cluster->nodes_len; i++) {
        if (cluster->nodes [i].stream) {
            mongoc_stream_close (cluster->nodes [i].stream);
            mongoc_stream_destroy (cluster->nodes [i].stream);
@@ -2415,7 +2453,7 @@ _mongoc_cluster_command_early (mongoc_cluster_t *cluster,
 
    node = _mongoc_cluster_get_primary (cluster);
 
-   for (i = 0; !node && i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   for (i = 0; !node && i < cluster->nodes_len; i++) {
       if (cluster->nodes[i].stream) {
          node = &cluster->nodes[i];
       }
@@ -2902,7 +2940,7 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    bson_return_val_if_fail (rpc, false);
    bson_return_val_if_fail (buffer, false);
    bson_return_val_if_fail (hint, false);
-   bson_return_val_if_fail (hint <= MONGOC_CLUSTER_MAX_NODES, false);
+   bson_return_val_if_fail (hint <= cluster->nodes_len, false);
 
    /*
     * Fetch the node to communicate over.
@@ -2996,7 +3034,7 @@ _mongoc_cluster_stamp (const mongoc_cluster_t *cluster,
 {
    bson_return_val_if_fail(cluster, 0);
    bson_return_val_if_fail(node > 0, 0);
-   bson_return_val_if_fail(node <= MONGOC_CLUSTER_MAX_NODES, 0);
+   bson_return_val_if_fail(node <= cluster->nodes_len, 0);
 
    return cluster->nodes[node].stamp;
 }
@@ -3017,7 +3055,7 @@ _mongoc_cluster_get_primary (mongoc_cluster_t *cluster)
 
    BSON_ASSERT (cluster);
 
-   for (i = 0; i < MONGOC_CLUSTER_MAX_NODES; i++) {
+   for (i = 0; i < cluster->nodes_len; i++) {
       if (cluster->nodes[i].primary) {
          return &cluster->nodes[i];
       }

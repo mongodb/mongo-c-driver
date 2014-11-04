@@ -485,7 +485,7 @@ _mongoc_client_recv (mongoc_client_t *client,
    bson_return_val_if_fail(rpc, false);
    bson_return_val_if_fail(buffer, false);
    bson_return_val_if_fail(hint, false);
-   bson_return_val_if_fail(hint <= MONGOC_CLUSTER_MAX_NODES, false);
+   bson_return_val_if_fail(hint <= client->cluster.nodes_len, false);
 
    return _mongoc_cluster_try_recv (&client->cluster, rpc, buffer, hint,
                                     error);
