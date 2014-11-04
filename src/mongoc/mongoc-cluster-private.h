@@ -40,7 +40,6 @@
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_CLUSTER_MAX_NODES 12
 #define MONGOC_CLUSTER_PING_NUM_SAMPLES 5
 
 
@@ -96,7 +95,8 @@ typedef struct
 
    unsigned                requires_auth : 1;
 
-   mongoc_cluster_node_t   nodes[MONGOC_CLUSTER_MAX_NODES];
+   mongoc_cluster_node_t  *nodes;
+   uint32_t                nodes_len;
    mongoc_client_t        *client;
    int32_t                 max_bson_size;
    int32_t                 max_msg_size;

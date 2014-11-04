@@ -491,6 +491,8 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
                            (char *)&optval, &optlen);
          if ((ret == 0) && (optval == 0)) {
             RETURN (0);
+         } else {
+            errno = sock->errno_ = optval;
          }
       }
       RETURN (-1);

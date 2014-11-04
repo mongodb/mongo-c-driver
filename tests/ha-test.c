@@ -261,6 +261,8 @@ ha_node_restart (ha_node_t *node)
       argv[i++] = (char *) ".";
       argv[i++] = (char *) "--port";
       argv[i++] = (char *) portstr;
+      argv[i++] = "--logpath";
+      argv[i++] = "log";
       argv[i++] = NULL;
    } else {
       argv[i++] = (char *) "mongos";
@@ -271,6 +273,8 @@ ha_node_restart (ha_node_t *node)
       argv[i++] = (char *) portstr;
       argv[i++] = (char *) "--configdb";
       argv[i++] = node->configopt;
+      argv[i++] = "--logpath";
+      argv[i++] = "log";
       argv[i++] = NULL;
    }
 
@@ -929,7 +933,7 @@ ha_sharded_cluster_start (ha_sharded_cluster_t *cluster)
                                  iter->next ? "," : "");
    }
 
-   sleep (5);
+   sleep (10);
 
    for (iter = cluster->routers; iter; iter = iter->next) {
       bson_free (iter->configopt);
