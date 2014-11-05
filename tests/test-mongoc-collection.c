@@ -190,6 +190,22 @@ test_insert_bulk (void)
    count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
    ASSERT (count == 6);
 
+   /* test validate */
+   for (i = 0; i < 10; i++) {
+      bson_destroy (&b[i]);
+      bson_init (&b[i]);
+      bson_oid_init (&oid, NULL);
+      BSON_APPEND_OID (&b[i], "$id", &oid);
+      bptr[i] = &b[i];
+   }
+   BEGIN_IGNORE_DEPRECATIONS;
+   r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
+                                      (const bson_t **)bptr, 10, NULL, &error);
+   END_IGNORE_DEPRECATIONS;
+   ASSERT (!r);
+   ASSERT (error.domain == MONGOC_ERROR_BSON);
+   ASSERT (error.code == MONGOC_ERROR_BSON_INVALID);
+
    bson_destroy(&q);
    for (i = 0; i < 10; i++) {
       bson_destroy(&b[i]);
