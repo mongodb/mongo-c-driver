@@ -34,6 +34,7 @@ main (int   argc,
       authuristr = "mongodb://user,=:pass@127.0.0.1/test?authMechanism=MONGODB-CR";
    } else {
       printf("%s - [implicit|scram|cr]\n", argv[0]);
+      return 1;
    }
 
    mongoc_init ();

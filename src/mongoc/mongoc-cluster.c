@@ -877,7 +877,7 @@ _mongoc_cluster_preselect (mongoc_cluster_t             *cluster,       /* IN */
    while (!(node = _mongoc_cluster_select (cluster, &rpc, 1, 0, write_concern,
                                            read_prefs, &scoped_error))) {
       if ((retry_count++ == MAX_RETRY_COUNT) ||
-          !_mongoc_cluster_reconnect (cluster, error)) {
+          !_mongoc_cluster_reconnect (cluster, &scoped_error)) {
          break;
       }
    }
