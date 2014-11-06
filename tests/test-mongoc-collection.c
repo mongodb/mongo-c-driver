@@ -194,8 +194,7 @@ test_insert_bulk (void)
    for (i = 0; i < 10; i++) {
       bson_destroy (&b[i]);
       bson_init (&b[i]);
-      bson_oid_init (&oid, NULL);
-      BSON_APPEND_OID (&b[i], "$id", &oid);
+      BSON_APPEND_INT32 (&b[i], "$invalid_dollar_prefixed_name", i);
       bptr[i] = &b[i];
    }
    BEGIN_IGNORE_DEPRECATIONS;
