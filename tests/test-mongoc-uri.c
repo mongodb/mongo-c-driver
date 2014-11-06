@@ -10,10 +10,13 @@ test_mongoc_uri_new (void)
 {
    const mongoc_host_list_t *hosts;
    const bson_t *options;
+   const bson_t *credentials;
+   bson_t properties;
    mongoc_uri_t *uri;
    bson_iter_t iter;
    bson_iter_t child;
 
+   /* bad uris */
    ASSERT(!mongoc_uri_new("mongodb://"));
    ASSERT(!mongoc_uri_new("mongodb://::"));
    ASSERT(!mongoc_uri_new("mongodb://localhost::27017"));
@@ -124,6 +127,13 @@ test_mongoc_uri_new (void)
    ASSERT(!mongoc_uri_get_hosts(uri)->next->next);
    mongoc_uri_destroy(uri);
 
+   /* should assign port numbers to correct hosts */
+   uri = mongoc_uri_new("mongodb://host1,host2:30000/foo/");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host_and_port, "host1:27017");
+   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->next->host_and_port, "host2:30000");
+   mongoc_uri_destroy(uri);
+
    uri = mongoc_uri_new("mongodb://localhost:27017,/tmp/mongodb.sock/?ssl=false");
    ASSERT(uri);
    ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host_and_port, "localhost:27017");
@@ -131,24 +141,43 @@ test_mongoc_uri_new (void)
    ASSERT(!mongoc_uri_get_hosts(uri)->next->next);
    mongoc_uri_destroy(uri);
 
-   uri = mongoc_uri_new("mongodb://christian:secret@localhost:27017?authSource=abcd");
+   /* should use the authSource over db when both are specified */
+   uri = mongoc_uri_new("mongodb://christian:secret@localhost:27017/foo/?authSource=abcd");
    ASSERT(uri);
    ASSERT_CMPSTR(mongoc_uri_get_username(uri), "christian");
    ASSERT_CMPSTR(mongoc_uri_get_password(uri), "secret");
    ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "abcd");
    mongoc_uri_destroy(uri);
 
+   /* should use the default auth source and mechanism */
    uri = mongoc_uri_new("mongodb://christian:secret@localhost:27017");
    ASSERT(uri);
    ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "admin");
+   ASSERT(!mongoc_uri_get_auth_mechanism(uri));
    mongoc_uri_destroy(uri);
 
+   /* should use the db when no authSource is specified */
+   uri = mongoc_uri_new("mongodb://user:password@localhost/foo");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "foo");
+   mongoc_uri_destroy(uri);
+
+   /* should recognize an empty password */
+   uri = mongoc_uri_new("mongodb://samantha:@localhost");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_username(uri), "samantha");
+   ASSERT_CMPSTR(mongoc_uri_get_password(uri), "");
+   mongoc_uri_destroy(uri);
+
+   /* should recognize no password */
    uri = mongoc_uri_new("mongodb://christian@localhost:27017");
    ASSERT(uri);
    ASSERT_CMPSTR(mongoc_uri_get_username(uri), "christian");
+   ASSERT(!mongoc_uri_get_password(uri));
    mongoc_uri_destroy(uri);
 
-   uri = mongoc_uri_new("mongodb://christian%40realm@localhost:27017");
+   /* should recognize a url escaped character in the username */
+   uri = mongoc_uri_new("mongodb://christian%40realm:pwd@localhost:27017");
    ASSERT(uri);
    ASSERT_CMPSTR(mongoc_uri_get_username(uri), "christian@realm");
    mongoc_uri_destroy(uri);
@@ -172,17 +201,6 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR(bson_iter_utf8(&iter, NULL), " ");
    mongoc_uri_destroy(uri);
 
-   uri = mongoc_uri_new("mongodb://christian%40realm.cc@localhost:27017/?authmechanism=GSSAPI&gssapiservicename=blah");
-   ASSERT(uri);
-   options = mongoc_uri_get_options(uri);
-   ASSERT(options);
-   assert (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
-   assert (0 == strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
-   assert (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
-           BSON_ITER_HOLDS_UTF8 (&iter) &&
-           (0 == strcmp (bson_iter_utf8 (&iter, NULL), "blah")));
-   mongoc_uri_destroy(uri);
-
    uri = mongoc_uri_new("mongodb://christian%40realm@[::6]:27017/?abcd=%20");
    ASSERT(uri);
    options = mongoc_uri_get_options(uri);
@@ -191,8 +209,110 @@ test_mongoc_uri_new (void)
    ASSERT(BSON_ITER_HOLDS_UTF8(&iter));
    ASSERT_CMPSTR(bson_iter_utf8(&iter, NULL), " ");
    mongoc_uri_destroy(uri);
-}
 
+   /* GSSAPI-specific options */
+
+   /* should recognize the GSSAPI mechanism, and use $external as source */
+   uri = mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?authMechanism=GSSAPI");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_auth_mechanism(uri), "GSSAPI");
+   /*ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "$external");*/
+   mongoc_uri_destroy(uri);
+
+   /* use $external as source when db is specified */
+   uri = mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/foo/?authMechanism=GSSAPI");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "$external");
+   mongoc_uri_destroy(uri);
+
+   /* should not accept authSource other than $external */
+   ASSERT(!mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/foo/?authMechanism=GSSAPI&authSource=bar"));
+
+   /* should accept authMechanismProperties */
+   uri = mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?authMechanism=GSSAPI"
+                        "&authMechanismProperties=SERVICE_NAME:other,CANONICALIZE_HOST_NAME:true");
+   ASSERT(uri);
+   credentials = mongoc_uri_get_credentials(uri);
+   ASSERT(credentials);
+   ASSERT(mongoc_uri_get_mechanism_properties(uri, &properties));
+   assert (bson_iter_init_find_case (&iter, &properties, "SERVICE_NAME") &&
+           BSON_ITER_HOLDS_UTF8 (&iter) &&
+           (0 == strcmp (bson_iter_utf8 (&iter, NULL), "other")));
+   assert (bson_iter_init_find_case (&iter, &properties, "CANONICALIZE_HOST_NAME") &&
+           BSON_ITER_HOLDS_UTF8 (&iter) &&
+           (0 == strcmp (bson_iter_utf8 (&iter, NULL), "true")));
+   mongoc_uri_destroy(uri);
+
+   /* reverse order of arguments to ensure parsing still succeeds */
+   uri = mongoc_uri_new("mongodb://user@localhost/"
+                        "?authMechanismProperties=SERVICE_NAME:other"
+                        "&authMechanism=GSSAPI");
+   ASSERT(uri);
+   mongoc_uri_destroy(uri);
+
+   /* deprecated gssapiServiceName option */
+   uri = mongoc_uri_new("mongodb://christian%40realm.cc@localhost:27017/?authMechanism=GSSAPI&gssapiServiceName=blah");
+   ASSERT(uri);
+   options = mongoc_uri_get_options(uri);
+   ASSERT(options);
+   assert (0 == strcmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI"));
+   assert (0 == strcmp (mongoc_uri_get_username (uri), "christian@realm.cc"));
+   assert (bson_iter_init_find_case (&iter, options, "gssapiServiceName") &&
+           BSON_ITER_HOLDS_UTF8 (&iter) &&
+           (0 == strcmp (bson_iter_utf8 (&iter, NULL), "blah")));
+   mongoc_uri_destroy(uri);
+
+   /* MONGODB-CR */
+
+   /* should recognize this mechanism */
+   uri = mongoc_uri_new("mongodb://user@localhost/?authMechanism=MONGODB-CR");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_auth_mechanism(uri), "MONGODB-CR");
+   mongoc_uri_destroy(uri);
+
+   /* X509 */
+
+   /* should recognize this mechanism, and use $external as the source */
+   uri = mongoc_uri_new("mongodb://user@localhost/?authMechanism=MONGODB-X509");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_auth_mechanism(uri), "MONGODB-X509");
+   /*ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "$external");*/
+   mongoc_uri_destroy(uri);
+
+   /* use $external as source when db is specified */
+   uri = mongoc_uri_new("mongodb://CN%3DmyName%2COU%3DmyOrgUnit%2CO%3DmyOrg%2CL%3DmyLocality"
+                        "%2CST%3DmyState%2CC%3DmyCountry@localhost/foo/?authMechanism=MONGODB-X509");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "$external");
+   mongoc_uri_destroy(uri);
+
+   /* should not accept authSource other than $external */
+   ASSERT(!mongoc_uri_new("mongodb://CN%3DmyName%2COU%3DmyOrgUnit%2CO%3DmyOrg%2CL%3DmyLocality"
+                          "%2CST%3DmyState%2CC%3DmyCountry@localhost/foo/?authMechanism=MONGODB-X509&authSource=bar"));
+
+   /* should recognize the encoded username */
+   uri = mongoc_uri_new("mongodb://CN%3DmyName%2COU%3DmyOrgUnit%2CO%3DmyOrg%2CL%3DmyLocality"
+                        "%2CST%3DmyState%2CC%3DmyCountry@localhost/?authMechanism=MONGODB-X509");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_username(uri), "CN=myName,OU=myOrgUnit,O=myOrg,L=myLocality,ST=myState,C=myCountry");
+   mongoc_uri_destroy(uri);
+
+   /* PLAIN */
+
+   /* should recognize this mechanism */
+   uri = mongoc_uri_new("mongodb://user@localhost/?authMechanism=PLAIN");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_auth_mechanism(uri), "PLAIN");
+   mongoc_uri_destroy(uri);
+
+   /* SCRAM-SHA1 */
+
+   /* should recognize this mechanism */
+   uri = mongoc_uri_new("mongodb://user@localhost/?authMechanism=SCRAM-SHA1");
+   ASSERT(uri);
+   ASSERT_CMPSTR(mongoc_uri_get_auth_mechanism(uri), "SCRAM-SHA1");
+   mongoc_uri_destroy(uri);
+}
 
 static void
 test_mongoc_host_list_from_string (void)
