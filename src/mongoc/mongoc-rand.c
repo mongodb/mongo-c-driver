@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-
-#include "mongoc-config.h"
-
-#include <openssl/rand.h>
-
 #include "mongoc-rand.h"
 #include "mongoc-rand-private.h"
+
+#include "mongoc.h"
+
+#include <openssl/rand.h>
 
 int _mongoc_rand_bytes(uint8_t * buf, int num) {
     return RAND_bytes(buf, num);

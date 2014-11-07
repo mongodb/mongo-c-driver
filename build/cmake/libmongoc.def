@@ -23,8 +23,8 @@ mongoc_client_get_collection
 mongoc_client_get_database
 mongoc_client_get_database_names
 mongoc_client_get_gridfs
-mongoc_client_get_max_message_size
 mongoc_client_get_max_bson_size
+mongoc_client_get_max_message_size
 mongoc_client_get_read_prefs
 mongoc_client_get_server_status
 mongoc_client_get_uri
@@ -138,6 +138,12 @@ mongoc_log
 mongoc_log_default_handler
 mongoc_log_level_str
 mongoc_log_set_handler
+mongoc_matcher_destroy
+mongoc_matcher_match
+mongoc_matcher_new
+mongoc_rand_add
+mongoc_rand_seed
+mongoc_rand_status
 mongoc_read_prefs_add_tag
 mongoc_read_prefs_copy
 mongoc_read_prefs_destroy
@@ -180,8 +186,10 @@ mongoc_uri_copy
 mongoc_uri_destroy
 mongoc_uri_get_auth_mechanism
 mongoc_uri_get_auth_source
+mongoc_uri_get_credentials
 mongoc_uri_get_database
 mongoc_uri_get_hosts
+mongoc_uri_get_mechanism_properties
 mongoc_uri_get_options
 mongoc_uri_get_password
 mongoc_uri_get_read_prefs
