@@ -42,7 +42,4 @@ mongoc_database_get_collection_info (mongoc_collection_t *collection,
     <code>NULL</code> will be returned in the case of a network error.</p>
   </section>
 
-</code></screen>
-</section>
-
 </page>

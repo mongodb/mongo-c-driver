@@ -43,7 +43,4 @@ mongoc_database_get_collection_info (mongoc_database_t *database,
     server's representation of a collection in this database. A value of <code>NULL</code> will be returned on a network error.</p>
   </section>
 
-</code></screen>
-</section>
-
 </page>
