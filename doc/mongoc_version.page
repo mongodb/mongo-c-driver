@@ -16,9 +16,9 @@
   <screen><![CDATA[#include <mongoc.h>
 
 #define MONGOC_MAJOR_VERSION (1)
-#define MONGOC_MINOR_VERSION (0)
-#define MONGOC_MICRO_VERSION (2)
-#define MONGOC_VERSION_S     "1.0.2"
+#define MONGOC_MINOR_VERSION (1)
+#define MONGOC_MICRO_VERSION (0)
+#define MONGOC_VERSION_S     "1.1.0-rc0"
 #define MONGOC_VERSION_HEX   ((1 << 24) | (0 << 16) | (0 << 8) | 0)
 #define MONGOC_CHECK_VERSION(major, minor, micro)
 ]]></screen>
@@ -26,8 +26,8 @@
 
   <listing>
     <title>MongoDB C Driver version check</title>
-    <desc>Only compile a block on MongoDB C Driver 1.0.2 and newer.</desc>
-    <code mime="text/x-csrc"><![CDATA[#if MONGOC_CHECK_VERSION(1, 0, 2)
+    <desc>Only compile a block on MongoDB C Driver 1.1.0-rc0 and newer.</desc>
+    <code mime="text/x-csrc"><![CDATA[#if MONGOC_CHECK_VERSION(1, 1, 0)
 static void do_something (void) {
 }
 #endif]]></code>

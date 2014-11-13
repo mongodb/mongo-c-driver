@@ -1,8 +1,61 @@
-TODO: Existing complex index names may contain a zero instead of a type due to
+mongo-c-driver 1.1.0-rc0
+========================
+
+It is my pleasure to announce to you the 1.1.0-rc0 release of the MongoDB C driver.
+
+This release is a release candidate with additive ABI changes and bugfixes.
+
+Changes include:
+ * ABI versioning for 1.1 versus 1.0 symbols
+ * additional geo index options
+ * authMechanismProperties in URI
+ * fixes for OS X Yosemite
+ * removal of replica set member limit
+ * SCRAM-SHA-1 SASL mechanism
+ * updated dependency on libbson 1.1 abi
+ * validation for bulk insert
+ * various memory leak fixes
+
+Additions to the ABI include:
+ * support for extra option in count
+   - mongoc_collection_count_with_opts
+ * extra index and collection info
+   - mongoc_collection_get_index_info
+   - mongoc_database_get_collection_info
+ * additional geo options
+   - mongoc_index_opt_geo_get_default
+   - mongoc_index_opt_geo_init
+ * rand interface to seed and verify the strong random number generation needed
+   by some auth mechanisms
+   - mongoc_rand_seed
+   - mongoc_rand_add
+   - mongoc_rand_status
+ * URI additions to support more complicated auth credentials
+   - mongoc_uri_get_credentials
+   - mongoc_uri_get_mechanism_properties
+
+Additional Notes:
+  Existing complex index names may contain a zero instead of a type due to
 a bug in mongoc_collection_keys_to_index_string. As a result those indexes may 
 be hard to drop from the driver as they have a name you would not expect.
 
--- Ask Tyler if you need more info.
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+ * Adam Midvidy
+ * aherlihy
+ * alexeyvo
+ * Christian Hergert
+ * Jason Carey
+ * Jérôme Lebel
+ * Samantha Ritter
+ * Spencer Jackson
+ * Tyler Brock
+
+
+Enjoy!
+
+-- Jason Carey
 
 mongo-c-driver 1.0.2
 ====================
