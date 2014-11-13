@@ -5,7 +5,7 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_collection_count">
+      id="mongoc_collection_count_with_opts">
 
 
   <info>

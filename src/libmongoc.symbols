@@ -221,3 +221,5 @@ mongoc_write_concern_set_w
 mongoc_write_concern_set_wmajority
 mongoc_write_concern_set_wtag
 mongoc_write_concern_set_wtimeout
+LIBMONGOC_1.0
+LIBMONGOC_1.1
