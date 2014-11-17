@@ -46,6 +46,12 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_socket_t mongoc_socket_t;
 
+typedef struct
+{
+   mongoc_socket_t *socket;
+   int              events;
+   int              revents;
+} mongoc_socket_poll_t;
 
 mongoc_socket_t *mongoc_socket_accept     (mongoc_socket_t       *sock,
                                            int64_t                expire_at);
@@ -86,6 +92,9 @@ ssize_t          mongoc_socket_sendv      (mongoc_socket_t       *sock,
                                            mongoc_iovec_t        *iov,
                                            size_t                 iovcnt,
                                            int64_t                expire_at);
+ssize_t          mongoc_socket_poll       (mongoc_socket_poll_t  *sds,
+                                           size_t                 nsds,
+                                           int32_t                timeout);
 
 
 BSON_END_DECLS

@@ -201,6 +201,47 @@ _mongoc_stream_socket_writev (mongoc_stream_t *stream,
 }
 
 
+static ssize_t
+_mongoc_stream_socket_poll (mongoc_stream_poll_t *streams,
+                            size_t                nstreams,
+                            int32_t               timeout_msec)
+
+{
+   int i;
+   ssize_t ret = -1;
+   mongoc_socket_poll_t *sds;
+   mongoc_stream_socket_t *ss;
+
+   ENTRY;
+
+   sds = bson_malloc(sizeof(*sds) * nstreams);
+
+   for (i = 0; i < nstreams; i++) {
+      ss = (mongoc_stream_socket_t *)streams[i].stream;
+
+      if (! ss->sock) {
+         goto CLEANUP;
+      }
+
+      sds[i].socket = ss->sock;
+      sds[i].events = streams[i].events;
+   }
+
+   ret = mongoc_socket_poll(sds, nstreams, timeout_msec);
+
+   if (ret > 0) {
+      for (i = 0; i < nstreams; i++) {
+         streams[i].revents = sds[i].revents;
+      }
+   }
+
+CLEANUP:
+   bson_free(sds);
+
+   RETURN (ret);
+}
+
+
 mongoc_socket_t *
 mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream) /* IN */
 {
@@ -242,6 +283,7 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
    stream->vtable.readv = _mongoc_stream_socket_readv;
    stream->vtable.writev = _mongoc_stream_socket_writev;
    stream->vtable.setsockopt = _mongoc_stream_socket_setsockopt;
+   stream->vtable.poll = _mongoc_stream_socket_poll;
    stream->sock = sock;
 
    return (mongoc_stream_t *)stream;

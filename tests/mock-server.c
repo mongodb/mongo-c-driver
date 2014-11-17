@@ -29,7 +29,22 @@
 # define strcasecmp _stricmp
 #endif
 
+#ifdef _WIN32
+static void
+usleep (int64_t usec)
+{
+   HANDLE timer;
+   LARGE_INTEGER ft;
 
+   ft.QuadPart = -(10 * usec);
+
+   timer = CreateWaitableTimer (NULL, true, NULL);
+   SetWaitableTimer (timer, &ft, 0, NULL, NULL, 0);
+   WaitForSingleObject (timer, INFINITE);
+   CloseHandle (timer);
+}
+
+#endif
 struct _mock_server_t
 {
    mock_server_handler_t  handler;
@@ -52,6 +67,9 @@ struct _mock_server_t
    int                    maxWireVersion;
    int                    maxBsonObjectSize;
    int                    maxMessageSizeBytes;
+#ifdef MONGOC_ENABLE_SSL
+   mongoc_ssl_opt_t      *ssl_opts;
+#endif
 };
 
 
@@ -147,6 +165,8 @@ handle_ismaster (mock_server_t   *server,
                       server->maxWireVersion);
    bson_append_double (&reply_doc, "ok", -1, 1.0);
    bson_append_time_t (&reply_doc, "localtime", -1, now);
+
+   usleep((rand() % 10) * 1000);
 
    mock_server_reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply_doc);
 
@@ -372,6 +392,16 @@ mock_server_run (mock_server_t *server)
       }
 
       stream = mongoc_stream_socket_new (csock);
+
+#ifdef MONGOC_ENABLE_SSL
+      if (server->ssl_opts) {
+         stream = mongoc_stream_tls_new(stream, server->ssl_opts, 0);
+         if (!stream) {
+            perror ("Failed to attach tls stream");
+            break;
+         }
+      }
+#endif
       closure = bson_malloc0 (sizeof(void*) * 2);
       closure[0] = server;
       closure[1] = stream;
@@ -444,3 +474,15 @@ mock_server_set_wire_version (mock_server_t *server,
    server->minWireVersion = min_wire_version;
    server->maxWireVersion = max_wire_version;
 }
+
+
+#ifdef MONGOC_ENABLE_SSL
+void
+mock_server_set_ssl_opts     (mock_server_t    *server,
+                              mongoc_ssl_opt_t *opts)
+{
+   BSON_ASSERT (server);
+
+   server->ssl_opts = opts;
+}
+#endif

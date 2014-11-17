@@ -676,7 +676,9 @@ mongoc_client_new (const char *uri_string)
    mongoc_uri_t *uri;
    const bson_t *options;
    bson_iter_t iter;
+#ifdef MONGOC_ENABLE_SSL
    bool has_ssl = false;
+#endif
    bool slave_okay = false;
 
    if (!uri_string) {
@@ -689,11 +691,13 @@ mongoc_client_new (const char *uri_string)
 
    options = mongoc_uri_get_options (uri);
 
+#ifdef MONGOC_ENABLE_SSL
    if (bson_iter_init_find (&iter, options, "ssl") &&
        BSON_ITER_HOLDS_BOOL (&iter) &&
        bson_iter_bool (&iter)) {
       has_ssl = true;
    }
+#endif
 
    if (bson_iter_init_find_case (&iter, options, "slaveok") &&
        BSON_ITER_HOLDS_BOOL (&iter) &&
