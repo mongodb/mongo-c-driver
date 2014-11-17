@@ -19,6 +19,8 @@ MONGOC_DEF_FILES = \
 INST_H_FILES = \
 	src/mongoc/mongoc.h \
 	src/mongoc/mongoc-array-private.h \
+	src/mongoc/mongoc-async-private.h \
+	src/mongoc/mongoc-async-cmd-private.h \
 	src/mongoc/mongoc-b64-private.h \
 	src/mongoc/mongoc-buffer-private.h \
 	src/mongoc/mongoc-bulk-operation-private.h \
@@ -93,6 +95,8 @@ endif
 MONGOC_SOURCES_SHARED += \
 	$(INST_H_FILES) \
 	src/mongoc/mongoc-array.c \
+	src/mongoc/mongoc-async.c \
+	src/mongoc/mongoc-async-cmd.c \
 	src/mongoc/mongoc-buffer.c \
 	src/mongoc/mongoc-bulk-operation.c \
 	src/mongoc/mongoc-b64.c \

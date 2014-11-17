@@ -46,6 +46,12 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_socket_t mongoc_socket_t;
 
+typedef struct
+{
+   mongoc_socket_t *socket;
+   int              events;
+   int              revents;
+} mongoc_socket_poll_t;
 
 mongoc_socket_t *mongoc_socket_accept     (mongoc_socket_t       *sock,
                                            int64_t                expire_at);
@@ -90,6 +96,9 @@ bool             mongoc_socket_check_closed (mongoc_socket_t       *sock);
 void             mongoc_socket_inet_ntop  (struct addrinfo         *rp,
                                            char                    *buf,
                                            size_t                   buflen);
+ssize_t          mongoc_socket_poll       (mongoc_socket_poll_t  *sds,
+                                           size_t                 nsds,
+                                           int32_t                timeout);
 
 
 BSON_END_DECLS

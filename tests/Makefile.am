@@ -76,6 +76,7 @@ test_libmongoc_SOURCES = \
 	tests/test-libmongoc.c \
 	tests/test-bulk.c \
 	tests/test-mongoc-array.c \
+	tests/test-mongoc-async.c \
 	tests/test-mongoc-buffer.c \
 	tests/test-mongoc-client.c \
 	tests/test-mongoc-client-pool.c \

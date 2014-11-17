@@ -165,6 +165,79 @@ _mongoc_socket_wait (int      sd,           /* IN */
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_socket_poll --
+ *
+ *       A multi-socket poll helper.
+ *
+ *       @events: in most cases should be POLLIN or POLLOUT.
+ *
+ *       @expire_at should be an absolute time at which to expire using
+ *       the monotonic clock (bson_get_monotonic_time(), which is in
+ *       microseconds). Or zero to not block at all. Or -1 to block
+ *       forever.
+ *
+ * Returns:
+ *       true if an event matched. otherwise false.
+ *       a timeout will return false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+ssize_t
+mongoc_socket_poll (mongoc_socket_poll_t *sds,          /* IN */
+                    size_t                nsds,         /* IN */
+                    int32_t               timeout)      /* IN */
+{
+#ifdef _WIN32
+   WSAPOLLFD *pfds;
+#else
+   struct pollfd *pfds;
+#endif
+   int ret;
+   int i;
+
+   ENTRY;
+
+   bson_return_val_if_fail (sds, false);
+
+   pfds = bson_malloc(sizeof(*pfds) * nsds);
+
+   for (i = 0; i < nsds; i++) {
+      pfds[i].fd = sds[i].socket->sd;
+#ifdef _WIN2
+      pfds[i].events = sds[i].events;
+#else
+      pfds[i].events = sds[i].events | POLLERR | POLLHUP;
+#endif
+      pfds[i].revents = 0;
+   }
+
+#ifdef _WIN32
+   ret = WSAPoll (pfds, nsds, timeout);
+   if (ret == SOCKET_ERROR) {
+      MONGOC_WARNING ("WSAGetLastError(): %d", WSAGetLastError ());
+      ret = -1;
+   }
+#else
+   ret = poll (pfds, nsds, timeout);
+#endif
+
+   for (i = 0; i < nsds; i++) {
+      sds[i].revents = pfds[i].revents;
+   }
+
+   bson_free(pfds);
+
+   return ret;
+}
+
+
 static bool
 #ifdef _WIN32
 _mongoc_socket_setnodelay (SOCKET sd) /* IN */
