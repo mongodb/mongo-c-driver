@@ -92,6 +92,8 @@ mongoc_cursor_t               *mongoc_client_command              (mongoc_client
                                                                    const bson_t                 *query,
                                                                    const bson_t                 *fields,
                                                                    const mongoc_read_prefs_t    *read_prefs);
+void                           mongoc_client_kill_cursor          (mongoc_client_t *client,
+                                                                   int64_t          cursor_id);
 bool                           mongoc_client_command_simple       (mongoc_client_t              *client,
                                                                    const char                   *db_name,
                                                                    const bson_t                 *command,

@@ -1257,6 +1257,30 @@ mongoc_client_command_simple (mongoc_client_t           *client,
    return ret;
 }
 
+void
+mongoc_client_kill_cursor (mongoc_client_t *client,
+                           int64_t          cursor_id)
+{
+   mongoc_rpc_t rpc = {{ 0 }};
+
+   ENTRY;
+
+   bson_return_if_fail(client);
+   bson_return_if_fail(cursor_id);
+
+   rpc.kill_cursors.msg_len = 0;
+   rpc.kill_cursors.request_id = 0;
+   rpc.kill_cursors.response_to = 0;
+   rpc.kill_cursors.opcode = MONGOC_OPCODE_KILL_CURSORS;
+   rpc.kill_cursors.zero = 0;
+   rpc.kill_cursors.cursors = &cursor_id;
+   rpc.kill_cursors.n_cursors = 1;
+
+   _mongoc_client_sendv (client, &rpc, 1, 0, NULL, NULL, NULL);
+
+   EXIT;
+}
+
 
 char **
 mongoc_client_get_database_names (mongoc_client_t *client,
