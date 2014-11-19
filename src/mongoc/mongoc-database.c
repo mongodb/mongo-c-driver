@@ -707,6 +707,7 @@ _mongoc_database_find_collections_legacy (mongoc_database_t *database,
 
    /* Filtering on name needs to be handled differently for old servers. */
    if (filter && bson_iter_init_find (&iter, filter, "name")) {
+      bson_string_t *buf;
       /* on legacy servers, this must be a string (i.e. not a regex) */
       if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
          bson_set_error (error,
@@ -720,7 +721,7 @@ _mongoc_database_find_collections_legacy (mongoc_database_t *database,
       bson_init (&legacy_filter);
       bson_copy_to_excluding_noinit (filter, &legacy_filter, "name", NULL);
       /* We must db-qualify filters on name. */
-      bson_string_t *buf = bson_string_new (database->name);
+      buf = bson_string_new (database->name);
       bson_string_append_c (buf, '.');
       bson_string_append (buf, col_filter);
       BSON_APPEND_UTF8 (&legacy_filter, "name", buf->str);
