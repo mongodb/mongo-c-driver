@@ -1056,6 +1056,22 @@ mongoc_cursor_current (const mongoc_cursor_t *cursor) /* IN */
 }
 
 
+void
+mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor,
+                              uint32_t         batch_size)
+{
+   bson_return_if_fail (cursor);
+   cursor->batch_size = batch_size;
+}
+
+uint32_t
+mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor)
+{
+   bson_return_val_if_fail (cursor, 0);
+
+   return cursor->batch_size;
+}
+
 uint32_t
 mongoc_cursor_get_hint (const mongoc_cursor_t *cursor)
 {
