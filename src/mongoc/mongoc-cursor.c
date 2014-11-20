@@ -318,31 +318,6 @@ finish:
 }
 
 
-static void
-_mongoc_cursor_kill_cursor (mongoc_cursor_t *cursor,
-                            int64_t     cursor_id)
-{
-   mongoc_rpc_t rpc = {{ 0 }};
-
-   ENTRY;
-
-   bson_return_if_fail(cursor);
-   bson_return_if_fail(cursor_id);
-
-   rpc.kill_cursors.msg_len = 0;
-   rpc.kill_cursors.request_id = 0;
-   rpc.kill_cursors.response_to = 0;
-   rpc.kill_cursors.opcode = MONGOC_OPCODE_KILL_CURSORS;
-   rpc.kill_cursors.zero = 0;
-   rpc.kill_cursors.cursors = &cursor_id;
-   rpc.kill_cursors.n_cursors = 1;
-
-   _mongoc_client_sendv (cursor->client, &rpc, 1, 0, NULL, NULL, NULL);
-
-   EXIT;
-}
-
-
 void
 mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
@@ -373,7 +348,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
             &cursor->client->cluster.nodes[cursor->hint - 1]);
       }
    } else if (cursor->rpc.reply.cursor_id) {
-      _mongoc_cursor_kill_cursor(cursor, cursor->rpc.reply.cursor_id);
+      mongoc_client_kill_cursor(cursor->client, cursor->rpc.reply.cursor_id);
    }
 
    if (cursor->reader) {
@@ -1063,3 +1038,4 @@ mongoc_cursor_get_hint (const mongoc_cursor_t *cursor)
 
    return cursor->hint;
 }
+
