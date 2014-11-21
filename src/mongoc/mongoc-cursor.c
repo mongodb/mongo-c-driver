@@ -348,6 +348,8 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
    BSON_ASSERT(cursor);
 
+   ENTRY;
+
    if (cursor->iface.destroy) {
       cursor->iface.destroy(cursor);
    } else {
