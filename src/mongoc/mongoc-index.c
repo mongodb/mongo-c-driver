@@ -32,6 +32,7 @@ static mongoc_index_opt_t gMongocIndexOptDefault = {
    0,
    -1,
    -1,
+   NULL,
    NULL
 };
 
@@ -42,6 +43,7 @@ static mongoc_index_opt_geo_t gMongocIndexOptGeoDefault = {
    -1,
    2
 };
+
 
 const mongoc_index_opt_t *
 mongoc_index_opt_get_default (void)
@@ -70,3 +72,6 @@ mongoc_index_opt_geo_init (mongoc_index_opt_geo_t *opt)
 
    memcpy (opt, &gMongocIndexOptGeoDefault, sizeof *opt);
 }
+
+
+

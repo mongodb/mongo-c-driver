@@ -36,6 +36,20 @@ typedef struct
    uint8_t *padding[32];
 } mongoc_index_opt_geo_t;
 
+typedef struct 
+{
+  int type;   
+} mongoc_index_opt_storage_t;
+
+typedef enum {MMAPV1, WIREDTIGER} mongoc_index_storage_opt_type_t;
+
+typedef struct
+{
+   mongoc_index_opt_storage_t base;
+   const char* config_str;
+   void *padding[8];
+} mongoc_index_opt_wt_t;
+
 typedef struct
 {
    bool                   is_initialized;
@@ -50,7 +64,8 @@ typedef struct
    const char             *default_language;
    const char             *language_override;
    mongoc_index_opt_geo_t *geo_options;
-   void                   *padding[7];
+   mongoc_index_opt_storage_t *storage_options;
+   void                   *padding[6];
 } mongoc_index_opt_t;
 
 

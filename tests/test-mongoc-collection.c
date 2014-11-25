@@ -637,6 +637,11 @@ test_index_geo (void)
    mongoc_client_destroy(client);
 }
 
+static void
+test_index_storage(void)
+{
+   g
+}
 
 static void
 test_count (void)
