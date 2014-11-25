@@ -64,6 +64,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-rpc-private.h \
 	src/mongoc/mongoc-sasl-private.h \
 	src/mongoc/mongoc-scram-private.h \
+	src/mongoc/mongoc-sdam-private.h \
 	src/mongoc/mongoc-socket.h \
 	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-buffered.h \
@@ -116,12 +117,15 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-queue.c \
 	src/mongoc/mongoc-read-prefs.c \
 	src/mongoc/mongoc-rpc.c \
+	src/mongoc/mongoc-sdam.c \
+	src/mongoc/mongoc-server-description.c \
 	src/mongoc/mongoc-socket.c \
 	src/mongoc/mongoc-stream.c \
 	src/mongoc/mongoc-stream-buffered.c \
 	src/mongoc/mongoc-stream-file.c \
 	src/mongoc/mongoc-stream-gridfs.c \
 	src/mongoc/mongoc-stream-socket.c \
+	src/mongoc/mongoc-topology-description.c \
 	src/mongoc/mongoc-uri.c \
 	src/mongoc/mongoc-util.c \
 	src/mongoc/mongoc-write-command.c \

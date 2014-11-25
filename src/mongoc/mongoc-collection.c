@@ -69,7 +69,6 @@ validate_name (const char *str)
    return false;
 }
 
-
 static uint32_t
 _mongoc_collection_preselect (mongoc_collection_t          *collection,
                               mongoc_opcode_t               opcode,
@@ -79,19 +78,22 @@ _mongoc_collection_preselect (mongoc_collection_t          *collection,
                               uint32_t                     *max_wire_version,
                               bson_error_t                 *error)
 {
-   mongoc_cluster_node_t *node;
-   uint32_t hint;
+   //mongoc_cluster_node_t *node;
+   //uint32_t hint;
 
    BSON_ASSERT (collection);
    BSON_ASSERT (opcode);
    BSON_ASSERT (min_wire_version);
    BSON_ASSERT (max_wire_version);
+   return 0;
+
+   // TODO SDAM
 
    /*
     * Try to discover the wire version of the server. Default to 1 so
     * we can return a valid cursor structure.
     */
-
+   /*
    *min_wire_version = 0;
    *max_wire_version = 1;
 
@@ -102,14 +104,15 @@ _mongoc_collection_preselect (mongoc_collection_t          *collection,
                                     error);
 
    if (hint) {
-      node = &collection->client->cluster.nodes [hint - 1];
-      *min_wire_version = node->min_wire_version;
-      *max_wire_version = node->max_wire_version;
+      node = &_mongoc_array_index(&collection->client->cluster.nodes,
+                                  mongoc_cluster_node_t, hint - 1);
+      *min_wire_version = node->server_description->min_wire_version;
+      *max_wire_version = node->server_description->max_wire_version;
    }
 
    return hint;
+}*/
 }
-
 
 /*
  *--------------------------------------------------------------------------

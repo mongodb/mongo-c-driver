@@ -40,12 +40,13 @@ test_mongoc_read_prefs_score (void)
    score = _mongoc_read_prefs_score(read_prefs, &node);
    ASSERT_CMPINT(score, ==, 1);
 
-   node.primary = true;
+   /* TODO SDAM
+   node.server_description->type = MONGOC_SERVER_TYPE_RS_PRIMARY;
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
    ASSERT_CMPINT(score, ==, INT_MAX);
-
+   */
    mongoc_read_prefs_destroy(read_prefs);
 
 #undef ASSERT_VALID

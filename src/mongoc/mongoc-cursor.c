@@ -207,8 +207,9 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    }
 
    /* we can't have exhaust queries with sharded clusters */
-   if ((flags & MONGOC_QUERY_EXHAUST) &&
-       (client->cluster.mode == MONGOC_CLUSTER_SHARDED_CLUSTER)) {
+   // TODO: make this work
+   /*   if ((flags & MONGOC_QUERY_EXHAUST) &&
+       (client->cluster.topology_description->type == MONGOC_CLUSTER_TYPE_SHARDED)) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_CURSOR,
                       MONGOC_ERROR_CURSOR_INVALID_CURSOR,
@@ -216,6 +217,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
       MARK_FAILED (cursor);
       GOTO (finish);
    }
+   */
 
    /*
     * Check types of various optional parameters.
@@ -366,12 +368,12 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
    if (cursor->in_exhaust) {
       cursor->client->in_exhaust = false;
-
-      if (!cursor->done) {
+      // TODO: take this out?
+      /*if (!cursor->done) {
          _mongoc_cluster_disconnect_node (
             &cursor->client->cluster,
             &cursor->client->cluster.nodes[cursor->hint - 1]);
-      }
+            }*/
    } else if (cursor->rpc.reply.cursor_id) {
       _mongoc_cursor_kill_cursor(cursor, cursor->rpc.reply.cursor_id);
    }
@@ -942,11 +944,11 @@ mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
    EXIT;
 }
 
-
 void
 _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
                          mongoc_host_list_t *host)
 {
+/* TODO SDAM
    bson_return_if_fail(cursor);
    bson_return_if_fail(host);
 
@@ -960,8 +962,9 @@ _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
 
    *host = cursor->client->cluster.nodes[cursor->hint - 1].host;
    host->next = NULL;
+*/
+   return;
 }
-
 
 mongoc_cursor_t *
 mongoc_cursor_clone (const mongoc_cursor_t *cursor)
