@@ -98,7 +98,7 @@ test_command (void)
    assert (!r);
    assert (error.domain == MONGOC_ERROR_QUERY);
    assert (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
-   assert (!strcmp ("no such cmd: a_non_existing_command", error.message));
+   assert (strstr (error.message, "a_non_existing_command"));
 
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
