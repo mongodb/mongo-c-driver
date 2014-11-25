@@ -789,7 +789,11 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    bson_t ar;
    bson_t doc;
    bson_t reply;
+   bson_t storage_doc;
+   bson_t wt_doc;
    const mongoc_index_opt_geo_t *geo_opt;
+   const mongoc_index_opt_storage_t *storage_opt;
+   const mongoc_index_opt_wt_t *wt_opt;
    char *alloc_name = NULL;
    bool ret = false;
 
@@ -862,6 +866,21 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
           BSON_APPEND_DOUBLE (&doc, "bucketSize", geo_opt->haystack_bucket_size);
        }
    }
+
+   if (opt->storage_options) {
+      storage_opt = opt->storage_options;
+      switch (storage_opt->type) {
+      case MONGOC_INDEX_STORAGE_OPT_WIREDTIGER:
+         wt_opt = (mongoc_index_opt_wt_t *)storage_opt;
+         BSON_APPEND_DOCUMENT_BEGIN (&doc, "storageEngine", &storage_doc);
+         BSON_APPEND_DOCUMENT_BEGIN (&storage_doc, "wiredtiger", &wt_doc);
+         BSON_APPEND_UTF8 (&wt_doc, "configString", wt_opt->config_str);
+         bson_append_document_end (&storage_doc, &wt_doc);
+         bson_append_document_end (&doc, &storage_doc);
+         break;
+      }
+   }
+
    bson_append_document_end (&ar, &doc);
    bson_append_array_end (&cmd, &ar);
 

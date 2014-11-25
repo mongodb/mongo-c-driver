@@ -229,6 +229,8 @@ LIBMONGOC_1.1 {
         mongoc_database_find_collections;
         mongoc_index_opt_geo_get_default;
         mongoc_index_opt_geo_init;
+        mongoc_index_opt_wt_get_default;
+        mongoc_index_opt_wt_init;
         mongoc_rand_add;
         mongoc_rand_seed;
         mongoc_rand_status;

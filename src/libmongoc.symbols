@@ -139,6 +139,8 @@ mongoc_index_opt_geo_get_default
 mongoc_index_opt_geo_init
 mongoc_index_opt_get_default
 mongoc_index_opt_init
+mongoc_index_opt_wt_get_default
+mongoc_index_opt_wt_init
 mongoc_init
 mongoc_log
 mongoc_log_default_handler

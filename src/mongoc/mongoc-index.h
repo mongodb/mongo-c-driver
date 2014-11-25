@@ -38,27 +38,47 @@ typedef struct
 
 typedef struct
 {
-   bool                   is_initialized;
-   bool                   background;
-   bool                   unique;
-   const char             *name;
-   bool                   drop_dups;
-   bool                   sparse;
-   int32_t                expire_after_seconds;
-   int32_t                v;
-   const bson_t           *weights;
-   const char             *default_language;
-   const char             *language_override;
-   mongoc_index_opt_geo_t *geo_options;
-   void                   *padding[7];
+   int type;
+} mongoc_index_opt_storage_t;
+
+typedef enum
+{
+   MONGOC_INDEX_STORAGE_OPT_MMAPV1,
+   MONGOC_INDEX_STORAGE_OPT_WIREDTIGER,
+} mongoc_index_storage_opt_type_t;
+
+typedef struct
+{
+   mongoc_index_opt_storage_t base;
+   const char* config_str;
+   void *padding[8];
+} mongoc_index_opt_wt_t;
+
+typedef struct
+{
+   bool                        is_initialized;
+   bool                        background;
+   bool                        unique;
+   const char                 *name;
+   bool                        drop_dups;
+   bool                        sparse;
+   int32_t                     expire_after_seconds;
+   int32_t                     v;
+   const bson_t               *weights;
+   const char                 *default_language;
+   const char                 *language_override;
+   mongoc_index_opt_geo_t     *geo_options;
+   mongoc_index_opt_storage_t *storage_options;
+   void                       *padding[6];
 } mongoc_index_opt_t;
 
 
 const mongoc_index_opt_t     *mongoc_index_opt_get_default     (void) BSON_GNUC_CONST;
 const mongoc_index_opt_geo_t *mongoc_index_opt_geo_get_default (void) BSON_GNUC_CONST;
+const mongoc_index_opt_wt_t  *mongoc_index_opt_wt_get_default  (void) BSON_GNUC_CONST;
 void                          mongoc_index_opt_init            (mongoc_index_opt_t *opt);
 void                          mongoc_index_opt_geo_init        (mongoc_index_opt_geo_t *opt);
-
+void                          mongoc_index_opt_wt_init         (mongoc_index_opt_wt_t *opt);
 
 BSON_END_DECLS
 
