@@ -58,7 +58,7 @@ bool
 mongoc_async_run (mongoc_async_t *async,
                   int32_t         timeout_msec);
 
-void
+struct _mongoc_async_cmd *
 mongoc_async_cmd (mongoc_async_t       *async,
                   mongoc_stream_t      *stream,
                   const char           *dbname,

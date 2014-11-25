@@ -64,7 +64,12 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
       return true;
    }
 
-   acmd->cb (result, &acmd->reply, acmd->data, &acmd->error);
+   if (result == MONGOC_ASYNC_CMD_SUCCESS) {
+      acmd->cb (result, &acmd->reply, acmd->data, &acmd->error);
+   } else {
+      acmd->cb (result, NULL, acmd->data, &acmd->error);
+   }
+
    mongoc_async_cmd_destroy (acmd);
    return false;
 }

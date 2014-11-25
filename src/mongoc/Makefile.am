@@ -57,6 +57,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-iovec.h \
 	src/mongoc/mongoc-list-private.h \
 	src/mongoc/mongoc-log.h \
+	src/mongoc/mongoc-node-switch-private.h \
 	src/mongoc/mongoc-matcher-op-private.h \
 	src/mongoc/mongoc-matcher-private.h \
 	src/mongoc/mongoc-matcher.h \
@@ -67,6 +68,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-rpc-private.h \
 	src/mongoc/mongoc-sasl-private.h \
 	src/mongoc/mongoc-scram-private.h \
+	src/mongoc/mongoc-sdam-scanner-private.h \
 	src/mongoc/mongoc-socket.h \
 	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-buffered.h \
@@ -120,9 +122,11 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-log.c \
 	src/mongoc/mongoc-matcher-op.c \
 	src/mongoc/mongoc-matcher.c \
+	src/mongoc/mongoc-node-switch.c \
 	src/mongoc/mongoc-queue.c \
 	src/mongoc/mongoc-read-prefs.c \
 	src/mongoc/mongoc-rpc.c \
+	src/mongoc/mongoc-sdam-scanner.c \
 	src/mongoc/mongoc-socket.c \
 	src/mongoc/mongoc-stream.c \
 	src/mongoc/mongoc-stream-buffered.c \

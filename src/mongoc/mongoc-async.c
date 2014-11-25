@@ -43,7 +43,7 @@ _mongoc_async_add_cmd (mongoc_async_t     *async,
    async->ncmds++;
 }
 
-void
+mongoc_async_cmd_t *
 mongoc_async_cmd (mongoc_async_t       *async,
                   mongoc_stream_t      *stream,
                   const char           *dbname,
@@ -56,6 +56,8 @@ mongoc_async_cmd (mongoc_async_t       *async,
                                                     cb, cb_data, timeout_msec);
 
    _mongoc_async_add_cmd (async, acmd);
+
+   return acmd;
 }
 
 mongoc_async_t *
@@ -94,7 +96,7 @@ mongoc_async_run (mongoc_async_t *async,
    DL_FOREACH_SAFE (async->cmds, acmd, tmp)
    {
       if (now > acmd->expire_at) {
-         acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, &acmd->reply, acmd->data,
+         acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, acmd->data,
                    &acmd->error);
          mongoc_async_cmd_destroy (acmd);
       } else {
@@ -114,7 +116,11 @@ mongoc_async_run (mongoc_async_t *async,
       goto CLEANUP;
    }
 
-   timeout_msec = MIN (timeout_msec, (async->cmds->expire_at - now) / 1000);
+   if (timeout_msec >= 0) {
+      timeout_msec = MIN (timeout_msec, (async->cmds->expire_at - now) / 1000);
+   } else {
+      timeout_msec = (async->cmds->expire_at - now) / 1000;
+   }
 
    nactive = mongoc_stream_poll (poll, async->ncmds, timeout_msec);
 
