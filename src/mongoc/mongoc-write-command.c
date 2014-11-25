@@ -33,8 +33,11 @@
 
 
 #define MAX_INSERT_BATCH 1000
+// TODO SDAM
+/*
 #define SUPPORTS_WRITE_COMMANDS(n) \
-   (((n)->min_wire_version <= 2) && ((n)->max_wire_version >= 2))
+   (((n)->server_description->min_wire_version <= 2) && ((n)->server_description->max_wire_version >= 2))
+*/
 #define WRITE_CONCERN_DOC(wc) \
    (wc && _mongoc_write_concern_needs_gle ((wc))) ? \
    (_mongoc_write_concern_get_bson((mongoc_write_concern_t*)(wc))) : \
@@ -508,13 +511,14 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
     * opcodes, then submit the legacy opcode so we don't need to wait for
     * a response from the server.
     */
-   if ((client->cluster.nodes [hint - 1].min_wire_version == 0) &&
+   /* TODO SDAM this won't work now
+   if ((client->cluster.nodes [hint - 1].server_description->min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_delete_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
       EXIT;
-   }
+      } */
 
    BSON_APPEND_UTF8 (&cmd, "delete", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
@@ -581,13 +585,14 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
     * opcodes, then submit the legacy opcode so we don't need to wait for
     * a response from the server.
     */
-   if ((client->cluster.nodes [hint - 1].min_wire_version == 0) &&
+   /* TODO SDAM
+   if ((client->cluster.nodes [hint - 1].server_description->min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_insert_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
       EXIT;
-   }
+      } */
 
    if (!command->u.insert.n_documents ||
        !bson_iter_init (&iter, command->u.insert.documents) ||
@@ -698,13 +703,15 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
     * opcodes, then submit the legacy opcode so we don't need to wait for
     * a response from the server.
     */
-   if ((client->cluster.nodes [hint - 1].min_wire_version == 0) &&
+   /* TODO SDAM
+   if ((client->cluster.nodes [hint - 1].server_description->min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_update_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
       EXIT;
    }
+   */
 
    BSON_APPEND_UTF8 (&cmd, "update", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
@@ -754,7 +761,7 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
                                const mongoc_write_concern_t *write_concern, /* IN */
                                mongoc_write_result_t        *result)        /* OUT */
 {
-   mongoc_cluster_node_t *node;
+   //mongoc_cluster_node_t *node;
    int mode = 0;
 
    ENTRY;
@@ -780,8 +787,9 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
 
    command->hint = hint;
 
-   node = &client->cluster.nodes [hint - 1];
-   mode = SUPPORTS_WRITE_COMMANDS (node);
+   // TODO SDAM
+   //node = &_mongoc_array_index(&client->cluster.nodes, mongoc_cluster_node_t, hint - 1);
+   //mode = SUPPORTS_WRITE_COMMANDS (node);
 
    gWriteOps [mode][command->type] (command, client, hint, database,
                                     collection, write_concern, result,

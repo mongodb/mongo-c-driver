@@ -61,7 +61,8 @@ bool                          mongoc_uri_get_mechanism_properties (const mongoc_
 bool                          mongoc_uri_get_ssl                  (const mongoc_uri_t *uri);
 char                         *mongoc_uri_unescape                 (const char         *escaped_string);
 const mongoc_write_concern_t *mongoc_uri_get_write_concern        (const mongoc_uri_t *uri);
-
+bool                          _mongoc_host_list_from_string       (mongoc_host_list_t *host_list,
+                                                                   const char         *host_and_port);
 
 BSON_END_DECLS
 
