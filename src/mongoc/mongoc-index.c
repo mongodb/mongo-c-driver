@@ -44,6 +44,10 @@ static mongoc_index_opt_geo_t gMongocIndexOptGeoDefault = {
    2
 };
 
+static mongoc_index_opt_wt_t gMongcIndexOptWTDefault = {
+   {WIREDTIGER},
+   ""
+};
 
 const mongoc_index_opt_t *
 mongoc_index_opt_get_default (void)
@@ -55,6 +59,12 @@ const mongoc_index_opt_geo_t *
 mongoc_index_opt_geo_get_default (void)
 {
    return &gMongocIndexOptGeoDefault;
+}
+
+const mongoc_index_opt_wt_t *
+mongoc_index_opt_wt_get_default (void)
+{
+   return &gMongcIndexOptWTDefault;
 }
 
 void
@@ -72,6 +82,14 @@ mongoc_index_opt_geo_init (mongoc_index_opt_geo_t *opt)
 
    memcpy (opt, &gMongocIndexOptGeoDefault, sizeof *opt);
 }
+
+void mongoc_index_opt_wt_init (mongoc_index_opt_wt_t *opt)
+{
+   BSON_ASSERT(opt);
+
+   memcpy (opt, &gMongcIndexOptWTDefault, sizeof *opt);
+}
+
 
 
 

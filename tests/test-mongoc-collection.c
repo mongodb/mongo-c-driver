@@ -640,7 +640,46 @@ test_index_geo (void)
 static void
 test_index_storage(void)
 {
-   g
+   char str[10];
+   sprintf(str, "here");
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   mongoc_index_opt_t opt;
+   mongoc_index_opt_wt_t wt_opt;
+   bson_error_t error;
+   bool r;
+   bson_t keys;
+
+   mongoc_index_opt_init(&opt);
+   mongoc_index_opt_wt_init(&wt_opt);
+
+   client = mongoc_client_new(gTestUri);
+   ASSERT (client);
+
+   database = get_test_database (client);
+   ASSERT (database);
+
+   collection = get_test_collection (client, "test_storage_index");
+   ASSERT (collection);
+
+   /* Create a simple index */
+   bson_init(&keys);
+   bson_append_int32(&keys, "hello", -1, 1);
+
+   /* Add storage option to the index */
+   wt_opt.base.type = WIREDTIGER;
+   wt_opt.config_str = "block_compressor=zlib";
+
+   opt.storage_options = (mongoc_index_opt_storage_t*) &wt_opt;
+
+   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
+   ASSERT(r);
+
+   mongoc_collection_destroy(collection);
+   mongoc_database_destroy(database);
+   mongoc_client_destroy(client);
+
 }
 
 static void
@@ -1359,6 +1398,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/index", test_index);
    TestSuite_Add (suite, "/Collection/index_compound", test_index_compound);
    TestSuite_Add (suite, "/Collection/index_geo", test_index_geo);
+   TestSuite_Add (suite, "/Collection/index_storage", test_index_storage);
    TestSuite_Add (suite, "/Collection/regex", test_regex);
    TestSuite_Add (suite, "/Collection/update", test_update);
    TestSuite_Add (suite, "/Collection/remove", test_remove);

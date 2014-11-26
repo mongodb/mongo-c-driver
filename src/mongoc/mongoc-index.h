@@ -36,9 +36,9 @@ typedef struct
    uint8_t *padding[32];
 } mongoc_index_opt_geo_t;
 
-typedef struct 
+typedef struct
 {
-  int type;   
+  int type;
 } mongoc_index_opt_storage_t;
 
 typedef enum {MMAPV1, WIREDTIGER} mongoc_index_storage_opt_type_t;
@@ -71,9 +71,10 @@ typedef struct
 
 const mongoc_index_opt_t     *mongoc_index_opt_get_default     (void) BSON_GNUC_CONST;
 const mongoc_index_opt_geo_t *mongoc_index_opt_geo_get_default (void) BSON_GNUC_CONST;
+const mongoc_index_opt_wt_t  *mongoc_index_opt_wt_get_default  (void) BSON_GNUC_CONST;
 void                          mongoc_index_opt_init            (mongoc_index_opt_t *opt);
 void                          mongoc_index_opt_geo_init        (mongoc_index_opt_geo_t *opt);
-
+void                          mongoc_index_opt_wt_init         (mongoc_index_opt_wt_t *opt);
 
 BSON_END_DECLS
 
