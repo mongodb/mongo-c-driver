@@ -19,45 +19,6 @@
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_sdam_label_possible_primary --
- *
- *       If server's current_primary field is not NULL, then find the
- *       server in topology whose address matches, and label it as a
- *       POSSIBLE_PRIMARY.
- *
- *       NOTE: this method does NOT check if there is already a primary
- *       in the cluster.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       May change server state.
- *
- *--------------------------------------------------------------------------
- */
-static void
-_mongoc_sdam_label_possible_primary(mongoc_topology_description_t *topology,
-                                    mongoc_server_description_t   *server)
-{
-   mongoc_server_description_t *current_server;
-
-   if (server->current_primary) {
-      current_server = topology->servers;
-      while (current_server) {
-         if (current_server->connection_address == server->current_primary) {
-            if (current_server->type == MONGOC_SERVER_TYPE_UNKNOWN) {
-               current_server->type = MONGOC_SERVER_TYPE_POSSIBLE_PRIMARY;
-            }
-         }
-         current_server = current_server->next;
-      }
-   }
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * _mongoc_sdam_remove_from_monitor --
  *
  *       Remove this server from being monitored.
@@ -302,10 +263,12 @@ _mongoc_sdam_update_rs_without_primary (mongoc_topology_description_t *topology,
    }
 
    /* Begin monitoring any new servers that this server knows about */
-   // TODO this loop.
+   // TODO SDAM this loop.
 
-   /* If this server thinks there is a primary, find it and label it POSSIBLE_PRIMARY */
-   _mongoc_sdam_label_possible_primary(topology, server);
+   /* If this server thinks there is a primary, label it POSSIBLE_PRIMARY */
+   _mongoc_topology_description_label_unknown_member(topology,
+                                                     server->current_primary,
+                                                     MONGOC_SERVER_TYPE_POSSIBLE_PRIMARY);
 }
 
 /*
@@ -338,7 +301,9 @@ _mongoc_sdam_update_rs_with_primary_from_member (mongoc_topology_description_t *
    /* If there is no primary, label server's current_primary as the POSSIBLE_PRIMARY */
    if (!_mongoc_topology_description_has_primary(topology)) {
       topology->type = MONGOC_CLUSTER_TYPE_REPLICA_SET_NO_PRIMARY;
-      _mongoc_sdam_label_possible_primary(topology, server);
+      _mongoc_topology_description_label_unknown_member(topology,
+                                                        server->current_primary,
+                                                        MONGOC_SERVER_TYPE_POSSIBLE_PRIMARY);
    }
 }
 

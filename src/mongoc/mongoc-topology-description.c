@@ -192,3 +192,37 @@ _mongoc_topology_description_has_primary (mongoc_topology_description_t *descrip
    }
    return false;
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_description_label_unknown_member --
+ *
+ *       Find the server description with the given @address and if its
+ *       type is UNKNOWN, set its type to @type.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_topology_description_label_unknown_member  (mongoc_topology_description_t *description,
+                                                    const char *address,
+                                                    mongoc_server_description_type_t type)
+{
+   mongoc_server_description_t *server_iter = description->servers;
+
+   while (server_iter) {
+      if (server_iter->connection_address == address &&
+          server_iter->type == MONGOC_SERVER_TYPE_UNKNOWN) {
+         server_iter->type = type;
+         return;
+      }
+      server_iter = server_iter->next;
+   }
+}

@@ -39,14 +39,17 @@ typedef struct _mongoc_topology_description_t
    char                              *compatibility_error;
 } mongoc_topology_description_t;
 
-void _mongoc_topology_description_init          (mongoc_topology_description_t *description);
-void _mongoc_topology_description_destroy       (mongoc_topology_description_t *description);
-void _mongoc_topology_description_add_server    (mongoc_topology_description_t *description,
-                                                 mongoc_server_description_t   *server);
-void _mongoc_topology_description_remove_server (mongoc_topology_description_t *description,
-                                                 mongoc_server_description_t   *server);
-bool _mongoc_topology_description_has_server    (mongoc_topology_description_t *description,
-                                                 const char                    *address);
-bool _mongoc_topology_description_has_primary   (mongoc_topology_description_t *description);
+void _mongoc_topology_description_init                  (mongoc_topology_description_t   *description);
+void _mongoc_topology_description_destroy               (mongoc_topology_description_t   *description);
+void _mongoc_topology_description_add_server            (mongoc_topology_description_t   *description,
+                                                         mongoc_server_description_t     *server);
+void _mongoc_topology_description_remove_server         (mongoc_topology_description_t   *description,
+                                                         mongoc_server_description_t     *server);
+bool _mongoc_topology_description_has_server            (mongoc_topology_description_t   *description,
+                                                         const char                      *address);
+bool _mongoc_topology_description_has_primary           (mongoc_topology_description_t   *description);
+void _mongoc_topology_description_label_unknown_member  (mongoc_topology_description_t   *description,
+                                                         const char                      *address,
+                                                         mongoc_server_description_type_t type);
 
 #endif
