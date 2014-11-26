@@ -140,6 +140,9 @@ test_create_collection (void)
    mongoc_client_t *client;
    bson_error_t error = { 0 };
    bson_t options;
+   bson_t storage_opts;
+   bson_t wt_opts;
+
    char *dbname;
    char *name;
    bool r;
@@ -157,6 +160,14 @@ test_create_collection (void)
    BSON_APPEND_INT32 (&options, "max", 4567);
    BSON_APPEND_BOOL (&options, "capped", true);
    BSON_APPEND_BOOL (&options, "autoIndexId", true);
+
+   // add in the wired tiger options
+   BSON_APPEND_DOCUMENT_BEGIN(&options, "storage", &storage_opts);
+   BSON_APPEND_DOCUMENT_BEGIN(&storage_opts, "wiredtiger", &wt_opts);
+   BSON_APPEND_UTF8(&wt_opts, "configString", "block_compressor=zlib");
+   bson_append_document_end(&storage_opts, &wt_opts);
+   bson_append_document_end(&options, &storage_opts);
+
 
    name = gen_collection_name ("create_collection");
    collection = mongoc_database_create_collection (database, name, &options, &error);
