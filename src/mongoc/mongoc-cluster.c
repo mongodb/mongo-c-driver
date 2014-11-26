@@ -59,9 +59,6 @@
 #define MAX_RETRY_COUNT 3
 #endif
 
-#define MIN_WIRE_VERSION 0
-#define MAX_WIRE_VERSION 3
-
 #ifndef DEFAULT_SOCKET_TIMEOUT_MSEC
 /*
  * NOTE: The default socket timeout for connections is 5 minutes. This
@@ -304,12 +301,12 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    cluster->uri = mongoc_uri_copy(uri);
    cluster->client = client;
-   cluster->sec_latency_ms = 15; // TODO: make configurable?
+   cluster->sec_latency_ms = 15; // TODO SDAM make configurable?
    cluster->max_msg_size = 1024 * 1024 * 48;
    cluster->max_bson_size = 1024 * 1024 * 16;
    cluster->requires_auth = (mongoc_uri_get_username(uri) ||
                              mongoc_uri_get_auth_mechanism(uri));
-   cluster->sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC; // TODO: make configurable?
+   cluster->sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC; // TODO SDAM make configurable?
 
    _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
 

@@ -19,6 +19,7 @@
 
 #include <bson.h>
 
+#include "mongoc-array-private.h"
 #include "mongoc-host-list.h"
 
 #define MONGOC_SERVER_DESCRIPTION_TYPES 8
@@ -51,19 +52,18 @@ struct _mongoc_server_description_t
    int32_t                          min_wire_version;
    int32_t                          max_wire_version;
 
-   char                           **rs_members; // TODO: what type should this be?
-                                                // TODO: need to make fixed length??
-                                                // maybe a mongoc_array_t
-   int32_t                          rs_members_len;
+   char                           **rs_members;
 
    bson_t                           tags;
    char                            *current_primary;
    int32_t                          max_write_batch_size;
 };
 
-void _mongoc_server_description_init    (mongoc_server_description_t *description,
-                                         const char                  *address,
-                                         int32_t                      id);
-void _mongoc_server_description_destroy (mongoc_server_description_t *description);
+void _mongoc_server_description_init          (mongoc_server_description_t *description,
+                                               const char                  *address,
+                                               int32_t                      id);
+void _mongoc_server_description_destroy       (mongoc_server_description_t *description);
+bool _mongoc_server_description_has_rs_member (mongoc_server_description_t *description,
+                                               const char                  *address);
 
 #endif

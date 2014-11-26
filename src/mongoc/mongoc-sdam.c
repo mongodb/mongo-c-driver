@@ -163,34 +163,34 @@ _mongoc_sdam_update_unknown_with_standalone (mongoc_topology_description_t *topo
    }
 }
 
-
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_sdam_server_has_rs_member --
+ * _mongoc_sdam_add_server_to_monitor --
  *
- *       Return true if this address is included in server's list of rs
- *       members, false otherwise.
+ *       Add the specified server to the cluster topology.
  *
- * Returns:
- *       true, false
+ * Return:
+ *       None.
  *
  * Side effects:
- *       None
+ *       None.
  *
  *--------------------------------------------------------------------------
  */
-static bool
-_mongoc_sdam_server_has_rs_member(mongoc_server_description_t *server,
-                                  char *address)
+static void
+_mongoc_sdam_add_server_to_monitor (mongoc_topology_description_t *topology,
+                                    const char                    *server)
 {
-   char **member_iter = server->rs_members;
-   for (int i = 0; i < server->rs_members_len; member_iter++, i++) {
-      if (*member_iter == address) {
-         return true;
-      }
-   }
-   return false;
+   // TODO SDAM: move this to monitor
+   mongoc_server_description_t description;
+
+   if (_mongoc_topology_description_has_server(topology, server)) return;
+
+   _mongoc_server_description_init(&description, server, -1); // TODO: determine real index
+
+   description.next = topology->servers;
+   topology->servers = &description;
 }
 
 /*
@@ -226,13 +226,15 @@ _mongoc_sdam_update_rs_from_primary (mongoc_topology_description_t *topology,
                                      mongoc_server_description_t   *server)
 {
    mongoc_server_description_t *current_server;
-   char **current_member;
+   char **member_iter;
 
    if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
 
    /* 'Server' can only be the primary if it has the right rs name */
    if (!topology->set_name) {
-      topology->set_name = server->set_name; /* TODO: how to copy? */
+      int len = strlen(server->set_name) + 1;
+      topology->set_name = bson_malloc (len);
+      memcpy (topology->set_name, server->set_name, len);
    }
    else if (topology->set_name != server->set_name) {
       _mongoc_sdam_remove_from_monitor(topology, server);
@@ -246,59 +248,28 @@ _mongoc_sdam_update_rs_from_primary (mongoc_topology_description_t *topology,
       if (current_server->connection_address != server->connection_address &&
           current_server->type == MONGOC_SERVER_TYPE_RS_PRIMARY ) {
          server->type = MONGOC_SERVER_TYPE_UNKNOWN;
-         /* TODO: reset other states to 'defaults'? */
+         // TODO SDAM reset other states to 'defaults'?
       }
       current_server = current_server->next;
    }
 
    /* Begin monitoring any new servers primary knows about */
-   current_member = server->rs_members;
-   for (int i = 0; i < server->rs_members_len; i++) {
-      if (!_mongoc_topology_description_has_server(topology, *current_member)) {
-         // TODO: begin monitoring new server
+   member_iter = server->rs_members;
+   while (member_iter) {
+      if (!_mongoc_topology_description_has_server(topology, *member_iter)) {
+         _mongoc_sdam_add_server_to_monitor(topology, *member_iter);
       }
-      current_member++;
+      member_iter++;
    }
 
    /* Stop monitoring any old servers primary doesn't know about */
    current_server = topology->servers;
    while (current_server) {
-      if (!_mongoc_sdam_server_has_rs_member(server, current_server->connection_address)) {
+      if (!_mongoc_server_description_has_rs_member(server, current_server->connection_address)) {
          _mongoc_sdam_remove_from_monitor(topology, current_server);
       }
       current_server = current_server->next;
    }
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_sdam_add_server_to_monitor --
- *
- *       Add the specified server to the cluster topology.
- *
- * Return:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-static void
-_mongoc_sdam_add_server_to_monitor (mongoc_topology_description_t *topology,
-                                    const char                    *server)
-{
-   mongoc_server_description_t description;
-
-   if (_mongoc_topology_description_has_server(topology, server)) return;
-
-   _mongoc_server_description_init(&description, server, -1); // TODO: determine real index
-
-   description.next = topology->servers;
-   topology->servers = &description;
-
-   // TODO: trip into the cluster to add node.
 }
 
 /*
@@ -320,8 +291,6 @@ void
 _mongoc_sdam_update_rs_without_primary (mongoc_topology_description_t *topology,
                                         mongoc_server_description_t   *server)
 {
-   char **current_address;
-
    if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
 
    if (!topology->set_name) {
@@ -333,12 +302,7 @@ _mongoc_sdam_update_rs_without_primary (mongoc_topology_description_t *topology,
    }
 
    /* Begin monitoring any new servers that this server knows about */
-   current_address = server->rs_members;
-   for (int i = 0; i < server->rs_members_len; current_address++, i++) {
-      if (!_mongoc_topology_description_has_server(topology, *current_address)) {
-         // TODO: begin monitoring
-      }
-   }
+   // TODO this loop.
 
    /* If this server thinks there is a primary, find it and label it POSSIBLE_PRIMARY */
    _mongoc_sdam_label_possible_primary(topology, server);

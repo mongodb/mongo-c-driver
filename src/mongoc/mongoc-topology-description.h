@@ -37,11 +37,6 @@ typedef struct _mongoc_topology_description_t
    char                              *set_name;
    bool                               compatible;
    char                              *compatibility_error;
-
-   // TODO: add a version field, for locking purposes?
-
-   /* callback functions to trip back into the cluster */
-   void                             (*remove_node_from_cluster)(char*, void*);
 } mongoc_topology_description_t;
 
 void _mongoc_topology_description_init          (mongoc_topology_description_t *description);
@@ -51,7 +46,7 @@ void _mongoc_topology_description_add_server    (mongoc_topology_description_t *
 void _mongoc_topology_description_remove_server (mongoc_topology_description_t *description,
                                                  mongoc_server_description_t   *server);
 bool _mongoc_topology_description_has_server    (mongoc_topology_description_t *description,
-                                                 const char                    *server);
+                                                 const char                    *address);
 bool _mongoc_topology_description_has_primary   (mongoc_topology_description_t *description);
 
 #endif

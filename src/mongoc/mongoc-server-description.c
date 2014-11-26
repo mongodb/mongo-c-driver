@@ -19,6 +19,9 @@
 #include "mongoc-trace.h"
 #include "mongoc-uri.h"
 
+#define MIN_WIRE_VERSION 0
+#define MAX_WIRE_VERSION 3
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -52,14 +55,14 @@ _mongoc_server_description_init (mongoc_server_description_t *description,
    description->next = NULL;
    description->set_name = NULL;
    description->connection_address = bson_strdup(address);
-   description->error = NULL; // TODO change if this changes types
-   description->round_trip_time = -1; // TODO: different default?
+   description->error = NULL; // TODO SDAM change if this changes types
    description->type = MONGOC_SERVER_TYPE_UNKNOWN;
-   description->min_wire_version = -1; // TODO: different default?
-   description->min_wire_version = -1; // TODO: different default?
 
-   description->rs_members = NULL; // TODO: proper way to initialize?
-   description->rs_members_len = 0;
+   description->round_trip_time = -1;
+   description->min_wire_version = MIN_WIRE_VERSION;
+   description->max_wire_version = MAX_WIRE_VERSION;
+
+   description->rs_members = NULL;
 
    description->host = host;
    if (!_mongoc_host_list_from_string(&description->host, address)) {
@@ -92,6 +95,8 @@ _mongoc_server_description_init (mongoc_server_description_t *description,
 void
 _mongoc_server_description_destroy (mongoc_server_description_t *description)
 {
+   char **member_iter;
+
    ENTRY;
 
    BSON_ASSERT(description);
@@ -102,6 +107,14 @@ _mongoc_server_description_destroy (mongoc_server_description_t *description)
    }
 
    bson_free(description->connection_address);
+
+   member_iter = description->rs_members;
+   while (member_iter) {
+      free(*member_iter);
+      member_iter++;
+   }
+   free(description->rs_members);
+   description->rs_members = NULL;
 
    if (description->set_name) {
       bson_free(description->set_name);
@@ -114,4 +127,36 @@ _mongoc_server_description_destroy (mongoc_server_description_t *description)
    }
 
    EXIT;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_server_description_has_rs_member --
+ *
+ *       Return true if this address is included in server's list of rs
+ *       members, false otherwise.
+ *
+ * Returns:
+ *       true, false
+ *
+ * Side effects:
+ *       None
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+_mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
+                                         const char                  *address)
+{
+   char **member_iter = server->rs_members;
+
+   while (member_iter) {
+      if (*member_iter == address) {
+         return true;
+      }
+      member_iter++;
+   }
+   return false;
 }

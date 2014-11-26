@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mongoc-server-description.h"
 #include "mongoc-topology-description.h"
 #include "mongoc-trace.h"
 
@@ -45,9 +46,6 @@ _mongoc_topology_description_init (mongoc_topology_description_t *description)
    description->compatible = true; // TODO: different default?
    description->compatibility_error = NULL;
 
-   // TODO: handle cluster callback stuff
-   // TODO: version?
-
    EXIT;
 }
 
@@ -69,11 +67,31 @@ _mongoc_topology_description_init (mongoc_topology_description_t *description)
 void
 _mongoc_topology_description_destroy (mongoc_topology_description_t *description)
 {
+   mongoc_server_description_t *prev_server = NULL;
+   mongoc_server_description_t *server_iter;
+
    ENTRY;
 
    BSON_ASSERT(description);
 
-   // TODO: what to do here, remove server descriptions?  Who owns these actually?
+   server_iter = description->servers;
+   while (server_iter) {
+      if (prev_server) {
+         _mongoc_server_description_destroy(prev_server);
+         // TODO SDAM: need to free this?
+         prev_server = NULL;
+      }
+      prev_server = server_iter;
+      server_iter = server_iter->next;
+   }
+
+   if (description->set_name) {
+      bson_free (description->set_name);
+   }
+
+   if (description->compatibility_error) {
+      bson_free (description->compatibility_error);
+   }
 
    EXIT;
 }
