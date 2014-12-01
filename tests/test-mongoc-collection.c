@@ -640,8 +640,6 @@ test_index_geo (void)
 static void
 test_index_storage(void)
 {
-   char str[10];
-   sprintf(str, "here");
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
