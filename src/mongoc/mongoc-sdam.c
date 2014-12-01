@@ -68,8 +68,8 @@ _mongoc_sdam_remove_and_check_primary (mongoc_topology_description_t *topology,
  * _mongoc_sdam_check_if_has_primary --
  *
  *       If there is a primary in topology, set topology
- *       type to REPLICA_SET_WITH_PRIMARY, otherwise set it to
- *       REPLICA_SET_NO_PRIMARY.
+ *       type to RS_WITH_PRIMARY, otherwise set it to
+ *       RS_NO_PRIMARY.
  *
  * Returns:
  *       None.
@@ -84,10 +84,12 @@ _mongoc_sdam_check_if_has_primary (mongoc_topology_description_t *topology,
                                    mongoc_server_description_t   *server)
 {
    if (_mongoc_topology_description_has_primary(topology)) {
-      topology->type = MONGOC_CLUSTER_TYPE_REPLICA_SET_WITH_PRIMARY;
+      _mongoc_topology_description_set_state(topology,
+                                             MONGOC_CLUSTER_RS_WITH_PRIMARY);
    }
    else {
-      topology->type = MONGOC_CLUSTER_TYPE_REPLICA_SET_NO_PRIMARY;
+      _mongoc_topology_description_set_state(topology,
+                                             MONGOC_CLUSTER_RS_NO_PRIMARY);
    }
 }
 
@@ -120,7 +122,7 @@ _mongoc_sdam_update_unknown_with_standalone (mongoc_topology_description_t *topo
       /* this cluster contains other servers, it cannot be a standalone. */
       _mongoc_sdam_remove_from_monitor(topology, server);
    } else {
-      topology->type = MONGOC_CLUSTER_TYPE_SINGLE;
+      _mongoc_topology_description_set_state(topology, MONGOC_CLUSTER_SINGLE);
    }
 }
 
@@ -207,8 +209,9 @@ _mongoc_sdam_update_rs_from_primary (mongoc_topology_description_t *topology,
    current_server = topology->servers;
    while (current_server) {
       if (current_server->connection_address != server->connection_address &&
-          current_server->type == MONGOC_SERVER_TYPE_RS_PRIMARY ) {
-         server->type = MONGOC_SERVER_TYPE_UNKNOWN;
+          current_server->type == MONGOC_SERVER_RS_PRIMARY ) {
+         _mongoc_server_description_set_state(server, MONGOC_SERVER_UNKNOWN);
+         server->type = MONGOC_SERVER_UNKNOWN;
          // TODO SDAM reset other states to 'defaults'?
       }
       current_server = current_server->next;
@@ -268,7 +271,7 @@ _mongoc_sdam_update_rs_without_primary (mongoc_topology_description_t *topology,
    /* If this server thinks there is a primary, label it POSSIBLE_PRIMARY */
    _mongoc_topology_description_label_unknown_member(topology,
                                                      server->current_primary,
-                                                     MONGOC_SERVER_TYPE_POSSIBLE_PRIMARY);
+                                                     MONGOC_SERVER_POSSIBLE_PRIMARY);
 }
 
 /*
@@ -300,10 +303,10 @@ _mongoc_sdam_update_rs_with_primary_from_member (mongoc_topology_description_t *
 
    /* If there is no primary, label server's current_primary as the POSSIBLE_PRIMARY */
    if (!_mongoc_topology_description_has_primary(topology)) {
-      topology->type = MONGOC_CLUSTER_TYPE_REPLICA_SET_NO_PRIMARY;
+      _mongoc_topology_description_set_state(topology, MONGOC_CLUSTER_RS_NO_PRIMARY);
       _mongoc_topology_description_label_unknown_member(topology,
                                                         server->current_primary,
-                                                        MONGOC_SERVER_TYPE_POSSIBLE_PRIMARY);
+                                                        MONGOC_SERVER_POSSIBLE_PRIMARY);
    }
 }
 
@@ -326,7 +329,7 @@ void
 _mongoc_sdam_set_topology_type_to_sharded (mongoc_topology_description_t *topology,
                                            mongoc_server_description_t   *server)
 {
-   topology->type = MONGOC_CLUSTER_TYPE_SHARDED;
+   _mongoc_topology_description_set_state(topology, MONGOC_CLUSTER_SHARDED);
 }
 
 /*
@@ -335,7 +338,7 @@ _mongoc_sdam_set_topology_type_to_sharded (mongoc_topology_description_t *topolo
  * _mongoc_sdam_transition_unknown_to_rs_no_primary --
  *
  *       Encapsulates transition from cluster state UNKNOWN to
- *       REPLICA_SET_NO_PRIMARY. Sets the type to REPLICA_SET_NO_PRIMARY,
+ *       RS_NO_PRIMARY. Sets the type to RS_NO_PRIMARY,
  *       then updates the replica set accordingly.
  *
  * Returns:
@@ -350,6 +353,6 @@ void
 _mongoc_sdam_transition_unknown_to_rs_no_primary (mongoc_topology_description_t *topology,
                                                   mongoc_server_description_t   *server)
 {
-   topology->type = MONGOC_CLUSTER_TYPE_REPLICA_SET_NO_PRIMARY;
+   _mongoc_topology_description_set_state(topology, MONGOC_CLUSTER_RS_NO_PRIMARY);
    _mongoc_sdam_update_rs_without_primary(topology, server);
 }

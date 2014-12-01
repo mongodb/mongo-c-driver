@@ -26,15 +26,15 @@
 
 typedef enum
    {
-      MONGOC_SERVER_TYPE_STANDALONE,
-      MONGOC_SERVER_TYPE_MONGOS,
-      MONGOC_SERVER_TYPE_POSSIBLE_PRIMARY,
-      MONGOC_SERVER_TYPE_RS_PRIMARY,
-      MONGOC_SERVER_TYPE_RS_SECONDARY,
-      MONGOC_SERVER_TYPE_RS_ARBITER,
-      MONGOC_SERVER_TYPE_RS_OTHER,
-      MONGOC_SERVER_TYPE_RS_GHOST,
-      MONGOC_SERVER_TYPE_UNKNOWN,
+      MONGOC_SERVER_STANDALONE,
+      MONGOC_SERVER_MONGOS,
+      MONGOC_SERVER_POSSIBLE_PRIMARY,
+      MONGOC_SERVER_RS_PRIMARY,
+      MONGOC_SERVER_RS_SECONDARY,
+      MONGOC_SERVER_RS_ARBITER,
+      MONGOC_SERVER_RS_OTHER,
+      MONGOC_SERVER_RS_GHOST,
+      MONGOC_SERVER_UNKNOWN,
    } mongoc_server_description_type_t;
 
 typedef struct _mongoc_server_description_t mongoc_server_description_t;
@@ -59,11 +59,13 @@ struct _mongoc_server_description_t
    int32_t                          max_write_batch_size;
 };
 
-void _mongoc_server_description_init          (mongoc_server_description_t *description,
-                                               const char                  *address,
-                                               int32_t                      id);
-void _mongoc_server_description_destroy       (mongoc_server_description_t *description);
-bool _mongoc_server_description_has_rs_member (mongoc_server_description_t *description,
-                                               const char                  *address);
+void _mongoc_server_description_init          (mongoc_server_description_t     *description,
+                                               const char                      *address,
+                                               int32_t                          id);
+void _mongoc_server_description_destroy       (mongoc_server_description_t     *description);
+bool _mongoc_server_description_has_rs_member (mongoc_server_description_t     *description,
+                                               const char                      *address);
+void _mongoc_server_description_set_state     (mongoc_server_description_t     *description,
+                                               mongoc_server_description_type_t type);
 
 #endif

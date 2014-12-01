@@ -56,7 +56,7 @@ _mongoc_server_description_init (mongoc_server_description_t *description,
    description->set_name = NULL;
    description->connection_address = bson_strdup(address);
    description->error = NULL; // TODO SDAM change if this changes types
-   description->type = MONGOC_SERVER_TYPE_UNKNOWN;
+   description->type = MONGOC_SERVER_UNKNOWN;
 
    description->round_trip_time = -1;
    description->min_wire_version = MIN_WIRE_VERSION;
@@ -159,4 +159,27 @@ _mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
       member_iter++;
    }
    return false;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_server_description_set_state --
+ *
+ *       Change the state of this server.
+ *
+ * Returns:
+ *       true, false
+ *
+ * Side effects:
+ *       None
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void _mongoc_server_description_set_state (mongoc_server_description_t *description,
+                                           mongoc_server_description_type_t type)
+{
+   description->type = type;
+   // TODO SDAM unblock waiters? Can waiters wait on particular server?
 }

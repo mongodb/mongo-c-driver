@@ -40,7 +40,7 @@ _mongoc_topology_description_init (mongoc_topology_description_t *description)
 
    bson_return_if_fail(description);
 
-   description->type = MONGOC_CLUSTER_TYPE_UNKNOWN;
+   description->type = MONGOC_CLUSTER_UNKNOWN;
    description->servers = NULL;
    description->set_name = NULL;
    description->compatible = true; // TODO: different default?
@@ -73,6 +73,8 @@ _mongoc_topology_description_destroy (mongoc_topology_description_t *description
    ENTRY;
 
    BSON_ASSERT(description);
+
+   // TODO SDAM unblock waiters?
 
    server_iter = description->servers;
    while (server_iter) {
@@ -185,7 +187,7 @@ _mongoc_topology_description_has_primary (mongoc_topology_description_t *descrip
    mongoc_server_description_t *server_iter = description->servers;
 
    while (server_iter) {
-      if (server_iter->type == MONGOC_SERVER_TYPE_RS_PRIMARY) {
+      if (server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
          return true;
       }
       server_iter = server_iter->next;
@@ -211,18 +213,43 @@ _mongoc_topology_description_has_primary (mongoc_topology_description_t *descrip
  */
 
 void
-_mongoc_topology_description_label_unknown_member  (mongoc_topology_description_t *description,
-                                                    const char *address,
-                                                    mongoc_server_description_type_t type)
+_mongoc_topology_description_label_unknown_member (mongoc_topology_description_t *description,
+                                                   const char *address,
+                                                   mongoc_server_description_type_t type)
 {
    mongoc_server_description_t *server_iter = description->servers;
 
    while (server_iter) {
       if (server_iter->connection_address == address &&
-          server_iter->type == MONGOC_SERVER_TYPE_UNKNOWN) {
-         server_iter->type = type;
+          server_iter->type == MONGOC_SERVER_UNKNOWN) {
+         _mongoc_server_description_set_state(server_iter, type);
          return;
       }
       server_iter = server_iter->next;
    }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_description_set_state --
+ *
+ *       Change the state of this cluster and unblock things waiting
+ *       on a change of topology type.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Unblocks anything waiting on this description to change states.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_topology_description_set_state (mongoc_topology_description_t *description,
+                                        mongoc_topology_description_type_t type)
+{
+   description->type = type;
+   // TODO SDAM unblock waiters
 }

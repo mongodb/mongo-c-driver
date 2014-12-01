@@ -23,11 +23,11 @@
 
 typedef enum
    {
-      MONGOC_CLUSTER_TYPE_SINGLE,
-      MONGOC_CLUSTER_TYPE_REPLICA_SET_NO_PRIMARY,
-      MONGOC_CLUSTER_TYPE_REPLICA_SET_WITH_PRIMARY,
-      MONGOC_CLUSTER_TYPE_SHARDED,
-      MONGOC_CLUSTER_TYPE_UNKNOWN,
+      MONGOC_CLUSTER_SINGLE,
+      MONGOC_CLUSTER_RS_NO_PRIMARY,
+      MONGOC_CLUSTER_RS_WITH_PRIMARY,
+      MONGOC_CLUSTER_SHARDED,
+      MONGOC_CLUSTER_UNKNOWN,
    } mongoc_topology_description_type_t;
 
 typedef struct _mongoc_topology_description_t
@@ -39,17 +39,19 @@ typedef struct _mongoc_topology_description_t
    char                              *compatibility_error;
 } mongoc_topology_description_t;
 
-void _mongoc_topology_description_init                  (mongoc_topology_description_t   *description);
-void _mongoc_topology_description_destroy               (mongoc_topology_description_t   *description);
-void _mongoc_topology_description_add_server            (mongoc_topology_description_t   *description,
-                                                         mongoc_server_description_t     *server);
-void _mongoc_topology_description_remove_server         (mongoc_topology_description_t   *description,
-                                                         mongoc_server_description_t     *server);
-bool _mongoc_topology_description_has_server            (mongoc_topology_description_t   *description,
-                                                         const char                      *address);
-bool _mongoc_topology_description_has_primary           (mongoc_topology_description_t   *description);
-void _mongoc_topology_description_label_unknown_member  (mongoc_topology_description_t   *description,
-                                                         const char                      *address,
-                                                         mongoc_server_description_type_t type);
+void _mongoc_topology_description_init                  (mongoc_topology_description_t     *description);
+void _mongoc_topology_description_destroy               (mongoc_topology_description_t     *description);
+void _mongoc_topology_description_add_server            (mongoc_topology_description_t     *description,
+                                                         mongoc_server_description_t       *server);
+void _mongoc_topology_description_remove_server         (mongoc_topology_description_t     *description,
+                                                         mongoc_server_description_t       *server);
+bool _mongoc_topology_description_has_server            (mongoc_topology_description_t     *description,
+                                                         const char                        *address);
+bool _mongoc_topology_description_has_primary           (mongoc_topology_description_t     *description);
+void _mongoc_topology_description_label_unknown_member  (mongoc_topology_description_t     *description,
+                                                         const char                        *address,
+                                                         mongoc_server_description_type_t   type);
+void _mongoc_topology_description_set_state             (mongoc_topology_description_t     *description,
+                                                         mongoc_topology_description_type_t type);
 
 #endif
