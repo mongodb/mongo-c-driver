@@ -230,3 +230,11 @@ LIBMONGOC_1.1 {
         mongoc_uri_get_credentials;
         mongoc_uri_get_mechanism_properties;
 } LIBMONGOC_1.0;
+
+LIBMONGOC_1.2 {
+    global:
+        mongoc_client_kill_cursor;
+        mongoc_cursor_get_batch_size;
+        mongoc_cursor_get_id;
+        mongoc_cursor_set_batch_size;
+} LIBMONGOC_1.1;

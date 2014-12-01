@@ -47,7 +47,7 @@ void             mongoc_cursor_set_batch_size (mongoc_cursor_t  *cursor,
                                                uint32_t          batch_size);
 uint32_t         mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor);
 uint32_t         mongoc_cursor_get_hint (const mongoc_cursor_t  *cursor);
-uint64_t         mongoc_cursor_get_id   (const mongoc_cursor_t  *cursor);
+int64_t          mongoc_cursor_get_id   (const mongoc_cursor_t  *cursor);
 
 
 BSON_END_DECLS

@@ -29,6 +29,7 @@ mongoc_client_get_read_prefs
 mongoc_client_get_server_status
 mongoc_client_get_uri
 mongoc_client_get_write_concern
+mongoc_client_kill_cursor
 mongoc_client_new
 mongoc_client_new_from_uri
 mongoc_client_pool_destroy
@@ -75,11 +76,14 @@ mongoc_cursor_clone
 mongoc_cursor_current
 mongoc_cursor_destroy
 mongoc_cursor_error
+mongoc_cursor_get_batch_size
 mongoc_cursor_get_hint
 mongoc_cursor_get_host
+mongoc_cursor_get_id
 mongoc_cursor_is_alive
 mongoc_cursor_more
 mongoc_cursor_next
+mongoc_cursor_set_batch_size
 mongoc_database_add_user
 mongoc_database_command
 mongoc_database_command_simple
