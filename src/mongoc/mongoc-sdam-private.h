@@ -48,6 +48,7 @@ void _mongoc_sdam_transition_unknown_to_rs_no_primary (mongoc_topology_descripti
 
 /*
  *--------------------------------------------------------------------------
+ *
  *  This table implements the 'ToplogyType' table outlined in the Server
  *  Discovery and Monitoring spec. Each row represents a server type,
  *  and each column represents the topology type. Given a current topology

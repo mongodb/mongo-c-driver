@@ -67,5 +67,7 @@ bool _mongoc_server_description_has_rs_member (mongoc_server_description_t     *
                                                const char                      *address);
 void _mongoc_server_description_set_state     (mongoc_server_description_t     *description,
                                                mongoc_server_description_type_t type);
+void _mongoc_server_description_update_rtt    (mongoc_server_description_t     *description,
+                                               int64_t                          new_time);
 
 #endif

@@ -183,3 +183,29 @@ void _mongoc_server_description_set_state (mongoc_server_description_t *descript
    description->type = type;
    // TODO SDAM unblock waiters? Can waiters wait on particular server?
 }
+
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * _mongoc_server_description_update_rtt --
+ *
+ *       Update this server's rtt calculation using an exponentially-
+ *       weighted moving average formula.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Changes this server description's rtt.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+void
+_mongoc_server_description_update_rtt (mongoc_server_description_t *server,
+                                       int64_t new_time)
+{
+   // TODO SS implement
+   return;
+}

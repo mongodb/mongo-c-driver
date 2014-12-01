@@ -83,6 +83,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
    ${SOURCE_DIR}/src/mongoc/mongoc-sdam.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-server-selection.c
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
@@ -120,6 +121,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-server-selection.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.h
