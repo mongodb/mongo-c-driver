@@ -32,15 +32,7 @@ typedef enum
 
 mongoc_server_description_t *_mongoc_ss_select (mongoc_ss_optype_t             optype,
                                                 mongoc_topology_description_t *topology,
-                                                const mongoc_read_prefs_t     *read_pref);
-
-
-// types we could return:
-// - server_description array (**)
-//   would have to use a mongoc array or know how many things we need
-// - server_description linked list, with copies of the original descriptions
-//   bad because of the copies, too much space, too often
-// - another linked list, of just description *s
-//   maybe good?  Also less efficient?
+                                                const mongoc_read_prefs_t     *read_pref,
+                                                bson_error_t                  *error);
 
 #endif

@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#include "mongoc-error.h"
 #include "mongoc-server-selection.h"
+#include "mongoc-trace.h"
 
 /*
  *-------------------------------------------------------------------------
@@ -87,7 +89,8 @@ _mongoc_ss_suitable_servers (mongoc_ss_optype_t optype,
 mongoc_server_description_t *
 _mongoc_ss_select (mongoc_ss_optype_t optype,
                    mongoc_topology_description_t *topology,
-                   const mongoc_read_prefs_t *read_pref)
+                   const mongoc_read_prefs_t *read_pref,
+                   bson_error_t *error /* OUT */)
 {
    /* timeout calculations in microseconds */
    int64_t start_time = bson_get_monotonic_time();
@@ -95,25 +98,32 @@ _mongoc_ss_select (mongoc_ss_optype_t optype,
    int64_t timeout = (MONGOC_SS_DEFAULT_TIMEOUT_MS * 1000UL); // TODO SS use client-set timeout if available
    mongoc_array_t *suitable_servers = NULL;
 
+   ENTRY;
+
+   if (!topology->compatible) {
+      bson_set_error(error,
+                     MONGOC_ERROR_SS,
+                     MONGOC_ERROR_SS_TIMEOUT,
+                     "Invalid topology wire version range");
+      RETURN(NULL);
+   }
+
    // TODO SS:
    // we should also timeout when minHearbeatFrequencyMS ms have passed, per check.
-
-   // TODO SS
-   // if we have an invalid wire version
-   //    - error
-
    do {
       suitable_servers = _mongoc_ss_suitable_servers(optype, topology, read_pref);
       if (!suitable_servers) {
-         return _mongoc_ss_select_within_window(suitable_servers);
+         RETURN( _mongoc_ss_select_within_window(suitable_servers));
       }
       // TODO SS request scan, and wait
       now = bson_get_monotonic_time();
 
       // TODO wait on condition variable
    } while (start_time + timeout < now);
-   // TODO SS what if a check succeeds but we also timeout?  perhaps better to loop on suitable_servers?
 
-   // TODO SS finish, obviously...
-   return NULL;
+   bson_set_error(error,
+                  MONGOC_ERROR_SS,
+                  MONGOC_ERROR_SS_TIMEOUT,
+                  "Could not find a suitable server");
+   RETURN(NULL);
 }

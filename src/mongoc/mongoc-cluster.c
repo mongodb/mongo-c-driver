@@ -186,29 +186,6 @@ _mongoc_cluster_remove_node (mongoc_cluster_t      *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_force_scan --
- *
- *       Check all nodes to update the cluster state.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       May update cluster and server state.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-_mongoc_cluster_force_scan (mongoc_cluster_t *cluster)
-{
-   // TODO, when Jason is done
-   return;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * _mongoc_cluster_node_by_id --
  *
  *       If node is in the cluster, return it.  Otherwise, return NULL.
@@ -246,11 +223,11 @@ _mongoc_cluster_node_by_id (mongoc_cluster_t *cluster, int32_t id)
  */
 void
 _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
-                          mongoc_server_description_t *description)
+                          mongoc_server_description_t *description,
+                          bson_error_t *error /* OUT */)
 {
    mongoc_cluster_node_t *node;
    mongoc_cluster_node_t new_node;
-   bson_error_t error; // TODO: should we take this error from somewhere else?
    mongoc_stream_t *stream;
 
    ENTRY;
@@ -260,7 +237,7 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
    MONGOC_DEBUG("Adding new server to cluster: %s", description->connection_address);
 
-   stream = _mongoc_client_create_stream(cluster->client, &description->host, &error);
+   stream = _mongoc_client_create_stream(cluster->client, &description->host, error);
    if (!stream) {
       MONGOC_WARNING("Failed connection to %s", description->connection_address);
    }
@@ -288,7 +265,8 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
  *       Otherwise, add this node to the cluster.
  *
  * Returns:
- *       A mongoc_cluster_node_t, or NULL upon failure.
+ *       A mongoc_cluster_node_t, or NULL upon failure, in which case
+ *       @error will be set.
  *
  * Side effects:
  *       May increase the size of cluster's array of nodes.
@@ -298,7 +276,8 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
 static mongoc_cluster_node_t *
 _mongoc_cluster_fetch_node(mongoc_cluster_t *cluster,
-                           mongoc_server_description_t *description)
+                           mongoc_server_description_t *description,
+                           bson_error_t *error /* OUT */)
 {
    mongoc_cluster_node_t *node = NULL;
 
@@ -306,7 +285,7 @@ _mongoc_cluster_fetch_node(mongoc_cluster_t *cluster,
 
    node = _mongoc_cluster_node_by_id(cluster, description->id);
    if (!node) {
-      _mongoc_cluster_add_node(cluster, description);
+      _mongoc_cluster_add_node(cluster, description, error);
       node = _mongoc_cluster_node_by_id(cluster, description->id);
    }
 
@@ -490,14 +469,13 @@ _mongoc_cluster_select(mongoc_cluster_t             *cluster,
    // topology description.  Maybe the client does, too?
    selected_server = _mongoc_ss_select(optype,
                                        NULL /* topology description */,
-                                       read_pref);
+                                       read_pref,
+                                       error);
 
    if (!selected_server) {
-      // TODO SS plumb through error?
       RETURN(NULL);
    }
 
-   selected_node = _mongoc_cluster_fetch_node(cluster, selected_server);
-   // TODO SS more error handling
+   selected_node = _mongoc_cluster_fetch_node(cluster, selected_server, error);
    RETURN(selected_node);
 }

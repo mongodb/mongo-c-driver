@@ -74,14 +74,15 @@ typedef struct _mongoc_cluster_t
 } mongoc_cluster_t;
 
 
-void                   _mongoc_cluster_remove_node     (mongoc_cluster_t             *cluster,
-                                                        mongoc_cluster_node_t        *node);
-void                   _mongoc_cluster_add_node        (mongoc_cluster_t             *cluster,
-                                                        mongoc_server_description_t  *description);
-void                   _mongoc_cluster_init            (mongoc_cluster_t             *cluster,
-                                                        const mongoc_uri_t           *uri,
-                                                        void                         *client);
-void                   _mongoc_cluster_destroy         (mongoc_cluster_t             *cluster);
+void                   _mongoc_cluster_remove_node (mongoc_cluster_t             *cluster,
+                                                    mongoc_cluster_node_t        *node);
+void                   _mongoc_cluster_add_node    (mongoc_cluster_t             *cluster,
+                                                    mongoc_server_description_t  *description,
+                                                    bson_error_t                 *error);
+void                   _mongoc_cluster_init        (mongoc_cluster_t             *cluster,
+                                                    const mongoc_uri_t           *uri,
+                                                    void                         *client);
+void                   _mongoc_cluster_destroy     (mongoc_cluster_t             *cluster);
 
 BSON_END_DECLS
 
