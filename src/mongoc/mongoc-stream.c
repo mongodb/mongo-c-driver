@@ -131,6 +131,40 @@ mongoc_stream_writev (mongoc_stream_t *stream,
    RETURN (ret);
 }
 
+/**
+ * mongoc_stream_write:
+ * @stream: A mongoc_stream_t.
+ * @buf: A buffer to write.
+ * @count: The number of bytes to write into @buf.
+ *
+ * Simplified access to mongoc_stream_writev(). Creates a single iovec
+ * with the buffer provided.
+ *
+ * Returns: -1 on failure, otherwise the number of bytes write.
+ */
+ssize_t
+mongoc_stream_write (mongoc_stream_t *stream,
+                    void            *buf,
+                    size_t           count,
+                    int32_t          timeout_msec)
+{
+   mongoc_iovec_t iov;
+   ssize_t ret;
+
+   ENTRY;
+
+   bson_return_val_if_fail (stream, -1);
+   bson_return_val_if_fail (buf, -1);
+
+   iov.iov_base = buf;
+   iov.iov_len = count;
+
+   BSON_ASSERT (stream->writev);
+
+   ret = mongoc_stream_writev (stream, &iov, 1, timeout_msec);
+
+   RETURN (ret);
+}
 
 /**
  * mongoc_stream_readv:

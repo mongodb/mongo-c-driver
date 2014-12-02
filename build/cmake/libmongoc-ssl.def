@@ -191,6 +191,7 @@ mongoc_stream_socket_new
 mongoc_stream_tls_check_cert
 mongoc_stream_tls_do_handshake
 mongoc_stream_tls_new
+mongoc_stream_write
 mongoc_stream_writev
 mongoc_uri_copy
 mongoc_uri_destroy

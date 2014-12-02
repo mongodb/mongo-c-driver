@@ -64,6 +64,10 @@ ssize_t          mongoc_stream_writev          (mongoc_stream_t       *stream,
                                                 mongoc_iovec_t        *iov,
                                                 size_t                 iovcnt,
                                                 int32_t                timeout_msec);
+ssize_t          mongoc_stream_write           (mongoc_stream_t       *stream,
+                                                void                  *buf,
+                                                size_t                 count,
+                                                int32_t                timeout_msec);
 ssize_t          mongoc_stream_readv           (mongoc_stream_t       *stream,
                                                 mongoc_iovec_t        *iov,
                                                 size_t                 iovcnt,

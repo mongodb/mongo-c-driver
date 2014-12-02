@@ -185,6 +185,7 @@ mongoc_stream_readv
 mongoc_stream_setsockopt
 mongoc_stream_socket_get_socket
 mongoc_stream_socket_new
+mongoc_stream_write
 mongoc_stream_writev
 mongoc_uri_copy
 mongoc_uri_destroy
