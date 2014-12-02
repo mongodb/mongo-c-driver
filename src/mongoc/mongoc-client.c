@@ -690,8 +690,8 @@ mongoc_client_new (const char *uri_string)
    options = mongoc_uri_get_options (uri);
 
    if (bson_iter_init_find (&iter, options, "ssl") &&
-       BSON_ITER_HOLDS_BOOL (&iter) &&
-       bson_iter_bool (&iter)) {
+       BSON_ITER_HOLDS_INT32 (&iter) &&
+       bson_iter_int32 (&iter)) {
       has_ssl = true;
    }
 

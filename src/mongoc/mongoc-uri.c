@@ -490,12 +490,20 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
    } else if (!strcasecmp(key, "canonicalizeHostname") ||
               !strcasecmp(key, "journal") ||
               !strcasecmp(key, "safe") ||
-              !strcasecmp(key, "slaveok") ||
-              !strcasecmp(key, "ssl")) {
+              !strcasecmp(key, "slaveok")) {
       bson_append_bool (&uri->options, key, -1,
                         (0 == strcasecmp (value, "true")) ||
                         (0 == strcasecmp (value, "t")) ||
                         (0 == strcmp (value, "1")));
+   } else if (!strcasecmp(key, "ssl")) {
+	   if (!strcasecmp (value, "prefer")) {
+		   bson_append_int32(&uri->options, key, -1, 2);
+	   } else {
+		   bson_append_int32 (&uri->options, key, -1,
+				   (0 == strcasecmp (value, "true")) ||
+				   (0 == strcasecmp (value, "t")) ||
+				   (0 == strcmp (value, "1")));
+	   }
    } else if (!strcasecmp(key, "readpreferencetags")) {
       mongoc_uri_parse_tags(uri, value, &uri->read_prefs);
    } else if (!strcasecmp(key, "authmechanism") ||
@@ -992,6 +1000,6 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
    bson_return_val_if_fail (uri, false);
 
    return (bson_iter_init_find_case (&iter, &uri->options, "ssl") &&
-           BSON_ITER_HOLDS_BOOL (&iter) &&
-           bson_iter_bool (&iter));
+           BSON_ITER_HOLDS_INT32 (&iter) &&
+           bson_iter_int32 (&iter));
 }
