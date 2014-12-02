@@ -40,6 +40,32 @@ _mongoc_ss_select_within_window (mongoc_array_t *suitable_servers)
    return NULL;
 }
 
+/*
+ *-------------------------------------------------------------------------
+ *
+ * _mongoc_ss_suitable_servers --
+ *
+ *       Return an array of suitable server descriptions for this
+ *       operation and read preference.
+ *
+ * Returns:
+ *       Array of server descriptions, or NULL upon failure.
+ *
+ * Side effects:
+ *       None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static mongoc_array_t *
+_mongoc_ss_suitable_servers (mongoc_ss_optype_t optype,
+                             mongoc_topology_description_t *topology,
+                             const mongoc_read_prefs_t *read_pref)
+{
+   // TODO SS implement
+   return NULL;
+}
+
 
 /*
  *-------------------------------------------------------------------------
@@ -61,7 +87,7 @@ _mongoc_ss_select_within_window (mongoc_array_t *suitable_servers)
 mongoc_server_description_t *
 _mongoc_ss_select (mongoc_ss_optype_t optype,
                    mongoc_topology_description_t *topology,
-                   mongoc_read_prefs_t read_pref)
+                   const mongoc_read_prefs_t *read_pref)
 {
    /* timeout calculations in microseconds */
    int64_t start_time = bson_get_monotonic_time();
@@ -69,46 +95,25 @@ _mongoc_ss_select (mongoc_ss_optype_t optype,
    int64_t timeout = (MONGOC_SS_DEFAULT_TIMEOUT_MS * 1000UL); // TODO SS use client-set timeout if available
    mongoc_array_t *suitable_servers = NULL;
 
+   // TODO SS:
+   // we should also timeout when minHearbeatFrequencyMS ms have passed, per check.
+
    // TODO SS
    // if we have an invalid wire version
    //    - error
 
-   // TODO this is a sucky loop
-   while (start_time + timeout < now) {
-
+   do {
       suitable_servers = _mongoc_ss_suitable_servers(optype, topology, read_pref);
       if (!suitable_servers) {
          return _mongoc_ss_select_within_window(suitable_servers);
       }
-      // TODO SS request scan, and wait?
+      // TODO SS request scan, and wait
       now = bson_get_monotonic_time();
-   }
 
-   return NULL;
-}
+      // TODO wait on condition variable
+   } while (start_time + timeout < now);
+   // TODO SS what if a check succeeds but we also timeout?  perhaps better to loop on suitable_servers?
 
-/*
- *-------------------------------------------------------------------------
- *
- * _mongoc_ss_suitable_servers --
- *
- *       Return an array of suitable server descriptions for this
- *       operation and read preference.
- *
- * Returns:
- *       Array of server descriptions, or NULL upon failure.
- *
- * Side effects:
- *       None.
- *
- *-------------------------------------------------------------------------
- */
-
-mongoc_array_t *
-_mongoc_ss_suitable_servers (mongoc_ss_optype_t optype,
-                             mongoc_topology_description_t *topology,
-                             mongoc_read_prefs_t read_pref)
-{
-   // TODO SS implement
+   // TODO SS finish, obviously...
    return NULL;
 }

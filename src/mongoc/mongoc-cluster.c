@@ -38,6 +38,7 @@
 #include "mongoc-sasl-private.h"
 #endif
 #include "mongoc-scram-private.h"
+#include "mongoc-server-selection.h"
 #include "mongoc-socket.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-socket.h"
@@ -205,11 +206,25 @@ _mongoc_cluster_force_scan (mongoc_cluster_t *cluster)
    return;
 }
 
-// TODO:
-// returns -1 if not found, otherwise returns array index of node
-static int32_t
-_mongoc_cluster_node_by_id (mongoc_cluster_t *cluster, int32_t id) {
-   return -1;
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_node_by_id --
+ *
+ *       If node is in the cluster, return it.  Otherwise, return NULL.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+static mongoc_cluster_node_t *
+_mongoc_cluster_node_by_id (mongoc_cluster_t *cluster, int32_t id)
+{
+   return NULL;
 }
 
 /*
@@ -217,7 +232,9 @@ _mongoc_cluster_node_by_id (mongoc_cluster_t *cluster, int32_t id) {
  *
  * mongoc_cluster_add_node --
  *
- *       Add a new node to this cluster.
+ *       Add a new node to this cluster for the given server description.
+ *
+ *       NOTE: does NOT check if this server is already in the cluster.
  *
  * Returns:
  *       None.
@@ -241,10 +258,6 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    BSON_ASSERT(cluster);
    BSON_ASSERT(server);
 
-   if (_mongoc_cluster_node_by_id(cluster, description->id) > -1) {
-      return;
-   }
-
    MONGOC_DEBUG("Adding new server to cluster: %s", description->connection_address);
 
    stream = _mongoc_client_create_stream(cluster->client, &description->host, &error);
@@ -264,6 +277,40 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    cluster->active_nodes++;
 
    EXIT;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_fetch_node --
+ *
+ *       Given a server description, if we already have it, return it.
+ *       Otherwise, add this node to the cluster.
+ *
+ * Returns:
+ *       A mongoc_cluster_node_t, or NULL upon failure.
+ *
+ * Side effects:
+ *       May increase the size of cluster's array of nodes.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static mongoc_cluster_node_t *
+_mongoc_cluster_fetch_node(mongoc_cluster_t *cluster,
+                           mongoc_server_description_t *description)
+{
+   mongoc_cluster_node_t *node = NULL;
+
+   ENTRY;
+
+   node = _mongoc_cluster_node_by_id(cluster, description->id);
+   if (!node) {
+      _mongoc_cluster_add_node(cluster, description);
+      node = _mongoc_cluster_node_by_id(cluster, description->id);
+   }
+
+   RETURN(node);
 }
 
 /*
@@ -360,10 +407,97 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
    EXIT;
 }
 
-// TODO:
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_preselect --
+ *
+ * Returns:
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 
-// change cluster add node
+// TODO SS what does this function actually do?
 
-// server selection method
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_select --
+ *
+ *       Selects a cluster node that is appropriate for handling the
+ *       required set of rpc messages.  Takes read preference into account.
+ *
+ * Returns:
+ *       A mongoc_cluster_node_t if successful, or NULL on failure, in
+ *       which case error is also set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 
-// change cluster remove node
+mongoc_cluster_node_t *
+_mongoc_cluster_select(mongoc_cluster_t             *cluster,
+                       mongoc_rpc_t                 *rpcs,
+                       size_t                        rpcs_len,
+                       //uint32_t                      hint, // TODO SS what is this?
+                       const mongoc_write_concern_t *write_concern,
+                       const mongoc_read_prefs_t    *read_pref,
+                       bson_error_t                 *error /* OUT */)
+{
+   mongoc_cluster_node_t *selected_node;
+   mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
+   mongoc_server_description_t *selected_server;
+   mongoc_ss_optype_t optype = MONGOC_SS_READ;
+
+   ENTRY;
+
+   bson_return_val_if_fail(cluster, NULL);
+   bson_return_val_if_fail(rpcs, NULL);
+   bson_return_val_if_fail(rpcs_len, NULL);
+
+   /* pick the most restrictive optype */
+   for (int i = 0; (i < rpcs_len) && (optype == MONGOC_SS_READ); i++) {
+      switch (rpcs[i].header.opcode) {
+      case MONGOC_OPCODE_KILL_CURSORS:
+      case MONGOC_OPCODE_GET_MORE:
+      case MONGOC_OPCODE_MSG:
+      case MONGOC_OPCODE_REPLY:
+         break;
+      case MONGOC_OPCODE_QUERY:
+         if ((read_mode & MONGOC_READ_SECONDARY) != 0) {
+            rpcs[i].query.flags |= MONGOC_QUERY_SLAVE_OK;
+         } else if (!(rpcs[i].query.flags & MONGOC_QUERY_SLAVE_OK)) {
+            optype = MONGOC_SS_WRITE;
+         }
+         break;
+      case MONGOC_OPCODE_DELETE:
+      case MONGOC_OPCODE_INSERT:
+      case MONGOC_OPCODE_UPDATE:
+      default:
+         optype = MONGOC_SS_WRITE;
+         break;
+      }
+   }
+
+   // TODO SS: somebody has to hold on to the topology description.
+   // I don't think it should be the cluster object, because it shouldn't
+   // have to know about these things.  The cluster monitor has to own the
+   // topology description.  Maybe the client does, too?
+   selected_server = _mongoc_ss_select(optype,
+                                       NULL /* topology description */,
+                                       read_pref);
+
+   if (!selected_server) {
+      // TODO SS plumb through error?
+      RETURN(NULL);
+   }
+
+   selected_node = _mongoc_cluster_fetch_node(cluster, selected_server);
+   // TODO SS more error handling
+   RETURN(selected_node);
+}

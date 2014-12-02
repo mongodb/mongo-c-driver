@@ -30,12 +30,10 @@ typedef enum
       MONGOC_SS_WRITE
    } mongoc_ss_optype_t;
 
-mongoc_server_description_t *_mongoc_ss_select           (mongoc_ss_optype_t             optype,
-                                                          mongoc_topology_description_t *topology,
-                                                          mongoc_read_prefs_t            read_pref);
-mongoc_array_t              *_mongoc_ss_suitable_servers (mongoc_ss_optype_t             optype,
-                                                          mongoc_topology_description_t *topology,
-                                                          mongoc_read_prefs_t            read_pref);
+mongoc_server_description_t *_mongoc_ss_select (mongoc_ss_optype_t             optype,
+                                                mongoc_topology_description_t *topology,
+                                                const mongoc_read_prefs_t     *read_pref);
+
 
 // types we could return:
 // - server_description array (**)
