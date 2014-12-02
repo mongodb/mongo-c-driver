@@ -98,6 +98,16 @@ test_mongoc_uri_new (void)
    ASSERT(!bson_iter_next(&iter));
    mongoc_uri_destroy(uri);
 
+   uri = mongoc_uri_new("mongodb://localhost/a?ssl=prefer");
+   options = mongoc_uri_get_options(uri);
+   ASSERT(options);
+   ASSERT(bson_iter_init(&iter, options));
+   ASSERT(bson_iter_find_case(&iter, "ssl"));
+   ASSERT(BSON_ITER_HOLDS_INT32(&iter));
+   ASSERT(bson_iter_int32(&iter) == 2);
+   ASSERT(!bson_iter_next(&iter));
+   mongoc_uri_destroy(uri);
+
    uri = mongoc_uri_new("mongodb://localhost/a?slaveok=true&ssl=false&journal=true");
    options = mongoc_uri_get_options(uri);
    ASSERT(options);
@@ -107,8 +117,8 @@ test_mongoc_uri_new (void)
    ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
    ASSERT(bson_iter_bool(&iter));
    ASSERT(bson_iter_find_case(&iter, "ssl"));
-   ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
-   ASSERT(!bson_iter_bool(&iter));
+   ASSERT(BSON_ITER_HOLDS_INT32(&iter));
+   ASSERT(!bson_iter_int32(&iter));
    ASSERT(bson_iter_find_case(&iter, "journal"));
    ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
    ASSERT(bson_iter_bool(&iter));
