@@ -31,6 +31,7 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-opcode.h"
+#include "mongoc-sdam-private.h"
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #endif
@@ -57,11 +58,17 @@ struct _mongoc_client_t
    char                      *pem_subject;
 #endif
 
+   mongoc_sdam_t             *sdam;
+
    mongoc_read_prefs_t       *read_prefs;
    mongoc_write_concern_t    *write_concern;
 };
 
 
+mongoc_client_t *_mongoc_client_new           (const char                   *uri_string,
+                                               mongoc_sdam_t                *sdam);
+mongoc_client_t *_mongoc_client_new_from_uri  (const mongoc_uri_t           *uri,
+                                               mongoc_sdam_t                *sdam);
 mongoc_stream_t *_mongoc_client_create_stream (mongoc_client_t              *client,
                                                const mongoc_host_list_t     *host,
                                                bson_error_t                 *error);

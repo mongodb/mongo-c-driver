@@ -657,7 +657,6 @@ cleanup:
    RETURN (ret);
 }
 
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -678,9 +677,46 @@ cleanup:
  *
  *--------------------------------------------------------------------------
  */
+mongoc_client_t *
+mongoc_client_new(const char *uri_string)
+{
+   mongoc_uri_t *uri;
+   mongoc_sdam_t *sdam;
+
+   if (!uri_string) {
+      uri_string = "mongodb://127.0.0.1/";
+   }
+
+   if (!(uri = mongoc_uri_new(uri_string))) {
+      return NULL;
+   }
+
+   // TODO error handling for sdam
+   sdam = _mongoc_sdam_new(uri);
+   return _mongoc_client_new(uri_string, sdam);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_client_new --
+ *
+ *       Creates a new mongoc_client_t using the provided URI and SDAM.
+ *       The SDAM object is not owned by this client, and it must outlive
+ *       this client.
+ *
+ * Returns:
+ *       A newly allocated mongoc_client_t or NULL if @uri_string is
+ *       invalid.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 mongoc_client_t *
-mongoc_client_new (const char *uri_string)
+_mongoc_client_new (const char *uri_string, mongoc_sdam_t *sdam)
 {
    const mongoc_write_concern_t *write_concern;
    mongoc_client_t *client;
@@ -722,6 +758,9 @@ mongoc_client_new (const char *uri_string)
    client->request_id = rand ();
    client->initiator = mongoc_client_default_stream_initiator;
    client->initiator_data = client;
+
+   _mongoc_sdam_grab(sdam);
+   client->sdam = sdam;
 
    write_concern = mongoc_uri_get_write_concern (uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
@@ -807,14 +846,45 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
 mongoc_client_t *
 mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 {
+   mongoc_sdam_t *sdam;
    const char *uristr;
 
    bson_return_val_if_fail(uri, NULL);
 
    uristr = mongoc_uri_get_string(uri);
-   return mongoc_client_new(uristr);
+
+   // TODO error handling on sdam
+   sdam = _mongoc_sdam_new(uri);
+   return _mongoc_client_new(uristr, sdam);
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_client_new_from_uri --
+ *
+ *       Create a new mongoc_client_t for a mongoc_uri_t and a given
+ *       SDAM object.
+ *
+ * Returns:
+ *       A newly allocated mongoc_client_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_client_t *
+_mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_sdam_t *sdam)
+{
+   const char *uristr;
+
+   bson_return_val_if_fail(uri, NULL);
+
+   uristr = mongoc_uri_get_string(uri);
+   return _mongoc_client_new(uristr, sdam);
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -841,6 +911,7 @@ mongoc_client_destroy (mongoc_client_t *client)
       bson_free (client->pem_subject);
 #endif
 
+      _mongoc_sdam_release(client->sdam);
       mongoc_write_concern_destroy (client->write_concern);
       mongoc_read_prefs_destroy (client->read_prefs);
       _mongoc_cluster_destroy (&client->cluster);

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "mongoc-array-private.h"
 #include "mongoc-error.h"
 #include "mongoc-server-description.h"
 #include "mongoc-topology-description.h"
@@ -99,6 +100,36 @@ _mongoc_topology_description_destroy (mongoc_topology_description_t *description
    EXIT;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_description_has_primary --
+ *
+ *       If topology has a primary, return true, else return false.
+ *
+ * Returns:
+ *       A pointer to the primary, or NULL.
+ *
+ * Side effects:
+ *       None
+ *
+ *--------------------------------------------------------------------------
+ */
+static mongoc_server_description_t *
+_mongoc_topology_description_has_primary (mongoc_topology_description_t *description)
+{
+   mongoc_server_description_t *server_iter = description->servers;
+
+   while (server_iter) {
+      if (server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
+         return server_iter;
+      }
+      server_iter = server_iter->next;
+   }
+   return NULL;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -119,8 +150,15 @@ _mongoc_topology_description_destroy (mongoc_topology_description_t *description
 static mongoc_server_description_t *
 _mongoc_topology_description_select_within_window (mongoc_array_t *suitable_servers)
 {
-   // TODO SS implement
-   return NULL;
+   bson_return_val_if_fail(suitable_servers, NULL);
+
+   // TODO SS implement properly
+
+   // for basic functionality, always return the first element.
+   if (suitable_servers->len < 1) {
+      return NULL;
+   }
+   return _mongoc_array_index(suitable_servers, mongoc_server_description_t *, 0);
 }
 
 /*
@@ -140,13 +178,22 @@ _mongoc_topology_description_select_within_window (mongoc_array_t *suitable_serv
  *-------------------------------------------------------------------------
  */
 
-static mongoc_array_t *
-_mongoc_topology_description_suitable_servers (mongoc_ss_optype_t optype,
+static void
+_mongoc_topology_description_suitable_servers (mongoc_array_t *set, /* OUT */
+                                               mongoc_ss_optype_t optype,
                                                mongoc_topology_description_t *topology,
                                                const mongoc_read_prefs_t *read_pref)
 {
-   // TODO SS implement
-   return NULL;
+   mongoc_server_description_t *server_iter;
+
+   // TODO SS implement properly
+
+   // for basic functionality, return the primary always.
+   server_iter = _mongoc_topology_description_has_primary(topology);
+   if (server_iter) {
+      _mongoc_array_append_val(set, server_iter);
+   }
+   return;
 }
 
 
@@ -177,7 +224,7 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
    int64_t start_time = bson_get_monotonic_time();
    int64_t now = bson_get_monotonic_time();
    int64_t timeout = (MONGOC_SS_DEFAULT_TIMEOUT_MS * 1000UL); // TODO SS use client-set timeout if available
-   mongoc_array_t *suitable_servers = NULL;
+   mongoc_array_t suitable_servers;
 
    ENTRY;
 
@@ -189,16 +236,17 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
       RETURN(NULL);
    }
 
+   _mongoc_array_init(&suitable_servers, sizeof(mongoc_server_description_t *));
+
    // TODO SS:
    // we should also timeout when minHearbeatFrequencyMS ms have passed, per check.
    do {
-      suitable_servers = _mongoc_topology_description_suitable_servers(optype, topology, read_pref);
-      if (!suitable_servers) {
-         RETURN( _mongoc_topology_description_select_within_window(suitable_servers));
+      _mongoc_topology_description_suitable_servers(&suitable_servers, optype, topology, read_pref);
+      if (suitable_servers.len == 0) {
+         RETURN(_mongoc_topology_description_select_within_window(&suitable_servers));
       }
       // TODO SS request scan, and wait
       now = bson_get_monotonic_time();
-
       // TODO wait on condition variable
    } while (start_time + timeout < now);
 
@@ -270,35 +318,6 @@ _mongoc_topology_description_has_server (mongoc_topology_description_t *descript
 
    while (server_iter) {
       if (address == server_iter->connection_address) {
-         return true;
-      }
-      server_iter = server_iter->next;
-   }
-   return false;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_topology_description_has_primary --
- *
- *       If topology has a primary, return true, else return false.
- *
- * Returns:
- *       true, false
- *
- * Side effects:
- *       None
- *
- *--------------------------------------------------------------------------
- */
-bool
-_mongoc_topology_description_has_primary (mongoc_topology_description_t *description)
-{
-   mongoc_server_description_t *server_iter = description->servers;
-
-   while (server_iter) {
-      if (server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
          return true;
       }
       server_iter = server_iter->next;

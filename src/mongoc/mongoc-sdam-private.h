@@ -29,12 +29,19 @@
 typedef struct _mongoc_sdam_t
 {
    mongoc_topology_description_t topology;
-   mongoc_uri_t                  *uri;
+   const mongoc_uri_t           *uri;
+   int                           users;
    // TODO SCAN jason's scanner thing
 } mongoc_sdam_t;
 
-mongoc_sdam_t               *_mongoc_sdam_new               (mongoc_uri_t  *uri);
+mongoc_sdam_t               *_mongoc_sdam_new               (const mongoc_uri_t  *uri);
+void                         _mongoc_sdam_grab              (mongoc_sdam_t *sdam);
+void                         _mongoc_sdam_release           (mongoc_sdam_t *sdam);
 void                         _mongoc_sdam_destroy           (mongoc_sdam_t *sdam);
+mongoc_server_description_t *_mongoc_sdam_select            (mongoc_sdam_t *sdam,
+                                                             mongoc_ss_optype_t optype,
+                                                             const mongoc_read_prefs_t *read_prefs,
+                                                             bson_error_t *error);
 void                         _mongoc_sdam_force_scan        (mongoc_sdam_t *sdam);
 void                         _mongoc_sdam_ismaster_callback (mongoc_sdam_t *sdam,
                                                              const bson_t  *ismaster);
