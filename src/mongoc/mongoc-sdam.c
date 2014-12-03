@@ -85,11 +85,11 @@ _mongoc_sdam_check_if_has_primary (mongoc_topology_description_t *topology,
 {
    if (_mongoc_topology_description_has_primary(topology)) {
       _mongoc_topology_description_set_state(topology,
-                                             MONGOC_CLUSTER_RS_WITH_PRIMARY);
+                                             MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
    }
    else {
       _mongoc_topology_description_set_state(topology,
-                                             MONGOC_CLUSTER_RS_NO_PRIMARY);
+                                             MONGOC_TOPOLOGY_RS_NO_PRIMARY);
    }
 }
 
@@ -122,7 +122,7 @@ _mongoc_sdam_update_unknown_with_standalone (mongoc_topology_description_t *topo
       /* this cluster contains other servers, it cannot be a standalone. */
       _mongoc_sdam_remove_from_monitor(topology, server);
    } else {
-      _mongoc_topology_description_set_state(topology, MONGOC_CLUSTER_SINGLE);
+      _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_SINGLE);
    }
 }
 
@@ -303,7 +303,7 @@ _mongoc_sdam_update_rs_with_primary_from_member (mongoc_topology_description_t *
 
    /* If there is no primary, label server's current_primary as the POSSIBLE_PRIMARY */
    if (!_mongoc_topology_description_has_primary(topology)) {
-      _mongoc_topology_description_set_state(topology, MONGOC_CLUSTER_RS_NO_PRIMARY);
+      _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
       _mongoc_topology_description_label_unknown_member(topology,
                                                         server->current_primary,
                                                         MONGOC_SERVER_POSSIBLE_PRIMARY);
@@ -329,7 +329,7 @@ void
 _mongoc_sdam_set_topology_type_to_sharded (mongoc_topology_description_t *topology,
                                            mongoc_server_description_t   *server)
 {
-   _mongoc_topology_description_set_state(topology, MONGOC_CLUSTER_SHARDED);
+   _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_SHARDED);
 }
 
 /*
@@ -353,6 +353,6 @@ void
 _mongoc_sdam_transition_unknown_to_rs_no_primary (mongoc_topology_description_t *topology,
                                                   mongoc_server_description_t   *server)
 {
-   _mongoc_topology_description_set_state(topology, MONGOC_CLUSTER_RS_NO_PRIMARY);
+   _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
    _mongoc_sdam_update_rs_without_primary(topology, server);
 }

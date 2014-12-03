@@ -23,11 +23,11 @@
 
 typedef enum
    {
-      MONGOC_CLUSTER_SINGLE,
-      MONGOC_CLUSTER_RS_NO_PRIMARY,
-      MONGOC_CLUSTER_RS_WITH_PRIMARY,
-      MONGOC_CLUSTER_SHARDED,
-      MONGOC_CLUSTER_UNKNOWN,
+      MONGOC_TOPOLOGY_SINGLE,
+      MONGOC_TOPOLOGY_RS_NO_PRIMARY,
+      MONGOC_TOPOLOGY_RS_WITH_PRIMARY,
+      MONGOC_TOPOLOGY_SHARDED,
+      MONGOC_TOPOLOGY_UNKNOWN,
    } mongoc_topology_description_type_t;
 
 typedef struct _mongoc_topology_description_t

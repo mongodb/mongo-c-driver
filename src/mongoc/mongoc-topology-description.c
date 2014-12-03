@@ -40,7 +40,7 @@ _mongoc_topology_description_init (mongoc_topology_description_t *description)
 
    bson_return_if_fail(description);
 
-   description->type = MONGOC_CLUSTER_UNKNOWN;
+   description->type = MONGOC_TOPOLOGY_UNKNOWN;
    description->servers = NULL;
    description->set_name = NULL;
    description->compatible = true; // TODO: different default?

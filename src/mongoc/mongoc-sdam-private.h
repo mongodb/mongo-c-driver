@@ -59,19 +59,18 @@ void _mongoc_sdam_transition_unknown_to_rs_no_primary (mongoc_topology_descripti
  *  { // server type for this row
  *     UNKNOWN,
  *     SHARDED,
- *     REPLICA_SET_NO_PRIMARY,
- *     REPLICA_SET_WITH_PRIMARY
+ *     RS_NO_PRIMARY,
+ *     RS_WITH_PRIMARY
  *  }
  *
  *--------------------------------------------------------------------------
  */
 transition_t state_transitions[MONGOC_SERVER_DESCRIPTION_TYPES][MONGOC_TOPOLOGY_DESCRIPTION_TYPES] = {
-   /* UNKNOWN, SHARDED, REPLICA_SET_NO_PRIMARY, REPLICA_SET_WITH_PRIMARY */
    { /* UNKNOWN */
-      NULL,
-      NULL,
-      NULL,
-      _mongoc_sdam_check_if_has_primary
+      NULL, /* MONGOC_TOPOLOGY_UNKNOWN */
+      NULL, /* MONGOC_TOPOLOGY_SHARDED */
+      NULL, /* MONGOC_TOPOLOGY_RS_NO_PRIMARY */
+      _mongoc_sdam_check_if_has_primary /* MONGOC_TOPOLOGY_RS_WITH_PRIMARY */
    },
    { /* STANDALONE */
       _mongoc_sdam_update_unknown_with_standalone,

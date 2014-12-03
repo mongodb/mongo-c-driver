@@ -49,8 +49,6 @@ struct _mongoc_cluster_node_t
 {
    uint32_t         id;
    mongoc_stream_t *stream;
-   //uint32_t       stamp; TODO: remove?
-   //unsigned       needs_auth : 1; TODO: remove?
 };
 
 
