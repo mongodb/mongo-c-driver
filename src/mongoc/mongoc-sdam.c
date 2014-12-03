@@ -14,345 +14,50 @@
  * limitations under the License.
  */
 
+#include "mongoc-error.h"
 #include "mongoc-sdam-private.h"
+#include "mongoc-trace.h"
 
 /*
- *--------------------------------------------------------------------------
- *
- * _mongoc_sdam_remove_from_monitor --
- *
- *       Remove this server from being monitored.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Removes server from topology's list of servers.
- *
- *--------------------------------------------------------------------------
+ *-------------------------------------------------------------------------
+ *-------------------------------------------------------------------------
  */
-void
-_mongoc_sdam_remove_from_monitor (mongoc_topology_description_t *topology,
-                                  mongoc_server_description_t   *server)
+mongoc_sdam_t *
+_mongoc_sdam_new (mongoc_uri_t *uri)
 {
-   _mongoc_topology_description_remove_server(topology, server);
+   // TODO
+   return NULL;
 }
 
 /*
- *--------------------------------------------------------------------------
- *
- * _mongoc_sdam_remove_and_check_primary --
- *
- *       Remove this server from being monitored, then check that the
- *       current topology has a primary.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Stop monitoring server.
- *
- *--------------------------------------------------------------------------
+ *-------------------------------------------------------------------------
+ *-------------------------------------------------------------------------
  */
 void
-_mongoc_sdam_remove_and_check_primary (mongoc_topology_description_t *topology,
-                                       mongoc_server_description_t   *server)
+_mongoc_sdam_destroy (mongoc_sdam_t *sdam)
 {
-   _mongoc_sdam_remove_from_monitor(topology, server);
-   _mongoc_sdam_check_if_has_primary(topology, server);
+   // TODO SDAM
+   return;
 }
 
 /*
- *--------------------------------------------------------------------------
- *
- * _mongoc_sdam_check_if_has_primary --
- *
- *       If there is a primary in topology, set topology
- *       type to RS_WITH_PRIMARY, otherwise set it to
- *       RS_NO_PRIMARY.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Changes the topology type.
- *
- *--------------------------------------------------------------------------
+ *-------------------------------------------------------------------------
+ *-------------------------------------------------------------------------
  */
 void
-_mongoc_sdam_check_if_has_primary (mongoc_topology_description_t *topology,
-                                   mongoc_server_description_t   *server)
+_mongoc_sdam_force_scan (mongoc_sdam_t *sdam)
 {
-   if (_mongoc_topology_description_has_primary(topology)) {
-      _mongoc_topology_description_set_state(topology,
-                                             MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
-   }
-   else {
-      _mongoc_topology_description_set_state(topology,
-                                             MONGOC_TOPOLOGY_RS_NO_PRIMARY);
-   }
+   // TODO SDAM
+   return;
 }
 
 /*
- *--------------------------------------------------------------------------
- *
- * _mongoc_sdam_update_unknown_with_standalone --
- *
- *       If the cluster doesn't contain this server, do nothing.
- *       Otherwise, if the topology only has one seed, change its
- *       type to SINGLE. If the topology has multiple seeds, it does not
- *       include us, so remove this server and stop monitoring us.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Changes the topology type, might remove server from monitor.
- *
- *--------------------------------------------------------------------------
+ *-------------------------------------------------------------------------
+ *-------------------------------------------------------------------------
  */
 void
-_mongoc_sdam_update_unknown_with_standalone (mongoc_topology_description_t *topology,
-                                             mongoc_server_description_t   *server)
+_mongoc_sdam_ismaster_callback (mongoc_sdam_t *sdam, const bson_t  *ismaster)
 {
-   mongoc_server_description_t *server_iter = topology->servers;
-
-   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
-   if (server_iter->next) {
-      /* this cluster contains other servers, it cannot be a standalone. */
-      _mongoc_sdam_remove_from_monitor(topology, server);
-   } else {
-      _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_SINGLE);
-   }
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_sdam_add_server_to_monitor --
- *
- *       Add the specified server to the cluster topology.
- *
- * Return:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-static void
-_mongoc_sdam_add_server_to_monitor (mongoc_topology_description_t *topology,
-                                    const char                    *server)
-{
-   // TODO SDAM: move this to monitor
-   mongoc_server_description_t description;
-
-   if (_mongoc_topology_description_has_server(topology, server)) return;
-
-   _mongoc_server_description_init(&description, server, -1); // TODO: determine real index
-
-   description.next = topology->servers;
-   topology->servers = &description;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_update_rs_from_primary --
- *
- *       First, determine that this is really the primary:
- *          -If this node isn't in the cluster, do nothing.
- *          -If the cluster's set name is null, set it to node's set name.
- *           Otherwise if the cluster's set name is different from node's,
- *           we found a rogue primary, so remove it from the cluster and
- *           check the cluster for a primary, then return.
- *          -If any of the members of cluster reports an address different
- *           from node's, node cannot be the primary.
- *       Now that we know this is the primary:
- *          -If any hosts, passives, or arbiters in node's description aren't
- *           in the cluster, add them as UNKNOWN servers and begin monitoring.
- *          -If the cluster has any servers that aren't in node's description
- *           remove them and stop monitoring.
- *       Finally, check the cluster for the new primary.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Changes to the cluster, possible removal of cluster nodes.
- *
- *--------------------------------------------------------------------------
- */
-void
-_mongoc_sdam_update_rs_from_primary (mongoc_topology_description_t *topology,
-                                     mongoc_server_description_t   *server)
-{
-   mongoc_server_description_t *current_server;
-   char **member_iter;
-
-   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
-
-   /* 'Server' can only be the primary if it has the right rs name */
-   if (!topology->set_name) {
-      int len = strlen(server->set_name) + 1;
-      topology->set_name = bson_malloc (len);
-      memcpy (topology->set_name, server->set_name, len);
-   }
-   else if (topology->set_name != server->set_name) {
-      _mongoc_sdam_remove_from_monitor(topology, server);
-      _mongoc_sdam_check_if_has_primary(topology, server);
-      return;
-   }
-
-   /* 'Server' is the primary! Invalidate other primaries if found */
-   current_server = topology->servers;
-   while (current_server) {
-      if (current_server->connection_address != server->connection_address &&
-          current_server->type == MONGOC_SERVER_RS_PRIMARY ) {
-         _mongoc_server_description_set_state(server, MONGOC_SERVER_UNKNOWN);
-         server->type = MONGOC_SERVER_UNKNOWN;
-         // TODO SDAM reset other states to 'defaults'?
-      }
-      current_server = current_server->next;
-   }
-
-   /* Begin monitoring any new servers primary knows about */
-   member_iter = server->rs_members;
-   while (member_iter) {
-      if (!_mongoc_topology_description_has_server(topology, *member_iter)) {
-         _mongoc_sdam_add_server_to_monitor(topology, *member_iter);
-      }
-      member_iter++;
-   }
-
-   /* Stop monitoring any old servers primary doesn't know about */
-   current_server = topology->servers;
-   while (current_server) {
-      if (!_mongoc_server_description_has_rs_member(server, current_server->connection_address)) {
-         _mongoc_sdam_remove_from_monitor(topology, current_server);
-      }
-      current_server = current_server->next;
-   }
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_sdam_update_rs_without_primary --
- *
- *       Update cluster's information when there is no primary.
- *
- * Returns:
- *       None.
- *
- * Side Effects:
- *       Alters cluster state, may remove node from cluster.
- *
- *--------------------------------------------------------------------------
- */
-void
-_mongoc_sdam_update_rs_without_primary (mongoc_topology_description_t *topology,
-                                        mongoc_server_description_t   *server)
-{
-   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
-
-   if (!topology->set_name) {
-      topology->set_name = server->set_name;
-   }
-   else if (topology->set_name != server->set_name) {
-      _mongoc_sdam_remove_from_monitor(topology, server);
-      return;
-   }
-
-   /* Begin monitoring any new servers that this server knows about */
-   // TODO SDAM this loop.
-
-   /* If this server thinks there is a primary, label it POSSIBLE_PRIMARY */
-   _mongoc_topology_description_label_unknown_member(topology,
-                                                     server->current_primary,
-                                                     MONGOC_SERVER_POSSIBLE_PRIMARY);
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_sdam_update_rs_with_primary_from_member --
- *
- *       Update cluster's information when there is a primary, but the
- *       update is coming from another replica set member.
- *
- * Returns:
- *       None.
- *
- * Side Effects:
- *       Alters cluster state.
- *
- *--------------------------------------------------------------------------
- */
-void
-_mongoc_sdam_update_rs_with_primary_from_member (mongoc_topology_description_t *topology,
-                                                 mongoc_server_description_t   *server)
-{
-   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
-
-   /* set_name should never be null here */
-   if (topology->set_name != server->set_name) {
-      _mongoc_sdam_remove_from_monitor(topology, server);
-   }
-
-   /* If there is no primary, label server's current_primary as the POSSIBLE_PRIMARY */
-   if (!_mongoc_topology_description_has_primary(topology)) {
-      _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
-      _mongoc_topology_description_label_unknown_member(topology,
-                                                        server->current_primary,
-                                                        MONGOC_SERVER_POSSIBLE_PRIMARY);
-   }
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_sdam_set_topology_type_to_sharded --
- *
- *       Sets topology's type to SHARDED.
- *
- * Returns:
- *       None
- *
- * Side effects:
- *       Alter's topology's type
- *
- *--------------------------------------------------------------------------
- */
-void
-_mongoc_sdam_set_topology_type_to_sharded (mongoc_topology_description_t *topology,
-                                           mongoc_server_description_t   *server)
-{
-   _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_SHARDED);
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_sdam_transition_unknown_to_rs_no_primary --
- *
- *       Encapsulates transition from cluster state UNKNOWN to
- *       RS_NO_PRIMARY. Sets the type to RS_NO_PRIMARY,
- *       then updates the replica set accordingly.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Changes topology state.
- *
- *--------------------------------------------------------------------------
- */
-void
-_mongoc_sdam_transition_unknown_to_rs_no_primary (mongoc_topology_description_t *topology,
-                                                  mongoc_server_description_t   *server)
-{
-   _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
-   _mongoc_sdam_update_rs_without_primary(topology, server);
+   // TODO SDAM
+   return;
 }

@@ -17,9 +17,13 @@
 #ifndef MONGOC_TOPOLOGY_DESCRIPTION_H
 #define MONGOC_TOPOLOGY_DESCRIPTION_H
 
+#include "mongoc-read-prefs-private.h"
 #include "mongoc-server-description.h"
 
 #define MONGOC_TOPOLOGY_DESCRIPTION_TYPES 4 // TODO: what about Single??
+
+#define MONGOC_SS_DEFAULT_TIMEOUT_MS 30000
+#define MONGOC_SS_DEFAULT_LOCAL_THRESHOLD_MS 15
 
 typedef enum
    {
@@ -39,19 +43,18 @@ typedef struct _mongoc_topology_description_t
    char                              *compatibility_error;
 } mongoc_topology_description_t;
 
+typedef enum
+   {
+      MONGOC_SS_READ,
+      MONGOC_SS_WRITE
+   } mongoc_ss_optype_t;
+
 void _mongoc_topology_description_init                  (mongoc_topology_description_t     *description);
 void _mongoc_topology_description_destroy               (mongoc_topology_description_t     *description);
-void _mongoc_topology_description_add_server            (mongoc_topology_description_t     *description,
-                                                         mongoc_server_description_t       *server);
-void _mongoc_topology_description_remove_server         (mongoc_topology_description_t     *description,
-                                                         mongoc_server_description_t       *server);
-bool _mongoc_topology_description_has_server            (mongoc_topology_description_t     *description,
-                                                         const char                        *address);
-bool _mongoc_topology_description_has_primary           (mongoc_topology_description_t     *description);
-void _mongoc_topology_description_label_unknown_member  (mongoc_topology_description_t     *description,
-                                                         const char                        *address,
-                                                         mongoc_server_description_type_t   type);
-void _mongoc_topology_description_set_state             (mongoc_topology_description_t     *description,
-                                                         mongoc_topology_description_type_t type);
-
+void _mongoc_topology_description_handle_ismaster       (mongoc_topology_description_t     *topology,
+                                                         const bson_t                      *ismaster);
+mongoc_server_description_t *_mongoc_topology_description_select (mongoc_topology_description_t *topology_description,o
+                                                                  mongoc_ss_optype_t optype,
+                                                                  const mongoc_read_prefs_t *read_pref,
+                                                                  bson_error_t *error);
 #endif
