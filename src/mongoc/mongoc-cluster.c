@@ -238,7 +238,6 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    ENTRY;
 
    BSON_ASSERT(cluster);
-   BSON_ASSERT(server);
 
    MONGOC_DEBUG("Adding new server to cluster: %s", description->connection_address);
 
@@ -322,6 +321,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
                       void               *client)
 {
    mongoc_cluster_node_t *node;
+   int i;
 
    ENTRY;
 
@@ -344,7 +344,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
    /* initialize our buffer of nodes with ids of -1 */
    cluster->active_nodes = 0;
    _mongoc_array_init (&cluster->nodes, sizeof (mongoc_cluster_node_t));
-   for (int i = 0; i < cluster->nodes.len; i++) {
+   for (i = 0; i < cluster->nodes.len; i++) {
       node = &_mongoc_array_index(&cluster->nodes, mongoc_cluster_node_t, i);
       _mongoc_cluster_node_init(node, -1);
    }
@@ -374,13 +374,14 @@ void
 _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 {
    mongoc_cluster_node_t *node;
+   int i;
    ENTRY;
 
    bson_return_if_fail(cluster);
 
    mongoc_uri_destroy(cluster->uri);
 
-   for (int i = 0; i < cluster->nodes.len; i++) {
+   for (i = 0; i < cluster->nodes.len; i++) {
       node = &_mongoc_array_index(&cluster->nodes, mongoc_cluster_node_t, i);
       _mongoc_cluster_node_destroy(node);
    }
@@ -437,6 +438,7 @@ _mongoc_cluster_select(mongoc_cluster_t             *cluster,
    mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
    mongoc_server_description_t *selected_server;
    mongoc_ss_optype_t optype = MONGOC_SS_READ;
+   int i;
 
    ENTRY;
 
@@ -445,7 +447,7 @@ _mongoc_cluster_select(mongoc_cluster_t             *cluster,
    bson_return_val_if_fail(rpcs_len, NULL);
 
    /* pick the most restrictive optype */
-   for (int i = 0; (i < rpcs_len) && (optype == MONGOC_SS_READ); i++) {
+   for (i = 0; (i < rpcs_len) && (optype == MONGOC_SS_READ); i++) {
       switch (rpcs[i].header.opcode) {
       case MONGOC_OPCODE_KILL_CURSORS:
       case MONGOC_OPCODE_GET_MORE:
@@ -472,10 +474,12 @@ _mongoc_cluster_select(mongoc_cluster_t             *cluster,
    // I don't think it should be the cluster object, because it shouldn't
    // have to know about these things.  The cluster monitor has to own the
    // topology description.  Maybe the client does, too?
+#if 0
    selected_server = _mongoc_topology_description_select(optype,
                                        NULL /* topology description */,
                                        read_pref,
                                        error);
+#endif
 
    if (!selected_server) {
       RETURN(NULL);

@@ -30,7 +30,6 @@ typedef struct _mongoc_sdam_t
 {
    mongoc_topology_description_t topology;
    mongoc_uri_t                  *uri;
-   transition_table_t             transitions;
    // TODO SCAN jason's scanner thing
 } mongoc_sdam_t;
 

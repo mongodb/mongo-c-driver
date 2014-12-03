@@ -53,7 +53,7 @@ void _mongoc_topology_description_init                  (mongoc_topology_descrip
 void _mongoc_topology_description_destroy               (mongoc_topology_description_t     *description);
 void _mongoc_topology_description_handle_ismaster       (mongoc_topology_description_t     *topology,
                                                          const bson_t                      *ismaster);
-mongoc_server_description_t *_mongoc_topology_description_select (mongoc_topology_description_t *topology_description,o
+mongoc_server_description_t *_mongoc_topology_description_select (mongoc_topology_description_t *topology_description,
                                                                   mongoc_ss_optype_t optype,
                                                                   const mongoc_read_prefs_t *read_pref,
                                                                   bson_error_t *error);

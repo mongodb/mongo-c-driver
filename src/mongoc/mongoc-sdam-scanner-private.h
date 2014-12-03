@@ -26,10 +26,9 @@
 #include <bson.h>
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
+#include "mongoc-host-list.h"
 
 BSON_BEGIN_DECLS
-
-typedef struct {} mongoc_server_description_t;
 
 typedef bool (*mongoc_sdam_scanner_cb_t)(uint32_t      id,
                                          const bson_t *bson,
@@ -43,7 +42,10 @@ typedef struct mongoc_sdam_scanner_node
    uint32_t                    id;
    mongoc_async_cmd_t         *cmd;
    mongoc_stream_t            *stream;
-   struct mongoc_sdam_scanner *tm;
+   mongoc_host_list_t          host;
+   struct addrinfo            *dns_results;
+   struct addrinfo            *current_dns_result;
+   struct mongoc_sdam_scanner *ss;
 
    struct mongoc_sdam_scanner_node *next;
    struct mongoc_sdam_scanner_node *prev;
@@ -68,18 +70,18 @@ mongoc_sdam_scanner_new (mongoc_sdam_scanner_cb_t cb,
                          void                    *data);
 
 void
-mongoc_sdam_scanner_destroy (mongoc_sdam_scanner_t *tm);
+mongoc_sdam_scanner_destroy (mongoc_sdam_scanner_t *ss);
 
 uint32_t
-mongoc_sdam_scanner_add (mongoc_sdam_scanner_t             *tm,
-                         const mongoc_server_description_t *sd);
+mongoc_sdam_scanner_add (mongoc_sdam_scanner_t    *ss,
+                         const mongoc_host_list_t *host);
 
 void
-mongoc_sdam_scanner_rm (mongoc_sdam_scanner_t *tm,
+mongoc_sdam_scanner_rm (mongoc_sdam_scanner_t *ss,
                         uint32_t               id);
 
 void
-mongoc_sdam_scanner_scan (mongoc_sdam_scanner_t *tm,
+mongoc_sdam_scanner_scan (mongoc_sdam_scanner_t *ss,
                           int32_t                timeout_msec);
 
 

@@ -494,7 +494,7 @@ _mongoc_client_recv (mongoc_client_t *client,
    bson_return_val_if_fail(rpc, false);
    bson_return_val_if_fail(buffer, false);
    bson_return_val_if_fail(hint, false);
-   bson_return_val_if_fail(hint <= client->cluster.nodes_len, false);
+//   bson_return_val_if_fail(hint <= client->cluster.nodes_len, false);
 
    // TODO SDAM
    //return _mongoc_cluster_try_recv (&client->cluster, rpc, buffer, hint,

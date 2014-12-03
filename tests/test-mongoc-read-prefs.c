@@ -9,6 +9,8 @@
 static void
 test_mongoc_read_prefs_score (void)
 {
+#if 0
+
    mongoc_read_prefs_t *read_prefs;
    mongoc_cluster_node_t node = { 0 };
    bool valid;
@@ -50,6 +52,7 @@ test_mongoc_read_prefs_score (void)
    mongoc_read_prefs_destroy(read_prefs);
 
 #undef ASSERT_VALID
+#endif
 }
 
 

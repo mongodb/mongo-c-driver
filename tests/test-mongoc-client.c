@@ -521,7 +521,7 @@ test_exhaust_cursor (void)
     * should be and ensure that an early destroy properly causes a disconnect
     * */
    {
-      /* TODO SDAM
+#if 0
       r = mongoc_cursor_next (cursor, &doc);
       assert (r);
       assert (doc);
@@ -532,9 +532,9 @@ test_exhaust_cursor (void)
 
       mongoc_cursor_destroy (cursor);
       /* make sure a disconnect happened */
-      /*assert (stream != node->stream);
+      assert (stream != node->stream);
       assert (! client->in_exhaust);
-      */
+#endif
    }
 
    /* Grab a new exhaust cursor, then verify that reading from that cursor

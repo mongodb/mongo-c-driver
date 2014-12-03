@@ -91,6 +91,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-read-prefs.c \
 	tests/test-mongoc-rpc.c \
 	tests/test-mongoc-socket.c \
+	tests/test-mongoc-sdam-scanner.c \
 	tests/test-mongoc-stream.c \
 	tests/test-mongoc-uri.c \
 	tests/test-mongoc-write-concern.c \
