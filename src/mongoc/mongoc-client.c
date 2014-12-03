@@ -435,6 +435,7 @@ _mongoc_client_sendv (mongoc_client_t              *client,
       rpcs[i].header.request_id = ++client->request_id;
    }
 
+   /* TODO FIX THIS
    switch (client->cluster.state) {
    case MONGOC_CLUSTER_STATE_BORN:
       return _mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint,
@@ -453,6 +454,8 @@ _mongoc_client_sendv (mongoc_client_t              *client,
       BSON_ASSERT(false);
       return 0;
    }
+   */
+   return false; // ditch
 }
 
 
@@ -487,8 +490,10 @@ _mongoc_client_recv (mongoc_client_t *client,
    bson_return_val_if_fail(hint, false);
    bson_return_val_if_fail(hint <= client->cluster.nodes_len, false);
 
-   return _mongoc_cluster_try_recv (&client->cluster, rpc, buffer, hint,
-                                    error);
+   // TODO SDAM
+   //return _mongoc_cluster_try_recv (&client->cluster, rpc, buffer, hint,
+   //                                 error);
+   return false;
 }
 
 
@@ -603,10 +608,11 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
 
+   /* TODO SDAM
    if (!_mongoc_cluster_try_recv (&client->cluster, &rpc, &buffer,
                                   hint, error)) {
       GOTO (cleanup);
-   }
+      }*/
 
    if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       bson_set_error (error,
@@ -892,7 +898,9 @@ _mongoc_client_stamp (mongoc_client_t *client,
 {
    bson_return_val_if_fail (client, 0);
 
-   return _mongoc_cluster_stamp (&client->cluster, node);
+   // TODO SDAM
+   //return _mongoc_cluster_stamp (&client->cluster, node);
+   return 0;
 }
 
 
@@ -1131,10 +1139,11 @@ _mongoc_client_warm_up (mongoc_client_t *client,
                         bson_error_t    *error)
 {
    bool ret = true;
-   bson_t cmd;
+   //bson_t cmd;
 
    BSON_ASSERT (client);
 
+   /* TODO FIX THIS
    if (client->cluster.state == MONGOC_CLUSTER_STATE_BORN) {
       bson_init (&cmd);
       bson_append_int32 (&cmd, "ping", 4, 1);
@@ -1143,7 +1152,7 @@ _mongoc_client_warm_up (mongoc_client_t *client,
       bson_destroy (&cmd);
    } else if (client->cluster.state == MONGOC_CLUSTER_STATE_DEAD) {
       ret = _mongoc_cluster_reconnect(&client->cluster, error);
-   }
+      } */
 
    return ret;
 }
@@ -1159,8 +1168,10 @@ _mongoc_client_preselect (mongoc_client_t              *client,        /* IN */
 
    BSON_ASSERT (client);
 
-   return _mongoc_cluster_preselect (&client->cluster, opcode,
-                                     write_concern, read_prefs, error);
+   // TODO SDAM
+   //return _mongoc_cluster_preselect (&client->cluster, opcode,
+   //write_concern, read_prefs, error);
+   return 0;
 }
 
 

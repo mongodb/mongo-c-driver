@@ -174,11 +174,12 @@ test_insert_bulk (void)
     * concern is needed for inserts, we will support this for a while, albeit
     * deprecated.
     */
-   if (client->cluster.nodes [0].max_wire_version == 0) {
+   /* TODO SDAM
+   if (client->cluster.nodes [0].server_description->max_wire_version == 0) {
       ASSERT (count == 6);
    } else {
       ASSERT (count == 5);
-   }
+      } */
 
    BEGIN_IGNORE_DEPRECATIONS;
    r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_CONTINUE_ON_ERROR,
@@ -607,13 +608,14 @@ test_index_geo (void)
    geo_opt.twod_bits_precision = 30;
    opt.geo_options = &geo_opt;
 
-   if (client->cluster.nodes [0].max_wire_version > 0) {
+   /* TODO SDAM
+   if (client->cluster.nodes [0].server_description->max_wire_version > 0) {
       r = mongoc_collection_create_index(collection, &keys, &opt, &error);
          ASSERT (r);
 
       r = mongoc_collection_drop_index(collection, "location_2d", &error);
       ASSERT (r);
-   }
+      } */
 
    /* Create a Haystack index */
    bson_init(&keys);
@@ -622,15 +624,16 @@ test_index_geo (void)
 
    mongoc_index_opt_geo_init(&geo_opt);
    geo_opt.haystack_bucket_size = 5;
-   opt.geo_options = &geo_opt;
 
-   if (client->cluster.nodes [0].max_wire_version > 0) {
+   opt.geo_options = &geo_opt;
+   /* TODO SDAM
+   if (client->cluster.nodes [0].server_description->max_wire_version > 0) {
       r = mongoc_collection_create_index(collection, &keys, &opt, &error);
       ASSERT (r);
 
       r = mongoc_collection_drop_index(collection, "location_geoHaystack_category_1", &error);
       ASSERT (r);
-   }
+      } */
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);

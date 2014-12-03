@@ -194,14 +194,16 @@ _score_tags (const bson_t *read_tags,
    return 0;
 }
 
-
 static int
 _mongoc_read_prefs_score_primary (const mongoc_read_prefs_t   *read_prefs,
                                   const mongoc_cluster_node_t *node)
 {
+   /* TODO SDAM
    bson_return_val_if_fail(read_prefs, -1);
    bson_return_val_if_fail(node, -1);
-   return node->primary ? INT_MAX : 0;
+   return _mongoc_cluster_node_is_primary(node) ? INT_MAX : 0;
+   */
+   return 0;
 }
 
 
@@ -209,20 +211,23 @@ static int
 _mongoc_read_prefs_score_primary_preferred (const mongoc_read_prefs_t   *read_prefs,
                                             const mongoc_cluster_node_t *node)
 {
+   /* TODO SDAM
    const bson_t *node_tags;
    const bson_t *read_tags;
 
    bson_return_val_if_fail(read_prefs, -1);
    bson_return_val_if_fail(node, -1);
 
-   if (node->primary) {
+   if (_mongoc_cluster_node_is_primary(node)) {
       return INT_MAX;
    }
 
-   node_tags = &node->tags;
+   node_tags = &node->server_description->tags;
    read_tags = &read_prefs->tags;
 
    return bson_empty(read_tags) ? 1 : _score_tags(read_tags, node_tags);
+*/
+   return 0;
 }
 
 
@@ -230,20 +235,23 @@ static int
 _mongoc_read_prefs_score_secondary (const mongoc_read_prefs_t   *read_prefs,
                                     const mongoc_cluster_node_t *node)
 {
+/* TODO SDAM
    const bson_t *node_tags;
    const bson_t *read_tags;
 
    bson_return_val_if_fail(read_prefs, -1);
    bson_return_val_if_fail(node, -1);
 
-   if (node->primary) {
+   if (_mongoc_cluster_node_is_primary(node)) {
       return -1;
    }
 
-   node_tags = &node->tags;
+   node_tags = &node->server_description->tags;
    read_tags = &read_prefs->tags;
 
    return bson_empty(read_tags) ? 1 : _score_tags(read_tags, node_tags);
+   */
+   return 0;
 }
 
 
@@ -251,20 +259,23 @@ static int
 _mongoc_read_prefs_score_secondary_preferred (const mongoc_read_prefs_t   *read_prefs,
                                               const mongoc_cluster_node_t *node)
 {
+   /* TODO SDAM
    const bson_t *node_tags;
    const bson_t *read_tags;
 
    bson_return_val_if_fail(read_prefs, -1);
    bson_return_val_if_fail(node, -1);
 
-   if (node->primary) {
+   if (_mongoc_cluster_node_is_primary(node)) {
       return 0;
    }
 
-   node_tags = &node->tags;
+   node_tags = &node->server_description->tags;
    read_tags = &read_prefs->tags;
 
    return bson_empty(read_tags) ? 1 : _score_tags(read_tags, node_tags);
+*/
+   return 0;
 }
 
 
@@ -272,16 +283,19 @@ static int
 _mongoc_read_prefs_score_nearest (const mongoc_read_prefs_t   *read_prefs,
                                   const mongoc_cluster_node_t *node)
 {
+/* TODO SDAM
    const bson_t *read_tags;
    const bson_t *node_tags;
 
    bson_return_val_if_fail(read_prefs, -1);
    bson_return_val_if_fail(node, -1);
 
-   node_tags = &node->tags;
+   node_tags = &node->server_description->tags;
    read_tags = &read_prefs->tags;
 
    return bson_empty(read_tags) ? 1 : _score_tags(read_tags, node_tags);
+*/
+   return 0;
 }
 
 
@@ -289,6 +303,7 @@ int
 _mongoc_read_prefs_score (const mongoc_read_prefs_t   *read_prefs,
                           const mongoc_cluster_node_t *node)
 {
+   /* TODO SDAM
    bson_return_val_if_fail(read_prefs, -1);
    bson_return_val_if_fail(node, -1);
 
@@ -307,22 +322,27 @@ _mongoc_read_prefs_score (const mongoc_read_prefs_t   *read_prefs,
       BSON_ASSERT(false);
       return -1;
    }
+*/
+   return 0;
 }
-
 
 void
 mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs)
 {
+   /* TODO SDAM
    if (read_prefs) {
       bson_destroy(&read_prefs->tags);
       bson_free(read_prefs);
    }
+   */
+   return;
 }
 
 
 mongoc_read_prefs_t *
 mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
 {
+/* TODO SDAM
    mongoc_read_prefs_t *ret = NULL;
 
    if (read_prefs) {
@@ -331,4 +351,6 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
    }
 
    return ret;
+*/
+   return NULL;
 }
