@@ -87,6 +87,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-gridfs-file-page.c \
 	tests/test-mongoc-list.c \
 	tests/test-mongoc-matcher.c \
+	tests/test-mongoc-node-switch.c \
 	tests/test-mongoc-queue.c \
 	tests/test-mongoc-read-prefs.c \
 	tests/test-mongoc-rpc.c \

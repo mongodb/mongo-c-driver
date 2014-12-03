@@ -41,21 +41,23 @@ mongoc_node_switch_add (mongoc_node_switch_t *ns,
                         uint32_t              id,
                         mongoc_stream_t      *stream)
 {
-   assert(id < UINT32_MAX);
+   assert (id < UINT32_MAX);
 
    if (ns->nodes_len > 0) {
-      assert(ns->nodes[ns->nodes_len - 1].id < id);
+      assert (ns->nodes[ns->nodes_len - 1].id < id);
    }
 
    if (ns->nodes_len >= ns->nodes_allocated) {
       ns->nodes_allocated *= 2;
-      bson_realloc (ns->nodes, sizeof (*ns->nodes) * ns->nodes_allocated);
+      ns->nodes = bson_realloc (ns->nodes,
+                                sizeof (*ns->nodes) * ns->nodes_allocated);
    }
 
    ns->nodes[ns->nodes_len].id = id;
    ns->nodes[ns->nodes_len].stream = stream;
 
    ns->nodes_len++;
+
 }
 
 static int
@@ -86,12 +88,13 @@ mongoc_node_switch_rm (mongoc_node_switch_t *ns,
                   mongoc_node_switch_id_cmp);
 
    if (ptr) {
-      mongoc_stream_destroy (ptr->stream);
-
       i = ptr - ns->nodes;
 
+      mongoc_stream_destroy (ptr->stream);
+
       if (i != ns->nodes_len - 1) {
-         memmove (ns->nodes + i, ns->nodes + i + 1, ns->nodes_len - (i + 1));
+         memmove (ns->nodes + i, ns->nodes + i + 1,
+                  (ns->nodes_len - (i + 1)) * sizeof (key));
       }
 
       ns->nodes_len--;

@@ -463,8 +463,6 @@ test_exhaust_cursor (void)
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    mongoc_cursor_t *cursor2;
-   mongoc_stream_t *stream;
-   mongoc_cluster_node_t *node;
    const bson_t *doc;
    bson_t q;
    bson_t b[10];

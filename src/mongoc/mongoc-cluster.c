@@ -91,127 +91,6 @@
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_node_init --
- *
- *       Initialize a mongoc_cluster_node_t.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-static void
-_mongoc_cluster_node_init (mongoc_cluster_node_t *node, int32_t id)
-{
-   ENTRY;
-
-   BSON_ASSERT(node);
-
-   memset(node, 0, sizeof *node);
-
-   node->id = id;
-   node->stream = NULL;
-
-   // TODO: delete?
-   // node->stamp = 0;
-   //node->needs_auth = 0;
-
-   EXIT;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_node_destroy --
- *
- *       Destroy allocated resources within @node.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-static void
-_mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
-{
-   ENTRY;
-
-   BSON_ASSERT(node);
-
-   if (node->stream) {
-      mongoc_stream_close(node->stream);
-      mongoc_stream_destroy(node->stream);
-      node->stream = NULL;
-   }
-
-   EXIT;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_remove_node --
- *
- *       Disconnects and destroys a cluster node.
- *
- *       The stream is closed and destroyed.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-_mongoc_cluster_remove_node (mongoc_cluster_t      *cluster,
-                             mongoc_cluster_node_t *node)
-{
-   ENTRY;
-
-   BSON_ASSERT(cluster);
-   BSON_ASSERT(node);
-
-   // TODO: remove from cluster's array
-   // actually, just move it to the end of the array
-   // shift all the other elements down
-   // update the "active nodes" index
-
-   EXIT;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_node_by_id --
- *
- *       If node is in the cluster, return it.  Otherwise, return NULL.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-static mongoc_cluster_node_t *
-_mongoc_cluster_node_by_id (mongoc_cluster_t *cluster, int32_t id)
-{
-   return NULL;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * mongoc_cluster_add_node --
  *
  *       Add a new node to this cluster for the given server description.
@@ -226,13 +105,11 @@ _mongoc_cluster_node_by_id (mongoc_cluster_t *cluster, int32_t id)
  *
  *--------------------------------------------------------------------------
  */
-void
+mongoc_stream_t *
 _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
                           mongoc_server_description_t *description,
                           bson_error_t *error /* OUT */)
 {
-   mongoc_cluster_node_t *node;
-   mongoc_cluster_node_t new_node;
    mongoc_stream_t *stream;
 
    ENTRY;
@@ -244,57 +121,14 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    stream = _mongoc_client_create_stream(cluster->client, &description->host, error);
    if (!stream) {
       MONGOC_WARNING("Failed connection to %s", description->connection_address);
+      RETURN(NULL);
    }
 
-   /* if we have too many active nodes, we must append */
-   if (cluster->active_nodes == cluster->nodes.len) {
-      _mongoc_cluster_node_init(&new_node, -1);
-      _mongoc_array_append_val(&cluster->nodes, new_node);
-   }
+   mongoc_node_switch_add(cluster->node_switch, description->id, stream);
 
-   node = &_mongoc_array_index(&cluster->nodes, mongoc_cluster_node_t, cluster->active_nodes);
-   node->stream = stream;
-   node->id = description->id;
-   cluster->active_nodes++;
-
-   EXIT;
+   RETURN(stream);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_fetch_node --
- *
- *       Given a server description, if we already have it, return it.
- *       Otherwise, add this node to the cluster.
- *
- * Returns:
- *       A mongoc_cluster_node_t, or NULL upon failure, in which case
- *       @error will be set.
- *
- * Side effects:
- *       May increase the size of cluster's array of nodes.
- *
- *--------------------------------------------------------------------------
- */
-
-static mongoc_cluster_node_t *
-_mongoc_cluster_fetch_node(mongoc_cluster_t *cluster,
-                           mongoc_server_description_t *description,
-                           bson_error_t *error /* OUT */)
-{
-   mongoc_cluster_node_t *node = NULL;
-
-   ENTRY;
-
-   node = _mongoc_cluster_node_by_id(cluster, description->id);
-   if (!node) {
-      _mongoc_cluster_add_node(cluster, description, error);
-      node = _mongoc_cluster_node_by_id(cluster, description->id);
-   }
-
-   RETURN(node);
-}
 
 /*
  *--------------------------------------------------------------------------
@@ -320,9 +154,6 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
                       const mongoc_uri_t *uri,
                       void               *client)
 {
-   mongoc_cluster_node_t *node;
-   int i;
-
    ENTRY;
 
    bson_return_if_fail(cluster);
@@ -338,16 +169,9 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
    cluster->requires_auth = (mongoc_uri_get_username(uri) ||
                              mongoc_uri_get_auth_mechanism(uri));
    cluster->sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC; // TODO SDAM make configurable?
+   cluster->node_switch = mongoc_node_switch_new();
 
    _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
-
-   /* initialize our buffer of nodes with ids of -1 */
-   cluster->active_nodes = 0;
-   _mongoc_array_init (&cluster->nodes, sizeof (mongoc_cluster_node_t));
-   for (i = 0; i < cluster->nodes.len; i++) {
-      node = &_mongoc_array_index(&cluster->nodes, mongoc_cluster_node_t, i);
-      _mongoc_cluster_node_init(node, -1);
-   }
 
    EXIT;
 }
@@ -373,7 +197,6 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
 void
 _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 {
-   mongoc_cluster_node_t *node;
    int i;
    ENTRY;
 
@@ -381,12 +204,8 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 
    mongoc_uri_destroy(cluster->uri);
 
-   for (i = 0; i < cluster->nodes.len; i++) {
-      node = &_mongoc_array_index(&cluster->nodes, mongoc_cluster_node_t, i);
-      _mongoc_cluster_node_destroy(node);
-   }
+   mongoc_node_switch_destroy(cluster->node_switch);
 
-   _mongoc_array_destroy(&cluster->nodes);
    _mongoc_array_destroy(&cluster->iov);
 
    EXIT;
@@ -405,7 +224,35 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
  *--------------------------------------------------------------------------
  */
 
-// TODO SS what does this function actually do?
+uint32_t
+_mongoc_cluster_preselect (mongoc_collection_t          *collection,
+                              mongoc_opcode_t               opcode,
+                              const mongoc_write_concern_t *write_concern,
+                              const mongoc_read_prefs_t    *read_prefs,
+                              uint32_t                     *min_wire_version,
+                              uint32_t                     *max_wire_version,
+                              bson_error_t                 *error)
+{
+   uint32_t hint;
+
+   ENTRY;
+
+   hint = 0;
+
+   /*
+
+   stream = mongoc_node_switch_get (cluster->node_switch, selected_server->id);
+
+   if (! stream) {
+      stream = _mongoc_cluster_add_node (cluster, selected_server, error);
+   }
+   */
+
+   if (hint) {
+   }
+
+   return hint;
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -425,7 +272,7 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
  *--------------------------------------------------------------------------
  */
 
-mongoc_cluster_node_t *
+mongoc_stream_t *
 _mongoc_cluster_select(mongoc_cluster_t             *cluster,
                        mongoc_rpc_t                 *rpcs,
                        size_t                        rpcs_len,
@@ -434,10 +281,10 @@ _mongoc_cluster_select(mongoc_cluster_t             *cluster,
                        const mongoc_read_prefs_t    *read_pref,
                        bson_error_t                 *error /* OUT */)
 {
-   mongoc_cluster_node_t *selected_node;
    mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
    mongoc_server_description_t *selected_server;
    mongoc_ss_optype_t optype = MONGOC_SS_READ;
+   mongoc_stream_t *stream;
    int i;
 
    ENTRY;
@@ -485,6 +332,11 @@ _mongoc_cluster_select(mongoc_cluster_t             *cluster,
       RETURN(NULL);
    }
 
-   selected_node = _mongoc_cluster_fetch_node(cluster, selected_server, error);
-   RETURN(selected_node);
+   stream = mongoc_node_switch_get (cluster->node_switch, selected_server->id);
+
+   if (! stream) {
+      stream = _mongoc_cluster_add_node (cluster, selected_server, error);
+   }
+
+   RETURN(stream);
 }

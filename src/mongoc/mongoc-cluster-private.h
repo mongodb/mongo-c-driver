@@ -28,6 +28,7 @@
 #include "mongoc-config.h"
 #include "mongoc-client.h"
 #include "mongoc-list-private.h"
+#include "mongoc-node-switch-private.h"
 #include "mongoc-opcode.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
@@ -43,15 +44,6 @@ BSON_BEGIN_DECLS
 
 #define MONGOC_CLUSTER_PING_NUM_SAMPLES 5
 
-typedef struct _mongoc_cluster_node_t mongoc_cluster_node_t;
-
-struct _mongoc_cluster_node_t
-{
-   uint32_t         id;
-   mongoc_stream_t *stream;
-};
-
-
 typedef struct _mongoc_cluster_t
 {
    uint32_t         request_id;
@@ -65,18 +57,12 @@ typedef struct _mongoc_cluster_t
    int32_t          max_msg_size;
    uint32_t         sec_latency_ms;
 
-   mongoc_array_t   nodes;
+   mongoc_node_switch_t *node_switch;
    int32_t          active_nodes;
 
    mongoc_array_t   iov;
 } mongoc_cluster_t;
 
-
-void                   _mongoc_cluster_remove_node (mongoc_cluster_t             *cluster,
-                                                    mongoc_cluster_node_t        *node);
-void                   _mongoc_cluster_add_node    (mongoc_cluster_t             *cluster,
-                                                    mongoc_server_description_t  *description,
-                                                    bson_error_t                 *error);
 void                   _mongoc_cluster_init        (mongoc_cluster_t             *cluster,
                                                     const mongoc_uri_t           *uri,
                                                     void                         *client);
