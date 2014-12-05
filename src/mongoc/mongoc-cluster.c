@@ -125,11 +125,17 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
       RETURN(NULL);
    }
 
-   mongoc_node_switch_add(cluster->node_switch, description->id, stream);
+   mongoc_set_add(cluster->nodes, description->id, stream);
 
    RETURN(stream);
 }
 
+static void
+_mongoc_cluster_stream_dtor (void *stream_,
+                             void *ctx_)
+{
+   mongoc_stream_destroy ((mongoc_stream_t *)stream_);
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -170,7 +176,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
    cluster->requires_auth = (mongoc_uri_get_username(uri) ||
                              mongoc_uri_get_auth_mechanism(uri));
    cluster->sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC; // TODO SDAM make configurable?
-   cluster->node_switch = mongoc_node_switch_new();
+   cluster->nodes = mongoc_set_new(8, _mongoc_cluster_stream_dtor, NULL);
 
    _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
 
@@ -198,14 +204,13 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
 void
 _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 {
-   int i;
    ENTRY;
 
    bson_return_if_fail(cluster);
 
    mongoc_uri_destroy(cluster->uri);
 
-   mongoc_node_switch_destroy(cluster->node_switch);
+   mongoc_set_destroy(cluster->nodes);
 
    _mongoc_array_destroy(&cluster->iov);
 
@@ -327,7 +332,7 @@ _mongoc_cluster_select(mongoc_cluster_t             *cluster,
       RETURN(NULL);
    }
 
-   stream = mongoc_node_switch_get (cluster->node_switch, selected_server->id);
+   stream = mongoc_set_get (cluster->nodes, selected_server->id);
 
    if (! stream) {
       stream = _mongoc_cluster_add_node (cluster, selected_server, error);

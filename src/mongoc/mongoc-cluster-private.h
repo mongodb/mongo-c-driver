@@ -28,11 +28,11 @@
 #include "mongoc-config.h"
 #include "mongoc-client.h"
 #include "mongoc-list-private.h"
-#include "mongoc-node-switch-private.h"
 #include "mongoc-opcode.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-server-description.h"
+#include "mongoc-set-private.h"
 #include "mongoc-stream.h"
 #include "mongoc-topology-description.h"
 #include "mongoc-uri.h"
@@ -57,7 +57,7 @@ typedef struct _mongoc_cluster_t
    int32_t          max_msg_size;
    uint32_t         sec_latency_ms;
 
-   mongoc_node_switch_t *node_switch;
+   mongoc_set_t    *nodes;
    int32_t          active_nodes;
 
    mongoc_array_t   iov;
