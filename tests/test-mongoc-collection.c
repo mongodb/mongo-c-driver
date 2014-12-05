@@ -1193,12 +1193,11 @@ test_get_index_info (void)
    mongoc_index_opt_t opt1;
    mongoc_index_opt_t opt2;
    bson_error_t error = { 0 };
-   bson_t *indexinfo = NULL;
+   mongoc_cursor_t *cursor;
+   const bson_t *indexinfo;
    bson_t indexkey1;
    bson_t indexkey2;
    bson_t dummy = BSON_INITIALIZER;
-   bson_iter_t idx_infos_iter;
-   bson_iter_t idx_arr_iter;
    bson_iter_t idx_spec_iter;
    bson_iter_t idx_spec_iter_copy;
    bool r;
@@ -1215,25 +1214,17 @@ test_get_index_info (void)
    ASSERT (collection);
 
    /*
-    * Try it on a collection that doesn't exist. We should just get
-    * {"indexes": []}
+    * Try it on a collection that doesn't exist.
     */
-   indexinfo = mongoc_collection_get_index_info (collection, &error);
+   cursor = mongoc_collection_get_index_info (collection, &error);
 
-   ASSERT (indexinfo);
+   ASSERT (cursor);
    ASSERT (!error.domain);
    ASSERT (!error.code);
 
-   if (bson_iter_init_find (&idx_infos_iter, indexinfo, "indexes") &&
-       BSON_ITER_HOLDS_ARRAY (&idx_infos_iter) &&
-       bson_iter_recurse (&idx_infos_iter, &idx_arr_iter)) {
-       if (bson_iter_next (&idx_arr_iter)) {
-           /* array should be empty */
-           assert (false);
-       }
-   }
+   ASSERT (!mongoc_cursor_next( cursor, &indexinfo ));
 
-   bson_destroy(indexinfo);
+   mongoc_cursor_destroy (cursor);
 
    /* insert a dummy document so that the collection actually exists */
    r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &dummy, NULL,
@@ -1243,32 +1234,28 @@ test_get_index_info (void)
    /* Try it on a collection with no secondary indexes.
     * We should just get back the index on _id.
     */
-   indexinfo = mongoc_collection_get_index_info (collection, &error);
-   ASSERT (indexinfo);
+   cursor = mongoc_collection_get_index_info (collection, &error);
+   ASSERT (cursor);
    ASSERT (!error.domain);
    ASSERT (!error.code);
 
-   if (bson_iter_init_find (&idx_infos_iter, indexinfo, "indexes") &&
-       BSON_ITER_HOLDS_ARRAY (&idx_infos_iter) &&
-       bson_iter_recurse (&idx_infos_iter, &idx_arr_iter)) {
-      while (bson_iter_next (&idx_arr_iter)) {
-         if (BSON_ITER_HOLDS_DOCUMENT (&idx_arr_iter) &&
-             bson_iter_recurse (&idx_arr_iter, &idx_spec_iter) &&
-             bson_iter_find (&idx_spec_iter, "name") &&
-             BSON_ITER_HOLDS_UTF8 (&idx_spec_iter) &&
-             (cur_idx_name = bson_iter_utf8 (&idx_spec_iter, NULL))) {
-            assert (0 == strcmp (cur_idx_name, id_idx_name));
-            ++num_idxs;
-         } else {
-            assert (false);
-         }
+   while (mongoc_cursor_next (cursor, &indexinfo)) {
+      if (bson_iter_init (&idx_spec_iter, indexinfo) &&
+          bson_iter_find (&idx_spec_iter, "name") &&
+          BSON_ITER_HOLDS_UTF8 (&idx_spec_iter) &&
+          (cur_idx_name = bson_iter_utf8 (&idx_spec_iter, NULL))) {
+         assert (0 == strcmp (cur_idx_name, id_idx_name));
+         ++num_idxs;
+      } else {
+         assert (false);
       }
    }
 
    assert (1 == num_idxs);
 
+   mongoc_cursor_destroy (cursor);
+
    num_idxs = 0;
-   bson_destroy (indexinfo);
    indexinfo = NULL;
 
    bson_init (&indexkey1);
@@ -1290,48 +1277,43 @@ test_get_index_info (void)
    /*
     * Now we try again after creating two indexes.
     */
-   indexinfo = mongoc_collection_get_index_info (collection, &error);
-   ASSERT (indexinfo);
+   cursor = mongoc_collection_get_index_info (collection, &error);
+   ASSERT (cursor);
    ASSERT (!error.domain);
    ASSERT (!error.code);
 
-   if (bson_iter_init_find (&idx_infos_iter, indexinfo, "indexes") &&
-       BSON_ITER_HOLDS_ARRAY (&idx_infos_iter) &&
-       bson_iter_recurse (&idx_infos_iter, &idx_arr_iter)) {
-      while (bson_iter_next (&idx_arr_iter)) {
-         if (BSON_ITER_HOLDS_DOCUMENT (&idx_arr_iter) &&
-             bson_iter_recurse (&idx_arr_iter, &idx_spec_iter) &&
-             (idx_spec_iter_copy = idx_spec_iter,    /* intentional assignment and use of comma */
-              bson_iter_find (&idx_spec_iter, "name")) &&
-             BSON_ITER_HOLDS_UTF8 (&idx_spec_iter) &&
-             (cur_idx_name = bson_iter_utf8 (&idx_spec_iter, NULL))) {
-            if (0 == strcmp (cur_idx_name, idx1_name)) {
-               /* need to use the copy of the iter since idx_spec_iter may have gone
-                * past the key we want */
-               ASSERT (bson_iter_find (&idx_spec_iter_copy, "background"));
-               ASSERT (BSON_ITER_HOLDS_BOOL (&idx_spec_iter_copy));
-               ASSERT (bson_iter_bool (&idx_spec_iter_copy));
-            } else if (0 == strcmp (cur_idx_name, idx2_name)) {
-               ASSERT (bson_iter_find (&idx_spec_iter_copy, "unique"));
-               ASSERT (BSON_ITER_HOLDS_BOOL (&idx_spec_iter_copy));
-               ASSERT (bson_iter_bool (&idx_spec_iter_copy));
-            } else {
-               ASSERT ((0 == strcmp (cur_idx_name, id_idx_name)));
-            }
-
-            ++num_idxs;
+   while (mongoc_cursor_next (cursor, &indexinfo)) {
+      if (bson_iter_init (&idx_spec_iter, indexinfo) &&
+          bson_iter_find (&idx_spec_iter, "name") &&
+          BSON_ITER_HOLDS_UTF8 (&idx_spec_iter) &&
+          (cur_idx_name = bson_iter_utf8 (&idx_spec_iter, NULL))) {
+         if (0 == strcmp (cur_idx_name, idx1_name)) {
+            /* need to use the copy of the iter since idx_spec_iter may have gone
+             * past the key we want */
+            ASSERT (bson_iter_init_find (&idx_spec_iter_copy, indexinfo, "background"));
+            ASSERT (BSON_ITER_HOLDS_BOOL (&idx_spec_iter_copy));
+            ASSERT (bson_iter_bool (&idx_spec_iter_copy));
+         } else if (0 == strcmp (cur_idx_name, idx2_name)) {
+            ASSERT (bson_iter_init_find (&idx_spec_iter_copy, indexinfo, "unique"));
+            ASSERT (BSON_ITER_HOLDS_BOOL (&idx_spec_iter_copy));
+            ASSERT (bson_iter_bool (&idx_spec_iter_copy));
          } else {
-            assert (false);
+            ASSERT ((0 == strcmp (cur_idx_name, id_idx_name)));
          }
+
+         ++num_idxs;
+      } else {
+         assert (false);
       }
    }
 
    assert (3 == num_idxs);
 
+   mongoc_cursor_destroy (cursor);
+
    bson_free (idx1_name);
    bson_free (idx2_name);
 
-   bson_destroy (indexinfo);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }

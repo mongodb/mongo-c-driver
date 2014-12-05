@@ -32,6 +32,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-counters-private.h \
 	src/mongoc/mongoc-cursor-array-private.h \
 	src/mongoc/mongoc-cursor-cursorid-private.h \
+	src/mongoc/mongoc-cursor-transform-private.h \
 	src/mongoc/mongoc-cursor-private.h \
 	src/mongoc/mongoc-cursor.h \
 	src/mongoc/mongoc-database-private.h \
@@ -102,6 +103,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-cursor.c \
 	src/mongoc/mongoc-cursor-array.c \
 	src/mongoc/mongoc-cursor-cursorid.c \
+	src/mongoc/mongoc-cursor-transform.c \
 	src/mongoc/mongoc-database.c \
 	src/mongoc/mongoc-init.c \
 	src/mongoc/mongoc-gridfs.c \

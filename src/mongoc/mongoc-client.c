@@ -21,6 +21,7 @@
 # include <netinet/tcp.h>
 #endif
 
+#include "mongoc-cursor-array-private.h"
 #include "mongoc-client.h"
 #include "mongoc-client-private.h"
 #include "mongoc-cluster-private.h"
@@ -1287,39 +1288,27 @@ mongoc_client_get_database_names (mongoc_client_t *client,
                                   bson_error_t    *error)
 {
    bson_iter_t iter;
-   bson_iter_t child;
-   bson_iter_t child2;
    const char *name;
    bson_t cmd = BSON_INITIALIZER;
-   bson_t reply;
    char **ret = NULL;
    int i = 0;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
 
    BSON_ASSERT (client);
 
-   BSON_APPEND_INT32 (&cmd, "listDatabases", 1);
+   cursor = mongoc_client_get_database_info (client, error);
 
-   if (!mongoc_client_command_simple (client, "admin", &cmd, NULL,
-                                      &reply, error)) {
-      bson_destroy (&cmd);
-      return NULL;
-   }
-
-   if (bson_iter_init_find (&iter, &reply, "databases") &&
-       BSON_ITER_HOLDS_ARRAY (&iter) &&
-       bson_iter_recurse (&iter, &child)) {
-      while (bson_iter_next (&child)) {
-         if (BSON_ITER_HOLDS_DOCUMENT (&child) &&
-             bson_iter_recurse (&child, &child2) &&
-             bson_iter_find (&child2, "name") &&
-             BSON_ITER_HOLDS_UTF8 (&child2) &&
-             (name = bson_iter_utf8 (&child2, NULL)) &&
-             (0 != strcmp (name, "local"))) {
+   while (mongoc_cursor_next (cursor, &doc)) {
+      if (bson_iter_init (&iter, doc) &&
+          bson_iter_find (&iter, "name") &&
+          BSON_ITER_HOLDS_UTF8 (&iter) &&
+          (name = bson_iter_utf8 (&iter, NULL)) &&
+          (0 != strcmp (name, "local"))) {
             ret = bson_realloc (ret, sizeof(char*) * (i + 2));
             ret [i] = bson_strdup (name);
             ret [++i] = NULL;
          }
-      }
    }
 
    if (!ret) {
@@ -1327,9 +1316,32 @@ mongoc_client_get_database_names (mongoc_client_t *client,
    }
 
    bson_destroy (&cmd);
-   bson_destroy (&reply);
 
    return ret;
+}
+
+
+mongoc_cursor_t *
+mongoc_client_get_database_info (mongoc_client_t *client,
+                                 bson_error_t    *error)
+{
+   bson_t cmd = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor;
+
+   BSON_ASSERT (client);
+
+   BSON_APPEND_INT32 (&cmd, "listDatabases", 1);
+
+   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_SLAVE_OK, 0, 0, 0,
+                                   &cmd, NULL, NULL);
+
+   _mongoc_cursor_array_init(cursor, "databases");
+
+   cursor->limit = 0;
+
+   bson_destroy (&cmd);
+
+   return cursor;
 }
 
 

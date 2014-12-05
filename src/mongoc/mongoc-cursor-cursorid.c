@@ -64,15 +64,58 @@ _mongoc_cursor_cursorid_destroy (mongoc_cursor_t *cursor)
 }
 
 
+bool
+_mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
+{
+   bool ret = true;
+   mongoc_cursor_cursorid_t *cid;
+   const bson_t *bson;
+   bson_iter_t iter, child;
+   const char *ns;
+
+   ENTRY;
+
+   cid = cursor->iface_data;
+
+   if (!cid->has_cursor) {
+      ret = _mongoc_cursor_next (cursor, &bson);
+
+      cid->has_cursor = true;
+
+      if (ret &&
+          bson_iter_init_find (&iter, bson, "cursor") &&
+          BSON_ITER_HOLDS_DOCUMENT (&iter) &&
+          bson_iter_recurse (&iter, &child)) {
+         while (bson_iter_next (&child)) {
+            if (BSON_ITER_IS_KEY (&child, "id")) {
+               cursor->rpc.reply.cursor_id = bson_iter_as_int64 (&child);
+            } else if (BSON_ITER_IS_KEY (&child, "ns")) {
+               ns = bson_iter_utf8 (&child, &cursor->nslen);
+               bson_strncpy (cursor->ns, ns, sizeof cursor->ns);
+            } else if (BSON_ITER_IS_KEY (&child, "firstBatch")) {
+               if (BSON_ITER_HOLDS_ARRAY (&child) &&
+                   bson_iter_recurse (&child, &cid->first_batch_iter)) {
+                  cid->in_first_batch = true;
+               }
+            }
+         }
+
+         cursor->is_command = false;
+      } else {
+         ret = false;
+      }
+   }
+
+   return ret;
+}
+
+
 static bool
 _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
                               const bson_t   **bson)
 {
    bool ret;
    mongoc_cursor_cursorid_t *cid;
-   bson_iter_t iter;
-   bson_iter_t child;
-   const char *ns;
    const uint8_t *data = NULL;
    uint32_t data_len = 0;
 
@@ -80,8 +123,13 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
 
    cid = cursor->iface_data;
 
+   if (! cid->has_cursor) {
+      if (! _mongoc_cursor_cursorid_prime (cursor)) {
+         return false;
+      }
+   }
+
    if (cid->in_first_batch) {
-process_first_batch:
       while (bson_iter_next (&cid->first_batch_iter)) {
          if (BSON_ITER_HOLDS_DOCUMENT (&cid->first_batch_iter)) {
             bson_iter_document (&cid->first_batch_iter, &data_len, &data);
@@ -101,38 +149,6 @@ process_first_batch:
    }
 
    ret = _mongoc_cursor_next (cursor, bson);
-
-   if (!cid->has_cursor) {
-      cid->has_cursor = true;
-
-      if (ret &&
-          bson_iter_init_find (&iter, *bson, "cursor") &&
-          BSON_ITER_HOLDS_DOCUMENT (&iter) &&
-          bson_iter_recurse (&iter, &child)) {
-         while (bson_iter_next (&child)) {
-            if (BSON_ITER_IS_KEY (&child, "id")) {
-               cursor->rpc.reply.cursor_id = bson_iter_as_int64 (&child);
-            } else if (BSON_ITER_IS_KEY (&child, "ns")) {
-               ns = bson_iter_utf8 (&child, &cursor->nslen);
-               bson_strncpy (cursor->ns, ns, sizeof cursor->ns);
-            } else if (BSON_ITER_IS_KEY (&child, "firstBatch")) {
-               if (BSON_ITER_HOLDS_ARRAY (&child) &&
-                   bson_iter_recurse (&child, &cid->first_batch_iter)) {
-                  cid->in_first_batch = true;
-               }
-            }
-         }
-
-         cursor->is_command = false;
-
-         if (cid->in_first_batch) {
-            cursor->end_of_event = false;
-            goto process_first_batch;
-         } else if (cursor->rpc.reply.cursor_id) {
-            ret = _mongoc_cursor_next (cursor, bson);
-         }
-      }
-   }
 
    RETURN (ret);
 }

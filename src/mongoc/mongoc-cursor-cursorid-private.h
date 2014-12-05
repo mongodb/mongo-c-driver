@@ -29,6 +29,7 @@
 BSON_BEGIN_DECLS
 
 
+bool _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor);
 void _mongoc_cursor_cursorid_init (mongoc_cursor_t *cursor);
 
 

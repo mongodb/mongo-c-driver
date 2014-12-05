@@ -29,7 +29,17 @@
 BSON_BEGIN_DECLS
 
 
-void _mongoc_cursor_array_init (mongoc_cursor_t *cursor);
+void
+_mongoc_cursor_array_init (mongoc_cursor_t *cursor,
+                           const char      *field_name);
+
+bool
+_mongoc_cursor_array_prime (mongoc_cursor_t *cursor);
+
+
+void
+_mongoc_cursor_array_set_bson (mongoc_cursor_t *cursor,
+                               const bson_t    *bson);
 
 
 BSON_END_DECLS

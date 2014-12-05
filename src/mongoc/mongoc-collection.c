@@ -70,47 +70,6 @@ validate_name (const char *str)
 }
 
 
-static uint32_t
-_mongoc_collection_preselect (mongoc_collection_t          *collection,
-                              mongoc_opcode_t               opcode,
-                              const mongoc_write_concern_t *write_concern,
-                              const mongoc_read_prefs_t    *read_prefs,
-                              uint32_t                     *min_wire_version,
-                              uint32_t                     *max_wire_version,
-                              bson_error_t                 *error)
-{
-   mongoc_cluster_node_t *node;
-   uint32_t hint;
-
-   BSON_ASSERT (collection);
-   BSON_ASSERT (opcode);
-   BSON_ASSERT (min_wire_version);
-   BSON_ASSERT (max_wire_version);
-
-   /*
-    * Try to discover the wire version of the server. Default to 1 so
-    * we can return a valid cursor structure.
-    */
-
-   *min_wire_version = 0;
-   *max_wire_version = 1;
-
-   hint = _mongoc_client_preselect (collection->client,
-                                    opcode,
-                                    write_concern,
-                                    read_prefs,
-                                    error);
-
-   if (hint) {
-      node = &collection->client->cluster.nodes [hint - 1];
-      *min_wire_version = node->min_wire_version;
-      *max_wire_version = node->max_wire_version;
-   }
-
-   return hint;
-}
-
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -268,26 +227,18 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 {
    mongoc_cursor_t *cursor;
    bson_iter_t iter;
-   uint32_t max_wire_version = 0;
-   uint32_t min_wire_version = 0;
-   uint32_t hint;
    bson_t command;
    bson_t child;
    int32_t batch_size = 0;
    bool did_batch_size = false;
+   bool try_cursor = true;
 
    bson_return_val_if_fail (collection, NULL);
    bson_return_val_if_fail (pipeline, NULL);
 
-   hint = _mongoc_collection_preselect (collection,
-                                        MONGOC_OPCODE_QUERY,
-                                        NULL,
-                                        read_prefs,
-                                        &min_wire_version,
-                                        &max_wire_version,
-                                        NULL);
-
    bson_init (&command);
+
+TOP:
    BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);
 
    /*
@@ -302,7 +253,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    }
 
    /* for newer version, we include a cursor subdocument */
-   if (max_wire_version) {
+   if (try_cursor) {
       bson_append_document_begin (&command, "cursor", 6, &child);
 
       if (options && bson_iter_init (&iter, options)) {
@@ -336,17 +287,23 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    cursor = mongoc_collection_command (collection, flags, 0, 0, batch_size,
                                        &command, NULL, read_prefs);
 
-   cursor->hint = hint;
-
-   if (max_wire_version > 0) {
+   if (try_cursor) {
       /* even for newer versions, we get back a cursor document, that we have
        * to patch in */
+
       _mongoc_cursor_cursorid_init(cursor);
       cursor->limit = 0;
+
+      if (! _mongoc_cursor_cursorid_prime (cursor)) {
+         mongoc_cursor_destroy (cursor);
+         bson_reinit (&command);
+         try_cursor = false;
+         goto TOP;
+      }
    } else {
       /* for older versions we get an array that we can create a synthetic
        * cursor on top of */
-      _mongoc_cursor_array_init(cursor);
+      _mongoc_cursor_array_init(cursor, "result");
       cursor->limit = 0;
    }
 
@@ -941,7 +898,7 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
    return mongoc_collection_create_index (collection, keys, opt, error);
 }
 
-bson_t *
+mongoc_cursor_t *
 _mongoc_collection_get_index_info_legacy (mongoc_collection_t *collection,
                                           bson_error_t        *error)
 {
@@ -949,13 +906,7 @@ _mongoc_collection_get_index_info_legacy (mongoc_collection_t *collection,
    mongoc_collection_t *idx_collection;
    mongoc_read_prefs_t *read_prefs;
    bson_t query = BSON_INITIALIZER;
-   bson_t idx_array = BSON_INITIALIZER;
-   bson_t *ret = bson_new ();
-   const bson_t *idx;
    mongoc_cursor_t *cursor;
-   const char *key;
-   char keystr[16];
-   uint32_t n_idxs = 0;
 
    BSON_ASSERT (collection);
 
@@ -972,72 +923,72 @@ _mongoc_collection_get_index_info_legacy (mongoc_collection_t *collection,
    cursor = mongoc_collection_find (idx_collection, MONGOC_QUERY_NONE, 0, 0, 0,
                                     &query, NULL, read_prefs);
 
-   BSON_APPEND_ARRAY_BEGIN (ret, "indexes", &idx_array);
-
-   while (mongoc_cursor_more (cursor) &&
-          !mongoc_cursor_error (cursor, error)) {
-      if (mongoc_cursor_next (cursor, &idx)) {
-         bson_uint32_to_string (n_idxs, &key, keystr, sizeof (keystr));
-         BSON_APPEND_DOCUMENT (&idx_array, key, idx);
-         ++n_idxs;
-      }
-   }
-
-   bson_append_array_end (ret, &idx_array);
-
-   mongoc_cursor_destroy (cursor);
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_collection_destroy (idx_collection);
    mongoc_database_destroy (db);
 
-   return ret;
+   return cursor;
 }
 
-bson_t *
+mongoc_cursor_t *
 mongoc_collection_get_index_info (mongoc_collection_t *collection,
                                   bson_error_t        *error)
 {
-   bool cmd_success;
+   mongoc_cursor_t *cursor;
    mongoc_read_prefs_t *read_prefs;
    bson_t cmd = BSON_INITIALIZER;
-   bson_t command_reply;
-   bson_t *reply = NULL;
+   bson_t child;
 
    BSON_ASSERT (collection);
 
    bson_append_utf8 (&cmd, "listIndexes", -1, collection->collection,
                      collection->collectionlen);
 
+   BSON_APPEND_DOCUMENT_BEGIN (&cmd, "cursor", &child);
+   bson_append_document_end (&cmd, &child);
+
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   cmd_success = mongoc_collection_command_simple (collection, &cmd, NULL,
-                                                   &command_reply, error);
+   cursor = mongoc_collection_command (collection, MONGOC_QUERY_SLAVE_OK, 0, 0, 0,
+                                       &cmd, NULL, read_prefs);
 
-   if (cmd_success) {
+   _mongoc_cursor_cursorid_init(cursor);
+   cursor->limit = 0;
+
+   if (_mongoc_cursor_cursorid_prime(cursor)) {
        /* intentionally empty */
-       reply = bson_copy (&command_reply);
-   } else if (error->code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
-       bson_t empty_arr = BSON_INITIALIZER;
-       /* collection does not exist. in accordance with the spec we return
-       * an empty array. Also we need to clear out the error. */
-       error->code = 0;
-       error->domain = 0;
-       BSON_APPEND_ARRAY (&command_reply, "indexes", &empty_arr);
-       reply = bson_copy (&command_reply);
-   } else if (error->code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
-      /* talking to an old server. */
-      /* clear out error. */
-      error->code = 0;
-      error->domain = 0;
-      reply =
-         _mongoc_collection_get_index_info_legacy (collection, error);
+   } else {
+      if (mongoc_cursor_error (cursor, error)) {
+         if (error->code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
+             bson_t empty_arr = BSON_INITIALIZER;
+             /* collection does not exist. in accordance with the spec we return
+             * an empty array. Also we need to clear out the error. */
+             error->code = 0;
+             error->domain = 0;
+             _mongoc_cursor_array_set_bson (cursor, &empty_arr);
+         } else if (error->code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
+            /* talking to an old server. */
+            /* clear out error. */
+            error->code = 0;
+            error->domain = 0;
+            mongoc_cursor_destroy (cursor);
+            cursor = _mongoc_collection_get_index_info_legacy (collection, error);
+         }
+      } else {
+         /* TODO: remove this branch for general release.  Only relevant for RC */
+         mongoc_cursor_destroy (cursor);
+         cursor = mongoc_collection_command (collection, MONGOC_QUERY_SLAVE_OK, 0, 0, 0,
+                                             &cmd, NULL, read_prefs);
+
+         _mongoc_cursor_array_init(cursor, "indexes");
+         cursor->limit = 0;
+      }
    }
 
    bson_destroy (&cmd);
-   bson_destroy (&command_reply);
    mongoc_read_prefs_destroy (read_prefs);
 
-   return reply;
+   return cursor;
 }
 
 /*

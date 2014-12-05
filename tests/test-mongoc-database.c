@@ -180,18 +180,17 @@ test_get_collection_info (void)
    mongoc_database_t *database;
    mongoc_collection_t *collection;
    mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
    bson_error_t error = { 0 };
-   bson_iter_t iter;
-   bson_iter_t col_array;
    bson_iter_t col_iter;
    bson_t capped_options = BSON_INITIALIZER;
    bson_t autoindexid_options = BSON_INITIALIZER;
    bson_t noopts_options = BSON_INITIALIZER;
    bson_t name_filter = BSON_INITIALIZER;
+   const bson_t *doc;
    int r;
    int num_infos = 0;
 
-   bson_t *infos = NULL;
    const char *name;
    char *dbname;
    char *capped_name;
@@ -240,33 +239,27 @@ test_get_collection_info (void)
     * test w/o filters for us. */
 
    /* Filter on an exact match of name */
-   infos = mongoc_database_get_collection_info (database, &name_filter, &error);
-   assert (infos);
+   cursor = mongoc_database_get_collection_info (database, &name_filter, &error);
+   assert (cursor);
    assert (!error.domain);
    assert (!error.code);
 
-   if (bson_iter_init_find (&iter, infos, "collections") &&
-       BSON_ITER_HOLDS_ARRAY (&iter) &&
-       bson_iter_recurse (&iter, &col_array)) {
-      while (bson_iter_next (&col_array)) {
-         if (BSON_ITER_HOLDS_DOCUMENT (&col_array) &&
-             bson_iter_recurse (&col_array, &col_iter) &&
-             bson_iter_find (&col_iter, "name") &&
-             BSON_ITER_HOLDS_UTF8 (&col_iter) &&
-             (name = bson_iter_utf8 (&col_iter, NULL))) {
-            ++num_infos;
-            assert (0 == strcmp (name, noopts_name));
-         } else {
-            assert (false);
-         }
-       }
+   while (mongoc_cursor_next (cursor, &doc)) {
+      if (bson_iter_init (&col_iter, doc) &&
+          bson_iter_find (&col_iter, "name") &&
+          BSON_ITER_HOLDS_UTF8 (&col_iter) &&
+          (name = bson_iter_utf8 (&col_iter, NULL))) {
+         ++num_infos;
+         assert (0 == strcmp (name, noopts_name));
+      } else {
+         assert (false);
+      }
    }
 
    assert (1 == num_infos);
 
    num_infos = 0;
-   bson_destroy (infos);
-   infos = NULL;
+   mongoc_cursor_destroy (cursor);
 
    r = mongoc_database_drop (database, &error);
    assert (r);

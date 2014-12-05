@@ -76,7 +76,7 @@ void                          mongoc_database_set_read_prefs       (mongoc_datab
 const mongoc_write_concern_t *mongoc_database_get_write_concern    (const mongoc_database_t      *database);
 void                          mongoc_database_set_write_concern    (mongoc_database_t            *database,
                                                                     const mongoc_write_concern_t *write_concern);
-bson_t                       *mongoc_database_get_collection_info  (mongoc_database_t            *database,
+mongoc_cursor_t              *mongoc_database_get_collection_info  (mongoc_database_t            *database,
                                                                     const bson_t                 *filter,
                                                                     bson_error_t                 *error);
 char                        **mongoc_database_get_collection_names (mongoc_database_t            *database,

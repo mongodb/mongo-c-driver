@@ -84,7 +84,7 @@ bool                          mongoc_collection_ensure_index         (mongoc_col
                                                                       const bson_t                  *keys,
                                                                       const mongoc_index_opt_t      *opt,
                                                                       bson_error_t                  *error) BSON_GNUC_DEPRECATED_FOR (mongoc_collection_create_index);
-bson_t                       *mongoc_collection_get_index_info       (mongoc_collection_t           *collection,
+mongoc_cursor_t              *mongoc_collection_get_index_info       (mongoc_collection_t           *collection,
                                                                       bson_error_t                  *error);
 mongoc_cursor_t              *mongoc_collection_find                 (mongoc_collection_t           *collection,
                                                                       mongoc_query_flags_t           flags,
