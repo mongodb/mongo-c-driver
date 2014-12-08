@@ -37,10 +37,11 @@ typedef enum
 typedef struct _mongoc_topology_description_t
 {
    mongoc_topology_description_type_t type;
-   mongoc_server_description_t       *servers;
+   mongoc_set_t                      *servers;
    char                              *set_name;
    bool                               compatible;
    char                              *compatibility_error;
+   uint32_t                           max_server_id;
 } mongoc_topology_description_t;
 
 typedef enum
@@ -49,12 +50,24 @@ typedef enum
       MONGOC_SS_WRITE
    } mongoc_ss_optype_t;
 
-void _mongoc_topology_description_init                  (mongoc_topology_description_t     *description);
-void _mongoc_topology_description_destroy               (mongoc_topology_description_t     *description);
-void _mongoc_topology_description_handle_ismaster       (mongoc_topology_description_t     *topology,
-                                                         const bson_t                      *ismaster);
-mongoc_server_description_t *_mongoc_topology_description_select (mongoc_topology_description_t *topology_description,
-                                                                  mongoc_ss_optype_t optype,
-                                                                  const mongoc_read_prefs_t *read_pref,
-                                                                  bson_error_t *error);
-#endif
+void
+_mongoc_topology_description_init (mongoc_topology_description_t *description);
+
+void
+_mongoc_topology_description_destroy (mongoc_topology_description_t *description);
+
+void
+_mongoc_topology_description_handle_ismaster (mongoc_topology_description_t *topology,
+                                              const bson_t                  *ismaster);
+
+mongoc_server_description_t *
+_mongoc_topology_description_select (mongoc_topology_description_t *description,
+                                     mongoc_ss_optype_t             optype,
+                                     const mongoc_read_prefs_t     *read_pref,
+                                     bson_error_t                  *error);
+
+mongoc_server_description_t *
+_mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
+                                           uint32_t                       id);
+
+#endif /* MONGOC_TOPOLOGY_DESCRIPTION_H */

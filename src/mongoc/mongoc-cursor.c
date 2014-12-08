@@ -207,9 +207,8 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    }
 
    /* we can't have exhaust queries with sharded clusters */
-   // TODO: make this work
-   /*   if ((flags & MONGOC_QUERY_EXHAUST) &&
-       (client->cluster.topology_description->type == MONGOC_CLUSTER_TYPE_SHARDED)) {
+   if ((flags & MONGOC_QUERY_EXHAUST) &&
+       (client->sdam->topology.type == MONGOC_TOPOLOGY_SHARDED)) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_CURSOR,
                       MONGOC_ERROR_CURSOR_INVALID_CURSOR,
@@ -217,7 +216,6 @@ _mongoc_cursor_new (mongoc_client_t           *client,
       MARK_FAILED (cursor);
       GOTO (finish);
    }
-   */
 
    /*
     * Check types of various optional parameters.
@@ -345,12 +343,11 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
    if (cursor->in_exhaust) {
       cursor->client->in_exhaust = false;
-      // TODO: take this out?
-      /*if (!cursor->done) {
+      if (!cursor->done) {
          _mongoc_cluster_disconnect_node (
             &cursor->client->cluster,
-            &cursor->client->cluster.nodes[cursor->hint - 1]);
-            }*/
+            cursor->hint);
+      }
    } else if (cursor->rpc.reply.cursor_id) {
       mongoc_client_kill_cursor(cursor->client, cursor->rpc.reply.cursor_id);
    }
@@ -927,7 +924,8 @@ void
 _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
                          mongoc_host_list_t *host)
 {
-/* TODO SDAM
+   mongoc_server_description_t *description;
+
    bson_return_if_fail(cursor);
    bson_return_if_fail(host);
 
@@ -939,9 +937,14 @@ _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
       return;
    }
 
-   *host = cursor->client->cluster.nodes[cursor->hint - 1].host;
-   host->next = NULL;
-*/
+   description = _mongoc_sdam_server_by_id(cursor->client->sdam, cursor->hint);
+   if (!description) {
+      MONGOC_WARNING("%s(): Invalid cursor hint, no matching host.",
+                     __FUNCTION__);
+      return;
+   }
+
+   *host = description->host;
    return;
 }
 

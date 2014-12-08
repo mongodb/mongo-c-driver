@@ -41,7 +41,7 @@
 void
 _mongoc_server_description_init (mongoc_server_description_t *description,
                                  const char                  *address,
-                                 int32_t                     id)
+                                 uint32_t                     id)
 {
    mongoc_host_list_t host;
 
@@ -53,7 +53,6 @@ _mongoc_server_description_init (mongoc_server_description_t *description,
    memset (description, 0, sizeof *description);
 
    description->id = id;
-   description->next = NULL;
    description->set_name = NULL;
    description->connection_address = bson_strdup(address);
    description->error = NULL; // TODO SDAM change if this changes types
@@ -108,13 +107,14 @@ _mongoc_server_description_destroy (mongoc_server_description_t *description)
    }
 
    bson_free(description->connection_address);
+   description->connection_address = NULL;
 
    member_iter = description->rs_members;
    while (member_iter) {
-      free(*member_iter);
+      bson_free(*member_iter);
       member_iter++;
    }
-   free(description->rs_members);
+   bson_free(description->rs_members);
    description->rs_members = NULL;
 
    if (description->set_name) {
@@ -126,6 +126,8 @@ _mongoc_server_description_destroy (mongoc_server_description_t *description)
       bson_free(description->current_primary);
       description->current_primary = NULL;
    }
+
+   bson_free(description);
 
    EXIT;
 }
@@ -209,4 +211,71 @@ _mongoc_server_description_update_rtt (mongoc_server_description_t *server,
 {
    // TODO SS implement
    return;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * _mongoc_server_description_new_copy --
+ *
+ *-------------------------------------------------------------------------
+ */
+mongoc_server_description_t *
+_mongoc_server_description_new_copy (mongoc_server_description_t *description)
+{
+   mongoc_server_description_t *copy;
+   char **member_iter;
+   char *member_name;
+   int member_name_len;
+   int num_members;
+   int i;
+
+   bson_return_val_if_fail(description, NULL);
+
+   copy = bson_malloc0(sizeof (*copy));
+
+   copy->id = description->id;
+   copy->set_name = description->set_name;
+   copy->connection_address = description->connection_address;
+   copy->error = NULL;
+   copy->type = description->type;
+
+   copy->round_trip_time = description->round_trip_time;
+   copy->min_wire_version = description->min_wire_version;
+   copy->max_wire_version = description->max_wire_version;
+
+   copy->host.next = NULL;
+   copy->host.port = description->host.port;
+   copy->host.family = description->host.family;
+   bson_strncpy(copy->host.host, description->host.host, BSON_HOST_NAME_MAX + 1);
+   bson_strncpy(copy->host.host_and_port, description->host.host_and_port, BSON_HOST_NAME_MAX + 7);
+
+   // TODO I highly doubt that this is best way to do this
+   num_members = 0;
+   member_iter = description->rs_members;
+   while (member_iter) {
+      num_members++;
+      member_iter++;
+   }
+
+   if (num_members > 0) {
+      copy->rs_members = bson_malloc0(num_members * (sizeof (char*)));
+      member_iter = description->rs_members;
+
+      for (i = 0; i < num_members; i++) {
+         member_name = *(member_iter + i);
+         member_name_len = 1;
+         while (*member_name != '\0') {
+            member_name_len++;
+            member_name++;
+         }
+         *(copy->rs_members + i) = bson_malloc0(member_name_len * (sizeof (char)));
+         bson_strncpy(*(copy->rs_members + i), *(description->rs_members + i), member_name_len);
+      }
+   }
+   else {
+      copy->rs_members = NULL;
+   }
+
+   return copy;
 }

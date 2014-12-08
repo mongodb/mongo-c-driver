@@ -119,12 +119,10 @@ mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
 void
 mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs)
 {
-   /* TODO SDAM
    if (read_prefs) {
       bson_destroy(&read_prefs->tags);
       bson_free(read_prefs);
    }
-   */
    return;
 }
 
@@ -132,7 +130,6 @@ mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs)
 mongoc_read_prefs_t *
 mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
 {
-/* TODO SDAM
    mongoc_read_prefs_t *ret = NULL;
 
    if (read_prefs) {
@@ -141,6 +138,4 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
    }
 
    return ret;
-*/
-   return NULL;
 }

@@ -84,8 +84,10 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    pool->max_pool_size = 100;
    pool->size = 0;
 
-   // TODO error handling on sdam
    sdam = _mongoc_sdam_new(uri);
+   if (!sdam) {
+      return NULL;
+   }
    _mongoc_sdam_grab(sdam);
    pool->sdam = sdam;
 

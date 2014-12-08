@@ -80,6 +80,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-log.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
@@ -121,6 +122,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.h

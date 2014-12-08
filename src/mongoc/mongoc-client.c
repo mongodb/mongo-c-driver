@@ -417,7 +417,7 @@ uint32_t
 _mongoc_client_sendv (mongoc_client_t              *client,
                       mongoc_rpc_t                 *rpcs,
                       size_t                        rpcs_len,
-                      uint32_t                      hint,
+                      uint32_t                      server_id,
                       const mongoc_write_concern_t *write_concern,
                       const mongoc_read_prefs_t    *read_prefs,
                       bson_error_t                 *error)
@@ -441,27 +441,15 @@ _mongoc_client_sendv (mongoc_client_t              *client,
       rpcs[i].header.request_id = ++client->request_id;
    }
 
-   /* TODO FIX THIS
-   switch (client->cluster.state) {
-   case MONGOC_CLUSTER_STATE_BORN:
-      return _mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint,
-                                   write_concern, read_prefs, error);
-   case MONGOC_CLUSTER_STATE_HEALTHY:
-   case MONGOC_CLUSTER_STATE_UNHEALTHY:
-      return _mongoc_cluster_try_sendv(&client->cluster, rpcs, rpcs_len, hint,
-                                       write_concern, read_prefs, error);
-   case MONGOC_CLUSTER_STATE_DEAD:
-      bson_set_error(error,
-                     MONGOC_ERROR_CLIENT,
-                     MONGOC_ERROR_CLIENT_NOT_READY,
-                     "No healthy connections.");
-      return false;
-   default:
-      BSON_ASSERT(false);
-      return 0;
+   if (server_id > 0) {
+      if (_mongoc_cluster_sendv_to_server(&client->cluster, rpcs, rpcs_len,
+                                          server_id, write_concern, error)) {
+         return server_id;
+      }
    }
-   */
-   return false; // ditch
+
+   return _mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len,
+                                write_concern, read_prefs, error);
 }
 
 
@@ -487,19 +475,17 @@ bool
 _mongoc_client_recv (mongoc_client_t *client,
                      mongoc_rpc_t    *rpc,
                      mongoc_buffer_t *buffer,
-                     uint32_t         hint,
+                     uint32_t         server_id,
                      bson_error_t    *error)
 {
    bson_return_val_if_fail(client, false);
    bson_return_val_if_fail(rpc, false);
    bson_return_val_if_fail(buffer, false);
-   bson_return_val_if_fail(hint, false);
-//   bson_return_val_if_fail(hint <= client->cluster.nodes_len, false);
+   bson_return_val_if_fail(server_id, false);
+   bson_return_val_if_fail(server_id < 1, false);
 
-   // TODO SDAM
-   //return _mongoc_cluster_try_recv (&client->cluster, rpc, buffer, hint,
-   //                                 error);
-   return false;
+   return _mongoc_cluster_try_recv (&client->cluster, rpc, buffer,
+                                    server_id, error);
 }
 
 
@@ -593,7 +579,7 @@ _bson_to_error (const bson_t *b,
 
 bool
 _mongoc_client_recv_gle (mongoc_client_t  *client,
-                         uint32_t          hint,
+                         uint32_t          server_id,
                          bson_t          **gle_doc,
                          bson_error_t     *error)
 {
@@ -606,7 +592,7 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
    ENTRY;
 
    bson_return_val_if_fail (client, false);
-   bson_return_val_if_fail (hint, false);
+   bson_return_val_if_fail (server_id, false);
 
    if (gle_doc) {
       *gle_doc = NULL;
@@ -614,11 +600,10 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
 
-   /* TODO SDAM
    if (!_mongoc_cluster_try_recv (&client->cluster, &rpc, &buffer,
-                                  hint, error)) {
+                                  server_id, error)) {
       GOTO (cleanup);
-      }*/
+   }
 
    if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       bson_set_error (error,
@@ -691,7 +676,6 @@ mongoc_client_new(const char *uri_string)
       return NULL;
    }
 
-   // TODO error handling for sdam
    sdam = _mongoc_sdam_new(uri);
    return _mongoc_client_new(uri_string, sdam);
 }
@@ -728,6 +712,8 @@ _mongoc_client_new (const char *uri_string, mongoc_sdam_t *sdam)
    bool has_ssl = false;
 #endif
    bool slave_okay = false;
+
+   bson_return_val_if_fail(sdam, NULL);
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
@@ -853,7 +839,6 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 
    uristr = mongoc_uri_get_string(uri);
 
-   // TODO error handling on sdam
    sdam = _mongoc_sdam_new(uri);
    return _mongoc_client_new(uristr, sdam);
 }
@@ -947,39 +932,6 @@ mongoc_client_get_uri (const mongoc_client_t *client)
 
    return client->uri;
 }
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_client_stamp --
- *
- *       INTERNAL API
- *
- *       Fetch the stamp for @node within @client. This is used to track
- *       if there have been changes or disconnects from a node between
- *       the last operation.
- *
- * Returns:
- *       A 32-bit monotonic stamp.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-uint32_t
-_mongoc_client_stamp (mongoc_client_t *client,
-                      uint32_t    node)
-{
-   bson_return_val_if_fail (client, 0);
-
-   // TODO SDAM
-   //return _mongoc_cluster_stamp (&client->cluster, node);
-   return 0;
-}
-
 
 /*
  *--------------------------------------------------------------------------
@@ -1215,23 +1167,23 @@ bool
 _mongoc_client_warm_up (mongoc_client_t *client,
                         bson_error_t    *error)
 {
-   bool ret = true;
-   //bson_t cmd;
+   uint32_t server_id;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_write_concern_t *write_concern;
 
    BSON_ASSERT (client);
 
-   /* TODO FIX THIS
-   if (client->cluster.state == MONGOC_CLUSTER_STATE_BORN) {
-      bson_init (&cmd);
-      bson_append_int32 (&cmd, "ping", 4, 1);
-      ret = _mongoc_cluster_command_early (&client->cluster, "admin", &cmd,
-                                           NULL, error);
-      bson_destroy (&cmd);
-   } else if (client->cluster.state == MONGOC_CLUSTER_STATE_DEAD) {
-      ret = _mongoc_cluster_reconnect(&client->cluster, error);
-      } */
+   write_concern = mongoc_write_concern_new();
+   read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
-   return ret;
+   /* If SDAM has been able to find any server, we know the cluster
+      can be reached. No need to ping separately. */
+   server_id = _mongoc_cluster_preselect(&client->cluster,
+                                         MONGOC_OPCODE_MSG,
+                                         write_concern,
+                                         read_prefs,
+                                         error);
+   return (server_id > 0);
 }
 
 
@@ -1245,10 +1197,8 @@ _mongoc_client_preselect (mongoc_client_t              *client,        /* IN */
 
    BSON_ASSERT (client);
 
-   // TODO SDAM
-   //return _mongoc_cluster_preselect (&client->cluster, opcode,
-   //write_concern, read_prefs, error);
-   return 0;
+   return _mongoc_cluster_preselect (&client->cluster, opcode,
+                                     write_concern, read_prefs, error);
 }
 
 

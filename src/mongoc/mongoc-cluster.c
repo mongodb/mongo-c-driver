@@ -31,7 +31,7 @@
 #include "mongoc-error.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
-#include "mongoc-opcode.h"
+#include "mongoc-opcode-private.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-rpc-private.h"
 #ifdef MONGOC_ENABLE_SASL
@@ -106,7 +106,7 @@
  *
  *--------------------------------------------------------------------------
  */
-mongoc_stream_t *
+static mongoc_stream_t *
 _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
                           mongoc_server_description_t *description,
                           bson_error_t *error /* OUT */)
@@ -129,6 +129,74 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
    RETURN(stream);
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_disconnect_node --
+ *
+ *       Remove a node from the set of nodes. This should be done if
+ *       a stream in the set is found to be invalid.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Removes node from cluster's set of nodes.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
+{
+   mongoc_set_rm(cluster->nodes, server_id);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_fetch_stream --
+ *
+ *       Fetch the stream for @server_id.
+ *
+ *       Returns a mongoc_stream_t on success, NULL on failure, in
+ *       which case @error will be set.
+ *
+ * Returns:
+ *       A stream, or NULL
+ *
+ * Side effects:
+ *       May add more streams to @cluster->nodes.
+ *       May set @error.
+ *
+ *--------------------------------------------------------------------------
+ */
+static mongoc_stream_t *
+_mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
+                              uint32_t server_id,
+                              bson_error_t *error)
+{
+   mongoc_stream_t *stream;
+
+   bson_return_val_if_fail(cluster, NULL);
+
+   stream = mongoc_set_get(cluster->nodes, server_id);
+   if (stream) {
+      return stream;
+   }
+
+   // TODO: do we want to try to get the server description here and reconnect?
+   bson_set_error(error,
+                  MONGOC_ERROR_STREAM,
+                  MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                  "No stream available for server_id %ul", server_id);
+
+   _mongoc_cluster_disconnect_node(cluster, server_id);
+
+   return NULL;
+}
+
 
 static void
 _mongoc_cluster_stream_dtor (void *stream_,
@@ -217,47 +285,143 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
    EXIT;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_select_by_optype --
+ *
+ *       Internal server selection.
+ *
+ *       NOTE: caller becomes the owner of returned server description
+ *       and must clean it up.
+ *
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_server_description_t *
+_mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
+                                 mongoc_ss_optype_t optype,
+                                 const mongoc_write_concern_t *write_concern,
+                                 const mongoc_read_prefs_t    *read_prefs,
+                                 bson_error_t                 *error)
+{
+   mongoc_stream_t *stream;
+   mongoc_server_description_t *selected_server;
+
+   ENTRY;
+
+   bson_return_val_if_fail(cluster, 0);
+   bson_return_val_if_fail(optype, 0);
+   bson_return_val_if_fail(write_concern, 0);
+   bson_return_val_if_fail(read_prefs, 0);
+
+   selected_server = _mongoc_sdam_select(cluster->client->sdam,
+                                         optype,
+                                         read_prefs,
+                                         error);
+
+   if (!selected_server) {
+      RETURN(NULL);
+   }
+
+   /* pre-load this stream if we don't already have it */
+   stream = mongoc_set_get (cluster->nodes, selected_server->id);
+   if (!stream) {
+      // TODO: error handling, if we can't add stream should we still return
+      // this server description?
+      stream = _mongoc_cluster_add_node (cluster, selected_server, error);
+   }
+
+   RETURN(selected_server);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_preselect_description --
+ *
+ *       Server selection by opcode, with retries, returns full
+ *       server description.
+ *
+ *       NOTE: caller becomes the owner of returned server description
+ *       and must clean it up.
+ *
+ * Returns:
+ *       A mongoc_server_description_t, or NULL on failure (sets @error)
+ *
+ * Side effects:
+ *       May set @error.
+ *       May add new nodes to @cluster->nodes.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_server_description_t *
+_mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
+                                       mongoc_opcode_t               opcode,
+                                       const mongoc_write_concern_t *write_concern,
+                                       const mongoc_read_prefs_t    *read_prefs,
+                                       bson_error_t                 *error /* OUT */)
+{
+   int retry_count = 0;
+   mongoc_server_description_t *server;
+   mongoc_read_mode_t read_mode;
+   mongoc_ss_optype_t optype = MONGOC_SS_READ;
+
+   if (_mongoc_opcode_needs_primary(opcode)) {
+      optype = MONGOC_SS_WRITE;
+   }
+
+   /* we can run queries on secondaries if given the right read mode */
+   if (optype == MONGOC_SS_WRITE &&
+       opcode == MONGOC_OPCODE_QUERY) {
+      read_mode = mongoc_read_prefs_get_mode(read_prefs);
+      if ((read_mode & MONGOC_READ_SECONDARY) != 0) {
+         optype = MONGOC_SS_READ;
+      }
+   }
+
+   while (retry_count++ < MAX_RETRY_COUNT) {
+      server = _mongoc_cluster_select_by_optype(cluster, optype, write_concern,
+                                                read_prefs, error);
+      if (server) {
+         break;
+      }
+   }
+
+   return server;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
  * _mongoc_cluster_preselect --
  *
- * Returns:
- *
- * Side effects:
- *       None.
+ *       Server selection by opcode with retries.
  *
  *--------------------------------------------------------------------------
  */
-
 uint32_t
-_mongoc_cluster_preselect (mongoc_collection_t          *collection,
-                              mongoc_opcode_t               opcode,
-                              const mongoc_write_concern_t *write_concern,
-                              const mongoc_read_prefs_t    *read_prefs,
-                              uint32_t                     *min_wire_version,
-                              uint32_t                     *max_wire_version,
-                              bson_error_t                 *error)
+_mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
+                          mongoc_opcode_t               opcode,
+                          const mongoc_write_concern_t *write_concern,
+                          const mongoc_read_prefs_t    *read_prefs,
+                          bson_error_t                 *error)
 {
-   uint32_t hint;
+   mongoc_server_description_t *server;
+   uint32_t server_id;
 
-   ENTRY;
-
-   hint = 0;
-
-   /*
-
-   stream = mongoc_node_switch_get (cluster->node_switch, selected_server->id);
-
-   if (! stream) {
-      stream = _mongoc_cluster_add_node (cluster, selected_server, error);
-   }
-   */
-
-   if (hint) {
+   server = _mongoc_cluster_preselect_description(cluster, opcode, write_concern,
+                                                  read_prefs, error);
+   if (server) {
+      server_id = server->id;
+      _mongoc_server_description_destroy(server);
+      return server_id;
    }
 
-   return hint;
+   return 0;
 }
 
 /*
@@ -269,7 +433,7 @@ _mongoc_cluster_preselect (mongoc_collection_t          *collection,
  *       required set of rpc messages.  Takes read preference into account.
  *
  * Returns:
- *       A mongoc_cluster_node_t if successful, or NULL on failure, in
+ *       A server description's id (> 0) if successful, or 0 on failure, in
  *       which case error is also set.
  *
  * Side effects:
@@ -278,65 +442,456 @@ _mongoc_cluster_preselect (mongoc_collection_t          *collection,
  *--------------------------------------------------------------------------
  */
 
-mongoc_stream_t *
+uint32_t
 _mongoc_cluster_select(mongoc_cluster_t             *cluster,
                        mongoc_rpc_t                 *rpcs,
                        size_t                        rpcs_len,
-                       //uint32_t                      hint, // TODO SS what is this?
                        const mongoc_write_concern_t *write_concern,
-                       const mongoc_read_prefs_t    *read_pref,
+                       const mongoc_read_prefs_t    *read_prefs,
                        bson_error_t                 *error /* OUT */)
 {
    mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
-   mongoc_server_description_t *selected_server;
    mongoc_ss_optype_t optype = MONGOC_SS_READ;
-   mongoc_stream_t *stream;
+   mongoc_opcode_t opcode;
+   mongoc_server_description_t *server;
+   uint32_t server_id;
    int i;
 
    ENTRY;
 
-   bson_return_val_if_fail(cluster, NULL);
-   bson_return_val_if_fail(rpcs, NULL);
-   bson_return_val_if_fail(rpcs_len, NULL);
+   bson_return_val_if_fail(cluster, 0);
+   bson_return_val_if_fail(rpcs, 0);
+   bson_return_val_if_fail(rpcs_len, 0);
 
    /* pick the most restrictive optype */
    for (i = 0; (i < rpcs_len) && (optype == MONGOC_SS_READ); i++) {
-      switch (rpcs[i].header.opcode) {
-      case MONGOC_OPCODE_KILL_CURSORS:
-      case MONGOC_OPCODE_GET_MORE:
-      case MONGOC_OPCODE_MSG:
-      case MONGOC_OPCODE_REPLY:
-         break;
-      case MONGOC_OPCODE_QUERY:
-         if ((read_mode & MONGOC_READ_SECONDARY) != 0) {
-            rpcs[i].query.flags |= MONGOC_QUERY_SLAVE_OK;
-         } else if (!(rpcs[i].query.flags & MONGOC_QUERY_SLAVE_OK)) {
+      opcode = rpcs[i].header.opcode;
+      if (_mongoc_opcode_needs_primary(opcode)) {
+         /* we can run queries on secondaries if given either:
+          * - a read mode of secondary
+          * - query flags where slave ok is set */
+         if (opcode == MONGOC_OPCODE_QUERY) {
+            read_mode = mongoc_read_prefs_get_mode(read_prefs);
+            if ((read_mode & MONGOC_READ_SECONDARY) != 0 ||
+                (rpcs[i].query.flags & MONGOC_QUERY_SLAVE_OK)) {
+               optype = MONGOC_SS_READ;
+            }
+         }
+         else {
             optype = MONGOC_SS_WRITE;
          }
-         break;
-      case MONGOC_OPCODE_DELETE:
-      case MONGOC_OPCODE_INSERT:
-      case MONGOC_OPCODE_UPDATE:
-      default:
-         optype = MONGOC_SS_WRITE;
-         break;
       }
    }
 
-   selected_server = _mongoc_sdam_select(cluster->client->sdam,
-                                         optype,
-                                         read_pref,
-                                         error);
+   server = _mongoc_cluster_select_by_optype(cluster, optype, write_concern,
+                                             read_prefs, error);
+   if (server) {
+      server_id = server->id;
+      _mongoc_server_description_destroy(server);
+      return server_id;
+   }
+   return 0;
+}
 
-   if (!selected_server) {
-      RETURN(NULL);
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_inc_egress_rpc --
+ *
+ *       Helper to increment the counter for a particular RPC based on
+ *       it's opcode.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static BSON_INLINE void
+_mongoc_cluster_inc_egress_rpc (const mongoc_rpc_t *rpc)
+{
+   mongoc_counter_op_egress_total_inc();
+
+   switch (rpc->header.opcode) {
+   case MONGOC_OPCODE_DELETE:
+      mongoc_counter_op_egress_delete_inc();
+      break;
+   case MONGOC_OPCODE_UPDATE:
+      mongoc_counter_op_egress_update_inc();
+      break;
+   case MONGOC_OPCODE_INSERT:
+      mongoc_counter_op_egress_insert_inc();
+      break;
+   case MONGOC_OPCODE_KILL_CURSORS:
+      mongoc_counter_op_egress_killcursors_inc();
+      break;
+   case MONGOC_OPCODE_GET_MORE:
+      mongoc_counter_op_egress_getmore_inc();
+      break;
+   case MONGOC_OPCODE_REPLY:
+      mongoc_counter_op_egress_reply_inc();
+      break;
+   case MONGOC_OPCODE_MSG:
+      mongoc_counter_op_egress_msg_inc();
+      break;
+   case MONGOC_OPCODE_QUERY:
+      mongoc_counter_op_egress_query_inc();
+      break;
+   default:
+      BSON_ASSERT(false);
+      break;
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_inc_ingress_rpc --
+ *
+ *       Helper to increment the counter for a particular RPC based on
+ *       it's opcode.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static BSON_INLINE void
+_mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
+{
+   mongoc_counter_op_ingress_total_inc ();
+
+   switch (rpc->header.opcode) {
+   case MONGOC_OPCODE_DELETE:
+      mongoc_counter_op_ingress_delete_inc ();
+      break;
+   case MONGOC_OPCODE_UPDATE:
+      mongoc_counter_op_ingress_update_inc ();
+      break;
+   case MONGOC_OPCODE_INSERT:
+      mongoc_counter_op_ingress_insert_inc ();
+      break;
+   case MONGOC_OPCODE_KILL_CURSORS:
+      mongoc_counter_op_ingress_killcursors_inc ();
+      break;
+   case MONGOC_OPCODE_GET_MORE:
+      mongoc_counter_op_ingress_getmore_inc ();
+      break;
+   case MONGOC_OPCODE_REPLY:
+      mongoc_counter_op_ingress_reply_inc ();
+      break;
+   case MONGOC_OPCODE_MSG:
+      mongoc_counter_op_ingress_msg_inc ();
+      break;
+   case MONGOC_OPCODE_QUERY:
+      mongoc_counter_op_ingress_query_inc ();
+      break;
+   default:
+      BSON_ASSERT (false);
+      break;
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_client_sendv_to_server --
+ *
+ *       Sends the given RPCs to the given server. On success,
+ *       returns the server id of the server to which the messages were
+ *       sent. Otherwise, returns 0 and sets error.
+ *
+ * Returns:
+ *       Server id, or 0.
+ *
+ * Side effects:
+ *       @rpcs may be mutated and should be considered invalid after calling
+ *       this method.
+ *
+ *       @error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+_mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
+                                 mongoc_rpc_t                  *rpcs,
+                                 size_t                         rpcs_len,
+                                 uint32_t                       server_id,
+                                 const mongoc_write_concern_t  *write_concern,
+                                 bson_error_t                  *error)
+{
+   mongoc_stream_t *stream;
+   mongoc_iovec_t *iov;
+   const bson_t *b;
+   mongoc_rpc_t gle;
+   size_t iovcnt;
+   size_t i;
+   bool need_gle;
+   char cmdname[140];
+
+   bson_return_val_if_fail(cluster, 0);
+   bson_return_val_if_fail(rpcs, 0);
+   bson_return_val_if_fail(rpcs_len, 0);
+   bson_return_val_if_fail(write_concern, 0);
+   bson_return_val_if_fail(server_id, 0);
+   bson_return_val_if_fail(server_id < 1, 0);
+
+   // TODO: introduce retries
+
+   /*
+    * Fetch the stream to communicate over.
+    */
+
+   stream = _mongoc_cluster_fetch_stream(cluster, server_id, error);
+   if (!stream) {
+      return false;
    }
 
-   stream = mongoc_set_get (cluster->nodes, selected_server->id);
+   _mongoc_array_clear(&cluster->iov);
 
-   if (! stream) {
-      stream = _mongoc_cluster_add_node (cluster, selected_server, error);
+   /*
+    * TODO: We can probably remove the need for sendv and just do send since
+    * we support write concerns now. Also, we clobber our getlasterror on
+    * each subsequent mutation. It's okay, since it comes out correct anyway,
+    * just useless work (and technically the request_id changes).
+    */
+
+   for (i = 0; i < rpcs_len; i++) {
+      _mongoc_cluster_inc_egress_rpc (&rpcs[i]);
+      rpcs[i].header.request_id = ++cluster->request_id;
+      need_gle = _mongoc_rpc_needs_gle(&rpcs[i], write_concern);
+      _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
+
+      if (rpcs[i].header.msg_len >(int32_t)cluster->max_msg_size) {
+         bson_set_error(error,
+                        MONGOC_ERROR_CLIENT,
+                        MONGOC_ERROR_CLIENT_TOO_BIG,
+                        "Attempted to send an RPC larger than the "
+                        "max allowed message size. Was %u, allowed %u.",
+                        rpcs[i].header.msg_len,
+                        cluster->max_msg_size);
+         RETURN(false);
+      }
+
+      if (need_gle) {
+         gle.query.msg_len = 0;
+         gle.query.request_id = ++cluster->request_id;
+         gle.query.response_to = 0;
+         gle.query.opcode = MONGOC_OPCODE_QUERY;
+         gle.query.flags = MONGOC_QUERY_NONE;
+         switch (rpcs[i].header.opcode) {
+         case MONGOC_OPCODE_INSERT:
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].insert.collection);
+            break;
+         case MONGOC_OPCODE_DELETE:
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].delete.collection);
+            break;
+         case MONGOC_OPCODE_UPDATE:
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].update.collection);
+            break;
+         default:
+            BSON_ASSERT(false);
+            DB_AND_CMD_FROM_COLLECTION(cmdname, "admin.$cmd");
+            break;
+         }
+         gle.query.collection = cmdname;
+         gle.query.skip = 0;
+         gle.query.n_return = 1;
+         b = _mongoc_write_concern_get_gle((void*)write_concern);
+         gle.query.query = bson_get_data(b);
+         gle.query.fields = NULL;
+         _mongoc_rpc_gather(&gle, &cluster->iov);
+         _mongoc_rpc_swab_to_le(&gle);
+      }
+
+      _mongoc_rpc_swab_to_le(&rpcs[i]);
    }
 
-   RETURN(stream);
+   iov = cluster->iov.data;
+   iovcnt = cluster->iov.len;
+   errno = 0;
+
+   BSON_ASSERT(cluster->iov.len);
+
+   if (!mongoc_stream_writev (stream, iov, iovcnt,
+                              cluster->sockettimeoutms)) {
+      char buf[128];
+      char * errstr;
+      errstr = bson_strerror_r(errno, buf, sizeof buf);
+
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failure during socket delivery: %s",
+                      errstr);
+      mongoc_set_rm(cluster->nodes, server_id);
+      return false;
+   }
+
+   return true;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_sendv --
+ *
+ *       Sends the given RPCs to an appropriate server. On success,
+ *       returns the server id of the server to which the messages were
+ *       sent. Otherwise, returns 0 and sets error.
+ *
+ * Returns:
+ *       Server id, or 0.
+ *
+ * Side effects:
+ *       @rpcs may be mutated and should be considered invalid after calling
+ *       this method.
+ *
+ *       @error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+uint32_t
+_mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
+                       mongoc_rpc_t                 *rpcs,
+                       size_t                        rpcs_len,
+                       const mongoc_write_concern_t *write_concern,
+                       const mongoc_read_prefs_t    *read_prefs,
+                       bson_error_t                 *error)
+{
+   uint32_t server_id;
+
+   server_id = _mongoc_cluster_select(cluster, rpcs, rpcs_len,
+                                            write_concern, read_prefs, error);
+   if (server_id < 1) {
+      return server_id;
+   }
+
+   if(_mongoc_cluster_sendv_to_server(cluster, rpcs, rpcs_len, server_id,
+                                      write_concern, error)) {
+      return true;
+   }
+   return false;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_try_recv --
+ *
+ *       Tries to receive the next event from the MongoDB server
+ *       specified by @server_id. The contents are loaded into @buffer and then
+ *       scattered into the @rpc structure. @rpc is valid as long as
+ *       @buffer contains the contents read into it.
+ *
+ *       Callers that can optimize a reuse of @buffer should do so. It
+ *       can save many memory allocations.
+ *
+ * Returns:
+ *       0 on failure and @error is set.
+ *       non-zero on success where the value is the hint of the connection
+ *       that was used.
+ *
+ * Side effects:
+ *       @error if return value is zero.
+ *       @rpc is set if result is non-zero.
+ *       @buffer will be filled with the input data.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+_mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
+                          mongoc_rpc_t     *rpc,
+                          mongoc_buffer_t  *buffer,
+                          uint32_t          server_id,
+                          bson_error_t     *error)
+{
+   mongoc_stream_t *stream;
+   int32_t msg_len;
+   off_t pos;
+
+   ENTRY;
+
+   bson_return_val_if_fail (cluster, false);
+   bson_return_val_if_fail (rpc, false);
+   bson_return_val_if_fail (buffer, false);
+   bson_return_val_if_fail (server_id, false);
+   bson_return_val_if_fail (server_id < 1, false);
+
+   /*
+    * Fetch the stream to communicate over.
+    */
+   stream = _mongoc_cluster_fetch_stream(cluster, server_id, error);
+   if (!stream) {
+      RETURN (false);
+   }
+
+   TRACE ("Waiting for reply from server \"%ul\"", server_id);
+
+   /*
+    * Buffer the message length to determine how much more to read.
+    */
+   pos = buffer->len;
+   if (!_mongoc_buffer_append_from_stream (buffer, stream, 4,
+                                           cluster->sockettimeoutms, error)) {
+      mongoc_counter_protocol_ingress_error_inc ();
+      _mongoc_cluster_disconnect_node(cluster, server_id);
+      RETURN (false);
+   }
+
+   /*
+    * Read the msg length from the buffer.
+    */
+   memcpy (&msg_len, &buffer->data[buffer->off + pos], 4);
+   msg_len = BSON_UINT32_FROM_LE (msg_len);
+   if ((msg_len < 16) || (msg_len > cluster->max_msg_size)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Corrupt or malicious reply received.");
+      _mongoc_cluster_disconnect_node(cluster, server_id);
+      mongoc_counter_protocol_ingress_error_inc ();
+      RETURN (false);
+   }
+
+   /*
+    * Read the rest of the message from the stream.
+    */
+   if (!_mongoc_buffer_append_from_stream (buffer, stream, msg_len - 4,
+                                           cluster->sockettimeoutms, error)) {
+      _mongoc_cluster_disconnect_node (cluster, server_id);
+      mongoc_counter_protocol_ingress_error_inc ();
+      RETURN (false);
+   }
+
+   /*
+    * Scatter the buffer into the rpc structure.
+    */
+   if (!_mongoc_rpc_scatter (rpc, &buffer->data[buffer->off + pos], msg_len)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Failed to decode reply from server.");
+      _mongoc_cluster_disconnect_node (cluster, server_id);
+      mongoc_counter_protocol_ingress_error_inc ();
+      RETURN (false);
+   }
+
+   DUMP_BYTES (buffer, buffer->data + buffer->off, buffer->len);
+
+   _mongoc_rpc_swab_from_le (rpc);
+
+   _mongoc_cluster_inc_ingress_rpc (rpc);
+
+   RETURN(true);
 }

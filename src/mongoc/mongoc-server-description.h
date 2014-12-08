@@ -41,8 +41,7 @@ typedef struct _mongoc_server_description_t mongoc_server_description_t;
 
 struct _mongoc_server_description_t
 {
-   mongoc_server_description_t     *next;
-   int32_t                          id;
+   uint32_t                         id;
    char                            *set_name;
    char                            *connection_address;
    mongoc_host_list_t               host;
@@ -59,15 +58,27 @@ struct _mongoc_server_description_t
    int32_t                          max_write_batch_size;
 };
 
-void _mongoc_server_description_init          (mongoc_server_description_t     *description,
-                                               const char                      *address,
-                                               int32_t                          id);
-void _mongoc_server_description_destroy       (mongoc_server_description_t     *description);
-bool _mongoc_server_description_has_rs_member (mongoc_server_description_t     *description,
-                                               const char                      *address);
-void _mongoc_server_description_set_state     (mongoc_server_description_t     *description,
-                                               mongoc_server_description_type_t type);
-void _mongoc_server_description_update_rtt    (mongoc_server_description_t     *description,
-                                               int64_t                          new_time);
+void
+_mongoc_server_description_init (mongoc_server_description_t *description,
+                                 const char                  *address,
+                                 uint32_t                     id);
+
+void
+_mongoc_server_description_destroy (mongoc_server_description_t *description);
+
+bool
+_mongoc_server_description_has_rs_member (mongoc_server_description_t *description,
+                                          const char                  *address);
+
+void
+_mongoc_server_description_set_state (mongoc_server_description_t     *description,
+                                      mongoc_server_description_type_t type);
+
+void
+_mongoc_server_description_update_rtt (mongoc_server_description_t *description,
+                                       int64_t                      new_time);
+
+mongoc_server_description_t *
+_mongoc_server_description_new_copy (mongoc_server_description_t *description);
 
 #endif
