@@ -45,7 +45,7 @@ static mongoc_index_opt_geo_t gMongocIndexOptGeoDefault = {
 };
 
 static mongoc_index_opt_wt_t gMongocIndexOptWTDefault = {
-   {MONGOC_WIREDTIGER},
+   {MONGOC_INDEX_STORAGE_OPT_WIREDTIGER},
    ""
 };
 

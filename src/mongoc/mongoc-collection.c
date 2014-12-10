@@ -914,7 +914,7 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
       storage_opt = opt->storage_options;
       switch (storage_opt->type)
         {
-          case MONGOC_WIREDTIGER:
+          case MONGOC_INDEX_STORAGE_OPT_WIREDTIGER:
             wt_opt = (mongoc_index_opt_wt_t*) storage_opt;
             BSON_APPEND_DOCUMENT_BEGIN (&doc, "storageEngine", &storage_doc);
             BSON_APPEND_DOCUMENT_BEGIN (&storage_doc, "wiredtiger", &wt_doc);

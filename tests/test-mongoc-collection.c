@@ -666,7 +666,7 @@ test_index_storage(void)
    bson_append_int32(&keys, "hello", -1, 1);
 
    /* Add storage option to the index */
-   wt_opt.base.type = MONGOC_WIREDTIGER;
+   wt_opt.base.type = MONGOC_INDEX_STORAGE_OPT_WIREDTIGER;
    wt_opt.config_str = "block_compressor=zlib";
 
    opt.storage_options = (mongoc_index_opt_storage_t*) &wt_opt;
