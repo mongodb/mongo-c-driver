@@ -458,6 +458,7 @@ test_mongoc_client_preselect (void)
 static void
 test_exhaust_cursor (void)
 {
+   mongoc_stream_t *stream;
    mongoc_write_concern_t *wr;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -584,12 +585,10 @@ test_exhaust_cursor (void)
     * 4. make sure we can read the cursor we made during the exhuast
     */
    {
-      /* TODO SDAM
       cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
                                         NULL, NULL);
 
-      node = &client->cluster.nodes[cursor->hint - 1];
-      stream = node->stream;
+      stream = mongoc_set_get(client->cluster.nodes, cursor->hint);
 
       for (i = 1; i < 10; i++) {
          r = mongoc_cursor_next (cursor, &doc);
@@ -603,12 +602,11 @@ test_exhaust_cursor (void)
 
       mongoc_cursor_destroy (cursor);
 
-      assert (stream == node->stream);
+      assert (stream == mongoc_set_get(client->cluster.nodes, cursor->hint));
 
       r = mongoc_cursor_next (cursor2, &doc);
       assert (r);
       assert (doc);
-      */
    }
 
    bson_destroy(&q);

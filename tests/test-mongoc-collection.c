@@ -96,6 +96,7 @@ test_insert (void)
 static void
 test_insert_bulk (void)
 {
+   mongoc_server_description_t *description;
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
@@ -108,6 +109,7 @@ test_insert_bulk (void)
    bson_t b[10];
    bson_t *bptr[10];
    int64_t count;
+   uint32_t id;
 
    client = mongoc_client_new(gTestUri);
    ASSERT (client);
@@ -174,12 +176,15 @@ test_insert_bulk (void)
     * concern is needed for inserts, we will support this for a while, albeit
     * deprecated.
     */
-   /* TODO SDAM
-   if (client->cluster.nodes [0].server_description->max_wire_version == 0) {
+
+   id = client->cluster.nodes->items[0].id;
+   description = _mongoc_sdam_server_by_id(client->sdam, id);
+
+   if (description->max_wire_version == 0) {
       ASSERT (count == 6);
    } else {
       ASSERT (count == 5);
-      } */
+   }
 
    BEGIN_IGNORE_DEPRECATIONS;
    r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_CONTINUE_ON_ERROR,
@@ -214,6 +219,7 @@ test_insert_bulk (void)
    r = mongoc_collection_drop (collection, &error);
    ASSERT (r);
 
+   _mongoc_server_description_destroy(description);
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    bson_context_destroy(context);
@@ -569,6 +575,7 @@ test_index_compound (void)
 static void
 test_index_geo (void)
 {
+   mongoc_server_description_t *description;
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
@@ -577,6 +584,7 @@ test_index_geo (void)
    bson_error_t error;
    bool r;
    bson_t keys;
+   uint32_t id;
 
    mongoc_index_opt_init(&opt);
    mongoc_index_opt_geo_init(&geo_opt);
@@ -608,14 +616,16 @@ test_index_geo (void)
    geo_opt.twod_bits_precision = 30;
    opt.geo_options = &geo_opt;
 
-   /* TODO SDAM
-   if (client->cluster.nodes [0].server_description->max_wire_version > 0) {
+   id = client->cluster.nodes->items[0].id;
+   description = _mongoc_sdam_server_by_id(client->sdam, id);
+
+   if (description->max_wire_version > 0) {
       r = mongoc_collection_create_index(collection, &keys, &opt, &error);
          ASSERT (r);
 
       r = mongoc_collection_drop_index(collection, "location_2d", &error);
       ASSERT (r);
-      } */
+   }
 
    /* Create a Haystack index */
    bson_init(&keys);
@@ -626,15 +636,16 @@ test_index_geo (void)
    geo_opt.haystack_bucket_size = 5;
 
    opt.geo_options = &geo_opt;
-   /* TODO SDAM
-   if (client->cluster.nodes [0].server_description->max_wire_version > 0) {
+
+   if (description->max_wire_version > 0) {
       r = mongoc_collection_create_index(collection, &keys, &opt, &error);
       ASSERT (r);
 
       r = mongoc_collection_drop_index(collection, "location_geoHaystack_category_1", &error);
       ASSERT (r);
-      } */
+   }
 
+   _mongoc_server_description_destroy(description);
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    mongoc_client_destroy(client);

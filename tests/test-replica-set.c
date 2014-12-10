@@ -63,22 +63,26 @@ insert_test_docs (mongoc_collection_t *collection)
 }
 
 
-//static ha_node_t *
-//get_replica (mongoc_cluster_node_t *node)
-//{
-   /* TODO SDAM
+static ha_node_t *
+get_replica (mongoc_client_t *client, uint32_t id)
+{
+   mongoc_server_description_t *description;
    ha_node_t *iter;
 
+   description = _mongoc_sdam_server_by_id(client->sdam, id);
+   BSON_ASSERT(description);
+
    for (iter = replica_set->nodes; iter; iter = iter->next) {
-      if (iter->port == node->host.port) {
+      if (iter->port == description->host.port) {
+         _mongoc_server_description_destroy(description);
          return iter;
       }
    }
 
+   _mongoc_server_description_destroy(description);
    BSON_ASSERT(false);
-   */
-   //return NULL;
-//}
+   return NULL;
+}
 
 
 /*
@@ -104,7 +108,7 @@ insert_test_docs (mongoc_collection_t *collection)
 static void
 test1 (void)
 {
-   //mongoc_cluster_node_t *node;
+   mongoc_server_description_t *description;
    mongoc_collection_t *collection;
    mongoc_read_prefs_t *read_prefs;
    mongoc_cursor_t *cursor;
@@ -112,7 +116,7 @@ test1 (void)
    const bson_t *doc;
    bson_error_t error;
    bool r;
-   //ha_node_t *replica;
+   ha_node_t *replica;
    bson_t q;
    int i;
 
@@ -155,8 +159,9 @@ test1 (void)
    /*
     * Make sure we queried a secondary.
     */
-   // TODO SDAM
-   //BSON_ASSERT(!_mongoc_cluster_node_is_primary(&(client->cluster.nodes[cursor->hint - 1])));
+   description = _mongoc_sdam_server_by_id(client->sdam, cursor->hint);
+   BSON_ASSERT(description->type != MONGOC_SERVER_RS_PRIMARY);
+   _mongoc_server_description_destroy(description);
 
    /*
     * Exhaust the items in our first OP_REPLY.
@@ -185,16 +190,15 @@ test1 (void)
     * Determine which node we queried by using the hint to
     * get the cluster information.
     */
-   // TODO SDAM
-   //BSON_ASSERT(cursor->hint);
-   //node = &client->cluster.nodes[cursor->hint - 1];
-   //replica = get_replica(node);
+
+   BSON_ASSERT(cursor->hint);
+   replica = get_replica(client, cursor->hint);
 
    /*
     * Kill the node we are communicating with.
     */
    MONGOC_INFO("Killing replicaSet node to synthesize failure.");
-   //ha_node_kill(replica);
+   ha_node_kill(replica);
 
    /*
     * Try to fetch the next result set, expect failure.
@@ -207,10 +211,9 @@ test1 (void)
    BSON_ASSERT(r);
    MONGOC_WARNING("%s", error.message);
 
-   // TODO SDAM
-   //BSON_ASSERT(cursor->client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
-   //BSON_ASSERT(client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
-   //BSON_ASSERT(!client->cluster.nodes[cursor->hint - 1].stream);
+   // TODO SDAM - we may need to force a scan and wait for this check to pass?
+   // TODO also maybe not the best way to check this...
+   BSON_ASSERT(client->cluster.nodes->items_len == 0);
 
    mongoc_cursor_destroy(cursor);
    mongoc_read_prefs_destroy(read_prefs);
@@ -218,7 +221,7 @@ test1 (void)
    mongoc_client_destroy(client);
    bson_destroy(&q);
 
-   //ha_node_restart(replica);
+   ha_node_restart(replica);
 }
 
 
