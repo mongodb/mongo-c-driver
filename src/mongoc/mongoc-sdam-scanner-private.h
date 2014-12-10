@@ -59,6 +59,7 @@ typedef struct mongoc_sdam_scanner
    bson_t                      ismaster_cmd;
    mongoc_sdam_scanner_cb_t    cb;
    void                       *cb_data;
+   bool                        in_progress;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts;
@@ -81,9 +82,12 @@ mongoc_sdam_scanner_rm (mongoc_sdam_scanner_t *ss,
                         uint32_t               id);
 
 void
+mongoc_sdam_scanner_start_scan (mongoc_sdam_scanner_t *ss,
+                                int32_t                timeout_msec);
+
+bool
 mongoc_sdam_scanner_scan (mongoc_sdam_scanner_t *ss,
                           int32_t                timeout_msec);
-
 
 BSON_END_DECLS
 

@@ -86,67 +86,83 @@ mongoc_async_run (mongoc_async_t *async,
                   int32_t         timeout_msec)
 {
    mongoc_async_cmd_t *acmd, *tmp;
-   mongoc_stream_poll_t *poll;
-   int i = 0;
+   mongoc_stream_poll_t *poll = NULL;
+   int i;
    ssize_t nactive = 0;
-   bool more_to_do = false;
    int64_t now;
+   int64_t expire_at = 0;
 
-   now = bson_get_monotonic_time ();
-   DL_FOREACH_SAFE (async->cmds, acmd, tmp)
-   {
-      if (now > acmd->expire_at) {
-         acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, acmd->data,
-                   &acmd->error);
-         mongoc_async_cmd_destroy (acmd);
-      } else {
+   for (;;) {
+      now = bson_get_monotonic_time ();
+
+      if (expire_at == 0) {
+         if (timeout_msec >= 0) {
+            expire_at = now + (timeout_msec * 1000);
+         } else {
+            expire_at = -1;
+         }
+      } else if (timeout_msec >= 0) {
+         timeout_msec = (expire_at - now) / 1000;
+      }
+
+      if (now > expire_at) {
          break;
       }
-   }
-
-   poll = bson_malloc0 (sizeof (*poll) * async->ncmds);
-   DL_FOREACH (async->cmds, acmd)
-   {
-      poll[i].stream = acmd->stream;
-      poll[i].events = acmd->events;
-      i++;
-   }
-
-   if (!async->cmds) {
-      goto CLEANUP;
-   }
-
-   if (timeout_msec >= 0) {
-      timeout_msec = MIN (timeout_msec, (async->cmds->expire_at - now) / 1000);
-   } else {
-      timeout_msec = (async->cmds->expire_at - now) / 1000;
-   }
-
-   nactive = mongoc_stream_poll (poll, async->ncmds, timeout_msec);
-
-   if (nactive) {
-      more_to_do = true;
-      i = 0;
 
       DL_FOREACH_SAFE (async->cmds, acmd, tmp)
       {
-         if (poll[i].revents & poll[i].events) {
-            mongoc_async_cmd_run (acmd);
-
-            nactive--;
-
-            if (!nactive) {
-               break;
-            }
+         if (now > acmd->expire_at) {
+            acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, acmd->data,
+                      &acmd->error);
+            mongoc_async_cmd_destroy (acmd);
+         } else {
+            break;
          }
+      }
 
+      if (!async->ncmds) {
+         break;
+      }
+
+      poll = bson_malloc0 (sizeof (*poll) * async->ncmds);
+
+      i = 0;
+      DL_FOREACH (async->cmds, acmd)
+      {
+         poll[i].stream = acmd->stream;
+         poll[i].events = acmd->events;
          i++;
+      }
+
+      if (timeout_msec >= 0) {
+         timeout_msec = MIN (timeout_msec, (async->cmds->expire_at - now) / 1000);
+      } else {
+         timeout_msec = (async->cmds->expire_at - now) / 1000;
+      }
+
+      nactive = mongoc_stream_poll (poll, async->ncmds, timeout_msec);
+
+      if (nactive) {
+         i = 0;
+
+         DL_FOREACH_SAFE (async->cmds, acmd, tmp)
+         {
+            if (poll[i].revents & poll[i].events) {
+               mongoc_async_cmd_run (acmd);
+
+               nactive--;
+
+               if (!nactive) {
+                  break;
+               }
+            }
+
+            i++;
+         }
       }
    }
 
-CLEANUP:
-
    bson_free (poll);
 
-   return more_to_do;
+   return async->ncmds;
 }

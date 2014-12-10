@@ -57,6 +57,7 @@ test_sdam_scanner(void)
    int i;
    bson_t q = BSON_INITIALIZER;
    int finished = NSERVERS * 3;
+   bool more_to_do;
    mongoc_host_list_t host = { 0 };
 
 #ifdef MONGOC_ENABLE_SSL
@@ -98,7 +99,11 @@ test_sdam_scanner(void)
    usleep (5000);
 
    for (i = 0; i < 3; i++) {
-      mongoc_sdam_scanner_scan (sdam_scanner, TIMEOUT);
+      mongoc_sdam_scanner_start_scan (sdam_scanner, TIMEOUT);
+
+      more_to_do = mongoc_sdam_scanner_scan (sdam_scanner, TIMEOUT);
+
+      assert(! more_to_do);
    }
 
    assert(finished == 0);
