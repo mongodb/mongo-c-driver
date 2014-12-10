@@ -41,7 +41,7 @@ typedef struct
    int type;
 } mongoc_index_opt_storage_t;
 
-typedef enum {MMAPV1, WIREDTIGER} mongoc_index_storage_opt_type_t;
+typedef enum {MONGOC_MMAPV1, MONGOC_WIREDTIGER} mongoc_index_storage_opt_type_t;
 
 typedef struct
 {
