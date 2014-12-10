@@ -877,7 +877,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
                             "The argument \"size\" must be an integer.");
             return NULL;
-         }  
+         }
          if (!capped) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
