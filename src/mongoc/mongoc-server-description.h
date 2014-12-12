@@ -22,10 +22,9 @@
 #include "mongoc-array-private.h"
 #include "mongoc-host-list.h"
 
-#define MONGOC_SERVER_DESCRIPTION_TYPES 8
-
 typedef enum
    {
+      MONGOC_SERVER_UNKNOWN,
       MONGOC_SERVER_STANDALONE,
       MONGOC_SERVER_MONGOS,
       MONGOC_SERVER_POSSIBLE_PRIMARY,
@@ -34,7 +33,7 @@ typedef enum
       MONGOC_SERVER_RS_ARBITER,
       MONGOC_SERVER_RS_OTHER,
       MONGOC_SERVER_RS_GHOST,
-      MONGOC_SERVER_UNKNOWN,
+      MONGOC_SERVER_DESCRIPTION_TYPES,
    } mongoc_server_description_type_t;
 
 typedef struct _mongoc_server_description_t mongoc_server_description_t;
@@ -42,19 +41,25 @@ typedef struct _mongoc_server_description_t mongoc_server_description_t;
 struct _mongoc_server_description_t
 {
    uint32_t                         id;
-   char                            *set_name;
-   char                            *connection_address;
    mongoc_host_list_t               host;
+   int64_t                          round_trip_time;
+   bson_t                           last_is_master;
+
+   /* The following fields are filled from the last_is_master and are zeroed on
+    * parse.  So order matters here.  DON'T move set_name */
+   const char                      *set_name;
+   const char                      *connection_address;
    char                            *error; // TODO: what type should this be?
-   int32_t                          round_trip_time;
    mongoc_server_description_type_t type;
    int32_t                          min_wire_version;
    int32_t                          max_wire_version;
 
-   char                           **rs_members;
+   bson_t                           hosts;
+   bson_t                           passives;
+   bson_t                           arbiters;
 
    bson_t                           tags;
-   char                            *current_primary;
+   const char                      *current_primary;
    int32_t                          max_write_batch_size;
 };
 
@@ -79,6 +84,13 @@ _mongoc_server_description_update_rtt (mongoc_server_description_t *description,
                                        int64_t                      new_time);
 
 mongoc_server_description_t *
-_mongoc_server_description_new_copy (mongoc_server_description_t *description);
+_mongoc_server_description_new_copy (const mongoc_server_description_t *description);
+
+void
+_mongoc_server_description_handle_ismaster (
+   mongoc_server_description_t   *sd,
+   const bson_t                  *reply,
+   int64_t                        rtt_msec,
+   bson_error_t                  *error);
 
 #endif

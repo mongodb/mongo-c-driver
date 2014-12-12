@@ -37,6 +37,7 @@ mongoc_read_prefs_new (mongoc_read_mode_t mode)
 mongoc_read_mode_t
 mongoc_read_prefs_get_mode (const mongoc_read_prefs_t *read_prefs)
 {
+   assert(read_prefs);
    bson_return_val_if_fail(read_prefs, 0);
    return read_prefs->mode;
 }

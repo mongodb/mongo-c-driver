@@ -33,6 +33,9 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "sdam_scanner"
 
+static void
+mongoc_sdam_scanner_node_destroy (mongoc_sdam_scanner_node_t *node);
+
 mongoc_sdam_scanner_t *
 mongoc_sdam_scanner_new (mongoc_sdam_scanner_cb_t cb,
                          void                    *cb_data)
@@ -52,26 +55,33 @@ mongoc_sdam_scanner_new (mongoc_sdam_scanner_cb_t cb,
 void
 mongoc_sdam_scanner_destroy (mongoc_sdam_scanner_t *ss)
 {
+   mongoc_sdam_scanner_node_t *ele, *tmp;
+
+   DL_FOREACH_SAFE (ss->nodes, ele, tmp) {
+      mongoc_sdam_scanner_node_destroy (ele);
+   }
+
    mongoc_async_destroy (ss->async);
    bson_destroy (&ss->ismaster_cmd);
 
    bson_free (ss);
 }
 
-uint32_t
+void
 mongoc_sdam_scanner_add (mongoc_sdam_scanner_t    *ss,
-                         const mongoc_host_list_t *host)
+                         const mongoc_host_list_t *host,
+                         uint32_t                  id)
 {
    mongoc_sdam_scanner_node_t *node = bson_malloc0 (sizeof (*node));
 
    memcpy (&node->host, host, sizeof (*host));
 
-   node->id = ss->seq++;
+   node->id = id;
    node->ss = ss;
 
    DL_APPEND(ss->nodes, node);
 
-   return node->id;
+   return;
 }
 
 static void
@@ -89,7 +99,10 @@ mongoc_sdam_scanner_node_destroy (mongoc_sdam_scanner_node_t *node)
       mongoc_async_cmd_destroy (node->cmd);
    }
 
-   mongoc_stream_destroy (node->stream);
+   if (node->stream) {
+      mongoc_stream_destroy (node->stream);
+   }
+
    bson_free (node);
 }
 
@@ -115,6 +128,7 @@ mongoc_sdam_scanner_rm (mongoc_sdam_scanner_t *ss,
 static void
 mongoc_sdam_scanner_ismaster_handler (mongoc_async_cmd_result_t result,
                                       const bson_t             *bson,
+                                      int64_t                   rtt_msec,
                                       void                     *data,
                                       bson_error_t             *error)
 {
@@ -122,7 +136,7 @@ mongoc_sdam_scanner_ismaster_handler (mongoc_async_cmd_result_t result,
 
    node->cmd = NULL;
 
-   if (!node->ss->cb (node->id, bson, node->ss->cb_data, error)) {
+   if (!node->ss->cb (node->id, bson, rtt_msec, node->ss->cb_data, error)) {
       mongoc_sdam_scanner_node_destroy (node);
       return;
    }
@@ -278,7 +292,7 @@ mongoc_sdam_scanner_node_setup (mongoc_sdam_scanner_node_t *node)
    }
 
    if (!sock_stream) {
-      if (!node->ss->cb (node->id, NULL, node->ss->cb_data, &error)) {
+      if (!node->ss->cb (node->id, NULL, 0, node->ss->cb_data, &error)) {
          mongoc_sdam_scanner_node_destroy (node);
       }
 
@@ -326,7 +340,7 @@ mongoc_sdam_scanner_scan (mongoc_sdam_scanner_t *ss,
                           int32_t                timeout_msec)
 {
    bool r;
-   
+
    r = mongoc_async_run (ss->async, timeout_msec);
 
    if (! r) {

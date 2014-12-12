@@ -92,6 +92,899 @@
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_cluster_run_command --
+ *
+ *       Helper to run a command on a given mongoc_cluster_node_t.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *       @reply is set and should ALWAYS be released with bson_destroy().
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
+                             mongoc_stream_t       *stream,
+                             const char            *db_name,
+                             const bson_t          *command,
+                             bson_t                *reply,
+                             bson_error_t          *error)
+{
+   mongoc_buffer_t buffer;
+   mongoc_array_t ar;
+   mongoc_rpc_t rpc;
+   int32_t msg_len;
+   bson_t reply_local;
+   char ns[MONGOC_NAMESPACE_MAX];
+
+   ENTRY;
+
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(db_name);
+   BSON_ASSERT(command);
+
+   bson_snprintf(ns, sizeof ns, "%s.$cmd", db_name);
+
+   rpc.query.msg_len = 0;
+   rpc.query.request_id = ++cluster->request_id;
+   rpc.query.response_to = 0;
+   rpc.query.opcode = MONGOC_OPCODE_QUERY;
+   rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
+   rpc.query.collection = ns;
+   rpc.query.skip = 0;
+   rpc.query.n_return = -1;
+   rpc.query.query = bson_get_data(command);
+   rpc.query.fields = NULL;
+
+   _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
+   _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
+
+   _mongoc_rpc_gather(&rpc, &ar);
+   _mongoc_rpc_swab_to_le(&rpc);
+
+   if (!mongoc_stream_writev(stream, ar.data, ar.len,
+                             cluster->sockettimeoutms)) {
+      GOTO(failure);
+   }
+
+   if (!_mongoc_buffer_append_from_stream(&buffer, stream, 4,
+                                          cluster->sockettimeoutms, error)) {
+      GOTO(failure);
+   }
+
+   BSON_ASSERT(buffer.len == 4);
+
+   memcpy(&msg_len, buffer.data, 4);
+   msg_len = BSON_UINT32_FROM_LE(msg_len);
+   if ((msg_len < 16) || (msg_len > (1024 * 1024 * 16))) {
+      GOTO(invalid_reply);
+   }
+
+   if (!_mongoc_buffer_append_from_stream(&buffer, stream, msg_len - 4,
+                                          cluster->sockettimeoutms, error)) {
+      GOTO(failure);
+   }
+
+   if (!_mongoc_rpc_scatter(&rpc, buffer.data, buffer.len)) {
+      GOTO(invalid_reply);
+   }
+
+   _mongoc_rpc_swab_from_le(&rpc);
+
+   if (rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+      GOTO(invalid_reply);
+   }
+
+   if (reply) {
+      if (!_mongoc_rpc_reply_get_first(&rpc.reply, &reply_local)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Failed to decode reply BSON document.");
+         GOTO(failure);
+      }
+      bson_copy_to(&reply_local, reply);
+      bson_destroy(&reply_local);
+   }
+
+   _mongoc_buffer_destroy(&buffer);
+   _mongoc_array_destroy(&ar);
+
+   RETURN(true);
+
+invalid_reply:
+   bson_set_error(error,
+                  MONGOC_ERROR_PROTOCOL,
+                  MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                  "Invalid reply from server.");
+
+failure:
+   _mongoc_buffer_destroy(&buffer);
+   _mongoc_array_destroy(&ar);
+
+   if (reply) {
+      bson_init(reply);
+   }
+
+   RETURN(false);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_build_basic_auth_digest --
+ *
+ *       Computes the Basic Authentication digest using the credentials
+ *       configured for @cluster and the @nonce provided.
+ *
+ *       The result should be freed by the caller using bson_free() when
+ *       they are finished with it.
+ *
+ * Returns:
+ *       A newly allocated string containing the digest.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static char *
+_mongoc_cluster_build_basic_auth_digest (mongoc_cluster_t *cluster,
+                                         const char       *nonce)
+{
+   const char *username;
+   const char *password;
+   char *password_digest;
+   char *password_md5;
+   char *digest_in;
+   char *ret;
+
+   ENTRY;
+
+   /*
+    * The following generates the digest to be used for basic authentication
+    * with a MongoDB server. More information on the format can be found
+    * at the following location:
+    *
+    * http://docs.mongodb.org/meta-driver/latest/legacy/
+    *   implement-authentication-in-driver/
+    */
+
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(cluster->uri);
+
+   username = mongoc_uri_get_username(cluster->uri);
+   password = mongoc_uri_get_password(cluster->uri);
+   password_digest = bson_strdup_printf("%s:mongo:%s", username, password);
+   password_md5 = _mongoc_hex_md5(password_digest);
+   digest_in = bson_strdup_printf("%s%s%s", nonce, username, password_md5);
+   ret = _mongoc_hex_md5(digest_in);
+   bson_free(digest_in);
+   bson_free(password_md5);
+   bson_free(password_digest);
+
+   RETURN(ret);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_auth_node_cr --
+ *
+ *       Performs authentication of @node using the credentials provided
+ *       when configuring the @cluster instance.
+ *
+ *       This is the Challenge-Response mode of authentication.
+ *
+ * Returns:
+ *       true if authentication was successful; otherwise false and
+ *       @error is set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_cluster_auth_node_cr (mongoc_cluster_t      *cluster,
+                              mongoc_stream_t       *stream,
+                              bson_error_t          *error)
+{
+   bson_iter_t iter;
+   const char *auth_source;
+   bson_t command = { 0 };
+   bson_t reply = { 0 };
+   char *digest;
+   char *nonce;
+
+   ENTRY;
+
+   BSON_ASSERT(cluster);
+   BSON_ASSERT(stream);
+
+   if (!(auth_source = mongoc_uri_get_auth_source(cluster->uri)) ||
+       (*auth_source == '\0')) {
+      auth_source = "admin";
+   }
+
+   /*
+    * To authenticate a node using basic authentication, we need to first
+    * get the nonce from the server. We use that to hash our password which
+    * is sent as a reply to the server. If everything went good we get a
+    * success notification back from the server.
+    */
+
+   /*
+    * Execute the getnonce command to fetch the nonce used for generating
+    * md5 digest of our password information.
+    */
+   bson_init (&command);
+   bson_append_int32 (&command, "getnonce", 8, 1);
+   if (!_mongoc_cluster_run_command (cluster, stream, auth_source, &command,
+                                     &reply, error)) {
+      bson_destroy (&command);
+      RETURN (false);
+   }
+   bson_destroy (&command);
+   if (!bson_iter_init_find_case (&iter, &reply, "nonce")) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_GETNONCE,
+                      "Invalid reply from getnonce");
+      bson_destroy (&reply);
+      RETURN (false);
+   }
+
+   /*
+    * Build our command to perform the authentication.
+    */
+   nonce = bson_iter_dup_utf8(&iter, NULL);
+   digest = _mongoc_cluster_build_basic_auth_digest(cluster, nonce);
+   bson_init(&command);
+   bson_append_int32(&command, "authenticate", 12, 1);
+   bson_append_utf8(&command, "user", 4,
+                    mongoc_uri_get_username(cluster->uri), -1);
+   bson_append_utf8(&command, "nonce", 5, nonce, -1);
+   bson_append_utf8(&command, "key", 3, digest, -1);
+   bson_destroy(&reply);
+   bson_free(nonce);
+   bson_free(digest);
+
+   /*
+    * Execute the authenticate command and check for {ok:1}
+    */
+   if (!_mongoc_cluster_run_command (cluster, stream, auth_source, &command,
+                                     &reply, error)) {
+      bson_destroy (&command);
+      RETURN (false);
+   }
+
+   bson_destroy (&command);
+
+   if (!bson_iter_init_find_case(&iter, &reply, "ok") ||
+       !bson_iter_as_bool(&iter)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                     "Failed to authenticate credentials.");
+      bson_destroy(&reply);
+      RETURN(false);
+   }
+
+   bson_destroy(&reply);
+
+   RETURN(true);
+}
+
+
+#ifdef MONGOC_ENABLE_SASL
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_get_canonicalized_name --
+ *
+ *       Query the node to get the canonicalized name. This may happen if
+ *       the node has been accessed via an alias.
+ *
+ *       The gssapi code will use this if canonicalizeHostname is true.
+ *
+ *       Some underlying layers of krb might do this for us, but they can
+ *       be disabled in krb.conf.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_cluster_get_canonicalized_name (mongoc_cluster_t      *cluster, /* IN */
+                                        mongoc_stream_t       *node_stream,    /* IN */
+                                        char                  *name,    /* OUT */
+                                        size_t                 namelen, /* IN */
+                                        bson_error_t          *error)   /* OUT */
+{
+   mongoc_stream_t *stream;
+   mongoc_stream_t *tmp;
+   mongoc_socket_t *sock = NULL;
+   char *canonicalized;
+
+   ENTRY;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (node_stream);
+   BSON_ASSERT (name);
+
+   /*
+    * Find the underlying socket used in the stream chain.
+    */
+   for (stream = node_stream; stream;) {
+      if ((tmp = mongoc_stream_get_base_stream (stream))) {
+         stream = tmp;
+         continue;
+      }
+      break;
+   }
+
+   BSON_ASSERT (stream);
+
+   if (stream->type == MONGOC_STREAM_SOCKET) {
+      sock = mongoc_stream_socket_get_socket ((mongoc_stream_socket_t *)stream);
+      if (sock) {
+         canonicalized = mongoc_socket_getnameinfo (sock);
+         if (canonicalized) {
+            bson_snprintf (name, namelen, "%s", canonicalized);
+            bson_free (canonicalized);
+            RETURN (true);
+         }
+      }
+   }
+
+   RETURN (false);
+}
+#endif
+
+
+#ifdef MONGOC_ENABLE_SASL
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_auth_node_sasl --
+ *
+ *       Perform authentication for a cluster node using SASL. This is
+ *       only supported for GSSAPI at the moment.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *       error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_cluster_auth_node_sasl (mongoc_cluster_t            *cluster,
+                                mongoc_stream_t             *stream,
+                                mongoc_server_description_t *sd,
+                                bson_error_t                *error)
+{
+   uint32_t buflen = 0;
+   mongoc_sasl_t sasl;
+   const bson_t *options;
+   bson_iter_t iter;
+   bool ret = false;
+   char real_name [BSON_HOST_NAME_MAX + 1];
+   const char *service_name;
+   const char *mechanism;
+   const char *tmpstr;
+   uint8_t buf[4096] = { 0 };
+   bson_t cmd;
+   bson_t reply;
+   int conv_id = 0;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (stream);
+
+   options = mongoc_uri_get_options (cluster->uri);
+
+   _mongoc_sasl_init (&sasl);
+
+   if ((mechanism = mongoc_uri_get_auth_mechanism (cluster->uri))) {
+      _mongoc_sasl_set_mechanism (&sasl, mechanism);
+   }
+
+   if (bson_iter_init_find_case (&iter, options, "gssapiservicename") &&
+       BSON_ITER_HOLDS_UTF8 (&iter) &&
+       (service_name = bson_iter_utf8 (&iter, NULL))) {
+      _mongoc_sasl_set_service_name (&sasl, service_name);
+   }
+
+   _mongoc_sasl_set_pass (&sasl, mongoc_uri_get_password (cluster->uri));
+   _mongoc_sasl_set_user (&sasl, mongoc_uri_get_username (cluster->uri));
+
+   /*
+    * If the URI requested canonicalizeHostname, we need to resolve the real
+    * hostname for the IP Address and pass that to the SASL layer. Some
+    * underlying GSSAPI layers will do this for us, but can be disabled in
+    * their config (krb.conf).
+    *
+    * This allows the consumer to specify canonicalizeHostname=true in the URI
+    * and have us do that for them.
+    *
+    * See CDRIVER-323 for more information.
+    */
+   if (bson_iter_init_find_case (&iter, options, "canonicalizeHostname") &&
+       BSON_ITER_HOLDS_BOOL (&iter) &&
+       bson_iter_bool (&iter)) {
+      if (_mongoc_cluster_get_canonicalized_name (cluster, stream, real_name,
+                                                  sizeof real_name, error)) {
+         _mongoc_sasl_set_service_host (&sasl, real_name);
+      } else {
+         _mongoc_sasl_set_service_host (&sasl, sd->host.host);
+      }
+   } else {
+      _mongoc_sasl_set_service_host (&sasl, sd->host.host);
+   }
+
+   for (;;) {
+      if (!_mongoc_sasl_step (&sasl, buf, buflen, buf, sizeof buf, &buflen, error)) {
+         goto failure;
+      }
+
+      bson_init (&cmd);
+
+      if (sasl.step == 1) {
+         BSON_APPEND_INT32 (&cmd, "saslStart", 1);
+         BSON_APPEND_UTF8 (&cmd, "mechanism", mechanism ? mechanism : "GSSAPI");
+         bson_append_utf8 (&cmd, "payload", 7, (const char *)buf, buflen);
+         BSON_APPEND_INT32 (&cmd, "autoAuthorize", 1);
+      } else {
+         BSON_APPEND_INT32 (&cmd, "saslContinue", 1);
+         BSON_APPEND_INT32 (&cmd, "conversationId", conv_id);
+         bson_append_utf8 (&cmd, "payload", 7, (const char *)buf, buflen);
+      }
+
+      MONGOC_INFO ("SASL: authenticating \"%s\" (step %d)",
+                   mongoc_uri_get_username (cluster->uri),
+                   sasl.step);
+
+      if (!_mongoc_cluster_run_command (cluster, stream, "$external", &cmd, &reply, error)) {
+         bson_destroy (&cmd);
+         goto failure;
+      }
+
+      bson_destroy (&cmd);
+
+      if (bson_iter_init_find (&iter, &reply, "done") &&
+          bson_iter_as_bool (&iter)) {
+         bson_destroy (&reply);
+         break;
+      }
+
+      if (!bson_iter_init_find (&iter, &reply, "ok") ||
+          !bson_iter_as_bool (&iter) ||
+          !bson_iter_init_find (&iter, &reply, "conversationId") ||
+          !BSON_ITER_HOLDS_INT32 (&iter) ||
+          !(conv_id = bson_iter_int32 (&iter)) ||
+          !bson_iter_init_find (&iter, &reply, "payload") ||
+          !BSON_ITER_HOLDS_UTF8 (&iter)) {
+         MONGOC_INFO ("SASL: authentication failed for \"%s\"",
+                      mongoc_uri_get_username (cluster->uri));
+         bson_destroy (&reply);
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "Received invalid SASL reply from MongoDB server.");
+         goto failure;
+      }
+
+      tmpstr = bson_iter_utf8 (&iter, &buflen);
+
+      if (buflen > sizeof buf) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "SASL reply from MongoDB is too large.");
+         goto failure;
+      }
+
+      memcpy (buf, tmpstr, buflen);
+
+      bson_destroy (&reply);
+   }
+
+   MONGOC_INFO ("SASL: \"%s\" authenticated",
+                mongoc_uri_get_username (cluster->uri));
+
+   ret = true;
+
+failure:
+   _mongoc_sasl_destroy (&sasl);
+
+   return ret;
+}
+#endif
+
+
+#ifdef MONGOC_ENABLE_SASL
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_auth_node_plain --
+ *
+ *       Perform SASL PLAIN authentication for @node. We do this manually
+ *       instead of using the SASL module because its rather simplistic.
+ *
+ * Returns:
+ *       true if successful; otherwise false and error is set.
+ *
+ * Side effects:
+ *       error may be set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
+                                 mongoc_stream_t       *stream,
+                                 bson_error_t          *error)
+{
+   char buf[4096];
+   unsigned buflen = 0;
+   bson_iter_t iter;
+   const char *username;
+   const char *password;
+   const char *errmsg = "Unknown authentication error.";
+   bson_t b = BSON_INITIALIZER;
+   bson_t reply;
+   size_t len;
+   char *str;
+   int ret;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (stream);
+
+   username = mongoc_uri_get_username (cluster->uri);
+   if (!username) {
+      username = "";
+   }
+
+   password = mongoc_uri_get_password (cluster->uri);
+   if (!password) {
+      password = "";
+   }
+
+   str = bson_strdup_printf ("%c%s%c%s", '\0', username, '\0', password);
+   len = strlen (username) + strlen (password) + 2;
+   ret = sasl_encode64 (str, len, buf, sizeof buf, &buflen);
+   bson_free (str);
+
+   if (ret != SASL_OK) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "sasl_encode64() returned %d.",
+                      ret);
+      return false;
+   }
+
+   BSON_APPEND_INT32 (&b, "saslStart", 1);
+   BSON_APPEND_UTF8 (&b, "mechanism", "PLAIN");
+   bson_append_utf8 (&b, "payload", 7, (const char *)buf, buflen);
+   BSON_APPEND_INT32 (&b, "autoAuthorize", 1);
+
+   if (!_mongoc_cluster_run_command (cluster, stream, "$external", &b, &reply, error)) {
+      bson_destroy (&b);
+      return false;
+   }
+
+   bson_destroy (&b);
+
+   if (!bson_iter_init_find_case (&iter, &reply, "ok") ||
+       !bson_iter_as_bool (&iter)) {
+      if (bson_iter_init_find_case (&iter, &reply, "errmsg") &&
+          BSON_ITER_HOLDS_UTF8 (&iter)) {
+         errmsg = bson_iter_utf8 (&iter, NULL);
+      }
+      bson_destroy (&reply);
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "%s", errmsg);
+      return false;
+   }
+
+   bson_destroy (&reply);
+
+   return true;
+}
+#endif
+
+
+#ifdef MONGOC_ENABLE_SSL
+static bool
+_mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
+                                mongoc_stream_t       *stream,
+                                bson_error_t          *error)
+{
+   const char *username = "";
+   const char *errmsg = "X509 authentication failure";
+   bson_iter_t iter;
+   bool ret = false;
+   bson_t cmd;
+   bson_t reply;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (stream);
+
+   if (!cluster->client->ssl_opts.pem_file) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "mongoc_client_set_ssl_opts() must be called "
+                      "with pem file for X-509 auth.");
+      return false;
+   }
+
+   if (cluster->client->pem_subject) {
+      username = cluster->client->pem_subject;
+   }
+
+   bson_init (&cmd);
+   BSON_APPEND_INT32 (&cmd, "authenticate", 1);
+   BSON_APPEND_UTF8 (&cmd, "mechanism", "MONGODB-X509");
+   BSON_APPEND_UTF8 (&cmd, "user", username);
+
+   if (!_mongoc_cluster_run_command (cluster, stream, "$external", &cmd, &reply,
+                                     error)) {
+      bson_destroy (&cmd);
+      return false;
+   }
+
+   if (!bson_iter_init_find (&iter, &reply, "ok") ||
+       !bson_iter_as_bool (&iter)) {
+      if (bson_iter_init_find (&iter, &reply, "errmsg") &&
+          BSON_ITER_HOLDS_UTF8 (&iter)) {
+         errmsg = bson_iter_utf8 (&iter, NULL);
+      }
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "%s", errmsg);
+      goto failure;
+   }
+
+   ret = true;
+
+failure:
+
+   bson_destroy (&cmd);
+   bson_destroy (&reply);
+
+   return ret;
+}
+#endif
+
+
+#ifdef MONGOC_ENABLE_SSL
+static bool
+_mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
+                                 mongoc_stream_t       *stream,
+                                 bson_error_t          *error)
+{
+   uint32_t buflen = 0;
+   mongoc_scram_t scram;
+   bson_iter_t iter;
+   bool ret = false;
+   const char *tmpstr;
+   const char *auth_source;
+   uint8_t buf[4096] = { 0 };
+   bson_t cmd;
+   bson_t reply;
+   int conv_id = 0;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (stream);
+
+   if (!(auth_source = mongoc_uri_get_auth_source(cluster->uri)) ||
+       (*auth_source == '\0')) {
+      auth_source = "admin";
+   }
+
+   _mongoc_scram_init(&scram);
+
+   _mongoc_scram_set_pass (&scram, mongoc_uri_get_password (cluster->uri));
+   _mongoc_scram_set_user (&scram, mongoc_uri_get_username (cluster->uri));
+
+   for (;;) {
+      if (!_mongoc_scram_step (&scram, buf, buflen, buf, sizeof buf, &buflen, error)) {
+         goto failure;
+      }
+
+      bson_init (&cmd);
+
+      if (scram.step == 1) {
+         BSON_APPEND_INT32 (&cmd, "saslStart", 1);
+         BSON_APPEND_UTF8 (&cmd, "mechanism", "SCRAM-SHA-1");
+         bson_append_binary (&cmd, "payload", 7, BSON_SUBTYPE_BINARY, buf, buflen);
+         BSON_APPEND_INT32 (&cmd, "autoAuthorize", 1);
+      } else {
+         BSON_APPEND_INT32 (&cmd, "saslContinue", 1);
+         BSON_APPEND_INT32 (&cmd, "conversationId", conv_id);
+         bson_append_binary (&cmd, "payload", 7, BSON_SUBTYPE_BINARY, buf, buflen);
+      }
+
+      MONGOC_INFO ("SCRAM: authenticating \"%s\" (step %d)",
+                   mongoc_uri_get_username (cluster->uri),
+                   scram.step);
+
+      if (!_mongoc_cluster_run_command (cluster, stream, auth_source, &cmd, &reply, error)) {
+         bson_destroy (&cmd);
+         goto failure;
+      }
+
+      bson_destroy (&cmd);
+
+      if (bson_iter_init_find (&iter, &reply, "done") &&
+          bson_iter_as_bool (&iter)) {
+         bson_destroy (&reply);
+         break;
+      }
+
+      if (!bson_iter_init_find (&iter, &reply, "ok") ||
+          !bson_iter_as_bool (&iter) ||
+          !bson_iter_init_find (&iter, &reply, "conversationId") ||
+          !BSON_ITER_HOLDS_INT32 (&iter) ||
+          !(conv_id = bson_iter_int32 (&iter)) ||
+          !bson_iter_init_find (&iter, &reply, "payload") ||
+          !BSON_ITER_HOLDS_BINARY(&iter)) {
+         MONGOC_INFO ("SCRAM: authentication failed for \"%s\"",
+                      mongoc_uri_get_username (cluster->uri));
+         bson_destroy (&reply);
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "Received invalid SCRAM reply from MongoDB server.");
+         goto failure;
+      }
+
+      bson_subtype_t btype;
+      bson_iter_binary (&iter, &btype, &buflen, (const uint8_t**)&tmpstr);
+
+      if (buflen > sizeof buf) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "SCRAM reply from MongoDB is too large.");
+         goto failure;
+      }
+
+      memcpy (buf, tmpstr, buflen);
+
+      bson_destroy (&reply);
+   }
+
+   MONGOC_INFO ("SCRAM: \"%s\" authenticated",
+                mongoc_uri_get_username (cluster->uri));
+
+   ret = true;
+
+failure:
+   _mongoc_scram_destroy (&scram);
+
+   return ret;
+}
+#endif
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_auth_node --
+ *
+ *       Authenticate a cluster node depending on the required mechanism.
+ *
+ * Returns:
+ *       true if authenticated. false on failure and @error is set.
+ *
+ * Side effects:
+ *       @error is set on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_cluster_auth_node (mongoc_cluster_t            *cluster,
+                           mongoc_stream_t             *stream,
+                           mongoc_server_description_t *sd,
+                           bson_error_t                *error)
+{
+   bool ret = false;
+   const char *mechanism;
+
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (sd);
+
+   mechanism = mongoc_uri_get_auth_mechanism (cluster->uri);
+
+   if (!mechanism) {
+      if (sd->max_wire_version < 3) {
+         mechanism = "MONGODB-CR";
+      } else {
+         mechanism = "SCRAM-SHA-1";
+      }
+   }
+
+   if (0 == strcasecmp (mechanism, "MONGODB-CR")) {
+      ret = _mongoc_cluster_auth_node_cr (cluster, stream, error);
+#ifdef MONGOC_ENABLE_SSL
+   } else if (0 == strcasecmp (mechanism, "MONGODB-X509")) {
+      ret = _mongoc_cluster_auth_node_x509 (cluster, stream, error);
+   } else if (0 == strcasecmp (mechanism, "SCRAM-SHA-1")) {
+      ret = _mongoc_cluster_auth_node_scram (cluster, stream, error);
+#endif
+#ifdef MONGOC_ENABLE_SASL
+   } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
+      ret = _mongoc_cluster_auth_node_sasl (cluster, stream, sd, error);
+   } else if (0 == strcasecmp (mechanism, "PLAIN")) {
+      ret = _mongoc_cluster_auth_node_plain (cluster, stream, error);
+#endif
+   } else {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "The authentication mechanism \"%s\" is not supported.",
+                      mechanism);
+   }
+
+   if (!ret) {
+      mongoc_counter_auth_failure_inc ();
+   } else {
+      mongoc_counter_auth_success_inc ();
+   }
+
+   return ret;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_disconnect_node --
+ *
+ *       Remove a node from the set of nodes. This should be done if
+ *       a stream in the set is found to be invalid.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Removes node from cluster's set of nodes.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
+{
+   mongoc_set_rm(cluster->nodes, server_id);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_cluster_add_node --
  *
  *       Add a new node to this cluster for the given server description.
@@ -125,32 +1018,16 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
       RETURN(NULL);
    }
 
+   if (cluster->requires_auth) {
+      if (!_mongoc_cluster_auth_node (cluster, stream, description, error)) {
+         mongoc_stream_destroy (stream);
+         RETURN (false);
+      }
+   }
+
    mongoc_set_add(cluster->nodes, description->id, stream);
 
    RETURN(stream);
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cluster_disconnect_node --
- *
- *       Remove a node from the set of nodes. This should be done if
- *       a stream in the set is found to be invalid.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Removes node from cluster's set of nodes.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-_mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
-{
-   mongoc_set_rm(cluster->nodes, server_id);
 }
 
 /*
@@ -312,13 +1189,15 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
    ENTRY;
 
    bson_return_val_if_fail(cluster, 0);
-   bson_return_val_if_fail(optype, 0);
+   /*
    bson_return_val_if_fail(write_concern, 0);
    bson_return_val_if_fail(read_prefs, 0);
+   */
 
    selected_server = _mongoc_sdam_select(cluster->client->sdam,
                                          optype,
                                          read_prefs,
+                                         cluster->sockettimeoutms,
                                          error);
 
    if (!selected_server) {
@@ -328,9 +1207,13 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
    /* pre-load this stream if we don't already have it */
    stream = mongoc_set_get (cluster->nodes, selected_server->id);
    if (!stream) {
-      // TODO: error handling, if we can't add stream should we still return
-      // this server description?
       stream = _mongoc_cluster_add_node (cluster, selected_server, error);
+
+      if (!stream) {
+         _mongoc_server_description_destroy(selected_server);
+
+         RETURN (NULL);
+      }
    }
 
    RETURN(selected_server);
@@ -368,6 +1251,14 @@ _mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
    mongoc_server_description_t *server;
    mongoc_read_mode_t read_mode;
    mongoc_ss_optype_t optype = MONGOC_SS_READ;
+
+   if (! write_concern) {
+      write_concern = cluster->client->write_concern;
+   }
+
+   if (! read_prefs) {
+      read_prefs = cluster->client->read_prefs;
+   }
 
    if (_mongoc_opcode_needs_primary(opcode)) {
       optype = MONGOC_SS_WRITE;
@@ -413,8 +1304,17 @@ _mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
    mongoc_server_description_t *server;
    uint32_t server_id;
 
+   if (! write_concern) {
+      write_concern = cluster->client->write_concern;
+   }
+
+   if (! read_prefs) {
+      read_prefs = cluster->client->read_prefs;
+   }
+   
    server = _mongoc_cluster_preselect_description(cluster, opcode, write_concern,
                                                   read_prefs, error);
+
    if (server) {
       server_id = server->id;
       _mongoc_server_description_destroy(server);
@@ -640,9 +1540,12 @@ _mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
    bson_return_val_if_fail(cluster, 0);
    bson_return_val_if_fail(rpcs, 0);
    bson_return_val_if_fail(rpcs_len, 0);
-   bson_return_val_if_fail(write_concern, 0);
    bson_return_val_if_fail(server_id, 0);
-   bson_return_val_if_fail(server_id < 1, 0);
+//   bson_return_val_if_fail(server_id < 1, 0);
+
+   if (! write_concern) {
+      write_concern = cluster->client->write_concern;
+   }
 
    // TODO: introduce retries
 
@@ -770,6 +1673,14 @@ _mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
 {
    uint32_t server_id;
 
+   if (! write_concern) {
+      write_concern = cluster->client->write_concern;
+   }
+
+   if (! read_prefs) {
+      read_prefs = cluster->client->read_prefs;
+   }
+
    server_id = _mongoc_cluster_select(cluster, rpcs, rpcs_len,
                                             write_concern, read_prefs, error);
    if (server_id < 1) {
@@ -826,7 +1737,7 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    bson_return_val_if_fail (rpc, false);
    bson_return_val_if_fail (buffer, false);
    bson_return_val_if_fail (server_id, false);
-   bson_return_val_if_fail (server_id < 1, false);
+//   bson_return_val_if_fail (server_id < 1, false);
 
    /*
     * Fetch the stream to communicate over.

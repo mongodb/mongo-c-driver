@@ -10,8 +10,8 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async-test"
 
-#define TIMEOUT 1000
-#define NSERVERS 100
+#define TIMEOUT 10000
+#define NSERVERS 10
 
 #define TRUST_DIR "tests/trust_dir"
 #define CAFILE TRUST_DIR "/verify/mongo_root.pem"
@@ -36,6 +36,7 @@ usleep (int64_t usec)
 static void
 test_ismaster_helper (mongoc_async_cmd_result_t result,
                       const bson_t             *bson,
+                      int64_t                   rtt_msec,
                       void                     *data,
                       bson_error_t             *error)
 {
@@ -46,9 +47,6 @@ test_ismaster_helper (mongoc_async_cmd_result_t result,
    assert(result == MONGOC_ASYNC_CMD_SUCCESS);
 
    (*finished)--;
-
-   char *json = bson_as_json(bson, NULL);
-   fprintf(stderr, "%s\n", json);
 }
 
 static void
@@ -56,7 +54,7 @@ test_ismaster_impl (bool with_ssl)
 {
    mock_server_t *servers[NSERVERS];
    mongoc_async_t *async;
-   mongoc_stream_t *sock_stream;
+   mongoc_stream_t *sock_streams[NSERVERS];
    mongoc_socket_t *conn_sock;
    struct sockaddr_in server_addr = { 0 };
    uint16_t port;
@@ -103,21 +101,21 @@ test_ismaster_impl (bool with_ssl)
                                  sizeof (server_addr), 0);
       assert (r == 0 || errno == EAGAIN);
 
-      sock_stream = mongoc_stream_socket_new (conn_sock);
+      sock_streams[i] = mongoc_stream_socket_new (conn_sock);
 
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
          copt.ca_file = CAFILE;
          copt.weak_cert_validation = 1;
 
-         sock_stream = mongoc_stream_tls_new (sock_stream, &copt, 1);
+         sock_streams[i] = mongoc_stream_tls_new (sock_streams[i], &copt, 1);
       }
 #endif
 
       bson_append_int32 (&q, "isMaster", 8, 1);
 
       mongoc_async_cmd (async,
-                        sock_stream,
+                        sock_streams[i],
                         "admin",
                         &q,
                         &test_ismaster_helper,
@@ -128,7 +126,6 @@ test_ismaster_impl (bool with_ssl)
    while (mongoc_async_run (async, TIMEOUT)) {
    }
 
-   fprintf(stderr, "finished: %d\n", finished);
    assert(finished == 0);
 
    mongoc_async_destroy (async);
@@ -137,6 +134,8 @@ test_ismaster_impl (bool with_ssl)
 
    for (i = 0; i < NSERVERS; i++) {
       mock_server_quit (servers[i], 0);
+      mock_server_destroy (servers[i]);
+      mongoc_stream_destroy (sock_streams[i]);
    }
 }
 

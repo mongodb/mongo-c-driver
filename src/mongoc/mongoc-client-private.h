@@ -111,6 +111,12 @@ _mongoc_client_preselect (mongoc_client_t              *client,
                           const mongoc_read_prefs_t    *read_prefs,
                           bson_error_t                 *error);
 
+void
+_mongoc_sdam_background_thread_start (mongoc_sdam_t *sdam);
+
+void
+_mongoc_sdam_background_thread_stop (mongoc_sdam_t *sdam);
+
 mongoc_server_description_t *
 _mongoc_client_get_server_description (mongoc_client_t *client,
                                        uint32_t         server_id);

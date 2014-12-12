@@ -11,7 +11,7 @@
 #define MONGOC_LOG_DOMAIN "sdam-scanner-test"
 
 #define TIMEOUT 1000
-#define NSERVERS 100
+#define NSERVERS 10
 
 #define TRUST_DIR "tests/trust_dir"
 #define CAFILE TRUST_DIR "/verify/mongo_root.pem"
@@ -36,6 +36,7 @@ usleep (int64_t usec)
 static bool
 test_sdam_scanner_helper (uint32_t      id,
                           const bson_t *bson,
+                          int64_t       rtt_msec,
                           void         *data,
                           bson_error_t *error)
 {
@@ -45,7 +46,7 @@ test_sdam_scanner_helper (uint32_t      id,
 
    (*finished)--;
 
-   return *finished >= 100 ? true : false;
+   return *finished >= NSERVERS ? true : false;
 }
 
 static void
@@ -93,7 +94,7 @@ test_sdam_scanner(void)
       host.port = port + i;
       host.family = AF_INET;
 
-      mongoc_sdam_scanner_add(sdam_scanner, &host);
+      mongoc_sdam_scanner_add(sdam_scanner, &host, i);
    }
 
    usleep (5000);
@@ -114,6 +115,7 @@ test_sdam_scanner(void)
 
    for (i = 0; i < NSERVERS; i++) {
       mock_server_quit (servers[i], 0);
+      mock_server_destroy (servers[i]);
    }
 }
 

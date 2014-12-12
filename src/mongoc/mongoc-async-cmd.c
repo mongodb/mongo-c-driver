@@ -57,17 +57,20 @@ bool
 mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 {
    mongoc_async_cmd_result_t result;
+   int64_t rtt;
 
    result = gMongocCMDPhases[acmd->state](acmd);
+
+   rtt = bson_get_monotonic_time () - acmd->start_time;
 
    if (result == MONGOC_ASYNC_CMD_IN_PROGRESS) {
       return true;
    }
 
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
-      acmd->cb (result, &acmd->reply, acmd->data, &acmd->error);
+      acmd->cb (result, &acmd->reply, rtt, acmd->data, &acmd->error);
    } else {
-      acmd->cb (result, NULL, acmd->data, &acmd->error);
+      acmd->cb (result, NULL, rtt, acmd->data, &acmd->error);
    }
 
    mongoc_async_cmd_destroy (acmd);
@@ -226,6 +229,8 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
       acmd->bytes_to_read = 4;
       acmd->events = POLLIN;
    }
+
+   acmd->start_time = bson_get_monotonic_time ();
 
    return MONGOC_ASYNC_CMD_IN_PROGRESS;
 }

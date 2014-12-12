@@ -112,7 +112,7 @@ mongoc_async_run (mongoc_async_t *async,
       DL_FOREACH_SAFE (async->cmds, acmd, tmp)
       {
          if (now > acmd->expire_at) {
-            acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, acmd->data,
+            acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->start_time), acmd->data,
                       &acmd->error);
             mongoc_async_cmd_destroy (acmd);
          } else {
@@ -124,6 +124,7 @@ mongoc_async_run (mongoc_async_t *async,
          break;
       }
 
+      bson_free (poll);
       poll = bson_malloc0 (sizeof (*poll) * async->ncmds);
 
       i = 0;

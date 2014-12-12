@@ -45,6 +45,7 @@ typedef enum
 
 typedef void (*mongoc_async_cmd_cb_t)(mongoc_async_cmd_result_t result,
                                       const bson_t             *bson,
+                                      int64_t                   rtt_msec,
                                       void                     *data,
                                       bson_error_t             *error);
 

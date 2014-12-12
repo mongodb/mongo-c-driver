@@ -520,8 +520,10 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
       _mongoc_write_command_delete_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
+      _mongoc_server_description_destroy (server);
       EXIT;
    }
+   _mongoc_server_description_destroy (server);
 
    BSON_APPEND_UTF8 (&cmd, "delete", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
@@ -601,8 +603,10 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
       _mongoc_write_command_insert_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
+      _mongoc_server_description_destroy (server);
       EXIT;
       }
+   _mongoc_server_description_destroy (server);
 
    if (!command->u.insert.n_documents ||
        !bson_iter_init (&iter, command->u.insert.documents) ||
@@ -726,8 +730,10 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
       _mongoc_write_command_update_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
+      _mongoc_server_description_destroy (server);
       EXIT;
    }
+   _mongoc_server_description_destroy (server);
 
    BSON_APPEND_UTF8 (&cmd, "update", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
@@ -809,6 +815,8 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
    gWriteOps [mode][command->type] (command, client, hint, database,
                                     collection, write_concern, result,
                                     &result->error);
+
+   _mongoc_server_description_destroy (server);
 
    EXIT;
 }

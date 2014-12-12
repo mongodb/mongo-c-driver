@@ -945,6 +945,9 @@ _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
    }
 
    *host = description->host;
+
+   _mongoc_server_description_destroy (description);
+
    return;
 }
 

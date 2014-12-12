@@ -43,17 +43,24 @@ _mongoc_topology_server_dtor (void *server_,
  *--------------------------------------------------------------------------
  */
 void
-_mongoc_topology_description_init (mongoc_topology_description_t *description)
+_mongoc_topology_description_init (mongoc_topology_description_t *description,
+                                   mongoc_topology_cb_t          *cb)
 {
    ENTRY;
 
    bson_return_if_fail(description);
+
+   memset (description, sizeof (*description), 0);
 
    description->type = MONGOC_TOPOLOGY_UNKNOWN;
    description->servers = mongoc_set_new(8, _mongoc_topology_server_dtor, NULL);
    description->set_name = NULL;
    description->compatible = true; // TODO: different default?
    description->compatibility_error = NULL;
+
+   if (cb) {
+      memcpy (&description->cb, cb, sizeof (*cb));
+   }
 
    EXIT;
 }
@@ -120,7 +127,8 @@ _mongoc_topology_description_has_primary (mongoc_topology_description_t *descrip
 
    for (i = 0; i < set->items_len; i++) {
       server_iter = set->items[i].item;
-      if (server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
+      if (server_iter->type == MONGOC_SERVER_RS_PRIMARY ||
+          server_iter->type == MONGOC_SERVER_STANDALONE) {
          return server_iter;
       }
    }
@@ -147,15 +155,24 @@ _mongoc_topology_description_has_primary (mongoc_topology_description_t *descrip
 static mongoc_server_description_t *
 _mongoc_topology_description_select_within_window (mongoc_array_t *suitable_servers)
 {
+   mongoc_server_description_t *out = NULL;
+
    bson_return_val_if_fail(suitable_servers, NULL);
 
    // TODO SS implement properly
 
    // for basic functionality, always return the first element.
    if (suitable_servers->len < 1) {
-      return NULL;
+      goto DONE;
    }
-   return _mongoc_array_index(suitable_servers, mongoc_server_description_t *, 0);
+
+   out = _mongoc_array_index(suitable_servers, mongoc_server_description_t *, 0);
+
+DONE:
+
+   _mongoc_array_destroy (suitable_servers);
+
+   return out;
 }
 
 /*
@@ -239,7 +256,7 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
    // we should also timeout when minHearbeatFrequencyMS ms have passed, per check.
    do {
       _mongoc_topology_description_suitable_servers(&suitable_servers, optype, topology, read_pref);
-      if (suitable_servers.len == 0) {
+      if (suitable_servers.len != 0) {
          RETURN(_mongoc_topology_description_select_within_window(&suitable_servers));
       }
       // TODO SS request scan, and wait
@@ -251,6 +268,9 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
                   MONGOC_ERROR_SERVER_SELECTION,
                   MONGOC_ERROR_SERVER_SELECTION_TIMEOUT,
                   "Could not find a suitable server");
+
+   _mongoc_array_destroy (&suitable_servers);
+
    RETURN(NULL);
 }
 
@@ -297,8 +317,11 @@ void
 _mongoc_topology_description_remove_server (mongoc_topology_description_t *description,
                                             mongoc_server_description_t   *server)
 {
+   if (description->cb.rm) {
+      description->cb.rm(server);
+   }
+
    mongoc_set_rm(description->servers, server->id);
-   // TODO: some sort of callback to clusters?
 }
 
 /*
@@ -445,7 +468,7 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
  *
  *--------------------------------------------------------------------------
  */
-static uint32_t
+uint32_t
 _mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
                                          const char                    *server)
 {
@@ -462,6 +485,11 @@ _mongoc_topology_description_add_server (mongoc_topology_description_t *topology
    _mongoc_server_description_init(description, server, id);
 
    mongoc_set_add(topology->servers, id, description);
+
+   if (topology->cb.add) {
+      topology->cb.add(description);
+   }
+
    return id;
 }
 
@@ -499,7 +527,9 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
 {
    mongoc_server_description_t *server_iter;
    mongoc_set_t *set = topology->servers;
-   char **member_iter;
+   bson_iter_t member_iter;
+   const bson_t *rs_members[3];
+   const char *member_name;
    int i;
 
    if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
@@ -536,12 +566,20 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
     * Begin monitoring any new servers primary knows about.
     */
 
-   member_iter = server->rs_members;
-   while (member_iter) {
-      if (!_mongoc_topology_description_has_server(topology, *member_iter)) {
-         _mongoc_topology_description_add_server(topology, *member_iter);
+   rs_members[0] = &server->hosts;
+   rs_members[1] = &server->arbiters;
+   rs_members[2] = &server->passives;
+
+   for (i = 0; i < 3; i++) {
+      bson_iter_init (&member_iter, rs_members[i]);
+
+      while (bson_iter_next (&member_iter)) {
+         member_name = bson_iter_utf8 (&member_iter, NULL);
+
+         if (!_mongoc_topology_description_has_server(topology, member_name)) {
+            _mongoc_topology_description_add_server(topology, member_name);
+         }
       }
-      member_iter++;
    }
 
    /*
@@ -578,7 +616,7 @@ _mongoc_topology_description_update_rs_without_primary (mongoc_topology_descript
    if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
 
    if (!topology->set_name) {
-      topology->set_name = server->set_name;
+      topology->set_name = bson_strdup(server->set_name);
    }
    else if (topology->set_name != server->set_name) {
       _mongoc_topology_description_remove_server(topology, server);
@@ -816,10 +854,23 @@ gSDAMTransitionTable[MONGOC_SERVER_DESCRIPTION_TYPES][MONGOC_TOPOLOGY_DESCRIPTIO
  *--------------------------------------------------------------------------
  */
 
-void _mongoc_topology_description_handle_ismaster (mongoc_topology_description_t *topology,
-                                                   const bson_t *ismaster)
+bool
+_mongoc_topology_description_handle_ismaster (
+   mongoc_topology_description_t *topology,
+   mongoc_server_description_t   *sd,
+   const bson_t                  *reply,
+   int64_t                        rtt_msec,
+   bson_error_t                  *error)
 {
-   // TODO
-   // call that table
-   return;
+   _mongoc_server_description_handle_ismaster (sd, reply, rtt_msec, error);
+
+   if (gSDAMTransitionTable[sd->type][topology->type]) {
+      gSDAMTransitionTable[sd->type][topology->type](topology, sd);
+   }
+
+   if (_mongoc_topology_description_server_by_id (topology, sd->id)) {
+      return true;
+   } else {
+      return false;
+   }
 }

@@ -99,7 +99,7 @@ mongoc_set_rm (mongoc_set_t *set,
 
       set->items_len--;
 
-      set->dtor(ptr, set->dtor_ctx);
+      set->dtor(ptr->item, set->dtor_ctx);
    }
 }
 

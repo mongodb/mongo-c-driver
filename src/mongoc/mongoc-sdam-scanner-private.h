@@ -32,6 +32,7 @@ BSON_BEGIN_DECLS
 
 typedef bool (*mongoc_sdam_scanner_cb_t)(uint32_t      id,
                                          const bson_t *bson,
+                                         int64_t       rtt,
                                          void         *data,
                                          bson_error_t *error);
 
@@ -73,9 +74,10 @@ mongoc_sdam_scanner_new (mongoc_sdam_scanner_cb_t cb,
 void
 mongoc_sdam_scanner_destroy (mongoc_sdam_scanner_t *ss);
 
-uint32_t
+void
 mongoc_sdam_scanner_add (mongoc_sdam_scanner_t    *ss,
-                         const mongoc_host_list_t *host);
+                         const mongoc_host_list_t *host,
+                         uint32_t                  id);
 
 void
 mongoc_sdam_scanner_rm (mongoc_sdam_scanner_t *ss,

@@ -470,6 +470,7 @@ test_exhaust_cursor (void)
    bson_t *bptr[10];
    int i;
    bool r;
+   uint32_t hint;
    bson_error_t error;
    bson_oid_t oid;
 
@@ -520,20 +521,25 @@ test_exhaust_cursor (void)
     * should be and ensure that an early destroy properly causes a disconnect
     * */
    {
-#if 0
       r = mongoc_cursor_next (cursor, &doc);
       assert (r);
       assert (doc);
       assert (cursor->in_exhaust);
       assert (client->in_exhaust);
+
+      /* TODO something coherent */
+      /*
       node = &client->cluster.nodes[cursor->hint - 1];
       stream = node->stream;
+      */
 
       mongoc_cursor_destroy (cursor);
       /* make sure a disconnect happened */
+      /* TODO something coherent */
+      /*
       assert (stream != node->stream);
+      */
       assert (! client->in_exhaust);
-#endif
    }
 
    /* Grab a new exhaust cursor, then verify that reading from that cursor
@@ -589,6 +595,7 @@ test_exhaust_cursor (void)
                                         NULL, NULL);
 
       stream = mongoc_set_get(client->cluster.nodes, cursor->hint);
+      hint = cursor->hint;
 
       for (i = 1; i < 10; i++) {
          r = mongoc_cursor_next (cursor, &doc);
@@ -602,7 +609,7 @@ test_exhaust_cursor (void)
 
       mongoc_cursor_destroy (cursor);
 
-      assert (stream == mongoc_set_get(client->cluster.nodes, cursor->hint));
+      assert (stream == mongoc_set_get(client->cluster.nodes, hint));
 
       r = mongoc_cursor_next (cursor2, &doc);
       assert (r);

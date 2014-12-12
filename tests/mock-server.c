@@ -24,6 +24,8 @@
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 
+#define TIMEOUT 100
+
 
 #ifdef _WIN32
 # define strcasecmp _stricmp
@@ -67,6 +69,9 @@ struct _mock_server_t
    int                    maxWireVersion;
    int                    maxBsonObjectSize;
    int                    maxMessageSizeBytes;
+   bool                   keep_going;
+   int                    children;
+   bool                   running;
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t      *ssl_opts;
 #endif
@@ -227,6 +232,7 @@ mock_server_worker (void *data)
    bson_error_t error;
    int32_t msg_len;
    void **closure = data;
+   bool keep_going;
 
    ENTRY;
 
@@ -238,9 +244,16 @@ mock_server_worker (void *data)
    _mongoc_buffer_init(&buffer, NULL, 0, NULL, NULL);
 
 again:
-   if (_mongoc_buffer_fill (&buffer, stream, 4, -1, &error) == -1) {
-      MONGOC_WARNING ("%s():%d: %s", __FUNCTION__, __LINE__, error.message);
-      GOTO (failure);
+   mongoc_mutex_lock (&server->mutex);
+   keep_going = server->keep_going;
+   mongoc_mutex_unlock (&server->mutex);
+
+   if (! keep_going) {
+      goto failure;
+   }
+
+   if (_mongoc_buffer_fill (&buffer, stream, 4, TIMEOUT, &error) == -1) {
+      GOTO (again);
    }
 
    assert (buffer.len >= 4);
@@ -281,6 +294,12 @@ again:
    GOTO (again);
 
 failure:
+   mongoc_mutex_lock (&server->mutex);
+   server->children--;
+   mongoc_mutex_unlock (&server->mutex);
+
+   _mongoc_buffer_destroy (&buffer);
+
    mongoc_stream_close (stream);
    mongoc_stream_destroy (stream);
    bson_free(closure);
@@ -327,6 +346,8 @@ mock_server_new (const char            *address,
    server->maxBsonObjectSize = 16777216;
    server->maxMessageSizeBytes = 48000000;
 
+   server->keep_going = true;
+
    mongoc_mutex_init (&server->mutex);
    mongoc_cond_init (&server->cond);
 
@@ -344,6 +365,8 @@ mock_server_run (mock_server_t *server)
    mongoc_socket_t *csock;
    void **closure;
    int optval;
+   bool keep_going = true;
+   bool has_children = true;
 
    bson_return_val_if_fail (server, -1);
    bson_return_val_if_fail (!server->sock, -1);
@@ -381,14 +404,24 @@ mock_server_run (mock_server_t *server)
    server->sock = ssock;
 
    mongoc_mutex_lock (&server->mutex);
+   server->running = true;
    mongoc_cond_signal (&server->cond);
    mongoc_mutex_unlock (&server->mutex);
 
    for (;;) {
-      csock = mongoc_socket_accept (server->sock, -1);
+      csock = mongoc_socket_accept (server->sock, bson_get_monotonic_time() + TIMEOUT);
+
       if (!csock) {
-         perror ("Failed to accept client socket");
-         break;
+         mongoc_mutex_lock (&server->mutex);
+         keep_going = server->keep_going;
+
+         mongoc_mutex_unlock (&server->mutex);
+
+         if (! keep_going) {
+            break;
+         } else {
+            continue;
+         }
       }
 
       stream = mongoc_stream_socket_new (csock);
@@ -406,11 +439,22 @@ mock_server_run (mock_server_t *server)
       closure[0] = server;
       closure[1] = stream;
 
+      mongoc_mutex_lock (&server->mutex);
+      server->children++;
+      mongoc_mutex_unlock (&server->mutex);
+
       mongoc_thread_create (&thread, mock_server_worker, closure);
    }
 
    mongoc_socket_close (server->sock);
+   mongoc_socket_destroy (server->sock);
    server->sock = NULL;
+
+   while (has_children) {
+      mongoc_mutex_lock (&server->mutex);
+      has_children = server->children > 0;
+      mongoc_mutex_unlock (&server->mutex);
+   }
 
    return 0;
 }
@@ -434,9 +478,12 @@ mock_server_run_in_thread (mock_server_t *server)
 
    server->using_main_thread = true;
 
-   mongoc_mutex_lock (&server->mutex);
    mongoc_thread_create (&server->main_thread, main_thread, server);
-   mongoc_cond_wait (&server->cond, &server->mutex);
+
+   mongoc_mutex_lock (&server->mutex);
+   while (! server->running) {
+      mongoc_cond_wait (&server->cond, &server->mutex);
+   }
    mongoc_mutex_unlock (&server->mutex);
 }
 
@@ -447,9 +494,11 @@ mock_server_quit (mock_server_t *server,
 {
    bson_return_if_fail(server);
 
-   /*
-    * TODO: Exit server loop.
-    */
+   mongoc_mutex_lock (&server->mutex);
+   server->keep_going = false;
+   mongoc_mutex_unlock (&server->mutex);
+
+   mongoc_thread_join (server->main_thread);
 }
 
 
