@@ -239,3 +239,18 @@ mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
 
    return NULL;
 }
+
+
+bool
+mongoc_stream_check_closed (mongoc_stream_t *stream)
+{
+   int ret;
+
+   ENTRY;
+
+   bson_return_val_if_fail(stream, -1);
+
+   ret = stream->check_closed(stream);
+
+   RETURN (ret);
+}

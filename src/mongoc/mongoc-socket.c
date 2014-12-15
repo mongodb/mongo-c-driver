@@ -1069,3 +1069,28 @@ mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
 
    RETURN (NULL);
 }
+
+
+bool
+mongoc_socket_check_closed (mongoc_socket_t *sock) /* IN */
+{
+   bool closed = false;
+   char buf [1];
+   ssize_t r;
+
+   if (_mongoc_socket_wait (sock->sd, POLLIN, 0)) {
+      sock->errno_ = 0;
+
+      r = recv (sock->sd, buf, 1, MSG_PEEK);
+
+      if (r < 0) {
+         _mongoc_socket_capture_errno (sock);
+      }
+
+      if (r < 1) {
+         closed = true;
+      }
+   }
+
+   return closed;
+}

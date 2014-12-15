@@ -210,6 +210,23 @@ mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream) /* IN */
 }
 
 
+static bool
+_mongoc_stream_socket_check_closed (mongoc_stream_t *stream) /* IN */
+{
+   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *)stream;
+
+   ENTRY;
+
+   bson_return_val_if_fail (stream, true);
+
+   if (ss->sock) {
+      RETURN (mongoc_socket_check_closed (ss->sock));
+   }
+
+   RETURN (true);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -242,6 +259,7 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
    stream->vtable.readv = _mongoc_stream_socket_readv;
    stream->vtable.writev = _mongoc_stream_socket_writev;
    stream->vtable.setsockopt = _mongoc_stream_socket_setsockopt;
+   stream->vtable.check_closed = _mongoc_stream_socket_check_closed;
    stream->sock = sock;
 
    return (mongoc_stream_t *)stream;
