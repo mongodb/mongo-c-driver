@@ -78,6 +78,7 @@ typedef struct
    int32_t             max_wire_version;
    int32_t             max_write_batch_size;
    char               *replSet;
+   int64_t             last_read_msec;
 } mongoc_cluster_node_t;
 
 

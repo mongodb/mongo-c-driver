@@ -63,6 +63,8 @@
 #define MIN_WIRE_VERSION 0
 #define MAX_WIRE_VERSION 3
 
+#define CHECK_CLOSED_DURATION_MSEC 1000
+
 
 #ifndef DEFAULT_SOCKET_TIMEOUT_MSEC
 /*
@@ -2656,20 +2658,34 @@ _mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
       }
    }
 
-   /*
-    * Try to find a node to deliver to. Since we are allowed to block in this
-    * version of sendv, we try to reconnect if we cannot select a node.
-    */
-   while (!(node = _mongoc_cluster_select (cluster, rpcs, rpcs_len, hint,
-                                           write_concern, read_prefs,
-                                           error))) {
-      if ((retry_count++ == MAX_RETRY_COUNT) ||
-          !_mongoc_cluster_reconnect (cluster, error)) {
-         RETURN (false);
+   for (;;) {
+      /*
+       * Try to find a node to deliver to. Since we are allowed to block in this
+       * version of sendv, we try to reconnect if we cannot select a node.
+       */
+      while (!(node = _mongoc_cluster_select (cluster, rpcs, rpcs_len, hint,
+                                              write_concern, read_prefs,
+                                              error))) {
+         if ((retry_count++ == MAX_RETRY_COUNT) ||
+             !_mongoc_cluster_reconnect (cluster, error)) {
+            RETURN (false);
+         }
+      }
+
+      BSON_ASSERT(node->stream);
+
+      if (node->last_read_msec + CHECK_CLOSED_DURATION_MSEC < now) {
+         if (mongoc_stream_check_closed (node->stream)) {
+            _mongoc_cluster_disconnect_node (cluster, node);
+            _mongoc_cluster_reconnect (cluster, NULL);
+         } else {
+            node->last_read_msec = now;
+            break;
+         }
+      } else {
+         break;
       }
    }
-
-   BSON_ASSERT(node->stream);
 
    _mongoc_array_clear (&cluster->iov);
 
@@ -3004,6 +3020,8 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
+
+   node->last_read_msec = bson_get_monotonic_time ();
 
    DUMP_BYTES (buffer, buffer->data + buffer->off, buffer->len);
 

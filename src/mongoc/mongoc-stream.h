@@ -52,7 +52,8 @@ struct _mongoc_stream_t
                                         void            *optval,
                                         socklen_t        optlen);
    mongoc_stream_t *(*get_base_stream) (mongoc_stream_t *stream);
-   void            *padding [8];
+   bool             (*check_closed)    (mongoc_stream_t *stream);
+   void            *padding [7];
 };
 
 
@@ -79,6 +80,7 @@ int              mongoc_stream_setsockopt      (mongoc_stream_t       *stream,
                                                 int                    optname,
                                                 void                  *optval,
                                                 socklen_t              optlen);
+bool             mongoc_stream_check_closed    (mongoc_stream_t       *stream);
 
 
 BSON_END_DECLS

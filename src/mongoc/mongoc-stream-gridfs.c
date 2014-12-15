@@ -139,6 +139,13 @@ _mongoc_stream_gridfs_writev (mongoc_stream_t *stream,
 }
 
 
+static bool
+_mongoc_stream_gridfs_check_closed (mongoc_stream_t *stream) /* IN */
+{
+   return false;
+}
+
+
 mongoc_stream_t *
 mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file)
 {
@@ -156,6 +163,7 @@ mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file)
    stream->stream.flush = _mongoc_stream_gridfs_flush;
    stream->stream.writev = _mongoc_stream_gridfs_writev;
    stream->stream.readv = _mongoc_stream_gridfs_readv;
+   stream->stream.check_closed = _mongoc_stream_gridfs_check_closed;
 
    mongoc_counter_streams_active_inc ();
 

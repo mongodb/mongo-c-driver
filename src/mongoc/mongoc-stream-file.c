@@ -167,6 +167,13 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream,       /* IN */
 }
 
 
+static bool
+_mongoc_stream_file_check_closed (mongoc_stream_t *stream) /* IN */
+{
+   return false;
+}
+
+
 mongoc_stream_t *
 mongoc_stream_file_new (int fd) /* IN */
 {
@@ -181,6 +188,7 @@ mongoc_stream_file_new (int fd) /* IN */
    stream->vtable.flush = _mongoc_stream_file_flush;
    stream->vtable.readv = _mongoc_stream_file_readv;
    stream->vtable.writev = _mongoc_stream_file_writev;
+   stream->vtable.check_closed = _mongoc_stream_file_check_closed;
    stream->fd = fd;
 
    return (mongoc_stream_t *)stream;

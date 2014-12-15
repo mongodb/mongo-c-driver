@@ -721,6 +721,15 @@ _mongoc_stream_tls_get_base_stream (mongoc_stream_t *stream)
 }
 
 
+static bool
+_mongoc_stream_tls_check_closed (mongoc_stream_t *stream) /* IN */
+{
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+   bson_return_val_if_fail(stream, -1);
+   return mongoc_stream_check_closed (tls->base_stream);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -779,6 +788,7 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
    tls->parent.readv = _mongoc_stream_tls_readv;
    tls->parent.setsockopt = _mongoc_stream_tls_setsockopt;
    tls->parent.get_base_stream = _mongoc_stream_tls_get_base_stream;
+   tls->parent.check_closed = _mongoc_stream_tls_check_closed;
    tls->weak_cert_validation = opt->weak_cert_validation;
    tls->bio = bio_ssl;
    tls->ctx = ssl_ctx;
