@@ -112,7 +112,7 @@ mongoc_collection_t           *mongoc_client_get_collection       (mongoc_client
                                                                    const char                   *collection);
 char                         **mongoc_client_get_database_names   (mongoc_client_t              *client,
                                                                    bson_error_t                 *error);
-mongoc_cursor_t               *mongoc_client_get_database_info    (mongoc_client_t              *client,
+mongoc_cursor_t               *mongoc_client_find_databases       (mongoc_client_t              *client,
                                                                    bson_error_t                 *error);
 bool                           mongoc_client_get_server_status    (mongoc_client_t              *client,
                                                                    mongoc_read_prefs_t          *read_prefs,

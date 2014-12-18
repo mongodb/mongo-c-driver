@@ -899,8 +899,8 @@ mongoc_collection_ensure_index (mongoc_collection_t      *collection,
 }
 
 mongoc_cursor_t *
-_mongoc_collection_get_index_info_legacy (mongoc_collection_t *collection,
-                                          bson_error_t        *error)
+_mongoc_collection_find_indexes_legacy (mongoc_collection_t *collection,
+                                        bson_error_t        *error)
 {
    mongoc_database_t *db;
    mongoc_collection_t *idx_collection;
@@ -931,8 +931,8 @@ _mongoc_collection_get_index_info_legacy (mongoc_collection_t *collection,
 }
 
 mongoc_cursor_t *
-mongoc_collection_get_index_info (mongoc_collection_t *collection,
-                                  bson_error_t        *error)
+mongoc_collection_find_indexes (mongoc_collection_t *collection,
+                                bson_error_t        *error)
 {
    mongoc_cursor_t *cursor;
    mongoc_read_prefs_t *read_prefs;
@@ -972,7 +972,7 @@ mongoc_collection_get_index_info (mongoc_collection_t *collection,
             error->code = 0;
             error->domain = 0;
             mongoc_cursor_destroy (cursor);
-            cursor = _mongoc_collection_get_index_info_legacy (collection, error);
+            cursor = _mongoc_collection_find_indexes_legacy (collection, error);
          }
       } else {
          /* TODO: remove this branch for general release.  Only relevant for RC */

@@ -239,7 +239,7 @@ test_get_collection_info (void)
     * test w/o filters for us. */
 
    /* Filter on an exact match of name */
-   cursor = mongoc_database_get_collection_info (database, &name_filter, &error);
+   cursor = mongoc_database_find_collections (database, &name_filter, &error);
    assert (cursor);
    assert (!error.domain);
    assert (!error.code);

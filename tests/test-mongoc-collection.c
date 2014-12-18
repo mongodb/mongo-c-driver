@@ -1216,7 +1216,7 @@ test_get_index_info (void)
    /*
     * Try it on a collection that doesn't exist.
     */
-   cursor = mongoc_collection_get_index_info (collection, &error);
+   cursor = mongoc_collection_find_indexes (collection, &error);
 
    ASSERT (cursor);
    ASSERT (!error.domain);
@@ -1234,7 +1234,7 @@ test_get_index_info (void)
    /* Try it on a collection with no secondary indexes.
     * We should just get back the index on _id.
     */
-   cursor = mongoc_collection_get_index_info (collection, &error);
+   cursor = mongoc_collection_find_indexes (collection, &error);
    ASSERT (cursor);
    ASSERT (!error.domain);
    ASSERT (!error.code);
@@ -1277,7 +1277,7 @@ test_get_index_info (void)
    /*
     * Now we try again after creating two indexes.
     */
-   cursor = mongoc_collection_get_index_info (collection, &error);
+   cursor = mongoc_collection_find_indexes (collection, &error);
    ASSERT (cursor);
    ASSERT (!error.domain);
    ASSERT (!error.code);

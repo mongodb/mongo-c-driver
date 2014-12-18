@@ -219,10 +219,14 @@ LIBMONGOC_1.0 {
 
 LIBMONGOC_1.1 {
     global:
-        mongoc_client_get_database_info;
+        mongoc_client_find_databases;
+        mongoc_client_kill_cursor;
         mongoc_collection_count_with_opts;
-        mongoc_collection_get_index_info;
-        mongoc_database_get_collection_info;
+        mongoc_collection_find_indexes;
+        mongoc_cursor_get_batch_size;
+        mongoc_cursor_get_id;
+        mongoc_cursor_set_batch_size;
+        mongoc_database_find_collections;
         mongoc_index_opt_geo_get_default;
         mongoc_index_opt_geo_init;
         mongoc_rand_add;
@@ -231,11 +235,3 @@ LIBMONGOC_1.1 {
         mongoc_uri_get_credentials;
         mongoc_uri_get_mechanism_properties;
 } LIBMONGOC_1.0;
-
-LIBMONGOC_1.2 {
-    global:
-        mongoc_client_kill_cursor;
-        mongoc_cursor_get_batch_size;
-        mongoc_cursor_get_id;
-        mongoc_cursor_set_batch_size;
-} LIBMONGOC_1.1;

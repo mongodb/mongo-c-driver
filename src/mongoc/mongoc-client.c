@@ -1297,7 +1297,7 @@ mongoc_client_get_database_names (mongoc_client_t *client,
 
    BSON_ASSERT (client);
 
-   cursor = mongoc_client_get_database_info (client, error);
+   cursor = mongoc_client_find_databases (client, error);
 
    while (mongoc_cursor_next (cursor, &doc)) {
       if (bson_iter_init (&iter, doc) &&
@@ -1322,8 +1322,8 @@ mongoc_client_get_database_names (mongoc_client_t *client,
 
 
 mongoc_cursor_t *
-mongoc_client_get_database_info (mongoc_client_t *client,
-                                 bson_error_t    *error)
+mongoc_client_find_databases (mongoc_client_t *client,
+                              bson_error_t    *error)
 {
    bson_t cmd = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;

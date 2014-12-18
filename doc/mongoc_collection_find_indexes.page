@@ -5,21 +5,21 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_collection_get_index_info">
+      id="mongoc_collection_find_indexes">
 
 
   <info>
     <link type="guide" xref="mongoc_collection_t" group="function"/>
   </info>
-  <title>mongoc_collection_get_index_info()</title>
+  <title>mongoc_collection_find_indexes()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[bson_t *
-mongoc_database_get_collection_info (mongoc_collection_t *collection,
-                                     bson_error_t        *error);
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
+mongoc_database_find_collections (mongoc_collection_t *collection,
+                                  bson_error_t        *error);
 ]]></code></synopsis>
-    <p>Fetches a document containing an array of documents, each corresponding to an index on this collection.</p>
+    <p>Fetches a cursor containing documents, each corresponding to an index on this collection.</p>
   </section>
 
   <section id="parameters">
@@ -37,9 +37,9 @@ mongoc_database_get_collection_info (mongoc_collection_t *collection,
 
   <section id="return">
     <title>Returns</title>
-    <p>On success, a bson document containing a field "indexes", the value of which will be an array of subdocuments, each corresponding to the
-    server's representation of an index on this collection. If the collection does not exist on the server, the array will be empty. A value of
-    <code>NULL</code> will be returned in the case of a network error.</p>
+    <p>A cursor where each result corresponds to the server's representation of
+    an index on this collection. If the collection does not exist on the
+    server, the cursor will be empty.</p>
   </section>
 
 </page>

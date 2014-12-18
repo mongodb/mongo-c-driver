@@ -5,22 +5,22 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_database_get_collection_info">
+      id="mongoc_database_find_collections">
 
 
   <info>
     <link type="guide" xref="mongoc_database_t" group="function"/>
   </info>
-  <title>mongoc_database_get_collection_info()</title>
+  <title>mongoc_database_find_collections()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[bson_t *
-mongoc_database_get_collection_info (mongoc_database_t *database,
-                                     const bson_t      *filter,
-                                     bson_error_t      *error);
+    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
+mongoc_database_find_collections (mongoc_database_t * database,
+                                  const bson_t * filter,
+                                  bson_error_t * error);
 ]]></code></synopsis>
-    <p>Fetches a document containing an array of documents, each corresponding to a collection on this database.</p>
+    <p>Fetches a cursor containing documents, each corresponding to a collection on this database.</p>
   </section>
 
   <section id="parameters">
@@ -39,8 +39,8 @@ mongoc_database_get_collection_info (mongoc_database_t *database,
 
   <section id="return">
     <title>Returns</title>
-    <p>On success, a bson document containing a field "collections", the value of which will be an array of subdocuments, each corresponding to the
-    server's representation of a collection in this database. A value of <code>NULL</code> will be returned on a network error.</p>
+    <p>A cursor where each result corresponds to the server's representation of
+    a collection in this database.</p>
   </section>
 
 </page>

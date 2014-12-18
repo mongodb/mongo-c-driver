@@ -607,7 +607,7 @@ mongoc_database_has_collection (mongoc_database_t *database,
 
    BSON_APPEND_UTF8 (&filter, "name", name);
 
-   cursor = mongoc_database_get_collection_info (database, &filter, error);
+   cursor = mongoc_database_find_collections (database, &filter, error);
 
    if (!cursor ||
        (error &&
@@ -639,13 +639,14 @@ typedef struct
    const char *dbname;
    size_t      dbname_len;
    const char *name;
-} mongoc_database_get_collection_info_legacy_ctx_t;
+} mongoc_database_find_collections_legacy_ctx_t;
 
 static mongoc_cursor_transform_mode_t
-_mongoc_database_get_collection_info_legacy_filter(const bson_t *bson, void *ctx_)
+_mongoc_database_find_collections_legacy_filter (const bson_t *bson,
+                                                 void         *ctx_)
 {
    bson_iter_t iter;
-   mongoc_database_get_collection_info_legacy_ctx_t *ctx;
+   mongoc_database_find_collections_legacy_ctx_t *ctx;
 
    ctx = ctx_;
 
@@ -660,9 +661,12 @@ _mongoc_database_get_collection_info_legacy_filter(const bson_t *bson, void *ctx
    }
 }
 
-static void _mongoc_database_get_collection_info_legacy_mutate(const bson_t *bson, bson_t *out, void *ctx_)
+static void
+_mongoc_database_find_collections_legacy_mutate (const bson_t *bson,
+                                                 bson_t       *out,
+                                                 void         *ctx_)
 {
-   mongoc_database_get_collection_info_legacy_ctx_t *ctx;
+   mongoc_database_find_collections_legacy_ctx_t *ctx;
 
    ctx = ctx_;
 
@@ -672,9 +676,9 @@ static void _mongoc_database_get_collection_info_legacy_mutate(const bson_t *bso
 
 /* Uses old way of querying system.namespaces. */
 mongoc_cursor_t *
-_mongoc_database_get_collection_info_legacy (mongoc_database_t *database,
-                                             const bson_t      *filter,
-                                             bson_error_t      *error)
+_mongoc_database_find_collections_legacy (mongoc_database_t *database,
+                                          const bson_t      *filter,
+                                          bson_error_t      *error)
 {
    mongoc_collection_t *col;
    mongoc_cursor_t *cursor = NULL;
@@ -684,7 +688,7 @@ _mongoc_database_get_collection_info_legacy (mongoc_database_t *database,
    bson_iter_t iter;
    const char *col_filter;
    bson_t q = BSON_INITIALIZER;
-   mongoc_database_get_collection_info_legacy_ctx_t *ctx;
+   mongoc_database_find_collections_legacy_ctx_t *ctx;
 
    BSON_ASSERT (database);
 
@@ -731,8 +735,8 @@ _mongoc_database_get_collection_info_legacy (mongoc_database_t *database,
 
    _mongoc_cursor_transform_init (
       cursor,
-      _mongoc_database_get_collection_info_legacy_filter,
-      _mongoc_database_get_collection_info_legacy_mutate,
+      _mongoc_database_find_collections_legacy_filter,
+      _mongoc_database_find_collections_legacy_mutate,
       &bson_free,
       ctx);
 
@@ -745,9 +749,9 @@ _mongoc_database_get_collection_info_legacy (mongoc_database_t *database,
 }
 
 mongoc_cursor_t *
-mongoc_database_get_collection_info (mongoc_database_t *database,
-                                     const bson_t      *filter,
-                                     bson_error_t      *error)
+mongoc_database_find_collections (mongoc_database_t *database,
+                                  const bson_t      *filter,
+                                  bson_error_t      *error)
 {
    mongoc_cursor_t *cursor;
    mongoc_read_prefs_t *read_prefs;
@@ -784,7 +788,8 @@ mongoc_database_get_collection_info (mongoc_database_t *database,
             error->domain = 0;
             /* try again with using system.namespaces */
             mongoc_cursor_destroy (cursor);
-            cursor = _mongoc_database_get_collection_info_legacy (database, filter, error);
+            cursor = _mongoc_database_find_collections_legacy (
+               database, filter, error);
          }
       } else {
          /* TODO: remove this branch for general release.  Only relevant for RC */
@@ -817,7 +822,7 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
 
    BSON_ASSERT (database);
 
-   cursor = mongoc_database_get_collection_info (database, NULL, error);
+   cursor = mongoc_database_find_collections (database, NULL, error);
 
    if (!cursor) {
       return NULL;

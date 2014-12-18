@@ -18,9 +18,9 @@ mongoc_cleanup
 mongoc_client_command
 mongoc_client_command_simple
 mongoc_client_destroy
+mongoc_client_find_databases
 mongoc_client_get_collection
 mongoc_client_get_database
-mongoc_client_get_database_info
 mongoc_client_get_database_names
 mongoc_client_get_gridfs
 mongoc_client_get_max_bson_size
@@ -56,7 +56,7 @@ mongoc_collection_drop_index
 mongoc_collection_ensure_index
 mongoc_collection_find
 mongoc_collection_find_and_modify
-mongoc_collection_get_index_info
+mongoc_collection_find_indexes
 mongoc_collection_get_last_error
 mongoc_collection_get_name
 mongoc_collection_get_read_prefs
@@ -90,8 +90,8 @@ mongoc_database_command_simple
 mongoc_database_create_collection
 mongoc_database_destroy
 mongoc_database_drop
+mongoc_database_find_collections
 mongoc_database_get_collection
-mongoc_database_get_collection_info
 mongoc_database_get_collection_names
 mongoc_database_get_name
 mongoc_database_get_read_prefs
@@ -146,10 +146,10 @@ mongoc_log_level_str
 mongoc_log_set_handler
 mongoc_matcher_destroy
 mongoc_matcher_match
-mongoc_rand_seed
-mongoc_rand_add
-mongoc_rand_status
 mongoc_matcher_new
+mongoc_rand_add
+mongoc_rand_seed
+mongoc_rand_status
 mongoc_read_prefs_add_tag
 mongoc_read_prefs_copy
 mongoc_read_prefs_destroy
