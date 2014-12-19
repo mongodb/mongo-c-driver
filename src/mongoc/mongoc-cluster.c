@@ -1649,11 +1649,11 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
           BSON_ITER_HOLDS_UTF8 (&iter)) {
          errmsg = bson_iter_utf8 (&iter, NULL);
       }
-      bson_destroy (&reply);
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_AUTHENTICATE,
                       "%s", errmsg);
+      bson_destroy (&reply);
       return false;
    }
 
