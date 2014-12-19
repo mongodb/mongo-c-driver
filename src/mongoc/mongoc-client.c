@@ -143,7 +143,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
                                       (socklen_t)rp->ai_addrlen,
                                       expire_at)) {
          char *errmsg;
-         char errmsg_buf[32];
+         char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
          char ip[255];
 
          mongoc_socket_inet_ntop (rp, ip, sizeof ip);
