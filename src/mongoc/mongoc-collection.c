@@ -878,6 +878,8 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
          bson_append_document_end (&storage_doc, &wt_doc);
          bson_append_document_end (&doc, &storage_doc);
          break;
+      default:
+         break;
       }
    }
 

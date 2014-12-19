@@ -163,6 +163,7 @@ mongoc_read_prefs_set_mode
 mongoc_read_prefs_set_tags
 mongoc_socket_accept
 mongoc_socket_bind
+mongoc_socket_check_closed
 mongoc_socket_close
 mongoc_socket_connect
 mongoc_socket_destroy
@@ -178,6 +179,7 @@ mongoc_socket_sendv
 mongoc_socket_setsockopt
 mongoc_ssl_opt_get_default
 mongoc_stream_buffered_new
+mongoc_stream_check_closed
 mongoc_stream_close
 mongoc_stream_destroy
 mongoc_stream_file_get_fd

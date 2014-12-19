@@ -80,7 +80,7 @@ _mongoc_cursor_array_destroy (mongoc_cursor_t *cursor)
 bool
 _mongoc_cursor_array_prime (mongoc_cursor_t *cursor)
 {
-   bool ret;
+   bool ret = true;
    mongoc_cursor_array_t *arr;
    bson_iter_t iter;
 
