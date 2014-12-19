@@ -321,6 +321,8 @@ finish:
 void
 mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
+   ENTRY;
+
    BSON_ASSERT(cursor);
 
    if (cursor->iface.destroy) {
@@ -682,6 +684,7 @@ mongoc_cursor_error (mongoc_cursor_t *cursor,
                      bson_error_t    *error)
 {
    bool ret;
+   ENTRY;
 
    BSON_ASSERT(cursor);
 
