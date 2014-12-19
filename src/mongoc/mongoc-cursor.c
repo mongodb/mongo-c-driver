@@ -684,6 +684,7 @@ mongoc_cursor_error (mongoc_cursor_t *cursor,
                      bson_error_t    *error)
 {
    bool ret;
+   ENTRY;
 
    ENTRY;
 
