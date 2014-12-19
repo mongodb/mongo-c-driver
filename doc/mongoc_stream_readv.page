@@ -48,6 +48,7 @@ mongoc_stream_readv (mongoc_stream_t *stream,
   <section id="seealso">
     <title>See Also</title>
     <p><link xref="mongoc_stream_read">mongoc_stream_read()</link></p>
+    <p><link xref="mongoc_stream_write">mongoc_stream_write()</link></p>
     <p><link xref="mongoc_stream_writev">mongoc_stream_writev()</link></p>
   </section>
 
