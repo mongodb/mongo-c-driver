@@ -37,6 +37,7 @@
 #ifdef MONGOC_ENABLE_SASL
 #include "mongoc-sasl-private.h"
 #endif
+#include "mongoc-b64-private.h"
 #include "mongoc-scram-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-stream-private.h"
@@ -1569,7 +1570,6 @@ failure:
 #endif
 
 
-#ifdef MONGOC_ENABLE_SASL
 /*
  *--------------------------------------------------------------------------
  *
@@ -1593,7 +1593,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
                                  bson_error_t          *error)
 {
    char buf[4096];
-   unsigned buflen = 0;
+   int buflen = 0;
    bson_iter_t iter;
    const char *username;
    const char *password;
@@ -1602,7 +1602,6 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
    bson_t reply;
    size_t len;
    char *str;
-   int ret;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (node);
@@ -1619,15 +1618,14 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
 
    str = bson_strdup_printf ("%c%s%c%s", '\0', username, '\0', password);
    len = strlen (username) + strlen (password) + 2;
-   ret = sasl_encode64 (str, len, buf, sizeof buf, &buflen);
+   buflen = b64_ntop ((const uint8_t *) str, len, buf, sizeof buf);
    bson_free (str);
 
-   if (ret != SASL_OK) {
+   if (buflen == -1) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "sasl_encode64() returned %d.",
-                      ret);
+                      "failed base64 encoding message");
       return false;
    }
 
@@ -1661,7 +1659,6 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
 
    return true;
 }
-#endif
 
 
 #ifdef MONGOC_ENABLE_SSL
@@ -1888,9 +1885,9 @@ _mongoc_cluster_auth_node (mongoc_cluster_t      *cluster,
 #ifdef MONGOC_ENABLE_SASL
    } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
       ret = _mongoc_cluster_auth_node_sasl (cluster, node, error);
+#endif
    } else if (0 == strcasecmp (mechanism, "PLAIN")) {
       ret = _mongoc_cluster_auth_node_plain (cluster, node, error);
-#endif
    } else {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
