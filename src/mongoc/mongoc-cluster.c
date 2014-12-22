@@ -2594,7 +2594,7 @@ _mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
  *       about the failure.
  *
  * Side effects:
- *       @rpcs may be muted and should be considered invalid after calling
+ *       @rpcs may be mutated and should be considered invalid after calling
  *       this function.
  *
  *       @error may be set.
