@@ -1664,17 +1664,25 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (node);
 
-   if (!cluster->client->ssl_opts.pem_file) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "mongoc_client_set_ssl_opts() must be called "
-                      "with pem file for X-509 auth.");
-      return false;
-   }
+   username = mongoc_uri_get_username(cluster->uri);
+   if (username) {
+      MONGOC_INFO ("X509: got username (%s) from URI", username);
+   } else {
+      if (!cluster->client->ssl_opts.pem_file) {
+         bson_set_error (error,
+               MONGOC_ERROR_CLIENT,
+               MONGOC_ERROR_CLIENT_AUTHENTICATE,
+               "cannot determine username "
+               "please either set it as part of the connection string or "
+               "call mongoc_client_set_ssl_opts() "
+               "with pem file for X-509 auth.");
+         return false;
+      }
 
-   if (cluster->client->pem_subject) {
-      username = cluster->client->pem_subject;
+      if (cluster->client->pem_subject) {
+         username = cluster->client->pem_subject;
+         MONGOC_INFO ("X509: got username (%s) from certificate", username);
+      }
    }
 
    bson_init (&cmd);
