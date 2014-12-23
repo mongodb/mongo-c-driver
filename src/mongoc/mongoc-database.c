@@ -331,6 +331,8 @@ mongoc_database_remove_user (mongoc_database_t *database,
 
       bson_destroy (&cmd);
       mongoc_collection_destroy (col);
+   } else if (error) {
+      memcpy (error, &lerror, sizeof *error);
    }
 
    RETURN (ret);
@@ -367,6 +369,8 @@ mongoc_database_remove_all_users (mongoc_database_t *database,
 
       bson_destroy (&cmd);
       mongoc_collection_destroy (col);
+   } else if (error) {
+      memcpy (error, &lerror, sizeof *error);
    }
 
    RETURN (ret);
