@@ -235,10 +235,10 @@ LIBMONGOC_1.1 {
         mongoc_rand_add;
         mongoc_rand_seed;
         mongoc_rand_status;
-        mongoc_socket_check_closed
-        mongoc_socket_inet_ntop
-        mongoc_stream_check_closed
-        mongoc_stream_write
+        mongoc_socket_check_closed;
+        mongoc_socket_inet_ntop;
+        mongoc_stream_check_closed;
+        mongoc_stream_write;
         mongoc_uri_get_credentials;
         mongoc_uri_get_mechanism_properties;
 } LIBMONGOC_1.0;
