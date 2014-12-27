@@ -23,6 +23,7 @@
 #include <string.h>
 
 #ifdef BSON_OS_UNIX
+#undef MAX
 #include <sys/mman.h>
 #include <sys/shm.h>
 #endif
