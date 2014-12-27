@@ -100,7 +100,7 @@ _mongoc_scram_buf_write (const char *src,
                          uint32_t   *outbuflen)
 {
    if (src_len < 0) {
-      src_len = strlen (src);
+      src_len = (int32_t) strlen (src);
    }
 
    if (*outbuflen + src_len >= outbufmax) {
@@ -455,9 +455,9 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
       next_comma = memchr (ptr, ',', (inbuf + inbuflen) - ptr);
 
       if (next_comma) {
-         *current_val_len = next_comma - ptr;
+         *current_val_len = (uint32_t) (next_comma - ptr);
       } else {
-         *current_val_len = (inbuf + inbuflen) - ptr;
+         *current_val_len = (uint32_t) ((inbuf + inbuflen) - ptr);
       }
 
       *current_val = bson_malloc (*current_val_len + 1);
@@ -550,7 +550,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
       goto FAIL;
    }
 
-   iterations = bson_ascii_strtoll ((char *)val_i, &tmp, 10);
+   iterations = (int) bson_ascii_strtoll ((char *)val_i, &tmp, 10);
    /* tmp holds the location of the failed to parse character.  So if it's
     * null, we got to the end of the string and didn't have a parse error */
 
@@ -562,7 +562,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
       goto FAIL;
    }
 
-   _mongoc_scram_salt_password (scram, hashed_password, strlen (
+   _mongoc_scram_salt_password (scram, hashed_password, (uint32_t) strlen (
                                    hashed_password), decoded_salt, decoded_salt_len,
                                 iterations);
 
@@ -703,9 +703,9 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
       next_comma = memchr (ptr, ',', (inbuf + inbuflen) - ptr);
 
       if (next_comma) {
-         *current_val_len = next_comma - ptr;
+         *current_val_len = (uint32_t) (next_comma - ptr);
       } else {
-         *current_val_len = (inbuf + inbuflen) - ptr;
+         *current_val_len = (uint32_t) ((inbuf + inbuflen) - ptr);
       }
 
       *current_val = bson_malloc (*current_val_len + 1);

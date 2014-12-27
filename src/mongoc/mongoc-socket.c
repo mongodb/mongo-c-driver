@@ -811,7 +811,7 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock,   /* IN */
 {
    ssize_t ret = 0;
    size_t i;
-   int wrote;
+   ssize_t wrote;
 
    ENTRY;
 
