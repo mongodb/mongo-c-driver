@@ -16,18 +16,20 @@
 
 typedef struct
 {
-   bool          is_initialized;
-   bool          background;
-   bool          unique;
-   const char   *name;
-   bool          drop_dups;
-   bool          sparse;
-   int32_t       expire_after_seconds;
-   int32_t       v;
-   const bson_t *weights;
-   const char   *default_language;
-   const char   *language_override;
-   void         *padding [8];
+   bool                        is_initialized;
+   bool                        background;
+   bool                        unique;
+   const char                 *name;
+   bool                        drop_dups;
+   bool                        sparse;
+   int32_t                     expire_after_seconds;
+   int32_t                     v;
+   const bson_t               *weights;
+   const char                 *default_language;
+   const char                 *language_override;
+   mongoc_index_opt_geo_t     *geo_options;
+   mongoc_index_opt_storage_t *storage_options;
+   void                       *padding[6];
 } mongoc_index_opt_t;]]></code>
   </section>
 
