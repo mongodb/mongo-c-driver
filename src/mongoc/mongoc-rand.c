@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#ifdef MONGOC_ENABLE_SSL
+
 #include "mongoc-rand.h"
 #include "mongoc-rand-private.h"
 
@@ -40,3 +42,5 @@ void mongoc_rand_add(const void* buf, int num, double entropy) {
 int mongoc_rand_status(void) {
     return RAND_status();
 }
+
+#endif
