@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#ifdef MONGOC_ENABLE_SSL
 
 #include <string.h>
 
@@ -799,3 +800,5 @@ _mongoc_scram_step (mongoc_scram_t *scram,
 
    return true;
 }
+
+#endif

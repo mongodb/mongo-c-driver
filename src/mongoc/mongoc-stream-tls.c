@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#ifdef MONGOC_ENABLE_SSL
 
 #include <bson.h>
 
@@ -799,3 +800,5 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
 
    return (mongoc_stream_t *)tls;
 }
+
+#endif

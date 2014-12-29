@@ -34,9 +34,11 @@ b64_ntop (uint8_t const *src,
 void
 b64_initialize_rmap (void);
 
+#ifdef MONGOC_ENABLE_SSL
 int
 b64_pton (char const *src,
           uint8_t    *target,
           size_t      targsize);
+#endif
 
 #endif /* MONGOC_B64_PRIVATE_H */

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#ifdef MONGOC_ENABLE_SSL
 
 #include <bson.h>
 #include <limits.h>
@@ -548,3 +549,5 @@ _mongoc_ssl_thread_cleanup (void)
    }
    OPENSSL_free (gMongocSslThreadLocks);
 }
+
+#endif
