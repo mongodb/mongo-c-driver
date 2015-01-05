@@ -69,6 +69,7 @@ test_ismaster_impl (bool with_ssl)
 #endif
 
    port = 20000 + (rand () % 1000);
+   assert(bson_append_int32 (&q, "isMaster", 8, 1));
 
    for (i = 0; i < NSERVERS; i++) {
       servers[i] = mock_server_new ("127.0.0.1", port + i, NULL, NULL);
@@ -99,7 +100,8 @@ test_ismaster_impl (bool with_ssl)
       server_addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
       r = mongoc_socket_connect (conn_sock, (struct sockaddr *)&server_addr,
                                  sizeof (server_addr), 0);
-      assert (r == 0 || errno == EAGAIN);
+
+      assert (r == 0 || errno == EAGAIN || errno == EINPROGRESS);
 
       sock_streams[i] = mongoc_stream_socket_new (conn_sock);
 
@@ -111,9 +113,6 @@ test_ismaster_impl (bool with_ssl)
          sock_streams[i] = mongoc_stream_tls_new (sock_streams[i], &copt, 1);
       }
 #endif
-
-      bson_append_int32 (&q, "isMaster", 8, 1);
-
       mongoc_async_cmd (async,
                         sock_streams[i],
                         "admin",

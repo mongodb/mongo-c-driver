@@ -139,8 +139,13 @@ mongoc_async_cmd_new (mongoc_async_t       *async,
                       void                 *cb_data,
                       int32_t               timeout_msec)
 {
-   mongoc_async_cmd_t *acmd = bson_malloc0 (sizeof (*acmd));
+   mongoc_async_cmd_t *acmd;
 
+   bson_return_val_if_fail(cmd, NULL);
+   bson_return_val_if_fail(dbname, NULL);
+   bson_return_val_if_fail(stream, NULL);
+
+   acmd = bson_malloc0 (sizeof (*acmd));
    acmd->async = async;
    acmd->expire_at = bson_get_monotonic_time () + (timeout_msec * 1000);
    acmd->stream = stream;
