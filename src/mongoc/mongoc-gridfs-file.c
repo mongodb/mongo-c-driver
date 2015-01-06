@@ -720,7 +720,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
 
    BSON_ASSERT (file->length > (int64_t)offset);
 
-   if (offset % file->chunk_size != file->pos % file->chunk_size) {
+   if (offset / file->chunk_size != file->pos / file->chunk_size) {
       /** no longer on the same page */
 
       if (file->page) {
@@ -728,6 +728,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
             _mongoc_gridfs_file_flush_page (file);
          } else {
             _mongoc_gridfs_file_page_destroy (file->page);
+            file->page = NULL;
          }
       }
 

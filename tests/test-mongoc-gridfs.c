@@ -250,6 +250,13 @@ test_read (void)
    assert (memcmp (iov[0].iov_base, "Bacon ipsu", 10) == 0);
    assert (memcmp (iov[1].iov_base, "m dolor si", 10) == 0);
 
+   assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
+   r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
+
+   assert (r == 20);
+   assert (memcmp (iov[0].iov_base, "Bacon ipsu", 10) == 0);
+   assert (memcmp (iov[1].iov_base, "m dolor si", 10) == 0);
+
    mongoc_gridfs_file_destroy (file);
 
    drop_collections (gridfs, &error);
