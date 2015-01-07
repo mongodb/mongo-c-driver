@@ -76,7 +76,7 @@ typedef struct
    uint32_t     n_commands;
    bson_t       upserted;
    bson_t       writeErrors;
-   bson_t       writeConcernErrors;
+   bson_t       writeConcernError;
    bool         failed;
    bson_error_t error;
    uint32_t     upsert_append_count;

@@ -828,7 +828,7 @@ _mongoc_write_result_init (mongoc_write_result_t *result) /* IN */
    memset (result, 0, sizeof *result);
 
    bson_init (&result->upserted);
-   bson_init (&result->writeConcernErrors);
+   bson_init (&result->writeConcernError);
    bson_init (&result->writeErrors);
 
    EXIT;
@@ -843,7 +843,7 @@ _mongoc_write_result_destroy (mongoc_write_result_t *result)
    BSON_ASSERT (result);
 
    bson_destroy (&result->upserted);
-   bson_destroy (&result->writeConcernErrors);
+   bson_destroy (&result->writeConcernError);
    bson_destroy (&result->writeErrors);
 
    EXIT;
@@ -1153,10 +1153,17 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
       _mongoc_write_result_merge_arrays (result, &result->writeErrors, &iter);
    }
 
-   if (bson_iter_init_find (&iter, reply, "writeConcernErrors") &&
-       BSON_ITER_HOLDS_ARRAY (&iter)) {
-      _mongoc_write_result_merge_arrays (result, &result->writeConcernErrors,
-                                         &iter);
+   if (bson_iter_init_find (&iter, reply, "writeConcernError") &&
+       BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+	   bson_iter_t citer;
+
+	   bson_iter_recurse (&iter, &citer);
+	   while (bson_iter_next (&citer)) {
+		   const bson_value_t *value;
+
+		   value = bson_iter_value (&citer);
+		   BSON_APPEND_VALUE (&result->writeConcernError, bson_iter_key (&citer), value);
+	   }
    }
 
    switch (command->type) {
@@ -1197,7 +1204,7 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
    BSON_ASSERT (result);
 
    ret = (!result->failed &&
-          bson_empty0 (&result->writeConcernErrors) &&
+          bson_empty0 (&result->writeConcernError) &&
           bson_empty0 (&result->writeErrors));
 
    if (bson) {
@@ -1212,9 +1219,9 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
          BSON_APPEND_ARRAY (bson, "upserted", &result->upserted);
       }
       BSON_APPEND_ARRAY (bson, "writeErrors", &result->writeErrors);
-      if (!bson_empty0 (&result->writeConcernErrors)) {
-         BSON_APPEND_ARRAY (bson, "writeConcernErrors",
-                            &result->writeConcernErrors);
+      if (!bson_empty0 (&result->writeConcernError)) {
+         BSON_APPEND_DOCUMENT (bson, "writeConcernError",
+                            &result->writeConcernError);
       }
    }
 
