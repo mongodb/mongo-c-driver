@@ -95,6 +95,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-array.c \
 	src/mongoc/mongoc-buffer.c \
 	src/mongoc/mongoc-bulk-operation.c \
+	src/mongoc/mongoc-b64.c \
 	src/mongoc/mongoc-client.c \
 	src/mongoc/mongoc-client-pool.c \
 	src/mongoc/mongoc-cluster.c \

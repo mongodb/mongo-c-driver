@@ -59,6 +59,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.c
    ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-b64.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cluster.c
