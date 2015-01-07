@@ -204,6 +204,7 @@ endfunction()
 
 set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/ha-test.c
+   ${SOURCE_DIR}/tests/json-test.c
    ${SOURCE_DIR}/tests/test-libmongoc.c
    ${SOURCE_DIR}/tests/test-mongoc-array.c
    ${SOURCE_DIR}/tests/test-mongoc-buffer.c
@@ -222,6 +223,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${SOURCE_DIR}/tests/test-mongoc-socket.c
+   ${SOURCE_DIR}/tests/test-mongoc-server-selection.c
    ${SOURCE_DIR}/tests/test-mongoc-stream.c
    ${SOURCE_DIR}/tests/test-mongoc-uri.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
