@@ -1155,15 +1155,14 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
 
    if (bson_iter_init_find (&iter, reply, "writeConcernError") &&
        BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-	   bson_iter_t citer;
 
-	   bson_iter_recurse (&iter, &citer);
-	   while (bson_iter_next (&citer)) {
-		   const bson_value_t *value;
+      uint32_t len;
+      const uint8_t *data;
+      bson_t write_concern_error;
 
-		   value = bson_iter_value (&citer);
-		   BSON_APPEND_VALUE (&result->writeConcernError, bson_iter_key (&citer), value);
-	   }
+      bson_iter_document (&iter, &len, &data);
+      bson_init_static (&write_concern_error, data, len);
+      bson_concat (&result->writeConcernError, &write_concern_error);
    }
 
    switch (command->type) {
