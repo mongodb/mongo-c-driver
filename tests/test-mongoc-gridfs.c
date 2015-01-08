@@ -422,6 +422,58 @@ test_remove_by_filename (void)
 
 
 static void
+test_seek (void)
+{
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+   mongoc_client_t *client;
+   bson_error_t error;
+   ssize_t r;
+   const size_t offset = 5;
+   char hello_buf[] = "hello world", 
+        rbuf[4096];
+   mongoc_gridfs_file_opt_t opt = { 0 };
+   mongoc_iovec_t iov = { sizeof hello_buf, hello_buf }, 
+                  riov = { sizeof rbuf, rbuf };
+
+   opt.filename = "test_file";
+
+   client = mongoc_client_new (gTestUri);
+   assert (client);
+
+   gridfs = get_test_gridfs (client, "seek", &error);
+   assert (gridfs);
+
+   mongoc_gridfs_drop (gridfs, &error);
+
+   file = mongoc_gridfs_create_file (gridfs, &opt);
+   assert (file);
+
+   r = mongoc_gridfs_file_writev (file, &iov, 1, 0);
+   assert (r == iov.iov_len);
+   assert (mongoc_gridfs_file_save (file));
+   mongoc_gridfs_file_destroy (file);
+
+   file = mongoc_gridfs_find_one_by_filename (gridfs, opt.filename, &error);
+   assert (file);
+
+   r = mongoc_gridfs_file_seek (file, offset, SEEK_SET);
+   assert (!r);
+
+   r = mongoc_gridfs_file_readv (file, &riov, 1, -1, 0);
+   assert (r == sizeof hello_buf - offset);
+   assert (memcmp (rbuf, hello_buf + offset, r) == 0);
+
+   mongoc_gridfs_file_destroy (file);
+
+   drop_collections (gridfs, &error);
+   mongoc_gridfs_destroy (gridfs);
+
+   mongoc_client_destroy (client);
+}
+
+
+static void
 cleanup_globals (void)
 {
    bson_free (gTestUri);
@@ -441,6 +493,7 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/remove", test_remove);
    TestSuite_Add (suite, "/GridFS/write", test_write);
    TestSuite_Add (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
+   TestSuite_Add (suite, "/GridFS/seek", test_seek);
 
    atexit (cleanup_globals);
 }
