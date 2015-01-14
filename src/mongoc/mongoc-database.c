@@ -762,6 +762,7 @@ mongoc_database_find_collections (mongoc_database_t *database,
    mongoc_read_prefs_t *read_prefs;
    bson_t cmd = BSON_INITIALIZER;
    bson_t child;
+   bson_error_t lerror;
 
    BSON_ASSERT (database);
 
@@ -785,16 +786,17 @@ mongoc_database_find_collections (mongoc_database_t *database,
    if (_mongoc_cursor_cursorid_prime (cursor)) {
        /* intentionally empty */
    } else {
-      if (mongoc_cursor_error (cursor, error)) {
-         if (error->code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
+      if (mongoc_cursor_error (cursor, &lerror)) {
+         if (lerror.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND) {
             /* We are talking to a server that doesn' support listCollections. */
             /* clear out the error. */
-            error->code = 0;
-            error->domain = 0;
+            memset (&lerror, 0, sizeof lerror);
             /* try again with using system.namespaces */
             mongoc_cursor_destroy (cursor);
             cursor = _mongoc_database_find_collections_legacy (
                database, filter, error);
+         } else if (error) {
+            memcpy (error, &lerror, sizeof *error);
          }
       } else {
          /* TODO: remove this branch for general release.  Only relevant for RC */
