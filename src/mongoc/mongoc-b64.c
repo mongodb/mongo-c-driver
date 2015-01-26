@@ -181,6 +181,8 @@ b64_ntop (uint8_t const *src,
    return (int)datalength;
 }
 
+#ifdef MONGOC_ENABLE_SSL
+
 /* (From RFC1521 and draft-ietf-dnssec-secext-03.txt)
    The following encoding technique is taken from RFC 1521 by Borenstein
    and Freed.  It is reproduced here in a slightly edited form for
@@ -515,3 +517,5 @@ b64_pton(char const *src, uint8_t *target, size_t targsize)
 	else
 		return b64_pton_len (src);
 }
+
+#endif /* MONGOC_ENABLE_SSL */
