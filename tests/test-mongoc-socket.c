@@ -138,9 +138,6 @@ socket_test_client (void *data_)
    assert (r == 5);
    assert (strcmp (buf, "pong") == 0);
 
-   closed = mongoc_stream_check_closed (stream);
-   assert (closed == false);
-
    mongoc_mutex_lock(&data->cond_mutex);
    while (! data->closed_socket) {
       mongoc_cond_wait(&data->cond, &data->cond_mutex);

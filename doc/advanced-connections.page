@@ -140,7 +140,7 @@ main (int   argc,
       The socket path <em>MUST</em> be suffixed with <code>.sock</code>.
     </p>
 
-    <code mime="text/x-csrc">"mongodb:///tmp/mongodb.sock"</code>
+    <code mime="text/x-csrc">"mongodb:///tmp/mongodb-27017.sock"</code>
 
     <note style="warning">
       <p>Connecting directly to a UNIX domain socket is not a common practice.</p>

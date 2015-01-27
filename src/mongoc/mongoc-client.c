@@ -220,7 +220,7 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
    memset (&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
    bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1,
-                  "%s", host->host_and_port);
+                  "%s", host->host);
 
    sock = mongoc_socket_new (AF_UNIX, SOCK_STREAM, 0);
 

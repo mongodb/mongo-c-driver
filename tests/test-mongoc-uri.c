@@ -37,7 +37,7 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (hosts->host_and_port, "[::1]:27888");
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new("mongodb:///tmp/mongodb.sock/?");
+   uri = mongoc_uri_new("mongodb:///tmp/mongodb-27017.sock/?");
    ASSERT(uri);
    mongoc_uri_destroy(uri);
 
@@ -115,14 +115,14 @@ test_mongoc_uri_new (void)
    ASSERT(!bson_iter_next(&iter));
    mongoc_uri_destroy(uri);
 
-   uri = mongoc_uri_new("mongodb:///tmp/mongodb.sock/?ssl=false");
+   uri = mongoc_uri_new("mongodb:///tmp/mongodb-27017.sock/?ssl=false");
    ASSERT(uri);
-   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host, "/tmp/mongodb.sock");
+   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host, "/tmp/mongodb-27017.sock");
    mongoc_uri_destroy(uri);
 
-   uri = mongoc_uri_new("mongodb:///tmp/mongodb.sock,localhost:27017/?ssl=false");
+   uri = mongoc_uri_new("mongodb:///tmp/mongodb-27017.sock,localhost:27017/?ssl=false");
    ASSERT(uri);
-   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host, "/tmp/mongodb.sock");
+   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host, "/tmp/mongodb-27017.sock");
    ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->next->host_and_port, "localhost:27017");
    ASSERT(!mongoc_uri_get_hosts(uri)->next->next);
    mongoc_uri_destroy(uri);
@@ -134,10 +134,10 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->next->host_and_port, "host2:30000");
    mongoc_uri_destroy(uri);
 
-   uri = mongoc_uri_new("mongodb://localhost:27017,/tmp/mongodb.sock/?ssl=false");
+   uri = mongoc_uri_new("mongodb://localhost:27017,/tmp/mongodb-27017.sock/?ssl=false");
    ASSERT(uri);
    ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host_and_port, "localhost:27017");
-   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->next->host, "/tmp/mongodb.sock");
+   ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->next->host, "/tmp/mongodb-27017.sock");
    ASSERT(!mongoc_uri_get_hosts(uri)->next->next);
    mongoc_uri_destroy(uri);
 
