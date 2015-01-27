@@ -84,13 +84,13 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 
    if (bson_iter_init_find_case(&iter, b, "minpoolsize")) {
       if (BSON_ITER_HOLDS_INT32(&iter)) {
-         pool->min_pool_size = MAX(0, bson_iter_int32(&iter));
+         pool->min_pool_size = BSON_MAX(0, bson_iter_int32(&iter));
       }
    }
 
    if (bson_iter_init_find_case(&iter, b, "maxpoolsize")) {
       if (BSON_ITER_HOLDS_INT32(&iter)) {
-         pool->max_pool_size = MAX(1, bson_iter_int32(&iter));
+         pool->max_pool_size = BSON_MAX(1, bson_iter_int32(&iter));
       }
    }
 

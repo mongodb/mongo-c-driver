@@ -89,7 +89,7 @@ _mongoc_n_return (mongoc_cursor_t * cursor)
       uint32_t remaining = cursor->limit - cursor->count;
 
       /* use min of batch or remaining */
-      r = MIN(r, (int32_t)remaining);
+      r = BSON_MIN(r, (int32_t)remaining);
    }
 
    return r;

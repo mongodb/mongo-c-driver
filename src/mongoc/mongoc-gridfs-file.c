@@ -490,7 +490,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
          file->pos += r;
          bytes_written += r;
 
-         file->length = MAX (file->length, (int64_t)file->pos);
+         file->length = BSON_MAX (file->length, (int64_t)file->pos);
 
          if (iov_pos == iov[i].iov_len) {
             /** filled a bucket, keep going */

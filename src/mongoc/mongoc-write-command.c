@@ -1123,7 +1123,7 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
           * XXX: The following addition to nMatched needs some checking.
           *      I'm highly skeptical of it.
           */
-         result->nMatched += MAX (0, (affected - n_upserted));
+         result->nMatched += BSON_MAX (0, (affected - n_upserted));
       } else {
          result->nMatched += affected;
       }
