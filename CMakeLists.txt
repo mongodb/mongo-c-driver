@@ -68,6 +68,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-cursorid.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-cursor-transform.c
    ${SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs.c
@@ -215,6 +216,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-queue.c
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
+   ${SOURCE_DIR}/tests/test-mongoc-socket.c
    ${SOURCE_DIR}/tests/test-mongoc-stream.c
    ${SOURCE_DIR}/tests/test-mongoc-uri.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
