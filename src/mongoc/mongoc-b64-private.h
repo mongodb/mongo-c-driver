@@ -26,19 +26,19 @@
 #include "mongoc-config.h"
 
 int
-b64_ntop (uint8_t const *src,
-          size_t         srclength,
-          char          *target,
-          size_t         targsize);
+mongoc_b64_ntop (uint8_t const *src,
+                 size_t         srclength,
+                 char          *target,
+                 size_t         targsize);
 
 void
-b64_initialize_rmap (void);
+mongoc_b64_initialize_rmap (void);
 
 #ifdef MONGOC_ENABLE_SSL
 int
-b64_pton (char const *src,
-          uint8_t    *target,
-          size_t      targsize);
+mongoc_b64_pton (char const *src,
+                 uint8_t    *target,
+                 size_t      targsize);
 #endif
 
 #endif /* MONGOC_B64_PRIVATE_H */

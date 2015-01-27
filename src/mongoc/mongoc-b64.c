@@ -111,10 +111,10 @@ static const char Pad64 = '=';
  */
 
 int
-b64_ntop (uint8_t const *src,
-          size_t         srclength,
-          char          *target,
-          size_t         targsize)
+mongoc_b64_ntop (uint8_t const *src,
+                 size_t         srclength,
+                 char          *target,
+                 size_t         targsize)
 {
    size_t datalength = 0;
    uint8_t input[3];
@@ -251,49 +251,49 @@ b64_ntop (uint8_t const *src,
    it returns the number of data bytes stored at the target, or -1 on error.
  */
 
-static int b64rmap_initialized = 0;
-static uint8_t b64rmap[256];
+static int mongoc_b64rmap_initialized = 0;
+static uint8_t mongoc_b64rmap[256];
 
-static const uint8_t b64rmap_special = 0xf0;
-static const uint8_t b64rmap_end = 0xfd;
-static const uint8_t b64rmap_space = 0xfe;
-static const uint8_t b64rmap_invalid = 0xff;
+static const uint8_t mongoc_b64rmap_special = 0xf0;
+static const uint8_t mongoc_b64rmap_end = 0xfd;
+static const uint8_t mongoc_b64rmap_space = 0xfe;
+static const uint8_t mongoc_b64rmap_invalid = 0xff;
 
 /**
  * Initializing the reverse map is not thread safe.
  * Which is fine for NSD. For now...
  **/
 void
-b64_initialize_rmap (void)
+mongoc_b64_initialize_rmap (void)
 {
 	int i;
 	unsigned char ch;
 
 	/* Null: end of string, stop parsing */
-	b64rmap[0] = b64rmap_end;
+	mongoc_b64rmap[0] = mongoc_b64rmap_end;
 
 	for (i = 1; i < 256; ++i) {
 		ch = (unsigned char)i;
 		/* Whitespaces */
 		if (isspace(ch))
-			b64rmap[i] = b64rmap_space;
+			mongoc_b64rmap[i] = mongoc_b64rmap_space;
 		/* Padding: stop parsing */
 		else if (ch == Pad64)
-			b64rmap[i] = b64rmap_end;
+			mongoc_b64rmap[i] = mongoc_b64rmap_end;
 		/* Non-base64 char */
 		else
-			b64rmap[i] = b64rmap_invalid;
+			mongoc_b64rmap[i] = mongoc_b64rmap_invalid;
 	}
 
 	/* Fill reverse mapping for base64 chars */
 	for (i = 0; Base64[i] != '\0'; ++i)
-		b64rmap[(uint8_t)Base64[i]] = i;
+		mongoc_b64rmap[(uint8_t)Base64[i]] = i;
 
-	b64rmap_initialized = 1;
+	mongoc_b64rmap_initialized = 1;
 }
 
 static int
-b64_pton_do(char const *src, uint8_t *target, size_t targsize)
+mongoc_b64_pton_do(char const *src, uint8_t *target, size_t targsize)
 {
 	int tarindex, state, ch;
 	uint8_t ofs;
@@ -304,14 +304,14 @@ b64_pton_do(char const *src, uint8_t *target, size_t targsize)
 	while (1)
 	{
 		ch = *src++;
-		ofs = b64rmap[ch];
+		ofs = mongoc_b64rmap[ch];
 
-		if (ofs >= b64rmap_special) {
+		if (ofs >= mongoc_b64rmap_special) {
 			/* Ignore whitespaces */
-			if (ofs == b64rmap_space)
+			if (ofs == mongoc_b64rmap_space)
 				continue;
 			/* End of base64 characters */
-			if (ofs == b64rmap_end)
+			if (ofs == mongoc_b64rmap_end)
 				break;
 			/* A non-base64 character. */
 			return (-1);
@@ -369,7 +369,7 @@ b64_pton_do(char const *src, uint8_t *target, size_t targsize)
 		case 2:		/* Valid, means one byte of info */
 			/* Skip any number of spaces. */
 			for ((void)NULL; ch != '\0'; ch = *src++)
-				if (b64rmap[ch] != b64rmap_space)
+				if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
 					break;
 			/* Make sure there is another trailing = sign. */
 			if (ch != Pad64)
@@ -384,7 +384,7 @@ b64_pton_do(char const *src, uint8_t *target, size_t targsize)
 			 * whitespace after it?
 			 */
 			for ((void)NULL; ch != '\0'; ch = *src++)
-				if (b64rmap[ch] != b64rmap_space)
+				if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
 					return (-1);
 
 			/*
@@ -412,7 +412,7 @@ b64_pton_do(char const *src, uint8_t *target, size_t targsize)
 
 
 static int
-b64_pton_len(char const *src)
+mongoc_b64_pton_len(char const *src)
 {
 	int tarindex, state, ch;
 	uint8_t ofs;
@@ -423,14 +423,14 @@ b64_pton_len(char const *src)
 	while (1)
 	{
 		ch = *src++;
-		ofs = b64rmap[ch];
+		ofs = mongoc_b64rmap[ch];
 
-		if (ofs >= b64rmap_special) {
+		if (ofs >= mongoc_b64rmap_special) {
 			/* Ignore whitespaces */
-			if (ofs == b64rmap_space)
+			if (ofs == mongoc_b64rmap_space)
 				continue;
 			/* End of base64 characters */
-			if (ofs == b64rmap_end)
+			if (ofs == mongoc_b64rmap_end)
 				break;
 			/* A non-base64 character. */
 			return (-1);
@@ -472,7 +472,7 @@ b64_pton_len(char const *src)
 		case 2:		/* Valid, means one byte of info */
 			/* Skip any number of spaces. */
 			for ((void)NULL; ch != '\0'; ch = *src++)
-				if (b64rmap[ch] != b64rmap_space)
+				if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
 					break;
 			/* Make sure there is another trailing = sign. */
 			if (ch != Pad64)
@@ -487,7 +487,7 @@ b64_pton_len(char const *src)
 			 * whitespace after it?
 			 */
 			for ((void)NULL; ch != '\0'; ch = *src++)
-				if (b64rmap[ch] != b64rmap_space)
+				if (mongoc_b64rmap[ch] != mongoc_b64rmap_space)
 					return (-1);
 
 		default:
@@ -507,15 +507,15 @@ b64_pton_len(char const *src)
 
 
 int
-b64_pton(char const *src, uint8_t *target, size_t targsize)
+mongoc_b64_pton(char const *src, uint8_t *target, size_t targsize)
 {
-	if (!b64rmap_initialized)
-		b64_initialize_rmap ();
+	if (!mongoc_b64rmap_initialized)
+		mongoc_b64_initialize_rmap ();
 
 	if (target)
-		return b64_pton_do (src, target, targsize);
+		return mongoc_b64_pton_do (src, target, targsize);
 	else
-		return b64_pton_len (src);
+		return mongoc_b64_pton_len (src);
 }
 
 #endif /* MONGOC_ENABLE_SSL */
