@@ -977,6 +977,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
    _clone->batch_size = cursor->batch_size;
    _clone->limit = cursor->limit;
    _clone->nslen = cursor->nslen;
+   _clone->has_fields = cursor->has_fields;
 
    if (cursor->read_prefs) {
       _clone->read_prefs = mongoc_read_prefs_copy (cursor->read_prefs);
