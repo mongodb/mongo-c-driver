@@ -1,3 +1,99 @@
+mongo-c-driver 1.1.0
+====================
+
+It is my pleasure to announce to you the 1.1.0 release of the MongoDB C driver.
+
+This release is a stable release with additive ABI changes and bugfixes.
+
+The below changes include some carried over from RC0.
+
+Changes include:
+ * RC0
+   * ABI versioning for 1.1 versus 1.0 symbols
+   * additional geo index options
+   * authMechanismProperties in URI
+   * fixes for OS X Yosemite
+   * removal of replica set member limit
+   * SCRAM-SHA-1 SASL mechanism
+   * updated dependency on libbson 1.1 abi
+   * validation for bulk insert
+   * various memory leak fixes
+ * Fixes to documentation typos
+ * "How to Ask For Help" in the README
+ * Removed dependency on sasl for PLAIN authentication
+ * Use provided username, if available, for X.509 auth
+ * Fixed WriteConcern error reporting for some writes
+ * Check for closed sockets before attempting RPCs
+ * Fixes for gridfs file seek
+ * Fixes for mongoc_cursor_clone()
+ * Fixes for unix domain socket support
+ * Fixes for polling on win32
+ * Improved warnings on failure to connect
+ * Addition of wired tiger options
+ * Fixes for examples
+
+Additions to the ABI include:
+ * support for extra option in count
+   - mongoc_collection_count_with_opts
+ * additional index options
+   - mongoc_index_opt_geo_get_default
+   - mongoc_index_opt_geo_init
+   - mongoc_index_opt_wt_get_default
+   - mongoc_index_opt_wt_init
+ * rand interface to seed and verify the strong random number generation needed
+   by some auth mechanisms
+   - mongoc_rand_seed
+   - mongoc_rand_add
+   - mongoc_rand_status
+ * URI additions to support more complicated auth credentials
+   - mongoc_uri_get_credentials
+   - mongoc_uri_get_mechanism_properties
+ * Support for cursor returning metadata crud operations
+   - mongoc_client_find_databases
+   - mongoc_collection_find_indexes
+   - mongoc_database_find_collections
+ * Kill cursor supportp
+   - mongoc_client_kill_cursor
+ * Various get/setters on cursor
+   - mongoc_cursor_get_batch_size
+   - mongoc_cursor_get_id
+   - mongoc_cursor_set_batch_size
+ * More socket/stream options
+   - mongoc_socket_check_closed
+   - mongoc_socket_inet_ntop
+   - mongoc_stream_check_closed
+   - mongoc_stream_write
+
+Additional Notes:
+  Existing complex index names may contain a zero instead of a type due to
+a bug in mongoc_collection_keys_to_index_string. As a result those indexes may 
+be hard to drop from the driver as they have a name you would not expect.
+
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+ * Adam Midvidy
+ * aherlihy
+ * alexeyvo
+ * Christian Hergert
+ * Hannes Magnusson
+ * Jason Carey
+ * Jérôme Lebel
+ * Jesse Jiryu Davis
+ * lloydzhou
+ * Mark Benevenuto
+ * Paul Melnikow
+ * Samantha Ritter
+ * Shraya Ramani
+ * Spencer Jackson
+ * Spencer Jackson
+ * Tyler Brock
+
+
+Enjoy!
+
+-- Jason Carey
+
 mongo-c-driver 1.1.0-rc0
 ========================
 
