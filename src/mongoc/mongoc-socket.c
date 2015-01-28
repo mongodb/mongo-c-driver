@@ -24,7 +24,6 @@
 #include "mongoc-socket.h"
 #include "mongoc-trace.h"
 
-
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"
 
@@ -148,14 +147,18 @@ _mongoc_socket_wait (int      sd,           /* IN */
    ret = WSAPoll (&pfd, 1, timeout);
    if (ret == SOCKET_ERROR) {
       MONGOC_WARNING ("WSAGetLastError(): %d", WSAGetLastError ());
-      ret = -1;
+      ret = false;
    }
 #else
    ret = poll (&pfd, 1, timeout);
 #endif
 
    if (ret > 0) {
+#ifdef _WIN32
+      RETURN (0 != (pfd.revents & (events | POLLHUP | POLLERR)));
+#else
       RETURN (0 != (pfd.revents & events));
+#endif
    }
 
    RETURN (false);
@@ -412,6 +415,7 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 
 #ifdef _WIN32
    if (sock->sd != INVALID_SOCKET) {
+      shutdown (sock->sd, SD_BOTH);
       ret = closesocket (sock->sd);
    }
 #else
