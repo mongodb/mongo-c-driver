@@ -1737,6 +1737,7 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
    bson_t cmd;
    bson_t reply;
    int conv_id = 0;
+   bson_subtype_t btype;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (node);
@@ -1803,7 +1804,6 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
          goto failure;
       }
 
-      bson_subtype_t btype;
       bson_iter_binary (&iter, &btype, &buflen, (const uint8_t**)&tmpstr);
 
       if (buflen > sizeof buf) {
