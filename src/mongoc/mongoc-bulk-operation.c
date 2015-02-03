@@ -370,6 +370,13 @@ mongoc_bulk_operation_set_write_concern (mongoc_bulk_operation_t      *bulk,
    }
 }
 
+const mongoc_write_concern_t *
+mongoc_bulk_operation_get_write_concern (mongoc_bulk_operation_t *bulk)
+{
+   bson_return_val_if_fail(bulk, NULL);
+   return bulk->write_concern;
+}
+
 
 void
 mongoc_bulk_operation_set_database (mongoc_bulk_operation_t *bulk,

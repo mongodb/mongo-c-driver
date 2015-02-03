@@ -65,18 +65,18 @@ void mongoc_bulk_operation_update_one  (mongoc_bulk_operation_t       *bulk,
  * those wanting to replay a bulk operation to a number of clients or
  * collections.
  */
-mongoc_bulk_operation_t *mongoc_bulk_operation_new               (bool                          ordered);
-void                     mongoc_bulk_operation_set_write_concern (mongoc_bulk_operation_t      *bulk,
-                                                                  const mongoc_write_concern_t *write_concern);
-void                     mongoc_bulk_operation_set_database      (mongoc_bulk_operation_t      *bulk,
-                                                                  const char                   *database);
-void                     mongoc_bulk_operation_set_collection    (mongoc_bulk_operation_t      *bulk,
-                                                                  const char                   *collection);
-void                     mongoc_bulk_operation_set_client        (mongoc_bulk_operation_t      *bulk,
-                                                                  void                         *client);
-void                     mongoc_bulk_operation_set_hint          (mongoc_bulk_operation_t      *bulk,
-                                                                  uint32_t                      hint);
-
+mongoc_bulk_operation_t      *mongoc_bulk_operation_new               (bool                               ordered);
+void                          mongoc_bulk_operation_set_write_concern (mongoc_bulk_operation_t            *bulk,
+                                                                       const mongoc_write_concern_t       *write_concern);
+void                          mongoc_bulk_operation_set_database      (mongoc_bulk_operation_t            *bulk,
+                                                                       const char                         *database);
+void                          mongoc_bulk_operation_set_collection    (mongoc_bulk_operation_t            *bulk,
+                                                                       const char                         *collection);
+void                          mongoc_bulk_operation_set_client        (mongoc_bulk_operation_t            *bulk,
+                                                                       void                               *client);
+void                          mongoc_bulk_operation_set_hint          (mongoc_bulk_operation_t            *bulk,
+                                                                       uint32_t                            hint);
+const mongoc_write_concern_t *mongoc_bulk_operation_get_write_concern (const mongoc_bulk_operation_t      *bulk);
 
 BSON_END_DECLS
 
