@@ -17,18 +17,22 @@
 #include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_APPLE_NATIVE_TLS
 
-#include "mongoc-rand.h"
-#include "mongoc-rand-private.h"
+#include "mongoc-rand-apple.h"
+#include "mongoc-rand-apple-private.h"
 
 #include "mongoc.h"
 
+#include <Security/Security.h>
+
 /*
  *-------------------------------------------------------------------------
  *
- * _mongoc_rand_bytes --
+ * _mongoc_rand_apple_bytes --
  *
- *       Fills @buf with @num cruptographically-secure random bytes.
+ *       Uses SecureTransport's default random number generator to fill
+ *       @buf with @num cryptographically secure random bytes.
  *
  * Returns:
  *       1 on success, 0 on failure, with error in errno system variable.
@@ -36,16 +40,19 @@
  *-------------------------------------------------------------------------
  */
 
-int _mongoc_rand_bytes(uint8_t * buf, int num) {
-   return _mongoc_rand_bytes_impl(buf, num);
+int _mongoc_rand_apple_bytes(uint8_t * buf, int num) {
+   if (0 == SecRandomCopyBytes(kSecRandomDefault, num, buf)) {
+      return 1;
+   }
+   return 0;
 }
 
 /*
  *-------------------------------------------------------------------------
  *
- * _mongoc_pseudo_rand_bytes --
+ * _mongoc_pseudo_rand_apple_bytes --
  *
- *       Fills @buf with @num secure pseudo-random bytes.
+ *       With SecureTransport, behaves like _mongoc_rand_bytes.
  *
  * Returns:
  *       1 on success, 0 on failure, with error in errno system variable.
@@ -53,20 +60,23 @@ int _mongoc_rand_bytes(uint8_t * buf, int num) {
  *-------------------------------------------------------------------------
  */
 
-int _mongoc_pseudo_rand_bytes(uint8_t * buf, int num) {
-   return _mongoc_pseudo_rand_bytes_impl(buf, num);
+int _mongoc_pseudo_rand_apple_bytes(uint8_t * buf, int num) {
+   return _mongoc_rand_apple_bytes(buf, num);
 }
 
-void mongoc_rand_seed(const void* buf, int num) {
-   return mongoc_rand_seed_impl(buf, num);
+void mongoc_rand_apple_seed(const void* buf, int num) {
+    /* n/a */
+    // TODO why is this n/a?
 }
 
-void mongoc_rand_add(const void* buf, int num, double entropy) {
-   return mongoc_rand_add_impl(buf, num, entropy);
+void mongoc_rand_apple_add(const void* buf, int num, double entropy) {
+    /* n/a */
+    // TODO why is this n/a?
 }
 
-int mongoc_rand_status(void) {
-   return mongoc_rand_status_impl();
+int mongoc_rand_apple_status(void) {
+    return 1;
 }
 
+#endif /* MONGOC_APPLE_NATIVE_TLS */
 #endif /* MONGOC_ENABLE_SSL */

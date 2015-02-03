@@ -10,6 +10,12 @@ AC_ARG_ENABLE(tracing,
     [],[enable_tracing="no"])
 AC_MSG_RESULT([$enable_tracing])
 
+AC_MSG_CHECKING([whether to use native TLS on OSX/iOS])
+AC_ARG_ENABLE(apple-native-tls,
+    AC_HELP_STRING([--enable-apple-native-tls], [use native TLS on OSX/iOS [default=no]]),
+    [],[enable_apple_native_tls="no"])
+AC_MSG_RESULT([$enable_apple_native_tls])
+
 AC_MSG_CHECKING([whether to enable optimized builds])
 AC_ARG_ENABLE(optimizations, 
     AC_HELP_STRING([--enable-optimizations], [turn on build-time optimizations [default=yes]]),

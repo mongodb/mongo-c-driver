@@ -66,7 +66,6 @@ INST_H_FILES = \
 	src/mongoc/mongoc-sasl-private.h \
 	src/mongoc/mongoc-scram-private.h \
 	src/mongoc/mongoc-socket.h \
-	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-buffered.h \
 	src/mongoc/mongoc-stream-file.h \
 	src/mongoc/mongoc-stream-gridfs.h \
@@ -85,9 +84,18 @@ INST_H_FILES = \
 if ENABLE_SSL
 INST_H_FILES += \
 	src/mongoc/mongoc-rand.h \
+	src/mongoc/mongoc-rand-apple.h \
+	src/mongoc/mongoc-rand-apple-private.h \
+	src/mongoc/mongoc-rand-openssl.h \
+	src/mongoc/mongoc-rand-openssl-private.h \
 	src/mongoc/mongoc-rand-private.h \
+	src/mongoc/mongoc-stream-apple-tls.h \
+	src/mongoc/mongoc-stream-openssl-tls.h \
 	src/mongoc/mongoc-stream-tls.h \
-	src/mongoc/mongoc-ssl.h
+	src/mongoc/mongoc-ssl.h \
+	src/mongoc/mongoc-ssl-apple-private.h \
+	src/mongoc/mongoc-ssl-openssl-private.h \
+	src/mongoc/mongoc-ssl-private.h
 endif
 
 MONGOC_SOURCES_SHARED += \
@@ -133,9 +141,15 @@ MONGOC_SOURCES_SHARED += \
 if ENABLE_SSL
 MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-rand.c \
+	src/mongoc/mongoc-rand-apple.c \
+	src/mongoc/mongoc-rand-openssl.c \
 	src/mongoc/mongoc-scram.c \
 	src/mongoc/mongoc-stream-tls.c \
-	src/mongoc/mongoc-ssl.c
+	src/mongoc/mongoc-stream-apple-tls.c \
+	src/mongoc/mongoc-stream-openssl-tls.c \
+	src/mongoc/mongoc-ssl.c \
+	src/mongoc/mongoc-ssl-apple.c \
+	src/mongoc/mongoc-ssl-openssl.c
 endif
 
 if ENABLE_SASL

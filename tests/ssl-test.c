@@ -1,7 +1,10 @@
 #include <bson.h>
 #include <errno.h>
+
+#ifdef MONGOC_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#endif
 
 #include <mongoc-thread-private.h>
 
@@ -22,6 +25,21 @@ typedef struct ssl_test_data
    ssl_test_result_t *client_result;
    ssl_test_result_t *server_result;
 } ssl_test_data_t;
+
+/**
+ * This function retrieves any SSL errors when they aren't
+ * directly returned from SSL steps' implementations.
+ */
+static unsigned long
+ssl_test_get_error ()
+{
+#ifdef MONGOC_OPENSSL
+   return ERR_get_error();
+#endif
+
+   /* otherwise operations return either true or false, no error */
+   return -1;
+}
 
 /** this function is meant to be run from ssl_test as a child thread
  *
@@ -85,7 +103,7 @@ ssl_test_server (void * ptr)
    assert (sock_stream);
    ssl_stream = mongoc_stream_tls_new(sock_stream, data->server, 0);
    if (!ssl_stream) {
-      unsigned long err = ERR_get_error();
+      unsigned long err = ssl_test_get_error();
       assert(err);
 
       data->server_result->ssl_err = err;
@@ -100,7 +118,7 @@ ssl_test_server (void * ptr)
 
    r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
    if (!r) {
-      unsigned long err = ERR_get_error();
+      unsigned long err = ssl_test_get_error();
       assert(err);
 
       data->server_result->ssl_err = err;
@@ -197,7 +215,7 @@ ssl_test_client (void * ptr)
    assert(sock_stream);
    ssl_stream = mongoc_stream_tls_new(sock_stream, data->client, 1);
    if (! ssl_stream) {
-      unsigned long err = ERR_get_error();
+      unsigned long err = ssl_test_get_error();
       assert(err);
 
       data->client_result->ssl_err = err;
@@ -214,7 +232,7 @@ ssl_test_client (void * ptr)
    errno_captured = errno;
 
    if (! r) {
-      unsigned long err = ERR_get_error();
+      unsigned long err = ssl_test_get_error();
       assert(err || errno_captured);
 
       if (err) {

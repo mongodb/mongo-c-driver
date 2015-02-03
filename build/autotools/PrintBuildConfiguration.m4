@@ -2,7 +2,7 @@ AC_OUTPUT
 
 if test $(( ${MONGOC_MINOR_VERSION} % 2 )) -eq 1; then
 cat << EOF
- *** IMPORTANT *** 
+ *** IMPORTANT ***
 
  This is an unstable version of libmongoc.
  It is for test purposes only.
@@ -35,6 +35,7 @@ Build configuration:
   Fast counters                                    : ${enable_rdtscp}
   SASL                                             : ${sasl_mode}
   SSL                                              : ${enable_ssl}
+  Apple Native TLS                                 : ${enable_apple_native_tls}
   Libbson                                          : ${with_libbson}
 
 Documentation:
