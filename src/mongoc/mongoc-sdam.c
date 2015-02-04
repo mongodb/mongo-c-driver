@@ -225,6 +225,7 @@ _mongoc_sdam_select (mongoc_sdam_t             *sdam,
                      mongoc_ss_optype_t         optype,
                      const mongoc_read_prefs_t *read_prefs,
                      int64_t                    timeout_msec,
+                     int64_t                    local_threshold_ms,
                      bson_error_t              *error)
 {
    int r;
@@ -237,14 +238,13 @@ _mongoc_sdam_select (mongoc_sdam_t             *sdam,
    now = bson_get_monotonic_time ();
    expire_at = now + timeout_msec;
 
-   int64_t before = now;
-
    mongoc_mutex_lock (&sdam->mutex);
 
    for (;;) {
       selected_server = _mongoc_topology_description_select(&sdam->topology,
                                                             optype,
                                                             read_prefs,
+                                                            local_threshold_ms,
                                                             error);
 
       if (! selected_server) {

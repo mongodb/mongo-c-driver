@@ -16,8 +16,10 @@
 
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
+#include "mongoc-read-prefs.h"
 #include "mongoc-server-description.h"
 #include "mongoc-trace.h"
+#include "mongoc-topology-description.h"
 #include "mongoc-uri.h"
 
 #define MIN_WIRE_VERSION 0
@@ -213,7 +215,7 @@ _mongoc_server_description_handle_ismaster (
 
    bson_iter_init (&iter, &sd->last_is_master);
 
-   memset (&sd->set_name, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd), 0);
+   memset (&sd->set_name, 0, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd));
 
    while (bson_iter_next (&iter)) {
       /* TODO: do we need to handle maxBsonObjSize */
@@ -339,4 +341,82 @@ _mongoc_server_description_new_copy (const mongoc_server_description_t *descript
                                                description->round_trip_time, NULL);
 
    return copy;
+}
+
+size_t
+_mongoc_server_description_filter_eligible (
+   mongoc_server_description_t **descriptions,
+   size_t                        description_len,
+   const mongoc_read_prefs_t    *read_prefs)
+{
+   const bson_t *rp_tags;
+   bson_iter_t rp_tagset_iter;
+   bson_iter_t rp_iter;
+   bson_iter_t sd_iter;
+   uint32_t rp_len;
+   uint32_t sd_len;
+   const char *rp_val;
+   const char *sd_val;
+   bool *sd_matched = bson_malloc(sizeof(bool) * description_len);
+   size_t found;
+   size_t i;
+
+   rp_tags = mongoc_read_prefs_get_tags (read_prefs);
+
+   if (bson_count_keys (rp_tags) == 0) {
+      return description_len;
+   }
+
+   bson_iter_init (&rp_tagset_iter, rp_tags);
+
+   /* for each read preference tagset */
+   while (bson_iter_next (&rp_tagset_iter)) {
+      found = description_len;
+
+      for (i = 0; i < description_len; i++) {
+         sd_matched[i] = true;
+
+         bson_iter_recurse (&rp_tagset_iter, &rp_iter);
+
+         while (bson_iter_next (&rp_iter)) {
+            /* TODO: can we have non-utf8 tags? */
+            rp_val = bson_iter_utf8 (&rp_iter, &rp_len);
+
+            if (bson_iter_init_find (&sd_iter, &descriptions[i]->tags, bson_iter_key (&rp_iter))) {
+               /* If the server description has that key */
+
+               sd_val = bson_iter_utf8 (&sd_iter, &sd_len);
+
+               if (! (sd_len == rp_len && (0 == memcmp(rp_val, sd_val, rp_len)))) {
+                  /* If the key value doesn't match, no match */
+                  sd_matched[i] = false;
+                  found--;
+               }
+            } else {
+               /* If the server description doesn't have that key, no match */
+               sd_matched[i] = false;
+               found--;
+               break;
+            }
+         }
+      }
+
+      if (found) {
+         for (i = 0; i < description_len; i++) {
+            if (! sd_matched[i]) {
+               descriptions[i] = NULL;
+            }
+         }
+
+         return found;
+      }
+   }
+
+   for (i = 0; i < description_len; i++) {
+      if (! sd_matched[i]) {
+         descriptions[i] = NULL;
+      }
+   }
+
+   return 0;
 }

@@ -140,6 +140,8 @@ mongoc_async_cmd_new (mongoc_async_t       *async,
                       int32_t               timeout_msec)
 {
    mongoc_async_cmd_t *acmd;
+   mongoc_async_cmd_t *tmp;
+   bool found = false;
 
    bson_return_val_if_fail(cmd, NULL);
    bson_return_val_if_fail(dbname, NULL);
@@ -159,6 +161,23 @@ mongoc_async_cmd_new (mongoc_async_t       *async,
    _mongoc_async_cmd_init_send (acmd, dbname);
 
    _mongoc_async_cmd_state_start (acmd);
+
+   /* slot the cmd into the right place in the expiration list */
+   {
+      async->ncmds++;
+      DL_FOREACH (async->cmds, tmp)
+      {
+         if (tmp->expire_at >= acmd->expire_at) {
+            DL_PREPEND_ELEM (async->cmds, tmp, acmd);
+            found = true;
+            break;
+         }
+      }
+
+      if (! found) {
+         DL_APPEND (async->cmds, acmd);
+      }
+   }
 
    return acmd;
 }

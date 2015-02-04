@@ -71,6 +71,7 @@ _mongoc_sdam_select (mongoc_sdam_t             *sdam,
                      mongoc_ss_optype_t         optype,
                      const mongoc_read_prefs_t *read_prefs,
                      int64_t                    timeout_msec,
+                     int64_t                    local_threshold_ms,
                      bson_error_t              *error);
 
 mongoc_server_description_t *

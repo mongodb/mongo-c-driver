@@ -24,25 +24,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async"
 
-void
-_mongoc_async_add_cmd (mongoc_async_t     *async,
-                       mongoc_async_cmd_t *acmd)
-{
-   mongoc_async_cmd_t *tmp;
-
-   DL_FOREACH (async->cmds, tmp)
-   {
-      if (tmp->expire_at >= acmd->expire_at) {
-         DL_PREPEND_ELEM (async->cmds, tmp, acmd);
-         return;
-      }
-   }
-
-   DL_APPEND (async->cmds, acmd);
-
-   async->ncmds++;
-}
-
 mongoc_async_cmd_t *
 mongoc_async_cmd (mongoc_async_t       *async,
                   mongoc_stream_t      *stream,
@@ -52,12 +33,8 @@ mongoc_async_cmd (mongoc_async_t       *async,
                   void                 *cb_data,
                   int32_t               timeout_msec)
 {
-   mongoc_async_cmd_t *acmd = mongoc_async_cmd_new (async, stream, dbname, cmd,
-                                                    cb, cb_data, timeout_msec);
-
-   _mongoc_async_add_cmd (async, acmd);
-
-   return acmd;
+   return mongoc_async_cmd_new (async, stream, dbname, cmd, cb, cb_data,
+                                timeout_msec);
 }
 
 mongoc_async_t *
@@ -92,6 +69,8 @@ mongoc_async_run (mongoc_async_t *async,
    int64_t now;
    int64_t expire_at = 0;
 
+   size_t poll_size = 0;
+
    for (;;) {
       now = bson_get_monotonic_time ();
 
@@ -124,14 +103,17 @@ mongoc_async_run (mongoc_async_t *async,
          break;
       }
 
-      bson_free (poll);
-      poll = bson_malloc0 (sizeof (*poll) * async->ncmds);
+      if (poll_size < async->ncmds) {
+         poll = bson_realloc (poll, sizeof (*poll) * async->ncmds);
+         poll_size = async->ncmds;
+      }
 
       i = 0;
       DL_FOREACH (async->cmds, acmd)
       {
          poll[i].stream = acmd->stream;
          poll[i].events = acmd->events;
+         poll[i].revents = 0;
          i++;
       }
 
@@ -163,7 +145,9 @@ mongoc_async_run (mongoc_async_t *async,
       }
    }
 
-   bson_free (poll);
+   if (poll_size) {
+      bson_free (poll);
+   }
 
    return async->ncmds;
 }

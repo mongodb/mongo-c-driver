@@ -1198,6 +1198,7 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
                                          optype,
                                          read_prefs,
                                          cluster->sockettimeoutms,
+                                         15, /* TODO MAKE THIS REAL */
                                          error);
 
    if (!selected_server) {

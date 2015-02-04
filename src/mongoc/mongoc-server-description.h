@@ -20,6 +20,7 @@
 #include <bson.h>
 
 #include "mongoc-array-private.h"
+#include "mongoc-read-prefs.h"
 #include "mongoc-host-list.h"
 
 typedef enum
@@ -92,5 +93,11 @@ _mongoc_server_description_handle_ismaster (
    const bson_t                  *reply,
    int64_t                        rtt_msec,
    bson_error_t                  *error);
+
+size_t
+_mongoc_server_description_filter_eligible (
+   mongoc_server_description_t **descriptions,
+   size_t                        description_len,
+   const mongoc_read_prefs_t    *read_prefs);
 
 #endif

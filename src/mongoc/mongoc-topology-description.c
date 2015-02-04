@@ -50,7 +50,7 @@ _mongoc_topology_description_init (mongoc_topology_description_t *description,
 
    bson_return_if_fail(description);
 
-   memset (description, sizeof (*description), 0);
+   memset (description, 0, sizeof (*description));
 
    description->type = MONGOC_TOPOLOGY_UNKNOWN;
    description->servers = mongoc_set_new(8, _mongoc_topology_server_dtor, NULL);
@@ -135,45 +135,63 @@ _mongoc_topology_description_has_primary (mongoc_topology_description_t *descrip
    return NULL;
 }
 
-/*
- *-------------------------------------------------------------------------
- *
- * _mongoc_topology_description_select_within_window --
- *
- *       Given an array of suitable servers, choose one from within
- *       the latency window and return its description.
- *
- * Returns:
- *       A server description, or NULL upon failure
- *
- * Side effects:
- *       None.
- *
- *-------------------------------------------------------------------------
- */
 
-static mongoc_server_description_t *
-_mongoc_topology_description_select_within_window (mongoc_array_t *suitable_servers)
+bool
+_mongoc_topology_description_server_description_is_candidate (
+   mongoc_server_description_type_t   desc_type,
+   mongoc_read_mode_t                 read_mode,
+   mongoc_topology_description_type_t topology_type)
 {
-   mongoc_server_description_t *out = NULL;
+   switch ((int)topology_type) {
+   case MONGOC_TOPOLOGY_SINGLE:
+      switch ((int)desc_type) {
+      case MONGOC_SERVER_STANDALONE:
+         return true;
+      default:
+         return false;
+      }
 
-   bson_return_val_if_fail(suitable_servers, NULL);
+   case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
+   case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
+      switch ((int)read_mode) {
+      case MONGOC_READ_PRIMARY:
+         switch ((int)desc_type) {
+         case MONGOC_SERVER_POSSIBLE_PRIMARY:
+         case MONGOC_SERVER_RS_PRIMARY:
+            return true;
+         default:
+            return false;
+         }
+      case MONGOC_READ_SECONDARY:
+         switch ((int)desc_type) {
+         case MONGOC_SERVER_RS_SECONDARY:
+            return true;
+         default:
+            return false;
+         }
+      default:
+         switch ((int)desc_type) {
+         case MONGOC_SERVER_POSSIBLE_PRIMARY:
+         case MONGOC_SERVER_RS_PRIMARY:
+         case MONGOC_SERVER_RS_SECONDARY:
+            return true;
+         default:
+            return false;
+         }
+      }
 
-   // TODO SS implement properly
-
-   // for basic functionality, always return the first element.
-   if (suitable_servers->len < 1) {
-      goto DONE;
+   case MONGOC_TOPOLOGY_SHARDED:
+      switch ((int)desc_type) {
+      case MONGOC_SERVER_MONGOS:
+         return true;
+      default:
+         return false;
+      }
+   default:
+      return false;
    }
-
-   out = _mongoc_array_index(suitable_servers, mongoc_server_description_t *, 0);
-
-DONE:
-
-   _mongoc_array_destroy (suitable_servers);
-
-   return out;
 }
+
 
 /*
  *-------------------------------------------------------------------------
@@ -192,21 +210,136 @@ DONE:
  *-------------------------------------------------------------------------
  */
 
-static void
-_mongoc_topology_description_suitable_servers (mongoc_array_t *set, /* OUT */
-                                               mongoc_ss_optype_t optype,
-                                               mongoc_topology_description_t *topology,
-                                               const mongoc_read_prefs_t *read_pref)
+void
+_mongoc_topology_description_suitable_servers (
+   mongoc_array_t                *set,                              /* OUT */
+   mongoc_ss_optype_t             optype,
+   mongoc_topology_description_t *topology,
+   const mongoc_read_prefs_t     *read_pref,
+   size_t                         local_threshold_ms)
 {
+   mongoc_set_t *servers;
+   mongoc_server_description_t **candidates;
    mongoc_server_description_t *server_iter;
+   mongoc_server_description_t *primary = NULL;
+   int i;
+   bool has_secondary = false;
+   size_t candidates_len = 0;
+   int64_t nearest = -1;
+   mongoc_read_mode_t read_mode = mongoc_read_prefs_get_mode(read_pref);
 
-   // TODO SS implement properly
+   candidates = bson_malloc0(sizeof(*candidates) * topology->servers->items_len);
 
-   // for basic functionality, return the primary always.
-   server_iter = _mongoc_topology_description_has_primary(topology);
-   if (server_iter) {
-      _mongoc_array_append_val(set, server_iter);
+   if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
+      server_iter = topology->servers->items[0].item;
+      if (_mongoc_topology_description_server_description_is_candidate (server_iter->type, read_mode, topology->type)) {
+         _mongoc_array_append_val (set, server_iter);
+         goto DONE;
+      }
+   } else if (topology->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY ||
+              topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
+      servers = topology->servers;
+
+      if (optype == MONGOC_SS_READ) {
+
+         for (i = 0; i < servers->items_len; i++) {
+            server_iter = servers->items[i].item;
+
+            if (_mongoc_topology_description_server_description_is_candidate (server_iter->type,
+                                                         read_mode, topology->type)) {
+
+               if (server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
+                  if (read_mode == MONGOC_READ_PRIMARY || read_mode == MONGOC_READ_PRIMARY_PREFERRED) {
+                     /* replica set has a primary and we're primary or primary
+                      * preferred.  Don't care about eligibility */
+                     _mongoc_array_append_val (set, server_iter);
+
+                     /* just need the one server and we're done */
+                     goto DONE;
+                  }
+
+                  primary = server_iter;
+               }
+
+               candidates[candidates_len++] = server_iter;
+            
+               if (server_iter->type == MONGOC_SERVER_RS_SECONDARY) {
+                  has_secondary = true;
+               }
+            }
+         }
+
+         if (! _mongoc_server_description_filter_eligible (candidates, candidates_len, read_pref)) {
+            if (read_mode == MONGOC_READ_NEAREST) {
+               goto DONE;
+            } else {
+               has_secondary = false;
+            }
+         }
+
+         if (has_secondary && (read_mode == MONGOC_READ_SECONDARY || read_mode == MONGOC_READ_SECONDARY_PREFERRED)) {
+            /* secondary or secondary preferred and we have one. */
+
+            for (i = 0; i < candidates_len; i++) {
+               if (candidates[i] && candidates[i]->type == MONGOC_SERVER_RS_PRIMARY) {
+                  candidates[i] = NULL;
+               }
+            }
+         } else if (read_mode == MONGOC_READ_SECONDARY_PREFERRED && primary) {
+            /* secondary preferred, but only the one primary */
+
+            _mongoc_array_append_val (set, primary);
+
+            goto DONE;
+         }
+
+      } else if (topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
+         /* includes optype == MONGOC_SS_WRITE as the exclusion of the above if */
+
+         for (i = 0; i < servers->items_len; i++) {
+            server_iter = servers->items[i].item;
+
+            if (server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
+               _mongoc_array_append_val (set, server_iter);
+               goto DONE;
+            }
+         }
+      }
+   } else if (topology->type == MONGOC_TOPOLOGY_SHARDED) {
+      servers = topology->servers;
+
+      for (i = 0; i < servers->items_len; i++) {
+         server_iter = servers->items[i].item;
+
+         if (_mongoc_topology_description_server_description_is_candidate (server_iter->type, read_mode, topology->type)) {
+            candidates[candidates_len++] = server_iter;
+         }
+      }
    }
+
+   /* Ways to get here:
+    *   - secondary read
+    *   - secondary preferred read
+    *   - primary_preferred and no primary read
+    *   - sharded anything
+    * Find the nearest, then select within the window */
+
+   for (i = 0; i < candidates_len; i++) {
+      if (candidates[i] && (nearest == -1 || nearest > candidates[i]->round_trip_time)) {
+         nearest = candidates[i]->round_trip_time;
+      }
+   }
+
+   for (i = 0; i < candidates_len; i++) {
+      if (candidates[i] && (candidates[i]->round_trip_time <= nearest + local_threshold_ms)) {
+         _mongoc_array_append_val (set, candidates[i]);
+      }
+   }
+
+DONE:
+
+   bson_free (candidates);
+
    return;
 }
 
@@ -230,15 +363,17 @@ _mongoc_topology_description_suitable_servers (mongoc_array_t *set, /* OUT */
 
 mongoc_server_description_t *
 _mongoc_topology_description_select (mongoc_topology_description_t *topology,
-                                     mongoc_ss_optype_t optype,
-                                     const mongoc_read_prefs_t *read_pref,
-                                     bson_error_t *error /* OUT */)
+                                     mongoc_ss_optype_t             optype,
+                                     const mongoc_read_prefs_t     *read_pref,
+                                     int64_t                        local_threshold_ms,
+                                     bson_error_t                  *error)              /* OUT */
 {
    /* timeout calculations in microseconds */
    int64_t start_time = bson_get_monotonic_time();
    int64_t now = bson_get_monotonic_time();
    int64_t timeout = (MONGOC_SS_DEFAULT_TIMEOUT_MS * 1000UL); // TODO SS use client-set timeout if available
    mongoc_array_t suitable_servers;
+   mongoc_server_description_t *sd = NULL;
 
    ENTRY;
 
@@ -255,9 +390,10 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
    // TODO SS:
    // we should also timeout when minHearbeatFrequencyMS ms have passed, per check.
    do {
-      _mongoc_topology_description_suitable_servers(&suitable_servers, optype, topology, read_pref);
+      _mongoc_topology_description_suitable_servers(&suitable_servers, optype, topology, read_pref, local_threshold_ms);
       if (suitable_servers.len != 0) {
-         RETURN(_mongoc_topology_description_select_within_window(&suitable_servers));
+         sd = _mongoc_array_index(&suitable_servers, mongoc_server_description_t*, rand() % suitable_servers.len);
+         goto DONE;
       }
       // TODO SS request scan, and wait
       now = bson_get_monotonic_time();
@@ -269,9 +405,11 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
                   MONGOC_ERROR_SERVER_SELECTION_TIMEOUT,
                   "Could not find a suitable server");
 
+DONE:
+
    _mongoc_array_destroy (&suitable_servers);
 
-   RETURN(NULL);
+   RETURN(sd);
 }
 
 /*

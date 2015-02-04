@@ -159,6 +159,7 @@ test_server_selection_logic (void)
    bson_iter_t topology_iter;
    bson_iter_t server_iter;
    bson_iter_t sd_iter;
+   bson_iter_t sd_child_iter;
    bson_iter_t read_pref_iter;
    bson_t *test;
    bson_t test_topology;
@@ -175,6 +176,8 @@ test_server_selection_logic (void)
    int num_tests;
    int i;
    int j = 0;
+
+   mongoc_array_t selected_servers;
 
    /* import the JSON files and parse into JSON */
    num_tests = collect_tests_from_dir(&test_paths[0],
@@ -224,8 +227,11 @@ test_server_selection_logic (void)
             sd->type = server_status_from_test(bson_iter_utf8(&sd_iter, NULL));
 
             /* set description tags */
+            /* TODO FIGURE OUT IF SERVERS SHOULD HAVE ARRAYS OF TAGSETS, THAT SEEMS WRONG */
             assert(bson_iter_init_find(&sd_iter, &server, "tags"));
-            bson_iter_array(&sd_iter, &len, &data);
+            bson_iter_recurse(&sd_iter, &sd_child_iter);
+            bson_iter_next(&sd_child_iter);
+            bson_iter_document(&sd_child_iter, &len, &data);
             assert(bson_init_static(&sd->tags, data, len));
 
             /* add new server to our topology description */
@@ -244,6 +250,10 @@ test_server_selection_logic (void)
          bson_iter_array(&read_pref_iter, &len, &data);
          assert(bson_init_static(&test_tags, data, len));
          mongoc_read_prefs_set_tags(read_prefs, &test_tags);
+
+         /* get optype */
+         assert (bson_iter_init_find(&iter, test, "operation"));
+         op = optype_from_test(bson_iter_utf8(&iter, NULL));
 
          /* read in candidate servers */
          assert (bson_iter_init_find(&iter, test, "candidate_servers"));
@@ -265,14 +275,36 @@ test_server_selection_logic (void)
          bson_iter_array (&iter, &len, &data);
          assert (bson_init_static (&latency, data, len));
 
-         /* get optype */
-         assert (bson_iter_init_find(&iter, test, "operation"));
-         op = optype_from_test(bson_iter_utf8(&iter, NULL));
+         _mongoc_array_init (&selected_servers, sizeof(mongoc_server_description_t*));
 
-         /* send through server selection and make sure we calculate correctly */
-         // TODO, once SS is implemented in discrete steps
+         _mongoc_topology_description_suitable_servers (&selected_servers, op, topology,
+                                                        read_prefs, 15);
+
+         bson_iter_init (&iter, &latency);
+
+         assert (bson_count_keys(&latency) == selected_servers.len);
+
+         while (bson_iter_next(&iter)) {
+            bool found = false;
+            bson_iter_t host;
+
+            bson_iter_recurse(&iter, &host);
+            bson_iter_find (&host, "address");
+
+            for (j = 0; j < selected_servers.len; j++) {
+               sd = _mongoc_array_index (&selected_servers, mongoc_server_description_t*, j);
+
+               if (strcmp(sd->host.host_and_port, bson_iter_utf8(&host, NULL)) == 0) {
+                  found = true;
+                  break;
+               }
+            }
+
+            assert (found);
+         }
 
          _mongoc_topology_description_destroy(topology);
+         _mongoc_array_destroy (&selected_servers);
          printf("PASS\n");
       }
       else {
