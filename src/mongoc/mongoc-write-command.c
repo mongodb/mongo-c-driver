@@ -31,8 +31,6 @@
  *    - Try to receive GLE on the stack (legacy only?)
  */
 
-
-#define MAX_INSERT_BATCH 1000
 #define SUPPORTS_WRITE_COMMANDS(n) \
    (((n)->min_wire_version <= 2) && ((n)->max_wire_version >= 2))
 #define WRITE_CONCERN_DOC(wc) \
@@ -292,7 +290,8 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    char ns [MONGOC_NAMESPACE_MAX + 1];
    bool r;
    int i;
-   int max_docs = MAX_INSERT_BATCH;
+   mongoc_cluster_node_t *node;
+   int max_insert_batch;
 
    ENTRY;
 
@@ -303,8 +302,11 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (collection);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
 
+   node = &client->cluster.nodes [hint - 1];
+   max_insert_batch = node->max_write_batch_size;
+
    if (command->u.insert.ordered || !command->u.insert.allow_bulk_op_insert) {
-      max_docs = 1;
+      max_insert_batch = 1;
    }
 
    r = bson_iter_init (&iter, command->u.insert.documents);
@@ -361,7 +363,7 @@ again:
       /*
        * Check that we will not overflow our max message size.
        */
-      if ((i == max_docs) || (size > (client->cluster.max_msg_size - len))) {
+      if ((i == max_insert_batch) || (size > (client->cluster.max_msg_size - len))) {
          has_more = true;
          break;
       }
@@ -618,6 +620,8 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    bool has_more;
    bool ret;
    int i;
+   mongoc_cluster_node_t *node;
+   int max_insert_batch;
 
    ENTRY;
 
@@ -628,12 +632,15 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
 
+   node = &client->cluster.nodes [hint - 1];
+   max_insert_batch = 1;//node->max_write_batch_size;
+
    /*
     * If we have an unacknowledged write and the server supports the legacy
     * opcodes, then submit the legacy opcode so we don't need to wait for
     * a response from the server.
     */
-   if ((client->cluster.nodes [hint - 1].min_wire_version == 0) &&
+   if ((node->min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_insert_legacy (command, client, hint, database,
                                            collection, write_concern, result,
@@ -666,7 +673,7 @@ again:
 
    if ((command->u.insert.documents->len < client->cluster.max_bson_size) &&
        (command->u.insert.documents->len < client->cluster.max_msg_size) &&
-       (command->u.insert.n_documents <= MAX_INSERT_BATCH)) {
+       (command->u.insert.n_documents <= max_insert_batch)) {
       BSON_APPEND_ARRAY (&cmd, "documents", command->u.insert.documents);
    } else {
       bson_append_array_begin (&cmd, "documents", 9, &ar);
@@ -678,7 +685,7 @@ again:
 
          bson_iter_document (&iter, &len, &data);
 
-         if ((i == MAX_INSERT_BATCH) ||
+         if ((i == max_insert_batch) ||
              (len > (client->cluster.max_msg_size - cmd.len - overhead))) {
             has_more = true;
             break;
@@ -731,9 +738,21 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
                               mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
-   bson_t cmd = BSON_INITIALIZER;
+   const uint8_t *data;
+   bson_iter_t iter;
+   const char *key;
+   uint32_t len;
+   bson_t tmp;
+   bson_t ar;
+   bson_t cmd;
    bson_t reply;
+   char str [16];
    bool ret;
+   mongoc_cluster_node_t *node;
+   int max_update_batch;
+   size_t overhead;
+   bool has_more;
+   int i;
 
    ENTRY;
 
@@ -742,6 +761,9 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
    BSON_ASSERT (database);
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
+
+   node = &client->cluster.nodes [hint - 1];
+   max_update_batch = 1;//node->max_write_batch_size;
 
    /*
     * If we have an unacknowledged write and the server supports the legacy
@@ -756,11 +778,81 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
       EXIT;
    }
 
+   if ((command->u.update.n_updates == 0) ||
+       !bson_iter_init (&iter, command->u.update.updates) ||
+       !bson_iter_next (&iter)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COLLECTION,
+                      MONGOC_ERROR_COLLECTION_UPDATE_FAILED,
+                      "Cannot do an empty update.");
+      result->failed = true;
+      EXIT;
+   }
+
+   overhead = 1 + strlen ("updates") + 1;
+
+again:
+   bson_init (&cmd);
+   has_more = false;
+   i = 0;
+
    BSON_APPEND_UTF8 (&cmd, "update", collection);
-   BSON_APPEND_ARRAY (&cmd, "updates", command->u.update.updates);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
                          WRITE_CONCERN_DOC (write_concern));
-   BSON_APPEND_BOOL (&cmd, "ordered", command->u.update.ordered);
+   BSON_APPEND_BOOL (&cmd, "ordered", command->u.insert.ordered);
+
+   if ((command->u.update.updates->len < client->cluster.max_bson_size) &&
+       (command->u.update.updates->len < client->cluster.max_msg_size) &&
+       (command->u.update.n_updates <= max_update_batch)) {
+      BSON_APPEND_ARRAY (&cmd, "updates", command->u.update.updates);
+   } else {
+      bson_append_array_begin (&cmd, "updates", 9, &ar);
+
+      do {
+         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+            BSON_ASSERT (false);
+         }
+
+         bson_iter_document (&iter, &len, &data);
+
+         if ((i == max_update_batch) ||
+             (len > (client->cluster.max_msg_size - cmd.len - overhead))) {
+            has_more = true;
+            break;
+         }
+
+         bson_uint32_to_string (i, &key, str, sizeof str);
+
+         if (!bson_init_static (&tmp, data, len)) {
+            BSON_ASSERT (false);
+         }
+
+         BSON_APPEND_DOCUMENT (&ar, key, &tmp);
+
+         bson_destroy (&tmp);
+
+         i++;
+      } while (bson_iter_next (&iter));
+
+      bson_append_array_end (&cmd, &ar);
+   }
+
+   ret = mongoc_client_command_simple (client, database, &cmd, NULL,
+                                       &reply, error);
+
+   if (!ret) {
+      result->failed = true;
+   }
+
+   command->u.update.current_n_updates = i;
+   _mongoc_write_result_merge (result, command, &reply);
+
+   bson_destroy (&cmd);
+   bson_destroy (&reply);
+
+   if (has_more && (ret || !command->u.insert.ordered)) {
+      GOTO (again);
+   }
 
    ret = mongoc_client_command_simple (client, database, &cmd, NULL,
                                        &reply, error);

@@ -170,6 +170,7 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
       last = &_mongoc_array_index (&bulk->commands,
                                    mongoc_write_command_t,
                                    bulk->commands.len - 1);
+
       if (last->type == MONGOC_WRITE_COMMAND_INSERT) {
          _mongoc_write_command_insert_append (last, &document, 1);
          EXIT;
