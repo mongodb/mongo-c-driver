@@ -57,6 +57,7 @@ typedef struct
          uint8_t   ordered : 1;
          bson_t   *updates;
          uint32_t  n_updates : 1;
+         uint32_t  current_n_updates;
       } update;
    } u;
 } mongoc_write_command_t;
