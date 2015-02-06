@@ -116,6 +116,7 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
 {
    char id[20];
    bson_t doc;
+   uint32_t pos;
 
    ENTRY;
 
@@ -129,11 +130,12 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
    BSON_APPEND_BOOL (&doc, "upsert", upsert);
    BSON_APPEND_BOOL (&doc, "multi", multi);
 
-   sprintf(id, "%i",  command->u.update.n_updates);
+   pos = command->u.update.n_updates;
+   sprintf(id, "%i", pos);
    
    BSON_APPEND_DOCUMENT (command->u.update.updates, id, &doc);
 
-   command->u.update.n_updates += 1;
+   command->u.update.n_updates = pos + 1;
 
    EXIT;
 }
@@ -204,6 +206,7 @@ _mongoc_write_command_init_update (mongoc_write_command_t *command,  /* IN */
    command->type = MONGOC_WRITE_COMMAND_UPDATE;
    command->u.update.updates = bson_new ();
    command->u.update.ordered = ordered;
+   command->u.insert.n_documents = 0;
 
    _mongoc_write_command_update_append (command, selector, update, upsert, multi);
 
