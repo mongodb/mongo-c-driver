@@ -637,23 +637,56 @@ test_index_geo (void)
    mongoc_client_destroy(client);
 }
 
+static char *
+storage_engine (mongoc_client_t *client)
+{
+   bson_iter_t iter;
+   bson_error_t error;
+   bson_t cmd = BSON_INITIALIZER;
+   bson_t reply;
+   bool r;
+
+   /* NOTE: this default will change eventually */
+   char *engine = bson_strdup("mmapv1");
+
+   BSON_APPEND_INT32 (&cmd, "getCmdLineOpts", 1);
+   r = mongoc_client_command_simple(client, "admin", &cmd, NULL, &reply, &error);
+   ASSERT (r);
+
+   if (bson_iter_init_find (&iter, &reply, "parsed.storage.engine")) {
+      engine = bson_strdup(bson_iter_utf8(&iter, NULL));
+   }
+
+   bson_destroy (&reply);
+   bson_destroy (&cmd);
+
+   return engine;
+}
+
 static void
 test_index_storage (void)
 {
-   mongoc_collection_t *collection;
-   mongoc_database_t *database;
-   mongoc_client_t *client;
+   mongoc_collection_t *collection = NULL;
+   mongoc_database_t *database = NULL;
+   mongoc_client_t *client = NULL;
    mongoc_index_opt_t opt;
    mongoc_index_opt_wt_t wt_opt;
    bson_error_t error;
    bool r;
    bson_t keys;
-
-   mongoc_index_opt_init (&opt);
-   mongoc_index_opt_wt_init (&wt_opt);
+   char *engine = NULL;
 
    client = mongoc_client_new (gTestUri);
    ASSERT (client);
+
+   /* Skip unless we are on WT */
+   engine = storage_engine(client);
+   if (strcmp("wiredTiger", engine) != 0) {
+      goto cleanup;
+   }
+
+   mongoc_index_opt_init (&opt);
+   mongoc_index_opt_wt_init (&wt_opt);
 
    database = get_test_database (client);
    ASSERT (database);
@@ -674,9 +707,11 @@ test_index_storage (void)
    r = mongoc_collection_create_index (collection, &keys, &opt, &error);
    ASSERT (r);
 
-   mongoc_collection_destroy (collection);
-   mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
+ cleanup:
+   if (engine) bson_free (engine);
+   if (collection) mongoc_collection_destroy (collection);
+   if (database) mongoc_database_destroy (database);
+   if (client) mongoc_client_destroy (client);
 }
 
 static void

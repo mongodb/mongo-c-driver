@@ -873,7 +873,7 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
       case MONGOC_INDEX_STORAGE_OPT_WIREDTIGER:
          wt_opt = (mongoc_index_opt_wt_t *)storage_opt;
          BSON_APPEND_DOCUMENT_BEGIN (&doc, "storageEngine", &storage_doc);
-         BSON_APPEND_DOCUMENT_BEGIN (&storage_doc, "wiredtiger", &wt_doc);
+         BSON_APPEND_DOCUMENT_BEGIN (&storage_doc, "wiredTiger", &wt_doc);
          BSON_APPEND_UTF8 (&wt_doc, "configString", wt_opt->config_str);
          bson_append_document_end (&storage_doc, &wt_doc);
          bson_append_document_end (&doc, &storage_doc);
