@@ -636,7 +636,7 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    BSON_ASSERT (collection);
 
    node = &client->cluster.nodes [hint - 1];
-   max_insert_batch = 1;//node->max_write_batch_size;
+   max_insert_batch = node->max_write_batch_size;
 
    /*
     * If we have an unacknowledged write and the server supports the legacy
@@ -679,7 +679,7 @@ again:
        (command->u.insert.n_documents <= max_insert_batch)) {
       BSON_APPEND_ARRAY (&cmd, "documents", command->u.insert.documents);
    } else {
-      bson_append_array_begin (&cmd, "documents", 9, &ar);
+      bson_append_array_begin (&cmd, "documents", strlen("documents"), &ar);
 
       do {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
@@ -766,7 +766,7 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
    BSON_ASSERT (collection);
 
    node = &client->cluster.nodes [hint - 1];
-   max_update_batch = 1;//node->max_write_batch_size;
+   max_update_batch = node->max_write_batch_size;
 
    /*
     * If we have an unacknowledged write and the server supports the legacy
@@ -807,22 +807,23 @@ again:
    if ((command->u.update.updates->len < client->cluster.max_bson_size) &&
        (command->u.update.updates->len < client->cluster.max_msg_size) &&
        (command->u.update.n_updates <= max_update_batch)) {
+       // there is enough space to send the whole query at once...
       BSON_APPEND_ARRAY (&cmd, "updates", command->u.update.updates);
    } else {
-      bson_append_array_begin (&cmd, "updates", 9, &ar);
+      bson_append_array_begin (&cmd, "updates", strlen("updates"), &ar);
 
       do {
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
             BSON_ASSERT (false);
          }
 
-         bson_iter_document (&iter, &len, &data);
-
          if ((i == max_update_batch) ||
              (len > (client->cluster.max_msg_size - cmd.len - overhead))) {
             has_more = true;
             break;
          }
+
+         bson_iter_document (&iter, &len, &data);
 
          bson_uint32_to_string (i, &key, str, sizeof str);
 
@@ -856,18 +857,6 @@ again:
    if (has_more && (ret || !command->u.insert.ordered)) {
       GOTO (again);
    }
-
-   ret = mongoc_client_command_simple (client, database, &cmd, NULL,
-                                       &reply, error);
-
-   if (!ret) {
-      result->failed = true;
-   }
-
-   _mongoc_write_result_merge (result, command, &reply);
-
-   bson_destroy (&reply);
-   bson_destroy (&cmd);
 
    EXIT;
 }
