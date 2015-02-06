@@ -132,7 +132,7 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
 
    pos = command->u.update.n_updates;
    sprintf(id, "%i", pos);
-   
+
    BSON_APPEND_DOCUMENT (command->u.update.updates, id, &doc);
 
    command->u.update.n_updates = pos + 1;
@@ -512,7 +512,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
                                      bson_error_t                 *error)
 {
    mongoc_rpc_t rpc;
-   bson_iter_t iter, subiter; 
+   bson_iter_t iter, subiter;
    bson_t doc;
    bson_t *gle = NULL;
    const uint8_t* data = NULL;
@@ -593,7 +593,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
                 }
         }
    }
-   
+
 cleanup:
    if (gle) {
       _mongoc_write_result_merge_legacy (result, command, gle);
@@ -627,7 +627,7 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    size_t overhead;
    bool has_more;
    bool ret;
-   int i;   
+   int i;
    mongoc_cluster_node_t *node;
    int max_delete_batch;
 
@@ -667,7 +667,7 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
       EXIT;
    }
 
-   overhead = 1 + strlen ("documents") + 1;
+   overhead = 1 + strlen ("deletes") + 1;
 
 again:
    bson_init (&cmd);
