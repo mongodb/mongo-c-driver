@@ -17,6 +17,7 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-client-pool.h"
+#include "mongoc-client-private.h"
 #include "mongoc-queue-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
@@ -132,29 +133,31 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   bson_return_val_if_fail(pool, NULL);
-
-   mongoc_mutex_lock(&pool->mutex);
+   bson_return_val_if_fail (pool, NULL);
+   mongoc_mutex_lock (&pool->mutex);
 
 again:
-   if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
+
+   if (!(client = _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
-         client = mongoc_client_new_from_uri(pool->uri);
-#ifdef MONGOC_ENABLE_SSL
+         client = mongoc_client_new_from_uri (pool->uri);
+   #ifdef MONGOC_ENABLE_SSL
+
          if (pool->ssl_opts_set) {
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
          }
-#endif
+
+   #endif
          pool->size++;
       } else {
-         mongoc_cond_wait(&pool->cond, &pool->mutex);
-         GOTO(again);
+         mongoc_cond_wait (&pool->cond, &pool->mutex);
+         GOTO (again);
       }
    }
 
-   mongoc_mutex_unlock(&pool->mutex);
+   mongoc_mutex_unlock (&pool->mutex);
 
-   RETURN(client);
+   RETURN (client);
 }
 
 
@@ -165,25 +168,27 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   bson_return_val_if_fail(pool, NULL);
+   bson_return_val_if_fail (pool, NULL);
 
-   mongoc_mutex_lock(&pool->mutex);
+   mongoc_mutex_lock (&pool->mutex);
 
-   if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
+   if (!(client = _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
-         client = mongoc_client_new_from_uri(pool->uri);
+         client = mongoc_client_new_from_uri (pool->uri);
 #ifdef MONGOC_ENABLE_SSL
+
          if (pool->ssl_opts_set) {
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
          }
+
 #endif
          pool->size++;
       }
    }
 
-   mongoc_mutex_unlock(&pool->mutex);
+   mongoc_mutex_unlock (&pool->mutex);
 
-   RETURN(client);
+   RETURN (client);
 }
 
 
@@ -193,23 +198,31 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
 {
    ENTRY;
 
-   bson_return_if_fail(pool);
-   bson_return_if_fail(client);
+   bson_return_if_fail (pool);
+   bson_return_if_fail (client);
 
-   /*
-    * TODO: Shutdown old client connections.
-    */
+   if (pool->size > pool->min_pool_size) {
+      mongoc_client_t *old_client;
+      old_client = _mongoc_queue_pop_head (&pool->queue);
+      mongoc_client_destroy (old_client);
+      pool->size--;
+   }
 
-   /*
-    * TODO: We should try to make a client healthy again if it
-    *       is unhealthy since this is typically where a thread
-    *       is done with its work.
-    */
+   if ((client->cluster.state == MONGOC_CLUSTER_STATE_HEALTHY) ||
+       (client->cluster.state == MONGOC_CLUSTER_STATE_BORN)) {
+      mongoc_mutex_lock (&pool->mutex);
+      _mongoc_queue_push_tail (&pool->queue, client);
+   } else if (_mongoc_cluster_reconnect (&client->cluster, NULL)) {
+      mongoc_mutex_lock (&pool->mutex);
+      _mongoc_queue_push_tail (&pool->queue, client);
+   }else {
+      mongoc_client_destroy (client);
+      mongoc_mutex_lock (&pool->mutex);
+      pool->size--;
+   }
 
-   mongoc_mutex_lock(&pool->mutex);
-   _mongoc_queue_push_head(&pool->queue, client);
-   mongoc_cond_signal(&pool->cond);
-   mongoc_mutex_unlock(&pool->mutex);
+   mongoc_cond_signal (&pool->cond);
+   mongoc_mutex_unlock (&pool->mutex);
 
    EXIT;
 }
