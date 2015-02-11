@@ -253,42 +253,33 @@ bool
 _mongoc_host_list_from_string (mongoc_host_list_t *host_list,
                                const char         *host_and_port)
 {
-   uint16_t port;
-   const char *end_host;
-   char *hostname = NULL;
+   bool rval = false;
+   char *uri_str = NULL;
+   mongoc_uri_t *uri = NULL;
+   const mongoc_host_list_t *uri_hl;
 
    bson_return_val_if_fail(host_list, false);
    bson_return_val_if_fail(host_and_port, false);
 
-   memset(host_list, 0, sizeof *host_list);
+   uri_str = bson_strdup_printf("mongodb://%s/", host_and_port);
+   if (! uri_str) goto CLEANUP;
 
-   if ((hostname = scan_to_unichar(host_and_port, ':', "", &end_host))) {
-      end_host++;
-      if (!isdigit(*end_host)) {
-         bson_free(hostname);
-         return false;
-      }
-#ifdef _MSC_VER
-      sscanf_s (end_host, "%hu", &port);
-#else
-      sscanf (end_host, "%hu", &port);
-#endif
-   } else {
-      hostname = bson_strdup(host_and_port);
-      port = MONGOC_DEFAULT_PORT;
-   }
+   uri = mongoc_uri_new(uri_str);
+   if (! uri) goto CLEANUP;
 
-   bson_strncpy (host_list->host_and_port, host_and_port,
-           sizeof host_list->host_and_port - 1);
+   uri_hl = mongoc_uri_get_hosts(uri);
+   if (uri_hl->next) goto CLEANUP;
 
-   bson_strncpy (host_list->host, hostname, sizeof host_list->host - 1);
+   memcpy(host_list, uri_hl, sizeof(*uri_hl));
 
-   host_list->port = port;
-   host_list->family = AF_INET;
+   rval = true;
 
-   bson_free(hostname);
+CLEANUP:
 
-   return true;
+   bson_free(uri_str);
+   if (uri) mongoc_uri_destroy(uri);
+
+   return rval;
 }
 
 
