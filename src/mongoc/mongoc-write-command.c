@@ -688,7 +688,8 @@ again:
       bson_iter_document (&iter, &len, &data);
 
       if ((i == max_delete_batch) ||
-          (len > (client->cluster.max_msg_size - cmd.len - overhead))) {
+           (len + ar.len + cmd.len + overhead > client->cluster.max_msg_size) ||
+           (len + ar.len + cmd.len + overhead > client->cluster.max_bson_size)) {
          has_more = true;
          break;
       }
@@ -819,14 +820,14 @@ again:
          }
 
          bson_iter_document (&iter, &len, &data);
+         bson_uint32_to_string (i, &key, str, sizeof str);
 
          if ((i == max_insert_batch) ||
-             (len > (client->cluster.max_msg_size - cmd.len - overhead))) {
+             (len + ar.len + cmd.len + overhead > client->cluster.max_msg_size) ||
+             (len + ar.len + cmd.len + overhead > client->cluster.max_bson_size)) {
             has_more = true;
             break;
          }
-
-         bson_uint32_to_string (i, &key, str, sizeof str);
 
          if (!bson_init_static (&tmp, data, len)) {
             BSON_ASSERT (false);
@@ -950,7 +951,8 @@ again:
          }
 
          if ((i == max_update_batch) ||
-             (len > (client->cluster.max_msg_size - cmd.len - overhead))) {
+              (len + ar.len + cmd.len + overhead > client->cluster.max_msg_size) ||
+              (len + ar.len + cmd.len + overhead > client->cluster.max_bson_size)) {
             has_more = true;
             break;
          }
