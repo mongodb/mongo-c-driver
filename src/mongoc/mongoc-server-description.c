@@ -190,10 +190,18 @@ _mongoc_server_description_update_rtt (mongoc_server_description_t *server,
    return;
 }
 
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Called during SDAM, from topology description's ismaster handler.
+ *
+ *-------------------------------------------------------------------------
+ */
+
 void
 _mongoc_server_description_handle_ismaster (
    mongoc_server_description_t   *sd,
-   const bson_t                  *reply,
+   const bson_t                  *ismaster_response,
    int64_t                        rtt_msec,
    bson_error_t                  *error)
 {
@@ -210,8 +218,11 @@ _mongoc_server_description_handle_ismaster (
    const uint8_t *bytes;
    uint32_t len;
 
+   bson_return_if_fail (sd);
+   bson_return_if_fail (ismaster_response);
+
    bson_destroy (&sd->last_is_master);
-   bson_copy_to (reply, &sd->last_is_master);
+   bson_copy_to (ismaster_response, &sd->last_is_master);
 
    bson_iter_init (&iter, &sd->last_is_master);
 
@@ -311,7 +322,6 @@ _mongoc_server_description_handle_ismaster (
    return;
 
 ERROR:
-
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time = -1;
 }
@@ -342,6 +352,22 @@ _mongoc_server_description_new_copy (const mongoc_server_description_t *descript
 
    return copy;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * _mongoc_server_description_filter_eligible --
+ *
+ *       Given a set of server descriptions, determine which are eligible
+ *       as per the Server Selection spec. Determines the number of
+ *       eligible servers, and sets any servers that are NOT eligible to
+ *       NULL in the descriptions set.
+ *
+ * Returns:
+ *       Number of eligible servers found.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 size_t
 _mongoc_server_description_filter_eligible (
@@ -383,8 +409,8 @@ _mongoc_server_description_filter_eligible (
             rp_val = bson_iter_utf8 (&rp_iter, &rp_len);
 
             if (bson_iter_init_find (&sd_iter, &descriptions[i]->tags, bson_iter_key (&rp_iter))) {
-               /* If the server description has that key */
 
+               /* If the server description has that key */
                sd_val = bson_iter_utf8 (&sd_iter, &sd_len);
 
                if (! (sd_len == rp_len && (0 == memcmp(rp_val, sd_val, rp_len)))) {

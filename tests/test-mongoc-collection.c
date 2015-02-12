@@ -1349,7 +1349,7 @@ test_get_index_info (void)
    indexinfo = NULL;
 
    bson_init (&indexkey1);
-   BSON_APPEND_INT32 (&indexkey1, "rasberry", 1);
+   BSON_APPEND_INT32 (&indexkey1, "raspberry", 1);
    idx1_name = mongoc_collection_keys_to_index_string (&indexkey1);
    mongoc_index_opt_init (&opt1);
    opt1.background = true;

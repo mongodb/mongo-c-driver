@@ -118,7 +118,7 @@ mongoc_async_run (mongoc_async_t *async,
       }
 
       if (timeout_msec >= 0) {
-         timeout_msec = MIN (timeout_msec, (async->cmds->expire_at - now) / 1000);
+         timeout_msec = BSON_MIN (timeout_msec, (async->cmds->expire_at - now) / 1000);
       } else {
          timeout_msec = (async->cmds->expire_at - now) / 1000;
       }

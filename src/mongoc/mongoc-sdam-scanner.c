@@ -125,25 +125,42 @@ mongoc_sdam_scanner_rm (mongoc_sdam_scanner_t *ss,
    }
 }
 
+/*
+ *-----------------------------------------------------------------------
+ *
+ * This is the callback passed to async_cmd when we're running
+ * ismasters from within SDAM.
+ *
+ *-----------------------------------------------------------------------
+ */
+
 static void
-mongoc_sdam_scanner_ismaster_handler (mongoc_async_cmd_result_t result,
-                                      const bson_t             *bson,
+mongoc_sdam_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status,
+                                      const bson_t             *ismaster_response,
                                       int64_t                   rtt_msec,
                                       void                     *data,
                                       bson_error_t             *error)
 {
-   mongoc_sdam_scanner_node_t *node = (mongoc_sdam_scanner_node_t *)data;
+   mongoc_sdam_scanner_node_t *node;
 
+   bson_return_if_fail (data);
+
+   node = (mongoc_sdam_scanner_node_t *)data;
    node->cmd = NULL;
 
-   if (!node->ss->cb (node->id, bson, rtt_msec, node->ss->cb_data, error)) {
-      mongoc_sdam_scanner_node_destroy (node);
-      return;
-   }
-
-   if (!bson) {
+   // TODO should both of these failures be the same thing?
+   // TODO issue a warning here?
+   // - how can we get a node but get no ismaster response?
+   /* if no ismaster response, async cmd had an error or timed out */
+   if (!ismaster_response) {
       mongoc_stream_destroy (node->stream);
       node->stream = NULL;
+   }
+
+   if (!node->ss->cb (node->id, ismaster_response, rtt_msec,
+                      node->ss->cb_data, error)) {
+      mongoc_sdam_scanner_node_destroy (node);
+      return;
    }
 }
 
@@ -312,11 +329,24 @@ mongoc_sdam_scanner_node_setup (mongoc_sdam_scanner_node_t *node)
    return true;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_sdam_scanner_start_scan --
+ *
+ *      Performs a full topology check. This is the driver's way to trip
+ *      the SDAM switch.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
 mongoc_sdam_scanner_start_scan (mongoc_sdam_scanner_t *ss,
                                 int32_t                timeout_msec)
 {
    mongoc_sdam_scanner_node_t *node, *tmp;
+
+   bson_return_if_fail (ss);
 
    if (ss->in_progress) {
       return;
@@ -334,6 +364,16 @@ mongoc_sdam_scanner_start_scan (mongoc_sdam_scanner_t *ss,
    }
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_sdam_scanner_scan --
+ *
+ *      Begin running an async ismaster command, from within SDAM
+ *      background thread or logic.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 bool
 mongoc_sdam_scanner_scan (mongoc_sdam_scanner_t *ss,

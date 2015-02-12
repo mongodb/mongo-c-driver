@@ -227,7 +227,7 @@ test_server_selection_logic (void)
             sd->type = server_status_from_test(bson_iter_utf8(&sd_iter, NULL));
 
             /* set description tags */
-            /* TODO FIGURE OUT IF SERVERS SHOULD HAVE ARRAYS OF TAGSETS, THAT SEEMS WRONG */
+            /* TODO FIX ONCE ARRAYS OF TAG SETS GO AWAY IN TESTS */
             assert(bson_iter_init_find(&sd_iter, &server, "tags"));
             bson_iter_recurse(&sd_iter, &sd_child_iter);
             bson_iter_next(&sd_child_iter);

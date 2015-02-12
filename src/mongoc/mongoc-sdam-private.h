@@ -79,7 +79,7 @@ _mongoc_sdam_server_by_id (mongoc_sdam_t *sdam,
                            uint32_t       id);
 
 void
-_mongoc_sdam_start_scan (mongoc_sdam_t *sdam);
+_mongoc_sdam_request_scan (mongoc_sdam_t *sdam);
 
 bool
 _mongoc_sdam_scan (mongoc_sdam_t *sdam,

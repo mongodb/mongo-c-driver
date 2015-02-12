@@ -55,7 +55,7 @@ _mongoc_topology_description_init (mongoc_topology_description_t *description,
    description->type = MONGOC_TOPOLOGY_UNKNOWN;
    description->servers = mongoc_set_new(8, _mongoc_topology_server_dtor, NULL);
    description->set_name = NULL;
-   description->compatible = true; // TODO: different default?
+   description->compatible = true;
    description->compatibility_error = NULL;
 
    if (cb) {
@@ -86,8 +86,6 @@ _mongoc_topology_description_destroy (mongoc_topology_description_t *description
    ENTRY;
 
    BSON_ASSERT(description);
-
-   // TODO TOPOLOGY_DESCRIPTION unblock waiters?
 
    mongoc_set_destroy(description->servers);
 
@@ -390,7 +388,8 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
    // TODO SS:
    // we should also timeout when minHearbeatFrequencyMS ms have passed, per check.
    do {
-      _mongoc_topology_description_suitable_servers(&suitable_servers, optype, topology, read_pref, local_threshold_ms);
+      _mongoc_topology_description_suitable_servers(&suitable_servers, optype,
+                                                    topology, read_pref, local_threshold_ms);
       if (suitable_servers.len != 0) {
          sd = _mongoc_array_index(&suitable_servers, mongoc_server_description_t*, rand() % suitable_servers.len);
          goto DONE;
@@ -987,7 +986,7 @@ gSDAMTransitionTable[MONGOC_SERVER_DESCRIPTION_TYPES][MONGOC_TOPOLOGY_DESCRIPTIO
 /*
  *--------------------------------------------------------------------------
  *
- * ismaster.
+ * Handle an ismaster. This is called by the background SDAM process.
  *
  *--------------------------------------------------------------------------
  */
@@ -996,11 +995,14 @@ bool
 _mongoc_topology_description_handle_ismaster (
    mongoc_topology_description_t *topology,
    mongoc_server_description_t   *sd,
-   const bson_t                  *reply,
+   const bson_t                  *ismaster_response,
    int64_t                        rtt_msec,
    bson_error_t                  *error)
 {
-   _mongoc_server_description_handle_ismaster (sd, reply, rtt_msec, error);
+   bson_return_val_if_fail (topology, false);
+   bson_return_val_if_fail (sd, false);
+
+   _mongoc_server_description_handle_ismaster (sd, ismaster_response, rtt_msec, error);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
       gSDAMTransitionTable[sd->type][topology->type](topology, sd);

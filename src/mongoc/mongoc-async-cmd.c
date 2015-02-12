@@ -70,6 +70,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
       acmd->cb (result, &acmd->reply, rtt, acmd->data, &acmd->error);
    } else {
+      /* we're either in ERROR or TIMEOUT */
       acmd->cb (result, NULL, rtt, acmd->data, &acmd->error);
    }
 

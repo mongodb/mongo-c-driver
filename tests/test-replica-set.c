@@ -211,8 +211,6 @@ test1 (void)
    BSON_ASSERT(r);
    MONGOC_WARNING("%s", error.message);
 
-   // TODO SDAM - we may need to force a scan and wait for this check to pass?
-   // TODO also maybe not the best way to check this...
    BSON_ASSERT(client->cluster.nodes->items_len == 0);
 
    mongoc_cursor_destroy(cursor);

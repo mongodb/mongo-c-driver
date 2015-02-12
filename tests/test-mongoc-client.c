@@ -527,18 +527,11 @@ test_exhaust_cursor (void)
       assert (cursor->in_exhaust);
       assert (client->in_exhaust);
 
-      /* TODO something coherent */
-      /*
-      node = &client->cluster.nodes[cursor->hint - 1];
-      stream = node->stream;
-      */
-
+      /* destroy the cursor, make sure a disconnect happened */
       mongoc_cursor_destroy (cursor);
-      /* make sure a disconnect happened */
-      /* TODO something coherent */
-      /*
-      assert (stream != node->stream);
-      */
+      stream = mongoc_set_get(client->cluster.nodes, cursor->hint);
+      assert (! stream);
+
       assert (! client->in_exhaust);
    }
 
