@@ -242,3 +242,8 @@ LIBMONGOC_1.1 {
         mongoc_uri_get_credentials;
         mongoc_uri_get_mechanism_properties;
 } LIBMONGOC_1.0;
+
+LIBMONGOC_1.2 {
+    global:
+        mongoc_bulk_operation_get_write_concern;
+} LIBMONGOC_1.1;
