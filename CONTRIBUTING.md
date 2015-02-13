@@ -95,6 +95,16 @@ typedef enum
 } my_flags_t;
 ```
 
+### Adding a new symbol
+
+This should be done rarely but there are several things that you need to do
+when adding a new symbol.
+
+ - Add the symbol to `src/libmongoc.symbols`
+ - Add the symbol to `build/autotools/versions.ldscript`
+ - Add the symbol to `build/cmake/libmongoc.def`
+ - Add the symbol to `build/cmake/libmongoc-ssl.def`
+ - Add documentation for the new symbol in `doc/mongoc_your_new_symbol_name.page`
 
 ### Documentation
 
