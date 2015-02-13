@@ -350,6 +350,9 @@ DONE:
  *       Return a server description of a node that is appropriate for
  *       the given read preference and operation type.
  *
+ *       Note: this method simply attempts to select a server from the
+ *       current topology, it does not retry or trigger topology checks.
+ *
  * Returns:
  *       Selected server description, or NULL upon failure.
  *
@@ -364,47 +367,27 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
                                      mongoc_ss_optype_t             optype,
                                      const mongoc_read_prefs_t     *read_pref,
                                      int64_t                        local_threshold_ms,
-                                     bson_error_t                  *error)              /* OUT */
+                                     bson_error_t                  *error) /* OUT */
 {
-   /* timeout calculations in microseconds */
-   int64_t start_time = bson_get_monotonic_time();
-   int64_t now = bson_get_monotonic_time();
-   int64_t timeout = (MONGOC_SS_DEFAULT_TIMEOUT_MS * 1000UL); // TODO SS use client-set timeout if available
    mongoc_array_t suitable_servers;
    mongoc_server_description_t *sd = NULL;
 
    ENTRY;
 
    if (!topology->compatible) {
-      bson_set_error(error,
-                     MONGOC_ERROR_SERVER_SELECTION,
-                     MONGOC_ERROR_SERVER_SELECTION_TIMEOUT,
-                     "Invalid topology wire version range");
+      /* TODO, should we return an error object here,
+         or just treat as a case where there are no suitable servers? */
       RETURN(NULL);
    }
 
    _mongoc_array_init(&suitable_servers, sizeof(mongoc_server_description_t *));
 
-   // TODO SS:
-   // we should also timeout when minHearbeatFrequencyMS ms have passed, per check.
-   do {
-      _mongoc_topology_description_suitable_servers(&suitable_servers, optype,
-                                                    topology, read_pref, local_threshold_ms);
-      if (suitable_servers.len != 0) {
-         sd = _mongoc_array_index(&suitable_servers, mongoc_server_description_t*, rand() % suitable_servers.len);
-         goto DONE;
-      }
-      // TODO SS request scan, and wait
-      now = bson_get_monotonic_time();
-      // TODO wait on condition variable
-   } while (start_time + timeout < now);
-
-   bson_set_error(error,
-                  MONGOC_ERROR_SERVER_SELECTION,
-                  MONGOC_ERROR_SERVER_SELECTION_TIMEOUT,
-                  "Could not find a suitable server");
-
-DONE:
+   _mongoc_topology_description_suitable_servers(&suitable_servers, optype,
+                                                 topology, read_pref, local_threshold_ms);
+   if (suitable_servers.len != 0) {
+      sd = _mongoc_array_index(&suitable_servers, mongoc_server_description_t*,
+                               rand() % suitable_servers.len);
+   }
 
    _mongoc_array_destroy (&suitable_servers);
 

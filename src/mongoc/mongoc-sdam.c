@@ -49,13 +49,10 @@ _mongoc_sdam_scanner_cb (uint32_t      id,
       mongoc_mutex_lock (&sdam->mutex);
       r = _mongoc_topology_description_handle_ismaster (&sdam->topology, sd,
                                                         ismaster_response, rtt_msec, error);
-
-      // TODO: handle these comments?
-      //if (type == sdam->topology.type) {
-      /* wake up all clients if we found any topology changes */
-      mongoc_cond_broadcast (&sdam->cond_client);
-      //}
       mongoc_mutex_unlock (&sdam->mutex);
+
+      /* TODO only wake up all clients if we found any topology changes */
+      mongoc_cond_broadcast (&sdam->cond_client);
 
    } else {
       r = false;
@@ -96,8 +93,8 @@ _mongoc_sdam_new (const mongoc_uri_t *uri)
    sdam->users = 0;
    sdam->uri = uri;
 
-   /* TODO replace this */
-   sdam->timeout_msec = 10000;
+   /* TODO make SS timeout configurable on client */
+   sdam->timeout_msec = 30000;
 
    _mongoc_topology_description_init(&sdam->topology, NULL);
    sdam->scanner = mongoc_sdam_scanner_new (_mongoc_sdam_scanner_cb, sdam);
@@ -242,9 +239,9 @@ _mongoc_sdam_select (mongoc_sdam_t             *sdam,
    now = bson_get_monotonic_time ();
    expire_at = now + timeout_msec;
 
-   mongoc_mutex_lock (&sdam->mutex);
-
+   /* we break out when we've found a server or timed out */
    for (;;) {
+      mongoc_mutex_lock (&sdam->mutex);
       selected_server = _mongoc_topology_description_select(&sdam->topology,
                                                             optype,
                                                             read_prefs,
@@ -252,37 +249,27 @@ _mongoc_sdam_select (mongoc_sdam_t             *sdam,
                                                             error);
 
       if (! selected_server) {
-         // TODO request an immediate topology check here
-         // TODO configurable SS timeout on client
-         //r = mongoc_cond_timedwait (&sdam->cond_client, &sdam->mutex, expire_at - now);
-         r = mongoc_cond_timedwait (&sdam->cond_client, &sdam->mutex, 10000);
+         /* TODO request an immediate topology check here */
+         r = mongoc_cond_timedwait (&sdam->cond_client, &sdam->mutex, expire_at - now);
+         mongoc_mutex_unlock (&sdam->mutex);
 
          if (r == ETIMEDOUT) {
-            mongoc_mutex_unlock (&sdam->mutex);
-
             /* handle timeouts */
-            goto ERROR;
+            break;
          } else if (r) {
-            mongoc_mutex_unlock (&sdam->mutex);
-
             /* handle other errors */
-            goto ERROR;
+            break;
          }
 
          now = bson_get_monotonic_time ();
       } else {
+         selected_server = _mongoc_server_description_new_copy(selected_server);
+         mongoc_mutex_unlock (&sdam->mutex);
          break;
       }
    }
 
-   selected_server = _mongoc_server_description_new_copy(selected_server);
-   mongoc_mutex_unlock (&sdam->mutex);
-
    return selected_server;
-
-ERROR:
-
-   return NULL;
 }
 
 /*
@@ -360,10 +347,10 @@ _mongoc_sdam_start_scan (mongoc_sdam_t *sdam)
       mongoc_sdam_scanner_start_scan (sdam->scanner, sdam->timeout_msec);
    }
 
+   mongoc_mutex_unlock (&sdam->mutex);
+
    /* This wakes up the background thread */
    mongoc_cond_signal (&sdam->cond_server);
-
-   mongoc_mutex_unlock (&sdam->mutex);
 
    return;
 }

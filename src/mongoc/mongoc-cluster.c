@@ -1189,15 +1189,11 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
    ENTRY;
 
    bson_return_val_if_fail(cluster, 0);
-   /*
-   bson_return_val_if_fail(write_concern, 0);
-   bson_return_val_if_fail(read_prefs, 0);
-   */
 
    selected_server = _mongoc_sdam_select(cluster->client->sdam,
                                          optype,
                                          read_prefs,
-                                         cluster->sockettimeoutms,
+                                         30000, /* TODO make configurable on client */
                                          15, /* TODO MAKE THIS REAL */
                                          error);
 
