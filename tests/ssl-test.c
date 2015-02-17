@@ -9,6 +9,8 @@
 
 #define TIMEOUT 1000
 
+#define NUM_IOVECS 2000
+
 #define LOCALHOST "127.0.0.1"
 
 typedef struct ssl_test_data
@@ -45,7 +47,7 @@ ssl_test_server (void * ptr)
    mongoc_socket_t *listen_sock;
    mongoc_socket_t *conn_sock;
    socklen_t sock_len;
-   char buf[1024];
+   char buf[4 * NUM_IOVECS];
    ssize_t r;
    mongoc_iovec_t iov;
    struct sockaddr_in server_addr = { 0 };
@@ -166,11 +168,13 @@ ssl_test_client (void * ptr)
    mongoc_stream_t *sock_stream;
    mongoc_stream_t *ssl_stream;
    mongoc_socket_t *conn_sock;
+   int i;
    int errno_captured;
    char buf[1024];
    ssize_t r;
    mongoc_iovec_t riov;
    mongoc_iovec_t wiov;
+   mongoc_iovec_t wiov_many[NUM_IOVECS];
    struct sockaddr_in server_addr = { 0 };
    int len;
 
@@ -237,7 +241,7 @@ ssl_test_client (void * ptr)
       return NULL;
    }
 
-   len = 4;
+   len = 4 * NUM_IOVECS;
 
    wiov.iov_base = (void *)&len;
    wiov.iov_len = 4;
@@ -245,10 +249,13 @@ ssl_test_client (void * ptr)
 
    assert(r == wiov.iov_len);
 
-   wiov.iov_base = "foo";
-   wiov.iov_len = 4;
-   r = mongoc_stream_writev(ssl_stream, &wiov, 1, TIMEOUT);
-   assert(r == wiov.iov_len);
+   for (i = 0; i < NUM_IOVECS; i++) {
+      wiov_many[i].iov_base = "foo";
+      wiov_many[i].iov_len = 4;
+   }
+
+   r = mongoc_stream_writev(ssl_stream, wiov_many, NUM_IOVECS, TIMEOUT);
+   assert(r == wiov_many[0].iov_len * NUM_IOVECS);
 
    riov.iov_len = 1;
 
