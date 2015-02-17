@@ -47,6 +47,7 @@ typedef struct _mongoc_topology_description_t
    char                              *compatibility_error;
    uint32_t                           max_server_id;
    mongoc_topology_cb_t               cb;
+   bool                               stale;
 } mongoc_topology_description_t;
 
 typedef enum

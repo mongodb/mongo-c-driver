@@ -1308,7 +1308,7 @@ _mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
    if (! read_prefs) {
       read_prefs = cluster->client->read_prefs;
    }
-   
+
    server = _mongoc_cluster_preselect_description(cluster, opcode, write_concern,
                                                   read_prefs, error);
 

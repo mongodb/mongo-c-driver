@@ -187,6 +187,8 @@ mongoc_async_cmd_new (mongoc_async_t       *async,
 void
 mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd)
 {
+   bson_return_if_fail (acmd);
+
    DL_DELETE (acmd->async->cmds, acmd);
    acmd->async->ncmds--;
 

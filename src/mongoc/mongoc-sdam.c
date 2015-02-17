@@ -33,7 +33,6 @@ _mongoc_sdam_scanner_cb (uint32_t      id,
    bool r;
    mongoc_sdam_t *sdam;
    mongoc_server_description_t *sd;
-   mongoc_topology_description_type_t type;
 
    bson_return_val_if_fail (data, false);
 
@@ -43,17 +42,20 @@ _mongoc_sdam_scanner_cb (uint32_t      id,
    sd = _mongoc_topology_description_server_by_id (&sdam->topology, id);
 
    if (sd) {
-      type = sdam->topology.type;
 
-      /* hold the lock while we update */
-      mongoc_mutex_lock (&sdam->mutex);
+      if (!sdam->single_threaded) {
+         /* hold the lock while we update */
+         mongoc_mutex_lock (&sdam->mutex);
+      }
+
       r = _mongoc_topology_description_handle_ismaster (&sdam->topology, sd,
                                                         ismaster_response, rtt_msec, error);
-      mongoc_mutex_unlock (&sdam->mutex);
 
-      /* TODO only wake up all clients if we found any topology changes */
-      mongoc_cond_broadcast (&sdam->cond_client);
-
+      if (!sdam->single_threaded) {
+         /* TODO only wake up all clients if we found any topology changes */
+         mongoc_mutex_unlock (&sdam->mutex);
+         mongoc_cond_broadcast (&sdam->cond_client);
+      }
    } else {
       r = false;
    }
@@ -92,6 +94,7 @@ _mongoc_sdam_new (const mongoc_uri_t *uri)
    sdam = bson_malloc0(sizeof *sdam);
    sdam->users = 0;
    sdam->uri = uri;
+   sdam->single_threaded = true;
 
    /* TODO make SS timeout configurable on client */
    sdam->timeout_msec = 30000;
@@ -192,7 +195,6 @@ _mongoc_sdam_release (mongoc_sdam_t *sdam)
 void
 _mongoc_sdam_destroy (mongoc_sdam_t *sdam)
 {
-   _mongoc_sdam_background_thread_stop (sdam);
    _mongoc_topology_description_destroy(&sdam->topology);
    mongoc_sdam_scanner_destroy (sdam->scanner);
    mongoc_cond_destroy (&sdam->cond_client);
@@ -239,6 +241,40 @@ _mongoc_sdam_select (mongoc_sdam_t             *sdam,
    now = bson_get_monotonic_time ();
    expire_at = now + timeout_msec;
 
+   /* run single-threaded algorithm if we must */
+   if (sdam->single_threaded) {
+
+      /* if enough time has passed or we're stale, block and scan */
+      if (mongoc_sdam_time_to_scan(sdam) || sdam->stale) {
+         mongoc_sdam_do_blocking_scan(sdam);
+         sdam->stale = false;
+      }
+
+      /* until we find a server or timeout */
+      for (;;) {
+         /* attempt to select a server */
+         selected_server = _mongoc_topology_description_select(&sdam->topology,
+                                                               optype,
+                                                               read_prefs,
+                                                               local_threshold_ms,
+                                                               error);
+
+         if (selected_server) {
+            return _mongoc_server_description_new_copy(selected_server);
+         }
+
+         /* rescan */
+         mongoc_sdam_do_blocking_scan(sdam);
+
+         /* error if we've timed out */
+         now = bson_get_monotonic_time();
+         if (now > expire_at) {
+            goto TIMEOUT;
+         }
+      }
+   }
+
+   /* With background thread */
    /* we break out when we've found a server or timed out */
    for (;;) {
       mongoc_mutex_lock (&sdam->mutex);
@@ -255,21 +291,26 @@ _mongoc_sdam_select (mongoc_sdam_t             *sdam,
 
          if (r == ETIMEDOUT) {
             /* handle timeouts */
-            break;
+            goto TIMEOUT;
          } else if (r) {
-            /* handle other errors */
-            break;
+            /* TODO handle other errors */
+            goto TIMEOUT;
          }
 
          now = bson_get_monotonic_time ();
       } else {
          selected_server = _mongoc_server_description_new_copy(selected_server);
          mongoc_mutex_unlock (&sdam->mutex);
-         break;
+         return selected_server;
       }
    }
 
-   return selected_server;
+ TIMEOUT:
+   bson_set_error(error,
+                  MONGOC_ERROR_SERVER_SELECTION,
+                  MONGOC_ERROR_SERVER_SELECTION_TIMEOUT,
+                  "Timed out trying to select a server");
+   return NULL;
 }
 
 /*
@@ -320,7 +361,6 @@ _mongoc_sdam_server_by_id (mongoc_sdam_t *sdam, uint32_t id)
 void
 _mongoc_sdam_start_scan (mongoc_sdam_t *sdam)
 {
-   int64_t now;
    bool do_scan = true;
 
    bson_return_if_fail (sdam);
@@ -331,11 +371,9 @@ _mongoc_sdam_start_scan (mongoc_sdam_t *sdam)
       /* if we're already scanning, don't start a new one */
       do_scan = false;
    } else {
-      now = bson_get_monotonic_time ();
-
       /* if we scanned too recently, just queue up the request for the
        * background thread */
-      if (now - sdam->last_scan < MONGOC_SDAM_HEARTBEAT_FREQUENCY_MS) {
+      if (mongoc_sdam_time_to_scan(sdam)) {
          sdam->scan_requested = true;
          do_scan = false;
       }
@@ -355,6 +393,19 @@ _mongoc_sdam_start_scan (mongoc_sdam_t *sdam)
    return;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_sdam_time_to_scan --
+ *
+ *       Returns true if it is time to scan the cluster again.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+mongoc_sdam_time_to_scan (mongoc_sdam_t *sdam) {
+   return (bson_get_monotonic_time() - sdam->last_scan >= MONGOC_SDAM_HEARTBEAT_FREQUENCY_MS);
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -364,7 +415,10 @@ _mongoc_sdam_start_scan (mongoc_sdam_t *sdam)
  *       Not threadsafe, the expectation is that we're either single
  *       threaded or only the background thread runs scans.
  *
- *       This is SDAM's internal way to run a scan.
+ *       Crank the underlying scanner until we've timed out or finished.
+ *
+ * Returns:
+ *       true if there is more work to do, false otherwise
  *
  *--------------------------------------------------------------------------
  */
@@ -394,14 +448,14 @@ _mongoc_sdam_scan (mongoc_sdam_t *sdam,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_sdam_run_cb --
+ * _mongoc_sdam_run_background --
  *
  *       The background SDAM thread runs in this loop.
  *
  *--------------------------------------------------------------------------
  */
 static
-void * _mongoc_sdam_run_cb (void *data)
+void * _mongoc_sdam_run_background (void *data)
 {
    mongoc_sdam_t *sdam;
    int64_t now;
@@ -428,7 +482,6 @@ void * _mongoc_sdam_run_cb (void *data)
          if (last_scan == 0) {
             /* set up the "last scan" as exactly long enough to force an
              * immediate scan on the first pass */
-
             last_scan = now - sdam->heartbeat_msec;
          }
 
@@ -477,6 +530,22 @@ DONE:
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_sdam_do_blocking_scan --
+ *
+ *       SDAM entry for single-threaded use case. Assumes that the caller
+ *       has checked that it's the right time to scan.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+mongoc_sdam_do_blocking_scan (mongoc_sdam_t *sdam) {
+   mongoc_sdam_scanner_start_scan (sdam->scanner, sdam->timeout_msec);
+   while (_mongoc_sdam_scan (sdam, sdam->timeout_msec)) {}
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_sdam_background_thread_start --
  *
  *       Start the SDAM background thread running. This should only be
@@ -498,7 +567,7 @@ _mongoc_sdam_background_thread_start (mongoc_sdam_t *sdam)
    mongoc_mutex_unlock (&sdam->mutex);
 
    if (launch_thread) {
-      mongoc_thread_create (&sdam->thread, _mongoc_sdam_run_cb, sdam);
+      mongoc_thread_create (&sdam->thread, _mongoc_sdam_run_background, sdam);
    }
 }
 

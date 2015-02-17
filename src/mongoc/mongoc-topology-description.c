@@ -57,6 +57,7 @@ _mongoc_topology_description_init (mongoc_topology_description_t *description,
    description->set_name = NULL;
    description->compatible = true;
    description->compatibility_error = NULL;
+   description->stale = true;
 
    if (cb) {
       memcpy (&description->cb, cb, sizeof (*cb));
@@ -260,7 +261,7 @@ _mongoc_topology_description_suitable_servers (
                }
 
                candidates[candidates_len++] = server_iter;
-            
+
                if (server_iter->type == MONGOC_SERVER_RS_SECONDARY) {
                   has_secondary = true;
                }

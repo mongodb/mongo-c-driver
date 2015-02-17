@@ -91,6 +91,10 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    _mongoc_sdam_grab(sdam);
    pool->sdam = sdam;
 
+   /* start the SDAM background thread */
+   sdam->single_threaded = false;
+   _mongoc_sdam_background_thread_start(sdam);
+
    b = mongoc_uri_get_options(pool->uri);
 
    if (bson_iter_init_find_case(&iter, b, "minpoolsize")) {
@@ -124,7 +128,10 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
       mongoc_client_destroy(client);
    }
 
+   /* stop SDAM background thread */
+   _mongoc_sdam_background_thread_stop (pool->sdam);
    _mongoc_sdam_release(pool->sdam);
+
    mongoc_uri_destroy(pool->uri);
    mongoc_mutex_destroy(&pool->mutex);
    mongoc_cond_destroy(&pool->cond);

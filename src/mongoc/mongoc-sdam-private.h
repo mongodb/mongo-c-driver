@@ -52,6 +52,8 @@ typedef struct _mongoc_sdam_t
    bool                          got_ismaster;
    int64_t                       heartbeat_msec;
    bool                          shutdown_requested;
+   bool                          single_threaded;
+   bool                          stale;
 } mongoc_sdam_t;
 
 mongoc_sdam_t *
@@ -80,6 +82,12 @@ _mongoc_sdam_server_by_id (mongoc_sdam_t *sdam,
 
 void
 _mongoc_sdam_request_scan (mongoc_sdam_t *sdam);
+
+bool
+mongoc_sdam_time_to_scan (mongoc_sdam_t *sdam);
+
+void
+mongoc_sdam_do_blocking_scan (mongoc_sdam_t *sdam);
 
 bool
 _mongoc_sdam_scan (mongoc_sdam_t *sdam,
