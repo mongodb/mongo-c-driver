@@ -39,7 +39,7 @@
 #endif
 #include "mongoc-b64-private.h"
 #include "mongoc-scram-private.h"
-#include "mongoc-sdam-private.h"
+#include "mongoc-topology-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-socket.h"
@@ -1115,12 +1115,15 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    cluster->uri = mongoc_uri_copy(uri);
    cluster->client = client;
-   cluster->sec_latency_ms = 15; // TODO SDAM make configurable?
    cluster->max_msg_size = 1024 * 1024 * 48;
    cluster->max_bson_size = 1024 * 1024 * 16;
    cluster->requires_auth = (mongoc_uri_get_username(uri) ||
                              mongoc_uri_get_auth_mechanism(uri));
-   cluster->sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC; // TODO SDAM make configurable?
+
+   /* TODO consider making these configurable */
+   cluster->sec_latency_ms = 15;
+   cluster->sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC;
+
    cluster->nodes = mongoc_set_new(8, _mongoc_cluster_stream_dtor, NULL);
 
    _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
@@ -1190,12 +1193,12 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
 
    bson_return_val_if_fail(cluster, 0);
 
-   selected_server = _mongoc_sdam_select(cluster->client->sdam,
-                                         optype,
-                                         read_prefs,
-                                         30000, /* TODO make configurable on client */
-                                         15, /* TODO MAKE THIS REAL */
-                                         error);
+   selected_server = _mongoc_topology_select(cluster->client->topology,
+                                             optype,
+                                             read_prefs,
+                                             30000, /* TODO make configurable on client */
+                                             15, /* TODO MAKE THIS REAL */
+                                             error);
 
    if (!selected_server) {
       RETURN(NULL);

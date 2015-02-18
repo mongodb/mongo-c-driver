@@ -666,7 +666,7 @@ mongoc_client_t *
 mongoc_client_new(const char *uri_string)
 {
    mongoc_uri_t *uri;
-   mongoc_sdam_t *sdam;
+   mongoc_topology_t *topology;
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
@@ -676,11 +676,11 @@ mongoc_client_new(const char *uri_string)
       return NULL;
    }
 
-   sdam = _mongoc_sdam_new(uri);
+   topology = _mongoc_topology_new(uri);
 
    mongoc_uri_destroy (uri);
 
-   return _mongoc_client_new(uri_string, sdam);
+   return _mongoc_client_new(uri_string, topology);
 }
 
 /*
@@ -688,8 +688,8 @@ mongoc_client_new(const char *uri_string)
  *
  * _mongoc_client_new --
  *
- *       Creates a new mongoc_client_t using the provided URI and SDAM.
- *       The SDAM object is not owned by this client, and it must outlive
+ *       Creates a new mongoc_client_t using the provided URI and topology.
+ *       The topology object is not owned by this client, and it must outlive
  *       this client.
  *
  * Returns:
@@ -703,7 +703,7 @@ mongoc_client_new(const char *uri_string)
  */
 
 mongoc_client_t *
-_mongoc_client_new (const char *uri_string, mongoc_sdam_t *sdam)
+_mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
 {
    const mongoc_write_concern_t *write_concern;
    mongoc_client_t *client;
@@ -716,7 +716,7 @@ _mongoc_client_new (const char *uri_string, mongoc_sdam_t *sdam)
 #endif
    bool slave_okay = false;
 
-   bson_return_val_if_fail(sdam, NULL);
+   bson_return_val_if_fail(topology, NULL);
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
@@ -748,8 +748,8 @@ _mongoc_client_new (const char *uri_string, mongoc_sdam_t *sdam)
    client->initiator = mongoc_client_default_stream_initiator;
    client->initiator_data = client;
 
-   _mongoc_sdam_grab(sdam);
-   client->sdam = sdam;
+   _mongoc_topology_grab(topology);
+   client->topology = topology;
 
    write_concern = mongoc_uri_get_write_concern (uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
@@ -835,15 +835,15 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
 mongoc_client_t *
 mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 {
-   mongoc_sdam_t *sdam;
+   mongoc_topology_t *topology;
    const char *uristr;
 
    bson_return_val_if_fail(uri, NULL);
 
    uristr = mongoc_uri_get_string(uri);
 
-   sdam = _mongoc_sdam_new(uri);
-   return _mongoc_client_new(uristr, sdam);
+   topology = _mongoc_topology_new(uri);
+   return _mongoc_client_new(uristr, topology);
 }
 
 /*
@@ -852,7 +852,7 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
  * _mongoc_client_new_from_uri --
  *
  *       Create a new mongoc_client_t for a mongoc_uri_t and a given
- *       SDAM object.
+ *       topology object.
  *
  * Returns:
  *       A newly allocated mongoc_client_t.
@@ -864,14 +864,14 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
  */
 
 mongoc_client_t *
-_mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_sdam_t *sdam)
+_mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topology)
 {
    const char *uristr;
 
    bson_return_val_if_fail(uri, NULL);
 
    uristr = mongoc_uri_get_string(uri);
-   return _mongoc_client_new(uristr, sdam);
+   return _mongoc_client_new(uristr, topology);
 }
 
 /*
@@ -899,7 +899,7 @@ mongoc_client_destroy (mongoc_client_t *client)
       bson_free (client->pem_subject);
 #endif
 
-      _mongoc_sdam_release(client->sdam);
+      _mongoc_topology_release(client->topology);
       mongoc_write_concern_destroy (client->write_concern);
       mongoc_read_prefs_destroy (client->read_prefs);
       _mongoc_cluster_destroy (&client->cluster);

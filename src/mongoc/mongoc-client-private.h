@@ -31,11 +31,11 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-opcode.h"
-#include "mongoc-sdam-private.h"
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #endif
 #include "mongoc-stream.h"
+#include "mongoc-topology-private.h"
 #include "mongoc-write-concern.h"
 
 
@@ -58,7 +58,7 @@ struct _mongoc_client_t
    char                      *pem_subject;
 #endif
 
-   mongoc_sdam_t             *sdam;
+   mongoc_topology_t             *topology;
 
    mongoc_read_prefs_t       *read_prefs;
    mongoc_write_concern_t    *write_concern;
@@ -67,11 +67,11 @@ struct _mongoc_client_t
 
 mongoc_client_t *
 _mongoc_client_new (const char    *uri_string,
-                    mongoc_sdam_t *sdam);
+                    mongoc_topology_t *topology);
 
 mongoc_client_t *
 _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
-                             mongoc_sdam_t      *sdam);
+                             mongoc_topology_t      *topology);
 
 mongoc_stream_t *
 _mongoc_client_create_stream (mongoc_client_t          *client,
@@ -112,10 +112,10 @@ _mongoc_client_preselect (mongoc_client_t              *client,
                           bson_error_t                 *error);
 
 void
-_mongoc_sdam_background_thread_start (mongoc_sdam_t *sdam);
+_mongoc_topology_background_thread_start (mongoc_topology_t *topology);
 
 void
-_mongoc_sdam_background_thread_stop (mongoc_sdam_t *sdam);
+_mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
 
 mongoc_server_description_t *
 _mongoc_client_get_server_description (mongoc_client_t *client,

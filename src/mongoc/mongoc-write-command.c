@@ -510,7 +510,7 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   server = _mongoc_sdam_server_by_id(client->sdam, hint);
+   server = _mongoc_topology_server_by_id(client->topology, hint);
    if (!server) {
       EXIT;
    }
@@ -592,7 +592,7 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   server = _mongoc_sdam_server_by_id(client->sdam, hint);
+   server = _mongoc_topology_server_by_id(client->topology, hint);
 
    if (!server) {
       EXIT;
@@ -719,7 +719,7 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   server = _mongoc_sdam_server_by_id(client->sdam, hint);
+   server = _mongoc_topology_server_by_id(client->topology, hint);
 
    if (!server) {
       EXIT;
@@ -809,7 +809,7 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
 
    command->hint = hint;
 
-   server = _mongoc_sdam_server_by_id(client->sdam, hint);
+   server = _mongoc_topology_server_by_id(client->topology, hint);
    mode = (server->min_wire_version <= 2 && server->max_wire_version >= 2);
 
    gWriteOps [mode][command->type] (command, client, hint, database,

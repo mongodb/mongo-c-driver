@@ -6,7 +6,7 @@
 
 #include "mongoc-server-description.h"
 #include "mongoc-topology-description.h"
-#include "mongoc-sdam-private.h"
+#include "mongoc-topology-private.h"
 
 #include "TestSuite.h"
 

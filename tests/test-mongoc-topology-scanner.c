@@ -1,6 +1,6 @@
 #include <mongoc.h>
 
-#include "mongoc-sdam-scanner-private.h"
+#include "mongoc-topology-scanner-private.h"
 #include "mock-server.h"
 #include "mongoc-tests.h"
 #include "TestSuite.h"
@@ -8,7 +8,7 @@
 #include "test-libmongoc.h"
 
 #undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "sdam-scanner-test"
+#define MONGOC_LOG_DOMAIN "topology-scanner-test"
 
 #define TIMEOUT 1000
 #define NSERVERS 10
@@ -34,11 +34,11 @@ usleep (int64_t usec)
 #endif
 
 static bool
-test_sdam_scanner_helper (uint32_t      id,
-                          const bson_t *bson,
-                          int64_t       rtt_msec,
-                          void         *data,
-                          bson_error_t *error)
+test_topology_scanner_helper (uint32_t      id,
+                              const bson_t *bson,
+                              int64_t       rtt_msec,
+                              void         *data,
+                              bson_error_t *error)
 {
    int *finished = (int*)data;
 
@@ -50,10 +50,10 @@ test_sdam_scanner_helper (uint32_t      id,
 }
 
 static void
-test_sdam_scanner(void)
+test_topology_scanner(void)
 {
    mock_server_t *servers[NSERVERS];
-   mongoc_sdam_scanner_t *sdam_scanner;
+   mongoc_topology_scanner_t *topology_scanner;
    uint16_t port;
    int i;
    bson_t q = BSON_INITIALIZER;
@@ -68,12 +68,12 @@ test_sdam_scanner(void)
 
    port = 20000 + (rand () % 1000);
 
-   sdam_scanner = mongoc_sdam_scanner_new (&test_sdam_scanner_helper, &finished);
+   topology_scanner = mongoc_topology_scanner_new (&test_topology_scanner_helper, &finished);
 
 #ifdef MONGOC_ENABLE_SSL
    copt.ca_file = CAFILE;
    copt.weak_cert_validation = 1;
-   sdam_scanner->ssl_opts = &copt;
+   topology_scanner->ssl_opts = &copt;
 #endif
 
    for (i = 0; i < NSERVERS; i++) {
@@ -94,22 +94,22 @@ test_sdam_scanner(void)
       host.port = port + i;
       host.family = AF_INET;
 
-      mongoc_sdam_scanner_add(sdam_scanner, &host, i);
+      mongoc_topology_scanner_add(topology_scanner, &host, i);
    }
 
    usleep (5000);
 
    for (i = 0; i < 3; i++) {
-      mongoc_sdam_scanner_start_scan (sdam_scanner, TIMEOUT);
+      mongoc_topology_scanner_start (topology_scanner, TIMEOUT);
 
-      more_to_do = mongoc_sdam_scanner_scan (sdam_scanner, TIMEOUT);
+      more_to_do = mongoc_topology_scanner_work (topology_scanner, TIMEOUT);
 
       assert(! more_to_do);
    }
 
    assert(finished == 0);
 
-   mongoc_sdam_scanner_destroy (sdam_scanner);
+   mongoc_topology_scanner_destroy (topology_scanner);
 
    bson_destroy (&q);
 
@@ -120,13 +120,13 @@ test_sdam_scanner(void)
 }
 
 void
-test_sdam_scanner_install (TestSuite *suite)
+test_topology_scanner_install (TestSuite *suite)
 {
    bool local;
 
    local = !getenv ("MONGOC_DISABLE_MOCK_SERVER");
 
    if (local) {
-      TestSuite_Add (suite, "/SDAM/scanner", test_sdam_scanner);
+      TestSuite_Add (suite, "/TOPOLOGY/scanner", test_topology_scanner);
    }
 }

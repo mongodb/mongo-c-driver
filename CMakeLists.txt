@@ -84,7 +84,6 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-sdam.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.c
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.c
@@ -92,6 +91,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-topology.c
    ${SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.c
    ${SOURCE_DIR}/src/mongoc/mongoc-util.c

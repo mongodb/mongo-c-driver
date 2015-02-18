@@ -68,8 +68,6 @@ INST_H_FILES = \
 	src/mongoc/mongoc-rpc-private.h \
 	src/mongoc/mongoc-sasl-private.h \
 	src/mongoc/mongoc-scram-private.h \
-	src/mongoc/mongoc-sdam-scanner-private.h \
-	src/mongoc/mongoc-sdam-private.h \
 	src/mongoc/mongoc-server-description.h \
 	src/mongoc/mongoc-set-private.h \
 	src/mongoc/mongoc-socket.h \
@@ -81,6 +79,8 @@ INST_H_FILES = \
 	src/mongoc/mongoc-stream-socket.h \
 	src/mongoc/mongoc-stream.h \
 	src/mongoc/mongoc-thread-private.h \
+	src/mongoc/mongoc-topology-private.h \
+	src/mongoc/mongoc-topology-scanner-private.h \
 	src/mongoc/mongoc-trace.h \
 	src/mongoc/mongoc-uri.h \
 	src/mongoc/mongoc-util-private.h \
@@ -129,8 +129,6 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-queue.c \
 	src/mongoc/mongoc-read-prefs.c \
 	src/mongoc/mongoc-rpc.c \
-	src/mongoc/mongoc-sdam-scanner.c \
-	src/mongoc/mongoc-sdam.c \
 	src/mongoc/mongoc-server-description.c \
 	src/mongoc/mongoc-set.c \
 	src/mongoc/mongoc-socket.c \
@@ -139,7 +137,9 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-stream-file.c \
 	src/mongoc/mongoc-stream-gridfs.c \
 	src/mongoc/mongoc-stream-socket.c \
+	src/mongoc/mongoc-topology.c \
 	src/mongoc/mongoc-topology-description.c \
+	src/mongoc/mongoc-topology-scanner.c \
 	src/mongoc/mongoc-uri.c \
 	src/mongoc/mongoc-util.c \
 	src/mongoc/mongoc-write-command.c \

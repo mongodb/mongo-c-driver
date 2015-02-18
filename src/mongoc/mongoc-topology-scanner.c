@@ -18,7 +18,7 @@
 
 #include "mongoc-error.h"
 #include "mongoc-trace.h"
-#include "mongoc-sdam-scanner-private.h"
+#include "mongoc-topology-scanner-private.h"
 #include "mongoc-stream-socket.h"
 
 #ifdef MONGOC_ENABLE_SSL
@@ -31,63 +31,63 @@
 #include "utlist.h"
 
 #undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "sdam_scanner"
+#define MONGOC_LOG_DOMAIN "topology_scanner"
 
 static void
-mongoc_sdam_scanner_node_destroy (mongoc_sdam_scanner_node_t *node);
+mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node);
 
-mongoc_sdam_scanner_t *
-mongoc_sdam_scanner_new (mongoc_sdam_scanner_cb_t cb,
-                         void                    *cb_data)
+mongoc_topology_scanner_t *
+mongoc_topology_scanner_new (mongoc_topology_scanner_cb_t cb,
+                             void                        *cb_data)
 {
-   mongoc_sdam_scanner_t *ss = bson_malloc0 (sizeof (*ss));
+   mongoc_topology_scanner_t *ts = bson_malloc0 (sizeof (*ts));
 
-   ss->async = mongoc_async_new ();
-   bson_init (&ss->ismaster_cmd);
-   BSON_APPEND_INT32 (&ss->ismaster_cmd, "isMaster", 1);
+   ts->async = mongoc_async_new ();
+   bson_init (&ts->ismaster_cmd);
+   BSON_APPEND_INT32 (&ts->ismaster_cmd, "isMaster", 1);
 
-   ss->cb = cb;
-   ss->cb_data = cb_data;
+   ts->cb = cb;
+   ts->cb_data = cb_data;
 
-   return ss;
+   return ts;
 }
 
 void
-mongoc_sdam_scanner_destroy (mongoc_sdam_scanner_t *ss)
+mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
 {
-   mongoc_sdam_scanner_node_t *ele, *tmp;
+   mongoc_topology_scanner_node_t *ele, *tmp;
 
-   DL_FOREACH_SAFE (ss->nodes, ele, tmp) {
-      mongoc_sdam_scanner_node_destroy (ele);
+   DL_FOREACH_SAFE (ts->nodes, ele, tmp) {
+      mongoc_topology_scanner_node_destroy (ele);
    }
 
-   mongoc_async_destroy (ss->async);
-   bson_destroy (&ss->ismaster_cmd);
+   mongoc_async_destroy (ts->async);
+   bson_destroy (&ts->ismaster_cmd);
 
-   bson_free (ss);
+   bson_free (ts);
 }
 
 void
-mongoc_sdam_scanner_add (mongoc_sdam_scanner_t    *ss,
-                         const mongoc_host_list_t *host,
-                         uint32_t                  id)
+mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
+                             const mongoc_host_list_t  *host,
+                             uint32_t                   id)
 {
-   mongoc_sdam_scanner_node_t *node = bson_malloc0 (sizeof (*node));
+   mongoc_topology_scanner_node_t *node = bson_malloc0 (sizeof (*node));
 
    memcpy (&node->host, host, sizeof (*host));
 
    node->id = id;
-   node->ss = ss;
+   node->ts = ts;
 
-   DL_APPEND(ss->nodes, node);
+   DL_APPEND(ts->nodes, node);
 
    return;
 }
 
 static void
-mongoc_sdam_scanner_node_destroy (mongoc_sdam_scanner_node_t *node)
+mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node)
 {
-   DL_DELETE (node->ss->nodes, node);
+   DL_DELETE (node->ts->nodes, node);
 
    if (node->dns_results) {
       freeaddrinfo (node->dns_results);
@@ -107,15 +107,15 @@ mongoc_sdam_scanner_node_destroy (mongoc_sdam_scanner_node_t *node)
 }
 
 void
-mongoc_sdam_scanner_rm (mongoc_sdam_scanner_t *ss,
-                        uint32_t               id)
+mongoc_topology_scanner_rm (mongoc_topology_scanner_t *ts,
+                            uint32_t                   id)
 {
-   mongoc_sdam_scanner_node_t *ele, *tmp;
+   mongoc_topology_scanner_node_t *ele, *tmp;
 
-   DL_FOREACH_SAFE (ss->nodes, ele, tmp)
+   DL_FOREACH_SAFE (ts->nodes, ele, tmp)
    {
       if (ele->id == id) {
-         mongoc_sdam_scanner_node_destroy (ele);
+         mongoc_topology_scanner_node_destroy (ele);
          break;
       }
 
@@ -129,23 +129,23 @@ mongoc_sdam_scanner_rm (mongoc_sdam_scanner_t *ss,
  *-----------------------------------------------------------------------
  *
  * This is the callback passed to async_cmd when we're running
- * ismasters from within SDAM.
+ * ismasters from within the topology monitor.
  *
  *-----------------------------------------------------------------------
  */
 
 static void
-mongoc_sdam_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status,
-                                      const bson_t             *ismaster_response,
-                                      int64_t                   rtt_msec,
-                                      void                     *data,
-                                      bson_error_t             *error)
+mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status,
+                                          const bson_t             *ismaster_response,
+                                          int64_t                   rtt_msec,
+                                          void                     *data,
+                                          bson_error_t             *error)
 {
-   mongoc_sdam_scanner_node_t *node;
+   mongoc_topology_scanner_node_t *node;
 
    bson_return_if_fail (data);
 
-   node = (mongoc_sdam_scanner_node_t *)data;
+   node = (mongoc_topology_scanner_node_t *)data;
    node->cmd = NULL;
 
    // TODO should both of these failures be the same thing?
@@ -157,16 +157,16 @@ mongoc_sdam_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status,
       node->stream = NULL;
    }
 
-   if (!node->ss->cb (node->id, ismaster_response, rtt_msec,
-                      node->ss->cb_data, error)) {
-      mongoc_sdam_scanner_node_destroy (node);
+   if (!node->ts->cb (node->id, ismaster_response, rtt_msec,
+                      node->ts->cb_data, error)) {
+      mongoc_topology_scanner_node_destroy (node);
       return;
    }
 }
 
 static mongoc_stream_t *
-mongoc_sdam_scanner_node_connect_tcp (mongoc_sdam_scanner_node_t *node,
-                                      bson_error_t               *error)
+mongoc_topology_scanner_node_connect_tcp (mongoc_topology_scanner_node_t *node,
+                                          bson_error_t                   *error)
 {
    mongoc_socket_t *sock = NULL;
    struct addrinfo hints;
@@ -239,8 +239,8 @@ mongoc_sdam_scanner_node_connect_tcp (mongoc_sdam_scanner_node_t *node,
 }
 
 static mongoc_stream_t *
-mongoc_sdam_scanner_node_connect_unix (mongoc_sdam_scanner_node_t *node,
-                                       bson_error_t               *error)
+mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
+                                           bson_error_t                   *error)
 {
 #ifdef _WIN32
    ENTRY;
@@ -293,7 +293,7 @@ mongoc_sdam_scanner_node_connect_unix (mongoc_sdam_scanner_node_t *node,
 }
 
 static bool
-mongoc_sdam_scanner_node_setup (mongoc_sdam_scanner_node_t *node)
+mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
 {
    mongoc_stream_t *sock_stream;
    bson_error_t error;
@@ -303,14 +303,14 @@ mongoc_sdam_scanner_node_setup (mongoc_sdam_scanner_node_t *node)
    /* TODO hook up a callback for this so you can use your own stream initiator */
 
    if (node->host.family == AF_UNIX) {
-      sock_stream = mongoc_sdam_scanner_node_connect_unix (node, &error);
+      sock_stream = mongoc_topology_scanner_node_connect_unix (node, &error);
    } else {
-      sock_stream = mongoc_sdam_scanner_node_connect_tcp (node, &error);
+      sock_stream = mongoc_topology_scanner_node_connect_tcp (node, &error);
    }
 
    if (!sock_stream) {
-      if (!node->ss->cb (node->id, NULL, 0, node->ss->cb_data, &error)) {
-         mongoc_sdam_scanner_node_destroy (node);
+      if (!node->ts->cb (node->id, NULL, 0, node->ts->cb_data, &error)) {
+         mongoc_topology_scanner_node_destroy (node);
       }
 
       return false;
@@ -318,8 +318,8 @@ mongoc_sdam_scanner_node_setup (mongoc_sdam_scanner_node_t *node)
 
 #ifdef MONGOC_ENABLE_SSL
 
-   if (node->ss->ssl_opts) {
-      sock_stream = mongoc_stream_tls_new (sock_stream, node->ss->ssl_opts, 1);
+   if (node->ts->ssl_opts) {
+      sock_stream = mongoc_stream_tls_new (sock_stream, node->ts->ssl_opts, 1);
    }
 
 #endif
@@ -332,32 +332,33 @@ mongoc_sdam_scanner_node_setup (mongoc_sdam_scanner_node_t *node)
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_sdam_scanner_start_scan --
+ * mongoc_topology_scanner_start --
  *
- *      Performs a full topology check. This is the driver's way to trip
- *      the SDAM switch.
+ *      Initializes the scanner and begins a full topology check. This
+ *      should be called once before calling mongoc_topology_scanner_work()
+ *      repeatedly to complete the scan.
  *
  *--------------------------------------------------------------------------
  */
 
 void
-mongoc_sdam_scanner_start_scan (mongoc_sdam_scanner_t *ss,
-                                int32_t                timeout_msec)
+mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
+                               int32_t                timeout_msec)
 {
-   mongoc_sdam_scanner_node_t *node, *tmp;
+   mongoc_topology_scanner_node_t *node, *tmp;
 
-   bson_return_if_fail (ss);
+   bson_return_if_fail (ts);
 
-   if (ss->in_progress) {
+   if (ts->in_progress) {
       return;
    }
 
-   DL_FOREACH_SAFE (ss->nodes, node, tmp)
+   DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
-      if (mongoc_sdam_scanner_node_setup (node)) {
-         node->cmd = mongoc_async_cmd (ss->async, node->stream, "admin",
-                                       &ss->ismaster_cmd,
-                                       &mongoc_sdam_scanner_ismaster_handler,
+      if (mongoc_topology_scanner_node_setup (node)) {
+         node->cmd = mongoc_async_cmd (ts->async, node->stream, "admin",
+                                       &ts->ismaster_cmd,
+                                       &mongoc_topology_scanner_ismaster_handler,
                                        node,
                                        timeout_msec);
       }
@@ -367,24 +368,28 @@ mongoc_sdam_scanner_start_scan (mongoc_sdam_scanner_t *ss,
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_sdam_scanner_scan --
+ * mongoc_topology_scanner_work --
  *
- *      Begin running an async ismaster command, from within SDAM
- *      background thread or logic.
+ *      Crank the knob on the topology scanner state machine. This should
+ *      be called only after mongoc_topology_scanner_start() has been used
+ *      to begin the scan.
+ *
+ * Returns:
+ *      true if there is more work to do, false if scan is done.
  *
  *--------------------------------------------------------------------------
  */
 
 bool
-mongoc_sdam_scanner_scan (mongoc_sdam_scanner_t *ss,
-                          int32_t                timeout_msec)
+mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
+                              int32_t                    timeout_msec)
 {
    bool r;
 
-   r = mongoc_async_run (ss->async, timeout_msec);
+   r = mongoc_async_run (ts->async, timeout_msec);
 
    if (! r) {
-      ss->in_progress = false;
+      ts->in_progress = false;
    }
 
    return r;

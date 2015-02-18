@@ -178,7 +178,7 @@ test_insert_bulk (void)
     */
 
    id = client->cluster.nodes->items[0].id;
-   description = _mongoc_sdam_server_by_id(client->sdam, id);
+   description = _mongoc_topology_server_by_id(client->topology, id);
 
    if (description->max_wire_version == 0) {
       ASSERT (count == 6);
@@ -617,7 +617,7 @@ test_index_geo (void)
    opt.geo_options = &geo_opt;
 
    id = client->cluster.nodes->items[0].id;
-   description = _mongoc_sdam_server_by_id(client->sdam, id);
+   description = _mongoc_topology_server_by_id(client->topology, id);
 
    if (description->max_wire_version > 0) {
       r = mongoc_collection_create_index(collection, &keys, &opt, &error);
