@@ -442,14 +442,14 @@ _mongoc_client_sendv (mongoc_client_t              *client,
    }
 
    if (server_id > 0) {
-      if (_mongoc_cluster_sendv_to_server(&client->cluster, rpcs, rpcs_len,
-                                          server_id, write_concern, error)) {
+      if (mongoc_cluster_sendv_to_server(&client->cluster, rpcs, rpcs_len,
+                                         server_id, write_concern, error)) {
          return server_id;
       }
    }
 
-   return _mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len,
-                                write_concern, read_prefs, error);
+   return mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len,
+                               write_concern, read_prefs, error);
 }
 
 
@@ -484,8 +484,8 @@ _mongoc_client_recv (mongoc_client_t *client,
    bson_return_val_if_fail(server_id, false);
 //   bson_return_val_if_fail(server_id < 1, false);
 
-   return _mongoc_cluster_try_recv (&client->cluster, rpc, buffer,
-                                    server_id, error);
+   return mongoc_cluster_try_recv (&client->cluster, rpc, buffer,
+                                   server_id, error);
 }
 
 
@@ -600,8 +600,8 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
 
-   if (!_mongoc_cluster_try_recv (&client->cluster, &rpc, &buffer,
-                                  server_id, error)) {
+   if (!mongoc_cluster_try_recv (&client->cluster, &rpc, &buffer,
+                                 server_id, error)) {
       GOTO (cleanup);
    }
 
@@ -676,7 +676,7 @@ mongoc_client_new(const char *uri_string)
       return NULL;
    }
 
-   topology = _mongoc_topology_new(uri);
+   topology = mongoc_topology_new(uri);
 
    mongoc_uri_destroy (uri);
 
@@ -748,7 +748,7 @@ _mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
    client->initiator = mongoc_client_default_stream_initiator;
    client->initiator_data = client;
 
-   _mongoc_topology_grab(topology);
+   mongoc_topology_grab(topology);
    client->topology = topology;
 
    write_concern = mongoc_uri_get_write_concern (uri);
@@ -765,7 +765,7 @@ _mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
       mongoc_read_prefs_set_tags (client->read_prefs, read_prefs_tags);
    }
 
-   _mongoc_cluster_init (&client->cluster, client->uri, client);
+   mongoc_cluster_init (&client->cluster, client->uri, client);
 
 #ifdef MONGOC_ENABLE_SSL
    if (has_ssl) {
@@ -842,7 +842,7 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 
    uristr = mongoc_uri_get_string(uri);
 
-   topology = _mongoc_topology_new(uri);
+   topology = mongoc_topology_new(uri);
    return _mongoc_client_new(uristr, topology);
 }
 
@@ -899,10 +899,10 @@ mongoc_client_destroy (mongoc_client_t *client)
       bson_free (client->pem_subject);
 #endif
 
-      _mongoc_topology_release(client->topology);
+      mongoc_topology_release(client->topology);
       mongoc_write_concern_destroy (client->write_concern);
       mongoc_read_prefs_destroy (client->read_prefs);
-      _mongoc_cluster_destroy (&client->cluster);
+      mongoc_cluster_destroy (&client->cluster);
       mongoc_uri_destroy (client->uri);
       bson_free (client);
 
@@ -1181,11 +1181,11 @@ _mongoc_client_warm_up (mongoc_client_t *client,
 
    /* If SDAM has been able to find any server, we know the cluster
       can be reached. No need to ping separately. */
-   server_id = _mongoc_cluster_preselect(&client->cluster,
-                                         MONGOC_OPCODE_MSG,
-                                         write_concern,
-                                         read_prefs,
-                                         error);
+   server_id = mongoc_cluster_preselect(&client->cluster,
+                                        MONGOC_OPCODE_MSG,
+                                        write_concern,
+                                        read_prefs,
+                                        error);
 
    mongoc_write_concern_destroy (write_concern);
    mongoc_read_prefs_destroy (read_prefs);
@@ -1204,8 +1204,8 @@ _mongoc_client_preselect (mongoc_client_t              *client,        /* IN */
 
    BSON_ASSERT (client);
 
-   return _mongoc_cluster_preselect (&client->cluster, opcode,
-                                     write_concern, read_prefs, error);
+   return mongoc_cluster_preselect (&client->cluster, opcode,
+                                    write_concern, read_prefs, error);
 }
 
 

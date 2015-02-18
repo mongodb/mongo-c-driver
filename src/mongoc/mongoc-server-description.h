@@ -23,81 +23,18 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-host-list.h"
 
-typedef enum
-   {
-      MONGOC_SERVER_UNKNOWN,
-      MONGOC_SERVER_STANDALONE,
-      MONGOC_SERVER_MONGOS,
-      MONGOC_SERVER_POSSIBLE_PRIMARY,
-      MONGOC_SERVER_RS_PRIMARY,
-      MONGOC_SERVER_RS_SECONDARY,
-      MONGOC_SERVER_RS_ARBITER,
-      MONGOC_SERVER_RS_OTHER,
-      MONGOC_SERVER_RS_GHOST,
-      MONGOC_SERVER_DESCRIPTION_TYPES,
-   } mongoc_server_description_type_t;
-
 typedef struct _mongoc_server_description_t mongoc_server_description_t;
 
-struct _mongoc_server_description_t
-{
-   uint32_t                         id;
-   mongoc_host_list_t               host;
-   int64_t                          round_trip_time;
-   bson_t                           last_is_master;
-
-   /* The following fields are filled from the last_is_master and are zeroed on
-    * parse.  So order matters here.  DON'T move set_name */
-   const char                      *set_name;
-   const char                      *connection_address;
-   char                            *error; // TODO: what type should this be?
-   mongoc_server_description_type_t type;
-   int32_t                          min_wire_version;
-   int32_t                          max_wire_version;
-
-   bson_t                           hosts;
-   bson_t                           passives;
-   bson_t                           arbiters;
-
-   bson_t                           tags;
-   const char                      *current_primary;
-   int32_t                          max_write_batch_size;
-};
-
 void
-_mongoc_server_description_init (mongoc_server_description_t *description,
-                                 const char                  *address,
-                                 uint32_t                     id);
-
-void
-_mongoc_server_description_destroy (mongoc_server_description_t *description);
-
-bool
-_mongoc_server_description_has_rs_member (mongoc_server_description_t *description,
-                                          const char                  *address);
-
-void
-_mongoc_server_description_set_state (mongoc_server_description_t     *description,
-                                      mongoc_server_description_type_t type);
-
-void
-_mongoc_server_description_update_rtt (mongoc_server_description_t *description,
-                                       int64_t                      new_time);
+mongoc_server_description_destroy (mongoc_server_description_t *description);
 
 mongoc_server_description_t *
-_mongoc_server_description_new_copy (const mongoc_server_description_t *description);
+mongoc_server_description_new_copy (const mongoc_server_description_t *description);
 
-void
-_mongoc_server_description_handle_ismaster (
-   mongoc_server_description_t   *sd,
-   const bson_t                  *reply,
-   int64_t                        rtt_msec,
-   bson_error_t                  *error);
+uint32_t
+mongoc_server_description_id (mongoc_server_description_t *description);
 
-size_t
-_mongoc_server_description_filter_eligible (
-   mongoc_server_description_t **descriptions,
-   size_t                        description_len,
-   const mongoc_read_prefs_t    *read_prefs);
+mongoc_host_list_t *
+mongoc_server_description_host (mongoc_server_description_t *description);
 
 #endif

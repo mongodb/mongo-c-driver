@@ -16,21 +16,21 @@
 
 #include "mongoc-array-private.h"
 #include "mongoc-error.h"
-#include "mongoc-server-description.h"
-#include "mongoc-topology-description.h"
+#include "mongoc-server-description-private.h"
+#include "mongoc-topology-description-private.h"
 #include "mongoc-trace.h"
 
 static void
 _mongoc_topology_server_dtor (void *server_,
                               void *ctx_)
 {
-   _mongoc_server_description_destroy ((mongoc_server_description_t *)server_);
+   mongoc_server_description_destroy ((mongoc_server_description_t *)server_);
 }
 
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_description_init --
+ * mongoc_topology_description_init --
  *
  *       Initialize the given topology description
  *
@@ -43,7 +43,7 @@ _mongoc_topology_server_dtor (void *server_,
  *--------------------------------------------------------------------------
  */
 void
-_mongoc_topology_description_init (mongoc_topology_description_t *description,
+mongoc_topology_description_init (mongoc_topology_description_t *description,
                                    mongoc_topology_cb_t          *cb)
 {
    ENTRY;
@@ -69,7 +69,7 @@ _mongoc_topology_description_init (mongoc_topology_description_t *description,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_description_destroy --
+ * mongoc_topology_description_destroy --
  *
  *       Destroy allocated resources within @description
  *
@@ -82,7 +82,7 @@ _mongoc_topology_description_init (mongoc_topology_description_t *description,
  *--------------------------------------------------------------------------
  */
 void
-_mongoc_topology_description_destroy (mongoc_topology_description_t *description)
+mongoc_topology_description_destroy (mongoc_topology_description_t *description)
 {
    ENTRY;
 
@@ -134,8 +134,7 @@ _mongoc_topology_description_has_primary (mongoc_topology_description_t *descrip
    return NULL;
 }
 
-
-bool
+static bool
 _mongoc_topology_description_server_description_is_candidate (
    mongoc_server_description_type_t   desc_type,
    mongoc_read_mode_t                 read_mode,
@@ -191,11 +190,10 @@ _mongoc_topology_description_server_description_is_candidate (
    }
 }
 
-
 /*
  *-------------------------------------------------------------------------
  *
- * _mongoc_topology_description_suitable_servers --
+ * mongoc_topology_description_suitable_servers --
  *
  *       Return an array of suitable server descriptions for this
  *       operation and read preference.
@@ -210,8 +208,8 @@ _mongoc_topology_description_server_description_is_candidate (
  */
 
 void
-_mongoc_topology_description_suitable_servers (
-   mongoc_array_t                *set,                              /* OUT */
+mongoc_topology_description_suitable_servers (
+   mongoc_array_t                *set, /* OUT */
    mongoc_ss_optype_t             optype,
    mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t     *read_pref,
@@ -268,7 +266,7 @@ _mongoc_topology_description_suitable_servers (
             }
          }
 
-         if (! _mongoc_server_description_filter_eligible (candidates, candidates_len, read_pref)) {
+         if (! mongoc_server_description_filter_eligible (candidates, candidates_len, read_pref)) {
             if (read_mode == MONGOC_READ_NEAREST) {
                goto DONE;
             } else {
@@ -346,29 +344,29 @@ DONE:
 /*
  *-------------------------------------------------------------------------
  *
- * _mongoc_topology_description_select --
+ * mongoc_topology_description_select --
  *
- *       Return a server description of a node that is appropriate for
- *       the given read preference and operation type.
+ *      Return a server description of a node that is appropriate for
+ *      the given read preference and operation type.
  *
- *       Note: this method simply attempts to select a server from the
- *       current topology, it does not retry or trigger topology checks.
+ *      Note: this method simply attempts to select a server from the
+ *      current topology, it does not retry or trigger topology checks.
  *
  * Returns:
- *       Selected server description, or NULL upon failure.
+ *      Selected server description, or NULL upon failure.
  *
  * Side effects:
- *       None.
+ *      None.
  *
  *-------------------------------------------------------------------------
  */
 
 mongoc_server_description_t *
-_mongoc_topology_description_select (mongoc_topology_description_t *topology,
-                                     mongoc_ss_optype_t             optype,
-                                     const mongoc_read_prefs_t     *read_pref,
-                                     int64_t                        local_threshold_ms,
-                                     bson_error_t                  *error) /* OUT */
+mongoc_topology_description_select (mongoc_topology_description_t *topology,
+                                    mongoc_ss_optype_t             optype,
+                                    const mongoc_read_prefs_t     *read_pref,
+                                    int64_t                        local_threshold_ms,
+                                    bson_error_t                  *error) /* OUT */
 {
    mongoc_array_t suitable_servers;
    mongoc_server_description_t *sd = NULL;
@@ -383,7 +381,7 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
 
    _mongoc_array_init(&suitable_servers, sizeof(mongoc_server_description_t *));
 
-   _mongoc_topology_description_suitable_servers(&suitable_servers, optype,
+   mongoc_topology_description_suitable_servers(&suitable_servers, optype,
                                                  topology, read_pref, local_threshold_ms);
    if (suitable_servers.len != 0) {
       sd = _mongoc_array_index(&suitable_servers, mongoc_server_description_t*,
@@ -398,7 +396,7 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_description_server_by_id --
+ * mongoc_topology_description_server_by_id --
  *
  *       Get the server description for @id, if that server is present
  *       in @description. Otherwise, return NULL.
@@ -413,7 +411,7 @@ _mongoc_topology_description_select (mongoc_topology_description_t *topology,
  */
 
 mongoc_server_description_t *
-_mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
+mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
                                            uint32_t                       id)
 {
    return mongoc_set_get(description->servers, id);
@@ -434,7 +432,7 @@ _mongoc_topology_description_server_by_id (mongoc_topology_description_t *descri
  *
  *--------------------------------------------------------------------------
  */
-void
+static void
 _mongoc_topology_description_remove_server (mongoc_topology_description_t *description,
                                             mongoc_server_description_t   *server)
 {
@@ -461,7 +459,7 @@ _mongoc_topology_description_remove_server (mongoc_topology_description_t *descr
  *
  *--------------------------------------------------------------------------
  */
-uint32_t
+static uint32_t
 _mongoc_topology_description_has_server (mongoc_topology_description_t *description,
                                          const char                    *address)
 {
@@ -495,8 +493,7 @@ _mongoc_topology_description_has_server (mongoc_topology_description_t *descript
  *
  *--------------------------------------------------------------------------
  */
-
-void
+static void
 _mongoc_topology_description_label_unknown_member (mongoc_topology_description_t *description,
                                                    const char *address,
                                                    mongoc_server_description_type_t type)
@@ -509,7 +506,7 @@ _mongoc_topology_description_label_unknown_member (mongoc_topology_description_t
       server_iter = set->items[i].item;
       if (server_iter->connection_address == address &&
           server_iter->type == MONGOC_SERVER_UNKNOWN) {
-         _mongoc_server_description_set_state(server_iter, type);
+         mongoc_server_description_set_state(server_iter, type);
          return;
       }
    }
@@ -531,8 +528,7 @@ _mongoc_topology_description_label_unknown_member (mongoc_topology_description_t
  *
  *--------------------------------------------------------------------------
  */
-
-void
+static void
 _mongoc_topology_description_set_state (mongoc_topology_description_t *description,
                                         mongoc_topology_description_type_t type)
 {
@@ -576,7 +572,7 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_description_add_server --
+ * mongoc_topology_description_add_server --
  *
  *       Add the specified server to the cluster topology and return its
  *       id, or 0 if the server was not added to the topology.
@@ -590,7 +586,7 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
  *--------------------------------------------------------------------------
  */
 uint32_t
-_mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
+mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
                                          const char                    *server)
 {
    uint32_t id;
@@ -603,7 +599,7 @@ _mongoc_topology_description_add_server (mongoc_topology_description_t *topology
    id = ++topology->max_server_id;
 
    description = bson_malloc0(sizeof *description);
-   _mongoc_server_description_init(description, server, id);
+   mongoc_server_description_init(description, server, id);
 
    mongoc_set_add(topology->servers, id, description);
 
@@ -678,7 +674,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
       server_iter = set->items[i].item;
       if (server_iter->id != server->id &&
           server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
-         _mongoc_server_description_set_state(server, MONGOC_SERVER_UNKNOWN);
+         mongoc_server_description_set_state(server, MONGOC_SERVER_UNKNOWN);
          // TODO SDAM set other states to defaults?
       }
    }
@@ -698,7 +694,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
          member_name = bson_iter_utf8 (&member_iter, NULL);
 
          if (!_mongoc_topology_description_has_server(topology, member_name)) {
-            _mongoc_topology_description_add_server(topology, member_name);
+            mongoc_topology_description_add_server(topology, member_name);
          }
       }
    }
@@ -709,7 +705,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
 
    for (i = 0; i < set->items_len; i++) {
       server_iter = set->items[i].item;
-      if (!_mongoc_server_description_has_rs_member(server, server_iter->connection_address)) {
+      if (!mongoc_server_description_has_rs_member(server, server_iter->connection_address)) {
          _mongoc_topology_description_remove_server(topology, server_iter);
       }
    }
@@ -976,7 +972,7 @@ gSDAMTransitionTable[MONGOC_SERVER_DESCRIPTION_TYPES][MONGOC_TOPOLOGY_DESCRIPTIO
  */
 
 bool
-_mongoc_topology_description_handle_ismaster (
+mongoc_topology_description_handle_ismaster (
    mongoc_topology_description_t *topology,
    mongoc_server_description_t   *sd,
    const bson_t                  *ismaster_response,
@@ -986,13 +982,13 @@ _mongoc_topology_description_handle_ismaster (
    bson_return_val_if_fail (topology, false);
    bson_return_val_if_fail (sd, false);
 
-   _mongoc_server_description_handle_ismaster (sd, ismaster_response, rtt_msec, error);
+   mongoc_server_description_handle_ismaster (sd, ismaster_response, rtt_msec, error);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
       gSDAMTransitionTable[sd->type][topology->type](topology, sd);
    }
 
-   if (_mongoc_topology_description_server_by_id (topology, sd->id)) {
+   if (mongoc_topology_description_server_by_id (topology, sd->id)) {
       return true;
    } else {
       return false;

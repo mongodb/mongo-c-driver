@@ -17,9 +17,8 @@
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-read-prefs.h"
-#include "mongoc-server-description.h"
+#include "mongoc-server-description-private.h"
 #include "mongoc-trace.h"
-#include "mongoc-topology-description.h"
 #include "mongoc-uri.h"
 
 #define MIN_WIRE_VERSION 0
@@ -30,7 +29,7 @@
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_server_description_init --
+ * mongoc_server_description_init --
  *
  *       Initialize a new server_description_t.
  *
@@ -43,9 +42,9 @@
  *--------------------------------------------------------------------------
  */
 void
-_mongoc_server_description_init (mongoc_server_description_t *description,
-                                 const char                  *address,
-                                 uint32_t                     id)
+mongoc_server_description_init (mongoc_server_description_t *description,
+                                const char                  *address,
+                                uint32_t                     id)
 {
    ENTRY;
 
@@ -71,7 +70,7 @@ _mongoc_server_description_init (mongoc_server_description_t *description,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_server_description_destroy --
+ * mongoc_server_description_destroy --
  *
  *       Destroy allocated resources within @description.
  *
@@ -84,7 +83,7 @@ _mongoc_server_description_init (mongoc_server_description_t *description,
  *--------------------------------------------------------------------------
  */
 void
-_mongoc_server_description_destroy (mongoc_server_description_t *description)
+mongoc_server_description_destroy (mongoc_server_description_t *description)
 {
    ENTRY;
 
@@ -100,7 +99,7 @@ _mongoc_server_description_destroy (mongoc_server_description_t *description)
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_server_description_has_rs_member --
+ * mongoc_server_description_has_rs_member --
  *
  *       Return true if this address is included in server's list of rs
  *       members, false otherwise.
@@ -113,10 +112,9 @@ _mongoc_server_description_destroy (mongoc_server_description_t *description)
  *
  *--------------------------------------------------------------------------
  */
-
 bool
-_mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
-                                         const char                  *address)
+mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
+                                        const char                  *address)
 {
    bson_iter_t member_iter;
    const bson_t *rs_members[3];
@@ -144,7 +142,45 @@ _mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_server_description_set_state --
+ * mongoc_server_description_id --
+ *
+ *      Get the id of this server.
+ *
+ * Returns:
+ *      Server's id.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+uint32_t
+mongoc_server_description_id (mongoc_server_description_t *description)
+{
+   return description->id;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_host --
+ *
+ *      Return a reference to the host associated with this server description.
+ *
+ * Returns:
+ *      A mongoc_host_list_t *, this server description's host.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_host_list_t *
+mongoc_server_description_host (mongoc_server_description_t *description)
+{
+   return &description->host;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_set_state --
  *
  *       Change the state of this server.
  *
@@ -156,9 +192,9 @@ _mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
  *
  *--------------------------------------------------------------------------
  */
-
-void _mongoc_server_description_set_state (mongoc_server_description_t *description,
-                                           mongoc_server_description_type_t type)
+void
+mongoc_server_description_set_state (mongoc_server_description_t *description,
+                                     mongoc_server_description_type_t type)
 {
    description->type = type;
    // TODO SDAM unblock waiters? Can waiters wait on particular server?
@@ -168,7 +204,7 @@ void _mongoc_server_description_set_state (mongoc_server_description_t *descript
 /*
  *-------------------------------------------------------------------------
  *
- * _mongoc_server_description_update_rtt --
+ * mongoc_server_description_update_rtt --
  *
  *       Update this server's rtt calculation using an exponentially-
  *       weighted moving average formula.
@@ -181,10 +217,9 @@ void _mongoc_server_description_set_state (mongoc_server_description_t *descript
  *
  *-------------------------------------------------------------------------
  */
-
 void
-_mongoc_server_description_update_rtt (mongoc_server_description_t *server,
-                                       int64_t new_time)
+mongoc_server_description_update_rtt (mongoc_server_description_t *server,
+                                      int64_t                      new_time)
 {
    // TODO SS implement
    return;
@@ -199,7 +234,7 @@ _mongoc_server_description_update_rtt (mongoc_server_description_t *server,
  */
 
 void
-_mongoc_server_description_handle_ismaster (
+mongoc_server_description_handle_ismaster (
    mongoc_server_description_t   *sd,
    const bson_t                  *ismaster_response,
    int64_t                        rtt_msec,
@@ -329,12 +364,12 @@ ERROR:
 /*
  *-------------------------------------------------------------------------
  *
- * _mongoc_server_description_new_copy --
+ * mongoc_server_description_new_copy --
  *
  *-------------------------------------------------------------------------
  */
 mongoc_server_description_t *
-_mongoc_server_description_new_copy (const mongoc_server_description_t *description)
+mongoc_server_description_new_copy (const mongoc_server_description_t *description)
 {
    mongoc_server_description_t *copy;
 
@@ -347,8 +382,8 @@ _mongoc_server_description_new_copy (const mongoc_server_description_t *descript
    copy->round_trip_time = -1;
    bson_init (&copy->last_is_master);
 
-   _mongoc_server_description_handle_ismaster (copy, &description->last_is_master,
-                                               description->round_trip_time, NULL);
+   mongoc_server_description_handle_ismaster (copy, &description->last_is_master,
+                                              description->round_trip_time, NULL);
 
    return copy;
 }
@@ -356,7 +391,7 @@ _mongoc_server_description_new_copy (const mongoc_server_description_t *descript
 /*
  *-------------------------------------------------------------------------
  *
- * _mongoc_server_description_filter_eligible --
+ * mongoc_server_description_filter_eligible --
  *
  *       Given a set of server descriptions, determine which are eligible
  *       as per the Server Selection spec. Determines the number of
@@ -370,7 +405,7 @@ _mongoc_server_description_new_copy (const mongoc_server_description_t *descript
  */
 
 size_t
-_mongoc_server_description_filter_eligible (
+mongoc_server_description_filter_eligible (
    mongoc_server_description_t **descriptions,
    size_t                        description_len,
    const mongoc_read_prefs_t    *read_prefs)

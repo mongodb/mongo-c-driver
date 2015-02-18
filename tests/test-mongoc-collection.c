@@ -178,7 +178,7 @@ test_insert_bulk (void)
     */
 
    id = client->cluster.nodes->items[0].id;
-   description = _mongoc_topology_server_by_id(client->topology, id);
+   description = mongoc_topology_server_by_id(client->topology, id);
 
    if (description->max_wire_version == 0) {
       ASSERT (count == 6);
@@ -219,7 +219,7 @@ test_insert_bulk (void)
    r = mongoc_collection_drop (collection, &error);
    ASSERT (r);
 
-   _mongoc_server_description_destroy(description);
+   mongoc_server_description_destroy(description);
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    bson_context_destroy(context);
@@ -617,7 +617,7 @@ test_index_geo (void)
    opt.geo_options = &geo_opt;
 
    id = client->cluster.nodes->items[0].id;
-   description = _mongoc_topology_server_by_id(client->topology, id);
+   description = mongoc_topology_server_by_id(client->topology, id);
 
    if (description->max_wire_version > 0) {
       r = mongoc_collection_create_index(collection, &keys, &opt, &error);
@@ -645,7 +645,7 @@ test_index_geo (void)
       ASSERT (r);
    }
 
-   _mongoc_server_description_destroy(description);
+   mongoc_server_description_destroy(description);
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    mongoc_client_destroy(client);

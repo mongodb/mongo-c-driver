@@ -4,8 +4,8 @@
 
 #include "json-test.h"
 
-#include "mongoc-server-description.h"
-#include "mongoc-topology-description.h"
+#include "mongoc-server-description-private.h"
+#include "mongoc-topology-description-private.h"
 #include "mongoc-topology-private.h"
 
 #include "TestSuite.h"
@@ -110,7 +110,7 @@ test_rtt_calculation (void)
    printf("\tfound %d JSON tests\n", num_tests);
 
    description = bson_malloc0(sizeof *description);
-   _mongoc_server_description_init(description, "localhost:27017", 1);
+   mongoc_server_description_init(description, "localhost:27017", 1);
 
    for (i = 0; i < num_tests; i++) {
       printf("\t\t%s: ", test_paths[i]);
@@ -123,7 +123,7 @@ test_rtt_calculation (void)
 
          /* update server description with new rtt */
          assert(bson_iter_init_find(&iter, test, "new_rtt_ms"));
-         _mongoc_server_description_update_rtt(description, bson_iter_int64(&iter));
+         mongoc_server_description_update_rtt(description, bson_iter_int64(&iter));
 
          /* ensure new RTT was calculated correctly */
          assert(bson_iter_init_find(&iter, test, "new_avg_rtt"));
@@ -134,7 +134,7 @@ test_rtt_calculation (void)
          printf("NO DATA\n");
       }
    }
-   _mongoc_server_description_destroy(description);
+   mongoc_server_description_destroy(description);
 }
 
 /*
@@ -192,7 +192,7 @@ test_server_selection_logic (void)
 
       if (test) {
          topology = bson_malloc0(sizeof *topology);
-         _mongoc_topology_description_init(topology, NULL);
+         mongoc_topology_description_init(topology, NULL);
 
          /* pull out topology description field */
          assert(bson_iter_init_find(&iter, test, "topology_description"));
@@ -216,7 +216,7 @@ test_server_selection_logic (void)
             /* initialize new server description with given address */
             sd = bson_malloc0(sizeof *sd);
             assert(bson_iter_init_find(&sd_iter, &server, "address"));
-            _mongoc_server_description_init(sd, bson_iter_utf8(&sd_iter, NULL), j++);
+            mongoc_server_description_init(sd, bson_iter_utf8(&sd_iter, NULL), j++);
 
             /* set description rtt */
             assert(bson_iter_init_find(&sd_iter, &server, "avg_rtt_ms"));
@@ -277,8 +277,8 @@ test_server_selection_logic (void)
 
          _mongoc_array_init (&selected_servers, sizeof(mongoc_server_description_t*));
 
-         _mongoc_topology_description_suitable_servers (&selected_servers, op, topology,
-                                                        read_prefs, 15);
+         mongoc_topology_description_suitable_servers (&selected_servers, op, topology,
+                                                       read_prefs, 15);
 
          bson_iter_init (&iter, &latency);
 
@@ -303,7 +303,7 @@ test_server_selection_logic (void)
             assert (found);
          }
 
-         _mongoc_topology_description_destroy(topology);
+         mongoc_topology_description_destroy(topology);
          _mongoc_array_destroy (&selected_servers);
          printf("PASS\n");
       }

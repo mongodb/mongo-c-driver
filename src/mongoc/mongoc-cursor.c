@@ -344,7 +344,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    if (cursor->in_exhaust) {
       cursor->client->in_exhaust = false;
       if (!cursor->done) {
-         _mongoc_cluster_disconnect_node (
+         mongoc_cluster_disconnect_node (
             &cursor->client->cluster,
             cursor->hint);
       }
@@ -937,7 +937,7 @@ _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
       return;
    }
 
-   description = _mongoc_topology_server_by_id(cursor->client->topology, cursor->hint);
+   description = mongoc_topology_server_by_id(cursor->client->topology, cursor->hint);
    if (!description) {
       MONGOC_WARNING("%s(): Invalid cursor hint, no matching host.",
                      __FUNCTION__);
@@ -946,7 +946,7 @@ _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
 
    *host = description->host;
 
-   _mongoc_server_description_destroy (description);
+   mongoc_server_description_destroy (description);
 
    return;
 }

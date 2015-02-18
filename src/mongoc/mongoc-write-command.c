@@ -510,7 +510,7 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   server = _mongoc_topology_server_by_id(client->topology, hint);
+   server = mongoc_topology_server_by_id(client->topology, hint);
    if (!server) {
       EXIT;
    }
@@ -520,10 +520,10 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
       _mongoc_write_command_delete_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
-      _mongoc_server_description_destroy (server);
+      mongoc_server_description_destroy (server);
       EXIT;
    }
-   _mongoc_server_description_destroy (server);
+   mongoc_server_description_destroy (server);
 
    BSON_APPEND_UTF8 (&cmd, "delete", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
@@ -592,7 +592,7 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   server = _mongoc_topology_server_by_id(client->topology, hint);
+   server = mongoc_topology_server_by_id(client->topology, hint);
 
    if (!server) {
       EXIT;
@@ -603,10 +603,10 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
       _mongoc_write_command_insert_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
-      _mongoc_server_description_destroy (server);
+      mongoc_server_description_destroy (server);
       EXIT;
       }
-   _mongoc_server_description_destroy (server);
+   mongoc_server_description_destroy (server);
 
    if (!command->u.insert.n_documents ||
        !bson_iter_init (&iter, command->u.insert.documents) ||
@@ -719,7 +719,7 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   server = _mongoc_topology_server_by_id(client->topology, hint);
+   server = mongoc_topology_server_by_id(client->topology, hint);
 
    if (!server) {
       EXIT;
@@ -730,10 +730,10 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
       _mongoc_write_command_update_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
-      _mongoc_server_description_destroy (server);
+      mongoc_server_description_destroy (server);
       EXIT;
    }
-   _mongoc_server_description_destroy (server);
+   mongoc_server_description_destroy (server);
 
    BSON_APPEND_UTF8 (&cmd, "update", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
@@ -809,14 +809,14 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
 
    command->hint = hint;
 
-   server = _mongoc_topology_server_by_id(client->topology, hint);
+   server = mongoc_topology_server_by_id(client->topology, hint);
    mode = (server->min_wire_version <= 2 && server->max_wire_version >= 2);
 
    gWriteOps [mode][command->type] (command, client, hint, database,
                                     collection, write_concern, result,
                                     &result->error);
 
-   _mongoc_server_description_destroy (server);
+   mongoc_server_description_destroy (server);
 
    EXIT;
 }

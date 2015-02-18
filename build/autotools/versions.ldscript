@@ -246,4 +246,8 @@ LIBMONGOC_1.1 {
 LIBMONGOC_1.2 {
     global:
         mongoc_bulk_operation_get_write_concern;
+        mongoc_server_description_destroy;
+        mongoc_server_description_host;
+        mongoc_server_description_id;
+        mongoc_server_description_new_copy;
 } LIBMONGOC_1.1;

@@ -19,8 +19,8 @@
 
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-topology-scanner-private.h"
-#include "mongoc-server-description.h"
-#include "mongoc-topology-description.h"
+#include "mongoc-server-description-private.h"
+#include "mongoc-topology-description-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-uri.h"
 
@@ -60,43 +60,36 @@ typedef struct _mongoc_topology_t
 } mongoc_topology_t;
 
 mongoc_topology_t *
-_mongoc_topology_new (const mongoc_uri_t *uri);
+mongoc_topology_new (const mongoc_uri_t *uri);
 
 void
-_mongoc_topology_grab (mongoc_topology_t *topology);
+mongoc_topology_grab (mongoc_topology_t *topology);
 
 void
-_mongoc_topology_release (mongoc_topology_t *topology);
+mongoc_topology_release (mongoc_topology_t *topology);
 
 void
-_mongoc_topology_destroy (mongoc_topology_t *topology);
+mongoc_topology_destroy (mongoc_topology_t *topology);
 
 mongoc_server_description_t *
-_mongoc_topology_select (mongoc_topology_t         *topology,
-                         mongoc_ss_optype_t         optype,
-                         const mongoc_read_prefs_t *read_prefs,
-                         int64_t                    timeout_ms,
-                         int64_t                    local_threshold_msec,
-                         bson_error_t              *error);
+mongoc_topology_select (mongoc_topology_t         *topology,
+                        mongoc_ss_optype_t         optype,
+                        const mongoc_read_prefs_t *read_prefs,
+                        int64_t                    timeout_ms,
+                        int64_t                    local_threshold_msec,
+                        bson_error_t              *error);
 
 mongoc_server_description_t *
-_mongoc_topology_server_by_id (mongoc_topology_t *topology,
-                               uint32_t           id);
+mongoc_topology_server_by_id (mongoc_topology_t *topology,
+                              uint32_t           id);
 
 void
-_mongoc_topology_request_scan (mongoc_topology_t *topology);
-
-bool
-mongoc_topology_time_to_scan (mongoc_topology_t *topology);
+mongoc_topology_request_scan (mongoc_topology_t *topology);
 
 void
-mongoc_topology_do_blocking_scan (mongoc_topology_t *topology);
+mongoc_topology_background_thread_start (mongoc_topology_t *topology);
 
-bool
-_mongoc_topology_run_scanner (mongoc_topology_t *topology,
-                              int64_t            work_msec);
-
-mongoc_topology_bg_state_t
-_mongoc_topology_background_thread_state (mongoc_topology_t *topology);
+void
+mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
 
 #endif

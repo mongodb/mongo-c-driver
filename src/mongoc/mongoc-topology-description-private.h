@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_TOPOLOGY_DESCRIPTION_H
-#define MONGOC_TOPOLOGY_DESCRIPTION_H
+#ifndef MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
+#define MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-server-description.h"
@@ -57,14 +57,14 @@ typedef enum
    } mongoc_ss_optype_t;
 
 void
-_mongoc_topology_description_init (mongoc_topology_description_t *description,
-                                   mongoc_topology_cb_t          *cb);
+mongoc_topology_description_init (mongoc_topology_description_t *description,
+                                  mongoc_topology_cb_t          *cb);
 
 void
-_mongoc_topology_description_destroy (mongoc_topology_description_t *description);
+mongoc_topology_description_destroy (mongoc_topology_description_t *description);
 
 bool
-_mongoc_topology_description_handle_ismaster (
+mongoc_topology_description_handle_ismaster (
    mongoc_topology_description_t *topology,
    mongoc_server_description_t   *sd,
    const bson_t                  *reply,
@@ -72,26 +72,26 @@ _mongoc_topology_description_handle_ismaster (
    bson_error_t                  *error);
 
 mongoc_server_description_t *
-_mongoc_topology_description_select (mongoc_topology_description_t *description,
-                                     mongoc_ss_optype_t             optype,
-                                     const mongoc_read_prefs_t     *read_pref,
-                                     int64_t                        local_threshold_ms,
-                                     bson_error_t                  *error);
+mongoc_topology_description_select (mongoc_topology_description_t *description,
+                                    mongoc_ss_optype_t             optype,
+                                    const mongoc_read_prefs_t     *read_pref,
+                                    int64_t                        local_threshold_ms,
+                                    bson_error_t                  *error);
 
 mongoc_server_description_t *
-_mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
-                                           uint32_t                       id);
-
-uint32_t
-_mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
-                                         const char                    *server);
+mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
+                                          uint32_t                       id);
 
 void
-_mongoc_topology_description_suitable_servers (
-   mongoc_array_t                *set,                              /* OUT */
+mongoc_topology_description_suitable_servers (
+   mongoc_array_t                *set, /* OUT */
    mongoc_ss_optype_t             optype,
    mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t     *read_pref,
    size_t                         local_threshold_ms);
+
+uint32_t
+mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
+                                        const char                    *server);
 
 #endif /* MONGOC_TOPOLOGY_DESCRIPTION_H */

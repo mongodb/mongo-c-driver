@@ -216,7 +216,7 @@ failure:
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_build_basic_auth_digest --
+ * _mongoc_cluster_build_basic_auth_digest --
  *
  *       Computes the Basic Authentication digest using the credentials
  *       configured for @cluster and the @nonce provided.
@@ -962,7 +962,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t            *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_disconnect_node --
+ * mongoc_cluster_disconnect_node --
  *
  *       Remove a node from the set of nodes. This should be done if
  *       a stream in the set is found to be invalid.
@@ -977,7 +977,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t            *cluster,
  */
 
 void
-_mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
+mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
 {
    mongoc_set_rm(cluster->nodes, server_id);
 }
@@ -1069,7 +1069,7 @@ _mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
                   MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
                   "No stream available for server_id %ul", server_id);
 
-   _mongoc_cluster_disconnect_node(cluster, server_id);
+   mongoc_cluster_disconnect_node(cluster, server_id);
 
    return NULL;
 }
@@ -1085,7 +1085,7 @@ _mongoc_cluster_stream_dtor (void *stream_,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_init --
+ * mongoc_cluster_init --
  *
  *       Initializes @cluster using the @uri and @client provided. The
  *       @uri is used to determine the "mode" of the cluster. Based on the
@@ -1102,9 +1102,9 @@ _mongoc_cluster_stream_dtor (void *stream_,
  */
 
 void
-_mongoc_cluster_init (mongoc_cluster_t   *cluster,
-                      const mongoc_uri_t *uri,
-                      void               *client)
+mongoc_cluster_init (mongoc_cluster_t   *cluster,
+                     const mongoc_uri_t *uri,
+                     void               *client)
 {
    ENTRY;
 
@@ -1135,7 +1135,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_destroy --
+ * mongoc_cluster_destroy --
  *
  *       Clean up after @cluster and destroy all active connections.
  *       All resources for @cluster are released.
@@ -1150,7 +1150,7 @@ _mongoc_cluster_init (mongoc_cluster_t   *cluster,
  */
 
 void
-_mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
+mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 {
    ENTRY;
 
@@ -1169,7 +1169,7 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_select_by_optype --
+ * mongoc_cluster_select_by_optype --
  *
  *       Internal server selection.
  *
@@ -1179,7 +1179,7 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
  *
  *--------------------------------------------------------------------------
  */
-mongoc_server_description_t *
+static mongoc_server_description_t *
 _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
                                  mongoc_ss_optype_t optype,
                                  const mongoc_write_concern_t *write_concern,
@@ -1193,12 +1193,12 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
 
    bson_return_val_if_fail(cluster, 0);
 
-   selected_server = _mongoc_topology_select(cluster->client->topology,
-                                             optype,
-                                             read_prefs,
-                                             30000, /* TODO make configurable on client */
-                                             15, /* TODO MAKE THIS REAL */
-                                             error);
+   selected_server = mongoc_topology_select(cluster->client->topology,
+                                            optype,
+                                            read_prefs,
+                                            30000, /* TODO make configurable on client */
+                                            15, /* TODO MAKE THIS REAL */
+                                            error);
 
    if (!selected_server) {
       RETURN(NULL);
@@ -1210,7 +1210,7 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
       stream = _mongoc_cluster_add_node (cluster, selected_server, error);
 
       if (!stream) {
-         _mongoc_server_description_destroy(selected_server);
+         mongoc_server_description_destroy(selected_server);
 
          RETURN (NULL);
       }
@@ -1222,7 +1222,7 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_preselect_description --
+ * mongoc_cluster_preselect_description --
  *
  *       Server selection by opcode, with retries, returns full
  *       server description.
@@ -1241,11 +1241,11 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
  */
 
 mongoc_server_description_t *
-_mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
-                                       mongoc_opcode_t               opcode,
-                                       const mongoc_write_concern_t *write_concern,
-                                       const mongoc_read_prefs_t    *read_prefs,
-                                       bson_error_t                 *error /* OUT */)
+mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
+                                      mongoc_opcode_t               opcode,
+                                      const mongoc_write_concern_t *write_concern,
+                                      const mongoc_read_prefs_t    *read_prefs,
+                                      bson_error_t                 *error /* OUT */)
 {
    int retry_count = 0;
    mongoc_server_description_t *server;
@@ -1288,18 +1288,18 @@ _mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_preselect --
+ * mongoc_cluster_preselect --
  *
  *       Server selection by opcode with retries.
  *
  *--------------------------------------------------------------------------
  */
 uint32_t
-_mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
-                          mongoc_opcode_t               opcode,
-                          const mongoc_write_concern_t *write_concern,
-                          const mongoc_read_prefs_t    *read_prefs,
-                          bson_error_t                 *error)
+mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
+                         mongoc_opcode_t               opcode,
+                         const mongoc_write_concern_t *write_concern,
+                         const mongoc_read_prefs_t    *read_prefs,
+                         bson_error_t                 *error)
 {
    mongoc_server_description_t *server;
    uint32_t server_id;
@@ -1312,12 +1312,12 @@ _mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
       read_prefs = cluster->client->read_prefs;
    }
 
-   server = _mongoc_cluster_preselect_description(cluster, opcode, write_concern,
-                                                  read_prefs, error);
+   server = mongoc_cluster_preselect_description(cluster, opcode, write_concern,
+                                                 read_prefs, error);
 
    if (server) {
       server_id = server->id;
-      _mongoc_server_description_destroy(server);
+      mongoc_server_description_destroy(server);
       return server_id;
    }
 
@@ -1327,7 +1327,7 @@ _mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_select --
+ * mongoc_cluster_select --
  *
  *       Selects a cluster node that is appropriate for handling the
  *       required set of rpc messages.  Takes read preference into account.
@@ -1343,12 +1343,12 @@ _mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
  */
 
 uint32_t
-_mongoc_cluster_select(mongoc_cluster_t             *cluster,
-                       mongoc_rpc_t                 *rpcs,
-                       size_t                        rpcs_len,
-                       const mongoc_write_concern_t *write_concern,
-                       const mongoc_read_prefs_t    *read_prefs,
-                       bson_error_t                 *error /* OUT */)
+mongoc_cluster_select(mongoc_cluster_t             *cluster,
+                      mongoc_rpc_t                 *rpcs,
+                      size_t                        rpcs_len,
+                      const mongoc_write_concern_t *write_concern,
+                      const mongoc_read_prefs_t    *read_prefs,
+                      bson_error_t                 *error /* OUT */)
 {
    mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
    mongoc_ss_optype_t optype = MONGOC_SS_READ;
@@ -1387,7 +1387,7 @@ _mongoc_cluster_select(mongoc_cluster_t             *cluster,
                                              read_prefs, error);
    if (server) {
       server_id = server->id;
-      _mongoc_server_description_destroy(server);
+      mongoc_server_description_destroy(server);
       return server_id;
    }
    return 0;
@@ -1502,7 +1502,7 @@ _mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_client_sendv_to_server --
+ * mongoc_client_sendv_to_server --
  *
  *       Sends the given RPCs to the given server. On success,
  *       returns the server id of the server to which the messages were
@@ -1521,12 +1521,12 @@ _mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
  */
 
 bool
-_mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
-                                 mongoc_rpc_t                  *rpcs,
-                                 size_t                         rpcs_len,
-                                 uint32_t                       server_id,
-                                 const mongoc_write_concern_t  *write_concern,
-                                 bson_error_t                  *error)
+mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
+                                mongoc_rpc_t                  *rpcs,
+                                size_t                         rpcs_len,
+                                uint32_t                       server_id,
+                                const mongoc_write_concern_t  *write_concern,
+                                bson_error_t                  *error)
 {
    mongoc_stream_t *stream;
    mongoc_iovec_t *iov;
@@ -1645,7 +1645,7 @@ _mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_sendv --
+ * mongoc_cluster_sendv --
  *
  *       Sends the given RPCs to an appropriate server. On success,
  *       returns the server id of the server to which the messages were
@@ -1664,12 +1664,12 @@ _mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
  */
 
 uint32_t
-_mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
-                       mongoc_rpc_t                 *rpcs,
-                       size_t                        rpcs_len,
-                       const mongoc_write_concern_t *write_concern,
-                       const mongoc_read_prefs_t    *read_prefs,
-                       bson_error_t                 *error)
+mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
+                      mongoc_rpc_t                 *rpcs,
+                      size_t                        rpcs_len,
+                      const mongoc_write_concern_t *write_concern,
+                      const mongoc_read_prefs_t    *read_prefs,
+                      bson_error_t                 *error)
 {
    uint32_t server_id;
 
@@ -1681,14 +1681,14 @@ _mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
       read_prefs = cluster->client->read_prefs;
    }
 
-   server_id = _mongoc_cluster_select(cluster, rpcs, rpcs_len,
-                                            write_concern, read_prefs, error);
+   server_id = mongoc_cluster_select(cluster, rpcs, rpcs_len,
+                                     write_concern, read_prefs, error);
    if (server_id < 1) {
       return server_id;
    }
 
-   if(_mongoc_cluster_sendv_to_server(cluster, rpcs, rpcs_len, server_id,
-                                      write_concern, error)) {
+   if(mongoc_cluster_sendv_to_server(cluster, rpcs, rpcs_len, server_id,
+                                     write_concern, error)) {
       return true;
    }
    return false;
@@ -1697,7 +1697,7 @@ _mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_try_recv --
+ * mongoc_cluster_try_recv --
  *
  *       Tries to receive the next event from the MongoDB server
  *       specified by @server_id. The contents are loaded into @buffer and then
@@ -1721,11 +1721,11 @@ _mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
  */
 
 bool
-_mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
-                          mongoc_rpc_t     *rpc,
-                          mongoc_buffer_t  *buffer,
-                          uint32_t          server_id,
-                          bson_error_t     *error)
+mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
+                         mongoc_rpc_t     *rpc,
+                         mongoc_buffer_t  *buffer,
+                         uint32_t          server_id,
+                         bson_error_t     *error)
 {
    mongoc_stream_t *stream;
    int32_t msg_len;
@@ -1756,7 +1756,7 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    if (!_mongoc_buffer_append_from_stream (buffer, stream, 4,
                                            cluster->sockettimeoutms, error)) {
       mongoc_counter_protocol_ingress_error_inc ();
-      _mongoc_cluster_disconnect_node(cluster, server_id);
+      mongoc_cluster_disconnect_node(cluster, server_id);
       RETURN (false);
    }
 
@@ -1770,7 +1770,7 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Corrupt or malicious reply received.");
-      _mongoc_cluster_disconnect_node(cluster, server_id);
+      mongoc_cluster_disconnect_node(cluster, server_id);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
@@ -1780,7 +1780,7 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
     */
    if (!_mongoc_buffer_append_from_stream (buffer, stream, msg_len - 4,
                                            cluster->sockettimeoutms, error)) {
-      _mongoc_cluster_disconnect_node (cluster, server_id);
+      mongoc_cluster_disconnect_node (cluster, server_id);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }
@@ -1793,7 +1793,7 @@ _mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Failed to decode reply from server.");
-      _mongoc_cluster_disconnect_node (cluster, server_id);
+      mongoc_cluster_disconnect_node (cluster, server_id);
       mongoc_counter_protocol_ingress_error_inc ();
       RETURN (false);
    }

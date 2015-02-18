@@ -69,48 +69,6 @@ validate_name (const char *str)
    return false;
 }
 
-static uint32_t
-_mongoc_collection_preselect (mongoc_collection_t          *collection,
-                              mongoc_opcode_t               opcode,
-                              const mongoc_write_concern_t *write_concern,
-                              const mongoc_read_prefs_t    *read_prefs,
-                              uint32_t                     *min_wire_version /* OUT */,
-                              uint32_t                     *max_wire_version /* OUT */,
-                              bson_error_t                 *error)
-{
-   mongoc_server_description_t *description;
-   uint32_t server_id;
-
-   BSON_ASSERT (collection);
-   BSON_ASSERT (opcode);
-   BSON_ASSERT (min_wire_version);
-   BSON_ASSERT (max_wire_version);
-
-   /*
-    * Try to discover the wire version of the server. Default to 1 so
-    * we can return a valid cursor structure.
-    */
-   description =
-      _mongoc_cluster_preselect_description (&collection->client->cluster,
-                                             opcode,
-                                             write_concern,
-                                             read_prefs,
-                                             error);
-
-   if (!description) {
-      *min_wire_version = 0;
-      *max_wire_version = 1;
-      return 0;
-   }
-
-   *min_wire_version = description->min_wire_version;
-   *max_wire_version = description->max_wire_version;
-   server_id = description->id;
-   _mongoc_server_description_destroy(description);
-
-   return server_id;
-}
-
 /*
  *--------------------------------------------------------------------------
  *
