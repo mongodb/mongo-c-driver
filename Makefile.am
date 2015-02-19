@@ -29,7 +29,7 @@ endif
 include build/cmake/Makefile.am
 
 ACLOCAL_AMFLAGS = -I build/autotools/m4 ${ACLOCAL_FLAGS}
-DISTCHECK_CONFIGURE_FLAGS = --enable-silent-rules --enable-man-pages --enable-html-doc --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+DISTCHECK_CONFIGURE_FLAGS = --enable-silent-rules --enable-man-pages --enable-html-doc --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled --enable-apple-native-tls
 
 mongocdocdir = ${docdir}
 mongocdoc_DATA = \

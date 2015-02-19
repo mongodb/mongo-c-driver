@@ -26,9 +26,14 @@
 
 #include "mongoc-b64-private.h"
 
+#ifdef MONGOC_APPLE_NATIVE_TLS
+#import <CommonCrypto/CommonHMAC.h>
+#import <CommonCrypto/CommonDigest.h>
+#else
 #include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#endif
 
 #define MONGOC_SCRAM_SERVER_KEY "Server Key"
 #define MONGOC_SCRAM_CLIENT_KEY "Client Key"
@@ -249,7 +254,6 @@ CLEANUP:
    return rval;
 }
 
-
 /* Compute the SCRAM step Hi() as defined in RFC5802 */
 static void
 _mongoc_scram_salt_password (mongoc_scram_t *scram,
@@ -263,7 +267,9 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
    uint8_t start_key[MONGOC_SCRAM_HASH_SIZE];
 
    /* Placeholder for HMAC return size, will always be scram::hashSize for HMAC SHA-1 */
+#ifdef MONGOC_OPENSSL
    uint32_t hash_len = 0;
+#endif
    int i;
    int k;
    uint8_t *output = scram->salted_password;
@@ -276,6 +282,14 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
    start_key[salt_len + 3] = 1;
 
    /* U1 = HMAC(input, salt + 0001) */
+#ifdef MONGOC_APPLE_NATIVE_TLS
+   CCHmac (kCCHmacAlgSHA1,
+           password,
+           password_len,
+           start_key,
+           sizeof (start_key),
+           output);
+#else
    HMAC (EVP_sha1 (),
          password,
          password_len,
@@ -283,11 +297,20 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
          sizeof (start_key),
          output,
          &hash_len);
+#endif
 
    memcpy (intermediate_digest, output, MONGOC_SCRAM_HASH_SIZE);
 
    /* intermediateDigest contains Ui and output contains the accumulated XOR:ed result */
    for (i = 2; i <= iterations; i++) {
+#ifdef MONGOC_APPLE_NATIVE_TLS
+      CCHmac (kCCHmacAlgSHA1,
+              password,
+              password_len,
+              intermediate_digest,
+              sizeof (intermediate_digest),
+              intermediate_digest);
+#else
       HMAC (EVP_sha1 (),
             password,
             password_len,
@@ -295,13 +318,13 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
             sizeof (intermediate_digest),
             intermediate_digest,
             &hash_len);
+#endif
 
       for (k = 0; k < MONGOC_SCRAM_HASH_SIZE; k++) {
          output[k] ^= intermediate_digest[k];
       }
    }
 }
-
 
 static bool
 _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
@@ -314,10 +337,31 @@ _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
    uint8_t stored_key[MONGOC_SCRAM_HASH_SIZE];
    uint8_t client_signature[MONGOC_SCRAM_HASH_SIZE];
    unsigned char client_proof[MONGOC_SCRAM_HASH_SIZE];
-   uint32_t hash_len = 0;
    int i;
    int r = 0;
+#ifdef MONGOC_OPENSSL
+   uint32_t hash_len = 0;
+#endif
 
+#ifdef MONGOC_APPLE_NATIVE_TLS
+   CCHmac (kCCHmacAlgSHA1,
+           scram->salted_password,
+           MONGOC_SCRAM_HASH_SIZE,
+           (uint8_t *)MONGOC_SCRAM_CLIENT_KEY,
+           strlen (MONGOC_SCRAM_CLIENT_KEY),
+           client_key);
+
+   /* StoredKey := H(client_key) */
+   CC_SHA1 (client_key, MONGOC_SCRAM_HASH_SIZE, stored_key);
+
+   /* ClientSignature := HMAC(StoredKey, AuthMessage) */
+   CCHmac (kCCHmacAlgSHA1,
+           stored_key,
+           MONGOC_SCRAM_HASH_SIZE,
+           scram->auth_message,
+           scram->auth_messagelen,
+           client_signature);
+#else
    HMAC (EVP_sha1 (),
          scram->salted_password,
          MONGOC_SCRAM_HASH_SIZE,
@@ -337,6 +381,7 @@ _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
          scram->auth_messagelen,
          client_signature,
          &hash_len);
+#endif
 
    /* ClientProof := ClientKey XOR ClientSignature */
 
@@ -566,7 +611,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    }
 
    _mongoc_scram_salt_password (scram, hashed_password, (uint32_t) strlen (
-                                   hashed_password), decoded_salt, decoded_salt_len,
+                                    hashed_password), decoded_salt, decoded_salt_len,
                                 iterations);
 
    _mongoc_scram_generate_client_proof (scram, outbuf, outbufmax, outbuflen);
@@ -604,19 +649,36 @@ CLEANUP:
    return rval;
 }
 
-
 static bool
 _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
                                        uint8_t        *verification,
                                        uint32_t        len)
 {
    /* ServerKey := HMAC(SaltedPassword, "Server Key") */
+#ifdef MONGOC_OPENSSL
    uint32_t hash_len;
+#endif
    uint8_t server_key[MONGOC_SCRAM_HASH_SIZE];
    char encoded_server_signature[MONGOC_SCRAM_B64_HASH_SIZE];
    int32_t encoded_server_signature_len;
    uint8_t server_signature[MONGOC_SCRAM_HASH_SIZE];
 
+#ifdef MONGOC_APPLE_NATIVE_TLS
+   CCHmac (kCCHmacAlgSHA1,
+           scram->salted_password,
+           MONGOC_SCRAM_HASH_SIZE,
+           (uint8_t *)MONGOC_SCRAM_SERVER_KEY,
+           strlen (MONGOC_SCRAM_SERVER_KEY),
+           server_key);
+
+   /* ServerSignature := HMAC(ServerKey, AuthMessage) */
+   CCHmac (kCCHmacAlgSHA1,
+           server_key,
+           MONGOC_SCRAM_HASH_SIZE,
+           scram->auth_message,
+           scram->auth_messagelen,
+           server_signature);
+#else
    HMAC (EVP_sha1 (),
          scram->salted_password,
          MONGOC_SCRAM_HASH_SIZE,
@@ -633,6 +695,7 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
          scram->auth_messagelen,
          server_signature,
          &hash_len);
+#endif
 
    encoded_server_signature_len =
       mongoc_b64_ntop (server_signature, sizeof (server_signature),
@@ -642,7 +705,6 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
    return (len == encoded_server_signature_len) &&
           (memcmp (verification, encoded_server_signature, len) == 0);
 }
-
 
 static bool
 _mongoc_scram_step3 (mongoc_scram_t *scram,

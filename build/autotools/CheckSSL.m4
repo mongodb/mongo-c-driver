@@ -32,14 +32,38 @@ AS_IF([test "$enable_ssl" != "no"],[
   ])
 ])
 
-
+AM_CONDITIONAL([ENABLE_APPLE_NATIVE_TLS], [test "$enable-apple-native-tls" = "yes"])
 AM_CONDITIONAL([ENABLE_SSL], [test "$enable_ssl" = "yes"])
+
+dnl For SecureTransport, link against proper frameworks
+if test "$enable_apple_native_tls" = "yes" ; then
+   dnl TODO this doesn't actually work...
+   SSL_CFLAGS="-framework Security -framework CoreFoundation"
+fi
+
 AC_SUBST(SSL_CFLAGS)
 AC_SUBST(SSL_LIBS)
 
 dnl Let mongoc-config.h.in know about SSL status.
+dnl TODO decouple OpenSSL support from general SSL support.
 if test "$enable_ssl" = "yes" ; then
   AC_SUBST(MONGOC_ENABLE_SSL, 1)
 else
   AC_SUBST(MONGOC_ENABLE_SSL, 0)
+fi
+
+dnl Same deal for Apple native TLS
+if test "$enable_apple_native_tls" = "yes" ; then
+   AC_SUBST(MONGOC_APPLE_NATIVE_TLS, 1)
+else
+   AC_SUBST(MONGOC_APPLE_NATIVE_TLS, 0)
+fi
+
+dnl TODO do a better job of this...
+if test "$enable_ssl" = "yes" ; then
+   if test "$enable_apple_native_tls" = "yes" ; then
+      AC_SUBST(MONGOC_OPENSSL, 0)
+   else
+      AC_SUBST(MONGOC_OPENSSL, 1)
+   fi
 fi

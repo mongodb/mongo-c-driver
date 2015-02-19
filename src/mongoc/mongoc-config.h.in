@@ -29,6 +29,25 @@
 #  undef MONGOC_ENABLE_SSL
 #endif
 
+/*
+ * MONGOC_APPLE_NATIVE_TLS is set from configure to determine if we
+ * are compiled with support for native TLS on OSX and iOS.
+ */
+#define MONGOC_APPLE_NATIVE_TLS @MONGOC_APPLE_NATIVE_TLS@
+
+#if MONGOC_APPLE_NATIVE_TLS != 1
+#  undef MONGOC_APPLE_NATIVE_TLS
+#endif
+
+/*
+ * MONGOC_OPENSSL is set from configure to determine if we are compiled
+ * with support for OpenSSL.
+ */
+#define MONGOC_OPENSSL @MONGOC_OPENSSL@
+
+#if MONGOC_OPENSSL != 1
+#  undef MONGOC_OPENSSL
+#endif
 
 /*
  * MONGOC_ENABLE_SASL is set from configure to determine if we are

@@ -17,31 +17,40 @@
 #ifndef MONGOC_SSL_PRIVATE_H
 #define MONGOC_SSL_PRIVATE_H
 
+#ifdef MONGOC_ENABLE_SSL
+
 #if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
 #include <bson.h>
-#include <openssl/bio.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
 
 #include "mongoc-ssl.h"
-
+#include "mongoc-ssl-apple-private.h"
+#include "mongoc-ssl-openssl-private.h"
 
 BSON_BEGIN_DECLS
 
+#ifdef MONGOC_OPENSSL
+bool
+_mongoc_ssl_check_cert (SSL        *ssl,
+                        const char *host,
+                        bool        weak_cert_validation);
 
-bool     _mongoc_ssl_check_cert      (SSL              *ssl,
-                                      const char       *host,
-                                      bool              weak_cert_validation);
-SSL_CTX *_mongoc_ssl_ctx_new         (mongoc_ssl_opt_t *opt);
-char    *_mongoc_ssl_extract_subject (const char       *filename);
-void     _mongoc_ssl_init            (void);
-void     _mongoc_ssl_cleanup         (void);
+SSL_CTX *
+_mongoc_ssl_ctx_new (mongoc_ssl_opt_t *opt);
+#endif
 
+char    *
+_mongoc_ssl_extract_subject (const char *filename);
+
+void
+_mongoc_ssl_init (void);
+
+void
+_mongoc_ssl_cleanup (void);
 
 BSON_END_DECLS
 
-
+#endif /* MONGOC_ENABLE_SSL */
 #endif /* MONGOC_SSL_PRIVATE_H */

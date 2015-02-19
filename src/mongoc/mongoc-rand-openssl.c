@@ -17,27 +17,30 @@
 #include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_OPENSSL
 
-#include "mongoc-rand.h"
-#include "mongoc-rand-private.h"
+#include "mongoc-rand-openssl.h"
+#include "mongoc-rand-openssl-private.h"
 
 #include "mongoc.h"
+
+#include <openssl/rand.h>
 
 /*
  *-------------------------------------------------------------------------
  *
- * _mongoc_rand_bytes --
+ * _mongoc_rand_openssl_bytes --
  *
- *       Fills @buf with @num cruptographically-secure random bytes.
+ *       Puts @num cryptographically secure bytes into @buf.
  *
  * Returns:
- *       1 on success, 0 on failure, with error in errno system variable.
+ *       1 on success, 0 otherwise, with error in ERR_get_error.
  *
  *-------------------------------------------------------------------------
  */
 
-int _mongoc_rand_bytes(uint8_t * buf, int num) {
-   return _mongoc_rand_bytes_impl(buf, num);
+int _mongoc_rand_openssl_bytes(uint8_t * buf, int num) {
+    return RAND_bytes(buf, num);
 }
 
 /*
@@ -45,28 +48,29 @@ int _mongoc_rand_bytes(uint8_t * buf, int num) {
  *
  * _mongoc_pseudo_rand_bytes --
  *
- *       Fills @buf with @num secure pseudo-random bytes.
+ *       Puts @num cryptographically secure bytes into @buf.
  *
  * Returns:
- *       1 on success, 0 on failure, with error in errno system variable.
+ *       1 on success, 0 otherwise, with error in ERR_get_error.
  *
  *-------------------------------------------------------------------------
  */
 
-int _mongoc_pseudo_rand_bytes(uint8_t * buf, int num) {
-   return _mongoc_pseudo_rand_bytes_impl(buf, num);
+int _mongoc_pseudo_rand_openssl_bytes(uint8_t * buf, int num) {
+    return RAND_pseudo_bytes(buf, num);
 }
 
-void mongoc_rand_seed(const void* buf, int num) {
-   return mongoc_rand_seed_impl(buf, num);
+void mongoc_rand_openssl_seed(const void* buf, int num) {
+    RAND_seed(buf, num);
 }
 
-void mongoc_rand_add(const void* buf, int num, double entropy) {
-   return mongoc_rand_add_impl(buf, num, entropy);
+void mongoc_rand_openssl_add(const void* buf, int num, double entropy) {
+    RAND_add(buf, num, entropy);
 }
 
-int mongoc_rand_status(void) {
-   return mongoc_rand_status_impl();
+int mongoc_rand_openssl_status(void) {
+    return RAND_status();
 }
 
+#endif /* MONGOC_OPENSSL */
 #endif /* MONGOC_ENABLE_SSL */

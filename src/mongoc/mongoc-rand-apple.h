@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2015 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,39 @@
  * limitations under the License.
  */
 
+#ifndef MONGOC_RAND_APPLE_H
+#define MONGOC_RAND_APPLE_H
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
-
-#ifndef MONGOC_RAND_H
-#define MONGOC_RAND_H
+#ifdef MONGOC_APPLE_NATIVE_TLS
 
 #include <bson.h>
 
-#include "mongoc-rand-apple.h"
-#include "mongoc-rand-openssl.h"
-
 BSON_BEGIN_DECLS
 
-void mongoc_rand_seed(const void* buf, int num);
-void mongoc_rand_add(const void* buf, int num, double entropy);
-int mongoc_rand_status(void);
+
+void
+mongoc_rand_apple_seed (const void *buf,
+                        int         num);
+
+void
+mongoc_rand_apple_add (const void *buf,
+                       int         num,
+                       double      entropy);
+
+int
+mongoc_rand_apple_status (void);
+
 
 BSON_END_DECLS
 
+/* API setup for Apple */
+#define mongoc_rand_seed_impl mongoc_rand_apple_seed
+#define mongoc_rand_add_impl mongoc_rand_apple_add
+#define mongoc_rand_status_impl mongoc_rand_apple_status
 
-#endif /* MONGOC_RAND_H */
+#endif /* MONGOC_APPLE_NATIVE_TLS */
+#endif /* MONGOC_RAND_APPLE_H */
