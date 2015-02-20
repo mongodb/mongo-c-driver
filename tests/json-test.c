@@ -20,6 +20,73 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+
+mongoc_topology_description_type_t
+topology_type_from_test(const char *type)
+{
+   if (strcmp(type, "ReplicaSetWithPrimary") == 0) {
+      return MONGOC_TOPOLOGY_RS_WITH_PRIMARY;
+   } else if (strcmp(type, "ReplicaSetNoPrimary") == 0) {
+      return MONGOC_TOPOLOGY_RS_NO_PRIMARY;
+   } else if (strcmp(type, "Unknown") == 0) {
+      return MONGOC_TOPOLOGY_UNKNOWN;
+   } else if (strcmp(type, "Single") == 0) {
+      return MONGOC_TOPOLOGY_SINGLE;
+   } else if (strcmp(type, "Sharded") == 0) {
+      return MONGOC_TOPOLOGY_SHARDED;
+   } else {
+      printf("can't parse this: %s", type);
+      assert(0);
+   }
+}
+
+mongoc_server_description_type_t
+server_type_from_test(const char *type)
+{
+   if (strcmp(type, "RSPrimary") == 0) {
+      return MONGOC_SERVER_RS_PRIMARY;
+   } else if (strcmp(type, "RSSecondary") == 0) {
+      return MONGOC_SERVER_RS_SECONDARY;
+   } else if (strcmp(type, "Standalone") == 0) {
+      return MONGOC_SERVER_STANDALONE;
+   } else if (strcmp(type, "Mongos") == 0) {
+      return MONGOC_SERVER_MONGOS;
+   } else if (strcmp(type, "PossiblePrimary") == 0) {
+      return MONGOC_SERVER_POSSIBLE_PRIMARY;
+   } else if (strcmp(type, "RSArbiter") == 0) {
+      return MONGOC_SERVER_RS_ARBITER;
+   } else if (strcmp(type, "RSOther") == 0) {
+      return MONGOC_SERVER_RS_OTHER;
+   } else if (strcmp(type, "RSGhost") == 0) {
+      return MONGOC_SERVER_RS_GHOST;
+   } else if (strcmp(type, "Unknown") == 0) {
+      return MONGOC_SERVER_UNKNOWN;
+   } else {
+      printf("ERROR: Unknown server type %s\n", type);
+      assert(0);
+   }
+}
+
+const char *
+topology_type_to_string(mongoc_topology_description_type_t type)
+{
+   switch(type) {
+   case MONGOC_TOPOLOGY_UNKNOWN:
+      return "Unknown";
+   case MONGOC_TOPOLOGY_SHARDED:
+      return "Sharded";
+   case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
+      return "ReplicaSetNoPrimary";
+   case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
+      return "ReplicaSetWithPrimary";
+   case MONGOC_TOPOLOGY_SINGLE:
+      return "Single";
+   default:
+      printf("ERROR: Unknown topology state\n");
+      assert(0);
+   }
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -149,4 +216,45 @@ get_bson_from_json_file(char *filename)
       return NULL;
    }
    return data;
+}
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * run_json_test_suite --
+ *
+ *      Given a path to a directory containing JSON tests, import each
+ *      test into a BSON blob and call the provided callback for
+ *      evaluation.
+ *
+ *      It is expected that the callback will assert on failure, so if
+ *      callback returns quietly the test is considered to have passed.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+run_json_test_suite(const char *dir_path, test_hook callback, void *data)
+{
+   char test_paths[MAX_NUM_TESTS][MAX_NAME_LENGTH];
+   int num_tests;
+   int i;
+   bson_t *test;
+
+   num_tests = collect_tests_from_dir(&test_paths[0],
+                                      dir_path,
+                                      0, 100);
+   printf("\tfound %d JSON tests\n", num_tests);
+
+   for (i = 0; i < num_tests; i++) {
+      printf("\t\t%s: ", test_paths[i]);
+      test = get_bson_from_json_file(test_paths[i]);
+
+      if (test) {
+         callback(test, data);
+         printf("PASS\n");
+         bson_free(test);
+      } else {
+         printf("NO DATA\n");
+      }
+   }
 }

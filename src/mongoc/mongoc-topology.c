@@ -49,8 +49,8 @@ _mongoc_topology_scanner_cb (uint32_t      id,
       }
 
       r = mongoc_topology_description_handle_ismaster (&topology->description, sd,
-                                                        ismaster_response, rtt_msec,
-                                                        error);
+                                                       ismaster_response, rtt_msec,
+                                                       error);
 
       if (!topology->single_threaded) {
          /* TODO only wake up all clients if we found any topology changes */
@@ -87,22 +87,43 @@ mongoc_topology_t *
 mongoc_topology_new (const mongoc_uri_t *uri)
 {
    mongoc_topology_t *topology;
+   mongoc_topology_description_type_t init_type;
    uint32_t id;
    const mongoc_host_list_t *hl;
 
    bson_return_val_if_fail(uri, NULL);
 
    topology = bson_malloc0(sizeof *topology);
+
+   /*
+    * Not ideal, but there's no great way to do this.
+    * Base on the URI, we assume:
+    *   - if we've got a replicaSet name, initialize to RS_NO_PRIMARY
+    *   - otherwise, if the seed list has a single host, initialize to SINGLE
+    *   - everything else gets initialized to UNKNOWN
+    */
+   if (mongoc_uri_get_replica_set(uri)) {
+      init_type = MONGOC_TOPOLOGY_RS_NO_PRIMARY;
+   } else {
+      hl = mongoc_uri_get_hosts(uri);
+      if (hl->next) {
+         init_type = MONGOC_TOPOLOGY_UNKNOWN;
+      } else {
+         init_type = MONGOC_TOPOLOGY_SINGLE;
+      }
+   }
+
+   mongoc_topology_description_init(&topology->description, init_type, NULL);
+   topology->description.set_name = bson_strdup(mongoc_uri_get_replica_set(uri));
+
+   topology->scanner = mongoc_topology_scanner_new (_mongoc_topology_scanner_cb,
+                                                    topology);
    topology->users = 0;
    topology->uri = uri;
    topology->single_threaded = true;
 
    /* TODO make SS timeout configurable on client */
    topology->timeout_msec = 30000;
-
-   mongoc_topology_description_init(&topology->description, NULL);
-   topology->scanner = mongoc_topology_scanner_new (_mongoc_topology_scanner_cb,
-                                                    topology);
 
    mongoc_mutex_init (&topology->mutex);
    mongoc_cond_init (&topology->cond_client);

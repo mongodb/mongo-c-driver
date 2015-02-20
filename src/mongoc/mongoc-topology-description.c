@@ -24,7 +24,7 @@ static void
 _mongoc_topology_server_dtor (void *server_,
                               void *ctx_)
 {
-   mongoc_server_description_destroy ((mongoc_server_description_t *)server_);
+   mongoc_server_description_cleanup ((mongoc_server_description_t *)server_);
 }
 
 /*
@@ -43,16 +43,20 @@ _mongoc_topology_server_dtor (void *server_,
  *--------------------------------------------------------------------------
  */
 void
-mongoc_topology_description_init (mongoc_topology_description_t *description,
-                                   mongoc_topology_cb_t          *cb)
+mongoc_topology_description_init (mongoc_topology_description_t     *description,
+                                  mongoc_topology_description_type_t type,
+                                  mongoc_topology_cb_t              *cb)
 {
    ENTRY;
 
-   bson_return_if_fail(description);
+   bson_return_if_fail (description);
+   bson_return_if_fail (type == MONGOC_TOPOLOGY_UNKNOWN ||
+                        type == MONGOC_TOPOLOGY_SINGLE ||
+                        type == MONGOC_TOPOLOGY_RS_NO_PRIMARY);
 
    memset (description, 0, sizeof (*description));
 
-   description->type = MONGOC_TOPOLOGY_UNKNOWN;
+   description->type = type;
    description->servers = mongoc_set_new(8, _mongoc_topology_server_dtor, NULL);
    description->set_name = NULL;
    description->compatible = true;
@@ -412,8 +416,10 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
 
 mongoc_server_description_t *
 mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
-                                           uint32_t                       id)
+                                          uint32_t                       id)
 {
+   bson_return_val_if_fail (description, NULL);
+
    return mongoc_set_get(description->servers, id);
 }
 
@@ -436,6 +442,9 @@ static void
 _mongoc_topology_description_remove_server (mongoc_topology_description_t *description,
                                             mongoc_server_description_t   *server)
 {
+   bson_return_if_fail (description);
+   bson_return_if_fail (server);
+
    if (description->cb.rm) {
       description->cb.rm(server);
    }
@@ -464,13 +473,20 @@ _mongoc_topology_description_has_server (mongoc_topology_description_t *descript
                                          const char                    *address)
 {
    mongoc_server_description_t *server_iter;
-   mongoc_set_t *set = description->servers;
+   mongoc_set_t *set;
    int i;
+
+   bson_return_val_if_fail (description, 0);
+   bson_return_val_if_fail (address, 0);
+
+   set = description->servers;
 
    for (i = 0; i < set->items_len; i++) {
       server_iter = set->items[i].item;
-      if (address == server_iter->connection_address) {
-         return server_iter->id;
+      if (server_iter) {
+         if (strcmp(address, server_iter->connection_address) == 0) {
+            return server_iter->id;
+         }
       }
    }
 
@@ -502,9 +518,12 @@ _mongoc_topology_description_label_unknown_member (mongoc_topology_description_t
    mongoc_set_t *set = description->servers;
    int i;
 
+   bson_return_if_fail (description);
+   bson_return_if_fail (address);
+
    for (i = 0; i < set->items_len; i++) {
       server_iter = set->items[i].item;
-      if (server_iter->connection_address == address &&
+      if (strcmp(server_iter->connection_address, address) == 0 &&
           server_iter->type == MONGOC_SERVER_UNKNOWN) {
          mongoc_server_description_set_state(server_iter, type);
          return;
@@ -587,10 +606,13 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
  */
 uint32_t
 mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
-                                         const char                    *server)
+                                        const char                    *server)
 {
    uint32_t id;
    mongoc_server_description_t *description;
+
+   bson_return_val_if_fail (topology, 0);
+   bson_return_val_if_fail (server, 0);
 
    if (_mongoc_topology_description_has_server(topology, server)){
       return 0;
@@ -608,6 +630,33 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
    }
 
    return id;
+}
+
+
+static void
+_mongoc_topology_description_monitor_new_servers (mongoc_topology_description_t *topology,
+                                                  mongoc_server_description_t *server)
+{
+   bson_iter_t member_iter;
+   const bson_t *rs_members[3];
+   const char *member_name;
+   int i;
+
+   rs_members[0] = &server->hosts;
+   rs_members[1] = &server->arbiters;
+   rs_members[2] = &server->passives;
+
+   for (i = 0; i < 3; i++) {
+      bson_iter_init (&member_iter, rs_members[i]);
+
+      while (bson_iter_next (&member_iter)) {
+         member_name = bson_iter_utf8 (&member_iter, NULL);
+
+         if (!_mongoc_topology_description_has_server(topology, member_name)) {
+            mongoc_topology_description_add_server(topology, member_name);
+         }
+      }
+   }
 }
 
 /*
@@ -643,11 +692,13 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
                                                      mongoc_server_description_t   *server)
 {
    mongoc_server_description_t *server_iter;
-   mongoc_set_t *set = topology->servers;
-   bson_iter_t member_iter;
-   const bson_t *rs_members[3];
-   const char *member_name;
+   mongoc_set_t *set;
    int i;
+
+   bson_return_if_fail (topology);
+   bson_return_if_fail (server);
+
+   set = topology->servers;
 
    if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
 
@@ -660,7 +711,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
       topology->set_name = bson_malloc (len);
       memcpy (topology->set_name, server->set_name, len);
    }
-   else if (topology->set_name != server->set_name) {
+   else if (strcmp(topology->set_name, server->set_name) != 0) {
       _mongoc_topology_description_remove_server(topology, server);
       _mongoc_topology_description_check_if_has_primary(topology, server);
       return;
@@ -675,7 +726,6 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
       if (server_iter->id != server->id &&
           server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
          mongoc_server_description_set_state(server, MONGOC_SERVER_UNKNOWN);
-         // TODO SDAM set other states to defaults?
       }
    }
 
@@ -683,21 +733,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
     * Begin monitoring any new servers primary knows about.
     */
 
-   rs_members[0] = &server->hosts;
-   rs_members[1] = &server->arbiters;
-   rs_members[2] = &server->passives;
-
-   for (i = 0; i < 3; i++) {
-      bson_iter_init (&member_iter, rs_members[i]);
-
-      while (bson_iter_next (&member_iter)) {
-         member_name = bson_iter_utf8 (&member_iter, NULL);
-
-         if (!_mongoc_topology_description_has_server(topology, member_name)) {
-            mongoc_topology_description_add_server(topology, member_name);
-         }
-      }
-   }
+   _mongoc_topology_description_monitor_new_servers(topology, server);
 
    /*
     * Stop monitoring any servers primary doesn't know about.
@@ -705,10 +741,17 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
 
    for (i = 0; i < set->items_len; i++) {
       server_iter = set->items[i].item;
-      if (!mongoc_server_description_has_rs_member(server, server_iter->connection_address)) {
+      if (strcmp(server->connection_address, server_iter->connection_address) != 0 &&
+          !mongoc_server_description_has_rs_member(server, server_iter->connection_address)) {
          _mongoc_topology_description_remove_server(topology, server_iter);
       }
    }
+
+   /*
+    * Finally, set topology type.
+    */
+
+   topology->type = MONGOC_TOPOLOGY_RS_WITH_PRIMARY;
 }
 
 /*
@@ -730,23 +773,33 @@ static void
 _mongoc_topology_description_update_rs_without_primary (mongoc_topology_description_t *topology,
                                                         mongoc_server_description_t   *server)
 {
-   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
+   bson_return_if_fail (topology);
+   bson_return_if_fail (server);
 
-   if (!topology->set_name) {
-      topology->set_name = bson_strdup(server->set_name);
-   }
-   else if (topology->set_name != server->set_name) {
-      _mongoc_topology_description_remove_server(topology, server);
+   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) {
       return;
    }
 
+   /* make sure we're talking about the same replica set */
+   if (server->set_name) {
+      if (!topology->set_name) {
+         topology->set_name = bson_strdup(server->set_name);
+      }
+      else if (strcmp(topology->set_name, server->set_name)!= 0) {
+         _mongoc_topology_description_remove_server(topology, server);
+         return;
+      }
+   }
+
    /* Begin monitoring any new servers that this server knows about */
-   // TODO TOPOLOGY_DESCRIPTION this loop.
+   _mongoc_topology_description_monitor_new_servers(topology, server);
 
    /* If this server thinks there is a primary, label it POSSIBLE_PRIMARY */
-   _mongoc_topology_description_label_unknown_member(topology,
-                                                     server->current_primary,
-                                                     MONGOC_SERVER_POSSIBLE_PRIMARY);
+   if (server->current_primary) {
+      _mongoc_topology_description_label_unknown_member(topology,
+                                                        server->current_primary,
+                                                        MONGOC_SERVER_POSSIBLE_PRIMARY);
+   }
 }
 
 /*
@@ -769,7 +822,12 @@ static void
 _mongoc_topology_description_update_rs_with_primary_from_member (mongoc_topology_description_t *topology,
                                                                  mongoc_server_description_t   *server)
 {
-   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
+   bson_return_if_fail (topology);
+   bson_return_if_fail (server);
+
+   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) {
+      return;
+   }
 
    /* set_name should never be null here */
    if (topology->set_name != server->set_name) {
@@ -777,7 +835,7 @@ _mongoc_topology_description_update_rs_with_primary_from_member (mongoc_topology
    }
 
    /* If there is no primary, label server's current_primary as the POSSIBLE_PRIMARY */
-   if (!_mongoc_topology_description_has_primary(topology)) {
+   if (!_mongoc_topology_description_has_primary(topology) && server->current_primary) {
       _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
       _mongoc_topology_description_label_unknown_member(topology,
                                                         server->current_primary,
@@ -878,6 +936,9 @@ static void
 _mongoc_topology_description_update_unknown_with_standalone (mongoc_topology_description_t *topology,
                                                              mongoc_server_description_t   *server)
 {
+   bson_return_if_fail (topology);
+   bson_return_if_fail (server);
+
    if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
 
    if (topology->servers->items_len > 1) {
@@ -930,6 +991,12 @@ gSDAMTransitionTable[MONGOC_SERVER_DESCRIPTION_TYPES][MONGOC_TOPOLOGY_DESCRIPTIO
       NULL,
       _mongoc_topology_description_remove_server,
       _mongoc_topology_description_remove_and_check_primary
+   },
+   { /* POSSIBLE_PRIMARY */
+      NULL,
+      NULL,
+      NULL,
+      NULL
    },
    { /* PRIMARY */
       _mongoc_topology_description_update_rs_from_primary,

@@ -39,12 +39,13 @@ struct _mongoc_server_description_t
    mongoc_host_list_t               host;
    int64_t                          round_trip_time;
    bson_t                           last_is_master;
+   bool                             has_is_master;
+   const char                      *connection_address;
 
    /* The following fields are filled from the last_is_master and are zeroed on
     * parse.  So order matters here.  DON'T move set_name */
    const char                      *set_name;
-   const char                      *connection_address;
-   char                            *error; // TODO: what type should this be?
+   const char                      *error; // TODO: what type should this be?
    mongoc_server_description_type_t type;
    int32_t                          min_wire_version;
    int32_t                          max_wire_version;
@@ -65,6 +66,9 @@ mongoc_server_description_init (mongoc_server_description_t *description,
 bool
 mongoc_server_description_has_rs_member (mongoc_server_description_t *description,
                                          const char                  *address);
+
+void
+mongoc_server_description_cleanup (mongoc_server_description_t *sd);
 
 void
 mongoc_server_description_set_state (mongoc_server_description_t     *description,

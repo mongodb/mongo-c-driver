@@ -21,10 +21,33 @@
 #include "mongoc-trace.h"
 #include "mongoc-uri.h"
 
+#include <stdio.h>
+
 #define MIN_WIRE_VERSION 0
 #define MAX_WIRE_VERSION 3
 
 #define ALPHA 0.2
+
+static uint8_t kMongocEmptyBson[] = { 5, 0, 0, 0, 0 };
+
+/* Destroy allocated resources within @description, and reset other fields,
+   but don't free it */
+void
+mongoc_server_description_cleanup (mongoc_server_description_t *sd)
+{
+   BSON_ASSERT(sd);
+
+   if (sd->error) {
+      bson_free ((void *)sd->error);
+   }
+
+   /* set other fields to 'default' empty states */
+   memset (&sd->set_name, 0, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd));
+
+   /* TODO? always leave last ismaster in an init-ed state until we destroy sd */
+   bson_destroy (&sd->last_is_master);
+   bson_init (&sd->last_is_master);
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -57,10 +80,21 @@ mongoc_server_description_init (mongoc_server_description_t *description,
    description->type = MONGOC_SERVER_UNKNOWN;
    description->round_trip_time = -1;
 
+   description->set_name = NULL;
+   description->error = NULL;
+   description->current_primary = NULL;
+
    if (!_mongoc_host_list_from_string(&description->host, address)) {
       MONGOC_WARNING("Failed to parse uri for %s", address);
       return;
    }
+
+   description->connection_address = description->host.host_and_port;
+
+   bson_init_static (&description->hosts, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+   bson_init_static (&description->passives, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+   bson_init_static (&description->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+   bson_init_static (&description->tags, kMongocEmptyBson, sizeof (kMongocEmptyBson));
 
    bson_init (&description->last_is_master);
 
@@ -72,7 +106,8 @@ mongoc_server_description_init (mongoc_server_description_t *description,
  *
  * mongoc_server_description_destroy --
  *
- *       Destroy allocated resources within @description.
+ *       Destroy allocated resources within @description and free
+ *       @description.
  *
  * Returns:
  *       None.
@@ -87,9 +122,7 @@ mongoc_server_description_destroy (mongoc_server_description_t *description)
 {
    ENTRY;
 
-   BSON_ASSERT(description);
-
-   bson_destroy (&description->last_is_master);
+   mongoc_server_description_cleanup(description);
 
    bson_free(description);
 
@@ -197,7 +230,6 @@ mongoc_server_description_set_state (mongoc_server_description_t *description,
                                      mongoc_server_description_type_t type)
 {
    description->type = type;
-   // TODO SDAM unblock waiters? Can waiters wait on particular server?
 }
 
 
@@ -206,7 +238,7 @@ mongoc_server_description_set_state (mongoc_server_description_t *description,
  *
  * mongoc_server_description_update_rtt --
  *
- *       Update this server's rtt calculation using an exponentially-
+ *       Calculate this server's rtt calculation using an exponentially-
  *       weighted moving average formula.
  *
  * Returns:
@@ -221,8 +253,11 @@ void
 mongoc_server_description_update_rtt (mongoc_server_description_t *server,
                                       int64_t                      new_time)
 {
-   // TODO SS implement
-   return;
+   if (server->round_trip_time == -1) {
+      server->round_trip_time = new_time;
+   } else {
+      server->round_trip_time = ALPHA * new_time + (1 - ALPHA) * server->round_trip_time;
+   }
 }
 
 /*
@@ -245,10 +280,6 @@ mongoc_server_description_handle_ismaster (
    bool is_shard = false;
    bool is_secondary = false;
    bool is_arbiter = false;
-   /*
-   bool is_passive = false;
-   bool is_hidden = false;
-   */
    bool is_replicaset = false;
    const uint8_t *bytes;
    uint32_t len;
@@ -256,15 +287,17 @@ mongoc_server_description_handle_ismaster (
    bson_return_if_fail (sd);
    bson_return_if_fail (ismaster_response);
 
+   mongoc_server_description_cleanup(sd);
+
    bson_destroy (&sd->last_is_master);
    bson_copy_to (ismaster_response, &sd->last_is_master);
+   sd->has_is_master = true;
 
    bson_iter_init (&iter, &sd->last_is_master);
 
-   memset (&sd->set_name, 0, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd));
-
    while (bson_iter_next (&iter)) {
       /* TODO: do we need to handle maxBsonObjSize */
+      /* TODO: do we need to handle ok */
       if (strcmp ("ismaster", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
          is_master = bson_iter_bool (&iter);
@@ -278,11 +311,10 @@ mongoc_server_description_handle_ismaster (
          if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
          sd->max_wire_version = bson_iter_int32 (&iter);
       } else if (strcmp ("msg", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
-         is_shard = bson_iter_bool (&iter);
+         if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto ERROR;
+         is_shard = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("setName", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto ERROR;
-
          sd->set_name = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("secondary", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
@@ -305,14 +337,6 @@ mongoc_server_description_handle_ismaster (
       } else if (strcmp ("arbiterOnly", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
          is_arbiter = bson_iter_bool (&iter);
-         /*
-      } else if (strcmp ("passive", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
-         is_passive = bson_iter_bool (&iter);
-      } else if (strcmp ("hidden", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
-         is_hidden = bson_iter_bool (&iter);
-         */
       } else if (strcmp ("isreplicaset", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
          is_replicaset = bson_iter_bool (&iter);
@@ -320,10 +344,14 @@ mongoc_server_description_handle_ismaster (
          if (! BSON_ITER_HOLDS_DOCUMENT (&iter)) goto ERROR;
          bson_iter_document (&iter, &len, &bytes);
          bson_init_static (&sd->tags, bytes, len);
-      } else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto ERROR;
-         sd->connection_address = bson_iter_utf8 (&iter, NULL);
-      }
+      } /*
+          TODO currently connection_address points into host, we don't use this.
+          else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
+          if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto ERROR;
+          bson_free((void *)sd->connection_address);
+          sd->connection_address = bson_strdup(bson_iter_utf8 (&iter, NULL));
+          }
+        */
    }
 
    if (is_shard) {
@@ -346,13 +374,7 @@ mongoc_server_description_handle_ismaster (
       goto ERROR;
    }
 
-   if (sd->round_trip_time == -1) {
-      sd->round_trip_time = rtt_msec;
-   } else {
-      /* calculate round trip time as an exponentially weighted moving average
-       * with a weigt of ALPHA */
-      sd->round_trip_time = ALPHA * rtt_msec + (1 - ALPHA) * sd->round_trip_time;
-   }
+   mongoc_server_description_update_rtt(sd, rtt_msec);
 
    return;
 
@@ -380,11 +402,23 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
    copy->id = description->id;
    memcpy (&copy->host, &description->host, sizeof (copy->host));
    copy->round_trip_time = -1;
+
+   copy->connection_address = copy->host.host_and_port;
+   copy->error = bson_strdup (description->error);
+
+   /* wait for handle_ismaster to fill these in properly */
+   copy->has_is_master = false;
+   bson_init_static (&copy->hosts, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+   bson_init_static (&copy->passives, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+   bson_init_static (&copy->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+   bson_init_static (&copy->tags, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+
    bson_init (&copy->last_is_master);
 
-   mongoc_server_description_handle_ismaster (copy, &description->last_is_master,
-                                              description->round_trip_time, NULL);
-
+   if (description->has_is_master) {
+      mongoc_server_description_handle_ismaster (copy, &description->last_is_master,
+                                                 description->round_trip_time, NULL);
+   }
    return copy;
 }
 

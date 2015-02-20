@@ -20,7 +20,13 @@
 #include <bson.h>
 #include <mongoc.h>
 
+#include "mongoc-server-description-private.h"
+#include "mongoc-topology-description-private.h"
+
 #define MAX_NAME_LENGTH 250
+#define MAX_NUM_TESTS 100
+
+typedef void (* test_hook)(bson_t *test, void *data);
 
 bson_t *
 get_bson_from_json_file (char *filename);
@@ -35,5 +41,19 @@ void
 assemble_path (const char *parent_path,
                const char *child_name,
                char       *dst /* OUT */);
+
+void
+run_json_test_suite(const char *dir_path,
+                    test_hook   callback,
+                    void       *data);
+
+mongoc_topology_description_type_t
+topology_type_from_test(const char *type);
+
+const char *
+topology_type_to_string(mongoc_topology_description_type_t type);
+
+mongoc_server_description_type_t
+server_type_from_test(const char *type);
 
 #endif
