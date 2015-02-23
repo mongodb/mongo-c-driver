@@ -130,3 +130,26 @@ mongoc_set_destroy (mongoc_set_t *set)
    bson_free (set->items);
    bson_free (set);
 }
+
+void
+mongoc_set_for_each (mongoc_set_t            *set,
+                     mongoc_set_for_each_cb_t cb,
+                     void                    *ctx)
+{
+   size_t i;
+   mongoc_set_item_t *old_set;
+   size_t items_len;
+
+   items_len = set->items_len;
+
+   old_set = bson_malloc (sizeof (*old_set) * items_len);
+   memcpy (old_set, set->items, sizeof (*old_set) * items_len);
+
+   for (i = 0; i < items_len; i++) {
+      if (!cb (old_set[i].item, ctx)) {
+         break;
+      }
+   }
+
+   bson_free (old_set);
+}

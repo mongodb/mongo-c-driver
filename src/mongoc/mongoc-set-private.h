@@ -29,6 +29,10 @@ BSON_BEGIN_DECLS
 typedef void (*mongoc_set_item_dtor)(void *item,
                                      void *ctx);
 
+/* return true to continue iteration, false to stop */
+typedef bool (*mongoc_set_for_each_cb_t)(void *item,
+                                         void *ctx);
+
 typedef struct
 {
    uint32_t id;
@@ -64,6 +68,18 @@ mongoc_set_get (mongoc_set_t *set,
 
 void
 mongoc_set_destroy (mongoc_set_t *set);
+
+/* loops over the set safe-ish.
+ *
+ * Caveats:
+ *   - you can add items at any iteration
+ *   - if you remove elements other than the one you're currently looking at,
+ *     you may see it later in the iteration
+ */
+void
+mongoc_set_for_each (mongoc_set_t            *set,
+                     mongoc_set_for_each_cb_t cb,
+                     void                    *ctx);
 
 BSON_END_DECLS
 

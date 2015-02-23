@@ -12,12 +12,34 @@ test_set_dtor (void * item_, void * ctx_)
    (*destroyed)++;
 }
 
+static bool
+test_set_visit_cb (void * item_, void * ctx_)
+{
+   int *visited = (int *)ctx_;
+
+   (*visited)++;
+
+   return true;
+}
+
+static bool
+test_set_stop_after_cb (void * item_, void * ctx_)
+{
+   int *stop_after = (int *)ctx_;
+
+   (*stop_after)--;
+
+   return *stop_after > 0;
+}
+
 static void
 test_set_new (void)
 {
    void * items[10];
    int i;
    int destroyed = 0;
+   int visited = 0;
+   int stop_after = 3;
 
    mongoc_set_t * set = mongoc_set_new(2, &test_set_dtor, &destroyed);
 
@@ -52,6 +74,12 @@ test_set_new (void)
 
    mongoc_set_add(set, 5, items + 5);
    assert( mongoc_set_get(set, 5) == items + 5);
+
+   mongoc_set_for_each(set, test_set_visit_cb, &visited);
+   assert( visited == 8 );
+
+   mongoc_set_for_each(set, test_set_stop_after_cb, &stop_after);
+   assert( stop_after == 0 );
 
    mongoc_set_destroy(set);
 }
