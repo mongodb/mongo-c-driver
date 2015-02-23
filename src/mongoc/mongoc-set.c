@@ -90,6 +90,8 @@ mongoc_set_rm (mongoc_set_t *set,
                   mongoc_set_id_cmp);
 
    if (ptr) {
+      set->dtor(ptr->item, set->dtor_ctx);
+
       i = ptr - set->items;
 
       if (i != set->items_len - 1) {
@@ -98,8 +100,6 @@ mongoc_set_rm (mongoc_set_t *set,
       }
 
       set->items_len--;
-
-      set->dtor(ptr->item, set->dtor_ctx);
    }
 }
 

@@ -30,8 +30,7 @@
 
 static uint8_t kMongocEmptyBson[] = { 5, 0, 0, 0, 0 };
 
-/* Destroy allocated resources within @description, and reset other fields,
-   but don't free it */
+/* Destroy allocated resources within @description, but don't free it */
 void
 mongoc_server_description_cleanup (mongoc_server_description_t *sd)
 {
@@ -41,12 +40,29 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
       bson_free ((void *)sd->error);
    }
 
+   bson_destroy (&sd->last_is_master);
+}
+
+/* Reset fields inside this sd, but keep same id, host information, and RTT,
+   and leave ismaster in empty inited state */
+static void
+_mongoc_server_description_reset (mongoc_server_description_t *sd)
+{
+   BSON_ASSERT(sd);
+
+   if (sd->error) {
+      bson_free ((void *)sd->error);
+      sd->error = NULL;
+   }
+
    /* set other fields to 'default' empty states */
    memset (&sd->set_name, 0, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd));
+   sd->set_name = NULL;
 
    /* TODO? always leave last ismaster in an init-ed state until we destroy sd */
    bson_destroy (&sd->last_is_master);
    bson_init (&sd->last_is_master);
+   sd->has_is_master = false;
 }
 
 /*
@@ -287,7 +303,7 @@ mongoc_server_description_handle_ismaster (
    bson_return_if_fail (sd);
    bson_return_if_fail (ismaster_response);
 
-   mongoc_server_description_cleanup(sd);
+   _mongoc_server_description_reset(sd);
 
    bson_destroy (&sd->last_is_master);
    bson_copy_to (ismaster_response, &sd->last_is_master);

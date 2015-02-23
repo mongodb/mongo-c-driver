@@ -105,13 +105,28 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
    EXIT;
 }
 
+/* find the primary, then stop iterating */
+static bool
+_mongoc_topology_description_has_primary_cb (void *item,
+                                             void *ctx /* OUT */)
+{
+   mongoc_server_description_t *server = item;
+   mongoc_server_description_t **primary = ctx;
+
+   /* TODO should this include MONGOS? */
+   if (server->type == MONGOC_SERVER_RS_PRIMARY || server->type == MONGOC_SERVER_STANDALONE) {
+      *primary = item;
+      return false;
+   }
+   return true;
+}
 
 /*
  *--------------------------------------------------------------------------
  *
  * _mongoc_topology_description_has_primary --
  *
- *       If topology has a primary, return true, else return false.
+ *       If topology has a primary, return it.
  *
  * Returns:
  *       A pointer to the primary, or NULL.
@@ -124,22 +139,15 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
 static mongoc_server_description_t *
 _mongoc_topology_description_has_primary (mongoc_topology_description_t *description)
 {
-   mongoc_server_description_t *server_iter;
-   mongoc_set_t *set = description->servers;
-   int i;
+   mongoc_server_description_t *primary = NULL;
 
-   for (i = 0; i < set->items_len; i++) {
-      server_iter = set->items[i].item;
-      if (server_iter->type == MONGOC_SERVER_RS_PRIMARY ||
-          server_iter->type == MONGOC_SERVER_STANDALONE) {
-         return server_iter;
-      }
-   }
-   return NULL;
+   mongoc_set_for_each(description->servers, _mongoc_topology_description_has_primary_cb, &primary);
+
+   return primary;
 }
 
 static bool
-_mongoc_topology_description_server_description_is_candidate (
+_mongoc_topology_description_server_is_candidate (
    mongoc_server_description_type_t   desc_type,
    mongoc_read_mode_t                 read_mode,
    mongoc_topology_description_type_t topology_type)
@@ -194,6 +202,63 @@ _mongoc_topology_description_server_description_is_candidate (
    }
 }
 
+typedef struct _mongoc_suitable_data_t
+{
+   mongoc_read_mode_t                 read_mode;
+   mongoc_topology_description_type_t topology_type;
+   mongoc_server_description_t       *primary; /* OUT */
+   mongoc_server_description_t      **candidates; /* OUT */
+   size_t                             candidates_len; /* OUT */
+   bool                               has_secondary; /* OUT */
+} mongoc_suitable_data_t;
+
+static bool
+_mongoc_replica_set_read_suitable_cb (void *item,
+                                      void *ctx)
+{
+   mongoc_server_description_t *server = item;
+   mongoc_suitable_data_t *data = ctx;
+
+   if (_mongoc_topology_description_server_is_candidate (server->type,
+                                                         data->read_mode,
+                                                         data->topology_type)) {
+
+      if (server->type == MONGOC_SERVER_RS_PRIMARY) {
+         data->primary = server;
+
+         if (data->read_mode == MONGOC_READ_PRIMARY ||
+             data->read_mode == MONGOC_READ_PRIMARY_PREFERRED) {
+            /* we want a primary and we have one, done! */
+            return false;
+         }
+      }
+
+      if (server->type == MONGOC_SERVER_RS_SECONDARY) {
+         data->has_secondary = true;
+      }
+
+      /* add to our candidates */
+      data->candidates[data->candidates_len++] = server;
+   }
+   return true;
+}
+
+/* if any mongos are candidates, add them to the candidates array */
+static bool
+_mongoc_find_suitable_mongos_cb (void *item,
+                                 void *ctx)
+{
+   mongoc_server_description_t *server = item;
+   mongoc_suitable_data_t *data = ctx;
+
+   if (_mongoc_topology_description_server_is_candidate (server->type,
+                                                         data->read_mode,
+                                                         data->topology_type)) {
+      data->candidates[data->candidates_len++] = server;
+   }
+   return true;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -219,103 +284,87 @@ mongoc_topology_description_suitable_servers (
    const mongoc_read_prefs_t     *read_pref,
    size_t                         local_threshold_ms)
 {
-   mongoc_set_t *servers;
+   mongoc_suitable_data_t data;
    mongoc_server_description_t **candidates;
-   mongoc_server_description_t *server_iter;
-   mongoc_server_description_t *primary = NULL;
-   int i;
-   bool has_secondary = false;
-   size_t candidates_len = 0;
+   mongoc_server_description_t *server;
    int64_t nearest = -1;
+   int i;
    mongoc_read_mode_t read_mode = mongoc_read_prefs_get_mode(read_pref);
 
    candidates = bson_malloc0(sizeof(*candidates) * topology->servers->items_len);
 
+   data.read_mode = read_mode;
+   data.topology_type = topology->type;
+   data.primary = NULL;
+   data.candidates = candidates;
+   data.candidates_len = 0;
+   data.has_secondary = false;
+
+   /* Single server --
+    * Either it is suitable or it isn't */
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
-      server_iter = topology->servers->items[0].item;
-      if (_mongoc_topology_description_server_description_is_candidate (server_iter->type, read_mode, topology->type)) {
-         _mongoc_array_append_val (set, server_iter);
-         goto DONE;
+      server = topology->servers->items[0].item;
+      if (_mongoc_topology_description_server_is_candidate (server->type, read_mode, topology->type)) {
+         _mongoc_array_append_val (set, server);
       }
-   } else if (topology->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY ||
-              topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
-      servers = topology->servers;
+      goto DONE;
+   }
+
+   /* Replica sets --
+    * Find suitable servers based on read mode */
+   if (topology->type == MONGOC_TOPOLOGY_RS_NO_PRIMARY ||
+       topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
 
       if (optype == MONGOC_SS_READ) {
 
-         for (i = 0; i < servers->items_len; i++) {
-            server_iter = servers->items[i].item;
+         mongoc_set_for_each(topology->servers, _mongoc_replica_set_read_suitable_cb, &data);
 
-            if (_mongoc_topology_description_server_description_is_candidate (server_iter->type,
-                                                         read_mode, topology->type)) {
-
-               if (server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
-                  if (read_mode == MONGOC_READ_PRIMARY || read_mode == MONGOC_READ_PRIMARY_PREFERRED) {
-                     /* replica set has a primary and we're primary or primary
-                      * preferred.  Don't care about eligibility */
-                     _mongoc_array_append_val (set, server_iter);
-
-                     /* just need the one server and we're done */
-                     goto DONE;
-                  }
-
-                  primary = server_iter;
-               }
-
-               candidates[candidates_len++] = server_iter;
-
-               if (server_iter->type == MONGOC_SERVER_RS_SECONDARY) {
-                  has_secondary = true;
-               }
+         /* if we have a primary, it's a candidate, for some read modes we are done */
+         if (read_mode == MONGOC_READ_PRIMARY || read_mode == MONGOC_READ_PRIMARY_PREFERRED) {
+            if (data.primary) {
+               _mongoc_array_append_val (set, data.primary);
+               goto DONE;
             }
          }
 
-         if (! mongoc_server_description_filter_eligible (candidates, candidates_len, read_pref)) {
+         if (! mongoc_server_description_filter_eligible (data.candidates, data.candidates_len, read_pref)) {
             if (read_mode == MONGOC_READ_NEAREST) {
                goto DONE;
             } else {
-               has_secondary = false;
+               data.has_secondary = false;
             }
          }
 
-         if (has_secondary && (read_mode == MONGOC_READ_SECONDARY || read_mode == MONGOC_READ_SECONDARY_PREFERRED)) {
+         if (data.has_secondary &&
+             (read_mode == MONGOC_READ_SECONDARY || read_mode == MONGOC_READ_SECONDARY_PREFERRED)) {
             /* secondary or secondary preferred and we have one. */
 
-            for (i = 0; i < candidates_len; i++) {
+            for (i = 0; i < data.candidates_len; i++) {
                if (candidates[i] && candidates[i]->type == MONGOC_SERVER_RS_PRIMARY) {
                   candidates[i] = NULL;
                }
             }
-         } else if (read_mode == MONGOC_READ_SECONDARY_PREFERRED && primary) {
-            /* secondary preferred, but only the one primary */
-
-            _mongoc_array_append_val (set, primary);
-
+         } else if (read_mode == MONGOC_READ_SECONDARY_PREFERRED && data.primary) {
+            /* secondary preferred, but only the one primary is a candidate */
+            _mongoc_array_append_val (set, data.primary);
             goto DONE;
          }
 
       } else if (topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
          /* includes optype == MONGOC_SS_WRITE as the exclusion of the above if */
-
-         for (i = 0; i < servers->items_len; i++) {
-            server_iter = servers->items[i].item;
-
-            if (server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
-               _mongoc_array_append_val (set, server_iter);
-               goto DONE;
-            }
+         mongoc_set_for_each(topology->servers, _mongoc_topology_description_has_primary_cb,
+                             &data.primary);
+         if (data.primary) {
+            _mongoc_array_append_val (set, data.primary);
+            goto DONE;
          }
       }
-   } else if (topology->type == MONGOC_TOPOLOGY_SHARDED) {
-      servers = topology->servers;
+   }
 
-      for (i = 0; i < servers->items_len; i++) {
-         server_iter = servers->items[i].item;
-
-         if (_mongoc_topology_description_server_description_is_candidate (server_iter->type, read_mode, topology->type)) {
-            candidates[candidates_len++] = server_iter;
-         }
-      }
+   /* Sharded clusters --
+    * All candidates in the latency window are suitable */
+   if (topology->type == MONGOC_TOPOLOGY_SHARDED) {
+      mongoc_set_for_each (topology->servers, _mongoc_find_suitable_mongos_cb, &data);
    }
 
    /* Ways to get here:
@@ -325,13 +374,13 @@ mongoc_topology_description_suitable_servers (
     *   - sharded anything
     * Find the nearest, then select within the window */
 
-   for (i = 0; i < candidates_len; i++) {
+   for (i = 0; i < data.candidates_len; i++) {
       if (candidates[i] && (nearest == -1 || nearest > candidates[i]->round_trip_time)) {
          nearest = candidates[i]->round_trip_time;
       }
    }
 
-   for (i = 0; i < candidates_len; i++) {
+   for (i = 0; i < data.candidates_len; i++) {
       if (candidates[i] && (candidates[i]->round_trip_time <= nearest + local_threshold_ms)) {
          _mongoc_array_append_val (set, candidates[i]);
       }
@@ -452,45 +501,84 @@ _mongoc_topology_description_remove_server (mongoc_topology_description_t *descr
    mongoc_set_rm(description->servers, server->id);
 }
 
+typedef struct _mongoc_address_and_id_t {
+   const char *address; /* IN */
+   bool found; /* OUT */
+   uint32_t id; /* OUT */
+} mongoc_address_and_id_t;
+
+/* find the given server and stop iterating */
+static bool
+_mongoc_topology_description_has_server_cb (void *item,
+                                            void *ctx /* IN - OUT */)
+{
+   mongoc_server_description_t *server = item;
+   mongoc_address_and_id_t *data = ctx;
+
+   if (strcmp (data->address, server->connection_address) == 0) {
+      data->found = true;
+      data->id = server->id;
+      return false;
+   }
+   return true;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
  * _mongoc_topology_description_topology_has_server --
  *
- *       Return a server id if @server is in the given topology,
- *       0 otherwise.
+ *       Return true if @server is in @topology. If so, place its id in
+ *       @id if given.
  *
  * Returns:
- *       A server id, or 0.
+ *       True if server is in topology, false otherwise.
  *
  * Side effects:
  *       None.
  *
  *--------------------------------------------------------------------------
  */
-static uint32_t
+static bool
 _mongoc_topology_description_has_server (mongoc_topology_description_t *description,
-                                         const char                    *address)
+                                         const char                    *address,
+                                         uint32_t                      *id /* OUT */)
 {
-   mongoc_server_description_t *server_iter;
-   mongoc_set_t *set;
-   int i;
+   mongoc_address_and_id_t data;
 
    bson_return_val_if_fail (description, 0);
    bson_return_val_if_fail (address, 0);
 
-   set = description->servers;
+   data.address = address;
+   data.found = false;
+   mongoc_set_for_each (description->servers, _mongoc_topology_description_has_server_cb, &data);
 
-   for (i = 0; i < set->items_len; i++) {
-      server_iter = set->items[i].item;
-      if (server_iter) {
-         if (strcmp(address, server_iter->connection_address) == 0) {
-            return server_iter->id;
-         }
-      }
+   if (data.found && id) {
+      *id = data.id;
    }
 
-   return 0;
+   return data.found;
+}
+
+typedef struct _mongoc_address_and_type_t
+{
+   const char *address;
+   mongoc_server_description_type_t type;
+} mongoc_address_and_type_t;
+
+static bool
+_mongoc_label_unknown_member_cb (void *item,
+                                 void *ctx)
+{
+   mongoc_server_description_t *server = item;
+   mongoc_address_and_type_t *data = ctx;
+
+   if (strcmp (server->connection_address, data->address) == 0 &&
+       server->type == MONGOC_SERVER_UNKNOWN) {
+      mongoc_server_description_set_state(server, data->type);
+      return false;
+   }
+   return true;
 }
 
 /*
@@ -514,21 +602,15 @@ _mongoc_topology_description_label_unknown_member (mongoc_topology_description_t
                                                    const char *address,
                                                    mongoc_server_description_type_t type)
 {
-   mongoc_server_description_t *server_iter;
-   mongoc_set_t *set = description->servers;
-   int i;
+   mongoc_address_and_type_t data;
 
    bson_return_if_fail (description);
    bson_return_if_fail (address);
 
-   for (i = 0; i < set->items_len; i++) {
-      server_iter = set->items[i].item;
-      if (strcmp(server_iter->connection_address, address) == 0 &&
-          server_iter->type == MONGOC_SERVER_UNKNOWN) {
-         mongoc_server_description_set_state(server_iter, type);
-         return;
-      }
-   }
+   data.type = type;
+   data.address = address;
+
+   mongoc_set_for_each(description->servers, _mongoc_label_unknown_member_cb, &data);
 }
 
 /*
@@ -593,43 +675,47 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
  *
  * mongoc_topology_description_add_server --
  *
- *       Add the specified server to the cluster topology and return its
- *       id, or 0 if the server was not added to the topology.
+ *       Add the specified server to the cluster topology if it is not
+ *       already a member. If @id, place its id in @id.
  *
  * Return:
- *       The id of this new server description, or 0.
+ *       True if the server was added or already existed in the topology,
+ *       false if an error occurred.
  *
  * Side effects:
  *       None.
  *
  *--------------------------------------------------------------------------
  */
-uint32_t
+bool
 mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
-                                        const char                    *server)
+                                        const char                    *server,
+                                        uint32_t                      *id /* OUT */)
 {
-   uint32_t id;
+   uint32_t server_id;
    mongoc_server_description_t *description;
 
-   bson_return_val_if_fail (topology, 0);
-   bson_return_val_if_fail (server, 0);
+   bson_return_val_if_fail (topology, false);
+   bson_return_val_if_fail (server, false);
 
-   if (_mongoc_topology_description_has_server(topology, server)){
-      return 0;
+   if (!_mongoc_topology_description_has_server(topology, server, &server_id)){
+
+      server_id = ++topology->max_server_id;
+      description = bson_malloc0(sizeof *description);
+      mongoc_server_description_init(description, server, server_id);
+
+      mongoc_set_add(topology->servers, server_id, description);
+
+      if (topology->cb.add) {
+         topology->cb.add(description);
+      }
    }
 
-   id = ++topology->max_server_id;
-
-   description = bson_malloc0(sizeof *description);
-   mongoc_server_description_init(description, server, id);
-
-   mongoc_set_add(topology->servers, id, description);
-
-   if (topology->cb.add) {
-      topology->cb.add(description);
+   if (id) {
+      *id = server_id;
    }
 
-   return id;
+   return true;
 }
 
 
@@ -639,7 +725,6 @@ _mongoc_topology_description_monitor_new_servers (mongoc_topology_description_t 
 {
    bson_iter_t member_iter;
    const bson_t *rs_members[3];
-   const char *member_name;
    int i;
 
    rs_members[0] = &server->hosts;
@@ -650,13 +735,44 @@ _mongoc_topology_description_monitor_new_servers (mongoc_topology_description_t 
       bson_iter_init (&member_iter, rs_members[i]);
 
       while (bson_iter_next (&member_iter)) {
-         member_name = bson_iter_utf8 (&member_iter, NULL);
-
-         if (!_mongoc_topology_description_has_server(topology, member_name)) {
-            mongoc_topology_description_add_server(topology, member_name);
-         }
+         mongoc_topology_description_add_server(topology, bson_iter_utf8(&member_iter, NULL), NULL);
       }
    }
+}
+
+typedef struct _mongoc_primary_and_topology_t {
+   mongoc_topology_description_t *topology;
+   mongoc_server_description_t *primary;
+} mongoc_primary_and_topology_t;
+
+/* invalidate old primaries */
+static bool
+_mongoc_topology_description_invalidate_primaries_cb (void *item,
+                                                      void *ctx)
+{
+   mongoc_server_description_t *server = item;
+   mongoc_primary_and_topology_t *data = ctx;
+
+   if (server->id != data->primary->id &&
+       server->type == MONGOC_SERVER_RS_PRIMARY) {
+      mongoc_server_description_set_state(server, MONGOC_SERVER_UNKNOWN);
+   }
+   return true;
+}
+
+/* Stop monitoring any servers primary doesn't know about */
+static bool
+_mongoc_topology_description_remove_missing_hosts_cb (void *item,
+                                                      void *ctx)
+{
+   mongoc_server_description_t *server = item;
+   mongoc_primary_and_topology_t *data = ctx;
+
+   if (strcmp(data->primary->connection_address, server->connection_address) != 0 &&
+       !mongoc_server_description_has_rs_member(data->primary, server->connection_address)) {
+      _mongoc_topology_description_remove_server(data->topology, server);
+   }
+   return true;
 }
 
 /*
@@ -691,16 +807,12 @@ static void
 _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description_t *topology,
                                                      mongoc_server_description_t   *server)
 {
-   mongoc_server_description_t *server_iter;
-   mongoc_set_t *set;
-   int i;
+   mongoc_primary_and_topology_t data;
 
    bson_return_if_fail (topology);
    bson_return_if_fail (server);
 
-   set = topology->servers;
-
-   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
+   if (!_mongoc_topology_description_has_server(topology, server->connection_address, NULL)) return;
 
    /*
     * 'Server' can only be the primary if it has the right rs name.
@@ -717,40 +829,18 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
       return;
    }
 
-   /*
-    *'Server' is the primary! Invalidate other primaries if found.
-    */
+   /* 'Server' is the primary! Invalidate other primaries if found */
+   data.primary = server;
+   data.topology = topology;
+   mongoc_set_for_each(topology->servers, _mongoc_topology_description_invalidate_primaries_cb, &data);
 
-   for (i = 0; i < set->items_len; i++) {
-      server_iter = set->items[i].item;
-      if (server_iter->id != server->id &&
-          server_iter->type == MONGOC_SERVER_RS_PRIMARY) {
-         mongoc_server_description_set_state(server, MONGOC_SERVER_UNKNOWN);
-      }
-   }
-
-   /*
-    * Begin monitoring any new servers primary knows about.
-    */
-
+   /* Begin monitoring any new servers primary knows about */
    _mongoc_topology_description_monitor_new_servers(topology, server);
 
-   /*
-    * Stop monitoring any servers primary doesn't know about.
-    */
+   /* Stop monitoring any servers primary doesn't know about */
+   mongoc_set_for_each(topology->servers, _mongoc_topology_description_remove_missing_hosts_cb, &data);
 
-   for (i = 0; i < set->items_len; i++) {
-      server_iter = set->items[i].item;
-      if (strcmp(server->connection_address, server_iter->connection_address) != 0 &&
-          !mongoc_server_description_has_rs_member(server, server_iter->connection_address)) {
-         _mongoc_topology_description_remove_server(topology, server_iter);
-      }
-   }
-
-   /*
-    * Finally, set topology type.
-    */
-
+   /* Finally, set topology type */
    topology->type = MONGOC_TOPOLOGY_RS_WITH_PRIMARY;
 }
 
@@ -776,7 +866,7 @@ _mongoc_topology_description_update_rs_without_primary (mongoc_topology_descript
    bson_return_if_fail (topology);
    bson_return_if_fail (server);
 
-   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) {
+   if (!_mongoc_topology_description_has_server(topology, server->connection_address, NULL)) {
       return;
    }
 
@@ -825,12 +915,12 @@ _mongoc_topology_description_update_rs_with_primary_from_member (mongoc_topology
    bson_return_if_fail (topology);
    bson_return_if_fail (server);
 
-   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) {
+   if (!_mongoc_topology_description_has_server(topology, server->connection_address, NULL)) {
       return;
    }
 
    /* set_name should never be null here */
-   if (topology->set_name != server->set_name) {
+   if (strcmp(topology->set_name, server->set_name) != 0) {
       _mongoc_topology_description_remove_server(topology, server);
    }
 
@@ -939,7 +1029,7 @@ _mongoc_topology_description_update_unknown_with_standalone (mongoc_topology_des
    bson_return_if_fail (topology);
    bson_return_if_fail (server);
 
-   if (!_mongoc_topology_description_has_server(topology, server->connection_address)) return;
+   if (!_mongoc_topology_description_has_server(topology, server->connection_address, NULL)) return;
 
    if (topology->servers->items_len > 1) {
       /* This cluster contains other servers, it cannot be a standalone. */

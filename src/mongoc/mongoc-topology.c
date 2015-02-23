@@ -130,8 +130,9 @@ mongoc_topology_new (const mongoc_uri_t *uri)
    mongoc_cond_init (&topology->cond_server);
 
    for ( hl = mongoc_uri_get_hosts (uri); hl; hl = hl->next) {
-      id = mongoc_topology_description_add_server (&topology->description,
-                                                    hl->host_and_port);
+      mongoc_topology_description_add_server (&topology->description,
+                                              hl->host_and_port,
+                                              &id);
       mongoc_topology_scanner_add (topology->scanner, hl, id);
    }
 
