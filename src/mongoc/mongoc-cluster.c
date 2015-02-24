@@ -66,18 +66,6 @@
 
 #define CHECK_CLOSED_DURATION_MSEC 1000
 
-#ifndef DEFAULT_SOCKET_TIMEOUT_MSEC
-/*
- * NOTE: The default socket timeout for connections is 5 minutes. This
- *       means that if your MongoDB server dies or becomes unavailable
- *       it will take 5 minutes to detect this.
- *
- *       You can change this by providing sockettimeoutms= in your
- *       connection URI.
- */
-#define DEFAULT_SOCKET_TIMEOUT_MSEC (1000L * 60L * 5L)
-#endif
-
 #define DB_AND_CMD_FROM_COLLECTION(outstr, name) \
    do { \
       const char *dot = strchr(name, '.'); \
@@ -617,7 +605,6 @@ failure:
 #endif
 
 
-#ifdef MONGOC_ENABLE_SASL
 /*
  *--------------------------------------------------------------------------
  *
@@ -641,7 +628,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
                                  bson_error_t          *error)
 {
    char buf[4096];
-   unsigned buflen = 0;
+   int buflen = 0;
    bson_iter_t iter;
    const char *username;
    const char *password;
@@ -650,7 +637,6 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
    bson_t reply;
    size_t len;
    char *str;
-   int ret;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
@@ -667,15 +653,14 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
 
    str = bson_strdup_printf ("%c%s%c%s", '\0', username, '\0', password);
    len = strlen (username) + strlen (password) + 2;
-   ret = sasl_encode64 (str, len, buf, sizeof buf, &buflen);
+   buflen = mongoc_b64_ntop ((const uint8_t *) str, len, buf, sizeof buf);
    bson_free (str);
 
-   if (ret != SASL_OK) {
+   if (buflen == -1) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "sasl_encode64() returned %d.",
-                      ret);
+                      "failed base64 encoding message");
       return false;
    }
 
@@ -697,11 +682,11 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
           BSON_ITER_HOLDS_UTF8 (&iter)) {
          errmsg = bson_iter_utf8 (&iter, NULL);
       }
-      bson_destroy (&reply);
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_AUTHENTICATE,
                       "%s", errmsg);
+      bson_destroy (&reply);
       return false;
    }
 
@@ -709,7 +694,6 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t      *cluster,
 
    return true;
 }
-#endif
 
 
 #ifdef MONGOC_ENABLE_SSL
@@ -728,17 +712,25 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
 
-   if (!cluster->client->ssl_opts.pem_file) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "mongoc_client_set_ssl_opts() must be called "
-                      "with pem file for X-509 auth.");
-      return false;
-   }
+   username = mongoc_uri_get_username (cluster->uri);
+   if (username) {
+      MONGOC_INFO ("X509: got username (%s) from URI", username);
+   } else {
+      if (!cluster->client->ssl_opts.pem_file) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                         "cannot determine username "
+                         "please either set it as part of the connection string or "
+                         "call mongoc_client_set_ssl_opts() "
+                         "with pem file for X-509 auth.");
+         return false;
+      }
 
-   if (cluster->client->pem_subject) {
-      username = cluster->client->pem_subject;
+      if (cluster->client->pem_subject) {
+         username = cluster->client->pem_subject;
+         MONGOC_INFO ("X509: got username (%s) from certificate", username);
+      }
    }
 
    bson_init (&cmd);
@@ -793,6 +785,7 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
    bson_t cmd;
    bson_t reply;
    int conv_id = 0;
+   bson_subtype_t btype;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
@@ -859,7 +852,6 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
          goto failure;
       }
 
-      bson_subtype_t btype;
       bson_iter_binary (&iter, &btype, &buflen, (const uint8_t**)&tmpstr);
 
       if (buflen > sizeof buf) {
@@ -938,9 +930,9 @@ _mongoc_cluster_auth_node (mongoc_cluster_t            *cluster,
 #ifdef MONGOC_ENABLE_SASL
    } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
       ret = _mongoc_cluster_auth_node_sasl (cluster, stream, sd, error);
+#endif
    } else if (0 == strcasecmp (mechanism, "PLAIN")) {
       ret = _mongoc_cluster_auth_node_plain (cluster, stream, error);
-#endif
    } else {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
@@ -1122,7 +1114,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    /* TODO consider making these configurable */
    cluster->sec_latency_ms = 15;
-   cluster->sockettimeoutms = DEFAULT_SOCKET_TIMEOUT_MSEC;
+   cluster->sockettimeoutms = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
 
    cluster->nodes = mongoc_set_new(8, _mongoc_cluster_stream_dtor, NULL);
 
