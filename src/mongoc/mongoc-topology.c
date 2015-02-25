@@ -30,7 +30,7 @@ _mongoc_topology_scanner_cb (uint32_t      id,
                              void         *data,
                              bson_error_t *error)
 {
-   bool r;
+   bool r = false;
    mongoc_topology_t *topology;
    mongoc_server_description_t *sd;
 
@@ -38,28 +38,20 @@ _mongoc_topology_scanner_cb (uint32_t      id,
 
    topology = data;
 
-   /* we're the only writer, so reading without the lock is fine */
+   /* if multithreaded, driver may write through invalidate_server, so lock */
+   mongoc_mutex_lock (&topology->mutex);
+
    sd = mongoc_topology_description_server_by_id (&topology->description, id);
 
    if (sd) {
-
-      if (!topology->single_threaded) {
-         /* hold the lock while we update */
-         mongoc_mutex_lock (&topology->mutex);
-      }
-
       r = mongoc_topology_description_handle_ismaster (&topology->description, sd,
                                                        ismaster_response, rtt_msec,
                                                        error);
-
-      if (!topology->single_threaded) {
-         /* TODO only wake up all clients if we found any topology changes */
-         mongoc_mutex_unlock (&topology->mutex);
-         mongoc_cond_broadcast (&topology->cond_client);
-      }
-   } else {
-      r = false;
+      /* TODO only wake up all clients if we found any topology changes */
+      mongoc_cond_broadcast (&topology->cond_client);
    }
+
+   mongoc_mutex_unlock (&topology->mutex);
 
    return r;
 }
@@ -220,6 +212,10 @@ mongoc_topology_release (mongoc_topology_t *topology)
 void
 mongoc_topology_destroy (mongoc_topology_t *topology)
 {
+   if (!topology) {
+      return;
+   }
+
    mongoc_topology_description_destroy(&topology->description);
    mongoc_topology_scanner_destroy (topology->scanner);
    mongoc_cond_destroy (&topology->cond_client);
@@ -484,6 +480,25 @@ _mongoc_topology_request_scan (mongoc_topology_t *topology)
    mongoc_cond_signal (&topology->cond_server);
 
    return;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_invalidate_server --
+ *
+ *      Invalidate the given server after receiving a network error in
+ *      another part of the client.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+mongoc_topology_invalidate_server (mongoc_topology_t *topology,
+                                   uint32_t           id)
+{
+   mongoc_mutex_lock (&topology->mutex);
+   mongoc_topology_description_invalidate_server (&topology->description, id);
+   mongoc_mutex_unlock (&topology->mutex);
 }
 
 /*

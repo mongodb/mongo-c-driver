@@ -979,6 +979,32 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
    mongoc_set_rm(cluster->nodes, server_id);
 }
 
+static void
+_mongoc_cluster_node_dtor (void *data_,
+                           void *ctx_)
+{
+   mongoc_cluster_node_t *node = data_;
+
+   mongoc_stream_destroy (node->stream);
+}
+
+static mongoc_cluster_node_t *
+_mongoc_cluster_node_new (mongoc_stream_t *stream)
+{
+   mongoc_cluster_node_t *node;
+
+   if (!stream) {
+      return NULL;
+   }
+
+   node = bson_malloc0(sizeof *node);
+
+   node->stream = stream;
+   node->timestamp = bson_get_monotonic_time ();
+
+   return node;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -1001,36 +1027,38 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
                           mongoc_server_description_t *description,
                           bson_error_t *error /* OUT */)
 {
-   mongoc_topology_scanner_node_t *node;
+   mongoc_topology_scanner_node_t *scanner_node;
+   mongoc_cluster_node_t *cluster_node;
    mongoc_stream_t *stream;
 
    ENTRY;
 
-   BSON_ASSERT(cluster);
+   BSON_ASSERT (cluster);
 
-   MONGOC_DEBUG("Adding new server to cluster: %s", description->connection_address);
+   MONGOC_DEBUG ("Adding new server to cluster: %s", description->connection_address);
 
    /* if the topology is single-threaded, we share its streams */
    if (cluster->client->topology->single_threaded) {
-      node = mongoc_topology_scanner_get_node(cluster->client->topology->scanner, description->id);
+      scanner_node = mongoc_topology_scanner_get_node(cluster->client->topology->scanner,
+                                                       description->id);
 
-      if (!node) {
+      if (!scanner_node) {
          RETURN (NULL);
       }
 
-      stream = node->stream;
+      stream = scanner_node->stream;
       if (!stream) {
-         MONGOC_WARNING("Failed connection to %s", description->connection_address);
+         MONGOC_WARNING ("Failed connection to %s", description->connection_address);
          RETURN (NULL);
       }
 
       /* we may need to authenticate */
-      if (!node->has_auth && cluster->requires_auth) {
+      if (!scanner_node->has_auth && cluster->requires_auth) {
          if (!_mongoc_cluster_auth_node (cluster, stream, description, error)) {
-            MONGOC_WARNING("Failed authentication to %s", description->connection_address);
+            MONGOC_WARNING ("Failed authentication to %s", description->connection_address);
             RETURN (NULL);
          }
-         node->has_auth = true;
+         scanner_node->has_auth = true;
       }
 
       RETURN (stream);
@@ -1038,21 +1066,22 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
    stream = _mongoc_client_create_stream(cluster->client, &description->host, error);
    if (!stream) {
-      MONGOC_WARNING("Failed connection to %s", description->connection_address);
+      MONGOC_WARNING ("Failed connection to %s", description->connection_address);
       RETURN (NULL);
    }
 
    if (cluster->requires_auth) {
       if (!_mongoc_cluster_auth_node (cluster, stream, description, error)) {
-         MONGOC_WARNING("Failed authentication to %s", description->connection_address);
+         MONGOC_WARNING ("Failed authentication to %s", description->connection_address);
          mongoc_stream_destroy (stream);
          RETURN (false);
       }
    }
 
-   mongoc_set_add(cluster->nodes, description->id, stream);
+   cluster_node = _mongoc_cluster_node_new (stream);
+   mongoc_set_add (cluster->nodes, description->id, cluster_node);
 
-   RETURN(stream);
+   RETURN (stream);
 }
 
 /*
@@ -1079,27 +1108,28 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
                              uint32_t server_id,
                              bson_error_t *error)
 {
-   mongoc_topology_scanner_node_t *node;
+   mongoc_topology_scanner_node_t *scanner_node;
+   mongoc_cluster_node_t *cluster_node;
    mongoc_server_description_t *sd;
    mongoc_stream_t *stream = NULL;
 
    bson_return_val_if_fail(cluster, NULL);
 
+   scanner_node = mongoc_topology_scanner_get_node(cluster->client->topology->scanner, server_id);
+   if (!scanner_node) {
+      goto FETCH_FAIL;
+   }
+
    /* in the single-threaded use case we share topology's streams */
    if (cluster->client->topology->single_threaded) {
 
-      node = mongoc_topology_scanner_get_node(cluster->client->topology->scanner, server_id);
-      if (!node) {
-         goto FETCH_FAIL;
-      }
-
-      stream = node->stream;
+      stream = scanner_node->stream;
       if (!stream) {
          goto FETCH_FAIL;
       }
 
       /* if stream exists but isn't authed, a disconnect happened */
-      if (cluster->requires_auth && !node->has_auth) {
+      if (cluster->requires_auth && !scanner_node->has_auth) {
 
          /* try to reconnect and re-authenticate */
          sd = mongoc_topology_server_by_id(cluster->client->topology, server_id);
@@ -1110,10 +1140,36 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
          if (!_mongoc_cluster_auth_node (cluster, stream, sd, error)) {
             goto FETCH_FAIL;
          }
-         node->has_auth = true;
+         scanner_node->has_auth = true;
       }
    } else {
-      stream = mongoc_set_get(cluster->nodes, server_id);
+      cluster_node = mongoc_set_get(cluster->nodes, server_id);
+      if (!cluster_node) {
+         goto FETCH_FAIL;
+      }
+
+      /* if our stream is out-of-date, create a new one
+         TODO this could maybe be more efficient */
+      if (cluster_node->timestamp < scanner_node->timestamp) {
+         sd = mongoc_topology_server_by_id(cluster->client->topology, server_id);
+         if (!sd) {
+            goto FETCH_FAIL;
+         }
+
+         mongoc_stream_destroy (cluster_node->stream);
+         cluster_node->stream = _mongoc_client_create_stream(cluster->client, &sd->host, error);
+         cluster_node->timestamp = bson_get_monotonic_time ();
+
+         if (cluster_node->stream) {
+            if (cluster->requires_auth) {
+               if (!_mongoc_cluster_auth_node (cluster, stream, sd, error)) {
+                  goto FETCH_FAIL;
+               }
+            }
+         }
+      }
+
+      stream = cluster_node->stream;
    }
 
    if (!stream) {
@@ -1132,14 +1188,6 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
    mongoc_cluster_disconnect_node(cluster, server_id);
 
    return NULL;
-}
-
-
-static void
-_mongoc_cluster_stream_dtor (void *stream_,
-                             void *ctx_)
-{
-   mongoc_stream_destroy ((mongoc_stream_t *)stream_);
 }
 
 /*
@@ -1184,7 +1232,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    cluster->sockettimeoutms = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
 
    /* TODO for single-threaded case we don't need this */
-   cluster->nodes = mongoc_set_new(8, _mongoc_cluster_stream_dtor, NULL);
+   cluster->nodes = mongoc_set_new(8, _mongoc_cluster_node_dtor, NULL);
 
    _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
 
@@ -1740,9 +1788,6 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
 
    server_id = mongoc_cluster_select(cluster, rpcs, rpcs_len,
                                      write_concern, read_prefs, error);
-   if (server_id < 1) {
-      return server_id;
-   }
 
    if(mongoc_cluster_sendv_to_server(cluster, rpcs, rpcs_len, server_id,
                                      write_concern, error)) {

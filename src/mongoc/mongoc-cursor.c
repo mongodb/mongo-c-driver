@@ -617,9 +617,7 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
       if (!_mongoc_client_sendv(cursor->client, &rpc, 1, cursor->hint,
                                 NULL, cursor->read_prefs, &cursor->error)) {
-         cursor->done = true;
-         cursor->failed = true;
-         RETURN (false);
+         GOTO (failure);
       }
 
       request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);

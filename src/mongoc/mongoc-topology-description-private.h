@@ -91,6 +91,10 @@ mongoc_topology_description_suitable_servers (
    const mongoc_read_prefs_t     *read_pref,
    size_t                         local_threshold_ms);
 
+void
+mongoc_topology_description_invalidate_server (mongoc_topology_description_t *topology,
+                                               uint32_t                       id);
+
 bool
 mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
                                         const char                    *server,

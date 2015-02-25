@@ -44,6 +44,12 @@ BSON_BEGIN_DECLS
 
 #define MONGOC_CLUSTER_PING_NUM_SAMPLES 5
 
+typedef struct _mongoc_cluster_node_t
+{
+   mongoc_stream_t *stream;
+   int64_t          timestamp;
+} mongoc_cluster_node_t;
+
 typedef struct _mongoc_cluster_t
 {
    uint32_t         request_id;

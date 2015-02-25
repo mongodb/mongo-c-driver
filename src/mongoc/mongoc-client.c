@@ -483,8 +483,11 @@ _mongoc_client_recv (mongoc_client_t *client,
    bson_return_val_if_fail(buffer, false);
    bson_return_val_if_fail(server_id, false);
 
-   return mongoc_cluster_try_recv (&client->cluster, rpc, buffer,
-                                   server_id, error);
+   if (!mongoc_cluster_try_recv (&client->cluster, rpc, buffer, server_id, error)) {
+      mongoc_topology_invalidate_server (client->topology, server_id);
+      return false;
+   }
+   return true;
 }
 
 
@@ -601,6 +604,7 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
 
    if (!mongoc_cluster_try_recv (&client->cluster, &rpc, &buffer,
                                  server_id, error)) {
+      mongoc_topology_invalidate_server(client->topology, server_id);
       GOTO (cleanup);
    }
 

@@ -71,6 +71,9 @@ void
 mongoc_server_description_cleanup (mongoc_server_description_t *sd);
 
 void
+mongoc_server_description_reset (mongoc_server_description_t *sd);
+
+void
 mongoc_server_description_set_state (mongoc_server_description_t     *description,
                                      mongoc_server_description_type_t type);
 void

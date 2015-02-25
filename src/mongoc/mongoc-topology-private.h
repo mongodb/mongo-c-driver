@@ -87,6 +87,10 @@ void
 mongoc_topology_request_scan (mongoc_topology_t *topology);
 
 void
+mongoc_topology_invalidate_server (mongoc_topology_t *topology,
+                                   uint32_t           id);
+
+void
 mongoc_topology_background_thread_start (mongoc_topology_t *topology);
 
 void

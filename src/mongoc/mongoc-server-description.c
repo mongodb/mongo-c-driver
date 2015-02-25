@@ -45,8 +45,8 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
 
 /* Reset fields inside this sd, but keep same id, host information, and RTT,
    and leave ismaster in empty inited state */
-static void
-_mongoc_server_description_reset (mongoc_server_description_t *sd)
+void
+mongoc_server_description_reset (mongoc_server_description_t *sd)
 {
    BSON_ASSERT(sd);
 
@@ -58,6 +58,7 @@ _mongoc_server_description_reset (mongoc_server_description_t *sd)
    /* set other fields to 'default' empty states */
    memset (&sd->set_name, 0, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd));
    sd->set_name = NULL;
+   sd->type = MONGOC_SERVER_UNKNOWN;
 
    /* always leave last ismaster in an init-ed state until we destroy sd */
    bson_destroy (&sd->last_is_master);
@@ -302,9 +303,11 @@ mongoc_server_description_handle_ismaster (
    int num_keys = 0;
 
    bson_return_if_fail (sd);
-   bson_return_if_fail (ismaster_response);
 
-   _mongoc_server_description_reset(sd);
+   mongoc_server_description_reset(sd);
+   if (!ismaster_response) {
+      return;
+   }
 
    bson_destroy (&sd->last_is_master);
    bson_copy_to (ismaster_response, &sd->last_is_master);

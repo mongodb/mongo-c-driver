@@ -668,6 +668,30 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_topology_description_invalidate_server --
+ *
+ *      Invalidate a server if a network error occurred while using it in
+ *      another part of the client. Server description is set to type
+ *      UNKNOWN and other parameters are reset to defaults.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+mongoc_topology_description_invalidate_server (mongoc_topology_description_t *topology,
+                                               uint32_t                       id)
+{
+   mongoc_server_description_t *sd;
+   bson_error_t error;
+
+   sd = mongoc_topology_description_server_by_id (topology, id);
+   mongoc_topology_description_handle_ismaster(topology, sd, NULL, 0, &error);
+
+   return;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_topology_description_add_server --
  *
  *       Add the specified server to the cluster topology if it is not
@@ -695,7 +719,9 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
 
    if (!_mongoc_topology_description_has_server(topology, server, &server_id)){
 
+      /* TODO this might not be an accurate count in all cases */
       server_id = ++topology->max_server_id;
+
       description = bson_malloc0(sizeof *description);
       mongoc_server_description_init(description, server, server_id);
 
