@@ -586,6 +586,10 @@ mongoc_topology_background_thread_start (mongoc_topology_t *topology)
 {
    bool launch_thread = true;
 
+   if (topology->single_threaded) {
+      return;
+   }
+
    mongoc_mutex_lock (&topology->mutex);
    if (topology->bg_thread_state != MONGOC_TOPOLOGY_BG_OFF) launch_thread = false;
    topology->bg_thread_state = MONGOC_TOPOLOGY_BG_RUNNING;
@@ -612,6 +616,10 @@ void
 mongoc_topology_background_thread_stop (mongoc_topology_t *topology)
 {
    bool join_thread = false;
+
+   if (topology->single_threaded) {
+      return;
+   }
 
    mongoc_mutex_lock (&topology->mutex);
    if (topology->bg_thread_state == MONGOC_TOPOLOGY_BG_RUNNING) {

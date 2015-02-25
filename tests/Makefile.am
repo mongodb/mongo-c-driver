@@ -98,6 +98,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-set.c \
 	tests/test-mongoc-stream.c \
 	tests/test-mongoc-topology-scanner.c \
+	tests/test-mongoc-topology.c \
 	tests/test-mongoc-uri.c \
 	tests/test-mongoc-write-concern.c \
 	tests/test-libmongoc.h \
