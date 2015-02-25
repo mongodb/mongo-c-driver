@@ -1175,8 +1175,8 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    cluster->uri = mongoc_uri_copy(uri);
    cluster->client = client;
-   cluster->max_msg_size = 1024 * 1024 * 48;
-   cluster->max_bson_size = 1024 * 1024 * 16;
+   cluster->max_bson_size = 1024 * 1024 * 4;
+   cluster->max_msg_size = cluster->max_bson_size * 2;
    cluster->requires_auth = (mongoc_uri_get_username(uri) ||
                              mongoc_uri_get_auth_mechanism(uri));
 
@@ -1606,8 +1606,6 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
       write_concern = cluster->client->write_concern;
    }
 
-   // TODO: introduce retries
-
    /*
     * Fetch the stream to communicate over.
     */
@@ -1796,7 +1794,6 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    bson_return_val_if_fail (rpc, false);
    bson_return_val_if_fail (buffer, false);
    bson_return_val_if_fail (server_id, false);
-//   bson_return_val_if_fail (server_id < 1, false);
 
    /*
     * Fetch the stream to communicate over.

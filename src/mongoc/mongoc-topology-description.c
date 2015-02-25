@@ -634,12 +634,7 @@ _mongoc_topology_description_set_state (mongoc_topology_description_t *descripti
                                         mongoc_topology_description_type_t type)
 {
    description->type = type;
-   // TODO TOPOLOGY_DESCRIPTION unblock waiters
 }
-
-
-
-// TRANSITIONS BEGIN HERE
 
 /*
  *--------------------------------------------------------------------------
@@ -818,10 +813,8 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
     * 'Server' can only be the primary if it has the right rs name.
     */
 
-   if (!topology->set_name) {
-      int len = strlen(server->set_name) + 1;
-      topology->set_name = bson_malloc (len);
-      memcpy (topology->set_name, server->set_name, len);
+   if (!topology->set_name && server->set_name) {
+      topology->set_name = bson_strdup (server->set_name);
    }
    else if (strcmp(topology->set_name, server->set_name) != 0) {
       _mongoc_topology_description_remove_server(topology, server);
@@ -1049,7 +1042,7 @@ _mongoc_topology_description_update_unknown_with_standalone (mongoc_topology_des
  *  state_transions[S][T] to transition to a new state.
  *
  *  Rows should be read like so:
- *  { // server type for this row
+ *  { server type for this row
  *     UNKNOWN,
  *     SHARDED,
  *     RS_NO_PRIMARY,
@@ -1139,15 +1132,15 @@ mongoc_topology_description_handle_ismaster (
    bson_return_val_if_fail (topology, false);
    bson_return_val_if_fail (sd, false);
 
+   if (!_mongoc_topology_description_has_server(topology, sd->connection_address, NULL)) {
+      return false;
+   }
+
    mongoc_server_description_handle_ismaster (sd, ismaster_response, rtt_msec, error);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
       gSDAMTransitionTable[sd->type][topology->type](topology, sd);
    }
 
-   if (mongoc_topology_description_server_by_id (topology, sd->id)) {
-      return true;
-   } else {
-      return false;
-   }
+   return (mongoc_topology_description_server_by_id (topology, sd->id) != NULL);
 }

@@ -482,7 +482,6 @@ _mongoc_client_recv (mongoc_client_t *client,
    bson_return_val_if_fail(rpc, false);
    bson_return_val_if_fail(buffer, false);
    bson_return_val_if_fail(server_id, false);
-//   bson_return_val_if_fail(server_id < 1, false);
 
    return mongoc_cluster_try_recv (&client->cluster, rpc, buffer,
                                    server_id, error);

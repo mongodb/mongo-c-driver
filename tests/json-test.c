@@ -81,6 +81,7 @@ topology_type_to_string(mongoc_topology_description_type_t type)
       return "ReplicaSetWithPrimary";
    case MONGOC_TOPOLOGY_SINGLE:
       return "Single";
+   case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
       printf("ERROR: Unknown topology state\n");
       assert(0);

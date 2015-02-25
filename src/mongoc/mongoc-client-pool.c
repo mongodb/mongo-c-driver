@@ -85,9 +85,6 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    pool->size = 0;
 
    topology = mongoc_topology_new(uri);
-   if (!topology) {
-      return NULL;
-   }
    mongoc_topology_grab(topology);
    pool->topology = topology;
 

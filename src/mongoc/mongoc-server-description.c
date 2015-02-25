@@ -59,7 +59,7 @@ _mongoc_server_description_reset (mongoc_server_description_t *sd)
    memset (&sd->set_name, 0, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd));
    sd->set_name = NULL;
 
-   /* TODO? always leave last ismaster in an init-ed state until we destroy sd */
+   /* always leave last ismaster in an init-ed state until we destroy sd */
    bson_destroy (&sd->last_is_master);
    bson_init (&sd->last_is_master);
    sd->has_is_master = false;
@@ -299,6 +299,7 @@ mongoc_server_description_handle_ismaster (
    bool is_replicaset = false;
    const uint8_t *bytes;
    uint32_t len;
+   int num_keys = 0;
 
    bson_return_if_fail (sd);
    bson_return_if_fail (ismaster_response);
@@ -312,12 +313,13 @@ mongoc_server_description_handle_ismaster (
    bson_iter_init (&iter, &sd->last_is_master);
 
    while (bson_iter_next (&iter)) {
+      num_keys++;
       /* TODO: do we need to handle maxBsonObjSize */
       /* TODO: do we need to handle ok */
       if (strcmp ("ismaster", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
          is_master = bson_iter_bool (&iter);
-      } else if (strcmp ("maxMessageSizeBytes", bson_iter_key (&iter)) == 0) {
+      } else if (strcmp ("maxWriteBatchSize", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
          sd->max_write_batch_size = bson_iter_int32 (&iter);
       } else if (strcmp ("minWireVersion", bson_iter_key (&iter)) == 0) {
@@ -384,10 +386,10 @@ mongoc_server_description_handle_ismaster (
       }
    } else if (is_replicaset) {
       sd->type = MONGOC_SERVER_RS_GHOST;
-   } else if (is_master) {
+   } else if (num_keys > 0) {
       sd->type = MONGOC_SERVER_STANDALONE;
    } else {
-      goto ERROR;
+      sd->type = MONGOC_SERVER_UNKNOWN;
    }
 
    mongoc_server_description_update_rtt(sd, rtt_msec);

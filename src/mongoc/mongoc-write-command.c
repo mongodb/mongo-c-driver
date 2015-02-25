@@ -31,7 +31,7 @@
  *    - Try to receive GLE on the stack (legacy only?)
  */
 
-
+#define WRITE_COMMAND_WIRE_VERSION 2
 #define MAX_INSERT_BATCH 1000
 
 #define WRITE_CONCERN_DOC(wc) \
@@ -810,7 +810,8 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
    command->hint = hint;
 
    server = mongoc_topology_server_by_id(client->topology, hint);
-   mode = (server->min_wire_version <= 2 && server->max_wire_version >= 2);
+   mode = (server->min_wire_version <= WRITE_COMMAND_WIRE_VERSION &&
+           server->max_wire_version >= WRITE_COMMAND_WIRE_VERSION);
 
    gWriteOps [mode][command->type] (command, client, hint, database,
                                     collection, write_concern, result,

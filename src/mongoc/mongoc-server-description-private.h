@@ -45,7 +45,7 @@ struct _mongoc_server_description_t
    /* The following fields are filled from the last_is_master and are zeroed on
     * parse.  So order matters here.  DON'T move set_name */
    const char                      *set_name;
-   const char                      *error; // TODO: what type should this be?
+   const char                      *error;
    mongoc_server_description_type_t type;
    int32_t                          min_wire_version;
    int32_t                          max_wire_version;

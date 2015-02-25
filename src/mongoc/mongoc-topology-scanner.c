@@ -161,11 +161,10 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
    node = (mongoc_topology_scanner_node_t *)data;
    node->cmd = NULL;
 
-   // TODO should both of these failures be the same thing?
-   // TODO issue a warning here?
-   // - how can we get a node but get no ismaster response?
    /* if no ismaster response, async cmd had an error or timed out */
-   if (!ismaster_response) {
+   if (!ismaster_response ||
+       async_status == MONGOC_ASYNC_CMD_ERROR ||
+       async_status == MONGOC_ASYNC_CMD_TIMEOUT) {
       mongoc_stream_destroy (node->stream);
       node->stream = NULL;
    }
