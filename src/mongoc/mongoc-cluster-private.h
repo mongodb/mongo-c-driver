@@ -120,6 +120,11 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                          uint32_t          server_id,
                          bson_error_t     *error);
 
+mongoc_stream_t *
+mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
+                             uint32_t server_id,
+                             bson_error_t *error);
+
 BSON_END_DECLS
 
 

@@ -177,8 +177,10 @@ test_insert_bulk (void)
     * deprecated.
     */
 
-   id = client->cluster.nodes->items[0].id;
+   /* TODO this hack is needed for single-threaded tests */
+   id = client->topology->description.servers->items[0].id;
    description = mongoc_topology_server_by_id(client->topology, id);
+   ASSERT (description);
 
    if (description->max_wire_version == 0) {
       ASSERT (count == 6);
@@ -616,8 +618,10 @@ test_index_geo (void)
    geo_opt.twod_bits_precision = 30;
    opt.geo_options = &geo_opt;
 
-   id = client->cluster.nodes->items[0].id;
+   /* TODO this hack is needed for single-threaded tests */
+   id = client->topology->description.servers->items[0].id;
    description = mongoc_topology_server_by_id(client->topology, id);
+   ASSERT (description);
 
    if (description->max_wire_version > 0) {
       r = mongoc_collection_create_index(collection, &keys, &opt, &error);

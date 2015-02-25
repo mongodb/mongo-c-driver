@@ -148,10 +148,13 @@ test_mongoc_client_authenticate_failure (void)
     * Try authenticating with that user.
     */
    bson_init(&q);
+   suppress_one_message ();
    client = mongoc_client_new(gTestUriWithBadPassword);
    collection = mongoc_client_get_collection(client, "test", "test");
+   suppress_one_message ();
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &q, NULL, NULL);
+   suppress_one_message ();
    r = mongoc_cursor_next(cursor, &doc);
    assert(!r);
    r = mongoc_cursor_error(cursor, &error);
@@ -164,6 +167,9 @@ test_mongoc_client_authenticate_failure (void)
     * Try various commands while in the failed state to ensure we get the
     * same sort of errors.
     */
+   suppress_one_message ();
+   suppress_one_message ();
+   suppress_one_message ();
    r = mongoc_collection_insert (collection, 0, &empty, NULL, &error);
    assert (!r);
    assert (error.domain == MONGOC_ERROR_CLIENT);
@@ -173,6 +179,9 @@ test_mongoc_client_authenticate_failure (void)
     * Try various commands while in the failed state to ensure we get the
     * same sort of errors.
     */
+   suppress_one_message ();
+   suppress_one_message ();
+   suppress_one_message ();
    r = mongoc_collection_update (collection, 0, &q, &empty, NULL, &error);
    assert (!r);
    assert (error.domain == MONGOC_ERROR_CLIENT);

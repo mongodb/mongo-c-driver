@@ -1,7 +1,9 @@
 #include <mongoc.h>
 
 #include "mongoc-client-private.h"
+#include "mongoc-cluster-private.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-topology-scanner-private.h"
 #include "mongoc-tests.h"
 #include "TestSuite.h"
 
@@ -15,10 +17,15 @@ static char *gTestUri;
 static void
 test_topology_client_creation (void)
 {
+   mongoc_topology_scanner_node_t *node;
    mongoc_topology_t *topology_a;
    mongoc_topology_t *topology_b;
    mongoc_client_t *client_a;
    mongoc_client_t *client_b;
+   mongoc_stream_t *topology_stream;
+   mongoc_stream_t *cluster_stream;
+   bson_error_t error;
+   uint32_t id;
 
    /* create two clients directly */
    client_a = mongoc_client_new(gTestUri);
@@ -46,7 +53,14 @@ test_topology_client_creation (void)
    assert (topology_a->single_threaded);
    assert (topology_a->bg_thread_state == MONGOC_TOPOLOGY_BG_OFF);
 
-   // TODO: ensure that they share sockets with the client
+   /* ensure that we are sharing streams with the client */
+   id = mongoc_cluster_preselect (&client_a->cluster, MONGOC_OPCODE_QUERY, NULL, NULL, &error);
+   cluster_stream = mongoc_cluster_fetch_stream (&client_a->cluster, id, &error);
+   node = mongoc_topology_scanner_get_node (client_a->topology->scanner, id);
+   assert (node);
+   topology_stream = node->stream;
+   assert (topology_stream);
+   assert (topology_stream == cluster_stream);
 }
 
 static void

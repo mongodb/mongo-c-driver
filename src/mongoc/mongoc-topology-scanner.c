@@ -106,22 +106,35 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node)
    bson_free (node);
 }
 
-void
-mongoc_topology_scanner_rm (mongoc_topology_scanner_t *ts,
-                            uint32_t                   id)
+mongoc_topology_scanner_node_t *
+mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,
+                                  uint32_t                   id)
 {
    mongoc_topology_scanner_node_t *ele, *tmp;
 
    DL_FOREACH_SAFE (ts->nodes, ele, tmp)
    {
       if (ele->id == id) {
-         mongoc_topology_scanner_node_destroy (ele);
-         break;
+         return ele;
       }
 
       if (ele->id > id) {
          break;
       }
+   }
+
+   return NULL;
+}
+
+void
+mongoc_topology_scanner_rm (mongoc_topology_scanner_t *ts,
+                            uint32_t                   id)
+{
+   mongoc_topology_scanner_node_t *ele;
+
+   ele = mongoc_topology_scanner_get_node (ts, id);
+   if (ele) {
+      mongoc_topology_scanner_node_destroy (ele);
    }
 }
 
@@ -325,6 +338,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
 #endif
 
    node->stream = sock_stream;
+   node->has_auth = false;
 
    return true;
 }
