@@ -93,7 +93,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    bson_return_val_if_fail (host, NULL);
 
    if ((options = mongoc_uri_get_options (uri)) &&
-       bson_iter_init_find (&iter, options, "connecttimeoutms") &&
+       bson_iter_init_find_case (&iter, options, "connecttimeoutms") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
       if (!(connecttimeoutms = bson_iter_int32(&iter))) {
          connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
