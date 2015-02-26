@@ -1294,7 +1294,6 @@ mongoc_client_get_database_names (mongoc_client_t *client,
 {
    bson_iter_t iter;
    const char *name;
-   bson_t cmd = BSON_INITIALIZER;
    char **ret = NULL;
    int i = 0;
    mongoc_cursor_t *cursor;
@@ -1320,7 +1319,7 @@ mongoc_client_get_database_names (mongoc_client_t *client,
       ret = bson_malloc0 (sizeof (void*));
    }
 
-   bson_destroy (&cmd);
+   mongoc_cursor_destroy (cursor);
 
    return ret;
 }
