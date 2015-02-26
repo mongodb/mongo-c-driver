@@ -938,6 +938,7 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    _mongoc_rpc_gather(&rpc, &ar);
    _mongoc_rpc_swab_to_le(&rpc);
 
+   DUMP_IOVEC (((mongoc_iovec_t *)ar.data), ((mongoc_iovec_t *)ar.data), ar.len);
    if (!mongoc_stream_writev(node->stream, ar.data, ar.len,
                              cluster->sockettimeoutms)) {
       GOTO(failure);
@@ -964,6 +965,7 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    if (!_mongoc_rpc_scatter(&rpc, buffer.data, buffer.len)) {
       GOTO(invalid_reply);
    }
+   DUMP_BYTES (&buffer, buffer.data + buffer.off, buffer.len);
 
    _mongoc_rpc_swab_from_le(&rpc);
 
