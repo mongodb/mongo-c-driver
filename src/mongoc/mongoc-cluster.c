@@ -1794,13 +1794,21 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
           !(conv_id = bson_iter_int32 (&iter)) ||
           !bson_iter_init_find (&iter, &reply, "payload") ||
           !BSON_ITER_HOLDS_BINARY(&iter)) {
+         const char *errmsg = "Received invalid SCRAM reply from MongoDB server.";
+
          MONGOC_INFO ("SCRAM: authentication failed for \"%s\"",
                       mongoc_uri_get_username (cluster->uri));
-         bson_destroy (&reply);
+
+         if (bson_iter_init_find (&iter, &reply, "errmsg") &&
+               BSON_ITER_HOLDS_UTF8 (&iter)) {
+            errmsg = bson_iter_utf8 (&iter, NULL);
+         }
+
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "Received invalid SCRAM reply from MongoDB server.");
+                         "%s", errmsg);
+         bson_destroy (&reply);
          goto failure;
       }
 
