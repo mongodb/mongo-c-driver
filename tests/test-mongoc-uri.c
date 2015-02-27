@@ -41,6 +41,14 @@ test_mongoc_uri_new (void)
    ASSERT(uri);
    mongoc_uri_destroy(uri);
 
+   /* should normalize to lowercase */
+   uri = mongoc_uri_new ("mongodb://cRaZyHoStNaMe");
+   assert (uri);
+   hosts = mongoc_uri_get_hosts (uri);
+   assert (hosts);
+   ASSERT_CMPSTR (hosts->host, "crazyhostname");
+   mongoc_uri_destroy (uri);
+
    uri = mongoc_uri_new("mongodb://localhost/?");
    ASSERT(uri);
    mongoc_uri_destroy(uri);

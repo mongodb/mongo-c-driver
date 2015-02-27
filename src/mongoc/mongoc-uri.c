@@ -23,7 +23,7 @@
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
 #include "mongoc-socket.h"
-#include "mongoc-uri.h"
+#include "mongoc-uri-private.h"
 
 
 #if defined(_WIN32) && !defined(strcasecmp)
@@ -55,6 +55,24 @@ mongoc_uri_do_unescape (char **str)
    }
 }
 
+void
+mongoc_uri_lowercase_hostname (const char *src,
+                               char *buf /* OUT */,
+                               int len)
+{
+   bson_unichar_t c;
+   const char *iter;
+   char *buf_iter;
+
+   /* TODO: this code only accepts ascii, and assumes that lowercased
+      chars are the same width as originals */
+   for (iter = src, buf_iter = buf;
+        iter && *iter && (c = bson_utf8_get_char(iter)) && buf_iter - buf < len;
+        iter = bson_utf8_next_char(iter), buf_iter++) {
+      assert(c < 128);
+      *buf_iter = tolower(c);
+   }
+}
 
 static void
 mongoc_uri_append_host (mongoc_uri_t  *uri,
@@ -65,7 +83,7 @@ mongoc_uri_append_host (mongoc_uri_t  *uri,
    mongoc_host_list_t *link_;
 
    link_ = bson_malloc0(sizeof *link_);
-   bson_strncpy (link_->host, host, sizeof link_->host);
+   mongoc_uri_lowercase_hostname(host, link_->host, sizeof link_->host);
    if (strchr (host, ':')) {
       bson_snprintf (link_->host_and_port, sizeof link_->host_and_port,
                      "[%s]:%hu", host, port);
