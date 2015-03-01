@@ -122,6 +122,11 @@ To build on Windows Vista or newer with Visual Studio 2010, do the following::
   msbuild.exe ALL_BUILD.vcxproj
   msbuild.exe INSTALL.vcxproj
 
+Note: For Visual Studio 2013
+
+1. You'll need to say ``-G "Visual Studio 12 2013"``. 
+2. Additionally if you are looking for the *Visual Studio Command Prompt*, for Visual Studio 2013 it's now called *"Developer Command Prompt for VS2013"* and will be found under ``C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\Tools\Shortcuts``
+
 Building From Git
 =================
 
@@ -192,6 +197,10 @@ from Visual Studio as well::
   msbuild.exe ALL_BUILD.vcxproj
   msbuild.exe INSTALL.vcxproj
 
+Note: For Visual Studio 2013
+
+1. You'll need to say ``-G "Visual Studio 12 2013"``. 
+2. Additionally if you are looking for the *Visual Studio Command Prompt*, for Visual Studio 2013 it's now called *"Developer Command Prompt for VS2013"* and will be found under ``C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\Tools\Shortcuts``
 
 Generating the Docs
 ===================
