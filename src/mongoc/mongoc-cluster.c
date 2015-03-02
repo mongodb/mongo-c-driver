@@ -901,6 +901,7 @@ static bool
 _mongoc_cluster_auth_node (mongoc_cluster_t            *cluster,
                            mongoc_stream_t             *stream,
                            mongoc_server_description_t *sd,
+                           int32_t                      max_wire_version,
                            bson_error_t                *error)
 {
    bool ret = false;
@@ -912,8 +913,9 @@ _mongoc_cluster_auth_node (mongoc_cluster_t            *cluster,
 
    mechanism = mongoc_uri_get_auth_mechanism (cluster->uri);
 
+   /* Use cached max_wire_version, not value from sd */
    if (!mechanism) {
-      if (sd->max_wire_version < 3) {
+      if (max_wire_version < 3) {
          mechanism = "MONGODB-CR";
       } else {
          mechanism = "SCRAM-SHA-1";
@@ -1024,7 +1026,7 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream)
  */
 static mongoc_stream_t *
 _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
-                          mongoc_server_description_t *description,
+                          mongoc_server_description_t *sd,
                           bson_error_t *error /* OUT */)
 {
    mongoc_topology_scanner_node_t *scanner_node;
@@ -1035,12 +1037,12 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
    BSON_ASSERT (cluster);
 
-   MONGOC_DEBUG ("Adding new server to cluster: %s", description->connection_address);
+   MONGOC_DEBUG ("Adding new server to cluster: %s", sd->connection_address);
 
    /* if the topology is single-threaded, we share its streams */
    if (cluster->client->topology->single_threaded) {
       scanner_node = mongoc_topology_scanner_get_node(cluster->client->topology->scanner,
-                                                       description->id);
+                                                       sd->id);
 
       if (!scanner_node) {
          RETURN (NULL);
@@ -1048,14 +1050,14 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
       stream = scanner_node->stream;
       if (!stream) {
-         MONGOC_WARNING ("Failed connection to %s", description->connection_address);
+         MONGOC_WARNING ("Failed connection to %s", sd->connection_address);
          RETURN (NULL);
       }
 
       /* we may need to authenticate */
       if (!scanner_node->has_auth && cluster->requires_auth) {
-         if (!_mongoc_cluster_auth_node (cluster, stream, description, error)) {
-            MONGOC_WARNING ("Failed authentication to %s", description->connection_address);
+         if (!_mongoc_cluster_auth_node (cluster, stream, sd, sd->max_wire_version, error)) {
+            MONGOC_WARNING ("Failed authentication to %s", sd->connection_address);
             RETURN (NULL);
          }
          scanner_node->has_auth = true;
@@ -1064,22 +1066,24 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
       RETURN (stream);
    }
 
-   stream = _mongoc_client_create_stream(cluster->client, &description->host, error);
+   stream = _mongoc_client_create_stream(cluster->client, &sd->host, error);
    if (!stream) {
-      MONGOC_WARNING ("Failed connection to %s", description->connection_address);
+      MONGOC_WARNING ("Failed connection to %s", sd->connection_address);
       RETURN (NULL);
    }
 
    if (cluster->requires_auth) {
-      if (!_mongoc_cluster_auth_node (cluster, stream, description, error)) {
-         MONGOC_WARNING ("Failed authentication to %s", description->connection_address);
+      if (!_mongoc_cluster_auth_node (cluster, stream, sd, sd->max_wire_version, error)) {
+         MONGOC_WARNING ("Failed authentication to %s", sd->connection_address);
          mongoc_stream_destroy (stream);
          RETURN (false);
       }
    }
 
    cluster_node = _mongoc_cluster_node_new (stream);
-   mongoc_set_add (cluster->nodes, description->id, cluster_node);
+   cluster_node->max_wire_version = sd->max_wire_version;
+
+   mongoc_set_add (cluster->nodes, sd->id, cluster_node);
 
    RETURN (stream);
 }
@@ -1137,7 +1141,8 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
             goto FETCH_FAIL;
          }
 
-         if (!_mongoc_cluster_auth_node (cluster, stream, sd, error)) {
+         /* In single-threaded mode, we can use sd's max_wire_version */
+         if (!_mongoc_cluster_auth_node (cluster, stream, sd, sd->max_wire_version, error)) {
             goto FETCH_FAIL;
          }
          scanner_node->has_auth = true;
@@ -1162,7 +1167,9 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
          if (cluster_node->stream) {
             if (cluster->requires_auth) {
-               if (!_mongoc_cluster_auth_node (cluster, stream, sd, error)) {
+               /* to avoid race condition, auth with cached max_wire_version */
+               if (!_mongoc_cluster_auth_node (cluster, cluster_node->stream, sd,
+                                               cluster_node->max_wire_version, error)) {
                   goto FETCH_FAIL;
                }
             }

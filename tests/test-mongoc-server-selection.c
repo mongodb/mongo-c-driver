@@ -110,7 +110,7 @@ test_server_selection_logic_cb (bson_t *test, void *data)
    bson_t test_read_pref;
    bson_t test_tags;
    const uint8_t *iter_data;
-   char *type;
+   const char *type;
    uint32_t len;
    int j = 0;
 
