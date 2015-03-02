@@ -171,6 +171,7 @@ test_create_collection (void)
    name = gen_collection_name ("create_collection");
    collection = mongoc_database_create_collection (database, name, &options, &error);
    assert (collection);
+   bson_destroy (&options);
    bson_free (name);
 
    r = mongoc_collection_drop (collection, &error);
