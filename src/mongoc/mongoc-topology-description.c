@@ -267,6 +267,9 @@ _mongoc_find_suitable_mongos_cb (void *item,
  *       Return an array of suitable server descriptions for this
  *       operation and read preference.
  *
+ *       NOTE: this method should only be called while holding the mutex on
+ *       the owning topology object.
+ *
  * Returns:
  *       Array of server descriptions, or NULL upon failure.
  *
@@ -402,8 +405,11 @@ DONE:
  *      Return a server description of a node that is appropriate for
  *      the given read preference and operation type.
  *
- *      Note: this method simply attempts to select a server from the
+ *      NOTE: this method simply attempts to select a server from the
  *      current topology, it does not retry or trigger topology checks.
+ *
+ *      NOTE: this method should only be called while holding the mutex on
+ *      the owning topology object.
  *
  * Returns:
  *      Selected server description, or NULL upon failure.
@@ -454,8 +460,13 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
  *       Get the server description for @id, if that server is present
  *       in @description. Otherwise, return NULL.
  *
+ *       NOTE: In most cases, caller should create a duplicate of the
+ *       returned server description. Caller should hold the mutex on the
+ *       owning topology object while calling this method and while using
+ *       the returned reference.
+ *
  * Returns:
- *       A mongoc_server_description_t, or NULL.
+ *       A mongoc_server_description_t *, or NULL.
  *
  * Side effects:
  *       None.
@@ -674,6 +685,9 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
  *      another part of the client. Server description is set to type
  *      UNKNOWN and other parameters are reset to defaults.
  *
+ *      NOTE: this method should only be called while holding the mutex on
+ *      the owning topology object.
+ *
  *--------------------------------------------------------------------------
  */
 void
@@ -696,6 +710,9 @@ mongoc_topology_description_invalidate_server (mongoc_topology_description_t *to
  *
  *       Add the specified server to the cluster topology if it is not
  *       already a member. If @id, place its id in @id.
+ *
+ *       NOTE: this method should only be called while holding the mutex on
+ *       the owning topology object.
  *
  * Return:
  *       True if the server was added or already existed in the topology,
@@ -1142,7 +1159,13 @@ gSDAMTransitionTable[MONGOC_SERVER_DESCRIPTION_TYPES][MONGOC_TOPOLOGY_DESCRIPTIO
 /*
  *--------------------------------------------------------------------------
  *
- * Handle an ismaster. This is called by the background SDAM process.
+ * mongoc_topology_description_handle_ismaster --
+ *
+ *      Handle an ismaster. This is called by the background SDAM process,
+ *      and by client when invalidating servers.
+ *
+ *      NOTE: this method should only be called while holding the mutex on
+ *      the owning topology object.
  *
  *--------------------------------------------------------------------------
  */

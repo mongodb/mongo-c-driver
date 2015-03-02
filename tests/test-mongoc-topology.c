@@ -193,6 +193,54 @@ test_invalid_cluster_node (void)
 }
 
 static void
+test_max_wire_version_race_condition (void)
+{
+   mongoc_topology_scanner_node_t *scanner_node;
+   mongoc_server_description_t *sd;
+   mongoc_database_t *database;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_stream_t *stream;
+   bson_error_t error;
+   mongoc_uri_t *uri;
+   uint32_t id;
+   int r;
+
+   /* connect directly and add our user, test is only valid with auth */
+   client = mongoc_client_new(gTestUri);
+   database = mongoc_client_get_database(client, "test");
+   mongoc_database_remove_user (database, "pink", &error);
+   r = mongoc_database_add_user (database, "pink", "panther", NULL, NULL, &error);
+   ASSERT_CMPINT(r, ==, 1);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+
+   /* use client pool, test is only valid when multi-threaded */
+   uri = mongoc_uri_new ("mongodb://pink:panther@localhost:27017/test");
+   pool = mongoc_client_pool_new (uri);
+   client = mongoc_client_pool_pop (pool);
+
+   /* load stream into cluster */
+   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, NULL, &error);
+
+   /* "disconnect": invalidate timestamp and reset server description */
+   scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, id);
+   assert (scanner_node);
+   scanner_node->timestamp = bson_get_monotonic_time ();
+   sd = mongoc_set_get (client->topology->description.servers, id);
+   assert (sd);
+   mongoc_server_description_reset (sd);
+
+   /* call fetch_stream, ensure that we can still auth with cached wire version */
+   stream = mongoc_cluster_fetch_stream (&client->cluster, id, &error);
+   assert (stream);
+
+   mongoc_client_pool_push (pool, client);
+   mongoc_uri_destroy (uri);
+   mongoc_client_pool_destroy (pool);
+}
+
+static void
 cleanup_globals (void)
 {
    bson_free(gTestUri);
@@ -207,6 +255,7 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
    TestSuite_Add (suite, "/Topology/invalidate_server", test_topology_invalidate_server);
    TestSuite_Add (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node);
+   TestSuite_Add (suite, "/Topology/max_wire_version_race_condition", test_max_wire_version_race_condition);
 
    atexit (cleanup_globals);
 }

@@ -44,9 +44,21 @@ BSON_BEGIN_DECLS
 
 #define MONGOC_CLUSTER_PING_NUM_SAMPLES 5
 
+#define MONGOC_CLUSTER_DEFAULT_WIRE_VERSION 0
+#define MONGOC_CLUSTER_DEFAULT_WRITE_BATCH_SIZE 1000
+#define MONGOC_CLUSTER_DEFAULT_BSON_OBJ_SIZE 16 * 1024 * 1024
+#define MONGOC_CLUSTER_DEFAULT_MAX_MSG_SIZE 48000000
+
 typedef struct _mongoc_cluster_node_t
 {
    mongoc_stream_t *stream;
+
+   int32_t          max_wire_version;
+   int32_t          min_wire_version;
+   int32_t          max_write_batch_size;
+   int32_t          max_bson_obj_size;
+   int32_t          max_msg_size;
+
    int64_t          timestamp;
 } mongoc_cluster_node_t;
 
@@ -59,8 +71,6 @@ typedef struct _mongoc_cluster_t
    unsigned         requires_auth : 1;
 
    mongoc_client_t *client;
-   int32_t          max_bson_size;
-   int32_t          max_msg_size;
    uint32_t         sec_latency_ms;
 
    mongoc_set_t    *nodes;
@@ -82,11 +92,11 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster,
                                 uint32_t          id);
 
 uint32_t
-mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
-                         mongoc_opcode_t               opcode,
-                         const mongoc_write_concern_t *write_concern,
-                         const mongoc_read_prefs_t    *read_prefs,
-                         bson_error_t                 *error);
+mongoc_cluster_preselect (mongoc_cluster_t             *cluster,
+                          mongoc_opcode_t               opcode,
+                          const mongoc_write_concern_t *write_concern,
+                          const mongoc_read_prefs_t    *read_prefs,
+                          bson_error_t                 *error);
 
 mongoc_server_description_t *
 mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
@@ -102,6 +112,14 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,
                        const mongoc_write_concern_t *write_concern,
                        const mongoc_read_prefs_t    *read_pref,
                        bson_error_t                 *error /* OUT */);
+
+int32_t
+mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster,
+                                      uint32_t         *server_id /* IN */);
+
+int32_t
+mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster,
+                                 uint32_t         *server_id /* IN */);
 
 bool
 mongoc_cluster_sendv_to_server (mongoc_cluster_t             *cluster,

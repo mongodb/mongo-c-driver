@@ -40,6 +40,7 @@
 #include "mongoc-b64-private.h"
 #include "mongoc-scram-private.h"
 #include "mongoc-server-description-private.h"
+#include "mongoc-set-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-socket.h"
@@ -83,7 +84,7 @@
  *
  * _mongoc_cluster_run_command --
  *
- *       Helper to run a command on a given mongoc_cluster_node_t.
+ *       Helper to run a command on a given stream.
  *
  * Returns:
  *       true if successful; otherwise false and @error is set.
@@ -201,6 +202,74 @@ failure:
    RETURN(false);
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_run_ismaster --
+ *
+ *       Run an ismaster command for the given node and handle result.
+ *
+ * Returns:
+ *       True if ismaster ran successfully, false otherwise.
+ *
+ * Side effects:
+ *       Makes a blocking I/O call.
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
+                              mongoc_cluster_node_t *node)
+{
+   bson_t reply;
+   bson_t command;
+   bson_error_t error;
+   bson_iter_t iter;
+   int num_fields = 0;
+
+   bson_init (&command);
+   bson_append_int32 (&command, "ismaster", 8, 1);
+
+   _mongoc_cluster_run_command (cluster, node->stream, "admin", &command,
+                                &reply, &error);
+
+   bson_iter_init (&iter, &reply);
+
+   while (bson_iter_next (&iter)) {
+      num_fields++;
+      if (strcmp ("maxWriteBatchSize", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         node->max_write_batch_size = bson_iter_int32 (&iter);
+      } else if (strcmp ("minWireVersion", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         node->min_wire_version = bson_iter_int32 (&iter);
+      } else if (strcmp ("maxWireVersion", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         node->max_wire_version = bson_iter_int32 (&iter);
+      } else if (strcmp ("maxBsonObjSize", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         node->max_bson_obj_size = bson_iter_int32 (&iter);
+      } else if (strcmp ("maxMessageSizeBytes", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         node->max_msg_size = bson_iter_int32 (&iter);
+      }
+   }
+
+   if (num_fields == 0) goto ERROR;
+
+   /* TODO: run ismaster through the topology machinery? */
+   bson_destroy (&command);
+   bson_destroy (&reply);
+
+   return true;
+
+ ERROR:
+
+   bson_destroy (&command);
+   bson_destroy (&reply);
+
+   return false;
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -901,6 +970,7 @@ static bool
 _mongoc_cluster_auth_node (mongoc_cluster_t            *cluster,
                            mongoc_stream_t             *stream,
                            mongoc_server_description_t *sd,
+                           int32_t                      max_wire_version,
                            bson_error_t                *error)
 {
    bool ret = false;
@@ -912,8 +982,9 @@ _mongoc_cluster_auth_node (mongoc_cluster_t            *cluster,
 
    mechanism = mongoc_uri_get_auth_mechanism (cluster->uri);
 
+   /* Use cached max_wire_version, not value from sd */
    if (!mechanism) {
-      if (sd->max_wire_version < 3) {
+      if (max_wire_version < 3) {
          mechanism = "MONGODB-CR";
       } else {
          mechanism = "SCRAM-SHA-1";
@@ -988,6 +1059,13 @@ _mongoc_cluster_node_dtor (void *data_,
    mongoc_stream_destroy (node->stream);
 }
 
+static void
+_mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
+{
+   _mongoc_cluster_node_dtor (node, NULL);
+   bson_free (node);
+}
+
 static mongoc_cluster_node_t *
 _mongoc_cluster_node_new (mongoc_stream_t *stream)
 {
@@ -1001,6 +1079,13 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream)
 
    node->stream = stream;
    node->timestamp = bson_get_monotonic_time ();
+
+   node->max_wire_version = MONGOC_CLUSTER_DEFAULT_WIRE_VERSION;
+   node->min_wire_version = MONGOC_CLUSTER_DEFAULT_WIRE_VERSION;
+
+   node->max_write_batch_size = MONGOC_CLUSTER_DEFAULT_WRITE_BATCH_SIZE;
+   node->max_bson_obj_size = MONGOC_CLUSTER_DEFAULT_BSON_OBJ_SIZE;
+   node->max_msg_size = MONGOC_CLUSTER_DEFAULT_MAX_MSG_SIZE;
 
    return node;
 }
@@ -1024,7 +1109,7 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream)
  */
 static mongoc_stream_t *
 _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
-                          mongoc_server_description_t *description,
+                          mongoc_server_description_t *sd,
                           bson_error_t *error /* OUT */)
 {
    mongoc_topology_scanner_node_t *scanner_node;
@@ -1035,12 +1120,12 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
    BSON_ASSERT (cluster);
 
-   MONGOC_DEBUG ("Adding new server to cluster: %s", description->connection_address);
+   MONGOC_DEBUG ("Adding new server to cluster: %s", sd->connection_address);
 
    /* if the topology is single-threaded, we share its streams */
    if (cluster->client->topology->single_threaded) {
       scanner_node = mongoc_topology_scanner_get_node(cluster->client->topology->scanner,
-                                                       description->id);
+                                                       sd->id);
 
       if (!scanner_node) {
          RETURN (NULL);
@@ -1048,14 +1133,14 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
       stream = scanner_node->stream;
       if (!stream) {
-         MONGOC_WARNING ("Failed connection to %s", description->connection_address);
+         MONGOC_WARNING ("Failed connection to %s", sd->connection_address);
          RETURN (NULL);
       }
 
       /* we may need to authenticate */
       if (!scanner_node->has_auth && cluster->requires_auth) {
-         if (!_mongoc_cluster_auth_node (cluster, stream, description, error)) {
-            MONGOC_WARNING ("Failed authentication to %s", description->connection_address);
+         if (!_mongoc_cluster_auth_node (cluster, stream, sd, sd->max_wire_version, error)) {
+            MONGOC_WARNING ("Failed authentication to %s", sd->connection_address);
             RETURN (NULL);
          }
          scanner_node->has_auth = true;
@@ -1064,22 +1149,30 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
       RETURN (stream);
    }
 
-   stream = _mongoc_client_create_stream(cluster->client, &description->host, error);
+   stream = _mongoc_client_create_stream(cluster->client, &sd->host, error);
    if (!stream) {
-      MONGOC_WARNING ("Failed connection to %s", description->connection_address);
+      MONGOC_WARNING ("Failed connection to %s", sd->connection_address);
+      RETURN (NULL);
+   }
+
+   /* take critical fields from a fresh ismaster */
+   cluster_node = _mongoc_cluster_node_new (stream);
+   if (!_mongoc_cluster_run_ismaster (cluster, cluster_node)) {
+      _mongoc_cluster_node_destroy (cluster_node);
+      MONGOC_WARNING ("Failed connection to %s", sd->connection_address);
       RETURN (NULL);
    }
 
    if (cluster->requires_auth) {
-      if (!_mongoc_cluster_auth_node (cluster, stream, description, error)) {
-         MONGOC_WARNING ("Failed authentication to %s", description->connection_address);
-         mongoc_stream_destroy (stream);
-         RETURN (false);
+      if (!_mongoc_cluster_auth_node (cluster, cluster_node->stream, sd,
+                                      cluster_node->max_wire_version, error)) {
+         MONGOC_WARNING ("Failed authentication to %s", sd->connection_address);
+         _mongoc_cluster_node_destroy (cluster_node);
+         RETURN (NULL);
       }
    }
 
-   cluster_node = _mongoc_cluster_node_new (stream);
-   mongoc_set_add (cluster->nodes, description->id, cluster_node);
+   mongoc_set_add (cluster->nodes, sd->id, cluster_node);
 
    RETURN (stream);
 }
@@ -1137,7 +1230,8 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
             goto FETCH_FAIL;
          }
 
-         if (!_mongoc_cluster_auth_node (cluster, stream, sd, error)) {
+         /* In single-threaded mode, we can use sd's max_wire_version */
+         if (!_mongoc_cluster_auth_node (cluster, stream, sd, sd->max_wire_version, error)) {
             goto FETCH_FAIL;
          }
          scanner_node->has_auth = true;
@@ -1161,8 +1255,15 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
          cluster_node->timestamp = bson_get_monotonic_time ();
 
          if (cluster_node->stream) {
+            /* call ismaster here to refresh critical fields */
+            if (!_mongoc_cluster_run_ismaster (cluster, cluster_node)) {
+               goto FETCH_FAIL;
+            }
+
             if (cluster->requires_auth) {
-               if (!_mongoc_cluster_auth_node (cluster, stream, sd, error)) {
+               /* to avoid race condition, auth with cached max_wire_version */
+               if (!_mongoc_cluster_auth_node (cluster, cluster_node->stream, sd,
+                                               cluster_node->max_wire_version, error)) {
                   goto FETCH_FAIL;
                }
             }
@@ -1223,8 +1324,6 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    cluster->uri = mongoc_uri_copy(uri);
    cluster->client = client;
-   cluster->max_bson_size = 1024 * 1024 * 4;
-   cluster->max_msg_size = cluster->max_bson_size * 2;
    cluster->requires_auth = (mongoc_uri_get_username(uri) ||
                              mongoc_uri_get_auth_mechanism(uri));
 
@@ -1607,10 +1706,205 @@ _mongoc_cluster_inc_ingress_rpc (const mongoc_rpc_t *rpc)
    }
 }
 
+static bool
+_mongoc_cluster_min_of_max_obj_size_sds (void *item,
+                                         void *ctx)
+{
+   mongoc_server_description_t *sd = item;
+   int32_t *current_min = ctx;
+
+   if (sd->max_bson_obj_size < *current_min) {
+      *current_min = sd->max_bson_obj_size;
+   }
+   return true;
+}
+
+static bool
+_mongoc_cluster_min_of_max_obj_size_nodes (void *item,
+                                           void *ctx)
+{
+   mongoc_cluster_node_t *node = item;
+   int32_t *current_min = ctx;
+
+   if (node->max_bson_obj_size < *current_min) {
+      *current_min = node->max_bson_obj_size;
+   }
+   return true;
+}
+
+static bool
+_mongoc_cluster_min_of_max_msg_size_sds (void *item,
+                                         void *ctx)
+{
+   mongoc_server_description_t *sd = item;
+   int32_t *current_min = ctx;
+
+   if (sd->max_msg_size < *current_min) {
+      *current_min = sd->max_msg_size;
+   }
+   return true;
+}
+
+static bool
+_mongoc_cluster_min_of_max_msg_size_nodes (void *item,
+                                           void *ctx)
+{
+   mongoc_cluster_node_t *node = item;
+   int32_t *current_min = ctx;
+
+   if (node->max_msg_size < *current_min) {
+      *current_min = node->max_msg_size;
+   }
+   return true;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_client_sendv_to_server --
+ * mongoc_cluster_get_max_bson_obj_size --
+ *
+ *      Return the max_bson_obj_size for the given server. If no server_id
+ *      is given, or if the given server_id doesn't match any servers in the
+ *      cluster, return the minimum max_bson_obj_size for all servers across
+ *      the cluster.
+ *
+ *       NOTE: this method uses the topology's mutex.
+ *
+ * Returns:
+ *      The max_bson_obj_size
+ *
+ * Side effects:
+ *      None
+ *
+ *--------------------------------------------------------------------------
+ */
+int32_t
+mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster,
+                                      uint32_t         *server_id /* IN */)
+{
+   mongoc_server_description_t *sd;
+   mongoc_cluster_node_t *node;
+   mongoc_topology_t *topology;
+   int32_t max_bson_obj_size = -1;
+   bool single_threaded;
+
+   topology = cluster->client->topology;
+   mongoc_mutex_lock (&topology->mutex);
+   single_threaded = topology->single_threaded;
+   mongoc_mutex_unlock (&topology->mutex);
+
+   if (server_id) {
+      if (!single_threaded) {
+         /* if we can, use information stored in cluster node */
+         node = mongoc_set_get (cluster->nodes, *server_id);
+         if (node) {
+            max_bson_obj_size = node->max_bson_obj_size;
+         }
+      } else {
+         /* otherwise, check the server description */
+         mongoc_mutex_lock (&topology->mutex);
+         sd = mongoc_set_get (topology->description.servers, *server_id);
+         if (sd) {
+            max_bson_obj_size = sd->max_bson_obj_size;
+         }
+         mongoc_mutex_unlock (&topology->mutex);
+      }
+   }
+
+   if (max_bson_obj_size == -1) {
+      max_bson_obj_size = MONGOC_CLUSTER_DEFAULT_BSON_OBJ_SIZE;
+
+      /* if no server was found or given, get min of all values */
+      if (!single_threaded) {
+         mongoc_set_for_each (cluster->nodes,
+                              _mongoc_cluster_min_of_max_obj_size_nodes,
+                              &max_bson_obj_size);
+      } else {
+         mongoc_set_for_each (topology->description.servers,
+                              _mongoc_cluster_min_of_max_obj_size_sds,
+                              &max_bson_obj_size);
+      }
+   }
+
+   return max_bson_obj_size;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_get_max_msg_size --
+ *
+ *      Return the max msg size for the given server. If no server_id is
+ *      provided, or if the given server_id doesn't match any servers in the
+ *      cluster, return the minimum max_msg_size for all servers across
+ *      the cluster.
+ *
+ *      NOTE: this method uses the topology's mutex.
+ *
+ * Returns:
+ *      The max_msg_size
+ *
+ * Side effects:
+ *      None
+ *
+ *--------------------------------------------------------------------------
+ */
+int32_t
+mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster,
+                                 uint32_t         *server_id /* IN */)
+{
+   mongoc_server_description_t *sd;
+   mongoc_cluster_node_t *node;
+   mongoc_topology_t *topology;
+   int32_t max_msg_size = -1;
+   bool single_threaded;
+
+   topology = cluster->client->topology;
+   mongoc_mutex_lock (&topology->mutex);
+   single_threaded = topology->single_threaded;
+   mongoc_mutex_unlock (&topology->mutex);
+
+   if (server_id) {
+      if (!single_threaded) {
+         /* if we can, use information stored in cluster node */
+         node = mongoc_set_get (cluster->nodes, *server_id);
+         if (node) {
+            max_msg_size = node->max_msg_size;
+         }
+      } else {
+         /* otherwise, check the server description */
+         mongoc_mutex_lock (&topology->mutex);
+         sd = mongoc_set_get (topology->description.servers, *server_id);
+         if (sd) {
+            max_msg_size = sd->max_msg_size;
+         }
+         mongoc_mutex_unlock (&topology->mutex);
+      }
+   }
+
+   if (max_msg_size == -1) {
+      max_msg_size = MONGOC_CLUSTER_DEFAULT_MAX_MSG_SIZE;
+
+      /* if no server was found or given, get min of all values */
+      if (!single_threaded) {
+         mongoc_set_for_each (cluster->nodes,
+                              _mongoc_cluster_min_of_max_msg_size_nodes,
+                              &max_msg_size);
+      } else {
+         mongoc_set_for_each (topology->description.servers,
+                              _mongoc_cluster_min_of_max_msg_size_sds,
+                              &max_msg_size);
+      }
+   }
+
+   return max_msg_size;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_sendv_to_server --
  *
  *       Sends the given RPCs to the given server. On success,
  *       returns the server id of the server to which the messages were
@@ -1644,6 +1938,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
    size_t i;
    bool need_gle;
    char cmdname[140];
+   int32_t max_msg_size;
 
    bson_return_val_if_fail(cluster, 0);
    bson_return_val_if_fail(rpcs, 0);
@@ -1660,7 +1955,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
 
    stream = mongoc_cluster_fetch_stream(cluster, server_id, error);
    if (!stream) {
-      return false;
+      RETURN (false);
    }
 
    _mongoc_array_clear(&cluster->iov);
@@ -1678,14 +1973,16 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
       need_gle = _mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
 
-      if (rpcs[i].header.msg_len >(int32_t)cluster->max_msg_size) {
+      max_msg_size = mongoc_cluster_get_max_msg_size (cluster, &server_id);
+
+      if (rpcs[i].header.msg_len > max_msg_size) {
          bson_set_error(error,
                         MONGOC_ERROR_CLIENT,
                         MONGOC_ERROR_CLIENT_TOO_BIG,
                         "Attempted to send an RPC larger than the "
                         "max allowed message size. Was %u, allowed %u.",
                         rpcs[i].header.msg_len,
-                        cluster->max_msg_size);
+                        max_msg_size);
          RETURN(false);
       }
 
@@ -1831,6 +2128,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
 {
    mongoc_stream_t *stream;
    int32_t msg_len;
+   int32_t max_msg_size;
    off_t pos;
 
    ENTRY;
@@ -1866,7 +2164,8 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
     */
    memcpy (&msg_len, &buffer->data[buffer->off + pos], 4);
    msg_len = BSON_UINT32_FROM_LE (msg_len);
-   if ((msg_len < 16) || (msg_len > cluster->max_msg_size)) {
+   max_msg_size = mongoc_cluster_get_max_msg_size (cluster, &server_id);
+   if ((msg_len < 16) || (msg_len > max_msg_size)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,

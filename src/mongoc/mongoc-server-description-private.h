@@ -47,8 +47,12 @@ struct _mongoc_server_description_t
    const char                      *set_name;
    const char                      *error;
    mongoc_server_description_type_t type;
+
    int32_t                          min_wire_version;
    int32_t                          max_wire_version;
+   int32_t                          max_msg_size;
+   int32_t                          max_bson_obj_size;
+   int32_t                          max_write_batch_size;
 
    bson_t                           hosts;
    bson_t                           passives;
@@ -56,7 +60,6 @@ struct _mongoc_server_description_t
 
    bson_t                           tags;
    const char                      *current_primary;
-   int32_t                          max_write_batch_size;
 };
 
 void

@@ -317,11 +317,16 @@ mongoc_server_description_handle_ismaster (
 
    while (bson_iter_next (&iter)) {
       num_keys++;
-      /* TODO: do we need to handle maxBsonObjSize */
       /* TODO: do we need to handle ok */
       if (strcmp ("ismaster", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
          is_master = bson_iter_bool (&iter);
+      } else if (strcmp ("maxMessageSizeBytes", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         sd->max_msg_size = bson_iter_int32 (&iter);
+      } else if (strcmp ("maxBsonObjectSize", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         sd->max_bson_obj_size = bson_iter_int32 (&iter);
       } else if (strcmp ("maxWriteBatchSize", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
          sd->max_write_batch_size = bson_iter_int32 (&iter);
@@ -365,14 +370,7 @@ mongoc_server_description_handle_ismaster (
          if (! BSON_ITER_HOLDS_DOCUMENT (&iter)) goto ERROR;
          bson_iter_document (&iter, &len, &bytes);
          bson_init_static (&sd->tags, bytes, len);
-      } /*
-          TODO currently connection_address points into host, we don't use this.
-          else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
-          if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto ERROR;
-          bson_free((void *)sd->connection_address);
-          sd->connection_address = bson_strdup(bson_iter_utf8 (&iter, NULL));
-          }
-        */
+      }
    }
 
    if (is_shard) {

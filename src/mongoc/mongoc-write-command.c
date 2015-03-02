@@ -263,6 +263,8 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    bool r;
    int i;
    int max_docs = MAX_INSERT_BATCH;
+   int32_t max_msg_size;
+   int32_t max_bson_obj_size;
 
    ENTRY;
 
@@ -315,23 +317,26 @@ again:
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
 
+      max_bson_obj_size = mongoc_cluster_get_max_msg_size (&client->cluster, &hint);
+      max_msg_size = mongoc_cluster_get_max_msg_size (&client->cluster, &hint);
+
       /*
        * Check that the server can receive this document.
        */
-      if ((len > client->cluster.max_bson_size) ||
-          (len > client->cluster.max_msg_size)) {
+      if ((len > max_bson_obj_size) ||
+          (len > max_msg_size)) {
          bson_set_error (error,
                          MONGOC_ERROR_BSON,
                          MONGOC_ERROR_BSON_INVALID,
                          "Document %u is too large for the cluster. "
                          "Document is %u bytes, max is %u.",
-                         i, (unsigned)len, client->cluster.max_bson_size);
+                         i, (unsigned)len, max_bson_obj_size);
       }
 
       /*
        * Check that we will not overflow our max message size.
        */
-      if ((i == max_docs) || (size > (client->cluster.max_msg_size - len))) {
+      if ((i == max_docs) || (size > (max_msg_size - len))) {
          has_more = true;
          break;
       }
@@ -567,6 +572,8 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    bson_iter_t iter;
    const char *key;
    uint32_t len;
+   int32_t max_msg_size;
+   int32_t max_bson_obj_size;
    bson_t tmp;
    bson_t ar;
    bson_t cmd;
@@ -631,8 +638,11 @@ again:
                          WRITE_CONCERN_DOC (write_concern));
    BSON_APPEND_BOOL (&cmd, "ordered", command->u.insert.ordered);
 
-   if ((command->u.insert.documents->len < client->cluster.max_bson_size) &&
-       (command->u.insert.documents->len < client->cluster.max_msg_size) &&
+   max_msg_size = mongoc_cluster_get_max_msg_size (&client->cluster, &hint);
+   max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster, &hint);
+
+   if ((command->u.insert.documents->len < max_bson_obj_size) &&
+       (command->u.insert.documents->len < max_msg_size) &&
        (command->u.insert.n_documents <= MAX_INSERT_BATCH)) {
       BSON_APPEND_ARRAY (&cmd, "documents", command->u.insert.documents);
    } else {
@@ -646,7 +656,7 @@ again:
          bson_iter_document (&iter, &len, &data);
 
          if ((i == MAX_INSERT_BATCH) ||
-             (len > (client->cluster.max_msg_size - cmd.len - overhead))) {
+             (len > (max_msg_size - cmd.len - overhead))) {
             has_more = true;
             break;
          }

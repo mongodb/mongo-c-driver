@@ -38,7 +38,6 @@ typedef struct _mongoc_topology_t
 {
    mongoc_topology_description_t description;
    const mongoc_uri_t           *uri;
-   int                           users;
    mongoc_topology_scanner_t    *scanner;
 
    int64_t                       last_scan;
@@ -61,12 +60,6 @@ typedef struct _mongoc_topology_t
 
 mongoc_topology_t *
 mongoc_topology_new (const mongoc_uri_t *uri);
-
-void
-mongoc_topology_grab (mongoc_topology_t *topology);
-
-void
-mongoc_topology_release (mongoc_topology_t *topology);
 
 void
 mongoc_topology_destroy (mongoc_topology_t *topology);
