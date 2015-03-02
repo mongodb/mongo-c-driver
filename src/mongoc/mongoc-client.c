@@ -692,8 +692,8 @@ mongoc_client_new(const char *uri_string)
  * _mongoc_client_new --
  *
  *       Creates a new mongoc_client_t using the provided URI and topology.
- *       The topology object is not owned by this client, and it must outlive
- *       this client.
+ *       If the topology is single-threaded, it will be destroyed by this
+ *       this client when mongoc_client_destroy is called.
  *
  * Returns:
  *       A newly allocated mongoc_client_t or NULL if @uri_string is
@@ -750,8 +750,6 @@ _mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
    client->request_id = rand ();
    client->initiator = mongoc_client_default_stream_initiator;
    client->initiator_data = client;
-
-   mongoc_topology_grab(topology);
    client->topology = topology;
 
    write_concern = mongoc_uri_get_write_concern (uri);
@@ -902,7 +900,10 @@ mongoc_client_destroy (mongoc_client_t *client)
       bson_free (client->pem_subject);
 #endif
 
-      mongoc_topology_release(client->topology);
+      if (client->topology->single_threaded) {
+         mongoc_topology_destroy(client->topology);
+      }
+
       mongoc_write_concern_destroy (client->write_concern);
       mongoc_read_prefs_destroy (client->read_prefs);
       mongoc_cluster_destroy (&client->cluster);

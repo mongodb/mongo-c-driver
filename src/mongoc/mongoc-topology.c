@@ -63,10 +63,6 @@ _mongoc_topology_scanner_cb (uint32_t      id,
  *
  *       Creates and returns a new topology object.
  *
- *       NOTE: use _mongoc_topology_grab() and _mongoc_topology_release() to
- *       manage the lifetime of this object. Do not attempt to use this
- *       object before calling _mongoc_topology_grab().
- *
  * Returns:
  *       A new topology object.
  *
@@ -110,7 +106,6 @@ mongoc_topology_new (const mongoc_uri_t *uri)
 
    topology->scanner = mongoc_topology_scanner_new (_mongoc_topology_scanner_cb,
                                                     topology);
-   topology->users = 0;
    topology->uri = uri;
    topology->single_threaded = true;
 
@@ -134,78 +129,15 @@ mongoc_topology_new (const mongoc_uri_t *uri)
 /*
  *-------------------------------------------------------------------------
  *
- * mongoc_topology_grab --
- *
- *       Increments the ref counter in @topology.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       None.
- *
- *-------------------------------------------------------------------------
- */
-void
-mongoc_topology_grab (mongoc_topology_t *topology)
-{
-   bson_return_if_fail(topology);
-
-   mongoc_mutex_lock (&topology->mutex);
-   topology->users++;
-   mongoc_mutex_unlock (&topology->mutex);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * mongoc_topology_release --
- *
- *       Decrements ref count of @topology. If number falls to < 1,
- *       destroys this mongoc_topology_t.  Treat this as destroy, and do not
- *       attempt to use @topology after calling.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       May destroy @topology.
- *
- *-------------------------------------------------------------------------
- */
-void
-mongoc_topology_release (mongoc_topology_t *topology)
-{
-   bson_return_if_fail(topology);
-
-   mongoc_mutex_lock (&topology->mutex);
-   topology->users--;
-   if (topology->users < 1) {
-      mongoc_mutex_unlock (&topology->mutex);
-      mongoc_topology_destroy(topology);
-   } else {
-      mongoc_mutex_unlock (&topology->mutex);
-   }
-}
-
-/*
- *-------------------------------------------------------------------------
- *
  * mongoc_topology_destroy --
  *
  *       Free the memory associated with this topology object.
  *
- *       NOTE: users should not call this directly; rather, use
- *       _mongoc_topology_grab() and _mongoc_topology_release() to indicate
- *       posession of this object.
- *
  * Returns:
  *       None.
  *
  * Side effects:
- *       @topology will be cleaned up. Any users using this object without
- *       having called _mongoc_topology_grab() will find themselves with
- *       a null pointer.
+ *       @topology will be cleaned up.
  *
  *-------------------------------------------------------------------------
  */
@@ -221,6 +153,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    mongoc_cond_destroy (&topology->cond_client);
    mongoc_cond_destroy (&topology->cond_server);
    mongoc_mutex_destroy (&topology->mutex);
+
    bson_free(topology);
 }
 

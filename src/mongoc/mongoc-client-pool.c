@@ -85,7 +85,6 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    pool->size = 0;
 
    topology = mongoc_topology_new(uri);
-   mongoc_topology_grab(topology);
    pool->topology = topology;
 
    /* start the topology background thread for SDAM */
@@ -127,7 +126,7 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 
    /* stop background monitoring thread */
    mongoc_topology_background_thread_stop (pool->topology);
-   mongoc_topology_release(pool->topology);
+   mongoc_topology_destroy (pool->topology);
 
    mongoc_uri_destroy(pool->uri);
    mongoc_mutex_destroy(&pool->mutex);
