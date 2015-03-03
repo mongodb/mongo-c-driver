@@ -1,4 +1,5 @@
 #include <mongoc.h>
+#include "mongoc-client-pool-private.h"
 #include "mongoc-array-private.h"
 
 
@@ -48,29 +49,29 @@ test_mongoc_client_pool_min_size_dispose (void)
    mongoc_array_t conns;
    int i;
 
-   _mongoc_array_init(&conns, sizeof client);
+   _mongoc_array_init (&conns, sizeof client);
 
-   uri = mongoc_uri_new("mongodb://127.0.0.1?maxpoolsize=10&minpoolsize=3");
-   pool = mongoc_client_pool_new(uri);
+   uri = mongoc_uri_new ("mongodb://127.0.0.1?maxpoolsize=10&minpoolsize=3");
+   pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < 10; i++) {
-      client = mongoc_client_pool_pop(pool);
-      assert(client);
-      _mongoc_array_append_val(&conns, client);
-      assert(mongoc_client_pool_get_size(pool) == i+1);
-   }
-   
-   for (i = 0; i < 10; i++) {
-      client = _mongoc_array_index(&conns,mongoc_client_t *, i);
-      assert(client);
-      mongoc_client_pool_push(pool, client);
+      client = mongoc_client_pool_pop (pool);
+      assert (client);
+      _mongoc_array_append_val (&conns, client);
+      assert (mongoc_client_pool_get_size (pool) == i + 1);
    }
 
-   assert(mongoc_client_pool_get_size(pool) == 3);
-   _mongoc_array_clear(&conns);
-   _mongoc_array_destroy(&conns);
-   mongoc_uri_destroy(uri);
-   mongoc_client_pool_destroy(pool);
+   for (i = 0; i < 10; i++) {
+      client = _mongoc_array_index (&conns, mongoc_client_t *, i);
+      assert (client);
+      mongoc_client_pool_push (pool, client);
+   }
+
+   assert (mongoc_client_pool_get_size (pool) == 3);
+   _mongoc_array_clear (&conns);
+   _mongoc_array_destroy (&conns);
+   mongoc_uri_destroy (uri);
+   mongoc_client_pool_destroy (pool);
 }
 
 void
