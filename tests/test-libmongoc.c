@@ -26,6 +26,7 @@
 
 
 extern void test_array_install            (TestSuite *suite);
+extern void test_async_install            (TestSuite *suite);
 extern void test_buffer_install           (TestSuite *suite);
 extern void test_bulk_install             (TestSuite *suite);
 extern void test_client_install           (TestSuite *suite);
@@ -41,7 +42,12 @@ extern void test_queue_install            (TestSuite *suite);
 extern void test_read_prefs_install       (TestSuite *suite);
 extern void test_rpc_install              (TestSuite *suite);
 extern void test_socket_install           (TestSuite *suite);
+extern void test_topology_scanner_install (TestSuite *suite);
+extern void test_sdam_install             (TestSuite *suite);
+extern void test_server_selection_install (TestSuite *suite);
+extern void test_set_install              (TestSuite *suite);
 extern void test_stream_install           (TestSuite *suite);
+extern void test_topology_install         (TestSuite *suite);
 extern void test_uri_install              (TestSuite *suite);
 extern void test_write_command_install    (TestSuite *suite);
 extern void test_write_concern_install    (TestSuite *suite);
@@ -67,11 +73,11 @@ log_handler (mongoc_log_level_t  log_level,
              const char         *message,
              void               *user_data)
 {
-   if (gSuppressCount) {
-      gSuppressCount--;
-      return;
-   }
    if (log_level < MONGOC_LOG_LEVEL_INFO) {
+      if (gSuppressCount) {
+         gSuppressCount--;
+         return;
+      }
       mongoc_log_default_handler (log_level, log_domain, message, NULL);
    }
 }
@@ -129,6 +135,7 @@ main (int   argc,
    TestSuite_Init (&suite, "", argc, argv);
 
    test_array_install (&suite);
+   test_async_install (&suite);
    test_buffer_install (&suite);
    test_client_install (&suite);
    test_client_pool_install (&suite);
@@ -145,7 +152,12 @@ main (int   argc,
    test_read_prefs_install (&suite);
    test_rpc_install (&suite);
    test_socket_install (&suite);
+   test_topology_scanner_install (&suite);
+   test_sdam_install (&suite);
+   test_server_selection_install (&suite);
+   test_set_install (&suite);
    test_stream_install (&suite);
+   test_topology_install (&suite);
    test_uri_install (&suite);
    test_write_concern_install (&suite);
 #ifdef MONGOC_ENABLE_SSL

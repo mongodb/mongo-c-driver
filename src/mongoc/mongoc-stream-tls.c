@@ -213,10 +213,10 @@ _mongoc_stream_tls_bio_read (BIO  *b,
    errno = 0;
    ret = (int)mongoc_stream_read (tls->base_stream, buf, len, 0,
                                   tls->timeout_msec);
-   BIO_clear_retry_flags (b);
+   BIO_clear_retry_flags (tls->bio);
 
-   if ((ret < 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
-      BIO_set_retry_read (b);
+   if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
+      BIO_set_retry_read (tls->bio);
    }
 
    return ret;
@@ -261,10 +261,10 @@ _mongoc_stream_tls_bio_write (BIO        *b,
    errno = 0;
    ret = (int)mongoc_stream_writev (tls->base_stream, &iov, 1,
                                     tls->timeout_msec);
-   BIO_clear_retry_flags (b);
+   BIO_clear_retry_flags (tls->bio);
 
-   if ((ret < 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
-      BIO_set_retry_write (b);
+   if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
+      BIO_set_retry_write (tls->bio);
    }
 
    return ret;
@@ -783,6 +783,10 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
       return true;
    }
 
+   if (!timeout_msec) {
+      return false;
+   }
+
    if (!errno) {
 #ifdef _WIN32
       errno = WSAETIMEDOUT;
@@ -792,6 +796,54 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
    }
 
    return false;
+}
+
+
+/**
+ * mongoc_stream_tls_should_retry:
+ *
+ * If the stream should be retried
+ */
+bool
+mongoc_stream_tls_should_retry (mongoc_stream_t *stream)
+{
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+
+   BSON_ASSERT (tls);
+
+   return BIO_should_retry (tls->bio);
+}
+
+
+/**
+ * mongoc_stream_tls_should_read:
+ *
+ * If the stream should read
+ */
+bool
+mongoc_stream_tls_should_read (mongoc_stream_t *stream)
+{
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+
+   BSON_ASSERT (tls);
+
+   return BIO_should_read (tls->bio);
+}
+
+
+/**
+ * mongoc_stream_tls_should_write:
+ *
+ * If the stream should write
+ */
+bool
+mongoc_stream_tls_should_write (mongoc_stream_t *stream)
+{
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+
+   BSON_ASSERT (tls);
+
+   return BIO_should_write (tls->bio);
 }
 
 

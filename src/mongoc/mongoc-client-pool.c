@@ -17,23 +17,26 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-client-pool.h"
+#include "mongoc-client-private.h"
 #include "mongoc-queue-private.h"
 #include "mongoc-thread-private.h"
+#include "mongoc-topology-private.h"
 #include "mongoc-trace.h"
 
 
 struct _mongoc_client_pool_t
 {
-   mongoc_mutex_t    mutex;
-   mongoc_cond_t     cond;
-   mongoc_queue_t    queue;
-   mongoc_uri_t     *uri;
-   uint32_t          min_pool_size;
-   uint32_t          max_pool_size;
-   uint32_t          size;
+   mongoc_mutex_t     mutex;
+   mongoc_cond_t      cond;
+   mongoc_queue_t     queue;
+   mongoc_topology_t *topology;
+   mongoc_uri_t      *uri;
+   uint32_t           min_pool_size;
+   uint32_t           max_pool_size;
+   uint32_t           size;
 #ifdef MONGOC_ENABLE_SSL
-   bool              ssl_opts_set;
-   mongoc_ssl_opt_t  ssl_opts;
+   bool               ssl_opts_set;
+   mongoc_ssl_opt_t   ssl_opts;
 #endif
 };
 
@@ -64,6 +67,7 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
 mongoc_client_pool_t *
 mongoc_client_pool_new (const mongoc_uri_t *uri)
 {
+   mongoc_topology_t *topology;
    mongoc_client_pool_t *pool;
    const bson_t *b;
    bson_iter_t iter;
@@ -79,6 +83,13 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    pool->min_pool_size = 0;
    pool->max_pool_size = 100;
    pool->size = 0;
+
+   topology = mongoc_topology_new(uri);
+   pool->topology = topology;
+
+   /* start the topology background thread for SDAM */
+   topology->single_threaded = false;
+   mongoc_topology_background_thread_start(topology);
 
    b = mongoc_uri_get_options(pool->uri);
 
@@ -113,6 +124,10 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
       mongoc_client_destroy(client);
    }
 
+   /* stop background monitoring thread */
+   mongoc_topology_background_thread_stop (pool->topology);
+   mongoc_topology_destroy (pool->topology);
+
    mongoc_uri_destroy(pool->uri);
    mongoc_mutex_destroy(&pool->mutex);
    mongoc_cond_destroy(&pool->cond);
@@ -139,7 +154,7 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 again:
    if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
-         client = mongoc_client_new_from_uri(pool->uri);
+         client = _mongoc_client_new_from_uri(pool->uri, pool->topology);
 #ifdef MONGOC_ENABLE_SSL
          if (pool->ssl_opts_set) {
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
@@ -171,7 +186,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
-         client = mongoc_client_new_from_uri(pool->uri);
+         client = _mongoc_client_new_from_uri(pool->uri, pool->topology);
 #ifdef MONGOC_ENABLE_SSL
          if (pool->ssl_opts_set) {
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);

@@ -30,6 +30,11 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_stream_t mongoc_stream_t;
 
+typedef struct _mongoc_stream_poll_t {
+   mongoc_stream_t *stream;
+   int              events;
+   int              revents;
+} mongoc_stream_poll_t;
 
 struct _mongoc_stream_t
 {
@@ -53,7 +58,10 @@ struct _mongoc_stream_t
                                         socklen_t        optlen);
    mongoc_stream_t *(*get_base_stream) (mongoc_stream_t *stream);
    bool             (*check_closed)    (mongoc_stream_t *stream);
-   void            *padding [7];
+   ssize_t          (*poll)            (mongoc_stream_poll_t *streams,
+                                        size_t                nstreams,
+                                        int32_t               timeout);
+   void             *padding [7];
 };
 
 
@@ -85,6 +93,9 @@ int              mongoc_stream_setsockopt      (mongoc_stream_t       *stream,
                                                 void                  *optval,
                                                 socklen_t              optlen);
 bool             mongoc_stream_check_closed    (mongoc_stream_t       *stream);
+ssize_t          mongoc_stream_poll            (mongoc_stream_poll_t  *streams,
+                                                size_t                 nstreams,
+                                                int32_t                timeout);
 
 
 BSON_END_DECLS
