@@ -2031,6 +2031,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
    const mongoc_host_list_t *iter;
    mongoc_cluster_node_t node;
    mongoc_cluster_node_t *saved_nodes;
+   size_t saved_nodes_len;
    mongoc_host_list_t host;
    mongoc_stream_t *stream;
    mongoc_list_t *list;
@@ -2047,6 +2048,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
    BSON_ASSERT(cluster->mode == MONGOC_CLUSTER_REPLICA_SET);
 
    saved_nodes = bson_malloc0(cluster->nodes_len * sizeof(*saved_nodes));
+   saved_nodes_len = cluster->nodes_len;
 
    MONGOC_DEBUG("Reconnecting to replica set.");
 
@@ -2142,10 +2144,11 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
       }
    }
 
-   for (liter = list, i = 0;
-        liter && (i < cluster->nodes_len);
-        liter = liter->next) {
+   for (liter = list, i = 0; liter; liter = liter->next, i++) {}
+   cluster->nodes = bson_realloc (cluster->nodes, sizeof (*cluster->nodes) * i);
+   cluster->nodes_len = i;
 
+   for (liter = list, i = 0; liter; liter = liter->next) {
       if (!_mongoc_host_list_from_string(&host, liter->data)) {
          MONGOC_WARNING("Failed to parse host and port: \"%s\"",
                         (char *)liter->data);
@@ -2154,7 +2157,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
 
       stream = NULL;
 
-      for (j = 0; j < cluster->nodes_len; j++) {
+      for (j = 0; j < saved_nodes_len; j++) {
          if (0 == strcmp (saved_nodes [j].host.host_and_port,
                           host.host_and_port)) {
             stream = saved_nodes [j].stream;
@@ -2215,6 +2218,8 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
       i++;
    }
 
+   cluster->nodes_len = i;
+
    _mongoc_list_foreach(list, (void(*)(void*,void*))bson_free, NULL);
    _mongoc_list_destroy(list);
 
@@ -2222,7 +2227,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
     * Cleanup all potential saved connections that were not used.
     */
 
-   for (j = 0; j < cluster->nodes_len; j++) {
+   for (j = 0; j < saved_nodes_len; j++) {
       if (saved_nodes [j].stream) {
          mongoc_stream_destroy (saved_nodes [j].stream);
          saved_nodes [j].stream = NULL;
