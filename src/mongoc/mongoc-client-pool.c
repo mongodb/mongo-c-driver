@@ -231,8 +231,6 @@ mongoc_client_pool_get_size (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   bson_return_if_fail (pool);
-
    mongoc_mutex_lock (&pool->mutex);
    size = pool->size;
    mongoc_mutex_unlock (&pool->mutex);
