@@ -48,6 +48,7 @@ void                  mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *p
                                                        const mongoc_ssl_opt_t *opts);
 #endif
 
+size_t 				  mongoc_client_pool_get_size(mongoc_client_pool_t *pool);
 
 BSON_END_DECLS
 
