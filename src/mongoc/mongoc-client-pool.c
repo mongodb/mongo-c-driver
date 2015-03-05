@@ -202,8 +202,10 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    if (pool->size > pool->min_pool_size) {
       mongoc_client_t *old_client;
       old_client = _mongoc_queue_pop_head (&pool->queue);
-      mongoc_client_destroy (old_client);
-      pool->size--;
+      if (old_client) {
+          mongoc_client_destroy (old_client);
+          pool->size--;
+      }
    }
    mongoc_mutex_unlock(&pool->mutex);
 
