@@ -198,12 +198,14 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    bson_return_if_fail(pool);
    bson_return_if_fail(client);
 
+   mongoc_mutex_lock(&pool->mutex);
    if (pool->size > pool->min_pool_size) {
       mongoc_client_t *old_client;
       old_client = _mongoc_queue_pop_head (&pool->queue);
       mongoc_client_destroy (old_client);
       pool->size--;
    }
+   mongoc_mutex_unlock(&pool->mutex);
 
    if ((client->cluster.state == MONGOC_CLUSTER_STATE_HEALTHY) ||
        (client->cluster.state == MONGOC_CLUSTER_STATE_BORN)) {
