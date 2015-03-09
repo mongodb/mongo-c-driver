@@ -62,7 +62,6 @@ bool                          mongoc_uri_get_ssl                  (const mongoc_
 char                         *mongoc_uri_unescape                 (const char         *escaped_string);
 const mongoc_write_concern_t *mongoc_uri_get_write_concern        (const mongoc_uri_t *uri);
 
-
 BSON_END_DECLS
 
 

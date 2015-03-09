@@ -80,15 +80,19 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-log.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-server-description.c
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-topology.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.c
    ${SOURCE_DIR}/src/mongoc/mongoc-util.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-command.c
@@ -118,6 +122,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.h
@@ -199,6 +204,7 @@ endfunction()
 
 set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/ha-test.c
+   ${SOURCE_DIR}/tests/json-test.c
    ${SOURCE_DIR}/tests/test-libmongoc.c
    ${SOURCE_DIR}/tests/test-mongoc-array.c
    ${SOURCE_DIR}/tests/test-mongoc-buffer.c
@@ -206,6 +212,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/mock-server.c
    ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-mongoc-client-pool.c
+   ${SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
    ${SOURCE_DIR}/tests/test-mongoc-cursor.c
    ${SOURCE_DIR}/tests/test-mongoc-database.c
@@ -217,7 +224,10 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${SOURCE_DIR}/tests/test-mongoc-socket.c
+   ${SOURCE_DIR}/tests/test-mongoc-sdam.c
+   ${SOURCE_DIR}/tests/test-mongoc-server-selection.c
    ${SOURCE_DIR}/tests/test-mongoc-stream.c
+   ${SOURCE_DIR}/tests/test-mongoc-topology.c
    ${SOURCE_DIR}/tests/test-mongoc-uri.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
    ${SOURCE_DIR}/tests/test-write-commands.c

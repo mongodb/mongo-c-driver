@@ -31,10 +31,9 @@
  *    - Try to receive GLE on the stack (legacy only?)
  */
 
-
+#define WRITE_COMMAND_WIRE_VERSION 2
 #define MAX_INSERT_BATCH 1000
-#define SUPPORTS_WRITE_COMMANDS(n) \
-   (((n)->min_wire_version <= 2) && ((n)->max_wire_version >= 2))
+
 #define WRITE_CONCERN_DOC(wc) \
    (wc && _mongoc_write_concern_needs_gle ((wc))) ? \
    (_mongoc_write_concern_get_bson((mongoc_write_concern_t*)(wc))) : \
@@ -57,6 +56,7 @@ static int32_t
 _mongoc_write_result_merge_arrays (mongoc_write_result_t *result,
                                    bson_t                *dest,
                                    bson_iter_t           *iter);
+
 void
 _mongoc_write_command_insert_append (mongoc_write_command_t *command,
                                      const bson_t * const   *documents,
@@ -263,6 +263,8 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    bool r;
    int i;
    int max_docs = MAX_INSERT_BATCH;
+   int32_t max_msg_size;
+   int32_t max_bson_obj_size;
 
    ENTRY;
 
@@ -315,23 +317,26 @@ again:
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
 
+      max_bson_obj_size = mongoc_cluster_get_max_msg_size (&client->cluster, &hint);
+      max_msg_size = mongoc_cluster_get_max_msg_size (&client->cluster, &hint);
+
       /*
        * Check that the server can receive this document.
        */
-      if ((len > client->cluster.max_bson_size) ||
-          (len > client->cluster.max_msg_size)) {
+      if ((len > max_bson_obj_size) ||
+          (len > max_msg_size)) {
          bson_set_error (error,
                          MONGOC_ERROR_BSON,
                          MONGOC_ERROR_BSON_INVALID,
                          "Document %u is too large for the cluster. "
                          "Document is %u bytes, max is %u.",
-                         i, (unsigned)len, client->cluster.max_bson_size);
+                         i, (unsigned)len, max_bson_obj_size);
       }
 
       /*
        * Check that we will not overflow our max message size.
        */
-      if ((i == max_docs) || (size > (client->cluster.max_msg_size - len))) {
+      if ((i == max_docs) || (size > (max_msg_size - len))) {
          has_more = true;
          break;
       }
@@ -489,6 +494,7 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
                               mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
+   mongoc_server_description_t *server;
    bson_t cmd = BSON_INITIALIZER;
    bson_t ar;
    bson_t child;
@@ -508,13 +514,21 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
     * opcodes, then submit the legacy opcode so we don't need to wait for
     * a response from the server.
     */
-   if ((client->cluster.nodes [hint - 1].min_wire_version == 0) &&
+
+   server = mongoc_topology_server_by_id(client->topology, hint);
+   if (!server) {
+      EXIT;
+   }
+
+   if ((server->min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_delete_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
+      mongoc_server_description_destroy (server);
       EXIT;
    }
+   mongoc_server_description_destroy (server);
 
    BSON_APPEND_UTF8 (&cmd, "delete", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
@@ -553,10 +567,13 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
                               mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
+   mongoc_server_description_t *server;
    const uint8_t *data;
    bson_iter_t iter;
    const char *key;
    uint32_t len;
+   int32_t max_msg_size;
+   int32_t max_bson_obj_size;
    bson_t tmp;
    bson_t ar;
    bson_t cmd;
@@ -581,13 +598,22 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
     * opcodes, then submit the legacy opcode so we don't need to wait for
     * a response from the server.
     */
-   if ((client->cluster.nodes [hint - 1].min_wire_version == 0) &&
+
+   server = mongoc_topology_server_by_id(client->topology, hint);
+
+   if (!server) {
+      EXIT;
+   }
+
+   if ((server->min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_insert_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
+      mongoc_server_description_destroy (server);
       EXIT;
-   }
+      }
+   mongoc_server_description_destroy (server);
 
    if (!command->u.insert.n_documents ||
        !bson_iter_init (&iter, command->u.insert.documents) ||
@@ -612,8 +638,11 @@ again:
                          WRITE_CONCERN_DOC (write_concern));
    BSON_APPEND_BOOL (&cmd, "ordered", command->u.insert.ordered);
 
-   if ((command->u.insert.documents->len < client->cluster.max_bson_size) &&
-       (command->u.insert.documents->len < client->cluster.max_msg_size) &&
+   max_msg_size = mongoc_cluster_get_max_msg_size (&client->cluster, &hint);
+   max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster, &hint);
+
+   if ((command->u.insert.documents->len < max_bson_obj_size) &&
+       (command->u.insert.documents->len < max_msg_size) &&
        (command->u.insert.n_documents <= MAX_INSERT_BATCH)) {
       BSON_APPEND_ARRAY (&cmd, "documents", command->u.insert.documents);
    } else {
@@ -627,7 +656,7 @@ again:
          bson_iter_document (&iter, &len, &data);
 
          if ((i == MAX_INSERT_BATCH) ||
-             (len > (client->cluster.max_msg_size - cmd.len - overhead))) {
+             (len > (max_msg_size - cmd.len - overhead))) {
             has_more = true;
             break;
          }
@@ -679,6 +708,7 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
                               mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
+   mongoc_server_description_t *server;
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
    bson_t ar;
@@ -698,13 +728,22 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
     * opcodes, then submit the legacy opcode so we don't need to wait for
     * a response from the server.
     */
-   if ((client->cluster.nodes [hint - 1].min_wire_version == 0) &&
+
+   server = mongoc_topology_server_by_id(client->topology, hint);
+
+   if (!server) {
+      EXIT;
+   }
+
+   if ((server->min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_update_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
+      mongoc_server_description_destroy (server);
       EXIT;
    }
+   mongoc_server_description_destroy (server);
 
    BSON_APPEND_UTF8 (&cmd, "update", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
@@ -754,7 +793,7 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
                                const mongoc_write_concern_t *write_concern, /* IN */
                                mongoc_write_result_t        *result)        /* OUT */
 {
-   mongoc_cluster_node_t *node;
+   mongoc_server_description_t *server;
    int mode = 0;
 
    ENTRY;
@@ -780,12 +819,15 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
 
    command->hint = hint;
 
-   node = &client->cluster.nodes [hint - 1];
-   mode = SUPPORTS_WRITE_COMMANDS (node);
+   server = mongoc_topology_server_by_id(client->topology, hint);
+   mode = (server->min_wire_version <= WRITE_COMMAND_WIRE_VERSION &&
+           server->max_wire_version >= WRITE_COMMAND_WIRE_VERSION);
 
    gWriteOps [mode][command->type] (command, client, hint, database,
                                     collection, write_concern, result,
                                     &result->error);
+
+   mongoc_server_description_destroy (server);
 
    EXIT;
 }

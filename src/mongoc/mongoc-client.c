@@ -417,7 +417,7 @@ uint32_t
 _mongoc_client_sendv (mongoc_client_t              *client,
                       mongoc_rpc_t                 *rpcs,
                       size_t                        rpcs_len,
-                      uint32_t                      hint,
+                      uint32_t                      server_id,
                       const mongoc_write_concern_t *write_concern,
                       const mongoc_read_prefs_t    *read_prefs,
                       bson_error_t                 *error)
@@ -441,24 +441,15 @@ _mongoc_client_sendv (mongoc_client_t              *client,
       rpcs[i].header.request_id = ++client->request_id;
    }
 
-   switch (client->cluster.state) {
-   case MONGOC_CLUSTER_STATE_BORN:
-      return _mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint,
-                                   write_concern, read_prefs, error);
-   case MONGOC_CLUSTER_STATE_HEALTHY:
-   case MONGOC_CLUSTER_STATE_UNHEALTHY:
-      return _mongoc_cluster_try_sendv(&client->cluster, rpcs, rpcs_len, hint,
-                                       write_concern, read_prefs, error);
-   case MONGOC_CLUSTER_STATE_DEAD:
-      bson_set_error(error,
-                     MONGOC_ERROR_CLIENT,
-                     MONGOC_ERROR_CLIENT_NOT_READY,
-                     "No healthy connections.");
-      return false;
-   default:
-      BSON_ASSERT(false);
-      return 0;
+   if (server_id > 0) {
+      if (mongoc_cluster_sendv_to_server(&client->cluster, rpcs, rpcs_len,
+                                         server_id, write_concern, error)) {
+         return server_id;
+      }
    }
+
+   return mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len,
+                               write_concern, read_prefs, error);
 }
 
 
@@ -484,17 +475,19 @@ bool
 _mongoc_client_recv (mongoc_client_t *client,
                      mongoc_rpc_t    *rpc,
                      mongoc_buffer_t *buffer,
-                     uint32_t         hint,
+                     uint32_t         server_id,
                      bson_error_t    *error)
 {
    bson_return_val_if_fail(client, false);
    bson_return_val_if_fail(rpc, false);
    bson_return_val_if_fail(buffer, false);
-   bson_return_val_if_fail(hint, false);
-   bson_return_val_if_fail(hint <= client->cluster.nodes_len, false);
+   bson_return_val_if_fail(server_id, false);
 
-   return _mongoc_cluster_try_recv (&client->cluster, rpc, buffer, hint,
-                                    error);
+   if (!mongoc_cluster_try_recv (&client->cluster, rpc, buffer, server_id, error)) {
+      mongoc_topology_invalidate_server (client->topology, server_id);
+      return false;
+   }
+   return true;
 }
 
 
@@ -588,7 +581,7 @@ _bson_to_error (const bson_t *b,
 
 bool
 _mongoc_client_recv_gle (mongoc_client_t  *client,
-                         uint32_t          hint,
+                         uint32_t          server_id,
                          bson_t          **gle_doc,
                          bson_error_t     *error)
 {
@@ -601,7 +594,7 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
    ENTRY;
 
    bson_return_val_if_fail (client, false);
-   bson_return_val_if_fail (hint, false);
+   bson_return_val_if_fail (server_id, false);
 
    if (gle_doc) {
       *gle_doc = NULL;
@@ -609,8 +602,9 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
 
-   if (!_mongoc_cluster_try_recv (&client->cluster, &rpc, &buffer,
-                                  hint, error)) {
+   if (!mongoc_cluster_try_recv (&client->cluster, &rpc, &buffer,
+                                 server_id, error)) {
+      mongoc_topology_invalidate_server(client->topology, server_id);
       GOTO (cleanup);
    }
 
@@ -651,7 +645,6 @@ cleanup:
    RETURN (ret);
 }
 
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -672,9 +665,48 @@ cleanup:
  *
  *--------------------------------------------------------------------------
  */
+mongoc_client_t *
+mongoc_client_new(const char *uri_string)
+{
+   mongoc_uri_t *uri;
+   mongoc_topology_t *topology;
+
+   if (!uri_string) {
+      uri_string = "mongodb://127.0.0.1/";
+   }
+
+   if (!(uri = mongoc_uri_new(uri_string))) {
+      return NULL;
+   }
+
+   topology = mongoc_topology_new(uri);
+
+   mongoc_uri_destroy (uri);
+
+   return _mongoc_client_new(uri_string, topology);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_client_new --
+ *
+ *       Creates a new mongoc_client_t using the provided URI and topology.
+ *       If the topology is single-threaded, it will be destroyed by this
+ *       this client when mongoc_client_destroy is called.
+ *
+ * Returns:
+ *       A newly allocated mongoc_client_t or NULL if @uri_string is
+ *       invalid.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 mongoc_client_t *
-mongoc_client_new (const char *uri_string)
+_mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
 {
    const mongoc_write_concern_t *write_concern;
    mongoc_client_t *client;
@@ -682,8 +714,12 @@ mongoc_client_new (const char *uri_string)
    mongoc_uri_t *uri;
    const bson_t *options;
    bson_iter_t iter;
+#ifdef MONGOC_ENABLE_SSL
    bool has_ssl = false;
+#endif
    bool slave_okay = false;
+
+   bson_return_val_if_fail(topology, NULL);
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
@@ -695,11 +731,13 @@ mongoc_client_new (const char *uri_string)
 
    options = mongoc_uri_get_options (uri);
 
+#ifdef MONGOC_ENABLE_SSL
    if (bson_iter_init_find (&iter, options, "ssl") &&
        BSON_ITER_HOLDS_BOOL (&iter) &&
        bson_iter_bool (&iter)) {
       has_ssl = true;
    }
+#endif
 
    if (bson_iter_init_find_case (&iter, options, "slaveok") &&
        BSON_ITER_HOLDS_BOOL (&iter) &&
@@ -712,6 +750,7 @@ mongoc_client_new (const char *uri_string)
    client->request_id = rand ();
    client->initiator = mongoc_client_default_stream_initiator;
    client->initiator_data = client;
+   client->topology = topology;
 
    write_concern = mongoc_uri_get_write_concern (uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
@@ -727,7 +766,7 @@ mongoc_client_new (const char *uri_string)
       mongoc_read_prefs_set_tags (client->read_prefs, read_prefs_tags);
    }
 
-   _mongoc_cluster_init (&client->cluster, client->uri, client);
+   mongoc_cluster_init (&client->cluster, client->uri, client);
 
 #ifdef MONGOC_ENABLE_SSL
    if (has_ssl) {
@@ -797,14 +836,44 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
 mongoc_client_t *
 mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 {
+   mongoc_topology_t *topology;
    const char *uristr;
 
    bson_return_val_if_fail(uri, NULL);
 
    uristr = mongoc_uri_get_string(uri);
-   return mongoc_client_new(uristr);
+
+   topology = mongoc_topology_new(uri);
+   return _mongoc_client_new(uristr, topology);
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_client_new_from_uri --
+ *
+ *       Create a new mongoc_client_t for a mongoc_uri_t and a given
+ *       topology object.
+ *
+ * Returns:
+ *       A newly allocated mongoc_client_t.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_client_t *
+_mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topology)
+{
+   const char *uristr;
+
+   bson_return_val_if_fail(uri, NULL);
+
+   uristr = mongoc_uri_get_string(uri);
+   return _mongoc_client_new(uristr, topology);
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -831,9 +900,13 @@ mongoc_client_destroy (mongoc_client_t *client)
       bson_free (client->pem_subject);
 #endif
 
+      if (client->topology->single_threaded) {
+         mongoc_topology_destroy(client->topology);
+      }
+
       mongoc_write_concern_destroy (client->write_concern);
       mongoc_read_prefs_destroy (client->read_prefs);
-      _mongoc_cluster_destroy (&client->cluster);
+      mongoc_cluster_destroy (&client->cluster);
       mongoc_uri_destroy (client->uri);
       bson_free (client);
 
@@ -866,37 +939,6 @@ mongoc_client_get_uri (const mongoc_client_t *client)
 
    return client->uri;
 }
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_client_stamp --
- *
- *       INTERNAL API
- *
- *       Fetch the stamp for @node within @client. This is used to track
- *       if there have been changes or disconnects from a node between
- *       the last operation.
- *
- * Returns:
- *       A 32-bit monotonic stamp.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-uint32_t
-_mongoc_client_stamp (mongoc_client_t *client,
-                      uint32_t    node)
-{
-   bson_return_val_if_fail (client, 0);
-
-   return _mongoc_cluster_stamp (&client->cluster, node);
-}
-
 
 /*
  *--------------------------------------------------------------------------
@@ -1132,22 +1174,27 @@ bool
 _mongoc_client_warm_up (mongoc_client_t *client,
                         bson_error_t    *error)
 {
-   bool ret = true;
-   bson_t cmd;
+   uint32_t server_id;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_write_concern_t *write_concern;
 
    BSON_ASSERT (client);
 
-   if (client->cluster.state == MONGOC_CLUSTER_STATE_BORN) {
-      bson_init (&cmd);
-      bson_append_int32 (&cmd, "ping", 4, 1);
-      ret = _mongoc_cluster_command_early (&client->cluster, "admin", &cmd,
-                                           NULL, error);
-      bson_destroy (&cmd);
-   } else if (client->cluster.state == MONGOC_CLUSTER_STATE_DEAD) {
-      ret = _mongoc_cluster_reconnect(&client->cluster, error);
-   }
+   write_concern = mongoc_write_concern_new();
+   read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
-   return ret;
+   /* If SDAM has been able to find any server, we know the cluster
+      can be reached. No need to ping separately. */
+   server_id = mongoc_cluster_preselect(&client->cluster,
+                                        MONGOC_OPCODE_MSG,
+                                        write_concern,
+                                        read_prefs,
+                                        error);
+
+   mongoc_write_concern_destroy (write_concern);
+   mongoc_read_prefs_destroy (read_prefs);
+
+   return (server_id > 0);
 }
 
 
@@ -1161,8 +1208,8 @@ _mongoc_client_preselect (mongoc_client_t              *client,        /* IN */
 
    BSON_ASSERT (client);
 
-   return _mongoc_cluster_preselect (&client->cluster, opcode,
-                                     write_concern, read_prefs, error);
+   return mongoc_cluster_preselect (&client->cluster, opcode,
+                                    write_concern, read_prefs, error);
 }
 
 
@@ -1354,7 +1401,7 @@ mongoc_client_get_max_message_size (mongoc_client_t *client) /* IN */
 {
    bson_return_val_if_fail (client, -1);
 
-   return client->cluster.max_msg_size;
+   return mongoc_cluster_get_max_msg_size (&client->cluster, NULL);
 }
 
 
@@ -1363,7 +1410,7 @@ mongoc_client_get_max_bson_size (mongoc_client_t *client) /* IN */
 {
    bson_return_val_if_fail (client, -1);
 
-   return client->cluster.max_bson_size;
+   return mongoc_cluster_get_max_bson_obj_size (&client->cluster, NULL);
 }
 
 

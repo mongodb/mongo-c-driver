@@ -261,7 +261,6 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
    return 0;
 }
 
-
 mongoc_stream_t *
 mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
 {
@@ -271,7 +270,53 @@ mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
       return stream->get_base_stream (stream);
    }
 
-   return NULL;
+   return stream;
+}
+
+
+ssize_t
+mongoc_stream_poll (mongoc_stream_poll_t *streams,
+                    size_t                nstreams,
+                    int32_t               timeout)
+{
+   mongoc_stream_poll_t * poll = bson_malloc(sizeof(*poll) * nstreams);
+
+   int i;
+   int last_type = 0;
+   ssize_t rval = -1;
+
+   errno = 0;
+
+   for (i = 0; i < nstreams; i++) {
+      poll[i].stream = mongoc_stream_get_base_stream(streams[i].stream);
+      poll[i].events = streams[i].events;
+      poll[i].revents = 0;
+
+      if (i == 0) {
+         last_type = poll[i].stream->type;
+      } else if (last_type != poll[i].stream->type) {
+         errno = EINVAL;
+         goto CLEANUP;
+      }
+   }
+
+   if (! poll[0].stream->poll) {
+      errno = EINVAL;
+      goto CLEANUP;
+   }
+
+   rval = poll[0].stream->poll(poll, nstreams, timeout);
+
+   if (rval > 0) {
+      for (i = 0; i < nstreams; i++) {
+         streams[i].revents = poll[i].revents;
+      }
+   }
+
+CLEANUP:
+   bson_free(poll);
+
+   return rval;
 }
 
 

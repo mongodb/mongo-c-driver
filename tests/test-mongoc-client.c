@@ -148,10 +148,13 @@ test_mongoc_client_authenticate_failure (void)
     * Try authenticating with that user.
     */
    bson_init(&q);
+   suppress_one_message ();
    client = mongoc_client_new(gTestUriWithBadPassword);
    collection = mongoc_client_get_collection(client, "test", "test");
+   suppress_one_message ();
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &q, NULL, NULL);
+   suppress_one_message ();
    r = mongoc_cursor_next(cursor, &doc);
    assert(!r);
    r = mongoc_cursor_error(cursor, &error);
@@ -164,6 +167,9 @@ test_mongoc_client_authenticate_failure (void)
     * Try various commands while in the failed state to ensure we get the
     * same sort of errors.
     */
+   suppress_one_message ();
+   suppress_one_message ();
+   suppress_one_message ();
    r = mongoc_collection_insert (collection, 0, &empty, NULL, &error);
    assert (!r);
    assert (error.domain == MONGOC_ERROR_CLIENT);
@@ -173,6 +179,9 @@ test_mongoc_client_authenticate_failure (void)
     * Try various commands while in the failed state to ensure we get the
     * same sort of errors.
     */
+   suppress_one_message ();
+   suppress_one_message ();
+   suppress_one_message ();
    r = mongoc_collection_update (collection, 0, &q, &empty, NULL, &error);
    assert (!r);
    assert (error.domain == MONGOC_ERROR_CLIENT);
@@ -458,19 +467,19 @@ test_mongoc_client_preselect (void)
 static void
 test_exhaust_cursor (void)
 {
+   mongoc_stream_t *stream;
    mongoc_write_concern_t *wr;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    mongoc_cursor_t *cursor2;
-   mongoc_stream_t *stream;
-   mongoc_cluster_node_t *node;
    const bson_t *doc;
    bson_t q;
    bson_t b[10];
    bson_t *bptr[10];
    int i;
    bool r;
+   uint32_t hint;
    bson_error_t error;
    bson_oid_t oid;
 
@@ -526,12 +535,12 @@ test_exhaust_cursor (void)
       assert (doc);
       assert (cursor->in_exhaust);
       assert (client->in_exhaust);
-      node = &client->cluster.nodes[cursor->hint - 1];
-      stream = node->stream;
 
+      /* destroy the cursor, make sure a disconnect happened */
       mongoc_cursor_destroy (cursor);
-      /* make sure a disconnect happened */
-      assert (stream != node->stream);
+      stream = mongoc_set_get(client->cluster.nodes, cursor->hint);
+      assert (! stream);
+
       assert (! client->in_exhaust);
    }
 
@@ -587,8 +596,8 @@ test_exhaust_cursor (void)
       cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
                                         NULL, NULL);
 
-      node = &client->cluster.nodes[cursor->hint - 1];
-      stream = node->stream;
+      stream = mongoc_set_get(client->cluster.nodes, cursor->hint);
+      hint = cursor->hint;
 
       for (i = 1; i < 10; i++) {
          r = mongoc_cursor_next (cursor, &doc);
@@ -602,7 +611,7 @@ test_exhaust_cursor (void)
 
       mongoc_cursor_destroy (cursor);
 
-      assert (stream == node->stream);
+      assert (stream == mongoc_set_get(client->cluster.nodes, hint));
 
       r = mongoc_cursor_next (cursor2, &doc);
       assert (r);

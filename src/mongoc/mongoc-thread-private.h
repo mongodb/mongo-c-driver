@@ -30,9 +30,25 @@
 # include <pthread.h>
 # define MONGOC_MUTEX_INITIALIZER       PTHREAD_MUTEX_INITIALIZER
 # define mongoc_cond_t                  pthread_cond_t
+# define mongoc_cond_broadcast          pthread_cond_broadcast
 # define mongoc_cond_init(_n)           pthread_cond_init((_n), NULL)
 # define mongoc_cond_wait               pthread_cond_wait
 # define mongoc_cond_signal             pthread_cond_signal
+static BSON_INLINE int
+mongoc_cond_timedwait (pthread_cond_t  *cond,
+                       pthread_mutex_t *mutex,
+                       int64_t         timeout_msec)
+{
+   struct timespec to;
+   struct timeval tv;
+
+   bson_gettimeofday (&tv);
+
+   to.tv_sec = tv.tv_sec + timeout_msec / 1000;
+   to.tv_nsec = (timeout_msec % 1000) * 1000000;
+
+   return pthread_cond_timedwait (cond, mutex, &to);
+}
 # define mongoc_cond_destroy            pthread_cond_destroy
 # define mongoc_mutex_t                 pthread_mutex_t
 # define mongoc_mutex_init(_n)          pthread_mutex_init((_n), NULL)
@@ -69,8 +85,28 @@ mongoc_thread_create (mongoc_thread_t *thread,
 # define mongoc_mutex_destroy           DeleteCriticalSection
 # define mongoc_cond_t                  CONDITION_VARIABLE
 # define mongoc_cond_init               InitializeConditionVariable
-# define mongoc_cond_wait(_c, _m)       SleepConditionVariableCS((_c), (_m), INFINITE)
+# define mongoc_cond_wait(_c, _m)       mongoc_cond_timedwait((_c), (_m), INFINITE)
+static BSON_INLINE int
+mongoc_cond_timedwait (mongoc_cond_t  *cond,
+                       mongoc_mutex_t *mutex,
+                       int64_t         timeout_msec)
+{
+   int r;
+
+   if (SleepConditionVariableCS(cond, mutex, timeout_msec)) {
+      return 0;
+   } else {
+      r = GetLastError();
+
+      if (r == WAIT_TIMEOUT || r == ERROR_TIMEOUT) {
+         return ETIMEDOUT;
+      } else {
+         return EINVAL;
+      }
+   }
+}
 # define mongoc_cond_signal             WakeConditionVariable
+# define mongoc_cond_broadcast          WakeAllConditionVariable
 static BSON_INLINE int
 mongoc_cond_destroy (mongoc_cond_t *_ignored)
 {

@@ -64,18 +64,23 @@ insert_test_docs (mongoc_collection_t *collection)
 
 
 static ha_node_t *
-get_replica (mongoc_cluster_node_t *node)
+get_replica (mongoc_client_t *client, uint32_t id)
 {
+   mongoc_server_description_t *description;
    ha_node_t *iter;
 
+   description = _mongoc_topology_server_by_id(client->topology, id);
+   BSON_ASSERT(description);
+
    for (iter = replica_set->nodes; iter; iter = iter->next) {
-      if (iter->port == node->host.port) {
+      if (iter->port == description->host.port) {
+         _mongoc_server_description_destroy(description);
          return iter;
       }
    }
 
+   _mongoc_server_description_destroy(description);
    BSON_ASSERT(false);
-
    return NULL;
 }
 
@@ -103,7 +108,7 @@ get_replica (mongoc_cluster_node_t *node)
 static void
 test1 (void)
 {
-   mongoc_cluster_node_t *node;
+   mongoc_server_description_t *description;
    mongoc_collection_t *collection;
    mongoc_read_prefs_t *read_prefs;
    mongoc_cursor_t *cursor;
@@ -154,7 +159,9 @@ test1 (void)
    /*
     * Make sure we queried a secondary.
     */
-   BSON_ASSERT(!client->cluster.nodes[cursor->hint - 1].primary);
+   description = _mongoc_topology_server_by_id(client->topology, cursor->hint);
+   BSON_ASSERT(description->type != MONGOC_SERVER_RS_PRIMARY);
+   _mongoc_server_description_destroy(description);
 
    /*
     * Exhaust the items in our first OP_REPLY.
@@ -183,9 +190,9 @@ test1 (void)
     * Determine which node we queried by using the hint to
     * get the cluster information.
     */
+
    BSON_ASSERT(cursor->hint);
-   node = &client->cluster.nodes[cursor->hint - 1];
-   replica = get_replica(node);
+   replica = get_replica(client, cursor->hint);
 
    /*
     * Kill the node we are communicating with.
@@ -204,9 +211,7 @@ test1 (void)
    BSON_ASSERT(r);
    MONGOC_WARNING("%s", error.message);
 
-   BSON_ASSERT(cursor->client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
-   BSON_ASSERT(client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
-   BSON_ASSERT(!client->cluster.nodes[cursor->hint - 1].stream);
+   BSON_ASSERT(client->cluster.nodes->items_len == 0);
 
    mongoc_cursor_destroy(cursor);
    mongoc_read_prefs_destroy(read_prefs);
