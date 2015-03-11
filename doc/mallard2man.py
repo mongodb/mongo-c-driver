@@ -249,7 +249,7 @@ class Convert(object):
             d = codecs.open(f, 'r', encoding='utf-8').read()
             self._writeLine(d)
         else:
-            print 'unknown element type', ele
+            print('unknown element type %s' % ele)
 
     def _generateTable(self, table):
         for child in table.getchildren():
@@ -306,7 +306,7 @@ def main(filenames, section='3'):
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print 'usage: %s SECTION FILENAMES...' % sys.argv[0]
+        print('usage: %s SECTION FILENAMES...' % sys.argv[0])
         sys.exit(1)
     section = sys.argv[1]
     main(sys.argv[2:], section)
