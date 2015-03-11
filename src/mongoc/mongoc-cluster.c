@@ -1061,19 +1061,20 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
 }
 
 static void
+_mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
+{
+   mongoc_stream_destroy (node->stream);
+
+   bson_free (node);
+}
+
+static void
 _mongoc_cluster_node_dtor (void *data_,
                            void *ctx_)
 {
    mongoc_cluster_node_t *node = data_;
 
-   mongoc_stream_destroy (node->stream);
-}
-
-static void
-_mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
-{
-   _mongoc_cluster_node_dtor (node, NULL);
-   bson_free (node);
+   _mongoc_cluster_node_destroy (node);
 }
 
 static mongoc_cluster_node_t *
@@ -1214,7 +1215,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 {
    mongoc_topology_scanner_node_t *scanner_node;
    mongoc_cluster_node_t *cluster_node;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t *sd = NULL;
    mongoc_stream_t *stream = NULL;
 
    bson_return_val_if_fail(cluster, NULL);
@@ -1283,13 +1284,22 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
       stream = cluster_node->stream;
    }
+
    if (!stream) {
       goto FETCH_FAIL;
+   }
+
+   if (sd) {
+      mongoc_server_description_destroy (sd);
    }
 
    return stream;
 
  FETCH_FAIL:
+
+   if (sd) {
+      mongoc_server_description_destroy (sd);
+   }
 
    bson_set_error(error,
                   MONGOC_ERROR_STREAM,
@@ -1519,10 +1529,6 @@ mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
 {
    mongoc_server_description_t *server;
    uint32_t server_id;
-
-   if (! write_concern) {
-      write_concern = cluster->client->write_concern;
-   }
 
    if (! read_prefs) {
       read_prefs = cluster->client->read_prefs;

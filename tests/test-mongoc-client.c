@@ -530,15 +530,18 @@ test_exhaust_cursor (void)
     * should be and ensure that an early destroy properly causes a disconnect
     * */
    {
+      uint32_t local_hint;
+
       r = mongoc_cursor_next (cursor, &doc);
       assert (r);
       assert (doc);
       assert (cursor->in_exhaust);
       assert (client->in_exhaust);
+      local_hint = cursor->hint;
 
       /* destroy the cursor, make sure a disconnect happened */
       mongoc_cursor_destroy (cursor);
-      stream = mongoc_set_get(client->cluster.nodes, cursor->hint);
+      stream = mongoc_set_get(client->cluster.nodes, local_hint);
       assert (! stream);
 
       assert (! client->in_exhaust);

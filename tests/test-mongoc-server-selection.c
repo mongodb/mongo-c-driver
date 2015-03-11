@@ -90,7 +90,7 @@ test_rtt_calculation_cb (bson_t *test)
 static void
 test_server_selection_logic_cb (bson_t *test)
 {
-   mongoc_topology_description_t *topology;
+   mongoc_topology_description_t topology;
    mongoc_server_description_t *sd;
    mongoc_read_prefs_t *read_prefs;
    mongoc_ss_optype_t op;
@@ -118,8 +118,6 @@ test_server_selection_logic_cb (bson_t *test)
 
    bson_return_if_fail (test);
 
-   topology = bson_malloc0(sizeof *topology);
-
    /* pull out topology description field */
    assert(bson_iter_init_find(&iter, test, "topology_description"));
    bson_iter_document(&iter, &len, &iter_data);
@@ -129,10 +127,10 @@ test_server_selection_logic_cb (bson_t *test)
    assert(bson_iter_init_find(&topology_iter, &test_topology, "type"));
    type = bson_iter_utf8(&topology_iter, NULL);
    if (strcmp(type, "Single") == 0) {
-      mongoc_topology_description_init(topology, MONGOC_TOPOLOGY_SINGLE, NULL);
+      mongoc_topology_description_init(&topology, MONGOC_TOPOLOGY_SINGLE, NULL);
    } else {
-      mongoc_topology_description_init(topology, MONGOC_TOPOLOGY_UNKNOWN, NULL);
-      topology->type = topology_type_from_test(bson_iter_utf8(&topology_iter, NULL));
+      mongoc_topology_description_init(&topology, MONGOC_TOPOLOGY_UNKNOWN, NULL);
+      topology.type = topology_type_from_test(bson_iter_utf8(&topology_iter, NULL));
    }
 
    /* for each server description in test, add server to our topology */
@@ -167,7 +165,7 @@ test_server_selection_logic_cb (bson_t *test)
       assert(bson_init_static(&sd->tags, iter_data, len));
 
       /* add new server to our topology description */
-      mongoc_set_add(topology->servers, sd->id, sd);
+      mongoc_set_add(topology.servers, sd->id, sd);
    }
 
    /* create read preference document from test */
@@ -209,7 +207,7 @@ test_server_selection_logic_cb (bson_t *test)
 
    _mongoc_array_init (&selected_servers, sizeof(mongoc_server_description_t*));
 
-   mongoc_topology_description_suitable_servers (&selected_servers, op, topology,
+   mongoc_topology_description_suitable_servers (&selected_servers, op, &topology,
                                                        read_prefs, 15);
 
    bson_iter_init (&iter, &latency);
@@ -234,7 +232,8 @@ test_server_selection_logic_cb (bson_t *test)
       assert (found);
    }
 
-   mongoc_topology_description_destroy(topology);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_topology_description_destroy(&topology);
    _mongoc_array_destroy (&selected_servers);
 }
 

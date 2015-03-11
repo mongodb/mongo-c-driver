@@ -471,15 +471,18 @@ mongoc_server_description_filter_eligible (
    uint32_t sd_len;
    const char *rp_val;
    const char *sd_val;
-   bool *sd_matched = bson_malloc(sizeof(bool) * description_len);
+   bool *sd_matched = NULL;
    size_t found;
    size_t i;
+   size_t rval = 0;
 
    rp_tags = mongoc_read_prefs_get_tags (read_prefs);
 
    if (bson_count_keys (rp_tags) == 0) {
       return description_len;
    }
+
+   sd_matched = bson_malloc(sizeof(bool) * description_len);
 
    bson_iter_init (&rp_tagset_iter, rp_tags);
 
@@ -522,7 +525,8 @@ mongoc_server_description_filter_eligible (
             }
          }
 
-         return found;
+         rval = found;
+         goto CLEANUP;
       }
    }
 
@@ -532,5 +536,8 @@ mongoc_server_description_filter_eligible (
       }
    }
 
-   return 0;
+CLEANUP:
+   bson_free (sd_matched);
+
+   return rval;
 }

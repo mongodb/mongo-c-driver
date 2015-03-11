@@ -24,7 +24,7 @@ static void
 _mongoc_topology_server_dtor (void *server_,
                               void *ctx_)
 {
-   mongoc_server_description_cleanup ((mongoc_server_description_t *)server_);
+   mongoc_server_description_destroy ((mongoc_server_description_t *)server_);
 }
 
 /*
@@ -1191,5 +1191,5 @@ mongoc_topology_description_handle_ismaster (
       gSDAMTransitionTable[sd->type][topology->type](topology, sd);
    }
 
-   return (mongoc_topology_description_server_by_id (topology, sd->id) != NULL);
+   return true;
 }

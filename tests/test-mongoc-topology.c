@@ -103,7 +103,7 @@ test_topology_client_pool_creation (void)
 static void
 test_topology_invalidate_server (void)
 {
-   mongoc_server_description_t fake_sd;
+   mongoc_server_description_t *fake_sd;
    mongoc_server_description_t *sd;
    mongoc_topology_description_t *td;
    mongoc_rpc_t rpc;
@@ -129,10 +129,12 @@ test_topology_invalidate_server (void)
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
 
+   fake_sd = bson_malloc0 (sizeof (*fake_sd));
+
    /* insert a 'fake' server description and ensure that it is invalidated by driver */
-   mongoc_server_description_init (&fake_sd, "fakeaddress:27033", fake_id);
-   fake_sd.type = MONGOC_SERVER_STANDALONE;
-   mongoc_set_add(td->servers, fake_id, &fake_sd);
+   mongoc_server_description_init (fake_sd, "fakeaddress:27033", fake_id);
+   fake_sd->type = MONGOC_SERVER_STANDALONE;
+   mongoc_set_add(td->servers, fake_id, fake_sd);
 
    /* with recv */
    _mongoc_buffer_init(&buffer, NULL, 0, NULL, NULL);
@@ -148,6 +150,8 @@ test_topology_invalidate_server (void)
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
 
+   _mongoc_buffer_destroy (&buffer);
+
    mongoc_client_destroy (client);
 }
 
@@ -160,7 +164,6 @@ test_invalid_cluster_node (void)
    bson_error_t error;
    mongoc_client_t *client;
    mongoc_cluster_t *cluster;
-   mongoc_stream_t *stream;
    mongoc_uri_t *uri;
    uint32_t id;
 
@@ -184,7 +187,7 @@ test_invalid_cluster_node (void)
    assert (cluster_node->timestamp < scanner_node->timestamp);
 
    /* ensure that cluster adjusts */
-   stream = mongoc_cluster_fetch_stream (cluster, id, &error);
+   mongoc_cluster_fetch_stream (cluster, id, &error);
    assert (cluster_node->timestamp > scanner_node->timestamp);
 
    mongoc_client_pool_push (pool, client);

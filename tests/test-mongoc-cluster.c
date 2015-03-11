@@ -28,6 +28,7 @@ test_get_max_bson_obj_size (void)
 
    /* single-threaded */
    client = mongoc_client_new (gTestUri);
+   assert (client);
 
    /* with given server */
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, NULL, &error);
@@ -104,6 +105,12 @@ test_get_max_msg_size (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+cleanup_globals (void)
+{
+   bson_free (gTestUri);
+}
+
 void
 test_cluster_install (TestSuite *suite)
 {
@@ -112,5 +119,5 @@ test_cluster_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cluster/test_get_max_bson_obj_size", test_get_max_bson_obj_size);
    TestSuite_Add (suite, "/Cluster/test_get_max_msg_size", test_get_max_msg_size);
 
-   bson_free (gTestUri);
+   atexit (cleanup_globals);
 }
