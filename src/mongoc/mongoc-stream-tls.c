@@ -44,7 +44,6 @@
 
 #define MONGOC_STREAM_TLS_BUFFER_SIZE 4096
 
-
 /**
  * mongoc_stream_tls_t:
  *
@@ -261,10 +260,10 @@ _mongoc_stream_tls_bio_write (BIO        *b,
    errno = 0;
    ret = (int)mongoc_stream_writev (tls->base_stream, &iov, 1,
                                     tls->timeout_msec);
-   BIO_clear_retry_flags (tls->bio);
+   BIO_clear_retry_flags (b);
 
    if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
-      BIO_set_retry_write (tls->bio);
+      BIO_set_retry_write (b);
    }
 
    return ret;
@@ -495,7 +494,6 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
 
    return ret;
 }
-
 
 /*
  *--------------------------------------------------------------------------

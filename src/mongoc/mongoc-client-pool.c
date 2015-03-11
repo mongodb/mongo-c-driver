@@ -218,18 +218,8 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
       pool->size--;
    }
 
-   if ((client->cluster.state == MONGOC_CLUSTER_STATE_HEALTHY) ||
-       (client->cluster.state == MONGOC_CLUSTER_STATE_BORN)) {
-      mongoc_mutex_lock (&pool->mutex);
-      _mongoc_queue_push_tail (&pool->queue, client);
-   } else if (_mongoc_cluster_reconnect (&client->cluster, NULL)) {
-      mongoc_mutex_lock (&pool->mutex);
-      _mongoc_queue_push_tail (&pool->queue, client);
-   } else {
-      mongoc_client_destroy (client);
-      mongoc_mutex_lock (&pool->mutex);
-      pool->size--;
-   }
+   mongoc_mutex_lock (&pool->mutex);
+   _mongoc_queue_push_tail (&pool->queue, client);
 
    mongoc_cond_signal(&pool->cond);
    mongoc_mutex_unlock(&pool->mutex);
