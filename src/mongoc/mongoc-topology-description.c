@@ -19,6 +19,7 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"
 #include "mongoc-trace.h"
+#include "mongoc-uri-private.h"
 
 static void
 _mongoc_topology_server_dtor (void *server_,
@@ -539,8 +540,8 @@ _mongoc_topology_description_has_server_cb (void *item,
  *
  * _mongoc_topology_description_topology_has_server --
  *
- *       Return true if @server is in @topology. If so, place its id in
- *       @id if given.
+ *       Return true if @address is in @topology. If so, place its id in
+ *       @id if given. Will normalize @address to lowercase before comparing.
  *
  * Returns:
  *       True if server is in topology, false otherwise.
@@ -556,17 +557,21 @@ _mongoc_topology_description_has_server (mongoc_topology_description_t *descript
                                          uint32_t                      *id /* OUT */)
 {
    mongoc_address_and_id_t data;
+   int len = strlen(address);
+   char *lowercase;
 
-   bson_return_val_if_fail (description, 0);
-   bson_return_val_if_fail (address, 0);
+   lowercase = bson_malloc0(len + 1);
+   mongoc_uri_lowercase_hostname(address, lowercase, len);
 
-   data.address = address;
+   data.address = lowercase;
    data.found = false;
    mongoc_set_for_each (description->servers, _mongoc_topology_description_has_server_cb, &data);
 
    if (data.found && id) {
       *id = data.id;
    }
+
+   bson_free (lowercase);
 
    return data.found;
 }
@@ -709,7 +714,8 @@ mongoc_topology_description_invalidate_server (mongoc_topology_description_t *to
  * mongoc_topology_description_add_server --
  *
  *       Add the specified server to the cluster topology if it is not
- *       already a member. If @id, place its id in @id.
+ *       already a member. If @id, place its id in @id. Normalizes server
+ *       name to lowercase before storing or comparing.
  *
  *       NOTE: this method should only be called while holding the mutex on
  *       the owning topology object.
@@ -730,17 +736,19 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
 {
    uint32_t server_id;
    mongoc_server_description_t *description;
+   int len = strlen (server);
+   char *lowercase;
 
-   bson_return_val_if_fail (topology, false);
-   bson_return_val_if_fail (server, false);
+   lowercase = bson_malloc0(len + 1);
+   mongoc_uri_lowercase_hostname(server, lowercase, len);
 
-   if (!_mongoc_topology_description_has_server(topology, server, &server_id)){
+   if (!_mongoc_topology_description_has_server(topology, lowercase, &server_id)){
 
       /* TODO this might not be an accurate count in all cases */
       server_id = ++topology->max_server_id;
 
       description = bson_malloc0(sizeof *description);
-      mongoc_server_description_init(description, server, server_id);
+      mongoc_server_description_init(description, lowercase, server_id);
 
       mongoc_set_add(topology->servers, server_id, description);
 
@@ -752,6 +760,8 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
    if (id) {
       *id = server_id;
    }
+
+   bson_free (lowercase);
 
    return true;
 }

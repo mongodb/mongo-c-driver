@@ -19,7 +19,7 @@
 #include "mongoc-read-prefs.h"
 #include "mongoc-server-description-private.h"
 #include "mongoc-trace.h"
-#include "mongoc-uri.h"
+#include "mongoc-uri-private.h"
 
 #include <stdio.h>
 
@@ -152,7 +152,8 @@ mongoc_server_description_destroy (mongoc_server_description_t *description)
  * mongoc_server_description_has_rs_member --
  *
  *       Return true if this address is included in server's list of rs
- *       members, false otherwise.
+ *       members, false otherwise. Will normalize to lowercase before
+ *       comparing.
  *
  * Returns:
  *       true, false
@@ -167,8 +168,17 @@ mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
                                         const char                  *address)
 {
    bson_iter_t member_iter;
+   const char *name;
    const bson_t *rs_members[3];
    int i;
+   int buf_len = -1;
+   int name_len;
+   int len = strlen(address);
+   char *lowercase;
+   char *buf = NULL;
+
+   lowercase = bson_malloc0(len + 1);
+   mongoc_uri_lowercase_hostname(address, lowercase, len);
 
    if (server->type != MONGOC_SERVER_UNKNOWN) {
       rs_members[0] = &server->hosts;
@@ -179,12 +189,32 @@ mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
          bson_iter_init (&member_iter, rs_members[i]);
 
          while (bson_iter_next (&member_iter)) {
-            if (strcmp (address, bson_iter_utf8 (&member_iter, NULL)) == 0) {
+            /* TODO we convert to lowercase each time we do this, it might be
+               better to store lowercased member names instead */
+            name = bson_iter_utf8 (&member_iter, NULL);
+            name_len = strlen (name);
+
+            /* re-use previously malloced buffer if we can */
+            if (name_len > buf_len) {
+               if (buf) bson_free (buf);
+               buf_len = name_len;
+               buf = bson_malloc0(buf_len + 1);
+            } else {
+               memset(buf, 0, buf_len);
+            }
+
+            mongoc_uri_lowercase_hostname (name, buf, buf_len);
+
+            if (strcmp (lowercase, buf) == 0) {
+               bson_free (buf);
                return true;
             }
          }
       }
    }
+
+   bson_free (lowercase);
+   if (buf) bson_free (buf);
 
    return false;
 }
