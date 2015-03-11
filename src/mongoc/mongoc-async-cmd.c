@@ -293,6 +293,8 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
 
       acmd->bytes_to_read = msg_len - 4;
       acmd->state = MONGOC_ASYNC_CMD_RECV_RPC;
+
+      return _mongoc_async_cmd_phase_recv_rpc (acmd);
    }
 
    return MONGOC_ASYNC_CMD_IN_PROGRESS;
