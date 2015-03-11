@@ -31,12 +31,9 @@ page to a groff styled man page.
 import os
 import sys
 
-try:
-    import codecs
-    from datetime import datetime
-    from lxml import etree
-except ImportError:
-    sys.exit(0)
+import codecs
+from datetime import datetime
+from xml.etree import ElementTree
 
 INCLUDE = '{http://www.w3.org/2001/XInclude}include'
 TITLE = '{http://projectmallard.org/1.0/}title'
@@ -73,9 +70,21 @@ class Convert(object):
         self.sections = []
 
     def _parse(self):
-        self.tree = etree.ElementTree()
-        self.tree.parse(file(self.inFile))
+        self.tree = ElementTree.ElementTree()
+        self.tree.parse(open(self.inFile))
         self.root = self.tree.getroot()
+
+        # Python's standard ElementTree doesn't store an element's parent on
+        # the element. Make a child->parent map.
+        try:
+            iterator = self.tree.iter()
+        except AttributeError:
+            # Python 2.6.
+            iterator = self.tree.getiterator()
+        self.parent_map = dict((c, p) for p in iterator for c in p)
+
+    def _get_parent(self, ele):
+        return self.parent_map[ele]
 
     def _extract(self):
         # Try to extract the title.
@@ -152,7 +161,7 @@ class Convert(object):
         self._writeCommand('.fi')
 
     def _generateCode(self, code):
-        if code.getparent().tag == P:
+        if self._get_parent(code).tag == P:
             self._writeCommand('.B %s' % code.text)
         else:
             self._writeCommand('.nf')
