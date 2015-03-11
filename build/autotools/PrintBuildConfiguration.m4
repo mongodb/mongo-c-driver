@@ -1,6 +1,6 @@
 AC_OUTPUT
 
-if test $(( ${MONGOC_MINOR_VERSION} % 2 )) -eq 1; then
+if test $(( ${MONGOC_MICRO_VERSION} % 2 )) -eq 1; then
 cat << EOF
  *** IMPORTANT *** 
 
