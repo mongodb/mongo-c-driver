@@ -59,6 +59,8 @@ extern "C" {
 
 
 typedef void (*TestFunc) (void);
+typedef void (*TestFuncWC) (void*);
+typedef void (*TestFuncDtor) (void*);
 typedef struct _Test Test;
 typedef struct _TestSuite TestSuite;
 
@@ -67,7 +69,9 @@ struct _Test
 {
    Test *next;
    char *name;
-   TestFunc func;
+   TestFuncWC func;
+   TestFuncDtor dtor;
+   void *ctx;
    int exit_code;
    unsigned seed;
    int (*check) (void);
@@ -92,9 +96,16 @@ void TestSuite_Init    (TestSuite *suite,
 void TestSuite_Add     (TestSuite *suite,
                         const char *name,
                         TestFunc func);
+void TestSuite_AddWC   (TestSuite *suite,
+                        const char *name,
+                        TestFuncWC func,
+                        TestFuncDtor dtor,
+                        void *ctx);
 void TestSuite_AddFull (TestSuite *suite,
                         const char *name,
-                        TestFunc func,
+                        TestFuncWC func,
+                        TestFuncDtor dtor,
+                        void *ctx,
                         int (*check) (void));
 int  TestSuite_Run     (TestSuite *suite);
 void TestSuite_Destroy (TestSuite *suite);

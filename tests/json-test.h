@@ -17,6 +17,8 @@
 #ifndef JSON_TEST_H
 #define JSON_TEST_H
 
+#include "TestSuite.h"
+
 #include <bson.h>
 #include <mongoc.h>
 
@@ -26,7 +28,7 @@
 #define MAX_NAME_LENGTH 250
 #define MAX_NUM_TESTS 100
 
-typedef void (* test_hook)(bson_t *test, void *data);
+typedef void (* test_hook)(bson_t *test);
 
 bson_t *
 get_bson_from_json_file (char *filename);
@@ -43,9 +45,9 @@ assemble_path (const char *parent_path,
                char       *dst /* OUT */);
 
 void
-run_json_test_suite(const char *dir_path,
-                    test_hook   callback,
-                    void       *data);
+install_json_test_suite(TestSuite  *suite,
+                        const char *dir_path,
+                        test_hook   callback);
 
 mongoc_topology_description_type_t
 topology_type_from_test(const char *type);

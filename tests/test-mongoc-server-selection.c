@@ -52,7 +52,7 @@ read_mode_from_test(const char *mode)
  */
 
 static void
-test_rtt_calculation_cb (bson_t *test, void *data)
+test_rtt_calculation_cb (bson_t *test)
 {
    mongoc_server_description_t *description;
    bson_iter_t iter;
@@ -88,7 +88,7 @@ test_rtt_calculation_cb (bson_t *test, void *data)
  *-----------------------------------------------------------------------
  */
 static void
-test_server_selection_logic_cb (bson_t *test, void *data)
+test_server_selection_logic_cb (bson_t *test)
 {
    mongoc_topology_description_t *topology;
    mongoc_server_description_t *sd;
@@ -246,19 +246,20 @@ test_server_selection_logic_cb (bson_t *test, void *data)
  *-----------------------------------------------------------------------
  */
 static void
-test_all_spec_tests (void)
+test_all_spec_tests (TestSuite *suite)
 {
    /* RTT calculation */
-   run_json_test_suite("tests/json/server_selection/rtt",
-                       &test_rtt_calculation_cb, NULL);
+   install_json_test_suite(suite, "tests/json/server_selection/rtt",
+                           &test_rtt_calculation_cb);
 
    /* SS logic */
-   run_json_test_suite("tests/json/server_selection/server_selection",
-                       &test_server_selection_logic_cb, NULL);
+   install_json_test_suite(suite, "tests/json/server_selection/server_selection",
+                           &test_server_selection_logic_cb);
 }
 
 void
 test_server_selection_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/ServerSelection/spec", test_all_spec_tests);
+   //TestSuite_Add (suite, "/ServerSelection/spec", test_all_spec_tests);
+   test_all_spec_tests(suite);
 }

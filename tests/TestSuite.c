@@ -262,20 +262,40 @@ TestSuite_CheckDummy (void)
    return 1;
 }
 
+static void
+TestSuite_AddHelper (void *cb_)
+{
+   TestFunc cb = (TestFunc)cb_;
+
+   cb();
+}
 
 void
 TestSuite_Add (TestSuite  *suite, /* IN */
                const char *name,  /* IN */
                TestFunc    func)  /* IN */
 {
-   TestSuite_AddFull (suite, name, func, TestSuite_CheckDummy);
+   TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckDummy);
+}
+
+
+void
+TestSuite_AddWC (TestSuite  *suite, /* IN */
+                 const char *name,  /* IN */
+                 TestFuncWC  func,  /* IN */
+                 TestFuncDtor dtor,  /* IN */
+                 void       *ctx)   /* IN */
+{
+   TestSuite_AddFull (suite, name, func, dtor, ctx, TestSuite_CheckDummy);
 }
 
 
 void
 TestSuite_AddFull (TestSuite  *suite,   /* IN */
                    const char *name,    /* IN */
-                   TestFunc    func,    /* IN */
+                   TestFuncWC  func,    /* IN */
+                   TestFuncDtor dtor,    /* IN */
+                   void       *ctx,
                    int (*check) (void)) /* IN */
 {
    Test *test;
@@ -286,6 +306,8 @@ TestSuite_AddFull (TestSuite  *suite,   /* IN */
    test->func = func;
    test->check = check;
    test->next = NULL;
+   test->dtor = dtor;
+   test->ctx = ctx;
    TestSuite_SeedRand (suite, test);
 
    if (!suite->tests) {
@@ -325,7 +347,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
       dup2 (fd, STDOUT_FILENO);
       close (fd);
       srand (test->seed);
-      test->func ();
+      test->func (test->ctx);
       exit (0);
    }
 
@@ -363,12 +385,12 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
 
 #if defined(_WIN32)
       srand (test->seed);
-      test->func ();
+      test->func (test->ctx);
       status = 0;
 #else
       if ((suite->flags & TEST_NOFORK)) {
          srand (test->seed);
-         test->func ();
+         test->func (test->ctx);
          status = 0;
       } else {
          status = TestSuite_RunFuncInChild (suite, test);
@@ -713,6 +735,10 @@ TestSuite_Destroy (TestSuite *suite)
 
    for (test = suite->tests; test; test = tmp) {
       tmp = test->next;
+
+      if (test->dtor) {
+         test->dtor(test->ctx);
+      }
       free (test->name);
       free (test);
    }

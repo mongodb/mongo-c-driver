@@ -234,26 +234,30 @@ get_bson_from_json_file(char *filename)
  *-----------------------------------------------------------------------
  */
 void
-run_json_test_suite(const char *dir_path, test_hook callback, void *data)
+install_json_test_suite(TestSuite *suite, const char *dir_path, test_hook callback)
 {
    char test_paths[MAX_NUM_TESTS][MAX_NAME_LENGTH];
    int num_tests;
    int i;
    bson_t *test;
+   char *skip_json;
+   char *ext;
 
    num_tests = collect_tests_from_dir(&test_paths[0],
                                       dir_path,
                                       0, 100);
-   printf("\tfound %d JSON tests\n", num_tests);
 
    for (i = 0; i < num_tests; i++) {
-      printf("\t\t%s: ", test_paths[i]);
       test = get_bson_from_json_file(test_paths[i]);
 
       if (test) {
-         callback(test, data);
-         printf("PASS\n");
-         bson_free(test);
+         skip_json = strstr(test_paths[i], "/json") + strlen("/json");
+         assert(skip_json);
+         ext = strstr (skip_json, ".json");
+         assert(ext);
+         ext[0] = '\0';
+
+         TestSuite_AddWC(suite, skip_json, (void (*)(void *))callback, (void (*)(void*))bson_destroy, test);
       } else {
          printf("NO DATA\n");
       }

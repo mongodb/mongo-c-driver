@@ -68,7 +68,7 @@ _topology_has_description(mongoc_topology_description_t *topology,
  *-----------------------------------------------------------------------
  */
 static void
-test_sdam_cb (bson_t *test, void *data)
+test_sdam_cb (bson_t *test)
 {
    mongoc_server_description_t *sd;
    mongoc_client_t *client;
@@ -211,23 +211,23 @@ test_sdam_cb (bson_t *test, void *data)
  *-----------------------------------------------------------------------
  */
 static void
-test_all_spec_tests (void)
+test_all_spec_tests (TestSuite *suite)
 {
    /* Single */
-   run_json_test_suite("tests/json/server_discovery_and_monitoring/single",
-                       &test_sdam_cb, NULL);
+   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/single",
+                       &test_sdam_cb);
 
    /* Replica set */
-   run_json_test_suite("tests/json/server_discovery_and_monitoring/rs",
-                       &test_sdam_cb, NULL);
+   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/rs",
+                       &test_sdam_cb);
 
    /* Sharded */
-   run_json_test_suite("tests/json/server_discovery_and_monitoring/sharded",
-                       &test_sdam_cb, NULL);
+   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/sharded",
+                       &test_sdam_cb);
 }
 
 void
 test_sdam_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/SDAM/spec", test_all_spec_tests);
+   test_all_spec_tests(suite);
 }
