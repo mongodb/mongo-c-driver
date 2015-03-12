@@ -314,10 +314,6 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
    bson_return_val_if_fail (bulk, false);
 
-   if (!bulk->write_concern) {
-      bulk->write_concern = mongoc_write_concern_new ();
-   }
-
    if (bulk->executed) {
       _mongoc_write_result_destroy (&bulk->result);
    }
