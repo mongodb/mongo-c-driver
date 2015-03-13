@@ -132,6 +132,20 @@ test_mongoc_uri_new (void)
    ASSERT(!bson_iter_next(&iter));
    mongoc_uri_destroy(uri);
 
+   uri = mongoc_uri_new("mongodb://localhost/?safe=false&journal=false");
+   options = mongoc_uri_get_options(uri);
+   ASSERT(options);
+   ASSERT_CMPINT(bson_count_keys(options), ==, 2);
+   ASSERT(bson_iter_init(&iter, options));
+   ASSERT(bson_iter_find_case(&iter, "safe"));
+   ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
+   ASSERT(!bson_iter_bool(&iter));
+   ASSERT(bson_iter_find_case(&iter, "journal"));
+   ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
+   ASSERT(!bson_iter_bool(&iter));
+   ASSERT(!bson_iter_next(&iter));
+   mongoc_uri_destroy(uri);
+
    uri = mongoc_uri_new("mongodb:///tmp/mongodb-27017.sock/?ssl=false");
    ASSERT(uri);
    ASSERT_CMPSTR(mongoc_uri_get_hosts(uri)->host, "/tmp/mongodb-27017.sock");
@@ -413,17 +427,17 @@ test_mongoc_uri_write_concern (void)
    int i;
    static const write_concern_test tests [] = {
       { "mongodb://localhost/?safe=false", true, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED },
-      { "mongodb://localhost/?safe=true", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?safe=true", true, 1 },
       { "mongodb://localhost/?w=-1", true, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED },
       { "mongodb://localhost/?w=0", true, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED },
-      { "mongodb://localhost/?w=1", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?w=1", true, 1 },
       { "mongodb://localhost/?w=2", true, 2 },
       { "mongodb://localhost/?w=majority", true, MONGOC_WRITE_CONCERN_W_MAJORITY },
       { "mongodb://localhost/?w=10", true, 10 },
       { "mongodb://localhost/?w=", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
       { "mongodb://localhost/?w=mytag", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag" },
       { "mongodb://localhost/?w=mytag&safe=false", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag" },
-      { "mongodb://localhost/?w=1&safe=false", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?w=1&safe=false", true, 1 },
       { NULL }
    };
 
