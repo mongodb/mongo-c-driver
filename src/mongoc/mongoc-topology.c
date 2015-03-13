@@ -455,6 +455,40 @@ mongoc_topology_invalidate_server (mongoc_topology_t *topology,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_topology_server_timestamp --
+ *
+ *      Return the topology's scanner's timestamp for the given server,
+ *      or -1 if there is no scanner node for the given server.
+ *
+ *      NOTE: this method uses @topology's mutex.
+ *
+ * Returns:
+ *      Timestamp, or -1
+ *
+ *--------------------------------------------------------------------------
+ */
+int64_t
+mongoc_topology_server_timestamp (mongoc_topology_t *topology,
+                                  uint32_t           id)
+{
+   mongoc_topology_scanner_node_t *node;
+   int64_t timestamp = -1;
+
+   mongoc_mutex_lock (&topology->mutex);
+
+   node = mongoc_topology_scanner_get_node (topology->scanner, id);
+   if (node) {
+      timestamp = node->timestamp;
+   }
+
+   mongoc_mutex_unlock (&topology->mutex);
+
+   return timestamp;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_topology_run_background --
  *
  *       The background topology monitoring thread runs in this loop.

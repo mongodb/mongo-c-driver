@@ -83,6 +83,10 @@ void
 mongoc_topology_invalidate_server (mongoc_topology_t *topology,
                                    uint32_t           id);
 
+int64_t
+mongoc_topology_server_timestamp (mongoc_topology_t *topology,
+                                  uint32_t           id);
+
 void
 mongoc_topology_background_thread_start (mongoc_topology_t *topology);
 

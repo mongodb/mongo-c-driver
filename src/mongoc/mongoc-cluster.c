@@ -1214,20 +1214,23 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
                              bson_error_t *error)
 {
    mongoc_topology_scanner_node_t *scanner_node;
+   mongoc_topology_t *topology;
    mongoc_cluster_node_t *cluster_node;
    mongoc_server_description_t *sd = NULL;
    mongoc_stream_t *stream = NULL;
+   int64_t timestamp;
 
    bson_return_val_if_fail(cluster, NULL);
 
-   /* TODO: this shouldn't be called for multi-threaded topologies */
-   scanner_node = mongoc_topology_scanner_get_node(cluster->client->topology->scanner, server_id);
-   if (!scanner_node) {
-      goto FETCH_FAIL;
-   }
+   topology = cluster->client->topology;
 
    /* in the single-threaded use case we share topology's streams */
-   if (cluster->client->topology->single_threaded) {
+   if (topology->single_threaded) {
+
+      scanner_node = mongoc_topology_scanner_get_node(topology->scanner, server_id);
+      if (!scanner_node) {
+         goto FETCH_FAIL;
+      }
 
       stream = scanner_node->stream;
       if (!stream) {
@@ -1238,7 +1241,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
       if (cluster->requires_auth && !scanner_node->has_auth) {
 
          /* try to reconnect and re-authenticate */
-         sd = mongoc_topology_server_by_id(cluster->client->topology, server_id);
+         sd = mongoc_topology_server_by_id(topology, server_id);
          if (!sd) {
             goto FETCH_FAIL;
          }
@@ -1258,8 +1261,9 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
       /* if our stream is out-of-date, create a new one
          TODO this could maybe be more efficient */
-      if (cluster_node->timestamp < scanner_node->timestamp) {
-         sd = mongoc_topology_server_by_id(cluster->client->topology, server_id);
+      timestamp = mongoc_topology_server_timestamp (topology, server_id);
+      if (timestamp == -1 || cluster_node->timestamp < timestamp) {
+         sd = mongoc_topology_server_by_id(topology, server_id);
          if (!sd) {
             goto FETCH_FAIL;
          }
