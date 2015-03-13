@@ -48,7 +48,7 @@ mongoc_write_concern_new (void)
    mongoc_write_concern_t *write_concern;
 
    write_concern = bson_malloc0(sizeof *write_concern);
-   write_concern->w = -2;
+   write_concern->w = MONGOC_WRITE_CONCERN_W_DEFAULT;
 
    return write_concern;
 }
@@ -214,7 +214,7 @@ bool
 mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern)
 {
    bson_return_val_if_fail(write_concern, false);
-   return (write_concern->w == -3);
+   return (write_concern->w == MONGOC_WRITE_CONCERN_W_MAJORITY);
 }
 
 
@@ -380,7 +380,8 @@ bool
 _mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern)
 {
    if (write_concern) {
-      return ((write_concern->w != 0) && (write_concern->w != -1));
+      return ((write_concern->w != MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED) &&
+              (write_concern->w != MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED));
    }
    return false;
 }
