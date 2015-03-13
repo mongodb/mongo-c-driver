@@ -28,6 +28,12 @@
 
 #define ALPHA 0.2
 
+
+#if defined(_WIN32) && !defined(strcasecmp)
+# define strcasecmp _stricmp
+#endif
+
+
 static uint8_t kMongocEmptyBson[] = { 5, 0, 0, 0, 0 };
 
 /* Destroy allocated resources within @description, but don't free it */
@@ -179,7 +185,7 @@ mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
          bson_iter_init (&member_iter, rs_members[i]);
 
          while (bson_iter_next (&member_iter)) {
-            if (strcmp (address, bson_iter_utf8 (&member_iter, NULL)) == 0) {
+            if (strcasecmp (address, bson_iter_utf8 (&member_iter, NULL)) == 0) {
                return true;
             }
          }

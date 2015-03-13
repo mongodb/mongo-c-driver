@@ -20,6 +20,12 @@
 #include "mongoc-topology-description-private.h"
 #include "mongoc-trace.h"
 
+
+#if defined(_WIN32) && !defined(strcasecmp)
+# define strcasecmp _stricmp
+#endif
+
+
 static void
 _mongoc_topology_server_dtor (void *server_,
                               void *ctx_)
@@ -526,7 +532,7 @@ _mongoc_topology_description_has_server_cb (void *item,
    mongoc_server_description_t *server = item;
    mongoc_address_and_id_t *data = ctx;
 
-   if (strcmp (data->address, server->connection_address) == 0) {
+   if (strcasecmp (data->address, server->connection_address) == 0) {
       data->found = true;
       data->id = server->id;
       return false;
@@ -584,7 +590,7 @@ _mongoc_label_unknown_member_cb (void *item,
    mongoc_server_description_t *server = item;
    mongoc_address_and_type_t *data = ctx;
 
-   if (strcmp (server->connection_address, data->address) == 0 &&
+   if (strcasecmp (server->connection_address, data->address) == 0 &&
        server->type == MONGOC_SERVER_UNKNOWN) {
       mongoc_server_description_set_state(server, data->type);
       return false;
@@ -806,7 +812,7 @@ _mongoc_topology_description_remove_missing_hosts_cb (void *item,
    mongoc_server_description_t *server = item;
    mongoc_primary_and_topology_t *data = ctx;
 
-   if (strcmp(data->primary->connection_address, server->connection_address) != 0 &&
+   if (strcasecmp(data->primary->connection_address, server->connection_address) != 0 &&
        !mongoc_server_description_has_rs_member(data->primary, server->connection_address)) {
       _mongoc_topology_description_remove_server(data->topology, server);
    }

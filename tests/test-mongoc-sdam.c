@@ -24,7 +24,7 @@ _server_description_by_hostname(mongoc_topology_description_t *topology,
 
    for (i = 0; i < set->items_len; i++) {
       server_iter = set->items[i].item;
-      if (strcmp(address, server_iter->connection_address) == 0) {
+      if (strcasecmp(address, server_iter->connection_address) == 0) {
          return server_iter;
       }
    }
@@ -104,10 +104,6 @@ test_sdam_cb (bson_t *test)
    } else if (strcmp("New primary with wrong setName", name) == 0 ||
               strcmp("Secondary wrong setName with primary", name) == 0) {
       printf("SKIPPED -- see SPEC-142 ");
-      return;
-   } else if (strcmp("Replica set case normalization", name) == 0 ||
-              strcmp("Normalize URI case", name) == 0) {
-      printf("SKIPPED -- see CDRIVER-536 ");
       return;
    } else if (strcmp("Direct connection to slave", name) == 0) {
       printf("SKIPPED -- see SPEC-139 ");
