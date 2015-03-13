@@ -321,7 +321,6 @@ test_regex (void)
                                     &error);
 
    ASSERT (count > 0);
-//   ASSERT (!error.domain);
 
    r = mongoc_collection_drop (collection, &error);
    ASSERT (r);

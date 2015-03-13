@@ -476,11 +476,6 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
 
    bson_return_val_if_fail (cursor, false);
 
-   if (!_mongoc_client_warm_up (cursor->client, &cursor->error)) {
-      cursor->failed = true;
-      RETURN (false);
-   }
-
    rpc.query.msg_len = 0;
    rpc.query.request_id = 0;
    rpc.query.response_to = 0;
@@ -581,11 +576,6 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    BSON_ASSERT (cursor);
 
    if (!cursor->in_exhaust) {
-      if (!_mongoc_client_warm_up (cursor->client, &cursor->error)) {
-         cursor->failed = true;
-         RETURN (false);
-      }
-
       if (!(cursor_id = cursor->rpc.reply.cursor_id)) {
          bson_set_error(&cursor->error,
                         MONGOC_ERROR_CURSOR,

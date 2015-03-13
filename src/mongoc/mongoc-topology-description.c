@@ -438,6 +438,10 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
       RETURN(NULL);
    }
 
+   if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
+      return topology->servers->items[0].item;
+   }
+
    _mongoc_array_init(&suitable_servers, sizeof(mongoc_server_description_t *));
 
    mongoc_topology_description_suitable_servers(&suitable_servers, optype,

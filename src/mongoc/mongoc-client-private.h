@@ -100,10 +100,6 @@ _mongoc_client_recv_gle (mongoc_client_t *client,
                          bson_t         **gle_doc,
                          bson_error_t    *error);
 
-bool
-_mongoc_client_warm_up (mongoc_client_t *client,
-                        bson_error_t    *error);
-
 uint32_t
 _mongoc_client_preselect (mongoc_client_t              *client,
                           mongoc_opcode_t               opcode,

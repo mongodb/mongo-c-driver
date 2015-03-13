@@ -20,9 +20,6 @@
 
 #include "utlist.h"
 
-void
-mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
-
 /*
  *-------------------------------------------------------------------------
  *

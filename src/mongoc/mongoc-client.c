@@ -813,6 +813,10 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
    if (opts->pem_file) {
       client->pem_subject = _mongoc_ssl_extract_subject (opts->pem_file);
    }
+
+   if (client->topology->single_threaded) {
+      client->topology->scanner->ssl_opts = &client->ssl_opts;
+   }
 }
 #endif
 
@@ -1167,33 +1171,6 @@ mongoc_client_set_read_prefs (mongoc_client_t           *client,
          mongoc_read_prefs_copy(read_prefs) :
          mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
    }
-}
-
-
-bool
-_mongoc_client_warm_up (mongoc_client_t *client,
-                        bson_error_t    *error)
-{
-   uint32_t server_id;
-   mongoc_read_prefs_t *read_prefs;
-   mongoc_write_concern_t *write_concern;
-
-   BSON_ASSERT (client);
-
-   write_concern = mongoc_write_concern_new();
-   read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
-
-   /* If SDAM has been able to find any server, we know the cluster
-      can be reached. No need to ping separately. */
-   server_id = mongoc_cluster_preselect(&client->cluster,
-                                        MONGOC_OPCODE_MSG,
-                                        read_prefs,
-                                        error);
-
-   mongoc_write_concern_destroy (write_concern);
-   mongoc_read_prefs_destroy (read_prefs);
-
-   return (server_id > 0);
 }
 
 

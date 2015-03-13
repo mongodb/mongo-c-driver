@@ -333,7 +333,6 @@ test_mongoc_client_read_prefs (void)
    mock_server_t *server;
    uint16_t port;
    const bson_t *doc;
-   bson_error_t error;
    bool success = false;
    bson_t b = BSON_INITIALIZER;
    bson_t q = BSON_INITIALIZER;
@@ -348,10 +347,6 @@ test_mongoc_client_read_prefs (void)
 
    uristr = bson_strdup_printf ("mongodb://127.0.0.1:%hu/", port);
    client = mongoc_client_new (uristr);
-
-   if (!_mongoc_client_warm_up (client, &error)) {
-      assert (false);
-   }
 
    collection = mongoc_client_get_collection (client, "test", "test");
 

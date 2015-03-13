@@ -147,7 +147,7 @@ test_sdam_cb (bson_t *test)
                                               bson_iter_utf8(&ismaster_field_iter, NULL));
 
          /* if server has been removed from topology, skip */
-         // TODO: ASSURE that the manager has the same behavior
+         /* TODO: ASSURE that the manager has the same behavior */
          if (!sd) continue;
 
          bson_iter_init_find (&ismaster_field_iter, &ismaster, "1");

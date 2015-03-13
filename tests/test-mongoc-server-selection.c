@@ -259,6 +259,5 @@ test_all_spec_tests (TestSuite *suite)
 void
 test_server_selection_install (TestSuite *suite)
 {
-   //TestSuite_Add (suite, "/ServerSelection/spec", test_all_spec_tests);
    test_all_spec_tests(suite);
 }

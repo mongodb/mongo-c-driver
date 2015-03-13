@@ -338,7 +338,7 @@ mongoc_server_description_handle_ismaster (
          sd->max_wire_version = bson_iter_int32 (&iter);
       } else if (strcmp ("msg", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto ERROR;
-         is_shard = bson_iter_utf8 (&iter, NULL);
+         is_shard = !!bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("setName", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto ERROR;
          sd->set_name = bson_iter_utf8 (&iter, NULL);

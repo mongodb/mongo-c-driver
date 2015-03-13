@@ -1220,6 +1220,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
    bson_return_val_if_fail(cluster, NULL);
 
+   /* TODO: this shouldn't be called for multi-threaded topologies */
    scanner_node = mongoc_topology_scanner_get_node(cluster->client->topology->scanner, server_id);
    if (!scanner_node) {
       goto FETCH_FAIL;
@@ -2090,11 +2091,13 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
 
    server_id = mongoc_cluster_select(cluster, rpcs, rpcs_len, read_prefs, error);
 
-   if(mongoc_cluster_sendv_to_server(cluster, rpcs, rpcs_len, server_id,
-                                     write_concern, error)) {
-      return true;
+   if (server_id &&
+       mongoc_cluster_sendv_to_server (cluster, rpcs, rpcs_len, server_id,
+                                       write_concern, error)) {
+      return server_id;
    }
-   return false;
+
+   return 0;
 }
 
 /*
