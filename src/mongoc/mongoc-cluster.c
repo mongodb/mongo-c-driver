@@ -534,10 +534,10 @@ _mongoc_cluster_get_canonicalized_name (mongoc_cluster_t      *cluster, /* IN */
  */
 
 static bool
-_mongoc_cluster_auth_node_sasl (mongoc_cluster_t            *cluster,
-                                mongoc_stream_t             *stream,
-                                mongoc_server_description_t *sd,
-                                bson_error_t                *error)
+_mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
+                                mongoc_stream_t  *stream,
+                                const char       *hostname,
+                                bson_error_t     *error)
 {
    uint32_t buflen = 0;
    mongoc_sasl_t sasl;
@@ -591,10 +591,10 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t            *cluster,
                                                   sizeof real_name, error)) {
          _mongoc_sasl_set_service_host (&sasl, real_name);
       } else {
-         _mongoc_sasl_set_service_host (&sasl, sd->host.host);
+         _mongoc_sasl_set_service_host (&sasl, hostname);
       }
    } else {
-      _mongoc_sasl_set_service_host (&sasl, sd->host.host);
+      _mongoc_sasl_set_service_host (&sasl, hostname);
    }
 
    for (;;) {
@@ -977,18 +977,17 @@ failure:
  */
 
 static bool
-_mongoc_cluster_auth_node (mongoc_cluster_t            *cluster,
-                           mongoc_stream_t             *stream,
-                           mongoc_server_description_t *sd,
-                           int32_t                      max_wire_version,
-                           bson_error_t                *error)
+_mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
+                           mongoc_stream_t  *stream,
+                           const char       *hostname,
+                           int32_t           max_wire_version,
+                           bson_error_t     *error)
 {
    bool ret = false;
    const char *mechanism;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
-   BSON_ASSERT (sd);
 
    mechanism = mongoc_uri_get_auth_mechanism (cluster->uri);
 
@@ -1011,7 +1010,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t            *cluster,
 #endif
 #ifdef MONGOC_ENABLE_SASL
    } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
-      ret = _mongoc_cluster_auth_node_sasl (cluster, stream, sd, error);
+      ret = _mongoc_cluster_auth_node_sasl (cluster, stream, hostname, error);
 #endif
    } else if (0 == strcasecmp (mechanism, "PLAIN")) {
       ret = _mongoc_cluster_auth_node_plain (cluster, stream, error);
@@ -1151,7 +1150,8 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
       /* we may need to authenticate */
       if (!scanner_node->has_auth && cluster->requires_auth) {
-         if (!_mongoc_cluster_auth_node (cluster, stream, sd, sd->max_wire_version, error)) {
+         if (!_mongoc_cluster_auth_node (cluster, stream, sd->host.host,
+                                         sd->max_wire_version, error)) {
             MONGOC_WARNING ("Failed authentication to %s", sd->connection_address);
             RETURN (NULL);
          }
@@ -1176,7 +1176,7 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    }
 
    if (cluster->requires_auth) {
-      if (!_mongoc_cluster_auth_node (cluster, cluster_node->stream, sd,
+      if (!_mongoc_cluster_auth_node (cluster, cluster_node->stream, sd->host.host,
                                       cluster_node->max_wire_version, error)) {
          MONGOC_WARNING ("Failed authentication to %s", sd->connection_address);
          _mongoc_cluster_node_destroy (cluster_node);
@@ -1243,7 +1243,8 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
          }
 
          /* In single-threaded mode, we can use sd's max_wire_version */
-         if (!_mongoc_cluster_auth_node (cluster, stream, sd, sd->max_wire_version, error)) {
+         if (!_mongoc_cluster_auth_node (cluster, stream, sd->host.host,
+                                         sd->max_wire_version, error)) {
             goto FETCH_FAIL;
          }
          scanner_node->has_auth = true;
@@ -1274,7 +1275,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
             if (cluster->requires_auth) {
                /* to avoid race condition, auth with cached max_wire_version */
-               if (!_mongoc_cluster_auth_node (cluster, cluster_node->stream, sd,
+               if (!_mongoc_cluster_auth_node (cluster, cluster_node->stream, sd->host.host,
                                                cluster_node->max_wire_version, error)) {
                   goto FETCH_FAIL;
                }
