@@ -1407,11 +1407,10 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
  *--------------------------------------------------------------------------
  */
 static mongoc_server_description_t *
-_mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
-                                 mongoc_ss_optype_t optype,
-                                 const mongoc_write_concern_t *write_concern,
-                                 const mongoc_read_prefs_t    *read_prefs,
-                                 bson_error_t                 *error)
+_mongoc_cluster_select_by_optype(mongoc_cluster_t          *cluster,
+                                 mongoc_ss_optype_t         optype,
+                                 const mongoc_read_prefs_t *read_prefs,
+                                 bson_error_t              *error)
 {
    mongoc_stream_t *stream;
    mongoc_server_description_t *selected_server;
@@ -1470,7 +1469,6 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t *cluster,
 mongoc_server_description_t *
 mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
                                       mongoc_opcode_t               opcode,
-                                      const mongoc_write_concern_t *write_concern,
                                       const mongoc_read_prefs_t    *read_prefs,
                                       bson_error_t                 *error /* OUT */)
 {
@@ -1478,10 +1476,6 @@ mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
    mongoc_server_description_t *server;
    mongoc_read_mode_t read_mode;
    mongoc_ss_optype_t optype = MONGOC_SS_READ;
-
-   if (! write_concern) {
-      write_concern = cluster->client->write_concern;
-   }
 
    if (! read_prefs) {
       read_prefs = cluster->client->read_prefs;
@@ -1501,8 +1495,7 @@ mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
    }
 
    while (retry_count++ < MAX_RETRY_COUNT) {
-      server = _mongoc_cluster_select_by_optype(cluster, optype, write_concern,
-                                                read_prefs, error);
+      server = _mongoc_cluster_select_by_optype(cluster, optype, read_prefs, error);
       if (server) {
          break;
       }
@@ -1524,7 +1517,6 @@ mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
 uint32_t
 mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
                          mongoc_opcode_t               opcode,
-                         const mongoc_write_concern_t *write_concern,
                          const mongoc_read_prefs_t    *read_prefs,
                          bson_error_t                 *error)
 {
@@ -1535,8 +1527,7 @@ mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
       read_prefs = cluster->client->read_prefs;
    }
 
-   server = mongoc_cluster_preselect_description(cluster, opcode, write_concern,
-                                                 read_prefs, error);
+   server = mongoc_cluster_preselect_description(cluster, opcode, read_prefs, error);
 
    if (server) {
       server_id = server->id;
@@ -1569,7 +1560,6 @@ uint32_t
 mongoc_cluster_select(mongoc_cluster_t             *cluster,
                       mongoc_rpc_t                 *rpcs,
                       size_t                        rpcs_len,
-                      const mongoc_write_concern_t *write_concern,
                       const mongoc_read_prefs_t    *read_prefs,
                       bson_error_t                 *error /* OUT */)
 {
@@ -1606,8 +1596,7 @@ mongoc_cluster_select(mongoc_cluster_t             *cluster,
       }
    }
 
-   server = _mongoc_cluster_select_by_optype(cluster, optype, write_concern,
-                                             read_prefs, error);
+   server = _mongoc_cluster_select_by_optype(cluster, optype, read_prefs, error);
    if (server) {
       server_id = server->id;
       mongoc_server_description_destroy(server);
@@ -2099,8 +2088,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
       read_prefs = cluster->client->read_prefs;
    }
 
-   server_id = mongoc_cluster_select(cluster, rpcs, rpcs_len,
-                                     write_concern, read_prefs, error);
+   server_id = mongoc_cluster_select(cluster, rpcs, rpcs_len, read_prefs, error);
 
    if(mongoc_cluster_sendv_to_server(cluster, rpcs, rpcs_len, server_id,
                                      write_concern, error)) {

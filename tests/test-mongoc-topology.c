@@ -54,7 +54,7 @@ test_topology_client_creation (void)
    assert (topology_a->bg_thread_state == MONGOC_TOPOLOGY_BG_OFF);
 
    /* ensure that we are sharing streams with the client */
-   id = mongoc_cluster_preselect (&client_a->cluster, MONGOC_OPCODE_QUERY, NULL, NULL, &error);
+   id = mongoc_cluster_preselect (&client_a->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    cluster_stream = mongoc_cluster_fetch_stream (&client_a->cluster, id, &error);
    node = mongoc_topology_scanner_get_node (client_a->topology->scanner, id);
    assert (node);
@@ -119,7 +119,7 @@ test_topology_invalidate_server (void)
    td = &client->topology->description;
 
    /* call explicitly */
-   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, NULL, &error);
+   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    sd = mongoc_set_get(td->servers, id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_STANDALONE);
@@ -174,7 +174,7 @@ test_invalid_cluster_node (void)
    cluster = &client->cluster;
 
    /* load stream into cluster */
-   id = mongoc_cluster_preselect (cluster, MONGOC_OPCODE_QUERY, NULL, NULL, &error);
+   id = mongoc_cluster_preselect (cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    cluster_node = mongoc_set_get (cluster->nodes, id);
    scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, id);
    assert (cluster_node);
@@ -224,7 +224,7 @@ test_max_wire_version_race_condition (void)
    client = mongoc_client_pool_pop (pool);
 
    /* load stream into cluster */
-   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, NULL, &error);
+   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
 
    /* "disconnect": invalidate timestamp and reset server description */
    scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, id);

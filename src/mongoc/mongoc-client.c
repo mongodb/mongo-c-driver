@@ -1187,7 +1187,6 @@ _mongoc_client_warm_up (mongoc_client_t *client,
       can be reached. No need to ping separately. */
    server_id = mongoc_cluster_preselect(&client->cluster,
                                         MONGOC_OPCODE_MSG,
-                                        write_concern,
                                         read_prefs,
                                         error);
 
@@ -1208,8 +1207,7 @@ _mongoc_client_preselect (mongoc_client_t              *client,        /* IN */
 
    BSON_ASSERT (client);
 
-   return mongoc_cluster_preselect (&client->cluster, opcode,
-                                    write_concern, read_prefs, error);
+   return mongoc_cluster_preselect (&client->cluster, opcode, read_prefs, error);
 }
 
 
