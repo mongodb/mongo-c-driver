@@ -705,10 +705,9 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
    write_concern = mongoc_write_concern_new ();
 
    if (bson_iter_init_find_case (&iter, &uri->options, "safe") &&
-       BSON_ITER_HOLDS_BOOL (&iter) &&
-       !bson_iter_bool (&iter)) {
+       BSON_ITER_HOLDS_BOOL (&iter)) {
       mongoc_write_concern_set_w (write_concern,
-                                  MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+                                  bson_iter_bool (&iter) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    }
 
    if (bson_iter_init_find_case (&iter, &uri->options, "wtimeoutms") &&
@@ -717,9 +716,8 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
    }
 
    if (bson_iter_init_find_case (&iter, &uri->options, "journal") &&
-       BSON_ITER_HOLDS_BOOL (&iter) &&
-       bson_iter_bool (&iter)) {
-      mongoc_write_concern_set_journal (write_concern, true);
+       BSON_ITER_HOLDS_BOOL (&iter)) {
+      mongoc_write_concern_set_journal (write_concern, bson_iter_bool (&iter));
    }
 
    if (bson_iter_init_find_case (&iter, &uri->options, "w")) {
@@ -735,12 +733,8 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
             mongoc_write_concern_set_w (write_concern,
                                         MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
             break;
-         case 1:
-            mongoc_write_concern_set_w (write_concern,
-                                        MONGOC_WRITE_CONCERN_W_DEFAULT);
-            break;
          default:
-            if (value > 1) {
+            if (value > 0) {
                mongoc_write_concern_set_w (write_concern, value);
                break;
             }
