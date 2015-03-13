@@ -769,6 +769,15 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
       write_concern = client->write_concern;
    }
 
+   if (!_mongoc_write_concern_is_valid(write_concern)) {
+      bson_set_error (&result->error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "The write concern is invalid.");
+      result->failed = true;
+      EXIT;
+   }
+
    if (!hint) {
       hint = _mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
                                        write_concern, NULL, &result->error);
