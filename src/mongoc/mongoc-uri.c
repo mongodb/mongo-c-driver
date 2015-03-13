@@ -259,11 +259,16 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
       port = MONGOC_DEFAULT_PORT;
    }
 
-   mongoc_uri_do_unescape(&hostname);
-   mongoc_uri_append_host(uri, hostname, port);
-   bson_free(hostname);
+   if (hostname) {
+      mongoc_uri_do_unescape(&hostname);
+      if (hostname) {
+         mongoc_uri_append_host(uri, hostname, port);
+         bson_free(hostname);
+         return true;
+      }
+   }
 
-   return true;
+   return false;
 }
 
 

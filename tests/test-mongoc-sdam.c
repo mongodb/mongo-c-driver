@@ -105,10 +105,6 @@ test_sdam_cb (bson_t *test)
               strcmp("Secondary wrong setName with primary", name) == 0) {
       printf("SKIPPED -- see SPEC-142 ");
       return;
-   } else if (strcmp("Replica set case normalization", name) == 0 ||
-              strcmp("Normalize URI case", name) == 0) {
-      printf("SKIPPED -- see CDRIVER-536 ");
-      return;
    } else if (strcmp("Direct connection to slave", name) == 0) {
       printf("SKIPPED -- see SPEC-139 ");
       return;
