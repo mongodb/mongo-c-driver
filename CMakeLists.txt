@@ -51,6 +51,10 @@ if (UNIX AND NOT APPLE)
    set(LIBS ${LIBS} rt)
 endif()
 
+if (APPLE)
+   cmake_policy(SET CMP0042 OLD)
+endif()
+
 add_definitions(-D_GNU_SOURCE)
 add_definitions(-D_BSD_SOURCE)
 add_definitions("-DBINARY_DIR=\"${SOURCE_DIR}/tests/binary\"")
