@@ -4,7 +4,6 @@
 
 #include "TestSuite.h"
 
-
 static void
 test_mongoc_uri_new (void)
 {
@@ -27,6 +26,16 @@ test_mongoc_uri_new (void)
    ASSERT(!mongoc_uri_new("mongodb://localhost::27017"));
    ASSERT(!mongoc_uri_new("mongodb://localhost::27017/"));
    ASSERT(!mongoc_uri_new("mongodb://localhost::27017,abc"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:-1"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:65536"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:foo"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:65536/"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:0/"));
+   ASSERT(!mongoc_uri_new("mongodb://[::1]:-1"));
+   ASSERT(!mongoc_uri_new("mongodb://[::1]:foo"));
+   ASSERT(!mongoc_uri_new("mongodb://[::1]:65536"));
+   ASSERT(!mongoc_uri_new("mongodb://[::1]:65536/"));
+   ASSERT(!mongoc_uri_new("mongodb://[::1]:0/"));
 
    uri = mongoc_uri_new("mongodb://[::1]:27888,[::2]:27999/?ipv6=true&safe=true");
    assert (uri);
