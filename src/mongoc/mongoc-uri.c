@@ -16,8 +16,10 @@
 
 
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <math.h>
 
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
@@ -203,6 +205,23 @@ mongoc_uri_parse_userpass (mongoc_uri_t  *uri,
    return ret;
 }
 
+static bool
+mongoc_uri_parse_port (uint16_t   *port,
+                       const char *str)
+{
+   unsigned long ul_port;
+
+   ul_port = strtoul (str, NULL, 10);
+
+   if (ul_port == 0 || ul_port > UINT16_MAX) {
+      /* Parse error or port number out of range. mongod prohibits port 0. */
+      return false;
+   }
+
+   *port = (uint16_t)ul_port;
+   return true;
+}
+
 
 static bool
 mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
@@ -214,11 +233,9 @@ mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
    char *hostname;
 
    if ((portstr = strrchr (str, ':')) && !strstr (portstr, "]")) {
-#ifdef _MSC_VER
-      sscanf_s (portstr, ":%hu", &port);
-#else
-      sscanf (portstr, ":%hu", &port);
-#endif
+      if (!mongoc_uri_parse_port(&port, portstr + 1)) {
+         return false;
+      }
    }
 
    hostname = scan_to_unichar (str + 1, ']', "", &end_host);
@@ -245,15 +262,10 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
 
    if ((hostname = scan_to_unichar(str, ':', "?/,", &end_host))) {
       end_host++;
-      if (!isdigit(*end_host)) {
-         bson_free(hostname);
+      if (!mongoc_uri_parse_port(&port, end_host)) {
+         bson_free (hostname);
          return false;
       }
-#ifdef _MSC_VER
-      sscanf_s (end_host, "%hu", &port);
-#else
-      sscanf (end_host, "%hu", &port);
-#endif
    } else {
       hostname = bson_strdup(str);
       port = MONGOC_DEFAULT_PORT;
