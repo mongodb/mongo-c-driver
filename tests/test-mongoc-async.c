@@ -1,6 +1,7 @@
 #include <mongoc.h>
 
 #include "mongoc-async-private.h"
+#include "mongoc-async-cmd-private.h"
 #include "mock-server.h"
 #include "mongoc-tests.h"
 #include "TestSuite.h"
@@ -56,6 +57,8 @@ test_ismaster_impl (bool with_ssl)
    mongoc_async_t *async;
    mongoc_stream_t *sock_streams[NSERVERS];
    mongoc_socket_t *conn_sock;
+   mongoc_async_cmd_setup_t setup = NULL;
+   void *setup_ctx = NULL;
    struct sockaddr_in server_addr = { 0 };
    uint16_t port;
    bool r;
@@ -111,10 +114,14 @@ test_ismaster_impl (bool with_ssl)
          copt.weak_cert_validation = 1;
 
          sock_streams[i] = mongoc_stream_tls_new (sock_streams[i], &copt, 1);
+         setup = mongoc_async_cmd_tls_setup;
+         setup_ctx = "127.0.0.1";
       }
 #endif
       mongoc_async_cmd (async,
                         sock_streams[i],
+                        setup,
+                        setup_ctx,
                         "admin",
                         &q,
                         &test_ismaster_helper,

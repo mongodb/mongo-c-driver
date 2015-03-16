@@ -59,7 +59,7 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
 
    }
 
-   pool->topology->scanner->ssl_opts = &pool->ssl_opts;
+   mongoc_topology_scanner_set_ssl_opts (pool->topology->scanner, &pool->ssl_opts);
 
    mongoc_mutex_unlock (&pool->mutex);
 }

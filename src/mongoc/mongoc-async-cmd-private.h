@@ -34,9 +34,7 @@ BSON_BEGIN_DECLS
 
 typedef enum
 {
-#ifdef MONGOC_ENABLE_SSL
-   MONGOC_ASYNC_CMD_TLS,
-#endif
+   MONGOC_ASYNC_CMD_SETUP,
    MONGOC_ASYNC_CMD_SEND,
    MONGOC_ASYNC_CMD_RECV_LEN,
    MONGOC_ASYNC_CMD_RECV_RPC,
@@ -45,13 +43,12 @@ typedef enum
 typedef struct _mongoc_async_cmd
 {
    mongoc_stream_t *stream;
-#ifdef MONGOC_ENABLE_SSL
-   mongoc_stream_t *tls_stream;
-#endif
 
    mongoc_async_t          *async;
    mongoc_async_cmd_state_t state;
    int                      events;
+   mongoc_async_cmd_setup_t setup;
+   void                    *setup_ctx;
    mongoc_async_cmd_cb_t    cb;
    void                    *data;
    bson_error_t             error;
@@ -73,19 +70,29 @@ typedef struct _mongoc_async_cmd
 } mongoc_async_cmd_t;
 
 mongoc_async_cmd_t *
-mongoc_async_cmd_new (mongoc_async_t       *async,
-                      mongoc_stream_t      *stream,
-                      const char           *dbname,
-                      const bson_t         *cmd,
-                      mongoc_async_cmd_cb_t cb,
-                      void                 *cb_data,
-                      int32_t               timeout_msec);
+mongoc_async_cmd_new (mongoc_async_t           *async,
+                      mongoc_stream_t          *stream,
+                      mongoc_async_cmd_setup_t  setup,
+                      void                     *setup_ctx,
+                      const char               *dbname,
+                      const bson_t             *cmd,
+                      mongoc_async_cmd_cb_t     cb,
+                      void                     *cb_data,
+                      int32_t                   timeout_msec);
 
 void
 mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd);
 
 bool
 mongoc_async_cmd_run (mongoc_async_cmd_t *acmd);
+
+#ifdef MONGOC_ENABLE_SSL
+int
+mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
+                            int             *events,
+                            void            *ctx,
+                            bson_error_t    *error);
+#endif
 
 BSON_END_DECLS
 

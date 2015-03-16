@@ -113,7 +113,7 @@ test1 (void)
    mongoc_read_prefs_t *read_prefs;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
-   mongoc_client_pool_t *pool;
+   mongoc_client_pool_t *pool = NULL;
    const bson_t *doc;
    bson_error_t error;
    bool r;
@@ -241,7 +241,7 @@ test2 (void)
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
-   mongoc_client_pool_t *pool;
+   mongoc_client_pool_t *pool = NULL;
    const bson_t *doc;
    bson_error_t error;
    bool r;

@@ -37,7 +37,7 @@ typedef enum {
 typedef struct _mongoc_topology_t
 {
    mongoc_topology_description_t description;
-   const mongoc_uri_t           *uri;
+   mongoc_uri_t                 *uri;
    mongoc_topology_scanner_t    *scanner;
 
    int64_t                       last_scan;
