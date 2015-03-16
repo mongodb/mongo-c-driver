@@ -37,8 +37,9 @@ static void
 mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node);
 
 mongoc_topology_scanner_t *
-mongoc_topology_scanner_new (mongoc_topology_scanner_cb_t cb,
-                             void                        *cb_data)
+mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
+                             mongoc_topology_scanner_cb_t cb,
+                             void                        *data)
 {
    mongoc_topology_scanner_t *ts = bson_malloc0 (sizeof (*ts));
 
@@ -47,9 +48,29 @@ mongoc_topology_scanner_new (mongoc_topology_scanner_cb_t cb,
    BSON_APPEND_INT32 (&ts->ismaster_cmd, "isMaster", 1);
 
    ts->cb = cb;
-   ts->cb_data = cb_data;
+   ts->cb_data = data;
+   ts->uri = uri;
 
    return ts;
+}
+
+#ifdef MONGOC_ENABLE_SSL
+void
+mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
+                                      mongoc_ssl_opt_t          *opts)
+{
+   ts->ssl_opts = opts;
+   ts->setup = mongoc_async_cmd_tls_setup;
+}
+#endif
+
+void
+mongoc_topology_scanner_set_stream_initiator (mongoc_topology_scanner_t *ts,
+                                              mongoc_stream_initiator_t  si,
+                                              void                      *ctx)
+{
+   ts->initiator = si;
+   ts->initiator_context = ctx;
 }
 
 void
@@ -319,16 +340,25 @@ static bool
 mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
 {
    mongoc_stream_t *sock_stream;
-   bson_error_t error;
+   bson_error_t error = { 0 };
 
    if (node->stream) { return true; }
 
-   /* TODO hook up a callback for this so you can use your own stream initiator */
-
-   if (node->host.family == AF_UNIX) {
-      sock_stream = mongoc_topology_scanner_node_connect_unix (node, &error);
+   if (node->ts->initiator) {
+      sock_stream = node->ts->initiator (node->ts->uri, &node->host,
+                                         node->ts->initiator_context, &error);
    } else {
-      sock_stream = mongoc_topology_scanner_node_connect_tcp (node, &error);
+      if (node->host.family == AF_UNIX) {
+         sock_stream = mongoc_topology_scanner_node_connect_unix (node, &error);
+      } else {
+         sock_stream = mongoc_topology_scanner_node_connect_tcp (node, &error);
+      }
+
+#ifdef MONGOC_ENABLE_SSL
+      if (sock_stream && node->ts->ssl_opts) {
+         sock_stream = mongoc_stream_tls_new (sock_stream, node->ts->ssl_opts, 1);
+      }
+#endif
    }
 
    if (!sock_stream) {
@@ -338,14 +368,6 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
 
       return false;
    }
-
-#ifdef MONGOC_ENABLE_SSL
-
-   if (node->ts->ssl_opts) {
-      sock_stream = mongoc_stream_tls_new (sock_stream, node->ts->ssl_opts, 1);
-   }
-
-#endif
 
    node->stream = sock_stream;
    node->has_auth = false;
@@ -381,10 +403,9 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
       if (mongoc_topology_scanner_node_setup (node)) {
-         node->cmd = mongoc_async_cmd (ts->async, node->stream, "admin",
-                                       &ts->ismaster_cmd,
-                                       &mongoc_topology_scanner_ismaster_handler,
-                                       node,
+         node->cmd = mongoc_async_cmd (ts->async, node->stream, ts->setup,
+                                       node->host.host, "admin", &ts->ismaster_cmd,
+                                       &mongoc_topology_scanner_ismaster_handler, node,
                                        timeout_msec);
       }
    }
@@ -418,4 +439,12 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
    }
 
    return r;
+}
+
+
+void
+mongoc_topology_scanner_set_async_cb (mongoc_topology_scanner_t *ts,
+                                      mongoc_async_cmd_setup_t   cb)
+{
+   ts->setup = cb;
 }

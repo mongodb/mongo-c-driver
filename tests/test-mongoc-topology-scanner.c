@@ -68,12 +68,13 @@ test_topology_scanner(void)
 
    port = 20000 + (rand () % 1000);
 
-   topology_scanner = mongoc_topology_scanner_new (&test_topology_scanner_helper, &finished);
+   topology_scanner = mongoc_topology_scanner_new (NULL, &test_topology_scanner_helper, &finished);
 
 #ifdef MONGOC_ENABLE_SSL
    copt.ca_file = CAFILE;
    copt.weak_cert_validation = 1;
-   topology_scanner->ssl_opts = &copt;
+
+   mongoc_topology_scanner_set_ssl_opts (topology_scanner, &copt);
 #endif
 
    for (i = 0; i < NSERVERS; i++) {

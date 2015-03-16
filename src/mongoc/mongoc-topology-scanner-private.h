@@ -63,6 +63,10 @@ typedef struct mongoc_topology_scanner
    mongoc_topology_scanner_cb_t    cb;
    void                           *cb_data;
    bool                            in_progress;
+   const mongoc_uri_t             *uri;
+   mongoc_async_cmd_setup_t        setup;
+   mongoc_stream_initiator_t       initiator;
+   void                           *initiator_context;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts;
@@ -70,8 +74,9 @@ typedef struct mongoc_topology_scanner
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
-mongoc_topology_scanner_new (mongoc_topology_scanner_cb_t cb,
-                             void                         *data);
+mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
+                             mongoc_topology_scanner_cb_t cb,
+                             void                        *data);
 
 void
 mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts);
@@ -96,6 +101,21 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,
                                   uint32_t                   id);
+
+void
+mongoc_topology_scanner_set_stream_initiator (mongoc_topology_scanner_t *ts,
+                                              mongoc_stream_initiator_t  si,
+                                              void                      *ctx);
+
+void
+mongoc_topology_scanner_set_async_cb (mongoc_topology_scanner_t *ts,
+                                      mongoc_async_cmd_setup_t   cb);
+
+#ifdef MONGOC_ENABLE_SSL
+void
+mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
+                                      mongoc_ssl_opt_t          *opts);
+#endif
 
 BSON_END_DECLS
 

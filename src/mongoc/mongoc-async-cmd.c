@@ -24,8 +24,11 @@
 #include "mongoc-opcode.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream-private.h"
-#include "mongoc-stream-tls.h"
 #include "utlist.h"
+
+#ifdef MONGOC_ENABLE_SSL
+#include "mongoc-stream-tls.h"
+#endif
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async"
@@ -33,10 +36,8 @@
 typedef mongoc_async_cmd_result_t (*_monogc_async_cmd_phase_t)(
    mongoc_async_cmd_t *cmd);
 
-#ifdef MONGOC_ENABLE_SSL
 mongoc_async_cmd_result_t
-_mongoc_async_cmd_phase_tls (mongoc_async_cmd_t *cmd);
-#endif
+_mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *cmd);
 mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *cmd);
 mongoc_async_cmd_result_t
@@ -45,13 +46,47 @@ mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *cmd);
 
 static const _monogc_async_cmd_phase_t gMongocCMDPhases[] = {
-#ifdef MONGOC_ENABLE_SSL
-   _mongoc_async_cmd_phase_tls,
-#endif
+   _mongoc_async_cmd_phase_setup,
    _mongoc_async_cmd_phase_send,
    _mongoc_async_cmd_phase_recv_len,
    _mongoc_async_cmd_phase_recv_rpc,
 };
+
+#ifdef MONGOC_ENABLE_SSL
+int
+mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
+                            int             *events,
+                            void            *ctx,
+                            bson_error_t    *error)
+{
+   mongoc_stream_t *tls_stream;
+   const char *host = ctx;
+
+   for (tls_stream = stream; tls_stream->type != MONGOC_STREAM_TLS;
+        tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
+   }
+
+   if (mongoc_stream_tls_do_handshake (tls_stream, 0)) {
+      if (mongoc_stream_tls_check_cert (tls_stream, host)) {
+         return 1;
+      } else {
+         bson_set_error (error, MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_SOCKET,
+                         "Failed to verify TLS cert.");
+         return -1;
+      }
+   } else if (mongoc_stream_tls_should_retry (tls_stream)) {
+      *events = mongoc_stream_tls_should_read (tls_stream) ? POLLIN : POLLOUT;
+   } else {
+      bson_set_error (error, MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Failed to initialize TLS state.");
+      return -1;
+   }
+
+   return 0;
+}
+#endif
 
 bool
 mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
@@ -104,41 +139,25 @@ _mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd,
 void
 _mongoc_async_cmd_state_start (mongoc_async_cmd_t *acmd)
 {
-#ifdef MONGOC_ENABLE_SSL
-   mongoc_stream_t *stream;
-
-   for (stream = acmd->stream; stream;
-        stream =
-           stream->get_base_stream ? stream->get_base_stream (stream) : NULL) {
-      if (stream->type == MONGOC_STREAM_TLS) {
-         acmd->tls_stream = stream;
-
-         if (mongoc_stream_tls_do_handshake (acmd->tls_stream, 0)) {
-            break;
-         }
-
-         acmd->events =
-            mongoc_stream_tls_should_read (acmd->tls_stream) ? POLLIN : POLLOUT;
-
-         acmd->state = MONGOC_ASYNC_CMD_TLS;
-
-         return;
-      }
+   if (acmd->setup) {
+      acmd->state = MONGOC_ASYNC_CMD_SETUP;
+   } else {
+      acmd->state = MONGOC_ASYNC_CMD_SEND;
    }
-#endif
 
-   acmd->state = MONGOC_ASYNC_CMD_SEND;
    acmd->events = POLLOUT;
 }
 
 mongoc_async_cmd_t *
-mongoc_async_cmd_new (mongoc_async_t       *async,
-                      mongoc_stream_t      *stream,
-                      const char           *dbname,
-                      const bson_t         *cmd,
-                      mongoc_async_cmd_cb_t cb,
-                      void                 *cb_data,
-                      int32_t               timeout_msec)
+mongoc_async_cmd_new (mongoc_async_t           *async,
+                      mongoc_stream_t          *stream,
+                      mongoc_async_cmd_setup_t  setup,
+                      void                     *setup_ctx,
+                      const char               *dbname,
+                      const bson_t             *cmd,
+                      mongoc_async_cmd_cb_t     cb,
+                      void                     *cb_data,
+                      int32_t                   timeout_msec)
 {
    mongoc_async_cmd_t *acmd;
    mongoc_async_cmd_t *tmp;
@@ -152,6 +171,8 @@ mongoc_async_cmd_new (mongoc_async_t       *async,
    acmd->async = async;
    acmd->expire_at = bson_get_monotonic_time () + (timeout_msec * 1000);
    acmd->stream = stream;
+   acmd->setup = setup;
+   acmd->setup_ctx = setup_ctx;
    acmd->cb = cb;
    acmd->data = cb_data;
    bson_copy_to (cmd, &acmd->cmd);
@@ -204,26 +225,26 @@ mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd)
    bson_free (acmd);
 }
 
-#ifdef MONGOC_ENABLE_SSL
 mongoc_async_cmd_result_t
-_mongoc_async_cmd_phase_tls (mongoc_async_cmd_t *acmd)
+_mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *acmd)
 {
-   if (mongoc_stream_tls_do_handshake (acmd->tls_stream, 0)) {
-      acmd->state = MONGOC_ASYNC_CMD_SEND;
-      acmd->events = POLLOUT;
-   } else if (mongoc_stream_tls_should_retry (acmd->tls_stream)) {
-      acmd->events =
-         mongoc_stream_tls_should_read (acmd->tls_stream) ? POLLIN : POLLOUT;
-   } else {
-      bson_set_error (&acmd->error, MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failed to initialize TLS state.");
-      return MONGOC_ASYNC_CMD_ERROR;
+   switch (acmd->setup (acmd->stream, &acmd->events, acmd->setup_ctx,
+                        &acmd->error)) {
+      case -1:
+         return MONGOC_ASYNC_CMD_ERROR;
+         break;
+      case 0:
+         break;
+      case 1:
+         acmd->state = MONGOC_ASYNC_CMD_SEND;
+         acmd->events = POLLOUT;
+         break;
+      default:
+         abort();
    }
 
    return MONGOC_ASYNC_CMD_IN_PROGRESS;
 }
-#endif
 
 mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)

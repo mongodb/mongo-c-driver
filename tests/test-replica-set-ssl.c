@@ -26,7 +26,7 @@ test_replica_set_ssl_client(void)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
-   mongoc_client_pool_t *pool;
+   mongoc_client_pool_t *pool = NULL;
    ha_replica_set_t *replica_set;
    bson_error_t error;
    int r;

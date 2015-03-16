@@ -815,7 +815,8 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
    }
 
    if (client->topology->single_threaded) {
-      client->topology->scanner->ssl_opts = &client->ssl_opts;
+      mongoc_topology_scanner_set_ssl_opts (client->topology->scanner,
+                                            &client->ssl_opts);
    }
 }
 #endif
@@ -1425,4 +1426,9 @@ mongoc_client_set_stream_initiator (mongoc_client_t           *client,
 
    client->initiator = initiator;
    client->initiator_data = user_data;
+
+   if (client->topology->single_threaded) {
+      mongoc_topology_scanner_set_stream_initiator (client->topology->scanner,
+                                                    initiator, user_data);
+   }
 }
