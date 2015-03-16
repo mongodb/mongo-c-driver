@@ -494,7 +494,7 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
                               mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
-   mongoc_server_description_t *server;
+   int32_t min_wire_version;
    bson_t cmd = BSON_INITIALIZER;
    bson_t ar;
    bson_t child;
@@ -515,20 +515,18 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   server = mongoc_topology_server_by_id(client->topology, hint);
-   if (!server) {
+   min_wire_version = mongoc_cluster_node_min_wire_version (&client->cluster, hint);
+   if (min_wire_version == -1) {
       EXIT;
    }
 
-   if ((server->min_wire_version == 0) &&
+   if ((min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_delete_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
-      mongoc_server_description_destroy (server);
       EXIT;
    }
-   mongoc_server_description_destroy (server);
 
    BSON_APPEND_UTF8 (&cmd, "delete", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
@@ -567,11 +565,11 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
                               mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
-   mongoc_server_description_t *server;
    const uint8_t *data;
    bson_iter_t iter;
    const char *key;
    uint32_t len;
+   int32_t min_wire_version;
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    bson_t tmp;
@@ -599,21 +597,18 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   server = mongoc_topology_server_by_id(client->topology, hint);
-
-   if (!server) {
+   min_wire_version = mongoc_cluster_node_min_wire_version (&client->cluster, hint);
+   if (min_wire_version == -1) {
       EXIT;
    }
 
-   if ((server->min_wire_version == 0) &&
+   if ((min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_insert_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
-      mongoc_server_description_destroy (server);
       EXIT;
       }
-   mongoc_server_description_destroy (server);
 
    if (!command->u.insert.n_documents ||
        !bson_iter_init (&iter, command->u.insert.documents) ||
@@ -708,7 +703,7 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
                               mongoc_write_result_t        *result,
                               bson_error_t                 *error)
 {
-   mongoc_server_description_t *server;
+   int32_t min_wire_version;
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
    bson_t ar;
@@ -729,21 +724,18 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   server = mongoc_topology_server_by_id(client->topology, hint);
-
-   if (!server) {
+   min_wire_version = mongoc_cluster_node_min_wire_version (&client->cluster, hint);
+   if (min_wire_version == -1) {
       EXIT;
    }
 
-   if ((server->min_wire_version == 0) &&
+   if ((min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_update_legacy (command, client, hint, database,
                                            collection, write_concern, result,
                                            error);
-      mongoc_server_description_destroy (server);
       EXIT;
    }
-   mongoc_server_description_destroy (server);
 
    BSON_APPEND_UTF8 (&cmd, "update", collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
@@ -793,7 +785,8 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
                                const mongoc_write_concern_t *write_concern, /* IN */
                                mongoc_write_result_t        *result)        /* OUT */
 {
-   mongoc_server_description_t *server;
+   int32_t min_wire_version;
+   int32_t max_wire_version;
    int mode = 0;
 
    ENTRY;
@@ -819,15 +812,19 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
 
    command->hint = hint;
 
-   server = mongoc_topology_server_by_id(client->topology, hint);
-   mode = (server->min_wire_version <= WRITE_COMMAND_WIRE_VERSION &&
-           server->max_wire_version >= WRITE_COMMAND_WIRE_VERSION);
+   min_wire_version = mongoc_cluster_node_min_wire_version (&client->cluster, hint);
+   max_wire_version = mongoc_cluster_node_max_wire_version (&client->cluster, hint);
+   if (min_wire_version == -1 ||
+       max_wire_version == -1) {
+      EXIT;
+   }
+
+   mode = (min_wire_version <= WRITE_COMMAND_WIRE_VERSION &&
+           max_wire_version >= WRITE_COMMAND_WIRE_VERSION);
 
    gWriteOps [mode][command->type] (command, client, hint, database,
                                     collection, write_concern, result,
                                     &result->error);
-
-   mongoc_server_description_destroy (server);
 
    EXIT;
 }

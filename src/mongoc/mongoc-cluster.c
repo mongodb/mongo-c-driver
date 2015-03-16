@@ -1910,6 +1910,71 @@ mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_cluster_node_max_wire_version --
+ *
+ *      Return the max wire version for the given server.
+ *
+ * Returns:
+ *      Max wire version, or -1 if server is not found.
+ *
+ *--------------------------------------------------------------------------
+ */
+int32_t
+mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,
+                                      uint32_t          server_id)
+{
+   mongoc_server_description_t *sd;
+   mongoc_cluster_node_t *node;
+
+   if (cluster->client->topology->single_threaded) {
+      if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
+         return sd->max_wire_version;
+      }
+   } else {
+      if((node = mongoc_set_get(cluster->nodes, server_id))) {
+         return node->max_wire_version;
+      }
+   }
+
+   return -1;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_node_min_wire_version --
+ *
+ *      Return the min wire version for the given server.
+ *
+ * Returns:
+ *      Min wire version, or -1 if server is not found.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int32_t
+mongoc_cluster_node_min_wire_version (mongoc_cluster_t *cluster,
+                                      uint32_t          server_id)
+{
+   mongoc_server_description_t *sd;
+   mongoc_cluster_node_t *node;
+
+   if (cluster->client->topology->single_threaded) {
+      if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
+         return sd->min_wire_version;
+      }
+   } else {
+      if((node = mongoc_set_get(cluster->nodes, server_id))) {
+         return node->min_wire_version;
+      }
+   }
+
+   return -1;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_cluster_sendv_to_server --
  *
  *       Sends the given RPCs to the given server. On success,
