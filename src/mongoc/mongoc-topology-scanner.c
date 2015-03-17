@@ -106,6 +106,17 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node)
    bson_free (node);
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_scanner_get_node --
+ *
+ *      Return the scanner node with the given id.
+ *
+ *      NOTE: only use this method when single-threaded!
+ *
+ *--------------------------------------------------------------------------
+ */
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,
                                   uint32_t                   id)

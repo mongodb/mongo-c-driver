@@ -1090,12 +1090,12 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream)
    node->stream = stream;
    node->timestamp = bson_get_monotonic_time ();
 
-   node->max_wire_version = MONGOC_CLUSTER_DEFAULT_WIRE_VERSION;
-   node->min_wire_version = MONGOC_CLUSTER_DEFAULT_WIRE_VERSION;
+   node->max_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
+   node->min_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
 
-   node->max_write_batch_size = MONGOC_CLUSTER_DEFAULT_WRITE_BATCH_SIZE;
-   node->max_bson_obj_size = MONGOC_CLUSTER_DEFAULT_BSON_OBJ_SIZE;
-   node->max_msg_size = MONGOC_CLUSTER_DEFAULT_MAX_MSG_SIZE;
+   node->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
+   node->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
+   node->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
 
    return node;
 }
@@ -1771,17 +1771,79 @@ _mongoc_cluster_min_of_max_msg_size_nodes (void *item,
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_get_max_bson_obj_size --
+ * mongoc_cluster_node_max_bson_obj_size --
  *
- *      Return the max_bson_obj_size for the given server. If no server_id
- *      is given, or if the given server_id doesn't match any servers in the
- *      cluster, return the minimum max_bson_obj_size for all servers across
- *      the cluster.
- *
- *       NOTE: this method uses the topology's mutex.
+ *      Return the max bson object size for the given server.
  *
  * Returns:
- *      The max_bson_obj_size
+ *      Max bson object size, or -1 if server is not found.
+ *
+ *--------------------------------------------------------------------------
+ */
+int32_t
+mongoc_cluster_node_max_bson_obj_size (mongoc_cluster_t *cluster,
+                                       uint32_t         server_id)
+{
+   mongoc_server_description_t *sd;
+   mongoc_cluster_node_t *node;
+
+   if (cluster->client->topology->single_threaded) {
+      if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
+         return sd->max_bson_obj_size;
+      }
+   } else {
+      if((node = mongoc_set_get(cluster->nodes, server_id))) {
+         return node->max_bson_obj_size;
+      }
+   }
+
+   return -1;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_node_max_msg_size --
+ *
+ *      Return the max message size for the given server.
+ *
+ * Returns:
+ *      Max message size, or -1 if server is not found.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int32_t
+mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
+                                  uint32_t          server_id)
+{
+   mongoc_server_description_t *sd;
+   mongoc_cluster_node_t *node;
+
+   if (cluster->client->topology->single_threaded) {
+      if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
+         return sd->max_msg_size;
+      }
+   } else {
+      if((node = mongoc_set_get(cluster->nodes, server_id))) {
+         return node->max_msg_size;
+      }
+   }
+
+   return -1;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_get_max_bson_obj_size --
+ *
+ *      Return the minimum max_bson_obj_size across all servers in cluster.
+ *
+ *      NOTE: this method uses the topology's mutex.
+ *
+ * Returns:
+ *      The minimum max_bson_obj_size.
  *
  * Side effects:
  *      None
@@ -1789,51 +1851,20 @@ _mongoc_cluster_min_of_max_msg_size_nodes (void *item,
  *--------------------------------------------------------------------------
  */
 int32_t
-mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster,
-                                      uint32_t         *server_id /* IN */)
+mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster)
 {
-   mongoc_server_description_t *sd;
-   mongoc_cluster_node_t *node;
-   mongoc_topology_t *topology;
    int32_t max_bson_obj_size = -1;
-   bool single_threaded;
 
-   topology = cluster->client->topology;
-   mongoc_mutex_lock (&topology->mutex);
-   single_threaded = topology->single_threaded;
-   mongoc_mutex_unlock (&topology->mutex);
+   max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
 
-   if (server_id) {
-      if (!single_threaded) {
-         /* if we can, use information stored in cluster node */
-         node = mongoc_set_get (cluster->nodes, *server_id);
-         if (node) {
-            max_bson_obj_size = node->max_bson_obj_size;
-         }
-      } else {
-         /* otherwise, check the server description */
-         mongoc_mutex_lock (&topology->mutex);
-         sd = mongoc_set_get (topology->description.servers, *server_id);
-         if (sd) {
-            max_bson_obj_size = sd->max_bson_obj_size;
-         }
-         mongoc_mutex_unlock (&topology->mutex);
-      }
-   }
-
-   if (max_bson_obj_size == -1) {
-      max_bson_obj_size = MONGOC_CLUSTER_DEFAULT_BSON_OBJ_SIZE;
-
-      /* if no server was found or given, get min of all values */
-      if (!single_threaded) {
-         mongoc_set_for_each (cluster->nodes,
-                              _mongoc_cluster_min_of_max_obj_size_nodes,
-                              &max_bson_obj_size);
-      } else {
-         mongoc_set_for_each (topology->description.servers,
-                              _mongoc_cluster_min_of_max_obj_size_sds,
-                              &max_bson_obj_size);
-      }
+   if (!cluster->client->topology->single_threaded) {
+      mongoc_set_for_each (cluster->nodes,
+                           _mongoc_cluster_min_of_max_obj_size_nodes,
+                           &max_bson_obj_size);
+   } else {
+      mongoc_set_for_each (cluster->client->topology->description.servers,
+                           _mongoc_cluster_min_of_max_obj_size_sds,
+                           &max_bson_obj_size);
    }
 
    return max_bson_obj_size;
@@ -1845,15 +1876,12 @@ mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster,
  *
  * mongoc_cluster_get_max_msg_size --
  *
- *      Return the max msg size for the given server. If no server_id is
- *      provided, or if the given server_id doesn't match any servers in the
- *      cluster, return the minimum max_msg_size for all servers across
- *      the cluster.
+ *      Return the minimum max msg size across all servers in cluster.
  *
  *      NOTE: this method uses the topology's mutex.
  *
  * Returns:
- *      The max_msg_size
+ *      The minimum max_msg_size
  *
  * Side effects:
  *      None
@@ -1861,51 +1889,18 @@ mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster,
  *--------------------------------------------------------------------------
  */
 int32_t
-mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster,
-                                 uint32_t         *server_id /* IN */)
+mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster)
 {
-   mongoc_server_description_t *sd;
-   mongoc_cluster_node_t *node;
-   mongoc_topology_t *topology;
-   int32_t max_msg_size = -1;
-   bool single_threaded;
+   int32_t max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
 
-   topology = cluster->client->topology;
-   mongoc_mutex_lock (&topology->mutex);
-   single_threaded = topology->single_threaded;
-   mongoc_mutex_unlock (&topology->mutex);
-
-   if (server_id) {
-      if (!single_threaded) {
-         /* if we can, use information stored in cluster node */
-         node = mongoc_set_get (cluster->nodes, *server_id);
-         if (node) {
-            max_msg_size = node->max_msg_size;
-         }
-      } else {
-         /* otherwise, check the server description */
-         mongoc_mutex_lock (&topology->mutex);
-         sd = mongoc_set_get (topology->description.servers, *server_id);
-         if (sd) {
-            max_msg_size = sd->max_msg_size;
-         }
-         mongoc_mutex_unlock (&topology->mutex);
-      }
-   }
-
-   if (max_msg_size == -1) {
-      max_msg_size = MONGOC_CLUSTER_DEFAULT_MAX_MSG_SIZE;
-
-      /* if no server was found or given, get min of all values */
-      if (!single_threaded) {
-         mongoc_set_for_each (cluster->nodes,
-                              _mongoc_cluster_min_of_max_msg_size_nodes,
-                              &max_msg_size);
-      } else {
-         mongoc_set_for_each (topology->description.servers,
-                              _mongoc_cluster_min_of_max_msg_size_sds,
-                              &max_msg_size);
-      }
+   if (!cluster->client->topology->single_threaded) {
+      mongoc_set_for_each (cluster->nodes,
+                           _mongoc_cluster_min_of_max_msg_size_nodes,
+                           &max_msg_size);
+   } else {
+      mongoc_set_for_each (cluster->client->topology->description.servers,
+                           _mongoc_cluster_min_of_max_msg_size_sds,
+                           &max_msg_size);
    }
 
    return max_msg_size;
@@ -2048,7 +2043,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
       need_gle = _mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
 
-      max_msg_size = mongoc_cluster_get_max_msg_size (cluster, &server_id);
+      max_msg_size = mongoc_cluster_node_max_msg_size (cluster, server_id);
 
       if (rpcs[i].header.msg_len > max_msg_size) {
          bson_set_error(error,
@@ -2240,7 +2235,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
     */
    memcpy (&msg_len, &buffer->data[buffer->off + pos], 4);
    msg_len = BSON_UINT32_FROM_LE (msg_len);
-   max_msg_size = mongoc_cluster_get_max_msg_size (cluster, &server_id);
+   max_msg_size = mongoc_cluster_node_max_msg_size (cluster, server_id);
    if ((msg_len < 16) || (msg_len > max_msg_size)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,

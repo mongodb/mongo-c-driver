@@ -44,11 +44,6 @@ BSON_BEGIN_DECLS
 
 #define MONGOC_CLUSTER_PING_NUM_SAMPLES 5
 
-#define MONGOC_CLUSTER_DEFAULT_WIRE_VERSION 0
-#define MONGOC_CLUSTER_DEFAULT_WRITE_BATCH_SIZE 1000
-#define MONGOC_CLUSTER_DEFAULT_BSON_OBJ_SIZE 16 * 1024 * 1024
-#define MONGOC_CLUSTER_DEFAULT_MAX_MSG_SIZE 48000000
-
 typedef struct _mongoc_cluster_node_t
 {
    mongoc_stream_t *stream;
@@ -111,12 +106,18 @@ mongoc_cluster_select (mongoc_cluster_t             *cluster,
                        bson_error_t                 *error /* OUT */);
 
 int32_t
-mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster,
-                                      uint32_t         *server_id /* IN */);
+mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
+                                  uint32_t          server_id);
 
 int32_t
-mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster,
-                                 uint32_t         *server_id /* IN */);
+mongoc_cluster_node_max_bson_obj_size (mongoc_cluster_t *cluster,
+                                       uint32_t         server_id);
+
+int32_t
+mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster);
+
+int32_t
+mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster);
 
 int32_t
 mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,

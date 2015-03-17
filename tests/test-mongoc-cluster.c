@@ -29,14 +29,10 @@ test_get_max_bson_obj_size (void)
    client = mongoc_client_new (gTestUri);
    assert (client);
 
-   /* with given server */
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    sd = mongoc_set_get (client->topology->description.servers, id);
    sd->max_bson_obj_size = max_bson_obj_size;
-   assert (max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster, &id));
-
-   /* with no given server */
-   assert (max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster, NULL));
+   assert (max_bson_obj_size == mongoc_cluster_get_max_bson_obj_size (&client->cluster));
 
    mongoc_client_destroy (client);
 
@@ -45,14 +41,10 @@ test_get_max_bson_obj_size (void)
    pool = mongoc_client_pool_new (uri);
    client = mongoc_client_pool_pop (pool);
 
-   /* with given server */
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    node = mongoc_set_get (client->cluster.nodes, id);
    node->max_bson_obj_size = max_bson_obj_size;
-   assert (max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster, &id));
-
-   /* without given server */
-   assert (max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster, NULL));
+   assert (max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster));
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -74,14 +66,10 @@ test_get_max_msg_size (void)
    /* single-threaded */
    client = mongoc_client_new (gTestUri);
 
-   /* with given server */
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    sd = mongoc_set_get (client->topology->description.servers, id);
    sd->max_msg_size = max_msg_size;
-   assert (max_msg_size = mongoc_cluster_get_max_msg_size (&client->cluster, &id));
-
-   /* with no given server */
-   assert (max_msg_size = mongoc_cluster_get_max_msg_size (&client->cluster, NULL));
+   assert (max_msg_size == mongoc_cluster_get_max_msg_size (&client->cluster));
 
    mongoc_client_destroy (client);
 
@@ -90,14 +78,10 @@ test_get_max_msg_size (void)
    pool = mongoc_client_pool_new (uri);
    client = mongoc_client_pool_pop (pool);
 
-   /* with given server */
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    node = mongoc_set_get (client->cluster.nodes, id);
    node->max_msg_size = max_msg_size;
-   assert (max_msg_size = mongoc_cluster_get_max_msg_size (&client->cluster, &id));
-
-   /* without given server */
-   assert (max_msg_size = mongoc_cluster_get_max_msg_size (&client->cluster, NULL));
+   assert (max_msg_size == mongoc_cluster_get_max_msg_size (&client->cluster));
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);

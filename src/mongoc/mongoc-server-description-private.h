@@ -19,6 +19,13 @@
 
 #include "mongoc-server-description.h"
 
+
+#define MONGOC_DEFAULT_WIRE_VERSION 0
+#define MONGOC_DEFAULT_WRITE_BATCH_SIZE 1000
+#define MONGOC_DEFAULT_BSON_OBJ_SIZE 16 * 1024 * 1024
+#define MONGOC_DEFAULT_MAX_MSG_SIZE 48000000
+
+
 typedef enum
    {
       MONGOC_SERVER_UNKNOWN,
@@ -63,7 +70,7 @@ struct _mongoc_server_description_t
 };
 
 void
-mongoc_server_description_init (mongoc_server_description_t *description,
+mongoc_server_description_init (mongoc_server_description_t *sd,
                                 const char                  *address,
                                 uint32_t                     id);
 bool

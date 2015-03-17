@@ -317,8 +317,8 @@ again:
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
 
-      max_bson_obj_size = mongoc_cluster_get_max_msg_size (&client->cluster, &hint);
-      max_msg_size = mongoc_cluster_get_max_msg_size (&client->cluster, &hint);
+      max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size(&client->cluster, hint);
+      max_msg_size = mongoc_cluster_node_max_msg_size (&client->cluster, hint);
 
       /*
        * Check that the server can receive this document.
@@ -633,8 +633,8 @@ again:
                          WRITE_CONCERN_DOC (write_concern));
    BSON_APPEND_BOOL (&cmd, "ordered", command->u.insert.ordered);
 
-   max_msg_size = mongoc_cluster_get_max_msg_size (&client->cluster, &hint);
-   max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster, &hint);
+   max_msg_size = mongoc_cluster_node_max_msg_size (&client->cluster, hint);
+   max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size (&client->cluster, hint);
 
    if ((command->u.insert.documents->len < max_bson_obj_size) &&
        (command->u.insert.documents->len < max_msg_size) &&

@@ -61,10 +61,16 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
       sd->error = NULL;
    }
 
-   /* set other fields to 'default' empty states */
+   /* set other fields to default or empty states */
    memset (&sd->set_name, 0, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd));
    sd->set_name = NULL;
    sd->type = MONGOC_SERVER_UNKNOWN;
+
+   sd->min_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
+   sd->max_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
+   sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
+   sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
+   sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
 
    /* always leave last ismaster in an init-ed state until we destroy sd */
    bson_destroy (&sd->last_is_master);
@@ -88,38 +94,44 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
  *--------------------------------------------------------------------------
  */
 void
-mongoc_server_description_init (mongoc_server_description_t *description,
+mongoc_server_description_init (mongoc_server_description_t *sd,
                                 const char                  *address,
                                 uint32_t                     id)
 {
    ENTRY;
 
-   bson_return_if_fail(description);
+   bson_return_if_fail(sd);
    bson_return_if_fail(address);
 
-   memset (description, 0, sizeof *description);
+   memset (sd, 0, sizeof *sd);
 
-   description->id = id;
-   description->type = MONGOC_SERVER_UNKNOWN;
-   description->round_trip_time = -1;
+   sd->id = id;
+   sd->type = MONGOC_SERVER_UNKNOWN;
+   sd->round_trip_time = -1;
 
-   description->set_name = NULL;
-   description->error = NULL;
-   description->current_primary = NULL;
+   sd->set_name = NULL;
+   sd->error = NULL;
+   sd->current_primary = NULL;
 
-   if (!_mongoc_host_list_from_string(&description->host, address)) {
+   if (!_mongoc_host_list_from_string(&sd->host, address)) {
       MONGOC_WARNING("Failed to parse uri for %s", address);
       return;
    }
 
-   description->connection_address = description->host.host_and_port;
+   sd->connection_address = sd->host.host_and_port;
 
-   bson_init_static (&description->hosts, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-   bson_init_static (&description->passives, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-   bson_init_static (&description->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
-   bson_init_static (&description->tags, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+   sd->min_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
+   sd->max_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
+   sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
+   sd->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
+   sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
 
-   bson_init (&description->last_is_master);
+   bson_init_static (&sd->hosts, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+   bson_init_static (&sd->passives, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+   bson_init_static (&sd->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+   bson_init_static (&sd->tags, kMongocEmptyBson, sizeof (kMongocEmptyBson));
+
+   bson_init (&sd->last_is_master);
 
    EXIT;
 }

@@ -1376,7 +1376,7 @@ mongoc_client_get_max_message_size (mongoc_client_t *client) /* IN */
 {
    bson_return_val_if_fail (client, -1);
 
-   return mongoc_cluster_get_max_msg_size (&client->cluster, NULL);
+   return mongoc_cluster_get_max_msg_size (&client->cluster);
 }
 
 
@@ -1385,7 +1385,7 @@ mongoc_client_get_max_bson_size (mongoc_client_t *client) /* IN */
 {
    bson_return_val_if_fail (client, -1);
 
-   return mongoc_cluster_get_max_bson_obj_size (&client->cluster, NULL);
+   return mongoc_cluster_get_max_bson_obj_size (&client->cluster);
 }
 
 
