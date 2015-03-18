@@ -1341,6 +1341,10 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
                      const mongoc_uri_t *uri,
                      void               *client)
 {
+   uint32_t sockettimeoutms = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
+   const bson_t *options = mongoc_uri_get_options(uri);
+   bson_iter_t iter;
+
    ENTRY;
 
    bson_return_if_fail(cluster);
@@ -1354,7 +1358,12 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
                              mongoc_uri_get_auth_mechanism(uri));
 
    cluster->sec_latency_ms = 15;
-   cluster->sockettimeoutms = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
+   if (bson_iter_init_find_case(&iter, options, "sockettimeoutms")) {
+      if (!(sockettimeoutms = bson_iter_int32 (&iter))) {
+         sockettimeoutms = MONGOC_DEFAULT_SOCKETTIMEOUTMS;
+      }
+   }
+   cluster->sockettimeoutms = sockettimeoutms;
 
    /* TODO for single-threaded case we don't need this */
    cluster->nodes = mongoc_set_new(8, _mongoc_cluster_node_dtor, NULL);
