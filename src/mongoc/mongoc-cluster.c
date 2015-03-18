@@ -1789,7 +1789,10 @@ mongoc_cluster_node_max_bson_obj_size (mongoc_cluster_t *cluster,
 
    if (cluster->client->topology->single_threaded) {
       if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
-         return sd->max_bson_obj_size;
+         int32_t retval = sd->max_bson_obj_size;
+
+         mongoc_server_description_destroy (sd);
+         return retval;
       }
    } else {
       if((node = mongoc_set_get(cluster->nodes, server_id))) {
@@ -1822,7 +1825,10 @@ mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
 
    if (cluster->client->topology->single_threaded) {
       if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
-         return sd->max_msg_size;
+         int32_t retval = sd->max_msg_size;
+
+         mongoc_server_description_destroy (sd);
+         return retval;
       }
    } else {
       if((node = mongoc_set_get(cluster->nodes, server_id))) {
@@ -1927,7 +1933,10 @@ mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,
 
    if (cluster->client->topology->single_threaded) {
       if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
-         return sd->max_wire_version;
+         int32_t retval = sd->max_wire_version;
+
+         mongoc_server_description_destroy (sd);
+         return retval;
       }
    } else {
       if((node = mongoc_set_get(cluster->nodes, server_id))) {
@@ -1960,7 +1969,10 @@ mongoc_cluster_node_min_wire_version (mongoc_cluster_t *cluster,
 
    if (cluster->client->topology->single_threaded) {
       if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
-         return sd->min_wire_version;
+         int32_t retval = sd->min_wire_version;
+
+         mongoc_server_description_destroy (sd);
+         return retval;
       }
    } else {
       if((node = mongoc_set_get(cluster->nodes, server_id))) {
