@@ -71,6 +71,7 @@ mongoc_topology_scanner_set_stream_initiator (mongoc_topology_scanner_t *ts,
 {
    ts->initiator = si;
    ts->initiator_context = ctx;
+   ts->setup = NULL;
 }
 
 void
