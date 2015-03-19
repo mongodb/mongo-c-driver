@@ -1797,7 +1797,7 @@ mongoc_cluster_node_max_bson_obj_size (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *node;
 
    if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
+      if ((sd = mongoc_topology_description_server_by_id (&cluster->client->topology->description, server_id))) {
          return sd->max_bson_obj_size;
       }
    } else {
@@ -1830,7 +1830,7 @@ mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *node;
 
    if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
+      if ((sd = mongoc_topology_description_server_by_id (&cluster->client->topology->description, server_id))) {
          return sd->max_msg_size;
       }
    } else {
@@ -1935,7 +1935,7 @@ mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *node;
 
    if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
+      if ((sd = mongoc_topology_description_server_by_id (&cluster->client->topology->description, server_id))) {
          return sd->max_wire_version;
       }
    } else {
@@ -1968,7 +1968,7 @@ mongoc_cluster_node_min_wire_version (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *node;
 
    if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_server_by_id (cluster->client->topology, server_id))) {
+      if ((sd = mongoc_topology_description_server_by_id (&cluster->client->topology->description, server_id))) {
          return sd->min_wire_version;
       }
    } else {
