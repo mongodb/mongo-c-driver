@@ -114,10 +114,10 @@ mongoc_topology_new (const mongoc_uri_t *uri)
    mongoc_topology_description_init(&topology->description, init_type, NULL);
    topology->description.set_name = bson_strdup(mongoc_uri_get_replica_set(uri));
 
-   topology->scanner = mongoc_topology_scanner_new (uri,
+   topology->uri = mongoc_uri_copy (uri);
+   topology->scanner = mongoc_topology_scanner_new (topology->uri,
                                                     _mongoc_topology_scanner_cb,
                                                     topology);
-   topology->uri = mongoc_uri_copy (uri);
    topology->single_threaded = true;
 
    /* TODO make SS timeout configurable on client */
