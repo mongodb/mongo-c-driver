@@ -306,7 +306,6 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                bson_error_t            *error) /* OUT */
 {
    mongoc_write_command_t *command;
-   uint32_t hint = 0;
    bool ret;
    int i;
 
@@ -361,11 +360,11 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
       command = &_mongoc_array_index (&bulk->commands,
                                       mongoc_write_command_t, i);
 
-      _mongoc_write_command_execute (command, bulk->client, hint,
+      _mongoc_write_command_execute (command, bulk->client, bulk->hint,
                                      bulk->database, bulk->collection,
                                      bulk->write_concern, &bulk->result);
 
-      hint = command->hint;
+      bulk->hint = command->hint;
 
       if (bulk->result.failed && bulk->ordered) {
          GOTO (cleanup);
@@ -375,7 +374,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 cleanup:
    ret = _mongoc_write_result_complete (&bulk->result, reply, error);
 
-   RETURN (ret ? hint : 0);
+   RETURN (ret ? bulk->hint : 0);
 }
 
 void
