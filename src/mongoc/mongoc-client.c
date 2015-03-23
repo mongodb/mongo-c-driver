@@ -443,12 +443,10 @@ _mongoc_client_sendv (mongoc_client_t              *client,
 
    switch (client->cluster.state) {
    case MONGOC_CLUSTER_STATE_BORN:
-      return _mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint,
-                                   write_concern, read_prefs, error);
    case MONGOC_CLUSTER_STATE_HEALTHY:
    case MONGOC_CLUSTER_STATE_UNHEALTHY:
-      return _mongoc_cluster_try_sendv(&client->cluster, rpcs, rpcs_len, hint,
-                                       write_concern, read_prefs, error);
+      return _mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint,
+                                   write_concern, read_prefs, error);
    case MONGOC_CLUSTER_STATE_DEAD:
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
