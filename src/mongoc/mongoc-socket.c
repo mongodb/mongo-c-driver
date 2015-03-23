@@ -778,8 +778,6 @@ again:
       RETURN (-1);
    }
 
-   DUMP_BYTES (recvbuf, (uint8_t *)buf, ret);
-
    mongoc_counter_streams_ingress_add (ret > 0 ? ret : 0);
 
    RETURN (ret);

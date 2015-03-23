@@ -126,6 +126,7 @@ mongoc_stream_writev (mongoc_stream_t *stream,
       timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
    }
 
+   DUMP_IOVEC (writev, iov, iovcnt);
    ret = stream->writev(stream, iov, iovcnt, timeout_msec);
 
    RETURN (ret);
@@ -199,6 +200,7 @@ mongoc_stream_readv (mongoc_stream_t *stream,
    BSON_ASSERT (stream->readv);
 
    ret = stream->readv (stream, iov, iovcnt, min_bytes, timeout_msec);
+   DUMP_IOVEC (readv, iov, iovcnt);
 
    RETURN (ret);
 }
