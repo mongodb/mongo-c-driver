@@ -14,6 +14,22 @@ static char *gTestUri;
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-test"
 
+#ifdef _WIN32
+static void
+usleep (int64_t usec)
+{
+    HANDLE timer;
+    LARGE_INTEGER ft;
+
+    ft.QuadPart = -(10 * usec);
+
+    timer = CreateWaitableTimer(NULL, true, NULL);
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+}
+
+#endif
 static void
 test_topology_client_creation (void)
 {
@@ -173,6 +189,8 @@ test_invalid_cluster_node (void)
    client = mongoc_client_pool_pop (pool);
    cluster = &client->cluster;
 
+   usleep(100);
+
    /* load stream into cluster */
    id = mongoc_cluster_preselect (cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    cluster_node = mongoc_set_get (cluster->nodes, id);
@@ -183,6 +201,7 @@ test_invalid_cluster_node (void)
    assert (cluster_node->timestamp > scanner_node->timestamp);
 
    /* update the scanner node's timestamp */
+   usleep(100);
    scanner_node->timestamp = bson_get_monotonic_time ();
    assert (cluster_node->timestamp < scanner_node->timestamp);
 
