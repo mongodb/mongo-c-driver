@@ -1256,6 +1256,19 @@ mongoc_client_command_simple (mongoc_client_t           *client,
                               bson_t                    *reply,
                               bson_error_t              *error)
 {
+   return _mongoc_client_command_simple_with_hint (client, db_name, command,
+                                                   read_prefs, reply, 0, error);
+}
+
+bool
+_mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
+                                         const char                *db_name,
+                                         const bson_t              *command,
+                                         const mongoc_read_prefs_t *read_prefs,
+                                         bson_t                    *reply,
+                                         uint32_t                   hint,
+                                         bson_error_t              *error)
+{
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bool ret;
@@ -1266,6 +1279,8 @@ mongoc_client_command_simple (mongoc_client_t           *client,
 
    cursor = mongoc_client_command (client, db_name, MONGOC_QUERY_NONE, 0, 1, 0,
                                    command, NULL, read_prefs);
+
+   cursor->hint = hint;
 
    ret = mongoc_cursor_next (cursor, &doc);
 

@@ -539,8 +539,8 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    bson_append_document_end (&ar, &child);
    bson_append_array_end (&cmd, &ar);
 
-   ret = mongoc_client_command_simple (client, database, &cmd, NULL,
-                                       &reply, error);
+   ret = _mongoc_client_command_simple_with_hint (client, database, &cmd, NULL,
+                                                  &reply, hint, error);
 
    if (!ret) {
       result->failed = true;
@@ -672,8 +672,8 @@ again:
       bson_append_array_end (&cmd, &ar);
    }
 
-   ret = mongoc_client_command_simple (client, database, &cmd, NULL,
-                                       &reply, error);
+   ret = _mongoc_client_command_simple_with_hint (client, database, &cmd, NULL,
+                                                  &reply, hint, error);
 
    if (!ret) {
       result->failed = true;
@@ -750,8 +750,8 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
    bson_append_document_end (&ar, &child);
    bson_append_array_end (&cmd, &ar);
 
-   ret = mongoc_client_command_simple (client, database, &cmd, NULL,
-                                       &reply, error);
+   ret = _mongoc_client_command_simple_with_hint (client, database, &cmd, NULL,
+                                                  &reply, hint, error);
 
    if (!ret) {
       result->failed = true;
