@@ -24,6 +24,7 @@
 #include <bson.h>
 
 #include "mongoc-host-list.h"
+#include "mongoc-read-prefs.h"
 #include "mongoc-write-concern.h"
 
 
@@ -60,6 +61,7 @@ bool                          mongoc_uri_get_mechanism_properties (const mongoc_
                                                                          bson_t       *properties);
 bool                          mongoc_uri_get_ssl                  (const mongoc_uri_t *uri);
 char                         *mongoc_uri_unescape                 (const char         *escaped_string);
+const mongoc_read_prefs_t *   mongoc_uri_get_read_prefs_t         (const mongoc_uri_t *uri);
 const mongoc_write_concern_t *mongoc_uri_get_write_concern        (const mongoc_uri_t *uri);
 
 BSON_END_DECLS

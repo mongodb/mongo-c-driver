@@ -216,6 +216,7 @@ mongoc_uri_get_mechanism_properties
 mongoc_uri_get_options
 mongoc_uri_get_password
 mongoc_uri_get_read_prefs
+mongoc_uri_get_read_prefs_t
 mongoc_uri_get_replica_set
 mongoc_uri_get_ssl
 mongoc_uri_get_string

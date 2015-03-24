@@ -42,7 +42,7 @@ struct _mongoc_uri_t
    char                   *database;
    bson_t                  options;
    bson_t                  credentials;
-   bson_t                  read_prefs;
+   mongoc_read_prefs_t    *read_prefs;
    mongoc_write_concern_t *write_concern;
 };
 
@@ -437,16 +437,13 @@ mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri,
 
 static void
 mongoc_uri_parse_tags (mongoc_uri_t *uri, /* IN */
-                       const char   *str, /* IN */
-                       bson_t       *doc) /* IN */
+                       const char   *str) /* IN */
 {
    const char *end_keyval;
    const char *end_key;
    bson_t b;
    char *keyval;
    char *key;
-   char keystr[32];
-   int i;
 
    bson_init(&b);
 
@@ -466,9 +463,7 @@ again:
       }
    }
 
-   i = bson_count_keys(doc);
-   bson_snprintf(keystr, sizeof keystr, "%u", i);
-   bson_append_document(doc, keystr, -1, &b);
+   mongoc_read_prefs_add_tag(uri->read_prefs, &b);
    bson_destroy(&b);
 }
 
@@ -518,7 +513,7 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
                         (0 == strcasecmp (value, "t")) ||
                         (0 == strcmp (value, "1")));
    } else if (!strcasecmp(key, "readpreferencetags")) {
-      mongoc_uri_parse_tags(uri, value, &uri->read_prefs);
+      mongoc_uri_parse_tags(uri, value);
    } else if (!strcasecmp(key, "authmechanism") ||
               !strcasecmp(key, "authsource")) {
       bson_append_utf8(&uri->credentials, key, -1, value, -1);
@@ -704,6 +699,47 @@ mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri, bson_t *properties
 
 
 static void
+_mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri) /* IN */
+{
+   const char *str;
+   bson_iter_t iter;
+
+   BSON_ASSERT(uri);
+
+   if (bson_iter_init_find_case(&iter, &uri->options, "slaveok") &&
+       BSON_ITER_HOLDS_BOOL(&iter) &&
+       bson_iter_bool(&iter)) {
+      mongoc_read_prefs_set_mode(uri->read_prefs, MONGOC_READ_SECONDARY_PREFERRED);
+   }
+
+   if (bson_iter_init_find_case(&iter, &uri->options, "readpreference") &&
+       BSON_ITER_HOLDS_UTF8(&iter)) {
+      str = bson_iter_utf8(&iter, NULL);
+
+      if (0 == strcasecmp("primary", str)) {
+         mongoc_read_prefs_set_mode(uri->read_prefs, MONGOC_READ_PRIMARY);
+      } else if (0 == strcasecmp("primarypreferred", str)) {
+         mongoc_read_prefs_set_mode(uri->read_prefs, MONGOC_READ_PRIMARY_PREFERRED);
+      } else if (0 == strcasecmp("secondary", str)) {
+         mongoc_read_prefs_set_mode(uri->read_prefs, MONGOC_READ_SECONDARY);
+      } else if (0 == strcasecmp("secondarypreferred", str)) {
+         mongoc_read_prefs_set_mode(uri->read_prefs, MONGOC_READ_SECONDARY_PREFERRED);
+      } else if (0 == strcasecmp("nearest", str)) {
+         mongoc_read_prefs_set_mode(uri->read_prefs, MONGOC_READ_NEAREST);
+      } else {
+         MONGOC_WARNING("Unsupported readPreference value [readPreference=%s].", str);
+      }
+   }
+
+   /* Warn on conflict, since read preference will be validated later */
+   if (mongoc_read_prefs_get_mode(uri->read_prefs) == MONGOC_READ_PRIMARY &&
+       !bson_empty(mongoc_read_prefs_get_tags(uri->read_prefs))) {
+      MONGOC_WARNING("Primary read preference mode conflicts with tags.");
+   }
+}
+
+
+static void
 _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
 {
    mongoc_write_concern_t *write_concern;
@@ -778,13 +814,22 @@ mongoc_uri_new (const char *uri_string)
    uri = bson_malloc0(sizeof *uri);
    bson_init(&uri->options);
    bson_init(&uri->credentials);
-   bson_init(&uri->read_prefs);
+
+   /* Initialize read_prefs since tag parsing may add to it */
+   uri->read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
    }
 
    if (!mongoc_uri_parse(uri, uri_string)) {
+      mongoc_uri_destroy(uri);
+      return NULL;
+   }
+
+   _mongoc_uri_assign_read_prefs_mode(uri);
+
+   if (!mongoc_read_prefs_is_valid(uri->read_prefs)) {
       mongoc_uri_destroy(uri);
       return NULL;
    }
@@ -879,7 +924,7 @@ mongoc_uri_destroy (mongoc_uri_t *uri)
       bson_free(uri->username);
       bson_destroy(&uri->options);
       bson_destroy(&uri->credentials);
-      bson_destroy(&uri->read_prefs);
+      mongoc_read_prefs_destroy(uri->read_prefs);
       mongoc_write_concern_destroy(uri->write_concern);
 
       if (uri->password) {
@@ -910,7 +955,7 @@ const bson_t *
 mongoc_uri_get_read_prefs (const mongoc_uri_t *uri)
 {
    bson_return_val_if_fail(uri, NULL);
-   return &uri->read_prefs;
+   return mongoc_read_prefs_get_tags(uri->read_prefs);
 }
 
 
@@ -987,6 +1032,15 @@ mongoc_uri_unescape (const char *escaped_string)
    }
 
    return bson_string_free(str, false);
+}
+
+
+const mongoc_read_prefs_t *
+mongoc_uri_get_read_prefs_t (const mongoc_uri_t *uri) /* IN */
+{
+   bson_return_val_if_fail(uri, NULL);
+
+   return uri->read_prefs;
 }
 
 
