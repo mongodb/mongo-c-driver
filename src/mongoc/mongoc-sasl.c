@@ -28,6 +28,9 @@
 #  define SASL_CALLBACK_FN(_f) ((int (*) (void))(_f))
 #endif
 
+#if defined(_WIN32) && !defined(strcasecmp)
+# define strcasecmp _stricmp
+#endif
 
 void
 _mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
