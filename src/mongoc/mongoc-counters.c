@@ -125,8 +125,8 @@ mongoc_counters_calc_size (void)
  *
  * Removes the shared memory segment for the current processes counters.
  */
-static void
-mongoc_counters_destroy (void)
+void
+_mongoc_counters_cleanup (void)
 {
    if (gCounterFallback) {
       bson_free (gCounterFallback);
@@ -190,7 +190,6 @@ mongoc_counters_alloc (size_t size)
 
    close (fd);
    memset (mem, 0, size);
-   atexit (mongoc_counters_destroy);
 
    return mem;
 
@@ -203,7 +202,6 @@ use_malloc:
 #endif
 
    gCounterFallback = bson_malloc0 (size);
-   atexit (mongoc_counters_destroy);
 
    return gCounterFallback;
 }
