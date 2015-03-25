@@ -210,7 +210,7 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds,          /* IN */
 
    for (i = 0; i < nsds; i++) {
       pfds[i].fd = sds[i].socket->sd;
-#ifdef _WIN2
+#ifdef _WIN32
       pfds[i].events = sds[i].events;
 #else
       pfds[i].events = sds[i].events | POLLERR | POLLHUP;

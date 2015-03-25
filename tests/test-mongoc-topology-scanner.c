@@ -10,7 +10,7 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-scanner-test"
 
-#define TIMEOUT 1000
+#define TIMEOUT 20000
 #define NSERVERS 10
 
 #define TRUST_DIR "tests/trust_dir"
@@ -90,8 +90,8 @@ test_topology_scanner(void)
 
       mock_server_run_in_thread (servers[i]);
 
-      snprintf(host.host, sizeof(host.host), "127.0.0.1");
-      snprintf(host.host_and_port, sizeof(host.host_and_port), "127.0.0.1:%d", port + i);
+      bson_snprintf(host.host, sizeof(host.host), "127.0.0.1");
+      bson_snprintf(host.host_and_port, sizeof(host.host_and_port), "127.0.0.1:%d", port + i);
       host.port = port + i;
       host.family = AF_INET;
 

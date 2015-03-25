@@ -10,6 +10,7 @@
 #include "test-libmongoc.h"
 
 static char *gTestUri;
+static char *gTestUriAuth;
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-test"
@@ -189,7 +190,7 @@ test_invalid_cluster_node (void)
    client = mongoc_client_pool_pop (pool);
    cluster = &client->cluster;
 
-   usleep(100);
+   usleep(100000);
 
    /* load stream into cluster */
    id = mongoc_cluster_preselect (cluster, MONGOC_OPCODE_QUERY, NULL, &error);
@@ -201,9 +202,10 @@ test_invalid_cluster_node (void)
    assert (cluster_node->timestamp > scanner_node->timestamp);
 
    /* update the scanner node's timestamp */
-   usleep(100);
+   usleep(100000);
    scanner_node->timestamp = bson_get_monotonic_time ();
    assert (cluster_node->timestamp < scanner_node->timestamp);
+   usleep(100000);
 
    /* ensure that cluster adjusts */
    mongoc_cluster_fetch_stream (cluster, id, &error);
@@ -238,7 +240,7 @@ test_max_wire_version_race_condition (void)
    mongoc_client_destroy (client);
 
    /* use client pool, test is only valid when multi-threaded */
-   uri = mongoc_uri_new ("mongodb://pink:panther@localhost:27017/test");
+   uri = mongoc_uri_new (gTestUriAuth);
    pool = mongoc_client_pool_new (uri);
    client = mongoc_client_pool_pop (pool);
 
@@ -266,12 +268,14 @@ static void
 cleanup_globals (void)
 {
    bson_free(gTestUri);
+   bson_free(gTestUriAuth);
 }
 
 void
 test_topology_install (TestSuite *suite)
 {
    gTestUri = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
+   gTestUriAuth = bson_strdup_printf("mongodb://pink:panther@%s/test", MONGOC_TEST_HOST);
 
    TestSuite_Add (suite, "/Topology/client_creation", test_topology_client_creation);
    TestSuite_Add (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);

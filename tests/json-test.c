@@ -16,7 +16,11 @@
 
 #include "json-test.h"
 
+#ifdef _MSC_VER
+#include <io.h>
+#else
 #include <dirent.h>
+#endif
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -131,6 +135,43 @@ collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
                         int paths_index,
                         int max_paths)
 {
+#ifdef _MSC_VER
+   intptr_t handle;
+   struct _finddata_t info;
+
+   char child_path[MAX_NAME_LENGTH];
+
+   handle = _findfirst(dir_path, &info);
+
+   if (handle == -1) {
+      return 0;
+   }
+
+   while (1) {
+      assert(paths_index < max_paths);
+
+      if (_findnext(handle, &info) == -1) {
+         break;
+      }
+
+      if (info.attrib & _A_SUBDIR) {
+         /* recursively call on child directories */
+         if (strcmp (info.name, "..") != 0 &&
+             strcmp (info.name, ".") != 0) {
+
+            assemble_path(dir_path, info.name, child_path);
+            paths_index = collect_tests_from_dir(paths, child_path, paths_index, max_paths);
+         }
+      } else if (strstr(info.name, ".json")) {
+         /* if this is a JSON test, collect its path */
+         assemble_path(dir_path, info.name, paths[paths_index++]);
+      }
+   }
+
+   _findclose(handle);
+
+   return paths_index;
+#else
    struct dirent *entry;
    char child_path[MAX_NAME_LENGTH];
    DIR *dir;
@@ -165,6 +206,7 @@ collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
       closedir(dir);
    }
    return paths_index;
+#endif
 }
 
 /*

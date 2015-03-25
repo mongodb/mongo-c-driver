@@ -13,6 +13,10 @@
 
 #define MAX_NUM_TESTS 100
 
+#if defined(_WIN32) && !defined(strcasecmp)
+# define strcasecmp _stricmp
+#endif
+
 /* caller must clean up the returned description */
 static mongoc_server_description_t *
 _server_description_by_hostname(mongoc_topology_description_t *topology,
