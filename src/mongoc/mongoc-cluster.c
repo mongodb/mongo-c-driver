@@ -239,24 +239,24 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
    while (bson_iter_next (&iter)) {
       num_fields++;
       if (strcmp ("maxWriteBatchSize", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          node->max_write_batch_size = bson_iter_int32 (&iter);
       } else if (strcmp ("minWireVersion", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          node->min_wire_version = bson_iter_int32 (&iter);
       } else if (strcmp ("maxWireVersion", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          node->max_wire_version = bson_iter_int32 (&iter);
       } else if (strcmp ("maxBsonObjSize", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          node->max_bson_obj_size = bson_iter_int32 (&iter);
       } else if (strcmp ("maxMessageSizeBytes", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          node->max_msg_size = bson_iter_int32 (&iter);
       }
    }
 
-   if (num_fields == 0) goto ERROR;
+   if (num_fields == 0) goto failure;
 
    /* TODO: run ismaster through the topology machinery? */
    bson_destroy (&command);
@@ -264,7 +264,7 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
 
    return true;
 
- ERROR:
+failure:
 
    bson_destroy (&command);
    bson_destroy (&reply);

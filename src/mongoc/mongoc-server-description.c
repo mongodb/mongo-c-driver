@@ -337,55 +337,55 @@ mongoc_server_description_handle_ismaster (
       num_keys++;
       /* TODO: do we need to handle ok */
       if (strcmp ("ismaster", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto failure;
          is_master = bson_iter_bool (&iter);
       } else if (strcmp ("maxMessageSizeBytes", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          sd->max_msg_size = bson_iter_int32 (&iter);
       } else if (strcmp ("maxBsonObjectSize", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          sd->max_bson_obj_size = bson_iter_int32 (&iter);
       } else if (strcmp ("maxWriteBatchSize", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          sd->max_write_batch_size = bson_iter_int32 (&iter);
       } else if (strcmp ("minWireVersion", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          sd->min_wire_version = bson_iter_int32 (&iter);
       } else if (strcmp ("maxWireVersion", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          sd->max_wire_version = bson_iter_int32 (&iter);
       } else if (strcmp ("msg", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto failure;
          is_shard = !!bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("setName", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto failure;
          sd->set_name = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("secondary", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto failure;
          is_secondary = bson_iter_bool (&iter);
       } else if (strcmp ("hosts", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_ARRAY (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_ARRAY (&iter)) goto failure;
          bson_iter_array (&iter, &len, &bytes);
          bson_init_static (&sd->hosts, bytes, len);
       } else if (strcmp ("passives", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_ARRAY (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_ARRAY (&iter)) goto failure;
          bson_iter_array (&iter, &len, &bytes);
          bson_init_static (&sd->passives, bytes, len);
       } else if (strcmp ("arbiters", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_ARRAY (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_ARRAY (&iter)) goto failure;
          bson_iter_array (&iter, &len, &bytes);
          bson_init_static (&sd->arbiters, bytes, len);
       } else if (strcmp ("primary", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto failure;
          sd->current_primary = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("arbiterOnly", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto failure;
          is_arbiter = bson_iter_bool (&iter);
       } else if (strcmp ("isreplicaset", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_BOOL (&iter)) goto failure;
          is_replicaset = bson_iter_bool (&iter);
       } else if (strcmp ("tags", bson_iter_key (&iter)) == 0) {
-         if (! BSON_ITER_HOLDS_DOCUMENT (&iter)) goto ERROR;
+         if (! BSON_ITER_HOLDS_DOCUMENT (&iter)) goto failure;
          bson_iter_document (&iter, &len, &bytes);
          bson_init_static (&sd->tags, bytes, len);
       }
@@ -415,7 +415,7 @@ mongoc_server_description_handle_ismaster (
 
    return;
 
-ERROR:
+failure:
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time = -1;
 }
