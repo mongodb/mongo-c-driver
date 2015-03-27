@@ -490,6 +490,9 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
    mongoc_uri_do_unescape(&value);
 
    if (!strcasecmp(key, "connecttimeoutms") ||
+       !strcasecmp(key, "heartbeatfrequencyms") ||
+       !strcasecmp(key, "serverselectiontimeoutms") ||
+       !strcasecmp(key, "socketcheckintervalms") ||
        !strcasecmp(key, "sockettimeoutms") ||
        !strcasecmp(key, "maxpoolsize") ||
        !strcasecmp(key, "minpoolsize") ||

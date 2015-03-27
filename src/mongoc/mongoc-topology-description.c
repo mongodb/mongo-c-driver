@@ -445,7 +445,13 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
    }
 
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
-      return topology->servers->items[0].item;
+      sd = topology->servers->items[0].item;
+
+      if (sd->has_is_master) {
+         RETURN(sd);
+      } else {
+         RETURN(NULL);
+      }
    }
 
    _mongoc_array_init(&suitable_servers, sizeof(mongoc_server_description_t *));

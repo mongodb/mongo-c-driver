@@ -61,15 +61,6 @@ test_topology_client_creation (void)
    assert (topology_a->single_threaded);
    assert (topology_a->bg_thread_state == MONGOC_TOPOLOGY_BG_OFF);
 
-   /* ensure that calling background_thread_start or stop does nothing */
-   mongoc_topology_background_thread_start(topology_a);
-   assert (topology_a->single_threaded);
-   assert (topology_a->bg_thread_state == MONGOC_TOPOLOGY_BG_OFF);
-
-   mongoc_topology_background_thread_stop(topology_a);
-   assert (topology_a->single_threaded);
-   assert (topology_a->bg_thread_state == MONGOC_TOPOLOGY_BG_OFF);
-
    /* ensure that we are sharing streams with the client */
    id = mongoc_cluster_preselect (&client_a->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    cluster_stream = mongoc_cluster_fetch_stream (&client_a->cluster, id, &error);

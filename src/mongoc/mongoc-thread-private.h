@@ -41,11 +41,14 @@ mongoc_cond_timedwait (pthread_cond_t  *cond,
 {
    struct timespec to;
    struct timeval tv;
+   int64_t msec;
 
    bson_gettimeofday (&tv);
 
-   to.tv_sec = tv.tv_sec + timeout_msec / 1000;
-   to.tv_nsec = (timeout_msec % 1000) * 1000000;
+   msec = (tv.tv_sec * 1000) + (tv.tv_usec / 1000) + timeout_msec;
+
+   to.tv_sec = msec / 1000;
+   to.tv_nsec = (msec % 1000) * 1000 * 1000;
 
    return pthread_cond_timedwait (cond, mutex, &to);
 }

@@ -679,7 +679,7 @@ mongoc_client_new(const char *uri_string)
       return NULL;
    }
 
-   topology = mongoc_topology_new(uri);
+   topology = mongoc_topology_new(uri, true);
 
    mongoc_uri_destroy (uri);
 
@@ -848,7 +848,7 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 
    uristr = mongoc_uri_get_string(uri);
 
-   topology = mongoc_topology_new(uri);
+   topology = mongoc_topology_new(uri, true);
    return _mongoc_client_new(uristr, topology);
 }
 

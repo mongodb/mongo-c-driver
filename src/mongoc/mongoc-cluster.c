@@ -1240,7 +1240,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
       if (cluster->requires_auth && !scanner_node->has_auth) {
 
          /* try to reconnect and re-authenticate */
-         sd = mongoc_topology_server_by_id(topology, server_id);
+         sd = mongoc_topology_description_server_by_id(&topology->description, server_id);
          if (!sd) {
             goto FETCH_FAIL;
          }
@@ -1252,6 +1252,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
          }
          scanner_node->has_auth = true;
       }
+
    } else {
       cluster_node = mongoc_set_get(cluster->nodes, server_id);
       if (!cluster_node) {
@@ -1294,7 +1295,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
       goto FETCH_FAIL;
    }
 
-   if (sd) {
+   if (sd && ! topology->single_threaded) {
       mongoc_server_description_destroy (sd);
    }
 
@@ -1302,7 +1303,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
  FETCH_FAIL:
 
-   if (sd) {
+   if (sd && ! topology->single_threaded) {
       mongoc_server_description_destroy (sd);
    }
 
@@ -1363,6 +1364,11 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
       }
    }
    cluster->sockettimeoutms = sockettimeoutms;
+
+   cluster->socketcheckintervalms = MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS;
+   if (bson_iter_init_find_case(&iter, options, "socketcheckintervalms")) {
+      cluster->socketcheckintervalms = bson_iter_int32 (&iter);
+   }
 
    /* TODO for single-threaded case we don't need this */
    cluster->nodes = mongoc_set_new(8, _mongoc_cluster_node_dtor, NULL);
@@ -1435,7 +1441,6 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t          *cluster,
    selected_server = mongoc_topology_select(cluster->client->topology,
                                             optype,
                                             read_prefs,
-                                            30000,
                                             15,
                                             error);
 
@@ -1979,6 +1984,82 @@ mongoc_cluster_node_min_wire_version (mongoc_cluster_t *cluster,
    return -1;
 }
 
+static bool
+_mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
+                                uint32_t          server_id,
+                                bson_error_t     *error)
+{
+   mongoc_topology_t *topology;
+   mongoc_topology_scanner_node_t *scanner_node;
+   mongoc_server_description_t *sd;
+   mongoc_stream_t *stream;
+   int64_t now;
+   int64_t before_ismaster;
+   bson_t command;
+   bson_t reply;
+   bool r;
+
+   topology = cluster->client->topology;
+
+   if (!topology->single_threaded) {
+      return true;
+   }
+
+   scanner_node =
+      mongoc_topology_scanner_get_node (topology->scanner, server_id);
+
+   if (!scanner_node) {
+      return false;
+   }
+
+   stream = scanner_node->stream;
+
+   if (!stream) {
+      return false;
+   }
+
+   now = bson_get_monotonic_time ();
+
+   if (scanner_node->last_used + (1000 * cluster->socketcheckintervalms) <
+       now) {
+      bson_init (&command);
+      BSON_APPEND_INT32 (&command, "ismaster", 1);
+
+      before_ismaster = now;
+
+      r = _mongoc_cluster_run_command (cluster, stream, "admin", &command,
+                                       &reply,
+                                       error);
+
+      now = bson_get_monotonic_time ();
+
+      bson_destroy (&command);
+
+      if (r) {
+         sd = mongoc_topology_description_server_by_id (
+            &topology->description, server_id);
+
+         if (!sd) {
+            bson_destroy (&reply);
+            return false;
+         }
+
+         mongoc_topology_description_handle_ismaster (
+            &topology->description, sd, &reply,
+            (now - before_ismaster) / 1000,    /* RTT_MS */
+            error);
+
+         bson_destroy (&reply);
+      } else {
+         bson_destroy (&reply);
+         return false;
+      }
+   }
+
+   return true;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -2010,6 +2091,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
 {
    mongoc_stream_t *stream;
    mongoc_iovec_t *iov;
+   mongoc_topology_scanner_node_t *scanner_node;
    const bson_t *b;
    mongoc_rpc_t gle;
    size_t iovcnt;
@@ -2025,6 +2107,10 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
 
    if (! write_concern) {
       write_concern = cluster->client->write_concern;
+   }
+
+   if (!_mongoc_cluster_check_interval (cluster, server_id, error)) {
+      RETURN (false);
    }
 
    /*
@@ -2117,6 +2203,16 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
                       errstr);
       mongoc_cluster_disconnect_node (cluster, server_id);
       return false;
+   }
+
+   if (cluster->client->topology->single_threaded) {
+      scanner_node =
+         mongoc_topology_scanner_get_node (cluster->client->topology->scanner,
+                                           server_id);
+
+      if (scanner_node) {
+         scanner_node->last_used = bson_get_monotonic_time ();
+      }
    }
 
    return true;

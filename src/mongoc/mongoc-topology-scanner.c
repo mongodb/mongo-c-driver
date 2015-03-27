@@ -202,6 +202,8 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
       node->stream = NULL;
    }
 
+   node->last_used = bson_get_monotonic_time ();
+
    if (!node->ts->cb (node->id, ismaster_response, rtt_msec,
                       node->ts->cb_data, error)) {
       mongoc_topology_scanner_node_destroy (node);

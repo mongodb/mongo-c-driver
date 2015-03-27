@@ -61,6 +61,7 @@ typedef struct _mongoc_cluster_t
 {
    uint32_t         request_id;
    uint32_t         sockettimeoutms;
+   uint32_t         socketcheckintervalms;
    int64_t          last_reconnect;
    mongoc_uri_t    *uri;
    unsigned         requires_auth : 1;
