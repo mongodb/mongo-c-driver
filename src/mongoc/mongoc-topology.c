@@ -21,10 +21,13 @@
 #include "utlist.h"
 
 static void
-mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
+_mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
 
 static void
-mongoc_topology_background_thread_start (mongoc_topology_t *topology);
+_mongoc_topology_background_thread_start (mongoc_topology_t *topology);
+
+static void
+_mongoc_topology_request_scan (mongoc_topology_t *topology);
 
 /*
  *-------------------------------------------------------------------------
@@ -54,6 +57,14 @@ _mongoc_topology_scanner_cb (uint32_t      id,
 
    topology = data;
 
+   if (rtt_msec >= 0) {
+      /* If the scanner failed to create a socket for this server, that means
+       * we're in scanner_start, which means we're under the mutex.  So don't
+       * take the mutex for rtt < 0 */
+
+      mongoc_mutex_lock (&topology->mutex);
+   }
+
    sd = mongoc_topology_description_server_by_id (&topology->description, id);
 
    if (sd) {
@@ -63,6 +74,10 @@ _mongoc_topology_scanner_cb (uint32_t      id,
 
       /* TODO only wake up all clients if we found any topology changes */
       mongoc_cond_broadcast (&topology->cond_client);
+   }
+
+   if (rtt_msec >= 0) {
+      mongoc_mutex_unlock (&topology->mutex);
    }
 
    return r;
@@ -154,7 +169,7 @@ mongoc_topology_new (const mongoc_uri_t *uri,
    }
 
    if (! topology->single_threaded) {
-       mongoc_topology_background_thread_start (topology);
+       _mongoc_topology_background_thread_start (topology);
    }
 
    return topology;
@@ -183,7 +198,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    }
 
    if (! topology->single_threaded) {
-      mongoc_topology_background_thread_stop (topology);
+      _mongoc_topology_background_thread_stop (topology);
    }
 
    mongoc_uri_destroy (topology->uri);
@@ -349,10 +364,11 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                                                            error);
 
       if (! selected_server) {
-         topology->scan_requested = true;
-         mongoc_cond_signal (&topology->cond_server);
+         _mongoc_topology_request_scan (topology);
 
-         r = mongoc_cond_timedwait (&topology->cond_client, &topology->mutex, (expire_at - now) / 1000);
+         r = mongoc_cond_timedwait (&topology->cond_client, &topology->mutex,
+                                    (expire_at - now) / 1000);
+
          mongoc_mutex_unlock (&topology->mutex);
 
          if (r == ETIMEDOUT) {
@@ -425,6 +441,26 @@ mongoc_topology_server_by_id (mongoc_topology_t *topology, uint32_t id)
  *
  * _mongoc_topology_request_scan --
  *
+ *       Non-locking variant
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_topology_request_scan (mongoc_topology_t *topology)
+{
+   if (!topology->scanning) {
+      topology->scan_requested = true;
+
+      mongoc_cond_signal (&topology->cond_server);
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_request_scan --
+ *
  *       Used from within the driver to request an immediate topology check.
  *
  *       NOTE: this method locks and unlocks @topology's mutex.
@@ -435,36 +471,11 @@ mongoc_topology_server_by_id (mongoc_topology_t *topology, uint32_t id)
 void
 mongoc_topology_request_scan (mongoc_topology_t *topology)
 {
-   bool do_scan = true;
-
-   bson_return_if_fail (topology);
-
    mongoc_mutex_lock (&topology->mutex);
 
-   if (topology->scanning) {
-      /* if we're already scanning, don't start a new one */
-      do_scan = false;
-   } else {
-      /* if we scanned too recently, just queue up the request for the
-       * background thread */
-      if (_mongoc_topology_time_to_scan(topology)) {
-         topology->scan_requested = true;
-         do_scan = false;
-      }
-   }
-
-   /* feel free to start the scan if none is currently in progress and it's
-    * been long enough */
-   if (do_scan) {
-      mongoc_topology_scanner_start (topology->scanner, topology->timeout_msec);
-   }
+   _mongoc_topology_request_scan (topology);
 
    mongoc_mutex_unlock (&topology->mutex);
-
-   /* This wakes up the background thread */
-   mongoc_cond_signal (&topology->cond_server);
-
-   return;
 }
 
 /*
@@ -633,7 +644,7 @@ DONE:
  */
 
 static void
-mongoc_topology_background_thread_start (mongoc_topology_t *topology)
+_mongoc_topology_background_thread_start (mongoc_topology_t *topology)
 {
    bool launch_thread = true;
 
@@ -666,7 +677,7 @@ mongoc_topology_background_thread_start (mongoc_topology_t *topology)
  */
 
 static void
-mongoc_topology_background_thread_stop (mongoc_topology_t *topology)
+_mongoc_topology_background_thread_stop (mongoc_topology_t *topology)
 {
    bool join_thread = false;
 

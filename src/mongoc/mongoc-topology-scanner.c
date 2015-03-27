@@ -365,7 +365,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
    }
 
    if (!sock_stream) {
-      if (!node->ts->cb (node->id, NULL, 0, node->ts->cb_data, &error)) {
+      /* Pass a rtt of -1 if we couldn't initialize a stream in node_setup */
+      if (!node->ts->cb (node->id, NULL, -1, node->ts->cb_data, &error)) {
          mongoc_topology_scanner_node_destroy (node);
       }
 
