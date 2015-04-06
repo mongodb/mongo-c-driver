@@ -1,3 +1,10 @@
+Next release
+============
+
+Changes include:
+ * The fsync and j write concern flags imply acknowledged writes
+ * Prevent using fsync or j with conflicting w=0 write concern
+
 mongo-c-driver 1.1.4
 ====================
 
