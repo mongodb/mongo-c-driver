@@ -4,6 +4,8 @@
 
 #include "TestSuite.h"
 
+#include "test-libmongoc.h"
+
 static void
 test_mongoc_uri_new (void)
 {
