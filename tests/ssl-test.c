@@ -282,7 +282,7 @@ ssl_test_client (void * ptr)
  * The basic idea is that you spin up a client and server, which will
  * communicate over a mongoc-stream-tls, with varrying mongoc_ssl_opt's.  The
  * client and server speak a simple echo protocol, so all we're really testing
- * here is that any given configuration suceeds or fails as it should
+ * here is that any given configuration succeeds or fails as it should
  */
 void
 ssl_test (mongoc_ssl_opt_t  *client,
