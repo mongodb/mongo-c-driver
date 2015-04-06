@@ -26,6 +26,7 @@
 #include "mongoc-log.h"
 #include "mongoc-socket.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-write-concern-private.h"
 
 
 #if defined(_WIN32) && !defined(strcasecmp)
@@ -737,13 +738,13 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
          value = bson_iter_int32 (&iter);
 
          switch (value) {
-         case -1:
-            mongoc_write_concern_set_w (write_concern,
-                                        MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED);
-            break;
-         case 0:
-            mongoc_write_concern_set_w (write_concern,
-                                        MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+         case MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED:
+         case MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED:
+            /* Warn on conflict, since write concern will be validated later */
+            if (mongoc_write_concern_get_journal(write_concern)) {
+               MONGOC_WARNING("Journal conflicts with w value [w=%d].", value);
+            }
+            mongoc_write_concern_set_w(write_concern, value);
             break;
          default:
             if (value > 0) {
@@ -789,9 +790,14 @@ mongoc_uri_new (const char *uri_string)
       return NULL;
    }
 
-   uri->str = bson_strdup(uri_string);
-
    _mongoc_uri_build_write_concern (uri);
+
+   if (!_mongoc_write_concern_is_valid(uri->write_concern)) {
+      mongoc_uri_destroy(uri);
+      return NULL;
+   }
+
+   uri->str = bson_strdup(uri_string);
 
    return uri;
 }
