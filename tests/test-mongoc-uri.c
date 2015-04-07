@@ -4,6 +4,8 @@
 
 #include "TestSuite.h"
 
+#include "test-libmongoc.h"
+
 static void
 test_mongoc_uri_new (void)
 {
@@ -536,8 +538,16 @@ test_mongoc_uri_write_concern (void)
       { "mongodb://localhost/?w=mytag", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag" },
       { "mongodb://localhost/?w=mytag&safe=false", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag" },
       { "mongodb://localhost/?w=1&safe=false", true, 1 },
+      { "mongodb://localhost/?journal=true", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?w=0&journal=true", false, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED },
+      { "mongodb://localhost/?w=-1&journal=true", false, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED },
+      { "mongodb://localhost/?w=1&journal=true", true, 1 },
       { NULL }
    };
+
+   /* Suppress warnings from two invalid URIs ("journal" and "w" conflict) */
+   suppress_one_message();
+   suppress_one_message();
 
    for (i = 0; tests [i].uri; i++) {
       t = &tests [i];

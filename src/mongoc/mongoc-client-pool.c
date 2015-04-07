@@ -16,6 +16,7 @@
 
 
 #include "mongoc-counters-private.h"
+#include "mongoc-client-pool-private.h"
 #include "mongoc-client-pool.h"
 #include "mongoc-client-private.h"
 #include "mongoc-queue-private.h"

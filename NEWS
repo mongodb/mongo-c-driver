@@ -1,3 +1,38 @@
+Next release
+============
+
+Changes include:
+ * The fsync and j write concern flags imply acknowledged writes
+ * Prevent using fsync or j with conflicting w=0 write concern
+
+mongo-c-driver 1.1.4
+====================
+
+It is my pleasure to announce to you the 1.1.4 release of the MongoDB C driver.
+
+This release is a stable release with performance enhancements and bugfixes.
+
+Changes include:
+ * Fixed client pool concurrency issues
+ * Fixed some scenarios where replica sets would fail to reconnect on primary
+   step down.
+ * Improved write concern handling
+ * Validate port number in URI
+ * Various other fixes
+
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+ * Jason Carey
+ * Andrew Clayton
+ * A. Jesse Jiryu Davis
+ * Jeremy Mikola
+
+Enjoy!
+
+-- Jason Carey
+
+
 mongo-c-driver 1.1.2
 ====================
 
