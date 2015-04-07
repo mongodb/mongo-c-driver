@@ -4,7 +4,7 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_uri_get_read_prefs">
+      id="mongoc_uri_get_read_prefs_t">
   <info>
     <link type="guide" xref="mongoc_uri_t" group="function"/>
   </info>
