@@ -20,6 +20,15 @@
 
 #include "utlist.h"
 
+static void
+_mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
+
+static void
+_mongoc_topology_background_thread_start (mongoc_topology_t *topology);
+
+static void
+_mongoc_topology_request_scan (mongoc_topology_t *topology);
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -48,8 +57,13 @@ _mongoc_topology_scanner_cb (uint32_t      id,
 
    topology = data;
 
-   /* if multithreaded, driver may write through invalidate_server, so lock */
-   mongoc_mutex_lock (&topology->mutex);
+   if (rtt_msec >= 0) {
+      /* If the scanner failed to create a socket for this server, that means
+       * we're in scanner_start, which means we're under the mutex.  So don't
+       * take the mutex for rtt < 0 */
+
+      mongoc_mutex_lock (&topology->mutex);
+   }
 
    sd = mongoc_topology_description_server_by_id (&topology->description, id);
 
@@ -57,11 +71,14 @@ _mongoc_topology_scanner_cb (uint32_t      id,
       r = mongoc_topology_description_handle_ismaster (&topology->description, sd,
                                                        ismaster_response, rtt_msec,
                                                        error);
+
       /* TODO only wake up all clients if we found any topology changes */
       mongoc_cond_broadcast (&topology->cond_client);
    }
 
-   mongoc_mutex_unlock (&topology->mutex);
+   if (rtt_msec >= 0) {
+      mongoc_mutex_unlock (&topology->mutex);
+   }
 
    return r;
 }
@@ -82,12 +99,15 @@ _mongoc_topology_scanner_cb (uint32_t      id,
  *-------------------------------------------------------------------------
  */
 mongoc_topology_t *
-mongoc_topology_new (const mongoc_uri_t *uri)
+mongoc_topology_new (const mongoc_uri_t *uri,
+                     bool                single_threaded)
 {
    mongoc_topology_t *topology;
    mongoc_topology_description_type_t init_type;
    uint32_t id;
    const mongoc_host_list_t *hl;
+   const bson_t *options;
+   bson_iter_t iter;
 
    bson_return_val_if_fail(uri, NULL);
 
@@ -118,10 +138,24 @@ mongoc_topology_new (const mongoc_uri_t *uri)
    topology->scanner = mongoc_topology_scanner_new (topology->uri,
                                                     _mongoc_topology_scanner_cb,
                                                     topology);
-   topology->single_threaded = true;
+   topology->single_threaded = single_threaded;
 
-   /* TODO make SS timeout configurable on client */
-   topology->timeout_msec = 30000;
+   topology->timeout_msec = MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS;
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, "serverselectiontimeoutms") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+      topology->timeout_msec = bson_iter_int32(&iter);
+   }
+
+   topology->heartbeat_msec =
+      single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED :
+      MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, "heartbeatfrequencyms") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+      topology->heartbeat_msec = bson_iter_int32(&iter);
+   }
 
    mongoc_mutex_init (&topology->mutex);
    mongoc_cond_init (&topology->cond_client);
@@ -132,6 +166,10 @@ mongoc_topology_new (const mongoc_uri_t *uri)
                                               hl->host_and_port,
                                               &id);
       mongoc_topology_scanner_add (topology->scanner, hl, id);
+   }
+
+   if (! topology->single_threaded) {
+       _mongoc_topology_background_thread_start (topology);
    }
 
    return topology;
@@ -159,6 +197,10 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
       return;
    }
 
+   if (! topology->single_threaded) {
+      _mongoc_topology_background_thread_stop (topology);
+   }
+
    mongoc_uri_destroy (topology->uri);
    mongoc_topology_description_destroy(&topology->description);
    mongoc_topology_scanner_destroy (topology->scanner);
@@ -180,7 +222,8 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
  */
 static bool
 _mongoc_topology_time_to_scan (mongoc_topology_t *topology) {
-   return (bson_get_monotonic_time() - topology->last_scan >= MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS);
+   return bson_get_monotonic_time () - topology->last_scan >=
+          topology->heartbeat_msec * 1000;
 }
 
 /*
@@ -207,11 +250,11 @@ _mongoc_topology_run_scanner (mongoc_topology_t *topology,
    bool keep_going = true;
 
    now = bson_get_monotonic_time ();
-   expire_at = now + work_msec;
+   expire_at = now + (work_msec * 1000);
 
    /* while there is more work to do and we haven't timed out */
-   while (keep_going && now < expire_at) {
-      keep_going = mongoc_topology_scanner_work (topology->scanner, expire_at - now);
+   while (keep_going && now <= expire_at) {
+      keep_going = mongoc_topology_scanner_work (topology->scanner, (expire_at - now) / 1000);
 
       if (keep_going) {
          now = bson_get_monotonic_time ();
@@ -235,6 +278,7 @@ static void
 _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology) {
    mongoc_topology_scanner_start (topology->scanner, topology->timeout_msec);
    while (_mongoc_topology_run_scanner (topology, topology->timeout_msec)) {}
+   topology->last_scan = bson_get_monotonic_time ();
 }
 
 /*
@@ -263,7 +307,6 @@ mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t         *topology,
                         mongoc_ss_optype_t         optype,
                         const mongoc_read_prefs_t *read_prefs,
-                        int64_t                    timeout_msec,
                         int64_t                    local_threshold_ms,
                         bson_error_t              *error)
 {
@@ -275,7 +318,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
    bson_return_val_if_fail(topology, NULL);
 
    now = bson_get_monotonic_time ();
-   expire_at = now + timeout_msec;
+   expire_at = now + (topology->timeout_msec * 1000);
 
    /* run single-threaded algorithm if we must */
    if (topology->single_threaded) {
@@ -321,8 +364,11 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                                                            error);
 
       if (! selected_server) {
-         /* TODO request an immediate topology check here */
-         r = mongoc_cond_timedwait (&topology->cond_client, &topology->mutex, expire_at - now);
+         _mongoc_topology_request_scan (topology);
+
+         r = mongoc_cond_timedwait (&topology->cond_client, &topology->mutex,
+                                    (expire_at - now) / 1000);
+
          mongoc_mutex_unlock (&topology->mutex);
 
          if (r == ETIMEDOUT) {
@@ -334,6 +380,10 @@ mongoc_topology_select (mongoc_topology_t         *topology,
          }
 
          now = bson_get_monotonic_time ();
+
+         if (now > expire_at) {
+             goto TIMEOUT;
+         }
       } else {
          selected_server = mongoc_server_description_new_copy(selected_server);
          mongoc_mutex_unlock (&topology->mutex);
@@ -391,6 +441,26 @@ mongoc_topology_server_by_id (mongoc_topology_t *topology, uint32_t id)
  *
  * _mongoc_topology_request_scan --
  *
+ *       Non-locking variant
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_topology_request_scan (mongoc_topology_t *topology)
+{
+   if (!topology->scanning) {
+      topology->scan_requested = true;
+
+      mongoc_cond_signal (&topology->cond_server);
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_request_scan --
+ *
  *       Used from within the driver to request an immediate topology check.
  *
  *       NOTE: this method locks and unlocks @topology's mutex.
@@ -399,38 +469,13 @@ mongoc_topology_server_by_id (mongoc_topology_t *topology, uint32_t id)
  */
 
 void
-_mongoc_topology_request_scan (mongoc_topology_t *topology)
+mongoc_topology_request_scan (mongoc_topology_t *topology)
 {
-   bool do_scan = true;
-
-   bson_return_if_fail (topology);
-
    mongoc_mutex_lock (&topology->mutex);
 
-   if (topology->scanning) {
-      /* if we're already scanning, don't start a new one */
-      do_scan = false;
-   } else {
-      /* if we scanned too recently, just queue up the request for the
-       * background thread */
-      if (_mongoc_topology_time_to_scan(topology)) {
-         topology->scan_requested = true;
-         do_scan = false;
-      }
-   }
-
-   /* feel free to start the scan if none is currently in progress and it's
-    * been long enough */
-   if (do_scan) {
-      mongoc_topology_scanner_start (topology->scanner, topology->timeout_msec);
-   }
+   _mongoc_topology_request_scan (topology);
 
    mongoc_mutex_unlock (&topology->mutex);
-
-   /* This wakes up the background thread */
-   mongoc_cond_signal (&topology->cond_server);
-
-   return;
 }
 
 /*
@@ -527,14 +572,14 @@ void * _mongoc_topology_run_background (void *data)
          if (last_scan == 0) {
             /* set up the "last scan" as exactly long enough to force an
              * immediate scan on the first pass */
-            last_scan = now - topology->heartbeat_msec;
+            last_scan = now - (topology->heartbeat_msec * 1000);
          }
 
-         timeout = topology->heartbeat_msec - (now - last_scan);
+         timeout = topology->heartbeat_msec - ((now - last_scan) / 1000);
 
          /* if someone's specifically asked for a scan, use a shorter interval */
          if (topology->scan_requested) {
-            force_timeout = MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS - (now - last_scan);
+            force_timeout = MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS - ((now - last_scan) / 1000);
 
             timeout = BSON_MIN (timeout, force_timeout);
          }
@@ -550,6 +595,7 @@ void * _mongoc_topology_run_background (void *data)
              *   o requests a shutdown
              */
             r = mongoc_cond_timedwait (&topology->cond_server, &topology->mutex, timeout);
+
             if (! (r == 0 || r == ETIMEDOUT)) {
                /* handle errors */
                goto DONE;
@@ -560,10 +606,20 @@ void * _mongoc_topology_run_background (void *data)
          }
       }
 
+      topology->scan_requested = false;
+      topology->scanning = true;
+
       /* scanning locks and unlocks the mutex itself until the scan is done */
       mongoc_mutex_unlock (&topology->mutex);
 
       while (_mongoc_topology_run_scanner (topology, topology->timeout_msec)) {}
+
+      mongoc_mutex_lock (&topology->mutex);
+      topology->last_scan = bson_get_monotonic_time ();
+      topology->scanning = false;
+      mongoc_mutex_unlock (&topology->mutex);
+
+      last_scan = bson_get_monotonic_time();
    }
 
 DONE:
@@ -587,8 +643,8 @@ DONE:
  *--------------------------------------------------------------------------
  */
 
-void
-mongoc_topology_background_thread_start (mongoc_topology_t *topology)
+static void
+_mongoc_topology_background_thread_start (mongoc_topology_t *topology)
 {
    bool launch_thread = true;
 
@@ -620,8 +676,8 @@ mongoc_topology_background_thread_start (mongoc_topology_t *topology)
  *--------------------------------------------------------------------------
  */
 
-void
-mongoc_topology_background_thread_stop (mongoc_topology_t *topology)
+static void
+_mongoc_topology_background_thread_stop (mongoc_topology_t *topology)
 {
    bool join_thread = false;
 

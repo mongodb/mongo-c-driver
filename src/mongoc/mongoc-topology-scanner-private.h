@@ -44,6 +44,7 @@ typedef struct mongoc_topology_scanner_node
    mongoc_async_cmd_t             *cmd;
    mongoc_stream_t                *stream;
    int64_t                         timestamp;
+   int64_t                         last_used;
    bool                            has_auth;
    mongoc_host_list_t              host;
    struct addrinfo                *dns_results;

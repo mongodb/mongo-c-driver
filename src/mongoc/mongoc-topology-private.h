@@ -24,9 +24,11 @@
 #include "mongoc-thread-private.h"
 #include "mongoc-uri.h"
 
-#define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 60000
-#define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000 /* TODO make configurable */
-#define MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS 60000 /* TODO make configurable */
+#define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
+#define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
+#define MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS 30000
+#define MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED 10000
+#define MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED 60000
 
 typedef enum {
    MONGOC_TOPOLOGY_BG_OFF,
@@ -59,7 +61,8 @@ typedef struct _mongoc_topology_t
 } mongoc_topology_t;
 
 mongoc_topology_t *
-mongoc_topology_new (const mongoc_uri_t *uri);
+mongoc_topology_new (const mongoc_uri_t *uri,
+                     bool                single_threaded);
 
 void
 mongoc_topology_destroy (mongoc_topology_t *topology);
@@ -68,7 +71,6 @@ mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t         *topology,
                         mongoc_ss_optype_t         optype,
                         const mongoc_read_prefs_t *read_prefs,
-                        int64_t                    timeout_ms,
                         int64_t                    local_threshold_msec,
                         bson_error_t              *error);
 
@@ -86,11 +88,5 @@ mongoc_topology_invalidate_server (mongoc_topology_t *topology,
 int64_t
 mongoc_topology_server_timestamp (mongoc_topology_t *topology,
                                   uint32_t           id);
-
-void
-mongoc_topology_background_thread_start (mongoc_topology_t *topology);
-
-void
-mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
 
 #endif
