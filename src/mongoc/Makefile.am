@@ -81,6 +81,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-stream-socket.h \
 	src/mongoc/mongoc-stream.h \
 	src/mongoc/mongoc-thread-private.h \
+	src/mongoc/mongoc-topology-description-private.h \
 	src/mongoc/mongoc-topology-private.h \
 	src/mongoc/mongoc-topology-scanner-private.h \
 	src/mongoc/mongoc-trace.h \
@@ -90,7 +91,8 @@ INST_H_FILES = \
 	src/mongoc/mongoc-version.h \
 	src/mongoc/mongoc-write-command-private.h \
 	src/mongoc/mongoc-write-concern-private.h \
-	src/mongoc/mongoc-write-concern.h
+	src/mongoc/mongoc-write-concern.h \
+	src/mongoc/utlist.h
 
 if ENABLE_SSL
 INST_H_FILES += \
