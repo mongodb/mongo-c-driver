@@ -4,7 +4,7 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_collection_get_write_concern">
+      id="mongoc_bulk_operation_get_write_concern">
   <info>
     <link type="guide" xref="mongoc_collection_t" group="function"/>
   </info>
