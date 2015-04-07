@@ -10,6 +10,8 @@ test_mongoc_uri_new (void)
    const mongoc_host_list_t *hosts;
    const bson_t *options;
    const bson_t *credentials;
+   const bson_t *read_prefs_tags;
+   const mongoc_read_prefs_t *read_prefs;
    bson_t properties;
    mongoc_uri_t *uri;
    bson_iter_t iter;
@@ -96,12 +98,15 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR(bson_iter_utf8(&iter, NULL), "1");
    mongoc_uri_destroy(uri);
 
-   uri = mongoc_uri_new("mongodb://localhost:27017/?readPreferenceTags=dc:ny&readPreferenceTags=");
+   uri = mongoc_uri_new("mongodb://localhost:27017/?readPreference=secondaryPreferred&readPreferenceTags=dc:ny&readPreferenceTags=");
    ASSERT(uri);
-   options = mongoc_uri_get_read_prefs(uri);
-   ASSERT(options);
-   ASSERT_CMPINT(bson_count_keys(options), ==, 2);
-   ASSERT(bson_iter_init_find(&iter, options, "0"));
+   read_prefs = mongoc_uri_get_read_prefs_t(uri);
+   ASSERT(mongoc_read_prefs_get_mode(read_prefs) == MONGOC_READ_SECONDARY_PREFERRED);
+   ASSERT(read_prefs);
+   read_prefs_tags = mongoc_read_prefs_get_tags(read_prefs);
+   ASSERT(read_prefs_tags);
+   ASSERT_CMPINT(bson_count_keys(read_prefs_tags), ==, 2);
+   ASSERT(bson_iter_init_find(&iter, read_prefs_tags, "0"));
    ASSERT(BSON_ITER_HOLDS_DOCUMENT(&iter));
    ASSERT(bson_iter_recurse(&iter, &child));
    ASSERT(bson_iter_next(&child));
@@ -411,6 +416,99 @@ test_mongoc_uri_unescape (void)
 
 typedef struct
 {
+   const char         *uri;
+   bool                parses;
+   mongoc_read_mode_t  mode;
+   bson_t             *tags;
+} read_prefs_test;
+
+
+static void
+test_mongoc_uri_read_prefs (void)
+{
+   const mongoc_read_prefs_t *rp;
+   mongoc_uri_t *uri;
+   const read_prefs_test *t;
+   int i;
+
+   bson_t *tags_dcny;
+   bson_t *tags_dcny_empty;
+   bson_t *tags_dcnyusessd_dcsf_empty;
+   bson_t *tags_empty;
+
+   tags_dcny = BCON_NEW(
+      "0", "{", "dc", "ny", "}"
+   );
+
+   tags_dcny_empty = BCON_NEW(
+      "0", "{", "dc", "ny", "}",
+      "1", "{", "}"
+   );
+
+   tags_dcnyusessd_dcsf_empty = BCON_NEW(
+      "0", "{", "dc", "ny", "use", "ssd", "}",
+      "1", "{", "dc", "sf", "}",
+      "2", "{", "}"
+   );
+
+   tags_empty = BCON_NEW(
+      "0", "{", "}"
+   );
+
+   const read_prefs_test tests [] = {
+      { "mongodb://localhost/", true, MONGOC_READ_PRIMARY, NULL },
+      { "mongodb://localhost/?slaveOk=false", true, MONGOC_READ_PRIMARY, NULL },
+      { "mongodb://localhost/?slaveOk=true", true, MONGOC_READ_SECONDARY_PREFERRED, NULL },
+      { "mongodb://localhost/?readPreference=primary", true, MONGOC_READ_PRIMARY, NULL },
+      { "mongodb://localhost/?readPreference=primaryPreferred", true, MONGOC_READ_PRIMARY_PREFERRED, NULL },
+      { "mongodb://localhost/?readPreference=secondary", true, MONGOC_READ_SECONDARY, NULL },
+      { "mongodb://localhost/?readPreference=secondaryPreferred", true, MONGOC_READ_SECONDARY_PREFERRED, NULL },
+      { "mongodb://localhost/?readPreference=nearest", true, MONGOC_READ_NEAREST, NULL },
+      /* readPreference should take priority over slaveOk */
+      { "mongodb://localhost/?slaveOk=false&readPreference=secondary", true, MONGOC_READ_SECONDARY, NULL },
+      /* readPreferenceTags conflict with primary mode */
+      { "mongodb://localhost/?readPreferenceTags=", false },
+      { "mongodb://localhost/?readPreference=primary&readPreferenceTags=", false },
+      { "mongodb://localhost/?slaveOk=false&readPreferenceTags=", false },
+      { "mongodb://localhost/?readPreference=secondaryPreferred&readPreferenceTags=", true, MONGOC_READ_SECONDARY_PREFERRED, tags_empty },
+      { "mongodb://localhost/?readPreference=secondaryPreferred&readPreferenceTags=dc:ny", true, MONGOC_READ_SECONDARY_PREFERRED, tags_dcny },
+      { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=dc:ny&readPreferenceTags=", true, MONGOC_READ_NEAREST, tags_dcny_empty },
+      { "mongodb://localhost/?readPreference=nearest&readPreferenceTags=dc:ny,use:ssd&readPreferenceTags=dc:sf&readPreferenceTags=", true, MONGOC_READ_NEAREST, tags_dcnyusessd_dcsf_empty },
+      { NULL }
+   };
+
+   for (i = 0; tests[i].uri; i++) {
+      t = &tests[i];
+
+      uri = mongoc_uri_new(t->uri);
+      if (t->parses) {
+         assert(uri);
+      } else {
+         assert(!uri);
+         continue;
+      }
+
+      rp = mongoc_uri_get_read_prefs_t(uri);
+      assert(rp);
+
+      assert(t->mode == mongoc_read_prefs_get_mode(rp));
+
+      if (t->tags) {
+         assert(bson_equal(t->tags, mongoc_read_prefs_get_tags(rp)));
+      }
+
+      mongoc_uri_destroy(uri);
+   }
+
+   bson_destroy(tags_dcny);
+   bson_destroy(tags_dcny_empty);
+   bson_destroy(tags_dcnyusessd_dcsf_empty);
+   bson_destroy(tags_empty);
+}
+
+
+typedef struct
+{
    const char *uri;
    bool        parses;
    int32_t     w;
@@ -472,6 +570,7 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/new", test_mongoc_uri_new);
    TestSuite_Add (suite, "/Uri/new_for_host_port", test_mongoc_uri_new_for_host_port);
    TestSuite_Add (suite, "/Uri/unescape", test_mongoc_uri_unescape);
+   TestSuite_Add (suite, "/Uri/read_prefs", test_mongoc_uri_read_prefs);
    TestSuite_Add (suite, "/Uri/write_concern", test_mongoc_uri_write_concern);
    TestSuite_Add (suite, "/HostList/from_string", test_mongoc_host_list_from_string);
 }

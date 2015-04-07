@@ -708,16 +708,15 @@ mongoc_client_new(const char *uri_string)
 mongoc_client_t *
 _mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
 {
+   const mongoc_read_prefs_t *read_prefs;
    const mongoc_write_concern_t *write_concern;
    mongoc_client_t *client;
-   const bson_t *read_prefs_tags;
    mongoc_uri_t *uri;
    const bson_t *options;
    bson_iter_t iter;
 #ifdef MONGOC_ENABLE_SSL
    bool has_ssl = false;
 #endif
-   bool slave_okay = false;
 
    bson_return_val_if_fail(topology, NULL);
 
@@ -739,12 +738,6 @@ _mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
    }
 #endif
 
-   if (bson_iter_init_find_case (&iter, options, "slaveok") &&
-       BSON_ITER_HOLDS_BOOL (&iter) &&
-       bson_iter_bool (&iter)) {
-      slave_okay = true;
-   }
-
    client = bson_malloc0(sizeof *client);
    client->uri = uri;
    client->request_id = rand ();
@@ -755,16 +748,8 @@ _mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
    write_concern = mongoc_uri_get_write_concern (uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
 
-   if (slave_okay) {
-      client->read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
-   } else {
-      client->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-   }
-
-   read_prefs_tags = mongoc_uri_get_read_prefs (client->uri);
-   if (!bson_empty (read_prefs_tags)) {
-      mongoc_read_prefs_set_tags (client->read_prefs, read_prefs_tags);
-   }
+   read_prefs = mongoc_uri_get_read_prefs_t(uri);
+   client->read_prefs = mongoc_read_prefs_copy(read_prefs);
 
    mongoc_cluster_init (&client->cluster, client->uri, client);
 
