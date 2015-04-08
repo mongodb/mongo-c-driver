@@ -83,6 +83,17 @@ _mongoc_stream_socket_destroy (mongoc_stream_t *stream)
 }
 
 
+static void
+_mongoc_stream_socket_failed (mongoc_stream_t *stream)
+{
+   ENTRY;
+
+   _mongoc_stream_socket_destroy (stream);
+
+   EXIT;
+}
+
+
 static int
 _mongoc_stream_socket_setsockopt (mongoc_stream_t *stream,
                                   int              level,
@@ -296,6 +307,7 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
    stream->vtable.type = MONGOC_STREAM_SOCKET;
    stream->vtable.close = _mongoc_stream_socket_close;
    stream->vtable.destroy = _mongoc_stream_socket_destroy;
+   stream->vtable.failed = _mongoc_stream_socket_failed;
    stream->vtable.flush = _mongoc_stream_socket_flush;
    stream->vtable.readv = _mongoc_stream_socket_readv;
    stream->vtable.writev = _mongoc_stream_socket_writev;

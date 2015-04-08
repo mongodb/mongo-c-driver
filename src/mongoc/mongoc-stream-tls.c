@@ -394,6 +394,29 @@ _mongoc_stream_tls_destroy (mongoc_stream_t *stream)
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_stream_tls_failed --
+ *
+ *       Called on stream failure. Same as _mongoc_stream_tls_destroy()
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+_mongoc_stream_tls_failed (mongoc_stream_t *stream)
+{
+   _mongoc_stream_tls_destroy (stream);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_stream_tls_close --
  *
  *       Close the underlying socket.
@@ -934,6 +957,7 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
    tls->base_stream = base_stream;
    tls->parent.type = MONGOC_STREAM_TLS;
    tls->parent.destroy = _mongoc_stream_tls_destroy;
+   tls->parent.failed = _mongoc_stream_tls_failed;
    tls->parent.close = _mongoc_stream_tls_close;
    tls->parent.flush = _mongoc_stream_tls_flush;
    tls->parent.writev = _mongoc_stream_tls_writev;

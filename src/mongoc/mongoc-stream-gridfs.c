@@ -55,6 +55,17 @@ _mongoc_stream_gridfs_destroy (mongoc_stream_t *stream)
 }
 
 
+static void
+_mongoc_stream_gridfs_failed (mongoc_stream_t *stream)
+{
+   ENTRY;
+
+   _mongoc_stream_gridfs_destroy (stream);
+
+   EXIT;
+}
+
+
 static int
 _mongoc_stream_gridfs_close (mongoc_stream_t *stream)
 {
@@ -159,6 +170,7 @@ mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file)
    stream->file = file;
    stream->stream.type = MONGOC_STREAM_GRIDFS;
    stream->stream.destroy = _mongoc_stream_gridfs_destroy;
+   stream->stream.failed = _mongoc_stream_gridfs_failed;
    stream->stream.close = _mongoc_stream_gridfs_close;
    stream->stream.flush = _mongoc_stream_gridfs_flush;
    stream->stream.writev = _mongoc_stream_gridfs_writev;
