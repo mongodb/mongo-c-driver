@@ -331,6 +331,12 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
       /* until we find a server or timeout */
       for (;;) {
+         /* error if we've timed out */
+         now = bson_get_monotonic_time();
+         if (now >= expire_at) {
+            goto TIMEOUT;
+         }
+
          /* attempt to select a server */
          selected_server = mongoc_topology_description_select(&topology->description,
                                                               optype,
@@ -344,12 +350,6 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
          /* rescan */
          _mongoc_topology_do_blocking_scan(topology);
-
-         /* error if we've timed out */
-         now = bson_get_monotonic_time();
-         if (now > expire_at) {
-            goto TIMEOUT;
-         }
       }
    }
 
