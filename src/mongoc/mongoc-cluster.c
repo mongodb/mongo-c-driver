@@ -59,10 +59,6 @@
 # define strcasecmp _stricmp
 #endif
 
-#ifndef MAX_RETRY_COUNT
-#define MAX_RETRY_COUNT 3
-#endif
-
 #define MIN_WIRE_VERSION 0
 #define MAX_WIRE_VERSION 3
 
@@ -1490,7 +1486,6 @@ mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
                                       const mongoc_read_prefs_t    *read_prefs,
                                       bson_error_t                 *error /* OUT */)
 {
-   int retry_count = 0;
    mongoc_server_description_t *server;
    mongoc_read_mode_t read_mode;
    mongoc_ss_optype_t optype = MONGOC_SS_READ;
@@ -1512,12 +1507,7 @@ mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
       }
    }
 
-   while (retry_count++ < MAX_RETRY_COUNT) {
-      server = _mongoc_cluster_select_by_optype(cluster, optype, read_prefs, error);
-      if (server) {
-         break;
-      }
-   }
+   server = _mongoc_cluster_select_by_optype(cluster, optype, read_prefs, error);
 
    return server;
 }
