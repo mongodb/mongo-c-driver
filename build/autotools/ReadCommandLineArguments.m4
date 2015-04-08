@@ -23,6 +23,12 @@ AC_ARG_ENABLE(optimizations,
     ])
 AC_MSG_RESULT([$enable_optimizations])
 
+AC_MSG_CHECKING([whether to enable shared memory performance counters])
+AC_ARG_ENABLE(shm_counters,
+    AC_HELP_STRING([--enable-shm-counters], [turn on shared memory performance counters [default=yes]]),
+    [],[enable_shm_counters="yes"])
+AC_MSG_RESULT([$enable_shm_counters])
+
 AC_MSG_CHECKING([whether to enable code coverage support])
 AC_ARG_ENABLE(coverage,
     AC_HELP_STRING([--enable-coverage], [enable code coverage support [default=no]]),

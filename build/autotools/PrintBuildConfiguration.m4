@@ -33,6 +33,7 @@ Build configuration:
   Code coverage support                            : ${enable_coverage}
   Cross Compiling                                  : ${enable_crosscompile}
   Fast counters                                    : ${enable_rdtscp}
+  Shared memory performance counters               : ${enable_shm_counters}
   SASL                                             : ${sasl_mode}
   SSL                                              : ${enable_ssl}
   Libbson                                          : ${with_libbson}
