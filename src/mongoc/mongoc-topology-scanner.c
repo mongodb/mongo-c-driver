@@ -163,18 +163,6 @@ mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,
    return NULL;
 }
 
-void
-mongoc_topology_scanner_rm (mongoc_topology_scanner_t *ts,
-                            uint32_t                   id)
-{
-   mongoc_topology_scanner_node_t *ele;
-
-   ele = mongoc_topology_scanner_get_node (ts, id);
-   if (ele) {
-      mongoc_topology_scanner_node_destroy (ele, true);
-   }
-}
-
 /*
  *-----------------------------------------------------------------------
  *

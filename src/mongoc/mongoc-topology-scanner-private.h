@@ -88,10 +88,6 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
                              uint32_t                   id);
 
 void
-mongoc_topology_scanner_rm (mongoc_topology_scanner_t *ts,
-                            uint32_t                   id);
-
-void
 mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
                                int32_t                    timeout_msec);
 
