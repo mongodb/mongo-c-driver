@@ -187,6 +187,7 @@ mongoc_stream_buffered_new
 mongoc_stream_check_closed
 mongoc_stream_close
 mongoc_stream_destroy
+mongoc_stream_failed
 mongoc_stream_file_get_fd
 mongoc_stream_file_new
 mongoc_stream_file_new_for_path

@@ -76,6 +76,31 @@ mongoc_stream_buffered_destroy (mongoc_stream_t *stream) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_stream_buffered_failed --
+ *
+ *       Called when a stream fails. Useful for streams that differnciate
+ *       between failure and cleanup.
+ *       Calls mongoc_stream_buffered_destroy() on the stream.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Everything.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+mongoc_stream_buffered_failed (mongoc_stream_t *stream) /* IN */
+{
+	mongoc_stream_buffered_destroy (stream);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_stream_buffered_close --
  *
  *       Close the underlying stream. The buffered content is still
@@ -287,6 +312,7 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream, /* IN */
    stream = bson_malloc0(sizeof *stream);
    stream->stream.type = MONGOC_STREAM_BUFFERED;
    stream->stream.destroy = mongoc_stream_buffered_destroy;
+   stream->stream.failed = mongoc_stream_buffered_failed;
    stream->stream.close = mongoc_stream_buffered_close;
    stream->stream.flush = mongoc_stream_buffered_flush;
    stream->stream.writev = mongoc_stream_buffered_writev;

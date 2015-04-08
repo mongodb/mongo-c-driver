@@ -81,6 +81,17 @@ _mongoc_stream_file_destroy (mongoc_stream_t *stream)
 }
 
 
+static void
+_mongoc_stream_file_failed (mongoc_stream_t *stream)
+{
+   ENTRY;
+
+   _mongoc_stream_file_destroy (stream);
+
+   EXIT;
+}
+
+
 static int
 _mongoc_stream_file_flush (mongoc_stream_t *stream) /* IN */
 {
@@ -185,6 +196,7 @@ mongoc_stream_file_new (int fd) /* IN */
    stream->vtable.type = MONGOC_STREAM_FILE;
    stream->vtable.close = _mongoc_stream_file_close;
    stream->vtable.destroy = _mongoc_stream_file_destroy;
+   stream->vtable.failed = _mongoc_stream_file_failed;
    stream->vtable.flush = _mongoc_stream_file_flush;
    stream->vtable.readv = _mongoc_stream_file_readv;
    stream->vtable.writev = _mongoc_stream_file_writev;

@@ -61,13 +61,15 @@ struct _mongoc_stream_t
    ssize_t          (*poll)            (mongoc_stream_poll_t *streams,
                                         size_t                nstreams,
                                         int32_t               timeout);
-   void             *padding [7];
+   void             (*failed)          (mongoc_stream_t *stream);
+   void             *padding [5];
 };
 
 
 mongoc_stream_t *mongoc_stream_get_base_stream (mongoc_stream_t       *stream);
 int              mongoc_stream_close           (mongoc_stream_t       *stream);
 void             mongoc_stream_destroy         (mongoc_stream_t       *stream);
+void             mongoc_stream_failed          (mongoc_stream_t       *stream);
 int              mongoc_stream_flush           (mongoc_stream_t       *stream);
 ssize_t          mongoc_stream_writev          (mongoc_stream_t       *stream,
                                                 mongoc_iovec_t        *iov,
