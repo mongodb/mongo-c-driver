@@ -1057,7 +1057,8 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
 static void
 _mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
 {
-   mongoc_stream_destroy (node->stream);
+   /* Failure, or Replica Set reconfigure without this node */
+   mongoc_stream_failed (node->stream);
 
    bson_free (node);
 }
@@ -1264,7 +1265,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
             goto FETCH_FAIL;
          }
 
-         mongoc_stream_destroy (cluster_node->stream);
+         mongoc_stream_failed (cluster_node->stream);
          cluster_node->stream = _mongoc_client_create_stream(cluster->client, &sd->host, error);
          cluster_node->timestamp = bson_get_monotonic_time ();
 

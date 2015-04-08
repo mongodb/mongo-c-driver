@@ -61,6 +61,32 @@ mongoc_stream_close (mongoc_stream_t *stream)
 
 
 /**
+ * mongoc_stream_failed:
+ * @stream: A mongoc_stream_t.
+ *
+ * Frees any resources referenced by @stream, including the memory allocation
+ * for @stream.
+ * This handler is called upon stream failure, such as network errors, invalid replies
+ * or replicaset reconfigures deleteing the stream
+ */
+void
+mongoc_stream_failed (mongoc_stream_t *stream)
+{
+   ENTRY;
+
+   bson_return_if_fail(stream);
+
+   if (stream->failed) {
+	   stream->failed(stream);
+   } else {
+	   stream->destroy(stream);
+   }
+
+   EXIT;
+}
+
+
+/**
  * mongoc_stream_destroy:
  * @stream: A mongoc_stream_t.
  *

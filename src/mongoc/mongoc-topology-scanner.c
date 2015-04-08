@@ -34,7 +34,7 @@
 #define MONGOC_LOG_DOMAIN "topology_scanner"
 
 static void
-mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node);
+mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool failed);
 
 mongoc_topology_scanner_t *
 mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
@@ -80,7 +80,7 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    mongoc_topology_scanner_node_t *ele, *tmp;
 
    DL_FOREACH_SAFE (ts->nodes, ele, tmp) {
-      mongoc_topology_scanner_node_destroy (ele);
+      mongoc_topology_scanner_node_destroy (ele, false);
    }
 
    mongoc_async_destroy (ts->async);
@@ -107,7 +107,7 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
 }
 
 static void
-mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node)
+mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool failed)
 {
    DL_DELETE (node->ts->nodes, node);
 
@@ -122,7 +122,11 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node)
    }
 
    if (node->stream) {
-      mongoc_stream_destroy (node->stream);
+      if (failed) {
+         mongoc_stream_failed (node->stream);
+      } else {
+         mongoc_stream_destroy (node->stream);
+      }
    }
 
    bson_free (node);
@@ -167,7 +171,7 @@ mongoc_topology_scanner_rm (mongoc_topology_scanner_t *ts,
 
    ele = mongoc_topology_scanner_get_node (ts, id);
    if (ele) {
-      mongoc_topology_scanner_node_destroy (ele);
+      mongoc_topology_scanner_node_destroy (ele, true);
    }
 }
 
@@ -198,7 +202,7 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
    if (!ismaster_response ||
        async_status == MONGOC_ASYNC_CMD_ERROR ||
        async_status == MONGOC_ASYNC_CMD_TIMEOUT) {
-      mongoc_stream_destroy (node->stream);
+      mongoc_stream_failed (node->stream);
       node->stream = NULL;
    }
 
@@ -206,7 +210,7 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
 
    if (!node->ts->cb (node->id, ismaster_response, rtt_msec,
                       node->ts->cb_data, error)) {
-      mongoc_topology_scanner_node_destroy (node);
+      mongoc_topology_scanner_node_destroy (node, true);
       return;
    }
 }
@@ -367,7 +371,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
    if (!sock_stream) {
       /* Pass a rtt of -1 if we couldn't initialize a stream in node_setup */
       if (!node->ts->cb (node->id, NULL, -1, node->ts->cb_data, &error)) {
-         mongoc_topology_scanner_node_destroy (node);
+         mongoc_topology_scanner_node_destroy (node, true);
       }
 
       return false;

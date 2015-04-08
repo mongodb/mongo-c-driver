@@ -263,7 +263,7 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t          *gridfs,
       }
    }
 
-   mongoc_stream_destroy (stream);
+   mongoc_stream_failed (stream);
 
    mongoc_gridfs_file_seek (file, 0, SEEK_SET);
 
