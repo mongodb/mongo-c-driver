@@ -61,7 +61,7 @@ struct _mongoc_stream_t
    ssize_t          (*poll)            (mongoc_stream_poll_t *streams,
                                         size_t                nstreams,
                                         int32_t               timeout);
-   void             *padding [7];
+   void             *padding [6];
 };
 
 
