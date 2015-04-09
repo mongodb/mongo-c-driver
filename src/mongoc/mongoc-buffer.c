@@ -213,7 +213,6 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    bson_return_val_if_fail(buffer, false);
    bson_return_val_if_fail(stream, false);
-   bson_return_val_if_fail(min_bytes >= 0, false);
 
    BSON_ASSERT (buffer->data);
    BSON_ASSERT (buffer->datalen);
