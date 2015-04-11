@@ -253,7 +253,7 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
          if (!strchr (bson_iter_key (&iter), '$')) {
             MONGOC_WARNING ("%s(): update only works with $ operators.",
                             __FUNCTION__);
-			   EXIT;
+            EXIT;
          }
       }
    }
@@ -285,7 +285,7 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
          if (!strchr (bson_iter_key (&iter), '$')) {
             MONGOC_WARNING ("%s(): update_one only works with $ operators.",
                             __FUNCTION__);
-			   EXIT;
+            EXIT;
          }
       }
    }
