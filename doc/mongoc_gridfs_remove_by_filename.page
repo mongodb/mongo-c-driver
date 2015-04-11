@@ -4,18 +4,19 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_gridfs_find_one_by_filename">
+      id="mongoc_gridfs_remove_by_filename">
   <info>
     <link type="guide" xref="mongoc_gridfs_t" group="function"/>
   </info>
-  <title>mongoc_gridfs_find_one_by_filename()</title>
+  <title>mongoc_gridfs_remove_by_filename()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_gridfs_file_t *
-mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
-                                    const char      *filename,
-                                    bson_error_t    *error);]]></code></synopsis>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
+mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
+                                  const char      *filename,
+                                  bson_error_t    *error);
+]]></code></synopsis>
   </section>
 
   <section id="parameters">
@@ -29,17 +30,16 @@ mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
 
   <section id="description">
     <title>Description</title>
-    <p>Finds the first file matching the filename specified. If no file could be found, NULL is returned and error is set.</p>
+    <p>Removes all files matching <code>filename</code> and their data chunks from the MongoDB server.</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>Returns true if successful (including when no files match), otherwise false and <code>error</code> is set.</p>
   </section>
 
   <section id="errors">
     <title>Errors</title>
     <p>Errors are propagated via the <code>error</code> parameter.</p>
   </section>
-
-  <section id="return">
-    <title>Returns</title>
-    <p>Returns a newly allocated <link xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</link> if successful, otherwise NULL and error is set. You must free the resulting file with <link xref="mongoc_gridfs_file_destroy">mongoc_gridfs_file_destroy()</link> when no longer in use.</p>
-  </section>
-
 </page>

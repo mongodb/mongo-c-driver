@@ -976,16 +976,17 @@ mongoc_client_get_collection (mongoc_client_t *client,
  *       This function returns a newly allocated collection structure.
  *
  *       @db should be the name of the database, such as "test".
- *       @collection should be the name of the collection such as "test".
  *
- *       The above would result in the namespace "test.test".
+ *       @prefix optional prefix for GridFS collection names, or NULL. Default
+ *       is "fs", thus the default collection names for GridFS are "fs.files"
+ *       and "fs.chunks".
  *
  *       You should free this structure when you are done with it using
  *       mongoc_collection_destroy().
  *
  * Returns:
- *       A newly allocated mongoc_collection_t that should be freed with
- *       mongoc_collection_destroy().
+ *       A newly allocated mongoc_gridfs_t that should be freed with
+ *       mongoc_gridfs_destroy().
  *
  * Side effects:
  *       None.

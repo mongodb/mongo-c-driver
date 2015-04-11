@@ -25,7 +25,7 @@
   </section>
   <section id="thread-safety">
     <title>Thread Safety</title>
-    <p>This sturcture is NOT thread-safe and should only be used from one thread at a time.</p>
+    <p>This structure is NOT thread-safe and should only be used from one thread at a time.</p>
   </section>
   <links type="topic" groups="function" style="2column">
     <title>Functions</title>
