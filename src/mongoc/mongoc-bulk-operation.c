@@ -222,8 +222,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
       MONGOC_WARNING ("%s(): replacement document may not contain "
                       "$ or . in keys. Ingoring document.",
                       __FUNCTION__);
-	  EXIT;
-      return;
+      EXIT;
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
@@ -254,8 +253,7 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
          if (!strchr (bson_iter_key (&iter), '$')) {
             MONGOC_WARNING ("%s(): update only works with $ operators.",
                             __FUNCTION__);
-			EXIT;
-            return;
+            EXIT;
          }
       }
    }
@@ -287,8 +285,7 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
          if (!strchr (bson_iter_key (&iter), '$')) {
             MONGOC_WARNING ("%s(): update_one only works with $ operators.",
                             __FUNCTION__);
-			EXIT;
-            return;
+            EXIT;
          }
       }
    }
