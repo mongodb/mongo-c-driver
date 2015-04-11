@@ -44,12 +44,15 @@ mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *cmd);
 mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *cmd);
+mongoc_async_cmd_result_t
+_mongoc_async_cmd_phase_error (mongoc_async_cmd_t *cmd);
 
 static const _monogc_async_cmd_phase_t gMongocCMDPhases[] = {
    _mongoc_async_cmd_phase_setup,
    _mongoc_async_cmd_phase_send,
    _mongoc_async_cmd_phase_recv_len,
    _mongoc_async_cmd_phase_recv_rpc,
+   _mongoc_async_cmd_phase_error,
 };
 
 #ifdef MONGOC_ENABLE_SSL
@@ -372,4 +375,10 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
    }
 
    return MONGOC_ASYNC_CMD_IN_PROGRESS;
+}
+
+mongoc_async_cmd_result_t
+_mongoc_async_cmd_phase_error (mongoc_async_cmd_t *acmd)
+{
+   return MONGOC_ASYNC_CMD_ERROR;
 }

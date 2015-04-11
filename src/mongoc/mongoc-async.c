@@ -132,9 +132,14 @@ mongoc_async_run (mongoc_async_t *async,
 
          DL_FOREACH_SAFE (async->cmds, acmd, tmp)
          {
-            if (poll[i].revents & poll[i].events) {
-               mongoc_async_cmd_run (acmd);
+            if (poll[i].revents & (POLLERR | POLLHUP)) {
+               acmd->state = MONGOC_ASYNC_CMD_ERROR_STATE;
+            }
 
+            if (acmd->state == MONGOC_ASYNC_CMD_ERROR_STATE
+                || (poll[i].revents & poll[i].events)) {
+
+               mongoc_async_cmd_run (acmd);
                nactive--;
 
                if (!nactive) {
