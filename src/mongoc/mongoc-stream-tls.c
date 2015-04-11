@@ -569,7 +569,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
 
             bytes = BSON_MIN (iov[i].iov_len - iov_pos, buf_end - buf_tail);
 
-            memcpy (buf_tail, iov[i].iov_base + iov_pos, bytes);
+            memcpy (buf_tail, (char *) iov[i].iov_base + iov_pos, bytes);
             buf_tail += bytes;
             iov_pos += bytes;
 
