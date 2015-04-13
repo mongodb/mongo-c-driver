@@ -20,6 +20,22 @@
 
 #include "utlist.h"
 
+#ifdef _WIN32
+static void
+usleep (int64_t usec)
+{
+    HANDLE timer;
+    LARGE_INTEGER ft;
+
+    ft.QuadPart = -(10 * usec);
+
+    timer = CreateWaitableTimer(NULL, true, NULL);
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+}
+#endif
+
 static void
 _mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
 
@@ -355,6 +371,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
          }
 
          /* rescan */
+         usleep (MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS * 1000);
          _mongoc_topology_do_blocking_scan(topology);
       }
    }
