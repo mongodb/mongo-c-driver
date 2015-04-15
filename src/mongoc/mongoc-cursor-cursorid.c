@@ -30,15 +30,6 @@
 #define MONGOC_LOG_DOMAIN "cursor-cursorid"
 
 
-typedef struct
-{
-   bool        has_cursor;
-   bool        in_first_batch;
-   bson_iter_t first_batch_iter;
-   bson_t      first_batch_inline;
-} mongoc_cursor_cursorid_t;
-
-
 static void *
 _mongoc_cursor_cursorid_new (void)
 {

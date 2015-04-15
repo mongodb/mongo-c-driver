@@ -29,6 +29,15 @@
 BSON_BEGIN_DECLS
 
 
+typedef struct
+{
+   bool        has_cursor;
+   bool        in_first_batch;
+   bson_iter_t first_batch_iter;
+   bson_t      first_batch_inline;
+} mongoc_cursor_cursorid_t;
+
+
 bool _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor);
 void _mongoc_cursor_cursorid_init (mongoc_cursor_t *cursor);
 
