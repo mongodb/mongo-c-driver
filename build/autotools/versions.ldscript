@@ -107,6 +107,7 @@ LIBMONGOC_1.0 {
         mongoc_gridfs_file_get_filename;
         mongoc_gridfs_file_get_length;
         mongoc_gridfs_file_get_md5;
+        mongoc_gridfs_file_get_files_id;
         mongoc_gridfs_file_get_metadata;
         mongoc_gridfs_file_get_upload_date;
         mongoc_gridfs_file_list_destroy;

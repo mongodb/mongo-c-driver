@@ -66,6 +66,8 @@ MONGOC_GRIDFS_FILE_BSON_HEADER (aliases)
 MONGOC_GRIDFS_FILE_BSON_HEADER (metadata)
 
 
+const bson_oid_t*
+         mongoc_gridfs_file_get_files_id    (mongoc_gridfs_file_t *file);
 int64_t  mongoc_gridfs_file_get_length      (mongoc_gridfs_file_t *file);
 int32_t  mongoc_gridfs_file_get_chunk_size  (mongoc_gridfs_file_t *file);
 int64_t  mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file);
