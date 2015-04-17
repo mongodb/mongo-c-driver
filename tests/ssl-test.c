@@ -30,11 +30,11 @@ typedef struct ssl_test_data
  * It:
  *    1. spins up
  *    2. binds and listens to a random port
- *    3. notifies the client of it's port through a condvar
+ *    3. notifies the client of its port through a condvar
  *    4. accepts a request
  *    5. reads a 32 bit length
  *    6. reads a string of that length
- *    7. echos it back to the client
+ *    7. echoes it back to the client
  *    8. shuts down
  */
 static void *
@@ -154,7 +154,7 @@ ssl_test_server (void * ptr)
  * It:
  *    1. spins up
  *    2. waits on a condvar until the server is up
- *    3. connects to the servers port
+ *    3. connects to the server's port
  *    4. writes a 4 bytes length
  *    5. writes a string of length size
  *    6. reads a response back of the given length
@@ -280,7 +280,7 @@ ssl_test_client (void * ptr)
 /** This is the testing function for the ssl-test lib
  *
  * The basic idea is that you spin up a client and server, which will
- * communicate over a mongoc-stream-tls, with varrying mongoc_ssl_opt's.  The
+ * communicate over a mongoc-stream-tls, with varying mongoc_ssl_opt's.  The
  * client and server speak a simple echo protocol, so all we're really testing
  * here is that any given configuration succeeds or fails as it should
  */
