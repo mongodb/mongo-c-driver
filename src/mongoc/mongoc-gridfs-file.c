@@ -769,12 +769,14 @@ mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
    RETURN(false);
 }
 
-const bson_oid_t*
-mongoc_gridfs_file_get_files_id (mongoc_gridfs_file_t *file)
+bool
+mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file, bson_value_t *file_id)
 {
    bson_return_val_if_fail (file, -1);
 
-   return &(file->files_id.value.v_oid);
+   bson_value_copy(&file->files_id, file_id);
+
+   return true;
 }
 
 int64_t

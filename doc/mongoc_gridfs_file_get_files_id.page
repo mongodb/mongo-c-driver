@@ -12,14 +12,15 @@
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[const bson_oid_t *
-mongoc_gridfs_file_get_files_id (mongoc_gridfs_file_t *file);]]></code></synopsis>
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
+mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file, bson_value_t *file_id);]]></code></synopsis>
   </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
       <tr><td><p>file</p></td><td><p>A <link xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</link>.</p></td></tr>
+      <tr><td><p>file_id</p></td><td><p>A <link xref="bson_value_t">bson_value_t</link>.</p></td></tr>
     </table>
   </section>
 
@@ -30,7 +31,7 @@ mongoc_gridfs_file_get_files_id (mongoc_gridfs_file_t *file);]]></code></synopsi
 
   <section id="return">
     <title>Returns</title>
-    <p>A bson_oid_t which should not be modified or freed.</p>
+    <p>Will return false when fails for any reason, otherwise return true and copy the files_id to struct "bson_value_t".</p>
   </section>
 
 </page>
