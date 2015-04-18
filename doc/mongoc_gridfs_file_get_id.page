@@ -8,7 +8,7 @@
   <info>
     <link type="guide" xref="mongoc_gridfs_file_t" group="function"/>
   </info>
-  <title>mongoc_gridfs_file_get_files_id()</title>
+  <title>mongoc_gridfs_file_get_id()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
