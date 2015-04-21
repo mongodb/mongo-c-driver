@@ -233,7 +233,8 @@ if (OPENSSL_FOUND)
    set(test-libmongoc-sources ${test-libmongoc-sources}
       ${SOURCE_DIR}/tests/test-x509.c
       ${SOURCE_DIR}/tests/ssl-test.c
-      ${SOURCE_DIR}/tests/test-mongoc-stream-tls.c)
+      ${SOURCE_DIR}/tests/test-mongoc-stream-tls.c
+      ${SOURCE_DIR}/tests/test-mongoc-stream-tls-hangup.c)
    mongoc_add_test(test-replica-set-ssl FALSE
       ${SOURCE_DIR}/tests/test-replica-set-ssl.c
       ${SOURCE_DIR}/tests/ha-test.c

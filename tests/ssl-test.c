@@ -3,8 +3,6 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#include <mongoc-thread-private.h>
-
 #include "ssl-test.h"
 
 #define TIMEOUT 1000
@@ -12,18 +10,6 @@
 #define NUM_IOVECS 2000
 
 #define LOCALHOST "127.0.0.1"
-
-typedef struct ssl_test_data
-{
-   mongoc_ssl_opt_t  *client;
-   mongoc_ssl_opt_t  *server;
-   const char        *host;
-   unsigned short     server_port;
-   mongoc_cond_t      cond;
-   mongoc_mutex_t     cond_mutex;
-   ssl_test_result_t *client_result;
-   ssl_test_result_t *server_result;
-} ssl_test_data_t;
 
 /** this function is meant to be run from ssl_test as a child thread
  *

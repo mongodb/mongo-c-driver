@@ -1,5 +1,7 @@
 #include <mongoc.h>
 
+#include <mongoc-thread-private.h>
+
 typedef enum ssl_test_state {
    SSL_TEST_CRASH,
    SSL_TEST_SUCCESS,
@@ -14,6 +16,18 @@ typedef struct ssl_test_result {
    int err;
    unsigned long ssl_err;
 } ssl_test_result_t;
+
+typedef struct ssl_test_data
+{
+   mongoc_ssl_opt_t  *client;
+   mongoc_ssl_opt_t  *server;
+   const char        *host;
+   unsigned short     server_port;
+   mongoc_cond_t      cond;
+   mongoc_mutex_t     cond_mutex;
+   ssl_test_result_t *client_result;
+   ssl_test_result_t *server_result;
+} ssl_test_data_t;
 
 void
 ssl_test (mongoc_ssl_opt_t  *client,
