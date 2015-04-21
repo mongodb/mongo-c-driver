@@ -144,7 +144,9 @@ mongoc_topology_new (const mongoc_uri_t *uri,
    if ((options = mongoc_uri_get_options (uri)) &&
        bson_iter_init_find_case (&iter, options, "serverselectiontimeoutms") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
-      topology->timeout_msec = bson_iter_int32(&iter);
+      if (!(topology->timeout_msec = bson_iter_int32(&iter))) {
+         topology->timeout_msec = MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS;
+      }
    }
 
    topology->heartbeat_msec =
@@ -154,7 +156,11 @@ mongoc_topology_new (const mongoc_uri_t *uri,
    if ((options = mongoc_uri_get_options (uri)) &&
        bson_iter_init_find_case (&iter, options, "heartbeatfrequencyms") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
-      topology->heartbeat_msec = bson_iter_int32(&iter);
+      if (!(topology->heartbeat_msec = bson_iter_int32(&iter))) {
+         topology->heartbeat_msec =
+            single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED :
+            MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
+      }
    }
 
    mongoc_mutex_init (&topology->mutex);

@@ -59,6 +59,21 @@
       <tr><td><p>connectTimeoutMS</p></td><td><p>A timeout in milliseconds to attempt a connection before timing out. The default is no timeout.</p></td></tr>
       <tr><td><p>socketTimeoutMS</p></td><td><p>The time in milliseconds to attempt to send or receive on a socket before the attempt times out. The default is 5 minutes.</p></td></tr>
     </table>
+    <note style="important">
+      <p>Setting any of the *TimeoutMS options above to <code>0</code> will be interpreted as "use the default value"</p>
+    </note>
+  </section>
+
+  <section id="sdam-ss-options">
+    <title>Server Discovery, Monitoring and Selection Options</title>
+    <table>
+      <tr><td><p>heartbeatFrequencyMS</p></td><td><p>The interval between server monitoring checks. Defaults to 10 seconds in multi-threaded mode, 60 seconds in single threaded.</p></td></tr>
+      <tr><td><p>serverSelectionTimeoutMS</p></td><td><p>A timeout in milliseconds to block for server selection before throwing an exception. The default is 30,000 (milliseconds).</p></td></tr>
+      <tr><td><p>socketCheckIntervalMS</p></td><td><p>Only applicable to single threaded clients. If socket has not been used within this timeframe a isMaster call is attempted. Defaults to 5 seconds.</p></td></tr>
+    </table>
+    <note style="important">
+      <p>Setting any of the *TimeoutMS options above to <code>0</code> will be interpreted as "use the default value"</p>
+    </note>
   </section>
 
   <section id="pool-options">
