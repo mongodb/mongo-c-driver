@@ -1243,7 +1243,8 @@ test_command_fq (void)
    client = mongoc_client_new (gTestUri);
    ASSERT (client);
 
-   collection = get_test_collection (client, "$cmd.sys.inprog");
+   collection = mongoc_client_get_collection (client,
+                                              "test", "$cmd.sys.inprog");
    ASSERT (collection);
 
    cmd = BCON_NEW ("query", "{", "}");
