@@ -4,8 +4,6 @@
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
 
-static char *gTestUri;
-
 
 static void
 test_has_collection (void)
@@ -19,7 +17,7 @@ test_has_collection (void)
    bson_oid_t oid;
    bson_t b;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    assert (client);
 
    name = gen_collection_name ("has_collection");
@@ -48,7 +46,6 @@ test_has_collection (void)
    bson_free (name);
    mongoc_database_destroy (database);
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
 
 
@@ -64,7 +61,7 @@ test_command (void)
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    assert (client);
 
    database = mongoc_client_get_database (client, "admin");
@@ -101,7 +98,6 @@ test_command (void)
    assert (strstr (error.message, "a_non_existing_command"));
 
    mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
    bson_destroy (&cmd);
 }
 
@@ -115,7 +111,7 @@ test_drop (void)
    char *dbname;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    assert (client);
 
    dbname = gen_collection_name ("db_drop_test");
@@ -128,7 +124,6 @@ test_drop (void)
    assert (!error.code);
 
    mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
 }
 
 
@@ -147,7 +142,7 @@ test_create_collection (void)
    char *name;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    assert (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -182,7 +177,6 @@ test_create_collection (void)
 
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
 }
 
 static void
@@ -208,7 +202,7 @@ test_get_collection_info (void)
    char *autoindexid_name;
    char *noopts_name;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    assert (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -282,7 +276,6 @@ test_get_collection_info (void)
    bson_free (autoindexid_name);
 
    mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
 }
 
 static void
@@ -308,7 +301,7 @@ test_get_collection_names (void)
    char *name5;
    const char *system_prefix = "system.";
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    assert (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -390,21 +383,11 @@ test_get_collection_names (void)
    assert (!error.code);
 
    mongoc_database_destroy (database);
-   mongoc_client_destroy (client);
 }
-
-static void
-cleanup_globals (void)
-{
-   bson_free (gTestUri);
-}
-
 
 void
 test_database_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf ("mongodb://%s/", MONGOC_TEST_HOST);
-
    TestSuite_Add (suite, "/Database/has_collection", test_has_collection);
    TestSuite_Add (suite, "/Database/command", test_command);
    TestSuite_Add (suite, "/Database/drop", test_drop);
@@ -413,6 +396,4 @@ test_database_install (TestSuite *suite)
                   test_get_collection_info);
    TestSuite_Add (suite, "/Database/get_collection_names",
                   test_get_collection_names);
-
-   atexit (cleanup_globals);
 }

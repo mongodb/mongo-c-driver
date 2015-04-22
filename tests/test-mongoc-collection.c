@@ -7,8 +7,6 @@
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
 
-static char *gTestUri;
-
 
 static mongoc_database_t *
 get_test_database (mongoc_client_t *client)
@@ -46,7 +44,7 @@ test_insert (void)
    bson_t b;
 
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -89,7 +87,6 @@ test_insert (void)
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    bson_context_destroy(context);
-   mongoc_client_destroy(client);
 }
 
 
@@ -109,7 +106,7 @@ test_insert_bulk (void)
    bson_t *bptr[10];
    int64_t count;
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -216,7 +213,6 @@ test_insert_bulk (void)
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    bson_context_destroy(context);
-   mongoc_client_destroy(client);
 }
 
 
@@ -233,7 +229,7 @@ test_save (void)
    unsigned i;
    bson_t b;
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -268,7 +264,6 @@ test_save (void)
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    bson_context_destroy(context);
-   mongoc_client_destroy(client);
 }
 
 
@@ -285,7 +280,7 @@ test_regex (void)
    bson_t *doc;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -323,7 +318,6 @@ test_regex (void)
    bson_destroy (doc);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy(database);
-   mongoc_client_destroy (client);
 }
 
 
@@ -343,7 +337,7 @@ test_update (void)
    bson_t u;
    bson_t set;
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -416,7 +410,6 @@ test_update (void)
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    bson_context_destroy(context);
-   mongoc_client_destroy(client);
 }
 
 
@@ -433,7 +426,7 @@ test_remove (void)
    bson_t b;
    int i;
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -475,7 +468,6 @@ test_remove (void)
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    bson_context_destroy(context);
-   mongoc_client_destroy(client);
 }
 
 static void
@@ -491,7 +483,7 @@ test_index (void)
 
    mongoc_index_opt_init(&opt);
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -518,7 +510,6 @@ test_index (void)
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
-   mongoc_client_destroy(client);
 }
 
 static void
@@ -534,7 +525,7 @@ test_index_compound (void)
 
    mongoc_index_opt_init(&opt);
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -562,7 +553,6 @@ test_index_compound (void)
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
-   mongoc_client_destroy(client);
 }
 
 static void
@@ -580,7 +570,7 @@ test_index_geo (void)
    mongoc_index_opt_init(&opt);
    mongoc_index_opt_geo_init(&geo_opt);
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -634,7 +624,6 @@ test_index_geo (void)
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
-   mongoc_client_destroy(client);
 }
 
 static char *
@@ -676,7 +665,7 @@ test_index_storage (void)
    bson_t keys;
    char *engine = NULL;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    /* Skip unless we are on WT */
@@ -711,7 +700,6 @@ test_index_storage (void)
    if (engine) bson_free (engine);
    if (collection) mongoc_collection_destroy (collection);
    if (database) mongoc_database_destroy (database);
-   if (client) mongoc_client_destroy (client);
 }
 
 static void
@@ -723,7 +711,7 @@ test_count (void)
    int64_t count;
    bson_t b;
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
@@ -740,7 +728,6 @@ test_count (void)
    ASSERT (count != -1);
 
    mongoc_collection_destroy(collection);
-   mongoc_client_destroy(client);
 }
 
 
@@ -754,7 +741,7 @@ test_count_with_opts (void)
    bson_t b;
    bson_t opts;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -777,7 +764,6 @@ test_count_with_opts (void)
    ASSERT (count != -1);
 
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
 
 
@@ -791,7 +777,7 @@ test_drop (void)
    bson_t *doc;
    bool r;
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -813,7 +799,6 @@ test_drop (void)
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
-   mongoc_client_destroy(client);
 }
 
 
@@ -834,7 +819,7 @@ test_aggregate (void)
    bson_iter_t iter;
    int i;
 
-   client = mongoc_client_new(gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -912,7 +897,6 @@ again:
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
-   mongoc_client_destroy(client);
    bson_destroy(b);
    bson_destroy(pipeline);
 }
@@ -930,7 +914,7 @@ test_validate (void)
    bson_t reply;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_validate");
@@ -961,7 +945,6 @@ test_validate (void)
    assert (r);
 
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
    bson_destroy (&doc);
    bson_destroy (&opts);
 }
@@ -976,7 +959,7 @@ test_rename (void)
    bson_t doc = BSON_INITIALIZER;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_rename");
@@ -992,7 +975,6 @@ test_rename (void)
    assert (r);
 
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
    bson_destroy (&doc);
 }
 
@@ -1008,7 +990,7 @@ test_stats (void)
    bson_t doc = BSON_INITIALIZER;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_stats");
@@ -1031,7 +1013,6 @@ test_stats (void)
    assert (r);
 
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
    bson_destroy (&doc);
 }
 
@@ -1049,7 +1030,7 @@ test_find_and_modify (void)
    bson_t reply;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_find_and_modify");
@@ -1097,7 +1078,6 @@ test_find_and_modify (void)
    assert (r);
 
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
    bson_destroy (&doc);
 }
 
@@ -1117,7 +1097,7 @@ test_large_return (void)
    char *str;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_large_return");
@@ -1157,7 +1137,6 @@ test_large_return (void)
    assert (r);
 
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
    bson_free (str);
 }
 
@@ -1176,7 +1155,7 @@ test_many_return (void)
    bool r;
    int i;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_many_return");
@@ -1226,7 +1205,6 @@ END_IGNORE_DEPRECATIONS;
    assert (r);
 
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
 
 
@@ -1240,7 +1218,7 @@ test_command_fq (void)
    bson_t *cmd;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    collection = mongoc_client_get_collection (client,
@@ -1259,7 +1237,6 @@ test_command_fq (void)
    mongoc_cursor_destroy (cursor);
    bson_destroy (cmd);
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
 
 static void
@@ -1284,7 +1261,7 @@ test_get_index_info (void)
    const char *id_idx_name = "_id_";
    int num_idxs = 0;
 
-   client = mongoc_client_new (gTestUri);
+   client = global_test_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_get_index_info");
@@ -1392,21 +1369,11 @@ test_get_index_info (void)
    bson_free (idx2_name);
 
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
-
-static void
-cleanup_globals (void)
-{
-   bson_free (gTestUri);
-}
-
 
 void
 test_collection_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
-
    TestSuite_Add (suite, "/Collection/insert_bulk", test_insert_bulk);
    TestSuite_Add (suite, "/Collection/insert", test_insert);
    TestSuite_Add (suite, "/Collection/save", test_save);
@@ -1429,6 +1396,4 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/many_return", test_many_return);
    TestSuite_Add (suite, "/Collection/command_fully_qualified", test_command_fq);
    TestSuite_Add (suite, "/Collection/get_index_info", test_get_index_info);
-
-   atexit (cleanup_globals);
 }

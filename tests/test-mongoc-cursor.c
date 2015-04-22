@@ -16,11 +16,8 @@ test_get_host (void)
    bson_error_t error;
    bool r;
    bson_t q = BSON_INITIALIZER;
-   char *uristr;
 
-   uristr = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
-   uri = mongoc_uri_new(uristr);
-   bson_free(uristr);
+   uri = mongoc_uri_new (get_mongoc_test_uri ());
 
    hosts = mongoc_uri_get_hosts(uri);
 
@@ -57,11 +54,8 @@ test_clone (void)
    mongoc_uri_t *uri;
    bool r;
    bson_t q = BSON_INITIALIZER;
-   char *uristr;
 
-   uristr = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
-   uri = mongoc_uri_new(uristr);
-   bson_free(uristr);
+   uri = mongoc_uri_new (get_mongoc_test_uri ());
 
    client = mongoc_client_new_from_uri(uri);
    ASSERT(client);
@@ -118,11 +112,8 @@ test_invalid_query (void)
    const bson_t *doc = NULL;
    bson_t *q;
    bool r;
-   char *uristr;
 
-   uristr = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
-   uri = mongoc_uri_new(uristr);
-   bson_free(uristr);
+   uri = mongoc_uri_new (get_mongoc_test_uri ());
 
    client = mongoc_client_new_from_uri (uri);
    assert (client);

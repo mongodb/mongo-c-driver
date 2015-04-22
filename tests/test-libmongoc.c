@@ -52,6 +52,7 @@ extern void test_stream_tls_install       (TestSuite *suite);
 
 
 static int gSuppressCount;
+static mongoc_client_t *gTestClient;
 
 
 void
@@ -77,7 +78,6 @@ log_handler (mongoc_log_level_t  log_level,
 }
 
 
-char MONGOC_TEST_HOST [1024];
 char MONGOC_TEST_UNIQUE [32];
 
 char *
@@ -90,24 +90,78 @@ gen_collection_name (const char *str)
 
 }
 
-static void
-set_mongoc_test_host(void)
+const char *
+get_mongoc_test_host (void)
 {
-#ifdef _MSC_VER
-   size_t buflen;
+   static char buf[1024];
+   static bool initialized = false;
 
-   if (0 != getenv_s (&buflen, MONGOC_TEST_HOST, sizeof MONGOC_TEST_HOST, "MONGOC_TEST_HOST")) {
-      bson_strncpy (MONGOC_TEST_HOST, "localhost", sizeof MONGOC_TEST_HOST);
-   }
+   if (!initialized) {
+#ifdef _MSC_VER
+      size_t buflen;
+
+      if (0 != getenv_s (&buflen, buf, sizeof buf, "MONGOC_TEST_HOST")) {
+         bson_strncpy (buf, "localhost", sizeof buf);
+      }
 #else
-   if (getenv("MONGOC_TEST_HOST")) {
-      bson_strncpy (MONGOC_TEST_HOST, getenv("MONGOC_TEST_HOST"), sizeof MONGOC_TEST_HOST);
-   } else {
-      bson_strncpy (MONGOC_TEST_HOST, "localhost", sizeof MONGOC_TEST_HOST);
-   }
+
+      if (getenv ("MONGOC_TEST_HOST")) {
+         bson_strncpy (buf, getenv ("MONGOC_TEST_HOST"), sizeof buf);
+      } else {
+         bson_strncpy (buf, "localhost", sizeof buf);
+      }
 #endif
+      initialized = true;
+   }
+
+   return buf;
 }
 
+const char *
+get_mongoc_test_uri (void)
+{
+   static char uristr[1024];
+   static bool initialized = false;
+
+   if (!initialized) {
+      bson_snprintf (uristr, sizeof uristr, "mongodb://%s/",
+                     get_mongoc_test_host ());
+      initialized = true;
+   }
+
+   return uristr;
+}
+
+mongoc_client_t *
+test_client_new (void)
+{
+   char *uri = bson_strdup_printf ("mongodb://%s/",
+                                   get_mongoc_test_host ());
+   mongoc_client_t *client = mongoc_client_new (uri);
+
+   bson_free (uri);
+   assert (client);
+   return client;
+}
+
+static void
+global_test_client_init (void)
+{
+   gTestClient = test_client_new ();
+}
+
+mongoc_client_t *
+global_test_client (void)
+{
+   assert (gTestClient);
+   return gTestClient;
+}
+
+static void
+global_test_client_destroy (void)
+{
+   if (gTestClient) { mongoc_client_destroy (gTestClient); }
+}
 
 int
 main (int   argc,
@@ -122,9 +176,10 @@ main (int   argc,
                   "test_%u_%u", (unsigned)time (NULL),
                   (unsigned)gettestpid ());
 
-   set_mongoc_test_host ();
-
    mongoc_log_set_handler (log_handler, NULL);
+
+   global_test_client_init ();
+   atexit (global_test_client_destroy);
 
    TestSuite_Init (&suite, "", argc, argv);
 

@@ -18,9 +18,10 @@
 #ifndef TEST_LIBMONGOC_H
 #define TEST_LIBMONGOC_H
 
-extern char MONGOC_TEST_HOST [1024];
-
 char *gen_collection_name (const char *prefix);
 void suppress_one_message (void);
-
+const char *get_mongoc_test_host (void);
+const char *get_mongoc_test_uri (void);
+mongoc_client_t *test_client_new (void);
+mongoc_client_t *global_test_client (void);
 #endif
