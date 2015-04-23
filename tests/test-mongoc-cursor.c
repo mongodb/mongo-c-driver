@@ -11,17 +11,18 @@ test_get_host (void)
    mongoc_host_list_t host;
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
+   char *uri_str = test_framework_get_uri_str (NULL);
    mongoc_uri_t *uri;
    const bson_t *doc;
    bson_error_t error;
    bool r;
    bson_t q = BSON_INITIALIZER;
 
-   uri = mongoc_uri_new (get_mongoc_test_uri ());
+   uri = mongoc_uri_new (uri_str);
 
    hosts = mongoc_uri_get_hosts(uri);
 
-   client = mongoc_client_new_from_uri(uri);
+   client = test_framework_client_new (uri_str);
    cursor = _mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
                                false, &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
@@ -38,6 +39,7 @@ test_get_host (void)
    ASSERT_CMPINT (host.port, ==, hosts->port);
    ASSERT_CMPINT (host.family, ==, hosts->family);
 
+   bson_free (uri_str);
    mongoc_uri_destroy(uri);
    mongoc_client_destroy (client);
    mongoc_cursor_destroy (cursor);
@@ -51,14 +53,10 @@ test_clone (void)
    mongoc_client_t *client;
    const bson_t *doc;
    bson_error_t error;
-   mongoc_uri_t *uri;
    bool r;
    bson_t q = BSON_INITIALIZER;
 
-   uri = mongoc_uri_new (get_mongoc_test_uri ());
-
-   client = mongoc_client_new_from_uri(uri);
-   ASSERT(client);
+   client = test_framework_get_global_client ();
 
    {
       /*
@@ -97,8 +95,6 @@ test_clone (void)
 
    mongoc_cursor_destroy(cursor);
    mongoc_cursor_destroy(clone);
-   mongoc_client_destroy(client);
-   mongoc_uri_destroy(uri);
 }
 
 
@@ -107,15 +103,12 @@ test_invalid_query (void)
 {
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
-   mongoc_uri_t *uri;
    bson_error_t error;
    const bson_t *doc = NULL;
    bson_t *q;
    bool r;
 
-   uri = mongoc_uri_new (get_mongoc_test_uri ());
-
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_get_global_client ();
    assert (client);
 
    q = BCON_NEW ("foo", BCON_INT32 (1), "$orderby", "{", "}");
@@ -132,8 +125,6 @@ test_invalid_query (void)
 
    bson_destroy (q);
    mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
-   mongoc_uri_destroy(uri);
 }
 
 

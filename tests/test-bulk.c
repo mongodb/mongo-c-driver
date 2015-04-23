@@ -36,7 +36,7 @@ test_bulk (void)
    bson_t doc = BSON_INITIALIZER;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "test_bulk");
@@ -116,7 +116,7 @@ test_update_upserted (void)
    bson_t *doc;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "test_update_upserted");
@@ -201,7 +201,7 @@ test_index_offset (void)
    bson_t *doc;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "test_index_offset");
@@ -290,7 +290,7 @@ test_bulk_edge_over_1000 (void)
    bson_error_t error;
    int i;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "OVER_1000");
@@ -366,7 +366,7 @@ test_bulk_edge_case_372 (void)
    int vmin = 0;
    int vmic = 0;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "CDRIVER_372");
@@ -494,7 +494,7 @@ test_bulk_new (void)
    bson_t empty = BSON_INITIALIZER;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "bulk_new");

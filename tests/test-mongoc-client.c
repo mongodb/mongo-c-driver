@@ -9,9 +9,6 @@
 
 #include "test-libmongoc.h"
 
-static char *gTestUriWithBadPassword;
-
-
 #define MONGOD_VERSION_HEX(a, b, c) ((a << 16) | (b << 8) | (c))
 
 
@@ -63,9 +60,13 @@ gen_test_user (void)
 static char *
 gen_good_uri (const char *username)
 {
-   return bson_strdup_printf("mongodb://%s:testpass@%s/test",
-                             username,
-                             get_mongoc_test_host ());
+   char *host = test_framework_get_host ();
+   char *uri = bson_strdup_printf ("mongodb://%s:testpass@%s/test",
+                                   username,
+                                   host);
+
+   bson_free (host);
+   return uri;
 }
 
 
@@ -90,7 +91,7 @@ test_mongoc_client_authenticate (void)
    /*
     * Add a user to the test database.
     */
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    database = mongoc_client_get_database(client, "test");
    mongoc_database_remove_user (database, username, &error);
    r = mongoc_database_add_user(database, username, "testpass", NULL, NULL, &error);
@@ -101,7 +102,7 @@ test_mongoc_client_authenticate (void)
     * Try authenticating with that user.
     */
    bson_init(&q);
-   auth_client = mongoc_client_new (uri);
+   auth_client = test_framework_client_new (uri);
    collection = mongoc_client_get_collection (auth_client, "test", "test");
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &q, NULL, NULL);
@@ -141,12 +142,17 @@ test_mongoc_client_authenticate_failure (void)
    bool r;
    bson_t q;
    bson_t empty = BSON_INITIALIZER;
+   char *host = test_framework_get_host ();
+   char *bad_uri_str = bson_strdup_printf (
+         "mongodb://baduser:badpass@%s/test%s",
+         host,
+         test_framework_get_ssl () ? "?ssl=true" : "");
 
    /*
-    * Try authenticating with that user.
+    * Try authenticating with bad user.
     */
    bson_init(&q);
-   client = mongoc_client_new(gTestUriWithBadPassword);
+   client = test_framework_client_new (bad_uri_str);
    collection = mongoc_client_get_collection(client, "test", "test");
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &q, NULL, NULL);
@@ -176,6 +182,8 @@ test_mongoc_client_authenticate_failure (void)
    assert (error.domain == MONGOC_ERROR_CLIENT);
    assert (error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
 
+   bson_free (host);
+   bson_free (bad_uri_str);
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
 }
@@ -385,7 +393,7 @@ test_mongoc_client_command (void)
    bool r;
    bson_t cmd = BSON_INITIALIZER;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    bson_append_int32 (&cmd, "ping", 4, 1);
@@ -414,7 +422,7 @@ test_mongoc_client_command_secondary (void)
    mongoc_read_prefs_t *read_prefs;
    bson_t cmd = BSON_INITIALIZER;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    BSON_APPEND_INT32 (&cmd, "invalid_command_here", 1);
@@ -440,7 +448,7 @@ test_mongoc_client_preselect (void)
    bson_error_t error;
    uint32_t node;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    node = _mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
@@ -468,7 +476,7 @@ test_exhaust_cursor (void)
    bson_error_t error;
    bson_oid_t oid;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "test_exhaust_cursor");
@@ -626,7 +634,7 @@ test_server_status (void)
    bson_t reply;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    assert (client);
 
    r = mongoc_client_get_server_status (client, NULL, &reply, &error);
@@ -665,21 +673,10 @@ test_mongoc_client_ipv6 (void)
 }
 
 
-static void
-cleanup_globals (void)
-{
-   bson_free(gTestUriWithBadPassword);
-}
-
-
 void
 test_client_install (TestSuite *suite)
 {
    bool local;
-
-   gTestUriWithBadPassword = bson_strdup_printf (
-      "mongodb://baduser:badpass@%s/test", get_mongoc_test_host ());
-
    local = !getenv ("MONGOC_DISABLE_MOCK_SERVER");
 
    if (!local) {
@@ -697,6 +694,4 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
-
-   atexit (cleanup_globals);
 }

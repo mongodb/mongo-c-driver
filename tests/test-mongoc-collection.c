@@ -44,7 +44,7 @@ test_insert (void)
    bson_t b;
 
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -106,7 +106,7 @@ test_insert_bulk (void)
    bson_t *bptr[10];
    int64_t count;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -229,7 +229,7 @@ test_save (void)
    unsigned i;
    bson_t b;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -280,7 +280,7 @@ test_regex (void)
    bson_t *doc;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -337,7 +337,7 @@ test_update (void)
    bson_t u;
    bson_t set;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -426,7 +426,7 @@ test_remove (void)
    bson_t b;
    int i;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -483,7 +483,7 @@ test_index (void)
 
    mongoc_index_opt_init(&opt);
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -525,7 +525,7 @@ test_index_compound (void)
 
    mongoc_index_opt_init(&opt);
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -570,7 +570,7 @@ test_index_geo (void)
    mongoc_index_opt_init(&opt);
    mongoc_index_opt_geo_init(&geo_opt);
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -665,7 +665,7 @@ test_index_storage (void)
    bson_t keys;
    char *engine = NULL;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    /* Skip unless we are on WT */
@@ -711,7 +711,7 @@ test_count (void)
    int64_t count;
    bson_t b;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
@@ -741,7 +741,7 @@ test_count_with_opts (void)
    bson_t b;
    bson_t opts;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -777,7 +777,7 @@ test_drop (void)
    bson_t *doc;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -819,7 +819,7 @@ test_aggregate (void)
    bson_iter_t iter;
    int i;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    database = get_test_database (client);
@@ -914,7 +914,7 @@ test_validate (void)
    bson_t reply;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_validate");
@@ -959,7 +959,7 @@ test_rename (void)
    bson_t doc = BSON_INITIALIZER;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_rename");
@@ -990,7 +990,7 @@ test_stats (void)
    bson_t doc = BSON_INITIALIZER;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_stats");
@@ -1030,7 +1030,7 @@ test_find_and_modify (void)
    bson_t reply;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_find_and_modify");
@@ -1097,7 +1097,7 @@ test_large_return (void)
    char *str;
    bool r;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_large_return");
@@ -1155,7 +1155,7 @@ test_many_return (void)
    bool r;
    int i;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_many_return");
@@ -1218,7 +1218,9 @@ test_command_fq (void)
    bson_t *cmd;
    bool r;
 
-   client = global_test_client ();
+   return;
+
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    collection = mongoc_client_get_collection (client,
@@ -1261,7 +1263,7 @@ test_get_index_info (void)
    const char *id_idx_name = "_id_";
    int num_idxs = 0;
 
-   client = global_test_client ();
+   client = test_framework_get_global_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_get_index_info");

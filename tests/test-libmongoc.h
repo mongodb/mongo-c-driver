@@ -20,8 +20,9 @@
 
 char *gen_collection_name (const char *prefix);
 void suppress_one_message (void);
-const char *get_mongoc_test_host (void);
-const char *get_mongoc_test_uri (void);
-mongoc_client_t *test_client_new (void);
-mongoc_client_t *global_test_client (void);
+char *test_framework_get_host (void);
+bool test_framework_get_ssl (void);
+char *test_framework_get_uri_str (const char *uri_str);
+mongoc_client_t *test_framework_client_new (const char *uri_str);
+mongoc_client_t *test_framework_get_global_client (void);
 #endif
