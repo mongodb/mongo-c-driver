@@ -53,6 +53,10 @@ extern void test_stream_tls_hangup_install (TestSuite *suite);
 
 
 static int gSuppressCount;
+static mongoc_client_t *gTestClient;
+#ifdef MONGOC_ENABLE_SSL
+static mongoc_ssl_opt_t gSSLOptions;
+#endif
 
 
 void
@@ -78,7 +82,6 @@ log_handler (mongoc_log_level_t  log_level,
 }
 
 
-char MONGOC_TEST_HOST [1024];
 char MONGOC_TEST_UNIQUE [32];
 
 char *
@@ -91,24 +94,202 @@ gen_collection_name (const char *str)
 
 }
 
-static void
-set_mongoc_test_host(void)
+static char *
+test_framework_getenv (const char *name)
 {
 #ifdef _MSC_VER
-   size_t buflen;
+      char buf[1024];
+      size_t buflen;
 
-   if (0 != getenv_s (&buflen, MONGOC_TEST_HOST, sizeof MONGOC_TEST_HOST, "MONGOC_TEST_HOST")) {
-      bson_strncpy (MONGOC_TEST_HOST, "localhost", sizeof MONGOC_TEST_HOST);
-   }
+      if (0 != getenv_s (&buflen, buf, sizeof buf, name)) {
+         bson_strncpy (buf, "localhost", sizeof buf);
+         return bson_strdup (buf);
+      } else {
+         return NULL;
+      }
 #else
-   if (getenv("MONGOC_TEST_HOST")) {
-      bson_strncpy (MONGOC_TEST_HOST, getenv("MONGOC_TEST_HOST"), sizeof MONGOC_TEST_HOST);
+
+   if (getenv (name)) {
+      return bson_strdup (getenv (name));
    } else {
-      bson_strncpy (MONGOC_TEST_HOST, "localhost", sizeof MONGOC_TEST_HOST);
+      return NULL;
    }
+
 #endif
 }
 
+/* true if the environment variable is set and not falsey */
+bool
+test_framework_getenv_bool (const char *name)
+{
+   char *value = test_framework_getenv (name);
+   bool ret = false;
+
+   /* if value is OTHER THAN no, false, or 0 */
+   if (value &&
+       strcasecmp (value, "no") &&
+       strcasecmp (value, "false") &&
+       strcmp (value, "0")) {
+      ret = true;
+   }
+
+   bson_free (value);
+   return ret;
+}
+
+char *
+test_framework_get_host (void)
+{
+   char *host = test_framework_getenv ("MONGOC_TEST_HOST");
+
+   return host ? host : bson_strdup ("localhost");
+}
+
+/* true if any SSL environment variables are set */
+bool
+test_framework_get_ssl (void)
+{
+   char *ssl_option_names[] = {
+      "MONGOC_TEST_SSL_PEM_FILE",
+      "MONGOC_TEST_SSL_PEM_PWD",
+      "MONGOC_TEST_SSL_CA_FILE",
+      "MONGOC_TEST_SSL_CA_DIR",
+      "MONGOC_TEST_SSL_CRL_FILE",
+      "MONGOC_TEST_SSL_WEAK_CERT_VALIDATION"
+   };
+   char *ssl_option_value;
+   size_t i;
+
+   for (i = 0; i < sizeof ssl_option_names / sizeof (char *); i++) {
+      ssl_option_value = test_framework_getenv (ssl_option_names[i]);
+
+      if (ssl_option_value) {
+         bson_free (ssl_option_value);
+         return true;
+      }
+   }
+
+   return test_framework_getenv_bool ("MONGOC_TEST_SSL");
+}
+
+static bool
+uri_has_options (const mongoc_uri_t *uri)
+{
+   bson_iter_t iter;
+
+   if (!uri) { return false; }
+
+   bson_iter_init (&iter, mongoc_uri_get_options (uri));
+   return bson_iter_next (&iter);
+}
+
+/* uri is optional */
+char *
+test_framework_get_uri_str (const char *uri_str)
+{
+   char *host = test_framework_get_host ();
+   char *test_uri_str_base = uri_str ?
+                             bson_strdup (uri_str) :
+                             bson_strdup_printf ("mongodb://%s/", host);
+
+   mongoc_uri_t *uri_parsed = mongoc_uri_new (test_uri_str_base);
+   char *test_uri_str;
+
+   assert (uri_parsed);
+
+   /* add "ssl=true" if needed */
+   if (test_framework_get_ssl () && !mongoc_uri_get_ssl (uri_parsed)) {
+      test_uri_str = bson_strdup_printf (
+         "%s%s",
+         test_uri_str_base,
+         uri_has_options (uri_parsed) ? "&ssl=true" : "?ssl=true");
+   } else {
+      test_uri_str = bson_strdup (test_uri_str_base);
+   }
+
+   mongoc_uri_destroy (uri_parsed);
+   bson_free (host);
+   bson_free (test_uri_str_base);
+   return test_uri_str;
+}
+
+static void
+test_framework_set_ssl_opts (mongoc_client_t *client)
+{
+   assert (client);
+
+   if (test_framework_get_ssl ()) {
+#ifndef MONGOC_ENABLE_SSL
+      fprintf (stderr,
+               "SSL test config variables are specified in the environment, but"
+               " SSL isn't enabled\n");
+      abort ();
+#else
+      mongoc_client_set_ssl_opts (client, &gSSLOptions);
+#endif
+   }
+}
+
+
+/* uri is optional */
+mongoc_client_t *
+test_framework_client_new (const char *uri_str)
+{
+   char *test_uri_str = test_framework_get_uri_str (uri_str);
+   mongoc_client_t *client = mongoc_client_new (test_uri_str);
+
+   assert (client);
+   test_framework_set_ssl_opts (client);
+
+   bson_free (test_uri_str);
+   assert (client);
+   return client;
+}
+
+#ifdef MONGOC_ENABLE_SSL
+static void
+test_framework_global_ssl_opts_init (void)
+{
+   memcpy (&gSSLOptions, mongoc_ssl_opt_get_default (), sizeof gSSLOptions);
+
+   gSSLOptions.pem_file = test_framework_getenv ("MONGOC_TEST_SSL_PEM_FILE");
+   gSSLOptions.pem_pwd = test_framework_getenv ("MONGOC_TEST_SSL_PEM_PWD");
+   gSSLOptions.ca_file = test_framework_getenv ("MONGOC_TEST_SSL_CA_FILE");
+   gSSLOptions.ca_dir = test_framework_getenv ("MONGOC_TEST_SSL_CA_DIR");
+   gSSLOptions.crl_file = test_framework_getenv ("MONGOC_TEST_SSL_CRL_FILE");
+   gSSLOptions.weak_cert_validation = test_framework_getenv_bool (
+      "MONGOC_TEST_SSL_WEAK_CERT_VALIDATION");
+}
+
+static void
+test_framework_global_ssl_opts_cleanup (void)
+{
+   bson_free (gSSLOptions.pem_file);
+   bson_free (gSSLOptions.pem_pwd);
+   bson_free (gSSLOptions.ca_file);
+   bson_free (gSSLOptions.ca_dir);
+   bson_free (gSSLOptions.crl_file);
+}
+#endif
+
+static void
+test_framework_global_client_init (void)
+{
+   gTestClient = test_framework_client_new (NULL);
+}
+
+mongoc_client_t *
+test_framework_get_global_client (void)
+{
+   assert (gTestClient);
+   return gTestClient;
+}
+
+static void
+test_framework_global_client_destroy (void)
+{
+   if (gTestClient) { mongoc_client_destroy (gTestClient); }
+}
 
 int
 main (int   argc,
@@ -123,9 +304,14 @@ main (int   argc,
                   "test_%u_%u", (unsigned)time (NULL),
                   (unsigned)gettestpid ());
 
-   set_mongoc_test_host ();
-
    mongoc_log_set_handler (log_handler, NULL);
+
+#ifdef MONGOC_ENABLE_SSL
+   test_framework_global_ssl_opts_init ();
+   atexit (test_framework_global_ssl_opts_cleanup);
+#endif
+   test_framework_global_client_init ();
+   atexit (test_framework_global_client_destroy);
 
    TestSuite_Init (&suite, "", argc, argv);
 

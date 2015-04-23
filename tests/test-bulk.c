@@ -6,9 +6,6 @@
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
 
-static char *gTestUri;
-
-
 static mongoc_collection_t *
 get_test_collection (mongoc_client_t *client,
                      const char      *prefix)
@@ -21,13 +18,6 @@ get_test_collection (mongoc_client_t *client,
    bson_free (str);
 
    return ret;
-}
-
-
-static void
-cleanup_globals (void)
-{
-   bson_free (gTestUri);
 }
 
 
@@ -46,7 +36,7 @@ test_bulk (void)
    bson_t doc = BSON_INITIALIZER;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "test_bulk");
@@ -107,7 +97,6 @@ test_bulk (void)
 
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
    bson_destroy (&doc);
 }
 
@@ -127,7 +116,7 @@ test_update_upserted (void)
    bson_t *doc;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "test_update_upserted");
@@ -191,7 +180,6 @@ test_update_upserted (void)
 
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 
    bson_destroy (doc);
    bson_destroy (sel);
@@ -213,7 +201,7 @@ test_index_offset (void)
    bson_t *doc;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "test_index_offset");
@@ -285,7 +273,6 @@ test_index_offset (void)
 
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 
    bson_destroy (doc);
    bson_destroy (sel);
@@ -303,7 +290,7 @@ test_bulk_edge_over_1000 (void)
    bson_error_t error;
    int i;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "OVER_1000");
@@ -358,7 +345,6 @@ test_bulk_edge_over_1000 (void)
    mongoc_write_concern_destroy(wc);
 
    mongoc_collection_destroy(collection);
-   mongoc_client_destroy(client);
 }
 
 static void
@@ -380,7 +366,7 @@ test_bulk_edge_case_372 (void)
    int vmin = 0;
    int vmic = 0;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "CDRIVER_372");
@@ -495,7 +481,6 @@ test_bulk_edge_case_372 (void)
 
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
 
 
@@ -509,7 +494,7 @@ test_bulk_new (void)
    bson_t empty = BSON_INITIALIZER;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_get_global_client ();
    assert (client);
 
    collection = get_test_collection (client, "bulk_new");
@@ -552,21 +537,16 @@ test_bulk_new (void)
    mongoc_collection_drop (collection, NULL);
 
    mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
 }
 
 
 void
 test_bulk_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
-
    TestSuite_Add (suite, "/BulkOperation/basic", test_bulk);
    TestSuite_Add (suite, "/BulkOperation/update_upserted", test_update_upserted);
    TestSuite_Add (suite, "/BulkOperation/index_offset", test_index_offset);
    TestSuite_Add (suite, "/BulkOperation/CDRIVER-372", test_bulk_edge_case_372);
    TestSuite_Add (suite, "/BulkOperation/new", test_bulk_new);
    TestSuite_Add (suite, "/BulkOperation/over_1000", test_bulk_edge_over_1000);
-
-   atexit (cleanup_globals);
 }
