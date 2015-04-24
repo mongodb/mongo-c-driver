@@ -120,5 +120,12 @@ have a locally running `mongod` instance available on `127.0.0.1:27017`. All
 tests should pass. Alternatively, you can specify `MONGOC_TEST_HOST`
 environment variable to specify a non-localhost hostname or ip address.
 
+Set the `MONGOC_TEST_SSL` environment variable `on` to connect to the server via
+SSL with default options. Configure SSL options with paths
+`MONGOC_TEST_SSL_PEM_FILE`, `MONGOC_TEST_SSL_PEM_PWD`,
+`MONGOC_TEST_SSL_CA_FILE`, `MONGOC_TEST_SSL_CA_DIR`, and
+`MONGOC_TEST_SSL_CRL_FILE`. Set the `MONGOC_TEST_SSL_WEAK_CERT_VALIDATION`
+environment variable `on` to relax server certificate validation.
+
 All tests should pass before submitting a patch.
 

@@ -53,6 +53,9 @@ extern void test_stream_tls_hangup_install (TestSuite *suite);
 
 
 static int gSuppressCount;
+#ifdef MONGOC_ENABLE_SSL
+static mongoc_ssl_opt_t gSSLOptions;
+#endif
 
 
 void
@@ -78,7 +81,6 @@ log_handler (mongoc_log_level_t  log_level,
 }
 
 
-char MONGOC_TEST_HOST [1024];
 char MONGOC_TEST_UNIQUE [32];
 
 char *
@@ -91,24 +93,294 @@ gen_collection_name (const char *str)
 
 }
 
-static void
-set_mongoc_test_host(void)
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_env --
+ *
+ *       Get the value of an environment variable.
+ *
+ * Returns:
+ *       A string you must bson_free, or NULL if the variable is not set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+static char *
+test_framework_getenv (const char *name)
 {
 #ifdef _MSC_VER
-   size_t buflen;
+      char buf[1024];
+      size_t buflen;
 
-   if (0 != getenv_s (&buflen, MONGOC_TEST_HOST, sizeof MONGOC_TEST_HOST, "MONGOC_TEST_HOST")) {
-      bson_strncpy (MONGOC_TEST_HOST, "localhost", sizeof MONGOC_TEST_HOST);
-   }
+      if (0 != getenv_s (&buflen, buf, sizeof buf, name)) {
+         bson_strncpy (buf, "localhost", sizeof buf);
+         return bson_strdup (buf);
+      } else {
+         return NULL;
+      }
 #else
-   if (getenv("MONGOC_TEST_HOST")) {
-      bson_strncpy (MONGOC_TEST_HOST, getenv("MONGOC_TEST_HOST"), sizeof MONGOC_TEST_HOST);
+
+   if (getenv (name)) {
+      return bson_strdup (getenv (name));
    } else {
-      bson_strncpy (MONGOC_TEST_HOST, "localhost", sizeof MONGOC_TEST_HOST);
+      return NULL;
    }
+
 #endif
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_getenv_bool --
+ *
+ *       Check if an environment variable is set.
+ *
+ * Returns:
+ *       True if the variable is set, or set to "on", false if it is not set
+ *       or set to "off".
+ *
+ * Side effects:
+ *       Logs and aborts if there is another value like "yes" or "true".
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+test_framework_getenv_bool (const char *name)
+{
+   char *value = test_framework_getenv (name);
+   bool ret = false;
+
+   if (value) {
+      if (!strcasecmp (value, "off")) {
+         ret = false;
+      } else if (!strcasecmp (value, "") || !strcasecmp (value, "on")) {
+         ret  = true;
+      } else {
+         fprintf (stderr,
+                  "Unrecognized value for %s: \"%s\". Use \"on\" or \"off\".\n",
+                  name, value);
+         abort ();
+      }
+   }
+
+   bson_free (value);
+   return ret;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_host --
+ *
+ *       Get the hostname of the test MongoDB server.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_host (void)
+{
+   char *host = test_framework_getenv ("MONGOC_TEST_HOST");
+
+   return host ? host : bson_strdup ("localhost");
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_ssl --
+ *
+ *       Should we connect to the test MongoDB server over SSL?
+ *
+ * Returns:
+ *       True if any MONGOC_TEST_SSL_* environment variables are set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+test_framework_get_ssl (void)
+{
+   char *ssl_option_names[] = {
+      "MONGOC_TEST_SSL_PEM_FILE",
+      "MONGOC_TEST_SSL_PEM_PWD",
+      "MONGOC_TEST_SSL_CA_FILE",
+      "MONGOC_TEST_SSL_CA_DIR",
+      "MONGOC_TEST_SSL_CRL_FILE",
+      "MONGOC_TEST_SSL_WEAK_CERT_VALIDATION"
+   };
+   char *ssl_option_value;
+   size_t i;
+
+   for (i = 0; i < sizeof ssl_option_names / sizeof (char *); i++) {
+      ssl_option_value = test_framework_getenv (ssl_option_names[i]);
+
+      if (ssl_option_value) {
+         bson_free (ssl_option_value);
+         return true;
+      }
+   }
+
+   return test_framework_getenv_bool ("MONGOC_TEST_SSL");
+}
+
+static bool
+uri_has_options (const mongoc_uri_t *uri)
+{
+   bson_iter_t iter;
+
+   if (!uri) { return false; }
+
+   bson_iter_init (&iter, mongoc_uri_get_options (uri));
+   return bson_iter_next (&iter);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_uri_str --
+ *
+ *       Get the connection string of the test MongoDB server. Pass NULL
+ *       to get the default connection string, or pass a string in to have
+ *       "ssl=true" added if appropriate.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_uri_str (const char *uri_str)
+{
+   char *host = test_framework_get_host ();
+   char *test_uri_str_base = uri_str ?
+                             bson_strdup (uri_str) :
+                             bson_strdup_printf ("mongodb://%s/", host);
+
+   mongoc_uri_t *uri_parsed = mongoc_uri_new (test_uri_str_base);
+   char *test_uri_str;
+
+   assert (uri_parsed);
+
+   /* add "ssl=true" if needed */
+   if (test_framework_get_ssl () && !mongoc_uri_get_ssl (uri_parsed)) {
+      test_uri_str = bson_strdup_printf (
+         "%s%s",
+         test_uri_str_base,
+         uri_has_options (uri_parsed) ? "&ssl=true" : "?ssl=true");
+   } else {
+      test_uri_str = bson_strdup (test_uri_str_base);
+   }
+
+   mongoc_uri_destroy (uri_parsed);
+   bson_free (host);
+   bson_free (test_uri_str_base);
+   return test_uri_str;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_set_ssl_opts --
+ *
+ *       Configure a client to connect to the test MongoDB server.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Logs and aborts if any MONGOC_TEST_SSL_* environment variables are
+ *       set but the driver is not built with SSL enabled.
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+test_framework_set_ssl_opts (mongoc_client_t *client)
+{
+   assert (client);
+
+   if (test_framework_get_ssl ()) {
+#ifndef MONGOC_ENABLE_SSL
+      fprintf (stderr,
+               "SSL test config variables are specified in the environment, but"
+               " SSL isn't enabled\n");
+      abort ();
+#else
+      mongoc_client_set_ssl_opts (client, &gSSLOptions);
+#endif
+   }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_client_new --
+ *
+ *       Get a client connected to the test MongoDB server using an
+ *       optional URI, or the default URI.
+ *
+ * Returns:
+ *       A client you must mongoc_client_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_t *
+test_framework_client_new (const char *uri_str)
+{
+   char *test_uri_str = test_framework_get_uri_str (uri_str);
+   mongoc_client_t *client = mongoc_client_new (test_uri_str);
+
+   assert (client);
+   test_framework_set_ssl_opts (client);
+
+   bson_free (test_uri_str);
+   assert (client);
+   return client;
+}
+
+#ifdef MONGOC_ENABLE_SSL
+static void
+test_framework_global_ssl_opts_init (void)
+{
+   memcpy (&gSSLOptions, mongoc_ssl_opt_get_default (), sizeof gSSLOptions);
+
+   gSSLOptions.pem_file = test_framework_getenv ("MONGOC_TEST_SSL_PEM_FILE");
+   gSSLOptions.pem_pwd = test_framework_getenv ("MONGOC_TEST_SSL_PEM_PWD");
+   gSSLOptions.ca_file = test_framework_getenv ("MONGOC_TEST_SSL_CA_FILE");
+   gSSLOptions.ca_dir = test_framework_getenv ("MONGOC_TEST_SSL_CA_DIR");
+   gSSLOptions.crl_file = test_framework_getenv ("MONGOC_TEST_SSL_CRL_FILE");
+   gSSLOptions.weak_cert_validation = test_framework_getenv_bool (
+      "MONGOC_TEST_SSL_WEAK_CERT_VALIDATION");
+}
+
+static void
+test_framework_global_ssl_opts_cleanup (void)
+{
+   bson_free (gSSLOptions.pem_file);
+   bson_free (gSSLOptions.pem_pwd);
+   bson_free (gSSLOptions.ca_file);
+   bson_free (gSSLOptions.ca_dir);
+   bson_free (gSSLOptions.crl_file);
+}
+#endif
 
 int
 main (int   argc,
@@ -123,9 +395,12 @@ main (int   argc,
                   "test_%u_%u", (unsigned)time (NULL),
                   (unsigned)gettestpid ());
 
-   set_mongoc_test_host ();
-
    mongoc_log_set_handler (log_handler, NULL);
+
+#ifdef MONGOC_ENABLE_SSL
+   test_framework_global_ssl_opts_init ();
+   atexit (test_framework_global_ssl_opts_cleanup);
+#endif
 
    TestSuite_Init (&suite, "", argc, argv);
 
