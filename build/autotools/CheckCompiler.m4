@@ -15,13 +15,26 @@ AC_PROG_CXX
 c_compiler="unknown"
 AC_LANG_PUSH([C])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
-#if !(defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 1)
+#if !(defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER))
 #error Not a supported GCC compiler
+#endif
+#if defined(__GNUC__)
+#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+                     + __GNUC_PATCHLEVEL__)
+#if GCC_VERSION < 40100
+#error Not a supported GCC compiler
+#endif
 #endif
 ])], [c_compiler="gcc"], [])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
-#if !(defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 3)))
+#if defined(__clang__)
+#define CLANG_VERSION (__clang_major * 10000 \
+                       + __clang_minor__ * 100 \
+                       + __clang_patchlevel__)
+#if CLANG_VERSION < 30300
 #error Not a supported Clang compiler
+#endif
 #endif
 ])], [c_compiler="clang"], [])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
