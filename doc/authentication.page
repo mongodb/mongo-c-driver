@@ -10,7 +10,7 @@
     </info>
     <title>Basic Authentication</title>
     <p>
-      The MongoDB C driver supports challenge response authentication (sometimes known as <code>MONGODB-CR</code> through the use of MongoDB connection URIs.
+      The MongoDB C driver supports challenge response authentication (sometimes known as <code>MONGODB-CR</code>) through the use of MongoDB connection URIs.
       Simply provide the username and password as you would with an <code>HTTP URL</code> as well as the database to authenticate against via <code>authSource</code>.
     </p>
     <screen><code>mongoc_client_t *client = mongoc_client_new ("mongodb://user:password@localhost/?authSource=mydb");</code></screen>
