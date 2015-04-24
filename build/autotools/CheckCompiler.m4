@@ -29,7 +29,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 ])], [c_compiler="gcc"], [])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 #if defined(__clang__)
-#define CLANG_VERSION (__clang_major * 10000 \
+#define CLANG_VERSION (__clang_major__ * 10000 \
                        + __clang_minor__ * 100 \
                        + __clang_patchlevel__)
 #if CLANG_VERSION < 30300
