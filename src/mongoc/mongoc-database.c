@@ -826,6 +826,7 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
    mongoc_array_t strv_buf;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
+   char **ret;
 
    BSON_ASSERT (database);
 
@@ -852,9 +853,16 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
    namecopy = NULL;
    _mongoc_array_append_val (&strv_buf, namecopy);
 
+   if (mongoc_cursor_error (cursor, error)) {
+      _mongoc_array_destroy (&strv_buf);
+      ret = NULL;
+   } else {
+      ret = (char **)strv_buf.data;
+   }
+
    mongoc_cursor_destroy (cursor);
 
-   return (char **) strv_buf.data;
+   return ret;
 }
 
 
