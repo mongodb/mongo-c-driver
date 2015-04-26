@@ -12,26 +12,26 @@
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[bool
-mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file, bson_value_t *file_id);]]></code></synopsis>
+    <synopsis><code mime="text/x-csrc"><![CDATA[const bson_value_t *
+mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file);]]></code></synopsis>
   </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
       <tr><td><p>file</p></td><td><p>A <link xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</link>.</p></td></tr>
-      <tr><td><p>file_id</p></td><td><p>A <link xref="bson_value_t">bson_value_t</link>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
     <title>Description</title>
-    <p>Fetches the files_id for the given gridfs file.</p>
+    <p>Fetches the id of a gridfs file.</p>
+    <p>The C Driver always uses an ObjectId for <code>_id</code>, but files created by other drivers may have any type of <code>_id</code>.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Will return false when fails for any reason, otherwise return true and copy the files_id to struct "bson_value_t".</p>
+    <p>Returns a <code>const bson_value_t *</code> that should not be modified or freed.</p>
   </section>
 
 </page>
