@@ -26,7 +26,7 @@ mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file, bson_value_t *file_id);]]
 
   <section id="description">
     <title>Description</title>
-    <p>Fetches the files_id for the give gridfs file.</p>
+    <p>Fetches the files_id for the given gridfs file.</p>
   </section>
 
   <section id="return">
