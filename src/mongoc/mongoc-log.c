@@ -64,7 +64,7 @@ mongoc_log (mongoc_log_level_t  log_level,
    char *message;
 
    if (!gLogFunc)
-       return
+       return;
 
    static mongoc_once_t once = MONGOC_ONCE_INIT;
 
