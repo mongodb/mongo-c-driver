@@ -10,9 +10,6 @@
   </p>
 
   <section id="ssl">
-    <info>
-      <link type="guide" xref="index#advanced-connections" />
-    </info>
     <title>Connecting over SSL</title>
     <p>
       To connect to a MongoDB server enabled with SSL, simply provide the <code>?ssl=true</code> option in the MongoDB URI.
@@ -27,10 +24,6 @@
   </section>
 
   <section id="replica-set">
-    <info>
-      <link type="guide" xref="index#advanced-connections" />
-    </info>
-
     <title>Connecting to a Replica Set</title>
 
     <p>
@@ -82,10 +75,6 @@ main (int   argc,
   </section>
 
   <section id="sharded-cluster">
-    <info>
-      <link type="guide" xref="index#advanced-connections" />
-    </info>
-
     <title>Connecting to a Sharded Cluster</title>
 
     <p>
@@ -128,10 +117,6 @@ main (int   argc,
   </section>
 
   <section id="unix-socket">
-    <info>
-      <link type="guide" xref="index#advanced-connections" />
-    </info>
-
     <title>Connecting to a UNIX Domain Socket</title>
 
     <p>
@@ -147,4 +132,7 @@ main (int   argc,
     </note>
   </section>
 
+  <info>
+    <link type="guide" xref="index#advanced-connections" />
+  </info>
 </page>
