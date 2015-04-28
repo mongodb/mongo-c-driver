@@ -32,4 +32,9 @@ mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern,
     <p>Sets if a fsync must be performed before indicating write success.</p>
   </section>
 
+  <section id="Deprecated">
+    <title>Deprecated</title>
+    <note style="warning"><p>The <code>fsync</code> write concern is deprecated.</p></note>
+    <p>Please use <link xref="mongoc_write_concern_set_journal">mongoc_write_concern_set_journal()</link> instead.</p>
+  </section>
 </page>
