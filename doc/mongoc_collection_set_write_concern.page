@@ -28,7 +28,8 @@ mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
 
   <section id="description">
     <title>Description</title>
-    <p>Sets the default write concern to use for operations on <code>collection</code> not specifying a write concern.</p>
+    <p>Sets the write concern to use for operations on <code>collection</code>.</p>
+    <p>The default write concern is MONGOC_WRITE_CONCERN_W_DEFAULT: the driver blocks awaiting basic acknowledgment of write operations from MongoDB. This is the correct write concern for the great majority of applications.</p>
   </section>
 
 </page>

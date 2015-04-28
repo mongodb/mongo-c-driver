@@ -40,7 +40,7 @@ mongoc_collection_create_bulk_operation (
     <p>After calling <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link> the commands will be executed in as large as batches as reasonable by the client.</p>
     <p>If <code>ordered</code> is true, then processing will stop at the first error.</p>
     <p>If <code>ordered</code> is not true, then the bulk operation will attempt to continue processing even after the first failure.</p>
-    <p><code>write_concern</code> should contain the write concern you wish to have applied to all operations within the bulk operation.</p>
+    <p><code>write_concern</code> contains the write concern for all operations in the bulk operation. If NULL, the collection's write concern is used. The global default is acknowledged writes: MONGOC_WRITE_CONCERN_W_DEFAULT.</p>
   </section>
 
   <section id="errors">
