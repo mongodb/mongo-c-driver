@@ -28,7 +28,7 @@ mongoc_socket_recv (mongoc_socket_t *sock,
       <tr><td><p>buf</p></td><td><p>A buffer to read into.</p></td></tr>
       <tr><td><p>buflen</p></td><td><p>A size_t with the number of bytes to receive.</p></td></tr>
       <tr><td><p>flags</p></td><td><p>flags for <code>recv()</code>.</p></td></tr>
-      <tr><td><p>expire_at</p></td><td><p>A int64_t with the time to expire in monotonic time using bson_get_monotonic_time(), which is in microseconds.</p></td></tr>
+      <tr><td><p>expire_at</p></td><td><p>A int64_t with the time to expire in monotonic time using <code xref="bson:clock">bson_get_monotonic_time()</code>, which is in microseconds.</p></td></tr>
     </table>
   </section>
 

@@ -30,8 +30,8 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection,
     <table>
       <tr><td><p>collection</p></td><td><p>A <link xref="mongoc_collection_t">mongoc_collection_t</link>.</p></td></tr>
       <tr><td><p>flags</p></td><td><p>A <link xref="mongoc_query_flags_t">mongoc_query_flags_t</link>.</p></td></tr>
-      <tr><td><p>pipeline</p></td><td><p>A bson_t containing the pipeline array.</p></td></tr>
-      <tr><td><p>options</p></td><td><p>A bson_t containing options for the pipeline, or NULL.</p></td></tr>
+      <tr><td><p>pipeline</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the pipeline array.</p></td></tr>
+      <tr><td><p>options</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing options for the pipeline, or NULL.</p></td></tr>
       <tr><td><p>read_prefs</p></td><td><p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link> or NULL.</p></td></tr>
     </table>
   </section>

@@ -38,8 +38,8 @@ mongoc_client_command (mongoc_client_t           *client,
       <tr><td><p>skip</p></td><td><p>The number of result documents to skip.</p></td></tr>
       <tr><td><p>limit</p></td><td><p>The maximum number of documents to return.</p></td></tr>
       <tr><td><p>batch_size</p></td><td><p>The batch size of documents to return from the MongoDB server.</p></td></tr>
-      <tr><td><p>query</p></td><td><p>A bson_t containing the command specification.</p></td></tr>
-      <tr><td><p>fields</p></td><td><p>An optional bson_t containing the fields to return in result documents.</p></td></tr>
+      <tr><td><p>query</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the command specification.</p></td></tr>
+      <tr><td><p>fields</p></td><td><p>An optional <code xref="bson:bson_t">bson_t</code> containing the fields to return in result documents.</p></td></tr>
       <tr><td><p>read_prefs</p></td><td><p>An optional <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p></td></tr>
     </table>
   </section>

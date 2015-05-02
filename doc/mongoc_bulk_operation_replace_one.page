@@ -28,8 +28,8 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
     <title>Parameters</title>
     <table>
       <tr><td><p>bulk</p></td><td><p>A <link xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</link>.</p></td></tr>
-      <tr><td><p>selector</p></td><td><p>A bson_t containing the selector to query.</p></td></tr>
-      <tr><td><p>document</p></td><td><p>A bson_t containing the replacement document.</p></td></tr>
+      <tr><td><p>selector</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the selector to query.</p></td></tr>
+      <tr><td><p>document</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the replacement document.</p></td></tr>
       <tr><td><p>upsert</p></td><td><p><code>true</code> if this should be an <code>upsert</code>.</p></td></tr>
     </table>
     <note style="warning"><p><code>document</code> may not contain fields with keys containing <code>.</code> or <code>$</code>.</p></note>

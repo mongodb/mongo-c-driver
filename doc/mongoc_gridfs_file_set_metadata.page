@@ -21,7 +21,7 @@ mongoc_gridfs_file_set_metadata (mongoc_gridfs_file_t *file,
     <title>Parameters</title>
     <table>
       <tr><td><p>file</p></td><td><p>A <link xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</link>.</p></td></tr>
-      <tr><td><p>bson</p></td><td><p>A bson_t containing metadata for <code>file</code>.</p></td></tr>
+      <tr><td><p>bson</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing metadata for <code>file</code>.</p></td></tr>
     </table>
   </section>
 

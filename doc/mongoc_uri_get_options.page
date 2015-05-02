@@ -31,7 +31,7 @@ mongoc_uri_get_options (const mongoc_uri_t *uri);
 
   <section id="return">
     <title>Returns</title>
-    <p>A bson_t which should not be modified or freed.</p>
+    <p>A <code xref="bson:bson_t">bson_t</code> which should not be modified or freed.</p>
   </section>
 
 </page>

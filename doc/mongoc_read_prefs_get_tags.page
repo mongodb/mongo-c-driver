@@ -31,7 +31,7 @@ mongoc_read_prefs_get_tags (const mongoc_read_prefs_t *read_prefs);
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns a bson_t that should not be modified or freed.</p>
+    <p>Returns a <code xref="bson:bson_t">bson_t</code> that should not be modified or freed.</p>
   </section>
 
 </page>

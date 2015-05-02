@@ -24,9 +24,9 @@ mongoc_collection_stats (mongoc_collection_t *collection,
     <title>Parameters</title>
     <table>
       <tr><td><p>collection</p></td><td><p>A <link xref="mongoc_collection_t">mongoc_collection_t</link>.</p></td></tr>
-      <tr><td><p>options</p></td><td><p>An optional bson_t containing extra options to pass to the <code>collStats</code> command.</p></td></tr>
-      <tr><td><p>reply</p></td><td><p>An optional location for a bson_t to store the result.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <link xref="bson_error_t">bson_error_t</link> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>options</p></td><td><p>An optional <code xref="bson:bson_t">bson_t</code> containing extra options to pass to the <code>collStats</code> command.</p></td></tr>
+      <tr><td><p>reply</p></td><td><p>An optional location for a <code xref="bson:bson_t">bson_t</code> to store the result.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 

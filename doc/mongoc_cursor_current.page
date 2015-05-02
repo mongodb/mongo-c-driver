@@ -31,7 +31,7 @@ mongoc_cursor_current (const mongoc_cursor_t *cursor);
 
   <section id="return">
     <title>Returns</title>
-    <p>A bson_t that should not be modified or freed or NULL.</p>
+    <p>A <code xref="bson:bson_t">bson_t</code> that should not be modified or freed or NULL.</p>
   </section>
 
 </page>

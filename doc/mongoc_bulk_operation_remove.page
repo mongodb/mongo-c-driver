@@ -23,7 +23,7 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,
     <title>Parameters</title>
     <table>
       <tr><td><p>bulk</p></td><td><p>A <link xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</link>.</p></td></tr>
-      <tr><td><p>selector</p></td><td><p>A bson_t.</p></td></tr>
+      <tr><td><p>selector</p></td><td><p>A <code xref="bson:bson_t">bson_t</code>.</p></td></tr>
     </table>
   </section>
 

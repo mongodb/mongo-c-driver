@@ -30,7 +30,7 @@ mongoc_socket_sendv (mongoc_socket_t *sock,
       <tr><td><p>sock</p></td><td><p>A <link xref="mongoc_socket_t">mongoc_socket_t</link>.</p></td></tr>
       <tr><td><p>iov</p></td><td><p>A mongoc_iovec_t.</p></td></tr>
       <tr><td><p>iovcnt</p></td><td><p>A size_t containing the number of elements in iov.</p></td></tr>
-      <tr><td><p>expire_at</p></td><td><p>A int64_t with absolute timeout in monotonic time. The monotonic clock is in microseconds and can be fetched using bson_get_monotonic_time().</p></td></tr>
+      <tr><td><p>expire_at</p></td><td><p>A int64_t with absolute timeout in monotonic time. The monotonic clock is in microseconds and can be fetched using <code xref="bson:clock">bson_get_monotonic_time()</code>.</p></td></tr>
     </table>
   </section>
 

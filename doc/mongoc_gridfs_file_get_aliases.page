@@ -30,6 +30,6 @@ mongoc_gridfs_file_get_aliases (mongoc_gridfs_file_t *file);]]></code></synopsis
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns a <code>const bson_t *</code> that should not be modified or freed.</p>
+    <p>Returns a <code xref="bson:bson_t">const bson_t *</code> that should not be modified or freed.</p>
   </section>
 </page>

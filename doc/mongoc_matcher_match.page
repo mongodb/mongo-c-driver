@@ -26,7 +26,7 @@ mongoc_matcher_match (const mongoc_matcher_t *matcher,
     <title>Parameters</title>
     <table>
       <tr><td><p>matcher</p></td><td><p>A <link xref="mongoc_matcher_t">mongoc_matcher_t</link>.</p></td></tr>
-      <tr><td><p>query</p></td><td><p>A bson_t that contains the query.</p></td></tr>
+      <tr><td><p>query</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> that contains the query.</p></td></tr>
     </table>
   </section>
 
