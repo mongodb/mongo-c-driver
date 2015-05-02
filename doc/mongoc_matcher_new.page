@@ -19,7 +19,7 @@
 mongoc_matcher_new (const bson_t *query,
                     bson_error_t *error);
 ]]></code></synopsis>
-    <p>Create a new <link xref="mongoc_matcher_t">mongoc_matcher_t</link> using the query specification provided.</p>
+    <p>Create a new <code xref="mongoc_matcher_t">mongoc_matcher_t</code> using the query specification provided.</p>
   </section>
 
   <section id="parameters">
@@ -37,7 +37,7 @@ mongoc_matcher_new (const bson_t *query,
 
   <section id="return">
     <title>Returns</title>
-    <p>A newly allocated <link xref="mongoc_matcher_t">mongoc_matcher_t</link> that should be freed with <link xref="mongoc_matcher_destroy">mongoc_matcher_destroy()</link> when no longer in use. Upon failure, <code>NULL</code> is returned and <code>error</code> is set. This could happen if <code>query</code> contains an invalid query specification.</p>
+    <p>A newly allocated <code xref="mongoc_matcher_t">mongoc_matcher_t</code> that should be freed with <code xref="mongoc_matcher_destroy">mongoc_matcher_destroy()</code> when no longer in use. Upon failure, <code>NULL</code> is returned and <code>error</code> is set. This could happen if <code>query</code> contains an invalid query specification.</p>
   </section>
 
 </page>

@@ -25,19 +25,19 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>base_stream</p></td><td><p>A <link xref="mongoc_stream_t">mongoc_stream_t</link>.</p></td></tr>
-      <tr><td><p>opt</p></td><td><p>A <link xref="mongoc_ssl_opt_t">mongoc_ssl_opt_t</link>.</p></td></tr>
+      <tr><td><p>base_stream</p></td><td><p>A <code xref="mongoc_stream_t">mongoc_stream_t</code>.</p></td></tr>
+      <tr><td><p>opt</p></td><td><p>A <code xref="mongoc_ssl_opt_t">mongoc_ssl_opt_t</code>.</p></td></tr>
       <tr><td><p>client</p></td><td><p>1 for client, 0 for server TLS.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
-    <p>Creates a new <link xref="mongoc_stream_tls_t">mongoc_stream_tls_t</link> using the parameters supplied.</p>
+    <p>Creates a new <code xref="mongoc_stream_tls_t">mongoc_stream_tls_t</code> using the parameters supplied.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>A newly allocated <link xref="mongoc_stream_tls_t">mongoc_stream_tls_t</link>.</p>
+    <p>A newly allocated <code xref="mongoc_stream_tls_t">mongoc_stream_tls_t</code>.</p>
   </section>
 
 </page>

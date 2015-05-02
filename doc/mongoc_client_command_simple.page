@@ -23,7 +23,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
                               bson_t                    *reply,
                               bson_error_t              *error);
 ]]></code></synopsis>
-    <p>This is a simplified interface to <link xref="mongoc_client_command">mongoc_client_command()</link>. It returns the first document from the result cursor into <code>reply</code>.</p>
+    <p>This is a simplified interface to <code xref="mongoc_client_command">mongoc_client_command()</code>. It returns the first document from the result cursor into <code>reply</code>.</p>
     <note style="warning"><p><code>reply</code> is always set, and should be released with <code xref="bson:bson_destroy">bson_destroy()</code>.</p></note>
   </section>
 
@@ -31,10 +31,10 @@ mongoc_client_command_simple (mongoc_client_t           *client,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>client</p></td><td><p>A <link xref="mongoc_client_t">mongoc_client_t</link>.</p></td></tr>
+      <tr><td><p>client</p></td><td><p>A <code xref="mongoc_client_t">mongoc_client_t</code>.</p></td></tr>
       <tr><td><p>db_name</p></td><td><p>The name of the database to run the command on.</p></td></tr>
       <tr><td><p>command</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the command specification.</p></td></tr>
-      <tr><td><p>read_prefs</p></td><td><p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
       <tr><td><p>reply</p></td><td><p>A location for the resulting document.</p></td></tr>
       <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>

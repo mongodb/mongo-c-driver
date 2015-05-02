@@ -28,7 +28,7 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_t">mongoc_stream_t</link>.</p></td></tr>
+      <tr><td><p>stream</p></td><td><p>A <code xref="mongoc_stream_t">mongoc_stream_t</code>.</p></td></tr>
       <tr><td><p>level</p></td><td><p>The level to pass to <code>setsockopt()</code>.</p></td></tr>
       <tr><td><p>optname</p></td><td><p>The optname to pass to <code>setsockopt()</code>.</p></td></tr>
       <tr><td><p>optval</p></td><td><p>The optval to pass to <code>setsockopt()</code>.</p></td></tr>

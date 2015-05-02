@@ -20,7 +20,7 @@ mongoc_collection_get_last_error (const mongoc_collection_t *collection);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>collection</p></td><td><p>A <link xref="mongoc_collection_t">mongoc_collection_t</link>.</p></td></tr>
+      <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
     </table>
   </section>
 

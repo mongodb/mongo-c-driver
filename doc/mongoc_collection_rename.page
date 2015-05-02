@@ -24,7 +24,7 @@ mongoc_collection_rename (mongoc_collection_t *collection,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>collection</p></td><td><p>A <link xref="mongoc_collection_t">mongoc_collection_t</link>.</p></td></tr>
+      <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
       <tr><td><p>new_db</p></td><td><p>The name of the new database.</p></td></tr>
       <tr><td><p>new_name</p></td><td><p>The new name for the collection.</p></td></tr>
       <tr><td><p>drop_target_before_rename</p></td><td><p>If an existing collection matches the new name, drop it before the rename.</p></td></tr>

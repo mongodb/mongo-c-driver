@@ -26,7 +26,7 @@ mongoc_collection_keys_to_index_string (const bson_t *keys);
 
   <section id="description">
     <title>Description</title>
-    <p>This function shall returns the canonical stringification, as used in <link xref="mongoc_collection_create_index">mongoc_collection_create_index()</link> without an explicit name, of a given key specification.</p>
+    <p>This function shall returns the canonical stringification, as used in <code xref="mongoc_collection_create_index">mongoc_collection_create_index()</code> without an explicit name, of a given key specification.</p>
 
     <p>It is a programming error to call this function on a non-standard index, such one other than a straight index with ascending and descending.</p>
   </section>

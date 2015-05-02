@@ -24,7 +24,7 @@ mongoc_client_destroy (mongoc_client_t *client);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>client</p></td><td><p>A <link xref="mongoc_client_t">mongoc_client_t</link>.</p></td></tr>
+      <tr><td><p>client</p></td><td><p>A <code xref="mongoc_client_t">mongoc_client_t</code>.</p></td></tr>
     </table>
   </section>
 

@@ -20,7 +20,7 @@ mongoc_init (void);
   <section id="description">
     <title>Description</title>
     <p>This function should be called at the beginning of every program using the MongoDB C driver. It is responsible for initializing global state such as process counters, SSL, and threading primatives.</p>
-    <p>When your process has completed, you should also call <link xref="mongoc_cleanup">mongoc_cleanup</link>.</p>
+    <p>When your process has completed, you should also call <code xref="mongoc_cleanup">mongoc_cleanup</code>.</p>
   </section>
 
 </page>

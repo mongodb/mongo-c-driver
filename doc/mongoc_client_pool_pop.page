@@ -18,19 +18,19 @@
     <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_client_t *
 mongoc_client_pool_pop (mongoc_client_pool_t *pool);
 ]]></code></synopsis>
-    <p>Retrieve a <link xref="mongoc_client_t">mongoc_client_t</link> from the client pool, possibly blocking until one is available.</p>
+    <p>Retrieve a <code xref="mongoc_client_t">mongoc_client_t</code> from the client pool, possibly blocking until one is available.</p>
   </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>pool</p></td><td><p>A <link xref="mongoc_client_pool_t">mongoc_client_pool_t</link>.</p></td></tr>
+      <tr><td><p>pool</p></td><td><p>A <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>A <link xref="mongoc_client_t">mongoc_client_t</link>.</p>
+    <p>A <code xref="mongoc_client_t">mongoc_client_t</code>.</p>
   </section>
 
 </page>

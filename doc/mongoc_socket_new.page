@@ -35,7 +35,7 @@ mongoc_socket_new (int domain,
 
   <section id="return">
     <title>Returns</title>
-    <p>A new socket if successful, otherwise NULL and errno is set. The result should be freed with <link xref="mongoc_socket_destroy">mongoc_socket_destroy()</link> when no longer in use.</p>
+    <p>A new socket if successful, otherwise NULL and errno is set. The result should be freed with <code xref="mongoc_socket_destroy">mongoc_socket_destroy()</code> when no longer in use.</p>
   </section>
 
 </page>

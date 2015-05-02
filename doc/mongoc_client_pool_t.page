@@ -16,7 +16,7 @@
   <section id="description">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[typedef struct _mongoc_client_pool_t mongoc_client_pool_t]]></code></synopsis>
-    <p><code>mongoc_client_pool_t</code> is the basis for multi-threading in the MongoDB C driver. Since <link xref="mongoc_client_t">mongoc_client_t</link> structures are not thread-safe, this structure is used to retrieve a new <link xref="mongoc_client_t">mongoc_client_t</link> for a given thread. This structure <em>is thread-safe</em>.</p>
+    <p><code>mongoc_client_pool_t</code> is the basis for multi-threading in the MongoDB C driver. Since <code xref="mongoc_client_t">mongoc_client_t</code> structures are not thread-safe, this structure is used to retrieve a new <code xref="mongoc_client_t">mongoc_client_t</code> for a given thread. This structure <em>is thread-safe</em>.</p>
   </section>
 
   <section id="example">

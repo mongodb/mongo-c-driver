@@ -27,7 +27,7 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>collection</p></td><td><p>A <link xref="mongoc_collection_t">mongoc_collection_t</link>.</p></td></tr>
+      <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
       <tr><td><p>query</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the query to locate target document(s).</p></td></tr>
       <tr><td><p>sort</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the sort order for <code>query</code>.</p></td></tr>
       <tr><td><p>update</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing an update spec.</p></td></tr>

@@ -21,7 +21,7 @@ mongoc_socket_close (mongoc_socket_t *socket);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>socket</p></td><td><p>A <link xref="mongoc_socket_t">mongoc_socket_t</link>.</p></td></tr>
+      <tr><td><p>socket</p></td><td><p>A <code xref="mongoc_socket_t">mongoc_socket_t</code>.</p></td></tr>
     </table>
   </section>
 

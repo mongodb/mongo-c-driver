@@ -16,13 +16,13 @@
   <section id="description">
     <title>Synopsis</title>
     <screen><code mime="text/x-csrc"><![CDATA[typedef struct _mongoc_database_t mongoc_database_t;]]></code></screen>
-    <p><code>mongoc_database_t</code> provides access to a MongoDB database. This handle is useful for actions a particular database object. It <em>is not</em> a container for <link xref="mongoc_collection_t">mongoc_collection_t</link> structures.</p>
-    <p>Read preferences and write concerns are inherited from the parent client. They can be overridden with <link xref="mongoc_database_set_read_prefs">mongoc_database_set_read_prefs()</link> and <link xref="mongoc_database_set_write_concern">mongoc_database_set_write_concern()</link>.</p>
-    <note style="warning"><p>It is an error to call <link
-    xref="mongoc_database_destroy">mongoc_database_destroy()</link> on a
-    database that has operations pending. It is required that you release <link
-    xref="mongoc_cursor_t">mongoc_cursor_t</link> structures before calling
-    <link xref="mongoc_database_destroy">mongoc_database_destroy</link>.
+    <p><code>mongoc_database_t</code> provides access to a MongoDB database. This handle is useful for actions a particular database object. It <em>is not</em> a container for <code xref="mongoc_collection_t">mongoc_collection_t</code> structures.</p>
+    <p>Read preferences and write concerns are inherited from the parent client. They can be overridden with <code xref="mongoc_database_set_read_prefs">mongoc_database_set_read_prefs()</code> and <code xref="mongoc_database_set_write_concern">mongoc_database_set_write_concern()</code>.</p>
+    <note style="warning"><p>It is an error to call <code
+    xref="mongoc_database_destroy">mongoc_database_destroy()</code> on a
+    database that has operations pending. It is required that you release <code
+    xref="mongoc_cursor_t">mongoc_cursor_t</code> structures before calling
+    <code xref="mongoc_database_destroy">mongoc_database_destroy</code>.
     </p></note>
   </section>
 

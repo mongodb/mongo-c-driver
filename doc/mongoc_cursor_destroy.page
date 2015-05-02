@@ -20,13 +20,13 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>cursor</p></td><td><p>A <link xref="mongoc_cursor_t">mongoc_cursor_t</link>.</p></td></tr>
+      <tr><td><p>cursor</p></td><td><p>A <code xref="mongoc_cursor_t">mongoc_cursor_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
     <title>Description</title>
-    <p>Frees a <link xref="mongoc_cursor_t">mongoc_cursor_t</link> and releases all associated resources. If a server-side cursor has been allocated, it will be released as well.</p>
+    <p>Frees a <code xref="mongoc_cursor_t">mongoc_cursor_t</code> and releases all associated resources. If a server-side cursor has been allocated, it will be released as well.</p>
   </section>
 
 </page>

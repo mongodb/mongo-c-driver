@@ -21,13 +21,13 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
                                    const bson_t            *document,
                                    bool                     upsert);
 ]]></code></synopsis>
-    <p>Replace a single document as part of a bulk operation. This only queues the operation. To execute it, call <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link>.</p>
+    <p>Replace a single document as part of a bulk operation. This only queues the operation. To execute it, call <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</code>.</p>
   </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>bulk</p></td><td><p>A <link xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</link>.</p></td></tr>
+      <tr><td><p>bulk</p></td><td><p>A <code xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</code>.</p></td></tr>
       <tr><td><p>selector</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the selector to query.</p></td></tr>
       <tr><td><p>document</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the replacement document.</p></td></tr>
       <tr><td><p>upsert</p></td><td><p><code>true</code> if this should be an <code>upsert</code>.</p></td></tr>
@@ -37,7 +37,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
 
   <section id="errors">
     <title>Errors</title>
-    <p>Errors are propagated via <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link>.</p>
+    <p>Errors are propagated via <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</code>.</p>
   </section>
 
 </page>
