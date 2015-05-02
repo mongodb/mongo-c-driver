@@ -28,7 +28,7 @@ mongoc_stream_writev (mongoc_stream_t *stream,
     <title>Parameters</title>
     <table>
       <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_t">mongoc_stream_t</link>.</p></td></tr>
-      <tr><td><p>iov</p></td><td><p>A vector of <link href="mongoc_iovect_t">mongoc_iovec_t</link>.</p></td></tr>
+      <tr><td><p>iov</p></td><td><p>A vector of <link href="mongoc_iovec_t">mongoc_iovec_t</link>.</p></td></tr>
       <tr><td><p>iovcnt</p></td><td><p>The number of items in <code>iov</code>.</p></td></tr>
       <tr><td><p>timeout_msec</p></td><td><p>The number of milliseconds to block before indicating failure, or 0 for non-blocking. Negative values indicate the default timeout.</p></td></tr>
     </table>
@@ -36,7 +36,7 @@ mongoc_stream_writev (mongoc_stream_t *stream,
 
   <section id="description">
     <p>The <code>mongoc_stream_writev()</code> function shall perform a write
-to a <link xref=">mongoc_stream_t">mongoc_stream_t</link>. It's modeled on the
+to a <link xref="mongoc_stream_t">mongoc_stream_t</link>. It's modeled on the
 API and semantics of <code>writev()</code>, though the parameters map only
 loosely.</p>
   </section>

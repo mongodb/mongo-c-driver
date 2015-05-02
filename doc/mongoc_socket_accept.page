@@ -36,7 +36,7 @@ mongoc_socket_accept (mongoc_socket_t *sock,
 
   <section id="return">
     <title>Returns</title>
-    <p>NULL upon failure to accept or timeout. A newly allocated <code>mongoc_socket_t</code> that should be released with <link xref="mongoco_socket_destroy">mongoc_socket_destroy()</link> on success.</p>
+    <p>NULL upon failure to accept or timeout. A newly allocated <code>mongoc_socket_t</code> that should be released with <link xref="mongoc_socket_destroy">mongoc_socket_destroy()</link> on success.</p>
   </section>
 
 
