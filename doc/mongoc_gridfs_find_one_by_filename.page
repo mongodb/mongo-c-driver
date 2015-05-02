@@ -29,7 +29,7 @@ mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
 
   <section id="description">
     <title>Description</title>
-    <p>Finds the first file matching the filename specified. If no file could be found, NULL is returned and error is set.</p>
+    <p>Finds the first file matching the filename specified. If no file could be found, <code>NULL</code> is returned and error is set.</p>
   </section>
 
   <section id="errors">
@@ -39,7 +39,7 @@ mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns a newly allocated <code xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</code> if successful, otherwise NULL and error is set. You must free the resulting file with <code xref="mongoc_gridfs_file_destroy">mongoc_gridfs_file_destroy()</code> when no longer in use.</p>
+    <p>Returns a newly allocated <code xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</code> if successful, otherwise <code>NULL</code> and error is set. You must free the resulting file with <code xref="mongoc_gridfs_file_destroy">mongoc_gridfs_file_destroy()</code> when no longer in use.</p>
   </section>
 
 </page>

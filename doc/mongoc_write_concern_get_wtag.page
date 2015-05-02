@@ -26,12 +26,12 @@ mongoc_write_concern_get_wtag (const mongoc_write_concern_t *write_concern);
 
   <section id="description">
     <title>Description</title>
-    <p>A string containing the wtag setting if it has been set. Otherwise returns NULL.</p>
+    <p>A string containing the wtag setting if it has been set. Otherwise returns <code>NULL</code>.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns a string which should not be modified or freed, or NULL.</p>
+    <p>Returns a string which should not be modified or freed, or <code>NULL</code>.</p>
   </section>
 
 </page>
