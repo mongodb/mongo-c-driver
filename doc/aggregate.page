@@ -6,12 +6,12 @@
 
   <p>This document provides a number of practical examples that display the capabilities of the aggregation framework.</p>
 
-  <p>The <link href="http://docs.mongodb.org/manual/tutorial/aggregation-examples/#aggregations-using-the-zip-code-data-set">Aggregations using the Zip Codes Data Set</link> examples uses a publicly available data set of all zipcodes and populations in the United States. These data are available at: <link href="http://media.mongodb.org/zips.json">zips.json</link>.</p>
+  <p>The <link href="https://docs.mongodb.org/manual/tutorial/aggregation-zip-code-data-set/">Aggregations using the Zip Codes Data Set</link> examples uses a publicly available data set of all zipcodes and populations in the United States. These data are available at: <link href="http://media.mongodb.org/zips.json">zips.json</link>.</p>
 
   <section id="requirements">
     <title>Requirements</title>
 
-    <p><link href="https://mongodb.org">MongoDB</link>, version 2.2.0 or later. <link href="https://github.com/mongodb/mongo-c-driver">MongoDB C driver</link>, version 0.96.0 or later.</p>
+    <p><link href="https://www.mongodb.org">MongoDB</link>, version 2.2.0 or later. <link href="https://github.com/mongodb/mongo-c-driver">MongoDB C driver</link>, version 0.96.0 or later.</p>
     <p>Let's check if everything is installed.</p>
     <p>Use the following command to load zips.json data set into mongod instance:</p>
 
