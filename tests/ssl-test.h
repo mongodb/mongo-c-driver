@@ -28,6 +28,7 @@ typedef struct ssl_test_data
    mongoc_ssl_opt_t    *client;
    mongoc_ssl_opt_t    *server;
    ssl_test_behavior_t  behavior;
+   int64_t              handshake_stall_ms;
    const char          *host;
    unsigned short       server_port;
    mongoc_cond_t        cond;
