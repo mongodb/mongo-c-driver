@@ -48,7 +48,7 @@ extern void test_write_concern_install     (TestSuite *suite);
 #ifdef MONGOC_ENABLE_SSL
 extern void test_x509_install              (TestSuite *suite);
 extern void test_stream_tls_install        (TestSuite *suite);
-extern void test_stream_tls_hangup_install (TestSuite *suite);
+extern void test_stream_tls_error_install  (TestSuite *suite);
 #endif
 
 
@@ -427,7 +427,7 @@ main (int   argc,
 #ifdef MONGOC_ENABLE_SSL
    test_x509_install (&suite);
    test_stream_tls_install (&suite);
-   test_stream_tls_hangup_install (&suite);
+   test_stream_tls_error_install (&suite);
 #endif
 
    ret = TestSuite_Run (&suite);

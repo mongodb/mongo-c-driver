@@ -2,6 +2,12 @@
 
 #include <mongoc-thread-private.h>
 
+typedef enum ssl_test_behavior {
+   SSL_TEST_BEHAVIOR_NORMAL,
+   SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE,
+   SSL_TEST_BEHAVIOR_STALL_BEFORE_HANDSHAKE,
+} ssl_test_behavior_t;
+
 typedef enum ssl_test_state {
    SSL_TEST_CRASH,
    SSL_TEST_SUCCESS,
@@ -19,14 +25,15 @@ typedef struct ssl_test_result {
 
 typedef struct ssl_test_data
 {
-   mongoc_ssl_opt_t  *client;
-   mongoc_ssl_opt_t  *server;
-   const char        *host;
-   unsigned short     server_port;
-   mongoc_cond_t      cond;
-   mongoc_mutex_t     cond_mutex;
-   ssl_test_result_t *client_result;
-   ssl_test_result_t *server_result;
+   mongoc_ssl_opt_t    *client;
+   mongoc_ssl_opt_t    *server;
+   ssl_test_behavior_t  behavior;
+   const char          *host;
+   unsigned short       server_port;
+   mongoc_cond_t        cond;
+   mongoc_mutex_t       cond_mutex;
+   ssl_test_result_t   *client_result;
+   ssl_test_result_t   *server_result;
 } ssl_test_data_t;
 
 void

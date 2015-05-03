@@ -18,7 +18,7 @@
  *    7. hangs up
  */
 static void *
-ssl_hangup_server (void *ptr)
+ssl_error_server (void *ptr)
 {
    ssl_test_data_t *data = (ssl_test_data_t *)ptr;
 
@@ -69,15 +69,22 @@ ssl_hangup_server (void *ptr)
    ssl_stream = mongoc_stream_tls_new (sock_stream, data->server, 0);
    assert (ssl_stream);
 
-   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
-   assert (r);
+   if (data->behavior != SSL_TEST_BEHAVIOR_STALL_BEFORE_HANDSHAKE) {
+      r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
+      assert (r);
 
-   r = mongoc_stream_readv (ssl_stream, &iov, 1, 1, TIMEOUT);
-   assert (r == 1);
+      r = mongoc_stream_readv (ssl_stream, &iov, 1, 1, TIMEOUT);
+      assert (r == 1);
 
-   mongoc_stream_close (ssl_stream);
-   mongoc_stream_destroy (ssl_stream);
-   mongoc_socket_destroy (listen_sock);
+      /* this test function only implements two behaviors so far */
+      ASSERT_CMPINT (data->behavior,
+                     ==,
+                     SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE);
+
+      mongoc_stream_close (ssl_stream);
+      mongoc_stream_destroy (ssl_stream);
+      mongoc_socket_destroy (listen_sock);
+   }
 
    data->server_result->result = SSL_TEST_SUCCESS;
 
@@ -173,6 +180,7 @@ test_mongoc_tls_hangup (void)
 
    data.server = &sopt;
    data.client = &copt;
+   data.behavior = SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE;
    data.server_result = &sr;
    data.client_result = &cr;
    data.host = "localhost";
@@ -180,7 +188,7 @@ test_mongoc_tls_hangup (void)
    mongoc_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = mongoc_thread_create (threads, &ssl_hangup_server, &data);
+   r = mongoc_thread_create (threads, &ssl_error_server, &data);
    assert (r == 0);
 
    r = mongoc_thread_create (threads + 1, &ssl_hangup_client, &data);
@@ -199,7 +207,7 @@ test_mongoc_tls_hangup (void)
 }
 
 void
-test_stream_tls_hangup_install (TestSuite *suite)
+test_stream_tls_error_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 }
