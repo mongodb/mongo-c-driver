@@ -91,8 +91,8 @@ ssl_hangup_server (void *ptr)
  *    2. waits on a condvar until the server is up
  *    3. connects to the server's port
  *    4. writes a byte
- *    6. confirms that the server hangs up promptly
- *    8. shuts down
+ *    5. confirms that the server hangs up promptly
+ *    6. shuts down
  */
 static void *
 ssl_hangup_client (void *ptr)
