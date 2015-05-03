@@ -283,6 +283,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
    const bson_t *options;
    bson_iter_t iter;
    const char *mechanism;
+   int32_t connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
 #endif
 
    bson_return_val_if_fail (uri, NULL);
@@ -336,7 +337,12 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
             return NULL;
          }
 
-         if (!mongoc_stream_tls_do_handshake (base_stream, -1) ||
+         if (bson_iter_init_find_case (&iter, options, "connecttimeoutms") &&
+             BSON_ITER_HOLDS_INT32 (&iter)) {
+            connecttimeoutms = bson_iter_int32 (&iter);
+         }
+
+         if (!mongoc_stream_tls_do_handshake (base_stream, connecttimeoutms) ||
              !mongoc_stream_tls_check_cert (base_stream, host->host)) {
             bson_set_error (error,
                             MONGOC_ERROR_STREAM,
