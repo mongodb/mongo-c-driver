@@ -349,7 +349,6 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
                             MONGOC_ERROR_STREAM_SOCKET,
                             "Failed to handshake and validate TLS certificate.");
             mongoc_stream_destroy (base_stream);
-            base_stream = NULL;
             return NULL;
          }
       }
