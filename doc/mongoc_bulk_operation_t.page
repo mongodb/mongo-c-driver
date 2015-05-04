@@ -18,7 +18,7 @@
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[typedef struct _mongoc_bulk_operation_t mongoc_bulk_operation_t;]]></code></synopsis>
     <p>The opaque type <code>mongoc_bulk_operation_t</code> provides an abstraction for submitting multiple write operations as a single batch.</p>
-    <p>After adding all of the write operations to the <code>mongoc_bulk_operation_t</code>, call <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link> to execute the operation.</p>
+    <p>After adding all of the write operations to the <code>mongoc_bulk_operation_t</code>, call <link xref="mongodec_bulk_operation_execute">mongoc_bulk_operation_execute()</link> to execute the operation.</p>
     <note style="warning"><p>It is only valid to call <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link> once. The <code>mongoc_bulk_operation_t</code> must be destroyed afterwards.</p></note>
   </section>
 

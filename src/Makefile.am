@@ -35,7 +35,10 @@ libmongoc_1_0_la_CPPFLAGS = $(MONGOC_CPPFLAGS_SHARED)
 
 
 MONGOC_LDFLAGS_SHARED = $(OPTIMIZE_LDFLAGS)
-libmongoc_priv_la_LDFLAGS = $(MONGOC_LDFLAGS_SHARED)
+libmongoc_priv_la_LDFLAGS = \
+	$(MONGOC_LDFLAGS_SHARED) \
+	-no-undefined
+
 libmongoc_1_0_la_LDFLAGS = \
 	$(MONGOC_LDFLAGS_SHARED) \
 	$(MONGOC_LT_LDFLAGS) \

@@ -17,7 +17,7 @@
 
     <p>
       The following code example creates a new <code>mongoc_client_t</code> that we will use to communicate with MongoDB.
-      The <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link> component is quite comprehensive.
+      See the <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link> page for more information on connecting to MongoDB.
     </p>
 
     <p>

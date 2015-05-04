@@ -81,7 +81,7 @@ static void *gCounterFallback = NULL;
  *
  * Returns: true if SHM is to be used.
  */
-#ifdef BSON_OS_UNIX
+#if defined(BSON_OS_UNIX) && defined(MONGOC_ENABLE_SHM_COUNTERS)
 static bool
 mongoc_counters_use_shm (void)
 {
@@ -131,7 +131,7 @@ mongoc_counters_destroy (void)
    if (gCounterFallback) {
       bson_free (gCounterFallback);
       gCounterFallback = NULL;
-#ifndef _WIN32
+#if defined(BSON_OS_UNIX) && defined(MONGOC_ENABLE_SHM_COUNTERS)
    } else {
       char name [32];
       int pid;
@@ -156,7 +156,7 @@ mongoc_counters_destroy (void)
 static void *
 mongoc_counters_alloc (size_t size)
 {
-#ifdef BSON_OS_UNIX
+#if defined(BSON_OS_UNIX) && defined(MONGOC_ENABLE_SHM_COUNTERS)
    void *mem;
    char name[32];
    int pid;

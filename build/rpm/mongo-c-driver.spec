@@ -1,9 +1,9 @@
 # norootforbuild
 
 %define DriverName    mongo-c-driver
-%define DriverVersion 1.1.1
+%define DriverVersion 1.1.5
 %define BsonName      libbson
-%define BsonVersion   1.1.1
+%define BsonVersion   1.1.5
 
 Name:           %{DriverName}
 Version:        %{DriverVersion}
@@ -117,6 +117,18 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %changelog -n %{DriverName}
+* Wed Apr 1 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.5-1
+- Post-release bump for 1.1.4
+
+* Wed Apr 1 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.4-1
+- Release 1.1.4.
+
+* Tue Mar 10 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.3-1
+- Post-release bump for 1.1.2
+
+* Tue Mar 10 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.2-1
+- Release 1.1.2.
+
 * Wed Jan 28 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.1-1
 - Post-release bump for 1.1.0
 
@@ -167,6 +179,18 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %changelog -n %{BsonName}
+* Wed Apr 1 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.5-1
+- Post-release bump for 1.1.4
+
+* Wed Apr 1 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.4-1
+- Release 1.1.4.
+
+* Tue Mar 10 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.3-1
+- Post-release bump for 1.1.2
+
+* Tue Mar 10 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.2-1
+- Release 1.1.2.
+
 * Wed Jan 28 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.1-1
 - Post-release bump for 1.1.0
 

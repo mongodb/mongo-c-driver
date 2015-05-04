@@ -19,7 +19,8 @@
 mongoc_database_set_write_concern (mongoc_database_t            *database,
                                    const mongoc_write_concern_t *write_concern);
 ]]></code></synopsis>
-    <p>This function sets the default write concern to use on operations performed with <code>database</code>. Collections created with <link xref="mongoc_database_get_collection">mongoc_database_get_collection()</link> after this call will inherit this write concern.</p>
+    <p>This function sets the write concern to use on operations performed with <code>database</code>. Collections created with <link xref="mongoc_database_get_collection">mongoc_database_get_collection()</link> after this call will inherit this write concern.</p>
+    <p>The default write concern is MONGOC_WRITE_CONCERN_W_DEFAULT: the driver blocks awaiting basic acknowledgment of write operations from MongoDB. This is the correct write concern for the great majority of applications.</p>
   </section>
 
   <section id="parameters">

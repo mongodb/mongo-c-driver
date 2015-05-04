@@ -48,7 +48,9 @@ mongoc_write_concern_new (void)
    mongoc_write_concern_t *write_concern;
 
    write_concern = bson_malloc0(sizeof *write_concern);
-   write_concern->w = -2;
+   write_concern->w = MONGOC_WRITE_CONCERN_W_DEFAULT;
+   write_concern->fsync_ = MONGOC_WRITE_CONCERN_FSYNC_DEFAULT;
+   write_concern->journal = MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT;
 
    return write_concern;
 }
@@ -98,7 +100,7 @@ bool
 mongoc_write_concern_get_fsync (const mongoc_write_concern_t *write_concern)
 {
    bson_return_val_if_fail(write_concern, false);
-   return write_concern->fsync_;
+   return (write_concern->fsync_ == true);
 }
 
 
@@ -117,7 +119,7 @@ mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern,
    bson_return_if_fail(write_concern);
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
-      write_concern->fsync_ = fsync_;
+      write_concern->fsync_ = !!fsync_;
    }
 }
 
@@ -126,7 +128,7 @@ bool
 mongoc_write_concern_get_journal (const mongoc_write_concern_t *write_concern)
 {
    bson_return_val_if_fail(write_concern, false);
-   return write_concern->journal;
+   return (write_concern->journal == true);
 }
 
 
@@ -145,7 +147,7 @@ mongoc_write_concern_set_journal (mongoc_write_concern_t *write_concern,
    bson_return_if_fail(write_concern);
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
-      write_concern->journal = journal;
+      write_concern->journal = !!journal;
    }
 }
 
@@ -214,7 +216,7 @@ bool
 mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern)
 {
    bson_return_val_if_fail(write_concern, false);
-   return (write_concern->w == -3);
+   return (write_concern->w == MONGOC_WRITE_CONCERN_W_MAJORITY);
 }
 
 
@@ -350,12 +352,12 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
       BSON_APPEND_INT32 (compiled, "w", write_concern->w);
    }
 
-   if (write_concern->fsync_) {
-      bson_append_bool(compiled, "fsync", 5, true);
+   if (write_concern->fsync_ != MONGOC_WRITE_CONCERN_FSYNC_DEFAULT) {
+      bson_append_bool(compiled, "fsync", 5, !!write_concern->fsync_);
    }
 
-   if (write_concern->journal) {
-      bson_append_bool(compiled, "j", 1, true);
+   if (write_concern->journal != MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT) {
+      bson_append_bool(compiled, "j", 1, !!write_concern->journal);
    }
 
    if (write_concern->wtimeout) {
@@ -380,7 +382,38 @@ bool
 _mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern)
 {
    if (write_concern) {
-      return ((write_concern->w != 0) && (write_concern->w != -1));
+      return (((write_concern->w != MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED) &&
+               (write_concern->w != MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) ||
+              mongoc_write_concern_get_fsync(write_concern) ||
+              mongoc_write_concern_get_journal(write_concern));
    }
    return false;
+}
+
+
+/**
+ * _mongoc_write_concern_is_valid:
+ * @write_concern: (in): A mongoc_write_concern_t.
+ *
+ * Checks to see if @write_concern is valid and does not contain conflicting
+ * options.
+ *
+ * Returns: true if the write concern is valid; otherwise false.
+ */
+bool
+_mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
+{
+   bson_return_val_if_fail(write_concern, false);
+
+   /*
+    * Journal or fsync should require acknowledgement.
+    */
+   if ((mongoc_write_concern_get_fsync(write_concern) ||
+        mongoc_write_concern_get_journal(write_concern)) &&
+       (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
+        write_concern->w == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) {
+      return false;
+   }
+
+   return true;
 }

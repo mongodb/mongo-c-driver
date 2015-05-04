@@ -50,6 +50,7 @@ mongoc_bulk_operation_t *_mongoc_bulk_operation_new (mongoc_client_t            
                                                      bool                          ordered,
                                                      const mongoc_write_concern_t *write_concern);
 
+const mongoc_write_concern_t *mongoc_bulk_operation_get_write_concern (const mongoc_bulk_operation_t *bulk);
 
 BSON_END_DECLS
 

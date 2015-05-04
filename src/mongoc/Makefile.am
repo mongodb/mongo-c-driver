@@ -24,6 +24,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-bulk-operation-private.h \
 	src/mongoc/mongoc-bulk-operation.h \
 	src/mongoc/mongoc-client-pool.h \
+	src/mongoc/mongoc-client-pool-private.h \
 	src/mongoc/mongoc-client-private.h \
 	src/mongoc/mongoc-client.h \
 	src/mongoc/mongoc-cluster-private.h \
@@ -76,6 +77,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-thread-private.h \
 	src/mongoc/mongoc-trace.h \
 	src/mongoc/mongoc-uri.h \
+	src/mongoc/mongoc-uri-private.h \
 	src/mongoc/mongoc-util-private.h \
 	src/mongoc/mongoc-version.h \
 	src/mongoc/mongoc-write-command-private.h \

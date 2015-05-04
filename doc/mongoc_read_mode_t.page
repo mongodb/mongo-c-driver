@@ -24,7 +24,8 @@
 
   <section id="description">
     <title>Description</title>
-    <p>This enum describes how reads should be dispatched. Please see the MongoDB website for a description of <link href="http://docs.mongodb.org/manual/core/read-preference/">Read Preferences</link>.</p>
+    <p>This enum describes how reads should be dispatched. The default is MONGOC_READ_PRIMARY.</p>
+	<p>Please see the MongoDB website for a description of <link href="http://docs.mongodb.org/manual/core/read-preference/">Read Preferences</link>.</p>
   </section>
 
 </page>

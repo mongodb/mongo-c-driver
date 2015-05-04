@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2015 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
+#ifndef MONGOC_CLIENT_POOL_PRIVATE_H
+#define MONGOC_CLIENT_POOL_PRIVATE_H
 
-#ifndef TEST_LIBMONGOC_H
-#define TEST_LIBMONGOC_H
-
-char *gen_collection_name (const char *prefix);
-void suppress_one_message (void);
-char *test_framework_get_host (void);
-bool test_framework_get_ssl (void);
-char *test_framework_get_uri_str (const char *uri_str);
-mongoc_client_t *test_framework_client_new (const char *uri_str);
+#if !defined (MONGOC_I_AM_A_DRIVER) && !defined (MONGOC_COMPILATION)
+#error "Only <mongoc.h> can be included directly."
 #endif
+
+#include <bson.h>
+
+#include "mongoc-client-pool.h"
+
+BSON_BEGIN_DECLS
+
+size_t 				  mongoc_client_pool_get_size(mongoc_client_pool_t *pool);
+
+BSON_END_DECLS
+
+
+#endif /* MONGOC_CLIENT_POOL_PRIVATE_H */

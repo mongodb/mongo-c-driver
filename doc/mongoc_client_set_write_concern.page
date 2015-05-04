@@ -15,7 +15,8 @@
     <synopsis><code mime="text/x-csrc"><![CDATA[void
 mongoc_client_set_write_concern (mongoc_client_t              *client,
                                  const mongoc_write_concern_t *write_concern);]]></code></synopsis>
-    <p>Sets the default write concern for the client. This only affects future operations, collections, and databases inheriting from <code>client</code>.</p>
+    <p>Sets the write concern for the client. This only affects future operations, collections, and databases inheriting from <code>client</code>.</p>
+    <p>The default write concern is MONGOC_WRITE_CONCERN_W_DEFAULT: the driver blocks awaiting basic acknowledgment of write operations from MongoDB. This is the correct write concern for the great majority of applications.</p>
   </section>
 
   <section id="parameters">

@@ -93,7 +93,7 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    bson_return_val_if_fail (host, NULL);
 
    if ((options = mongoc_uri_get_options (uri)) &&
-       bson_iter_init_find (&iter, options, "connecttimeoutms") &&
+       bson_iter_init_find_case (&iter, options, "connecttimeoutms") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
       if (!(connecttimeoutms = bson_iter_int32(&iter))) {
          connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
@@ -443,12 +443,10 @@ _mongoc_client_sendv (mongoc_client_t              *client,
 
    switch (client->cluster.state) {
    case MONGOC_CLUSTER_STATE_BORN:
-      return _mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint,
-                                   write_concern, read_prefs, error);
    case MONGOC_CLUSTER_STATE_HEALTHY:
    case MONGOC_CLUSTER_STATE_UNHEALTHY:
-      return _mongoc_cluster_try_sendv(&client->cluster, rpcs, rpcs_len, hint,
-                                       write_concern, read_prefs, error);
+      return _mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len, hint,
+                                   write_concern, read_prefs, error);
    case MONGOC_CLUSTER_STATE_DEAD:
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
@@ -978,16 +976,17 @@ mongoc_client_get_collection (mongoc_client_t *client,
  *       This function returns a newly allocated collection structure.
  *
  *       @db should be the name of the database, such as "test".
- *       @collection should be the name of the collection such as "test".
  *
- *       The above would result in the namespace "test.test".
+ *       @prefix optional prefix for GridFS collection names, or NULL. Default
+ *       is "fs", thus the default collection names for GridFS are "fs.files"
+ *       and "fs.chunks".
  *
  *       You should free this structure when you are done with it using
  *       mongoc_collection_destroy().
  *
  * Returns:
- *       A newly allocated mongoc_collection_t that should be freed with
- *       mongoc_collection_destroy().
+ *       A newly allocated mongoc_gridfs_t that should be freed with
+ *       mongoc_gridfs_destroy().
  *
  * Side effects:
  *       None.
@@ -1294,7 +1293,6 @@ mongoc_client_get_database_names (mongoc_client_t *client,
 {
    bson_iter_t iter;
    const char *name;
-   bson_t cmd = BSON_INITIALIZER;
    char **ret = NULL;
    int i = 0;
    mongoc_cursor_t *cursor;
@@ -1320,7 +1318,7 @@ mongoc_client_get_database_names (mongoc_client_t *client,
       ret = bson_malloc0 (sizeof (void*));
    }
 
-   bson_destroy (&cmd);
+   mongoc_cursor_destroy (cursor);
 
    return ret;
 }

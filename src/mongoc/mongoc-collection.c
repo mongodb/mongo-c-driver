@@ -1237,6 +1237,10 @@ mongoc_collection_update (mongoc_collection_t          *collection,
 
    bson_clear (&collection->gle);
 
+   if (!write_concern) {
+      write_concern = collection->write_concern;
+   }
+
    if (!((uint32_t)flags & MONGOC_UPDATE_NO_VALIDATE) &&
        bson_iter_init (&iter, update) &&
        bson_iter_next (&iter) &&
@@ -1798,6 +1802,10 @@ mongoc_collection_create_bulk_operation (
       const mongoc_write_concern_t *write_concern)
 {
    bson_return_val_if_fail (collection, NULL);
+
+   if (!write_concern) {
+      write_concern = collection->write_concern;
+   }
 
    /*
     * TODO: where should we discover if we can do new or old style bulk ops?

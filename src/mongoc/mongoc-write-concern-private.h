@@ -27,10 +27,14 @@
 BSON_BEGIN_DECLS
 
 
+#define MONGOC_WRITE_CONCERN_FSYNC_DEFAULT   -1
+#define MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT -1
+
+
 struct _mongoc_write_concern_t
 {
-   bool      fsync_;
-   bool      journal;
+   int8_t    fsync_;
+   int8_t    journal;
    int32_t   w;
    int32_t   wtimeout;
    char     *wtag;
@@ -43,6 +47,7 @@ struct _mongoc_write_concern_t
 const bson_t *_mongoc_write_concern_get_gle   (mongoc_write_concern_t       *write_cocnern);
 const bson_t *_mongoc_write_concern_get_bson  (mongoc_write_concern_t       *write_concern);
 bool          _mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern);
+bool          _mongoc_write_concern_is_valid  (const mongoc_write_concern_t *write_concern);
 
 BSON_END_DECLS
 

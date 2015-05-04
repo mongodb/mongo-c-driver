@@ -29,6 +29,8 @@ mongoc_collection_set_read_prefs (mongoc_collection_t       *collection,
   <section id="description">
     <title>Description</title>
     <p>Sets the default read preferences to use for operations on <code>collection</code> not specifying a read preference.</p>
+    <p>The global default is MONGOC_READ_PRIMARY: if the client is connected to a replica set it reads from the primary, otherwise it reads from the current MongoDB server.</p>
+	<p>Please see the MongoDB website for a description of <link href="http://docs.mongodb.org/manual/core/read-preference/">Read Preferences</link>.</p>
   </section>
 
 </page>

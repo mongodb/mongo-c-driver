@@ -3,13 +3,13 @@
 
 #include "mongoc-collection-private.h"
 #include "mongoc-write-command-private.h"
+#include "mongoc-write-concern.h"
+#include "mongoc-write-concern-private.h"
 
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
-
-static char *gTestUri;
 
 
 static mongoc_collection_t *
@@ -41,7 +41,7 @@ test_split_insert (void)
    int i;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    collection = get_test_collection (client, "test_split_insert");
@@ -87,17 +87,59 @@ test_split_insert (void)
 
 
 static void
-cleanup_globals (void)
+test_invalid_write_concern (void)
 {
-   bson_free (gTestUri);
+   mongoc_write_command_t command;
+   mongoc_write_result_t result;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_write_concern_t *write_concern;
+   bson_t **docs;
+   bson_t reply = BSON_INITIALIZER;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new (NULL);
+   assert(client);
+
+   collection = get_test_collection(client, "test_invalid_write_concern");
+   assert(collection);
+
+   write_concern = mongoc_write_concern_new();
+   assert(write_concern);
+   mongoc_write_concern_set_w(write_concern, 0);
+   mongoc_write_concern_set_journal(write_concern, true);
+   assert(!_mongoc_write_concern_is_valid(write_concern));
+
+   docs = bson_malloc(sizeof(bson_t*));
+   docs[0] = BCON_NEW("_id", BCON_INT32(0));
+
+   _mongoc_write_command_init_insert(&command, (const bson_t * const *)docs, 1, true, true);
+   _mongoc_write_result_init (&result);
+
+   _mongoc_write_command_execute (&command, client, 0, collection->db,
+                                  collection->collection, write_concern, &result);
+
+   r = _mongoc_write_result_complete (&result, &reply, &error);
+
+   assert(!r);
+   assert(error.domain = MONGOC_ERROR_COMMAND);
+   assert(error.code = MONGOC_ERROR_COMMAND_INVALID_ARG);
+
+   _mongoc_write_command_destroy (&command);
+   _mongoc_write_result_destroy (&result);
+
+   bson_destroy(docs[0]);
+   bson_free(docs);
+
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+   mongoc_write_concern_destroy(write_concern);
 }
 
 void
 test_write_command_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
-
    TestSuite_Add (suite, "/WriteCommand/split_insert", test_split_insert);
-
-   atexit (cleanup_globals);
+   TestSuite_Add (suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
 }

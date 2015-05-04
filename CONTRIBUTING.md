@@ -95,6 +95,16 @@ typedef enum
 } my_flags_t;
 ```
 
+### Adding a new symbol
+
+This should be done rarely but there are several things that you need to do
+when adding a new symbol.
+
+ - Add the symbol to `src/libmongoc.symbols`
+ - Add the symbol to `build/autotools/versions.ldscript`
+ - Add the symbol to `build/cmake/libmongoc.def`
+ - Add the symbol to `build/cmake/libmongoc-ssl.def`
+ - Add documentation for the new symbol in `doc/mongoc_your_new_symbol_name.page`
 
 ### Documentation
 
@@ -109,6 +119,13 @@ You should always run `make test` before submitting a patch. Just make sure you
 have a locally running `mongod` instance available on `127.0.0.1:27017`. All
 tests should pass. Alternatively, you can specify `MONGOC_TEST_HOST`
 environment variable to specify a non-localhost hostname or ip address.
+
+Set the `MONGOC_TEST_SSL` environment variable `on` to connect to the server via
+SSL with default options. Configure SSL options with paths
+`MONGOC_TEST_SSL_PEM_FILE`, `MONGOC_TEST_SSL_PEM_PWD`,
+`MONGOC_TEST_SSL_CA_FILE`, `MONGOC_TEST_SSL_CA_DIR`, and
+`MONGOC_TEST_SSL_CRL_FILE`. Set the `MONGOC_TEST_SSL_WEAK_CERT_VALIDATION`
+environment variable `on` to relax server certificate validation.
 
 All tests should pass before submitting a patch.
 

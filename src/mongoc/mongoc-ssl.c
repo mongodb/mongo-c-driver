@@ -535,8 +535,10 @@ _mongoc_ssl_thread_startup (void)
       mongoc_mutex_init(&gMongocSslThreadLocks[i]);
    }
 
-   CRYPTO_set_locking_callback (_mongoc_ssl_thread_locking_callback);
-   CRYPTO_set_id_callback (_mongoc_ssl_thread_id_callback);
+   if (!CRYPTO_get_locking_callback ()) {
+      CRYPTO_set_locking_callback (_mongoc_ssl_thread_locking_callback);
+      CRYPTO_set_id_callback (_mongoc_ssl_thread_id_callback);
+   }
 }
 
 static void
@@ -544,7 +546,10 @@ _mongoc_ssl_thread_cleanup (void)
 {
    int i;
 
-   CRYPTO_set_locking_callback (NULL);
+   if (CRYPTO_get_locking_callback () == _mongoc_ssl_thread_locking_callback) {
+      CRYPTO_set_locking_callback (NULL);
+      CRYPTO_set_id_callback (NULL);
+   }
 
    for (i = 0; i < CRYPTO_num_locks (); i++) {
       mongoc_mutex_destroy (&gMongocSslThreadLocks[i]);

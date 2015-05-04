@@ -4,6 +4,7 @@
 
 #include "TestSuite.h"
 
+#include "test-libmongoc.h"
 
 static void
 test_mongoc_uri_new (void)
@@ -27,6 +28,16 @@ test_mongoc_uri_new (void)
    ASSERT(!mongoc_uri_new("mongodb://localhost::27017"));
    ASSERT(!mongoc_uri_new("mongodb://localhost::27017/"));
    ASSERT(!mongoc_uri_new("mongodb://localhost::27017,abc"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:-1"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:65536"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:foo"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:65536/"));
+   ASSERT(!mongoc_uri_new("mongodb://localhost:0/"));
+   ASSERT(!mongoc_uri_new("mongodb://[::1]:-1"));
+   ASSERT(!mongoc_uri_new("mongodb://[::1]:foo"));
+   ASSERT(!mongoc_uri_new("mongodb://[::1]:65536"));
+   ASSERT(!mongoc_uri_new("mongodb://[::1]:65536/"));
+   ASSERT(!mongoc_uri_new("mongodb://[::1]:0/"));
 
    uri = mongoc_uri_new("mongodb://[::1]:27888,[::2]:27999/?ipv6=true&safe=true");
    assert (uri);
@@ -40,6 +51,14 @@ test_mongoc_uri_new (void)
    uri = mongoc_uri_new("mongodb:///tmp/mongodb-27017.sock/?");
    ASSERT(uri);
    mongoc_uri_destroy(uri);
+
+   /* should normalize to lowercase */
+   uri = mongoc_uri_new ("mongodb://cRaZyHoStNaMe");
+   assert (uri);
+   hosts = mongoc_uri_get_hosts (uri);
+   assert (hosts);
+   ASSERT_CMPSTR (hosts->host, "crazyhostname");
+   mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new("mongodb://localhost/?");
    ASSERT(uri);
@@ -112,6 +131,20 @@ test_mongoc_uri_new (void)
    ASSERT(bson_iter_find_case(&iter, "journal"));
    ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
    ASSERT(bson_iter_bool(&iter));
+   ASSERT(!bson_iter_next(&iter));
+   mongoc_uri_destroy(uri);
+
+   uri = mongoc_uri_new("mongodb://localhost/?safe=false&journal=false");
+   options = mongoc_uri_get_options(uri);
+   ASSERT(options);
+   ASSERT_CMPINT(bson_count_keys(options), ==, 2);
+   ASSERT(bson_iter_init(&iter, options));
+   ASSERT(bson_iter_find_case(&iter, "safe"));
+   ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
+   ASSERT(!bson_iter_bool(&iter));
+   ASSERT(bson_iter_find_case(&iter, "journal"));
+   ASSERT(BSON_ITER_HOLDS_BOOL(&iter));
+   ASSERT(!bson_iter_bool(&iter));
    ASSERT(!bson_iter_next(&iter));
    mongoc_uri_destroy(uri);
 
@@ -396,19 +429,27 @@ test_mongoc_uri_write_concern (void)
    int i;
    static const write_concern_test tests [] = {
       { "mongodb://localhost/?safe=false", true, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED },
-      { "mongodb://localhost/?safe=true", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?safe=true", true, 1 },
       { "mongodb://localhost/?w=-1", true, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED },
       { "mongodb://localhost/?w=0", true, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED },
-      { "mongodb://localhost/?w=1", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?w=1", true, 1 },
       { "mongodb://localhost/?w=2", true, 2 },
       { "mongodb://localhost/?w=majority", true, MONGOC_WRITE_CONCERN_W_MAJORITY },
       { "mongodb://localhost/?w=10", true, 10 },
       { "mongodb://localhost/?w=", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
       { "mongodb://localhost/?w=mytag", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag" },
       { "mongodb://localhost/?w=mytag&safe=false", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag" },
-      { "mongodb://localhost/?w=1&safe=false", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?w=1&safe=false", true, 1 },
+      { "mongodb://localhost/?journal=true", true, MONGOC_WRITE_CONCERN_W_DEFAULT },
+      { "mongodb://localhost/?w=0&journal=true", false, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED },
+      { "mongodb://localhost/?w=-1&journal=true", false, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED },
+      { "mongodb://localhost/?w=1&journal=true", true, 1 },
       { NULL }
    };
+
+   /* Suppress warnings from two invalid URIs ("journal" and "w" conflict) */
+   suppress_one_message();
+   suppress_one_message();
 
    for (i = 0; tests [i].uri; i++) {
       t = &tests [i];

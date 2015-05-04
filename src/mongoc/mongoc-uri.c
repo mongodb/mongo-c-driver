@@ -16,14 +16,17 @@
 
 
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <math.h>
 
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
 #include "mongoc-socket.h"
-#include "mongoc-uri.h"
+#include "mongoc-uri-private.h"
+#include "mongoc-write-concern-private.h"
 
 
 #if defined(_WIN32) && !defined(strcasecmp)
@@ -55,6 +58,24 @@ mongoc_uri_do_unescape (char **str)
    }
 }
 
+void
+mongoc_uri_lowercase_hostname (const char *src,
+                               char *buf /* OUT */,
+                               int len)
+{
+   bson_unichar_t c;
+   const char *iter;
+   char *buf_iter;
+
+   /* TODO: this code only accepts ascii, and assumes that lowercased
+      chars are the same width as originals */
+   for (iter = src, buf_iter = buf;
+        iter && *iter && (c = bson_utf8_get_char(iter)) && buf_iter - buf < len;
+        iter = bson_utf8_next_char(iter), buf_iter++) {
+      assert(c < 128);
+      *buf_iter = tolower(c);
+   }
+}
 
 static void
 mongoc_uri_append_host (mongoc_uri_t  *uri,
@@ -65,7 +86,7 @@ mongoc_uri_append_host (mongoc_uri_t  *uri,
    mongoc_host_list_t *link_;
 
    link_ = bson_malloc0(sizeof *link_);
-   bson_strncpy (link_->host, host, sizeof link_->host);
+   mongoc_uri_lowercase_hostname(host, link_->host, sizeof link_->host);
    if (strchr (host, ':')) {
       bson_snprintf (link_->host_and_port, sizeof link_->host_and_port,
                      "[%s]:%hu", host, port);
@@ -185,6 +206,23 @@ mongoc_uri_parse_userpass (mongoc_uri_t  *uri,
    return ret;
 }
 
+static bool
+mongoc_uri_parse_port (uint16_t   *port,
+                       const char *str)
+{
+   unsigned long ul_port;
+
+   ul_port = strtoul (str, NULL, 10);
+
+   if (ul_port == 0 || ul_port > UINT16_MAX) {
+      /* Parse error or port number out of range. mongod prohibits port 0. */
+      return false;
+   }
+
+   *port = (uint16_t)ul_port;
+   return true;
+}
+
 
 static bool
 mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
@@ -196,11 +234,9 @@ mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
    char *hostname;
 
    if ((portstr = strrchr (str, ':')) && !strstr (portstr, "]")) {
-#ifdef _MSC_VER
-      sscanf_s (portstr, ":%hu", &port);
-#else
-      sscanf (portstr, ":%hu", &port);
-#endif
+      if (!mongoc_uri_parse_port(&port, portstr + 1)) {
+         return false;
+      }
    }
 
    hostname = scan_to_unichar (str + 1, ']', "", &end_host);
@@ -227,15 +263,10 @@ mongoc_uri_parse_host (mongoc_uri_t  *uri,
 
    if ((hostname = scan_to_unichar(str, ':', "?/,", &end_host))) {
       end_host++;
-      if (!isdigit(*end_host)) {
-         bson_free(hostname);
+      if (!mongoc_uri_parse_port(&port, end_host)) {
+         bson_free (hostname);
          return false;
       }
-#ifdef _MSC_VER
-      sscanf_s (end_host, "%hu", &port);
-#else
-      sscanf (end_host, "%hu", &port);
-#endif
    } else {
       hostname = bson_strdup(str);
       port = MONGOC_DEFAULT_PORT;
@@ -253,42 +284,33 @@ bool
 _mongoc_host_list_from_string (mongoc_host_list_t *host_list,
                                const char         *host_and_port)
 {
-   uint16_t port;
-   const char *end_host;
-   char *hostname = NULL;
+   bool rval = false;
+   char *uri_str = NULL;
+   mongoc_uri_t *uri = NULL;
+   const mongoc_host_list_t *uri_hl;
 
    bson_return_val_if_fail(host_list, false);
    bson_return_val_if_fail(host_and_port, false);
 
-   memset(host_list, 0, sizeof *host_list);
+   uri_str = bson_strdup_printf("mongodb://%s/", host_and_port);
+   if (! uri_str) goto CLEANUP;
 
-   if ((hostname = scan_to_unichar(host_and_port, ':', "", &end_host))) {
-      end_host++;
-      if (!isdigit(*end_host)) {
-         bson_free(hostname);
-         return false;
-      }
-#ifdef _MSC_VER
-      sscanf_s (end_host, "%hu", &port);
-#else
-      sscanf (end_host, "%hu", &port);
-#endif
-   } else {
-      hostname = bson_strdup(host_and_port);
-      port = MONGOC_DEFAULT_PORT;
-   }
+   uri = mongoc_uri_new(uri_str);
+   if (! uri) goto CLEANUP;
 
-   bson_strncpy (host_list->host_and_port, host_and_port,
-           sizeof host_list->host_and_port - 1);
+   uri_hl = mongoc_uri_get_hosts(uri);
+   if (uri_hl->next) goto CLEANUP;
 
-   bson_strncpy (host_list->host, hostname, sizeof host_list->host - 1);
+   memcpy(host_list, uri_hl, sizeof(*uri_hl));
 
-   host_list->port = port;
-   host_list->family = AF_INET;
+   rval = true;
 
-   bson_free(hostname);
+CLEANUP:
 
-   return true;
+   bson_free(uri_str);
+   if (uri) mongoc_uri_destroy(uri);
+
+   return rval;
 }
 
 
@@ -696,10 +718,9 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
    write_concern = mongoc_write_concern_new ();
 
    if (bson_iter_init_find_case (&iter, &uri->options, "safe") &&
-       BSON_ITER_HOLDS_BOOL (&iter) &&
-       !bson_iter_bool (&iter)) {
+       BSON_ITER_HOLDS_BOOL (&iter)) {
       mongoc_write_concern_set_w (write_concern,
-                                  MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+                                  bson_iter_bool (&iter) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    }
 
    if (bson_iter_init_find_case (&iter, &uri->options, "wtimeoutms") &&
@@ -708,9 +729,8 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
    }
 
    if (bson_iter_init_find_case (&iter, &uri->options, "journal") &&
-       BSON_ITER_HOLDS_BOOL (&iter) &&
-       bson_iter_bool (&iter)) {
-      mongoc_write_concern_set_journal (write_concern, true);
+       BSON_ITER_HOLDS_BOOL (&iter)) {
+      mongoc_write_concern_set_journal (write_concern, bson_iter_bool (&iter));
    }
 
    if (bson_iter_init_find_case (&iter, &uri->options, "w")) {
@@ -718,20 +738,16 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
          value = bson_iter_int32 (&iter);
 
          switch (value) {
-         case -1:
-            mongoc_write_concern_set_w (write_concern,
-                                        MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED);
-            break;
-         case 0:
-            mongoc_write_concern_set_w (write_concern,
-                                        MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
-            break;
-         case 1:
-            mongoc_write_concern_set_w (write_concern,
-                                        MONGOC_WRITE_CONCERN_W_DEFAULT);
+         case MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED:
+         case MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED:
+            /* Warn on conflict, since write concern will be validated later */
+            if (mongoc_write_concern_get_journal(write_concern)) {
+               MONGOC_WARNING("Journal conflicts with w value [w=%d].", value);
+            }
+            mongoc_write_concern_set_w(write_concern, value);
             break;
          default:
-            if (value > 1) {
+            if (value > 0) {
                mongoc_write_concern_set_w (write_concern, value);
                break;
             }
@@ -774,9 +790,14 @@ mongoc_uri_new (const char *uri_string)
       return NULL;
    }
 
-   uri->str = bson_strdup(uri_string);
-
    _mongoc_uri_build_write_concern (uri);
+
+   if (!_mongoc_write_concern_is_valid(uri->write_concern)) {
+      mongoc_uri_destroy(uri);
+      return NULL;
+   }
+
+   uri->str = bson_strdup(uri_string);
 
    return uri;
 }

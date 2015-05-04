@@ -16,8 +16,8 @@
   <section id="synopsis">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
-mongoc_database_find_collections (mongoc_collection_t *collection,
-                                  bson_error_t        *error);
+mongoc_collection_find_indexes (mongoc_collection_t *collection,
+                                bson_error_t        *error);
 ]]></code></synopsis>
     <p>Fetches a cursor containing documents, each corresponding to an index on this collection.</p>
   </section>

@@ -16,9 +16,11 @@
 
 
 #include "mongoc-counters-private.h"
-#include "mongoc-client-pool.h"
+#include "mongoc-client-pool-private.h"
 #include "mongoc-queue-private.h"
 #include "mongoc-thread-private.h"
+#include "mongoc-cluster-private.h"
+#include "mongoc-client-private.h"
 #include "mongoc-trace.h"
 
 
@@ -196,20 +198,46 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    bson_return_if_fail(pool);
    bson_return_if_fail(client);
 
-   /*
-    * TODO: Shutdown old client connections.
-    */
-
-   /*
-    * TODO: We should try to make a client healthy again if it
-    *       is unhealthy since this is typically where a thread
-    *       is done with its work.
-    */
-
    mongoc_mutex_lock(&pool->mutex);
-   _mongoc_queue_push_head(&pool->queue, client);
+   if (pool->size > pool->min_pool_size) {
+      mongoc_client_t *old_client;
+      old_client = _mongoc_queue_pop_head (&pool->queue);
+      if (old_client) {
+          mongoc_client_destroy (old_client);
+          pool->size--;
+      }
+   }
+   mongoc_mutex_unlock(&pool->mutex);
+
+   if ((client->cluster.state == MONGOC_CLUSTER_STATE_HEALTHY) ||
+       (client->cluster.state == MONGOC_CLUSTER_STATE_BORN)) {
+      mongoc_mutex_lock (&pool->mutex);
+      _mongoc_queue_push_tail (&pool->queue, client);
+   } else if (_mongoc_cluster_reconnect (&client->cluster, NULL)) {
+      mongoc_mutex_lock (&pool->mutex);
+      _mongoc_queue_push_tail (&pool->queue, client);
+   } else {
+      mongoc_client_destroy (client);
+      mongoc_mutex_lock (&pool->mutex);
+      pool->size--;
+   }
+
    mongoc_cond_signal(&pool->cond);
    mongoc_mutex_unlock(&pool->mutex);
 
    EXIT;
+}
+
+size_t
+mongoc_client_pool_get_size (mongoc_client_pool_t *pool)
+{
+   size_t size = 0;
+
+   ENTRY;
+
+   mongoc_mutex_lock (&pool->mutex);
+   size = pool->size;
+   mongoc_mutex_unlock (&pool->mutex);
+
+   RETURN (size);
 }
