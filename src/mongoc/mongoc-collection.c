@@ -1395,7 +1395,7 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
    multi = !(flags & MONGOC_REMOVE_SINGLE_REMOVE);
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_delete (&command, &selector, 1, multi, true);
+   _mongoc_write_command_init_delete (&command, selector, multi, true);
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,

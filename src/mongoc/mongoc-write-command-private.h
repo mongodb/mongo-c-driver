@@ -91,11 +91,10 @@ void _mongoc_write_command_init_insert (mongoc_write_command_t        *command,
                                         uint32_t                       n_documents,
                                         bool                           ordered,
                                         bool                           allow_bulk_op_insert);
-void _mongoc_write_command_init_delete (mongoc_write_command_t *command,
-                                        const bson_t * const   *selectors,
-                                        uint32_t                n_selectors,
-                                        bool                    multi,
-                                        bool                    ordered);
+void _mongoc_write_command_init_delete (mongoc_write_command_t        *command,
+                                        const bson_t                  *selectors,
+                                        bool                           multi,
+                                        bool                           ordered);
 void _mongoc_write_command_init_update (mongoc_write_command_t        *command,
                                         const bson_t                  *selector,
                                         const bson_t                  *update,
@@ -109,12 +108,11 @@ void _mongoc_write_command_insert_append (mongoc_write_command_t      *command,
 void _mongoc_write_command_update_append (mongoc_write_command_t      *command,
                                           const bson_t                *selector,
                                           const bson_t                *update,
-                                          bool                        upsert,
-                                          bool                        multi);
+                                          bool                         upsert,
+                                          bool                         multi);
 
 void _mongoc_write_command_delete_append (mongoc_write_command_t *command,
-                                          const bson_t * const   *selectors,
-                                          uint32_t                n_selectors);
+                                          const bson_t           *selector);
 
 void _mongoc_write_command_execute     (mongoc_write_command_t        *command,
                                         mongoc_client_t               *client,

@@ -128,12 +128,12 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,     /* IN */
                                    bulk->commands.len - 1);
       if ((last->type == MONGOC_WRITE_COMMAND_DELETE) &&
           last->u.delete.multi) {
-         _mongoc_write_command_delete_append (last, &selector, 1);
+         _mongoc_write_command_delete_append (last, selector);
          EXIT;
       }
    }
 
-   _mongoc_write_command_init_delete (&command, &selector, 1, true, bulk->ordered);
+   _mongoc_write_command_init_delete (&command, selector, true, bulk->ordered);
 
    _mongoc_array_append_val (&bulk->commands, command);
 
@@ -159,13 +159,12 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk,     /* IN */
                                    bulk->commands.len - 1);
       if ((last->type == MONGOC_WRITE_COMMAND_DELETE) &&
           !last->u.delete.multi) {
-         _mongoc_write_command_delete_append (last, &selector, 1);
+         _mongoc_write_command_delete_append (last, selector);
          EXIT;
       }
    }
 
-   _mongoc_write_command_init_delete (&command, &selector, 1, false,
-      bulk->ordered);
+   _mongoc_write_command_init_delete (&command, selector, false, bulk->ordered);
 
    _mongoc_array_append_val (&bulk->commands, command);
 
@@ -237,6 +236,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
 {
    mongoc_write_command_t command = { 0 };
    size_t err_off;
+   mongoc_write_command_t *last;
 
    bson_return_if_fail (bulk);
    bson_return_if_fail (selector);
@@ -251,6 +251,16 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
                       "$ or . in keys. Ingoring document.",
                       __FUNCTION__);
       EXIT;
+   }
+
+   if (bulk->commands.len) {
+      last = &_mongoc_array_index (&bulk->commands,
+                                   mongoc_write_command_t,
+                                   bulk->commands.len - 1);
+      if (last->type == MONGOC_WRITE_COMMAND_UPDATE) {
+         _mongoc_write_command_update_append (last, selector, document, upsert, false);
+         EXIT;
+      }
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
@@ -293,7 +303,7 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
                                    mongoc_write_command_t,
                                    bulk->commands.len - 1);
       if (last->type == MONGOC_WRITE_COMMAND_UPDATE) {
-         _mongoc_write_command_update_append (last, selector, document, multi, upsert);
+         _mongoc_write_command_update_append (last, selector, document, upsert, multi);
          EXIT;
       }
    }
@@ -313,6 +323,7 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
 {
    mongoc_write_command_t command = { 0 };
    bson_iter_t iter;
+   mongoc_write_command_t *last;
 
    bson_return_if_fail (bulk);
    bson_return_if_fail (selector);
@@ -327,6 +338,16 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
                             __FUNCTION__);
             EXIT;
          }
+      }
+   }
+
+   if (bulk->commands.len) {
+      last = &_mongoc_array_index (&bulk->commands,
+                                   mongoc_write_command_t,
+                                   bulk->commands.len - 1);
+      if (last->type == MONGOC_WRITE_COMMAND_UPDATE) {
+         _mongoc_write_command_update_append (last, selector, document, upsert, false);
+         EXIT;
       }
    }
 
