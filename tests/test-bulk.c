@@ -6,6 +6,107 @@
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
 
+/* copy str with single-quotes replaced by double. bson_free the return value.*/
+char *
+single_quotes_to_double (const char *str)
+{
+   char *result = bson_strdup (str);
+   char *p;
+
+   for (p = result; *p; p++) {
+      if (*p == '\'') {
+         *p = '"';
+      }
+   }
+
+   return result;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * assert_match_json --
+ *
+ *       Check that a document matches an expected pattern.
+ *
+ *       The provided JSON is fed to mongoc_matcher_t, so it can omit
+ *       fields or use $gt, $in,$and, $or, etc. For convenience,
+ *       single-quotes are synonymous with double-quotes.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Aborts if doc doesn't match json_query.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+assert_match_json (const bson_t *doc,
+                   const char   *json_query)
+{
+   char *double_quoted = single_quotes_to_double (json_query);
+   bson_error_t error;
+   bson_t *query;
+   mongoc_matcher_t *matcher;
+
+   query = bson_new_from_json ((const uint8_t *)double_quoted, -1, &error);
+
+   if (!query) {
+      fprintf (stderr, "couldn't parse JSON: %s\n", error.message);
+      abort ();
+   }
+
+   if (!(matcher = mongoc_matcher_new (query, &error))) {
+      fprintf (stderr, "couldn't parse JSON: %s\n", error.message);
+      abort ();
+   }
+
+   if (!mongoc_matcher_match (matcher, doc)) {
+      fprintf (stderr,
+               "assert_match_json failed with document:\n\n"
+               "%s\n\nquery:\n\n%s\n",
+               bson_as_json (doc, NULL), double_quoted);
+      abort ();
+   }
+
+   mongoc_matcher_destroy (matcher);
+   bson_destroy (query);
+   bson_free (double_quoted);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * check_n_modified --
+ *
+ *       Check a bulk operation reply's nModified field is correct or absent.
+ *
+ *       It may be omitted if we talked to a (<= 2.4.x) node, or a mongos
+ *       talked to a (<= 2.4.x) node.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Aborts if the field is present and incorrect.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+check_n_modified (const bson_t *reply,
+                  int32_t       n_modified)
+{
+   bson_iter_t iter;
+
+   if (bson_iter_init_find (&iter, reply, "nModified")) {
+      assert (BSON_ITER_HOLDS_INT32 (&iter));
+      assert (bson_iter_int32 (&iter) == n_modified);
+   }
+}
+
+
 static mongoc_collection_t *
 get_test_collection (mongoc_client_t *client,
                      const char      *prefix)
@@ -28,7 +129,6 @@ test_bulk (void)
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bson_error_t error;
-   bson_iter_t iter;
    bson_t reply;
    bson_t child;
    bson_t del;
@@ -65,30 +165,12 @@ test_bulk (void)
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
 
-   assert (bson_iter_init_find (&iter, &reply, "nInserted"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 4);
+   assert_match_json (&reply, "{'nInserted': 4,"
+                              " 'nRemoved':  4,"
+                              " 'nMatched':  4,"
+                              " 'nUpserted': 0}");
 
-   /*
-    * This may be omitted if we talked to a (<= 2.4.x) node, or a mongos
-    * talked to a (<= 2.4.x) node.
-    */
-   if (bson_iter_init_find (&iter, &reply, "nModified")) {
-      assert (BSON_ITER_HOLDS_INT32 (&iter));
-      assert (bson_iter_int32 (&iter) == 4);
-   }
-
-   assert (bson_iter_init_find (&iter, &reply, "nRemoved"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (4 == bson_iter_int32 (&iter));
-
-   assert (bson_iter_init_find (&iter, &reply, "nMatched"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (4 == bson_iter_int32 (&iter));
-
-   assert (bson_iter_init_find (&iter, &reply, "nUpserted"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (!bson_iter_int32 (&iter));
+   check_n_modified (&reply, 4);
 
    bson_destroy (&reply);
 
@@ -109,9 +191,6 @@ test_update_upserted (void)
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bson_error_t error;
-   bson_iter_t iter;
-   bson_iter_t ar;
-   bson_iter_t citer;
    bson_t reply;
    bson_t *sel;
    bson_t *doc;
@@ -126,7 +205,7 @@ test_update_upserted (void)
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    assert (bulk);
 
-   sel = BCON_NEW ("abcd", BCON_INT32 (1234));
+   sel = BCON_NEW ("_id", BCON_INT32 (1234));
    doc = BCON_NEW ("$set", "{", "hello", "there", "}");
 
    mongoc_bulk_operation_update (bulk, sel, doc, true);
@@ -134,45 +213,14 @@ test_update_upserted (void)
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
 
-   assert (bson_iter_init_find (&iter, &reply, "nUpserted"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 1);
+   assert_match_json (&reply, "{'nInserted': 0,"
+                              " 'nRemoved':  0,"
+                              " 'nMatched':  0,"
+                              " 'nUpserted': 1,"
+                              " 'upserted': [{'index': 0, '_id': 1234}],"
+                              " 'writeErrors': []}");
 
-   assert (bson_iter_init_find (&iter, &reply, "nMatched"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 0);
-
-   assert (bson_iter_init_find (&iter, &reply, "nRemoved"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 0);
-
-   assert (bson_iter_init_find (&iter, &reply, "nInserted"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 0);
-
-   if (bson_iter_init_find (&iter, &reply, "nModified")) {
-      assert (BSON_ITER_HOLDS_INT32 (&iter));
-      assert (bson_iter_int32 (&iter) == 0);
-   }
-
-   assert (bson_iter_init_find (&iter, &reply, "upserted"));
-   assert (BSON_ITER_HOLDS_ARRAY (&iter));
-   assert (bson_iter_recurse (&iter, &ar));
-   assert (bson_iter_next (&ar));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&ar));
-   assert (bson_iter_recurse (&ar, &citer));
-   assert (bson_iter_next (&citer));
-   assert (BSON_ITER_IS_KEY (&citer, "index"));
-   assert (bson_iter_next (&citer));
-   assert (BSON_ITER_IS_KEY (&citer, "_id"));
-   assert (BSON_ITER_HOLDS_OID (&citer));
-   assert (!bson_iter_next (&citer));
-   assert (!bson_iter_next (&ar));
-
-   assert (bson_iter_init_find (&iter, &reply, "writeErrors"));
-   assert (BSON_ITER_HOLDS_ARRAY (&iter));
-   assert (bson_iter_recurse (&iter, &ar));
-   assert (!bson_iter_next (&ar));
+   check_n_modified (&reply, 0);
 
    bson_destroy (&reply);
 
@@ -195,9 +243,6 @@ test_index_offset (void)
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bson_error_t error;
-   bson_iter_t iter;
-   bson_iter_t ar;
-   bson_iter_t citer;
    bson_t reply;
    bson_t *sel;
    bson_t *doc;
@@ -210,7 +255,7 @@ test_index_offset (void)
    assert (collection);
 
    doc = bson_new ();
-   BSON_APPEND_INT32 (doc, "abcd", 1234);
+   BSON_APPEND_INT32 (doc, "_id", 1234);
    r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL, &error);
    assert (r);
    bson_destroy (doc);
@@ -218,7 +263,7 @@ test_index_offset (void)
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    assert (bulk);
 
-   sel = BCON_NEW ("abcd", BCON_INT32 (1234));
+   sel = BCON_NEW ("_id", BCON_INT32 (1234));
    doc = BCON_NEW ("$set", "{", "hello", "there", "}");
 
    mongoc_bulk_operation_remove_one (bulk, sel);
@@ -227,46 +272,14 @@ test_index_offset (void)
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
 
-   assert (bson_iter_init_find (&iter, &reply, "nUpserted"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 1);
+   assert_match_json (&reply, "{'nInserted': 0,"
+                              " 'nRemoved':  1,"
+                              " 'nMatched':  0,"
+                              " 'nUpserted': 1,"
+                              " 'upserted': [{'index': 1, '_id': 1234}],"
+                              " 'writeErrors': []}");
 
-   assert (bson_iter_init_find (&iter, &reply, "nMatched"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 0);
-
-   assert (bson_iter_init_find (&iter, &reply, "nRemoved"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 1);
-
-   assert (bson_iter_init_find (&iter, &reply, "nInserted"));
-   assert (BSON_ITER_HOLDS_INT32 (&iter));
-   assert (bson_iter_int32 (&iter) == 0);
-
-   if (bson_iter_init_find (&iter, &reply, "nModified")) {
-      assert (BSON_ITER_HOLDS_INT32 (&iter));
-      assert (bson_iter_int32 (&iter) == 0);
-   }
-
-   assert (bson_iter_init_find (&iter, &reply, "upserted"));
-   assert (BSON_ITER_HOLDS_ARRAY (&iter));
-   assert (bson_iter_recurse (&iter, &ar));
-   assert (bson_iter_next (&ar));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&ar));
-   assert (bson_iter_recurse (&ar, &citer));
-   assert (bson_iter_next (&citer));
-   assert (BSON_ITER_IS_KEY (&citer, "index"));
-   assert (bson_iter_int32 (&citer) == 1);
-   assert (bson_iter_next (&citer));
-   assert (BSON_ITER_IS_KEY (&citer, "_id"));
-   assert (BSON_ITER_HOLDS_OID (&citer));
-   assert (!bson_iter_next (&citer));
-   assert (!bson_iter_next (&ar));
-
-   assert (bson_iter_init_find (&iter, &reply, "writeErrors"));
-   assert (BSON_ITER_HOLDS_ARRAY (&iter));
-   assert (bson_iter_recurse (&iter, &ar));
-   assert (!bson_iter_next (&ar));
+   check_n_modified (&reply, 0);
 
    bson_destroy (&reply);
 
@@ -360,7 +373,6 @@ test_bulk_edge_case_372 (void)
    bson_error_t error;
    bson_iter_t iter;
    bson_iter_t citer;
-   bson_iter_t child;
    const char *str;
    bson_t *selector;
    bson_t *update;
@@ -427,57 +439,24 @@ test_bulk_edge_case_372 (void)
    printf ("%s\n", bson_as_json (&reply, NULL));
 #endif
 
-   assert (bson_iter_init_find (&iter, &reply, "nMatched") &&
-           BSON_ITER_HOLDS_INT32 (&iter) &&
-           (0 == bson_iter_int32 (&iter)));
-   assert (bson_iter_init_find (&iter, &reply, "nUpserted") &&
-           BSON_ITER_HOLDS_INT32 (&iter) &&
-           (3 == bson_iter_int32 (&iter)));
-   assert (bson_iter_init_find (&iter, &reply, "nInserted") &&
-           BSON_ITER_HOLDS_INT32 (&iter) &&
-           (0 == bson_iter_int32 (&iter)));
-   assert (bson_iter_init_find (&iter, &reply, "nRemoved") &&
-           BSON_ITER_HOLDS_INT32 (&iter) &&
-           (0 == bson_iter_int32 (&iter)));
+   assert_match_json (
+      &reply,
+      "{'nInserted': 0,"
+      " 'nRemoved':  0,"
+      " 'nMatched':  0,"
+      " 'nUpserted': 3,"
+      " 'upserted': ["
+      "     {'index': 0, '_id': 0},"
+      "     {'index': 1, '_id': 1},"
+      "     {'index': 2, '_id': 2}"
+      " ],"
+      " 'writeErrors': []}");
+
+   check_n_modified (&reply, 0);
 
    assert (bson_iter_init_find (&iter, &reply, "upserted") &&
            BSON_ITER_HOLDS_ARRAY (&iter) &&
            bson_iter_recurse (&iter, &citer));
-
-   assert (bson_iter_next (&citer));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&citer));
-   assert (bson_iter_recurse (&citer, &child));
-   assert (bson_iter_find (&child, "_id"));
-   assert (BSON_ITER_HOLDS_INT32 (&child));
-   assert (0 == bson_iter_int32 (&child));
-   assert (bson_iter_recurse (&citer, &child));
-   assert (bson_iter_find (&child, "index"));
-   assert (BSON_ITER_HOLDS_INT32 (&child));
-   assert (0 == bson_iter_int32 (&child));
-
-   assert (bson_iter_next (&citer));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&citer));
-   assert (bson_iter_recurse (&citer, &child));
-   assert (bson_iter_find (&child, "_id"));
-   assert (BSON_ITER_HOLDS_INT32 (&child));
-   assert (1 == bson_iter_int32 (&child));
-   assert (bson_iter_recurse (&citer, &child));
-   assert (bson_iter_find (&child, "index"));
-   assert (BSON_ITER_HOLDS_INT32 (&child));
-   assert (1 == bson_iter_int32 (&child));
-
-   assert (bson_iter_next (&citer));
-   assert (BSON_ITER_HOLDS_DOCUMENT (&citer));
-   assert (bson_iter_recurse (&citer, &child));
-   assert (bson_iter_find (&child, "_id"));
-   assert (BSON_ITER_HOLDS_INT32 (&child));
-   assert (2 == bson_iter_int32 (&child));
-   assert (bson_iter_recurse (&citer, &child));
-   assert (bson_iter_find (&child, "index"));
-   assert (BSON_ITER_HOLDS_INT32 (&child));
-   assert (2 == bson_iter_int32 (&child));
-
-   assert (!bson_iter_next (&citer));
 
    bson_destroy (&reply);
 
