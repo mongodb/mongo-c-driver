@@ -19,10 +19,28 @@ log_query (const bson_t *doc,
 }
 
 static void
+check_match (const bson_t *doc,
+             const bson_t *query)
+{
+   bson_error_t error;
+   mongoc_matcher_t *matcher = mongoc_matcher_new (query, &error);
+   if (!matcher) {
+      fprintf (stderr, "Error: %s\n", error.message);
+      return;
+   }
+
+   if (mongoc_matcher_match (matcher, doc)) {
+      printf ("  Document matched!\n");
+   } else {
+      printf ("  No match.\n");
+   }
+
+   mongoc_matcher_destroy (matcher);
+}
+
+static void
 example (void)
 {
-   mongoc_matcher_t *matcher;
-   bson_error_t error;
    bson_t *query;
    bson_t *doc;
 
@@ -30,22 +48,28 @@ example (void)
    query = BCON_NEW ("hello.0.foo", BCON_UTF8 ("bar"));
 
    log_query (doc, query);
+   check_match (doc, query);
 
-   matcher = mongoc_matcher_new (query, &error);
-   if (!matcher) {
-      fprintf (stderr, "Error: %s\n", error.message);
-      bson_destroy (query);
-      bson_destroy (doc);
-      return;
-   }
-
-   if (mongoc_matcher_match (matcher, doc)) {
-      printf ("  Document matched!\n");
-   }
-
-   bson_destroy (query);
    bson_destroy (doc);
-   mongoc_matcher_destroy (matcher);
+   bson_destroy (query);
+
+   /* i is > 1 or i < -1. */
+   query = BCON_NEW ("$or", "[",
+                     "{", "i", "{", "$gt", BCON_INT32 (1), "}", "}",
+                     "{", "i", "{", "$lt", BCON_INT32 (-1), "}", "}", "]");
+
+   doc = BCON_NEW ("i", BCON_INT32 (2));
+   log_query (doc, query);
+   check_match (doc, query);
+
+   bson_destroy (doc);
+
+   doc = BCON_NEW ("i", BCON_INT32 (0));
+   log_query (doc, query);
+   check_match (doc, query);
+
+   bson_destroy (doc);
+   bson_destroy (query);
 }
 
 int
