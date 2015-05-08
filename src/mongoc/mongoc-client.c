@@ -339,7 +339,9 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 
          if (bson_iter_init_find_case (&iter, options, "connecttimeoutms") &&
              BSON_ITER_HOLDS_INT32 (&iter)) {
-            connecttimeoutms = bson_iter_int32 (&iter);
+            if (!(connecttimeoutms = bson_iter_int32(&iter))) {
+               connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
+            }
          }
 
          if (!mongoc_stream_tls_do_handshake (base_stream, connecttimeoutms) ||
