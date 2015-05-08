@@ -189,6 +189,102 @@ test_mongoc_matcher_compare (void)
 }
 
 
+typedef struct {
+   const char *spec;
+   const char *doc;
+   bool match;
+} logic_op_test_t;
+
+
+static void
+test_mongoc_matcher_logic_ops (void)
+{
+   logic_op_test_t tests[] = {
+         {"{\"$or\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1}", true},
+         {"{\"$or\": [{\"a\": 1}, {\"b\": 2}]}", "{\"b\": 2}", true},
+         {"{\"$or\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 3}", false},
+         {
+               "{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}",
+               "{\"a\": 3}",
+               true
+         },
+         {
+               "{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}",
+               "{\"a\": -2}",
+               true
+         },
+         {
+               "{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}",
+               "{\"a\": 0}",
+               false
+         },
+         {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1, \"b\": 2}", true},
+         {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1, \"b\": 1}", false},
+         {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1}", false},
+         {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"b\": 2}", false},
+         {
+               "{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}",
+               "{\"a\": 0}",
+               true
+         },
+         {
+               "{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}",
+               "{\"a\": -2}",
+               false
+         },
+         {
+               "{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}",
+               "{\"a\": 1}",
+               false
+         },
+   };
+
+   int n_tests = sizeof tests / sizeof (logic_op_test_t);
+   int i;
+   logic_op_test_t test;
+   bson_t *spec;
+   bson_error_t error;
+   mongoc_matcher_t *matcher;
+   bson_t *doc;
+   bool r;
+
+   for (i = 0; i < n_tests; i++) {
+      test = tests[i];
+      spec = bson_new_from_json ((uint8_t * )test.spec, -1, &error);
+      if (!spec) {
+         fprintf (stderr,
+                  "couldn't parse JSON query:\n\n%s\n\n%s\n",
+         test.spec, error.message);
+         abort ();
+      }
+
+      matcher = mongoc_matcher_new (spec, &error);
+      BSON_ASSERT (matcher);
+
+      doc = bson_new_from_json ((uint8_t * )test.doc, -1, &error);
+      if (!doc) {
+         fprintf (stderr,
+                  "couldn't parse JSON document:\n\n%s\n\n%s\n",
+                  test.doc, error.message);
+         abort ();
+      }
+
+      r = mongoc_matcher_match (matcher, doc);
+      if (test.match != r) {
+         fprintf (stderr,
+                  "query:\n\n%s\n\nshould %shave matched:\n\n%s\n",
+                  test.match ? "" : "not ",
+                  test.spec, test.doc);
+         abort ();
+      }
+
+      mongoc_matcher_destroy (matcher);
+      bson_destroy (doc);
+      bson_destroy (spec);
+   }
+}
+
+
 static void
 test_mongoc_matcher_bad_spec (void)
 {
@@ -444,6 +540,7 @@ test_matcher_install (TestSuite *suite)
    TestSuite_Add (suite, "/Matcher/basic", test_mongoc_matcher_basic);
    TestSuite_Add (suite, "/Matcher/array", test_mongoc_matcher_array);
    TestSuite_Add (suite, "/Matcher/compare", test_mongoc_matcher_compare);
+   TestSuite_Add (suite, "/Matcher/logic", test_mongoc_matcher_logic_ops);
    TestSuite_Add (suite, "/Matcher/bad_spec", test_mongoc_matcher_bad_spec);
    TestSuite_Add (suite, "/Matcher/eq/utf8", test_mongoc_matcher_eq_utf8);
    TestSuite_Add (suite, "/Matcher/eq/int32", test_mongoc_matcher_eq_int32);
