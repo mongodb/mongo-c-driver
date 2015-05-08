@@ -304,6 +304,33 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
 
 
 static bool
+_mongoc_scram_sha1 (const unsigned char *input,
+                    const size_t         input_len,
+                    unsigned char       *output)
+{
+   EVP_MD_CTX digest_ctx;
+   bool rval = false;
+
+   EVP_MD_CTX_init (&digest_ctx);
+
+   if (1 != EVP_DigestInit_ex (&digest_ctx, EVP_sha1 (), NULL)) {
+      goto cleanup;
+   }
+
+   if (1 != EVP_DigestUpdate (&digest_ctx, input, input_len)) {
+      goto cleanup;
+   }
+
+   rval = (1 == EVP_DigestFinal_ex (&digest_ctx, output, NULL));
+
+cleanup:
+   EVP_MD_CTX_cleanup (&digest_ctx);
+
+   return rval;
+}
+
+
+static bool
 _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
                                      uint8_t        *outbuf,
                                      uint32_t        outbufmax,
@@ -327,7 +354,7 @@ _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
          &hash_len);
 
    /* StoredKey := H(client_key) */
-   SHA1 (client_key, MONGOC_SCRAM_HASH_SIZE, stored_key);
+   _mongoc_scram_sha1 (client_key, MONGOC_SCRAM_HASH_SIZE, stored_key);
 
    /* ClientSignature := HMAC(StoredKey, AuthMessage) */
    HMAC (EVP_sha1 (),
