@@ -174,8 +174,7 @@ buildvariants:
   expansions:
       <<: *default_expansions
       <<: *mingw_expansions
-      # TODO: stuck on 2.6?
-      mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-i386-2.6.9.zip"
+      mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-i386-latest.zip"
   run_on:
       - windows-32
   tasks: *std_tests
