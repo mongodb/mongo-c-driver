@@ -48,7 +48,24 @@ extern void test_write_concern_install     (TestSuite *suite);
 #ifdef MONGOC_ENABLE_SSL
 extern void test_x509_install              (TestSuite *suite);
 extern void test_stream_tls_install        (TestSuite *suite);
-extern void test_stream_tls_hangup_install (TestSuite *suite);
+extern void test_stream_tls_error_install  (TestSuite *suite);
+#endif
+
+
+#ifdef _WIN32
+void
+usleep (int64_t usec)
+{
+    HANDLE timer;
+    LARGE_INTEGER ft;
+
+    ft.QuadPart = -(10 * usec);
+
+    timer = CreateWaitableTimer(NULL, true, NULL);
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+    WaitForSingleObject(timer, INFINITE);
+    CloseHandle(timer);
+}
 #endif
 
 
@@ -427,7 +444,7 @@ main (int   argc,
 #ifdef MONGOC_ENABLE_SSL
    test_x509_install (&suite);
    test_stream_tls_install (&suite);
-   test_stream_tls_hangup_install (&suite);
+   test_stream_tls_error_install (&suite);
 #endif
 
    ret = TestSuite_Run (&suite);
