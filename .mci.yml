@@ -1,90 +1,286 @@
+#######################################
+#      libmongoc config for MCI       #
+#######################################
+
+#######################################
+#            Options                  #
+#######################################
+
 stepback: true
+
+#######################################
+#            Functions                #
+#######################################
+
+functions:
+    fetch_source:
+        command: git.get_project
+        params:
+            directory: libmongoc
+
+libmongoc_variables:
+    ## Tests run on most buildvariants
+
+    std_test_def: &std_tests
+        - name: compile
+        - name: make check
+
+    ## Architectures
+
+    default_expansions_def: &default_expansions
+        env_vars: CFLAGS=""
+        mongodb_args: "--fork --logpath=/data/log --dbpath=/data/db --pidfilepath=/data/pid"
+
+    i386_expansions_def: &i386_expansions
+        env_vars: CFLAGS="-m32 -march=i386"
+
+    i686_expansions_def: &i686_expansions
+        env_vars: CFLAGS="-m32 -march=i686"
+
+    x86_64_expansions_def: &x86_64_expansions
+        env_vars: CFLAGS="-m64 -march=x86-64"
+
+    ## "Platforms" or whatever
+
+    linux_expansions_def: &linux_expansions
+        j_flag: -j$(grep -c ^processor /proc/cpuinfo)
+        mongo_url: "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-latest.tgz"
+
+    osx_expansions_def: &osx_expansions
+        j_flag: -j$(sysctl -n hw.logicalcpu)
+        mongo_url: "https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-latest.tgz"
+
+    solaris_expansions_def: &solaris_expansions
+        j_flag: -j$(kstat cpu_info|grep core_id|sort -u|wc -l)
+        mongo_url: "https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-latest.tgz"
+
+    mingw_expansions_def: &mingw_expansions
+        j_flag: -j$(grep -c ^processor /proc/cpuinfo)
+        mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-latest.zip"
+        ext: ".zip"
+
+#######################################
+#              Pre Task               #
+#######################################
+
 pre:
-  - command: expansions.fetch
-    params:
-      keys:
-        - local_key: "aws_key"
-          remote_key: "project_aws_key"
-        - local_key: "aws_secret"
-          remote_key: "project_aws_secret"
-  - command: shell.exec
-    params:
-      script: |
-        set -o verbose
-        rm -rf "c-driver"
-        rm -rf /data/db
-        mkdir -p /data/db
+    - command: expansions.fetch
+      params:
+          keys:
+              - local_key: aws_key
+                remote_key: project_aws_key
+              - local_key: aws_secret
+                remote_key: project_aws_secret
+
+    - command: shell.exec
+      params:
+          script: |
+              set -o verbose
+              rm -rf libmongoc
+              rm -rf /data/db
+              mkdir -p /data/db
+
 post:
-  - command: shell.exec
-    params:
-      script: |
-        set -o verbose
-        ${killall_mci|pkill -9 mongod; pkill -9 mongos}
+    - command: shell.exec
+      params:
+          script: |
+              set -o verbose
+              ${killall_mci|pkill -9 mongod; pkill -9 mongos}
 
-## tasks 
-tasks: 
+
+#######################################
+#               Tasks                 #
+#######################################
+
+tasks:
 - name: compile
-  commands: 
-    - command: git.get_project
-      params:
-        directory: "c-driver"
-    - command: git.apply_patch
-      params:
-        directory: "c-driver"
-    - command: shell.exec
-      params:
-        working_dir: "c-driver"
-        script: |
-          set -o verbose
-          set -o errexit
-          ./autogen.sh
-          make ${compile_flags}
-          tar -czvf ../mongo-c-driver.tar.gz .
-    - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        remote_file: mongo-c-driver/${build_variant}/${revision}/artifacts/${build_id}.tar.gz
-        bucket: mciuploads
-        local_file: mongo-c-driver.tar.gz
-        permissions: public-read
-        content_type: ${content_type|application/x-gzip}
-
-- name: "make check"
-  depends_on:
-    - name: "compile"
   commands:
-    - command: shell.exec
-      params:
-        script: |
-            mkdir c-driver
-    - command: shell.exec
-      params:
-        working_dir: "c-driver"
-        script: |
-            set -o verbose
-            set -o errexit
-            trap 'set +o errexit; pkill -9 mongod; pkill -9 mongos}' EXIT
-            # MCI's S3 mechanism doesn't support symlinks
-            curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${build_variant}/${revision}/artifacts/${build_id}.tar.gz -o ${build_id}.tar.gz --silent
-            tar -xzf ${build_id}.tar.gz
-            curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
-            ${decompress} mongo_enterprise.${ext|tgz}
-            cp mongodb*/bin/mongod${extension} ./mongod${extension}
-            chmod +x ./mongod${extension}
-            ./mongod${extension} ${mongodb_args}
-            sleep 30
-            make check
+      - command: git.get_project
+        params:
+            directory: libmongoc
+      - command: git.apply_patch
+        params:
+            directory: libmongoc
+      - command: shell.exec
+        params:
+            working_dir: libmongoc
+            script: |
+                set -o verbose
+                set -o errexit
+                export PATH=${path}:$PATH
+                ${env_vars} ./autogen.sh
+                make ${j_flag}
+      - command: shell.exec
+        params:
+            working_dir: libmongoc
+            script: |
+                set -o verbose
+                tar -czvf ../libmongoc.tar.gz .
+      - command: s3.put
+        params:
+            aws_key: ${aws_key}
+            aws_secret: ${aws_secret}
+            remote_file: libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz
+            bucket: mciuploads
+            local_file: libmongoc.tar.gz
+            permissions: public-read
+            content_type: ${content_type|application/x-gzip}
+
+- name: make check
+  depends_on:
+      - name: compile
+  commands:
+      - command: shell.exec
+        params:
+            script: |
+                mkdir libmongoc
+      - command: shell.exec
+        params:
+            working_dir: libmongoc
+            script: |
+                set -o verbose
+                set -o errexit
+                trap 'set +o errexit; pkill -9 mongod; pkill -9 mongos}' EXIT
+                # MCI's S3 mechanism doesn't support symlinks
+                curl http://s3.amazonaws.com/mciuploads/libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz -o ${build_id}.tar.gz --silent
+                tar -xzf ${build_id}.tar.gz
+                curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
+                ${decompress} mongo_enterprise.${ext|tgz}
+                cp mongodb*/bin/mongod${extension} ./mongod${extension}
+                chmod +x ./mongod${extension}
+                ./mongod${extension} ${mongodb_args}
+                sleep 30
+                make check
+
+#######################################
+#           Buildvariants             #
+#######################################
 
 buildvariants:
-- name: ubuntu-1404
-  display_name: "Ubuntu-1404"
-  expansions: 
-    compile_flags: -j$(grep -c ^processor /proc/cpuinfo)
-    mongo_url: "http://downloads.mongodb.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1404-latest.tgz"
-    mongodb_args: "--dbpath /data/db --nopreallocj --setParameter=enableTestCommands=1 &"
-  run_on: 
-    - ubuntu1404-test
-  tasks:
-  - name: compile
-  - name: "make check"
+
+################ 32-bit ###############
+
+- name: rhel55-32
+  display_name: RHEL 5.5 32-bit
+  expansions:
+      <<: *default_expansions
+      <<: *linux_expansions
+  run_on:
+      - rhel55-32
+  tasks: *std_tests
+
+- name: windows-32
+  display_name: Windows 32-bit
+  expansions:
+      <<: *default_expansions
+      <<: *mingw_expansions
+      # TODO: stuck on 2.6?
+      mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-i386-2.6.9.zip"
+  run_on:
+      - windows-32
+  tasks: *std_tests
+
+########## i386 cross-compile #########
+
+- name: ubuntu-1204-i386
+  display_name: Ubuntu 12.04 i386
+  expansions:
+      <<: *i386_expansions
+      <<: *linux_expansions
+  run_on:
+      - ubuntu1204-test
+  tasks: *std_tests
+
+- name: ubuntu-1404-i386
+  display_name: Ubuntu 14.04 i386
+  expansions:
+      <<: *i386_expansions
+      <<: *linux_expansions
+  run_on:
+      - ubuntu1404-test
+  tasks: *std_tests
+
+- name: os-x-108-i386
+  display_name: OS X 10.8 i386
+  expansions:
+      <<: *osx_expansions
+      env_vars: CC="clang -m32 -march=i386"
+  run_on:
+      - osx-108
+  tasks: *std_tests
+
+########## i686 cross-compile #########
+
+- name: ubuntu-1204-i686
+  display_name: Ubuntu 12.04 i686
+  expansions:
+      <<: *i686_expansions
+      <<: *linux_expansions
+  run_on:
+      - ubuntu1204-test
+  tasks: *std_tests
+
+- name: ubuntu-1404-i686
+  display_name: Ubuntu 14.04 i686
+  expansions:
+      <<: *i686_expansions
+      <<: *linux_expansions
+  run_on:
+      - ubuntu1404-test
+  tasks: *std_tests
+
+- name: os-x-108-i686
+  display_name: OS X 10.8 i686
+  expansions:
+      <<: *osx_expansions
+      env_vars: CC="clang -m32 -march=i686"
+  run_on:
+      - osx-108
+  tasks: *std_tests
+
+############## x86_64 #################
+
+- name: ubuntu-1204-64
+  display_name: Ubuntu 12.04 64-bit
+  expansions:
+      <<: *x86_64_expansions
+      <<: *linux_expansions
+  run_on:
+      - ubuntu1204-test
+  tasks: *std_tests
+
+- name: ubuntu-1404-64
+  display_name: Ubuntu 14.04 64-bit
+  expansions:
+      <<: *x86_64_expansions
+      <<: *linux_expansions
+  run_on:
+      - ubuntu1404-test
+  tasks: *std_tests
+
+- name: os-x-108-64
+  display_name: OS X 10.8 64-bit
+  expansions:
+      <<: *osx_expansions
+  run_on:
+      - osx-108
+  tasks: *std_tests
+
+- name: solaris-64-bit
+  display_name: Solaris 64-bit
+  expansions:
+      <<: *x86_64_expansions
+      <<: *solaris_expansions
+      path: "/opt/mongodbtoolchain/bin/"
+  run_on:
+      - solaris
+  tasks: *std_tests
+
+- name: windows-64-mingw64
+  display_name: Windows 64-bit MinGW-64
+  expansions:
+      <<: *default_expansions
+      path: "/cygdrive/c/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin:/cygdrive/c/sasl/"
+  run_on:
+      - windows-64-vs2013-test
+  tasks: *std_tests
