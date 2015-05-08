@@ -475,7 +475,6 @@ _mongoc_matcher_iter_eq_match (bson_iter_t *compare_iter, /* IN */
    case _TYPE_CODE(BSON_TYPE_NULL, BSON_TYPE_UNDEFINED):
       return true;
 
-   /* Array on Left Side */
    case _TYPE_CODE (BSON_TYPE_ARRAY, BSON_TYPE_ARRAY):
       {
          bson_iter_t left_array;
@@ -501,6 +500,19 @@ _mongoc_matcher_iter_eq_match (bson_iter_t *compare_iter, /* IN */
                return false;
             }
          }
+      }
+
+   case _TYPE_CODE (BSON_TYPE_DOCUMENT, BSON_TYPE_DOCUMENT):
+      {
+         uint32_t llen;
+         uint32_t rlen;
+         const uint8_t *ldoc;
+         const uint8_t *rdoc;
+
+         bson_iter_document (compare_iter, &llen, &ldoc);
+         bson_iter_document (iter, &rlen, &rdoc);
+
+         return ((llen == rlen) && (0 == memcmp (ldoc, rdoc, llen)));
       }
 
    default:

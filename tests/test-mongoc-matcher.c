@@ -330,6 +330,68 @@ test_mongoc_matcher_eq_int64 (void)
 
 
 static void
+test_mongoc_matcher_eq_doc (void)
+{
+   bson_t *spec;
+   bson_t *doc;
+   bson_error_t error;
+   mongoc_matcher_t *matcher;
+
+   /* {doc: {a: 1}} matches itself */
+   spec = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "}");
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   BSON_ASSERT (mongoc_matcher_match (matcher, spec));
+
+   /* {doc: {a: 1}} matches {doc: {a: 1}, foo: "whatever"} */
+   doc = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "}",
+                   "foo", BCON_UTF8 ("whatever"));
+   BSON_ASSERT (mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1}} doesn't match {doc: 1} */
+   doc = BCON_NEW ("doc", BCON_INT32 (1));
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1}} doesn't match {doc: {}} */
+   doc = BCON_NEW ("doc", "{", "}");
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1}} doesn't match {doc: {a: 2}} */
+   doc = BCON_NEW ("doc", "{", "a", BCON_INT32 (2), "}");
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1}} doesn't match {doc: {b: 1}} */
+   doc = BCON_NEW ("doc", "{", "b", BCON_INT32 (1), "}");
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1}} doesn't match {doc: {a: 1, b: 1}} */
+   doc = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "b", BCON_INT32 (1), "}");
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1, b:1}} matches itself */
+   bson_destroy (spec);
+   mongoc_matcher_destroy (matcher);
+   spec = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "b", BCON_INT32 (1), "}");
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   BSON_ASSERT (mongoc_matcher_match (matcher, spec));
+
+   /* {doc: {a: 1, b:1}} doesn't match {doc: {a: 1}} */
+   doc = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "}");
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (spec);
+   bson_destroy (doc);
+   mongoc_matcher_destroy (matcher);
+}
+
+
+static void
 test_mongoc_matcher_in_basic (void)
 {
    mongoc_matcher_t *matcher;
@@ -386,5 +448,6 @@ test_matcher_install (TestSuite *suite)
    TestSuite_Add (suite, "/Matcher/eq/utf8", test_mongoc_matcher_eq_utf8);
    TestSuite_Add (suite, "/Matcher/eq/int32", test_mongoc_matcher_eq_int32);
    TestSuite_Add (suite, "/Matcher/eq/int64", test_mongoc_matcher_eq_int64);
+   TestSuite_Add (suite, "/Matcher/eq/doc", test_mongoc_matcher_eq_doc);
    TestSuite_Add (suite, "/Matcher/in/basic", test_mongoc_matcher_in_basic);
 }
