@@ -29,7 +29,7 @@ libmongoc_variables:
 
     default_expansions_def: &default_expansions
         env_vars: CFLAGS=""
-        mongodb_args: "--fork --logpath=/data/log --dbpath=/data/db --pidfilepath=/data/pid"
+        mongodb_args: "--fork --nojournal --smallfiles --logpath=/data/log --dbpath=/data/db --pidfilepath=/data/pid"
 
     i386_expansions_def: &i386_expansions
         env_vars: CFLAGS="-m32 -march=i386"
@@ -184,6 +184,7 @@ buildvariants:
 - name: ubuntu-1204-i386
   display_name: Ubuntu 12.04 i386
   expansions:
+      <<: *default_expansions
       <<: *i386_expansions
       <<: *linux_expansions
   run_on:
@@ -193,6 +194,7 @@ buildvariants:
 - name: ubuntu-1404-i386
   display_name: Ubuntu 14.04 i386
   expansions:
+      <<: *default_expansions
       <<: *i386_expansions
       <<: *linux_expansions
   run_on:
@@ -202,6 +204,7 @@ buildvariants:
 - name: os-x-108-i386
   display_name: OS X 10.8 i386
   expansions:
+      <<: *default_expansions
       <<: *osx_expansions
       env_vars: CC="clang -m32 -march=i386"
   run_on:
@@ -213,6 +216,7 @@ buildvariants:
 - name: ubuntu-1204-i686
   display_name: Ubuntu 12.04 i686
   expansions:
+      <<: *default_expansions
       <<: *i686_expansions
       <<: *linux_expansions
   run_on:
@@ -222,6 +226,7 @@ buildvariants:
 - name: ubuntu-1404-i686
   display_name: Ubuntu 14.04 i686
   expansions:
+      <<: *default_expansions
       <<: *i686_expansions
       <<: *linux_expansions
   run_on:
@@ -231,6 +236,7 @@ buildvariants:
 - name: os-x-108-i686
   display_name: OS X 10.8 i686
   expansions:
+      <<: *default_expansions
       <<: *osx_expansions
       env_vars: CC="clang -m32 -march=i686"
   run_on:
@@ -242,6 +248,7 @@ buildvariants:
 - name: ubuntu-1204-64
   display_name: Ubuntu 12.04 64-bit
   expansions:
+      <<: *default_expansions
       <<: *x86_64_expansions
       <<: *linux_expansions
   run_on:
@@ -251,6 +258,7 @@ buildvariants:
 - name: ubuntu-1404-64
   display_name: Ubuntu 14.04 64-bit
   expansions:
+      <<: *default_expansions
       <<: *x86_64_expansions
       <<: *linux_expansions
   run_on:
@@ -260,6 +268,7 @@ buildvariants:
 - name: os-x-108-64
   display_name: OS X 10.8 64-bit
   expansions:
+      <<: *default_expansions
       <<: *osx_expansions
   run_on:
       - osx-108
@@ -268,6 +277,7 @@ buildvariants:
 - name: solaris-64-bit
   display_name: Solaris 64-bit
   expansions:
+      <<: *default_expansions
       <<: *x86_64_expansions
       <<: *solaris_expansions
       path: "/opt/mongodbtoolchain/bin/"
