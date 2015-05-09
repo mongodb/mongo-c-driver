@@ -29,7 +29,8 @@ libmongoc_variables:
 
     default_expansions_def: &default_expansions
         env_vars: CFLAGS=""
-        mongodb_args: "--fork --nojournal --smallfiles --logpath=/data/log --dbpath=/data/db --pidfilepath=/data/pid"
+        mongodb_logpath: /data/log
+        mongodb_args: "--fork --noprealloc --smallfiles --dbpath=/data/db --pidfilepath=/data/pid"
 
     i386_expansions_def: &i386_expansions
         env_vars: CFLAGS="-m32 -march=i386"
@@ -71,15 +72,6 @@ pre:
                 remote_key: project_aws_key
               - local_key: aws_secret
                 remote_key: project_aws_secret
-
-    - command: shell.exec
-      params:
-          script: |
-              set -o verbose
-              rm -rf libmongoc
-              rm -rf /data/db
-              mkdir -p /data/db
-
 post:
     - command: shell.exec
       params:
@@ -133,6 +125,13 @@ tasks:
       - command: shell.exec
         params:
             script: |
+                set -o verbose
+                rm -rf libmongoc
+                rm -rf /data/db
+                mkdir -p /data/db
+      - command: shell.exec
+        params:
+            script: |
                 mkdir libmongoc
       - command: shell.exec
         params:
@@ -148,7 +147,11 @@ tasks:
                 ${decompress} mongo_enterprise.${ext|tgz}
                 cp mongodb*/bin/mongod${extension} ./mongod${extension}
                 chmod +x ./mongod${extension}
-                ./mongod${extension} ${mongodb_args}
+                if ! ./mongod${extension} ${mongodb_args} --logpath=${mongodb_logpath}
+                then
+                    cat ${mongodb_logpath}
+                    exit 1
+                fi
                 sleep 30
                 make check
 
