@@ -53,6 +53,8 @@ extern void test_stream_tls_error_install  (TestSuite *suite);
 
 
 #ifdef _WIN32
+# define strcasecmp _stricmp
+
 void
 usleep (int64_t usec)
 {
