@@ -112,6 +112,102 @@ test_mongoc_matcher_compare (void)
 }
 
 
+typedef struct {
+   const char *spec;
+   const char *doc;
+   bool match;
+} logic_op_test_t;
+
+
+static void
+test_mongoc_matcher_logic_ops (void)
+{
+   logic_op_test_t tests[] = {
+         {"{\"$or\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1}", true},
+         {"{\"$or\": [{\"a\": 1}, {\"b\": 2}]}", "{\"b\": 2}", true},
+         {"{\"$or\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 3}", false},
+         {
+               "{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}",
+               "{\"a\": 3}",
+               true
+         },
+         {
+               "{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}",
+               "{\"a\": -2}",
+               true
+         },
+         {
+               "{\"$or\": [{\"a\": {\"$gt\": 1}}, {\"a\": {\"$lt\": -1}}]}",
+               "{\"a\": 0}",
+               false
+         },
+         {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1, \"b\": 2}", true},
+         {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1, \"b\": 1}", false},
+         {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"a\": 1}", false},
+         {"{\"$and\": [{\"a\": 1}, {\"b\": 2}]}", "{\"b\": 2}", false},
+         {
+               "{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}",
+               "{\"a\": 0}",
+               true
+         },
+         {
+               "{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}",
+               "{\"a\": -2}",
+               false
+         },
+         {
+               "{\"$and\": [{\"a\": {\"$gt\": -1}}, {\"a\": {\"$lt\": 1}}]}",
+               "{\"a\": 1}",
+               false
+         },
+   };
+
+   int n_tests = sizeof tests / sizeof (logic_op_test_t);
+   int i;
+   logic_op_test_t test;
+   bson_t *spec;
+   bson_error_t error;
+   mongoc_matcher_t *matcher;
+   bson_t *doc;
+   bool r;
+
+   for (i = 0; i < n_tests; i++) {
+      test = tests[i];
+      spec = bson_new_from_json ((uint8_t * )test.spec, -1, &error);
+      if (!spec) {
+         fprintf (stderr,
+                  "couldn't parse JSON query:\n\n%s\n\n%s\n",
+         test.spec, error.message);
+         abort ();
+      }
+
+      matcher = mongoc_matcher_new (spec, &error);
+      BSON_ASSERT (matcher);
+
+      doc = bson_new_from_json ((uint8_t * )test.doc, -1, &error);
+      if (!doc) {
+         fprintf (stderr,
+                  "couldn't parse JSON document:\n\n%s\n\n%s\n",
+                  test.doc, error.message);
+         abort ();
+      }
+
+      r = mongoc_matcher_match (matcher, doc);
+      if (test.match != r) {
+         fprintf (stderr,
+                  "query:\n\n%s\n\nshould %shave matched:\n\n%s\n",
+                  test.match ? "" : "not ",
+                  test.spec, test.doc);
+         abort ();
+      }
+
+      mongoc_matcher_destroy (matcher);
+      bson_destroy (doc);
+      bson_destroy (spec);
+   }
+}
+
+
 static void
 test_mongoc_matcher_bad_spec (void)
 {
@@ -253,6 +349,146 @@ test_mongoc_matcher_eq_int64 (void)
 
 
 static void
+test_mongoc_matcher_eq_array (void)
+{
+   bson_t *query;
+   bson_t *to_match;
+   bson_t *should_fail;
+   bson_error_t error;
+   mongoc_matcher_t *matcher;
+
+   query = BCON_NEW ("a", "[", BCON_INT32 (1), BCON_INT32 (2), "]");
+   matcher = mongoc_matcher_new (query, &error);
+   assert (matcher);
+
+   /* query matches itself */
+   assert (mongoc_matcher_match (matcher, query));
+
+   to_match = BCON_NEW (
+         "a", "[", BCON_INT32 (1), BCON_INT32 (2), "]",
+         "b", "whatever"
+   );
+   assert (mongoc_matcher_match (matcher, to_match));
+
+   /* query {a: [1, 2]} doesn't match {a: 1} */
+   should_fail = BCON_NEW ("a", BCON_INT32 (1));
+   assert (!mongoc_matcher_match (matcher, should_fail));
+   bson_destroy (should_fail);
+
+   /* query {a: [1, 2]} doesn't match {a: [2, 1]} */
+   should_fail = BCON_NEW ("a",  "[", BCON_INT32 (2), BCON_INT32 (1), "]");
+   assert (!mongoc_matcher_match (matcher, should_fail));
+   bson_destroy (should_fail);
+
+   /* query {a: [1, 2]} doesn't match {a: [1, 2, 3]} */
+   should_fail = BCON_NEW ("a",  "[", BCON_INT32 (1), BCON_INT32 (2), BCON_INT32 (3), "]");
+   assert (!mongoc_matcher_match (matcher, should_fail));
+   bson_destroy (should_fail);
+
+   /* query {a: [1, 2]} doesn't match {a: [1]} */
+   should_fail = BCON_NEW ("a",  "[", BCON_INT32 (1), "]");
+   assert (!mongoc_matcher_match (matcher, should_fail));
+
+   bson_destroy (to_match);
+   mongoc_matcher_destroy (matcher);
+   bson_destroy (query);
+
+   /* empty array */
+   query = BCON_NEW ("a", "[", "]");
+
+   /* {a: []} matches itself */
+   matcher = mongoc_matcher_new (query, &error);
+   assert (matcher);
+
+   /* query {a: []} matches {a: [], b: "whatever"} */
+   to_match = BCON_NEW ("a", "[", "]", "b", "whatever");
+   assert (mongoc_matcher_match (matcher, query));
+   assert (mongoc_matcher_match (matcher, to_match));
+
+   /* query {a: []} doesn't match {a: [1]} */
+   assert (!mongoc_matcher_match (matcher, should_fail));
+   bson_destroy (should_fail);
+
+   /* query {a: []} doesn't match empty document */
+   should_fail = bson_new ();
+   assert (!mongoc_matcher_match (matcher, should_fail));
+
+   bson_destroy (should_fail);
+
+   /* query {a: []} doesn't match {a: null} */
+   should_fail = BCON_NEW ("a", BCON_NULL);
+   assert (!mongoc_matcher_match (matcher, should_fail));
+
+   bson_destroy (should_fail);
+   bson_destroy (query);
+   bson_destroy (to_match);
+   mongoc_matcher_destroy (matcher);
+}
+
+
+static void
+test_mongoc_matcher_eq_doc (void)
+{
+   bson_t *spec;
+   bson_t *doc;
+   bson_error_t error;
+   mongoc_matcher_t *matcher;
+
+   /* {doc: {a: 1}} matches itself */
+   spec = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "}");
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   BSON_ASSERT (mongoc_matcher_match (matcher, spec));
+
+   /* {doc: {a: 1}} matches {doc: {a: 1}, foo: "whatever"} */
+   doc = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "}",
+                   "foo", BCON_UTF8 ("whatever"));
+   BSON_ASSERT (mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1}} doesn't match {doc: 1} */
+   doc = BCON_NEW ("doc", BCON_INT32 (1));
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1}} doesn't match {doc: {}} */
+   doc = BCON_NEW ("doc", "{", "}");
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1}} doesn't match {doc: {a: 2}} */
+   doc = BCON_NEW ("doc", "{", "a", BCON_INT32 (2), "}");
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1}} doesn't match {doc: {b: 1}} */
+   doc = BCON_NEW ("doc", "{", "b", BCON_INT32 (1), "}");
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1}} doesn't match {doc: {a: 1, b: 1}} */
+   doc = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "b", BCON_INT32 (1), "}");
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (doc);
+
+   /* {doc: {a: 1, b:1}} matches itself */
+   bson_destroy (spec);
+   mongoc_matcher_destroy (matcher);
+   spec = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "b", BCON_INT32 (1), "}");
+   matcher = mongoc_matcher_new (spec, &error);
+   BSON_ASSERT (matcher);
+   BSON_ASSERT (mongoc_matcher_match (matcher, spec));
+
+   /* {doc: {a: 1, b:1}} doesn't match {doc: {a: 1}} */
+   doc = BCON_NEW ("doc", "{", "a", BCON_INT32 (1), "}");
+   BSON_ASSERT (!mongoc_matcher_match (matcher, doc));
+   bson_destroy (spec);
+   bson_destroy (doc);
+   mongoc_matcher_destroy (matcher);
+}
+
+
+static void
 test_mongoc_matcher_in_basic (void)
 {
    mongoc_matcher_t *matcher;
@@ -304,9 +540,12 @@ test_matcher_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Matcher/basic", test_mongoc_matcher_basic);
    TestSuite_Add (suite, "/Matcher/compare", test_mongoc_matcher_compare);
+   TestSuite_Add (suite, "/Matcher/logic", test_mongoc_matcher_logic_ops);
    TestSuite_Add (suite, "/Matcher/bad_spec", test_mongoc_matcher_bad_spec);
    TestSuite_Add (suite, "/Matcher/eq/utf8", test_mongoc_matcher_eq_utf8);
    TestSuite_Add (suite, "/Matcher/eq/int32", test_mongoc_matcher_eq_int32);
    TestSuite_Add (suite, "/Matcher/eq/int64", test_mongoc_matcher_eq_int64);
+   TestSuite_Add (suite, "/Matcher/eq/array", test_mongoc_matcher_eq_array);
+   TestSuite_Add (suite, "/Matcher/eq/doc", test_mongoc_matcher_eq_doc);
    TestSuite_Add (suite, "/Matcher/in/basic", test_mongoc_matcher_in_basic);
 }
