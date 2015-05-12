@@ -1,7 +1,7 @@
 mongo-c-driver 1.1.5
 ====================
 
-It is my pleasure to announce to you the 1.1.4 release of the MongoDB C driver.
+It is my pleasure to announce to you the 1.1.5 release of the MongoDB C driver.
 
 This is a patch release with performance enhancements and bug fixes:
 
@@ -9,9 +9,11 @@ This is a patch release with performance enhancements and bug fixes:
  * Prevent using fsync or j with conflicting w=0 write concern
  * Obey socket timeout consistently in TLS/SSL mode
  * Return an error promptly after a network hangup in TLS mode
+ * Prevent crash using SSL in FIPS mode
  * Always return NULL from mongoc_database_get_collection_names on error
  * Fix version check for GCC 5 and future versions of Clang
  * Fix warnings and errors building on various platforms
+ * Add configure flag to enable/disable shared memory performance counters
  * Minor docs improvements and fix links from C Driver docs to Libbson docs
 
 With this release, Libbson abandons the convention that odd-numbered patch

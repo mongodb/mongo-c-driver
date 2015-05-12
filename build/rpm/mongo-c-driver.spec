@@ -117,8 +117,8 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %changelog -n %{DriverName}
-* Wed Apr 1 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.5-1
-- Post-release bump for 1.1.4
+* Tue May 12 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.5-1
+- Release 1.1.5
 
 * Wed Apr 1 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.4-1
 - Release 1.1.4.
@@ -179,8 +179,8 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %changelog -n %{BsonName}
-* Wed Apr 1 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.5-1
-- Post-release bump for 1.1.4
+* Tue May 12 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.5-1
+- Release 1.1.5
 
 * Wed Apr 1 2015 Jason Carey <jason.carey@mongodb.com> - 1.1.4-1
 - Release 1.1.4.
