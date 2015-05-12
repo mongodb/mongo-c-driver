@@ -24,7 +24,7 @@ mongoc_socket_accept (mongoc_socket_t *sock,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>sock</p></td><td><p>A <link xref="mongoc_socket_t">mongoc_socket_t</link>.</p></td></tr>
+      <tr><td><p>sock</p></td><td><p>A <code xref="mongoc_socket_t">mongoc_socket_t</code>.</p></td></tr>
       <tr><td><p>expire_at</p></td><td><p>An int64_t containing a timeout in milliseconds.</p></td></tr>
     </table>
   </section>
@@ -36,7 +36,7 @@ mongoc_socket_accept (mongoc_socket_t *sock,
 
   <section id="return">
     <title>Returns</title>
-    <p>NULL upon failure to accept or timeout. A newly allocated <code>mongoc_socket_t</code> that should be released with <link xref="mongoco_socket_destroy">mongoc_socket_destroy()</link> on success.</p>
+    <p>NULL upon failure to accept or timeout. A newly allocated <code>mongoc_socket_t</code> that should be released with <code xref="mongoc_socket_destroy">mongoc_socket_destroy()</code> on success.</p>
   </section>
 
 

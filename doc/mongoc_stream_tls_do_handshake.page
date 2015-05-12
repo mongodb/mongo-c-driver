@@ -24,7 +24,7 @@ mongoc_stream_tls_do_handshake (mongoc_stream_t *stream,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_tls_t">mongoc_stream_tls_t</link>.</p></td></tr>
+      <tr><td><p>stream</p></td><td><p>A <code xref="mongoc_stream_tls_t">mongoc_stream_tls_t</code>.</p></td></tr>
       <tr><td><p>timeout_msec</p></td><td><p>A timeout, in milliseconds, for the handshake.</p></td></tr>
     </table>
   </section>

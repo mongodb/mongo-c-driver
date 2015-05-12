@@ -17,20 +17,20 @@
 mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
                               const bson_t            *document);
 ]]></code></synopsis>
-    <p>Queue an insert of a single document into a bulk operation. The insert is not performed until <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link> is called.</p>
+    <p>Queue an insert of a single document into a bulk operation. The insert is not performed until <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</code> is called.</p>
   </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>bulk</p></td><td><p>A <link xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</link>.</p></td></tr>
-      <tr><td><p>document</p></td><td><p>A bson_t.</p></td></tr>
+      <tr><td><p>bulk</p></td><td><p>A <code xref="mongoc_bulk_operation_t">mongoc_bulk_operation_t</code>.</p></td></tr>
+      <tr><td><p>document</p></td><td><p>A <code xref="bson:bson_t">bson_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="errors">
     <title>Errors</title>
-    <p>Errors are propagated via <link xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</link>.</p>
+    <p>Errors are propagated via <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</code>.</p>
   </section>
 
 </page>

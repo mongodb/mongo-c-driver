@@ -17,19 +17,19 @@
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_client_t *
 mongoc_client_new_from_uri (const mongoc_uri_t *uri);]]></code></synopsis>
-    <p>Creates a new <link xref="mongoc_client_t">mongoc_client_t</link> using the <link xref="mongoc_uri_t">mongoc_uri_t</link> provided.</p>
+    <p>Creates a new <code xref="mongoc_client_t">mongoc_client_t</code> using the <code xref="mongoc_uri_t">mongoc_uri_t</code> provided.</p>
   </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>uri</p></td><td><p>A <link xref="mongoc_uri_t">mongoc_uri_t</link>.</p></td></tr>
+      <tr><td><p>uri</p></td><td><p>A <code xref="mongoc_uri_t">mongoc_uri_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>A newly allocated <link xref="mongoc_client_t">mongoc_client_t</link> that should be freed with <link xref="mongoc_client_destroy">mongoc_client_destroy()</link> when no longer in use.</p>
+    <p>A newly allocated <code xref="mongoc_client_t">mongoc_client_t</code> that should be freed with <code xref="mongoc_client_destroy">mongoc_client_destroy()</code> when no longer in use.</p>
   </section>
 
 </page>

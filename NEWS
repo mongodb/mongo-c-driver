@@ -1,9 +1,38 @@
-Next release
-============
+mongo-c-driver 1.1.5
+====================
 
-Changes include:
- * The fsync and j write concern flags imply acknowledged writes
+It is my pleasure to announce to you the 1.1.4 release of the MongoDB C driver.
+
+This is a patch release with performance enhancements and bug fixes:
+
+ * The fsync and j write concern flags now imply acknowledged writes
  * Prevent using fsync or j with conflicting w=0 write concern
+ * Obey socket timeout consistently in TLS/SSL mode
+ * Return an error promptly after a network hangup in TLS mode
+ * Always return NULL from mongoc_database_get_collection_names on error
+ * Fix version check for GCC 5 and future versions of Clang
+ * Fix warnings and errors building on various platforms
+ * Minor docs improvements and fix links from C Driver docs to Libbson docs
+
+With this release, Libbson abandons the convention that odd-numbered patch
+versions indicate unstable releases. We switch to simple semantic versioning:
+1.1.5 is a stable release with bug fixes since 1.1.4. During subsequent
+development the version will be "1.1.6-dev".
+
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+ * A. Jesse Jiryu Davis
+ * Christian Hergert
+ * Jason Carey
+ * Jeremy Mikola
+ * Jeroen Ooms
+ * Hannes Magnusson
+
+Enjoy!
+
+-- A. Jesse Jiryu Davis
+
 
 mongo-c-driver 1.1.4
 ====================

@@ -425,7 +425,8 @@ mongoc_database_add_user (mongoc_database_t *database,
 
    if (!ret && (lerror.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
       ret = mongoc_database_add_user_legacy (database, username, password, error);
-   } else if (ret) {
+   } else if (ret || (lerror.code == 13)) {
+      /* usersInfo succeeded or failed with auth err, we're on modern mongod */
       input = bson_strdup_printf ("%s:mongo:%s", username, password);
       hashed_password = _mongoc_hex_md5 (input);
       bson_free (input);
@@ -826,6 +827,7 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
    mongoc_array_t strv_buf;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
+   char **ret;
 
    BSON_ASSERT (database);
 
@@ -852,9 +854,16 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
    namecopy = NULL;
    _mongoc_array_append_val (&strv_buf, namecopy);
 
+   if (mongoc_cursor_error (cursor, error)) {
+      _mongoc_array_destroy (&strv_buf);
+      ret = NULL;
+   } else {
+      ret = (char **)strv_buf.data;
+   }
+
    mongoc_cursor_destroy (cursor);
 
-   return (char **) strv_buf.data;
+   return ret;
 }
 
 

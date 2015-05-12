@@ -18,7 +18,7 @@
  *    7. hangs up
  */
 static void *
-ssl_hangup_server (void *ptr)
+ssl_error_server (void *ptr)
 {
    ssl_test_data_t *data = (ssl_test_data_t *)ptr;
 
@@ -69,17 +69,28 @@ ssl_hangup_server (void *ptr)
    ssl_stream = mongoc_stream_tls_new (sock_stream, data->server, 0);
    assert (ssl_stream);
 
-   r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
-   assert (r);
+   switch (data->behavior) {
+   case SSL_TEST_BEHAVIOR_STALL_BEFORE_HANDSHAKE:
+      usleep (data->handshake_stall_ms * 1000);
+      break;
+   case SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE:
+      r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
+      assert (r);
 
-   r = mongoc_stream_readv (ssl_stream, &iov, 1, 1, TIMEOUT);
-   assert (r == 1);
+      r = mongoc_stream_readv (ssl_stream, &iov, 1, 1, TIMEOUT);
+      assert (r == 1);
+      break;
+   case SSL_TEST_BEHAVIOR_NORMAL:
+   default:
+      fprintf (stderr, "unimplemented ssl_test_behavior_t\n");
+      abort ();
+   }
+
+   data->server_result->result = SSL_TEST_SUCCESS;
 
    mongoc_stream_close (ssl_stream);
    mongoc_stream_destroy (ssl_stream);
    mongoc_socket_destroy (listen_sock);
-
-   data->server_result->result = SSL_TEST_SUCCESS;
 
    return NULL;
 }
@@ -91,8 +102,8 @@ ssl_hangup_server (void *ptr)
  *    2. waits on a condvar until the server is up
  *    3. connects to the server's port
  *    4. writes a byte
- *    6. confirms that the server hangs up promptly
- *    8. shuts down
+ *    5. confirms that the server hangs up promptly
+ *    6. shuts down
  */
 static void *
 ssl_hangup_client (void *ptr)
@@ -173,6 +184,7 @@ test_mongoc_tls_hangup (void)
 
    data.server = &sopt;
    data.client = &copt;
+   data.behavior = SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE;
    data.server_result = &sr;
    data.client_result = &cr;
    data.host = "localhost";
@@ -180,7 +192,7 @@ test_mongoc_tls_hangup (void)
    mongoc_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = mongoc_thread_create (threads, &ssl_hangup_server, &data);
+   r = mongoc_thread_create (threads, &ssl_error_server, &data);
    assert (r == 0);
 
    r = mongoc_thread_create (threads + 1, &ssl_hangup_client, &data);
@@ -198,8 +210,118 @@ test_mongoc_tls_hangup (void)
    ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
 
+
+/** run as a child thread by test_mongoc_tls_handshake_stall
+ *
+ * It:
+ *    1. spins up
+ *    2. waits on a condvar until the server is up
+ *    3. connects to the server's port
+ *    4. attempts handshake
+ *    5. confirms that it times out
+ *    6. shuts down
+ */
+static void *
+handshake_stall_client (void *ptr)
+{
+   ssl_test_data_t *data = (ssl_test_data_t *)ptr;
+   char *uri_str;
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+   int64_t connect_timeout_ms = data->handshake_stall_ms - 100;
+   int64_t duration_ms;
+
+   int64_t start_time;
+
+   mongoc_mutex_lock (&data->cond_mutex);
+   while (!data->server_port) {
+      mongoc_cond_wait (&data->cond, &data->cond_mutex);
+   }
+   mongoc_mutex_unlock (&data->cond_mutex);
+
+   uri_str = bson_strdup_printf (
+      "mongodb://localhost:%u/?ssl=true&connecttimeoutms=%" PRId64,
+      data->server_port, connect_timeout_ms);
+
+   client = mongoc_client_new (uri_str);
+
+   /* we should time out after about 200ms */
+   start_time = bson_get_monotonic_time ();
+   mongoc_client_get_server_status (client,
+                                    NULL,
+                                    &reply,
+                                    &error);
+
+   /* time is in microseconds */
+   duration_ms = (bson_get_monotonic_time () - start_time) / 1000;
+
+   if (llabs(duration_ms - connect_timeout_ms) > 100) {
+      fprintf (stderr,
+               "expected timeout after about 200ms, not %" PRId64 "\n",
+               duration_ms);
+      abort ();
+   }
+
+   data->client_result->result = SSL_TEST_SUCCESS;
+
+   bson_destroy (&reply);
+   mongoc_client_destroy (client);
+   bson_free (uri_str);
+
+   return NULL;
+}
+
+
+static void
+test_mongoc_tls_handshake_stall (void)
+{
+   mongoc_ssl_opt_t sopt = { 0 };
+   mongoc_ssl_opt_t copt = { 0 };
+   ssl_test_result_t sr;
+   ssl_test_result_t cr;
+   ssl_test_data_t data = { 0 };
+   mongoc_thread_t threads[2];
+   int i, r;
+
+   sopt.pem_file = PEMFILE_NOPASS;
+   sopt.weak_cert_validation = 1;
+   copt.weak_cert_validation = 1;
+
+   data.server = &sopt;
+   data.client = &copt;
+   data.behavior = SSL_TEST_BEHAVIOR_STALL_BEFORE_HANDSHAKE;
+   data.handshake_stall_ms = 300;
+   data.server_result = &sr;
+   data.client_result = &cr;
+   data.host = "localhost";
+
+   mongoc_mutex_init (&data.cond_mutex);
+   mongoc_cond_init (&data.cond);
+
+   r = mongoc_thread_create (threads, &ssl_error_server, &data);
+   assert (r == 0);
+
+   r =
+      mongoc_thread_create (threads + 1, &handshake_stall_client, &data);
+   assert (r == 0);
+
+   for (i = 0; i < 2; i++) {
+      r = mongoc_thread_join (threads[i]);
+      assert (r == 0);
+   }
+
+   mongoc_mutex_destroy (&data.cond_mutex);
+   mongoc_cond_destroy (&data.cond);
+
+   ASSERT (cr.result == SSL_TEST_SUCCESS);
+   ASSERT (sr.result == SSL_TEST_SUCCESS);
+}
+
 void
-test_stream_tls_hangup_install (TestSuite *suite)
+test_stream_tls_error_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
+   TestSuite_Add (suite, "/TLS/handshake_stall",
+                  test_mongoc_tls_handshake_stall);
 }

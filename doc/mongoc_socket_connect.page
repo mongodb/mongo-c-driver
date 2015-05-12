@@ -25,7 +25,7 @@ mongoc_socket_connect (mongoc_socket_t       *sock,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>sock</p></td><td><p>A <link xref="mongoc_socket_t">mongoc_socket_t</link>.</p></td></tr>
+      <tr><td><p>sock</p></td><td><p>A <code xref="mongoc_socket_t">mongoc_socket_t</code>.</p></td></tr>
       <tr><td><p>addr</p></td><td><p>A struct sockaddr.</p></td></tr>
       <tr><td><p>addrlen</p></td><td><p>A socklen_t.</p></td></tr>
       <tr><td><p>expire_at</p></td><td><p>A int64_t containing the absolute timeout using the monotonic clock.</p></td></tr>
@@ -35,7 +35,7 @@ mongoc_socket_connect (mongoc_socket_t       *sock,
   <section id="description">
     <title>Description</title>
     <p>This function is a wrapper around the BSD socket <code>connect()</code> interface. It provides better portability between UNIX-like and Microsoft Windows platforms.</p>
-    <p>This function performs a socket connection but will fail if @expire_at has been reached by the monotonic clock. Keep in mind that this is an absolute timeout in milliseconds. You should add your desired timeout to <link xref="bson_get_monotonic_time">bson_get_monotonic_time()</link>.</p>
+    <p>This function performs a socket connection but will fail if @expire_at has been reached by the monotonic clock. Keep in mind that this is an absolute timeout in milliseconds. You should add your desired timeout to <code xref="bson:clock">bson_get_monotonic_time()</code>.</p>
   </section>
 
   <section id="return">

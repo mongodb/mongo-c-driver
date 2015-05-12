@@ -20,8 +20,8 @@ mongoc_read_prefs_set_tags (mongoc_read_prefs_t *read_prefs,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>read_prefs</p></td><td><p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p></td></tr>
-      <tr><td><p>tags</p></td><td><p>A bson_t.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
+      <tr><td><p>tags</p></td><td><p>A <code xref="bson:bson_t">bson_t</code>.</p></td></tr>
     </table>
   </section>
 

@@ -21,14 +21,15 @@ mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>collection</p></td><td><p>A <link xref="mongoc_collection_t">mongoc_collection_t</link>.</p></td></tr>
-      <tr><td><p>write_concern</p></td><td><p>A <link xref="mongoc_write_concern_t">mongoc_write_concern_t</link>.</p></td></tr>
+      <tr><td><p>collection</p></td><td><p>A <code xref="mongoc_collection_t">mongoc_collection_t</code>.</p></td></tr>
+      <tr><td><p>write_concern</p></td><td><p>A <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
     <title>Description</title>
-    <p>Sets the default write concern to use for operations on <code>collection</code> not specifying a write concern.</p>
+    <p>Sets the write concern to use for operations on <code>collection</code>.</p>
+    <p>The default write concern is MONGOC_WRITE_CONCERN_W_DEFAULT: the driver blocks awaiting basic acknowledgment of write operations from MongoDB. This is the correct write concern for the great majority of applications.</p>
   </section>
 
 </page>

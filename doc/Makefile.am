@@ -24,7 +24,7 @@ endif
 if ENABLE_HTML_DOCS
 html $(YELP_HTML_FILES):
 	@ $(MKDIR_P) doc/html
-	$(AM_V_GEN)$(YELP_BUILD) html -o doc/html $(wildcard $(top_srcdir)/doc/*.page)
+	$(AM_V_GEN)$(YELP_BUILD) html -x build/libbson.xsl -o doc/html $(wildcard $(top_srcdir)/doc/*.page)
 
 YELP_HTML_FILES = \
 	doc/html/C.css \

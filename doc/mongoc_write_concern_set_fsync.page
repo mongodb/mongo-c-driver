@@ -22,7 +22,7 @@ mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>write_concern</p></td><td><p>A <link xref="mongoc_write_concern_t">mongoc_write_concern_t</link>.</p></td></tr>
+      <tr><td><p>write_concern</p></td><td><p>A <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code>.</p></td></tr>
       <tr><td><p>fsync_</p></td><td><p>A boolean.</p></td></tr>
     </table>
   </section>
@@ -32,4 +32,9 @@ mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern,
     <p>Sets if a fsync must be performed before indicating write success.</p>
   </section>
 
+  <section id="Deprecated">
+    <title>Deprecated</title>
+    <note style="warning"><p>The <code>fsync</code> write concern is deprecated.</p></note>
+    <p>Please use <code xref="mongoc_write_concern_set_journal">mongoc_write_concern_set_journal()</code> instead.</p>
+  </section>
 </page>

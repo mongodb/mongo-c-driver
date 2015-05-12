@@ -31,7 +31,7 @@ typedef struct iovec mongoc_iovec_t;
 ]]></code></synopsis>
   </section>
 
-    <p>The <code mime="text/x-csrc">mongoc_iovec_t</code> structure is a portability abstraction for consumers of the <link xref="mongoc_stream_t">mongoc_stream_t</link> interfaces. It allows for scatter/gather I/O through the socket subsystem.</p>
+    <p>The <code mime="text/x-csrc">mongoc_iovec_t</code> structure is a portability abstraction for consumers of the <code xref="mongoc_stream_t">mongoc_stream_t</code> interfaces. It allows for scatter/gather I/O through the socket subsystem.</p>
     <note style="warning"><p>When writing portable code, beware of the ordering of <code>iov_len</code> and <code>iov_base</code> as they are different on various platforms. Therefore, you should not use C initializers for initialization.</p></note>
   </section>
 

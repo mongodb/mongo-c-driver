@@ -19,11 +19,11 @@
 mongoc_client_set_stream_initiator (mongoc_client_t          *client,
                                     mongoc_stream_initiator_t initiator,
                                     void                     *user_data);]]></code></synopsis>
-    <p>The <link xref="mongoc_client_set_stream_initiator">mongoc_client_set_stream_initiator()</link>
-function shall associate a given <link xref="mongoc_client_t">mongoc_client_t</link>
+    <p>The <code xref="mongoc_client_set_stream_initiator">mongoc_client_set_stream_initiator()</code>
+function shall associate a given <code xref="mongoc_client_t">mongoc_client_t</code>
 with a new stream initiator. This will completely replace the default transport
 (buffered TCP, possibly with TLS). The <code>initiator</code> should fulfill the
-<link xref="mongoc_stream_t">mongoc_stream_t</link> contract.
+<code xref="mongoc_stream_t">mongoc_stream_t</code> contract.
 <code>user_data</code> is passed through to the <code>initiator</code> callback and may
 be used for whatever run time customization is necessary.</p>
   </section>
@@ -31,8 +31,8 @@ be used for whatever run time customization is necessary.</p>
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>client</p></td><td><p>A <link xref="mongoc_client_t">mongoc_client_t</link>.</p></td></tr>
-      <tr><td><p>initiator</p></td><td><p>A <link xref="mongoc_client_t">mongoc_stream_initiator_t</link>.</p></td></tr>
+      <tr><td><p>client</p></td><td><p>A <code xref="mongoc_client_t">mongoc_client_t</code>.</p></td></tr>
+      <tr><td><p>initiator</p></td><td><p>A <code xref="mongoc_client_t">mongoc_stream_initiator_t</code>.</p></td></tr>
       <tr><td><p>user_data</p></td><td><p>User supplied pointer for callback function.</p></td></tr>
     </table>
   </section>

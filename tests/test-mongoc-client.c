@@ -15,24 +15,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test"
 
-
-#ifdef _WIN32
-static void
-usleep (int64_t usec)
-{
-    HANDLE timer;
-    LARGE_INTEGER ft;
-
-    ft.QuadPart = -(10 * usec);
-
-    timer = CreateWaitableTimer(NULL, true, NULL);
-    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
-    WaitForSingleObject(timer, INFINITE);
-    CloseHandle(timer);
-}
-#endif
-
-
 static mongoc_collection_t *
 get_test_collection (mongoc_client_t *client,
                      const char      *name)
@@ -58,12 +40,14 @@ gen_test_user (void)
 
 
 static char *
-gen_good_uri (const char *username)
+gen_good_uri (const char *username,
+              const char *dbname)
 {
    char *host = test_framework_get_host ();
-   char *uri = bson_strdup_printf ("mongodb://%s:testpass@%s/test",
+   char *uri = bson_strdup_printf ("mongodb://%s:testpass@%s/%s",
                                    username,
-                                   host);
+                                   host,
+                                   dbname);
 
    bson_free (host);
    return uri;
@@ -73,28 +57,58 @@ gen_good_uri (const char *username)
 static void
 test_mongoc_client_authenticate (void)
 {
-   mongoc_collection_t *collection;
+   char *admin_username;
+   mongoc_client_t *admin_client;
+   mongoc_database_t *admin_database;
+   bson_t admin_roles;
+   char *admin_uri;
+   char *username;
+   char *uri;
+   bson_t roles;
    mongoc_database_t *database;
-   mongoc_client_t *client;
+   mongoc_collection_t *collection;
    mongoc_client_t *auth_client;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
-   char *username;
-   char *uri;
    bool r;
    bson_t q;
 
-   username = gen_test_user ();
-   uri = gen_good_uri (username);
+   /*
+    * Add an admin user first.
+    */
+   admin_username = gen_test_user ();
+   admin_client = test_framework_client_new (NULL);
+   admin_database = mongoc_client_get_database (admin_client, "admin");
+   mongoc_database_remove_user (admin_database, admin_username, NULL);
+   bson_init (&admin_roles);
+   BCON_APPEND (&admin_roles,
+                "0", "{", "role", "root", "db", "admin", "}");
+
+   r = mongoc_database_add_user (admin_database, admin_username, "testpass",
+                                 &admin_roles, NULL, NULL);
+   assert (r);
+
+   /*
+    * Log in as admin.
+    */
+   mongoc_database_destroy (admin_database);
+   mongoc_client_destroy (admin_client);
+   admin_uri = gen_good_uri (admin_username, "admin");
+   admin_client = test_framework_client_new (admin_uri);
 
    /*
     * Add a user to the test database.
     */
-   client = test_framework_client_new (NULL);
-   database = mongoc_client_get_database(client, "test");
+   username = gen_test_user ();
+   uri = gen_good_uri (username, "test");
+
+   database = mongoc_client_get_database (admin_client, "test");
    mongoc_database_remove_user (database, username, &error);
-   r = mongoc_database_add_user(database, username, "testpass", NULL, NULL, &error);
+   bson_init (&roles);
+   BCON_APPEND (&roles,
+                "0", "{", "role", "read", "db", "test", "}");
+   r = mongoc_database_add_user(database, username, "testpass", &roles, NULL, &error);
    ASSERT_CMPINT(r, ==, 1);
    mongoc_database_destroy(database);
 
@@ -114,21 +128,33 @@ test_mongoc_client_authenticate (void)
       }
       assert(!r);
    }
-   mongoc_cursor_destroy(cursor);
-   mongoc_collection_destroy(collection);
 
    /*
     * Remove all test users.
     */
-   database = mongoc_client_get_database (auth_client, "test");
+   database = mongoc_client_get_database (admin_client, "test");
    r = mongoc_database_remove_all_users (database, &error);
    assert (r);
-   mongoc_database_destroy (database);
-   mongoc_client_destroy (auth_client);
-   mongoc_client_destroy (client);
 
-   bson_free (username);
+   /*
+    * Remove admin user.
+    */
+   admin_database = mongoc_client_get_database (admin_client, "admin");
+   r = mongoc_database_remove_user (admin_database, admin_username, NULL);
+   assert (r);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (auth_client);
+   bson_destroy (&roles);
    bson_free (uri);
+   bson_free (username);
+   bson_free (admin_uri);
+   mongoc_database_destroy (database);
+   bson_destroy (&admin_roles);
+   mongoc_database_destroy (admin_database);
+   mongoc_client_destroy (admin_client);
+   bson_free (admin_username);
 }
 
 

@@ -21,7 +21,7 @@ mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>cursor</p></td><td><p>A <link xref="mongoc_cursor_t">mongoc_cursor_t</link>.</p></td></tr>
+      <tr><td><p>cursor</p></td><td><p>A <code xref="mongoc_cursor_t">mongoc_cursor_t</code>.</p></td></tr>
       <tr><td><p>host</p></td><td><p>A mongoc_host_list_t.</p></td></tr>
     </table>
   </section>

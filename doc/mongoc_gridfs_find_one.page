@@ -21,9 +21,9 @@ mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>gridfs</p></td><td><p>A <link xref="mongoc_gridfs_t">mongoc_gridfs_t</link>.</p></td></tr>
-      <tr><td><p>query</p></td><td><p>A bson_t.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <link xref="bson_error_t">bson_error_t</link> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>gridfs</p></td><td><p>A <code xref="mongoc_gridfs_t">mongoc_gridfs_t</code>.</p></td></tr>
+      <tr><td><p>query</p></td><td><p>A <code xref="bson:bson_t">bson_t</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 
@@ -39,7 +39,7 @@ mongoc_gridfs_find_one (mongoc_gridfs_t *gridfs,
 
   <section id="return">
     <title>Returns</title>
-    <p>A newly allcoated <link xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</link> or NULL if no file could be found. You must free the resulting file with <link xref="mongoc_gridfs_file_destroy">mongoc_gridfs_file_destroy()</link> if non-NULL.</p>
+    <p>A newly allcoated <code xref="mongoc_gridfs_file_t">mongoc_gridfs_file_t</code> or <code>NULL</code> if no file could be found. You must free the resulting file with <code xref="mongoc_gridfs_file_destroy">mongoc_gridfs_file_destroy()</code> if non-NULL.</p>
   </section>
 
 </page>

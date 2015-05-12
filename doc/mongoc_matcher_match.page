@@ -25,14 +25,14 @@ mongoc_matcher_match (const mongoc_matcher_t *matcher,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>matcher</p></td><td><p>A <link xref="mongoc_matcher_t">mongoc_matcher_t</link>.</p></td></tr>
-      <tr><td><p>query</p></td><td><p>A bson_t that contains the query.</p></td></tr>
+      <tr><td><p>matcher</p></td><td><p>A <code xref="mongoc_matcher_t">mongoc_matcher_t</code>.</p></td></tr>
+      <tr><td><p>query</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> that contains the query.</p></td></tr>
     </table>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p><code>true</code> if <code>document</code> matches the query specification provided to <link xref="mongoc_matcher_new">mongoc_matcher_new()</link>. Otherwise, <code>false</code>.</p>
+    <p><code>true</code> if <code>document</code> matches the query specification provided to <code xref="mongoc_matcher_new">mongoc_matcher_new()</code>. Otherwise, <code>false</code>.</p>
   </section>
 
 </page>
