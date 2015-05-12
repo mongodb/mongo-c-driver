@@ -215,6 +215,48 @@ test_framework_get_host (void)
 /*
  *--------------------------------------------------------------------------
  *
+ * test_framework_get_admin_user --
+ *
+ *       Get the username of an admin user on the test MongoDB server.
+ *
+ * Returns:
+ *       A string you must bson_free, or NULL.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_admin_user (void)
+{
+   return test_framework_getenv ("MONGOC_TEST_USER");
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_admin_password --
+ *
+ *       Get the password of an admin user on the test MongoDB server.
+ *
+ * Returns:
+ *       A string you must bson_free, or NULL.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_admin_password (void)
+{
+   return test_framework_getenv ("MONGOC_TEST_PASSWORD");
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * test_framework_get_ssl --
  *
  *       Should we connect to the test MongoDB server over SSL?
@@ -271,7 +313,7 @@ uri_has_options (const mongoc_uri_t *uri)
  *
  *       Get the connection string of the test MongoDB server. Pass NULL
  *       to get the default connection string, or pass a string in to have
- *       "ssl=true" added if appropriate.
+ *       username, password, and "ssl=true" added if appropriate.
  *
  * Returns:
  *       A string you must bson_free.
@@ -285,14 +327,23 @@ char *
 test_framework_get_uri_str (const char *uri_str)
 {
    char *host = test_framework_get_host ();
+   char *user = test_framework_get_admin_user ();
+   char *password = test_framework_get_admin_password ();
    char *test_uri_str_base = uri_str ?
                              bson_strdup (uri_str) :
                              bson_strdup_printf ("mongodb://%s/", host);
 
    mongoc_uri_t *uri_parsed = mongoc_uri_new (test_uri_str_base);
    char *test_uri_str;
+   char *test_uri_str_auth;
 
    assert (uri_parsed);
+
+   if ((user && !password) || (!user && password)) {
+      fprintf (stderr, "Specify neither MONGOC_TEST_USER nor"
+                       " MONGOC_TEST_PASSWORD, or both\n");
+      abort ();
+   }
 
    /* add "ssl=true" if needed */
    if (test_framework_get_ssl () && !mongoc_uri_get_ssl (uri_parsed)) {
@@ -304,10 +355,27 @@ test_framework_get_uri_str (const char *uri_str)
       test_uri_str = bson_strdup (test_uri_str_base);
    }
 
+   /* must we add "user:password"? */
+   mongoc_uri_destroy (uri_parsed);
+   uri_parsed = mongoc_uri_new (test_uri_str);
+   assert (uri_parsed);
+
+   if (user && password && !mongoc_uri_get_username (uri_parsed)) {
+      /* TODO: uri-escape username and password */
+      test_uri_str_auth = bson_strdup_printf (
+         "mongodb://%s:%s@%s",
+         user, password, test_uri_str + strlen ("mongodb://"));
+   } else {
+      test_uri_str_auth = bson_strdup (test_uri_str);
+   }
+
    mongoc_uri_destroy (uri_parsed);
    bson_free (host);
    bson_free (test_uri_str_base);
-   return test_uri_str;
+   bson_free (test_uri_str);
+   bson_free (user);
+   bson_free (password);
+   return test_uri_str_auth;
 }
 
 /*

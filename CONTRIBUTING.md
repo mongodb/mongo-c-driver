@@ -120,6 +120,10 @@ have a locally running `mongod` instance available on `127.0.0.1:27017`. All
 tests should pass. Alternatively, you can specify `MONGOC_TEST_HOST`
 environment variable to specify a non-localhost hostname or ip address.
 
+To test with auth, create a "root" user on the "admin" database and set the
+`MONGOC_TEST_USER` and `MONGOC_TEST_PASSWORD` environment variables to its
+username and password.
+
 Set the `MONGOC_TEST_SSL` environment variable `on` to connect to the server via
 SSL with default options. Configure SSL options with paths
 `MONGOC_TEST_SSL_PEM_FILE`, `MONGOC_TEST_SSL_PEM_PWD`,
