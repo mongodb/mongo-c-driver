@@ -131,15 +131,14 @@ static char *
 test_framework_getenv (const char *name)
 {
 #ifdef _MSC_VER
-      char buf[1024];
-      size_t buflen;
+   char buf[1024];
+   size_t buflen;
 
-      if (0 != getenv_s (&buflen, buf, sizeof buf, name)) {
-         bson_strncpy (buf, "localhost", sizeof buf);
-         return bson_strdup (buf);
-      } else {
-         return NULL;
-      }
+   if ((0 == getenv_s (&buflen, buf, sizeof buf, name)) && buflen) {
+      return bson_strdup (buf);
+   } else {
+      return NULL;
+   }
 #else
 
    if (getenv (name)) {
