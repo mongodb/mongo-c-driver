@@ -90,7 +90,7 @@ mongoc_bulk_operation_destroy (mongoc_bulk_operation_t *bulk) /* IN */
    int i;
 
    if (bulk) {
-      for (i = 0; i < bulk->commands.len; i++) {
+      for (i = 0; i < (int)bulk->commands.len; i++) {
          command = &_mongoc_array_index (&bulk->commands,
                                          mongoc_write_command_t, i);
          _mongoc_write_command_destroy (command);
@@ -354,7 +354,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
       RETURN (false);
    }
 
-   for (i = 0; i < bulk->commands.len; i++) {
+   for (i = 0; i < (int)bulk->commands.len; i++) {
       command = &_mongoc_array_index (&bulk->commands,
                                       mongoc_write_command_t, i);
 

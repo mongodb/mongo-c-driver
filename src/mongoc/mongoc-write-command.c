@@ -308,7 +308,7 @@ again:
 
    do {
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
-      BSON_ASSERT (i < command->u.insert.n_documents);
+      BSON_ASSERT (i < (int)command->u.insert.n_documents);
 
       bson_iter_document (&iter, &len, &data);
 
@@ -318,8 +318,8 @@ again:
       /*
        * Check that the server can receive this document.
        */
-      if ((len > client->cluster.max_bson_size) ||
-          (len > client->cluster.max_msg_size)) {
+      if ((len > (uint32_t)client->cluster.max_bson_size) ||
+          (len > (uint32_t)client->cluster.max_msg_size)) {
          bson_set_error (error,
                          MONGOC_ERROR_BSON,
                          MONGOC_ERROR_BSON_INVALID,
@@ -612,8 +612,8 @@ again:
                          WRITE_CONCERN_DOC (write_concern));
    BSON_APPEND_BOOL (&cmd, "ordered", command->u.insert.ordered);
 
-   if ((command->u.insert.documents->len < client->cluster.max_bson_size) &&
-       (command->u.insert.documents->len < client->cluster.max_msg_size) &&
+   if ((command->u.insert.documents->len < (uint32_t)client->cluster.max_bson_size) &&
+       (command->u.insert.documents->len < (uint32_t)client->cluster.max_msg_size) &&
        (command->u.insert.n_documents <= MAX_INSERT_BATCH)) {
       BSON_APPEND_ARRAY (&cmd, "documents", command->u.insert.documents);
    } else {
@@ -872,7 +872,7 @@ _mongoc_write_result_append_upsert (mongoc_write_result_t *result,
    BSON_ASSERT (result);
    BSON_ASSERT (value);
 
-   len = bson_uint32_to_string (result->upsert_append_count, &keyptr, key,
+   len = (int)bson_uint32_to_string (result->upsert_append_count, &keyptr, key,
                                 sizeof key);
 
    bson_append_document_begin (&result->upserted, keyptr, len, &child);
@@ -1049,7 +1049,7 @@ _mongoc_write_result_merge_arrays (mongoc_write_result_t *result, /* IN */
       while (bson_iter_next (&ar)) {
          if (BSON_ITER_HOLDS_DOCUMENT (&ar) &&
              bson_iter_recurse (&ar, &citer)) {
-            len = bson_uint32_to_string (aridx++, &keyptr, key, sizeof key);
+            len = (int)bson_uint32_to_string (aridx++, &keyptr, key, sizeof key);
             bson_append_document_begin (dest, keyptr, len, &child);
             while (bson_iter_next (&citer)) {
                if (BSON_ITER_IS_KEY (&citer, "index")) {

@@ -234,8 +234,8 @@ mongoc_stream_read (mongoc_stream_t *stream,
    bson_return_val_if_fail (stream, -1);
    bson_return_val_if_fail (buf, -1);
 
-   iov.iov_base = buf;
-   iov.iov_len = count;
+   iov.iov_base = (char*)buf;
+   iov.iov_len = (u_long)count;
 
    BSON_ASSERT (stream->readv);
 
