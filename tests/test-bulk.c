@@ -107,6 +107,45 @@ check_n_modified (const bson_t *reply,
 }
 
 
+/*--------------------------------------------------------------------------
+ *
+ * oid_created_on_client --
+ *
+ *       Check that a document's _id contains this process's pid.
+ *
+ * Returns:
+ *       True or false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+oid_created_on_client (const bson_t *doc)
+{
+   bson_oid_t new_oid;
+   const uint8_t *new_pid;
+   bson_iter_t iter;
+   const bson_oid_t *oid;
+   const uint8_t *pid;
+
+   bson_oid_init (&new_oid, NULL);
+   new_pid = &new_oid.bytes[7];
+
+   bson_iter_init_find (&iter, doc, "_id");
+
+   if (!BSON_ITER_HOLDS_OID (&iter)) {
+      return false;
+   }
+
+   oid = bson_iter_oid (&iter);
+   pid = &oid->bytes[7];
+
+   return 0 == memcmp (pid, new_pid, 2);
+}
+
 static mongoc_collection_t *
 get_test_collection (mongoc_client_t *client,
                      const char      *prefix)
@@ -177,6 +216,68 @@ test_bulk (void)
    r = mongoc_collection_drop (collection, &error);
    assert (r);
 
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&doc);
+}
+
+
+static void
+test_insert (void)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t reply;
+   bson_t doc = BSON_INITIALIZER;
+   bson_t query = BSON_INITIALIZER;
+   bool r;
+   mongoc_cursor_t *cursor;
+   const bson_t *inserted_doc;
+
+   client = test_framework_client_new (NULL);
+   assert (client);
+
+   collection = get_test_collection (client, "test_bulk");
+   assert (collection);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   assert (bulk);
+
+   mongoc_bulk_operation_insert (bulk, &doc);
+   mongoc_bulk_operation_insert (bulk, &doc);
+
+   r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
+   assert (r);
+
+   assert_match_json (&reply, "{'nInserted': 2,"
+                              " 'nRemoved':  0,"
+                              " 'nMatched':  0,"
+                              " 'nUpserted': 0}");
+
+   check_n_modified (&reply, 0);
+
+   bson_destroy (&reply);
+
+   ASSERT_CMPINT (
+      2, ==, (int)mongoc_collection_count (collection, MONGOC_QUERY_NONE,
+                                           NULL, 0, 0, NULL, NULL));
+
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
+                                    &query, NULL, NULL);
+   assert (cursor);
+
+   while (mongoc_cursor_next (cursor, &inserted_doc)) {
+      assert (oid_created_on_client (inserted_doc));
+   }
+
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (&query);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -529,6 +630,7 @@ void
 test_bulk_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/BulkOperation/basic", test_bulk);
+   TestSuite_Add (suite, "/BulkOperation/insert", test_insert);
    TestSuite_Add (suite, "/BulkOperation/update_upserted", test_update_upserted);
    TestSuite_Add (suite, "/BulkOperation/index_offset", test_index_offset);
    TestSuite_Add (suite, "/BulkOperation/CDRIVER-372", test_bulk_edge_case_372);
