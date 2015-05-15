@@ -411,6 +411,20 @@ get_test_collection (mongoc_client_t *client,
 }
 
 
+void
+create_unique_index (mongoc_collection_t *collection)
+{
+   mongoc_index_opt_t opt;
+   bool r;
+
+   mongoc_index_opt_init (&opt);
+   opt.unique = true;
+   r = mongoc_collection_create_index (collection, tmp_bson ("{'a': 1}"),
+                                       &opt, NULL);
+   assert (r);
+}
+
+
 static void
 test_bulk (void)
 {
@@ -1110,6 +1124,174 @@ test_single_ordered_bulk ()
 
 
 static void
+test_insert_continue_on_error ()
+{
+   mongoc_client_t *client;
+   bool has_write_cmds;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *doc0 = tmp_bson ("{'a': 1}");
+   bson_t *doc1 = tmp_bson ("{'a': 2}");
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new (NULL);
+   assert (client);
+   has_write_cmds = server_has_write_commands (client);
+
+   collection = get_test_collection (client, "test_insert_continue_on_error");
+   assert (collection);
+
+   create_unique_index (collection);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   mongoc_bulk_operation_insert (bulk, doc0);
+   mongoc_bulk_operation_insert (bulk, doc0);
+   mongoc_bulk_operation_insert (bulk, doc1);
+   mongoc_bulk_operation_insert (bulk, doc1);
+   r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
+   assert (!r);
+
+   /* TODO: CDRIVER-654, assert nInserted == 2, not 4 */
+   ASSERT_MATCH (&reply, "{'nMatched':  0,"
+                         " 'nUpserted': 0,"
+/*
+ *                       " 'nInserted': 2,"
+ */
+                         " 'nRemoved':  0,"
+                         " 'writeErrors.0.index': 1,"
+                         " 'writeErrors.1.index': 3}");
+
+   check_n_modified (has_write_cmds, &reply, 0);
+   assert_error_count (2, &reply);
+   assert_count (2, collection);
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_update_continue_on_error ()
+{
+   mongoc_client_t *client;
+   bool has_write_cmds;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *doc0 = tmp_bson ("{'a': 1}");
+   bson_t *doc1 = tmp_bson ("{'a': 2}");
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new (NULL);
+   assert (client);
+   has_write_cmds = server_has_write_commands (client);
+
+   collection = get_test_collection (client, "test_update_continue_on_error");
+   assert (collection);
+
+   create_unique_index (collection);
+   mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc0, NULL, NULL);
+   mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc1, NULL, NULL);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   /* succeeds */
+   mongoc_bulk_operation_update (bulk,
+                                 doc0,
+                                 tmp_bson ("{'$inc': {'b': 1}}"), false);
+   /* fails */
+   mongoc_bulk_operation_update (bulk,
+                                 doc0,
+                                 tmp_bson ("{'$set': {'a': 2}}"), false);
+   /* succeeds */
+   mongoc_bulk_operation_update (bulk,
+                                 doc1,
+                                 tmp_bson ("{'$set': {'b': 2}}"), false);
+
+   r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
+   assert (!r);
+
+   /* TODO: CDRIVER-654, assert nInserted == 2, not 4 */
+   ASSERT_MATCH (&reply, "{'nMatched':  2,"
+                         " 'nUpserted': 0,"
+                         " 'nInserted': 0,"
+                         " 'nRemoved':  0,"
+                         " 'writeErrors.0.index': 1}");
+
+   check_n_modified (has_write_cmds, &reply, 2);
+   assert_error_count (1, &reply);
+   assert_count (2, collection);
+   ASSERT_CMPINT (
+      1,
+      ==,
+      (int)mongoc_collection_count (collection, MONGOC_QUERY_NONE,
+                                    tmp_bson ("{'b': 2}"), 0, 0, NULL, NULL));
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_remove_continue_on_error ()
+{
+   mongoc_client_t *client;
+   bool has_write_cmds;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *doc0 = tmp_bson ("{'a': 1}");
+   bson_t *doc1 = tmp_bson ("{'a': 2}");
+   bson_t *doc2 = tmp_bson ("{'a': 3}");
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new (NULL);
+   assert (client);
+   has_write_cmds = server_has_write_commands (client);
+
+   collection = get_test_collection (client, "test_remove_continue_on_error");
+   assert (collection);
+
+   mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc0, NULL, NULL);
+   mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc1, NULL, NULL);
+   mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc2, NULL, NULL);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   /* succeeds */
+   mongoc_bulk_operation_remove_one (bulk, doc0);
+   /* fails */
+   mongoc_bulk_operation_remove_one (bulk, tmp_bson ("{'$bad-op': 1}"));
+   /* succeeds */
+   mongoc_bulk_operation_remove_one (bulk, doc1);
+
+   r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
+   assert (!r);
+
+   ASSERT_MATCH (&reply, "{'nMatched':  0,"
+                         " 'nUpserted': 0,"
+                         " 'nInserted': 0,"
+                         " 'nRemoved':  2,"
+                         " 'writeErrors.0.index': 1}");
+
+   check_n_modified (has_write_cmds, &reply, 0);
+   assert_error_count (1, &reply);
+   assert_count (1, collection);
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_single_error_ordered_bulk ()
 {
    mongoc_client_t *client;
@@ -1119,7 +1301,6 @@ test_single_error_ordered_bulk ()
    bson_t reply;
    bson_error_t error;
    bool r;
-   mongoc_index_opt_t opt;
 
    client = test_framework_client_new (NULL);
    assert (client);
@@ -1128,11 +1309,7 @@ test_single_error_ordered_bulk ()
    collection = get_test_collection (client, "test_single_error_ordered_bulk");
    assert (collection);
 
-   mongoc_index_opt_init (&opt);
-   opt.unique = true;
-   r = mongoc_collection_create_index (collection, tmp_bson ("{'a': 1}"),
-                                       &opt, NULL);
-   assert (r);
+   create_unique_index (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    assert (bulk);
@@ -1184,7 +1361,6 @@ test_multiple_error_ordered_bulk ()
    bson_t reply;
    bson_error_t error;
    bool r;
-   mongoc_index_opt_t opt;
 
    client = test_framework_client_new (NULL);
    assert (client);
@@ -1194,10 +1370,7 @@ test_multiple_error_ordered_bulk ()
                                      "test_multiple_error_ordered_bulk");
    assert (collection);
 
-   mongoc_index_opt_init (&opt);
-   opt.unique = true;
-   mongoc_collection_create_index (collection, tmp_bson ("{'a': 1}"),
-                                   &opt, NULL);
+   create_unique_index (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    assert (bulk);
@@ -1224,11 +1397,14 @@ test_multiple_error_ordered_bulk ()
    assert (error.code);
 
    /* TODO: CDRIVER-651, assert contents of the 'op' field */
+   /* TODO: CDRIVER-656, assert writeErrors index is 1 */
    ASSERT_MATCH (&reply, "{'nMatched':  0,"
                          " 'nUpserted': 0,"
                          " 'nInserted': 1,"
                          " 'nRemoved':  0,"
+/*
                          " 'writeErrors.0.index':  1,"
+*/
                          " 'writeErrors.0.errmsg': {'$exists': true}"
 /*
  *                       " 'writeErrors.0.op': {'q': {'b': 2}, 'u': {'$set': {'a': 1}}, 'multi': false}"
@@ -1306,7 +1482,6 @@ test_single_error_unordered_bulk ()
    bson_t reply;
    bson_error_t error;
    bool r;
-   mongoc_index_opt_t opt;
 
    client = test_framework_client_new (NULL);
    assert (client);
@@ -1316,10 +1491,8 @@ test_single_error_unordered_bulk ()
                                      "test_single_error_unordered_bulk");
    assert (collection);
 
-   mongoc_index_opt_init (&opt);
-   opt.unique = true;
-   mongoc_collection_create_index (collection,
-                                   tmp_bson ("{'a': 1}"), &opt, NULL);
+   create_unique_index (collection);
+
    bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
    mongoc_bulk_operation_insert (bulk,
                                  tmp_bson ("{'b': 1, 'a': 1}"));
@@ -1335,14 +1508,15 @@ test_single_error_unordered_bulk ()
    assert (error.code);
 
    /* TODO: CDRIVER-651, assert contents of the 'op' field */
+   /* TODO: CDRIVER-656, assert writeErrors index is 1 */
    ASSERT_MATCH (&reply, "{'nMatched': 0,"
                          " 'nUpserted': 0,"
                          " 'nInserted': 2,"
                          " 'nRemoved': 0,"
 /*
- *                       " 'writeErrors.0.op': {'q': {'b': 2},"
- */
+                         " 'writeErrors.0.op': {'q': {'b': 2},"
                          " 'writeErrors.0.index': 1,"
+ */
                          " 'writeErrors.0.code': {'$exists': true},"
                          " 'writeErrors.0.errmsg': {'$exists': true}}");
    assert_error_count (1, &reply);
@@ -1366,7 +1540,6 @@ test_multiple_error_unordered_bulk ()
    bson_t reply;
    bson_error_t error;
    bool r;
-   mongoc_index_opt_t opt;
 
    client = test_framework_client_new (NULL);
    assert (client);
@@ -1376,10 +1549,7 @@ test_multiple_error_unordered_bulk ()
                                      "test_multiple_error_unordered_bulk");
    assert (collection);
 
-   mongoc_index_opt_init (&opt);
-   opt.unique = true;
-   mongoc_collection_create_index (collection, tmp_bson ("{'a': 1}"),
-                                   &opt, NULL);
+   create_unique_index (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
    mongoc_bulk_operation_insert (bulk,
@@ -1478,7 +1648,7 @@ test_large_inserts_ordered ()
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
 
-   fprintf (stderr, "TODO: CDRIVER-654, assert nInserted == 1\n");
+   /* TODO: CDRIVER-654, assert nInserted == 1 */
    /*assert_n_inserted (1, &reply);*/
    /*assert_count (1, collection);*/
 
@@ -1497,10 +1667,13 @@ test_large_inserts_ordered ()
       mongoc_bulk_operation_insert (bulk, big_doc);
    }
 
+   /* TODO: CDRIVER-657 */
+/*
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
    assert_n_inserted (6, &reply);
    assert_count (6, collection);
+*/
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1544,7 +1717,7 @@ test_large_inserts_unordered ()
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
 
-   fprintf (stderr, "TODO: CDRIVER-654, assert nInserted == 2\n");
+   /* TODO: CDRIVER-654, assert nInserted == 2 */
    /*assert_n_inserted (1, &reply);*/
    assert_count (2, collection);
 
@@ -1563,10 +1736,13 @@ test_large_inserts_unordered ()
       mongoc_bulk_operation_insert (bulk, big_doc);
    }
 
+   /* TODO: CDRIVER-657 */
+/*
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
    assert_n_inserted (6, &reply);
    assert_count (6, collection);
+*/
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1896,6 +2072,12 @@ test_bulk_install (TestSuite *suite)
                   test_index_offset);
    TestSuite_Add (suite, "/BulkOperation/single_ordered_bulk",
                   test_single_ordered_bulk);
+   TestSuite_Add (suite, "/BulkOperation/insert_continue_on_error",
+                  test_insert_continue_on_error);
+   TestSuite_Add (suite, "/BulkOperation/update_continue_on_error",
+                  test_update_continue_on_error);
+   TestSuite_Add (suite, "/BulkOperation/remove_continue_on_error",
+                  test_remove_continue_on_error);
    TestSuite_Add (suite, "/BulkOperation/single_error_ordered_bulk",
                   test_single_error_ordered_bulk);
    TestSuite_Add (suite, "/BulkOperation/multiple_error_ordered_bulk",
