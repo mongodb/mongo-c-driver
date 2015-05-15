@@ -1,4 +1,3 @@
-#include <bcon.h>
 #include <mongoc.h>
 #include <mongoc-bulk-operation-private.h>
 
@@ -218,7 +217,7 @@ match_json (const bson_t *doc,
 bool
 server_has_write_commands (mongoc_client_t *client)
 {
-   bson_t *ismaster_cmd = BCON_NEW ("ismaster", BCON_INT32 (1));
+   bson_t *ismaster_cmd = tmp_bson ("{'ismaster': 1}");
    bson_t ismaster;
    bson_iter_t iter;
    bool expect;
@@ -230,7 +229,6 @@ server_has_write_commands (mongoc_client_t *client)
              BSON_ITER_HOLDS_INT32 (&iter) &&
              bson_iter_int32 (&iter) > 1);
 
-   bson_destroy (ismaster_cmd);
    bson_destroy (&ismaster);
 
    return expect;
@@ -486,7 +484,6 @@ test_bulk (void)
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   bson_destroy (&doc);
 }
 
 
@@ -589,7 +586,7 @@ test_insert_check_keys (void)
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    assert (bulk);
 
-   doc = BCON_NEW ("$dollar", BCON_INT32 (1));
+   doc = tmp_bson ("{'$dollar': 1}");
    mongoc_bulk_operation_insert (bulk, doc);
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
@@ -611,7 +608,6 @@ test_insert_check_keys (void)
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   bson_destroy (doc);
 }
 
 
@@ -639,8 +635,8 @@ test_upsert (bool ordered)
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
    assert (bulk);
 
-   sel = BCON_NEW ("_id", BCON_INT32 (1234));
-   doc = BCON_NEW ("$set", "{", "hello", "there", "}");
+   sel = tmp_bson ("{'_id': 1234}");
+   doc = tmp_bson ("{'$set': {'hello': 'there'}}");
 
    mongoc_bulk_operation_update (bulk, sel, doc, true);
 
@@ -659,15 +655,13 @@ test_upsert (bool ordered)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
-   bson_destroy (doc);
-   bson_destroy (sel);
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
    assert (bulk);
 
    /* non-upsert, no matches */
-   sel = BCON_NEW ("_id", BCON_INT32 (2));
-   doc = BCON_NEW ("$set", "{", "hello", "there", "}");
+   sel = tmp_bson ("{'_id': 2}");
+   doc = tmp_bson ("{'$set': {'hello': 'there'}}");
 
    mongoc_bulk_operation_update (bulk, sel, doc, false);
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
@@ -690,9 +684,6 @@ test_upsert (bool ordered)
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-
-   bson_destroy (doc);
-   bson_destroy (sel);
 }
 
 
@@ -743,8 +734,8 @@ test_update_one (bool ordered)
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
    assert (bulk);
 
-   sel = bson_new ();
-   doc = BCON_NEW ("$set", "{", "hello", "there", "}");
+   sel = tmp_bson ("{}");
+   doc = tmp_bson ("{'$set': {'hello': 'there'}}");
    mongoc_bulk_operation_update_one (bulk, sel, doc, true);
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
@@ -757,20 +748,15 @@ test_update_one (bool ordered)
                          " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 1);
-
-   bson_destroy (sel);
-   sel = BCON_NEW ("hello", BCON_UTF8 ("there"));
    assert_count (2, collection);
 
    r = mongoc_collection_drop (collection, &error);
    assert (r);
 
-   bson_destroy (sel);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   bson_destroy (doc);
 }
 
 
@@ -821,8 +807,8 @@ test_replace_one (bool ordered)
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
    assert (bulk);
 
-   sel = bson_new ();
-   doc = BCON_NEW ("hello", "there");
+   sel = tmp_bson ("{}");
+   doc = tmp_bson ("{'hello': 'there'}");
    mongoc_bulk_operation_replace_one (bulk, sel, doc, true);
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
@@ -835,20 +821,15 @@ test_replace_one (bool ordered)
                          " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 1);
-
-   bson_destroy (sel);
-   sel = BCON_NEW ("hello", BCON_UTF8 ("there"));
    assert_count (2, collection);
 
    r = mongoc_collection_drop (collection, &error);
    assert (r);
 
-   bson_destroy (sel);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   bson_destroy (doc);
 }
 
 
@@ -859,7 +840,7 @@ test_upsert_large ()
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    bool has_write_cmds;
-   bson_t *sel = BCON_NEW ("_id", BCON_INT32 (1));
+   bson_t *sel = tmp_bson ("{'_id': 1}");
    bson_t doc = BSON_INITIALIZER;
    bson_t child = BSON_INITIALIZER;
    bson_error_t error;
@@ -896,8 +877,6 @@ test_upsert_large ()
    check_n_modified (has_write_cmds, &reply, 0);
    assert_count (1, collection);
 
-   bson_destroy (sel);
-   bson_destroy (&doc);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -926,16 +905,16 @@ test_update (bool ordered)
    bool has_write_cmds;
    mongoc_collection_t *collection;
    bson_t *docs_inserted[] = {
-      BCON_NEW ("a", BCON_INT32 (1)),
-      BCON_NEW ("a", BCON_INT32 (2)),
-      BCON_NEW ("a", BCON_INT32 (3), "foo", BCON_UTF8 ("bar"))
+      tmp_bson ("{'a': 1}"),
+      tmp_bson ("{'a': 2}"),
+      tmp_bson ("{'a': 3, 'foo': 'bar'}"),
    };
    int i;
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
    bson_t reply;
    bson_t *sel;
-   bson_t *bad_update_doc = BCON_NEW ("foo", BCON_UTF8 ("bar"));
+   bson_t *bad_update_doc = tmp_bson ("{'foo': 'bar'}");
    bson_t *update_doc;
    bool r;
 
@@ -955,12 +934,12 @@ test_update (bool ordered)
    assert (bulk);
 
    /* update doc without $-operators rejected */
-   sel = BCON_NEW ("a", "{", "$gte", BCON_INT32 (2), "}");
+   sel = tmp_bson ("{'a': {'$gte': 2}}");
    suppress_one_message ();
    mongoc_bulk_operation_update (bulk, sel, bad_update_doc, false);
    ASSERT_CMPINT (0, ==, (int)bulk->commands.len);
 
-   update_doc = BCON_NEW ("$set", "{", "foo", BCON_UTF8 ("bar"), "}");
+   update_doc = tmp_bson ("{'$set': {'foo': 'bar'}}");
    mongoc_bulk_operation_update (bulk, sel, update_doc, false);
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
@@ -980,16 +959,9 @@ test_update (bool ordered)
    assert (r);
 
    mongoc_bulk_operation_destroy (bulk);
-   bson_destroy (update_doc);
    bson_destroy (&reply);
-   bson_destroy (bad_update_doc);
-   bson_destroy (sel);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-
-   for (i = 0; i < sizeof docs_inserted / sizeof (bson_t *); i++) {
-      bson_destroy (docs_inserted[i]);
-   }
 }
 
 
@@ -1027,18 +999,17 @@ test_index_offset (void)
    collection = get_test_collection (client, "test_index_offset");
    assert (collection);
 
-   doc = bson_new ();
+   doc = tmp_bson ("{}");
    BSON_APPEND_INT32 (doc, "_id", 1234);
    r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc,
                                  NULL, &error);
    assert (r);
-   bson_destroy (doc);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    assert (bulk);
 
-   sel = BCON_NEW ("_id", BCON_INT32 (1234));
-   doc = BCON_NEW ("$set", "{", "hello", "there", "}");
+   sel = tmp_bson ("{'_id': 1234}");
+   doc = tmp_bson ("{'$set': {'hello': 'there'}}");
 
    mongoc_bulk_operation_remove_one (bulk, sel);
    mongoc_bulk_operation_update (bulk, sel, doc, true);
@@ -1064,9 +1035,6 @@ test_index_offset (void)
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-
-   bson_destroy (doc);
-   bson_destroy (sel);
 }
 
 
@@ -1902,32 +1870,24 @@ test_bulk_edge_case_372 (bool ordered)
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
    assert (bulk);
 
-   selector = BCON_NEW ("_id", BCON_INT32 (0));
-   update = BCON_NEW ("$set", "{", "a", BCON_INT32 (0), "}");
+   selector = tmp_bson ("{'_id': 0}");
+   update = tmp_bson ("{'$set': {'a': 0}}");
    mongoc_bulk_operation_update_one (bulk, selector, update, true);
-   bson_destroy (selector);
-   bson_destroy (update);
 
-   selector = BCON_NEW ("a", BCON_INT32 (1));
-   update = BCON_NEW ("_id", BCON_INT32 (1));
+   selector = tmp_bson ("{'a': 1}");
+   update = tmp_bson ("{'_id': 1}");
    mongoc_bulk_operation_replace_one (bulk, selector, update, true);
-   bson_destroy (selector);
-   bson_destroy (update);
 
    if (has_write_cmds) {
       /* This is just here to make the counts right in all cases. */
-      selector = BCON_NEW ("_id", BCON_INT32 (2));
-      update = BCON_NEW ("_id", BCON_INT32 (2));
+      selector = tmp_bson ("{'_id': 2}");
+      update = tmp_bson ("{'_id': 2}");
       mongoc_bulk_operation_replace_one (bulk, selector, update, true);
-      bson_destroy (selector);
-      bson_destroy (update);
    } else {
       /* This case is only possible in MongoDB versions before 2.6. */
-      selector = BCON_NEW ("_id", BCON_INT32 (3));
-      update = BCON_NEW ("_id", BCON_INT32 (2));
+      selector = tmp_bson ("{'_id': 3}");
+      update = tmp_bson ("{'_id': 2}");
       mongoc_bulk_operation_replace_one (bulk, selector, update, true);
-      bson_destroy (selector);
-      bson_destroy (update);
    }
 
    r = mongoc_bulk_operation_execute (bulk, &reply, &error);
