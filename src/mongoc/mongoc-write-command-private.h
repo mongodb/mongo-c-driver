@@ -43,7 +43,10 @@ typedef struct
       struct {
          uint8_t   ordered : 1;
          uint8_t   multi : 1;
-         bson_t   *selector;
+         bson_t   *selectors;
+         uint32_t  n_selectors;
+         uint32_t  n_merged;
+         uint32_t  current_n_documents;
       } delete;
       struct {
          uint8_t   ordered : 1;
@@ -55,10 +58,9 @@ typedef struct
       } insert;
       struct {
          uint8_t   ordered : 1;
-         uint8_t   upsert : 1;
-         uint8_t   multi  : 1;
-         bson_t   *selector;
-         bson_t   *update;
+         bson_t   *updates;
+         uint32_t  n_updates;
+         uint32_t  current_n_updates;
       } update;
    } u;
 } mongoc_write_command_t;
@@ -90,7 +92,7 @@ void _mongoc_write_command_init_insert (mongoc_write_command_t        *command,
                                         bool                           ordered,
                                         bool                           allow_bulk_op_insert);
 void _mongoc_write_command_init_delete (mongoc_write_command_t        *command,
-                                        const bson_t                  *selector,
+                                        const bson_t                  *selectors,
                                         bool                           multi,
                                         bool                           ordered);
 void _mongoc_write_command_init_update (mongoc_write_command_t        *command,
@@ -102,6 +104,16 @@ void _mongoc_write_command_init_update (mongoc_write_command_t        *command,
 void _mongoc_write_command_insert_append (mongoc_write_command_t      *command,
                                           const bson_t * const        *documents,
                                           uint32_t                     n_documents);
+
+void _mongoc_write_command_update_append (mongoc_write_command_t      *command,
+                                          const bson_t                *selector,
+                                          const bson_t                *update,
+                                          bool                         upsert,
+                                          bool                         multi);
+
+void _mongoc_write_command_delete_append (mongoc_write_command_t *command,
+                                          const bson_t           *selector);
+
 void _mongoc_write_command_execute     (mongoc_write_command_t        *command,
                                         mongoc_client_t               *client,
                                         uint32_t                       hint,
