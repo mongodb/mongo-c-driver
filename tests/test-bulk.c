@@ -1498,19 +1498,17 @@ test_multiple_error_ordered_bulk ()
 
    mongoc_bulk_operation_insert (bulk,
                                  tmp_bson ("{'b': 1, 'a': 1}"));
-   mongoc_bulk_operation_update (bulk,
-                                 tmp_bson ("{'b': 2}"),
-                                 tmp_bson ("{'$set': {'a': 1}}"), true);
+   /* succeeds */
    mongoc_bulk_operation_update (bulk,
                                  tmp_bson ("{'b': 3}"),
                                  tmp_bson ("{'$set': {'a': 2}}"), true);
+   /* fails, duplicate value for 'a' */
    mongoc_bulk_operation_update (bulk,
                                  tmp_bson ("{'b': 2}"),
                                  tmp_bson ("{'$set': {'a': 1}}"), true);
+   /* not attempted, bulk is already aborted */
    mongoc_bulk_operation_insert (bulk,
                                  tmp_bson ("{'b': 4, 'a': 3}"));
-   mongoc_bulk_operation_insert (bulk,
-                                 tmp_bson ("{'b': 5, 'a': 1}"));
 
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
@@ -1520,7 +1518,7 @@ test_multiple_error_ordered_bulk ()
    /* TODO: CDRIVER-651, assert contents of the 'op' field */
    /* TODO: CDRIVER-656, assert writeErrors index is 1 */
    ASSERT_MATCH (&reply, "{'nMatched':  0,"
-                         " 'nUpserted': 0,"
+                         " 'nUpserted': 1,"
                          " 'nInserted': 1,"
                          " 'nRemoved':  0,"
 /*
@@ -1533,7 +1531,7 @@ test_multiple_error_ordered_bulk ()
                          "}");
    check_n_modified (has_write_cmds, &reply, 0);
    assert_error_count (1, &reply);
-   assert_count (1, collection);
+   assert_count (2, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1751,8 +1749,8 @@ test_large_inserts_ordered ()
    client = test_framework_client_new (NULL);
    assert (client);
 
-   huge_doc = BCON_NEW ('a', BCON_INT32 (1));
-   bson_append_utf8 (huge_doc, "huge", -1,
+   huge_doc = BCON_NEW ("a", BCON_INT32 (1));
+   bson_append_utf8 (huge_doc, "long-key-to-make-this-fail", -1,
                      huge_string (client), huge_string_length (client));
 
    collection = get_test_collection (client, "test_large_inserts_ordered");
@@ -1766,7 +1764,7 @@ test_large_inserts_ordered ()
 
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_QUERY);
    assert (error.code);
 
    /* TODO: CDRIVER-654, assert nInserted == 1 */
@@ -1822,8 +1820,8 @@ test_large_inserts_unordered ()
    client = test_framework_client_new (NULL);
    assert (client);
 
-   huge_doc = tmp_bson ("{'a': 1}");
-   bson_append_utf8 (huge_doc, "huge", -1,
+   huge_doc = BCON_NEW ("a", BCON_INT32 (1));
+   bson_append_utf8 (huge_doc, "long-key-to-make-this-fail", -1,
                      huge_string (client), huge_string_length (client));
 
    collection = get_test_collection (client, "test_large_inserts_unordered");
@@ -1837,7 +1835,7 @@ test_large_inserts_unordered ()
 
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_QUERY);
    assert (error.code);
 
    /* TODO: CDRIVER-654, assert nInserted == 2 */
@@ -1868,6 +1866,7 @@ test_large_inserts_unordered ()
    assert_count (6, collection);
 */
 
+   bson_destroy (huge_doc);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -2177,6 +2176,10 @@ test_bulk_install (TestSuite *suite)
                   test_upsert_unordered);
    TestSuite_Add (suite, "/BulkOperation/upsert_large",
                   test_upsert_large);
+   TestSuite_Add (suite, "/BulkOperation/upserted_index_ordered",
+                  test_upserted_index_ordered);
+   TestSuite_Add (suite, "/BulkOperation/upserted_index_unordered",
+                  test_upserted_index_unordered);
    TestSuite_Add (suite, "/BulkOperation/update_one_ordered",
                   test_update_one_ordered);
    TestSuite_Add (suite, "/BulkOperation/update_one_unordered",
