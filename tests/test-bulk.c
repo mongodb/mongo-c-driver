@@ -1751,7 +1751,7 @@ test_large_inserts_ordered ()
    client = test_framework_client_new (NULL);
    assert (client);
 
-   huge_doc = tmp_bson ("{'a': 1}");
+   huge_doc = BCON_NEW ('a', BCON_INT32 (1));
    bson_append_utf8 (huge_doc, "huge", -1,
                      huge_string (client), huge_string_length (client));
 
