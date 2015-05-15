@@ -702,6 +702,158 @@ test_upsert_unordered (void)
 
 
 static void
+test_upserted_index (bool ordered)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bool has_write_cmds;
+
+   bson_error_t error;
+   bson_t reply;
+   bson_t *emp = tmp_bson ("{}");
+   bson_t *inc = tmp_bson ("{'$inc': {'b': 1}}");
+   bool r;
+
+   client = test_framework_client_new (NULL);
+   assert (client);
+   has_write_cmds = server_has_write_commands (client);
+
+   collection = get_test_collection (client, "test_upserted_index");
+   assert (collection);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+   assert (bulk);
+   
+   mongoc_bulk_operation_insert (bulk, emp);
+   mongoc_bulk_operation_insert (bulk, emp);
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'i': 2}"));  
+   mongoc_bulk_operation_update (bulk,
+                                 tmp_bson ("{'i': 3}"),
+                                 inc, false);
+   /* upsert */
+   mongoc_bulk_operation_update (bulk,
+                                 tmp_bson ("{'i': 4}"),
+                                 inc, true);
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'i': 5}"));  
+   mongoc_bulk_operation_remove_one (bulk, tmp_bson ("{'i': 6}"));  
+   mongoc_bulk_operation_replace_one (bulk, tmp_bson ("{'i': 7}"), emp, false);
+   /* upsert */
+   mongoc_bulk_operation_replace_one (bulk, tmp_bson ("{'i': 8}"), emp, true);
+   /* upsert */
+   mongoc_bulk_operation_replace_one (bulk, tmp_bson ("{'i': 9}"), emp, true);
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'i': 10}"));
+   mongoc_bulk_operation_insert (bulk, emp);
+   mongoc_bulk_operation_insert (bulk, emp);
+   mongoc_bulk_operation_update (bulk,
+                                 tmp_bson ("{'i': 13}"),
+                                 inc, false);
+   /* upsert */
+   mongoc_bulk_operation_update (bulk,
+                                 tmp_bson ("{'i': 14}"),
+                                 inc, true);
+   mongoc_bulk_operation_insert (bulk, emp);
+   /* upserts */
+   mongoc_bulk_operation_update (bulk,
+                                 tmp_bson ("{'i': 16}"),
+                                 inc, true);
+   mongoc_bulk_operation_update (bulk,
+                                 tmp_bson ("{'i': 17}"),
+                                 inc, true);
+   /* non-upsert */
+   mongoc_bulk_operation_update (bulk,
+                                 tmp_bson ("{'i': 18}"),
+                                 inc, false);
+   /* upserts */
+   mongoc_bulk_operation_update (bulk,
+                                 tmp_bson ("{'i': 19}"),
+                                 inc, true);
+   mongoc_bulk_operation_replace_one (bulk, tmp_bson ("{'i': 20}"), emp, true);
+   mongoc_bulk_operation_replace_one (bulk, tmp_bson ("{'i': 21}"), emp, true);
+   mongoc_bulk_operation_replace_one (bulk, tmp_bson ("{'i': 22}"), emp, true);
+   mongoc_bulk_operation_update (bulk,
+                                 tmp_bson ("{'i': 23}"),
+                                 inc, true);
+   /* non-upsert */
+   mongoc_bulk_operation_update_one (bulk,
+                                     tmp_bson ("{'i': 24}"),
+                                     inc, false);
+   /* upsert */
+   mongoc_bulk_operation_update_one (bulk,
+                                     tmp_bson ("{'i': 25}"),
+                                     inc, true);
+   /* non-upserts */
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'i': 26}"));
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'i': 27}"));
+   mongoc_bulk_operation_update_one (bulk,
+                                     tmp_bson ("{'i': 28}"),
+                                     inc, false);
+   mongoc_bulk_operation_update_one (bulk,
+                                     tmp_bson ("{'i': 29}"),
+                                     inc, false);
+   /* each update modifies existing 16 docs, but only increments index by one */
+   mongoc_bulk_operation_update (bulk, emp, inc, false);
+   mongoc_bulk_operation_update (bulk, emp, inc, false);
+   /* upsert */
+   mongoc_bulk_operation_update_one (bulk,
+                                     tmp_bson ("{'i': 32}"),
+                                     inc, true);
+
+
+
+   r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
+   if (!r) {
+      fprintf (stderr, "bulk failed: %s\n", error.message);
+      abort ();
+   }
+
+   ASSERT_MATCH (&reply, "{'nInserted':          5,"
+                         " 'nRemoved':           0,"
+                         " 'nMatched':          34,"
+                         " 'nUpserted':         13,"
+                         " 'upserted.0.index':   4,"
+                         " 'upserted.1.index':   8,"
+                         " 'upserted.2.index':   9,"
+                         " 'upserted.3.index':  14,"
+                         " 'upserted.4.index':  16,"
+                         " 'upserted.5.index':  17,"
+                         " 'upserted.6.index':  19,"
+                         " 'upserted.7.index':  20,"
+                         " 'upserted.8.index':  21,"
+                         " 'upserted.9.index':  22,"
+                         " 'upserted.10.index': 23,"
+                         " 'upserted.11.index': 25,"
+                         " 'upserted.12.index': 32,"
+                         " 'writeErrors': []}");
+
+   check_n_modified (has_write_cmds, &reply, 34);
+   assert_count (18, collection);
+
+   r = mongoc_collection_drop (collection, &error);
+   assert (r);
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_upserted_index_ordered (void)
+{
+   test_upserted_index (true);
+}
+
+
+static void
+test_upserted_index_unordered (void)
+{
+   test_upserted_index (false);
+}
+
+
+static void
 test_update_one (bool ordered)
 {
    mongoc_bulk_operation_t *bulk;
