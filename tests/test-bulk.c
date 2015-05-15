@@ -1267,7 +1267,7 @@ test_remove_continue_on_error ()
    /* succeeds */
    mongoc_bulk_operation_remove_one (bulk, doc0);
    /* fails */
-   mongoc_bulk_operation_remove_one (bulk, tmp_bson ("{'$bad-op': 1}"));
+   mongoc_bulk_operation_remove_one (bulk, tmp_bson ("{'a': {'$bad': 1}}"));
    /* succeeds */
    mongoc_bulk_operation_remove_one (bulk, doc1);
 
