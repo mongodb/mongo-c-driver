@@ -1,5 +1,32 @@
-Libmongoc-1.1.6-dev
-===================
+mongo-c-driver 1.1.6
+====================
+
+It is my pleasure to announce to you the 1.1.6 release of the MongoDB C driver.
+
+This is a patch release with performance enhancements and bug fixes:
+
+ * mongoc_bulk_operation_execute now coalesces consecutive update operations
+   into a single message to a MongoDB 2.6+ server, yielding huge performance
+   gains. Same for remove operations. (Inserts were always coalesced.)
+ * Large batches of insert operations are now properly batched according to
+   number of documents and total data size.
+
+I snuck in a feature:
+
+ * mongoc_matcher_t now supports basic subdocument and array matching
+
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+ * A. Jesse Jiryu Davis
+ * Jason Carey
+ * Kai Mast
+ * Matt Cotter
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
 
 mongo-c-driver 1.1.5
 ====================
