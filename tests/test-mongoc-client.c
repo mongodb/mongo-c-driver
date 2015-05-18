@@ -57,11 +57,7 @@ gen_good_uri (const char *username,
 static void
 test_mongoc_client_authenticate (void)
 {
-   char *admin_username;
    mongoc_client_t *admin_client;
-   mongoc_database_t *admin_database;
-   bson_t admin_roles;
-   char *admin_uri;
    char *username;
    char *uri;
    bson_t roles;
@@ -75,27 +71,9 @@ test_mongoc_client_authenticate (void)
    bson_t q;
 
    /*
-    * Add an admin user first.
-    */
-   admin_username = gen_test_user ();
-   admin_client = test_framework_client_new (NULL);
-   admin_database = mongoc_client_get_database (admin_client, "admin");
-   mongoc_database_remove_user (admin_database, admin_username, NULL);
-   bson_init (&admin_roles);
-   BCON_APPEND (&admin_roles,
-                "0", "{", "role", "root", "db", "admin", "}");
-
-   r = mongoc_database_add_user (admin_database, admin_username, "testpass",
-                                 &admin_roles, NULL, NULL);
-   assert (r);
-
-   /*
     * Log in as admin.
     */
-   mongoc_database_destroy (admin_database);
-   mongoc_client_destroy (admin_client);
-   admin_uri = gen_good_uri (admin_username, "admin");
-   admin_client = test_framework_client_new (admin_uri);
+   admin_client = test_framework_client_new (NULL);
 
    /*
     * Add a user to the test database.
@@ -136,25 +114,14 @@ test_mongoc_client_authenticate (void)
    r = mongoc_database_remove_all_users (database, &error);
    assert (r);
 
-   /*
-    * Remove admin user.
-    */
-   admin_database = mongoc_client_get_database (admin_client, "admin");
-   r = mongoc_database_remove_user (admin_database, admin_username, NULL);
-   assert (r);
-
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (auth_client);
    bson_destroy (&roles);
    bson_free (uri);
    bson_free (username);
-   bson_free (admin_uri);
    mongoc_database_destroy (database);
-   bson_destroy (&admin_roles);
-   mongoc_database_destroy (admin_database);
    mongoc_client_destroy (admin_client);
-   bson_free (admin_username);
 }
 
 

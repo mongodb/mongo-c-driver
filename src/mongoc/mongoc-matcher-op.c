@@ -374,7 +374,7 @@ _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,  /* IN */
 
 #define _TYPE_CODE(l, r) ((((int)(l)) << 8) | ((int)(r)))
 #define _NATIVE_COMPARE(op, t1, t2) \
-   (bson_iter##t2(iter) op bson_iter##t1(&compare->iter))
+   (bson_iter##t2(iter) op bson_iter##t1(compare_iter))
 #define _EQ_COMPARE(t1, t2)  _NATIVE_COMPARE(==, t1, t2)
 #define _NE_COMPARE(t1, t2)  _NATIVE_COMPARE(!=, t1, t2)
 #define _GT_COMPARE(t1, t2)  _NATIVE_COMPARE(>, t1, t2)
@@ -386,7 +386,7 @@ _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,  /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_matcher_op_eq_match --
+ * _mongoc_matcher_iter_eq_match --
  *
  *       Performs equality match for all types on either left or right
  *       side of the equation.
@@ -413,15 +413,15 @@ _mongoc_matcher_op_not_match (mongoc_matcher_op_not_t *not,  /* IN */
  */
 
 static bool
-_mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
-                             bson_iter_t                 *iter)    /* IN */
+_mongoc_matcher_iter_eq_match (bson_iter_t *compare_iter, /* IN */
+                               bson_iter_t *iter)         /* IN */
 {
    int code;
 
-   BSON_ASSERT (compare);
+   BSON_ASSERT (compare_iter);
    BSON_ASSERT (iter);
 
-   code = _TYPE_CODE (bson_iter_type (&compare->iter),
+   code = _TYPE_CODE (bson_iter_type (compare_iter),
                       bson_iter_type (iter));
 
    switch (code) {
@@ -444,7 +444,7 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
          const char *lstr;
          const char *rstr;
 
-         lstr = bson_iter_utf8 (&compare->iter, &llen);
+         lstr = bson_iter_utf8 (compare_iter, &llen);
          rstr = bson_iter_utf8 (iter, &rlen);
 
          return ((llen == rlen) && (0 == memcmp (lstr, rstr, llen)));
@@ -475,11 +475,78 @@ _mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
    case _TYPE_CODE(BSON_TYPE_NULL, BSON_TYPE_UNDEFINED):
       return true;
 
+   case _TYPE_CODE (BSON_TYPE_ARRAY, BSON_TYPE_ARRAY):
+      {
+         bson_iter_t left_array;
+         bson_iter_t right_array;
+         bson_iter_recurse (compare_iter, &left_array);
+         bson_iter_recurse (iter, &right_array);
+
+         while (true) {
+            bool left_has_next = bson_iter_next (&left_array);
+            bool right_has_next = bson_iter_next (&right_array);
+
+            if (left_has_next != right_has_next) {
+               /* different lengths */
+               return false;
+            }
+
+            if (!left_has_next) {
+               /* finished */
+               return true;
+            }
+
+            if (!_mongoc_matcher_iter_eq_match (&left_array, &right_array)) {
+               return false;
+            }
+         }
+      }
+
+   case _TYPE_CODE (BSON_TYPE_DOCUMENT, BSON_TYPE_DOCUMENT):
+      {
+         uint32_t llen;
+         uint32_t rlen;
+         const uint8_t *ldoc;
+         const uint8_t *rdoc;
+
+         bson_iter_document (compare_iter, &llen, &ldoc);
+         bson_iter_document (iter, &rlen, &rdoc);
+
+         return ((llen == rlen) && (0 == memcmp (ldoc, rdoc, llen)));
+      }
+
    default:
       return false;
    }
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_matcher_op_eq_match --
+ *
+ *       Performs equality match for all types on either left or right
+ *       side of the equation.
+ *
+ * Returns:
+ *       true if the equality match succeeded.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_matcher_op_eq_match (mongoc_matcher_op_compare_t *compare, /* IN */
+                             bson_iter_t                 *iter)    /* IN */
+{
+   BSON_ASSERT (compare);
+   BSON_ASSERT (iter);
+
+   return _mongoc_matcher_iter_eq_match (&compare->iter, iter);
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -505,11 +572,12 @@ _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare, /* IN */
                              bson_iter_t                 *iter)    /* IN */
 {
    int code;
+   bson_iter_t *compare_iter = &compare->iter;
 
    BSON_ASSERT (compare);
    BSON_ASSERT (iter);
 
-   code = _TYPE_CODE (bson_iter_type (&compare->iter),
+   code = _TYPE_CODE (bson_iter_type (compare_iter),
                       bson_iter_type (iter));
 
    switch (code) {
@@ -546,7 +614,7 @@ _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    default:
       MONGOC_WARNING ("Implement for (Type(%d) > Type(%d))",
-                      bson_iter_type (&compare->iter),
+                      bson_iter_type (compare_iter),
                       bson_iter_type (iter));
       break;
    }
@@ -575,12 +643,14 @@ static bool
 _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare, /* IN */
                               bson_iter_t                 *iter)    /* IN */
 {
+   bson_iter_t *compare_iter;
    int code;
 
    BSON_ASSERT (compare);
    BSON_ASSERT (iter);
 
-   code = _TYPE_CODE (bson_iter_type (&compare->iter),
+   compare_iter = &compare->iter;
+   code = _TYPE_CODE (bson_iter_type (compare_iter),
                       bson_iter_type (iter));
 
    switch (code) {
@@ -617,7 +687,7 @@ _mongoc_matcher_op_gte_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    default:
       MONGOC_WARNING ("Implement for (Type(%d) >= Type(%d))",
-                      bson_iter_type (&compare->iter),
+                      bson_iter_type (compare_iter),
                       bson_iter_type (iter));
       break;
    }
@@ -686,12 +756,14 @@ static bool
 _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare, /* IN */
                              bson_iter_t                 *iter)    /* IN */
 {
+   bson_iter_t *compare_iter;
    int code;
 
    BSON_ASSERT (compare);
    BSON_ASSERT (iter);
 
-   code = _TYPE_CODE (bson_iter_type (&compare->iter),
+   compare_iter = &compare->iter;
+   code = _TYPE_CODE (bson_iter_type (compare_iter),
                       bson_iter_type (iter));
 
    switch (code) {
@@ -728,7 +800,7 @@ _mongoc_matcher_op_lt_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    default:
       MONGOC_WARNING ("Implement for (Type(%d) < Type(%d))",
-                      bson_iter_type (&compare->iter),
+                      bson_iter_type (compare_iter),
                       bson_iter_type (iter));
       break;
    }
@@ -757,12 +829,14 @@ static bool
 _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare, /* IN */
                               bson_iter_t                 *iter)    /* IN */
 {
+   bson_iter_t *compare_iter;
    int code;
 
    BSON_ASSERT (compare);
    BSON_ASSERT (iter);
 
-   code = _TYPE_CODE (bson_iter_type (&compare->iter),
+   compare_iter = &compare->iter;
+   code = _TYPE_CODE (bson_iter_type (compare_iter),
                       bson_iter_type (iter));
 
    switch (code) {
@@ -799,7 +873,7 @@ _mongoc_matcher_op_lte_match (mongoc_matcher_op_compare_t *compare, /* IN */
 
    default:
       MONGOC_WARNING ("Implement for (Type(%d) <= Type(%d))",
-                      bson_iter_type (&compare->iter),
+                      bson_iter_type (compare_iter),
                       bson_iter_type (iter));
       break;
    }
