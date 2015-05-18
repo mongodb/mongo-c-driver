@@ -131,6 +131,8 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
    BSON_APPEND_DOCUMENT (command->documents, key, &doc);
    command->n_documents++;
 
+   bson_destroy (&doc);
+
    EXIT;
 }
 
