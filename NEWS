@@ -8,8 +8,12 @@ This is a patch release with performance enhancements and bug fixes:
  * mongoc_bulk_operation_execute now coalesces consecutive update operations
    into a single message to a MongoDB 2.6+ server, yielding huge performance
    gains. Same for remove operations. (Inserts were always coalesced.)
- * Large batches of insert operations are now properly batched according to
+ * Large numbers of insert operations are now properly batched according to
    number of documents and total data size.
+ * GSSAPI / Kerberos auth now works.
+ * The driver no longer tries three times in vain to reconnect to a primary,
+   so socketTimeoutMS and connectTimeoutMS now behave *closer* to what you
+   expect for replica sets with down members. A full fix awaits 1.2.0.
 
 I snuck in a feature:
 
