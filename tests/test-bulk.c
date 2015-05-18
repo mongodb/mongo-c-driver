@@ -298,7 +298,7 @@ test_bulk_edge_over_1000 (void)
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t * bulk_op;
    mongoc_write_concern_t * wc = mongoc_write_concern_new();
-   bson_iter_t iter, error_iter, index;
+   bson_iter_t iter, error_iter, indexnum;
    bson_t doc, result;
    bson_error_t error;
    int i;
@@ -343,12 +343,12 @@ test_bulk_edge_over_1000 (void)
    assert(bson_iter_next(&error_iter));
 
    for (i = 0; i < 1010; i+=3) {
-      assert(bson_iter_recurse(&error_iter, &index));
-      assert(bson_iter_find(&index, "index"));
-      if (bson_iter_int32(&index) != i) {
-          fprintf(stderr, "index should be %d, but is %d\n", i, bson_iter_int32(&index));
+      assert(bson_iter_recurse(&error_iter, &indexnum));
+      assert(bson_iter_find(&indexnum, "index"));
+      if (bson_iter_int32(&indexnum) != i) {
+          fprintf(stderr, "index should be %d, but is %d\n", i, bson_iter_int32(&indexnum));
       }
-      assert(bson_iter_int32(&index) == i);
+      assert(bson_iter_int32(&indexnum) == i);
       bson_iter_next(&error_iter);
    }
 

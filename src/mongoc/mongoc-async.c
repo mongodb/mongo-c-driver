@@ -65,7 +65,7 @@ mongoc_async_run (mongoc_async_t *async,
                   int32_t         timeout_msec)
 {
    mongoc_async_cmd_t *acmd, *tmp;
-   mongoc_stream_poll_t *poll = NULL;
+   mongoc_stream_poll_t *poller = NULL;
    int i;
    ssize_t nactive = 0;
    int64_t now;
@@ -106,16 +106,16 @@ mongoc_async_run (mongoc_async_t *async,
       }
 
       if (poll_size < async->ncmds) {
-         poll = bson_realloc (poll, sizeof (*poll) * async->ncmds);
+         poller = bson_realloc (poller, sizeof (*poller) * async->ncmds);
          poll_size = async->ncmds;
       }
 
       i = 0;
       DL_FOREACH (async->cmds, acmd)
       {
-         poll[i].stream = acmd->stream;
-         poll[i].events = acmd->events;
-         poll[i].revents = 0;
+         poller[i].stream = acmd->stream;
+         poller[i].events = acmd->events;
+         poller[i].revents = 0;
          i++;
       }
 
@@ -125,19 +125,19 @@ mongoc_async_run (mongoc_async_t *async,
          timeout_msec = (async->cmds->expire_at - now) / 1000;
       }
 
-      nactive = mongoc_stream_poll (poll, async->ncmds, timeout_msec);
+      nactive = mongoc_stream_poll (poller, async->ncmds, timeout_msec);
 
       if (nactive) {
          i = 0;
 
          DL_FOREACH_SAFE (async->cmds, acmd, tmp)
          {
-            if (poll[i].revents & (POLLERR | POLLHUP)) {
+            if (poller[i].revents & (POLLERR | POLLHUP)) {
                acmd->state = MONGOC_ASYNC_CMD_ERROR_STATE;
             }
 
             if (acmd->state == MONGOC_ASYNC_CMD_ERROR_STATE
-                || (poll[i].revents & poll[i].events)) {
+                || (poller[i].revents & poller[i].events)) {
 
                mongoc_async_cmd_run (acmd);
                nactive--;
@@ -153,7 +153,7 @@ mongoc_async_run (mongoc_async_t *async,
    }
 
    if (poll_size) {
-      bson_free (poll);
+      bson_free (poller);
    }
 
    return async->ncmds;
