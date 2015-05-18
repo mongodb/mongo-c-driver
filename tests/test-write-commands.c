@@ -62,7 +62,7 @@ test_split_insert (void)
                                       3000, true, true);
 
    _mongoc_write_command_execute (&command, client, 0, collection->db,
-                                  collection->collection, NULL, &result);
+                                  collection->collection, NULL, 0, &result);
 
    r = _mongoc_write_result_complete (&result, &reply, &error);
 
@@ -118,7 +118,8 @@ test_invalid_write_concern (void)
    _mongoc_write_result_init (&result);
 
    _mongoc_write_command_execute (&command, client, 0, collection->db,
-                                  collection->collection, write_concern, &result);
+                                  collection->collection, write_concern, 0,
+                                  &result);
 
    r = _mongoc_write_result_complete (&result, &reply, &error);
 

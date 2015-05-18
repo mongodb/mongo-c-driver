@@ -37,30 +37,21 @@ BSON_BEGIN_DECLS
 
 typedef struct
 {
-   int type;
+   int      type;
    uint32_t hint;
+   bson_t  *documents;
+   uint32_t n_documents;
    union {
       struct {
          uint8_t   ordered : 1;
          uint8_t   multi : 1;
-         bson_t   *selectors;
-         uint32_t  n_selectors;
-         uint32_t  n_merged;
-         uint32_t  current_n_documents;
       } delete;
       struct {
          uint8_t   ordered : 1;
          uint8_t   allow_bulk_op_insert : 1;
-         bson_t   *documents;
-         uint32_t  n_documents;
-         uint32_t  n_merged;
-         uint32_t  current_n_documents;
       } insert;
       struct {
          uint8_t   ordered : 1;
-         bson_t   *updates;
-         uint32_t  n_updates;
-         uint32_t  current_n_updates;
       } update;
    } u;
 } mongoc_write_command_t;
@@ -68,16 +59,17 @@ typedef struct
 
 typedef struct
 {
+   /* true after a legacy update prevents us from calculating nModified */
    bool         omit_nModified;
    uint32_t     nInserted;
    uint32_t     nMatched;
    uint32_t     nModified;
    uint32_t     nRemoved;
    uint32_t     nUpserted;
-   uint32_t     offset;
-   uint32_t     n_commands;
-   bson_t       upserted;
+   /* like [{"index": int, "_id": value}, ...] */
    bson_t       writeErrors;
+   /* like [{"index": int, "code": int, "errmsg": str}, ...] */
+   bson_t       upserted;
    bson_t       writeConcernError;
    bool         failed;
    bson_error_t error;
@@ -120,14 +112,16 @@ void _mongoc_write_command_execute     (mongoc_write_command_t        *command,
                                         const char                    *database,
                                         const char                    *collection,
                                         const mongoc_write_concern_t  *write_concern,
-                                        mongoc_write_result_t         *result);
+                                        uint32_t                       offset,                                        mongoc_write_result_t         *result);
 void _mongoc_write_result_init         (mongoc_write_result_t         *result);
 void _mongoc_write_result_merge        (mongoc_write_result_t         *result,
                                         mongoc_write_command_t        *command,
-                                        const bson_t                  *reply);
+                                        const bson_t                  *reply,
+                                        uint32_t                       offset);
 void _mongoc_write_result_merge_legacy (mongoc_write_result_t         *result,
                                         mongoc_write_command_t        *command,
-                                        const bson_t                  *reply);
+                                        const bson_t                  *reply,
+                                        uint32_t                       offset);
 bool _mongoc_write_result_complete     (mongoc_write_result_t         *result,
                                         bson_t                        *reply,
                                         bson_error_t                  *error);

@@ -1093,7 +1093,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
-                                  write_concern, &result);
+                                  write_concern, 0, &result);
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result, collection->gle, error);
@@ -1178,7 +1178,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
-                                  write_concern, &result);
+                                  write_concern, 0, &result);
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result, collection->gle, error);
@@ -1271,7 +1271,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
-                                  write_concern, &result);
+                                  write_concern, 0, &result);
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result, collection->gle, error);
@@ -1399,7 +1399,7 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
-                                  write_concern, &result);
+                                  write_concern, 0, &result);
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result, collection->gle, error);

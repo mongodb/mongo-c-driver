@@ -329,30 +329,18 @@ assert_n_inserted (int           n,
 }
 
 
-/*--------------------------------------------------------------------------
- *
- * assert_count --
- *
- *       Check the number of documents in a collection.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Aborts if the count is incorrect.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-assert_count (int                  n,
-              mongoc_collection_t *collection)
-{
-   int count = (int)mongoc_collection_count (collection, MONGOC_QUERY_NONE,
-                                             NULL, 0, 0, NULL, NULL);
-
-   ASSERT_CMPINT (n, ==, count);
-}
+#define ASSERT_COUNT(n, collection) \
+   do { \
+      int count = (int)mongoc_collection_count (collection, MONGOC_QUERY_NONE, \
+                                                NULL, 0, 0, NULL, NULL); \
+      if ((n) != count) { \
+         fprintf(stderr, "FAIL\n\nAssert Failure: count of %s is %d, not %d\n" \
+                         "%s:%d  %s()\n", \
+                         mongoc_collection_get_name (collection), count, n, \
+                         __FILE__, __LINE__, __FUNCTION__); \
+         abort(); \
+      } \
+   } while (0)
 
 
 /*--------------------------------------------------------------------------
@@ -474,7 +462,7 @@ test_bulk (void)
                          " 'nUpserted': 0}");
 
    check_n_modified (has_write_cmds, &reply, 4);
-   assert_count (0, collection);
+   ASSERT_COUNT (0, collection);
 
    bson_destroy (&reply);
 
@@ -527,7 +515,7 @@ test_insert (bool ordered)
    check_n_modified (has_write_cmds, &reply, 0);
 
    bson_destroy (&reply);
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
 
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
                                     &query, NULL, NULL);
@@ -601,7 +589,7 @@ test_insert_check_keys (void)
                                     error.code);
    ASSERT_MATCH (&reply, json_query);
    check_n_modified (has_write_cmds, &reply, 0);
-   assert_count (0, collection);
+   ASSERT_COUNT (0, collection);
 
    bson_free (json_query);
    bson_destroy (&reply);
@@ -651,7 +639,7 @@ test_upsert (bool ordered)
                          " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 0);
-   assert_count (1, collection);
+   ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -675,7 +663,7 @@ test_upsert (bool ordered)
                          " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 0);
-   assert_count (1, collection);  /* doc remains from previous operation */
+   ASSERT_COUNT (1, collection);  /* doc remains from previous operation */
 
    r = mongoc_collection_drop (collection, &error);
    assert (r);
@@ -827,7 +815,7 @@ test_upserted_index (bool ordered)
                          " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 34);
-   assert_count (18, collection);
+   ASSERT_COUNT (18, collection);
 
    r = mongoc_collection_drop (collection, &error);
    assert (r);
@@ -900,7 +888,7 @@ test_update_one (bool ordered)
                          " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 1);
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
 
    r = mongoc_collection_drop (collection, &error);
    assert (r);
@@ -973,7 +961,7 @@ test_replace_one (bool ordered)
                          " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 1);
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
 
    r = mongoc_collection_drop (collection, &error);
    assert (r);
@@ -1027,7 +1015,7 @@ test_upsert_large ()
                          " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 0);
-   assert_count (1, collection);
+   ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
    bson_destroy (&doc);
@@ -1106,7 +1094,7 @@ test_update (bool ordered)
 
    /* one doc already had "foo": "bar" */
    check_n_modified (has_write_cmds, &reply, 1);
-   assert_count (3, collection);
+   ASSERT_COUNT (3, collection);
 
    r = mongoc_collection_drop (collection, &error);
    assert (r);
@@ -1178,7 +1166,7 @@ test_index_offset (void)
                          " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 0);
-   assert_count (1, collection);
+   ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
 
@@ -1235,7 +1223,7 @@ test_single_ordered_bulk ()
                          " 'upserted.0._id':   {'$exists': true}}");
 
    check_n_modified (has_write_cmds, &reply, 1);
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1286,7 +1274,7 @@ test_insert_continue_on_error ()
 
    check_n_modified (has_write_cmds, &reply, 0);
    assert_error_count (2, &reply);
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1345,7 +1333,7 @@ test_update_continue_on_error ()
 
    check_n_modified (has_write_cmds, &reply, 2);
    assert_error_count (1, &reply);
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
    ASSERT_CMPINT (
       1,
       ==,
@@ -1403,7 +1391,7 @@ test_remove_continue_on_error ()
 
    check_n_modified (has_write_cmds, &reply, 0);
    assert_error_count (1, &reply);
-   assert_count (1, collection);
+   ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1463,7 +1451,7 @@ test_single_error_ordered_bulk ()
                          "}");
    assert_error_count (1, &reply);
    check_n_modified (has_write_cmds, &reply, 0);
-   assert_count (1, collection);
+   ASSERT_COUNT (1, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1531,7 +1519,7 @@ test_multiple_error_ordered_bulk ()
                          "}");
    check_n_modified (has_write_cmds, &reply, 0);
    assert_error_count (1, &reply);
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1582,7 +1570,7 @@ test_single_unordered_bulk ()
                          " 'upserted.0._id': {'$exists': true},"
                          " 'writeErrors': []}");
    check_n_modified (has_write_cmds, &reply, 1);
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1640,7 +1628,7 @@ test_single_error_unordered_bulk ()
                          " 'writeErrors.0.errmsg': {'$exists': true}}");
    assert_error_count (1, &reply);
    check_n_modified (has_write_cmds, &reply, 0);
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1723,7 +1711,7 @@ test_multiple_error_unordered_bulk ()
     * assume the update at index 1 runs before the update at index 3,
     * although the spec does not require it. Same for inserts.
     */
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1764,12 +1752,13 @@ test_large_inserts_ordered ()
 
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_QUERY);
+   /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
 
    /* TODO: CDRIVER-654, assert nInserted == 1 */
    /*assert_n_inserted (1, &reply);*/
-   /*assert_count (1, collection);*/
+   /*ASSERT_COUNT (1, collection);*/
 
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
                              NULL, NULL);
@@ -1787,13 +1776,10 @@ test_large_inserts_ordered ()
       mongoc_bulk_operation_insert (bulk, big_doc);
    }
 
-   /* TODO: CDRIVER-657 */
-/*
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
    assert_n_inserted (6, &reply);
-   assert_count (6, collection);
-*/
+   ASSERT_COUNT (6, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1835,12 +1821,13 @@ test_large_inserts_unordered ()
 
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_QUERY);
-   assert (error.code);
+   assert ((error.domain == MONGOC_ERROR_COMMAND) ||
+           (error.domain == MONGOC_ERROR_BSON &&
+            error.code == MONGOC_ERROR_BSON_INVALID));
 
    /* TODO: CDRIVER-654, assert nInserted == 2 */
    /*assert_n_inserted (1, &reply);*/
-   assert_count (2, collection);
+   ASSERT_COUNT (2, collection);
 
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
                              NULL, NULL);
@@ -1858,13 +1845,10 @@ test_large_inserts_unordered ()
       mongoc_bulk_operation_insert (bulk, big_doc);
    }
 
-   /* TODO: CDRIVER-657 */
-/*
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
    assert_n_inserted (6, &reply);
-   assert_count (6, collection);
-*/
+   ASSERT_COUNT (6, collection);
 
    bson_destroy (huge_doc);
    bson_destroy (&reply);
@@ -1904,7 +1888,7 @@ test_numerous_inserts ()
    assert (r);
 
    assert_n_inserted (n_docs, &reply);
-   assert_count (n_docs, collection);
+   ASSERT_COUNT (n_docs, collection);
 
    /* same with ordered bulk */
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
@@ -1922,7 +1906,7 @@ test_numerous_inserts ()
    assert (r);
 
    assert_n_inserted (n_docs, &reply);
-   assert_count (n_docs, collection);
+   ASSERT_COUNT (n_docs, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);

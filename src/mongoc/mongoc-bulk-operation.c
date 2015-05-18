@@ -366,6 +366,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
    mongoc_write_command_t *command;
    uint32_t hint = 0;
    bool ret;
+   uint32_t offset = 0;
    int i;
 
    ENTRY;
@@ -421,13 +422,16 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
       _mongoc_write_command_execute (command, bulk->client, hint,
                                      bulk->database, bulk->collection,
-                                     bulk->write_concern, &bulk->result);
+                                     bulk->write_concern, offset,
+                                     &bulk->result);
 
       hint = command->hint;
 
       if (bulk->result.failed && bulk->ordered) {
          GOTO (cleanup);
       }
+
+      offset += command->n_documents;
    }
 
 cleanup:
