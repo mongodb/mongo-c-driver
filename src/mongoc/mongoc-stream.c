@@ -307,7 +307,7 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
                     size_t                nstreams,
                     int32_t               timeout)
 {
-   mongoc_stream_poll_t * poll = bson_malloc(sizeof(*poll) * nstreams);
+   mongoc_stream_poll_t *poller = bson_malloc(sizeof(*poller) * nstreams);
 
    int i;
    int last_type = 0;
@@ -316,33 +316,33 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
    errno = 0;
 
    for (i = 0; i < nstreams; i++) {
-      poll[i].stream = mongoc_stream_get_base_stream(streams[i].stream);
-      poll[i].events = streams[i].events;
-      poll[i].revents = 0;
+      poller[i].stream = mongoc_stream_get_base_stream(streams[i].stream);
+      poller[i].events = streams[i].events;
+      poller[i].revents = 0;
 
       if (i == 0) {
-         last_type = poll[i].stream->type;
-      } else if (last_type != poll[i].stream->type) {
+         last_type = poller[i].stream->type;
+      } else if (last_type != poller[i].stream->type) {
          errno = EINVAL;
          goto CLEANUP;
       }
    }
 
-   if (! poll[0].stream->poll) {
+   if (! poller[0].stream->poll) {
       errno = EINVAL;
       goto CLEANUP;
    }
 
-   rval = poll[0].stream->poll(poll, nstreams, timeout);
+   rval = poller[0].stream->poll(poller, nstreams, timeout);
 
    if (rval > 0) {
       for (i = 0; i < nstreams; i++) {
-         streams[i].revents = poll[i].revents;
+         streams[i].revents = poller[i].revents;
       }
    }
 
 CLEANUP:
-   bson_free(poll);
+   bson_free(poller);
 
    return rval;
 }
