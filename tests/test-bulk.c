@@ -1763,6 +1763,7 @@ test_large_inserts_ordered ()
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
                              NULL, NULL);
 
+   bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    assert (bulk);
@@ -1832,6 +1833,7 @@ test_large_inserts_unordered ()
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
                              NULL, NULL);
 
+   bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
    assert (bulk);
@@ -1894,6 +1896,7 @@ test_numerous_inserts ()
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
                              NULL, NULL);
 
+   bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    assert (bulk);
