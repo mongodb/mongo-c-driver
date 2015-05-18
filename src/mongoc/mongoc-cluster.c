@@ -2314,7 +2314,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
       RETURN (false);
    }
 
-   TRACE ("Waiting for reply from server \"%ul\"", server_id);
+   TRACE ("Waiting for reply from server_id \"%u\"", server_id);
 
    /*
     * Buffer the message length to determine how much more to read.
