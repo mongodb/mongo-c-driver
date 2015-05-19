@@ -302,8 +302,7 @@ test_mongoc_tls_handshake_stall (void)
    r = mongoc_thread_create (threads, &ssl_error_server, &data);
    assert (r == 0);
 
-   r =
-      mongoc_thread_create (threads + 1, &handshake_stall_client, &data);
+   r = mongoc_thread_create (threads + 1, &handshake_stall_client, &data);
    assert (r == 0);
 
    for (i = 0; i < 2; i++) {
