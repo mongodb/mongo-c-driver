@@ -322,6 +322,10 @@ void
 test_stream_tls_error_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
+
+   /* TODO: CDRIVER-630 */
+/*
    TestSuite_Add (suite, "/TLS/handshake_stall",
                   test_mongoc_tls_handshake_stall);
+*/
 }
