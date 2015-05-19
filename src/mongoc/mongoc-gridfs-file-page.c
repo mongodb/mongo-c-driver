@@ -98,7 +98,7 @@ _mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
  *
  * writes are copy on write as regards the buf passed during construction.
  * I.e. the first write allocs a buf large enough for the chunk_size, which
- * because authoritative from then on out
+ * becomes authoritative from then on.
  */
 int32_t
 _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,

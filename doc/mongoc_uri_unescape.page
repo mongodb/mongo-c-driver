@@ -31,7 +31,7 @@ mongoc_uri_unescape (const char *escaped_string);
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns a newly allocated string that should be freed with bson_free().</p>
+    <p>Returns a newly allocated string that should be freed with <code xref="bson:bson_free">bson_free()</code>.</p>
   </section>
 
 </page>

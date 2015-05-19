@@ -12,8 +12,9 @@
   <subtitle>Write Concern abstraction</subtitle>
   <section id="description">
     <title>Synopsis</title>
-    <p><code>mongoc_write_concern_t</code> provides an abstraction on top of the MongoDB connection write concern.  It allows for hinting to the driver how durable writes should be, both in replication as well as on a per node basis.</p>
-    <p>You can specify a read preference mode on connection objects, database objects, collection objects, or per-operation.</p>
+    <p><code>mongoc_write_concern_t</code> tells the driver what level of acknowledgment to await from the server. The default, MONGOC_WRITE_CONCERN_W_DEFAULT, is right for the great majority of applications.</p>
+    <p>You can specify a write concern on connection objects, database objects, collection objects, or per-operation.</p>
+    <p>See <link href="http://docs.mongodb.org/manual/core/write-concern/">Write Concern</link> on the MongoDB website for more information.</p>
   </section>
 
   <section id="levels">
@@ -22,34 +23,30 @@
       <title>Network Related</title>
       <tr>
         <td><p>MONGOC_WRITE_CONCERN_W_DEFAULT (1)</p></td>
-        <td><p>With a receipt acknowledged write concern, the mongod confirms the receipt of the write operation. Acknowledged write concern allows clients to catch network, duplicate key, and other errors.</p></td>
+        <td><p>By default, writes block awaiting acknowledgment from MongoDB. Acknowledged write concern allows clients to catch network, duplicate key, and other errors.</p></td>
       </tr>
       <tr>
         <td><p>MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED (-1)</p></td>
-        <td><p>With an errors ignored write concern, MongoDB does not acknowledge write operations. With this level of write concern, the client cannot detect failed write operations. These errors include connection errors and mongod exceptions such as duplicate key exceptions for unique indexes. Although the errors ignored write concern provides fast performance, this performance gain comes at the cost of significant risks for data persistence and durability.</p></td>
+        <td><p>With this write concern, MongoDB does not acknowledge write operations. The client cannot detect failed write operations due to connection errors, or server errors such as duplicate key exceptions for unique indexes. This write concern provides fast performance at the cost of significant risks for data persistence and durability.</p></td>
       </tr>
       <tr>
         <td><p>MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED (0)</p></td>
-        <td><p>With an unacknowledged write concern, MongoDB does not acknowledge the receipt of write operation. Unacknowledged is similar to errors ignored; however, mongoc attempts to receive and handle network errors when possible.</p></td>
+        <td><p>With this write concern, MongoDB does not acknowledge the receipt of write operation. Unacknowledged is similar to errors ignored; however, mongoc attempts to receive and handle network errors when possible.</p></td>
       </tr>
       <tr>
         <td><p>MONGOC_WRITE_CONCERN_W_MAJORITY (majority)</p></td>
-        <td><p>Require that a write has been propagated to a majority of the nodes in the replica set.</p></td>
+        <td><p>Block until a write has been propagated to a majority of the nodes in the replica set.</p></td>
       </tr>
       <tr>
         <td><p>n</p></td>
-        <td><p>Require that a write has been propagated to at least <code>n</code> nodes in the replica set.</p></td>
+        <td><p>Block until a write has been propagated to at least <code>n</code> nodes in the replica set.</p></td>
       </tr>
     </table>
     <table>
       <title>Node Persistence</title>
       <tr>
-        <td><p>fsync</p></td>
-        <td><p>Force a full <code>fsync()</code> on the node receiving the write.</p></td>
-      </tr>
-      <tr>
         <td><p>journal</p></td>
-        <td><p>Force a flush to the journal on the node receiving the write.</p></td>
+        <td><p>Block until the node receiving the write has committed the journal.</p></td>
       </tr>
     </table>
   </section>

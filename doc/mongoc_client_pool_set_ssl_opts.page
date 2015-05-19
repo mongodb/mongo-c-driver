@@ -17,15 +17,15 @@ void
 mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
                                  const mongoc_ssl_opt_t *opts);
 #endif]]></code></synopsis>
-    <p>This function is identical to <link xref="mongoc_client_set_ssl_opts">mongoc_client_set_ssl_opts()</link> except for client pools. It ensures that all clients retrieved from <link xref="mongoc_client_pool_pop">mongoc_client_pool_pop()</link> or <link xref="mongoc_client_pool_try_pop">mongoc_client_pool_try_pop()</link> are configured with the same SSL settings.</p>
+    <p>This function is identical to <code xref="mongoc_client_set_ssl_opts">mongoc_client_set_ssl_opts()</code> except for client pools. It ensures that all clients retrieved from <code xref="mongoc_client_pool_pop">mongoc_client_pool_pop()</code> or <code xref="mongoc_client_pool_try_pop">mongoc_client_pool_try_pop()</code> are configured with the same SSL settings.</p>
     <p>It is a programming error to call this function after retrieving a client from the client pool.</p>
   </section>
 
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>pool</p></td><td><p>A <link xref="mongoc_client_pool_t">mongoc_client_pool_t</link>.</p></td></tr>
-      <tr><td><p>opts</p></td><td><p>A <link xref="mongoc_ssl_opt_t">mongoc_ssl_opt_t</link> that will not be modified.</p></td></tr>
+      <tr><td><p>pool</p></td><td><p>A <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code>.</p></td></tr>
+      <tr><td><p>opts</p></td><td><p>A <code xref="mongoc_ssl_opt_t">mongoc_ssl_opt_t</code> that will not be modified.</p></td></tr>
     </table>
   </section>
 

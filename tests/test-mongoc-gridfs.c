@@ -10,9 +10,6 @@
 #include "TestSuite.h"
 
 
-static char *gTestUri;
-
-
 static mongoc_gridfs_t *
 get_test_gridfs (mongoc_client_t *client,
                  const char      *name,
@@ -45,7 +42,7 @@ test_create (void)
    mongoc_client_t *client;
    bson_error_t error;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error);
@@ -77,7 +74,7 @@ test_remove (void)
    bool r;
    char name[32];
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error);
@@ -122,7 +119,7 @@ test_list (void)
    char buf[100];
    int i = 0;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    gridfs = get_test_gridfs (client, "list", &error);
@@ -189,7 +186,7 @@ test_create_from_stream (void)
    mongoc_client_t *client;
    bson_error_t error;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    gridfs = get_test_gridfs (client, "from_stream", &error);
@@ -231,7 +228,7 @@ test_read (void)
    iov[1].iov_base = buf2;
    iov[1].iov_len = 10;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    gridfs = get_test_gridfs (client, "read", &error);
@@ -292,7 +289,7 @@ test_write (void)
 
    opt.chunk_size = 2;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    gridfs = get_test_gridfs (client, "write", &error);
@@ -343,7 +340,7 @@ test_stream (void)
    iov.iov_base = buf;
    iov.iov_len = sizeof buf;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    gridfs = get_test_gridfs (client, "fs", &error);
@@ -383,7 +380,7 @@ test_remove_by_filename (void)
    bson_error_t error;
    bool ret;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    gridfs = get_test_gridfs (client, "fs_remove_by_filename", &error);
@@ -420,19 +417,9 @@ test_remove_by_filename (void)
    mongoc_client_destroy (client);
 }
 
-
-static void
-cleanup_globals (void)
-{
-   bson_free (gTestUri);
-}
-
-
 void
 test_gridfs_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf ("mongodb://%s/", MONGOC_TEST_HOST);
-
    TestSuite_Add (suite, "/GridFS/create", test_create);
    TestSuite_Add (suite, "/GridFS/create_from_stream", test_create_from_stream);
    TestSuite_Add (suite, "/GridFS/list", test_list);
@@ -441,6 +428,4 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/remove", test_remove);
    TestSuite_Add (suite, "/GridFS/write", test_write);
    TestSuite_Add (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
-
-   atexit (cleanup_globals);
 }

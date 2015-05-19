@@ -27,12 +27,12 @@ mongoc_uri_new_for_host_port (const char *hostname,
 
   <section id="description">
     <title>Description</title>
-    <p>Creates a new <link xref="mongoc_uri_t">mongoc_uri_t</link> based on the hostname and port provided.</p>
+    <p>Creates a new <code xref="mongoc_uri_t">mongoc_uri_t</code> based on the hostname and port provided.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns a newly allocated <link xref="mongoc_uri_t">mongoc_uri_t</link> that should be freed with <link xref="mongoc_uri_destroy">mongoc_uri_destroy()</link> when no longer in use.</p>
+    <p>Returns a newly allocated <code xref="mongoc_uri_t">mongoc_uri_t</code> that should be freed with <code xref="mongoc_uri_destroy">mongoc_uri_destroy()</code> when no longer in use.</p>
   </section>
 
 </page>

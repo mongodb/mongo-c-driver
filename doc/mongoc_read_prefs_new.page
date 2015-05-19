@@ -20,18 +20,18 @@ mongoc_read_prefs_new (mongoc_read_mode_t read_mode);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>read_mode</p></td><td><p>A <link xref="mongoc_read_mode_t">mongoc_read_mode_t</link>.</p></td></tr>
+      <tr><td><p>read_mode</p></td><td><p>A <code xref="mongoc_read_mode_t">mongoc_read_mode_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
     <title>Description</title>
-    <p>Creates a new <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link> using the mode specified.</p>
+    <p>Creates a new <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code> using the mode specified.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns a newly allocated <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link> that should be freed with <link xref="mongoc_read_prefs_destroy">mongoc_read_prefs_destroy()</link>.</p>
+    <p>Returns a newly allocated <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code> that should be freed with <code xref="mongoc_read_prefs_destroy">mongoc_read_prefs_destroy()</code>.</p>
   </section>
 
 </page>

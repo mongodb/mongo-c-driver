@@ -24,17 +24,17 @@ mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_socket_t">mongoc_stream_socket_t</link>.</p></td></tr>
+      <tr><td><p>stream</p></td><td><p>A <code xref="mongoc_stream_socket_t">mongoc_stream_socket_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
-    <p>Retrieves the underlying <link xref="mongoc_socket_t">mongoc_socket_t</link> for a <link xref="mongoc_stream_socket_t">mongoc_stream_socket_t</link>.</p>
+    <p>Retrieves the underlying <code xref="mongoc_socket_t">mongoc_socket_t</code> for a <code xref="mongoc_stream_socket_t">mongoc_stream_socket_t</code>.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>A <link xref="mongoc_stream_socket_t">mongoc_stream_socket_t</link>.</p>
+    <p>A <code xref="mongoc_stream_socket_t">mongoc_stream_socket_t</code>.</p>
   </section>
 
 </page>

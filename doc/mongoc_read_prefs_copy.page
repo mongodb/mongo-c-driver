@@ -21,7 +21,7 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>read_prefs</p></td><td><p>A <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>A <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
     </table>
   </section>
 
@@ -32,7 +32,7 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs);
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns a newly allocated read preference that should be freed with <link xref="mongoc_read_prefs_destroy">mongoc_read_prefs_destroy()</link>.</p>
+    <p>Returns a newly allocated read preference that should be freed with <code xref="mongoc_read_prefs_destroy">mongoc_read_prefs_destroy()</code>.</p>
   </section>
 
 

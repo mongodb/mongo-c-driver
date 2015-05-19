@@ -21,8 +21,8 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>client</p></td><td><p>A <link xref="mongoc_client_t">mongoc_client_t</link>.</p></td></tr>
-      <tr><td><p>opts</p></td><td><p>A <link xref="mongoc_ssl_opt_t">mongoc_ssl_opt_t</link>. This parameter will be copied by the client.</p></td></tr>
+      <tr><td><p>client</p></td><td><p>A <code xref="mongoc_client_t">mongoc_client_t</code>.</p></td></tr>
+      <tr><td><p>opts</p></td><td><p>A <code xref="mongoc_ssl_opt_t">mongoc_ssl_opt_t</code>. This parameter will be copied by the client.</p></td></tr>
     </table>
   </section>
 

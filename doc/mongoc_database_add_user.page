@@ -29,12 +29,12 @@ mongoc_database_add_user (mongoc_database_t *database,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>database</p></td><td><p>A <link xref="mongoc_database_t">mongoc_database_t</link>.</p></td></tr>
+      <tr><td><p>database</p></td><td><p>A <code xref="mongoc_database_t">mongoc_database_t</code>.</p></td></tr>
       <tr><td><p>username</p></td><td><p>The name of the user.</p></td></tr>
       <tr><td><p>password</p></td><td><p>The cleartext password for the user.</p></td></tr>
-      <tr><td><p>roles</p></td><td><p>An optional bson_t for roles.</p></td></tr>
-      <tr><td><p>custom_data</p></td><td><p>A optional bson_t for extra data.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>A location for a <link xref="bson_error_t">bson_error_t</link> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>roles</p></td><td><p>An optional <code xref="bson:bson_t">bson_t</code> for roles.</p></td></tr>
+      <tr><td><p>custom_data</p></td><td><p>A optional <code xref="bson:bson_t">bson_t</code> for extra data.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>A location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 

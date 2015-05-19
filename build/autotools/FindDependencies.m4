@@ -32,4 +32,7 @@ AS_IF([test "$ac_cv_search_clock_gettime" = "-lrt"],
 AS_IF([test "$enable_rdtscp" = "yes"],
       [CPPFLAGS="$CPPFLAGS -DENABLE_RDTSCP"])
 
+AS_IF([test "$enable_shm_counters" = "yes"],
+      [CPPFLAGS="$CPPFLAGS -DMONGOC_ENABLE_SHM_COUNTERS"])
+
 AX_PTHREAD

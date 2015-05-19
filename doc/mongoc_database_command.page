@@ -31,28 +31,28 @@ mongoc_database_command (mongoc_database_t         *database,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>database</p></td><td><p>A <link xref="mongoc_database_t">mongoc_database_t</link>.</p></td></tr>
-      <tr><td><p>flags</p></td><td><p>A <link xref="mongoc_query_flags_t">mongoc_query_flags_t</link>.</p></td></tr>
+      <tr><td><p>database</p></td><td><p>A <code xref="mongoc_database_t">mongoc_database_t</code>.</p></td></tr>
+      <tr><td><p>flags</p></td><td><p>A <code xref="mongoc_query_flags_t">mongoc_query_flags_t</code>.</p></td></tr>
       <tr><td><p>skip</p></td><td><p>The number of documents to skip on the server.</p></td></tr>
       <tr><td><p>limit</p></td><td><p>The maximum number of documents to return from the cursor.</p></td></tr>
       <tr><td><p>batch_size</p></td><td><p>Attempt to batch results from the server in groups of <code>batch_size</code> documents.</p></td></tr>
-      <tr><td><p>command</p></td><td><p>A bson_t containing the command.</p></td></tr>
-      <tr><td><p>fields</p></td><td><p>An optional bson_t containing the fields to return. <code>NULL</code> for all fields.</p></td></tr>
-      <tr><td><p>read_prefs</p></td><td><p>An optional <link xref="mongoc_read_prefs_t">mongoc_read_prefs_t</link>.</p></td></tr>
+      <tr><td><p>command</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the command.</p></td></tr>
+      <tr><td><p>fields</p></td><td><p>An optional <code xref="bson:bson_t">bson_t</code> containing the fields to return. <code>NULL</code> for all fields.</p></td></tr>
+      <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
-    <p>The <code>mongoc_database_command()</code> function shall execute a command on a database. This is performed lazily after calling <link xref="mongoc_cursor_next">mongoc_cursor_next()</link> on the resulting cursor structure.</p>
+    <p>The <code>mongoc_database_command()</code> function shall execute a command on a database. This is performed lazily after calling <code xref="mongoc_cursor_next">mongoc_cursor_next()</code> on the resulting cursor structure.</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>This command returns a <link xref="mongoc_cursor_t">mongoc_cursor_t</link> that should be freed with <link xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</link> when no longer in use.</p>
+    <p>This command returns a <code xref="mongoc_cursor_t">mongoc_cursor_t</code> that should be freed with <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code> when no longer in use.</p>
   </section>
 
   <section id="seealso">
     <title>See Also</title>
-    <p><link xref="mongoc_cursor_next">mongoc_cursor_next()</link></p>
+    <p><code xref="mongoc_cursor_next">mongoc_cursor_next()</code></p>
   </section>
 </page>

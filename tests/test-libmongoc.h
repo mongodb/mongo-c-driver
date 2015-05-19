@@ -18,9 +18,16 @@
 #ifndef TEST_LIBMONGOC_H
 #define TEST_LIBMONGOC_H
 
-extern char MONGOC_TEST_HOST [1024];
+
+#ifdef _WIN32
+void usleep (int64_t usec);
+#endif
+
 
 char *gen_collection_name (const char *prefix);
 void suppress_one_message (void);
-
+char *test_framework_get_host (void);
+bool test_framework_get_ssl (void);
+char *test_framework_get_uri_str (const char *uri_str);
+mongoc_client_t *test_framework_client_new (const char *uri_str);
 #endif

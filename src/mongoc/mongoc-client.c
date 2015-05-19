@@ -283,6 +283,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
    const bson_t *options;
    bson_iter_t iter;
    const char *mechanism;
+   int32_t connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
 #endif
 
    bson_return_val_if_fail (uri, NULL);
@@ -336,14 +337,20 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
             return NULL;
          }
 
-         if (!mongoc_stream_tls_do_handshake (base_stream, -1) ||
+         if (bson_iter_init_find_case (&iter, options, "connecttimeoutms") &&
+             BSON_ITER_HOLDS_INT32 (&iter)) {
+            if (!(connecttimeoutms = bson_iter_int32(&iter))) {
+               connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
+            }
+         }
+
+         if (!mongoc_stream_tls_do_handshake (base_stream, connecttimeoutms) ||
              !mongoc_stream_tls_check_cert (base_stream, host->host)) {
             bson_set_error (error,
                             MONGOC_ERROR_STREAM,
                             MONGOC_ERROR_STREAM_SOCKET,
                             "Failed to handshake and validate TLS certificate.");
-            mongoc_stream_failed (base_stream);
-            base_stream = NULL;
+            mongoc_stream_destroy (base_stream);
             return NULL;
          }
       }
@@ -1010,16 +1017,17 @@ mongoc_client_get_collection (mongoc_client_t *client,
  *       This function returns a newly allocated collection structure.
  *
  *       @db should be the name of the database, such as "test".
- *       @collection should be the name of the collection such as "test".
  *
- *       The above would result in the namespace "test.test".
+ *       @prefix optional prefix for GridFS collection names, or NULL. Default
+ *       is "fs", thus the default collection names for GridFS are "fs.files"
+ *       and "fs.chunks".
  *
  *       You should free this structure when you are done with it using
  *       mongoc_collection_destroy().
  *
  * Returns:
- *       A newly allocated mongoc_collection_t that should be freed with
- *       mongoc_collection_destroy().
+ *       A newly allocated mongoc_gridfs_t that should be freed with
+ *       mongoc_gridfs_destroy().
  *
  * Side effects:
  *       None.

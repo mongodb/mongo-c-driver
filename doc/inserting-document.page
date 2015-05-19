@@ -17,7 +17,7 @@
 
     <p>
       The following code example creates a new <code>mongoc_client_t</code> that we will use to communicate with MongoDB.
-      The <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link> component is quite comprehensive.
+      See the <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link> page for more information on connecting to MongoDB.
     </p>
 
     <p>
@@ -75,7 +75,7 @@ main (int   argc,
 
     <note style="warning">
       <p>
-        When using the MongoDB C Driver, you must call <link xref="mongoc_init">mongoc_init()</link> at the beginning of your application.
+        When using the MongoDB C Driver, you must call <code xref="mongoc_init">mongoc_init()</code> at the beginning of your application.
         This allows the driver to initialize it's required subsystems.
         Failure to do so will result in a runtime crash.
       </p>

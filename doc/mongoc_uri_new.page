@@ -32,7 +32,7 @@ mongoc_uri_new (const char *uri_string)
 
   <section id="return">
     <title>Returns</title>
-    <p>A newly allocated <link xref="mongoc_uri_t">mongoc_uri_t</link> if successful. Otherwise NULL.</p>
+    <p>A newly allocated <code xref="mongoc_uri_t">mongoc_uri_t</code> if successful. Otherwise <code>NULL</code>.</p>
     <note style="warning"><p>Failure to handle the result of this function is a programming error.</p></note>
   </section>
 

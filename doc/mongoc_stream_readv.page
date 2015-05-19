@@ -28,8 +28,8 @@ mongoc_stream_readv (mongoc_stream_t *stream,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>stream</p></td><td><p>A <link xref="mongoc_stream_t">mongoc_stream_t</link>.</p></td></tr>
-      <tr><td><p>iov</p></td><td><p>A vector of <link xref="mongoc_iovec_t">mongoc_iovec_t</link>.</p></td></tr>
+      <tr><td><p>stream</p></td><td><p>A <code xref="mongoc_stream_t">mongoc_stream_t</code>.</p></td></tr>
+      <tr><td><p>iov</p></td><td><p>A vector of <code xref="mongoc_iovec_t">mongoc_iovec_t</code>.</p></td></tr>
       <tr><td><p>iovcnt</p></td><td><p>The number of items in <code>iov</code>.</p></td></tr>
       <tr><td><p>min_bytes</p></td><td><p>The minimum number of bytes to read or failure will be indicated.</p></td></tr>
       <tr><td><p>timeout_msec</p></td><td><p>A timeout in milliseconds, or 0 to indicate non-blocking. A negative value with use the default timeout.</p></td></tr>
@@ -37,7 +37,7 @@ mongoc_stream_readv (mongoc_stream_t *stream,
   </section>
 
   <section id="description">
-    <p>This function is identical to <link xref="mongoc_stream_read">mongoc_stream_read()</link> except that it takes a <link xref="mongoc_iovec_t">mongoc_iovec_t</link> to perform gathered I/O.</p>
+    <p>This function is identical to <code xref="mongoc_stream_read">mongoc_stream_read()</code> except that it takes a <code xref="mongoc_iovec_t">mongoc_iovec_t</code> to perform gathered I/O.</p>
   </section>
 
   <section id="return">
@@ -47,9 +47,9 @@ mongoc_stream_readv (mongoc_stream_t *stream,
 
   <section id="seealso">
     <title>See Also</title>
-    <p><link xref="mongoc_stream_read">mongoc_stream_read()</link></p>
-    <p><link xref="mongoc_stream_write">mongoc_stream_write()</link></p>
-    <p><link xref="mongoc_stream_writev">mongoc_stream_writev()</link></p>
+    <p><code xref="mongoc_stream_read">mongoc_stream_read()</code></p>
+    <p><code xref="mongoc_stream_write">mongoc_stream_write()</code></p>
+    <p><code xref="mongoc_stream_writev">mongoc_stream_writev()</code></p>
   </section>
 
 </page>

@@ -14,7 +14,7 @@
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_client_t *
 mongoc_client_new (const char *uri_string);]]></code></synopsis>
-    <p>Creates a new <link xref="mongoc_client_t">mongoc_client_t</link> using the URI string provided.</p>
+    <p>Creates a new <code xref="mongoc_client_t">mongoc_client_t</code> using the URI string provided.</p>
   </section>
 
   <section id="parameters">
@@ -26,12 +26,12 @@ mongoc_client_new (const char *uri_string);]]></code></synopsis>
 
   <section id="return">
     <title>Returns</title>
-    <p>A newly allocated <link xref="mongoc_client_t">mongoc_client_t</link> if the URI parsed successfully, otherwise <code>NULL</code>.</p>
+    <p>A newly allocated <code xref="mongoc_client_t">mongoc_client_t</code> if the URI parsed successfully, otherwise <code>NULL</code>.</p>
   </section>
 
   <section id="seealso">
     <title>See Also</title>
-    <p><link xref="mongoc_client_new_from_uri">mongoc_client_new_from_uri()</link></p>
+    <p><code xref="mongoc_client_new_from_uri">mongoc_client_new_from_uri()</code></p>
   </section>
 
 </page>

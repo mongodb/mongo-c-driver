@@ -13,10 +13,10 @@ set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
 set (MONGOC_MAJOR_VERSION 1)
 set (MONGOC_MINOR_VERSION 1)
-set (MONGOC_MICRO_VERSION 5)
+set (MONGOC_MICRO_VERSION 7)
 set (MONGOC_PRERELEASE_VERSION dev)
 set (MONGOC_API_VERSION 1.0)
-set (MONGOC_VERSION 1.1.5-dev)
+set (MONGOC_VERSION 1.1.7-dev)
 
 set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 set (CPACK_PACKAGE_VERSION_MAJOR ${MONGOC_MAJOR_VERSION})
@@ -251,7 +251,8 @@ if (OPENSSL_FOUND)
    set(test-libmongoc-sources ${test-libmongoc-sources}
       ${SOURCE_DIR}/tests/test-x509.c
       ${SOURCE_DIR}/tests/ssl-test.c
-      ${SOURCE_DIR}/tests/test-mongoc-stream-tls.c)
+      ${SOURCE_DIR}/tests/test-mongoc-stream-tls.c
+      ${SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c)
    mongoc_add_test(test-replica-set-ssl FALSE
       ${SOURCE_DIR}/tests/test-replica-set-ssl.c
       ${SOURCE_DIR}/tests/ha-test.c

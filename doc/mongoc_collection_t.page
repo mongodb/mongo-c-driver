@@ -26,7 +26,7 @@ typedef struct _mongoc_collection_t mongoc_collection_t;]]></code></synopsis>
 
   <section>
     <title>Lifecycle</title>
-    <p>It is an error to call <link xref="mongoc_collection_destroy">mongoc_collection_destroy()</link> on a collection that has operations pending. It is required that you release <link xref="mongoc_cursor_t">mongoc_cursor_t</link> structures before calling <link xref="mongoc_collection_destroy">mongoc_collection_destroy()</link>.</p>
+    <p>It is an error to call <code xref="mongoc_collection_destroy">mongoc_collection_destroy()</code> on a collection that has operations pending. It is required that you release <code xref="mongoc_cursor_t">mongoc_cursor_t</code> structures before calling <code xref="mongoc_collection_destroy">mongoc_collection_destroy()</code>.</p>
   </section>
 
   <links type="topic" groups="function" style="2column">

@@ -303,6 +303,7 @@ failure:
    mongoc_stream_close (stream);
    mongoc_stream_destroy (stream);
    bson_free(closure);
+   _mongoc_buffer_destroy (&buffer);
 
    RETURN (NULL);
 }

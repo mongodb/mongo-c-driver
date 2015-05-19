@@ -25,8 +25,8 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>database</p></td><td><p>A <link xref="mongoc_database_t">mongoc_database_t</link>.</p></td></tr>
-      <tr><td><p>error</p></td><td><p>An optional location for a <link xref="bson_error_t">bson_error_t</link> or <code>NULL</code>.</p></td></tr>
+      <tr><td><p>database</p></td><td><p>A <code xref="mongoc_database_t">mongoc_database_t</code>.</p></td></tr>
+      <tr><td><p>error</p></td><td><p>An optional location for a <code xref="bson:bson_error_t">bson_error_t</code> or <code>NULL</code>.</p></td></tr>
     </table>
   </section>
 
@@ -37,7 +37,7 @@ mongoc_database_get_collection_names (mongoc_database_t *database,
 
   <section id="return">
     <title>Returns</title>
-    <p>A <code>NULL</code> terminated array of <code>NULL</code> terminated <code>char*</code> strings that should be freed with <link xref="bson_strfreev">bson_strfreev()</link>. Upon failure, <code>NULL</code> is returned and <code>error</code> is set.</p>
+    <p>A <code>NULL</code> terminated array of <code>NULL</code> terminated <code>char*</code> strings that should be freed with <code xref="bson:bson_strfreev">bson_strfreev()</code>. Upon failure, <code>NULL</code> is returned and <code>error</code> is set.</p>
   </section>
 
   <section id="examples">

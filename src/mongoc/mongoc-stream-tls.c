@@ -590,7 +590,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
 
             bytes = BSON_MIN (iov[i].iov_len - iov_pos, buf_end - buf_tail);
 
-            memcpy (buf_tail, iov[i].iov_base + iov_pos, bytes);
+            memcpy (buf_tail, (char *) iov[i].iov_base + iov_pos, bytes);
             buf_tail += bytes;
             iov_pos += bytes;
 
@@ -705,8 +705,16 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
          read_ret = BIO_read (tls->bio, (char *)iov[i].iov_base + iov_pos,
                               (int)(iov[i].iov_len - iov_pos));
 
-         if (read_ret < 0) {
-            return read_ret;
+         /* https://www.openssl.org/docs/crypto/BIO_should_retry.html:
+          *
+          * If BIO_should_retry() returns false then the precise "error
+          * condition" depends on the BIO type that caused it and the return
+          * code of the BIO operation. For example if a call to BIO_read() on a
+          * socket BIO returns 0 and BIO_should_retry() is false then the cause
+          * will be that the connection closed.
+          */
+         if (read_ret < 0 || (read_ret == 0 && !BIO_should_retry (tls->bio))) {
+            return -1;
          }
 
          if (expire) {

@@ -447,7 +447,7 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
 "Options:\n"
 "    -h, --help   Show this help menu.\n"
 "    -f           Do not fork() before running tests.\n"
-"    -l NAME      Run test by name.\n"
+"    -l NAME      Run test by name, e.g. \"/Client/command\" or \"/Client/*\".\n"
 "    -p           Do not run tests in parallel.\n"
 "    -v           Be verbose with logs.\n"
 "\n"
@@ -670,6 +670,8 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
    char name[128];
    Test *test;
    int count = 1;
+   bool star = strlen (testname) && testname[strlen (testname) - 1] == '*';
+   bool match;
 
    ASSERT (suite);
    ASSERT (testname);
@@ -680,8 +682,14 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
       snprintf (name, sizeof name, "%s%s",
                 suite->name, test->name);
       name [sizeof name - 1] = '\0';
+      if (star) {
+         /* e.g. testname is "/Client/*" and name is "/Client/authenticate" */
+         match = (0 == strncmp (name, testname, strlen (testname) - 1));
+      } else {
+         match = (0 == strcmp (name, testname));
+      }
 
-      if (0 == strcmp (name, testname)) {
+      if (match) {
          TestSuite_RunTest (suite, test, &mutex, &count);
       }
    }

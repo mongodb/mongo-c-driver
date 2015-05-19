@@ -11,8 +11,6 @@
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
 
-static char *gTestUri;
-
 
 static mongoc_collection_t *
 get_test_collection (mongoc_client_t *client,
@@ -43,7 +41,7 @@ test_split_insert (void)
    int i;
    bool r;
 
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    collection = get_test_collection (client, "test_split_insert");
@@ -64,7 +62,7 @@ test_split_insert (void)
                                       3000, true, true);
 
    _mongoc_write_command_execute (&command, client, 0, collection->db,
-                                  collection->collection, NULL, &result);
+                                  collection->collection, NULL, 0, &result);
 
    r = _mongoc_write_result_complete (&result, &reply, &error);
 
@@ -101,7 +99,7 @@ test_invalid_write_concern (void)
    bson_error_t error;
    bool r;
 
-   client = mongoc_client_new(gTestUri);
+   client = test_framework_client_new (NULL);
    assert(client);
 
    collection = get_test_collection(client, "test_invalid_write_concern");
@@ -120,7 +118,8 @@ test_invalid_write_concern (void)
    _mongoc_write_result_init (&result);
 
    _mongoc_write_command_execute (&command, client, 0, collection->db,
-                                  collection->collection, write_concern, &result);
+                                  collection->collection, write_concern, 0,
+                                  &result);
 
    r = _mongoc_write_result_complete (&result, &reply, &error);
 
@@ -139,20 +138,9 @@ test_invalid_write_concern (void)
    mongoc_write_concern_destroy(write_concern);
 }
 
-
-static void
-cleanup_globals (void)
-{
-   bson_free (gTestUri);
-}
-
 void
 test_write_command_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
-
    TestSuite_Add (suite, "/WriteCommand/split_insert", test_split_insert);
    TestSuite_Add (suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
-
-   atexit (cleanup_globals);
 }

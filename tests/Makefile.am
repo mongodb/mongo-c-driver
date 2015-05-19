@@ -110,6 +110,7 @@ if ENABLE_SSL
 test_libmongoc_SOURCES += \
 	tests/test-x509.c \
 	tests/test-mongoc-stream-tls.c \
+	tests/test-mongoc-stream-tls-error.c \
 	tests/ssl-test.c \
 	tests/ssl-test.h
 endif

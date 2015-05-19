@@ -303,15 +303,6 @@ _mongoc_sasl_step (mongoc_sasl_t *sasl,
    BSON_ASSERT (outbuf);
    BSON_ASSERT (outbuflen);
 
-   if (!sasl->step && !*outbuflen) {
-      bson_set_error (error,
-                      MONGOC_ERROR_SASL,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "SASL Failure: no data received from SASL request. "
-                      "Does server have SASL support enabled?");
-      return false;
-   }
-
    sasl->step++;
 
    if (sasl->step == 1) {

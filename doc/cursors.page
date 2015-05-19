@@ -39,14 +39,14 @@ print_all_documents (mongoc_collection_t *collection)
   <section id="killing-cursors">
     <info><link type="guide" xref="index#cursors"/></info>
     <title>Destroying Server-Side Cursors</title>
-    <p>The MongoDB C driver will automatically destroy a server-side cursor when <link xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</link> is called. Failure to call this function when done with a cursor will leak memory client side as well as consume extra memory server side. If the cursor was configured to never timeout, it will become a memory leak on the server.</p>
+    <p>The MongoDB C driver will automatically destroy a server-side cursor when <code xref="mongoc_cursor_destroy">mongoc_cursor_destroy()</code> is called. Failure to call this function when done with a cursor will leak memory client side as well as consume extra memory server side. If the cursor was configured to never timeout, it will become a memory leak on the server.</p>
   </section>
 
   <section id="tailable">
     <title>Tailable Cursors</title>
     <info><link type="guide" xref="index#cursors"/></info>
 
-    <p>Tailable cursors are cursors that remain open even after they've returned a final result. This way, if more documents are added to a collection (i.e., to the cursor's result set), then you can continue to call <link xref="mongoc_cursor_next">mongoc_cursor_next()</link> to retrieve those additional results.</p>
+    <p>Tailable cursors are cursors that remain open even after they've returned a final result. This way, if more documents are added to a collection (i.e., to the cursor's result set), then you can continue to call <code xref="mongoc_cursor_next">mongoc_cursor_next()</code> to retrieve those additional results.</p>
     <p>Here's a complete test case that demonstrates the use of tailable cursors.</p>
 
     <note style="info"><p>Note that tailable cursors are for capped collections only.</p></note>
@@ -57,7 +57,7 @@ print_all_documents (mongoc_collection_t *collection)
       <code mime="text/x-csrc"><include parse="text" href="../examples/mongoc-tail.c" xmlns="http://www.w3.org/2001/XInclude" /></code>
     </listing>
 
-    <p>Let's compile and run this example against a <link href="">replicaSet</link> to see updates as they are made.</p>
+    <p>Let's compile and run this example against a replica set to see updates as they are made.</p>
 
     <screen><output style="prompt">$ </output><input>gcc -Wall -o mongoc-tail mongoc-tail.c $(pkg-config --cflags --libs libmongoc-1.0)</input>
 <output style="prompt">$ </output><input>./mongoc-tail mongodb://example.com/?replicaSet=myReplSet</input>

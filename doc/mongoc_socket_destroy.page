@@ -21,13 +21,13 @@ mongoc_socket_destroy (mongoc_socket_t *sock);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>sock</p></td><td><p>A <link xref="mongoc_socket_t">mongoc_socket_t</link>.</p></td></tr>
+      <tr><td><p>sock</p></td><td><p>A <code xref="mongoc_socket_t">mongoc_socket_t</code>.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
     <title>Description</title>
-    <p>This function releases all resources associated with a <link xref="mongoc_socket_t">mongoc_socket_t</link>. This should be called when you are no longer using the socket.</p>
+    <p>This function releases all resources associated with a <code xref="mongoc_socket_t">mongoc_socket_t</code>. This should be called when you are no longer using the socket.</p>
   </section>
 
 </page>

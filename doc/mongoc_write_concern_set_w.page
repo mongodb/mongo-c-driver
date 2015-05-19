@@ -20,14 +20,14 @@ mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>write_concern</p></td><td><p>A <link xref="mongoc_write_concern_t">mongoc_write_concern_t</link>.</p></td></tr>
+      <tr><td><p>write_concern</p></td><td><p>A <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code>.</p></td></tr>
       <tr><td><p>w</p></td><td><p>A int32_t.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
     <title>Description</title>
-    <p>Sets the <code>w</code> value for the write concern. See <link xref="mongoc_write_concern_t">mongoc_write_concern_t</link> for more information on this setting.</p>
+    <p>Sets the <code>w</code> value for the write concern. See <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code> for more information on this setting.</p>
   </section>
 
 </page>
