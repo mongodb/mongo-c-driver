@@ -1,5 +1,6 @@
 #include <mongoc.h>
 #include <mongoc-bulk-operation-private.h>
+#include <mongoc-client-private.h>
 
 #include "TestSuite.h"
 
@@ -9,9 +10,9 @@
 
 static mongoc_array_t gTmpBsonArray;
 static char *gHugeString;
-static int gHugeStringLength;
+static size_t gHugeStringLength;
 static char *gFourMBString;
-static int gFourMB = 1024 * 1024 * 4;
+static size_t gFourMB = 1024 * 1024 * 4;
 
 
 void
@@ -80,11 +81,15 @@ tmp_bson (const char *json)
 void
 init_huge_string (mongoc_client_t *client)
 {
+   int32_t max_bson_size;
+
    assert (client);
 
    if (!gHugeString) {
-      gHugeStringLength = (int)mongoc_client_get_max_bson_size (client) - 37;
-      gHugeString = bson_malloc ((size_t)gHugeStringLength);
+      max_bson_size = mongoc_cluster_get_max_bson_obj_size(&client->cluster);
+      assert (max_bson_size > 0);
+      gHugeStringLength = (size_t) max_bson_size - 37;
+      gHugeString = bson_malloc (gHugeStringLength);
       assert (gHugeString);
       memset (gHugeString, 'a', gHugeStringLength - 1);
       gHugeString[gHugeStringLength - 1] = '\0';
@@ -100,7 +105,7 @@ huge_string (mongoc_client_t *client)
 }
 
 
-int
+size_t
 huge_string_length (mongoc_client_t *client)
 {
    init_huge_string (client);
@@ -108,12 +113,11 @@ huge_string_length (mongoc_client_t *client)
 }
 
 
-
 void
 init_four_mb_string ()
 {
    if (!gFourMBString) {
-      gFourMBString = bson_malloc ((size_t)gFourMB);
+      gFourMBString = bson_malloc (gFourMB);
       assert (gFourMBString);
       memset (gFourMBString, 'a', gFourMB - 1);
       gFourMBString[gFourMB - 1] = '\0';
@@ -1000,7 +1004,7 @@ test_upsert_large ()
    bson_append_document_begin (&doc, "$set", -1, &child);
    assert (bson_append_utf8 (&child, "x", -1,
                              huge_string (client),
-                             huge_string_length (client)));
+                             (int) huge_string_length (client)));
    bson_append_document_end (&doc, &child);
 
    mongoc_bulk_operation_update (bulk, sel, &doc, true);
@@ -1739,7 +1743,7 @@ test_large_inserts_ordered ()
 
    huge_doc = BCON_NEW ("a", BCON_INT32 (1));
    bson_append_utf8 (huge_doc, "long-key-to-make-this-fail", -1,
-                     huge_string (client), huge_string_length (client));
+                     huge_string (client), (int) huge_string_length (client));
 
    collection = get_test_collection (client, "test_large_inserts_ordered");
    assert (collection);
@@ -1769,7 +1773,7 @@ test_large_inserts_ordered ()
    assert (bulk);
 
    big_doc = tmp_bson ("{'a': 1}");
-   bson_append_utf8 (big_doc, "big", -1, four_mb_string (), gFourMB);
+   bson_append_utf8 (big_doc, "big", -1, four_mb_string (), (int) gFourMB);
    bson_iter_init_find (&iter, big_doc, "a");
 
    for (i = 1; i <= 6; i++) {
@@ -1809,7 +1813,7 @@ test_large_inserts_unordered ()
 
    huge_doc = BCON_NEW ("a", BCON_INT32 (1));
    bson_append_utf8 (huge_doc, "long-key-to-make-this-fail", -1,
-                     huge_string (client), huge_string_length (client));
+                     huge_string (client), (int) huge_string_length (client));
 
    collection = get_test_collection (client, "test_large_inserts_unordered");
    assert (collection);
@@ -1839,7 +1843,7 @@ test_large_inserts_unordered ()
    assert (bulk);
 
    big_doc = tmp_bson ("{'a': 1}");
-   bson_append_utf8 (big_doc, "big", -1, four_mb_string (), gFourMB);
+   bson_append_utf8 (big_doc, "big", -1, four_mb_string (), (int) gFourMB);
    bson_iter_init_find (&iter, big_doc, "a");
 
    for (i = 1; i <= 6; i++) {

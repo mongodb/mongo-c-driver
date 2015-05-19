@@ -28,7 +28,9 @@
  *    - Remove error parameter to ops, favor result->error.
  */
 
-#define MAX_INSERT_BATCH 1000
+#define WRITE_COMMAND_WIRE_VERSION 2
+// TODO: create a mongoc_cluster_node_max_batch_size, CDRIVER-528
+#define MAX_BATCH_SIZE 1000
 
 #define WRITE_CONCERN_DOC(wc) \
    (wc && _mongoc_write_concern_needs_gle ((wc))) ? \
@@ -356,8 +358,9 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    char ns [MONGOC_NAMESPACE_MAX + 1];
    bool r;
    uint32_t i;
-   mongoc_cluster_node_t *node;
-   int max_insert_batch;
+   int max_insert_batch = MAX_BATCH_SIZE;
+   int32_t max_msg_size;
+   int32_t max_bson_obj_size;
 
    ENTRY;
 
@@ -367,10 +370,6 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
-
-   node = &client->cluster.nodes [hint - 1];
-   max_insert_batch =
-      node->max_write_batch_size ? node->max_write_batch_size : MAX_INSERT_BATCH;
 
    if (command->u.insert.ordered || !command->u.insert.allow_bulk_op_insert) {
       max_insert_batch = 1;
@@ -421,9 +420,8 @@ again:
       /*
        * Check that the server can receive this document.
        */
-      if ((len > client->cluster.max_bson_size) ||
-          (len > client->cluster.max_msg_size)) {
-         too_large_error (error, i, len, client->cluster.max_bson_size);
+      if (len > max_bson_obj_size || len > max_msg_size) {
+         too_large_error (error, i, len, max_bson_obj_size);
          /* TODO: CDRIVER-654 if ordered, insert all so far then stop,
           *   else continue. in any case add to writeErrors, see
           *   PyMongo's execute_legacy() */
@@ -434,8 +432,7 @@ again:
       /*
        * Check that we will not overflow our max message size.
        */
-      if ((i == max_insert_batch) ||
-          (size > (client->cluster.max_msg_size - len))) {
+      if (i == max_insert_batch || size > (max_msg_size - len)) {
          has_more = true;
          break;
       }
@@ -711,8 +708,9 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    bool has_more;
    bool ret = false;
    uint32_t i;
-   mongoc_cluster_node_t *node;
-   int32_t max_delete_batch;
+   int32_t min_wire_version;
+   int32_t max_delete_batch = MAX_BATCH_SIZE;
+   int32_t max_bson_obj_size;
    uint32_t key_len;
 
    ENTRY;
@@ -723,9 +721,6 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    BSON_ASSERT (database);
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
-
-   node = &client->cluster.nodes [hint - 1];
-   max_delete_batch = node->max_write_batch_size;
 
    /*
     * If we have an unacknowledged write and the server supports the legacy
@@ -757,6 +752,8 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
       EXIT;
    }
 
+   max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size(&client->cluster, hint);
+
 again:
    bson_init (&cmd);
    has_more = false;
@@ -779,7 +776,7 @@ again:
       if (_mongoc_write_command_will_overflow (ar.len,
                                                key_len + len + 2,
                                                i,
-                                               client->cluster.max_bson_size,
+                                               max_bson_obj_size,
                                                max_delete_batch)) {
          has_more = true;
          break;
@@ -802,7 +799,7 @@ again:
    bson_append_array_end (&cmd, &ar);
 
    if (!i) {
-      too_large_error (error, i, len, client->cluster.max_bson_size);
+      too_large_error (error, i, len, max_bson_obj_size);
       result->failed = true;
       ret = false;
    } else {
@@ -842,7 +839,7 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    const uint8_t *data;
    bson_iter_t iter;
    const char *key;
-   uint32_t len;
+   uint32_t len = 0;
    bson_t tmp;
    bson_t ar;
    bson_t cmd;
@@ -851,8 +848,9 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    bool has_more;
    bool ret = false;
    uint32_t i;
-   mongoc_cluster_node_t *node;
-   int32_t max_insert_batch;
+   int32_t max_insert_batch = MAX_BATCH_SIZE;
+   int32_t min_wire_version;
+   int32_t max_bson_obj_size;
    uint32_t key_len;
 
    ENTRY;
@@ -864,15 +862,20 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
 
-   node = &client->cluster.nodes [hint - 1];
-   max_insert_batch = node->max_write_batch_size;
+   max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size(&client->cluster, hint);
 
    /*
     * If we have an unacknowledged write and the server supports the legacy
     * opcodes, then submit the legacy opcode so we don't need to wait for
     * a response from the server.
     */
-   if ((node->min_wire_version == 0) &&
+   min_wire_version = mongoc_cluster_node_min_wire_version (&client->cluster,
+                                                            hint);
+   if (min_wire_version == -1) {
+      EXIT;
+   }
+
+   if ((min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
       _mongoc_write_command_insert_legacy (command, client, hint, database,
                                            collection, write_concern, offset,
@@ -904,7 +907,7 @@ again:
    if (!_mongoc_write_command_will_overflow (0,
                                              command->documents->len,
                                              command->n_documents,
-                                             client->cluster.max_bson_size,
+                                             max_bson_obj_size,
                                              max_insert_batch)) {
       BSON_APPEND_ARRAY (&cmd, "documents", command->documents);
       i = command->n_documents;
@@ -923,7 +926,7 @@ again:
          if (_mongoc_write_command_will_overflow (ar.len,
                                                   key_len + len + 2,
                                                   i,
-                                                  client->cluster.max_bson_size,
+                                                  max_bson_obj_size,
                                                   max_insert_batch)) {
             has_more = true;
             break;
@@ -944,7 +947,7 @@ again:
    }
 
    if (!i) {
-      too_large_error (error, i, len, client->cluster.max_bson_size);
+      too_large_error (error, i, len, max_bson_obj_size);
       result->failed = true;
       ret = false;
    } else {
@@ -992,9 +995,9 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
    bson_t reply;
    char str [16];
    bool ret = false;
-   mongoc_cluster_node_t *node;
-   int32_t max_update_batch;
-   bool has_more;
+   int32_t min_wire_version;
+   int32_t max_update_batch = MAX_BATCH_SIZE;
+   int32_t max_bson_obj_size;   bool has_more;
    uint32_t i;
    uint32_t key_len;
 
@@ -1005,9 +1008,6 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
    BSON_ASSERT (database);
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
-
-   node = &client->cluster.nodes [hint - 1];
-   max_update_batch = node->max_write_batch_size;
 
    /*
     * If we have an unacknowledged write and the server supports the legacy
@@ -1039,6 +1039,8 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
       EXIT;
    }
 
+   max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size(&client->cluster, hint);
+
 again:
    bson_init (&cmd);
    has_more = false;
@@ -1052,7 +1054,7 @@ again:
    if (!_mongoc_write_command_will_overflow (command->documents->len,
                                              0,
                                              command->n_documents,
-                                             client->cluster.max_bson_size,
+                                             max_bson_obj_size,
                                              max_update_batch)) {
       /* there is enough space to send the whole query at once... */
       BSON_APPEND_ARRAY (&cmd, "updates", command->documents);
@@ -1071,7 +1073,7 @@ again:
          if (_mongoc_write_command_will_overflow (ar.len,
                                                   key_len + len + 2,
                                                   i,
-                                                  client->cluster.max_bson_size,
+                                                  max_bson_obj_size,
                                                   max_update_batch)) {
             has_more = true;
             break;
@@ -1091,7 +1093,7 @@ again:
    }
 
    if (!i) {
-      too_large_error (error, i, len, client->cluster.max_bson_size);
+      too_large_error (error, i, len, max_bson_obj_size);
       result->failed = true;
       ret = false;
    } else {
