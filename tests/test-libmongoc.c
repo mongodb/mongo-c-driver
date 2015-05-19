@@ -408,6 +408,36 @@ test_framework_get_uri_str (const char *uri_str)
 /*
  *--------------------------------------------------------------------------
  *
+ * test_framework_get_uri --
+ *
+ *       Like test_framework_get_uri_str (). Get the URI of the test
+ *       MongoDB server. Pass NULL to get the default URI, or pass a
+ *       string in to have username, password, and "ssl=true" added if
+ *       appropriate.
+ *
+ * Returns:
+ *       A mongoc_uri_t* you must destroy.
+ *
+ * Side effects:
+ *       Same as test_framework_get_uri_str ().
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_uri_t *
+test_framework_get_uri (const char *uri_str)
+{
+   char *test_uri_str = test_framework_get_uri_str (uri_str);
+   mongoc_uri_t *uri = mongoc_uri_new (test_uri_str);
+
+   assert (uri);
+   bson_free (test_uri_str);
+
+   return uri;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * test_framework_set_ssl_opts --
  *
  *       Configure a client to connect to the test MongoDB server.
@@ -467,6 +497,72 @@ test_framework_client_new (const char *uri_str)
    bson_free (test_uri_str);
    assert (client);
    return client;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_set_pool_ssl_opts --
+ *
+ *       Configure a client pool to connect to the test MongoDB server.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Logs and aborts if any MONGOC_TEST_SSL_* environment variables are
+ *       set but the driver is not built with SSL enabled.
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
+{
+   assert (pool);
+
+   if (test_framework_get_ssl ()) {
+#ifndef MONGOC_ENABLE_SSL
+      fprintf (stderr,
+               "SSL test config variables are specified in the environment, but"
+                     " SSL isn't enabled\n");
+      abort ();
+#else
+      mongoc_client_pool_set_ssl_opts (pool, &gSSLOptions);
+#endif
+   }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_pool_new --
+ *
+ *       Get a client pool connected to the test MongoDB server using
+ *       an optional URI, or the default URI.
+ *
+ * Returns:
+ *       A pool you must destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_pool_t *
+test_framework_client_pool_new (const char *uri_str)
+{
+   char *test_uri_str = test_framework_get_uri_str (uri_str);
+   mongoc_uri_t *test_uri = mongoc_uri_new (test_uri_str);
+   mongoc_client_pool_t *pool = mongoc_client_pool_new (test_uri);
+
+   assert (pool);
+   test_framework_set_pool_ssl_opts (pool);
+
+   bson_free (test_uri_str);
+   assert (pool);
+   return pool;
 }
 
 #ifdef MONGOC_ENABLE_SSL

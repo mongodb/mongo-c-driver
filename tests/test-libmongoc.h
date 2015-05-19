@@ -29,5 +29,7 @@ void suppress_one_message (void);
 char *test_framework_get_host (void);
 bool test_framework_get_ssl (void);
 char *test_framework_get_uri_str (const char *uri_str);
+mongoc_uri_t *test_framework_get_uri (const char *uri_str);
 mongoc_client_t *test_framework_client_new (const char *uri_str);
+mongoc_client_pool_t *test_framework_client_pool_new (const char *uri_str);
 #endif

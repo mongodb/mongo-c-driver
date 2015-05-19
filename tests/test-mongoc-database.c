@@ -427,10 +427,6 @@ test_get_collection_names_error (void)
    uristr = bson_strdup_printf ("mongodb://127.0.0.1:%hu/", port);
    client = mongoc_client_new (uristr);
 
-   if (!_mongoc_client_warm_up (client, &error)) {
-      assert (false);
-   }
-
    database = mongoc_client_get_database (client, "test");
    suppress_one_message ();
    suppress_one_message ();

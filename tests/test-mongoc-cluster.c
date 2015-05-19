@@ -8,7 +8,6 @@
 
 #include "test-libmongoc.h"
 
-static char *gTestUri;
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster-test"
@@ -21,12 +20,11 @@ test_get_max_bson_obj_size (void)
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
    bson_error_t error;
-   mongoc_uri_t *uri;
    int32_t max_bson_obj_size = 16;
    uint32_t id;
 
    /* single-threaded */
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
@@ -37,8 +35,7 @@ test_get_max_bson_obj_size (void)
    mongoc_client_destroy (client);
 
    /* multi-threaded */
-   uri = mongoc_uri_new (gTestUri);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new (NULL);
    client = mongoc_client_pool_pop (pool);
 
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
@@ -48,7 +45,6 @@ test_get_max_bson_obj_size (void)
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
 }
 
 static void
@@ -59,12 +55,11 @@ test_get_max_msg_size (void)
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
    bson_error_t error;
-   mongoc_uri_t *uri;
    int32_t max_msg_size = 32;
    uint32_t id;
 
    /* single-threaded */
-   client = mongoc_client_new (gTestUri);
+   client = test_framework_client_new (NULL);
 
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    sd = mongoc_set_get (client->topology->description.servers, id);
@@ -74,8 +69,7 @@ test_get_max_msg_size (void)
    mongoc_client_destroy (client);
 
    /* multi-threaded */
-   uri = mongoc_uri_new (gTestUri);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new (NULL);
    client = mongoc_client_pool_pop (pool);
 
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
@@ -85,22 +79,11 @@ test_get_max_msg_size (void)
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
-}
-
-static void
-cleanup_globals (void)
-{
-   bson_free (gTestUri);
 }
 
 void
 test_cluster_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
-
    TestSuite_Add (suite, "/Cluster/test_get_max_bson_obj_size", test_get_max_bson_obj_size);
    TestSuite_Add (suite, "/Cluster/test_get_max_msg_size", test_get_max_msg_size);
-
-   atexit (cleanup_globals);
 }

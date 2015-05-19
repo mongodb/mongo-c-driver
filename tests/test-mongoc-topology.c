@@ -9,9 +9,6 @@
 
 #include "test-libmongoc.h"
 
-static char *gTestUri;
-static char *gTestUriAuth;
-
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-test"
 
@@ -45,8 +42,8 @@ test_topology_client_creation (void)
    uint32_t id;
 
    /* create two clients directly */
-   client_a = mongoc_client_new(gTestUri);
-   client_b = mongoc_client_new(gTestUri);
+   client_a = test_framework_client_new (NULL);
+   client_b = test_framework_client_new (NULL);
    assert (client_a);
    assert (client_b);
 
@@ -82,11 +79,9 @@ test_topology_client_pool_creation (void)
    mongoc_client_t *client_b;
    mongoc_topology_t *topology_a;
    mongoc_topology_t *topology_b;
-   mongoc_uri_t *uri;
 
    /* create two clients through a client pool */
-   uri = mongoc_uri_new (gTestUri);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new (NULL);
    client_a = mongoc_client_pool_pop (pool);
    client_b = mongoc_client_pool_pop (pool);
    assert (client_a);
@@ -104,7 +99,6 @@ test_topology_client_pool_creation (void)
 
    mongoc_client_pool_push (pool, client_a);
    mongoc_client_pool_push (pool, client_b);
-   mongoc_uri_destroy (uri);
    mongoc_client_pool_destroy (pool);
 }
 
@@ -121,7 +115,7 @@ test_topology_invalidate_server (void)
    uint32_t fake_id = 42;
    uint32_t id;
 
-   client = mongoc_client_new(gTestUri);
+   client = test_framework_client_new (NULL);
    assert (client);
 
    td = &client->topology->description;
@@ -172,12 +166,10 @@ test_invalid_cluster_node (void)
    bson_error_t error;
    mongoc_client_t *client;
    mongoc_cluster_t *cluster;
-   mongoc_uri_t *uri;
    uint32_t id;
 
    /* use client pool, this test is only valid when multi-threaded */
-   uri = mongoc_uri_new (gTestUri);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new (NULL);
    client = mongoc_client_pool_pop (pool);
    cluster = &client->cluster;
 
@@ -203,7 +195,6 @@ test_invalid_cluster_node (void)
    assert (cluster_node->timestamp > scanner_node->timestamp);
 
    mongoc_client_pool_push (pool, client);
-   mongoc_uri_destroy (uri);
    mongoc_client_pool_destroy (pool);
 }
 
@@ -217,12 +208,11 @@ test_max_wire_version_race_condition (void)
    mongoc_client_t *client;
    mongoc_stream_t *stream;
    bson_error_t error;
-   mongoc_uri_t *uri;
    uint32_t id;
    int r;
 
    /* connect directly and add our user, test is only valid with auth */
-   client = mongoc_client_new(gTestUri);
+   client = test_framework_client_new (NULL);
    database = mongoc_client_get_database(client, "test");
    mongoc_database_remove_user (database, "pink", &error);
    r = mongoc_database_add_user (database, "pink", "panther", NULL, NULL, &error);
@@ -231,8 +221,7 @@ test_max_wire_version_race_condition (void)
    mongoc_client_destroy (client);
 
    /* use client pool, test is only valid when multi-threaded */
-   uri = mongoc_uri_new (gTestUriAuth);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new (NULL);
    client = mongoc_client_pool_pop (pool);
 
    /* load stream into cluster */
@@ -251,28 +240,15 @@ test_max_wire_version_race_condition (void)
    assert (stream);
 
    mongoc_client_pool_push (pool, client);
-   mongoc_uri_destroy (uri);
    mongoc_client_pool_destroy (pool);
-}
-
-static void
-cleanup_globals (void)
-{
-   bson_free(gTestUri);
-   bson_free(gTestUriAuth);
 }
 
 void
 test_topology_install (TestSuite *suite)
 {
-   gTestUri = bson_strdup_printf("mongodb://%s/", MONGOC_TEST_HOST);
-   gTestUriAuth = bson_strdup_printf("mongodb://pink:panther@%s/test", MONGOC_TEST_HOST);
-
    TestSuite_Add (suite, "/Topology/client_creation", test_topology_client_creation);
    TestSuite_Add (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
    TestSuite_Add (suite, "/Topology/invalidate_server", test_topology_invalidate_server);
    TestSuite_Add (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node);
    TestSuite_Add (suite, "/Topology/max_wire_version_race_condition", test_max_wire_version_race_condition);
-
-   atexit (cleanup_globals);
 }
