@@ -30,10 +30,14 @@ libmongoc_variables:
     default_expansions_def: &default_expansions
         env_vars: CFLAGS=""
         mongodb_logpath: /data/log
-        mongodb_args: "--fork --noprealloc --smallfiles --dbpath=/data/db --pidfilepath=/data/pid"
+        mongodb_args: "--fork --noprealloc --smallfiles --dbpath=/data/db --pidfilepath=/data/pid --auth"
+        enable_ssl: yes
 
     i386_expansions_def: &i386_expansions
         env_vars: CFLAGS="-m32 -march=i386"
+
+    ubuntu_i386_expansions_def: &ubuntu_i386_expansions
+          pre_compile: sudo apt-get install -f -y autoconf libtool gcc-multilib binutils-multiarch libsasl2-dev:i386 libsasl2-2:i386
 
     i686_expansions_def: &i686_expansions
         env_vars: CFLAGS="-m32 -march=i686"
@@ -100,7 +104,8 @@ tasks:
                 set -o verbose
                 set -o errexit
                 export PATH=${path}:$PATH
-                ${env_vars} ./autogen.sh
+                ${pre_compile}
+                ${env_vars} ./autogen.sh --enable-ssl=${enable_ssl}
                 make ${j_flag}
       - command: shell.exec
         params:
@@ -139,20 +144,31 @@ tasks:
             script: |
                 set -o verbose
                 set -o errexit
-                trap 'set +o errexit; pkill -9 mongod; pkill -9 mongos}' EXIT
                 # MCI's S3 mechanism doesn't support symlinks
                 curl http://s3.amazonaws.com/mciuploads/libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz -o ${build_id}.tar.gz --silent
                 tar -xzf ${build_id}.tar.gz
                 curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
                 ${decompress} mongo_enterprise.${ext|tgz}
                 cp mongodb*/bin/mongod${extension} ./mongod${extension}
+                cp mongodb*/bin/mongo${extension} ./mongo${extension}
                 chmod +x ./mongod${extension}
+                chmod +x ./mongo${extension}
                 if ! ./mongod${extension} ${mongodb_args} --logpath=${mongodb_logpath}
                 then
                     cat ${mongodb_logpath}
                     exit 1
                 fi
-                sleep 30
+                tries=0
+                until ./mongo${extension} --eval 'printjson(db.serverBuildInfo())'; do
+                    sleep 2
+                    ((tries=tries+1))
+                    if ((tries > 15)); then
+                        break
+                    fi
+                done
+                ./mongo${extension} --eval "db.createUser({user: 'admin', pwd: 'pass', roles: [{role: 'root', db: 'admin'}]})" admin
+                export MONGOC_TEST_USER=admin
+                export MONGOC_TEST_PASSWORD=pass
                 make check
 
 #######################################
@@ -190,6 +206,8 @@ buildvariants:
       <<: *default_expansions
       <<: *i386_expansions
       <<: *linux_expansions
+      <<: *ubuntu_i386_expansions
+      enable_ssl: no
   run_on:
       - ubuntu1204-test
   tasks: *std_tests
@@ -200,6 +218,8 @@ buildvariants:
       <<: *default_expansions
       <<: *i386_expansions
       <<: *linux_expansions
+      <<: *ubuntu_i386_expansions
+      enable_ssl: no
   run_on:
       - ubuntu1404-test
   tasks: *std_tests
@@ -222,6 +242,8 @@ buildvariants:
       <<: *default_expansions
       <<: *i686_expansions
       <<: *linux_expansions
+      pre_compile: sudo apt-get install -f -y autoconf libtool
+      enable_ssl: no
   run_on:
       - ubuntu1204-test
   tasks: *std_tests
@@ -232,6 +254,8 @@ buildvariants:
       <<: *default_expansions
       <<: *i686_expansions
       <<: *linux_expansions
+      pre_compile: sudo apt-get install -f -y autoconf libtool
+      enable_ssl: no
   run_on:
       - ubuntu1404-test
   tasks: *std_tests
@@ -254,6 +278,7 @@ buildvariants:
       <<: *default_expansions
       <<: *x86_64_expansions
       <<: *linux_expansions
+      pre_compile: sudo apt-get install -f -y autoconf libtool
   run_on:
       - ubuntu1204-test
   tasks: *std_tests
@@ -292,6 +317,7 @@ buildvariants:
   display_name: Windows 64-bit MinGW-64
   expansions:
       <<: *default_expansions
+      pre_compile: dos2unix autogen.sh
       path: "/cygdrive/c/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin:/cygdrive/c/sasl/"
   run_on:
       - windows-64-vs2013-test
