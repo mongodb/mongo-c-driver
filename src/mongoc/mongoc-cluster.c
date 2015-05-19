@@ -57,7 +57,7 @@
 #endif
 
 #ifndef MAX_RETRY_COUNT
-#define MAX_RETRY_COUNT 3
+#define MAX_RETRY_COUNT 1
 #endif
 
 
