@@ -21,8 +21,7 @@
 #else
 #include <dirent.h>
 #endif
-#include <stdio.h>
-#include <sys/types.h>
+#include <sys/stat.h>
 
 
 mongoc_topology_description_type_t
@@ -173,6 +172,7 @@ collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
    return paths_index;
 #else
    struct dirent *entry;
+   struct stat dir_stat;
    char child_path[MAX_NAME_LENGTH];
    DIR *dir;
 
@@ -188,7 +188,7 @@ collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
          break;
       }
 
-      if (entry->d_type & DT_DIR) {
+      if (0 == stat(entry->d_name, &dir_stat) && dir_stat.st_mode & S_IFDIR) {
          /* recursively call on child directories */
          if (strcmp (entry->d_name, "..") != 0 &&
              strcmp (entry->d_name, ".") != 0) {
