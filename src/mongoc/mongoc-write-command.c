@@ -728,7 +728,8 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   min_wire_version = mongoc_cluster_node_min_wire_version (&client->cluster, hint);
+   min_wire_version = mongoc_cluster_node_min_wire_version (&client->cluster,
+                                                            hint);
    if (min_wire_version == -1) {
       EXIT;
    }
@@ -881,7 +882,7 @@ _mongoc_write_command_insert (mongoc_write_command_t       *command,
                                            collection, write_concern, offset,
                                            result, error);
       EXIT;
-      }
+   }
 
    if (!command->n_documents ||
        !bson_iter_init (&iter, command->documents) ||
@@ -951,7 +952,7 @@ again:
       result->failed = true;
       ret = false;
    } else {
-      /* sets domain to QUERY? */
+      /* sets err domain to QUERY? */
       ret = mongoc_client_command_simple (client, database, &cmd, NULL,
                                           &reply, error);
 
@@ -1015,7 +1016,8 @@ _mongoc_write_command_update (mongoc_write_command_t       *command,
     * a response from the server.
     */
 
-   min_wire_version = mongoc_cluster_node_min_wire_version (&client->cluster, hint);
+   min_wire_version = mongoc_cluster_node_min_wire_version (&client->cluster,
+                                                            hint);
    if (min_wire_version == -1) {
       EXIT;
    }
