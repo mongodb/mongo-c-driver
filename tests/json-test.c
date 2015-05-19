@@ -177,16 +177,9 @@ collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
    DIR *dir;
 
    dir = opendir(dir_path);
-
-   while (dir) {
-
+   assert (dir);
+   while ((entry = readdir(dir))) {
       assert(paths_index < max_paths);
-
-      entry = readdir(dir);
-      if (!entry) {
-         /* out of entries */
-         break;
-      }
 
       if (0 == stat(entry->d_name, &dir_stat) && dir_stat.st_mode & S_IFDIR) {
          /* recursively call on child directories */
@@ -194,7 +187,8 @@ collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
              strcmp (entry->d_name, ".") != 0) {
 
             assemble_path(dir_path, entry->d_name, child_path);
-            paths_index = collect_tests_from_dir(paths, child_path, paths_index, max_paths);
+            paths_index = collect_tests_from_dir(paths, child_path, paths_index,
+                                                 max_paths);
          }
       } else if (strstr(entry->d_name, ".json")) {
          /* if this is a JSON test, collect its path */
@@ -202,9 +196,8 @@ collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
       }
    }
 
-   if (dir) {
-      closedir(dir);
-   }
+   closedir(dir);
+
    return paths_index;
 #endif
 }
