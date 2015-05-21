@@ -2001,6 +2001,52 @@ _mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
    RETURN (true);
 }
 
+mongoc_host_list_t *
+prepend_host (const mongoc_host_list_t *host, mongoc_host_list_t *list)
+{
+   mongoc_host_list_t *cpy = bson_malloc (sizeof *host);
+
+   memcpy (cpy, host, sizeof *host);
+   cpy->next = list;
+
+   return cpy;
+}
+
+/*
+ * Case-sensitive search for host-and-port.
+ */
+bool
+has_host (const mongoc_host_list_t *hl,
+          const char               *host_and_port)
+{
+   printf ("has_host %s\n", host_and_port);
+
+   while (hl) {
+      if (!strcmp(hl->host_and_port, host_and_port)) {
+         printf ("\tyes\n");
+         return true;
+      }
+
+      hl = hl->next;
+   }
+
+   printf ("\tno\n");
+   return false;
+}
+
+
+void
+host_list_destroy (mongoc_host_list_t *hl)
+{
+   mongoc_host_list_t *tmp;
+
+   while (hl) {
+      tmp = hl->next;
+      bson_free (hl);
+      hl = tmp;
+   }
+}
+
 
 /*
  *--------------------------------------------------------------------------
@@ -2031,6 +2077,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
 {
    const mongoc_host_list_t *hosts;
    const mongoc_host_list_t *iter;
+   mongoc_host_list_t *failed_hosts = NULL;
    mongoc_cluster_node_t node;
    mongoc_cluster_node_t *saved_nodes;
    size_t saved_nodes_len;
@@ -2102,6 +2149,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
       stream = _mongoc_client_create_stream(cluster->client, iter, error);
       if (!stream) {
          MONGOC_WARNING("Failed connection to %s", iter->host_and_port);
+         failed_hosts = prepend_host (iter, failed_hosts);
          continue;
       }
 
@@ -2110,6 +2158,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
       node.stream = stream;
 
       if (!_mongoc_cluster_ismaster (cluster, &node, error)) {
+         failed_hosts = prepend_host (iter, failed_hosts);
          _mongoc_cluster_node_destroy (&node);
          continue;
       }
@@ -2154,6 +2203,11 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
       if (!_mongoc_host_list_from_string(&host, liter->data)) {
          MONGOC_WARNING("Failed to parse host and port: \"%s\"",
                         (char *)liter->data);
+         continue;
+      }
+
+      if (has_host (failed_hosts, host.host_and_port)) {
+         MONGOC_INFO ("Skipping reconnection to %s", host.host_and_port);
          continue;
       }
 
@@ -2251,6 +2305,8 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
 CLEANUP:
 
    bson_free(saved_nodes);
+
+   host_list_destroy (failed_hosts);
 
    RETURN(rval);
 }
