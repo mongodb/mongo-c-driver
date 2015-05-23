@@ -19,7 +19,7 @@
 
 #include <bson.h>
 
-#include "future_value.h"
+#include "future-value.h"
 #include "mongoc-thread-private.h"
 
 
