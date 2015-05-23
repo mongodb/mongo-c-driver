@@ -71,12 +71,18 @@ test_replica_set_ssl_LDADD = $(TEST_LIBS)
 
 
 test_libmongoc_SOURCES = \
-	tests/mock_server2/mock-server2.c \
-	tests/mock_server2/mock-server2.h \
 	tests/json-test.c \
 	tests/json-test.h \
 	tests/mock-server.c \
 	tests/mock-server.h \
+	tests/mock_server2/future.c \
+	tests/mock_server2/future.h \
+	tests/mock_server2/future-value.h \
+	tests/mock_server2/mock-server2.c \
+	tests/mock_server2/mock-server2.h \
+	tests/mock_server2/make-future-getters.def \
+	tests/mock_server2/queue.c \
+	tests/mock_server2/queue.h \
 	tests/test-libmongoc.c \
 	tests/test-bulk.c \
 	tests/test-mongoc-array.c \
