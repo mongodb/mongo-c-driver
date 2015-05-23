@@ -215,6 +215,9 @@ endfunction()
 set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/ha-test.c
    ${SOURCE_DIR}/tests/json-test.c
+   ${SOURCE_DIR}/tests/mock_server2/future.c
+   ${SOURCE_DIR}/tests/mock_server2/queue.c
+   ${SOURCE_DIR}/tests/mock_server2/mock-server2.c
    ${SOURCE_DIR}/tests/mock-server.c
    ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-libmongoc.c

@@ -71,6 +71,8 @@ test_replica_set_ssl_LDADD = $(TEST_LIBS)
 
 
 test_libmongoc_SOURCES = \
+	tests/mock_server2/mock-server2.c \
+	tests/mock_server2/mock-server2.h \
 	tests/json-test.c \
 	tests/json-test.h \
 	tests/mock-server.c \
@@ -220,6 +222,13 @@ EXTRA_DIST += \
 	tests/binary/update1.dat \
 	tests/certificates/ca.pem \
 	tests/certificates/client.pem \
+	tests/mock_server2/future_value.h \
+	tests/mock_server2/future.c \
+	tests/mock_server2/future.h \
+	tests/mock_server2/queue.c \
+	tests/mock_server2/queue.h \
+	tests/mock_server2/mock-server2.c \
+	tests/mock_server2/mock-server2.h \
 	tests/mock-server.c \
 	tests/mock-server.h \
 	tests/mongoc-tests.c \

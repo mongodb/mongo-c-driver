@@ -6,6 +6,7 @@
 
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
+#include "mock_server2/mock-server2.h"
 
 
 static mongoc_array_t gTmpBsonArray;
@@ -1641,6 +1642,75 @@ test_single_error_unordered_bulk ()
 }
 
 
+/* TODO: test unordered and ordered, legacy and write commands */
+static void
+test_write_concern_error ()
+{
+   mock_server2_t *mock_server = mock_server2_new ();
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_write_concern_t *wc;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   mock_server2_set_verbose (mock_server, true);
+   mock_server2_run (mock_server);
+   client = mongoc_client_new_from_uri (mock_server2_get_uri (mock_server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 3);
+   mongoc_write_concern_set_wtimeout (wc, 100);
+   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'a': 1}"));
+
+   /* start mongoc_cursor_next () on thread */
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   /* TODO */
+   /* defaults to 1 second, this is just showing the API */
+   /*mock_server2_set_request_timeout_ms (mock_server, 100);
+   mock_server2_set_response_timeout_ms (mock_server, 100);*/
+
+   request = mock_server2_receives_command (
+         mock_server,
+         "insert",
+         "test",
+         "{'insert': 'test',"
+         " 'documents': [{'a': 1}],"
+         " 'writeConcern: {'w': 2, 'wtimeout': 100}}");
+
+   assert (request);
+   mock_server2_replies (request,
+                         0,                    /* flags */
+                         0,                    /* cursorId */
+                         0,                    /* startingFrom */
+                         1,                    /* numberReturned */
+                         "{'ok': 1.0,"
+                         " 'n': 1,"
+                         " 'writeConcernError': {'code': 17, 'errmsg': 'e'}}");
+
+   /* join thread, assert mongoc_bulk_operation_execute () returned 0 */
+   assert (!future_get_uint32_t (future));
+
+   ASSERT_MATCH (&reply, "{'nMatched': 0,"
+                         " 'nUpserted': 0,"
+                         " 'nInserted': 1,"
+                         " 'nRemoved': 0,"
+                         " 'writeErrors': [],"
+                         " 'writeConcernError': {'code': 17, 'errmsg': 'e'}}");
+
+   check_n_modified (true, &reply, 0);
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server2_destroy (mock_server);
+}
+
 static void
 test_multiple_error_unordered_bulk ()
 {
@@ -2197,6 +2267,8 @@ test_bulk_install (TestSuite *suite)
                   test_single_unordered_bulk);
    TestSuite_Add (suite, "/BulkOperation/single_error_unordered_bulk",
                   test_single_error_unordered_bulk);
+   TestSuite_Add (suite, "/BulkOperation/write_concern_error",
+                  test_write_concern_error);
 
    /* TODO: CDRIVER-653 */
 /*
