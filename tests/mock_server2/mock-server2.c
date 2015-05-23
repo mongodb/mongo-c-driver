@@ -29,6 +29,7 @@
 #ifdef MONGOC_ENABLE_SSL
 
 #include "mongoc-stream-tls.h"
+#include "future.h"
 
 #endif
 
@@ -360,19 +361,17 @@ static void *
 background_bulk_operation_execute (void *data)
 {
    future_t *future = (future_t *) data;
-
-   /* TODO: lock, copy, unlock the future, to make macro-gen easier later */
+   future_t *copy = future_new_copy (future);
+   future_value_t return_value;
 
    future_value_set_uint32_t (
-         &future->return_value,
+         &return_value,
          mongoc_bulk_operation_execute (
-               future_value_get_mongoc_bulk_operation_ptr (&future->argv[0]),
-               future_value_get_bson_ptr (&future->argv[1]),
-               future_value_get_bson_error_ptr (&future->argv[2])));
+               future_value_get_mongoc_bulk_operation_ptr (&copy->argv[0]),
+               future_value_get_bson_ptr (&copy->argv[1]),
+               future_value_get_bson_error_ptr (&copy->argv[2])));
 
-   future_resolve (future);
-
-   /* TODO: lock, copy back, unlock the future */
+   future_resolve (future, return_value);
 
    return NULL;
 }

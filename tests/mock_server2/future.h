@@ -36,10 +36,12 @@ typedef struct
 
 future_t *future_new (int argc);
 
+future_t *future_new_copy (future_t *future);
+
 void future_start (future_t *future,
                           void *(*start_routine)(void *));
 
-void future_resolve (future_t *future);
+void future_resolve (future_t *future, future_value_t return_value);
 
 bool future_wait (future_t *future);
 
