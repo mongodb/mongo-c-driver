@@ -1,0 +1,6 @@
+FUTURE_FUNCTION (uint32_t,
+                 future_bulk_operation_execute,
+                 mongoc_bulk_operation_execute,
+                 FUTURE_PARAM(mongoc_bulk_operation_ptr, bulk),
+                 FUTURE_PARAM(bson_ptr,                  reply),
+                 FUTURE_PARAM(bson_error_ptr,            error))

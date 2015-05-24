@@ -36,12 +36,14 @@
 
 
 future_t *
-future_new (int argc)
+future_new (future_value_type_t return_type, int argc)
 {
    future_t *future;
 
    future = bson_malloc0 (sizeof *future);
+   future->return_value.type = return_type;
    future->argc = argc;
+   /* TODO */
    /* the future_value_t's are initialized with type future_value_no_type */
    future->argv = bson_malloc0 ((size_t) argc * sizeof(future_value_t));
    mongoc_cond_init (&future->cond);
@@ -56,7 +58,7 @@ future_t *future_new_copy (future_t *future)
    future_t *copy;
 
    mongoc_mutex_lock (&future->mutex);
-   copy = future_new (future->argc);
+   copy = future_new (future->return_value.type, future->argc);
    copy->return_value = future->return_value;
    memcpy (copy->argv, future->argv, future->argc * sizeof(future_value_t));
    mongoc_mutex_unlock (&future->mutex);

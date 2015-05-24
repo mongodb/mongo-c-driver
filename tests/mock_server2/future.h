@@ -34,7 +34,7 @@ typedef struct
    mongoc_thread_t  thread;
 } future_t;
 
-future_t *future_new (int argc);
+future_t *future_new (future_value_type_t return_type, int argc);
 
 future_t *future_new_copy (future_t *future);
 

@@ -17,13 +17,36 @@
 #ifndef FUTURE_FUNCTIONS_H
 #define FUTURE_FUNCTIONS_H
 
+#include "future-value.h"
 #include "future.h"
+#include "macro-vargs-magic.h"
 #include "mongoc-bulk-operation.h"
 
-static void * background_bulk_operation_execute (void *data);
+#undef FUTURE_PARAM
+#undef PARAM_DECL
+#undef LAST_PARAM_DECL
+#undef FUTURE_FUNCTION
 
-future_t * future_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
-                                          bson_t *reply,
-                                          bson_error_t *error);
+#define FUTURE_PARAM(TYPE, NAME) TYPE NAME
+#define PARAM_DECL(decl) decl,
+#define LAST_PARAM_DECL(decl) decl
+
+/* declare functions like :
+ *    future_t *future_cursor_next(mongoc_cursor_t *cursor, bson_t *doc);
+ */
+
+#define FUTURE_FUNCTION(RET_TYPE, FUTURE_FN, FN, ...) \
+   future_t * \
+   FUTURE_FN ( \
+      FOREACH_EXCEPT_LAST(PARAM_DECL, __VA_ARGS__) \
+      LAST_PARAM_DECL(LAST_ARG(__VA_ARGS__)) \
+   );
+
+#include "future-functions.def"
+
+#undef FUTURE_PARAM
+#undef PARAM_DECL
+#undef LAST_PARAM_DECL
+#undef FUTURE_FUNCTION
 
 #endif //FUTURE_FUNCTIONS_H

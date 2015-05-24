@@ -18,7 +18,7 @@
 #include "future-functions.h"
 
 
-void static *background_bulk_operation_execute (void *data)
+void static *background_mongoc_bulk_operation_execute (void *data)
 {
    future_t *future = (future_t *) data;
    future_t *copy = future_new_copy (future);
@@ -38,27 +38,65 @@ void static *background_bulk_operation_execute (void *data)
 }
 
 
-future_t *future_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
-                                         bson_t *reply,
-                                         bson_error_t *error)
-{
-   future_t *future;
+#undef FUTURE_PARAM
+#undef PARAM_DECL_
+#undef PARAM_DECL
+#undef LAST_PARAM_DECL_
+#undef LAST_PARAM_DECL
+#undef FUTURE_SET_
+#undef FUTURE_SET
+#undef FUTURE_FUNCTION
 
-   future = future_new (3);
+#define FUTURE_PARAM(TYPE, NAME) (TYPE, NAME)
 
-   /* TODO: use setters */
-   future->return_value.type = future_value_uint32_t_type;
+/* this pattern turns MACRO((type, name)) and into MACRO_(type, name) */
+#define PARAM_DECL_(TYPE, NAME) TYPE NAME,
+#define PARAM_DECL(PARAM) PARAM_DECL_ PARAM
 
-   future->argv[0].type = future_value_mongoc_bulk_operation_ptr_type;
-   future->argv[0].mongoc_bulk_operation_ptr_value = bulk;
+#define LAST_PARAM_DECL_(TYPE, NAME) TYPE NAME
+#define LAST_PARAM_DECL(PARAM) LAST_PARAM_DECL_ PARAM
 
-   future->argv[1].type = future_value_bson_ptr_type;
-   future->argv[1].bson_ptr_value = reply;
+#define FUTURE_SET_(TYPE, NAME) future_value_set_ ## TYPE (&future->argv[i++], \
+                                                           NAME);
+#define FUTURE_SET(PARAM) FUTURE_SET_ PARAM
 
-   future->argv[2].type = future_value_bson_error_ptr_type;
-   future->argv[2].bson_error_ptr_value = error;
+/* define functions like :
+ *    future_t *
+ *    future_cursor_next (mongoc_cursor_t *cursor,
+ *                        bson_t **doc)
+ *    {
+ *       int i = 0;
+ *       future_t *future = future_new (future_value_bool_type, 2);
+ *       future_value_set_mongoc_cursor_ptr (future->argv[i++], cursor);
+ *       future_value_set_bson_ptr_ptr (future->argv[i++], doc);
+ *       future_start (future, background_mongoc_cursor_next);
+ *       return future;
+ *    }
+ */
 
-   future_start (future, background_bulk_operation_execute);
+#define FUTURE_FUNCTION(RET_TYPE, FUTURE_FN, FN, ...) \
+   future_t * \
+   FUTURE_FN ( \
+      FOREACH_EXCEPT_LAST(PARAM_DECL, __VA_ARGS__) \
+      LAST_PARAM_DECL(LAST_ARG(__VA_ARGS__)) \
+   ) \
+   { \
+      int i = 0; \
+      future_t *future = future_new (future_value_ ## RET_TYPE ## _type, \
+                                     ARGC(__VA_ARGS__)); \
+      FOREACH(FUTURE_SET, __VA_ARGS__) \
+      future_start (future, background_ ## FN); \
+      return future; \
+   }
 
-   return future;
-}
+
+#include "future-functions.def"
+
+#undef FUTURE_PARAM
+#undef PARAM_DECL_
+#undef PARAM_DECL
+#undef LAST_PARAM_DECL_
+#undef LAST_PARAM_DECL
+#undef FUTURE_SET_
+#undef FUTURE_SET
+#undef FUTURE_FUNCTION
