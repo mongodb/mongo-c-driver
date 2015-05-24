@@ -20,13 +20,10 @@
 #include <bson.h>
 
 #include "mongoc-uri.h"
-#include "mongoc-bulk-operation.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #endif
-
-#include "future.h"
 
 typedef struct _mock_server2_t mock_server2_t;
 typedef struct _request_t request_t;
@@ -56,11 +53,5 @@ void mock_server2_replies (request_t *request,
 void mock_server2_destroy (mock_server2_t *server);
 
 void request_destroy (request_t *request);
-
-future_t *future_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
-                                         bson_t *reply,
-                                         bson_error_t *error);
-
-
 
 #endif //MOCK_SERVER2_H

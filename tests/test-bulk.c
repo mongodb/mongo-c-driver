@@ -6,6 +6,7 @@
 
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
+#include "mock_server2/future-functions.h"
 #include "mock_server2/mock-server2.h"
 
 

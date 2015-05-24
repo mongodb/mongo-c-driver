@@ -77,6 +77,8 @@ test_libmongoc_SOURCES = \
 	tests/mock-server.h \
 	tests/mock_server2/future.c \
 	tests/mock_server2/future.h \
+	tests/mock_server2/future-functions.c \
+	tests/mock_server2/future-functions.h \
 	tests/mock_server2/future-value.h \
 	tests/mock_server2/mock-server2.c \
 	tests/mock_server2/mock-server2.h \
