@@ -71,7 +71,7 @@ struct _mock_server2_t
 
 struct _request_t
 {
-   const mongoc_rpc_t *request_rpc;
+   mongoc_rpc_t request_rpc;
    mock_server2_t *server;
    mongoc_stream_t *client;
 };
@@ -286,7 +286,7 @@ mock_server2_replies (request_t *request,
 
    mock_server2_reply_simple (request->server,
                               request->client,
-                              request->request_rpc,
+                              &request->request_rpc,
                               MONGOC_REPLY_NONE,
                               &doc);
 
@@ -329,6 +329,9 @@ mock_server2_destroy (mock_server2_t *server)
    mongoc_cond_destroy (&server->cond);
    mongoc_mutex_unlock (&server->mutex);
    mongoc_mutex_destroy (&server->mutex);
+   mongoc_socket_destroy (server->sock);
+   bson_free (server->uri_str);
+   mongoc_uri_destroy (server->uri);
    q_destroy (server->q);
    bson_free (server);
 }
@@ -342,7 +345,7 @@ request_new (const mongoc_rpc_t *request_rpc,
    request_t *request;
 
    request = bson_malloc (sizeof *request);
-   request->request_rpc = request_rpc;
+   memcpy ((void *)&request->request_rpc, (void *)request_rpc, sizeof *request_rpc);
    request->server = server;
    request->client = client;
 
@@ -353,7 +356,7 @@ request_new (const mongoc_rpc_t *request_rpc,
 void
 request_destroy (request_t *request)
 {
-   /* TODO */
+   bson_free (request);
 }
 
 
@@ -371,6 +374,7 @@ background_bulk_operation_execute (void *data)
                future_value_get_bson_ptr (&copy->argv[1]),
                future_value_get_bson_error_ptr (&copy->argv[2])));
 
+   future_destroy (copy);
    future_resolve (future, return_value);
 
    return NULL;
@@ -488,7 +492,7 @@ worker_thread (void *data)
    mongoc_stream_t *client_stream = closure->client_stream;
    uint16_t port = closure->port;
    mongoc_buffer_t buffer;
-   mongoc_rpc_t *rpc;
+   mongoc_rpc_t *rpc = NULL;
    bson_error_t error;
    int32_t msg_len;
    bool stopped;
@@ -502,6 +506,9 @@ worker_thread (void *data)
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
 
 again:
+   bson_free (rpc);
+   rpc = NULL;
+
    mongoc_mutex_lock (&server->mutex);
    stopped = server->stopped;
    mongoc_mutex_unlock (&server->mutex);
@@ -551,6 +558,7 @@ again:
       }
 
       q = mock_server2_get_queue (server);
+      /* copies rpc */
       request = request_new (rpc, server, client_stream);
       q_put (q, (void *)request);
    }
@@ -571,6 +579,7 @@ failure:
 
    mongoc_stream_close (client_stream);
    mongoc_stream_destroy (client_stream);
+   bson_free (rpc);
    bson_free (closure);
    _mongoc_buffer_destroy (&buffer);
 

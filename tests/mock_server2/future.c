@@ -58,7 +58,7 @@ future_t *future_new_copy (future_t *future)
    mongoc_mutex_lock (&future->mutex);
    copy = future_new (future->argc);
    copy->return_value = future->return_value;
-   memcpy (&copy->argv, &future->argv, future->argc * sizeof(future_value_t));
+   memcpy (copy->argv, future->argv, future->argc * sizeof(future_value_t));
    mongoc_mutex_unlock (&future->mutex);
 
    return copy;

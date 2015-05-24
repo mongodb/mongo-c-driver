@@ -1703,9 +1703,12 @@ test_write_concern_error ()
                          " 'writeConcernError': {'code': 17, 'errmsg': 'e'}}");
 
    check_n_modified (true, &reply, 0);
+
    request_destroy (request);
    future_destroy (future);
+   bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server2_destroy (mock_server);
