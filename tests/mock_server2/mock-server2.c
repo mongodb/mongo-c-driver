@@ -15,6 +15,7 @@
  */
 
 
+#include <mongoc-rpc-private.h>
 #include "mongoc-rpc-private.h"
 #include "mongoc-opcode.h"
 #include "mongoc-flags.h"
@@ -55,12 +56,8 @@ struct _mock_server2_t
    int32_t last_response_id;
    mongoc_array_t worker_threads;
    queue_t *q;
-
-   bool isMaster;
-   int minWireVersion;
-   int maxWireVersion;
-   int maxBsonObjectSize;
-   int maxMessageSizeBytes;
+   mongoc_array_t autoresponders;
+   int last_autoresponder_id;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts;
@@ -76,18 +73,17 @@ struct _request_t
 };
 
 
+struct _autoresponder_handle_t
+{
+   autoresponder_t responder;
+   void *data;
+   int id;
+};
+
+
 static void *main_thread (void *data);
 
 static void *worker_thread (void *data);
-
-static bool handle_command (mock_server2_t *server,
-                            mongoc_stream_t *client,
-                            mongoc_rpc_t *rpc);
-
-static bool handle_ismaster (mock_server2_t *server,
-                             mongoc_stream_t *client,
-                             mongoc_rpc_t *rpc,
-                             const bson_t *doc);
 
 static void mock_server2_reply_simple (mock_server2_t *server,
                                        mongoc_stream_t *client,
@@ -104,16 +100,13 @@ mock_server2_new ()
 {
    mock_server2_t *server = bson_malloc0 (sizeof (mock_server2_t));
 
-   _mongoc_array_init (&server->worker_threads, sizeof (mongoc_thread_t));
+   _mongoc_array_init (&server->autoresponders,
+                       sizeof (autoresponder_handle_t));
+   _mongoc_array_init (&server->worker_threads,
+                       sizeof (mongoc_thread_t));
    mongoc_cond_init (&server->cond);
    mongoc_mutex_init (&server->mutex);
    server->q = q_new ();
-
-   /* TODO configurable, and auto-ismaster defaults "off" */
-   server->isMaster = true;
-   server->maxWireVersion = 3;
-   server->maxBsonObjectSize = 16 * 1024 * 1024;
-   server->maxMessageSizeBytes = 32 * 1024 * 1024;
 
    return server;
 }
@@ -186,9 +179,10 @@ mock_server2_run (mock_server2_t *server)
    mongoc_mutex_lock (&server->mutex);
    server->sock = ssock;
    server->port = bound_port;
-   /* TODO: configurable socket timeout, perhaps from env */
+   /* TODO: configurable timeouts, perhaps from env */
    server->uri_str = bson_strdup_printf (
-         "mongodb://127.0.0.1:%hu/?serverselectiontimeoutms=10000000",
+         "mongodb://127.0.0.1:%hu/?serverselectiontimeoutms=10000&"
+         "sockettimeoutms=10000",
          bound_port);
    server->uri = mongoc_uri_new (server->uri_str);
    mongoc_mutex_unlock (&server->mutex);
@@ -198,6 +192,113 @@ mock_server2_run (mock_server2_t *server)
    return (uint16_t) bound_port;
 }
 
+/*
+ * returns an id for mock_server2_remove_autoresponder ().
+ */
+int
+mock_server2_autoresponds (mock_server2_t *server,
+                           autoresponder_t responder,
+                           void *data)
+{
+   autoresponder_handle_t handle = { responder, data };
+   int id;
+
+   mongoc_mutex_lock (&server->mutex);
+   id = handle.id = server->last_autoresponder_id++;
+   _mongoc_array_append_val (&server->autoresponders, handle);
+   mongoc_mutex_unlock (&server->mutex);
+
+   return id;
+}
+
+void
+mock_server2_remove_autoresponder (mock_server2_t *server,
+                                   int id)
+{
+   size_t i;
+   autoresponder_handle_t *data;
+   
+   mongoc_mutex_lock (&server->mutex);
+   data = (autoresponder_handle_t *)server->autoresponders.data;
+   for (i = 0; i < server->autoresponders.len; i++) {
+      if (data[i].id == id) {
+         /* left-shift everyone after */
+         server->autoresponders.len--;
+         for (; i < server->autoresponders.len; i++) {
+            data[i] = data[i + 1];
+         }
+
+         break;
+      }
+   }
+
+   mongoc_mutex_unlock (&server->mutex);
+}
+
+/* TODO: refactor, responders should be easier to write, add stuff to
+ *       request_t
+ */
+static bool
+auto_ismaster (request_t *request,
+               void *data)
+{
+   const char *response_json = (const char*)data;
+   mongoc_rpc_t *rpc = &request->request_rpc;
+   int32_t len;
+   bool ret = false;
+   bson_iter_t iter;
+   const char *key;
+   char *quotes_replaced;
+   bson_t query;
+   bson_t response;
+   bson_error_t error;
+
+   if (rpc->header.opcode != MONGOC_OPCODE_QUERY) {
+      return false;
+   }
+
+   memcpy (&len, rpc->query.query, 4);
+   len = BSON_UINT32_FROM_LE (len);
+   if (!bson_init_static (&query, rpc->query.query, (size_t)len)) {
+      return false;
+   }
+
+   if (!bson_iter_init (&iter, &query) || !bson_iter_next (&iter)) {
+      return false;
+   }
+
+   key = bson_iter_key (&iter);
+   if (!strcasecmp (key, "ismaster")) {
+      quotes_replaced = _single_quotes_to_double (response_json);
+      if (!bson_init_from_json (&response, quotes_replaced, -1, &error)) {
+         fprintf (stderr, "%s\n", error.message);
+         abort ();
+      }
+
+      mock_server2_reply_simple (request->server,
+                                 request->client,
+                                 rpc,
+                                 MONGOC_REPLY_NONE,
+                                 &response);
+
+      bson_destroy (&response);
+      bson_free (quotes_replaced);
+      ret = true;
+   }
+
+   bson_destroy (&query);
+
+   return ret;
+}
+
+int
+mock_server2_auto_ismaster (mock_server2_t *server,
+                            const char *response_json)
+{
+   return mock_server2_autoresponds (server,
+                                     auto_ismaster,
+                                     (void *)response_json);
+}
 
 const mongoc_uri_t *
 mock_server2_get_uri (mock_server2_t *server)
@@ -264,6 +365,12 @@ mock_server2_receives_command (mock_server2_t *server,
 
 
 void
+mock_server2_hangs_up (request_t *request)
+{
+   mongoc_stream_close (request->client);
+}
+
+void
 mock_server2_replies (request_t *request,
                       uint32_t flags,
                       int64_t cursor_id,
@@ -325,6 +432,7 @@ mock_server2_destroy (mock_server2_t *server)
    }
 
    _mongoc_array_destroy (&server->worker_threads);
+   _mongoc_array_destroy (&server->autoresponders);
    mongoc_cond_destroy (&server->cond);
    mongoc_mutex_unlock (&server->mutex);
    mongoc_mutex_destroy (&server->mutex);
@@ -435,6 +543,7 @@ main_thread (void *data)
    return NULL;
 }
 
+/* TODO: factor */
 static void *
 worker_thread (void *data)
 {
@@ -444,21 +553,27 @@ worker_thread (void *data)
    uint16_t port = closure->port;
    mongoc_buffer_t buffer;
    mongoc_rpc_t *rpc = NULL;
+   bool handled;
    bson_error_t error;
    int32_t msg_len;
    bool stopped;
    queue_t *q;
    request_t *request;
+   mongoc_array_t autoresponders;
+   size_t i;
+   autoresponder_handle_t handle;
 
    ENTRY;
 
    BSON_ASSERT(closure);
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
+   _mongoc_array_init (&autoresponders, sizeof(autoresponder_handle_t));
 
 again:
    bson_free (rpc);
    rpc = NULL;
+   handled = false;
 
    mongoc_mutex_lock (&server->mutex);
    stopped = server->stopped;
@@ -502,16 +617,34 @@ again:
 
    _mongoc_rpc_swab_from_le (rpc);
 
-   if (!handle_command (server, client_stream, rpc)) {
+   /* copies rpc */
+   request = request_new (rpc, server, client_stream);
+
+   mongoc_mutex_lock (&server->mutex);
+   _mongoc_array_copy (&autoresponders, &server->autoresponders);
+   mongoc_mutex_unlock (&server->mutex);
+
+   for (i = 0; i < server->autoresponders.len; i++) {
+      handle = _mongoc_array_index (&server->autoresponders,
+                                    autoresponder_handle_t,
+                                    i);
+      if (handle.responder(request, handle.data)) {
+         handled = true;
+         request_destroy (request);
+         request = NULL;
+         break;
+      }
+   }
+
+   if (!handled) {
       if (mock_server2_get_verbose (server)) {
          /* TODO: parse and print repr of request */
          /*printf ("%hu\t%s\n", port, "unhandled command");*/
       }
 
       q = mock_server2_get_queue (server);
-      /* copies rpc */
-      request = request_new (rpc, server, client_stream);
       q_put (q, (void *)request);
+      request = NULL;
    }
 
    memmove (buffer.data, buffer.data + buffer.off + msg_len,
@@ -526,6 +659,7 @@ failure:
    /* TODO: remove self from threads array */
    mongoc_mutex_unlock (&server->mutex);
 
+   _mongoc_array_destroy (&autoresponders);
    _mongoc_buffer_destroy (&buffer);
 
    mongoc_stream_close (client_stream);
@@ -536,81 +670,6 @@ failure:
 
    RETURN (NULL);
 }
-
-
-static bool
-handle_command (mock_server2_t *server,
-                mongoc_stream_t *client,
-                mongoc_rpc_t *rpc)
-{
-   int32_t len;
-   bool ret = false;
-   bson_iter_t iter;
-   const char *key;
-   bson_t doc;
-
-   BSON_ASSERT (rpc);
-
-   if (rpc->header.opcode != MONGOC_OPCODE_QUERY) {
-      return false;
-   }
-
-   memcpy (&len, rpc->query.query, 4);
-   len = BSON_UINT32_FROM_LE (len);
-   if (!bson_init_static (&doc, rpc->query.query, len)) {
-      return false;
-   }
-
-   if (!bson_iter_init (&iter, &doc) || !bson_iter_next (&iter)) {
-      return false;
-   }
-
-   key = bson_iter_key (&iter);
-
-   if (!strcasecmp (key, "ismaster")) {
-      ret = handle_ismaster (server, client, rpc, &doc);
-   }
-
-   bson_destroy (&doc);
-
-   return ret;
-}
-
-
-static bool
-handle_ismaster (mock_server2_t *server,
-                 mongoc_stream_t *client,
-                 mongoc_rpc_t *rpc,
-                 const bson_t *doc)
-{
-   bson_t reply_doc = BSON_INITIALIZER;
-   time_t now = time (NULL);
-
-   BSON_ASSERT (server);
-   BSON_ASSERT (client);
-   BSON_ASSERT (rpc);
-   BSON_ASSERT (doc);
-
-   bson_append_bool (&reply_doc, "ismaster", -1, server->isMaster);
-   bson_append_int32 (&reply_doc, "maxBsonObjectSize", -1,
-                      server->maxBsonObjectSize);
-   bson_append_int32 (&reply_doc, "maxMessageSizeBytes", -1,
-                      server->maxMessageSizeBytes);
-   bson_append_int32 (&reply_doc, "minWireVersion", -1,
-                      server->minWireVersion);
-   bson_append_int32 (&reply_doc, "maxWireVersion", -1,
-                      server->maxWireVersion);
-   bson_append_double (&reply_doc, "ok", -1, 1.0);
-   bson_append_time_t (&reply_doc, "localtime", -1, now);
-
-   mock_server2_reply_simple (server, client, rpc, MONGOC_REPLY_NONE,
-                              &reply_doc);
-
-   bson_destroy (&reply_doc);
-
-   return true;
-}
-
 
 void
 mock_server2_reply_simple (mock_server2_t *server,

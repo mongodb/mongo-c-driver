@@ -32,6 +32,36 @@ _mongoc_array_init (mongoc_array_t *array,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_array_copy --
+ *
+ *       Destroy dst and copy src into it. Both arrays must be initialized.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_array_copy (mongoc_array_t       *dst,
+                    const mongoc_array_t *src)
+{
+   _mongoc_array_destroy (dst);
+
+   dst->len = src->len;
+   dst->element_size = src->element_size;
+   dst->allocated = src->allocated;
+   dst->data = bson_malloc (dst->allocated);
+   memcpy (dst->data, src->data, dst->allocated);
+}
+
+
 void
 _mongoc_array_destroy (mongoc_array_t *array)
 {

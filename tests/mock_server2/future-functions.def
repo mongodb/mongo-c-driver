@@ -4,3 +4,9 @@ FUTURE_FUNCTION (uint32_t,
                  FUTURE_PARAM(mongoc_bulk_operation_ptr, bulk),
                  FUTURE_PARAM(bson_ptr,                  reply),
                  FUTURE_PARAM(bson_error_ptr,            error))
+
+FUTURE_FUNCTION (char_ptr_ptr,
+                 future_database_get_collection_names,
+                 mongoc_database_get_collection_names,
+                 FUTURE_PARAM(mongoc_database_ptr,       database),
+                 FUTURE_PARAM(bson_error_ptr,            error))

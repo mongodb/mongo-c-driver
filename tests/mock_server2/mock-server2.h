@@ -27,8 +27,20 @@
 
 typedef struct _mock_server2_t mock_server2_t;
 typedef struct _request_t request_t;
+typedef struct _autoresponder_handle_t autoresponder_handle_t;
+typedef bool (*autoresponder_t)(request_t *request, void *data);
 
 mock_server2_t *mock_server2_new ();
+
+int mock_server2_autoresponds (mock_server2_t *server,
+                                autoresponder_t responder,
+                                void *data);
+
+void mock_server2_remove_autoresponder (mock_server2_t *server,
+                                        int id);
+
+int mock_server2_auto_ismaster (mock_server2_t *server,
+                                const char *response_json);
 
 uint16_t mock_server2_run (mock_server2_t *server);
 
@@ -42,6 +54,8 @@ request_t *mock_server2_receives_command (mock_server2_t *server,
                                           const char *database_name,
                                           const char *command_name,
                                           const char *command_json);
+
+void mock_server2_hangs_up (request_t *request);
 
 void mock_server2_replies (request_t *request,
                            uint32_t flags,

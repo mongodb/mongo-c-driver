@@ -46,6 +46,8 @@ struct _mongoc_array_t
 
 void _mongoc_array_init        (mongoc_array_t *array,
                                 size_t          element_size);
+void _mongoc_array_copy        (mongoc_array_t *dst,
+                                const mongoc_array_t *src);
 void _mongoc_array_append_vals (mongoc_array_t *array,
                                 const void     *data,
                                 uint32_t        n_elements);

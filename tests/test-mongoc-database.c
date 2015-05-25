@@ -3,8 +3,9 @@
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
-#include "mock-server.h"
 #include "mongoc-client-private.h"
+#include "mock_server2/mock-server2.h"
+#include "mock_server2/future-functions.h"
 
 
 static void
@@ -394,53 +395,43 @@ test_get_collection_names (void)
 }
 
 static void
-collection_names_handler (mock_server_t   *server,
-                          mongoc_stream_t *stream,
-                          mongoc_rpc_t    *rpc,
-                          void            *user_data)
-{
-   mongoc_stream_close (stream);
-}
-
-static void
 test_get_collection_names_error (void)
 {
    mongoc_database_t *database;
    mongoc_client_t *client;
-   mock_server_t *server;
-   uint16_t port;
+   mock_server2_t *server;
    bson_error_t error = { 0 };
-   bool success = false;
    bson_t b = BSON_INITIALIZER;
-   char *uristr;
+   future_t *future;
+   request_t *request;
    char **names;
 
-   port = (uint16_t )(20000 + (rand () % 1000));
-
-   server = mock_server_new ("127.0.0.1", port, collection_names_handler,
-                             &success);
-   mock_server_set_wire_version (server, 0, 3);  /* listCollections command */
-   mock_server_run_in_thread (server);
-
-   usleep (5000);
-
-   uristr = bson_strdup_printf ("mongodb://127.0.0.1:%hu/", port);
-   client = mongoc_client_new (uristr);
+   server = mock_server2_new ();
+   mock_server2_auto_ismaster (server, "{'ismaster': true,"
+                                       " 'maxWireVersion': 3}");
+   mock_server2_run (server);
+   client = mongoc_client_new_from_uri (mock_server2_get_uri (server));
 
    database = mongoc_client_get_database (client, "test");
    suppress_one_message ();
    suppress_one_message ();
-   names = mongoc_database_get_collection_names (database, &error);
+   future = future_database_get_collection_names (database, &error);
+   request = mock_server2_receives_command (server,
+                                            "test",
+                                            "listCollections",
+                                            "{}");
+   mock_server2_hangs_up (request);
+   names = future_get_char_ptr_ptr (future);
    assert (!names);
    ASSERT_CMPINT (MONGOC_ERROR_STREAM, ==, error.domain);
    ASSERT_CMPINT (MONGOC_ERROR_STREAM_SOCKET, ==, error.code);
 
+   request_destroy (request);
+   future_destroy (future);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
-   mock_server_quit (server, 0);
-   mock_server_destroy (server);
+   mock_server2_destroy (server);
    bson_destroy (&b);
-   bson_free (uristr);
 }
 
 void
