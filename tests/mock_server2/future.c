@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <stdio.h>
 
 #include "mongoc-array-private.h"
 #include "mongoc-thread-private.h"
@@ -27,8 +28,11 @@
    TYPE \
    future_get_ ## TYPE (future_t *future) \
    { \
-      assert (future_wait (future)); \
-      return future_value_get_ ## TYPE (&future->return_value); \
+      if (future_wait (future)) { \
+         return future_value_get_ ## TYPE (&future->return_value); \
+      } \
+      fprintf (stderr, "%s timed out\n", __FUNCTION__); \
+      abort (); \
    }
 
 #include "make-future-getters.def"
@@ -84,6 +88,7 @@ future_resolve (future_t *future, future_value_t return_value)
 {
    mongoc_mutex_lock (&future->mutex);
    assert (!future->resolved);
+   assert (future->return_value.type == return_value.type);
    future->return_value = return_value;
    future->resolved = true;
    mongoc_cond_signal (&future->cond);
