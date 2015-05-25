@@ -242,6 +242,40 @@ test_framework_get_host (void)
 /*
  *--------------------------------------------------------------------------
  *
+ * test_framework_get_port --
+ *
+ *       Get the port number of the test MongoDB server.
+ *
+ * Returns:
+ *       The port number, 27017 by default.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+uint16_t
+test_framework_get_port (void)
+{
+   char *port_str = test_framework_getenv ("MONGOC_TEST_PORT");
+   unsigned long port = MONGOC_DEFAULT_PORT;
+
+   if (port_str && strlen (port_str)) {
+      port = strtoul (port_str, NULL, 10);
+      if (port == 0 || port > UINT16_MAX) {
+         /* parse err or port out of range -- mongod prohibits port 0 */
+         port = MONGOC_DEFAULT_PORT;
+      }
+   }
+
+   bson_free (port_str);
+
+   return (uint16_t) port;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * test_framework_get_admin_user --
  *
  *       Get the username of an admin user on the test MongoDB server.
@@ -354,11 +388,13 @@ char *
 test_framework_get_uri_str (const char *uri_str)
 {
    char *host = test_framework_get_host ();
+   uint16_t port = test_framework_get_port ();
    char *user = test_framework_get_admin_user ();
    char *password = test_framework_get_admin_password ();
    char *test_uri_str_base = uri_str ?
                              bson_strdup (uri_str) :
-                             bson_strdup_printf ("mongodb://%s/", host);
+                             bson_strdup_printf ("mongodb://%s:%hu/",
+                                                 host, port);
 
    mongoc_uri_t *uri_parsed = mongoc_uri_new (test_uri_str_base);
    char *test_uri_str;

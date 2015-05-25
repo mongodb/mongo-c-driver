@@ -118,7 +118,8 @@ generate man pages and HTML for it.
 You should always run `make test` before submitting a patch. Just make sure you
 have a locally running `mongod` instance available on `127.0.0.1:27017`. All
 tests should pass. Alternatively, you can specify `MONGOC_TEST_HOST`
-environment variable to specify a non-localhost hostname or ip address.
+environment variable to specify a non-localhost hostname or ip address,
+and `MONGOC_TEST_PORT` to override the port number.
 
 To test with auth, create a "root" user on the "admin" database and set the
 `MONGOC_TEST_USER` and `MONGOC_TEST_PASSWORD` environment variables to its

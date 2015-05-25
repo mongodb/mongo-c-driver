@@ -44,9 +44,11 @@ gen_good_uri (const char *username,
               const char *dbname)
 {
    char *host = test_framework_get_host ();
-   char *uri = bson_strdup_printf ("mongodb://%s:testpass@%s/%s",
+   uint16_t port = test_framework_get_port ();
+   char *uri = bson_strdup_printf ("mongodb://%s:testpass@%s:%hu/%s",
                                    username,
                                    host,
+                                   port,
                                    dbname);
 
    bson_free (host);
@@ -137,9 +139,11 @@ test_mongoc_client_authenticate_failure (void)
    bson_t q;
    bson_t empty = BSON_INITIALIZER;
    char *host = test_framework_get_host ();
+   uint16_t port = test_framework_get_port ();
    char *bad_uri_str = bson_strdup_printf (
-         "mongodb://baduser:badpass@%s/test%s",
+         "mongodb://baduser:badpass@%s:%hu/test%s",
          host,
+         port,
          test_framework_get_ssl () ? "?ssl=true" : "");
 
    /*
