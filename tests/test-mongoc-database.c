@@ -438,6 +438,7 @@ test_get_collection_names_error (void)
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
    mock_server_quit (server, 0);
+   mock_server_destroy (server);
    bson_destroy (&b);
    bson_free (uristr);
 }
