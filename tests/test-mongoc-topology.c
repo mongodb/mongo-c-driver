@@ -124,7 +124,9 @@ test_topology_invalidate_server (void)
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    sd = mongoc_set_get(td->servers, id);
    assert (sd);
-   assert (sd->type == MONGOC_SERVER_STANDALONE);
+   assert (sd->type == MONGOC_SERVER_STANDALONE ||
+           sd->type == MONGOC_SERVER_RS_PRIMARY ||
+           sd->type == MONGOC_SERVER_MONGOS);
 
    mongoc_topology_invalidate_server (client->topology, id);
    sd = mongoc_set_get(td->servers, id);
