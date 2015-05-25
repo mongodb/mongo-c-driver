@@ -596,6 +596,7 @@ test_framework_client_pool_new (const char *uri_str)
    assert (pool);
    test_framework_set_pool_ssl_opts (pool);
 
+   mongoc_uri_destroy (test_uri);
    bson_free (test_uri_str);
    assert (pool);
    return pool;
