@@ -115,6 +115,10 @@ mongoc_cluster_node_max_bson_obj_size (mongoc_cluster_t *cluster,
                                        uint32_t         server_id);
 
 int32_t
+mongoc_cluster_node_max_write_batch_size (mongoc_cluster_t *cluster,
+                                       uint32_t         server_id);
+
+int32_t
 mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster);
 
 int32_t

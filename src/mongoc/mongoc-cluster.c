@@ -1842,6 +1842,39 @@ mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_cluster_node_max_write_batch_size --
+ *
+ *      Return the max write batch size for the given server.
+ *
+ * Returns:
+ *      Max write batch size, or -1 if server is not found.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int32_t
+mongoc_cluster_node_max_write_batch_size (mongoc_cluster_t *cluster,
+                                  uint32_t          server_id)
+{
+   mongoc_server_description_t *sd;
+   mongoc_cluster_node_t *node;
+
+   if (cluster->client->topology->single_threaded) {
+      if ((sd = mongoc_topology_description_server_by_id (&cluster->client->topology->description, server_id))) {
+         return sd->max_write_batch_size;
+      }
+   } else {
+      if((node = mongoc_set_get(cluster->nodes, server_id))) {
+         return node->max_write_batch_size;
+      }
+   }
+
+   return -1;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_cluster_get_max_bson_obj_size --
  *
  *      Return the minimum max_bson_obj_size across all servers in cluster.
