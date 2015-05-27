@@ -282,7 +282,9 @@ mongoc_stream_check_closed (mongoc_stream_t *stream)
 
    ENTRY;
 
-   bson_return_val_if_fail(stream, -1);
+   if (!stream) {
+      return true;
+   }
 
    ret = stream->check_closed(stream);
 

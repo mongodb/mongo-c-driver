@@ -637,7 +637,7 @@ _mongoc_cluster_select (mongoc_cluster_t             *cluster,
    bson_return_val_if_fail(rpcs_len, NULL);
    bson_return_val_if_fail(hint <= cluster->nodes_len, NULL);
 
-   nodes = bson_malloc(sizeof(*nodes) * cluster->nodes_len);
+   nodes = bson_malloc0(sizeof(*nodes) * cluster->nodes_len);
    scores = bson_malloc(sizeof(*scores) * cluster->nodes_len);
 
    /*
@@ -723,16 +723,25 @@ dispatch:
    /*
     * Apply the hint if the client knows who they would like to continue
     * communicating with.
+    *
+    * TODO: after an initial query a cursor sets its hint to an index in the
+    *   nodes array, but _mongoc_cluster_reconnect may resize the array or
+    *   rearrange servers and the cursor sends its getmore to the wrong server,
+    *   causing a server error "cursor not found". Fixed by the topology
+    *   rewrite in 1.2.x.
     */
    if (hint) {
-      if (!nodes[hint - 1]) {
+      if ((hint - 1) >= cluster->nodes_len || !nodes[hint - 1]) {
          bson_set_error(error,
                         MONGOC_ERROR_CLIENT,
                         MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
                         "Requested node (%u) is not available.",
                         hint);
+         node = NULL;
+      } else {
+         node = nodes[hint - 1];
       }
-      node = nodes[hint - 1];
+
       goto CLEANUP;
    }
 
