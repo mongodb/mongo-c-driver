@@ -81,9 +81,10 @@ test_libmongoc_SOURCES = \
 	tests/mock_server2/future-functions.def \
 	tests/mock_server2/future-functions.h \
 	tests/mock_server2/future-value.h \
+	tests/mock_server2/macro-vargs-magic.h \
+	tests/mock_server2/make-future-getters.def \
 	tests/mock_server2/mock-server2.c \
 	tests/mock_server2/mock-server2.h \
-	tests/mock_server2/make-future-getters.def \
 	tests/mock_server2/queue.c \
 	tests/mock_server2/queue.h \
 	tests/test-libmongoc.c \
@@ -233,13 +234,15 @@ EXTRA_DIST += \
 	tests/binary/update1.dat \
 	tests/certificates/ca.pem \
 	tests/certificates/client.pem \
-	tests/mock_server2/future_value.h \
+	tests/mock_server2/future-value.h \
 	tests/mock_server2/future.c \
 	tests/mock_server2/future.h \
-	tests/mock_server2/queue.c \
-	tests/mock_server2/queue.h \
+	tests/mock_server2/macro-vargs-magic.h \
+	tests/mock_server2/make-future-getters.def \
 	tests/mock_server2/mock-server2.c \
 	tests/mock_server2/mock-server2.h \
+	tests/mock_server2/queue.c \
+	tests/mock_server2/queue.h \
 	tests/mock-server.c \
 	tests/mock-server.h \
 	tests/mongoc-tests.c \
