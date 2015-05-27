@@ -804,8 +804,8 @@ again:
       result->failed = true;
       ret = false;
    } else {
-      ret = mongoc_client_command_simple (client, database, &cmd, NULL,
-                                          &reply, error);
+      ret = _mongoc_client_command_simple_with_hint (client, database, &cmd, NULL,
+                                          &reply, hint, error);
 
       if (!ret) {
          result->failed = true;
@@ -952,9 +952,9 @@ again:
       result->failed = true;
       ret = false;
    } else {
-      /* sets err domain to QUERY? */
-      ret = mongoc_client_command_simple (client, database, &cmd, NULL,
-                                          &reply, error);
+      /* sets domain to QUERY? */
+      ret = _mongoc_client_command_simple_with_hint (client, database, &cmd, NULL,
+                                          &reply, hint, error);
 
       if (!ret) {
          result->failed = true;
@@ -1099,8 +1099,8 @@ again:
       result->failed = true;
       ret = false;
    } else {
-      ret = mongoc_client_command_simple (client, database, &cmd, NULL,
-                                          &reply, error);
+      ret = _mongoc_client_command_simple_with_hint (client, database, &cmd, NULL,
+                                          &reply, hint, error);
 
       if (!ret) {
          result->failed = true;
