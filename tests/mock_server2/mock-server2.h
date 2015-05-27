@@ -29,18 +29,22 @@ typedef struct _mock_server2_t mock_server2_t;
 typedef struct _request_t request_t;
 typedef struct _autoresponder_handle_t autoresponder_handle_t;
 typedef bool (*autoresponder_t)(request_t *request, void *data);
+typedef void (*destructor_t)(void *data);
 
 mock_server2_t *mock_server2_new ();
 
-int mock_server2_autoresponds (mock_server2_t *server,
-                                autoresponder_t responder,
-                                void *data);
+mock_server2_t *mock_server2_with_autoismaster (int32_t max_wire_version);
+
+int mock_server2_autoresponds (mock_server2_t  *server,
+                               autoresponder_t responder,
+                               void           *data,
+                               destructor_t    destructor);
 
 void mock_server2_remove_autoresponder (mock_server2_t *server,
                                         int id);
 
 int mock_server2_auto_ismaster (mock_server2_t *server,
-                                const char *response_json);
+                                const char     *response_json);
 
 uint16_t mock_server2_run (mock_server2_t *server);
 
@@ -51,18 +55,26 @@ bool mock_server2_get_verbose (mock_server2_t *server);
 void mock_server2_set_verbose (mock_server2_t *server, bool verbose);
 
 request_t *mock_server2_receives_command (mock_server2_t *server,
-                                          const char *database_name,
-                                          const char *command_name,
-                                          const char *command_json);
+                                          const char     *database_name,
+                                          const char     *command_name,
+                                          const char     *command_json);
+
+request_t * mock_server2_receives_query (mock_server2_t          *server,
+                                         const char              *ns,
+                                         mongoc_query_flags_t     flags,
+                                         uint32_t                 skip,
+                                         uint32_t                 n_return,
+                                         const char              *query_json,
+                                         const char              *fields_json);
 
 void mock_server2_hangs_up (request_t *request);
 
-void mock_server2_replies (request_t *request,
-                           uint32_t flags,
-                           int64_t cursor_id,
-                           int32_t starting_from,
-                           int32_t number_returned,
-                           const char *docs_json);
+void mock_server2_replies (request_t    *request,
+                           uint32_t      flags,
+                           int64_t       cursor_id,
+                           int32_t       starting_from,
+                           int32_t       number_returned,
+                           const char   *docs_json);
 
 void mock_server2_destroy (mock_server2_t *server);
 

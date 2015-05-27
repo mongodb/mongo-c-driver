@@ -8,6 +8,7 @@
 #include "mongoc-tests.h"
 #include "mock_server2/future-functions.h"
 #include "mock_server2/mock-server2.h"
+#include "test-conveniences.h"
 
 
 static mongoc_array_t gTmpBsonArray;
@@ -39,23 +40,6 @@ test_bulk_cleanup ()
    _mongoc_array_destroy (&gTmpBsonArray);
 
    bson_free (gHugeString);
-}
-
-
-/* copy str with single-quotes replaced by double. bson_free the return value.*/
-char *
-single_quotes_to_double (const char *str)
-{
-   char *result = bson_strdup (str);
-   char *p;
-
-   for (p = result; *p; p++) {
-      if (*p == '\'') {
-         *p = '"';
-      }
-   }
-
-   return result;
 }
 
 
@@ -133,76 +117,6 @@ four_mb_string ()
    init_four_mb_string ();
    return gFourMBString;
 }
-
-
-/*--------------------------------------------------------------------------
- *
- * match_json --
- *
- *       Check that a document matches an expected pattern.
- *
- *       The provided JSON is fed to mongoc_matcher_t, so it can omit
- *       fields or use $gt, $in, $and, $or, etc. For convenience,
- *       single-quotes are synonymous with double-quotes.
- *
- * Returns:
- *       True or false.
- *
- * Side effects:
- *       Logs if no match.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-match_json (const bson_t *doc,
-            const char   *json_query,
-            const char   *filename,
-            int           lineno,
-            const char   *funcname)
-{
-   char *double_quoted = single_quotes_to_double (json_query);
-   bson_error_t error;
-   bson_t *query;
-   mongoc_matcher_t *matcher;
-   bool matches;
-
-   query = bson_new_from_json ((const uint8_t *)double_quoted, -1, &error);
-
-   if (!query) {
-      fprintf (stderr, "couldn't parse JSON: %s\n", error.message);
-      abort ();
-   }
-
-   if (!(matcher = mongoc_matcher_new (query, &error))) {
-      fprintf (stderr, "couldn't parse JSON: %s\n", error.message);
-      abort ();
-   }
-
-   matches = mongoc_matcher_match (matcher, doc);
-
-   if (!matches) {
-      fprintf (stderr,
-               "ASSERT_MATCH failed with document:\n\n"
-               "%s\n"
-               "query:\n%s\n\n"
-               "%s:%d  %s()\n",
-               bson_as_json (doc, NULL), double_quoted,
-               filename, lineno, funcname);
-   }
-
-   mongoc_matcher_destroy (matcher);
-   bson_destroy (query);
-   bson_free (double_quoted);
-
-   return matches;
-}
-
-#define ASSERT_MATCH(doc, json_query) \
-   do { \
-      assert (match_json (doc, json_query, \
-                          __FILE__, __LINE__, __FUNCTION__)); \
-   } while (0)
 
 
 /*--------------------------------------------------------------------------
@@ -463,8 +377,8 @@ test_bulk (void)
    assert (r);
 
    ASSERT_MATCH (&reply, "{'nInserted': 4,"
-                         " 'nRemoved':  4,"
                          " 'nMatched':  4,"
+                         " 'nRemoved':  4,"
                          " 'nUpserted': 0}");
 
    check_n_modified (has_write_cmds, &reply, 4);
@@ -514,8 +428,8 @@ test_insert (bool ordered)
    assert (r);
 
    ASSERT_MATCH (&reply, "{'nInserted': 2,"
-                         " 'nRemoved':  0,"
                          " 'nMatched':  0,"
+                         " 'nRemoved':  0,"
                          " 'nUpserted': 0}");
 
    check_n_modified (has_write_cmds, &reply, 0);
@@ -568,7 +482,7 @@ test_insert_check_keys (void)
    bson_t reply;
    bson_error_t error;
    bool r;
-   char *json_query;
+   char *json_pattern;
 
    client = test_framework_client_new (NULL);
    assert (client);
@@ -587,17 +501,18 @@ test_insert_check_keys (void)
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
    /* TODO: CDRIVER-648, assert nInserted == 0 */
-   json_query = bson_strdup_printf ("{'nRemoved':  0,"
-                                    " 'nMatched':  0,"
-                                    " 'nUpserted': 0,"
-                                    " 'writeErrors.0.index': 0,"
-                                    " 'writeErrors.0.code': %d}",
+   json_pattern = bson_strdup_printf ("{'nMatched':  0,"
+                                      " 'nRemoved':  0,"
+                                      " 'nUpserted': 0,"
+                                      " 'writeErrors': ["
+                                      "    {'index': 0, 'code': %d}"
+                                      " ]}",
                                     error.code);
-   ASSERT_MATCH (&reply, json_query);
+   ASSERT_MATCH (&reply, json_pattern);
    check_n_modified (has_write_cmds, &reply, 0);
    ASSERT_COUNT (0, collection);
 
-   bson_free (json_query);
+   bson_free (json_pattern);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -638,8 +553,8 @@ test_upsert (bool ordered)
    assert (r);
 
    ASSERT_MATCH (&reply, "{'nInserted': 0,"
-                         " 'nRemoved':  0,"
                          " 'nMatched':  0,"
+                         " 'nRemoved':  0,"
                          " 'nUpserted': 1,"
                          " 'upserted':  [{'index': 0, '_id': 1234}],"
                          " 'writeErrors': []}");
@@ -662,8 +577,8 @@ test_upsert (bool ordered)
    assert (r);
 
    ASSERT_MATCH (&reply, "{'nInserted': 0,"
-                         " 'nRemoved':  0,"
                          " 'nMatched':  0,"
+                         " 'nRemoved':  0,"
                          " 'nUpserted': 0,"
                          " 'upserted':  {'$exists': false},"
                          " 'writeErrors': []}");
@@ -801,23 +716,25 @@ test_upserted_index (bool ordered)
       abort ();
    }
 
-   ASSERT_MATCH (&reply, "{'nInserted':          5,"
-                         " 'nRemoved':           0,"
-                         " 'nMatched':          34,"
-                         " 'nUpserted':         13,"
-                         " 'upserted.0.index':   4,"
-                         " 'upserted.1.index':   8,"
-                         " 'upserted.2.index':   9,"
-                         " 'upserted.3.index':  14,"
-                         " 'upserted.4.index':  16,"
-                         " 'upserted.5.index':  17,"
-                         " 'upserted.6.index':  19,"
-                         " 'upserted.7.index':  20,"
-                         " 'upserted.8.index':  21,"
-                         " 'upserted.9.index':  22,"
-                         " 'upserted.10.index': 23,"
-                         " 'upserted.11.index': 25,"
-                         " 'upserted.12.index': 32,"
+   ASSERT_MATCH (&reply, "{'nInserted':    5,"
+                         " 'nMatched':    34,"
+                         " 'nRemoved':     0,"
+                         " 'nUpserted':   13,"
+                         " 'upserted': ["
+                         "    {'index':   4},"
+                         "    {'index':   8},"
+                         "    {'index':   9},"
+                         "    {'index':  14},"
+                         "    {'index':  16},"
+                         "    {'index':  17},"
+                         "    {'index':  19},"
+                         "    {'index':  20},"
+                         "    {'index':  21},"
+                         "    {'index':  22},"
+                         "    {'index':  23},"
+                         "    {'index':  25},"
+                         "    {'index':  32}"
+                         " ],"
                          " 'writeErrors': []}");
 
    check_n_modified (has_write_cmds, &reply, 34);
@@ -887,8 +804,8 @@ test_update_one (bool ordered)
    assert (r);
 
    ASSERT_MATCH (&reply, "{'nInserted': 0,"
-                         " 'nRemoved':  0,"
                          " 'nMatched':  1,"
+                         " 'nRemoved':  0,"
                          " 'nUpserted': 0,"
                          " 'upserted': {'$exists': false},"
                          " 'writeErrors': []}");
@@ -960,8 +877,8 @@ test_replace_one (bool ordered)
    assert (r);
 
    ASSERT_MATCH (&reply, "{'nInserted': 0,"
-                         " 'nRemoved':  0,"
                          " 'nMatched':  1,"
+                         " 'nRemoved':  0,"
                          " 'nUpserted': 0,"
                          " 'upserted': {'$exists': false},"
                          " 'writeErrors': []}");
@@ -1014,8 +931,8 @@ test_upsert_large ()
    assert (r);
 
    ASSERT_MATCH (&reply, "{'nInserted': 0,"
-                         " 'nRemoved':  0,"
                          " 'nMatched':  0,"
+                         " 'nRemoved':  0,"
                          " 'nUpserted': 1,"
                          " 'upserted':  [{'index': 0, '_id': 1}],"
                          " 'writeErrors': []}");
@@ -1092,8 +1009,8 @@ test_update (bool ordered)
    assert (r);
 
    ASSERT_MATCH (&reply, "{'nInserted': 0,"
-                         " 'nRemoved':  0,"
                          " 'nMatched':  2,"
+                         " 'nRemoved':  0,"
                          " 'nUpserted': 0,"
                          " 'upserted':  {'$exists': false},"
                          " 'writeErrors': []}");
@@ -1165,8 +1082,8 @@ test_index_offset (void)
    assert (r);
 
    ASSERT_MATCH (&reply, "{'nInserted': 0,"
-                         " 'nRemoved':  1,"
                          " 'nMatched':  0,"
+                         " 'nRemoved':  1,"
                          " 'nUpserted': 1,"
                          " 'upserted': [{'index': 1, '_id': 1234}],"
                          " 'writeErrors': []}");
@@ -1221,12 +1138,12 @@ test_single_ordered_bulk ()
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
 
-   ASSERT_MATCH (&reply, "{'nMatched':  1,"
-                         " 'nUpserted': 1,"
-                         " 'nInserted': 2,"
+   ASSERT_MATCH (&reply, "{'nInserted': 2,"
+                         " 'nMatched':  1,"
                          " 'nRemoved':  1,"
-                         " 'upserted.0.index': 2,"
-                         " 'upserted.0._id':   {'$exists': true}}");
+                         " 'nUpserted': 1,"
+                         " 'upserted': [{'index': 2, '_id': {'$exists': true}}]"
+                         "}");
 
    check_n_modified (has_write_cmds, &reply, 1);
    ASSERT_COUNT (2, collection);
@@ -1270,13 +1187,12 @@ test_insert_continue_on_error ()
 
    /* TODO: CDRIVER-654, assert nInserted == 2, not 4 */
    ASSERT_MATCH (&reply, "{'nMatched':  0,"
+                         " 'nRemoved':  0,"
                          " 'nUpserted': 0,"
 /*
  *                       " 'nInserted': 2,"
  */
-                         " 'nRemoved':  0,"
-                         " 'writeErrors.0.index': 1,"
-                         " 'writeErrors.1.index': 3}");
+                         " 'writeErrors': [{'index': 1}, {'index': 3}]}");
 
    check_n_modified (has_write_cmds, &reply, 0);
    assert_error_count (2, &reply);
@@ -1331,11 +1247,11 @@ test_update_continue_on_error ()
    assert (!r);
 
    /* TODO: CDRIVER-654, assert nInserted == 2, not 4 */
-   ASSERT_MATCH (&reply, "{'nMatched':  2,"
-                         " 'nUpserted': 0,"
-                         " 'nInserted': 0,"
+   ASSERT_MATCH (&reply, "{'nInserted': 0,"
+                         " 'nMatched':  2,"
                          " 'nRemoved':  0,"
-                         " 'writeErrors.0.index': 1}");
+                         " 'nUpserted': 0,"
+                         " 'writeErrors': [{'index': 1}]}");
 
    check_n_modified (has_write_cmds, &reply, 2);
    assert_error_count (1, &reply);
@@ -1389,11 +1305,11 @@ test_remove_continue_on_error ()
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
 
-   ASSERT_MATCH (&reply, "{'nMatched':  0,"
-                         " 'nUpserted': 0,"
-                         " 'nInserted': 0,"
+   ASSERT_MATCH (&reply, "{'nInserted': 0,"
+                         " 'nMatched':  0,"
                          " 'nRemoved':  2,"
-                         " 'writeErrors.0.index': 1}");
+                         " 'nUpserted': 0,"
+                         " 'writeErrors': [{'index': 1}]}");
 
    check_n_modified (has_write_cmds, &reply, 0);
    assert_error_count (1, &reply);
@@ -1440,17 +1356,15 @@ test_single_error_ordered_bulk ()
    assert (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
 
+   /* TODO: CDRIVER-656, assert writeErrors.0.index is 1 */
    /* TODO: CDRIVER-651, assert contents of the 'op' field */
-   /* TODO: CDRIVER-656, assert index is 1 */
-   ASSERT_MATCH (&reply, "{'nMatched':  0,"
-                         " 'nUpserted': 0,"
-                         " 'nInserted': 1,"
+   ASSERT_MATCH (&reply, "{'nInserted': 1,"
+                         " 'nMatched':  0,"
                          " 'nRemoved':  0,"
-/*
-                         " 'writeErrors.0.index':  1,"
-*/
-                         " 'writeErrors.0.code':   {'$exists': true},"
-                         " 'writeErrors.0.errmsg': {'$exists': true}"
+                         " 'nUpserted': 0,"
+                         " 'writeErrors': ["
+                         "    {'code':   {'$exists': true},"
+                         "     'errmsg': {'$exists': true}}]"
 /*
  *                       " 'writeErrors.0.op':     ...,"
  */
@@ -1509,16 +1423,13 @@ test_multiple_error_ordered_bulk ()
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
 
+   /* TODO: CDRIVER-656, assert writeErrors.0.index is 1 */
    /* TODO: CDRIVER-651, assert contents of the 'op' field */
-   /* TODO: CDRIVER-656, assert writeErrors index is 1 */
-   ASSERT_MATCH (&reply, "{'nMatched':  0,"
-                         " 'nUpserted': 1,"
-                         " 'nInserted': 1,"
+   ASSERT_MATCH (&reply, "{'nInserted': 1,"
+                         " 'nMatched':  0,"
                          " 'nRemoved':  0,"
-/*
-                         " 'writeErrors.0.index':  1,"
-*/
-                         " 'writeErrors.0.errmsg': {'$exists': true}"
+                         " 'nUpserted': 1,"
+                         " 'writeErrors': [{'errmsg': {'$exists': true}}]"
 /*
  *                       " 'writeErrors.0.op': {'q': {'b': 2}, 'u': {'$set': {'a': 1}}, 'multi': false}"
  */
@@ -1568,12 +1479,12 @@ test_single_unordered_bulk ()
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
 
-   ASSERT_MATCH (&reply, "{'nMatched': 1,"
-                         " 'nUpserted': 1,"
-                         " 'nInserted': 2,"
+   ASSERT_MATCH (&reply, "{'nInserted': 2,"
+                         " 'nMatched': 1,"
                          " 'nRemoved': 1,"
-                         " 'upserted.0.index': 2,"
-                         " 'upserted.0._id': {'$exists': true},"
+                         " 'nUpserted': 1,"
+                         " 'upserted': ["
+                         "    {'index': 2, '_id': {'$exists': true}}],"
                          " 'writeErrors': []}");
    check_n_modified (has_write_cmds, &reply, 1);
    ASSERT_COUNT (2, collection);
@@ -1620,18 +1531,14 @@ test_single_error_unordered_bulk ()
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
 
+   /* TODO: CDRIVER-656, assert writeErrors.0.index is 1 */
    /* TODO: CDRIVER-651, assert contents of the 'op' field */
-   /* TODO: CDRIVER-656, assert writeErrors index is 1 */
-   ASSERT_MATCH (&reply, "{'nMatched': 0,"
+   ASSERT_MATCH (&reply, "{'nInserted': 2,"
+                         " 'nMatched':  0,"
+                         " 'nRemoved':  0,"
                          " 'nUpserted': 0,"
-                         " 'nInserted': 2,"
-                         " 'nRemoved': 0,"
-/*
-                         " 'writeErrors.0.op': {'q': {'b': 2},"
-                         " 'writeErrors.0.index': 1,"
- */
-                         " 'writeErrors.0.code': {'$exists': true},"
-                         " 'writeErrors.0.errmsg': {'$exists': true}}");
+                         " 'writeErrors': [{'code': {'$exists': true},"
+                         "                  'errmsg': {'$exists': true}}]}");
    assert_error_count (1, &reply);
    check_n_modified (has_write_cmds, &reply, 0);
    ASSERT_COUNT (2, collection);
@@ -1647,7 +1554,7 @@ test_single_error_unordered_bulk ()
 static void
 test_write_concern_error ()
 {
-   mock_server2_t *mock_server = mock_server2_new ();
+   mock_server2_t *mock_server = mock_server2_with_autoismaster (3);
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_write_concern_t *wc;
@@ -1696,10 +1603,10 @@ test_write_concern_error ()
    /* join thread, assert mongoc_bulk_operation_execute () returned 0 */
    assert (!future_get_uint32_t (future));
 
-   ASSERT_MATCH (&reply, "{'nMatched': 0,"
-                         " 'nUpserted': 0,"
-                         " 'nInserted': 1,"
+   ASSERT_MATCH (&reply, "{'nInserted': 1,"
+                         " 'nMatched': 0,"
                          " 'nRemoved': 0,"
+                         " 'nUpserted': 0,"
                          " 'writeErrors': [],"
                          " 'writeConcernError': {'code': 17, 'errmsg': 'e'}}");
 
@@ -2120,8 +2027,8 @@ test_bulk_edge_case_372 (bool ordered)
 #endif
 
    ASSERT_MATCH (&reply, "{'nInserted': 0,"
-                         " 'nRemoved':  0,"
                          " 'nMatched':  0,"
+                         " 'nRemoved':  0,"
                          " 'nUpserted': 3,"
                          " 'upserted': ["
                          "     {'index': 0, '_id': 0},"

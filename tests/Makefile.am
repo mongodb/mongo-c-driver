@@ -88,6 +88,8 @@ test_libmongoc_SOURCES = \
 	tests/mock_server2/queue.h \
 	tests/test-libmongoc.c \
 	tests/test-bulk.c \
+	tests/test-conveniences.c \
+	tests/test-conveniences.h \
 	tests/test-mongoc-array.c \
 	tests/test-mongoc-async.c \
 	tests/test-mongoc-buffer.c \

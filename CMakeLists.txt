@@ -220,6 +220,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/mock_server2/queue.c
    ${SOURCE_DIR}/tests/mock_server2/mock-server2.c
    ${SOURCE_DIR}/tests/mock-server.c
+   ${SOURCE_DIR}/tests/test-conveniences.c
    ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-libmongoc.c
    ${SOURCE_DIR}/tests/test-mongoc-array.c

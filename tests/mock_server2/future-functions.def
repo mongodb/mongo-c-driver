@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+
 FUTURE_FUNCTION (uint32_t,
                  future_bulk_operation_execute,
                  mongoc_bulk_operation_execute,
@@ -5,8 +8,16 @@ FUTURE_FUNCTION (uint32_t,
                  FUTURE_PARAM(bson_ptr,                  reply),
                  FUTURE_PARAM(bson_error_ptr,            error))
 
+FUTURE_FUNCTION (bool,
+                 future_cursor_next,
+                 mongoc_cursor_next,
+                 FUTURE_PARAM(mongoc_cursor_ptr,         cursor),
+                 FUTURE_PARAM(const_bson_ptr_ptr,        doc))
+
 FUTURE_FUNCTION (char_ptr_ptr,
                  future_database_get_collection_names,
                  mongoc_database_get_collection_names,
                  FUTURE_PARAM(mongoc_database_ptr,       database),
                  FUTURE_PARAM(bson_error_ptr,            error))
+
+#pragma clang diagnostic pop

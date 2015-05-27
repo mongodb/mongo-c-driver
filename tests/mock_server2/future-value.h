@@ -26,8 +26,10 @@ typedef enum {
    future_value_bool_type,
    future_value_bson_error_ptr_type,
    future_value_bson_ptr_type,
+   future_value_const_bson_ptr_ptr_type,
    future_value_char_ptr_ptr_type,
    future_value_mongoc_bulk_operation_ptr_type,
+   future_value_mongoc_cursor_ptr_type,
    future_value_mongoc_database_ptr_type,
    future_value_uint32_t_type,
 } future_value_type_t;
@@ -35,13 +37,17 @@ typedef enum {
 
 typedef char **char_ptr_ptr;
 typedef mongoc_bulk_operation_t *mongoc_bulk_operation_ptr;
+typedef mongoc_cursor_t *mongoc_cursor_ptr;
 typedef mongoc_database_t *mongoc_database_ptr;
 typedef bson_t *bson_ptr;
+typedef const bson_t **const_bson_ptr_ptr;
 typedef bson_error_t *bson_error_ptr;
 
 
 typedef struct _future_value_t future_value_t;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
 
 struct _future_value_t
 {
@@ -49,9 +55,11 @@ struct _future_value_t
    union {
       bool bool_value;
       bson_ptr bson_ptr_value;
+      const_bson_ptr_ptr const_bson_ptr_ptr_value;
       bson_error_ptr bson_error_ptr_value;
       char_ptr_ptr char_ptr_ptr_value;
       mongoc_bulk_operation_ptr mongoc_bulk_operation_ptr_value;
+      mongoc_cursor_ptr mongoc_cursor_ptr_value;
       mongoc_database_ptr mongoc_database_ptr_value;
       uint32_t uint32_t_value;
    };
@@ -73,12 +81,16 @@ struct _future_value_t
 
 MAKE_GETTER_AND_SETTER(bool)
 MAKE_GETTER_AND_SETTER(bson_ptr)
+MAKE_GETTER_AND_SETTER(const_bson_ptr_ptr)
 MAKE_GETTER_AND_SETTER(bson_error_ptr)
 MAKE_GETTER_AND_SETTER(char_ptr_ptr)
 MAKE_GETTER_AND_SETTER(uint32_t)
 MAKE_GETTER_AND_SETTER(mongoc_bulk_operation_ptr)
+MAKE_GETTER_AND_SETTER(mongoc_cursor_ptr)
 MAKE_GETTER_AND_SETTER(mongoc_database_ptr)
 
 #undef MAKE_FUTURE_GETTER
+
+#pragma clang diagnostic pop
 
 #endif //FUTURE_VALUE_H
