@@ -2019,18 +2019,14 @@ bool
 has_host (const mongoc_host_list_t *hl,
           const char               *host_and_port)
 {
-   printf ("has_host %s\n", host_and_port);
-
    while (hl) {
       if (!strcmp(hl->host_and_port, host_and_port)) {
-         printf ("\tyes\n");
          return true;
       }
 
       hl = hl->next;
    }
 
-   printf ("\tno\n");
    return false;
 }
 
