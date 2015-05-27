@@ -8,8 +8,9 @@
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
-
-#define MONGOD_VERSION_HEX(a, b, c) ((a << 16) | (b << 8) | (c))
+#include "mock_server2/mock-server2.h"
+#include "mock_server2/future.h"
+#include "mock_server2/future-functions.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -249,107 +250,25 @@ test_wire_version (void)
 
 
 static void
-read_prefs_handler (mock_server_t   *server,
-                    mongoc_stream_t *stream,
-                    mongoc_rpc_t    *rpc,
-                    void            *user_data)
-{
-   bool *success = user_data;
-   int32_t len;
-   bson_iter_t iter;
-   bson_iter_t child;
-   bson_iter_t child2;
-   bson_iter_t child3;
-   bson_t b;
-   bson_t reply = BSON_INITIALIZER;
-   int r;
-
-   if (rpc->header.opcode == MONGOC_OPCODE_QUERY) {
-      memcpy (&len, rpc->query.query, 4);
-      len = BSON_UINT32_FROM_LE (len);
-
-      r = bson_init_static (&b, rpc->query.query, len);
-      assert (r);
-
-      r = bson_iter_init_find (&iter, &b, "$query");
-      assert (r);
-      assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
-
-      r = bson_iter_init_find (&iter, &b, "$readPreference");
-      assert (r);
-      assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
-
-      r = bson_iter_recurse (&iter, &child);
-      assert (r);
-
-      r = bson_iter_next (&child);
-      assert (r);
-      assert (BSON_ITER_HOLDS_UTF8 (&child));
-      assert (!strcmp ("mode", bson_iter_key (&child)));
-      assert (!strcmp ("secondaryPreferred", bson_iter_utf8 (&child, NULL)));
-
-      r = bson_iter_next (&child);
-      assert (r);
-      assert (BSON_ITER_HOLDS_ARRAY (&child));
-
-      r = bson_iter_recurse (&child, &child2);
-      assert (r);
-
-      r = bson_iter_next (&child2);
-      assert (r);
-      assert (BSON_ITER_HOLDS_DOCUMENT (&child2));
-
-      r = bson_iter_recurse (&child2, &child3);
-      assert (r);
-
-      r = bson_iter_next (&child3);
-      assert (r);
-      assert (BSON_ITER_HOLDS_UTF8 (&child3));
-      assert (!strcmp ("dc", bson_iter_key (&child3)));
-      assert (!strcmp ("ny", bson_iter_utf8 (&child3, NULL)));
-      r = bson_iter_next (&child3);
-      assert (!r);
-
-      r = bson_iter_next (&child2);
-      assert (r);
-
-      r = bson_iter_recurse (&child2, &child3);
-      assert (r);
-
-      r = bson_iter_next (&child3);
-      assert (!r);
-
-      mock_server_reply_simple (server, stream, rpc, MONGOC_REPLY_NONE, &reply);
-
-      *success = true;
-   }
-}
-
-
-static void
 test_mongoc_client_read_prefs (void)
 {
    mongoc_collection_t *collection;
    mongoc_read_prefs_t *read_prefs;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
-   mock_server_t *server;
-   uint16_t port;
+   mock_server2_t *server;
    const bson_t *doc;
-   bool success = false;
    bson_t b = BSON_INITIALIZER;
    bson_t q = BSON_INITIALIZER;
-   char *uristr;
+   future_t *future;
+   request_t *request;
 
-   port = 20000 + (rand () % 1000);
-
-   server = mock_server_new ("127.0.0.1", port, read_prefs_handler, &success);
-   mock_server_run_in_thread (server);
-
-   usleep (5000);
-
-   uristr = bson_strdup_printf ("mongodb://127.0.0.1:%hu/", port);
-   client = mongoc_client_new (uristr);
+   server = mock_server2_new ();
+   mock_server2_auto_ismaster (server, "{'ok': 1,"
+                                       " 'ismaster': true,"
+                                       " 'msg': 'isdbgrid'}");
+   mock_server2_run (server);
+   client = mongoc_client_new_from_uri (mock_server2_get_uri (server));
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
@@ -369,19 +288,37 @@ test_mongoc_client_read_prefs (void)
                                     NULL,
                                     read_prefs);
 
-   mongoc_cursor_next (cursor, &doc);
+   future = future_cursor_next (cursor, &doc);
 
-   usleep (50000);
+   request = mock_server2_receives_query (
+         server,
+         "test.test",
+         MONGOC_QUERY_NONE,
+         0,
+         0,
+         "{'$query': {},"
+         " '$readPreference': {'mode': 'secondaryPreferred',"
+         "                     'tags': [{'dc': 'ny'}, {}]}}",
+         NULL);
 
-   assert (success);
+   mock_server2_replies (request,
+                         0,                    /* flags */
+                         0,                    /* cursorId */
+                         0,                    /* startingFrom */
+                         1,                    /* numberReturned */
+                         "{'a': 1}");
 
+   /* mongoc_cursor_next returned true */
+   assert (future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   mock_server_quit (server, 0);
+   mock_server2_destroy (server);
    bson_destroy (&b);
-   bson_free (uristr);
 }
 
 
@@ -690,14 +627,17 @@ test_client_install (TestSuite *suite)
    bool local;
    local = !getenv ("MONGOC_DISABLE_MOCK_SERVER");
 
+   /* TODO: this double-negative is wrong and hides another bug CDRIVER-689 */
    if (!local) {
       TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
-      TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
    }
+
    if (getenv ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
       TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);
    }
+
+   TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
    TestSuite_Add (suite, "/Client/authenticate", test_mongoc_client_authenticate);
    TestSuite_Add (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
