@@ -16,18 +16,18 @@
 
 #include <stddef.h>
 
-#ifndef QUEUE_H
-#define QUEUE_H
+#ifndef SYNC_QUEUE_H
+#define SYNC_QUEUE_H
 
 
-typedef struct _queue_t queue_t;
+typedef struct _sync_queue sync_queue_t;
 
-queue_t *q_new ();
+sync_queue_t *q_new ();
 
-void q_put (queue_t *q, void *item);
+void q_put (sync_queue_t *q, void *item);
 
-void *q_get (queue_t *q, int64_t timeout_msec);
+void *q_get (sync_queue_t *q, int64_t timeout_msec);
 
-void q_destroy (queue_t *q);
+void q_destroy (sync_queue_t *q);
 
-#endif //QUEUE_H
+#endif //SYNC_QUEUE_H

@@ -17,20 +17,20 @@
 #include "mongoc-array-private.h"
 #include "mongoc-thread-private.h"
 
-#include "queue.h"
+#include "sync-queue.h"
 
 
-struct _queue_t {
+struct _sync_queue_t {
    mongoc_array_t array;
    mongoc_cond_t      cond;
    mongoc_mutex_t     mutex;
 };
 
 
-queue_t *
+sync_queue_t *
 q_new ()
 {
-   queue_t *q = bson_malloc (sizeof(queue_t));
+   sync_queue_t *q = bson_malloc (sizeof(sync_queue_t));
 
    _mongoc_array_init (&q->array, sizeof(void *));
    mongoc_cond_init (&q->cond);
@@ -40,7 +40,7 @@ q_new ()
 }
 
 void
-q_put (queue_t *q, void *item)
+q_put (sync_queue_t *q, void *item)
 {
    mongoc_mutex_lock (&q->mutex);
    _mongoc_array_append_val (&q->array, item);
@@ -50,7 +50,7 @@ q_put (queue_t *q, void *item)
 
 
 void *
-q_get (queue_t *q, int64_t timeout_msec)
+q_get (sync_queue_t *q, int64_t timeout_msec)
 {
    void *item = NULL;
    size_t i;
@@ -87,7 +87,7 @@ q_get (queue_t *q, int64_t timeout_msec)
 }
 
 void
-q_destroy (queue_t *q)
+q_destroy (sync_queue_t *q)
 {
    _mongoc_array_destroy (&q->array);
    mongoc_cond_destroy (&q->cond);

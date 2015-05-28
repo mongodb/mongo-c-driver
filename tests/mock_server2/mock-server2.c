@@ -22,7 +22,7 @@
 #include "mongoc-buffer-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
-#include "queue.h"
+#include "sync-queue.h"
 #include "mock-server2.h"
 #include "../test-conveniences.h"
 
@@ -49,7 +49,7 @@ struct _mock_server2_t
    mongoc_mutex_t mutex;
    int32_t last_response_id;
    mongoc_array_t worker_threads;
-   queue_t *q;
+   sync_queue_t *q;
    mongoc_array_t autoresponders;
    int last_autoresponder_id;
 
@@ -477,10 +477,10 @@ mock_server2_set_verbose (mock_server2_t *server, bool verbose)
 }
 
 
-queue_t *
+sync_queue_t *
 mock_server2_get_queue (mock_server2_t *server)
 {
-   queue_t *q;
+   sync_queue_t *q;
 
    mongoc_mutex_lock (&server->mutex);
    q = server->q;
@@ -513,7 +513,7 @@ mock_server2_receives_command (mock_server2_t *server,
                                const char     *command_name,
                                const char     *command_json)
 {
-   queue_t *q;
+   sync_queue_t *q;
    request_t *request;
 
    q = mock_server2_get_queue (server);
@@ -552,7 +552,7 @@ mock_server2_receives_query (mock_server2_t      *server,
                              const char          *query_json,
                              const char          *fields_json)
 {
-   queue_t *q;
+   sync_queue_t *q;
    request_t *request;
 
    q = mock_server2_get_queue (server);
@@ -977,7 +977,7 @@ worker_thread (void *data)
    bson_error_t error;
    int32_t msg_len;
    bool stopped;
-   queue_t *q;
+   sync_queue_t *q;
    request_t *request;
    mongoc_array_t autoresponders;
    ssize_t i;

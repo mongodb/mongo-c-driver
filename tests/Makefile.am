@@ -85,8 +85,8 @@ test_libmongoc_SOURCES = \
 	tests/mock_server2/make-future-getters.def \
 	tests/mock_server2/mock-server2.c \
 	tests/mock_server2/mock-server2.h \
-	tests/mock_server2/queue.c \
-	tests/mock_server2/queue.h \
+	tests/mock_server2/sync-queue.c \
+	tests/mock_server2/sync-queue.h \
 	tests/test-libmongoc.c \
 	tests/test-bulk.c \
 	tests/test-conveniences.c \
@@ -241,8 +241,8 @@ EXTRA_DIST += \
 	tests/mock_server2/make-future-getters.def \
 	tests/mock_server2/mock-server2.c \
 	tests/mock_server2/mock-server2.h \
-	tests/mock_server2/queue.c \
-	tests/mock_server2/queue.h \
+	tests/mock_server2/sync-queue.c \
+	tests/mock_server2/sync-queue.h \
 	tests/mock-server.c \
 	tests/mock-server.h \
 	tests/mongoc-tests.c \
