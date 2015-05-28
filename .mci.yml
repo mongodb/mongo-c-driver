@@ -69,19 +69,10 @@ libmongoc_variables:
 #######################################
 
 pre:
-    - command: expansions.fetch
-      params:
-          keys:
-              - local_key: aws_key
-                remote_key: project_aws_key
-              - local_key: aws_secret
-                remote_key: project_aws_secret
+    - command: shell.track
+
 post:
-    - command: shell.exec
-      params:
-          script: |
-              set -o verbose
-              ${killall_mci|pkill -9 mongod; pkill -9 mongos}
+    - command: shell.cleanup
 
 
 #######################################
@@ -132,12 +123,9 @@ tasks:
             script: |
                 set -o verbose
                 rm -rf libmongoc
+                mkdir libmongoc
                 rm -rf /data/db
                 mkdir -p /data/db
-      - command: shell.exec
-        params:
-            script: |
-                mkdir libmongoc
       - command: shell.exec
         params:
             working_dir: libmongoc
@@ -179,96 +167,96 @@ buildvariants:
 
 ################ 32-bit ###############
 
-- name: rhel55-32
-  display_name: RHEL 5.5 32-bit
-  expansions:
-      <<: *default_expansions
-      <<: *linux_expansions
-  run_on:
-      - rhel55-32
-  tasks: *std_tests
+#- name: rhel55-32
+#  display_name: RHEL 5.5 32-bit
+#  expansions:
+#      <<: *default_expansions
+#      <<: *linux_expansions
+#  run_on:
+#      - rhel55-32
+#  tasks: *std_tests
 
-- name: windows-32
-  display_name: Windows 32-bit
-  expansions:
-      <<: *default_expansions
-      <<: *mingw_expansions
-      mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-i386-latest.zip"
-  run_on:
-      - windows-32
-  tasks: *std_tests
+#- name: windows-32
+#  display_name: Windows 32-bit
+#  expansions:
+#      <<: *default_expansions
+#      <<: *mingw_expansions
+#      mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-i386-latest.zip"
+#  run_on:
+#      - windows-32
+#  tasks: *std_tests
 
 ########## i386 cross-compile #########
 
-- name: ubuntu-1204-i386
-  display_name: Ubuntu 12.04 i386
-  expansions:
-      <<: *default_expansions
-      <<: *i386_expansions
-      <<: *linux_expansions
-      <<: *ubuntu_i386_expansions
-      enable_ssl: no
-  run_on:
-      - ubuntu1204-test
-  tasks: *std_tests
+#- name: ubuntu-1204-i386
+#  display_name: Ubuntu 12.04 i386
+#  expansions:
+#      <<: *default_expansions
+#      <<: *i386_expansions
+#      <<: *linux_expansions
+#      <<: *ubuntu_i386_expansions
+#      enable_ssl: no
+#  run_on:
+#      - ubuntu1204-test
+#  tasks: *std_tests
 
-- name: ubuntu-1404-i386
-  display_name: Ubuntu 14.04 i386
-  expansions:
-      <<: *default_expansions
-      <<: *i386_expansions
-      <<: *linux_expansions
-      <<: *ubuntu_i386_expansions
-      enable_ssl: no
-  run_on:
-      - ubuntu1404-test
-  tasks: *std_tests
+#- name: ubuntu-1404-i386
+#  display_name: Ubuntu 14.04 i386
+#  expansions:
+#      <<: *default_expansions
+#      <<: *i386_expansions
+#      <<: *linux_expansions
+#      <<: *ubuntu_i386_expansions
+#      enable_ssl: no
+#  run_on:
+#      - ubuntu1404-test
+#  tasks: *std_tests
 
-- name: os-x-108-i386
-  display_name: OS X 10.8 i386
-  expansions:
-      <<: *default_expansions
-      <<: *osx_expansions
-      env_vars: CC="clang -m32 -march=i386"
-  run_on:
-      - osx-108
-  tasks: *std_tests
+#- name: os-x-108-i386
+#  display_name: OS X 10.8 i386
+#  expansions:
+#      <<: *default_expansions
+#      <<: *osx_expansions
+#      env_vars: CC="clang -m32 -march=i386"
+#  run_on:
+#      - osx-108
+#  tasks: *std_tests
 
 ########## i686 cross-compile #########
 
-- name: ubuntu-1204-i686
-  display_name: Ubuntu 12.04 i686
-  expansions:
-      <<: *default_expansions
-      <<: *i686_expansions
-      <<: *linux_expansions
-      pre_compile: sudo apt-get install -f -y autoconf libtool
-      enable_ssl: no
-  run_on:
-      - ubuntu1204-test
-  tasks: *std_tests
+#- name: ubuntu-1204-i686
+#  display_name: Ubuntu 12.04 i686
+#  expansions:
+#      <<: *default_expansions
+#      <<: *i686_expansions
+#      <<: *linux_expansions
+#      pre_compile: sudo apt-get install -f -y autoconf libtool
+#      enable_ssl: no
+#  run_on:
+#      - ubuntu1204-test
+#  tasks: *std_tests
 
-- name: ubuntu-1404-i686
-  display_name: Ubuntu 14.04 i686
-  expansions:
-      <<: *default_expansions
-      <<: *i686_expansions
-      <<: *linux_expansions
-      pre_compile: sudo apt-get install -f -y autoconf libtool
-      enable_ssl: no
-  run_on:
-      - ubuntu1404-test
-  tasks: *std_tests
+#- name: ubuntu-1404-i686
+#  display_name: Ubuntu 14.04 i686
+#  expansions:
+#      <<: *default_expansions
+#      <<: *i686_expansions
+#      <<: *linux_expansions
+#      pre_compile: sudo apt-get install -f -y autoconf libtool
+#      enable_ssl: no
+#  run_on:
+#      - ubuntu1404-test
+#  tasks: *std_tests
 
-- name: os-x-108-i686
-  display_name: OS X 10.8 i686
-  expansions:
-      <<: *default_expansions
-      <<: *osx_expansions
-      env_vars: CC="clang -m32 -march=i686"
-  run_on:
-      - osx-108
-  tasks: *std_tests
+#- name: os-x-108-i686
+#  display_name: OS X 10.8 i686
+#  expansions:
+#      <<: *default_expansions
+#      <<: *osx_expansions
+#      env_vars: CC="clang -m32 -march=i686"
+#  run_on:
+#      - osx-108
+#  tasks: *std_tests
 
 ############## x86_64 #################
 
@@ -313,12 +301,13 @@ buildvariants:
       - solaris
   tasks: *std_tests
 
-- name: windows-64-mingw64
-  display_name: Windows 64-bit MinGW-64
-  expansions:
-      <<: *default_expansions
-      pre_compile: dos2unix autogen.sh
-      path: "/cygdrive/c/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin:/cygdrive/c/sasl/"
-  run_on:
-      - windows-64-vs2013-test
-  tasks: *std_tests
+#- name: windows-64-mingw64
+#  display_name: Windows 64-bit MinGW-64
+#  expansions:
+#      <<: *default_expansions
+#      # must change dos to unix line endings for some reason
+#      pre_compile: sed -i 's/\r//' autogen.sh
+#      path: "/cygdrive/c/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin:/cygdrive/c/sasl/"
+#  run_on:
+#      - windows-64-vs2013-test
+#  tasks: *std_tests
