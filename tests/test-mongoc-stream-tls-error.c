@@ -320,7 +320,10 @@ test_mongoc_tls_handshake_stall (void)
 void
 test_stream_tls_error_install (TestSuite *suite)
 {
+   /* TLS stream doesn't detect hangup promptly on Solaris for some reason */
+#if !defined(__sun)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
+#endif
 
    /* TODO: CDRIVER-630 */
 /*
