@@ -510,7 +510,6 @@ mock_server2_get_queue (mock_server2_t *server)
 request_t *
 mock_server2_receives_command (mock_server2_t *server,
                                const char     *database_name,
-                               const char     *command_name,
                                const char     *command_json)
 {
    sync_queue_t *q;

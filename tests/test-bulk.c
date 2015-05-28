@@ -1584,7 +1584,6 @@ test_write_concern_error ()
 
    request = mock_server2_receives_command (
          mock_server,
-         "insert",
          "test",
          "{'insert': 'test',"
          " 'documents': [{'a': 1}],"

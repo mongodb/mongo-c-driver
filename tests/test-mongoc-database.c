@@ -418,8 +418,7 @@ test_get_collection_names_error (void)
    future = future_database_get_collection_names (database, &error);
    request = mock_server2_receives_command (server,
                                             "test",
-                                            "listCollections",
-                                            "{}");
+                                            "{'listCollections': 1}");
    mock_server2_hangs_up (request);
    names = future_get_char_ptr_ptr (future);
    assert (!names);
