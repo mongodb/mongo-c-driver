@@ -45,61 +45,64 @@
 #define XPASTE(a, b) PASTE(a,b)
 #define APPLYX_(EACH_FN, MACRO_FN, ...) MACRO_FN(EACH_FN, __VA_ARGS__)
 
-/* thanks http://sohu.io/questions/2016985/foreach-macro-on-macros-arguments */
+/* thanks http://sohu.io/questions/2016985/foreach-macro-on-macros-arguments
 
-#define APPLYX1(X, a)                X(a)
-#define APPLYX2(X, a, b)             X(a) X(b)
-#define APPLYX3(X, a, b, c)          X(a) X(b) X(c)
-#define APPLYX4(X, a, b, c, d)       X(a) X(b) X(c) X(d)
-#define APPLYX5(X, a, b, c, d, e)    X(a) X(b) X(c) X(d) X(e)
-#define APPLYX6(X, a, b, c, d, e, f) X(a) X(b) X(c) X(d) X(e) X(f)
-#define APPLYX7(X, a, b, c, d, e, f, g) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g)
-#define APPLYX8(X, a, b, c, d, e, f, g, h) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h)
-#define APPLYX9(X, a, b, c, d, e, f, g, h, i) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i)
-#define APPLYX10(X, a, b, c, d, e, f, g, h, i, j) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j)
-#define APPLYX11(X, a, b, c, d, e, f, g, h, i, j, k) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k)
-#define APPLYX12(X, a, b, c, d, e, f, g, h, i, j, k, l) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l)
-#define APPLYX13(X, a, b, c, d, e, f, g, h, i, j, k, l, m) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l) X(m)
-#define APPLYX14(X, a, b, c, d, e, f, g, h, i, j, k, l, m, n) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l) X(m) X(n)
-#define APPLYX15(X, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l) X(m) X(n) X(o)
+run this python:
+
+for i in range(1, 16):
+    params = ', '.join([chr(ord('a') + j) for j in range(i)])
+    calls = ' '.join(['X(%s, %d)' % (chr(ord('a') + j), j)
+                      for j in range(i)])
+
+    print("#define APPLYX%d(X, %s) %s" % (
+        i, params, calls))
+*/
+
+#define APPLYX1(X, a) X(a, 0)
+#define APPLYX2(X, a, b) X(a, 0) X(b, 1)
+#define APPLYX3(X, a, b, c) X(a, 0) X(b, 1) X(c, 2)
+#define APPLYX4(X, a, b, c, d) X(a, 0) X(b, 1) X(c, 2) X(d, 3)
+#define APPLYX5(X, a, b, c, d, e) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4)
+#define APPLYX6(X, a, b, c, d, e, f) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5)
+#define APPLYX7(X, a, b, c, d, e, f, g) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6)
+#define APPLYX8(X, a, b, c, d, e, f, g, h) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7)
+#define APPLYX9(X, a, b, c, d, e, f, g, h, i) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8)
+#define APPLYX10(X, a, b, c, d, e, f, g, h, i, j) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9)
+#define APPLYX11(X, a, b, c, d, e, f, g, h, i, j, k) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9) X(k, 10)
+#define APPLYX12(X, a, b, c, d, e, f, g, h, i, j, k, l) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9) X(k, 10) X(l, 11)
+#define APPLYX13(X, a, b, c, d, e, f, g, h, i, j, k, l, m) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9) X(k, 10) X(l, 11) X(m, 12)
+#define APPLYX14(X, a, b, c, d, e, f, g, h, i, j, k, l, m, n) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9) X(k, 10) X(l, 11) X(m, 12) X(n, 13)
+#define APPLYX15(X, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9) X(k, 10) X(l, 11) X(m, 12) X(n, 13) X(o, 14)
+
 
 #define FOREACH(EACH_FN, ...) APPLYX_(EACH_FN, XPASTE(APPLYX, ARGC(__VA_ARGS__)), __VA_ARGS__)
 
-/* apologies to everyone */
+/* run this python:
+
+for i in range(1, 16):
+    params = ', '.join([chr(ord('a') + j) for j in range(i)])
+    calls = ' '.join(['X(%s, %d)' % (chr(ord('a') + j), j)
+                      for j in range(i - 1)])
+
+    print("#define APPLYX_MINUS_ONE%d(X, %s) %s" % (
+        i, params, calls))
+*/
 
 #define APPLYX_MINUS_ONE1(X, a)
-#define APPLYX_MINUS_ONE2(X, a, b)             X(a)
-#define APPLYX_MINUS_ONE3(X, a, b, c)          X(a) X(b)
-#define APPLYX_MINUS_ONE4(X, a, b, c, d)       X(a) X(b) X(c)
-#define APPLYX_MINUS_ONE5(X, a, b, c, d, e)    X(a) X(b) X(c) X(d)
-#define APPLYX_MINUS_ONE6(X, a, b, c, d, e, f) X(a) X(b) X(c) X(d) X(e)
-#define APPLYX_MINUS_ONE7(X, a, b, c, d, e, f, g) \
-    X(a) X(b) X(c) X(d) X(e) X(f)
-#define APPLYX_MINUS_ONE8(X, a, b, c, d, e, f, g, h) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g)
-#define APPLYX_MINUS_ONE9(X, a, b, c, d, e, f, g, h, i) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h)
-#define APPLYX_MINUS_ONE10(X, a, b, c, d, e, f, g, h, i, j) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i)
-#define APPLYX_MINUS_ONE11(X, a, b, c, d, e, f, g, h, i, j, k) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j)
-#define APPLYX_MINUS_ONE12(X, a, b, c, d, e, f, g, h, i, j, k, l) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k)
-#define APPLYX_MINUS_ONE13(X, a, b, c, d, e, f, g, h, i, j, k, l, m) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l)
-#define APPLYX_MINUS_ONE14(X, a, b, c, d, e, f, g, h, i, j, k, l, m, n) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l) X(m)
-#define APPLYX_MINUS_ONE15(X, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) \
-    X(a) X(b) X(c) X(d) X(e) X(f) X(g) X(h) X(i) X(j) X(k) X(l) X(m) X(n)
+#define APPLYX_MINUS_ONE2(X, a, b) X(a, 0)
+#define APPLYX_MINUS_ONE3(X, a, b, c) X(a, 0) X(b, 1)
+#define APPLYX_MINUS_ONE4(X, a, b, c, d) X(a, 0) X(b, 1) X(c, 2)
+#define APPLYX_MINUS_ONE5(X, a, b, c, d, e) X(a, 0) X(b, 1) X(c, 2) X(d, 3)
+#define APPLYX_MINUS_ONE6(X, a, b, c, d, e, f) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4)
+#define APPLYX_MINUS_ONE7(X, a, b, c, d, e, f, g) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5)
+#define APPLYX_MINUS_ONE8(X, a, b, c, d, e, f, g, h) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6)
+#define APPLYX_MINUS_ONE9(X, a, b, c, d, e, f, g, h, i) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7)
+#define APPLYX_MINUS_ONE10(X, a, b, c, d, e, f, g, h, i, j) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8)
+#define APPLYX_MINUS_ONE11(X, a, b, c, d, e, f, g, h, i, j, k) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9)
+#define APPLYX_MINUS_ONE12(X, a, b, c, d, e, f, g, h, i, j, k, l) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9) X(k, 10)
+#define APPLYX_MINUS_ONE13(X, a, b, c, d, e, f, g, h, i, j, k, l, m) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9) X(k, 10) X(l, 11)
+#define APPLYX_MINUS_ONE14(X, a, b, c, d, e, f, g, h, i, j, k, l, m, n) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9) X(k, 10) X(l, 11) X(m, 12)
+#define APPLYX_MINUS_ONE15(X, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) X(a, 0) X(b, 1) X(c, 2) X(d, 3) X(e, 4) X(f, 5) X(g, 6) X(h, 7) X(i, 8) X(j, 9) X(k, 10) X(l, 11) X(m, 12) X(n, 13)
 
 #define FOREACH_EXCEPT_LAST(EACH_FN, ...) APPLYX_(EACH_FN, XPASTE(APPLYX_MINUS_ONE, ARGC(__VA_ARGS__)), __VA_ARGS__)
 

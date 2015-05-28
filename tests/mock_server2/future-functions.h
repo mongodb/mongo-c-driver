@@ -28,7 +28,7 @@
 #undef FUTURE_FUNCTION
 
 #define FUTURE_PARAM(TYPE, NAME) TYPE NAME
-#define PARAM_DECL(decl) decl,
+#define PARAM_DECL(decl, i) decl,
 #define LAST_PARAM_DECL(decl) decl
 
 /* declare functions like :

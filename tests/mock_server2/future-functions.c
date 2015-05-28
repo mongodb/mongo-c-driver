@@ -27,18 +27,23 @@
 
 #include "future-functions.h"
 
+#undef TYPE_
+#undef TYPE
+#undef NAME_
+#undef NAME
 
-#undef FUTURE_PARAM
-#undef FUTURE_SET_
-#undef FUTURE_SET
-#undef FUTURE_FUNCTION
+/* in future-functions.def we define params like "FUTURE_PARAM(type, name)",
+ * these macros unpack type and name from the pair */
+#define TYPE_(X, Y) X
+#define TYPE(PAIR) TYPE_ PAIR
+#define NAME_(X, Y) Y
+#define NAME(PAIR) NAME_ PAIR
 
 /* define functions like:
  *
  *    static void *
  *    background_mongoc_cursor_next (void *data)
  *    {
- *       int i = 0;
  *       future_t *future = (future_t *) data;
  *       future_t *copy = future_new_copy (future);
  *       future_value_t return_value;
@@ -46,8 +51,8 @@
  *       future_value_set_bool (
  *           &return_value,
  *           mongoc_cursor_next (
- *              future_value_get_mongoc_cursor_ptr (future->argv[i++]),
- *              future_value_get_bson_ptr_ptr (future->argv[i++]));
+ *              future_value_get_mongoc_cursor_ptr (&future->argv[0]),
+ *              future_value_get_bson_ptr_ptr (&future->argv[2 - 1]));
  *
  *       future_destroy (copy);
  *       future_resolve (future, return_value);
@@ -58,20 +63,20 @@
  * The future is copied so we can unlock it while calling mongoc_cursor_next.
  */
 
+#undef FUTURE_PARAM
+#undef FUTURE_GET
+#undef FUTURE_GET_LAST
+#undef FUTURE_FUNCTION
+
 #define FUTURE_PARAM(TYPE, NAME) (TYPE, NAME)
-
-/* this pattern turns MACRO((type, name)) into MACRO_(type, name) */
-#define FUTURE_GET_(TYPE, NAME) future_value_get_ ## TYPE (&future->argv[i++]),
-#define FUTURE_GET(PARAM) FUTURE_GET_ PARAM
-
-#define FUTURE_GET_LAST_(TYPE, NAME) future_value_get_ ## TYPE (&future->argv[i++])
-#define FUTURE_GET_LAST(PARAM) FUTURE_GET_LAST_ PARAM
+#define FUTURE_GET_LAST(PARAM, i) XPASTE(future_value_get_, TYPE(PARAM)) (&future->argv[i])
+/* add comma */
+#define FUTURE_GET(PARAM, i) FUTURE_GET_LAST(PARAM, i),
 
 #define FUTURE_FUNCTION(RET_TYPE, FUTURE_FN, FN, ...) \
    static void * \
    background_ ## FN (void *data) \
    { \
-      int i = 0; \
       future_t *future = (future_t *) data; \
       future_t *copy = future_new_copy (future); \
       future_value_t return_value; \
@@ -81,7 +86,7 @@
          FN ( \
             /* avoid trailing comma */ \
             FOREACH_EXCEPT_LAST(FUTURE_GET, __VA_ARGS__) \
-            FUTURE_GET_LAST(LAST_ARG(__VA_ARGS__)) \
+            FUTURE_GET_LAST(LAST_ARG(__VA_ARGS__), ARGC(__VA_ARGS__) - 1) \
       )); \
       \
       future_destroy (copy); \
@@ -94,46 +99,29 @@
 #include "future-functions.def"
 
 #undef FUTURE_PARAM
-#undef PARAM_DECL_
-#undef PARAM_DECL
-#undef LAST_PARAM_DECL_
-#undef LAST_PARAM_DECL
-#undef FUTURE_SET_
-#undef FUTURE_SET
+#undef FUTURE_GET
+#undef FUTURE_GET_LAST
 #undef FUTURE_FUNCTION
 
-
-#undef FUTURE_PARAM
-#undef PARAM_DECL_
 #undef PARAM_DECL
-#undef LAST_PARAM_DECL_
 #undef LAST_PARAM_DECL
-#undef FUTURE_SET_
 #undef FUTURE_SET
 #undef FUTURE_FUNCTION
 
 #define FUTURE_PARAM(TYPE, NAME) (TYPE, NAME)
-
-/* this pattern turns MACRO((type, name)) into MACRO_(type, name) */
-#define PARAM_DECL_(TYPE, NAME) TYPE NAME,
-#define PARAM_DECL(PARAM) PARAM_DECL_ PARAM
-
-#define LAST_PARAM_DECL_(TYPE, NAME) TYPE NAME
-#define LAST_PARAM_DECL(PARAM) LAST_PARAM_DECL_ PARAM
-
-#define FUTURE_SET_(TYPE, NAME) future_value_set_ ## TYPE (&future->argv[i++], \
-                                                           NAME);
-#define FUTURE_SET(PARAM) FUTURE_SET_ PARAM
+#define LAST_PARAM_DECL(PARAM) TYPE(PARAM) NAME(PARAM)
+/* add comma */
+#define PARAM_DECL(PARAM, i) LAST_PARAM_DECL(PARAM),
+#define FUTURE_SET(PARAM, i) XPASTE(future_value_set_, TYPE(PARAM)) (&future->argv[i], NAME(PARAM));
 
 /* define functions like :
  *    future_t *
  *    future_cursor_next (mongoc_cursor_t *cursor,
  *                        bson_t **doc)
  *    {
- *       int i = 0;
  *       future_t *future = future_new (future_value_bool_type, 2);
- *       future_value_set_mongoc_cursor_ptr (future->argv[i++], cursor);
- *       future_value_set_bson_ptr_ptr (future->argv[i++], doc);
+ *       future_value_set_mongoc_cursor_ptr (&future->argv[0], cursor);
+ *       future_value_set_bson_ptr_ptr (&future->argv[1], doc);
  *       future_start (future, background_mongoc_cursor_next);
  *       return future;
  *    }
@@ -147,7 +135,6 @@
       LAST_PARAM_DECL(LAST_ARG(__VA_ARGS__)) \
    ) \
    { \
-      int i = 0; \
       future_t *future = future_new (future_value_ ## RET_TYPE ## _type, \
                                      ARGC(__VA_ARGS__)); \
       FOREACH(FUTURE_SET, __VA_ARGS__) \
@@ -159,10 +146,12 @@
 #include "future-functions.def"
 
 #undef FUTURE_PARAM
-#undef PARAM_DECL_
 #undef PARAM_DECL
-#undef LAST_PARAM_DECL_
 #undef LAST_PARAM_DECL
-#undef FUTURE_SET_
 #undef FUTURE_SET
 #undef FUTURE_FUNCTION
+
+#undef TYPE_
+#undef TYPE
+#undef NAME_
+#undef NAME
