@@ -597,6 +597,56 @@ test_server_status (void)
 
 
 static void
+test_get_database_names (void)
+{
+   mock_server2_t *server = mock_server2_with_autoismaster (0);
+   mongoc_client_t *client;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   char **names;
+
+   mock_server2_run (server);
+   client = mongoc_client_new_from_uri (mock_server2_get_uri (server));
+   future = future_client_get_database_names (client, &error);
+   request = mock_server2_receives_command (server,
+                                            "admin",
+                                            MONGOC_QUERY_SLAVE_OK,
+                                            "{'listDatabases': 1}");
+   mock_server2_replies (
+         request, 0, 0, 0, 1,
+         "{'ok': 1.0, 'databases': [{'name': 'a'}, {'name': 'b'}]}");
+   names = future_get_char_ptr_ptr (future);
+   assert (!strcmp(names[0], "a"));
+   assert (!strcmp(names[1], "b"));
+   assert (NULL == names[2]);
+
+   bson_strfreev (names);
+   request_destroy (request);
+   future_destroy (future);
+
+   future = future_client_get_database_names (client, &error);
+   request = mock_server2_receives_command (server,
+                                            "admin",
+                                            MONGOC_QUERY_SLAVE_OK,
+                                            "{'listDatabases': 1}");
+   mock_server2_replies (
+         request, 0, 0, 0, 1,
+         "{'ok': 0.0, 'code': 17, 'errmsg': 'err'}");
+
+   names = future_get_char_ptr_ptr (future);
+   assert (!names);
+   ASSERT_CMPINT (MONGOC_ERROR_QUERY, ==, error.domain);
+   ASSERT_CMPSTR ("err", error.message);
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_client_destroy (client);
+   mock_server2_destroy (server);
+}
+
+
+static void
 test_mongoc_client_ipv6 (void)
 {
    mongoc_client_t *client;
@@ -645,4 +695,5 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
+   TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
 }

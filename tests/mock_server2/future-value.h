@@ -29,6 +29,7 @@ typedef enum {
    future_value_const_bson_ptr_ptr_type,
    future_value_char_ptr_ptr_type,
    future_value_mongoc_bulk_operation_ptr_type,
+   future_value_mongoc_client_ptr_type,
    future_value_mongoc_cursor_ptr_type,
    future_value_mongoc_database_ptr_type,
    future_value_uint32_t_type,
@@ -37,6 +38,7 @@ typedef enum {
 
 typedef char **char_ptr_ptr;
 typedef mongoc_bulk_operation_t *mongoc_bulk_operation_ptr;
+typedef mongoc_client_t *mongoc_client_ptr;
 typedef mongoc_cursor_t *mongoc_cursor_ptr;
 typedef mongoc_database_t *mongoc_database_ptr;
 typedef bson_t *bson_ptr;
@@ -59,6 +61,7 @@ struct _future_value_t
       bson_error_ptr bson_error_ptr_value;
       char_ptr_ptr char_ptr_ptr_value;
       mongoc_bulk_operation_ptr mongoc_bulk_operation_ptr_value;
+      mongoc_client_ptr mongoc_client_ptr_value;
       mongoc_cursor_ptr mongoc_cursor_ptr_value;
       mongoc_database_ptr mongoc_database_ptr_value;
       uint32_t uint32_t_value;
@@ -86,6 +89,7 @@ MAKE_GETTER_AND_SETTER(bson_error_ptr)
 MAKE_GETTER_AND_SETTER(char_ptr_ptr)
 MAKE_GETTER_AND_SETTER(uint32_t)
 MAKE_GETTER_AND_SETTER(mongoc_bulk_operation_ptr)
+MAKE_GETTER_AND_SETTER(mongoc_client_ptr)
 MAKE_GETTER_AND_SETTER(mongoc_cursor_ptr)
 MAKE_GETTER_AND_SETTER(mongoc_database_ptr)
 
