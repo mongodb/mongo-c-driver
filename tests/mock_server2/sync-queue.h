@@ -20,7 +20,7 @@
 #define SYNC_QUEUE_H
 
 
-typedef struct _sync_queue sync_queue_t;
+typedef struct _sync_queue_t sync_queue_t;
 
 sync_queue_t *q_new ();
 
