@@ -970,7 +970,6 @@ worker_thread (void *data)
    worker_closure_t *closure = (worker_closure_t *) data;
    mock_server2_t *server = closure->server;
    mongoc_stream_t *client_stream = closure->client_stream;
-   uint16_t port = closure->port;
    mongoc_buffer_t buffer;
    mongoc_rpc_t *rpc = NULL;
    bool handled;
