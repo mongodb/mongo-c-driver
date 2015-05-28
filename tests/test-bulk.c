@@ -1585,9 +1585,11 @@ test_write_concern_error ()
    request = mock_server2_receives_command (
          mock_server,
          "test",
+         MONGOC_QUERY_NONE,
          "{'insert': 'test',"
-         " 'documents': [{'a': 1}],"
-         " 'writeConcern: {'w': 2, 'wtimeout': 100}}");
+         " 'writeConcern': {'w': 2, 'wtimeout': 100},"
+         " 'ordered': false,"
+         " 'documents': [{'a': 1}]}");
 
    assert (request);
    mock_server2_replies (request,

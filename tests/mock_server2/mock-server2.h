@@ -54,9 +54,10 @@ bool mock_server2_get_verbose (mock_server2_t *server);
 
 void mock_server2_set_verbose (mock_server2_t *server, bool verbose);
 
-request_t *mock_server2_receives_command (mock_server2_t *server,
-                                          const char     *database_name,
-                                          const char     *command_json);
+request_t *mock_server2_receives_command (mock_server2_t       *server,
+                                          const char           *database_name,
+                                          mongoc_query_flags_t  flags,
+                                          const char           *command_json);
 
 request_t * mock_server2_receives_query (mock_server2_t          *server,
                                          const char              *ns,

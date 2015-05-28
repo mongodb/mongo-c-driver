@@ -96,7 +96,8 @@ request_matches_query (const request_t     *request,
                        uint32_t             skip,
                        uint32_t             n_return,
                        const char          *query_json,
-                       const char          *fields_json);
+                       const char          *fields_json,
+                       bool                 is_command);
 
 void autoresponder_handle_destroy (autoresponder_handle_t *handle);
 
@@ -508,18 +509,32 @@ mock_server2_get_queue (mock_server2_t *server)
  */
 
 request_t *
-mock_server2_receives_command (mock_server2_t *server,
-                               const char     *database_name,
-                               const char     *command_json)
+mock_server2_receives_command (mock_server2_t         *server,
+                               const char             *database_name,
+                               mongoc_query_flags_t    flags,
+                               const char             *command_json)
 {
    sync_queue_t *q;
    request_t *request;
+   char *ns = bson_strdup_printf ("%s.$cmd", database_name);
 
    q = mock_server2_get_queue (server);
    /* TODO: get timeout val from mock_server2_t */
    request = (request_t *) q_get (q, 100 * 1000);
 
-   /* TODO: match */
+   if (!request_matches_query (request,
+                               ns,
+                               flags,
+                               0,
+                               1,
+                               command_json,
+                               NULL,
+                               true)) {
+      request_destroy (request);
+      request = NULL;
+   }
+
+   bson_free (ns);
 
    return request;
 }
@@ -564,7 +579,8 @@ mock_server2_receives_query (mock_server2_t      *server,
                                skip,
                                n_return,
                                query_json,
-                               fields_json)) {
+                               fields_json,
+                               false)) {
       request_destroy (request);
       return NULL;
    }
@@ -779,7 +795,8 @@ request_matches_query (const request_t     *request,
                        uint32_t             skip,
                        uint32_t             n_return,
                        const char          *query_json,
-                       const char          *fields_json)
+                       const char          *fields_json,
+                       bool                 is_command)
 {
    const mongoc_rpc_t *rpc = &request->request_rpc;
    bson_t *doc;
@@ -794,8 +811,13 @@ request_matches_query (const request_t     *request,
     *       return false;
     *   }
     */
-   if (request->is_command) {
+   if (request->is_command && !is_command) {
       MONGOC_ERROR ("expected query, got command");
+      return false;
+   }
+
+   if (!request->is_command && is_command) {
+      MONGOC_ERROR ("expected command, got query");
       return false;
    }
 
@@ -833,7 +855,7 @@ request_matches_query (const request_t     *request,
       doc = NULL;
    }
 
-   if (!match_json (doc, query_json, false, __FILE__, __LINE__, __FUNCTION__)) {
+   if (!match_json (doc, query_json, is_command, __FILE__, __LINE__, __FUNCTION__)) {
       /* match_json has logged the err */
       return false;
    }
