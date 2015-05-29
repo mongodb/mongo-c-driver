@@ -161,8 +161,11 @@ class Convert(object):
         self._writeCommand('.fi')
 
     def _generateCode(self, code):
-        if self._get_parent(code).tag == P:
-            self._writeCommand('.B %s' % code.text)
+        text = code.text
+        is_synopsis = self._get_parent(code).tag.endswith('synopsis')
+        if text and '\n' not in text and not is_synopsis:
+            text = text.replace('()', '(%s)' % self.section)
+            self._writeCommand('.BR ' + text)
         else:
             self._writeCommand('.nf')
             self._writeLine(code.text)
@@ -257,7 +260,7 @@ class Convert(object):
 
     def _generateTr(self, tr):
         self._writeCommand('.TP')
-        self._write('.B ')
+        self._writeCommand('.B')
         for child in tr.getchildren():
             self._generateElement(child)
         self._writeCommand('.LP')
