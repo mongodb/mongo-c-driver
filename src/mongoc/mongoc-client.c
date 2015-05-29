@@ -1321,7 +1321,7 @@ mongoc_client_get_database_names (mongoc_client_t *client,
          }
    }
 
-   if (!ret) {
+   if (!ret && !mongoc_cursor_error (cursor, error)) {
       ret = bson_malloc0 (sizeof (void*));
    }
 
