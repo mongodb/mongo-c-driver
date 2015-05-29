@@ -93,10 +93,6 @@
       <tr><td><p>w</p></td><td>
         <table>
         <tr>
-          <td><p>-1</p></td>
-          <td><p>The driver will not acknowledge write operations and will suppress all network or socket errors.</p></td>
-        </tr>
-        <tr>
           <td><p>0</p></td>
           <td><p>The driver will not acknowledge write operations but will pass or handle any network and socket errors that it receives to the client. If you disable write concern but enable the getLastError command’s w option, w overrides the w option.</p></td>
         </tr>
