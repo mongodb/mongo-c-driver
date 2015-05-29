@@ -29,7 +29,7 @@ mongoc_collection_destroy (mongoc_collection_t *collection);
 
   <section id="description">
     <title>Description</title>
-    <p>This function shall destroy a <code xref="mongoc_collection_t">mongoc_collection_t</code> and it's associated resources.</p>
+    <p>This function shall destroy a <code xref="mongoc_collection_t">mongoc_collection_t</code> and its associated resources.</p>
     <note style="warning"><p>Always destroy a <code xref="mongoc_cursor_t">mongoc_cursor_t</code> created from a collection before destroying the collection.</p></note>
   </section>
 

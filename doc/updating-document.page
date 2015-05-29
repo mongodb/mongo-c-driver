@@ -97,7 +97,7 @@ fail:
     <note style="warning">
       <p>
         When using the MongoDB C Driver, you must call <code>mongoc_init()</code> at the beginning of your application.
-        This allows the driver to initialize it's required subsystems.
+        This allows the driver to initialize its required subsystems.
         Failure to do so will result in a runtime crash.
       </p>
     </note>
