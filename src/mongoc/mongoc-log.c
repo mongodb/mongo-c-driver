@@ -54,6 +54,16 @@ mongoc_log_set_handler (mongoc_log_func_t  log_func,
 }
 
 
+/* just for testing */
+void
+_mongoc_log_get_handler (mongoc_log_func_t  *log_func,
+                         void              **user_data)
+{
+   *log_func = gLogFunc;
+   *user_data = gLogData;
+}
+
+
 void
 mongoc_log (mongoc_log_level_t  log_level,
             const char         *log_domain,
