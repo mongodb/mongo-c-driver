@@ -769,6 +769,14 @@ mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
    RETURN(false);
 }
 
+const bson_value_t *
+mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file)
+{
+   bson_return_val_if_fail (file, NULL);
+
+   return &file->files_id;
+}
+
 int64_t
 mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file)
 {

@@ -178,6 +178,64 @@ test_list (void)
 
 
 static void
+test_properties (void)
+{
+   mongoc_client_t *client;
+   mongoc_gridfs_t *gridfs;
+   bson_error_t error;
+   bson_t *doc_in;
+   mongoc_gridfs_file_t *file;
+   mongoc_gridfs_file_list_t *list;
+   bson_t query = BSON_INITIALIZER;
+   const bson_value_t *file_id;
+   const char *alias0, *alias1;
+
+   client = test_framework_client_new (NULL);
+
+   gridfs = get_test_gridfs (client, "list", &error);
+   assert (gridfs);
+
+   mongoc_gridfs_drop (gridfs, &error);
+
+   /* the C Driver sets _id to an ObjectId, but other drivers can do anything */
+   doc_in = BCON_NEW (
+         "_id", BCON_INT32 (1),
+         "md5", BCON_UTF8 ("md5"),
+         "filename", BCON_UTF8 ("filename"),
+         "contentType", BCON_UTF8 ("content_type"),
+         "aliases", "[", BCON_UTF8 ("alias0"), BCON_UTF8 ("alias1"), "]",
+         "metadata", "{", "key", BCON_UTF8 ("value"), "}",
+         "chunkSize", BCON_INT32 (100));
+
+   assert (mongoc_collection_insert (mongoc_gridfs_get_files (gridfs),
+                                     MONGOC_INSERT_NONE, doc_in, NULL, NULL));
+
+   list = mongoc_gridfs_find (gridfs, &query);
+   file = mongoc_gridfs_file_list_next (list);
+   file_id = mongoc_gridfs_file_get_id (file);
+   assert (file_id);
+   ASSERT_CMPINT (BSON_TYPE_INT32, ==, file_id->value_type);
+   ASSERT_CMPINT (1, ==, file_id->value.v_int32);
+   ASSERT_CMPSTR ("md5", mongoc_gridfs_file_get_md5 (file));
+   ASSERT_CMPSTR ("filename", mongoc_gridfs_file_get_filename (file));
+   ASSERT_CMPSTR ("content_type", mongoc_gridfs_file_get_content_type (file));
+   assert (BCON_EXTRACT ((bson_t *)mongoc_gridfs_file_get_aliases (file),
+                         "0", BCONE_UTF8 (alias0),
+                         "1", BCONE_UTF8 (alias1)));
+
+   ASSERT_CMPSTR ("alias0", alias0);
+   ASSERT_CMPSTR ("alias1", alias1);
+
+   drop_collections (gridfs, &error);
+   mongoc_gridfs_file_destroy (file);
+   mongoc_gridfs_file_list_destroy (list);
+   bson_destroy (doc_in);
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_create_from_stream (void)
 {
    mongoc_gridfs_t *gridfs;
@@ -423,6 +481,7 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/create", test_create);
    TestSuite_Add (suite, "/GridFS/create_from_stream", test_create_from_stream);
    TestSuite_Add (suite, "/GridFS/list", test_list);
+   TestSuite_Add (suite, "/GridFS/properties", test_properties);
    TestSuite_Add (suite, "/GridFS/read", test_read);
    TestSuite_Add (suite, "/GridFS/stream", test_stream);
    TestSuite_Add (suite, "/GridFS/remove", test_remove);
