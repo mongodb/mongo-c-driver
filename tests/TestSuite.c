@@ -662,6 +662,8 @@ TestSuite_RunSerial (TestSuite *suite) /* IN */
 }
 
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcomment"
 static void
 TestSuite_RunNamed (TestSuite *suite,     /* IN */
                     const char *testname) /* IN */
@@ -701,6 +703,7 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
 
    Mutex_Destroy (&mutex);
 }
+#pragma clang diagnostic pop
 
 
 int
