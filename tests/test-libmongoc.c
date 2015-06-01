@@ -601,11 +601,11 @@ test_framework_global_ssl_opts_init (void)
 static void
 test_framework_global_ssl_opts_cleanup (void)
 {
-   bson_free (gSSLOptions.pem_file);
-   bson_free (gSSLOptions.pem_pwd);
-   bson_free (gSSLOptions.ca_file);
-   bson_free (gSSLOptions.ca_dir);
-   bson_free (gSSLOptions.crl_file);
+   bson_free ((void *)gSSLOptions.pem_file);
+   bson_free ((void *)gSSLOptions.pem_pwd);
+   bson_free ((void *)gSSLOptions.ca_file);
+   bson_free ((void *)gSSLOptions.ca_dir);
+   bson_free ((void *)gSSLOptions.crl_file);
 }
 #endif
 
