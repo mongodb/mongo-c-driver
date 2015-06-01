@@ -36,7 +36,7 @@ struct _mongoc_sasl_t
 {
    sasl_callback_t  callbacks [4];
    sasl_conn_t     *conn;
-   bool      done;
+   bool             done;
    int              step;
    char            *mechanism;
    char            *user;
