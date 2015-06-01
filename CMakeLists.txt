@@ -8,6 +8,7 @@ include(InstallRequiredSystemLibraries)
 include(FindOpenSSL)
 
 include(FindBSON REQUIRED)
+include(FindSASL2)
 
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
@@ -30,7 +31,11 @@ else()
    set (MONGOC_ENABLE_SSL 0)
 endif ()
 
-set (MONGOC_ENABLE_SASL 0)
+if (SASL2_FOUND)
+   set (MONGOC_ENABLE_SASL 1)
+else()
+   set (MONGOC_ENABLE_SASL 0)
+endif ()
 
 configure_file (
    "${SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
@@ -161,6 +166,13 @@ if (OPENSSL_FOUND)
    )
    set(LIBS ${LIBS} ${OPENSSL_LIBRARIES})
    include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
+if (SASL2_FOUND)
+   set (HEADERS ${HEADERS} ${SOURCE_DIR}/src/mongoc/mongoc-sasl-private.h)
+   set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
+   set(LIBS ${LIBS} ${SASL2_LIBRARY})
+   include_directories(${SASL2_INCLUDE_DIR})
 endif()
 
 if (MSVC)
