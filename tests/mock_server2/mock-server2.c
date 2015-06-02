@@ -18,9 +18,9 @@
 #include <mongoc-rpc-private.h>
 #include "mongoc.h"
 
-#include "mongoc-rpc-private.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-socket-private.h"
+#include "mongoc-stream-tls.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 #include "sync-queue.h"
@@ -161,7 +161,8 @@ mock_server2_t *
 mock_server2_with_autoismaster (int32_t max_wire_version)
 {
    mock_server2_t *server = mock_server2_new ();
-   char *ismaster = bson_strdup_printf ("{'ismaster': true,"
+   char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
+                                        " 'ismaster': true,"
                                         " 'minWireVersion': 0,"
                                         " 'maxWireVersion': %d}",
                                         max_wire_version);
@@ -173,6 +174,31 @@ mock_server2_with_autoismaster (int32_t max_wire_version)
    return server;
 }
 
+
+#ifdef MONGOC_ENABLE_SSL
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_set_ssl_opts --
+ *
+ *       Set server-side SSL options before calling mock_server2_run.
+ *
+ *       opts should be valid for server's lifetime.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+mock_server2_set_ssl_opts (mock_server2_t    *server,
+                           mongoc_ssl_opt_t *opts)
+{
+   server->ssl_opts = opts;
+}
+#endif
 
 /*--------------------------------------------------------------------------
  *
@@ -723,9 +749,8 @@ uint16_t
 get_port (mongoc_socket_t *sock)
 {
    struct sockaddr_in bound_addr = { 0 };
-   socklen_t addr_len;
+   socklen_t addr_len = (socklen_t) sizeof bound_addr;
 
-   addr_len = (socklen_t) sizeof bound_addr;
    if (mongoc_socket_getsockname (sock,
                                   (struct sockaddr *) &bound_addr,
                                   &addr_len) < 0) {

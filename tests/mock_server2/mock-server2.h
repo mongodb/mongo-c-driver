@@ -46,6 +46,12 @@ void mock_server2_remove_autoresponder (mock_server2_t *server,
 int mock_server2_auto_ismaster (mock_server2_t *server,
                                 const char     *response_json);
 
+
+#ifdef MONGOC_ENABLE_SSL
+void mock_server2_set_ssl_opts (mock_server2_t    *server,
+                                mongoc_ssl_opt_t  *opts);
+#endif
+
 uint16_t mock_server2_run (mock_server2_t *server);
 
 const mongoc_uri_t *mock_server2_get_uri (mock_server2_t *server);
