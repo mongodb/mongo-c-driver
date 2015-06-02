@@ -101,6 +101,8 @@ request_matches_query (const request_t     *request,
 
 void autoresponder_handle_destroy (autoresponder_handle_t *handle);
 
+uint16_t get_port (mongoc_socket_t *sock);
+
 
 /*--------------------------------------------------------------------------
  *
@@ -168,24 +170,6 @@ mock_server2_with_autoismaster (int32_t max_wire_version)
    bson_free (ismaster);
 
    return server;
-}
-
-
-uint16_t
-get_port (mongoc_socket_t *sock)
-{
-   struct sockaddr_in bound_addr = { 0 };
-   socklen_t addr_len;
-
-   addr_len = (socklen_t) sizeof bound_addr;
-   if (mongoc_socket_getsockname (sock,
-                                  (struct sockaddr *) &bound_addr,
-                                  &addr_len) < 0) {
-      perror ("Failed to get listening port number");
-      return 0;
-   }
-
-   return ntohs (bound_addr.sin_port);
 }
 
 
@@ -727,6 +711,24 @@ mock_server2_destroy (mock_server2_t *server)
    mongoc_uri_destroy (server->uri);
    q_destroy (server->q);
    bson_free (server);
+}
+
+
+uint16_t
+get_port (mongoc_socket_t *sock)
+{
+   struct sockaddr_in bound_addr = { 0 };
+   socklen_t addr_len;
+
+   addr_len = (socklen_t) sizeof bound_addr;
+   if (mongoc_socket_getsockname (sock,
+                                  (struct sockaddr *) &bound_addr,
+                                  &addr_len) < 0) {
+      perror ("Failed to get listening port number");
+      return 0;
+   }
+
+   return ntohs (bound_addr.sin_port);
 }
 
 
