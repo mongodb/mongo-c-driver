@@ -73,8 +73,6 @@ test_replica_set_ssl_LDADD = $(TEST_LIBS)
 test_libmongoc_SOURCES = \
 	tests/json-test.c \
 	tests/json-test.h \
-	tests/mock-server.c \
-	tests/mock-server.h \
 	tests/mock_server2/future.c \
 	tests/mock_server2/future.h \
 	tests/mock_server2/future-functions.c \
@@ -244,8 +242,6 @@ EXTRA_DIST += \
 	tests/mock_server2/mock-server2.h \
 	tests/mock_server2/sync-queue.c \
 	tests/mock_server2/sync-queue.h \
-	tests/mock-server.c \
-	tests/mock-server.h \
 	tests/mongoc-tests.c \
 	tests/mongoc-tests.h \
 	tests/trust_dir.cnf \
