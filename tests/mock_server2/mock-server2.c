@@ -41,6 +41,7 @@ struct _mock_server2_t
    bool running;
    bool stopped;
    bool verbose;
+   bool rand_delay;
    uint16_t port;
    mongoc_socket_t *sock;
    char *uri_str;
@@ -386,6 +387,10 @@ auto_ismaster (request_t *request,
       abort ();
    }
 
+   if (mock_server2_get_rand_delay (request->server)) {
+      usleep((rand() % 10) * 1000);
+   }
+
    mock_server2_reply_simple (request->server,
                               request->client,
                               &request->request_rpc,
@@ -489,6 +494,45 @@ mock_server2_set_verbose (mock_server2_t *server, bool verbose)
 {
    mongoc_mutex_lock (&server->mutex);
    server->verbose = verbose;
+   mongoc_mutex_unlock (&server->mutex);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server2_get_rand_delay --
+ *
+ *       Does the server delay a random duration before responding?
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mock_server2_get_rand_delay (mock_server2_t *server)
+{
+   bool rand_delay;
+
+   mongoc_mutex_lock (&server->mutex);
+   rand_delay = server->rand_delay;
+   mongoc_mutex_unlock (&server->mutex);
+
+   return rand_delay;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server2_set_rand_delay --
+ *
+ *       Whether to delay a random duration before responding.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_server2_set_rand_delay (mock_server2_t *server, bool rand_delay)
+{
+   mongoc_mutex_lock (&server->mutex);
+   server->rand_delay = rand_delay;
    mongoc_mutex_unlock (&server->mutex);
 }
 
