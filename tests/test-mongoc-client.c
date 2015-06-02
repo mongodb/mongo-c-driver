@@ -7,9 +7,9 @@
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
-#include "mock_server2/mock-server2.h"
-#include "mock_server2/future.h"
-#include "mock_server2/future-functions.h"
+#include "mock_server/future.h"
+#include "mock_server/future-functions.h"
+#include "mock_server/mock-server.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -201,21 +201,21 @@ test_wire_version (void)
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
-   mock_server2_t *server;
+   mock_server_t *server;
    const bson_t *doc;
    bson_error_t error;
    bool r;
    bson_t q = BSON_INITIALIZER;
 
-   server = mock_server2_new ();
-   mock_server2_auto_ismaster (server, "{'ok': 1.0,"
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server, "{'ok': 1.0,"
                                        " 'ismaster': true,"
                                        " 'minWireVersion': 10,"
                                        " 'maxWireVersion': 11}");
 
-   mock_server2_run (server);
+   mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server2_get_uri (server));
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
@@ -240,7 +240,7 @@ test_wire_version (void)
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   mock_server2_destroy (server);
+   mock_server_destroy (server);
 }
 
 
@@ -251,19 +251,19 @@ test_mongoc_client_read_prefs (void)
    mongoc_read_prefs_t *read_prefs;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
-   mock_server2_t *server;
+   mock_server_t *server;
    const bson_t *doc;
    bson_t b = BSON_INITIALIZER;
    bson_t q = BSON_INITIALIZER;
    future_t *future;
    request_t *request;
 
-   server = mock_server2_new ();
-   mock_server2_auto_ismaster (server, "{'ok': 1,"
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server, "{'ok': 1,"
                                        " 'ismaster': true,"
                                        " 'msg': 'isdbgrid'}");
-   mock_server2_run (server);
-   client = mongoc_client_new_from_uri (mock_server2_get_uri (server));
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
@@ -285,7 +285,7 @@ test_mongoc_client_read_prefs (void)
 
    future = future_cursor_next (cursor, &doc);
 
-   request = mock_server2_receives_query (
+   request = mock_server_receives_query (
          server,
          "test.test",
          MONGOC_QUERY_NONE,
@@ -296,7 +296,7 @@ test_mongoc_client_read_prefs (void)
          "                     'tags': [{'dc': 'ny'}, {}]}}",
          NULL);
 
-   mock_server2_replies (request,
+   mock_server_replies (request,
                          0,                    /* flags */
                          0,                    /* cursorId */
                          0,                    /* startingFrom */
@@ -312,7 +312,7 @@ test_mongoc_client_read_prefs (void)
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   mock_server2_destroy (server);
+   mock_server_destroy (server);
    bson_destroy (&b);
 }
 
@@ -594,21 +594,21 @@ test_server_status (void)
 static void
 test_get_database_names (void)
 {
-   mock_server2_t *server = mock_server2_with_autoismaster (0);
+   mock_server_t *server = mock_server_with_autoismaster (0);
    mongoc_client_t *client;
    bson_error_t error;
    future_t *future;
    request_t *request;
    char **names;
 
-   mock_server2_run (server);
-   client = mongoc_client_new_from_uri (mock_server2_get_uri (server));
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    future = future_client_get_database_names (client, &error);
-   request = mock_server2_receives_command (server,
+   request = mock_server_receives_command (server,
                                             "admin",
                                             MONGOC_QUERY_SLAVE_OK,
                                             "{'listDatabases': 1}");
-   mock_server2_replies (
+   mock_server_replies (
          request, 0, 0, 0, 1,
          "{'ok': 1.0, 'databases': [{'name': 'a'}, {'name': 'b'}]}");
    names = future_get_char_ptr_ptr (future);
@@ -621,11 +621,11 @@ test_get_database_names (void)
    future_destroy (future);
 
    future = future_client_get_database_names (client, &error);
-   request = mock_server2_receives_command (server,
+   request = mock_server_receives_command (server,
                                             "admin",
                                             MONGOC_QUERY_SLAVE_OK,
                                             "{'listDatabases': 1}");
-   mock_server2_replies (
+   mock_server_replies (
          request, 0, 0, 0, 1,
          "{'ok': 0.0, 'code': 17, 'errmsg': 'err'}");
 
@@ -637,7 +637,7 @@ test_get_database_names (void)
    request_destroy (request);
    future_destroy (future);
    mongoc_client_destroy (client);
-   mock_server2_destroy (server);
+   mock_server_destroy (server);
 }
 
 

@@ -20,11 +20,10 @@
 
 #include "mongoc-buffer-private.h"
 #include "mongoc-socket-private.h"
-#include "mongoc-stream-tls.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 #include "sync-queue.h"
-#include "mock-server2.h"
+#include "mock-server.h"
 #include "../test-conveniences.h"
 
 
@@ -36,7 +35,7 @@
 #define TIMEOUT 100
 
 
-struct _mock_server2_t
+struct _mock_server_t
 {
    bool running;
    bool stopped;
@@ -63,21 +62,21 @@ struct _mock_server2_t
 
 struct _request_t
 {
-   mongoc_rpc_t     request_rpc;
-   mock_server2_t  *server;
+   mongoc_rpc_t request_rpc;
+   mock_server_t *server;
    mongoc_stream_t *client;
-   bool             is_command;
-   char            *command_name;
-   mongoc_array_t   docs;
+   bool is_command;
+   char *command_name;
+   mongoc_array_t docs;
 };
 
 
 struct _autoresponder_handle_t
 {
    autoresponder_t responder;
-   void           *data;
-   destructor_t    destructor;
-   int             id;
+   void *data;
+   destructor_t destructor;
+   int id;
 };
 
 
@@ -85,21 +84,20 @@ static void *main_thread (void *data);
 
 static void *worker_thread (void *data);
 
-static void mock_server2_reply_simple (mock_server2_t *server,
-                                       mongoc_stream_t *client,
-                                       const mongoc_rpc_t *request,
-                                       mongoc_reply_flags_t flags,
-                                       const bson_t *doc);
+static void mock_server_reply_simple (mock_server_t *server,
+                                      mongoc_stream_t *client,
+                                      const mongoc_rpc_t *request,
+                                      mongoc_reply_flags_t flags,
+                                      const bson_t *doc);
 
-bool
-request_matches_query (const request_t     *request,
-                       const char          *ns,
-                       mongoc_query_flags_t flags,
-                       uint32_t             skip,
-                       uint32_t             n_return,
-                       const char          *query_json,
-                       const char          *fields_json,
-                       bool                 is_command);
+bool request_matches_query (const request_t *request,
+                            const char *ns,
+                            mongoc_query_flags_t flags,
+                            uint32_t skip,
+                            uint32_t n_return,
+                            const char *query_json,
+                            const char *fields_json,
+                            bool is_command);
 
 void autoresponder_handle_destroy (autoresponder_handle_t *handle);
 
@@ -108,15 +106,15 @@ uint16_t get_port (mongoc_socket_t *sock);
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_new --
+ * mock_server_new --
  *
- *       Get a new mock_server2_t. Call mock_server2_run to start it,
- *       then mock_server2_get_uri to connect.
+ *       Get a new mock_server_t. Call mock_server_run to start it,
+ *       then mock_server_get_uri to connect.
  *
  *       This server does not autorespond to "ismaster".
  *
  * Returns:
- *       A server you must mock_server2_destroy.
+ *       A server you must mock_server_destroy.
  *
  * Side effects:
  *       None.
@@ -124,10 +122,10 @@ uint16_t get_port (mongoc_socket_t *sock);
  *--------------------------------------------------------------------------
  */
 
-mock_server2_t *
-mock_server2_new ()
+mock_server_t *
+mock_server_new ()
 {
-   mock_server2_t *server = bson_malloc0 (sizeof (mock_server2_t));
+   mock_server_t *server = bson_malloc0 (sizeof (mock_server_t));
 
    _mongoc_array_init (&server->autoresponders,
                        sizeof (autoresponder_handle_t));
@@ -143,14 +141,14 @@ mock_server2_new ()
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_with_autoismaster --
+ * mock_server_with_autoismaster --
  *
- *       A new mock_server2_t that autoresponds to ismaster. Call
- *       mock_server2_run to start it, then mock_server2_get_uri to
+ *       A new mock_server_t that autoresponds to ismaster. Call
+ *       mock_server_run to start it, then mock_server_get_uri to
  *       connect.
  *
  * Returns:
- *       A server you must mock_server2_destroy.
+ *       A server you must mock_server_destroy.
  *
  * Side effects:
  *       None.
@@ -158,17 +156,17 @@ mock_server2_new ()
  *--------------------------------------------------------------------------
  */
 
-mock_server2_t *
-mock_server2_with_autoismaster (int32_t max_wire_version)
+mock_server_t *
+mock_server_with_autoismaster (int32_t max_wire_version)
 {
-   mock_server2_t *server = mock_server2_new ();
+   mock_server_t *server = mock_server_new ();
    char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
                                         " 'ismaster': true,"
                                         " 'minWireVersion': 0,"
                                         " 'maxWireVersion': %d}",
                                         max_wire_version);
 
-   mock_server2_auto_ismaster (server, ismaster);
+   mock_server_auto_ismaster (server, ismaster);
 
    bson_free (ismaster);
 
@@ -177,11 +175,12 @@ mock_server2_with_autoismaster (int32_t max_wire_version)
 
 
 #ifdef MONGOC_ENABLE_SSL
+
 /*--------------------------------------------------------------------------
  *
  * mock_server_set_ssl_opts --
  *
- *       Set server-side SSL options before calling mock_server2_run.
+ *       Set server-side SSL options before calling mock_server_run.
  *
  *       opts should be valid for server's lifetime.
  *
@@ -194,19 +193,20 @@ mock_server2_with_autoismaster (int32_t max_wire_version)
  *--------------------------------------------------------------------------
  */
 void
-mock_server2_set_ssl_opts (mock_server2_t    *server,
-                           mongoc_ssl_opt_t *opts)
+mock_server_set_ssl_opts (mock_server_t *server,
+                          mongoc_ssl_opt_t *opts)
 {
    server->ssl_opts = opts;
 }
+
 #endif
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_run --
+ * mock_server_run --
  *
  *       Start listening on an unused port. After this, call
- *       mock_server2_get_uri to connect.
+ *       mock_server_get_uri to connect.
  *
  * Returns:
  *       The bound port.
@@ -218,7 +218,7 @@ mock_server2_set_ssl_opts (mock_server2_t    *server,
  */
 
 uint16_t
-mock_server2_run (mock_server2_t *server)
+mock_server_run (mock_server_t *server)
 {
    mongoc_socket_t *ssock;
    struct sockaddr_in bind_addr;
@@ -276,7 +276,7 @@ mock_server2_run (mock_server2_t *server)
 
    mongoc_thread_create (&server->main_thread, main_thread, (void *) server);
 
-   if (mock_server2_get_verbose (server)) {
+   if (mock_server_get_verbose (server)) {
       printf ("listening on port %hu\n", bound_port);
    }
 
@@ -286,7 +286,7 @@ mock_server2_run (mock_server2_t *server)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_autoresponds --
+ * mock_server_autoresponds --
  *
  *       Respond to matching requests. "data" is passed to the responder
  *       callback, and passed to "destructor" when the autoresponder is
@@ -294,10 +294,10 @@ mock_server2_run (mock_server2_t *server)
  *
  *       Responders are run most-recently-added-first until one returns
  *       true to indicate it has handled the request. If none handles it,
- *       the request is enqueued until a call to mock_server2_receives_*.
+ *       the request is enqueued until a call to mock_server_receives_*.
  *
  * Returns:
- *       An id for mock_server2_remove_autoresponder.
+ *       An id for mock_server_remove_autoresponder.
  *
  * Side effects:
  *       If a matching request is enqueued, pop it and respond.
@@ -306,10 +306,10 @@ mock_server2_run (mock_server2_t *server)
  */
 
 int
-mock_server2_autoresponds (mock_server2_t *server,
-                           autoresponder_t responder,
-                           void           *data,
-                           destructor_t    destructor)
+mock_server_autoresponds (mock_server_t *server,
+                          autoresponder_t responder,
+                          void *data,
+                          destructor_t destructor)
 {
    autoresponder_handle_t handle = { responder, data, destructor };
    int id;
@@ -326,10 +326,10 @@ mock_server2_autoresponds (mock_server2_t *server,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_remove_autoresponder --
+ * mock_server_remove_autoresponder --
  *
  *       Remove a responder callback. Pass in the id returned by
- *       mock_server2_autoresponds.
+ *       mock_server_autoresponds.
  *
  * Returns:
  *       None.
@@ -341,14 +341,14 @@ mock_server2_autoresponds (mock_server2_t *server,
  */
 
 void
-mock_server2_remove_autoresponder (mock_server2_t *server,
-                                   int id)
+mock_server_remove_autoresponder (mock_server_t *server,
+                                  int id)
 {
    size_t i;
    autoresponder_handle_t *handles;
-   
+
    mongoc_mutex_lock (&server->mutex);
-   handles = (autoresponder_handle_t *)server->autoresponders.data;
+   handles = (autoresponder_handle_t *) server->autoresponders.data;
    for (i = 0; i < server->autoresponders.len; i++) {
       if (handles[i].id == id) {
          /* left-shift everyone after */
@@ -369,9 +369,9 @@ mock_server2_remove_autoresponder (mock_server2_t *server,
 
 static bool
 auto_ismaster (request_t *request,
-               void      *data)
+               void *data)
 {
-   const char *response_json = (const char*)data;
+   const char *response_json = (const char *) data;
    char *quotes_replaced;
    bson_t response;
    bson_error_t error;
@@ -387,15 +387,15 @@ auto_ismaster (request_t *request,
       abort ();
    }
 
-   if (mock_server2_get_rand_delay (request->server)) {
-      usleep((rand() % 10) * 1000);
+   if (mock_server_get_rand_delay (request->server)) {
+      usleep ((rand () % 10) * 1000);
    }
 
-   mock_server2_reply_simple (request->server,
-                              request->client,
-                              &request->request_rpc,
-                              MONGOC_REPLY_NONE,
-                              &response);
+   mock_server_reply_simple (request->server,
+                             request->client,
+                             &request->request_rpc,
+                             MONGOC_REPLY_NONE,
+                             &response);
 
    bson_destroy (&response);
    bson_free (quotes_replaced);
@@ -405,12 +405,12 @@ auto_ismaster (request_t *request,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_auto_ismaster --
+ * mock_server_auto_ismaster --
  *
  *       Autorespond to "ismaster" with the provided document.
  *
  * Returns:
- *       An id for mock_server2_remove_autoresponder.
+ *       An id for mock_server_remove_autoresponder.
  *
  * Side effects:
  *       If a matching request is enqueued, pop it and respond.
@@ -419,23 +419,23 @@ auto_ismaster (request_t *request,
  */
 
 int
-mock_server2_auto_ismaster (mock_server2_t *server,
-                            const char *response_json)
+mock_server_auto_ismaster (mock_server_t *server,
+                           const char *response_json)
 {
    char *copy = bson_strdup (response_json);
 
-   return mock_server2_autoresponds (server,
-                                     auto_ismaster,
-                                     (void *)copy,
-                                     bson_free);
+   return mock_server_autoresponds (server,
+                                    auto_ismaster,
+                                    (void *) copy,
+                                    bson_free);
 }
 
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_get_uri --
+ * mock_server_get_uri --
  *
- *       Call after mock_server2_run to get the connection string.
+ *       Call after mock_server_run to get the connection string.
  *
  * Returns:
  *       A const string.
@@ -447,7 +447,7 @@ mock_server2_auto_ismaster (mock_server2_t *server,
  */
 
 const mongoc_uri_t *
-mock_server2_get_uri (mock_server2_t *server)
+mock_server_get_uri (mock_server_t *server)
 {
    mongoc_uri_t *uri;
 
@@ -461,7 +461,7 @@ mock_server2_get_uri (mock_server2_t *server)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_get_verbose --
+ * mock_server_get_verbose --
  *
  *       Is the server set to log during normal operation?
  *
@@ -469,7 +469,7 @@ mock_server2_get_uri (mock_server2_t *server)
  */
 
 bool
-mock_server2_get_verbose (mock_server2_t *server)
+mock_server_get_verbose (mock_server_t *server)
 {
    bool verbose;
 
@@ -482,7 +482,7 @@ mock_server2_get_verbose (mock_server2_t *server)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_set_verbose --
+ * mock_server_set_verbose --
  *
  *       Tell the server whether to log during normal operation.
  *
@@ -490,7 +490,7 @@ mock_server2_get_verbose (mock_server2_t *server)
  */
 
 void
-mock_server2_set_verbose (mock_server2_t *server, bool verbose)
+mock_server_set_verbose (mock_server_t *server, bool verbose)
 {
    mongoc_mutex_lock (&server->mutex);
    server->verbose = verbose;
@@ -500,7 +500,7 @@ mock_server2_set_verbose (mock_server2_t *server, bool verbose)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_get_rand_delay --
+ * mock_server_get_rand_delay --
  *
  *       Does the server delay a random duration before responding?
  *
@@ -508,7 +508,7 @@ mock_server2_set_verbose (mock_server2_t *server, bool verbose)
  */
 
 bool
-mock_server2_get_rand_delay (mock_server2_t *server)
+mock_server_get_rand_delay (mock_server_t *server)
 {
    bool rand_delay;
 
@@ -521,7 +521,7 @@ mock_server2_get_rand_delay (mock_server2_t *server)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_set_rand_delay --
+ * mock_server_set_rand_delay --
  *
  *       Whether to delay a random duration before responding.
  *
@@ -529,7 +529,7 @@ mock_server2_get_rand_delay (mock_server2_t *server)
  */
 
 void
-mock_server2_set_rand_delay (mock_server2_t *server, bool rand_delay)
+mock_server_set_rand_delay (mock_server_t *server, bool rand_delay)
 {
    mongoc_mutex_lock (&server->mutex);
    server->rand_delay = rand_delay;
@@ -538,7 +538,7 @@ mock_server2_set_rand_delay (mock_server2_t *server, bool rand_delay)
 
 
 sync_queue_t *
-mock_server2_get_queue (mock_server2_t *server)
+mock_server_get_queue (mock_server_t *server)
 {
    sync_queue_t *q;
 
@@ -552,7 +552,7 @@ mock_server2_get_queue (mock_server2_t *server)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_receives_command --
+ * mock_server_receives_command --
  *
  *       Pop a client request if one is enqueued, or wait up to
  *       request_timeout_ms for the client to send a request.
@@ -568,17 +568,17 @@ mock_server2_get_queue (mock_server2_t *server)
  */
 
 request_t *
-mock_server2_receives_command (mock_server2_t         *server,
-                               const char             *database_name,
-                               mongoc_query_flags_t    flags,
-                               const char             *command_json)
+mock_server_receives_command (mock_server_t *server,
+                              const char *database_name,
+                              mongoc_query_flags_t flags,
+                              const char *command_json)
 {
    sync_queue_t *q;
    request_t *request;
    char *ns = bson_strdup_printf ("%s.$cmd", database_name);
 
-   q = mock_server2_get_queue (server);
-   /* TODO: get timeout val from mock_server2_t */
+   q = mock_server_get_queue (server);
+   /* TODO: get timeout val from mock_server_t */
    request = (request_t *) q_get (q, 100 * 1000);
 
    if (!request_matches_query (request,
@@ -601,7 +601,7 @@ mock_server2_receives_command (mock_server2_t         *server,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_receives_query --
+ * mock_server_receives_query --
  *
  *       Pop a client request if one is enqueued, or wait up to
  *       request_timeout_ms for the client to send a request.
@@ -617,20 +617,20 @@ mock_server2_receives_command (mock_server2_t         *server,
  */
 
 request_t *
-mock_server2_receives_query (mock_server2_t      *server,
-                             const char          *ns,
-                             mongoc_query_flags_t flags,
-                             uint32_t             skip,
-                             uint32_t             n_return,
-                             const char          *query_json,
-                             const char          *fields_json)
+mock_server_receives_query (mock_server_t *server,
+                            const char *ns,
+                            mongoc_query_flags_t flags,
+                            uint32_t skip,
+                            uint32_t n_return,
+                            const char *query_json,
+                            const char *fields_json)
 {
    sync_queue_t *q;
    request_t *request;
 
-   q = mock_server2_get_queue (server);
-   /* TODO: get timeout val from mock_server2_t */
-   request = (request_t *)q_get (q, 100 * 1000);
+   q = mock_server_get_queue (server);
+   /* TODO: get timeout val from mock_server_t */
+   request = (request_t *) q_get (q, 100 * 1000);
 
    if (!request_matches_query (request,
                                ns,
@@ -650,7 +650,7 @@ mock_server2_receives_query (mock_server2_t      *server,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_hangs_up --
+ * mock_server_hangs_up --
  *
  *       Hang up on a client request.
  *
@@ -664,7 +664,7 @@ mock_server2_receives_query (mock_server2_t      *server,
  */
 
 void
-mock_server2_hangs_up (request_t *request)
+mock_server_hangs_up (request_t *request)
 {
    mongoc_stream_close (request->client);
 }
@@ -672,7 +672,7 @@ mock_server2_hangs_up (request_t *request)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_replies --
+ * mock_server_replies --
  *
  *       Respond to a client request.
  *
@@ -686,12 +686,12 @@ mock_server2_hangs_up (request_t *request)
  */
 
 void
-mock_server2_replies (request_t  *request,
-                      uint32_t    flags,
-                      int64_t     cursor_id,
-                      int32_t     starting_from,
-                      int32_t     number_returned,
-                      const char *docs_json)
+mock_server_replies (request_t *request,
+                     uint32_t flags,
+                     int64_t cursor_id,
+                     int32_t starting_from,
+                     int32_t number_returned,
+                     const char *docs_json)
 {
    char *quotes_replaced = single_quotes_to_double (docs_json);
    bson_t doc;
@@ -706,11 +706,11 @@ mock_server2_replies (request_t  *request,
       return;
    }
 
-   mock_server2_reply_simple (request->server,
-                              request->client,
-                              &request->request_rpc,
-                              MONGOC_REPLY_NONE,
-                              &doc);
+   mock_server_reply_simple (request->server,
+                             request->client,
+                             &request->request_rpc,
+                             MONGOC_REPLY_NONE,
+                             &doc);
 
    bson_destroy (&doc);
    bson_free (quotes_replaced);
@@ -719,23 +719,23 @@ mock_server2_replies (request_t  *request,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server2_destroy --
+ * mock_server_destroy --
  *
- *       Free a mock_server2_t.
+ *       Free a mock_server_t.
  *
  * Returns:
  *       None.
  *
  * Side effects:
  *       Closes sockets, joins threads, and calls destructors passed
- *       to mock_server2_autoresponds.
+ *       to mock_server_autoresponds.
  *
  *--------------------------------------------------------------------------
  */
 
 
 void
-mock_server2_destroy (mock_server2_t *server)
+mock_server_destroy (mock_server_t *server)
 {
    size_t i;
    autoresponder_handle_t *handle;
@@ -819,7 +819,7 @@ is_command (const char *ns)
 
 request_t *
 request_new (const mongoc_rpc_t *request_rpc,
-             mock_server2_t *server,
+             mock_server_t *server,
              mongoc_stream_t *client)
 {
    request_t *request;
@@ -828,8 +828,8 @@ request_new (const mongoc_rpc_t *request_rpc,
    bson_iter_t iter;
 
    request = bson_malloc0 (sizeof *request);
-   memcpy ((void *)&request->request_rpc,
-           (void *)request_rpc,
+   memcpy ((void *) &request->request_rpc,
+           (void *) request_rpc,
            sizeof *request_rpc);
    request->server = server;
    request->client = client;
@@ -844,7 +844,7 @@ request_new (const mongoc_rpc_t *request_rpc,
    /* TODO: multiple docs */
    memcpy (&len, request_rpc->query.query, 4);
    len = BSON_UINT32_FROM_LE (len);
-   query = bson_new_from_data (request_rpc->query.query, (size_t)len);
+   query = bson_new_from_data (request_rpc->query.query, (size_t) len);
    assert (query);
    _mongoc_array_append_val (&request->docs, query);
 
@@ -865,14 +865,14 @@ request_new (const mongoc_rpc_t *request_rpc,
 
 /* TODO: take file, line, function params from caller, wrap in macro */
 bool
-request_matches_query (const request_t     *request,
-                       const char          *ns,
+request_matches_query (const request_t *request,
+                       const char *ns,
                        mongoc_query_flags_t flags,
-                       uint32_t             skip,
-                       uint32_t             n_return,
-                       const char          *query_json,
-                       const char          *fields_json,
-                       bool                 is_command)
+                       uint32_t skip,
+                       uint32_t n_return,
+                       const char *query_json,
+                       const char *fields_json,
+                       bool is_command)
 {
    const mongoc_rpc_t *rpc = &request->request_rpc;
    bson_t *doc;
@@ -931,7 +931,8 @@ request_matches_query (const request_t     *request,
       doc = NULL;
    }
 
-   if (!match_json (doc, query_json, is_command, __FILE__, __LINE__, __FUNCTION__)) {
+   if (!match_json (doc, query_json, is_command, __FILE__, __LINE__,
+                    __FUNCTION__)) {
       /* match_json has logged the err */
       return false;
    }
@@ -979,14 +980,14 @@ request_destroy (request_t *request)
    }
 
    _mongoc_array_destroy (&request->docs);
-   bson_free ((void *)request->command_name);
+   bson_free ((void *) request->command_name);
    bson_free (request);
 }
 
 
 typedef struct worker_closure_t
 {
-   mock_server2_t *server;
+   mock_server_t *server;
    mongoc_stream_t *client_stream;
    uint16_t port;
 } worker_closure_t;
@@ -995,7 +996,7 @@ typedef struct worker_closure_t
 static void *
 main_thread (void *data)
 {
-   mock_server2_t *server = data;
+   mock_server_t *server = data;
    mongoc_socket_t *client_sock;
    bool stopped;
    uint16_t port;
@@ -1008,7 +1009,7 @@ main_thread (void *data)
    mongoc_cond_signal (&server->cond);
    mongoc_mutex_unlock (&server->mutex);
 
-   for (;;) {
+   for (; ;) {
       client_sock = mongoc_socket_accept_ex (
             server->sock,
             bson_get_monotonic_time () + TIMEOUT,
@@ -1023,7 +1024,7 @@ main_thread (void *data)
       }
 
       if (client_sock) {
-         if (mock_server2_get_verbose (server)) {
+         if (mock_server_get_verbose (server)) {
             printf ("connection from port %hu\n", port);
          }
 
@@ -1066,7 +1067,7 @@ static void *
 worker_thread (void *data)
 {
    worker_closure_t *closure = (worker_closure_t *) data;
-   mock_server2_t *server = closure->server;
+   mock_server_t *server = closure->server;
    mongoc_stream_t *client_stream = closure->client_stream;
    mongoc_buffer_t buffer;
    mongoc_rpc_t *rpc = NULL;
@@ -1085,9 +1086,9 @@ worker_thread (void *data)
    BSON_ASSERT(closure);
 
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
-   _mongoc_array_init (&autoresponders, sizeof(autoresponder_handle_t));
+   _mongoc_array_init (&autoresponders, sizeof (autoresponder_handle_t));
 
-again:
+   again:
    bson_free (rpc);
    rpc = NULL;
    handled = false;
@@ -1146,7 +1147,7 @@ again:
       handle = _mongoc_array_index (&server->autoresponders,
                                     autoresponder_handle_t,
                                     i);
-      if (handle.responder(request, handle.data)) {
+      if (handle.responder (request, handle.data)) {
          handled = true;
          request_destroy (request);
          request = NULL;
@@ -1155,13 +1156,13 @@ again:
    }
 
    if (!handled) {
-      if (mock_server2_get_verbose (server)) {
+      if (mock_server_get_verbose (server)) {
          /* TODO: parse and print repr of request */
          /*printf ("%hu\t%s\n", port, "unhandled command");*/
       }
 
-      q = mock_server2_get_queue (server);
-      q_put (q, (void *)request);
+      q = mock_server_get_queue (server);
+      q_put (q, (void *) request);
       request = NULL;
    }
 
@@ -1172,7 +1173,7 @@ again:
 
    GOTO (again);
 
-failure:
+   failure:
    mongoc_mutex_lock (&server->mutex);
    /* TODO: remove self from threads array */
    mongoc_mutex_unlock (&server->mutex);
@@ -1191,11 +1192,11 @@ failure:
 
 /* TODO: simpler */
 void
-mock_server2_reply_simple (mock_server2_t *server,
-                           mongoc_stream_t *client,
-                           const mongoc_rpc_t *request,
-                           mongoc_reply_flags_t flags,
-                           const bson_t *doc)
+mock_server_reply_simple (mock_server_t *server,
+                          mongoc_stream_t *client,
+                          const mongoc_rpc_t *request,
+                          mongoc_reply_flags_t flags,
+                          const bson_t *doc)
 {
    mongoc_iovec_t *iov;
    mongoc_array_t ar;
@@ -1235,7 +1236,7 @@ mock_server2_reply_simple (mock_server2_t *server,
       expected += iov[i].iov_len;
    }
 
-   n_written = mongoc_stream_writev (client, iov, (size_t)iovcnt, -1);
+   n_written = mongoc_stream_writev (client, iov, (size_t) iovcnt, -1);
 
    assert (n_written == expected);
 
@@ -1247,6 +1248,6 @@ void
 autoresponder_handle_destroy (autoresponder_handle_t *handle)
 {
    if (handle->destructor) {
-      handle->destructor(handle->data);
+      handle->destructor (handle->data);
    }
 }

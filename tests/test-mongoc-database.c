@@ -4,8 +4,8 @@
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
 #include "mongoc-client-private.h"
-#include "mock_server2/mock-server2.h"
-#include "mock_server2/future-functions.h"
+#include "mock_server/future-functions.h"
+#include "mock_server/mock-server.h"
 
 
 static void
@@ -399,28 +399,28 @@ test_get_collection_names_error (void)
 {
    mongoc_database_t *database;
    mongoc_client_t *client;
-   mock_server2_t *server;
+   mock_server_t *server;
    bson_error_t error = { 0 };
    bson_t b = BSON_INITIALIZER;
    future_t *future;
    request_t *request;
    char **names;
 
-   server = mock_server2_new ();
-   mock_server2_auto_ismaster (server, "{'ismaster': true,"
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server, "{'ismaster': true,"
                                        " 'maxWireVersion': 3}");
-   mock_server2_run (server);
-   client = mongoc_client_new_from_uri (mock_server2_get_uri (server));
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    database = mongoc_client_get_database (client, "test");
    suppress_one_message ();
    suppress_one_message ();
    future = future_database_get_collection_names (database, &error);
-   request = mock_server2_receives_command (server,
+   request = mock_server_receives_command (server,
                                             "test",
                                             MONGOC_QUERY_SLAVE_OK,
                                             "{'listCollections': 1}");
-   mock_server2_hangs_up (request);
+   mock_server_hangs_up (request);
    names = future_get_char_ptr_ptr (future);
    assert (!names);
    ASSERT_CMPINT (MONGOC_ERROR_STREAM, ==, error.domain);
@@ -430,7 +430,7 @@ test_get_collection_names_error (void)
    future_destroy (future);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
-   mock_server2_destroy (server);
+   mock_server_destroy (server);
    bson_destroy (&b);
 }
 

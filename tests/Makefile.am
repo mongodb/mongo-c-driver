@@ -73,18 +73,18 @@ test_replica_set_ssl_LDADD = $(TEST_LIBS)
 test_libmongoc_SOURCES = \
 	tests/json-test.c \
 	tests/json-test.h \
-	tests/mock_server2/future.c \
-	tests/mock_server2/future.h \
-	tests/mock_server2/future-functions.c \
-	tests/mock_server2/future-functions.def \
-	tests/mock_server2/future-functions.h \
-	tests/mock_server2/future-value.h \
-	tests/mock_server2/macro-vargs-magic.h \
-	tests/mock_server2/make-future-getters.def \
-	tests/mock_server2/mock-server2.c \
-	tests/mock_server2/mock-server2.h \
-	tests/mock_server2/sync-queue.c \
-	tests/mock_server2/sync-queue.h \
+	tests/mock_server/future.c \
+	tests/mock_server/future.h \
+	tests/mock_server/future-functions.c \
+	tests/mock_server/future-functions.def \
+	tests/mock_server/future-functions.h \
+	tests/mock_server/future-value.h \
+	tests/mock_server/macro-vargs-magic.h \
+	tests/mock_server/make-future-getters.def \
+	tests/mock_server/mock-server.c \
+	tests/mock_server/mock-server.h \
+	tests/mock_server/sync-queue.c \
+	tests/mock_server/sync-queue.h \
 	tests/test-libmongoc.c \
 	tests/test-bulk.c \
 	tests/test-conveniences.c \
@@ -233,15 +233,15 @@ EXTRA_DIST += \
 	tests/binary/update1.dat \
 	tests/certificates/ca.pem \
 	tests/certificates/client.pem \
-	tests/mock_server2/future-value.h \
-	tests/mock_server2/future.c \
-	tests/mock_server2/future.h \
-	tests/mock_server2/macro-vargs-magic.h \
-	tests/mock_server2/make-future-getters.def \
-	tests/mock_server2/mock-server2.c \
-	tests/mock_server2/mock-server2.h \
-	tests/mock_server2/sync-queue.c \
-	tests/mock_server2/sync-queue.h \
+	tests/mock_server/future-value.h \
+	tests/mock_server/future.c \
+	tests/mock_server/future.h \
+	tests/mock_server/macro-vargs-magic.h \
+	tests/mock_server/make-future-getters.def \
+	tests/mock_server/mock-server.c \
+	tests/mock_server/mock-server.h \
+	tests/mock_server/sync-queue.c \
+	tests/mock_server/sync-queue.h \
 	tests/mongoc-tests.c \
 	tests/mongoc-tests.h \
 	tests/trust_dir.cnf \

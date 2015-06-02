@@ -3,9 +3,8 @@
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
 #include "mongoc-tests.h"
-#include "mongoc-stream-tls.h"
-#include "mock_server2/mock-server2.h"
 #include "TestSuite.h"
+#include "mock_server/mock-server.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async-test"
@@ -49,7 +48,7 @@ test_ismaster_helper (mongoc_async_cmd_result_t result,
 static void
 test_ismaster_impl (bool with_ssl)
 {
-   mock_server2_t *servers[NSERVERS];
+   mock_server_t *servers[NSERVERS];
    mongoc_async_t *async;
    mongoc_stream_t *sock_streams[NSERVERS];
    mongoc_socket_t *conn_sock;
@@ -71,18 +70,18 @@ test_ismaster_impl (bool with_ssl)
 
    for (i = 0; i < NSERVERS; i++) {
       /* use max wire versions just to distinguish among responses */
-      servers[i] = mock_server2_with_autoismaster (i);
+      servers[i] = mock_server_with_autoismaster (i);
 
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
          sopt.pem_file = PEMFILE_NOPASS;
          sopt.ca_file = CAFILE;
 
-         mock_server2_set_ssl_opts (servers[i], &sopt);
+         mock_server_set_ssl_opts (servers[i], &sopt);
       }
 #endif
 
-      ports[i] = mock_server2_run (servers[i]);
+      ports[i] = mock_server_run (servers[i]);
    }
 
    async = mongoc_async_new ();
@@ -145,7 +144,7 @@ test_ismaster_impl (bool with_ssl)
    bson_destroy (&q);
 
    for (i = 0; i < NSERVERS; i++) {
-      mock_server2_destroy (servers[i]);
+      mock_server_destroy (servers[i]);
       mongoc_stream_destroy (sock_streams[i]);
    }
 }

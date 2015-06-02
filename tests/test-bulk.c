@@ -6,8 +6,8 @@
 
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
-#include "mock_server2/future-functions.h"
-#include "mock_server2/mock-server2.h"
+#include "mock_server/future-functions.h"
+#include "mock_server/mock-server.h"
 #include "test-conveniences.h"
 
 
@@ -1554,7 +1554,7 @@ test_single_error_unordered_bulk ()
 static void
 test_write_concern_error ()
 {
-   mock_server2_t *mock_server = mock_server2_with_autoismaster (3);
+   mock_server_t *mock_server = mock_server_with_autoismaster (3);
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_write_concern_t *wc;
@@ -1564,9 +1564,9 @@ test_write_concern_error ()
    future_t *future;
    request_t *request;
 
-   mock_server2_set_verbose (mock_server, true);
-   mock_server2_run (mock_server);
-   client = mongoc_client_new_from_uri (mock_server2_get_uri (mock_server));
+   mock_server_set_verbose (mock_server, true);
+   mock_server_run (mock_server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
    collection = mongoc_client_get_collection (client, "test", "test");
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 3);
@@ -1579,10 +1579,10 @@ test_write_concern_error ()
 
    /* TODO */
    /* defaults to 1 second, this is just showing the API */
-   /*mock_server2_set_request_timeout_ms (mock_server, 100);
-   mock_server2_set_response_timeout_ms (mock_server, 100);*/
+   /*mock_server_set_request_timeout_ms (mock_server, 100);
+   mock_server_set_response_timeout_ms (mock_server, 100);*/
 
-   request = mock_server2_receives_command (
+   request = mock_server_receives_command (
          mock_server,
          "test",
          MONGOC_QUERY_NONE,
@@ -1592,7 +1592,7 @@ test_write_concern_error ()
          " 'documents': [{'a': 1}]}");
 
    assert (request);
-   mock_server2_replies (request,
+   mock_server_replies (request,
                          0,                    /* flags */
                          0,                    /* cursorId */
                          0,                    /* startingFrom */
@@ -1620,7 +1620,7 @@ test_write_concern_error ()
    mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   mock_server2_destroy (mock_server);
+   mock_server_destroy (mock_server);
 }
 
 static void

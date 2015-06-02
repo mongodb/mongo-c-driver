@@ -1,9 +1,9 @@
 #include <mongoc.h>
 
 #include "mongoc-topology-scanner-private.h"
-#include "mock_server2/mock-server2.h"
 #include "mongoc-tests.h"
 #include "TestSuite.h"
+#include "mock_server/mock-server.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-scanner-test"
@@ -45,7 +45,7 @@ test_topology_scanner_helper (uint32_t      id,
 static void
 _test_topology_scanner(bool with_ssl)
 {
-   mock_server2_t *servers[NSERVERS];
+   mock_server_t *servers[NSERVERS];
    mongoc_topology_scanner_t *topology_scanner;
    int i;
    bson_t q = BSON_INITIALIZER;
@@ -71,23 +71,23 @@ _test_topology_scanner(bool with_ssl)
 
    for (i = 0; i < NSERVERS; i++) {
       /* use max wire versions just to distinguish among responses */
-      servers[i] = mock_server2_with_autoismaster (i);
-      mock_server2_set_rand_delay (servers[i], true);
+      servers[i] = mock_server_with_autoismaster (i);
+      mock_server_set_rand_delay (servers[i], true);
 
 #ifdef MONGOC_ENABLE_SSL
       if (with_ssl) {
          sopt.pem_file = PEMFILE_NOPASS;
          sopt.ca_file = CAFILE;
 
-         mock_server2_set_ssl_opts (servers[i], &sopt);
+         mock_server_set_ssl_opts (servers[i], &sopt);
       }
 #endif
 
-      mock_server2_run (servers[i]);
+      mock_server_run (servers[i]);
 
       mongoc_topology_scanner_add(
             topology_scanner,
-            mongoc_uri_get_hosts (mock_server2_get_uri (servers[i])),
+            mongoc_uri_get_hosts (mock_server_get_uri (servers[i])),
             (uint32_t) i);
    }
 
@@ -106,7 +106,7 @@ _test_topology_scanner(bool with_ssl)
    bson_destroy (&q);
 
    for (i = 0; i < NSERVERS; i++) {
-      mock_server2_destroy (servers[i]);
+      mock_server_destroy (servers[i]);
    }
 }
 

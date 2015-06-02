@@ -21,7 +21,7 @@
  * the background operation and returns a future_t that will resolve when
  * the operation finishes.
  *
- * These are used with mock_server2_t so you can run the driver on a thread
+ * These are used with mock_server_t so you can run the driver on a thread
  * while controlling the server from the main thread.
  */
 
