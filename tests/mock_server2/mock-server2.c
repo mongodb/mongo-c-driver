@@ -20,6 +20,7 @@
 
 #include "mongoc-rpc-private.h"
 #include "mongoc-buffer-private.h"
+#include "mongoc-socket-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 #include "sync-queue.h"
@@ -247,6 +248,10 @@ mock_server2_run (mock_server2_t *server)
    mongoc_mutex_unlock (&server->mutex);
 
    mongoc_thread_create (&server->main_thread, main_thread, (void *) server);
+
+   if (mock_server2_get_verbose (server)) {
+      printf ("listening on port %hu\n", bound_port);
+   }
 
    return (uint16_t) bound_port;
 }
@@ -935,8 +940,10 @@ main_thread (void *data)
    mongoc_mutex_unlock (&server->mutex);
 
    for (;;) {
-      client_sock = mongoc_socket_accept (server->sock,
-                                          bson_get_monotonic_time () + TIMEOUT);
+      client_sock = mongoc_socket_accept_ex (
+            server->sock,
+            bson_get_monotonic_time () + TIMEOUT,
+            &port);
 
       mongoc_mutex_lock (&server->mutex);
       stopped = server->stopped;
@@ -947,7 +954,6 @@ main_thread (void *data)
       }
 
       if (client_sock) {
-         port = get_port (client_sock);
          if (mock_server2_get_verbose (server)) {
             printf ("connection from port %hu\n", port);
          }

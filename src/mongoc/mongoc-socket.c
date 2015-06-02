@@ -21,7 +21,7 @@
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
 #include "mongoc-host-list.h"
-#include "mongoc-socket.h"
+#include "mongoc-socket-private.h"
 #include "mongoc-trace.h"
 
 #undef MONGOC_LOG_DOMAIN
@@ -356,7 +356,7 @@ _mongoc_socket_errno_is_again (mongoc_socket_t *sock) /* IN */
  *       A newly allocated mongoc_socket_t on success.
  *
  * Side effects:
- *       None.
+ *       *port contains the client port number.
  *
  *--------------------------------------------------------------------------
  */
@@ -365,8 +365,34 @@ mongoc_socket_t *
 mongoc_socket_accept (mongoc_socket_t *sock,      /* IN */
                       int64_t          expire_at) /* IN */
 {
+   return mongoc_socket_accept_ex (sock, expire_at, NULL);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_socket_accept_ex --
+ *
+ *       Private synonym for mongoc_socket_accept, returning client port.
+ *
+ * Returns:
+ *       NULL upon failure to accept or timeout.
+ *       A newly allocated mongoc_socket_t on success.
+ *
+ * Side effects:
+ *       *port contains the client port number.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_socket_t *
+mongoc_socket_accept_ex (mongoc_socket_t *sock,      /* IN */
+                         int64_t          expire_at, /* IN */
+                         uint16_t *port)             /* OUT */
+{
    mongoc_socket_t *client;
-   struct sockaddr addr;
+   struct sockaddr_in addr;
    socklen_t addrlen = sizeof addr;
    bool try_again = false;
    bool failed = false;
@@ -382,7 +408,7 @@ mongoc_socket_accept (mongoc_socket_t *sock,      /* IN */
 
 again:
    errno = 0;
-   sd = accept (sock->sd, &addr, &addrlen);
+   sd = accept (sock->sd, (struct sockaddr *) &addr, &addrlen);
 
    _mongoc_socket_capture_errno (sock);
 
@@ -411,6 +437,10 @@ again:
 
    client = bson_malloc0 (sizeof *client);
    client->sd = sd;
+
+   if (port) {
+      *port = ntohs (addr.sin_port);
+   }
 
    if (!_mongoc_socket_setnodelay (client->sd)) {
       MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
