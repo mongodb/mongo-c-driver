@@ -1344,7 +1344,7 @@ mongoc_collection_save (mongoc_collection_t          *collection,
  * mongoc_collection_remove --
  *
  *       Delete one or more items from a collection. If you want to
- *       limit to a single delete, provided MONGOC_DELETE_SINGLE_REMOVE
+ *       limit to a single delete, provided MONGOC_REMOVE_SINGLE_REMOVE
  *       for @flags.
  *
  * Parameters:

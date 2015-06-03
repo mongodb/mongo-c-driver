@@ -67,7 +67,7 @@ main (int   argc,
     doc = bson_new ();
     BSON_APPEND_OID (doc, "_id", &oid);
 
-    if (!mongoc_collection_remove (collection, MONGOC_DELETE_SINGLE_REMOVE, doc, NULL, &error)) {
+    if (!mongoc_collection_remove (collection, MONGOC_REMOVE_SINGLE_REMOVE, doc, NULL, &error)) {
         printf ("Delete failed: %s\n", error.message);
     }
 
