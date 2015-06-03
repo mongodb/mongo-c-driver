@@ -973,6 +973,41 @@ mongoc_client_get_database (mongoc_client_t *client,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_client_get_default_database --
+ *
+ *       Get the database named in the MongoDB connection URI, or NULL
+ *       if none was specified in the URI.
+ *
+ *       This structure should be freed when the caller is done with it
+ *       using mongoc_database_destroy().
+ *
+ * Returns:
+ *       A newly allocated mongoc_database_t or NULL.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_database_t *
+mongoc_client_get_default_database (mongoc_client_t *client)
+{
+   bson_return_val_if_fail(client, NULL);
+
+   const char *db = mongoc_uri_get_database (client->uri);
+
+   if (db) {
+      return mongoc_client_get_database (client, db);
+   }
+
+   return NULL;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_client_get_collection --
  *
  *       This function returns a newly allocated collection structure.

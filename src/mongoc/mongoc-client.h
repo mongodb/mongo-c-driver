@@ -116,6 +116,7 @@ bool                           mongoc_client_command_simple       (mongoc_client
 void                           mongoc_client_destroy              (mongoc_client_t              *client);
 mongoc_database_t             *mongoc_client_get_database         (mongoc_client_t              *client,
                                                                    const char                   *name);
+mongoc_database_t             *mongoc_client_get_default_database (mongoc_client_t              *client);
 mongoc_gridfs_t               *mongoc_client_get_gridfs           (mongoc_client_t              *client,
                                                                    const char                   *db,
                                                                    const char                   *prefix,

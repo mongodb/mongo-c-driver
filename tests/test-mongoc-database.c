@@ -434,6 +434,27 @@ test_get_collection_names_error (void)
    bson_destroy (&b);
 }
 
+static void
+test_get_default_database (void)
+{
+   /* default database is "db_name" */
+   mongoc_client_t *client = mongoc_client_new ("mongodb://host/db_name");
+   mongoc_database_t *db = mongoc_client_get_default_database (client);
+
+   assert (!strcmp ("db_name", mongoc_database_get_name (db)));
+
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+
+   /* no default database */
+   client = mongoc_client_new ("mongodb://host/");
+   db = mongoc_client_get_default_database (client);
+
+   assert (!db);
+
+   mongoc_client_destroy (client);
+}
+
 void
 test_database_install (TestSuite *suite)
 {
@@ -447,4 +468,6 @@ test_database_install (TestSuite *suite)
                   test_get_collection_names);
    TestSuite_Add (suite, "/Database/get_collection_names_error",
                   test_get_collection_names_error);
+   TestSuite_Add (suite, "/Database/get_default_database",
+                  test_get_default_database);
 }
