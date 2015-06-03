@@ -17,7 +17,7 @@ mongoc_client_get_database (mongoc_client_t *client,
                             const char      *name);
 ]]></code></synopsis>
     <p>Get a newly allocated <code xref="mongoc_database_t">mongoc_database_t</code> for the database named <code>name</code>.</p>
-    <note style="tip"><p>Database are automatically created on the MongoDB server upon insertion of the first document into a collection. There is no need to create a database manually.</p></note>
+    <note style="tip"><p>Databases are automatically created on the MongoDB server upon insertion of the first document into a collection. There is no need to create a database manually.</p></note>
   </section>
 
   <section id="parameters">
@@ -30,7 +30,7 @@ mongoc_client_get_database (mongoc_client_t *client,
 
   <section id="return">
     <title>Returns</title>
-    <p>A newly allocated <code>mongoc_database_t</code> that should be freed with <code xref="mongoc_database_destroy">mongoc_database_destroy()</code> when no longer in use.</p>
+    <p>A newly allocated <code xref="mongoc_client_t">mongoc_database_t</code> that should be freed with <code xref="mongoc_database_destroy">mongoc_database_destroy()</code> when no longer in use.</p>
   </section>
 
 </page>
