@@ -20,6 +20,17 @@ endif ()
 
 if (SASL2_INCLUDE_DIR AND SASL2_LIBRARY)
     set (SASL2_FOUND 1)
+
+    check_symbol_exists (
+        sasl_client_done
+        ${SASL2_INCLUDE_DIR}/sasl/sasl.h
+        MONGOC_HAVE_SASL_CLIENT_DONE)
+
+    if (MONGOC_HAVE_SASL_CLIENT_DONE)
+        set (MONGOC_HAVE_SASL_CLIENT_DONE 1)
+    else ()
+        set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
+    endif ()
 else ()
     set (SASL2_FOUND 0)
 endif ()
