@@ -264,6 +264,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-topology-scanner.c
    ${SOURCE_DIR}/tests/test-mongoc-uri.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
+   ${SOURCE_DIR}/tests/test-sasl.c
    ${SOURCE_DIR}/tests/TestSuite.c
    ${SOURCE_DIR}/tests/test-write-commands.c
 )

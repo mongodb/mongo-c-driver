@@ -26,6 +26,7 @@ void usleep (int64_t usec);
 
 char *gen_collection_name (const char *prefix);
 void suppress_one_message (void);
+char *test_framework_getenv (const char *name);
 char *test_framework_get_host (void);
 uint16_t test_framework_get_port (void);
 bool test_framework_get_ssl (void);
