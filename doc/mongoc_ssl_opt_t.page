@@ -27,7 +27,7 @@
 
   <section id="desc">
     <title>Description</title>
-    <p>This structure is used to set the SSL options for a mongoc_client_t.</p>
+    <p>This structure is used to set the SSL options for a <code xref="mongoc_client_t">mongoc_client_t</code>.</p>
   </section>
 
   <links type="topic" groups="function" style="2column">
