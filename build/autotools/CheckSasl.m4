@@ -43,17 +43,17 @@ dnl Let mongoc-config.h.in know about SASL status.
 if test "$sasl_mode" != "no" ; then
   AC_SUBST(MONGOC_ENABLE_SASL, 1)
   
-  AC_MSG_CHECKING([for sasl_client_done])
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sasl/sasl.h>]],
-                                  [[sasl_client_done ();]])],
-                 [AC_MSG_RESULT(yes)
-                  have_sasl_client_done=yes],
-                 [AC_MSG_RESULT(no)
-                  have_sasl_client_done=no])
-  AS_IF([test "$have_sasl_client_done" = "yes"],
-        [AC_SUBST(MONGOC_HAVE_SASL_CLIENT_DONE, 1)],
-        [AC_SUBST(MONGOC_HAVE_SASL_CLIENT_DONE, 0)])
+  AC_CHECK_LIB([sasl2],[sasl_client_done],
+               [have_sasl_client_done=yes],
+               [have_sasl_client_done=no])
+
+  if test "have_sasl_client_done" = "yes" ; then
+    AC_SUBST(MONGOC_HAVE_SASL_CLIENT_DONE, 1)
+  else
+    AC_SUBST(MONGOC_HAVE_SASL_CLIENT_DONE, 0)
+  fi
 
 else
   AC_SUBST(MONGOC_ENABLE_SASL, 0)
+  AC_SUBST(MONGOC_HAVE_SASL_CLIENT_DONE, 0)
 fi
