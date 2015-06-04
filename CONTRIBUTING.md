@@ -131,5 +131,15 @@ SSL with default options. Configure SSL options with paths
 `MONGOC_TEST_SSL_CRL_FILE`. Set the `MONGOC_TEST_SSL_WEAK_CERT_VALIDATION`
 environment variable `on` to relax server certificate validation.
 
+The SASL / GSSAPI / Kerberos tests are skipped by default. To run them, set up a
+separate `mongod` with Kerberos and set its host and Kerberos principal name
+as environment variables:
+
+* `MONGOC_TEST_GSSAPI_HOST` 
+* `MONGOC_TEST_GSSAPI_USER` 
+
+URI-escape the username, for example write "user@realm" as "user%40realm".
+The user must be authorized to query `test.collection`.
+
 All tests should pass before submitting a patch.
 

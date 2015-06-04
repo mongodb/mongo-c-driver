@@ -40,6 +40,7 @@ extern void test_matcher_install           (TestSuite *suite);
 extern void test_queue_install             (TestSuite *suite);
 extern void test_read_prefs_install        (TestSuite *suite);
 extern void test_rpc_install               (TestSuite *suite);
+extern void test_sasl_install              (TestSuite *suite);
 extern void test_socket_install            (TestSuite *suite);
 extern void test_stream_install            (TestSuite *suite);
 extern void test_uri_install               (TestSuite *suite);
@@ -127,7 +128,7 @@ gen_collection_name (const char *str)
  *
  *--------------------------------------------------------------------------
  */
-static char *
+char *
 test_framework_getenv (const char *name)
 {
 #ifdef _MSC_VER
@@ -506,6 +507,7 @@ main (int   argc,
    test_queue_install (&suite);
    test_read_prefs_install (&suite);
    test_rpc_install (&suite);
+   test_sasl_install (&suite);
    test_socket_install (&suite);
    test_stream_install (&suite);
    test_uri_install (&suite);
