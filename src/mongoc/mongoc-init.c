@@ -133,11 +133,13 @@ static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
    _mongoc_ssl_cleanup();
 #endif
 
+#ifdef MONGOC_ENABLE_SASL
 #ifdef MONGOC_HAVE_SASL_CLIENT_DONE
    sasl_client_done ();
 #else
    /* fall back to deprecated function */
    sasl_done ();
+#endif
 #endif
 
 #ifdef _WIN32
