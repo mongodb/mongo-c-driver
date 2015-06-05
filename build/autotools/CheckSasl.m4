@@ -47,7 +47,7 @@ if test "$sasl_mode" != "no" ; then
                [have_sasl_client_done=yes],
                [have_sasl_client_done=no])
 
-  if test "have_sasl_client_done" = "yes" ; then
+  if test "$have_sasl_client_done" = "yes" ; then
     AC_SUBST(MONGOC_HAVE_SASL_CLIENT_DONE, 1)
   else
     AC_SUBST(MONGOC_HAVE_SASL_CLIENT_DONE, 0)
