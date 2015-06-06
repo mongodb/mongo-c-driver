@@ -1,5 +1,7 @@
+#ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
+#endif
 
 FUTURE_FUNCTION (uint32_t,
                  future_bulk_operation_execute,
@@ -26,4 +28,6 @@ FUTURE_FUNCTION (char_ptr_ptr,
                  FUTURE_PARAM(mongoc_database_ptr,       database),
                  FUTURE_PARAM(bson_error_ptr,            error))
 
+#ifdef __clang__
 #pragma clang diagnostic pop
+#endif

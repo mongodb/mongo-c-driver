@@ -48,8 +48,10 @@ typedef bson_error_t *bson_error_ptr;
 
 typedef struct _future_value_t future_value_t;
 
+#ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
+#endif
 
 struct _future_value_t
 {
@@ -95,6 +97,8 @@ MAKE_GETTER_AND_SETTER(mongoc_database_ptr)
 
 #undef MAKE_FUTURE_GETTER
 
+#ifdef __clang__
 #pragma clang diagnostic pop
+#endif
 
 #endif //FUTURE_VALUE_H
