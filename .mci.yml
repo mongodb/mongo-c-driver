@@ -25,6 +25,10 @@ libmongoc_variables:
         - name: compile
         - name: make check
 
+    msvc_test_def: &msvc_tests
+        - name: compile msvc
+        - name: make check msvc
+
     ## Architectures
 
     default_expansions_def: &default_expansions
@@ -33,11 +37,17 @@ libmongoc_variables:
         mongodb_args: "--fork --noprealloc --smallfiles --dbpath=/data/db --pidfilepath=/data/pid --auth"
         enable_ssl: yes
 
+    windows_expansions_def: &windows_expansions
+        env_vars: CFLAGS=""
+        mongodb_logpath: C:/data
+        mongodb_args: "--fork --noprealloc --smallfiles --dbpath=C:/data/db --pidfilepath=C:/data/pid --auth"
+        enable_ssl: yes
+
     i386_expansions_def: &i386_expansions
         env_vars: CFLAGS="-m32 -march=i386"
 
     ubuntu_i386_expansions_def: &ubuntu_i386_expansions
-          pre_compile: sudo apt-get install -f -y autoconf libtool gcc-multilib binutils-multiarch libsasl2-dev:i386 libsasl2-2:i386
+        pre_compile: sudo apt-get install -f -y autoconf libtool gcc-multilib binutils-multiarch libsasl2-dev:i386 libsasl2-2:i386
 
     i686_expansions_def: &i686_expansions
         env_vars: CFLAGS="-m32 -march=i686"
@@ -58,6 +68,15 @@ libmongoc_variables:
     solaris_expansions_def: &solaris_expansions
         j_flag: -j$(kstat cpu_info|grep core_id|sort -u|wc -l)
         mongo_url: "https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-latest.tgz"
+
+    msvc_expansions_def: &msvc_expansions
+        cmake: /cygdrive/c/cmake/bin/cmake
+        ctest: /cygdrive/c/cmake/bin/ctest
+        generator: Visual Studio 12 2013 Win64
+        msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
+        path: /cygdrive/c/mongo-c-driver/bin:/cygdrive/c/openssl/bin
+        mongo_url: http://downloads.mongodb.com/win32/mongodb-win32-x86_64-enterprise-windows-64-latest.zip
+        ext: .zip
 
     mingw_expansions_def: &mingw_expansions
         j_flag: -j$(grep -c ^processor /proc/cpuinfo)
@@ -158,6 +177,104 @@ tasks:
                 export MONGOC_TEST_USER=admin
                 export MONGOC_TEST_PASSWORD=pass
                 make check
+
+- name: compile msvc
+  commands:
+      - command: git.get_project
+        params:
+            directory: libmongoc
+      - command: git.apply_patch
+        params:
+            directory: libmongoc
+      - command: shell.exec
+        params:
+            working_dir: libmongoc
+            script: |
+                # In Autotools builds, autogen.sh does this, we must do it here.
+                git submodule init
+                git submodule update
+      - command: shell.exec
+        params:
+            working_dir: libmongoc/src/libbson
+            script: |
+                set -o verbose
+                set -o errexit
+                export PATH=${path}:$PATH
+                ${cmake} -G "${generator}" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
+                "${msbuild}" /m ALL_BUILD.vcxproj
+                "${msbuild}" /m INSTALL.vcxproj
+      - command: shell.exec
+        params:
+            working_dir: libmongoc
+            script: |
+                set -o verbose
+                set -o errexit
+                export PATH=${path}:$PATH
+                ${cmake} -G "${generator}" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"
+                "${msbuild}" /m ALL_BUILD.vcxproj
+                "${msbuild}" /m INSTALL.vcxproj
+      - command: shell.exec
+        params:
+            working_dir: libmongoc
+            script: |
+                set -o verbose
+                tar -czvf ../libmongoc.tar.gz .
+      - command: s3.put
+        params:
+            aws_key: ${aws_key}
+            aws_secret: ${aws_secret}
+            remote_file: libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz
+            bucket: mciuploads
+            local_file: libmongoc.tar.gz
+            permissions: public-read
+            content_type: ${content_type|application/x-gzip}
+
+- name: make check msvc
+  depends_on:
+      - name: compile msvc
+  commands:
+      - command: shell.exec
+        params:
+            script: |
+                set -o verbose
+                rm -rf libmongoc
+                mkdir libmongoc
+                rm -rf /data/db
+                mkdir -p /data/db
+      - command: shell.exec
+        params:
+            working_dir: libmongoc
+            script: |
+                set -o verbose
+                set -o errexit
+                # MCI's S3 mechanism doesn't support symlinks
+                curl http://s3.amazonaws.com/mciuploads/libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz -o ${build_id}.tar.gz --silent
+                tar -xzf ${build_id}.tar.gz
+                curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
+                ${decompress} mongo_enterprise.${ext|tgz}
+                cp mongodb*/bin/mongod${extension} ./mongod${extension}
+                cp mongodb*/bin/mongo${extension} ./mongo${extension}
+                chmod +x ./mongod${extension}
+                chmod +x ./mongo${extension}
+                if ! ./mongod${extension} ${mongodb_args} --logpath=${mongodb_logpath}
+                then
+                    cat ${mongodb_logpath}
+                    exit 1
+                fi
+                tries=0
+                until ./mongo${extension} --eval 'printjson(db.serverBuildInfo())'; do
+                    sleep 2
+                    ((tries=tries+1))
+                    if ((tries > 15)); then
+                        break
+                    fi
+                done
+                ./mongo${extension} --eval "db.createUser({user: 'admin', pwd: 'pass', roles: [{role: 'root', db: 'admin'}]})" admin
+                export MONGOC_TEST_USER=admin
+                export MONGOC_TEST_PASSWORD=pass
+                PATH=./tests:${PATH} ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
+                touch tests/trust_dir/done
+                ${ctest} -V -C Debug
 
 #######################################
 #           Buildvariants             #
@@ -300,6 +417,15 @@ buildvariants:
   run_on:
       - solaris
   tasks: *std_tests
+
+- name: windows-64-vs2013
+  display_name: Windows 64-bit CMake Visual Studio 2013
+  expansions:
+      <<: *windows_expansions
+      <<: *msvc_expansions
+  run_on:
+      - windows-64-vs2013-compile
+  tasks: *msvc_tests
 
 #- name: windows-64-mingw64
 #  display_name: Windows 64-bit MinGW-64
