@@ -31,6 +31,7 @@ else()
 endif ()
 
 set (MONGOC_ENABLE_SASL 0)
+set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
 
 configure_file (
    "${SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
