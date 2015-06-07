@@ -1,5 +1,5 @@
-#ifndef future_functionS_H
-#define future_functionS_H
+#ifndef FUTURE_FUNCTIONS_H
+#define FUTURE_FUNCTIONS_H
 
 #include "future-value.h"
 #include "future.h"
@@ -48,4 +48,4 @@ future_database_get_collection_names (
 
 
 
-#endif /* future_functionS_H */
+#endif /* FUTURE_FUNCTIONS_H */

@@ -1,0 +1,56 @@
+#ifndef FUTURE_VALUE_H
+#define FUTURE_VALUE_H
+
+#include <bson.h>
+#include <mongoc.h>
+
+{{ header_comment }}
+
+typedef char **char_ptr_ptr;
+typedef mongoc_bulk_operation_t *mongoc_bulk_operation_ptr;
+typedef mongoc_client_t *mongoc_client_ptr;
+typedef mongoc_cursor_t *mongoc_cursor_ptr;
+typedef mongoc_database_t *mongoc_database_ptr;
+typedef bson_t *bson_ptr;
+typedef const bson_t **const_bson_ptr_ptr;
+typedef bson_error_t *bson_error_ptr;
+
+typedef enum {
+   future_value_no_type = 0,
+{% for T in type_list %}   future_value_{{ T }}_type,
+{% endfor %}
+} future_value_type_t;
+
+typedef struct _future_value_t
+{
+   future_value_type_t type;
+   union {
+{% for T in type_list %}      {{ T }} {{ T }}_value;
+{% endfor %}
+   };
+} future_value_t;
+
+future_value_t *future_value_new ();
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
+{% for T in type_list %}
+void
+future_value_set_{{ T }}(
+   future_value_t *future_value,
+   {{ T }} value);
+
+{{ T }}
+future_value_get_{{ T }} (
+   future_value_t *future_value);
+{% endfor %}
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
+#endif /* FUTURE_VALUE_H */
+

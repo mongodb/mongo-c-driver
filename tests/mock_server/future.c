@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 
 #include "mongoc-array-private.h"
