@@ -221,6 +221,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/json-test.c
    ${SOURCE_DIR}/tests/mock_server/future.c
    ${SOURCE_DIR}/tests/mock_server/future-functions.c
+   ${SOURCE_DIR}/tests/mock_server/future-value.c
    ${SOURCE_DIR}/tests/mock_server/sync-queue.c
    ${SOURCE_DIR}/tests/mock_server/mock-server.c
    ${SOURCE_DIR}/tests/test-conveniences.c

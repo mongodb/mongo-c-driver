@@ -76,11 +76,9 @@ test_libmongoc_SOURCES = \
 	tests/mock_server/future.c \
 	tests/mock_server/future.h \
 	tests/mock_server/future-functions.c \
-	tests/mock_server/future-functions.def \
 	tests/mock_server/future-functions.h \
+	tests/mock_server/future-value.c \
 	tests/mock_server/future-value.h \
-	tests/mock_server/macro-vargs-magic.h \
-	tests/mock_server/make-future-getters.def \
 	tests/mock_server/mock-server.c \
 	tests/mock_server/mock-server.h \
 	tests/mock_server/sync-queue.c \
@@ -236,8 +234,6 @@ EXTRA_DIST += \
 	tests/mock_server/future-value.h \
 	tests/mock_server/future.c \
 	tests/mock_server/future.h \
-	tests/mock_server/macro-vargs-magic.h \
-	tests/mock_server/make-future-getters.def \
 	tests/mock_server/mock-server.c \
 	tests/mock_server/mock-server.h \
 	tests/mock_server/sync-queue.c \
