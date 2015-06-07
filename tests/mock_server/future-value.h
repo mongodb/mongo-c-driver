@@ -12,14 +12,15 @@
  *
  *************************************************/
 
-typedef char **char_ptr_ptr;
-typedef mongoc_bulk_operation_t *mongoc_bulk_operation_ptr;
-typedef mongoc_client_t *mongoc_client_ptr;
-typedef mongoc_cursor_t *mongoc_cursor_ptr;
-typedef mongoc_database_t *mongoc_database_ptr;
-typedef bson_t *bson_ptr;
-typedef const bson_t **const_bson_ptr_ptr;
-typedef bson_error_t *bson_error_ptr;
+
+typedef bson_error_t * bson_error_ptr;
+typedef bson_t * bson_ptr;
+typedef const bson_t ** const_bson_ptr_ptr;
+typedef char ** char_ptr_ptr;
+typedef mongoc_bulk_operation_t * mongoc_bulk_operation_ptr;
+typedef mongoc_client_t * mongoc_client_ptr;
+typedef mongoc_cursor_t * mongoc_cursor_ptr;
+typedef mongoc_database_t * mongoc_database_ptr;
 
 typedef enum {
    future_value_no_type = 0,
