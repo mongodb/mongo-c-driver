@@ -19,6 +19,9 @@
 
 #include "test-conveniences.h"
 
+#ifdef _WIN32
+# define strcasecmp _stricmp
+#endif
 
 bool
 get_exists_operator (bson_iter_t *iter,
