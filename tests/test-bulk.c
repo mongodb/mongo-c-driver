@@ -1563,7 +1563,6 @@ test_write_concern_error ()
    future_t *future;
    request_t *request;
 
-   mock_server_set_verbose (mock_server, true);
    mock_server_run (mock_server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
    collection = mongoc_client_get_collection (client, "test", "test");
