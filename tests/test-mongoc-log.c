@@ -22,8 +22,8 @@
 
 struct log_func_data {
    mongoc_log_level_t  log_level;
-   const char         *log_domain;
-   const char         *message;
+   char               *log_domain;
+   char               *message;
 };
 
 
@@ -33,10 +33,10 @@ void log_func (mongoc_log_level_t  log_level,
                void               *user_data)
 {
    struct log_func_data *data = (struct log_func_data *)user_data;
-   
+
    data->log_level = log_level;
-   data->log_domain = log_domain;
-   data->message = message;
+   data->log_domain = bson_strdup (log_domain);
+   data->message = bson_strdup (message);
 }
 
 
@@ -51,6 +51,7 @@ test_mongoc_log_handler (void)
    mongoc_log_set_handler (log_func, &data);
 
 #pragma push_macro("MONGOC_LOG_DOMAIN")
+#undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "my-custom-domain"
 
    MONGOC_WARNING ("warning!");
@@ -63,6 +64,9 @@ test_mongoc_log_handler (void)
 
    /* restore */
    mongoc_log_set_handler (old_handler, old_data);
+
+   bson_free (data.log_domain);
+   bson_free (data.message);
 }
 
 
