@@ -28,12 +28,11 @@ test_bulk_init ()
 void
 test_bulk_cleanup ()
 {
-   typedef bson_t *bson_ptr;
    int i;
    bson_t *doc;
 
    for (i = 0; i < gTmpBsonArray.len; i++) {
-      doc = _mongoc_array_index (&gTmpBsonArray, bson_ptr, i);
+      doc = _mongoc_array_index (&gTmpBsonArray, bson_t *, i);
       bson_destroy (doc);
    }
 
