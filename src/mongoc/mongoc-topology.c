@@ -189,7 +189,6 @@ mongoc_topology_new (const mongoc_uri_t *uri,
                                               topology->scanner,
                                               hl->host_and_port,
                                               &id);
-      mongoc_topology_scanner_add (topology->scanner, hl, id);
    }
 
    if (! topology->single_threaded) {

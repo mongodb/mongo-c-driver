@@ -755,6 +755,7 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
       mongoc_server_description_init(description, server, server_id);
 
       mongoc_set_add(topology->servers, server_id, description);
+      mongoc_topology_scanner_add (scanner, &description->host, server_id);
    }
 
    if (id) {
@@ -772,6 +773,7 @@ _mongoc_topology_description_monitor_new_servers (mongoc_topology_description_t 
 {
    bson_iter_t member_iter;
    const bson_t *rs_members[3];
+   uint32_t id;
    int i;
 
    rs_members[0] = &server->hosts;
@@ -782,7 +784,7 @@ _mongoc_topology_description_monitor_new_servers (mongoc_topology_description_t 
       bson_iter_init (&member_iter, rs_members[i]);
 
       while (bson_iter_next (&member_iter)) {
-         mongoc_topology_description_add_server(topology, scanner, bson_iter_utf8(&member_iter, NULL), NULL);
+         mongoc_topology_description_add_server(topology, scanner, bson_iter_utf8(&member_iter, NULL), &id);
       }
    }
 }
