@@ -6,6 +6,12 @@
 
 #include "test-libmongoc.h"
 
+#define ASSERT_SUPPRESS(x) \
+   do { \
+      suppress_one_message (); \
+      ASSERT (x); \
+   } while (0)
+
 static void
 test_mongoc_uri_new (void)
 {
@@ -21,6 +27,22 @@ test_mongoc_uri_new (void)
 
    /* bad uris */
    ASSERT(!mongoc_uri_new("mongodb://"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://\x80"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://localhost/\x80"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://localhost:\x80/"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://localhost/?ipv6=\x80"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://localhost/?foo=\x80"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://localhost/?\x80=bar"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://\x80:pass@localhost"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://user:\x80@localhost"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?"
+                                   "authMechanism=\x80"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?"
+                                   "authMechanism=GSSAPI"
+                                   "&authMechanismProperties=SERVICE_NAME:\x80"));
+   ASSERT_SUPPRESS(!mongoc_uri_new("mongodb://user%40DOMAIN.COM:password@localhost/?"
+                                   "authMechanism=GSSAPI"
+                                   "&authMechanismProperties=\x80:mongodb"));
    ASSERT(!mongoc_uri_new("mongodb://::"));
    ASSERT(!mongoc_uri_new("mongodb://localhost::27017"));
    ASSERT(!mongoc_uri_new("mongodb://localhost,localhost::"));
@@ -351,6 +373,8 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR(mongoc_uri_get_auth_mechanism(uri), "SCRAM-SHA1");
    mongoc_uri_destroy(uri);
 }
+
+#undef ASSERT_SUPPRESS
 
 static void
 test_mongoc_host_list_from_string (void)
