@@ -2071,7 +2071,7 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
          }
 
          mongoc_topology_description_handle_ismaster (
-            &topology->description, sd, &reply,
+            &topology->description, topology->scanner, sd, &reply,
             (now - before_ismaster) / 1000,    /* RTT_MS */
             error);
 

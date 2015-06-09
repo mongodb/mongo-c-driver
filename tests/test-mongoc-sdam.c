@@ -137,6 +137,7 @@ test_sdam_cb (bson_t *test)
 
          /* send ismaster through the topology description's handler */
          mongoc_topology_description_handle_ismaster(&client->topology->description,
+                                                     client->topology->scanner,
                                                      sd,
                                                      &response,
                                                      15,
