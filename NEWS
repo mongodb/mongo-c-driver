@@ -1,5 +1,28 @@
-mongo-c-driver 1.1.7-dev
-========================
+mongo-c-driver 1.1.7
+====================
+
+It is my pleasure to announce to you the 1.1.7 release of the MongoDB C driver.
+
+This is a patch release with bug fixes:
+
+ * Thread-safe use of Cyrus SASL library.
+ * Experimental support for building with CMake and SASL.
+ * Faster reconnection to replica set with some hosts down.
+ * Crash iterating a cursor after reconnecting to a replica set.
+ * Unchecked errors decoding invalid UTF-8 in MongoDB URIs.
+ * Fix error reporting from mongoc_client_get_database_names.
+
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+ * A. Jesse Jiryu Davis
+ * Jason Carey
+ * Hannes Magnusson
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
 
 mongo-c-driver 1.1.6
 ====================
