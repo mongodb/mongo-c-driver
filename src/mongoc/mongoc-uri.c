@@ -242,6 +242,10 @@ mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
    hostname = scan_to_unichar (str + 1, ']', "", &end_host);
 
    mongoc_uri_do_unescape (&hostname);
+   if (!hostname) {
+      return false;
+   }
+
    mongoc_uri_append_host (uri, hostname, port);
    bson_free (hostname);
 
