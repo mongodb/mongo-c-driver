@@ -127,9 +127,9 @@ test_server_selection_logic_cb (bson_t *test)
    assert(bson_iter_init_find(&topology_iter, &test_topology, "type"));
    type = bson_iter_utf8(&topology_iter, NULL);
    if (strcmp(type, "Single") == 0) {
-      mongoc_topology_description_init(&topology, MONGOC_TOPOLOGY_SINGLE, NULL);
+      mongoc_topology_description_init(&topology, MONGOC_TOPOLOGY_SINGLE);
    } else {
-      mongoc_topology_description_init(&topology, MONGOC_TOPOLOGY_UNKNOWN, NULL);
+      mongoc_topology_description_init(&topology, MONGOC_TOPOLOGY_UNKNOWN);
       topology.type = topology_type_from_test(bson_iter_utf8(&topology_iter, NULL));
    }
 

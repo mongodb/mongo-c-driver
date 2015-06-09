@@ -147,7 +147,7 @@ mongoc_topology_new (const mongoc_uri_t *uri,
       }
    }
 
-   mongoc_topology_description_init(&topology->description, init_type, NULL);
+   mongoc_topology_description_init(&topology->description, init_type);
    topology->description.set_name = bson_strdup(mongoc_uri_get_replica_set(uri));
 
    topology->uri = mongoc_uri_copy (uri);

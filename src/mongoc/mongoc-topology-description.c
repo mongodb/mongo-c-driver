@@ -50,8 +50,7 @@ _mongoc_topology_server_dtor (void *server_,
  */
 void
 mongoc_topology_description_init (mongoc_topology_description_t     *description,
-                                  mongoc_topology_description_type_t type,
-                                  mongoc_topology_cb_t              *cb)
+                                  mongoc_topology_description_type_t type)
 {
    ENTRY;
 
@@ -68,10 +67,6 @@ mongoc_topology_description_init (mongoc_topology_description_t     *description
    description->compatible = true;
    description->compatibility_error = NULL;
    description->stale = true;
-
-   if (cb) {
-      memcpy (&description->cb, cb, sizeof (*cb));
-   }
 
    EXIT;
 }
@@ -521,10 +516,6 @@ _mongoc_topology_description_remove_server (mongoc_topology_description_t *descr
    bson_return_if_fail (description);
    bson_return_if_fail (server);
 
-   if (description->cb.rm) {
-      description->cb.rm(server);
-   }
-
    mongoc_set_rm(description->servers, server->id);
 }
 
@@ -759,10 +750,6 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
       mongoc_server_description_init(description, server, server_id);
 
       mongoc_set_add(topology->servers, server_id, description);
-
-      if (topology->cb.add) {
-         topology->cb.add(description);
-      }
    }
 
    if (id) {
