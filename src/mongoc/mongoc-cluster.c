@@ -250,6 +250,7 @@ _mongoc_cluster_node_init (mongoc_cluster_node_t *node)
    bson_init(&node->tags);
    node->primary = 0;
    node->needs_auth = 0;
+   node->valid = true;
 
    EXIT;
 }
@@ -318,7 +319,8 @@ _mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
 {
    ENTRY;
 
-   BSON_ASSERT(node);
+   ALWAYS_ASSERT(node);
+   ALWAYS_ASSERT(node->valid);
 
    if (node->stream) {
       mongoc_stream_close(node->stream);
@@ -566,7 +568,7 @@ _mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 
    ENTRY;
 
-   bson_return_if_fail (cluster);
+   ALWAYS_ASSERT (cluster);
 
    mongoc_uri_destroy (cluster->uri);
 
@@ -1052,9 +1054,9 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
 
    ENTRY;
 
-   BSON_ASSERT(cluster);
-   BSON_ASSERT(node);
-   BSON_ASSERT(node->stream);
+   ALWAYS_ASSERT(cluster);
+   ALWAYS_ASSERT(node);
+   ALWAYS_ASSERT(node->stream);
 
    bson_init(&command);
    bson_append_int32(&command, "isMaster", 8, 1);
@@ -2204,6 +2206,11 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
    cluster->nodes = bson_realloc (cluster->nodes, sizeof (*cluster->nodes) * i);
    cluster->nodes_len = i;
 
+   /* guard against counter errors, see CDRIVER-695 */
+   for (i = 0; i < cluster->nodes_len; i++) {
+      cluster->nodes[i].valid = false;
+   }
+
    for (liter = list, i = 0; liter; liter = liter->next) {
       if (!_mongoc_host_list_from_string(&host, liter->data)) {
          MONGOC_WARNING("Failed to parse host and port: \"%s\"",
@@ -2276,6 +2283,7 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
 
       _mongoc_cluster_node_track_ping(&cluster->nodes[i], ping);
 
+      cluster->nodes[i].valid = true;
       i++;
    }
 

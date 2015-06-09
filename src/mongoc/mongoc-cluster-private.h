@@ -79,6 +79,7 @@ typedef struct
    int32_t             max_write_batch_size;
    char               *replSet;
    int64_t             last_read_msec;
+   bool                valid;
 } mongoc_cluster_node_t;
 
 
