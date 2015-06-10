@@ -77,7 +77,7 @@ mongoc_uri_lowercase_hostname (const char *src,
    }
 }
 
-static void
+void
 mongoc_uri_append_host (mongoc_uri_t  *uri,
                         const char    *host,
                         uint16_t       port)
@@ -483,6 +483,104 @@ again:
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_uri_bson_append_or_replace_key --
+ *
+ *
+ *       Appends 'option' to the end of 'options' if not already set.
+ *
+ *       Since we cannot grow utf8 strings inline, we have to allocate a temporary
+ *       bson variable and splice in the new value if the key is already set.
+ *
+ *       NOTE: This function keeps the order of the BSON keys.
+ *
+ *       NOTE: 'option' is case*in*sensitive.
+ *
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+mongoc_uri_bson_append_or_replace_key (bson_t *options, const char *option, const char *value)
+{
+   bson_iter_t iter;
+   bool found = false;
+
+   if (bson_iter_init (&iter, options)) {
+      bson_t tmp = BSON_INITIALIZER;
+
+      while (bson_iter_next (&iter)) {
+         const bson_value_t *bvalue;
+
+         if (!strcasecmp(bson_iter_key (&iter), option)) {
+            bson_append_utf8(&tmp, option, -1, value, -1);
+            found = true;
+            continue;
+         }
+
+         bvalue = bson_iter_value (&iter);
+         BSON_APPEND_VALUE (&tmp, bson_iter_key (&iter), bvalue);
+      }
+
+      if (! found) {
+         bson_append_utf8(&tmp, option, -1, value, -1);
+      }
+
+      bson_destroy (options);
+      bson_copy_to (&tmp, options);
+      bson_destroy (&tmp);
+   }
+}
+
+
+bool
+mongoc_uri_option_is_int32 (const char *key)
+{
+   return !strcasecmp(key, "connecttimeoutms") ||
+       !strcasecmp(key, "heartbeatfrequencyms") ||
+       !strcasecmp(key, "serverselectiontimeoutms") ||
+       !strcasecmp(key, "socketcheckintervalms") ||
+       !strcasecmp(key, "sockettimeoutms") ||
+       !strcasecmp(key, "maxpoolsize") ||
+       !strcasecmp(key, "minpoolsize") ||
+       !strcasecmp(key, "maxidletimems") ||
+       !strcasecmp(key, "waitqueuemultiple") ||
+       !strcasecmp(key, "waitqueuetimeoutms") ||
+       !strcasecmp(key, "wtimeoutms");
+}
+
+bool
+mongoc_uri_option_is_bool (const char *key)
+{
+   return !strcasecmp(key, "canonicalizeHostname") ||
+              !strcasecmp(key, "journal") ||
+              !strcasecmp(key, "safe") ||
+              !strcasecmp(key, "slaveok") ||
+              !strcasecmp(key, "ssl");
+}
+
+bool
+mongoc_uri_option_is_utf8 (const char *key)
+{
+   if (mongoc_uri_option_is_bool(key) || mongoc_uri_option_is_int32(key)) {
+      return false;
+   }
+
+   if (!strcasecmp(key, "readpreferencetags") ||
+         !strcasecmp(key, "authmechanismproperties")) {
+      return false;
+   }
+
+   if (!strcasecmp(key, "username") || !strcasecmp(key, "password")
+         || !strcasecmp(key, "authsource") || !strcasecmp(key, "database")) {
+      return false;
+   }
+
+   return true;
+}
+
 static bool
 mongoc_uri_parse_option (mongoc_uri_t *uri,
                          const char   *str)
@@ -503,19 +601,9 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       return false;
    }
 
-   if (!strcasecmp(key, "connecttimeoutms") ||
-       !strcasecmp(key, "heartbeatfrequencyms") ||
-       !strcasecmp(key, "serverselectiontimeoutms") ||
-       !strcasecmp(key, "socketcheckintervalms") ||
-       !strcasecmp(key, "sockettimeoutms") ||
-       !strcasecmp(key, "maxpoolsize") ||
-       !strcasecmp(key, "minpoolsize") ||
-       !strcasecmp(key, "maxidletimems") ||
-       !strcasecmp(key, "waitqueuemultiple") ||
-       !strcasecmp(key, "waitqueuetimeoutms") ||
-       !strcasecmp(key, "wtimeoutms")) {
+   if (mongoc_uri_option_is_int32(key)) {
       v_int = (int) strtol (value, NULL, 10);
-      bson_append_int32(&uri->options, key, -1, v_int);
+      BSON_APPEND_INT32 (&uri->options, key, v_int);
    } else if (!strcasecmp(key, "w")) {
       if (*value == '-' || isdigit(*value)) {
          v_int = (int) strtol (value, NULL, 10);
@@ -523,13 +611,9 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       } else if (0 == strcasecmp (value, "majority")) {
          BSON_APPEND_UTF8 (&uri->options, "w", "majority");
       } else if (*value) {
-         BSON_APPEND_UTF8 (&uri->options, "W", value);
+         BSON_APPEND_UTF8 (&uri->options, "w", value);
       }
-   } else if (!strcasecmp(key, "canonicalizeHostname") ||
-              !strcasecmp(key, "journal") ||
-              !strcasecmp(key, "safe") ||
-              !strcasecmp(key, "slaveok") ||
-              !strcasecmp(key, "ssl")) {
+   } else if (mongoc_uri_option_is_bool(key)) {
       bson_append_bool (&uri->options, key, -1,
                         (0 == strcasecmp (value, "true")) ||
                         (0 == strcasecmp (value, "t")) ||
@@ -728,9 +812,7 @@ _mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri) /* IN */
 
    BSON_ASSERT(uri);
 
-   if (bson_iter_init_find_case(&iter, &uri->options, "slaveok") &&
-       BSON_ITER_HOLDS_BOOL(&iter) &&
-       bson_iter_bool(&iter)) {
+   if (mongoc_uri_get_option_as_bool (uri, "slaveok", false)) {
       mongoc_read_prefs_set_mode(uri->read_prefs, MONGOC_READ_SECONDARY_PREFERRED);
    }
 
@@ -767,7 +849,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
    mongoc_write_concern_t *write_concern;
    const char *str;
    bson_iter_t iter;
-   int32_t wtimeoutms = 0;
+   int32_t wtimeoutms;
    int value;
 
    BSON_ASSERT (uri);
@@ -780,10 +862,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
                                   bson_iter_bool (&iter) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    }
 
-   if (bson_iter_init_find_case (&iter, &uri->options, "wtimeoutms") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      wtimeoutms = bson_iter_int32 (&iter);
-   }
+   wtimeoutms = mongoc_uri_get_option_as_int32(uri, "wtimeoutms", 0);
 
    if (bson_iter_init_find_case (&iter, &uri->options, "journal") &&
        BSON_ITER_HOLDS_BOOL (&iter)) {
@@ -891,7 +970,29 @@ const char *
 mongoc_uri_get_username (const mongoc_uri_t *uri)
 {
    bson_return_val_if_fail(uri, NULL);
+
    return uri->username;
+}
+
+bool
+mongoc_uri_set_username (mongoc_uri_t *uri, const char *username)
+{
+   size_t len;
+
+   bson_return_val_if_fail (username, false);
+
+   len = strlen(username);
+
+   if (!bson_utf8_validate (username, len, false)) {
+      return false;
+   }
+
+   if (uri->username) {
+      bson_free (uri->username);
+   }
+
+   uri->username = bson_strdup (username);
+   return true;
 }
 
 
@@ -899,7 +1000,29 @@ const char *
 mongoc_uri_get_password (const mongoc_uri_t *uri)
 {
    bson_return_val_if_fail(uri, NULL);
+
    return uri->password;
+}
+
+bool
+mongoc_uri_set_password (mongoc_uri_t *uri, const char *password)
+{
+   size_t len;
+
+   bson_return_val_if_fail (password, false);
+
+   len = strlen(password);
+
+   if (!bson_utf8_validate (password, len, false)) {
+      return false;
+   }
+
+   if (uri->password) {
+      bson_free (uri->password);
+   }
+
+   uri->password = bson_strdup (password);
+   return true;
 }
 
 
@@ -908,6 +1031,27 @@ mongoc_uri_get_database (const mongoc_uri_t *uri)
 {
    bson_return_val_if_fail(uri, NULL);
    return uri->database;
+}
+
+bool
+mongoc_uri_set_database (mongoc_uri_t *uri, const char *database)
+{
+   size_t len;
+
+   bson_return_val_if_fail (database, false);
+
+   len = strlen(database);
+
+   if (!bson_utf8_validate (database, len, false)) {
+      return false;
+   }
+
+   if (uri->database) {
+      bson_free (uri->database);
+   }
+
+   uri->database = bson_strdup(database);
+   return true;
 }
 
 
@@ -925,6 +1069,24 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
    return uri->database ? uri->database : "admin";
 }
 
+
+bool
+mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
+{
+   size_t len;
+
+   bson_return_val_if_fail (value, false);
+
+   len = strlen(value);
+
+   if (!bson_utf8_validate (value, len, false)) {
+      return false;
+   }
+
+   mongoc_uri_bson_append_or_replace_key (&uri->credentials, "authSource", value);
+
+   return true;
+}
 
 const bson_t *
 mongoc_uri_get_options (const mongoc_uri_t *uri)
@@ -1091,3 +1253,267 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
            BSON_ITER_HOLDS_BOOL (&iter) &&
            bson_iter_bool (&iter));
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_uri_get_option_as_int32 --
+ *
+ *       Checks if the URI 'option' is set and of correct type (int32).
+ *       The special value '0' is considered as "unset".
+ *       This is so users can provide
+ *       sprintf(mongodb://localhost/?option=%d, myvalue) style connection strings,
+ *       and still apply default values.
+ *
+ *       If not set, or set to invalid type, 'fallback' is returned.
+ *
+ *       NOTE: 'option' is case*in*sensitive.
+ *
+ * Returns:
+ *       The value of 'option' if available as int32 (and not 0), or 'fallback'.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int32_t
+mongoc_uri_get_option_as_int32(const mongoc_uri_t *uri, const char *option,
+                               int32_t fallback)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+   int32_t retval = fallback;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+        bson_iter_init_find_case (&iter, options, option) &&
+        BSON_ITER_HOLDS_INT32 (&iter)) {
+
+      if (!(retval = bson_iter_int32(&iter))) {
+         retval = fallback;
+      }
+   }
+
+   return retval;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_uri_set_option_as_int32 --
+ *
+ *       Sets a URI option 'after the fact'. Allows users to set individual
+ *       URI options without passing them as a connection string.
+ *
+ *       Only allows a set of known options to be set.
+ *       @see mongoc_uri_option_is_int32 ().
+ *
+ *       Does in-place-update of the option BSON if 'option' is already set.
+ *       Appends the option to the end otherwise.
+ *
+ *       NOTE: If 'option' is already set, and is of invalid type, this
+ *       function will return false.
+ *
+ *       NOTE: 'option' is case*in*sensitive.
+ *
+ * Returns:
+ *       true on successfully setting the option, false on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_uri_set_option_as_int32(mongoc_uri_t *uri, const char *option,
+                               int32_t value)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+
+   bson_return_val_if_fail (option, false);
+
+   if (!mongoc_uri_option_is_int32 (option)) {
+      return false;
+   }
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+         bson_iter_init_find_case (&iter, options, option)) {
+      if (BSON_ITER_HOLDS_INT32 (&iter)) {
+         bson_iter_overwrite_int32 (&iter, value);
+         return true;
+      } else {
+         return false;
+      }
+   }
+
+   bson_append_int32(&uri->options, option, -1, value);
+   return true;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_uri_get_option_as_bool --
+ *
+ *       Checks if the URI 'option' is set and of correct type (bool).
+ *
+ *       If not set, or set to invalid type, 'fallback' is returned.
+ *
+ *       NOTE: 'option' is case*in*sensitive.
+ *
+ * Returns:
+ *       The value of 'option' if available as bool, or 'fallback'.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_uri_get_option_as_bool (const mongoc_uri_t *uri, const char *option,
+                               bool fallback)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, option) &&
+       BSON_ITER_HOLDS_BOOL (&iter)) {
+      return bson_iter_bool (&iter);
+   }
+
+   return fallback;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_uri_set_option_as_bool --
+ *
+ *       Sets a URI option 'after the fact'. Allows users to set individual
+ *       URI options without passing them as a connection string.
+ *
+ *       Only allows a set of known options to be set.
+ *       @see mongoc_uri_option_is_bool ().
+ *
+ *       Does in-place-update of the option BSON if 'option' is already set.
+ *       Appends the option to the end otherwise.
+ *
+ *       NOTE: If 'option' is already set, and is of invalid type, this
+ *       function will return false.
+ *
+ *       NOTE: 'option' is case*in*sensitive.
+ *
+ * Returns:
+ *       true on successfully setting the option, false on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_uri_set_option_as_bool(mongoc_uri_t *uri, const char *option,
+                              bool value)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+
+   bson_return_val_if_fail (option, false);
+
+   if (!mongoc_uri_option_is_bool (option)) {
+      return false;
+   }
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+         bson_iter_init_find_case (&iter, options, option)) {
+      if (BSON_ITER_HOLDS_BOOL (&iter)) {
+         bson_iter_overwrite_bool (&iter, value);
+         return true;
+      } else {
+         return false;
+      }
+   }
+   bson_append_bool(&uri->options, option, -1, value);
+   return true;
+
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_uri_get_option_as_utf8 --
+ *
+ *       Checks if the URI 'option' is set and of correct type (utf8).
+ *
+ *       If not set, or set to invalid type, 'fallback' is returned.
+ *
+ *       NOTE: 'option' is case*in*sensitive.
+ *
+ * Returns:
+ *       The value of 'option' if available as utf8, or 'fallback'.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const char*
+mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri, const char *option,
+                               const char *fallback)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, option) &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      return bson_iter_utf8 (&iter, NULL);
+   }
+
+   return fallback;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_uri_set_option_as_utf8 --
+ *
+ *       Sets a URI option 'after the fact'. Allows users to set individual
+ *       URI options without passing them as a connection string.
+ *
+ *       Only allows a set of known options to be set.
+ *       @see mongoc_uri_option_is_utf8 ().
+ *
+ *       If the option is not already set, this function will append it to the end
+ *       of the options bson.
+ *       NOTE: If the option is already set the entire options bson will be
+ *       overwritten, containing the new option=value (at the same position).
+ *
+ *       NOTE: If 'option' is already set, and is of invalid type, this
+ *       function will return false.
+ *
+ *       NOTE: 'option' must be valid utf8.
+ *
+ *       NOTE: 'option' is case*in*sensitive.
+ *
+ * Returns:
+ *       true on successfully setting the option, false on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_uri_set_option_as_utf8(mongoc_uri_t *uri, const char *option,
+                              const char *value)
+{
+   size_t len;
+
+   bson_return_val_if_fail (option, false);
+
+   len = strlen(value);
+
+   if (!bson_utf8_validate (value, len, false)) {
+      return false;
+   }
+
+   if (!mongoc_uri_option_is_utf8 (option)) {
+      return false;
+   }
+
+   mongoc_uri_bson_append_or_replace_key (&uri->options, option, value);
+
+   return true;
+}
+
