@@ -349,7 +349,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
             cursor->hint);
       }
    } else if (cursor->rpc.reply.cursor_id) {
-      mongoc_client_kill_cursor(cursor->client, cursor->rpc.reply.cursor_id);
+      _mongoc_client_kill_cursor(cursor->client, cursor->hint, cursor->rpc.reply.cursor_id);
    }
 
    if (cursor->reader) {
