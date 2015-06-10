@@ -28,10 +28,40 @@ BSON_BEGIN_DECLS
 
 
 void
-mongoc_uri_lowercase_hostname (const char *src,
-                               char       *buf /* OUT */,
-                               int         len);
-
+mongoc_uri_lowercase_hostname    (const char *src,
+                                  char       *buf /* OUT */,
+                                  int         len);
+void
+mongoc_uri_append_host           (mongoc_uri_t  *uri,
+                                  const char    *host,
+                                  uint16_t       port);
+bool
+mongoc_uri_set_username          (mongoc_uri_t *uri,
+                                  const char *username);
+bool
+mongoc_uri_set_password          (mongoc_uri_t *uri,
+                                  const char *password);
+bool
+mongoc_uri_set_database          (mongoc_uri_t *uri,
+                                  const char *database);
+bool
+mongoc_uri_option_is_int32       (const char *key);
+bool
+mongoc_uri_set_option_as_int32   (mongoc_uri_t *uri,
+                                  const char *option,
+                                  int32_t value);
+bool
+mongoc_uri_option_is_bool        (const char *key);
+bool
+mongoc_uri_set_option_as_bool    (mongoc_uri_t *uri,
+                                  const char *option,
+                                  bool value);
+bool
+mongoc_uri_option_is_utf8        (const char *key);
+bool
+mongoc_uri_set_option_as_utf8    (mongoc_uri_t *uri,
+                                  const char *option,
+                                  const char *value);
 
 BSON_BEGIN_DECLS
 
