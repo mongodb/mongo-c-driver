@@ -67,6 +67,9 @@ const mongoc_write_concern_t *mongoc_uri_get_write_concern        (const mongoc_
 int32_t                       mongoc_uri_get_option_as_int32      (const mongoc_uri_t *uri,
                                                                    const char         *option,
                                                                          int32_t       fallback);
+bool                          mongoc_uri_get_option_as_bool       (const mongoc_uri_t *uri,
+                                                                   const char         *option,
+                                                                         bool          fallback);
 
 BSON_END_DECLS
 

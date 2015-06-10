@@ -372,7 +372,37 @@ test_mongoc_uri_new (void)
    ASSERT(uri);
    ASSERT_CMPSTR(mongoc_uri_get_auth_mechanism(uri), "SCRAM-SHA1");
    mongoc_uri_destroy(uri);
+
+
 }
+
+
+static void
+test_mongoc_uri_functions (void)
+{
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new("mongodb://foo:bar@localhost:27017/baz?authSource=source");
+   ASSERT_CMPSTR(mongoc_uri_get_username(uri), "foo");
+   ASSERT_CMPSTR(mongoc_uri_get_password(uri), "bar");
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "baz");
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "source");
+
+   mongoc_uri_set_username (uri, "longer username that should work");
+   ASSERT_CMPSTR(mongoc_uri_get_username(uri), "longer username that should work");
+
+   mongoc_uri_set_password (uri, "longer password that should work");
+   ASSERT_CMPSTR(mongoc_uri_get_password(uri), "longer password that should also work");
+
+   mongoc_uri_set_database (uri, "longer database that should work");
+   ASSERT_CMPSTR(mongoc_uri_get_database(uri), "longer database that should work");
+
+   mongoc_uri_set_auth_source (uri, "longer database that should work");
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "longer database that should work");
+
+   mongoc_uri_destroy(uri);
+}
+
 
 #undef ASSERT_SUPPRESS
 
@@ -607,4 +637,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/read_prefs", test_mongoc_uri_read_prefs);
    TestSuite_Add (suite, "/Uri/write_concern", test_mongoc_uri_write_concern);
    TestSuite_Add (suite, "/HostList/from_string", test_mongoc_host_list_from_string);
+   TestSuite_Add (suite, "/Uri/functions", test_mongoc_uri_functions);
 }

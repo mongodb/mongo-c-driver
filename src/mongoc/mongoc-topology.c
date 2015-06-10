@@ -154,12 +154,13 @@ mongoc_topology_new (const mongoc_uri_t *uri,
                                                     topology);
    topology->single_threaded = single_threaded;
 
-   topology->timeout_msec = mongoc_uri_get_option_as_int32(topology->uri,
-         "serverselectiontimeoutms", MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS);
+   topology->timeout_msec = mongoc_uri_get_option_as_int32(
+      topology->uri, "serverselectiontimeoutms",
+      MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS);
 
-   topology->heartbeat_msec = mongoc_uri_get_option_as_int32(topology->uri,
-       "heartbeatfrequencyms",
-            (single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED :
+   topology->heartbeat_msec = mongoc_uri_get_option_as_int32(
+      topology->uri, "heartbeatfrequencyms",
+      (single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED :
             MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED)
    );
 

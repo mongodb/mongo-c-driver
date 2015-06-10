@@ -1352,11 +1352,11 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    cluster->sec_latency_ms = 15;
 
-   cluster->sockettimeoutms = mongoc_uri_get_option_as_int32(uri, "sockettimeoutms",
-         MONGOC_DEFAULT_SOCKETTIMEOUTMS);
+   cluster->sockettimeoutms = mongoc_uri_get_option_as_int32(
+      uri, "sockettimeoutms", MONGOC_DEFAULT_SOCKETTIMEOUTMS);
 
-   cluster->socketcheckintervalms = mongoc_uri_get_option_as_int32(uri,
-         "socketcheckintervalms", MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS);
+   cluster->socketcheckintervalms = mongoc_uri_get_option_as_int32(
+      uri, "socketcheckintervalms", MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS);
 
    /* TODO for single-threaded case we don't need this */
    cluster->nodes = mongoc_set_new(8, _mongoc_cluster_node_dtor, NULL);
