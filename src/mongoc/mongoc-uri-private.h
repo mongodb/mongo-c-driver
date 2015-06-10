@@ -33,7 +33,7 @@ mongoc_uri_lowercase_hostname (const char *src,
                                int         len);
 
 
-BSON_BEGIN_DECLS
+BSON_END_DECLS
 
 
 #endif /* MONGOC_URI_PRIVATE_H */
