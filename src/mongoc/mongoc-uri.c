@@ -780,10 +780,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
                                   bson_iter_bool (&iter) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    }
 
-   if (bson_iter_init_find_case (&iter, &uri->options, "wtimeoutms") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      wtimeoutms = bson_iter_int32 (&iter);
-   }
+   wtimeoutms = mongoc_uri_get_option_as_int32(uri, "wtimeoutms", 0);
 
    if (bson_iter_init_find_case (&iter, &uri->options, "journal") &&
        BSON_ITER_HOLDS_BOOL (&iter)) {
@@ -1091,3 +1088,24 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
            BSON_ITER_HOLDS_BOOL (&iter) &&
            bson_iter_bool (&iter));
 }
+
+int32_t
+mongoc_uri_get_option_as_int32(const mongoc_uri_t *uri, const char *option,
+                               int32_t fallback)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+   int32_t retval = fallback;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, option) &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+
+      if (!(retval = bson_iter_int32(&iter))) {
+         retval = fallback;
+      }
+   }
+
+   return retval;
+}
+
