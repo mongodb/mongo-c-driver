@@ -98,16 +98,10 @@ test_sdam_cb (bson_t *test)
    const char *hostname;
    const char *name;
 
-   /* TODO remove these when tickets are resolved,
-      but for now skip some broken tests */
    assert (bson_iter_init_find(&iter, test, "description"));
    name = bson_iter_utf8(&iter, NULL);
    if (strcmp("Host list differs from seeds", name) == 0) {
       printf("SKIPPED -- see SPEC-141 ");
-      return;
-   } else if (strcmp("New primary with wrong setName", name) == 0 ||
-              strcmp("Secondary wrong setName with primary", name) == 0) {
-      printf("SKIPPED -- see SPEC-142 ");
       return;
    } else if (strcmp("Direct connection to slave", name) == 0) {
       printf("SKIPPED -- see SPEC-139 ");
