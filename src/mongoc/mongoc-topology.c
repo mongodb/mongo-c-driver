@@ -359,29 +359,23 @@ mongoc_topology_select (mongoc_topology_t         *topology,
          topology->stale = false;
       }
 
-      /* until we find a server or timeout */
-      for (;;) {
-         /* error if we've timed out */
-         now = bson_get_monotonic_time();
-         if (now >= expire_at) {
-            goto TIMEOUT;
-         }
+      /* attempt to select a server */
+      selected_server = mongoc_topology_description_select(&topology->description,
+                                                           optype,
+                                                           read_prefs,
+                                                           local_threshold_ms,
+                                                           error);
 
-         /* attempt to select a server */
-         selected_server = mongoc_topology_description_select(&topology->description,
-                                                              optype,
-                                                              read_prefs,
-                                                              local_threshold_ms,
-                                                              error);
-
-         if (selected_server) {
-            RETURN (mongoc_server_description_new_copy(selected_server));
-         }
-
-         /* rescan */
-         usleep (MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS * 1000);
-         _mongoc_topology_do_blocking_scan(topology);
+      if (selected_server) {
+         RETURN (mongoc_server_description_new_copy(selected_server));
       }
+
+      bson_set_error(error,
+                     MONGOC_ERROR_SERVER_SELECTION,
+                     MONGOC_ERROR_SERVER_SELECTION_NO_MATCH,
+                     "Could not find any server matching");
+
+      RETURN (NULL);
    }
 
    /* With background thread */
