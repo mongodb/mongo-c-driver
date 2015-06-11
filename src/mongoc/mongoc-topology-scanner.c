@@ -332,21 +332,21 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
 }
 
 static bool
-mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
+mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
+                                    bson_error_t                   *error)
 {
    mongoc_stream_t *sock_stream;
-   bson_error_t error = { 0 };
 
    if (node->stream) { return true; }
 
    if (node->ts->initiator) {
       sock_stream = node->ts->initiator (node->ts->uri, &node->host,
-                                         node->ts->initiator_context, &error);
+                                         node->ts->initiator_context, error);
    } else {
       if (node->host.family == AF_UNIX) {
-         sock_stream = mongoc_topology_scanner_node_connect_unix (node, &error);
+         sock_stream = mongoc_topology_scanner_node_connect_unix (node, error);
       } else {
-         sock_stream = mongoc_topology_scanner_node_connect_tcp (node, &error);
+         sock_stream = mongoc_topology_scanner_node_connect_tcp (node, error);
       }
 
 #ifdef MONGOC_ENABLE_SSL
@@ -358,7 +358,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
 
    if (!sock_stream) {
       /* Pass a rtt of -1 if we couldn't initialize a stream in node_setup */
-      if (!node->ts->cb (node->id, NULL, -1, node->ts->cb_data, &error)) {
+      if (!node->ts->cb (node->id, NULL, -1, node->ts->cb_data, error)) {
          mongoc_topology_scanner_node_destroy (node, true);
       }
 
@@ -399,7 +399,10 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
-      if (mongoc_topology_scanner_node_setup (node)) {
+      /* FIXME: Gotta catch all the pokemons, not overwrite them */
+      bson_error_t error;
+
+      if (mongoc_topology_scanner_node_setup (node, &error)) {
          node->cmd = mongoc_async_cmd (ts->async, node->stream, ts->setup,
                                        node->host.host, "admin", &ts->ismaster_cmd,
                                        &mongoc_topology_scanner_ismaster_handler, node,
