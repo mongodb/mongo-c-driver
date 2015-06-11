@@ -103,9 +103,6 @@ test_sdam_cb (bson_t *test)
    if (strcmp("Host list differs from seeds", name) == 0) {
       printf("SKIPPED -- see SPEC-141 ");
       return;
-   } else if (strcmp("Direct connection to slave", name) == 0) {
-      printf("SKIPPED -- see SPEC-139 ");
-      return;
    }
 
    /* parse out the uri and use it to create a client */
