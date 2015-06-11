@@ -518,6 +518,7 @@ _mongoc_topology_description_remove_server (mongoc_topology_description_t *descr
    bson_return_if_fail (description);
    bson_return_if_fail (server);
 
+   /* FIXME: Call mongoc_topology_scanner_node_destroy() ? How to we get the node */
    mongoc_set_rm(description->servers, server->id);
 }
 
@@ -789,10 +790,11 @@ _mongoc_topology_description_monitor_new_servers (mongoc_topology_description_t 
    }
 }
 
-typedef struct _mongoc_primary_and_topology_t {
+typedef struct _mongoc_primary_and_topology_t_with_scanner {
    mongoc_topology_description_t *topology;
-   mongoc_server_description_t *primary;
-} mongoc_primary_and_topology_t;
+   mongoc_server_description_t   *primary;
+   mongoc_topology_scanner_t     *scanner;
+} mongoc_primary_and_topology_t_with_scanner;
 
 /* invalidate old primaries */
 static bool
@@ -800,7 +802,7 @@ _mongoc_topology_description_invalidate_primaries_cb (void *item,
                                                       void *ctx)
 {
    mongoc_server_description_t *server = item;
-   mongoc_primary_and_topology_t *data = ctx;
+   mongoc_primary_and_topology_t_with_scanner *data = ctx;
 
    if (server->id != data->primary->id &&
        server->type == MONGOC_SERVER_RS_PRIMARY) {
@@ -815,10 +817,10 @@ _mongoc_topology_description_remove_missing_hosts_cb (void *item,
                                                       void *ctx)
 {
    mongoc_server_description_t *server = item;
-   mongoc_primary_and_topology_t *data = ctx;
+   mongoc_primary_and_topology_t_with_scanner *data = ctx;
 
    if (!mongoc_server_description_has_rs_member(data->primary, server->connection_address)) {
-      _mongoc_topology_description_remove_server(data->topology, NULL, server);
+      _mongoc_topology_description_remove_server(data->topology, data->scanner, server);
    }
    return true;
 }
@@ -856,7 +858,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
                                                      mongoc_topology_scanner_t     *scanner,
                                                      mongoc_server_description_t   *server)
 {
-   mongoc_primary_and_topology_t data;
+   mongoc_primary_and_topology_t_with_scanner data;
 
    bson_return_if_fail (topology);
    bson_return_if_fail (server);
@@ -879,6 +881,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
    /* 'Server' is the primary! Invalidate other primaries if found */
    data.primary = server;
    data.topology = topology;
+   data.scanner = scanner;
    mongoc_set_for_each(topology->servers, _mongoc_topology_description_invalidate_primaries_cb, &data);
 
    /* Begin monitoring any new servers primary knows about */
@@ -888,7 +891,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
    mongoc_set_for_each(topology->servers, _mongoc_topology_description_remove_missing_hosts_cb, &data);
 
    /* Finally, set topology type */
-   _mongoc_topology_description_check_if_has_primary (topology, server);
+   _mongoc_topology_description_check_if_has_primary (topology, scanner, server);
 }
 
 /*
