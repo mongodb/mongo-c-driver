@@ -390,6 +390,7 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
 {
    mongoc_topology_scanner_node_t *node, *tmp;
 
+   ENTRY;
    bson_return_if_fail (ts);
 
    if (ts->in_progress) {
@@ -405,6 +406,8 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
                                        timeout_msec);
       }
    }
+
+   EXIT;
 }
 
 /*
@@ -428,13 +431,14 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
 {
    bool r;
 
+   ENTRY;
    r = mongoc_async_run (ts->async, timeout_msec);
 
    if (! r) {
       ts->in_progress = false;
    }
 
-   return r;
+   RETURN (r);
 }
 
 

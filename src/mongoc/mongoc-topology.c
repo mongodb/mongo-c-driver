@@ -70,6 +70,7 @@ _mongoc_topology_scanner_cb (uint32_t      id,
    mongoc_server_description_t *sd;
 
    bson_return_val_if_fail (data, false);
+   ENTRY;
 
    topology = data;
 
@@ -96,7 +97,7 @@ _mongoc_topology_scanner_cb (uint32_t      id,
       mongoc_mutex_unlock (&topology->mutex);
    }
 
-   return r;
+   RETURN (r);
 }
 
 /*
@@ -126,6 +127,7 @@ mongoc_topology_new (const mongoc_uri_t *uri,
    bson_iter_t iter;
 
    bson_return_val_if_fail(uri, NULL);
+   ENTRY;
 
    topology = bson_malloc0(sizeof *topology);
 
@@ -194,7 +196,7 @@ mongoc_topology_new (const mongoc_uri_t *uri,
        _mongoc_topology_background_thread_start (topology);
    }
 
-   return topology;
+   RETURN (topology);
 }
 
 /*
@@ -271,6 +273,7 @@ _mongoc_topology_run_scanner (mongoc_topology_t *topology,
    int64_t expire_at;
    bool keep_going = true;
 
+   ENTRY;
    now = bson_get_monotonic_time ();
    expire_at = now + (work_msec * 1000);
 
@@ -283,7 +286,7 @@ _mongoc_topology_run_scanner (mongoc_topology_t *topology,
       }
    }
 
-   return keep_going;
+   RETURN (keep_going);
 }
 
 /*
@@ -298,9 +301,13 @@ _mongoc_topology_run_scanner (mongoc_topology_t *topology,
  */
 static void
 _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology) {
+   ENTRY;
+
    mongoc_topology_scanner_start (topology->scanner, topology->timeout_msec);
    while (_mongoc_topology_run_scanner (topology, topology->timeout_msec)) {}
    topology->last_scan = bson_get_monotonic_time ();
+
+   EXIT;
 }
 
 /*
@@ -337,6 +344,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
    int64_t expire_at;
    mongoc_server_description_t *selected_server = NULL;
 
+   ENTRY;
    bson_return_val_if_fail(topology, NULL);
 
    now = bson_get_monotonic_time ();
@@ -367,7 +375,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                                                               error);
 
          if (selected_server) {
-            return mongoc_server_description_new_copy(selected_server);
+            RETURN (mongoc_server_description_new_copy(selected_server));
          }
 
          /* rescan */
@@ -396,21 +404,21 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
          if (r == ETIMEDOUT) {
             /* handle timeouts */
-            goto TIMEOUT;
+            GOTO (TIMEOUT);
          } else if (r) {
             /* TODO handle other errors */
-            goto TIMEOUT;
+            GOTO (TIMEOUT);
          }
 
          now = bson_get_monotonic_time ();
 
          if (now > expire_at) {
-             goto TIMEOUT;
+             GOTO (TIMEOUT);
          }
       } else {
          selected_server = mongoc_server_description_new_copy(selected_server);
          mongoc_mutex_unlock (&topology->mutex);
-         return selected_server;
+         RETURN (selected_server);
       }
    }
 
@@ -419,7 +427,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                   MONGOC_ERROR_SERVER_SELECTION,
                   MONGOC_ERROR_SERVER_SELECTION_TIMEOUT,
                   "Timed out trying to select a server");
-   return NULL;
+   RETURN (NULL);
 }
 
 /*
