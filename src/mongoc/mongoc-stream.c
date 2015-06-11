@@ -309,7 +309,7 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
 {
    mongoc_stream_poll_t *poller = bson_malloc(sizeof(*poller) * nstreams);
 
-   int i;
+   size_t i;
    int last_type = 0;
    ssize_t rval = -1;
 
