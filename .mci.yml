@@ -76,12 +76,50 @@ libmongoc_variables:
         msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
         path: /cygdrive/c/mongo-c-driver/bin:/cygdrive/c/openssl/bin
         mongo_url: http://downloads.mongodb.com/win32/mongodb-win32-x86_64-enterprise-windows-64-latest.zip
-        ext: .zip
+        ext: zip
 
     mingw_expansions_def: &mingw_expansions
         j_flag: -j$(grep -c ^processor /proc/cpuinfo)
         mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-latest.zip"
-        ext: ".zip"
+        ext: zip
+
+
+#######################################
+#              Scripts                #
+#######################################
+
+# Copied from https://github.com/mongodb/mongo-cxx-driver/blob/legacy/.mci.yml
+scripts:
+
+    mongo_orchestration:
+
+      windows: &mongo_orchestration_windows
+
+        start_mongo_orchestration: |
+          taskkill.exe /FI "IMAGENAME eq python.exe" /F
+          taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
+          trap 'set +o errexit; rm server.pid;' EXIT
+          echo "Starting Mongo Orchestration..."
+          echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
+          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000
+          sleep 5
+
+      linux: &mongo_orchestration_linux
+
+        start_mongo_orchestration: |
+          trap 'set +o errexit; mongo-orchestration stop;' EXIT
+          echo "Starting Mongo Orchestration..."
+          echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
+          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
+
+      osx: &mongo_orchestration_osx
+
+        start_mongo_orchestration: |
+          echo "Starting Mongo Orchestration..."
+          trap 'set +o errexit; /usr/local/bin/mongo-orchestration stop;' EXIT
+          echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
+          TMPDIR=/data/db /usr/local/bin/mongo-orchestration -f orchestration.config -e default start # --socket-timeout-ms=60000 <- uncomment when OSX builders get new MO
+
 
 #######################################
 #              Pre Task               #
@@ -91,6 +129,11 @@ pre:
     - command: shell.track
 
 post:
+    - command: shell.exec
+      params:
+          working_dir: libmongoc
+          script: |
+              mongo-orchestration stop
     - command: shell.cleanup
 
 
@@ -251,30 +294,30 @@ tasks:
                 curl http://s3.amazonaws.com/mciuploads/libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz -o ${build_id}.tar.gz --silent
                 tar -xzf ${build_id}.tar.gz
                 curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
-                ${decompress} mongo_enterprise.${ext|tgz}
-                cp mongodb*/bin/mongod${extension} ./mongod${extension}
-                cp mongodb*/bin/mongo${extension} ./mongo${extension}
-                chmod +x ./mongod${extension}
-                chmod +x ./mongo${extension}
-                if ! ./mongod${extension} ${mongodb_args} --logpath=${mongodb_logpath}
-                then
-                    cat ${mongodb_logpath}
-                    exit 1
-                fi
-                tries=0
-                until ./mongo${extension} --eval 'printjson(db.serverBuildInfo())'; do
-                    sleep 2
-                    ((tries=tries+1))
-                    if ((tries > 15)); then
-                        break
-                    fi
-                done
-                ./mongo${extension} --eval "db.createUser({user: 'admin', pwd: 'pass', roles: [{role: 'root', db: 'admin'}]})" admin
-                export MONGOC_TEST_USER=admin
-                export MONGOC_TEST_PASSWORD=pass
-                PATH=./tests:${PATH} ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
+                mkdir -p /cygdrive/c/mongodb/bin
+                unzip -o -j mongo_enterprise.${ext|tgz} -d /cygdrive/c/mongodb/bin
+                chmod +x /cygdrive/c/mongodb/bin/*
+                /cygdrive/c/mongodb/bin/vcredist_x64.exe /Q
+      - command: shell.exec
+        params:
+            background: true
+            working_dir: libmongoc
+            script: |
+                ${start_mongo_orchestration}
+      - command: shell.exec
+        params:
+            working_dir: libmongoc
+            script: |
+                mongo --nodb --eval 'for(var i=0;i<30;i++){try{m = new Mongo("localhost:27017"); break;} catch(err) {print("mongod not up yet"); sleep(1000)}}'
+                curl localhost:8889
+                curl --data '{"name": "mongod", "preset": "auth.json"}' http://localhost:8889/v1/servers
+                export PATH=$PATH:`pwd`/tests
+                ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
                 touch tests/trust_dir/done
-                ${ctest} -V -C Debug
+                export MONGOC_TEST_USER=bob
+                export MONGOC_TEST_PASSWORD=pwd123
+                export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
+                ./Debug/test-libmongoc.exe -f -p
 
 #######################################
 #           Buildvariants             #
@@ -422,6 +465,7 @@ buildvariants:
   display_name: Windows 64-bit CMake Visual Studio 2013
   expansions:
       <<: *windows_expansions
+      <<: *mongo_orchestration_windows
       <<: *msvc_expansions
   run_on:
       - windows-64-vs2013-compile
