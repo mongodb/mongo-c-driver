@@ -1,6 +1,7 @@
 #include <mongoc.h>
 
 #include <stdio.h>
+#include <mongoc-set-private.h>
 
 #include "json-test.h"
 
@@ -96,14 +97,6 @@ test_sdam_cb (bson_t *test)
    const uint8_t *iter_data;
    const char *set_name;
    const char *hostname;
-   const char *name;
-
-   assert (bson_iter_init_find(&iter, test, "description"));
-   name = bson_iter_utf8(&iter, NULL);
-   if (strcmp("Host list differs from seeds", name) == 0) {
-      printf("SKIPPED -- see SPEC-141 ");
-      return;
-   }
 
    /* parse out the uri and use it to create a client */
    assert (bson_iter_init_find(&iter, test, "uri"));
@@ -160,6 +153,10 @@ test_sdam_cb (bson_t *test)
          if (strcmp ("servers", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_document (&outcome_iter, &len, &iter_data);
             bson_init_static (&servers, iter_data, len);
+            ASSERT_CMPINT (
+               bson_count_keys (&servers), ==,
+               (int) client->topology->description.servers->items_len);
+
             bson_iter_init (&servers_iter, &servers);
 
             /* for each server, ensure topology has a matching entry */

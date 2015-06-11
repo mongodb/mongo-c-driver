@@ -822,8 +822,7 @@ _mongoc_topology_description_remove_missing_hosts_cb (void *item,
    mongoc_server_description_t *server = item;
    mongoc_primary_and_topology_t *data = ctx;
 
-   if (strcasecmp(data->primary->connection_address, server->connection_address) != 0 &&
-       !mongoc_server_description_has_rs_member(data->primary, server->connection_address)) {
+   if (!mongoc_server_description_has_rs_member(data->primary, server->connection_address)) {
       _mongoc_topology_description_remove_server(data->topology, server);
    }
    return true;
@@ -893,7 +892,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
    mongoc_set_for_each(topology->servers, _mongoc_topology_description_remove_missing_hosts_cb, &data);
 
    /* Finally, set topology type */
-   topology->type = MONGOC_TOPOLOGY_RS_WITH_PRIMARY;
+   _mongoc_topology_description_check_if_has_primary (topology, server);
 }
 
 /*
