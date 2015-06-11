@@ -27,6 +27,11 @@ extern "C" {
 #endif
 
 
+#ifndef BINARY_DIR
+# define BINARY_DIR "tests/binary"
+#endif
+
+
 #ifdef ASSERT
 # undef ASSERT
 #endif
