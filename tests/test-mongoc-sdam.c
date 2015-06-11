@@ -106,9 +106,6 @@ test_sdam_cb (bson_t *test)
    } else if (strcmp("Direct connection to slave", name) == 0) {
       printf("SKIPPED -- see SPEC-139 ");
       return;
-   } else if (strcmp("Handle a not-ok ismaster response", name) == 0) {
-      printf("SKIPPED -- see SPEC-144 ");
-      return;
    }
 
    /* parse out the uri and use it to create a client */

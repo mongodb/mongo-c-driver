@@ -335,8 +335,10 @@ mongoc_server_description_handle_ismaster (
 
    while (bson_iter_next (&iter)) {
       num_keys++;
-      /* TODO: do we need to handle ok */
-      if (strcmp ("ismaster", bson_iter_key (&iter)) == 0) {
+      if (strcmp ("ok", bson_iter_key (&iter)) == 0) {
+         /* ismaster responses never have ok: 0, but spec requires we check */
+         if (! bson_iter_as_bool (&iter)) goto failure;
+      } else if (strcmp ("ismaster", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto failure;
          is_master = bson_iter_bool (&iter);
       } else if (strcmp ("maxMessageSizeBytes", bson_iter_key (&iter)) == 0) {
