@@ -16,12 +16,73 @@
 
 
 #include <bson.h>
+#include <mongoc-array-private.h>
 
 #include "test-conveniences.h"
 
 #ifdef _WIN32
 # define strcasecmp _stricmp
 #endif
+
+static bool gConveniencesInitialized = false;
+static mongoc_array_t gTmpBsonArray;
+
+static void test_conveniences_cleanup ();
+
+
+static void
+test_conveniences_init ()
+{
+   if (!gConveniencesInitialized) {
+      _mongoc_array_init (&gTmpBsonArray, sizeof (bson_t *));
+      atexit (test_conveniences_cleanup);
+      gConveniencesInitialized = true;
+   }
+}
+
+
+static void
+test_conveniences_cleanup ()
+{
+   int i;
+   bson_t *doc;
+
+   if (gConveniencesInitialized) {
+      for (i = 0; i < gTmpBsonArray.len; i++) {
+         doc = _mongoc_array_index (&gTmpBsonArray, bson_t *, i);
+         bson_destroy (doc);
+      }
+
+      _mongoc_array_destroy (&gTmpBsonArray);
+   }
+}
+
+
+bson_t *
+tmp_bson (const char *json)
+{
+   bson_error_t error;
+   char *double_quoted;
+   bson_t *doc;
+
+   test_conveniences_init ();
+
+   double_quoted = single_quotes_to_double (json);
+   doc = bson_new_from_json ((const uint8_t *)double_quoted,
+                             -1, &error);
+
+   if (!doc) {
+      fprintf (stderr, "%s\n", error.message);
+      abort ();
+   }
+
+   _mongoc_array_append_val (&gTmpBsonArray, doc);
+
+   bson_free (double_quoted);
+
+   return doc;
+}
+
 
 bool
 get_exists_operator (bson_iter_t *iter,

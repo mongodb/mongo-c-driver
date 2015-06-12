@@ -11,7 +11,6 @@
 #include "test-conveniences.h"
 
 
-static mongoc_array_t gTmpBsonArray;
 static char *gHugeString;
 static size_t gHugeStringLength;
 static char *gFourMBString;
@@ -19,47 +18,9 @@ static size_t gFourMB = 1024 * 1024 * 4;
 
 
 void
-test_bulk_init ()
-{
-   _mongoc_array_init (&gTmpBsonArray, sizeof (bson_t *));
-}
-
-
-void
 test_bulk_cleanup ()
 {
-   int i;
-   bson_t *doc;
-
-   for (i = 0; i < gTmpBsonArray.len; i++) {
-      doc = _mongoc_array_index (&gTmpBsonArray, bson_t *, i);
-      bson_destroy (doc);
-   }
-
-   _mongoc_array_destroy (&gTmpBsonArray);
-
    bson_free (gHugeString);
-}
-
-
-bson_t *
-tmp_bson (const char *json)
-{
-   bson_error_t error;
-   char *double_quoted = single_quotes_to_double (json);
-   bson_t *doc = bson_new_from_json ((const uint8_t *)double_quoted,
-                                     -1, &error);
-
-   if (!doc) {
-      fprintf (stderr, "%s\n", error.message);
-      abort ();
-   }
-
-   _mongoc_array_append_val (&gTmpBsonArray, doc);
-
-   bson_free (double_quoted);
-
-   return doc;
 }
 
 
@@ -2126,7 +2087,6 @@ test_bulk_new (void)
 void
 test_bulk_install (TestSuite *suite)
 {
-   test_bulk_init ();
    atexit (test_bulk_cleanup);
 
    TestSuite_Add (suite, "/BulkOperation/basic",
