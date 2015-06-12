@@ -65,8 +65,10 @@ struct _request_t
    mongoc_rpc_t request_rpc;
    mock_server_t *server;
    mongoc_stream_t *client;
+   uint16_t client_port;
    bool is_command;
    char *command_name;
+   char *as_str;
    mongoc_array_t docs;
 };
 
@@ -731,6 +733,10 @@ mock_server_replies (request_t *request,
       return;
    }
 
+   if (mock_server_get_verbose (request->server)) {
+      printf ("%hu <- \t%s\n", request->client_port, quotes_replaced);
+   }
+
    mock_server_reply_simple (request->server,
                              request->client,
                              &request->request_rpc,
@@ -845,7 +851,8 @@ is_command (const char *ns)
 request_t *
 request_new (const mongoc_rpc_t *request_rpc,
              mock_server_t *server,
-             mongoc_stream_t *client)
+             mongoc_stream_t *client,
+             uint16_t client_port)
 {
    request_t *request;
    int32_t len;
@@ -858,6 +865,7 @@ request_new (const mongoc_rpc_t *request_rpc,
            sizeof *request_rpc);
    request->server = server;
    request->client = client;
+   request->client_port = client_port;
    _mongoc_array_init (&request->docs, sizeof (bson_t));
 
    if (request_rpc->query.opcode != MONGOC_OPCODE_QUERY) {
@@ -883,6 +891,8 @@ request_new (const mongoc_rpc_t *request_rpc,
 
       request->command_name = bson_strdup (bson_iter_key (&iter));
    }
+
+   request->as_str = bson_as_json (query, NULL);
 
    return request;
 }
@@ -1015,7 +1025,8 @@ request_destroy (request_t *request)
    }
 
    _mongoc_array_destroy (&request->docs);
-   bson_free ((void *) request->command_name);
+   bson_free (request->command_name);
+   bson_free (request->as_str);
    bson_free (request);
 }
 
@@ -1171,7 +1182,7 @@ worker_thread (void *data)
    _mongoc_rpc_swab_from_le (rpc);
 
    /* copies rpc */
-   request = request_new (rpc, server, client_stream);
+   request = request_new (rpc, server, client_stream, closure->port);
 
    mongoc_mutex_lock (&server->mutex);
    _mongoc_array_copy (&autoresponders, &server->autoresponders);
@@ -1192,8 +1203,7 @@ worker_thread (void *data)
 
    if (!handled) {
       if (mock_server_get_verbose (server)) {
-         /* TODO: parse and print repr of request */
-         /*printf ("%hu\t%s\n", port, "unhandled command");*/
+         printf ("%hu -> %s\n", closure->port, request->as_str);
       }
 
       q = mock_server_get_queue (server);
@@ -1208,7 +1218,7 @@ worker_thread (void *data)
 
    GOTO (again);
 
-   failure:
+failure:
    mongoc_mutex_lock (&server->mutex);
    /* TODO: remove self from threads array */
    mongoc_mutex_unlock (&server->mutex);
