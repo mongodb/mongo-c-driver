@@ -438,7 +438,7 @@ mock_server_auto_ismaster (mock_server_t *server,
  *       Call after mock_server_run to get the connection string.
  *
  * Returns:
- *       A const string.
+ *       A const URI.
  *
  * Side effects:
  *       None.
@@ -456,6 +456,31 @@ mock_server_get_uri (mock_server_t *server)
    mongoc_mutex_unlock (&server->mutex);
 
    return uri;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_get_host_and_port --
+ *
+ *       Call after mock_server_run to get the server's "host:port".
+ *
+ * Returns:
+ *       A const string.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const char *
+mock_server_get_host_and_port (mock_server_t *server)
+{
+   const mongoc_uri_t *uri;
+
+   uri = mock_server_get_uri (server);
+   return (mongoc_uri_get_hosts (uri))->host_and_port;
 }
 
 

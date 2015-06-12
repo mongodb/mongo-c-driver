@@ -62,6 +62,8 @@ uint16_t mock_server_run (mock_server_t *server);
 
 const mongoc_uri_t *mock_server_get_uri (mock_server_t *server);
 
+const char *mock_server_get_host_and_port (mock_server_t *server);
+
 bool mock_server_get_verbose (mock_server_t *server);
 
 void mock_server_set_verbose (mock_server_t *server,
