@@ -48,11 +48,11 @@ future_get_bson_ptr (future_t *future)
    abort ();
 }
 
-const_bson_ptr_ptr
-future_get_const_bson_ptr_ptr (future_t *future)
+char_ptr
+future_get_char_ptr (future_t *future)
 {
    if (future_wait (future)) {
-      return future_value_get_const_bson_ptr_ptr (&future->return_value);
+      return future_value_get_char_ptr (&future->return_value);
    }
 
    fprintf (stderr, "%s timed out\n", __FUNCTION__);
@@ -64,6 +64,50 @@ future_get_char_ptr_ptr (future_t *future)
 {
    if (future_wait (future)) {
       return future_value_get_char_ptr_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", __FUNCTION__);
+   abort ();
+}
+
+const_char_ptr
+future_get_const_char_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_const_char_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", __FUNCTION__);
+   abort ();
+}
+
+const_bson_ptr
+future_get_const_bson_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_const_bson_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", __FUNCTION__);
+   abort ();
+}
+
+const_bson_ptr_ptr
+future_get_const_bson_ptr_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_const_bson_ptr_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", __FUNCTION__);
+   abort ();
+}
+
+const_mongoc_read_prefs_ptr
+future_get_const_mongoc_read_prefs_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_const_mongoc_read_prefs_ptr (&future->return_value);
    }
 
    fprintf (stderr, "%s timed out\n", __FUNCTION__);
@@ -108,6 +152,17 @@ future_get_mongoc_database_ptr (future_t *future)
 {
    if (future_wait (future)) {
       return future_value_get_mongoc_database_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", __FUNCTION__);
+   abort ();
+}
+
+mongoc_query_flags_t
+future_get_mongoc_query_flags_t (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_mongoc_query_flags_t (&future->return_value);
    }
 
    fprintf (stderr, "%s timed out\n", __FUNCTION__);

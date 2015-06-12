@@ -24,6 +24,18 @@ future_bulk_operation_execute (
 
 
 future_t *
+future_client_command_simple (
+
+   mongoc_client_ptr client,
+   const_char_ptr db_name,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_cursor_next (
 
    mongoc_cursor_ptr cursor,

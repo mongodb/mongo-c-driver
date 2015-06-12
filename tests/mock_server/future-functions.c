@@ -52,6 +52,37 @@ background_bulk_operation_execute (void *data)
 }
 
 static void *
+background_client_command_simple (void *data)
+{
+   future_t *future = (future_t *) data;
+
+   /* copy the future so we can unlock it while calling
+    * client_command_simple
+    */
+   future_t *copy = future_new_copy (future);
+   future_value_t return_value;
+
+   return_value.type = future_value_bool_type;
+
+   future_value_set_bool (
+      &return_value,
+      mongoc_client_command_simple (
+
+         future_value_get_mongoc_client_ptr (future_get_param(copy, 0)),
+         future_value_get_const_char_ptr (future_get_param(copy, 1)),
+         future_value_get_const_bson_ptr (future_get_param(copy, 2)),
+         future_value_get_const_mongoc_read_prefs_ptr (future_get_param(copy, 3)),
+         future_value_get_bson_ptr (future_get_param(copy, 4)),
+         future_value_get_bson_error_ptr (future_get_param(copy, 5))
+   ));
+
+   future_destroy (copy);
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
 background_cursor_next (void *data)
 {
    future_t *future = (future_t *) data;
@@ -153,6 +184,40 @@ future_bulk_operation_execute (
       future_get_param (future, 2), error);
    
    future_start (future, background_bulk_operation_execute);
+   return future;
+}
+
+future_t *
+future_client_command_simple (
+   mongoc_client_ptr client,
+   const_char_ptr db_name,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   bson_ptr reply,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_bool_type,
+                                  6);
+   
+   future_value_set_mongoc_client_ptr (
+      future_get_param (future, 0), client);
+   
+   future_value_set_const_char_ptr (
+      future_get_param (future, 1), db_name);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 2), command);
+   
+   future_value_set_const_mongoc_read_prefs_ptr (
+      future_get_param (future, 3), read_prefs);
+   
+   future_value_set_bson_ptr (
+      future_get_param (future, 4), reply);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 5), error);
+   
+   future_start (future, background_client_command_simple);
    return future;
 }
 

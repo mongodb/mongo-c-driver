@@ -50,12 +50,19 @@ typedef_list = [
     typedef("bool", None),
     typedef("bson_error_ptr", "bson_error_t *"),
     typedef("bson_ptr", "bson_t *"),
-    typedef("const_bson_ptr_ptr", "const bson_t **"),
+    typedef("char_ptr", "char *"),
     typedef("char_ptr_ptr", "char **"),
+
+    typedef("const_char_ptr", "const char *"),
+    typedef("const_bson_ptr", "const bson_t *"),
+    typedef("const_bson_ptr_ptr", "const bson_t **"),
+    typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
+
     typedef("mongoc_bulk_operation_ptr", "mongoc_bulk_operation_t *"),
     typedef("mongoc_client_ptr", "mongoc_client_t *"),
     typedef("mongoc_cursor_ptr", "mongoc_cursor_t *"),
     typedef("mongoc_database_ptr", "mongoc_database_t *"),
+    typedef("mongoc_query_flags_t", None),
     typedef("uint32_t", None),
 ]
 
@@ -76,6 +83,15 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
+                    "client_command_simple",
+                    [param("mongoc_client_ptr", "client"),
+                     param("const_char_ptr", "db_name"),
+                     param("const_bson_ptr", "command"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
                     "cursor_next",
                     [param("mongoc_cursor_ptr", "cursor"),
                      param("const_bson_ptr_ptr", "doc")]),
@@ -90,6 +106,12 @@ future_functions = [
                     [param("mongoc_database_ptr", "database"),
                      param("bson_error_ptr", "error")]),
 ]
+
+
+for fn in future_functions:
+    for p in fn.params:
+        if p.type_name not in type_list:
+            raise Exception('bad type "%s"\n\nin %s' % (p.type_name, fn))
 
 
 header_comment = """/**************************************************

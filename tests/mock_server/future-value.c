@@ -65,17 +65,17 @@ future_value_get_bson_ptr (future_value_t *future_value)
 
 
 void
-future_value_set_const_bson_ptr_ptr(future_value_t *future_value, const_bson_ptr_ptr value)
+future_value_set_char_ptr(future_value_t *future_value, char_ptr value)
 {
-  future_value->type = future_value_const_bson_ptr_ptr_type;
-  future_value->const_bson_ptr_ptr_value = value;
+  future_value->type = future_value_char_ptr_type;
+  future_value->char_ptr_value = value;
 }
 
-const_bson_ptr_ptr
-future_value_get_const_bson_ptr_ptr (future_value_t *future_value)
+char_ptr
+future_value_get_char_ptr (future_value_t *future_value)
 {
-  assert (future_value->type == future_value_const_bson_ptr_ptr_type);
-  return future_value->const_bson_ptr_ptr_value;
+  assert (future_value->type == future_value_char_ptr_type);
+  return future_value->char_ptr_value;
 }
 
 
@@ -92,6 +92,70 @@ future_value_get_char_ptr_ptr (future_value_t *future_value)
 {
   assert (future_value->type == future_value_char_ptr_ptr_type);
   return future_value->char_ptr_ptr_value;
+}
+
+
+
+void
+future_value_set_const_char_ptr(future_value_t *future_value, const_char_ptr value)
+{
+  future_value->type = future_value_const_char_ptr_type;
+  future_value->const_char_ptr_value = value;
+}
+
+const_char_ptr
+future_value_get_const_char_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_const_char_ptr_type);
+  return future_value->const_char_ptr_value;
+}
+
+
+
+void
+future_value_set_const_bson_ptr(future_value_t *future_value, const_bson_ptr value)
+{
+  future_value->type = future_value_const_bson_ptr_type;
+  future_value->const_bson_ptr_value = value;
+}
+
+const_bson_ptr
+future_value_get_const_bson_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_const_bson_ptr_type);
+  return future_value->const_bson_ptr_value;
+}
+
+
+
+void
+future_value_set_const_bson_ptr_ptr(future_value_t *future_value, const_bson_ptr_ptr value)
+{
+  future_value->type = future_value_const_bson_ptr_ptr_type;
+  future_value->const_bson_ptr_ptr_value = value;
+}
+
+const_bson_ptr_ptr
+future_value_get_const_bson_ptr_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_const_bson_ptr_ptr_type);
+  return future_value->const_bson_ptr_ptr_value;
+}
+
+
+
+void
+future_value_set_const_mongoc_read_prefs_ptr(future_value_t *future_value, const_mongoc_read_prefs_ptr value)
+{
+  future_value->type = future_value_const_mongoc_read_prefs_ptr_type;
+  future_value->const_mongoc_read_prefs_ptr_value = value;
+}
+
+const_mongoc_read_prefs_ptr
+future_value_get_const_mongoc_read_prefs_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_const_mongoc_read_prefs_ptr_type);
+  return future_value->const_mongoc_read_prefs_ptr_value;
 }
 
 
@@ -156,6 +220,22 @@ future_value_get_mongoc_database_ptr (future_value_t *future_value)
 {
   assert (future_value->type == future_value_mongoc_database_ptr_type);
   return future_value->mongoc_database_ptr_value;
+}
+
+
+
+void
+future_value_set_mongoc_query_flags_t(future_value_t *future_value, mongoc_query_flags_t value)
+{
+  future_value->type = future_value_mongoc_query_flags_t_type;
+  future_value->mongoc_query_flags_t_value = value;
+}
+
+mongoc_query_flags_t
+future_value_get_mongoc_query_flags_t (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_mongoc_query_flags_t_type);
+  return future_value->mongoc_query_flags_t_value;
 }
 
 

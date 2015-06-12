@@ -876,6 +876,7 @@ request_matches_query (const request_t *request,
 {
    const mongoc_rpc_t *rpc = &request->request_rpc;
    bson_t *doc;
+   bool n_return_equal;
 
    assert (request->docs.len <= 2);
 
@@ -919,7 +920,16 @@ request_matches_query (const request_t *request,
       return false;
    }
 
-   if (rpc->query.n_return != n_return) {
+   n_return_equal = (rpc->query.n_return == n_return);
+
+   if (! n_return_equal && abs (rpc->query.n_return) == 1) {
+      /* quirk: commands from mongoc_client_command_simple have n_return 1,
+       * from mongoc_topology_scanner_t have n_return -1
+       */
+      n_return_equal = abs (rpc->query.n_return) == abs (n_return);
+   }
+
+   if (! n_return_equal) {
       MONGOC_ERROR ("requests's n_return = %d, expected %d",
                     rpc->query.n_return, n_return);
       return false;
