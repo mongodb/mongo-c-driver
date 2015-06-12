@@ -26,12 +26,77 @@
 # include "mongoc-ssl-private.h"
 #endif
 #include "mongoc-thread-private.h"
+#include "mongoc-trace.h"
+
+
+#ifdef MONGOC_ENABLE_SASL
+#include <sasl/sasl.h>
+
+static void *
+mongoc_sasl_mutex_alloc (void)
+{
+   mongoc_mutex_t *mutex;
+
+   ENTRY;
+
+   mutex = bson_malloc0 (sizeof (mongoc_mutex_t));
+   mongoc_mutex_init (mutex);
+
+   RETURN((void *) mutex);
+}
+
+
+static int
+mongoc_sasl_mutex_lock (void *mutex)
+{
+   ENTRY;
+
+   mongoc_mutex_lock ((mongoc_mutex_t *) mutex);
+
+   RETURN(SASL_OK);
+}
+
+
+static int
+mongoc_sasl_mutex_unlock (void *mutex)
+{
+   ENTRY;
+
+   mongoc_mutex_unlock ((mongoc_mutex_t *) mutex);
+
+   RETURN(SASL_OK);
+}
+
+
+static void
+mongoc_sasl_mutex_free (void *mutex)
+{
+   ENTRY;
+
+   mongoc_mutex_destroy ((mongoc_mutex_t *) mutex);
+   bson_free (mutex);
+
+   EXIT;
+}
+
+#endif//MONGOC_ENABLE_SASL
+
 
 static MONGOC_ONCE_FUN( _mongoc_do_init)
 {
 #ifdef MONGOC_ENABLE_SSL
    _mongoc_ssl_init();
    _mongoc_scram_startup();
+#endif
+
+#ifdef MONGOC_ENABLE_SASL
+   sasl_set_mutex (mongoc_sasl_mutex_alloc,
+                   mongoc_sasl_mutex_lock,
+                   mongoc_sasl_mutex_unlock,
+                   mongoc_sasl_mutex_free);
+
+   /* TODO: logging callback? */
+   sasl_client_init (NULL);
 #endif
 
    _mongoc_counters_init();
@@ -66,6 +131,15 @@ static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
 {
 #ifdef MONGOC_ENABLE_SSL
    _mongoc_ssl_cleanup();
+#endif
+
+#ifdef MONGOC_ENABLE_SASL
+#ifdef MONGOC_HAVE_SASL_CLIENT_DONE
+   sasl_client_done ();
+#else
+   /* fall back to deprecated function */
+   sasl_done ();
+#endif
 #endif
 
 #ifdef _WIN32
