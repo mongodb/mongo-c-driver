@@ -1330,8 +1330,9 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
 }
 
 void
-mongoc_client_kill_cursor (mongoc_client_t *client,
-                           int64_t          cursor_id)
+_mongoc_client_kill_cursor (mongoc_client_t *client,
+                            uint32_t         server_id,
+                            int64_t          cursor_id)
 {
    mongoc_rpc_t rpc = {{ 0 }};
 
@@ -1348,10 +1349,18 @@ mongoc_client_kill_cursor (mongoc_client_t *client,
    rpc.kill_cursors.cursors = &cursor_id;
    rpc.kill_cursors.n_cursors = 1;
 
-   _mongoc_client_sendv (client, &rpc, 1, 0, NULL, NULL, NULL);
+   _mongoc_client_sendv (client, &rpc, 1, server_id, NULL, NULL, NULL);
 
    EXIT;
 }
+
+void
+mongoc_client_kill_cursor (mongoc_client_t *client,
+                            int64_t          cursor_id)
+{
+   _mongoc_client_kill_cursor (client, 0, cursor_id);
+}
+
 
 
 char **

@@ -125,6 +125,10 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
                                          bson_t                    *reply,
                                          uint32_t                   hint,
                                          bson_error_t              *error);
+void
+_mongoc_client_kill_cursor              (mongoc_client_t *client,
+                                         uint32_t         server_id,
+                                         int64_t          cursor_id);
 
 BSON_END_DECLS
 
