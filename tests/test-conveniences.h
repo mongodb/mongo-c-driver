@@ -18,7 +18,8 @@
 #define TEST_CONVENIENCES_H
 
 #include <bson.h>
-#include <mongoc.h>
+
+#include "mongoc.h"
 
 bson_t *tmp_bson (const char *json);
 

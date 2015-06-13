@@ -297,11 +297,11 @@ test_mongoc_client_read_prefs (void)
          NULL);
 
    mock_server_replies (request,
-                         0,                    /* flags */
-                         0,                    /* cursorId */
-                         0,                    /* startingFrom */
-                         1,                    /* numberReturned */
-                         "{'a': 1}");
+                        0,                    /* flags */
+                        0,                    /* cursorId */
+                        0,                    /* startingFrom */
+                        1,                    /* numberReturned */
+                        "{'a': 1}");
 
    /* mongoc_cursor_next returned true */
    assert (future_get_bool (future));

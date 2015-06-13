@@ -16,7 +16,8 @@
 
 
 #include <bson.h>
-#include <mongoc-array-private.h>
+
+#include "mongoc-array-private.h"
 
 #include "test-conveniences.h"
 
