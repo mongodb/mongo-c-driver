@@ -27,8 +27,9 @@
 
 #endif
 
+#include "request.h"
+
 typedef struct _mock_server_t mock_server_t;
-typedef struct _request_t request_t;
 typedef struct _autoresponder_handle_t autoresponder_handle_t;
 
 typedef bool (*autoresponder_t) (request_t *request, void *data);
@@ -64,6 +65,8 @@ const mongoc_uri_t *mock_server_get_uri (mock_server_t *server);
 
 const char *mock_server_get_host_and_port (mock_server_t *server);
 
+uint16_t mock_server_get_port (mock_server_t *server);
+
 bool mock_server_get_verbose (mock_server_t *server);
 
 void mock_server_set_verbose (mock_server_t *server,
@@ -87,6 +90,9 @@ request_t *mock_server_receives_query (mock_server_t *server,
                                        const char *query_json,
                                        const char *fields_json);
 
+request_t *mock_server_receives_kill_cursors (mock_server_t *server,
+                                              int64_t cursor_id);
+
 void mock_server_hangs_up (request_t *request);
 
 void mock_server_replies (request_t *request,
@@ -97,6 +103,20 @@ void mock_server_replies (request_t *request,
                           const char *docs_json);
 
 void mock_server_destroy (mock_server_t *server);
+
+bool request_matches_query (const request_t *request,
+                            const char *ns,
+                            mongoc_query_flags_t flags,
+                            uint32_t skip,
+                            uint32_t n_return,
+                            const char *query_json,
+                            const char *fields_json,
+                            bool is_command);
+
+bool request_matches_kill_cursors (const request_t *request,
+                                   int64_t cursor_id);
+
+uint16_t request_get_server_port (request_t *request);
 
 void request_destroy (request_t *request);
 

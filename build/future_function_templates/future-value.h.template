@@ -11,7 +11,7 @@ typedef {{ T.typedef }} {{ T.name }};{% endif %}{% endfor %}
 
 typedef enum {
    future_value_no_type = 0,
-{% for T in type_list %}   future_value_{{ T }}_type,
+{% for T in type_list_with_void %}   future_value_{{ T }}_type,
 {% endfor %}
 } future_value_type_t;
 
@@ -30,6 +30,10 @@ future_value_t *future_value_new ();
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
 #endif
+
+void future_value_set_void (future_value_t *future_value);
+
+void future_value_get_void (future_value_t *future_value);
 
 {% for T in type_list %}
 void

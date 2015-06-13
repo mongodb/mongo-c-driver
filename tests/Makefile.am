@@ -81,6 +81,10 @@ test_libmongoc_SOURCES = \
 	tests/mock_server/future-value.h \
 	tests/mock_server/mock-server.c \
 	tests/mock_server/mock-server.h \
+	tests/mock_server/mock-rs.c \
+	tests/mock_server/mock-rs.h \
+	tests/mock_server/request.c \
+	tests/mock_server/request.h \
 	tests/mock_server/sync-queue.c \
 	tests/mock_server/sync-queue.h \
 	tests/test-libmongoc.c \
@@ -237,6 +241,10 @@ EXTRA_DIST += \
 	tests/mock_server/future.h \
 	tests/mock_server/mock-server.c \
 	tests/mock_server/mock-server.h \
+	tests/mock_server/mock-rs.c \
+	tests/mock_server/mock-rs.h \
+	tests/mock_server/request.c \
+	tests/mock_server/request.h \
 	tests/mock_server/sync-queue.c \
 	tests/mock_server/sync-queue.h \
 	tests/mongoc-tests.c \

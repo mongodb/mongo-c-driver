@@ -36,6 +36,13 @@ future_client_command_simple (
 
 
 future_t *
+future_cursor_destroy (
+
+   mongoc_cursor_ptr cursor
+);
+
+
+future_t *
 future_cursor_next (
 
    mongoc_cursor_ptr cursor,

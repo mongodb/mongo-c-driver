@@ -29,14 +29,16 @@ background_{{ F.name }} (void *data)
    future_value_t return_value;
 
    return_value.type = future_value_{{ F.ret_type }}_type;
-
+{% if F.ret_type == 'void' %}
+   {{ F.name }} ({% for P in F.params %}
+      future_value_get_{{ P.type_name }} (future_get_param(copy, {{ loop.index0 }})){% if not loop.last %},{% endif %}{% endfor %});
+{% else %}
    future_value_set_{{ F.ret_type }} (
       &return_value,
-      mongoc_{{ F.name }} (
-{% for P in F.params %}
+         {{ F.name }} ({% for P in F.params %}
          future_value_get_{{ P.type_name }} (future_get_param(copy, {{ loop.index0 }})){% if not loop.last %},{% endif %}{% endfor %}
-   ));
-
+      ));
+{% endif %}
    future_destroy (copy);
    future_resolve (future, return_value);
 
@@ -46,7 +48,7 @@ background_{{ F.name }} (void *data)
 
 {% for F in future_functions %}
 future_t *
-future_{{ F.name }} ({% for P in F.params %}
+{{ F|future_function_name }} ({% for P in F.params %}
    {{ P.type_name }} {{ P.name }}{% if not loop.last %},{% endif %}{% endfor %})
 {
    future_t *future = future_new (future_value_{{ F.ret_type }}_type,

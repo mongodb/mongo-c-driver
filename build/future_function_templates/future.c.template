@@ -8,6 +8,15 @@
 
 #define FUTURE_TIMEOUT_MS 10 * 1000
 
+void
+future_get_void (future_t *future)
+{
+   if (!future_wait (future)) {
+      fprintf (stderr, "%s timed out\n", __FUNCTION__);
+      abort ();
+   }
+}
+
 {% for T in type_list %}
 {{ T }}
 future_get_{{ T }} (future_t *future)

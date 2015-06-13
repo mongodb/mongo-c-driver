@@ -29,10 +29,11 @@ conveniently test libmongoc wire protocol operations.
 Written for Python 2.6+, requires Jinja 2 for templating.
 """
 
+import glob
 from collections import namedtuple
 from os.path import basename, dirname, join as joinpath, normpath
 
-from jinja2 import Template  # Please "pip install jinja2".
+from jinja2 import Environment, FileSystemLoader  # Please "pip install jinja2".
 
 
 this_dir = dirname(__file__)
@@ -47,26 +48,37 @@ typedef = namedtuple("typedef", ["name", "typedef"])
 # of possible future_value_t.value types. future_value_t getters and setters
 # are generated for all types, as well as future_t getters.
 typedef_list = [
+    # Fundamental.
     typedef("bool", None),
-    typedef("bson_error_ptr", "bson_error_t *"),
-    typedef("bson_ptr", "bson_t *"),
     typedef("char_ptr", "char *"),
     typedef("char_ptr_ptr", "char **"),
+    typedef("int64_t", None),
+    typedef("uint32_t", None),
 
+    # Const fundamental.
     typedef("const_char_ptr", "const char *"),
+
+    # libbson.
+    typedef("bson_error_ptr", "bson_error_t *"),
+    typedef("bson_ptr", "bson_t *"),
+
+    # Const libbson.
     typedef("const_bson_ptr", "const bson_t *"),
     typedef("const_bson_ptr_ptr", "const bson_t **"),
-    typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
 
+    # libmongoc.
     typedef("mongoc_bulk_operation_ptr", "mongoc_bulk_operation_t *"),
     typedef("mongoc_client_ptr", "mongoc_client_t *"),
     typedef("mongoc_cursor_ptr", "mongoc_cursor_t *"),
     typedef("mongoc_database_ptr", "mongoc_database_t *"),
     typedef("mongoc_query_flags_t", None),
-    typedef("uint32_t", None),
+
+    # Const libmongoc.
+    typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
 ]
 
 type_list = [T.name for T in typedef_list]
+type_list_with_void = type_list + ['void']
 
 param = namedtuple("param", ["type_name", "name"])
 future_function = namedtuple("future_function", ["ret_type", "name", "params"])
@@ -77,13 +89,13 @@ future_function = namedtuple("future_function", ["ret_type", "name", "params"])
 # resolve the future.
 future_functions = [
     future_function("uint32_t",
-                    "bulk_operation_execute",
+                    "mongoc_bulk_operation_execute",
                     [param("mongoc_bulk_operation_ptr", "bulk"),
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
-                    "client_command_simple",
+                    "mongoc_client_command_simple",
                     [param("mongoc_client_ptr", "client"),
                      param("const_char_ptr", "db_name"),
                      param("const_bson_ptr", "command"),
@@ -91,24 +103,30 @@ future_functions = [
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
+    future_function("void",
+                    "mongoc_cursor_destroy",
+                    [param("mongoc_cursor_ptr", "cursor")]),
+
     future_function("bool",
-                    "cursor_next",
+                    "mongoc_cursor_next",
                     [param("mongoc_cursor_ptr", "cursor"),
                      param("const_bson_ptr_ptr", "doc")]),
 
     future_function("char_ptr_ptr",
-                    "client_get_database_names",
+                    "mongoc_client_get_database_names",
                     [param("mongoc_client_ptr", "client"),
                      param("bson_error_ptr", "error")]),
 
     future_function("char_ptr_ptr",
-                    "database_get_collection_names",
+                    "mongoc_database_get_collection_names",
                     [param("mongoc_database_ptr", "database"),
                      param("bson_error_ptr", "error")]),
 ]
 
 
 for fn in future_functions:
+    if fn.ret_type not in type_list_with_void:
+        raise Exception('bad type "%s"\n\nin %s' % (fn.ret_type, fn))
     for p in fn.params:
         if p.type_name not in type_list:
             raise Exception('bad type "%s"\n\nin %s' % (p.type_name, fn))
@@ -123,6 +141,19 @@ header_comment = """/**************************************************
  *************************************************/""" % basename(__file__)
 
 
+def future_function_name(fn):
+    if fn.name.startswith('mongoc'):
+        # E.g. future_cursor_next().
+        return 'future' + fn.name[len('mongoc'):]
+    else:
+        # E.g. future__mongoc_client_kill_cursor().
+        return 'future_' + fn.name
+
+
+env = Environment(loader=FileSystemLoader(template_dir))
+env.filters['future_function_name'] = future_function_name
+
+
 files = ["future.h",
          "future.c",
          "future-value.h",
@@ -133,6 +164,6 @@ files = ["future.h",
 
 for file_name in files:
     print(file_name)
-    template = open(joinpath(template_dir, file_name + '.template')).read()
     with open(joinpath(mock_server_dir, file_name), 'w+') as f:
-        f.write(Template(template).render(globals()))
+        t = env.get_template(file_name + ".template")
+        f.write(t.render(globals()))

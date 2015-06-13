@@ -38,15 +38,11 @@ void future_resolve (future_t *future, future_value_t return_value);
 
 bool future_wait (future_t *future);
 
+void future_get_void (future_t *future);
+
 
 bool
 future_get_bool (future_t *future);
-
-bson_error_ptr
-future_get_bson_error_ptr (future_t *future);
-
-bson_ptr
-future_get_bson_ptr (future_t *future);
 
 char_ptr
 future_get_char_ptr (future_t *future);
@@ -54,17 +50,26 @@ future_get_char_ptr (future_t *future);
 char_ptr_ptr
 future_get_char_ptr_ptr (future_t *future);
 
+int64_t
+future_get_int64_t (future_t *future);
+
+uint32_t
+future_get_uint32_t (future_t *future);
+
 const_char_ptr
 future_get_const_char_ptr (future_t *future);
+
+bson_error_ptr
+future_get_bson_error_ptr (future_t *future);
+
+bson_ptr
+future_get_bson_ptr (future_t *future);
 
 const_bson_ptr
 future_get_const_bson_ptr (future_t *future);
 
 const_bson_ptr_ptr
 future_get_const_bson_ptr_ptr (future_t *future);
-
-const_mongoc_read_prefs_ptr
-future_get_const_mongoc_read_prefs_ptr (future_t *future);
 
 mongoc_bulk_operation_ptr
 future_get_mongoc_bulk_operation_ptr (future_t *future);
@@ -81,8 +86,8 @@ future_get_mongoc_database_ptr (future_t *future);
 mongoc_query_flags_t
 future_get_mongoc_query_flags_t (future_t *future);
 
-uint32_t
-future_get_uint32_t (future_t *future);
+const_mongoc_read_prefs_ptr
+future_get_const_mongoc_read_prefs_ptr (future_t *future);
 
 
 void future_destroy (future_t *future);

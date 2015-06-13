@@ -32,6 +32,8 @@ void future_resolve (future_t *future, future_value_t return_value);
 
 bool future_wait (future_t *future);
 
+void future_get_void (future_t *future);
+
 {% for T in type_list %}
 {{ T }}
 future_get_{{ T }} (future_t *future);

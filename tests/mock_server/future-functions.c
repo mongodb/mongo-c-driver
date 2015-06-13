@@ -24,12 +24,12 @@
 
 
 static void *
-background_bulk_operation_execute (void *data)
+background_mongoc_bulk_operation_execute (void *data)
 {
    future_t *future = (future_t *) data;
 
    /* copy the future so we can unlock it while calling
-    * bulk_operation_execute
+    * mongoc_bulk_operation_execute
     */
    future_t *copy = future_new_copy (future);
    future_value_t return_value;
@@ -38,12 +38,11 @@ background_bulk_operation_execute (void *data)
 
    future_value_set_uint32_t (
       &return_value,
-      mongoc_bulk_operation_execute (
-
+         mongoc_bulk_operation_execute (
          future_value_get_mongoc_bulk_operation_ptr (future_get_param(copy, 0)),
          future_value_get_bson_ptr (future_get_param(copy, 1)),
          future_value_get_bson_error_ptr (future_get_param(copy, 2))
-   ));
+      ));
 
    future_destroy (copy);
    future_resolve (future, return_value);
@@ -52,12 +51,12 @@ background_bulk_operation_execute (void *data)
 }
 
 static void *
-background_client_command_simple (void *data)
+background_mongoc_client_command_simple (void *data)
 {
    future_t *future = (future_t *) data;
 
    /* copy the future so we can unlock it while calling
-    * client_command_simple
+    * mongoc_client_command_simple
     */
    future_t *copy = future_new_copy (future);
    future_value_t return_value;
@@ -66,15 +65,14 @@ background_client_command_simple (void *data)
 
    future_value_set_bool (
       &return_value,
-      mongoc_client_command_simple (
-
+         mongoc_client_command_simple (
          future_value_get_mongoc_client_ptr (future_get_param(copy, 0)),
          future_value_get_const_char_ptr (future_get_param(copy, 1)),
          future_value_get_const_bson_ptr (future_get_param(copy, 2)),
          future_value_get_const_mongoc_read_prefs_ptr (future_get_param(copy, 3)),
          future_value_get_bson_ptr (future_get_param(copy, 4)),
          future_value_get_bson_error_ptr (future_get_param(copy, 5))
-   ));
+      ));
 
    future_destroy (copy);
    future_resolve (future, return_value);
@@ -83,12 +81,34 @@ background_client_command_simple (void *data)
 }
 
 static void *
-background_cursor_next (void *data)
+background_mongoc_cursor_destroy (void *data)
 {
    future_t *future = (future_t *) data;
 
    /* copy the future so we can unlock it while calling
-    * cursor_next
+    * mongoc_cursor_destroy
+    */
+   future_t *copy = future_new_copy (future);
+   future_value_t return_value;
+
+   return_value.type = future_value_void_type;
+
+   mongoc_cursor_destroy (
+      future_value_get_mongoc_cursor_ptr (future_get_param(copy, 0)));
+
+   future_destroy (copy);
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
+background_mongoc_cursor_next (void *data)
+{
+   future_t *future = (future_t *) data;
+
+   /* copy the future so we can unlock it while calling
+    * mongoc_cursor_next
     */
    future_t *copy = future_new_copy (future);
    future_value_t return_value;
@@ -97,11 +117,10 @@ background_cursor_next (void *data)
 
    future_value_set_bool (
       &return_value,
-      mongoc_cursor_next (
-
+         mongoc_cursor_next (
          future_value_get_mongoc_cursor_ptr (future_get_param(copy, 0)),
          future_value_get_const_bson_ptr_ptr (future_get_param(copy, 1))
-   ));
+      ));
 
    future_destroy (copy);
    future_resolve (future, return_value);
@@ -110,12 +129,12 @@ background_cursor_next (void *data)
 }
 
 static void *
-background_client_get_database_names (void *data)
+background_mongoc_client_get_database_names (void *data)
 {
    future_t *future = (future_t *) data;
 
    /* copy the future so we can unlock it while calling
-    * client_get_database_names
+    * mongoc_client_get_database_names
     */
    future_t *copy = future_new_copy (future);
    future_value_t return_value;
@@ -124,11 +143,10 @@ background_client_get_database_names (void *data)
 
    future_value_set_char_ptr_ptr (
       &return_value,
-      mongoc_client_get_database_names (
-
+         mongoc_client_get_database_names (
          future_value_get_mongoc_client_ptr (future_get_param(copy, 0)),
          future_value_get_bson_error_ptr (future_get_param(copy, 1))
-   ));
+      ));
 
    future_destroy (copy);
    future_resolve (future, return_value);
@@ -137,12 +155,12 @@ background_client_get_database_names (void *data)
 }
 
 static void *
-background_database_get_collection_names (void *data)
+background_mongoc_database_get_collection_names (void *data)
 {
    future_t *future = (future_t *) data;
 
    /* copy the future so we can unlock it while calling
-    * database_get_collection_names
+    * mongoc_database_get_collection_names
     */
    future_t *copy = future_new_copy (future);
    future_value_t return_value;
@@ -151,11 +169,10 @@ background_database_get_collection_names (void *data)
 
    future_value_set_char_ptr_ptr (
       &return_value,
-      mongoc_database_get_collection_names (
-
+         mongoc_database_get_collection_names (
          future_value_get_mongoc_database_ptr (future_get_param(copy, 0)),
          future_value_get_bson_error_ptr (future_get_param(copy, 1))
-   ));
+      ));
 
    future_destroy (copy);
    future_resolve (future, return_value);
@@ -183,7 +200,7 @@ future_bulk_operation_execute (
    future_value_set_bson_error_ptr (
       future_get_param (future, 2), error);
    
-   future_start (future, background_bulk_operation_execute);
+   future_start (future, background_mongoc_bulk_operation_execute);
    return future;
 }
 
@@ -217,7 +234,21 @@ future_client_command_simple (
    future_value_set_bson_error_ptr (
       future_get_param (future, 5), error);
    
-   future_start (future, background_client_command_simple);
+   future_start (future, background_mongoc_client_command_simple);
+   return future;
+}
+
+future_t *
+future_cursor_destroy (
+   mongoc_cursor_ptr cursor)
+{
+   future_t *future = future_new (future_value_void_type,
+                                  1);
+   
+   future_value_set_mongoc_cursor_ptr (
+      future_get_param (future, 0), cursor);
+   
+   future_start (future, background_mongoc_cursor_destroy);
    return future;
 }
 
@@ -235,7 +266,7 @@ future_cursor_next (
    future_value_set_const_bson_ptr_ptr (
       future_get_param (future, 1), doc);
    
-   future_start (future, background_cursor_next);
+   future_start (future, background_mongoc_cursor_next);
    return future;
 }
 
@@ -253,7 +284,7 @@ future_client_get_database_names (
    future_value_set_bson_error_ptr (
       future_get_param (future, 1), error);
    
-   future_start (future, background_client_get_database_names);
+   future_start (future, background_mongoc_client_get_database_names);
    return future;
 }
 
@@ -271,6 +302,6 @@ future_database_get_collection_names (
    future_value_set_bson_error_ptr (
       future_get_param (future, 1), error);
    
-   future_start (future, background_database_get_collection_names);
+   future_start (future, background_mongoc_database_get_collection_names);
    return future;
 }
