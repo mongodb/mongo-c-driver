@@ -72,11 +72,12 @@ mongoc_log (mongoc_log_level_t  log_level,
 {
    va_list args;
    char *message;
+   static mongoc_once_t once;
 
    if (!gLogFunc)
        return;
 
-   static mongoc_once_t once = MONGOC_ONCE_INIT;
+   once  = MONGOC_ONCE_INIT;
 
    mongoc_once(&once, &_mongoc_ensure_mutex_once);
 

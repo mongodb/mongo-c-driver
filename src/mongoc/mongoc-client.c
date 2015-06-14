@@ -993,9 +993,10 @@ mongoc_client_get_database (mongoc_client_t *client,
 mongoc_database_t *
 mongoc_client_get_default_database (mongoc_client_t *client)
 {
-   bson_return_val_if_fail(client, NULL);
+   const char *db;
 
-   const char *db = mongoc_uri_get_database (client->uri);
+   bson_return_val_if_fail(client, NULL);
+   db = mongoc_uri_get_database (client->uri);
 
    if (db) {
       return mongoc_client_get_database (client, db);
