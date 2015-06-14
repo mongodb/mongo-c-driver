@@ -135,9 +135,10 @@ test_invalid_query (void)
 
 
 static void
-test_kill_cursors (void)
+_test_kill_cursors (bool pooled)
 {
    mock_rs_t *rs;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_t *q = BCON_NEW ("a", BCON_INT32 (1));
@@ -152,8 +153,12 @@ test_kill_cursors (void)
    rs = mock_rs_with_autoismaster (0, 5, 0);
    mock_rs_run (rs);
 
-   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
-   assert (client);
+   if (pooled) {
+      pool = mongoc_client_pool_new (mock_rs_get_uri (rs));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   }
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
@@ -189,8 +194,29 @@ test_kill_cursors (void)
    mongoc_read_prefs_destroy (prefs);
    mongoc_collection_destroy (collection);
    bson_destroy (q);
-   mongoc_client_destroy (client);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
    mock_rs_destroy (rs);
+}
+
+
+static void
+test_kill_cursors_single (void)
+{
+   _test_kill_cursors (false);
+}
+
+
+static void
+test_kill_cursors_pooled (void)
+{
+   _test_kill_cursors (true);
 }
 
 
@@ -200,5 +226,6 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/get_host", test_get_host);
    TestSuite_Add (suite, "/Cursor/clone", test_clone);
    TestSuite_Add (suite, "/Cursor/invalid_query", test_invalid_query);
-   TestSuite_Add (suite, "/Cursor/kill", test_kill_cursors);
+   TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);
+   TestSuite_Add (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
 }
