@@ -56,7 +56,12 @@ request_new (const mongoc_rpc_t *request_rpc,
       request_from_killcursors (request, request_rpc);
       break;
 
-   default:
+   case MONGOC_OPCODE_REPLY:
+   case MONGOC_OPCODE_MSG:
+   case MONGOC_OPCODE_UPDATE:
+   case MONGOC_OPCODE_INSERT:
+   case MONGOC_OPCODE_GET_MORE:
+   case MONGOC_OPCODE_DELETE:
       fprintf (stderr, "Unimplemented opcode %d\n", request->opcode);
       abort ();
    }
@@ -301,7 +306,7 @@ flags_str (uint32_t flags)
             case MONGOC_QUERY_PARTIAL:
                bson_string_append (str, "PARTIAL");
                break;
-            default:
+            case MONGOC_QUERY_NONE:
                assert (false);
             }
          }
