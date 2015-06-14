@@ -150,7 +150,6 @@ test_kill_cursors (void)
 
    /* wire version 0, five secondaries, no arbiters */
    rs = mock_rs_with_autoismaster (0, 5, 0);
-   mock_rs_set_verbose (rs, true);
    mock_rs_run (rs);
 
    client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
