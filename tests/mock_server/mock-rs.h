@@ -24,6 +24,7 @@
 typedef struct _mock_rs_t mock_rs_t;
 
 mock_rs_t *mock_rs_with_autoismaster (int32_t max_wire_version,
+                                      bool has_primary,
                                       int n_secondaries,
                                       int n_arbiters);
 
@@ -41,15 +42,22 @@ request_t *mock_rs_receives_query (mock_rs_t *rs,
                                    const char *query_json,
                                    const char *fields_json);
 
+request_t *mock_rs_receives_getmore (mock_rs_t *rs,
+                                     const char *ns,
+                                     uint32_t n_return,
+                                     int64_t cursor_id);
+
 request_t *mock_rs_receives_kill_cursors (mock_rs_t *rs,
                                           int64_t cursor_id);
 
 void mock_rs_replies (request_t *request,
-                          uint32_t flags,
-                          int64_t cursor_id,
-                          int32_t starting_from,
-                          int32_t number_returned,
-                          const char *docs_json);
+                      uint32_t flags,
+                      int64_t cursor_id,
+                      int32_t starting_from,
+                      int32_t number_returned,
+                      const char *docs_json);
+
+void mock_rs_hangs_up (request_t *request);
 
 void mock_rs_destroy (mock_rs_t *rs);
 

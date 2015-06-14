@@ -22,6 +22,7 @@
 
 
 struct _mock_rs_t {
+   bool has_primary;
    int n_secondaries;
    int n_arbiters;
    mongoc_array_t servers;
@@ -113,12 +114,14 @@ make_uri (mongoc_array_t *servers)
 
 mock_rs_t *
 mock_rs_with_autoismaster (int32_t max_wire_version,
+                           bool has_primary,
                            int n_secondaries,
                            int n_arbiters)
 {
    mock_rs_t *rs = bson_malloc0 (sizeof (mock_rs_t));
 
    rs->max_wire_version = max_wire_version;
+   rs->has_primary = has_primary;
    rs->n_secondaries = n_secondaries;
    rs->n_arbiters = n_arbiters;
    _mongoc_array_init (&rs->servers, sizeof (mock_server_t *));
@@ -183,16 +186,18 @@ void
 mock_rs_run (mock_rs_t *rs)
 {
    int i;
-   mock_server_t *primary;
+   mock_server_t *primary = NULL;
    mongoc_array_t secondaries;
    mongoc_array_t arbiters;
    mock_server_t *server;
    char *hosts_str;
    char *ismaster_json;
 
-   /* start primary */
-   primary = mock_server_new ();
-   mock_server_run (primary);
+   if (rs->has_primary) {
+      /* start primary */
+      primary = mock_server_new ();
+      mock_server_run (primary);
+   }
 
    /* start secondaries */
    _mongoc_array_init (&secondaries, sizeof(mock_server_t *));
@@ -213,11 +218,17 @@ mock_rs_run (mock_rs_t *rs)
    }
 
    /* add all servers to replica set */
-   _mongoc_array_append_val (&rs->servers, primary);
+   if (rs->has_primary) {
+      _mongoc_array_append_val (&rs->servers, primary);
+   }
+
    append_array (&rs->servers, &secondaries);
    append_array (&rs->servers, &arbiters);
 
-   /* enqueue unhandled requests. added 1st so run last, after auto-ismaster */
+   /* enqueue unhandled requests in rs->q, they're retrieved with
+    * mock_rs_receives_query() &co. rs_q_append is added first so it
+    * runs last, after auto_ismaster.
+    */
    for (i = 0; i < rs->servers.len; i++) {
       mock_server_autoresponds (get_server (&rs->servers, i),
                                 rs_q_append,
@@ -230,13 +241,15 @@ mock_rs_run (mock_rs_t *rs)
    rs->hosts_str = hosts_str = hosts (&rs->servers);
    rs->uri = make_uri (&rs->servers);
 
-   /* primary's ismaster response */
-   ismaster_json = bson_strdup_printf (
-      "{'ok': 1, 'ismaster': true, 'secondary': false, 'maxWireVersion': %d, "
-      "'setName': 'rs', 'hosts': [%s]}", rs->max_wire_version, hosts_str);
-   mock_server_auto_ismaster (primary, ismaster_json);
+   if (rs->has_primary) {
+      /* primary's ismaster response */
+      ismaster_json = bson_strdup_printf (
+         "{'ok': 1, 'ismaster': true, 'secondary': false, 'maxWireVersion': %d, "
+            "'setName': 'rs', 'hosts': [%s]}", rs->max_wire_version, hosts_str);
 
-   bson_free (ismaster_json);
+      mock_server_auto_ismaster (primary, ismaster_json);
+      bson_free (ismaster_json);
+   }
 
    /* secondaries' ismaster response */
    ismaster_json = bson_strdup_printf (
@@ -336,6 +349,68 @@ mock_rs_receives_query (mock_rs_t *rs,
    }
 
    return request;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_rs_receives_getmore --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not a getmore matching n_return
+ *       and cursor_id.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_rs_receives_getmore (mock_rs_t *rs,
+                          const char *ns,
+                          uint32_t n_return,
+                          int64_t cursor_id)
+{
+   request_t *request;
+
+   /* TODO: configurable timeout val */
+   request = (request_t *) q_get (rs->q, 10 * 1000);
+
+   if (!request_matches_getmore (request,
+                                 ns,
+                                 n_return,
+                                 cursor_id)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_rs_hangs_up --
+ *
+ *       Hang up on a client request.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Causes a network error on the client side.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_rs_hangs_up (request_t *request)
+{
+   mock_server_hangs_up (request);
 }
 
 

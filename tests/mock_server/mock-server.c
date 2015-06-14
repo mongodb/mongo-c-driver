@@ -745,6 +745,11 @@ request_t *mock_server_receives_kill_cursors (mock_server_t *server,
 void
 mock_server_hangs_up (request_t *request)
 {
+   if (mock_server_get_verbose (request->server)) {
+      printf ("%hu <-  \thang up!\n",
+              request_get_server_port (request));
+   }
+
    mongoc_stream_close (request->client);
 }
 
@@ -1059,11 +1064,6 @@ worker_thread (void *data)
          handled = true;
          /* responder should destroy the request */
          request = NULL;
-
-         if (mock_server_get_verbose (server)) {
-            printf ("%hu <-   \t(autoresponded)\n", closure->port);
-         }
-
          break;
       }
    }

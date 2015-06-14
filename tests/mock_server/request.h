@@ -53,6 +53,11 @@ bool request_matches_query (const request_t *request,
                             const char *fields_json,
                             bool is_command);
 
+bool request_matches_getmore (const request_t *request,
+                              const char *ns,
+                              uint32_t n_return,
+                              int64_t cursor_id);
+
 bool request_matches_kill_cursors (const request_t *request,
                                    int64_t cursor_id);
 

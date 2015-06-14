@@ -28,6 +28,8 @@ void request_from_query (request_t *request, const mongoc_rpc_t *rpc);
 
 void request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc);
 
+void request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
+
 
 request_t *
 request_new (const mongoc_rpc_t *request_rpc,
@@ -56,11 +58,14 @@ request_new (const mongoc_rpc_t *request_rpc,
       request_from_killcursors (request, request_rpc);
       break;
 
+   case MONGOC_OPCODE_GET_MORE:
+      request_from_getmore (request, request_rpc);
+      break;
+
    case MONGOC_OPCODE_REPLY:
    case MONGOC_OPCODE_MSG:
    case MONGOC_OPCODE_UPDATE:
    case MONGOC_OPCODE_INSERT:
-   case MONGOC_OPCODE_GET_MORE:
    case MONGOC_OPCODE_DELETE:
       fprintf (stderr, "Unimplemented opcode %d\n", request->opcode);
       abort ();
@@ -81,9 +86,12 @@ request_matches_query (const request_t *request,
                        const char *fields_json,
                        bool is_command)
 {
-   const mongoc_rpc_t *rpc = &request->request_rpc;
+   const mongoc_rpc_t *rpc;
    bson_t *doc;
    bool n_return_equal;
+
+   assert (request);
+   rpc = &request->request_rpc;
 
    assert (request->docs.len <= 2);
 
@@ -105,7 +113,7 @@ request_matches_query (const request_t *request,
       return false;
    }
 
-   if (rpc->header.opcode != MONGOC_OPCODE_QUERY) {
+   if (request->opcode != MONGOC_OPCODE_QUERY) {
       MONGOC_ERROR ("request's opcode does not match QUERY");
       return false;
    }
@@ -170,14 +178,54 @@ request_matches_query (const request_t *request,
 }
 
 
+bool request_matches_getmore (const request_t *request,
+                              const char *ns,
+                              uint32_t n_return,
+                              int64_t cursor_id)
+{
+   const mongoc_rpc_t *rpc;
+
+   assert (request);
+   rpc = &request->request_rpc;
+
+   if (request->opcode != MONGOC_OPCODE_GET_MORE) {
+      MONGOC_ERROR ("request's opcode does not match GET_MORE");
+      return false;
+   }
+
+   if (strcmp (rpc->get_more.collection, ns)) {
+      MONGOC_ERROR ("request's namespace is '%s', expected '%s'",
+                    request->request_rpc.get_more.collection, ns);
+      return false;
+   }
+
+   if (rpc->get_more.n_return != n_return) {
+      MONGOC_ERROR ("requests's n_return = %d, expected %d",
+                    rpc->query.n_return, n_return);
+      return false;
+   }
+
+   if (rpc->get_more.cursor_id != cursor_id) {
+      MONGOC_ERROR ("requests's cursor_id = %" PRId64 ", expected %" PRId64,
+                    rpc->get_more.cursor_id, cursor_id);
+      return false;
+   }
+
+   return true;
+}
+
+
 /* TODO: take file, line, function params from caller, wrap in macro */
 bool
 request_matches_kill_cursors (const request_t *request,
                               int64_t cursor_id)
 {
-   const mongoc_rpc_t *rpc = &request->request_rpc;
+   const mongoc_rpc_t *rpc;
 
-   if (rpc->header.opcode != MONGOC_OPCODE_KILL_CURSORS) {
+   assert (request);
+   rpc = &request->request_rpc;
+
+   if (request->opcode != MONGOC_OPCODE_KILL_CURSORS) {
       MONGOC_ERROR ("request's opcode does not match KILL_CURSORS");
       return false;
    }
@@ -367,4 +415,15 @@ request_from_killcursors (request_t *request,
    assert (rpc->kill_cursors.n_cursors == 1);
    request->as_str = bson_strdup_printf ("OP_KILLCURSORS %" PRId64,
                                          rpc->kill_cursors.cursors[0]);
+}
+
+
+void
+request_from_getmore (request_t *request,
+                      const mongoc_rpc_t *rpc)
+{
+   request->as_str = bson_strdup_printf ("getmore %s %" PRId64 " n_return=%d",
+                                         rpc->get_more.collection,
+                                         rpc->get_more.cursor_id,
+                                         rpc->get_more.n_return);
 }
