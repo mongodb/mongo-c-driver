@@ -321,7 +321,7 @@ mock_rs_receives_query (mock_rs_t *rs,
    request_t *request;
 
    /* TODO: configurable timeout val */
-   request = (request_t *) q_get (rs->q, 100 * 1000);
+   request = (request_t *) q_get (rs->q, 10 * 1000);
 
    if (!request_matches_query (request,
                                ns,
@@ -367,7 +367,7 @@ mock_rs_receives_kill_cursors (mock_rs_t *rs,
    request_t *request;
 
    /* TODO: configurable timeout val */
-   request = (request_t *) q_get (rs->q, 100 * 1000);
+   request = (request_t *) q_get (rs->q, 10 * 1000);
 
    if (!request_matches_kill_cursors (request, cursor_id)) {
       request_destroy (request);

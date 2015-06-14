@@ -617,7 +617,7 @@ mock_server_receives_command (mock_server_t *server,
 
    q = mock_server_get_queue (server);
    /* TODO: get timeout val from mock_server_t */
-   request = (request_t *) q_get (q, 100 * 1000);
+   request = (request_t *) q_get (q, 10 * 1000);
 
    if (!request_matches_query (request,
                                ns,
@@ -669,7 +669,7 @@ mock_server_receives_query (mock_server_t *server,
 
    q = mock_server_get_queue (server);
    /* TODO: get timeout val from mock_server_t */
-   request = (request_t *) q_get (q, 100 * 1000);
+   request = (request_t *) q_get (q, 10 * 1000);
 
    if (!request_matches_query (request,
                                ns,
@@ -717,7 +717,7 @@ request_t *mock_server_receives_kill_cursors (mock_server_t *server,
    q = mock_server_get_queue (server);
 
    /* TODO: get timeout val from mock_server_t */
-   request = (request_t *) q_get (q, 100 * 1000);
+   request = (request_t *) q_get (q, 10 * 1000);
 
    if (!request_matches_kill_cursors (request, cursor_id)) {
       request_destroy (request);
