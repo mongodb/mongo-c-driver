@@ -18,6 +18,7 @@ TEST_CFLAGS += -D_REENTRANT
 endif
 
 TEST_CFLAGS += \
+	-Wno-deprecated-declarations \
 	-DMONGOC_COMPILATION \
 	-DBINARY_DIR="\"$(srcdir)/tests/binary\"" \
 	$(BSON_CFLAGS) \
