@@ -142,17 +142,27 @@ _mongoc_write_command_delete_append (mongoc_write_command_t *command,
 {
    const char *key;
    char keydata [16];
+   bson_t doc;
 
+   ENTRY;
+
+   BSON_ASSERT (command);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_DELETE);
    BSON_ASSERT (selector);
 
    BSON_ASSERT (selector->len >= 5);
 
+   bson_init (&doc);
+   BSON_APPEND_DOCUMENT (&doc, "q", selector);
+   BSON_APPEND_INT32 (&doc, "limit", command->u.delete.multi ? 0 : 1);
+
    key = NULL;
    bson_uint32_to_string (command->n_documents, &key, keydata, sizeof keydata);
    BSON_ASSERT (key);
-   BSON_APPEND_DOCUMENT (command->documents, key, selector);
+   BSON_APPEND_DOCUMENT (command->documents, key, &doc);
    command->n_documents++;
+
+   bson_destroy (&doc);
 
    EXIT;
 }
@@ -698,7 +708,7 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    const uint8_t *data;
    bson_iter_t iter;
    const char *key;
-   uint32_t len;
+   uint32_t len = 0;
    bson_t child;
    bson_t tmp;
    bson_t ar;
@@ -708,8 +718,8 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    bool has_more;
    bool ret = false;
    uint32_t i;
-   int32_t min_wire_version;
    int32_t max_delete_batch;
+   int32_t min_wire_version;
    int32_t max_bson_obj_size;
    uint32_t key_len;
 
@@ -721,6 +731,9 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
    BSON_ASSERT (database);
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
+
+   max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size(&client->cluster, hint);
+   max_delete_batch = mongoc_cluster_node_max_write_batch_size(&client->cluster, hint);
 
    /*
     * If we have an unacknowledged write and the server supports the legacy
@@ -753,9 +766,6 @@ _mongoc_write_command_delete (mongoc_write_command_t       *command,
       EXIT;
    }
 
-   max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size(&client->cluster, hint);
-   max_delete_batch = mongoc_cluster_node_max_write_batch_size(&client->cluster, hint);
-
 again:
    bson_init (&cmd);
    has_more = false;
@@ -765,40 +775,47 @@ again:
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
                          WRITE_CONCERN_DOC (write_concern));
    BSON_APPEND_BOOL (&cmd, "ordered", command->u.delete.ordered);
-   bson_append_array_begin (&cmd, "deletes", 7, &ar);
 
-   do {
-      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         BSON_ASSERT (false);
-      }
+   if (!_mongoc_write_command_will_overflow (0,
+                                             command->documents->len,
+                                             command->n_documents,
+                                             max_bson_obj_size,
+                                             max_delete_batch)) {
+      BSON_APPEND_ARRAY (&cmd, "deletes", command->documents);
+      i = command->n_documents;
+   } else {
+      bson_append_array_begin (&cmd, "deletes", 7, &ar);
 
-      bson_iter_document (&iter, &len, &data);
-      key_len = (uint32_t)bson_uint32_to_string (i, &key, str, sizeof str);
+      do {
+         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+            BSON_ASSERT (false);
+         }
 
-      if (_mongoc_write_command_will_overflow (ar.len,
-                                               key_len + len + 2,
-                                               i,
-                                               max_bson_obj_size,
-                                               max_delete_batch)) {
-         has_more = true;
-         break;
-      }
+         bson_iter_document (&iter, &len, &data);
+         key_len = (uint32_t) bson_uint32_to_string (i, &key, str, sizeof str);
 
-      if (!bson_init_static (&tmp, data, len)) {
-         BSON_ASSERT (false);
-      }
+         if (_mongoc_write_command_will_overflow (ar.len,
+                                                  key_len + len + 2,
+                                                  i,
+                                                  max_bson_obj_size,
+                                                  max_delete_batch)) {
+            has_more = true;
+            break;
+         }
 
-      bson_append_document_begin (&ar, key, key_len, &child);
+         if (!bson_init_static (&tmp, data, len)) {
+            BSON_ASSERT (false);
+         }
 
-      BSON_APPEND_DOCUMENT (&child, "q", &tmp);
-      BSON_APPEND_INT32 (&child, "limit", command->u.delete.multi ? 0 : 1);
+         BSON_APPEND_DOCUMENT (&ar, key, &tmp);
 
-      bson_append_document_end (&ar, &child);
+         bson_destroy (&tmp);
 
-      i++;
-   } while (bson_iter_next (&iter));
+         i++;
+      } while (bson_iter_next (&iter));
 
-   bson_append_array_end (&cmd, &ar);
+      bson_append_array_end (&cmd, &ar);
+   }
 
    if (!i) {
       too_large_error (error, i, len, max_bson_obj_size);

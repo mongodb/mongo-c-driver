@@ -209,6 +209,33 @@ assert_n_inserted (int           n,
 }
 
 
+/*--------------------------------------------------------------------------
+ *
+ * assert_n_removed --
+ *
+ *       Check a bulk operation reply's nRemoved field.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Aborts if the field is incorrect.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+assert_n_removed (int           n,
+                  const bson_t *reply)
+{
+   bson_iter_t iter;
+
+   assert (bson_iter_init_find (&iter, reply, "nRemoved"));
+   assert (BSON_ITER_HOLDS_INT32 (&iter));
+   ASSERT_CMPINT (n, ==, bson_iter_int32 (&iter));
+}
+
+
 #define ASSERT_COUNT(n, collection) \
    do { \
       int count = (int)mongoc_collection_count (collection, MONGOC_QUERY_NONE, \
@@ -1806,7 +1833,7 @@ test_large_inserts_unordered ()
 
 
 static void
-test_numerous_inserts ()
+_test_numerous (bool ordered)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -1814,8 +1841,9 @@ test_numerous_inserts ()
    bson_t reply;
    bson_error_t error;
    bool r;
-   int n_docs = 2100;
-   bson_t *doc = tmp_bson ("{}");
+   int n_docs = 4100; /* exceeds max write batch size of 1000 */
+   bson_t doc;
+   bson_iter_t iter;
    int i;
 
    client = test_framework_client_new (NULL);
@@ -1824,11 +1852,16 @@ test_numerous_inserts ()
    collection = get_test_collection (client, "test_numerous_inserts");
    assert (collection);
 
-   /* ensure we don't exceed server's 1000-document bulk size limit */
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+
+   /* insert docs {_id: 0} through {_id: n_docs-1} */
+   bson_init (&doc);
+   BSON_APPEND_INT32 (&doc, "_id", 0);
+   bson_iter_init_find (&iter, &doc, "_id");
 
    for (i = 0; i < n_docs; i++) {
-      mongoc_bulk_operation_insert (bulk, doc);
+      bson_iter_overwrite_int32 (&iter, i);
+      mongoc_bulk_operation_insert (bulk, &doc);
    }
 
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
@@ -1836,30 +1869,57 @@ test_numerous_inserts ()
 
    assert_n_inserted (n_docs, &reply);
    ASSERT_COUNT (n_docs, collection);
-
-   /* same with ordered bulk */
-   mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
-                             NULL, NULL);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-   assert (bulk);
+   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
 
-   for (i = 0; i < n_docs; i++) {
-      mongoc_bulk_operation_insert (bulk, doc);
+   /* use remove_one for docs {_id: 0}, {_id: 2}, ..., {_id: n_docs-2} */
+   for (i = 0; i < n_docs; i += 2) {
+      bson_iter_overwrite_int32 (&iter, i);
+      mongoc_bulk_operation_remove_one (bulk, &doc);
    }
 
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (r);
 
-   assert_n_inserted (n_docs, &reply);
-   ASSERT_COUNT (n_docs, collection);
+   assert_n_removed (n_docs / 2, &reply);
+   ASSERT_COUNT (n_docs / 2, collection);
+
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
+
+   /* use remove for docs {_id: 1}, {_id: 3}, ..., {_id: n_docs-1} */
+   for (i = 1; i < n_docs; i += 2) {
+      bson_iter_overwrite_int32 (&iter, i);
+      mongoc_bulk_operation_remove (bulk, &doc);
+   }
+
+   r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
+   assert (r);
+
+   assert_n_removed (n_docs / 2, &reply);
+   ASSERT_COUNT (0, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+}
+
+
+static void
+test_numerous_ordered (void)
+{
+   _test_numerous (true);
+}
+
+
+static void
+test_numerous_unordered (void)
+{
+   _test_numerous (false);
 }
 
 
@@ -2149,8 +2209,10 @@ test_bulk_install (TestSuite *suite)
                   test_large_inserts_ordered);
    TestSuite_Add (suite, "/BulkOperation/large_inserts_unordered",
                   test_large_inserts_unordered);
-   TestSuite_Add (suite, "/BulkOperation/numerous_inserts",
-                  test_numerous_inserts);
+   TestSuite_Add (suite, "/BulkOperation/numerous_ordered",
+                  test_numerous_ordered);
+   TestSuite_Add (suite, "/BulkOperation/numerous_unordered",
+                  test_numerous_unordered);
    TestSuite_Add (suite, "/BulkOperation/CDRIVER-372_ordered",
                   test_bulk_edge_case_372_ordered);
    TestSuite_Add (suite, "/BulkOperation/CDRIVER-372_unordered",
