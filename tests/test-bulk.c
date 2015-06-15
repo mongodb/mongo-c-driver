@@ -487,8 +487,8 @@ test_insert_check_keys (void)
    assert (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
-   /* TODO: CDRIVER-648, assert nInserted == 0 */
-   json_pattern = bson_strdup_printf ("{'nMatched':  0,"
+   json_pattern = bson_strdup_printf ("{'nInserted': 0,"
+                                      " 'nMatched':  0,"
                                       " 'nRemoved':  0,"
                                       " 'nUpserted': 0,"
                                       " 'writeErrors': ["
@@ -497,6 +497,7 @@ test_insert_check_keys (void)
                                     error.code);
    ASSERT_MATCH (&reply, json_pattern);
    check_n_modified (has_write_cmds, &reply, 0);
+   assert_error_count (1, &reply);
    ASSERT_COUNT (0, collection);
 
    bson_free (json_pattern);
@@ -1172,13 +1173,10 @@ test_insert_continue_on_error ()
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
 
-   /* TODO: CDRIVER-654, assert nInserted == 2, not 4 */
-   ASSERT_MATCH (&reply, "{'nMatched':  0,"
+   ASSERT_MATCH (&reply, "{'nInserted': 2,"
+                         " 'nMatched':  0,"
                          " 'nRemoved':  0,"
                          " 'nUpserted': 0,"
-/*
- *                       " 'nInserted': 2,"
- */
                          " 'writeErrors': [{'index': 1}, {'index': 3}]}");
 
    check_n_modified (has_write_cmds, &reply, 0);
@@ -1233,7 +1231,6 @@ test_update_continue_on_error ()
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
 
-   /* TODO: CDRIVER-654, assert nInserted == 2, not 4 */
    ASSERT_MATCH (&reply, "{'nInserted': 0,"
                          " 'nMatched':  2,"
                          " 'nRemoved':  0,"
@@ -1343,14 +1340,14 @@ test_single_error_ordered_bulk ()
    assert (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
 
-   /* TODO: CDRIVER-656, assert writeErrors.0.index is 1 */
    /* TODO: CDRIVER-651, assert contents of the 'op' field */
    ASSERT_MATCH (&reply, "{'nInserted': 1,"
                          " 'nMatched':  0,"
                          " 'nRemoved':  0,"
                          " 'nUpserted': 0,"
                          " 'writeErrors': ["
-                         "    {'code':   {'$exists': true},"
+                         "    {'index': 1,"
+                         "     'code':   {'$exists': true},"
                          "     'errmsg': {'$exists': true}}]"
 /*
  *                       " 'writeErrors.0.op':     ...,"
@@ -1391,17 +1388,18 @@ test_multiple_error_ordered_bulk ()
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    assert (bulk);
 
+   /* 0 succeeds */
    mongoc_bulk_operation_insert (bulk,
                                  tmp_bson ("{'b': 1, 'a': 1}"));
-   /* succeeds */
+   /* 1 succeeds */
    mongoc_bulk_operation_update (bulk,
                                  tmp_bson ("{'b': 3}"),
                                  tmp_bson ("{'$set': {'a': 2}}"), true);
-   /* fails, duplicate value for 'a' */
+   /* 2 fails, duplicate value for 'a' */
    mongoc_bulk_operation_update (bulk,
                                  tmp_bson ("{'b': 2}"),
                                  tmp_bson ("{'$set': {'a': 1}}"), true);
-   /* not attempted, bulk is already aborted */
+   /* 3 not attempted, bulk is already aborted */
    mongoc_bulk_operation_insert (bulk,
                                  tmp_bson ("{'b': 4, 'a': 3}"));
 
@@ -1410,13 +1408,14 @@ test_multiple_error_ordered_bulk ()
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
 
-   /* TODO: CDRIVER-656, assert writeErrors.0.index is 1 */
    /* TODO: CDRIVER-651, assert contents of the 'op' field */
    ASSERT_MATCH (&reply, "{'nInserted': 1,"
                          " 'nMatched':  0,"
                          " 'nRemoved':  0,"
                          " 'nUpserted': 1,"
-                         " 'writeErrors': [{'errmsg': {'$exists': true}}]"
+                         " 'writeErrors': ["
+                         "    {'index': 2, 'errmsg': {'$exists': true}}"
+                         "]"
 /*
  *                       " 'writeErrors.0.op': {'q': {'b': 2}, 'u': {'$set': {'a': 1}}, 'multi': false}"
  */
@@ -1505,11 +1504,15 @@ test_single_error_unordered_bulk ()
    create_unique_index (collection);
 
    bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+
+   /* 0 succeeds */
    mongoc_bulk_operation_insert (bulk,
                                  tmp_bson ("{'b': 1, 'a': 1}"));
+   /* 1 fails */
    mongoc_bulk_operation_update (bulk,
                                  tmp_bson ("{'b': 2}"),
                                  tmp_bson ("{'$set': {'a': 1}}"), true);
+   /* 2 succeeds */
    mongoc_bulk_operation_insert (bulk,
                                  tmp_bson ("{'b': 3, 'a': 2}"));
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
@@ -1518,13 +1521,13 @@ test_single_error_unordered_bulk ()
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
 
-   /* TODO: CDRIVER-656, assert writeErrors.0.index is 1 */
    /* TODO: CDRIVER-651, assert contents of the 'op' field */
    ASSERT_MATCH (&reply, "{'nInserted': 2,"
                          " 'nMatched':  0,"
                          " 'nRemoved':  0,"
                          " 'nUpserted': 0,"
-                         " 'writeErrors': [{'code': {'$exists': true},"
+                         " 'writeErrors': [{'index': 1,"
+                         "                  'code': {'$exists': true},"
                          "                  'errmsg': {'$exists': true}}]}");
    assert_error_count (1, &reply);
    check_n_modified (has_write_cmds, &reply, 0);
@@ -1656,26 +1659,17 @@ test_multiple_error_unordered_bulk ()
     * although the spec does not require it. Same for inserts.
     */
    /* TODO: CDRIVER-651, assert contents of the 'op' field */
-   ASSERT_MATCH (&reply, "{'nMatched': 0,"
-                         " 'nUpserted': 2,"
-                         " 'nInserted': 2,"
+   ASSERT_MATCH (&reply, "{'nInserted': 2,"
+                         " 'nMatched': 0,"
                          " 'nRemoved': 0,"
-                         " 'upserted.0.index': 1,"
-                         " 'upserted.0._id':   {'$exists': true},"
-                         " 'upserted.1.index': 2,"
-                         " 'upserted.1._id':   {'$exists': true},"
-                         " 'writeErrors.0.index': 3,"
-/*
- *                       " 'writeErrors.0.op': {'q': {'b': 4}, 'u': {'$set': {'a': 3}}, 'multi': false, 'upsert': true}},"
- */
-                         " 'writeErrors.0.code':  {'$exists': true},"
-                         " 'writeErrors.0.error': {'$exists': true},"
-                         " 'writeErrors.1.index': 5,"
-/*
- *                       " 'writeErrors.1.op': {'_id': '...', 'b': 6, 'a': 1},"
- */
-                         " 'writeErrors.1.code':  {'$exists': true},"
-                         " 'writeErrors.1.error': {'$exists': true}}");
+                         " 'nUpserted': 2,"
+                         /* " 'writeErrors.0.op': {'q': {'b': 4}, 'u': {'$set': {'a': 3}}, 'multi': false, 'upsert': true}}," */
+                         " 'writeErrors.0.index':  3,"
+                         " 'writeErrors.0.code':   {'$exists': true},"
+                         " 'writeErrors.1.index':  5,"
+                         /* " 'writeErrors.1.op': {'_id': '...', 'b': 6, 'a': 1}," */
+                         " 'writeErrors.1.code':   {'$exists': true},"
+                         " 'writeErrors.1.errmsg': {'$exists': true}}");
    assert_error_count (2, &reply);
    check_n_modified (has_write_cmds, &reply, 0);
 
@@ -1683,7 +1677,7 @@ test_multiple_error_unordered_bulk ()
     * assume the update at index 1 runs before the update at index 3,
     * although the spec does not require it. Same for inserts.
     */
-   ASSERT_COUNT (2, collection);
+   ASSERT_COUNT (4, collection);
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1728,9 +1722,8 @@ test_large_inserts_ordered ()
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
    assert (error.code);
 
-   /* TODO: CDRIVER-654, assert nInserted == 1 */
-   /*assert_n_inserted (1, &reply);*/
-   /*ASSERT_COUNT (1, collection);*/
+   assert_n_inserted (1, &reply);
+   ASSERT_COUNT (1, collection);
 
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
                              NULL, NULL);
@@ -1789,6 +1782,8 @@ test_large_inserts_unordered ()
    bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
    assert (bulk);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 1, 'a': 1}"));
+
+   /* 1 fails */
    mongoc_bulk_operation_insert (bulk, huge_doc);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'b': 2, 'a': 2}"));
 
@@ -1798,8 +1793,18 @@ test_large_inserts_unordered ()
            (error.domain == MONGOC_ERROR_BSON &&
             error.code == MONGOC_ERROR_BSON_INVALID));
 
-   /* TODO: CDRIVER-654, assert nInserted == 2 */
-   /*assert_n_inserted (1, &reply);*/
+   ASSERT_MATCH (&reply, "{'nInserted': 2,"
+                         " 'nMatched':  0,"
+                         " 'nRemoved':  0,"
+                         " 'nUpserted': 0,"
+                         " 'writeErrors': [{"
+                         "    'index':  1,"
+                         "    'code':   {'$exists': true},"
+                         "    'errmsg': {'$exists': true}"
+                         " }]}");
+
+   assert_error_count (1, &reply);
+
    ASSERT_COUNT (2, collection);
 
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
@@ -2199,12 +2204,8 @@ test_bulk_install (TestSuite *suite)
                   test_single_error_unordered_bulk);
    TestSuite_Add (suite, "/BulkOperation/write_concern_error",
                   test_write_concern_error);
-
-   /* TODO: CDRIVER-653 */
-/*
    TestSuite_Add (suite, "/BulkOperation/multiple_error_unordered_bulk",
                   test_multiple_error_unordered_bulk);
-*/
    TestSuite_Add (suite, "/BulkOperation/large_inserts_ordered",
                   test_large_inserts_ordered);
    TestSuite_Add (suite, "/BulkOperation/large_inserts_unordered",

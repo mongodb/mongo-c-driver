@@ -41,18 +41,14 @@ typedef struct
    uint32_t hint;
    bson_t  *documents;
    uint32_t n_documents;
+   bool     ordered;
    union {
       struct {
-         uint8_t   ordered : 1;
-         uint8_t   multi : 1;
+         bool multi;
       } delete;
       struct {
-         uint8_t   ordered : 1;
-         uint8_t   allow_bulk_op_insert : 1;
+         bool allow_bulk_op_insert;
       } insert;
-      struct {
-         uint8_t   ordered : 1;
-      } update;
    } u;
 } mongoc_write_command_t;
 

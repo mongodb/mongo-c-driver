@@ -86,8 +86,13 @@ tmp_bson (const char *json)
 
 
 bool
-get_exists_operator (bson_iter_t *iter,
-                     bool        *exists);
+get_exists_operator (const bson_value_t *value,
+                     bool               *exists);
+
+const bson_value_t *find (const bson_iter_t *iter,
+                          const char *key,
+                          bool is_command,
+                          bool is_first);
 
 bool
 bson_value_equal (const bson_value_t *a,
@@ -221,9 +226,12 @@ match_bson (const bson_t *doc,
 {
    bson_iter_t pattern_iter;
    const char *key;
+   const bson_value_t *value;
    bson_iter_t doc_iter;
-   bool first_pattern_key = true;
+   bool is_first = true;
+   bool is_exists_operator;
    bool exists;
+   const bson_value_t *doc_value;
 
    if (bson_empty0 (pattern)) {
       /* matches anything */
@@ -240,31 +248,29 @@ match_bson (const bson_t *doc,
 
    while (bson_iter_next (&pattern_iter)) {
       key = bson_iter_key (&pattern_iter);
-      if (first_pattern_key && is_command) {
-         if (!bson_iter_next (&doc_iter) ||
-             strcasecmp (key, bson_iter_key (&doc_iter))) {
-            return false;
-         }
+      value = bson_iter_value (&pattern_iter);
+      doc_value = find (&doc_iter, key, is_command, is_first);
 
-         if (!bson_value_equal (bson_iter_value (&pattern_iter),
-                                bson_iter_value (&doc_iter))) {
+      /* is value {"$exists": true} or {"$exists": false} ? */
+      is_exists_operator = get_exists_operator (value, &exists);
+
+      if (is_exists_operator) {
+         if (exists != (bool) doc_value) {
             return false;
          }
-      } else {
-         /* is pattern_iter at "key": {"$exists": bool} ? */
-         if (get_exists_operator (&pattern_iter, &exists)) {
-            if (exists != bson_has_field (doc, key)) {
-               return false;
-            }
-         } else if (!bson_iter_find (&doc_iter, key)) {
-            return false;
-         } else if (!bson_value_equal (bson_iter_value (&pattern_iter),
-                                       bson_iter_value (&doc_iter))) {
-            return false;
-         }
+      } else if (!doc_value) {
+         return false;
+      } else if (!bson_value_equal (value, doc_value)) {
+         return false;
       }
 
-      first_pattern_key = false;
+      /* don't advance if next call may be for another key in the same subdoc,
+       * or if we're skipping a pattern key that was {$exists: false}. */
+      if (!strchr (key, '.') && !(is_exists_operator && !exists)) {
+         bson_iter_next (&doc_iter);
+      }
+
+      is_first = false;
    }
 
    return true;
@@ -273,37 +279,46 @@ match_bson (const bson_t *doc,
 
 /*--------------------------------------------------------------------------
  *
- * get_exists_operator --
+ * find --
  *
- *       Is iter at a subdocument value like {"$exists": bool}?
+ *       Find the value for a key.
  *
  * Returns:
- *       True if the current value is a subdocument with the first key
- *       "$exists".
+ *       A value, or NULL if the key is not found.
  *
  * Side effects:
- *       If the function returns true, *exists is set to true or false,
- *       the value of the bool.
+ *       None.
  *
  *--------------------------------------------------------------------------
  */
 
-bool
-get_exists_operator (bson_iter_t *iter,
-                     bool        *exists)
+const bson_value_t *
+find (const bson_iter_t *iter,
+      const char *key,
+      bool is_command,
+      bool is_first)
 {
-   bson_iter_t child;
+   bson_iter_t i2;
+   bson_iter_t descendent;
 
-   if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
-      if (bson_iter_recurse (iter, &child) &&
-          bson_iter_next (&child) &&
-          BSON_ITER_IS_KEY (&child, "$exists")) {
-         *exists = bson_iter_as_bool (&child);
-         return true;
+   /* don't advance iter. */
+   memcpy (&i2, iter, sizeof *iter);
+
+   if (strchr (key, '.')) {
+      if (!bson_iter_find_descendant (&i2, key, &descendent)) {
+         return NULL;
       }
+
+      return bson_iter_value (&descendent);
+   } else if (is_command && is_first) {
+      if (!bson_iter_find_case (&i2, key)) {
+         return NULL;
+      }
+   } else if (!bson_iter_find (&i2, key)) {
+      return NULL;
    }
 
-   return false;
+   return bson_iter_value (&i2);
 }
 
 
@@ -315,6 +330,40 @@ bson_init_from_value (bson_t             *b,
            v->value_type == BSON_TYPE_DOCUMENT);
 
    return bson_init_static (b, v->value.v_doc.data, v->value.v_doc.data_len);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * get_exists_operator --
+ *
+ *       Is value a subdocument like {"$exists": bool}?
+ *
+ * Returns:
+ *       True if the value is a subdocument with the first key "$exists".
+ *
+ * Side effects:
+ *       If the function returns true, *exists is set to true or false,
+ *       the value of the bool.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+get_exists_operator (const bson_value_t *value,
+                     bool               *exists)
+{
+   bson_t bson;
+   bson_iter_t iter;
+
+   if (value->value_type == BSON_TYPE_DOCUMENT &&
+       bson_init_from_value (&bson, value) &&
+       bson_iter_init_find (&iter, &bson, "$exists")) {
+      *exists = bson_iter_as_bool (&iter);
+      return true;
+   }
+
+   return false;
 }
 
 
