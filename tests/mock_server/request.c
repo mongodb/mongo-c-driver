@@ -20,11 +20,14 @@
 
 #include "mock-server.h"
 #include "../test-conveniences.h"
+#include "../TestSuite.h"
 
 
 bool is_command (const char *ns);
 
 void request_from_query (request_t *request, const mongoc_rpc_t *rpc);
+
+void request_from_insert (request_t *request, const mongoc_rpc_t *rpc);
 
 void request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc);
 
@@ -54,6 +57,10 @@ request_new (const mongoc_rpc_t *request_rpc,
       request_from_query (request, request_rpc);
       break;
 
+   case MONGOC_OPCODE_INSERT:
+      request_from_insert (request, request_rpc);
+      break;
+
    case MONGOC_OPCODE_KILL_CURSORS:
       request_from_killcursors (request, request_rpc);
       break;
@@ -65,7 +72,6 @@ request_new (const mongoc_rpc_t *request_rpc,
    case MONGOC_OPCODE_REPLY:
    case MONGOC_OPCODE_MSG:
    case MONGOC_OPCODE_UPDATE:
-   case MONGOC_OPCODE_INSERT:
    case MONGOC_OPCODE_DELETE:
       fprintf (stderr, "Unimplemented opcode %d\n", request->opcode);
       abort ();
@@ -156,8 +162,8 @@ request_matches_query (const request_t *request,
       doc = NULL;
    }
 
-   if (!match_json (doc, query_json, is_command, __FILE__, __LINE__,
-                    __FUNCTION__)) {
+   if (!match_json (doc, is_command, __FILE__, __LINE__,
+                    __FUNCTION__, query_json)) {
       /* match_json has logged the err */
       return false;
    }
@@ -168,8 +174,8 @@ request_matches_query (const request_t *request,
       doc = NULL;
    }
 
-   if (!match_json (doc, fields_json, false,
-                    __FILE__, __LINE__, __FUNCTION__)) {
+   if (!match_json (doc, false,
+                    __FILE__, __LINE__, __FUNCTION__, fields_json)) {
       /* match_json has logged the err */
       return false;
    }
@@ -178,10 +184,45 @@ request_matches_query (const request_t *request,
 }
 
 
-bool request_matches_getmore (const request_t *request,
-                              const char *ns,
-                              uint32_t n_return,
-                              int64_t cursor_id)
+/* TODO: take file, line, function params from caller, wrap in macro */
+bool
+request_matches_insert (const request_t *request,
+                        const char *ns,
+                        mongoc_insert_flags_t flags,
+                        const char *doc_json)
+{
+   const mongoc_rpc_t *rpc;
+   bson_t *doc;
+
+   assert (request);
+   rpc = &request->request_rpc;
+
+   if (request->opcode != MONGOC_OPCODE_INSERT) {
+      MONGOC_ERROR ("request's opcode does not match INSERT");
+      return false;
+   }
+
+   if (rpc->insert.flags != flags) {
+      MONGOC_ERROR ("request's insert flags don't match");
+      return false;
+   }
+
+   ASSERT_CMPINT ((int)request->docs.len, ==, 1);
+   doc = _mongoc_array_index (&request->docs, bson_t *, 0);
+   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, doc_json)) {
+      return false;
+   }
+
+   return true;
+}
+
+
+/* TODO: take file, line, function params from caller, wrap in macro */
+bool
+request_matches_getmore (const request_t *request,
+                         const char *ns,
+                         uint32_t n_return,
+                         int64_t cursor_id)
 {
    const mongoc_rpc_t *rpc;
 
@@ -313,7 +354,7 @@ is_command (const char *ns)
 
 
 char *
-flags_str (uint32_t flags)
+query_flags_str (uint32_t flags)
 {
    mongoc_query_flags_t flag = (mongoc_query_flags_t) 1;
    bson_string_t *str = bson_string_new ("");
@@ -399,11 +440,51 @@ request_from_query (request_t *request,
 
    bson_string_append (query_as_str, " flags=");
 
-   str = flags_str (rpc->query.flags);
+   str = query_flags_str (rpc->query.flags);
    bson_string_append (query_as_str, str);
    bson_free (str);
 
    request->as_str = bson_string_free (query_as_str, false);
+}
+
+
+char *
+insert_flags_str (uint32_t flags)
+{
+   if (flags == MONGOC_INSERT_NONE) {
+      return bson_strdup ("0");
+   } else {
+      return bson_strdup ("CONTINUE_ON_ERROR");
+   }
+}
+
+
+void
+request_from_insert (request_t *request,
+                     const mongoc_rpc_t *rpc)
+{
+   bson_t *doc;
+   bson_string_t *insert_as_str = bson_string_new ("");
+   char *str;
+
+   /* TODO: multiple docs */
+   ASSERT_CMPINT (rpc->insert.n_documents, ==, 1);
+   doc = bson_new_from_data (rpc->insert.documents->iov_base,
+                             rpc->insert.documents->iov_len);
+   assert (doc);
+   _mongoc_array_append_val (&request->docs, doc);
+
+   str = bson_as_json (doc, NULL);
+   bson_string_append (insert_as_str, str);
+   bson_free (str);
+
+   bson_string_append (insert_as_str, " flags=");
+
+   str = insert_flags_str (rpc->query.flags);
+   bson_string_append (insert_as_str, str);
+   bson_free (str);
+
+   request->as_str = bson_string_free (insert_as_str, false);
 }
 
 

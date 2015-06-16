@@ -609,11 +609,20 @@ request_t *
 mock_server_receives_command (mock_server_t *server,
                               const char *database_name,
                               mongoc_query_flags_t flags,
-                              const char *command_json)
+                              const char *command_json,
+                              ...)
 {
+   va_list args;
+   char *formatted_command_json;
+   char *ns;
    sync_queue_t *q;
    request_t *request;
-   char *ns = bson_strdup_printf ("%s.$cmd", database_name);
+
+   va_start (args, command_json);
+   formatted_command_json = bson_strdupv_printf (command_json, args);
+   va_end (args);
+
+   ns = bson_strdup_printf ("%s.$cmd", database_name);
 
    q = mock_server_get_queue (server);
    /* TODO: get timeout val from mock_server_t */
@@ -624,13 +633,14 @@ mock_server_receives_command (mock_server_t *server,
                                flags,
                                0,
                                1,
-                               command_json,
+                               formatted_command_json,
                                NULL,
                                true)) {
       request_destroy (request);
       request = NULL;
    }
 
+   bson_free (formatted_command_json);
    bson_free (ns);
 
    return request;
@@ -679,6 +689,49 @@ mock_server_receives_query (mock_server_t *server,
                                query_json,
                                fields_json,
                                false)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_insert --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not an insert matching ns, flags,
+ *       and doc_json.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_insert (mock_server_t *server,
+                             const char *ns,
+                             mongoc_insert_flags_t flags,
+                             const char *doc_json)
+{
+   sync_queue_t *q;
+   request_t *request;
+
+   q = mock_server_get_queue (server);
+   /* TODO: get timeout val from mock_server_t */
+   request = (request_t *) q_get (q, 10 * 1000);
+
+   if (!request_matches_insert (request,
+                                ns,
+                                flags,
+                                doc_json)) {
       request_destroy (request);
       return NULL;
    }

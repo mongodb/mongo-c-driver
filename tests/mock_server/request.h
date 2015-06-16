@@ -53,6 +53,11 @@ bool request_matches_query (const request_t *request,
                             const char *fields_json,
                             bool is_command);
 
+bool request_matches_insert (const request_t *request,
+                             const char *ns,
+                             mongoc_insert_flags_t flags,
+                             const char *doc_json);
+
 bool request_matches_getmore (const request_t *request,
                               const char *ns,
                               uint32_t n_return,

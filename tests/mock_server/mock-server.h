@@ -80,7 +80,8 @@ void mock_server_set_rand_delay (mock_server_t *server,
 request_t *mock_server_receives_command (mock_server_t *server,
                                          const char *database_name,
                                          mongoc_query_flags_t flags,
-                                         const char *command_json);
+                                         const char *command_json,
+                                         ...);
 
 request_t *mock_server_receives_query (mock_server_t *server,
                                        const char *ns,
@@ -89,6 +90,11 @@ request_t *mock_server_receives_query (mock_server_t *server,
                                        uint32_t n_return,
                                        const char *query_json,
                                        const char *fields_json);
+
+request_t *mock_server_receives_insert (mock_server_t *server,
+                                        const char *ns,
+                                        mongoc_insert_flags_t flags,
+                                        const char *doc_json);
 
 request_t *mock_server_receives_kill_cursors (mock_server_t *server,
                                               int64_t cursor_id);

@@ -89,10 +89,11 @@ bool
 get_exists_operator (const bson_value_t *value,
                      bool               *exists);
 
-const bson_value_t *find (const bson_iter_t *iter,
-                          const char *key,
-                          bool is_command,
-                          bool is_first);
+bool find (bson_value_t *value,
+           const bson_iter_t *iter,
+           const char *key,
+           bool is_command,
+           bool is_first);
 
 bool
 bson_value_equal (const bson_value_t *a,
@@ -155,17 +156,27 @@ single_quotes_to_double (const char *str)
 
 bool
 match_json (const bson_t *doc,
-            const char   *json_pattern,
             bool          is_command,
             const char   *filename,
             int           lineno,
-            const char   *funcname)
+            const char   *funcname,
+            const char   *json_pattern,
+            ...)
 {
-   char *double_quoted = single_quotes_to_double (
-         json_pattern ? json_pattern : "{}");
+   va_list args;
+   char *json_pattern_formatted;
+   char *double_quoted;
    bson_error_t error;
    bson_t *pattern;
    bool matches;
+
+   va_start (args, json_pattern);
+   json_pattern_formatted = bson_strdupv_printf (
+      json_pattern ? json_pattern : "{}", args);
+   va_end (args);
+
+   double_quoted = single_quotes_to_double (json_pattern_formatted);
+
 
    pattern = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
 
@@ -188,6 +199,7 @@ match_json (const bson_t *doc,
    }
 
    bson_destroy (pattern);
+   bson_free (json_pattern_formatted);
    bson_free (double_quoted);
 
    return matches;
@@ -231,7 +243,8 @@ match_bson (const bson_t *doc,
    bool is_first = true;
    bool is_exists_operator;
    bool exists;
-   const bson_value_t *doc_value;
+   bool found;
+   bson_value_t doc_value;
 
    if (bson_empty0 (pattern)) {
       /* matches anything */
@@ -249,18 +262,18 @@ match_bson (const bson_t *doc,
    while (bson_iter_next (&pattern_iter)) {
       key = bson_iter_key (&pattern_iter);
       value = bson_iter_value (&pattern_iter);
-      doc_value = find (&doc_iter, key, is_command, is_first);
+      found = find (&doc_value, &doc_iter, key, is_command, is_first);
 
       /* is value {"$exists": true} or {"$exists": false} ? */
       is_exists_operator = get_exists_operator (value, &exists);
 
       if (is_exists_operator) {
-         if (exists != (bool) doc_value) {
+         if (exists != found) {
             return false;
          }
-      } else if (!doc_value) {
+      } else if (!found) {
          return false;
-      } else if (!bson_value_equal (value, doc_value)) {
+      } else if (!bson_value_equal (value, &doc_value)) {
          return false;
       }
 
@@ -271,6 +284,9 @@ match_bson (const bson_t *doc,
       }
 
       is_first = false;
+      if (found) {
+         bson_value_destroy (&doc_value);
+      }
    }
 
    return true;
@@ -284,16 +300,17 @@ match_bson (const bson_t *doc,
  *       Find the value for a key.
  *
  * Returns:
- *       A value, or NULL if the key is not found.
+ *       Whether the key was found.
  *
  * Side effects:
- *       None.
+ *       Copies the found value into "value".
  *
  *--------------------------------------------------------------------------
  */
 
-const bson_value_t *
-find (const bson_iter_t *iter,
+bool
+find (bson_value_t *value,
+      const bson_iter_t *iter,
       const char *key,
       bool is_command,
       bool is_first)
@@ -306,19 +323,21 @@ find (const bson_iter_t *iter,
 
    if (strchr (key, '.')) {
       if (!bson_iter_find_descendant (&i2, key, &descendent)) {
-         return NULL;
+         return false;
       }
 
-      return bson_iter_value (&descendent);
+      bson_value_copy(bson_iter_value (&descendent), value);
+      return true;
    } else if (is_command && is_first) {
       if (!bson_iter_find_case (&i2, key)) {
-         return NULL;
+         return false;
       }
    } else if (!bson_iter_find (&i2, key)) {
-      return NULL;
+      return false;
    }
 
-   return bson_iter_value (&i2);
+   bson_value_copy (bson_iter_value (&i2), value);
+   return true;
 }
 
 
