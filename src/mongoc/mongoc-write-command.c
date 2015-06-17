@@ -508,12 +508,14 @@ _mongoc_write_command_will_overflow (uint32_t len_so_far,
                                      int32_t  max_bson_size,
                                      int32_t  max_write_batch_size)
 {
+   int32_t max_cmd_size;
+
    BSON_ASSERT (max_bson_size);
 
    /* max BSON object size + 16k - 2 bytes for ending NUL bytes.
     * server guarantees there is enough room: SERVER-10643
     */
-   int32_t max_cmd_size = max_bson_size + 16382;
+   max_cmd_size = max_bson_size + 16382;
 
    if (len_so_far + document_len > max_cmd_size) {
       return true;
