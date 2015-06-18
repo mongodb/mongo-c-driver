@@ -259,6 +259,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
    const uint8_t *data;
    mongoc_rpc_t rpc;
    bson_iter_t iter;
+   bson_iter_t q_iter;
    uint32_t len;
    bson_t *gle = NULL;
    char ns [MONGOC_NAMESPACE_MAX + 1];
@@ -291,9 +292,12 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
    bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
 
    do {
+      /* the document is like { "q": { <selector> }, limit: <0 or 1> } */
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
-
-      bson_iter_document (&iter, &len, &data);
+      BSON_ASSERT (bson_iter_recurse (&iter, &q_iter));
+      BSON_ASSERT (bson_iter_find (&q_iter, "q"));
+      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&q_iter));
+      bson_iter_document (&q_iter, &len, &data);
 
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
