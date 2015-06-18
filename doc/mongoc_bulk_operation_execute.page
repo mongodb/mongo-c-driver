@@ -44,7 +44,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,
   <section id="return">
     <title>Returns</title>
     <p>A non-zero <code>hint</code> of the peer node on success, otherwise <code>0</code> and <code>error</code> is set.</p>
-  </section>
+    <p>The <code>reply</code> document counts operations and collects error information. See <link xref="bulk">Bulk Write Operations</link> for examples.</p>
 
-
+ </section>
 </page>

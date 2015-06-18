@@ -16,12 +16,14 @@
     <note style="tip"><p>The bulk operation API will automatically handle MongoDB servers &lt; 2.6 by speaking the old wire protocol. However, some performance degredation may occur.</p></note>
     <p>To execute the bulk operation and receive the result we call <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute()</code>.</p>
     <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk1.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
-    <synopsis><code mime="text/x-json">{"nInserted"   : 10000,
+      <p>Example <code>reply</code> document:</p>
+      <synopsis><code mime="text/x-json">{"nInserted"   : 10000,
  "nMatched"    : 0,
  "nModified"   : 0,
  "nRemoved"    : 0,
  "nUpserted"   : 0,
- "writeErrors" : []}</code></synopsis>
+ "writeErrors" : []
+ "writeConcernErrors" : [] }</code></synopsis>
   </section>
 
   <section id="mixed-bulk-write">
@@ -35,16 +37,19 @@
   <section id="ordered-bulk-write">
     <info><link xref="index#bulk" type="guide"/></info>
     <title>Ordered Bulk Write Operations</title>
-    <p>Ordered bulk write operations are batched and sent to the server in the order provided for serial execution. The return value is a document describing the type and count of operations performed.</p>
+    <p>Ordered bulk write operations are batched and sent to the server in the order provided for serial execution. The <code>reply</code> document describes the type and count of operations performed.</p>
     <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk2.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
-    <synopsis><code mime="text/x-json"><![CDATA[{ "nInserted"   : 3,
+      <p>Example <code>reply</code> document:</p>
+      <synopsis><code mime="text/x-json"><![CDATA[{ "nInserted"   : 3,
   "nMatched"    : 2,
   "nModified"   : 2,
   "nRemoved"    : 10000,
   "nUpserted"   : 1,
   "upserted"    : [{"index" : 5, "_id" : 4}],
-  "writeErrors" : [] }]]></code></synopsis>
-    <note style="warning"><p><code>nModified</code> is only reported by MongoDB 2.6 and later. When connected to an earlier server version, or in certain mixed version sharding configurations, MongoDB C driver omits this field from the results of a bulk write operation.</p></note>
+  "writeErrors" : []
+  "writeConcernErrors" : [] }]]></code></synopsis>
+    <p>The <code>index</code> field in the <code>upserted</code> array is the 0-based index of the upsert operation; in this example, the sixth operation of the overall bulk operation was an upsert, so its index is 5.</p>
+    <p><code>nModified</code> is only reported when using MongoDB 2.6 and later, otherwise the field is omitted.</p>
   </section>
 
   <section id="unordered-bulk-write">
@@ -53,24 +58,48 @@
     <p>Unordered bulk write operations are batched and sent to the server in <em>arbitrary order</em> where they may be executed in parallel. Any errors that occur are reported after all operations are attempted.</p>
     <p>In the next example the first and third operations fail due to the unique constraint on <code>_id</code>. Since we are doing unordered execution the second and fourth operations succeed.</p>
     <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk3.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
-    <synopsis><code mime="text/x-csrc"><![CDATA[{ "nInserted" : 0,
-  "nMatched" : 1,
-  "nModified" : 1,
-  "nRemoved" : 1,
-  "nUpserted" : 0,
-  "writeErrors" : [{ "index": 0,
-                     "code": 11000,
-                     "errmsg": "insertDocument :: caused by :: 11000 E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }" },
-                   { "index" : 2,
-                     "code" : 11000,
-                     "errmsg" : "insertDocument :: caused by :: 11000 E11000 duplicate key error index: test.test.$_id_  dup key: { : 3 }" }] }
-Error: insertDocument :: caused by :: 11000 E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }]]></code></synopsis>
+    <p>Example <code>reply</code> document:</p>
+    <synopsis><code mime="text/x-csrc"><![CDATA[{ "nInserted"    : 0,
+  "nMatched"     : 1,
+  "nModified"    : 1,
+  "nRemoved"     : 1,
+  "nUpserted"    : 0,
+  "writeErrors"  : [
+    { "index"  : 0,
+      "code"   : 11000,
+      "errmsg" : "E11000 duplicate key error index: test.test.$_id_ dup key: { : 1 }" },
+    { "index"  : 2,
+      "code"   : 11000,
+      "errmsg" : "E11000 duplicate key error index: test.test.$_id_ dup key: { : 3 }" } ],
+  "writeConcernErrors" : [] }
+
+Error: E11000 duplicate key error index: test.test.$_id_ dup key: { : 1 }]]></code></synopsis>
   </section>
 
   <section id="bulk-write-concern">
     <info><link xref="index#bulk" type="guide"/></info>
-    <title>Bulk Operations Write Concerns</title>
+    <title>Bulk Operation Write Concerns</title>
     <p>By default bulk operations are executed with the <code xref="mongoc_write_concern_t">write_concern</code> of the collection they are executed against. A custom write concern can be passed to the <code xref="mongoc_collection_create_bulk_operation">mongoc_collection_create_bulk_operation()</code> method. Write concern errors (e.g. wtimeout) will be reported after all operations are attempted, regardless of execution order.</p>
+    <synopsis><code mime="text/x-csrc"><include parse="text" href="../examples/bulk/bulk4.c" xmlns="http://www.w3.org/2001/XInclude" /></code></synopsis>
+      <p>Example <code>reply</code> document and error message:</p>
+      <synopsis><code mime="text/x-csrc"><![CDATA[{ "nInserted"    : 2,
+  "nMatched"     : 0,
+  "nModified"    : 0,
+  "nRemoved"     : 0,
+  "nUpserted"    : 0,
+  "writeErrors"  : [],
+  "writeConcernErrors" : [
+    { "code"   : 64,
+      "errmsg" : "waiting for replication timed out" }
+] }
+
+Error: waiting for replication timed out]]></code></synopsis>
+  </section>
+
+  <section id="bulk-spec">
+    <info><link xref="index#bulk" type="guide"/></info>
+    <title>Further Reading</title>
+    <p>See the <link href="https://github.com/mongodb/specifications/blob/master/source/driver-bulk-update.rst">Driver Bulk API Spec</link>, which describes bulk write operations for all MongoDB drivers.</p>
   </section>
 
 </page>
