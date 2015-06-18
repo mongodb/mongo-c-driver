@@ -481,6 +481,7 @@ again:
    }
 
    if (_mongoc_write_concern_needs_gle (write_concern)) {
+      bool err = false;
       bson_iter_t citer;
 
       if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
@@ -488,11 +489,15 @@ again:
          GOTO (cleanup);
       }
 
+      err = (bson_iter_init_find (&citer, gle, "err")
+             && bson_iter_as_bool (&citer));
+
       /*
        * Overwrite the "n" field since it will be zero. Otherwise, our
        * merge_legacy code will not know how many we tried in this batch.
        */
-      if (bson_iter_init_find (&citer, gle, "n") &&
+      if (!err &&
+          bson_iter_init_find (&citer, gle, "n") &&
           BSON_ITER_HOLDS_INT32 (&citer) &&
           !bson_iter_int32 (&citer)) {
          bson_iter_overwrite_int32 (&citer, i);
