@@ -387,6 +387,10 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (collection);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
 
+   max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size(&client->cluster, hint);
+   max_msg_size = mongoc_cluster_node_max_msg_size (&client->cluster, hint);
+   max_insert_batch = mongoc_cluster_node_max_write_batch_size(&client->cluster, hint);
+
    if (command->ordered || !command->u.insert.allow_bulk_op_insert) {
       max_insert_batch = 1;
    }
@@ -429,10 +433,6 @@ again:
 
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
-
-      max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size(&client->cluster, hint);
-      max_msg_size = mongoc_cluster_node_max_msg_size (&client->cluster, hint);
-      max_insert_batch = mongoc_cluster_node_max_write_batch_size(&client->cluster, hint);
 
       /*
        * Check that the server can receive this document.
