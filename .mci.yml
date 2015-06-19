@@ -207,7 +207,6 @@ tasks:
                 DBPATH=`pwd`/data/db
                 LOGPATH=`pwd`/data/log
                 curl --data '{"name": "mongod", "preset": "auth.json", "procParams": {"dbpath": "'$DBPATH'", "logpath": "'$LOGPATH'"}}' http://localhost:8889/v1/servers
-                ./mongodb/bin/mongo --nodb --eval 'for(var i=0;i<30;i++){try{m = new Mongo("localhost:27017"); break;} catch(err) {print("mongod not up yet"); sleep(1000)}}'
                 ./mongodb/bin/mongo --eval 'printjson(db.serverBuildInfo())'
                 export MONGOC_TEST_USER=bob
                 export MONGOC_TEST_PASSWORD=pwd123
@@ -301,7 +300,6 @@ tasks:
                 DBPATH=`pwd`/data/db
                 LOGPATH=`pwd`/data/log
                 curl --data '{"name": "mongod", "preset": "auth.json", "procParams": {"dbpath": "'$DBPATH'", "logpath": "'$LOGPATH'"}}' http://localhost:8889/v1/servers
-                mongo --nodb --eval 'for(var i=0;i<30;i++){try{m = new Mongo("localhost:27017"); break;} catch(err) {print("mongod not up yet"); sleep(1000)}}'
                 mongo --eval 'printjson(db.serverBuildInfo())'
                 export PATH=$PATH:`pwd`/tests
                 ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
@@ -418,7 +416,6 @@ buildvariants:
       <<: *default_expansions
       <<: *x86_64_expansions
       <<: *linux_expansions
-      pre_compile: sudo apt-get install -f -y autoconf libtool
   run_on:
       - ubuntu1204-test
   tasks: *std_tests
