@@ -649,6 +649,32 @@ mock_server_receives_command (mock_server_t *server,
 
 /*--------------------------------------------------------------------------
  *
+ * mock_server_receives_gle --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not getLastError.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_gle (mock_server_t *server,
+                          const char *database_name)
+{
+   return mock_server_receives_command (server, database_name,
+                                        MONGOC_QUERY_NONE,
+                                        "{'getLastError': 1}");
+}
+
+/*--------------------------------------------------------------------------
+ *
  * mock_server_receives_query --
  *
  *       Pop a client request if one is enqueued, or wait up to
@@ -732,6 +758,48 @@ mock_server_receives_insert (mock_server_t *server,
                                 ns,
                                 flags,
                                 doc_json)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_bulk_insert --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not an insert matching ns and flags,
+ *       with "n" documents.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_bulk_insert (mock_server_t *server,
+                                  const char *ns,
+                                  mongoc_insert_flags_t flags,
+                                  int n)
+{
+   sync_queue_t *q;
+   request_t *request;
+
+   q = mock_server_get_queue (server);
+   /* TODO: get timeout val from mock_server_t */
+   request = (request_t *) q_get (q, 10000 * 1000);
+
+   if (!request_matches_bulk_insert (request,
+                                     ns,
+                                     flags,
+                                     n)) {
       request_destroy (request);
       return NULL;
    }
@@ -856,6 +924,31 @@ mock_server_replies (request_t *request,
 
    bson_destroy (&doc);
    bson_free (quotes_replaced);
+}
+
+
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_replies_simple --
+ *
+ *       Respond to a client request.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Sends an OP_REPLY to the client.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_server_replies_simple (request_t *request,
+                            const char *docs_json)
+{
+   mock_server_replies (request, 0, 0, 0, 1, docs_json);
 }
 
 
@@ -1111,11 +1204,6 @@ again:
    }
 
    if (!handled) {
-      if (mock_server_get_verbose (server)) {
-         printf ("%hu -> %hu %s\n",
-                 closure->port, server->port, request->as_str);
-      }
-
       q = mock_server_get_queue (server);
       q_put (q, (void *) request);
       request = NULL;

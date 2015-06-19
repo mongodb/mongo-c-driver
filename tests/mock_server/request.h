@@ -29,6 +29,7 @@ struct _mock_server_t;  /* forward declaration */
 typedef struct _request_t
 {
    uint8_t *data;
+   size_t data_len;
    mongoc_rpc_t request_rpc;
    mongoc_opcode_t opcode;  /* copied from rpc for convenience */
    struct _mock_server_t *server;
@@ -37,7 +38,7 @@ typedef struct _request_t
    bool is_command;
    char *command_name;
    char *as_str;
-   mongoc_array_t docs;
+   mongoc_array_t docs;  /* array of bson_t pointers */
 } request_t;
 
 
@@ -46,6 +47,11 @@ request_t *request_new (const mongoc_buffer_t *buffer,
                         struct _mock_server_t *server,
                         mongoc_stream_t *client,
                         uint16_t client_port);
+
+int request_count_docs (const request_t *request);
+
+const bson_t * request_get_doc (const request_t *request,
+                                int n);
 
 bool request_matches_query (const request_t *request,
                             const char *ns,
@@ -60,6 +66,11 @@ bool request_matches_insert (const request_t *request,
                              const char *ns,
                              mongoc_insert_flags_t flags,
                              const char *doc_json);
+
+bool request_matches_bulk_insert (const request_t *request,
+                                  const char *ns,
+                                  mongoc_insert_flags_t flags,
+                                  int n);
 
 bool request_matches_getmore (const request_t *request,
                               const char *ns,

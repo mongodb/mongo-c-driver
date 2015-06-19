@@ -81,6 +81,36 @@ background_mongoc_client_command_simple (void *data)
 }
 
 static void *
+background_mongoc_collection_insert_bulk (void *data)
+{
+   future_t *future = (future_t *) data;
+
+   /* copy the future so we can unlock it while calling
+    * mongoc_collection_insert_bulk
+    */
+   future_t *copy = future_new_copy (future);
+   future_value_t return_value;
+
+   return_value.type = future_value_bool_type;
+
+   future_value_set_bool (
+      &return_value,
+         mongoc_collection_insert_bulk (
+         future_value_get_mongoc_collection_ptr (future_get_param(copy, 0)),
+         future_value_get_mongoc_insert_flags_t (future_get_param(copy, 1)),
+         future_value_get_const_bson_ptr_ptr (future_get_param(copy, 2)),
+         future_value_get_uint32_t (future_get_param(copy, 3)),
+         future_value_get_const_mongoc_write_concern_ptr (future_get_param(copy, 4)),
+         future_value_get_bson_error_ptr (future_get_param(copy, 5))
+      ));
+
+   future_destroy (copy);
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
 background_mongoc_cursor_destroy (void *data)
 {
    future_t *future = (future_t *) data;
@@ -235,6 +265,40 @@ future_client_command_simple (
       future_get_param (future, 5), error);
    
    future_start (future, background_mongoc_client_command_simple);
+   return future;
+}
+
+future_t *
+future_collection_insert_bulk (
+   mongoc_collection_ptr collection,
+   mongoc_insert_flags_t flags,
+   const_bson_ptr_ptr documents,
+   uint32_t n_documents,
+   const_mongoc_write_concern_ptr write_concern,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_bool_type,
+                                  6);
+   
+   future_value_set_mongoc_collection_ptr (
+      future_get_param (future, 0), collection);
+   
+   future_value_set_mongoc_insert_flags_t (
+      future_get_param (future, 1), flags);
+   
+   future_value_set_const_bson_ptr_ptr (
+      future_get_param (future, 2), documents);
+   
+   future_value_set_uint32_t (
+      future_get_param (future, 3), n_documents);
+   
+   future_value_set_const_mongoc_write_concern_ptr (
+      future_get_param (future, 4), write_concern);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 5), error);
+   
+   future_start (future, background_mongoc_collection_insert_bulk);
    return future;
 }
 

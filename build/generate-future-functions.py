@@ -69,12 +69,15 @@ typedef_list = [
     # libmongoc.
     typedef("mongoc_bulk_operation_ptr", "mongoc_bulk_operation_t *"),
     typedef("mongoc_client_ptr", "mongoc_client_t *"),
+    typedef("mongoc_collection_ptr", "mongoc_collection_t *"),
     typedef("mongoc_cursor_ptr", "mongoc_cursor_t *"),
     typedef("mongoc_database_ptr", "mongoc_database_t *"),
+    typedef("mongoc_insert_flags_t", None),
     typedef("mongoc_query_flags_t", None),
 
     # Const libmongoc.
     typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
+    typedef("const_mongoc_write_concern_ptr", "const mongoc_write_concern_t *"),
 ]
 
 type_list = [T.name for T in typedef_list]
@@ -101,6 +104,15 @@ future_functions = [
                      param("const_bson_ptr", "command"),
                      param("const_mongoc_read_prefs_ptr", "read_prefs"),
                      param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_collection_insert_bulk",
+                    [param("mongoc_collection_ptr", "collection"),
+                     param("mongoc_insert_flags_t", "flags"),
+                     param("const_bson_ptr_ptr", "documents"),
+                     param("uint32_t", "n_documents"),
+                     param("const_mongoc_write_concern_ptr", "write_concern"),
                      param("bson_error_ptr", "error")]),
 
     future_function("void",

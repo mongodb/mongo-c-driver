@@ -196,6 +196,20 @@ future_value_get_mongoc_client_ptr (future_value_t *future_value)
 }
 
 void
+future_value_set_mongoc_collection_ptr(future_value_t *future_value, mongoc_collection_ptr value)
+{
+  future_value->type = future_value_mongoc_collection_ptr_type;
+  future_value->mongoc_collection_ptr_value = value;
+}
+
+mongoc_collection_ptr
+future_value_get_mongoc_collection_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_mongoc_collection_ptr_type);
+  return future_value->mongoc_collection_ptr_value;
+}
+
+void
 future_value_set_mongoc_cursor_ptr(future_value_t *future_value, mongoc_cursor_ptr value)
 {
   future_value->type = future_value_mongoc_cursor_ptr_type;
@@ -224,6 +238,20 @@ future_value_get_mongoc_database_ptr (future_value_t *future_value)
 }
 
 void
+future_value_set_mongoc_insert_flags_t(future_value_t *future_value, mongoc_insert_flags_t value)
+{
+  future_value->type = future_value_mongoc_insert_flags_t_type;
+  future_value->mongoc_insert_flags_t_value = value;
+}
+
+mongoc_insert_flags_t
+future_value_get_mongoc_insert_flags_t (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_mongoc_insert_flags_t_type);
+  return future_value->mongoc_insert_flags_t_value;
+}
+
+void
 future_value_set_mongoc_query_flags_t(future_value_t *future_value, mongoc_query_flags_t value)
 {
   future_value->type = future_value_mongoc_query_flags_t_type;
@@ -249,4 +277,18 @@ future_value_get_const_mongoc_read_prefs_ptr (future_value_t *future_value)
 {
   assert (future_value->type == future_value_const_mongoc_read_prefs_ptr_type);
   return future_value->const_mongoc_read_prefs_ptr_value;
+}
+
+void
+future_value_set_const_mongoc_write_concern_ptr(future_value_t *future_value, const_mongoc_write_concern_ptr value)
+{
+  future_value->type = future_value_const_mongoc_write_concern_ptr_type;
+  future_value->const_mongoc_write_concern_ptr_value = value;
+}
+
+const_mongoc_write_concern_ptr
+future_value_get_const_mongoc_write_concern_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_const_mongoc_write_concern_ptr_type);
+  return future_value->const_mongoc_write_concern_ptr_value;
 }

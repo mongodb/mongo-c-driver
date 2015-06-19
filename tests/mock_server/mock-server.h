@@ -83,6 +83,9 @@ request_t *mock_server_receives_command (mock_server_t *server,
                                          const char *command_json,
                                          ...);
 
+request_t *mock_server_receives_gle (mock_server_t *server,
+                                     const char *database_name);
+
 request_t *mock_server_receives_query (mock_server_t *server,
                                        const char *ns,
                                        mongoc_query_flags_t flags,
@@ -96,6 +99,11 @@ request_t *mock_server_receives_insert (mock_server_t *server,
                                         mongoc_insert_flags_t flags,
                                         const char *doc_json);
 
+request_t *mock_server_receives_bulk_insert (mock_server_t *server,
+                                             const char *ns,
+                                             mongoc_insert_flags_t flags,
+                                             int n);
+
 request_t *mock_server_receives_kill_cursors (mock_server_t *server,
                                               int64_t cursor_id);
 
@@ -107,6 +115,9 @@ void mock_server_replies (request_t *request,
                           int32_t starting_from,
                           int32_t number_returned,
                           const char *docs_json);
+
+void mock_server_replies_simple (request_t *request,
+                                 const char *docs_json);
 
 void mock_server_destroy (mock_server_t *server);
 

@@ -36,6 +36,18 @@ future_client_command_simple (
 
 
 future_t *
+future_collection_insert_bulk (
+
+   mongoc_collection_ptr collection,
+   mongoc_insert_flags_t flags,
+   const_bson_ptr_ptr documents,
+   uint32_t n_documents,
+   const_mongoc_write_concern_ptr write_concern,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_cursor_destroy (
 
    mongoc_cursor_ptr cursor

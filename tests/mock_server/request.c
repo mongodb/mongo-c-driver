@@ -47,6 +47,7 @@ request_new (const mongoc_buffer_t *buffer,
    data = bson_malloc ((size_t)msg_len);
    memcpy (data, buffer->data + buffer->off, (size_t) msg_len);
    request->data = data;
+   request->data_len = (size_t) msg_len;
 
    if (!_mongoc_rpc_scatter (&request->request_rpc, data,
                              (size_t) msg_len)) {
@@ -63,7 +64,7 @@ request_new (const mongoc_buffer_t *buffer,
    request->server = server;
    request->client = client;
    request->client_port = client_port;
-   _mongoc_array_init (&request->docs, sizeof (bson_t));
+   _mongoc_array_init (&request->docs, sizeof (bson_t *));
 
    switch (request->opcode) {
    case MONGOC_OPCODE_QUERY:
@@ -93,6 +94,19 @@ request_new (const mongoc_buffer_t *buffer,
    return request;
 }
 
+int
+request_count_docs (const request_t *request)
+{
+   return (int) request->docs.len;
+}
+
+const bson_t *
+request_get_doc (const request_t *request,
+                 int n)
+{
+   return _mongoc_array_index (&request->docs, const bson_t *, n);
+}
+
 
 /* TODO: take file, line, function params from caller, wrap in macro */
 bool
@@ -106,7 +120,7 @@ request_matches_query (const request_t *request,
                        bool is_command)
 {
    const mongoc_rpc_t *rpc;
-   bson_t *doc;
+   const bson_t *doc;
    bool n_return_equal;
 
    assert (request);
@@ -170,7 +184,7 @@ request_matches_query (const request_t *request,
    }
 
    if (request->docs.len) {
-      doc = _mongoc_array_index (&request->docs, bson_t *, 0);
+      doc = request_get_doc(request, 0);
    } else {
       doc = NULL;
    }
@@ -182,7 +196,7 @@ request_matches_query (const request_t *request,
    }
 
    if (request->docs.len > 1) {
-      doc = _mongoc_array_index (&request->docs, bson_t *, 1);
+      doc = request_get_doc (request, 1);
    } else {
       doc = NULL;
    }
@@ -205,7 +219,7 @@ request_matches_insert (const request_t *request,
                         const char *doc_json)
 {
    const mongoc_rpc_t *rpc;
-   bson_t *doc;
+   const bson_t *doc;
 
    assert (request);
    rpc = &request->request_rpc;
@@ -215,14 +229,59 @@ request_matches_insert (const request_t *request,
       return false;
    }
 
+
+   if (strcmp (rpc->insert.collection, ns)) {
+      MONGOC_ERROR ("insert's namespace is '%s', expected '%s'",
+                    request->request_rpc.get_more.collection, ns);
+      return false;
+   }
+
    if (rpc->insert.flags != flags) {
       MONGOC_ERROR ("request's insert flags don't match");
       return false;
    }
 
    ASSERT_CMPINT ((int)request->docs.len, ==, 1);
-   doc = _mongoc_array_index (&request->docs, bson_t *, 0);
+   doc = request_get_doc(request, 0);
    if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, doc_json)) {
+      return false;
+   }
+
+   return true;
+}
+
+
+/* TODO: take file, line, function params from caller, wrap in macro */
+bool
+request_matches_bulk_insert (const request_t *request,
+                             const char *ns,
+                             mongoc_insert_flags_t flags,
+                             int n)
+{
+   const mongoc_rpc_t *rpc;
+
+   assert (request);
+   rpc = &request->request_rpc;
+
+   if (request->opcode != MONGOC_OPCODE_INSERT) {
+      MONGOC_ERROR ("request's opcode does not match INSERT");
+      return false;
+   }
+
+   if (strcmp (rpc->insert.collection, ns)) {
+      MONGOC_ERROR ("insert's namespace is '%s', expected '%s'",
+                    request->request_rpc.get_more.collection, ns);
+      return false;
+   }
+
+   if (rpc->insert.flags != flags) {
+      MONGOC_ERROR ("request's insert flags don't match");
+      return false;
+   }
+
+   if ((int)request->docs.len != n) {
+      MONGOC_ERROR ("expected %d docs inserted, got %d",
+                    n, (int)request->docs.len);
       return false;
    }
 
@@ -473,24 +532,52 @@ insert_flags_str (uint32_t flags)
 }
 
 
+uint32_t
+length_prefix (void *data)
+{
+   uint32_t len_le;
+
+   memcpy (&len_le, data, sizeof (len_le));
+
+   return BSON_UINT32_FROM_LE (len_le);
+}
+
+
 void
 request_from_insert (request_t *request,
                      const mongoc_rpc_t *rpc)
 {
+   uint8_t *pos = request->request_rpc.insert.documents->iov_base;
+   uint8_t *end = request->data + request->data_len;
+   bson_string_t *insert_as_str = bson_string_new("");
    bson_t *doc;
-   bson_string_t *insert_as_str = bson_string_new ("");
+   size_t n_documents;
+   size_t i;
    char *str;
 
-   /* TODO: multiple docs */
-   ASSERT_CMPINT (rpc->insert.n_documents, ==, 1);
-   doc = bson_new_from_data (rpc->insert.documents->iov_base,
-                             rpc->insert.documents->iov_len);
-   assert (doc);
-   _mongoc_array_append_val (&request->docs, doc);
+   while (pos < end) {
+      uint32_t len = length_prefix (pos);
+      doc = bson_new_from_data (pos, len);
+      assert (doc);
+      _mongoc_array_append_val (&request->docs, doc);
+      pos += len;
+   }
 
-   str = bson_as_json (doc, NULL);
-   bson_string_append (insert_as_str, str);
-   bson_free (str);
+   n_documents = request->docs.len;
+
+   bson_string_append_printf (insert_as_str, "%d ", (int)n_documents);
+
+   for (i = 0; i < n_documents; i++) {
+      str = bson_as_json (request_get_doc (request, (int) i), NULL);
+      assert (str);
+      bson_string_append (insert_as_str, str);
+      bson_free (str);
+
+      if (i < n_documents - 1) {
+         bson_string_append (insert_as_str, ", ");
+      }
+
+   }
 
    bson_string_append (insert_as_str, " flags=");
 

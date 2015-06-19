@@ -77,17 +77,26 @@ future_get_mongoc_bulk_operation_ptr (future_t *future);
 mongoc_client_ptr
 future_get_mongoc_client_ptr (future_t *future);
 
+mongoc_collection_ptr
+future_get_mongoc_collection_ptr (future_t *future);
+
 mongoc_cursor_ptr
 future_get_mongoc_cursor_ptr (future_t *future);
 
 mongoc_database_ptr
 future_get_mongoc_database_ptr (future_t *future);
 
+mongoc_insert_flags_t
+future_get_mongoc_insert_flags_t (future_t *future);
+
 mongoc_query_flags_t
 future_get_mongoc_query_flags_t (future_t *future);
 
 const_mongoc_read_prefs_ptr
 future_get_const_mongoc_read_prefs_ptr (future_t *future);
+
+const_mongoc_write_concern_ptr
+future_get_const_mongoc_write_concern_ptr (future_t *future);
 
 
 void future_destroy (future_t *future);
