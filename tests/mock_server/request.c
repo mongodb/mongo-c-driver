@@ -35,18 +35,31 @@ void request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
 
 
 request_t *
-request_new (const mongoc_rpc_t *request_rpc,
+request_new (const mongoc_buffer_t *buffer,
+             int32_t msg_len,
              mock_server_t *server,
              mongoc_stream_t *client,
              uint16_t client_port)
 {
    request_t *request = bson_malloc0 (sizeof *request);
+   uint8_t *data;
 
-   memcpy ((void *) &request->request_rpc,
-           (void *) request_rpc,
-           sizeof *request_rpc);
+   data = bson_malloc ((size_t)msg_len);
+   memcpy (data, buffer->data + buffer->off, (size_t) msg_len);
+   request->data = data;
 
-   request->opcode = (mongoc_opcode_t) request_rpc->header.opcode;
+   if (!_mongoc_rpc_scatter (&request->request_rpc, data,
+                             (size_t) msg_len)) {
+      MONGOC_WARNING ("%s():%d: %s", __FUNCTION__, __LINE__,
+                      "Failed to scatter");
+      bson_free (data);
+      bson_free (request);
+      return NULL;
+   }
+
+   _mongoc_rpc_swab_from_le (&request->request_rpc);
+
+   request->opcode = (mongoc_opcode_t) request->request_rpc.header.opcode;
    request->server = server;
    request->client = client;
    request->client_port = client_port;
@@ -54,19 +67,19 @@ request_new (const mongoc_rpc_t *request_rpc,
 
    switch (request->opcode) {
    case MONGOC_OPCODE_QUERY:
-      request_from_query (request, request_rpc);
+      request_from_query (request, &request->request_rpc);
       break;
 
    case MONGOC_OPCODE_INSERT:
-      request_from_insert (request, request_rpc);
+      request_from_insert (request, &request->request_rpc);
       break;
 
    case MONGOC_OPCODE_KILL_CURSORS:
-      request_from_killcursors (request, request_rpc);
+      request_from_killcursors (request, &request->request_rpc);
       break;
 
    case MONGOC_OPCODE_GET_MORE:
-      request_from_getmore (request, request_rpc);
+      request_from_getmore (request, &request->request_rpc);
       break;
 
    case MONGOC_OPCODE_REPLY:
@@ -338,6 +351,7 @@ request_destroy (request_t *request)
    _mongoc_array_destroy (&request->docs);
    bson_free (request->command_name);
    bson_free (request->as_str);
+   bson_free (request->data);
    bson_free (request);
 }
 

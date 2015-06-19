@@ -18,6 +18,7 @@
 #define REQUEST_H
 
 #include <bson.h>
+#include <mongoc-buffer-private.h>
 
 #include "mongoc.h"
 
@@ -27,6 +28,7 @@ struct _mock_server_t;  /* forward declaration */
 
 typedef struct _request_t
 {
+   uint8_t *data;
    mongoc_rpc_t request_rpc;
    mongoc_opcode_t opcode;  /* copied from rpc for convenience */
    struct _mock_server_t *server;
@@ -39,7 +41,8 @@ typedef struct _request_t
 } request_t;
 
 
-request_t *request_new (const mongoc_rpc_t *request_rpc,
+request_t *request_new (const mongoc_buffer_t *buffer,
+                        int32_t msg_len,
                         struct _mock_server_t *server,
                         mongoc_stream_t *client,
                         uint16_t client_port);

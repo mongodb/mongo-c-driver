@@ -1050,7 +1050,7 @@ worker_thread (void *data)
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
    _mongoc_array_init (&autoresponders, sizeof (autoresponder_handle_t));
 
-   again:
+again:
    bson_free (rpc);
    rpc = NULL;
    handled = false;
@@ -1085,20 +1085,9 @@ worker_thread (void *data)
 
    assert (buffer.len >= (unsigned) msg_len);
 
-   DUMP_BYTES (buffer, buffer.data + buffer.off, buffer.len);
-
-   rpc = bson_malloc0 (sizeof *rpc);
-   if (!_mongoc_rpc_scatter (rpc, buffer.data + buffer.off,
-                             (size_t) msg_len)) {
-      MONGOC_WARNING ("%s():%d: %s", __FUNCTION__, __LINE__,
-                      "Failed to scatter");
-      GOTO (failure);
-   }
-
-   _mongoc_rpc_swab_from_le (rpc);
-
-   /* copies rpc */
-   request = request_new (rpc, server, client_stream, closure->port);
+   /* copies message from buffer */
+   request = request_new (&buffer, msg_len, server, client_stream,
+                          closure->port);
 
    mongoc_mutex_lock (&server->mutex);
    _mongoc_array_copy (&autoresponders, &server->autoresponders);
