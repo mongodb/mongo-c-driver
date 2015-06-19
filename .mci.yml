@@ -33,14 +33,10 @@ libmongoc_variables:
 
     default_expansions_def: &default_expansions
         env_vars: CFLAGS=""
-        mongodb_logpath: /data/log
-        mongodb_args: "--fork --noprealloc --smallfiles --dbpath=/data/db --pidfilepath=/data/pid --auth"
         enable_ssl: yes
 
     windows_expansions_def: &windows_expansions
         env_vars: CFLAGS=""
-        mongodb_logpath: C:/data
-        mongodb_args: "--fork --noprealloc --smallfiles --dbpath=C:/data/db --pidfilepath=C:/data/pid --auth"
         enable_ssl: yes
 
     i386_expansions_def: &i386_expansions
@@ -102,7 +98,6 @@ scripts:
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
           mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000
-          sleep 5
 
       linux: &mongo_orchestration_linux
 
@@ -110,7 +105,7 @@ scripts:
           trap 'set +o errexit; mongo-orchestration stop;' EXIT
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
-          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
+          mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
 
       osx: &mongo_orchestration_osx
 
@@ -118,7 +113,7 @@ scripts:
           echo "Starting Mongo Orchestration..."
           trap 'set +o errexit; /usr/local/bin/mongo-orchestration stop;' EXIT
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
-          TMPDIR=/data/db /usr/local/bin/mongo-orchestration -f orchestration.config -e default start # --socket-timeout-ms=60000 <- uncomment when OSX builders get new MO
+          /usr/local/bin/mongo-orchestration -f orchestration.config -e default start # --socket-timeout-ms=60000 <- uncomment when OSX builders get new MO
 
 
 #######################################
@@ -199,26 +194,23 @@ tasks:
                 tar -xzf ${build_id}.tar.gz
                 curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
                 ${decompress} mongo_enterprise.${ext|tgz}
-                cp mongodb*/bin/mongod${extension} ./mongod${extension}
-                cp mongodb*/bin/mongo${extension} ./mongo${extension}
-                chmod +x ./mongod${extension}
-                chmod +x ./mongo${extension}
-                if ! ./mongod${extension} ${mongodb_args} --logpath=${mongodb_logpath}
-                then
-                    cat ${mongodb_logpath}
-                    exit 1
-                fi
-                tries=0
-                until ./mongo${extension} --eval 'printjson(db.serverBuildInfo())'; do
-                    sleep 2
-                    ((tries=tries+1))
-                    if ((tries > 15)); then
-                        break
-                    fi
-                done
-                ./mongo${extension} --eval "db.createUser({user: 'admin', pwd: 'pass', roles: [{role: 'root', db: 'admin'}]})" admin
-                export MONGOC_TEST_USER=admin
-                export MONGOC_TEST_PASSWORD=pass
+                mv mongodb* mongodb
+                chmod +x ./mongodb/bin/mongod${extension}
+      - command: shell.exec
+        params:
+            working_dir: libmongoc
+            script: |
+                ${start_mongo_orchestration}
+                set -o verbose
+                set -o errexit
+                curl http://localhost:8889/
+                DBPATH=`pwd`/data/db
+                LOGPATH=`pwd`/data/log
+                curl --data '{"name": "mongod", "preset": "auth.json", "procParams": {"dbpath": "'$DBPATH'", "logpath": "'$LOGPATH'"}}' http://localhost:8889/v1/servers
+                ./mongodb/bin/mongo --nodb --eval 'for(var i=0;i<30;i++){try{m = new Mongo("localhost:27017"); break;} catch(err) {print("mongod not up yet"); sleep(1000)}}'
+                ./mongodb/bin/mongo --eval 'printjson(db.serverBuildInfo())'
+                export MONGOC_TEST_USER=bob
+                export MONGOC_TEST_PASSWORD=pwd123
                 make check
 
 - name: compile msvc
@@ -300,17 +292,17 @@ tasks:
                 /cygdrive/c/mongodb/bin/vcredist_x64.exe /Q
       - command: shell.exec
         params:
-            background: true
             working_dir: libmongoc
             script: |
                 ${start_mongo_orchestration}
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
+                set -o verbose
+                set -o errexit
+                curl http://localhost:8889/
+                DBPATH=`pwd`/data/db
+                LOGPATH=`pwd`/data/log
+                curl --data '{"name": "mongod", "preset": "auth.json", "procParams": {"dbpath": "'$DBPATH'", "logpath": "'$LOGPATH'"}}' http://localhost:8889/v1/servers
                 mongo --nodb --eval 'for(var i=0;i<30;i++){try{m = new Mongo("localhost:27017"); break;} catch(err) {print("mongod not up yet"); sleep(1000)}}'
-                curl localhost:8889
-                curl --data '{"name": "mongod", "preset": "auth.json"}' http://localhost:8889/v1/servers
+                mongo --eval 'printjson(db.serverBuildInfo())'
                 export PATH=$PATH:`pwd`/tests
                 ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
                 touch tests/trust_dir/done
@@ -437,6 +429,7 @@ buildvariants:
       <<: *default_expansions
       <<: *x86_64_expansions
       <<: *linux_expansions
+      <<: *mongo_orchestration_linux
   run_on:
       - ubuntu1404-test
   tasks: *std_tests
@@ -446,6 +439,7 @@ buildvariants:
   expansions:
       <<: *default_expansions
       <<: *osx_expansions
+      <<: *mongo_orchestration_linux
   run_on:
       - osx-108
   tasks: *std_tests
@@ -455,6 +449,7 @@ buildvariants:
   expansions:
       <<: *default_expansions
       <<: *x86_64_expansions
+      <<: *mongo_orchestration_linux
       <<: *solaris_expansions
       path: "/opt/mongodbtoolchain/bin/"
   run_on:
