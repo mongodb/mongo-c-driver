@@ -494,7 +494,7 @@ request_from_insert (request_t *request,
 
    bson_string_append (insert_as_str, " flags=");
 
-   str = insert_flags_str (rpc->query.flags);
+   str = insert_flags_str (rpc->insert.flags);
    bson_string_append (insert_as_str, str);
    bson_free (str);
 
