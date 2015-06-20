@@ -1332,11 +1332,7 @@ END_IGNORE_DEPRECATIONS;
 
    assert (r);
 
-   for (i = 0; i < 5000; i++) {
-      bson_destroy (docs [i]);
-   }
-
-   bson_free (docs);
+   bson_ptr_free (docs, 5000);
 
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 6000, &query, NULL, NULL);
    assert (cursor);
