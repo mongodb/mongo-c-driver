@@ -6,6 +6,8 @@
 
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
+#include "mock_server/future-functions.h"
+#include "mock_server/mock-server.h"
 
 
 static mongoc_database_t *
@@ -202,6 +204,145 @@ test_insert_bulk (void)
    mongoc_database_destroy(database);
    bson_context_destroy(context);
    mongoc_client_destroy(client);
+}
+
+
+static void
+auto_ismaster (mock_server_t *server,
+               int32_t max_message_size,
+               int32_t max_bson_size,
+               int32_t max_batch_size)
+{
+   char *response = bson_strdup_printf (
+      "{'ismaster': true, "
+      " 'maxWireVersion': 0,"
+      " 'maxBsonObjectSize': %d,"
+      " 'maxMessageSizeBytes': %d,"
+      " 'maxWriteBatchSize': %d }",
+      max_bson_size, max_message_size, max_batch_size);
+
+   mock_server_auto_ismaster (server, response);
+
+   bson_free (response);
+}
+
+
+char *
+make_string (size_t len)
+{
+   char *s = malloc (len);
+
+   memset (s, 'a', len - 1);
+   s[len - 1] = '\0';
+
+   return s;
+}
+
+
+bson_t **
+make_bulk_insert (int n,
+                  size_t bytes)
+{
+   int i;
+   bson_t **bsons;
+   bson_t *bson;
+   bson_oid_t oid;
+   char *s;
+
+   bsons = (bson_t **) bson_malloc0 (n * sizeof(bson_t *));
+   
+   for (i = 0; i < n; i++) {
+      bson = bson_new ();
+
+      bson_oid_init (&oid, NULL);
+      BSON_APPEND_OID (bson, "_id", &oid);
+
+      /* make the document exactly n bytes by appending a string. a string has
+       * 7 bytes overhead (1 for type code, 2 for key, 4 for length prefix), so
+       * make it (n - current_length - 7) bytes long. */
+      s = make_string (bytes - bson->len - 7);
+      BSON_APPEND_UTF8 (bson, "s", s);
+      bson_free (s);
+      ASSERT_CMPINT ((int)bytes, ==, bson->len);
+      bsons[i] = bson;
+   }
+
+   return bsons;
+}
+
+
+static void 
+bson_ptr_free (bson_t **ptr,
+               int n)
+{
+   int i;
+   
+   for (i = 0; i < n; i++) {
+      bson_destroy (ptr[i]);
+   }
+   
+   bson_free (ptr);
+}
+
+
+static void
+receive_bulk (mock_server_t *server,
+              int n)
+{
+   request_t *request;
+
+   request = mock_server_receives_bulk_insert (server, "test.test",
+                                               MONGOC_INSERT_NONE, n);
+   assert (request);
+   request_destroy (request);
+
+   request = mock_server_receives_gle (server, "test");
+   mock_server_replies_simple (request, "{'ok': 1.0, 'n': 0, 'err': null}");
+   request_destroy (request);
+}
+
+
+static void
+test_legacy_bulk_insert_large (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t **bsons;
+   bson_error_t error;
+   future_t *future;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   ASSERT (client);
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   /* 10 docs size 50 bytes each */
+   bsons = make_bulk_insert (10, 50);
+
+   /* max message of 240 bytes, so 4 docs per batch, 3 batches. */
+   auto_ismaster (server,
+                  240,   /* max_message_size */
+                  1000,  /* max_bson_size */
+                  1000); /* max_write_batch_size */
+
+   future = future_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
+                                           (const bson_t **) bsons, 10, NULL,
+                                           &error);
+   receive_bulk (server, 4);
+   receive_bulk (server, 4);
+   receive_bulk (server, 2);
+
+   assert (future_get_bool (future));
+
+   future_destroy (future);
+   bson_ptr_free (bsons, 10);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+   mock_server_destroy (server);
 }
 
 
@@ -1392,6 +1533,8 @@ void
 test_collection_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Collection/insert_bulk", test_insert_bulk);
+   TestSuite_Add (suite, "/Collection/legacy_bulk_insert_large",
+                  test_legacy_bulk_insert_large);
    TestSuite_Add (suite, "/Collection/insert", test_insert);
    TestSuite_Add (suite, "/Collection/save", test_save);
    TestSuite_Add (suite, "/Collection/index", test_index);

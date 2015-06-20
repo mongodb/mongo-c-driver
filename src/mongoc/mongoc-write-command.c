@@ -370,13 +370,13 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    uint32_t len;
    bson_t *gle = NULL;
    uint32_t size = 0;
-   bool has_more = false;
+   bool has_more;
    char ns [MONGOC_NAMESPACE_MAX + 1];
    bool r;
    uint32_t i;
-   int32_t max_insert_batch;
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
+   bool singly;
 
    ENTRY;
 
@@ -389,11 +389,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
 
    max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size(&client->cluster, hint);
    max_msg_size = mongoc_cluster_node_max_msg_size (&client->cluster, hint);
-   max_insert_batch = mongoc_cluster_node_max_write_batch_size(&client->cluster, hint);
-
-   if (command->ordered || !command->u.insert.allow_bulk_op_insert) {
-      max_insert_batch = 1;
-   }
+   singly = !command->u.insert.allow_bulk_op_insert;
 
    r = bson_iter_init (&iter, command->documents);
 
@@ -449,7 +445,7 @@ again:
       /*
        * Check that we will not overflow our max message size.
        */
-      if (i == max_insert_batch || size > (max_msg_size - len)) {
+      if ((i == 1 && singly)|| size > (max_msg_size - len)) {
          has_more = true;
          break;
       }
