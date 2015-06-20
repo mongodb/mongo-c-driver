@@ -94,7 +94,6 @@ test_insert (void)
 static void
 test_insert_bulk (void)
 {
-   mongoc_server_description_t *description;
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
@@ -107,7 +106,6 @@ test_insert_bulk (void)
    bson_t b[10];
    bson_t *bptr[10];
    int64_t count;
-   uint32_t id;
 
    client = test_framework_client_new (NULL);
    ASSERT (client);
@@ -165,26 +163,7 @@ test_insert_bulk (void)
    ASSERT (error.code == 11000);
 
    count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
-
-   /*
-    * MongoDB <2.6 and 2.6 will return different values for this. This is a
-    * primary reason that mongoc_collection_insert_bulk() is deprecated.
-    * Instead, you should use the new bulk api which will hide the differences
-    * for you.  However, since the new bulk API is slower on 2.4 when write
-    * concern is needed for inserts, we will support this for a while, albeit
-    * deprecated.
-    */
-
-   /* TODO this hack is needed for single-threaded tests */
-   id = client->topology->description.servers->items[0].id;
-   description = mongoc_topology_server_by_id(client->topology, id);
-   ASSERT (description);
-
-   if (description->max_wire_version == 0) {
-      ASSERT (count == 6);
-   } else {
-      ASSERT (count == 5);
-   }
+   ASSERT (count == 5);
 
    BEGIN_IGNORE_DEPRECATIONS;
    r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_CONTINUE_ON_ERROR,
@@ -219,7 +198,6 @@ test_insert_bulk (void)
    r = mongoc_collection_drop (collection, &error);
    ASSERT (r);
 
-   mongoc_server_description_destroy(description);
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
    bson_context_destroy(context);

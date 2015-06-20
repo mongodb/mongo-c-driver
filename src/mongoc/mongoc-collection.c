@@ -1078,8 +1078,6 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
             RETURN (false);
          }
       }
-   } else {
-      flags &= ~MONGOC_INSERT_NO_VALIDATE;
    }
 
    bson_clear (&collection->gle);
