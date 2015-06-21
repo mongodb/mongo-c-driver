@@ -73,7 +73,7 @@ print_all_documents (mongoc_collection_t *collection)
 
    query = BCON_NEW ("$query", "{", "foo", BCON_INT32 (1), "}",
                      "$orderby": "{", "foo", BCON_INT32 (-1), "}");
-   cursor = mongoc_collection_query (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
 
    while (mongoc_cursor_more (cursor) && mongoc_cursor_next (cursor, &doc)) {
       str = bson_as_json (doc, NULL);
