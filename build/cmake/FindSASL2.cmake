@@ -1,3 +1,5 @@
+include(CheckSymbolExists)
+
 message ("Searching for sasl/sasl.h")
 find_path (
     SASL2_INCLUDE_DIR NAMES sasl/sasl.h
