@@ -859,6 +859,73 @@ test_regex (void)
 
 
 static void
+test_decimal128 (void *ctx)
+{
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_write_concern_t *wr;
+   mongoc_client_t *client;
+   bson_error_t error = { 0 };
+   int64_t count;
+   bson_t query = BSON_INITIALIZER;
+   bson_t *doc;
+   const bson_t *dec;
+   bson_iter_t dec_iter;
+   mongoc_cursor_t *cursor;
+   bool r;
+   bson_decimal128_t decimal128;
+   bson_decimal128_t read_decimal;
+
+   bson_decimal128_from_string ("-123456789.101112E-120", &decimal128);
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   database = get_test_database (client);
+   ASSERT (database);
+
+   collection = get_test_collection (client, "test_decimal128");
+   ASSERT(collection);
+
+   wr = mongoc_write_concern_new ();
+   mongoc_write_concern_set_journal (wr, true);
+
+   doc = BCON_NEW ("the_decimal", BCON_DECIMAL128 (&decimal128));
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, wr,
+                                 &error);
+   if (!r) {
+      MONGOC_WARNING ("test_decimal128: %s\n", error.message);
+   }
+   ASSERT (r);
+
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE,
+                                    &query,
+                                    0,
+                                    0,
+                                    NULL,
+                                    &error);
+   ASSERT (count > 0);
+
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE,
+                                    0, 0, 0, &query, NULL, NULL);
+   ASSERT (mongoc_cursor_next (cursor, &dec));
+
+   ASSERT (bson_iter_init (&dec_iter, dec));
+
+   ASSERT (bson_iter_find (&dec_iter, "the_decimal"));
+   ASSERT (BSON_ITER_HOLDS_DECIMAL128 (&dec_iter));
+   bson_iter_decimal128 (&dec_iter, &read_decimal);
+
+   ASSERT(read_decimal.high == decimal128.high && read_decimal.low == decimal128.low);
+
+   bson_destroy (&query);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_update (void)
 {
    mongoc_collection_t *collection;
@@ -1489,6 +1556,15 @@ _test_count_read_concern_live (bool supports_read_concern)
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+}
+
+int
+mongod_supports_decimal128 (void)
+{
+   if (test_framework_get_server_version () <= test_framework_str_to_version("3.3.3")) {
+      return 1;
+   }
+   return 0;
 }
 
 int
@@ -2961,6 +3037,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/index_geo", test_index_geo);
    TestSuite_Add (suite, "/Collection/index_storage", test_index_storage);
    TestSuite_Add (suite, "/Collection/regex", test_regex);
+   TestSuite_AddFull (suite, "/Collection/decimal128", test_decimal128, NULL, NULL, mongod_supports_decimal128);
    TestSuite_Add (suite, "/Collection/update", test_update);
    TestSuite_Add (suite, "/Collection/remove", test_remove);
    TestSuite_Add (suite, "/Collection/count", test_count);
