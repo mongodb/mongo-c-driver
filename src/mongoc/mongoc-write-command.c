@@ -374,9 +374,11 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    char ns [MONGOC_NAMESPACE_MAX + 1];
    bool r;
    uint32_t i;
+   uint32_t index = 0;
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    bool singly;
+   bool too_large;
 
    ENTRY;
 
@@ -433,19 +435,12 @@ again:
       /*
        * Check that the server can receive this document.
        */
-      if (len > max_bson_obj_size || len > max_msg_size) {
-         too_large_error (error, i, len, max_bson_obj_size);
-         /* TODO: CDRIVER-654 if ordered, insert all so far then stop,
-          *   else continue. in any case add to writeErrors, see
-          *   PyMongo's execute_legacy() */
-         /*result->failed = true;*/
-         /*GOTO (cleanup);*/
-      }
+      too_large = (len > max_bson_obj_size);
 
       /*
        * Check that we will not overflow our max message size.
        */
-      if ((i == 1 && singly)|| size > (max_msg_size - len)) {
+      if (too_large || (i == 1 && singly) || size > (max_msg_size - len)) {
          has_more = true;
          break;
       }
@@ -455,48 +450,51 @@ again:
 
       size += len;
       i++;
+      index++;
    } while (bson_iter_next (&iter));
 
-   rpc.insert.msg_len = 0;
-   rpc.insert.request_id = 0;
-   rpc.insert.response_to = 0;
-   rpc.insert.opcode = MONGOC_OPCODE_INSERT;
-   rpc.insert.flags = (
-      command->ordered ? MONGOC_INSERT_NONE
-      : MONGOC_INSERT_CONTINUE_ON_ERROR);
-   rpc.insert.collection = ns;
-   rpc.insert.documents = iov;
-   rpc.insert.n_documents = i;
+   if (i) {
+      rpc.insert.msg_len = 0;
+      rpc.insert.request_id = 0;
+      rpc.insert.response_to = 0;
+      rpc.insert.opcode = MONGOC_OPCODE_INSERT;
+      rpc.insert.flags = (
+         command->ordered ? MONGOC_INSERT_NONE
+                          : MONGOC_INSERT_CONTINUE_ON_ERROR);
+      rpc.insert.collection = ns;
+      rpc.insert.documents = iov;
+      rpc.insert.n_documents = i;
 
-   hint = _mongoc_client_sendv (client, &rpc, 1, hint, write_concern,
-                                NULL, error);
+      hint = _mongoc_client_sendv (client, &rpc, 1, hint, write_concern,
+                                   NULL, error);
 
-   if (!hint) {
-      result->failed = true;
-      GOTO (cleanup);
-   }
-
-   if (_mongoc_write_concern_needs_gle (write_concern)) {
-      bool err = false;
-      bson_iter_t citer;
-
-      if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
+      if (!hint) {
          result->failed = true;
          GOTO (cleanup);
       }
 
-      err = (bson_iter_init_find (&citer, gle, "err")
-             && bson_iter_as_bool (&citer));
+      if (_mongoc_write_concern_needs_gle (write_concern)) {
+         bool err = false;
+         bson_iter_t citer;
 
-      /*
-       * Overwrite the "n" field since it will be zero. Otherwise, our
-       * merge_legacy code will not know how many we tried in this batch.
-       */
-      if (!err &&
-          bson_iter_init_find (&citer, gle, "n") &&
-          BSON_ITER_HOLDS_INT32 (&citer) &&
-          !bson_iter_int32 (&citer)) {
-         bson_iter_overwrite_int32 (&citer, i);
+         if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
+            result->failed = true;
+            GOTO (cleanup);
+         }
+
+         err = (bson_iter_init_find (&citer, gle, "err")
+                && bson_iter_as_bool (&citer));
+
+         /*
+          * Overwrite the "n" field since it will be zero. Otherwise, our
+          * merge_legacy code will not know how many we tried in this batch.
+          */
+         if (!err &&
+             bson_iter_init_find (&citer, gle, "n") &&
+             BSON_ITER_HOLDS_INT32 (&citer) &&
+             !bson_iter_int32 (&citer)) {
+            bson_iter_overwrite_int32 (&citer, i);
+         }
       }
    }
 
@@ -509,7 +507,10 @@ cleanup:
       gle = NULL;
    }
 
-   if (has_more) {
+   if (too_large) {
+      too_large_error (error, index, len, max_bson_obj_size);
+      result->failed = true;
+   } else if (has_more) {
       GOTO (again);
    }
 

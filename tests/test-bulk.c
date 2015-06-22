@@ -1729,6 +1729,7 @@ static void
 test_large_inserts_ordered ()
 {
    mongoc_client_t *client;
+   bool has_write_cmds;
    bson_t *huge_doc;
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
@@ -1741,6 +1742,7 @@ test_large_inserts_ordered ()
 
    client = test_framework_client_new (NULL);
    assert (client);
+   has_write_cmds = server_has_write_commands (client);
 
    huge_doc = BCON_NEW ("a", BCON_INT32 (1));
    bson_append_utf8 (huge_doc, "long-key-to-make-this-fail", -1,
@@ -1759,9 +1761,15 @@ test_large_inserts_ordered ()
    assert (!r);
    /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
-   assert (error.code);
+   ASSERT_CMPINT (error.code, ==, 2);
 
-   assert_n_inserted (1, &reply);
+   ASSERT_MATCH (&reply, "{'nInserted': 1,"
+                         " 'nMatched': 0,"
+                         " 'nRemoved': 0,"
+                         " 'nUpserted': 0,"
+                         " 'writeErrors': [{'index':  1}]}");
+   assert_error_count (1, &reply);
+   check_n_modified (has_write_cmds, &reply, 0);
    ASSERT_COUNT (1, collection);
 
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
@@ -1828,6 +1836,7 @@ test_large_inserts_unordered ()
 
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
+   /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
    assert ((error.domain == MONGOC_ERROR_COMMAND) ||
            (error.domain == MONGOC_ERROR_BSON &&
             error.code == MONGOC_ERROR_BSON_INVALID));
@@ -1841,8 +1850,6 @@ test_large_inserts_unordered ()
                          "    'code':   {'$exists': true},"
                          "    'errmsg': {'$exists': true}"
                          " }]}");
-
-   assert_error_count (1, &reply);
 
    ASSERT_COUNT (2, collection);
 

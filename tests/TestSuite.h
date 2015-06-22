@@ -63,6 +63,17 @@ extern "C" {
    } while (0)
 
 
+#define ASSERT_STARTSWITH(a, b) \
+   do { \
+      if ((a) != strstr ((a), (b))) { \
+         fprintf(stderr, \
+                 "FAIL\n\nAssert Failure: \"%s\" does not start with \"%s\"\n", \
+                 a, b); \
+         abort(); \
+      } \
+   } while (0)
+
+
 typedef void (*TestFunc) (void);
 typedef void (*TestFuncWC) (void*);
 typedef void (*TestFuncDtor) (void*);

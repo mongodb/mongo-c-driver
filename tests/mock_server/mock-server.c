@@ -794,7 +794,7 @@ mock_server_receives_bulk_insert (mock_server_t *server,
 
    q = mock_server_get_queue (server);
    /* TODO: get timeout val from mock_server_t */
-   request = (request_t *) q_get (q, 10000 * 1000);
+   request = (request_t *) q_get (q, 10 * 1000);
 
    if (!request_matches_bulk_insert (request,
                                      ns,
