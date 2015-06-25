@@ -456,6 +456,54 @@ test_mongoc_client_preselect (void)
 
 
 static void
+test_unavailable_seeds(void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_t query = BSON_INITIALIZER;
+   const bson_t *doc;
+   
+   const char* uri_strs[] = {
+      "mongodb://a:1/?connectTimeoutMS=1",
+      "mongodb://a:1,a:2/?connectTimeoutMS=1",
+      "mongodb://a:1,a:2/?replicaSet=r&connectTimeoutMS=1",
+      "mongodb://u:p@a:1/?connectTimeoutMS=1",
+      "mongodb://u:p@a:1,a:2/?connectTimeoutMS=1",
+      "mongodb://u:p@a:1,a:2/?replicaSet=r&connectTimeoutMS=1",
+   };
+
+   int i;
+
+   /* hardcode the number of error messages we have to suppress */
+   for (i = 0; i < 18; i++) {
+      suppress_one_message ();
+   }
+
+   for (i = 0; i < (sizeof(uri_strs) / sizeof(const char *)); i++) {
+      client = mongoc_client_new (uri_strs[i]);
+      assert (client);
+
+      collection = mongoc_client_get_collection (client, "test", "test");
+      cursor = mongoc_collection_find (collection,
+                                       MONGOC_QUERY_NONE,
+                                       0,
+                                       0,
+                                       0,
+                                       &query,
+                                       NULL,
+                                       NULL);
+
+      assert (! mongoc_cursor_next (cursor, &doc));
+
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
+      mongoc_client_destroy (client);
+   }
+}
+
+
+static void
 test_exhaust_cursor (void)
 {
    mongoc_write_concern_t *wr;
@@ -693,6 +741,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
+   TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
 }
