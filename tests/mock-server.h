@@ -42,6 +42,12 @@ mock_server_t *mock_server_new              (const char            *address,
                                              uint16_t          port,
                                              mock_server_handler_t  handler,
                                              void                  *handler_data);
+mock_server_t *mock_server_new_rs           (const char            *address,
+                                             uint16_t                     port,
+                                             mock_server_handler_t        handler,
+                                             void                        *handler_data,
+                                             const char                  *setName,
+                                             const mongoc_host_list_t    *hosts);
 void           mock_server_set_wire_version (mock_server_t         *server,
                                              int32_t           min_wire_version,
                                              int32_t           max_wire_version);

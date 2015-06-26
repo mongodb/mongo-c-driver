@@ -52,6 +52,9 @@ struct _mock_server_t
    int                    maxWireVersion;
    int                    maxBsonObjectSize;
    int                    maxMessageSizeBytes;
+
+   const char                  *setName;
+   const mongoc_host_list_t    *hosts;
 };
 
 
@@ -130,6 +133,11 @@ handle_ismaster (mock_server_t   *server,
 {
    bson_t reply_doc = BSON_INITIALIZER;
    time_t now = time (NULL);
+   bson_t hosts_array;
+   const char *hosts_array_key;
+   char buf[32];
+   uint32_t i;
+   const mongoc_host_list_t *host;
 
    BSON_ASSERT (server);
    BSON_ASSERT (client);
@@ -147,6 +155,21 @@ handle_ismaster (mock_server_t   *server,
                       server->maxWireVersion);
    bson_append_double (&reply_doc, "ok", -1, 1.0);
    bson_append_time_t (&reply_doc, "localtime", -1, now);
+   if (server->setName) {
+      BSON_APPEND_UTF8 (&reply_doc, "setName", server->setName);
+      host = server->hosts;
+      i = 0;
+      bson_append_array_begin (&reply_doc, "hosts", -1, &hosts_array);
+
+      while (host) {
+         bson_uint32_to_string (i, &hosts_array_key, buf, sizeof buf);
+         BSON_APPEND_UTF8 (&hosts_array, hosts_array_key, host->host_and_port);
+         i++;
+         host = host->next;
+      }
+      
+      bson_append_array_end (&reply_doc, &hosts_array);
+   }
 
    mock_server_reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply_doc);
 
@@ -280,10 +303,12 @@ dummy_handler (mock_server_t   *server,
 
 
 mock_server_t *
-mock_server_new (const char            *address,
-                 uint16_t          port,
-                 mock_server_handler_t  handler,
-                 void                  *handler_data)
+mock_server_new_rs (const char                  *address,
+                    uint16_t                     port,
+                    mock_server_handler_t        handler,
+                    void                        *handler_data,
+                    const char                  *setName,
+                    const mongoc_host_list_t    *hosts)
 {
    mock_server_t *server;
 
@@ -308,10 +333,22 @@ mock_server_new (const char            *address,
    server->maxBsonObjectSize = 16777216;
    server->maxMessageSizeBytes = 48000000;
 
+   server->setName = setName;
+   server->hosts = hosts;
+
    mongoc_mutex_init (&server->mutex);
    mongoc_cond_init (&server->cond);
 
    return server;
+}
+
+mock_server_t *
+mock_server_new (const char            *address,
+                 uint16_t               port,
+                 mock_server_handler_t  handler,
+                 void                  *handler_data)
+{
+   return mock_server_new_rs (address, port, handler, handler_data, NULL, NULL);
 }
 
 

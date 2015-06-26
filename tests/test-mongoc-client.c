@@ -503,6 +503,45 @@ test_unavailable_seeds(void)
 }
 
 
+/* CDRIVER-721 catch errors in _mongoc_cluster_destroy */
+static void
+test_large_seed_list(void)
+{
+   uint16_t port;
+   char *uri_str;
+   mongoc_uri_t *uri;
+   mock_server_t *server;
+   int i;
+   const mongoc_host_list_t *hosts;
+   mongoc_client_t *client;
+   bson_error_t error;
+
+   port = 20000 + (rand () % 1000);
+   uri_str = bson_strdup_printf ("mongodb://localhost:%hu,a,b,c/?replicaSet=rs",
+                                 port);
+   uri = mongoc_uri_new (uri_str);
+   hosts = mongoc_uri_get_hosts (uri);
+   server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
+                                "rs", hosts);
+
+   mock_server_run_in_thread (server);
+
+   for (i = 0; i < 10; i++) {
+      suppress_one_message ();
+   }
+
+   client = mongoc_client_new_from_uri (uri);
+   assert (client);
+   assert (_mongoc_client_warm_up (client, &error));
+
+   mongoc_client_destroy (client);
+   mock_server_quit (server, 0);
+   mock_server_destroy (server);
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+}
+
+
 static void
 test_exhaust_cursor (void)
 {
@@ -742,6 +781,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
+   TestSuite_Add (suite, "/Client/large_seed_list", test_large_seed_list);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
 }
