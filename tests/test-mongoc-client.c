@@ -231,7 +231,7 @@ test_wire_version (void)
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
-   mock_server_quit (server, 0);
+   mock_server_quit (server);
    mongoc_client_destroy (client);
    bson_free (uristr);
 }
@@ -373,7 +373,7 @@ test_mongoc_client_read_prefs (void)
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
-   mock_server_quit (server, 0);
+   mock_server_quit (server);
    bson_destroy (&b);
    bson_free (uristr);
 }
@@ -504,10 +504,17 @@ test_unavailable_seeds(void)
 }
 
 
+typedef enum {
+   NO_CONNECT,
+   CONNECT,
+   RECONNECT
+} connection_option_t;
+
+
 /* CDRIVER-721 catch errors in _mongoc_cluster_destroy */
 static void 
 test_seed_list (bool rs,
-                bool connect)
+                connection_option_t connection_option)
 {
    uint16_t port;
    char *uri_str;
@@ -531,7 +538,7 @@ test_seed_list (bool rs,
 
    mock_server_run_in_thread (server);
 
-   for (i = 0; i < 10; i++) {
+   for (i = 0; i < 12; i++) {
       suppress_one_message ();
    }
 
@@ -542,12 +549,25 @@ test_seed_list (bool rs,
       assert (client->cluster.nodes[i].valid);
    }
 
-   if (connect) {
+   expected_nodes_len = rs ? 1 : 4;
+
+   if (connection_option != NO_CONNECT) {
       /* only localhost:port responds, nodes_len is set to 1 */
       assert (_mongoc_client_warm_up (client, &error));
 
       /* a mongos load-balanced connection never removes down nodes */
-      expected_nodes_len = rs ? 1 : 4;
+      ASSERT_CMPINT (expected_nodes_len, ==, client->cluster.nodes_len);
+      for (i = 0; i < expected_nodes_len; i++) {
+         assert (client->cluster.nodes[i].valid);
+      }
+   }
+
+   if (connection_option == RECONNECT) {
+      for (i = 0; i < 12; i++) {
+         suppress_one_message ();
+      }
+
+      assert (_mongoc_cluster_reconnect (&client->cluster, &error));
       ASSERT_CMPINT (expected_nodes_len, ==, client->cluster.nodes_len);
       for (i = 0; i < expected_nodes_len; i++) {
          assert (client->cluster.nodes[i].valid);
@@ -557,7 +577,7 @@ test_seed_list (bool rs,
    /* testing for crashes like CDRIVER-721 */
    mongoc_client_destroy (client);
 
-   mock_server_quit (server, 0);
+   mock_server_quit (server);
    mock_server_destroy (server);
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
@@ -567,28 +587,42 @@ test_seed_list (bool rs,
 static void
 test_rs_seeds_no_connect (void)
 {
-   test_seed_list (true, false);
+   test_seed_list (true, NO_CONNECT);
 }
 
 
 static void
 test_rs_seeds_connect (void)
 {
-   test_seed_list (true, true);
+   test_seed_list (true, CONNECT);
+}
+
+
+static void
+test_rs_seeds_reconnect (void)
+{
+   test_seed_list (true, RECONNECT);
 }
 
 
 static void
 test_mongos_seeds_no_connect (void)
 {
-   test_seed_list (false, false);
+   test_seed_list (false, NO_CONNECT);
 }
 
 
 static void
 test_mongos_seeds_connect (void)
 {
-   test_seed_list (false, true);
+   test_seed_list (false, CONNECT);
+}
+
+
+static void
+test_mongos_seeds_reconnect (void)
+{
+   test_seed_list (false, RECONNECT);
 }
 
 
@@ -833,8 +867,10 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect", test_rs_seeds_no_connect);
    TestSuite_Add (suite, "/Client/rs_seeds_connect", test_rs_seeds_connect);
+   TestSuite_Add (suite, "/Client/rs_seeds_reconnect", test_rs_seeds_reconnect);
    TestSuite_Add (suite, "/Client/mongos_seeds_no_connect", test_mongos_seeds_no_connect);
    TestSuite_Add (suite, "/Client/mongos_seeds_connect", test_mongos_seeds_connect);
+   TestSuite_Add (suite, "/Client/mongos_seeds_reconnect", test_mongos_seeds_reconnect);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
 }
