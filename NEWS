@@ -1,12 +1,13 @@
-mongo-c-driver 1.1.8
+mongo-c-driver 1.1.9
 ====================
 
-It is my pleasure to announce to you the 1.1.8 release of the MongoDB C driver.
+It is my pleasure to announce to you the MongoDB C driver 1.1.9.
 
-This is a patch release with bug fixes:
+This release fixes a common crash in 1.1.8, which itself was introduced while
+fixing a rare crash in 1.1.7. For further details:
 
- * Crash freeing client after a replica set auth error.
- * Compile error strict C89 mode.
+https://jira.mongodb.org/browse/CDRIVER-721
+https://jira.mongodb.org/browse/CDRIVER-695
 
 Thanks to everyone who contributed to the development of this point release for
 libmongoc.
@@ -15,6 +16,17 @@ Peace,
 
   A. Jesse Jiryu Davis
 
+mongo-c-driver 1.1.8
+====================
+
+UPDATE: 1.1.8 suffered a severe new bug so I removed the release from GitHub:
+
+https://jira.mongodb.org/browse/CDRIVER-721
+
+This is a patch release with bug fixes:
+
+ * Crash freeing client after a replica set auth error.
+ * Compile error strict C89 mode.
 
 mongo-c-driver 1.1.7
 ====================
