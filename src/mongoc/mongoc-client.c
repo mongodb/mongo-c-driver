@@ -719,9 +719,9 @@ _mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
    const mongoc_write_concern_t *write_concern;
    mongoc_client_t *client;
    mongoc_uri_t *uri;
+#ifdef MONGOC_ENABLE_SSL
    const bson_t *options;
    bson_iter_t iter;
-#ifdef MONGOC_ENABLE_SSL
    bool has_ssl = false;
 #endif
 
@@ -735,9 +735,9 @@ _mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
       return NULL;
    }
 
+#ifdef MONGOC_ENABLE_SSL
    options = mongoc_uri_get_options (uri);
 
-#ifdef MONGOC_ENABLE_SSL
    if (bson_iter_init_find (&iter, options, "ssl") &&
        BSON_ITER_HOLDS_BOOL (&iter) &&
        bson_iter_bool (&iter)) {
