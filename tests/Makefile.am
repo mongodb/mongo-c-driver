@@ -228,4 +228,4 @@ DEBUGGER = gdb --args
 endif
 
 debug: test-libmongoc
-	$(LIBTOOL) --mode=execute $(DEBUGGER) test-libmongoc -f -p
+	$(LIBTOOL) --mode=execute $(DEBUGGER) test-libmongoc $(TEST_ARGS) -f -p
