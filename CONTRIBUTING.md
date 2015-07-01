@@ -163,3 +163,38 @@ URI-escape the username, for example write "user@realm" as "user%40realm".
 The user must be authorized to query `test.collection`.
 
 All tests should pass before submitting a patch.
+
+## Configuring the test runner
+
+The test runner can be configured by declaring the `TEST_ARGS` environment
+variable.
+Currently the following options can be provided:
+
+```
+    -h, --help   Show this help menu.
+    -f           Do not fork() before running tests.
+    -l NAME      Run test by name, e.g. "/Client/command" or "/Client/*".
+    -p           Do not run tests in parallel.
+    -v           Be verbose with logs.
+```
+
+`TEST_ARGS` is set to "-f -p" by default.
+
+To run just a specific portion of the test suite use the -l option like so:
+
+```
+$ make test TEST_ARGS="-l /server_selection/*"
+```
+
+The full list of tests is shown in the help.
+
+## Debugging failed tests
+
+The easiest way to debug a failed tests is to use the `debug` make target:
+
+```
+$ make debug TEST_ARGS="-l /WriteConcern/bson_omits_defaults"
+```
+
+This will build all dependencies and leave you in a debugger ready to run the test.
+
