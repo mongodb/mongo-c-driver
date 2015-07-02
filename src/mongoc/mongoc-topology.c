@@ -122,8 +122,6 @@ mongoc_topology_new (const mongoc_uri_t *uri,
    mongoc_topology_description_type_t init_type;
    uint32_t id;
    const mongoc_host_list_t *hl;
-   const bson_t *options;
-   bson_iter_t iter;
 
    bson_return_val_if_fail(uri, NULL);
 
@@ -156,28 +154,15 @@ mongoc_topology_new (const mongoc_uri_t *uri,
                                                     topology);
    topology->single_threaded = single_threaded;
 
-   topology->timeout_msec = MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS;
-   if ((options = mongoc_uri_get_options (uri)) &&
-       bson_iter_init_find_case (&iter, options, "serverselectiontimeoutms") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      if (!(topology->timeout_msec = bson_iter_int32(&iter))) {
-         topology->timeout_msec = MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS;
-      }
-   }
+   topology->timeout_msec = mongoc_uri_get_option_as_int32(
+      topology->uri, "serverselectiontimeoutms",
+      MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS);
 
-   topology->heartbeat_msec =
-      single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED :
-      MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
-
-   if ((options = mongoc_uri_get_options (uri)) &&
-       bson_iter_init_find_case (&iter, options, "heartbeatfrequencyms") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      if (!(topology->heartbeat_msec = bson_iter_int32(&iter))) {
-         topology->heartbeat_msec =
-            single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED :
-            MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
-      }
-   }
+   topology->heartbeat_msec = mongoc_uri_get_option_as_int32(
+      topology->uri, "heartbeatfrequencyms",
+      (single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED :
+            MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED)
+   );
 
    mongoc_mutex_init (&topology->mutex);
    mongoc_cond_init (&topology->cond_client);

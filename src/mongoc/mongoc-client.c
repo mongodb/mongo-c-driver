@@ -80,10 +80,8 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    mongoc_socket_t *sock = NULL;
    struct addrinfo hints;
    struct addrinfo *result, *rp;
-   int32_t connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
+   int32_t connecttimeoutms;
    int64_t expire_at;
-   const bson_t *options;
-   bson_iter_t iter;
    char portstr [8];
    int s;
 
@@ -92,13 +90,8 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
    bson_return_val_if_fail (uri, NULL);
    bson_return_val_if_fail (host, NULL);
 
-   if ((options = mongoc_uri_get_options (uri)) &&
-       bson_iter_init_find_case (&iter, options, "connecttimeoutms") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      if (!(connecttimeoutms = bson_iter_int32(&iter))) {
-         connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
-      }
-   }
+   connecttimeoutms = mongoc_uri_get_option_as_int32 (
+      uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
    BSON_ASSERT (connecttimeoutms);
    expire_at = bson_get_monotonic_time () + (connecttimeoutms * 1000L);
@@ -337,12 +330,8 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
             return NULL;
          }
 
-         if (bson_iter_init_find_case (&iter, options, "connecttimeoutms") &&
-             BSON_ITER_HOLDS_INT32 (&iter)) {
-            if (!(connecttimeoutms = bson_iter_int32(&iter))) {
-               connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
-            }
-         }
+         connecttimeoutms = mongoc_uri_get_option_as_int32 (
+            uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
          if (!mongoc_stream_tls_do_handshake (base_stream, connecttimeoutms) ||
              !mongoc_stream_tls_check_cert (base_stream, host->host)) {

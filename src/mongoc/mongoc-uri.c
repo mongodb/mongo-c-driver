@@ -77,7 +77,7 @@ mongoc_uri_lowercase_hostname (const char *src,
    }
 }
 
-static void
+void
 mongoc_uri_append_host (mongoc_uri_t  *uri,
                         const char    *host,
                         uint16_t       port)
@@ -482,6 +482,77 @@ again:
    bson_destroy(&b);
 }
 
+static void
+mongoc_uri_bson_replace_key (bson_t *options, const char *option, const char *value)
+{
+   bson_iter_t iter;
+   bson_t tmp = BSON_INITIALIZER;
+
+   bson_init (&tmp);
+
+   bson_iter_init (&iter, options);
+   while (bson_iter_next (&iter)) {
+      const bson_value_t *bvalue;
+
+      if (!strcasecmp(bson_iter_key (&iter), option)) {
+         bson_append_utf8(&tmp, option, -1, value, -1);
+         continue;
+      }
+
+      bvalue = bson_iter_value (&iter);
+      BSON_APPEND_VALUE (&tmp, bson_iter_key (&iter), bvalue);
+   }
+
+   bson_destroy (options);
+   bson_copy_to (&tmp, options);
+}
+
+
+bool
+mongoc_uri_option_is_int32 (const char *key)
+{
+   return !strcasecmp(key, "connecttimeoutms") ||
+       !strcasecmp(key, "heartbeatfrequencyms") ||
+       !strcasecmp(key, "serverselectiontimeoutms") ||
+       !strcasecmp(key, "socketcheckintervalms") ||
+       !strcasecmp(key, "sockettimeoutms") ||
+       !strcasecmp(key, "maxpoolsize") ||
+       !strcasecmp(key, "minpoolsize") ||
+       !strcasecmp(key, "maxidletimems") ||
+       !strcasecmp(key, "waitqueuemultiple") ||
+       !strcasecmp(key, "waitqueuetimeoutms") ||
+       !strcasecmp(key, "wtimeoutms");
+}
+
+bool
+mongoc_uri_option_is_bool (const char *key)
+{
+   return !strcasecmp(key, "canonicalizeHostname") ||
+              !strcasecmp(key, "journal") ||
+              !strcasecmp(key, "safe") ||
+              !strcasecmp(key, "slaveok") ||
+              !strcasecmp(key, "ssl");
+}
+
+bool
+mongoc_uri_option_is_utf8 (const char *key)
+{
+   if (mongoc_uri_option_is_bool(key) || mongoc_uri_option_is_int32(key)) {
+      return false;
+   }
+
+   if (!strcasecmp(key, "readpreferencetags") ||
+         !strcasecmp(key, "authmechanismproperties")) {
+      return false;
+   }
+
+   if (!strcasecmp(key, "username") || !strcasecmp(key, "password")
+         || !strcasecmp(key, "authSource") || !strcasecmp(key, "database")) {
+      return false;
+   }
+
+   return true;
+}
 
 static bool
 mongoc_uri_parse_option (mongoc_uri_t *uri,
@@ -503,19 +574,9 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       return false;
    }
 
-   if (!strcasecmp(key, "connecttimeoutms") ||
-       !strcasecmp(key, "heartbeatfrequencyms") ||
-       !strcasecmp(key, "serverselectiontimeoutms") ||
-       !strcasecmp(key, "socketcheckintervalms") ||
-       !strcasecmp(key, "sockettimeoutms") ||
-       !strcasecmp(key, "maxpoolsize") ||
-       !strcasecmp(key, "minpoolsize") ||
-       !strcasecmp(key, "maxidletimems") ||
-       !strcasecmp(key, "waitqueuemultiple") ||
-       !strcasecmp(key, "waitqueuetimeoutms") ||
-       !strcasecmp(key, "wtimeoutms")) {
+   if (mongoc_uri_option_is_int32(key)) {
       v_int = (int) strtol (value, NULL, 10);
-      bson_append_int32(&uri->options, key, -1, v_int);
+      BSON_APPEND_INT32 (&uri->options, key, v_int);
    } else if (!strcasecmp(key, "w")) {
       if (*value == '-' || isdigit(*value)) {
          v_int = (int) strtol (value, NULL, 10);
@@ -523,13 +584,9 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       } else if (0 == strcasecmp (value, "majority")) {
          BSON_APPEND_UTF8 (&uri->options, "w", "majority");
       } else if (*value) {
-         BSON_APPEND_UTF8 (&uri->options, "W", value);
+         BSON_APPEND_UTF8 (&uri->options, "w", value);
       }
-   } else if (!strcasecmp(key, "canonicalizeHostname") ||
-              !strcasecmp(key, "journal") ||
-              !strcasecmp(key, "safe") ||
-              !strcasecmp(key, "slaveok") ||
-              !strcasecmp(key, "ssl")) {
+   } else if (mongoc_uri_option_is_bool(key)) {
       bson_append_bool (&uri->options, key, -1,
                         (0 == strcasecmp (value, "true")) ||
                         (0 == strcasecmp (value, "t")) ||
@@ -728,9 +785,7 @@ _mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri) /* IN */
 
    BSON_ASSERT(uri);
 
-   if (bson_iter_init_find_case(&iter, &uri->options, "slaveok") &&
-       BSON_ITER_HOLDS_BOOL(&iter) &&
-       bson_iter_bool(&iter)) {
+   if (mongoc_uri_get_option_as_bool (uri, "slaveok", false)) {
       mongoc_read_prefs_set_mode(uri->read_prefs, MONGOC_READ_SECONDARY_PREFERRED);
    }
 
@@ -780,10 +835,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
                                   bson_iter_bool (&iter) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    }
 
-   if (bson_iter_init_find_case (&iter, &uri->options, "wtimeoutms") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      wtimeoutms = bson_iter_int32 (&iter);
-   }
+   wtimeoutms = mongoc_uri_get_option_as_int32(uri, "wtimeoutms", 0);
 
    if (bson_iter_init_find_case (&iter, &uri->options, "journal") &&
        BSON_ITER_HOLDS_BOOL (&iter)) {
@@ -891,7 +943,21 @@ const char *
 mongoc_uri_get_username (const mongoc_uri_t *uri)
 {
    bson_return_val_if_fail(uri, NULL);
+
    return uri->username;
+}
+
+bool
+mongoc_uri_set_username (mongoc_uri_t *uri, const char *username)
+{
+   bson_return_val_if_fail (username, false);
+
+   if (uri->username) {
+      bson_free (uri->username);
+   }
+
+   uri->username = bson_strdup (username);
+   return true;
 }
 
 
@@ -899,7 +965,21 @@ const char *
 mongoc_uri_get_password (const mongoc_uri_t *uri)
 {
    bson_return_val_if_fail(uri, NULL);
+
    return uri->password;
+}
+
+bool
+mongoc_uri_set_password (mongoc_uri_t *uri, const char *password)
+{
+   bson_return_val_if_fail (password, false);
+
+   if (uri->password) {
+      bson_free (uri->password);
+   }
+
+   uri->password = bson_strdup (password);
+   return true;
 }
 
 
@@ -908,6 +988,19 @@ mongoc_uri_get_database (const mongoc_uri_t *uri)
 {
    bson_return_val_if_fail(uri, NULL);
    return uri->database;
+}
+
+bool
+mongoc_uri_set_database (mongoc_uri_t *uri, const char *database)
+{
+   bson_return_val_if_fail(database, false);
+
+   if (uri->database) {
+      bson_free (uri->database);
+   }
+
+   uri->database = bson_strdup(database);
+   return true;
 }
 
 
@@ -925,6 +1018,32 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
    return uri->database ? uri->database : "admin";
 }
 
+
+bool
+mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
+{
+   bson_t *credentials;
+   bson_iter_t iter;
+   size_t len;
+
+   bson_return_val_if_fail (value, false);
+
+   len = strlen(value);
+
+   if (!bson_utf8_validate (value, len, false)) {
+      return false;
+   }
+
+   credentials = &uri->credentials;
+   if (bson_iter_init_find_case (&iter, credentials, "authSource")) {
+      mongoc_uri_bson_replace_key (credentials, "authSource", value);
+   } else {
+      bson_append_utf8(&uri->credentials, "authSource", -1, value, -1);
+   }
+
+   return true;
+
+}
 
 const bson_t *
 mongoc_uri_get_options (const mongoc_uri_t *uri)
@@ -1091,3 +1210,139 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
            BSON_ITER_HOLDS_BOOL (&iter) &&
            bson_iter_bool (&iter));
 }
+
+int32_t
+mongoc_uri_get_option_as_int32(const mongoc_uri_t *uri, const char *option,
+                               int32_t fallback)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+   int32_t retval = fallback;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+        bson_iter_init_find_case (&iter, options, option) &&
+        BSON_ITER_HOLDS_INT32 (&iter)) {
+
+      if (!(retval = bson_iter_int32(&iter))) {
+         retval = fallback;
+      }
+   }
+
+   return retval;
+}
+
+bool
+mongoc_uri_set_option_as_int32(mongoc_uri_t *uri, const char *option,
+                               int32_t value)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+
+   bson_return_val_if_fail (option, false);
+
+   if (!mongoc_uri_option_is_int32 (option)) {
+      return false;
+   }
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+         bson_iter_init_find_case (&iter, options, option)) {
+      if (BSON_ITER_HOLDS_INT32 (&iter)) {
+         bson_iter_overwrite_int32 (&iter, value);
+         return true;
+      } else {
+         return false;
+      }
+   }
+   bson_append_int32(&uri->options, option, -1, value);
+   return true;
+}
+
+bool
+mongoc_uri_set_option_as_bool(mongoc_uri_t *uri, const char *option,
+                              bool value)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+
+   bson_return_val_if_fail (option, false);
+
+   if (!mongoc_uri_option_is_bool (option)) {
+      return false;
+   }
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+         bson_iter_init_find_case (&iter, options, option)) {
+      if (BSON_ITER_HOLDS_BOOL (&iter)) {
+         bson_iter_overwrite_bool (&iter, value);
+         return true;
+      } else {
+         return false;
+      }
+   }
+   bson_append_bool(&uri->options, option, -1, value);
+   return true;
+
+}
+
+bool
+mongoc_uri_get_option_as_bool (const mongoc_uri_t *uri, const char *option,
+                               bool fallback)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, option) &&
+       BSON_ITER_HOLDS_BOOL (&iter)) {
+      return bson_iter_bool (&iter);
+   }
+
+   return fallback;
+}
+
+bool
+mongoc_uri_set_option_as_utf8(mongoc_uri_t *uri, const char *option,
+                              const char *value)
+{
+   bson_t *options;
+   bson_iter_t iter;
+   size_t len;
+
+   bson_return_val_if_fail (option, false);
+
+   len = strlen(value);
+
+   if (!bson_utf8_validate (value, len, false)) {
+      return false;
+   }
+
+   if (!mongoc_uri_option_is_utf8 (option)) {
+      return false;
+   }
+
+   options = &uri->options;
+   if (bson_iter_init_find_case (&iter, options, option)) {
+      mongoc_uri_bson_replace_key (options, option, value);
+   } else {
+      bson_append_utf8(&uri->options, option, -1, value, -1);
+   }
+
+   return true;
+}
+
+const char*
+mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri, const char *option,
+                               const char *fallback)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, option) &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      return bson_iter_utf8 (&iter, NULL);
+   }
+
+   return fallback;
+}
+
