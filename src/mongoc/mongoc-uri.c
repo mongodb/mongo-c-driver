@@ -482,6 +482,32 @@ again:
    bson_destroy(&b);
 }
 
+static void
+mongoc_uri_bson_replace_key (bson_t *options, const char *option, const char *value)
+{
+   bson_iter_t iter;
+   bson_t tmp = BSON_INITIALIZER;
+
+   bson_init (&tmp);
+
+   bson_iter_init (&iter, options);
+   while (bson_iter_next (&iter)) {
+      const bson_value_t *bvalue;
+
+      if (!strcasecmp(bson_iter_key (&iter), option)) {
+         bson_append_utf8(&tmp, option, -1, value, -1);
+         continue;
+      }
+
+      bvalue = bson_iter_value (&iter);
+      BSON_APPEND_VALUE (&tmp, bson_iter_key (&iter), bvalue);
+   }
+
+   bson_destroy (options);
+   bson_copy_to (&tmp, options);
+}
+
+
 bool
 mongoc_uri_option_is_int32 (const char *key)
 {
@@ -918,7 +944,7 @@ mongoc_uri_get_username (const mongoc_uri_t *uri)
 void
 mongoc_uri_set_username (mongoc_uri_t *uri, const char *username)
 {
-   bson_return_val_if_fail (username, false);
+   bson_return_if_fail (username);
 
    if (uri->username) {
       bson_free (uri->username);
@@ -938,7 +964,7 @@ mongoc_uri_get_password (const mongoc_uri_t *uri)
 void
 mongoc_uri_set_password (mongoc_uri_t *uri, const char *password)
 {
-   bson_return_val_if_fail (password, false);
+   bson_return_if_fail (password);
 
    if (uri->password) {
       bson_free (uri->password);
@@ -958,7 +984,7 @@ mongoc_uri_get_database (const mongoc_uri_t *uri)
 void
 mongoc_uri_set_database (mongoc_uri_t *uri, const char *database)
 {
-   bson_return_val_if_fail(database, false);
+   bson_return_if_fail(database);
 
    if (uri->database) {
       bson_free (uri->database);
@@ -982,6 +1008,32 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
    return uri->database ? uri->database : "admin";
 }
 
+
+void
+mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
+{
+   const bson_t *credentials;
+   bson_iter_t iter;
+   size_t len;
+
+   bson_return_val_if_fail (value, false);
+
+   len = strlen(value);
+
+   if (!bson_utf8_validate (value, len, false)) {
+      return false;
+   }
+
+   credentials = &uri->credentials;
+   if (bson_iter_init_find_case (&iter, credentials, "authSource")) {
+      mongoc_uri_bson_replace_key (credentials, "authSource", value);
+   } else {
+      bson_append_utf8(&uri->credentials, "authSource", -1, value, -1);
+   }
+
+   return true;
+
+}
 
 const bson_t *
 mongoc_uri_get_options (const mongoc_uri_t *uri)
@@ -1176,6 +1228,8 @@ mongoc_uri_set_option_as_int32(mongoc_uri_t *uri, const char *option,
    const bson_t *options;
    bson_iter_t iter;
 
+   bson_return_val_if_fail (option, false);
+
    if (!mongoc_uri_option_is_int32 (option)) {
       return false;
    }
@@ -1199,6 +1253,8 @@ mongoc_uri_set_option_as_bool(mongoc_uri_t *uri, const char *option,
 {
    const bson_t *options;
    bson_iter_t iter;
+
+   bson_return_val_if_fail (option, false);
 
    if (!mongoc_uri_option_is_bool (option)) {
       return false;
@@ -1242,6 +1298,8 @@ mongoc_uri_set_option_as_utf8(mongoc_uri_t *uri, const char *option,
    bson_iter_t iter;
    size_t len;
 
+   bson_return_val_if_fail (option, false);
+
    len = strlen(value);
 
    if (!bson_utf8_validate (value, len, false)) {
@@ -1252,26 +1310,9 @@ mongoc_uri_set_option_as_utf8(mongoc_uri_t *uri, const char *option,
       return false;
    }
 
-   if ((options = mongoc_uri_get_options (uri)) &&
-       bson_iter_init_find_case (&iter, options, option)) {
-      bson_t tmp = BSON_INITIALIZER;
-
-      bson_init (&tmp);
-
-      bson_iter_init (&iter, &uri->options);
-      while (bson_iter_next (&iter)) {
-         const bson_value_t *value;
-
-         if (!strcasecmp(bson_iter_key (&iter), option)) {
-            bson_append_utf8(&uri->options, option, -1, value, -1);
-            continue;
-         }
-
-         value = bson_iter_value (&iter);
-         BSON_APPEND_VALUE (&tmp, bson_iter_key (&iter), value);
-      }
-      bson_destroy (&uri->options);
-      bson_copy_to (&tmp, &uri->options);
+   options = mongoc_uri_get_options (uri);
+   if (bson_iter_init_find_case (&iter, options, option)) {
+      mongoc_uri_bson_replace_key (options, option, value);
    } else {
       bson_append_utf8(&uri->options, option, -1, value, -1);
    }

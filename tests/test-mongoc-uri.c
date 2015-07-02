@@ -385,20 +385,22 @@ test_mongoc_uri_functions (void)
    uri = mongoc_uri_new("mongodb://foo:bar@localhost:27017/baz?authSource=source");
    ASSERT_CMPSTR(mongoc_uri_get_username(uri), "foo");
    ASSERT_CMPSTR(mongoc_uri_get_password(uri), "bar");
-   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "baz");
+   ASSERT_CMPSTR(mongoc_uri_get_database(uri), "baz");
    ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "source");
 
    mongoc_uri_set_username (uri, "longer username that should work");
    ASSERT_CMPSTR(mongoc_uri_get_username(uri), "longer username that should work");
 
-   mongoc_uri_set_password (uri, "longer password that should work");
+   mongoc_uri_set_password (uri, "longer password that should also work");
    ASSERT_CMPSTR(mongoc_uri_get_password(uri), "longer password that should also work");
 
    mongoc_uri_set_database (uri, "longer database that should work");
    ASSERT_CMPSTR(mongoc_uri_get_database(uri), "longer database that should work");
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "source");
 
-   mongoc_uri_set_auth_source (uri, "longer database that should work");
-   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "longer database that should work");
+   mongoc_uri_set_auth_source (uri, "longer authsource that should work");
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "longer authsource that should work");
+   ASSERT_CMPSTR(mongoc_uri_get_database(uri), "longer database that should work");
 
    mongoc_uri_destroy(uri);
 }
