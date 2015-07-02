@@ -1,5 +1,6 @@
 #include <mongoc.h>
 
+#include "mongoc-uri-private.h"
 #include "mongoc-host-list-private.h"
 
 #include "TestSuite.h"
@@ -401,6 +402,37 @@ test_mongoc_uri_functions (void)
    mongoc_uri_set_auth_source (uri, "longer authsource that should work");
    ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "longer authsource that should work");
    ASSERT_CMPSTR(mongoc_uri_get_database(uri), "longer database that should work");
+
+   mongoc_uri_destroy(uri);
+
+
+   uri = mongoc_uri_new("mongodb://localhost/?serverselectiontimeoutms=3&journal=true&wtimeoutms=42&canonicalizeHostname=false");
+
+   ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "serverselectiontimeoutms", 18), ==, 3);
+   ASSERT(mongoc_uri_set_option_as_int32(uri, "serverselectiontimeoutms", 18));
+   ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "serverselectiontimeoutms", 19), ==, 18);
+
+   ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "wtimeoutms", 18), ==, 42);
+   ASSERT(mongoc_uri_set_option_as_int32(uri, "wtimeoutms", 18));
+   ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "wtimeoutms", 19), ==, 18);
+
+   /* socketcheckintervalms isn't set, return our fallback */
+   ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "socketcheckintervalms", 123), ==, 123);
+   ASSERT(mongoc_uri_set_option_as_int32(uri, "socketcheckintervalms", 18));
+   ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "socketcheckintervalms", 19), ==, 18);
+
+   ASSERT(mongoc_uri_get_option_as_bool(uri, "journal", false));
+   ASSERT(!mongoc_uri_get_option_as_bool(uri, "canonicalizeHostname", true));
+   /* ssl isn't set, return out fallback */
+   ASSERT(mongoc_uri_get_option_as_bool(uri, "ssl", true));
+
+   mongoc_uri_destroy(uri);
+
+
+   uri = mongoc_uri_new("mongodb://localhost/");
+   ASSERT_CMPSTR(mongoc_uri_get_option_as_utf8(uri, "random", "default"), "default");
+   ASSERT(mongoc_uri_set_option_as_utf8(uri, "random", "value"));
+   ASSERT_CMPSTR(mongoc_uri_get_option_as_utf8(uri, "random", "default"), "value");
 
    mongoc_uri_destroy(uri);
 }

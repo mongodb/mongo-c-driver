@@ -537,11 +537,17 @@ mongoc_uri_option_is_bool (const char *key)
 bool
 mongoc_uri_option_is_utf8 (const char *key)
 {
-   if (!mongoc_uri_option_is_bool(key) || !mongoc_uri_option_is_int32(key)) {
+   if (mongoc_uri_option_is_bool(key) || mongoc_uri_option_is_int32(key)) {
       return false;
    }
 
-   if (!strcasecmp(key, "readpreferencetags") || !strcasecmp(key, "authmechanismproperties")) {
+   if (!strcasecmp(key, "readpreferencetags") ||
+         !strcasecmp(key, "authmechanismproperties")) {
+      return false;
+   }
+
+   if (!strcasecmp(key, "username") || !strcasecmp(key, "password")
+         || !strcasecmp(key, "authSource") || !strcasecmp(key, "database")) {
       return false;
    }
 
@@ -941,15 +947,17 @@ mongoc_uri_get_username (const mongoc_uri_t *uri)
    return uri->username;
 }
 
-void
+bool
 mongoc_uri_set_username (mongoc_uri_t *uri, const char *username)
 {
-   bson_return_if_fail (username);
+   bson_return_val_if_fail (username, false);
 
    if (uri->username) {
       bson_free (uri->username);
    }
+
    uri->username = bson_strdup (username);
+   return true;
 }
 
 
@@ -961,16 +969,17 @@ mongoc_uri_get_password (const mongoc_uri_t *uri)
    return uri->password;
 }
 
-void
+bool
 mongoc_uri_set_password (mongoc_uri_t *uri, const char *password)
 {
-   bson_return_if_fail (password);
+   bson_return_val_if_fail (password, false);
 
    if (uri->password) {
       bson_free (uri->password);
    }
 
    uri->password = bson_strdup (password);
+   return true;
 }
 
 
@@ -981,16 +990,17 @@ mongoc_uri_get_database (const mongoc_uri_t *uri)
    return uri->database;
 }
 
-void
+bool
 mongoc_uri_set_database (mongoc_uri_t *uri, const char *database)
 {
-   bson_return_if_fail(database);
+   bson_return_val_if_fail(database, false);
 
    if (uri->database) {
       bson_free (uri->database);
    }
 
    uri->database = bson_strdup(database);
+   return true;
 }
 
 
@@ -1009,10 +1019,10 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
 }
 
 
-void
+bool
 mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
 {
-   const bson_t *credentials;
+   bson_t *credentials;
    bson_iter_t iter;
    size_t len;
 
@@ -1294,7 +1304,7 @@ bool
 mongoc_uri_set_option_as_utf8(mongoc_uri_t *uri, const char *option,
                               const char *value)
 {
-   const bson_t *options;
+   bson_t *options;
    bson_iter_t iter;
    size_t len;
 
@@ -1310,7 +1320,7 @@ mongoc_uri_set_option_as_utf8(mongoc_uri_t *uri, const char *option,
       return false;
    }
 
-   options = mongoc_uri_get_options (uri);
+   options = &uri->options;
    if (bson_iter_init_find_case (&iter, options, option)) {
       mongoc_uri_bson_replace_key (options, option, value);
    } else {
@@ -1320,4 +1330,19 @@ mongoc_uri_set_option_as_utf8(mongoc_uri_t *uri, const char *option,
    return true;
 }
 
+const char*
+mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri, const char *option,
+                               const char *fallback)
+{
+   const bson_t *options;
+   bson_iter_t iter;
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, option) &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      return bson_iter_utf8 (&iter, NULL);
+   }
+
+   return fallback;
+}
 

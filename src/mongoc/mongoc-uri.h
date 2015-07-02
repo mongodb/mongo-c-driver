@@ -64,12 +64,6 @@ bool                          mongoc_uri_get_ssl                  (const mongoc_
 char                         *mongoc_uri_unescape                 (const char         *escaped_string);
 const mongoc_read_prefs_t *   mongoc_uri_get_read_prefs_t         (const mongoc_uri_t *uri);
 const mongoc_write_concern_t *mongoc_uri_get_write_concern        (const mongoc_uri_t *uri);
-int32_t                       mongoc_uri_get_option_as_int32      (const mongoc_uri_t *uri,
-                                                                   const char         *option,
-                                                                         int32_t       fallback);
-bool                          mongoc_uri_get_option_as_bool       (const mongoc_uri_t *uri,
-                                                                   const char         *option,
-                                                                         bool          fallback);
 
 BSON_END_DECLS
 
