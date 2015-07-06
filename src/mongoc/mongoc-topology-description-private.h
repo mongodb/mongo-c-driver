@@ -19,6 +19,7 @@
 
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-server-description.h"
+#include "mongoc-topology-scanner-private.h"
 
 #define MONGOC_SS_DEFAULT_TIMEOUT_MS 30000
 #define MONGOC_SS_DEFAULT_LOCAL_THRESHOLD_MS 15
@@ -33,11 +34,6 @@ typedef enum
       MONGOC_TOPOLOGY_DESCRIPTION_TYPES
    } mongoc_topology_description_type_t;
 
-typedef struct {
-   void (*add)(const mongoc_server_description_t *);
-   void (*rm)(const mongoc_server_description_t *);
-} mongoc_topology_cb_t;
-
 typedef struct _mongoc_topology_description_t
 {
    mongoc_topology_description_type_t type;
@@ -46,7 +42,6 @@ typedef struct _mongoc_topology_description_t
    bool                               compatible;
    char                              *compatibility_error;
    uint32_t                           max_server_id;
-   mongoc_topology_cb_t               cb;
    bool                               stale;
 } mongoc_topology_description_t;
 
@@ -58,8 +53,7 @@ typedef enum
 
 void
 mongoc_topology_description_init (mongoc_topology_description_t     *description,
-                                  mongoc_topology_description_type_t type,
-                                  mongoc_topology_cb_t              *cb);
+                                  mongoc_topology_description_type_t type);
 
 void
 mongoc_topology_description_destroy (mongoc_topology_description_t *description);
@@ -67,6 +61,7 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
 bool
 mongoc_topology_description_handle_ismaster (
    mongoc_topology_description_t *topology,
+   mongoc_topology_scanner_t     *scanner,
    mongoc_server_description_t   *sd,
    const bson_t                  *reply,
    int64_t                        rtt_msec,
@@ -93,10 +88,12 @@ mongoc_topology_description_suitable_servers (
 
 void
 mongoc_topology_description_invalidate_server (mongoc_topology_description_t *topology,
+                                               mongoc_topology_scanner_t     *scanner,
                                                uint32_t                       id);
 
 bool
 mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
+                                        mongoc_topology_scanner_t     *scanner,
                                         const char                    *server,
                                         uint32_t                      *id /* OUT */);
 

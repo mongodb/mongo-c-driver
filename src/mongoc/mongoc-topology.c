@@ -84,7 +84,8 @@ _mongoc_topology_scanner_cb (uint32_t      id,
    sd = mongoc_topology_description_server_by_id (&topology->description, id);
 
    if (sd) {
-      r = mongoc_topology_description_handle_ismaster (&topology->description, sd,
+      r = mongoc_topology_description_handle_ismaster (&topology->description,
+                                                       topology->scanner, sd,
                                                        ismaster_response, rtt_msec,
                                                        error);
 
@@ -147,7 +148,7 @@ mongoc_topology_new (const mongoc_uri_t *uri,
       }
    }
 
-   mongoc_topology_description_init(&topology->description, init_type, NULL);
+   mongoc_topology_description_init(&topology->description, init_type);
    topology->description.set_name = bson_strdup(mongoc_uri_get_replica_set(uri));
 
    topology->uri = mongoc_uri_copy (uri);
@@ -185,9 +186,9 @@ mongoc_topology_new (const mongoc_uri_t *uri,
 
    for ( hl = mongoc_uri_get_hosts (uri); hl; hl = hl->next) {
       mongoc_topology_description_add_server (&topology->description,
+                                              topology->scanner,
                                               hl->host_and_port,
                                               &id);
-      mongoc_topology_scanner_add (topology->scanner, hl, id);
    }
 
    if (! topology->single_threaded) {
@@ -518,7 +519,8 @@ mongoc_topology_invalidate_server (mongoc_topology_t *topology,
                                    uint32_t           id)
 {
    mongoc_mutex_lock (&topology->mutex);
-   mongoc_topology_description_invalidate_server (&topology->description, id);
+   mongoc_topology_description_invalidate_server (&topology->description,
+           topology->scanner, id);
    mongoc_mutex_unlock (&topology->mutex);
 }
 
