@@ -37,46 +37,36 @@ mongoc_sasl_mutex_alloc (void)
 {
    mongoc_mutex_t *mutex;
 
-   ENTRY;
-
    mutex = bson_malloc0 (sizeof (mongoc_mutex_t));
    mongoc_mutex_init (mutex);
 
-   RETURN((void *) mutex);
+   return (void *) mutex;
 }
 
 
 static int
 mongoc_sasl_mutex_lock (void *mutex)
 {
-   ENTRY;
-
    mongoc_mutex_lock ((mongoc_mutex_t *) mutex);
 
-   RETURN(SASL_OK);
+   return SASL_OK;
 }
 
 
 static int
 mongoc_sasl_mutex_unlock (void *mutex)
 {
-   ENTRY;
-
    mongoc_mutex_unlock ((mongoc_mutex_t *) mutex);
 
-   RETURN(SASL_OK);
+   return SASL_OK;
 }
 
 
 static void
 mongoc_sasl_mutex_free (void *mutex)
 {
-   ENTRY;
-
    mongoc_mutex_destroy ((mongoc_mutex_t *) mutex);
    bson_free (mutex);
-
-   EXIT;
 }
 
 #endif//MONGOC_ENABLE_SASL
@@ -90,6 +80,8 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
 #endif
 
 #ifdef MONGOC_ENABLE_SASL
+   /* The following functions should not use tracing, as they may be invoked
+    * before mongoc_log_set_handler() can complete. */
    sasl_set_mutex (mongoc_sasl_mutex_alloc,
                    mongoc_sasl_mutex_lock,
                    mongoc_sasl_mutex_unlock,
