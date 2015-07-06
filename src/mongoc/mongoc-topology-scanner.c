@@ -33,9 +33,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
 
-static void
-mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool failed);
-
 mongoc_topology_scanner_t *
 mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
                              mongoc_topology_scanner_cb_t cb,
@@ -106,7 +103,7 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
    return;
 }
 
-static void
+void
 mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool failed)
 {
    DL_DELETE (node->ts->nodes, node);

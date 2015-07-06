@@ -16,6 +16,7 @@
 
 #include "mongoc-error.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-topology-scanner-private.h"
 #include "mongoc-trace.h"
 
 #include "utlist.h"
@@ -45,6 +46,35 @@ _mongoc_topology_background_thread_start (mongoc_topology_t *topology);
 static void
 _mongoc_topology_request_scan (mongoc_topology_t *topology);
 
+static bool
+_mongoc_topology_reconcile_add_nodes (void *item,
+                            void *ctx)
+{
+   mongoc_server_description_t *sd = item;
+   mongoc_topology_scanner_t *scanner = ctx;
+
+   if (! mongoc_topology_scanner_get_node (scanner, sd->id)) {
+      mongoc_topology_scanner_add (scanner, &sd->host, sd->id);
+   }
+
+   return true;
+}
+
+void
+mongoc_topology_reconcile (mongoc_topology_description_t *description,
+                           mongoc_topology_scanner_t     *scanner) {
+   mongoc_topology_scanner_node_t *ele, *tmp;
+
+   /* Add newly discovered nodes */
+   mongoc_set_for_each(description->servers, _mongoc_topology_reconcile_add_nodes, scanner);
+
+   /* Remove removed nodes */
+   DL_FOREACH_SAFE (scanner->nodes, ele, tmp) {
+      if (! mongoc_topology_description_server_by_id (description, ele->id)) {
+         mongoc_topology_scanner_node_destroy (ele, true);
+      }
+   }
+}
 /*
  *-------------------------------------------------------------------------
  *
@@ -87,6 +117,12 @@ _mongoc_topology_scanner_cb (uint32_t      id,
       r = mongoc_topology_description_handle_ismaster (&topology->description, sd,
                                                        ismaster_response, rtt_msec,
                                                        error);
+
+      /* The processing of the ismaster results above may have added/removed
+       * server descriptions. We need to reconcile that with our monitoring agents
+       */
+
+      mongoc_topology_reconcile(&topology->description, topology->scanner);
 
       /* TODO only wake up all clients if we found any topology changes */
       mongoc_cond_broadcast (&topology->cond_client);
