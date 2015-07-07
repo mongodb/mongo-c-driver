@@ -49,6 +49,7 @@
 #include "mongoc-trace.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
+#include "mongoc-uri-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN

@@ -41,6 +41,7 @@
 #include "mongoc-stream-socket.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
+#include "mongoc-uri-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"

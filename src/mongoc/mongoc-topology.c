@@ -17,6 +17,7 @@
 #include "mongoc-error.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-topology-scanner-private.h"
+#include "mongoc-uri-private.h"
 #include "mongoc-trace.h"
 
 #include "utlist.h"
