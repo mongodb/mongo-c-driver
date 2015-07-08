@@ -21,7 +21,6 @@
 #else
 #include <dirent.h>
 #endif
-#include <sys/stat.h>
 
 
 mongoc_topology_description_type_t
