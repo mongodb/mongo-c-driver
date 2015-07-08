@@ -11,6 +11,7 @@
 #include "mongoc-topology-private.h"
 
 #include "TestSuite.h"
+#include "test-conveniences.h"
 
 #define MAX_NUM_TESTS 100
 
@@ -93,8 +94,6 @@ test_sdam_cb (bson_t *test)
    bson_iter_t servers_iter;
    bson_iter_t outcome_iter;
    bson_iter_t iter;
-   uint32_t len;
-   const uint8_t *iter_data;
    const char *set_name;
    const char *hostname;
 
@@ -104,23 +103,19 @@ test_sdam_cb (bson_t *test)
 
    /* for each phase, parse and validate */
    assert (bson_iter_init_find(&iter, test, "phases"));
-   bson_iter_array (&iter, &len, &iter_data);
-   assert (bson_init_static (&phases, iter_data, len));
+   bson_iter_bson (&iter, &phases);
    bson_iter_init (&phase_iter, &phases);
 
    while (bson_iter_next (&phase_iter)) {
-      bson_iter_document (&phase_iter, &len, &iter_data);
-      bson_init_static (&phase, iter_data, len);
+      bson_iter_bson (&phase_iter, &phase);
 
       /* grab ismaster responses out and feed them to topology */
       assert (bson_iter_init_find(&phase_field_iter, &phase, "responses"));
-      bson_iter_array (&phase_field_iter, &len, &iter_data);
-      assert (bson_init_static (&ismasters, iter_data, len));
+      bson_iter_bson (&phase_field_iter, &ismasters);
       bson_iter_init (&ismaster_iter, &ismasters);
 
       while (bson_iter_next (&ismaster_iter)) {
-         bson_iter_array (&ismaster_iter, &len, &iter_data);
-         bson_init_static (&ismaster, iter_data, len);
+         bson_iter_bson (&ismaster_iter, &ismaster);
 
          /* fetch server description for this server based on its hostname */
          bson_iter_init_find (&ismaster_field_iter, &ismaster, "0");
@@ -132,8 +127,7 @@ test_sdam_cb (bson_t *test)
          if (!sd) continue;
 
          bson_iter_init_find (&ismaster_field_iter, &ismaster, "1");
-         bson_iter_document (&ismaster_field_iter, &len, &iter_data);
-         bson_init_static (&response, iter_data, len);
+         bson_iter_bson (&ismaster_field_iter, &response);
 
          /* send ismaster through the topology description's handler */
          mongoc_topology_description_handle_ismaster(&client->topology->description,
@@ -145,14 +139,12 @@ test_sdam_cb (bson_t *test)
 
       /* parse out "outcome" and validate */
       assert (bson_iter_init_find(&phase_field_iter, &phase, "outcome"));
-      bson_iter_document (&phase_field_iter, &len, &iter_data);
-      bson_init_static (&outcome, iter_data, len);
+      bson_iter_bson (&phase_field_iter, &outcome);
       bson_iter_init (&outcome_iter, &outcome);
 
       while (bson_iter_next (&outcome_iter)) {
          if (strcmp ("servers", bson_iter_key (&outcome_iter)) == 0) {
-            bson_iter_document (&outcome_iter, &len, &iter_data);
-            bson_init_static (&servers, iter_data, len);
+            bson_iter_bson (&outcome_iter, &servers);
             ASSERT_CMPINT (
                bson_count_keys (&servers), ==,
                (int) client->topology->description.servers->items_len);
@@ -162,8 +154,7 @@ test_sdam_cb (bson_t *test)
             /* for each server, ensure topology has a matching entry */
             while (bson_iter_next (&servers_iter)) {
                hostname = bson_iter_key (&servers_iter);
-               bson_iter_document(&servers_iter, &len, &iter_data);
-               bson_init_static (&server, iter_data, len);
+               bson_iter_bson (&servers_iter, &server);
 
                _topology_has_description(&client->topology->description,
                                          &server,

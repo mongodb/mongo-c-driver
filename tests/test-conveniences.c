@@ -85,6 +85,33 @@ tmp_bson (const char *json)
 }
 
 
+/*--------------------------------------------------------------------------
+ *
+ * bson_iter_bson --
+ *
+ *       Statically init a bson_t from an iter at an array or document.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+bson_iter_bson (const bson_iter_t *iter,
+                bson_t *bson)
+{
+   uint32_t len;
+   const uint8_t *data;
+
+   assert (BSON_ITER_HOLDS_DOCUMENT (iter) || BSON_ITER_HOLDS_ARRAY (iter));
+
+   if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      bson_iter_document (iter, &len, &data);
+   } else {
+      bson_iter_array (iter, &len, &data);
+   }
+
+   assert (bson_init_static (bson, data, len));
+}
+
+
 bool
 get_exists_operator (const bson_value_t *value,
                      bool               *exists);

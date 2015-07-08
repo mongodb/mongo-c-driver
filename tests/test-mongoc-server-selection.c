@@ -9,6 +9,7 @@
 #include "mongoc-topology-private.h"
 
 #include "TestSuite.h"
+#include "test-conveniences.h"
 
 static mongoc_ss_optype_t
 optype_from_test(const char *op)
@@ -109,9 +110,7 @@ test_server_selection_logic_cb (bson_t *test)
    bson_t latency;
    bson_t test_read_pref;
    bson_t test_tags;
-   const uint8_t *iter_data;
    const char *type;
-   uint32_t len;
    int j = 0;
 
    mongoc_array_t selected_servers;
@@ -120,8 +119,7 @@ test_server_selection_logic_cb (bson_t *test)
 
    /* pull out topology description field */
    assert(bson_iter_init_find(&iter, test, "topology_description"));
-   bson_iter_document(&iter, &len, &iter_data);
-   assert(bson_init_static(&test_topology, iter_data, len));
+   bson_iter_bson (&iter, &test_topology);
 
    /* set topology state from test */
    assert(bson_iter_init_find(&topology_iter, &test_topology, "type"));
@@ -135,13 +133,11 @@ test_server_selection_logic_cb (bson_t *test)
 
    /* for each server description in test, add server to our topology */
    assert(bson_iter_init_find(&topology_iter, &test_topology, "servers"));
-   bson_iter_array (&topology_iter, &len, &iter_data);
-   assert(bson_init_static (&test_servers, iter_data, len));
+   bson_iter_bson (&topology_iter, &test_servers);
 
    bson_iter_init(&server_iter, &test_servers);
    while (bson_iter_next (&server_iter)) {
-      bson_iter_document(&server_iter, &len, &iter_data);
-      assert(bson_init_static(&server, iter_data, len));
+      bson_iter_bson (&server_iter, &server);
 
       /* initialize new server description with given address */
       sd = bson_malloc0(sizeof *sd);
@@ -161,8 +157,7 @@ test_server_selection_logic_cb (bson_t *test)
       assert(bson_iter_init_find(&sd_iter, &server, "tags"));
       bson_iter_recurse(&sd_iter, &sd_child_iter);
       bson_iter_next(&sd_child_iter);
-      bson_iter_document(&sd_child_iter, &len, &iter_data);
-      assert(bson_init_static(&sd->tags, iter_data, len));
+      bson_iter_bson (&sd_child_iter, &sd->tags);
 
       /* add new server to our topology description */
       mongoc_set_add(topology.servers, sd->id, sd);
@@ -170,15 +165,13 @@ test_server_selection_logic_cb (bson_t *test)
 
    /* create read preference document from test */
    assert (bson_iter_init_find(&iter, test, "read_preference"));
-   bson_iter_document(&iter, &len, &iter_data);
-   assert(bson_init_static(&test_read_pref, iter_data, len));
+   bson_iter_bson (&iter, &test_read_pref);
 
    assert (bson_iter_init_find(&read_pref_iter, &test_read_pref, "mode"));
    read_prefs = mongoc_read_prefs_new(read_mode_from_test(bson_iter_utf8(&read_pref_iter, NULL)));
 
    assert (bson_iter_init_find(&read_pref_iter, &test_read_pref, "tags"));
-   bson_iter_array(&read_pref_iter, &len, &iter_data);
-   assert(bson_init_static(&test_tags, iter_data, len));
+   bson_iter_bson (&read_pref_iter, &test_tags);
    mongoc_read_prefs_set_tags(read_prefs, &test_tags);
 
    /* get optype */
@@ -187,23 +180,19 @@ test_server_selection_logic_cb (bson_t *test)
 
    /* read in candidate servers */
    assert (bson_iter_init_find(&iter, test, "candidate_servers"));
-   bson_iter_array (&iter, &len, &iter_data);
-   assert (bson_init_static (&candidates, iter_data, len));
+   bson_iter_bson (&iter, &candidates);
 
    /* read in eligible servers */
    assert (bson_iter_init_find(&iter, test, "eligible_servers"));
-   bson_iter_array (&iter, &len, &iter_data);
-   assert (bson_init_static (&eligible, iter_data, len));
+   bson_iter_bson (&iter, &eligible);
 
    /* read in suitable servers */
    assert (bson_iter_init_find(&iter, test, "suitable_servers"));
-   bson_iter_array (&iter, &len, &iter_data);
-   assert (bson_init_static (&suitable, iter_data, len));
+   bson_iter_bson (&iter, &suitable);
 
    /* read in latency window servers */
    assert (bson_iter_init_find(&iter, test, "in_latency_window"));
-   bson_iter_array (&iter, &len, &iter_data);
-   assert (bson_init_static (&latency, iter_data, len));
+   bson_iter_bson (&iter, &latency);
 
    _mongoc_array_init (&selected_servers, sizeof(mongoc_server_description_t*));
 

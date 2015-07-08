@@ -23,6 +23,9 @@
 
 bson_t *tmp_bson (const char *json);
 
+void bson_iter_bson (const bson_iter_t *iter,
+                     bson_t            *bson);
+
 char *single_quotes_to_double (const char *str);
 
 bool match_json (const bson_t *doc,
