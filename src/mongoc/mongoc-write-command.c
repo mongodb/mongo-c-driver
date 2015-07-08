@@ -293,12 +293,16 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
 
    do {
       /* the document is like { "q": { <selector> }, limit: <0 or 1> } */
-      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
-      BSON_ASSERT (bson_iter_recurse (&iter, &q_iter));
-      BSON_ASSERT (bson_iter_find (&q_iter, "q"));
-      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&q_iter));
-      bson_iter_document (&q_iter, &len, &data);
+      r = (bson_iter_recurse (&iter, &q_iter) &&
+           bson_iter_find (&q_iter, "q") &&
+           BSON_ITER_HOLDS_DOCUMENT (&q_iter));
 
+      if (!r) {
+         BSON_ASSERT (false);
+         EXIT;
+      }
+
+      bson_iter_document (&q_iter, &len, &data);
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
 
