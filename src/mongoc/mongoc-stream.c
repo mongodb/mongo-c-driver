@@ -292,13 +292,14 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
 mongoc_stream_t *
 mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
 {
+   ENTRY;
    bson_return_val_if_fail (stream, NULL);
 
    if (stream->get_base_stream) {
-      return stream->get_base_stream (stream);
+      RETURN (stream->get_base_stream (stream));
    }
 
-   return stream;
+   RETURN (stream);
 }
 
 
@@ -309,10 +310,11 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
 {
    mongoc_stream_poll_t *poller = bson_malloc(sizeof(*poller) * nstreams);
 
-   int i;
+   size_t i;
    int last_type = 0;
    ssize_t rval = -1;
 
+   ENTRY;
    errno = 0;
 
    for (i = 0; i < nstreams; i++) {
@@ -324,13 +326,13 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
          last_type = poller[i].stream->type;
       } else if (last_type != poller[i].stream->type) {
          errno = EINVAL;
-         goto CLEANUP;
+         GOTO (CLEANUP);
       }
    }
 
    if (! poller[0].stream->poll) {
       errno = EINVAL;
-      goto CLEANUP;
+      GOTO (CLEANUP);
    }
 
    rval = poller[0].stream->poll(poller, nstreams, timeout);
@@ -344,7 +346,7 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
 CLEANUP:
    bson_free(poller);
 
-   return rval;
+   RETURN (rval);
 }
 
 
