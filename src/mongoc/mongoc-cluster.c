@@ -998,15 +998,35 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
 
    if (0 == strcasecmp (mechanism, "MONGODB-CR")) {
       ret = _mongoc_cluster_auth_node_cr (cluster, stream, error);
-#ifdef MONGOC_ENABLE_SSL
    } else if (0 == strcasecmp (mechanism, "MONGODB-X509")) {
+#ifdef MONGOC_ENABLE_SSL
       ret = _mongoc_cluster_auth_node_x509 (cluster, stream, error);
-   } else if (0 == strcasecmp (mechanism, "SCRAM-SHA-1")) {
-      ret = _mongoc_cluster_auth_node_scram (cluster, stream, error);
+#else
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "The \"%s\" authentication mechanism requires libmongoc built with --enable-ssl",
+                      mechanism);
 #endif
-#ifdef MONGOC_ENABLE_SASL
+   } else if (0 == strcasecmp (mechanism, "SCRAM-SHA-1")) {
+#ifdef MONGOC_ENABLE_SSL
+      ret = _mongoc_cluster_auth_node_scram (cluster, stream, error);
+#else
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "The \"%s\" authentication mechanism requires libmongoc built with --enable-ssl",
+                      mechanism);
+#endif
    } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
+#ifdef MONGOC_ENABLE_SASL
       ret = _mongoc_cluster_auth_node_sasl (cluster, stream, hostname, error);
+#else
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                      "The \"%s\" authentication mechanism requires libmongoc built with --enable-sasl",
+                      mechanism);
 #endif
    } else if (0 == strcasecmp (mechanism, "PLAIN")) {
       ret = _mongoc_cluster_auth_node_plain (cluster, stream, error);
@@ -1014,7 +1034,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "The authentication mechanism \"%s\" is not supported.",
+                      "Unknown authentication mechanism \"%s\".",
                       mechanism);
    }
 

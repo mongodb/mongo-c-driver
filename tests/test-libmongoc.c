@@ -390,6 +390,14 @@ test_framework_get_uri_str (const char *uri_str)
       abort ();
    }
 
+#ifndef MONGOC_ENABLE_SSL
+   if (user && password) {
+      fprintf (stderr, "You need to configure with --enable-ssl"
+                       " when providing user+password (for SCRAM-SHA-1)\n");
+      abort ();
+   }
+#endif
+
    /* add "ssl=true" if needed */
    if (test_framework_get_ssl () && !mongoc_uri_get_ssl (uri_parsed)) {
       test_uri_str = bson_strdup_printf (

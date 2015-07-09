@@ -57,7 +57,7 @@ gen_good_uri (const char *username,
 
 
 static void
-test_mongoc_client_authenticate (void)
+test_mongoc_client_authenticate (void *context)
 {
    mongoc_client_t *admin_client;
    char *username;
@@ -127,8 +127,22 @@ test_mongoc_client_authenticate (void)
 }
 
 
+int should_run_auth_tests (void)
+{
+#ifndef MONGOC_ENABLE_SSL
+   mongoc_client_t *client = test_framework_client_new (NULL);
+   uint32_t server_id = mongoc_cluster_preselect(&client->cluster, MONGOC_OPCODE_QUERY, NULL, NULL);
+
+   if (mongoc_cluster_node_max_wire_version (&client->cluster, server_id) > 2) {
+      mongoc_client_destroy (client);
+      return 0;
+   }
+#endif
+
+   return 1;
+}
 static void
-test_mongoc_client_authenticate_failure (void)
+test_mongoc_client_authenticate_failure (void *context)
 {
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
@@ -151,6 +165,7 @@ test_mongoc_client_authenticate_failure (void)
     */
    bson_init(&q);
    client = test_framework_client_new (bad_uri_str);
+
    collection = mongoc_client_get_collection(client, "test", "test");
    suppress_one_message ();
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
@@ -675,8 +690,8 @@ test_client_install (TestSuite *suite)
    }
 
    TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
-   TestSuite_Add (suite, "/Client/authenticate", test_mongoc_client_authenticate);
-   TestSuite_Add (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure);
+   TestSuite_AddFull (suite, "/Client/authenticate", test_mongoc_client_authenticate, NULL, NULL, should_run_auth_tests);
+   TestSuite_AddFull (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure, NULL, NULL, should_run_auth_tests);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);

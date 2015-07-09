@@ -1,6 +1,6 @@
 AC_ARG_ENABLE([ssl],
               [AS_HELP_STRING([--enable-ssl=@<:@auto/yes/no@:>@],
-                              [Use OpenSSL for TLS connections.])],
+                              [Use OpenSSL for TLS connections and SCRAM-SHA-1 authentication. NOTE: OpenSSL is required for authenticating to MongoDB 3.0 and later])],
               [],
               [enable_ssl=auto])
 
