@@ -83,6 +83,8 @@ request_t *mock_server_receives_command (mock_server_t *server,
                                          const char *command_json,
                                          ...);
 
+request_t *mock_server_receives_ismaster (mock_server_t *server);
+
 request_t *mock_server_receives_gle (mock_server_t *server,
                                      const char *database_name);
 

@@ -470,6 +470,7 @@ mock_server_get_host_and_port (mock_server_t *server)
    const mongoc_uri_t *uri;
 
    uri = mock_server_get_uri (server);
+   assert (uri);  /* must call after mock_server_run */
    return (mongoc_uri_get_hosts (uri))->host_and_port;
 }
 
@@ -644,6 +645,31 @@ mock_server_receives_command (mock_server_t *server,
    bson_free (ns);
 
    return request;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_ismaster --
+ *
+ *       Pop a client ismaster call if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the current
+ *       request is not an ismaster command.
+ *
+ * Side effects:
+ *       Logs if the current request is not an ismaster command.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_ismaster (mock_server_t *server)
+{
+   return mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'isMaster': 1}");
 }
 
 

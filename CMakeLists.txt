@@ -264,6 +264,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-socket.c
    ${SOURCE_DIR}/tests/test-mongoc-stream.c
    ${SOURCE_DIR}/tests/test-mongoc-topology.c
+   ${SOURCE_DIR}/tests/test-mongoc-topology-reconcile.c
    ${SOURCE_DIR}/tests/test-mongoc-topology-scanner.c
    ${SOURCE_DIR}/tests/test-mongoc-uri.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
