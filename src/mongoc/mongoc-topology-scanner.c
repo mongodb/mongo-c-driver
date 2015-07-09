@@ -193,11 +193,8 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
 
    node->last_used = bson_get_monotonic_time ();
 
-   if (!node->ts->cb (node->id, ismaster_response, rtt_msec,
-                      node->ts->cb_data, error)) {
-      mongoc_topology_scanner_node_destroy (node, true);
-      return;
-   }
+   node->ts->cb (node->id, ismaster_response, rtt_msec,
+                 node->ts->cb_data, error);
 }
 
 static mongoc_stream_t *
@@ -355,10 +352,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
 
    if (!sock_stream) {
       /* Pass a rtt of -1 if we couldn't initialize a stream in node_setup */
-      if (!node->ts->cb (node->id, NULL, -1, node->ts->cb_data, &error)) {
-         mongoc_topology_scanner_node_destroy (node, true);
-      }
-
+      node->ts->cb (node->id, NULL, -1, node->ts->cb_data, &error);
       return false;
    }
 

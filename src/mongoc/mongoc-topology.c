@@ -89,18 +89,17 @@ mongoc_topology_reconcile (mongoc_topology_description_t *description,
  *-------------------------------------------------------------------------
  */
 
-bool
+void
 _mongoc_topology_scanner_cb (uint32_t      id,
                              const bson_t *ismaster_response,
                              int64_t       rtt_msec,
                              void         *data,
                              bson_error_t *error)
 {
-   bool r = false;
    mongoc_topology_t *topology;
    mongoc_server_description_t *sd;
 
-   bson_return_val_if_fail (data, false);
+   bson_return_if_fail (data);
 
    topology = data;
 
@@ -115,9 +114,9 @@ _mongoc_topology_scanner_cb (uint32_t      id,
    sd = mongoc_topology_description_server_by_id (&topology->description, id);
 
    if (sd) {
-      r = mongoc_topology_description_handle_ismaster (&topology->description, sd,
-                                                       ismaster_response, rtt_msec,
-                                                       error);
+      mongoc_topology_description_handle_ismaster (&topology->description, sd,
+                                                   ismaster_response, rtt_msec,
+                                                   error);
 
       /* The processing of the ismaster results above may have added/removed
        * server descriptions. We need to reconcile that with our monitoring agents
@@ -132,8 +131,6 @@ _mongoc_topology_scanner_cb (uint32_t      id,
    if (rtt_msec >= 0) {
       mongoc_mutex_unlock (&topology->mutex);
    }
-
-   return r;
 }
 
 /*

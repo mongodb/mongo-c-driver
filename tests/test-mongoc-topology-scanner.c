@@ -15,7 +15,7 @@
 #define CAFILE TRUST_DIR "/verify/mongo_root.pem"
 #define PEMFILE_NOPASS TRUST_DIR "/keys/mongodb.com.pem"
 
-static bool
+static void
 test_topology_scanner_helper (uint32_t      id,
                               const bson_t *bson,
                               int64_t       rtt_msec,
@@ -38,8 +38,6 @@ test_topology_scanner_helper (uint32_t      id,
    ASSERT_CMPINT (max_wire_version, ==, id);
 
    (*finished)--;
-
-   return *finished >= NSERVERS ? true : false;
 }
 
 static void

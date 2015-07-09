@@ -30,7 +30,7 @@
 
 BSON_BEGIN_DECLS
 
-typedef bool (*mongoc_topology_scanner_cb_t)(uint32_t      id,
+typedef void (*mongoc_topology_scanner_cb_t)(uint32_t      id,
                                              const bson_t *bson,
                                              int64_t       rtt,
                                              void         *data,

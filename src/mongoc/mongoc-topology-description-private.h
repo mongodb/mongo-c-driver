@@ -57,7 +57,7 @@ mongoc_topology_description_init (mongoc_topology_description_t     *description
 void
 mongoc_topology_description_destroy (mongoc_topology_description_t *description);
 
-bool
+void
 mongoc_topology_description_handle_ismaster (
    mongoc_topology_description_t *topology,
    mongoc_server_description_t   *sd,

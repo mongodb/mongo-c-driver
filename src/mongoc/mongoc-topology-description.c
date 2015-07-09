@@ -1172,7 +1172,7 @@ gSDAMTransitionTable[MONGOC_SERVER_DESCRIPTION_TYPES][MONGOC_TOPOLOGY_DESCRIPTIO
  *--------------------------------------------------------------------------
  */
 
-bool
+void
 mongoc_topology_description_handle_ismaster (
    mongoc_topology_description_t *topology,
    mongoc_server_description_t   *sd,
@@ -1180,18 +1180,19 @@ mongoc_topology_description_handle_ismaster (
    int64_t                        rtt_msec,
    bson_error_t                  *error)
 {
-   bson_return_val_if_fail (topology, false);
-   bson_return_val_if_fail (sd, false);
+   bson_return_if_fail (topology);
+   bson_return_if_fail (sd);
 
-   if (!_mongoc_topology_description_has_server(topology, sd->connection_address, NULL)) {
-      return false;
+   if (!_mongoc_topology_description_has_server (topology,
+                                                 sd->connection_address,
+                                                 NULL)) {
+      return;
    }
 
-   mongoc_server_description_handle_ismaster (sd, ismaster_response, rtt_msec, error);
+   mongoc_server_description_handle_ismaster (sd, ismaster_response, rtt_msec,
+                                              error);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
-      gSDAMTransitionTable[sd->type][topology->type](topology, sd);
+      gSDAMTransitionTable[sd->type][topology->type] (topology, sd);
    }
-
-   return true;
 }
