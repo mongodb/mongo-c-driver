@@ -23,7 +23,7 @@
    obj:*/libcrypto.so.*
 }
 {
-   ingore_scram_nonce_uninitialized_warning_cond
+   ignore_scram_nonce_uninitialized_warning_cond
    Memcheck:Cond
    fun:b64_ntop
    ...
@@ -31,7 +31,7 @@
    ...
 }
 {
-   ingore_scram_nonce_uninitialized_warning_value8
+   ignore_scram_nonce_uninitialized_warning_value8
    Memcheck:Value8
    fun:b64_ntop
    ...
