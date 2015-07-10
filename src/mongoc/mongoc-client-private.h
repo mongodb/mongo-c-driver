@@ -66,10 +66,6 @@ struct _mongoc_client_t
 
 
 mongoc_client_t *
-_mongoc_client_new (const char    *uri_string,
-                    mongoc_topology_t *topology);
-
-mongoc_client_t *
 _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
                              mongoc_topology_t      *topology);
 

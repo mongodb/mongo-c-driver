@@ -1128,7 +1128,29 @@ mongoc_uri_destroy (mongoc_uri_t *uri)
 mongoc_uri_t *
 mongoc_uri_copy (const mongoc_uri_t *uri)
 {
-   return mongoc_uri_new(uri->str);
+   mongoc_uri_t       *copy;
+   mongoc_host_list_t *iter;
+
+   bson_return_val_if_fail(uri, NULL);
+
+   copy = bson_malloc0(sizeof (*copy));
+
+   copy->str      = bson_strdup (uri->str);
+   copy->username = bson_strdup (uri->username);
+   copy->password = bson_strdup (uri->password);
+   copy->database = bson_strdup (uri->database);
+
+   copy->read_prefs    = mongoc_read_prefs_copy (uri->read_prefs);
+   copy->write_concern = mongoc_write_concern_copy (uri->write_concern);
+
+   for (iter = uri->hosts; iter; iter = iter->next) {
+      mongoc_uri_append_host (copy, iter->host, iter->port);
+   }
+
+   bson_copy_to (&uri->options, &copy->options);
+   bson_copy_to (&uri->credentials, &copy->credentials);
+
+   return copy;
 }
 
 

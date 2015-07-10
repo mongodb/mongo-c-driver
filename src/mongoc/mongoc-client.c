@@ -665,98 +665,23 @@ cleanup:
 mongoc_client_t *
 mongoc_client_new(const char *uri_string)
 {
-   mongoc_uri_t *uri;
    mongoc_topology_t *topology;
+   mongoc_client_t   *client;
+   mongoc_uri_t      *uri;
+
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
    }
 
-   if (!(uri = mongoc_uri_new(uri_string))) {
+   if (!(uri = mongoc_uri_new (uri_string))) {
       return NULL;
    }
 
    topology = mongoc_topology_new(uri, true);
 
+   client = _mongoc_client_new_from_uri (uri, topology);
    mongoc_uri_destroy (uri);
-
-   return _mongoc_client_new(uri_string, topology);
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_client_new --
- *
- *       Creates a new mongoc_client_t using the provided URI and topology.
- *       If the topology is single-threaded, it will be destroyed by this
- *       this client when mongoc_client_destroy is called.
- *
- * Returns:
- *       A newly allocated mongoc_client_t or NULL if @uri_string is
- *       invalid.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-mongoc_client_t *
-_mongoc_client_new (const char *uri_string, mongoc_topology_t *topology)
-{
-   const mongoc_read_prefs_t *read_prefs;
-   const mongoc_write_concern_t *write_concern;
-   mongoc_client_t *client;
-   mongoc_uri_t *uri;
-#ifdef MONGOC_ENABLE_SSL
-   const bson_t *options;
-   bson_iter_t iter;
-   bool has_ssl = false;
-#endif
-
-   bson_return_val_if_fail(topology, NULL);
-
-   if (!uri_string) {
-      uri_string = "mongodb://127.0.0.1/";
-   }
-
-   if (!(uri = mongoc_uri_new(uri_string))) {
-      return NULL;
-   }
-
-#ifdef MONGOC_ENABLE_SSL
-   options = mongoc_uri_get_options (uri);
-
-   if (bson_iter_init_find (&iter, options, "ssl") &&
-       BSON_ITER_HOLDS_BOOL (&iter) &&
-       bson_iter_bool (&iter)) {
-      has_ssl = true;
-   }
-#endif
-
-   client = bson_malloc0(sizeof *client);
-   client->uri = uri;
-   client->request_id = rand ();
-   client->initiator = mongoc_client_default_stream_initiator;
-   client->initiator_data = client;
-   client->topology = topology;
-
-   write_concern = mongoc_uri_get_write_concern (uri);
-   client->write_concern = mongoc_write_concern_copy (write_concern);
-
-   read_prefs = mongoc_uri_get_read_prefs_t(uri);
-   client->read_prefs = mongoc_read_prefs_copy(read_prefs);
-
-   mongoc_cluster_init (&client->cluster, client->uri, client);
-
-#ifdef MONGOC_ENABLE_SSL
-   if (has_ssl) {
-      mongoc_client_set_ssl_opts (client, mongoc_ssl_opt_get_default ());
-   }
-#endif
-
-   mongoc_counter_clients_active_inc ();
 
    return client;
 }
@@ -824,14 +749,10 @@ mongoc_client_t *
 mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 {
    mongoc_topology_t *topology;
-   const char *uristr;
 
-   bson_return_val_if_fail(uri, NULL);
+   topology = mongoc_topology_new (uri, true);
 
-   uristr = mongoc_uri_get_string(uri);
-
-   topology = mongoc_topology_new(uri, true);
-   return _mongoc_client_new(uristr, topology);
+   return _mongoc_client_new_from_uri (uri, topology);
 }
 
 /*
@@ -854,12 +775,45 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 mongoc_client_t *
 _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topology)
 {
-   const char *uristr;
+   mongoc_client_t *client;
+   const mongoc_read_prefs_t *read_prefs;
+   const mongoc_write_concern_t *write_concern;
+#ifdef MONGOC_ENABLE_SSL
+   const bson_t *options;
+   bson_iter_t iter;
+   bool has_ssl = false;
+#endif
 
    bson_return_val_if_fail(uri, NULL);
 
-   uristr = mongoc_uri_get_string(uri);
-   return _mongoc_client_new(uristr, topology);
+   client = bson_malloc0(sizeof *client);
+   client->uri = mongoc_uri_copy (uri);
+   client->request_id = rand ();
+   client->initiator = mongoc_client_default_stream_initiator;
+   client->initiator_data = client;
+   client->topology = topology;
+
+   write_concern = mongoc_uri_get_write_concern (client->uri);
+   client->write_concern = mongoc_write_concern_copy (write_concern);
+
+   read_prefs = mongoc_uri_get_read_prefs_t (client->uri);
+   client->read_prefs = mongoc_read_prefs_copy (read_prefs);
+
+   mongoc_cluster_init (&client->cluster, client->uri, client);
+
+#ifdef MONGOC_ENABLE_SSL
+   options = mongoc_uri_get_options (client->uri);
+
+   if (bson_iter_init_find (&iter, options, "ssl") &&
+       BSON_ITER_HOLDS_BOOL (&iter) &&
+       bson_iter_bool (&iter)) {
+         mongoc_client_set_ssl_opts (client, mongoc_ssl_opt_get_default ());
+   }
+#endif
+
+   mongoc_counter_clients_active_inc ();
+
+   return client;
 }
 
 /*

@@ -1,5 +1,6 @@
 #include <mongoc.h>
 
+#include "mongoc-client-private.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-host-list-private.h"
 
@@ -379,9 +380,12 @@ test_mongoc_uri_new (void)
 static void
 test_mongoc_uri_functions (void)
 {
+   mongoc_client_t *client;
    mongoc_uri_t *uri;
 
+
    uri = mongoc_uri_new("mongodb://foo:bar@localhost:27017/baz?authSource=source");
+
    ASSERT_CMPSTR(mongoc_uri_get_username(uri), "foo");
    ASSERT_CMPSTR(mongoc_uri_get_password(uri), "bar");
    ASSERT_CMPSTR(mongoc_uri_get_database(uri), "baz");
@@ -432,6 +436,19 @@ test_mongoc_uri_functions (void)
    ASSERT(mongoc_uri_set_option_as_utf8(uri, "random", "value"));
    ASSERT_CMPSTR(mongoc_uri_get_option_as_utf8(uri, "random", "default"), "value");
 
+   mongoc_uri_destroy(uri);
+
+
+   uri = mongoc_uri_new("mongodb://localhost/?sockettimeoutms=1");
+   ASSERT_CMPINT (1, ==, mongoc_uri_get_option_as_int32 (uri, "sockettimeoutms", 0));
+
+   mongoc_uri_set_option_as_int32 (uri, "sockettimeoutms", 2);
+   ASSERT_CMPINT (2, ==, mongoc_uri_get_option_as_int32 (uri, "sockettimeoutms", 0));
+
+   client = mongoc_client_new_from_uri (uri);
+   ASSERT_CMPINT (2, ==, client->cluster.sockettimeoutms);
+
+   mongoc_client_destroy (client);
    mongoc_uri_destroy(uri);
 }
 
