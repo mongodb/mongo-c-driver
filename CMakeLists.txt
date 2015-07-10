@@ -18,6 +18,9 @@ set (MONGOC_PRERELEASE_VERSION )
 set (MONGOC_API_VERSION 1.0)
 set (MONGOC_VERSION 1.1.9)
 
+option(MONGOC_BUILD_TESTS "Build mongoc tests." ON)
+option(MONGOC_BUILD_EXAMPLES "Build mongoc examples." ON)
+
 set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 set (CPACK_PACKAGE_VERSION_MAJOR ${MONGOC_MAJOR_VERSION})
 set (CPACK_PACKAGE_VERSION_MINOR ${MONGOC_MINOR_VERSION})
@@ -174,109 +177,120 @@ set_target_properties(mongoc_static PROPERTIES VERSION ${MONGOC_VERSION} SOVERSI
 
 set_target_properties(mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API_VERSION}" PREFIX "lib")
 set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
-enable_testing()
 
-function(mongoc_add_test test use_shared)
-   add_executable(${test} ${ARGN})
-   if (${use_shared})
-      target_link_libraries(${test} mongoc_shared)
-   else()
-      set_target_properties(${test} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
-      target_link_libraries(${test} mongoc_static)
-   endif()
-   if(WIN32)
-      target_link_libraries(${test} shlwapi)
-   endif()
-endfunction()
+if (MONGOC_BUILD_TESTS)
+   enable_testing()
 
-function(mongoc_add_example example use_shared)
-   add_executable(${example} ${ARGN})
-   if (${use_shared})
-      target_link_libraries(${example} mongoc_shared)
-   else()
-      set_target_properties(${example} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
-      target_link_libraries(${example} mongoc_static)
-   endif()
-   if(WIN32)
-      target_link_libraries(${example} shlwapi)
-   endif()
-   set (EXAMPLES ${EXAMPLES} ${example})
-endfunction()
-
-set(test-libmongoc-sources
-   ${SOURCE_DIR}/tests/ha-test.c
-   ${SOURCE_DIR}/tests/test-libmongoc.c
-   ${SOURCE_DIR}/tests/test-mongoc-array.c
-   ${SOURCE_DIR}/tests/test-mongoc-buffer.c
-   ${SOURCE_DIR}/tests/test-mongoc-client.c
-   ${SOURCE_DIR}/tests/mock-server.c
-   ${SOURCE_DIR}/tests/test-bulk.c
-   ${SOURCE_DIR}/tests/test-mongoc-client-pool.c
-   ${SOURCE_DIR}/tests/test-mongoc-cluster.c
-   ${SOURCE_DIR}/tests/test-mongoc-collection.c
-   ${SOURCE_DIR}/tests/test-mongoc-cursor.c
-   ${SOURCE_DIR}/tests/test-mongoc-database.c
-   ${SOURCE_DIR}/tests/test-mongoc-gridfs.c
-   ${SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
-   ${SOURCE_DIR}/tests/test-mongoc-list.c
-   ${SOURCE_DIR}/tests/test-mongoc-matcher.c
-   ${SOURCE_DIR}/tests/test-mongoc-queue.c
-   ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
-   ${SOURCE_DIR}/tests/test-mongoc-rpc.c
-   ${SOURCE_DIR}/tests/test-mongoc-socket.c
-   ${SOURCE_DIR}/tests/test-mongoc-stream.c
-   ${SOURCE_DIR}/tests/test-mongoc-uri.c
-   ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
-   ${SOURCE_DIR}/tests/test-sasl.c
-   ${SOURCE_DIR}/tests/test-write-commands.c
-   ${SOURCE_DIR}/tests/TestSuite.c
-)
-
-if (OPENSSL_FOUND)
-   set(test-libmongoc-sources ${test-libmongoc-sources}
-      ${SOURCE_DIR}/tests/test-x509.c
-      ${SOURCE_DIR}/tests/ssl-test.c
-      ${SOURCE_DIR}/tests/test-mongoc-stream-tls.c
-      ${SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c)
-   mongoc_add_test(test-replica-set-ssl FALSE
-      ${SOURCE_DIR}/tests/test-replica-set-ssl.c
-      ${SOURCE_DIR}/tests/ha-test.c
-      ${SOURCE_DIR}/tests/mongoc-tests.c
-   )
+   function(mongoc_add_test test use_shared)
+      add_executable(${test} ${ARGN})
+      if (${use_shared})
+         target_link_libraries(${test} mongoc_shared)
+      else()
+         set_target_properties(${test} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
+         target_link_libraries(${test} mongoc_static)
+      endif()
+      if(WIN32)
+         target_link_libraries(${test} shlwapi)
+      endif()
+   endfunction()
 endif()
 
-mongoc_add_test(test-load FALSE
-   ${SOURCE_DIR}/tests/test-load.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c)
-mongoc_add_test(test-secondary FALSE
-   ${SOURCE_DIR}/tests/test-secondary.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c)
-mongoc_add_test(test-replica-set FALSE
-   ${SOURCE_DIR}/tests/test-replica-set.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c
-   ${SOURCE_DIR}/tests/ha-test.c)
-mongoc_add_test(test-sharded-cluster FALSE
-   ${SOURCE_DIR}/tests/test-sharded-cluster.c
-   ${SOURCE_DIR}/tests/mongoc-tests.c
-   ${SOURCE_DIR}/tests/ha-test.c)
+if (MONGOC_BUILD_EXAMPLES)
+   function(mongoc_add_example example use_shared)
+      add_executable(${example} ${ARGN})
+      if (${use_shared})
+         target_link_libraries(${example} mongoc_shared)
+      else()
+         set_target_properties(${example} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
+         target_link_libraries(${example} mongoc_static)
+      endif()
+      if(WIN32)
+         target_link_libraries(${example} shlwapi)
+      endif()
+      set (EXAMPLES ${EXAMPLES} ${example})
+   endfunction()
+endif()
 
-mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
-add_test(NAME test-libmongoc COMMAND test-libmongoc -f -p)
+if (MONGOC_BUILD_TESTS)
+   set(test-libmongoc-sources
+      ${SOURCE_DIR}/tests/ha-test.c
+      ${SOURCE_DIR}/tests/test-libmongoc.c
+      ${SOURCE_DIR}/tests/test-mongoc-array.c
+      ${SOURCE_DIR}/tests/test-mongoc-buffer.c
+      ${SOURCE_DIR}/tests/test-mongoc-client.c
+      ${SOURCE_DIR}/tests/mock-server.c
+      ${SOURCE_DIR}/tests/test-bulk.c
+      ${SOURCE_DIR}/tests/test-mongoc-client-pool.c
+      ${SOURCE_DIR}/tests/test-mongoc-cluster.c
+      ${SOURCE_DIR}/tests/test-mongoc-collection.c
+      ${SOURCE_DIR}/tests/test-mongoc-cursor.c
+      ${SOURCE_DIR}/tests/test-mongoc-database.c
+      ${SOURCE_DIR}/tests/test-mongoc-gridfs.c
+      ${SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
+      ${SOURCE_DIR}/tests/test-mongoc-list.c
+      ${SOURCE_DIR}/tests/test-mongoc-matcher.c
+      ${SOURCE_DIR}/tests/test-mongoc-queue.c
+      ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
+      ${SOURCE_DIR}/tests/test-mongoc-rpc.c
+      ${SOURCE_DIR}/tests/test-mongoc-socket.c
+      ${SOURCE_DIR}/tests/test-mongoc-stream.c
+      ${SOURCE_DIR}/tests/test-mongoc-uri.c
+      ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
+      ${SOURCE_DIR}/tests/test-sasl.c
+      ${SOURCE_DIR}/tests/test-write-commands.c
+      ${SOURCE_DIR}/tests/TestSuite.c
+   )
 
-mongoc_add_example(example-gridfs TRUE ${SOURCE_DIR}/examples/example-gridfs.c)
-mongoc_add_example(example-client TRUE ${SOURCE_DIR}/examples/example-client.c)
-mongoc_add_example(example-scram TRUE ${SOURCE_DIR}/examples/example-scram.c)
-mongoc_add_example(mongoc-dump TRUE ${SOURCE_DIR}/examples/mongoc-dump.c)
-mongoc_add_example(mongoc-ping TRUE ${SOURCE_DIR}/examples/mongoc-ping.c)
-mongoc_add_example(mongoc-rpc-validate FALSE ${SOURCE_DIR}/examples/mongoc-rpc-validate.c)
-mongoc_add_example(mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)
+   if (OPENSSL_FOUND)
+      set(test-libmongoc-sources ${test-libmongoc-sources}
+         ${SOURCE_DIR}/tests/test-x509.c
+         ${SOURCE_DIR}/tests/ssl-test.c
+         ${SOURCE_DIR}/tests/test-mongoc-stream-tls.c
+         ${SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c)
+      mongoc_add_test(test-replica-set-ssl FALSE
+         ${SOURCE_DIR}/tests/test-replica-set-ssl.c
+         ${SOURCE_DIR}/tests/ha-test.c
+         ${SOURCE_DIR}/tests/mongoc-tests.c
+      )
+   endif()
 
-file(COPY ${SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
-file(COPY ${SOURCE_DIR}/tests/certificates DESTINATION ${PROJECT_BINARY_DIR}/tests)
+   mongoc_add_test(test-load FALSE
+      ${SOURCE_DIR}/tests/test-load.c
+      ${SOURCE_DIR}/tests/mongoc-tests.c)
+   mongoc_add_test(test-secondary FALSE
+      ${SOURCE_DIR}/tests/test-secondary.c
+      ${SOURCE_DIR}/tests/mongoc-tests.c)
+   mongoc_add_test(test-replica-set FALSE
+      ${SOURCE_DIR}/tests/test-replica-set.c
+      ${SOURCE_DIR}/tests/mongoc-tests.c
+      ${SOURCE_DIR}/tests/ha-test.c)
+   mongoc_add_test(test-sharded-cluster FALSE
+      ${SOURCE_DIR}/tests/test-sharded-cluster.c
+      ${SOURCE_DIR}/tests/mongoc-tests.c
+      ${SOURCE_DIR}/tests/ha-test.c)
+
+   mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
+   add_test(NAME test-libmongoc COMMAND test-libmongoc -f -p)
+endif()
+
+if (MONGOC_BUILD_EXAMPLES)
+   mongoc_add_example(example-gridfs TRUE ${SOURCE_DIR}/examples/example-gridfs.c)
+   mongoc_add_example(example-client TRUE ${SOURCE_DIR}/examples/example-client.c)
+   mongoc_add_example(example-scram TRUE ${SOURCE_DIR}/examples/example-scram.c)
+   mongoc_add_example(mongoc-dump TRUE ${SOURCE_DIR}/examples/mongoc-dump.c)
+   mongoc_add_example(mongoc-ping TRUE ${SOURCE_DIR}/examples/mongoc-ping.c)
+   mongoc_add_example(mongoc-rpc-validate FALSE ${SOURCE_DIR}/examples/mongoc-rpc-validate.c)
+   mongoc_add_example(mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)
+endif()
+
+if (MONGOC_BUILD_TESTS)
+   file(COPY ${SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
+   file(COPY ${SOURCE_DIR}/tests/certificates DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
 #if (OPENSSL_FOUND)
 #   file(COPY ${SOURCE_DIR}/tests/trust_dir DESTINATION ${PROJECT_BINARY_DIR}/tests)
 #endif()
+endif()
 
 install(
   TARGETS mongoc_shared mongoc_static ${EXAMPLES}
