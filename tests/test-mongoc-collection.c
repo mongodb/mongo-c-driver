@@ -411,8 +411,13 @@ test_legacy_bulk_insert_oversized (void)
 
       /* third batch not sent */
       assert (!future_get_bool (future));
-      ASSERT_CMPINT (MONGOC_ERROR_BSON, ==, error.domain);
-      ASSERT_CMPINT (MONGOC_ERROR_BSON_INVALID, ==, error.code);
+
+      /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
+      assert (
+         (error.domain == MONGOC_ERROR_COMMAND) ||
+         (error.domain == MONGOC_ERROR_BSON &&
+          error.code == MONGOC_ERROR_BSON_INVALID));
+
       ASSERT_STARTSWITH (error.message, "Document 3 is too large");
 
       gle = mongoc_collection_get_last_error (collection);
@@ -481,8 +486,12 @@ test_legacy_bulk_insert_oversized_first (void)
 
       /* nothing sent */
       assert (!future_get_bool (future));
-      ASSERT_CMPINT (MONGOC_ERROR_BSON, ==, error.domain);
-      ASSERT_CMPINT (MONGOC_ERROR_BSON_INVALID, ==, error.code);
+
+      /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
+      assert (
+         (error.domain == MONGOC_ERROR_COMMAND) ||
+         (error.domain == MONGOC_ERROR_BSON &&
+          error.code == MONGOC_ERROR_BSON_INVALID));
       ASSERT_STARTSWITH (error.message, "Document 0 is too large");
 
       gle = mongoc_collection_get_last_error (collection);

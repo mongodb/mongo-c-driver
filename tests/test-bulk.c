@@ -1760,8 +1760,10 @@ test_large_inserts_ordered ()
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
    /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
-   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
-   ASSERT_CMPINT (error.code, ==, 2);
+   assert (
+      (error.domain == MONGOC_ERROR_COMMAND) ||
+      (error.domain == MONGOC_ERROR_BSON &&
+       error.code == MONGOC_ERROR_BSON_INVALID));
 
    ASSERT_MATCH (&reply, "{'nInserted': 1,"
                          " 'nMatched': 0,"
