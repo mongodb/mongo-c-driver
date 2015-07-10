@@ -2034,6 +2034,13 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
 
    now = bson_get_monotonic_time ();
 
+   if (scanner_node->last_used + (1000 * CHECK_CLOSED_DURATION_MSEC) < now) {
+      if (mongoc_stream_check_closed (stream)) {
+         mongoc_cluster_disconnect_node (cluster, server_id);
+         return false;
+      }
+   }
+
    if (scanner_node->last_used + (1000 * cluster->socketcheckintervalms) <
        now) {
       bson_init (&command);
