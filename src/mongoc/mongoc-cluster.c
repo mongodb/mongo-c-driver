@@ -1351,8 +1351,6 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    cluster->requires_auth = (mongoc_uri_get_username(uri) ||
                              mongoc_uri_get_auth_mechanism(uri));
 
-   cluster->sec_latency_ms = 15;
-
    cluster->sockettimeoutms = mongoc_uri_get_option_as_int32(
       uri, "sockettimeoutms", MONGOC_DEFAULT_SOCKETTIMEOUTMS);
 

@@ -42,8 +42,6 @@
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_CLUSTER_PING_NUM_SAMPLES 5
-
 typedef struct _mongoc_cluster_node_t
 {
    mongoc_stream_t *stream;
@@ -62,16 +60,12 @@ typedef struct _mongoc_cluster_t
    uint32_t         request_id;
    uint32_t         sockettimeoutms;
    uint32_t         socketcheckintervalms;
-   int64_t          last_reconnect;
    mongoc_uri_t    *uri;
    unsigned         requires_auth : 1;
 
    mongoc_client_t *client;
-   uint32_t         sec_latency_ms;
 
    mongoc_set_t    *nodes;
-   int32_t          active_nodes;
-
    mongoc_array_t   iov;
 } mongoc_cluster_t;
 
