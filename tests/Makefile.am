@@ -220,7 +220,7 @@ DISTCLEANFILES += \
 	tests/trust_dir/ca.db.serial.old \
 	tests/trust_dir/crl/root.crl.pem
 
-.PHONY: test_certs
+.PHONY: test_certs valgrind debug
 
 EXTRA_DIST += \
 	tests/abicheck.sh \
