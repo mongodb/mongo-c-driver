@@ -266,34 +266,16 @@ make_document (size_t bytes)
 }
 
 
-bson_t **
-make_bulk_insert (int n,
+void
+make_bulk_insert (bson_t **bsons,
+                  int n,
                   size_t bytes)
 {
    int i;
-   bson_t **bsons;
 
-   bsons = (bson_t **) bson_malloc0 (n * sizeof(bson_t *));
-   
    for (i = 0; i < n; i++) {
       bsons[i] = make_document (bytes);
    }
-
-   return bsons;
-}
-
-
-static void 
-bson_ptr_free (bson_t **ptr,
-               int n)
-{
-   int i;
-   
-   for (i = 0; i < n; i++) {
-      bson_destroy (ptr[i]);
-   }
-   
-   bson_free (ptr);
 }
 
 
@@ -330,10 +312,12 @@ receive_bulk (mock_server_t *server,
 static void
 test_legacy_bulk_insert_large (void)
 {
+   const int N_BSONS = 10;
+
    mock_server_t *server;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
-   bson_t **bsons;
+   bson_t *bsons[N_BSONS];
    bson_error_t error;
    future_t *future;
 
@@ -345,8 +329,8 @@ test_legacy_bulk_insert_large (void)
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   /* 10 docs size 50 bytes each */
-   bsons = make_bulk_insert (10, 50);
+   /* docs size 50 bytes each */
+   make_bulk_insert (bsons, N_BSONS, 50);
 
    /* max message of 240 bytes, so 4 docs per batch, 3 batches. */
    auto_ismaster (server,
@@ -364,7 +348,7 @@ test_legacy_bulk_insert_large (void)
    assert (future_get_bool (future));
 
    future_destroy (future);
-   bson_ptr_free (bsons, 10);
+   destroy_all (bsons, N_BSONS);
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
    mock_server_destroy (server);
@@ -1575,6 +1559,8 @@ test_large_return (void)
 static void
 test_many_return (void)
 {
+   const int N_BSONS = 5000;
+
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
@@ -1582,7 +1568,7 @@ test_many_return (void)
    const bson_t *doc = NULL;
    bson_oid_t oid;
    bson_t query = BSON_INITIALIZER;
-   bson_t **docs;
+   bson_t *docs[N_BSONS];
    bool r;
    int i;
 
@@ -1592,9 +1578,7 @@ test_many_return (void)
    collection = get_test_collection (client, "test_many_return");
    ASSERT (collection);
 
-   docs = bson_malloc (sizeof(bson_t*) * 5000);
-
-   for (i = 0; i < 5000; i++) {
+   for (i = 0; i < N_BSONS; i++) {
       docs [i] = bson_new ();
       bson_oid_init (&oid, NULL);
       BSON_APPEND_OID (docs [i], "_id", &oid);
@@ -1602,13 +1586,11 @@ test_many_return (void)
 
 BEGIN_IGNORE_DEPRECATIONS;
 
-   r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **)docs, 5000, NULL, &error);
+   r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **)docs, N_BSONS, NULL, &error);
 
 END_IGNORE_DEPRECATIONS;
 
    assert (r);
-
-   bson_ptr_free (docs, 5000);
 
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 6000, &query, NULL, NULL);
    assert (cursor);
@@ -1621,7 +1603,7 @@ END_IGNORE_DEPRECATIONS;
       i++;
    }
 
-   assert (i == 5000);
+   assert (i == N_BSONS);
 
    r = mongoc_cursor_next (cursor, &doc);
    assert (!r);
@@ -1631,6 +1613,7 @@ END_IGNORE_DEPRECATIONS;
    r = mongoc_collection_drop (collection, &error);
    assert (r);
 
+   destroy_all (docs, N_BSONS);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
