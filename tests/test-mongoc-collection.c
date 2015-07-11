@@ -298,6 +298,18 @@ bson_ptr_free (bson_t **ptr,
 
 
 static void
+destroy_all (bson_t **ptr,
+             int n)
+{
+   int i;
+
+   for (i = 0; i < n; i++) {
+      bson_destroy (ptr[i]);
+   }
+}
+
+
+static void
 receive_bulk (mock_server_t *server,
               int n,
               mongoc_insert_flags_t flags)
@@ -359,20 +371,78 @@ test_legacy_bulk_insert_large (void)
 }
 
 
-static void
-test_legacy_bulk_insert_oversized (void)
+/* number of docs that should go in a batch that starts at "offset" */
+int
+expected_batch_size (const bson_t **bsons,
+                     int n_bsons,
+                     int max_message_size,
+                     int max_bson_size,
+                     bool continue_on_err,
+                     int *offset,            /* IN / OUT */
+                     bool *has_oversized)    /* OUT */
 {
-   const int N_BSONS = 5;
-   bson_t *bsons[N_BSONS];
+   int batch_sz = 0;
+   int msg_sz = 0;
+   bool oversized;
+   int n_oversized = 0;
+
+   for (; *offset < n_bsons; (*offset)++) {
+      oversized = (bsons[*offset]->len > max_bson_size);
+
+      if (oversized) {
+         n_oversized++;
+
+         if (!continue_on_err) {
+            /* stop here */
+            return batch_sz;
+         }
+      } else {
+         /* not oversized, regular document */
+         msg_sz += bsons[*offset]->len;
+
+         if (msg_sz >= max_message_size) {
+            /* batch is full of regular documents */
+            break;
+         }
+
+         batch_sz++;
+      }
+   }
+
+   *has_oversized = (bool) n_oversized;
+
+   return batch_sz;
+}
+
+
+static void
+_test_legacy_bulk_insert (const bson_t **bsons,
+                          int n_bsons,
+                          bool continue_on_err,
+                          const char *err_msg,
+                          const char *gle_json,
+                          ...)
+{
+   const int MAX_MESSAGE_SIZE = 300;
+   const int MAX_BSON_SIZE = 200;
+
+   va_list args;
+   char *gle_json_formatted;
    mock_server_t *server;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_error_t error;
    future_t *future;
-   int i;
    mongoc_insert_flags_t flags;
+   int offset;
+   bool has_oversized;
+   int batch_sz;
    const bson_t *gle;
 
+   va_start (args, gle_json);
+   gle_json_formatted = bson_strdupv_printf (gle_json, args);
+   va_end (args);
+   
    server = mock_server_new ();
    mock_server_run (server);
 
@@ -382,9 +452,61 @@ test_legacy_bulk_insert_oversized (void)
    collection = mongoc_client_get_collection (client, "test", "test");
 
    auto_ismaster (server,
-                  300,    /* max_message_size */
-                  200,    /* max_bson_size */
-                  1);     /* max_write_batch_size, irrelevant */
+                  MAX_MESSAGE_SIZE,
+                  MAX_BSON_SIZE,
+                  1 /* max_write_batch_size, irrelevant */ );
+
+   flags = continue_on_err ?
+           MONGOC_INSERT_CONTINUE_ON_ERROR :
+           MONGOC_INSERT_NONE;
+
+   future = future_collection_insert_bulk (
+      collection, flags, bsons, (uint32_t) n_bsons, NULL, &error);
+
+   offset = 0;
+
+   /* mock server receives each batch. check each is the right size. */
+   while ((batch_sz = expected_batch_size (bsons, n_bsons,
+                                           MAX_MESSAGE_SIZE, MAX_BSON_SIZE,
+                                           continue_on_err,
+                                           &offset, &has_oversized))) {
+      receive_bulk (server, batch_sz, flags);
+      if (has_oversized && !continue_on_err) {
+         break;
+      }
+   }
+
+   /* mongoc_collection_insert_bulk returns false, there was an error */
+   assert (!future_get_bool (future));
+
+   /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
+   assert (
+      (error.domain == MONGOC_ERROR_COMMAND) ||
+      (error.domain == MONGOC_ERROR_BSON &&
+       error.code == MONGOC_ERROR_BSON_INVALID));
+
+   ASSERT_STARTSWITH (error.message, err_msg);
+
+   gle = mongoc_collection_get_last_error (collection);
+   assert (gle);
+
+   /* TODO: should contain inserted ids, CDRIVER-703 */
+   ASSERT_MATCH (gle, gle_json_formatted);
+
+   future_destroy (future);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+   mock_server_destroy (server);
+   bson_free (gle_json_formatted);
+}
+
+
+static void
+_test_legacy_bulk_insert_oversized_middle (bool continue_on_err)
+{
+   const int N_BSONS = 5;
+   
+   bson_t *bsons[N_BSONS];
 
    /* first batch */
    bsons[0] = make_document (100);
@@ -394,129 +516,109 @@ test_legacy_bulk_insert_oversized (void)
    bsons[2] = make_document (100);
    bsons[3] = make_document (300);  /* too big */
 
-   /* final batch (won't be sent) */
+   /* final batch, only sent if continue_on_err */
    bsons[4] = make_document (100);
 
-   flags = MONGOC_INSERT_NONE;
+   _test_legacy_bulk_insert (
+      (const bson_t **) bsons, N_BSONS, continue_on_err,
+      "Document 3 is too large",
+      "{'nInserted': %d,"
+      " 'nMatched': 0,"
+      " 'nRemoved': 0,"
+      " 'nUpserted': 0,"
+      " 'writeErrors': [{'index': 3}]}",
+      continue_on_err ? 4 : 3);
 
-   for (i = 0; i < 2; i++) {
-      future = future_collection_insert_bulk (collection, flags,
-                                              (const bson_t **) bsons, N_BSONS,
-                                              NULL, &error);
+   destroy_all (bsons, N_BSONS);
+}
 
-      /* first batch */
-      receive_bulk (server, 2, flags);
-      /* second batch stops before big document */
-      receive_bulk (server, 1, flags);
+static void
+test_legacy_bulk_insert_oversized_middle (void)
+{
+   _test_legacy_bulk_insert_oversized_middle (false);
+}
 
-      /* third batch not sent */
-      assert (!future_get_bool (future));
 
-      /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
-      assert (
-         (error.domain == MONGOC_ERROR_COMMAND) ||
-         (error.domain == MONGOC_ERROR_BSON &&
-          error.code == MONGOC_ERROR_BSON_INVALID));
+static void
+test_legacy_bulk_insert_oversized_continue_middle (void)
+{
+   _test_legacy_bulk_insert_oversized_middle (true);
+}
 
-      ASSERT_STARTSWITH (error.message, "Document 3 is too large");
 
-      gle = mongoc_collection_get_last_error (collection);
-      assert (gle);
+static void
+_test_legacy_bulk_insert_oversized_first (bool continue_on_err)
+{
+   const int N_BSONS = 2;
 
-      /* TODO: should contain inserted ids, CDRIVER-703 */
-      ASSERT_MATCH (gle,
-                    "{'nInserted': 3,"
-                    " 'nMatched': 0,"
-                    " 'nRemoved': 0,"
-                    " 'nUpserted': 0,"
-                    " 'writeErrors': []}");
+   bson_t *bsons[N_BSONS];
 
-      future_destroy (future);
+   bsons[0] = make_document (300);   /* too big */ 
+   bsons[1] = make_document (100);
 
-      /* test same behavior with continueOnError */
-      flags = MONGOC_INSERT_CONTINUE_ON_ERROR;
-   }
+   _test_legacy_bulk_insert (
+      (const bson_t **) bsons, N_BSONS, continue_on_err,
+      "Document 0 is too large",
+      "{'nInserted': %d,"
+      " 'nMatched': 0,"
+      " 'nRemoved': 0,"
+      " 'nUpserted': 0,"
+      " 'writeErrors': [{'index': 0}]}",
+      continue_on_err ? 1 : 0);
 
-   for (i = 0; i < N_BSONS; i++) {
-      bson_destroy (bsons[i]);
-   }
-
-   mongoc_collection_destroy(collection);
-   mongoc_client_destroy(client);
-   mock_server_destroy (server);
+   destroy_all (bsons, N_BSONS);
 }
 
 
 static void
 test_legacy_bulk_insert_oversized_first (void)
 {
+   _test_legacy_bulk_insert_oversized_first (false);
+}
+
+
+static void
+test_legacy_bulk_insert_oversized_first_continue (void)
+{
+   _test_legacy_bulk_insert_oversized_first (true);
+}
+
+
+static void
+_test_legacy_bulk_insert_oversized_last (bool continue_on_err)
+{
    const int N_BSONS = 2;
+
    bson_t *bsons[N_BSONS];
-   mock_server_t *server;
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   bson_error_t error;
-   future_t *future;
-   int i;
-   mongoc_insert_flags_t flags;
-   const bson_t *gle;
 
-   server = mock_server_new ();
-   mock_server_run (server);
+   bsons[0] = make_document (100);
+   bsons[1] = make_document (300);  /* too big */
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-   ASSERT (client);
+   _test_legacy_bulk_insert (
+      (const bson_t **) bsons, N_BSONS, continue_on_err,
+      "Document 1 is too large",
+      "{'nInserted': 1,"
+      " 'nMatched': 0,"
+      " 'nRemoved': 0,"
+      " 'nUpserted': 0,"
+      " 'writeErrors': [{'index': 1}]}");
 
-   collection = mongoc_client_get_collection (client, "test", "test");
+   destroy_all (bsons, N_BSONS);
+}
 
-   auto_ismaster (server,
-                  300,    /* max_message_size */
-                  200,    /* max_bson_size */
-                  1);     /* max_write_batch_size, irrelevant */
 
-   bsons[0] = make_document (300);  /* too big */
-   bsons[1] = make_document (100);
+static void
+test_legacy_bulk_insert_oversized_last (void)
+{
+   _test_legacy_bulk_insert_oversized_last (false);
+}
 
-   flags = MONGOC_INSERT_NONE;
 
-   for (i = 0; i < 2; i++) {
-      future = future_collection_insert_bulk (collection, flags,
-                                              (const bson_t **) bsons, N_BSONS,
-                                              NULL, &error);
 
-      /* nothing sent */
-      assert (!future_get_bool (future));
-
-      /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
-      assert (
-         (error.domain == MONGOC_ERROR_COMMAND) ||
-         (error.domain == MONGOC_ERROR_BSON &&
-          error.code == MONGOC_ERROR_BSON_INVALID));
-      ASSERT_STARTSWITH (error.message, "Document 0 is too large");
-
-      gle = mongoc_collection_get_last_error (collection);
-      assert (gle);
-
-      ASSERT_MATCH (gle,
-                    "{'nInserted': 0,"
-                    " 'nMatched': 0,"
-                    " 'nRemoved': 0,"
-                    " 'nUpserted': 0,"
-                    " 'writeErrors': []}");
-
-      future_destroy (future);
-
-      /* test same behavior with continueOnError */
-      flags = MONGOC_INSERT_CONTINUE_ON_ERROR;
-   }
-
-   for (i = 0; i < N_BSONS; i++) {
-      bson_destroy (bsons[i]);
-   }
-
-   mongoc_collection_destroy(collection);
-   mongoc_client_destroy(client);
-   mock_server_destroy (server);
+static void
+test_legacy_bulk_insert_oversized_last_continue (void)
+{
+   _test_legacy_bulk_insert_oversized_last (true);
 }
 
 
@@ -1703,12 +1805,29 @@ void
 test_collection_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Collection/insert_bulk", test_insert_bulk);
-   TestSuite_Add (suite, "/Collection/legacy_bulk_insert_large",
+
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/large",
                   test_legacy_bulk_insert_large);
-   TestSuite_Add (suite, "/Collection/legacy_bulk_insert_oversized",
-                  test_legacy_bulk_insert_oversized);
-   TestSuite_Add (suite, "/Collection/legacy_bulk_insert_oversized_first",
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_middle",
+                  test_legacy_bulk_insert_oversized_middle);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized__middle_continue",
+                  test_legacy_bulk_insert_oversized_continue_middle);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_first",
                   test_legacy_bulk_insert_oversized_first);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_first_continue",
+                  test_legacy_bulk_insert_oversized_first_continue);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_last",
+                  test_legacy_bulk_insert_oversized_last);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_last_continue",
+                  test_legacy_bulk_insert_oversized_last_continue);
+
    TestSuite_Add (suite, "/Collection/insert", test_insert);
    TestSuite_Add (suite, "/Collection/save", test_save);
    TestSuite_Add (suite, "/Collection/index", test_index);

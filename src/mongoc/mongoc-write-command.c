@@ -341,18 +341,49 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
 }
 
 
+/*
+ *-------------------------------------------------------------------------
+ *
+ * too_large_error --
+ *
+ *       Fill a bson_error_t and optional bson_t with error info after
+ *       receiving a document for bulk insert, update, or remove that is
+ *       larger than max_bson_size.
+ *
+ *       "err_doc" should be NULL or an empty initialized bson_t.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       "error" and optionally "err_doc" are filled out.
+ *
+ *-------------------------------------------------------------------------
+ */
+
 static void
 too_large_error (bson_error_t *error,
                  int32_t       index,
                  int32_t       len,
-                 int32_t       max_bson_size)
+                 int32_t       max_bson_size,
+                 bson_t       *err_doc)
 {
-   bson_set_error (error,
-                   MONGOC_ERROR_BSON,
-                   MONGOC_ERROR_BSON_INVALID,
-                   "Document %u is too large for the cluster. "
-                   "Document is %u bytes, max is %d.",
-                   index, len, max_bson_size);
+   /* MongoDB 2.6 uses code 2 for "too large". TODO: see CDRIVER-644 */
+   const int code = 2;
+   char *msg;
+
+   msg = bson_strdup_printf (
+      "Document %u is too large for the cluster. "
+         "Document is %u bytes, max is %d.",
+      index, len, max_bson_size);
+
+   bson_set_error (error, MONGOC_ERROR_BSON, code, "%s", msg);
+
+   if (err_doc) {
+      BSON_APPEND_INT32 (err_doc, "index", index);
+      BSON_APPEND_UTF8 (err_doc, "err", msg);
+      BSON_APPEND_INT32 (err_doc, "code", code);
+   }
 }
 
 
@@ -367,6 +398,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
                                      mongoc_write_result_t        *result,
                                      bson_error_t                 *error)
 {
+   uint32_t current_offset;
    mongoc_iovec_t *iov;
    const uint8_t *data;
    mongoc_rpc_t rpc;
@@ -377,12 +409,11 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    bool has_more;
    char ns [MONGOC_NAMESPACE_MAX + 1];
    bool r;
-   uint32_t i;
+   uint32_t n_docs_in_batch;
    uint32_t index = 0;
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    bool singly;
-   bool too_large;
 
    ENTRY;
 
@@ -392,6 +423,8 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    BSON_ASSERT (hint);
    BSON_ASSERT (collection);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
+
+   current_offset = offset;
 
    max_bson_obj_size = mongoc_cluster_node_max_bson_obj_size(&client->cluster, hint);
    max_msg_size = mongoc_cluster_node_max_msg_size (&client->cluster, hint);
@@ -419,7 +452,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
 
 again:
    has_more = false;
-   i = 0;
+   n_docs_in_batch = 0;
    size = (uint32_t)(sizeof (mongoc_rpc_header_t) +
                      4 +
                      strlen (database) +
@@ -429,35 +462,46 @@ again:
 
    do {
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
-      BSON_ASSERT (i < command->n_documents);
+      BSON_ASSERT (n_docs_in_batch <= index);
+      BSON_ASSERT (index < command->n_documents);
 
       bson_iter_document (&iter, &len, &data);
 
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
 
-      /*
-       * Check that the server can receive this document.
-       */
-      too_large = (len > max_bson_obj_size);
+      if (len > max_bson_obj_size) {
+         /* document is too large */
+         bson_t write_err_doc = BSON_INITIALIZER;
 
-      /*
-       * Check that we will not overflow our max message size.
-       */
-      if (too_large || (i == 1 && singly) || size > (max_msg_size - len)) {
+         too_large_error (error, index, len,
+                          max_bson_obj_size, &write_err_doc);
+
+         _mongoc_write_result_merge_legacy (result, command,
+                                            &write_err_doc, offset + index);
+
+         bson_destroy (&write_err_doc);
+
+         if (command->ordered) {
+            /* send the batch so far (if any) and return the error */
+            break;
+         }
+      } else if ((n_docs_in_batch == 1 && singly) || size > (max_msg_size - len)) {
+         /* batch is full, send it and then start the next batch */
          has_more = true;
          break;
+      } else {
+         /* add document to batch and continue building the batch */
+         iov[n_docs_in_batch].iov_base = (void *) data;
+         iov[n_docs_in_batch].iov_len = len;
+         size += len;
+         n_docs_in_batch++;
       }
 
-      iov [i].iov_base = (void *)data;
-      iov [i].iov_len = len;
-
-      size += len;
-      i++;
       index++;
    } while (bson_iter_next (&iter));
 
-   if (i) {
+   if (n_docs_in_batch) {
       rpc.insert.msg_len = 0;
       rpc.insert.request_id = 0;
       rpc.insert.response_to = 0;
@@ -467,7 +511,7 @@ again:
                           : MONGOC_INSERT_CONTINUE_ON_ERROR);
       rpc.insert.collection = ns;
       rpc.insert.documents = iov;
-      rpc.insert.n_documents = i;
+      rpc.insert.n_documents = n_docs_in_batch;
 
       hint = _mongoc_client_sendv (client, &rpc, 1, hint, write_concern,
                                    NULL, error);
@@ -497,7 +541,7 @@ again:
              bson_iter_init_find (&citer, gle, "n") &&
              BSON_ITER_HOLDS_INT32 (&citer) &&
              !bson_iter_int32 (&citer)) {
-            bson_iter_overwrite_int32 (&citer, i);
+            bson_iter_overwrite_int32 (&citer, n_docs_in_batch);
          }
       }
    }
@@ -505,16 +549,13 @@ again:
 cleanup:
 
    if (gle) {
-      _mongoc_write_result_merge_legacy (result, command, gle, offset);
-      offset += i;
+      _mongoc_write_result_merge_legacy (result, command, gle, current_offset);
+      current_offset = offset + index;
       bson_destroy (gle);
       gle = NULL;
    }
 
-   if (too_large) {
-      too_large_error (error, index, len, max_bson_obj_size);
-      result->failed = true;
-   } else if (has_more) {
+   if (has_more) {
       GOTO (again);
    }
 
@@ -854,7 +895,7 @@ again:
    }
 
    if (!i) {
-      too_large_error (error, i, len, max_bson_obj_size);
+      too_large_error (error, i, len, max_bson_obj_size, NULL);
       result->failed = true;
       ret = false;
    } else {
