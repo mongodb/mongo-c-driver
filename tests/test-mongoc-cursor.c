@@ -188,6 +188,8 @@ _test_kill_cursors (bool pooled)
    ASSERT_CMPINT (request_get_server_port (kill_cursors), ==,
                   request_get_server_port (request));
 
+   assert (future_wait (future));
+
    request_destroy (kill_cursors);
    request_destroy (request);
    future_destroy (future);
