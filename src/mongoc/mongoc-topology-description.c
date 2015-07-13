@@ -505,7 +505,7 @@ mongoc_topology_description_server_by_id (mongoc_topology_description_t *descrip
  *       None.
  *
  * Side effects:
- *       Removes server from topology's list of servers.
+ *       Removes the server description from topology and destroys it.
  *
  *--------------------------------------------------------------------------
  */
@@ -654,6 +654,19 @@ _mongoc_topology_description_set_state (mongoc_topology_description_t *descripti
    description->type = type;
 }
 
+
+static void
+_check_if_has_primary (mongoc_topology_description_t *topology)
+{
+   if (_mongoc_topology_description_has_primary(topology)) {
+      _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
+   }
+   else {
+      _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
+   }
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -675,12 +688,7 @@ static void
 _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t *topology,
                                                    mongoc_server_description_t   *server)
 {
-   if (_mongoc_topology_description_has_primary(topology)) {
-      _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
-   }
-   else {
-      _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
-   }
+   _check_if_has_primary (topology);
 }
 
 /*
@@ -802,19 +810,46 @@ _mongoc_topology_description_invalidate_primaries_cb (void *item,
    return true;
 }
 
-/* Stop monitoring any servers primary doesn't know about */
-static bool
-_mongoc_topology_description_remove_missing_hosts_cb (void *item,
-                                                      void *ctx)
-{
-   mongoc_server_description_t *server = item;
-   mongoc_primary_and_topology_t *data = ctx;
 
-   if (!mongoc_server_description_has_rs_member(data->primary, server->connection_address)) {
-      _mongoc_topology_description_remove_server(data->topology, server);
+/* Remove and destroy all replica set members not in primary's hosts lists */
+static void
+_mongoc_topology_description_remove_unreported_servers (
+   mongoc_topology_description_t *topology,
+   mongoc_server_description_t *primary)
+{
+   mongoc_array_t to_remove;
+   int i;
+   mongoc_server_description_t *member;
+   const char *address;
+
+   _mongoc_array_init (&to_remove,
+                       sizeof (mongoc_server_description_t *));
+
+   /* Accumulate servers to be removed - do this before calling
+    * _mongoc_topology_description_remove_server, which could call
+    * mongoc_server_description_cleanup on the primary itself if it
+    * doesn't report its own connection_address in its hosts list.
+    * See hosts_differ_from_seeds.json */
+   for (i = 0; i < topology->servers->items_len; i++) {
+      member = mongoc_set_get_item (topology->servers, i);
+      address = member->connection_address;
+      if (!mongoc_server_description_has_rs_member(primary, address)) {
+         _mongoc_array_append_val (&to_remove, member);
+      }
    }
-   return true;
+
+   /* now it's safe to call _mongoc_topology_description_remove_server,
+    * even on the primary */
+   for (i = 0; i < to_remove.len; i++) {
+      member = _mongoc_array_index (
+         &to_remove, mongoc_server_description_t *, i);
+
+      _mongoc_topology_description_remove_server (topology, member);
+   }
+
+   _mongoc_array_destroy (&to_remove);
 }
+
 
 /*
  *--------------------------------------------------------------------------
@@ -832,8 +867,8 @@ _mongoc_topology_description_remove_missing_hosts_cb (void *item,
  *       Now that we know this is the primary:
  *          -If any hosts, passives, or arbiters in node's description aren't
  *           in the cluster, add them as UNKNOWN servers.
- *          -If the cluster has any servers that aren't in node's description
- *           remove them.
+ *          -If the cluster has any servers that aren't in node's description,
+ *           remove and destroy them.
  *       Finally, check the cluster for the new primary.
  *
  * Returns:
@@ -864,7 +899,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
    }
    else if (strcmp(topology->set_name, server->set_name) != 0) {
       _mongoc_topology_description_remove_server(topology, server);
-      _mongoc_topology_description_check_if_has_primary(topology, server);
+      _check_if_has_primary (topology);
       return;
    }
 
@@ -876,11 +911,11 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
    /* Add to topology description any new servers primary knows about */
    _mongoc_topology_description_add_new_servers (topology, server);
 
-   /* Stop monitoring any servers primary doesn't know about */
-   mongoc_set_for_each(topology->servers, _mongoc_topology_description_remove_missing_hosts_cb, &data);
+   /* Remove from topology description any servers primary doesn't know about */
+   _mongoc_topology_description_remove_unreported_servers (topology, server);
 
    /* Finally, set topology type */
-   _mongoc_topology_description_check_if_has_primary (topology, server);
+   _check_if_has_primary (topology);
 }
 
 /*
@@ -961,6 +996,7 @@ _mongoc_topology_description_update_rs_with_primary_from_member (mongoc_topology
    /* set_name should never be null here */
    if (strcmp(topology->set_name, server->set_name) != 0) {
       _mongoc_topology_description_remove_server(topology, server);
+      return;
    }
 
    /* If there is no primary, label server's current_primary as the POSSIBLE_PRIMARY */
@@ -1039,7 +1075,7 @@ _mongoc_topology_description_remove_and_check_primary (mongoc_topology_descripti
                                                        mongoc_server_description_t   *server)
 {
    _mongoc_topology_description_remove_server(topology, server);
-   _mongoc_topology_description_check_if_has_primary(topology, server);
+   _check_if_has_primary (topology);
 }
 
 /*
