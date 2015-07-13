@@ -761,8 +761,9 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
 
 
 static void
-_mongoc_topology_description_monitor_new_servers (mongoc_topology_description_t *topology,
-                                                  mongoc_server_description_t *server)
+_mongoc_topology_description_add_new_servers (
+   mongoc_topology_description_t *topology,
+   mongoc_server_description_t *server)
 {
    bson_iter_t member_iter;
    const bson_t *rs_members[3];
@@ -830,9 +831,9 @@ _mongoc_topology_description_remove_missing_hosts_cb (void *item,
  *           from node's, node cannot be the primary.
  *       Now that we know this is the primary:
  *          -If any hosts, passives, or arbiters in node's description aren't
- *           in the cluster, add them as UNKNOWN servers and begin monitoring.
+ *           in the cluster, add them as UNKNOWN servers.
  *          -If the cluster has any servers that aren't in node's description
- *           remove them and stop monitoring.
+ *           remove them.
  *       Finally, check the cluster for the new primary.
  *
  * Returns:
@@ -872,8 +873,8 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
    data.topology = topology;
    mongoc_set_for_each(topology->servers, _mongoc_topology_description_invalidate_primaries_cb, &data);
 
-   /* Begin monitoring any new servers primary knows about */
-   _mongoc_topology_description_monitor_new_servers(topology, server);
+   /* Add to topology description any new servers primary knows about */
+   _mongoc_topology_description_add_new_servers (topology, server);
 
    /* Stop monitoring any servers primary doesn't know about */
    mongoc_set_for_each(topology->servers, _mongoc_topology_description_remove_missing_hosts_cb, &data);
@@ -919,8 +920,8 @@ _mongoc_topology_description_update_rs_without_primary (mongoc_topology_descript
       }
    }
 
-   /* Begin monitoring any new servers that this server knows about */
-   _mongoc_topology_description_monitor_new_servers(topology, server);
+   /* Add new servers that this replica set member knows about */
+   _mongoc_topology_description_add_new_servers (topology, server);
 
    /* If this server thinks there is a primary, label it POSSIBLE_PRIMARY */
    if (server->current_primary) {
@@ -1023,14 +1024,13 @@ _mongoc_topology_description_transition_unknown_to_rs_no_primary (mongoc_topolog
  *
  * _mongoc_topology_description_remove_and_check_primary --
  *
- *       Remove this server from being monitored, then check that the
- *       current topology has a primary.
+ *       Remove the server and check if the topology still has a primary.
  *
  * Returns:
  *       None.
  *
  * Side effects:
- *       Stop monitoring server.
+ *       Removes server from topology and destroys it.
  *
  *--------------------------------------------------------------------------
  */
@@ -1050,13 +1050,13 @@ _mongoc_topology_description_remove_and_check_primary (mongoc_topology_descripti
  *       If the cluster doesn't contain this server, do nothing.
  *       Otherwise, if the topology only has one seed, change its
  *       type to SINGLE. If the topology has multiple seeds, it does not
- *       include us, so remove this server and stop monitoring us.
+ *       include us, so remove this server and destroy it.
  *
  * Returns:
  *       None.
  *
  * Side effects:
- *       Changes the topology type, might remove server from monitor.
+ *       Changes the topology type, might remove server from topology.
  *
  *--------------------------------------------------------------------------
  */
