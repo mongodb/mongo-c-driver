@@ -405,7 +405,14 @@ test_mongoc_uri_functions (void)
    ASSERT_CMPSTR(mongoc_uri_get_auth_source(uri), "longer authsource that should work");
    ASSERT_CMPSTR(mongoc_uri_get_database(uri), "longer database that should work");
 
+   client = mongoc_client_new_from_uri (uri);
    mongoc_uri_destroy(uri);
+
+   ASSERT_CMPSTR(mongoc_uri_get_username(client->uri), "longer username that should work");
+   ASSERT_CMPSTR(mongoc_uri_get_password(client->uri), "longer password that should also work");
+   ASSERT_CMPSTR(mongoc_uri_get_database(client->uri), "longer database that should work");
+   ASSERT_CMPSTR(mongoc_uri_get_auth_source(client->uri), "longer authsource that should work");
+   mongoc_client_destroy (client);
 
 
    uri = mongoc_uri_new("mongodb://localhost/?serverselectiontimeoutms=3&journal=true&wtimeoutms=42&canonicalizeHostname=false");
@@ -428,8 +435,14 @@ test_mongoc_uri_functions (void)
    /* ssl isn't set, return out fallback */
    ASSERT(mongoc_uri_get_option_as_bool(uri, "ssl", true));
 
+   client = mongoc_client_new_from_uri (uri);
    mongoc_uri_destroy(uri);
 
+   ASSERT(mongoc_uri_get_option_as_bool(client->uri, "journal", false));
+   ASSERT(!mongoc_uri_get_option_as_bool(client->uri, "canonicalizeHostname", true));
+   /* ssl isn't set, return out fallback */
+   ASSERT(mongoc_uri_get_option_as_bool(client->uri, "ssl", true));
+   mongoc_client_destroy (client);
 
    uri = mongoc_uri_new("mongodb://localhost/");
    ASSERT_CMPSTR(mongoc_uri_get_option_as_utf8(uri, "random", "default"), "default");
@@ -439,14 +452,32 @@ test_mongoc_uri_functions (void)
    mongoc_uri_destroy(uri);
 
 
-   uri = mongoc_uri_new("mongodb://localhost/?sockettimeoutms=1");
+   uri = mongoc_uri_new("mongodb://localhost/?sockettimeoutms=1&socketcheckintervalms=200");
    ASSERT_CMPINT (1, ==, mongoc_uri_get_option_as_int32 (uri, "sockettimeoutms", 0));
+   ASSERT_CMPINT (200, ==, mongoc_uri_get_option_as_int32 (uri, "socketcheckintervalms", 0));
 
    mongoc_uri_set_option_as_int32 (uri, "sockettimeoutms", 2);
    ASSERT_CMPINT (2, ==, mongoc_uri_get_option_as_int32 (uri, "sockettimeoutms", 0));
 
+   mongoc_uri_set_option_as_int32 (uri, "socketcheckintervalms", 202);
+   ASSERT_CMPINT (202, ==, mongoc_uri_get_option_as_int32 (uri, "socketcheckintervalms", 0));
+
+
    client = mongoc_client_new_from_uri (uri);
    ASSERT_CMPINT (2, ==, client->cluster.sockettimeoutms);
+   ASSERT_CMPINT (202, ==, client->cluster.socketcheckintervalms);
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy(uri);
+
+
+   uri = mongoc_uri_new ("mongodb://host/dbname0");
+   ASSERT_CMPSTR (mongoc_uri_get_database (uri), "dbname0");
+   mongoc_uri_set_database (uri, "dbname1");
+   client = mongoc_client_new_from_uri (uri);
+   ASSERT_CMPSTR (
+         mongoc_database_get_name (mongoc_client_get_default_database (client))
+         , "dbname1");
 
    mongoc_client_destroy (client);
    mongoc_uri_destroy(uri);
