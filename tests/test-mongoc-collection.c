@@ -312,7 +312,7 @@ receive_bulk (mock_server_t *server,
 static void
 test_legacy_bulk_insert_large (void)
 {
-   const int N_BSONS = 10;
+   enum { N_BSONS = 10 };
 
    mock_server_t *server;
    mongoc_client_t *client;
@@ -488,7 +488,7 @@ _test_legacy_bulk_insert (const bson_t **bsons,
 static void
 _test_legacy_bulk_insert_oversized_middle (bool continue_on_err)
 {
-   const int N_BSONS = 5;
+   enum { N_BSONS = 5 };
    
    bson_t *bsons[N_BSONS];
 
@@ -533,7 +533,7 @@ test_legacy_bulk_insert_oversized_continue_middle (void)
 static void
 _test_legacy_bulk_insert_oversized_first (bool continue_on_err)
 {
-   const int N_BSONS = 2;
+   enum { N_BSONS = 2 };
 
    bson_t *bsons[N_BSONS];
 
@@ -571,7 +571,7 @@ test_legacy_bulk_insert_oversized_first_continue (void)
 static void
 _test_legacy_bulk_insert_oversized_last (bool continue_on_err)
 {
-   const int N_BSONS = 2;
+   enum { N_BSONS = 2 };
 
    bson_t *bsons[N_BSONS];
 
@@ -1559,7 +1559,7 @@ test_large_return (void)
 static void
 test_many_return (void)
 {
-   const int N_BSONS = 5000;
+   enum { N_BSONS = 5000 };
 
    mongoc_collection_t *collection;
    mongoc_client_t *client;
