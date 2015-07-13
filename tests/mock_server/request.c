@@ -87,6 +87,7 @@ request_new (const mongoc_buffer_t *buffer,
    case MONGOC_OPCODE_MSG:
    case MONGOC_OPCODE_UPDATE:
    case MONGOC_OPCODE_DELETE:
+   default:
       fprintf (stderr, "Unimplemented opcode %d\n", request->opcode);
       abort ();
    }
@@ -469,6 +470,7 @@ query_flags_str (uint32_t flags)
                bson_string_append (str, "PARTIAL");
                break;
             case MONGOC_QUERY_NONE:
+            default:
                assert (false);
             }
          }

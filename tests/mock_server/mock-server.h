@@ -121,20 +121,4 @@ void mock_server_replies_simple (request_t *request,
 
 void mock_server_destroy (mock_server_t *server);
 
-bool request_matches_query (const request_t *request,
-                            const char *ns,
-                            mongoc_query_flags_t flags,
-                            uint32_t skip,
-                            uint32_t n_return,
-                            const char *query_json,
-                            const char *fields_json,
-                            bool is_command);
-
-bool request_matches_kill_cursors (const request_t *request,
-                                   int64_t cursor_id);
-
-uint16_t request_get_server_port (request_t *request);
-
-void request_destroy (request_t *request);
-
 #endif //MOCK_SERVER_H
