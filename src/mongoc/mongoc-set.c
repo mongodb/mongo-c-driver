@@ -118,6 +118,17 @@ mongoc_set_get (mongoc_set_t *set,
    return ptr ? ptr->item : NULL;
 }
 
+void *
+mongoc_set_get_item (mongoc_set_t *set,
+                     int           index)
+{
+   bson_return_val_if_fail (set, NULL);
+   bson_return_val_if_fail (index < set->items_len, NULL);
+
+   return set->items[index].item;
+}
+
+
 void
 mongoc_set_destroy (mongoc_set_t *set)
 {

@@ -307,7 +307,7 @@ mongoc_topology_description_suitable_servers (
    /* Single server --
     * Either it is suitable or it isn't */
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
-      server = topology->servers->items[0].item;
+      server = mongoc_set_get_item (topology->servers, 0);
       if (_mongoc_topology_description_server_is_candidate (server->type, read_mode, topology->type)) {
          _mongoc_array_append_val (set, server);
       }
@@ -440,7 +440,7 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
    }
 
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
-      sd = topology->servers->items[0].item;
+      sd = mongoc_set_get_item (topology->servers, 0);
 
       if (sd->has_is_master) {
          RETURN(sd);

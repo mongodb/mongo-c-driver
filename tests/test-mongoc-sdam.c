@@ -29,7 +29,7 @@ _server_description_by_hostname(mongoc_topology_description_t *topology,
    int i;
 
    for (i = 0; i < set->items_len; i++) {
-      server_iter = set->items[i].item;
+      server_iter = mongoc_set_get_item (topology->servers, i);
       if (strcasecmp(address, server_iter->connection_address) == 0) {
          return server_iter;
       }
