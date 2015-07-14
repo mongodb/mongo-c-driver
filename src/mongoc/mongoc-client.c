@@ -781,7 +781,6 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
 #ifdef MONGOC_ENABLE_SSL
    const bson_t *options;
    bson_iter_t iter;
-   bool has_ssl = false;
 #endif
 
    bson_return_val_if_fail(uri, NULL);
