@@ -416,6 +416,7 @@ buildvariants:
       <<: *default_expansions
       <<: *x86_64_expansions
       <<: *linux_expansions
+      <<: *mongo_orchestration_linux
   run_on:
       - ubuntu1204-test
   tasks: *std_tests
