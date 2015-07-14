@@ -1,123 +1,316 @@
 #######################################
-#      libmongoc config for MCI       #
+#       C Driver Config for MCI       #
 #######################################
 
-#######################################
-#            Options                  #
-#######################################
+## Some variables for convenience:
 
-stepback: true
+c_driver_variables:
+
+  test_list: &std_tests
+    - name: "compile"
+    - name: "integration test latest"
+
+  ## Note that the in 3.0, the default storage engine is MMAPv1 and
+  ## WiredTiger is opt-in, but in latest as of MongoDB 3.1.4, the
+  ## default is WiredTiger and MMAPv1 is opt-in.
+  storage_engine_test_list: &storage_engine_tests
+    - name: "compile"
+    - name: "integration test 3.0"
+    - name: "integration test 3.0 with WiredTiger"
+    - name: "integration test latest"
+    - name: "integration test latest with MMAPv1"
+
+  version_test_list: &version_tests
+    - name: "compile"
+    - name: "integration test 2.4"
+    - name: "integration test 2.6"
+    - name: "integration test 3.0"
+    - name: "integration test latest"
+
+## Common download urls (merge in as hashes)
+  mongo_download_url_prefixes:
+    linux64: &mongo_url_linux64
+      mongo_url_prefix: "http://downloads.mongodb.com/linux/mongodb-linux-x86_64-"
+    ubuntu1204: &mongo_url_ubuntu1204
+      mongo_url_platform: "ubuntu1204-"
+      <<: *mongo_url_linux64
+    ubuntu1404: &mongo_url_ubuntu1404
+      mongo_url_platform: "ubuntu1404-"
+      <<: *mongo_url_linux64
+    windows64-bitcomm: &mongo_url_windows64
+      mongo_url_prefix: "http://downloads.mongodb.com/win32/mongodb-win32-x86_64-"
+      mongo_url_platform: "windows-64-"
+    windows32: &mongo_url_windows32
+      mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-i386-"
+      mongo_url_enterprise_keyword: ""
+    rhel55: &mongo_url_rhel55
+      mongo_url_platform: "rhel57-"
+      <<: *mongo_url_linux64
+    rhel55_32: &mongo_url_rhel55_32
+      mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-i686-"
+      mongo_url_enterprise_keyword: ""
+      mongo_url_subscription_keyword: ""
+    osx-108: &mongo_url_osx_108
+      mongo_url_prefix: "http://downloads.mongodb.org/osx/mongodb-osx-x86_64-"
+      mongo_url_enterprise_keyword: ""
+    solaris: &mongo_url_solaris
+      mongo_url_prefix: "http://downloads.mongodb.org/sunos5/mongodb-sunos5-x86_64-"
+      mongo_url_enterprise_keyword: ""
+
+  ## Common sets of CFLAGS
+  cflags:
+    standard: &cflags_64
+      cflags: "-m64 -march=x86-64"
+    standard_32: &cflags_32
+      cflags: "-m32 -march=i386"
+    osx_108: &cflags_osx_108
+      cflags: "-m64 -march=x86-64"
+
+  ## Extra $PATH entries
+  paths:
+    unix_path: &unix_path
+      extra_path:
+    osx_path: &osx_path
+      extra_path:
+    windows_path: &windows_path
+      extra_path: /cygdrive/c/mongo-c-driver/bin:/cygdrive/c/openssl/bin
+    solaris_path: &solaris_path
+      extra_path: /opt/mongodbtoolchain/bin
+
+  ## Scripts that are shared between buildvariants
+  scripts:
+    mongo_orchestration:
+      windows: &mongo_orchestration_windows
+        start_mongo_orchestration: |
+          echo "Installing Mongo Orchestration..."
+          trap 'set +o errexit; mongo-orchestration stop;' EXIT
+          taskkill.exe /FI "IMAGENAME eq python.exe" /F
+          taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
+          echo "Starting Mongo Orchestration..."
+          echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
+          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000
+          curl -s http://localhost:8889/
+      unix: &mongo_orchestration_unix
+        start_mongo_orchestration: |
+          echo "Installing Mongo Orchestration..."
+          trap 'set +o errexit; mongo-orchestration stop;' EXIT
+          echo "Starting Mongo Orchestration..."
+          echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
+          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
+          curl -s http://localhost:8889/
+      start_mongod_command: &start_mongod_command
+        start_mongod: |
+          DBPATH=`pwd`/data/db
+          LOGPATH=`pwd`/data/log
+          curl --data '{"name": "mongod", "preset": "auth.json", "procParams": {"dbpath": "'$DBPATH'", "logpath": "'$LOGPATH'"}}' http://localhost:8889/v1/servers
+          ./mongodb/bin/mongo --eval 'printjson(db.serverBuildInfo())'
+
+    compile:
+      unix: &compile_unix
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          ./autogen.sh --enable-ssl=yes --enable-sasl=yes
+          make -j8
+      solaris: &compile_solaris
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          ./autogen.sh --enable-ssl=yes --enable-sasl=yes
+          make
+      msvc: &compile_msvc
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          cmake="/cygdrive/c/cmake/bin/cmake"
+          msbuild="/cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe"
+          generator="Visual Studio 12 2013 Win64"
+          # In Autotools builds, autogen.sh does this, we must do it here.
+          git submodule init
+          git submodule update
+          cd src/libbson
+          "$cmake" -G "$generator" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
+          "$msbuild" /m ALL_BUILD.vcxproj
+          "$msbuild" /m INSTALL.vcxproj
+          cd ../..
+          "$cmake" -G "$generator" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" "-DCMAKE_INCLUDE_PATH=C:/sasl/include" "-DCMAKE_LIBRARY_PATH=C:/sasl/lib"
+          "$msbuild" /m ALL_BUILD.vcxproj
+          "$msbuild" /m INSTALL.vcxproj
+
+    integration_tests:
+      msvc: &run_integration_tests_msvc
+        run_integration_tests: |
+          export PATH=$PATH:`pwd`/tests
+          ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
+          touch tests/trust_dir/done
+          export MONGOC_TEST_USER=bob
+          export MONGOC_TEST_PASSWORD=pwd123
+          ./Debug/test-"mongo-c-driver".exe -f -p
+      unix: &run_integration_tests_unix
+        run_integration_tests: |
+          export MONGOC_TEST_USER=bob
+          export MONGOC_TEST_PASSWORD=pwd123
+          make check
+
+## Other OS-specific attributes, grouped by OS
+  unix_common: &unix_common
+    <<: *compile_unix
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_unix
+    <<: *start_mongod_command
+    <<: *unix_path
+
+  osx_common: &osx_common
+    <<: *unix_common
+    <<: *osx_path
+
+  solaris_common: &solaris_common
+    <<: *unix_common
+    <<: *compile_solaris
+    <<: *solaris_path
+
+## Misc. for Windows builds
+  windows_compilers:
+    ## msvc2010
+    msvc2010: &with_msvc2010
+      generator: Visual Studio 10 2010
+      msbuild: # ???
+      dllpath: "c:/openssl/bin,c:/sasl/bin,c:/curl/dlls"
+    ## msvc2013, 32-bit
+    msvc2013-32: &with_msvc2010_32bit
+      generator: Visual Studio 10 2010
+      msbuild: # ???
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+    msvc2013: &with_msvc2013
+      generator: Visual Studio 12 2013 Win64
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+
+  ## all windows buildvariants have these attributes in common
+  windows_common: &windows_common
+    mongo_url_extension: "zip"
+    extension: ".exe"
+    windows: true
+    <<: *windows_path
+    <<: *mongo_orchestration_windows
+    <<: *start_mongod_command
+
+  msvc_common: &msvc_common
+    <<: *windows_common
+    <<: *compile_msvc
+    <<: *run_integration_tests_msvc
+
 
 #######################################
 #            Functions                #
 #######################################
 
 functions:
-    fetch_source:
-        command: git.get_project
-        params:
-            directory: libmongoc
+  "fetch source" :
+    command: git.get_project
+    params:
+      directory: mongo-c-driver
 
-libmongoc_variables:
-    ## Tests run on most buildvariants
+  "fetch mongodb" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+        set -o verbose
+        set -o errexit
+        curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
+        ${decompress} mongo_enterprise.${ext|tgz}
+        mv mongodb* mongodb
+        chmod +x ./mongodb/bin/mongod${extension}
+        if [ ${windows|false} = true ]; then
+            cp -r mongodb /cygdrive/c/mongodb
+            #This won't run on a 32bit OS.
+            ./mongodb/bin/vcredist_x64${extension} /Q
+        fi
 
-    std_test_def: &std_tests
-        - name: compile
-        - name: make check
+  "create working directory" :
+    command: shell.exec
+    params:
+      script: |
+        rm -rf mongo-c-driver
+        mkdir mongo-c-driver
 
-    msvc_test_def: &msvc_tests
-        - name: compile msvc
-        - name: make check msvc
+  # MCI's S3 mechanism doesn't support symlinks, use curl instead of s3.get
+  "fetch artifacts" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+        set -o verbose
+        set -o errexit
+        curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${build_variant}/${revision}/artifacts/mongo-${build_id}.tar.gz -o ${build_id}.tar.gz --silent
+        tar -xzf ${build_id}.tar.gz
 
-    ## Architectures
+  "compile function" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+          export PATH=${extra_path}:$PATH
+          ${compile_script}
 
-    default_expansions_def: &default_expansions
-        env_vars: CFLAGS=""
-        enable_ssl: yes
+  "set version latest" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongo_url"
+          value: ${mongo_url_prefix}${mongo_url_enterprise_keyword|"enterprise-"}${mongo_url_platform|}latest.${mongo_url_extension|tgz}
 
-    windows_expansions_def: &windows_expansions
-        env_vars: CFLAGS=""
-        enable_ssl: yes
+  "use WiredTiger storage" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_preset"
+          value: "--mongo-orchestration-preset=wiredtiger.json"
 
-    i386_expansions_def: &i386_expansions
-        env_vars: CFLAGS="-m32 -march=i386"
+  "use MMAPv1 storage" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_preset"
+          # Requires mongo-orchestration 0.4
+          value: "--mongo-orchestration-preset=mmapv1.json"
 
-    ubuntu_i386_expansions_def: &ubuntu_i386_expansions
-        pre_compile: sudo apt-get install -f -y autoconf libtool gcc-multilib binutils-multiarch libsasl2-dev:i386 libsasl2-2:i386
+  "set version 3.0" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongo_url"
+          value: ${mongo_url_prefix}${mongo_url_enterprise_keyword|enterprise-}${mongo_url_platform|}3.0.1.${mongo_url_extension|tgz}
 
-    i686_expansions_def: &i686_expansions
-        env_vars: CFLAGS="-m32 -march=i686"
+  "set version 2.6" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongo_url"
+          value: ${mongo_url_prefix}${mongo_url_enterprise_keyword|enterprise-}${mongo_url_platform|}2.6.8.${mongo_url_extension|tgz}
 
-    x86_64_expansions_def: &x86_64_expansions
-        env_vars: CFLAGS="-m64 -march=x86-64"
+  "set version 2.4" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongo_url"
+          value: ${mongo_url_prefix}${mongo_url_subscription_keyword|subscription-}${mongo_url_platform|}2.4.13.${mongo_url_extension|tgz}
 
-    ## "Platforms" or whatever
-
-    linux_expansions_def: &linux_expansions
-        j_flag: -j$(grep -c ^processor /proc/cpuinfo)
-        mongo_url: "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-latest.tgz"
-
-    osx_expansions_def: &osx_expansions
-        j_flag: -j$(sysctl -n hw.logicalcpu)
-        mongo_url: "https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-latest.tgz"
-
-    solaris_expansions_def: &solaris_expansions
-        j_flag: -j$(kstat cpu_info|grep core_id|sort -u|wc -l)
-        mongo_url: "https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-latest.tgz"
-
-    msvc_expansions_def: &msvc_expansions
-        cmake: /cygdrive/c/cmake/bin/cmake
-        ctest: /cygdrive/c/cmake/bin/ctest
-        generator: Visual Studio 12 2013 Win64
-        msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
-        path: /cygdrive/c/mongo-c-driver/bin:/cygdrive/c/openssl/bin
-        mongo_url: http://downloads.mongodb.com/win32/mongodb-win32-x86_64-enterprise-windows-64-latest.zip
-        ext: zip
-
-    mingw_expansions_def: &mingw_expansions
-        j_flag: -j$(grep -c ^processor /proc/cpuinfo)
-        mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-latest.zip"
-        ext: zip
+  "run integration tests" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+        set -o errexit
+        set -o verbose
+        ${start_mongo_orchestration}
+        ${start_mongod}
+        ${run_integration_tests}
 
 
 #######################################
-#              Scripts                #
-#######################################
-
-# Copied from https://github.com/mongodb/mongo-cxx-driver/blob/legacy/.mci.yml
-scripts:
-
-    mongo_orchestration:
-
-      windows: &mongo_orchestration_windows
-
-        start_mongo_orchestration: |
-          taskkill.exe /FI "IMAGENAME eq python.exe" /F
-          taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
-          trap 'set +o errexit; rm server.pid;' EXIT
-          echo "Starting Mongo Orchestration..."
-          echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
-          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000
-
-      linux: &mongo_orchestration_linux
-
-        start_mongo_orchestration: |
-          trap 'set +o errexit; mongo-orchestration stop;' EXIT
-          echo "Starting Mongo Orchestration..."
-          echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
-          mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
-
-      osx: &mongo_orchestration_osx
-
-        start_mongo_orchestration: |
-          echo "Starting Mongo Orchestration..."
-          trap 'set +o errexit; /usr/local/bin/mongo-orchestration stop;' EXIT
-          echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
-          /usr/local/bin/mongo-orchestration -f orchestration.config -e default start # --socket-timeout-ms=60000 <- uncomment when OSX builders get new MO
-
-
-#######################################
-#              Pre Task               #
+#            Pre Task                 #
 #######################################
 
 pre:
@@ -126,9 +319,9 @@ pre:
 post:
     - command: shell.exec
       params:
-          working_dir: libmongoc
-          script: |
-              mongo-orchestration stop
+        working_dir: "mongo-c-driver"
+        script: |
+            mongo-orchestration stop
     - command: shell.cleanup
 
 
@@ -137,177 +330,92 @@ post:
 #######################################
 
 tasks:
-- name: compile
-  commands:
-      - command: git.get_project
-        params:
-            directory: libmongoc
-      - command: git.apply_patch
-        params:
-            directory: libmongoc
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
-                set -o verbose
+    - name: compile
+      commands:
+        - func: "fetch source"
+        - command: git.apply_patch
+          params:
+            directory: "mongo-c-driver"
+        - func: "compile function"
+        - command: shell.exec
+          params:
+              working_dir: "mongo-c-driver"
+              script: |
                 set -o errexit
-                export PATH=${path}:$PATH
-                ${pre_compile}
-                ${env_vars} ./autogen.sh --enable-ssl=${enable_ssl}
-                make ${j_flag}
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
                 set -o verbose
-                tar -czvf ../libmongoc.tar.gz .
-      - command: s3.put
-        params:
+                tar -czf ../mongo-c-driver.tar.gz .
+        - command: s3.put
+          params:
             aws_key: ${aws_key}
             aws_secret: ${aws_secret}
-            remote_file: libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz
+            local_file: mongo-c-driver.tar.gz
+            remote_file: mongo-c-driver/${build_variant}/${revision}/artifacts/mongo-${build_id}.tar.gz
             bucket: mciuploads
-            local_file: libmongoc.tar.gz
             permissions: public-read
             content_type: ${content_type|application/x-gzip}
 
-- name: make check
-  depends_on:
-      - name: compile
-  commands:
-      - command: shell.exec
-        params:
-            script: |
-                set -o verbose
-                rm -rf libmongoc
-                mkdir libmongoc
-                rm -rf /data/db
-                mkdir -p /data/db
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
-                set -o verbose
-                set -o errexit
-                # MCI's S3 mechanism doesn't support symlinks
-                curl http://s3.amazonaws.com/mciuploads/libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz -o ${build_id}.tar.gz --silent
-                tar -xzf ${build_id}.tar.gz
-                curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
-                ${decompress} mongo_enterprise.${ext|tgz}
-                mv mongodb* mongodb
-                chmod +x ./mongodb/bin/mongod${extension}
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
-                ${start_mongo_orchestration}
-                set -o verbose
-                set -o errexit
-                curl http://localhost:8889/
-                DBPATH=`pwd`/data/db
-                LOGPATH=`pwd`/data/log
-                curl --data '{"name": "mongod", "preset": "auth.json", "procParams": {"dbpath": "'$DBPATH'", "logpath": "'$LOGPATH'"}}' http://localhost:8889/v1/servers
-                ./mongodb/bin/mongo --eval 'printjson(db.serverBuildInfo())'
-                export MONGOC_TEST_USER=bob
-                export MONGOC_TEST_PASSWORD=pwd123
-                make check
+    - name: "integration test 2.4"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
 
-- name: compile msvc
-  commands:
-      - command: git.get_project
-        params:
-            directory: libmongoc
-      - command: git.apply_patch
-        params:
-            directory: libmongoc
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
-                # In Autotools builds, autogen.sh does this, we must do it here.
-                git submodule init
-                git submodule update
-      - command: shell.exec
-        params:
-            working_dir: libmongoc/src/libbson
-            script: |
-                set -o verbose
-                set -o errexit
-                export PATH=${path}:$PATH
-                ${cmake} -G "${generator}" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
-                "${msbuild}" /m ALL_BUILD.vcxproj
-                "${msbuild}" /m INSTALL.vcxproj
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
-                set -o verbose
-                set -o errexit
-                export PATH=${path}:$PATH
-                ${cmake} -G "${generator}" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver" "-DCMAKE_INCLUDE_PATH=C:\sasl\include" "-DCMAKE_LIBRARY_PATH=C:\sasl\lib"
-                "${msbuild}" /m ALL_BUILD.vcxproj
-                "${msbuild}" /m INSTALL.vcxproj
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
-                set -o verbose
-                tar -czvf ../libmongoc.tar.gz .
-      - command: s3.put
-        params:
-            aws_key: ${aws_key}
-            aws_secret: ${aws_secret}
-            remote_file: libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz
-            bucket: mciuploads
-            local_file: libmongoc.tar.gz
-            permissions: public-read
-            content_type: ${content_type|application/x-gzip}
+    - name: "integration test 2.6"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
 
-- name: make check msvc
-  depends_on:
-      - name: compile msvc
-  commands:
-      - command: shell.exec
-        params:
-            script: |
-                set -o verbose
-                rm -rf libmongoc
-                mkdir libmongoc
-                rm -rf /data/db
-                mkdir -p /data/db
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
-                set -o verbose
-                set -o errexit
-                # MCI's S3 mechanism doesn't support symlinks
-                curl http://s3.amazonaws.com/mciuploads/libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz -o ${build_id}.tar.gz --silent
-                tar -xzf ${build_id}.tar.gz
-                curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
-                mkdir -p /cygdrive/c/mongodb/bin
-                unzip -o -j mongo_enterprise.${ext|tgz} -d /cygdrive/c/mongodb/bin
-                chmod +x /cygdrive/c/mongodb/bin/*
-                /cygdrive/c/mongodb/bin/vcredist_x64.exe /Q
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
-                ${start_mongo_orchestration}
-                set -o verbose
-                set -o errexit
-                curl http://localhost:8889/
-                DBPATH=`pwd`/data/db
-                LOGPATH=`pwd`/data/log
-                curl --data '{"name": "mongod", "preset": "auth.json", "procParams": {"dbpath": "'$DBPATH'", "logpath": "'$LOGPATH'"}}' http://localhost:8889/v1/servers
-                /cygdrive/c/mongodb/bin/mongo --eval 'printjson(db.serverBuildInfo())'
-                export PATH=$PATH:`pwd`/tests
-                ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
-                touch tests/trust_dir/done
-                export MONGOC_TEST_USER=bob
-                export MONGOC_TEST_PASSWORD=pwd123
-                export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
-                ./Debug/test-libmongoc.exe -f -p
+    - name: "integration test 3.0"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 with WiredTiger"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set version 3.0"
+        - func: "use WiredTiger storage"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest with MMAPv1"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set version latest"
+        - func: "use MMAPv1 storage"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
 
 #######################################
 #           Buildvariants             #
@@ -315,162 +423,100 @@ tasks:
 
 buildvariants:
 
-################ 32-bit ###############
+#######################################
+#         Linux Buildvariants         #
+#######################################
 
-#- name: rhel55-32
-#  display_name: RHEL 5.5 32-bit
+### RHEL 5.5
+#
+#- name: rhel55
+#  display_name: "RHEL 5.5"
 #  expansions:
-#      <<: *default_expansions
-#      <<: *linux_expansions
+#    <<: *cflags_64
+#    <<: *warning_flags_rhel55
+#    <<: *cpppath_rhel55
+#    <<: *libpath_rhel55_64
+#    <<: *mongo_url_rhel55
 #  run_on:
-#      - rhel55-32
+#  - rhel55-test
+#  tasks: *std_tests
+#
+### RHEL 5.5 32-bit
+#
+#- name: rhel55-32-bit
+#  display_name: "RHEL 5.5 32-bit"
+#  expansions:
+#    <<: *cflags_32
+#    <<: *warning_flags_rhel55
+#    <<: *cpppath_rhel55
+#    <<: *libpath_rhel55_32
+#    <<: *mongo_url_rhel55_32
+#  run_on:
+#  - rhel55-test
 #  tasks: *std_tests
 
-#- name: windows-32
-#  display_name: Windows 32-bit
-#  expansions:
-#      <<: *default_expansions
-#      <<: *mingw_expansions
-#      mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-i386-latest.zip"
-#  run_on:
-#      - windows-32
-#  tasks: *std_tests
-
-########## i386 cross-compile #########
-
-#- name: ubuntu-1204-i386
-#  display_name: Ubuntu 12.04 i386
-#  expansions:
-#      <<: *default_expansions
-#      <<: *i386_expansions
-#      <<: *linux_expansions
-#      <<: *ubuntu_i386_expansions
-#      enable_ssl: no
-#  run_on:
-#      - ubuntu1204-test
-#  tasks: *std_tests
-
-#- name: ubuntu-1404-i386
-#  display_name: Ubuntu 14.04 i386
-#  expansions:
-#      <<: *default_expansions
-#      <<: *i386_expansions
-#      <<: *linux_expansions
-#      <<: *ubuntu_i386_expansions
-#      enable_ssl: no
-#  run_on:
-#      - ubuntu1404-test
-#  tasks: *std_tests
-
-#- name: os-x-108-i386
-#  display_name: OS X 10.8 i386
-#  expansions:
-#      <<: *default_expansions
-#      <<: *osx_expansions
-#      env_vars: CC="clang -m32 -march=i386"
-#  run_on:
-#      - osx-108
-#  tasks: *std_tests
-
-########## i686 cross-compile #########
-
-#- name: ubuntu-1204-i686
-#  display_name: Ubuntu 12.04 i686
-#  expansions:
-#      <<: *default_expansions
-#      <<: *i686_expansions
-#      <<: *linux_expansions
-#      pre_compile: sudo apt-get install -f -y autoconf libtool
-#      enable_ssl: no
-#  run_on:
-#      - ubuntu1204-test
-#  tasks: *std_tests
-
-#- name: ubuntu-1404-i686
-#  display_name: Ubuntu 14.04 i686
-#  expansions:
-#      <<: *default_expansions
-#      <<: *i686_expansions
-#      <<: *linux_expansions
-#      pre_compile: sudo apt-get install -f -y autoconf libtool
-#      enable_ssl: no
-#  run_on:
-#      - ubuntu1404-test
-#  tasks: *std_tests
-
-#- name: os-x-108-i686
-#  display_name: OS X 10.8 i686
-#  expansions:
-#      <<: *default_expansions
-#      <<: *osx_expansions
-#      env_vars: CC="clang -m32 -march=i686"
-#  run_on:
-#      - osx-108
-#  tasks: *std_tests
-
-############## x86_64 #################
+## Ubuntu 1204
 
 - name: ubuntu-1204-64
-  display_name: Ubuntu 12.04 64-bit
+  display_name: "Ubuntu 12.04 64-bit"
   expansions:
-      <<: *default_expansions
-      <<: *x86_64_expansions
-      <<: *linux_expansions
-      <<: *mongo_orchestration_linux
+    <<: *cflags_64
+    <<: *mongo_url_ubuntu1204
+    <<: *unix_common
   run_on:
-      - ubuntu1204-test
+  - ubuntu1204-test
   tasks: *std_tests
+
+## Ubuntu 1404
 
 - name: ubuntu-1404-64
-  display_name: Ubuntu 14.04 64-bit
+  display_name: "Ubuntu 14.04 64-bit"
   expansions:
-      <<: *default_expansions
-      <<: *x86_64_expansions
-      <<: *linux_expansions
-      <<: *mongo_orchestration_linux
+    <<: *cflags_64
+    <<: *mongo_url_ubuntu1404
+    <<: *unix_common
   run_on:
-      - ubuntu1404-test
+  - ubuntu1404-test
   tasks: *std_tests
 
+#######################################
+#         OS X Buildvariants          #
+#######################################
+
 - name: os-x-108-64
-  display_name: OS X 10.8 64-bit
+  display_name: "OS X 10.8 64-bit"
   expansions:
-      <<: *default_expansions
-      <<: *osx_expansions
-      <<: *mongo_orchestration_linux
+    <<: *mongo_url_osx_108
+    <<: *cflags_osx_108
+    <<: *osx_common
   run_on:
-      - osx-108
+  - osx-108
   tasks: *std_tests
+
+#######################################
+#        Windows Buildvariants        #
+#######################################
+
+- name: windows-64-vs2013
+  display_name: "Windows 64-bit CMake Visual Studio 2013"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2013
+  run_on:
+  - windows-64-vs2013-compile
+  tasks: *std_tests
+
+#######################################
+#        Solaris Buildvariant         #
+#######################################
 
 - name: solaris-64-bit
   display_name: Solaris 64-bit
   expansions:
-      <<: *default_expansions
-      <<: *x86_64_expansions
-      <<: *mongo_orchestration_linux
-      <<: *solaris_expansions
-      path: "/opt/mongodbtoolchain/bin/"
+    <<: *solaris_common
+    <<: *cflags_64
+    <<: *mongo_url_solaris
   run_on:
       - solaris
   tasks: *std_tests
-
-- name: windows-64-vs2013
-  display_name: Windows 64-bit CMake Visual Studio 2013
-  expansions:
-      <<: *windows_expansions
-      <<: *mongo_orchestration_windows
-      <<: *msvc_expansions
-  run_on:
-      - windows-64-vs2013-compile
-  tasks: *msvc_tests
-
-#- name: windows-64-mingw64
-#  display_name: Windows 64-bit MinGW-64
-#  expansions:
-#      <<: *default_expansions
-#      # must change dos to unix line endings for some reason
-#      pre_compile: sed -i 's/\r//' autogen.sh
-#      path: "/cygdrive/c/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin:/cygdrive/c/sasl/"
-#  run_on:
-#      - windows-64-vs2013-test
-#  tasks: *std_tests
