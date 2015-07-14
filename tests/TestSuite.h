@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 
+#include <bson.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,26 +106,33 @@ struct _TestSuite
 };
 
 
-void TestSuite_Init    (TestSuite *suite,
-                        const char *name,
-                        int argc,
-                        char **argv);
-void TestSuite_Add     (TestSuite *suite,
-                        const char *name,
-                        TestFunc func);
-void TestSuite_AddWC   (TestSuite *suite,
-                        const char *name,
-                        TestFuncWC func,
-                        TestFuncDtor dtor,
-                        void *ctx);
-void TestSuite_AddFull (TestSuite *suite,
-                        const char *name,
-                        TestFuncWC func,
-                        TestFuncDtor dtor,
-                        void *ctx,
-                        int (*check) (void));
-int  TestSuite_Run     (TestSuite *suite);
-void TestSuite_Destroy (TestSuite *suite);
+void TestSuite_Init              (TestSuite *suite,
+                                  const char *name,
+                                  int argc,
+                                  char **argv);
+void TestSuite_Add               (TestSuite *suite,
+                                  const char *name,
+                                  TestFunc func);
+void TestSuite_AddOrSkip         (TestSuite *suite,
+                                  const char *name,
+                                  TestFunc func,
+                                  bool skip);
+void TestSuite_AddMockServerTest (TestSuite  *suite,
+                                  const char *name,
+                                  TestFunc    func);
+void TestSuite_AddWC             (TestSuite *suite,
+                                  const char *name,
+                                  TestFuncWC func,
+                                  TestFuncDtor dtor,
+                                  void *ctx);
+void TestSuite_AddFull           (TestSuite *suite,
+                                  const char *name,
+                                  TestFuncWC func,
+                                  TestFuncDtor dtor,
+                                  void *ctx,
+                                  int (*check) (void));
+int  TestSuite_Run               (TestSuite *suite);
+void TestSuite_Destroy           (TestSuite *suite);
 
 #ifdef __cplusplus
 }

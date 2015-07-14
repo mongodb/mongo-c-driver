@@ -466,8 +466,9 @@ test_database_install (TestSuite *suite)
                   test_get_collection_info);
    TestSuite_Add (suite, "/Database/get_collection_names",
                   test_get_collection_names);
-   TestSuite_Add (suite, "/Database/get_collection_names_error",
-                  test_get_collection_names_error);
    TestSuite_Add (suite, "/Database/get_default_database",
                   test_get_default_database);
+   TestSuite_AddMockServerTest (suite,
+                                "/Database/get_collection_names_error",
+                                test_get_collection_names_error);
 }

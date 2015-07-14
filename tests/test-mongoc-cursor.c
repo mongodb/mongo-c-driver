@@ -336,15 +336,28 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/get_host", test_get_host);
    TestSuite_Add (suite, "/Cursor/clone", test_clone);
    TestSuite_Add (suite, "/Cursor/invalid_query", test_invalid_query);
-   TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);
-   TestSuite_Add (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/kill/single",
+                                test_kill_cursors_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cursor/kill/pooled",
+                                test_kill_cursors_pooled);
+
    /* TODO: CDRIVER-679
-   TestSuite_Add (suite, "/Cursor/getmore_fail/with_primary/pooled",
-                  test_getmore_fail_with_primary_pooled);
-   TestSuite_Add (suite, "/Cursor/getmore_fail/with_primary/single",
-                  test_getmore_fail_with_primary_single);
-   TestSuite_Add (suite, "/Cursor/getmore_fail/no_primary/pooled",
-                  test_getmore_fail_no_primary_pooled);
-   TestSuite_Add (suite, "/Cursor/getmore_fail/no_primary/single",
-                  test_getmore_fail_no_primary_single);*/
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Cursor/getmore_fail/with_primary/pooled",
+      test_getmore_fail_with_primary_pooled);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Cursor/getmore_fail/with_primary/single",
+      test_getmore_fail_with_primary_single);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Cursor/getmore_fail/no_primary/pooled",
+      test_getmore_fail_no_primary_pooled);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Cursor/getmore_fail/no_primary/single",
+      test_getmore_fail_no_primary_single);*/
 }

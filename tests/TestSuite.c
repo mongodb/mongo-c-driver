@@ -262,6 +262,13 @@ TestSuite_CheckDummy (void)
    return 1;
 }
 
+static int
+TestSuite_Skip (void)
+{
+   return 0;
+}
+
+
 static void
 TestSuite_AddHelper (void *cb_)
 {
@@ -276,6 +283,41 @@ TestSuite_Add (TestSuite  *suite, /* IN */
                TestFunc    func)  /* IN */
 {
    TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckDummy);
+}
+
+
+void
+TestSuite_AddOrSkip (TestSuite  *suite, /* IN */
+                     const char *name,  /* IN */
+                     TestFunc    func,  /* IN */
+                     bool        skip)  /* IN */
+{
+   if (skip) {
+      TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, func,
+                         TestSuite_Skip);
+   } else {
+      TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, func,
+                         NULL);
+   }
+}
+
+
+void
+TestSuite_AddMockServerTest (TestSuite  *suite, /* IN */
+                             const char *name,  /* IN */
+                             TestFunc    func)  /* IN */
+{
+   /* skip mock server tests on SunOS / Solaris,
+    * mongoc_socket_getsockname doesn't work there for some reason */
+   bool is_sun;
+
+#if defined(__sun)
+   is_sun = true;
+#else
+   is_sun = false;
+#endif
+
+   TestSuite_AddOrSkip (suite, name, func, is_sun);
 }
 
 

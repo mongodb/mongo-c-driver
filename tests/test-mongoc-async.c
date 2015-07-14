@@ -169,8 +169,12 @@ test_ismaster_ssl (void)
 void
 test_async_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Async/ismaster", test_ismaster);
+   TestSuite_AddMockServerTest (suite,
+                                "/Async/ismaster",
+                                test_ismaster);
 #ifdef MONGOC_ENABLE_SSL
-   TestSuite_Add (suite, "/Async/ismaster_ssl", test_ismaster_ssl);
+   TestSuite_AddMockServerTest (suite,
+                                "/Async/ismaster_ssl",
+                                test_ismaster_ssl);
 #endif
 }
