@@ -1,3 +1,23 @@
+mongo-c-driver 1.1.10
+=====================
+
+It is my pleasure to announce to you the MongoDB C driver 1.1.10.
+
+This is a patch release with bug fixes:
+
+ * Occasional crash reconnecting to replica set.
+ * Hang after network error sending a large message.
+
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+ * A. Jesse Jiryu Davis
+ * Jason Carey
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
 mongo-c-driver 1.1.9
 ====================
 
