@@ -145,7 +145,8 @@ c_driver_variables:
           touch tests/trust_dir/done
           export MONGOC_TEST_USER=bob
           export MONGOC_TEST_PASSWORD=pwd123
-          ./Debug/test-"mongo-c-driver".exe -f -p
+          export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
+          ./Debug/test-libmongoc.exe -f -p
       unix: &run_integration_tests_unix
         run_integration_tests: |
           export MONGOC_TEST_USER=bob
