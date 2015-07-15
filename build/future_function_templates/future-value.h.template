@@ -4,6 +4,11 @@
 #include <bson.h>
 #include <mongoc.h>
 
+
+#include "mongoc-server-description.h"
+#include "mongoc-topology-private.h"
+
+
 {{ header_comment }}
 
 {% for T in typedef_list %}{% if T.typedef %}

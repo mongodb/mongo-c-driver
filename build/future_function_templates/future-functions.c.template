@@ -14,6 +14,8 @@
  * controlling the server from the main thread.
  */
 
+#include "mongoc-topology-private.h"
+
 #include "future-functions.h"
 
 {% for F in future_functions %}

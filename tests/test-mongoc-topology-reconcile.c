@@ -3,6 +3,8 @@
 #include "mongoc-client-private.h"
 #include "utlist.h"
 
+#include "mock_server/future.h"
+#include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -207,32 +209,29 @@ test_topology_reconcile_rs_pooled (void)
 static void
 _test_topology_reconcile_sharded (bool pooled)
 {
-   mock_server_t *server0;
-   mock_server_t *server1;
+   mock_server_t *mongos;
+   mock_server_t *secondary;
    char *uri_str;
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_read_prefs_t *primary_read_prefs;
-   int64_t start;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   char *secondary_response;
+   mongoc_server_description_t *sd;
 
-   server0 = mock_server_new ();
-   server1 = mock_server_new ();
-   mock_server_run (server0);
-   mock_server_run (server1);
-
-   /* mongos */
-   mock_server_auto_ismaster (server0,
-                              "{'ok': 1, 'ismaster': true, 'msg': 'isdbgrid'}");
-
-   /* replica set secondary - should be removed */
-   RS_RESPONSE_TO_ISMASTER (server1, false, false, server0, server1);
+   mongos = mock_server_new ();
+   secondary = mock_server_new ();
+   mock_server_run (mongos);
+   mock_server_run (secondary);
 
    /* provide both servers in seed list */
    uri_str = bson_strdup_printf (
       "mongodb://%s,%s/?connectTimeoutMS=10&serverselectiontimeoutms=1000",
-      mock_server_get_host_and_port (server0),
-      mock_server_get_host_and_port (server1));
+      mock_server_get_host_and_port (mongos),
+      mock_server_get_host_and_port (secondary));
 
    uri = mongoc_uri_new (uri_str);
 
@@ -244,26 +243,55 @@ _test_topology_reconcile_sharded (bool pooled)
    }
 
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   future = future_topology_select (client->topology, MONGOC_SS_READ,
+                                    primary_read_prefs, 15, &error);
+
+   /* mongos */
+   request = mock_server_receives_ismaster (mongos);
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'ismaster': true, 'msg': 'isdbgrid'}");
+
+   request_destroy (request);
+
+   /* replica set secondary - topology removes it */
+   request = mock_server_receives_ismaster (secondary);
+   secondary_response = bson_strdup_printf (
+      "{'ok': 1, "
+      " 'setName': 'rs',"
+      " 'ismaster': false,"
+      " 'secondary': true,"
+      " 'hosts': ['%s', '%s']"
+      "}",
+      mock_server_get_host_and_port (mongos),
+      mock_server_get_host_and_port (secondary));
+
+   mock_server_replies_simple (request, secondary_response);
+
+   request_destroy (request);
 
    /*
-    * server0 is selected, server1 is removed.
+    * mongos is selected, secondary is removed.
     */
-   assert (selects_server (client, primary_read_prefs, server0));
+   sd = future_get_mongoc_server_description_ptr (future);
+   ASSERT_CMPSTR (sd->host.host_and_port,
+                  mock_server_get_host_and_port (mongos));
 
    if (pooled) {
-      /* wait a second for scanner thread to remove server1 */
-      start = bson_get_monotonic_time ();
+      /* wait a second for scanner thread to remove secondary */
+      int64_t start = bson_get_monotonic_time ();
       while (get_node (client->topology->scanner,
-                       mock_server_get_host_and_port (server1)))
+                       mock_server_get_host_and_port (secondary)))
       {
          assert (bson_get_monotonic_time () - start < 1000000);
       }
-
    } else {
       assert (!get_node (client->topology->scanner,
-                         mock_server_get_host_and_port (server1)));
+                         mock_server_get_host_and_port (secondary)));
    }
 
+   mongoc_server_description_destroy (sd);
+   bson_free (secondary_response);
    mongoc_read_prefs_destroy (primary_read_prefs);
 
    if (pooled) {
@@ -273,10 +301,11 @@ _test_topology_reconcile_sharded (bool pooled)
       mongoc_client_destroy (client);
    }
 
+   future_destroy (future);
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
-   mock_server_destroy (server1);
-   mock_server_destroy (server0);
+   mock_server_destroy (secondary);
+   mock_server_destroy (mongos);
 }
 
 

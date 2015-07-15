@@ -74,6 +74,9 @@ typedef_list = [
     typedef("mongoc_database_ptr", "mongoc_database_t *"),
     typedef("mongoc_insert_flags_t", None),
     typedef("mongoc_query_flags_t", None),
+    typedef("mongoc_server_description_ptr", "mongoc_server_description_t *"),
+    typedef("mongoc_ss_optype_t", None),
+    typedef("mongoc_topology_ptr", "mongoc_topology_t *"),
 
     # Const libmongoc.
     typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
@@ -132,6 +135,14 @@ future_functions = [
     future_function("char_ptr_ptr",
                     "mongoc_database_get_collection_names",
                     [param("mongoc_database_ptr", "database"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("mongoc_server_description_ptr",
+                    "mongoc_topology_select",
+                    [param("mongoc_topology_ptr", "topology"),
+                     param("mongoc_ss_optype_t", "optype"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("int64_t", "local_threshold_ms"),
                      param("bson_error_ptr", "error")]),
 ]
 

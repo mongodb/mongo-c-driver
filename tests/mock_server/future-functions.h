@@ -78,5 +78,16 @@ future_database_get_collection_names (
 );
 
 
+future_t *
+future_topology_select (
+
+   mongoc_topology_ptr topology,
+   mongoc_ss_optype_t optype,
+   const_mongoc_read_prefs_ptr read_prefs,
+   int64_t local_threshold_ms,
+   bson_error_ptr error
+);
+
+
 
 #endif /* FUTURE_FUNCTIONS_H */

@@ -92,6 +92,15 @@ future_get_mongoc_insert_flags_t (future_t *future);
 mongoc_query_flags_t
 future_get_mongoc_query_flags_t (future_t *future);
 
+mongoc_server_description_ptr
+future_get_mongoc_server_description_ptr (future_t *future);
+
+mongoc_ss_optype_t
+future_get_mongoc_ss_optype_t (future_t *future);
+
+mongoc_topology_ptr
+future_get_mongoc_topology_ptr (future_t *future);
+
 const_mongoc_read_prefs_ptr
 future_get_const_mongoc_read_prefs_ptr (future_t *future);
 
