@@ -282,7 +282,7 @@ install_json_test_suite(TestSuite *suite, const char *dir_path, test_hook callba
 
    num_tests = collect_tests_from_dir(&test_paths[0],
                                       dir_path,
-                                      0, 100);
+                                      0, MAX_NUM_TESTS);
 
    for (i = 0; i < num_tests; i++) {
       test = get_bson_from_json_file(test_paths[i]);
