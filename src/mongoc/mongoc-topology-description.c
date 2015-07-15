@@ -996,6 +996,7 @@ _mongoc_topology_description_update_rs_with_primary_from_member (mongoc_topology
    /* set_name should never be null here */
    if (strcmp(topology->set_name, server->set_name) != 0) {
       _mongoc_topology_description_remove_server(topology, server);
+      _update_rs_type (topology);
       return;
    }
 
