@@ -656,7 +656,7 @@ _mongoc_topology_description_set_state (mongoc_topology_description_t *descripti
 
 
 static void
-_check_if_has_primary (mongoc_topology_description_t *topology)
+_update_rs_type (mongoc_topology_description_t *topology)
 {
    if (_mongoc_topology_description_has_primary(topology)) {
       _mongoc_topology_description_set_state(topology, MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
@@ -688,7 +688,7 @@ static void
 _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t *topology,
                                                    mongoc_server_description_t   *server)
 {
-   _check_if_has_primary (topology);
+   _update_rs_type (topology);
 }
 
 /*
@@ -899,7 +899,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
    }
    else if (strcmp(topology->set_name, server->set_name) != 0) {
       _mongoc_topology_description_remove_server(topology, server);
-      _check_if_has_primary (topology);
+      _update_rs_type (topology);
       return;
    }
 
@@ -915,7 +915,7 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
    _mongoc_topology_description_remove_unreported_servers (topology, server);
 
    /* Finally, set topology type */
-   _check_if_has_primary (topology);
+   _update_rs_type (topology);
 }
 
 /*
@@ -1075,7 +1075,7 @@ _mongoc_topology_description_remove_and_check_primary (mongoc_topology_descripti
                                                        mongoc_server_description_t   *server)
 {
    _mongoc_topology_description_remove_server(topology, server);
-   _check_if_has_primary (topology);
+   _update_rs_type (topology);
 }
 
 /*
