@@ -329,7 +329,7 @@ _mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
 
    if (node->tags.len) {
       bson_destroy (&node->tags);
-      memset (&node->tags, 0, sizeof node->tags);
+      bson_init (&node->tags);
    }
 
    bson_free (node->replSet);
