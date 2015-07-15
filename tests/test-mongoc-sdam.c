@@ -201,6 +201,10 @@ test_all_spec_tests (TestSuite *suite)
    /* Sharded */
    install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/sharded",
                        &test_sdam_cb);
+
+   /* Tests not in official Server Discovery And Monitoring Spec */
+   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/supplemental",
+                       &test_sdam_cb);
 }
 
 void
