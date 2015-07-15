@@ -1799,7 +1799,7 @@ test_collection_install (TestSuite *suite)
       test_legacy_bulk_insert_oversized_middle);
    TestSuite_AddMockServerTest (
       suite,
-      "/Collection/bulk_insert/legacy/oversized__middle_continue",
+      "/Collection/bulk_insert/legacy/oversized_middle_continue",
       test_legacy_bulk_insert_oversized_continue_middle);
    TestSuite_AddMockServerTest (
       suite,
