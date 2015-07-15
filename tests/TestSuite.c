@@ -411,8 +411,8 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
    struct timespec ts1;
    struct timespec ts2;
    struct timespec ts3;
-   char name[64];
-   char buf[256];
+   char name[MAX_TEST_NAME_LENGTH];
+   char buf[MAX_TEST_NAME_LENGTH + 500];
    int status;
 
    snprintf (name, sizeof name, "%s%s", suite->name, test->name);

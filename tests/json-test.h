@@ -25,7 +25,6 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"
 
-#define MAX_NAME_LENGTH 250
 #define MAX_NUM_TESTS 100
 
 typedef void (* test_hook)(bson_t *test);
@@ -34,7 +33,7 @@ bson_t *
 get_bson_from_json_file (char *filename);
 
 int
-collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
+collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
                         const char *dir_path,
                         int         paths_index,
                         int         max_paths);

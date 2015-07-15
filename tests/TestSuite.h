@@ -75,6 +75,9 @@ extern "C" {
    } while (0)
 
 
+#define MAX_TEST_NAME_LENGTH 500
+
+
 typedef void (*TestFunc) (void);
 typedef void (*TestFuncWC) (void*);
 typedef void (*TestFuncDtor) (void*);

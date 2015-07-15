@@ -108,9 +108,9 @@ assemble_path (const char *parent_path,
    int path_len = (int)strlen(parent_path);
    int name_len = (int)strlen(child_name);
 
-   assert(path_len + name_len + 1 < MAX_NAME_LENGTH);
+   assert(path_len + name_len + 1 < MAX_TEST_NAME_LENGTH);
 
-   memset(dst, '\0', MAX_NAME_LENGTH * sizeof(char));
+   memset(dst, '\0', MAX_TEST_NAME_LENGTH * sizeof(char));
    strncat(dst, parent_path, path_len);
    strncat(dst, "/", 1);
    strncat(dst, child_name, name_len);
@@ -128,7 +128,7 @@ assemble_path (const char *parent_path,
  *-----------------------------------------------------------------------
  */
 int
-collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
+collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
                         const char *dir_path,
                         int paths_index,
                         int max_paths)
@@ -137,7 +137,7 @@ collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
    intptr_t handle;
    struct _finddata_t info;
 
-   char child_path[MAX_NAME_LENGTH];
+   char child_path[MAX_TEST_NAME_LENGTH];
 
    handle = _findfirst(dir_path, &info);
 
@@ -172,7 +172,7 @@ collect_tests_from_dir (char (*paths)[MAX_NAME_LENGTH] /* OUT */,
 #else
    struct dirent *entry;
    struct stat dir_stat;
-   char child_path[MAX_NAME_LENGTH];
+   char child_path[MAX_TEST_NAME_LENGTH];
    DIR *dir;
 
    dir = opendir(dir_path);
@@ -273,7 +273,7 @@ get_bson_from_json_file(char *filename)
 void
 install_json_test_suite(TestSuite *suite, const char *dir_path, test_hook callback)
 {
-   char test_paths[MAX_NUM_TESTS][MAX_NAME_LENGTH];
+   char test_paths[MAX_NUM_TESTS][MAX_TEST_NAME_LENGTH];
    int num_tests;
    int i;
    bson_t *test;
