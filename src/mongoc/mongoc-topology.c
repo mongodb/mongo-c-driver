@@ -16,9 +16,7 @@
 
 #include "mongoc-error.h"
 #include "mongoc-topology-private.h"
-#include "mongoc-topology-scanner-private.h"
 #include "mongoc-uri-private.h"
-#include "mongoc-trace.h"
 
 #include "utlist.h"
 
@@ -270,6 +268,31 @@ _mongoc_topology_time_to_scan (mongoc_topology_t *topology) {
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_topology_sleep_min_heartbeat --
+ *
+ *       Wait until we're allowed to rescan.
+ *
+ *       Server Discovery And Monitoring Spec: "If a client frequently
+ *       rechecks a server, it MUST wait at least minHeartbeatFrequencyMS
+ *       milliseconds  since the previous check to avoid pointless effort.
+ *       This value MUST be 500 ms, and it MUST NOT be configurable."
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+_mongoc_topology_sleep_min_heartbeat (mongoc_topology_t *topology) {
+   int64_t next_scan = topology->last_scan
+                       + MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS * 1000;
+   int64_t sleep_usec = next_scan - bson_get_monotonic_time ();
+
+   if (sleep_usec > 0) {
+      usleep (sleep_usec);
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_topology_run_scanner --
  *
  *       Not threadsafe, the expectation is that we're either single
@@ -317,7 +340,10 @@ _mongoc_topology_run_scanner (mongoc_topology_t *topology,
  */
 static void
 _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology) {
-   mongoc_topology_scanner_start (topology->scanner, topology->timeout_msec);
+   mongoc_topology_scanner_start (topology->scanner,
+                                  topology->timeout_msec,
+                                  true);
+
    while (_mongoc_topology_run_scanner (topology, topology->timeout_msec)) {}
    topology->last_scan = bson_get_monotonic_time ();
 }
@@ -372,12 +398,6 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
       /* until we find a server or timeout */
       for (;;) {
-         /* error if we've timed out */
-         now = bson_get_monotonic_time();
-         if (now >= expire_at) {
-            goto TIMEOUT;
-         }
-
          /* attempt to select a server */
          selected_server = mongoc_topology_description_select(&topology->description,
                                                               optype,
@@ -389,9 +409,15 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             return mongoc_server_description_new_copy(selected_server);
          }
 
+         /* error if we've timed out */
+         now = bson_get_monotonic_time();
+         if (now >= expire_at) {
+            goto TIMEOUT;
+         }
+
          /* rescan */
-         usleep (MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS * 1000);
-         _mongoc_topology_do_blocking_scan(topology);
+         _mongoc_topology_sleep_min_heartbeat (topology);
+         _mongoc_topology_do_blocking_scan (topology);
       }
    }
 
@@ -628,7 +654,9 @@ void * _mongoc_topology_run_background (void *data)
 
          /* if we can start scanning, do so immediately */
          if (timeout <= 0) {
-            mongoc_topology_scanner_start (topology->scanner, topology->timeout_msec);
+            mongoc_topology_scanner_start (topology->scanner,
+                                           topology->timeout_msec,
+                                           false);
             break;
          } else {
             /* otherwise wait until someone:

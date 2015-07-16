@@ -1,4 +1,5 @@
 #include <mongoc.h>
+#include <mongoc-uri-private.h>
 
 #include "mongoc-client-private.h"
 #include "mongoc-cluster-private.h"
@@ -8,6 +9,9 @@
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
+#include "mock_server/mock-server.h"
+#include "mock_server/future.h"
+#include "mock_server/future-functions.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-test"
@@ -245,6 +249,168 @@ test_max_wire_version_race_condition (void)
    mongoc_client_pool_destroy (pool);
 }
 
+
+static void
+test_cooldown_standalone (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *primary_pref;
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   mongoc_server_description_t *sd;
+
+   server = mock_server_new ();
+   mock_server_set_request_timeout_msec (server, 100);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   /* anything less than minHeartbeatFrequencyMS=500 is irrelevant */
+   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1);
+   client = mongoc_client_new_from_uri (uri);
+   primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   /* first ismaster fails, selection fails */
+   future = future_topology_select (client->topology, MONGOC_SS_READ,
+                                    primary_pref, 15, &error);
+   assert (request = mock_server_receives_ismaster (server));
+   mock_server_hangs_up (request);
+   assert (!future_get_mongoc_server_description_ptr (future));
+   request_destroy (request);
+   future_destroy (future);
+
+   sleep (1);
+
+   /* second selection doesn't try to call ismaster: we're in cooldown */
+   future = future_topology_select (client->topology, MONGOC_SS_READ,
+                                    primary_pref, 15, &error);
+   assert (!mock_server_receives_ismaster (server));  /* no ismaster call */
+   assert (!future_get_mongoc_server_description_ptr (future));
+   future_destroy (future);
+
+   sleep (5);
+
+   /* cooldown ends, now we try ismaster again, this time succeeding */
+   future = future_topology_select (client->topology, MONGOC_SS_READ,
+                                    primary_pref, 15, &error);
+   request = mock_server_receives_ismaster (server);  /* not in cooldown now */
+   assert (request);
+   mock_server_replies_simple (request, "{'ok': 1, 'ismaster': true}");
+   sd = future_get_mongoc_server_description_ptr (future);
+   assert (sd);
+   request_destroy (request);
+   future_destroy (future);
+
+   mongoc_server_description_destroy (sd);
+   mongoc_read_prefs_destroy (primary_pref);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_cooldown_rs (void)
+{
+   mock_server_t *servers[2];  /* two secondaries, no primary */
+   char *uri_str;
+   int i;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *primary_pref;
+   char *secondary_response;
+   char *primary_response;
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   mongoc_server_description_t *sd;
+
+   for (i = 0; i < 2; i++) {
+      servers[i] = mock_server_new ();
+      mock_server_set_request_timeout_msec (servers[i], 600);
+      mock_server_run (servers[i]);
+   }
+
+   uri_str = bson_strdup_printf (
+      "mongodb://localhost:%hu/?replicaSet=rs&serverSelectionTimeoutMS=1000",
+      mock_server_get_port (servers[0]));
+
+   client = mongoc_client_new (uri_str);
+   primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   secondary_response = bson_strdup_printf (
+      "{'ok': 1, 'ismaster': false, 'secondary': true, 'setName': 'rs',"
+      " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
+      mock_server_get_port (servers[0]),
+      mock_server_get_port (servers[1]));
+
+   primary_response = bson_strdup_printf (
+      "{'ok': 1, 'ismaster': true, 'setName': 'rs',"
+      " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
+      mock_server_get_port (servers[0]),
+      mock_server_get_port (servers[1]));
+
+   /* server 0 is a secondary, 1 is discovered but down. selection fails. */
+   future = future_topology_select (client->topology, MONGOC_SS_READ,
+                                    primary_pref, 15, &error);
+
+   assert (request = mock_server_receives_ismaster (servers[0]));
+   mock_server_replies_simple (request, secondary_response);
+   request_destroy (request);
+
+   /* TODO: Once CDRIVER-751 is fixed, the driver will attempt this call
+    * in the same blocking scan, so we can turn serverSelectionTimeoutMS
+    * down to 1 ms and request_timeout_msec to 10ms and this still works.
+    */
+   assert (request = mock_server_receives_ismaster (servers[1]));
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   assert (!future_get_mongoc_server_description_ptr (future));
+   future_destroy (future);
+
+   sleep (1);
+
+   /* second selection doesn't try ismaster on server 1: it's in cooldown */
+   future = future_topology_select (client->topology, MONGOC_SS_READ,
+                                    primary_pref, 15, &error);
+
+   assert (request = mock_server_receives_ismaster (servers[0]));
+   mock_server_replies_simple (request, secondary_response);
+   request_destroy (request);
+
+   assert (!mock_server_receives_ismaster (servers[1]));  /* no ismaster call */
+
+   /* still no primary */
+   assert (!future_get_mongoc_server_description_ptr (future));
+   future_destroy (future);
+
+   sleep (5);
+
+   /* cooldown ends, now we try ismaster on server 1, this time succeeding */
+   future = future_topology_select (client->topology, MONGOC_SS_READ,
+                                    primary_pref, 15, &error);
+
+   request = mock_server_receives_ismaster (servers[1]);
+   assert (request);
+   mock_server_replies_simple (request, primary_response);
+   request_destroy (request);
+
+   /* server 0 doesn't need to respond */
+   sd = future_get_mongoc_server_description_ptr (future);
+   assert (sd);
+   future_destroy (future);
+
+   mongoc_server_description_destroy (sd);
+   mongoc_read_prefs_destroy (primary_pref);
+   mongoc_client_destroy (client);
+   bson_free (secondary_response);
+   bson_free (primary_response);
+   bson_free (uri_str);
+   mock_server_destroy (servers[0]);
+}
+
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -253,4 +419,6 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/invalidate_server", test_topology_invalidate_server);
    TestSuite_Add (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node);
    TestSuite_Add (suite, "/Topology/max_wire_version_race_condition", test_max_wire_version_race_condition);
+   TestSuite_Add (suite, "/Topology/cooldown/standalone", test_cooldown_standalone);
+   TestSuite_Add (suite, "/Topology/cooldown/rs", test_cooldown_rs);
 }
