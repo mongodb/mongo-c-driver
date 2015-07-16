@@ -47,6 +47,8 @@ mock_server_t *mock_server_new_rs           (const char            *address,
                                              mock_server_handler_t        handler,
                                              void                        *handler_data,
                                              const char                  *setName,
+                                             bool                         isMaster,
+                                             bool                         isSecondary,
                                              const mongoc_host_list_t    *hosts);
 void           mock_server_set_wire_version (mock_server_t         *server,
                                              int32_t           min_wire_version,
@@ -58,6 +60,9 @@ void           mock_server_reply_simple     (mock_server_t        *server,
                                              const bson_t         *doc);
 int            mock_server_run              (mock_server_t         *server);
 void           mock_server_run_in_thread    (mock_server_t         *server);
+void           mock_server_set_verbose      (mock_server_t         *server,
+                                             bool                   verbose);
+bool           mock_server_verbose          (mock_server_t         *server);
 void           mock_server_quit             (mock_server_t         *server);
 void           mock_server_destroy          (mock_server_t         *server);
 

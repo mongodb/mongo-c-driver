@@ -74,6 +74,7 @@ typedef struct
    unsigned            primary    : 1;
    unsigned            needs_auth : 1;
    unsigned            isdbgrid   : 1;
+   unsigned            secondary  : 1;
    int32_t             min_wire_version;
    int32_t             max_wire_version;
    int32_t             max_write_batch_size;

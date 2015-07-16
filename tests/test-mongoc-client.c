@@ -534,7 +534,7 @@ test_seed_list (bool rs,
    hosts = mongoc_uri_get_hosts (uri);
    
    server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
-                                rs ? "rs" : NULL, hosts);
+                                rs ? "rs" : NULL, true, false, hosts);
 
    mock_server_run_in_thread (server);
 
@@ -623,6 +623,61 @@ static void
 test_mongos_seeds_reconnect (void)
 {
    test_seed_list (false, RECONNECT);
+}
+
+static void
+test_recovering (void)
+{
+   uint16_t port;
+   char *uri_str;
+   mongoc_uri_t *uri;
+   mock_server_t *server;
+   uint32_t i;
+   const mongoc_host_list_t *hosts;
+   mongoc_client_t *client;
+   mongoc_read_mode_t read_mode;
+   mongoc_read_prefs_t *prefs;
+   bson_error_t error;
+
+   port = 20000 + (rand () % 1000);
+   uri_str = bson_strdup_printf ("mongodb://localhost:%hu/?replicaSet=rs",
+                                 port);
+
+   uri = mongoc_uri_new (uri_str);
+   hosts = mongoc_uri_get_hosts (uri);
+
+   /* server is "recovering": not master, not secondary */
+   server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
+                                "rs", false, false, hosts);
+
+   mock_server_set_verbose (server, false);
+   mock_server_run_in_thread (server);
+
+   client = mongoc_client_new_from_uri (uri);
+   assert (client);
+   ASSERT_CMPINT (1, ==, client->cluster.nodes_len);
+   for (i = 0; i < 1; i++) {
+      assert (client->cluster.nodes[i].valid);
+   }
+
+   prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   /* recovering member matches no read mode */
+   for (read_mode = MONGOC_READ_PRIMARY;
+        read_mode <= MONGOC_READ_NEAREST;
+        read_mode++) {
+      mongoc_read_prefs_set_mode (prefs, read_mode);
+      assert (!_mongoc_cluster_preselect (&client->cluster,
+                                          MONGOC_OPCODE_QUERY,
+                                          NULL, prefs, &error));
+   }
+
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_client_destroy (client);
+   mock_server_quit (server);
+   mock_server_destroy (server);
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
 }
 
 
@@ -871,6 +926,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/mongos_seeds_no_connect", test_mongos_seeds_no_connect);
    TestSuite_Add (suite, "/Client/mongos_seeds_connect", test_mongos_seeds_connect);
    TestSuite_Add (suite, "/Client/mongos_seeds_reconnect", test_mongos_seeds_reconnect);
+   TestSuite_Add (suite, "/Client/recovering", test_recovering);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
 }

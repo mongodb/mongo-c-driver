@@ -249,6 +249,7 @@ _mongoc_cluster_node_init (mongoc_cluster_node_t *node)
    node->stamp = 0;
    bson_init(&node->tags);
    node->primary = 0;
+   node->secondary = 0;
    node->needs_auth = 0;
    node->valid = true;
 
@@ -437,6 +438,7 @@ _mongoc_cluster_disconnect_node (mongoc_cluster_t      *cluster,
    node->pings_pos = 0;
    node->stamp++;
    node->primary = 0;
+   node->secondary = 0;
 
    bson_destroy (&node->tags);
    bson_init (&node->tags);
@@ -706,7 +708,7 @@ dispatch:
       if (need_primary && cluster->nodes[i].primary) {
          node = &cluster->nodes[i];
          goto CLEANUP;
-      } else if (need_secondary && cluster->nodes[i].primary) {
+      } else if (need_secondary && !cluster->nodes[i].secondary) {
          nodes[i] = NULL;
       } else {
          nodes[i] = cluster->nodes[i].stream ? &cluster->nodes[i] : NULL;
@@ -1070,6 +1072,7 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
    }
 
    node->primary = false;
+   node->secondary = false;
 
    bson_free (node->replSet);
    node->replSet = NULL;
@@ -1078,6 +1081,12 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
        BSON_ITER_HOLDS_BOOL (&iter) &&
        bson_iter_bool (&iter)) {
       node->primary = true;
+   }
+
+   if (bson_iter_init_find_case (&iter, &reply, "secondary") &&
+       BSON_ITER_HOLDS_BOOL (&iter) &&
+       bson_iter_bool (&iter)) {
+      node->secondary = true;
    }
 
    if (bson_iter_init_find_case(&iter, &reply, "maxMessageSizeBytes")) {
@@ -1974,6 +1983,7 @@ _mongoc_cluster_reconnect_direct (mongoc_cluster_t *cluster,
    node->host = *hosts;
    node->needs_auth = cluster->requires_auth;
    node->primary = false;
+   node->secondary = false;
    node->ping_avg_msec = -1;
    memset(node->pings, 0xFF, sizeof node->pings);
    node->pings_pos = 0;

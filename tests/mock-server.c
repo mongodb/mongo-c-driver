@@ -34,6 +34,7 @@ struct _mock_server_t
 {
    mock_server_handler_t  handler;
    void                  *handler_data;
+   bool                   verbose;
 
    mongoc_thread_t        main_thread;
    mongoc_cond_t          cond;
@@ -50,6 +51,7 @@ struct _mock_server_t
    int                    last_response_id;
 
    bool                   isMaster;
+   bool                   isSecondary;
    int                    minWireVersion;
    int                    maxWireVersion;
    int                    maxBsonObjectSize;
@@ -150,6 +152,10 @@ handle_ismaster (mock_server_t   *server,
    BSON_ASSERT (doc);
 
    bson_append_bool (&reply_doc, "ismaster", -1, server->isMaster);
+   if (!server->isMaster) {
+      bson_append_bool (&reply_doc, "secondary", -1, server->isSecondary);
+   }
+
    bson_append_int32 (&reply_doc, "maxBsonObjectSize", -1,
                       server->maxBsonObjectSize);
    bson_append_int32 (&reply_doc, "maxMessageSizeBytes", -1,
@@ -253,7 +259,10 @@ mock_server_worker (void *data)
 
 again:
    if (_mongoc_buffer_fill (&buffer, stream, 4, -1, &error) == -1) {
-      MONGOC_WARNING ("%s():%d: %s", __FUNCTION__, __LINE__, error.message);
+      if (mock_server_verbose (server)) {
+         MONGOC_WARNING ("%s():%d: %s", __FUNCTION__, __LINE__, error.message);
+      }
+
       GOTO (failure);
    }
 
@@ -328,6 +337,8 @@ mock_server_new_rs (const char                  *address,
                     mock_server_handler_t        handler,
                     void                        *handler_data,
                     const char                  *setName,
+                    bool                         isMaster,
+                    bool                         isSecondary,
                     const mongoc_host_list_t    *hosts)
 {
    mock_server_t *server;
@@ -343,6 +354,7 @@ mock_server_new_rs (const char                  *address,
    server = bson_malloc0(sizeof *server);
    server->handler = handler ? handler : dummy_handler;
    server->handler_data = handler_data;
+   server->verbose = true;
    server->sock = NULL;
    _mongoc_array_init (&server->streams, sizeof (mongoc_stream_t *));
    server->address = address;
@@ -350,7 +362,8 @@ mock_server_new_rs (const char                  *address,
 
    server->minWireVersion = 0;
    server->maxWireVersion = 0;
-   server->isMaster = true;
+   server->isMaster = isMaster;
+   server->isSecondary = isSecondary;
    server->maxBsonObjectSize = 16777216;
    server->maxMessageSizeBytes = 48000000;
 
@@ -373,7 +386,8 @@ mock_server_new (const char            *address,
                  mock_server_handler_t  handler,
                  void                  *handler_data)
 {
-   return mock_server_new_rs (address, port, handler, handler_data, NULL, NULL);
+   return mock_server_new_rs (address, port, handler, handler_data,
+                              NULL, true, false, NULL);
 }
 
 
@@ -480,6 +494,29 @@ mock_server_run_in_thread (mock_server_t *server)
    mongoc_thread_create (&server->main_thread, main_thread, server);
    mongoc_cond_wait (&server->cond, &server->mutex);
    mongoc_mutex_unlock (&server->mutex);
+}
+
+
+void
+mock_server_set_verbose (mock_server_t *server,
+                         bool verbose)
+{
+   mongoc_mutex_lock (&server->mutex);
+   server->verbose = verbose;
+   mongoc_mutex_unlock (&server->mutex);
+}
+
+
+bool
+mock_server_verbose (mock_server_t *server)
+{
+   bool verbose;
+
+   mongoc_mutex_lock (&server->mutex);
+   verbose = server->verbose;
+   mongoc_mutex_unlock (&server->mutex);
+
+   return verbose;
 }
 
 

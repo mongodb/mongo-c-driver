@@ -11,6 +11,7 @@ test_mongoc_read_prefs_score (void)
 {
    mongoc_read_prefs_t *read_prefs;
    mongoc_cluster_node_t node = { 0 };
+   mongoc_cluster_node_t recovering = { 0 };
    bool valid;
    int score;
 
@@ -19,32 +20,43 @@ test_mongoc_read_prefs_score (void)
    ASSERT_CMPINT(valid, ==, 1)
 
    read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
+   node.secondary = true;
 
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
    ASSERT_CMPINT(score, ==, 0);
+   score = _mongoc_read_prefs_score(read_prefs, &recovering);
+   ASSERT_CMPINT(score, ==, -1);
 
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY_PREFERRED);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
    ASSERT_CMPINT(score, ==, 1);
+   score = _mongoc_read_prefs_score(read_prefs, &recovering);
+   ASSERT_CMPINT(score, ==, -1);
 
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_SECONDARY_PREFERRED);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
    ASSERT_CMPINT(score, ==, 1);
+   score = _mongoc_read_prefs_score(read_prefs, &recovering);
+   ASSERT_CMPINT(score, ==, -1);
 
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_SECONDARY);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
    ASSERT_CMPINT(score, ==, 1);
+   score = _mongoc_read_prefs_score(read_prefs, &recovering);
+   ASSERT_CMPINT(score, ==, -1);
 
    node.primary = true;
    mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY);
    ASSERT_VALID(read_prefs);
    score = _mongoc_read_prefs_score(read_prefs, &node);
    ASSERT_CMPINT(score, ==, INT_MAX);
+   score = _mongoc_read_prefs_score(read_prefs, &recovering);
+   ASSERT_CMPINT(score, ==, -1);
 
    mongoc_read_prefs_destroy(read_prefs);
 
