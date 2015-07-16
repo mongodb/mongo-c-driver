@@ -41,6 +41,7 @@ struct _mock_server_t
    bool stopped;
    bool verbose;
    bool rand_delay;
+   int64_t request_timeout_msec;
    uint16_t port;
    mongoc_socket_t *sock;
    char *uri_str;
@@ -108,6 +109,7 @@ mock_server_new ()
 {
    mock_server_t *server = bson_malloc0 (sizeof (mock_server_t));
 
+   server->request_timeout_msec = 10 * 1000;
    _mongoc_array_init (&server->autoresponders,
                        sizeof (autoresponder_handle_t));
    _mongoc_array_init (&server->worker_threads,
@@ -538,6 +540,48 @@ mock_server_set_verbose (mock_server_t *server, bool verbose)
 
 /*--------------------------------------------------------------------------
  *
+ * mock_server_get_request_timeout_msec --
+ *
+ *       How long mock_server_receives_* functions wait for a client
+ *       request before giving up and returning NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int64_t
+mock_server_get_request_timeout_msec (mock_server_t *server)
+{
+   int64_t request_timeout_msec;
+
+   mongoc_mutex_lock (&server->mutex);
+   request_timeout_msec = server->request_timeout_msec;
+   mongoc_mutex_unlock (&server->mutex);
+
+   return request_timeout_msec;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_set_request_timeout_msec --
+ *
+ *       How long mock_server_receives_* functions wait for a client
+ *       request before giving up and returning NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_server_set_request_timeout_msec (mock_server_t *server,
+                                      int64_t request_timeout_msec)
+{
+   mongoc_mutex_lock (&server->mutex);
+   server->request_timeout_msec = request_timeout_msec;
+   mongoc_mutex_unlock (&server->mutex);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * mock_server_get_rand_delay --
  *
  *       Does the server delay a random duration before responding?
@@ -626,17 +670,16 @@ mock_server_receives_command (mock_server_t *server,
    ns = bson_strdup_printf ("%s.$cmd", database_name);
 
    q = mock_server_get_queue (server);
-   /* TODO: get timeout val from mock_server_t */
-   request = (request_t *) q_get (q, 10 * 1000);
+   request = (request_t *) q_get (q, server->request_timeout_msec);
 
-   if (!request_matches_query (request,
-                               ns,
-                               flags,
-                               0,
-                               1,
-                               formatted_command_json,
-                               NULL,
-                               true)) {
+   if (request && !request_matches_query (request,
+                                          ns,
+                                          flags,
+                                          0,
+                                          1,
+                                          formatted_command_json,
+                                          NULL,
+                                          true)) {
       request_destroy (request);
       request = NULL;
    }
@@ -730,17 +773,16 @@ mock_server_receives_query (mock_server_t *server,
    request_t *request;
 
    q = mock_server_get_queue (server);
-   /* TODO: get timeout val from mock_server_t */
-   request = (request_t *) q_get (q, 10 * 1000);
+   request = (request_t *) q_get (q, server->request_timeout_msec);
 
-   if (!request_matches_query (request,
-                               ns,
-                               flags,
-                               skip,
-                               n_return,
-                               query_json,
-                               fields_json,
-                               false)) {
+   if (request && !request_matches_query (request,
+                                          ns,
+                                          flags,
+                                          skip,
+                                          n_return,
+                                          query_json,
+                                          fields_json,
+                                          false)) {
       request_destroy (request);
       return NULL;
    }
@@ -777,13 +819,12 @@ mock_server_receives_insert (mock_server_t *server,
    request_t *request;
 
    q = mock_server_get_queue (server);
-   /* TODO: get timeout val from mock_server_t */
-   request = (request_t *) q_get (q, 10 * 1000);
+   request = (request_t *) q_get (q, server->request_timeout_msec);
 
-   if (!request_matches_insert (request,
-                                ns,
-                                flags,
-                                doc_json)) {
+   if (request && !request_matches_insert (request,
+                                           ns,
+                                           flags,
+                                           doc_json)) {
       request_destroy (request);
       return NULL;
    }
@@ -819,13 +860,12 @@ mock_server_receives_bulk_insert (mock_server_t *server,
    request_t *request;
 
    q = mock_server_get_queue (server);
-   /* TODO: get timeout val from mock_server_t */
-   request = (request_t *) q_get (q, 10 * 1000);
+   request = (request_t *) q_get (q, server->request_timeout_msec);
 
-   if (!request_matches_bulk_insert (request,
-                                     ns,
-                                     flags,
-                                     n)) {
+   if (request && !request_matches_bulk_insert (request,
+                                                ns,
+                                                flags,
+                                                n)) {
       request_destroy (request);
       return NULL;
    }
@@ -863,10 +903,9 @@ request_t *mock_server_receives_kill_cursors (mock_server_t *server,
 
    q = mock_server_get_queue (server);
 
-   /* TODO: get timeout val from mock_server_t */
-   request = (request_t *) q_get (q, 10 * 1000);
+   request = (request_t *) q_get (q, server->request_timeout_msec);
 
-   if (!request_matches_kill_cursors (request, cursor_id)) {
+   if (request && !request_matches_kill_cursors (request, cursor_id)) {
       request_destroy (request);
       return NULL;
    }

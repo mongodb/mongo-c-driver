@@ -72,6 +72,11 @@ bool mock_server_get_verbose (mock_server_t *server);
 void mock_server_set_verbose (mock_server_t *server,
                               bool verbose);
 
+int64_t mock_server_get_request_timeout_msec (mock_server_t *server);
+
+void mock_server_set_request_timeout_msec (mock_server_t *server,
+                                           int64_t request_timeout_msec);
+
 bool mock_server_get_rand_delay (mock_server_t *server);
 
 void mock_server_set_rand_delay (mock_server_t *server,
