@@ -77,7 +77,7 @@
     </note>
 
     <note style="advanced">
-      <p>If you require <code>Kerberos</code> add <code>--enable-sasl</code> to the above configuration. This will require the <code>cyris-sasl-devel</code> on RedHat Entrprise Linux. Other Linux-based operating systems may have another name for this package.</p>
+      <p>If you require <code>Kerberos</code> add <code>--enable-sasl</code> to the above configuration. This will require the <code>cyrus-sasl-devel</code> on RedHat Entrprise Linux. Other Linux-based operating systems may have another name for this package.</p>
     </note>
 
     <p>If <code>configure</code> completed successfully, you'll see something like the following describing your build configuration.</p>
