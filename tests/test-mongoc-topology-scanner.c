@@ -128,12 +128,8 @@ test_topology_scanner_ssl ()
 void
 test_topology_scanner_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (suite,
-                                "/TOPOLOGY/scanner",
-                                test_topology_scanner);
+   TestSuite_Add (suite, "/TOPOLOGY/scanner", test_topology_scanner);
 #ifdef MONGOC_ENABLE_SSL
-   TestSuite_AddMockServerTest (suite,
-                                "/TOPOLOGY/scanner_ssl",
-                                test_topology_scanner_ssl);
+   TestSuite_Add (suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
 #endif
 }

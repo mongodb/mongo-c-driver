@@ -689,6 +689,7 @@ test_client_install (TestSuite *suite)
       TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);
    }
 
+   TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
    TestSuite_AddFull (suite, "/Client/authenticate", test_mongoc_client_authenticate, NULL, NULL, should_run_auth_tests);
    TestSuite_AddFull (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure, NULL, NULL, should_run_auth_tests);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
@@ -696,17 +697,8 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
-   TestSuite_AddMockServerTest (suite,
-                                "/Client/read_prefs",
-                                test_mongoc_client_read_prefs);
-   TestSuite_AddMockServerTest (suite,
-                                "/Client/database_names",
-                                test_get_database_names);
+   TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
 
    /* TODO: CDRIVER-689 */
-   /*
-   TestSuite_AddMockServerTest (suite,
-                                "/Client/wire_version",
-                                test_wire_version);
-   */
+   /*TestSuite_Add (suite, "/Client/wire_version", test_wire_version);*/
 }

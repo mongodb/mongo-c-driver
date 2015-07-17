@@ -2251,23 +2251,15 @@ test_bulk_install (TestSuite *suite)
    TestSuite_Add (suite, "/BulkOperation/single_error_unordered_bulk",
                   test_single_error_unordered_bulk);
 /* TODO: CDRIVER-707.
-   TestSuite_AddMockServerTest (suite,
-                                "/BulkOperation/write_concern/legacy/ordered",
-                                test_write_concern_legacy_ordered);
-   TestSuite_AddMockServerTest (suite,
-                                "/BulkOperation/write_concern/legacy/unordered",
-                                test_write_concern_legacy_unordered);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/legacy/ordered",
+                  test_write_concern_legacy_ordered);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/legacy/unordered",
+                  test_write_concern_legacy_unordered);
 */
-   TestSuite_AddMockServerTest (
-      suite,
-      "/BulkOperation/write_concern/write_command/ordered",
-      test_write_concern_write_command_ordered);
-
-   TestSuite_AddMockServerTest (
-      suite,
-      "/BulkOperation/write_concern/write_command/unordered",
-      test_write_concern_write_command_unordered);
-
+   TestSuite_Add (suite, "/BulkOperation/write_concern/write_command/ordered",
+                  test_write_concern_write_command_ordered);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/write_command/unordered",
+                  test_write_concern_write_command_unordered);
    TestSuite_Add (suite, "/BulkOperation/multiple_error_unordered_bulk",
                   test_multiple_error_unordered_bulk);
    TestSuite_Add (suite, "/BulkOperation/large_inserts_ordered",

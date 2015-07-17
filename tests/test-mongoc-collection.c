@@ -1789,34 +1789,27 @@ test_collection_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Collection/insert_bulk", test_insert_bulk);
 
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/large",
-      test_legacy_bulk_insert_large);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_middle",
-      test_legacy_bulk_insert_oversized_middle);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_middle_continue",
-      test_legacy_bulk_insert_oversized_continue_middle);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_first",
-      test_legacy_bulk_insert_oversized_first);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_first_continue",
-      test_legacy_bulk_insert_oversized_first_continue);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_last",
-      test_legacy_bulk_insert_oversized_last);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/Collection/bulk_insert/legacy/oversized_last_continue",
-      test_legacy_bulk_insert_oversized_last_continue);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/large",
+                  test_legacy_bulk_insert_large);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_middle",
+                  test_legacy_bulk_insert_oversized_middle);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_middle_continue",
+                  test_legacy_bulk_insert_oversized_continue_middle);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_first",
+                  test_legacy_bulk_insert_oversized_first);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_first_continue",
+                  test_legacy_bulk_insert_oversized_first_continue);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_last",
+                  test_legacy_bulk_insert_oversized_last);
+   TestSuite_Add (suite,
+                  "/Collection/bulk_insert/legacy/oversized_last_continue",
+                  test_legacy_bulk_insert_oversized_last_continue);
 
    TestSuite_Add (suite, "/Collection/insert", test_insert);
    TestSuite_Add (suite, "/Collection/save", test_save);
