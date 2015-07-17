@@ -45,7 +45,7 @@ mongoc_cond_timedwait (pthread_cond_t  *cond,
 
    bson_gettimeofday (&tv);
 
-   msec = (tv.tv_sec * 1000) + (tv.tv_usec / 1000) + timeout_msec;
+   msec = ((int64_t)tv.tv_sec * 1000) + (tv.tv_usec / 1000) + timeout_msec;
 
    to.tv_sec = msec / 1000;
    to.tv_nsec = (msec % 1000) * 1000 * 1000;
