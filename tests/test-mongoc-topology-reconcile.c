@@ -326,12 +326,12 @@ test_topology_reconcile_sharded_pooled (void)
 void
 test_topology_reconcile_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/reconcile/rs/pooled",
-                                test_topology_reconcile_rs_pooled);
-   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/reconcile/rs/single",
-                                test_topology_reconcile_rs_single);
-   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/reconcile/sharded/pooled",
-                                test_topology_reconcile_sharded_pooled);
-   TestSuite_AddMockServerTest (suite, "/TOPOLOGY/reconcile/sharded/single",
-                                test_topology_reconcile_sharded_single);
+   TestSuite_Add (suite, "/TOPOLOGY/reconcile/rs/pooled",
+                  test_topology_reconcile_rs_pooled);
+   TestSuite_Add (suite, "/TOPOLOGY/reconcile/rs/single",
+                  test_topology_reconcile_rs_single);
+   TestSuite_Add (suite, "/TOPOLOGY/reconcile/sharded/pooled",
+                  test_topology_reconcile_sharded_pooled);
+   TestSuite_Add (suite, "/TOPOLOGY/reconcile/sharded/single",
+                  test_topology_reconcile_sharded_single);
 }
