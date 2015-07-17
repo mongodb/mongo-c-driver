@@ -2,10 +2,15 @@ cmake_minimum_required(VERSION 2.8)
 
 project (libmongoc)
 
+option(SEARCH_OPEN_SSL "SEARCH_OPEN_SSL" ON)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
 include(InstallRequiredSystemLibraries)
-include(FindOpenSSL)
+
+if (SEARCH_OPEN_SSL)
+    include(FindOpenSSL)
+endif ()
 
 include(FindBSON REQUIRED)
 include(FindSASL2)
@@ -25,7 +30,7 @@ set (CPACK_PACKAGE_VERSION_MINOR ${MONGOC_MINOR_VERSION})
 
 include (CPack)
 
-if (OPENSSL_FOUND)
+if (SEARCH_OPEN_SSL AND OPENSSL_FOUND)
    set (MONGOC_ENABLE_SSL 1)
 else()
    set (MONGOC_ENABLE_SSL 0)
@@ -273,7 +278,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-write-commands.c
 )
 
-if (OPENSSL_FOUND)
+if (SEARCH_OPEN_SSL AND OPENSSL_FOUND)
    set(test-libmongoc-sources ${test-libmongoc-sources}
       ${SOURCE_DIR}/tests/test-x509.c
       ${SOURCE_DIR}/tests/ssl-test.c

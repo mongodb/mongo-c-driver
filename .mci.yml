@@ -124,17 +124,19 @@ c_driver_variables:
           set -o verbose
           cmake="/cygdrive/c/cmake/bin/cmake"
           msbuild="/cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe"
-          generator="Visual Studio 12 2013 Win64"
+          dumpbin="/cygdrive/c/Program Files (x86)/Microsoft Visual Studio 12.0/VC/bin/dumpbin.exe"
           # In Autotools builds, autogen.sh does this, we must do it here.
           git submodule init
           git submodule update
           cd src/libbson
-          "$cmake" -G "$generator" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
+          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
           "$msbuild" /m ALL_BUILD.vcxproj
+          "$dumpbin" /HEADERS Debug/libbson-1.0.dll | head -n 25
           "$msbuild" /m INSTALL.vcxproj
           cd ../..
-          "$cmake" -G "$generator" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" "-DCMAKE_INCLUDE_PATH=C:/sasl/include" "-DCMAKE_LIBRARY_PATH=C:/sasl/lib"
+          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" "$cmake_defs"
           "$msbuild" /m ALL_BUILD.vcxproj
+          "$dumpbin" /HEADERS Debug/mongoc-1.0.lib | head -n 25
           "$msbuild" /m INSTALL.vcxproj
 
     integration_tests:
@@ -178,12 +180,13 @@ c_driver_variables:
       msbuild: # ???
       dllpath: "c:/openssl/bin,c:/sasl/bin,c:/curl/dlls"
     ## msvc2013, 32-bit
-    msvc2013-32: &with_msvc2010_32bit
-      generator: Visual Studio 10 2010
-      msbuild: # ???
-      dllpath: "c:/openssl/bin,c:/sasl/bin"
+    msvc2013_32bit: &with_msvc2013_32bit
+      generator: Visual Studio 12 2013
+      cmake_defs: "-DSEARCH_OPEN_SSL:BOOL=OFF"
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
     msvc2013: &with_msvc2013
       generator: Visual Studio 12 2013 Win64
+      cmake_defs: "-DCMAKE_INCLUDE_PATH=C:/sasl/include -DCMAKE_LIBRARY_PATH=C:/sasl/lib"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
 
@@ -253,6 +256,8 @@ functions:
       working_dir: "mongo-c-driver"
       script: |
           export PATH=${extra_path}:$PATH
+          export GENERATOR="${generator}"     # For CMake on Windows
+          export cmake_defs="${cmake_defs}"   # For CMake on Windows
           ${compile_script}
 
   "set version latest" :
@@ -497,6 +502,16 @@ buildvariants:
 #######################################
 #        Windows Buildvariants        #
 #######################################
+
+- name: windows-32-vs2013
+  display_name: "Windows 32-bit CMake Visual Studio 2013"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2013_32bit
+  run_on:
+  - windows-64-vs2013-compile
+  tasks: *std_tests
 
 - name: windows-64-vs2013
   display_name: "Windows 64-bit CMake Visual Studio 2013"
