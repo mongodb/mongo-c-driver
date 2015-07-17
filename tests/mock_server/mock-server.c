@@ -83,7 +83,7 @@ static void mock_server_reply_simple (mock_server_t *server,
 
 void autoresponder_handle_destroy (autoresponder_handle_t *handle);
 
-uint16_t get_port (mongoc_socket_t *sock);
+static uint16_t get_port (mongoc_socket_t *sock);
 
 
 /*--------------------------------------------------------------------------
@@ -1088,7 +1088,7 @@ mock_server_destroy (mock_server_t *server)
 }
 
 
-uint16_t
+static uint16_t
 get_port (mongoc_socket_t *sock)
 {
    struct sockaddr_in bound_addr = { 0 };
