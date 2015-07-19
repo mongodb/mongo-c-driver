@@ -134,7 +134,7 @@ c_driver_variables:
           "$dumpbin" /HEADERS Debug/libbson-1.0.dll | head -n 25
           "$msbuild" /m INSTALL.vcxproj
           cd ../..
-          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" "$cmake_defs"
+          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" "$CMAKE_DEFS"
           "$msbuild" /m ALL_BUILD.vcxproj
           "$dumpbin" /HEADERS Debug/mongoc-1.0.lib | head -n 25
           "$msbuild" /m INSTALL.vcxproj
@@ -257,7 +257,7 @@ functions:
       script: |
           export PATH=${extra_path}:$PATH
           export GENERATOR="${generator}"     # For CMake on Windows
-          export cmake_defs="${cmake_defs}"   # For CMake on Windows
+          export CMAKE_DEFS="${cmake_defs}"   # For CMake on Windows
           ${compile_script}
 
   "set version latest" :
