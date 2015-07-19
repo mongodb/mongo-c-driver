@@ -151,7 +151,7 @@ test_framework_getenv (const char *name)
    }
 #else
 
-   if (getenv (name)) {
+   if (getenv (name) && strlen (getenv (name))) {
       return bson_strdup (getenv (name));
    } else {
       return NULL;
