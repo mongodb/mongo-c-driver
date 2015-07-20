@@ -49,7 +49,8 @@ mock_server_t *mock_server_new_rs           (const char            *address,
                                              const char                  *setName,
                                              bool                         isMaster,
                                              bool                         isSecondary,
-                                             const mongoc_host_list_t    *hosts);
+                                             const mongoc_host_list_t    *hosts,
+                                             const bson_t                *tags);
 void           mock_server_set_wire_version (mock_server_t         *server,
                                              int32_t           min_wire_version,
                                              int32_t           max_wire_version);

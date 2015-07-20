@@ -3,6 +3,7 @@
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
+#include "mock-server.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -232,23 +233,110 @@ test_mongoc_cluster_basic (void)
 
 
 static void
-test_mongoc_cluster_destroy_disconnect (void)
+_test_mongoc_cluster_destroy_disconnect (bool has_many_tags,
+                                         bool rs_connection)
 {
+   uint16_t port;
+   char *uri_str;
+   mongoc_uri_t *uri;
+   const mongoc_host_list_t *hosts;
+   int i;
+   bson_t tags = BSON_INITIALIZER;
+   char *key;
+   mock_server_t *server;
    mongoc_client_t *client;
    bson_error_t error;
    mongoc_cluster_t *cluster;
-   mongoc_cluster_node_t *node;
+   mongoc_cluster_node_t *node = NULL;
 
-   client = test_framework_client_new (NULL);
-   assert (_mongoc_client_warm_up (client, &error));
+   port = 20000 + (rand () % 1000);
+   uri_str = bson_strdup_printf (
+      rs_connection ? "mongodb://localhost:%hu/?replicaSet=rs"
+                    : "mongodb://localhost:%hu/",
+      port);
+
+   uri = mongoc_uri_new (uri_str);
+   hosts = mongoc_uri_get_hosts (uri);
+
+   if (has_many_tags) {
+      for (i = 0; i < 100; i++) {
+         /* ensure the tags document must spill to the heap */
+         key = bson_strdup_printf ("key%d", i);
+         BSON_APPEND_UTF8 (
+            &tags, key,
+            "value-value-value-value-value-value-value-value-value-value");
+
+         bson_free (key);
+      }
+   } else {
+      BSON_APPEND_UTF8 (&tags, "key", "value");
+   }
+
+   server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
+                                "rs", true, false, hosts, &tags);
+
+   mock_server_run_in_thread (server);
+
+   client = mongoc_client_new (uri_str);
    cluster = &client->cluster;
-   ASSERT_CMPINT (cluster->nodes_len, >=, 1);
-   node = &cluster->nodes[0];
-   _mongoc_cluster_node_destroy (node);
+
+   for (i = 0; i < 2; i++) {
+      assert (_mongoc_cluster_reconnect (cluster, &error));
+      ASSERT_CMPINT (cluster->nodes_len, ==, 1);
+      node = &cluster->nodes[0];
+      if (rs_connection) {
+         ASSERT_CMPSTR (node->replSet, "rs");
+         if (has_many_tags) {
+            ASSERT_CMPINT (100, ==, bson_count_keys (&node->tags));
+         } else {
+            ASSERT_CMPINT (1, ==, bson_count_keys (&node->tags));
+         }
+      } else {
+         assert (!node->replSet);
+         /* cluster ignores "ismaster.tags" in direct mode */
+         assert (bson_empty (&node->tags));
+      }
+   }
+
+   mock_server_quit (server);
+   mock_server_destroy (server);
 
    /* no segfaults */
+   _mongoc_cluster_node_destroy (node);
    _mongoc_cluster_disconnect_node (cluster, node);
    mongoc_client_destroy (client);
+
+   bson_destroy (&tags);
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+}
+
+
+void
+test_mongoc_cluster_destroy_disconnect_one_direct (void)
+{
+   _test_mongoc_cluster_destroy_disconnect (false, false);
+}
+
+
+void
+test_mongoc_cluster_destroy_disconnect_many_direct (void)
+{
+   _test_mongoc_cluster_destroy_disconnect (true, false);
+}
+
+
+void
+test_mongoc_cluster_destroy_disconnect_one_rs (void)
+{
+   _test_mongoc_cluster_destroy_disconnect (false, true);
+}
+
+
+void
+test_mongoc_cluster_destroy_disconnect_many_rs (void)
+{
+   _test_mongoc_cluster_destroy_disconnect (true, true);
 }
 
 
@@ -256,6 +344,12 @@ void
 test_cluster_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Cluster/basic", test_mongoc_cluster_basic);
-   TestSuite_Add (suite, "/Cluster/node_destroy_disconnect",
-                  test_mongoc_cluster_destroy_disconnect);
+   TestSuite_Add (suite, "/Cluster/node_destroy_disconnect/one_tag/direct",
+                  test_mongoc_cluster_destroy_disconnect_one_direct);
+   TestSuite_Add (suite, "/Cluster/node_destroy_disconnect/many_tags/direct",
+                  test_mongoc_cluster_destroy_disconnect_many_direct);
+   TestSuite_Add (suite, "/Cluster/node_destroy_disconnect/one_tag/rs",
+                  test_mongoc_cluster_destroy_disconnect_one_rs);
+   TestSuite_Add (suite, "/Cluster/node_destroy_disconnect/many_tags/rs",
+                  test_mongoc_cluster_destroy_disconnect_many_rs);
 }

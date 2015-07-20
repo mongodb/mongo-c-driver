@@ -1077,6 +1077,9 @@ _mongoc_cluster_ismaster (mongoc_cluster_t      *cluster,
    bson_free (node->replSet);
    node->replSet = NULL;
 
+   bson_destroy (&node->tags);
+   bson_init (&node->tags);
+
    if (bson_iter_init_find_case (&iter, &reply, "isMaster") &&
        BSON_ITER_HOLDS_BOOL (&iter) &&
        bson_iter_bool (&iter)) {
@@ -2067,6 +2070,95 @@ host_list_destroy (mongoc_host_list_t *hl)
 }
 
 
+static uint32_t
+list_len (const mongoc_list_t *list)
+{
+   const mongoc_list_t *liter;
+   uint32_t i;
+
+   for (liter = list, i = 0; liter; liter = liter->next, i++) {}
+
+   return i;
+}
+
+
+static mongoc_cluster_node_t *
+save_nodes (mongoc_cluster_node_t *nodes,
+            size_t                 nodes_len)
+{
+   mongoc_cluster_node_t *saved_nodes;
+   int i;
+
+   saved_nodes = bson_malloc0 (nodes_len * sizeof (mongoc_cluster_node_t));
+
+   for (i = 0; i < nodes_len; i++) {
+      _mongoc_cluster_node_init (&saved_nodes[i]);
+      if (nodes[i].stream) {
+         saved_nodes[i].host = nodes[i].host;
+         saved_nodes[i].stream = nodes[i].stream;
+         nodes [i].stream = NULL;
+      }
+   }
+
+   return saved_nodes;
+}
+
+
+
+static mongoc_cluster_node_t *
+nodes_list_new (size_t nodes_len)
+{
+   mongoc_cluster_node_t *nodes;
+   size_t i;
+
+   nodes = bson_malloc0 (sizeof (mongoc_cluster_node_t) * nodes_len);
+   for (i = 0; i < nodes_len; i++) {
+      _mongoc_cluster_node_init (&nodes[i]);
+      /* guard against counter errors, see CDRIVER-695 */
+      nodes[i].valid = false;
+   }
+
+   return nodes;
+}
+
+
+static mongoc_stream_t *
+restore_stream (mongoc_cluster_node_t *saved_nodes,
+                size_t                 saved_nodes_len,
+                char                  *host_and_port)
+{
+   size_t i;
+   mongoc_stream_t *stream;
+
+   for (i = 0; i < saved_nodes_len; i++) {
+      if (0 == strcmp (saved_nodes [i].host.host_and_port,
+                       host_and_port)) {
+         stream = saved_nodes [i].stream;
+         saved_nodes [i].stream = NULL;
+         return stream;
+      }
+   }
+
+   return NULL;
+}
+
+
+static void
+destroy_nodes_list (mongoc_cluster_node_t **nodes_ptr,
+                    size_t                  nodes_len)
+{
+   mongoc_cluster_node_t *nodes = *nodes_ptr;
+   size_t i;
+
+   for (i = 0; i < nodes_len; i++) {
+      _mongoc_cluster_node_destroy (&nodes[i]);
+   }
+
+   bson_free (nodes);
+   *nodes_ptr = NULL;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -2098,25 +2190,22 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
    const mongoc_host_list_t *iter;
    mongoc_host_list_t *failed_hosts = NULL;
    mongoc_cluster_node_t node;
-   mongoc_cluster_node_t *saved_nodes;
-   size_t saved_nodes_len;
+   mongoc_cluster_node_t *saved_nodes = NULL;
+   size_t saved_nodes_len = 0;
+   uint32_t peers_len;
    mongoc_host_list_t host;
    mongoc_stream_t *stream;
-   mongoc_list_t *list;
+   mongoc_list_t *list = NULL;
    mongoc_list_t *liter;
    int32_t ping;
    const char *replSet;
    uint32_t i;
-   uint32_t j;
    bool rval = false;
 
    ENTRY;
 
    BSON_ASSERT(cluster);
    BSON_ASSERT(cluster->mode == MONGOC_CLUSTER_REPLICA_SET);
-
-   saved_nodes = bson_malloc0(cluster->nodes_len * sizeof(*saved_nodes));
-   saved_nodes_len = cluster->nodes_len;
 
    MONGOC_DEBUG("Reconnecting to replica set.");
 
@@ -2135,26 +2224,18 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
     * Replica Set (Re)Connection Strategy
     * ===================================
     *
-    * First we break all existing connections. This may change.
+    * First we save existing connections.
     *
     * To perform the replica set connection, we connect to each of the
     * pre-configured replicaSet nodes. (There may in fact only be one).
     *
-    * TODO: We should perform this initial connection in parallel.
-    *
     * Using the result of an "isMaster" on each of these nodes, we can
-    * prime the cluster nodes we want to connect to.
-    *
-    * We then connect to all of these nodes in parallel. Once we have
-    * all of the working nodes established, we can complete the process.
+    * prime the cluster nodes we want to connect to. Then we connect to
+    * them.
     *
     * We return true if any of the connections were successful, however
     * we must update the cluster health appropriately so that callers
     * that need a PRIMARY node can force reconnection.
-    *
-    * TODO: At some point in the future, we will need to authenticate
-    *       before calling an "isMaster". But that is dependent on a
-    *       few server "features" first.
     */
 
    cluster->last_reconnect = bson_get_monotonic_time();
@@ -2202,28 +2283,18 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
 
    /*
     * To avoid reconnecting to all of the peers, we will save the
-    * functional connections (and save their ping times) so that
-    * we don't waste time doing that again.
+    * functional connections.
     */
 
-   for (i = 0; i < cluster->nodes_len; i++) {
-      if (cluster->nodes [i].stream) {
-         saved_nodes [i].host = cluster->nodes [i].host;
-         saved_nodes [i].stream = cluster->nodes [i].stream;
-         cluster->nodes [i].stream = NULL;
-      }
-   }
+   saved_nodes_len = cluster->nodes_len;
+   saved_nodes = save_nodes (cluster->nodes, cluster->nodes_len);
+
+   destroy_nodes_list (&cluster->nodes, cluster->nodes_len);
 
    /* reinitialize nodes with same length as peer list. */
-   for (liter = list, i = 0; liter; liter = liter->next, i++) {}
-   cluster->nodes = bson_realloc (cluster->nodes, sizeof (*cluster->nodes) * i);
-   cluster->nodes_len = i;
-
-   for (j = 0; j < i; j++) {
-      _mongoc_cluster_node_init (&cluster->nodes[j]);
-      /* guard against counter errors, see CDRIVER-695 */
-      cluster->nodes[j].valid = false;
-   }
+   peers_len = list_len(list);
+   cluster->nodes = nodes_list_new (peers_len);
+   cluster->nodes_len = peers_len;
 
    for (liter = list, i = 0; liter; liter = liter->next) {
       if (!_mongoc_host_list_from_string(&host, liter->data)) {
@@ -2237,15 +2308,10 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
          continue;
       }
 
-      stream = NULL;
-
-      for (j = 0; j < saved_nodes_len; j++) {
-         if (0 == strcmp (saved_nodes [j].host.host_and_port,
-                          host.host_and_port)) {
-            stream = saved_nodes [j].stream;
-            saved_nodes [j].stream = NULL;
-         }
-      }
+      /* NULLs the saved node's stream if found and returns it */
+      stream = restore_stream (saved_nodes,
+                               saved_nodes_len,
+                               host.host_and_port);
 
       if (!stream) {
          stream = _mongoc_client_create_stream (cluster->client, &host, error);
@@ -2300,20 +2366,6 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
       cluster->nodes_len = i;
    }
 
-   _mongoc_list_foreach(list, (void(*)(void*,void*))bson_free, NULL);
-   _mongoc_list_destroy(list);
-
-   /*
-    * Cleanup all potential saved connections that were not used.
-    */
-
-   for (j = 0; j < saved_nodes_len; j++) {
-      if (saved_nodes [j].stream) {
-         mongoc_stream_destroy (saved_nodes [j].stream);
-         saved_nodes [j].stream = NULL;
-      }
-   }
-
    if (i == 0) {
       bson_set_error(error,
                      MONGOC_ERROR_CLIENT,
@@ -2328,8 +2380,12 @@ _mongoc_cluster_reconnect_replica_set (mongoc_cluster_t *cluster,
 
 CLEANUP:
 
-   bson_free(saved_nodes);
+   if (list) {
+      _mongoc_list_foreach (list, (void (*) (void *, void *)) bson_free, NULL);
+      _mongoc_list_destroy (list);
+   }
 
+   destroy_nodes_list (&saved_nodes, saved_nodes_len);
    host_list_destroy (failed_hosts);
 
    RETURN(rval);

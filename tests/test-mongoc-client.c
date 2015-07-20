@@ -534,7 +534,7 @@ test_seed_list (bool rs,
    hosts = mongoc_uri_get_hosts (uri);
    
    server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
-                                rs ? "rs" : NULL, true, false, hosts);
+                                rs ? "rs" : NULL, true, false, hosts, NULL);
 
    mock_server_run_in_thread (server);
 
@@ -648,7 +648,7 @@ test_recovering (void)
 
    /* server is "recovering": not master, not secondary */
    server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
-                                "rs", false, false, hosts);
+                                "rs", false, false, hosts, NULL);
 
    mock_server_set_verbose (server, false);
    mock_server_run_in_thread (server);

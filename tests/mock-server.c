@@ -59,6 +59,7 @@ struct _mock_server_t
 
    const char                  *setName;
    const mongoc_host_list_t    *hosts;
+   const bson_t                *tags;
 
    bool stopping;
    bool stopped;
@@ -180,6 +181,10 @@ handle_ismaster (mock_server_t   *server,
       }
       
       bson_append_array_end (&reply_doc, &hosts_array);
+   }
+
+   if (server->tags) {
+      BSON_APPEND_DOCUMENT (&reply_doc, "tags", server->tags);
    }
 
    mock_server_reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply_doc);
@@ -339,7 +344,8 @@ mock_server_new_rs (const char                  *address,
                     const char                  *setName,
                     bool                         isMaster,
                     bool                         isSecondary,
-                    const mongoc_host_list_t    *hosts)
+                    const mongoc_host_list_t    *hosts,
+                    const bson_t                *tags)
 {
    mock_server_t *server;
 
@@ -369,6 +375,7 @@ mock_server_new_rs (const char                  *address,
 
    server->setName = setName;
    server->hosts = hosts;
+   server->tags = tags;
 
    mongoc_mutex_init (&server->mutex);
    mongoc_cond_init (&server->cond);
@@ -387,7 +394,7 @@ mock_server_new (const char            *address,
                  void                  *handler_data)
 {
    return mock_server_new_rs (address, port, handler, handler_data,
-                              NULL, true, false, NULL);
+                              NULL, true, false, NULL, NULL);
 }
 
 
@@ -462,7 +469,7 @@ mock_server_run (mock_server_t *server)
    }
 
    mongoc_mutex_lock (&server->mutex);
-   mongoc_socket_close (server->sock);
+   mongoc_socket_destroy (server->sock);
    server->sock = NULL;
    server->stopped = true;
    mongoc_cond_signal (&server->stopped_condition);
