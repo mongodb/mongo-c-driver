@@ -115,7 +115,8 @@ generate man pages and HTML for it.
 
 ### Testing
 
-The tests require a MongoDB server with authentication. Start `mongod`:
+To run the entire test suite, including authentication tests,
+start `mongod` with auth enabled:
 
 ```
 $ mongod --auth
@@ -127,7 +128,14 @@ In another terminal, use the `mongo` shell to create a user:
 $ mongo --eval "db.createUser({user: 'admin', pwd: 'pass', roles: ['root']})" admin
 ```
 
-Set the user and password environment variables, and run the tests:
+To authenticate against MongoDB 3.0+ requires SCRAM-SHA-1, which in turn
+requires a driver built with OpenSSL:
+
+```
+$ ./configure --enable-ssl`
+```
+
+Set the user and password environment variables, then build and run the tests:
 
 ```
 $ export MONGOC_TEST_USER=admin
@@ -167,8 +175,7 @@ All tests should pass before submitting a patch.
 ## Configuring the test runner
 
 The test runner can be configured by declaring the `TEST_ARGS` environment
-variable.
-Currently the following options can be provided:
+variable. The following options can be provided:
 
 ```
     -h, --help   Show this help menu.
@@ -197,4 +204,3 @@ $ make debug TEST_ARGS="-l /WriteConcern/bson_omits_defaults"
 ```
 
 This will build all dependencies and leave you in a debugger ready to run the test.
-
