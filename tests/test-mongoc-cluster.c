@@ -231,8 +231,31 @@ test_mongoc_cluster_basic (void)
 }
 
 
+static void
+test_mongoc_cluster_destroy_disconnect (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_cluster_t *cluster;
+   mongoc_cluster_node_t *node;
+
+   client = test_framework_client_new (NULL);
+   assert (_mongoc_client_warm_up (client, &error));
+   cluster = &client->cluster;
+   ASSERT_CMPINT (cluster->nodes_len, >=, 1);
+   node = &cluster->nodes[0];
+   _mongoc_cluster_node_destroy (node);
+
+   /* no segfaults */
+   _mongoc_cluster_disconnect_node (cluster, node);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_cluster_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Cluster/basic", test_mongoc_cluster_basic);
+   TestSuite_Add (suite, "/Cluster/node_destroy_disconnect",
+                  test_mongoc_cluster_destroy_disconnect);
 }

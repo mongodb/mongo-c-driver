@@ -143,6 +143,7 @@ bool                   _mongoc_cluster_command_early   (mongoc_cluster_t        
                                                         const bson_t                 *command,
                                                         bson_t                       *reply,
                                                         bson_error_t                 *error);
+void                   _mongoc_cluster_node_destroy    (mongoc_cluster_node_t        *node);
 void                   _mongoc_cluster_disconnect_node (mongoc_cluster_t             *cluster,
                                                         mongoc_cluster_node_t        *node);
 bool                   _mongoc_cluster_reconnect       (mongoc_cluster_t             *cluster,

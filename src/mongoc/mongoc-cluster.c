@@ -315,7 +315,7 @@ _mongoc_cluster_node_track_ping (mongoc_cluster_node_t *node,
  *--------------------------------------------------------------------------
  */
 
-static void
+void
 _mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
 {
    ENTRY;
