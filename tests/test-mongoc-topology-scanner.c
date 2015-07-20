@@ -8,7 +8,7 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-scanner-test"
 
-#define TIMEOUT 20000
+#define TIMEOUT 20000 /* milliseconds */
 #define NSERVERS 10
 
 #define TRUST_DIR "tests/trust_dir"

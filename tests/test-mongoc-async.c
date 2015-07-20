@@ -9,7 +9,7 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async-test"
 
-#define TIMEOUT 10000
+#define TIMEOUT 10000  /* milliseconds */
 #define NSERVERS 10
 
 #define TRUST_DIR "tests/trust_dir"
@@ -126,7 +126,7 @@ test_ismaster_impl (bool with_ssl)
                         TIMEOUT);
    }
 
-   while (mongoc_async_run (async, TIMEOUT * 1000 * 10)) {
+   while (mongoc_async_run (async, TIMEOUT)) {
    }
 
    for (i = 0; i < NSERVERS; i++) {
