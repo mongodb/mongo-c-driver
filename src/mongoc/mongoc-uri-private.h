@@ -36,6 +36,9 @@ mongoc_uri_append_host           (      mongoc_uri_t *uri,
                                   const char         *host,
                                         uint16_t      port);
 bool
+mongoc_uri_parse_host            (      mongoc_uri_t  *uri,
+                                  const char          *str);
+bool
 mongoc_uri_set_username          (      mongoc_uri_t *uri,
                                   const char         *username);
 bool
