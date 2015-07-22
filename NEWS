@@ -7,13 +7,15 @@ This is a patch release with bug fixes:
 
  * Occasional crash reconnecting to replica set.
  * Queries sent to recovering replica set members.
- * Hang after network error sending a large message.
+ * Memory leak when calling ismaster on replica set members.
 
 Thanks to everyone who contributed to the development of this point release for
 libmongoc.
 
  * A. Jesse Jiryu Davis
+ * Daniil Zaitsev
  * Jason Carey
+ * Jeremy Mikola
 
 Peace,
 
