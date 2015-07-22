@@ -253,7 +253,7 @@ mongoc_uri_parse_host6 (mongoc_uri_t  *uri,
 }
 
 
-static bool
+bool
 mongoc_uri_parse_host (mongoc_uri_t  *uri,
                        const char    *str)
 {
