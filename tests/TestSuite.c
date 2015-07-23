@@ -383,6 +383,11 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
        * TODO: If not verbose, close()/dup(/dev/null) for stdout.
        */
 
+      /* Tracing is superduper slow */
+#if MONGOC_TRACE
+      mongoc_log_trace_disable ();
+#endif
+
 #if defined(_WIN32)
       srand (test->seed);
       test->func (test->ctx);

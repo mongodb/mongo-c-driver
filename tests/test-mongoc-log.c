@@ -17,6 +17,7 @@
 #include <mongoc.h>
 
 #include "mongoc-log-private.h"
+#include "mongoc-trace.h"
 #include "TestSuite.h"
 
 
@@ -87,10 +88,69 @@ test_mongoc_log_null (void)
    mongoc_log_set_handler (old_handler, old_data);
 }
 
+int should_run_trace_tests (void)
+{
+#if MONGOC_TRACE
+   return 1;
+#else
+   return 0;
+#endif
+}
+int should_not_run_trace_tests (void)
+{
+   return !should_run_trace_tests();
+}
+
+static void
+test_mongoc_log_trace_enabled (void *context)
+{
+   struct log_func_data data;
+
+   mongoc_log_set_handler (log_func, &data);
+
+   mongoc_log_trace_enable ();
+   TRACE("%s", "Conscript reporting!");
+   ASSERT_CMPINT (data.log_level, ==, MONGOC_LOG_LEVEL_TRACE);
+   ASSERT_CONTAINS (data.message, " Conscript reporting!");
+   bson_free (data.log_domain);
+   bson_free (data.message);
+
+   TRACE("%s", "Awaiting orders");
+   ASSERT_CMPINT (data.log_level, ==, MONGOC_LOG_LEVEL_TRACE);
+   ASSERT_CONTAINS (data.message, "Awaiting orders");
+
+   mongoc_log_trace_disable ();
+   TRACE("%s", "For the Union");
+   ASSERT_CMPINT (data.log_level, ==, MONGOC_LOG_LEVEL_TRACE);
+   ASSERT_CONTAINS (data.message, "Awaiting orders");
+   bson_free (data.log_domain);
+   bson_free (data.message);
+
+
+   mongoc_log_trace_enable ();
+   TRACE("%s", "For home country");
+   ASSERT_CMPINT (data.log_level, ==, MONGOC_LOG_LEVEL_TRACE);
+   ASSERT_CONTAINS (data.message, "For home country");
+   bson_free (data.log_domain);
+   bson_free (data.message);
+}
+
+static void
+test_mongoc_log_trace_disabled (void *context)
+{
+   struct log_func_data data = {-1, 0, NULL};
+
+   mongoc_log_set_handler (log_func, &data);
+
+   TRACE("%s", "Conscript reporting!");
+   ASSERT_CMPINT (data.log_level, ==, -1);
+}
 
 void
 test_log_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Log/basic", test_mongoc_log_handler);
+   TestSuite_AddFull (suite, "/Log/trace/enabled", test_mongoc_log_trace_enabled, NULL, NULL, should_run_trace_tests);
+   TestSuite_AddFull (suite, "/Log/trace/disabled", test_mongoc_log_trace_disabled, NULL, NULL, should_not_run_trace_tests);
    TestSuite_Add (suite, "/Log/null", test_mongoc_log_null);
 }

@@ -63,6 +63,16 @@ extern "C" {
    } while (0)
 
 
+#define ASSERT_CONTAINS(a, b) \
+   do { \
+      if (NULL == strstr ((a), (b))) { \
+         fprintf(stderr, \
+                 "FAIL\n\nAssert Failure: \"%s\" does not contain \"%s\"\n", \
+                 a, b); \
+         abort(); \
+      } \
+   } while (0)
+
 #define ASSERT_STARTSWITH(a, b) \
    do { \
       if ((a) != strstr ((a), (b))) { \
