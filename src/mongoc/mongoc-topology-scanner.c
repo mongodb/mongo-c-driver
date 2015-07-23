@@ -29,7 +29,6 @@
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
 #include "utlist.h"
-#include "mongoc-topology-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
@@ -98,7 +97,6 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
 
    node->id = id;
    node->ts = ts;
-   node->last_failed = -1;
 
    DL_APPEND(ts->nodes, node);
 
@@ -179,7 +177,6 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
                                           bson_error_t             *error)
 {
    mongoc_topology_scanner_node_t *node;
-   int64_t now = bson_get_monotonic_time ();
 
    bson_return_if_fail (data);
 
@@ -192,12 +189,9 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
        async_status == MONGOC_ASYNC_CMD_TIMEOUT) {
       mongoc_stream_failed (node->stream);
       node->stream = NULL;
-      node->last_failed = now;
-   } else {
-      node->last_failed = -1;
    }
 
-   node->last_used = now;
+   node->last_used = bson_get_monotonic_time ();
 
    node->ts->cb (node->id, ismaster_response, rtt_msec,
                  node->ts->cb_data, error);
@@ -378,52 +372,28 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
  *      should be called once before calling mongoc_topology_scanner_work()
  *      repeatedly to complete the scan.
  *
- *      If "obey_cooldown" is true, this is a single-threaded blocking scan
- *      that must obey the Server Discovery And Monitoring Spec's cooldownMS:
- *
- *      "After a single-threaded client gets a network error trying to check
- *      a server, the client skips re-checking the server until cooldownMS has
- *      passed.
- *
- *      "This avoids spending connectTimeoutMS on each unavailable server
- *      during each scan.
- *
- *      "This value MUST be 5000 ms, and it MUST NOT be configurable."
- *
  *--------------------------------------------------------------------------
  */
 
 void
 mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
-                               int32_t timeout_msec,
-                               bool obey_cooldown)
+                               int32_t                timeout_msec)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
-   int64_t cooldown;
+
    bson_return_if_fail (ts);
 
    if (ts->in_progress) {
       return;
    }
 
-   if (obey_cooldown) {
-      cooldown = bson_get_monotonic_time ()
-                 - 1000 * MONGOC_TOPOLOGY_COOLDOWN_MS;
-   } else {
-      cooldown = INT64_MIN;
-   }
-
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
-      if (node->last_failed < cooldown) {
-         if (mongoc_topology_scanner_node_setup (node)) {
-            node->cmd = mongoc_async_cmd (
-               ts->async, node->stream, ts->setup,
-               node->host.host, "admin",
-               &ts->ismaster_cmd,
-               &mongoc_topology_scanner_ismaster_handler,
-               node, timeout_msec);
-         }
+      if (mongoc_topology_scanner_node_setup (node)) {
+         node->cmd = mongoc_async_cmd (ts->async, node->stream, ts->setup,
+                                       node->host.host, "admin", &ts->ismaster_cmd,
+                                       &mongoc_topology_scanner_ismaster_handler, node,
+                                       timeout_msec);
       }
    }
 }

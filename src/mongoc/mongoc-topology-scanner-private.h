@@ -45,7 +45,6 @@ typedef struct mongoc_topology_scanner_node
    mongoc_stream_t                *stream;
    int64_t                         timestamp;
    int64_t                         last_used;
-   int64_t                         last_failed;
    bool                            has_auth;
    mongoc_host_list_t              host;
    struct addrinfo                *dns_results;
@@ -94,8 +93,7 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node,
 
 void
 mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
-                               int32_t timeout_msec,
-                               bool obey_cooldown);
+                               int32_t                    timeout_msec);
 
 bool
 mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,

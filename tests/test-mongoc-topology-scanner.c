@@ -90,7 +90,7 @@ _test_topology_scanner(bool with_ssl)
    }
 
    for (i = 0; i < 3; i++) {
-      mongoc_topology_scanner_start (topology_scanner, TIMEOUT, false);
+      mongoc_topology_scanner_start (topology_scanner, TIMEOUT);
 
       more_to_do = mongoc_topology_scanner_work (topology_scanner, TIMEOUT);
 
