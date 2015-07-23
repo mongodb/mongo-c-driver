@@ -667,10 +667,6 @@ TestSuite_RunSerial (TestSuite *suite) /* IN */
 }
 
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wcomment"
-#endif
 static void
 TestSuite_RunNamed (TestSuite *suite,     /* IN */
                     const char *testname) /* IN */
@@ -692,7 +688,7 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
                 suite->name, test->name);
       name [sizeof name - 1] = '\0';
       if (star) {
-         /* e.g. testname is "/Client/*" and name is "/Client/authenticate" */
+         /* e.g. testname is "/Client*" and name is "/Client/authenticate" */
          match = (0 == strncmp (name, testname, strlen (testname) - 1));
       } else {
          match = (0 == strcmp (name, testname));
@@ -710,9 +706,6 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
 
    Mutex_Destroy (&mutex);
 }
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 
 int

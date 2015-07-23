@@ -222,6 +222,7 @@ test_kill_cursors_pooled (void)
 }
 
 
+#ifdef TODO_CDRIVER_679
 static void
 _test_getmore_fail (bool has_primary,
                     bool pooled)
@@ -328,6 +329,7 @@ test_getmore_fail_no_primary_single (void)
 {
    _test_getmore_fail (false, false);
 }
+#endif
 
 
 void
@@ -338,7 +340,7 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/invalid_query", test_invalid_query);
    TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);
    TestSuite_Add (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
-   /* TODO: CDRIVER-679
+#ifdef TODO_CDRIVER_679
    TestSuite_Add (suite, "/Cursor/getmore_fail/with_primary/pooled",
                   test_getmore_fail_with_primary_pooled);
    TestSuite_Add (suite, "/Cursor/getmore_fail/with_primary/single",
@@ -347,4 +349,5 @@ test_cursor_install (TestSuite *suite)
                   test_getmore_fail_no_primary_pooled);
    TestSuite_Add (suite, "/Cursor/getmore_fail/no_primary/single",
                   test_getmore_fail_no_primary_single);*/
+#endif
 }

@@ -210,6 +210,7 @@ test_mongoc_client_authenticate_failure (void *context)
 }
 
 
+#ifdef TODO_CDRIVER_689
 static void
 test_wire_version (void)
 {
@@ -257,6 +258,7 @@ test_wire_version (void)
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
+#endif
 
 
 static void
@@ -699,6 +701,8 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
 
-   /* TODO: CDRIVER-689 */
-   /*TestSuite_Add (suite, "/Client/wire_version", test_wire_version);*/
+#ifdef TODO_CDRIVER_689
+   TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
+#endif
 }
+

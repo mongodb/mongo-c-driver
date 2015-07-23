@@ -1623,6 +1623,7 @@ _test_write_concern (bool has_write_commands, bool ordered)
    mock_server_destroy (mock_server);
 }
 
+#ifdef TODO_CDRIVER_707
 static void
 test_write_concern_legacy_ordered (void)
 {
@@ -1635,6 +1636,7 @@ test_write_concern_legacy_unordered (void)
 {
    _test_write_concern (false, false);
 }
+#endif
 
 
 static void
@@ -2250,12 +2252,12 @@ test_bulk_install (TestSuite *suite)
                   test_single_unordered_bulk);
    TestSuite_Add (suite, "/BulkOperation/single_error_unordered_bulk",
                   test_single_error_unordered_bulk);
-/* TODO: CDRIVER-707.
+#ifdef TODO_CDRIVER_707
    TestSuite_Add (suite, "/BulkOperation/write_concern/legacy/ordered",
                   test_write_concern_legacy_ordered);
    TestSuite_Add (suite, "/BulkOperation/write_concern/legacy/unordered",
                   test_write_concern_legacy_unordered);
-*/
+#endif
    TestSuite_Add (suite, "/BulkOperation/write_concern/write_command/ordered",
                   test_write_concern_write_command_ordered);
    TestSuite_Add (suite, "/BulkOperation/write_concern/write_command/unordered",
