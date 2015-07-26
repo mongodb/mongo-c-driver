@@ -539,7 +539,7 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 
    update = bson_sized_new (file->chunk_size + 100);
 
-   bson_append_value (update, "files_id", -1, &file->files_id);  
+   bson_append_value (update, "files_id", -1, &file->files_id);
    bson_append_int32 (update, "n", -1, n);
    bson_append_binary (update, "data", -1, BSON_SUBTYPE_BINARY, buf, len);
 
