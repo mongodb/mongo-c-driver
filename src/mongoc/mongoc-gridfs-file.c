@@ -496,15 +496,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
             /** filled a bucket, keep going */
             break;
          } else {
-            /** flush the buffer, the next pass through will bring in a new page
-             *
-             * Our file pointer is now on the new page, so push it back one so
-             * that flush knows to flush the old page rather than a new one.
-             * This is a little hacky
-             */
-            file->pos--;
             _mongoc_gridfs_file_flush_page (file);
-            file->pos++;
          }
       }
    }
@@ -523,6 +515,7 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    bool r;
    const uint8_t *buf;
    uint32_t len;
+   int32_t n;
 
    ENTRY;
    BSON_ASSERT (file);
@@ -534,12 +527,20 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    selector = bson_new ();
 
    bson_append_value (selector, "files_id", -1, &file->files_id);
-   bson_append_int32 (selector, "n", -1, (int32_t)(file->pos / file->chunk_size));
+   /** when flushing the buffer
+    *
+    * Our file pointer is on the next byte to be written, that could be the next page, 
+    * so push it back one when calculating "n" so
+    * that flush knows to flush the old page rather than a potentially new one.
+    * This is a little hacky and has been moved function mongoc_gridfs_file_writev(),
+    * the "else" section of statement "if (iov_pos == iov[i].iov_len)"
+    */
+   bson_append_int32 (selector, "n", -1, n = (int32_t)((file->pos - 1) / file->chunk_size));
 
    update = bson_sized_new (file->chunk_size + 100);
 
-   bson_append_value (update, "files_id", -1, &file->files_id);
-   bson_append_int32 (update, "n", -1, (int32_t)(file->pos / file->chunk_size));
+   bson_append_value (update, "files_id", -1, &file->files_id);  
+   bson_append_int32 (update, "n", -1, n);
    bson_append_binary (update, "data", -1, BSON_SUBTYPE_BINARY, buf, len);
 
    r = mongoc_collection_update (file->gridfs->chunks, MONGOC_UPDATE_UPSERT,
