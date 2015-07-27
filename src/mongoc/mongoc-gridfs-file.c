@@ -197,6 +197,7 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
    file = bson_malloc0 (sizeof *file);
 
    file->gridfs = gridfs;
+   file->pos_after_read_write = false;
    bson_copy_to (data, &file->bson);
 
    bson_iter_init (&iter, &file->bson);
@@ -295,6 +296,7 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
 
    file->gridfs = gridfs;
    file->is_dirty = 1;
+   file->pos_after_read_write = false;
 
    if (opt->chunk_size) {
       file->chunk_size = opt->chunk_size;
@@ -430,6 +432,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
          iov_pos += r;
          file->pos += r;
+         file->pos_after_read_write = true;
          bytes_read += r;
 
          if (iov_pos == iov[i].iov_len) {
@@ -488,6 +491,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 
          iov_pos += r;
          file->pos += r;
+         file->pos_after_read_write = true;
          bytes_written += r;
 
          file->length = BSON_MAX (file->length, (int64_t)file->pos);
@@ -535,7 +539,7 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
     * This is a little hacky and has been moved function mongoc_gridfs_file_writev(),
     * the "else" section of statement "if (iov_pos == iov[i].iov_len)"
     */
-   bson_append_int32 (selector, "n", -1, n = (int32_t)((file->pos - (file->pos == file->length ? 1 : 0)) / file->chunk_size));
+   bson_append_int32 (selector, "n", -1, n = (int32_t)((file->pos - (file->pos_after_read_write ? 1 : 0)) / file->chunk_size));
 
    update = bson_sized_new (file->chunk_size + 100);
 
@@ -739,6 +743,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
    }
 
    file->pos = offset;
+   file->pos_after_read_write = false;
 
    return 0;
 }
