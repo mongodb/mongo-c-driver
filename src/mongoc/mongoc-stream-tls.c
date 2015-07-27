@@ -480,11 +480,6 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
       if ((expire - now) < 0) {
          if (ret < buf_len) {
             mongoc_counter_streams_timeout_inc();
-#ifdef _WIN32
-            errno = WSAETIMEDOUT;
-#else
-            errno = ETIMEDOUT;
-#endif
          }
 
          tls->timeout_msec = 0;
