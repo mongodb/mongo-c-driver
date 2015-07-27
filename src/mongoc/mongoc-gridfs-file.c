@@ -531,13 +531,15 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    selector = bson_new ();
 
    bson_append_value (selector, "files_id", -1, &file->files_id);
-   /** when flushing the buffer
+   /** Note when calculating page number:
     *
-    * Our file pointer is on the next byte to be written, that could be the next page, 
-    * so push it back one when calculating "n" if we are past the end of file so
-    * that flush knows to flush the old page rather than a potentially new one.
-    * This is a little hacky and has been moved function mongoc_gridfs_file_writev(),
-    * the "else" section of statement "if (iov_pos == iov[i].iov_len)"
+    * Our file pointer *could* be  on the next byte to be read or written after a read or write operation,
+    * that in fact could be the next page when we cross the chunk_size boundary.
+    * So we will push it back by one byte when calculating "n" if pos_after_read_write is true
+    * to really flush the previous page.
+    * This is a little hacky and this trick has been moved from function mongoc_gridfs_file_writev().
+    * Before it was located in the "else" section of statement "if (iov_pos == iov[i].iov_len)" and implemented by
+    * decrementing file->pos by one and then re-incrementing it by one.
     */
    bson_append_int32 (selector, "n", -1, n = (int32_t)((file->pos - (file->pos_after_read_write ? 1 : 0)) / file->chunk_size));
 
