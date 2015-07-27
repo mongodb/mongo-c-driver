@@ -546,7 +546,9 @@ mock_server_quit (mock_server_t *server)
          assert (0 == mongoc_stream_close (stream));  /* success */
       }
    }
-   mongoc_cond_wait (&server->stopped_condition, &server->mutex);
+   while (! server->stopped) {
+      mongoc_cond_wait (&server->stopped_condition, &server->mutex);
+   }
    mongoc_mutex_unlock (&server->mutex);
 }
 
@@ -554,6 +556,9 @@ mock_server_quit (mock_server_t *server)
 void
 mock_server_destroy (mock_server_t *server)
 {
+   /* TODO: we can't actually destroy these if workers are still around.  Make
+    * this operational again after fixing that up */
+   return;
    if (server) {
       _mongoc_array_destroy (&server->streams);
       mongoc_cond_destroy (&server->cond);

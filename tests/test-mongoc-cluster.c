@@ -22,6 +22,8 @@ call_ismaster (bson_t *reply)
    r = mongoc_client_command_simple (client, "admin", &ismaster,
                                      NULL, reply, NULL);
 
+   mongoc_client_destroy(client);
+
    assert (r);
 }
 
@@ -72,6 +74,7 @@ uri_from_ismaster_plus_one (bson_t *ismaster_response)
    char *name;
    bson_iter_t iter;
    bson_iter_t hosts_iter;
+   mongoc_uri_t *uri;
 
    if ((name = set_name (ismaster_response))) {
       bson_iter_init_find (&iter, ismaster_response, "hosts");
@@ -98,7 +101,11 @@ uri_from_ismaster_plus_one (bson_t *ismaster_response)
       bson_free (host);
    }
 
-   return mongoc_uri_new (bson_string_free (uri_str, false));
+   uri = mongoc_uri_new (uri_str->str);
+
+   bson_string_free (uri_str, true);
+
+   return uri;
 }
 
 
