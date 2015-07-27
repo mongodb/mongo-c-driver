@@ -533,7 +533,7 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    bson_append_value (selector, "files_id", -1, &file->files_id);
    /** Note when calculating page number:
     *
-    * Our file pointer *could* be  on the next byte to be read or written after a read or write operation,
+    * Our file pointer *could* be on the next byte to be read or written after a read or write operation,
     * that in fact could be the next page when we cross the chunk_size boundary.
     * So we will push it back by one byte when calculating "n" if pos_after_read_write is true
     * to really flush the previous page.
