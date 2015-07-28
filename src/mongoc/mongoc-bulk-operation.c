@@ -248,7 +248,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
                        (BSON_VALIDATE_DOT_KEYS | BSON_VALIDATE_DOLLAR_KEYS),
                        &err_off)) {
       MONGOC_WARNING ("%s(): replacement document may not contain "
-                      "$ or . in keys. Ingoring document.",
+                      "$ or . in keys. Ignoring document.",
                       __FUNCTION__);
       EXIT;
    }
