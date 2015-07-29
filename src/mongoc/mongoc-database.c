@@ -618,6 +618,7 @@ mongoc_database_has_collection (mongoc_database_t *database,
        (error &&
         ((error->domain != 0) ||
          (error->code != 0)))) {
+      mongoc_cursor_destroy( cursor );
       return ret;
    }
 
