@@ -20,6 +20,9 @@
 #include <fcntl.h>
 #include <stdarg.h>
 
+#include "mongoc-log.h"
+#include "mongoc-log-private.h"
+
 #if defined(__APPLE__)
 # include <mach/mach_time.h>
 #endif
