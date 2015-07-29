@@ -412,6 +412,231 @@ test_mongoc_client_preselect (void)
 
 
 static void
+test_unavailable_seeds(void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_t query = BSON_INITIALIZER;
+   const bson_t *doc;
+   
+   const char* uri_strs[] = {
+      "mongodb://a:1/?connectTimeoutMS=1",
+      "mongodb://a:1,a:2/?connectTimeoutMS=1",
+      "mongodb://a:1,a:2/?replicaSet=r&connectTimeoutMS=1",
+      "mongodb://u:p@a:1/?connectTimeoutMS=1",
+      "mongodb://u:p@a:1,a:2/?connectTimeoutMS=1",
+      "mongodb://u:p@a:1,a:2/?replicaSet=r&connectTimeoutMS=1",
+   };
+
+   int i;
+
+   /* hardcode the number of error messages we have to suppress */
+   for (i = 0; i < 18; i++) {
+      suppress_one_message ();
+   }
+
+   for (i = 0; i < (sizeof(uri_strs) / sizeof(const char *)); i++) {
+      client = mongoc_client_new (uri_strs[i]);
+      assert (client);
+
+      collection = mongoc_client_get_collection (client, "test", "test");
+      cursor = mongoc_collection_find (collection,
+                                       MONGOC_QUERY_NONE,
+                                       0,
+                                       0,
+                                       0,
+                                       &query,
+                                       NULL,
+                                       NULL);
+
+      assert (! mongoc_cursor_next (cursor, &doc));
+
+      mongoc_cursor_destroy (cursor);
+      mongoc_collection_destroy (collection);
+      mongoc_client_destroy (client);
+   }
+}
+
+
+typedef enum {
+   NO_CONNECT,
+   CONNECT,
+   RECONNECT
+} connection_option_t;
+
+
+/* CDRIVER-721 catch errors in _mongoc_cluster_destroy */
+static void 
+test_seed_list (bool rs,
+                connection_option_t connection_option)
+{
+   uint16_t port;
+   char *uri_str;
+   mongoc_uri_t *uri;
+   mock_server_t *server;
+   uint32_t i;
+   uint32_t expected_nodes_len;
+   const mongoc_host_list_t *hosts;
+   mongoc_client_t *client;
+   bson_error_t error;
+
+   port = 20000 + (rand () % 1000);
+   uri_str = bson_strdup_printf ("mongodb://localhost:%hu,a,b,c/%s",
+                                 port,
+                                 rs ? "?replicaSet=rs" : "");
+   uri = mongoc_uri_new (uri_str);
+   hosts = mongoc_uri_get_hosts (uri);
+   
+   server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
+                                rs ? "rs" : NULL, true, false, hosts, NULL);
+
+   mock_server_run_in_thread (server);
+
+   for (i = 0; i < 12; i++) {
+      suppress_one_message ();
+   }
+
+   client = mongoc_client_new_from_uri (uri);
+   assert (client);
+   ASSERT_CMPINT (4, ==, client->cluster.nodes_len);
+   for (i = 0; i < 4; i++) {
+      assert (client->cluster.nodes[i].valid);
+   }
+
+   expected_nodes_len = rs ? 1 : 4;
+
+   if (connection_option != NO_CONNECT) {
+      /* only localhost:port responds, nodes_len is set to 1 */
+      assert (_mongoc_client_warm_up (client, &error));
+
+      /* a mongos load-balanced connection never removes down nodes */
+      ASSERT_CMPINT (expected_nodes_len, ==, client->cluster.nodes_len);
+      for (i = 0; i < expected_nodes_len; i++) {
+         assert (client->cluster.nodes[i].valid);
+      }
+   }
+
+   if (connection_option == RECONNECT) {
+      for (i = 0; i < 12; i++) {
+         suppress_one_message ();
+      }
+
+      assert (_mongoc_cluster_reconnect (&client->cluster, &error));
+      ASSERT_CMPINT (expected_nodes_len, ==, client->cluster.nodes_len);
+      for (i = 0; i < expected_nodes_len; i++) {
+         assert (client->cluster.nodes[i].valid);
+      }
+   }
+
+   /* testing for crashes like CDRIVER-721 */
+   mongoc_client_destroy (client);
+
+   mock_server_quit (server);
+   mock_server_destroy (server);
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+}
+
+
+static void
+test_rs_seeds_no_connect (void)
+{
+   test_seed_list (true, NO_CONNECT);
+}
+
+
+static void
+test_rs_seeds_connect (void)
+{
+   test_seed_list (true, CONNECT);
+}
+
+
+static void
+test_rs_seeds_reconnect (void)
+{
+   test_seed_list (true, RECONNECT);
+}
+
+
+static void
+test_mongos_seeds_no_connect (void)
+{
+   test_seed_list (false, NO_CONNECT);
+}
+
+
+static void
+test_mongos_seeds_connect (void)
+{
+   test_seed_list (false, CONNECT);
+}
+
+
+static void
+test_mongos_seeds_reconnect (void)
+{
+   test_seed_list (false, RECONNECT);
+}
+
+static void
+test_recovering (void)
+{
+   uint16_t port;
+   char *uri_str;
+   mongoc_uri_t *uri;
+   mock_server_t *server;
+   uint32_t i;
+   const mongoc_host_list_t *hosts;
+   mongoc_client_t *client;
+   mongoc_read_mode_t read_mode;
+   mongoc_read_prefs_t *prefs;
+   bson_error_t error;
+
+   port = 20000 + (rand () % 1000);
+   uri_str = bson_strdup_printf ("mongodb://localhost:%hu/?replicaSet=rs",
+                                 port);
+
+   uri = mongoc_uri_new (uri_str);
+   hosts = mongoc_uri_get_hosts (uri);
+
+   /* server is "recovering": not master, not secondary */
+   server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
+                                "rs", false, false, hosts, NULL);
+
+   mock_server_set_verbose (server, false);
+   mock_server_run_in_thread (server);
+
+   client = mongoc_client_new_from_uri (uri);
+   assert (client);
+   ASSERT_CMPINT (1, ==, client->cluster.nodes_len);
+   for (i = 0; i < 1; i++) {
+      assert (client->cluster.nodes[i].valid);
+   }
+
+   prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   /* recovering member matches no read mode */
+   for (read_mode = MONGOC_READ_PRIMARY;
+        read_mode <= MONGOC_READ_NEAREST;
+        read_mode++) {
+      mongoc_read_prefs_set_mode (prefs, read_mode);
+      assert (!_mongoc_cluster_preselect (&client->cluster,
+                                          MONGOC_OPCODE_QUERY,
+                                          NULL, prefs, &error));
+   }
+
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_client_destroy (client);
+   mock_server_quit (server);
+   mock_server_destroy (server);
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+}
+
+
+static void
 test_exhaust_cursor (void)
 {
    mongoc_stream_t *stream;
@@ -686,6 +911,13 @@ test_mongoc_client_ipv6 (void)
 void
 test_client_install (TestSuite *suite)
 {
+   bool local;
+   local = !getenv ("MONGOC_DISABLE_MOCK_SERVER");
+
+   if (!local) {
+      TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
+      TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
+   }
    if (getenv ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
       TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);
@@ -697,6 +929,14 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
+   TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
+   TestSuite_Add (suite, "/Client/rs_seeds_no_connect", test_rs_seeds_no_connect);
+   TestSuite_Add (suite, "/Client/rs_seeds_connect", test_rs_seeds_connect);
+   TestSuite_Add (suite, "/Client/rs_seeds_reconnect", test_rs_seeds_reconnect);
+   TestSuite_Add (suite, "/Client/mongos_seeds_no_connect", test_mongos_seeds_no_connect);
+   TestSuite_Add (suite, "/Client/mongos_seeds_connect", test_mongos_seeds_connect);
+   TestSuite_Add (suite, "/Client/mongos_seeds_reconnect", test_mongos_seeds_reconnect);
+   TestSuite_Add (suite, "/Client/recovering", test_recovering);
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);

@@ -27,6 +27,7 @@
 #include "mongoc-stream.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-trace.h"
+#include "mongoc-util-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -53,6 +54,8 @@ mongoc_stream_close (mongoc_stream_t *stream)
    ENTRY;
 
    bson_return_val_if_fail(stream, -1);
+
+   ALWAYS_ASSERT(stream->close);
 
    ret = stream->close(stream);
 
@@ -99,6 +102,8 @@ mongoc_stream_destroy (mongoc_stream_t *stream)
    ENTRY;
 
    bson_return_if_fail(stream);
+
+   ALWAYS_ASSERT(stream->destroy);
 
    stream->destroy(stream);
 
@@ -355,7 +360,9 @@ mongoc_stream_check_closed (mongoc_stream_t *stream)
 
    ENTRY;
 
-   bson_return_val_if_fail(stream, -1);
+   if (!stream) {
+      return true;
+   }
 
    ret = stream->check_closed(stream);
 

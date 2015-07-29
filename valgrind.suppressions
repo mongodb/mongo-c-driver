@@ -25,7 +25,7 @@
 {
    ignore_scram_nonce_uninitialized_warning_cond
    Memcheck:Cond
-   fun:b64_ntop
+   fun:mongoc_b64_ntop
    ...
    fun:_mongoc_scram_step
    ...
@@ -33,7 +33,7 @@
 {
    ignore_scram_nonce_uninitialized_warning_value8
    Memcheck:Value8
-   fun:b64_ntop
+   fun:mongoc_b64_ntop
    ...
    fun:_mongoc_scram_step
    ...

@@ -123,7 +123,6 @@ mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs)
       bson_destroy(&read_prefs->tags);
       bson_free(read_prefs);
    }
-   return;
 }
 
 
