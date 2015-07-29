@@ -411,8 +411,22 @@ test_mongoc_client_preselect (void)
 }
 
 
+int should_run_slow_tests (void)
+{
+   char *skip = test_framework_getenv("SKIP_SLOW_TESTS");
+
+   if (skip) {
+      if (!strcmp(skip, "true") || !strcmp(skip, "1")) {
+         bson_free (skip);
+         return 0;
+      }
+      bson_free (skip);
+   }
+
+   return 1;
+}
 static void
-test_unavailable_seeds(void)
+test_unavailable_seeds(void *context)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
