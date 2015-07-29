@@ -466,6 +466,7 @@ typedef enum {
 } connection_option_t;
 
 
+#ifdef TODO_MOCK_SERVER_MERGE
 /* CDRIVER-721 catch errors in _mongoc_cluster_destroy */
 static void 
 test_seed_list (bool rs,
@@ -634,6 +635,7 @@ test_recovering (void)
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
 }
+#endif
 
 
 static void
@@ -915,7 +917,9 @@ test_client_install (TestSuite *suite)
    local = !getenv ("MONGOC_DISABLE_MOCK_SERVER");
 
    if (!local) {
+#ifdef TODO_CDRIVER_689
       TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
+#endif
       TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
    }
    if (getenv ("MONGOC_CHECK_IPV6")) {
@@ -929,7 +933,8 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
-   TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
+   TestSuite_AddFull (suite, "/Client/unavailable_seeds", test_unavailable_seeds, NULL, NULL, should_run_slow_tests);
+#ifdef TODO_MOCK_SERVER_MERGE
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect", test_rs_seeds_no_connect);
    TestSuite_Add (suite, "/Client/rs_seeds_connect", test_rs_seeds_connect);
    TestSuite_Add (suite, "/Client/rs_seeds_reconnect", test_rs_seeds_reconnect);
@@ -937,6 +942,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/mongos_seeds_connect", test_mongos_seeds_connect);
    TestSuite_Add (suite, "/Client/mongos_seeds_reconnect", test_mongos_seeds_reconnect);
    TestSuite_Add (suite, "/Client/recovering", test_recovering);
+#endif
    TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
