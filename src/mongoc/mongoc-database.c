@@ -613,13 +613,15 @@ mongoc_database_has_collection (mongoc_database_t *database,
    BSON_APPEND_UTF8 (&filter, "name", name);
 
    cursor = mongoc_database_find_collections (database, &filter, error);
-
-   if (!cursor ||
-       (error &&
-        ((error->domain != 0) ||
-         (error->code != 0)))) {
-      mongoc_cursor_destroy( cursor );
+   
+   if (!cursor) {
       return ret;
+   }
+   
+   if (error &&
+        ((error->domain != 0) ||
+         (error->code != 0))) {
+      GOTO (cleanup);
    }
 
    while (mongoc_cursor_next (cursor, &doc)) {
