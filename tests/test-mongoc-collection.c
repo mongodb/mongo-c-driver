@@ -231,7 +231,7 @@ auto_ismaster (mock_server_t *server,
 char *
 make_string (size_t len)
 {
-   char *s = malloc (len);
+   char *s = bson_malloc (len);
 
    memset (s, 'a', len - 1);
    s[len - 1] = '\0';
