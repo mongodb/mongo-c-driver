@@ -81,7 +81,7 @@ mongoc_log (mongoc_log_level_t  log_level,
    mongoc_once(&once, &_mongoc_ensure_mutex_once);
 
    if (!gLogFunc
-#if MONGOC_TRACE
+#ifdef MONGOC_TRACE
          || (log_level == MONGOC_LOG_LEVEL_TRACE && !gLogTrace)
 #endif
       ) {

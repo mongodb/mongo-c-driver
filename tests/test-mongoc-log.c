@@ -90,7 +90,7 @@ test_mongoc_log_null (void)
 
 int should_run_trace_tests (void)
 {
-#if MONGOC_TRACE
+#ifdef MONGOC_TRACE
    return 1;
 #else
    return 0;

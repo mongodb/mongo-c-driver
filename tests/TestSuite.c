@@ -387,7 +387,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
        */
 
       /* Tracing is superduper slow */
-#if MONGOC_TRACE
+#ifdef MONGOC_TRACE
       mongoc_log_trace_disable ();
 #endif
 
