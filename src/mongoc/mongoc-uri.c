@@ -890,6 +890,9 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
          default:
             if (value > 0) {
                mongoc_write_concern_set_w (write_concern, value);
+               if (value > 1) {
+                  mongoc_write_concern_set_wtimeout (write_concern, wtimeoutms);
+               }
                break;
             }
             MONGOC_WARNING ("Unsupported w value [w=%d].", value);
@@ -902,6 +905,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri) /* IN */
             mongoc_write_concern_set_wmajority (write_concern, wtimeoutms);
          } else {
             mongoc_write_concern_set_wtag (write_concern, str);
+            mongoc_write_concern_set_wtimeout (write_concern, wtimeoutms);
          }
       } else {
          BSON_ASSERT (false);
