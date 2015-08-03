@@ -441,6 +441,7 @@ typedef struct
    bool        parses;
    int32_t     w;
    const char *wtag;
+   int32_t     wtimeoutms;
 } write_concern_test;
 
 
@@ -468,6 +469,9 @@ test_mongoc_uri_write_concern (void)
       { "mongodb://localhost/?w=0&journal=true", false, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED },
       { "mongodb://localhost/?w=-1&journal=true", false, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED },
       { "mongodb://localhost/?w=1&journal=true", true, 1 },
+      { "mongodb://localhost/?w=2&wtimeoutms=1000", true, 2, NULL, 1000 },
+      { "mongodb://localhost/?w=majority&wtimeoutms=1000", true, MONGOC_WRITE_CONCERN_W_MAJORITY, NULL, 1000 },
+      { "mongodb://localhost/?w=mytag&wtimeoutms=1000", true, MONGOC_WRITE_CONCERN_W_TAG, "mytag", 1000 },
       { NULL }
    };
 
@@ -493,6 +497,10 @@ test_mongoc_uri_write_concern (void)
 
       if (t->wtag) {
          assert (0 == strcmp (t->wtag, mongoc_write_concern_get_wtag (wr)));
+      }
+
+      if (t->wtimeoutms) {
+         assert (t->wtimeoutms == mongoc_write_concern_get_wtimeout (wr));
       }
 
       mongoc_uri_destroy (uri);
