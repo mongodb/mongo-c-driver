@@ -261,6 +261,7 @@ mock_server_run (mock_server_t *server)
 
    if (mock_server_get_verbose (server)) {
       printf ("listening on port %hu\n", bound_port);
+      fflush (stdout);
    }
 
    return (uint16_t) bound_port;
@@ -370,6 +371,7 @@ auto_ismaster (request_t *request,
 
    if (!bson_init_from_json (&response, quotes_replaced, -1, &error)) {
       fprintf (stderr, "%s\n", error.message);
+      fflush (stderr);
       abort ();
    }
 
@@ -379,6 +381,7 @@ auto_ismaster (request_t *request,
 
    if (mock_server_get_verbose (request->server)) {
       printf ("%hu <- \t%s\n", request->client_port, quotes_replaced);
+      fflush (stdout);
    }
 
    mock_server_reply_simple (request->server,
@@ -934,6 +937,7 @@ mock_server_hangs_up (request_t *request)
    if (mock_server_get_verbose (request->server)) {
       printf ("%hu <-  \thang up!\n",
               request_get_server_port (request));
+      fflush (stdout);
    }
 
    mongoc_stream_close (request->client);
@@ -978,6 +982,7 @@ mock_server_replies (request_t *request,
 
    if (mock_server_get_verbose (request->server)) {
       printf ("%hu <- \t%s\n", request->client_port, quotes_replaced);
+      fflush (stdout);
    }
 
    mock_server_reply_simple (request->server,
@@ -1062,6 +1067,7 @@ mock_server_destroy (mock_server_t *server)
    mongoc_mutex_lock (&server->mutex);
    if (server->running) {
       fprintf (stderr, "server still running after timeout\n");
+      fflush (stderr);
       abort ();
    }
 
@@ -1146,6 +1152,7 @@ main_thread (void *data)
       if (client_sock) {
          if (mock_server_get_verbose (server)) {
             printf ("%hu -> server port %hu (connected)\n", port, server->port);
+            fflush (stdout);
          }
 
          client_stream = mongoc_stream_socket_new (client_sock);
@@ -1253,6 +1260,7 @@ again:
 
    if (mock_server_get_verbose (server)) {
       printf ("%hu -> %hu %s\n", closure->port, server->port, request->as_str);
+      fflush (stdout);
    }
 
    /* run responders most-recently-added-first */

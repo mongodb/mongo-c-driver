@@ -134,6 +134,32 @@ snprintf (char *str,
 
 
 void
+_Print_StdOut (const char *format,
+               ...)
+{
+   va_list ap;
+
+   va_start (ap, format);
+   vprintf (format, ap);
+   fflush (stdout);   
+   va_end (ap);
+}
+
+
+void
+_Print_StdErr (const char *format,
+               ...)
+{
+   va_list ap;
+
+   va_start (ap, format);
+   vfprintf (stderr, format, ap);
+   fflush (stderr);
+   va_end (ap);
+}
+
+
+void
 _Clock_GetMonotonic (struct timespec *ts) /* OUT */
 {
 #if defined(BSON_HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
@@ -229,7 +255,7 @@ TestSuite_Init (TestSuite *suite,
          suite->flags |= TEST_NOTHREADS;
       } else if (0 == strcmp ("-F", argv [i])) {
          if (argc - 1 == i) {
-            fprintf (stderr, "-F requires a filename argument.\n");
+            _Print_StdErr ("-F requires a filename argument.\n");
             exit (EXIT_FAILURE);
          }
          filename = argv [++i];
@@ -242,7 +268,7 @@ TestSuite_Init (TestSuite *suite,
             suite->outfile = fopen (filename, "w");
 #endif
             if (!suite->outfile) {
-               fprintf (stderr, "Failed to open log file: %s\n", filename);
+               _Print_StdErr ("Failed to open log file: %s\n", filename);
             }
          }
       } else if ((0 == strcmp ("-h", argv [i])) ||
@@ -250,7 +276,7 @@ TestSuite_Init (TestSuite *suite,
          suite->flags |= TEST_HELPONLY;
       } else if ((0 == strcmp ("-l", argv [i]))) {
          if (argc - 1 == i) {
-            fprintf (stderr, "-l requires an argument.\n");
+            _Print_StdErr ("-l requires an argument.\n");
             exit (EXIT_FAILURE);
          }
          suite->testname = strdup (argv [++i]);
@@ -421,7 +447,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
                (unsigned)ts3.tv_nsec,
                ((*count) == 1) ? "" : ",");
       buf [sizeof buf - 1] = 0;
-      fprintf (stdout, "%s", buf);
+      _Print_StdOut ("%s", buf);
       if (suite->outfile) {
          fprintf (suite->outfile, "%s", buf);
          fflush (suite->outfile);
@@ -433,7 +459,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
                 "    { \"status\": \"SKIP\", \"name\": \"%s\" },\n",
                 test->name);
       buf [sizeof buf - 1] = '\0';
-      fprintf (stdout, "%s", buf);
+      _Print_StdOut ("%s", buf);
       if (suite->outfile) {
          fprintf (suite->outfile, "%s", buf);
          fflush (suite->outfile);
@@ -637,7 +663,7 @@ TestSuite_RunParallel (TestSuite *suite) /* IN */
    sleep (30);
 #endif
 
-   fprintf (stderr, "Timed out, aborting!\n");
+   _Print_StdErr ("Timed out, aborting!\n");
 
    abort ();
 }
