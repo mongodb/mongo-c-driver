@@ -1071,6 +1071,8 @@ mock_server_destroy (mock_server_t *server)
       abort ();
    }
 
+   mongoc_thread_join (server->main_thread);
+
    _mongoc_array_destroy (&server->worker_threads);
 
    for (i = 0; i < server->autoresponders.len; i++) {
@@ -1129,6 +1131,8 @@ main_thread (void *data)
    mongoc_stream_t *client_stream;
    worker_closure_t *closure;
    mongoc_thread_t thread;
+   mongoc_array_t worker_threads;
+   size_t i;
 
    mongoc_mutex_lock (&server->mutex);
    server->running = true;
@@ -1172,15 +1176,24 @@ main_thread (void *data)
          closure->client_stream = client_stream;
          closure->port = port;
 
-         mongoc_mutex_lock (&server->mutex);
-         /* TODO: add to array of threads */
-         mongoc_mutex_unlock (&server->mutex);
-
          mongoc_thread_create (&thread, worker_thread, closure);
+
+         mongoc_mutex_lock (&server->mutex);
+         _mongoc_array_append_val (&server->worker_threads, thread);
+         mongoc_mutex_unlock (&server->mutex);
       }
    }
 
-   /* TODO: cleanup */
+   /* copy list of worker threads and join them all */
+   _mongoc_array_init (&worker_threads, sizeof (mongoc_thread_t));
+   mongoc_mutex_lock (&server->mutex);
+   _mongoc_array_copy (&worker_threads, &server->worker_threads);
+   mongoc_mutex_unlock (&server->mutex);
+
+   for (i = 0; i < worker_threads.len; i++) {
+      mongoc_thread_join (
+         _mongoc_array_index (&worker_threads, mongoc_thread_t, i));
+   }
 
    mongoc_mutex_lock (&server->mutex);
    server->running = false;
@@ -1290,10 +1303,6 @@ again:
    GOTO (again);
 
 failure:
-   mongoc_mutex_lock (&server->mutex);
-   /* TODO: remove self from threads array */
-   mongoc_mutex_unlock (&server->mutex);
-
    _mongoc_array_destroy (&autoresponders);
    _mongoc_buffer_destroy (&buffer);
 
