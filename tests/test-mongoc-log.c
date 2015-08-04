@@ -21,6 +21,34 @@
 #include "TestSuite.h"
 
 
+struct log_state {
+   mongoc_log_func_t handler;
+   void *data;
+   bool trace_enabled;
+};
+
+
+static void
+save_state (struct log_state *state)
+{
+   _mongoc_log_get_handler (&state->handler, &state->data);
+   state->trace_enabled = _mongoc_log_trace_is_enabled ();
+}
+
+
+static void
+restore_state (const struct log_state *state)
+{
+   mongoc_log_set_handler (state->handler, state->data);
+
+   if (state->trace_enabled) {
+      mongoc_log_trace_enable ();
+   } else {
+      mongoc_log_trace_disable ();
+   }
+}
+
+
 struct log_func_data {
    mongoc_log_level_t  log_level;
    char               *log_domain;
@@ -44,11 +72,10 @@ void log_func (mongoc_log_level_t  log_level,
 static void
 test_mongoc_log_handler (void)
 {
-   mongoc_log_func_t old_handler;
-   void *old_data;
+   struct log_state old_state;
    struct log_func_data data;
 
-   _mongoc_log_get_handler (&old_handler, &old_data);
+   save_state (&old_state);
    mongoc_log_set_handler (log_func, &data);
 
 #pragma push_macro("MONGOC_LOG_DOMAIN")
@@ -63,8 +90,7 @@ test_mongoc_log_handler (void)
    ASSERT_CMPSTR (data.log_domain, "my-custom-domain");
    ASSERT_CMPSTR (data.message, "warning!");
 
-   /* restore */
-   mongoc_log_set_handler (old_handler, old_data);
+   restore_state (&old_state);
 
    bson_free (data.log_domain);
    bson_free (data.message);
@@ -74,21 +100,19 @@ test_mongoc_log_handler (void)
 static void
 test_mongoc_log_null (void)
 {
-   mongoc_log_func_t old_handler;
-   void *old_data;
+   struct log_state old_state;
 
-   _mongoc_log_get_handler (&old_handler, &old_data);
+   save_state (&old_state);
    mongoc_log_set_handler (NULL, NULL);
 
    /* doesn't seg fault */
    MONGOC_ERROR ("error!");
    MONGOC_DEBUG ("debug!");
 
-   /* restore */
-   mongoc_log_set_handler (old_handler, old_data);
+   restore_state (&old_state);
 }
 
-int should_run_trace_tests (void)
+static int should_run_trace_tests (void)
 {
 #ifdef MONGOC_TRACE
    return 1;
@@ -96,7 +120,7 @@ int should_run_trace_tests (void)
    return 0;
 #endif
 }
-int should_not_run_trace_tests (void)
+static int should_not_run_trace_tests (void)
 {
    return !should_run_trace_tests();
 }
@@ -104,8 +128,10 @@ int should_not_run_trace_tests (void)
 static void
 test_mongoc_log_trace_enabled (void *context)
 {
+   struct log_state old_state;
    struct log_func_data data;
 
+   save_state (&old_state);
    mongoc_log_set_handler (log_func, &data);
 
    mongoc_log_trace_enable ();
@@ -131,6 +157,9 @@ test_mongoc_log_trace_enabled (void *context)
    TRACE("%s", "For home country");
    ASSERT_CMPINT (data.log_level, ==, MONGOC_LOG_LEVEL_TRACE);
    ASSERT_CONTAINS (data.message, "For home country");
+
+   restore_state (&old_state);
+
    bson_free (data.log_domain);
    bson_free (data.message);
 }
@@ -138,12 +167,16 @@ test_mongoc_log_trace_enabled (void *context)
 static void
 test_mongoc_log_trace_disabled (void *context)
 {
+   struct log_state old_state;
    struct log_func_data data = {-1, 0, NULL};
 
+   save_state (&old_state);
    mongoc_log_set_handler (log_func, &data);
 
    TRACE("%s", "Conscript reporting!");
    ASSERT_CMPINT (data.log_level, ==, -1);
+
+   restore_state (&old_state);
 }
 
 void

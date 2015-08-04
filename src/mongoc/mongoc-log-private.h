@@ -27,6 +27,8 @@
 void _mongoc_log_get_handler (mongoc_log_func_t  *log_func,
                               void              **user_data);
 
+bool _mongoc_log_trace_is_enabled (void);
+
 void
 mongoc_log_trace_bytes       (const char *domain,
                               const uint8_t *_b,

@@ -186,6 +186,16 @@ mongoc_log_default_handler (mongoc_log_level_t  log_level,
             message);
 }
 
+bool
+_mongoc_log_trace_is_enabled (void)
+{
+#ifdef MONGOC_TRACE
+   return gLogTrace;
+#else
+   return false;
+#endif
+}
+
 void
 mongoc_log_trace_enable (void)
 {
