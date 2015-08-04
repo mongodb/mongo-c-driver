@@ -399,7 +399,7 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
                                bool obey_cooldown)
 {
    mongoc_topology_scanner_node_t *node, *tmp;
-   int64_t cooldown;
+   int64_t cooldown = INT64_MAX;
    bson_return_if_fail (ts);
 
    if (ts->in_progress) {
@@ -407,14 +407,14 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
    }
 
    if (obey_cooldown) {
+      /* when current cooldown period began */
       cooldown = bson_get_monotonic_time ()
                  - 1000 * MONGOC_TOPOLOGY_COOLDOWN_MS;
-   } else {
-      cooldown = INT64_MIN;
    }
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
+      /* check node if it last failed before current cooldown period began */
       if (node->last_failed < cooldown) {
          if (mongoc_topology_scanner_node_setup (node)) {
             node->cmd = mongoc_async_cmd (

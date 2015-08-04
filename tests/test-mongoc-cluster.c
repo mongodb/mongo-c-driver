@@ -39,6 +39,11 @@ test_get_max_bson_obj_size (void)
    client = mongoc_client_pool_pop (pool);
 
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
+   if (!id) {
+      fprintf (stderr, "%s\n", error.message);
+   }
+
+   assert (id);
    node = mongoc_set_get (client->cluster.nodes, id);
    node->max_bson_obj_size = max_bson_obj_size;
    assert (max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster));
