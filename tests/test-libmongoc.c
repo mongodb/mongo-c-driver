@@ -53,6 +53,7 @@ extern void test_topology_install             (TestSuite *suite);
 extern void test_topology_reconcile_install   (TestSuite *suite);
 extern void test_topology_scanner_install     (TestSuite *suite);
 extern void test_uri_install                  (TestSuite *suite);
+extern void test_usleep_install               (TestSuite *suite);
 extern void test_write_command_install        (TestSuite *suite);
 extern void test_write_concern_install        (TestSuite *suite);
 #ifdef MONGOC_ENABLE_SSL
@@ -64,20 +65,6 @@ extern void test_stream_tls_error_install     (TestSuite *suite);
 
 #ifdef _WIN32
 # define strcasecmp _stricmp
-
-void
-usleep (int64_t usec)
-{
-    HANDLE timer;
-    LARGE_INTEGER ft;
-
-    ft.QuadPart = -(10 * usec);
-
-    timer = CreateWaitableTimer(NULL, true, NULL);
-    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
-    WaitForSingleObject(timer, INFINITE);
-    CloseHandle(timer);
-}
 #endif
 
 
@@ -670,6 +657,7 @@ main (int   argc,
    test_stream_install (&suite);
    test_topology_install (&suite);
    test_uri_install (&suite);
+   test_usleep_install (&suite);
    test_write_concern_install (&suite);
 #ifdef MONGOC_ENABLE_SSL
    test_x509_install (&suite);

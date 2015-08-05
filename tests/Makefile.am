@@ -118,6 +118,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-topology-scanner.c \
 	tests/test-mongoc-topology.c \
 	tests/test-mongoc-uri.c \
+	tests/test-mongoc-usleep.c \
 	tests/test-mongoc-write-concern.c \
 	tests/test-libmongoc.h \
 	tests/test-sasl.c \

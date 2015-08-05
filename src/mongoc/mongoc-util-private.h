@@ -38,6 +38,8 @@ BSON_BEGIN_DECLS
 
 char *_mongoc_hex_md5 (const char *input);
 
+void _mongoc_usleep (int64_t usec);
+
 
 BSON_END_DECLS
 

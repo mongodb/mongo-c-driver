@@ -22,6 +22,7 @@
 #include "mongoc-socket-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
+#include "mongoc-util-private.h"
 #include "sync-queue.h"
 #include "mock-server.h"
 #include "../test-conveniences.h"
@@ -376,7 +377,7 @@ auto_ismaster (request_t *request,
    }
 
    if (mock_server_get_rand_delay (request->server)) {
-      usleep ((rand () % 10) * 1000);
+      _mongoc_usleep ((int64_t) (rand () % 10) * 1000);
    }
 
    if (mock_server_get_verbose (request->server)) {
@@ -1060,7 +1061,7 @@ mock_server_destroy (mock_server_t *server)
       }
 
       mongoc_mutex_unlock (&server->mutex);
-      usleep (1000);
+      _mongoc_usleep (1000);
    }
 
    mongoc_mutex_lock (&server->mutex);

@@ -6,6 +6,7 @@
 #include "mongoc-topology-private.h"
 #include "mongoc-topology-scanner-private.h"
 #include "mongoc-tests.h"
+#include "mongoc-util-private.h"
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"
@@ -16,22 +17,7 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-test"
 
-#ifdef _WIN32
-static void
-usleep (int64_t usec)
-{
-    HANDLE timer;
-    LARGE_INTEGER ft;
 
-    ft.QuadPart = -(10 * usec);
-
-    timer = CreateWaitableTimer(NULL, true, NULL);
-    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
-    WaitForSingleObject(timer, INFINITE);
-    CloseHandle(timer);
-}
-
-#endif
 static void
 test_topology_client_creation (void)
 {
@@ -179,7 +165,7 @@ test_invalid_cluster_node (void)
    client = mongoc_client_pool_pop (pool);
    cluster = &client->cluster;
 
-   usleep(100000);
+   _mongoc_usleep (100 * 1000);;
 
    /* load stream into cluster */
    id = mongoc_cluster_preselect (cluster, MONGOC_OPCODE_QUERY, NULL, &error);
@@ -191,10 +177,10 @@ test_invalid_cluster_node (void)
    assert (cluster_node->timestamp > scanner_node->timestamp);
 
    /* update the scanner node's timestamp */
-   usleep(100000);
+   _mongoc_usleep (100 * 1000);;
    scanner_node->timestamp = bson_get_monotonic_time ();
    assert (cluster_node->timestamp < scanner_node->timestamp);
-   usleep(100000);
+   _mongoc_usleep (100 * 1000);;
 
    /* ensure that cluster adjusts */
    mongoc_cluster_fetch_stream (cluster, id, &error);
@@ -280,7 +266,7 @@ test_cooldown_standalone (void)
    request_destroy (request);
    future_destroy (future);
 
-   usleep (1000 * 1000);
+   _mongoc_usleep (1000 * 1000);  /* 1 second */
 
    /* second selection doesn't try to call ismaster: we're in cooldown */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
@@ -289,7 +275,7 @@ test_cooldown_standalone (void)
    assert (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 
-   usleep (6000 * 1000);
+   _mongoc_usleep (5000 * 1000);  /* 5 seconds */
 
    /* cooldown ends, now we try ismaster again, this time succeeding */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
@@ -369,7 +355,7 @@ test_cooldown_rs (void)
    assert (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 
-   usleep (1000 * 1000);
+   _mongoc_usleep (1000 * 1000);  /* 1 second */
 
    /* second selection doesn't try ismaster on server 1: it's in cooldown */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
@@ -385,7 +371,7 @@ test_cooldown_rs (void)
    assert (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 
-   usleep (5000 * 1000);
+   _mongoc_usleep (5000 * 1000);  /* 5 seconds */
 
    /* cooldown ends, now we try ismaster on server 1, this time succeeding */
    future = future_topology_select (client->topology, MONGOC_SS_READ,

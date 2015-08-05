@@ -17,24 +17,9 @@
 #include "mongoc-error.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-util-private.h"
 
 #include "utlist.h"
-
-#ifdef _WIN32
-static void
-usleep (int64_t usec)
-{
-    HANDLE timer;
-    LARGE_INTEGER ft;
-
-    ft.QuadPart = -(10 * usec);
-
-    timer = CreateWaitableTimer(NULL, true, NULL);
-    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
-    WaitForSingleObject(timer, INFINITE);
-    CloseHandle(timer);
-}
-#endif
 
 static void
 _mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
@@ -286,7 +271,7 @@ _mongoc_topology_sleep_min_heartbeat (mongoc_topology_t *topology) {
    int64_t sleep_usec = next_scan - bson_get_monotonic_time ();
 
    if (sleep_usec > 0) {
-      usleep (sleep_usec);
+      _mongoc_usleep (sleep_usec);
    }
 }
 

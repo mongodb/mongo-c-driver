@@ -19,11 +19,6 @@
 #define TEST_LIBMONGOC_H
 
 
-#ifdef _WIN32
-void usleep (int64_t usec);
-#endif
-
-
 char *gen_collection_name (const char *prefix);
 void suppress_one_message (void);
 char *test_framework_getenv (const char *name);

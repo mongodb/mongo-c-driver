@@ -1,6 +1,7 @@
 #include <openssl/err.h>
 #include <mongoc.h>
 #include <mongoc-thread-private.h>
+#include <mongoc-util-private.h>
 
 #include "ssl-test.h"
 #include "TestSuite.h"
@@ -71,7 +72,7 @@ ssl_error_server (void *ptr)
 
    switch (data->behavior) {
    case SSL_TEST_BEHAVIOR_STALL_BEFORE_HANDSHAKE:
-      usleep (data->handshake_stall_ms * 1000);
+      _mongoc_usleep (data->handshake_stall_ms * 1000);
       break;
    case SSL_TEST_BEHAVIOR_HANGUP_AFTER_HANDSHAKE:
       r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
