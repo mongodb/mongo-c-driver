@@ -1045,7 +1045,6 @@ mock_server_destroy (mock_server_t *server)
    autoresponder_handle_t *handle;
    int64_t deadline = bson_get_monotonic_time () + 10 * 1000 * 1000;
 
-   /* TODO: improve! */
    mongoc_mutex_lock (&server->mutex);
    if (server->running) {
       server->stopped = true;
