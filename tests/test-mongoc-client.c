@@ -411,22 +411,8 @@ test_mongoc_client_preselect (void)
 }
 
 
-int should_run_slow_tests (void)
-{
-   char *skip = test_framework_getenv("SKIP_SLOW_TESTS");
-
-   if (skip) {
-      if (!strcmp(skip, "true") || !strcmp(skip, "1")) {
-         bson_free (skip);
-         return 0;
-      }
-      bson_free (skip);
-   }
-
-   return 1;
-}
 static void
-test_unavailable_seeds(void *context)
+test_unavailable_seeds (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -435,12 +421,12 @@ test_unavailable_seeds(void *context)
    const bson_t *doc;
    
    const char* uri_strs[] = {
-      "mongodb://a:1/?connectTimeoutMS=1",
-      "mongodb://a:1,a:2/?connectTimeoutMS=1",
-      "mongodb://a:1,a:2/?replicaSet=r&connectTimeoutMS=1",
-      "mongodb://u:p@a:1/?connectTimeoutMS=1",
-      "mongodb://u:p@a:1,a:2/?connectTimeoutMS=1",
-      "mongodb://u:p@a:1,a:2/?replicaSet=r&connectTimeoutMS=1",
+      "mongodb://a:1/?connectTimeoutMS=1&serverSelectionTimeoutMS=1",
+      "mongodb://a:1,a:2/?connectTimeoutMS=1&serverSelectionTimeoutMS=1",
+      "mongodb://a:1,a:2/?replicaSet=r&connectTimeoutMS=1&serverSelectionTimeoutMS=1",
+      "mongodb://u:p@a:1/?connectTimeoutMS=1&serverSelectionTimeoutMS=1",
+      "mongodb://u:p@a:1,a:2/?connectTimeoutMS=1&serverSelectionTimeoutMS=1",
+      "mongodb://u:p@a:1,a:2/?replicaSet=r&connectTimeoutMS=1&serverSelectionTimeoutMS=1",
    };
 
    int i;
@@ -943,7 +929,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
-   TestSuite_AddFull (suite, "/Client/unavailable_seeds", test_unavailable_seeds, NULL, NULL, should_run_slow_tests);
+   TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
 #ifdef TODO_MOCK_SERVER_MERGE
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect", test_rs_seeds_no_connect);
    TestSuite_Add (suite, "/Client/rs_seeds_connect", test_rs_seeds_connect);
