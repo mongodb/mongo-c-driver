@@ -1,11 +1,9 @@
 #include <mongoc.h>
 
 #include "mongoc-client-private.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-set-private.h"
+
 #include "mongoc-tests.h"
 #include "TestSuite.h"
-
 #include "test-libmongoc.h"
 
 
