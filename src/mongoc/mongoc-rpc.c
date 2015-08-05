@@ -619,7 +619,7 @@ _mongoc_rpc_scatter (mongoc_rpc_t  *rpc,
       return false;
    }
 
-   opcode = BSON_UINT32_FROM_LE(rpc->header.opcode);
+   opcode = (mongoc_opcode_t)BSON_UINT32_FROM_LE(rpc->header.opcode);
 
    switch (opcode) {
    case MONGOC_OPCODE_REPLY:
