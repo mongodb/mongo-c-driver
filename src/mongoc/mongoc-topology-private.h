@@ -42,6 +42,7 @@ typedef struct _mongoc_topology_t
    mongoc_topology_description_t description;
    mongoc_uri_t                 *uri;
    mongoc_topology_scanner_t    *scanner;
+   bool                          server_selection_try_once;
 
    int64_t                       last_scan;
    int64_t                       timeout_msec;

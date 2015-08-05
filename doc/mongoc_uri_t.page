@@ -69,6 +69,8 @@
     <table>
       <tr><td><p>heartbeatFrequencyMS</p></td><td><p>The interval between server monitoring checks. Defaults to 10 seconds in multi-threaded mode, 60 seconds in single threaded.</p></td></tr>
       <tr><td><p>serverSelectionTimeoutMS</p></td><td><p>A timeout in milliseconds to block for server selection before throwing an exception. The default is 30,000 (milliseconds).</p></td></tr>
+      <tr><td><p>serverSelectionTryOnce</p></td><td><p>If "true" (the default), the driver scans the topology exactly once after server selection fails, then either selects a server or raises an error. If it is false, then the driver repeatedly searches for an appropriate server for up to serverSelectionTimeoutMS milliseconds (pausing a half second between attempts).</p>
+      <p>Clients in a <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code> share a topology scanner that runs on a background thread. Pooled clients ignore serverSelectionTryOnce; they signal the thread to rescan the topology every half-second until serverSelectionTimeoutMS expires.</p></td></tr>
       <tr><td><p>socketCheckIntervalMS</p></td><td><p>Only applicable to single threaded clients. If socket has not been used within this timeframe a isMaster call is attempted. Defaults to 5 seconds.</p></td></tr>
     </table>
     <note style="important">

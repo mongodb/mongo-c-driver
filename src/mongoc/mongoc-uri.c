@@ -557,6 +557,7 @@ mongoc_uri_option_is_bool (const char *key)
    return !strcasecmp(key, "canonicalizeHostname") ||
               !strcasecmp(key, "journal") ||
               !strcasecmp(key, "safe") ||
+              !strcasecmp(key, "serverSelectionTryOnce") ||
               !strcasecmp(key, "slaveok") ||
               !strcasecmp(key, "ssl");
 }

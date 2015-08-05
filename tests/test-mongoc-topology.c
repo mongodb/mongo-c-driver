@@ -93,6 +93,44 @@ test_topology_client_pool_creation (void)
 }
 
 static void
+test_server_selection_try_once_option (void)
+{
+   const char *uri_strings[3] = {
+      "mongodb://a",
+      "mongodb://a/?serverSelectionTryOnce=true",
+      "mongodb://a/?serverSelectionTryOnce=false" };
+
+   int i;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+
+   /* try_once is on by default for non-pooled, can be turned off */
+   client = mongoc_client_new (uri_strings[0]);
+   assert (client->topology->server_selection_try_once);
+   mongoc_client_destroy (client);
+
+   client = mongoc_client_new (uri_strings[1]);
+   assert (client->topology->server_selection_try_once);
+   mongoc_client_destroy (client);
+
+   client = mongoc_client_new (uri_strings[2]);
+   assert (! client->topology->server_selection_try_once);
+   mongoc_client_destroy (client);
+   
+   /* off for pooled clients, can't be enabled */
+   for (i = 0; i < sizeof (uri_strings) / sizeof (char *); i++) {
+      uri = mongoc_uri_new ("mongodb://a");
+      pool = mongoc_client_pool_new (uri);
+      client = mongoc_client_pool_pop (pool);
+      assert (!client->topology->server_selection_try_once);
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+      mongoc_uri_destroy (uri);
+   }
+}
+
+static void
 test_topology_invalidate_server (void)
 {
    mongoc_server_description_t *fake_sd;
@@ -402,6 +440,10 @@ test_topology_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Topology/client_creation", test_topology_client_creation);
    TestSuite_Add (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
+   TestSuite_Add (suite,
+                  "/Topology/server_selection_try_once_option",
+                  test_server_selection_try_once_option);
+
    TestSuite_Add (suite, "/Topology/invalidate_server", test_topology_invalidate_server);
    TestSuite_Add (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node);
    TestSuite_Add (suite, "/Topology/max_wire_version_race_condition", test_max_wire_version_race_condition);

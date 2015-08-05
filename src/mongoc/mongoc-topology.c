@@ -170,6 +170,23 @@ mongoc_topology_new (const mongoc_uri_t *uri,
                                                     _mongoc_topology_scanner_cb,
                                                     topology);
    topology->single_threaded = single_threaded;
+   if (single_threaded) {
+      /* Server Selection Spec:
+       *
+       *   "Single-threaded drivers MUST provide a "serverSelectionTryOnce"
+       *   mode, in which the driver scans the topology exactly once after
+       *   server selection fails, then either selects a server or raises an
+       *   error.
+       *
+       *   "The serverSelectionTryOnce option MUST be true by default."
+       */
+      topology->server_selection_try_once = mongoc_uri_get_option_as_bool (
+         uri,
+         "serverselectiontryonce",
+         true);
+   } else {
+      topology->server_selection_try_once = false;
+   }
 
    topology->timeout_msec = mongoc_uri_get_option_as_int32(
       topology->uri, "serverselectiontimeoutms",
