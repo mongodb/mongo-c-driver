@@ -158,7 +158,7 @@ _mongoc_write_command_delete_append (mongoc_write_command_t *command,
 
    bson_init (&doc);
    BSON_APPEND_DOCUMENT (&doc, "q", selector);
-   BSON_APPEND_INT32 (&doc, "limit", command->u.delete.multi ? 0 : 1);
+   BSON_APPEND_INT32 (&doc, "limit", command->u.delete_.multi ? 0 : 1);
 
    key = NULL;
    bson_uint32_to_string (command->n_documents, &key, keydata, sizeof keydata);
@@ -211,7 +211,7 @@ _mongoc_write_command_init_delete (mongoc_write_command_t *command,  /* IN */
    command->type = MONGOC_WRITE_COMMAND_DELETE;
    command->documents = bson_new ();
    command->n_documents = 0;
-   command->u.delete.multi = (uint8_t)multi;
+   command->u.delete_.multi = (uint8_t)multi;
    command->ordered = (uint8_t)ordered;
 
    _mongoc_write_command_delete_append (command, selector);
@@ -306,15 +306,15 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
 
-      rpc.delete.msg_len = 0;
-      rpc.delete.request_id = 0;
-      rpc.delete.response_to = 0;
-      rpc.delete.opcode = MONGOC_OPCODE_DELETE;
-      rpc.delete.zero = 0;
-      rpc.delete.collection = ns;
-      rpc.delete.flags = command->u.delete.multi ? MONGOC_DELETE_NONE
+      rpc.delete_.msg_len = 0;
+      rpc.delete_.request_id = 0;
+      rpc.delete_.response_to = 0;
+      rpc.delete_.opcode = MONGOC_OPCODE_DELETE;
+      rpc.delete_.zero = 0;
+      rpc.delete_.collection = ns;
+      rpc.delete_.flags = command->u.delete_.multi ? MONGOC_DELETE_NONE
                          : MONGOC_DELETE_SINGLE_REMOVE;
-      rpc.delete.selector = data;
+      rpc.delete_.selector = data;
 
       hint = _mongoc_client_sendv (client, &rpc, 1, hint, write_concern,
                                    NULL, error);

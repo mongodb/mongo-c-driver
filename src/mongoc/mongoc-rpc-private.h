@@ -58,7 +58,7 @@ BSON_BEGIN_DECLS
 
 typedef union
 {
-   mongoc_rpc_delete_t       delete;
+   mongoc_rpc_delete_t       delete_;
    mongoc_rpc_get_more_t     get_more;
    mongoc_rpc_header_t       header;
    mongoc_rpc_insert_t       insert;

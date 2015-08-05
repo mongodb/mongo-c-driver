@@ -127,7 +127,7 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,     /* IN */
                                    mongoc_write_command_t,
                                    bulk->commands.len - 1);
       if ((last->type == MONGOC_WRITE_COMMAND_DELETE) &&
-          last->u.delete.multi) {
+          last->u.delete_.multi) {
          _mongoc_write_command_delete_append (last, selector);
          EXIT;
       }
@@ -158,7 +158,7 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk,     /* IN */
                                    mongoc_write_command_t,
                                    bulk->commands.len - 1);
       if ((last->type == MONGOC_WRITE_COMMAND_DELETE) &&
-          !last->u.delete.multi) {
+          !last->u.delete_.multi) {
          _mongoc_write_command_delete_append (last, selector);
          EXIT;
       }

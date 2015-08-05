@@ -45,7 +45,7 @@ typedef struct
    union {
       struct {
          bool multi;
-      } delete;
+      } delete_;
       struct {
          bool allow_bulk_op_insert;
       } insert;

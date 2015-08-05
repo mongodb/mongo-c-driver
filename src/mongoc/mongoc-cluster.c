@@ -2210,7 +2210,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
             DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].insert.collection);
             break;
          case MONGOC_OPCODE_DELETE:
-            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].delete.collection);
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].delete_.collection);
             break;
          case MONGOC_OPCODE_UPDATE:
             DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].update.collection);
