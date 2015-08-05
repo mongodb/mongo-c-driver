@@ -280,7 +280,7 @@ test_cooldown_standalone (void)
    request_destroy (request);
    future_destroy (future);
 
-   sleep (1);
+   usleep (1000 * 1000);
 
    /* second selection doesn't try to call ismaster: we're in cooldown */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
@@ -289,7 +289,7 @@ test_cooldown_standalone (void)
    assert (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 
-   sleep (5);
+   usleep (6000 * 1000);
 
    /* cooldown ends, now we try ismaster again, this time succeeding */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
@@ -369,7 +369,7 @@ test_cooldown_rs (void)
    assert (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 
-   sleep (1);
+   usleep (1000 * 1000);
 
    /* second selection doesn't try ismaster on server 1: it's in cooldown */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
@@ -385,7 +385,7 @@ test_cooldown_rs (void)
    assert (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 
-   sleep (5);
+   usleep (5000 * 1000);
 
    /* cooldown ends, now we try ismaster on server 1, this time succeeding */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
