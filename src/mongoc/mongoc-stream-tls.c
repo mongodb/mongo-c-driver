@@ -164,7 +164,9 @@ _mongoc_stream_tls_bio_destroy (BIO *b)
 
    BSON_ASSERT (b);
 
-   if (!(tls = b->ptr)) {
+   tls = (mongoc_stream_tls_t *)b->ptr;
+
+   if (!tls) {
       return -1;
    }
 
@@ -205,7 +207,9 @@ _mongoc_stream_tls_bio_read (BIO  *b,
    BSON_ASSERT (b);
    BSON_ASSERT (buf);
 
-   if (!(tls = b->ptr)) {
+   tls = (mongoc_stream_tls_t *)b->ptr;
+
+   if (!tls) {
       return -1;
    }
 
@@ -250,7 +254,9 @@ _mongoc_stream_tls_bio_write (BIO        *b,
    BSON_ASSERT (b);
    BSON_ASSERT (buf);
 
-   if (!(tls = b->ptr)) {
+   tls = (mongoc_stream_tls_t *)b->ptr;
+
+   if (!tls) {
       return -1;
    }
 

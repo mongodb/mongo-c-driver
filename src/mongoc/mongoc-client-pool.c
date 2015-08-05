@@ -119,7 +119,7 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 
    bson_return_if_fail(pool);
 
-   while ((client = _mongoc_queue_pop_head(&pool->queue))) {
+   while ((client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       mongoc_client_destroy(client);
    }
 
@@ -149,7 +149,7 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
    mongoc_mutex_lock(&pool->mutex);
 
 again:
-   if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
+   if (!(client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = _mongoc_client_new_from_uri(pool->uri, pool->topology);
 #ifdef MONGOC_ENABLE_SSL
@@ -181,7 +181,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    mongoc_mutex_lock(&pool->mutex);
 
-   if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
+   if (!(client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = _mongoc_client_new_from_uri(pool->uri, pool->topology);
 #ifdef MONGOC_ENABLE_SSL
@@ -211,7 +211,7 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    mongoc_mutex_lock(&pool->mutex);
    if (pool->size > pool->min_pool_size) {
       mongoc_client_t *old_client;
-      old_client = _mongoc_queue_pop_head (&pool->queue);
+      old_client = (mongoc_client_t *)_mongoc_queue_pop_head (&pool->queue);
       if (old_client) {
           mongoc_client_destroy (old_client);
           pool->size--;

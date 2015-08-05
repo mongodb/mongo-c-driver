@@ -653,7 +653,7 @@ _mongoc_database_find_collections_legacy_filter (const bson_t *bson,
    bson_iter_t iter;
    mongoc_database_find_collections_legacy_ctx_t *ctx;
 
-   ctx = ctx_;
+   ctx = (mongoc_database_find_collections_legacy_ctx_t *)ctx_;
 
    if (bson_iter_init_find (&iter, bson, "name")
        && BSON_ITER_HOLDS_UTF8 (&iter)
@@ -673,7 +673,7 @@ _mongoc_database_find_collections_legacy_mutate (const bson_t *bson,
 {
    mongoc_database_find_collections_legacy_ctx_t *ctx;
 
-   ctx = ctx_;
+   ctx = (mongoc_database_find_collections_legacy_ctx_t *)ctx_;
 
    bson_copy_to_excluding_noinit (bson, out, "name", NULL);
    BSON_APPEND_UTF8 (out, "name", ctx->name + (ctx->dbname_len + 1));  /* +1 for the '.' */

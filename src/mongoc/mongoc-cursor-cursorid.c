@@ -66,7 +66,7 @@ _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   cid = cursor->iface_data;
+   cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
 
    if (!cid->has_cursor) {
       ret = _mongoc_cursor_next (cursor, &bson);
@@ -112,7 +112,7 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
 
    ENTRY;
 
-   cid = cursor->iface_data;
+   cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
 
    if (! cid->has_cursor) {
       if (! _mongoc_cursor_cursorid_prime (cursor)) {

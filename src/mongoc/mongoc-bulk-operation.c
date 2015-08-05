@@ -499,7 +499,7 @@ mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk,
 {
    bson_return_if_fail (bulk);
 
-   bulk->client = client;
+   bulk->client = (mongoc_client_t *)client;
 }
 
 

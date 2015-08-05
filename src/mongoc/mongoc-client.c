@@ -273,7 +273,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 {
    mongoc_stream_t *base_stream = NULL;
 #ifdef MONGOC_ENABLE_SSL
-   mongoc_client_t *client = user_data;
+   mongoc_client_t *client = (mongoc_client_t *)user_data;
    const bson_t *options;
    bson_iter_t iter;
    const char *mechanism;

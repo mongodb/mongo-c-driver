@@ -34,8 +34,8 @@ static bool
 _mongoc_topology_reconcile_add_nodes (void *item,
                             void *ctx)
 {
-   mongoc_server_description_t *sd = item;
-   mongoc_topology_scanner_t *scanner = ctx;
+   mongoc_server_description_t *sd = (mongoc_server_description_t *)item;
+   mongoc_topology_scanner_t *scanner = (mongoc_topology_scanner_t *)ctx;
 
    if (! mongoc_topology_scanner_get_node (scanner, sd->id)) {
       mongoc_topology_scanner_add (scanner, &sd->host, sd->id);
@@ -84,7 +84,7 @@ _mongoc_topology_scanner_cb (uint32_t      id,
 
    bson_return_if_fail (data);
 
-   topology = data;
+   topology = (mongoc_topology_t *)data;
 
    if (rtt_msec >= 0) {
       /* If the scanner failed to create a socket for this server, that means
@@ -635,7 +635,7 @@ void * _mongoc_topology_run_background (void *data)
    bson_return_val_if_fail (data, NULL);
 
    last_scan = 0;
-   topology = data;
+   topology = (mongoc_topology_t *)data;
    /* we exit this loop when shutdown_requested, or on error */
    for (;;) {
       /* unlocked after starting a scan or after breaking out of the loop */

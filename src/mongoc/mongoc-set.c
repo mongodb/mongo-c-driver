@@ -85,7 +85,7 @@ mongoc_set_rm (mongoc_set_t *set,
 
    key.id = id;
 
-   ptr = bsearch (&key, set->items, set->items_len, sizeof (key),
+   ptr = (mongoc_set_item_t *)bsearch (&key, set->items, set->items_len, sizeof (key),
                   mongoc_set_id_cmp);
 
    if (ptr) {
@@ -111,7 +111,7 @@ mongoc_set_get (mongoc_set_t *set,
 
    key.id = id;
 
-   ptr = bsearch (&key, set->items, set->items_len, sizeof (key),
+   ptr = (mongoc_set_item_t *)bsearch (&key, set->items, set->items_len, sizeof (key),
                   mongoc_set_id_cmp);
 
    return ptr ? ptr->item : NULL;

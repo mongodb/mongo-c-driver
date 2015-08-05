@@ -482,7 +482,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
 
       ptr++;
 
-      next_comma = memchr (ptr, ',', (inbuf + inbuflen) - ptr);
+      next_comma = (const uint8_t*)memchr (ptr, ',', (inbuf + inbuflen) - ptr);
 
       if (next_comma) {
          *current_val_len = (uint32_t) (next_comma - ptr);
@@ -730,7 +730,7 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
 
       ptr++;
 
-      next_comma = memchr (ptr, ',', (inbuf + inbuflen) - ptr);
+      next_comma = (const uint8_t*)memchr (ptr, ',', (inbuf + inbuflen) - ptr);
 
       if (next_comma) {
          *current_val_len = (uint32_t) (next_comma - ptr);

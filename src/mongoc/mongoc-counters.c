@@ -296,7 +296,7 @@ _mongoc_counters_init (void)
 
 #define COUNTER(ident, Category, Name, Desc) \
    off = mongoc_counters_register(counters, COUNTER_##ident, Category, Name, Desc); \
-   __mongoc_counter_##ident.cpus = (void *)(segment + off);
+   __mongoc_counter_##ident.cpus = (mongoc_counter_slots_t *)(segment + off);
 #include "mongoc-counters.defs"
 #undef COUNTER
 

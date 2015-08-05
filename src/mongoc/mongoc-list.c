@@ -35,7 +35,7 @@ _mongoc_list_append (mongoc_list_t *list,
    mongoc_list_t *iter;
 
    item = (mongoc_list_t *)bson_malloc0(sizeof *item);
-   item->data = data;
+   item->data = (void *)data;
    if (!list) {
       return item;
    }
@@ -63,7 +63,7 @@ _mongoc_list_prepend (mongoc_list_t *list,
    mongoc_list_t *item;
 
    item = (mongoc_list_t *)bson_malloc0(sizeof *item);
-   item->data = data;
+   item->data = (void *)data;
    item->next = list;
 
    return item;

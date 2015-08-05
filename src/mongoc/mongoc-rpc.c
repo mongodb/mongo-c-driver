@@ -353,7 +353,7 @@
       if (needed > buflen) { \
          return false; \
       } \
-      rpc->_name = (void *)buf; \
+      rpc->_name = (int64_t*)buf; \
       buf += needed; \
       buflen -= needed; \
    } while (0);

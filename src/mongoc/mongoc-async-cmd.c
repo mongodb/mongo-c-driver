@@ -63,7 +63,7 @@ mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
                             bson_error_t    *error)
 {
    mongoc_stream_t *tls_stream;
-   const char *host = ctx;
+   const char *host = (const char *)ctx;
 
    for (tls_stream = stream; tls_stream->type != MONGOC_STREAM_TLS;
         tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
