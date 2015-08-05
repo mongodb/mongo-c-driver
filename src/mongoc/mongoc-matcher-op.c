@@ -44,7 +44,7 @@ _mongoc_matcher_op_exists_new (const char  *path,   /* IN */
 
    BSON_ASSERT (path);
 
-   op = bson_malloc0 (sizeof *op);
+   op = (mongoc_matcher_op_t *)bson_malloc0 (sizeof *op);
    op->exists.base.opcode = MONGOC_MATCHER_OPCODE_EXISTS;
    op->exists.path = bson_strdup (path);
    op->exists.exists = exists;
@@ -79,7 +79,7 @@ _mongoc_matcher_op_type_new (const char  *path, /* IN */
    BSON_ASSERT (path);
    BSON_ASSERT (type);
 
-   op = bson_malloc0 (sizeof *op);
+   op = (mongoc_matcher_op_t *)bson_malloc0 (sizeof *op);
    op->type.base.opcode = MONGOC_MATCHER_OPCODE_TYPE;
    op->type.path = bson_strdup (path);
    op->type.type = type;
@@ -120,7 +120,7 @@ _mongoc_matcher_op_logical_new (mongoc_matcher_opcode_t  opcode, /* IN */
    BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_OR) &&
                 (opcode <= MONGOC_MATCHER_OPCODE_NOR));
 
-   op = bson_malloc0 (sizeof *op);
+   op = (mongoc_matcher_op_t *)bson_malloc0 (sizeof *op);
    op->logical.base.opcode = opcode;
    op->logical.left = left;
    op->logical.right = right;
@@ -174,7 +174,7 @@ _mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t  opcode, /* IN */
    BSON_ASSERT (path);
    BSON_ASSERT (iter);
 
-   op = bson_malloc0 (sizeof *op);
+   op = (mongoc_matcher_op_t *)bson_malloc0 (sizeof *op);
    op->compare.base.opcode = opcode;
    op->compare.path = bson_strdup (path);
    memcpy (&op->compare.iter, iter, sizeof *iter);
@@ -209,7 +209,7 @@ _mongoc_matcher_op_not_new (const char          *path,  /* IN */
    BSON_ASSERT (path);
    BSON_ASSERT (child);
 
-   op = bson_malloc0 (sizeof *op);
+   op = (mongoc_matcher_op_t *)bson_malloc0 (sizeof *op);
    op->not.base.opcode = MONGOC_MATCHER_OPCODE_NOT;
    op->not.path = bson_strdup (path);
    op->not.child = child;

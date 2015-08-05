@@ -465,7 +465,7 @@ _mongoc_ssl_extract_subject (const char *filename)
          ret = X509_NAME_print_ex (strbio, subject, 0, XN_FLAG_RFC2253);
 
          if ((ret > 0) && (ret < INT_MAX)) {
-            str = bson_malloc (ret + 2);
+            str = (char *)bson_malloc (ret + 2);
             BIO_gets (strbio, str, ret + 1);
             str [ret] = '\0';
          }
@@ -529,7 +529,7 @@ _mongoc_ssl_thread_startup (void)
 {
    int i;
 
-   gMongocSslThreadLocks = OPENSSL_malloc (CRYPTO_num_locks () * sizeof (mongoc_mutex_t));
+   gMongocSslThreadLocks = (mongoc_mutex_t *)OPENSSL_malloc (CRYPTO_num_locks () * sizeof (mongoc_mutex_t));
 
    for (i = 0; i < CRYPTO_num_locks (); i++) {
       mongoc_mutex_init(&gMongocSslThreadLocks[i]);

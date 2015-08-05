@@ -37,7 +37,7 @@ _mongoc_cursor_cursorid_new (void)
 
    ENTRY;
 
-   cid = bson_malloc0 (sizeof *cid);
+   cid = (mongoc_cursor_cursorid_t *)bson_malloc0 (sizeof *cid);
 
    RETURN (cid);
 }

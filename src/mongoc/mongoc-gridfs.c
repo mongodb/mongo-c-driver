@@ -113,7 +113,7 @@ _mongoc_gridfs_new (mongoc_client_t *client,
    }
 #endif
 
-   gridfs = bson_malloc0 (sizeof *gridfs);
+   gridfs = (mongoc_gridfs_t *) bson_malloc0 (sizeof *gridfs);
 
    gridfs->client = client;
 

@@ -68,7 +68,7 @@ _mongoc_database_new (mongoc_client_t              *client,
    bson_return_val_if_fail(client, NULL);
    bson_return_val_if_fail(name, NULL);
 
-   db = bson_malloc0(sizeof *db);
+   db = (mongoc_database_t *)bson_malloc0(sizeof *db);
    db->client = client;
    db->write_concern = write_concern ?
       mongoc_write_concern_copy(write_concern) :
@@ -705,7 +705,7 @@ _mongoc_database_find_collections_legacy (mongoc_database_t *database,
 
    dbname_len = (uint32_t)strlen (database->name);
 
-   ctx = bson_malloc (sizeof (*ctx));
+   ctx = (mongoc_database_find_collections_legacy_ctx_t *)bson_malloc (sizeof (*ctx));
 
    ctx->dbname = database->name;
    ctx->dbname_len = dbname_len;

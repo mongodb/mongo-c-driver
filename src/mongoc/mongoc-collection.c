@@ -109,7 +109,7 @@ _mongoc_collection_new (mongoc_client_t              *client,
    bson_return_val_if_fail(db, NULL);
    bson_return_val_if_fail(collection, NULL);
 
-   col = bson_malloc0(sizeof *col);
+   col = (mongoc_collection_t *)bson_malloc0(sizeof *col);
    col->client = client;
    col->write_concern = write_concern ?
       mongoc_write_concern_copy(write_concern) :

@@ -26,7 +26,7 @@ mongoc_read_prefs_new (mongoc_read_mode_t mode)
 {
    mongoc_read_prefs_t *read_prefs;
 
-   read_prefs = bson_malloc0(sizeof *read_prefs);
+   read_prefs = (mongoc_read_prefs_t *)bson_malloc0(sizeof *read_prefs);
    read_prefs->mode = mode;
    bson_init(&read_prefs->tags);
 

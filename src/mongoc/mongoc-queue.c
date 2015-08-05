@@ -38,7 +38,7 @@ _mongoc_queue_push_head (mongoc_queue_t *queue,
    bson_return_if_fail(queue);
    bson_return_if_fail(data);
 
-   item = bson_malloc0(sizeof *item);
+   item = (mongoc_queue_item_t *)bson_malloc0(sizeof *item);
    item->next = queue->head;
    item->data = data;
 
@@ -59,7 +59,7 @@ _mongoc_queue_push_tail (mongoc_queue_t *queue,
    bson_return_if_fail(queue);
    bson_return_if_fail(data);
 
-   item = bson_malloc0(sizeof *item);
+   item = (mongoc_queue_item_t *)bson_malloc0(sizeof *item);
    item->data = data;
 
    if (queue->tail) {

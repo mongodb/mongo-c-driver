@@ -79,7 +79,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 
    bson_return_val_if_fail(uri, NULL);
 
-   pool = bson_malloc0(sizeof *pool);
+   pool = (mongoc_client_pool_t *)bson_malloc0(sizeof *pool);
    mongoc_mutex_init(&pool->mutex);
    _mongoc_queue_init(&pool->queue);
    pool->uri = mongoc_uri_copy(uri);

@@ -206,7 +206,11 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds,          /* IN */
 
    bson_return_val_if_fail (sds, false);
 
-   pfds = bson_malloc(sizeof(*pfds) * nsds);
+#ifdef _WIN32
+   pfds = (WSAPOLLFD *)bson_malloc(sizeof(*pfds) * nsds);
+#else
+   pfds = (pollfd *)bson_malloc(sizeof(*pfds) * nsds);
+#endif
 
    for (i = 0; i < nsds; i++) {
       pfds[i].fd = sds[i].socket->sd;
@@ -435,7 +439,7 @@ again:
       RETURN (NULL);
    }
 
-   client = bson_malloc0 (sizeof *client);
+   client = (mongoc_socket_t *)bson_malloc0 (sizeof *client);
    client->sd = sd;
 
    if (port) {
@@ -729,7 +733,7 @@ mongoc_socket_new (int domain,   /* IN */
       MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
    }
 
-   sock = bson_malloc0 (sizeof *sock);
+   sock = (mongoc_socket_t *)bson_malloc0 (sizeof *sock);
    sock->sd = sd;
    sock->domain = domain;
 

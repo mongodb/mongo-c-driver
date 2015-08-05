@@ -42,7 +42,7 @@ mongoc_async_cmd (mongoc_async_t           *async,
 mongoc_async_t *
 mongoc_async_new ()
 {
-   mongoc_async_t *async = bson_malloc0 (sizeof (*async));
+   mongoc_async_t *async = (mongoc_async_t *)bson_malloc0 (sizeof (*async));
 
    return async;
 }
@@ -106,7 +106,7 @@ mongoc_async_run (mongoc_async_t *async,
       }
 
       if (poll_size < async->ncmds) {
-         poller = bson_realloc (poller, sizeof (*poller) * async->ncmds);
+         poller = (mongoc_stream_poll_t *)bson_realloc (poller, sizeof (*poller) * async->ncmds);
          poll_size = async->ncmds;
       }
 

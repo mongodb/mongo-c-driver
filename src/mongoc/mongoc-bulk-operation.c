@@ -49,7 +49,7 @@ mongoc_bulk_operation_new (bool ordered)
 {
    mongoc_bulk_operation_t *bulk;
 
-   bulk = bson_malloc0 (sizeof *bulk);
+   bulk = (mongoc_bulk_operation_t *)bson_malloc0 (sizeof *bulk);
    bulk->ordered = ordered;
 
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));

@@ -961,7 +961,7 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
 
    BIO_push (bio_ssl, bio_mongoc_shim);
 
-   tls = bson_malloc0 (sizeof *tls);
+   tls = (mongoc_stream_tls_t *)bson_malloc0 (sizeof *tls);
    tls->base_stream = base_stream;
    tls->parent.type = MONGOC_STREAM_TLS;
    tls->parent.destroy = _mongoc_stream_tls_destroy;

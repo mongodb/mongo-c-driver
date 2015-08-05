@@ -166,7 +166,7 @@ mongoc_stream_gridfs_new (mongoc_gridfs_file_t *file)
 
    BSON_ASSERT (file);
 
-   stream = bson_malloc0 (sizeof *stream);
+   stream = (mongoc_stream_gridfs_t *)bson_malloc0 (sizeof *stream);
    stream->file = file;
    stream->stream.type = MONGOC_STREAM_GRIDFS;
    stream->stream.destroy = _mongoc_stream_gridfs_destroy;

@@ -1108,7 +1108,7 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream)
       return NULL;
    }
 
-   node = bson_malloc0(sizeof *node);
+   node = (mongoc_cluster_node_t *)bson_malloc0(sizeof *node);
 
    node->stream = stream;
    node->timestamp = bson_get_monotonic_time ();

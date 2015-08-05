@@ -309,7 +309,7 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream, /* IN */
 
    bson_return_val_if_fail(base_stream, NULL);
 
-   stream = bson_malloc0(sizeof *stream);
+   stream = (mongoc_stream_buffered_t *)bson_malloc0(sizeof *stream);
    stream->stream.type = MONGOC_STREAM_BUFFERED;
    stream->stream.destroy = mongoc_stream_buffered_destroy;
    stream->stream.failed = mongoc_stream_buffered_failed;

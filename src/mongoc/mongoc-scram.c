@@ -140,7 +140,7 @@ _mongoc_scram_start (mongoc_scram_t *scram,
    BSON_ASSERT (outbuflen);
 
    /* auth message is as big as the outbuf just because */
-   scram->auth_message = bson_malloc (outbufmax);
+   scram->auth_message = (uint8_t *)bson_malloc (outbufmax);
    scram->auth_messagemax = outbufmax;
 
    /* the server uses a 24 byte random nonce.  so we do as well */
@@ -490,7 +490,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
          *current_val_len = (uint32_t) ((inbuf + inbuflen) - ptr);
       }
 
-      *current_val = bson_malloc (*current_val_len + 1);
+      *current_val = (uint8_t *)bson_malloc (*current_val_len + 1);
       memcpy (*current_val, ptr, *current_val_len);
       (*current_val)[*current_val_len] = '\0';
 
@@ -738,7 +738,7 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
          *current_val_len = (uint32_t) ((inbuf + inbuflen) - ptr);
       }
 
-      *current_val = bson_malloc (*current_val_len + 1);
+      *current_val = (uint8_t *)bson_malloc (*current_val_len + 1);
       memcpy (*current_val, ptr, *current_val_len);
       (*current_val)[*current_val_len] = '\0';
 

@@ -201,7 +201,7 @@ use_malloc:
    MONGOC_WARNING("Falling back to malloc for counters.");
 #endif
 
-   gCounterFallback = bson_malloc0 (size);
+   gCounterFallback = (void *)bson_malloc0 (size);
 
    return gCounterFallback;
 }
@@ -283,7 +283,7 @@ _mongoc_counters_init (void)
    char *segment;
 
    size = mongoc_counters_calc_size();
-   segment = mongoc_counters_alloc(size);
+   segment = (char *)mongoc_counters_alloc(size);
    infos_size = LAST_COUNTER * sizeof *info;
 
    counters = (mongoc_counters_t *)segment;

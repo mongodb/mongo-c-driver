@@ -448,7 +448,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
 
    bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
 
-   iov = bson_malloc ((sizeof *iov) * command->n_documents);
+   iov = (mongoc_iovec_t *)bson_malloc ((sizeof *iov) * command->n_documents);
 
 again:
    has_more = false;

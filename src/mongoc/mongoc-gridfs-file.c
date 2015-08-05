@@ -194,7 +194,7 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
    BSON_ASSERT (gridfs);
    BSON_ASSERT (data);
 
-   file = bson_malloc0 (sizeof *file);
+   file = (mongoc_gridfs_file_t *)bson_malloc0 (sizeof *file);
 
    file->gridfs = gridfs;
    bson_copy_to (data, &file->bson);
@@ -291,7 +291,7 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
       opt = &default_opt;
    }
 
-   file = bson_malloc0 (sizeof *file);
+   file = (mongoc_gridfs_file_t *)bson_malloc0 (sizeof *file);
 
    file->gridfs = gridfs;
    file->is_dirty = 1;

@@ -28,7 +28,7 @@ _mongoc_array_init (mongoc_array_t *array,
    array->len = 0;
    array->element_size = element_size;
    array->allocated = 128;
-   array->data = bson_malloc0(array->allocated);
+   array->data = (void *)bson_malloc0(array->allocated);
 }
 
 
@@ -57,7 +57,7 @@ _mongoc_array_copy (mongoc_array_t       *dst,
    dst->len = src->len;
    dst->element_size = src->element_size;
    dst->allocated = src->allocated;
-   dst->data = bson_malloc (dst->allocated);
+   dst->data = (void *)bson_malloc (dst->allocated);
    memcpy (dst->data, src->data, dst->allocated);
 }
 
@@ -87,7 +87,7 @@ _mongoc_array_append_vals (mongoc_array_t *array,
    len = (size_t)n_elements * array->element_size;
    if ((off + len) > array->allocated) {
       next_size = bson_next_power_of_two(off + len);
-      array->data = bson_realloc(array->data, next_size);
+      array->data = (void *)bson_realloc(array->data, next_size);
       array->allocated = next_size;
    }
 

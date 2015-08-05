@@ -50,7 +50,7 @@ _mongoc_cursor_transform_new (mongoc_cursor_transform_filter_t filter,
 
    ENTRY;
 
-   transform = bson_malloc0 (sizeof *transform);
+   transform = (mongoc_cursor_transform_t *)bson_malloc0 (sizeof *transform);
 
    transform->filter = filter;
    transform->mutate = mutate;

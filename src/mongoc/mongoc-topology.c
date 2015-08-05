@@ -142,7 +142,7 @@ mongoc_topology_new (const mongoc_uri_t *uri,
 
    bson_return_val_if_fail(uri, NULL);
 
-   topology = bson_malloc0(sizeof *topology);
+   topology = (mongoc_topology_t *)bson_malloc0(sizeof *topology);
 
    /*
     * Not ideal, but there's no great way to do this.

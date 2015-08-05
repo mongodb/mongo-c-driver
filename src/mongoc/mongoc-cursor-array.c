@@ -50,7 +50,7 @@ _mongoc_cursor_array_new (const char *field_name)
 
    ENTRY;
 
-   arr = bson_malloc0 (sizeof *arr);
+   arr = (mongoc_cursor_array_t *)bson_malloc0 (sizeof *arr);
    arr->field_name = field_name;
 
    RETURN (arr);

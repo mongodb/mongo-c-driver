@@ -295,7 +295,7 @@ mongoc_topology_description_suitable_servers (
    int i;
    mongoc_read_mode_t read_mode = mongoc_read_prefs_get_mode(read_pref);
 
-   candidates = bson_malloc0(sizeof(*candidates) * topology->servers->items_len);
+   candidates = (mongoc_server_description_t **)bson_malloc0(sizeof(*candidates) * topology->servers->items_len);
 
    data.read_mode = read_mode;
    data.topology_type = topology->type;
@@ -754,7 +754,7 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
       /* TODO this might not be an accurate count in all cases */
       server_id = ++topology->max_server_id;
 
-      description = bson_malloc0(sizeof *description);
+      description = (mongoc_server_description_t *)bson_malloc0(sizeof *description);
       mongoc_server_description_init(description, server, server_id);
 
       mongoc_set_add(topology->servers, server_id, description);
