@@ -1070,6 +1070,7 @@ mock_server_destroy (mock_server_t *server)
       abort ();
    }
 
+   mongoc_mutex_unlock (&server->mutex);
    mongoc_thread_join (server->main_thread);
 
    _mongoc_array_destroy (&server->worker_threads);
