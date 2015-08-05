@@ -225,6 +225,12 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
    bson_iter_t iter;
    int num_fields = 0;
 
+   ENTRY;
+
+   ALWAYS_ASSERT(cluster);
+   ALWAYS_ASSERT(node);
+   ALWAYS_ASSERT(node->stream);
+
    bson_init (&command);
    bson_append_int32 (&command, "ismaster", 8, 1);
 
@@ -2141,6 +2147,8 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
    char cmdname[140];
    int32_t max_msg_size;
 
+   ENTRY;
+
    bson_return_val_if_fail(cluster, 0);
    bson_return_val_if_fail(rpcs, 0);
    bson_return_val_if_fail(rpcs_len, 0);
@@ -2229,7 +2237,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
    iovcnt = cluster->iov.len;
    errno = 0;
 
-   BSON_ASSERT(cluster->iov.len);
+   BSON_ASSERT (cluster->iov.len);
 
    if (!mongoc_stream_writev (stream, iov, iovcnt,
                               cluster->sockettimeoutms)) {
@@ -2243,7 +2251,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
                       "Failure during socket delivery: %s",
                       errstr);
       mongoc_cluster_disconnect_node (cluster, server_id);
-      return false;
+      RETURN (false);
    }
 
    if (cluster->client->topology->single_threaded) {
@@ -2256,8 +2264,9 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
       }
    }
 
-   return true;
+   RETURN (true);
 }
+
 
 /*
  *--------------------------------------------------------------------------
@@ -2308,6 +2317,7 @@ mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
 
    return 0;
 }
+
 
 /*
  *--------------------------------------------------------------------------

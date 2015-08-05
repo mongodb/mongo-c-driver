@@ -587,18 +587,19 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
 {
    int32_t v_int;
    const char *end_key;
-   char *key;
-   char *value;
+   char *key = NULL;
+   char *value = NULL;
+   bool ret = false;
 
    if (!(key = scan_to_unichar(str, '=', "", &end_key))) {
-      return false;
+      goto CLEANUP;
    }
 
    value = bson_strdup(end_key + 1);
    mongoc_uri_do_unescape(&value);
    if (!value) {
       /* do_unescape detected invalid UTF-8 and freed value */
-      return false;
+      goto CLEANUP;
    }
 
    if (mongoc_uri_option_is_int32(key)) {
@@ -633,10 +634,13 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       bson_append_utf8(&uri->options, key, -1, value, -1);
    }
 
+   ret = true;
+
+CLEANUP:
    bson_free(key);
    bson_free(value);
 
-   return true;
+   return ret;
 }
 
 

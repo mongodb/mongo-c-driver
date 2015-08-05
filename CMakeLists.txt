@@ -19,10 +19,10 @@ set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
 set (MONGOC_MAJOR_VERSION 1)
 set (MONGOC_MINOR_VERSION 1)
-set (MONGOC_MICRO_VERSION 7)
-set (MONGOC_PRERELEASE_VERSION )
+set (MONGOC_MICRO_VERSION 11)
+set (MONGOC_PRERELEASE_VERSION dev)
 set (MONGOC_API_VERSION 1.0)
-set (MONGOC_VERSION 1.1.7)
+set (MONGOC_VERSION 1.1.11-dev)
 
 set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 set (CPACK_PACKAGE_VERSION_MAJOR ${MONGOC_MAJOR_VERSION})
@@ -41,6 +41,7 @@ if (SASL2_FOUND)
 else()
    set (MONGOC_ENABLE_SASL 0)
 endif ()
+set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
 
 configure_file (
    "${SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
@@ -81,6 +82,8 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-b64.c
    ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-b64.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cluster.c
@@ -88,13 +91,16 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-counters.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-cursorid.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-transform.c
    ${SOURCE_DIR}/src/mongoc/mongoc-database.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-index.c
    ${SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${SOURCE_DIR}/src/mongoc/mongoc-list.c
@@ -110,6 +116,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
@@ -250,6 +257,8 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-async.c
    ${SOURCE_DIR}/tests/test-mongoc-buffer.c
    ${SOURCE_DIR}/tests/test-mongoc-client.c
+   ${SOURCE_DIR}/tests/mock-server.c
+   ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-mongoc-client-pool.c
    ${SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
@@ -274,8 +283,8 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-uri.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
    ${SOURCE_DIR}/tests/test-sasl.c
-   ${SOURCE_DIR}/tests/TestSuite.c
    ${SOURCE_DIR}/tests/test-write-commands.c
+   ${SOURCE_DIR}/tests/TestSuite.c
 )
 
 if (SEARCH_OPEN_SSL AND OPENSSL_FOUND)
