@@ -131,6 +131,120 @@ test_server_selection_try_once_option (void)
 }
 
 static void
+_test_server_selection (bool try_once)
+{
+   mock_server_t *server;
+   char *secondary_response;
+   char *primary_response;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *primary_pref;
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   mongoc_server_description_t *sd;
+
+   server = mock_server_new ();
+   mock_server_set_request_timeout_msec (server, 600);
+   mock_server_run (server);
+
+   secondary_response = bson_strdup_printf (
+      "{'ok': 1, "
+      " 'ismaster': false,"
+      " 'secondary': true,"
+      " 'setName': 'rs',"
+      " 'hosts': ['%s']}",
+      mock_server_get_host_and_port (server));
+
+   primary_response = bson_strdup_printf (
+      "{'ok': 1, "
+      " 'ismaster': true,"
+      " 'setName': 'rs',"
+      " 'hosts': ['%s']}",
+      mock_server_get_host_and_port (server));
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
+   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
+   if (!try_once) {
+      /* serverSelectionTryOnce is on by default */
+      mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
+   }
+
+   client = mongoc_client_new_from_uri (uri);
+   primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   /* no primary, selection fails after one try */
+   future = future_topology_select (client->topology, MONGOC_SS_READ,
+                                    primary_pref, 15, &error);
+   assert (request = mock_server_receives_ismaster (server));
+   mock_server_replies_simple (request, secondary_response);
+
+   if (try_once) {
+      /* selection fails without another ismaster call */
+      assert (!mock_server_receives_ismaster (server));
+   } else {
+      /* TODO: SPEC-289 the driver thinks there's time for one more check
+       * but there isn't, since selection time remaining < heartbeat.
+       * the test works until SPEC-289 is resolved and implemented.
+       */
+      assert (request = mock_server_receives_ismaster (server));
+      mock_server_replies_simple (request, secondary_response);
+      request_destroy (request);
+   }
+
+   /* selection fails */
+   assert (!future_get_mongoc_server_description_ptr (future));
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
+
+   if (try_once) {
+      ASSERT_CMPSTR ("No suitable servers found", error.message);
+   } else {
+      ASSERT_CMPSTR ("Timed out trying to select a server", error.message);
+   }
+
+   assert (client->topology->stale);
+   future_destroy (future);
+
+   _mongoc_usleep (510 * 1000);  /* one heartbeat, plus a few milliseconds */
+
+   /* second selection, now we try ismaster again */
+   future = future_topology_select (client->topology, MONGOC_SS_READ,
+                                    primary_pref, 15, &error);
+   assert (request = mock_server_receives_ismaster (server));
+
+   /* the secondary is now primary, selection succeeds */
+   mock_server_replies_simple (request, primary_response);
+   sd = future_get_mongoc_server_description_ptr (future);
+   assert (sd);
+   assert (!client->topology->stale);
+   request_destroy (request);
+   future_destroy (future);
+
+   mongoc_server_description_destroy (sd);
+   mongoc_read_prefs_destroy (primary_pref);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   bson_free (secondary_response);
+   bson_free (primary_response);
+   mock_server_destroy (server);
+}
+
+static void
+test_server_selection_try_once (void)
+{
+   _test_server_selection (true);
+}
+
+static void
+test_server_selection_try_once_false (void)
+{
+   _test_server_selection (false);
+}
+
+static void
 test_topology_invalidate_server (void)
 {
    mongoc_server_description_t *fake_sd;
@@ -356,7 +470,8 @@ test_cooldown_rs (void)
    }
 
    uri_str = bson_strdup_printf (
-      "mongodb://localhost:%hu/?replicaSet=rs&serverSelectionTimeoutMS=1000",
+      "mongodb://localhost:%hu/?replicaSet=rs&serverSelectionTimeoutMS=1000"
+         "&serverSelectionTryOnce=false",
       mock_server_get_port (servers[0]));
 
    client = mongoc_client_new (uri_str);
@@ -440,10 +555,9 @@ test_topology_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Topology/client_creation", test_topology_client_creation);
    TestSuite_Add (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
-   TestSuite_Add (suite,
-                  "/Topology/server_selection_try_once_option",
-                  test_server_selection_try_once_option);
-
+   TestSuite_Add (suite, "/Topology/server_selection_try_once_option", test_server_selection_try_once_option);
+   TestSuite_Add (suite, "/Topology/server_selection_try_once", test_server_selection_try_once);
+   TestSuite_Add (suite, "/Topology/server_selection_try_once_false", test_server_selection_try_once_false);
    TestSuite_Add (suite, "/Topology/invalidate_server", test_topology_invalidate_server);
    TestSuite_Add (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node);
    TestSuite_Add (suite, "/Topology/max_wire_version_race_condition", test_max_wire_version_race_condition);

@@ -411,10 +411,14 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             return mongoc_server_description_new_copy(selected_server);
          }
 
+         if (topology->server_selection_try_once) {
+            goto FAIL;
+         }
+
          /* error if we've timed out */
          now = bson_get_monotonic_time();
          if (now >= expire_at) {
-            goto TIMEOUT;
+            goto FAIL;
          }
 
          /* rescan */
@@ -443,16 +447,16 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
          if (r == ETIMEDOUT) {
             /* handle timeouts */
-            goto TIMEOUT;
+            goto FAIL;
          } else if (r) {
             /* TODO handle other errors */
-            goto TIMEOUT;
+            goto FAIL;
          }
 
          now = bson_get_monotonic_time ();
 
          if (now > expire_at) {
-             goto TIMEOUT;
+            goto FAIL;
          }
       } else {
          selected_server = mongoc_server_description_new_copy(selected_server);
@@ -461,11 +465,15 @@ mongoc_topology_select (mongoc_topology_t         *topology,
       }
    }
 
- TIMEOUT:
+FAIL:
+   topology->stale = true;
    bson_set_error(error,
                   MONGOC_ERROR_SERVER_SELECTION,
-                  MONGOC_ERROR_SERVER_SELECTION_TIMEOUT,
+                  MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                  topology->server_selection_try_once ?
+                  "No suitable servers found" :
                   "Timed out trying to select a server");
+
    return NULL;
 }
 

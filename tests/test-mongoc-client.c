@@ -438,14 +438,15 @@ test_unavailable_seeds (void)
    mongoc_cursor_t *cursor;
    bson_t query = BSON_INITIALIZER;
    const bson_t *doc;
+   bson_error_t error;
    
    const char* uri_strs[] = {
-      "mongodb://a:1/?connectTimeoutMS=1&serverSelectionTimeoutMS=1",
-      "mongodb://a:1,a:2/?connectTimeoutMS=1&serverSelectionTimeoutMS=1",
-      "mongodb://a:1,a:2/?replicaSet=r&connectTimeoutMS=1&serverSelectionTimeoutMS=1",
-      "mongodb://u:p@a:1/?connectTimeoutMS=1&serverSelectionTimeoutMS=1",
-      "mongodb://u:p@a:1,a:2/?connectTimeoutMS=1&serverSelectionTimeoutMS=1",
-      "mongodb://u:p@a:1,a:2/?replicaSet=r&connectTimeoutMS=1&serverSelectionTimeoutMS=1",
+      "mongodb://a:1/?connectTimeoutMS=1",
+      "mongodb://a:1,a:2/?connectTimeoutMS=1",
+      "mongodb://a:1,a:2/?replicaSet=r&connectTimeoutMS=1",
+      "mongodb://u:p@a:1/?connectTimeoutMS=1",
+      "mongodb://u:p@a:1,a:2/?connectTimeoutMS=1",
+      "mongodb://u:p@a:1,a:2/?replicaSet=r&connectTimeoutMS=1",
    };
 
    int i;
@@ -470,6 +471,9 @@ test_unavailable_seeds (void)
                                        NULL);
 
       assert (! mongoc_cursor_next (cursor, &doc));
+      assert (mongoc_cursor_error (cursor, &error));
+      ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
+      ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
 
       mongoc_cursor_destroy (cursor);
       mongoc_collection_destroy (collection);

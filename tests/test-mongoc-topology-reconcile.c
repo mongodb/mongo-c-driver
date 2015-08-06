@@ -135,8 +135,10 @@ _test_topology_reconcile_rs (bool pooled)
    RS_RESPONSE_TO_ISMASTER (server1, true, false, server0, server1);
 
    /* provide secondary in seed list */
+   /* TODO: CDRIVER-751 serverSelectionTryOnce=false shouldn't be needed */
    uri_str = bson_strdup_printf (
-      "mongodb://%s/?replicaSet=rs&connectTimeoutMS=10",
+      "mongodb://%s/?replicaSet=rs&connectTimeoutMS=10"
+         "&serverSelectionTryOnce=false",
       mock_server_get_host_and_port (server0));
 
    uri = mongoc_uri_new (uri_str);
@@ -155,6 +157,7 @@ _test_topology_reconcile_rs (bool pooled)
 
    /*
     * server0 is selected, server1 is discovered and added to scanner.
+    * TODO: CDRIVER-751 actually it isn't.
     */
    assert (selects_server (client, secondary_read_prefs, server0));
    assert (get_node (client->topology->scanner,
