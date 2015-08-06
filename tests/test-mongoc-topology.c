@@ -253,7 +253,7 @@ test_cooldown_standalone (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* anything less than minHeartbeatFrequencyMS=500 is irrelevant */
-   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1);
+   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
    client = mongoc_client_new_from_uri (uri);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
