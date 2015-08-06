@@ -133,8 +133,11 @@ test_mongoc_client_authenticate (void *context)
    mongoc_database_destroy (database);
    mongoc_client_destroy (admin_client);
 }
+
+
 int should_run_auth_tests (void)
 {
+   char *user;
 #ifndef MONGOC_ENABLE_SSL
    mongoc_client_t *client = test_framework_client_new (NULL);
    uint32_t server_id = mongoc_cluster_preselect(&client->cluster, MONGOC_OPCODE_QUERY, NULL, NULL);
@@ -145,7 +148,10 @@ int should_run_auth_tests (void)
    }
 #endif
 
-   return 1;
+   /* run auth tests if the MONGOC_TEST_USER env var is set */
+   user = test_framework_get_admin_user ();
+   bson_free (user);
+   return user ? 1 : 0;
 }
 
 
@@ -714,6 +720,10 @@ test_exhaust_cursor (void)
       uint32_t local_hint;
 
       r = mongoc_cursor_next (cursor, &doc);
+      if (!r) {
+         mongoc_cursor_error (cursor, &error);
+         printf ("cursor error: %s\n", error.message);
+      }
       assert (r);
       assert (doc);
       assert (cursor->in_exhaust);
