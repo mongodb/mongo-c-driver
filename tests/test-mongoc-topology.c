@@ -32,8 +32,8 @@ test_topology_client_creation (void)
    uint32_t id;
 
    /* create two clients directly */
-   client_a = test_framework_client_new (NULL);
-   client_b = test_framework_client_new (NULL);
+   client_a = test_framework_client_new ();
+   client_b = test_framework_client_new ();
    assert (client_a);
    assert (client_b);
 
@@ -71,7 +71,7 @@ test_topology_client_pool_creation (void)
    mongoc_topology_t *topology_b;
 
    /* create two clients through a client pool */
-   pool = test_framework_client_pool_new (NULL);
+   pool = test_framework_client_pool_new ();
    client_a = mongoc_client_pool_pop (pool);
    client_b = mongoc_client_pool_pop (pool);
    assert (client_a);
@@ -105,7 +105,7 @@ test_topology_invalidate_server (void)
    uint32_t fake_id = 42;
    uint32_t id;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    td = &client->topology->description;
@@ -161,7 +161,7 @@ test_invalid_cluster_node (void)
    uint32_t id;
 
    /* use client pool, this test is only valid when multi-threaded */
-   pool = test_framework_client_pool_new (NULL);
+   pool = test_framework_client_pool_new ();
    client = mongoc_client_pool_pop (pool);
    cluster = &client->cluster;
 
@@ -204,7 +204,7 @@ test_max_wire_version_race_condition (void)
    int r;
 
    /* connect directly and add our user, test is only valid with auth */
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    database = mongoc_client_get_database(client, "test");
    mongoc_database_remove_user (database, "pink", &error);
    r = mongoc_database_add_user (database, "pink", "panther", NULL, NULL, &error);
@@ -213,7 +213,7 @@ test_max_wire_version_race_condition (void)
    mongoc_client_destroy (client);
 
    /* use client pool, test is only valid when multi-threaded */
-   pool = test_framework_client_pool_new (NULL);
+   pool = test_framework_client_pool_new ();
    client = mongoc_client_pool_pop (pool);
 
    /* load stream into cluster */

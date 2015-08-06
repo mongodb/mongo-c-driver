@@ -20,7 +20,7 @@ test_has_collection (void)
    bson_oid_t oid;
    bson_t b;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    name = gen_collection_name ("has_collection");
@@ -65,7 +65,7 @@ test_command (void)
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    database = mongoc_client_get_database (client, "admin");
@@ -116,7 +116,7 @@ test_drop (void)
    char *dbname;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    dbname = gen_collection_name ("db_drop_test");
@@ -148,7 +148,7 @@ test_create_collection (void)
    char *name;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -209,7 +209,7 @@ test_get_collection_info (void)
    char *autoindexid_name;
    char *noopts_name;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -309,7 +309,7 @@ test_get_collection_names (void)
    char *name5;
    const char *system_prefix = "system.";
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    dbname = gen_collection_name ("dbtest");

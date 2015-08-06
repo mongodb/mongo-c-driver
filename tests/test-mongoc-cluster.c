@@ -22,7 +22,7 @@ test_get_max_bson_obj_size (void)
    uint32_t id;
 
    /* single-threaded */
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
@@ -33,7 +33,7 @@ test_get_max_bson_obj_size (void)
    mongoc_client_destroy (client);
 
    /* multi-threaded */
-   pool = test_framework_client_pool_new (NULL);
+   pool = test_framework_client_pool_new ();
    client = mongoc_client_pool_pop (pool);
 
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
@@ -62,7 +62,7 @@ test_get_max_msg_size (void)
    uint32_t id;
 
    /* single-threaded */
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
 
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
    sd = mongoc_set_get (client->topology->description.servers, id);
@@ -72,7 +72,7 @@ test_get_max_msg_size (void)
    mongoc_client_destroy (client);
 
    /* multi-threaded */
-   pool = test_framework_client_pool_new (NULL);
+   pool = test_framework_client_pool_new ();
    client = mongoc_client_pool_pop (pool);
 
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);

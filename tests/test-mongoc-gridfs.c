@@ -42,7 +42,7 @@ test_create (void)
    mongoc_client_t *client;
    bson_error_t error;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error);
@@ -74,7 +74,7 @@ test_remove (void)
    bool r;
    char name[32];
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error);
@@ -119,7 +119,7 @@ test_list (void)
    char buf[100];
    int i = 0;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    gridfs = get_test_gridfs (client, "list", &error);
@@ -190,7 +190,7 @@ test_properties (void)
    const bson_value_t *file_id;
    const char *alias0, *alias1;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
 
    gridfs = get_test_gridfs (client, "list", &error);
    assert (gridfs);
@@ -244,7 +244,7 @@ test_create_from_stream (void)
    mongoc_client_t *client;
    bson_error_t error;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    gridfs = get_test_gridfs (client, "from_stream", &error);
@@ -286,7 +286,7 @@ test_read (void)
    iov[1].iov_base = buf2;
    iov[1].iov_len = 10;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    gridfs = get_test_gridfs (client, "read", &error);
@@ -347,7 +347,7 @@ test_write (void)
 
    opt.chunk_size = 2;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    gridfs = get_test_gridfs (client, "write", &error);
@@ -398,7 +398,7 @@ test_stream (void)
    iov.iov_base = buf;
    iov.iov_len = sizeof buf;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    gridfs = get_test_gridfs (client, "fs", &error);
@@ -438,7 +438,7 @@ test_remove_by_filename (void)
    bson_error_t error;
    bool ret;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    gridfs = get_test_gridfs (client, "fs_remove_by_filename", &error);

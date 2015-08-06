@@ -41,7 +41,7 @@ test_split_insert (void)
    int i;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    collection = get_test_collection (client, "test_split_insert");
@@ -99,7 +99,7 @@ test_invalid_write_concern (void)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert(client);
 
    collection = get_test_collection(client, "test_invalid_write_concern");

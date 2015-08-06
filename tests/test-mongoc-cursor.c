@@ -15,7 +15,7 @@ test_get_host (void)
    mongoc_host_list_t host;
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
-   char *uri_str = test_framework_get_uri_str (NULL);
+   char *uri_str = test_framework_get_uri_str ();
    mongoc_uri_t *uri;
    const bson_t *doc;
    bson_error_t error;
@@ -26,7 +26,7 @@ test_get_host (void)
 
    hosts = mongoc_uri_get_hosts(uri);
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    cursor = _mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
                                false, &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
@@ -60,7 +60,7 @@ test_clone (void)
    bool r;
    bson_t q = BSON_INITIALIZER;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
 
    {
       /*
@@ -113,7 +113,7 @@ test_invalid_query (void)
    bson_t *q;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    q = BCON_NEW ("foo", BCON_INT32 (1), "$orderby", "{", "}");

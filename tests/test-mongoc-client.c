@@ -77,7 +77,7 @@ test_mongoc_client_authenticate (void *context)
    /*
     * Log in as admin.
     */
-   admin_client = test_framework_client_new (NULL);
+   admin_client = test_framework_client_new ();
 
    /*
     * Add a user to the test database.
@@ -139,7 +139,7 @@ int should_run_auth_tests (void)
 {
    char *user;
 #ifndef MONGOC_ENABLE_SSL
-   mongoc_client_t *client = test_framework_client_new (NULL);
+   mongoc_client_t *client = test_framework_client_new ();
    uint32_t server_id = mongoc_cluster_preselect(&client->cluster, MONGOC_OPCODE_QUERY, NULL, NULL);
 
    if (mongoc_cluster_node_max_wire_version (&client->cluster, server_id) > 2) {
@@ -356,7 +356,7 @@ test_mongoc_client_command (void)
    bool r;
    bson_t cmd = BSON_INITIALIZER;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    bson_append_int32 (&cmd, "ping", 4, 1);
@@ -386,7 +386,7 @@ test_mongoc_client_command_secondary (void)
    mongoc_read_prefs_t *read_prefs;
    bson_t cmd = BSON_INITIALIZER;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    BSON_APPEND_INT32 (&cmd, "invalid_command_here", 1);
@@ -413,7 +413,7 @@ test_mongoc_client_preselect (void)
    bson_error_t error;
    uint32_t node;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    node = _mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
@@ -670,7 +670,7 @@ test_exhaust_cursor (void)
    bson_error_t error;
    bson_oid_t oid;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    collection = get_test_collection (client, "test_exhaust_cursor");
@@ -836,7 +836,7 @@ test_server_status (void)
    bson_t reply;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    r = mongoc_client_get_server_status (client, NULL, &reply, &error);

@@ -661,7 +661,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
  *--------------------------------------------------------------------------
  */
 char *
-test_framework_get_uri_str (const char *uri_str)  /* TODO: remove parameter */
+test_framework_get_uri_str ()
 {
    return test_framework_add_user_password_from_env (
       test_framework_get_uri_str_no_auth (NULL));
@@ -685,9 +685,9 @@ test_framework_get_uri_str (const char *uri_str)  /* TODO: remove parameter */
  *--------------------------------------------------------------------------
  */
 mongoc_uri_t *
-test_framework_get_uri (const char *uri_str)  /* TODO: remove parameter */
+test_framework_get_uri ()
 {
-   char *test_uri_str = test_framework_get_uri_str (NULL);
+   char *test_uri_str = test_framework_get_uri_str ();
    mongoc_uri_t *uri = mongoc_uri_new (test_uri_str);
 
    assert (uri);
@@ -746,9 +746,9 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
  *--------------------------------------------------------------------------
  */
 mongoc_client_t *
-test_framework_client_new (const char *uri_str)
+test_framework_client_new ()
 {
-   char *test_uri_str = test_framework_get_uri_str (uri_str);
+   char *test_uri_str = test_framework_get_uri_str ();
    mongoc_client_t *client = mongoc_client_new (test_uri_str);
 
    assert (client);
@@ -810,17 +810,15 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
  *--------------------------------------------------------------------------
  */
 mongoc_client_pool_t *
-test_framework_client_pool_new (const char *uri_str)
+test_framework_client_pool_new ()
 {
-   char *test_uri_str = test_framework_get_uri_str (uri_str);
-   mongoc_uri_t *test_uri = mongoc_uri_new (test_uri_str);
+   mongoc_uri_t *test_uri = test_framework_get_uri ();
    mongoc_client_pool_t *pool = mongoc_client_pool_new (test_uri);
 
    assert (pool);
    test_framework_set_pool_ssl_opts (pool);
 
    mongoc_uri_destroy (test_uri);
-   bson_free (test_uri_str);
    assert (pool);
    return pool;
 }

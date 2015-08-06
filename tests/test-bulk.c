@@ -333,7 +333,7 @@ test_bulk (void)
    bson_t doc = BSON_INITIALIZER;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -397,7 +397,7 @@ test_insert (bool ordered)
    mongoc_cursor_t *cursor;
    const bson_t *inserted_doc;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -471,7 +471,7 @@ test_insert_check_keys (void)
    bool r;
    char *json_pattern;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -522,7 +522,7 @@ test_upsert (bool ordered)
    bson_t *doc;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -612,7 +612,7 @@ test_upserted_index (bool ordered)
    bson_t *inc = tmp_bson ("{'$inc': {'b': 1}}");
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -766,7 +766,7 @@ test_update_one (bool ordered)
    bson_t *doc;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -839,7 +839,7 @@ test_replace_one (bool ordered)
    bson_t *doc;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -898,7 +898,7 @@ test_upsert_large ()
    bson_t reply;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -970,7 +970,7 @@ test_update (bool ordered)
    bson_t *update_doc;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1044,7 +1044,7 @@ test_index_offset (void)
    bson_t *doc;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1101,7 +1101,7 @@ test_single_ordered_bulk ()
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1156,7 +1156,7 @@ test_insert_continue_on_error ()
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1203,7 +1203,7 @@ test_update_continue_on_error ()
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1267,7 +1267,7 @@ test_remove_continue_on_error ()
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1317,7 +1317,7 @@ test_single_error_ordered_bulk ()
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1375,7 +1375,7 @@ test_multiple_error_ordered_bulk ()
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1442,7 +1442,7 @@ test_single_unordered_bulk ()
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1493,7 +1493,7 @@ test_single_error_unordered_bulk ()
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1664,7 +1664,7 @@ test_multiple_error_unordered_bulk ()
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1742,7 +1742,7 @@ test_large_inserts_ordered ()
    bson_iter_t iter;
    int i;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -1820,7 +1820,7 @@ test_large_inserts_unordered ()
    bson_iter_t iter;
    int i;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    huge_doc = BCON_NEW ("a", BCON_INT32 (1));
@@ -1901,7 +1901,7 @@ _test_numerous (bool ordered)
    bson_iter_t iter;
    int i;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    collection = get_test_collection (client, "test_numerous_inserts");
@@ -1990,7 +1990,7 @@ test_bulk_edge_over_1000 (void)
    bson_error_t error;
    int i;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    collection = get_test_collection (client, "OVER_1000");
@@ -2063,7 +2063,7 @@ test_bulk_edge_case_372 (bool ordered)
    bson_t reply;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
    has_write_cmds = server_has_write_commands (client);
 
@@ -2152,7 +2152,7 @@ test_bulk_new (void)
    bson_t empty = BSON_INITIALIZER;
    bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    collection = get_test_collection (client, "bulk_new");
