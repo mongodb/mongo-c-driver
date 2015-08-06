@@ -92,6 +92,7 @@ int
 mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
                             int             *events,
                             void            *ctx,
+                            int32_t         timeout_msec,
                             bson_error_t    *error);
 #endif
 

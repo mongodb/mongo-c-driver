@@ -222,7 +222,6 @@ test_mongoc_tls_hangup (void)
  *    5. confirms that it times out
  *    6. shuts down
  */
-#ifdef TODO_CDRIVER_630
 static void *
 handshake_stall_client (void *ptr)
 {
@@ -243,7 +242,7 @@ handshake_stall_client (void *ptr)
    mongoc_mutex_unlock (&data->cond_mutex);
 
    uri_str = bson_strdup_printf (
-      "mongodb://localhost:%u/?ssl=true&connecttimeoutms=%" PRId64,
+      "mongodb://localhost:%u/?ssl=true&serverselectiontimeoutms=200&connecttimeoutms=%" PRId64,
       data->server_port, connect_timeout_ms);
 
    client = mongoc_client_new (uri_str);
@@ -318,7 +317,6 @@ test_mongoc_tls_handshake_stall (void)
    ASSERT (cr.result == SSL_TEST_SUCCESS);
    ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
-#endif
 
 void
 test_stream_tls_error_install (TestSuite *suite)
@@ -328,8 +326,6 @@ test_stream_tls_error_install (TestSuite *suite)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif
 
-#ifdef TODO_CDRIVER_630
    TestSuite_Add (suite, "/TLS/handshake_stall",
                   test_mongoc_tls_handshake_stall);
-#endif
 }

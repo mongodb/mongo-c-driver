@@ -60,6 +60,7 @@ int
 mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
                             int             *events,
                             void            *ctx,
+                            int32_t         timeout_msec,
                             bson_error_t    *error)
 {
    mongoc_stream_t *tls_stream;
@@ -69,7 +70,7 @@ mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
         tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
    }
 
-   if (mongoc_stream_tls_do_handshake (tls_stream, 0)) {
+   if (mongoc_stream_tls_do_handshake (tls_stream, timeout_msec)) {
       if (mongoc_stream_tls_check_cert (tls_stream, host)) {
          return 1;
       } else {
@@ -231,8 +232,14 @@ mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd)
 mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *acmd)
 {
+   int64_t now;
+   int32_t timeout_msec;
+
+   now = bson_get_monotonic_time ();
+   timeout_msec = (acmd->expire_at - now) / 1000;
+
    switch (acmd->setup (acmd->stream, &acmd->events, acmd->setup_ctx,
-                        &acmd->error)) {
+                        timeout_msec, &acmd->error)) {
       case -1:
          return MONGOC_ASYNC_CMD_ERROR;
          break;
