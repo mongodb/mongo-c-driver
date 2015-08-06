@@ -64,6 +64,8 @@ test_mongoc_client_authenticate (void *context)
    char *uri;
    bson_t roles;
    mongoc_database_t *database;
+   char *uri_str_no_auth;
+   char *uri_str_auth;
    mongoc_collection_t *collection;
    mongoc_client_t *auth_client;
    mongoc_cursor_t *cursor;
@@ -96,7 +98,11 @@ test_mongoc_client_authenticate (void *context)
     * Try authenticating with that user.
     */
    bson_init(&q);
-   auth_client = test_framework_client_new (uri);
+   uri_str_no_auth = test_framework_get_uri_str_no_auth ("test");
+   uri_str_auth = test_framework_add_user_password (uri_str_no_auth,
+                                                    username,
+                                                    "testpass");
+   auth_client = mongoc_client_new (uri_str_auth);
    collection = mongoc_client_get_collection (auth_client, "test", "test");
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &q, NULL, NULL);
@@ -118,6 +124,8 @@ test_mongoc_client_authenticate (void *context)
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
+   bson_free (uri_str_no_auth);
+   bson_free (uri_str_auth);
    mongoc_client_destroy (auth_client);
    bson_destroy (&roles);
    bson_free (uri);
@@ -125,8 +133,6 @@ test_mongoc_client_authenticate (void *context)
    mongoc_database_destroy (database);
    mongoc_client_destroy (admin_client);
 }
-
-
 int should_run_auth_tests (void)
 {
 #ifndef MONGOC_ENABLE_SSL
@@ -141,6 +147,8 @@ int should_run_auth_tests (void)
 
    return 1;
 }
+
+
 static void
 test_mongoc_client_authenticate_failure (void *context)
 {
@@ -153,18 +161,16 @@ test_mongoc_client_authenticate_failure (void *context)
    bson_t q;
    bson_t empty = BSON_INITIALIZER;
    char *host = test_framework_get_host ();
-   uint16_t port = test_framework_get_port ();
-   char *bad_uri_str = bson_strdup_printf (
-         "mongodb://baduser:badpass@%s:%hu/test%s",
-         host,
-         port,
-         test_framework_get_ssl () ? "?ssl=true" : "");
+   char *uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
+   char *bad_uri_str = test_framework_add_user_password (uri_str_no_auth,
+                                                         "baduser",
+                                                         "badpass");
 
    /*
     * Try authenticating with bad user.
     */
    bson_init(&q);
-   client = test_framework_client_new (bad_uri_str);
+   client = mongoc_client_new (bad_uri_str);
 
    collection = mongoc_client_get_collection(client, "test", "test");
    suppress_one_message ();
@@ -204,6 +210,7 @@ test_mongoc_client_authenticate_failure (void *context)
    assert (error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
 
    bson_free (host);
+   bson_free (uri_str_no_auth);
    bson_free (bad_uri_str);
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);

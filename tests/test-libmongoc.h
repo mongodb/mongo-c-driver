@@ -24,7 +24,13 @@ void suppress_one_message (void);
 char *test_framework_getenv (const char *name);
 char *test_framework_get_host (void);
 uint16_t test_framework_get_port (void);
+char *test_framework_get_admin_user (void);
+char *test_framework_get_admin_password (void);
 bool test_framework_get_ssl (void);
+char *test_framework_add_user_password (const char *uri_str,
+                                        const char *user,
+                                        const char *password);
+char *test_framework_get_uri_str_no_auth (const char *database_name);
 char *test_framework_get_uri_str (const char *uri_str);
 mongoc_uri_t *test_framework_get_uri (const char *uri_str);
 mongoc_client_t *test_framework_client_new (const char *uri_str);

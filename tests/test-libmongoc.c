@@ -17,12 +17,13 @@
 
 #include <bson.h>
 #include <mongoc.h>
-#include <stdlib.h>
-#include <stdio.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
+#include "mongoc-uri-private.h"
+
 #include "mongoc-tests.h"
+#include "TestSuite.h"
+#include "test-conveniences.h"
+#include "test-libmongoc.h"
 
 
 extern void test_array_install                (TestSuite *suite);
@@ -285,6 +286,115 @@ test_framework_get_admin_password (void)
    return test_framework_getenv ("MONGOC_TEST_PASSWORD");
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_user_password --
+ *
+ *       Get the username and password of an admin user on the test MongoDB
+ *       server.
+ *
+ * Returns:
+ *       True if username and password environment variables are set.
+ *
+ * Side effects:
+ *       Sets passed-in string pointers to strings you must free, or NULL.
+ *       Logs and aborts if user or password is set in the environment
+ *       but not both, or if user and password are set but SSL is not
+ *       compiled in (SSL is required for SCRAM-SHA-1, see CDRIVER-520).
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+test_framework_get_user_password (char **user,
+                                  char **password)
+{
+   /* TODO: uri-escape username and password */
+   *user = test_framework_get_admin_user ();
+   *password = test_framework_get_admin_password ();
+
+   if ((*user && !*password) || (!*user && *password)) {
+      fprintf (stderr, "Specify both MONGOC_TEST_USER and"
+         " MONGOC_TEST_PASSWORD, or neither\n");
+      abort ();
+   }
+
+#ifndef MONGOC_ENABLE_SSL
+   if (*user && *password) {
+      fprintf (stderr, "You need to configure with --enable-ssl"
+                       " when providing user+password (for SCRAM-SHA-1)\n");
+      abort ();
+   }
+#endif
+
+   return (bool) *user;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_add_user_password --
+ *
+ *       Copy a connection string, with user and password added.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_add_user_password (const char *uri_str,
+                                  const char *user,
+                                  const char *password)
+{
+   return bson_strdup_printf (
+      "mongodb://%s:%s@%s",
+      user, password, uri_str + strlen ("mongodb://"));
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_add_user_password_from_env --
+ *
+ *       Add password of an admin user on the test MongoDB server.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       Same as test_framework_get_user_password.
+ *
+ *--------------------------------------------------------------------------
+ */
+static char *
+test_framework_add_user_password_from_env (const char *uri_str)
+{
+   char *user;
+   char *password;
+   char *uri_str_auth;
+
+   if (test_framework_get_user_password (&user, &password)) {
+      uri_str_auth = test_framework_add_user_password (uri_str,
+                                                       user,
+                                                       password);
+
+      bson_free (user);
+      bson_free (password);
+   } else {
+      uri_str_auth = bson_strdup (uri_str);
+   }
+
+   return uri_str_auth;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -326,15 +436,211 @@ test_framework_get_ssl (void)
    return test_framework_getenv_bool ("MONGOC_TEST_SSL");
 }
 
-static bool
-uri_has_options (const mongoc_uri_t *uri)
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_uri_str_from_env --
+ *
+ *       Get the connection string of the test MongoDB server based on
+ *       the variables set in the environment. Does *not* call isMaster
+ *       to discover your actual topology.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       Same as test_framework_get_user_password.
+ *
+ *--------------------------------------------------------------------------
+ */
+static char *
+test_framework_get_uri_str_from_env ()
+{
+   char *host;
+   uint16_t port;
+   char *test_uri_str;
+   char *test_uri_str_auth;
+
+   host = test_framework_get_host ();
+   port = test_framework_get_port ();
+   test_uri_str = bson_strdup_printf (
+      "mongodb://%s:%hu%s",
+      host,
+      port,
+      test_framework_get_ssl () ? "?ssl=true" : "");
+
+   test_uri_str_auth = test_framework_add_user_password_from_env (test_uri_str);
+
+   bson_free (host);
+   bson_free (test_uri_str);
+
+   return test_uri_str_auth;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * call_ismaster --
+ *
+ *       Use test_framework_get_uri_str_from_env's URI to call isMaster.
+ *
+ * Side effects:
+ *       Fills reply with ismaster response. Logs and aborts on error.
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+call_ismaster (bson_t *reply)
+{
+   char *uri_str;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bool r;
+
+   uri_str = test_framework_get_uri_str_from_env ();
+   uri = mongoc_uri_new (uri_str);
+   assert (uri);
+   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
+
+   client = mongoc_client_new_from_uri (uri);
+   r = mongoc_client_command_simple (client, "admin",
+                                     tmp_bson ("{'isMaster': 1}"),
+                                     NULL, reply, &error);
+
+   if (!r) {
+      printf ("ismaster error: %s\n", error.message);
+   }
+
+   assert (r);
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+}
+
+
+static char *
+set_name (bson_t *ismaster_response)
 {
    bson_iter_t iter;
 
-   if (!uri) { return false; }
+   if (bson_iter_init_find (&iter, ismaster_response, "setName")) {
+      return bson_strdup (bson_iter_utf8 (&iter, NULL));
+   } else {
+      return NULL;
+   }
+}
 
-   bson_iter_init (&iter, mongoc_uri_get_options (uri));
-   return bson_iter_next (&iter);
+
+static int
+get_n_members (bson_t *ismaster_response)
+{
+   bson_iter_t iter;
+   bson_iter_t hosts_iter;
+   char *name;
+   int n;
+
+   if ((name = set_name (ismaster_response))) {
+      bson_free (name);
+      assert (bson_iter_init_find (&iter, ismaster_response, "hosts"));
+      bson_iter_recurse (&iter, &hosts_iter);
+      n = 0;
+      while (bson_iter_next (&hosts_iter)) n++;
+      return n;
+   } else {
+      return 1;
+   }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_uri_str_no_auth --
+ *
+ *       Get the connection string of the test MongoDB topology --
+ *       standalone, replica set, mongos, or mongoses -- along with
+ *       SSL options, but not username and password. Calls
+ *       test_framework_get_uri_str_from_env, calls isMaster with
+ *       that connection string to discover your topology, and
+ *       returns an appropriate connection string for the topology
+ *       type.
+ *
+ *       database_name is optional.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       Same as test_framework_get_user_password.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_uri_str_no_auth (const char *database_name)
+{
+   bson_t ismaster_response;
+   bson_string_t *uri_string;
+   char *name;
+   bson_iter_t iter;
+   bson_iter_t hosts_iter;
+   bool first;
+   char *host;
+   uint16_t port;
+
+   call_ismaster (&ismaster_response);
+   uri_string = bson_string_new ("mongodb://");
+
+   if ((name = set_name (&ismaster_response))) {
+      /* make a replica set URI */
+      bson_iter_init_find (&iter, &ismaster_response, "hosts");
+      bson_iter_recurse (&iter, &hosts_iter);
+      first = true;
+
+      /* append "host1,host2,host3" */
+      while (bson_iter_next (&hosts_iter)) {
+         assert (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
+         if (!first) {
+            bson_string_append (uri_string, ",");
+         }
+
+         bson_string_append (uri_string, bson_iter_utf8 (&hosts_iter, NULL));
+         first = false;
+      }
+
+      bson_string_append (uri_string, "/");
+      if (database_name) {
+         bson_string_append (uri_string, database_name);
+      }
+
+      bson_string_append_printf (uri_string, "?replicaSet=%s&", name);
+      bson_free (name);
+   } else {
+      host = test_framework_get_host ();
+      port = test_framework_get_port ();
+      bson_string_append_printf (uri_string, "%s:%hu", host, port);
+      bson_string_append (uri_string, "/");
+      if (database_name) {
+         bson_string_append (uri_string, database_name);
+      }
+
+      bson_string_append (uri_string, "?");
+      bson_free (host);
+   }
+
+   /* by now the string ends in "?" or "&", we can add options to it */
+   bson_string_append (uri_string,
+                       "connectTimeoutMS=1000&serverSelectionTimeoutMS=1000");
+
+   if (test_framework_get_ssl ()) {
+      bson_string_append (uri_string, "&ssl=true");
+   }
+
+   bson_destroy (&ismaster_response);
+
+   return bson_string_free (uri_string, false);
 }
 
 /*
@@ -342,82 +648,25 @@ uri_has_options (const mongoc_uri_t *uri)
  *
  * test_framework_get_uri_str --
  *
- *       Get the connection string of the test MongoDB server. Pass NULL
- *       to get the default connection string, or pass a string in to have
- *       username, password, and "ssl=true" added if appropriate.
+ *       Get the connection string of the test MongoDB topology --
+ *       standalone, replica set, mongos, or mongoses -- along with
+ *       SSL options, username and password.
  *
  * Returns:
  *       A string you must bson_free.
  *
  * Side effects:
- *       None.
+ *       Same as test_framework_get_user_password.
  *
  *--------------------------------------------------------------------------
  */
 char *
-test_framework_get_uri_str (const char *uri_str)
+test_framework_get_uri_str (const char *uri_str)  /* TODO: remove parameter */
 {
-   char *host = test_framework_get_host ();
-   uint16_t port = test_framework_get_port ();
-   char *user = test_framework_get_admin_user ();
-   char *password = test_framework_get_admin_password ();
-   char *test_uri_str_base = uri_str ?
-                             bson_strdup (uri_str) :
-                             bson_strdup_printf ("mongodb://%s:%hu/",
-                                                 host, port);
-
-   mongoc_uri_t *uri_parsed = mongoc_uri_new (test_uri_str_base);
-   char *test_uri_str;
-   char *test_uri_str_auth;
-
-   assert (uri_parsed);
-
-   if ((user && !password) || (!user && password)) {
-      fprintf (stderr, "Specify neither MONGOC_TEST_USER nor"
-                       " MONGOC_TEST_PASSWORD, or both\n");
-      abort ();
-   }
-
-#ifndef MONGOC_ENABLE_SSL
-   if (user && password) {
-      fprintf (stderr, "You need to configure with --enable-ssl"
-                       " when providing user+password (for SCRAM-SHA-1)\n");
-      abort ();
-   }
-#endif
-
-   /* add "ssl=true" if needed */
-   if (test_framework_get_ssl () && !mongoc_uri_get_ssl (uri_parsed)) {
-      test_uri_str = bson_strdup_printf (
-         "%s%s",
-         test_uri_str_base,
-         uri_has_options (uri_parsed) ? "&ssl=true" : "?ssl=true");
-   } else {
-      test_uri_str = bson_strdup (test_uri_str_base);
-   }
-
-   /* must we add "user:password"? */
-   mongoc_uri_destroy (uri_parsed);
-   uri_parsed = mongoc_uri_new (test_uri_str);
-   assert (uri_parsed);
-
-   if (user && password && !mongoc_uri_get_username (uri_parsed)) {
-      /* TODO: uri-escape username and password */
-      test_uri_str_auth = bson_strdup_printf (
-         "mongodb://%s:%s@%s",
-         user, password, test_uri_str + strlen ("mongodb://"));
-   } else {
-      test_uri_str_auth = bson_strdup (test_uri_str);
-   }
-
-   mongoc_uri_destroy (uri_parsed);
-   bson_free (host);
-   bson_free (test_uri_str_base);
-   bson_free (test_uri_str);
-   bson_free (user);
-   bson_free (password);
-   return test_uri_str_auth;
+   return test_framework_add_user_password_from_env (
+      test_framework_get_uri_str_no_auth (NULL));
 }
+
 
 /*
  *--------------------------------------------------------------------------
@@ -425,22 +674,20 @@ test_framework_get_uri_str (const char *uri_str)
  * test_framework_get_uri --
  *
  *       Like test_framework_get_uri_str (). Get the URI of the test
- *       MongoDB server. Pass NULL to get the default URI, or pass a
- *       string in to have username, password, and "ssl=true" added if
- *       appropriate.
+ *       MongoDB server.
  *
  * Returns:
  *       A mongoc_uri_t* you must destroy.
  *
  * Side effects:
- *       Same as test_framework_get_uri_str ().
+ *       Same as test_framework_get_user_password.
  *
  *--------------------------------------------------------------------------
  */
 mongoc_uri_t *
-test_framework_get_uri (const char *uri_str)
+test_framework_get_uri (const char *uri_str)  /* TODO: remove parameter */
 {
-   char *test_uri_str = test_framework_get_uri_str (uri_str);
+   char *test_uri_str = test_framework_get_uri_str (NULL);
    mongoc_uri_t *uri = mongoc_uri_new (test_uri_str);
 
    assert (uri);
@@ -488,8 +735,7 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
  *
  * test_framework_client_new --
  *
- *       Get a client connected to the test MongoDB server using an
- *       optional URI, or the default URI.
+ *       Get a client connected to the test MongoDB topology.
  *
  * Returns:
  *       A client you must mongoc_client_destroy.
@@ -509,7 +755,7 @@ test_framework_client_new (const char *uri_str)
    test_framework_set_ssl_opts (client);
 
    bson_free (test_uri_str);
-   assert (client);
+
    return client;
 }
 
@@ -553,8 +799,7 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
  *
  * test_framework_pool_new --
  *
- *       Get a client pool connected to the test MongoDB server using
- *       an optional URI, or the default URI.
+ *       Get a client pool connected to the test MongoDB topology.
  *
  * Returns:
  *       A pool you must destroy.

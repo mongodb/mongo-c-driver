@@ -15,6 +15,7 @@
  */
 
 #include <bson.h>
+#include <mongoc.h>
 
 #include <assert.h>
 #include <fcntl.h>
@@ -46,6 +47,7 @@
 # include <sys/time.h>
 #endif
 
+#include "test-libmongoc.h"
 #include "TestSuite.h"
 
 
@@ -521,6 +523,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
 
    fprintf (stream,
             "{\n"
+            "  \"uri\": \"%s\",\n"
             "  \"host\": {\n"
             "    \"sysname\": \"Windows\",\n"
             "    \"release\": \"%ld.%ld (%ld)\",\n"
@@ -535,6 +538,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "    \"fork\": \"%s\"\n"
             "  },\n"
             "  \"tests\": [\n",
+            test_framework_get_uri_str (),
             major_version, minor_version, build,
             si.dwProcessorType,
             si.dwPageSize,
@@ -561,6 +565,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
 
    fprintf (stream,
             "{\n"
+            "  \"uri\": \"%s\",\n"
             "  \"host\": {\n"
             "    \"sysname\": \"%s\",\n"
             "    \"release\": \"%s\",\n"
@@ -575,6 +580,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "    \"fork\": \"%s\"\n"
             "  },\n"
             "  \"tests\": [\n",
+            test_framework_get_uri_str (),
             u.sysname,
             u.release,
             u.machine,

@@ -26,7 +26,7 @@ test_get_host (void)
 
    hosts = mongoc_uri_get_hosts(uri);
 
-   client = test_framework_client_new (uri_str);
+   client = test_framework_client_new (NULL);
    cursor = _mongoc_cursor_new(client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
                                false, &q, NULL, NULL);
    r = mongoc_cursor_next(cursor, &doc);
