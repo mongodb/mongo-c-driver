@@ -1196,6 +1196,8 @@ main_thread (void *data)
          _mongoc_array_index (&worker_threads, mongoc_thread_t, i));
    }
 
+   _mongoc_array_destroy (&worker_threads);
+
    mongoc_mutex_lock (&server->mutex);
    server->running = false;
    mongoc_mutex_unlock (&server->mutex);
