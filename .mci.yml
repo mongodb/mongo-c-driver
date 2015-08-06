@@ -29,6 +29,18 @@ c_driver_variables:
     - name: "integration test 3.0"
     - name: "integration test latest"
 
+  topology_test_list: &topology_tests
+    - name: "compile"
+    - name: "integration test latest"
+    - name: "integration test latest replica set"
+    - name: "integration test latest sharded"
+
+  topology_test_no_auth_list: &topology_tests_no_auth
+    - name: "compile"
+    - name: "integration test latest no auth"
+    - name: "integration test latest replica set no auth"
+    - name: "integration test latest sharded no auth"
+
 ## Common download urls (merge in as hashes)
   mongo_download_url_prefixes:
     linux64: &mongo_url_linux64
@@ -100,17 +112,11 @@ c_driver_variables:
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
           TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
           curl -s http://localhost:8889/
-      start_mongod_command: &start_mongod_command
-        start_mongod: |
-          DBPATH=`pwd`/data/db
-          LOGPATH=`pwd`/data/log
-          if [ -z "$MONGOC_TEST_USER" ]; then
-            # No authentication.
-            curl --data '{"name": "mongod", "preset": "basic.json", "procParams": {"dbpath": "'$DBPATH'", "logpath": "'$LOGPATH'", "port": 27017}}' http://localhost:8889/v1/servers
-          else
-            curl --data '{"name": "mongod", "preset": "auth.json", "procParams": {"dbpath": "'$DBPATH'", "logpath": "'$LOGPATH'", "port": 27017}}' http://localhost:8889/v1/servers
-          fi
+      start_topology_command: &start_topology_command
+        start_topology: |
+          curl -s --data @"$ORCHESTRATION_FILE" "http://localhost:8889/v1/$ORCHESTRATION_PATH"
           ./mongodb/bin/mongo --eval 'printjson(db.serverBuildInfo())'
+          ./mongodb/bin/mongo --eval 'printjson(db.isMaster())'
 
     compile:
       unix: &compile_unix
@@ -174,7 +180,7 @@ c_driver_variables:
     <<: *compile_unix
     <<: *mongo_orchestration_unix
     <<: *run_integration_tests_unix
-    <<: *start_mongod_command
+    <<: *start_topology_command
     <<: *unix_path
 
   osx_common: &osx_common
@@ -214,7 +220,7 @@ c_driver_variables:
     windows: true
     <<: *windows_path
     <<: *mongo_orchestration_windows
-    <<: *start_mongod_command
+    <<: *start_topology_command
 
   msvc_common: &msvc_common
     <<: *windows_common
@@ -284,20 +290,78 @@ functions:
         - key: "mongo_url"
           value: ${mongo_url_prefix}${mongo_url_enterprise_keyword|enterprise-}${mongo_url_platform|}latest.${mongo_url_extension|tgz}
 
+  # TODO: refactor these, "file" and "path" share parts
+  "set topology standalone" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "orchestration_configs/servers/auth.json"
+        - key: "orchestration_path"
+          value: "servers"
+
+  "set topology replica set" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "orchestration_configs/replica_sets/auth.json"
+        - key: "orchestration_path"
+          value: "replica_sets"
+
+  "set topology sharded" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "orchestration_configs/sharded_clusters/auth.json"
+        - key: "orchestration_path"
+          value: "sharded_clusters"
+
+  "set topology standalone no auth" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "orchestration_configs/servers/basic.json"
+        - key: "orchestration_path"
+          value: "servers"
+
+  "set topology replica set no auth" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "orchestration_configs/replica_sets/basic.json"
+        - key: "orchestration_path"
+          value: "replica_sets"
+
+  "set topology sharded no auth" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "orchestration_configs/sharded_clusters/basic.json"
+        - key: "orchestration_path"
+          value: "sharded_clusters"
+
   "use WiredTiger storage" :
     command: expansions.update
     params:
       updates:
-        - key: "orchestration_preset"
-          value: "--mongo-orchestration-preset=wiredtiger.json"
+        - key: "orchestration_file"
+          value: "orchestration_configs/servers/wiredtiger.json"
+        - key: "orchestration_path"
+          value: "servers"
 
   "use MMAPv1 storage" :
     command: expansions.update
     params:
       updates:
-        - key: "orchestration_preset"
-          # Requires mongo-orchestration 0.4
-          value: "--mongo-orchestration-preset=mmapv1.json"
+        - key: "orchestration_file"
+          value: "orchestration_configs/servers/mmapv1.json"
+        - key: "orchestration_path"
+          value: "servers"
 
   "set version 3.0" :
     command: expansions.update
@@ -327,9 +391,11 @@ functions:
       script: |
         set -o errexit
         set -o verbose
+        export ORCHESTRATION_FILE="${orchestration_file}"
+        export ORCHESTRATION_PATH="${orchestration_path}"
         ${set_username_password}
         ${start_mongo_orchestration}
-        ${start_mongod}
+        ${start_topology}
         ${run_integration_tests}
 
 
@@ -382,6 +448,7 @@ tasks:
       depends_on:
         - name: "compile"
       commands:
+        - func: "set topology standalone"
         - func: "set version 2.4"
         - func: "create working directory"
         - func: "fetch artifacts"
@@ -392,6 +459,7 @@ tasks:
       depends_on:
         - name: "compile"
       commands:
+        - func: "set topology standalone"
         - func: "set version 2.6"
         - func: "create working directory"
         - func: "fetch artifacts"
@@ -402,6 +470,7 @@ tasks:
       depends_on:
         - name: "compile"
       commands:
+        - func: "set topology standalone"
         - func: "set version 3.0"
         - func: "create working directory"
         - func: "fetch artifacts"
@@ -412,6 +481,7 @@ tasks:
       depends_on:
         - name: "compile"
       commands:
+        - func: "set topology standalone"
         - func: "set version 3.0"
         - func: "use WiredTiger storage"
         - func: "create working directory"
@@ -423,6 +493,7 @@ tasks:
       depends_on:
         - name: "compile"
       commands:
+        - func: "set topology standalone"
         - func: "set version latest"
         - func: "create working directory"
         - func: "fetch artifacts"
@@ -433,8 +504,64 @@ tasks:
       depends_on:
         - name: "compile"
       commands:
+        - func: "set topology standalone"
         - func: "set version latest"
         - func: "use MMAPv1 storage"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone no auth"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest replica set"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest sharded"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest replica set no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set no auth"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest sharded no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded no auth"
+        - func: "set version latest"
         - func: "create working directory"
         - func: "fetch artifacts"
         - func: "fetch mongodb"
@@ -463,7 +590,7 @@ buildvariants:
 #    <<: *mongo_url_rhel55
 #  run_on:
 #  - rhel55-test
-#  tasks: *std_tests
+#  tasks: *topology_tests
 #
 ### RHEL 5.5 32-bit
 #
@@ -477,7 +604,7 @@ buildvariants:
 #    <<: *mongo_url_rhel55_32
 #  run_on:
 #  - rhel55-test
-#  tasks: *std_tests
+#  tasks: *topology_tests
 
 ## Ubuntu 1204
 
@@ -489,7 +616,7 @@ buildvariants:
     <<: *unix_common
   run_on:
   - ubuntu1204-test
-  tasks: *std_tests
+  tasks: *topology_tests
 
 ## Ubuntu 1404
 
@@ -501,7 +628,7 @@ buildvariants:
     <<: *unix_common
   run_on:
   - ubuntu1404-test
-  tasks: *std_tests
+  tasks: *topology_tests
 
 #######################################
 #         OS X Buildvariants          #
@@ -515,7 +642,7 @@ buildvariants:
     <<: *osx_common
   run_on:
   - osx-108
-  tasks: *std_tests
+  tasks: *topology_tests
 
 #######################################
 #        Windows Buildvariants        #
@@ -529,7 +656,7 @@ buildvariants:
     <<: *with_msvc2013_32bit
   run_on:
   - windows-64-vs2013-compile
-  tasks: *std_tests
+  tasks: *topology_tests_no_auth
 
 - name: windows-64-vs2013
   display_name: "Windows 64-bit CMake Visual Studio 2013"
@@ -539,7 +666,7 @@ buildvariants:
     <<: *with_msvc2013
   run_on:
   - windows-64-vs2013-compile
-  tasks: *std_tests
+  tasks: *topology_tests
 
 #######################################
 #        Solaris Buildvariant         #
@@ -553,4 +680,4 @@ buildvariants:
     <<: *mongo_url_solaris
   run_on:
       - solaris
-  tasks: *std_tests
+  tasks: *topology_tests
