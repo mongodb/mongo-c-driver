@@ -22,7 +22,6 @@
 #endif
 
 #include <bson.h>
-#include "mongoc-stream.h"
 
 BSON_BEGIN_DECLS
 

@@ -16,7 +16,6 @@
 
 
 #include <bson.h>
-#include <stdlib.h>
 
 #include "mongoc-set-private.h"
 
