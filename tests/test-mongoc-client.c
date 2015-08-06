@@ -135,7 +135,7 @@ test_mongoc_client_authenticate (void *context)
 }
 
 
-int should_run_auth_tests (void)
+static int should_run_auth_tests (void)
 {
    char *user;
 #ifndef MONGOC_ENABLE_SSL
