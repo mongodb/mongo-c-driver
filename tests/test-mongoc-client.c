@@ -155,6 +155,12 @@ int should_run_auth_tests (void)
 }
 
 
+int skip_if_mongos (void)
+{
+   return test_framework_is_mongos () ? 0 : 1;
+}
+
+
 static void
 test_mongoc_client_authenticate_failure (void *context)
 {
@@ -652,7 +658,7 @@ test_recovering (void)
 
 
 static void
-test_exhaust_cursor (void)
+test_exhaust_cursor (void *context)
 {
    mongoc_stream_t *stream;
    mongoc_write_concern_t *wr;
@@ -955,7 +961,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/mongos_seeds_reconnect", test_mongos_seeds_reconnect);
    TestSuite_Add (suite, "/Client/recovering", test_recovering);
 #endif
-   TestSuite_Add (suite, "/Client/exhaust_cursor", test_exhaust_cursor);
+   TestSuite_AddFull (suite, "/Client/exhaust_cursor", test_exhaust_cursor, NULL, NULL, skip_if_mongos);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
 

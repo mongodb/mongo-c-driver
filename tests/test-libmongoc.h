@@ -35,4 +35,5 @@ char *test_framework_get_uri_str (void);
 mongoc_uri_t *test_framework_get_uri (void);
 mongoc_client_t *test_framework_client_new (void);
 mongoc_client_pool_t *test_framework_client_pool_new (void);
+bool test_framework_is_mongos (void);
 #endif

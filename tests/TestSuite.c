@@ -524,6 +524,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
    fprintf (stream,
             "{\n"
             "  \"uri\": \"%s\",\n"
+            "  \"is_mongos\": \"%s\",\n"
             "  \"host\": {\n"
             "    \"sysname\": \"Windows\",\n"
             "    \"release\": \"%ld.%ld (%ld)\",\n"
@@ -539,6 +540,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  },\n"
             "  \"tests\": [\n",
             test_framework_get_uri_str (),
+            test_framework_is_mongos () ? "true" : "false",
             major_version, minor_version, build,
             si.dwProcessorType,
             si.dwPageSize,
@@ -566,6 +568,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
    fprintf (stream,
             "{\n"
             "  \"uri\": \"%s\",\n"
+            "  \"is_mongos\": \"%s\",\n"
             "  \"host\": {\n"
             "    \"sysname\": \"%s\",\n"
             "    \"release\": \"%s\",\n"
@@ -581,6 +584,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  },\n"
             "  \"tests\": [\n",
             test_framework_get_uri_str (),
+            test_framework_is_mongos () ? "true" : "false",
             u.sysname,
             u.release,
             u.machine,

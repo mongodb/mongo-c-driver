@@ -849,6 +849,25 @@ test_framework_global_ssl_opts_cleanup (void)
 }
 #endif
 
+
+bool
+test_framework_is_mongos (void)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   bool is_mongos;
+
+   call_ismaster (&reply);
+
+   is_mongos = (bson_iter_init_find (&iter, &reply, "msg")
+                && BSON_ITER_HOLDS_UTF8 (&iter)
+                && !strcasecmp (bson_iter_utf8 (&iter, NULL), "isdbgrid"));
+
+   bson_destroy (&reply);
+
+   return is_mongos;
+}
+
 int
 main (int   argc,
       char *argv[])

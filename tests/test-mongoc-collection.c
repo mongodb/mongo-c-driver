@@ -1338,7 +1338,6 @@ test_validate (void)
    r = mongoc_collection_validate (collection, &opts, &reply, &error);
    assert (r);
 
-   assert (bson_iter_init_find (&iter, &reply, "ns"));
    assert (bson_iter_init_find (&iter, &reply, "valid"));
 
    bson_destroy (&reply);
