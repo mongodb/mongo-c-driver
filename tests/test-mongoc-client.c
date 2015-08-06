@@ -930,7 +930,6 @@ test_client_install (TestSuite *suite)
       TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);
    }
 
-   TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
    TestSuite_AddFull (suite, "/Client/authenticate", test_mongoc_client_authenticate, NULL, NULL, should_run_auth_tests);
    TestSuite_AddFull (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure, NULL, NULL, should_run_auth_tests);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
