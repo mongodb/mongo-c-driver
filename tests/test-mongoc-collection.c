@@ -1242,7 +1242,7 @@ test_command_fq (void)
    ASSERT (client);
 
    collection = mongoc_client_get_collection (client,
-                                              "test", "$cmd.sys.inprog");
+                                              "admin", "$cmd.sys.inprog");
    ASSERT (collection);
 
    cmd = BCON_NEW ("query", "{", "}");
