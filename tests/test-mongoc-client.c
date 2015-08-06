@@ -699,7 +699,7 @@ test_exhaust_cursor (void)
       END_IGNORE_DEPRECATIONS;
 
       if (!r) {
-         MONGOC_WARNING("Insert bulk failure: %s\n", error.message);
+         printf("Insert bulk failure: %s\n", error.message);
       }
       assert(r);
    }
