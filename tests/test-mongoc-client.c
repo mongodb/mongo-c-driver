@@ -90,8 +90,11 @@ test_mongoc_client_authenticate (void *context)
    bson_init (&roles);
    BCON_APPEND (&roles,
                 "0", "{", "role", "read", "db", "test", "}");
-   r = mongoc_database_add_user(database, username, "testpass", &roles, NULL, &error);
-   ASSERT_CMPINT(r, ==, 1);
+
+   ASSERT_OR_PRINT (mongoc_database_add_user(database, username, "testpass",
+                                             &roles, NULL, &error),
+                    error);
+
    mongoc_database_destroy(database);
 
    /*
@@ -110,7 +113,7 @@ test_mongoc_client_authenticate (void *context)
    if (!r) {
       r = mongoc_cursor_error(cursor, &error);
       if (r) {
-         MONGOC_ERROR("Authentication failure: \"%s\"", error.message);
+         printf("Authentication failure: \"%s\"", error.message);
       }
       assert(!r);
    }
@@ -704,14 +707,11 @@ test_exhaust_cursor (void *context)
       }
 
       BEGIN_IGNORE_DEPRECATIONS;
-      r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
-                                         (const bson_t **)bptr, 10, wr, &error);
+      ASSERT_OR_PRINT (mongoc_collection_insert_bulk (
+                          collection, MONGOC_INSERT_NONE,
+                          (const bson_t **)bptr, 10, wr, &error),
+                       error);
       END_IGNORE_DEPRECATIONS;
-
-      if (!r) {
-         printf("Insert bulk failure: %s\n", error.message);
-      }
-      assert(r);
    }
 
    /* create a couple of cursors */

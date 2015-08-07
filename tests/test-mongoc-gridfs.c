@@ -45,12 +45,9 @@ test_create (void)
    client = test_framework_client_new ();
    assert (client);
 
-   gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error);
-   if (!gridfs) {
-      printf ("mongoc_client_get_gridfs err: %s\n", error.message);
-   }
-
-   assert (gridfs);
+   ASSERT_OR_PRINT (
+      (gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error)),
+      error);
 
    mongoc_gridfs_drop (gridfs, &error);
 
@@ -75,7 +72,6 @@ test_remove (void)
    mongoc_gridfs_file_opt_t opts = { 0 };
    mongoc_client_t *client;
    bson_error_t error;
-   bool r;
    char name[32];
 
    client = test_framework_client_new ();
@@ -94,9 +90,7 @@ test_remove (void)
    assert (file);
    assert (mongoc_gridfs_file_save (file));
 
-   r = mongoc_gridfs_file_remove (file, &error);
-   if (!r) fprintf (stderr, "%s\n", error.message);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_gridfs_file_remove (file, &error), error);
 
    mongoc_gridfs_file_destroy (file);
 
@@ -251,8 +245,8 @@ test_create_from_stream (void)
    client = test_framework_client_new ();
    assert (client);
 
-   gridfs = get_test_gridfs (client, "from_stream", &error);
-   assert (gridfs);
+   ASSERT_OR_PRINT ((gridfs = get_test_gridfs (client, "from_stream", &error)),
+                    error);
 
    mongoc_gridfs_drop (gridfs, &error);
 
@@ -440,7 +434,6 @@ test_remove_by_filename (void)
    mongoc_gridfs_file_opt_t opt = { 0 };
    mongoc_client_t *client;
    bson_error_t error;
-   bool ret;
 
    client = test_framework_client_new ();
    assert (client);
@@ -461,9 +454,9 @@ test_remove_by_filename (void)
    assert (file);
    assert (mongoc_gridfs_file_save (file));
 
-   ret = mongoc_gridfs_remove_by_filename (gridfs, "foo_file_1.txt", &error);
-   if (!ret) fprintf (stderr, "ERROR: %s\n", error.message);
-   assert (ret);
+   ASSERT_OR_PRINT (
+      mongoc_gridfs_remove_by_filename (gridfs, "foo_file_1.txt", &error),
+      error);
    mongoc_gridfs_file_destroy (file);
 
    file = mongoc_gridfs_find_one_by_filename (gridfs, "foo_file_1.txt", &error);

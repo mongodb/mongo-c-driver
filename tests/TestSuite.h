@@ -38,6 +38,21 @@ extern "C" {
 #define ASSERT assert
 
 
+#ifdef ASSERT_OR_PRINT
+# undef ASSERT_OR_PRINT
+#endif
+#define ASSERT_OR_PRINT(_statement, _err) \
+   do { \
+      if (!_statement) { \
+         fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n  %s\n\n", \
+                         __FILE__, __LINE__, __FUNCTION__, \
+                         #_statement, _err.message); \
+         fflush(stderr); \
+         abort(); \
+      } \
+   } while (0)
+
+
 #ifdef ASSERT_CMPINT
 # undef ASSERT_CMPINT
 #endif

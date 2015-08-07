@@ -34,12 +34,9 @@ test_has_collection (void)
    bson_oid_init (&oid, NULL);
    bson_append_oid (&b, "_id", 3, &oid);
    bson_append_utf8 (&b, "hello", 5, "world", 5);
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &b, NULL,
-                                 &error);
-   if (!r) {
-      MONGOC_WARNING ("%s\n", error.message);
-   }
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
+                                              &b, NULL, &error),
+                    error);
    bson_destroy (&b);
 
    r = mongoc_database_has_collection (database, name, &error);
@@ -114,7 +111,6 @@ test_drop (void)
    mongoc_client_t *client;
    bson_error_t error = { 0 };
    char *dbname;
-   bool r;
 
    client = test_framework_client_new ();
    assert (client);
@@ -123,8 +119,7 @@ test_drop (void)
    database = mongoc_client_get_database (client, dbname);
    bson_free (dbname);
 
-   r = mongoc_database_drop (database, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
    assert (!error.domain);
    assert (!error.code);
 

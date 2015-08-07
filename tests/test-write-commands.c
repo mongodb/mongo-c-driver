@@ -64,16 +64,14 @@ test_split_insert (void)
    _mongoc_write_command_execute (&command, client, 0, collection->db,
                                   collection->collection, NULL, 0, &result);
 
-   r = _mongoc_write_result_complete (&result, &reply, &error);
-
-   assert (r);
+   ASSERT_OR_PRINT (_mongoc_write_result_complete (&result, &reply, &error),
+                    error);
    assert (result.nInserted == 3000);
 
    _mongoc_write_command_destroy (&command);
    _mongoc_write_result_destroy (&result);
 
-   r = mongoc_collection_drop (collection, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    for (i = 0; i < 3000; i++) {
       bson_destroy (docs [i]);
