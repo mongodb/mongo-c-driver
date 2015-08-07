@@ -71,7 +71,7 @@ main (int   argc,
 
    collection = mongoc_client_get_collection (client, "test", "test");
 
-   cursor = mongoc_collection_find (collection, 0, 0, 0, 0, &query, NULL, NULL);
+   cursor = mongoc_collection_find (collection, (mongoc_query_flags_t)0, 0, 0, 0, &query, NULL, NULL);
 
    mongoc_cursor_next (cursor, &doc);
 

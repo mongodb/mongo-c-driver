@@ -26,6 +26,9 @@ query_collection (mongoc_collection_t *collection,
    mongoc_cursor_t *cursor;
    bson_t query;
    bson_t gt;
+   int fflags = (MONGOC_QUERY_TAILABLE_CURSOR
+         | MONGOC_QUERY_AWAIT_DATA
+         | MONGOC_QUERY_SLAVE_OK);
 
    BSON_ASSERT(collection);
 
@@ -35,9 +38,7 @@ query_collection (mongoc_collection_t *collection,
    bson_append_document_end(&query, &gt);
 
    cursor = mongoc_collection_find(collection,
-                                   (MONGOC_QUERY_TAILABLE_CURSOR |
-                                    MONGOC_QUERY_AWAIT_DATA |
-                                    MONGOC_QUERY_SLAVE_OK),
+                                   (mongoc_query_flags_t)fflags,
                                    0,
                                    0,
                                    0,
