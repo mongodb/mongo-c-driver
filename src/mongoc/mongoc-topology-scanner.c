@@ -92,6 +92,8 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    mongoc_async_destroy (ts->async);
    bson_destroy (&ts->ismaster_cmd);
 
+   mongoc_host_list_destroy_all (ts->seen);
+
    bson_free (ts);
 }
 
@@ -100,7 +102,18 @@ _add_node (mongoc_topology_scanner_t *ts,
            const mongoc_host_list_t  *host,
            uint32_t                   id)
 {
-   mongoc_topology_scanner_node_t *node = (mongoc_topology_scanner_node_t *)bson_malloc0 (sizeof (*node));
+   mongoc_topology_scanner_node_t *node;
+
+   if (mongoc_host_list_find (ts->seen, host)) {
+      /* already seen this host -- avoid pathological case like two primaries
+       * pointing at each other, each invalidating itself and trying to add the
+       * other on each check within the same blocking scan, see
+       * test_topology_scanner_oscillate
+       */
+      return NULL;
+   }
+
+   node = (mongoc_topology_scanner_node_t *) bson_malloc0 (sizeof (*node));
 
    memcpy (&node->host, host, sizeof (*host));
 
@@ -109,6 +122,8 @@ _add_node (mongoc_topology_scanner_t *ts,
    node->last_failed = -1;
 
    DL_APPEND(ts->nodes, node);
+
+   ts->seen = mongoc_host_list_copy (host, ts->seen);
 
    return node;
 }
@@ -132,7 +147,7 @@ mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
 
    node = _add_node (ts, host, id);
 
-   if (mongoc_topology_scanner_node_setup (node)) {
+   if (node && mongoc_topology_scanner_node_setup (node)) {
       node->cmd = mongoc_async_cmd (
          ts->async, node->stream, ts->setup,
          node->host.host, "admin",
@@ -147,6 +162,7 @@ mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
 void
 mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool failed)
 {
+   /* delete from nodes but keep its host in "seen" so we don't rescan */
    DL_DELETE (node->ts->nodes, node);
 
    if (node->dns_results) {
@@ -491,6 +507,8 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
    r = mongoc_async_run (ts->async, timeout_msec);
 
    if (! r) {
+      mongoc_host_list_destroy_all (ts->seen);
+      ts->seen = NULL;
       ts->in_progress = false;
    }
 

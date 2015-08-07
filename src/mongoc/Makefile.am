@@ -120,6 +120,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-cursor-cursorid.c \
 	src/mongoc/mongoc-cursor-transform.c \
 	src/mongoc/mongoc-database.c \
+	src/mongoc/mongoc-host-list.c \
 	src/mongoc/mongoc-init.c \
 	src/mongoc/mongoc-gridfs.c \
 	src/mongoc/mongoc-gridfs-file.c \

@@ -142,7 +142,7 @@ test_topology_scanner_discovery ()
    mongoc_client_t *client;
    mongoc_topology_scanner_t *scanner;
    char *uri_str;
-   mongoc_read_prefs_t *primary_pref;
+   mongoc_read_prefs_t *secondary_pref;
    bson_error_t error;
    future_t *future;
    request_t *request;
@@ -174,32 +174,41 @@ test_topology_scanner_discovery ()
                                  mock_server_get_host_and_port (primary));
    client = mongoc_client_new (uri_str);
    scanner = client->topology->scanner;
-   primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    secondary_pref, 15, &error);
 
    /* a single scan discovers *and* checks the secondary */
+   AWAIT (scanner->async->ncmds == 1);
+   ASSERT_CMPINT (1, ==, (int) mongoc_host_list_count (scanner->seen));
    request = mock_server_receives_ismaster (primary);
    mock_server_replies_simple (request, primary_response);
    request_destroy (request);
 
    /* let client process that response */
    _mongoc_usleep (250 * 1000);
+   ASSERT_CMPINT (2, ==, (int) mongoc_host_list_count (scanner->seen));
 
    /* a check of the secondary is scheduled in this scan */
-   AWAIT (scanner->async->ncmds);
+   AWAIT (scanner->async->ncmds == 1);
 
    request = mock_server_receives_ismaster (secondary);
    mock_server_replies_simple (request, secondary_response);
    /* scan completes */
-   AWAIT (!scanner->async->ncmds);
+   AWAIT (scanner->async->ncmds == 0);
    ASSERT_OR_PRINT ((sd = future_get_mongoc_server_description_ptr (future)),
                     error);
 
+   ASSERT_CMPSTR (sd->host.host_and_port,
+                  mock_server_get_host_and_port (secondary));
+
+   /* "seen" is reset */
+   ASSERT_CMPINT (0, ==, (int) mongoc_host_list_count (scanner->seen));
+
    mongoc_server_description_destroy (sd);
    request_destroy (request);
-   mongoc_read_prefs_destroy (primary_pref);
+   mongoc_read_prefs_destroy (secondary_pref);
    bson_free (secondary_response);
    bson_free (primary_response);
    bson_free (uri_str);
@@ -209,9 +218,7 @@ test_topology_scanner_discovery ()
 }
 
 
-/*
- * Check that scanner doesn't spinlock if two primaries point at each other.
- */
+/* scanner shouldn't spin if two primaries point at each other */
 void
 test_topology_scanner_oscillate ()
 {
@@ -266,13 +273,21 @@ test_topology_scanner_oscillate ()
 
    /* let client process that response */
    _mongoc_usleep (250 * 1000);
-   AWAIT (scanner->async->ncmds);
+   AWAIT (scanner->async->ncmds == 1);
 
    request = mock_server_receives_ismaster (server1);
    mock_server_replies_simple (request, server1_response);
-   AWAIT (!scanner->async->ncmds);
+
+   /* we don't schedule another check of server0 */
+   _mongoc_usleep (250 * 1000);
+   AWAIT (scanner->async->ncmds == 0);
 
    assert (!future_get_mongoc_server_description_ptr (future));
+   assert (scanner->async->ncmds == 0);
+
+   /* "seen" is reset */
+   ASSERT_CMPINT (0, ==, (int) mongoc_host_list_count (scanner->seen));
+
    request_destroy (request);
    mongoc_read_prefs_destroy (primary_pref);
    bson_free (server1_response);
@@ -293,8 +308,6 @@ test_topology_scanner_install (TestSuite *suite)
 #endif
    TestSuite_Add (suite, "/TOPOLOGY/scanner_discovery",
                   test_topology_scanner_discovery);
-/*
    TestSuite_Add (suite, "/TOPOLOGY/scanner_oscillate",
                   test_topology_scanner_oscillate);
-*/
 }

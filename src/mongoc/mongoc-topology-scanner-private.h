@@ -69,6 +69,7 @@ typedef struct mongoc_topology_scanner
    mongoc_async_cmd_setup_t        setup;
    mongoc_stream_initiator_t       initiator;
    void                           *initiator_context;
+   mongoc_host_list_t             *seen;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts;

@@ -101,6 +101,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-host-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-index.c
    ${SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${SOURCE_DIR}/src/mongoc/mongoc-list.c
