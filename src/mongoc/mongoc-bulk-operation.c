@@ -237,6 +237,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
    mongoc_write_command_t command = { 0 };
    size_t err_off;
    mongoc_write_command_t *last;
+   int flags = BSON_VALIDATE_DOT_KEYS|BSON_VALIDATE_DOLLAR_KEYS;
 
    bson_return_if_fail (bulk);
    bson_return_if_fail (selector);
@@ -244,9 +245,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
 
    ENTRY;
 
-   if (!bson_validate (document,
-                       (BSON_VALIDATE_DOT_KEYS | BSON_VALIDATE_DOLLAR_KEYS),
-                       &err_off)) {
+   if (!bson_validate (document, (bson_validate_flags_t)flags, &err_off)) {
       MONGOC_WARNING ("%s(): replacement document may not contain "
                       "$ or . in keys. Ignoring document.",
                       __FUNCTION__);

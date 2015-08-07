@@ -632,6 +632,8 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
    bool val = false;
    char ns [MONGOC_NAMESPACE_MAX + 1];
    int32_t affected = 0;
+   int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
+               | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
 
    ENTRY;
 
@@ -652,12 +654,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
          if (bson_iter_init (&subsubiter, &doc) &&
              bson_iter_next (&subsubiter) &&
              (bson_iter_key (&subsubiter) [0] != '$') &&
-             !bson_validate (&doc,
-                             (BSON_VALIDATE_UTF8 |
-                              BSON_VALIDATE_UTF8_ALLOW_NULL |
-                              BSON_VALIDATE_DOLLAR_KEYS |
-                              BSON_VALIDATE_DOT_KEYS),
-                             &err_offset)) {
+             !bson_validate (&doc, (bson_validate_flags_t)vflags, &err_offset)) {
             result->failed = true;
             bson_set_error (error,
                             MONGOC_ERROR_BSON,
@@ -686,7 +683,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
       rpc.update.opcode = MONGOC_OPCODE_UPDATE;
       rpc.update.zero = 0;
       rpc.update.collection = ns;
-      rpc.update.flags = 0;
+      rpc.update.flags = MONGOC_UPDATE_NONE;
 
       has_update = false;
       has_selector = false;
@@ -706,12 +703,16 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
             has_selector = true;
          } else if (strcmp (bson_iter_key (&subiter), "multi") == 0) {
             val = bson_iter_bool (&subiter);
-            rpc.update.flags = rpc.update.flags |
-                               (val ? MONGOC_UPDATE_MULTI_UPDATE : 0);
+            if (val) {
+               rpc.update.flags = (mongoc_update_flags_t)(
+                     rpc.update.flags | MONGOC_UPDATE_MULTI_UPDATE);
+            }
          } else if (strcmp (bson_iter_key (&subiter), "upsert") == 0) {
             val = bson_iter_bool (&subiter);
-            rpc.update.flags = rpc.update.flags |
-                               (val ? MONGOC_UPDATE_UPSERT : 0);
+            if (val) {
+               rpc.update.flags = (mongoc_update_flags_t)(
+                     rpc.update.flags | MONGOC_UPDATE_UPSERT);
+            }
             is_upsert = true;
          }
       }
