@@ -1,5 +1,76 @@
-mongo-c-driver 1.1.11
-=====================
+mongo-c-driver 1.2.0-beta
+=========================
+
+It is my pleasure to announce to you the first beta release of the MongoDB C
+driver 1.2.0.
+
+This release is a stable release with additive ABI changes and bugfixes.
+It is compatible with MongoDB version 2.4 and later.
+
+Version 1.2.0 rewrites mongoc_client_t's internals to match two important new
+specs for MongoDB drivers: the Server Discovery And Monitoring Spec and the
+Server Selection Spec. The rewritten client has many advantages:
+
+ * All replica set members or mongoses are discovered and periodically
+   checked in parallel. The driver's performance is dramatically better and
+   more predictable with multi-server deployments, or with a flaky network,
+   or when some servers are slow or down.
+ * Clients from the same mongoc_client_pool_t share a background thread that
+   discovers and monitors all servers in parallel.
+ * Unnecessary round trips for server checks and pings are eliminated.
+ * Behavior is documented in the specs, and consistent with other drivers, even
+   in complex or unusual scenarios.
+ * The URI's "replicaSet" option is enforced: the driver now refuses to connect
+   to a server unless it is a member of a replica set with the right setName.
+ * Many race conditions related to changing deployment conditions are fixed.
+
+To conform to the new specs, the client now accepts these options in the MongoDB
+URI; see the mongoc_uri_t documentation for details:
+
+ * heartbeatFrequencyMS
+ * serverSelectionTimeoutMS
+ * serverSelectionTryOnce
+ * socketCheckIntervalMS
+
+Other features:
+
+ * All timeouts that can be configured in the URI now interpret 0 to mean "use
+   the default value for this timeout".
+ * The client's read preference can be configured in the URI with the new
+   options "readPreference" and "readPreferenceTags", see the mongoc_uri_t
+   documentation.
+ * The new mongoc_uri_get_read_prefs_t function retrieves both the read mode
+   and tags from a mongoc_uri_t.
+ * New accessors mongoc_gridfs_file_get_id, mongoc_client_get_default_database,
+   and mongoc_bulk_operation_get_write_concern.
+ * Debug tracing can be controlled at runtime with mongoc_log_trace_enable and
+   mongoc_log_trace_disable.
+
+Notable bugs fixed:
+
+ * "wtimeoutms" was ignored for write concerns besides "majority".
+ * Bulk write operations might fail in mixed-version sharded clusters with
+   some pre-2.6 mongos servers.
+ * Normal operations were logged during startup and could not be silenced.
+ * A variety of bugs and incorrect results in mongoc_bulk_operation_execute.
+ * Numerous compiler warnings and build failures on various platforms.
+ * Copious refinements to the documentation.
+
+Thanks to everyone who contributed to this version of libmongoc.
+
+ * A. Jesse Jiryu Davis
+ * Sujan Dutta
+ * Jason Carey
+ * Hannes Magnusson
+ * Jeremy Mikola
+ * Derick Rethans
+ * Samantha Ritter
+ * Yuchen Xie
+ * Lloyd Zhou
+
+Peace,
+
+  A. Jesse Jiryu Davis
 
 mongo-c-driver 1.1.10
 =====================
