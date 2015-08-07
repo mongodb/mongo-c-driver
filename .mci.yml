@@ -103,6 +103,7 @@ c_driver_variables:
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
           mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000
+          sleep 10
           curl -s http://localhost:8889/
       unix: &mongo_orchestration_unix
         start_mongo_orchestration: |
