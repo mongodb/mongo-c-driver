@@ -162,8 +162,15 @@ _mongoc_matcher_op_compare_new (mongoc_matcher_opcode_t  opcode, /* IN */
 {
    mongoc_matcher_op_t *op;
 
+#if defined(__GNUC__)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
    BSON_ASSERT ((opcode >= MONGOC_MATCHER_OPCODE_EQ) &&
                 (opcode <= MONGOC_MATCHER_OPCODE_NIN));
+#if defined(__GNUC__)
+# pragma GCC diagnostic pop
+#endif
    BSON_ASSERT (path);
    BSON_ASSERT (iter);
 
