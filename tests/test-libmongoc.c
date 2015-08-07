@@ -657,8 +657,15 @@ test_framework_get_uri_str_no_auth (const char *database_name)
 char *
 test_framework_get_uri_str ()
 {
-   return test_framework_add_user_password_from_env (
-      test_framework_get_uri_str_no_auth (NULL));
+   char *uri_str_no_auth;
+   char *uri_str;
+
+   uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
+   uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
+
+   bson_free (uri_str_no_auth);
+
+   return uri_str;
 }
 
 

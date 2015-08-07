@@ -502,6 +502,8 @@ static void
 TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
                            FILE *stream)     /* IN */
 {
+   char *uri_str = test_framework_get_uri_str ();
+
 #ifdef _WIN32
 #  define INFO_BUFFER_SIZE 32767
 
@@ -539,7 +541,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "    \"fork\": \"%s\"\n"
             "  },\n"
             "  \"tests\": [\n",
-            test_framework_get_uri_str (),
+            uri_str,
             test_framework_is_mongos () ? "true" : "false",
             major_version, minor_version, build,
             si.dwProcessorType,
@@ -583,7 +585,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "    \"fork\": \"%s\"\n"
             "  },\n"
             "  \"tests\": [\n",
-            test_framework_get_uri_str (),
+            uri_str,
             test_framework_is_mongos () ? "true" : "false",
             u.sysname,
             u.release,
@@ -595,6 +597,8 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
 #endif
 
    fflush (stream);
+
+   bson_free (uri_str);
 }
 
 

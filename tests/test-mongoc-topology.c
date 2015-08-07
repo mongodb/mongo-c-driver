@@ -180,6 +180,7 @@ _test_server_selection (bool try_once)
                                     primary_pref, 15, &error);
    assert (request = mock_server_receives_ismaster (server));
    mock_server_replies_simple (request, secondary_response);
+   request_destroy (request);
 
    if (try_once) {
       /* selection fails without another ismaster call */
