@@ -229,7 +229,6 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    bson_t command;
    bson_t child;
    int32_t batch_size = 0;
-   bool did_batch_size = false;
    bool try_cursor = true;
 
    bson_return_val_if_fail (collection, NULL);
@@ -261,15 +260,10 @@ TOP:
                 (BSON_ITER_HOLDS_INT32 (&iter) ||
                  BSON_ITER_HOLDS_INT64 (&iter) ||
                  BSON_ITER_HOLDS_DOUBLE (&iter))) {
-               did_batch_size = true;
                batch_size = (int32_t)bson_iter_as_int64 (&iter);
                BSON_APPEND_INT32 (&child, "batchSize", batch_size);
             }
          }
-      }
-
-      if (!did_batch_size) {
-         BSON_APPEND_INT32 (&child, "batchSize", 100);
       }
 
       bson_append_document_end (&command, &child);
