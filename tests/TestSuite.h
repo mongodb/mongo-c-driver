@@ -98,6 +98,18 @@ extern "C" {
       } \
    } while (0)
 
+#define AWAIT(_condition) \
+   do { \
+      int64_t _start = bson_get_monotonic_time (); \
+      while (! _condition) { \
+         if (bson_get_monotonic_time() - _start > 1000 * 1000) { \
+            fprintf (stderr, \
+                     "%s:%d %s(): \"%s\" still false after 1 second\n", \
+                     __FILE__, __LINE__, __FUNCTION__, #_condition); \
+            abort (); \
+         } \
+      }  \
+   } while (0)
 
 #define MAX_TEST_NAME_LENGTH 500
 

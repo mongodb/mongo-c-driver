@@ -467,8 +467,7 @@ test_cooldown_rs (void)
    }
 
    uri_str = bson_strdup_printf (
-      "mongodb://localhost:%hu/?replicaSet=rs&serverSelectionTimeoutMS=1000"
-         "&serverSelectionTryOnce=false",
+      "mongodb://localhost:%hu/?replicaSet=rs&serverSelectionTimeoutMS=100",
       mock_server_get_port (servers[0]));
 
    client = mongoc_client_new (uri_str);
@@ -486,7 +485,7 @@ test_cooldown_rs (void)
       mock_server_get_port (servers[0]),
       mock_server_get_port (servers[1]));
 
-   /* server 0 is a secondary, 1 is discovered but down. selection fails. */
+   /* server 0 is a secondary. */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
 
@@ -494,14 +493,12 @@ test_cooldown_rs (void)
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
-   /* TODO: Once CDRIVER-751 is fixed, the driver will attempt this call
-    * in the same blocking scan, so we can turn serverSelectionTimeoutMS
-    * down to 1 ms and request_timeout_msec to 10ms and this still works.
-    */
+   /* server 0 told us about server 1. we check it immediately but it's down. */
    assert (request = mock_server_receives_ismaster (servers[1]));
    mock_server_hangs_up (request);
    request_destroy (request);
 
+   /* selection fails. */
    assert (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
 

@@ -131,10 +131,8 @@ _test_topology_reconcile_rs (bool pooled)
    RS_RESPONSE_TO_ISMASTER (server1, true, false, server0, server1);
 
    /* provide secondary in seed list */
-   /* TODO: CDRIVER-751 serverSelectionTryOnce=false shouldn't be needed */
    uri_str = bson_strdup_printf (
-      "mongodb://%s/?replicaSet=rs&connectTimeoutMS=10"
-         "&serverSelectionTryOnce=false",
+      "mongodb://%s/?replicaSet=rs",
       mock_server_get_host_and_port (server0));
 
    uri = mongoc_uri_new (uri_str);
@@ -153,7 +151,6 @@ _test_topology_reconcile_rs (bool pooled)
 
    /*
     * server0 is selected, server1 is discovered and added to scanner.
-    * TODO: CDRIVER-751 actually it isn't.
     */
    assert (selects_server (client, secondary_read_prefs, server0));
    assert (get_node (client->topology->scanner,
@@ -168,7 +165,16 @@ _test_topology_reconcile_rs (bool pooled)
     * remove server0 from set. tag primary, select w/ tags to trigger re-scan.
     */
    RS_RESPONSE_TO_ISMASTER (server1, true, true, server1);  /* server0 absent */
+
+   if (!pooled) {
+      /* TODO: SPEC-217 this selection should trigger one rescan but doesn't */
+      assert (!client->topology->stale);
+      assert (!selects_server (client, tag_read_prefs, server1));
+      assert (client->topology->stale);
+   }
+
    assert (selects_server (client, tag_read_prefs, server1));
+   assert (!client->topology->stale);
 
    assert (!get_node (client->topology->scanner,
                       mock_server_get_host_and_port (server0)));

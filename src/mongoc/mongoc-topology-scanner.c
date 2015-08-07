@@ -26,13 +26,21 @@
 #endif
 
 #include "mongoc-counters-private.h"
-#include "mongoc-async-private.h"
-#include "mongoc-async-cmd-private.h"
 #include "utlist.h"
 #include "mongoc-topology-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
+
+static bool
+mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node);
+
+static void
+mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status,
+                                          const bson_t             *ismaster_response,
+                                          int64_t                   rtt_msec,
+                                          void                     *data,
+                                          bson_error_t             *error);
 
 mongoc_topology_scanner_t *
 mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
@@ -87,10 +95,10 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    bson_free (ts);
 }
 
-void
-mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
-                             const mongoc_host_list_t  *host,
-                             uint32_t                   id)
+static mongoc_topology_scanner_node_t *
+_add_node (mongoc_topology_scanner_t *ts,
+           const mongoc_host_list_t  *host,
+           uint32_t                   id)
 {
    mongoc_topology_scanner_node_t *node = (mongoc_topology_scanner_node_t *)bson_malloc0 (sizeof (*node));
 
@@ -101,6 +109,37 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
    node->last_failed = -1;
 
    DL_APPEND(ts->nodes, node);
+
+   return node;
+}
+
+void
+mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
+                             const mongoc_host_list_t  *host,
+                             uint32_t                   id)
+{
+   _add_node (ts, host, id);
+}
+
+
+void
+mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
+                                      const mongoc_host_list_t  *host,
+                                      uint32_t                   id,
+                                      int64_t                    timeout_msec)
+{
+   mongoc_topology_scanner_node_t *node;
+
+   node = _add_node (ts, host, id);
+
+   if (mongoc_topology_scanner_node_setup (node)) {
+      node->cmd = mongoc_async_cmd (
+         ts->async, node->stream, ts->setup,
+         node->host.host, "admin",
+         &ts->ismaster_cmd,
+         &mongoc_topology_scanner_ismaster_handler,
+         node, (int32_t) timeout_msec);
+   }
 
    return;
 }

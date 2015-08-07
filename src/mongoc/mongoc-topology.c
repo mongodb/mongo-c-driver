@@ -32,25 +32,33 @@ _mongoc_topology_request_scan (mongoc_topology_t *topology);
 
 static bool
 _mongoc_topology_reconcile_add_nodes (void *item,
-                            void *ctx)
+                                      void *ctx)
 {
-   mongoc_server_description_t *sd = (mongoc_server_description_t *)item;
-   mongoc_topology_scanner_t *scanner = (mongoc_topology_scanner_t *)ctx;
+   mongoc_server_description_t *sd = item;
+   mongoc_topology_t *topology = (mongoc_topology_t *)ctx;
+   mongoc_topology_scanner_t *scanner = topology->scanner;
 
    if (! mongoc_topology_scanner_get_node (scanner, sd->id)) {
-      mongoc_topology_scanner_add (scanner, &sd->host, sd->id);
+      mongoc_topology_scanner_add_and_scan (scanner, &sd->host, sd->id,
+                                            topology->timeout_msec);
    }
 
    return true;
 }
 
 void
-mongoc_topology_reconcile (mongoc_topology_description_t *description,
-                           mongoc_topology_scanner_t     *scanner) {
+mongoc_topology_reconcile (mongoc_topology_t *topology) {
    mongoc_topology_scanner_node_t *ele, *tmp;
+   mongoc_topology_description_t *description;
+   mongoc_topology_scanner_t *scanner;
+
+   description = &topology->description;
+   scanner = topology->scanner;
 
    /* Add newly discovered nodes */
-   mongoc_set_for_each(description->servers, _mongoc_topology_reconcile_add_nodes, scanner);
+   mongoc_set_for_each(description->servers,
+                       _mongoc_topology_reconcile_add_nodes,
+                       topology);
 
    /* Remove removed nodes */
    DL_FOREACH_SAFE (scanner->nodes, ele, tmp) {
@@ -105,7 +113,7 @@ _mongoc_topology_scanner_cb (uint32_t      id,
        * server descriptions. We need to reconcile that with our monitoring agents
        */
 
-      mongoc_topology_reconcile(&topology->description, topology->scanner);
+      mongoc_topology_reconcile(topology);
 
       /* TODO only wake up all clients if we found any topology changes */
       mongoc_cond_broadcast (&topology->cond_client);
