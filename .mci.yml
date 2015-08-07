@@ -115,7 +115,7 @@ c_driver_variables:
           curl -s http://localhost:8889/
       start_topology_command: &start_topology_command
         start_topology: |
-          curl -s --data @"$ORCHESTRATION_FILE" "http://localhost:8889/v1/$ORCHESTRATION_PATH"
+          curl -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL"
           ./mongodb/bin/mongo --eval 'printjson(db.serverBuildInfo())'
           ./mongodb/bin/mongo --eval 'printjson(db.isMaster())'
 
@@ -291,78 +291,77 @@ functions:
         - key: "mongo_url"
           value: ${mongo_url_prefix}${mongo_url_enterprise_keyword|enterprise-}${mongo_url_platform|}latest.${mongo_url_extension|tgz}
 
-  # TODO: refactor these, "file" and "path" share parts
   "set topology standalone" :
     command: expansions.update
     params:
       updates:
         - key: "orchestration_file"
-          value: "orchestration_configs/servers/auth.json"
-        - key: "orchestration_path"
-          value: "servers"
+          value: "auth.json"
+        - key: "topology_type"
+          value: "server"
 
   "set topology replica set" :
     command: expansions.update
     params:
       updates:
         - key: "orchestration_file"
-          value: "orchestration_configs/replica_sets/auth.json"
-        - key: "orchestration_path"
-          value: "replica_sets"
+          value: "auth.json"
+        - key: "topology_type"
+          value: "replica_set"
 
   "set topology sharded" :
     command: expansions.update
     params:
       updates:
         - key: "orchestration_file"
-          value: "orchestration_configs/sharded_clusters/auth.json"
-        - key: "orchestration_path"
-          value: "sharded_clusters"
+          value: "auth.json"
+        - key: "topology_type"
+          value: "sharded_cluster"
 
   "set topology standalone no auth" :
     command: expansions.update
     params:
       updates:
         - key: "orchestration_file"
-          value: "orchestration_configs/servers/basic.json"
-        - key: "orchestration_path"
-          value: "servers"
+          value: "basic.json"
+        - key: "topology_type"
+          value: "server"
 
   "set topology replica set no auth" :
     command: expansions.update
     params:
       updates:
         - key: "orchestration_file"
-          value: "orchestration_configs/replica_sets/basic.json"
-        - key: "orchestration_path"
-          value: "replica_sets"
+          value: "basic.json"
+        - key: "topology_type"
+          value: "replica_set"
 
   "set topology sharded no auth" :
     command: expansions.update
     params:
       updates:
         - key: "orchestration_file"
-          value: "orchestration_configs/sharded_clusters/basic.json"
-        - key: "orchestration_path"
-          value: "sharded_clusters"
+          value: "basic.json"
+        - key: "topology_type"
+          value: "sharded_cluster"
 
   "use WiredTiger storage" :
     command: expansions.update
     params:
       updates:
         - key: "orchestration_file"
-          value: "orchestration_configs/servers/wiredtiger.json"
-        - key: "orchestration_path"
-          value: "servers"
+          value: "wiredtiger.json"
+        - key: "topology_type"
+          value: "server"
 
   "use MMAPv1 storage" :
     command: expansions.update
     params:
       updates:
         - key: "orchestration_file"
-          value: "orchestration_configs/servers/mmapv1.json"
-        - key: "orchestration_path"
-          value: "servers"
+          value: "mmapv1.json"
+        - key: "topology_type"
+          value: "server"
 
   "set version 3.0" :
     command: expansions.update
@@ -392,8 +391,8 @@ functions:
       script: |
         set -o errexit
         set -o verbose
-        export ORCHESTRATION_FILE="${orchestration_file}"
-        export ORCHESTRATION_PATH="${orchestration_path}"
+        export ORCHESTRATION_FILE="orchestration_configs/${topology_type}s/${orchestration_file}"
+        export ORCHESTRATION_URL="http://localhost:8889/v1/${topology_type}s"
         ${set_username_password}
         ${start_mongo_orchestration}
         ${start_topology}
