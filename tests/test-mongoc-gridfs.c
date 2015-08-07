@@ -46,6 +46,10 @@ test_create (void)
    assert (client);
 
    gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error);
+   if (!gridfs) {
+      printf ("mongoc_client_get_gridfs err: %s\n", error.message);
+   }
+
    assert (gridfs);
 
    mongoc_gridfs_drop (gridfs, &error);
