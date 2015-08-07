@@ -1286,6 +1286,136 @@ again:
 }
 
 
+typedef struct {
+    bool with_batch_size;
+    bool with_options;
+} test_aggregate_context_t;
+
+
+static const char *
+options_json (test_aggregate_context_t *c)
+{
+   if (c->with_batch_size && c->with_options) {
+      return "{'foo': 1, 'batchSize': 11}";
+   } else if (c->with_batch_size) {
+      return "{'batchSize': 11}";
+   } else if (c->with_options) {
+      return "{'foo': 1}";
+   } else {
+      return "{}";
+   }
+}
+
+
+static void
+test_aggregate_legacy (void *data)
+{
+   test_aggregate_context_t *context = (test_aggregate_context_t *) data;
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   future_t *future;
+   request_t *request;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   /* wire protocol version 0 */
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   cursor = mongoc_collection_aggregate (
+      collection,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("[{'a': 1}]"),
+      tmp_bson (options_json (context)),
+      NULL);
+
+   future = future_cursor_next (cursor, &doc);
+
+   /* no "cursor" argument */
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'aggregate': 'collection',"
+      " 'pipeline': [{'a': 1}]},"
+      " 'cursor': {'$exists': false} %s",
+      context->with_options ? ", 'foo': 1" : "");
+
+   mock_server_replies_simple (request, "{'ok': 1, 'result': [{'_id': 123}]}");
+   assert (future_get_bool (future));
+   ASSERT_MATCH (doc, "{'_id': 123}");
+
+   /* cursor is completed */
+   assert (!mongoc_cursor_next (cursor, &doc));
+
+   mongoc_cursor_destroy (cursor);
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_aggregate_modern (void *data)
+{
+   test_aggregate_context_t *context = (test_aggregate_context_t *) data;
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   future_t *future;
+   request_t *request;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   /* wire protocol version 1 */
+   server = mock_server_with_autoismaster (1);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   future = future_collection_aggregate (
+      collection,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("[{'a': 1}]"),
+      tmp_bson (options_json (context)),
+      NULL);
+
+   /* "cursor" argument always sent if wire version >= 1 */
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'aggregate': 'collection',"
+      " 'pipeline': [{'a': 1}],"
+      " 'cursor': %s %s}",
+      context->with_batch_size ? "{'batchSize': 11}" : "{'$empty': true}",
+      context->with_options ? ", 'foo': 1" : "");
+
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': 0,"
+                               "    'ns': 'db.collection',"
+                               "    'firstBatch': [{'_id': 123}]"
+                               "}}");
+
+   assert ((cursor = future_get_mongoc_cursor_ptr (future)));
+   assert (mongoc_cursor_next (cursor, &doc));
+   ASSERT_MATCH (doc, "{'_id': 123}");
+
+   /* cursor is completed */
+   assert (!mongoc_cursor_next (cursor, &doc));
+
+   mongoc_cursor_destroy (cursor);
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 static void
 test_validate (void)
 {
@@ -1747,9 +1877,48 @@ test_get_index_info (void)
    mongoc_client_destroy (client);
 }
 
+
+static void
+test_aggregate_install (TestSuite *suite) {
+   static test_aggregate_context_t test_aggregate_contexts[2][2][2];
+
+   int wire_version, with_batch_size, with_options;
+   char *legacy_or_modern;
+   TestFuncWC func;
+   char *name;
+   test_aggregate_context_t *context;
+
+   for (wire_version = 0; wire_version < 2; wire_version++) {
+      for (with_batch_size = 0; with_batch_size < 2; with_batch_size++) {
+         for (with_options = 0; with_options < 2; with_options++) {
+            legacy_or_modern = wire_version ? "legacy" : "modern";
+            func = wire_version ? test_aggregate_legacy : test_aggregate_modern;
+
+            context = &test_aggregate_contexts
+               [wire_version][with_batch_size][with_options];
+
+            context->with_batch_size = (bool) with_batch_size;
+            context->with_options = (bool) with_options;
+
+            name = bson_strdup_printf (
+               "/Collection/aggregate/%s/%s/%s",
+               legacy_or_modern,
+               context->with_batch_size ? "batch_size" : "no_batch_size",
+               context->with_options ? "with_options" : "no_options");
+
+            TestSuite_AddWC (suite, name, func, NULL, (void *) context);
+            bson_free (name);
+         }
+      }
+   }
+}
+
+
 void
 test_collection_install (TestSuite *suite)
 {
+   test_aggregate_install (suite);
+
    TestSuite_Add (suite, "/Collection/insert_bulk", test_insert_bulk);
 
    TestSuite_Add (suite,
@@ -1787,7 +1956,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
-   TestSuite_Add (suite, "/Collection/validate", test_validate);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
    TestSuite_Add (suite, "/Collection/stats", test_stats);
    TestSuite_Add (suite, "/Collection/find_and_modify", test_find_and_modify);

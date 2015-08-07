@@ -151,6 +151,8 @@ mock_server_t *
 mock_server_with_autoismaster (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
+
+   /* TODO: max_wire_version 0 is special */
    char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
                                         " 'ismaster': true,"
                                         " 'minWireVersion': 0,"

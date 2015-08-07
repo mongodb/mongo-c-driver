@@ -36,6 +36,17 @@ future_client_command_simple (
 
 
 future_t *
+future_collection_aggregate (
+
+   mongoc_collection_ptr collection,
+   mongoc_query_flags_t flags,
+   const_bson_ptr pipeline,
+   const_bson_ptr options,
+   const_mongoc_read_prefs_ptr read_prefs
+);
+
+
+future_t *
 future_collection_insert_bulk (
 
    mongoc_collection_ptr collection,

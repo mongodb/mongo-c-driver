@@ -109,6 +109,14 @@ future_functions = [
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
+    future_function("mongoc_cursor_ptr",
+                    "mongoc_collection_aggregate",
+                    [param("mongoc_collection_ptr", "collection"),
+                     param("mongoc_query_flags_t", "flags"),
+                     param("const_bson_ptr", "pipeline"),
+                     param("const_bson_ptr", "options"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs")]),
+
     future_function("bool",
                     "mongoc_collection_insert_bulk",
                     [param("mongoc_collection_ptr", "collection"),
