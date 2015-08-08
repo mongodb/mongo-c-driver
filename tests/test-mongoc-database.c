@@ -141,7 +141,6 @@ test_create_collection (void)
 
    char *dbname;
    char *name;
-   bool r;
 
    client = test_framework_client_new ();
    assert (client);
@@ -165,16 +164,17 @@ test_create_collection (void)
 
 
    name = gen_collection_name ("create_collection");
-   collection = mongoc_database_create_collection (database, name, &options, &error);
-   assert (collection);
+   ASSERT_OR_PRINT (
+      collection = mongoc_database_create_collection (database, name,
+                                                      &options, &error),
+      error);
+
    bson_destroy (&options);
    bson_free (name);
 
-   r = mongoc_collection_drop (collection, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
-   r = mongoc_database_drop (database, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
 
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
@@ -195,7 +195,6 @@ test_get_collection_info (void)
    bson_t noopts_options = BSON_INITIALIZER;
    bson_t name_filter = BSON_INITIALIZER;
    const bson_t *doc;
-   int r;
    int num_infos = 0;
 
    const char *name;
@@ -268,8 +267,8 @@ test_get_collection_info (void)
    num_infos = 0;
    mongoc_cursor_destroy (cursor);
 
-   r = mongoc_database_drop (database, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_database_drop (database, &error),
+                    error);
    assert (!error.domain);
    assert (!error.code);
 
@@ -289,7 +288,6 @@ test_get_collection_names (void)
    mongoc_client_t *client;
    bson_error_t error = { 0 };
    bson_t options;
-   int r;
    int namecount = 0;
 
    char **names;
@@ -380,8 +378,8 @@ test_get_collection_names (void)
 
    bson_free (names);
 
-   r = mongoc_database_drop (database, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_database_drop (database, &error),
+                    error);
    assert (!error.domain);
    assert (!error.code);
 

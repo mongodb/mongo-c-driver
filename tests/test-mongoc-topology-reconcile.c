@@ -94,13 +94,9 @@ selects_server (mongoc_client_t *client,
    mongoc_server_description_t *sd;
    bool result;
 
-   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ,
-                                read_prefs, 15, &error);
-
-   if (!sd) {
-      fprintf (stderr, "%s\n", error.message);
-      return false;
-   }
+   ASSERT_OR_PRINT (sd = mongoc_topology_select (
+      client->topology, MONGOC_SS_READ,
+      read_prefs, 15, &error), error);
 
    result = (0 == strcmp (mongoc_server_description_host (sd)->host_and_port,
                           mock_server_get_host_and_port (server)));

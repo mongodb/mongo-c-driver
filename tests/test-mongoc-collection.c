@@ -84,8 +84,8 @@ test_insert (void)
    ASSERT (error.code == MONGOC_ERROR_BSON_INVALID);
    bson_destroy (&b);
 
-   r = mongoc_collection_drop (collection, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error),
+                    error);
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
@@ -136,16 +136,14 @@ test_insert_bulk (void)
    }
 
    BEGIN_IGNORE_DEPRECATIONS;
-   r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE,
-                                      (const bson_t **)bptr, 10, NULL, &error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_bulk (collection,
+                                                   MONGOC_INSERT_NONE,
+                                                   (const bson_t **)bptr,
+                                                   10, NULL, &error), error);
    END_IGNORE_DEPRECATIONS;
 
-   if (!r) {
-      MONGOC_WARNING("%s\n", error.message);
-   }
-   ASSERT (r);
-
-   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q,
+                                    0, 0, NULL, &error);
    ASSERT (count == 5);
 
    for (i = 8; i < 10; i++) {
@@ -165,7 +163,8 @@ test_insert_bulk (void)
    ASSERT (!r);
    ASSERT (error.code == 11000);
 
-   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE,
+                                    &q, 0, 0, NULL, &error);
    ASSERT (count == 5);
 
    BEGIN_IGNORE_DEPRECATIONS;
@@ -175,7 +174,8 @@ test_insert_bulk (void)
    ASSERT (!r);
    ASSERT (error.code == 11000);
 
-   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE,
+                                    &q, 0, 0, NULL, &error);
    ASSERT (count == 6);
 
    /* test validate */
@@ -198,8 +198,7 @@ test_insert_bulk (void)
       bson_destroy(&b[i]);
    }
 
-   r = mongoc_collection_drop (collection, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
@@ -345,7 +344,7 @@ test_legacy_bulk_insert_large (void)
    receive_bulk (server, 4, MONGOC_INSERT_NONE);
    receive_bulk (server, 2, MONGOC_INSERT_NONE);
 
-   assert (future_get_bool (future));
+   ASSERT_OR_PRINT (future_get_bool (future), error);
 
    future_destroy (future);
    destroy_all (bsons, N_BSONS);
@@ -614,7 +613,6 @@ test_save (void)
    mongoc_client_t *client;
    bson_context_t *context;
    bson_error_t error;
-   bool r;
    bson_oid_t oid;
    unsigned i;
    bson_t b;
@@ -638,18 +636,14 @@ test_save (void)
       bson_oid_init(&oid, context);
       bson_append_oid(&b, "_id", 3, &oid);
       bson_append_utf8(&b, "hello", 5, "/world", 5);
-      r = mongoc_collection_save(collection, &b, NULL, &error);
-      if (!r) {
-         MONGOC_WARNING("%s\n", error.message);
-      }
-      ASSERT (r);
+      ASSERT_OR_PRINT (mongoc_collection_save(collection, &b, NULL, &error),
+                       error);
       bson_destroy(&b);
    }
 
    bson_destroy (&b);
 
-   r = mongoc_collection_drop (collection, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
@@ -669,7 +663,6 @@ test_regex (void)
    int64_t count;
    bson_t q = BSON_INITIALIZER;
    bson_t *doc;
-   bool r;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -684,8 +677,8 @@ test_regex (void)
    mongoc_write_concern_set_journal (wr, true);
 
    doc = BCON_NEW ("hello", "/world");
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, wr, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
+                                              doc, wr, &error), error);
 
    BSON_APPEND_REGEX (&q, "hello", "^/wo", "i");
 
@@ -698,12 +691,9 @@ test_regex (void)
                                     &error);
 
    ASSERT (count > 0);
-
-   r = mongoc_collection_drop (collection, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_write_concern_destroy (wr);
-
    bson_destroy (&q);
    bson_destroy (doc);
    mongoc_collection_destroy (collection);
@@ -749,11 +739,8 @@ test_update (void)
       bson_append_int64(&b, "int64", 5, 12345678);
       bson_append_bool(&b, "bool", 4, 1);
 
-      r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
-      if (!r) {
-         MONGOC_WARNING("%s\n", error.message);
-      }
-      ASSERT (r);
+      ASSERT_OR_PRINT (mongoc_collection_insert(collection, MONGOC_INSERT_NONE,
+                                                &b, NULL, &error), error);
 
       bson_init(&q);
       bson_append_oid(&q, "_id", 3, &oid);
@@ -763,11 +750,8 @@ test_update (void)
       bson_append_utf8(&set, "utf8", 4, "updated", 7);
       bson_append_document_end(&u, &set);
 
-      r = mongoc_collection_update(collection, MONGOC_UPDATE_NONE, &q, &u, NULL, &error);
-      if (!r) {
-         MONGOC_WARNING("%s\n", error.message);
-      }
-      ASSERT (r);
+      ASSERT_OR_PRINT (mongoc_collection_update(collection, MONGOC_UPDATE_NONE,
+                                                &q, &u, NULL, &error), error);
 
       bson_destroy(&b);
       bson_destroy(&q);
@@ -795,8 +779,7 @@ test_update (void)
    bson_destroy(&q);
    bson_destroy(&u);
 
-   r = mongoc_collection_drop (collection, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
@@ -854,8 +837,7 @@ test_remove (void)
       bson_destroy(&b);
    }
 
-   r = mongoc_collection_drop (collection, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
@@ -871,7 +853,6 @@ test_index (void)
    mongoc_client_t *client;
    mongoc_index_opt_t opt;
    bson_error_t error;
-   bool r;
    bson_t keys;
 
    mongoc_index_opt_init(&opt);
@@ -887,19 +868,18 @@ test_index (void)
 
    bson_init(&keys);
    bson_append_int32(&keys, "hello", -1, 1);
-   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_create_index(collection, &keys,
+                                                   &opt, &error), error);
 
-   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_create_index(collection, &keys,
+                                                   &opt, &error), error);
 
-   r = mongoc_collection_drop_index(collection, "hello_1", &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop_index(collection, "hello_1", &error),
+                    error);
 
    bson_destroy(&keys);
 
-   r = mongoc_collection_drop (collection, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
@@ -914,7 +894,6 @@ test_index_compound (void)
    mongoc_client_t *client;
    mongoc_index_opt_t opt;
    bson_error_t error;
-   bool r;
    bson_t keys;
 
    mongoc_index_opt_init(&opt);
@@ -931,19 +910,18 @@ test_index_compound (void)
    bson_init(&keys);
    bson_append_int32(&keys, "hello", -1, 1);
    bson_append_int32(&keys, "world", -1, -1);
-   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_create_index(collection, &keys,
+                                                   &opt, &error), error);
 
-   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_create_index(collection, &keys,
+                                                   &opt, &error), error);
 
-   r = mongoc_collection_drop_index(collection, "hello_1_world_-1", &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop_index(collection, "hello_1_world_-1",
+                                                 &error), error);
 
    bson_destroy(&keys);
 
-   r = mongoc_collection_drop (collection, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
@@ -979,11 +957,11 @@ test_index_geo (void)
    /* Create a basic 2d index */
    bson_init(&keys);
    BSON_APPEND_UTF8(&keys, "location", "2d");
-   r = mongoc_collection_create_index(collection, &keys, &opt, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_create_index(collection, &keys,
+                                                   &opt, &error), error);
 
-   r = mongoc_collection_drop_index(collection, "location_2d", &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop_index(collection,
+                                                 "location_2d", &error), error);
 
    /* Create a 2d index with bells and whistles */
    bson_init(&keys);
@@ -1000,11 +978,11 @@ test_index_geo (void)
    ASSERT (description);
 
    if (description->max_wire_version > 0) {
-      r = mongoc_collection_create_index(collection, &keys, &opt, &error);
-         ASSERT (r);
+      ASSERT_OR_PRINT (mongoc_collection_create_index(collection, &keys,
+                                                      &opt, &error), error);
 
-      r = mongoc_collection_drop_index(collection, "location_2d", &error);
-      ASSERT (r);
+      ASSERT_OR_PRINT (mongoc_collection_drop_index(collection, "location_2d",
+                                                    &error), error);
    }
 
    /* Create a Haystack index */
@@ -1018,11 +996,13 @@ test_index_geo (void)
    opt.geo_options = &geo_opt;
 
    if (description->max_wire_version > 0) {
-      r = mongoc_collection_create_index(collection, &keys, &opt, &error);
-      ASSERT (r);
+      ASSERT_OR_PRINT (mongoc_collection_create_index(collection, &keys,
+                                                      &opt, &error), error);
 
-      r = mongoc_collection_drop_index(collection, "location_geoHaystack_category_1", &error);
-      ASSERT (r);
+      r = mongoc_collection_drop_index(collection,
+                                       "location_geoHaystack_category_1",
+                                       &error);
+      ASSERT_OR_PRINT (r, error);
    }
 
    mongoc_server_description_destroy(description);
@@ -1038,14 +1018,14 @@ storage_engine (mongoc_client_t *client)
    bson_error_t error;
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
-   bool r;
 
    /* NOTE: this default will change eventually */
    char *engine = bson_strdup("mmapv1");
 
    BSON_APPEND_INT32 (&cmd, "getCmdLineOpts", 1);
-   r = mongoc_client_command_simple(client, "admin", &cmd, NULL, &reply, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_client_command_simple(client, "admin",
+                                                 &cmd, NULL, &reply, &error),
+                    error);
 
    if (bson_iter_init_find (&iter, &reply, "parsed.storage.engine")) {
       engine = bson_strdup(bson_iter_utf8(&iter, NULL));
@@ -1066,7 +1046,6 @@ test_index_storage (void)
    mongoc_index_opt_t opt;
    mongoc_index_opt_wt_t wt_opt;
    bson_error_t error;
-   bool r;
    bson_t keys;
    char *engine = NULL;
 
@@ -1098,8 +1077,8 @@ test_index_storage (void)
 
    opt.storage_options = (mongoc_index_opt_storage_t *)&wt_opt;
 
-   r = mongoc_collection_create_index (collection, &keys, &opt, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_create_index (collection, &keys,
+                                                    &opt, &error), error);
 
  cleanup:
    if (engine) bson_free (engine);
@@ -1183,7 +1162,6 @@ test_drop (void)
    mongoc_client_t *client;
    bson_error_t error;
    bson_t *doc;
-   bool r;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -1195,15 +1173,12 @@ test_drop (void)
    ASSERT (collection);
 
    doc = BCON_NEW("hello", "world");
-   r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, doc, NULL, &error);
+   ASSERT_OR_PRINT (mongoc_collection_insert(collection,  MONGOC_INSERT_NONE,
+                                             doc, NULL, &error), error);
    bson_destroy (doc);
-   ASSERT (r);
 
-   r = mongoc_collection_drop(collection, &error);
-   ASSERT (r == true);
-
-   r = mongoc_collection_drop(collection, &error);
-   ASSERT (r == false);
+   ASSERT_OR_PRINT (mongoc_collection_drop(collection, &error), error);
+   ASSERT (!mongoc_collection_drop(collection, &error));
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
@@ -1244,8 +1219,9 @@ again:
    mongoc_collection_drop(collection, &error);
 
    for (i = 0; i < 2; i++) {
-      r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, b, NULL, &error);
-      ASSERT (r);
+      ASSERT_OR_PRINT (mongoc_collection_insert(
+         collection,
+         MONGOC_INSERT_NONE, b, NULL, &error), error);
    }
 
    for (i = 0; i < 2; i++) {
@@ -1274,7 +1250,9 @@ again:
                mongoc_cursor_destroy (cursor);
                break;
             }
-            MONGOC_WARNING("[%d.%d] %s", error.domain, error.code, error.message);
+
+            fprintf (stderr, "[%d.%d] %s",
+                     error.domain, error.code, error.message);
          }
 
          ASSERT (r);
@@ -1286,7 +1264,7 @@ again:
 
       r = mongoc_cursor_next(cursor, &doc);
       if (mongoc_cursor_error(cursor, &error)) {
-         MONGOC_WARNING("%s", error.message);
+         fprintf (stderr, "%s", error.message);
       }
       ASSERT (!r);
       ASSERT (!doc);
@@ -1301,8 +1279,7 @@ again:
       goto again;
    }
 
-   r = mongoc_collection_drop(collection, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop(collection, &error), error);
 
    mongoc_collection_destroy(collection);
    mongoc_database_destroy(database);
@@ -1330,13 +1307,13 @@ test_validate (void)
    collection = get_test_collection (client, "test_validate");
    ASSERT (collection);
 
-   r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_insert(collection, MONGOC_INSERT_NONE,
+                                             &doc, NULL, &error), error);
 
    BSON_APPEND_BOOL (&opts, "full", true);
 
-   r = mongoc_collection_validate (collection, &opts, &reply, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_validate (collection, &opts,
+                                                &reply, &error), error);
 
    assert (bson_iter_init_find (&iter, &reply, "valid"));
 
@@ -1350,8 +1327,7 @@ test_validate (void)
    assert (error.domain == MONGOC_ERROR_BSON);
    assert (error.code == MONGOC_ERROR_BSON_INVALID);
 
-   r = mongoc_collection_drop (collection, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -1367,7 +1343,6 @@ test_rename (void)
    mongoc_client_t *client;
    bson_error_t error;
    bson_t doc = BSON_INITIALIZER;
-   bool r;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -1375,14 +1350,13 @@ test_rename (void)
    collection = get_test_collection (client, "test_rename");
    ASSERT (collection);
 
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, &doc, NULL, &error), error);
 
-   r = mongoc_collection_rename (collection, "test", "test_rename_2", false, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_rename (
+      collection, "test", "test_rename_2", false, &error), error);
 
-   r = mongoc_collection_drop (collection, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -1399,7 +1373,6 @@ test_stats (void)
    bson_iter_t iter;
    bson_t stats;
    bson_t doc = BSON_INITIALIZER;
-   bool r;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -1407,11 +1380,11 @@ test_stats (void)
    collection = get_test_collection (client, "test_stats");
    ASSERT (collection);
 
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, &doc, NULL, &error), error);
 
-   r = mongoc_collection_stats (collection, NULL, &stats, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_stats (
+      collection, NULL, &stats, &error), error);
 
    assert (bson_iter_init_find (&iter, &stats, "ns"));
 
@@ -1420,8 +1393,7 @@ test_stats (void)
 
    bson_destroy (&stats);
 
-   r = mongoc_collection_drop (collection, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -1440,7 +1412,6 @@ test_find_and_modify (void)
    bson_t *update;
    bson_t doc = BSON_INITIALIZER;
    bson_t reply;
-   bool r;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -1450,24 +1421,23 @@ test_find_and_modify (void)
 
    BSON_APPEND_INT32 (&doc, "superduper", 77889);
 
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, &doc, NULL, &error), error);
 
    update = BCON_NEW ("$set", "{",
                          "superduper", BCON_INT32 (1234),
                       "}");
 
-   r = mongoc_collection_find_and_modify (collection,
-                                          &doc,
-                                          NULL,
-                                          update,
-                                          NULL,
-                                          false,
-                                          false,
-                                          true,
-                                          &reply,
-                                          &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_find_and_modify (collection,
+                                                       &doc,
+                                                       NULL,
+                                                       update,
+                                                       NULL,
+                                                       false,
+                                                       false,
+                                                       true,
+                                                       &reply,
+                                                       &error), error);
 
    assert (bson_iter_init_find (&iter, &reply, "value"));
    assert (BSON_ITER_HOLDS_DOCUMENT (&iter));
@@ -1486,8 +1456,7 @@ test_find_and_modify (void)
    bson_destroy (&reply);
    bson_destroy (update);
 
-   r = mongoc_collection_drop (collection, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -1525,8 +1494,8 @@ test_large_return (void)
    BSON_APPEND_OID (&insert_doc, "_id", &oid);
    BSON_APPEND_UTF8 (&insert_doc, "big", str);
 
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &insert_doc, NULL, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_insert (
+      collection, MONGOC_INSERT_NONE, &insert_doc, NULL, &error), error);
 
    bson_destroy (&insert_doc);
 
@@ -1536,8 +1505,7 @@ test_large_return (void)
    assert (cursor);
    bson_destroy (&query);
 
-   r = mongoc_cursor_next (cursor, &doc);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), error);
    assert (doc);
 
    r = mongoc_cursor_next (cursor, &doc);
@@ -1545,9 +1513,7 @@ test_large_return (void)
 
    mongoc_cursor_destroy (cursor);
 
-   r = mongoc_collection_drop (collection, &error);
-   if (!r) fprintf (stderr, "ERROR: %s\n", error.message);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -1585,11 +1551,11 @@ test_many_return (void)
 
 BEGIN_IGNORE_DEPRECATIONS;
 
-   r = mongoc_collection_insert_bulk (collection, MONGOC_INSERT_NONE, (const bson_t **)docs, N_BSONS, NULL, &error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_bulk (
+                       collection, MONGOC_INSERT_NONE, (const bson_t **)docs,
+                       (uint32_t) N_BSONS, NULL, &error), error);
 
 END_IGNORE_DEPRECATIONS;
-
-   assert (r);
 
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 6000, &query, NULL, NULL);
    assert (cursor);
@@ -1609,8 +1575,7 @@ END_IGNORE_DEPRECATIONS;
 
    mongoc_cursor_destroy (cursor);
 
-   r = mongoc_collection_drop (collection, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    destroy_all (docs, N_BSONS);
    mongoc_collection_destroy (collection);
@@ -1728,16 +1693,16 @@ test_get_index_info (void)
    idx1_name = mongoc_collection_keys_to_index_string (&indexkey1);
    mongoc_index_opt_init (&opt1);
    opt1.background = true;
-   r = mongoc_collection_create_index (collection, &indexkey1, &opt1, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_create_index (
+      collection, &indexkey1, &opt1, &error), error);
 
    bson_init (&indexkey2);
    BSON_APPEND_INT32 (&indexkey2, "snozzberry", 1);
    idx2_name = mongoc_collection_keys_to_index_string (&indexkey2);
    mongoc_index_opt_init (&opt2);
    opt2.unique = true;
-   r = mongoc_collection_create_index (collection, &indexkey2, &opt2, &error);
-   ASSERT (r);
+   ASSERT_OR_PRINT (mongoc_collection_create_index (
+      collection, &indexkey2, &opt2, &error), error);
 
    /*
     * Now we try again after creating two indexes.

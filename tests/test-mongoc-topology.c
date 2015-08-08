@@ -354,14 +354,13 @@ test_max_wire_version_race_condition (void)
    mongoc_stream_t *stream;
    bson_error_t error;
    uint32_t id;
-   int r;
 
    /* connect directly and add our user, test is only valid with auth */
    client = test_framework_client_new ();
    database = mongoc_client_get_database(client, "test");
    mongoc_database_remove_user (database, "pink", &error);
-   r = mongoc_database_add_user (database, "pink", "panther", NULL, NULL, &error);
-   ASSERT_CMPINT(r, ==, 1);
+   ASSERT_OR_PRINT (1 == mongoc_database_add_user (
+      database, "pink", "panther", NULL, NULL, &error), error);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
 

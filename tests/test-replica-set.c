@@ -10,6 +10,7 @@
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-write-concern-private.h"
+#include "TestSuite.h"
 
 #undef G_LOG_DOMAIN
 #define G_LOG_DOMAIN "test"
@@ -48,14 +49,12 @@ insert_test_docs (mongoc_collection_t *collection)
       bson_init(&b);
       bson_oid_init(&oid, NULL);
       bson_append_oid(&b, "_id", 3, &oid);
-      if (!mongoc_collection_insert(collection,
-                                    MONGOC_INSERT_NONE,
-                                    &b,
-                                    write_concern,
-                                    &error)) {
-         MONGOC_ERROR("%s", error.message);
-         abort();
-      }
+
+      ASSERT_OR_PRINT (mongoc_collection_insert(collection,
+                                                MONGOC_INSERT_NONE,
+                                                &b,
+                                                write_concern,
+                                                &error), error);
       bson_destroy(&b);
    }
 
@@ -283,8 +282,9 @@ test2 (void)
     */
    r = mongoc_cursor_next(cursor, &doc);
    BSON_ASSERT(!r); /* No docs */
-   r = mongoc_cursor_error(cursor, &error);
-   BSON_ASSERT(!r); /* No error, slaveOk was set */
+
+   /* No error, slaveOk was set */
+   ASSERT_OR_PRINT (!mongoc_cursor_error(cursor, &error), error);
 
    mongoc_read_prefs_destroy(read_prefs);
    mongoc_cursor_destroy(cursor);

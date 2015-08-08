@@ -43,7 +43,7 @@ extern "C" {
 #endif
 #define ASSERT_OR_PRINT(_statement, _err) \
    do { \
-      if (!_statement) { \
+      if (! (_statement)) { \
          fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n  %s\n\n", \
                          __FILE__, __LINE__, __FUNCTION__, \
                          #_statement, _err.message); \

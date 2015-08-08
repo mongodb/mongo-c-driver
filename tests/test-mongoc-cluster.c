@@ -36,12 +36,11 @@ test_get_max_bson_obj_size (void)
    pool = test_framework_client_pool_new ();
    client = mongoc_client_pool_pop (pool);
 
-   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
-   if (!id) {
-      fprintf (stderr, "%s\n", error.message);
-   }
+   ASSERT_OR_PRINT (id = mongoc_cluster_preselect (&client->cluster,
+                                                   MONGOC_OPCODE_QUERY,
+                                                   NULL,
+                                                   &error), error);
 
-   assert (id);
    node = mongoc_set_get (client->cluster.nodes, id);
    node->max_bson_obj_size = max_bson_obj_size;
    assert (max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster));
@@ -64,7 +63,11 @@ test_get_max_msg_size (void)
    /* single-threaded */
    client = test_framework_client_new ();
 
-   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
+   ASSERT_OR_PRINT (id = mongoc_cluster_preselect (&client->cluster,
+                                                   MONGOC_OPCODE_QUERY,
+                                                   NULL,
+                                                   &error), error);
+
    sd = mongoc_set_get (client->topology->description.servers, id);
    sd->max_msg_size = max_msg_size;
    assert (max_msg_size == mongoc_cluster_get_max_msg_size (&client->cluster));
@@ -75,7 +78,11 @@ test_get_max_msg_size (void)
    pool = test_framework_client_pool_new ();
    client = mongoc_client_pool_pop (pool);
 
-   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
+   ASSERT_OR_PRINT (id = mongoc_cluster_preselect (&client->cluster,
+                                                   MONGOC_OPCODE_QUERY,
+                                                   NULL,
+                                                   &error), error);
+
    node = mongoc_set_get (client->cluster.nodes, id);
    node->max_msg_size = max_msg_size;
    assert (max_msg_size == mongoc_cluster_get_max_msg_size (&client->cluster));

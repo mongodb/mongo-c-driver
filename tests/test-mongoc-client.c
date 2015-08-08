@@ -207,7 +207,8 @@ test_mongoc_client_authenticate_failure (void *context)
    suppress_one_message ();
    suppress_one_message ();
    suppress_one_message ();
-   r = mongoc_collection_insert (collection, 0, &empty, NULL, &error);
+   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
+                                 &empty, NULL, &error);
    assert (!r);
    assert (error.domain == MONGOC_ERROR_CLIENT);
    assert (error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
@@ -219,7 +220,8 @@ test_mongoc_client_authenticate_failure (void *context)
    suppress_one_message ();
    suppress_one_message ();
    suppress_one_message ();
-   r = mongoc_collection_update (collection, 0, &q, &empty, NULL, &error);
+   r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE,
+                                 &q, &empty, NULL, &error);
    assert (!r);
    assert (error.domain == MONGOC_ERROR_CLIENT);
    assert (error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
@@ -420,14 +422,12 @@ test_mongoc_client_preselect (void)
 {
    mongoc_client_t *client;
    bson_error_t error;
-   uint32_t node;
 
    client = test_framework_client_new ();
    assert (client);
 
-   node = _mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
-                                    NULL, NULL, &error);
-   assert (node > 0);
+   ASSERT_OR_PRINT (_mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
+                                              NULL, NULL, &error), error);
 
    mongoc_client_destroy (client);
 }
@@ -827,8 +827,7 @@ test_exhaust_cursor (void *context)
       bson_destroy(&b[i]);
    }
 
-   r = mongoc_collection_drop (collection, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
    mongoc_write_concern_destroy (wr);
    mongoc_cursor_destroy (cursor2);
@@ -844,13 +843,12 @@ test_server_status (void)
    bson_error_t error;
    bson_iter_t iter;
    bson_t reply;
-   bool r;
 
    client = test_framework_client_new ();
    assert (client);
 
-   r = mongoc_client_get_server_status (client, NULL, &reply, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_client_get_server_status (client, NULL,
+                                                     &reply, &error), error);
 
    assert (bson_iter_init_find (&iter, &reply, "host"));
    assert (bson_iter_init_find (&iter, &reply, "version"));
@@ -919,13 +917,12 @@ test_mongoc_client_ipv6 (void)
    bson_error_t error;
    bson_iter_t iter;
    bson_t reply;
-   bool r;
 
    client = mongoc_client_new ("mongodb://[::1]/");
    assert (client);
 
-   r = mongoc_client_get_server_status (client, NULL, &reply, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_client_get_server_status (client, NULL,
+                                                     &reply, &error), error);
 
    assert (bson_iter_init_find (&iter, &reply, "host"));
    assert (bson_iter_init_find (&iter, &reply, "version"));
