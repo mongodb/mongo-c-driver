@@ -21,22 +21,32 @@ c_driver_variables:
     - name: "integration test latest"
     - name: "integration test latest with MMAPv1"
 
-  # TODO: ONLY INTEGRATION TEST LATEST IS USED, CDRIVER-781
-  version_test_list: &version_tests
-    - name: "compile"
-    - name: "integration test 2.4"
-    - name: "integration test 2.6"
-    - name: "integration test 3.0"
-    - name: "integration test latest"
-
   topology_test_list: &topology_tests
     - name: "compile"
+    - name: "integration test 2.4"
+    - name: "integration test 2.4 replica set"
+    - name: "integration test 2.4 sharded"
+    - name: "integration test 2.6"
+    - name: "integration test 2.6 replica set"
+    - name: "integration test 2.6 sharded"
+    - name: "integration test 3.0"
+    - name: "integration test 3.0 replica set"
+    - name: "integration test 3.0 sharded"
     - name: "integration test latest"
     - name: "integration test latest replica set"
     - name: "integration test latest sharded"
 
   topology_test_no_auth_list: &topology_tests_no_auth
     - name: "compile"
+    - name: "integration test 2.4 no auth"
+    - name: "integration test 2.4 replica set no auth"
+    - name: "integration test 2.4 sharded no auth"
+    - name: "integration test 2.6 no auth"
+    - name: "integration test 2.6 replica set no auth"
+    - name: "integration test 2.6 sharded no auth"
+    - name: "integration test 3.0 no auth"
+    - name: "integration test 3.0 replica set no auth"
+    - name: "integration test 3.0 sharded no auth"
     - name: "integration test latest no auth"
     - name: "integration test latest replica set no auth"
     - name: "integration test latest sharded no auth"
@@ -44,32 +54,27 @@ c_driver_variables:
 ## Common download urls (merge in as hashes)
   mongo_download_url_prefixes:
     linux64: &mongo_url_linux64
-      mongo_url_prefix: "http://downloads.mongodb.com/linux/mongodb-linux-x86_64-"
+      mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-x86_64-"
     ubuntu1204: &mongo_url_ubuntu1204
       mongo_url_platform: "ubuntu1204-"
       <<: *mongo_url_linux64
     ubuntu1404: &mongo_url_ubuntu1404
       mongo_url_platform: "ubuntu1404-"
       <<: *mongo_url_linux64
-    windows64-bitcomm: &mongo_url_windows64
-      mongo_url_prefix: "http://downloads.mongodb.com/win32/mongodb-win32-x86_64-"
-      mongo_url_platform: "windows-64-"
+    windows64: &mongo_url_windows64
+      mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-x86_64-"
+      mongo_url_platform: ""
     windows32: &mongo_url_windows32
       mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-i386-"
-      mongo_url_enterprise_keyword: ""
     rhel55: &mongo_url_rhel55
       mongo_url_platform: "rhel57-"
       <<: *mongo_url_linux64
     rhel55_32: &mongo_url_rhel55_32
       mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-i686-"
-      mongo_url_enterprise_keyword: ""
-      mongo_url_subscription_keyword: ""
     osx-108: &mongo_url_osx_108
       mongo_url_prefix: "http://downloads.mongodb.org/osx/mongodb-osx-x86_64-"
-      mongo_url_enterprise_keyword: ""
     solaris: &mongo_url_solaris
       mongo_url_prefix: "http://downloads.mongodb.org/sunos5/mongodb-sunos5-x86_64-"
-      mongo_url_enterprise_keyword: ""
 
   ## Common sets of CFLAGS
   cflags:
@@ -158,10 +163,6 @@ c_driver_variables:
         set_username_password: |
           export MONGOC_TEST_USER=bob
           export MONGOC_TEST_PASSWORD=pwd123
-      msvc_32bit: &username_password_msvc_32bit
-        # No auth until we get 32-bit OpenSSL on Windows or don't need it:
-        # BUILD-797, CDRIVER-744
-        set_username_password:
 
     integration_tests:
       msvc: &run_integration_tests_msvc
@@ -203,7 +204,6 @@ c_driver_variables:
       dllpath: "c:/openssl/bin,c:/sasl/bin,c:/curl/dlls"
     ## msvc2013, 32-bit
     msvc2013_32bit: &with_msvc2013_32bit
-      <<: *username_password_msvc_32bit
       generator: Visual Studio 12 2013
       cmake_defs: "-DSEARCH_OPEN_SSL:BOOL=OFF"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
@@ -246,15 +246,10 @@ functions:
       script: |
         set -o verbose
         set -o errexit
-        curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
-        ${decompress} mongo_enterprise.${ext|tgz}
+        curl -s ${mongo_url} --output mongo-archive.${ext|tgz}
+        ${decompress} mongo-archive.${ext|tgz}
         mv mongodb* mongodb
         chmod +x ./mongodb/bin/mongod${extension}
-        if [ ${windows|false} = true ]; then
-            cp -r mongodb /cygdrive/c/mongodb
-            #This won't run on a 32bit OS.
-            ./mongodb/bin/vcredist_x64${extension} /Q
-        fi
 
   "create working directory" :
     command: shell.exec
@@ -283,13 +278,6 @@ functions:
           export GENERATOR="${generator}"     # For CMake on Windows
           export CMAKE_DEFS="${cmake_defs}"   # For CMake on Windows
           ${compile_script}
-
-  "set version latest" :
-    command: expansions.update
-    params:
-      updates:
-        - key: "mongo_url"
-          value: ${mongo_url_prefix}${mongo_url_enterprise_keyword|enterprise-}${mongo_url_platform|}latest.${mongo_url_extension|tgz}
 
   "set topology standalone" :
     command: expansions.update
@@ -363,26 +351,33 @@ functions:
         - key: "topology_type"
           value: "server"
 
-  "set version 3.0" :
+  "set version 2.4" :
     command: expansions.update
     params:
       updates:
         - key: "mongo_url"
-          value: ${mongo_url_prefix}${mongo_url_enterprise_keyword|enterprise-}${mongo_url_platform|}3.0.1.${mongo_url_extension|tgz}
+          value: ${mongo_url_prefix}2.4.14.${mongo_url_extension|tgz}
 
   "set version 2.6" :
     command: expansions.update
     params:
       updates:
         - key: "mongo_url"
-          value: ${mongo_url_prefix}${mongo_url_enterprise_keyword|enterprise-}${mongo_url_platform|}2.6.8.${mongo_url_extension|tgz}
+          value: ${mongo_url_prefix}2.6.10.${mongo_url_extension|tgz}
 
-  "set version 2.4" :
+  "set version 3.0" :
     command: expansions.update
     params:
       updates:
         - key: "mongo_url"
-          value: ${mongo_url_prefix}${mongo_url_subscription_keyword|subscription-}${mongo_url_platform|}2.4.13.${mongo_url_extension|tgz}
+          value: ${mongo_url_prefix}${mongo_url_platform|}3.0.5.${mongo_url_extension|tgz}
+
+  "set version latest" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongo_url"
+          value: ${mongo_url_prefix}${mongo_url_platform|}latest.${mongo_url_extension|tgz}
 
   "run integration tests" :
     command: shell.exec
@@ -455,11 +450,55 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
+    - name: "integration test 2.4 replica set"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.4 sharded"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
     - name: "integration test 2.6"
       depends_on:
         - name: "compile"
       commands:
         - func: "set topology standalone"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6 replica set"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6 sharded"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
         - func: "set version 2.6"
         - func: "create working directory"
         - func: "fetch artifacts"
@@ -477,13 +516,23 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 3.0 with WiredTiger"
+    - name: "integration test 3.0 replica set"
       depends_on:
         - name: "compile"
       commands:
-        - func: "set topology standalone"
+        - func: "set topology replica set"
         - func: "set version 3.0"
-        - func: "use WiredTiger storage"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 sharded"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 3.0"
         - func: "create working directory"
         - func: "fetch artifacts"
         - func: "fetch mongodb"
@@ -494,29 +543,6 @@ tasks:
         - name: "compile"
       commands:
         - func: "set topology standalone"
-        - func: "set version latest"
-        - func: "create working directory"
-        - func: "fetch artifacts"
-        - func: "fetch mongodb"
-        - func: "run integration tests"
-
-    - name: "integration test latest with MMAPv1"
-      depends_on:
-        - name: "compile"
-      commands:
-        - func: "set topology standalone"
-        - func: "set version latest"
-        - func: "use MMAPv1 storage"
-        - func: "create working directory"
-        - func: "fetch artifacts"
-        - func: "fetch mongodb"
-        - func: "run integration tests"
-
-    - name: "integration test latest no auth"
-      depends_on:
-        - name: "compile"
-      commands:
-        - func: "set topology standalone no auth"
         - func: "set version latest"
         - func: "create working directory"
         - func: "fetch artifacts"
@@ -545,6 +571,116 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
+    - name: "integration test 2.4 no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone no auth"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.4 replica set no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set no auth"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.4 sharded no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded no auth"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6 no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone no auth"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6 replica set no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set no auth"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6 sharded no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded no auth"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone no auth"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 replica set no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set no auth"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 sharded no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded no auth"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone no auth"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
     - name: "integration test latest replica set no auth"
       depends_on:
         - name: "compile"
@@ -562,6 +698,30 @@ tasks:
       commands:
         - func: "set topology sharded no auth"
         - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest with MMAPv1"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone"
+        - func: "set version latest"
+        - func: "use MMAPv1 storage"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 with WiredTiger"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone"
+        - func: "set version 3.0"
+        - func: "use WiredTiger storage"
         - func: "create working directory"
         - func: "fetch artifacts"
         - func: "fetch mongodb"
