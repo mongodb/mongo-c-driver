@@ -2,8 +2,6 @@
 #define MONGOC_INSIDE
 #include <mongoc-gridfs-file-private.h>
 #undef MONGOC_INSIDE
-#include <stdlib.h>
-#include <fcntl.h>
 
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"

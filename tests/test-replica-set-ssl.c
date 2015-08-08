@@ -2,11 +2,7 @@
 
 #include "ha-test.h"
 
-#include "mongoc-client.h"
 #include "mongoc-client-private.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-cursor.h"
-#include "mongoc-cursor-private.h"
 #include "mongoc-tests.h"
 #include "mongoc-write-concern-private.h"
 #include "TestSuite.h"

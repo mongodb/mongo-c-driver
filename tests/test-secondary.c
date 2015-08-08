@@ -1,6 +1,4 @@
 #include <mongoc.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 static bool gExpectingFailure;
 static bool gShutdown;
