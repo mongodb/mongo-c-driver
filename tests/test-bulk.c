@@ -887,7 +887,6 @@ test_upsert_large ()
    bson_t child = BSON_INITIALIZER;
    bson_error_t error;
    bson_t reply;
-   bool r;
 
    client = test_framework_client_new ();
    assert (client);
