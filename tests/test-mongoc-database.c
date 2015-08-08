@@ -264,7 +264,6 @@ test_get_collection_info (void)
 
    assert (1 == num_infos);
 
-   num_infos = 0;
    mongoc_cursor_destroy (cursor);
 
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error),

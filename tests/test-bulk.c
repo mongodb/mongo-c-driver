@@ -2079,10 +2079,6 @@ test_bulk_edge_case_372 (bool ordered)
       mongoc_bulk_operation_replace_one (bulk, selector, update, true);
    }
 
-
-#if 0
-   printf ("%s\n", bson_as_json (&reply, NULL));
-#endif
    ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, &reply, &error),
                     error);
 
@@ -2135,7 +2131,7 @@ test_bulk_new (void)
    mongoc_client_t *client;
    bson_error_t error;
    bson_t empty = BSON_INITIALIZER;
-   bool r;
+   uint32_t r;
 
    client = test_framework_client_new ();
    assert (client);

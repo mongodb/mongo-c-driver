@@ -1557,7 +1557,8 @@ BEGIN_IGNORE_DEPRECATIONS;
 
 END_IGNORE_DEPRECATIONS;
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 6000, &query, NULL, NULL);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 6000,
+                                    &query, NULL, NULL);
    assert (cursor);
    bson_destroy (&query);
 
@@ -1602,7 +1603,8 @@ test_command_fq (void)
 
    cmd = BCON_NEW ("query", "{", "}");
 
-   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 1, 0, cmd, NULL, NULL);
+   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 1, 0,
+                                       cmd, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
    assert (r);
 
