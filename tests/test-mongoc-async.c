@@ -98,7 +98,11 @@ test_ismaster_impl (bool with_ssl)
                                  sizeof (server_addr),
                                  0);
 
-      assert (r == 0 || errno == EAGAIN || errno == EINPROGRESS);
+      if (!(r == 0 || errno == EAGAIN || errno == EINPROGRESS)) {
+         fprintf (stderr, "mongoc_socket_connect unexpected return: %d\n", r);
+         fflush (stderr);
+         abort ();
+      }
 
       sock_streams[i] = mongoc_stream_socket_new (conn_sock);
 
