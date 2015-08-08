@@ -92,8 +92,7 @@ test_mongoc_client_authenticate (void *context)
                 "0", "{", "role", "read", "db", "test", "}");
 
    ASSERT_OR_PRINT (mongoc_database_add_user(database, username, "testpass",
-                                             &roles, NULL, &error),
-                    error);
+                                             &roles, NULL, &error), error);
 
    mongoc_database_destroy(database);
 
