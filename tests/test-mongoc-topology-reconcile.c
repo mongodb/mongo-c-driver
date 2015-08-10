@@ -94,9 +94,13 @@ selects_server (mongoc_client_t *client,
    mongoc_server_description_t *sd;
    bool result;
 
-   ASSERT_OR_PRINT (sd = mongoc_topology_select (
-      client->topology, MONGOC_SS_READ,
-      read_prefs, 15, &error), error);
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ,
+                                read_prefs, 15, &error);
+
+   if (!sd) {
+      fprintf (stderr, "%s\n", error.message);
+      return false;
+   }
 
    result = (0 == strcmp (mongoc_server_description_host (sd)->host_and_port,
                           mock_server_get_host_and_port (server)));
@@ -167,7 +171,7 @@ _test_topology_reconcile_rs (bool pooled)
    RS_RESPONSE_TO_ISMASTER (server1, true, true, server1);  /* server0 absent */
 
    if (!pooled) {
-      /* TODO: SPEC-217 this selection should trigger one rescan but doesn't */
+      /* TODO: CDRIVER-699 this selection should trigger one rescan but doesn't */
       assert (!client->topology->stale);
       assert (!selects_server (client, tag_read_prefs, server1));
       assert (client->topology->stale);
