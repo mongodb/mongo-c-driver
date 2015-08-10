@@ -250,6 +250,9 @@ functions:
         ${decompress} mongo-archive.${ext|tgz}
         mv mongodb* mongodb
         chmod +x ./mongodb/bin/mongod${extension}
+        if [ ${windows|false} = true ]; then
+            cp -r mongodb /cygdrive/c/mongodb
+        fi
 
   "create working directory" :
     command: shell.exec
