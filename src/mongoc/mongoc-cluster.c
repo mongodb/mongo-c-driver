@@ -1481,8 +1481,7 @@ _mongoc_cluster_select_by_optype(mongoc_cluster_t          *cluster,
  *
  * mongoc_cluster_preselect_description --
  *
- *       Server selection by opcode, with retries, returns full
- *       server description.
+ *       Server selection by opcode, returns full server description.
  *
  *       NOTE: caller becomes the owner of returned server description
  *       and must clean it up.
@@ -1535,7 +1534,7 @@ mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
  *
  * mongoc_cluster_preselect --
  *
- *       Server selection by opcode with retries.
+ *       Server selection by opcode.
  *
  *--------------------------------------------------------------------------
  */
