@@ -163,3 +163,55 @@ mongoc_set_for_each (mongoc_set_t            *set,
 
    bson_free (old_set);
 }
+
+
+static mongoc_set_item_t *
+_mongoc_set_find (mongoc_set_t            *set,
+                  mongoc_set_for_each_cb_t cb,
+                  void                    *ctx)
+{
+   size_t i;
+   size_t items_len;
+   mongoc_set_item_t *item;
+
+   items_len = set->items_len;
+
+   for (i = 0; i < items_len; i++) {
+      item = &set->items[i];
+      if (cb (item->item, ctx)) {
+         return item;
+      }
+   }
+
+   return NULL;
+}
+
+
+void *
+mongoc_set_find_item (mongoc_set_t            *set,
+                      mongoc_set_for_each_cb_t cb,
+                      void                    *ctx)
+{
+   mongoc_set_item_t *item;
+
+   if ((item = _mongoc_set_find (set, cb, ctx))) {
+      return item->item;
+   }
+
+   return NULL;
+}
+
+
+uint32_t
+mongoc_set_find_id (mongoc_set_t            *set,
+                    mongoc_set_for_each_cb_t cb,
+                    void                    *ctx)
+{
+   mongoc_set_item_t *item;
+
+   if ((item = _mongoc_set_find (set, cb, ctx))) {
+      return item->id;
+   }
+
+   return 0;
+}

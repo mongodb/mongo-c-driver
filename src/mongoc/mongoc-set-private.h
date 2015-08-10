@@ -84,6 +84,18 @@ mongoc_set_for_each (mongoc_set_t            *set,
                      mongoc_set_for_each_cb_t cb,
                      void                    *ctx);
 
+/* first item in set for which "cb" returns true */
+void *
+mongoc_set_find_item (mongoc_set_t            *set,
+                      mongoc_set_for_each_cb_t cb,
+                      void                    *ctx);
+
+/* id of first item in set for which "cb" returns true, or 0. */
+uint32_t
+mongoc_set_find_id (mongoc_set_t            *set,
+                    mongoc_set_for_each_cb_t cb,
+                    void                    *ctx);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_SET_PRIVATE_H */
