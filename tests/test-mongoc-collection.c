@@ -418,7 +418,7 @@ _test_legacy_bulk_insert (const bson_t **bsons,
    future_t *future;
    mongoc_insert_flags_t flags;
    int offset;
-   bool has_oversized;
+   bool has_oversized = false;
    int batch_sz;
    const bson_t *gle;
 
