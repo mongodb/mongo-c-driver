@@ -13,6 +13,10 @@
 #include "mock_server/mock-server.h"
 #include "mongoc-tests.h"
 
+#ifdef _WIN32
+# define strcasecmp _stricmp
+#endif
+
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test"
