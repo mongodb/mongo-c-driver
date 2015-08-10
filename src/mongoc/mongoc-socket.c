@@ -209,7 +209,7 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds,          /* IN */
 #ifdef _WIN32
    pfds = (WSAPOLLFD *)bson_malloc(sizeof(*pfds) * nsds);
 #else
-   pfds = (pollfd *)bson_malloc(sizeof(*pfds) * nsds);
+   pfds = (struct pollfd *)bson_malloc(sizeof(*pfds) * nsds);
 #endif
 
    for (i = 0; i < nsds; i++) {

@@ -238,7 +238,8 @@ _mongoc_ssl_check_cert (SSL        *ssl,
 
    if (verify_status == X509_V_OK) {
       /* get's a stack of alt names that we can iterate through */
-      sans = (stack_st_GENERAL_NAME *)X509_get_ext_d2i ((X509 *)peer, NID_subject_alt_name, NULL, NULL);
+      sans = (STACK_OF (GENERAL_NAME) *) X509_get_ext_d2i (
+         (X509 *)peer, NID_subject_alt_name, NULL, NULL);
 
       if (sans) {
          n_sans = sk_GENERAL_NAME_num (sans);
