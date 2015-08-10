@@ -138,9 +138,9 @@ Install man pages                                : yes
     <p>The following commands will download the most recent MongoDB binary release and install it using the <code>pkgadd</code> command on Solaris 10.</p>
       <screen><output style="prompt">$ </output><input>bash</input>
 <output style="prompt">bash-3.2$ </output><input>export ARCH=`uname -m`</input>
-<output style="prompt">bash-3.2$ </output><input>/usr/sfw/bin/wget --no-check-certificate "https://github.com/mongodb/mongo-c-driver/releases/download/1.1.10/MONGOmongo-c-driver-1.1.10.${ARCH}.pkg.tar.gz"</input>
-<output style="prompt">bash-3.2$ </output><input>gunzip -c "MONGOmongo-c-driver-1.1.10.${ARCH}.pkg.tar.gz" | tar -xf -</input>
-<output style="prompt">bash-3.2$ </output><input>pkgadd -d . MONGOmongo-c-driver</input></screen>
+<output style="prompt">bash-3.2$ </output><input>/usr/sfw/bin/wget --no-check-certificate "https://github.com/mongodb/mongo-c-driver/releases/download/1.1.10/mongo-c-driver-1.1.10.${ARCH}.pkg.tar.gz"</input>
+<output style="prompt">bash-3.2$ </output><input>gunzip -c "mongo-c-driver-1.1.10.${ARCH}.pkg.tar.gz" | tar -xf -</input>
+<output style="prompt">bash-3.2$ </output><input>pkgadd -d . mongo-c-driver</input></screen>
 
   </section>
 
