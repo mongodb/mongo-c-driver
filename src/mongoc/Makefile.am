@@ -58,6 +58,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-iovec.h \
 	src/mongoc/mongoc-list-private.h \
 	src/mongoc/mongoc-log.h \
+	src/mongoc/mongoc-log-private.h \
 	src/mongoc/mongoc-matcher-op-private.h \
 	src/mongoc/mongoc-matcher-private.h \
 	src/mongoc/mongoc-matcher.h \
@@ -73,6 +74,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-server-description-private.h \
 	src/mongoc/mongoc-set-private.h \
 	src/mongoc/mongoc-socket.h \
+	src/mongoc/mongoc-socket-private.h \
 	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-buffered.h \
 	src/mongoc/mongoc-stream-file.h \
