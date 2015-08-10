@@ -101,10 +101,10 @@ c_driver_variables:
     mongo_orchestration:
       windows: &mongo_orchestration_windows
         start_mongo_orchestration: |
-          echo "Installing Mongo Orchestration..."
           trap 'set +o errexit; mongo-orchestration stop;' EXIT
           taskkill.exe /FI "IMAGENAME eq python.exe" /F
           taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
+          fsutil volume diskfree c:
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
           mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000
@@ -112,8 +112,8 @@ c_driver_variables:
           curl -s http://localhost:8889/
       unix: &mongo_orchestration_unix
         start_mongo_orchestration: |
-          echo "Installing Mongo Orchestration..."
           trap 'set +o errexit; mongo-orchestration stop;' EXIT
+          df
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
           TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
