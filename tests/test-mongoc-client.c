@@ -1,15 +1,17 @@
 #include <fcntl.h>
 #include <mongoc.h>
 
-#include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
-#include "mongoc-tests.h"
-#include "TestSuite.h"
+#include "mongoc-cursor-private.h"
+#include "mongoc-uri-private.h"
 
+#include "TestSuite.h"
+#include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
+#include "mongoc-tests.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -435,6 +437,9 @@ test_mongoc_client_preselect (void)
 static void
 test_unavailable_seeds (void)
 {
+   mock_server_t *servers[2];
+   char **uri_strs;
+   char **uri_str;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
@@ -442,21 +447,41 @@ test_unavailable_seeds (void)
    const bson_t *doc;
    bson_error_t error;
    
-   const char* uri_strs[] = {
-      "mongodb://a:1/?connectTimeoutMS=1",
-      "mongodb://a:1,a:2/?connectTimeoutMS=1",
-      "mongodb://a:1,a:2/?replicaSet=r&connectTimeoutMS=1",
-      "mongodb://u:p@a:1/?connectTimeoutMS=1",
-      "mongodb://u:p@a:1,a:2/?connectTimeoutMS=1",
-      "mongodb://u:p@a:1,a:2/?replicaSet=r&connectTimeoutMS=1",
-   };
-
    int i;
 
-   /* hardcode the number of error messages we have to suppress */
-   for (i = 0; i < 18; i++) {
-      suppress_one_message ();
+   for (i = 0; i < 2; i++) {
+      servers[i] = mock_server_down ();  /* hangs up on all requests */
+      mock_server_run (servers[i]);
    }
+   
+   uri_str = uri_strs = bson_malloc0 (7 * sizeof (char *));
+   *(uri_str++) = bson_strdup_printf (
+      "mongodb://%s",
+      mock_server_get_host_and_port (servers[0]));
+
+   *(uri_str++) = bson_strdup_printf (
+      "mongodb://%s,%s",
+      mock_server_get_host_and_port (servers[0]),
+      mock_server_get_host_and_port (servers[1]));
+
+   *(uri_str++) = bson_strdup_printf (
+      "mongodb://%s,%s/?replicaSet=rs",
+      mock_server_get_host_and_port (servers[0]),
+      mock_server_get_host_and_port (servers[1]));
+
+   *(uri_str++) = bson_strdup_printf (
+      "mongodb://u:p@%s",
+      mock_server_get_host_and_port (servers[0]));
+
+   *(uri_str++) = bson_strdup_printf (
+      "mongodb://u:p@%s,%s",
+      mock_server_get_host_and_port (servers[0]),
+      mock_server_get_host_and_port (servers[1]));
+
+   *(uri_str++) = bson_strdup_printf (
+      "mongodb://u:p@%s,%s/?replicaSet=rs",
+      mock_server_get_host_and_port (servers[0]),
+      mock_server_get_host_and_port (servers[1]));
 
    for (i = 0; i < (sizeof(uri_strs) / sizeof(const char *)); i++) {
       client = mongoc_client_new (uri_strs[i]);
@@ -481,6 +506,12 @@ test_unavailable_seeds (void)
       mongoc_collection_destroy (collection);
       mongoc_client_destroy (client);
    }
+
+   for (i = 0; i < 2; i++) {
+      mock_server_destroy (servers[i]);
+   }
+
+   bson_strfreev (uri_strs);
 }
 
 
@@ -491,156 +522,297 @@ typedef enum {
 } connection_option_t;
 
 
-#ifdef TODO_MOCK_SERVER_MERGE
+static bool
+responder (request_t *request,
+           void *data)
+{
+   if (!strcmp (request->command_name, "foo")) {
+      mock_server_replies_simple (request, "{'ok': 1}");
+      request_destroy (request);
+      return true;
+   }
+
+   return false;
+}
+
+
+/* mongoc_set_for_each callback */
+static bool
+host_equals (void *item,
+             void *ctx)
+{
+   mongoc_server_description_t *sd;
+   const char *host_and_port;
+
+   sd = (mongoc_server_description_t *) item;
+   host_and_port = (const char *) ctx;
+
+   return !strcasecmp (sd->host.host_and_port, host_and_port);
+}
+
+
 /* CDRIVER-721 catch errors in _mongoc_cluster_destroy */
 static void 
 test_seed_list (bool rs,
-                connection_option_t connection_option)
+                connection_option_t connection_option,
+                bool pooled)
 {
-   uint16_t port;
+   mock_server_t *server;
+   mock_server_t *down_servers[3];
+   int i;
    char *uri_str;
    mongoc_uri_t *uri;
-   mock_server_t *server;
-   uint32_t i;
-   uint32_t expected_nodes_len;
-   const mongoc_host_list_t *hosts;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
+   mongoc_topology_t *topology;
+   mongoc_topology_description_t *td;
+   mongoc_read_prefs_t *primary_pref;
+   uint32_t discovered_nodes_len;
+   bson_t reply;
    bson_error_t error;
+   uint32_t id;
 
-   port = 20000 + (rand () % 1000);
-   uri_str = bson_strdup_printf ("mongodb://localhost:%hu,a,b,c/%s",
-                                 port,
-                                 rs ? "?replicaSet=rs" : "");
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   for (i = 0; i < 3; i++) {
+      down_servers[i] = mock_server_down ();
+      mock_server_run (down_servers[i]);
+   }
+
+   uri_str = bson_strdup_printf (
+      "mongodb://%s,%s,%s,%s",
+      mock_server_get_host_and_port (server),
+      mock_server_get_host_and_port (down_servers[0]),
+      mock_server_get_host_and_port (down_servers[1]),
+      mock_server_get_host_and_port (down_servers[2]));
+
    uri = mongoc_uri_new (uri_str);
-   hosts = mongoc_uri_get_hosts (uri);
-   
-   server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
-                                rs ? "rs" : NULL, true, false, hosts, NULL);
+   assert (uri);
 
-   mock_server_run_in_thread (server);
+   if (rs) {
+      mock_server_auto_ismaster (server,
+                                 "{'ok': 1,"
+                                 " 'ismaster': true,"
+                                 " 'setName': 'rs',"
+                                 " 'hosts': ['%s']}",
+                                 mock_server_get_host_and_port (server));
 
-   for (i = 0; i < 12; i++) {
-      suppress_one_message ();
+      mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+   } else {
+      mock_server_auto_ismaster (server,
+                                 "{'ok': 1,"
+                                 " 'ismaster': true,"
+                                 " 'msg': 'isdbgrid'}");
    }
 
-   client = mongoc_client_new_from_uri (uri);
-   assert (client);
-   ASSERT_CMPINT (4, ==, client->cluster.nodes_len);
-   for (i = 0; i < 4; i++) {
-      assert (client->cluster.nodes[i].valid);
+   /* auto-respond to "foo" command */
+   mock_server_autoresponds (server, responder, NULL, NULL);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
    }
 
-   expected_nodes_len = rs ? 1 : 4;
+   topology = client->topology;
+   td = &topology->description;
 
-   if (connection_option != NO_CONNECT) {
-      /* only localhost:port responds, nodes_len is set to 1 */
-      assert (_mongoc_client_warm_up (client, &error));
+   if (rs) {
+      ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
+   } else {
+      ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_UNKNOWN);
+   }
 
-      /* a mongos load-balanced connection never removes down nodes */
-      ASSERT_CMPINT (expected_nodes_len, ==, client->cluster.nodes_len);
-      for (i = 0; i < expected_nodes_len; i++) {
-         assert (client->cluster.nodes[i].valid);
+   ASSERT_CMPINT (4, ==, (int) td->servers->items_len);
+
+   /* a mongos load-balanced connection never removes down nodes */
+   discovered_nodes_len = rs ? 1 : 4;
+
+   primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   if (connection_option == CONNECT || connection_option == RECONNECT) {
+      /* only localhost:port responds to initial discovery. the other seeds are
+       * discarded from replica set topology, but remain for sharded. */
+      ASSERT_OR_PRINT (mongoc_client_command_simple (
+         client, "test", tmp_bson("{'foo': 1}"),
+         primary_pref, &reply, &error), error);
+
+      bson_destroy (&reply);
+
+      ASSERT_CMPINT (discovered_nodes_len, ==, (int) td->servers->items_len);
+
+      if (rs) {
+         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
+      } else {
+         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_SHARDED);
+      }
+
+      if (pooled) {
+         /* nodes created on demand when we use servers for actual operations */
+         ASSERT_CMPINT ((int) client->cluster.nodes->items_len, ==, 1);
       }
    }
 
    if (connection_option == RECONNECT) {
-      for (i = 0; i < 12; i++) {
-         suppress_one_message ();
+      id = mongoc_set_find_id (td->servers,
+                               host_equals,
+                               (void *) mock_server_get_host_and_port (server));
+      ASSERT_CMPINT (id, !=, 0);
+      mongoc_topology_invalidate_server (topology, id);
+      if (rs) {
+         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
+      } else {
+         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_SHARDED);
       }
 
-      assert (_mongoc_cluster_reconnect (&client->cluster, &error));
-      ASSERT_CMPINT (expected_nodes_len, ==, client->cluster.nodes_len);
-      for (i = 0; i < expected_nodes_len; i++) {
-         assert (client->cluster.nodes[i].valid);
+      /* TODO: CDRIVER-699 shouldn't need to set topology stale */
+      topology->stale = true;
+
+      ASSERT_OR_PRINT (mongoc_client_command_simple (
+         client, "test", tmp_bson("{'foo': 1}"),
+         primary_pref, &reply, &error), error);
+
+      bson_destroy (&reply);
+
+      ASSERT_CMPINT (discovered_nodes_len, ==, (int) td->servers->items_len);
+
+      if (pooled) {
+         ASSERT_CMPINT ((int) client->cluster.nodes->items_len, ==, 1);
       }
    }
 
    /* testing for crashes like CDRIVER-721 */
-   mongoc_client_destroy (client);
 
-   mock_server_quit (server);
-   mock_server_destroy (server);
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_read_prefs_destroy (primary_pref);
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
+
+   for (i = 0; i < 3; i++) {
+      mock_server_destroy (down_servers[i]);
+   }
+
+   mock_server_destroy (server);
 }
 
 
 static void
-test_rs_seeds_no_connect (void)
+test_rs_seeds_no_connect_single (void)
 {
-   test_seed_list (true, NO_CONNECT);
+   test_seed_list (true, NO_CONNECT, false);
 }
 
 
 static void
-test_rs_seeds_connect (void)
+test_rs_seeds_no_connect_pooled (void)
 {
-   test_seed_list (true, CONNECT);
+   test_seed_list (true, NO_CONNECT, true);
 }
 
 
 static void
-test_rs_seeds_reconnect (void)
+test_rs_seeds_connect_single (void)
 {
-   test_seed_list (true, RECONNECT);
+   test_seed_list (true, CONNECT, false);
+}
+
+#ifdef TODO_CDRIVER_789
+static void
+test_rs_seeds_connect_pooled (void)
+{
+   test_seed_list (true, CONNECT, true);
 }
 
 
 static void
-test_mongos_seeds_no_connect (void)
+test_rs_seeds_reconnect_single (void)
 {
-   test_seed_list (false, NO_CONNECT);
+   test_seed_list (true, RECONNECT, false);
 }
 
 
 static void
-test_mongos_seeds_connect (void)
+test_rs_seeds_reconnect_pooled (void)
 {
-   test_seed_list (false, CONNECT);
+   test_seed_list (true, RECONNECT, true);
+}
+#endif
+
+
+static void
+test_mongos_seeds_no_connect_single (void)
+{
+   test_seed_list (false, NO_CONNECT, false);
 }
 
 
 static void
-test_mongos_seeds_reconnect (void)
+test_mongos_seeds_no_connect_pooled (void)
 {
-   test_seed_list (false, RECONNECT);
+   test_seed_list (false, NO_CONNECT, true);
+}
+
+
+static void
+test_mongos_seeds_connect_single (void)
+{
+   test_seed_list (false, CONNECT, false);
+}
+
+
+static void
+test_mongos_seeds_connect_pooled (void)
+{
+   test_seed_list (false, CONNECT, true);
+}
+
+
+static void
+test_mongos_seeds_reconnect_single (void)
+{
+   test_seed_list (false, RECONNECT, false);
+}
+
+
+static void
+test_mongos_seeds_reconnect_pooled (void)
+{
+   test_seed_list (false, RECONNECT, true);
 }
 
 static void
 test_recovering (void)
 {
-   uint16_t port;
-   char *uri_str;
-   mongoc_uri_t *uri;
    mock_server_t *server;
-   uint32_t i;
-   const mongoc_host_list_t *hosts;
+   mongoc_uri_t *uri;
    mongoc_client_t *client;
    mongoc_read_mode_t read_mode;
    mongoc_read_prefs_t *prefs;
    bson_error_t error;
 
-   port = 20000 + (rand () % 1000);
-   uri_str = bson_strdup_printf ("mongodb://localhost:%hu/?replicaSet=rs",
-                                 port);
-
-   uri = mongoc_uri_new (uri_str);
-   hosts = mongoc_uri_get_hosts (uri);
+   server = mock_server_new ();
+   mock_server_run (server);
 
    /* server is "recovering": not master, not secondary */
-   server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
-                                "rs", false, false, hosts, NULL);
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': false,"
+                              " 'secondary': false,"
+                              " 'setName': 'rs',"
+                              " 'hosts': ['%s']}",
+                              mock_server_get_host_and_port (server));
 
-   mock_server_set_verbose (server, false);
-   mock_server_run_in_thread (server);
-
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
    client = mongoc_client_new_from_uri (uri);
-   assert (client);
-   ASSERT_CMPINT (1, ==, client->cluster.nodes_len);
-   for (i = 0; i < 1; i++) {
-      assert (client->cluster.nodes[i].valid);
-   }
-
    prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    /* recovering member matches no read mode */
@@ -648,19 +820,16 @@ test_recovering (void)
         read_mode <= MONGOC_READ_NEAREST;
         read_mode++) {
       mongoc_read_prefs_set_mode (prefs, read_mode);
-      assert (!_mongoc_cluster_preselect (&client->cluster,
-                                          MONGOC_OPCODE_QUERY,
-                                          NULL, prefs, &error));
+      assert (!mongoc_cluster_preselect (&client->cluster,
+                                         MONGOC_OPCODE_QUERY,
+                                         prefs, &error));
    }
 
    mongoc_read_prefs_destroy (prefs);
    mongoc_client_destroy (client);
-   mock_server_quit (server);
-   mock_server_destroy (server);
    mongoc_uri_destroy (uri);
-   bson_free (uri_str);
+   mock_server_destroy (server);
 }
-#endif
 
 
 static void
@@ -952,13 +1121,21 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
-#ifdef TODO_MOCK_SERVER_MERGE
-   TestSuite_Add (suite, "/Client/rs_seeds_no_connect", test_rs_seeds_no_connect);
-   TestSuite_Add (suite, "/Client/rs_seeds_connect", test_rs_seeds_connect);
-   TestSuite_Add (suite, "/Client/rs_seeds_reconnect", test_rs_seeds_reconnect);
-   TestSuite_Add (suite, "/Client/mongos_seeds_no_connect", test_mongos_seeds_no_connect);
-   TestSuite_Add (suite, "/Client/mongos_seeds_connect", test_mongos_seeds_connect);
-   TestSuite_Add (suite, "/Client/mongos_seeds_reconnect", test_mongos_seeds_reconnect);
+   TestSuite_Add (suite, "/Client/rs_seeds_no_connect/single", test_rs_seeds_no_connect_single);
+   TestSuite_Add (suite, "/Client/rs_seeds_no_connect/pooled", test_rs_seeds_no_connect_pooled);
+#ifdef TODO_CDRIVER_789
+   TestSuite_Add (suite, "/Client/rs_seeds_connect/single", test_rs_seeds_connect_single);
+   TestSuite_Add (suite, "/Client/rs_seeds_connect/pooled", test_rs_seeds_connect_pooled);
+   TestSuite_Add (suite, "/Client/rs_seeds_reconnect/single", test_rs_seeds_reconnect_single);
+   TestSuite_Add (suite, "/Client/rs_seeds_reconnect/pooled", test_rs_seeds_reconnect_pooled);
+#endif
+   TestSuite_Add (suite, "/Client/mongos_seeds_no_connect/single", test_mongos_seeds_no_connect_single);
+   TestSuite_Add (suite, "/Client/mongos_seeds_no_connect/pooled", test_mongos_seeds_no_connect_pooled);
+#ifdef TODO_CDRIVER_789
+   TestSuite_Add (suite, "/Client/mongos_seeds_connect/single", test_mongos_seeds_connect_single);
+   TestSuite_Add (suite, "/Client/mongos_seeds_connect/pooled", test_mongos_seeds_connect_pooled);
+   TestSuite_Add (suite, "/Client/mongos_seeds_reconnect/single", test_mongos_seeds_reconnect_single);
+   TestSuite_Add (suite, "/Client/mongos_seeds_reconnect/pooled", test_mongos_seeds_reconnect_pooled);
    TestSuite_Add (suite, "/Client/recovering", test_recovering);
 #endif
    TestSuite_AddFull (suite, "/Client/exhaust_cursor", test_exhaust_cursor, NULL, NULL, skip_if_mongos);

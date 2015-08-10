@@ -158,6 +158,43 @@ mock_server_with_autoismaster (int32_t max_wire_version)
 }
 
 
+static bool
+hangup (request_t *request,
+        void *ctx)
+{
+   mock_server_hangs_up (request);
+   request_destroy (request);
+   return true;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_down --
+ *
+ *       A new mock_server_t hangs up. Call mock_server_run to start it,
+ *       then mock_server_get_uri to connect.
+ *
+ * Returns:
+ *       A server you must mock_server_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mock_server_t *
+mock_server_down (void)
+{
+   mock_server_t *server = mock_server_new ();
+
+   mock_server_autoresponds (server, hangup, NULL, NULL);
+
+   return server;
+}
+
+
 #ifdef MONGOC_ENABLE_SSL
 
 /*--------------------------------------------------------------------------
@@ -416,13 +453,19 @@ auto_ismaster (request_t *request,
 
 int
 mock_server_auto_ismaster (mock_server_t *server,
-                           const char *response_json)
+                           const char *response_json,
+                           ...)
 {
-   char *copy = bson_strdup (response_json);
+   char *formatted_response_json;
+   va_list args;
+
+   va_start (args, response_json);
+   formatted_response_json = bson_strdupv_printf (response_json, args);
+   va_end (args);
 
    return mock_server_autoresponds (server,
                                     auto_ismaster,
-                                    (void *) copy,
+                                    (void *) formatted_response_json,
                                     bson_free);
 }
 

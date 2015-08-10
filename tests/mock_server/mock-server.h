@@ -40,6 +40,8 @@ mock_server_t *mock_server_new ();
 
 mock_server_t *mock_server_with_autoismaster (int32_t max_wire_version);
 
+mock_server_t *mock_server_down (void);
+
 int mock_server_autoresponds (mock_server_t *server,
                               autoresponder_t responder,
                               void *data,
@@ -49,8 +51,8 @@ void mock_server_remove_autoresponder (mock_server_t *server,
                                        int id);
 
 int mock_server_auto_ismaster (mock_server_t *server,
-                               const char *response_json);
-
+                               const char *response_json,
+                               ...);
 
 #ifdef MONGOC_ENABLE_SSL
 
