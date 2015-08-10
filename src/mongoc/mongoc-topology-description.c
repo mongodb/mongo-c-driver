@@ -111,12 +111,12 @@ static bool
 _mongoc_topology_description_has_primary_cb (void *item,
                                              void *ctx /* OUT */)
 {
-   mongoc_server_description_t *server = item;
-   mongoc_server_description_t **primary = ctx;
+   mongoc_server_description_t *server = (mongoc_server_description_t *)item;
+   mongoc_server_description_t **primary = (mongoc_server_description_t **)ctx;
 
    /* TODO should this include MONGOS? */
    if (server->type == MONGOC_SERVER_RS_PRIMARY || server->type == MONGOC_SERVER_STANDALONE) {
-      *primary = item;
+      *primary = (mongoc_server_description_t *)item;
       return false;
    }
    return true;
@@ -217,8 +217,8 @@ static bool
 _mongoc_replica_set_read_suitable_cb (void *item,
                                       void *ctx)
 {
-   mongoc_server_description_t *server = item;
-   mongoc_suitable_data_t *data = ctx;
+   mongoc_server_description_t *server = (mongoc_server_description_t *)item;
+   mongoc_suitable_data_t *data = (mongoc_suitable_data_t *)ctx;
 
    if (_mongoc_topology_description_server_is_candidate (server->type,
                                                          data->read_mode,
@@ -249,8 +249,8 @@ static bool
 _mongoc_find_suitable_mongos_cb (void *item,
                                  void *ctx)
 {
-   mongoc_server_description_t *server = item;
-   mongoc_suitable_data_t *data = ctx;
+   mongoc_server_description_t *server = (mongoc_server_description_t *)item;
+   mongoc_suitable_data_t *data = (mongoc_suitable_data_t *)ctx;
 
    if (_mongoc_topology_description_server_is_candidate (server->type,
                                                          data->read_mode,
@@ -295,7 +295,7 @@ mongoc_topology_description_suitable_servers (
    int i;
    mongoc_read_mode_t read_mode = mongoc_read_prefs_get_mode(read_pref);
 
-   candidates = bson_malloc0(sizeof(*candidates) * topology->servers->items_len);
+   candidates = (mongoc_server_description_t **)bson_malloc0(sizeof(*candidates) * topology->servers->items_len);
 
    data.read_mode = read_mode;
    data.topology_type = topology->type;
@@ -307,7 +307,7 @@ mongoc_topology_description_suitable_servers (
    /* Single server --
     * Either it is suitable or it isn't */
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
-      server = mongoc_set_get_item (topology->servers, 0);
+      server = (mongoc_server_description_t *)mongoc_set_get_item (topology->servers, 0);
       if (_mongoc_topology_description_server_is_candidate (server->type, read_mode, topology->type)) {
          _mongoc_array_append_val (set, server);
       }
@@ -440,7 +440,7 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
    }
 
    if (topology->type == MONGOC_TOPOLOGY_SINGLE) {
-      sd = mongoc_set_get_item (topology->servers, 0);
+      sd = (mongoc_server_description_t *)mongoc_set_get_item (topology->servers, 0);
 
       if (sd->has_is_master) {
          RETURN(sd);
@@ -491,7 +491,7 @@ mongoc_topology_description_server_by_id (mongoc_topology_description_t *descrip
 {
    bson_return_val_if_fail (description, NULL);
 
-   return mongoc_set_get(description->servers, id);
+   return (mongoc_server_description_t *)mongoc_set_get(description->servers, id);
 }
 
 /*
@@ -530,8 +530,8 @@ static bool
 _mongoc_topology_description_has_server_cb (void *item,
                                             void *ctx /* IN - OUT */)
 {
-   mongoc_server_description_t *server = item;
-   mongoc_address_and_id_t *data = ctx;
+   mongoc_server_description_t *server = (mongoc_server_description_t *)item;
+   mongoc_address_and_id_t *data = (mongoc_address_and_id_t *)ctx;
 
    if (strcasecmp (data->address, server->connection_address) == 0) {
       data->found = true;
@@ -588,8 +588,8 @@ static bool
 _mongoc_label_unknown_member_cb (void *item,
                                  void *ctx)
 {
-   mongoc_server_description_t *server = item;
-   mongoc_address_and_type_t *data = ctx;
+   mongoc_server_description_t *server = (mongoc_server_description_t *)item;
+   mongoc_address_and_type_t *data = (mongoc_address_and_type_t *)ctx;
 
    if (strcasecmp (server->connection_address, data->address) == 0 &&
        server->type == MONGOC_SERVER_UNKNOWN) {
@@ -754,7 +754,7 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
       /* TODO this might not be an accurate count in all cases */
       server_id = ++topology->max_server_id;
 
-      description = bson_malloc0(sizeof *description);
+      description = (mongoc_server_description_t *)bson_malloc0(sizeof *description);
       mongoc_server_description_init(description, server, server_id);
 
       mongoc_set_add(topology->servers, server_id, description);
@@ -800,8 +800,8 @@ static bool
 _mongoc_topology_description_invalidate_primaries_cb (void *item,
                                                       void *ctx)
 {
-   mongoc_server_description_t *server = item;
-   mongoc_primary_and_topology_t *data = ctx;
+   mongoc_server_description_t *server = (mongoc_server_description_t *)item;
+   mongoc_primary_and_topology_t *data = (mongoc_primary_and_topology_t *)ctx;
 
    if (server->id != data->primary->id &&
        server->type == MONGOC_SERVER_RS_PRIMARY) {
@@ -831,7 +831,7 @@ _mongoc_topology_description_remove_unreported_servers (
     * doesn't report its own connection_address in its hosts list.
     * See hosts_differ_from_seeds.json */
    for (i = 0; i < topology->servers->items_len; i++) {
-      member = mongoc_set_get_item (topology->servers, i);
+      member = (mongoc_server_description_t *)mongoc_set_get_item (topology->servers, i);
       address = member->connection_address;
       if (!mongoc_server_description_has_rs_member(primary, address)) {
          _mongoc_array_append_val (&to_remove, member);

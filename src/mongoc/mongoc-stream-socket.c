@@ -225,7 +225,7 @@ _mongoc_stream_socket_poll (mongoc_stream_poll_t *streams,
 
    ENTRY;
 
-   sds = bson_malloc(sizeof(*sds) * nstreams);
+   sds = (mongoc_socket_poll_t *)bson_malloc(sizeof(*sds) * nstreams);
 
    for (i = 0; i < nstreams; i++) {
       ss = (mongoc_stream_socket_t *)streams[i].stream;
@@ -303,7 +303,7 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
 
    bson_return_val_if_fail (sock, NULL);
 
-   stream = bson_malloc0 (sizeof *stream);
+   stream = (mongoc_stream_socket_t *)bson_malloc0 (sizeof *stream);
    stream->vtable.type = MONGOC_STREAM_SOCKET;
    stream->vtable.close = _mongoc_stream_socket_close;
    stream->vtable.destroy = _mongoc_stream_socket_destroy;

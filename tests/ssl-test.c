@@ -230,7 +230,7 @@ ssl_test_client (void * ptr)
    assert(r == wiov.iov_len);
 
    for (i = 0; i < NUM_IOVECS; i++) {
-      wiov_many[i].iov_base = "foo";
+      wiov_many[i].iov_base = (void *)"foo";
       wiov_many[i].iov_len = 4;
    }
 

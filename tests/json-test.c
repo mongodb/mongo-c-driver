@@ -237,7 +237,7 @@ get_bson_from_json_file(char *filename)
    }
 
    /* read entire file into buffer */
-   buffer = bson_malloc0(length);
+   buffer = (const char *)bson_malloc0(length);
    if (fread((void *)buffer, 1, length, file) != length) {
       abort();
    }

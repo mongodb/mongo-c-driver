@@ -49,7 +49,7 @@ mongoc_bulk_operation_new (bool ordered)
 {
    mongoc_bulk_operation_t *bulk;
 
-   bulk = bson_malloc0 (sizeof *bulk);
+   bulk = (mongoc_bulk_operation_t *)bson_malloc0 (sizeof *bulk);
    bulk->ordered = ordered;
 
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));
@@ -127,7 +127,7 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,     /* IN */
                                    mongoc_write_command_t,
                                    bulk->commands.len - 1);
       if ((last->type == MONGOC_WRITE_COMMAND_DELETE) &&
-          last->u.delete.multi) {
+          last->u.delete_.multi) {
          _mongoc_write_command_delete_append (last, selector);
          EXIT;
       }
@@ -158,7 +158,7 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk,     /* IN */
                                    mongoc_write_command_t,
                                    bulk->commands.len - 1);
       if ((last->type == MONGOC_WRITE_COMMAND_DELETE) &&
-          !last->u.delete.multi) {
+          !last->u.delete_.multi) {
          _mongoc_write_command_delete_append (last, selector);
          EXIT;
       }
@@ -237,6 +237,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
    mongoc_write_command_t command = { 0 };
    size_t err_off;
    mongoc_write_command_t *last;
+   int flags = BSON_VALIDATE_DOT_KEYS|BSON_VALIDATE_DOLLAR_KEYS;
 
    bson_return_if_fail (bulk);
    bson_return_if_fail (selector);
@@ -244,9 +245,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
 
    ENTRY;
 
-   if (!bson_validate (document,
-                       (BSON_VALIDATE_DOT_KEYS | BSON_VALIDATE_DOLLAR_KEYS),
-                       &err_off)) {
+   if (!bson_validate (document, (bson_validate_flags_t)flags, &err_off)) {
       MONGOC_WARNING ("%s(): replacement document may not contain "
                       "$ or . in keys. Ignoring document.",
                       __FUNCTION__);
@@ -499,7 +498,7 @@ mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk,
 {
    bson_return_if_fail (bulk);
 
-   bulk->client = client;
+   bulk->client = (mongoc_client_t *)client;
 }
 
 

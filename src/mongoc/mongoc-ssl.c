@@ -238,7 +238,7 @@ _mongoc_ssl_check_cert (SSL        *ssl,
 
    if (verify_status == X509_V_OK) {
       /* get's a stack of alt names that we can iterate through */
-      sans = X509_get_ext_d2i ((X509 *)peer, NID_subject_alt_name, NULL, NULL);
+      sans = (stack_st_GENERAL_NAME *)X509_get_ext_d2i ((X509 *)peer, NID_subject_alt_name, NULL, NULL);
 
       if (sans) {
          n_sans = sk_GENERAL_NAME_num (sans);
@@ -465,7 +465,7 @@ _mongoc_ssl_extract_subject (const char *filename)
          ret = X509_NAME_print_ex (strbio, subject, 0, XN_FLAG_RFC2253);
 
          if ((ret > 0) && (ret < INT_MAX)) {
-            str = bson_malloc (ret + 2);
+            str = (char *)bson_malloc (ret + 2);
             BIO_gets (strbio, str, ret + 1);
             str [ret] = '\0';
          }
@@ -529,7 +529,7 @@ _mongoc_ssl_thread_startup (void)
 {
    int i;
 
-   gMongocSslThreadLocks = OPENSSL_malloc (CRYPTO_num_locks () * sizeof (mongoc_mutex_t));
+   gMongocSslThreadLocks = (mongoc_mutex_t *)OPENSSL_malloc (CRYPTO_num_locks () * sizeof (mongoc_mutex_t));
 
    for (i = 0; i < CRYPTO_num_locks (); i++) {
       mongoc_mutex_init(&gMongocSslThreadLocks[i]);

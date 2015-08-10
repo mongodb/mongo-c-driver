@@ -353,7 +353,7 @@
       if (needed > buflen) { \
          return false; \
       } \
-      rpc->_name = (void *)buf; \
+      rpc->_name = (int64_t*)buf; \
       buf += needed; \
       buflen -= needed; \
    } while (0);
@@ -463,7 +463,7 @@ _mongoc_rpc_gather (mongoc_rpc_t   *rpc,
       _mongoc_rpc_gather_get_more(&rpc->get_more, array);
       return;
    case MONGOC_OPCODE_DELETE:
-      _mongoc_rpc_gather_delete(&rpc->delete, array);
+      _mongoc_rpc_gather_delete(&rpc->delete_, array);
       return;
    case MONGOC_OPCODE_KILL_CURSORS:
       _mongoc_rpc_gather_kill_cursors(&rpc->kill_cursors, array);
@@ -505,7 +505,7 @@ _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
       _mongoc_rpc_swab_to_le_get_more(&rpc->get_more);
       break;
    case MONGOC_OPCODE_DELETE:
-      _mongoc_rpc_swab_to_le_delete(&rpc->delete);
+      _mongoc_rpc_swab_to_le_delete(&rpc->delete_);
       break;
    case MONGOC_OPCODE_KILL_CURSORS:
       _mongoc_rpc_swab_to_le_kill_cursors(&rpc->kill_cursors);
@@ -548,7 +548,7 @@ _mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
       _mongoc_rpc_swab_from_le_get_more(&rpc->get_more);
       break;
    case MONGOC_OPCODE_DELETE:
-      _mongoc_rpc_swab_from_le_delete(&rpc->delete);
+      _mongoc_rpc_swab_from_le_delete(&rpc->delete_);
       break;
    case MONGOC_OPCODE_KILL_CURSORS:
       _mongoc_rpc_swab_from_le_kill_cursors(&rpc->kill_cursors);
@@ -586,7 +586,7 @@ _mongoc_rpc_printf (mongoc_rpc_t *rpc)
       _mongoc_rpc_printf_get_more(&rpc->get_more);
       break;
    case MONGOC_OPCODE_DELETE:
-      _mongoc_rpc_printf_delete(&rpc->delete);
+      _mongoc_rpc_printf_delete(&rpc->delete_);
       break;
    case MONGOC_OPCODE_KILL_CURSORS:
       _mongoc_rpc_printf_kill_cursors(&rpc->kill_cursors);
@@ -619,7 +619,7 @@ _mongoc_rpc_scatter (mongoc_rpc_t  *rpc,
       return false;
    }
 
-   opcode = BSON_UINT32_FROM_LE(rpc->header.opcode);
+   opcode = (mongoc_opcode_t)BSON_UINT32_FROM_LE(rpc->header.opcode);
 
    switch (opcode) {
    case MONGOC_OPCODE_REPLY:
@@ -635,7 +635,7 @@ _mongoc_rpc_scatter (mongoc_rpc_t  *rpc,
    case MONGOC_OPCODE_GET_MORE:
       return _mongoc_rpc_scatter_get_more(&rpc->get_more, buf, buflen);
    case MONGOC_OPCODE_DELETE:
-      return _mongoc_rpc_scatter_delete(&rpc->delete, buf, buflen);
+      return _mongoc_rpc_scatter_delete(&rpc->delete_, buf, buflen);
    case MONGOC_OPCODE_KILL_CURSORS:
       return _mongoc_rpc_scatter_kill_cursors(&rpc->kill_cursors, buf, buflen);
    default:

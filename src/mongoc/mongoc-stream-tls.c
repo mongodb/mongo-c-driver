@@ -164,7 +164,9 @@ _mongoc_stream_tls_bio_destroy (BIO *b)
 
    BSON_ASSERT (b);
 
-   if (!(tls = b->ptr)) {
+   tls = (mongoc_stream_tls_t *)b->ptr;
+
+   if (!tls) {
       return -1;
    }
 
@@ -205,7 +207,9 @@ _mongoc_stream_tls_bio_read (BIO  *b,
    BSON_ASSERT (b);
    BSON_ASSERT (buf);
 
-   if (!(tls = b->ptr)) {
+   tls = (mongoc_stream_tls_t *)b->ptr;
+
+   if (!tls) {
       return -1;
    }
 
@@ -250,7 +254,9 @@ _mongoc_stream_tls_bio_write (BIO        *b,
    BSON_ASSERT (b);
    BSON_ASSERT (buf);
 
-   if (!(tls = b->ptr)) {
+   tls = (mongoc_stream_tls_t *)b->ptr;
+
+   if (!tls) {
       return -1;
    }
 
@@ -961,7 +967,7 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
 
    BIO_push (bio_ssl, bio_mongoc_shim);
 
-   tls = bson_malloc0 (sizeof *tls);
+   tls = (mongoc_stream_tls_t *)bson_malloc0 (sizeof *tls);
    tls->base_stream = base_stream;
    tls->parent.type = MONGOC_STREAM_TLS;
    tls->parent.destroy = _mongoc_stream_tls_destroy;

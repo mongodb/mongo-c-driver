@@ -47,7 +47,7 @@ test_split_insert (void)
    collection = get_test_collection (client, "test_split_insert");
    assert (collection);
 
-   docs = bson_malloc (sizeof(bson_t*) * 3000);
+   docs = (bson_t **)bson_malloc (sizeof(bson_t*) * 3000);
 
    for (i = 0; i < 3000; i++) {
       docs [i] = bson_new ();
@@ -109,7 +109,7 @@ test_invalid_write_concern (void)
    mongoc_write_concern_set_journal(write_concern, true);
    assert(!_mongoc_write_concern_is_valid(write_concern));
 
-   docs = bson_malloc(sizeof(bson_t*));
+   docs = (bson_t **)bson_malloc(sizeof(bson_t*));
    docs[0] = BCON_NEW("_id", BCON_INT32(0));
 
    _mongoc_write_command_init_insert(&command, (const bson_t * const *)docs, 1, true, true);

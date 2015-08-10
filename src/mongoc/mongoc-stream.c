@@ -312,7 +312,7 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
                     size_t                nstreams,
                     int32_t               timeout)
 {
-   mongoc_stream_poll_t *poller = bson_malloc(sizeof(*poller) * nstreams);
+   mongoc_stream_poll_t *poller = (mongoc_stream_poll_t *)bson_malloc(sizeof(*poller) * nstreams);
 
    int i;
    int last_type = 0;

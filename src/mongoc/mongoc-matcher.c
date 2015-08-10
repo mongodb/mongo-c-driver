@@ -328,7 +328,7 @@ mongoc_matcher_new (const bson_t *query, /* IN */
 
    BSON_ASSERT (query);
 
-   matcher = bson_malloc0 (sizeof *matcher);
+   matcher = (mongoc_matcher_t *)bson_malloc0 (sizeof *matcher);
    bson_copy_to (query, &matcher->query);
 
    if (!bson_iter_init (&iter, &matcher->query)) {

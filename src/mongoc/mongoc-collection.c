@@ -109,7 +109,7 @@ _mongoc_collection_new (mongoc_client_t              *client,
    bson_return_val_if_fail(db, NULL);
    bson_return_val_if_fail(collection, NULL);
 
-   col = bson_malloc0(sizeof *col);
+   col = (mongoc_collection_t *)bson_malloc0(sizeof *col);
    col->client = client;
    col->write_concern = write_concern ?
       mongoc_write_concern_copy(write_concern) :
@@ -763,8 +763,9 @@ _mongoc_collection_create_index_legacy (mongoc_collection_t      *collection,
    col = mongoc_client_get_collection (collection->client, collection->db,
                                        "system.indexes");
 
-   ret = mongoc_collection_insert (col, MONGOC_INSERT_NO_VALIDATE, &insert, NULL,
-                                   error);
+   ret = mongoc_collection_insert (col,
+                                  (mongoc_insert_flags_t)MONGOC_INSERT_NO_VALIDATE,
+                                  &insert, NULL, error);
 
    mongoc_collection_destroy(col);
 
@@ -1062,14 +1063,11 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
 
    if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
       int i;
+      int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
+                  | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
 
       for (i = 0; i < n_documents; i++) {
-         if (!bson_validate (documents[i],
-                             (BSON_VALIDATE_UTF8 |
-                              BSON_VALIDATE_UTF8_ALLOW_NULL |
-                              BSON_VALIDATE_DOLLAR_KEYS |
-                              BSON_VALIDATE_DOT_KEYS),
-                             NULL)) {
+         if (!bson_validate (documents[i], (bson_validate_flags_t)vflags, NULL)) {
             bson_set_error (error,
                             MONGOC_ERROR_BSON,
                             MONGOC_ERROR_BSON_INVALID,
@@ -1153,12 +1151,10 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    }
 
    if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
-      if (!bson_validate (document,
-                          (BSON_VALIDATE_UTF8 |
-                           BSON_VALIDATE_UTF8_ALLOW_NULL |
-                           BSON_VALIDATE_DOLLAR_KEYS |
-                           BSON_VALIDATE_DOT_KEYS),
-                          NULL)) {
+      int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
+                  | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
+
+      if (!bson_validate (document, (bson_validate_flags_t)vflags, NULL)) {
          bson_set_error (error,
                          MONGOC_ERROR_BSON,
                          MONGOC_ERROR_BSON_INVALID,
@@ -1166,8 +1162,6 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
                          "invalid characters . or $");
          RETURN (false);
       }
-   } else {
-      flags &= ~MONGOC_INSERT_NO_VALIDATE;
    }
 
    _mongoc_write_result_init (&result);
@@ -1214,7 +1208,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
 
 bool
 mongoc_collection_update (mongoc_collection_t          *collection,
-                          mongoc_update_flags_t         flags,
+                          mongoc_update_flags_t         uflags,
                           const bson_t                 *selector,
                           const bson_t                 *update,
                           const mongoc_write_concern_t *write_concern,
@@ -1225,6 +1219,9 @@ mongoc_collection_update (mongoc_collection_t          *collection,
    bson_iter_t iter;
    size_t err_offset;
    bool ret;
+   int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
+               | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
+   int flags = uflags;
 
    ENTRY;
 
@@ -1242,12 +1239,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
        bson_iter_init (&iter, update) &&
        bson_iter_next (&iter) &&
        (bson_iter_key (&iter) [0] != '$') &&
-       !bson_validate (update,
-                       (BSON_VALIDATE_UTF8 |
-                        BSON_VALIDATE_UTF8_ALLOW_NULL |
-                        BSON_VALIDATE_DOLLAR_KEYS |
-                        BSON_VALIDATE_DOT_KEYS),
-                       &err_offset)) {
+       !bson_validate (update, (bson_validate_flags_t)vflags, &err_offset)) {
       bson_set_error (error,
                       MONGOC_ERROR_BSON,
                       MONGOC_ERROR_BSON_INVALID,

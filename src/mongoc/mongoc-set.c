@@ -27,10 +27,10 @@ mongoc_set_new (size_t               nitems,
                 mongoc_set_item_dtor dtor,
                 void                *dtor_ctx)
 {
-   mongoc_set_t *set = bson_malloc (sizeof (*set));
+   mongoc_set_t *set = (mongoc_set_t *)bson_malloc (sizeof (*set));
 
    set->items_allocated = nitems;
-   set->items = bson_malloc (sizeof (*set->items) * set->items_allocated);
+   set->items = (mongoc_set_item_t *)bson_malloc (sizeof (*set->items) * set->items_allocated);
    set->items_len = 0;
 
    set->dtor = dtor;
@@ -60,7 +60,7 @@ mongoc_set_add (mongoc_set_t *set,
 {
    if (set->items_len >= set->items_allocated) {
       set->items_allocated *= 2;
-      set->items = bson_realloc (set->items,
+      set->items = (mongoc_set_item_t *)bson_realloc (set->items,
                                  sizeof (*set->items) * set->items_allocated);
    }
 
@@ -85,7 +85,7 @@ mongoc_set_rm (mongoc_set_t *set,
 
    key.id = id;
 
-   ptr = bsearch (&key, set->items, set->items_len, sizeof (key),
+   ptr = (mongoc_set_item_t *)bsearch (&key, set->items, set->items_len, sizeof (key),
                   mongoc_set_id_cmp);
 
    if (ptr) {
@@ -111,7 +111,7 @@ mongoc_set_get (mongoc_set_t *set,
 
    key.id = id;
 
-   ptr = bsearch (&key, set->items, set->items_len, sizeof (key),
+   ptr = (mongoc_set_item_t *)bsearch (&key, set->items, set->items_len, sizeof (key),
                   mongoc_set_id_cmp);
 
    return ptr ? ptr->item : NULL;
@@ -152,7 +152,7 @@ mongoc_set_for_each (mongoc_set_t            *set,
 
    items_len = set->items_len;
 
-   old_set = bson_malloc (sizeof (*old_set) * items_len);
+   old_set = (mongoc_set_item_t *)bson_malloc (sizeof (*old_set) * items_len);
    memcpy (old_set, set->items, sizeof (*old_set) * items_len);
 
    for (i = 0; i < items_len; i++) {

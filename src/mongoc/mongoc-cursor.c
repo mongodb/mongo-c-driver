@@ -98,7 +98,7 @@ _mongoc_n_return (mongoc_cursor_t * cursor)
 mongoc_cursor_t *
 _mongoc_cursor_new (mongoc_client_t           *client,
                     const char                *db_and_collection,
-                    mongoc_query_flags_t       flags,
+                    mongoc_query_flags_t       qflags,
                     uint32_t                   skip,
                     uint32_t                   limit,
                     uint32_t                   batch_size,
@@ -117,6 +117,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    bson_t child;
    bool found = false;
    int i;
+   int flags = qflags;
 
    ENTRY;
 
@@ -128,7 +129,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
       read_prefs = client->read_prefs;
    }
 
-   cursor = bson_malloc0 (sizeof *cursor);
+   cursor = (mongoc_cursor_t *)bson_malloc0 (sizeof *cursor);
 
    /*
     * DRIVERS-63:
@@ -179,7 +180,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    cursor->client = client;
    bson_strncpy (cursor->ns, db_and_collection, sizeof cursor->ns);
    cursor->nslen = (uint32_t)strlen(cursor->ns);
-   cursor->flags = flags;
+   cursor->flags = (mongoc_query_flags_t)flags;
    cursor->skip = skip;
    cursor->limit = limit;
    cursor->batch_size = batch_size;
@@ -961,7 +962,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 
    BSON_ASSERT (cursor);
 
-   _clone = bson_malloc0 (sizeof *_clone);
+   _clone = (mongoc_cursor_t *)bson_malloc0 (sizeof *_clone);
 
    _clone->client = cursor->client;
    _clone->is_command = cursor->is_command;

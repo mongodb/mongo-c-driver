@@ -64,7 +64,7 @@ mongoc_async_cmd_tls_setup (mongoc_stream_t *stream,
                             bson_error_t    *error)
 {
    mongoc_stream_t *tls_stream;
-   const char *host = ctx;
+   const char *host = (const char *)ctx;
 
    for (tls_stream = stream; tls_stream->type != MONGOC_STREAM_TLS;
         tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
@@ -171,7 +171,7 @@ mongoc_async_cmd_new (mongoc_async_t           *async,
    bson_return_val_if_fail(dbname, NULL);
    bson_return_val_if_fail(stream, NULL);
 
-   acmd = bson_malloc0 (sizeof (*acmd));
+   acmd = (mongoc_async_cmd_t *)bson_malloc0 (sizeof (*acmd));
    acmd->async = async;
    acmd->expire_at = bson_get_monotonic_time () + (timeout_msec * 1000);
    acmd->stream = stream;

@@ -436,7 +436,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
 
    bson_return_val_if_fail(description, NULL);
 
-   copy = bson_malloc0(sizeof (*copy));
+   copy = (mongoc_server_description_t *)bson_malloc0(sizeof (*copy));
 
    copy->id = description->id;
    memcpy (&copy->host, &description->host, sizeof (copy->host));
@@ -502,7 +502,7 @@ mongoc_server_description_filter_eligible (
       return description_len;
    }
 
-   sd_matched = bson_malloc(sizeof(bool) * description_len);
+   sd_matched = (bool *)bson_malloc(sizeof(bool) * description_len);
 
    bson_iter_init (&rp_tagset_iter, rp_tags);
 

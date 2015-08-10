@@ -39,7 +39,7 @@ mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
                              mongoc_topology_scanner_cb_t cb,
                              void                        *data)
 {
-   mongoc_topology_scanner_t *ts = bson_malloc0 (sizeof (*ts));
+   mongoc_topology_scanner_t *ts = (mongoc_topology_scanner_t *)bson_malloc0 (sizeof (*ts));
 
    ts->async = mongoc_async_new ();
    bson_init (&ts->ismaster_cmd);
@@ -92,7 +92,7 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
                              const mongoc_host_list_t  *host,
                              uint32_t                   id)
 {
-   mongoc_topology_scanner_node_t *node = bson_malloc0 (sizeof (*node));
+   mongoc_topology_scanner_node_t *node = (mongoc_topology_scanner_node_t *)bson_malloc0 (sizeof (*node));
 
    memcpy (&node->host, host, sizeof (*host));
 

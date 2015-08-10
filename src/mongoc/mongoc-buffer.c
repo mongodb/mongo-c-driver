@@ -67,7 +67,7 @@ _mongoc_buffer_init (mongoc_buffer_t   *buffer,
    }
 
    if (!buf) {
-      buf = realloc_func (NULL, buflen, NULL);
+      buf = (uint8_t *)realloc_func (NULL, buflen, NULL);
    }
 
    memset (buffer, 0, sizeof *buffer);
@@ -164,7 +164,7 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       buffer->off = 0;
       if (!SPACE_FOR (buffer, size)) {
          buffer->datalen = bson_next_power_of_two (size + buffer->len + buffer->off);
-         buffer->data = buffer->realloc_func (buffer->data, buffer->datalen, NULL);
+         buffer->data = (uint8_t *)buffer->realloc_func (buffer->data, buffer->datalen, NULL);
       }
    }
 
@@ -231,7 +231,7 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    if (!SPACE_FOR (buffer, min_bytes)) {
       buffer->datalen = bson_next_power_of_two (buffer->len + min_bytes);
-      buffer->data = buffer->realloc_func (buffer->data, buffer->datalen,
+      buffer->data = (uint8_t *)buffer->realloc_func (buffer->data, buffer->datalen,
                                            buffer->realloc_data);
    }
 
@@ -307,7 +307,7 @@ _mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
       buffer->off = 0;
       if (!SPACE_FOR (buffer, size)) {
          buffer->datalen = bson_next_power_of_two (size + buffer->len + buffer->off);
-         buffer->data = buffer->realloc_func (buffer->data, buffer->datalen, NULL);
+         buffer->data = (uint8_t *)buffer->realloc_func (buffer->data, buffer->datalen, NULL);
       }
    }
 

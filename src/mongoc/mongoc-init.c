@@ -37,7 +37,7 @@ mongoc_sasl_mutex_alloc (void)
 {
    mongoc_mutex_t *mutex;
 
-   mutex = bson_malloc0 (sizeof (mongoc_mutex_t));
+   mutex = (mongoc_mutex_t *)bson_malloc0 (sizeof (mongoc_mutex_t));
    mongoc_mutex_init (mutex);
 
    return (void *) mutex;

@@ -132,7 +132,7 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    _mongoc_rpc_gather(&rpc, &ar);
    _mongoc_rpc_swab_to_le(&rpc);
 
-   if (!mongoc_stream_writev(stream, ar.data, ar.len,
+   if (!mongoc_stream_writev(stream, (mongoc_iovec_t *)ar.data, ar.len,
                              cluster->sockettimeoutms)) {
       GOTO(failure);
    }
@@ -1094,7 +1094,7 @@ static void
 _mongoc_cluster_node_dtor (void *data_,
                            void *ctx_)
 {
-   mongoc_cluster_node_t *node = data_;
+   mongoc_cluster_node_t *node = (mongoc_cluster_node_t *)data_;
 
    _mongoc_cluster_node_destroy (node);
 }
@@ -1108,7 +1108,7 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream)
       return NULL;
    }
 
-   node = bson_malloc0(sizeof *node);
+   node = (mongoc_cluster_node_t *)bson_malloc0(sizeof *node);
 
    node->stream = stream;
    node->timestamp = bson_get_monotonic_time ();
@@ -1278,7 +1278,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
       }
 
    } else {
-      cluster_node = mongoc_set_get(cluster->nodes, server_id);
+      cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id);
       if (!cluster_node) {
          goto FETCH_FAIL;
       }
@@ -1373,7 +1373,7 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
    memset (cluster, 0, sizeof *cluster);
 
    cluster->uri = mongoc_uri_copy(uri);
-   cluster->client = client;
+   cluster->client = (mongoc_client_t *)client;
    cluster->requires_auth = (mongoc_uri_get_username(uri) ||
                              mongoc_uri_get_auth_mechanism(uri));
 
@@ -1603,7 +1603,7 @@ mongoc_cluster_select(mongoc_cluster_t             *cluster,
 
    /* pick the most restrictive optype */
    for (i = 0; (i < rpcs_len) && (optype == MONGOC_SS_READ); i++) {
-      opcode = rpcs[i].header.opcode;
+      opcode = (mongoc_opcode_t) rpcs[i].header.opcode;
       if (_mongoc_opcode_needs_primary(opcode)) {
          /* we can run queries on secondaries if given either:
           * - a read mode of secondary
@@ -1740,8 +1740,8 @@ static bool
 _mongoc_cluster_min_of_max_obj_size_sds (void *item,
                                          void *ctx)
 {
-   mongoc_server_description_t *sd = item;
-   int32_t *current_min = ctx;
+   mongoc_server_description_t *sd = (mongoc_server_description_t *)item;
+   int32_t *current_min = (int32_t *)ctx;
 
    if (sd->max_bson_obj_size < *current_min) {
       *current_min = sd->max_bson_obj_size;
@@ -1753,8 +1753,8 @@ static bool
 _mongoc_cluster_min_of_max_obj_size_nodes (void *item,
                                            void *ctx)
 {
-   mongoc_cluster_node_t *node = item;
-   int32_t *current_min = ctx;
+   mongoc_cluster_node_t *node = (mongoc_cluster_node_t *)item;
+   int32_t *current_min = (int32_t *)ctx;
 
    if (node->max_bson_obj_size < *current_min) {
       *current_min = node->max_bson_obj_size;
@@ -1766,8 +1766,8 @@ static bool
 _mongoc_cluster_min_of_max_msg_size_sds (void *item,
                                          void *ctx)
 {
-   mongoc_server_description_t *sd = item;
-   int32_t *current_min = ctx;
+   mongoc_server_description_t *sd = (mongoc_server_description_t *)item;
+   int32_t *current_min = (int32_t *)ctx;
 
    if (sd->max_msg_size < *current_min) {
       *current_min = sd->max_msg_size;
@@ -1779,8 +1779,8 @@ static bool
 _mongoc_cluster_min_of_max_msg_size_nodes (void *item,
                                            void *ctx)
 {
-   mongoc_cluster_node_t *node = item;
-   int32_t *current_min = ctx;
+   mongoc_cluster_node_t *node = (mongoc_cluster_node_t *)item;
+   int32_t *current_min = (int32_t *)ctx;
 
    if (node->max_msg_size < *current_min) {
       *current_min = node->max_msg_size;
@@ -1812,7 +1812,7 @@ mongoc_cluster_node_max_bson_obj_size (mongoc_cluster_t *cluster,
          return sd->max_bson_obj_size;
       }
    } else {
-      if((node = mongoc_set_get(cluster->nodes, server_id))) {
+      if((node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id))) {
          return node->max_bson_obj_size;
       }
    }
@@ -1845,7 +1845,7 @@ mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
          return sd->max_msg_size;
       }
    } else {
-      if((node = mongoc_set_get(cluster->nodes, server_id))) {
+      if((node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id))) {
          return node->max_msg_size;
       }
    }
@@ -1878,7 +1878,7 @@ mongoc_cluster_node_max_write_batch_size (mongoc_cluster_t *cluster,
          return sd->max_write_batch_size;
       }
    } else {
-      if((node = mongoc_set_get(cluster->nodes, server_id))) {
+      if((node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id))) {
          return node->max_write_batch_size;
       }
    }
@@ -1983,7 +1983,7 @@ mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,
          return sd->max_wire_version;
       }
    } else {
-      if((node = mongoc_set_get(cluster->nodes, server_id))) {
+      if((node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id))) {
          return node->max_wire_version;
       }
    }
@@ -2016,7 +2016,7 @@ mongoc_cluster_node_min_wire_version (mongoc_cluster_t *cluster,
          return sd->min_wire_version;
       }
    } else {
-      if((node = mongoc_set_get(cluster->nodes, server_id))) {
+      if((node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id))) {
          return node->min_wire_version;
       }
    }
@@ -2210,7 +2210,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
             DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].insert.collection);
             break;
          case MONGOC_OPCODE_DELETE:
-            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].delete.collection);
+            DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].delete_.collection);
             break;
          case MONGOC_OPCODE_UPDATE:
             DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].update.collection);
@@ -2223,7 +2223,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
          gle.query.collection = cmdname;
          gle.query.skip = 0;
          gle.query.n_return = 1;
-         b = _mongoc_write_concern_get_gle((void*)write_concern);
+         b = _mongoc_write_concern_get_gle((mongoc_write_concern_t *)write_concern);
          gle.query.query = bson_get_data(b);
          gle.query.fields = NULL;
          _mongoc_rpc_gather(&gle, &cluster->iov);
@@ -2233,7 +2233,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
       _mongoc_rpc_swab_to_le(&rpcs[i]);
    }
 
-   iov = cluster->iov.data;
+   iov = (mongoc_iovec_t *)cluster->iov.data;
    iovcnt = cluster->iov.len;
    errno = 0;
 

@@ -158,7 +158,7 @@ _mongoc_write_command_delete_append (mongoc_write_command_t *command,
 
    bson_init (&doc);
    BSON_APPEND_DOCUMENT (&doc, "q", selector);
-   BSON_APPEND_INT32 (&doc, "limit", command->u.delete.multi ? 0 : 1);
+   BSON_APPEND_INT32 (&doc, "limit", command->u.delete_.multi ? 0 : 1);
 
    key = NULL;
    bson_uint32_to_string (command->n_documents, &key, keydata, sizeof keydata);
@@ -211,7 +211,7 @@ _mongoc_write_command_init_delete (mongoc_write_command_t *command,  /* IN */
    command->type = MONGOC_WRITE_COMMAND_DELETE;
    command->documents = bson_new ();
    command->n_documents = 0;
-   command->u.delete.multi = (uint8_t)multi;
+   command->u.delete_.multi = (uint8_t)multi;
    command->ordered = (uint8_t)ordered;
 
    _mongoc_write_command_delete_append (command, selector);
@@ -306,15 +306,15 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       BSON_ASSERT (data);
       BSON_ASSERT (len >= 5);
 
-      rpc.delete.msg_len = 0;
-      rpc.delete.request_id = 0;
-      rpc.delete.response_to = 0;
-      rpc.delete.opcode = MONGOC_OPCODE_DELETE;
-      rpc.delete.zero = 0;
-      rpc.delete.collection = ns;
-      rpc.delete.flags = command->u.delete.multi ? MONGOC_DELETE_NONE
+      rpc.delete_.msg_len = 0;
+      rpc.delete_.request_id = 0;
+      rpc.delete_.response_to = 0;
+      rpc.delete_.opcode = MONGOC_OPCODE_DELETE;
+      rpc.delete_.zero = 0;
+      rpc.delete_.collection = ns;
+      rpc.delete_.flags = command->u.delete_.multi ? MONGOC_DELETE_NONE
                          : MONGOC_DELETE_SINGLE_REMOVE;
-      rpc.delete.selector = data;
+      rpc.delete_.selector = data;
 
       hint = _mongoc_client_sendv (client, &rpc, 1, hint, write_concern,
                                    NULL, error);
@@ -448,7 +448,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
 
    bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
 
-   iov = bson_malloc ((sizeof *iov) * command->n_documents);
+   iov = (mongoc_iovec_t *)bson_malloc ((sizeof *iov) * command->n_documents);
 
 again:
    has_more = false;
@@ -632,6 +632,8 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
    bool val = false;
    char ns [MONGOC_NAMESPACE_MAX + 1];
    int32_t affected = 0;
+   int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
+               | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
 
    ENTRY;
 
@@ -652,12 +654,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
          if (bson_iter_init (&subsubiter, &doc) &&
              bson_iter_next (&subsubiter) &&
              (bson_iter_key (&subsubiter) [0] != '$') &&
-             !bson_validate (&doc,
-                             (BSON_VALIDATE_UTF8 |
-                              BSON_VALIDATE_UTF8_ALLOW_NULL |
-                              BSON_VALIDATE_DOLLAR_KEYS |
-                              BSON_VALIDATE_DOT_KEYS),
-                             &err_offset)) {
+             !bson_validate (&doc, (bson_validate_flags_t)vflags, &err_offset)) {
             result->failed = true;
             bson_set_error (error,
                             MONGOC_ERROR_BSON,
@@ -686,7 +683,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
       rpc.update.opcode = MONGOC_OPCODE_UPDATE;
       rpc.update.zero = 0;
       rpc.update.collection = ns;
-      rpc.update.flags = 0;
+      rpc.update.flags = MONGOC_UPDATE_NONE;
 
       has_update = false;
       has_selector = false;
@@ -706,12 +703,16 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
             has_selector = true;
          } else if (strcmp (bson_iter_key (&subiter), "multi") == 0) {
             val = bson_iter_bool (&subiter);
-            rpc.update.flags = rpc.update.flags |
-                               (val ? MONGOC_UPDATE_MULTI_UPDATE : 0);
+            if (val) {
+               rpc.update.flags = (mongoc_update_flags_t)(
+                     rpc.update.flags | MONGOC_UPDATE_MULTI_UPDATE);
+            }
          } else if (strcmp (bson_iter_key (&subiter), "upsert") == 0) {
             val = bson_iter_bool (&subiter);
-            rpc.update.flags = rpc.update.flags |
-                               (val ? MONGOC_UPDATE_UPSERT : 0);
+            if (val) {
+               rpc.update.flags = (mongoc_update_flags_t)(
+                     rpc.update.flags | MONGOC_UPDATE_UPSERT);
+            }
             is_upsert = true;
          }
       }

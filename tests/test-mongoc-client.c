@@ -741,7 +741,7 @@ test_exhaust_cursor (void *context)
 
       /* destroy the cursor, make sure a disconnect happened */
       mongoc_cursor_destroy (cursor);
-      stream = mongoc_set_get(client->cluster.nodes, local_hint);
+      stream = (mongoc_stream_t *)mongoc_set_get(client->cluster.nodes, local_hint);
       assert (! stream);
 
       assert (! client->in_exhaust);
@@ -799,7 +799,7 @@ test_exhaust_cursor (void *context)
       cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
                                         NULL, NULL);
 
-      stream = mongoc_set_get(client->cluster.nodes, cursor->hint);
+      stream = (mongoc_stream_t *)mongoc_set_get(client->cluster.nodes, cursor->hint);
       hint = cursor->hint;
 
       for (i = 1; i < 10; i++) {
@@ -814,7 +814,7 @@ test_exhaust_cursor (void *context)
 
       mongoc_cursor_destroy (cursor);
 
-      assert (stream == mongoc_set_get(client->cluster.nodes, hint));
+      assert (stream == (mongoc_stream_t *)mongoc_set_get(client->cluster.nodes, hint));
 
       r = mongoc_cursor_next (cursor2, &doc);
       assert (r);

@@ -41,10 +41,10 @@ request_new (const mongoc_buffer_t *buffer,
              mongoc_stream_t *client,
              uint16_t client_port)
 {
-   request_t *request = bson_malloc0 (sizeof *request);
+   request_t *request = (request_t *)bson_malloc0 (sizeof *request);
    uint8_t *data;
 
-   data = bson_malloc ((size_t)msg_len);
+   data = (uint8_t *)bson_malloc ((size_t)msg_len);
    memcpy (data, buffer->data + buffer->off, (size_t) msg_len);
    request->data = data;
    request->data_len = (size_t) msg_len;
@@ -430,7 +430,7 @@ is_command (const char *ns)
 char *
 query_flags_str (uint32_t flags)
 {
-   mongoc_query_flags_t flag = (mongoc_query_flags_t) 1;
+   int flag = 1;
    bson_string_t *str = bson_string_new ("");
    bool begun = false;
 
@@ -549,7 +549,7 @@ void
 request_from_insert (request_t *request,
                      const mongoc_rpc_t *rpc)
 {
-   uint8_t *pos = request->request_rpc.insert.documents->iov_base;
+   uint8_t *pos = (uint8_t *)request->request_rpc.insert.documents->iov_base;
    uint8_t *end = request->data + request->data_len;
    bson_string_t *insert_as_str = bson_string_new("");
    bson_t *doc;

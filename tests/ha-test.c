@@ -169,7 +169,7 @@ ha_node_new (const char       *name,
 {
    ha_node_t *node;
 
-   node = bson_malloc0(sizeof *node);
+   node = (ha_node_t *)bson_malloc0(sizeof *node);
    node->name = bson_strdup(name);
    node->repl_set = bson_strdup(repl_set);
    node->dbpath = bson_strdup(dbpath);
@@ -465,7 +465,7 @@ ha_replica_set_new (const char *name)
 {
    ha_replica_set_t *repl_set;
 
-   repl_set = bson_malloc0(sizeof *repl_set);
+   repl_set = (ha_replica_set_t *)bson_malloc0(sizeof *repl_set);
    repl_set->name = bson_strdup(name);
    repl_set->next_port = random_int_range(30000, 40000);
 
@@ -827,7 +827,7 @@ ha_sharded_cluster_new (const char *name)
 {
    ha_sharded_cluster_t *cluster;
 
-   cluster = bson_malloc0(sizeof *cluster);
+   cluster = (ha_sharded_cluster_t *)bson_malloc0(sizeof *cluster);
    cluster->next_port = random_int_range(40000, 41000);
    cluster->name = bson_strdup(name);
 

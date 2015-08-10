@@ -85,7 +85,7 @@ mongoc_uri_append_host (mongoc_uri_t  *uri,
    mongoc_host_list_t *iter;
    mongoc_host_list_t *link_;
 
-   link_ = bson_malloc0(sizeof *link_);
+   link_ = (mongoc_host_list_t *)bson_malloc0(sizeof *link_);
    mongoc_uri_lowercase_hostname(host, link_->host, sizeof link_->host);
    if (strchr (host, ':')) {
       bson_snprintf (link_->host_and_port, sizeof link_->host_and_port,
@@ -921,7 +921,7 @@ mongoc_uri_new (const char *uri_string)
 {
    mongoc_uri_t *uri;
 
-   uri = bson_malloc0(sizeof *uri);
+   uri = (mongoc_uri_t *)bson_malloc0(sizeof *uri);
    bson_init(&uri->options);
    bson_init(&uri->credentials);
 
@@ -1142,7 +1142,7 @@ mongoc_uri_copy (const mongoc_uri_t *uri)
 
    bson_return_val_if_fail(uri, NULL);
 
-   copy = bson_malloc0(sizeof (*copy));
+   copy = (mongoc_uri_t *)bson_malloc0(sizeof (*copy));
 
    copy->str      = bson_strdup (uri->str);
    copy->username = bson_strdup (uri->username);

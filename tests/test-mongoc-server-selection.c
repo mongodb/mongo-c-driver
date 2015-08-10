@@ -60,7 +60,7 @@ test_rtt_calculation_cb (bson_t *test)
 
    bson_return_if_fail (test);
 
-   description = bson_malloc0(sizeof *description);
+   description = (mongoc_server_description_t *)bson_malloc0(sizeof *description);
    mongoc_server_description_init(description, "localhost:27017", 1);
 
    /* parse RTT into server description */
@@ -140,7 +140,7 @@ test_server_selection_logic_cb (bson_t *test)
       bson_iter_bson (&server_iter, &server);
 
       /* initialize new server description with given address */
-      sd = bson_malloc0(sizeof *sd);
+      sd = (mongoc_server_description_t *)bson_malloc0(sizeof *sd);
       assert(bson_iter_init_find(&sd_iter, &server, "address"));
       mongoc_server_description_init(sd, bson_iter_utf8(&sd_iter, NULL), j++);
 

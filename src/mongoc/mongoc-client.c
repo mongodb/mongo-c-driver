@@ -273,7 +273,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 {
    mongoc_stream_t *base_stream = NULL;
 #ifdef MONGOC_ENABLE_SSL
-   mongoc_client_t *client = user_data;
+   mongoc_client_t *client = (mongoc_client_t *)user_data;
    const bson_t *options;
    bson_iter_t iter;
    const char *mechanism;
@@ -785,7 +785,7 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
 
    bson_return_val_if_fail(uri, NULL);
 
-   client = bson_malloc0(sizeof *client);
+   client = (mongoc_client_t *)bson_malloc0(sizeof *client);
    client->uri = mongoc_uri_copy (uri);
    client->request_id = rand ();
    client->initiator = mongoc_client_default_stream_initiator;
@@ -1328,14 +1328,14 @@ mongoc_client_get_database_names (mongoc_client_t *client,
           BSON_ITER_HOLDS_UTF8 (&iter) &&
           (name = bson_iter_utf8 (&iter, NULL)) &&
           (0 != strcmp (name, "local"))) {
-            ret = bson_realloc (ret, sizeof(char*) * (i + 2));
+            ret = (char **)bson_realloc (ret, sizeof(char*) * (i + 2));
             ret [i] = bson_strdup (name);
             ret [++i] = NULL;
          }
    }
 
    if (!ret && !mongoc_cursor_error (cursor, error)) {
-      ret = bson_malloc0 (sizeof (void*));
+      ret = (char **)bson_malloc0 (sizeof (void*));
    }
 
    mongoc_cursor_destroy (cursor);
