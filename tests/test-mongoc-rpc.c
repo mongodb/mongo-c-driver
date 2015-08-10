@@ -33,7 +33,7 @@ get_test_file (const char *filename,
    }
 
    len = 40960;
-   buf = bson_malloc0(len);
+   buf = (uint8_t *)bson_malloc0(len);
 #ifdef _WIN32
    len = _read (fd, buf, (uint32_t)len);
 #else

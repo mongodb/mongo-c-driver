@@ -113,7 +113,7 @@ test_ismaster_impl (bool with_ssl)
 
          sock_streams[i] = mongoc_stream_tls_new (sock_streams[i], &copt, 1);
          setup = mongoc_async_cmd_tls_setup;
-         setup_ctx = "127.0.0.1";
+         setup_ctx = (void *)"127.0.0.1";
       }
 #endif
 

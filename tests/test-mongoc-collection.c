@@ -230,7 +230,7 @@ auto_ismaster (mock_server_t *server,
 char *
 make_string (size_t len)
 {
-   char *s = bson_malloc (len);
+   char *s = (char *)bson_malloc (len);
 
    memset (s, 'a', len - 1);
    s[len - 1] = '\0';
@@ -1486,7 +1486,7 @@ test_large_return (void)
    ASSERT (collection);
 
    len = 1024 * 1024 * 4;
-   str = bson_malloc (len);
+   str = (char *)bson_malloc (len);
    memset (str, (int)' ', len);
    str [len - 1] = '\0';
 

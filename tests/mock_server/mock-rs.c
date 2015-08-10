@@ -118,7 +118,7 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
                            int n_secondaries,
                            int n_arbiters)
 {
-   mock_rs_t *rs = bson_malloc0 (sizeof (mock_rs_t));
+   mock_rs_t *rs = (mock_rs_t *)bson_malloc0 (sizeof (mock_rs_t));
 
    rs->max_wire_version = max_wire_version;
    rs->has_primary = has_primary;

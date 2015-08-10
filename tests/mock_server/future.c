@@ -272,10 +272,10 @@ future_new (future_value_type_t return_type, int argc)
 {
    future_t *future;
 
-   future = bson_malloc0 (sizeof *future);
+   future = (future_t *)bson_malloc0 (sizeof *future);
    future->return_value.type = return_type;
    future->argc = argc;
-   future->argv = bson_malloc0 ((size_t) argc * sizeof(future_value_t));
+   future->argv = (future_value_t *)bson_malloc0 ((size_t) argc * sizeof(future_value_t));
    mongoc_cond_init (&future->cond);
    mongoc_mutex_init (&future->mutex);
 

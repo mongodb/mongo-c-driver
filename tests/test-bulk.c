@@ -35,7 +35,7 @@ init_huge_string (mongoc_client_t *client)
       max_bson_size = mongoc_cluster_get_max_bson_obj_size(&client->cluster);
       assert (max_bson_size > 0);
       gHugeStringLength = (size_t) max_bson_size - 37;
-      gHugeString = bson_malloc (gHugeStringLength);
+      gHugeString = (char *)bson_malloc (gHugeStringLength);
       assert (gHugeString);
       memset (gHugeString, 'a', gHugeStringLength - 1);
       gHugeString[gHugeStringLength - 1] = '\0';
@@ -63,7 +63,7 @@ void
 init_four_mb_string ()
 {
    if (!gFourMBString) {
-      gFourMBString = bson_malloc (gFourMB);
+      gFourMBString = (char *)bson_malloc (gFourMB);
       assert (gFourMBString);
       memset (gFourMBString, 'a', gFourMB - 1);
       gFourMBString[gFourMB - 1] = '\0';

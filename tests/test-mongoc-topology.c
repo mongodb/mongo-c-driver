@@ -262,18 +262,18 @@ test_topology_invalidate_server (void)
 
    /* call explicitly */
    id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
-   sd = mongoc_set_get(td->servers, id);
+   sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_STANDALONE ||
            sd->type == MONGOC_SERVER_RS_PRIMARY ||
            sd->type == MONGOC_SERVER_MONGOS);
 
    mongoc_topology_invalidate_server (client->topology, id);
-   sd = mongoc_set_get(td->servers, id);
+   sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
 
-   fake_sd = bson_malloc0 (sizeof (*fake_sd));
+   fake_sd = (mongoc_server_description_t *)bson_malloc0 (sizeof (*fake_sd));
 
    /* insert a 'fake' server description and ensure that it is invalidated by driver */
    mongoc_server_description_init (fake_sd, "fakeaddress:27033", fake_id);
@@ -283,14 +283,14 @@ test_topology_invalidate_server (void)
    /* with recv */
    _mongoc_buffer_init(&buffer, NULL, 0, NULL, NULL);
    _mongoc_client_recv(client, &rpc, &buffer, fake_id, &error);
-   sd = mongoc_set_get(td->servers, fake_id);
+   sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, fake_id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
 
    /* with recv_gle */
    sd->type = MONGOC_SERVER_STANDALONE;
    _mongoc_client_recv_gle(client, fake_id, NULL, &error);
-   sd = mongoc_set_get(td->servers, fake_id);
+   sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, fake_id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
 
@@ -319,7 +319,7 @@ test_invalid_cluster_node (void)
 
    /* load stream into cluster */
    id = mongoc_cluster_preselect (cluster, MONGOC_OPCODE_QUERY, NULL, &error);
-   cluster_node = mongoc_set_get (cluster->nodes, id);
+   cluster_node = (mongoc_cluster_node_t *)mongoc_set_get (cluster->nodes, id);
    scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, id);
    assert (cluster_node);
    assert (scanner_node);
@@ -372,7 +372,7 @@ test_max_wire_version_race_condition (void)
    scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, id);
    assert (scanner_node);
    scanner_node->timestamp = bson_get_monotonic_time ();
-   sd = mongoc_set_get (client->topology->description.servers, id);
+   sd = (mongoc_server_description_t *)mongoc_set_get (client->topology->description.servers, id);
    assert (sd);
    mongoc_server_description_reset (sd);
 

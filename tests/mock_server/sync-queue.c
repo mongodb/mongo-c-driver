@@ -30,7 +30,7 @@ struct _sync_queue_t {
 sync_queue_t *
 q_new ()
 {
-   sync_queue_t *q = bson_malloc (sizeof(sync_queue_t));
+   sync_queue_t *q = (sync_queue_t *)bson_malloc (sizeof(sync_queue_t));
 
    _mongoc_array_init (&q->array, sizeof(void *));
    mongoc_cond_init (&q->cond);

@@ -108,7 +108,7 @@ static uint16_t get_port (mongoc_socket_t *sock);
 mock_server_t *
 mock_server_new ()
 {
-   mock_server_t *server = bson_malloc0 (sizeof (mock_server_t));
+   mock_server_t *server = (mock_server_t *)bson_malloc0 (sizeof (mock_server_t));
 
    server->request_timeout_msec = 10 * 1000;
    _mongoc_array_init (&server->autoresponders,
@@ -1125,7 +1125,7 @@ typedef struct worker_closure_t
 static void *
 main_thread (void *data)
 {
-   mock_server_t *server = data;
+   mock_server_t *server = (mock_server_t *)data;
    mongoc_socket_t *client_sock;
    bool stopped;
    uint16_t port;
@@ -1172,7 +1172,7 @@ main_thread (void *data)
             }
          }
 #endif
-         closure = bson_malloc (sizeof *closure);
+         closure = (worker_closure_t *)bson_malloc (sizeof *closure);
          closure->server = server;
          closure->client_stream = client_stream;
          closure->port = port;
@@ -1358,7 +1358,7 @@ mock_server_reply_simple (mock_server_t *server,
    _mongoc_rpc_gather (&r, &ar);
    _mongoc_rpc_swab_to_le (&r);
 
-   iov = ar.data;
+   iov = (mongoc_iovec_t *)ar.data;
    iovcnt = (int) ar.len;
 
    for (i = 0; i < iovcnt; i++) {

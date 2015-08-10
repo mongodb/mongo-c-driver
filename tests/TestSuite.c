@@ -306,7 +306,7 @@ TestSuite_Add (TestSuite  *suite, /* IN */
                const char *name,  /* IN */
                TestFunc    func)  /* IN */
 {
-   TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckDummy);
+   TestSuite_AddFull (suite, name, TestSuite_AddHelper, NULL, (void *)func, TestSuite_CheckDummy);
 }
 
 
@@ -332,7 +332,7 @@ TestSuite_AddFull (TestSuite  *suite,   /* IN */
    Test *test;
    Test *iter;
 
-   test = calloc (1, sizeof *test);
+   test = (Test *)calloc (1, sizeof *test);
    test->name = strdup (name);
    test->func = func;
    test->check = check;
@@ -622,7 +622,7 @@ typedef struct
 static void *
 TestSuite_ParallelWorker (void *data) /* IN */
 {
-   ParallelInfo *info = data;
+   ParallelInfo *info = (ParallelInfo *)data;
 
    ASSERT (info);
 
@@ -658,12 +658,12 @@ TestSuite_RunParallel (TestSuite *suite) /* IN */
       count++;
    }
 
-   threads = calloc (count, sizeof *threads);
+   threads = (Thread *)calloc (count, sizeof *threads);
 
    Memory_Barrier ();
 
    for (test = suite->tests, i = 0; test; test = test->next, i++) {
-      info = calloc (1, sizeof *info);
+      info = (ParallelInfo *)calloc (1, sizeof *info);
       info->suite = suite;
       info->test = test;
       info->count = &count;
