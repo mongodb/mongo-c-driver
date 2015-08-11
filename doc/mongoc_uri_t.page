@@ -65,7 +65,7 @@
   </section>
 
   <section id="sdam-ss-options">
-    <title>Server Discovery, Monitoring and Selection Options</title>
+    <title>Server Discovery, Monitoring, and Selection Options</title>
     <table>
       <tr><td><p>heartbeatFrequencyMS</p></td><td><p>The interval between server monitoring checks. Defaults to 10 seconds in multi-threaded mode, 60 seconds in single threaded.</p></td></tr>
       <tr><td><p>serverSelectionTimeoutMS</p></td><td><p>A timeout in milliseconds to block for server selection before throwing an exception. The default is 30,000 (milliseconds).</p></td></tr>
