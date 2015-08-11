@@ -705,7 +705,6 @@ test_seed_list (bool rs,
 }
 
 
-#ifdef TODO_CDRIVER_789
 static void
 test_rs_seeds_no_connect_single (void)
 {
@@ -745,7 +744,6 @@ test_rs_seeds_reconnect_pooled (void)
 {
    test_seed_list (true, RECONNECT, true);
 }
-#endif
 
 
 static void
@@ -762,7 +760,6 @@ test_mongos_seeds_no_connect_pooled (void)
 }
 
 
-#ifdef TODO_CDRIVER_789
 static void
 test_mongos_seeds_connect_single (void)
 {
@@ -789,7 +786,7 @@ test_mongos_seeds_reconnect_pooled (void)
 {
    test_seed_list (false, RECONNECT, true);
 }
-#endif
+
 
 static void
 test_recovering (void)
@@ -1124,22 +1121,18 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
-#ifdef TODO_CDRIVER_789
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/single", test_rs_seeds_no_connect_single);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/pooled", test_rs_seeds_no_connect_pooled);
    TestSuite_Add (suite, "/Client/rs_seeds_connect/single", test_rs_seeds_connect_single);
    TestSuite_Add (suite, "/Client/rs_seeds_connect/pooled", test_rs_seeds_connect_pooled);
    TestSuite_Add (suite, "/Client/rs_seeds_reconnect/single", test_rs_seeds_reconnect_single);
    TestSuite_Add (suite, "/Client/rs_seeds_reconnect/pooled", test_rs_seeds_reconnect_pooled);
-#endif
    TestSuite_Add (suite, "/Client/mongos_seeds_no_connect/single", test_mongos_seeds_no_connect_single);
    TestSuite_Add (suite, "/Client/mongos_seeds_no_connect/pooled", test_mongos_seeds_no_connect_pooled);
-#ifdef TODO_CDRIVER_789
    TestSuite_Add (suite, "/Client/mongos_seeds_connect/single", test_mongos_seeds_connect_single);
    TestSuite_Add (suite, "/Client/mongos_seeds_connect/pooled", test_mongos_seeds_connect_pooled);
    TestSuite_Add (suite, "/Client/mongos_seeds_reconnect/single", test_mongos_seeds_reconnect_single);
    TestSuite_Add (suite, "/Client/mongos_seeds_reconnect/pooled", test_mongos_seeds_reconnect_pooled);
-#endif
    TestSuite_Add (suite, "/Client/recovering", test_recovering);
    TestSuite_AddFull (suite, "/Client/exhaust_cursor", test_exhaust_cursor, NULL, NULL, skip_if_mongos);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
