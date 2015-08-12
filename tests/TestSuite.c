@@ -55,6 +55,7 @@
 #define TEST_NOFORK    (1 << 1)
 #define TEST_HELPONLY  (1 << 2)
 #define TEST_NOTHREADS (1 << 3)
+#define TEST_DEBUGOUTPUT (1 << 4)
 
 
 #define NANOSEC_PER_SEC 1000000000UL
@@ -251,6 +252,8 @@ TestSuite_Init (TestSuite *suite,
    for (i = 0; i < argc; i++) {
       if (0 == strcmp ("-v", argv [i])) {
          suite->flags |= TEST_VERBOSE;
+      } else if (0 == strcmp ("-d", argv [i])) {
+         suite->flags |= TEST_DEBUGOUTPUT;
       } else if (0 == strcmp ("-f", argv [i])) {
          suite->flags |= TEST_NOFORK;
       } else if (0 == strcmp ("-p", argv [i])) {
@@ -421,9 +424,18 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
 
 #if defined(_WIN32)
       srand (test->seed);
+
+      if (suite->flags & TEST_DEBUGOUTPUT) {
+         _Print_StdOut ("Begin %s\n", name);
+      }
+
       test->func (test->ctx);
       status = 0;
 #else
+      if (suite->flags & TEST_DEBUGOUTPUT) {
+         _Print_StdOut ("Begin %s\n", name);
+      }
+      
       if ((suite->flags & TEST_NOFORK)) {
          srand (test->seed);
          test->func (test->ctx);
@@ -486,6 +498,7 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
 "    -l NAME      Run test by name, e.g. \"/Client/command\" or \"/Client/*\".\n"
 "    -p           Do not run tests in parallel.\n"
 "    -v           Be verbose with logs.\n"
+"    -d           Print debug output (useful if a test hangs).\n"
 "\n"
 "Tests:\n",
             suite->prgname);
