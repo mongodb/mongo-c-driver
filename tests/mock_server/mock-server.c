@@ -285,6 +285,7 @@ mock_server_run (mock_server_t *server)
    }
 
    mongoc_mutex_lock (&server->mutex);
+
    server->sock = ssock;
    server->port = bound_port;
    /* TODO: configurable timeouts, perhaps from env */
@@ -293,9 +294,12 @@ mock_server_run (mock_server_t *server)
          "sockettimeoutms=10000",
          bound_port);
    server->uri = mongoc_uri_new (server->uri_str);
-   mongoc_mutex_unlock (&server->mutex);
 
    mongoc_thread_create (&server->main_thread, main_thread, (void *) server);
+
+   /* wait for main thread to start */
+   mongoc_cond_wait (&server->cond, &server->mutex);
+   mongoc_mutex_unlock (&server->mutex);
 
    if (mock_server_get_verbose (server)) {
       printf ("listening on port %hu\n", bound_port);
