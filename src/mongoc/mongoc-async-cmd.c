@@ -100,11 +100,11 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 
    result = gMongocCMDPhases[acmd->state](acmd);
 
-   rtt = bson_get_monotonic_time () - acmd->start_time;
-
    if (result == MONGOC_ASYNC_CMD_IN_PROGRESS) {
       return true;
    }
+
+   rtt = bson_get_monotonic_time () - acmd->start_time;
 
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
       acmd->cb (result, &acmd->reply, rtt, acmd->data, &acmd->error);
