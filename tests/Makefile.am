@@ -114,6 +114,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-server-selection.c \
 	tests/test-mongoc-set.c \
 	tests/test-mongoc-stream.c \
+	tests/test-mongoc-thread.c \
 	tests/test-mongoc-topology-reconcile.c \
 	tests/test-mongoc-topology-scanner.c \
 	tests/test-mongoc-topology.c \
