@@ -246,9 +246,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
       return;
    }
 
-   if (! topology->single_threaded) {
-      _mongoc_topology_background_thread_stop (topology);
-   }
+   _mongoc_topology_background_thread_stop (topology);
 
    mongoc_uri_destroy (topology->uri);
    mongoc_topology_description_destroy(&topology->description);
