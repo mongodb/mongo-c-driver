@@ -205,9 +205,10 @@ _mongoc_stream_tls_bio_read (BIO  *b,
 
    BSON_ASSERT (b);
    BSON_ASSERT (buf);
+   ENTRY;
 
    if (!(tls = b->ptr)) {
-      return -1;
+      RETURN (-1);
    }
 
    errno = 0;
@@ -216,10 +217,11 @@ _mongoc_stream_tls_bio_read (BIO  *b,
    BIO_clear_retry_flags (b);
 
    if ((ret < 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
+      MONGOC_DEBUG("set_retry_read");
       BIO_set_retry_read (b);
    }
 
-   return ret;
+   RETURN (ret);
 }
 
 
@@ -247,27 +249,36 @@ _mongoc_stream_tls_bio_write (BIO        *b,
    mongoc_stream_tls_t *tls;
    mongoc_iovec_t iov;
    int ret;
+   ENTRY;
 
    BSON_ASSERT (b);
    BSON_ASSERT (buf);
 
    if (!(tls = b->ptr)) {
-      return -1;
+      RETURN (-1);
    }
 
    iov.iov_base = (void *)buf;
    iov.iov_len = len;
 
    errno = 0;
+   TRACE("mongoc_stream_writev is expected to write: %d", len);
    ret = (int)mongoc_stream_writev (tls->base_stream, &iov, 1,
                                     tls->timeout_msec);
    BIO_clear_retry_flags (b);
 
-   if ((ret < 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
+   if (len > ret) {
+      TRACE("Returned short write: %d of %d", ret, len);
+   } else {
+      TRACE("Completed the %d", ret);
+   }
+   if (ret <= 0 && MONGOC_ERRNO_IS_AGAIN (errno)) {
+      TRACE("%s", "Requesting a retry");
       BIO_set_retry_write (b);
    }
 
-   return ret;
+
+   RETURN (ret);
 }
 
 
@@ -416,10 +427,13 @@ static int
 _mongoc_stream_tls_close (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+   int ret = 0;
+   ENTRY;
 
    BSON_ASSERT (tls);
 
-   return mongoc_stream_close (tls->base_stream);
+   ret = mongoc_stream_close (tls->base_stream);
+   RETURN (ret);
 }
 
 
@@ -459,6 +473,7 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
 
    int64_t now;
    int64_t expire = 0;
+   ENTRY;
 
    BSON_ASSERT (tls);
    BSON_ASSERT (buf);
@@ -469,8 +484,10 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
    }
 
    ret = BIO_write (tls->bio, buf, buf_len);
+   TRACE("BIO_write returned %ld", ret);
 
-   if (ret < 0) {
+   TRACE("I got ret: %ld and retry: %d", ret, BIO_should_retry (tls->bio));
+   if (ret <= 0) {
       return ret;
    }
 
@@ -488,7 +505,13 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
       }
    }
 
-   return ret;
+   if (ret <= 0 && BIO_should_retry (tls->bio)) {
+      if (tls->timeout_msec > 0) {
+         TRACE("I do have %dmsec left", tls->timeout_msec);
+      }
+   }
+
+   RETURN (ret);
 }
 
 
@@ -545,6 +568,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
    BSON_ASSERT (tls);
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
+   ENTRY;
 
    tls->timeout_msec = timeout_msec;
 
@@ -590,10 +614,15 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
              * if we didn't buffer and have to send out of the iovec */
 
             child_ret = _mongoc_stream_tls_write (tls, to_write, to_write_len);
+            if (child_ret != to_write_len) {
+               MONGOC_DEBUG("Got child_ret: %ld while to_write_len is: %ld",
+                     child_ret, to_write_len);
+            }
 
             if (child_ret < 0) {
                /* Buffer write failed, just return the error */
-               return child_ret;
+               TRACE("Returning what I had: %ld", ret);
+               RETURN (ret);
             }
 
             ret += child_ret;
@@ -601,7 +630,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
             if (child_ret < to_write_len) {
                /* we timed out, so send back what we could send */
 
-               return ret;
+               RETURN (ret);
             }
 
             to_write = NULL;
@@ -612,10 +641,12 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
    if (buf_head != buf_tail) {
       /* If we have any bytes buffered, send */
 
+      TRACE("buffered writing %ld", buf_tail - buf_head);
       child_ret = _mongoc_stream_tls_write (tls, buf_head, buf_tail - buf_head);
+      TRACE("Got %ld written", child_ret);
 
       if (child_ret < 0) {
-         return child_ret;
+         RETURN (child_ret);
       }
 
       ret += child_ret;
@@ -625,7 +656,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
       mongoc_counter_streams_egress_add (ret);
    }
 
-   return ret;
+   RETURN (ret);
 }
 
 
@@ -661,6 +692,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
    size_t iov_pos = 0;
    int64_t now;
    int64_t expire = 0;
+   ENTRY;
 
    BSON_ASSERT (tls);
    BSON_ASSERT (iov);
@@ -702,7 +734,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
 #else
                   errno = ETIMEDOUT;
 #endif
-                  return -1;
+                  RETURN (-1);
                }
 
                tls->timeout_msec = 0;
@@ -715,7 +747,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
 
          if ((size_t)ret >= min_bytes) {
             mongoc_counter_streams_ingress_add(ret);
-            return ret;
+            RETURN (ret);
          }
 
          iov_pos += read_ret;
@@ -726,7 +758,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
       mongoc_counter_streams_ingress_add(ret);
    }
 
-   return ret;
+   RETURN (ret);
 }
 
 

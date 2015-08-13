@@ -306,12 +306,14 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
    size_t total_bytes = 0;
    int i;
    ssize_t r;
+   ENTRY;
 
    for (i = 0; i < iovcnt; i++) {
       total_bytes += iov[i].iov_len;
    }
 
    r = mongoc_stream_writev(stream, iov, iovcnt, timeout_msec);
+   TRACE("writev returned: %d", r);
 
    if (r < 0) {
       if (error) {
@@ -324,7 +326,7 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
                          "Failure during socket delivery: %s", errstr);
       }
 
-      return false;
+      RETURN(false);
    }
 
    if (r != total_bytes) {
@@ -332,8 +334,8 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
                       "Failure to send all requested bytes (only sent: %ld/%ld in %dms) during socket delivery",
                       (int64_t)r, (int64_t)total_bytes, timeout_msec);
 
-      return false;
+      RETURN(false);
    }
 
-   return true;
+   RETURN(true);
 }
