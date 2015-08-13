@@ -78,7 +78,7 @@ mongoc_async_run (mongoc_async_t *async,
 
       if (expire_at == 0) {
          if (timeout_msec >= 0) {
-            expire_at = now + (timeout_msec * 1000);
+            expire_at = now + ((int64_t) timeout_msec * 1000);
          } else {
             expire_at = -1;
          }

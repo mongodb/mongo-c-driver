@@ -173,7 +173,7 @@ mongoc_async_cmd_new (mongoc_async_t           *async,
 
    acmd = (mongoc_async_cmd_t *)bson_malloc0 (sizeof (*acmd));
    acmd->async = async;
-   acmd->expire_at = bson_get_monotonic_time () + (timeout_msec * 1000);
+   acmd->expire_at = bson_get_monotonic_time () + (int64_t) timeout_msec * 1000;
    acmd->stream = stream;
    acmd->setup = setup;
    acmd->setup_ctx = setup_ctx;
@@ -233,13 +233,15 @@ mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *acmd)
 {
    int64_t now;
-   int32_t timeout_msec;
+   int64_t timeout_msec;
 
    now = bson_get_monotonic_time ();
    timeout_msec = (acmd->expire_at - now) / 1000;
 
+   assert (timeout_msec < INT32_MAX);
+
    switch (acmd->setup (acmd->stream, &acmd->events, acmd->setup_ctx,
-                        timeout_msec, &acmd->error)) {
+                        (int32_t) timeout_msec, &acmd->error)) {
       case -1:
          return MONGOC_ASYNC_CMD_ERROR;
          break;

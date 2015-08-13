@@ -393,7 +393,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
    bson_return_val_if_fail(topology, NULL);
 
    now = bson_get_monotonic_time ();
-   expire_at = now + (topology->timeout_msec * 1000);
+   expire_at = now + ((int64_t) topology->timeout_msec * 1000);
 
    /* run single-threaded algorithm if we must */
    if (topology->single_threaded) {
