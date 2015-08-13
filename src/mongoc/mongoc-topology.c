@@ -533,11 +533,9 @@ mongoc_topology_server_by_id (mongoc_topology_t *topology, uint32_t id)
 static void
 _mongoc_topology_request_scan (mongoc_topology_t *topology)
 {
-   if (!topology->scanning) {
-      topology->scan_requested = true;
+   topology->scan_requested = true;
 
-      mongoc_cond_signal (&topology->cond_server);
-   }
+   mongoc_cond_signal (&topology->cond_server);
 }
 
 /*
