@@ -145,7 +145,7 @@ mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
 {
    mongoc_topology_scanner_node_t *node;
 
-   assert (timeout_msec < INT32_MAX);
+   BSON_ASSERT (timeout_msec < INT32_MAX);
 
    node = _add_node (ts, host, id);
 

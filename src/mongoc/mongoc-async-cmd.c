@@ -238,7 +238,7 @@ _mongoc_async_cmd_phase_setup (mongoc_async_cmd_t *acmd)
    now = bson_get_monotonic_time ();
    timeout_msec = (acmd->expire_at - now) / 1000;
 
-   assert (timeout_msec < INT32_MAX);
+   BSON_ASSERT (timeout_msec < INT32_MAX);
 
    switch (acmd->setup (acmd->stream, &acmd->events, acmd->setup_ctx,
                         (int32_t) timeout_msec, &acmd->error)) {
