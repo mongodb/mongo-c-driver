@@ -68,6 +68,25 @@ extern "C" {
    } while (0)
 
 
+#ifdef ASSERT_ALMOST_EQUAL
+# undef ASSERT_ALMOST_EQUAL
+#endif
+#define ASSERT_ALMOST_EQUAL(a, b) \
+   do { \
+      /* evaluate once */ \
+      int64_t _a = (a); \
+      int64_t _b = (b); \
+      if (!(_a > (_b * 4) / 5 && (_a < (_b * 6) / 5))) { \
+         fprintf(stderr, "FAIL\n\nAssert Failure: %" PRId64 \
+                         " not within 20%% of %" PRId64 "\n" \
+                         "%s:%d  %s()\n", \
+                         _a, _b, \
+                         __FILE__, __LINE__, __FUNCTION__); \
+         abort(); \
+      } \
+   } while (0)
+
+
 #define ASSERT_CMPSTR(a, b) \
    do { \
       if (((a) != (b)) && !!strcmp((a), (b))) { \

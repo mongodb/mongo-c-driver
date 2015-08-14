@@ -45,7 +45,8 @@ typedef struct _mongoc_topology_t
    bool                          server_selection_try_once;
 
    int64_t                       last_scan;
-   int64_t                       timeout_msec;
+   int64_t                       connect_timeout_msec;
+   int64_t                       server_selection_timeout_msec;
    int64_t                       heartbeat_msec;
 
    mongoc_mutex_t                mutex;

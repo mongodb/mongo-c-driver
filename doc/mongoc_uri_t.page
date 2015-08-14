@@ -56,7 +56,7 @@
     <title>Connection Options</title>
     <table>
       <tr><td><p>ssl</p></td><td><p>{true|false}, indicating if SSL must be used.</p></td></tr>
-      <tr><td><p>connectTimeoutMS</p></td><td><p>A timeout in milliseconds to attempt a connection before timing out. The default is no timeout.</p></td></tr>
+      <tr><td><p>connectTimeoutMS</p></td><td><p>A timeout in milliseconds to attempt a connection before timing out. This setting applies to server discovery and monitoring connections as well as to connections for application operations. The default is 10 seconds.</p></td></tr>
       <tr><td><p>socketTimeoutMS</p></td><td><p>The time in milliseconds to attempt to send or receive on a socket before the attempt times out. The default is 5 minutes.</p></td></tr>
     </table>
     <note style="important">
@@ -69,7 +69,7 @@
     <table>
       <tr><td><p>heartbeatFrequencyMS</p></td><td><p>The interval between server monitoring checks. Defaults to 10 seconds in multi-threaded mode, 60 seconds in single threaded.</p></td></tr>
       <tr><td><p>serverSelectionTimeoutMS</p></td><td><p>A timeout in milliseconds to block for server selection before throwing an exception. The default is 30,000 (milliseconds).</p></td></tr>
-      <tr><td><p>serverSelectionTryOnce</p></td><td><p>If "true" (the default), the driver scans the topology exactly once after server selection fails, then either selects a server or raises an error. If it is false, then the driver repeatedly searches for an appropriate server for up to serverSelectionTimeoutMS milliseconds (pausing a half second between attempts).</p>
+      <tr><td><p>serverSelectionTryOnce</p></td><td><p>If "true", the driver scans the topology exactly once after server selection fails, then either selects a server or raises an error. If it is false, then the driver repeatedly searches for an appropriate server for up to serverSelectionTimeoutMS milliseconds (pausing a half second between attempts). The default for serverSelectionTryOnce is "false" for pooled clients, otherwise "true".</p>
       <p>Clients in a <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code> share a topology scanner that runs on a background thread. Pooled clients ignore serverSelectionTryOnce; they signal the thread to rescan the topology every half-second until serverSelectionTimeoutMS expires.</p></td></tr>
       <tr><td><p>socketCheckIntervalMS</p></td><td><p>Only applicable to single threaded clients. If socket has not been used within this timeframe a isMaster call is attempted. Defaults to 5 seconds.</p></td></tr>
     </table>
