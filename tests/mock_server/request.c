@@ -23,15 +23,16 @@
 #include "../TestSuite.h"
 
 
-bool is_command (const char *ns);
+static bool is_command (const char *ns);
 
-void request_from_query (request_t *request, const mongoc_rpc_t *rpc);
+static void request_from_query (request_t *request, const mongoc_rpc_t *rpc);
 
-void request_from_insert (request_t *request, const mongoc_rpc_t *rpc);
+static void request_from_insert (request_t *request, const mongoc_rpc_t *rpc);
 
-void request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc);
+static void request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc);
 
-void request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
+static void request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
+
 
 
 request_t *
@@ -93,12 +94,6 @@ request_new (const mongoc_buffer_t *buffer,
    }
 
    return request;
-}
-
-int
-request_count_docs (const request_t *request)
-{
-   return (int) request->docs.len;
 }
 
 const bson_t *
@@ -229,7 +224,6 @@ request_matches_insert (const request_t *request,
       MONGOC_ERROR ("request's opcode does not match INSERT");
       return false;
    }
-
 
    if (strcmp (rpc->insert.collection, ns)) {
       MONGOC_ERROR ("insert's namespace is '%s', expected '%s'",
@@ -416,7 +410,7 @@ request_destroy (request_t *request)
 }
 
 
-bool
+static bool
 is_command (const char *ns)
 {
    size_t len = strlen (ns);
@@ -427,7 +421,7 @@ is_command (const char *ns)
 }
 
 
-char *
+static char *
 query_flags_str (uint32_t flags)
 {
    int flag = 1;
@@ -481,7 +475,7 @@ query_flags_str (uint32_t flags)
 }
 
 
-void
+static void
 request_from_query (request_t *request,
                     const mongoc_rpc_t *rpc)
 {
@@ -491,7 +485,6 @@ request_from_query (request_t *request,
    bson_string_t *query_as_str = bson_string_new ("");
    char *str;
 
-   /* TODO: multiple docs */
    memcpy (&len, rpc->query.query, 4);
    len = BSON_UINT32_FROM_LE (len);
    query = bson_new_from_data (rpc->query.query, (size_t) len);
@@ -523,7 +516,7 @@ request_from_query (request_t *request,
 }
 
 
-char *
+static char *
 insert_flags_str (uint32_t flags)
 {
    if (flags == MONGOC_INSERT_NONE) {
@@ -534,7 +527,7 @@ insert_flags_str (uint32_t flags)
 }
 
 
-uint32_t
+static uint32_t
 length_prefix (void *data)
 {
    uint32_t len_le;
@@ -545,7 +538,7 @@ length_prefix (void *data)
 }
 
 
-void
+static void
 request_from_insert (request_t *request,
                      const mongoc_rpc_t *rpc)
 {
@@ -591,7 +584,7 @@ request_from_insert (request_t *request,
 }
 
 
-void
+static void
 request_from_killcursors (request_t *request,
                           const mongoc_rpc_t *rpc)
 {
@@ -602,7 +595,7 @@ request_from_killcursors (request_t *request,
 }
 
 
-void
+static void
 request_from_getmore (request_t *request,
                       const mongoc_rpc_t *rpc)
 {

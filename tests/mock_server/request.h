@@ -48,8 +48,6 @@ request_t *request_new (const mongoc_buffer_t *buffer,
                         mongoc_stream_t *client,
                         uint16_t client_port);
 
-int request_count_docs (const request_t *request);
-
 const bson_t * request_get_doc (const request_t *request,
                                 int n);
 
