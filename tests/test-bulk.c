@@ -308,13 +308,13 @@ void
 create_unique_index (mongoc_collection_t *collection)
 {
    mongoc_index_opt_t opt;
-   bool r;
+   bson_error_t error;
 
    mongoc_index_opt_init (&opt);
    opt.unique = true;
-   r = mongoc_collection_create_index (collection, tmp_bson ("{'a': 1}"),
-                                       &opt, NULL);
-   assert (r);
+
+   ASSERT_OR_PRINT (mongoc_collection_create_index (
+      collection, tmp_bson ("{'a': 1}"), &opt, &error), error);
 }
 
 
