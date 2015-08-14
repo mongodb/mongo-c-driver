@@ -1121,6 +1121,7 @@ mock_server_destroy (mock_server_t *server)
    size_t i;
    autoresponder_handle_t *handle;
    int64_t deadline = bson_get_monotonic_time () + 10 * 1000 * 1000;
+   request_t *request;
 
    mongoc_mutex_lock (&server->mutex);
    if (server->running) {
@@ -1168,6 +1169,11 @@ mock_server_destroy (mock_server_t *server)
    mongoc_socket_destroy (server->sock);
    bson_free (server->uri_str);
    mongoc_uri_destroy (server->uri);
+
+   while ((request = (request_t *) q_get_nowait (server->q))) {
+      request_destroy (request);
+   }
+
    q_destroy (server->q);
    bson_free (server);
 }

@@ -49,13 +49,34 @@ q_put (sync_queue_t *q, void *item)
 }
 
 
+/* call holding the lock */
+static void *
+_get (sync_queue_t *q)
+{
+   void **data;
+   void *item = NULL;
+   size_t i;
+
+   if (q->array.len) {
+      data = (void **)q->array.data;
+      item = data[0];
+
+      /* shift the queue left */
+      q->array.len--;
+      for (i = 0; i < q->array.len; i++) {
+         data[i] = data[i + 1];
+      }
+   }
+
+   return item;
+}
+
+
 void *
 q_get (sync_queue_t *q, int64_t timeout_msec)
 {
    void *item = NULL;
-   size_t i;
    int64_t deadline;
-   void **data;
 
    mongoc_mutex_lock (&q->mutex);
    if (timeout_msec) {
@@ -70,21 +91,25 @@ q_get (sync_queue_t *q, int64_t timeout_msec)
       }
    }
 
-   if (q->array.len) {
-      data = (void **)q->array.data;
-      item = data[0];
-
-      /* shift the queue left */
-      q->array.len--;
-      for (i = 0; i < q->array.len; i++) {
-         data[i] = data[i + 1];
-      }
-   }
-
+   item = _get (q);
    mongoc_mutex_unlock (&q->mutex);
 
    return item;
 }
+
+
+void *
+q_get_nowait (sync_queue_t *q)
+{
+   void *item;
+
+   mongoc_mutex_lock (&q->mutex);
+   item = _get (q);
+   mongoc_mutex_unlock (&q->mutex);
+
+   return item;
+}
+
 
 void
 q_destroy (sync_queue_t *q)

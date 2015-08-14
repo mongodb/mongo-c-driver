@@ -342,6 +342,11 @@ future_wait (future_t *future)
    resolved = future->resolved;
    mongoc_mutex_unlock (&future->mutex);
 
+   if (resolved) {
+      /* free memory */
+      mongoc_thread_join (future->thread);
+   }
+
    return resolved;
 }
 
