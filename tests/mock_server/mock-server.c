@@ -55,6 +55,7 @@ struct _mock_server_t
    sync_queue_t *q;
    mongoc_array_t autoresponders;
    int last_autoresponder_id;
+   int64_t start_time;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts;
@@ -118,6 +119,7 @@ mock_server_new ()
    mongoc_cond_init (&server->cond);
    mongoc_mutex_init (&server->mutex);
    server->q = q_new ();
+   server->start_time = bson_get_monotonic_time ();
 
    return server;
 }
@@ -422,7 +424,9 @@ auto_ismaster (request_t *request,
    }
 
    if (mock_server_get_verbose (request->server)) {
-      printf ("%hu <- \t%s\n", request->client_port, quotes_replaced);
+      printf ("%5.2f  %hu <- \t%s\n",
+              mock_server_get_uptime_sec (request->server),
+              request->client_port, quotes_replaced);
       fflush (stdout);
    }
 
@@ -667,6 +671,28 @@ mock_server_set_rand_delay (mock_server_t *server, bool rand_delay)
    mongoc_mutex_lock (&server->mutex);
    server->rand_delay = rand_delay;
    mongoc_mutex_unlock (&server->mutex);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_set_rand_delay --
+ *
+ *       Whether to delay a random duration before responding.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+double
+mock_server_get_uptime_sec (mock_server_t *server)
+{
+   double uptime;
+
+   mongoc_mutex_lock (&server->mutex);
+   uptime = (bson_get_monotonic_time () - server->start_time) / 1e6;
+   mongoc_mutex_unlock (&server->mutex);
+
+   return uptime;
 }
 
 
@@ -983,7 +1009,8 @@ void
 mock_server_hangs_up (request_t *request)
 {
    if (mock_server_get_verbose (request->server)) {
-      printf ("%hu <-  \thang up!\n",
+      printf ("%5.2f  %hu <-  \thang up!\n",
+              mock_server_get_uptime_sec (request->server),
               request_get_server_port (request));
       fflush (stdout);
    }
@@ -1029,7 +1056,9 @@ mock_server_replies (request_t *request,
    }
 
    if (mock_server_get_verbose (request->server)) {
-      printf ("%hu <- \t%s\n", request->client_port, quotes_replaced);
+      printf ("%5.2f  %hu <- \t%s\n",
+              mock_server_get_uptime_sec (request->server),
+              request->client_port, quotes_replaced);
       fflush (stdout);
    }
 
@@ -1203,7 +1232,9 @@ main_thread (void *data)
 
       if (client_sock) {
          if (mock_server_get_verbose (server)) {
-            printf ("%hu -> server port %hu (connected)\n", port, server->port);
+            printf ("%5.2f  %hu -> server port %hu (connected)\n",
+                    mock_server_get_uptime_sec (server),
+                    port, server->port);
             fflush (stdout);
          }
 
@@ -1322,7 +1353,9 @@ again:
    mongoc_mutex_unlock (&server->mutex);
 
    if (mock_server_get_verbose (server)) {
-      printf ("%hu -> %hu %s\n", closure->port, server->port, request->as_str);
+      printf ("%5.2f  %hu -> %hu %s\n",
+              mock_server_get_uptime_sec (server),
+              closure->port, server->port, request->as_str);
       fflush (stdout);
    }
 
