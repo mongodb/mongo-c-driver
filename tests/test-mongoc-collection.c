@@ -66,12 +66,9 @@ test_insert (void)
       bson_oid_init(&oid, context);
       bson_append_oid(&b, "_id", 3, &oid);
       bson_append_utf8(&b, "hello", 5, "/world", 5);
-      r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL,
-                                   &error);
-      if (!r) {
-         MONGOC_WARNING("%s\n", error.message);
-      }
-      ASSERT (r);
+      ASSERT_OR_PRINT (mongoc_collection_insert(
+         collection, MONGOC_INSERT_NONE, &b, NULL, &error), error);
+
       bson_destroy(&b);
    }
 
