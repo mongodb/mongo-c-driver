@@ -112,21 +112,22 @@ bson_iter_bson (const bson_iter_t *iter,
 }
 
 
-bool
+static bool
 get_exists_operator (const bson_value_t *value,
                      bool               *exists);
 
-bool find (bson_value_t *value,
-           const bson_iter_t *iter,
-           const char *key,
-           bool is_command,
-           bool is_first);
+static bool
+find (bson_value_t *value,
+      const bson_iter_t *iter,
+      const char *key,
+      bool is_command,
+      bool is_first);
 
-bool
+static bool
 bson_value_equal (const bson_value_t *a,
                   const bson_value_t *b);
 
-bool
+static bool
 match_bson (const bson_t *doc,
             const bson_t *pattern,
             bool          is_command);
@@ -258,7 +259,7 @@ match_json (const bson_t *doc,
  *--------------------------------------------------------------------------
  */
 
-bool
+static bool
 match_bson (const bson_t *doc,
             const bson_t *pattern,
             bool          is_command)
@@ -335,7 +336,7 @@ match_bson (const bson_t *doc,
  *--------------------------------------------------------------------------
  */
 
-bool
+static bool
 find (bson_value_t *value,
       const bson_iter_t *iter,
       const char *key,
@@ -368,7 +369,7 @@ find (bson_value_t *value,
 }
 
 
-bool
+static bool
 bson_init_from_value (bson_t             *b,
                       const bson_value_t *v)
 {
@@ -395,7 +396,7 @@ bson_init_from_value (bson_t             *b,
  *--------------------------------------------------------------------------
  */
 
-bool
+static bool
 get_exists_operator (const bson_value_t *value,
                      bool               *exists)
 {
@@ -413,7 +414,7 @@ get_exists_operator (const bson_value_t *value,
 }
 
 
-bool
+static bool
 match_bson_arrays (const bson_t *a,
                    const bson_t *b)
 {
@@ -427,7 +428,7 @@ match_bson_arrays (const bson_t *a,
 }
 
 
-bool
+static bool
 bson_value_equal (const bson_value_t *a,
                   const bson_value_t *b)
 {
