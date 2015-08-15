@@ -124,8 +124,8 @@ find (bson_value_t *value,
       bool is_first);
 
 static bool
-bson_value_equal (const bson_value_t *a,
-                  const bson_value_t *b);
+match_bson_value (const bson_value_t *doc,
+                  const bson_value_t *pattern);
 
 static bool
 match_bson (const bson_t *doc,
@@ -301,7 +301,7 @@ match_bson (const bson_t *doc,
          }
       } else if (!found) {
          return false;
-      } else if (!bson_value_equal (value, &doc_value)) {
+      } else if (!match_bson_value (value, &doc_value)) {
          return false;
       }
 
@@ -415,106 +415,112 @@ get_exists_operator (const bson_value_t *value,
 
 
 static bool
-match_bson_arrays (const bson_t *a,
-                   const bson_t *b)
+match_bson_arrays (const bson_t *array,
+                   const bson_t *pattern)
 {
    /* an array is just a document with keys "0", "1", ...
     * so match_bson suffices if the number of keys is equal. */
-   if (bson_count_keys (a) != bson_count_keys (b)) {
+   if (bson_count_keys (array) != bson_count_keys (pattern)) {
       return false;
    }
    
-   return match_bson (a, b, false);
+   return match_bson (array, pattern, false);
 }
 
 
 static bool
-bson_value_equal (const bson_value_t *a,
-                  const bson_value_t *b)
+match_bson_value (const bson_value_t *doc,
+                  const bson_value_t *pattern)
 {
-   bson_t subdoc_a;
-   bson_t subdoc_b;
+   bson_t subdoc;
+   bson_t pattern_subdoc;
    bool ret;
 
-   if (a->value_type != b->value_type) {
+   if (doc->value_type != pattern->value_type) {
       return false;
    }
    
-   switch (a->value_type) {
+   switch (doc->value_type) {
    case BSON_TYPE_ARRAY:
    case BSON_TYPE_DOCUMENT:
 
-      if (!bson_init_from_value (&subdoc_a, a)) {
+      if (!bson_init_from_value (&subdoc, doc)) {
          return false;
       }
 
-      if (!bson_init_from_value (&subdoc_b, b)) {
-         bson_destroy (&subdoc_a);
+      if (!bson_init_from_value (&pattern_subdoc, pattern)) {
+         bson_destroy (&subdoc);
          return false;
       }
 
-      if (a->value_type == BSON_TYPE_ARRAY) {
-         ret = match_bson_arrays (&subdoc_a, &subdoc_b);
+      if (doc->value_type == BSON_TYPE_ARRAY) {
+         ret = match_bson_arrays (&subdoc, &pattern_subdoc);
       } else {
-         ret = match_bson (&subdoc_a, &subdoc_b, false);
+         ret = match_bson (&subdoc, &pattern_subdoc, false);
       }
 
-      bson_destroy (&subdoc_a);
-      bson_destroy (&subdoc_b);
+      bson_destroy (&subdoc);
+      bson_destroy (&pattern_subdoc);
 
       return ret;
 
    case BSON_TYPE_BINARY:
-      return a->value.v_binary.data_len == b->value.v_binary.data_len &&
-             !memcmp (a->value.v_binary.data,
-                      b->value.v_binary.data,
-                      a->value.v_binary.data_len);
+      return doc->value.v_binary.data_len == pattern->value.v_binary.data_len &&
+             !memcmp (doc->value.v_binary.data,
+                      pattern->value.v_binary.data,
+                      doc->value.v_binary.data_len);
 
    case BSON_TYPE_BOOL:
-      return a->value.v_bool == b->value.v_bool;
+      return doc->value.v_bool == pattern->value.v_bool;
 
    case BSON_TYPE_CODE:
-      return a->value.v_code.code_len == b->value.v_code.code_len &&
-             !memcmp (a->value.v_code.code,
-                      b->value.v_code.code,
-                      a->value.v_code.code_len);
+      return doc->value.v_code.code_len == pattern->value.v_code.code_len &&
+             !memcmp (doc->value.v_code.code,
+                      pattern->value.v_code.code,
+                      doc->value.v_code.code_len);
 
    case BSON_TYPE_CODEWSCOPE:
-      return a->value.v_codewscope.code_len == b->value.v_codewscope.code_len &&
-             !memcmp (a->value.v_codewscope.code,
-                      b->value.v_codewscope.code,
-                      a->value.v_codewscope.code_len) &&
-             a->value.v_codewscope.scope_len == b->value.v_codewscope.scope_len
-             && !memcmp (a->value.v_codewscope.scope_data,
-                         b->value.v_codewscope.scope_data,
-                         a->value.v_codewscope.scope_len);
+      return doc->value.v_codewscope.code_len ==
+                pattern->value.v_codewscope.code_len &&
+             !memcmp (doc->value.v_codewscope.code,
+                      pattern->value.v_codewscope.code,
+                      doc->value.v_codewscope.code_len) &&
+             doc->value.v_codewscope.scope_len ==
+                pattern->value.v_codewscope.scope_len
+             && !memcmp (doc->value.v_codewscope.scope_data,
+                         pattern->value.v_codewscope.scope_data,
+                         doc->value.v_codewscope.scope_len);
 
    case BSON_TYPE_DATE_TIME:
-      return a->value.v_datetime == b->value.v_datetime;
+      return doc->value.v_datetime == pattern->value.v_datetime;
    case BSON_TYPE_DOUBLE:
-      return a->value.v_double == b->value.v_double;
+      return doc->value.v_double == pattern->value.v_double;
    case BSON_TYPE_INT32:
-      return a->value.v_int32 == b->value.v_int32;
+      return doc->value.v_int32 == pattern->value.v_int32;
    case BSON_TYPE_INT64:
-      return a->value.v_int64 == b->value.v_int64;
+      return doc->value.v_int64 == pattern->value.v_int64;
    case BSON_TYPE_OID:
-      return bson_oid_equal (&a->value.v_oid, &b->value.v_oid);
+      return bson_oid_equal (&doc->value.v_oid, &pattern->value.v_oid);
    case BSON_TYPE_REGEX:
-      return !strcmp (a->value.v_regex.regex, b->value.v_regex.regex) &&
-             !strcmp (a->value.v_regex.options, b->value.v_regex.options);
+      return !strcmp (doc->value.v_regex.regex,
+                      pattern->value.v_regex.regex) &&
+             !strcmp (doc->value.v_regex.options,
+                      pattern->value.v_regex.options);
    case BSON_TYPE_SYMBOL:
-      return a->value.v_symbol.len == b->value.v_symbol.len &&
-             !strncmp (a->value.v_symbol.symbol,
-                       b->value.v_symbol.symbol,
-                       a->value.v_symbol.len);
+      return doc->value.v_symbol.len == pattern->value.v_symbol.len &&
+             !strncmp (doc->value.v_symbol.symbol,
+                       pattern->value.v_symbol.symbol,
+                       doc->value.v_symbol.len);
    case BSON_TYPE_TIMESTAMP:
-      return a->value.v_timestamp.timestamp == b->value.v_timestamp.timestamp &&
-             a->value.v_timestamp.increment == b->value.v_timestamp.increment;
+      return doc->value.v_timestamp.timestamp ==
+                pattern->value.v_timestamp.timestamp &&
+             doc->value.v_timestamp.increment ==
+                pattern->value.v_timestamp.increment;
    case BSON_TYPE_UTF8:
-      return a->value.v_utf8.len == b->value.v_utf8.len &&
-             !strncmp (a->value.v_utf8.str,
-                       b->value.v_utf8.str,
-                       a->value.v_utf8.len);
+      return doc->value.v_utf8.len == pattern->value.v_utf8.len &&
+             !strncmp (doc->value.v_utf8.str,
+                       pattern->value.v_utf8.str,
+                       doc->value.v_utf8.len);
 
    /* these are empty types, if "a" and "b" are the same type they're equal */
    case BSON_TYPE_EOD:
@@ -529,7 +535,7 @@ bson_value_equal (const bson_value_t *a,
       abort ();
 
    default:
-      fprintf (stderr, "unexpected value type %d", a->value_type);
+      fprintf (stderr, "unexpected value type %d", doc->value_type);
       abort ();
    }
 }
