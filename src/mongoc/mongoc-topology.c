@@ -287,9 +287,9 @@ _mongoc_topology_time_to_scan (mongoc_topology_t *topology) {
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_sleep_min_heartbeat --
+ * _mongoc_topology_min_heartbeat_from_now --
  *
- *       Wait until we're allowed to rescan.
+ *       How long until we're allowed to rescan, in microseconds.
  *
  *       Server Discovery And Monitoring Spec: "If a client frequently
  *       rechecks a server, it MUST wait at least minHeartbeatFrequencyMS
@@ -298,15 +298,13 @@ _mongoc_topology_time_to_scan (mongoc_topology_t *topology) {
  *
  *--------------------------------------------------------------------------
  */
-static void
-_mongoc_topology_sleep_min_heartbeat (mongoc_topology_t *topology) {
+static int64_t
+_mongoc_topology_min_heartbeat_from_now (mongoc_topology_t *topology,
+                                         int64_t now)
+{
    int64_t next_scan = topology->last_scan
                        + MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS * 1000;
-   int64_t sleep_usec = next_scan - bson_get_monotonic_time ();
-
-   if (sleep_usec > 0) {
-      _mongoc_usleep (sleep_usec);
-   }
+   return next_scan - now;
 }
 
 /*
@@ -367,6 +365,7 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology) {
                                         topology->connect_timeout_msec)) {}
 
    topology->last_scan = bson_get_monotonic_time ();
+   topology->stale = false;
 }
 
 /*
@@ -399,27 +398,52 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                         bson_error_t              *error)
 {
    int r;
-   int64_t now;
-   int64_t expire_at;
    mongoc_server_description_t *selected_server = NULL;
+   bool try_once;
+   int64_t sleep_usec;
+
+   /* These names come from the Server Selection Spec pseudocode */
+   int64_t loop_start;  /* when we entered this function */
+   int64_t loop_end;    /* when we last completed a loop (single-threaded) */
+   int64_t scan_ready;  /* the soonest we can do a blocking scan */
+   int64_t next_update; /* the latest we must do a blocking scan */
+   int64_t expire_at;   /* when server selection timeout expires */
 
    bson_return_val_if_fail(topology, NULL);
 
-   now = bson_get_monotonic_time ();
-   expire_at = now + ((int64_t) topology->server_selection_timeout_msec * 1000);
+   try_once = topology->server_selection_try_once;
+   loop_start = loop_end = bson_get_monotonic_time ();
+   expire_at = loop_start
+               + ((int64_t) topology->server_selection_timeout_msec * 1000);
 
-   /* run single-threaded algorithm if we must */
    if (topology->single_threaded) {
-
-      /* if enough time has passed or we're stale, block and scan */
-      if (_mongoc_topology_time_to_scan(topology) || topology->stale) {
-         _mongoc_topology_do_blocking_scan(topology);
-         topology->stale = false;
+      next_update = topology->last_scan + topology->heartbeat_msec * 1000;
+      if (next_update < loop_start) {
+         /* we must scan now */
+         topology->stale = true;
       }
 
-      /* until we find a server or timeout */
+      /* until we find a server or time out */
       for (;;) {
-         /* attempt to select a server */
+         if (topology->stale) {
+            /* how soon are we allowed to scan? */
+            scan_ready = topology->last_scan
+                         + MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS * 1000;
+
+            if (scan_ready > expire_at && !try_once) {
+               /* selection timeout will expire before min heartbeat passes */
+               goto FAIL;
+            }
+
+            sleep_usec = scan_ready - loop_end;
+            if (sleep_usec > 0) {
+               _mongoc_usleep (sleep_usec);
+            }
+
+            /* takes up to connectTimeoutMS. sets "last_scan", clears "stale" */
+            _mongoc_topology_do_blocking_scan (topology);
+         }
+
          selected_server = mongoc_topology_description_select(&topology->description,
                                                               optype,
                                                               read_prefs,
@@ -430,19 +454,18 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             return mongoc_server_description_new_copy(selected_server);
          }
 
-         if (topology->server_selection_try_once) {
+         topology->stale = true;
+         loop_end = bson_get_monotonic_time ();
+
+         if (try_once) {
+            if (topology->last_scan > loop_start) {
+               /* we tried once */
+               goto FAIL;
+            }
+         } else if (loop_end > expire_at) {
+            /* no time left in server_selection_timeout_msec */
             goto FAIL;
          }
-
-         /* error if we've timed out */
-         now = bson_get_monotonic_time();
-         if (now >= expire_at) {
-            goto FAIL;
-         }
-
-         /* rescan */
-         _mongoc_topology_sleep_min_heartbeat (topology);
-         _mongoc_topology_do_blocking_scan (topology);
       }
    }
 
@@ -460,7 +483,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
          _mongoc_topology_request_scan (topology);
 
          r = mongoc_cond_timedwait (&topology->cond_client, &topology->mutex,
-                                    (expire_at - now) / 1000);
+                                    (expire_at - loop_start) / 1000);
 
          mongoc_mutex_unlock (&topology->mutex);
 
@@ -472,9 +495,9 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             goto FAIL;
          }
 
-         now = bson_get_monotonic_time ();
+         loop_start = bson_get_monotonic_time ();
 
-         if (now > expire_at) {
+         if (loop_start > expire_at) {
             goto FAIL;
          }
       } else {
@@ -489,8 +512,7 @@ FAIL:
    bson_set_error(error,
                   MONGOC_ERROR_SERVER_SELECTION,
                   MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                  topology->server_selection_try_once ?
-                  "No suitable servers found" :
+                  try_once ? "No suitable servers found" :
                   "Timed out trying to select a server");
 
    return NULL;

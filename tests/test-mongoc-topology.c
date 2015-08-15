@@ -188,18 +188,9 @@ _test_server_selection (bool try_once)
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
-   if (try_once) {
-      /* selection fails without another ismaster call */
-      assert (!mock_server_receives_ismaster (server));
-   } else {
-      /* TODO: SPEC-289 the driver thinks there's time for one more check
-       * but there isn't, since selection time remaining < heartbeat.
-       * the test works until SPEC-289 is resolved and implemented.
-       */
-      assert (request = mock_server_receives_ismaster (server));
-      mock_server_replies_simple (request, secondary_response);
-      request_destroy (request);
-   }
+   /* the selection timeout is 100 ms, and we can't rescan until a half second
+    * passes, so selection fails without another ismaster call */
+   assert (!mock_server_receives_ismaster (server));
 
    /* selection fails */
    assert (!future_get_mongoc_server_description_ptr (future));
@@ -631,9 +622,6 @@ _test_connect_timeout (bool pooled, bool try_once)
    if (!try_once) {
       /* driver retries every minHeartbeatFrequencyMS + connectTimeoutMS */
       n_loops = server_selection_timeout_ms / (500 + connect_timeout_ms);
-
-      /* TODO: SPEC-289 the driver thinks there's time for one extra check */
-      n_loops++;
 
       for (i = 1; i <= n_loops; i++) {
          request = mock_server_receives_ismaster (servers[1]);

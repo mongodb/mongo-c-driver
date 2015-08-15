@@ -671,9 +671,6 @@ test_seed_list (bool rs,
          ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_SHARDED);
       }
 
-      /* TODO: CDRIVER-699 shouldn't need to set topology stale */
-      topology->stale = true;
-
       ASSERT_OR_PRINT (mongoc_client_command_simple (
          client, "test", tmp_bson("{'foo': 1}"),
          primary_pref, &reply, &error), error);

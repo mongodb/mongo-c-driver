@@ -171,13 +171,6 @@ _test_topology_reconcile_rs (bool pooled)
     */
    RS_RESPONSE_TO_ISMASTER (server1, true, true, server1);  /* server0 absent */
 
-   if (!pooled) {
-      /* TODO: CDRIVER-699 this selection should trigger one rescan but doesn't */
-      assert (!client->topology->stale);
-      assert (!selects_server (client, tag_read_prefs, server1));
-      assert (client->topology->stale);
-   }
-
    assert (selects_server (client, tag_read_prefs, server1));
    assert (!client->topology->stale);
 
