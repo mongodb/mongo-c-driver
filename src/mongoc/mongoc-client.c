@@ -1001,9 +1001,6 @@ mongoc_client_get_collection (mongoc_client_t *client,
  *       is "fs", thus the default collection names for GridFS are "fs.files"
  *       and "fs.chunks".
  *
- *       You should free this structure when you are done with it using
- *       mongoc_collection_destroy().
- *
  * Returns:
  *       A newly allocated mongoc_gridfs_t that should be freed with
  *       mongoc_gridfs_destroy().
