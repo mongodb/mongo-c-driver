@@ -370,18 +370,15 @@ too_large_error (bson_error_t *error,
 {
    /* MongoDB 2.6 uses code 2 for "too large". TODO: see CDRIVER-644 */
    const int code = 2;
-   char *msg;
 
-   msg = bson_strdup_printf (
-      "Document %u is too large for the cluster. "
-         "Document is %u bytes, max is %d.",
-      index, len, max_bson_size);
-
-   bson_set_error (error, MONGOC_ERROR_BSON, code, "%s", msg);
+   bson_set_error (error, MONGOC_ERROR_BSON, code,
+                   "Document %u is too large for the cluster. "
+                   "Document is %u bytes, max is %d.",
+                   index, len, max_bson_size);
 
    if (err_doc) {
       BSON_APPEND_INT32 (err_doc, "index", index);
-      BSON_APPEND_UTF8 (err_doc, "err", msg);
+      BSON_APPEND_UTF8 (err_doc, "err", error->message);
       BSON_APPEND_INT32 (err_doc, "code", code);
    }
 }
