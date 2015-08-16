@@ -1108,15 +1108,8 @@ mongoc_uri_get_options (const mongoc_uri_t *uri)
 void
 mongoc_uri_destroy (mongoc_uri_t *uri)
 {
-   mongoc_host_list_t *tmp;
-
    if (uri) {
-      while (uri->hosts) {
-         tmp = uri->hosts;
-         uri->hosts = tmp->next;
-         bson_free(tmp);
-      }
-
+      mongoc_host_list_destroy_all (uri->hosts);
       bson_free(uri->str);
       bson_free(uri->database);
       bson_free(uri->username);
