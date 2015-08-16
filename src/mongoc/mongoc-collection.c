@@ -224,19 +224,28 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                              const bson_t              *options,    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
+   mongoc_server_description_t *selected_server;
+   bson_error_t error;
    mongoc_cursor_t *cursor;
    bson_iter_t iter;
    bson_t command;
    bson_t child;
    int32_t batch_size = 0;
-   bool try_cursor = true;
+   bool use_cursor;
 
    bson_return_val_if_fail (collection, NULL);
    bson_return_val_if_fail (pipeline, NULL);
 
+   selected_server = mongoc_topology_select(collection->client->topology,
+                                            MONGOC_SS_READ,
+                                            read_prefs,
+                                            15,
+                                            &error);
+
+   use_cursor = selected_server->max_wire_version >= 1;
+
    bson_init (&command);
 
-TOP:
    BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);
 
    /*
@@ -251,7 +260,7 @@ TOP:
    }
 
    /* for newer version, we include a cursor subdocument */
-   if (try_cursor) {
+   if (use_cursor) {
       bson_append_document_begin (&command, "cursor", 6, &child);
 
       if (options && bson_iter_init (&iter, options)) {
@@ -280,18 +289,16 @@ TOP:
    cursor = mongoc_collection_command (collection, flags, 0, 0, batch_size,
                                        &command, NULL, read_prefs);
 
-   if (try_cursor) {
+   cursor->hint = selected_server->id;
+
+   if (use_cursor) {
       /* even for newer versions, we get back a cursor document, that we have
        * to patch in */
-
       _mongoc_cursor_cursorid_init(cursor);
       cursor->limit = 0;
 
       if (! _mongoc_cursor_cursorid_prime (cursor)) {
          mongoc_cursor_destroy (cursor);
-         bson_reinit (&command);
-         try_cursor = false;
-         goto TOP;
       }
    } else {
       /* for older versions we get an array that we can create a synthetic
