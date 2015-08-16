@@ -1,5 +1,84 @@
-mongo-c-driver 1.1.7-dev
-========================
+mongo-c-driver 1.1.11
+=====================
+
+mongo-c-driver 1.1.10
+=====================
+
+It is my pleasure to announce to you the MongoDB C driver 1.1.10.
+
+This is a patch release with bug fixes:
+
+ * Occasional crash reconnecting to replica set.
+ * Queries sent to recovering replica set members.
+ * Memory leak when calling ismaster on replica set members.
+
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+ * A. Jesse Jiryu Davis
+ * Daniil Zaitsev
+ * Jason Carey
+ * Jeremy Mikola
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
+mongo-c-driver 1.1.9
+====================
+
+It is my pleasure to announce to you the MongoDB C driver 1.1.9.
+
+This release fixes a common crash in 1.1.8, which itself was introduced while
+fixing a rare crash in 1.1.7. For further details:
+
+https://jira.mongodb.org/browse/CDRIVER-721
+https://jira.mongodb.org/browse/CDRIVER-695
+
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
+mongo-c-driver 1.1.8
+====================
+
+UPDATE: 1.1.8 suffered a severe new bug so I removed the release from GitHub:
+
+https://jira.mongodb.org/browse/CDRIVER-721
+
+This is a patch release with bug fixes:
+
+ * Crash freeing client after a replica set auth error.
+ * Compile error strict C89 mode.
+
+mongo-c-driver 1.1.7
+====================
+
+It is my pleasure to announce to you the 1.1.7 release of the MongoDB C driver.
+
+This is a patch release with bug fixes:
+
+ * Thread-safe use of Cyrus SASL library.
+ * Experimental support for building with CMake and SASL.
+ * Faster reconnection to replica set with some hosts down.
+ * Crash iterating a cursor after reconnecting to a replica set.
+ * Unchecked errors decoding invalid UTF-8 in MongoDB URIs.
+ * Fix error reporting from mongoc_client_get_database_names.
+
+Thanks to everyone who contributed to the development of this point release for
+libmongoc.
+
+ * A. Jesse Jiryu Davis
+ * Jason Carey
+ * Hannes Magnusson
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
 
 mongo-c-driver 1.1.6
 ====================

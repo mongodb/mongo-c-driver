@@ -15,6 +15,7 @@ MONGOC_CPPFLAGS_SHARED = \
 	-DMONGOC_COMPILATION \
 	$(LIBC_FEATURES) \
 	$(OPTIMIZE_CFLAGS) \
+	$(COVERAGE_CFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/mongoc \
 	-I$(top_builddir)/src/mongoc \
@@ -34,7 +35,7 @@ libmongoc_priv_la_CPPFLAGS = $(MONGOC_CPPFLAGS_SHARED)
 libmongoc_1_0_la_CPPFLAGS = $(MONGOC_CPPFLAGS_SHARED)
 
 
-MONGOC_LDFLAGS_SHARED = $(OPTIMIZE_LDFLAGS)
+MONGOC_LDFLAGS_SHARED = $(OPTIMIZE_LDFLAGS) $(COVERAGE_LDFLAGS)
 libmongoc_priv_la_LDFLAGS = \
 	$(MONGOC_LDFLAGS_SHARED) \
 	-no-undefined

@@ -23,6 +23,15 @@
 
 #include <bson.h>
 
+/* like assert, but for production builds too */
+#define ALWAYS_ASSERT(s)  \
+   do { \
+      if (!(s)) { \
+         fprintf (stderr, "precondition \"%s\" failed %s:%d: %s()\n", \
+                  #s, __FILE__, __LINE__, __FUNCTION__); \
+         abort (); \
+      } \
+   } while (0)
 
 BSON_BEGIN_DECLS
 

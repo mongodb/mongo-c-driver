@@ -30,6 +30,7 @@ extern void test_buffer_install            (TestSuite *suite);
 extern void test_bulk_install              (TestSuite *suite);
 extern void test_client_install            (TestSuite *suite);
 extern void test_client_pool_install       (TestSuite *suite);
+extern void test_cluster_install           (TestSuite *suite);
 extern void test_collection_install        (TestSuite *suite);
 extern void test_cursor_install            (TestSuite *suite);
 extern void test_database_install          (TestSuite *suite);
@@ -40,6 +41,7 @@ extern void test_matcher_install           (TestSuite *suite);
 extern void test_queue_install             (TestSuite *suite);
 extern void test_read_prefs_install        (TestSuite *suite);
 extern void test_rpc_install               (TestSuite *suite);
+extern void test_sasl_install              (TestSuite *suite);
 extern void test_socket_install            (TestSuite *suite);
 extern void test_stream_install            (TestSuite *suite);
 extern void test_uri_install               (TestSuite *suite);
@@ -127,7 +129,7 @@ gen_collection_name (const char *str)
  *
  *--------------------------------------------------------------------------
  */
-static char *
+char *
 test_framework_getenv (const char *name)
 {
 #ifdef _MSC_VER
@@ -494,6 +496,7 @@ main (int   argc,
    test_buffer_install (&suite);
    test_client_install (&suite);
    test_client_pool_install (&suite);
+   test_cluster_install (&suite);
    test_write_command_install (&suite);
    test_bulk_install (&suite);
    test_collection_install (&suite);
@@ -506,6 +509,7 @@ main (int   argc,
    test_queue_install (&suite);
    test_read_prefs_install (&suite);
    test_rpc_install (&suite);
+   test_sasl_install (&suite);
    test_socket_install (&suite);
    test_stream_install (&suite);
    test_uri_install (&suite);

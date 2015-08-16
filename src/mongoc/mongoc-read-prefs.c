@@ -292,6 +292,12 @@ _mongoc_read_prefs_score (const mongoc_read_prefs_t   *read_prefs,
    bson_return_val_if_fail(read_prefs, -1);
    bson_return_val_if_fail(node, -1);
 
+   if (!node->primary && !node->secondary) {
+      /* recovering, arbiter, or removed: see RSOther and RSGhost in
+       * the Server Discovery And Monitoring Spec */
+      return -1;
+   }
+
    switch (read_prefs->mode) {
    case MONGOC_READ_PRIMARY:
       return _mongoc_read_prefs_score_primary(read_prefs, node);

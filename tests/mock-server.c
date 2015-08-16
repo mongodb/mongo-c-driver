@@ -34,13 +34,16 @@ struct _mock_server_t
 {
    mock_server_handler_t  handler;
    void                  *handler_data;
+   bool                   verbose;
 
    mongoc_thread_t        main_thread;
    mongoc_cond_t          cond;
+   mongoc_cond_t          stopped_condition;
    mongoc_mutex_t         mutex;
    bool                   using_main_thread;
 
    const char            *address;
+   mongoc_array_t         streams;  /* mongoc_stream_t pointers */
 
    uint16_t               port;
    mongoc_socket_t       *sock;
@@ -48,10 +51,18 @@ struct _mock_server_t
    int                    last_response_id;
 
    bool                   isMaster;
+   bool                   isSecondary;
    int                    minWireVersion;
    int                    maxWireVersion;
    int                    maxBsonObjectSize;
    int                    maxMessageSizeBytes;
+
+   const char                  *setName;
+   const mongoc_host_list_t    *hosts;
+   const bson_t                *tags;
+
+   bool stopping;
+   bool stopped;
 };
 
 
@@ -130,6 +141,11 @@ handle_ismaster (mock_server_t   *server,
 {
    bson_t reply_doc = BSON_INITIALIZER;
    time_t now = time (NULL);
+   bson_t hosts_array;
+   const char *hosts_array_key;
+   char buf[32];
+   uint32_t i;
+   const mongoc_host_list_t *host;
 
    BSON_ASSERT (server);
    BSON_ASSERT (client);
@@ -137,6 +153,10 @@ handle_ismaster (mock_server_t   *server,
    BSON_ASSERT (doc);
 
    bson_append_bool (&reply_doc, "ismaster", -1, server->isMaster);
+   if (!server->isMaster) {
+      bson_append_bool (&reply_doc, "secondary", -1, server->isSecondary);
+   }
+
    bson_append_int32 (&reply_doc, "maxBsonObjectSize", -1,
                       server->maxBsonObjectSize);
    bson_append_int32 (&reply_doc, "maxMessageSizeBytes", -1,
@@ -147,6 +167,25 @@ handle_ismaster (mock_server_t   *server,
                       server->maxWireVersion);
    bson_append_double (&reply_doc, "ok", -1, 1.0);
    bson_append_time_t (&reply_doc, "localtime", -1, now);
+   if (server->setName) {
+      BSON_APPEND_UTF8 (&reply_doc, "setName", server->setName);
+      host = server->hosts;
+      i = 0;
+      bson_append_array_begin (&reply_doc, "hosts", -1, &hosts_array);
+
+      while (host) {
+         bson_uint32_to_string (i, &hosts_array_key, buf, sizeof buf);
+         BSON_APPEND_UTF8 (&hosts_array, hosts_array_key, host->host_and_port);
+         i++;
+         host = host->next;
+      }
+      
+      bson_append_array_end (&reply_doc, &hosts_array);
+   }
+
+   if (server->tags) {
+      BSON_APPEND_DOCUMENT (&reply_doc, "tags", server->tags);
+   }
 
    mock_server_reply_simple (server, client, rpc, MONGOC_REPLY_NONE, &reply_doc);
 
@@ -200,6 +239,7 @@ handle_command (mock_server_t   *server,
 static void *
 mock_server_worker (void *data)
 {
+   size_t streams_buffer_pos;
    mongoc_buffer_t buffer;
    mongoc_stream_t *stream;
    mock_server_t *server;
@@ -215,11 +255,19 @@ mock_server_worker (void *data)
    server = closure[0];
    stream = closure[1];
 
+   mongoc_mutex_lock (&server->mutex);
+   streams_buffer_pos = server->streams.len;
+   _mongoc_array_append_val (&server->streams, stream);
+   mongoc_mutex_unlock (&server->mutex);
+
    _mongoc_buffer_init(&buffer, NULL, 0, NULL, NULL);
 
 again:
    if (_mongoc_buffer_fill (&buffer, stream, 4, -1, &error) == -1) {
-      MONGOC_WARNING ("%s():%d: %s", __FUNCTION__, __LINE__, error.message);
+      if (mock_server_verbose (server)) {
+         MONGOC_WARNING ("%s():%d: %s", __FUNCTION__, __LINE__, error.message);
+      }
+
       GOTO (failure);
    }
 
@@ -261,6 +309,15 @@ again:
    GOTO (again);
 
 failure:
+   mongoc_mutex_lock (&server->mutex);
+   if (!server->stopping) {
+      _mongoc_array_index (&server->streams,
+                           mongoc_stream_t *,
+                           streams_buffer_pos) = NULL;
+   }
+
+   mongoc_mutex_unlock (&server->mutex);
+
    mongoc_stream_close (stream);
    mongoc_stream_destroy (stream);
    bson_free(closure);
@@ -280,10 +337,15 @@ dummy_handler (mock_server_t   *server,
 
 
 mock_server_t *
-mock_server_new (const char            *address,
-                 uint16_t          port,
-                 mock_server_handler_t  handler,
-                 void                  *handler_data)
+mock_server_new_rs (const char                  *address,
+                    uint16_t                     port,
+                    mock_server_handler_t        handler,
+                    void                        *handler_data,
+                    const char                  *setName,
+                    bool                         isMaster,
+                    bool                         isSecondary,
+                    const mongoc_host_list_t    *hosts,
+                    const bson_t                *tags)
 {
    mock_server_t *server;
 
@@ -298,20 +360,41 @@ mock_server_new (const char            *address,
    server = bson_malloc0(sizeof *server);
    server->handler = handler ? handler : dummy_handler;
    server->handler_data = handler_data;
+   server->verbose = true;
    server->sock = NULL;
+   _mongoc_array_init (&server->streams, sizeof (mongoc_stream_t *));
    server->address = address;
    server->port = port;
 
    server->minWireVersion = 0;
    server->maxWireVersion = 0;
-   server->isMaster = true;
+   server->isMaster = isMaster;
+   server->isSecondary = isSecondary;
    server->maxBsonObjectSize = 16777216;
    server->maxMessageSizeBytes = 48000000;
 
+   server->setName = setName;
+   server->hosts = hosts;
+   server->tags = tags;
+
    mongoc_mutex_init (&server->mutex);
    mongoc_cond_init (&server->cond);
+   mongoc_cond_init (&server->stopped_condition);
+
+   server->stopping = false;
+   server->stopped = false;
 
    return server;
+}
+
+mock_server_t *
+mock_server_new (const char            *address,
+                 uint16_t               port,
+                 mock_server_handler_t  handler,
+                 void                  *handler_data)
+{
+   return mock_server_new_rs (address, port, handler, handler_data,
+                              NULL, true, false, NULL, NULL);
 }
 
 
@@ -366,22 +449,31 @@ mock_server_run (mock_server_t *server)
    mongoc_mutex_unlock (&server->mutex);
 
    for (;;) {
-      csock = mongoc_socket_accept (server->sock, -1);
-      if (!csock) {
-         perror ("Failed to accept client socket");
+      mongoc_mutex_lock (&server->mutex);
+      if (server->stopping) {
+         mongoc_mutex_unlock (&server->mutex);
          break;
       }
+      mongoc_mutex_unlock (&server->mutex);
 
-      stream = mongoc_stream_socket_new (csock);
-      closure = bson_malloc0 (sizeof(void*) * 2);
-      closure[0] = server;
-      closure[1] = stream;
+      csock = mongoc_socket_accept (server->sock,
+                                    bson_get_monotonic_time () + 1000 * 1000);
+      if (csock) {
+         stream = mongoc_stream_socket_new (csock);
+         closure = bson_malloc0 (sizeof (void *) * 2);
+         closure[0] = server;
+         closure[1] = stream;
 
-      mongoc_thread_create (&thread, mock_server_worker, closure);
+         mongoc_thread_create (&thread, mock_server_worker, closure);
+      }
    }
 
-   mongoc_socket_close (server->sock);
+   mongoc_mutex_lock (&server->mutex);
+   mongoc_socket_destroy (server->sock);
    server->sock = NULL;
+   server->stopped = true;
+   mongoc_cond_signal (&server->stopped_condition);
+   mongoc_mutex_unlock (&server->mutex);
 
    return 0;
 }
@@ -413,22 +505,64 @@ mock_server_run_in_thread (mock_server_t *server)
 
 
 void
-mock_server_quit (mock_server_t *server,
-                  int            code)
+mock_server_set_verbose (mock_server_t *server,
+                         bool verbose)
 {
+   mongoc_mutex_lock (&server->mutex);
+   server->verbose = verbose;
+   mongoc_mutex_unlock (&server->mutex);
+}
+
+
+bool
+mock_server_verbose (mock_server_t *server)
+{
+   bool verbose;
+
+   mongoc_mutex_lock (&server->mutex);
+   verbose = server->verbose;
+   mongoc_mutex_unlock (&server->mutex);
+
+   return verbose;
+}
+
+
+void
+mock_server_quit (mock_server_t *server)
+{
+   size_t i;
+   mongoc_stream_t *stream;
+
    bson_return_if_fail(server);
 
-   /*
-    * TODO: Exit server loop.
-    */
+   mongoc_mutex_lock (&server->mutex);
+   assert (!server->stopping);
+   assert (!server->stopped);
+   server->stopping = true;
+   assert (0 == mongoc_socket_close (server->sock));  /* success */
+   for (i = 0; i < server->streams.len; i++) {
+      stream = _mongoc_array_index (&server->streams, mongoc_stream_t *, i);
+      if (stream) {
+         assert (0 == mongoc_stream_close (stream));  /* success */
+      }
+   }
+   while (! server->stopped) {
+      mongoc_cond_wait (&server->stopped_condition, &server->mutex);
+   }
+   mongoc_mutex_unlock (&server->mutex);
 }
 
 
 void
 mock_server_destroy (mock_server_t *server)
 {
+   /* TODO: we can't actually destroy these if workers are still around.  Make
+    * this operational again after fixing that up */
+   return;
    if (server) {
+      _mongoc_array_destroy (&server->streams);
       mongoc_cond_destroy (&server->cond);
+      mongoc_cond_destroy (&server->stopped_condition);
       mongoc_mutex_destroy (&server->mutex);
       bson_free(server);
    }
