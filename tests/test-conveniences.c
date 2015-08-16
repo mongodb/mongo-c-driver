@@ -117,6 +117,13 @@ get_exists_operator (const bson_value_t *value,
                      bool               *exists);
 
 static bool
+get_empty_operator (const bson_value_t *value,
+                    bool               *exists);
+
+static bool
+is_empty_doc_or_array (const bson_value_t *value);
+
+static bool
 find (bson_value_t *value,
       const bson_iter_t *iter,
       const char *key,
@@ -244,7 +251,10 @@ match_json (const bson_t *doc,
  *       we need to test in e.g. test_mongoc_client_read_prefs, so this
  *       does *not* use mongoc_matcher_t. Instead, "doc" matches "pattern"
  *       if its key-value pairs are a simple superset of pattern's. Order
- *       matters. The only special pattern syntax is {"$exists": true/false}.
+ *       matters.
+ *       
+ *       The only special pattern syntaxes are "field": {"$exists": true/false}
+ *       and "field": {"$empty": true/false}.
  *
  *       The first key matches case-insensitively if is_command.
  *
@@ -270,7 +280,9 @@ match_bson (const bson_t *doc,
    bson_iter_t doc_iter;
    bool is_first = true;
    bool is_exists_operator;
+   bool is_empty_operator;
    bool exists;
+   bool empty;
    bool found;
    bson_value_t doc_value;
 
@@ -295,13 +307,20 @@ match_bson (const bson_t *doc,
       /* is value {"$exists": true} or {"$exists": false} ? */
       is_exists_operator = get_exists_operator (value, &exists);
 
+      /* is value {"$empty": true} or {"$empty": false} ? */
+      is_empty_operator = get_empty_operator (value, &empty);
+
       if (is_exists_operator) {
          if (exists != found) {
             return false;
          }
       } else if (!found) {
          return false;
-      } else if (!match_bson_value (value, &doc_value)) {
+      } else if (is_empty_operator) {
+         if (empty != is_empty_doc_or_array (&doc_value)) {
+            return false;
+         }
+      } else if (!match_bson_value (&doc_value, value)) {
          return false;
       }
 
@@ -380,6 +399,25 @@ bson_init_from_value (bson_t             *b,
 }
 
 
+static bool
+_is_operator (const char         *op_name,
+              const bson_value_t *value,
+              bool               *op_val)
+{
+   bson_t bson;
+   bson_iter_t iter;
+
+   if (value->value_type == BSON_TYPE_DOCUMENT &&
+       bson_init_from_value (&bson, value) &&
+       bson_iter_init_find (&iter, &bson, op_name)) {
+      *op_val = bson_iter_as_bool (&iter);
+      return true;
+   }
+
+   return false;
+}
+
+
 /*--------------------------------------------------------------------------
  *
  * get_exists_operator --
@@ -400,17 +438,57 @@ static bool
 get_exists_operator (const bson_value_t *value,
                      bool               *exists)
 {
-   bson_t bson;
-   bson_iter_t iter;
+   return _is_operator ("$exists", value, exists);
+}
 
-   if (value->value_type == BSON_TYPE_DOCUMENT &&
-       bson_init_from_value (&bson, value) &&
-       bson_iter_init_find (&iter, &bson, "$exists")) {
-      *exists = bson_iter_as_bool (&iter);
-      return true;
+
+/*--------------------------------------------------------------------------
+ *
+ * get_empty_operator --
+ *
+ *       Is value a subdocument like {"$empty": bool}?
+ *
+ * Returns:
+ *       True if the value is a subdocument with the first key "$empty".
+ *
+ * Side effects:
+ *       If the function returns true, *empty is set to true or false,
+ *       the value of the bool.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+get_empty_operator (const bson_value_t *value,
+                    bool               *empty)
+{
+   return _is_operator ("$empty", value, empty);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * is_empty_doc_or_array --
+ *
+ *       Is value the subdocument {} or the array []?
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+is_empty_doc_or_array (const bson_value_t *value)
+{
+   bson_t doc;
+
+   if (!(value->value_type == BSON_TYPE_ARRAY ||
+         value->value_type == BSON_TYPE_DOCUMENT)) {
+      return false;
    }
+   assert (bson_init_static (&doc,
+                             value->value.v_doc.data,
+                             value->value.v_doc.data_len));
 
-   return false;
+   return bson_count_keys (&doc) == 0;
 }
 
 
