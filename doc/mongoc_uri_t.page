@@ -55,7 +55,7 @@
   <section id="conn-options">
     <title>Connection Options</title>
     <table>
-      <tr><td><p>ssl</p></td><td><p>{true|false}, idicating if SSL must be used.</p></td></tr>
+      <tr><td><p>ssl</p></td><td><p>{true|false}, indicating if SSL must be used.</p></td></tr>
       <tr><td><p>connectTimeoutMS</p></td><td><p>A timeout in milliseconds to attempt a connection before timing out. The default is no timeout.</p></td></tr>
       <tr><td><p>socketTimeoutMS</p></td><td><p>The time in milliseconds to attempt to send or receive on a socket before the attempt times out. The default is 5 minutes.</p></td></tr>
     </table>
