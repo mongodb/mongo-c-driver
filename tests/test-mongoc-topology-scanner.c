@@ -207,6 +207,7 @@ test_topology_scanner_discovery ()
    ASSERT_CMPINT (0, ==, (int) mongoc_host_list_count (scanner->seen));
 
    mongoc_server_description_destroy (sd);
+   future_destroy (future);
    request_destroy (request);
    mongoc_read_prefs_destroy (secondary_pref);
    bson_free (secondary_response);
@@ -288,6 +289,7 @@ test_topology_scanner_oscillate ()
    /* "seen" is reset */
    ASSERT_CMPINT (0, ==, (int) mongoc_host_list_count (scanner->seen));
 
+   future_destroy (future);
    request_destroy (request);
    mongoc_read_prefs_destroy (primary_pref);
    bson_free (server1_response);

@@ -510,4 +510,6 @@ mock_rs_destroy (mock_rs_t *rs)
    bson_free (rs->hosts_str);
    mongoc_uri_destroy (rs->uri);
    q_destroy (rs->q);
+
+   bson_free (rs);
 }

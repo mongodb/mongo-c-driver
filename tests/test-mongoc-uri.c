@@ -382,7 +382,7 @@ test_mongoc_uri_functions (void)
 {
    mongoc_client_t *client;
    mongoc_uri_t *uri;
-
+   mongoc_database_t *db;
 
    uri = mongoc_uri_new("mongodb://foo:bar@localhost:27017/baz?authSource=source");
 
@@ -475,10 +475,10 @@ test_mongoc_uri_functions (void)
    ASSERT_CMPSTR (mongoc_uri_get_database (uri), "dbname0");
    mongoc_uri_set_database (uri, "dbname1");
    client = mongoc_client_new_from_uri (uri);
-   ASSERT_CMPSTR (
-         mongoc_database_get_name (mongoc_client_get_default_database (client))
-         , "dbname1");
+   db = mongoc_client_get_default_database (client);
+   ASSERT_CMPSTR (mongoc_database_get_name (db), "dbname1");
 
+   mongoc_database_destroy (db);
    mongoc_client_destroy (client);
    mongoc_uri_destroy(uri);
 }

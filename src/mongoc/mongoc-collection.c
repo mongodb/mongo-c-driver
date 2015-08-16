@@ -306,6 +306,7 @@ TOP:
       cursor->limit = 0;
    }
 
+   mongoc_server_description_destroy (selected_server);
    bson_destroy(&command);
 
    return cursor;
