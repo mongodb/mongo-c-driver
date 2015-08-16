@@ -75,7 +75,7 @@ pipeline_query (mongoc_collection_t *collection)
    cursor = mongoc_collection_aggregate (collection,
                                          MONGOC_QUERY_NONE,
                                          pipeline,
-                                         options,
+                                         NULL,
                                          NULL);
 
    bson_destroy (pipeline);
