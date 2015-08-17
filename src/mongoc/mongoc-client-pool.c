@@ -199,7 +199,7 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    bson_return_if_fail(client);
 
    mongoc_mutex_lock(&pool->mutex);
-   if (pool->size > pool->min_pool_size) {
+   if (pool->size > pool->max_pool_size) {
       mongoc_client_t *old_client;
       old_client = _mongoc_queue_pop_head (&pool->queue);
       if (old_client) {
