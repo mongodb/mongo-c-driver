@@ -26,6 +26,7 @@
 #include "sync-queue.h"
 #include "mock-server.h"
 #include "../test-conveniences.h"
+#include "../test-libmongoc.h"
 
 
 #ifdef _WIN32
@@ -120,6 +121,10 @@ mock_server_new ()
    mongoc_mutex_init (&server->mutex);
    server->q = q_new ();
    server->start_time = bson_get_monotonic_time ();
+
+   if (test_framework_getenv_bool ("MONGOC_TEST_SERVER_VERBOSE")) {
+      server->verbose = true;
+   }
 
    return server;
 }

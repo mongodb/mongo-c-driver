@@ -8,6 +8,7 @@
 #include "mock_server/mock-server.h"
 #include "TestSuite.h"
 #include "test-conveniences.h"
+#include "test-libmongoc.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-reconcile-test"

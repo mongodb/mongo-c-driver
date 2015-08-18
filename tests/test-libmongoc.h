@@ -22,6 +22,7 @@
 char *gen_collection_name (const char *prefix);
 void suppress_one_message (void);
 char *test_framework_getenv (const char *name);
+bool test_framework_getenv_bool (const char *name);
 char *test_framework_get_host (void);
 uint16_t test_framework_get_port (void);
 char *test_framework_get_admin_user (void);
