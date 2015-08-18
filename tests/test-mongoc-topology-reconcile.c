@@ -15,10 +15,10 @@
 
 
 static const mongoc_topology_scanner_node_t *
-get_node (mongoc_topology_scanner_t *ts,
+get_node (const mongoc_topology_scanner_t *ts,
           const char *host_and_port)
 {
-   mongoc_topology_scanner_node_t *node;
+   const mongoc_topology_scanner_node_t *node;
 
    DL_FOREACH (ts->nodes, node)
    {
