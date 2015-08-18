@@ -566,12 +566,11 @@ _bson_to_error (const bson_t *b,
  *       is responsible for freeing it in this case.
  *
  * Returns:
- *       true if getlasterror was success; otherwise false and @error
- *       is set.
+ *       true if getlasterror was success; otherwise false.
  *
  * Side effects:
- *       @error if return value is false.
  *       @gle_doc will be set if non NULL and a reply was received.
+ *       @error if return value is false, and @gle_doc is set to NULL.
  *
  *--------------------------------------------------------------------------
  */
@@ -614,14 +613,14 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
    }
 
    if (_mongoc_rpc_reply_get_first (&rpc.reply, &b)) {
-      if (gle_doc) {
-         *gle_doc = bson_copy (&b);
-      }
-
       if ((rpc.reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
          _bson_to_error (&b, error);
          bson_destroy (&b);
          GOTO (cleanup);
+      }
+
+      if (gle_doc) {
+         *gle_doc = bson_copy (&b);
       }
 
       if (!bson_iter_init_find (&iter, &b, "ok") ||
@@ -632,9 +631,8 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
       }
 
       bson_destroy (&b);
+      ret = true;
    }
-
-   ret = true;
 
 cleanup:
    _mongoc_buffer_destroy (&buffer);

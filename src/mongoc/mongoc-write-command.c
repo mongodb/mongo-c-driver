@@ -327,7 +327,6 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       if (_mongoc_write_concern_needs_gle (write_concern)) {
          if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
             result->failed = true;
-            bson_destroy (gle);
             EXIT;
          }
 
@@ -725,8 +724,6 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
       if (_mongoc_write_concern_needs_gle (write_concern)) {
          if (!_mongoc_client_recv_gle (client, hint, &gle, error)) {
             result->failed = true;
-            bson_destroy (gle);
-
             EXIT;
          }
 
