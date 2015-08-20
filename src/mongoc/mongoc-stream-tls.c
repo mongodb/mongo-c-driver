@@ -500,7 +500,7 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
 
    ret = BIO_write (tls->bio, buf, buf_len);
 
-   if (ret < 0) {
+   if (ret <= 0) {
       return ret;
    }
 
