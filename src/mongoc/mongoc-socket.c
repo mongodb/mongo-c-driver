@@ -523,27 +523,26 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 #ifdef _WIN32
    if (sock->sd != INVALID_SOCKET) {
       shutdown (sock->sd, SD_BOTH);
-      ret = closesocket (sock->sd);
+      if (0 == closesocket (sock->sd)) {
+         sock->sd = INVALID_SOCKET;
+      } else {
+         _mongoc_socket_capture_errno (sock);
+         RETURN(-1);
+      }
    }
+   RETURN(0);
 #else
    if (sock->sd != -1) {
       shutdown (sock->sd, SHUT_RDWR);
-      ret = close (sock->sd);
+      if (0 == close (sock->sd)) {
+         sock->sd = -1;
+      } else {
+         _mongoc_socket_capture_errno (sock);
+         RETURN(-1);
+      }
    }
+   RETURN(0);
 #endif
-
-   _mongoc_socket_capture_errno (sock);
-
-   if (ret == 0) {
-#ifdef _WIN32
-      sock->sd = INVALID_SOCKET;
-#else
-      sock->sd = -1;
-#endif
-      RETURN (0);
-   }
-
-   RETURN (-1);
 }
 
 
