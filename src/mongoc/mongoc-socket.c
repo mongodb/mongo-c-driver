@@ -146,8 +146,8 @@ _mongoc_socket_wait (int      sd,           /* IN */
 #ifdef _WIN32
    ret = WSAPoll (&pfd, 1, timeout);
    if (ret == SOCKET_ERROR) {
-      MONGOC_WARNING ("WSAGetLastError(): %d", WSAGetLastError ());
-      ret = false;
+         errno = WSAGetLastError();
+         ret = -1;
    }
 #else
    ret = poll (&pfd, 1, timeout);
