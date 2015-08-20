@@ -1052,19 +1052,23 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 
 ssize_t
 mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
-                     mongoc_iovec_t   *iov,       /* IN */
+                     mongoc_iovec_t   *in_iov,    /* IN */
                      size_t            iovcnt,    /* IN */
                      int64_t           expire_at) /* IN */
 {
    ssize_t ret = 0;
    ssize_t sent;
    size_t cur = 0;
+   mongoc_iovec_t *iov;
 
    ENTRY;
 
    bson_return_val_if_fail (sock, -1);
-   bson_return_val_if_fail (iov, -1);
+   bson_return_val_if_fail (in_iov, -1);
    bson_return_val_if_fail (iovcnt, -1);
+
+   iov = bson_malloc(sizeof(*iov) * iovcnt);
+   memcpy(iov, in_iov, sizeof(*iov) * iovcnt);
 
    for (;;) {
       sent = _mongoc_socket_try_sendv (sock, &iov [cur], iovcnt - cur);
@@ -1076,7 +1080,8 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
        */
       if (sent == -1) {
          if (!_mongoc_socket_errno_is_again (sock)) {
-            RETURN (ret ? ret : -1);
+            ret = -1;
+            GOTO(CLEANUP);
          }
       }
 
@@ -1117,7 +1122,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
 #else
          errno = ETIMEDOUT;
 #endif
-         RETURN (ret ? ret : -1);
+         GOTO(CLEANUP);
       }
 
       /*
@@ -1131,9 +1136,12 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
             errno = ETIMEDOUT;
 #endif
          }
-         RETURN (ret  ? ret : -1);
+         GOTO(CLEANUP);
       }
    }
+
+CLEANUP:
+   bson_free(iov);
 
    RETURN (ret);
 }
