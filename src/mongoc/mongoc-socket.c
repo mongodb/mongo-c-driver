@@ -536,8 +536,6 @@ mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
 int
 mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 {
-   int ret = 0;
-
    ENTRY;
 
    bson_return_val_if_fail (sock, false);

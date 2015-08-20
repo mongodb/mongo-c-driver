@@ -529,27 +529,6 @@ set_name (bson_t *ismaster_response)
 }
 
 
-static int
-get_n_members (bson_t *ismaster_response)
-{
-   bson_iter_t iter;
-   bson_iter_t hosts_iter;
-   char *name;
-   int n;
-
-   if ((name = set_name (ismaster_response))) {
-      bson_free (name);
-      assert (bson_iter_init_find (&iter, ismaster_response, "hosts"));
-      bson_iter_recurse (&iter, &hosts_iter);
-      n = 0;
-      while (bson_iter_next (&hosts_iter)) n++;
-      return n;
-   } else {
-      return 1;
-   }
-}
-
-
 /*
  *--------------------------------------------------------------------------
  *
