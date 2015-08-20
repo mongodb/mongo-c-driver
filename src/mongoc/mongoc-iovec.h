@@ -21,10 +21,11 @@
 
 #include <bson.h>
 
-#ifndef _WIN32
+#ifdef _WIN32
+# include <stddef.h>
+#else
 # include <sys/uio.h>
 #endif
-
 
 BSON_BEGIN_DECLS
 
@@ -35,6 +36,11 @@ typedef struct
    u_long  iov_len;
    char   *iov_base;
 } mongoc_iovec_t;
+
+BSON_STATIC_ASSERT(sizeof(mongoc_iovec_t) == sizeof(WSABUF));
+BSON_STATIC_ASSERT(offsetof(mongoc_iovec_t, iov_base) == offsetof(WSABUF, buf));
+BSON_STATIC_ASSERT(offsetof(mongoc_iovec_t, iov_len) == offsetof(WSABUF, len));
+
 #else
 typedef struct iovec mongoc_iovec_t;
 #endif
