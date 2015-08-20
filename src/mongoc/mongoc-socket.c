@@ -1032,6 +1032,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 # endif
 #endif
 
+   TRACE("Send %ld out of %ld bytes (errno=%d)", ret, iov->iov_len, errno);
    /*
     * Check to see if we have sent an iovec too large for sendmsg to
     * complete. If so, we need to fallback to the slow path of multiple
@@ -1096,6 +1097,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
 
    for (;;) {
       sent = _mongoc_socket_try_sendv (sock, &iov [cur], iovcnt - cur);
+      TRACE("Sent %ld (of %ld) out of iovcnt=%ld", sent, iov[cur].iov_len, iovcnt);
 
       /*
        * If we failed with anything other than EAGAIN or EWOULDBLOCK,
@@ -1120,6 +1122,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
           * Subtract the sent amount from what we still need to send.
           */
          while ((cur < iovcnt) && (sent >= (ssize_t)iov [cur].iov_len)) {
+            TRACE("still got bytes left: sent -= iov_len: %ld -= %ld", sent, iov[cur+1].iov_len);
             sent -= iov [cur++].iov_len;
          }
 
@@ -1128,6 +1131,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
           * sending data over the socket.
           */
          if (cur == iovcnt) {
+            TRACE("%s", "Finished the iovecs");
             break;
          }
 
@@ -1135,8 +1139,11 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
           * Increment the current iovec buffer to its proper offset and adjust
           * the number of bytes to write.
           */
+         TRACE("Seeked io_base+%ld", sent);
+         TRACE("Subtracting iov_len -= sent; %ld -= %ld", iov[cur].iov_len, sent);
          iov [cur].iov_base = ((char *)iov [cur].iov_base) + sent;
          iov [cur].iov_len -= sent;
+         TRACE("iov_len remaining %ld", iov[cur].iov_len);
 
          BSON_ASSERT (iovcnt - cur);
          BSON_ASSERT (iov [cur].iov_len);

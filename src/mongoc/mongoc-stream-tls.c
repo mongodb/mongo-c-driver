@@ -252,6 +252,7 @@ _mongoc_stream_tls_bio_write (BIO        *b,
    mongoc_stream_tls_t *tls;
    mongoc_iovec_t iov;
    int ret;
+   ENTRY;
 
    BSON_ASSERT (b);
    BSON_ASSERT (buf);
@@ -259,22 +260,30 @@ _mongoc_stream_tls_bio_write (BIO        *b,
    tls = (mongoc_stream_tls_t *)b->ptr;
 
    if (!tls) {
-      return -1;
+      RETURN (-1);
    }
 
    iov.iov_base = (void *)buf;
    iov.iov_len = len;
 
    errno = 0;
+   TRACE("mongoc_stream_writev is expected to write: %d", len);
    ret = (int)mongoc_stream_writev (tls->base_stream, &iov, 1,
                                     tls->timeout_msec);
    BIO_clear_retry_flags (b);
 
-   if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
+   if (len > ret) {
+      TRACE("Returned short write: %d of %d", ret, len);
+   } else {
+      TRACE("Completed the %d", ret);
+   }
+   if (ret <= 0 && MONGOC_ERRNO_IS_AGAIN (errno)) {
+      TRACE("%s", "Requesting a retry");
       BIO_set_retry_write (b);
    }
 
-   return ret;
+
+   RETURN (ret);
 }
 
 
@@ -446,10 +455,13 @@ static int
 _mongoc_stream_tls_close (mongoc_stream_t *stream)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
+   int ret = 0;
+   ENTRY;
 
    BSON_ASSERT (tls);
 
-   return mongoc_stream_close (tls->base_stream);
+   ret = mongoc_stream_close (tls->base_stream);
+   RETURN (ret);
 }
 
 
@@ -489,6 +501,7 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
 
    int64_t now;
    int64_t expire = 0;
+   ENTRY;
 
    BSON_ASSERT (tls);
    BSON_ASSERT (buf);
@@ -499,7 +512,9 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
    }
 
    ret = BIO_write (tls->bio, buf, buf_len);
+   TRACE("BIO_write returned %ld", ret);
 
+   TRACE("I got ret: %ld and retry: %d", ret, BIO_should_retry (tls->bio));
    if (ret <= 0) {
       return ret;
    }
@@ -518,7 +533,13 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
       }
    }
 
-   return ret;
+   if (ret <= 0 && BIO_should_retry (tls->bio)) {
+      if (tls->timeout_msec > 0) {
+         TRACE("I do have %dmsec left", tls->timeout_msec);
+      }
+   }
+
+   RETURN (ret);
 }
 
 /*
@@ -697,6 +718,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
    size_t iov_pos = 0;
    int64_t now;
    int64_t expire = 0;
+   ENTRY;
 
    BSON_ASSERT (tls);
    BSON_ASSERT (iov);
@@ -738,7 +760,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
 #else
                   errno = ETIMEDOUT;
 #endif
-                  return -1;
+                  RETURN (-1);
                }
 
                tls->timeout_msec = 0;
@@ -751,7 +773,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
 
          if ((size_t)ret >= min_bytes) {
             mongoc_counter_streams_ingress_add(ret);
-            return ret;
+            RETURN (ret);
          }
 
          iov_pos += read_ret;
@@ -762,7 +784,7 @@ _mongoc_stream_tls_readv (mongoc_stream_t *stream,
       mongoc_counter_streams_ingress_add(ret);
    }
 
-   return ret;
+   RETURN (ret);
 }
 
 
