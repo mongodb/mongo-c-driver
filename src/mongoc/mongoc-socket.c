@@ -119,21 +119,11 @@ _mongoc_socket_wait (int      sd,           /* IN */
 #endif
    int ret;
    int timeout;
+   int64_t now;
 
    ENTRY;
 
    bson_return_val_if_fail (events, false);
-
-   if (expire_at < 0) {
-      timeout = -1;
-   } else if (expire_at == 0) {
-      timeout = 0;
-   } else {
-      timeout = (int)((expire_at - bson_get_monotonic_time ()) / 1000L);
-      if (timeout < 0) {
-         timeout = 0;
-      }
-   }
 
    pfd.fd = sd;
 #ifdef _WIN32
@@ -143,25 +133,57 @@ _mongoc_socket_wait (int      sd,           /* IN */
 #endif
    pfd.revents = 0;
 
+   now = bson_get_monotonic_time();
+
+   for (;;) {
+      if (expire_at < 0) {
+         timeout = -1;
+      } else if (expire_at == 0) {
+         timeout = 0;
+      } else {
+         timeout = (int)((expire_at - now) / 1000L);
+         if (timeout < 0) {
+            timeout = 0;
+         }
+      }
+
 #ifdef _WIN32
-   ret = WSAPoll (&pfd, 1, timeout);
-   if (ret == SOCKET_ERROR) {
+      ret = WSAPoll (&pfd, 1, timeout);
+      if (ret == SOCKET_ERROR) {
          errno = WSAGetLastError();
          ret = -1;
-   }
+      }
 #else
-   ret = poll (&pfd, 1, timeout);
+      ret = poll (&pfd, 1, timeout);
 #endif
 
-   if (ret > 0) {
+      if (ret > 0) {
+         /* Something happened, so return that */
 #ifdef _WIN32
-      RETURN (0 != (pfd.revents & (events | POLLHUP | POLLERR)));
+         RETURN (0 != (pfd.revents & (events | POLLHUP | POLLERR)));
 #else
-      RETURN (0 != (pfd.revents & events));
+         RETURN (0 != (pfd.revents & events));
 #endif
-   }
+      } else if (ret < 0) {
+         /* poll itself failed */
 
-   RETURN (false);
+         if (MONGOC_ERRNO_IS_AGAIN(errno)) {
+            now = bson_get_monotonic_time();
+
+            if (expire_at < now) {
+               RETURN (false);
+            } else {
+               continue;
+            }
+         } else {
+            /* poll failed for some non-transient reason */
+            RETURN (false);
+         }
+      } else {
+         /* poll timed out */
+         RETURN (false);
+      }
+   }
 }
 
 
