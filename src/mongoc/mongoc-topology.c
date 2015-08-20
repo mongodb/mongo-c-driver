@@ -272,44 +272,6 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_time_to_scan --
- *
- *       Returns true if it is time to scan the cluster again.
- *
- *--------------------------------------------------------------------------
- */
-static bool
-_mongoc_topology_time_to_scan (mongoc_topology_t *topology) {
-   return bson_get_monotonic_time () - topology->last_scan >=
-          topology->heartbeat_msec * 1000;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_topology_min_heartbeat_from_now --
- *
- *       How long until we're allowed to rescan, in microseconds.
- *
- *       Server Discovery And Monitoring Spec: "If a client frequently
- *       rechecks a server, it MUST wait at least minHeartbeatFrequencyMS
- *       milliseconds  since the previous check to avoid pointless effort.
- *       This value MUST be 500 ms, and it MUST NOT be configurable."
- *
- *--------------------------------------------------------------------------
- */
-static int64_t
-_mongoc_topology_min_heartbeat_from_now (mongoc_topology_t *topology,
-                                         int64_t now)
-{
-   int64_t next_scan = topology->last_scan
-                       + MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS * 1000;
-   return next_scan - now;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * _mongoc_topology_run_scanner --
  *
  *       Not threadsafe, the expectation is that we're either single
