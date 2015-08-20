@@ -579,6 +579,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
    BSON_ASSERT (tls);
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
+   ENTRY;
 
    tls->timeout_msec = timeout_msec;
 
@@ -624,10 +625,14 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
              * if we didn't buffer and have to send out of the iovec */
 
             child_ret = _mongoc_stream_tls_write (tls, to_write, to_write_len);
+            if (child_ret != to_write_len) {
+               MONGOC_DEBUG("Got child_ret: %ld while to_write_len is: %ld",
+                     child_ret, to_write_len);
+            }
 
             if (child_ret < 0) {
-               /* Buffer write failed, just return the error */
-               return child_ret;
+               TRACE("Returning what I had (%ld) as apposed to the error (%ld, errno:%d)", ret, child_ret, errno);
+               RETURN (ret);
             }
 
             ret += child_ret;
@@ -635,7 +640,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
             if (child_ret < to_write_len) {
                /* we timed out, so send back what we could send */
 
-               return ret;
+               RETURN (ret);
             }
 
             to_write = NULL;
@@ -646,10 +651,12 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
    if (buf_head != buf_tail) {
       /* If we have any bytes buffered, send */
 
+      TRACE("buffered writing %ld", buf_tail - buf_head);
       child_ret = _mongoc_stream_tls_write (tls, buf_head, buf_tail - buf_head);
+      TRACE("Got %ld written", child_ret);
 
       if (child_ret < 0) {
-         return child_ret;
+         RETURN (child_ret);
       }
 
       ret += child_ret;
@@ -659,7 +666,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
       mongoc_counter_streams_egress_add (ret);
    }
 
-   return ret;
+   RETURN (ret);
 }
 
 
