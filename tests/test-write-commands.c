@@ -39,7 +39,6 @@ test_split_insert (void)
    bson_t reply = BSON_INITIALIZER;
    bson_error_t error;
    int i;
-   bool r;
 
    client = test_framework_client_new ();
    assert (client);
