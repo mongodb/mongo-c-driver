@@ -709,7 +709,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
       offset = file->pos + delta;
       break;
    case SEEK_END:
-      offset = (file->length - 1) + delta;
+      offset = file->length + delta;
       break;
    default:
       errno = EINVAL;
