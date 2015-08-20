@@ -900,9 +900,9 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
  * _mongoc_socket_try_sendv_slow --
  *
  *       A slow variant of _mongoc_socket_try_sendv() that sends each
- *       iovec entry one by one. This can happen if we hit EMSGSIZE on
- *       with sendmsg() on various POSIX systems (such as Solaris), or
- *       on WinXP.
+ *       iovec entry one by one. This can happen if we hit EMSGSIZE
+ *       with sendmsg() on various POSIX systems or WSASend()+WSAEMSGSIZE
+ *       on Windows.
  *
  * Returns:
  *       the number of bytes sent or -1 and errno is set.
@@ -1018,7 +1018,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 #else
    if ((ret == -1) && (errno == EMSGSIZE)) {
 #endif
-      _mongoc_socket_try_sendv_slow (sock, iov, iovcnt);
+      RETURN(_mongoc_socket_try_sendv_slow (sock, iov, iovcnt));
    }
 
    _mongoc_socket_capture_errno (sock);
