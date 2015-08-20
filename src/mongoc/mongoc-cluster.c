@@ -2238,18 +2238,8 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
 
    BSON_ASSERT (cluster->iov.len);
 
-   if (!mongoc_stream_writev (stream, iov, iovcnt,
-                              cluster->sockettimeoutms)) {
-      char buf[128];
-      char * errstr;
-      errstr = bson_strerror_r(errno, buf, sizeof buf);
-
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failure during socket delivery: %s",
-                      errstr);
-      mongoc_cluster_disconnect_node (cluster, server_id);
+   if (!_mongoc_stream_writev_full (stream, iov, iovcnt,
+                                    cluster->sockettimeoutms, error)) {
       RETURN (false);
    }
 

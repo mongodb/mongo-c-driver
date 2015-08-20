@@ -368,3 +368,47 @@ mongoc_stream_check_closed (mongoc_stream_t *stream)
 
    RETURN (ret);
 }
+
+bool
+_mongoc_stream_writev_full (mongoc_stream_t *stream,
+                            mongoc_iovec_t  *iov,
+                            size_t           iovcnt,
+                            int32_t          timeout_msec,
+                            bson_error_t    *error)
+{
+   size_t total_bytes = 0;
+   int i;
+   ssize_t r;
+   ENTRY;
+
+   for (i = 0; i < iovcnt; i++) {
+      total_bytes += iov[i].iov_len;
+   }
+
+   r = mongoc_stream_writev(stream, iov, iovcnt, timeout_msec);
+   TRACE("writev returned: %ld", r);
+
+   if (r < 0) {
+      if (error) {
+         char buf[128];
+         char *errstr;
+
+         errstr = bson_strerror_r(errno, buf, sizeof(buf));
+
+         bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
+                         "Failure during socket delivery: %s (%d)", errstr, errno);
+      }
+
+      RETURN(false);
+   }
+
+   if (r != total_bytes) {
+      bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
+                      "Failure to send all requested bytes (only sent: %lld/%llu in %dms) during socket delivery",
+                      (long long)r, (unsigned long long)total_bytes, timeout_msec);
+
+      RETURN(false);
+   }
+
+   RETURN(true);
+}
