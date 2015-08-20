@@ -206,23 +206,25 @@ _mongoc_stream_tls_bio_read (BIO  *b,
 
    BSON_ASSERT (b);
    BSON_ASSERT (buf);
+   ENTRY;
 
    tls = (mongoc_stream_tls_t *)b->ptr;
 
    if (!tls) {
-      return -1;
+      RETURN (-1);
    }
 
    errno = 0;
    ret = (int)mongoc_stream_read (tls->base_stream, buf, len, 0,
                                   tls->timeout_msec);
-   BIO_clear_retry_flags (tls->bio);
+   BIO_clear_retry_flags (b);
 
    if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
-      BIO_set_retry_read (tls->bio);
+      MONGOC_DEBUG("set_retry_read");
+      BIO_set_retry_read (b);
    }
 
-   return ret;
+   RETURN (ret);
 }
 
 
