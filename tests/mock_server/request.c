@@ -179,7 +179,7 @@ request_matches_query (const request_t *request,
       /* quirk: commands from mongoc_client_command_simple have n_return 1,
        * from mongoc_topology_scanner_t have n_return -1
        */
-      n_return_equal = abs (rpc->query.n_return) == abs (n_return);
+      n_return_equal = abs (rpc->query.n_return) == n_return;
    }
 
    if (! n_return_equal) {
