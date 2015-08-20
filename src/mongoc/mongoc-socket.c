@@ -605,13 +605,13 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
 
    ret = connect (sock->sd, addr, addrlen);
 
-   _mongoc_socket_capture_errno (sock);
-
 #ifdef _WIN32
    if (ret == SOCKET_ERROR) {
 #else
    if (ret == -1) {
 #endif
+      _mongoc_socket_capture_errno (sock);
+
       failed = true;
       try_again = _mongoc_socket_errno_is_again (sock);
    }
@@ -820,7 +820,9 @@ again:
    ret = recv (sock->sd, buf, buflen, flags);
    failed = (ret == -1);
 #endif
-   _mongoc_socket_capture_errno (sock);
+   if (failed) {
+      _mongoc_socket_capture_errno (sock);
+   }
    try_again = (failed && _mongoc_socket_errno_is_again (sock));
 
    if (failed && try_again) {
@@ -951,12 +953,13 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock,   /* IN */
 
    for (i = 0; i < iovcnt; i++) {
       wrote = send (sock->sd, iov [i].iov_base, iov [i].iov_len, 0);
-      _mongoc_socket_capture_errno (sock);
 #ifdef _WIN32
       if (wrote == SOCKET_ERROR) {
 #else
       if (wrote == -1) {
 #endif
+         _mongoc_socket_capture_errno (sock);
+
          if (!_mongoc_socket_errno_is_again (sock)) {
             RETURN (-1);
          }
