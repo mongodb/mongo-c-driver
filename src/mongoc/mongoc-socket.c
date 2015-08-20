@@ -833,7 +833,7 @@ again:
       RETURN (-1);
    }
 
-   mongoc_counter_streams_ingress_add (ret > 0 ? ret : 0);
+   mongoc_counter_streams_ingress_add (ret);
 
    RETURN (ret);
 }
