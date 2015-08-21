@@ -62,6 +62,17 @@ void        mongoc_log_default_handler (mongoc_log_level_t  log_level,
 MONGOC_WARNING ("An error occurred: %s", strerror (errno));]]></code></screen>
   </section>
 
+  <section id="tracing">
+    <title>Tracing</title>
+    <p>If compiling your own copy of the MongoDB C driver, consider configuring with <code>--enable-tracing</code> to enable function tracing and hex dumps of network packets to <code>STDERR</code> and <code>STDOUT</code> during development and debugging.</p>
+    <p>This is especially useful when debugging what may be going on internally in the driver.</p>
+    <p>Trace messages can be enabled and disabled by calling <code>mongoc_log_trace_enable()</code> and <code>mongoc_log_trace_disable()</code></p>
+    <note type="warning"><p>
+       Compiling the driver with <code>--enable-tracing</code> will affect its performance. Disabling tracing with <code>mongoc_log_trace_disable()</code> significantly reduces the overhead, but cannot remove it completely.
+    </p></note>
+
+  </section>
+
   <section id="handlers">
     <title>Custom Log Handlers</title>
     <p>The default log handler prints a timestamp and the log message to <code>stdout</code>, or to <code>stderr</code> for warnings, critical messages, and errors.
@@ -69,6 +80,12 @@ MONGOC_WARNING ("An error occurred: %s", strerror (errno));]]></code></screen>
     Your handler function is called in a mutex for thread safety.</p>
     <p>To restore the default handler:</p>
     <screen><code mime="text/x-csrc"><![CDATA[mongoc_log_set_handler (mongoc_log_default_handler, NULL);]]></code></screen>
+  </section>
+
+  <section id="disable-logs">
+    <title>Disable logging</title>
+    <p>To disable all logging, including warnings, critical messages and errors, you need to provide an empty log handler</p>
+    <screen><code mime="text/x-csrc"><![CDATA[mongoc_log_set_handler (NULL, NULL);]]></code></screen>
   </section>
 
 </page>
