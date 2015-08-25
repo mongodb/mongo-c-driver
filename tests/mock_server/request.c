@@ -29,10 +29,13 @@ static void request_from_query (request_t *request, const mongoc_rpc_t *rpc);
 
 static void request_from_insert (request_t *request, const mongoc_rpc_t *rpc);
 
+static void request_from_update (request_t *request, const mongoc_rpc_t *rpc);
+
+static void request_from_delete (request_t *request, const mongoc_rpc_t *rpc);
+
 static void request_from_killcursors (request_t *request, const mongoc_rpc_t *rpc);
 
 static void request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
-
 
 
 request_t *
@@ -76,6 +79,10 @@ request_new (const mongoc_buffer_t *buffer,
       request_from_insert (request, &request->request_rpc);
       break;
 
+   case MONGOC_OPCODE_UPDATE:
+      request_from_update (request, &request->request_rpc);
+      break;
+
    case MONGOC_OPCODE_KILL_CURSORS:
       request_from_killcursors (request, &request->request_rpc);
       break;
@@ -84,10 +91,12 @@ request_new (const mongoc_buffer_t *buffer,
       request_from_getmore (request, &request->request_rpc);
       break;
 
+   case MONGOC_OPCODE_DELETE:
+      request_from_delete (request, &request->request_rpc);
+      break;
+
    case MONGOC_OPCODE_REPLY:
    case MONGOC_OPCODE_MSG:
-   case MONGOC_OPCODE_UPDATE:
-   case MONGOC_OPCODE_DELETE:
    default:
       fprintf (stderr, "Unimplemented opcode %d\n", request->opcode);
       abort ();
@@ -277,6 +286,90 @@ request_matches_bulk_insert (const request_t *request,
    if ((int)request->docs.len != n) {
       MONGOC_ERROR ("expected %d docs inserted, got %d",
                     n, (int)request->docs.len);
+      return false;
+   }
+
+   return true;
+}
+
+
+/* TODO: take file, line, function params from caller, wrap in macro */
+bool
+request_matches_update (const request_t *request,
+                        const char *ns,
+                        mongoc_update_flags_t flags,
+                        const char *selector_json,
+                        const char *update_json)
+{
+   const mongoc_rpc_t *rpc;
+   const bson_t *doc;
+
+   assert (request);
+   rpc = &request->request_rpc;
+
+   if (request->opcode != MONGOC_OPCODE_UPDATE) {
+      MONGOC_ERROR ("request's opcode does not match UPDATE");
+      return false;
+   }
+
+   if (strcmp (rpc->update.collection, ns)) {
+      MONGOC_ERROR ("update's namespace is '%s', expected '%s'",
+                    request->request_rpc.update.collection, ns);
+      return false;
+   }
+
+   if (rpc->update.flags != flags) {
+      MONGOC_ERROR ("request's update flags don't match");
+      return false;
+   }
+
+   ASSERT_CMPINT ((int)request->docs.len, ==, 2);
+   doc = request_get_doc(request, 0);
+   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, selector_json)) {
+      return false;
+   }
+
+   doc = request_get_doc(request, 1);
+   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, update_json)) {
+      return false;
+   }
+
+   return true;
+}
+
+
+/* TODO: take file, line, function params from caller, wrap in macro */
+bool
+request_matches_delete (const request_t *request,
+                        const char *ns,
+                        mongoc_remove_flags_t flags,
+                        const char *selector_json)
+{
+   const mongoc_rpc_t *rpc;
+   const bson_t *doc;
+
+   assert (request);
+   rpc = &request->request_rpc;
+
+   if (request->opcode != MONGOC_OPCODE_DELETE) {
+      MONGOC_ERROR ("request's opcode does not match DELETE");
+      return false;
+   }
+
+   if (strcmp (rpc->delete_.collection, ns)) {
+      MONGOC_ERROR ("delete's namespace is '%s', expected '%s'",
+                    request->request_rpc.delete_.collection, ns);
+      return false;
+   }
+
+   if (rpc->delete_.flags != flags) {
+      MONGOC_ERROR ("request's delete flags don't match");
+      return false;
+   }
+
+   ASSERT_CMPINT ((int)request->docs.len, ==, 1);
+   doc = request_get_doc(request, 0);
+   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, selector_json)) {
       return false;
    }
 
@@ -581,6 +674,126 @@ request_from_insert (request_t *request,
    bson_free (str);
 
    request->as_str = bson_string_free (insert_as_str, false);
+}
+
+
+static char *
+update_flags_str (uint32_t flags)
+{
+   int flag = 1;
+   bson_string_t *str = bson_string_new ("");
+   bool begun = false;
+
+   if (flags == MONGOC_UPDATE_NONE) {
+      bson_string_append (str, "0");
+   } else {
+      while (flag <= MONGOC_UPDATE_MULTI_UPDATE) {
+         flag <<= 1;
+
+         if (flags & flag) {
+            if (begun) {
+               bson_string_append (str, "|");
+            }
+
+            begun = true;
+
+            switch (flag) {
+            case MONGOC_UPDATE_UPSERT:
+               bson_string_append (str, "UPSERT");
+               break;
+            case MONGOC_UPDATE_MULTI_UPDATE:
+               bson_string_append (str, "MULTI");
+               break;
+            case MONGOC_UPDATE_NONE:
+            default:
+               assert (false);
+            }
+         }
+      }
+   }
+
+   return bson_string_free (str, false);  /* detach buffer */
+}
+
+
+static void
+request_from_update (request_t *request,
+                     const mongoc_rpc_t *rpc)
+{
+   int32_t len;
+   bson_t *doc;
+   bson_string_t *update_as_str = bson_string_new ("");
+   char *str;
+
+   memcpy (&len, rpc->update.selector, 4);
+   len = BSON_UINT32_FROM_LE (len);
+   doc = bson_new_from_data (rpc->update.selector, (size_t) len);
+   assert (doc);
+   _mongoc_array_append_val (&request->docs, doc);
+
+   str = bson_as_json (doc, NULL);
+   bson_string_append (update_as_str, str);
+   bson_free (str);
+
+   bson_string_append (update_as_str, ", ");
+   
+   memcpy (&len, rpc->update.update, 4);
+   len = BSON_UINT32_FROM_LE (len);
+   doc = bson_new_from_data (rpc->update.update, (size_t) len);
+   assert (doc);
+   _mongoc_array_append_val (&request->docs, doc);
+
+   str = bson_as_json (doc, NULL);
+   bson_string_append (update_as_str, str);
+   bson_free (str);
+
+   bson_string_append (update_as_str, " flags=");
+
+   str = update_flags_str (rpc->update.flags);
+   bson_string_append (update_as_str, str);
+   bson_free (str);
+
+   request->as_str = bson_string_free (update_as_str, false);
+}
+
+
+static char *
+delete_flags_str (uint32_t flags)
+{
+   if (flags == MONGOC_DELETE_NONE) {
+      return bson_strdup ("0");
+   } else {
+      return bson_strdup ("SINGLE_REMOVE");
+   }
+}
+
+
+static void
+request_from_delete (request_t *request,
+                     const mongoc_rpc_t *rpc)
+{
+   int32_t len;
+   bson_t *doc;
+   bson_string_t *delete_as_str = bson_string_new ("");
+   char *str;
+
+   memcpy (&len, rpc->delete_.selector, 4);
+   len = BSON_UINT32_FROM_LE (len);
+   doc = bson_new_from_data (rpc->delete_.selector, (size_t) len);
+   assert (doc);
+   _mongoc_array_append_val (&request->docs, doc);
+
+   str = bson_as_json (doc, NULL);
+   bson_string_append (delete_as_str, str);
+   bson_free (str);
+
+   bson_string_append (delete_as_str, " flags=");
+
+   str = delete_flags_str (rpc->delete_.flags);
+   bson_string_append (delete_as_str, str);
+   bson_free (str);
+
+   request->as_str = bson_string_free (delete_as_str, false);
 }
 
 

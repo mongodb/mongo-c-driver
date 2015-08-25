@@ -2179,6 +2179,105 @@ test_bulk_new (void)
 }
 
 
+typedef enum {
+    INSERT,
+    UPDATE,
+    REMOVE
+} op_type_t;
+
+
+static void
+_test_legacy_write_err (op_type_t op_type)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *doc = tmp_bson ("{'_id': 1}");
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request = NULL;
+
+   server = mock_server_with_autoismaster (0);  /* wire version = 0 */
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+
+   switch (op_type) {
+   case INSERT:
+      mongoc_bulk_operation_insert (bulk, doc);
+      break;
+   case UPDATE:
+      mongoc_bulk_operation_update (bulk,
+                                    doc,
+                                    tmp_bson ( "{'$inc': {'x': 1}}"),
+                                    false);
+      break;
+   case REMOVE:
+      mongoc_bulk_operation_remove (bulk, doc);
+   }
+
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   switch (op_type) {
+   case INSERT:
+      request = mock_server_receives_insert (server, "test.test",
+                                             MONGOC_INSERT_NONE,
+                                             "{'_id': 1}");
+      break;
+   case UPDATE:
+      request = mock_server_receives_update (server, "test.test",
+                                             MONGOC_UPDATE_MULTI_UPDATE,
+                                             "{'_id': 1}",
+                                             "{'$inc': {'x': 1}}");
+      break;
+   case REMOVE:
+      request = mock_server_receives_delete (server, "test.test",
+                                             MONGOC_REMOVE_NONE,
+                                             "{'_id': 1}");
+      break;
+   }
+
+   request_destroy (request);
+   request = mock_server_receives_gle (server, "test");
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   /* bulk operation fails */
+   assert (!future_get_uint32_t (future));
+
+   future_destroy (future);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_legacy_insert_err ()
+{
+   _test_legacy_write_err (INSERT);
+}
+
+
+static void
+test_legacy_update_err ()
+{
+   _test_legacy_write_err (UPDATE);
+}
+
+
+static void
+test_legacy_remove_err ()
+{
+   _test_legacy_write_err (REMOVE);
+}
+
+
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -2260,4 +2359,8 @@ test_bulk_install (TestSuite *suite)
                   test_bulk_new);
    TestSuite_Add (suite, "/BulkOperation/over_1000",
                   test_bulk_edge_over_1000);
+
+   TestSuite_Add (suite, "/BulkOperation/error/insert", test_legacy_insert_err);
+   TestSuite_Add (suite, "/BulkOperation/error/update", test_legacy_update_err);
+   TestSuite_Add (suite, "/BulkOperation/error/remove", test_legacy_remove_err);
 }

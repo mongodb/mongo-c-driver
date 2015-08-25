@@ -70,6 +70,17 @@ bool request_matches_bulk_insert (const request_t *request,
                                   mongoc_insert_flags_t flags,
                                   int n);
 
+bool request_matches_update (const request_t *request,
+                             const char *ns,
+                             mongoc_update_flags_t flags,
+                             const char *selector_json,
+                             const char *update_json);
+
+bool request_matches_delete (const request_t *request,
+                             const char *ns,
+                             mongoc_remove_flags_t flags,
+                             const char *selector_json);
+
 bool request_matches_getmore (const request_t *request,
                               const char *ns,
                               uint32_t n_return,

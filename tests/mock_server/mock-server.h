@@ -115,6 +115,17 @@ request_t *mock_server_receives_bulk_insert (mock_server_t *server,
                                              mongoc_insert_flags_t flags,
                                              int n);
 
+request_t *mock_server_receives_update (mock_server_t *server,
+                                        const char *ns,
+                                        mongoc_update_flags_t flags,
+                                        const char *selector_json,
+                                        const char *update_json);
+
+request_t * mock_server_receives_delete (mock_server_t *server,
+                                         const char *ns,
+                                         mongoc_remove_flags_t flags,
+                                         const char *selector_json);
+
 request_t *mock_server_receives_kill_cursors (mock_server_t *server,
                                               int64_t cursor_id);
 

@@ -955,6 +955,91 @@ mock_server_receives_bulk_insert (mock_server_t *server,
    return request;
 }
 
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_update --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not an update matching ns, flags,
+ *       selector_json, and update_json.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_update (mock_server_t *server,
+                             const char *ns,
+                             mongoc_update_flags_t flags,
+                             const char *selector_json,
+                             const char *update_json)
+{
+   sync_queue_t *q;
+   request_t *request;
+
+   q = mock_server_get_queue (server);
+   request = (request_t *) q_get (q, server->request_timeout_msec);
+
+   if (request && !request_matches_update (request,
+                                           ns,
+                                           flags,
+                                           selector_json,
+                                           update_json)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_delete --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not a delete matching ns, flags,
+ *       and selector_json.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_delete (mock_server_t *server,
+                             const char *ns,
+                             mongoc_remove_flags_t flags,
+                             const char *selector_json)
+{
+   sync_queue_t *q;
+   request_t *request;
+
+   q = mock_server_get_queue (server);
+   request = (request_t *) q_get (q, server->request_timeout_msec);
+
+   if (request && !request_matches_delete (request,
+                                           ns,
+                                           flags,
+                                           selector_json)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
 
 /*--------------------------------------------------------------------------
  *
