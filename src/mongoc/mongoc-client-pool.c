@@ -241,3 +241,29 @@ mongoc_client_pool_get_size (mongoc_client_pool_t *pool)
 
    RETURN (size);
 }
+
+void
+mongoc_client_pool_max_size(mongoc_client_pool_t *pool,
+                            int                   max_pool_size)
+{
+   ENTRY;
+
+   mongoc_mutex_lock (&pool->mutex);
+   pool->max_pool_size = max_pool_size;
+   mongoc_mutex_unlock (&pool->mutex);
+
+   EXIT;
+}
+
+void
+mongoc_client_pool_min_size(mongoc_client_pool_t *pool,
+                            int                   max_pool_size)
+{
+   ENTRY;
+
+   mongoc_mutex_lock (&pool->mutex);
+   pool->min_pool_size = max_pool_size;
+   mongoc_mutex_unlock (&pool->mutex);
+
+   EXIT;
+}
