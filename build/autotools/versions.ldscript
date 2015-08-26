@@ -254,4 +254,6 @@ LIBMONGOC_1.2 {
         mongoc_server_description_new_copy;
         mongoc_stream_failed;
         mongoc_uri_get_read_prefs_t;
+        mongoc_client_pool_max_size;
+        mongoc_client_pool_min_size;
 } LIBMONGOC_1.1;

@@ -40,6 +40,8 @@ mongoc_client_pool_new
 mongoc_client_pool_pop
 mongoc_client_pool_push
 mongoc_client_pool_try_pop
+mongoc_client_pool_max_size
+mongoc_client_pool_min_size
 mongoc_client_set_read_prefs
 mongoc_client_set_stream_initiator
 mongoc_client_set_write_concern
