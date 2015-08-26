@@ -241,4 +241,6 @@ LIBMONGOC_1.1 {
         mongoc_stream_write;
         mongoc_uri_get_credentials;
         mongoc_uri_get_mechanism_properties;
+        mongoc_client_pool_max_size;
+        mongoc_client_pool_min_size;
 } LIBMONGOC_1.0;
