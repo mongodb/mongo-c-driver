@@ -1161,6 +1161,8 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
          RETURN (NULL);
       }
 
+      BSON_ASSERT (!scanner_node->retired);
+
       stream = scanner_node->stream;
       if (!stream) {
          MONGOC_WARNING ("Failed connection to %s", sd->connection_address);
@@ -1250,6 +1252,8 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
       if (!scanner_node) {
          goto FETCH_FAIL;
       }
+
+      BSON_ASSERT (!scanner_node->retired);
 
       stream = scanner_node->stream;
       if (!stream) {
@@ -2046,6 +2050,8 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
    if (!scanner_node) {
       return false;
    }
+
+   BSON_ASSERT (!scanner_node->retired);
 
    stream = scanner_node->stream;
 

@@ -54,6 +54,8 @@ typedef struct mongoc_topology_scanner_node
 
    struct mongoc_topology_scanner_node *next;
    struct mongoc_topology_scanner_node *prev;
+
+   bool                            retired;
 } mongoc_topology_scanner_node_t;
 
 typedef struct mongoc_topology_scanner
@@ -84,7 +86,7 @@ mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
 void
 mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts);
 
-void
+mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
                              const mongoc_host_list_t  *host,
                              uint32_t                   id);
@@ -94,6 +96,9 @@ mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
                                       const mongoc_host_list_t  *host,
                                       uint32_t                   id,
                                       int64_t                    timeout_msec);
+
+void
+mongoc_topology_scanner_node_retire (mongoc_topology_scanner_node_t *node);
 
 void
 mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node,
@@ -107,6 +112,9 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
 bool
 mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
                               int32_t                    timeout_msec);
+
+void
+mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts);
 
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,

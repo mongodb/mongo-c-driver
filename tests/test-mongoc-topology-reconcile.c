@@ -121,6 +121,7 @@ _test_topology_reconcile_rs (bool pooled)
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
+   debug_stream_stats_t debug_stream_stats = { 0 };
    mongoc_read_prefs_t *secondary_read_prefs;
    mongoc_read_prefs_t *primary_read_prefs;
    mongoc_read_prefs_t *tag_read_prefs;
@@ -149,6 +150,10 @@ _test_topology_reconcile_rs (bool pooled)
       client = mongoc_client_new (uri_str);
    }
 
+   if (!pooled) {
+      test_framework_set_debug_stream (client, &debug_stream_stats);
+   }
+
    secondary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    tag_read_prefs = mongoc_read_prefs_new (MONGOC_READ_NEAREST);
@@ -167,15 +172,30 @@ _test_topology_reconcile_rs (bool pooled)
    assert (selects_server (client, primary_read_prefs, server1));
 
    /*
-    * remove server0 from set. tag primary, select w/ tags to trigger re-scan.
+    * remove server1 from set. server0 is the primary, with tags.
     */
-   RS_RESPONSE_TO_ISMASTER (server1, true, true, server1);  /* server0 absent */
+   RS_RESPONSE_TO_ISMASTER (server0, true, true, server0);  /* server1 absent */
 
    assert (selects_server (client, tag_read_prefs, server1));
    assert (!client->topology->stale);
 
-   assert (!get_node (client->topology->scanner,
-                      mock_server_get_host_and_port (server0)));
+   if (!pooled) {
+      ASSERT_CMPINT (1, ==, debug_stream_stats.n_failed);
+   }
+
+   /*
+    * server1 returns as a secondary. its scanner node is un-retired.
+    */
+   RS_RESPONSE_TO_ISMASTER (server0, true, true, server0, server1);
+   RS_RESPONSE_TO_ISMASTER (server1, false, false, server0, server1);
+
+   assert (selects_server (client, secondary_read_prefs, server1));
+
+   if (!pooled) {
+      /* no additional failed streams */
+      ASSERT_CMPINT (1, ==, debug_stream_stats.n_failed);
+   }
+
 
    mongoc_read_prefs_destroy (primary_read_prefs);
    mongoc_read_prefs_destroy (secondary_read_prefs);

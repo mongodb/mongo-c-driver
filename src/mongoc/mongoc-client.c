@@ -265,7 +265,7 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
  *--------------------------------------------------------------------------
  */
 
-static mongoc_stream_t *
+mongoc_stream_t *
 mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
                                         const mongoc_host_list_t *host,
                                         void                     *user_data,

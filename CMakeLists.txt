@@ -242,6 +242,7 @@ function(mongoc_add_example example use_shared)
 endfunction()
 
 set(test-libmongoc-sources
+   ${SOURCE_DIR}/tests/debug-stream.c
    ${SOURCE_DIR}/tests/ha-test.c
    ${SOURCE_DIR}/tests/json-test.c
    ${SOURCE_DIR}/tests/mock_server/future.c

@@ -99,6 +99,8 @@ _test_topology_scanner(bool with_ssl)
       more_to_do = mongoc_topology_scanner_work (topology_scanner, TIMEOUT);
 
       assert(! more_to_do);
+
+      mongoc_topology_scanner_reset (topology_scanner);
    }
 
    assert(finished == 0);

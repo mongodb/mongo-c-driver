@@ -72,6 +72,7 @@ test_replica_set_ssl_LDADD = $(TEST_LIBS)
 
 
 test_libmongoc_SOURCES = \
+	tests/debug-stream.c \
 	tests/json-test.c \
 	tests/json-test.h \
 	tests/mock_server/future.c \

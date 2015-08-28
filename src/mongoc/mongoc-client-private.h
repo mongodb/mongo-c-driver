@@ -70,6 +70,12 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
                              mongoc_topology_t      *topology);
 
 mongoc_stream_t *
+mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
+                                        const mongoc_host_list_t *host,
+                                        void                     *user_data,
+                                        bson_error_t             *error);
+
+mongoc_stream_t *
 _mongoc_client_create_stream (mongoc_client_t          *client,
                               const mongoc_host_list_t *host,
                               bson_error_t             *error);

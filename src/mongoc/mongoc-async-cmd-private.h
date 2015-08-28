@@ -39,6 +39,7 @@ typedef enum
    MONGOC_ASYNC_CMD_RECV_LEN,
    MONGOC_ASYNC_CMD_RECV_RPC,
    MONGOC_ASYNC_CMD_ERROR_STATE,
+   MONGOC_ASYNC_CMD_CANCELED_STATE,
 } mongoc_async_cmd_state_t;
 
 typedef struct _mongoc_async_cmd

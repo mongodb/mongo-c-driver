@@ -37,4 +37,13 @@ mongoc_uri_t *test_framework_get_uri (void);
 mongoc_client_t *test_framework_client_new (void);
 mongoc_client_pool_t *test_framework_client_pool_new (void);
 bool test_framework_is_mongos (void);
+
+typedef struct _debug_stream_stats_t {
+    int n_destroyed;
+    int n_failed;
+} debug_stream_stats_t;
+
+void test_framework_set_debug_stream (mongoc_client_t *client,
+                                      debug_stream_stats_t *stats);
+
 #endif

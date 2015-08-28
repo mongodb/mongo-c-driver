@@ -44,15 +44,14 @@ mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *cmd);
 mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *cmd);
-mongoc_async_cmd_result_t
-_mongoc_async_cmd_phase_error (mongoc_async_cmd_t *cmd);
 
 static const _monogc_async_cmd_phase_t gMongocCMDPhases[] = {
    _mongoc_async_cmd_phase_setup,
    _mongoc_async_cmd_phase_send,
    _mongoc_async_cmd_phase_recv_len,
    _mongoc_async_cmd_phase_recv_rpc,
-   _mongoc_async_cmd_phase_error,
+   NULL,  /* no callback for MONGOC_ASYNC_CMD_ERROR_STATE    */
+   NULL,  /* no callback for MONGOC_ASYNC_CMD_CANCELED_STATE */
 };
 
 #ifdef MONGOC_ENABLE_SSL
@@ -97,8 +96,14 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 {
    mongoc_async_cmd_result_t result;
    int64_t rtt;
+   _monogc_async_cmd_phase_t phase_callback;
 
-   result = gMongocCMDPhases[acmd->state](acmd);
+   phase_callback = gMongocCMDPhases[acmd->state];
+   if (phase_callback) {
+      result = phase_callback (acmd);
+   } else {
+      result = MONGOC_ASYNC_CMD_ERROR;
+   }
 
    if (result == MONGOC_ASYNC_CMD_IN_PROGRESS) {
       return true;
@@ -109,7 +114,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
       acmd->cb (result, &acmd->reply, rtt, acmd->data, &acmd->error);
    } else {
-      /* we're either in ERROR or TIMEOUT */
+      /* we're in ERROR, TIMEOUT, or CANCELED */
       acmd->cb (result, NULL, rtt, acmd->data, &acmd->error);
    }
 
@@ -384,10 +389,4 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
    }
 
    return MONGOC_ASYNC_CMD_IN_PROGRESS;
-}
-
-mongoc_async_cmd_result_t
-_mongoc_async_cmd_phase_error (mongoc_async_cmd_t *acmd)
-{
-   return MONGOC_ASYNC_CMD_ERROR;
 }

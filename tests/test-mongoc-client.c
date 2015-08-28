@@ -594,6 +594,12 @@ test_seed_list (bool rs,
    uri = mongoc_uri_new (uri_str);
    assert (uri);
 
+   /* TODO: CDRIVER-798 this shouldn't be needed in order to fail promptly
+    * in single-threaded case. */
+   /* must be >= minHeartbeatFrequencyMS=500 or the "reconnect"
+    * case won't have time to succeed */
+   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
+
    if (rs) {
       mock_server_auto_ismaster (server,
                                  "{'ok': 1,"
@@ -622,12 +628,6 @@ test_seed_list (bool rs,
 
    topology = client->topology;
    td = &topology->description;
-
-   if (rs) {
-      ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
-   } else {
-      ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_UNKNOWN);
-   }
 
    ASSERT_CMPINT (4, ==, (int) td->servers->items_len);
 

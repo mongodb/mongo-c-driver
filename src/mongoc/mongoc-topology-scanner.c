@@ -97,10 +97,10 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    bson_free (ts);
 }
 
-static mongoc_topology_scanner_node_t *
-_add_node (mongoc_topology_scanner_t *ts,
-           const mongoc_host_list_t  *host,
-           uint32_t                   id)
+mongoc_topology_scanner_node_t *
+mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
+                             const mongoc_host_list_t  *host,
+                             uint32_t                   id)
 {
    mongoc_topology_scanner_node_t *node;
 
@@ -129,15 +129,6 @@ _add_node (mongoc_topology_scanner_t *ts,
 }
 
 void
-mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
-                             const mongoc_host_list_t  *host,
-                             uint32_t                   id)
-{
-   _add_node (ts, host, id);
-}
-
-
-void
 mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
                                       const mongoc_host_list_t  *host,
                                       uint32_t                   id,
@@ -147,7 +138,7 @@ mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
 
    BSON_ASSERT (timeout_msec < INT32_MAX);
 
-   node = _add_node (ts, host, id);
+   node = mongoc_topology_scanner_add (ts, host, id);
 
    if (node && mongoc_topology_scanner_node_setup (node)) {
       node->cmd = mongoc_async_cmd (
@@ -158,7 +149,18 @@ mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
          node, (int32_t) timeout_msec);
    }
 
+   /* if setup fails the node stays in the scanner. destroyed after the scan. */
    return;
+}
+
+void
+mongoc_topology_scanner_node_retire (mongoc_topology_scanner_node_t *node)
+{
+   if (node->cmd) {
+      node->cmd->state = MONGOC_ASYNC_CMD_CANCELED_STATE;
+   }
+
+   node->retired = true;
 }
 
 void
@@ -236,12 +238,18 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
                                           bson_error_t             *error)
 {
    mongoc_topology_scanner_node_t *node;
-   int64_t now = bson_get_monotonic_time ();
+   int64_t now;
 
    bson_return_if_fail (data);
 
    node = (mongoc_topology_scanner_node_t *)data;
    node->cmd = NULL;
+
+   if (node->retired) {
+      return;
+   }
+
+   now = bson_get_monotonic_time ();
 
    /* if no ismaster response, async cmd had an error or timed out */
    if (!ismaster_response ||
@@ -396,6 +404,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
 
    if (node->stream) { return true; }
 
+   BSON_ASSERT (!node->retired);
+
    if (node->ts->initiator) {
       sock_stream = node->ts->initiator (node->ts->uri, &node->host,
                                          node->ts->initiator_context, &error);
@@ -474,6 +484,9 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
       /* check node if it last failed before current cooldown period began */
       if (node->last_failed < cooldown) {
          if (mongoc_topology_scanner_node_setup (node)) {
+
+            BSON_ASSERT (!node->cmd);
+
             node->cmd = mongoc_async_cmd (
                ts->async, node->stream, ts->setup,
                node->host.host, "admin",
@@ -509,14 +522,37 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
    r = mongoc_async_run (ts->async, timeout_msec);
 
    if (! r) {
-      mongoc_host_list_destroy_all (ts->seen);
-      ts->seen = NULL;
       ts->in_progress = false;
    }
 
    return r;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_scanner_reset --
+ *
+ *      Reset "retired" nodes that failed or were removed in the previous
+ *      scan.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts)
+{
+   mongoc_topology_scanner_node_t *node, *tmp;
+
+   DL_FOREACH_SAFE (ts->nodes, node, tmp) {
+      if (node->retired) {
+         mongoc_topology_scanner_node_destroy (node, true);
+      }
+   }
+
+   mongoc_host_list_destroy_all (ts->seen);
+   ts->seen = NULL;
+}
 
 void
 mongoc_topology_scanner_set_async_cb (mongoc_topology_scanner_t *ts,

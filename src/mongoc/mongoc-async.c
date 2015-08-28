@@ -92,6 +92,7 @@ mongoc_async_run (mongoc_async_t *async,
 
       DL_FOREACH_SAFE (async->cmds, acmd, tmp)
       {
+         /* async commands are sorted by expire_at */
          if (now > acmd->expire_at) {
             acmd->cb (MONGOC_ASYNC_CMD_TIMEOUT, NULL, (now - acmd->start_time), acmd->data,
                       &acmd->error);

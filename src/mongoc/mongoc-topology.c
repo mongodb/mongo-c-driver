@@ -63,7 +63,7 @@ mongoc_topology_reconcile (mongoc_topology_t *topology) {
    /* Remove removed nodes */
    DL_FOREACH_SAFE (scanner->nodes, ele, tmp) {
       if (! mongoc_topology_description_server_by_id (description, ele->id)) {
-         mongoc_topology_scanner_node_destroy (ele, true);
+         mongoc_topology_scanner_node_retire (ele);
       }
    }
 }
@@ -326,6 +326,8 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology) {
    while (_mongoc_topology_run_scanner (topology,
                                         topology->connect_timeout_msec)) {}
 
+   /* "retired" nodes can be checked again in the next scan */
+   mongoc_topology_scanner_reset (topology->scanner);
    topology->last_scan = bson_get_monotonic_time ();
    topology->stale = false;
 }
@@ -697,6 +699,10 @@ void * _mongoc_topology_run_background (void *data)
                                            topology->connect_timeout_msec)) {}
 
       mongoc_mutex_lock (&topology->mutex);
+
+      /* "retired" nodes can be checked again in the next scan */
+      mongoc_topology_scanner_reset (topology->scanner);
+
       topology->last_scan = bson_get_monotonic_time ();
       topology->scanning = false;
       mongoc_mutex_unlock (&topology->mutex);
