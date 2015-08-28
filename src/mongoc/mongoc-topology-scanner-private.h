@@ -71,7 +71,6 @@ typedef struct mongoc_topology_scanner
    mongoc_async_cmd_setup_t        setup;
    mongoc_stream_initiator_t       initiator;
    void                           *initiator_context;
-   mongoc_host_list_t             *seen;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts;
@@ -119,6 +118,10 @@ mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts);
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,
                                   uint32_t                   id);
+
+bool
+mongoc_topology_scanner_has_node_for_host (mongoc_topology_scanner_t *ts,
+                                           mongoc_host_list_t        *host);
 
 void
 mongoc_topology_scanner_set_stream_initiator (mongoc_topology_scanner_t *ts,

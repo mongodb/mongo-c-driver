@@ -38,7 +38,10 @@ _mongoc_topology_reconcile_add_nodes (void *item,
    mongoc_topology_t *topology = (mongoc_topology_t *)ctx;
    mongoc_topology_scanner_t *scanner = topology->scanner;
 
-   if (! mongoc_topology_scanner_get_node (scanner, sd->id)) {
+   /* quickly search by id, then check if a node for this host was retired in
+    * this scan. */
+   if (! mongoc_topology_scanner_get_node (scanner, sd->id) &&
+       ! mongoc_topology_scanner_has_node_for_host (scanner, &sd->host)) {
       mongoc_topology_scanner_add_and_scan (scanner, &sd->host, sd->id,
                                             topology->connect_timeout_msec);
    }

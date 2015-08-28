@@ -183,14 +183,12 @@ test_topology_scanner_discovery ()
 
    /* a single scan discovers *and* checks the secondary */
    AWAIT (scanner->async->ncmds == 1);
-   ASSERT_CMPINT (1, ==, (int) mongoc_host_list_count (scanner->seen));
    request = mock_server_receives_ismaster (primary);
    mock_server_replies_simple (request, primary_response);
    request_destroy (request);
 
    /* let client process that response */
    _mongoc_usleep (250 * 1000);
-   ASSERT_CMPINT (2, ==, (int) mongoc_host_list_count (scanner->seen));
 
    /* a check of the secondary is scheduled in this scan */
    AWAIT (scanner->async->ncmds == 1);
@@ -204,9 +202,6 @@ test_topology_scanner_discovery ()
 
    ASSERT_CMPSTR (sd->host.host_and_port,
                   mock_server_get_host_and_port (secondary));
-
-   /* "seen" is reset */
-   ASSERT_CMPINT (0, ==, (int) mongoc_host_list_count (scanner->seen));
 
    mongoc_server_description_destroy (sd);
    future_destroy (future);
@@ -287,9 +282,6 @@ test_topology_scanner_oscillate ()
 
    assert (!future_get_mongoc_server_description_ptr (future));
    assert (scanner->async->ncmds == 0);
-
-   /* "seen" is reset */
-   ASSERT_CMPINT (0, ==, (int) mongoc_host_list_count (scanner->seen));
 
    future_destroy (future);
    request_destroy (request);

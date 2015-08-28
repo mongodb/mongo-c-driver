@@ -176,7 +176,7 @@ _test_topology_reconcile_rs (bool pooled)
     */
    RS_RESPONSE_TO_ISMASTER (server0, true, true, server0);  /* server1 absent */
 
-   assert (selects_server (client, tag_read_prefs, server1));
+   assert (selects_server (client, tag_read_prefs, server0));
    assert (!client->topology->stale);
 
    if (!pooled) {

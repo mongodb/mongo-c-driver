@@ -92,8 +92,6 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    mongoc_async_destroy (ts->async);
    bson_destroy (&ts->ismaster_cmd);
 
-   mongoc_host_list_destroy_all (ts->seen);
-
    bson_free (ts);
 }
 
@@ -104,15 +102,6 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
 {
    mongoc_topology_scanner_node_t *node;
 
-   if (mongoc_host_list_find (ts->seen, host)) {
-      /* already seen this host -- avoid pathological case like two primaries
-       * pointing at each other, each invalidating itself and trying to add the
-       * other on each check within the same blocking scan, see
-       * test_topology_scanner_oscillate
-       */
-      return NULL;
-   }
-
    node = (mongoc_topology_scanner_node_t *) bson_malloc0 (sizeof (*node));
 
    memcpy (&node->host, host, sizeof (*host));
@@ -122,8 +111,6 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
    node->last_failed = -1;
 
    DL_APPEND(ts->nodes, node);
-
-   ts->seen = mongoc_host_list_copy (host, ts->seen);
 
    return node;
 }
@@ -219,6 +206,31 @@ mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,
    }
 
    return NULL;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_scanner_has_node_for_host --
+ *
+ *      Whether the scanner has a node for the given host and port.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+mongoc_topology_scanner_has_node_for_host (mongoc_topology_scanner_t *ts,
+                                           mongoc_host_list_t        *host)
+{
+   mongoc_topology_scanner_node_t *ele, *tmp;
+
+   DL_FOREACH_SAFE (ts->nodes, ele, tmp)
+   {
+      if (mongoc_host_list_equal (&ele->host, host)) {
+         return true;
+      }
+   }
+
+   return false;
 }
 
 /*
@@ -549,9 +561,6 @@ mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts)
          mongoc_topology_scanner_node_destroy (node, true);
       }
    }
-
-   mongoc_host_list_destroy_all (ts->seen);
-   ts->seen = NULL;
 }
 
 void
