@@ -316,6 +316,13 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
+   if (bytes == 0) {
+      bson_set_error (&acmd->error, MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Server closed connection.");
+      return MONGOC_ASYNC_CMD_ERROR;
+   }
+
    acmd->bytes_to_read -= bytes;
 
    if (!acmd->bytes_to_read) {
@@ -350,6 +357,13 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
       bson_set_error (&acmd->error, MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_SOCKET,
                       "Failed to receive rpc bytes from server.");
+      return MONGOC_ASYNC_CMD_ERROR;
+   }
+
+   if (bytes == 0) {
+      bson_set_error (&acmd->error, MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "Server closed connection.");
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
