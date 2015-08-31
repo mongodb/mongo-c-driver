@@ -26,6 +26,7 @@
 #include "mongoc-log.h"
 #include "mongoc-socket.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
 
 
