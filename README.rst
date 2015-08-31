@@ -141,6 +141,17 @@ FreeBSD::
 
   $ su -c 'pkg install git gcc automake autoconf libtool'
 
+OS X::
+
+  $ brew install pkg-config
+
+If you don't have Homebrew, you can install it from the `homebrew-website`_. You
+also need Xcode, which is available as a free download in the App Store or on
+the `apple-website`_.
+
+.. _homebrew-website Homebrew website: http://brew.sh
+.. _apple-website Apple Developer website: http://developer.apple.com/xcode
+
 
 Fetch Sources and Build
 -----------------------
