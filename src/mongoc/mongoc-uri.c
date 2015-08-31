@@ -29,11 +29,6 @@
 #include "mongoc-write-concern-private.h"
 
 
-#if defined(_WIN32) && !defined(strcasecmp)
-# define strcasecmp _stricmp
-#endif
-
-
 struct _mongoc_uri_t
 {
    char                   *str;

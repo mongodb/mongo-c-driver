@@ -20,6 +20,7 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-uri.h"
+#include "mongoc-util-private.h"
 
 #include <stdio.h>
 
@@ -27,11 +28,6 @@
 #define MAX_WIRE_VERSION 3
 
 #define ALPHA 0.2
-
-
-#if defined(_WIN32) && !defined(strcasecmp)
-# define strcasecmp _stricmp
-#endif
 
 
 static uint8_t kMongocEmptyBson[] = { 5, 0, 0, 0, 0 };

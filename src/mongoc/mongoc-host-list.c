@@ -15,11 +15,7 @@
  */
 
 #include "mongoc-host-list.h"
-
-
-#ifdef _WIN32
-# define strcasecmp _stricmp
-#endif
+#include "mongoc-util-private.h"
 
 /*
  *--------------------------------------------------------------------------

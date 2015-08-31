@@ -33,6 +33,12 @@
       } \
    } while (0)
 
+/* string comparison functions for Windows */
+#ifdef _WIN32
+# define strcasecmp  _stricmp
+# define strncasecmp _strnicmp
+#endif
+
 BSON_BEGIN_DECLS
 
 
