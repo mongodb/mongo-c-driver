@@ -252,7 +252,7 @@ _test_topology_reconcile_sharded (bool pooled)
 
    /* provide both servers in seed list */
    uri_str = bson_strdup_printf (
-      "mongodb://%s,%s/?connectTimeoutMS=10&serverselectiontimeoutms=1000",
+      "mongodb://%s,%s",
       mock_server_get_host_and_port (mongos),
       mock_server_get_host_and_port (secondary));
 
