@@ -56,10 +56,6 @@
 #define MONGOC_LOG_DOMAIN "cluster"
 
 
-#ifdef _WIN32
-# define strcasecmp _stricmp
-#endif
-
 #define MIN_WIRE_VERSION 0
 #define MAX_WIRE_VERSION 3
 

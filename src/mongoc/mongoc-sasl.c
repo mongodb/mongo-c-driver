@@ -22,14 +22,11 @@
 
 #include "mongoc-error.h"
 #include "mongoc-sasl-private.h"
+#include "mongoc-util-private.h"
 
 
 #ifndef SASL_CALLBACK_FN
 #  define SASL_CALLBACK_FN(_f) ((int (*) (void))(_f))
-#endif
-
-#if defined(_WIN32) && !defined(strcasecmp)
-# define strcasecmp _stricmp
 #endif
 
 void
