@@ -556,7 +556,7 @@ test_cooldown_rs (void)
 static void
 _test_connect_timeout (bool pooled, bool try_once)
 {
-   const int32_t connect_timeout_ms = 50;
+   const int32_t connect_timeout_ms = 200;
    const int32_t server_selection_timeout_ms = 10 * 1000;  /* 10 seconds */
 
    mock_server_t *servers[2];
@@ -569,10 +569,12 @@ _test_connect_timeout (bool pooled, bool try_once)
    mongoc_read_prefs_t *primary_pref;
    future_t *future;
    int64_t start;
+   int64_t server0_last_ismaster;
    int64_t duration_usec;
+   int64_t expected_duration_usec;
+   bool server0_in_cooldown;
    bson_error_t error;
    request_t *request;
-   int n_loops;
 
    assert (!(pooled && try_once));  /* not supported */
 
@@ -615,7 +617,7 @@ _test_connect_timeout (bool pooled, bool try_once)
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
 
-   start = bson_get_monotonic_time ();
+   server0_last_ismaster = start = bson_get_monotonic_time ();
 
    /* server 0 doesn't respond */
    assert (request = mock_server_receives_ismaster (servers[0]));
@@ -628,22 +630,30 @@ _test_connect_timeout (bool pooled, bool try_once)
 
    if (!try_once) {
       /* driver retries every minHeartbeatFrequencyMS + connectTimeoutMS */
-      n_loops = server_selection_timeout_ms / (500 + connect_timeout_ms);
+      server0_in_cooldown = true;
+      expected_duration_usec = 0;
 
-      for (i = 1; i <= n_loops; i++) {
+      while (expected_duration_usec < server_selection_timeout_ms) {
          request = mock_server_receives_ismaster (servers[1]);
          mock_server_replies_simple (request, secondary_response);
          request_destroy (request);
 
          duration_usec = bson_get_monotonic_time () - start;
-         ASSERT_ALMOST_EQUAL (duration_usec / 1000,
-                              i * (500 + connect_timeout_ms));
+         expected_duration_usec += 1000 * (
+            connect_timeout_ms + MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
+
+         ASSERT_ALMOST_EQUAL (duration_usec, expected_duration_usec);
 
          /* single client puts server 0 in cooldown for 5 sec */
-         if (pooled || i == 10) {
+         if (pooled || !server0_in_cooldown) {
             assert (request = mock_server_receives_ismaster (servers[0]));
+            server0_last_ismaster = bson_get_monotonic_time ();
             request_destroy (request);  /* don't respond */
          }
+
+         server0_in_cooldown =
+            (bson_get_monotonic_time () - server0_last_ismaster) <
+            5 * 1000 * 1000;
       }
    }
 
