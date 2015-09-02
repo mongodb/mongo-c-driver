@@ -391,7 +391,6 @@ functions:
         set -o verbose
         export ORCHESTRATION_FILE="orchestration_configs/${topology_type}s/${orchestration_file}"
         export ORCHESTRATION_URL="http://localhost:8889/v1/${topology_type}s"
-        export FOREVER_GREEN=1
         ${set_username_password}
         ${start_mongo_orchestration}
         ${start_topology}

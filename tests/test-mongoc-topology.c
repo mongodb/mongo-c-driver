@@ -14,13 +14,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-test"
 
-static int should_run_topology_tests (void)
-{
-   if (getenv ("FOREVER_GREEN")) {
-      return 0;
-   }
-   return 1;
-}
 
 static void
 test_topology_client_creation (void)
@@ -238,13 +231,13 @@ _test_server_selection (bool try_once)
 }
 
 static void
-test_server_selection_try_once (void *context)
+test_server_selection_try_once (void)
 {
    _test_server_selection (true);
 }
 
 static void
-test_server_selection_try_once_false (void *context)
+test_server_selection_try_once_false (void)
 {
    _test_server_selection (false);
 }
@@ -688,21 +681,21 @@ _test_connect_timeout (bool pooled, bool try_once)
 
 
 static void
-test_connect_timeout_pooled (void *context)
+test_connect_timeout_pooled (void)
 {
    _test_connect_timeout (true, false);
 }
 
 
 static void
-test_connect_timeout_single(void *context)
+test_connect_timeout_single(void)
 {
    _test_connect_timeout (false, true);
 }
 
 
 static void
-test_connect_timeout_try_once_false(void *context)
+test_connect_timeout_try_once_false(void)
 {
    _test_connect_timeout (false, false);
 }
@@ -714,14 +707,14 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/client_creation", test_topology_client_creation);
    TestSuite_Add (suite, "/Topology/client_pool_creation", test_topology_client_pool_creation);
    TestSuite_Add (suite, "/Topology/server_selection_try_once_option", test_server_selection_try_once_option);
-   TestSuite_AddFull (suite, "/Topology/server_selection_try_once", test_server_selection_try_once, NULL, NULL, should_run_topology_tests);
-   TestSuite_AddFull (suite, "/Topology/server_selection_try_once_false", test_server_selection_try_once_false, NULL, NULL, should_run_topology_tests);
+   TestSuite_Add (suite, "/Topology/server_selection_try_once", test_server_selection_try_once);
+   TestSuite_Add (suite, "/Topology/server_selection_try_once_false", test_server_selection_try_once_false);
    TestSuite_Add (suite, "/Topology/invalidate_server", test_topology_invalidate_server);
    TestSuite_Add (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node);
    TestSuite_Add (suite, "/Topology/max_wire_version_race_condition", test_max_wire_version_race_condition);
    TestSuite_Add (suite, "/Topology/cooldown/standalone", test_cooldown_standalone);
    TestSuite_Add (suite, "/Topology/cooldown/rs", test_cooldown_rs);
-   TestSuite_AddFull (suite, "/Topology/connect_timeout/pooled", test_connect_timeout_pooled, NULL, NULL, should_run_topology_tests);
-   TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once", test_connect_timeout_single, NULL, NULL, should_run_topology_tests);
-   TestSuite_AddFull (suite, "/Topology/connect_timeout/single/try_once_false", test_connect_timeout_try_once_false, NULL, NULL, should_run_topology_tests);
+   TestSuite_Add (suite, "/Topology/connect_timeout/pooled", test_connect_timeout_pooled);
+   TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once", test_connect_timeout_single);
+   TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once_false", test_connect_timeout_try_once_false);
 }
