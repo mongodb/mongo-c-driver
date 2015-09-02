@@ -919,6 +919,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    ret = WSASend (sock->sd, (LPWSABUF)iov, iovcnt, &dwNumberofBytesSent,
                   0, NULL, NULL);
    ret = ret ? -1 : dwNumberofBytesSent;
+   errno = WSAGetLastError();
 #else
    memset (&msg, 0, sizeof msg);
    msg.msg_iov = iov;
