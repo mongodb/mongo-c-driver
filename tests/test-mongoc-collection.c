@@ -1198,7 +1198,7 @@ test_aggregate (void)
    bson_t *pipeline;
    bson_t *b;
    bson_iter_t iter;
-   int i;
+   int i, j;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -1236,20 +1236,13 @@ again:
          bson_destroy (&opts);
       }
 
-      for (i = 0; i < 2; i++) {
-         /*
-          * This can fail if we are connecting to a 2.0 MongoDB instance.
-          */
+      for (j = 0; j < 2; j++) {
          r = mongoc_cursor_next(cursor, &doc);
          if (mongoc_cursor_error(cursor, &error)) {
-            if ((error.domain == MONGOC_ERROR_QUERY) &&
-                (error.code == MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND)) {
-               mongoc_cursor_destroy (cursor);
-               break;
-            }
-
             fprintf (stderr, "[%d.%d] %s",
                      error.domain, error.code, error.message);
+
+            abort ();
          }
 
          ASSERT (r);
@@ -1262,7 +1255,9 @@ again:
       r = mongoc_cursor_next(cursor, &doc);
       if (mongoc_cursor_error(cursor, &error)) {
          fprintf (stderr, "%s", error.message);
+         abort ();
       }
+
       ASSERT (!r);
       ASSERT (!doc);
 
