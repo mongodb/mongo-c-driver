@@ -288,6 +288,7 @@ _mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
 static bool
 _mongoc_socket_errno_is_again (mongoc_socket_t *sock) /* IN */
 {
+   TRACE("errno is: %d", sock->errno_);
    return MONGOC_ERRNO_IS_AGAIN (sock->errno_);
 }
 
