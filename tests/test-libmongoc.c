@@ -502,6 +502,7 @@ call_ismaster (bson_t *reply)
    uri_str = test_framework_get_uri_str_from_env ();
    uri = mongoc_uri_new (uri_str);
    assert (uri);
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 1000);
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
 
    client = mongoc_client_new_from_uri (uri);
@@ -605,9 +606,6 @@ test_framework_get_uri_str_no_auth (const char *database_name)
    }
 
    /* by now the string ends in "?" or "&", we can add options to it */
-   bson_string_append (uri_string,
-                       "connectTimeoutMS=1000&serverSelectionTimeoutMS=1000");
-
    if (test_framework_get_ssl ()) {
       bson_string_append (uri_string, "&ssl=true");
    }
