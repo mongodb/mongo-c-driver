@@ -847,6 +847,24 @@ test_framework_is_mongos (void)
    return is_mongos;
 }
 
+
+bool
+test_framework_max_wire_version_at_least (int version)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   bool at_least;
+
+   call_ismaster (&reply);
+
+   at_least = (bson_iter_init_find (&iter, &reply, "maxWireVersion")
+                && bson_iter_as_int64 (&iter) >= version);
+
+   bson_destroy (&reply);
+
+   return at_least;
+}
+
 int
 main (int   argc,
       char *argv[])

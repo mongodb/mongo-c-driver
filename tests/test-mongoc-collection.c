@@ -1227,9 +1227,14 @@ again:
          ASSERT (cursor);
       } else {
          bson_init (&opts);
-         BSON_APPEND_INT32 (&opts, "batchSize", 10);
-         BSON_APPEND_BOOL (&opts, "allowDiskUse", true);
 
+         /* servers < 2.6 error is passed allowDiskUse */
+         if (test_framework_max_wire_version_at_least (2)) {
+            BSON_APPEND_BOOL (&opts, "allowDiskUse", true);
+         }
+
+         /* this is ok, the driver silently omits batchSize if server < 2.6 */
+         BSON_APPEND_INT32 (&opts, "batchSize", 10);
          cursor = mongoc_collection_aggregate(collection, MONGOC_QUERY_NONE, pipeline, &opts, NULL);
          ASSERT (cursor);
 
