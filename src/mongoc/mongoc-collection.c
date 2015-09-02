@@ -236,11 +236,19 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    bson_return_val_if_fail (collection, NULL);
    bson_return_val_if_fail (pipeline, NULL);
 
+   if (!read_prefs) {
+      read_prefs = collection->read_prefs;
+   }
+
    selected_server = mongoc_topology_select(collection->client->topology,
                                             MONGOC_SS_READ,
                                             read_prefs,
                                             15,
                                             &error);
+
+   if (!selected_server) {
+      return NULL;
+   }
 
    use_cursor = selected_server->max_wire_version >= 1;
 

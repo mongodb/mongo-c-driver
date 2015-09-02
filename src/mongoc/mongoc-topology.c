@@ -338,7 +338,7 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology) {
 /*
  *-------------------------------------------------------------------------
  *
- * _mongoc_topology_select --
+ * mongoc_topology_select --
  *
  *       Selects a server description for an operation based on @optype
  *       and @read_prefs.
@@ -347,6 +347,15 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology) {
  *       description. Callers must own and clean up this copy.
  *
  *       NOTE: this method locks and unlocks @topology's mutex.
+ *
+ * Parameters:
+ *       @topology: The topology.
+ *       @optype: Whether we are selecting for a read or write operation.
+ *       @read_prefs: Required, the read preferences for the command.
+ *       @local_threshold_ms: Maximum latency *beyond* the nearest server
+ *          among which to randomly select servers. See Server Selection
+ *          Spec.
+ *       @error: Required, out pointer for error info.
  *
  * Returns:
  *       A mongoc_server_description_t, or NULL on failure, in which case
