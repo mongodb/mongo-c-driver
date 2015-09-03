@@ -377,6 +377,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
    mongoc_server_description_t *selected_server = NULL;
    bool try_once;
    int64_t sleep_usec;
+   bool tried_once;
 
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
@@ -393,6 +394,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
                + ((int64_t) topology->server_selection_timeout_msec * 1000);
 
    if (topology->single_threaded) {
+      tried_once = false;
       next_update = topology->last_scan + topology->heartbeat_msec * 1000;
       if (next_update < loop_start) {
          /* we must scan now */
@@ -418,6 +420,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
             /* takes up to connectTimeoutMS. sets "last_scan", clears "stale" */
             _mongoc_topology_do_blocking_scan (topology);
+            tried_once = true;
          }
 
          selected_server = mongoc_topology_description_select(&topology->description,
@@ -431,16 +434,18 @@ mongoc_topology_select (mongoc_topology_t         *topology,
          }
 
          topology->stale = true;
-         loop_end = bson_get_monotonic_time ();
 
          if (try_once) {
-            if (topology->last_scan > loop_start) {
-               /* we tried once */
+            if (tried_once) {
                goto FAIL;
             }
-         } else if (loop_end > expire_at) {
-            /* no time left in server_selection_timeout_msec */
-            goto FAIL;
+         } else {
+            loop_end = bson_get_monotonic_time ();
+
+            if (loop_end > expire_at) {
+               /* no time left in server_selection_timeout_msec */
+               goto FAIL;
+            }
          }
       }
    }
