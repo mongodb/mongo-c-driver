@@ -17,7 +17,6 @@
 
 #include "mongoc-config.h"
 
-#include <errno.h>
 #ifdef MONGOC_ENABLE_SASL
 #include <sasl/sasl.h>
 #include <sasl/saslutil.h>
@@ -2892,7 +2891,6 @@ _mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
 
    iov = cluster->iov.data;
    iovcnt = cluster->iov.len;
-   errno = 0;
 
    BSON_ASSERT (cluster->iov.len);
 

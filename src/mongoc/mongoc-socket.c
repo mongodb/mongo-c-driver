@@ -167,6 +167,7 @@ _mongoc_socket_wait (int      sd,           /* IN */
       } else if (ret < 0) {
          /* poll itself failed */
 
+         TRACE("errno is: %d", errno);
          if (MONGOC_ERRNO_IS_AGAIN(errno)) {
             now = bson_get_monotonic_time();
 
@@ -265,6 +266,7 @@ _mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
 #else
    sock->errno_ = errno;
 #endif
+   TRACE("setting errno: %d", sock->errno_);
 }
 
 
@@ -335,7 +337,6 @@ again:
    sd = accept (sock->sd, &addr, &addrlen);
 
    _mongoc_socket_capture_errno (sock);
-
 #ifdef _WIN32
    failed = (sd == INVALID_SOCKET);
 #else
@@ -702,7 +703,6 @@ mongoc_socket_recv (mongoc_socket_t *sock,      /* IN */
 {
    ssize_t ret = 0;
    bool failed = false;
-   bool try_again = false;
 
    ENTRY;
 
@@ -721,11 +721,8 @@ again:
 #endif
    if (failed) {
       _mongoc_socket_capture_errno (sock);
-   }
-   try_again = (failed && _mongoc_socket_errno_is_again (sock));
-
-   if (failed && try_again) {
-      if (_mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
+      if (_mongoc_socket_errno_is_again (sock) &&
+          _mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
          GOTO (again);
       }
    }
@@ -928,26 +925,29 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    ret = sendmsg (sock->sd, &msg,
 # ifdef MSG_NOSIGNAL
                   MSG_NOSIGNAL);
-#else
+# else
                   0);
 # endif
 #endif
 
-   TRACE("Send %ld out of %ld bytes (errno=%d)", ret, iov->iov_len, errno);
-   /*
-    * Check to see if we have sent an iovec too large for sendmsg to
-    * complete. If so, we need to fallback to the slow path of multiple
-    * send() commands.
-    */
-#ifdef _WIN32
-   if ((ret == -1) && (errno == WSAEMSGSIZE)) {
-#else
-   if ((ret == -1) && (errno == EMSGSIZE)) {
-#endif
-      RETURN(_mongoc_socket_try_sendv_slow (sock, iov, iovcnt));
-   }
+   TRACE("Send %ld out of %ld bytes", ret, iov->iov_len);
 
-   _mongoc_socket_capture_errno (sock);
+   if (ret == -1) {
+      _mongoc_socket_capture_errno (sock);
+
+      /*
+       * Check to see if we have sent an iovec too large for sendmsg to
+       * complete. If so, we need to fallback to the slow path of multiple
+       * send() commands.
+       */
+#ifdef _WIN32
+      if (errno == WSAEMSGSIZE) {
+#else
+      if (errno == EMSGSIZE) {
+#endif
+         RETURN(_mongoc_socket_try_sendv_slow (sock, iov, iovcnt));
+      }
+   }
 
    RETURN (ret);
 }
