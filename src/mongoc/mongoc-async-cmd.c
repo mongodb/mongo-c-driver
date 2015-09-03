@@ -33,7 +33,7 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async"
 
-typedef mongoc_async_cmd_result_t (*_monogc_async_cmd_phase_t)(
+typedef mongoc_async_cmd_result_t (*_mongoc_async_cmd_phase_t)(
    mongoc_async_cmd_t *cmd);
 
 mongoc_async_cmd_result_t
@@ -45,7 +45,7 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *cmd);
 mongoc_async_cmd_result_t
 _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *cmd);
 
-static const _monogc_async_cmd_phase_t gMongocCMDPhases[] = {
+static const _mongoc_async_cmd_phase_t gMongocCMDPhases[] = {
    _mongoc_async_cmd_phase_setup,
    _mongoc_async_cmd_phase_send,
    _mongoc_async_cmd_phase_recv_len,
@@ -96,7 +96,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 {
    mongoc_async_cmd_result_t result;
    int64_t rtt;
-   _monogc_async_cmd_phase_t phase_callback;
+   _mongoc_async_cmd_phase_t phase_callback;
 
    phase_callback = gMongocCMDPhases[acmd->state];
    if (phase_callback) {
