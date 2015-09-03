@@ -1,3 +1,41 @@
+mongo-c-driver 1.2.0-beta1
+==========================
+
+It is my pleasure to announce the second beta release of the MongoDB C driver
+1.2.0. It includes features and bugfixes developed since 1.2.0-beta.
+
+New features:
+
+ * Set mongoc_client_pool_t's size with mongoc_client_pool_min_size()
+   and mongoc_client_pool_max_size().
+ * The write concern "w=-1" is now documented as obsolete.
+ * Abundant fixes and additions to the documentation, beyond those in the
+   previous beta.
+
+Notable bugs fixed:
+
+ * Crashes and races in several replica set scenarios.
+ * The driver now uses the server's maxWireVersion to avoid an error and
+   extra round-trip when executing aggregations on MongoDB 2.4 and older.
+ * Fixed network error handling in multiple code paths.
+ * connectTimeoutMS limits the time the driver can spend reconnecting to
+   servers in single-threaded (non-pooled) mode with serverSelectionTryOnce.
+
+Version 1.2.0 final will be a stable release with additive ABI changes and
+bugfixes. It is compatible with MongoDB version 2.4 and later.
+
+Thanks to everyone who contributed to this version of libmongoc.
+
+ * A. Jesse Jiryu Davis
+ * Hannes Magnusson
+ * Manuel Schoenlaub
+ * Kyle Suarez
+ * Remi Collet
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
 mongo-c-driver 1.2.0-beta
 =========================
 
