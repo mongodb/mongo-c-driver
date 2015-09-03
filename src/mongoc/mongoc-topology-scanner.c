@@ -562,10 +562,3 @@ mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts)
       }
    }
 }
-
-void
-mongoc_topology_scanner_set_async_cb (mongoc_topology_scanner_t *ts,
-                                      mongoc_async_cmd_setup_t   cb)
-{
-   ts->setup = cb;
-}

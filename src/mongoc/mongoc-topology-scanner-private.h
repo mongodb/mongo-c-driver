@@ -128,10 +128,6 @@ mongoc_topology_scanner_set_stream_initiator (mongoc_topology_scanner_t *ts,
                                               mongoc_stream_initiator_t  si,
                                               void                      *ctx);
 
-void
-mongoc_topology_scanner_set_async_cb (mongoc_topology_scanner_t *ts,
-                                      mongoc_async_cmd_setup_t   cb);
-
 #ifdef MONGOC_ENABLE_SSL
 void
 mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
