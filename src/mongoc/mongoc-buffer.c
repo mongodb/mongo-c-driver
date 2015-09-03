@@ -16,7 +16,6 @@
 
 
 #include <bson.h>
-#include <errno.h>
 #include <stdarg.h>
 
 #include "mongoc-error.h"
