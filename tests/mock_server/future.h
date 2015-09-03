@@ -17,6 +17,7 @@
 typedef struct
 {
    bool             resolved;
+   bool             awaited;
    future_value_t   return_value;
    int              argc;
    future_value_t  *argv;

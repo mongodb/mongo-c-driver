@@ -328,6 +328,8 @@ future_wait (future_t *future)
    mongoc_mutex_unlock (&future->mutex);
 
    if (resolved) {
+      future->awaited = true;
+
       /* free memory */
       mongoc_thread_join (future->thread);
    }
@@ -339,6 +341,7 @@ future_wait (future_t *future)
 void
 future_destroy (future_t *future)
 {
+   assert (future->awaited);
    bson_free (future->argv);
    mongoc_cond_destroy (&future->cond);
    mongoc_mutex_destroy (&future->mutex);
