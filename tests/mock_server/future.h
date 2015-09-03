@@ -27,8 +27,6 @@ typedef struct
 
 future_t *future_new (future_value_type_t return_type, int argc);
 
-future_t *future_new_copy (future_t *future);
-
 future_value_t *future_get_param (future_t *future, int i);
 
 void future_start (future_t *future,
