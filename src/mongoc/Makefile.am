@@ -150,6 +150,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-topology-scanner.c \
 	src/mongoc/mongoc-uri.c \
 	src/mongoc/mongoc-util.c \
+	src/mongoc/mongoc-version.c \
 	src/mongoc/mongoc-write-command.c \
 	src/mongoc/mongoc-write-concern.c
 
