@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_get_version">
+  <info>
+    <link type="guide" xref="version" group="function"/>
+  </info>
+  <title>mongoc_check_major_version()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[const char *
+mongoc_get_major_version (int requiredmajor, int requiredminor, int requiredmicro);
+]]></code></synopsis>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>requiredmajor</p></td><td><p>The minimum major version required.</p></td></tr>
+      <tr><td><p>requiredminor</p></td><td><p>The minimum minor version required.</p></td></tr>
+      <tr><td><p>requiredmicro</p></td><td><p>The minimum micro version required.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+	<p><code>NULL</code> if requirement is met, else the value of <code>MONGOC_VERSION_S</code>.</p>
+  </section>
+</page>
