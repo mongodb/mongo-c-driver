@@ -153,7 +153,6 @@ mongoc_topology_scanner_node_retire (mongoc_topology_scanner_node_t *node)
 void
 mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool failed)
 {
-   /* delete from nodes but keep its host in "seen" so we don't rescan */
    DL_DELETE (node->ts->nodes, node);
 
    if (node->dns_results) {
