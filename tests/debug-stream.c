@@ -47,7 +47,8 @@ _mongoc_stream_debug_destroy (mongoc_stream_t *stream)
 
    debug_stream->stats->n_destroyed++;
 
-   return mongoc_stream_destroy (debug_stream->wrapped);
+   mongoc_stream_destroy (debug_stream->wrapped);
+   bson_free (debug_stream);
 }
 
 
@@ -58,7 +59,8 @@ _mongoc_stream_debug_failed (mongoc_stream_t *stream)
 
    debug_stream->stats->n_failed++;
 
-   return mongoc_stream_failed (debug_stream->wrapped);
+   mongoc_stream_failed (debug_stream->wrapped);
+   bson_free (debug_stream);
 }
 
 
