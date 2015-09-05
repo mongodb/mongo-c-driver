@@ -113,37 +113,6 @@ _mongoc_stream_debug_writev (mongoc_stream_t *stream,
                                 timeout_msec);
 }
 
-/*
-static ssize_t
-_mongoc_stream_debug_poll (mongoc_stream_poll_t *streams,
-                           size_t                nstreams,
-                           int32_t               timeout_msec)
-
-{
-   mongoc_stream_poll_t *wrapped_streams;
-   int i;
-   ssize_t ret;
-
-   wrapped_streams = (mongoc_stream_poll_t *) bson_malloc (
-      sizeof (mongoc_stream_poll_t) * nstreams);
-
-   for (i = 0; i < nstreams; i++) {
-      wrapped_streams[i].stream =
-         ((mongoc_stream_debug_t *) streams[i].stream)->wrapped;
-
-      wrapped_streams[i].events = streams[i].events;
-      wrapped_streams[i].revents = streams[i].revents;
-   }
-
-   ret = mongoc_stream_poll (wrapped_streams,
-                             nstreams,
-                             timeout_msec);
-
-   bson_free (wrapped_streams);
-
-   return ret;
-}*/
-
 
 static bool
 _mongoc_stream_debug_check_closed (mongoc_stream_t *stream)
