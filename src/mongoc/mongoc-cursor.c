@@ -104,13 +104,9 @@ _mongoc_cursor_new (mongoc_client_t           *client,
                     const mongoc_read_prefs_t *read_prefs)
 {
    mongoc_read_prefs_t *local_read_prefs = NULL;
-   mongoc_read_mode_t mode;
    mongoc_cursor_t *cursor;
-   const bson_t *tags;
    bson_iter_t iter;
    const char *key;
-   const char *mode_str;
-   bson_t child;
    bool found = false;
    int i;
    int flags = qflags;
@@ -126,18 +122,6 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    }
 
    cursor = (mongoc_cursor_t *)bson_malloc0 (sizeof *cursor);
-
-   /*
-    * DRIVERS-63:
-    *
-    * If this is a command and we have read_prefs other than PRIMARY, we need to
-    * set SlaveOK bit in the protocol.
-    */
-   if (is_command &&
-       read_prefs &&
-       (mongoc_read_prefs_get_mode (read_prefs) != MONGOC_READ_PRIMARY)) {
-      flags |= MONGOC_QUERY_SLAVE_OK;
-   }
 
    /*
     * CDRIVER-244:
@@ -267,33 +251,11 @@ _mongoc_cursor_new (mongoc_client_t           *client,
       }
    }
 
-   if (!cursor->is_command && !bson_has_field (query, "$query")) {
-      bson_init (&cursor->query);
-      bson_append_document (&cursor->query, "$query", 6, query);
-   } else {
-      bson_copy_to (query, &cursor->query);
-   }
+   /* don't use MARK_FAILED after this, you'll leak cursor->query */
+   bson_copy_to (query, &cursor->query);
 
    if (read_prefs) {
       cursor->read_prefs = mongoc_read_prefs_copy (read_prefs);
-
-      mode = mongoc_read_prefs_get_mode (read_prefs);
-      tags = mongoc_read_prefs_get_tags (read_prefs);
-
-      if (mode != MONGOC_READ_PRIMARY) {
-         flags |= MONGOC_QUERY_SLAVE_OK;
-
-         if ((mode != MONGOC_READ_SECONDARY_PREFERRED) || tags) {
-            bson_append_document_begin (&cursor->query, "$readPreference",
-                                        15, &child);
-            mode_str = _mongoc_cursor_get_read_mode_string (mode);
-            bson_append_utf8 (&child, "mode", 4, mode_str, -1);
-            if (tags) {
-               bson_append_array (&child, "tags", 4, tags);
-            }
-            bson_append_document_end (&cursor->query, &child);
-         }
-      }
    }
 
    if (fields) {
@@ -462,11 +424,153 @@ _mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 }
 
 
+/* Server Selection Spec: "When any $ modifier is used, including the
+ * $readPreference modifier, the query MUST be provided using the $query
+ * modifier".
+ *
+ * This applies to commands, too.
+ */
+static void
+_prep_for_read_pref_modifier (bson_t *query_bson)
+{
+   bson_t tmp;
+
+   bson_return_if_fail (query_bson);
+
+   if (bson_empty (query_bson) || bson_has_field (query_bson, "$query")) {
+      return;
+   }
+
+   bson_copy_to (query_bson, &tmp);
+   bson_reinit (query_bson);
+   bson_append_document (query_bson, "$query", 6, &tmp);
+   bson_destroy (&tmp);
+}
+
+
+/* Update the RPC with the read prefs, following Server Selection Spec.
+ * The driver must have discovered the server is a mongos.
+ */
+static void
+_apply_read_preferences_mongos (mongoc_read_prefs_t *read_prefs,
+                                bson_t *query_bson,
+                                mongoc_rpc_query_t *query_rpc)  /* IN  / OUT */
+{
+   mongoc_read_mode_t mode = MONGOC_READ_PRIMARY;
+   const bson_t *tags = NULL;
+   bson_t child;
+   const char *mode_str;
+
+   if (read_prefs) {
+      mode = mongoc_read_prefs_get_mode (read_prefs);
+      tags = mongoc_read_prefs_get_tags (read_prefs);
+   }
+
+   /* Server Selection Spec says:
+    *
+    * For mode 'primary', drivers MUST NOT set the slaveOK wire protocol flag
+    *   and MUST NOT use $readPreference
+    *
+    * For mode 'secondary', drivers MUST set the slaveOK wire protocol flag and
+    *   MUST also use $readPreference
+    *
+    * For mode 'primaryPreferred', drivers MUST set the slaveOK wire protocol
+    *   flag and MUST also use $readPreference
+    *
+    * For mode 'secondaryPreferred', drivers MUST set the slaveOK wire protocol
+    *   flag. If the read preference contains a non-empty tag_sets parameter,
+    *   drivers MUST use $readPreference; otherwise, drivers MUST NOT use
+    *   $readPreference
+    *
+    * For mode 'nearest', drivers MUST set the slaveOK wire protocol flag and
+    *   MUST also use $readPreference
+    */
+   if (mode == MONGOC_READ_SECONDARY_PREFERRED && bson_empty0 (tags)) {
+      query_rpc->flags |= MONGOC_QUERY_SLAVE_OK;
+
+   } else if (mode != MONGOC_READ_PRIMARY) {
+      query_rpc->flags |= MONGOC_QUERY_SLAVE_OK;
+
+      _prep_for_read_pref_modifier (query_bson);
+      bson_append_document_begin (query_bson, "$readPreference",
+                                  15, &child);
+      mode_str = _mongoc_cursor_get_read_mode_string (mode);
+      bson_append_utf8 (&child, "mode", 4, mode_str, -1);
+      if (!bson_empty0 (tags)) {
+         bson_append_array (&child, "tags", 4, tags);
+      }
+
+      bson_append_document_end (query_bson, &child);
+   }
+
+   query_rpc->query = bson_get_data (query_bson);
+}
+
+
+/* Update rpc->query and flags from read prefs, following Server Selection Spec.
+ * Called after selecting a server: topology and server type must be known.
+ */
+static void
+_apply_read_preferences (mongoc_read_prefs_t *read_prefs,
+                         mongoc_topology_description_type_t topology_type,
+                         mongoc_server_description_type_t server_type,
+                         bson_t *query_bson,
+                         mongoc_rpc_query_t *query_rpc)         /* IN  / OUT */
+{
+   switch (topology_type) {
+   case MONGOC_TOPOLOGY_SINGLE:
+      if (server_type == MONGOC_SERVER_MONGOS) {
+         _apply_read_preferences_mongos (read_prefs, query_bson, query_rpc);
+         return;
+      } else {
+         /* Server Selection Spec: for topology type single and server types
+          * besides mongos, "clients MUST always set the slaveOK wire protocol
+          * flag on reads to ensure that any server type can handle the
+          * request."
+          */
+         query_rpc->flags |= MONGOC_QUERY_SLAVE_OK;
+      }
+
+      break;
+
+   case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
+   case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
+      if (read_prefs) {
+         /* Server Selection Spec: for RS topology types, "For all read
+          * preferences modes except primary, clients MUST set the slaveOK wire
+          * protocol flag to ensure that any suitable server can handle the
+          * request. Clients MUST  NOT set the slaveOK wire protocol flag if the
+          * read preference mode is primary.
+          */
+         if (mongoc_read_prefs_get_mode (read_prefs) != MONGOC_READ_PRIMARY) {
+            query_rpc->flags |= MONGOC_QUERY_SLAVE_OK;
+         }
+      }
+
+      break;
+
+   case MONGOC_TOPOLOGY_SHARDED:
+      _apply_read_preferences_mongos (read_prefs, query_bson, query_rpc);
+      return;
+
+   default:
+      /* must not call _apply_read_preferences with unknown topology type */
+      BSON_ASSERT (false);
+      break;
+   }
+
+   /* we haven't called _apply_read_preferences_mongos, must set query */
+   query_rpc->query = bson_get_data (query_bson);
+}
+
+
 static bool
 _mongoc_cursor_query (mongoc_cursor_t *cursor)
 {
+   mongoc_read_prefs_t *local_read_prefs = NULL;
+   mongoc_topology_t *topology;
+   mongoc_server_description_t *sd;
    mongoc_rpc_t rpc;
-   uint32_t hint;
    uint32_t request_id;
 
    ENTRY;
@@ -485,7 +589,6 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    } else {
       rpc.query.n_return = _mongoc_n_return(cursor);
    }
-   rpc.query.query = bson_get_data(&cursor->query);
 
    if (cursor->has_fields) {
       rpc.query.fields = bson_get_data (&cursor->fields);
@@ -493,14 +596,46 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
       rpc.query.fields = NULL;
    }
 
-   if (!(hint = _mongoc_client_sendv (cursor->client, &rpc, 1,
-                                      cursor->hint, NULL,
-                                      cursor->read_prefs,
-                                      &cursor->error))) {
+   if (cursor->hint) {
+      rpc.query.query = bson_get_data (&cursor->query);
+   } else {
+      topology = cursor->client->topology;
+
+      if (!cursor->read_prefs) {
+         local_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+      }
+
+      sd = mongoc_cluster_select_by_optype (
+         &cursor->client->cluster,
+         MONGOC_SS_READ,
+         cursor->read_prefs ? cursor->read_prefs : local_read_prefs,
+         &cursor->error);
+
+      if (local_read_prefs) {
+         mongoc_read_prefs_destroy (local_read_prefs);
+      }
+
+      if (!sd) {
+         GOTO (failure);
+      }
+
+      cursor->hint = sd->id;
+      _apply_read_preferences (cursor->read_prefs,
+                               topology->description.type,
+                               sd->type,
+                               &cursor->query,
+                               &rpc.query);
+
+      mongoc_server_description_destroy (sd);
+   }
+
+   if (!_mongoc_client_sendv (cursor->client, &rpc, 1,
+                              cursor->hint, NULL,
+                              cursor->read_prefs,
+                              &cursor->error)) {
       GOTO (failure);
    }
 
-   cursor->hint = hint;
    request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
 
    _mongoc_buffer_clear(&cursor->buffer, false);
@@ -508,7 +643,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    if (!_mongoc_client_recv(cursor->client,
                             &cursor->rpc,
                             &cursor->buffer,
-                            hint,
+                            cursor->hint,
                             &cursor->error)) {
       GOTO (failure);
    }

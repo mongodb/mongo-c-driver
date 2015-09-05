@@ -17,7 +17,7 @@
 #ifndef MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 #define MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 
-#include "mongoc-read-prefs-private.h"
+#include "mongoc-set-private.h"
 #include "mongoc-server-description.h"
 
 #define MONGOC_SS_DEFAULT_TIMEOUT_MS 30000

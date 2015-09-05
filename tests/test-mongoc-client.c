@@ -291,79 +291,6 @@ test_wire_version (void)
 
 
 static void
-test_mongoc_client_read_prefs (void)
-{
-   mongoc_collection_t *collection;
-   mongoc_read_prefs_t *read_prefs;
-   mongoc_cursor_t *cursor;
-   mongoc_client_t *client;
-   mock_server_t *server;
-   const bson_t *doc;
-   bson_t b = BSON_INITIALIZER;
-   bson_t q = BSON_INITIALIZER;
-   future_t *future;
-   request_t *request;
-
-   server = mock_server_new ();
-   mock_server_auto_ismaster (server, "{'ok': 1,"
-                                       " 'ismaster': true,"
-                                       " 'msg': 'isdbgrid'}");
-   mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-
-   collection = mongoc_client_get_collection (client, "test", "test");
-
-   bson_append_utf8 (&b, "dc", 2, "ny", 2);
-
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
-   mongoc_read_prefs_add_tag (read_prefs, &b);
-   mongoc_read_prefs_add_tag (read_prefs, NULL);
-   mongoc_collection_set_read_prefs (collection, read_prefs);
-
-   cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_NONE,
-                                    0,
-                                    1,
-                                    0,
-                                    &q,
-                                    NULL,
-                                    read_prefs);
-
-   future = future_cursor_next (cursor, &doc);
-
-   request = mock_server_receives_query (
-         server,
-         "test.test",
-         MONGOC_QUERY_NONE,
-         0,
-         0,
-         "{'$query': {},"
-         " '$readPreference': {'mode': 'secondaryPreferred',"
-         "                     'tags': [{'dc': 'ny'}, {}]}}",
-         NULL);
-
-   mock_server_replies (request,
-                        0,                    /* flags */
-                        0,                    /* cursorId */
-                        0,                    /* startingFrom */
-                        1,                    /* numberReturned */
-                        "{'a': 1}");
-
-   /* mongoc_cursor_next returned true */
-   assert (future_get_bool (future));
-
-   request_destroy (request);
-   future_destroy (future);
-   mongoc_read_prefs_destroy (read_prefs);
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-   bson_destroy (&b);
-}
-
-
-static void
 test_mongoc_client_command (void)
 {
    mongoc_client_t *client;
@@ -1122,8 +1049,6 @@ test_client_install (TestSuite *suite)
 #ifdef TODO_CDRIVER_689
    TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
 #endif
-   TestSuite_Add (suite, "/Client/read_prefs", test_mongoc_client_read_prefs);
-
    if (getenv ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
       TestSuite_Add (suite, "/Client/ipv6", test_mongoc_client_ipv6);

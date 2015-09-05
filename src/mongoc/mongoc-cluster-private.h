@@ -81,6 +81,12 @@ void
 mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster,
                                 uint32_t          id);
 
+mongoc_server_description_t *
+mongoc_cluster_select_by_optype (mongoc_cluster_t *cluster,
+                                 mongoc_ss_optype_t optype,
+                                 const mongoc_read_prefs_t *read_prefs,
+                                 bson_error_t *error);
+
 uint32_t
 mongoc_cluster_preselect (mongoc_cluster_t             *cluster,
                           mongoc_opcode_t               opcode,

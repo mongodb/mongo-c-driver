@@ -147,9 +147,10 @@ _test_kill_cursors (bool pooled)
    const bson_t *doc = NULL;
    future_t *future;
    request_t *request;
+   bson_error_t error;
    request_t *kill_cursors;
 
-   /* wire version 0, five secondaries, no arbiters */
+   /* wire version 0, a primary, five secondaries, no arbiters */
    rs = mock_rs_with_autoismaster (0, true, 5, 0);
    mock_rs_run (rs);
 
@@ -167,15 +168,16 @@ _test_kill_cursors (bool pooled)
                                     q, NULL, prefs);
 
    future = future_cursor_next (cursor, &doc);
-   /* TODO: bug? query has $readPreference but not slave ok!! */
-   /* request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
-                                     0, 0, "{'a': 1}", NULL); */
-
-   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_NONE,
-                                     0, 0, "{}", NULL);
+   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
+                                     0, 0, "{'a': 1}", NULL);
 
    mock_rs_replies (request, 0, 123, 0, 1, "{'b': 1}");
-   assert (future_get_bool (future));
+   if (!future_get_bool (future)) {
+      mongoc_cursor_error (cursor, &error);
+      fprintf (stderr, "%s\n", error.message);
+      abort ();
+   };
+
    ASSERT_MATCH (doc, "{'b': 1}");
    ASSERT_CMPINT (123, ==, (int) mongoc_cursor_get_id (cursor));
 
@@ -258,12 +260,8 @@ _test_getmore_fail (bool has_primary,
                                     q, NULL, prefs);
 
    future = future_cursor_next (cursor, &doc);
-   /* TODO: bug? query has $readPreference but not slave ok!! */
-   /* request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
-                                     0, 0, "{'a': 1}", NULL); */
-
-   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_NONE,
-                                     0, 0, "{}", NULL);
+   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
+                                     0, 0, "{'a': 1}", NULL);
 
    mock_rs_replies (request, 0, 123, 0, 1, "{'b': 1}");
    assert (future_get_bool (future));

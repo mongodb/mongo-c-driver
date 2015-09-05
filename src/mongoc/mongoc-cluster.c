@@ -1437,11 +1437,11 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
  *
  *--------------------------------------------------------------------------
  */
-static mongoc_server_description_t *
-_mongoc_cluster_select_by_optype(mongoc_cluster_t          *cluster,
-                                 mongoc_ss_optype_t         optype,
+mongoc_server_description_t *
+mongoc_cluster_select_by_optype (mongoc_cluster_t *cluster,
+                                 mongoc_ss_optype_t optype,
                                  const mongoc_read_prefs_t *read_prefs,
-                                 bson_error_t              *error)
+                                 bson_error_t *error)
 {
    mongoc_stream_t *stream;
    mongoc_server_description_t *selected_server;
@@ -1522,7 +1522,7 @@ mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
       }
    }
 
-   server = _mongoc_cluster_select_by_optype(cluster, optype, read_prefs, error);
+   server = mongoc_cluster_select_by_optype (cluster, optype, read_prefs, error);
 
    return server;
 }
@@ -1619,7 +1619,7 @@ mongoc_cluster_select(mongoc_cluster_t             *cluster,
       }
    }
 
-   server = _mongoc_cluster_select_by_optype(cluster, optype, read_prefs, error);
+   server = mongoc_cluster_select_by_optype (cluster, optype, read_prefs, error);
    if (server) {
       server_id = server->id;
       mongoc_server_description_destroy(server);
