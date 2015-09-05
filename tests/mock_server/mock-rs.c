@@ -19,6 +19,7 @@
 
 #include "mock-rs.h"
 #include "sync-queue.h"
+#include "../test-libmongoc.h"
 
 
 struct _mock_rs_t {
@@ -126,6 +127,7 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
    rs->n_arbiters = n_arbiters;
    _mongoc_array_init (&rs->servers, sizeof (mock_server_t *));
    rs->q = q_new ();
+   rs->verbose = test_framework_getenv_bool ("MONGOC_TEST_SERVER_VERBOSE");
 
    return rs;   
 }

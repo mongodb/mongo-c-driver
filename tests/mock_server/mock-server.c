@@ -431,9 +431,11 @@ auto_ismaster (request_t *request,
    }
 
    if (mock_server_get_verbose (request->server)) {
-      printf ("%5.2f  %hu <- \t%s\n",
+      printf ("%5.2f  %hu <- %hu \t%s\n",
               mock_server_get_uptime_sec (request->server),
-              request->client_port, quotes_replaced);
+              request->client_port,
+              mock_server_get_port (request->server),
+              quotes_replaced);
       fflush (stdout);
    }
 
@@ -1101,8 +1103,9 @@ void
 mock_server_hangs_up (request_t *request)
 {
    if (mock_server_get_verbose (request->server)) {
-      printf ("%5.2f  %hu <-  \thang up!\n",
+      printf ("%5.2f  %hu <- %hu \thang up!\n",
               mock_server_get_uptime_sec (request->server),
+              request->client_port,
               request_get_server_port (request));
       fflush (stdout);
    }
@@ -1148,9 +1151,11 @@ mock_server_replies (request_t *request,
    }
 
    if (mock_server_get_verbose (request->server)) {
-      printf ("%5.2f  %hu <- \t%s\n",
+      printf ("%5.2f  %hu <- %hu \t%s\n",
               mock_server_get_uptime_sec (request->server),
-              request->client_port, quotes_replaced);
+              request->client_port,
+              mock_server_get_port (request->server),
+              quotes_replaced);
       fflush (stdout);
    }
 
