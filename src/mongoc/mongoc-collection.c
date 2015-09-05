@@ -316,6 +316,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    }
 
    bson_destroy(&command);
+   mongoc_server_description_destroy (selected_server);
 
    return cursor;
 }
