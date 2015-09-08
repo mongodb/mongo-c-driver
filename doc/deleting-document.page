@@ -1,39 +1,16 @@
-<page xmlns="http://projectmallard.org/1.0/"
-      type="topic"
-      id="deleting-document">
-
+<section id="remove" xmlns="http://projectmallard.org/1.0/">
   <info>
-    <link type="guide" xref="index#getting-started" />
+    <link type="guide" xref="tutorial#crud-operations"/>
+    <link type="guide" xref="mongoc_collection_remove"/>
   </info>
 
-  <title>Deleting a Document</title>
+  <title>Removing a Document</title>
+  <p>This example illustrates the use of <link xref="mongoc_collection_remove">mongoc_collection_remove()</link> to delete documents.</p>
+  <p>The following code inserts a sample document into the database "mydb" and collection "mycoll". Then, it deletes all documents matching <code>{"hello" : "world"}</code>.</p>
 
-  <p>The following guide will step you through the process of connecting to MongoDB and deleting a document.</p>
-
-  <include href="basic-prequisites.xml" xmlns="http://www.w3.org/2001/XInclude" />
-
-  <section id="deleting-basics">
-    <title>The Basics</title>
-
-    <p>
-      The following code example creates a new <code>mongoc_client_t</code> that we will use to communicate with MongoDB.
-      See the <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link> page for more information on connecting to MongoDB.
-    </p>
-
-    <p>
-      Using our <code>mongoc_client_t</code>, we get a handle to a <code>mongoc_collection_t</code> which represents the remote collection.
-      We create a new document, initialized with an <code>_id</code> and a field named <code>hello</code> and insert it into the <code>test.test</code> collection.
-      Immediately after, we remove the document matching the <code>_id</code> we inserted.
-    </p>
-
-    <p>
-      Lastly, we release all of our heap allocated structures.
-    </p>
-
-    <listing>
-      <title><file>example4.c</file></title>
-      <desc>Removing a document from a collection.</desc>
-      <synopsis><code mime="text/x-csrc"><![CDATA[#include <bson.h>
+  <listing>
+    <title><file>example7.c</file></title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[#include <bson.h>
 #include <mongoc.h>
 #include <stdio.h>
 
@@ -78,23 +55,19 @@ main (int   argc,
     return 0;
 }
 ]]></code></synopsis>
-    </listing>
+  </listing>
 
-    <p>Let's use <code>GCC</code> and <code>pkg-config</code> to compile <file>example3.c</file>.</p>
-    <screen>gcc -o example4 example4.c $(pkg-config --cflags --libs libmongoc-1.0)</screen>
+  <p>Compile the code and run it:</p>
+  <screen><output style="prompt">$ gcc -o example7 example7.c $(pkg-config --cflags --libs libmongoc-1.0)
+$ ./example7</output></screen>
 
-    <note style="warning">
-      <p>
-        When using the MongoDB C Driver, you must call <code xref="mongoc_init">mongoc_init()</code> at the beginning of your application.
-        This allows the driver to initialize its required subsystems.
-        Failure to do so will result in a runtime crash.
-      </p>
-    </note>
-
-    <p>Now let's run it!</p>
-
-    <screen>./example4</screen>
-
-  </section>
-
-</page>
+  <p>Use the MongoDB shell to prove that the documents have been removed successfully.</p>
+  <screen><output style="prompt">$ mongo
+MongoDB shell version: 3.0.6
+connecting to: test
+> use mydb
+switched to db mydb
+> db.mycoll.count({"hello" : "world"})
+0
+> </output></screen>
+</section>

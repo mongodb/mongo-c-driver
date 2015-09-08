@@ -1,38 +1,16 @@
-<page xmlns="http://projectmallard.org/1.0/"
-      type="topic"
-      id="inserting-document">
-
+<section id="insert" xmlns="http://projectmallard.org/1.0/">
   <info>
-    <link type="guide" xref="index#getting-started" />
+    <link type="guide" xref="tutorial#crud-operations"/>
+    <link type="guide" xref="mongoc_collection_insert"/>
   </info>
 
   <title>Inserting a Document</title>
+  <p>To insert documents into a collection, first obtain a handle to a <code>mongoc_collection_t</code> via a <code>mongoc_client_t</code>. Then, use <link xref="mongoc_collection_insert">mongoc_collection_insert()</link> to add BSON documents to the collection. This example inserts into the database "mydb" and collection "mycoll".</p>
+  <p>When finished, ensure that allocated structures are freed by using their respective destroy functions.</p>
 
-  <p>The following guide will step you through the process of connecting to MongoDB and inserting a document.</p>
-
-  <include href="basic-prequisites.xml" xmlns="http://www.w3.org/2001/XInclude" />
-
-  <section id="inserting-basics">
-    <title>The Basics</title>
-
-    <p>
-      The following code example creates a new <code>mongoc_client_t</code> that we will use to communicate with MongoDB.
-      See the <link href="http://docs.mongodb.org/manual/reference/connection-string/">Connection String URI</link> page for more information on connecting to MongoDB.
-    </p>
-
-    <p>
-      Using our <code>mongoc_client_t</code>, we get a handle to a <code>mongoc_collection_t</code> which represents the remote collection.
-      We create a new document, initialized with an <code>_id</code> and a field named <code>hello</code> and insert it into the <code>test.test</code> collection.
-    </p>
-
-    <p>
-      Lastly, we release all of our heap allocated structures.
-    </p>
-
-    <listing>
-      <title><file>example3.c</file></title>
-      <desc>Insert a document into the collection.</desc>
-      <synopsis><code mime="text/x-csrc"><![CDATA[#include <bson.h>
+  <listing>
+    <title><file>example3.c</file></title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[#include <bson.h>
 #include <mongoc.h>
 #include <stdio.h>
 
@@ -50,7 +28,7 @@ main (int   argc,
     mongoc_init ();
 
     client = mongoc_client_new ("mongodb://localhost:27017/");
-    collection = mongoc_client_get_collection (client, "test", "test");
+    collection = mongoc_client_get_collection (client, "mydb", "mycoll");
 
     doc = bson_new ();
     bson_oid_init (&oid, NULL);
@@ -68,35 +46,19 @@ main (int   argc,
     return 0;
 }
 ]]></code></synopsis>
-    </listing>
+  </listing>
 
-    <p>Let's use <code>GCC</code> and <code>pkg-config</code> to compile <file>example3.c</file>.</p>
-    <screen>gcc -o example3 example3.c $(pkg-config --cflags --libs libmongoc-1.0)</screen>
+  <p>Compile the code and run it: </p>
+  <screen><output style="prompt">$ gcc -o example3 example3.c $(pkg-config --cflags --libs libmongoc-1.0)
+$ ./example3</output></screen>
 
-    <note style="warning">
-      <p>
-        When using the MongoDB C Driver, you must call <code xref="mongoc_init">mongoc_init()</code> at the beginning of your application.
-        This allows the driver to initialize its required subsystems.
-        Failure to do so will result in a runtime crash.
-      </p>
-    </note>
-
-    <p>Now let's run it!</p>
-
-    <screen>./example3</screen>
-
-    <p>Let's make a query with the MongoDB shell now and see what happened!</p>
-
-    <screen>[christian@starpulse ~]$ mongo
-MongoDB shell version: 2.4.10
+  <p>To verify that the insert succeeded, connect with the MongoDB shell.</p>
+  <screen><output style="prompt">$ mongo
+MongoDB shell version: 3.0.6
 connecting to: test
-> use test
-switched to db test
-> db.test.find({})
-{ "_id" : { "$oid" : "534cde1a4f05ea4055d4cd4c" }, "hello" : "world" }
-> 
-bye</screen>
-
-  </section>
-
-</page>
+> use mydb
+switched to db mydb
+> db.mycoll.find()
+{ "_id" : ObjectId("55ef43766cb5f36a3bae6ee4"), "hello" : "world" }
+> </output></screen>
+</section>
