@@ -1,5 +1,5 @@
 <page xmlns="http://projectmallard.org/1.0/"
-      type="topic"
+      type="guide"
       id="mongoc_version">
 
   <info>
@@ -25,7 +25,7 @@
 
 
   <listing>
-    <title>MongoDB C Driver version check</title>
+    <title>Compile-Time Version Check</title>
     <desc>Only compile a block on MongoDB C Driver 1.1.0 and newer.</desc>
     <code mime="text/x-csrc"><![CDATA[#if MONGOC_CHECK_VERSION(1, 1, 0)
 static void do_something (void) {
@@ -33,13 +33,8 @@ static void do_something (void) {
 #endif]]></code>
   </listing>
 
-  <section id="seealso">
-    <title>See Also</title>
-    <p><link type="seealso" xref="mongoc_get_major_version">mongoc_get_major_version()</link>.</p>
-    <p><link type="seealso" xref="mongoc_get_minor_version">mongoc_get_minor_version()</link>.</p>
-    <p><link type="seealso" xref="mongoc_get_micro_version">mongoc_get_micro_version()</link>.</p>
-    <p><link type="seealso" xref="mongoc_get_version">mongoc_get_version()</link>.</p>
-    <p><link type="seealso" xref="mongoc_check_version">mongoc_check_version()</link>.</p>
-  </section>
+  <links type="topic" groups="function" style="1column">
+    <title>Run-Time Version Checks</title>
+  </links>
 
 </page>

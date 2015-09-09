@@ -6,7 +6,7 @@
       xmlns:ui="http://projectmallard.org/experimental/ui/"
       id="mongoc_get_major_version">
   <info>
-    <link type="guide" xref="version" group="function"/>
+    <link type="guide" xref="mongoc_version" group="function"/>
   </info>
   <title>mongoc_get_major_version()</title>
 

@@ -4,16 +4,18 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_get_version">
+      id="mongoc_check_version">
   <info>
-    <link type="guide" xref="version" group="function"/>
+    <link type="guide" xref="mongoc_version" group="function"/>
   </info>
-  <title>mongoc_check_major_version()</title>
+  <title>mongoc_check_version()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[const char *
-mongoc_get_major_version (int requiredmajor, int requiredminor, int requiredmicro);
+mongoc_check_version (int required_major,
+                      int required_minor,
+                      int required_micro);
 ]]></code></synopsis>
   </section>
 
