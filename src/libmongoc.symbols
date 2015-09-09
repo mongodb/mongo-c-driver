@@ -15,6 +15,7 @@ mongoc_bulk_operation_set_hint
 mongoc_bulk_operation_set_write_concern
 mongoc_bulk_operation_update
 mongoc_bulk_operation_update_one
+mongoc_check_version
 mongoc_cleanup
 mongoc_client_command
 mongoc_client_command_simple
@@ -105,6 +106,10 @@ mongoc_database_remove_all_users
 mongoc_database_remove_user
 mongoc_database_set_read_prefs
 mongoc_database_set_write_concern
+mongoc_get_major_version
+mongoc_get_micro_version
+mongoc_get_minor_version
+mongoc_get_version
 mongoc_gridfs_create_file
 mongoc_gridfs_create_file_from_stream
 mongoc_gridfs_destroy
