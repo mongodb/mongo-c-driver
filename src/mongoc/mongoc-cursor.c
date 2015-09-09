@@ -553,6 +553,8 @@ _apply_read_preferences (mongoc_read_prefs_t *read_prefs,
       _apply_read_preferences_mongos (read_prefs, query_bson, query_rpc);
       return;
 
+   case MONGOC_TOPOLOGY_UNKNOWN:
+   case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
       /* must not call _apply_read_preferences with unknown topology type */
       BSON_ASSERT (false);

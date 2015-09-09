@@ -2218,6 +2218,10 @@ _test_legacy_write_err (op_type_t op_type)
       break;
    case REMOVE:
       mongoc_bulk_operation_remove (bulk, doc);
+      break;
+   default:
+      fprintf (stderr, "Invalid op_type: : %d\n", op_type);
+      abort ();
    }
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
@@ -2239,6 +2243,9 @@ _test_legacy_write_err (op_type_t op_type)
                                              MONGOC_REMOVE_NONE,
                                              "{'_id': 1}");
       break;
+   default:
+      fprintf (stderr, "Invalid op_type: : %d\n", op_type);
+      abort ();
    }
 
    request_destroy (request);

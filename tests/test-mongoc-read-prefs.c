@@ -100,6 +100,9 @@ _test_read_prefs (read_pref_test_type_t test_type,
                                          " 'hosts': ['%s']}",
                                  mock_server_get_host_and_port (server));
       break;
+   default:
+      fprintf (stderr, "Invalid test_type: : %d\n", test_type);
+      abort ();
    }
 
    mock_server_run (server);
