@@ -26,6 +26,7 @@
 #include "test-libmongoc.h"
 
 
+extern void test_version_install              (TestSuite *suite);
 extern void test_array_install                (TestSuite *suite);
 extern void test_async_install                (TestSuite *suite);
 extern void test_buffer_install               (TestSuite *suite);
@@ -887,6 +888,7 @@ main (int   argc,
 
    TestSuite_Init (&suite, "", argc, argv);
 
+   test_version_install (&suite);
    test_array_install (&suite);
    test_async_install (&suite);
    test_buffer_install (&suite);

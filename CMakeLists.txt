@@ -125,6 +125,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
    ${SOURCE_DIR}/src/mongoc/mongoc-topology-scanner.c
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-version.c
    ${SOURCE_DIR}/src/mongoc/mongoc-util.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
@@ -283,6 +284,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-topology-reconcile.c
    ${SOURCE_DIR}/tests/test-mongoc-topology-scanner.c
    ${SOURCE_DIR}/tests/test-mongoc-uri.c
+   ${SOURCE_DIR}/tests/test-mongoc-version.c
    ${SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
    ${SOURCE_DIR}/tests/test-sasl.c
