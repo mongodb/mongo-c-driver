@@ -125,8 +125,8 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
    ${SOURCE_DIR}/src/mongoc/mongoc-topology-scanner.c
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-version.c
    ${SOURCE_DIR}/src/mongoc/mongoc-util.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
 )
@@ -164,6 +164,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
 )
 

@@ -91,12 +91,4 @@
          (MONGOC_MAJOR_VERSION == (major) && MONGOC_MINOR_VERSION == (minor) && \
           MONGOC_MICRO_VERSION >= (micro)))
 
-int mongoc_get_major_version (void);
-int mongoc_get_minor_version (void);
-int mongoc_get_micro_version (void);
-const char *mongoc_get_version (void);
-const char *mongoc_check_version (int required_major,
-                                  int required_minor,
-                                  int required_micro);
-
 #endif /* MONGOC_VERSION_H */

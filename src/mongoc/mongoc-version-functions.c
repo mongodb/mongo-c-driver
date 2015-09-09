@@ -15,8 +15,8 @@
  */
 
 
-#include "mongoc.h"
 #include "mongoc-version.h"
+#include "mongoc-version-functions.h"
 
 /**
  * mongoc_get_major_version:
