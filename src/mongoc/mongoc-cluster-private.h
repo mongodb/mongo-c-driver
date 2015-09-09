@@ -99,13 +99,6 @@ mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
                                       const mongoc_read_prefs_t    *read_prefs,
                                       bson_error_t                 *error /* OUT */);
 
-uint32_t
-mongoc_cluster_select (mongoc_cluster_t             *cluster,
-                       mongoc_rpc_t                 *rpcs,
-                       size_t                        rpcs_len,
-                       const mongoc_read_prefs_t    *read_pref,
-                       bson_error_t                 *error /* OUT */);
-
 int32_t
 mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
                                   uint32_t          server_id);
@@ -139,14 +132,6 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t             *cluster,
                                 uint32_t                      server_id,
                                 const mongoc_write_concern_t *write_concern,
                                 bson_error_t                 *error);
-
-uint32_t
-mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
-                      mongoc_rpc_t                 *rpcs,
-                      size_t                        rpcs_len,
-                      const mongoc_write_concern_t *write_concern,
-                      const mongoc_read_prefs_t    *read_prefs,
-                      bson_error_t                 *error);
 
 bool
 mongoc_cluster_try_recv (mongoc_cluster_t *cluster,

@@ -389,70 +389,6 @@ _mongoc_client_create_stream (mongoc_client_t          *client,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_client_sendv --
- *
- *       INTERNAL API
- *
- *       This function is used to deliver one or more RPCs to the remote
- *       MongoDB server.
- *
- *       Based on the cluster state and operation type, the request may
- *       be retried. This is handled by the cluster instance.
- *
- * Returns:
- *       0 upon failure and @error is set. Otherwise non-zero indicating
- *       the cluster node that performed the request.
- *
- * Side effects:
- *       @error is set if return value is 0.
- *       @rpcs is mutated and therefore invalid after calling.
- *
- *--------------------------------------------------------------------------
- */
-
-uint32_t
-_mongoc_client_sendv (mongoc_client_t              *client,
-                      mongoc_rpc_t                 *rpcs,
-                      size_t                        rpcs_len,
-                      uint32_t                      server_id,
-                      const mongoc_write_concern_t *write_concern,
-                      const mongoc_read_prefs_t    *read_prefs,
-                      bson_error_t                 *error)
-{
-   size_t i;
-
-   bson_return_val_if_fail(client, false);
-   bson_return_val_if_fail(rpcs, false);
-   bson_return_val_if_fail(rpcs_len, false);
-
-   if (client->in_exhaust) {
-      bson_set_error(error,
-                     MONGOC_ERROR_CLIENT,
-                     MONGOC_ERROR_CLIENT_IN_EXHAUST,
-                     "A cursor derived from this client is in exhaust.");
-      RETURN(false);
-   }
-
-   for (i = 0; i < rpcs_len; i++) {
-      rpcs[i].header.msg_len = 0;
-      rpcs[i].header.request_id = ++client->request_id;
-   }
-
-   if (server_id > 0) {
-      if (mongoc_cluster_sendv_to_server(&client->cluster, rpcs, rpcs_len,
-                                         server_id, write_concern, error)) {
-         return server_id;
-      }
-   }
-
-   return mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len,
-                               write_concern, read_prefs, error);
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
  * _mongoc_client_recv --
  *
  *       Receives a RPC from a remote MongoDB cluster node. @hint should
@@ -1274,6 +1210,7 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
                             int64_t          cursor_id)
 {
    mongoc_rpc_t rpc = {{ 0 }};
+   bson_error_t error;
 
    ENTRY;
 
@@ -1288,7 +1225,8 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
    rpc.kill_cursors.cursors = &cursor_id;
    rpc.kill_cursors.n_cursors = 1;
 
-   _mongoc_client_sendv (client, &rpc, 1, server_id, NULL, NULL, NULL);
+   mongoc_cluster_sendv_to_server (&client->cluster, &rpc, 1, server_id,
+                                   NULL, &error);
 
    EXIT;
 }

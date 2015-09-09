@@ -1564,73 +1564,6 @@ mongoc_cluster_preselect(mongoc_cluster_t             *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_select --
- *
- *       Selects a cluster node that is appropriate for handling the
- *       required set of rpc messages.  Takes read preference into account.
- *
- * Returns:
- *       A server description's id (> 0) if successful, or 0 on failure, in
- *       which case error is also set.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
-uint32_t
-mongoc_cluster_select(mongoc_cluster_t             *cluster,
-                      mongoc_rpc_t                 *rpcs,
-                      size_t                        rpcs_len,
-                      const mongoc_read_prefs_t    *read_prefs,
-                      bson_error_t                 *error /* OUT */)
-{
-   mongoc_read_mode_t read_mode = MONGOC_READ_PRIMARY;
-   mongoc_ss_optype_t optype = MONGOC_SS_READ;
-   mongoc_opcode_t opcode;
-   mongoc_server_description_t *server;
-   uint32_t server_id;
-   int i;
-
-   ENTRY;
-
-   bson_return_val_if_fail(cluster, 0);
-   bson_return_val_if_fail(rpcs, 0);
-   bson_return_val_if_fail(rpcs_len, 0);
-
-   /* pick the most restrictive optype */
-   for (i = 0; (i < rpcs_len) && (optype == MONGOC_SS_READ); i++) {
-      opcode = (mongoc_opcode_t) rpcs[i].header.opcode;
-      if (_mongoc_opcode_needs_primary(opcode)) {
-         /* we can run queries on secondaries if given either:
-          * - a read mode of secondary
-          * - query flags where slave ok is set */
-         if (opcode == MONGOC_OPCODE_QUERY) {
-            read_mode = mongoc_read_prefs_get_mode(read_prefs);
-            if ((read_mode & MONGOC_READ_SECONDARY) != 0 ||
-                (rpcs[i].query.flags & MONGOC_QUERY_SLAVE_OK)) {
-               optype = MONGOC_SS_READ;
-            }
-         }
-         else {
-            optype = MONGOC_SS_WRITE;
-         }
-      }
-   }
-
-   server = mongoc_cluster_select_by_optype (cluster, optype, read_prefs, error);
-   if (server) {
-      server_id = server->id;
-      mongoc_server_description_destroy(server);
-      return server_id;
-   }
-   return 0;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * _mongoc_cluster_inc_egress_rpc --
  *
  *       Helper to increment the counter for a particular RPC based on
@@ -2117,7 +2050,7 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
  *       sent. Otherwise, returns 0 and sets error.
  *
  * Returns:
- *       Server id, or 0.
+ *       True if successful.
  *
  * Side effects:
  *       @rpcs may be mutated and should be considered invalid after calling
@@ -2153,6 +2086,14 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
    bson_return_val_if_fail(rpcs, 0);
    bson_return_val_if_fail(rpcs_len, 0);
    bson_return_val_if_fail(server_id, 0);
+
+   if (cluster->client->in_exhaust) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CLIENT,
+                     MONGOC_ERROR_CLIENT_IN_EXHAUST,
+                     "A cursor derived from this client is in exhaust.");
+      RETURN(false);
+   }
 
    if (! write_concern) {
       write_concern = cluster->client->write_concern;
@@ -2254,57 +2195,6 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
    }
 
    RETURN (true);
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_sendv --
- *
- *       Sends the given RPCs to an appropriate server. On success,
- *       returns the server id of the server to which the messages were
- *       sent. Otherwise, returns 0 and sets error.
- *
- * Returns:
- *       Server id, or 0.
- *
- * Side effects:
- *       @rpcs may be mutated and should be considered invalid after calling
- *       this method.
- *
- *       @error may be set.
- *
- *--------------------------------------------------------------------------
- */
-
-uint32_t
-mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
-                      mongoc_rpc_t                 *rpcs,
-                      size_t                        rpcs_len,
-                      const mongoc_write_concern_t *write_concern,
-                      const mongoc_read_prefs_t    *read_prefs,
-                      bson_error_t                 *error)
-{
-   uint32_t server_id;
-
-   if (! write_concern) {
-      write_concern = cluster->client->write_concern;
-   }
-
-   if (! read_prefs) {
-      read_prefs = cluster->client->read_prefs;
-   }
-
-   server_id = mongoc_cluster_select(cluster, rpcs, rpcs_len, read_prefs, error);
-
-   if (server_id &&
-       mongoc_cluster_sendv_to_server (cluster, rpcs, rpcs_len, server_id,
-                                       write_concern, error)) {
-      return server_id;
-   }
-
-   return 0;
 }
 
 

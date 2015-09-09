@@ -316,10 +316,9 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
                          : MONGOC_DELETE_SINGLE_REMOVE;
       rpc.delete_.selector = data;
 
-      hint = _mongoc_client_sendv (client, &rpc, 1, hint, write_concern,
-                                   NULL, error);
-
-      if (!hint) {
+      if (!mongoc_cluster_sendv_to_server (&client->cluster,
+                                           &rpc, 1, hint,
+                                           NULL, error)) {
          result->failed = true;
          EXIT;
       }
@@ -509,10 +508,9 @@ again:
       rpc.insert.documents = iov;
       rpc.insert.n_documents = n_docs_in_batch;
 
-      hint = _mongoc_client_sendv (client, &rpc, 1, hint, write_concern,
-                                   NULL, error);
-
-      if (!hint) {
+      if (!mongoc_cluster_sendv_to_server (&client->cluster,
+                                           &rpc, 1, hint,
+                                           NULL, error)) {
          result->failed = true;
          GOTO (cleanup);
       }
@@ -713,10 +711,9 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
          }
       }
 
-      hint = _mongoc_client_sendv (client, &rpc, 1, hint, write_concern,
-                                   NULL, error);
-
-      if (!hint) {
+      if (!mongoc_cluster_sendv_to_server (&client->cluster,
+                                           &rpc, 1, hint,
+                                           NULL, error)) {
          result->failed = true;
          EXIT;
       }

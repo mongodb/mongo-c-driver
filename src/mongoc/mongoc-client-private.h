@@ -80,15 +80,6 @@ _mongoc_client_create_stream (mongoc_client_t          *client,
                               const mongoc_host_list_t *host,
                               bson_error_t             *error);
 
-uint32_t
-_mongoc_client_sendv (mongoc_client_t              *client,
-                      mongoc_rpc_t                 *rpcs,
-                      size_t                        rpcs_len,
-                      uint32_t                      server_id,
-                      const mongoc_write_concern_t *write_concern,
-                      const mongoc_read_prefs_t    *read_prefs,
-                      bson_error_t                 *error);
-
 bool
 _mongoc_client_recv (mongoc_client_t *client,
                      mongoc_rpc_t    *rpc,

@@ -631,10 +631,9 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
       mongoc_server_description_destroy (sd);
    }
 
-   if (!_mongoc_client_sendv (cursor->client, &rpc, 1,
-                              cursor->hint, NULL,
-                              cursor->read_prefs,
-                              &cursor->error)) {
+   if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
+                                        &rpc, 1, cursor->hint,
+                                        NULL, &cursor->error)) {
       GOTO (failure);
    }
 
@@ -731,12 +730,9 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       }
       rpc.get_more.cursor_id = cursor_id;
 
-      /*
-       * TODO: Stamp protections for disconnections.
-       */
-
-      if (!_mongoc_client_sendv(cursor->client, &rpc, 1, cursor->hint,
-                                NULL, cursor->read_prefs, &cursor->error)) {
+      if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
+                                           &rpc, 1, cursor->hint,
+                                           NULL, &cursor->error)) {
          GOTO (failure);
       }
 
