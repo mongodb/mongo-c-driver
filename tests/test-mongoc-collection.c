@@ -1956,6 +1956,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
+   TestSuite_Add (suite, "/Collection/validate", test_validate);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
    TestSuite_Add (suite, "/Collection/stats", test_stats);
    TestSuite_Add (suite, "/Collection/find_and_modify", test_find_and_modify);
