@@ -22,9 +22,9 @@ mongoc_check_version (int required_major,
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>requiredmajor</p></td><td><p>The minimum major version required.</p></td></tr>
-      <tr><td><p>requiredminor</p></td><td><p>The minimum minor version required.</p></td></tr>
-      <tr><td><p>requiredmicro</p></td><td><p>The minimum micro version required.</p></td></tr>
+      <tr><td><p>required_major</p></td><td><p>The minimum major version required.</p></td></tr>
+      <tr><td><p>required_minor</p></td><td><p>The minimum minor version required.</p></td></tr>
+      <tr><td><p>required_micro</p></td><td><p>The minimum micro version required.</p></td></tr>
     </table>
   </section>
 

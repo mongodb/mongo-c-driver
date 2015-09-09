@@ -70,7 +70,11 @@ mongoc_get_version (void)
  * return NULL it met the required version, else return the version string.
  */
 const char *
-mongoc_check_version (int requiredmajor, int requiredminor, int requiredmicro)
+mongoc_check_version (int required_major,
+                      int required_minor,
+                      int required_micro)
 {
-   return (MONGOC_CHECK_VERSION(requiredmajor, requiredminor, requiredmicro) ? NULL : MONGOC_VERSION_S);
+   return (
+      MONGOC_CHECK_VERSION(required_major, required_minor, required_micro) ?
+      NULL : MONGOC_VERSION_S);
 }

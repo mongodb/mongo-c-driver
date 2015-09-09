@@ -19,6 +19,6 @@ mongoc_get_major_version (void);
 
   <section id="return">
     <title>Returns</title>
-    <p>The value of <code>MONGOC_MAJOR_VERSION</code> when Libmongoc was compiled.</p>
+    <p>The value of <code>MONGOC_MAJOR_VERSION</code> when libmongoc was compiled.</p>
   </section>
 </page>
