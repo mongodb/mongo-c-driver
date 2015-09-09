@@ -238,6 +238,7 @@ int
 mongoc_socket_errno (mongoc_socket_t *sock) /* IN */
 {
    BSON_ASSERT (sock);
+   TRACE("Current errno: %d", sock->errno_);
    return sock->errno_;
 }
 
@@ -900,10 +901,11 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 {
 #ifdef _WIN32
    DWORD dwNumberofBytesSent = 0;
+   int ret;
 #else
    struct msghdr msg;
-#endif
    ssize_t ret = -1;
+#endif
 
    ENTRY;
 
@@ -916,8 +918,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 #ifdef _WIN32
    ret = WSASend (sock->sd, (LPWSABUF)iov, iovcnt, &dwNumberofBytesSent,
                   0, NULL, NULL);
-   ret = ret ? -1 : dwNumberofBytesSent;
-   errno = WSAGetLastError();
+   TRACE("WSASend sent: %ld (out of: %ld), ret: %d", dwNumberofBytesSent, iov->iov_len, ret);
 #else
    memset (&msg, 0, sizeof msg);
    msg.msg_iov = iov;
@@ -928,11 +929,15 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 # else
                   0);
 # endif
+   TRACE("Send %ld out of %ld bytes", ret, iov->iov_len);
 #endif
 
-   TRACE("Send %ld out of %ld bytes", ret, iov->iov_len);
 
+#ifdef _WIN32
+   if (ret == SOCKET_ERROR) {
+#else
    if (ret == -1) {
+#endif
       _mongoc_socket_capture_errno (sock);
 
       /*
@@ -941,15 +946,21 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
        * send() commands.
        */
 #ifdef _WIN32
-      if (errno == WSAEMSGSIZE) {
+      if (mongoc_socket_errno (sock) == WSAEMSGSIZE) {
 #else
-      if (errno == EMSGSIZE) {
+      if (mongoc_socket_errno (sock) == EMSGSIZE) {
 #endif
          RETURN(_mongoc_socket_try_sendv_slow (sock, iov, iovcnt));
       }
+
+      RETURN (-1);
    }
 
+#ifdef _WIN32
+   RETURN (dwNumberofBytesSent);
+#else
    RETURN (ret);
+#endif
 }
 
 
