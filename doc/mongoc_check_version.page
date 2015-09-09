@@ -12,7 +12,7 @@
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[const char *
+    <synopsis><code mime="text/x-csrc"><![CDATA[bool
 mongoc_check_version (int required_major,
                       int required_minor,
                       int required_micro);
@@ -30,6 +30,6 @@ mongoc_check_version (int required_major,
 
   <section id="return">
     <title>Returns</title>
-	<p><code>NULL</code> if requirement is met, else the value of <code>MONGOC_VERSION_S</code>.</p>
+	<p>True if libmongoc's version is greater than or equal to the required version.</p>
   </section>
 </page>

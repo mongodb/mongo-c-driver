@@ -23,7 +23,7 @@
 #ifndef MONGOC_VERSION_FUNCTIONS_H
 #define MONGOC_VERSION_FUNCTIONS_H
 
-#include "mongoc.h"
+#include "bson.h"  /* for "bool" */
 
 int mongoc_get_major_version (void);
 int mongoc_get_minor_version (void);

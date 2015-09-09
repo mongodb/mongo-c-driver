@@ -66,15 +66,13 @@ mongoc_get_version (void)
 /**
  * mongoc_check_version:
  *
- * Helper function to check the runtime string version of the library.
- * return NULL it met the required version, else return the version string.
+ * True if libmongoc's version is greater than or equal to the required
+ * version.
  */
-const char *
+bool
 mongoc_check_version (int required_major,
                       int required_minor,
                       int required_micro)
 {
-   return (
-      MONGOC_CHECK_VERSION(required_major, required_minor, required_micro) ?
-      NULL : MONGOC_VERSION_S);
+   return MONGOC_CHECK_VERSION(required_major, required_minor, required_micro);
 }
