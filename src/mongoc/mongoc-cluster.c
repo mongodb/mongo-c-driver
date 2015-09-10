@@ -1337,10 +1337,12 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
       mongoc_server_description_destroy (sd);
    }
 
-   bson_set_error(error,
+   if (!error) {
+      bson_set_error(error,
                   MONGOC_ERROR_STREAM,
                   MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
                   "No stream available for server_id %u", server_id);
+   }
 
    mongoc_cluster_disconnect_node (cluster, server_id);
 

@@ -410,6 +410,11 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
             if (scan_ready > expire_at && !try_once) {
                /* selection timeout will expire before min heartbeat passes */
+               bson_set_error(error,
+                              MONGOC_ERROR_SERVER_SELECTION,
+                              MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                              "No suitable servers found: "
+                              "`minheartbeatfrequencyms` not reached yet");
                goto FAIL;
             }
 
@@ -437,6 +442,11 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
          if (try_once) {
             if (tried_once) {
+               bson_set_error(error,
+                              MONGOC_ERROR_SERVER_SELECTION,
+                              MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                              "No suitable servers found: "
+                              "`serverselectiontryonce` set");
                goto FAIL;
             }
          } else {
@@ -444,6 +454,11 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
             if (loop_end > expire_at) {
                /* no time left in server_selection_timeout_msec */
+               bson_set_error(error,
+                              MONGOC_ERROR_SERVER_SELECTION,
+                              MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                              "No suitable servers found: "
+                              "`serverselectiontimeoutms` timed out");
                goto FAIL;
             }
          }
@@ -470,15 +485,27 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
          if (r == ETIMEDOUT) {
             /* handle timeouts */
+            bson_set_error(error,
+                           MONGOC_ERROR_SERVER_SELECTION,
+                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                           "Timed out trying to select a server");
             goto FAIL;
          } else if (r) {
-            /* TODO handle other errors */
+            bson_set_error(error,
+                           MONGOC_ERROR_SERVER_SELECTION,
+                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                           "Unknown error '%d' received while waiting on thread condition",
+                           r);
             goto FAIL;
          }
 
          loop_start = bson_get_monotonic_time ();
 
          if (loop_start > expire_at) {
+            bson_set_error(error,
+                           MONGOC_ERROR_SERVER_SELECTION,
+                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                           "Timed out trying to select a server");
             goto FAIL;
          }
       } else {
@@ -490,11 +517,6 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
 FAIL:
    topology->stale = true;
-   bson_set_error(error,
-                  MONGOC_ERROR_SERVER_SELECTION,
-                  MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                  try_once ? "No suitable servers found" :
-                  "Timed out trying to select a server");
 
    return NULL;
 }
