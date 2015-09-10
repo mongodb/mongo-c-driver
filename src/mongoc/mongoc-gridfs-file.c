@@ -560,7 +560,7 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 }
 
 
-/** referesh a gridfs file's underlying page
+/** refresh a gridfs file's underlying page
  *
  * This unconditionally fetches the current page, even if the current page
  * covers the same theoretical chunk.
