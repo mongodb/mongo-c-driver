@@ -8,8 +8,12 @@
     <title>Installation</title>
   </section>
 
-  <section id="getting-started" style="2column">
-    <title>Getting Started</title>
+  <section id="tutorial">
+    <title>Tutorial</title>
+  </section>
+
+  <section id="basic-operations" style="2column">
+    <title>Basic Operations</title>
   </section>
 
   <section id="advanced-connections" style="2column">
