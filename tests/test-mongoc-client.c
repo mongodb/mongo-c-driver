@@ -866,6 +866,10 @@ test_exhaust_cursor (void *context)
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next (cursor2, &doc);
+         if (!r) {
+            mongoc_cursor_error (cursor2, &error);
+            printf ("cursor error: %s\n", error.message);
+         }
          assert (r);
          assert (doc);
       }
