@@ -1472,11 +1472,17 @@ mongoc_cluster_select_by_optype (mongoc_cluster_t *cluster,
    /* pre-load this stream if we don't already have it */
    stream = mongoc_cluster_fetch_stream (cluster, selected_server->id, error);
 
-   if (!stream) {
-      stream = _mongoc_cluster_add_node (cluster, selected_server, error);
+   if (!stream ) {
+      /* We share the stream between topology scanner and cluster.
+       * If fetching the stream failed, avoid reconnecting and failing again */
+      if (cluster->client->topology->single_threaded) {
+         mongoc_server_description_destroy (selected_server);
+         RETURN (NULL);
+      }
 
+      stream = _mongoc_cluster_add_node (cluster, selected_server, error);
       if (!stream) {
-         mongoc_server_description_destroy(selected_server);
+         mongoc_server_description_destroy (selected_server);
          RETURN (NULL);
       }
    }
