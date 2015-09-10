@@ -70,6 +70,7 @@ test-mongoc-client-pool
 test-mongoc-collection
 test-mongoc-cursor
 test-mongoc-database
+test-mongoc-exhaust
 test-mongoc-event
 test-mongoc-gridfs
 test-mongoc-gridfs-file-page

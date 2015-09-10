@@ -36,6 +36,7 @@ extern void test_cluster_install              (TestSuite *suite);
 extern void test_collection_install           (TestSuite *suite);
 extern void test_cursor_install               (TestSuite *suite);
 extern void test_database_install             (TestSuite *suite);
+extern void test_exhaust_install              (TestSuite *suite);
 extern void test_gridfs_file_page_install     (TestSuite *suite);
 extern void test_gridfs_install               (TestSuite *suite);
 extern void test_list_install                 (TestSuite *suite);
@@ -899,6 +900,7 @@ main (int   argc,
    test_collection_install (&suite);
    test_cursor_install (&suite);
    test_database_install (&suite);
+   test_exhaust_install (&suite);
    test_gridfs_install (&suite);
    test_gridfs_file_page_install (&suite);
    test_list_install (&suite);
