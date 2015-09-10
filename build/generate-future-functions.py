@@ -109,6 +109,11 @@ future_functions = [
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
+    future_function("void",
+                    "mongoc_client_kill_cursor",
+                    [param("mongoc_client_ptr", "client"),
+                     param("int64_t", "cursor_id")]),
+
     future_function("mongoc_cursor_ptr",
                     "mongoc_collection_aggregate",
                     [param("mongoc_collection_ptr", "collection"),

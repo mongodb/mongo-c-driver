@@ -330,6 +330,62 @@ test_getmore_fail_no_primary_single (void)
 #endif
 
 
+/* We already test that mongoc_cursor_destroy sends OP_KILLCURSORS in
+ * test_kill_cursors_single / pooled. Here, test explicit
+ * mongoc_client_kill_cursor. */
+static void
+test_client_kill_cursor (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0,
+                                    0, tmp_bson ("{}"), NULL, NULL);
+
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_query (
+      server,
+      "test.test",
+      MONGOC_QUERY_SLAVE_OK,  /* we set slaveok when querying standalone */
+      0,
+      0,
+      "{}",
+      NULL);
+
+   mock_server_replies (request,
+                        0,                    /* flags */
+                        123,                  /* cursorId */
+                        0,                    /* startingFrom */
+                        1,                    /* numberReturned */
+                        "{'a': 1}");
+
+   /* mongoc_cursor_next returned true */
+   assert (future_get_bool (future));
+   future_destroy (future);
+   request_destroy (request);
+
+   future = future_client_kill_cursor (client, 123);
+   request = mock_server_receives_kill_cursors (server, 123);  /* no reply */
+   future_wait (future);  /* no return value */
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 void
 test_cursor_install (TestSuite *suite)
 {
@@ -348,4 +404,5 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/getmore_fail/no_primary/single",
                   test_getmore_fail_no_primary_single);*/
 #endif
+   TestSuite_Add (suite, "/Cursor/client_kill_cursor", test_client_kill_cursor);
 }
