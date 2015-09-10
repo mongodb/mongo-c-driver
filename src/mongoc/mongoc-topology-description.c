@@ -709,7 +709,7 @@ mongoc_topology_description_invalidate_server (mongoc_topology_description_t *to
    bson_error_t error;
 
    sd = mongoc_topology_description_server_by_id (topology, id);
-   mongoc_topology_description_handle_ismaster(topology, sd, NULL, 0, &error);
+   mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, &error);
 
    return;
 }
@@ -1219,6 +1219,7 @@ mongoc_topology_description_handle_ismaster (
    if (!_mongoc_topology_description_has_server (topology,
                                                  sd->connection_address,
                                                  NULL)) {
+      MONGOC_DEBUG("Couldn't find %s in Topology Description", sd->connection_address);
       return;
    }
 
@@ -1226,6 +1227,9 @@ mongoc_topology_description_handle_ismaster (
                                               error);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
+      MONGOC_DEBUG("Transitioning to %d for %d", topology->type, sd->type);
       gSDAMTransitionTable[sd->type][topology->type] (topology, sd);
+   } else {
+      MONGOC_DEBUG("No transition entry to %d for %d", topology->type, sd->type);
    }
 }

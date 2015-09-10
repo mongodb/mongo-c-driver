@@ -315,12 +315,13 @@ mongoc_server_description_handle_ismaster (
    const uint8_t *bytes;
    uint32_t len;
    int num_keys = 0;
+   ENTRY;
 
    bson_return_if_fail (sd);
 
-   mongoc_server_description_reset(sd);
+   mongoc_server_description_reset (sd);
    if (!ismaster_response) {
-      return;
+      EXIT;
    }
 
    bson_destroy (&sd->last_is_master);
@@ -411,11 +412,13 @@ mongoc_server_description_handle_ismaster (
 
    mongoc_server_description_update_rtt(sd, rtt_msec);
 
-   return;
+   EXIT;
 
 failure:
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time = -1;
+
+   EXIT;
 }
 
 /*
