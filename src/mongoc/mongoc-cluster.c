@@ -1074,6 +1074,15 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
    ENTRY;
 
    if (cluster->client->topology->single_threaded) {
+      mongoc_topology_scanner_node_t *scanner_node;
+
+      scanner_node = mongoc_topology_scanner_get_node (cluster->client->topology->scanner, server_id);
+
+      /* might never actually have connected */
+      if (scanner_node && scanner_node->stream) {
+         mongoc_topology_scanner_node_destroy (scanner_node, true);
+         EXIT;
+      }
       EXIT;
    } else {
       mongoc_set_rm(cluster->nodes, server_id);
