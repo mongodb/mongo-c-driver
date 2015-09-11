@@ -1231,11 +1231,66 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
    EXIT;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_kill_cursor --
+ *
+ *       Destroy a cursor on the server.
+ *
+ *       NOTE: this is only reliable when connected to a single mongod or
+ *       mongos. If connected to a replica set, the driver attempts to
+ *       kill the cursor on the primary. If connected to multiple mongoses
+ *       the kill-cursors message is sent to a *random* mongos.
+ *
+ *       If no primary, mongos, or standalone server is known, return
+ *       without attempting to reconnect.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
 mongoc_client_kill_cursor (mongoc_client_t *client,
-                            int64_t          cursor_id)
+                           int64_t          cursor_id)
 {
-   _mongoc_client_kill_cursor (client, 0, cursor_id);
+   mongoc_topology_t *topology;
+   mongoc_server_description_t *selected_server;
+   mongoc_read_prefs_t *read_prefs;
+   bson_error_t error;
+   uint32_t server_id = 0;
+
+   topology = client->topology;
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   mongoc_mutex_lock (&topology->mutex);
+
+   /* see if there's a known writable server - do no I/O or retries */
+   selected_server = mongoc_topology_description_select(&topology->description,
+                                                        MONGOC_SS_WRITE,
+                                                        read_prefs,
+                                                        15,
+                                                        &error);
+
+   if (selected_server) {
+      server_id = selected_server->id;
+   }
+
+   mongoc_mutex_unlock (&topology->mutex);
+
+   if (server_id) {
+      _mongoc_client_kill_cursor (client, selected_server->id, cursor_id);
+   } else {
+      MONGOC_INFO ("No server available for mongoc_client_kill_cursor");
+   }
+
+   mongoc_read_prefs_destroy (read_prefs);
 }
 
 
