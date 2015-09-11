@@ -1172,6 +1172,10 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
                                                        sd->id);
 
       if (!scanner_node) {
+         bson_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                         "Could not find node %s", sd->connection_address);
          RETURN (NULL);
       }
 
@@ -1179,7 +1183,10 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
       stream = scanner_node->stream;
       if (!stream) {
-         MONGOC_WARNING ("Failed connection to %s", sd->connection_address);
+         bson_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                         "Could not find stream for node %s", sd->connection_address);
          RETURN (NULL);
       }
 
@@ -1265,6 +1272,10 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
       scanner_node = mongoc_topology_scanner_get_node (topology->scanner, server_id);
       if (!scanner_node) {
+         bson_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                         "Could not find node %u", server_id);
          GOTO(FETCH_FAIL);
       }
 
@@ -1272,6 +1283,10 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
       stream = scanner_node->stream;
       if (!stream) {
+         bson_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                         "Could not find stream for node %u", server_id);
          GOTO(FETCH_FAIL);
       }
 
@@ -1340,7 +1355,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
    RETURN(stream);
 
- FETCH_FAIL:
+FETCH_FAIL:
 
    if (sd && ! topology->single_threaded) {
       mongoc_server_description_destroy (sd);
@@ -2283,6 +2298,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    pos = buffer->len;
    if (!_mongoc_buffer_append_from_stream (buffer, stream, 4,
                                            cluster->sockettimeoutms, error)) {
+      MONGOC_DEBUG("Could not read 4 bytes, stream probably closed or timed out");
       mongoc_counter_protocol_ingress_error_inc ();
       mongoc_cluster_disconnect_node(cluster, server_id);
       RETURN (false);
