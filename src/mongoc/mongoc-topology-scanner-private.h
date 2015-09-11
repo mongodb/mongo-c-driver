@@ -115,6 +115,9 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
 void
 mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts);
 
+bool
+mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node);
+
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,
                                   uint32_t                   id);

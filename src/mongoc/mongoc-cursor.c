@@ -303,9 +303,10 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    if (cursor->in_exhaust) {
       cursor->client->in_exhaust = false;
       if (!cursor->done) {
-         mongoc_cluster_disconnect_node (
-            &cursor->client->cluster,
-            cursor->hint);
+         bson_error_t error;
+
+         /* The only way to stop an exhaust cursor is to kill the connection */
+         mongoc_cluster_node_reconnect (&cursor->client->cluster, cursor->hint, &error);
       }
    } else if (cursor->rpc.reply.cursor_id) {
       _mongoc_client_kill_cursor(cursor->client, cursor->hint, cursor->rpc.reply.cursor_id);

@@ -32,9 +32,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
 
-static bool
-mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node);
-
 static void
 mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status,
                                           const bson_t             *ismaster_response,
@@ -407,7 +404,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
 #endif
 }
 
-static bool
+bool
 mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node)
 {
    mongoc_stream_t *sock_stream;

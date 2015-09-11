@@ -38,11 +38,12 @@ int skip_if_mongos (void)
 
 
 static void
-test_exhaust_cursor (void *context)
+test_exhaust_cursor (bool pooled)
 {
    mongoc_stream_t *stream;
    mongoc_write_concern_t *wr;
    mongoc_client_t *client;
+   mongoc_client_pool_t *pool;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    mongoc_cursor_t *cursor2;
@@ -56,7 +57,12 @@ test_exhaust_cursor (void *context)
    bson_error_t error;
    bson_oid_t oid;
 
-   client = test_framework_client_new ();
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+   }
    assert (client);
 
    collection = get_test_collection (client, "test_exhaust_cursor");
@@ -101,6 +107,8 @@ test_exhaust_cursor (void *context)
     * */
    {
       uint32_t local_hint;
+      int64_t timestamp1;
+      int64_t timestamp2;
 
       r = mongoc_cursor_next (cursor, &doc);
       if (!r) {
@@ -114,10 +122,29 @@ test_exhaust_cursor (void *context)
       local_hint = cursor->hint;
 
       /* destroy the cursor, make sure a disconnect happened */
-      mongoc_cursor_destroy (cursor);
-      stream = (mongoc_stream_t *)mongoc_set_get(client->cluster.nodes, local_hint);
-      assert (! stream);
+      if (pooled) {
+         mongoc_cluster_node_t *cluster_node;
 
+         cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(client->cluster.nodes, local_hint);
+         timestamp1 = cluster_node->timestamp;
+
+         mongoc_cursor_destroy (cursor);
+
+         cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(client->cluster.nodes, local_hint);
+         timestamp2 = cluster_node->timestamp;
+      } else {
+         mongoc_topology_scanner_node_t *scanner_node;
+
+         scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, local_hint);
+         timestamp1 = scanner_node->timestamp;
+
+         mongoc_cursor_destroy (cursor);
+
+         scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, local_hint);
+         timestamp2 = scanner_node->timestamp;
+      }
+
+      assert (timestamp1 < timestamp2);
       assert (! client->in_exhaust);
    }
 
@@ -209,13 +236,31 @@ test_exhaust_cursor (void *context)
    mongoc_write_concern_destroy (wr);
    mongoc_cursor_destroy (cursor2);
    mongoc_collection_destroy(collection);
-   mongoc_client_destroy (client);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
 }
 
+static void
+test_exhaust_cursor_single (void *context)
+{
+   test_exhaust_cursor (false);
+}
+
+static void
+test_exhaust_cursor_pool (void *context)
+{
+   test_exhaust_cursor (true);
+}
 
 void
 test_exhaust_install (TestSuite *suite)
 {
-   TestSuite_AddFull (suite, "/Client/exhaust_cursor", test_exhaust_cursor, NULL, NULL, skip_if_mongos);
+   TestSuite_AddFull (suite, "/Client/exhaust_cursor/single", test_exhaust_cursor_single, NULL, NULL, skip_if_mongos);
+   TestSuite_AddFull (suite, "/Client/exhaust_cursor/pool", test_exhaust_cursor_pool, NULL, NULL, skip_if_mongos);
 }
 
