@@ -18,7 +18,7 @@
   <section id="starting-mongod">
     <info><link type="guide" xref="index#tutorial"/></info>
     <title>1. Starting MongoDB</title>
-    <p>To run the examples in this tutorial, MongoDB must be installed and running on <code>localhost</code> on the default port, 27017. To check if MongoDB is up and running, connect to it with the MongoDB shell.</p>
+    <p>To run the examples in this tutorial, MongoDB must be installed and running on <code>localhost</code> on the default port, 27017. To check if it is up and running, connect to it with the MongoDB shell.</p>
 
     <screen><output style="prompt">$ mongo --host localhost --port 27017
 MongoDB shell version: 3.0.6
@@ -37,11 +37,8 @@ connecting to: localhost:27017/test
 
     <title>2. Making a Connection</title>
     <p>The C Driver provides a convenient way to access MongoDB -- regardless of cluster configuration -- via a <link xref="mongoc_client_t">mongoc_client_t</link>. It transparently connects to standalone servers, replica sets and sharded clusters on demand. Once a connection has been made, handles to databases and collections can be obtained via the structs <link xref="mongoc_database_t">mongoc_database_t</link> and <link xref="mongoc_collection_t">mongoc_collection_t</link>, respectively. MongoDB operations can then be performed through these handles.</p>
+    <p>At the start of an application, call <link xref="mongoc_init">mongoc_init()</link> before any other libmongoc functions and call <link xref="mongoc_cleanup">mongoc_cleanup()</link> before exiting. When creating handles to clients, databases and servers, call the appropriate destroy functions when finished.</p>
     <p>The example below establishes a connection to a standalone server on <code>localhost</code> and performs a simple command. More information about database operations can be found in the <link xref="tutorial#crud-operations">CRUD Operations</link> and <link xref="tutorial#executing-commands">Executing Commands</link> sections. Examples of connecting to replica sets and sharded clusters can be found on the <link xref="advanced-connections">Advanced Connections</link> page.</p>
-
-    <note>
-      <p>The client, database and collection structures all allocate memory. Be sure to call the appropriate destroy function when finished to avoid memory leaks.</p>
-    </note>
 
     <listing>
       <title><file>connect.c</file></title>
@@ -57,7 +54,8 @@ main (int   argc,
    mongoc_database_t    *database;
    mongoc_collection_t  *collection;
    bson_t               *command,
-                         reply;
+                         reply,
+                         insert;
    bson_error_t          error;
    char                 *str;
    bool                  retval;
@@ -79,7 +77,8 @@ main (int   argc,
    collection = mongoc_client_get_collection (client, "db_name", "coll_name");
 
    /*
-    * Do work. This example pings the database and prints the result as JSON
+    * Do work. This example pings the database, prints the result as JSON and
+    * performs an insert
     */
    command = BCON_NEW ("ping", BCON_INT32 (1));
 
@@ -92,9 +91,17 @@ main (int   argc,
 
    str = bson_as_json (&reply, NULL);
    fprintf (stdout, "%s\n", str);
-   bson_free (str);
+
+   insert = BCON_NEW ("hello", BCON_UTF8 ("world"));
+
+   if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, insert, NULL, &error)) {
+      fprintf (stderr, "%s\n", error.message);
+   }
+
+   bson_destroy (&insert);
    bson_destroy (&reply);
    bson_destroy (command);
+   bson_free (str);
 
    /*
     * Release our handles and clean up libmongoc
@@ -131,7 +138,7 @@ C:\> connect
       <link type="guide" xref="bson:index"/>
     </info>
     <title>3. Creating BSON Documents</title>
-    <p>Documents in <link href="http://docs.mongodb.org/master/reference/mongodb-extended-json/">MongoDB Extended JSON Format</link> are represented in the C Driver using <link href="http://bsonspec.org">BSON</link> via <link xref="bson:index">libbson</link>. There are several ways to create BSON documents: building a <code>bson_t</code> imperatively field-by-field, using BCON, or parsing JSON.</p>
+    <p>Documents are stored in MongoDB's data format, BSON. The C driver uses <link xref="bson:index">libbson</link> to create BSON documents. There are several ways to construct them: appending key-value pairs, using BCON, or parsing JSON.</p>
 
     <section id="appending">
       <info>
@@ -145,41 +152,47 @@ C:\> connect
 
       <screen><code><![CDATA[#include <bson.h>
 
-bson_t *document;
+int
+main (int   argc,
+      char *argv[])
+{
+   bson_t *document;
+   bson_t  child;
+   char   *str;
 
-document = bson_new ();
+   document = bson_new ();
 
-/*
- * Append {"hello" : "world"} to the document.
- * The -1 indicates that the string is \0-terminated.
- */
-bson_append_utf8 (document, "hello", -1, "world", -1);
+   /*
+    * Append {"hello" : "world"} to the document.
+    * Passing -1 for the length argument tells libbson to calculate the string length.
+    */
+   bson_append_utf8 (document, "hello", -1, "world", -1);
 
-/*
- * For convenience, this macro is equivalent.
- */
-BSON_APPEND_UTF8 (document, "hello", "world");
+   /*
+    * For convenience, this macro is equivalent.
+    */
+   BSON_APPEND_UTF8 (document, "hello", "world");
 
-/*
- * Begin a subdocument.
- */
-bson_t child;
+   /*
+    * Begin a subdocument.
+    */
+   BSON_APPEND_DOCUMENT_BEGIN (document, "subdoc", &child);
+   BSON_APPEND_UTF8 (&child, "subkey", "value");
+   bson_append_document_end (document, &child);
 
-BSON_APPEND_DOCUMENT_BEGIN (document, "subdoc", &child);
-BSON_APPEND_UTF8 (&child, "subkey", "value");
-bson_append_document_end (document, &child);
+   /*
+    * Print the document as a JSON string.
+    */
+   str = bson_as_json (b, NULL);
+   printf ("%s\n", str);
+   bson_free (str);
 
-/*
- * Print the document as a JSON string.
- */
-char *str = bson_as_json (b, NULL);
-printf ("%s\n", str);
-bson_free (str);
-
-/*
- * Clean up allocated bson documents.
- */
-bson_destroy (document);
+   /*
+    * Clean up allocated bson documents.
+    */
+   bson_destroy (document);
+   return 0;
+}
 ]]></code></screen>
 
       <p>See the <link xref="bson:bson_t">libbson documentation</link> for all of the types that can be appended to a <code>bson_t</code>.</p>
@@ -192,10 +205,6 @@ bson_destroy (document);
 
       <title>Using BCON</title>
       <p><strong>BSON C Object Notation</strong>, BCON for short, is an alternative way of constructing BSON documents in a manner closer to the intended format. It has less type-safety than BSON's append functions but results in less code.</p>
-
-      <note style="warning">
-        <p>Using BCON involves some overhead. However, it is rare for BSON document creation to cause bottlenecks in code.</p>
-      </note>
 
       <screen><code><![CDATA[#include <bcon.h>
 #include <bson.h>
@@ -243,10 +252,6 @@ main (int   argc,
       <p>For <em>single</em> documents, BSON can be created from JSON strings via <link xref="bson:bson_new_from_json">bson_new_from_json</link>.</p>
       <p>To initialize BSON from a sequence of JSON documents, use <link xref="bson:bson_json_reader_t">bson_json_reader_t</link>.</p>
 
-      <note style="warning">
-        <p>Parsing from JSON strings will incur additional overhead.</p>
-      </note>
-
       <screen><code><![CDATA[#include <bson.h>
 
 int
@@ -279,10 +284,6 @@ main (int   argc,
     <info><link type="guide" xref="index#tutorial"/></info>
     <title>4. Basic CRUD Operations</title>
     <p>This section demonstrates the basics of using the C Driver to interact with MongoDB.</p>
-
-    <note style="warning">
-      <p>When using the MongoDB C Driver, call <code xref="mongoc_init">mongoc_init()</code> at the beginning of the application to allow the driver to initialize its required subsystems. On application exit, call <code xref="mongoc_cleanup">mongoc_cleanup()</code>. Failure to do so will result in runtime crashes and memory leaks.</p>
-    </note>
 
     <!-- Table of contents -->
     <links type="section"/>
@@ -325,7 +326,7 @@ main (int   argc,
     BSON_APPEND_UTF8 (doc, "hello", "world");
 
     if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
-        printf ("%s\n", error.message);
+        fprintf (stderr, "%s\n", error.message);
     }
 
     bson_destroy (doc);
@@ -575,7 +576,7 @@ switched to db mydb
         <link type="guide" xref="mongoc_collection_remove"/>
       </info>
 
-      <title>Removing a Document</title>
+      <title>Deleting a Document</title>
       <p>This example illustrates the use of <link xref="mongoc_collection_remove">mongoc_collection_remove()</link> to delete documents.</p>
       <p>The following code inserts a sample document into the database "mydb" and collection "mycoll". Then, it deletes all documents matching <code>{"hello" : "world"}</code>.</p>
 
