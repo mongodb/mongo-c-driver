@@ -20,24 +20,13 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
+#include "mongoc-socket-private.h"
 #include "mongoc-host-list.h"
 #include "mongoc-socket.h"
 #include "mongoc-trace.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"
-
-
-struct _mongoc_socket_t
-{
-#ifdef _WIN32
-   SOCKET sd;
-#else
-   int sd;
-#endif
-   int errno_;
-   int domain;
-};
 
 
 #define OPERATION_EXPIRED(expire_at) \
