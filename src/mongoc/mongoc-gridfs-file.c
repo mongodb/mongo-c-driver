@@ -733,7 +733,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
       }
 
       /** we'll pick up the seek when we fetch a page on the next action.  We lazily load */
-   } else {
+   } else if (file->page) {
       _mongoc_gridfs_file_page_seek (file->page, offset % file->chunk_size);
    }
 
