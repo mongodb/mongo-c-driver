@@ -66,7 +66,9 @@ typedef struct
    bson_t       writeErrors;
    /* like [{"index": int, "code": int, "errmsg": str}, ...] */
    bson_t       upserted;
-   bson_t       writeConcernError;
+   /* like [{"code": 64, "errmsg": "duplicate"}, ...] */
+   uint32_t     n_writeConcernErrors;
+   bson_t       writeConcernErrors;
    bool         failed;
    bson_error_t error;
    uint32_t     upsert_append_count;
