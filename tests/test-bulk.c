@@ -2170,6 +2170,7 @@ test_bulk_edge_over_1000 (void)
    mongoc_client_destroy(client);
 }
 
+
 static void
 test_bulk_edge_case_372 (bool ordered)
 {
@@ -2420,6 +2421,70 @@ test_legacy_remove_err ()
    _test_legacy_write_err (REMOVE);
 }
 
+static void
+test_bulk_write_concern_over_1000(void)
+{
+   mongoc_client_t *client;
+   mongoc_bulk_operation_t *bulk;
+   mongoc_write_concern_t *write_concern;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_t doc;
+   bson_error_t error;
+   uint32_t success;
+   int i;
+   char *str;
+   bson_t *query;
+   const bson_t *result;
+
+   client = test_framework_client_new ();
+   assert (client);
+
+
+   write_concern = mongoc_write_concern_new();
+   mongoc_write_concern_set_w (write_concern, 1);
+   mongoc_client_set_write_concern (client, write_concern);
+
+   str = gen_collection_name ("bulk_write_concern_over_1000");
+   bulk = mongoc_bulk_operation_new (true);
+   mongoc_bulk_operation_set_database (bulk, "test");
+   mongoc_bulk_operation_set_collection (bulk, str);
+   mongoc_write_concern_set_w (write_concern, 0);
+   mongoc_bulk_operation_set_write_concern (bulk, write_concern);
+   mongoc_bulk_operation_set_client (bulk, client);
+
+   for (i = 0; i < 1010; i+=3) {
+      bson_init(&doc);
+      bson_append_int32(&doc, "_id", -1, i);
+
+      mongoc_bulk_operation_insert(bulk, &doc);
+
+      bson_destroy(&doc);
+   }
+
+   success = mongoc_bulk_operation_execute(bulk, NULL, &error);
+   ASSERT_OR_PRINT (success, error);
+
+   collection = mongoc_client_get_collection (client, "test", str);
+   bson_free (str);
+
+   query = bson_new();
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
+
+    success = mongoc_cursor_next (cursor, &result);
+    if (!success) {
+       mongoc_cursor_error(cursor, &error);
+       printf("%s", error.message);
+    }
+    assert(success);
+
+    bson_destroy (query);
+    mongoc_cursor_destroy (cursor);
+    mongoc_bulk_operation_destroy(bulk);
+    mongoc_collection_destroy (collection);
+    mongoc_client_destroy (client);
+    mongoc_write_concern_destroy (write_concern);
+}
 
 void
 test_bulk_install (TestSuite *suite)
@@ -2508,6 +2573,8 @@ test_bulk_install (TestSuite *suite)
                   test_bulk_new);
    TestSuite_Add (suite, "/BulkOperation/over_1000",
                   test_bulk_edge_over_1000);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/over_1000",
+                  test_bulk_write_concern_over_1000);
 
    TestSuite_Add (suite, "/BulkOperation/error/insert", test_legacy_insert_err);
    TestSuite_Add (suite, "/BulkOperation/error/update", test_legacy_update_err);
