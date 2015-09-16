@@ -13,7 +13,6 @@ c_driver_variables:
   ## Note that the in 3.0, the default storage engine is MMAPv1 and
   ## WiredTiger is opt-in, but in latest as of MongoDB 3.1.4, the
   ## default is WiredTiger and MMAPv1 is opt-in.
-  # TODO: ONLY INTEGRATION TEST LATEST IS USED, CDRIVER-675
   storage_engine_test_list: &storage_engine_tests
     - name: "compile"
     - name: "integration test 3.0"
