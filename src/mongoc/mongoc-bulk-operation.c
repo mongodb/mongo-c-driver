@@ -214,12 +214,13 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
                                    bulk->commands.len - 1);
 
       if (last->type == MONGOC_WRITE_COMMAND_INSERT) {
-         _mongoc_write_command_insert_append (last, &document, 1);
+         _mongoc_write_command_insert_append (last, document);
          EXIT;
       }
    }
 
-   _mongoc_write_command_init_insert (&command, &document, 1, bulk->ordered,
+   _mongoc_write_command_init_insert (
+      &command, document, bulk->ordered,
       !_mongoc_write_concern_needs_gle (bulk->write_concern));
 
    _mongoc_array_append_val (&bulk->commands, command);

@@ -205,6 +205,36 @@ test_insert_bulk (void)
 
 
 static void
+test_insert_bulk_empty (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *bptr = NULL;
+
+   client = test_framework_client_new ();
+   database = get_test_database (client);
+   collection = get_test_collection (client, "test_insert_bulk_empty");
+
+   BEGIN_IGNORE_DEPRECATIONS;
+   ASSERT (!mongoc_collection_insert_bulk (collection,
+                                           MONGOC_INSERT_NONE,
+                                           (const bson_t **)&bptr,
+                                           0, NULL, &error));
+   END_IGNORE_DEPRECATIONS;
+
+   ASSERT_CMPINT (MONGOC_ERROR_COLLECTION, ==, error.domain);
+   ASSERT_CMPINT (MONGOC_ERROR_COLLECTION_INSERT_FAILED, ==, error.code);
+   ASSERT_CONTAINS (error.message, "empty insert");
+
+   mongoc_collection_destroy(collection);
+   mongoc_database_destroy(database);
+   mongoc_client_destroy(client);
+}
+
+
+static void
 auto_ismaster (mock_server_t *server,
                int32_t max_message_size,
                int32_t max_bson_size,
@@ -1992,7 +2022,9 @@ test_collection_install (TestSuite *suite)
    test_aggregate_install (suite);
 
    TestSuite_Add (suite, "/Collection/insert_bulk", test_insert_bulk);
-
+   TestSuite_Add (suite,
+                  "/Collection/insert_bulk_empty",
+                  test_insert_bulk_empty);
    TestSuite_Add (suite,
                   "/Collection/bulk_insert/legacy/large",
                   test_legacy_bulk_insert_large);

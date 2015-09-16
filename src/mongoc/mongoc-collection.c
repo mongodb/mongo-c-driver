@@ -1063,6 +1063,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
    mongoc_write_result_t result;
    bool ordered;
    bool ret;
+   uint32_t i;
 
    bson_return_val_if_fail (collection, false);
    bson_return_val_if_fail (documents, false);
@@ -1072,7 +1073,6 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
    }
 
    if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
-      int i;
       int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
                   | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
 
@@ -1093,8 +1093,12 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
    _mongoc_write_result_init (&result);
 
    ordered = !(flags & MONGOC_INSERT_CONTINUE_ON_ERROR);
-   _mongoc_write_command_init_insert (&command, documents, n_documents,
-                                      ordered, true);
+
+   _mongoc_write_command_init_insert (&command, NULL, ordered, true);
+
+   for (i = 0; i < n_documents; i++) {
+      _mongoc_write_command_insert_append (&command, documents[i]);
+   }
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
@@ -1175,7 +1179,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert (&command, &document, 1, true, false);
+   _mongoc_write_command_init_insert (&command, document, true, false);
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,

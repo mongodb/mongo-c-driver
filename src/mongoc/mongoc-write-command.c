@@ -61,13 +61,11 @@ _mongoc_write_result_merge_arrays (uint32_t               offset,
 
 void
 _mongoc_write_command_insert_append (mongoc_write_command_t *command,
-                                     const bson_t * const   *documents,
-                                     uint32_t                n_documents)
+                                     const bson_t           *document)
 {
    const char *key;
    bson_iter_t iter;
    bson_oid_t oid;
-   uint32_t i;
    bson_t tmp;
    char keydata [16];
 
@@ -75,35 +73,31 @@ _mongoc_write_command_insert_append (mongoc_write_command_t *command,
 
    BSON_ASSERT (command);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_INSERT);
-   BSON_ASSERT (!n_documents || documents);
+   BSON_ASSERT (document);
+   BSON_ASSERT (document->len >= 5);
 
-   for (i = 0; i < n_documents; i++) {
-      BSON_ASSERT (documents [i]);
-      BSON_ASSERT (documents [i]->len >= 5);
+   key = NULL;
+   bson_uint32_to_string (command->n_documents,
+                          &key, keydata, sizeof keydata);
 
-      key = NULL;
-      bson_uint32_to_string (command->n_documents + i,
-                             &key, keydata, sizeof keydata);
+   BSON_ASSERT (key);
 
-      BSON_ASSERT (key);
-
-      /*
-       * If the document does not contain an "_id" field, we need to generate
-       * a new oid for "_id".
-       */
-      if (!bson_iter_init_find (&iter, documents [i], "_id")) {
-         bson_init (&tmp);
-         bson_oid_init (&oid, NULL);
-         BSON_APPEND_OID (&tmp, "_id", &oid);
-         bson_concat (&tmp, documents [i]);
-         BSON_APPEND_DOCUMENT (command->documents, key, &tmp);
-         bson_destroy (&tmp);
-      } else {
-         BSON_APPEND_DOCUMENT (command->documents, key, documents [i]);
-      }
+   /*
+    * If the document does not contain an "_id" field, we need to generate
+    * a new oid for "_id".
+    */
+   if (!bson_iter_init_find (&iter, document, "_id")) {
+      bson_init (&tmp);
+      bson_oid_init (&oid, NULL);
+      BSON_APPEND_OID (&tmp, "_id", &oid);
+      bson_concat (&tmp, document);
+      BSON_APPEND_DOCUMENT (command->documents, key, &tmp);
+      bson_destroy (&tmp);
+   } else {
+      BSON_APPEND_DOCUMENT (command->documents, key, document);
    }
 
-   command->n_documents += n_documents;
+   command->n_documents++;
 
    EXIT;
 }
@@ -175,15 +169,13 @@ _mongoc_write_command_delete_append (mongoc_write_command_t *command,
 
 void
 _mongoc_write_command_init_insert (mongoc_write_command_t *command,              /* IN */
-                                   const bson_t *const    *documents,            /* IN */
-                                   uint32_t                n_documents,          /* IN */
+                                   const bson_t           *document,             /* IN */
                                    bool                    ordered,              /* IN */
                                    bool                    allow_bulk_op_insert) /* IN */
 {
    ENTRY;
 
    BSON_ASSERT (command);
-   BSON_ASSERT (!n_documents || documents);
 
    command->type = MONGOC_WRITE_COMMAND_INSERT;
    command->documents = bson_new ();
@@ -191,8 +183,9 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,             
    command->ordered = (uint8_t)ordered;
    command->u.insert.allow_bulk_op_insert = (uint8_t)allow_bulk_op_insert;
 
-   if (n_documents) {
-      _mongoc_write_command_insert_append (command, documents, n_documents);
+   /* must handle NULL document from mongoc_collection_insert_bulk */
+   if (document) {
+      _mongoc_write_command_insert_append (command, document);
    }
 
    EXIT;
