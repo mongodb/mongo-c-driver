@@ -82,7 +82,9 @@ _mongoc_write_command_insert_append (mongoc_write_command_t *command,
       BSON_ASSERT (documents [i]->len >= 5);
 
       key = NULL;
-      bson_uint32_to_string (i, &key, keydata, sizeof keydata);
+      bson_uint32_to_string (command->n_documents + i,
+                             &key, keydata, sizeof keydata);
+
       BSON_ASSERT (key);
 
       /*

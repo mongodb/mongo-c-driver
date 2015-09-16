@@ -351,6 +351,78 @@ test_legacy_bulk_insert_large (void)
 }
 
 
+/* verify an insert command's "documents" array has keys "0", "1", "2", ... */
+static void
+verify_keys (uint32_t n_documents,
+             const bson_t *insert_command)
+{
+   bson_iter_t iter;
+   uint32_t len;
+   const uint8_t *data;
+   bson_t document;
+   char str[16];
+   const char *key;
+   uint32_t i;
+
+   ASSERT (bson_iter_init_find (&iter, insert_command, "documents"));
+   bson_iter_array (&iter, &len, &data);
+   ASSERT (bson_init_static (&document, data, len));
+
+   for (i = 0; i < n_documents; i++) {
+      bson_uint32_to_string (i, &key, str, sizeof str);
+      ASSERT (bson_has_field (&document, key));
+   }
+}
+
+
+/* CDRIVER-845: "insert" command must have array keys "0", "1", "2", ... */
+static void
+test_insert_command_keys (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   uint32_t i;
+   bson_t *doc;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   /* maxWireVersion 3 allows write commands */
+   server = mock_server_with_autoismaster (3);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+
+   for (i = 0; i < 3; i++) {
+      doc = BCON_NEW ("_id", BCON_INT32 (i));
+      mongoc_bulk_operation_insert (bulk, doc);
+      bson_destroy (doc);
+   }
+
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+   request = mock_server_receives_command (server, "test", MONGOC_QUERY_NONE,
+                                           "{'insert': 'test'}");
+
+   verify_keys (3, request_get_doc (request, 0));
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT_OR_PRINT (future_get_uint32_t (future), error);
+
+   bson_destroy (&reply);
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+   mock_server_destroy (server);
+}
+
+
 /* number of docs that should go in a batch that starts at "offset" */
 int
 expected_batch_size (const bson_t **bsons,
@@ -1944,6 +2016,7 @@ test_collection_install (TestSuite *suite)
                   test_legacy_bulk_insert_oversized_last_continue);
 
    TestSuite_Add (suite, "/Collection/insert", test_insert);
+   TestSuite_Add (suite, "/Collection/insert/keys", test_insert_command_keys);
    TestSuite_Add (suite, "/Collection/save", test_save);
    TestSuite_Add (suite, "/Collection/index", test_index);
    TestSuite_Add (suite, "/Collection/index_compound", test_index_compound);
