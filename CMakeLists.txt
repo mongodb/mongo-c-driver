@@ -126,6 +126,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-socket-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.h

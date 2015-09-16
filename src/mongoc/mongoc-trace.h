@@ -40,6 +40,7 @@ BSON_BEGIN_DECLS
       bson_string_t *str, *astr; \
       int32_t _i; \
       uint8_t _v; \
+      break; \
       mongoc_log(MONGOC_LOG_LEVEL_TRACE, MONGOC_LOG_DOMAIN, \
                  " %s = %p [%d]", #_n, _b, (int)_l); \
       str = bson_string_new(NULL); \
@@ -81,6 +82,7 @@ BSON_BEGIN_DECLS
       unsigned _k = 0; \
       size_t _l = 0; \
       uint8_t _v; \
+      break; \
       for (_i = 0; _i < _iovcnt; _i++) { \
          _l += _iov[_i].iov_len; \
       } \

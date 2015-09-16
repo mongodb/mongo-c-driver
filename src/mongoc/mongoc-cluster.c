@@ -17,7 +17,6 @@
 
 #include "mongoc-config.h"
 
-#include <errno.h>
 #ifdef MONGOC_ENABLE_SASL
 #include <sasl/sasl.h>
 #include <sasl/saslutil.h>
@@ -954,9 +953,9 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    _mongoc_rpc_swab_to_le(&rpc);
 
    DUMP_IOVEC (((mongoc_iovec_t *)ar.data), ((mongoc_iovec_t *)ar.data), ar.len);
-   if (!mongoc_stream_writev(node->stream, ar.data, ar.len,
-                             cluster->sockettimeoutms)) {
-      GOTO(failure);
+   if (!_mongoc_stream_writev_full (node->stream, ar.data, ar.len,
+                                    cluster->sockettimeoutms, error)) {
+      GOTO (failure);
    }
 
    if (!_mongoc_buffer_append_from_stream(&buffer, node->stream, 4,
@@ -2892,21 +2891,11 @@ _mongoc_cluster_sendv (mongoc_cluster_t             *cluster,
 
    iov = cluster->iov.data;
    iovcnt = cluster->iov.len;
-   errno = 0;
 
    BSON_ASSERT (cluster->iov.len);
 
-   if (!mongoc_stream_writev (node->stream, iov, iovcnt,
-                              cluster->sockettimeoutms)) {
-      char buf[128];
-      char * errstr;
-      errstr = bson_strerror_r(errno, buf, sizeof buf);
-
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failure during socket delivery: %s",
-                      errstr);
+   if (!_mongoc_stream_writev_full (node->stream, iov, iovcnt,
+                                    cluster->sockettimeoutms, error)) {
       _mongoc_cluster_disconnect_node (cluster, node);
       RETURN (0);
    }
@@ -3037,17 +3026,8 @@ _mongoc_cluster_try_sendv (mongoc_cluster_t             *cluster,
 
    DUMP_IOVEC (iov, iov, iovcnt);
 
-   if (!mongoc_stream_writev (node->stream, iov, iovcnt,
-                              cluster->sockettimeoutms)) {
-      char buf[128];
-      char * errstr;
-      errstr = bson_strerror_r(errno, buf, sizeof buf);
-
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "Failure during socket delivery: %s",
-                      errstr);
+   if (!_mongoc_stream_writev_full (node->stream, iov, iovcnt,
+                                    cluster->sockettimeoutms, error)) {
       _mongoc_cluster_disconnect_node (cluster, node);
       RETURN (0);
    }

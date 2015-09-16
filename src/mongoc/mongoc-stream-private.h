@@ -34,6 +34,13 @@ BSON_BEGIN_DECLS
 #define MONGOC_STREAM_GRIDFS   4
 #define MONGOC_STREAM_TLS      5
 
+bool
+_mongoc_stream_writev_full (mongoc_stream_t *stream,
+                            mongoc_iovec_t  *iov,
+                            size_t           iovcnt,
+                            int32_t          timeout_msec,
+                            bson_error_t    *error);
+
 
 BSON_END_DECLS
 

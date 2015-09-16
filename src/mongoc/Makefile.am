@@ -67,6 +67,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-sasl-private.h \
 	src/mongoc/mongoc-scram-private.h \
 	src/mongoc/mongoc-socket.h \
+	src/mongoc/mongoc-socket-private.h \
 	src/mongoc/mongoc-ssl-private.h \
 	src/mongoc/mongoc-stream-buffered.h \
 	src/mongoc/mongoc-stream-file.h \

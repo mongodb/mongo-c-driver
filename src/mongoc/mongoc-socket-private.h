@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2015 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,39 +14,29 @@
  * limitations under the License.
  */
 
+#ifndef MONGOC_SOCKET_PRIVATE_H
+#define MONGOC_SOCKET_PRIVATE_H
 
-#ifndef MONGOC_IOVEC_H
-#define MONGOC_IOVEC_H
-
-
-#include <bson.h>
-
-#ifdef _WIN32
-# include <stddef.h>
-#else
-# include <sys/uio.h>
+#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
+# error "Only <mongoc.h> can be included directly."
 #endif
+
+#include "mongoc-socket.h"
 
 BSON_BEGIN_DECLS
 
-
-#ifdef _WIN32
-typedef struct
+struct _mongoc_socket_t
 {
-   u_long  iov_len;
-   char   *iov_base;
-} mongoc_iovec_t;
-
-BSON_STATIC_ASSERT(sizeof(mongoc_iovec_t) == sizeof(WSABUF));
-BSON_STATIC_ASSERT(offsetof(mongoc_iovec_t, iov_base) == offsetof(WSABUF, buf));
-BSON_STATIC_ASSERT(offsetof(mongoc_iovec_t, iov_len) == offsetof(WSABUF, len));
-
+#ifdef _WIN32
+   SOCKET sd;
 #else
-typedef struct iovec mongoc_iovec_t;
+   int sd;
 #endif
+   int errno_;
+   int domain;
+};
 
 
 BSON_END_DECLS
 
-
-#endif /* MONGOC_IOVEC_H */
+#endif /* MONGOC_SOCKET_PRIVATE_H */

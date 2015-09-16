@@ -20,24 +20,13 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
+#include "mongoc-socket-private.h"
 #include "mongoc-host-list.h"
 #include "mongoc-socket.h"
 #include "mongoc-trace.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "socket"
-
-
-struct _mongoc_socket_t
-{
-#ifdef _WIN32
-   SOCKET sd;
-#else
-   int sd;
-#endif
-   int errno_;
-   int domain;
-};
 
 
 #define OPERATION_EXPIRED(expire_at) \
@@ -119,21 +108,11 @@ _mongoc_socket_wait (int      sd,           /* IN */
 #endif
    int ret;
    int timeout;
+   int64_t now;
 
    ENTRY;
 
    bson_return_val_if_fail (events, false);
-
-   if (expire_at < 0) {
-      timeout = -1;
-   } else if (expire_at == 0) {
-      timeout = 0;
-   } else {
-      timeout = (int)((expire_at - bson_get_monotonic_time ()) / 1000L);
-      if (timeout < 0) {
-         timeout = 0;
-      }
-   }
 
    pfd.fd = sd;
 #ifdef _WIN32
@@ -143,25 +122,58 @@ _mongoc_socket_wait (int      sd,           /* IN */
 #endif
    pfd.revents = 0;
 
+   now = bson_get_monotonic_time();
+
+   for (;;) {
+      if (expire_at < 0) {
+         timeout = -1;
+      } else if (expire_at == 0) {
+         timeout = 0;
+      } else {
+         timeout = (int)((expire_at - now) / 1000L);
+         if (timeout < 0) {
+            timeout = 0;
+         }
+      }
+
 #ifdef _WIN32
-   ret = WSAPoll (&pfd, 1, timeout);
-   if (ret == SOCKET_ERROR) {
-      MONGOC_WARNING ("WSAGetLastError(): %d", WSAGetLastError ());
-      ret = false;
-   }
+      ret = WSAPoll (&pfd, 1, timeout);
+      if (ret == SOCKET_ERROR) {
+         errno = WSAGetLastError();
+         ret = -1;
+      }
 #else
-   ret = poll (&pfd, 1, timeout);
+      ret = poll (&pfd, 1, timeout);
 #endif
 
-   if (ret > 0) {
+      if (ret > 0) {
+         /* Something happened, so return that */
 #ifdef _WIN32
-      RETURN (0 != (pfd.revents & (events | POLLHUP | POLLERR)));
+         RETURN (0 != (pfd.revents & (events | POLLHUP | POLLERR)));
 #else
-      RETURN (0 != (pfd.revents & events));
+         RETURN (0 != (pfd.revents & events));
 #endif
-   }
+      } else if (ret < 0) {
+         /* poll itself failed */
 
-   RETURN (false);
+         TRACE("errno is: %d", errno);
+         if (MONGOC_ERRNO_IS_AGAIN(errno)) {
+            now = bson_get_monotonic_time();
+
+            if (expire_at < now) {
+               RETURN (false);
+            } else {
+               continue;
+            }
+         } else {
+            /* poll failed for some non-transient reason */
+            RETURN (false);
+         }
+      } else {
+         /* poll timed out */
+         RETURN (false);
+      }
+   }
 }
 
 
@@ -215,6 +227,7 @@ int
 mongoc_socket_errno (mongoc_socket_t *sock) /* IN */
 {
    BSON_ASSERT (sock);
+   TRACE("Current errno: %d", sock->errno_);
    return sock->errno_;
 }
 
@@ -243,6 +256,7 @@ _mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
 #else
    sock->errno_ = errno;
 #endif
+   TRACE("setting errno: %d", sock->errno_);
 }
 
 
@@ -266,6 +280,7 @@ _mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
 static bool
 _mongoc_socket_errno_is_again (mongoc_socket_t *sock) /* IN */
 {
+   TRACE("errno is: %d", sock->errno_);
    return MONGOC_ERRNO_IS_AGAIN (sock->errno_);
 }
 
@@ -312,7 +327,6 @@ again:
    sd = accept (sock->sd, &addr, &addrlen);
 
    _mongoc_socket_capture_errno (sock);
-
 #ifdef _WIN32
    failed = (sd == INVALID_SOCKET);
 #else
@@ -417,15 +431,17 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
    if (sock->sd != INVALID_SOCKET) {
       shutdown (sock->sd, SD_BOTH);
       ret = closesocket (sock->sd);
+   } else {
+       RETURN(0);
    }
 #else
    if (sock->sd != -1) {
       shutdown (sock->sd, SHUT_RDWR);
       ret = close (sock->sd);
+   } else {
+       RETURN(0);
    }
 #endif
-
-   _mongoc_socket_capture_errno (sock);
 
    if (ret == 0) {
 #ifdef _WIN32
@@ -435,6 +451,8 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 #endif
       RETURN (0);
    }
+
+   _mongoc_socket_capture_errno (sock);
 
    RETURN (-1);
 }
@@ -477,13 +495,13 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
 
    ret = connect (sock->sd, addr, addrlen);
 
-   _mongoc_socket_capture_errno (sock);
-
 #ifdef _WIN32
    if (ret == SOCKET_ERROR) {
 #else
    if (ret == -1) {
 #endif
+      _mongoc_socket_capture_errno (sock);
+
       failed = true;
       try_again = _mongoc_socket_errno_is_again (sock);
    }
@@ -675,7 +693,6 @@ mongoc_socket_recv (mongoc_socket_t *sock,      /* IN */
 {
    ssize_t ret = 0;
    bool failed = false;
-   bool try_again = false;
 
    ENTRY;
 
@@ -692,11 +709,10 @@ again:
    ret = recv (sock->sd, buf, buflen, flags);
    failed = (ret == -1);
 #endif
-   _mongoc_socket_capture_errno (sock);
-   try_again = (failed && _mongoc_socket_errno_is_again (sock));
-
-   if (failed && try_again) {
-      if (_mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
+   if (failed) {
+      _mongoc_socket_capture_errno (sock);
+      if (_mongoc_socket_errno_is_again (sock) &&
+          _mongoc_socket_wait (sock->sd, POLLIN, expire_at)) {
          GOTO (again);
       }
    }
@@ -707,7 +723,7 @@ again:
 
    DUMP_BYTES (recvbuf, (uint8_t *)buf, ret);
 
-   mongoc_counter_streams_ingress_add (ret > 0 ? ret : 0);
+   mongoc_counter_streams_ingress_add (ret);
 
    RETURN (ret);
 }
@@ -795,9 +811,8 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
  * _mongoc_socket_try_sendv_slow --
  *
  *       A slow variant of _mongoc_socket_try_sendv() that sends each
- *       iovec entry one by one. This can happen if we hit EMSGSIZE on
- *       with sendmsg() on various POSIX systems (such as Solaris), or
- *       on WinXP.
+ *       iovec entry one by one. This can happen if we hit EMSGSIZE
+ *       with sendmsg() on various POSIX systems.
  *
  * Returns:
  *       the number of bytes sent or -1 and errno is set.
@@ -825,12 +840,13 @@ _mongoc_socket_try_sendv_slow (mongoc_socket_t *sock,   /* IN */
 
    for (i = 0; i < iovcnt; i++) {
       wrote = send (sock->sd, iov [i].iov_base, iov [i].iov_len, 0);
-      _mongoc_socket_capture_errno (sock);
 #ifdef _WIN32
       if (wrote == SOCKET_ERROR) {
 #else
       if (wrote == -1) {
 #endif
+         _mongoc_socket_capture_errno (sock);
+
          if (!_mongoc_socket_errno_is_again (sock)) {
             RETURN (-1);
          }
@@ -874,10 +890,11 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 {
 #ifdef _WIN32
    DWORD dwNumberofBytesSent = 0;
+   int ret;
 #else
    struct msghdr msg;
-#endif
    ssize_t ret = -1;
+#endif
 
    ENTRY;
 
@@ -890,7 +907,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 #ifdef _WIN32
    ret = WSASend (sock->sd, (LPWSABUF)iov, iovcnt, &dwNumberofBytesSent,
                   0, NULL, NULL);
-   ret = ret ? -1 : dwNumberofBytesSent;
+   TRACE("WSASend sent: %ld (out of: %ld), ret: %d", dwNumberofBytesSent, iov->iov_len, ret);
 #else
    memset (&msg, 0, sizeof msg);
    msg.msg_iov = iov;
@@ -898,27 +915,41 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    ret = sendmsg (sock->sd, &msg,
 # ifdef MSG_NOSIGNAL
                   MSG_NOSIGNAL);
-#else
+# else
                   0);
 # endif
+   TRACE("Send %ld out of %ld bytes", ret, iov->iov_len);
 #endif
 
-   /*
-    * Check to see if we have sent an iovec too large for sendmsg to
-    * complete. If so, we need to fallback to the slow path of multiple
-    * send() commands.
-    */
+
 #ifdef _WIN32
-   if ((ret == -1) && (errno == WSAEMSGSIZE)) {
+   if (ret == SOCKET_ERROR) {
 #else
-   if ((ret == -1) && (errno == EMSGSIZE)) {
+   if (ret == -1) {
 #endif
-      _mongoc_socket_try_sendv_slow (sock, iov, iovcnt);
+      _mongoc_socket_capture_errno (sock);
+
+      /*
+       * Check to see if we have sent an iovec too large for sendmsg to
+       * complete. If so, we need to fallback to the slow path of multiple
+       * send() commands.
+       */
+#ifdef _WIN32
+      if (mongoc_socket_errno (sock) == WSAEMSGSIZE) {
+#else
+      if (mongoc_socket_errno (sock) == EMSGSIZE) {
+#endif
+         RETURN(_mongoc_socket_try_sendv_slow (sock, iov, iovcnt));
+      }
+
+      RETURN (-1);
    }
 
-   _mongoc_socket_capture_errno (sock);
-
+#ifdef _WIN32
+   RETURN (dwNumberofBytesSent);
+#else
    RETURN (ret);
+#endif
 }
 
 
@@ -947,22 +978,27 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
 
 ssize_t
 mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
-                     mongoc_iovec_t   *iov,       /* IN */
+                     mongoc_iovec_t   *in_iov,    /* IN */
                      size_t            iovcnt,    /* IN */
                      int64_t           expire_at) /* IN */
 {
    ssize_t ret = 0;
    ssize_t sent;
    size_t cur = 0;
+   mongoc_iovec_t *iov;
 
    ENTRY;
 
    bson_return_val_if_fail (sock, -1);
-   bson_return_val_if_fail (iov, -1);
+   bson_return_val_if_fail (in_iov, -1);
    bson_return_val_if_fail (iovcnt, -1);
+
+   iov = bson_malloc(sizeof(*iov) * iovcnt);
+   memcpy(iov, in_iov, sizeof(*iov) * iovcnt);
 
    for (;;) {
       sent = _mongoc_socket_try_sendv (sock, &iov [cur], iovcnt - cur);
+      TRACE("Sent %ld (of %ld) out of iovcnt=%ld", sent, iov[cur].iov_len, iovcnt);
 
       /*
        * If we failed with anything other than EAGAIN or EWOULDBLOCK,
@@ -971,7 +1007,8 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
        */
       if (sent == -1) {
          if (!_mongoc_socket_errno_is_again (sock)) {
-            RETURN (ret ? ret : -1);
+            ret = -1;
+            GOTO(CLEANUP);
          }
       }
 
@@ -986,6 +1023,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
           * Subtract the sent amount from what we still need to send.
           */
          while ((cur < iovcnt) && (sent >= (ssize_t)iov [cur].iov_len)) {
+            TRACE("still got bytes left: sent -= iov_len: %ld -= %ld", sent, iov[cur+1].iov_len);
             sent -= iov [cur++].iov_len;
          }
 
@@ -994,6 +1032,7 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
           * sending data over the socket.
           */
          if (cur == iovcnt) {
+            TRACE("%s", "Finished the iovecs");
             break;
          }
 
@@ -1001,34 +1040,28 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
           * Increment the current iovec buffer to its proper offset and adjust
           * the number of bytes to write.
           */
+         TRACE("Seeked io_base+%ld", sent);
+         TRACE("Subtracting iov_len -= sent; %ld -= %ld", iov[cur].iov_len, sent);
          iov [cur].iov_base = ((char *)iov [cur].iov_base) + sent;
          iov [cur].iov_len -= sent;
+         TRACE("iov_len remaining %ld", iov[cur].iov_len);
 
          BSON_ASSERT (iovcnt - cur);
          BSON_ASSERT (iov [cur].iov_len);
       } else if (OPERATION_EXPIRED (expire_at)) {
-#ifdef _WIN32
-         errno = WSAETIMEDOUT;
-#else
-         errno = ETIMEDOUT;
-#endif
-         RETURN (ret ? ret : -1);
+         GOTO(CLEANUP);
       }
 
       /*
        * Block on poll() until our desired condition is met.
        */
       if (!_mongoc_socket_wait (sock->sd, POLLOUT, expire_at)) {
-         if (ret == 0){
-#ifdef _WIN32
-            errno = WSAETIMEDOUT;
-#else
-            errno = ETIMEDOUT;
-#endif
-         }
-         RETURN (ret  ? ret : -1);
+         GOTO(CLEANUP);
       }
    }
+
+CLEANUP:
+   bson_free(iov);
 
    RETURN (ret);
 }
