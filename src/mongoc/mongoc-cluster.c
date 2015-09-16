@@ -788,10 +788,8 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "cannot determine username "
-                         "please either set it as part of the connection string or "
-                         "call mongoc_client_set_ssl_opts() "
-                         "with pem file for X-509 auth.");
+                         "cannot determine username for "
+                         "X-509 authentication.");
          return false;
       }
 
