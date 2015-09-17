@@ -112,7 +112,7 @@ c_driver_variables:
       unix: &mongo_orchestration_unix
         start_mongo_orchestration: |
           trap 'set +o errexit; mongo-orchestration stop;' EXIT
-          df
+          df -h
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
           TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
