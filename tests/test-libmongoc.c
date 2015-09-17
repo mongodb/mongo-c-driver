@@ -331,7 +331,7 @@ test_framework_get_user_password (char **user,
    }
 #endif
 
-   return (bool) *user;
+   return *user != NULL;
 }
 
 
