@@ -592,7 +592,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
          bson_string_append (uri_string, database_name);
       }
 
-      bson_string_append_printf (uri_string, "?replicaSet=%s&", name);
+      bson_string_append_printf (uri_string, "?replicaSet=%s", name);
       bson_free (name);
    } else {
       host = test_framework_get_host ();
@@ -603,13 +603,17 @@ test_framework_get_uri_str_no_auth (const char *database_name)
          bson_string_append (uri_string, database_name);
       }
 
-      bson_string_append (uri_string, "?");
       bson_free (host);
    }
 
-   /* by now the string ends in "?" or "&", we can add options to it */
    if (test_framework_get_ssl ()) {
-      bson_string_append (uri_string, "&ssl=true");
+      if (name) {
+         /* string ends with "?replicaSet=name" */
+         bson_string_append (uri_string, "&ssl=true");
+      } else {
+         /* string ends with "/" or "/dbname" */
+         bson_string_append (uri_string, "?ssl=true");
+      }
    }
 
    bson_destroy (&ismaster_response);
