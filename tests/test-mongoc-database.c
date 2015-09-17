@@ -224,18 +224,18 @@ test_get_collection_info (void)
 
    collection = mongoc_database_create_collection (database, capped_name,
                                                    &capped_options, &error);
-   assert (collection);
+   ASSERT_OR_PRINT (collection, error);
    mongoc_collection_destroy (collection);
 
    collection = mongoc_database_create_collection (database, autoindexid_name,
                                                    &autoindexid_options,
                                                    &error);
-   assert (collection);
+   ASSERT_OR_PRINT (collection, error);
    mongoc_collection_destroy (collection);
 
    collection = mongoc_database_create_collection (database, noopts_name,
                                                    &noopts_options, &error);
-   assert (collection);
+   ASSERT_OR_PRINT (collection, error);
    mongoc_collection_destroy (collection);
 
    /* first we filter on collection name. */
