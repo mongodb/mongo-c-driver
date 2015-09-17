@@ -274,28 +274,25 @@ test_seek (void)
    bson_error_t error;
 
    client = test_framework_client_new ();
-   assert (client);
 
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "seek", &error), error);
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   stream = mongoc_stream_file_new_for_path (BINARY_DIR"/gridfs.dat", O_RDONLY, 0);
+   stream = mongoc_stream_file_new_for_path (BINARY_DIR"/gridfs-large.dat", O_RDONLY, 0);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
    assert (file);
    assert (mongoc_gridfs_file_save (file));
 
-   /* XXX Start seek tests */
    assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
    assert (mongoc_gridfs_file_tell (file) == 0);
 
-   assert (mongoc_gridfs_file_seek (file, 2000, SEEK_CUR) == 0);
-   assert (mongoc_gridfs_file_tell (file) == 2000);
+   assert (mongoc_gridfs_file_seek (file, (255*1024) + 1, SEEK_CUR) == 0);
+   assert (mongoc_gridfs_file_tell (file) == (255*1024) + 1);
 
    mongoc_gridfs_file_seek (file, 0, SEEK_END);
    assert (mongoc_gridfs_file_tell (file) == mongoc_gridfs_file_get_length (file));
-   /* XXX End seek tests */
 
    mongoc_gridfs_file_destroy (file);
 
