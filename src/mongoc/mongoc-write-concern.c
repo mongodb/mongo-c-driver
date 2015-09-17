@@ -198,13 +198,20 @@ mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern)
  * @wtimeout_msec: Number of milliseconds before timeout.
  *
  * Sets the number of milliseconds to wait before considering a write
- * request as failed.
+ * request as failed. A value of 0 indicates no write timeout.
+ *
+ * The @wtimeout_msec parameter must be positive or zero. Negative values will
+ * be ignored.
  */
 void
 mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
                                    int32_t            wtimeout_msec)
 {
    BSON_ASSERT (write_concern);
+
+   if (wtimeout_msec < 0) {
+      return;
+   }
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->wtimeout = wtimeout_msec;
@@ -227,7 +234,10 @@ mongoc_write_concern_get_wmajority (const mongoc_write_concern_t *write_concern)
  *
  * Sets the "w" of a write concern to "majority". It is suggested that
  * you provide a reasonable @wtimeout_msec to wait before considering the
- * write request failed.
+ * write request failed. A @wtimeout_msec value of 0 indicates no write timeout.
+ *
+ * The @wtimeout_msec parameter must be positive or zero. Negative values will
+ * be ignored.
  */
 void
 mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
@@ -237,7 +247,10 @@ mongoc_write_concern_set_wmajority (mongoc_write_concern_t *write_concern,
 
    if (!_mongoc_write_concern_warn_frozen(write_concern)) {
       write_concern->w = MONGOC_WRITE_CONCERN_W_MAJORITY;
-      write_concern->wtimeout = wtimeout_msec;
+
+      if (wtimeout_msec >= 0) {
+         write_concern->wtimeout = wtimeout_msec;
+      }
    }
 }
 
@@ -412,6 +425,10 @@ _mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
         mongoc_write_concern_get_journal(write_concern)) &&
        (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
         write_concern->w == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) {
+      return false;
+   }
+
+   if (write_concern->wtimeout < 0) {
       return false;
    }
 
