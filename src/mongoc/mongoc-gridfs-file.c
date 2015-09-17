@@ -718,8 +718,6 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
       break;
    }
 
-   BSON_ASSERT (file->length > (int64_t)offset);
-
    if (offset / file->chunk_size != file->pos / file->chunk_size) {
       /** no longer on the same page */
 
