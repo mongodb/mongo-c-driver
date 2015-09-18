@@ -56,6 +56,7 @@
 #define TEST_HELPONLY  (1 << 2)
 #define TEST_NOTHREADS (1 << 3)
 #define TEST_DEBUGOUTPUT (1 << 4)
+#define TEST_TRACE     (1 << 5)
 
 
 #define NANOSEC_PER_SEC 1000000000UL
@@ -258,6 +259,14 @@ TestSuite_Init (TestSuite *suite,
          suite->flags |= TEST_NOFORK;
       } else if (0 == strcmp ("-p", argv [i])) {
          suite->flags |= TEST_NOTHREADS;
+      } else if ((0 == strcmp ("-t", argv [i])) ||
+                 (0 == strcmp ("--trace", argv [i]))) {
+#ifdef MONGOC_TRACE
+         suite->flags |= TEST_TRACE;
+#else
+         _Print_StdErr ("-t requires mongoc compiled with --enable-tracing.\n");
+         exit (EXIT_FAILURE);
+#endif
       } else if (0 == strcmp ("-F", argv [i])) {
          if (argc - 1 == i) {
             _Print_StdErr ("-F requires a filename argument.\n");
@@ -419,7 +428,12 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
 
       /* Tracing is superduper slow */
 #ifdef MONGOC_TRACE
-      mongoc_log_trace_disable ();
+      if (suite->flags & TEST_TRACE) {
+         mongoc_log_set_handler (mongoc_log_default_handler, NULL);
+         mongoc_log_trace_enable ();
+      } else {
+         mongoc_log_trace_disable ();
+      }
 #endif
 
 #if defined(_WIN32)
@@ -498,7 +512,9 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
 "    -l NAME      Run test by name, e.g. \"/Client/command\" or \"/Client/*\".\n"
 "    -p           Do not run tests in parallel.\n"
 "    -v           Be verbose with logs.\n"
+"    -F FILENAME  Write test results (JSON) to FILENAME.\n"
 "    -d           Print debug output (useful if a test hangs).\n"
+"    -t, --trace  Enable mongoc tracing (useful to debug tests).\n"
 "\n"
 "Tests:\n",
             suite->prgname);
@@ -552,6 +568,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  \"options\": {\n"
             "    \"parallel\": \"%s\",\n"
             "    \"fork\": \"%s\"\n"
+            "    \"tracing\": \"%s\"\n"
             "  },\n"
             "  \"tests\": [\n",
             uri_str,
@@ -561,7 +578,8 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             si.dwPageSize,
             0,
             (suite->flags & TEST_NOTHREADS) ? "false" : "true",
-            (suite->flags & TEST_NOFORK) ? "false" : "true");
+            (suite->flags & TEST_NOFORK) ? "false" : "true",
+            (suite->flags & TEST_TRACE) ? "true" : "false");
 #else
    struct utsname u;
    uint64_t pagesize;
@@ -596,6 +614,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  \"options\": {\n"
             "    \"parallel\": \"%s\",\n"
             "    \"fork\": \"%s\"\n"
+            "    \"tracing\": \"%s\"\n"
             "  },\n"
             "  \"tests\": [\n",
             uri_str,
@@ -606,7 +625,8 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             pagesize,
             npages,
             (suite->flags & TEST_NOTHREADS) ? "false" : "true",
-            (suite->flags & TEST_NOFORK) ? "false" : "true");
+            (suite->flags & TEST_NOFORK) ? "false" : "true",
+            (suite->flags & TEST_TRACE) ? "true" : "false");
 #endif
 
    fflush (stream);
