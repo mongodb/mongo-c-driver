@@ -534,12 +534,12 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    selector = bson_new ();
 
    bson_append_value (selector, "files_id", -1, &file->files_id);
-   bson_append_int32 (selector, "n", -1, (int32_t)(file->pos / file->chunk_size));
+   bson_append_int32 (selector, "n", -1, file->n);
 
    update = bson_sized_new (file->chunk_size + 100);
 
    bson_append_value (update, "files_id", -1, &file->files_id);
-   bson_append_int32 (update, "n", -1, (int32_t)(file->pos / file->chunk_size));
+   bson_append_int32 (update, "n", -1, file->n);
    bson_append_binary (update, "data", -1, BSON_SUBTYPE_BINARY, buf, len);
 
    r = mongoc_collection_update (file->gridfs->chunks, MONGOC_UPDATE_UPSERT,
@@ -573,7 +573,6 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    const char *key;
    bson_iter_t iter;
 
-   uint32_t n;
    const uint8_t *data;
    uint32_t len;
 
@@ -581,7 +580,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 
    BSON_ASSERT (file);
 
-   n = (uint32_t)(file->pos / file->chunk_size);
+   file->n = (uint32_t)(file->pos / file->chunk_size);
 
    if (file->page) {
       _mongoc_gridfs_file_page_destroy (file->page);
@@ -610,7 +609,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
             bson_append_value (&child, "files_id", -1, &file->files_id);
 
             bson_append_document_begin (&child, "n", -1, &child2);
-               bson_append_int32 (&child2, "$gte", -1, (int32_t)(file->pos / file->chunk_size));
+               bson_append_int32 (&child2, "$gte", -1, file->n);
             bson_append_document_end (&child, &child2);
          bson_append_document_end(query, &child);
 
@@ -628,7 +627,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
                                                 MONGOC_QUERY_NONE, 0, 0, 0, query,
                                                 fields, NULL);
 
-         file->cursor_range[0] = n;
+         file->cursor_range[0] = file->n;
          file->cursor_range[1] = (uint32_t)(file->length / file->chunk_size);
 
          bson_destroy (query);
@@ -639,7 +638,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 
       /* we might have had a cursor before, then seeked ahead past a chunk.
        * iterate until we're on the right chunk */
-      while (file->cursor_range[0] <= n) {
+      while (file->cursor_range[0] <= file->n) {
          if (!mongoc_cursor_next (file->cursor, &chunk)) {
             if (file->cursor->failed) {
                memcpy (&(file->error), &(file->cursor->error),
@@ -660,7 +659,8 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
          key = bson_iter_key (&iter);
 
          if (strcmp (key, "n") == 0) {
-            n = bson_iter_int32 (&iter);
+            /* TODO Why do we need this */
+            file->n = bson_iter_int32 (&iter);
          } else if (strcmp (key, "data") == 0) {
             bson_iter_binary (&iter, NULL, &len, &data);
          } else {
@@ -674,7 +674,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
        * TODO: maybe we should make more noise here?
        */
 
-      if (!(n == file->pos / file->chunk_size)) {
+      if (!(file->n == file->pos / file->chunk_size)) {
          return 0;
       }
    }
@@ -718,7 +718,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
       break;
    }
 
-   if (offset / file->chunk_size != file->pos / file->chunk_size) {
+   if (offset / file->chunk_size != file->n) {
       /** no longer on the same page */
 
       if (file->page) {
@@ -736,6 +736,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
    }
 
    file->pos = offset;
+   file->n = file->pos / file->chunk_size;
 
    return 0;
 }
