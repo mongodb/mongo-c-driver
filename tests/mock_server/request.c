@@ -133,14 +133,6 @@ request_matches_query (const request_t *request,
 
    assert (request->docs.len <= 2);
 
-   /* TODO: make a good request repr, skip logging and say:
-    *   request_t *expected = request_new_from_pattern (...);
-    *   if (!request_matches (request, expected)) {
-    *       MONGOC_ERROR ("expected %s, got %s",
-    *                     request_repr (expected), request_repr (request));
-    *       return false;
-    *   }
-    */
    if (request->is_command && !is_command) {
       MONGOC_ERROR ("expected query, got command");
       return false;
