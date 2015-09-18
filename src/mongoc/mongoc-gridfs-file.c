@@ -481,6 +481,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
             _mongoc_gridfs_file_refresh_page (file);
          }
 
+         /* write bytes until an iov is exhausted or the page is full */
          r = _mongoc_gridfs_file_page_write (file->page,
                                             (uint8_t *)iov[i].iov_base + iov_pos,
                                             (uint32_t)(iov[i].iov_len - iov_pos));
@@ -496,15 +497,8 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
             /** filled a bucket, keep going */
             break;
          } else {
-            /** flush the buffer, the next pass through will bring in a new page
-             *
-             * Our file pointer is now on the new page, so push it back one so
-             * that flush knows to flush the old page rather than a new one.
-             * This is a little hacky
-             */
-            file->pos--;
+            /** flush the buffer, the next pass through will bring in a new page */
             _mongoc_gridfs_file_flush_page (file);
-            file->pos++;
          }
       }
    }
@@ -515,7 +509,20 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 }
 
 
-/** flush a gridfs file's current page to the db */
+/**
+ * _mongoc_gridfs_file_flush_page:
+ *
+ *    Unconditionally flushes the file's current page to the database.
+ *    The page to flush is determined by page->n.
+ *
+ * Side Effects:
+ *
+ *    On success, file->page is properly destroyed and set to NULL.
+ *
+ * Returns:
+ *
+ *    True on success; false otherwise.
+ */
 static bool
 _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 {
@@ -560,10 +567,28 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 }
 
 
-/** referesh a gridfs file's underlying page
+/**
+ * _mongoc_gridfs_file_refresh_page:
  *
- * This unconditionally fetches the current page, even if the current page
- * covers the same theoretical chunk.
+ *    Refresh a GridFS file's underlying page. This recalculates the current
+ *    page number based on the file's stream position, then fetches that page
+ *    from the database.
+ *
+ *    Note that this fetch is unconditional and the page is queried from the
+ *    database even if the current page covers the same theoretical chunk.
+ *
+ * Preconditions:
+ *
+ *    file->pos is nonnegative.
+ *
+ * Side Effects:
+ *
+ *    file->page is loaded with the appropriate buffer, fetched from the
+ *    database. If the file position is at the end of the file and on a new
+ *    chunk boundary, a new page is created. We currently DO NOT handle the case
+ *    of the file position being far past the end-of-file.
+ *
+ *    file->n is set based on file->pos.
  */
 static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
@@ -579,6 +604,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    ENTRY;
 
    BSON_ASSERT (file);
+   BSON_ASSERT (file->pos >= 0);
 
    file->n = (uint32_t)(file->pos / file->chunk_size);
 
@@ -674,7 +700,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
        * TODO: maybe we should make more noise here?
        */
 
-      if (!(file->n == file->pos / file->chunk_size)) {
+      if (file->n != file->pos / file->chunk_size) {
          return 0;
       }
    }
@@ -687,10 +713,30 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 }
 
 
-/** Seek in a gridfs file to a given location
+/**
+ * mongoc_gridfs_file_seek:
  *
- * @param whence is regular fseek whence.  I.e. SEEK_SET, SEEK_CUR or SEEK_END
+ *    Adjust the file position pointer in `file` by `delta`, starting from the
+ *    position `whence`. The `whence` argument is interpreted as in fseek(2):
  *
+ *       SEEK_SET    Set the position to the start of the file.
+ *       SEEK_CUR    Move `delta` from the current file position.
+ *       SEEK_END    Move `delta` from the end-of-file.
+ *
+ * Parameters:
+ *
+ *    @file: A mongoc_gridfs_file_t.
+ *    @delta: The amount to move. May be positive or negative.
+ *    @whence: One of SEEK_SET, SEEK_CUR or SEEK_END.
+ *
+ * Errors:
+ *
+ *    [EINVAL] `whence` is not one of SEEK_SET, SEEK_CUR or SEEK_END.
+ *
+ * Returns:
+ *
+ *    0 on success.
+ *    -1 on error, and errno set to the appropriate value.
  */
 int
 mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
