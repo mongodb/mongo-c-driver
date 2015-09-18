@@ -403,7 +403,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
 #endif
 
 
-static void
+static int
 TestSuite_RunTest (TestSuite *suite,       /* IN */
                    Test *test,             /* IN */
                    Mutex *mutex, /* IN */
@@ -494,6 +494,8 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       }
       Mutex_Unlock (mutex);
    }
+
+   return status ? 1 : 0;
 }
 
 
@@ -656,17 +658,18 @@ static void *
 TestSuite_ParallelWorker (void *data) /* IN */
 {
    ParallelInfo *info = (ParallelInfo *)data;
+   int status;
 
    ASSERT (info);
 
-   TestSuite_RunTest (info->suite, info->test, info->mutex, info->count);
+   status = TestSuite_RunTest (info->suite, info->test, info->mutex, info->count);
 
    if (AtomicInt_DecrementAndTest (info->count)) {
       TestSuite_PrintJsonFooter (stdout);
       if (info->suite->outfile) {
          TestSuite_PrintJsonFooter (info->suite->outfile);
       }
-      exit (0);
+      exit (status);
    }
 
    return NULL;
@@ -716,12 +719,13 @@ TestSuite_RunParallel (TestSuite *suite) /* IN */
 }
 
 
-static void
+static int
 TestSuite_RunSerial (TestSuite *suite) /* IN */
 {
    Test *test;
    Mutex mutex;
    int count = 0;
+   int status = 0;
 
    Mutex_Init (&mutex);
 
@@ -730,7 +734,7 @@ TestSuite_RunSerial (TestSuite *suite) /* IN */
    }
 
    for (test = suite->tests; test; test = test->next) {
-      TestSuite_RunTest (suite, test, &mutex, &count);
+      status += TestSuite_RunTest (suite, test, &mutex, &count);
       count--;
    }
 
@@ -740,10 +744,12 @@ TestSuite_RunSerial (TestSuite *suite) /* IN */
    }
 
    Mutex_Destroy (&mutex);
+
+   return status;
 }
 
 
-static void
+static int
 TestSuite_RunNamed (TestSuite *suite,     /* IN */
                     const char *testname) /* IN */
 {
@@ -753,6 +759,7 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
    int count = 1;
    bool star = strlen (testname) && testname[strlen (testname) - 1] == '*';
    bool match;
+   int status = 0;
 
    ASSERT (suite);
    ASSERT (testname);
@@ -771,7 +778,7 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
       }
 
       if (match) {
-         TestSuite_RunTest (suite, test, &mutex, &count);
+         status += TestSuite_RunTest (suite, test, &mutex, &count);
       }
    }
 
@@ -781,12 +788,15 @@ TestSuite_RunNamed (TestSuite *suite,     /* IN */
    }
 
    Mutex_Destroy (&mutex);
+   return status;
 }
 
 
 int
 TestSuite_Run (TestSuite *suite) /* IN */
 {
+   int failures = 0;
+
    if ((suite->flags & TEST_HELPONLY)) {
       TestSuite_PrintHelp (suite, stderr);
       return 0;
@@ -799,9 +809,9 @@ TestSuite_Run (TestSuite *suite) /* IN */
 
    if (suite->tests) {
       if (suite->testname) {
-         TestSuite_RunNamed (suite, suite->testname);
+         failures += TestSuite_RunNamed (suite, suite->testname);
       } else if ((suite->flags & TEST_NOTHREADS)) {
-         TestSuite_RunSerial (suite);
+         failures += TestSuite_RunSerial (suite);
       } else {
          TestSuite_RunParallel (suite);
       }
@@ -812,7 +822,7 @@ TestSuite_Run (TestSuite *suite) /* IN */
       }
    }
 
-   return 0;
+   return failures;
 }
 
 
