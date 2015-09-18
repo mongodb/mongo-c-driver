@@ -265,6 +265,45 @@ test_create_from_stream (void)
 
 
 static void
+test_seek (void)
+{
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+   mongoc_stream_t *stream;
+   mongoc_client_t *client;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+
+   ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "seek", &error), error);
+
+   mongoc_gridfs_drop (gridfs, &error);
+
+   stream = mongoc_stream_file_new_for_path (BINARY_DIR"/gridfs-large.dat", O_RDONLY, 0);
+
+   file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
+   assert (file);
+   assert (mongoc_gridfs_file_save (file));
+
+   assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
+   assert (mongoc_gridfs_file_tell (file) == 0);
+
+   assert (mongoc_gridfs_file_seek (file, (255*1024) + 1, SEEK_CUR) == 0);
+   assert (mongoc_gridfs_file_tell (file) == (255*1024) + 1);
+
+   mongoc_gridfs_file_seek (file, 0, SEEK_END);
+   assert (mongoc_gridfs_file_tell (file) == mongoc_gridfs_file_get_length (file));
+
+   mongoc_gridfs_file_destroy (file);
+
+   drop_collections (gridfs, &error);
+   mongoc_gridfs_destroy (gridfs);
+
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_read (void)
 {
    mongoc_gridfs_t *gridfs;
@@ -475,6 +514,7 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/list", test_list);
    TestSuite_Add (suite, "/GridFS/properties", test_properties);
    TestSuite_Add (suite, "/GridFS/read", test_read);
+   TestSuite_Add (suite, "/GridFS/seek", test_seek);
    TestSuite_Add (suite, "/GridFS/stream", test_stream);
    TestSuite_Add (suite, "/GridFS/remove", test_remove);
    TestSuite_Add (suite, "/GridFS/write", test_write);
