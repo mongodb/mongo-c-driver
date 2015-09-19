@@ -1,83 +1,415 @@
 #######################################
-#      libmongoc config for MCI       #
+#       C Driver Config for MCI       #
 #######################################
 
-#######################################
-#            Options                  #
-#######################################
+## Some variables for convenience:
 
-stepback: true
+c_driver_variables:
+
+  test_list: &std_tests
+    - name: "compile"
+    - name: "integration test latest"
+
+  ## Note that the in 3.0, the default storage engine is MMAPv1 and
+  ## WiredTiger is opt-in, but in latest as of MongoDB 3.1.4, the
+  ## default is WiredTiger and MMAPv1 is opt-in.
+  storage_engine_test_list: &storage_engine_tests
+    - name: "compile"
+    - name: "integration test 3.0"
+    - name: "integration test 3.0 with WiredTiger"
+    - name: "integration test latest"
+    - name: "integration test latest with MMAPv1"
+
+  topology_test_list: &topology_tests
+    - name: "compile"
+    - name: "integration test 2.4"
+    - name: "integration test 2.4 replica set"
+    - name: "integration test 2.4 sharded"
+    - name: "integration test 2.6"
+    - name: "integration test 2.6 replica set"
+    - name: "integration test 2.6 sharded"
+    - name: "integration test 3.0"
+    - name: "integration test 3.0 replica set"
+    - name: "integration test 3.0 sharded"
+    - name: "integration test latest"
+    - name: "integration test latest replica set"
+    - name: "integration test latest sharded"
+
+  topology_test_no_auth_list: &topology_tests_no_auth
+    - name: "compile"
+    - name: "integration test 2.4 no auth"
+    - name: "integration test 2.4 replica set no auth"
+    - name: "integration test 2.4 sharded no auth"
+    - name: "integration test 2.6 no auth"
+    - name: "integration test 2.6 replica set no auth"
+    - name: "integration test 2.6 sharded no auth"
+    - name: "integration test 3.0 no auth"
+    - name: "integration test 3.0 replica set no auth"
+    - name: "integration test 3.0 sharded no auth"
+    - name: "integration test latest no auth"
+    - name: "integration test latest replica set no auth"
+    - name: "integration test latest sharded no auth"
+
+## Common download urls (merge in as hashes)
+  mongo_download_url_prefixes:
+    linux64: &mongo_url_linux64
+      mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-x86_64-"
+    ubuntu1204: &mongo_url_ubuntu1204
+      mongo_url_platform: "ubuntu1204-"
+      <<: *mongo_url_linux64
+    ubuntu1404: &mongo_url_ubuntu1404
+      mongo_url_platform: "ubuntu1404-"
+      <<: *mongo_url_linux64
+    windows64: &mongo_url_windows64
+      mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-x86_64-"
+      mongo_url_platform: ""
+    windows32: &mongo_url_windows32
+      mongo_url_prefix: "http://downloads.mongodb.org/win32/mongodb-win32-i386-"
+    rhel55: &mongo_url_rhel55
+      mongo_url_platform: "rhel57-"
+      <<: *mongo_url_linux64
+    rhel55_32: &mongo_url_rhel55_32
+      mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-i686-"
+    osx-108: &mongo_url_osx_108
+      mongo_url_prefix: "http://downloads.mongodb.org/osx/mongodb-osx-x86_64-"
+    solaris: &mongo_url_solaris
+      mongo_url_prefix: "http://downloads.mongodb.org/sunos5/mongodb-sunos5-x86_64-"
+
+  ## Common sets of CFLAGS
+  cflags:
+    standard: &cflags_64
+      cflags: "-m64 -march=x86-64"
+    standard_32: &cflags_32
+      cflags: "-m32 -march=i386"
+    osx_108: &cflags_osx_108
+      cflags: "-m64 -march=x86-64"
+
+  ## Extra $PATH entries
+  paths:
+    unix_path: &unix_path
+      extra_path:
+    osx_path: &osx_path
+      extra_path:
+    windows_path: &windows_path
+      extra_path: /cygdrive/c/mongo-c-driver/bin:/cygdrive/c/openssl/bin
+    solaris_path: &solaris_path
+      extra_path: /opt/mongodbtoolchain/bin
+
+  ## Scripts that are shared between buildvariants
+  scripts:
+    mongo_orchestration:
+      windows: &mongo_orchestration_windows
+        start_mongo_orchestration: |
+          trap 'set +o errexit; mongo-orchestration stop;' EXIT
+          taskkill.exe /FI "IMAGENAME eq python.exe" /F
+          taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
+          fsutil volume diskfree c:
+          echo "Starting Mongo Orchestration..."
+          echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
+          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000
+          sleep 10
+          curl -s http://localhost:8889/
+      unix: &mongo_orchestration_unix
+        start_mongo_orchestration: |
+          trap 'set +o errexit; mongo-orchestration stop;' EXIT
+          df -h
+          echo "Starting Mongo Orchestration..."
+          echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
+          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
+          curl -s http://localhost:8889/
+      start_topology_command: &start_topology_command
+        start_topology: |
+          curl -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL"
+          ./mongodb/bin/mongo --eval 'printjson(db.serverBuildInfo())'
+          ./mongodb/bin/mongo --eval 'printjson(db.isMaster())'
+
+    compile:
+      unix: &compile_unix
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          ./autogen.sh --enable-ssl=yes --enable-sasl=yes
+          make -j8
+      solaris: &compile_solaris
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          ./autogen.sh --enable-ssl=yes --enable-sasl=yes
+          make
+      msvc: &compile_msvc
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          cmake="/cygdrive/c/cmake/bin/cmake"
+          msbuild="/cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe"
+          dumpbin="/cygdrive/c/Program Files (x86)/Microsoft Visual Studio 12.0/VC/bin/dumpbin.exe"
+          # In Autotools builds, autogen.sh does this, we must do it here.
+          git submodule init
+          git submodule update
+          cd src/libbson
+          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
+          "$msbuild" /m ALL_BUILD.vcxproj
+          "$dumpbin" /HEADERS Debug/libbson-1.0.dll | head -n 25
+          "$msbuild" /m INSTALL.vcxproj
+          cd ../..
+          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" "$CMAKE_DEFS"
+          "$msbuild" /m ALL_BUILD.vcxproj
+          "$dumpbin" /HEADERS Debug/mongoc-1.0.lib | head -n 25
+          "$msbuild" /m INSTALL.vcxproj
+
+    username_password:
+      common: &username_password_common
+        set_username_password: |
+          export MONGOC_TEST_USER=bob
+          export MONGOC_TEST_PASSWORD=pwd123
+
+    integration_tests:
+      msvc: &run_integration_tests_msvc
+        run_integration_tests: |
+          export PATH=$PATH:`pwd`/tests
+          ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
+          touch tests/trust_dir/done
+          export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
+          ./Debug/test-libmongoc.exe -d -f -p
+      unix: &run_integration_tests_unix
+        run_integration_tests: |
+          make TEST_ARGS="-f -p -d" check
+
+## Other OS-specific attributes, grouped by OS
+  unix_common: &unix_common
+    <<: *username_password_common
+    <<: *compile_unix
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_unix
+    <<: *start_topology_command
+    <<: *unix_path
+
+  osx_common: &osx_common
+    <<: *unix_common
+    <<: *osx_path
+
+  solaris_common: &solaris_common
+    <<: *unix_common
+    <<: *compile_solaris
+    <<: *solaris_path
+
+## Misc. for Windows builds
+  windows_compilers:
+    ## msvc2010
+    msvc2010: &with_msvc2010
+      <<: *username_password_common
+      generator: Visual Studio 10 2010
+      msbuild: # ???
+      dllpath: "c:/openssl/bin,c:/sasl/bin,c:/curl/dlls"
+    ## msvc2013, 32-bit
+    msvc2013_32bit: &with_msvc2013_32bit
+      generator: Visual Studio 12 2013
+      cmake_defs: "-DSEARCH_OPEN_SSL:BOOL=OFF"
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
+    msvc2013: &with_msvc2013
+      <<: *username_password_common
+      generator: Visual Studio 12 2013 Win64
+      cmake_defs: "-DCMAKE_INCLUDE_PATH=C:/sasl/include -DCMAKE_LIBRARY_PATH=C:/sasl/lib"
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+
+  ## all windows buildvariants have these attributes in common
+  windows_common: &windows_common
+    mongo_url_extension: "zip"
+    extension: ".exe"
+    windows: true
+    <<: *windows_path
+    <<: *mongo_orchestration_windows
+    <<: *start_topology_command
+
+  msvc_common: &msvc_common
+    <<: *windows_common
+    <<: *compile_msvc
+    <<: *run_integration_tests_msvc
+
 
 #######################################
 #            Functions                #
 #######################################
 
 functions:
-    fetch_source:
-        command: git.get_project
-        params:
-            directory: libmongoc
+  "fetch source" :
+    command: git.get_project
+    params:
+      directory: mongo-c-driver
 
-libmongoc_variables:
-    ## Tests run on most buildvariants
+  "fetch mongodb" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+        set -o verbose
+        set -o errexit
+        curl -s ${mongo_url} --output mongo-archive.${ext|tgz}
+        ${decompress} mongo-archive.${ext|tgz}
+        mv mongodb* mongodb
+        chmod +x ./mongodb/bin/mongod${extension}
+        if [ ${windows|false} = true ]; then
+            cp -r mongodb /cygdrive/c/mongodb
+        fi
 
-    std_test_def: &std_tests
-        - name: compile
-        - name: make check
+  "create working directory" :
+    command: shell.exec
+    params:
+      script: |
+        rm -rf mongo-c-driver
+        mkdir mongo-c-driver
 
-    ## Architectures
+  # MCI's S3 mechanism doesn't support symlinks, use curl instead of s3.get
+  "fetch artifacts" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+        set -o verbose
+        set -o errexit
+        curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${build_variant}/${revision}/artifacts/mongo-${build_id}.tar.gz -o ${build_id}.tar.gz --silent
+        tar -xzf ${build_id}.tar.gz
 
-    default_expansions_def: &default_expansions
-        env_vars: CFLAGS=""
-        mongodb_logpath: /data/log
-        mongodb_args: "--fork --noprealloc --smallfiles --dbpath=/data/db --pidfilepath=/data/pid"
+  "compile function" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+          export PATH=${extra_path}:$PATH
+          export GENERATOR="${generator}"     # For CMake on Windows
+          export CMAKE_DEFS="${cmake_defs}"   # For CMake on Windows
+          ${compile_script}
 
-    i386_expansions_def: &i386_expansions
-        env_vars: CFLAGS="-m32 -march=i386"
+  "set topology standalone" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "auth.json"
+        - key: "topology_type"
+          value: "server"
 
-    i686_expansions_def: &i686_expansions
-        env_vars: CFLAGS="-m32 -march=i686"
+  "set topology replica set" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "auth.json"
+        - key: "topology_type"
+          value: "replica_set"
 
-    x86_64_expansions_def: &x86_64_expansions
-        env_vars: CFLAGS="-m64 -march=x86-64"
+  "set topology sharded" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "auth.json"
+        - key: "topology_type"
+          value: "sharded_cluster"
 
-    ## "Platforms" or whatever
+  "set topology standalone no auth" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "basic.json"
+        - key: "topology_type"
+          value: "server"
 
-    linux_expansions_def: &linux_expansions
-        j_flag: -j$(grep -c ^processor /proc/cpuinfo)
-        mongo_url: "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-latest.tgz"
+  "set topology replica set no auth" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "basic.json"
+        - key: "topology_type"
+          value: "replica_set"
 
-    osx_expansions_def: &osx_expansions
-        j_flag: -j$(sysctl -n hw.logicalcpu)
-        mongo_url: "https://fastdl.mongodb.org/osx/mongodb-osx-x86_64-latest.tgz"
+  "set topology sharded no auth" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "basic.json"
+        - key: "topology_type"
+          value: "sharded_cluster"
 
-    solaris_expansions_def: &solaris_expansions
-        j_flag: -j$(kstat cpu_info|grep core_id|sort -u|wc -l)
-        mongo_url: "https://fastdl.mongodb.org/sunos5/mongodb-sunos5-x86_64-latest.tgz"
+  "use WiredTiger storage" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "wiredtiger.json"
+        - key: "topology_type"
+          value: "server"
 
-    mingw_expansions_def: &mingw_expansions
-        j_flag: -j$(grep -c ^processor /proc/cpuinfo)
-        mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-latest.zip"
-        ext: ".zip"
+  "use MMAPv1 storage" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "mmapv1.json"
+        - key: "topology_type"
+          value: "server"
+
+  "set version 2.4" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongo_url"
+          value: ${mongo_url_prefix}2.4.14.${mongo_url_extension|tgz}
+
+  "set version 2.6" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongo_url"
+          value: ${mongo_url_prefix}2.6.10.${mongo_url_extension|tgz}
+
+  "set version 3.0" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongo_url"
+          value: ${mongo_url_prefix}${mongo_url_platform|}3.0.5.${mongo_url_extension|tgz}
+
+  "set version latest" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "mongo_url"
+          value: ${mongo_url_prefix}${mongo_url_platform|}latest.${mongo_url_extension|tgz}
+
+  "run integration tests" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+        set -o errexit
+        set -o verbose
+        export ORCHESTRATION_FILE="orchestration_configs/${topology_type}s/${orchestration_file}"
+        export ORCHESTRATION_URL="http://localhost:8889/v1/${topology_type}s"
+        ${set_username_password}
+        ${start_mongo_orchestration}
+        ${start_topology}
+        ${run_integration_tests}
+
 
 #######################################
-#              Pre Task               #
+#            Pre Task                 #
 #######################################
 
 pre:
-    - command: expansions.fetch
-      params:
-          keys:
-              - local_key: aws_key
-                remote_key: project_aws_key
-              - local_key: aws_secret
-                remote_key: project_aws_secret
+    - command: shell.track
+
 post:
     - command: shell.exec
       params:
-          script: |
-              set -o verbose
-              ${killall_mci|pkill -9 mongod; pkill -9 mongos}
+        working_dir: "mongo-c-driver"
+        script: |
+            mongo-orchestration stop
+    - command: shell.cleanup
 
 
 #######################################
@@ -85,75 +417,318 @@ post:
 #######################################
 
 tasks:
-- name: compile
-  commands:
-      - command: git.get_project
-        params:
-            directory: libmongoc
-      - command: git.apply_patch
-        params:
-            directory: libmongoc
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
-                set -o verbose
+    - name: compile
+      commands:
+        - func: "fetch source"
+        - command: git.apply_patch
+          params:
+            directory: "mongo-c-driver"
+        - func: "compile function"
+        - command: shell.exec
+          params:
+              working_dir: "mongo-c-driver"
+              script: |
                 set -o errexit
-                export PATH=${path}:$PATH
-                ${env_vars} ./autogen.sh
-                make ${j_flag}
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
                 set -o verbose
-                tar -czvf ../libmongoc.tar.gz .
-      - command: s3.put
-        params:
+                tar -czf ../mongo-c-driver.tar.gz .
+        - command: s3.put
+          params:
             aws_key: ${aws_key}
             aws_secret: ${aws_secret}
-            remote_file: libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz
+            local_file: mongo-c-driver.tar.gz
+            remote_file: mongo-c-driver/${build_variant}/${revision}/artifacts/mongo-${build_id}.tar.gz
             bucket: mciuploads
-            local_file: libmongoc.tar.gz
             permissions: public-read
             content_type: ${content_type|application/x-gzip}
 
-- name: make check
-  depends_on:
-      - name: compile
-  commands:
-      - command: shell.exec
-        params:
-            script: |
-                set -o verbose
-                rm -rf libmongoc
-                rm -rf /data/db
-                mkdir -p /data/db
-      - command: shell.exec
-        params:
-            script: |
-                mkdir libmongoc
-      - command: shell.exec
-        params:
-            working_dir: libmongoc
-            script: |
-                set -o verbose
-                set -o errexit
-                trap 'set +o errexit; pkill -9 mongod; pkill -9 mongos}' EXIT
-                # MCI's S3 mechanism doesn't support symlinks
-                curl http://s3.amazonaws.com/mciuploads/libmongoc/${build_variant}/${revision}/artifacts/${build_id}.tar.gz -o ${build_id}.tar.gz --silent
-                tar -xzf ${build_id}.tar.gz
-                curl -s ${mongo_url} --output mongo_enterprise.${ext|tgz}
-                ${decompress} mongo_enterprise.${ext|tgz}
-                cp mongodb*/bin/mongod${extension} ./mongod${extension}
-                chmod +x ./mongod${extension}
-                if ! ./mongod${extension} ${mongodb_args} --logpath=${mongodb_logpath}
-                then
-                    cat ${mongodb_logpath}
-                    exit 1
-                fi
-                sleep 30
-                make check
+    - name: "integration test 2.4"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.4 replica set"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.4 sharded"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6 replica set"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6 sharded"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 replica set"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 sharded"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest replica set"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest sharded"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.4 no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone no auth"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.4 replica set no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set no auth"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.4 sharded no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded no auth"
+        - func: "set version 2.4"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6 no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone no auth"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6 replica set no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set no auth"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 2.6 sharded no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded no auth"
+        - func: "set version 2.6"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone no auth"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 replica set no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set no auth"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 sharded no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded no auth"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone no auth"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest replica set no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology replica set no auth"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest sharded no auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology sharded no auth"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test latest with MMAPv1"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone"
+        - func: "set version latest"
+        - func: "use MMAPv1 storage"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
+    - name: "integration test 3.0 with WiredTiger"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone"
+        - func: "set version 3.0"
+        - func: "use WiredTiger storage"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
+
 
 #######################################
 #           Buildvariants             #
@@ -161,138 +736,110 @@ tasks:
 
 buildvariants:
 
-################ 32-bit ###############
+#######################################
+#         Linux Buildvariants         #
+#######################################
 
-- name: rhel55-32
-  display_name: RHEL 5.5 32-bit
-  expansions:
-      <<: *default_expansions
-      <<: *linux_expansions
-  run_on:
-      - rhel55-32
-  tasks: *std_tests
+### RHEL 5.5
+#
+#- name: rhel55
+#  display_name: "RHEL 5.5"
+#  expansions:
+#    <<: *cflags_64
+#    <<: *warning_flags_rhel55
+#    <<: *cpppath_rhel55
+#    <<: *libpath_rhel55_64
+#    <<: *mongo_url_rhel55
+#  run_on:
+#  - rhel55-test
+#  tasks: *topology_tests
+#
+### RHEL 5.5 32-bit
+#
+#- name: rhel55-32-bit
+#  display_name: "RHEL 5.5 32-bit"
+#  expansions:
+#    <<: *cflags_32
+#    <<: *warning_flags_rhel55
+#    <<: *cpppath_rhel55
+#    <<: *libpath_rhel55_32
+#    <<: *mongo_url_rhel55_32
+#  run_on:
+#  - rhel55-test
+#  tasks: *topology_tests
 
-- name: windows-32
-  display_name: Windows 32-bit
-  expansions:
-      <<: *default_expansions
-      <<: *mingw_expansions
-      mongo_url: "https://fastdl.mongodb.org/win32/mongodb-win32-i386-latest.zip"
-  run_on:
-      - windows-32
-  tasks: *std_tests
-
-########## i386 cross-compile #########
-
-- name: ubuntu-1204-i386
-  display_name: Ubuntu 12.04 i386
-  expansions:
-      <<: *default_expansions
-      <<: *i386_expansions
-      <<: *linux_expansions
-  run_on:
-      - ubuntu1204-test
-  tasks: *std_tests
-
-- name: ubuntu-1404-i386
-  display_name: Ubuntu 14.04 i386
-  expansions:
-      <<: *default_expansions
-      <<: *i386_expansions
-      <<: *linux_expansions
-  run_on:
-      - ubuntu1404-test
-  tasks: *std_tests
-
-- name: os-x-108-i386
-  display_name: OS X 10.8 i386
-  expansions:
-      <<: *default_expansions
-      <<: *osx_expansions
-      env_vars: CC="clang -m32 -march=i386"
-  run_on:
-      - osx-108
-  tasks: *std_tests
-
-########## i686 cross-compile #########
-
-- name: ubuntu-1204-i686
-  display_name: Ubuntu 12.04 i686
-  expansions:
-      <<: *default_expansions
-      <<: *i686_expansions
-      <<: *linux_expansions
-  run_on:
-      - ubuntu1204-test
-  tasks: *std_tests
-
-- name: ubuntu-1404-i686
-  display_name: Ubuntu 14.04 i686
-  expansions:
-      <<: *default_expansions
-      <<: *i686_expansions
-      <<: *linux_expansions
-  run_on:
-      - ubuntu1404-test
-  tasks: *std_tests
-
-- name: os-x-108-i686
-  display_name: OS X 10.8 i686
-  expansions:
-      <<: *default_expansions
-      <<: *osx_expansions
-      env_vars: CC="clang -m32 -march=i686"
-  run_on:
-      - osx-108
-  tasks: *std_tests
-
-############## x86_64 #################
+## Ubuntu 1204
 
 - name: ubuntu-1204-64
-  display_name: Ubuntu 12.04 64-bit
+  display_name: "Ubuntu 12.04 64-bit"
   expansions:
-      <<: *default_expansions
-      <<: *x86_64_expansions
-      <<: *linux_expansions
+    <<: *cflags_64
+    <<: *mongo_url_ubuntu1204
+    <<: *unix_common
   run_on:
-      - ubuntu1204-test
-  tasks: *std_tests
+  - ubuntu1204-test
+  tasks: *topology_tests
+
+## Ubuntu 1404
 
 - name: ubuntu-1404-64
-  display_name: Ubuntu 14.04 64-bit
+  display_name: "Ubuntu 14.04 64-bit"
   expansions:
-      <<: *default_expansions
-      <<: *x86_64_expansions
-      <<: *linux_expansions
+    <<: *cflags_64
+    <<: *mongo_url_ubuntu1404
+    <<: *unix_common
   run_on:
-      - ubuntu1404-test
-  tasks: *std_tests
+  - ubuntu1404-test
+  tasks: *topology_tests
+
+#######################################
+#         OS X Buildvariants          #
+#######################################
 
 - name: os-x-108-64
-  display_name: OS X 10.8 64-bit
+  display_name: "OS X 10.8 64-bit"
   expansions:
-      <<: *default_expansions
-      <<: *osx_expansions
+    <<: *mongo_url_osx_108
+    <<: *cflags_osx_108
+    <<: *osx_common
   run_on:
-      - osx-108
-  tasks: *std_tests
+  - osx-108
+  tasks: *topology_tests
+
+#######################################
+#        Windows Buildvariants        #
+#######################################
+
+- name: windows-32-vs2013
+  display_name: "Windows 32-bit CMake Visual Studio 2013"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2013_32bit
+  run_on:
+  - windows-64-vs2013-compile
+  tasks: *topology_tests_no_auth
+
+- name: windows-64-vs2013
+  display_name: "Windows 64-bit CMake Visual Studio 2013"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2013
+  run_on:
+  - windows-64-vs2013-compile
+  tasks: *topology_tests
+
+#######################################
+#        Solaris Buildvariant         #
+#######################################
 
 - name: solaris-64-bit
   display_name: Solaris 64-bit
   expansions:
-      <<: *default_expansions
-      <<: *x86_64_expansions
-      <<: *solaris_expansions
-      path: "/opt/mongodbtoolchain/bin/"
+    <<: *solaris_common
+    <<: *cflags_64
+    <<: *mongo_url_solaris
   run_on:
       - solaris
-  tasks: *std_tests
-
-- name: windows-64-mingw64
-  display_name: Windows 64-bit MinGW-64
-  expansions:
-      <<: *default_expansions
-      path: "/cygdrive/c/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin:/cygdrive/c/sasl/"
-  run_on:
-      - windows-64-vs2013-test
-  tasks: *std_tests
+  tasks: *topology_tests
