@@ -205,7 +205,7 @@ mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern)
  */
 void
 mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
-                                   int32_t            wtimeout_msec)
+                                   int32_t                 wtimeout_msec)
 {
    BSON_ASSERT (write_concern);
 
