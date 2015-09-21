@@ -414,7 +414,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
    struct timespec ts3;
    char name[MAX_TEST_NAME_LENGTH];
    char buf[MAX_TEST_NAME_LENGTH + 500];
-   int status;
+   int status = 0;
 
    snprintf (name, sizeof name, "%s%s", suite->name, test->name);
    name [sizeof name - 1] = '\0';
@@ -482,6 +482,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       }
       Mutex_Unlock (mutex);
    } else {
+      status = 0;
       Mutex_Lock (mutex);
       snprintf (buf, sizeof buf,
                 "    { \"status\": \"SKIP\", \"name\": \"%s\" },\n",
