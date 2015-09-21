@@ -307,7 +307,7 @@ mongoc_topology_scanner_node_connect_tcp (mongoc_topology_scanner_node_t *node,
          bson_set_error (error,
                          MONGOC_ERROR_STREAM,
                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
-                         "Failed to resolve %s",
+                         "Failed to resolve '%s'",
                          host->host);
          RETURN (NULL);
       }
@@ -339,7 +339,7 @@ mongoc_topology_scanner_node_connect_tcp (mongoc_topology_scanner_node_t *node,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_CONNECT,
-                      "Failed to connect to target host: %s",
+                      "Failed to connect to target host: '%s'",
                       host->host_and_port);
       freeaddrinfo (node->dns_results);
       node->dns_results = NULL;
