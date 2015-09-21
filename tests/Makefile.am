@@ -114,6 +114,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-socket.c \
 	tests/test-mongoc-sdam.c \
 	tests/test-mongoc-server-selection.c \
+        tests/test-mongoc-server-selection-errors.c \
 	tests/test-mongoc-set.c \
 	tests/test-mongoc-stream.c \
 	tests/test-mongoc-thread.c \
