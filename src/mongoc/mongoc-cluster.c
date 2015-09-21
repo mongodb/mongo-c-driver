@@ -1255,7 +1255,7 @@ mongoc_cluster_node_reconnect (mongoc_cluster_t *cluster, uint32_t server_id, bs
 
       mongoc_stream_failed (scanner_node->stream);
       scanner_node->stream = NULL;
-      mongoc_topology_scanner_node_setup (scanner_node);
+      mongoc_topology_scanner_node_setup (scanner_node, error);
       if (scanner_node->stream && cluster->requires_auth) {
          sd = mongoc_topology_server_by_id (topology, server_id);
          if (!sd) {

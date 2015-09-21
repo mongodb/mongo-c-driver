@@ -56,6 +56,7 @@ typedef struct mongoc_topology_scanner_node
    struct mongoc_topology_scanner_node *prev;
 
    bool                            retired;
+   bson_error_t                    last_error;
 } mongoc_topology_scanner_node_t;
 
 typedef struct mongoc_topology_scanner
@@ -116,7 +117,8 @@ void
 mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts);
 
 bool
-mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node);
+mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
+                                    bson_error_t *error);
 
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts,
