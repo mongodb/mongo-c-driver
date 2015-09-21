@@ -434,7 +434,7 @@ test_empty (void)
 
    client = test_framework_client_new ();
 
-   ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "seek", &error), error);
+   ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "empty", &error), error);
 
    mongoc_gridfs_drop (gridfs, &error);
 
@@ -454,13 +454,16 @@ test_empty (void)
    assert (mongoc_gridfs_file_tell (file) == 0);
 
    r = mongoc_gridfs_file_writev(file, iov, 1, 0);
-   assert (r == 2);
 
+   assert (r == 2);
    assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
    assert (mongoc_gridfs_file_tell (file) == 0);
+   assert (mongoc_gridfs_file_save (file)); /* CDRIVER-511 */
 
    r = mongoc_gridfs_file_readv(file, iov, 1, 2, 0);
+
    assert (r == 2);
+   assert (strncmp (buf, "hi", 2) == 0);
 
    mongoc_gridfs_file_destroy (file);
 
