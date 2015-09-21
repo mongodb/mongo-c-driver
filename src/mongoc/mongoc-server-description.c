@@ -38,10 +38,6 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
 {
    BSON_ASSERT(sd);
 
-   if (sd->error) {
-      bson_free ((void *)sd->error);
-   }
-
    bson_destroy (&sd->last_is_master);
 }
 
@@ -51,11 +47,6 @@ void
 mongoc_server_description_reset (mongoc_server_description_t *sd)
 {
    BSON_ASSERT(sd);
-
-   if (sd->error) {
-      bson_free ((void *)sd->error);
-      sd->error = NULL;
-   }
 
    /* set other fields to default or empty states */
    memset (&sd->set_name, 0, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd));
@@ -106,7 +97,6 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    sd->round_trip_time = -1;
 
    sd->set_name = NULL;
-   sd->error = NULL;
    sd->current_primary = NULL;
 
    if (!_mongoc_host_list_from_string(&sd->host, address)) {
@@ -442,7 +432,6 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
    copy->round_trip_time = -1;
 
    copy->connection_address = copy->host.host_and_port;
-   copy->error = bson_strdup (description->error);
 
    /* wait for handle_ismaster to fill these in properly */
    copy->has_is_master = false;
@@ -457,6 +446,8 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
       mongoc_server_description_handle_ismaster (copy, &description->last_is_master,
                                                  description->round_trip_time, NULL);
    }
+   /* Preserve the error */
+   memcpy (&copy->error, &description->error, sizeof copy->error);
    return copy;
 }
 
