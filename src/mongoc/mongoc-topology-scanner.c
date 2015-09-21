@@ -538,6 +538,45 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_topology_scanner_sum_errors --
+ *
+ *      Summarizes all scanner node errors into one error message
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mongoc_topology_scanner_sum_errors (mongoc_topology_scanner_t *ts,
+                                    bson_error_t              *error)
+{
+   mongoc_topology_scanner_node_t *node, *tmp;
+
+   DL_FOREACH_SAFE (ts->nodes, node, tmp) {
+      if (node->last_error.code) {
+         char *msg = NULL;
+
+         if (error->code) {
+            msg = bson_strdup(error->message);
+         }
+
+         bson_set_error(error,
+                        MONGOC_ERROR_SERVER_SELECTION,
+                        MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                        "%s[%s] ",
+                        msg ? msg : "", node->last_error.message);
+         if (msg) {
+            bson_free (msg);
+         }
+      }
+   }
+   if (error->code) {
+      error->message[strlen(error->message)-1] = '\0';
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_topology_scanner_reset --
  *
  *      Reset "retired" nodes that failed or were removed in the previous
@@ -557,3 +596,4 @@ mongoc_topology_scanner_reset (mongoc_topology_scanner_t *ts)
       }
    }
 }
+

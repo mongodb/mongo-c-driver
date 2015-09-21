@@ -198,7 +198,7 @@ _test_server_selection (bool try_once)
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
 
    if (try_once) {
-      ASSERT_CMPSTR ("No suitable servers found: `serverselectiontryonce` set", error.message);
+      ASSERT_CMPSTR ("No suitable servers found (`serverselectiontryonce` set)", error.message);
    } else {
       ASSERT_CMPSTR ("No suitable servers found: `minheartbeatfrequencyms` not reached yet", error.message);
    }

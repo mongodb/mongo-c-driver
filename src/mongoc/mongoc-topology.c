@@ -321,7 +321,7 @@ _mongoc_topology_run_scanner (mongoc_topology_t *topology,
  *--------------------------------------------------------------------------
  */
 static void
-_mongoc_topology_do_blocking_scan (mongoc_topology_t *topology) {
+_mongoc_topology_do_blocking_scan (mongoc_topology_t *topology, bson_error_t *error) {
    mongoc_topology_scanner_start (topology->scanner,
                                   topology->connect_timeout_msec,
                                   true);
@@ -329,6 +329,8 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology) {
    while (_mongoc_topology_run_scanner (topology,
                                         topology->connect_timeout_msec)) {}
 
+   /* Aggregate all scanner errors, if any */
+   mongoc_topology_scanner_sum_errors (topology->scanner, error);
    /* "retired" nodes can be checked again in the next scan */
    mongoc_topology_scanner_reset (topology->scanner);
    topology->last_scan = bson_get_monotonic_time ();
@@ -378,6 +380,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
    bool try_once;
    int64_t sleep_usec;
    bool tried_once;
+   bson_error_t scanner_error = { 0 };
 
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
@@ -424,7 +427,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
             }
 
             /* takes up to connectTimeoutMS. sets "last_scan", clears "stale" */
-            _mongoc_topology_do_blocking_scan (topology);
+            _mongoc_topology_do_blocking_scan (topology, &scanner_error);
             tried_once = true;
          }
 
@@ -441,11 +444,19 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
          if (try_once) {
             if (tried_once) {
-               bson_set_error(error,
-                              MONGOC_ERROR_SERVER_SELECTION,
-                              MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                              "No suitable servers found: "
-                              "`serverselectiontryonce` set");
+               if (scanner_error.code) {
+                  bson_set_error(error,
+                                 MONGOC_ERROR_SERVER_SELECTION,
+                                 MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                                 "No suitable servers found "
+                                 "(`serverselectiontryonce` set): %s", scanner_error.message);
+               } else {
+                  bson_set_error(error,
+                                 MONGOC_ERROR_SERVER_SELECTION,
+                                 MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                                 "No suitable servers found "
+                                 "(`serverselectiontryonce` set)");
+               }
                goto FAIL;
             }
          } else {
