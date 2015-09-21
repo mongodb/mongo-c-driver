@@ -1835,12 +1835,14 @@ _test_wtimeout_plus_duplicate_key_err (bool has_write_commands)
    mock_server_destroy (mock_server);
 }
 
-
+ 
+#ifdef TODO_CDRIVER_707
 static void
 test_wtimeout_plus_duplicate_key_err_legacy (void)
 {
    _test_wtimeout_plus_duplicate_key_err (false);
 }
+#endif
 
 
 static void
