@@ -421,8 +421,7 @@ mongoc_server_description_t *
 mongoc_topology_description_select (mongoc_topology_description_t *topology,
                                     mongoc_ss_optype_t             optype,
                                     const mongoc_read_prefs_t     *read_pref,
-                                    int64_t                        local_threshold_ms,
-                                    bson_error_t                  *error) /* OUT */
+                                    int64_t                        local_threshold_ms)
 {
    mongoc_array_t suitable_servers;
    mongoc_server_description_t *sd = NULL;

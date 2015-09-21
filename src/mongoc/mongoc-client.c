@@ -1263,7 +1263,6 @@ mongoc_client_kill_cursor (mongoc_client_t *client,
    mongoc_topology_t *topology;
    mongoc_server_description_t *selected_server;
    mongoc_read_prefs_t *read_prefs;
-   bson_error_t error;
    uint32_t server_id = 0;
 
    topology = client->topology;
@@ -1275,8 +1274,7 @@ mongoc_client_kill_cursor (mongoc_client_t *client,
    selected_server = mongoc_topology_description_select(&topology->description,
                                                         MONGOC_SS_WRITE,
                                                         read_prefs,
-                                                        15,
-                                                        &error);
+                                                        15);
 
    if (selected_server) {
       server_id = selected_server->id;

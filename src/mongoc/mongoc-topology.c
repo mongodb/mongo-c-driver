@@ -431,8 +431,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
          selected_server = mongoc_topology_description_select(&topology->description,
                                                               optype,
                                                               read_prefs,
-                                                              local_threshold_ms,
-                                                              error);
+                                                              local_threshold_ms);
 
          if (selected_server) {
             return mongoc_server_description_new_copy(selected_server);
@@ -472,8 +471,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
       selected_server = mongoc_topology_description_select(&topology->description,
                                                            optype,
                                                            read_prefs,
-                                                           local_threshold_ms,
-                                                           error);
+                                                           local_threshold_ms);
 
       if (! selected_server) {
          _mongoc_topology_request_scan (topology);
