@@ -288,8 +288,8 @@ test_seek (void)
    assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
    assert (mongoc_gridfs_file_tell (file) == 0);
 
-   assert (mongoc_gridfs_file_seek (file, (255*1024) + 1, SEEK_CUR) == 0);
-   assert (mongoc_gridfs_file_tell (file) == (255*1024) + 1);
+   assert (mongoc_gridfs_file_seek (file, file->chunk_size + 1, SEEK_CUR) == 0);
+   assert (mongoc_gridfs_file_tell (file) == file->chunk_size + 1);
 
    mongoc_gridfs_file_seek (file, 0, SEEK_END);
    assert (mongoc_gridfs_file_tell (file) == mongoc_gridfs_file_get_length (file));
@@ -328,7 +328,7 @@ test_read (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   stream = mongoc_stream_file_new_for_path (BINARY_DIR"/gridfs.dat", O_RDONLY, 0);
+   stream = mongoc_stream_file_new_for_path (BINARY_DIR"/gridfs-large.dat", O_RDONLY, 0);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
    assert (file);
@@ -339,12 +339,20 @@ test_read (void)
    assert (memcmp (iov[0].iov_base, "Bacon ipsu", 10) == 0);
    assert (memcmp (iov[1].iov_base, "m dolor si", 10) == 0);
 
-   assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
+   assert (mongoc_gridfs_file_seek (file, 1, SEEK_SET) == 0);
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
 
    assert (r == 20);
-   assert (memcmp (iov[0].iov_base, "Bacon ipsu", 10) == 0);
-   assert (memcmp (iov[1].iov_base, "m dolor si", 10) == 0);
+   assert (memcmp (iov[0].iov_base, "acon ipsum", 10) == 0);
+   assert (memcmp (iov[1].iov_base, " dolor sit", 10) == 0);
+
+   assert (mongoc_gridfs_file_seek (file, file->chunk_size-1, SEEK_SET) == 0);
+   r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
+
+   assert (r == 20);
+   assert (mongoc_gridfs_file_tell (file) == file->chunk_size+19);
+   assert (memcmp (iov[0].iov_base, "turducken ", 10) == 0);
+   assert (memcmp (iov[1].iov_base, "spare ribs", 10) == 0);
 
    mongoc_gridfs_file_destroy (file);
 
@@ -392,19 +400,33 @@ test_write (void)
    assert (file);
    assert (mongoc_gridfs_file_save (file));
 
+   /* Test a write across many pages */
    r = mongoc_gridfs_file_writev (file, iov, 2, 0);
    assert (r == len);
    assert (mongoc_gridfs_file_save (file));
 
-   r = mongoc_gridfs_file_seek (file, 0, SEEK_SET);
-   assert (!r);
-
-   r = (ssize_t) mongoc_gridfs_file_tell (file);
-   assert (r == 0);
+   assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
+   assert (mongoc_gridfs_file_tell (file) == 0);
 
    r = mongoc_gridfs_file_readv (file, &riov, 1, len, 0);
    assert (r == len);
    assert (memcmp (buf3, "foo bar baz", len) == 0);
+   assert (mongoc_gridfs_file_save (file));
+
+   /* Test a write starting and ending exactly on chunk boundaries */
+   assert (mongoc_gridfs_file_seek (file, file->chunk_size, SEEK_SET) == 0);
+   assert (mongoc_gridfs_file_tell (file) == file->chunk_size);
+
+   r = mongoc_gridfs_file_writev (file, iov+1, 1, 0);
+   assert (r == iov[1].iov_len);
+   assert (mongoc_gridfs_file_save (file));
+
+   assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
+   assert (mongoc_gridfs_file_tell (file) == 0);
+
+   r = mongoc_gridfs_file_readv (file, &riov, 1, len, 0);
+   assert (r == len);
+   assert (memcmp (buf3, "fo bazr baz", len) == 0);
 
    mongoc_gridfs_file_destroy (file);
 
@@ -512,7 +534,6 @@ test_stream (void)
    mongoc_gridfs_destroy (gridfs);
    mongoc_client_destroy (client);
 }
-
 
 static void
 test_remove_by_filename (void)
