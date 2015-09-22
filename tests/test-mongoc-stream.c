@@ -122,17 +122,21 @@ test_stream_writev_full (void)
    r = _mongoc_stream_writev_full (error_stream, iov, 2, 100, &error);
 
    BSON_ASSERT (!r);
-   BSON_ASSERT (error.domain == MONGOC_ERROR_STREAM);
-   BSON_ASSERT (error.code == MONGOC_ERROR_STREAM_SOCKET);
-   BSON_ASSERT (strncmp (error.message, error_message, strlen (
-                            error_message)) == 0);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET);
+   if ((error.message) != strstr ((error.message), (error_message))) {
+      fprintf (stderr,
+               "FAIL\n\nAssert Failure: \"%s\" does not start with \"%s\"\n",
+               error.message, error_message);
+      abort ();
+   }
 
    errno = 0;
    r = _mongoc_stream_writev_full (short_stream, iov, 2, 100, &error);
    BSON_ASSERT (!r);
-   BSON_ASSERT (error.domain == MONGOC_ERROR_STREAM);
-   BSON_ASSERT (error.code == MONGOC_ERROR_STREAM_SOCKET);
-   BSON_ASSERT (strcmp (error.message, short_message) == 0);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET);
+   ASSERT_CMPSTR (error.message, short_message);
 
    errno = 0;
    r = _mongoc_stream_writev_full (success_stream, iov, 2, 100, &error);
