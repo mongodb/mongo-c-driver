@@ -351,7 +351,7 @@ _test_client_kill_cursor (bool has_primary)
 
    future = future_cursor_next (cursor, &doc);
 
-   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_NONE,
+   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
                                      0, 0, "{}", NULL);
 
    assert (mock_rs_request_is_to_secondary (rs, request));
