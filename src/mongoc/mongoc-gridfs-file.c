@@ -333,6 +333,9 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
       bson_copy_to (opt->metadata, &(file->metadata));
    }
 
+   file->pos = 0;
+   file->n = 0;
+
    RETURN (file);
 }
 
@@ -606,7 +609,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    BSON_ASSERT (file);
    BSON_ASSERT (file->pos >= 0);
 
-   file->n = (uint32_t)(file->pos / file->chunk_size);
+   file->n = (int32_t)(file->pos / file->chunk_size);
 
    if (file->page) {
       _mongoc_gridfs_file_page_destroy (file->page);
@@ -719,7 +722,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
  *    Adjust the file position pointer in `file` by `delta`, starting from the
  *    position `whence`. The `whence` argument is interpreted as in fseek(2):
  *
- *       SEEK_SET    Set the position to the start of the file.
+ *       SEEK_SET    Set the position relative to the start of the file.
  *       SEEK_CUR    Move `delta` from the current file position.
  *       SEEK_END    Move `delta` from the end-of-file.
  *
