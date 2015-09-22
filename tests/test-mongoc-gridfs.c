@@ -423,11 +423,8 @@ test_empty (void)
    mongoc_client_t *client;
    bson_error_t error;
    ssize_t r;
-   char buf[2];
+   char buf[2] = {'h', 'i'};
    mongoc_iovec_t iov[1];
-
-   buf[0] = 'h';
-   buf[1] = 'i';
 
    iov[0].iov_base = buf;
    iov[0].iov_len = 2;
@@ -435,8 +432,6 @@ test_empty (void)
    client = test_framework_client_new ();
 
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "empty", &error), error);
-
-   mongoc_gridfs_drop (gridfs, &error);
 
    stream = mongoc_stream_file_new_for_path (BINARY_DIR"/empty.dat", O_RDONLY, 0);
 
