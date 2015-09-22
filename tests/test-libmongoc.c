@@ -508,10 +508,14 @@ call_ismaster (bson_t *reply)
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
 
    client = mongoc_client_new_from_uri (uri);
-   ASSERT_OR_PRINT (mongoc_client_command_simple (client, "admin",
-                                                  tmp_bson ("{'isMaster': 1}"),
-                                                  NULL, reply, &error),
-                    error);
+   if (!mongoc_client_command_simple (client, "admin",
+                                      tmp_bson ("{'isMaster': 1}"),
+                                      NULL, reply, &error)) {
+
+      printf ("error calling ismaster: '%s'\n", error.message);
+      printf ("URI = %s\n", uri_str);
+      abort ();
+   }
 
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
