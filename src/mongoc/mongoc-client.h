@@ -75,12 +75,15 @@ typedef struct _mongoc_client_t mongoc_client_t;
  * mongoc_stream_initiator_t:
  * @uri: The uri and options for the stream.
  * @host: The host and port (or UNIX domain socket path) to connect to.
+ * @user_data: The pointer passed to mongoc_client_set_stream_initiator.
  * @error: A location for an error.
  *
- * Creates a new mongoc_stream_t for the host and port. This can be used
- * by language bindings to create network transports other than those
- * built into libmongoc. An example of such would be the streams API
- * provided by PHP.
+ * Creates a new mongoc_stream_t for the host and port. Begin a
+ * non-blocking connect and return immediately.
+ *
+ * This can be used by language bindings to create network transports other
+ * than those built into libmongoc. An example of such would be the streams
+ * API provided by PHP.
  *
  * Returns: A newly allocated mongoc_stream_t or NULL on failure.
  */

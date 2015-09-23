@@ -124,6 +124,7 @@ mongoc_topology_scanner_add_and_scan (mongoc_topology_scanner_t *ts,
 
    node = mongoc_topology_scanner_add (ts, host, id);
 
+   /* begin non-blocking connection, don't wait for success */
    if (node && mongoc_topology_scanner_node_setup (node, &node->last_error)) {
       node->cmd = mongoc_async_cmd (
          ts->async, node->stream, ts->setup,
@@ -276,6 +277,17 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
                  node->ts->cb_data, error);
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_scanner_node_connect_tcp --
+ *
+ *      Create a socket stream for this node, begin a non-blocking
+ *      connect and return.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 static mongoc_stream_t *
 mongoc_topology_scanner_node_connect_tcp (mongoc_topology_scanner_node_t *node,
                                           bson_error_t                   *error)
@@ -403,6 +415,17 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
    RETURN (ret);
 #endif
 }
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_scanner_node_setup --
+ *
+ *      Create a stream and begin a non-blocking connect.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 bool
 mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node, bson_error_t *error)
