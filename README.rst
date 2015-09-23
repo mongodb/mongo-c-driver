@@ -44,7 +44,7 @@ the `mongodb-user list`_ to ask for help. Please include in your email all of th
 information:
 
 - The version of the driver you are trying to build (branch or tag).
-    - Examples: master branch, 1.1.10 tag
+    - Examples: master branch, 1.1.11 tag
 - Host OS, version, and architecture.
     - Examples: Windows 8 64-bit x86, Ubuntu 12.04 32-bit x86, OS X Mavericks
 - C Compiler and version.
@@ -59,7 +59,7 @@ communications to ascertain the necessary details, delaying a useful response.
 Here is a made-up example of a help request that provides the relevant
 information:
 
-  Hello, I'm trying to build the C driver with SSL, from mongo-c-driver-1.1.10.tar.gz. I'm on Ubuntu
+  Hello, I'm trying to build the C driver with SSL, from mongo-c-driver-1.1.11.tar.gz. I'm on Ubuntu
   14.04, 64-bit Intel, with gcc 4.8.2. I run configure like::
 
     $ ./configure --enable-sasl=yes
@@ -92,13 +92,13 @@ Building from Release Tarball
 Unless you intend on contributing to the mongo-c-driver, you will want to build
 from a release tarball.
 
-The most current release is 1.1.10 which you can download here.
-`mongo-c-driver-1.1.10.tar.gz <https://github.com/mongodb/mongo-c-driver/releases/download/1.1.10/mongo-c-driver-1.1.10.tar.gz>`_.
+The most current release is 1.1.11 which you can download here.
+`mongo-c-driver-1.1.11.tar.gz <https://github.com/mongodb/mongo-c-driver/releases/download/1.1.11/mongo-c-driver-1.1.11.tar.gz>`_.
 
 To build on UNIX-like systems, do the following::
 
-  $ tar xzf mongo-c-driver-1.1.10.tar.gz
-  $ cd mongo-c-driver-1.1.10
+  $ tar xzf mongo-c-driver-1.1.11.tar.gz
+  $ cd mongo-c-driver-1.1.11
   $ ./configure
   $ make
   $ sudo make install
@@ -109,7 +109,7 @@ To see all of the options available to you during configuration, run::
 
 To build on Windows Vista or newer with Visual Studio 2010, do the following::
 
-  cd mongo-c-driver-1.1.10
+  cd mongo-c-driver-1.1.11
   cd src\libbson
   cmake -DCMAKE_INSTALL_PREFIX=C:\usr -G "Visual Studio 10 Win64" .
   msbuild.exe ALL_BUILD.vcxproj
