@@ -734,10 +734,9 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
  *
  * Errors:
  *
- *    [EINVAL]    `whence` is not one of SEEK_SET, SEEK_CUR or SEEK_END.
- *    [EINVAL]    Resulting file position would be negative.
- *    [EBADF]     The given file is not seekable (e.g. NULL).
- *    [EOVERFLOW] Resulting file offset would overflow.
+ *    [EINVAL] `whence` is not one of SEEK_SET, SEEK_CUR or SEEK_END.
+ *    [EINVAL] Resulting file position would be negative.
+ *    [EBADF]  The given file is not seekable (e.g. NULL).
  *
  * Side Effects:
  *
@@ -747,7 +746,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
  * Returns:
  *
  *    0 on success.
- *    -1 on error, and errno set to the appropriate value.
+ *    -1 on error, and errno set to indicate the error.
  */
 int
 mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
