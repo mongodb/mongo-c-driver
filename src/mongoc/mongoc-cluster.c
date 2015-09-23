@@ -1241,6 +1241,8 @@ mongoc_cluster_node_reconnect (mongoc_cluster_t *cluster, uint32_t server_id, bs
    mongoc_topology_t *topology = cluster->client->topology;
    mongoc_cluster_node_t *cluster_node;
    mongoc_server_description_t *sd = NULL;
+   int64_t expire_at;
+
    ENTRY;
 
    bson_return_val_if_fail(cluster, false);
@@ -1259,7 +1261,24 @@ mongoc_cluster_node_reconnect (mongoc_cluster_t *cluster, uint32_t server_id, bs
 
       mongoc_stream_failed (scanner_node->stream);
       scanner_node->stream = NULL;
-      mongoc_topology_scanner_node_setup (scanner_node, error);
+
+      /* begin a non-blocking connect, then await connection */
+      if (!mongoc_topology_scanner_node_setup (scanner_node, error)) {
+         RETURN(false);
+      }
+
+      expire_at = bson_get_monotonic_time ()
+                  + topology->connect_timeout_msec * 1000;
+
+      if (!mongoc_stream_wait (scanner_node->stream, expire_at)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                         "Could not reconnect to %s",
+                         scanner_node->host.host_and_port);
+         RETURN(false);
+      }
+
       if (scanner_node->stream && cluster->requires_auth) {
          sd = mongoc_topology_server_by_id (topology, server_id);
          if (!sd) {
