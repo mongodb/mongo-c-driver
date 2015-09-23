@@ -285,6 +285,9 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
  *      Create a socket stream for this node, begin a non-blocking
  *      connect and return.
  *
+ * Returns:
+ *      A stream. On failure, return NULL and fill out the error.
+ *
  *--------------------------------------------------------------------------
  */
 
