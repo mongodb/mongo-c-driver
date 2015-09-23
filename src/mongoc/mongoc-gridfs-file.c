@@ -418,6 +418,12 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
    /* TODO: we should probably do something about timeout_msec here */
 
+   /* Reading when positioned past the end does nothing */
+   if (file->pos >= file->length) {
+      return -1;
+   }
+
+   /* Try to get the current chunk */
    if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
          return -1;
    }
