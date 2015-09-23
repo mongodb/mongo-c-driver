@@ -197,6 +197,7 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
    file = bson_malloc0 (sizeof *file);
 
    file->gridfs = gridfs;
+   file->pos_after_read_write = false;
    bson_copy_to (data, &file->bson);
 
    bson_iter_init (&iter, &file->bson);
@@ -295,6 +296,7 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
 
    file->gridfs = gridfs;
    file->is_dirty = 1;
+   file->pos_after_read_write = false;
 
    if (opt->chunk_size) {
       file->chunk_size = opt->chunk_size;
@@ -430,6 +432,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
          iov_pos += r;
          file->pos += r;
+         file->pos_after_read_write = true;
          bytes_read += r;
 
          if (iov_pos == iov[i].iov_len) {
@@ -488,6 +491,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 
          iov_pos += r;
          file->pos += r;
+         file->pos_after_read_write = true;
          bytes_written += r;
 
          file->length = BSON_MAX (file->length, (int64_t)file->pos);
@@ -496,15 +500,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
             /** filled a bucket, keep going */
             break;
          } else {
-            /** flush the buffer, the next pass through will bring in a new page
-             *
-             * Our file pointer is now on the new page, so push it back one so
-             * that flush knows to flush the old page rather than a new one.
-             * This is a little hacky
-             */
-            file->pos--;
             _mongoc_gridfs_file_flush_page (file);
-            file->pos++;
          }
       }
    }
@@ -523,6 +519,7 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    bool r;
    const uint8_t *buf;
    uint32_t len;
+   int32_t n;
 
    ENTRY;
    BSON_ASSERT (file);
@@ -534,12 +531,22 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    selector = bson_new ();
 
    bson_append_value (selector, "files_id", -1, &file->files_id);
-   bson_append_int32 (selector, "n", -1, (int32_t)(file->pos / file->chunk_size));
+   /** Note when calculating page number:
+    *
+    * Our file pointer *could* be on the next byte to be read or written after a read or write operation,
+    * that in fact could be the next page when we cross the chunk_size boundary.
+    * So we will push it back by one byte when calculating "n" if pos_after_read_write is true
+    * to really flush the previous page.
+    * This is a little hacky and this trick has been moved from function mongoc_gridfs_file_writev().
+    * Before it was located in the "else" section of statement "if (iov_pos == iov[i].iov_len)" and implemented by
+    * decrementing file->pos by one and then re-incrementing it by one.
+    */
+   bson_append_int32 (selector, "n", -1, n = (int32_t)((file->pos - (file->pos_after_read_write ? 1 : 0)) / file->chunk_size));
 
    update = bson_sized_new (file->chunk_size + 100);
 
    bson_append_value (update, "files_id", -1, &file->files_id);
-   bson_append_int32 (update, "n", -1, (int32_t)(file->pos / file->chunk_size));
+   bson_append_int32 (update, "n", -1, n);
    bson_append_binary (update, "data", -1, BSON_SUBTYPE_BINARY, buf, len);
 
    r = mongoc_collection_update (file->gridfs->chunks, MONGOC_UPDATE_UPSERT,
@@ -598,7 +605,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       /* if we have a cursor, but the cursor doesn't have the chunk we're going
        * to need, destroy it (we'll grab a new one immediately there after) */
       if (file->cursor &&
-          !(file->cursor_range[0] >= n && file->cursor_range[1] <= n)) {
+          !(file->cursor_range[0] <= n && file->cursor_range[1] >= n)) {
          mongoc_cursor_destroy (file->cursor);
          file->cursor = NULL;
       }
@@ -738,6 +745,7 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
    }
 
    file->pos = offset;
+   file->pos_after_read_write = false;
 
    return 0;
 }

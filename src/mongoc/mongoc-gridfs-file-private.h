@@ -59,6 +59,7 @@ struct _mongoc_gridfs_file_t
    const char                *bson_content_type;
    bson_t                     bson_aliases;
    bson_t                     bson_metadata;
+   bool                       pos_after_read_write;
 };
 
 
