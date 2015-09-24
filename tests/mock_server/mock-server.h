@@ -131,6 +131,8 @@ request_t *mock_server_receives_kill_cursors (mock_server_t *server,
 
 void mock_server_hangs_up (request_t *request);
 
+void mock_server_resets (request_t *request);
+
 void mock_server_replies (request_t *request,
                           uint32_t flags,
                           int64_t cursor_id,

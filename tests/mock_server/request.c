@@ -463,6 +463,28 @@ request_get_server_port (request_t *request)
 
 /*--------------------------------------------------------------------------
  *
+ * request_get_client_port --
+ *
+ *       Get the client port this request was sent from.
+ *
+ * Returns:
+ *       A port number.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+uint16_t
+request_get_client_port (request_t *request)
+{
+   return request->client_port;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * request_destroy --
  *
  *       Free a request_t.

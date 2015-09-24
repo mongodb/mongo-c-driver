@@ -1116,6 +1116,47 @@ mock_server_hangs_up (request_t *request)
 
 /*--------------------------------------------------------------------------
  *
+ * mock_server_resets --
+ *
+ *       Forcefully reset a connection from the client.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Causes ECONNRESET on the client side.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_server_resets (request_t *request)
+{
+   struct linger no_linger;
+   no_linger.l_onoff = 1;
+   no_linger.l_linger = 0;
+
+   if (mock_server_get_verbose (request->server)) {
+      printf ("%5.2f  %hu <- %hu \treset!\n",
+              mock_server_get_uptime_sec (request->server),
+              request->client_port,
+              request_get_server_port (request));
+      fflush (stdout);
+   }
+
+   /* send RST packet to client */
+   mongoc_stream_setsockopt (request->client,
+                             SOL_SOCKET,
+                             SO_LINGER,
+                             &no_linger,
+                             sizeof no_linger);
+
+   mongoc_stream_close (request->client);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * mock_server_replies --
  *
  *       Respond to a client request.
