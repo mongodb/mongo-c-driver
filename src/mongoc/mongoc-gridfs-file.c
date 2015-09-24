@@ -418,8 +418,8 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
    /* TODO: we should probably do something about timeout_msec here */
 
-   if (!file->page) {
-      _mongoc_gridfs_file_refresh_page (file);
+   if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
+         return -1;
    }
 
    for (i = 0; i < iovcnt; i++) {
@@ -444,9 +444,9 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
          } else if (bytes_read >= min_bytes) {
             /* we need a new page, but we've read enough bytes to stop */
             RETURN (bytes_read);
-         } else {
+         } else if (!_mongoc_gridfs_file_refresh_page (file)) {
             /* more to read, just on a new page */
-            _mongoc_gridfs_file_refresh_page (file);
+            return -1;
          }
       }
    }
@@ -480,8 +480,8 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
       iov_pos = 0;
 
       for (;; ) {
-         if (!file->page) {
-            _mongoc_gridfs_file_refresh_page (file);
+         if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
+            return -1;
          }
 
          /* write bytes until an iov is exhausted or the page is full */
