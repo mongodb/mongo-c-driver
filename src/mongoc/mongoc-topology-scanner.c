@@ -424,11 +424,15 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
  *
  *      Create a stream and begin a non-blocking connect.
  *
+ * Returns:
+ *      true on success, or false and error is set.
+ *
  *--------------------------------------------------------------------------
  */
 
 bool
-mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node, bson_error_t *error)
+mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
+                                    bson_error_t                   *error)
 {
    mongoc_stream_t *sock_stream;
 
