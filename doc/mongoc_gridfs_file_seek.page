@@ -44,7 +44,6 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
     <table>
       <tr><td><p><code>EINVAL</code></p></td><td><p><code>whence</code> is not one of SEEK_SET, SEEK_CUR or SEEK_END.</p></td></tr>
       <tr><td><p><code>EINVAL</code></p></td><td><p>The resulting file position would be negative.</p></td></tr>
-      <tr><td><p><code>EBADF</code></p></td><td><p>The given file is not seekable.</p></td></tr>
     </table>
   </section>
 
