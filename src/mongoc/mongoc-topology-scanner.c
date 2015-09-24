@@ -149,10 +149,9 @@ mongoc_topology_scanner_node_retire (mongoc_topology_scanner_node_t *node)
 }
 
 void
-mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool failed)
+mongoc_topology_scanner_node_disconnect (mongoc_topology_scanner_node_t *node,
+                                         bool failed)
 {
-   DL_DELETE (node->ts->nodes, node);
-
    if (node->dns_results) {
       freeaddrinfo (node->dns_results);
       node->dns_results = NULL;
@@ -161,6 +160,7 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool
 
    if (node->cmd) {
       mongoc_async_cmd_destroy (node->cmd);
+      node->cmd = NULL;
    }
 
    if (node->stream) {
@@ -169,8 +169,16 @@ mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool
       } else {
          mongoc_stream_destroy (node->stream);
       }
-   }
 
+      node->stream = NULL;
+   }
+}
+
+void
+mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node, bool failed)
+{
+   DL_DELETE (node->ts->nodes, node);
+   mongoc_topology_scanner_node_disconnect (node, failed);
    bson_free (node);
 }
 

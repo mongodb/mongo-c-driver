@@ -101,6 +101,10 @@ void
 mongoc_topology_scanner_node_retire (mongoc_topology_scanner_node_t *node);
 
 void
+mongoc_topology_scanner_node_disconnect (mongoc_topology_scanner_node_t *node,
+                                         bool failed);
+
+void
 mongoc_topology_scanner_node_destroy (mongoc_topology_scanner_node_t *node,
                                       bool failed);
 

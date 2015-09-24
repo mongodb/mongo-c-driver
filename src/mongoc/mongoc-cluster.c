@@ -1079,7 +1079,7 @@ mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t server_id)
 
       /* might never actually have connected */
       if (scanner_node && scanner_node->stream) {
-         mongoc_topology_scanner_node_destroy (scanner_node, true);
+         mongoc_topology_scanner_node_disconnect (scanner_node, true);
          EXIT;
       }
       EXIT;
