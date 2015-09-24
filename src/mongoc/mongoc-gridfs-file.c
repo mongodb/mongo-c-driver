@@ -40,6 +40,9 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);
 static bool
 _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file);
 
+static bool
+_mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file);
+
 
 /*****************************************************************
 * Magic accessor generation
@@ -482,6 +485,16 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 
    /* TODO: we should probably do something about timeout_msec here */
 
+   /* Pull in the correct page */
+   if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
+         return -1;
+   }
+
+   /* When writing past the end-of-file, fill the gap with zeros */
+   if (file->pos > file->length && !_mongoc_gridfs_file_extend (file)) {
+      return -1;
+   }
+
    for (i = 0; i < iovcnt; i++) {
       iov_pos = 0;
 
@@ -515,6 +528,63 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
    file->is_dirty = 1;
 
    RETURN (bytes_written);
+}
+
+
+/**
+ * _mongoc_gridfs_file_extend:
+ *
+ *      Extend a GridFS file to the current position pointer. Zero bytes will be
+ *      appended to the end of the file until file->length is even with file->pos.
+ *
+ *      If file->length >= file-> pos, the function exits successfully with no
+ *      operation performed.
+ *
+ * Parameters:
+ *      @file: A mongoc_gridfs_file_t.
+ *
+ * Returns:
+ *      True on success; false on failure.
+ */
+static bool
+_mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
+{
+   int64_t tmp;
+
+   ENTRY;
+
+   BSON_ASSERT (file);
+
+   if (file->length >= file->pos) {
+      RETURN (true);
+   }
+
+   tmp = file->length;
+   file->length = file->pos;
+   file->pos = tmp;
+
+   while (true) {
+      if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
+         /* TODO Can we do more? e.g. file->failed */
+         RETURN (false);
+      }
+
+      /* Set bytes we reach the limit or fill a page */
+      file->pos += _mongoc_gridfs_file_page_memset0 (file->page,
+                                                     file->length - file->pos);
+
+      if (file->pos == file->length) {
+         /* We're done */
+         break;
+      } else {
+         /* Buffer must be full, so flush it */
+         _mongoc_gridfs_file_flush_page (file);
+      }
+   }
+
+   file->is_dirty = true;
+
+   RETURN (true);
 }
 
 
