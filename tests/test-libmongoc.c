@@ -505,8 +505,9 @@ call_ismaster (bson_t *reply)
    uri_str = test_framework_get_uri_str_from_env ();
    uri = mongoc_uri_new (uri_str);
    assert (uri);
-   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 1000);
-   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10000);
+   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 10000);
+   mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
 
    client = mongoc_client_new_from_uri (uri);
    if (!mongoc_client_command_simple (client, "admin",
