@@ -259,7 +259,10 @@ EXTRA_DIST += \
 	tests/mongoc-tests.h \
 	tests/trust_dir.cnf \
 	tests/make_ca.pl \
-	tests/c_rehash
+	tests/c_rehash \
+	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
+	$(wildcard tests/json/server_selection/rtt/*.json) \
+	$(wildcard tests/json/server_selection/server_selection/*/*/*.json)
 
 if OS_DARWIN
 DEBUGGER = lldb --
