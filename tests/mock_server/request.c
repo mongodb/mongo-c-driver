@@ -589,7 +589,7 @@ request_from_query (request_t *request,
    int32_t len;
    bson_t *query;
    bson_iter_t iter;
-   bson_string_t *query_as_str = bson_string_new ("");
+   bson_string_t *query_as_str = bson_string_new ("OP_QUERY ");
    char *str;
 
    memcpy (&len, rpc->query.query, 4);
@@ -651,7 +651,7 @@ request_from_insert (request_t *request,
 {
    uint8_t *pos = (uint8_t *)request->request_rpc.insert.documents->iov_base;
    uint8_t *end = request->data + request->data_len;
-   bson_string_t *insert_as_str = bson_string_new("");
+   bson_string_t *insert_as_str = bson_string_new("OP_INSERT");
    bson_t *doc;
    size_t n_documents;
    size_t i;
@@ -667,7 +667,7 @@ request_from_insert (request_t *request,
 
    n_documents = request->docs.len;
 
-   bson_string_append_printf (insert_as_str, "%d ", (int)n_documents);
+   bson_string_append_printf (insert_as_str, " %d ", (int)n_documents);
 
    for (i = 0; i < n_documents; i++) {
       str = bson_as_json (request_get_doc (request, (int) i), NULL);
@@ -736,7 +736,7 @@ request_from_update (request_t *request,
 {
    int32_t len;
    bson_t *doc;
-   bson_string_t *update_as_str = bson_string_new ("");
+   bson_string_t *update_as_str = bson_string_new ("OP_UPDATE ");
    char *str;
 
    memcpy (&len, rpc->update.selector, 4);
@@ -788,7 +788,7 @@ request_from_delete (request_t *request,
 {
    int32_t len;
    bson_t *doc;
-   bson_string_t *delete_as_str = bson_string_new ("");
+   bson_string_t *delete_as_str = bson_string_new ("OP_DELETE ");
    char *str;
 
    memcpy (&len, rpc->delete_.selector, 4);
