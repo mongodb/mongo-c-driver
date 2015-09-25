@@ -181,6 +181,39 @@ test_write (void)
 }
 
 
+static void
+test_memset (void)
+{
+   uint8_t buf[] = "wxyz";
+   uint32_t len = sizeof buf;
+   int32_t r;
+   mongoc_gridfs_file_page_t *page;
+
+   page = _mongoc_gridfs_file_page_new (buf, len, 5);
+
+   ASSERT (page);
+   ASSERT (page->len == len);
+   ASSERT (!page->buf);
+
+   r = _mongoc_gridfs_file_page_memset0 (page, 1);
+   ASSERT (r == 1);
+   ASSERT (page->buf);
+   ASSERT (memcmp (page->buf, "\0xyz", 4) == 0);
+   ASSERT (page->offset == 1);
+
+   r = _mongoc_gridfs_file_page_memset0 (page, 10);
+   ASSERT (r == 4);
+   ASSERT (page->buf);
+   ASSERT (memcmp (page->buf, "\0\0\0\0\0", 5) == 0);
+   ASSERT (page->offset == 5);
+
+   r = _mongoc_gridfs_file_page_memset0 (page, 10);
+   ASSERT (r == 0);
+
+   _mongoc_gridfs_file_page_destroy (page);
+}
+
+
 void
 test_gridfs_file_page_install (TestSuite *suite)
 {
@@ -191,4 +224,5 @@ test_gridfs_file_page_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/File/Page/read", test_read);
    TestSuite_Add (suite, "/GridFS/File/Page/seek", test_seek);
    TestSuite_Add (suite, "/GridFS/File/Page/write", test_write);
+   TestSuite_Add (suite, "/GridFS/File/Page/memset", test_memset);
 }

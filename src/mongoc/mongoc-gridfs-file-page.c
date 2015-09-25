@@ -157,6 +157,8 @@ _mongoc_gridfs_file_page_memset0 (mongoc_gridfs_file_page_t *page,
 
    BSON_ASSERT (page);
 
+   bytes_set = BSON_MIN (page->chunk_size - page->offset, len);
+
    if (!page->buf) {
       page->buf = (uint8_t *)bson_malloc0 (page->chunk_size);
       memcpy (page->buf, page->read_buf, BSON_MIN (page->chunk_size, page->len));

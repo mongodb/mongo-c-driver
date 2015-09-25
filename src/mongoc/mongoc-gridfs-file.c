@@ -40,7 +40,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);
 static bool
 _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file);
 
-static bool
+static ssize_t
 _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file);
 
 
@@ -491,8 +491,11 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
    }
 
    /* When writing past the end-of-file, fill the gap with zeros */
-   if (file->pos > file->length && !_mongoc_gridfs_file_extend (file)) {
-      return -1;
+   if (file->pos > file->length) {
+      bytes_written = _mongoc_gridfs_file_extend (file);
+      if (bytes_written == -1) {
+         return -1;
+      }
    }
 
    for (i = 0; i < iovcnt; i++) {
@@ -544,47 +547,48 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
  *      @file: A mongoc_gridfs_file_t.
  *
  * Returns:
- *      True on success; false on failure.
+ *      The number of zero bytes written, or -1 on failure.
  */
-static bool
+static ssize_t
 _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
 {
-   int64_t tmp;
+   int64_t target_length;
+   ssize_t diff;
 
    ENTRY;
 
    BSON_ASSERT (file);
 
    if (file->length >= file->pos) {
-      RETURN (true);
+      RETURN (0);
    }
 
-   tmp = file->length;
-   file->length = file->pos;
-   file->pos = tmp;
+   diff = (ssize_t)(file->pos - file->length);
+   target_length = file->pos;
+   mongoc_gridfs_file_seek (file, 0, SEEK_END);
 
    while (true) {
       if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
-         /* TODO Can we do more? e.g. file->failed */
-         RETURN (false);
+         RETURN (-1);
       }
 
-      /* Set bytes we reach the limit or fill a page */
+      /* Set bytes until we reach the limit or fill a page */
       file->pos += _mongoc_gridfs_file_page_memset0 (file->page,
-                                                     file->length - file->pos);
+                                                     target_length - file->pos);
 
-      if (file->pos == file->length) {
+      if (file->pos == target_length) {
          /* We're done */
          break;
-      } else {
+      } else if (!_mongoc_gridfs_file_flush_page (file)) {
          /* Buffer must be full, so flush it */
-         _mongoc_gridfs_file_flush_page (file);
+         RETURN (-1);
       }
    }
 
+   BSON_ASSERT (file->length = target_length);
    file->is_dirty = true;
 
-   RETURN (true);
+   RETURN (diff);
 }
 
 

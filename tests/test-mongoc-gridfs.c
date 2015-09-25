@@ -424,6 +424,25 @@ test_write (void)
    ASSERT_CMPLONG (r, ==, len);
    ASSERT_CMPINT (memcmp (buf3, "fo bazr baz", len), ==, 0);
 
+   /* Test writing beyond the end of the file */
+   assert (mongoc_gridfs_file_seek (file, 5, SEEK_END) == 0);
+   assert (mongoc_gridfs_file_tell (file) == file->length + 5);
+
+   r = mongoc_gridfs_file_writev (file, iov, 2, 0);
+   assert (r == len + 5);
+   assert (mongoc_gridfs_file_tell (file) == len*2 + 5);
+   assert (file->length == 2*len + 5);
+   assert (mongoc_gridfs_file_save (file));
+
+   assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
+   assert (mongoc_gridfs_file_tell (file) == 0);
+
+   r = mongoc_gridfs_file_readv (file, &riov, 1, 2*len + 5, 0);
+   assert (r == 2*len + 5);
+   assert (memcmp (buf3, "fo bazr baz\0\0\0\0\0foo bar baz", 2*len + 5) == 0);
+   assert (mongoc_gridfs_file_save (file));
+
+
    mongoc_gridfs_file_destroy (file);
 
    drop_collections (gridfs, &error);
