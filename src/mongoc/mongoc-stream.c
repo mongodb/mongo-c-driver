@@ -232,7 +232,9 @@ mongoc_stream_readv (mongoc_stream_t *stream,
    BSON_ASSERT (stream->readv);
 
    ret = stream->readv (stream, iov, iovcnt, min_bytes, timeout_msec);
-   DUMP_IOVEC (readv, iov, iovcnt);
+   if (ret >= 0) {
+      DUMP_IOVEC (readv, iov, iovcnt);
+   }
 
    RETURN (ret);
 }
