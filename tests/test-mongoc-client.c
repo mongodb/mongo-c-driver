@@ -180,8 +180,8 @@ test_mongoc_client_authenticate_failure (void *context)
    assert(!r);
    r = mongoc_cursor_error(cursor, &error);
    assert(r);
-   assert(error.domain == MONGOC_ERROR_CLIENT);
-   assert(error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
    mongoc_cursor_destroy(cursor);
 
    /*
@@ -194,8 +194,8 @@ test_mongoc_client_authenticate_failure (void *context)
    r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
                                  &empty, NULL, &error);
    assert (!r);
-   assert (error.domain == MONGOC_ERROR_CLIENT);
-   assert (error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
 
    /*
     * Try various commands while in the failed state to ensure we get the
@@ -207,8 +207,8 @@ test_mongoc_client_authenticate_failure (void *context)
    r = mongoc_collection_update (collection, MONGOC_UPDATE_NONE,
                                  &q, &empty, NULL, &error);
    assert (!r);
-   assert (error.domain == MONGOC_ERROR_CLIENT);
-   assert (error.code == MONGOC_ERROR_CLIENT_AUTHENTICATE);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
 
    bson_free (host);
    bson_free (uri_str_no_auth);

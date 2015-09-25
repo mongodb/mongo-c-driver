@@ -1383,10 +1383,10 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
    /* in the single-threaded use case we share topology's streams */
    if (topology->single_threaded) {
+      sd = mongoc_topology_description_server_by_id (&topology->description, server_id);
 
       scanner_node = mongoc_topology_scanner_get_node (topology->scanner, server_id);
       if (!scanner_node) {
-         sd = mongoc_topology_description_server_by_id (&topology->description, server_id);
          if (sd && sd->error.code) {
             memcpy (error, &sd->error, sizeof *error);
          } else {
@@ -1402,10 +1402,14 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
       stream = scanner_node->stream;
       if (!stream) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not find stream for node %u", server_id);
+         if (sd && sd->error.code) {
+            memcpy (error, &sd->error, sizeof *error);
+         } else {
+            bson_set_error (error,
+                            MONGOC_ERROR_STREAM,
+                            MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                            "Could not find stream for node %u", server_id);
+         }
          GOTO(FETCH_FAIL);
       }
 
@@ -1413,7 +1417,6 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
       if (cluster->requires_auth && !scanner_node->has_auth) {
 
          /* try to reconnect and re-authenticate */
-         sd = mongoc_topology_description_server_by_id (&topology->description, server_id);
          if (!sd) {
             bson_set_error (error,
                             MONGOC_ERROR_STREAM,
