@@ -101,8 +101,8 @@ test_get_max_msg_size (void)
       char *error_message = bson_strdup_printf ( \
          "Failed to read 4 bytes from socket within %d milliseconds.", \
          socket_timeout_ms); \
-      BSON_ASSERT (!future_get_bool (future)); \
-      BSON_ASSERT (mongoc_cursor_error (cursor, &error)); \
+      assert (!future_get_bool (future)); \
+      assert (mongoc_cursor_error (cursor, &error)); \
       ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM); \
       ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET); \
       ASSERT_CMPSTR (error.message, error_message); \
@@ -112,14 +112,13 @@ test_get_max_msg_size (void)
 
 #define START_QUERY(client_port_variable) do { \
       cursor = mongoc_collection_find (collection, \
-                                        MONGOC_QUERY_NONE, \
-                                        0, 0, 0, tmp_bson ("{}"), \
-                                        NULL, NULL); \
+                                       MONGOC_QUERY_NONE, \
+                                       0, 0, 0, tmp_bson ("{}"), \
+                                       NULL, NULL); \
       future = future_cursor_next (cursor, &doc); \
       request = mock_server_receives_query (server, "test.test", \
-                                             MONGOC_QUERY_SLAVE_OK, 0, 0, \
-                                             "{}", NULL); \
-      BSON_ASSERT (request); \
+                                            MONGOC_QUERY_SLAVE_OK, 0, 0, \
+                                            "{}", NULL); \
       client_port_variable = request_get_client_port (request); \
    } while (0)
 
