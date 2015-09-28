@@ -4,6 +4,7 @@ if ENABLE_MAN_PAGES
 MAINTAINERCLEANFILES += $(BUILT_MAN_FILES)
 BUILT_MAN_FILES = $(patsubst %.page,%.3,$(wildcard doc/mongoc_*.page))
 EXTRA_DIST += $(BUILT_MAN_FILES)
+CLEANFILES += $(BUILT_MAN_FILES)
 
 dist_man_MANS = $(BUILT_MAN_FILES)
 # Automake (at least up to 1.10) mishandles dist_man_MANS inside conditionals.
@@ -18,6 +19,9 @@ man3_MANS = $(BUILT_MAN_FILES)
 	@ $(MKDIR_P) doc
 	$(AM_V_GEN)./doc/mallard2man.py 3 $^
 
+man-clean:
+	rm -f $(BUILT_MAN_FILES)
+
 man: $(BUILT_MAN_FILES)
 endif
 
@@ -25,6 +29,9 @@ if ENABLE_HTML_DOCS
 html $(YELP_HTML_FILES):
 	@ $(MKDIR_P) doc/html
 	$(AM_V_GEN)$(YELP_BUILD) html -x build/libbson.xsl -o doc/html $(wildcard $(top_srcdir)/doc/*.page)
+
+html-clean:
+	rm -f $(BUILT_HTML_FILES) $(YELP_HTML_FILES)
 
 YELP_HTML_FILES = \
 	doc/html/C.css \
@@ -41,7 +48,8 @@ YELP_HTML_FILES = \
 BUILT_HTML_FILES = $(patsubst doc/%.page,doc/html/%.html,$(wildcard doc/*.page))
 EXTRA_DIST += $(BUILT_HTML_FILES)
 EXTRA_DIST += $(YELP_HTML_FILES)
-DISTCLEANFILES += $(wildcard doc/html/*)
+CLEANFILES += $(BUILT_HTML_FILES)
+CLEANFILES += $(YELP_HTML_FILES)
 endif
 
 dist-hook: man html
