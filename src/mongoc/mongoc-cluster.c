@@ -1291,6 +1291,7 @@ mongoc_cluster_node_reconnect (mongoc_cluster_t *cluster, uint32_t server_id, bs
 
          if (!_mongoc_cluster_auth_node (cluster, scanner_node->stream, sd->host.host,
                                          sd->max_wire_version, error)) {
+            mongoc_server_description_destroy (sd);
             RETURN(false);
          }
       }
@@ -1342,6 +1343,7 @@ mongoc_cluster_node_reconnect (mongoc_cluster_t *cluster, uint32_t server_id, bs
          }
       }
    }
+   mongoc_server_description_destroy (sd);
 
    RETURN(true);
 }
