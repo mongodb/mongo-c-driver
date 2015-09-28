@@ -489,7 +489,7 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
 
    if (r != total_bytes) {
       bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
-                      "Failure to send all requested bytes (only sent: %lld/%llu in %dms) during socket delivery",
+                      "Failure to send all requested bytes (only sent: %" PRId64 "/%" PRId64 " in %dms) during socket delivery",
                       (long long)r, (unsigned long long)total_bytes, timeout_msec);
 
       RETURN(false);
