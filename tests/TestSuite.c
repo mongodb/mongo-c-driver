@@ -391,6 +391,8 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
       close (fd);
       srand (test->seed);
       test->func (test->ctx);
+
+      TestSuite_Destroy (suite);
       exit (0);
    }
 
