@@ -269,6 +269,7 @@ failure:
    return false;
 }
 
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -2293,6 +2294,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
          gle.query.response_to = 0;
          gle.query.opcode = MONGOC_OPCODE_QUERY;
          gle.query.flags = MONGOC_QUERY_NONE;
+
          switch (rpcs[i].header.opcode) {
          case MONGOC_OPCODE_INSERT:
             DB_AND_CMD_FROM_COLLECTION(cmdname, rpcs[i].insert.collection);
@@ -2308,6 +2310,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
             DB_AND_CMD_FROM_COLLECTION(cmdname, "admin.$cmd");
             break;
          }
+
          gle.query.collection = cmdname;
          gle.query.skip = 0;
          gle.query.n_return = 1;

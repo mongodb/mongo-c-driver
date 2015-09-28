@@ -297,6 +297,7 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
    return 0;
 }
 
+
 mongoc_stream_t *
 mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
 {

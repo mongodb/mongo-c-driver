@@ -44,6 +44,7 @@
 
 #define MONGOC_STREAM_TLS_BUFFER_SIZE 4096
 
+
 /**
  * mongoc_stream_tls_t:
  *
@@ -533,14 +534,9 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
       }
    }
 
-   if (ret <= 0 && BIO_should_retry (tls->bio)) {
-      if (tls->timeout_msec > 0) {
-         TRACE("I do have %dmsec left", tls->timeout_msec);
-      }
-   }
-
    RETURN (ret);
 }
+
 
 /*
  *--------------------------------------------------------------------------
@@ -667,9 +663,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
    if (buf_head != buf_tail) {
       /* If we have any bytes buffered, send */
 
-      TRACE("buffered writing %ld", buf_tail - buf_head);
       child_ret = _mongoc_stream_tls_write (tls, buf_head, buf_tail - buf_head);
-      TRACE("Got %ld written", child_ret);
 
       if (child_ret < 0) {
          RETURN (child_ret);
