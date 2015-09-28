@@ -119,10 +119,13 @@ _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
       memcpy (page->buf, page->read_buf, BSON_MIN (page->chunk_size, page->len));
    }
 
+   /* Copy bytes and adjust the page position */
    memcpy (page->buf + page->offset, src, bytes_written);
    page->offset += bytes_written;
-
    page->len = BSON_MAX (page->offset, page->len);
+
+   /* Invalidate the read buffer */
+   page->read_buf = page->buf;
 
    RETURN (bytes_written);
 }
