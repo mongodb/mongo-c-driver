@@ -43,7 +43,7 @@ test_exhaust_cursor (bool pooled)
    mongoc_stream_t *stream;
    mongoc_write_concern_t *wr;
    mongoc_client_t *client;
-   mongoc_client_pool_t *pool;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    mongoc_cursor_t *cursor2;
