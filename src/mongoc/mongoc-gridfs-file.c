@@ -534,7 +534,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 /**
  * _mongoc_gridfs_file_extend:
  *
- *      Extend a GridFS file to the current position pointer. Zero bytes will be
+ *      Extend a GridFS file to the current position pointer. Zeros will be
  *      appended to the end of the file until file->length is even with file->pos.
  *
  *      If file->length >= file-> pos, the function exits successfully with no
@@ -577,7 +577,7 @@ _mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
          /* We're done */
          break;
       } else if (!_mongoc_gridfs_file_flush_page (file)) {
-         /* Buffer must be full, so flush it */
+         /* We tried to flush a full buffer, but an error occurred */
          RETURN (-1);
       }
    }
