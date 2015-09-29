@@ -354,6 +354,12 @@ test_read (void)
    ASSERT_CMPINT (memcmp (iov[0].iov_base, "turducken ", 10), ==, 0);
    ASSERT_CMPINT (memcmp (iov[1].iov_base, "spare ribs", 10), ==, 0);
 
+   assert (mongoc_gridfs_file_seek (file, 20, SEEK_END) == 0);
+   r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
+
+   assert (r == 0);
+   assert (mongoc_gridfs_file_tell (file) == file->length + 20);
+
    mongoc_gridfs_file_destroy (file);
 
    drop_collections (gridfs, &error);

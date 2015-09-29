@@ -423,7 +423,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
    /* Reading when positioned past the end does nothing */
    if (file->pos >= file->length) {
-      return -1;
+      return 0;
    }
 
    /* Try to get the current chunk */
