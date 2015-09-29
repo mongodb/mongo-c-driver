@@ -204,7 +204,7 @@ main (int   argc,
       </info>
 
       <title>Using BCON</title>
-      <p><strong>BSON C Object Notation</strong>, BCON for short, is an alternative way of constructing BSON documents in a manner closer to the intended format. It has less type-safety than BSON's append functions but results in less code.</p>
+      <p><em>BSON C Object Notation</em>, BCON for short, is an alternative way of constructing BSON documents in a manner closer to the intended format. It has less type-safety than BSON's append functions but results in less code.</p>
 
       <screen><code><![CDATA[#include <bcon.h>
 #include <bson.h>
