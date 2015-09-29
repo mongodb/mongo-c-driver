@@ -303,10 +303,9 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    if (cursor->in_exhaust) {
       cursor->client->in_exhaust = false;
       if (!cursor->done) {
-         bson_error_t error;
-
          /* The only way to stop an exhaust cursor is to kill the connection */
-         mongoc_cluster_node_reconnect (&cursor->client->cluster, cursor->hint, &error);
+         mongoc_cluster_disconnect_node (&cursor->client->cluster,
+                                         cursor->hint);
       }
    } else if (cursor->rpc.reply.cursor_id) {
       _mongoc_client_kill_cursor(cursor->client, cursor->hint, cursor->rpc.reply.cursor_id);
@@ -634,7 +633,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
 
    if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
                                         &rpc, 1, cursor->hint,
-                                        NULL, &cursor->error)) {
+                                        NULL, true, &cursor->error)) {
       GOTO (failure);
    }
 
@@ -733,7 +732,7 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
       if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
                                            &rpc, 1, cursor->hint,
-                                           NULL, &cursor->error)) {
+                                           NULL, true, &cursor->error)) {
          GOTO (failure);
       }
 

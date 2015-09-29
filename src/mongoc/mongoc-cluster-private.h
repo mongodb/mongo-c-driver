@@ -131,6 +131,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t             *cluster,
                                 size_t                        rpcs_len,
                                 uint32_t                      server_id,
                                 const mongoc_write_concern_t *write_concern,
+                                bool                          reconnect_ok,
                                 bson_error_t                 *error);
 
 bool
@@ -143,9 +144,8 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
 mongoc_stream_t *
 mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
                              uint32_t server_id,
+                             bool reconnect_ok,
                              bson_error_t *error);
-bool
-mongoc_cluster_node_reconnect (mongoc_cluster_t *cluster, uint32_t server_id, bson_error_t *error);
 
 BSON_END_DECLS
 

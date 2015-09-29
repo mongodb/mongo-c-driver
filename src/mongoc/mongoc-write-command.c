@@ -313,7 +313,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
 
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, hint,
-                                           write_concern, error)) {
+                                           write_concern, true, error)) {
          result->failed = true;
          EXIT;
       }
@@ -505,7 +505,7 @@ again:
 
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, hint,
-                                           write_concern, error)) {
+                                           write_concern, true, error)) {
          result->failed = true;
          GOTO (cleanup);
       }
@@ -708,7 +708,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
 
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, hint,
-                                           write_concern, error)) {
+                                           write_concern, true, error)) {
          result->failed = true;
          EXIT;
       }

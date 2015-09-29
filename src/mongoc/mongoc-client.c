@@ -1225,8 +1225,9 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
    rpc.kill_cursors.cursors = &cursor_id;
    rpc.kill_cursors.n_cursors = 1;
 
+   /* don't attempt reconnect if server unavailable */
    mongoc_cluster_sendv_to_server (&client->cluster, &rpc, 1, server_id,
-                                   NULL, &error);
+                                   NULL, false, &error);
 
    EXIT;
 }

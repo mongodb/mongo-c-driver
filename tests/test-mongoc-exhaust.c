@@ -37,6 +37,32 @@ int skip_if_mongos (void)
 }
 
 
+static int64_t
+get_timestamp (mongoc_client_t *client,
+               mongoc_cursor_t *cursor)
+{
+   uint32_t hint;
+
+   hint = mongoc_cursor_get_hint (cursor);
+
+   if (client->topology->single_threaded) {
+      mongoc_topology_scanner_node_t *scanner_node;
+
+      scanner_node = mongoc_topology_scanner_get_node (
+         client->topology->scanner, hint);
+
+      return scanner_node->timestamp;
+   } else {
+      mongoc_cluster_node_t *cluster_node;
+
+      cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(
+         client->cluster.nodes, hint);
+
+      return cluster_node->timestamp;
+   }
+}
+
+
 static void
 test_exhaust_cursor (bool pooled)
 {
@@ -56,6 +82,7 @@ test_exhaust_cursor (bool pooled)
    uint32_t hint;
    bson_error_t error;
    bson_oid_t oid;
+   int64_t timestamp1;
 
    if (pooled) {
       pool = test_framework_client_pool_new ();
@@ -106,10 +133,6 @@ test_exhaust_cursor (bool pooled)
     * should be and ensure that an early destroy properly causes a disconnect
     * */
    {
-      uint32_t local_hint;
-      int64_t timestamp1;
-      int64_t timestamp2;
-
       r = mongoc_cursor_next (cursor, &doc);
       if (!r) {
          mongoc_cursor_error (cursor, &error);
@@ -119,32 +142,10 @@ test_exhaust_cursor (bool pooled)
       assert (doc);
       assert (cursor->in_exhaust);
       assert (client->in_exhaust);
-      local_hint = cursor->hint;
 
       /* destroy the cursor, make sure a disconnect happened */
-      if (pooled) {
-         mongoc_cluster_node_t *cluster_node;
-
-         cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(client->cluster.nodes, local_hint);
-         timestamp1 = cluster_node->timestamp;
-
-         mongoc_cursor_destroy (cursor);
-
-         cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(client->cluster.nodes, local_hint);
-         timestamp2 = cluster_node->timestamp;
-      } else {
-         mongoc_topology_scanner_node_t *scanner_node;
-
-         scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, local_hint);
-         timestamp1 = scanner_node->timestamp;
-
-         mongoc_cursor_destroy (cursor);
-
-         scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, local_hint);
-         timestamp2 = scanner_node->timestamp;
-      }
-
-      assert (timestamp1 < timestamp2);
+      timestamp1 = get_timestamp (client, cursor);
+      mongoc_cursor_destroy (cursor);
       assert (! client->in_exhaust);
    }
 
@@ -154,6 +155,15 @@ test_exhaust_cursor (bool pooled)
    {
       cursor = mongoc_collection_find (collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, &q,
                                        NULL, NULL);
+
+      r = mongoc_cursor_next (cursor2, &doc);
+      if (!r) {
+         mongoc_cursor_error (cursor2, &error);
+         printf ("cursor error: %s\n", error.message);
+      }
+      assert (r);
+      assert (doc);
+      assert (timestamp1 < get_timestamp (client, cursor2));
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next (cursor2, &doc);

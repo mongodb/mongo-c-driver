@@ -71,6 +71,20 @@
       } \
    } while (0)
 
+static mongoc_stream_t *
+mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
+                                    mongoc_topology_t *topology,
+                                    mongoc_server_description_t *sd,
+                                    bool reconnect_ok,
+                                    bson_error_t *error);
+
+static mongoc_stream_t *
+mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
+                                    mongoc_topology_t *topology,
+                                    mongoc_server_description_t *sd,
+                                    bool reconnect_ok,
+                                    bson_error_t *error);
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -197,6 +211,49 @@ failure:
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_stream_run_ismaster --
+ *
+ *       Run an ismaster command on the given stream.
+ *
+ * Returns:
+ *       True if ismaster ran successfully.
+ *
+ * Side effects:
+ *       Makes a blocking I/O call and fills out @reply on success,
+ *       or @error on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
+                             mongoc_stream_t *stream,
+                             bson_t *reply,
+                             bson_error_t *error)
+{
+   bson_t command;
+   bool ret;
+
+   ENTRY;
+
+   ALWAYS_ASSERT (cluster);
+   ALWAYS_ASSERT (stream);
+   ALWAYS_ASSERT (reply);
+   ALWAYS_ASSERT (error);
+
+   bson_init (&command);
+   bson_append_int32 (&command, "ismaster", 8, 1);
+
+   ret = _mongoc_cluster_run_command (cluster, stream, "admin", &command,
+                                      reply, error);
+
+   bson_destroy (&command);
+
+   RETURN (ret);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_cluster_run_ismaster --
  *
  *       Run an ismaster command for the given node and handle result.
@@ -214,7 +271,6 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
                               mongoc_cluster_node_t *node)
 {
    bson_t reply;
-   bson_t command;
    bson_error_t error;
    bson_iter_t iter;
    int num_fields = 0;
@@ -225,11 +281,9 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
    ALWAYS_ASSERT(node);
    ALWAYS_ASSERT(node->stream);
 
-   bson_init (&command);
-   bson_append_int32 (&command, "ismaster", 8, 1);
-
-   _mongoc_cluster_run_command (cluster, node->stream, "admin", &command,
-                                &reply, &error);
+   if (!_mongoc_stream_run_ismaster (cluster, node->stream, &reply, &error)) {
+      GOTO (failure);
+   }
 
    bson_iter_init (&iter, &reply);
 
@@ -256,14 +310,12 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
    if (num_fields == 0) goto failure;
 
    /* TODO: run ismaster through the topology machinery? */
-   bson_destroy (&command);
    bson_destroy (&reply);
 
    return true;
 
 failure:
 
-   bson_destroy (&command);
    bson_destroy (&reply);
 
    return false;
@@ -1058,11 +1110,15 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
  *       Remove a node from the set of nodes. This should be done if
  *       a stream in the set is found to be invalid.
  *
+ *       WARNING: pointers to a disconnected mongoc_cluster_node_t or
+ *       its stream are now invalid, be careful of dangling pointers.
+ *
  * Returns:
  *       None.
  *
  * Side effects:
- *       Removes node from cluster's set of nodes.
+ *       Removes node from cluster's set of nodes, and frees the
+ *       mongoc_cluster_node_t if pooled.
  *
  *--------------------------------------------------------------------------
  */
@@ -1143,10 +1199,10 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream)
  *       NOTE: does NOT check if this server is already in the cluster.
  *
  * Returns:
- *       None.
+ *       A stream connected to the server, or NULL on failure.
  *
  * Side effects:
- *       None.
+ *       Adds a cluster node, or sets error on failure.
  *
  *--------------------------------------------------------------------------
  */
@@ -1155,7 +1211,6 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
                           mongoc_server_description_t *sd,
                           bson_error_t *error /* OUT */)
 {
-   mongoc_topology_scanner_node_t *scanner_node;
    mongoc_cluster_node_t *cluster_node;
 
    mongoc_stream_t *stream;
@@ -1163,49 +1218,9 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    ENTRY;
 
    BSON_ASSERT (cluster);
+   BSON_ASSERT (!cluster->client->topology->single_threaded);
 
    MONGOC_DEBUG ("Adding new server to cluster: %s", sd->connection_address);
-
-   /* if the topology is single-threaded, we share its streams */
-   if (cluster->client->topology->single_threaded) {
-      scanner_node = mongoc_topology_scanner_get_node(cluster->client->topology->scanner,
-                                                       sd->id);
-
-      if (!scanner_node) {
-         if (sd->error.code) {
-            memcpy (error, &sd->error, sizeof *error);
-         } else {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                            "Could not find node %s", sd->connection_address);
-         }
-         RETURN (NULL);
-      }
-
-      BSON_ASSERT (!scanner_node->retired);
-
-      stream = scanner_node->stream;
-      if (!stream) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not find stream for node %s", sd->connection_address);
-         RETURN (NULL);
-      }
-
-      /* we may need to authenticate */
-      if (!scanner_node->has_auth && cluster->requires_auth) {
-         if (!_mongoc_cluster_auth_node (cluster, stream, sd->host.host,
-                                         sd->max_wire_version, error)) {
-            MONGOC_WARNING ("Failed authentication to %s (%s)", sd->connection_address, error->message);
-            RETURN (NULL);
-         }
-         scanner_node->has_auth = true;
-      }
-
-      RETURN (stream);
-   }
 
    stream = _mongoc_client_create_stream(cluster->client, &sd->host, error);
    if (!stream) {
@@ -1235,250 +1250,201 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    RETURN (stream);
 }
 
-bool
-mongoc_cluster_node_reconnect (mongoc_cluster_t *cluster, uint32_t server_id, bson_error_t *error)
+static void
+server_description_not_found (uint32_t server_id,
+                              bson_error_t *error /* OUT */)
 {
-   mongoc_topology_scanner_node_t *scanner_node;
-   mongoc_topology_t *topology = cluster->client->topology;
-   mongoc_cluster_node_t *cluster_node;
-   mongoc_server_description_t *sd = NULL;
-   int64_t expire_at;
-
-   ENTRY;
-
-   bson_return_val_if_fail(cluster, false);
-
-   if (topology->single_threaded) {
-
-      scanner_node = mongoc_topology_scanner_get_node (topology->scanner, server_id);
-
-      if (!scanner_node) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not find node %u", server_id);
-         RETURN(false);
-      }
-
-      mongoc_stream_failed (scanner_node->stream);
-      scanner_node->stream = NULL;
-
-      /* begin a non-blocking connect, then await connection */
-      if (!mongoc_topology_scanner_node_setup (scanner_node, error)) {
-         RETURN(false);
-      }
-
-      expire_at = bson_get_monotonic_time ()
-                  + topology->connect_timeout_msec * 1000;
-
-      if (!mongoc_stream_wait (scanner_node->stream, expire_at)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not reconnect to %s",
-                         scanner_node->host.host_and_port);
-         RETURN(false);
-      }
-
-      if (scanner_node->stream && cluster->requires_auth) {
-         sd = mongoc_topology_server_by_id (topology, server_id);
-         if (!sd) {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                            "Could not find description for node %u", server_id);
-            RETURN(false);
-         }
-
-         if (!_mongoc_cluster_auth_node (cluster, scanner_node->stream, sd->host.host,
-                                         sd->max_wire_version, error)) {
-            mongoc_server_description_destroy (sd);
-            RETURN(false);
-         }
-      }
-   } else {
-      mongoc_stream_t *stream;
-
-      sd = mongoc_topology_server_by_id (topology, server_id);
-      if (!sd) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not find description for node %u", server_id);
-         RETURN(false);
-      }
-
-      cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id);
-      if (!cluster_node) {
-         mongoc_server_description_destroy (sd);
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not find node %u", server_id);
-         RETURN(false);
-      }
-      mongoc_stream_failed (cluster_node->stream);
-      stream = _mongoc_client_create_stream(cluster->client, &sd->host, error);
-
-      if (stream) {
-         cluster_node->stream = stream;
-         cluster_node->timestamp = bson_get_monotonic_time ();
-
-         /* call ismaster here to refresh critical fields */
-         if (!_mongoc_cluster_run_ismaster (cluster, cluster_node)) {
-            mongoc_server_description_destroy (sd);
-            _mongoc_cluster_node_destroy (cluster_node);
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                            "Could not run isMaster on node %u", server_id);
-            RETURN(false);
-         }
-         if (cluster->requires_auth) {
-            if (!_mongoc_cluster_auth_node (cluster, cluster_node->stream, sd->host.host,
-                                            cluster_node->max_wire_version, error)) {
-               mongoc_server_description_destroy (sd);
-               _mongoc_cluster_node_destroy (cluster_node);
-               RETURN(false);
-            }
-         }
-      }
-   }
-   mongoc_server_description_destroy (sd);
-
-   RETURN(true);
+   bson_set_error (error,
+                   MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                   "Could not find description for node %u", server_id);
 }
+
+static void
+node_not_found (uint32_t server_id,
+                mongoc_server_description_t *sd,
+                bson_error_t *error /* OUT */)
+{
+   if (sd->error.code) {
+      memcpy (error, &sd->error, sizeof *error);
+   } else {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                      "Could not find node %u", server_id);
+   }
+}
+
+static void
+stream_not_found (uint32_t server_id,
+                  mongoc_server_description_t *sd,
+                  bson_error_t *error /* OUT */)
+{
+   if (sd->error.code) {
+      memcpy (error, &sd->error, sizeof *error);
+   } else {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                      "Could not find stream for node %u", server_id);
+   }
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
  * mongoc_cluster_fetch_stream --
  *
- *       Fetch the stream for @server_id.
+ *       Fetch the stream for @server_id. If @reconnect_ok and there is no
+ *       valid stream, attempts to reconnect; if not @reconnect_ok then only
+ *       an existing stream can be returned, or NULL.
  *
- *       Returns a mongoc_stream_t on success, NULL on failure, in
+ *       Returns a mongoc_stream_t on success or NULL on failure, in
  *       which case @error will be set.
  *
  * Returns:
  *       A stream, or NULL
  *
  * Side effects:
- *       May add more streams to @cluster->nodes.
+ *       May add a node or reconnect one, if @reconnect_ok.
+ *       Authenticates the stream if needed.
  *       May set @error.
  *
  *--------------------------------------------------------------------------
  */
+
 mongoc_stream_t *
 mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
                              uint32_t server_id,
+                             bool reconnect_ok,
                              bson_error_t *error)
 {
-   mongoc_topology_scanner_node_t *scanner_node;
    mongoc_topology_t *topology;
-   mongoc_cluster_node_t *cluster_node;
-   mongoc_server_description_t *sd = NULL;
+   mongoc_server_description_t *sd;
    mongoc_stream_t *stream = NULL;
-   int64_t timestamp;
+
    ENTRY;
 
    bson_return_val_if_fail(cluster, NULL);
 
    topology = cluster->client->topology;
 
+   if (!(sd = mongoc_topology_server_by_id (topology, server_id))) {
+      server_description_not_found (server_id, error);
+      RETURN (NULL);
+   }
+
    /* in the single-threaded use case we share topology's streams */
    if (topology->single_threaded) {
-      sd = mongoc_topology_description_server_by_id (&topology->description, server_id);
-
-      scanner_node = mongoc_topology_scanner_get_node (topology->scanner, server_id);
-      if (!scanner_node) {
-         if (sd && sd->error.code) {
-            memcpy (error, &sd->error, sizeof *error);
-         } else {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                            "Could not find node %u", server_id);
-         }
-         GOTO(FETCH_FAIL);
-      }
-
-      BSON_ASSERT (!scanner_node->retired);
-
-      stream = scanner_node->stream;
-      if (!stream) {
-         if (sd && sd->error.code) {
-            memcpy (error, &sd->error, sizeof *error);
-         } else {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                            "Could not find stream for node %u", server_id);
-         }
-         GOTO(FETCH_FAIL);
-      }
-
-      /* if stream exists but isn't authed, a disconnect happened */
-      if (cluster->requires_auth && !scanner_node->has_auth) {
-
-         /* try to reconnect and re-authenticate */
-         if (!sd) {
-            bson_set_error (error,
-                            MONGOC_ERROR_STREAM,
-                            MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                            "Could not find description for node %u", server_id);
-            GOTO(FETCH_FAIL);
-         }
-
-         /* In single-threaded mode, we can use sd's max_wire_version */
-         if (!_mongoc_cluster_auth_node (cluster, stream, sd->host.host,
-                                         sd->max_wire_version, &sd->error)) {
-            memcpy (error, &sd->error, sizeof *error);
-            GOTO(FETCH_FAIL);
-         }
-         scanner_node->has_auth = true;
-      }
+      stream = mongoc_cluster_fetch_stream_single (cluster,
+                                                   topology,
+                                                   sd,
+                                                   reconnect_ok,
+                                                   error);
 
    } else {
-      cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id);
-      if (!cluster_node) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not find node %u", server_id);
-         GOTO(FETCH_FAIL);
+      stream = mongoc_cluster_fetch_stream_pooled (cluster,
+                                                   topology,
+                                                   sd,
+                                                   reconnect_ok,
+                                                   error);
+
+   }
+
+   mongoc_server_description_destroy (sd);
+
+   if (!stream) {
+      /* failed */
+      mongoc_cluster_disconnect_node (cluster, server_id);
+   }
+
+   RETURN (stream);
+}
+
+
+static mongoc_stream_t *
+mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
+                                    mongoc_topology_t *topology,
+                                    mongoc_server_description_t *sd,
+                                    bool reconnect_ok,
+                                    bson_error_t *error)
+{
+   mongoc_stream_t *stream = NULL;
+   mongoc_topology_scanner_node_t *scanner_node;
+   bson_t reply;
+
+   scanner_node = mongoc_topology_scanner_get_node (topology->scanner, sd->id);
+   ALWAYS_ASSERT (scanner_node && !scanner_node->retired);
+   stream = scanner_node->stream;
+
+   if (!stream) {
+      if (!reconnect_ok) {
+         stream_not_found (sd->id, sd, error);
+         return NULL;
       }
 
-      timestamp = mongoc_topology_server_timestamp (topology, server_id);
+      if (!mongoc_topology_scanner_node_setup (scanner_node, error)) {
+         return NULL;
+      }
+
+      stream = scanner_node->stream;
+      if (!_mongoc_stream_run_ismaster (cluster, stream, &reply, error)) {
+         mongoc_topology_scanner_node_disconnect (scanner_node, true);
+         return NULL;
+      }
+
+      /* TODO: run ismaster through the topology machinery? */
+      bson_destroy (&reply);
+   }
+
+   /* if stream exists but isn't authed, a disconnect happened */
+   if (cluster->requires_auth && !scanner_node->has_auth) {
+      /* In single-threaded mode, we can use sd's max_wire_version */
+      if (!_mongoc_cluster_auth_node (cluster, stream, sd->host.host,
+                                      sd->max_wire_version, &sd->error)) {
+         memcpy (error, &sd->error, sizeof *error);
+         return NULL;
+      }
+
+      scanner_node->has_auth = true;
+   }
+
+   return stream;
+}
+
+static mongoc_stream_t *
+mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
+                                    mongoc_topology_t *topology,
+                                    mongoc_server_description_t *sd,
+                                    bool reconnect_ok,
+                                    bson_error_t *error)
+{
+   mongoc_cluster_node_t *cluster_node;
+   int64_t timestamp;
+
+   cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (cluster->nodes,
+                                                            sd->id);
+
+   if (cluster_node) {
+      ALWAYS_ASSERT (cluster_node->stream);
+
+      /* existing cluster node, is it outdated? */
+      timestamp = mongoc_topology_server_timestamp (topology, sd->id);
       if (timestamp == -1 || cluster_node->timestamp < timestamp) {
-         if (!mongoc_cluster_node_reconnect (cluster, server_id, error)) {
-               GOTO(FETCH_FAIL);
-         }
-      }
-
-      stream = cluster_node->stream;
-      if (!stream) {
-         bson_set_error (error,
-                         MONGOC_ERROR_STREAM,
-                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                         "Could not find stream for node %u", server_id);
-         GOTO(FETCH_FAIL);
+         mongoc_cluster_disconnect_node (cluster, sd->id);
+      } else {
+         return cluster_node->stream;
       }
    }
 
-   if (sd && ! topology->single_threaded) {
-      mongoc_server_description_destroy (sd);
+   /* no node, or out of date */
+   if (!reconnect_ok) {
+      node_not_found (sd->id, sd, error);
+      return NULL;
    }
 
-   RETURN(stream);
-
-FETCH_FAIL:
-
-   if (sd && ! topology->single_threaded) {
-      mongoc_server_description_destroy (sd);
-   }
-
-   mongoc_cluster_disconnect_node (cluster, server_id);
-
-   RETURN(NULL);
+   return _mongoc_cluster_add_node (cluster, sd, error);
 }
 
 /*
@@ -1602,22 +1568,15 @@ mongoc_cluster_select_by_optype (mongoc_cluster_t *cluster,
       RETURN(NULL);
    }
 
-   /* pre-load this stream if we don't already have it */
-   stream = mongoc_cluster_fetch_stream (cluster, selected_server->id, error);
+   /* connect or reconnect to server if necessary */
+   stream = mongoc_cluster_fetch_stream (cluster,
+                                         selected_server->id,
+                                         true,
+                                         error);
 
    if (!stream ) {
-      /* We share the stream between topology scanner and cluster.
-       * If fetching the stream failed, avoid reconnecting and failing again */
-      if (topology->single_threaded) {
-         mongoc_server_description_destroy (selected_server);
-         RETURN (NULL);
-      }
-
-      stream = _mongoc_cluster_add_node (cluster, selected_server, error);
-      if (!stream) {
-         mongoc_server_description_destroy (selected_server);
-         RETURN (NULL);
-      }
+      mongoc_server_description_destroy (selected_server);
+      RETURN (NULL);
    }
 
    RETURN(selected_server);
@@ -2201,6 +2160,7 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
  *       True if successful.
  *
  * Side effects:
+ *       Attempts to reconnect to server if necessary and @reconnect_ok.
  *       @rpcs may be mutated and should be considered invalid after calling
  *       this method.
  *
@@ -2215,6 +2175,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
                                 size_t                         rpcs_len,
                                 uint32_t                       server_id,
                                 const mongoc_write_concern_t  *write_concern,
+                                bool                           reconnect_ok,
                                 bson_error_t                  *error)
 {
    mongoc_stream_t *stream;
@@ -2255,7 +2216,11 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
     * Fetch the stream to communicate over.
     */
 
-   stream = mongoc_cluster_fetch_stream(cluster, server_id, error);
+   stream = mongoc_cluster_fetch_stream (cluster,
+                                         server_id,
+                                         reconnect_ok,
+                                         error);
+
    if (!stream) {
       RETURN (false);
    }
@@ -2396,7 +2361,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    /*
     * Fetch the stream to communicate over.
     */
-   stream = mongoc_cluster_fetch_stream(cluster, server_id, error);
+   stream = mongoc_cluster_fetch_stream (cluster, server_id, false, error);
    if (!stream) {
       RETURN (false);
    }

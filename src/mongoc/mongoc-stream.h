@@ -94,8 +94,6 @@ int              mongoc_stream_setsockopt      (mongoc_stream_t       *stream,
                                                 int                    optname,
                                                 void                  *optval,
                                                 socklen_t              optlen);
-bool             mongoc_stream_wait            (mongoc_stream_t       *stream,
-                                                int64_t                expire_at);
 bool             mongoc_stream_check_closed    (mongoc_stream_t       *stream);
 ssize_t          mongoc_stream_poll            (mongoc_stream_poll_t  *streams,
                                                 size_t                 nstreams,
