@@ -145,9 +145,9 @@ _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
  *      regards to the page buffer.
  *
  * Returns:
- *      The number of bytes actually set to zero.
+ *      True on success; false otherwise.
  */
-int32_t
+bool
 _mongoc_gridfs_file_page_memset0 (mongoc_gridfs_file_page_t *page,
                                   uint32_t len)
 {
@@ -168,7 +168,7 @@ _mongoc_gridfs_file_page_memset0 (mongoc_gridfs_file_page_t *page,
    page->offset += bytes_set;
    page->len = BSON_MAX (page->offset, page->len);
 
-   RETURN (bytes_set);
+   RETURN (true);
 }
 
 

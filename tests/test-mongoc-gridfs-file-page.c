@@ -182,7 +182,7 @@ test_write (void)
 
 
 static void
-test_memset (void)
+test_memset0 (void)
 {
    uint8_t buf[] = "wxyz";
    uint32_t len = sizeof buf;
@@ -224,5 +224,5 @@ test_gridfs_file_page_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/File/Page/read", test_read);
    TestSuite_Add (suite, "/GridFS/File/Page/seek", test_seek);
    TestSuite_Add (suite, "/GridFS/File/Page/write", test_write);
-   TestSuite_Add (suite, "/GridFS/File/Page/memset", test_memset);
+   TestSuite_Add (suite, "/GridFS/File/Page/memset0", test_memset0);
 }

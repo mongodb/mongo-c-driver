@@ -491,11 +491,8 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
    }
 
    /* When writing past the end-of-file, fill the gap with zeros */
-   if (file->pos > file->length) {
-      bytes_written = _mongoc_gridfs_file_extend (file);
-      if (bytes_written == -1) {
-         return -1;
-      }
+   if (file->pos > file->length && !_mongoc_gridfs_file_extend (file)) {
+      return -1;
    }
 
    for (i = 0; i < iovcnt; i++) {
