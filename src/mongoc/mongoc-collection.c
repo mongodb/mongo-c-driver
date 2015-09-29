@@ -306,7 +306,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       cursor->limit = 0;
 
       if (! _mongoc_cursor_cursorid_prime (cursor)) {
-         mongoc_cursor_destroy (cursor);
+         ; /* Do nothing, returning the failed cursor. See CDRIVER-880 */
       }
    } else {
       /* for older versions we get an array that we can create a synthetic
