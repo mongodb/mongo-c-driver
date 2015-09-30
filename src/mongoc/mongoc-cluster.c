@@ -1261,8 +1261,7 @@ server_description_not_found (uint32_t server_id,
 }
 
 static void
-node_not_found (uint32_t server_id,
-                mongoc_server_description_t *sd,
+node_not_found (mongoc_server_description_t *sd,
                 bson_error_t *error /* OUT */)
 {
    if (sd->error.code) {
@@ -1271,13 +1270,13 @@ node_not_found (uint32_t server_id,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                      "Could not find node %u", server_id);
+                      "Could not find node %s",
+                      sd->host.host_and_port);
    }
 }
 
 static void
-stream_not_found (uint32_t server_id,
-                  mongoc_server_description_t *sd,
+stream_not_found (mongoc_server_description_t *sd,
                   bson_error_t *error /* OUT */)
 {
    if (sd->error.code) {
@@ -1286,7 +1285,8 @@ stream_not_found (uint32_t server_id,
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                      "Could not find stream for node %u", server_id);
+                      "Could not find stream for node %s",
+                      sd->host.host_and_port);
    }
 }
 
@@ -1380,7 +1380,7 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 
    if (!stream) {
       if (!reconnect_ok) {
-         stream_not_found (sd->id, sd, error);
+         stream_not_found (sd, error);
          return NULL;
       }
 
@@ -1440,7 +1440,7 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
 
    /* no node, or out of date */
    if (!reconnect_ok) {
-      node_not_found (sd->id, sd, error);
+      node_not_found (sd, error);
       return NULL;
    }
 
