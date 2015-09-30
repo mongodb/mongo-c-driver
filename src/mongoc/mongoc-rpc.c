@@ -28,29 +28,29 @@
                                mongoc_array_t *array) \
    { \
       mongoc_iovec_t iov; \
-      BSON_ASSERT(rpc); \
-      BSON_ASSERT(array); \
+      assert (rpc); \
+      assert (array); \
       rpc->msg_len = 0; \
       _code \
    }
 #define INT32_FIELD(_name) \
    iov.iov_base = (void *)&rpc->_name; \
    iov.iov_len = 4; \
-   BSON_ASSERT(iov.iov_len); \
+   assert (iov.iov_len); \
    rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name) \
    iov.iov_base = (void *)&rpc->_name; \
    iov.iov_len = 8; \
-   BSON_ASSERT(iov.iov_len); \
+   assert (iov.iov_len); \
    rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 #define CSTRING_FIELD(_name) \
-   BSON_ASSERT(rpc->_name); \
+   assert (rpc->_name); \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = strlen(rpc->_name) + 1; \
-   BSON_ASSERT(iov.iov_len); \
+   assert (iov.iov_len); \
    rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 #define BSON_FIELD(_name) \
@@ -60,7 +60,7 @@
       __l = BSON_UINT32_FROM_LE(__l); \
       iov.iov_base = (void *)rpc->_name; \
       iov.iov_len = __l; \
-      BSON_ASSERT(iov.iov_len); \
+      assert (iov.iov_len); \
       rpc->msg_len += (int32_t)iov.iov_len; \
       _mongoc_array_append_val(array, iov); \
    } while (0);
@@ -70,16 +70,16 @@
    if (rpc->_name##_len) { \
       iov.iov_base = (void *)rpc->_name; \
       iov.iov_len = rpc->_name##_len; \
-      BSON_ASSERT(iov.iov_len); \
+      assert (iov.iov_len); \
       rpc->msg_len += (int32_t)iov.iov_len; \
       _mongoc_array_append_val(array, iov); \
    }
 #define IOVEC_ARRAY_FIELD(_name) \
    do { \
       ssize_t _i; \
-      BSON_ASSERT(rpc->n_##_name); \
+      assert (rpc->n_##_name); \
       for (_i = 0; _i < rpc->n_##_name; _i++) { \
-         BSON_ASSERT(rpc->_name[_i].iov_len); \
+         assert (rpc->_name[_i].iov_len); \
          rpc->msg_len += (int32_t)rpc->_name[_i].iov_len; \
          _mongoc_array_append_val(array, rpc->_name[_i]); \
       } \
@@ -87,18 +87,18 @@
 #define RAW_BUFFER_FIELD(_name) \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_name##_len; \
-   BSON_ASSERT(iov.iov_len); \
+   assert (iov.iov_len); \
    rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 #define INT64_ARRAY_FIELD(_len, _name) \
    iov.iov_base = (void *)&rpc->_len; \
    iov.iov_len = 4; \
-   BSON_ASSERT(iov.iov_len); \
+   assert (iov.iov_len); \
    rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov); \
    iov.iov_base = (void *)rpc->_name; \
    iov.iov_len = rpc->_len * 8; \
-   BSON_ASSERT(iov.iov_len); \
+   assert (iov.iov_len); \
    rpc->msg_len += (int32_t)iov.iov_len; \
    _mongoc_array_append_val(array, iov);
 
@@ -133,7 +133,7 @@
    static void \
    _mongoc_rpc_swab_to_le_##_name (mongoc_rpc_##_name##_t *rpc) \
    { \
-      BSON_ASSERT(rpc); \
+      assert (rpc); \
       _code \
    }
 #define INT32_FIELD(_name) \
@@ -174,7 +174,7 @@
    static void \
    _mongoc_rpc_swab_from_le_##_name (mongoc_rpc_##_name##_t *rpc) \
    { \
-      BSON_ASSERT(rpc); \
+      assert (rpc); \
       _code \
    }
 #define INT64_ARRAY_FIELD(_len, _name) \
@@ -216,7 +216,7 @@
    static void \
    _mongoc_rpc_printf_##_name (mongoc_rpc_##_name##_t *rpc) \
    { \
-      BSON_ASSERT(rpc); \
+      assert (rpc); \
       _code \
    }
 #define INT32_FIELD(_name) \
@@ -319,9 +319,9 @@
                                 const uint8_t *buf, \
                                 size_t buflen) \
    { \
-      BSON_ASSERT(rpc); \
-      BSON_ASSERT(buf); \
-      BSON_ASSERT(buflen); \
+      assert (rpc); \
+      assert (buf); \
+      assert (buflen); \
       _code \
       return true; \
    }
