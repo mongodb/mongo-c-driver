@@ -772,7 +772,7 @@ mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
 const bson_value_t *
 mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file)
 {
-   bson_return_val_if_fail (file, NULL);
+   BSON_ASSERT (file);
 
    return &file->files_id;
 }
@@ -780,7 +780,7 @@ mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file)
 int64_t
 mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file)
 {
-   bson_return_val_if_fail (file, -1);
+   BSON_ASSERT (file);
 
    return file->length;
 }
@@ -788,7 +788,7 @@ mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file)
 int32_t
 mongoc_gridfs_file_get_chunk_size (mongoc_gridfs_file_t *file)
 {
-   bson_return_val_if_fail (file, -1);
+   BSON_ASSERT (file);
 
    return file->chunk_size;
 }
@@ -796,7 +796,7 @@ mongoc_gridfs_file_get_chunk_size (mongoc_gridfs_file_t *file)
 int64_t
 mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file)
 {
-   bson_return_val_if_fail (file, -1);
+   BSON_ASSERT (file);
 
    return file->upload_date;
 }
@@ -808,7 +808,7 @@ mongoc_gridfs_file_remove (mongoc_gridfs_file_t *file,
    bson_t sel = BSON_INITIALIZER;
    bool ret = false;
 
-   bson_return_val_if_fail (file, false);
+   BSON_ASSERT (file);
 
    BSON_APPEND_VALUE (&sel, "_id", &file->files_id);
 

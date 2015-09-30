@@ -47,7 +47,7 @@ void
 mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
                                  const mongoc_ssl_opt_t *opts)
 {
-   bson_return_if_fail (pool);
+   BSON_ASSERT (pool);
 
    mongoc_mutex_lock (&pool->mutex);
 
@@ -77,7 +77,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 
    ENTRY;
 
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
    pool = (mongoc_client_pool_t *)bson_malloc0(sizeof *pool);
    mongoc_mutex_init(&pool->mutex);
@@ -117,7 +117,7 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   bson_return_if_fail(pool);
+   BSON_ASSERT (pool);
 
    while ((client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       mongoc_client_destroy(client);
@@ -144,7 +144,7 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   bson_return_val_if_fail(pool, NULL);
+   BSON_ASSERT (pool);
 
    mongoc_mutex_lock(&pool->mutex);
 
@@ -177,7 +177,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   bson_return_val_if_fail(pool, NULL);
+   BSON_ASSERT (pool);
 
    mongoc_mutex_lock(&pool->mutex);
 
@@ -205,8 +205,8 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
 {
    ENTRY;
 
-   bson_return_if_fail(pool);
-   bson_return_if_fail(client);
+   BSON_ASSERT (pool);
+   BSON_ASSERT (client);
 
    mongoc_mutex_lock(&pool->mutex);
    if (pool->size > pool->min_pool_size) {

@@ -23,7 +23,6 @@
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
 #include "mongoc-trace.h"
-#include "mongoc-util-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -298,7 +297,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
    ENTRY;
 
-   bson_return_if_fail(cursor);
+   BSON_ASSERT (cursor);
 
    if (cursor->in_exhaust) {
       cursor->client->in_exhaust = false;
@@ -371,7 +370,7 @@ _mongoc_cursor_unwrap_failure (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   bson_return_val_if_fail(cursor, false);
+   BSON_ASSERT (cursor);
 
    if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
       bson_set_error(&cursor->error,
@@ -435,7 +434,7 @@ _prep_for_read_pref_modifier (bson_t *query_bson)
 {
    bson_t tmp;
 
-   bson_return_if_fail (query_bson);
+   BSON_ASSERT (query_bson);
 
    if (bson_empty (query_bson) || bson_has_field (query_bson, "$query")) {
       return;
@@ -577,7 +576,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   bson_return_val_if_fail (cursor, false);
+   BSON_ASSERT (cursor);
 
    rpc.query.msg_len = 0;
    rpc.query.request_id = 0;
@@ -834,7 +833,7 @@ _mongoc_cursor_error (mongoc_cursor_t *cursor,
 {
    ENTRY;
 
-   bson_return_val_if_fail(cursor, false);
+   BSON_ASSERT (cursor);
 
    if (BSON_UNLIKELY(cursor->failed)) {
       bson_set_error(error,
@@ -1006,7 +1005,7 @@ mongoc_cursor_more (mongoc_cursor_t *cursor)
 bool
 _mongoc_cursor_more (mongoc_cursor_t *cursor)
 {
-   bson_return_val_if_fail(cursor, false);
+   BSON_ASSERT (cursor);
 
    if (cursor->failed) {
       return false;
@@ -1040,8 +1039,8 @@ _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
 {
    mongoc_server_description_t *description;
 
-   bson_return_if_fail(cursor);
-   bson_return_if_fail(host);
+   BSON_ASSERT (cursor);
+   BSON_ASSERT (host);
 
    memset(host, 0, sizeof *host);
 
@@ -1140,7 +1139,7 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
 bool
 mongoc_cursor_is_alive (const mongoc_cursor_t *cursor) /* IN */
 {
-   bson_return_val_if_fail (cursor, false);
+   BSON_ASSERT (cursor);
 
    return (!cursor->sent ||
            (!cursor->failed &&
@@ -1153,7 +1152,7 @@ mongoc_cursor_is_alive (const mongoc_cursor_t *cursor) /* IN */
 const bson_t *
 mongoc_cursor_current (const mongoc_cursor_t *cursor) /* IN */
 {
-   bson_return_val_if_fail (cursor, NULL);
+   BSON_ASSERT (cursor);
 
    return cursor->current;
 }
@@ -1163,14 +1162,14 @@ void
 mongoc_cursor_set_batch_size (mongoc_cursor_t *cursor,
                               uint32_t         batch_size)
 {
-   bson_return_if_fail (cursor);
+   BSON_ASSERT (cursor);
    cursor->batch_size = batch_size;
 }
 
 uint32_t
 mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor)
 {
-   bson_return_val_if_fail (cursor, 0);
+   BSON_ASSERT (cursor);
 
    return cursor->batch_size;
 }
@@ -1178,7 +1177,7 @@ mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor)
 uint32_t
 mongoc_cursor_get_hint (const mongoc_cursor_t *cursor)
 {
-   bson_return_val_if_fail (cursor, 0);
+   BSON_ASSERT (cursor);
 
    return cursor->hint;
 }

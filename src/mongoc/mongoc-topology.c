@@ -93,7 +93,7 @@ _mongoc_topology_scanner_cb (uint32_t      id,
    mongoc_topology_t *topology;
    mongoc_server_description_t *sd;
 
-   bson_return_if_fail (data);
+   BSON_ASSERT (data);
 
    topology = (mongoc_topology_t *)data;
 
@@ -151,7 +151,7 @@ mongoc_topology_new (const mongoc_uri_t *uri,
    uint32_t id;
    const mongoc_host_list_t *hl;
 
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
    topology = (mongoc_topology_t *)bson_malloc0(sizeof *topology);
 
@@ -389,7 +389,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
    int64_t next_update; /* the latest we must do a blocking scan */
    int64_t expire_at;   /* when server selection timeout expires */
 
-   bson_return_val_if_fail(topology, NULL);
+   BSON_ASSERT (topology);
 
    try_once = topology->server_selection_try_once;
    loop_start = loop_end = bson_get_monotonic_time ();
@@ -683,7 +683,7 @@ void * _mongoc_topology_run_background (void *data)
    int64_t force_timeout;
    int r;
 
-   bson_return_val_if_fail (data, NULL);
+   BSON_ASSERT (data);
 
    last_scan = 0;
    topology = (mongoc_topology_t *)data;

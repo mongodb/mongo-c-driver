@@ -934,7 +934,7 @@ static bool
 _mongoc_stream_tls_check_closed (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   bson_return_val_if_fail(stream, -1);
+   BSON_ASSERT (stream);
    return mongoc_stream_check_closed (tls->base_stream);
 }
 

@@ -172,9 +172,9 @@ mongoc_async_cmd_new (mongoc_async_t           *async,
    mongoc_async_cmd_t *tmp;
    bool found = false;
 
-   bson_return_val_if_fail(cmd, NULL);
-   bson_return_val_if_fail(dbname, NULL);
-   bson_return_val_if_fail(stream, NULL);
+   BSON_ASSERT (cmd);
+   BSON_ASSERT (dbname);
+   BSON_ASSERT (stream);
 
    acmd = (mongoc_async_cmd_t *)bson_malloc0 (sizeof (*acmd));
    acmd->async = async;
@@ -217,7 +217,7 @@ mongoc_async_cmd_new (mongoc_async_t           *async,
 void
 mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd)
 {
-   bson_return_if_fail (acmd);
+   BSON_ASSERT (acmd);
 
    DL_DELETE (acmd->async->cmds, acmd);
    acmd->async->ncmds--;

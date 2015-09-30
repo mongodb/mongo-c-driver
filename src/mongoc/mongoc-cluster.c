@@ -259,10 +259,10 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
 
    ENTRY;
 
-   ALWAYS_ASSERT (cluster);
-   ALWAYS_ASSERT (stream);
-   ALWAYS_ASSERT (reply);
-   ALWAYS_ASSERT (error);
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (reply);
+   BSON_ASSERT (error);
 
    bson_init (&command);
    bson_append_int32 (&command, "ismaster", 8, 1);
@@ -301,9 +301,9 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
 
    ENTRY;
 
-   ALWAYS_ASSERT(cluster);
-   ALWAYS_ASSERT(node);
-   ALWAYS_ASSERT(node->stream);
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (node);
+   BSON_ASSERT (node->stream);
 
    if (!_mongoc_stream_run_ismaster (cluster, node->stream, &reply, &error)) {
       GOTO (failure);
@@ -1350,7 +1350,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
    ENTRY;
 
-   bson_return_val_if_fail(cluster, NULL);
+   BSON_ASSERT (cluster);
 
    topology = cluster->client->topology;
 
@@ -1399,7 +1399,7 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    bson_t reply;
 
    scanner_node = mongoc_topology_scanner_get_node (topology->scanner, sd->id);
-   ALWAYS_ASSERT (scanner_node && !scanner_node->retired);
+   BSON_ASSERT (scanner_node && !scanner_node->retired);
    stream = scanner_node->stream;
 
    if (!stream) {
@@ -1451,7 +1451,7 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
                                                             sd->id);
 
    if (cluster_node) {
-      ALWAYS_ASSERT (cluster_node->stream);
+      BSON_ASSERT (cluster_node->stream);
 
       /* existing cluster node, is it outdated? */
       timestamp = mongoc_topology_server_timestamp (topology, sd->id);
@@ -1497,8 +1497,8 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
 {
    ENTRY;
 
-   bson_return_if_fail(cluster);
-   bson_return_if_fail(uri);
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (uri);
 
    memset (cluster, 0, sizeof *cluster);
 
@@ -1543,7 +1543,7 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
 {
    ENTRY;
 
-   bson_return_if_fail(cluster);
+   BSON_ASSERT (cluster);
 
    mongoc_uri_destroy(cluster->uri);
 
@@ -1580,7 +1580,7 @@ mongoc_cluster_select_by_optype (mongoc_cluster_t *cluster,
 
    ENTRY;
 
-   bson_return_val_if_fail(cluster, 0);
+   BSON_ASSERT (cluster);
 
    selected_server = mongoc_topology_select (topology,
                                             optype,
@@ -2215,10 +2215,10 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
 
    ENTRY;
 
-   bson_return_val_if_fail(cluster, 0);
-   bson_return_val_if_fail(rpcs, 0);
-   bson_return_val_if_fail(rpcs_len, 0);
-   bson_return_val_if_fail(server_id, 0);
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (rpcs);
+   BSON_ASSERT (rpcs_len);
+   BSON_ASSERT (server_id);
 
    if (cluster->client->in_exhaust) {
       bson_set_error(error,
@@ -2377,10 +2377,10 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
 
    ENTRY;
 
-   bson_return_val_if_fail (cluster, false);
-   bson_return_val_if_fail (rpc, false);
-   bson_return_val_if_fail (buffer, false);
-   bson_return_val_if_fail (server_id, false);
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (rpc);
+   BSON_ASSERT (buffer);
+   BSON_ASSERT (server_id);
 
    /*
     * Fetch the stream to communicate over.

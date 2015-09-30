@@ -37,7 +37,7 @@ mongoc_read_prefs_new (mongoc_read_mode_t mode)
 mongoc_read_mode_t
 mongoc_read_prefs_get_mode (const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_val_if_fail(read_prefs, MONGOC_READ_PRIMARY);
+   BSON_ASSERT (read_prefs);
    return read_prefs->mode;
 }
 
@@ -46,8 +46,8 @@ void
 mongoc_read_prefs_set_mode (mongoc_read_prefs_t *read_prefs,
                             mongoc_read_mode_t   mode)
 {
-   bson_return_if_fail(read_prefs);
-   bson_return_if_fail(mode <= MONGOC_READ_NEAREST);
+   BSON_ASSERT (read_prefs);
+   BSON_ASSERT (mode <= MONGOC_READ_NEAREST);
 
    read_prefs->mode = mode;
 }
@@ -56,7 +56,7 @@ mongoc_read_prefs_set_mode (mongoc_read_prefs_t *read_prefs,
 const bson_t *
 mongoc_read_prefs_get_tags (const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_val_if_fail(read_prefs, NULL);
+   BSON_ASSERT (read_prefs);
    return &read_prefs->tags;
 }
 
@@ -65,7 +65,7 @@ void
 mongoc_read_prefs_set_tags (mongoc_read_prefs_t *read_prefs,
                             const bson_t        *tags)
 {
-   bson_return_if_fail(read_prefs);
+   BSON_ASSERT (read_prefs);
 
    bson_destroy(&read_prefs->tags);
 
@@ -101,7 +101,7 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
 bool
 mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_val_if_fail(read_prefs, false);
+   BSON_ASSERT (read_prefs);
 
    /*
     * Tags are not supported with PRIMARY mode.

@@ -119,8 +119,8 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,     /* IN */
 
    ENTRY;
 
-   bson_return_if_fail (bulk);
-   bson_return_if_fail (selector);
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (selector);
 
    if (bulk->commands.len) {
       last = &_mongoc_array_index (&bulk->commands,
@@ -150,8 +150,8 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk,     /* IN */
 
    ENTRY;
 
-   bson_return_if_fail (bulk);
-   bson_return_if_fail (selector);
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (selector);
 
    if (bulk->commands.len) {
       last = &_mongoc_array_index (&bulk->commands,
@@ -205,8 +205,8 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
 
    ENTRY;
 
-   bson_return_if_fail (bulk);
-   bson_return_if_fail (document);
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (document);
 
    if (bulk->commands.len) {
       last = &_mongoc_array_index (&bulk->commands,
@@ -240,9 +240,9 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
    mongoc_write_command_t *last;
    int flags = BSON_VALIDATE_DOT_KEYS|BSON_VALIDATE_DOLLAR_KEYS;
 
-   bson_return_if_fail (bulk);
-   bson_return_if_fail (selector);
-   bson_return_if_fail (document);
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (selector);
+   BSON_ASSERT (document);
 
    ENTRY;
 
@@ -282,9 +282,9 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
    bson_iter_t iter;
    mongoc_write_command_t *last;
 
-   bson_return_if_fail (bulk);
-   bson_return_if_fail (selector);
-   bson_return_if_fail (document);
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (selector);
+   BSON_ASSERT (document);
 
    ENTRY;
 
@@ -325,9 +325,9 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
    bson_iter_t iter;
    mongoc_write_command_t *last;
 
-   bson_return_if_fail (bulk);
-   bson_return_if_fail (selector);
-   bson_return_if_fail (document);
+   BSON_ASSERT (bulk);
+   BSON_ASSERT (selector);
+   BSON_ASSERT (document);
 
    ENTRY;
 
@@ -370,7 +370,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (bulk, false);
+   BSON_ASSERT (bulk);
 
    if (bulk->executed) {
       _mongoc_write_result_destroy (&bulk->result);
@@ -443,7 +443,7 @@ void
 mongoc_bulk_operation_set_write_concern (mongoc_bulk_operation_t      *bulk,
                                          const mongoc_write_concern_t *write_concern)
 {
-   bson_return_if_fail (bulk);
+   BSON_ASSERT (bulk);
 
    if (bulk->write_concern) {
       mongoc_write_concern_destroy (bulk->write_concern);
@@ -459,7 +459,7 @@ mongoc_bulk_operation_set_write_concern (mongoc_bulk_operation_t      *bulk,
 const mongoc_write_concern_t *
 mongoc_bulk_operation_get_write_concern (const mongoc_bulk_operation_t *bulk)
 {
-   bson_return_val_if_fail (bulk, NULL);
+   BSON_ASSERT (bulk);
 
    return bulk->write_concern;
 }
@@ -469,7 +469,7 @@ void
 mongoc_bulk_operation_set_database (mongoc_bulk_operation_t *bulk,
                                     const char              *database)
 {
-   bson_return_if_fail (bulk);
+   BSON_ASSERT (bulk);
 
    if (bulk->database) {
       bson_free (bulk->database);
@@ -483,7 +483,7 @@ void
 mongoc_bulk_operation_set_collection (mongoc_bulk_operation_t *bulk,
                                       const char              *collection)
 {
-   bson_return_if_fail (bulk);
+   BSON_ASSERT (bulk);
 
    if (bulk->collection) {
       bson_free (bulk->collection);
@@ -497,7 +497,7 @@ void
 mongoc_bulk_operation_set_client (mongoc_bulk_operation_t *bulk,
                                   void                    *client)
 {
-   bson_return_if_fail (bulk);
+   BSON_ASSERT (bulk);
 
    bulk->client = (mongoc_client_t *)client;
 }
@@ -507,7 +507,7 @@ void
 mongoc_bulk_operation_set_hint (mongoc_bulk_operation_t *bulk,
                                 uint32_t                 hint)
 {
-   bson_return_if_fail (bulk);
+   BSON_ASSERT (bulk);
 
    bulk->hint = hint;
 }

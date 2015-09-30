@@ -112,7 +112,7 @@ _mongoc_socket_wait (int      sd,           /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (events, false);
+   BSON_ASSERT (events);
 
    pfd.fd = sd;
 #ifdef _WIN32
@@ -216,7 +216,7 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds,          /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sds, false);
+   BSON_ASSERT (sds);
 
 #ifdef _WIN32
    pfds = (WSAPOLLFD *)bson_malloc(sizeof(*pfds) * nsds);
@@ -423,7 +423,7 @@ mongoc_socket_accept_ex (mongoc_socket_t *sock,      /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, NULL);
+   BSON_ASSERT (sock);
 
 again:
    errno = 0;
@@ -493,9 +493,9 @@ mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, false);
-   bson_return_val_if_fail (addr, false);
-   bson_return_val_if_fail (addrlen, false);
+   BSON_ASSERT (sock);
+   BSON_ASSERT (addr);
+   BSON_ASSERT (addrlen);
 
    ret = bind (sock->sd, addr, addrlen);
 
@@ -530,7 +530,7 @@ mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 {
    ENTRY;
 
-   bson_return_val_if_fail (sock, false);
+   BSON_ASSERT (sock);
 
 #ifdef _WIN32
    if (sock->sd != INVALID_SOCKET) {
@@ -589,9 +589,9 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, false);
-   bson_return_val_if_fail (addr, false);
-   bson_return_val_if_fail (addrlen, false);
+   BSON_ASSERT (sock);
+   BSON_ASSERT (addr);
+   BSON_ASSERT (addrlen);
 
    ret = connect (sock->sd, addr, addrlen);
 
@@ -679,7 +679,7 @@ mongoc_socket_listen (mongoc_socket_t *sock,    /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, false);
+   BSON_ASSERT (sock);
 
    if (backlog == 0) {
       backlog = 10;
@@ -796,9 +796,9 @@ mongoc_socket_recv (mongoc_socket_t *sock,      /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, -1);
-   bson_return_val_if_fail (buf, -1);
-   bson_return_val_if_fail (buflen, -1);
+   BSON_ASSERT (sock);
+   BSON_ASSERT (buf);
+   BSON_ASSERT (buflen);
 
 again:
    sock->errno_ = 0;
@@ -854,7 +854,7 @@ mongoc_socket_setsockopt (mongoc_socket_t *sock,    /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, false);
+   BSON_ASSERT (sock);
 
    ret = setsockopt (sock->sd, level, optname, optval, optlen);
 
@@ -892,9 +892,9 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
 {
    mongoc_iovec_t iov;
 
-   bson_return_val_if_fail (sock, -1);
-   bson_return_val_if_fail (buf, -1);
-   bson_return_val_if_fail (buflen, -1);
+   BSON_ASSERT (sock);
+   BSON_ASSERT (buf);
+   BSON_ASSERT (buflen);
 
    iov.iov_base = (void *)buf;
    iov.iov_len = buflen;
@@ -1088,9 +1088,9 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, -1);
-   bson_return_val_if_fail (in_iov, -1);
-   bson_return_val_if_fail (iovcnt, -1);
+   BSON_ASSERT (sock);
+   BSON_ASSERT (in_iov);
+   BSON_ASSERT (iovcnt);
 
    iov = bson_malloc(sizeof(*iov) * iovcnt);
    memcpy(iov, in_iov, sizeof(*iov) * iovcnt);
@@ -1175,7 +1175,7 @@ mongoc_socket_getsockname (mongoc_socket_t *sock,    /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, -1);
+   BSON_ASSERT (sock);
 
    ret = getsockname (sock->sd, addr, addrlen);
 
@@ -1195,7 +1195,7 @@ mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, NULL);
+   BSON_ASSERT (sock);
 
    if ((0 == getpeername (sock->sd, &addr, &len)) &&
        (0 == getnameinfo (&addr, len, host, sizeof host, NULL, 0, 0))) {

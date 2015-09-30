@@ -28,7 +28,6 @@
 #include "mongoc-stream.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-trace.h"
-#include "mongoc-util-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -54,9 +53,9 @@ mongoc_stream_close (mongoc_stream_t *stream)
 
    ENTRY;
 
-   bson_return_val_if_fail(stream, -1);
+   BSON_ASSERT (stream);
 
-   ALWAYS_ASSERT(stream->close);
+   BSON_ASSERT (stream->close);
 
    ret = stream->close(stream);
 
@@ -78,7 +77,7 @@ mongoc_stream_failed (mongoc_stream_t *stream)
 {
    ENTRY;
 
-   bson_return_if_fail(stream);
+   BSON_ASSERT (stream);
 
    if (stream->failed) {
 	   stream->failed(stream);
@@ -102,9 +101,9 @@ mongoc_stream_destroy (mongoc_stream_t *stream)
 {
    ENTRY;
 
-   bson_return_if_fail(stream);
+   BSON_ASSERT (stream);
 
-   ALWAYS_ASSERT(stream->destroy);
+   BSON_ASSERT (stream->destroy);
 
    stream->destroy(stream);
 
@@ -123,7 +122,7 @@ mongoc_stream_destroy (mongoc_stream_t *stream)
 int
 mongoc_stream_flush (mongoc_stream_t *stream)
 {
-   bson_return_val_if_fail(stream, -1);
+   BSON_ASSERT (stream);
    return stream->flush(stream);
 }
 
@@ -148,11 +147,11 @@ mongoc_stream_writev (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail(stream, -1);
-   bson_return_val_if_fail(iov, -1);
-   bson_return_val_if_fail(iovcnt, -1);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (iov);
+   BSON_ASSERT (iovcnt);
 
-   BSON_ASSERT(stream->writev);
+   BSON_ASSERT (stream->writev);
 
    if (timeout_msec < 0) {
       timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
@@ -186,8 +185,8 @@ mongoc_stream_write (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail (stream, -1);
-   bson_return_val_if_fail (buf, -1);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (buf);
 
    iov.iov_base = buf;
    iov.iov_len = count;
@@ -225,9 +224,9 @@ mongoc_stream_readv (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail (stream, -1);
-   bson_return_val_if_fail (iov, -1);
-   bson_return_val_if_fail (iovcnt, -1);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (iov);
+   BSON_ASSERT (iovcnt);
 
    BSON_ASSERT (stream->readv);
 
@@ -267,8 +266,8 @@ mongoc_stream_read (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail (stream, -1);
-   bson_return_val_if_fail (buf, -1);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (buf);
 
    iov.iov_base = buf;
    iov.iov_len = count;
@@ -288,7 +287,7 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
                           void            *optval,
                           socklen_t        optlen)
 {
-   bson_return_val_if_fail(stream, -1);
+   BSON_ASSERT (stream);
 
    if (stream->setsockopt) {
       return stream->setsockopt(stream, level, optname, optval, optlen);
@@ -301,7 +300,7 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
 mongoc_stream_t *
 mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
 {
-   bson_return_val_if_fail (stream, NULL);
+   BSON_ASSERT (stream);
 
    if (stream->get_base_stream) {
       return stream->get_base_stream (stream);

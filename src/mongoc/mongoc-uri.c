@@ -26,7 +26,6 @@
 #include "mongoc-log.h"
 #include "mongoc-socket.h"
 #include "mongoc-uri-private.h"
-#include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
 
 
@@ -295,8 +294,8 @@ _mongoc_host_list_from_string (mongoc_host_list_t *host_list,
    mongoc_uri_t *uri = NULL;
    const mongoc_host_list_t *uri_hl;
 
-   bson_return_val_if_fail(host_list, false);
-   bson_return_val_if_fail(host_and_port, false);
+   BSON_ASSERT (host_list);
+   BSON_ASSERT (host_and_port);
 
    uri_str = bson_strdup_printf("mongodb://%s/", host_and_port);
    if (! uri_str) goto CLEANUP;
@@ -736,7 +735,7 @@ mongoc_uri_parse (mongoc_uri_t *uri,
 const mongoc_host_list_t *
 mongoc_uri_get_hosts (const mongoc_uri_t *uri)
 {
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
    return uri->hosts;
 }
 
@@ -746,7 +745,7 @@ mongoc_uri_get_replica_set (const mongoc_uri_t *uri)
 {
    bson_iter_t iter;
 
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
    if (bson_iter_init_find_case(&iter, &uri->options, "replicaSet") &&
        BSON_ITER_HOLDS_UTF8(&iter)) {
@@ -760,7 +759,7 @@ mongoc_uri_get_replica_set (const mongoc_uri_t *uri)
 const bson_t *
 mongoc_uri_get_credentials (const mongoc_uri_t *uri)
 {
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
    return &uri->credentials;
 }
 
@@ -770,7 +769,7 @@ mongoc_uri_get_auth_mechanism (const mongoc_uri_t *uri)
 {
    bson_iter_t iter;
 
-   bson_return_val_if_fail (uri, NULL);
+   BSON_ASSERT (uri);
 
    if (bson_iter_init_find_case (&iter, &uri->credentials, "authMechanism") &&
        BSON_ITER_HOLDS_UTF8 (&iter)) {
@@ -960,8 +959,8 @@ mongoc_uri_new_for_host_port (const char *hostname,
    mongoc_uri_t *uri;
    char *str;
 
-   bson_return_val_if_fail(hostname, NULL);
-   bson_return_val_if_fail(port, NULL);
+   BSON_ASSERT (hostname);
+   BSON_ASSERT (port);
 
    str = bson_strdup_printf("mongodb://%s:%hu/", hostname, port);
    uri = mongoc_uri_new(str);
@@ -974,7 +973,7 @@ mongoc_uri_new_for_host_port (const char *hostname,
 const char *
 mongoc_uri_get_username (const mongoc_uri_t *uri)
 {
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
    return uri->username;
 }
@@ -984,7 +983,7 @@ mongoc_uri_set_username (mongoc_uri_t *uri, const char *username)
 {
    size_t len;
 
-   bson_return_val_if_fail (username, false);
+   BSON_ASSERT (username);
 
    len = strlen(username);
 
@@ -1004,7 +1003,7 @@ mongoc_uri_set_username (mongoc_uri_t *uri, const char *username)
 const char *
 mongoc_uri_get_password (const mongoc_uri_t *uri)
 {
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
    return uri->password;
 }
@@ -1014,7 +1013,7 @@ mongoc_uri_set_password (mongoc_uri_t *uri, const char *password)
 {
    size_t len;
 
-   bson_return_val_if_fail (password, false);
+   BSON_ASSERT (password);
 
    len = strlen(password);
 
@@ -1034,7 +1033,7 @@ mongoc_uri_set_password (mongoc_uri_t *uri, const char *password)
 const char *
 mongoc_uri_get_database (const mongoc_uri_t *uri)
 {
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
    return uri->database;
 }
 
@@ -1043,7 +1042,7 @@ mongoc_uri_set_database (mongoc_uri_t *uri, const char *database)
 {
    size_t len;
 
-   bson_return_val_if_fail (database, false);
+   BSON_ASSERT (database);
 
    len = strlen(database);
 
@@ -1065,7 +1064,7 @@ mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
 {
    bson_iter_t iter;
 
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
    if (bson_iter_init_find_case(&iter, &uri->credentials, "authSource")) {
       return bson_iter_utf8(&iter, NULL);
@@ -1080,7 +1079,7 @@ mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
 {
    size_t len;
 
-   bson_return_val_if_fail (value, false);
+   BSON_ASSERT (value);
 
    len = strlen(value);
 
@@ -1096,7 +1095,7 @@ mongoc_uri_set_auth_source (mongoc_uri_t *uri, const char *value)
 const bson_t *
 mongoc_uri_get_options (const mongoc_uri_t *uri)
 {
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
    return &uri->options;
 }
 
@@ -1129,7 +1128,7 @@ mongoc_uri_copy (const mongoc_uri_t *uri)
    mongoc_uri_t       *copy;
    mongoc_host_list_t *iter;
 
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
    copy = (mongoc_uri_t *)bson_malloc0(sizeof (*copy));
 
@@ -1155,7 +1154,7 @@ mongoc_uri_copy (const mongoc_uri_t *uri)
 const char *
 mongoc_uri_get_string (const mongoc_uri_t *uri)
 {
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
    return uri->str;
 }
 
@@ -1163,7 +1162,7 @@ mongoc_uri_get_string (const mongoc_uri_t *uri)
 const bson_t *
 mongoc_uri_get_read_prefs (const mongoc_uri_t *uri)
 {
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
    return mongoc_read_prefs_get_tags(uri->read_prefs);
 }
 
@@ -1198,7 +1197,7 @@ mongoc_uri_unescape (const char *escaped_string)
    const char *end;
    size_t len;
 
-   bson_return_val_if_fail(escaped_string, NULL);
+   BSON_ASSERT (escaped_string);
 
    len = strlen(escaped_string);
 
@@ -1247,7 +1246,7 @@ mongoc_uri_unescape (const char *escaped_string)
 const mongoc_read_prefs_t *
 mongoc_uri_get_read_prefs_t (const mongoc_uri_t *uri) /* IN */
 {
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
    return uri->read_prefs;
 }
@@ -1256,7 +1255,7 @@ mongoc_uri_get_read_prefs_t (const mongoc_uri_t *uri) /* IN */
 const mongoc_write_concern_t *
 mongoc_uri_get_write_concern (const mongoc_uri_t *uri) /* IN */
 {
-   bson_return_val_if_fail (uri, NULL);
+   BSON_ASSERT (uri);
 
    return uri->write_concern;
 }
@@ -1267,7 +1266,7 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
 {
    bson_iter_t iter;
 
-   bson_return_val_if_fail (uri, false);
+   BSON_ASSERT (uri);
 
    return (bson_iter_init_find_case (&iter, &uri->options, "ssl") &&
            BSON_ITER_HOLDS_BOOL (&iter) &&
@@ -1347,7 +1346,7 @@ mongoc_uri_set_option_as_int32(mongoc_uri_t *uri, const char *option,
    const bson_t *options;
    bson_iter_t iter;
 
-   bson_return_val_if_fail (option, false);
+   BSON_ASSERT (option);
 
    if (!mongoc_uri_option_is_int32 (option)) {
       return false;
@@ -1432,7 +1431,7 @@ mongoc_uri_set_option_as_bool(mongoc_uri_t *uri, const char *option,
    const bson_t *options;
    bson_iter_t iter;
 
-   bson_return_val_if_fail (option, false);
+   BSON_ASSERT (option);
 
    if (!mongoc_uri_option_is_bool (option)) {
       return false;
@@ -1520,7 +1519,7 @@ mongoc_uri_set_option_as_utf8(mongoc_uri_t *uri, const char *option,
 {
    size_t len;
 
-   bson_return_val_if_fail (option, false);
+   BSON_ASSERT (option);
 
    len = strlen(value);
 

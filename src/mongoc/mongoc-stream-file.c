@@ -46,7 +46,7 @@ _mongoc_stream_file_close (mongoc_stream_t *stream)
 
    ENTRY;
 
-   bson_return_val_if_fail (file, -1);
+   BSON_ASSERT (file);
 
    if (file->fd != -1) {
 #ifdef _WIN32
@@ -69,7 +69,7 @@ _mongoc_stream_file_destroy (mongoc_stream_t *stream)
 
    ENTRY;
 
-   bson_return_if_fail (file);
+   BSON_ASSERT (file);
 
    if (file->fd) {
       _mongoc_stream_file_close (stream);
@@ -190,7 +190,7 @@ mongoc_stream_file_new (int fd) /* IN */
 {
    mongoc_stream_file_t *stream;
 
-   bson_return_val_if_fail (fd != -1, NULL);
+   BSON_ASSERT (fd != -1);
 
    stream = (mongoc_stream_file_t *)bson_malloc0 (sizeof *stream);
    stream->vtable.type = MONGOC_STREAM_FILE;
@@ -214,7 +214,7 @@ mongoc_stream_file_new_for_path (const char *path,  /* IN */
 {
    int fd = -1;
 
-   bson_return_val_if_fail (path, NULL);
+   BSON_ASSERT (path);
 
 #ifdef _WIN32
    if (_sopen_s (&fd, path, (flags | _O_BINARY), _SH_DENYNO, mode) != 0) {
@@ -235,7 +235,7 @@ mongoc_stream_file_new_for_path (const char *path,  /* IN */
 int
 mongoc_stream_file_get_fd (mongoc_stream_file_t *stream)
 {
-   bson_return_val_if_fail (stream, -1);
+   BSON_ASSERT (stream);
 
    return stream->fd;
 }

@@ -88,8 +88,8 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
 
    ENTRY;
 
-   bson_return_val_if_fail (uri, NULL);
-   bson_return_val_if_fail (host, NULL);
+   BSON_ASSERT (uri);
+   BSON_ASSERT (host);
 
    connecttimeoutms = mongoc_uri_get_option_as_int32 (
       uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
@@ -208,8 +208,8 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
 
    ENTRY;
 
-   bson_return_val_if_fail (uri, NULL);
-   bson_return_val_if_fail (host, NULL);
+   BSON_ASSERT (uri);
+   BSON_ASSERT (host);
 
    memset (&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
@@ -280,8 +280,8 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
    int32_t connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
 #endif
 
-   bson_return_val_if_fail (uri, NULL);
-   bson_return_val_if_fail (host, NULL);
+   BSON_ASSERT (uri);
+   BSON_ASSERT (host);
 
 #ifndef MONGOC_ENABLE_SSL
    if (mongoc_uri_get_ssl (uri)) {
@@ -379,8 +379,8 @@ _mongoc_client_create_stream (mongoc_client_t          *client,
                               const mongoc_host_list_t *host,
                               bson_error_t             *error)
 {
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(host, NULL);
+   BSON_ASSERT (client);
+   BSON_ASSERT (host);
 
    return client->initiator (client->uri, host, client->initiator_data, error);
 }
@@ -411,10 +411,10 @@ _mongoc_client_recv (mongoc_client_t *client,
                      uint32_t         server_id,
                      bson_error_t    *error)
 {
-   bson_return_val_if_fail(client, false);
-   bson_return_val_if_fail(rpc, false);
-   bson_return_val_if_fail(buffer, false);
-   bson_return_val_if_fail(server_id, false);
+   BSON_ASSERT (client);
+   BSON_ASSERT (rpc);
+   BSON_ASSERT (buffer);
+   BSON_ASSERT (server_id);
 
    if (!mongoc_cluster_try_recv (&client->cluster, rpc, buffer, server_id, error)) {
       mongoc_topology_invalidate_server (client->topology, server_id);
@@ -447,7 +447,7 @@ _bson_to_error (const bson_t *b,
    bson_iter_t iter;
    int code = 0;
 
-   BSON_ASSERT(b);
+   BSON_ASSERT (b);
 
    if (!error) {
       return;
@@ -525,8 +525,8 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
 
    ENTRY;
 
-   bson_return_val_if_fail (client, false);
-   bson_return_val_if_fail (server_id, false);
+   BSON_ASSERT (client);
+   BSON_ASSERT (server_id);
 
    if (gle_doc) {
       *gle_doc = NULL;
@@ -717,7 +717,7 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
    bson_iter_t iter;
 #endif
 
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
    client = (mongoc_client_t *)bson_malloc0(sizeof *client);
    client->uri = mongoc_uri_copy (uri);
@@ -809,7 +809,7 @@ mongoc_client_destroy (mongoc_client_t *client)
 const mongoc_uri_t *
 mongoc_client_get_uri (const mongoc_client_t *client)
 {
-   bson_return_val_if_fail(client, NULL);
+   BSON_ASSERT (client);
 
    return client->uri;
 }
@@ -840,8 +840,8 @@ mongoc_database_t *
 mongoc_client_get_database (mongoc_client_t *client,
                             const char      *name)
 {
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(name, NULL);
+   BSON_ASSERT (client);
+   BSON_ASSERT (name);
 
    return _mongoc_database_new(client, name, client->read_prefs, client->write_concern);
 }
@@ -872,7 +872,7 @@ mongoc_client_get_default_database (mongoc_client_t *client)
 {
    const char *db;
 
-   bson_return_val_if_fail(client, NULL);
+   BSON_ASSERT (client);
    db = mongoc_uri_get_database (client->uri);
 
    if (db) {
@@ -913,9 +913,9 @@ mongoc_client_get_collection (mongoc_client_t *client,
                               const char      *db,
                               const char      *collection)
 {
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(db, NULL);
-   bson_return_val_if_fail(collection, NULL);
+   BSON_ASSERT (client);
+   BSON_ASSERT (db);
+   BSON_ASSERT (collection);
 
    return _mongoc_collection_new(client, db, collection, client->read_prefs,
                                  client->write_concern);
@@ -951,8 +951,8 @@ mongoc_client_get_gridfs (mongoc_client_t *client,
                           const char      *prefix,
                           bson_error_t    *error)
 {
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(db, NULL);
+   BSON_ASSERT (client);
+   BSON_ASSERT (db);
 
    if (! prefix) {
       prefix = "fs";
@@ -981,7 +981,7 @@ mongoc_client_get_gridfs (mongoc_client_t *client,
 const mongoc_write_concern_t *
 mongoc_client_get_write_concern (const mongoc_client_t *client)
 {
-   bson_return_val_if_fail(client, NULL);
+   BSON_ASSERT (client);
 
    return client->write_concern;
 }
@@ -1007,7 +1007,7 @@ void
 mongoc_client_set_write_concern (mongoc_client_t              *client,
                                  const mongoc_write_concern_t *write_concern)
 {
-   bson_return_if_fail(client);
+   BSON_ASSERT (client);
 
    if (write_concern != client->write_concern) {
       if (client->write_concern) {
@@ -1039,7 +1039,7 @@ mongoc_client_set_write_concern (mongoc_client_t              *client,
 const mongoc_read_prefs_t *
 mongoc_client_get_read_prefs (const mongoc_client_t *client)
 {
-   bson_return_val_if_fail (client, NULL);
+   BSON_ASSERT (client);
 
    return client->read_prefs;
 }
@@ -1065,7 +1065,7 @@ void
 mongoc_client_set_read_prefs (mongoc_client_t           *client,
                               const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_if_fail (client);
+   BSON_ASSERT (client);
 
    if (read_prefs != client->read_prefs) {
       if (client->read_prefs) {
@@ -1214,8 +1214,8 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
 
    ENTRY;
 
-   bson_return_if_fail(client);
-   bson_return_if_fail(cursor_id);
+   BSON_ASSERT (client);
+   BSON_ASSERT (cursor_id);
 
    rpc.kill_cursors.msg_len = 0;
    rpc.kill_cursors.request_id = 0;
@@ -1358,7 +1358,7 @@ mongoc_client_find_databases (mongoc_client_t *client,
 int32_t
 mongoc_client_get_max_message_size (mongoc_client_t *client) /* IN */
 {
-   bson_return_val_if_fail (client, -1);
+   BSON_ASSERT (client);
 
    return mongoc_cluster_get_max_msg_size (&client->cluster);
 }
@@ -1367,7 +1367,7 @@ mongoc_client_get_max_message_size (mongoc_client_t *client) /* IN */
 int32_t
 mongoc_client_get_max_bson_size (mongoc_client_t *client) /* IN */
 {
-   bson_return_val_if_fail (client, -1);
+   BSON_ASSERT (client);
 
    return mongoc_cluster_get_max_bson_obj_size (&client->cluster);
 }
@@ -1382,7 +1382,7 @@ mongoc_client_get_server_status (mongoc_client_t     *client,     /* IN */
    bson_t cmd = BSON_INITIALIZER;
    bool ret = false;
 
-   bson_return_val_if_fail (client, false);
+   BSON_ASSERT (client);
 
    BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
    ret = mongoc_client_command_simple (client, "admin", &cmd, read_prefs,
@@ -1398,7 +1398,7 @@ mongoc_client_set_stream_initiator (mongoc_client_t           *client,
                                     mongoc_stream_initiator_t  initiator,
                                     void                      *user_data)
 {
-   bson_return_if_fail (client);
+   BSON_ASSERT (client);
 
    if (!initiator) {
       initiator = mongoc_client_default_stream_initiator;

@@ -258,7 +258,7 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
    int64_t now;
    const char *message;
 
-   bson_return_if_fail (data);
+   BSON_ASSERT (data);
 
    node = (mongoc_topology_scanner_node_t *)data;
    node->cmd = NULL;
@@ -522,7 +522,7 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
 {
    mongoc_topology_scanner_node_t *node, *tmp;
    int64_t cooldown = INT64_MAX;
-   bson_return_if_fail (ts);
+   BSON_ASSERT (ts);
 
    if (ts->in_progress) {
       return;

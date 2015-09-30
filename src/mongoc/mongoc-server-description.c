@@ -20,7 +20,6 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-uri.h"
-#include "mongoc-util-private.h"
 
 #include <stdio.h>
 
@@ -87,8 +86,8 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
 {
    ENTRY;
 
-   bson_return_if_fail(sd);
-   bson_return_if_fail(address);
+   BSON_ASSERT (sd);
+   BSON_ASSERT (address);
 
    memset (sd, 0, sizeof *sd);
 
@@ -307,7 +306,7 @@ mongoc_server_description_handle_ismaster (
    int num_keys = 0;
    ENTRY;
 
-   bson_return_if_fail (sd);
+   BSON_ASSERT (sd);
 
    mongoc_server_description_reset (sd);
    if (!ismaster_response) {
@@ -423,7 +422,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
 {
    mongoc_server_description_t *copy;
 
-   bson_return_val_if_fail(description, NULL);
+   BSON_ASSERT (description);
 
    copy = (mongoc_server_description_t *)bson_malloc0(sizeof (*copy));
 
