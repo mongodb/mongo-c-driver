@@ -314,6 +314,7 @@ test_read (void)
    ssize_t r;
    char buf[10], buf2[10];
    mongoc_iovec_t iov[2];
+   int previous_errno;
 
    iov[0].iov_base = buf;
    iov[0].iov_len = 10;
@@ -355,8 +356,10 @@ test_read (void)
    ASSERT_CMPINT (memcmp (iov[1].iov_base, "spare ribs", 10), ==, 0);
 
    assert (mongoc_gridfs_file_seek (file, 20, SEEK_END) == 0);
+   previous_errno = errno;
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
 
+   assert (errno == previous_errno);
    assert (r == 0);
    assert (mongoc_gridfs_file_tell (file) == file->length + 20);
 
@@ -435,8 +438,8 @@ test_write (void)
    assert (mongoc_gridfs_file_tell (file) == file->length + 5);
 
    r = mongoc_gridfs_file_writev (file, iov, 2, 0);
-   assert (r == len + 5);
-   assert (mongoc_gridfs_file_tell (file) == len*2 + 5);
+   assert (r == len);
+   assert (mongoc_gridfs_file_tell (file) == 2*len + 5);
    assert (file->length == 2*len + 5);
    assert (mongoc_gridfs_file_save (file));
 

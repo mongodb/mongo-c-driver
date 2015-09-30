@@ -58,8 +58,6 @@ _mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page,
 
    BSON_ASSERT (page);
 
-   BSON_ASSERT (offset <= page->len);
-
    page->offset = offset;
 
    RETURN (1);
@@ -96,7 +94,7 @@ _mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
  *
  * Write to a page.
  *
- * Writes are copy-on-write with regards to the buffer that was passed to the
+* Writes are copy-on-write with regards to the buffer that was passed to the
  * mongoc_gridfs_file_page_t during construction. In other words, the first
  * write allocates a large enough buffer for file->chunk_size, which becomes
  * authoritative from then on.
@@ -127,7 +125,7 @@ _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
    page->offset += bytes_written;
    page->len = BSON_MAX (page->offset, page->len);
 
-   /* Invalidate the read buffer */
+   /* Don't use the old read buffer, which is no longer current */
    page->read_buf = page->buf;
 
    RETURN (bytes_written);
@@ -164,9 +162,13 @@ _mongoc_gridfs_file_page_memset0 (mongoc_gridfs_file_page_t *page,
       memcpy (page->buf, page->read_buf, BSON_MIN (page->chunk_size, page->len));
    }
 
+   /* Set bytes and adjust the page position */
    memset (page->buf + page->offset, '\0', bytes_set);
    page->offset += bytes_set;
    page->len = BSON_MAX (page->offset, page->len);
+
+   /* Don't use the old read buffer, which is no longer current */
+   page->read_buf = page->buf;
 
    RETURN (true);
 }

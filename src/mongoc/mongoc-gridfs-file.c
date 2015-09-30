@@ -487,7 +487,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 
    /* Pull in the correct page */
    if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
-         return -1;
+      return -1;
    }
 
    /* When writing past the end-of-file, fill the gap with zeros */

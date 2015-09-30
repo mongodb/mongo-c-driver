@@ -186,7 +186,6 @@ test_memset0 (void)
 {
    uint8_t buf[] = "wxyz";
    uint32_t len = sizeof buf;
-   int32_t r;
    mongoc_gridfs_file_page_t *page;
 
    page = _mongoc_gridfs_file_page_new (buf, len, 5);
@@ -195,20 +194,17 @@ test_memset0 (void)
    ASSERT (page->len == len);
    ASSERT (!page->buf);
 
-   r = _mongoc_gridfs_file_page_memset0 (page, 1);
-   ASSERT (r == 1);
+   ASSERT (_mongoc_gridfs_file_page_memset0 (page, 1));
    ASSERT (page->buf);
    ASSERT (memcmp (page->buf, "\0xyz", 4) == 0);
    ASSERT (page->offset == 1);
 
-   r = _mongoc_gridfs_file_page_memset0 (page, 10);
-   ASSERT (r == 4);
+   ASSERT (_mongoc_gridfs_file_page_memset0 (page, 10));
    ASSERT (page->buf);
    ASSERT (memcmp (page->buf, "\0\0\0\0\0", 5) == 0);
    ASSERT (page->offset == 5);
 
-   r = _mongoc_gridfs_file_page_memset0 (page, 10);
-   ASSERT (r == 0);
+   ASSERT (_mongoc_gridfs_file_page_memset0 (page, 10));
 
    _mongoc_gridfs_file_page_destroy (page);
 }
