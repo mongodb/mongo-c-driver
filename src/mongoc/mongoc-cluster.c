@@ -85,6 +85,21 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
                                     bool reconnect_ok,
                                     bson_error_t *error);
 
+
+static const char *
+get_command_name (const bson_t *command)
+{
+   bson_iter_t iter;
+
+   if (!bson_iter_init (&iter, command) ||
+       !bson_iter_next (&iter)) {
+      return NULL;
+   }
+
+   return bson_iter_key (&iter);
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -115,6 +130,7 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    int32_t msg_len;
    bson_t reply_local;
    char ns[MONGOC_NAMESPACE_MAX];
+   char error_message[sizeof error->message];
 
    ENTRY;
 
@@ -141,8 +157,16 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    _mongoc_rpc_gather(&rpc, &ar);
    _mongoc_rpc_swab_to_le(&rpc);
 
-   if (!mongoc_stream_writev(stream, (mongoc_iovec_t *)ar.data, ar.len,
-                             cluster->sockettimeoutms)) {
+   if (!_mongoc_stream_writev_full (stream, (mongoc_iovec_t *)ar.data, ar.len,
+                                   cluster->sockettimeoutms, error)) {
+      /* add info about the command to writev_full's error message */
+      bson_snprintf (error_message,
+                     sizeof error->message,
+                     "Failed to send \"%s\" command with database \"%s\": %s\n",
+                     get_command_name (command),
+                     db_name,
+                     error->message);
+      bson_strncpy (error->message, error_message, sizeof error->message);
       GOTO(failure);
    }
 
