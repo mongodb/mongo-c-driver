@@ -19,6 +19,7 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"
 #include "mongoc-trace.h"
+#include "mongoc-util-private.h"
 
 
 static void

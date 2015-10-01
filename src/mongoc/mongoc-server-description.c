@@ -20,6 +20,7 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-uri.h"
+#include "mongoc-util-private.h"
 
 #include <stdio.h>
 
