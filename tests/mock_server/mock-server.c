@@ -311,7 +311,7 @@ mock_server_run (mock_server_t *server)
    mongoc_mutex_unlock (&server->mutex);
 
    if (mock_server_get_verbose (server)) {
-      printf ("listening on port %hu\n", bound_port);
+      fprintf (stderr, "listening on port %hu\n", bound_port);
       fflush (stdout);
    }
 

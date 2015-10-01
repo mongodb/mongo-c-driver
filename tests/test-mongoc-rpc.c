@@ -71,16 +71,16 @@ assert_rpc_equal (const char   *filename,
    _mongoc_rpc_gather(rpc, &ar);
 
 #if 0
-   printf("Before swabbing\n");
-   printf("=========================\n");
+   fprintf(stderr, "Before swabbing\n");
+   fprintf(stderr, "=========================\n");
    mongoc_rpc_printf(rpc);
 #endif
 
    _mongoc_rpc_swab_to_le(rpc);
 
 #if 0
-   printf("After swabbing\n");
-   printf("=========================\n");
+   fprintf(stderr, "After swabbing\n");
+   fprintf(stderr, "=========================\n");
    mongoc_rpc_printf(rpc);
 #endif
 
@@ -89,7 +89,7 @@ assert_rpc_equal (const char   *filename,
       ASSERT(iov->iov_len <= (length - off));
       r = memcmp(&data[off], iov->iov_base, iov->iov_len);
       if (r) {
-         printf("\nError iovec: %u\n", i);
+         fprintf(stderr, "\nError iovec: %u\n", i);
       }
       ASSERT(r == 0);
       off += iov->iov_len;

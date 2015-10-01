@@ -136,7 +136,7 @@ test_exhaust_cursor (bool pooled)
       r = mongoc_cursor_next (cursor, &doc);
       if (!r) {
          mongoc_cursor_error (cursor, &error);
-         printf ("cursor error: %s\n", error.message);
+         fprintf (stderr, "cursor error: %s\n", error.message);
       }
       assert (r);
       assert (doc);
@@ -159,7 +159,7 @@ test_exhaust_cursor (bool pooled)
       r = mongoc_cursor_next (cursor2, &doc);
       if (!r) {
          mongoc_cursor_error (cursor2, &error);
-         printf ("cursor error: %s\n", error.message);
+         fprintf (stderr, "cursor error: %s\n", error.message);
       }
       assert (r);
       assert (doc);
@@ -169,7 +169,7 @@ test_exhaust_cursor (bool pooled)
          r = mongoc_cursor_next (cursor2, &doc);
          if (!r) {
             mongoc_cursor_error (cursor2, &error);
-            printf ("cursor error: %s\n", error.message);
+            fprintf (stderr, "cursor error: %s\n", error.message);
          }
          assert (r);
          assert (doc);

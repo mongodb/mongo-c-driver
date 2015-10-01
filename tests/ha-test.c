@@ -789,7 +789,7 @@ again:
       char *str;
 
       str = bson_as_json(&status, NULL);
-      printf("%s\n", str);
+      fprintf(stderr, "%s\n", str);
       bson_free(str);
    }
 #endif
@@ -952,7 +952,7 @@ again:
       char *str;
 
       str = bson_as_json (&reply, NULL);
-      printf ("%s\n", str);
+      fprintf (stderr, "%s\n", str);
       bson_free (str);
    }
 #endif

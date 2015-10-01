@@ -2476,7 +2476,7 @@ test_bulk_write_concern_over_1000(void)
     success = mongoc_cursor_next (cursor, &result);
     if (!success) {
        mongoc_cursor_error(cursor, &error);
-       printf("%s", error.message);
+       fprintf(stderr, "%s", error.message);
     }
     assert(success);
 

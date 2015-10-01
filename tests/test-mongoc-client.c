@@ -103,7 +103,7 @@ test_mongoc_client_authenticate (void *context)
    if (!r) {
       r = mongoc_cursor_error(cursor, &error);
       if (r) {
-         printf("Authentication failure: \"%s\"", error.message);
+         fprintf (stderr, "Authentication failure: \"%s\"", error.message);
       }
       assert(!r);
    }

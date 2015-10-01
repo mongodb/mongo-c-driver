@@ -514,8 +514,8 @@ call_ismaster (bson_t *reply)
                                       tmp_bson ("{'isMaster': 1}"),
                                       NULL, reply, &error)) {
 
-      printf ("error calling ismaster: '%s'\n", error.message);
-      printf ("URI = %s\n", uri_str);
+      fprintf (stderr, "error calling ismaster: '%s'\n", error.message);
+      fprintf (stderr, "URI = %s\n", uri_str);
       abort ();
    }
 
