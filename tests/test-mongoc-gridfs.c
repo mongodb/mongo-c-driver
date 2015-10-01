@@ -398,12 +398,10 @@ test_write (void)
 
    file = mongoc_gridfs_create_file (gridfs, &opt);
    assert (file);
-   assert (mongoc_gridfs_file_save (file));
 
    /* Test a write across many pages */
    r = mongoc_gridfs_file_writev (file, iov, 2, 0);
    assert (r == len);
-   assert (mongoc_gridfs_file_save (file));
 
    assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
    assert (mongoc_gridfs_file_tell (file) == 0);
@@ -411,7 +409,6 @@ test_write (void)
    r = mongoc_gridfs_file_readv (file, &riov, 1, len, 0);
    assert (r == len);
    assert (memcmp (buf3, "foo bar baz", len) == 0);
-   assert (mongoc_gridfs_file_save (file));
 
    /* Test a write starting and ending exactly on chunk boundaries */
    assert (mongoc_gridfs_file_seek (file, file->chunk_size, SEEK_SET) == 0);
@@ -419,7 +416,6 @@ test_write (void)
 
    r = mongoc_gridfs_file_writev (file, iov+1, 1, 0);
    assert (r == iov[1].iov_len);
-   assert (mongoc_gridfs_file_save (file));
 
    assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
    assert (mongoc_gridfs_file_tell (file) == 0);
@@ -459,7 +455,6 @@ test_empty (void)
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
    assert (file);
-   assert (mongoc_gridfs_file_save (file));
 
    assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
    assert (mongoc_gridfs_file_tell (file) == 0);
@@ -475,7 +470,6 @@ test_empty (void)
    assert (r == 2);
    assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
    assert (mongoc_gridfs_file_tell (file) == 0);
-   assert (mongoc_gridfs_file_save (file)); /* CDRIVER-511 */
 
    r = mongoc_gridfs_file_readv(file, iov, 1, 2, 0);
 
