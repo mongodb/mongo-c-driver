@@ -58,7 +58,7 @@ test_rtt_calculation_cb (bson_t *test)
    mongoc_server_description_t *description;
    bson_iter_t iter;
 
-   bson_return_if_fail (test);
+   BSON_ASSERT (test);
 
    description = (mongoc_server_description_t *)bson_malloc0(sizeof *description);
    mongoc_server_description_init(description, "localhost:27017", 1);
@@ -115,7 +115,7 @@ test_server_selection_logic_cb (bson_t *test)
 
    mongoc_array_t selected_servers;
 
-   bson_return_if_fail (test);
+   BSON_ASSERT (test);
 
    /* pull out topology description field */
    assert(bson_iter_init_find(&iter, test, "topology_description"));

@@ -841,8 +841,8 @@ ha_sharded_cluster_add_replica_set (ha_sharded_cluster_t *cluster,
 {
    int i;
 
-   bson_return_if_fail(cluster);
-   bson_return_if_fail(replica_set);
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (replica_set);
 
    for (i = 0; i < 12; i++) {
       if (!cluster->replicas[i]) {
@@ -860,7 +860,7 @@ ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
    ha_node_t *node;
    char dbpath[PATH_MAX];
 
-   bson_return_val_if_fail(cluster, NULL);
+   BSON_ASSERT (cluster);
 
    bson_snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
    dbpath[sizeof dbpath - 1] = '\0';
@@ -889,7 +889,7 @@ ha_sharded_cluster_add_router (ha_sharded_cluster_t *cluster,
    ha_node_t *node;
    char dbpath[PATH_MAX];
 
-   bson_return_val_if_fail(cluster, NULL);
+   BSON_ASSERT (cluster);
 
    bson_snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
    dbpath[sizeof dbpath - 1] = '\0';
@@ -972,7 +972,7 @@ ha_sharded_cluster_start (ha_sharded_cluster_t *cluster)
    ha_node_t *iter;
    int i;
 
-   bson_return_if_fail(cluster);
+   BSON_ASSERT (cluster);
 
    if (!stat(cluster->name, &st)) {
       if (S_ISDIR(st.st_mode)) {
@@ -1024,7 +1024,7 @@ ha_sharded_cluster_wait_for_healthy (ha_sharded_cluster_t *cluster)
 {
    int i;
 
-   bson_return_if_fail(cluster);
+   BSON_ASSERT (cluster);
 
    for (i = 0; i < 12; i++) {
       if (cluster->replicas[i]) {
@@ -1040,7 +1040,7 @@ ha_sharded_cluster_shutdown (ha_sharded_cluster_t *cluster)
    ha_node_t *iter;
    int i;
 
-   bson_return_if_fail(cluster);
+   BSON_ASSERT (cluster);
 
    for (i = 0; i < 12; i++) {
       if (cluster->replicas[i]) {
