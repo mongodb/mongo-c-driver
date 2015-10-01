@@ -162,7 +162,7 @@ _mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
       /* add info about the command to writev_full's error message */
       bson_snprintf (error_message,
                      sizeof error->message,
-                     "Failed to send \"%s\" command with database \"%s\": %s\n",
+                     "Failed to send \"%s\" command with database \"%s\": %s",
                      get_command_name (command),
                      db_name,
                      error->message);
