@@ -440,9 +440,6 @@ void
 _mongoc_rpc_gather (mongoc_rpc_t   *rpc,
                     mongoc_array_t *array)
 {
-   bson_return_if_fail(rpc);
-   bson_return_if_fail(array);
-
    switch ((mongoc_opcode_t)rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
       _mongoc_rpc_gather_reply(&rpc->reply, array);
@@ -480,8 +477,6 @@ _mongoc_rpc_swab_to_le (mongoc_rpc_t *rpc)
 {
 #if BSON_BYTE_ORDER != BSON_LITTLE_ENDIAN
    mongoc_opcode_t opcode;
-
-   bson_return_if_fail(rpc);
 
    opcode = rpc->header.opcode;
 
@@ -524,8 +519,6 @@ _mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
 #if BSON_BYTE_ORDER != BSON_LITTLE_ENDIAN
    mongoc_opcode_t opcode;
 
-   bson_return_if_fail(rpc);
-
    opcode = BSON_UINT32_FROM_LE(rpc->header.opcode);
 
    switch (opcode) {
@@ -564,8 +557,6 @@ _mongoc_rpc_swab_from_le (mongoc_rpc_t *rpc)
 void
 _mongoc_rpc_printf (mongoc_rpc_t *rpc)
 {
-   bson_return_if_fail(rpc);
-
    switch ((mongoc_opcode_t)rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
       _mongoc_rpc_printf_reply(&rpc->reply);
@@ -604,10 +595,6 @@ _mongoc_rpc_scatter (mongoc_rpc_t  *rpc,
                      size_t         buflen)
 {
    mongoc_opcode_t opcode;
-
-   bson_return_val_if_fail(rpc, false);
-   bson_return_val_if_fail(buf, false);
-   bson_return_val_if_fail(buflen, false);
 
    memset (rpc, 0, sizeof *rpc);
 
@@ -651,9 +638,6 @@ _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t *reply,
 {
    int32_t len;
 
-   bson_return_val_if_fail(reply, false);
-   bson_return_val_if_fail(bson, false);
-
    if (!reply->documents || reply->documents_len < 4) {
       return false;
    }
@@ -692,8 +676,6 @@ bool
 _mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,
                        const mongoc_write_concern_t *write_concern)
 {
-   bson_return_val_if_fail(rpc, false);
-
    switch (rpc->header.opcode) {
    case MONGOC_OPCODE_REPLY:
    case MONGOC_OPCODE_QUERY:
