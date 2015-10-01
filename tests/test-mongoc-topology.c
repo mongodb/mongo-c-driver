@@ -10,6 +10,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include "test-conveniences.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-test"
@@ -725,6 +726,37 @@ test_connect_timeout_try_once_false(void)
 }
 
 
+static void
+test_multiple_selection_errors (void)
+{
+   const char *uri = "mongodb://doesntexist,example.com:2/?replicaSet=rs"
+      "&connectTimeoutMS=100";
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+
+   client = mongoc_client_new (uri);
+   mongoc_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"),
+                                 NULL, &reply, &error);
+
+   ASSERT_CMPINT (MONGOC_ERROR_SERVER_SELECTION, ==, error.domain);
+   ASSERT_CMPINT (MONGOC_ERROR_SERVER_SELECTION_FAILURE, ==, error.code);
+
+   /* Like:
+    * "No suitable servers found (`serverselectiontryonce` set):
+    *  [Failed to resolve 'doesntexist'] [connection error]"
+    */
+   ASSERT_CONTAINS (error.message,
+                    "No suitable servers found");
+   ASSERT_CONTAINS (error.message,
+                    "[connection error calling ismaster on 'example.com:2']");
+   ASSERT_CONTAINS (error.message,
+                    "[Failed to resolve 'doesntexist']");
+
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -741,4 +773,5 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/connect_timeout/pooled", test_connect_timeout_pooled);
    TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once", test_connect_timeout_single);
    TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once_false", test_connect_timeout_try_once_false);
+   TestSuite_Add (suite, "/Topology/multiple_selection_errors", test_multiple_selection_errors);
 }

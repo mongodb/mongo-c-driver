@@ -256,6 +256,7 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
 {
    mongoc_topology_scanner_node_t *node;
    int64_t now;
+   const char *message;
 
    bson_return_if_fail (data);
 
@@ -275,6 +276,15 @@ mongoc_topology_scanner_ismaster_handler (mongoc_async_cmd_result_t async_status
       mongoc_stream_failed (node->stream);
       node->stream = NULL;
       node->last_failed = now;
+      message = async_status == MONGOC_ASYNC_CMD_TIMEOUT ?
+                "connection error" :
+                "connection timeout";
+      bson_set_error (&node->last_error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_STREAM_CONNECT,
+                      "%s calling ismaster on \'%s\'",
+                      message,
+                      node->host.host_and_port);
    } else {
       node->last_failed = -1;
    }
