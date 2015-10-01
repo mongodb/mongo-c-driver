@@ -1,9 +1,9 @@
 # norootforbuild
 
 %define DriverName    mongo-c-driver
-%define DriverVersion 1.1.11
+%define DriverVersion 1.2.0-rc0
 %define BsonName      libbson
-%define BsonVersion   1.1.11
+%define BsonVersion   1.2.0-rc0
 
 Name:           %{DriverName}
 Version:        %{DriverVersion}

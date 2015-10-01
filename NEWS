@@ -1,10 +1,45 @@
 mongo-c-driver 1.2.0-rc0
 ========================
 
-Changes:
+It is my pleasure to announce the release candidate of the MongoDB C driver
+1.2.0. It includes features and bugfixes developed since 1.2.0-beta1.
 
+Notable bugs fixed:
+
+  * Much improved reporting of network errors, unavailable servers, and
+    authentication failure
+  * Destroying an exhaust cursor must close its socket
+  * Various bugs in server reconnection logic
+  * mongoc_collection_aggregate returned invalid cursor after failure
+  * Wrong error message after failed network write on Sparc
+  * Missing JSON test files in release tarball
+
+Other changes:
+
+  * Enable runtime asserts in release build.
   * mongoc_client_kill_cursor is now deprecated and will be removed in
     version 2.0.
+
+This release candidate also includes all bugfixes from 1.1.11.
+
+Version 1.2.0 final will be a stable release with additive ABI changes and
+bugfixes. It is compatible with MongoDB version 2.4 and later.
+
+Thanks to everyone who contributed to this version of libmongoc.
+
+ * A. Jesse Jiryu Davis
+ * Hannes Magnusson
+ * Kyle Suarez
+ * rubicks
+ * Jose Sebastian Battig
+ * Jason Carey
+ * Remi Collet
+ * Yuval Hager
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
 
 mongo-c-driver 1.2.0-beta1
 ==========================
