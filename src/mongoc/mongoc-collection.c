@@ -305,9 +305,9 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       _mongoc_cursor_cursorid_init(cursor);
       cursor->limit = 0;
 
-      if (! _mongoc_cursor_cursorid_prime (cursor)) {
-         mongoc_cursor_destroy (cursor);
-      }
+      /* we always return the cursor, even if it fails; users can detect the failure on performing
+       * a cursor operation. see CDRIVER-880. */
+      _mongoc_cursor_cursorid_prime (cursor);
    } else {
       /* for older versions we get an array that we can create a synthetic
        * cursor on top of */

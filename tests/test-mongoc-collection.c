@@ -1,6 +1,7 @@
 #include <bcon.h>
 #include <mongoc.h>
 #include <mongoc-client-private.h>
+#include <mongoc-cursor-private.h>
 
 #include "TestSuite.h"
 
@@ -1298,6 +1299,7 @@ test_aggregate (void)
    bool r;
    bson_t opts;
    bson_t *pipeline;
+   bson_t *broken_pipeline;
    bson_t *b;
    bson_iter_t iter;
    int i, j;
@@ -1312,6 +1314,7 @@ test_aggregate (void)
    ASSERT (collection);
 
    pipeline = BCON_NEW ("pipeline", "[", "{", "$match", "{", "hello", BCON_UTF8 ("world"), "}", "}", "]");
+   broken_pipeline = BCON_NEW ("pipeline", "[", "{", "$asdf", "{", "foo", BCON_UTF8 ("bar"), "}", "}", "]");
    b = BCON_NEW ("hello", BCON_UTF8 ("world"));
 
 again:
@@ -1322,6 +1325,15 @@ again:
          collection,
          MONGOC_INSERT_NONE, b, NULL, &error), error);
    }
+
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, broken_pipeline, NULL, NULL);
+   ASSERT (cursor);
+
+   r = mongoc_cursor_next (cursor, &doc);
+   ASSERT (!r);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT (cursor->failed);
+   ASSERT (error.code == 16436);
 
    for (i = 0; i < 2; i++) {
       if (i % 2 == 0) {
@@ -1385,6 +1397,7 @@ again:
    mongoc_client_destroy(client);
    bson_destroy(b);
    bson_destroy(pipeline);
+   bson_destroy (broken_pipeline);
 }
 
 
