@@ -403,7 +403,7 @@ Additions to the ABI include:
    - mongoc_client_find_databases
    - mongoc_collection_find_indexes
    - mongoc_database_find_collections
- * Kill cursor supportp
+ * Kill cursor support
    - mongoc_client_kill_cursor
  * Various get/setters on cursor
    - mongoc_cursor_get_batch_size
