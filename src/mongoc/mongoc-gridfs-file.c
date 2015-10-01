@@ -735,20 +735,26 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
  * Errors:
  *
  *    [EINVAL] `whence` is not one of SEEK_SET, SEEK_CUR or SEEK_END.
+ *    [EINVAL] Resulting file position would be negative.
+ *
+ * Side Effects:
+ *
+ *    On success, the file's underlying position pointer is set appropriately.
+ *    On failure, the file position is NOT changed and errno is set.
  *
  * Returns:
  *
  *    0 on success.
- *    -1 on error, and errno set to the appropriate value.
+ *    -1 on error, and errno set to indicate the error.
  */
 int
 mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
                          int64_t               delta,
                          int                   whence)
 {
-   uint64_t offset;
+   int64_t offset;
 
-   BSON_ASSERT(file);
+   BSON_ASSERT (file);
 
    switch (whence) {
    case SEEK_SET:
@@ -765,6 +771,11 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
       return -1;
 
       break;
+   }
+
+   if (offset < 0) {
+      errno = EINVAL;
+      return -1;
    }
 
    if (offset / file->chunk_size != file->n) {
