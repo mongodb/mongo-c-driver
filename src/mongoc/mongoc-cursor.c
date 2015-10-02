@@ -92,6 +92,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    cursor->batch_size = batch_size;
    cursor->is_command = is_command;
    cursor->has_fields = !!fields;
+   cursor->is_write_command = false;
 
 #define MARK_FAILED(c) \
    do { \
@@ -284,11 +285,11 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
       rpc.query.fields = NULL;
    }
 
-   if (cursor->hint) {
-      rpc.query.query = bson_get_data (&cursor->query);
-   } else {
-      topology = cursor->client->topology;
+   topology = cursor->client->topology;
 
+   if (cursor->hint) {
+      sd = mongoc_topology_server_by_id(topology, cursor->hint);
+   } else {
       if (!cursor->read_prefs) {
          local_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
       }
@@ -302,20 +303,28 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
       if (local_read_prefs) {
          mongoc_read_prefs_destroy (local_read_prefs);
       }
-
-      if (!sd) {
-         GOTO (failure);
-      }
-
-      cursor->hint = sd->id;
-      apply_read_preferences (cursor->read_prefs,
-                              topology->description.type,
-                              sd->type,
-                              &cursor->query,
-                              &rpc.query);
-
-      mongoc_server_description_destroy (sd);
    }
+
+   if (!sd) {
+      GOTO (failure);
+   }
+
+   if (!cursor->hint) {
+      cursor->hint = sd->id;
+   }
+
+   if (!cursor->is_write_command) {
+      apply_read_preferences (cursor->read_prefs,
+                               topology->description.type,
+                               sd->type,
+                               &cursor->query,
+                               &rpc.query);
+   } else {
+      /* we haven't called apply_read_preferences, must set query */
+      rpc.query.query = bson_get_data (&cursor->query);
+   }
+
+   mongoc_server_description_destroy (sd);
 
    if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
                                         &rpc, 1, cursor->hint,
