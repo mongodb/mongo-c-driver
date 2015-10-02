@@ -1451,7 +1451,7 @@ test_aggregate_legacy (void *data)
 
    /* no "cursor" argument */
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_NONE,
+      server, "db", MONGOC_QUERY_SLAVE_OK,
       "{'aggregate': 'collection',"
       " 'pipeline': [{'a': 1}]},"
       " 'cursor': {'$exists': false} %s",
@@ -1500,7 +1500,7 @@ test_aggregate_modern (void *data)
 
    /* "cursor" argument always sent if wire version >= 1 */
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_NONE,
+      server, "db", MONGOC_QUERY_SLAVE_OK,
       "{'aggregate': 'collection',"
       " 'pipeline': [{'a': 1}],"
       " 'cursor': %s %s}",
@@ -1799,7 +1799,7 @@ BEGIN_IGNORE_DEPRECATIONS;
 
 END_IGNORE_DEPRECATIONS;
 
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 6000,
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_SLAVE_OK, 0, 0, 6000,
                                     &query, NULL, NULL);
    assert (cursor);
    bson_destroy (&query);
@@ -1841,7 +1841,7 @@ test_command_fq (void *context)
 
    cmd = tmp_bson ("{ 'dbstats': 1}");
 
-   cursor = mongoc_client_command (client, "sometest.$cmd", MONGOC_QUERY_NONE,
+   cursor = mongoc_client_command (client, "sometest.$cmd", MONGOC_QUERY_SLAVE_OK,
                                  0, -1, 0, cmd, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
    assert (r);
