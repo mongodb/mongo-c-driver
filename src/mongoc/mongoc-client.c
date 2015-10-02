@@ -1114,8 +1114,7 @@ mongoc_client_command (mongoc_client_t           *client,
    }
 
    /*
-    * Allow a caller to provide a fully qualified namespace. Otherwise,
-    * querying something like "$cmd.sys.inprog" is not possible.
+    * Allow a caller to provide a fully qualified namespace
     */
    if (NULL == strstr (db_name, "$cmd")) {
       bson_snprintf (ns, sizeof ns, "%s.$cmd", db_name);

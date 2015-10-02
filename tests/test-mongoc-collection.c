@@ -1829,33 +1829,36 @@ END_IGNORE_DEPRECATIONS;
 static void
 test_command_fq (void)
 {
-   mongoc_collection_t *collection;
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
    const bson_t *doc = NULL;
+   bson_iter_t iter;
    bson_t *cmd;
    bool r;
 
    client = test_framework_client_new ();
    ASSERT (client);
 
-   collection = mongoc_client_get_collection (client,
-                                              "admin", "$cmd.sys.inprog");
-   ASSERT (collection);
+   cmd = tmp_bson ("{ 'dbstats': 1}");
 
-   cmd = BCON_NEW ("query", "{", "}");
-
-   cursor = mongoc_collection_command (collection, MONGOC_QUERY_NONE, 0, 1, 0,
-                                       cmd, NULL, NULL);
+   cursor = mongoc_client_command (client, "sometest.$cmd", MONGOC_QUERY_NONE,
+                                 0, -1, 0, cmd, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
    assert (r);
+
+   if (bson_iter_init_find (&iter, doc, "db") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "sometest");
+   } else {
+      fprintf(stderr, "dbstats didn't return 'db' key?");
+      abort();
+   }
+
 
    r = mongoc_cursor_next (cursor, &doc);
    assert (!r);
 
    mongoc_cursor_destroy (cursor);
-   bson_destroy (cmd);
-   mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
 
