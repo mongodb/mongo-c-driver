@@ -1451,7 +1451,7 @@ test_aggregate_legacy (void *data)
 
    /* no "cursor" argument */
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_NONE,
+      server, "db", MONGOC_QUERY_SLAVE_OK,
       "{'aggregate': 'collection',"
       " 'pipeline': [{'a': 1}]},"
       " 'cursor': {'$exists': false} %s",
@@ -1500,7 +1500,7 @@ test_aggregate_modern (void *data)
 
    /* "cursor" argument always sent if wire version >= 1 */
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_NONE,
+      server, "db", MONGOC_QUERY_SLAVE_OK,
       "{'aggregate': 'collection',"
       " 'pipeline': [{'a': 1}],"
       " 'cursor': %s %s}",

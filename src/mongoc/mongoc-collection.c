@@ -1909,7 +1909,9 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
    /*
     * Submit the command to MongoDB server.
     */
-   ret = mongoc_collection_command_simple (collection, &command, NULL, reply, error);
+   ret = _mongoc_client_command_simple_with_hint (collection->client,
+                                                  collection->db, &command, NULL,
+                                                  true, reply, 0, error);
 
    /*
     * Cleanup.
