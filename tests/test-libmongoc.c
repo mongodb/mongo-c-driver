@@ -875,6 +875,17 @@ test_framework_is_replset (void)
    return is_replset;
 }
 
+int
+test_framework_skip_if_mongos (void)
+{
+   return test_framework_is_mongos() ? 0 : 1;
+}
+
+int
+test_framework_skip_if_replset (void)
+{
+   return test_framework_is_replset() ? 0 : 1;
+}
 
 bool
 test_framework_max_wire_version_at_least (int version)

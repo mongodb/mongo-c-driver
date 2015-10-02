@@ -1827,7 +1827,7 @@ END_IGNORE_DEPRECATIONS;
 
 
 static void
-test_command_fq (void)
+test_command_fq (void *context)
 {
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
@@ -2083,6 +2083,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/find_and_modify", test_find_and_modify);
    TestSuite_Add (suite, "/Collection/large_return", test_large_return);
    TestSuite_Add (suite, "/Collection/many_return", test_many_return);
-   TestSuite_Add (suite, "/Collection/command_fully_qualified", test_command_fq);
+   TestSuite_AddFull (suite, "/Collection/command_fully_qualified", test_command_fq, NULL, NULL, test_framework_skip_if_mongos);
    TestSuite_Add (suite, "/Collection/get_index_info", test_get_index_info);
 }
