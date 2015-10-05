@@ -191,6 +191,45 @@ test_framework_getenv_bool (const char *name)
    return ret;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_getenv_int64 --
+ *
+ *       Get a number from an environment variable.
+ *
+ * Returns:
+ *       The number, or default.
+ *
+ * Side effects:
+ *       Logs and aborts if there is a non-numeric value.
+ *
+ *--------------------------------------------------------------------------
+ */
+int64_t
+test_framework_getenv_int64 (const char *name,
+                             int64_t default_value)
+{
+   char *value = test_framework_getenv (name);
+   char *endptr;
+   int64_t ret;
+
+   if (value) {
+      errno = 0;
+      ret = bson_ascii_strtoll (value, &endptr, 10);
+      if (errno) {
+         perror (bson_strdup_printf ("Parsing %s from environment", name));
+         abort ();
+      }
+
+      bson_free (value);
+      return ret;
+   }
+
+   return default_value;
+}
+
 /*
  *--------------------------------------------------------------------------
  *

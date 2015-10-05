@@ -3,10 +3,18 @@
 #include "mongoc-array-private.h"
 #include "mongoc-thread-private.h"
 #include "future.h"
+#include "../test-libmongoc.h"
 
 {{ header_comment }}
 
-#define FUTURE_TIMEOUT_MS 10 * 1000
+#define DEFAULT_FUTURE_TIMEOUT_MS 10 * 1000
+
+static int64_t
+get_future_timeout_ms ()
+{
+    return test_framework_getenv_int64 ("MONGOC_TEST_FUTURE_TIMEOUT_MS",
+                                        DEFAULT_FUTURE_TIMEOUT_MS);
+}
 
 void
 future_get_void (future_t *future)
@@ -79,13 +87,14 @@ future_resolve (future_t *future, future_value_t return_value)
 bool
 future_wait (future_t *future)
 {
-   /* TODO: configurable timeout */
-   int64_t deadline = bson_get_monotonic_time () + FUTURE_TIMEOUT_MS * 1000;
+   int64_t deadline = bson_get_monotonic_time () + get_future_timeout_ms ();
    bool resolved;
 
    mongoc_mutex_lock (&future->mutex);
    while (!future->resolved && bson_get_monotonic_time () <= deadline) {
-      mongoc_cond_timedwait (&future->cond, &future->mutex, FUTURE_TIMEOUT_MS);
+      mongoc_cond_timedwait (&future->cond,
+                             &future->mutex,
+                             get_future_timeout_ms ());
    }
    resolved = future->resolved;
    mongoc_mutex_unlock (&future->mutex);
