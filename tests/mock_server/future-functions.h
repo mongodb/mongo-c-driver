@@ -100,5 +100,15 @@ future_topology_select (
 );
 
 
+future_t *
+future_client_get_gridfs (
+
+   mongoc_client_ptr client,
+   const_char_ptr db,
+   const_char_ptr prefix,
+   bson_error_ptr error
+);
+
+
 
 #endif /* FUTURE_FUNCTIONS_H */

@@ -72,6 +72,7 @@ typedef_list = [
     typedef("mongoc_collection_ptr", "mongoc_collection_t *"),
     typedef("mongoc_cursor_ptr", "mongoc_cursor_t *"),
     typedef("mongoc_database_ptr", "mongoc_database_t *"),
+    typedef("mongoc_gridfs_ptr", "mongoc_gridfs_t *"),
     typedef("mongoc_insert_flags_t", None),
     typedef("mongoc_query_flags_t", None),
     typedef("mongoc_server_description_ptr", "mongoc_server_description_t *"),
@@ -151,6 +152,13 @@ future_functions = [
                      param("mongoc_ss_optype_t", "optype"),
                      param("const_mongoc_read_prefs_ptr", "read_prefs"),
                      param("int64_t", "local_threshold_ms"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("mongoc_gridfs_ptr",
+                    "mongoc_client_get_gridfs",
+                    [param("mongoc_client_ptr", "client"),
+                     param("const_char_ptr", "db"),
+                     param("const_char_ptr", "prefix"),
                      param("bson_error_ptr", "error")]),
 ]
 

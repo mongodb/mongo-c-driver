@@ -270,6 +270,34 @@ background_mongoc_topology_select (void *data)
    return NULL;
 }
 
+static void *
+background_mongoc_client_get_gridfs (void *data)
+{
+   future_t *future = (future_t *) data;
+
+   /* copy the future so we can unlock it while calling
+    * mongoc_client_get_gridfs
+    */
+   future_t *copy = future_new_copy (future);
+   future_value_t return_value;
+
+   return_value.type = future_value_mongoc_gridfs_ptr_type;
+
+   future_value_set_mongoc_gridfs_ptr (
+      &return_value,
+         mongoc_client_get_gridfs (
+         future_value_get_mongoc_client_ptr (future_get_param(copy, 0)),
+         future_value_get_const_char_ptr (future_get_param(copy, 1)),
+         future_value_get_const_char_ptr (future_get_param(copy, 2)),
+         future_value_get_bson_error_ptr (future_get_param(copy, 3))
+      ));
+
+   future_destroy (copy);
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
 
 
 future_t *
@@ -487,5 +515,31 @@ future_topology_select (
       future_get_param (future, 4), error);
    
    future_start (future, background_mongoc_topology_select);
+   return future;
+}
+
+future_t *
+future_client_get_gridfs (
+   mongoc_client_ptr client,
+   const_char_ptr db,
+   const_char_ptr prefix,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_mongoc_gridfs_ptr_type,
+                                  4);
+   
+   future_value_set_mongoc_client_ptr (
+      future_get_param (future, 0), client);
+   
+   future_value_set_const_char_ptr (
+      future_get_param (future, 1), db);
+   
+   future_value_set_const_char_ptr (
+      future_get_param (future, 2), prefix);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 3), error);
+   
+   future_start (future, background_mongoc_client_get_gridfs);
    return future;
 }
