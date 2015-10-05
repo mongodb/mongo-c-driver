@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bson.h>
 
 #include "mongoc-client-private.h"
 #include "mongoc-error.h"
@@ -1330,25 +1331,85 @@ _mongoc_write_result_merge (mongoc_write_result_t  *result,  /* IN */
 }
 
 
+/*
+ * If error is not set, set code from first document in array like
+ * [{"code": 64, "errmsg": "duplicate"}, ...]. Format the error message
+ * from all errors in array.
+*/
+static void
+_set_error_from_response (bson_t *bson_array,
+                          mongoc_error_domain_t domain,
+                          const char *error_type,
+                          bson_error_t *error /* OUT */)
+{
+   bson_iter_t array_iter;
+   bson_iter_t doc_iter;
+   bson_string_t *compound_err;
+   const char *errmsg = NULL;
+   int32_t code = 0;
+   uint32_t n_keys, i;
+
+   compound_err = bson_string_new (NULL);
+   n_keys = bson_count_keys (bson_array);
+   if (n_keys > 1) {
+      bson_string_append_printf (compound_err,
+                                 "Multiple %s errors: ",
+                                 error_type);
+   }
+
+   if (!bson_empty0 (bson_array) && bson_iter_init (&array_iter, bson_array)) {
+
+      /* get first code and all error messages */
+      i = 0;
+
+      while (bson_iter_next (&array_iter)) {
+         if (BSON_ITER_HOLDS_DOCUMENT (&array_iter) &&
+             bson_iter_recurse (&array_iter, &doc_iter)) {
+
+            /* parse doc, which is like {"code": 64, "errmsg": "duplicate"} */
+            while (bson_iter_next (&doc_iter)) {
+
+               /* use the first error code we find */
+               if (BSON_ITER_IS_KEY (&doc_iter, "code") && code == 0) {
+                  code = bson_iter_int32 (&doc_iter);
+               } else if (BSON_ITER_IS_KEY (&doc_iter, "errmsg")) {
+                  errmsg = bson_iter_utf8 (&doc_iter, NULL);
+
+                  /* build message like 'Multiple write errors: "foo", "bar"' */
+                  if (n_keys > 1) {
+                     bson_string_append_printf (compound_err, "\"%s\"", errmsg);
+                     if (i < n_keys - 1) {
+                        bson_string_append (compound_err, ", ");
+                     }
+                  } else {
+                     /* single error message */
+                     bson_string_append (compound_err, errmsg);
+                  }
+               }
+            }
+
+            i++;
+         }
+      }
+
+      if (code && compound_err->len) {
+         bson_set_error (error, domain, (uint32_t) code,
+                         "%s", compound_err->str);
+      }
+   }
+
+   bson_string_free (compound_err, true);
+}
+
+
 bool
 _mongoc_write_result_complete (mongoc_write_result_t *result,
                                bson_t                *bson,
                                bson_error_t          *error)
 {
-   bson_iter_t iter;
-   bson_iter_t citer;
-   const char *err = NULL;
-   uint32_t code = 0;
-   bool ret;
-
    ENTRY;
 
    BSON_ASSERT (result);
-
-   ret = (!result->failed &&
-          /* TODO: not to spec */
-          bson_empty0 (&result->writeConcernErrors) &&
-          bson_empty0 (&result->writeErrors));
 
    if (bson) {
       BSON_APPEND_INT32 (bson, "nInserted", result->nInserted);
@@ -1368,27 +1429,22 @@ _mongoc_write_result_complete (mongoc_write_result_t *result,
       }
    }
 
+   /* set bson_error_t from first write error or write concern error */
+   _set_error_from_response (&result->writeErrors,
+                             MONGOC_ERROR_COMMAND,
+                             "write",
+                             &result->error);
+
+   if (!result->error.code) {
+      _set_error_from_response (&result->writeConcernErrors,
+                                MONGOC_ERROR_WRITE_CONCERN,
+                                "write concern",
+                                &result->error);
+   }
+
    if (error) {
       memcpy (error, &result->error, sizeof *error);
    }
 
-   if (!ret &&
-       !bson_empty0 (&result->writeErrors) &&
-       bson_iter_init (&iter, &result->writeErrors) &&
-       bson_iter_next (&iter) &&
-       BSON_ITER_HOLDS_DOCUMENT (&iter) &&
-       bson_iter_recurse (&iter, &citer)) {
-      while (bson_iter_next (&citer)) {
-         if (BSON_ITER_IS_KEY (&citer, "errmsg")) {
-            err = bson_iter_utf8 (&citer, NULL);
-         } else if (BSON_ITER_IS_KEY (&citer, "code")) {
-            code = bson_iter_int32 (&citer);
-         }
-      }
-      if (err && code) {
-         bson_set_error (error, MONGOC_ERROR_COMMAND, code, "%s", err);
-      }
-   }
-
-   RETURN (ret);
+   RETURN (!result->failed && result->error.code == 0);
 }
