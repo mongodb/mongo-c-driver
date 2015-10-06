@@ -416,6 +416,8 @@ failure:
  *
  * mongoc_server_description_new_copy --
  *
+ *       A copy of a server description that you must destroy, or NULL.
+ *
  *-------------------------------------------------------------------------
  */
 mongoc_server_description_t *
@@ -423,7 +425,9 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
 {
    mongoc_server_description_t *copy;
 
-   BSON_ASSERT (description);
+   if (!description) {
+      return NULL;
+   }
 
    copy = (mongoc_server_description_t *)bson_malloc0(sizeof (*copy));
 

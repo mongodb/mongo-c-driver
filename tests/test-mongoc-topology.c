@@ -757,6 +757,19 @@ test_multiple_selection_errors (void)
 }
 
 
+static void
+test_invalid_server_id (void)
+{
+   mongoc_client_t *client;
+
+   client = test_framework_client_new ();
+
+   assert (!mongoc_topology_server_by_id (client->topology, 99999));
+
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -774,4 +787,5 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once", test_connect_timeout_single);
    TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once_false", test_connect_timeout_try_once_false);
    TestSuite_Add (suite, "/Topology/multiple_selection_errors", test_multiple_selection_errors);
+   TestSuite_Add (suite, "/Topology/invalid_server_id", test_invalid_server_id);
 }
