@@ -284,7 +284,6 @@ test_mongoc_client_command (void)
    bson_append_int32 (&cmd, "ping", 4, 1);
 
    cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, NULL);
-   assert (!cursor->redir_primary);
 
    r = mongoc_cursor_next (cursor, &doc);
    assert (r);
@@ -307,21 +306,24 @@ test_mongoc_client_command_secondary (void)
    mongoc_cursor_t *cursor;
    mongoc_read_prefs_t *read_prefs;
    bson_t cmd = BSON_INITIALIZER;
+   const bson_t *reply;
 
    client = test_framework_client_new ();
    assert (client);
 
    BSON_APPEND_INT32 (&cmd, "invalid_command_here", 1);
 
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
    suppress_one_message ();
    cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, read_prefs);
+   mongoc_cursor_next (cursor, &reply);
+
+   if (test_framework_is_replset ()) {
+      assert (test_framework_server_is_secondary (client, cursor->hint));
+   }
 
    mongoc_read_prefs_destroy (read_prefs);
-
-   /* ensure we detected this must go to primary */
-   assert (cursor->redir_primary);
 
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);

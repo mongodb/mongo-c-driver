@@ -30,28 +30,6 @@
 #define MONGOC_LOG_DOMAIN "cursor"
 
 
-static const char *gSecondaryOkCommands [] = {
-   "aggregate",
-   "authenticate",
-   "collstats",
-   "count",
-   "dbstats",
-   "distinct",
-   "geonear",
-   "geosearch",
-   "geowalk",
-   "getnonce",
-   "group",
-   "ismaster",
-   "mapreduce",
-   "parallelcollectionscan",
-   "ping",
-   "replsetgetstatus",
-   "text",
-   NULL
-};
-
-
 static const char *
 _mongoc_cursor_get_read_mode_string (mongoc_read_mode_t mode)
 {
@@ -103,12 +81,8 @@ _mongoc_cursor_new (mongoc_client_t           *client,
                     const bson_t              *fields,
                     const mongoc_read_prefs_t *read_prefs)
 {
-   mongoc_read_prefs_t *local_read_prefs = NULL;
    mongoc_cursor_t *cursor;
    bson_iter_t iter;
-   const char *key;
-   bool found = false;
-   int i;
    int flags = qflags;
 
    ENTRY;
@@ -122,33 +96,6 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    }
 
    cursor = (mongoc_cursor_t *)bson_malloc0 (sizeof *cursor);
-
-   /*
-    * CDRIVER-244:
-    *
-    * If this is a command, we need to verify we can send it to the location
-    * specified by the read preferences. Otherwise, log a warning that we
-    * are rerouting to the primary instance.
-    */
-   if (is_command &&
-       read_prefs &&
-       (mongoc_read_prefs_get_mode (read_prefs) != MONGOC_READ_PRIMARY) &&
-       bson_iter_init (&iter, query) &&
-       bson_iter_next (&iter) &&
-       (key = bson_iter_key (&iter))) {
-      for (i = 0; gSecondaryOkCommands [i]; i++) {
-         if (0 == strcasecmp (key, gSecondaryOkCommands [i])) {
-            found = true;
-            break;
-         }
-      }
-      if (!found) {
-         cursor->redir_primary = true;
-         local_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-         read_prefs = local_read_prefs;
-         MONGOC_INFO ("Database command \"%s\" rerouted to primary node", key);
-      }
-   }
 
    /*
     * Cursors execute their query lazily. This sadly means that we must copy
@@ -268,10 +215,6 @@ _mongoc_cursor_new (mongoc_client_t           *client,
 
 finish:
    mongoc_counter_cursors_active_inc();
-
-   if (local_read_prefs) {
-      mongoc_read_prefs_destroy (local_read_prefs);
-   }
 
    RETURN (cursor);
 }

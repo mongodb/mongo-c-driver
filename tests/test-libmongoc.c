@@ -18,6 +18,10 @@
 #include <bson.h>
 #include <mongoc.h>
 
+#include "mongoc-server-description.h"
+#include "mongoc-server-description-private.h"
+#include "mongoc-topology-private.h"
+#include "mongoc-client-private.h"
 #include "mongoc-uri-private.h"
 
 #include "mongoc-tests.h"
@@ -524,9 +528,9 @@ test_framework_get_uri_str_from_env ()
 /*
  *--------------------------------------------------------------------------
  *
- * call_ismaster --
+ * call_ismaster_with_host_and_port --
  *
- *       Use test_framework_get_uri_str_from_env's URI to call isMaster.
+ *       Call isMaster on a server, possibly over SSL.
  *
  * Side effects:
  *       Fills reply with ismaster response. Logs and aborts on error.
@@ -534,14 +538,21 @@ test_framework_get_uri_str_from_env ()
  *--------------------------------------------------------------------------
  */
 static void
-call_ismaster (bson_t *reply)
+call_ismaster_with_host_and_port (char *host,
+                                  uint16_t port,
+                                  bson_t *reply)
 {
    char *uri_str;
    mongoc_uri_t *uri;
    mongoc_client_t *client;
    bson_error_t error;
 
-   uri_str = test_framework_get_uri_str_from_env ();
+   uri_str = bson_strdup_printf (
+      "mongodb://%s:%hu%s",
+      host,
+      port,
+      test_framework_get_ssl () ? "?ssl=true" : "");
+
    uri = mongoc_uri_new (uri_str);
    assert (uri);
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10000);
@@ -561,6 +572,33 @@ call_ismaster (bson_t *reply)
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * call_ismaster --
+ *
+ *       Call isMaster on the test server, possibly over SSL, using host
+ *       and port from the environment.
+ *
+ * Side effects:
+ *       Fills reply with ismaster response. Logs and aborts on error.
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+call_ismaster (bson_t *reply)
+{
+   char *host;
+   uint16_t port;
+
+   host = test_framework_get_host ();
+   port = test_framework_get_port ();
+
+   call_ismaster_with_host_and_port (host, port, reply);
+
+   bson_free (host);
 }
 
 
@@ -907,11 +945,39 @@ test_framework_is_replset (void)
 
    call_ismaster (&reply);
 
-   is_replset = (bson_iter_init_find (&iter, &reply, "hosts") && BSON_ITER_HOLDS_DOCUMENT (&iter));
+   is_replset = (bson_iter_init_find (&iter, &reply, "hosts") &&
+                 BSON_ITER_HOLDS_ARRAY (&iter));
 
    bson_destroy (&reply);
 
    return is_replset;
+}
+
+bool
+test_framework_server_is_secondary (mongoc_client_t *client,
+                                    uint32_t server_id)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   mongoc_server_description_t *sd;
+   bool ret;
+
+   sd = mongoc_topology_server_by_id (client->topology, server_id);
+   if (!sd) {
+      fprintf (stderr,
+               "test_framework_server_is_secondary: no server description\n");
+      fflush (stderr);
+      abort ();
+   }
+
+   call_ismaster_with_host_and_port (sd->host.host, sd->host.port, &reply);
+
+   ret = bson_iter_init_find (&iter, &reply, "secondary") &&
+         bson_iter_as_bool (&iter);
+
+   mongoc_server_description_destroy (sd);
+
+   return ret;
 }
 
 int
