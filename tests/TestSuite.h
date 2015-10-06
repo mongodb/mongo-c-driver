@@ -53,19 +53,24 @@ extern "C" {
    } while (0)
 
 
-#ifdef ASSERT_CMPINT
-# undef ASSERT_CMPINT
-#endif
-#define ASSERT_CMPINT(a, eq, b) \
+#define ASSERT_CMPINT_HELPER(a, eq, b, fmt) \
    do { \
       if (!((a) eq (b))) { \
-         fprintf(stderr, "FAIL\n\nAssert Failure: %d %s %d\n" \
+         fprintf(stderr, "FAIL\n\nAssert Failure: %" fmt " %s %" fmt "\n" \
                          "%s:%d  %s()\n", \
                          a, #eq, b, \
                          __FILE__, __LINE__, __FUNCTION__); \
          abort(); \
       } \
    } while (0)
+
+
+#define ASSERT_CMPINT(a, eq, b)    ASSERT_CMPINT_HELPER(a, eq, b, "d")
+#define ASSERT_CMPUINT(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "u")
+#define ASSERT_LONG(a, eq, b)      ASSERT_CMPINT_HELPER(a, eq, b, "ld")
+#define ASSERT_ULONG(a, eq, b)     ASSERT_CMPINT_HELPER(a, eq, b, "lu")
+#define ASSERT_CMPINT64(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, PRId64)
+#define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, PRIu64)
 
 
 #ifdef ASSERT_ALMOST_EQUAL
