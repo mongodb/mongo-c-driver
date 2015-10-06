@@ -189,6 +189,17 @@ future_get_mongoc_database_ptr (future_t *future)
    abort ();
 }
 
+mongoc_gridfs_ptr
+future_get_mongoc_gridfs_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_mongoc_gridfs_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", __FUNCTION__);
+   abort ();
+}
+
 mongoc_insert_flags_t
 future_get_mongoc_insert_flags_t (future_t *future)
 {

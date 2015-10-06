@@ -238,6 +238,20 @@ future_value_get_mongoc_database_ptr (future_value_t *future_value)
 }
 
 void
+future_value_set_mongoc_gridfs_ptr(future_value_t *future_value, mongoc_gridfs_ptr value)
+{
+  future_value->type = future_value_mongoc_gridfs_ptr_type;
+  future_value->mongoc_gridfs_ptr_value = value;
+}
+
+mongoc_gridfs_ptr
+future_value_get_mongoc_gridfs_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_mongoc_gridfs_ptr_type);
+  return future_value->mongoc_gridfs_ptr_value;
+}
+
+void
 future_value_set_mongoc_insert_flags_t(future_value_t *future_value, mongoc_insert_flags_t value)
 {
   future_value->type = future_value_mongoc_insert_flags_t_type;

@@ -86,6 +86,9 @@ future_get_mongoc_cursor_ptr (future_t *future);
 mongoc_database_ptr
 future_get_mongoc_database_ptr (future_t *future);
 
+mongoc_gridfs_ptr
+future_get_mongoc_gridfs_ptr (future_t *future);
+
 mongoc_insert_flags_t
 future_get_mongoc_insert_flags_t (future_t *future);
 
