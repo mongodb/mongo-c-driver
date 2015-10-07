@@ -36,6 +36,13 @@ struct _mongoc_read_prefs_t
    bson_t             tags;
 };
 
+void
+apply_read_preferences (mongoc_read_prefs_t *read_prefs,
+                        mongoc_topology_description_type_t topology_type,
+                        mongoc_server_description_type_t server_type,
+                        bson_t *query_bson,
+                        mongoc_rpc_query_t *query_rpc);        /* IN  / OUT */
+
 BSON_END_DECLS
 
 
