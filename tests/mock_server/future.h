@@ -49,8 +49,17 @@ future_get_char_ptr (future_t *future);
 char_ptr_ptr
 future_get_char_ptr_ptr (future_t *future);
 
+int
+future_get_int (future_t *future);
+
 int64_t
 future_get_int64_t (future_t *future);
+
+size_t
+future_get_size_t (future_t *future);
+
+ssize_t
+future_get_ssize_t (future_t *future);
 
 uint32_t
 future_get_uint32_t (future_t *future);
@@ -85,8 +94,17 @@ future_get_mongoc_cursor_ptr (future_t *future);
 mongoc_database_ptr
 future_get_mongoc_database_ptr (future_t *future);
 
+mongoc_gridfs_file_t_ptr
+future_get_mongoc_gridfs_file_t_ptr (future_t *future);
+
+mongoc_gridfs_ptr
+future_get_mongoc_gridfs_ptr (future_t *future);
+
 mongoc_insert_flags_t
 future_get_mongoc_insert_flags_t (future_t *future);
+
+mongoc_iovec_t_ptr
+future_get_mongoc_iovec_t_ptr (future_t *future);
 
 mongoc_query_flags_t
 future_get_mongoc_query_flags_t (future_t *future);

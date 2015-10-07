@@ -49,9 +49,9 @@ typedef enum
 
 typedef struct
 {
-   mongoc_index_opt_storage_t base;
-   const char* config_str;
-   void *padding[8];
+   mongoc_index_opt_storage_t  base;
+   const char                 *config_str;
+   void                       *padding[8];
 } mongoc_index_opt_wt_t;
 
 typedef struct
@@ -69,7 +69,8 @@ typedef struct
    const char                 *language_override;
    mongoc_index_opt_geo_t     *geo_options;
    mongoc_index_opt_storage_t *storage_options;
-   void                       *padding[6];
+   const bson_t               *partial_filter_expression;
+   void                       *padding[5];
 } mongoc_index_opt_t;
 
 

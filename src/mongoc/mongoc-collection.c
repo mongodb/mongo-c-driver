@@ -857,6 +857,9 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    if (opt->language_override != def_opt->language_override) {
       BSON_APPEND_UTF8 (&doc, "language_override", opt->language_override);
    }
+   if (opt->partial_filter_expression) {
+      BSON_APPEND_DOCUMENT (&doc, "partialFilterExpression", opt->partial_filter_expression);
+   }
    if (opt->geo_options) {
        geo_opt = opt->geo_options;
        def_geo = mongoc_index_opt_geo_get_default ();

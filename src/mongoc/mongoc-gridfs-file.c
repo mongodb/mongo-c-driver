@@ -333,6 +333,9 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
       bson_copy_to (opt->metadata, &(file->metadata));
    }
 
+   file->pos = 0;
+   file->n = 0;
+
    RETURN (file);
 }
 
@@ -415,8 +418,8 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
    /* TODO: we should probably do something about timeout_msec here */
 
-   if (!file->page) {
-      _mongoc_gridfs_file_refresh_page (file);
+   if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
+         return -1;
    }
 
    for (i = 0; i < iovcnt; i++) {
@@ -441,9 +444,9 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
          } else if (bytes_read >= min_bytes) {
             /* we need a new page, but we've read enough bytes to stop */
             RETURN (bytes_read);
-         } else {
+         } else if (!_mongoc_gridfs_file_refresh_page (file)) {
             /* more to read, just on a new page */
-            _mongoc_gridfs_file_refresh_page (file);
+            return -1;
          }
       }
    }
@@ -477,10 +480,11 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
       iov_pos = 0;
 
       for (;; ) {
-         if (!file->page) {
-            _mongoc_gridfs_file_refresh_page (file);
+         if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
+            return -1;
          }
 
+         /* write bytes until an iov is exhausted or the page is full */
          r = _mongoc_gridfs_file_page_write (file->page,
                                             (uint8_t *)iov[i].iov_base + iov_pos,
                                             (uint32_t)(iov[i].iov_len - iov_pos));
@@ -496,15 +500,8 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
             /** filled a bucket, keep going */
             break;
          } else {
-            /** flush the buffer, the next pass through will bring in a new page
-             *
-             * Our file pointer is now on the new page, so push it back one so
-             * that flush knows to flush the old page rather than a new one.
-             * This is a little hacky
-             */
-            file->pos--;
+            /** flush the buffer, the next pass through will bring in a new page */
             _mongoc_gridfs_file_flush_page (file);
-            file->pos++;
          }
       }
    }
@@ -515,7 +512,20 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 }
 
 
-/** flush a gridfs file's current page to the db */
+/**
+ * _mongoc_gridfs_file_flush_page:
+ *
+ *    Unconditionally flushes the file's current page to the database.
+ *    The page to flush is determined by page->n.
+ *
+ * Side Effects:
+ *
+ *    On success, file->page is properly destroyed and set to NULL.
+ *
+ * Returns:
+ *
+ *    True on success; false otherwise.
+ */
 static bool
 _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 {
@@ -534,12 +544,12 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    selector = bson_new ();
 
    bson_append_value (selector, "files_id", -1, &file->files_id);
-   bson_append_int32 (selector, "n", -1, (int32_t)(file->pos / file->chunk_size));
+   bson_append_int32 (selector, "n", -1, file->n);
 
    update = bson_sized_new (file->chunk_size + 100);
 
    bson_append_value (update, "files_id", -1, &file->files_id);
-   bson_append_int32 (update, "n", -1, (int32_t)(file->pos / file->chunk_size));
+   bson_append_int32 (update, "n", -1, file->n);
    bson_append_binary (update, "data", -1, BSON_SUBTYPE_BINARY, buf, len);
 
    r = mongoc_collection_update (file->gridfs->chunks, MONGOC_UPDATE_UPSERT,
@@ -560,10 +570,28 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 }
 
 
-/** refresh a gridfs file's underlying page
+/**
+ * _mongoc_gridfs_file_refresh_page:
  *
- * This unconditionally fetches the current page, even if the current page
- * covers the same theoretical chunk.
+ *    Refresh a GridFS file's underlying page. This recalculates the current
+ *    page number based on the file's stream position, then fetches that page
+ *    from the database.
+ *
+ *    Note that this fetch is unconditional and the page is queried from the
+ *    database even if the current page covers the same theoretical chunk.
+ *
+ * Preconditions:
+ *
+ *    file->pos is nonnegative.
+ *
+ * Side Effects:
+ *
+ *    file->page is loaded with the appropriate buffer, fetched from the
+ *    database. If the file position is at the end of the file and on a new
+ *    chunk boundary, a new page is created. We currently DO NOT handle the case
+ *    of the file position being far past the end-of-file.
+ *
+ *    file->n is set based on file->pos.
  */
 static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
@@ -573,15 +601,15 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    const char *key;
    bson_iter_t iter;
 
-   uint32_t n;
    const uint8_t *data;
    uint32_t len;
 
    ENTRY;
 
    BSON_ASSERT (file);
+   BSON_ASSERT (file->pos >= 0);
 
-   n = (uint32_t)(file->pos / file->chunk_size);
+   file->n = (int32_t)(file->pos / file->chunk_size);
 
    if (file->page) {
       _mongoc_gridfs_file_page_destroy (file->page);
@@ -598,7 +626,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       /* if we have a cursor, but the cursor doesn't have the chunk we're going
        * to need, destroy it (we'll grab a new one immediately there after) */
       if (file->cursor &&
-          !(file->cursor_range[0] >= n && file->cursor_range[1] <= n)) {
+          (file->n < file->cursor_range[0] || file->n > file->cursor_range[1])) {
          mongoc_cursor_destroy (file->cursor);
          file->cursor = NULL;
       }
@@ -610,7 +638,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
             bson_append_value (&child, "files_id", -1, &file->files_id);
 
             bson_append_document_begin (&child, "n", -1, &child2);
-               bson_append_int32 (&child2, "$gte", -1, (int32_t)(file->pos / file->chunk_size));
+               bson_append_int32 (&child2, "$gte", -1, file->n);
             bson_append_document_end (&child, &child2);
          bson_append_document_end(query, &child);
 
@@ -628,7 +656,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
                                                 MONGOC_QUERY_NONE, 0, 0, 0, query,
                                                 fields, NULL);
 
-         file->cursor_range[0] = n;
+         file->cursor_range[0] = file->n;
          file->cursor_range[1] = (uint32_t)(file->length / file->chunk_size);
 
          bson_destroy (query);
@@ -639,7 +667,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 
       /* we might have had a cursor before, then seeked ahead past a chunk.
        * iterate until we're on the right chunk */
-      while (file->cursor_range[0] <= n) {
+      while (file->cursor_range[0] <= file->n) {
          if (!mongoc_cursor_next (file->cursor, &chunk)) {
             if (file->cursor->failed) {
                memcpy (&(file->error), &(file->cursor->error),
@@ -660,7 +688,8 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
          key = bson_iter_key (&iter);
 
          if (strcmp (key, "n") == 0) {
-            n = bson_iter_int32 (&iter);
+            /* TODO Why do we need this */
+            file->n = bson_iter_int32 (&iter);
          } else if (strcmp (key, "data") == 0) {
             bson_iter_binary (&iter, NULL, &len, &data);
          } else {
@@ -674,7 +703,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
        * TODO: maybe we should make more noise here?
        */
 
-      if (!(n == file->pos / file->chunk_size)) {
+      if (file->n != file->pos / file->chunk_size) {
          return 0;
       }
    }
@@ -687,19 +716,45 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 }
 
 
-/** Seek in a gridfs file to a given location
+/**
+ * mongoc_gridfs_file_seek:
  *
- * @param whence is regular fseek whence.  I.e. SEEK_SET, SEEK_CUR or SEEK_END
+ *    Adjust the file position pointer in `file` by `delta`, starting from the
+ *    position `whence`. The `whence` argument is interpreted as in fseek(2):
  *
+ *       SEEK_SET    Set the position relative to the start of the file.
+ *       SEEK_CUR    Move `delta` from the current file position.
+ *       SEEK_END    Move `delta` from the end-of-file.
+ *
+ * Parameters:
+ *
+ *    @file: A mongoc_gridfs_file_t.
+ *    @delta: The amount to move. May be positive or negative.
+ *    @whence: One of SEEK_SET, SEEK_CUR or SEEK_END.
+ *
+ * Errors:
+ *
+ *    [EINVAL] `whence` is not one of SEEK_SET, SEEK_CUR or SEEK_END.
+ *    [EINVAL] Resulting file position would be negative.
+ *
+ * Side Effects:
+ *
+ *    On success, the file's underlying position pointer is set appropriately.
+ *    On failure, the file position is NOT changed and errno is set.
+ *
+ * Returns:
+ *
+ *    0 on success.
+ *    -1 on error, and errno set to indicate the error.
  */
 int
 mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
                          int64_t               delta,
                          int                   whence)
 {
-   uint64_t offset;
+   int64_t offset;
 
-   BSON_ASSERT(file);
+   BSON_ASSERT (file);
 
    switch (whence) {
    case SEEK_SET:
@@ -718,9 +773,12 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
       break;
    }
 
-   BSON_ASSERT (file->length > (int64_t)offset);
+   if (offset < 0) {
+      errno = EINVAL;
+      return -1;
+   }
 
-   if (offset / file->chunk_size != file->pos / file->chunk_size) {
+   if (offset / file->chunk_size != file->n) {
       /** no longer on the same page */
 
       if (file->page) {
@@ -733,11 +791,12 @@ mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
       }
 
       /** we'll pick up the seek when we fetch a page on the next action.  We lazily load */
-   } else {
+   } else if (file->page) {
       _mongoc_gridfs_file_page_seek (file->page, offset % file->chunk_size);
    }
 
    file->pos = offset;
+   file->n = file->pos / file->chunk_size;
 
    return 0;
 }
