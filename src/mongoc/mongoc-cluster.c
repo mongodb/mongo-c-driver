@@ -1119,7 +1119,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
       MONGOC_DEBUG("Authentication failed: %s", error->message);
    } else {
       mongoc_counter_auth_success_inc ();
-      MONGOC_DEBUG("Authentication succeeded");
+      TRACE("%s", "Authentication succeeded");
    }
 
    RETURN(ret);
@@ -1244,7 +1244,7 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (!cluster->client->topology->single_threaded);
 
-   MONGOC_DEBUG ("Adding new server to cluster: %s", sd->connection_address);
+   TRACE ("Adding new server to cluster: %s", sd->connection_address);
 
    stream = _mongoc_client_create_stream(cluster->client, &sd->host, error);
    if (!stream) {

@@ -1226,9 +1226,9 @@ mongoc_topology_description_handle_ismaster (
                                               error);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
-      MONGOC_DEBUG("Transitioning to %d for %d", topology->type, sd->type);
+      TRACE("Transitioning to %d for %d", topology->type, sd->type);
       gSDAMTransitionTable[sd->type][topology->type] (topology, sd);
    } else {
-      MONGOC_DEBUG("No transition entry to %d for %d", topology->type, sd->type);
+      TRACE("No transition entry to %d for %d", topology->type, sd->type);
    }
 }

@@ -221,7 +221,6 @@ _mongoc_stream_tls_bio_read (BIO  *b,
    BIO_clear_retry_flags (b);
 
    if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
-      MONGOC_DEBUG("set_retry_read");
       BIO_set_retry_read (b);
    }
 
@@ -638,7 +637,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
 
             child_ret = _mongoc_stream_tls_write (tls, to_write, to_write_len);
             if (child_ret != to_write_len) {
-               MONGOC_DEBUG("Got child_ret: %ld while to_write_len is: %ld",
+               TRACE("Got child_ret: %ld while to_write_len is: %ld",
                      child_ret, to_write_len);
             }
 
