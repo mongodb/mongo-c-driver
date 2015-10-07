@@ -145,7 +145,7 @@ test_list (void)
    while ((file = mongoc_gridfs_file_list_next (list))) {
       bson_snprintf (buf, sizeof buf, "file.%d", i++);
 
-      ASSERT (strcmp (mongoc_gridfs_file_get_filename (file), buf) == 0);
+      ASSERT_CMPINT (strcmp (mongoc_gridfs_file_get_filename (file), buf), ==, 0);
 
       mongoc_gridfs_file_destroy (file);
    }
@@ -285,13 +285,13 @@ test_seek (void)
    ASSERT (file);
    ASSERT (mongoc_gridfs_file_save (file));
 
-   ASSERT_CMPINT64 (mongoc_gridfs_file_seek (file, 0, SEEK_SET), ==, 0LL);
-   ASSERT_CMPINT64 (mongoc_gridfs_file_tell (file), ==, 0LL);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_SET), ==, 0);
+   ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)0);
 
-   ASSERT_CMPINT64 (mongoc_gridfs_file_seek (file, file->chunk_size + 1, SEEK_CUR), ==, 0LL);
-   ASSERT_CMPINT64 (mongoc_gridfs_file_tell (file), ==, file->chunk_size + 1);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, file->chunk_size + 1, SEEK_CUR), ==, 0);
+   ASSERT_CMPINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)(file->chunk_size + 1));
 
-   ASSERT_CMPINT64 (mongoc_gridfs_file_seek (file, 0, SEEK_END), ==, 0LL);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_END), ==, 0);
    ASSERT_CMPINT64 (mongoc_gridfs_file_tell (file), ==, mongoc_gridfs_file_get_length (file));
 
    mongoc_gridfs_file_destroy (file);
@@ -335,22 +335,22 @@ test_read (void)
    ASSERT (mongoc_gridfs_file_save (file));
 
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
-   ASSERT_CMPINT (r, ==, 20);
+   ASSERT_CMPLONG (r, ==, 20L);
    ASSERT_CMPINT (memcmp (iov[0].iov_base, "Bacon ipsu", 10), ==, 0);
    ASSERT_CMPINT (memcmp (iov[1].iov_base, "m dolor si", 10), ==, 0);
 
-   ASSERT_CMPINT64 (mongoc_gridfs_file_seek (file, 1, SEEK_SET), ==, 0);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 1, SEEK_SET), ==, 0);
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
 
-   ASSERT_CMPINT64 (r, ==, 20L);
+   ASSERT_CMPLONG (r, ==, 20L);
    ASSERT_CMPINT (memcmp (iov[0].iov_base, "acon ipsum", 10), ==, 0);
    ASSERT_CMPINT (memcmp (iov[1].iov_base, " dolor sit", 10), ==, 0);
 
-   ASSERT_CMPINT64 (mongoc_gridfs_file_seek (file, file->chunk_size-1, SEEK_SET), ==, 0);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, file->chunk_size-1, SEEK_SET), ==, 0);
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
 
-   ASSERT_CMPINT64 (r, ==, 20L);
-   ASSERT_CMPINT64 (mongoc_gridfs_file_tell (file), ==, file->chunk_size+19);
+   ASSERT_CMPLONG (r, ==, 20L);
+   ASSERT_CMPINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)(file->chunk_size+19));
    ASSERT_CMPINT (memcmp (iov[0].iov_base, "turducken ", 10), ==, 0);
    ASSERT_CMPINT (memcmp (iov[1].iov_base, "spare ribs", 10), ==, 0);
 
@@ -377,7 +377,7 @@ test_write (void)
    mongoc_gridfs_file_opt_t opt = { 0 };
    mongoc_iovec_t iov[2];
    mongoc_iovec_t riov;
-   int len = sizeof buf + sizeof buf2 - 2;
+   ssize_t len = sizeof buf + sizeof buf2 - 2;
 
    iov [0].iov_base = buf;
    iov [0].iov_len = sizeof (buf) - 1;
@@ -401,28 +401,28 @@ test_write (void)
 
    /* Test a write across many pages */
    r = mongoc_gridfs_file_writev (file, iov, 2, 0);
-   ASSERT (r == len);
+   ASSERT_CMPLONG (r, ==, len);
 
-   ASSERT (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
-   ASSERT (mongoc_gridfs_file_tell (file) == 0);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_SET), ==, 0);
+   ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)0);
 
    r = mongoc_gridfs_file_readv (file, &riov, 1, len, 0);
-   ASSERT (r == len);
-   ASSERT (memcmp (buf3, "foo bar baz", len) == 0);
+   ASSERT_CMPLONG (r, ==, len);
+   ASSERT_CMPINT (memcmp (buf3, "foo bar baz", len), ==, 0);
 
    /* Test a write starting and ending exactly on chunk boundaries */
-   ASSERT (mongoc_gridfs_file_seek (file, file->chunk_size, SEEK_SET) == 0);
-   ASSERT (mongoc_gridfs_file_tell (file) == file->chunk_size);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, file->chunk_size, SEEK_SET), ==, 0);
+   ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)(file->chunk_size));
 
    r = mongoc_gridfs_file_writev (file, iov+1, 1, 0);
-   ASSERT (r == iov[1].iov_len);
+   ASSERT_CMPLONG (r, ==, iov[1].iov_len);
 
-   ASSERT (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
-   ASSERT (mongoc_gridfs_file_tell (file) == 0);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_SET), ==, 0);
+   ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)0);
 
    r = mongoc_gridfs_file_readv (file, &riov, 1, len, 0);
-   ASSERT (r == len);
-   ASSERT (memcmp (buf3, "fo bazr baz", len) == 0);
+   ASSERT_CMPLONG (r, ==, len);
+   ASSERT_CMPINT (memcmp (buf3, "fo bazr baz", len), ==, 0);
 
    mongoc_gridfs_file_destroy (file);
 
@@ -456,25 +456,25 @@ test_empty (void)
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
    ASSERT (file);
 
-   ASSERT (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
-   ASSERT (mongoc_gridfs_file_tell (file) == 0);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_SET), ==, 0);
+   ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)0);
 
-   ASSERT (mongoc_gridfs_file_seek (file, 0, SEEK_CUR) == 0);
-   ASSERT (mongoc_gridfs_file_tell (file) == 0);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_CUR), ==, 0);
+   ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)0);
 
-   ASSERT (mongoc_gridfs_file_seek (file, 0, SEEK_END) == 0);
-   ASSERT (mongoc_gridfs_file_tell (file) == 0);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_END), ==, 0);
+   ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)0);
 
    r = mongoc_gridfs_file_writev(file, iov, 1, 0);
 
-   ASSERT (r == 2);
-   ASSERT (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
-   ASSERT (mongoc_gridfs_file_tell (file) == 0);
+   ASSERT_CMPLONG (r, ==, 2L);
+   ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_SET), ==, 0);
+   ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)0);
 
    r = mongoc_gridfs_file_readv(file, iov, 1, 2, 0);
 
-   ASSERT (r == 2);
-   ASSERT (strncmp (buf, "hi", 2) == 0);
+   ASSERT_CMPLONG (r, ==, 2L);
+   ASSERT_CMPINT (strncmp (buf, "hi", 2), ==, 0);
 
    mongoc_gridfs_file_destroy (file);
 
@@ -517,7 +517,7 @@ test_stream (void)
    stream = mongoc_stream_gridfs_new (file);
 
    r = mongoc_stream_readv (stream, &iov, 1, file->length, 0);
-   ASSERT (r == file->length);
+   ASSERT_CMPINT64 ((int64_t)r, ==, file->length);
 
    /* cleanup */
    mongoc_stream_destroy (stream);

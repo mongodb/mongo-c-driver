@@ -67,8 +67,8 @@ extern "C" {
 
 #define ASSERT_CMPINT(a, eq, b)    ASSERT_CMPINT_HELPER(a, eq, b, "d")
 #define ASSERT_CMPUINT(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "u")
-#define ASSERT_LONG(a, eq, b)      ASSERT_CMPINT_HELPER(a, eq, b, "ld")
-#define ASSERT_ULONG(a, eq, b)     ASSERT_CMPINT_HELPER(a, eq, b, "lu")
+#define ASSERT_CMPLONG(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "ld")
+#define ASSERT_CMPULONG(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, "lu")
 #define ASSERT_CMPINT64(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, PRId64)
 #define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, PRIu64)
 

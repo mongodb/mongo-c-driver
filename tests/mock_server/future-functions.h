@@ -90,6 +90,36 @@ future_database_get_collection_names (
 
 
 future_t *
+future_gridfs_file_readv (
+
+   mongoc_gridfs_file_t_ptr file,
+   mongoc_iovec_t_ptr iov,
+   size_t iovcnt,
+   size_t min_bytes,
+   uint32_t timeout_msec
+);
+
+
+future_t *
+future_gridfs_file_seek (
+
+   mongoc_gridfs_file_t_ptr file,
+   int64_t delta,
+   int whence
+);
+
+
+future_t *
+future_gridfs_file_writev (
+
+   mongoc_gridfs_file_t_ptr file,
+   mongoc_iovec_t_ptr iov,
+   size_t iovcnt,
+   uint32_t timeout_msec
+);
+
+
+future_t *
 future_topology_select (
 
    mongoc_topology_ptr topology,
