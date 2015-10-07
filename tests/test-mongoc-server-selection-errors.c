@@ -59,11 +59,18 @@ test_server_selection_error_dns_multi_fail (void)
 static void
 test_server_selection_error_dns_multi_success (void *context)
 {
-   server_selection_error_dns (
-      "mongodb://non-existing-localhost:27017,localhost:27017,other-non-existing-localhost:27017/",
-      "",
-      true
-   );
+   char *uri_str;
+
+   uri_str = bson_strdup_printf (
+      "mongodb://non-existing-localhost:27017,"
+      "%s:%d,"
+      "other-non-existing-localhost:27017/",
+      test_framework_get_host (),
+      test_framework_get_port ());
+
+   server_selection_error_dns (uri_str, "", true);
+
+   bson_free (uri_str);
 }
 
 void
