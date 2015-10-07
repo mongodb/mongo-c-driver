@@ -194,7 +194,7 @@ _mongoc_gridfs_file_new_from_bson (mongoc_gridfs_t *gridfs,
    BSON_ASSERT (gridfs);
    BSON_ASSERT (data);
 
-   file = bson_malloc0 (sizeof *file);
+   file = (mongoc_gridfs_file_t *)bson_malloc0 (sizeof *file);
 
    file->gridfs = gridfs;
    bson_copy_to (data, &file->bson);
@@ -291,7 +291,7 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t          *gridfs,
       opt = &default_opt;
    }
 
-   file = bson_malloc0 (sizeof *file);
+   file = (mongoc_gridfs_file_t *)bson_malloc0 (sizeof *file);
 
    file->gridfs = gridfs;
    file->is_dirty = 1;
@@ -560,7 +560,7 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 }
 
 
-/** referesh a gridfs file's underlying page
+/** refresh a gridfs file's underlying page
  *
  * This unconditionally fetches the current page, even if the current page
  * covers the same theoretical chunk.
@@ -769,10 +769,18 @@ mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
    RETURN(false);
 }
 
+const bson_value_t *
+mongoc_gridfs_file_get_id (mongoc_gridfs_file_t *file)
+{
+   BSON_ASSERT (file);
+
+   return &file->files_id;
+}
+
 int64_t
 mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file)
 {
-   bson_return_val_if_fail (file, -1);
+   BSON_ASSERT (file);
 
    return file->length;
 }
@@ -780,7 +788,7 @@ mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file)
 int32_t
 mongoc_gridfs_file_get_chunk_size (mongoc_gridfs_file_t *file)
 {
-   bson_return_val_if_fail (file, -1);
+   BSON_ASSERT (file);
 
    return file->chunk_size;
 }
@@ -788,7 +796,7 @@ mongoc_gridfs_file_get_chunk_size (mongoc_gridfs_file_t *file)
 int64_t
 mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file)
 {
-   bson_return_val_if_fail (file, -1);
+   BSON_ASSERT (file);
 
    return file->upload_date;
 }
@@ -800,7 +808,7 @@ mongoc_gridfs_file_remove (mongoc_gridfs_file_t *file,
    bson_t sel = BSON_INITIALIZER;
    bool ret = false;
 
-   bson_return_val_if_fail (file, false);
+   BSON_ASSERT (file);
 
    BSON_APPEND_VALUE (&sel, "_id", &file->files_id);
 

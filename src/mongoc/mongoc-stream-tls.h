@@ -32,6 +32,9 @@ BSON_BEGIN_DECLS
 
 bool             mongoc_stream_tls_do_handshake  (mongoc_stream_t  *stream,
                                                   int32_t           timeout_msec);
+bool             mongoc_stream_tls_should_retry  (mongoc_stream_t  *stream);
+bool             mongoc_stream_tls_should_read   (mongoc_stream_t  *stream);
+bool             mongoc_stream_tls_should_write  (mongoc_stream_t  *stream);
 bool             mongoc_stream_tls_check_cert    (mongoc_stream_t  *stream,
                                                   const char       *host);
 mongoc_stream_t *mongoc_stream_tls_new           (mongoc_stream_t  *base_stream,

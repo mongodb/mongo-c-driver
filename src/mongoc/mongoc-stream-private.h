@@ -35,6 +35,10 @@ BSON_BEGIN_DECLS
 #define MONGOC_STREAM_TLS      5
 
 bool
+mongoc_stream_wait (mongoc_stream_t *stream,
+                    int64_t expire_at);
+
+bool
 _mongoc_stream_writev_full (mongoc_stream_t *stream,
                             mongoc_iovec_t  *iov,
                             size_t           iovcnt,

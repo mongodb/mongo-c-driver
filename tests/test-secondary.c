@@ -1,6 +1,4 @@
 #include <mongoc.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 static bool gExpectingFailure;
 static bool gShutdown;
@@ -43,7 +41,7 @@ query_collection (mongoc_collection_t *col)
          }
          gExpectingFailure = false;
       } else {
-         MONGOC_WARNING("%s", error.message);
+         fprintf (stderr, "%s", error.message);
          abort();
       }
    }

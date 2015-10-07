@@ -21,7 +21,7 @@ typedef struct _mongoc_socket_t mongoc_socket_t]]></code></synopsis>
 
   <section id="description">
     <title>Synopsis</title>
-    <p>This structure provides a socket abstraction that is friendlier for portability than BSD sockets directly. Inconsistencies between Linux, various BSD's, Solaris, and Windows are handled here.</p>
+    <p>This structure provides a socket abstraction that is friendlier for portability than BSD sockets directly. Inconsistencies between Linux, various BSDs, Solaris, and Windows are handled here.</p>
   </section>
 
   <links type="topic" groups="function" style="2column">

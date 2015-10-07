@@ -108,7 +108,7 @@ union _mongoc_matcher_op_t
    mongoc_matcher_op_compare_t compare;
    mongoc_matcher_op_exists_t exists;
    mongoc_matcher_op_type_t type;
-   mongoc_matcher_op_not_t not;
+   mongoc_matcher_op_not_t not_;
 };
 
 

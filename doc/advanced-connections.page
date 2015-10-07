@@ -3,36 +3,13 @@
       id="advanced-connections">
 
   <title>Advanced Connections</title>
-
-  <p>
-    The following sections contain information specific to certain types of MongoDB configurations.
-    You may not need to use all of them, but understanding their uses is a good idea.
-  </p>
-
-  <section id="ssl">
-    <title>Connecting over SSL</title>
-    <p>
-      To connect to a MongoDB server enabled with SSL, simply provide the <code>?ssl=true</code> option in the MongoDB URI.
-    </p>
-    <code mime="text/x-csrc">"mongodb://localhost:27017/?ssl=true"</code>
-    <note style="important">
-      <p>
-        If the MongoDB C Driver has not been compiled with <code>--enable-ssl</code>, then connecting to a server that does not support SSL will fail if the <code>?ssl=true</code> parameter is provided in the URI.
-        This is to prevent unintentional information leak.
-      </p>
-    </note>
-  </section>
+  <p>The following guide contains information specific to certain types of MongoDB configurations.</p>
+  <p>For an example of connecting to a simple standalone server, see the <link xref="tutorial#connecting">Tutorial</link>. To establish a connection with authentication options enabled, see the <link xref="authentication">Authentication</link> page.</p>
 
   <section id="replica-set">
+    <info><link type="guide" xref="index#advanced-connections" /></info>
     <title>Connecting to a Replica Set</title>
-
-    <p>
-      Connecting to a <link href="http://docs.mongodb.org/manual/replication/">Replica Set</link> is much like connecting to a single MongoDB server.
-      All that is needed is to alter the connection string URI.
-      The following listing will connect to a Replica Set named <code>myreplset</code>.
-      The hostname <code>myreplset01</code> should be a member of the configured Replica Set.
-      Notice the addition of <code>replicaSet=myreplset</code>.
-    </p>
+    <p>Connecting to a <link href="http://docs.mongodb.org/manual/replication/">replica set</link> is much like connecting to a standalone MongoDB server. Simply specify the replica set name using the <code>?replicaSet=myreplset</code> URI option.</p>
 
     <code mime="text/x-csrc"><![CDATA[#include <bson.h>
 #include <mongoc.h>
@@ -46,13 +23,13 @@ main (int   argc,
     mongoc_init ();
 
     /* Create our MongoDB Client */
-    client = mongoc_client_new ("mongodb://myreplset01:27017/?replicaSet=myreplset");
+    client = mongoc_client_new ("mongodb://host01:27017,host02:27017,host03:27017/?replicaSet=myreplset");
 
-    /* do something with client ... */
+    /* Do some work */
+    /* TODO */
 
-    /* Free our client */
+    /* Clean up */
     mongoc_client_destroy (client);
-
     mongoc_cleanup ();
 
     return 0;
@@ -60,29 +37,20 @@ main (int   argc,
 ]]></code>
 
     <note style="advanced">
-      <p>
-        You can specify multiple hostnames using the MongoDB connection string URI.
-        The Mongo C Driver will use this information to try to recover in the case of a <link href="http://en.wikipedia.org/wiki/Network_partition">network partition</link>.
-      </p>
+      <p>Multiple hostnames can be specified in the MongoDB connection string URI, with a comma separating hosts in the seed list.</p>
+      <p>It is recommended to use a seed list of members of the replica set to allow the driver to connect to any node.</p>
     </note>
-
-    <p>
-      To seed a list of nodes in your Replica Set, use a comma to separate the hostnames.
-    </p>
-
-    <code mime="text/x-csrc">"mongodb://myreplset01:27017,myreplset02:27017/?replicaSet=myreplset"</code>
-      
   </section>
 
   <section id="sharded-cluster">
+    <info><link type="guide" xref="index#advanced-connections" /></info>
     <title>Connecting to a Sharded Cluster</title>
+    <p>To connect to a <link href="http://docs.mongodb.org/manual/sharding/">sharded cluster</link>, specify the <code>mongos</code> nodes the client should connect to. The C Driver will automatically detect that it has connected to a <code>mongos</code> sharding server.</p>
+    <p>If more than one hostname is specified, a seed list will be created to attempt failover between the <code>mongos</code> instances.</p>
 
-    <p>
-      The MongoDB C Driver will automatically detect if it has connected to a <code>mongos</code> sharding server.
-      You can specify a URI just like you would for connecting directly to a single MongoDB server.
-      If you specify more than one hostname a seed list will be created to attempt to handle failover between the <code>mongos</code> instances.
-    </p>
-
+    <note style="warning">
+      <p>Specifying the <code>replicaSet</code> parameter when connecting to a <code>mongos</code> sharding server is invalid.</p>
+    </note>
     <code mime="text/x-csrc"><![CDATA[#include <bson.h>
 #include <mongoc.h>
 
@@ -107,32 +75,30 @@ main (int   argc,
     return 0;
 }
 ]]></code>
+  </section>
 
-    <note style="important">
-      <p>
-        Specifying the <code>replicaSet</code> parameter when connecting to a <code>mongos</code> sharding server is invalid.
-      </p>
-    </note>
+  <section id="ipv6">
+    <info><link type="guide" xref="index#advanced-connections" /></info>
+    <title>Connecting to an IPv6 Address</title>
+    <p>The MongoDB C Driver will automatically resolve IPv6 addresses from host names. However, to specify an IPv6 address directly, wrap the address in <code>[]</code>.</p>
 
+    <screen><code><![CDATA[mongoc_uri_t *uri = mongoc_uri_new ("mongodb://[::1]:27017");]]></code></screen>
   </section>
 
   <section id="unix-socket">
+    <info><link type="guide" xref="index#advanced-connections" /></info>
     <title>Connecting to a UNIX Domain Socket</title>
+    <p>On UNIX-like systems, the C Driver can connect directly to a MongoDB server using a UNIX domain socket. Simply pass the path to the socket, which <em>must</em> be suffixed with <code>.sock</code>.</p>
 
-    <p>
-      On UNIX-like systems, you can connect directly to a MongoDB server using a UNIX domain socket.
-      Use the following URI format to specify the path to the socket.
-      The socket path <em>MUST</em> be suffixed with <code>.sock</code>.
-    </p>
-
-    <code mime="text/x-csrc">"mongodb:///tmp/mongodb-27017.sock"</code>
-
+    <screen><code><![CDATA[mongoc_uri_t *uri = mongoc_uri_new ("mongodb:///tmp/mysocket.sock");]]></code></screen>
     <note style="warning">
       <p>Connecting directly to a UNIX domain socket is not a common practice.</p>
     </note>
   </section>
 
-  <info>
-    <link type="guide" xref="index#advanced-connections" />
-  </info>
+  <section id="additional-options">
+    <info><link type="guide" xref="index#advanced-connections" /></info>
+    <title>Additional Connection Options</title>
+    <p>A variety of connection options for the MongoDB URI can be found <link href="http://docs.mongodb.org/manual/reference/connection-string/">here</link>.</p>
+  </section>
 </page>

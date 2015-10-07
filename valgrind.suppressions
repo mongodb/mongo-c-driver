@@ -23,7 +23,7 @@
    obj:*/libcrypto.so.*
 }
 {
-   ingore_scram_nonce_uninitialized_warning_cond
+   ignore_scram_nonce_uninitialized_warning_cond
    Memcheck:Cond
    fun:mongoc_b64_ntop
    ...
@@ -31,7 +31,7 @@
    ...
 }
 {
-   ingore_scram_nonce_uninitialized_warning_value8
+   ignore_scram_nonce_uninitialized_warning_value8
    Memcheck:Value8
    fun:mongoc_b64_ntop
    ...
@@ -44,4 +44,12 @@
    sendmsg(msg.msg_iov[0])
    ...
    obj:*/libcrypto.so.*
+}
+{
+   ignore_sasl_load_plugin_reachable_warnings
+   Memcheck:Leak
+   ...
+   fun:_sasl_get_plugin
+   ...
+   fun:_mongoc_do_init
 }

@@ -1,362 +1,219 @@
-#include "mongoc-cluster-private.h"
-#include "mongoc-client-private.h"
+#include <mongoc.h>
 
+#include "mongoc-client-private.h"
+#include "mongoc-uri-private.h"
+
+#include "mock_server/mock-server.h"
+#include "mock_server/future.h"
+#include "mock_server/future-functions.h"
+#include "mongoc-tests.h"
 #include "TestSuite.h"
 #include "test-libmongoc.h"
-#include "mock-server.h"
+#include "test-conveniences.h"
 
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster-test"
 
-
-void
-call_ismaster (bson_t *reply)
-{
-   bson_t ismaster = BSON_INITIALIZER;
-   mongoc_client_t *client;
-   bool r;
-
-   BSON_APPEND_INT32 (&ismaster, "isMaster", 1);
-   client = test_framework_client_new (NULL);
-   r = mongoc_client_command_simple (client, "admin", &ismaster,
-                                     NULL, reply, NULL);
-
-   mongoc_client_destroy(client);
-
-   assert (r);
-}
-
-
-char *
-set_name (bson_t *ismaster_response)
-{
-   bson_iter_t iter;
-
-   if (bson_iter_init_find (&iter, ismaster_response, "setName")) {
-      return bson_strdup (bson_iter_utf8 (&iter, NULL));
-   } else {
-      return NULL;
-   }
-}
-
-
-int
-get_n_members (bson_t *ismaster_response)
-{
-   bson_iter_t iter;
-   bson_iter_t hosts_iter;
-   char *name;
-   int n;
-
-   if ((name = set_name (ismaster_response))) {
-      bson_free (name);
-      assert (bson_iter_init_find (&iter, ismaster_response, "hosts"));
-      bson_iter_recurse (&iter, &hosts_iter);
-      n = 0;
-      while (bson_iter_next (&hosts_iter)) n++;
-      return n;
-   } else {
-      return 1;
-   }
-}
-
-
-#define BAD_HOST "mongodb.com:12345"
-
-
-/* a uri with one bogus host */
-mongoc_uri_t *
-uri_from_ismaster_plus_one (bson_t *ismaster_response)
-{
-   /* start with one bad host and a comma */
-   bson_string_t *uri_str = bson_string_new ("mongodb://" BAD_HOST ",");
-   char *name;
-   bson_iter_t iter;
-   bson_iter_t hosts_iter;
-   mongoc_uri_t *uri;
-
-   if ((name = set_name (ismaster_response))) {
-      bson_iter_init_find (&iter, ismaster_response, "hosts");
-      bson_iter_recurse (&iter, &hosts_iter);
-      while (bson_iter_next (&hosts_iter)) {
-         assert (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
-         bson_string_append (uri_str, bson_iter_utf8 (&hosts_iter, NULL));
-         while (bson_iter_next (&hosts_iter)) {
-            bson_string_append (uri_str, ",");
-            bson_string_append (uri_str, bson_iter_utf8 (&hosts_iter, NULL));
-         }
-
-         bson_string_append_printf (
-            uri_str, "/?replicaSet=%s&connecttimeoutms=1000", name);
-      }
-
-      bson_free (name);
-   } else {
-      char *host = test_framework_get_host ();
-
-      bson_string_append (uri_str, host);
-      bson_string_append (uri_str, "/?connecttimeoutms=1000");
-
-      bson_free (host);
-   }
-
-   uri = mongoc_uri_new (uri_str->str);
-
-   bson_string_free (uri_str, true);
-
-   return uri;
-}
-
-
-bool
-cluster_has_host (const mongoc_cluster_t *cluster,
-                  const char *host_and_port)
-{
-   int i;
-
-   for (i = 0; i < cluster->nodes_len; i++) {
-      if (!strcmp(cluster->nodes[i].host.host_and_port, host_and_port)) {
-         return true;
-      }
-   }
-
-   return false;
-}
-
-
-int
-hosts_len (const mongoc_host_list_t *hl)
-{
-   int n = 0;
-
-   if (!hl) {
-      return 0;
-   }
-
-   do { n++; } while ((hl = hl->next));
-
-   return n;
-}
-
-
-void
-assert_hosts_equal (const mongoc_host_list_t *hl,
-                    const mongoc_cluster_t *cluster)
-{
-   ASSERT_CMPINT (hosts_len (hl), ==, cluster->nodes_len);
-
-   while (hl) {
-      if (!cluster_has_host (cluster, hl->host_and_port) &&
-          strcmp (BAD_HOST, hl->host_and_port)) {
-         printf ("cluster has no host %s\n", hl->host_and_port);
-         abort ();
-      }
-
-      hl = hl->next;
-   }
-}
-
-
-/* not very exhaustive, but ensure that cluster reflects whatever server
- * we're connected to */
 static void
-test_mongoc_cluster_basic (void)
+test_get_max_bson_obj_size (void)
 {
+   mongoc_server_description_t *sd;
+   mongoc_cluster_node_t *node;
+   mongoc_client_pool_t *pool;
    mongoc_client_t *client;
-   bson_t reply;
-   mongoc_uri_t *uri;
-   const mongoc_host_list_t *hosts;
    bson_error_t error;
-   int n_members;
-   char *replica_set_name;
-   int i;
-   int n;
+   int32_t max_bson_obj_size = 16;
+   uint32_t id;
 
-   call_ismaster (&reply);
-   n_members = get_n_members (&reply);
-   replica_set_name = set_name (&reply);
-   uri = uri_from_ismaster_plus_one (&reply);
+   /* single-threaded */
+   client = test_framework_client_new ();
+   assert (client);
 
-   /* get hosts list from uri */
-   hosts = mongoc_uri_get_hosts (uri);
-   assert (hosts);
-   ASSERT_CMPSTR (BAD_HOST, hosts->host_and_port);
+   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
+   sd = (mongoc_server_description_t *)mongoc_set_get (client->topology->description.servers, id);
+   sd->max_bson_obj_size = max_bson_obj_size;
+   assert (max_bson_obj_size == mongoc_cluster_get_max_bson_obj_size (&client->cluster));
 
-   if (replica_set_name) {
-      /* remove bad host we prepended, because the cluster will remove it
-       * once it finds the primary */
-      hosts = hosts->next;
-      assert (hosts);
-   }
-
-   client = mongoc_client_new_from_uri (uri);
-
-   ASSERT_CMPINT (n_members, ==, client->cluster.nodes_len - 1);
-   if (replica_set_name) {
-      ASSERT_CMPINT (MONGOC_CLUSTER_REPLICA_SET, ==, client->cluster.mode);
-   } else {
-      /* sharded mode, since we gave 2 seeds */
-      ASSERT_CMPINT (MONGOC_CLUSTER_SHARDED_CLUSTER, ==, client->cluster.mode);
-   }
-
-   /* connect twice and assert cluster nodes are as expected */
-   for (i = 0; i < 2; i++) {
-      /* warnings about failing to connect to mongodb.com:12345 */
-      suppress_one_message ();
-      suppress_one_message ();
-      suppress_one_message ();
-
-      _mongoc_cluster_reconnect (&client->cluster, &error);
-
-      assert_hosts_equal (hosts, &client->cluster);
-
-      for (n = 0; n < client->cluster.nodes_len; n++) {
-         const mongoc_cluster_node_t *node = &client->cluster.nodes[n];
-         bool valid_host;
-
-         assert (node->valid);
-
-         valid_host = (strlen (node->host.host_and_port) &&
-                       strcmp (node->host.host_and_port, BAD_HOST));
-
-         if (valid_host) {
-            assert (node->stream);
-         } else {
-            assert (!node->stream);
-         }
-
-         ASSERT_CMPINT (n, ==, node->index);
-         ASSERT_CMPINT (0, ==, node->stamp);
-         ASSERT_CMPSTR (replica_set_name, node->replSet);
-      }
-   }
-
-   bson_free (replica_set_name);
-   mongoc_uri_destroy (uri);
-   bson_destroy (&reply);
    mongoc_client_destroy (client);
+
+   /* multi-threaded */
+   pool = test_framework_client_pool_new ();
+   client = mongoc_client_pool_pop (pool);
+
+   ASSERT_OR_PRINT (id = mongoc_cluster_preselect (&client->cluster,
+                                                   MONGOC_OPCODE_QUERY,
+                                                   NULL,
+                                                   &error), error);
+
+   node = (mongoc_cluster_node_t *)mongoc_set_get (client->cluster.nodes, id);
+   node->max_bson_obj_size = max_bson_obj_size;
+   assert (max_bson_obj_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster));
+
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
+
+static void
+test_get_max_msg_size (void)
+{
+   mongoc_server_description_t *sd;
+   mongoc_cluster_node_t *node;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   bson_error_t error;
+   int32_t max_msg_size = 32;
+   uint32_t id;
+
+   /* single-threaded */
+   client = test_framework_client_new ();
+
+   ASSERT_OR_PRINT (id = mongoc_cluster_preselect (&client->cluster,
+                                                   MONGOC_OPCODE_QUERY,
+                                                   NULL,
+                                                   &error), error);
+
+   sd = (mongoc_server_description_t *)mongoc_set_get (client->topology->description.servers, id);
+   sd->max_msg_size = max_msg_size;
+   assert (max_msg_size == mongoc_cluster_get_max_msg_size (&client->cluster));
+
+   mongoc_client_destroy (client);
+
+   /* multi-threaded */
+   pool = test_framework_client_pool_new ();
+   client = mongoc_client_pool_pop (pool);
+
+   ASSERT_OR_PRINT (id = mongoc_cluster_preselect (&client->cluster,
+                                                   MONGOC_OPCODE_QUERY,
+                                                   NULL,
+                                                   &error), error);
+
+   node = (mongoc_cluster_node_t *)mongoc_set_get (client->cluster.nodes, id);
+   node->max_msg_size = max_msg_size;
+   assert (max_msg_size == mongoc_cluster_get_max_msg_size (&client->cluster));
+
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
 }
 
 
+#define ASSERT_CURSOR_ERR() do { \
+      char *error_message = bson_strdup_printf ( \
+         "Failed to read 4 bytes from socket within %d milliseconds.", \
+         socket_timeout_ms); \
+      assert (!future_get_bool (future)); \
+      assert (mongoc_cursor_error (cursor, &error)); \
+      ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM); \
+      ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET); \
+      ASSERT_CMPSTR (error.message, error_message); \
+      bson_free (error_message); \
+   } while (0)
+
+
+#define START_QUERY(client_port_variable) do { \
+      cursor = mongoc_collection_find (collection, \
+                                       MONGOC_QUERY_NONE, \
+                                       0, 0, 0, tmp_bson ("{}"), \
+                                       NULL, NULL); \
+      future = future_cursor_next (cursor, &doc); \
+      request = mock_server_receives_query (server, "test.test", \
+                                            MONGOC_QUERY_SLAVE_OK, 0, 0, \
+                                            "{}", NULL); \
+      client_port_variable = request_get_client_port (request); \
+   } while (0)
+
+
+#define CLEANUP_QUERY() do { \
+      request_destroy (request); \
+      future_destroy (future); \
+      mongoc_cursor_destroy (cursor); \
+   } while (0)
+
+
+/* test that we reconnect a cluster node after disconnect */
 static void
-_test_mongoc_cluster_destroy_disconnect (bool has_many_tags,
-                                         bool rs_connection)
+_test_cluster_node_disconnect (bool pooled)
 {
-   uint16_t port;
-   char *uri_str;
-   mongoc_uri_t *uri;
-   const mongoc_host_list_t *hosts;
-   int i;
-   bson_t tags = BSON_INITIALIZER;
-   char *key;
    mock_server_t *server;
+   const int32_t socket_timeout_ms = 100;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   const bson_t *doc;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   uint16_t client_port_0, client_port_1;
    bson_error_t error;
-   mongoc_cluster_t *cluster;
-   mongoc_cluster_node_t *node = NULL;
 
-   port = 20000 + (rand () % 1000);
-   uri_str = bson_strdup_printf (
-      rs_connection ? "mongodb://localhost:%hu/?replicaSet=rs"
-                    : "mongodb://localhost:%hu/",
-      port);
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
 
-   uri = mongoc_uri_new (uri_str);
-   hosts = mongoc_uri_get_hosts (uri);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", socket_timeout_ms);
 
-   if (has_many_tags) {
-      for (i = 0; i < 100; i++) {
-         /* ensure the tags document must spill to the heap */
-         key = bson_strdup_printf ("key%d", i);
-         BSON_APPEND_UTF8 (
-            &tags, key,
-            "value-value-value-value-value-value-value-value-value-value");
-
-         bson_free (key);
-      }
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      client = mongoc_client_pool_pop (pool);
    } else {
-      BSON_APPEND_UTF8 (&tags, "key", "value");
+      client = mongoc_client_new_from_uri (uri);
    }
 
-   server = mock_server_new_rs ("127.0.0.1", port, NULL, NULL,
-                                "rs", true, false, hosts, &tags);
+   collection = mongoc_client_get_collection (client, "test", "test");
 
-   mock_server_run_in_thread (server);
-
-   client = mongoc_client_new (uri_str);
-   cluster = &client->cluster;
-
-   for (i = 0; i < 2; i++) {
-      assert (_mongoc_cluster_reconnect (cluster, &error));
-      ASSERT_CMPINT (cluster->nodes_len, ==, 1);
-      node = &cluster->nodes[0];
-      if (rs_connection) {
-         ASSERT_CMPSTR (node->replSet, "rs");
-         if (has_many_tags) {
-            ASSERT_CMPINT (100, ==, bson_count_keys (&node->tags));
-         } else {
-            ASSERT_CMPINT (1, ==, bson_count_keys (&node->tags));
-         }
-      } else {
-         assert (!node->replSet);
-         /* cluster ignores "ismaster.tags" in direct mode */
-         assert (bson_empty (&node->tags));
-      }
+   /* query 0 fails. set client_port_0 to the port used by the query. */
+   START_QUERY (client_port_0);
+   if (pooled) {
+      suppress_one_message ();
    }
 
-   mock_server_quit (server);
-   mock_server_destroy (server);
+   mock_server_resets (request);
+   ASSERT_CURSOR_ERR ();
+   CLEANUP_QUERY ();
 
-   /* no segfaults */
-   _mongoc_cluster_node_destroy (node);
-   _mongoc_cluster_disconnect_node (cluster, node);
-   mongoc_client_destroy (client);
+   /* query 1 opens a new socket. set client_port_1 to the new port. */
+   START_QUERY (client_port_1);
+   ASSERT_CMPINT (client_port_1, !=, client_port_0);
+   mock_server_replies_simple (request, "{'a': 1}");
 
-   bson_destroy (&tags);
+   /* success! */
+   BSON_ASSERT (future_get_bool (future));
+
+   CLEANUP_QUERY ();
+   mongoc_collection_destroy (collection);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
    mongoc_uri_destroy (uri);
-   bson_free (uri_str);
+   mock_server_destroy (server);
 }
 
 
-void
-test_mongoc_cluster_destroy_disconnect_one_direct (void)
+static void
+test_cluster_node_disconnect_single (void)
 {
-   _test_mongoc_cluster_destroy_disconnect (false, false);
+   _test_cluster_node_disconnect (false);
 }
 
 
-void
-test_mongoc_cluster_destroy_disconnect_many_direct (void)
+static void
+test_cluster_node_disconnect_pooled (void)
 {
-   _test_mongoc_cluster_destroy_disconnect (true, false);
-}
-
-
-void
-test_mongoc_cluster_destroy_disconnect_one_rs (void)
-{
-   _test_mongoc_cluster_destroy_disconnect (false, true);
-}
-
-
-void
-test_mongoc_cluster_destroy_disconnect_many_rs (void)
-{
-   _test_mongoc_cluster_destroy_disconnect (true, true);
+   _test_cluster_node_disconnect (true);
 }
 
 
 void
 test_cluster_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Cluster/basic", test_mongoc_cluster_basic);
-   TestSuite_Add (suite, "/Cluster/node_destroy_disconnect/one_tag/direct",
-                  test_mongoc_cluster_destroy_disconnect_one_direct);
-   TestSuite_Add (suite, "/Cluster/node_destroy_disconnect/many_tags/direct",
-                  test_mongoc_cluster_destroy_disconnect_many_direct);
-   TestSuite_Add (suite, "/Cluster/node_destroy_disconnect/one_tag/rs",
-                  test_mongoc_cluster_destroy_disconnect_one_rs);
-   TestSuite_Add (suite, "/Cluster/node_destroy_disconnect/many_tags/rs",
-                  test_mongoc_cluster_destroy_disconnect_many_rs);
+   TestSuite_Add (suite, "/Cluster/test_get_max_bson_obj_size", test_get_max_bson_obj_size);
+   TestSuite_Add (suite, "/Cluster/test_get_max_msg_size", test_get_max_msg_size);
+   TestSuite_Add (suite, "/Cluster/disconnect/single", test_cluster_node_disconnect_single);
+   TestSuite_Add (suite, "/Cluster/disconnect/pooled", test_cluster_node_disconnect_pooled);
 }

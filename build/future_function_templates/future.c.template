@@ -1,0 +1,122 @@
+#include <stdio.h>
+
+#include "mongoc-array-private.h"
+#include "mongoc-thread-private.h"
+#include "future.h"
+#include "../test-libmongoc.h"
+
+{{ header_comment }}
+
+#define DEFAULT_FUTURE_TIMEOUT_MS 10 * 1000
+
+static int64_t
+get_future_timeout_ms ()
+{
+    return test_framework_getenv_int64 ("MONGOC_TEST_FUTURE_TIMEOUT_MS",
+                                        DEFAULT_FUTURE_TIMEOUT_MS);
+}
+
+void
+future_get_void (future_t *future)
+{
+   if (!future_wait (future)) {
+      fprintf (stderr, "%s timed out\n", __FUNCTION__);
+      abort ();
+   }
+}
+
+{% for T in type_list %}
+{{ T }}
+future_get_{{ T }} (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_{{ T }} (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", __FUNCTION__);
+   abort ();
+}
+{% endfor %}
+
+future_t *
+future_new (future_value_type_t return_type, int argc)
+{
+   future_t *future;
+
+   future = (future_t *)bson_malloc0 (sizeof *future);
+   future->return_value.type = return_type;
+   future->argc = argc;
+   future->argv = (future_value_t *)bson_malloc0 ((size_t) argc * sizeof(future_value_t));
+   mongoc_cond_init (&future->cond);
+   mongoc_mutex_init (&future->mutex);
+
+   return future;
+}
+
+future_value_t *
+future_get_param (future_t *future, int i)
+{
+   return &future->argv[i];
+}
+
+void
+future_start (future_t *future,
+              void *(*start_routine)(void *))
+{
+   int r = mongoc_thread_create (&future->thread,
+                                 start_routine,
+                                 (void *) future);
+
+   assert (!r);
+}
+
+
+void
+future_resolve (future_t *future, future_value_t return_value)
+{
+   mongoc_mutex_lock (&future->mutex);
+   assert (!future->resolved);
+   assert (future->return_value.type == return_value.type);
+   future->return_value = return_value;
+   future->resolved = true;
+   mongoc_cond_signal (&future->cond);
+   mongoc_mutex_unlock (&future->mutex);
+}
+
+
+bool
+future_wait (future_t *future)
+{
+   int64_t deadline = bson_get_monotonic_time () + get_future_timeout_ms ();
+   bool resolved;
+
+   mongoc_mutex_lock (&future->mutex);
+   while (!future->resolved && bson_get_monotonic_time () <= deadline) {
+      mongoc_cond_timedwait (&future->cond,
+                             &future->mutex,
+                             get_future_timeout_ms ());
+   }
+   resolved = future->resolved;
+   mongoc_mutex_unlock (&future->mutex);
+
+   if (resolved) {
+      future->awaited = true;
+
+      /* free memory */
+      mongoc_thread_join (future->thread);
+   }
+
+   return resolved;
+}
+
+
+void
+future_destroy (future_t *future)
+{
+   assert (future->awaited);
+   bson_free (future->argv);
+   mongoc_cond_destroy (&future->cond);
+   mongoc_mutex_destroy (&future->mutex);
+   bson_free (future);
+}
+

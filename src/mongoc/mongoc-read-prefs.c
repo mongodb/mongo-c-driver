@@ -26,7 +26,7 @@ mongoc_read_prefs_new (mongoc_read_mode_t mode)
 {
    mongoc_read_prefs_t *read_prefs;
 
-   read_prefs = bson_malloc0(sizeof *read_prefs);
+   read_prefs = (mongoc_read_prefs_t *)bson_malloc0(sizeof *read_prefs);
    read_prefs->mode = mode;
    bson_init(&read_prefs->tags);
 
@@ -37,7 +37,7 @@ mongoc_read_prefs_new (mongoc_read_mode_t mode)
 mongoc_read_mode_t
 mongoc_read_prefs_get_mode (const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_val_if_fail(read_prefs, 0);
+   BSON_ASSERT (read_prefs);
    return read_prefs->mode;
 }
 
@@ -46,8 +46,8 @@ void
 mongoc_read_prefs_set_mode (mongoc_read_prefs_t *read_prefs,
                             mongoc_read_mode_t   mode)
 {
-   bson_return_if_fail(read_prefs);
-   bson_return_if_fail(mode <= MONGOC_READ_NEAREST);
+   BSON_ASSERT (read_prefs);
+   BSON_ASSERT (mode <= MONGOC_READ_NEAREST);
 
    read_prefs->mode = mode;
 }
@@ -56,7 +56,7 @@ mongoc_read_prefs_set_mode (mongoc_read_prefs_t *read_prefs,
 const bson_t *
 mongoc_read_prefs_get_tags (const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_val_if_fail(read_prefs, NULL);
+   BSON_ASSERT (read_prefs);
    return &read_prefs->tags;
 }
 
@@ -65,7 +65,7 @@ void
 mongoc_read_prefs_set_tags (mongoc_read_prefs_t *read_prefs,
                             const bson_t        *tags)
 {
-   bson_return_if_fail(read_prefs);
+   BSON_ASSERT (read_prefs);
 
    bson_destroy(&read_prefs->tags);
 
@@ -101,7 +101,7 @@ mongoc_read_prefs_add_tag (mongoc_read_prefs_t *read_prefs,
 bool
 mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_val_if_fail(read_prefs, false);
+   BSON_ASSERT (read_prefs);
 
    /*
     * Tags are not supported with PRIMARY mode.
@@ -113,206 +113,6 @@ mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
    }
 
    return true;
-}
-
-
-static bool
-_contains_tag (const bson_t *b,
-               const char   *key,
-               const char   *value,
-               size_t        value_len)
-{
-   bson_iter_t iter;
-
-   bson_return_val_if_fail(b, false);
-   bson_return_val_if_fail(key, false);
-   bson_return_val_if_fail(value, false);
-
-   if (bson_iter_init_find(&iter, b, key) &&
-       BSON_ITER_HOLDS_UTF8(&iter) &&
-       !strncmp(value, bson_iter_utf8(&iter, NULL), value_len)) {
-      return true;
-   }
-
-   return false;
-}
-
-
-static int
-_score_tags (const bson_t *read_tags,
-             const bson_t *node_tags)
-{
-   uint32_t len;
-   bson_iter_t iter;
-   bson_iter_t sub_iter;
-   const char *key;
-   const char *str;
-   int count;
-   bool node_matches_set;
-
-   bson_return_val_if_fail(read_tags, -1);
-   bson_return_val_if_fail(node_tags, -1);
-
-   count = bson_count_keys(read_tags);
-
-   /* Execute this block if read tags were provided, else bail and return 0 (all nodes equal) */
-   if (!bson_empty(read_tags) && bson_iter_init(&iter, read_tags)) {
-
-      /*
-       * Iterate over array of read tag sets provided (each element is a tag set)
-       * Tag sets are provided in order of preference so return the count of the
-       * first set that matches the node or -1 if no set matched the node.
-       */
-      while (count && bson_iter_next(&iter)) {
-         if (BSON_ITER_HOLDS_DOCUMENT(&iter) && bson_iter_recurse(&iter, &sub_iter)) {
-            node_matches_set = true;
-
-            /* Iterate over the key/value pairs (tags) in the current set */
-            while (bson_iter_next(&sub_iter) && BSON_ITER_HOLDS_UTF8(&sub_iter)) {
-               key = bson_iter_key(&sub_iter);
-               str = bson_iter_utf8(&sub_iter, &len);
-
-               /* If any of the tags do not match, this node cannot satisfy this tag set. */
-               if (!_contains_tag(node_tags, key, str, len)) {
-                   node_matches_set = false;
-                   break;
-               }
-            }
-
-            /* This set matched, return the count as the score */
-            if (node_matches_set) {
-                return count;
-            }
-
-            /* Decrement the score and try to match the next set. */
-            count--;
-         }
-      }
-      return -1;
-   }
-
-   return 0;
-}
-
-
-static int
-_mongoc_read_prefs_score_primary (const mongoc_read_prefs_t   *read_prefs,
-                                  const mongoc_cluster_node_t *node)
-{
-   bson_return_val_if_fail(read_prefs, -1);
-   bson_return_val_if_fail(node, -1);
-   return node->primary ? INT_MAX : 0;
-}
-
-
-static int
-_mongoc_read_prefs_score_primary_preferred (const mongoc_read_prefs_t   *read_prefs,
-                                            const mongoc_cluster_node_t *node)
-{
-   const bson_t *node_tags;
-   const bson_t *read_tags;
-
-   bson_return_val_if_fail(read_prefs, -1);
-   bson_return_val_if_fail(node, -1);
-
-   if (node->primary) {
-      return INT_MAX;
-   }
-
-   node_tags = &node->tags;
-   read_tags = &read_prefs->tags;
-
-   return bson_empty(read_tags) ? 1 : _score_tags(read_tags, node_tags);
-}
-
-
-static int
-_mongoc_read_prefs_score_secondary (const mongoc_read_prefs_t   *read_prefs,
-                                    const mongoc_cluster_node_t *node)
-{
-   const bson_t *node_tags;
-   const bson_t *read_tags;
-
-   bson_return_val_if_fail(read_prefs, -1);
-   bson_return_val_if_fail(node, -1);
-
-   if (node->primary) {
-      return -1;
-   }
-
-   node_tags = &node->tags;
-   read_tags = &read_prefs->tags;
-
-   return bson_empty(read_tags) ? 1 : _score_tags(read_tags, node_tags);
-}
-
-
-static int
-_mongoc_read_prefs_score_secondary_preferred (const mongoc_read_prefs_t   *read_prefs,
-                                              const mongoc_cluster_node_t *node)
-{
-   const bson_t *node_tags;
-   const bson_t *read_tags;
-
-   bson_return_val_if_fail(read_prefs, -1);
-   bson_return_val_if_fail(node, -1);
-
-   if (node->primary) {
-      return 0;
-   }
-
-   node_tags = &node->tags;
-   read_tags = &read_prefs->tags;
-
-   return bson_empty(read_tags) ? 1 : _score_tags(read_tags, node_tags);
-}
-
-
-static int
-_mongoc_read_prefs_score_nearest (const mongoc_read_prefs_t   *read_prefs,
-                                  const mongoc_cluster_node_t *node)
-{
-   const bson_t *read_tags;
-   const bson_t *node_tags;
-
-   bson_return_val_if_fail(read_prefs, -1);
-   bson_return_val_if_fail(node, -1);
-
-   node_tags = &node->tags;
-   read_tags = &read_prefs->tags;
-
-   return bson_empty(read_tags) ? 1 : _score_tags(read_tags, node_tags);
-}
-
-
-int
-_mongoc_read_prefs_score (const mongoc_read_prefs_t   *read_prefs,
-                          const mongoc_cluster_node_t *node)
-{
-   bson_return_val_if_fail(read_prefs, -1);
-   bson_return_val_if_fail(node, -1);
-
-   if (!node->primary && !node->secondary) {
-      /* recovering, arbiter, or removed: see RSOther and RSGhost in
-       * the Server Discovery And Monitoring Spec */
-      return -1;
-   }
-
-   switch (read_prefs->mode) {
-   case MONGOC_READ_PRIMARY:
-      return _mongoc_read_prefs_score_primary(read_prefs, node);
-   case MONGOC_READ_PRIMARY_PREFERRED:
-      return _mongoc_read_prefs_score_primary_preferred(read_prefs, node);
-   case MONGOC_READ_SECONDARY:
-      return _mongoc_read_prefs_score_secondary(read_prefs, node);
-   case MONGOC_READ_SECONDARY_PREFERRED:
-      return _mongoc_read_prefs_score_secondary_preferred(read_prefs, node);
-   case MONGOC_READ_NEAREST:
-      return _mongoc_read_prefs_score_nearest(read_prefs, node);
-   default:
-      BSON_ASSERT(false);
-      return -1;
-   }
 }
 
 

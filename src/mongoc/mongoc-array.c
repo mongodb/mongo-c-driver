@@ -22,13 +22,43 @@ void
 _mongoc_array_init (mongoc_array_t *array,
                     size_t          element_size)
 {
-   bson_return_if_fail(array);
-   bson_return_if_fail(element_size);
+   BSON_ASSERT (array);
+   BSON_ASSERT (element_size);
 
    array->len = 0;
    array->element_size = element_size;
    array->allocated = 128;
-   array->data = bson_malloc0(array->allocated);
+   array->data = (void *)bson_malloc0(array->allocated);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_array_copy --
+ *
+ *       Destroy dst and copy src into it. Both arrays must be initialized.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_array_copy (mongoc_array_t       *dst,
+                    const mongoc_array_t *src)
+{
+   _mongoc_array_destroy (dst);
+
+   dst->len = src->len;
+   dst->element_size = src->element_size;
+   dst->allocated = src->allocated;
+   dst->data = (void *)bson_malloc (dst->allocated);
+   memcpy (dst->data, src->data, dst->allocated);
 }
 
 
@@ -50,14 +80,14 @@ _mongoc_array_append_vals (mongoc_array_t *array,
    size_t off;
    size_t next_size;
 
-   bson_return_if_fail(array);
-   bson_return_if_fail(data);
+   BSON_ASSERT (array);
+   BSON_ASSERT (data);
 
    off = array->element_size * array->len;
    len = (size_t)n_elements * array->element_size;
    if ((off + len) > array->allocated) {
       next_size = bson_next_power_of_two(off + len);
-      array->data = bson_realloc(array->data, next_size);
+      array->data = (void *)bson_realloc(array->data, next_size);
       array->allocated = next_size;
    }
 

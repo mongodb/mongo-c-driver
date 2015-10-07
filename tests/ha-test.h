@@ -93,6 +93,7 @@ ha_node_t        *ha_replica_set_add_arbiter      (ha_replica_set_t *replica_set
 ha_node_t        *ha_replica_set_add_replica      (ha_replica_set_t *replica_set,
                                                    const char       *name);
 mongoc_client_t  *ha_replica_set_create_client    (ha_replica_set_t *replica_set);
+mongoc_client_pool_t  *ha_replica_set_create_client_pool    (ha_replica_set_t *replica_set);
 void              ha_replica_set_start            (ha_replica_set_t *replica_set);
 void              ha_replica_set_shutdown         (ha_replica_set_t *replica_set);
 void              ha_replica_set_destroy          (ha_replica_set_t *replica_set);

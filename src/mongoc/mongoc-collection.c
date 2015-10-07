@@ -69,7 +69,6 @@ validate_name (const char *str)
    return false;
 }
 
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -106,11 +105,11 @@ _mongoc_collection_new (mongoc_client_t              *client,
 
    ENTRY;
 
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(db, NULL);
-   bson_return_val_if_fail(collection, NULL);
+   BSON_ASSERT (client);
+   BSON_ASSERT (db);
+   BSON_ASSERT (collection);
 
-   col = bson_malloc0(sizeof *col);
+   col = (mongoc_collection_t *)bson_malloc0(sizeof *col);
    col->client = client;
    col->write_concern = write_concern ?
       mongoc_write_concern_copy(write_concern) :
@@ -156,7 +155,7 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
 {
    ENTRY;
 
-   bson_return_if_fail(collection);
+   BSON_ASSERT (collection);
 
    bson_clear (&collection->gle);
 
@@ -225,20 +224,36 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
                              const bson_t              *options,    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
+   mongoc_server_description_t *selected_server;
+   bson_error_t error;
    mongoc_cursor_t *cursor;
    bson_iter_t iter;
    bson_t command;
    bson_t child;
    int32_t batch_size = 0;
-   bool did_batch_size = false;
-   bool try_cursor = true;
+   bool use_cursor;
 
-   bson_return_val_if_fail (collection, NULL);
-   bson_return_val_if_fail (pipeline, NULL);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (pipeline);
+
+   if (!read_prefs) {
+      read_prefs = collection->read_prefs;
+   }
+
+   selected_server = mongoc_topology_select(collection->client->topology,
+                                            MONGOC_SS_READ,
+                                            read_prefs,
+                                            15,
+                                            &error);
+
+   if (!selected_server) {
+      return NULL;
+   }
+
+   use_cursor = selected_server->max_wire_version >= 1;
 
    bson_init (&command);
 
-TOP:
    BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);
 
    /*
@@ -253,7 +268,7 @@ TOP:
    }
 
    /* for newer version, we include a cursor subdocument */
-   if (try_cursor) {
+   if (use_cursor) {
       bson_append_document_begin (&command, "cursor", 6, &child);
 
       if (options && bson_iter_init (&iter, options)) {
@@ -262,15 +277,10 @@ TOP:
                 (BSON_ITER_HOLDS_INT32 (&iter) ||
                  BSON_ITER_HOLDS_INT64 (&iter) ||
                  BSON_ITER_HOLDS_DOUBLE (&iter))) {
-               did_batch_size = true;
                batch_size = (int32_t)bson_iter_as_int64 (&iter);
                BSON_APPEND_INT32 (&child, "batchSize", batch_size);
             }
          }
-      }
-
-      if (!did_batch_size) {
-         BSON_APPEND_INT32 (&child, "batchSize", 100);
       }
 
       bson_append_document_end (&command, &child);
@@ -287,19 +297,17 @@ TOP:
    cursor = mongoc_collection_command (collection, flags, 0, 0, batch_size,
                                        &command, NULL, read_prefs);
 
-   if (try_cursor) {
+   cursor->hint = selected_server->id;
+
+   if (use_cursor) {
       /* even for newer versions, we get back a cursor document, that we have
        * to patch in */
-
       _mongoc_cursor_cursorid_init(cursor);
       cursor->limit = 0;
 
-      if (! _mongoc_cursor_cursorid_prime (cursor)) {
-         mongoc_cursor_destroy (cursor);
-         bson_reinit (&command);
-         try_cursor = false;
-         goto TOP;
-      }
+      /* we always return the cursor, even if it fails; users can detect the failure on performing
+       * a cursor operation. see CDRIVER-880. */
+      _mongoc_cursor_cursorid_prime (cursor);
    } else {
       /* for older versions we get an array that we can create a synthetic
        * cursor on top of */
@@ -308,6 +316,7 @@ TOP:
    }
 
    bson_destroy(&command);
+   mongoc_server_description_destroy (selected_server);
 
    return cursor;
 }
@@ -366,8 +375,8 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
                         const bson_t              *fields,     /* IN */
                         const mongoc_read_prefs_t *read_prefs) /* IN */
 {
-   bson_return_val_if_fail(collection, NULL);
-   bson_return_val_if_fail(query, NULL);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (query);
 
    bson_clear (&collection->gle);
 
@@ -518,7 +527,7 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
    bson_t cmd;
    bson_t q;
 
-   bson_return_val_if_fail(collection, -1);
+   BSON_ASSERT (collection);
 
    bson_init(&cmd);
    bson_append_utf8(&cmd, "count", 5, collection->collection,
@@ -574,7 +583,7 @@ mongoc_collection_drop (mongoc_collection_t *collection, /* IN */
    bool ret;
    bson_t cmd;
 
-   bson_return_val_if_fail(collection, false);
+   BSON_ASSERT (collection);
 
    bson_init(&cmd);
    bson_append_utf8(&cmd, "drop", 4, collection->collection,
@@ -610,8 +619,8 @@ mongoc_collection_drop_index (mongoc_collection_t *collection, /* IN */
    bool ret;
    bson_t cmd;
 
-   bson_return_val_if_fail(collection, false);
-   bson_return_val_if_fail(index_name, false);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (index_name);
 
    bson_init(&cmd);
    bson_append_utf8(&cmd, "dropIndexes", -1, collection->collection,
@@ -692,7 +701,7 @@ _mongoc_collection_create_index_legacy (mongoc_collection_t      *collection,
    bson_t insert;
    char *name;
 
-   bson_return_val_if_fail (collection, false);
+   BSON_ASSERT (collection);
 
    /*
     * TODO: this is supposed to be cached and cheap... make it that way
@@ -764,8 +773,9 @@ _mongoc_collection_create_index_legacy (mongoc_collection_t      *collection,
    col = mongoc_client_get_collection (collection->client, collection->db,
                                        "system.indexes");
 
-   ret = mongoc_collection_insert (col, MONGOC_INSERT_NO_VALIDATE, &insert, NULL,
-                                   error);
+   ret = mongoc_collection_insert (col,
+                                  (mongoc_insert_flags_t)MONGOC_INSERT_NO_VALIDATE,
+                                  &insert, NULL, error);
 
    mongoc_collection_destroy(col);
 
@@ -797,8 +807,8 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    char *alloc_name = NULL;
    bool ret = false;
 
-   bson_return_val_if_fail (collection, false);
-   bson_return_val_if_fail (keys, false);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (keys);
 
    def_opt = mongoc_index_opt_get_default ();
    opt = opt ? opt : def_opt;
@@ -1053,24 +1063,21 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
    mongoc_write_result_t result;
    bool ordered;
    bool ret;
+   uint32_t i;
 
-   bson_return_val_if_fail (collection, false);
-   bson_return_val_if_fail (documents, false);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (documents);
 
    if (!write_concern) {
       write_concern = collection->write_concern;
    }
 
    if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
-      int i;
+      int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
+                  | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
 
       for (i = 0; i < n_documents; i++) {
-         if (!bson_validate (documents[i],
-                             (BSON_VALIDATE_UTF8 |
-                              BSON_VALIDATE_UTF8_ALLOW_NULL |
-                              BSON_VALIDATE_DOLLAR_KEYS |
-                              BSON_VALIDATE_DOT_KEYS),
-                             NULL)) {
+         if (!bson_validate (documents[i], (bson_validate_flags_t)vflags, NULL)) {
             bson_set_error (error,
                             MONGOC_ERROR_BSON,
                             MONGOC_ERROR_BSON_INVALID,
@@ -1079,8 +1086,6 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
             RETURN (false);
          }
       }
-   } else {
-      flags &= ~MONGOC_INSERT_NO_VALIDATE;
    }
 
    bson_clear (&collection->gle);
@@ -1088,8 +1093,12 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
    _mongoc_write_result_init (&result);
 
    ordered = !(flags & MONGOC_INSERT_CONTINUE_ON_ERROR);
-   _mongoc_write_command_init_insert (&command, documents, n_documents,
-                                      ordered, true);
+
+   _mongoc_write_command_init_insert (&command, NULL, ordered, true);
+
+   for (i = 0; i < n_documents; i++) {
+      _mongoc_write_command_insert_append (&command, documents[i]);
+   }
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
@@ -1146,8 +1155,8 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
 
    ENTRY;
 
-   bson_return_val_if_fail (collection, false);
-   bson_return_val_if_fail (document, false);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (document);
 
    bson_clear (&collection->gle);
 
@@ -1156,12 +1165,10 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    }
 
    if (!(flags & MONGOC_INSERT_NO_VALIDATE)) {
-      if (!bson_validate (document,
-                          (BSON_VALIDATE_UTF8 |
-                           BSON_VALIDATE_UTF8_ALLOW_NULL |
-                           BSON_VALIDATE_DOLLAR_KEYS |
-                           BSON_VALIDATE_DOT_KEYS),
-                          NULL)) {
+      int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
+                  | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
+
+      if (!bson_validate (document, (bson_validate_flags_t)vflags, NULL)) {
          bson_set_error (error,
                          MONGOC_ERROR_BSON,
                          MONGOC_ERROR_BSON_INVALID,
@@ -1169,12 +1176,10 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
                          "invalid characters . or $");
          RETURN (false);
       }
-   } else {
-      flags &= ~MONGOC_INSERT_NO_VALIDATE;
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert (&command, &document, 1, true, false);
+   _mongoc_write_command_init_insert (&command, document, true, false);
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
@@ -1217,7 +1222,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
 
 bool
 mongoc_collection_update (mongoc_collection_t          *collection,
-                          mongoc_update_flags_t         flags,
+                          mongoc_update_flags_t         uflags,
                           const bson_t                 *selector,
                           const bson_t                 *update,
                           const mongoc_write_concern_t *write_concern,
@@ -1228,12 +1233,15 @@ mongoc_collection_update (mongoc_collection_t          *collection,
    bson_iter_t iter;
    size_t err_offset;
    bool ret;
+   int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL
+               | BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
+   int flags = uflags;
 
    ENTRY;
 
-   bson_return_val_if_fail(collection, false);
-   bson_return_val_if_fail(selector, false);
-   bson_return_val_if_fail(update, false);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (selector);
+   BSON_ASSERT (update);
 
    bson_clear (&collection->gle);
 
@@ -1245,12 +1253,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
        bson_iter_init (&iter, update) &&
        bson_iter_next (&iter) &&
        (bson_iter_key (&iter) [0] != '$') &&
-       !bson_validate (update,
-                       (BSON_VALIDATE_UTF8 |
-                        BSON_VALIDATE_UTF8_ALLOW_NULL |
-                        BSON_VALIDATE_DOLLAR_KEYS |
-                        BSON_VALIDATE_DOT_KEYS),
-                       &err_offset)) {
+       !bson_validate (update, (bson_validate_flags_t)vflags, &err_offset)) {
       bson_set_error (error,
                       MONGOC_ERROR_BSON,
                       MONGOC_ERROR_BSON_INVALID,
@@ -1312,8 +1315,8 @@ mongoc_collection_save (mongoc_collection_t          *collection,
    bool ret;
    bson_t selector;
 
-   bson_return_val_if_fail(collection, false);
-   bson_return_val_if_fail(document, false);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (document);
 
    if (!bson_iter_init_find(&iter, document, "_id")) {
       return mongoc_collection_insert(collection,
@@ -1345,7 +1348,7 @@ mongoc_collection_save (mongoc_collection_t          *collection,
  * mongoc_collection_remove --
  *
  *       Delete one or more items from a collection. If you want to
- *       limit to a single delete, provided MONGOC_DELETE_SINGLE_REMOVE
+ *       limit to a single delete, provided MONGOC_REMOVE_SINGLE_REMOVE
  *       for @flags.
  *
  * Parameters:
@@ -1383,8 +1386,8 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
 
    ENTRY;
 
-   bson_return_val_if_fail (collection, false);
-   bson_return_val_if_fail (selector, false);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (selector);
 
    bson_clear (&collection->gle);
 
@@ -1442,7 +1445,7 @@ mongoc_collection_delete (mongoc_collection_t          *collection,
 const mongoc_read_prefs_t *
 mongoc_collection_get_read_prefs (const mongoc_collection_t *collection)
 {
-   bson_return_val_if_fail(collection, NULL);
+   BSON_ASSERT (collection);
    return collection->read_prefs;
 }
 
@@ -1467,7 +1470,7 @@ void
 mongoc_collection_set_read_prefs (mongoc_collection_t       *collection,
                                   const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_if_fail(collection);
+   BSON_ASSERT (collection);
 
    if (collection->read_prefs) {
       mongoc_read_prefs_destroy(collection->read_prefs);
@@ -1499,7 +1502,7 @@ mongoc_collection_set_read_prefs (mongoc_collection_t       *collection,
 const mongoc_write_concern_t *
 mongoc_collection_get_write_concern (const mongoc_collection_t *collection)
 {
-   bson_return_val_if_fail (collection, NULL);
+   BSON_ASSERT (collection);
 
    return collection->write_concern;
 }
@@ -1525,7 +1528,7 @@ void
 mongoc_collection_set_write_concern (mongoc_collection_t          *collection,
                                      const mongoc_write_concern_t *write_concern)
 {
-   bson_return_if_fail(collection);
+   BSON_ASSERT (collection);
 
    if (collection->write_concern) {
       mongoc_write_concern_destroy(collection->write_concern);
@@ -1586,7 +1589,7 @@ mongoc_collection_get_name (mongoc_collection_t *collection)
 const bson_t *
 mongoc_collection_get_last_error (const mongoc_collection_t *collection) /* IN */
 {
-   bson_return_val_if_fail (collection, NULL);
+   BSON_ASSERT (collection);
 
    return collection->gle;
 }
@@ -1630,7 +1633,7 @@ mongoc_collection_validate (mongoc_collection_t *collection, /* IN */
    bson_t cmd = BSON_INITIALIZER;
    bool ret;
 
-   bson_return_val_if_fail (collection, false);
+   BSON_ASSERT (collection);
 
    if (options &&
        bson_iter_init_find (&iter, options, "full") &&
@@ -1691,8 +1694,8 @@ mongoc_collection_rename (mongoc_collection_t *collection,
    char newns [MONGOC_NAMESPACE_MAX + 1];
    bool ret;
 
-   bson_return_val_if_fail (collection, false);
-   bson_return_val_if_fail (new_name, false);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (new_name);
 
    if (!validate_name (new_name)) {
       bson_set_error (error,
@@ -1769,7 +1772,7 @@ mongoc_collection_stats (mongoc_collection_t *collection,
    bson_t cmd = BSON_INITIALIZER;
    bool ret;
 
-   bson_return_val_if_fail (collection, false);
+   BSON_ASSERT (collection);
 
    if (options &&
        bson_iter_init_find (&iter, options, "scale") &&
@@ -1801,7 +1804,7 @@ mongoc_collection_create_bulk_operation (
       bool                          ordered,
       const mongoc_write_concern_t *write_concern)
 {
-   bson_return_val_if_fail (collection, NULL);
+   BSON_ASSERT (collection);
 
    if (!write_concern) {
       write_concern = collection->write_concern;
@@ -1870,9 +1873,9 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
 
    ENTRY;
 
-   bson_return_val_if_fail (collection, false);
-   bson_return_val_if_fail (query, false);
-   bson_return_val_if_fail (update || _remove, false);
+   BSON_ASSERT (collection);
+   BSON_ASSERT (query);
+   BSON_ASSERT (update || _remove);
 
    name = mongoc_collection_get_name (collection);
 

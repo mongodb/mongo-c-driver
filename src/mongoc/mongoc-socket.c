@@ -22,7 +22,7 @@
 #include "mongoc-errno-private.h"
 #include "mongoc-socket-private.h"
 #include "mongoc-host-list.h"
-#include "mongoc-socket.h"
+#include "mongoc-socket-private.h"
 #include "mongoc-trace.h"
 
 #undef MONGOC_LOG_DOMAIN
@@ -112,7 +112,7 @@ _mongoc_socket_wait (int      sd,           /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (events, false);
+   BSON_ASSERT (events);
 
    pfd.fd = sd;
 #ifdef _WIN32
@@ -174,6 +174,83 @@ _mongoc_socket_wait (int      sd,           /* IN */
          RETURN (false);
       }
    }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_socket_poll --
+ *
+ *       A multi-socket poll helper.
+ *
+ *       @events: in most cases should be POLLIN or POLLOUT.
+ *
+ *       @expire_at should be an absolute time at which to expire using
+ *       the monotonic clock (bson_get_monotonic_time(), which is in
+ *       microseconds). Or zero to not block at all. Or -1 to block
+ *       forever.
+ *
+ * Returns:
+ *       true if an event matched. otherwise false.
+ *       a timeout will return false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+ssize_t
+mongoc_socket_poll (mongoc_socket_poll_t *sds,          /* IN */
+                    size_t                nsds,         /* IN */
+                    int32_t               timeout)      /* IN */
+{
+#ifdef _WIN32
+   WSAPOLLFD *pfds;
+#else
+   struct pollfd *pfds;
+#endif
+   int ret;
+   int i;
+
+   ENTRY;
+
+   BSON_ASSERT (sds);
+
+#ifdef _WIN32
+   pfds = (WSAPOLLFD *)bson_malloc(sizeof(*pfds) * nsds);
+#else
+   pfds = (struct pollfd *)bson_malloc(sizeof(*pfds) * nsds);
+#endif
+
+   for (i = 0; i < nsds; i++) {
+      pfds[i].fd = sds[i].socket->sd;
+#ifdef _WIN32
+      pfds[i].events = sds[i].events;
+#else
+      pfds[i].events = sds[i].events | POLLERR | POLLHUP;
+#endif
+      pfds[i].revents = 0;
+   }
+
+#ifdef _WIN32
+   ret = WSAPoll (pfds, nsds, timeout);
+   if (ret == SOCKET_ERROR) {
+      MONGOC_WARNING ("WSAGetLastError(): %d", WSAGetLastError ());
+      ret = -1;
+   }
+#else
+   ret = poll (pfds, nsds, timeout);
+#endif
+
+   for (i = 0; i < nsds; i++) {
+      sds[i].revents = pfds[i].revents;
+   }
+
+   bson_free(pfds);
+
+   return ret;
 }
 
 
@@ -298,7 +375,7 @@ _mongoc_socket_errno_is_again (mongoc_socket_t *sock) /* IN */
  *       A newly allocated mongoc_socket_t on success.
  *
  * Side effects:
- *       None.
+ *       *port contains the client port number.
  *
  *--------------------------------------------------------------------------
  */
@@ -307,8 +384,34 @@ mongoc_socket_t *
 mongoc_socket_accept (mongoc_socket_t *sock,      /* IN */
                       int64_t          expire_at) /* IN */
 {
+   return mongoc_socket_accept_ex (sock, expire_at, NULL);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_socket_accept_ex --
+ *
+ *       Private synonym for mongoc_socket_accept, returning client port.
+ *
+ * Returns:
+ *       NULL upon failure to accept or timeout.
+ *       A newly allocated mongoc_socket_t on success.
+ *
+ * Side effects:
+ *       *port contains the client port number.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_socket_t *
+mongoc_socket_accept_ex (mongoc_socket_t *sock,      /* IN */
+                         int64_t          expire_at, /* IN */
+                         uint16_t *port)             /* OUT */
+{
    mongoc_socket_t *client;
-   struct sockaddr addr;
+   struct sockaddr_in addr;
    socklen_t addrlen = sizeof addr;
    bool try_again = false;
    bool failed = false;
@@ -320,11 +423,11 @@ mongoc_socket_accept (mongoc_socket_t *sock,      /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, NULL);
+   BSON_ASSERT (sock);
 
 again:
    errno = 0;
-   sd = accept (sock->sd, &addr, &addrlen);
+   sd = accept (sock->sd, (struct sockaddr *) &addr, &addrlen);
 
    _mongoc_socket_capture_errno (sock);
 #ifdef _WIN32
@@ -350,8 +453,12 @@ again:
       RETURN (NULL);
    }
 
-   client = bson_malloc0 (sizeof *client);
+   client = (mongoc_socket_t *)bson_malloc0 (sizeof *client);
    client->sd = sd;
+
+   if (port) {
+      *port = ntohs (addr.sin_port);
+   }
 
    if (!_mongoc_socket_setnodelay (client->sd)) {
       MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
@@ -386,9 +493,9 @@ mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, false);
-   bson_return_val_if_fail (addr, false);
-   bson_return_val_if_fail (addrlen, false);
+   BSON_ASSERT (sock);
+   BSON_ASSERT (addr);
+   BSON_ASSERT (addrlen);
 
    ret = bind (sock->sd, addr, addrlen);
 
@@ -421,40 +528,33 @@ mongoc_socket_bind (mongoc_socket_t       *sock,    /* IN */
 int
 mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 {
-   int ret = 0;
-
    ENTRY;
 
-   bson_return_val_if_fail (sock, false);
+   BSON_ASSERT (sock);
 
 #ifdef _WIN32
    if (sock->sd != INVALID_SOCKET) {
       shutdown (sock->sd, SD_BOTH);
-      ret = closesocket (sock->sd);
-   } else {
-       RETURN(0);
+      if (0 == closesocket (sock->sd)) {
+         sock->sd = INVALID_SOCKET;
+      } else {
+         _mongoc_socket_capture_errno (sock);
+         RETURN(-1);
+      }
    }
+   RETURN(0);
 #else
    if (sock->sd != -1) {
       shutdown (sock->sd, SHUT_RDWR);
-      ret = close (sock->sd);
-   } else {
-       RETURN(0);
+      if (0 == close (sock->sd)) {
+         sock->sd = -1;
+      } else {
+         _mongoc_socket_capture_errno (sock);
+         RETURN(-1);
+      }
    }
+   RETURN(0);
 #endif
-
-   if (ret == 0) {
-#ifdef _WIN32
-      sock->sd = INVALID_SOCKET;
-#else
-      sock->sd = -1;
-#endif
-      RETURN (0);
-   }
-
-   _mongoc_socket_capture_errno (sock);
-
-   RETURN (-1);
 }
 
 
@@ -489,9 +589,9 @@ mongoc_socket_connect (mongoc_socket_t       *sock,      /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, false);
-   bson_return_val_if_fail (addr, false);
-   bson_return_val_if_fail (addrlen, false);
+   BSON_ASSERT (sock);
+   BSON_ASSERT (addr);
+   BSON_ASSERT (addrlen);
 
    ret = connect (sock->sd, addr, addrlen);
 
@@ -579,7 +679,7 @@ mongoc_socket_listen (mongoc_socket_t *sock,    /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, false);
+   BSON_ASSERT (sock);
 
    if (backlog == 0) {
       backlog = 10;
@@ -644,7 +744,7 @@ mongoc_socket_new (int domain,   /* IN */
       MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
    }
 
-   sock = bson_malloc0 (sizeof *sock);
+   sock = (mongoc_socket_t *)bson_malloc0 (sizeof *sock);
    sock->sd = sd;
    sock->domain = domain;
 
@@ -696,9 +796,9 @@ mongoc_socket_recv (mongoc_socket_t *sock,      /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, -1);
-   bson_return_val_if_fail (buf, -1);
-   bson_return_val_if_fail (buflen, -1);
+   BSON_ASSERT (sock);
+   BSON_ASSERT (buf);
+   BSON_ASSERT (buflen);
 
 again:
    sock->errno_ = 0;
@@ -720,8 +820,6 @@ again:
    if (failed) {
       RETURN (-1);
    }
-
-   DUMP_BYTES (recvbuf, (uint8_t *)buf, ret);
 
    mongoc_counter_streams_ingress_add (ret);
 
@@ -756,7 +854,7 @@ mongoc_socket_setsockopt (mongoc_socket_t *sock,    /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, false);
+   BSON_ASSERT (sock);
 
    ret = setsockopt (sock->sd, level, optname, optval, optlen);
 
@@ -794,9 +892,9 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
 {
    mongoc_iovec_t iov;
 
-   bson_return_val_if_fail (sock, -1);
-   bson_return_val_if_fail (buf, -1);
-   bson_return_val_if_fail (buflen, -1);
+   BSON_ASSERT (sock);
+   BSON_ASSERT (buf);
+   BSON_ASSERT (buflen);
 
    iov.iov_base = (void *)buf;
    iov.iov_len = buflen;
@@ -812,7 +910,8 @@ mongoc_socket_send (mongoc_socket_t *sock,      /* IN */
  *
  *       A slow variant of _mongoc_socket_try_sendv() that sends each
  *       iovec entry one by one. This can happen if we hit EMSGSIZE
- *       with sendmsg() on various POSIX systems.
+ *       with sendmsg() on various POSIX systems or WSASend()+WSAEMSGSIZE
+ *       on Windows.
  *
  * Returns:
  *       the number of bytes sent or -1 and errno is set.
@@ -989,9 +1088,9 @@ mongoc_socket_sendv (mongoc_socket_t  *sock,      /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, -1);
-   bson_return_val_if_fail (in_iov, -1);
-   bson_return_val_if_fail (iovcnt, -1);
+   BSON_ASSERT (sock);
+   BSON_ASSERT (in_iov);
+   BSON_ASSERT (iovcnt);
 
    iov = bson_malloc(sizeof(*iov) * iovcnt);
    memcpy(iov, in_iov, sizeof(*iov) * iovcnt);
@@ -1076,7 +1175,7 @@ mongoc_socket_getsockname (mongoc_socket_t *sock,    /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, -1);
+   BSON_ASSERT (sock);
 
    ret = getsockname (sock->sd, addr, addrlen);
 
@@ -1096,7 +1195,7 @@ mongoc_socket_getnameinfo (mongoc_socket_t *sock) /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (sock, NULL);
+   BSON_ASSERT (sock);
 
    if ((0 == getpeername (sock->sd, &addr, &len)) &&
        (0 == getnameinfo (&addr, len, host, sizeof host, NULL, 0, 0))) {

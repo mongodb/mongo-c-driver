@@ -75,12 +75,15 @@ typedef struct _mongoc_client_t mongoc_client_t;
  * mongoc_stream_initiator_t:
  * @uri: The uri and options for the stream.
  * @host: The host and port (or UNIX domain socket path) to connect to.
+ * @user_data: The pointer passed to mongoc_client_set_stream_initiator.
  * @error: A location for an error.
  *
- * Creates a new mongoc_stream_t for the host and port. This can be used
- * by language bindings to create network transports other than those
- * built into libmongoc. An example of such would be the streams API
- * provided by PHP.
+ * Creates a new mongoc_stream_t for the host and port. Begin a
+ * non-blocking connect and return immediately.
+ *
+ * This can be used by language bindings to create network transports other
+ * than those built into libmongoc. An example of such would be the streams
+ * API provided by PHP.
  *
  * Returns: A newly allocated mongoc_stream_t or NULL on failure.
  */
@@ -106,7 +109,7 @@ mongoc_cursor_t               *mongoc_client_command              (mongoc_client
                                                                    const bson_t                 *fields,
                                                                    const mongoc_read_prefs_t    *read_prefs);
 void                           mongoc_client_kill_cursor          (mongoc_client_t *client,
-                                                                   int64_t          cursor_id);
+                                                                   int64_t          cursor_id) BSON_GNUC_DEPRECATED;
 bool                           mongoc_client_command_simple       (mongoc_client_t              *client,
                                                                    const char                   *db_name,
                                                                    const bson_t                 *command,
@@ -116,6 +119,7 @@ bool                           mongoc_client_command_simple       (mongoc_client
 void                           mongoc_client_destroy              (mongoc_client_t              *client);
 mongoc_database_t             *mongoc_client_get_database         (mongoc_client_t              *client,
                                                                    const char                   *name);
+mongoc_database_t             *mongoc_client_get_default_database (mongoc_client_t              *client);
 mongoc_gridfs_t               *mongoc_client_get_gridfs           (mongoc_client_t              *client,
                                                                    const char                   *db,
                                                                    const char                   *prefix,
@@ -131,8 +135,8 @@ bool                           mongoc_client_get_server_status    (mongoc_client
                                                                    mongoc_read_prefs_t          *read_prefs,
                                                                    bson_t                       *reply,
                                                                    bson_error_t                 *error);
-int32_t                        mongoc_client_get_max_message_size (mongoc_client_t              *client);
-int32_t                        mongoc_client_get_max_bson_size    (mongoc_client_t              *client);
+int32_t                        mongoc_client_get_max_message_size (mongoc_client_t              *client) BSON_GNUC_DEPRECATED;
+int32_t                        mongoc_client_get_max_bson_size    (mongoc_client_t              *client) BSON_GNUC_DEPRECATED;
 const mongoc_write_concern_t  *mongoc_client_get_write_concern    (const mongoc_client_t        *client);
 void                           mongoc_client_set_write_concern    (mongoc_client_t              *client,
                                                                    const mongoc_write_concern_t *write_concern);

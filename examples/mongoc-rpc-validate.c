@@ -67,7 +67,7 @@ validate (const char *name) /* IN */
       exit (EXIT_FAILURE);
    }
 
-   buf = malloc (st.st_size);
+   buf = (uint8_t *)bson_malloc (st.st_size);
    if (buf == NULL) {
       fprintf (stderr, "%s: Failed to malloc %d bytes.\n",
                name, (int)st.st_size);

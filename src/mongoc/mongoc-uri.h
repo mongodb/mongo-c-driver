@@ -24,6 +24,7 @@
 #include <bson.h>
 
 #include "mongoc-host-list.h"
+#include "mongoc-read-prefs.h"
 #include "mongoc-write-concern.h"
 
 
@@ -49,7 +50,8 @@ const mongoc_host_list_t     *mongoc_uri_get_hosts                (const mongoc_
 const char                   *mongoc_uri_get_database             (const mongoc_uri_t *uri);
 const bson_t                 *mongoc_uri_get_options              (const mongoc_uri_t *uri);
 const char                   *mongoc_uri_get_password             (const mongoc_uri_t *uri);
-const bson_t                 *mongoc_uri_get_read_prefs           (const mongoc_uri_t *uri);
+const bson_t                 *mongoc_uri_get_read_prefs           (const mongoc_uri_t *uri)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_read_prefs_t);
 const char                   *mongoc_uri_get_replica_set          (const mongoc_uri_t *uri);
 const char                   *mongoc_uri_get_string               (const mongoc_uri_t *uri);
 const char                   *mongoc_uri_get_username             (const mongoc_uri_t *uri);
@@ -60,8 +62,8 @@ bool                          mongoc_uri_get_mechanism_properties (const mongoc_
                                                                          bson_t       *properties);
 bool                          mongoc_uri_get_ssl                  (const mongoc_uri_t *uri);
 char                         *mongoc_uri_unescape                 (const char         *escaped_string);
+const mongoc_read_prefs_t *   mongoc_uri_get_read_prefs_t         (const mongoc_uri_t *uri);
 const mongoc_write_concern_t *mongoc_uri_get_write_concern        (const mongoc_uri_t *uri);
-
 
 BSON_END_DECLS
 

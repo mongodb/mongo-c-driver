@@ -40,7 +40,7 @@ _mongoc_gridfs_file_page_new (const uint8_t *data,
    BSON_ASSERT (data);
    BSON_ASSERT (len <= chunk_size);
 
-   page = bson_malloc0 (sizeof *page);
+   page = (mongoc_gridfs_file_page_t *)bson_malloc0 (sizeof *page);
 
    page->chunk_size = chunk_size;
    page->read_buf = data;
@@ -115,7 +115,7 @@ _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
    bytes_written = BSON_MIN (len, page->chunk_size - page->offset);
 
    if (!page->buf) {
-      page->buf = bson_malloc (page->chunk_size);
+      page->buf = (uint8_t *) bson_malloc (page->chunk_size);
       memcpy (page->buf, page->read_buf, BSON_MIN (page->chunk_size, page->len));
    }
 

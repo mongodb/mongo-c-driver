@@ -41,18 +41,14 @@ typedef struct
    uint32_t hint;
    bson_t  *documents;
    uint32_t n_documents;
+   bool     ordered;
    union {
       struct {
-         uint8_t   ordered : 1;
-         uint8_t   multi : 1;
-      } delete;
+         bool multi;
+      } delete_;
       struct {
-         uint8_t   ordered : 1;
-         uint8_t   allow_bulk_op_insert : 1;
+         bool allow_bulk_op_insert;
       } insert;
-      struct {
-         uint8_t   ordered : 1;
-      } update;
    } u;
 } mongoc_write_command_t;
 
@@ -70,7 +66,9 @@ typedef struct
    bson_t       writeErrors;
    /* like [{"index": int, "code": int, "errmsg": str}, ...] */
    bson_t       upserted;
-   bson_t       writeConcernError;
+   /* like [{"code": 64, "errmsg": "duplicate"}, ...] */
+   uint32_t     n_writeConcernErrors;
+   bson_t       writeConcernErrors;
    bool         failed;
    bson_error_t error;
    uint32_t     upsert_append_count;
@@ -79,8 +77,7 @@ typedef struct
 
 void _mongoc_write_command_destroy     (mongoc_write_command_t        *command);
 void _mongoc_write_command_init_insert (mongoc_write_command_t        *command,
-                                        const bson_t * const          *documents,
-                                        uint32_t                       n_documents,
+                                        const bson_t                  *document,
                                         bool                           ordered,
                                         bool                           allow_bulk_op_insert);
 void _mongoc_write_command_init_delete (mongoc_write_command_t        *command,
@@ -94,9 +91,7 @@ void _mongoc_write_command_init_update (mongoc_write_command_t        *command,
                                         bool                           multi,
                                         bool                           ordered);
 void _mongoc_write_command_insert_append (mongoc_write_command_t      *command,
-                                          const bson_t * const        *documents,
-                                          uint32_t                     n_documents);
-
+                                          const bson_t                *document);
 void _mongoc_write_command_update_append (mongoc_write_command_t      *command,
                                           const bson_t                *selector,
                                           const bson_t                *update,
@@ -112,7 +107,8 @@ void _mongoc_write_command_execute     (mongoc_write_command_t        *command,
                                         const char                    *database,
                                         const char                    *collection,
                                         const mongoc_write_concern_t  *write_concern,
-                                        uint32_t                       offset,                                        mongoc_write_result_t         *result);
+                                        uint32_t                       offset,
+                                        mongoc_write_result_t         *result);
 void _mongoc_write_result_init         (mongoc_write_result_t         *result);
 void _mongoc_write_result_merge        (mongoc_write_result_t         *result,
                                         mongoc_write_command_t        *command,

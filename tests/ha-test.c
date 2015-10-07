@@ -63,6 +63,56 @@ void ha_mkdir(const char * name)
    }
 }
 
+mongoc_client_pool_t *
+ha_replica_set_create_client_pool (ha_replica_set_t *replica_set)
+{
+   mongoc_client_pool_t *client;
+   bson_string_t *str;
+   ha_node_t *iter;
+   char *portstr;
+   mongoc_uri_t *uri;
+
+   str = bson_string_new("mongodb://");
+
+   for (iter = replica_set->nodes; iter; iter = iter->next) {
+      bson_string_append(str, "127.0.0.1:");
+
+      portstr = bson_strdup_printf("%hu", iter->port);
+      bson_string_append(str, portstr);
+      bson_free(portstr);
+
+      if (iter->next) {
+         bson_string_append(str, ",");
+      }
+   }
+
+   bson_string_append(str, "/?replicaSet=");
+   bson_string_append(str, replica_set->name);
+
+#ifdef MONGOC_ENABLE_SSL
+   if (replica_set->ssl_opt) {
+      bson_string_append(str, "&ssl=true");
+   }
+#endif
+
+   uri = mongoc_uri_new (str->str);
+
+   client = mongoc_client_pool_new(uri);
+
+#ifdef MONGOC_ENABLE_SSL
+   if (replica_set->ssl_opt) {
+      mongoc_client_pool_set_ssl_opts(client, replica_set->ssl_opt);
+   }
+#endif
+
+   mongoc_uri_destroy (uri);
+
+   bson_string_free(str, true);
+
+   return client;
+}
+
+
 mongoc_client_t *
 ha_replica_set_create_client (ha_replica_set_t *replica_set)
 {
@@ -87,6 +137,12 @@ ha_replica_set_create_client (ha_replica_set_t *replica_set)
 
    bson_string_append(str, "/?replicaSet=");
    bson_string_append(str, replica_set->name);
+
+#ifdef MONGOC_ENABLE_SSL
+   if (replica_set->ssl_opt) {
+      bson_string_append(str, "&ssl=true");
+   }
+#endif
 
    client = mongoc_client_new(str->str);
 
@@ -113,7 +169,7 @@ ha_node_new (const char       *name,
 {
    ha_node_t *node;
 
-   node = bson_malloc0(sizeof *node);
+   node = (ha_node_t *)bson_malloc0(sizeof *node);
    node->name = bson_strdup(name);
    node->repl_set = bson_strdup(repl_set);
    node->dbpath = bson_strdup(dbpath);
@@ -409,7 +465,7 @@ ha_replica_set_new (const char *name)
 {
    ha_replica_set_t *repl_set;
 
-   repl_set = bson_malloc0(sizeof *repl_set);
+   repl_set = (ha_replica_set_t *)bson_malloc0(sizeof *repl_set);
    repl_set->name = bson_strdup(name);
    repl_set->next_port = random_int_range(30000, 40000);
 
@@ -488,7 +544,16 @@ ha_replica_set_configure (ha_replica_set_t *replica_set,
    char key[8];
    int i = 0;
 
+#ifdef MONGOC_ENABLE_SSL
+   if (replica_set->ssl_opt) {
+      uristr = bson_strdup_printf("mongodb://127.0.0.1:%hu/?ssl=true", primary->port);
+   } else {
+      uristr = bson_strdup_printf("mongodb://127.0.0.1:%hu/", primary->port);
+   }
+#else
    uristr = bson_strdup_printf("mongodb://127.0.0.1:%hu/", primary->port);
+#endif
+
    client = mongoc_client_new(uristr);
 #ifdef MONGOC_ENABLE_SSL
    if (replica_set->ssl_opt) {
@@ -724,7 +789,7 @@ again:
       char *str;
 
       str = bson_as_json(&status, NULL);
-      printf("%s\n", str);
+      fprintf(stderr, "%s\n", str);
       bson_free(str);
    }
 #endif
@@ -762,7 +827,7 @@ ha_sharded_cluster_new (const char *name)
 {
    ha_sharded_cluster_t *cluster;
 
-   cluster = bson_malloc0(sizeof *cluster);
+   cluster = (ha_sharded_cluster_t *)bson_malloc0(sizeof *cluster);
    cluster->next_port = random_int_range(40000, 41000);
    cluster->name = bson_strdup(name);
 
@@ -776,8 +841,8 @@ ha_sharded_cluster_add_replica_set (ha_sharded_cluster_t *cluster,
 {
    int i;
 
-   bson_return_if_fail(cluster);
-   bson_return_if_fail(replica_set);
+   BSON_ASSERT (cluster);
+   BSON_ASSERT (replica_set);
 
    for (i = 0; i < 12; i++) {
       if (!cluster->replicas[i]) {
@@ -795,7 +860,7 @@ ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
    ha_node_t *node;
    char dbpath[PATH_MAX];
 
-   bson_return_val_if_fail(cluster, NULL);
+   BSON_ASSERT (cluster);
 
    bson_snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
    dbpath[sizeof dbpath - 1] = '\0';
@@ -824,7 +889,7 @@ ha_sharded_cluster_add_router (ha_sharded_cluster_t *cluster,
    ha_node_t *node;
    char dbpath[PATH_MAX];
 
-   bson_return_val_if_fail(cluster, NULL);
+   BSON_ASSERT (cluster);
 
    bson_snprintf(dbpath, sizeof dbpath, "%s/%s", cluster->name, name);
    dbpath[sizeof dbpath - 1] = '\0';
@@ -887,7 +952,7 @@ again:
       char *str;
 
       str = bson_as_json (&reply, NULL);
-      printf ("%s\n", str);
+      fprintf (stderr, "%s\n", str);
       bson_free (str);
    }
 #endif
@@ -907,7 +972,7 @@ ha_sharded_cluster_start (ha_sharded_cluster_t *cluster)
    ha_node_t *iter;
    int i;
 
-   bson_return_if_fail(cluster);
+   BSON_ASSERT (cluster);
 
    if (!stat(cluster->name, &st)) {
       if (S_ISDIR(st.st_mode)) {
@@ -959,7 +1024,7 @@ ha_sharded_cluster_wait_for_healthy (ha_sharded_cluster_t *cluster)
 {
    int i;
 
-   bson_return_if_fail(cluster);
+   BSON_ASSERT (cluster);
 
    for (i = 0; i < 12; i++) {
       if (cluster->replicas[i]) {
@@ -975,7 +1040,7 @@ ha_sharded_cluster_shutdown (ha_sharded_cluster_t *cluster)
    ha_node_t *iter;
    int i;
 
-   bson_return_if_fail(cluster);
+   BSON_ASSERT (cluster);
 
    for (i = 0; i < 12; i++) {
       if (cluster->replicas[i]) {

@@ -207,6 +207,38 @@ test_write_concern_fsync_and_journal_gle_and_validity (void)
    mongoc_write_concern_destroy(write_concern);
 }
 
+static void
+test_write_concern_wtimeout_validity (void)
+{
+   mongoc_write_concern_t *write_concern = mongoc_write_concern_new();
+
+   /* Test defaults */
+   ASSERT(write_concern);
+   ASSERT(mongoc_write_concern_get_w(write_concern) == MONGOC_WRITE_CONCERN_W_DEFAULT);
+   ASSERT(mongoc_write_concern_get_wtimeout(write_concern) == 0);
+   ASSERT(!mongoc_write_concern_get_wmajority(write_concern));
+
+   /* mongoc_write_concern_set_wtimeout() ignores invalid wtimeout */
+   mongoc_write_concern_set_wtimeout(write_concern, -1);
+   ASSERT(mongoc_write_concern_get_w(write_concern) == MONGOC_WRITE_CONCERN_W_DEFAULT);
+   ASSERT(mongoc_write_concern_get_wtimeout(write_concern) == 0);
+   ASSERT(!mongoc_write_concern_get_wmajority(write_concern));
+   ASSERT(_mongoc_write_concern_is_valid(write_concern));
+
+   /* mongoc_write_concern_set_wmajority() ignores invalid wtimeout */
+   mongoc_write_concern_set_wmajority(write_concern, -1);
+   ASSERT(mongoc_write_concern_get_w(write_concern) == MONGOC_WRITE_CONCERN_W_MAJORITY);
+   ASSERT(mongoc_write_concern_get_wtimeout(write_concern) == 0);
+   ASSERT(mongoc_write_concern_get_wmajority(write_concern));
+   ASSERT(_mongoc_write_concern_is_valid(write_concern));
+
+   /* Manually assigning a negative wtimeout will make the write concern invalid */
+   write_concern->wtimeout = -1;
+   ASSERT(!_mongoc_write_concern_is_valid(write_concern));
+
+   mongoc_write_concern_destroy(write_concern);
+}
+
 
 void
 test_write_concern_install (TestSuite *suite)
@@ -215,4 +247,5 @@ test_write_concern_install (TestSuite *suite)
    TestSuite_Add (suite, "/WriteConcern/bson_omits_defaults", test_write_concern_bson_omits_defaults);
    TestSuite_Add (suite, "/WriteConcern/bson_includes_false_fsync_and_journal", test_write_concern_bson_includes_false_fsync_and_journal);
    TestSuite_Add (suite, "/WriteConcern/fsync_and_journal_gle_and_validity", test_write_concern_fsync_and_journal_gle_and_validity);
+   TestSuite_Add (suite, "/WriteConcern/wtimeout_validity", test_write_concern_wtimeout_validity);
 }

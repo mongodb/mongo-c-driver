@@ -30,15 +30,6 @@
 #define MONGOC_LOG_DOMAIN "cursor-cursorid"
 
 
-typedef struct
-{
-   bool        has_cursor;
-   bool        in_first_batch;
-   bson_iter_t first_batch_iter;
-   bson_t      first_batch_inline;
-} mongoc_cursor_cursorid_t;
-
-
 static void *
 _mongoc_cursor_cursorid_new (void)
 {
@@ -46,7 +37,7 @@ _mongoc_cursor_cursorid_new (void)
 
    ENTRY;
 
-   cid = bson_malloc0 (sizeof *cid);
+   cid = (mongoc_cursor_cursorid_t *)bson_malloc0 (sizeof *cid);
 
    RETURN (cid);
 }
@@ -75,7 +66,7 @@ _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   cid = cursor->iface_data;
+   cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
 
    if (!cid->has_cursor) {
       ret = _mongoc_cursor_next (cursor, &bson);
@@ -121,7 +112,7 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
 
    ENTRY;
 
-   cid = cursor->iface_data;
+   cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
 
    if (! cid->has_cursor) {
       if (! _mongoc_cursor_cursorid_prime (cursor)) {

@@ -20,7 +20,7 @@ mongoc_index_opt_init (mongoc_index_opt_t *opt);
   <section id="parameters">
     <title>Parameters</title>
     <table>
-      <tr><td><p>opt</p></td><td><p>A mongoc_index_opt_t.</p></td></tr>
+      <tr><td><p>opt</p></td><td><p>A <code xref="mongoc_index_opt_t">mongoc_index_opt_t</code>.</p></td></tr>
     </table>
   </section>
 

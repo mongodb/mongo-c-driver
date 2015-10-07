@@ -17,59 +17,59 @@
 
 #include <bson.h>
 #include <mongoc.h>
-#include <stdlib.h>
-#include <stdio.h>
 
-#include "TestSuite.h"
-#include "test-libmongoc.h"
+#include "mongoc-uri-private.h"
+
 #include "mongoc-tests.h"
+#include "TestSuite.h"
+#include "test-conveniences.h"
+#include "test-libmongoc.h"
 
 
-extern void test_array_install             (TestSuite *suite);
-extern void test_buffer_install            (TestSuite *suite);
-extern void test_bulk_install              (TestSuite *suite);
-extern void test_client_install            (TestSuite *suite);
-extern void test_client_pool_install       (TestSuite *suite);
-extern void test_cluster_install           (TestSuite *suite);
-extern void test_collection_install        (TestSuite *suite);
-extern void test_cursor_install            (TestSuite *suite);
-extern void test_database_install          (TestSuite *suite);
-extern void test_gridfs_install            (TestSuite *suite);
-extern void test_gridfs_file_page_install  (TestSuite *suite);
-extern void test_list_install              (TestSuite *suite);
-extern void test_matcher_install           (TestSuite *suite);
-extern void test_queue_install             (TestSuite *suite);
-extern void test_read_prefs_install        (TestSuite *suite);
-extern void test_rpc_install               (TestSuite *suite);
-extern void test_sasl_install              (TestSuite *suite);
-extern void test_socket_install            (TestSuite *suite);
-extern void test_stream_install            (TestSuite *suite);
-extern void test_uri_install               (TestSuite *suite);
-extern void test_write_command_install     (TestSuite *suite);
-extern void test_write_concern_install     (TestSuite *suite);
+extern void test_array_install                   (TestSuite *suite);
+extern void test_async_install                   (TestSuite *suite);
+extern void test_buffer_install                  (TestSuite *suite);
+extern void test_bulk_install                    (TestSuite *suite);
+extern void test_client_install                  (TestSuite *suite);
+extern void test_client_pool_install             (TestSuite *suite);
+extern void test_cluster_install                 (TestSuite *suite);
+extern void test_collection_install              (TestSuite *suite);
+extern void test_cursor_install                  (TestSuite *suite);
+extern void test_database_install                (TestSuite *suite);
+extern void test_exhaust_install                 (TestSuite *suite);
+extern void test_gridfs_file_page_install        (TestSuite *suite);
+extern void test_gridfs_install                  (TestSuite *suite);
+extern void test_list_install                    (TestSuite *suite);
+extern void test_log_install                     (TestSuite *suite);
+extern void test_matcher_install                 (TestSuite *suite);
+extern void test_queue_install                   (TestSuite *suite);
+extern void test_read_prefs_install              (TestSuite *suite);
+extern void test_rpc_install                     (TestSuite *suite);
+extern void test_sdam_install                    (TestSuite *suite);
+extern void test_sasl_install                    (TestSuite *suite);
+extern void test_server_selection_install        (TestSuite *suite);
+extern void test_server_selection_errors_install (TestSuite *suite);
+extern void test_set_install                     (TestSuite *suite);
+extern void test_socket_install                  (TestSuite *suite);
+extern void test_stream_install                  (TestSuite *suite);
+extern void test_thread_install                  (TestSuite *suite);
+extern void test_topology_install                (TestSuite *suite);
+extern void test_topology_reconcile_install      (TestSuite *suite);
+extern void test_topology_scanner_install        (TestSuite *suite);
+extern void test_uri_install                     (TestSuite *suite);
+extern void test_usleep_install                  (TestSuite *suite);
+extern void test_version_install                 (TestSuite *suite);
+extern void test_write_command_install           (TestSuite *suite);
+extern void test_write_concern_install           (TestSuite *suite);
 #ifdef MONGOC_ENABLE_SSL
-extern void test_x509_install              (TestSuite *suite);
-extern void test_stream_tls_install        (TestSuite *suite);
-extern void test_stream_tls_error_install  (TestSuite *suite);
+extern void test_x509_install                    (TestSuite *suite);
+extern void test_stream_tls_install              (TestSuite *suite);
+extern void test_stream_tls_error_install        (TestSuite *suite);
 #endif
 
 
 #ifdef _WIN32
 # define strcasecmp _stricmp
-
-void
-usleep (int64_t usec)
-{
-    HANDLE timer;
-    LARGE_INTEGER ft;
-
-    ft.QuadPart = -(10 * usec);
-
-    timer = CreateWaitableTimer(NULL, true, NULL);
-    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
-    WaitForSingleObject(timer, INFINITE);
-    CloseHandle(timer);
-}
 #endif
 
 
@@ -92,11 +92,11 @@ log_handler (mongoc_log_level_t  log_level,
              const char         *message,
              void               *user_data)
 {
-   if (gSuppressCount) {
-      gSuppressCount--;
-      return;
-   }
    if (log_level < MONGOC_LOG_LEVEL_INFO) {
+      if (gSuppressCount) {
+         gSuppressCount--;
+         return;
+      }
       mongoc_log_default_handler (log_level, log_domain, message, NULL);
    }
 }
@@ -143,7 +143,7 @@ test_framework_getenv (const char *name)
    }
 #else
 
-   if (getenv (name)) {
+   if (getenv (name) && strlen (getenv (name))) {
       return bson_strdup (getenv (name));
    } else {
       return NULL;
@@ -191,6 +191,45 @@ test_framework_getenv_bool (const char *name)
    return ret;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_getenv_int64 --
+ *
+ *       Get a number from an environment variable.
+ *
+ * Returns:
+ *       The number, or default.
+ *
+ * Side effects:
+ *       Logs and aborts if there is a non-numeric value.
+ *
+ *--------------------------------------------------------------------------
+ */
+int64_t
+test_framework_getenv_int64 (const char *name,
+                             int64_t default_value)
+{
+   char *value = test_framework_getenv (name);
+   char *endptr;
+   int64_t ret;
+
+   if (value) {
+      errno = 0;
+      ret = bson_ascii_strtoll (value, &endptr, 10);
+      if (errno) {
+         perror (bson_strdup_printf ("Parsing %s from environment", name));
+         abort ();
+      }
+
+      bson_free (value);
+      return ret;
+   }
+
+   return default_value;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -212,6 +251,40 @@ test_framework_get_host (void)
    char *host = test_framework_getenv ("MONGOC_TEST_HOST");
 
    return host ? host : bson_strdup ("localhost");
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_port --
+ *
+ *       Get the port number of the test MongoDB server.
+ *
+ * Returns:
+ *       The port number, 27017 by default.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+uint16_t
+test_framework_get_port (void)
+{
+   char *port_str = test_framework_getenv ("MONGOC_TEST_PORT");
+   unsigned long port = MONGOC_DEFAULT_PORT;
+
+   if (port_str && strlen (port_str)) {
+      port = strtoul (port_str, NULL, 10);
+      if (port == 0 || port > UINT16_MAX) {
+         /* parse err or port out of range -- mongod prohibits port 0 */
+         port = MONGOC_DEFAULT_PORT;
+      }
+   }
+
+   bson_free (port_str);
+
+   return (uint16_t) port;
 }
 
 /*
@@ -256,6 +329,115 @@ test_framework_get_admin_password (void)
    return test_framework_getenv ("MONGOC_TEST_PASSWORD");
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_user_password --
+ *
+ *       Get the username and password of an admin user on the test MongoDB
+ *       server.
+ *
+ * Returns:
+ *       True if username and password environment variables are set.
+ *
+ * Side effects:
+ *       Sets passed-in string pointers to strings you must free, or NULL.
+ *       Logs and aborts if user or password is set in the environment
+ *       but not both, or if user and password are set but SSL is not
+ *       compiled in (SSL is required for SCRAM-SHA-1, see CDRIVER-520).
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+test_framework_get_user_password (char **user,
+                                  char **password)
+{
+   /* TODO: uri-escape username and password */
+   *user = test_framework_get_admin_user ();
+   *password = test_framework_get_admin_password ();
+
+   if ((*user && !*password) || (!*user && *password)) {
+      fprintf (stderr, "Specify both MONGOC_TEST_USER and"
+         " MONGOC_TEST_PASSWORD, or neither\n");
+      abort ();
+   }
+
+#ifndef MONGOC_ENABLE_SSL
+   if (*user && *password) {
+      fprintf (stderr, "You need to configure with --enable-ssl"
+                       " when providing user+password (for SCRAM-SHA-1)\n");
+      abort ();
+   }
+#endif
+
+   return *user != NULL;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_add_user_password --
+ *
+ *       Copy a connection string, with user and password added.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_add_user_password (const char *uri_str,
+                                  const char *user,
+                                  const char *password)
+{
+   return bson_strdup_printf (
+      "mongodb://%s:%s@%s",
+      user, password, uri_str + strlen ("mongodb://"));
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_add_user_password_from_env --
+ *
+ *       Add password of an admin user on the test MongoDB server.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       Same as test_framework_get_user_password.
+ *
+ *--------------------------------------------------------------------------
+ */
+static char *
+test_framework_add_user_password_from_env (const char *uri_str)
+{
+   char *user;
+   char *password;
+   char *uri_str_auth;
+
+   if (test_framework_get_user_password (&user, &password)) {
+      uri_str_auth = test_framework_add_user_password (uri_str,
+                                                       user,
+                                                       password);
+
+      bson_free (user);
+      bson_free (password);
+   } else {
+      uri_str_auth = bson_strdup (uri_str);
+   }
+
+   return uri_str_auth;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -297,15 +479,191 @@ test_framework_get_ssl (void)
    return test_framework_getenv_bool ("MONGOC_TEST_SSL");
 }
 
-static bool
-uri_has_options (const mongoc_uri_t *uri)
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_uri_str_from_env --
+ *
+ *       Get the connection string of the test MongoDB server based on
+ *       the variables set in the environment. Does *not* call isMaster
+ *       to discover your actual topology.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       Same as test_framework_get_user_password.
+ *
+ *--------------------------------------------------------------------------
+ */
+static char *
+test_framework_get_uri_str_from_env ()
+{
+   char *host;
+   uint16_t port;
+   char *test_uri_str;
+   char *test_uri_str_auth;
+
+   host = test_framework_get_host ();
+   port = test_framework_get_port ();
+   test_uri_str = bson_strdup_printf (
+      "mongodb://%s:%hu%s",
+      host,
+      port,
+      test_framework_get_ssl () ? "?ssl=true" : "");
+
+   test_uri_str_auth = test_framework_add_user_password_from_env (test_uri_str);
+
+   bson_free (host);
+   bson_free (test_uri_str);
+
+   return test_uri_str_auth;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * call_ismaster --
+ *
+ *       Use test_framework_get_uri_str_from_env's URI to call isMaster.
+ *
+ * Side effects:
+ *       Fills reply with ismaster response. Logs and aborts on error.
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+call_ismaster (bson_t *reply)
+{
+   char *uri_str;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   bson_error_t error;
+
+   uri_str = test_framework_get_uri_str_from_env ();
+   uri = mongoc_uri_new (uri_str);
+   assert (uri);
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10000);
+   mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 10000);
+   mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
+
+   client = mongoc_client_new_from_uri (uri);
+   if (!mongoc_client_command_simple (client, "admin",
+                                      tmp_bson ("{'isMaster': 1}"),
+                                      NULL, reply, &error)) {
+
+      fprintf (stderr, "error calling ismaster: '%s'\n", error.message);
+      fprintf (stderr, "URI = %s\n", uri_str);
+      abort ();
+   }
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   bson_free (uri_str);
+}
+
+
+static char *
+set_name (bson_t *ismaster_response)
 {
    bson_iter_t iter;
 
-   if (!uri) { return false; }
+   if (bson_iter_init_find (&iter, ismaster_response, "setName")) {
+      return bson_strdup (bson_iter_utf8 (&iter, NULL));
+   } else {
+      return NULL;
+   }
+}
 
-   bson_iter_init (&iter, mongoc_uri_get_options (uri));
-   return bson_iter_next (&iter);
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_uri_str_no_auth --
+ *
+ *       Get the connection string of the test MongoDB topology --
+ *       standalone, replica set, mongos, or mongoses -- along with
+ *       SSL options, but not username and password. Calls
+ *       test_framework_get_uri_str_from_env, calls isMaster with
+ *       that connection string to discover your topology, and
+ *       returns an appropriate connection string for the topology
+ *       type.
+ *
+ *       database_name is optional.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       Same as test_framework_get_user_password.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_uri_str_no_auth (const char *database_name)
+{
+   bson_t ismaster_response;
+   bson_string_t *uri_string;
+   char *name;
+   bson_iter_t iter;
+   bson_iter_t hosts_iter;
+   bool first;
+   char *host;
+   uint16_t port;
+
+   call_ismaster (&ismaster_response);
+   uri_string = bson_string_new ("mongodb://");
+
+   if ((name = set_name (&ismaster_response))) {
+      /* make a replica set URI */
+      bson_iter_init_find (&iter, &ismaster_response, "hosts");
+      bson_iter_recurse (&iter, &hosts_iter);
+      first = true;
+
+      /* append "host1,host2,host3" */
+      while (bson_iter_next (&hosts_iter)) {
+         assert (BSON_ITER_HOLDS_UTF8 (&hosts_iter));
+         if (!first) {
+            bson_string_append (uri_string, ",");
+         }
+
+         bson_string_append (uri_string, bson_iter_utf8 (&hosts_iter, NULL));
+         first = false;
+      }
+
+      bson_string_append (uri_string, "/");
+      if (database_name) {
+         bson_string_append (uri_string, database_name);
+      }
+
+      bson_string_append_printf (uri_string, "?replicaSet=%s", name);
+      bson_free (name);
+   } else {
+      host = test_framework_get_host ();
+      port = test_framework_get_port ();
+      bson_string_append_printf (uri_string, "%s:%hu", host, port);
+      bson_string_append (uri_string, "/");
+      if (database_name) {
+         bson_string_append (uri_string, database_name);
+      }
+
+      bson_free (host);
+   }
+
+   if (test_framework_get_ssl ()) {
+      if (name) {
+         /* string ends with "?replicaSet=name" */
+         bson_string_append (uri_string, "&ssl=true");
+      } else {
+         /* string ends with "/" or "/dbname" */
+         bson_string_append (uri_string, "?ssl=true");
+      }
+   }
+
+   bson_destroy (&ismaster_response);
+
+   return bson_string_free (uri_string, false);
 }
 
 /*
@@ -313,71 +671,59 @@ uri_has_options (const mongoc_uri_t *uri)
  *
  * test_framework_get_uri_str --
  *
- *       Get the connection string of the test MongoDB server. Pass NULL
- *       to get the default connection string, or pass a string in to have
- *       username, password, and "ssl=true" added if appropriate.
+ *       Get the connection string of the test MongoDB topology --
+ *       standalone, replica set, mongos, or mongoses -- along with
+ *       SSL options, username and password.
  *
  * Returns:
  *       A string you must bson_free.
  *
  * Side effects:
- *       None.
+ *       Same as test_framework_get_user_password.
  *
  *--------------------------------------------------------------------------
  */
 char *
-test_framework_get_uri_str (const char *uri_str)
+test_framework_get_uri_str ()
 {
-   char *host = test_framework_get_host ();
-   char *user = test_framework_get_admin_user ();
-   char *password = test_framework_get_admin_password ();
-   char *test_uri_str_base = uri_str ?
-                             bson_strdup (uri_str) :
-                             bson_strdup_printf ("mongodb://%s/", host);
+   char *uri_str_no_auth;
+   char *uri_str;
 
-   mongoc_uri_t *uri_parsed = mongoc_uri_new (test_uri_str_base);
-   char *test_uri_str;
-   char *test_uri_str_auth;
+   uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
+   uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
 
-   assert (uri_parsed);
+   bson_free (uri_str_no_auth);
 
-   if ((user && !password) || (!user && password)) {
-      fprintf (stderr, "Specify neither MONGOC_TEST_USER nor"
-                       " MONGOC_TEST_PASSWORD, or both\n");
-      abort ();
-   }
+   return uri_str;
+}
 
-   /* add "ssl=true" if needed */
-   if (test_framework_get_ssl () && !mongoc_uri_get_ssl (uri_parsed)) {
-      test_uri_str = bson_strdup_printf (
-         "%s%s",
-         test_uri_str_base,
-         uri_has_options (uri_parsed) ? "&ssl=true" : "?ssl=true");
-   } else {
-      test_uri_str = bson_strdup (test_uri_str_base);
-   }
 
-   /* must we add "user:password"? */
-   mongoc_uri_destroy (uri_parsed);
-   uri_parsed = mongoc_uri_new (test_uri_str);
-   assert (uri_parsed);
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_uri --
+ *
+ *       Like test_framework_get_uri_str (). Get the URI of the test
+ *       MongoDB server.
+ *
+ * Returns:
+ *       A mongoc_uri_t* you must destroy.
+ *
+ * Side effects:
+ *       Same as test_framework_get_user_password.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_uri_t *
+test_framework_get_uri ()
+{
+   char *test_uri_str = test_framework_get_uri_str ();
+   mongoc_uri_t *uri = mongoc_uri_new (test_uri_str);
 
-   if (user && password && !mongoc_uri_get_username (uri_parsed)) {
-      /* TODO: uri-escape username and password */
-      test_uri_str_auth = bson_strdup_printf (
-         "mongodb://%s:%s@%s",
-         user, password, test_uri_str + strlen ("mongodb://"));
-   } else {
-      test_uri_str_auth = bson_strdup (test_uri_str);
-   }
-
-   mongoc_uri_destroy (uri_parsed);
-   bson_free (host);
-   bson_free (test_uri_str_base);
+   assert (uri);
    bson_free (test_uri_str);
-   bson_free (user);
-   bson_free (password);
-   return test_uri_str_auth;
+
+   return uri;
 }
 
 /*
@@ -419,8 +765,7 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
  *
  * test_framework_client_new --
  *
- *       Get a client connected to the test MongoDB server using an
- *       optional URI, or the default URI.
+ *       Get a client connected to the test MongoDB topology.
  *
  * Returns:
  *       A client you must mongoc_client_destroy.
@@ -431,17 +776,81 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
  *--------------------------------------------------------------------------
  */
 mongoc_client_t *
-test_framework_client_new (const char *uri_str)
+test_framework_client_new ()
 {
-   char *test_uri_str = test_framework_get_uri_str (uri_str);
+   char *test_uri_str = test_framework_get_uri_str ();
    mongoc_client_t *client = mongoc_client_new (test_uri_str);
 
    assert (client);
    test_framework_set_ssl_opts (client);
 
    bson_free (test_uri_str);
-   assert (client);
+
    return client;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_set_pool_ssl_opts --
+ *
+ *       Configure a client pool to connect to the test MongoDB server.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Logs and aborts if any MONGOC_TEST_SSL_* environment variables are
+ *       set but the driver is not built with SSL enabled.
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
+{
+   assert (pool);
+
+   if (test_framework_get_ssl ()) {
+#ifndef MONGOC_ENABLE_SSL
+      fprintf (stderr,
+               "SSL test config variables are specified in the environment, but"
+                     " SSL isn't enabled\n");
+      abort ();
+#else
+      mongoc_client_pool_set_ssl_opts (pool, &gSSLOptions);
+#endif
+   }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_pool_new --
+ *
+ *       Get a client pool connected to the test MongoDB topology.
+ *
+ * Returns:
+ *       A pool you must destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_pool_t *
+test_framework_client_pool_new ()
+{
+   mongoc_uri_t *test_uri = test_framework_get_uri ();
+   mongoc_client_pool_t *pool = mongoc_client_pool_new (test_uri);
+
+   assert (pool);
+   test_framework_set_pool_ssl_opts (pool);
+
+   mongoc_uri_destroy (test_uri);
+   assert (pool);
+   return pool;
 }
 
 #ifdef MONGOC_ENABLE_SSL
@@ -462,13 +871,77 @@ test_framework_global_ssl_opts_init (void)
 static void
 test_framework_global_ssl_opts_cleanup (void)
 {
-   bson_free (gSSLOptions.pem_file);
-   bson_free (gSSLOptions.pem_pwd);
-   bson_free (gSSLOptions.ca_file);
-   bson_free (gSSLOptions.ca_dir);
-   bson_free (gSSLOptions.crl_file);
+   bson_free ((void *)gSSLOptions.pem_file);
+   bson_free ((void *)gSSLOptions.pem_pwd);
+   bson_free ((void *)gSSLOptions.ca_file);
+   bson_free ((void *)gSSLOptions.ca_dir);
+   bson_free ((void *)gSSLOptions.crl_file);
 }
 #endif
+
+
+bool
+test_framework_is_mongos (void)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   bool is_mongos;
+
+   call_ismaster (&reply);
+
+   is_mongos = (bson_iter_init_find (&iter, &reply, "msg")
+                && BSON_ITER_HOLDS_UTF8 (&iter)
+                && !strcasecmp (bson_iter_utf8 (&iter, NULL), "isdbgrid"));
+
+   bson_destroy (&reply);
+
+   return is_mongos;
+}
+
+bool
+test_framework_is_replset (void)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   bool is_replset;
+
+   call_ismaster (&reply);
+
+   is_replset = (bson_iter_init_find (&iter, &reply, "hosts") && BSON_ITER_HOLDS_DOCUMENT (&iter));
+
+   bson_destroy (&reply);
+
+   return is_replset;
+}
+
+int
+test_framework_skip_if_mongos (void)
+{
+   return test_framework_is_mongos() ? 0 : 1;
+}
+
+int
+test_framework_skip_if_replset (void)
+{
+   return test_framework_is_replset() ? 0 : 1;
+}
+
+bool
+test_framework_max_wire_version_at_least (int version)
+{
+   bson_t reply;
+   bson_iter_t iter;
+   bool at_least;
+
+   call_ismaster (&reply);
+
+   at_least = (bson_iter_init_find (&iter, &reply, "maxWireVersion")
+                && bson_iter_as_int64 (&iter) >= version);
+
+   bson_destroy (&reply);
+
+   return at_least;
+}
 
 int
 main (int   argc,
@@ -493,26 +966,39 @@ main (int   argc,
    TestSuite_Init (&suite, "", argc, argv);
 
    test_array_install (&suite);
+   test_async_install (&suite);
    test_buffer_install (&suite);
    test_client_install (&suite);
    test_client_pool_install (&suite);
-   test_cluster_install (&suite);
    test_write_command_install (&suite);
    test_bulk_install (&suite);
+   test_cluster_install (&suite);
    test_collection_install (&suite);
    test_cursor_install (&suite);
    test_database_install (&suite);
+   test_exhaust_install (&suite);
    test_gridfs_install (&suite);
    test_gridfs_file_page_install (&suite);
    test_list_install (&suite);
+   test_log_install (&suite);
    test_matcher_install (&suite);
    test_queue_install (&suite);
    test_read_prefs_install (&suite);
    test_rpc_install (&suite);
    test_sasl_install (&suite);
    test_socket_install (&suite);
+   test_topology_scanner_install (&suite);
+   test_topology_reconcile_install (&suite);
+   test_sdam_install (&suite);
+   test_server_selection_install (&suite);
+   test_server_selection_errors_install (&suite);
+   test_set_install (&suite);
    test_stream_install (&suite);
+   test_thread_install (&suite);
+   test_topology_install (&suite);
    test_uri_install (&suite);
+   test_usleep_install (&suite);
+   test_version_install (&suite);
    test_write_concern_install (&suite);
 #ifdef MONGOC_ENABLE_SSL
    test_x509_install (&suite);

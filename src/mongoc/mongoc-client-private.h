@@ -35,6 +35,7 @@
 #include "mongoc-ssl.h"
 #endif
 #include "mongoc-stream.h"
+#include "mongoc-topology-private.h"
 #include "mongoc-write-concern.h"
 
 
@@ -57,40 +58,70 @@ struct _mongoc_client_t
    char                      *pem_subject;
 #endif
 
+   mongoc_topology_t             *topology;
+
    mongoc_read_prefs_t       *read_prefs;
    mongoc_write_concern_t    *write_concern;
 };
 
 
-mongoc_stream_t *_mongoc_client_create_stream (mongoc_client_t              *client,
-                                               const mongoc_host_list_t     *host,
-                                               bson_error_t                 *error);
-uint32_t         _mongoc_client_sendv         (mongoc_client_t              *client,
-                                               mongoc_rpc_t                 *rpcs,
-                                               size_t                        rpcs_len,
-                                               uint32_t                      hint,
-                                               const mongoc_write_concern_t *write_concern,
-                                               const mongoc_read_prefs_t    *read_prefs,
-                                               bson_error_t                 *error);
-bool             _mongoc_client_recv          (mongoc_client_t              *client,
-                                               mongoc_rpc_t                 *rpc,
-                                               mongoc_buffer_t              *buffer,
-                                               uint32_t                      hint,
-                                               bson_error_t                 *error);
-bool             _mongoc_client_recv_gle      (mongoc_client_t              *client,
-                                               uint32_t                      hint,
-                                               bson_t                      **gle_doc,
-                                               bson_error_t                 *error);
-uint32_t         _mongoc_client_stamp         (mongoc_client_t              *client,
-                                               uint32_t                      node);
-bool             _mongoc_client_warm_up       (mongoc_client_t              *client,
-                                               bson_error_t                 *error);
-uint32_t         _mongoc_client_preselect     (mongoc_client_t              *client,
-                                               mongoc_opcode_t               opcode,
-                                               const mongoc_write_concern_t *write_concern,
-                                               const mongoc_read_prefs_t    *read_prefs,
-                                               bson_error_t                 *error);
+mongoc_client_t *
+_mongoc_client_new_from_uri (const mongoc_uri_t *uri,
+                             mongoc_topology_t      *topology);
 
+mongoc_stream_t *
+mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
+                                        const mongoc_host_list_t *host,
+                                        void                     *user_data,
+                                        bson_error_t             *error);
+
+mongoc_stream_t *
+_mongoc_client_create_stream (mongoc_client_t          *client,
+                              const mongoc_host_list_t *host,
+                              bson_error_t             *error);
+
+bool
+_mongoc_client_recv (mongoc_client_t *client,
+                     mongoc_rpc_t    *rpc,
+                     mongoc_buffer_t *buffer,
+                     uint32_t         server_id,
+                     bson_error_t    *error);
+
+bool
+_mongoc_client_recv_gle (mongoc_client_t *client,
+                         uint32_t         hint,
+                         bson_t         **gle_doc,
+                         bson_error_t    *error);
+
+uint32_t
+_mongoc_client_preselect (mongoc_client_t              *client,
+                          mongoc_opcode_t               opcode,
+                          const mongoc_write_concern_t *write_concern,
+                          const mongoc_read_prefs_t    *read_prefs,
+                          bson_error_t                 *error);
+
+void
+_mongoc_topology_background_thread_start (mongoc_topology_t *topology);
+
+void
+_mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
+
+mongoc_server_description_t *
+_mongoc_client_get_server_description (mongoc_client_t *client,
+                                       uint32_t         server_id);
+
+bool
+_mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
+                                         const char                *db_name,
+                                         const bson_t              *command,
+                                         const mongoc_read_prefs_t *read_prefs,
+                                         bson_t                    *reply,
+                                         uint32_t                   hint,
+                                         bson_error_t              *error);
+void
+_mongoc_client_kill_cursor              (mongoc_client_t *client,
+                                         uint32_t         server_id,
+                                         int64_t          cursor_id);
 
 BSON_END_DECLS
 

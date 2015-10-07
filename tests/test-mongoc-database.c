@@ -3,8 +3,9 @@
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
-#include "mock-server.h"
 #include "mongoc-client-private.h"
+#include "mock_server/future-functions.h"
+#include "mock_server/mock-server.h"
 
 
 static void
@@ -19,7 +20,7 @@ test_has_collection (void)
    bson_oid_t oid;
    bson_t b;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    name = gen_collection_name ("has_collection");
@@ -33,12 +34,9 @@ test_has_collection (void)
    bson_oid_init (&oid, NULL);
    bson_append_oid (&b, "_id", 3, &oid);
    bson_append_utf8 (&b, "hello", 5, "world", 5);
-   r = mongoc_collection_insert (collection, MONGOC_INSERT_NONE, &b, NULL,
-                                 &error);
-   if (!r) {
-      MONGOC_WARNING ("%s\n", error.message);
-   }
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_insert (collection, MONGOC_INSERT_NONE,
+                                              &b, NULL, &error),
+                    error);
    bson_destroy (&b);
 
    r = mongoc_database_has_collection (database, name, &error);
@@ -64,7 +62,7 @@ test_command (void)
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    database = mongoc_client_get_database (client, "admin");
@@ -113,17 +111,15 @@ test_drop (void)
    mongoc_client_t *client;
    bson_error_t error = { 0 };
    char *dbname;
-   bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    dbname = gen_collection_name ("db_drop_test");
    database = mongoc_client_get_database (client, dbname);
    bson_free (dbname);
 
-   r = mongoc_database_drop (database, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
    assert (!error.domain);
    assert (!error.code);
 
@@ -145,9 +141,8 @@ test_create_collection (void)
 
    char *dbname;
    char *name;
-   bool r;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -169,16 +164,17 @@ test_create_collection (void)
 
 
    name = gen_collection_name ("create_collection");
-   collection = mongoc_database_create_collection (database, name, &options, &error);
-   assert (collection);
+   ASSERT_OR_PRINT (
+      collection = mongoc_database_create_collection (database, name,
+                                                      &options, &error),
+      error);
+
    bson_destroy (&options);
    bson_free (name);
 
-   r = mongoc_collection_drop (collection, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 
-   r = mongoc_database_drop (database, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
 
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
@@ -199,7 +195,6 @@ test_get_collection_info (void)
    bson_t noopts_options = BSON_INITIALIZER;
    bson_t name_filter = BSON_INITIALIZER;
    const bson_t *doc;
-   int r;
    int num_infos = 0;
 
    const char *name;
@@ -208,7 +203,7 @@ test_get_collection_info (void)
    char *autoindexid_name;
    char *noopts_name;
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -229,18 +224,18 @@ test_get_collection_info (void)
 
    collection = mongoc_database_create_collection (database, capped_name,
                                                    &capped_options, &error);
-   assert (collection);
+   ASSERT_OR_PRINT (collection, error);
    mongoc_collection_destroy (collection);
 
    collection = mongoc_database_create_collection (database, autoindexid_name,
                                                    &autoindexid_options,
                                                    &error);
-   assert (collection);
+   ASSERT_OR_PRINT (collection, error);
    mongoc_collection_destroy (collection);
 
    collection = mongoc_database_create_collection (database, noopts_name,
                                                    &noopts_options, &error);
-   assert (collection);
+   ASSERT_OR_PRINT (collection, error);
    mongoc_collection_destroy (collection);
 
    /* first we filter on collection name. */
@@ -269,11 +264,10 @@ test_get_collection_info (void)
 
    assert (1 == num_infos);
 
-   num_infos = 0;
    mongoc_cursor_destroy (cursor);
 
-   r = mongoc_database_drop (database, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_database_drop (database, &error),
+                    error);
    assert (!error.domain);
    assert (!error.code);
 
@@ -293,7 +287,6 @@ test_get_collection_names (void)
    mongoc_client_t *client;
    bson_error_t error = { 0 };
    bson_t options;
-   int r;
    int namecount = 0;
 
    char **names;
@@ -308,7 +301,7 @@ test_get_collection_names (void)
    char *name5;
    const char *system_prefix = "system.";
 
-   client = test_framework_client_new (NULL);
+   client = test_framework_client_new ();
    assert (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -384,8 +377,8 @@ test_get_collection_names (void)
 
    bson_free (names);
 
-   r = mongoc_database_drop (database, &error);
-   assert (r);
+   ASSERT_OR_PRINT (mongoc_database_drop (database, &error),
+                    error);
    assert (!error.domain);
    assert (!error.code);
 
@@ -394,56 +387,64 @@ test_get_collection_names (void)
 }
 
 static void
-collection_names_handler (mock_server_t   *server,
-                          mongoc_stream_t *stream,
-                          mongoc_rpc_t    *rpc,
-                          void            *user_data)
-{
-   mongoc_stream_close (stream);
-}
-
-static void
 test_get_collection_names_error (void)
 {
    mongoc_database_t *database;
    mongoc_client_t *client;
    mock_server_t *server;
-   uint16_t port;
    bson_error_t error = { 0 };
-   bool success = false;
    bson_t b = BSON_INITIALIZER;
-   char *uristr;
+   future_t *future;
+   request_t *request;
    char **names;
 
-   port = (uint16_t )(20000 + (rand () % 1000));
-
-   server = mock_server_new ("127.0.0.1", port, collection_names_handler,
-                             &success);
-   mock_server_set_wire_version (server, 0, 3);  /* listCollections command */
-   mock_server_run_in_thread (server);
-
-   usleep (5000);
-
-   uristr = bson_strdup_printf ("mongodb://127.0.0.1:%hu/", port);
-   client = mongoc_client_new (uristr);
-
-   if (!_mongoc_client_warm_up (client, &error)) {
-      assert (false);
-   }
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server, "{'ismaster': true,"
+                                       " 'maxWireVersion': 3}");
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
 
    database = mongoc_client_get_database (client, "test");
    suppress_one_message ();
    suppress_one_message ();
-   names = mongoc_database_get_collection_names (database, &error);
+   future = future_database_get_collection_names (database, &error);
+   request = mock_server_receives_command (server,
+                                            "test",
+                                            MONGOC_QUERY_SLAVE_OK,
+                                            "{'listCollections': 1}");
+   mock_server_hangs_up (request);
+   names = future_get_char_ptr_ptr (future);
    assert (!names);
    ASSERT_CMPINT (MONGOC_ERROR_STREAM, ==, error.domain);
    ASSERT_CMPINT (MONGOC_ERROR_STREAM_SOCKET, ==, error.code);
 
+   request_destroy (request);
+   future_destroy (future);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
-   mock_server_quit (server);
+   mock_server_destroy (server);
    bson_destroy (&b);
-   bson_free (uristr);
+}
+
+static void
+test_get_default_database (void)
+{
+   /* default database is "db_name" */
+   mongoc_client_t *client = mongoc_client_new ("mongodb://host/db_name");
+   mongoc_database_t *db = mongoc_client_get_default_database (client);
+
+   assert (!strcmp ("db_name", mongoc_database_get_name (db)));
+
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+
+   /* no default database */
+   client = mongoc_client_new ("mongodb://host/");
+   db = mongoc_client_get_default_database (client);
+
+   assert (!db);
+
+   mongoc_client_destroy (client);
 }
 
 void
@@ -459,4 +460,6 @@ test_database_install (TestSuite *suite)
                   test_get_collection_names);
    TestSuite_Add (suite, "/Database/get_collection_names_error",
                   test_get_collection_names_error);
+   TestSuite_Add (suite, "/Database/get_default_database",
+                  test_get_default_database);
 }

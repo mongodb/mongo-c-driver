@@ -97,7 +97,7 @@ gssapi_kerberos_worker (void *data)
 
 
 static void
-test_gssapi_kerberos ()
+test_gssapi_kerberos (void *context)
 {
    char *host = test_framework_getenv (GSSAPI_HOST);
    char *user = test_framework_getenv (GSSAPI_USER);
@@ -147,5 +147,7 @@ test_sasl_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/SASL/gssapi_kerberos",
                       test_gssapi_kerberos,
+                      NULL,
+                      NULL,
                       should_run_gssapi_kerberos);
 }

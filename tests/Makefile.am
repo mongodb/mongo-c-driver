@@ -18,6 +18,7 @@ TEST_CFLAGS += -D_REENTRANT
 endif
 
 TEST_CFLAGS += \
+	-Wno-deprecated-declarations \
 	-DMONGOC_COMPILATION \
 	-DBINARY_DIR="\"$(srcdir)/tests/binary\"" \
 	$(BSON_CFLAGS) \
@@ -71,11 +72,29 @@ test_replica_set_ssl_LDADD = $(TEST_LIBS)
 
 
 test_libmongoc_SOURCES = \
-	tests/mock-server.c \
-	tests/mock-server.h \
+	tests/debug-stream.c \
+	tests/json-test.c \
+	tests/json-test.h \
+	tests/mock_server/future.c \
+	tests/mock_server/future.h \
+	tests/mock_server/future-functions.c \
+	tests/mock_server/future-functions.h \
+	tests/mock_server/future-value.c \
+	tests/mock_server/future-value.h \
+	tests/mock_server/mock-server.c \
+	tests/mock_server/mock-server.h \
+	tests/mock_server/mock-rs.c \
+	tests/mock_server/mock-rs.h \
+	tests/mock_server/request.c \
+	tests/mock_server/request.h \
+	tests/mock_server/sync-queue.c \
+	tests/mock_server/sync-queue.h \
 	tests/test-libmongoc.c \
 	tests/test-bulk.c \
+	tests/test-conveniences.c \
+	tests/test-conveniences.h \
 	tests/test-mongoc-array.c \
+	tests/test-mongoc-async.c \
 	tests/test-mongoc-buffer.c \
 	tests/test-mongoc-client.c \
 	tests/test-mongoc-client-pool.c \
@@ -83,16 +102,28 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-collection.c \
 	tests/test-mongoc-cursor.c \
 	tests/test-mongoc-database.c \
+	tests/test-mongoc-exhaust.c \
 	tests/test-mongoc-gridfs.c \
 	tests/test-mongoc-gridfs-file-page.c \
+	tests/test-mongoc-log.c \
 	tests/test-mongoc-list.c \
 	tests/test-mongoc-matcher.c \
 	tests/test-mongoc-queue.c \
 	tests/test-mongoc-read-prefs.c \
 	tests/test-mongoc-rpc.c \
 	tests/test-mongoc-socket.c \
+	tests/test-mongoc-sdam.c \
+	tests/test-mongoc-server-selection.c \
+        tests/test-mongoc-server-selection-errors.c \
+	tests/test-mongoc-set.c \
 	tests/test-mongoc-stream.c \
+	tests/test-mongoc-thread.c \
+	tests/test-mongoc-topology-reconcile.c \
+	tests/test-mongoc-topology-scanner.c \
+	tests/test-mongoc-topology.c \
 	tests/test-mongoc-uri.c \
+	tests/test-mongoc-usleep.c \
+	tests/test-mongoc-version.c \
 	tests/test-mongoc-write-concern.c \
 	tests/test-libmongoc.h \
 	tests/test-sasl.c \
@@ -139,7 +170,7 @@ endif
 	done
 
 valgrind: $(TEST_PROGS)
-	$(LIBTOOL) --mode=execute valgrind --leak-check=full --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc -f -p
+	$(LIBTOOL) --mode=execute valgrind --leak-check=full --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc $(TEST_ARGS)
 
 if OS_LINUX
 abicheck:
@@ -196,7 +227,7 @@ DISTCLEANFILES += \
 	tests/trust_dir/ca.db.serial.old \
 	tests/trust_dir/crl/root.crl.pem
 
-.PHONY: test_certs
+.PHONY: test_certs valgrind debug
 
 EXTRA_DIST += \
 	tests/abicheck.sh \
@@ -213,13 +244,25 @@ EXTRA_DIST += \
 	tests/binary/update1.dat \
 	tests/certificates/ca.pem \
 	tests/certificates/client.pem \
-	tests/mock-server.c \
-	tests/mock-server.h \
+	tests/mock_server/future-value.h \
+	tests/mock_server/future.c \
+	tests/mock_server/future.h \
+	tests/mock_server/mock-server.c \
+	tests/mock_server/mock-server.h \
+	tests/mock_server/mock-rs.c \
+	tests/mock_server/mock-rs.h \
+	tests/mock_server/request.c \
+	tests/mock_server/request.h \
+	tests/mock_server/sync-queue.c \
+	tests/mock_server/sync-queue.h \
 	tests/mongoc-tests.c \
 	tests/mongoc-tests.h \
 	tests/trust_dir.cnf \
 	tests/make_ca.pl \
-	tests/c_rehash
+	tests/c_rehash \
+	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
+	$(wildcard tests/json/server_selection/rtt/*.json) \
+	$(wildcard tests/json/server_selection/server_selection/*/*/*.json)
 
 if OS_DARWIN
 DEBUGGER = lldb --

@@ -45,7 +45,7 @@ _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
 
    BSON_ASSERT (cursor);
 
-   list = bson_malloc0 (sizeof *list);
+   list = (mongoc_gridfs_file_list_t *)bson_malloc0 (sizeof *list);
 
    list->cursor = cursor;
    list->gridfs = gridfs;

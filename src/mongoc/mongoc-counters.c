@@ -125,8 +125,8 @@ mongoc_counters_calc_size (void)
  *
  * Removes the shared memory segment for the current processes counters.
  */
-static void
-mongoc_counters_destroy (void)
+void
+_mongoc_counters_cleanup (void)
 {
    if (gCounterFallback) {
       bson_free (gCounterFallback);
@@ -190,7 +190,6 @@ mongoc_counters_alloc (size_t size)
 
    close (fd);
    memset (mem, 0, size);
-   atexit (mongoc_counters_destroy);
 
    return mem;
 
@@ -202,8 +201,7 @@ use_malloc:
    MONGOC_WARNING("Falling back to malloc for counters.");
 #endif
 
-   gCounterFallback = bson_malloc0 (size);
-   atexit (mongoc_counters_destroy);
+   gCounterFallback = (void *)bson_malloc0 (size);
 
    return gCounterFallback;
 }
@@ -285,7 +283,7 @@ _mongoc_counters_init (void)
    char *segment;
 
    size = mongoc_counters_calc_size();
-   segment = mongoc_counters_alloc(size);
+   segment = (char *)mongoc_counters_alloc(size);
    infos_size = LAST_COUNTER * sizeof *info;
 
    counters = (mongoc_counters_t *)segment;
@@ -298,7 +296,7 @@ _mongoc_counters_init (void)
 
 #define COUNTER(ident, Category, Name, Desc) \
    off = mongoc_counters_register(counters, COUNTER_##ident, Category, Name, Desc); \
-   __mongoc_counter_##ident.cpus = (void *)(segment + off);
+   __mongoc_counter_##ident.cpus = (mongoc_counter_slots_t *)(segment + off);
 #include "mongoc-counters.defs"
 #undef COUNTER
 

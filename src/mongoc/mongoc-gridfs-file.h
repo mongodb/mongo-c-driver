@@ -44,7 +44,7 @@ BSON_BEGIN_DECLS
                                      const bson_t * bson);
 
 
-typedef struct _mongoc_gridfs_file_t     mongoc_gridfs_file_t;
+typedef struct _mongoc_gridfs_file_t mongoc_gridfs_file_t;
 typedef struct _mongoc_gridfs_file_opt_t mongoc_gridfs_file_opt_t;
 
 
@@ -66,31 +66,51 @@ MONGOC_GRIDFS_FILE_BSON_HEADER (aliases)
 MONGOC_GRIDFS_FILE_BSON_HEADER (metadata)
 
 
-int64_t  mongoc_gridfs_file_get_length      (mongoc_gridfs_file_t *file);
-int32_t  mongoc_gridfs_file_get_chunk_size  (mongoc_gridfs_file_t *file);
-int64_t  mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file);
-ssize_t  mongoc_gridfs_file_writev          (mongoc_gridfs_file_t *file,
-                                             mongoc_iovec_t       *iov,
-                                             size_t                iovcnt,
-                                             uint32_t              timeout_msec);
-ssize_t  mongoc_gridfs_file_readv           (mongoc_gridfs_file_t *file,
-                                             mongoc_iovec_t       *iov,
-                                             size_t                iovcnt,
-                                             size_t                min_bytes,
-                                             uint32_t              timeout_msec);
-int      mongoc_gridfs_file_seek            (mongoc_gridfs_file_t *file,
-                                             int64_t               delta,
-                                             int                   whence);
-uint64_t mongoc_gridfs_file_tell            (mongoc_gridfs_file_t *file);
-bool     mongoc_gridfs_file_save            (mongoc_gridfs_file_t *file);
-void     mongoc_gridfs_file_destroy         (mongoc_gridfs_file_t *file);
-bool     mongoc_gridfs_file_error           (mongoc_gridfs_file_t *file,
-                                             bson_error_t         *error);
-bool     mongoc_gridfs_file_remove          (mongoc_gridfs_file_t *file,
-                                             bson_error_t         *error);
+const bson_value_t *
+mongoc_gridfs_file_get_id (mongoc_gridfs_file_t * file);
 
+int64_t
+mongoc_gridfs_file_get_length (mongoc_gridfs_file_t *file);
+
+int32_t
+mongoc_gridfs_file_get_chunk_size (mongoc_gridfs_file_t *file);
+
+int64_t
+mongoc_gridfs_file_get_upload_date (mongoc_gridfs_file_t *file);
+
+ssize_t
+mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
+                           mongoc_iovec_t       *iov,
+                           size_t                iovcnt,
+                           uint32_t              timeout_msec);
+ssize_t
+mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
+                          mongoc_iovec_t       *iov,
+                          size_t                iovcnt,
+                          size_t                min_bytes,
+                          uint32_t              timeout_msec);
+int
+mongoc_gridfs_file_seek (mongoc_gridfs_file_t *file,
+                         int64_t               delta,
+                         int                   whence);
+
+uint64_t
+mongoc_gridfs_file_tell (mongoc_gridfs_file_t *file);
+
+bool
+mongoc_gridfs_file_save (mongoc_gridfs_file_t *file);
+
+void
+mongoc_gridfs_file_destroy (mongoc_gridfs_file_t *file);
+
+bool
+mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
+                          bson_error_t         *error);
+
+bool
+mongoc_gridfs_file_remove (mongoc_gridfs_file_t *file,
+                           bson_error_t         *error);
 
 BSON_END_DECLS
-
 
 #endif /* MONGOC_GRIDFS_FILE_H */

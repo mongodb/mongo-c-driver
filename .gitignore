@@ -7,6 +7,7 @@ autom4te.cache
 bulk1
 bulk2
 bulk3
+bulk4
 ChangeLog
 cluster1
 *.cmake
@@ -69,6 +70,7 @@ test-mongoc-client-pool
 test-mongoc-collection
 test-mongoc-cursor
 test-mongoc-database
+test-mongoc-exhaust
 test-mongoc-event
 test-mongoc-gridfs
 test-mongoc-gridfs-file-page

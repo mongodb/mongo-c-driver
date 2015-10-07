@@ -115,21 +115,62 @@ generate man pages and HTML for it.
 
 ### Testing
 
-You should always run `make test` before submitting a patch. Just make sure you
-have a locally running `mongod` instance available on `127.0.0.1:27017`. All
-tests should pass. Alternatively, you can specify `MONGOC_TEST_HOST`
-environment variable to specify a non-localhost hostname or ip address.
+To run the entire test suite, including authentication tests,
+start `mongod` with auth enabled:
 
-To test with auth, create a "root" user on the "admin" database and set the
-`MONGOC_TEST_USER` and `MONGOC_TEST_PASSWORD` environment variables to its
-username and password.
+```
+$ mongod --auth
+```
 
-Set the `MONGOC_TEST_SSL` environment variable `on` to connect to the server via
-SSL with default options. Configure SSL options with paths
-`MONGOC_TEST_SSL_PEM_FILE`, `MONGOC_TEST_SSL_PEM_PWD`,
-`MONGOC_TEST_SSL_CA_FILE`, `MONGOC_TEST_SSL_CA_DIR`, and
-`MONGOC_TEST_SSL_CRL_FILE`. Set the `MONGOC_TEST_SSL_WEAK_CERT_VALIDATION`
-environment variable `on` to relax server certificate validation.
+In another terminal, use the `mongo` shell to create a user:
+
+```
+$ mongo --eval "db.createUser({user: 'admin', pwd: 'pass', roles: ['root']})" admin
+```
+
+To authenticate against MongoDB 3.0+ requires SCRAM-SHA-1, which in turn
+requires a driver built with OpenSSL:
+
+```
+$ ./configure --enable-ssl`
+```
+
+Set the user and password environment variables, then build and run the tests:
+
+```
+$ export MONGOC_TEST_USER=admin
+$ export MONGOC_TEST_PASSWORD=pass
+$ make test
+```
+
+Additional environment variables:
+
+* `MONGOC_TEST_HOST`: default `localhost`, the host running MongoDB.
+* `MONGOC_TEST_PORT`: default 27017, MongoDB's listening port.
+* `MONGOC_TEST_SERVER_VERBOSE`: set to `on` for wire protocol logging from 
+  tests that use `mock_server_t`. 
+
+If you start `mongod` with SSL, set these variables to configure how
+`make test` connects to it:
+
+* `MONGOC_TEST_SSL`: set to `on` to connect to the server with SSL.
+* `MONGOC_TEST_SSL_PEM_FILE`: path to a client PEM file.
+* `MONGOC_TEST_SSL_PEM_PWD`: the PEM file's password.
+* `MONGOC_TEST_SSL_CA_FILE`: path to a certificate authority file.
+* `MONGOC_TEST_SSL_CA_DIR`: path to a certificate authority directory.
+* `MONGOC_TEST_SSL_CRL_FILE`: path to a certificate revocation list.
+* `MONGOC_TEST_SSL_WEAK_CERT_VALIDATION`: set to `on` to relax the client's
+  validation of the server's certificate.
+
+The SASL / GSSAPI / Kerberos tests are skipped by default. To run them, set up a
+separate `mongod` with Kerberos and set its host and Kerberos principal name
+as environment variables:
+
+* `MONGOC_TEST_GSSAPI_HOST` 
+* `MONGOC_TEST_GSSAPI_USER` 
+
+URI-escape the username, for example write "user@realm" as "user%40realm".
+The user must be authorized to query `test.collection`.
 
 The SASL / GSSAPI / Kerberos tests are skipped by default. To run them, set up a
 separate `mongod` with Kerberos and set its host and Kerberos principal name
@@ -143,3 +184,35 @@ The user must be authorized to query `test.collection`.
 
 All tests should pass before submitting a patch.
 
+## Configuring the test runner
+
+The test runner can be configured by declaring the `TEST_ARGS` environment
+variable. The following options can be provided:
+
+```
+    -h, --help   Show this help menu.
+    -f           Do not fork() before running tests.
+    -l NAME      Run test by name, e.g. "/Client/command" or "/Client/*".
+    -p           Do not run tests in parallel.
+    -v           Be verbose with logs.
+```
+
+`TEST_ARGS` is set to "-f -p" by default.
+
+To run just a specific portion of the test suite use the -l option like so:
+
+```
+$ make test TEST_ARGS="-l /server_selection/*"
+```
+
+The full list of tests is shown in the help.
+
+## Debugging failed tests
+
+The easiest way to debug a failed tests is to use the `debug` make target:
+
+```
+$ make debug TEST_ARGS="-l /WriteConcern/bson_omits_defaults"
+```
+
+This will build all dependencies and leave you in a debugger ready to run the test.

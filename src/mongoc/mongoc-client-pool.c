@@ -17,25 +17,27 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-client-pool-private.h"
+#include "mongoc-client-pool.h"
+#include "mongoc-client-private.h"
 #include "mongoc-queue-private.h"
 #include "mongoc-thread-private.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-client-private.h"
+#include "mongoc-topology-private.h"
 #include "mongoc-trace.h"
 
 
 struct _mongoc_client_pool_t
 {
-   mongoc_mutex_t    mutex;
-   mongoc_cond_t     cond;
-   mongoc_queue_t    queue;
-   mongoc_uri_t     *uri;
-   uint32_t          min_pool_size;
-   uint32_t          max_pool_size;
-   uint32_t          size;
+   mongoc_mutex_t     mutex;
+   mongoc_cond_t      cond;
+   mongoc_queue_t     queue;
+   mongoc_topology_t *topology;
+   mongoc_uri_t      *uri;
+   uint32_t           min_pool_size;
+   uint32_t           max_pool_size;
+   uint32_t           size;
 #ifdef MONGOC_ENABLE_SSL
-   bool              ssl_opts_set;
-   mongoc_ssl_opt_t  ssl_opts;
+   bool               ssl_opts_set;
+   mongoc_ssl_opt_t   ssl_opts;
 #endif
 };
 
@@ -45,7 +47,7 @@ void
 mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
                                  const mongoc_ssl_opt_t *opts)
 {
-   bson_return_if_fail (pool);
+   BSON_ASSERT (pool);
 
    mongoc_mutex_lock (&pool->mutex);
 
@@ -58,6 +60,8 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
 
    }
 
+   mongoc_topology_scanner_set_ssl_opts (pool->topology->scanner, &pool->ssl_opts);
+
    mongoc_mutex_unlock (&pool->mutex);
 }
 #endif
@@ -66,21 +70,25 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
 mongoc_client_pool_t *
 mongoc_client_pool_new (const mongoc_uri_t *uri)
 {
+   mongoc_topology_t *topology;
    mongoc_client_pool_t *pool;
    const bson_t *b;
    bson_iter_t iter;
 
    ENTRY;
 
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
-   pool = bson_malloc0(sizeof *pool);
+   pool = (mongoc_client_pool_t *)bson_malloc0(sizeof *pool);
    mongoc_mutex_init(&pool->mutex);
    _mongoc_queue_init(&pool->queue);
    pool->uri = mongoc_uri_copy(uri);
    pool->min_pool_size = 0;
    pool->max_pool_size = 100;
    pool->size = 0;
+
+   topology = mongoc_topology_new(uri, false);
+   pool->topology = topology;
 
    b = mongoc_uri_get_options(pool->uri);
 
@@ -109,11 +117,13 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   bson_return_if_fail(pool);
+   BSON_ASSERT (pool);
 
-   while ((client = _mongoc_queue_pop_head(&pool->queue))) {
+   while ((client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       mongoc_client_destroy(client);
    }
+
+   mongoc_topology_destroy (pool->topology);
 
    mongoc_uri_destroy(pool->uri);
    mongoc_mutex_destroy(&pool->mutex);
@@ -134,14 +144,14 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   bson_return_val_if_fail(pool, NULL);
+   BSON_ASSERT (pool);
 
    mongoc_mutex_lock(&pool->mutex);
 
 again:
-   if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
+   if (!(client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
-         client = mongoc_client_new_from_uri(pool->uri);
+         client = _mongoc_client_new_from_uri(pool->uri, pool->topology);
 #ifdef MONGOC_ENABLE_SSL
          if (pool->ssl_opts_set) {
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
@@ -167,13 +177,13 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   bson_return_val_if_fail(pool, NULL);
+   BSON_ASSERT (pool);
 
    mongoc_mutex_lock(&pool->mutex);
 
-   if (!(client = _mongoc_queue_pop_head(&pool->queue))) {
+   if (!(client = (mongoc_client_t *)_mongoc_queue_pop_head(&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
-         client = mongoc_client_new_from_uri(pool->uri);
+         client = _mongoc_client_new_from_uri(pool->uri, pool->topology);
 #ifdef MONGOC_ENABLE_SSL
          if (pool->ssl_opts_set) {
             mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
@@ -195,13 +205,13 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
 {
    ENTRY;
 
-   bson_return_if_fail(pool);
-   bson_return_if_fail(client);
+   BSON_ASSERT (pool);
+   BSON_ASSERT (client);
 
    mongoc_mutex_lock(&pool->mutex);
    if (pool->size > pool->min_pool_size) {
       mongoc_client_t *old_client;
-      old_client = _mongoc_queue_pop_head (&pool->queue);
+      old_client = (mongoc_client_t *)_mongoc_queue_pop_head (&pool->queue);
       if (old_client) {
           mongoc_client_destroy (old_client);
           pool->size--;
@@ -209,18 +219,8 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool,
    }
    mongoc_mutex_unlock(&pool->mutex);
 
-   if ((client->cluster.state == MONGOC_CLUSTER_STATE_HEALTHY) ||
-       (client->cluster.state == MONGOC_CLUSTER_STATE_BORN)) {
-      mongoc_mutex_lock (&pool->mutex);
-      _mongoc_queue_push_tail (&pool->queue, client);
-   } else if (_mongoc_cluster_reconnect (&client->cluster, NULL)) {
-      mongoc_mutex_lock (&pool->mutex);
-      _mongoc_queue_push_tail (&pool->queue, client);
-   } else {
-      mongoc_client_destroy (client);
-      mongoc_mutex_lock (&pool->mutex);
-      pool->size--;
-   }
+   mongoc_mutex_lock (&pool->mutex);
+   _mongoc_queue_push_tail (&pool->queue, client);
 
    mongoc_cond_signal(&pool->cond);
    mongoc_mutex_unlock(&pool->mutex);
@@ -240,4 +240,30 @@ mongoc_client_pool_get_size (mongoc_client_pool_t *pool)
    mongoc_mutex_unlock (&pool->mutex);
 
    RETURN (size);
+}
+
+void
+mongoc_client_pool_max_size(mongoc_client_pool_t *pool,
+                            uint32_t              max_pool_size)
+{
+   ENTRY;
+
+   mongoc_mutex_lock (&pool->mutex);
+   pool->max_pool_size = max_pool_size;
+   mongoc_mutex_unlock (&pool->mutex);
+
+   EXIT;
+}
+
+void
+mongoc_client_pool_min_size(mongoc_client_pool_t *pool,
+                            uint32_t              min_pool_size)
+{
+   ENTRY;
+
+   mongoc_mutex_lock (&pool->mutex);
+   pool->min_pool_size = min_pool_size;
+   mongoc_mutex_unlock (&pool->mutex);
+
+   EXIT;
 }

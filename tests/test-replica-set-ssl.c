@@ -2,13 +2,10 @@
 
 #include "ha-test.h"
 
-#include "mongoc-client.h"
 #include "mongoc-client-private.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-cursor.h"
-#include "mongoc-cursor-private.h"
 #include "mongoc-tests.h"
 #include "mongoc-write-concern-private.h"
+#include "TestSuite.h"
 
 #define TRUST_DIR "tests/trust_dir"
 #define CAFILE TRUST_DIR "/verify/mongo_root.pem"
@@ -19,15 +16,16 @@
 
 static char * gTestCAFile;
 static char * gTestPEMFileLocalhost;
+static bool use_pool;
 
 static void
 test_replica_set_ssl_client(void)
 {
    mongoc_collection_t *collection;
    mongoc_client_t *client;
+   mongoc_client_pool_t *pool = NULL;
    ha_replica_set_t *replica_set;
    bson_error_t error;
-   int r;
    bson_t b;
 
    mongoc_ssl_opt_t sopt = { 0 };
@@ -44,8 +42,13 @@ test_replica_set_ssl_client(void)
    ha_replica_set_start(replica_set);
    ha_replica_set_wait_for_healthy(replica_set);
 
+   if (use_pool) {
+      pool = ha_replica_set_create_client_pool(replica_set);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = ha_replica_set_create_client(replica_set);
+   }
 
-   client = ha_replica_set_create_client(replica_set);
    assert(client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
@@ -54,11 +57,18 @@ test_replica_set_ssl_client(void)
    bson_init(&b);
    bson_append_utf8(&b, "hello", -1, "world", -1);
 
-   r = mongoc_collection_insert(collection, MONGOC_INSERT_NONE, &b, NULL, &error);
-   assert(r);
+   ASSERT_OR_PRINT (mongoc_collection_insert(collection, MONGOC_INSERT_NONE,
+                                             &b, NULL, &error), error);
 
    mongoc_collection_destroy(collection);
-   mongoc_client_destroy(client);
+
+   if (use_pool) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy(client);
+   }
+
    bson_destroy(&b);
 
    ha_replica_set_shutdown(replica_set);
@@ -95,7 +105,11 @@ main (int   argc,   /* IN */
    gTestCAFile = bson_strdup_printf("%s/" CAFILE, cwd);
    gTestPEMFileLocalhost = bson_strdup_printf("%s/" PEMFILE_LOCALHOST, cwd);
 
-   run_test("/ReplicaSet/ssl/client", &test_replica_set_ssl_client);
+   use_pool = false;
+   run_test("/ReplicaSet/single/ssl/client", &test_replica_set_ssl_client);
+
+   use_pool = true;
+   run_test("/ReplicaSet/pool/ssl/client", &test_replica_set_ssl_client);
 
    bson_free(gTestCAFile);
    bson_free(gTestPEMFileLocalhost);

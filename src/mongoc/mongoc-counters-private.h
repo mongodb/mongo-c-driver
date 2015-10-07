@@ -40,6 +40,7 @@ BSON_BEGIN_DECLS
 
 
 void _mongoc_counters_init (void);
+void _mongoc_counters_cleanup (void);
 
 
 static BSON_INLINE unsigned

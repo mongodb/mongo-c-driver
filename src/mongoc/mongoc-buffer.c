@@ -54,8 +54,8 @@ _mongoc_buffer_init (mongoc_buffer_t   *buffer,
                      bson_realloc_func  realloc_func,
                      void              *realloc_data)
 {
-   bson_return_if_fail (buffer);
-   bson_return_if_fail (buflen || !buf);
+   BSON_ASSERT (buffer);
+   BSON_ASSERT (buflen || !buf);
 
    if (!realloc_func) {
       realloc_func = bson_realloc_ctx;
@@ -66,7 +66,7 @@ _mongoc_buffer_init (mongoc_buffer_t   *buffer,
    }
 
    if (!buf) {
-      buf = realloc_func (NULL, buflen, NULL);
+      buf = (uint8_t *)realloc_func (NULL, buflen, NULL);
    }
 
    memset (buffer, 0, sizeof *buffer);
@@ -89,7 +89,7 @@ _mongoc_buffer_init (mongoc_buffer_t   *buffer,
 void
 _mongoc_buffer_destroy (mongoc_buffer_t *buffer)
 {
-   bson_return_if_fail(buffer);
+   BSON_ASSERT (buffer);
 
    if (buffer->data && buffer->realloc_func) {
       buffer->realloc_func (buffer->data, 0, buffer->realloc_data);
@@ -112,7 +112,7 @@ void
 _mongoc_buffer_clear (mongoc_buffer_t *buffer,
                       bool      zero)
 {
-   bson_return_if_fail(buffer);
+   BSON_ASSERT (buffer);
 
    if (zero) {
       memset(buffer->data, 0, buffer->datalen);
@@ -149,9 +149,9 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
 
    ENTRY;
 
-   bson_return_val_if_fail (buffer, false);
-   bson_return_val_if_fail (stream, false);
-   bson_return_val_if_fail (size, false);
+   BSON_ASSERT (buffer);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (size);
 
    BSON_ASSERT (buffer->datalen);
    BSON_ASSERT ((buffer->datalen + size) < INT_MAX);
@@ -163,7 +163,7 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
       buffer->off = 0;
       if (!SPACE_FOR (buffer, size)) {
          buffer->datalen = bson_next_power_of_two (size + buffer->len + buffer->off);
-         buffer->data = buffer->realloc_func (buffer->data, buffer->datalen, NULL);
+         buffer->data = (uint8_t *)buffer->realloc_func (buffer->data, buffer->datalen, NULL);
       }
    }
 
@@ -210,9 +210,8 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    ENTRY;
 
-   bson_return_val_if_fail(buffer, false);
-   bson_return_val_if_fail(stream, false);
-   bson_return_val_if_fail(min_bytes >= 0, false);
+   BSON_ASSERT (buffer);
+   BSON_ASSERT (stream);
 
    BSON_ASSERT (buffer->data);
    BSON_ASSERT (buffer->datalen);
@@ -231,7 +230,7 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    if (!SPACE_FOR (buffer, min_bytes)) {
       buffer->datalen = bson_next_power_of_two (buffer->len + min_bytes);
-      buffer->data = buffer->realloc_func (buffer->data, buffer->datalen,
+      buffer->data = (uint8_t *)buffer->realloc_func (buffer->data, buffer->datalen,
                                            buffer->realloc_data);
    }
 
@@ -265,3 +264,63 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    RETURN (buffer->len);
 }
+
+
+/**
+ * mongoc_buffer_try_append_from_stream:
+ * @buffer; A mongoc_buffer_t.
+ * @stream: The stream to read from.
+ * @size: The number of bytes to read.
+ * @timeout_msec: The number of milliseconds to wait or -1 for the default
+ * @error: A location for a bson_error_t, or NULL.
+ *
+ * Reads from stream @size bytes and stores them in @buffer. This can be used
+ * in conjunction with reading RPCs from a stream. You read from the stream
+ * into this buffer and then scatter the buffer into the RPC.
+ *
+ * Returns: bytes read if successful; otherwise -1 and @error is set.
+ */
+ssize_t
+_mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
+                                   mongoc_stream_t *stream,
+                                   size_t           size,
+                                   int32_t          timeout_msec,
+                                   bson_error_t    *error)
+{
+   uint8_t *buf;
+   ssize_t ret;
+
+   ENTRY;
+
+   BSON_ASSERT (buffer);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (size);
+
+   BSON_ASSERT (buffer->datalen);
+   BSON_ASSERT ((buffer->datalen + size) < INT_MAX);
+
+   if (!SPACE_FOR (buffer, size)) {
+      if (buffer->len) {
+         memmove(&buffer->data[0], &buffer->data[buffer->off], buffer->len);
+      }
+      buffer->off = 0;
+      if (!SPACE_FOR (buffer, size)) {
+         buffer->datalen = bson_next_power_of_two (size + buffer->len + buffer->off);
+         buffer->data = (uint8_t *)buffer->realloc_func (buffer->data, buffer->datalen, NULL);
+      }
+   }
+
+   buf = &buffer->data[buffer->off + buffer->len];
+
+   BSON_ASSERT ((buffer->off + buffer->len + size) <= buffer->datalen);
+
+   ret = mongoc_stream_read (stream, buf, size, 0, timeout_msec);
+
+   if (ret > 0) {
+      buffer->len += ret;
+   }
+
+   RETURN (ret);
+}
+
+

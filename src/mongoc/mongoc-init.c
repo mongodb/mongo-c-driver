@@ -37,7 +37,7 @@ mongoc_sasl_mutex_alloc (void)
 {
    mongoc_mutex_t *mutex;
 
-   mutex = bson_malloc0 (sizeof (mongoc_mutex_t));
+   mutex = (mongoc_mutex_t *)bson_malloc0 (sizeof (mongoc_mutex_t));
    mongoc_mutex_init (mutex);
 
    return (void *) mutex;
@@ -105,9 +105,7 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
 
       /* check the version perhaps? */
 
-      assert (err == 0);
-
-      atexit ((void(*)(void))WSACleanup);
+      BSON_ASSERT (err == 0);
    }
 #endif
 
@@ -140,6 +138,8 @@ static MONGOC_ONCE_FUN( _mongoc_do_cleanup)
    WSACleanup ();
 #endif
 
+   _mongoc_counters_cleanup ();
+
    MONGOC_ONCE_RETURN;
 }
 
@@ -154,7 +154,7 @@ mongoc_cleanup (void)
  * On GCC, just use __attribute__((constructor)) to perform initialization
  * automatically for the application.
  */
-#ifdef __GNUC__
+#if defined(__GNUC__) && ! defined(MONGOC_NO_AUTOMATIC_GLOBALS)
 static void _mongoc_init_ctor (void) __attribute__((constructor));
 static void
 _mongoc_init_ctor (void)

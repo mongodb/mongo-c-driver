@@ -19,16 +19,37 @@
 #define TEST_LIBMONGOC_H
 
 
-#ifdef _WIN32
-void usleep (int64_t usec);
-#endif
-
-
 char *gen_collection_name (const char *prefix);
 void suppress_one_message (void);
 char *test_framework_getenv (const char *name);
+bool test_framework_getenv_bool (const char *name);
+int64_t test_framework_getenv_int64 (const char *name,
+                                     int64_t default_value);
 char *test_framework_get_host (void);
+uint16_t test_framework_get_port (void);
+char *test_framework_get_admin_user (void);
+char *test_framework_get_admin_password (void);
 bool test_framework_get_ssl (void);
-char *test_framework_get_uri_str (const char *uri_str);
-mongoc_client_t *test_framework_client_new (const char *uri_str);
+char *test_framework_add_user_password (const char *uri_str,
+                                        const char *user,
+                                        const char *password);
+char *test_framework_get_uri_str_no_auth (const char *database_name);
+char *test_framework_get_uri_str (void);
+mongoc_uri_t *test_framework_get_uri (void);
+mongoc_client_t *test_framework_client_new (void);
+mongoc_client_pool_t *test_framework_client_pool_new (void);
+bool test_framework_is_mongos (void);
+bool test_framework_is_replset (void);
+int test_framework_skip_if_mongos (void);
+int test_framework_skip_if_replset (void);
+bool test_framework_max_wire_version_at_least (int version);
+
+typedef struct _debug_stream_stats_t {
+    int n_destroyed;
+    int n_failed;
+} debug_stream_stats_t;
+
+void test_framework_set_debug_stream (mongoc_client_t *client,
+                                      debug_stream_stats_t *stats);
+
 #endif

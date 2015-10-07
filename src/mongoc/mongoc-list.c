@@ -34,8 +34,8 @@ _mongoc_list_append (mongoc_list_t *list,
    mongoc_list_t *item;
    mongoc_list_t *iter;
 
-   item = bson_malloc0(sizeof *item);
-   item->data = data;
+   item = (mongoc_list_t *)bson_malloc0(sizeof *item);
+   item->data = (void *)data;
    if (!list) {
       return item;
    }
@@ -62,8 +62,8 @@ _mongoc_list_prepend (mongoc_list_t *list,
 {
    mongoc_list_t *item;
 
-   item = bson_malloc0(sizeof *item);
-   item->data = data;
+   item = (mongoc_list_t *)bson_malloc0(sizeof *item);
+   item->data = (void *)data;
    item->next = list;
 
    return item;
@@ -87,7 +87,7 @@ _mongoc_list_remove (mongoc_list_t *list,
    mongoc_list_t *prev = NULL;
    mongoc_list_t *ret = list;
 
-   bson_return_val_if_fail(list, NULL);
+   BSON_ASSERT (list);
 
    for (iter = list; iter; iter = iter->next) {
       if (iter->data == data) {
@@ -121,7 +121,7 @@ _mongoc_list_foreach (mongoc_list_t *list,
 {
    mongoc_list_t *iter;
 
-   bson_return_if_fail(func);
+   BSON_ASSERT (func);
 
    for (iter = list; iter; iter = iter->next) {
       func(iter->data, user_data);

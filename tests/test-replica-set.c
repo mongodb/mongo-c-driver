@@ -1,15 +1,11 @@
 #include "mongoc-tests.h"
 
-#include <string.h>
-
 #include "ha-test.h"
 
-#include "mongoc-client.h"
 #include "mongoc-client-private.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-write-concern-private.h"
+#include "TestSuite.h"
 
 #undef G_LOG_DOMAIN
 #define G_LOG_DOMAIN "test"
@@ -20,7 +16,7 @@ static ha_node_t *r1;
 static ha_node_t *r2;
 static ha_node_t *r3;
 static ha_node_t *a1;
-
+static bool use_pool;
 
 static void
 insert_test_docs (mongoc_collection_t *collection)
@@ -48,14 +44,12 @@ insert_test_docs (mongoc_collection_t *collection)
       bson_init(&b);
       bson_oid_init(&oid, NULL);
       bson_append_oid(&b, "_id", 3, &oid);
-      if (!mongoc_collection_insert(collection,
-                                    MONGOC_INSERT_NONE,
-                                    &b,
-                                    write_concern,
-                                    &error)) {
-         MONGOC_ERROR("%s", error.message);
-         abort();
-      }
+
+      ASSERT_OR_PRINT (mongoc_collection_insert(collection,
+                                                MONGOC_INSERT_NONE,
+                                                &b,
+                                                write_concern,
+                                                &error), error);
       bson_destroy(&b);
    }
 
@@ -64,18 +58,23 @@ insert_test_docs (mongoc_collection_t *collection)
 
 
 static ha_node_t *
-get_replica (mongoc_cluster_node_t *node)
+get_replica (mongoc_client_t *client, uint32_t id)
 {
+   mongoc_server_description_t *description;
    ha_node_t *iter;
 
+   description = mongoc_topology_server_by_id(client->topology, id);
+   BSON_ASSERT(description);
+
    for (iter = replica_set->nodes; iter; iter = iter->next) {
-      if (iter->port == node->host.port) {
+      if (iter->port == description->host.port) {
+         mongoc_server_description_destroy(description);
          return iter;
       }
    }
 
+   mongoc_server_description_destroy(description);
    BSON_ASSERT(false);
-
    return NULL;
 }
 
@@ -103,11 +102,12 @@ get_replica (mongoc_cluster_node_t *node)
 static void
 test1 (void)
 {
-   mongoc_cluster_node_t *node;
+   mongoc_server_description_t *description;
    mongoc_collection_t *collection;
    mongoc_read_prefs_t *read_prefs;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
+   mongoc_client_pool_t *pool = NULL;
    const bson_t *doc;
    bson_error_t error;
    bool r;
@@ -117,7 +117,13 @@ test1 (void)
 
    bson_init(&q);
 
-   client = ha_replica_set_create_client(replica_set);
+   if (use_pool) {
+      pool = ha_replica_set_create_client_pool(replica_set);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = ha_replica_set_create_client(replica_set);
+   }
+
    collection = mongoc_client_get_collection(client, "test1", "test1");
 
    MONGOC_DEBUG("Inserting test documents.");
@@ -154,7 +160,9 @@ test1 (void)
    /*
     * Make sure we queried a secondary.
     */
-   BSON_ASSERT(!client->cluster.nodes[cursor->hint - 1].primary);
+   description = mongoc_topology_server_by_id(client->topology, cursor->hint);
+   BSON_ASSERT(description->type != MONGOC_SERVER_RS_PRIMARY);
+   mongoc_server_description_destroy(description);
 
    /*
     * Exhaust the items in our first OP_REPLY.
@@ -183,9 +191,9 @@ test1 (void)
     * Determine which node we queried by using the hint to
     * get the cluster information.
     */
+
    BSON_ASSERT(cursor->hint);
-   node = &client->cluster.nodes[cursor->hint - 1];
-   replica = get_replica(node);
+   replica = get_replica(client, cursor->hint);
 
    /*
     * Kill the node we are communicating with.
@@ -204,14 +212,16 @@ test1 (void)
    BSON_ASSERT(r);
    MONGOC_WARNING("%s", error.message);
 
-   BSON_ASSERT(cursor->client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
-   BSON_ASSERT(client->cluster.state == MONGOC_CLUSTER_STATE_UNHEALTHY);
-   BSON_ASSERT(!client->cluster.nodes[cursor->hint - 1].stream);
-
    mongoc_cursor_destroy(cursor);
    mongoc_read_prefs_destroy(read_prefs);
    mongoc_collection_destroy(collection);
-   mongoc_client_destroy(client);
+
+   if (use_pool) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy(client);
+   }
    bson_destroy(&q);
 
    ha_node_restart(replica);
@@ -225,6 +235,7 @@ test2 (void)
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
    mongoc_client_t *client;
+   mongoc_client_pool_t *pool = NULL;
    const bson_t *doc;
    bson_error_t error;
    bool r;
@@ -238,7 +249,13 @@ test2 (void)
    ha_node_kill(r1);
    ha_node_kill(r2);
 
-   client = ha_replica_set_create_client(replica_set);
+   if (use_pool) {
+      pool = ha_replica_set_create_client_pool(replica_set);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = ha_replica_set_create_client(replica_set);
+   }
+
    collection = mongoc_client_get_collection(client, "test2", "test2");
 
    /*
@@ -260,13 +277,21 @@ test2 (void)
     */
    r = mongoc_cursor_next(cursor, &doc);
    BSON_ASSERT(!r); /* No docs */
-   r = mongoc_cursor_error(cursor, &error);
-   BSON_ASSERT(!r); /* No error, slaveOk was set */
+
+   /* No error, slaveOk was set */
+   ASSERT_OR_PRINT (!mongoc_cursor_error(cursor, &error), error);
 
    mongoc_read_prefs_destroy(read_prefs);
    mongoc_cursor_destroy(cursor);
    mongoc_collection_destroy(collection);
-   mongoc_client_destroy(client);
+
+   if (use_pool) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy(client);
+   }
+
    bson_destroy(&q);
 
    ha_node_restart(r1);
@@ -305,10 +330,20 @@ main (int   argc,   /* IN */
    ha_replica_set_start(replica_set);
 
    ha_replica_set_wait_for_healthy(replica_set);
-   run_test("/ReplicaSet/lose_node_during_cursor", test1);
+   use_pool = false;
+   run_test("/ReplicaSet/single/lose_node_during_cursor", test1);
 
    ha_replica_set_wait_for_healthy(replica_set);
-   run_test("/ReplicaSet/cursor_with_2_of_3_replicas_down", test2);
+   use_pool = true;
+   run_test("/ReplicaSet/pool/lose_node_during_cursor", test1);
+
+   ha_replica_set_wait_for_healthy(replica_set);
+   use_pool = false;
+   run_test("/ReplicaSet/single/cursor_with_2_of_3_replicas_down", test2);
+
+   ha_replica_set_wait_for_healthy(replica_set);
+   use_pool = true;
+   run_test("/ReplicaSet/pool/cursor_with_2_of_3_replicas_down", test2);
 
    ha_replica_set_wait_for_healthy(replica_set);
 

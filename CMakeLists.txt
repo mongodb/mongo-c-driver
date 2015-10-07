@@ -2,21 +2,27 @@ cmake_minimum_required(VERSION 2.8)
 
 project (libmongoc)
 
+option(SEARCH_OPEN_SSL "SEARCH_OPEN_SSL" ON)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
 include(InstallRequiredSystemLibraries)
-include(FindOpenSSL)
+
+if (SEARCH_OPEN_SSL)
+    include(FindOpenSSL)
+endif ()
 
 include(FindBSON REQUIRED)
+include(FindSASL2)
 
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
 set (MONGOC_MAJOR_VERSION 1)
-set (MONGOC_MINOR_VERSION 1)
-set (MONGOC_MICRO_VERSION 11)
-set (MONGOC_PRERELEASE_VERSION )
+set (MONGOC_MINOR_VERSION 2)
+set (MONGOC_MICRO_VERSION 0)
+set (MONGOC_PRERELEASE_VERSION dev)
 set (MONGOC_API_VERSION 1.0)
-set (MONGOC_VERSION 1.1.11)
+set (MONGOC_VERSION 1.2.0-dev)
 
 set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 set (CPACK_PACKAGE_VERSION_MAJOR ${MONGOC_MAJOR_VERSION})
@@ -24,13 +30,17 @@ set (CPACK_PACKAGE_VERSION_MINOR ${MONGOC_MINOR_VERSION})
 
 include (CPack)
 
-if (OPENSSL_FOUND)
+if (SEARCH_OPEN_SSL AND OPENSSL_FOUND)
    set (MONGOC_ENABLE_SSL 1)
 else()
    set (MONGOC_ENABLE_SSL 0)
 endif ()
 
-set (MONGOC_ENABLE_SASL 0)
+if (SASL2_FOUND)
+   set (MONGOC_ENABLE_SASL 1)
+else()
+   set (MONGOC_ENABLE_SASL 0)
+endif ()
 set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
 
 configure_file (
@@ -60,9 +70,17 @@ endif()
 add_definitions(-D_GNU_SOURCE)
 add_definitions(-D_BSD_SOURCE)
 add_definitions("-DBINARY_DIR=\"${SOURCE_DIR}/tests/binary\"")
+if (APPLE)
+   # Until CDRIVER-520.
+   add_definitions(-Wno-deprecated-declarations)
+endif()
 
 set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-array.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-async.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-async-cmd.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-b64.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.c
    ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
    ${SOURCE_DIR}/src/mongoc/mongoc-b64.c
@@ -71,6 +89,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-cluster.c
    ${SOURCE_DIR}/src/mongoc/mongoc-collection.c
    ${SOURCE_DIR}/src/mongoc/mongoc-counters.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-cursorid.c
@@ -79,24 +98,35 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-host-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-index.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${SOURCE_DIR}/src/mongoc/mongoc-list.c
    ${SOURCE_DIR}/src/mongoc/mongoc-log.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-server-description.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-set.c
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-topology.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-topology-scanner.c
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.c
    ${SOURCE_DIR}/src/mongoc/mongoc-util.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
 )
@@ -124,7 +154,9 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-log.h
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.h
@@ -133,6 +165,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
 )
 
@@ -149,6 +182,13 @@ if (OPENSSL_FOUND)
    )
    set(LIBS ${LIBS} ${OPENSSL_LIBRARIES})
    include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
+
+if (SASL2_FOUND)
+   set (HEADERS ${HEADERS} ${SOURCE_DIR}/src/mongoc/mongoc-sasl-private.h)
+   set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
+   set(LIBS ${LIBS} ${SASL2_LIBRARY})
+   include_directories(${SASL2_INCLUDE_DIR})
 endif()
 
 if (MSVC)
@@ -205,35 +245,58 @@ function(mongoc_add_example example use_shared)
 endfunction()
 
 set(test-libmongoc-sources
+   ${SOURCE_DIR}/tests/debug-stream.c
    ${SOURCE_DIR}/tests/ha-test.c
+   ${SOURCE_DIR}/tests/json-test.c
+   ${SOURCE_DIR}/tests/mock_server/future.c
+   ${SOURCE_DIR}/tests/mock_server/future-functions.c
+   ${SOURCE_DIR}/tests/mock_server/future-value.c
+   ${SOURCE_DIR}/tests/mock_server/sync-queue.c
+   ${SOURCE_DIR}/tests/mock_server/mock-rs.c
+   ${SOURCE_DIR}/tests/mock_server/mock-server.c
+   ${SOURCE_DIR}/tests/mock_server/request.c
+   ${SOURCE_DIR}/tests/test-conveniences.c
+   ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-libmongoc.c
    ${SOURCE_DIR}/tests/test-mongoc-array.c
+   ${SOURCE_DIR}/tests/test-mongoc-async.c
    ${SOURCE_DIR}/tests/test-mongoc-buffer.c
    ${SOURCE_DIR}/tests/test-mongoc-client.c
-   ${SOURCE_DIR}/tests/mock-server.c
    ${SOURCE_DIR}/tests/test-bulk.c
    ${SOURCE_DIR}/tests/test-mongoc-client-pool.c
    ${SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
    ${SOURCE_DIR}/tests/test-mongoc-cursor.c
    ${SOURCE_DIR}/tests/test-mongoc-database.c
+   ${SOURCE_DIR}/tests/test-mongoc-exhaust.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
    ${SOURCE_DIR}/tests/test-mongoc-list.c
+   ${SOURCE_DIR}/tests/test-mongoc-log.c
    ${SOURCE_DIR}/tests/test-mongoc-matcher.c
    ${SOURCE_DIR}/tests/test-mongoc-queue.c
    ${SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
+   ${SOURCE_DIR}/tests/test-mongoc-sdam.c
+   ${SOURCE_DIR}/tests/test-mongoc-server-selection.c
+   ${SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
+   ${SOURCE_DIR}/tests/test-mongoc-set.c
    ${SOURCE_DIR}/tests/test-mongoc-socket.c
    ${SOURCE_DIR}/tests/test-mongoc-stream.c
+   ${SOURCE_DIR}/tests/test-mongoc-thread.c
+   ${SOURCE_DIR}/tests/test-mongoc-topology.c
+   ${SOURCE_DIR}/tests/test-mongoc-topology-reconcile.c
+   ${SOURCE_DIR}/tests/test-mongoc-topology-scanner.c
    ${SOURCE_DIR}/tests/test-mongoc-uri.c
+   ${SOURCE_DIR}/tests/test-mongoc-version.c
+   ${SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
    ${SOURCE_DIR}/tests/test-sasl.c
    ${SOURCE_DIR}/tests/test-write-commands.c
    ${SOURCE_DIR}/tests/TestSuite.c
 )
 
-if (OPENSSL_FOUND)
+if (SEARCH_OPEN_SSL AND OPENSSL_FOUND)
    set(test-libmongoc-sources ${test-libmongoc-sources}
       ${SOURCE_DIR}/tests/test-x509.c
       ${SOURCE_DIR}/tests/ssl-test.c

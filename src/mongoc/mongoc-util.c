@@ -39,3 +39,24 @@ _mongoc_hex_md5 (const char *input)
 
    return bson_strdup(digest_str);
 }
+
+
+void
+_mongoc_usleep (int64_t usec)
+{
+#ifdef _WIN32
+   LARGE_INTEGER ft;
+   HANDLE timer;
+
+   BSON_ASSERT (usec >= 0);
+
+   ft.QuadPart = -(10 * usec);
+   timer = CreateWaitableTimer(NULL, true, NULL);
+   SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0);
+   WaitForSingleObject(timer, INFINITE);
+   CloseHandle(timer);
+#else
+   BSON_ASSERT (usec >= 0);
+   usleep ((useconds_t) usec);
+#endif
+}

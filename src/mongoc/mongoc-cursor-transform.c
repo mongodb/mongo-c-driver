@@ -50,7 +50,7 @@ _mongoc_cursor_transform_new (mongoc_cursor_transform_filter_t filter,
 
    ENTRY;
 
-   transform = bson_malloc0 (sizeof *transform);
+   transform = (mongoc_cursor_transform_t *)bson_malloc0 (sizeof *transform);
 
    transform->filter = filter;
    transform->mutate = mutate;
@@ -69,7 +69,7 @@ _mongoc_cursor_transform_destroy (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   transform = cursor->iface_data;
+   transform = (mongoc_cursor_transform_t *)cursor->iface_data;
 
    if (transform->dtor) {
       transform->dtor (transform->ctx);
@@ -92,7 +92,7 @@ _mongoc_cursor_transform_next (mongoc_cursor_t *cursor,
 
    ENTRY;
 
-   transform = cursor->iface_data;
+   transform = (mongoc_cursor_transform_t *)cursor->iface_data;
 
    for (;; ) {
       if (!_mongoc_cursor_next (cursor, bson)) {
@@ -129,7 +129,7 @@ _mongoc_cursor_transform_clone (const mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   transform = cursor->iface_data;
+   transform = (mongoc_cursor_transform_t *)cursor->iface_data;
 
    clone_ = _mongoc_cursor_clone (cursor);
    _mongoc_cursor_transform_init (clone_, transform->filter, transform->mutate,

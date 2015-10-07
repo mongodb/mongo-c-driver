@@ -23,7 +23,7 @@
 void
 _mongoc_queue_init (mongoc_queue_t *queue)
 {
-   bson_return_if_fail(queue);
+   BSON_ASSERT (queue);
 
    memset (queue, 0, sizeof *queue);
 }
@@ -35,10 +35,10 @@ _mongoc_queue_push_head (mongoc_queue_t *queue,
 {
    mongoc_queue_item_t *item;
 
-   bson_return_if_fail(queue);
-   bson_return_if_fail(data);
+   BSON_ASSERT (queue);
+   BSON_ASSERT (data);
 
-   item = bson_malloc0(sizeof *item);
+   item = (mongoc_queue_item_t *)bson_malloc0(sizeof *item);
    item->next = queue->head;
    item->data = data;
 
@@ -56,10 +56,10 @@ _mongoc_queue_push_tail (mongoc_queue_t *queue,
 {
    mongoc_queue_item_t *item;
 
-   bson_return_if_fail(queue);
-   bson_return_if_fail(data);
+   BSON_ASSERT (queue);
+   BSON_ASSERT (data);
 
-   item = bson_malloc0(sizeof *item);
+   item = (mongoc_queue_item_t *)bson_malloc0(sizeof *item);
    item->data = data;
 
    if (queue->tail) {
@@ -78,7 +78,7 @@ _mongoc_queue_pop_head (mongoc_queue_t *queue)
    mongoc_queue_item_t *item;
    void *data = NULL;
 
-   bson_return_val_if_fail(queue, NULL);
+   BSON_ASSERT (queue);
 
    if ((item = queue->head)) {
       if (!item->next) {
@@ -99,7 +99,7 @@ _mongoc_queue_get_length (const mongoc_queue_t *queue)
    mongoc_queue_item_t *item;
    uint32_t count = 0;
 
-   bson_return_val_if_fail(queue, 0);
+   BSON_ASSERT (queue);
 
    for (item = queue->head; item; item = item->next) {
       count++;

@@ -27,12 +27,14 @@
 #include "mongoc-buffer-private.h"
 #include "mongoc-config.h"
 #include "mongoc-client.h"
-#include "mongoc-host-list.h"
 #include "mongoc-list-private.h"
 #include "mongoc-opcode.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
+#include "mongoc-server-description-private.h"
+#include "mongoc-set-private.h"
 #include "mongoc-stream.h"
+#include "mongoc-topology-description-private.h"
 #include "mongoc-uri.h"
 #include "mongoc-write-concern.h"
 
@@ -40,120 +42,110 @@
 BSON_BEGIN_DECLS
 
 
-#define MONGOC_CLUSTER_PING_NUM_SAMPLES 5
-
-
-typedef enum
+typedef struct _mongoc_cluster_node_t
 {
-   MONGOC_CLUSTER_DIRECT,
-   MONGOC_CLUSTER_REPLICA_SET,
-   MONGOC_CLUSTER_SHARDED_CLUSTER,
-} mongoc_cluster_mode_t;
+   mongoc_stream_t *stream;
 
+   int32_t          max_wire_version;
+   int32_t          min_wire_version;
+   int32_t          max_write_batch_size;
+   int32_t          max_bson_obj_size;
+   int32_t          max_msg_size;
 
-typedef enum
-{
-   MONGOC_CLUSTER_STATE_BORN      = 0,
-   MONGOC_CLUSTER_STATE_HEALTHY   = 1,
-   MONGOC_CLUSTER_STATE_DEAD      = 2,
-   MONGOC_CLUSTER_STATE_UNHEALTHY = (MONGOC_CLUSTER_STATE_DEAD |
-                                     MONGOC_CLUSTER_STATE_HEALTHY),
-} mongoc_cluster_state_t;
-
-
-typedef struct
-{
-   uint32_t            index;
-   mongoc_host_list_t  host;
-   mongoc_stream_t    *stream;
-   int32_t             ping_avg_msec;
-   int32_t             pings[MONGOC_CLUSTER_PING_NUM_SAMPLES];
-   int32_t             pings_pos;
-   uint32_t            stamp;
-   bson_t              tags;
-   unsigned            primary    : 1;
-   unsigned            needs_auth : 1;
-   unsigned            isdbgrid   : 1;
-   unsigned            secondary  : 1;
-   int32_t             min_wire_version;
-   int32_t             max_wire_version;
-   int32_t             max_write_batch_size;
-   char               *replSet;
-   int64_t             last_read_msec;
-   bool                valid;
+   int64_t          timestamp;
 } mongoc_cluster_node_t;
 
-
-typedef struct
+typedef struct _mongoc_cluster_t
 {
-   mongoc_cluster_mode_t   mode;
-   mongoc_cluster_state_t  state;
+   uint32_t         request_id;
+   uint32_t         sockettimeoutms;
+   uint32_t         socketcheckintervalms;
+   mongoc_uri_t    *uri;
+   unsigned         requires_auth : 1;
 
-   uint32_t                request_id;
-   uint32_t                sockettimeoutms;
+   mongoc_client_t *client;
 
-   int64_t                 last_reconnect;
-
-   mongoc_uri_t           *uri;
-
-   unsigned                requires_auth : 1;
-
-   mongoc_cluster_node_t  *nodes;
-   uint32_t                nodes_len;
-   mongoc_client_t        *client;
-   int32_t                 max_bson_size;
-   int32_t                 max_msg_size;
-   uint32_t                sec_latency_ms;
-   mongoc_array_t          iov;
-
-   mongoc_list_t          *peers;
-
-   char                   *replSet;
+   mongoc_set_t    *nodes;
+   mongoc_array_t   iov;
 } mongoc_cluster_t;
 
+void
+mongoc_cluster_init (mongoc_cluster_t   *cluster,
+                     const mongoc_uri_t *uri,
+                     void               *client);
 
-void                   _mongoc_cluster_destroy         (mongoc_cluster_t             *cluster);
-void                   _mongoc_cluster_init            (mongoc_cluster_t             *cluster,
-                                                        const mongoc_uri_t           *uri,
-                                                        void                         *client);
-uint32_t               _mongoc_cluster_sendv           (mongoc_cluster_t             *cluster,
-                                                        mongoc_rpc_t                 *rpcs,
-                                                        size_t                        rpcs_len,
-                                                        uint32_t                      hint,
-                                                        const mongoc_write_concern_t *write_concern,
-                                                        const mongoc_read_prefs_t    *read_prefs,
-                                                        bson_error_t                 *error);
-uint32_t               _mongoc_cluster_try_sendv       (mongoc_cluster_t             *cluster,
-                                                        mongoc_rpc_t                 *rpcs,
-                                                        size_t                        rpcs_len,
-                                                        uint32_t                      hint,
-                                                        const mongoc_write_concern_t *write_concern,
-                                                        const mongoc_read_prefs_t    *read_prefs,
-                                                        bson_error_t                 *error);
-bool                   _mongoc_cluster_try_recv        (mongoc_cluster_t             *cluster,
-                                                        mongoc_rpc_t                 *rpc,
-                                                        mongoc_buffer_t              *buffer,
-                                                        uint32_t                      hint,
-                                                        bson_error_t                 *error);
-uint32_t               _mongoc_cluster_stamp           (const mongoc_cluster_t       *cluster,
-                                                        uint32_t                      node);
-mongoc_cluster_node_t *_mongoc_cluster_get_primary     (mongoc_cluster_t             *cluster);
-bool                   _mongoc_cluster_command_early   (mongoc_cluster_t             *cluster,
-                                                        const char                   *dbname,
-                                                        const bson_t                 *command,
-                                                        bson_t                       *reply,
-                                                        bson_error_t                 *error);
-void                   _mongoc_cluster_node_destroy    (mongoc_cluster_node_t        *node);
-void                   _mongoc_cluster_disconnect_node (mongoc_cluster_t             *cluster,
-                                                        mongoc_cluster_node_t        *node);
-bool                   _mongoc_cluster_reconnect       (mongoc_cluster_t             *cluster,
-                                                        bson_error_t                 *error);
-uint32_t               _mongoc_cluster_preselect       (mongoc_cluster_t             *cluster,
-                                                        mongoc_opcode_t               opcode,
-                                                        const mongoc_write_concern_t *write_concern,
-                                                        const mongoc_read_prefs_t    *read_prefs,
-                                                        bson_error_t                 *error);
+void
+mongoc_cluster_destroy (mongoc_cluster_t *cluster);
 
+void
+mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster,
+                                uint32_t          id);
+
+mongoc_server_description_t *
+mongoc_cluster_select_by_optype (mongoc_cluster_t *cluster,
+                                 mongoc_ss_optype_t optype,
+                                 const mongoc_read_prefs_t *read_prefs,
+                                 bson_error_t *error);
+
+uint32_t
+mongoc_cluster_preselect (mongoc_cluster_t             *cluster,
+                          mongoc_opcode_t               opcode,
+                          const mongoc_read_prefs_t    *read_prefs,
+                          bson_error_t                 *error);
+
+mongoc_server_description_t *
+mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
+                                      mongoc_opcode_t               opcode,
+                                      const mongoc_read_prefs_t    *read_prefs,
+                                      bson_error_t                 *error /* OUT */);
+
+int32_t
+mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
+                                  uint32_t          server_id);
+
+int32_t
+mongoc_cluster_node_max_bson_obj_size (mongoc_cluster_t *cluster,
+                                       uint32_t         server_id);
+
+int32_t
+mongoc_cluster_node_max_write_batch_size (mongoc_cluster_t *cluster,
+                                       uint32_t         server_id);
+
+int32_t
+mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster);
+
+int32_t
+mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster);
+
+int32_t
+mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,
+                                      uint32_t          server_id);
+
+int32_t
+mongoc_cluster_node_min_wire_version (mongoc_cluster_t *cluster,
+                                      uint32_t          server_id);
+
+bool
+mongoc_cluster_sendv_to_server (mongoc_cluster_t             *cluster,
+                                mongoc_rpc_t                 *rpcs,
+                                size_t                        rpcs_len,
+                                uint32_t                      server_id,
+                                const mongoc_write_concern_t *write_concern,
+                                bool                          reconnect_ok,
+                                bson_error_t                 *error);
+
+bool
+mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
+                         mongoc_rpc_t     *rpc,
+                         mongoc_buffer_t  *buffer,
+                         uint32_t          server_id,
+                         bson_error_t     *error);
+
+mongoc_stream_t *
+mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
+                             uint32_t server_id,
+                             bool reconnect_ok,
+                             bson_error_t *error);
 
 BSON_END_DECLS
 

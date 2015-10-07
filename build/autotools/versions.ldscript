@@ -105,6 +105,7 @@ LIBMONGOC_1.0 {
         mongoc_gridfs_file_get_chunk_size;
         mongoc_gridfs_file_get_content_type;
         mongoc_gridfs_file_get_filename;
+        mongoc_gridfs_file_get_id;
         mongoc_gridfs_file_get_length;
         mongoc_gridfs_file_get_md5;
         mongoc_gridfs_file_get_metadata;
@@ -242,3 +243,22 @@ LIBMONGOC_1.1 {
         mongoc_uri_get_credentials;
         mongoc_uri_get_mechanism_properties;
 } LIBMONGOC_1.0;
+
+LIBMONGOC_1.2 {
+    global:
+        mongoc_client_get_default_database;
+        mongoc_bulk_operation_get_write_concern;
+        mongoc_server_description_destroy;
+        mongoc_server_description_host;
+        mongoc_server_description_id;
+        mongoc_server_description_new_copy;
+        mongoc_stream_failed;
+        mongoc_uri_get_read_prefs_t;
+        mongoc_client_pool_max_size;
+        mongoc_client_pool_min_size;
+        mongoc_get_major_version;
+        mongoc_get_minor_version;
+        mongoc_get_micro_version;
+        mongoc_get_version;
+        mongoc_check_version;
+} LIBMONGOC_1.1;

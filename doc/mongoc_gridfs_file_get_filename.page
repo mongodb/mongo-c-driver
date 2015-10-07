@@ -25,7 +25,7 @@ mongoc_gridfs_file_get_filename (mongoc_gridfs_file_t *file);]]></code></synopsi
 
   <section id="description">
     <title>Description</title>
-    <p>Fetches the filename for the give gridfs file.</p>
+    <p>Fetches the filename for the given gridfs file.</p>
   </section>
 
   <section id="return">

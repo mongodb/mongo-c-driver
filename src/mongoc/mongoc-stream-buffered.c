@@ -59,7 +59,7 @@ mongoc_stream_buffered_destroy (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
 
-   bson_return_if_fail(stream);
+   BSON_ASSERT (stream);
 
    mongoc_stream_destroy(buffered->base_stream);
    buffered->base_stream = NULL;
@@ -70,6 +70,31 @@ mongoc_stream_buffered_destroy (mongoc_stream_t *stream) /* IN */
 
    mongoc_counter_streams_active_dec();
    mongoc_counter_streams_disposed_inc();
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_buffered_failed --
+ *
+ *       Called when a stream fails. Useful for streams that differnciate
+ *       between failure and cleanup.
+ *       Calls mongoc_stream_buffered_destroy() on the stream.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Everything.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static void
+mongoc_stream_buffered_failed (mongoc_stream_t *stream) /* IN */
+{
+	mongoc_stream_buffered_destroy (stream);
 }
 
 
@@ -95,7 +120,7 @@ static int
 mongoc_stream_buffered_close (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   bson_return_val_if_fail(stream, -1);
+   BSON_ASSERT (stream);
    return mongoc_stream_close(buffered->base_stream);
 }
 
@@ -120,7 +145,7 @@ static int
 mongoc_stream_buffered_flush (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   bson_return_val_if_fail(buffered, -1);
+   BSON_ASSERT (buffered);
    return mongoc_stream_flush(buffered->base_stream);
 }
 
@@ -156,7 +181,7 @@ mongoc_stream_buffered_writev (mongoc_stream_t *stream,       /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail(buffered, -1);
+   BSON_ASSERT (buffered);
 
    ret = mongoc_stream_writev(buffered->base_stream, iov, iovcnt,
                               timeout_msec);
@@ -206,7 +231,7 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail(buffered, -1);
+   BSON_ASSERT (buffered);
 
    for (i = 0; i < iovcnt; i++) {
       total_bytes += iov[i].iov_len;
@@ -223,7 +248,7 @@ mongoc_stream_buffered_readv (mongoc_stream_t *stream,       /* IN */
       RETURN (-1);
    }
 
-   BSON_ASSERT(buffered->buffer.len >= total_bytes);
+   BSON_ASSERT (buffered->buffer.len >= total_bytes);
 
    for (i = 0; i < iovcnt; i++) {
       memcpy(iov[i].iov_base,
@@ -248,7 +273,7 @@ static bool
 _mongoc_stream_buffered_check_closed (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *)stream;
-   bson_return_val_if_fail(stream, -1);
+   BSON_ASSERT (stream);
    return mongoc_stream_check_closed (buffered->base_stream);
 }
 
@@ -282,11 +307,12 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream, /* IN */
 {
    mongoc_stream_buffered_t *stream;
 
-   bson_return_val_if_fail(base_stream, NULL);
+   BSON_ASSERT (base_stream);
 
-   stream = bson_malloc0(sizeof *stream);
+   stream = (mongoc_stream_buffered_t *)bson_malloc0(sizeof *stream);
    stream->stream.type = MONGOC_STREAM_BUFFERED;
    stream->stream.destroy = mongoc_stream_buffered_destroy;
+   stream->stream.failed = mongoc_stream_buffered_failed;
    stream->stream.close = mongoc_stream_buffered_close;
    stream->stream.flush = mongoc_stream_buffered_flush;
    stream->stream.writev = mongoc_stream_buffered_writev;

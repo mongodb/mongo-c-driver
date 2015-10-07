@@ -66,6 +66,15 @@
 
     <p>Minimal dependencies are needed to build the MongoDB C driver. Optionally, if you want Kerberos (GSSAPI) or SSL support, you need to install <code>libsasl2</code> and <code>OpenSSL</code> libraries and development headers respectively.</p>
 
+    <note>
+      <p>
+      In MongoDB 3.0 and later the default authentication mechanism is SCRAM-SHA-1.
+      The MongoDB C Driver must be built with OpenSSL to use SCRAM-SHA-1 authentication,
+      since the driver uses hash algorithms from the OpenSSL library to implement SCRAM-SHA-1,
+      even if it connects to MongoDB over a non-SSL connection.
+      </p>
+    </note>
+
     <p>Make sure you have access to a <link xref="installing#supported-platforms">supported toolchain</link> such as GCC, Clang, SolarisStudio, or MinGW. Optionally, <code>pkg-config</code> can be used if your system supports it to simplify locating proper compiler and linker arguments when compiling your program.</p>
 
     <p>The following will configure for a typical 64-bit Linux system such as RedHat Enterprise Linux 6 or CentOS 6. Note that not all systems place 64-bit libraries in <code>/usr/lib64</code>. Check your system to see what the convention is if you are building 64-bit versions of the library.</p>
@@ -129,9 +138,9 @@ Install man pages                                : yes
     <p>The following commands will download the most recent MongoDB binary release and install it using the <code>pkgadd</code> command on Solaris 10.</p>
       <screen><output style="prompt">$ </output><input>bash</input>
 <output style="prompt">bash-3.2$ </output><input>export ARCH=`uname -m`</input>
-<output style="prompt">bash-3.2$ </output><input>/usr/sfw/bin/wget --no-check-certificate "https://github.com/mongodb/mongo-c-driver/releases/download/1.1.11/MONGOmongo-c-driver-1.1.11.${ARCH}.pkg.tar.gz"</input>
-<output style="prompt">bash-3.2$ </output><input>gunzip -c "MONGOmongo-c-driver-1.1.11.${ARCH}.pkg.tar.gz" | tar -xf -</input>
-<output style="prompt">bash-3.2$ </output><input>pkgadd -d . MONGOmongo-c-driver</input></screen>
+<output style="prompt">bash-3.2$ </output><input>/usr/sfw/bin/wget --no-check-certificate "https://github.com/mongodb/mongo-c-driver/releases/download/1.1.11/mongo-c-driver-1.1.11.${ARCH}.pkg.tar.gz"</input>
+<output style="prompt">bash-3.2$ </output><input>gunzip -c "mongo-c-driver-1.1.11.${ARCH}.pkg.tar.gz" | tar -xf -</input>
+<output style="prompt">bash-3.2$ </output><input>pkgadd -d . mongo-c-driver</input></screen>
 
   </section>
 
@@ -157,7 +166,7 @@ cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</sc
 
     <p>Now let's do the same for the MongoDB C driver.</p>
 
-    <screen>cd mongo-c-driver-1.1.11
+    <screen>cd mongo-c-driver-1.2.0-rc0
 cmake -G "Visual Studio 2010 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"
 msbuild.exe ALL_BUILD.vcxproj
 msbuild.exe INSTALL.vcxproj</screen>

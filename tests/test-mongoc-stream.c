@@ -27,7 +27,13 @@ test_buffered_basic (void)
    iov.iov_len = sizeof buf;
    iov.iov_base = buf;
    r = mongoc_stream_readv(buffered, &iov, 1, iov.iov_len, -1);
-   BSON_ASSERT(r == iov.iov_len);
+   if (r != iov.iov_len) {
+      char msg[100];
+
+      bson_snprintf(msg, 100, "Expected %lld got %llu",
+                   (long long)r, (unsigned long long)iov.iov_len);
+      ASSERT_CMPSTR(msg, "failed");
+   }
 
    /* cleanup */
    mongoc_stream_destroy(buffered);
@@ -53,7 +59,13 @@ test_buffered_oversized (void)
    iov.iov_len = sizeof buf;
    iov.iov_base = buf;
    r = mongoc_stream_readv(buffered, &iov, 1, iov.iov_len, -1);
-   BSON_ASSERT(r == iov.iov_len);
+   if (r != iov.iov_len) {
+      char msg[100];
+
+      bson_snprintf(msg, 100, "Expected %lld got %llu",
+                   (long long)r, (unsigned long long)iov.iov_len);
+      ASSERT_CMPSTR(msg, "failed");
+   }
 
    /* cleanup */
    mongoc_stream_destroy(buffered);
@@ -124,12 +136,7 @@ test_stream_writev_full (void)
    BSON_ASSERT (!r);
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_STREAM);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_STREAM_SOCKET);
-   if ((error.message) != strstr ((error.message), (error_message))) {
-      fprintf (stderr,
-               "FAIL\n\nAssert Failure: \"%s\" does not start with \"%s\"\n",
-               error.message, error_message);
-      abort ();
-   }
+   ASSERT_STARTSWITH (error.message, error_message);
 
    errno = 0;
    r = _mongoc_stream_writev_full (short_stream, iov, 2, 100, &error);

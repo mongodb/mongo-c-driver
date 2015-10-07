@@ -22,12 +22,12 @@
 
 #include "mongoc-error.h"
 #include "mongoc-sasl-private.h"
+#include "mongoc-util-private.h"
 
 
 #ifndef SASL_CALLBACK_FN
 #  define SASL_CALLBACK_FN(_f) ((int (*) (void))(_f))
 #endif
-
 
 void
 _mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
@@ -35,8 +35,8 @@ _mongoc_sasl_set_mechanism (mongoc_sasl_t *sasl,
 {
    BSON_ASSERT (sasl);
 
-   free (sasl->mechanism);
-   sasl->mechanism = mechanism ? strdup (mechanism) : NULL;
+   bson_free (sasl->mechanism);
+   sasl->mechanism = mechanism ? bson_strdup (mechanism) : NULL;
 }
 
 
@@ -67,8 +67,8 @@ _mongoc_sasl_set_pass (mongoc_sasl_t *sasl,
 {
    BSON_ASSERT (sasl);
 
-   free (sasl->pass);
-   sasl->pass = pass ? strdup (pass) : NULL;
+   bson_free (sasl->pass);
+   sasl->pass = pass ? bson_strdup (pass) : NULL;
 }
 
 
@@ -99,8 +99,8 @@ _mongoc_sasl_set_user (mongoc_sasl_t *sasl,
 {
    BSON_ASSERT (sasl);
 
-   free (sasl->user);
-   sasl->user = user ? strdup (user) : NULL;
+   bson_free (sasl->user);
+   sasl->user = user ? bson_strdup (user) : NULL;
 }
 
 
@@ -110,8 +110,8 @@ _mongoc_sasl_set_service_host (mongoc_sasl_t *sasl,
 {
    BSON_ASSERT (sasl);
 
-   free (sasl->service_host);
-   sasl->service_host = service_host ? strdup (service_host) : NULL;
+   bson_free (sasl->service_host);
+   sasl->service_host = service_host ? bson_strdup (service_host) : NULL;
 }
 
 
@@ -121,8 +121,8 @@ _mongoc_sasl_set_service_name (mongoc_sasl_t *sasl,
 {
    BSON_ASSERT (sasl);
 
-   free (sasl->service_name);
-   sasl->service_name = service_name ? strdup (service_name) : NULL;
+   bson_free (sasl->service_name);
+   sasl->service_name = service_name ? bson_strdup (service_name) : NULL;
 }
 
 
@@ -163,11 +163,11 @@ _mongoc_sasl_destroy (mongoc_sasl_t *sasl)
       sasl_dispose (&sasl->conn);
    }
 
-   free (sasl->user);
-   free (sasl->pass);
-   free (sasl->mechanism);
-   free (sasl->service_name);
-   free (sasl->service_host);
+   bson_free (sasl->user);
+   bson_free (sasl->pass);
+   bson_free (sasl->mechanism);
+   bson_free (sasl->service_name);
+   bson_free (sasl->service_host);
 }
 
 
