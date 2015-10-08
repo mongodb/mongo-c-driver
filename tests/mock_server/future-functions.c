@@ -214,26 +214,20 @@ static void *
 background_mongoc_gridfs_file_readv (void *data)
 {
    future_t *future = (future_t *) data;
-
-   /* copy the future so we can unlock it while calling
-    * mongoc_gridfs_file_readv
-    */
-   future_t *copy = future_new_copy (future);
    future_value_t return_value;
 
    return_value.type = future_value_ssize_t_type;
 
    future_value_set_ssize_t (
       &return_value,
-         mongoc_gridfs_file_readv (
-         future_value_get_mongoc_gridfs_file_t_ptr (future_get_param(copy, 0)),
-         future_value_get_mongoc_iovec_t_ptr (future_get_param(copy, 1)),
-         future_value_get_size_t (future_get_param(copy, 2)),
-         future_value_get_size_t (future_get_param(copy, 3)),
-         future_value_get_uint32_t (future_get_param(copy, 4))
+      mongoc_gridfs_file_readv (
+         future_value_get_mongoc_gridfs_file_t_ptr (future_get_param (future, 0)),
+         future_value_get_mongoc_iovec_t_ptr (future_get_param (future, 1)),
+         future_value_get_size_t (future_get_param (future, 2)),
+         future_value_get_size_t (future_get_param (future, 3)),
+         future_value_get_uint32_t (future_get_param (future, 4))
       ));
 
-   future_destroy (copy);
    future_resolve (future, return_value);
 
    return NULL;
@@ -243,24 +237,18 @@ static void *
 background_mongoc_gridfs_file_seek (void *data)
 {
    future_t *future = (future_t *) data;
-
-   /* copy the future so we can unlock it while calling
-    * mongoc_gridfs_file_seek
-    */
-   future_t *copy = future_new_copy (future);
    future_value_t return_value;
 
    return_value.type = future_value_int_type;
 
    future_value_set_int (
       &return_value,
-         mongoc_gridfs_file_seek (
-         future_value_get_mongoc_gridfs_file_t_ptr (future_get_param(copy, 0)),
-         future_value_get_int64_t (future_get_param(copy, 1)),
-         future_value_get_int (future_get_param(copy, 2))
+      mongoc_gridfs_file_seek (
+         future_value_get_mongoc_gridfs_file_t_ptr (future_get_param (future, 0)),
+         future_value_get_int64_t (future_get_param (future, 1)),
+         future_value_get_int (future_get_param (future, 2))
       ));
 
-   future_destroy (copy);
    future_resolve (future, return_value);
 
    return NULL;
@@ -270,25 +258,19 @@ static void *
 background_mongoc_gridfs_file_writev (void *data)
 {
    future_t *future = (future_t *) data;
-
-   /* copy the future so we can unlock it while calling
-    * mongoc_gridfs_file_writev
-    */
-   future_t *copy = future_new_copy (future);
    future_value_t return_value;
 
    return_value.type = future_value_ssize_t_type;
 
    future_value_set_ssize_t (
       &return_value,
-         mongoc_gridfs_file_writev (
-         future_value_get_mongoc_gridfs_file_t_ptr (future_get_param(copy, 0)),
-         future_value_get_mongoc_iovec_t_ptr (future_get_param(copy, 1)),
-         future_value_get_size_t (future_get_param(copy, 2)),
-         future_value_get_uint32_t (future_get_param(copy, 3))
+      mongoc_gridfs_file_writev (
+         future_value_get_mongoc_gridfs_file_t_ptr (future_get_param (future, 0)),
+         future_value_get_mongoc_iovec_t_ptr (future_get_param (future, 1)),
+         future_value_get_size_t (future_get_param (future, 2)),
+         future_value_get_uint32_t (future_get_param (future, 3))
       ));
 
-   future_destroy (copy);
    future_resolve (future, return_value);
 
    return NULL;
@@ -321,25 +303,19 @@ static void *
 background_mongoc_client_get_gridfs (void *data)
 {
    future_t *future = (future_t *) data;
-
-   /* copy the future so we can unlock it while calling
-    * mongoc_client_get_gridfs
-    */
-   future_t *copy = future_new_copy (future);
    future_value_t return_value;
 
    return_value.type = future_value_mongoc_gridfs_ptr_type;
 
    future_value_set_mongoc_gridfs_ptr (
       &return_value,
-         mongoc_client_get_gridfs (
-         future_value_get_mongoc_client_ptr (future_get_param(copy, 0)),
-         future_value_get_const_char_ptr (future_get_param(copy, 1)),
-         future_value_get_const_char_ptr (future_get_param(copy, 2)),
-         future_value_get_bson_error_ptr (future_get_param(copy, 3))
+      mongoc_client_get_gridfs (
+         future_value_get_mongoc_client_ptr (future_get_param (future, 0)),
+         future_value_get_const_char_ptr (future_get_param (future, 1)),
+         future_value_get_const_char_ptr (future_get_param (future, 2)),
+         future_value_get_bson_error_ptr (future_get_param (future, 3))
       ));
 
-   future_destroy (copy);
    future_resolve (future, return_value);
 
    return NULL;
