@@ -35,13 +35,27 @@ BSON_BEGIN_DECLS
 #define MONGOC_WRITE_COMMAND_UPDATE 2
 
 
+typedef enum
+{
+   MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE   = 0,
+   MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE    = 1 << 0,
+   MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT = 1 << 1,
+} mongoc_write_bypass_document_validation_t;
+
+struct _mongoc_bulk_write_flags_t
+{
+   bool ordered;
+   mongoc_write_bypass_document_validation_t bypass_document_validation;
+};
+
+
 typedef struct
 {
    int      type;
    uint32_t hint;
    bson_t  *documents;
    uint32_t n_documents;
-   bool     ordered;
+   mongoc_bulk_write_flags_t flags;
    union {
       struct {
          bool multi;
@@ -78,18 +92,18 @@ typedef struct
 void _mongoc_write_command_destroy     (mongoc_write_command_t        *command);
 void _mongoc_write_command_init_insert (mongoc_write_command_t        *command,
                                         const bson_t                  *document,
-                                        bool                           ordered,
+                                        mongoc_bulk_write_flags_t      flags,
                                         bool                           allow_bulk_op_insert);
 void _mongoc_write_command_init_delete (mongoc_write_command_t        *command,
                                         const bson_t                  *selectors,
                                         bool                           multi,
-                                        bool                           ordered);
+                                        mongoc_bulk_write_flags_t      flags);
 void _mongoc_write_command_init_update (mongoc_write_command_t        *command,
                                         const bson_t                  *selector,
                                         const bson_t                  *update,
                                         bool                           upsert,
                                         bool                           multi,
-                                        bool                           ordered);
+                                        mongoc_bulk_write_flags_t      flags);
 void _mongoc_write_command_insert_append (mongoc_write_command_t      *command,
                                           const bson_t                *document);
 void _mongoc_write_command_update_append (mongoc_write_command_t      *command,

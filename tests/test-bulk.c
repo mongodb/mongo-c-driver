@@ -403,7 +403,7 @@ test_insert (bool ordered)
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
    assert (bulk);
-   assert (bulk->ordered == ordered);
+   assert (bulk->flags.ordered == ordered);
 
    mongoc_bulk_operation_insert (bulk, &doc);
    mongoc_bulk_operation_insert (bulk, &doc);

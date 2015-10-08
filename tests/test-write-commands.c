@@ -10,6 +10,7 @@
 
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
+#include "test-conveniences.h"
 
 
 static mongoc_collection_t *
@@ -30,6 +31,7 @@ get_test_collection (mongoc_client_t *client,
 static void
 test_split_insert (void)
 {
+   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    mongoc_collection_t *collection;
@@ -58,7 +60,7 @@ test_split_insert (void)
 
    _mongoc_write_command_init_insert (&command,
                                       docs[0],
-                                      true, true);
+                                      write_flags, true);
 
    for (i = 1; i < 3000; i++) {
       _mongoc_write_command_insert_append (&command, docs[i]);
@@ -90,6 +92,7 @@ test_split_insert (void)
 static void
 test_invalid_write_concern (void)
 {
+   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    mongoc_collection_t *collection;
@@ -114,7 +117,7 @@ test_invalid_write_concern (void)
 
    doc = BCON_NEW("_id", BCON_INT32(0));
 
-   _mongoc_write_command_init_insert(&command, doc, true, true);
+   _mongoc_write_command_init_insert(&command, doc, write_flags, true);
    _mongoc_write_result_init (&result);
 
    _mongoc_write_command_execute (&command, client, 0, collection->db,
@@ -136,9 +139,88 @@ test_invalid_write_concern (void)
    mongoc_write_concern_destroy(write_concern);
 }
 
+static void
+test_bypass_validation (void *context)
+{
+   mongoc_bulk_operation_t *bulk;
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   bson_t reply = BSON_INITIALIZER;
+   bson_error_t error;
+   bson_t *options;
+   char *dbname;
+   char *collname;
+   int r;
+   int i;
+
+   client = test_framework_client_new ();
+   assert (client);
+
+   dbname = gen_collection_name ("dbtest");
+   collname = gen_collection_name ("bypass");
+   database = mongoc_client_get_database (client, dbname);
+   collection = mongoc_database_get_collection (database, collname);
+   assert (collection);
+
+   options = tmp_bson ("{'validator': {'number': {'$gte': 5}}, 'validationAction': 'error'}");
+   ASSERT_OR_PRINT (mongoc_database_create_collection (database, collname, options, &error), error);
+
+   /* {{{ Default fails validation */
+   bulk = mongoc_collection_create_bulk_operation(collection, true, NULL);
+   for (i = 0; i < 3; i++) {
+      bson_t *doc = tmp_bson (bson_strdup_printf ("{'number': 3, 'high': %d }", i));
+
+      mongoc_bulk_operation_insert (bulk, doc);
+   }
+   r = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT(!r);
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, 121, "Document failed validation");
+   mongoc_bulk_operation_destroy (bulk);
+   /* }}} */
+
+   /* {{{ bypass_document_validation=false Fails validation */
+   bulk = mongoc_collection_create_bulk_operation(collection, true, NULL);
+   mongoc_bulk_operation_set_bypass_document_validation (bulk, false);
+   for (i = 0; i < 3; i++) {
+      bson_t *doc = tmp_bson (bson_strdup_printf ("{'number': 3, 'high': %d }", i));
+
+      mongoc_bulk_operation_insert (bulk, doc);
+   }
+   r = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT(!r);
+
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_COMMAND, 121, "Document failed validation");
+   mongoc_bulk_operation_destroy (bulk);
+   /* }}} */
+
+   /* {{{ bypass_document_validation=true ignores validation */
+   bulk = mongoc_collection_create_bulk_operation(collection, true, NULL);
+   mongoc_bulk_operation_set_bypass_document_validation (bulk, true);
+   for (i = 0; i < 3; i++) {
+      bson_t *doc = tmp_bson (bson_strdup_printf ("{'number': 3, 'high': %d }", i));
+
+      mongoc_bulk_operation_insert (bulk, doc);
+   }
+   r = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT(r, error);
+   mongoc_bulk_operation_destroy (bulk);
+   /* }}} */
+
+
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 void
 test_write_command_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/WriteCommand/split_insert", test_split_insert);
    TestSuite_Add (suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
+   TestSuite_AddFull (suite, "/WriteCommand/bypass_validation", test_bypass_validation,
+                      NULL, NULL,
+                      test_framework_skip_if_max_version_version_less_than_4);
 }

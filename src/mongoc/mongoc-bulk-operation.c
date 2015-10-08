@@ -50,7 +50,7 @@ mongoc_bulk_operation_new (bool ordered)
    mongoc_bulk_operation_t *bulk;
 
    bulk = (mongoc_bulk_operation_t *)bson_malloc0 (sizeof *bulk);
-   bulk->ordered = ordered;
+   bulk->flags.ordered = ordered;
 
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));
 
@@ -63,7 +63,7 @@ _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN *
                             const char                   *database,      /* IN */
                             const char                   *collection,    /* IN */
                             uint32_t                      hint,          /* IN */
-                            bool                          ordered,       /* IN */
+                            mongoc_bulk_write_flags_t     flags,         /* IN */
                             const mongoc_write_concern_t *write_concern) /* IN */
 {
    mongoc_bulk_operation_t *bulk;
@@ -71,13 +71,14 @@ _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN *
    BSON_ASSERT (client);
    BSON_ASSERT (collection);
 
-   bulk = mongoc_bulk_operation_new (ordered);
+   bulk = mongoc_bulk_operation_new (flags.ordered);
    bulk->client = client;
    bulk->database = bson_strdup (database);
    bulk->collection = bson_strdup (collection);
    bulk->hint = hint;
    bulk->write_concern = mongoc_write_concern_copy (write_concern);
    bulk->executed = false;
+   bulk->flags = flags;
 
    return bulk;
 }
@@ -133,7 +134,7 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,     /* IN */
       }
    }
 
-   _mongoc_write_command_init_delete (&command, selector, true, bulk->ordered);
+   _mongoc_write_command_init_delete (&command, selector, true, bulk->flags);
 
    _mongoc_array_append_val (&bulk->commands, command);
 
@@ -164,7 +165,7 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk,     /* IN */
       }
    }
 
-   _mongoc_write_command_init_delete (&command, selector, false, bulk->ordered);
+   _mongoc_write_command_init_delete (&command, selector, false, bulk->flags);
 
    _mongoc_array_append_val (&bulk->commands, command);
 
@@ -220,7 +221,7 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_insert (
-      &command, document, bulk->ordered,
+      &command, document, bulk->flags,
       !_mongoc_write_concern_needs_gle (bulk->write_concern));
 
    _mongoc_array_append_val (&bulk->commands, command);
@@ -264,7 +265,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
-                                      false, bulk->ordered);
+                                      false, bulk->flags);
    _mongoc_array_append_val (&bulk->commands, command);
 
    EXIT;
@@ -309,7 +310,7 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
-                                      multi, bulk->ordered);
+                                      multi, bulk->flags);
    _mongoc_array_append_val (&bulk->commands, command);
    EXIT;
 }
@@ -352,7 +353,7 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
-                                      false, bulk->ordered);
+                                      false, bulk->flags);
    _mongoc_array_append_val (&bulk->commands, command);
    EXIT;
 }
@@ -426,7 +427,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
       bulk->hint = command->hint;
 
-      if (bulk->result.failed && bulk->ordered) {
+      if (bulk->result.failed && bulk->flags.ordered) {
          GOTO (cleanup);
       }
 
@@ -510,4 +511,16 @@ mongoc_bulk_operation_set_hint (mongoc_bulk_operation_t *bulk,
    BSON_ASSERT (bulk);
 
    bulk->hint = hint;
+}
+
+
+void
+mongoc_bulk_operation_set_bypass_document_validation (mongoc_bulk_operation_t *bulk,
+                                                      bool                     bypass)
+{
+   BSON_ASSERT (bulk);
+
+   bulk->flags.bypass_document_validation = bypass ?
+      MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE :
+      MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
 }

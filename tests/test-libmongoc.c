@@ -980,18 +980,6 @@ test_framework_server_is_secondary (mongoc_client_t *client,
    return ret;
 }
 
-int
-test_framework_skip_if_mongos (void)
-{
-   return test_framework_is_mongos() ? 0 : 1;
-}
-
-int
-test_framework_skip_if_replset (void)
-{
-   return test_framework_is_replset() ? 0 : 1;
-}
-
 bool
 test_framework_max_wire_version_at_least (int version)
 {
@@ -1008,6 +996,24 @@ test_framework_max_wire_version_at_least (int version)
 
    return at_least;
 }
+
+int
+test_framework_skip_if_mongos (void)
+{
+   return test_framework_is_mongos() ? 0 : 1;
+}
+
+int
+test_framework_skip_if_replset (void)
+{
+   return test_framework_is_replset() ? 0 : 1;
+}
+
+int test_framework_skip_if_max_version_version_less_than_4 (void)
+{
+   return test_framework_max_wire_version_at_least (4);
+}
+
 
 int
 main (int   argc,

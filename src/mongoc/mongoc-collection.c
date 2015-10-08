@@ -1064,7 +1064,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
 {
    mongoc_write_command_t command;
    mongoc_write_result_t result;
-   bool ordered;
+   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
    bool ret;
    uint32_t i;
 
@@ -1095,9 +1095,9 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
 
    _mongoc_write_result_init (&result);
 
-   ordered = !(flags & MONGOC_INSERT_CONTINUE_ON_ERROR);
+   write_flags.ordered = !(flags & MONGOC_INSERT_CONTINUE_ON_ERROR);
 
-   _mongoc_write_command_init_insert (&command, NULL, ordered, true);
+   _mongoc_write_command_init_insert (&command, NULL, write_flags, true);
 
    for (i = 0; i < n_documents; i++) {
       _mongoc_write_command_insert_append (&command, documents[i]);
@@ -1152,6 +1152,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
+   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    bool ret;
@@ -1182,7 +1183,7 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert (&command, document, true, false);
+   _mongoc_write_command_init_insert (&command, document, write_flags, false);
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
@@ -1231,6 +1232,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
+   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    bson_iter_t iter;
@@ -1273,7 +1275,7 @@ mongoc_collection_update (mongoc_collection_t          *collection,
                                       update,
                                       !!(flags & MONGOC_UPDATE_UPSERT),
                                       !!(flags & MONGOC_UPDATE_MULTI_UPDATE),
-                                      true);
+                                      write_flags);
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
@@ -1382,6 +1384,7 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
                           const mongoc_write_concern_t *write_concern,
                           bson_error_t                 *error)
 {
+   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
    mongoc_write_command_t command;
    mongoc_write_result_t result;
    bool multi;
@@ -1401,7 +1404,7 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
    multi = !(flags & MONGOC_REMOVE_SINGLE_REMOVE);
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_delete (&command, selector, multi, true);
+   _mongoc_write_command_init_delete (&command, selector, multi, write_flags);
 
    _mongoc_write_command_execute (&command, collection->client, 0,
                                   collection->db, collection->collection,
@@ -1807,21 +1810,20 @@ mongoc_collection_create_bulk_operation (
       bool                          ordered,
       const mongoc_write_concern_t *write_concern)
 {
+   mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
    BSON_ASSERT (collection);
 
    if (!write_concern) {
       write_concern = collection->write_concern;
    }
 
-   /*
-    * TODO: where should we discover if we can do new or old style bulk ops?
-    */
+   write_flags.ordered = ordered;
 
    return _mongoc_bulk_operation_new (collection->client,
                                       collection->db,
                                       collection->collection,
                                       0,
-                                      ordered,
+                                      write_flags,
                                       write_concern);
 }
 

@@ -169,10 +169,10 @@ _mongoc_write_command_delete_append (mongoc_write_command_t *command,
 }
 
 void
-_mongoc_write_command_init_insert (mongoc_write_command_t *command,              /* IN */
-                                   const bson_t           *document,             /* IN */
-                                   bool                    ordered,              /* IN */
-                                   bool                    allow_bulk_op_insert) /* IN */
+_mongoc_write_command_init_insert (mongoc_write_command_t    *command,              /* IN */
+                                   const bson_t              *document,             /* IN */
+                                   mongoc_bulk_write_flags_t  flags,                /* IN */
+                                   bool                       allow_bulk_op_insert) /* IN */
 {
    ENTRY;
 
@@ -181,7 +181,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,             
    command->type = MONGOC_WRITE_COMMAND_INSERT;
    command->documents = bson_new ();
    command->n_documents = 0;
-   command->ordered = (uint8_t)ordered;
+   command->flags = flags;
    command->u.insert.allow_bulk_op_insert = (uint8_t)allow_bulk_op_insert;
 
    /* must handle NULL document from mongoc_collection_insert_bulk */
@@ -194,10 +194,10 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command,             
 
 
 void
-_mongoc_write_command_init_delete (mongoc_write_command_t *command,  /* IN */
-                                   const bson_t           *selector, /* IN */
-                                   bool                    multi,    /* IN */
-                                   bool                    ordered)  /* IN */
+_mongoc_write_command_init_delete (mongoc_write_command_t    *command,  /* IN */
+                                   const bson_t              *selector, /* IN */
+                                   bool                       multi,    /* IN */
+                                   mongoc_bulk_write_flags_t  flags)    /* IN */
 {
    ENTRY;
 
@@ -208,7 +208,7 @@ _mongoc_write_command_init_delete (mongoc_write_command_t *command,  /* IN */
    command->documents = bson_new ();
    command->n_documents = 0;
    command->u.delete_.multi = (uint8_t)multi;
-   command->ordered = (uint8_t)ordered;
+   command->flags = flags;
 
    _mongoc_write_command_delete_append (command, selector);
 
@@ -217,12 +217,12 @@ _mongoc_write_command_init_delete (mongoc_write_command_t *command,  /* IN */
 
 
 void
-_mongoc_write_command_init_update (mongoc_write_command_t *command,  /* IN */
-                                   const bson_t           *selector, /* IN */
-                                   const bson_t           *update,   /* IN */
-                                   bool                    upsert,   /* IN */
-                                   bool                    multi,    /* IN */
-                                   bool                    ordered)  /* IN */
+_mongoc_write_command_init_update (mongoc_write_command_t    *command,  /* IN */
+                                   const bson_t              *selector, /* IN */
+                                   const bson_t              *update,   /* IN */
+                                   bool                       upsert,   /* IN */
+                                   bool                       multi,    /* IN */
+                                   mongoc_bulk_write_flags_t  flags)    /* IN */
 {
    ENTRY;
 
@@ -233,7 +233,7 @@ _mongoc_write_command_init_update (mongoc_write_command_t *command,  /* IN */
    command->type = MONGOC_WRITE_COMMAND_UPDATE;
    command->documents = bson_new ();
    command->n_documents = 0;
-   command->ordered = (uint8_t) ordered;
+   command->flags = flags;
 
    _mongoc_write_command_update_append (command, selector, update, upsert, multi);
 
@@ -473,7 +473,7 @@ again:
 
          bson_destroy (&write_err_doc);
 
-         if (command->ordered) {
+         if (command->flags.ordered) {
             /* send the batch so far (if any) and return the error */
             break;
          }
@@ -498,7 +498,7 @@ again:
       rpc.insert.response_to = 0;
       rpc.insert.opcode = MONGOC_OPCODE_INSERT;
       rpc.insert.flags = (
-         command->ordered ? MONGOC_INSERT_NONE
+         (command->flags.ordered) ? MONGOC_INSERT_NONE
                           : MONGOC_INSERT_CONTINUE_ON_ERROR);
       rpc.insert.collection = ns;
       rpc.insert.documents = iov;
@@ -836,7 +836,11 @@ again:
    BSON_APPEND_UTF8 (&cmd, gCommandNames[command->type], collection);
    BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
                          WRITE_CONCERN_DOC (write_concern));
-   BSON_APPEND_BOOL (&cmd, "ordered", command->ordered);
+   BSON_APPEND_BOOL (&cmd, "ordered", command->flags.ordered);
+   if (command->flags.bypass_document_validation != MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+      BSON_APPEND_BOOL (&cmd, "bypassDocumentValidation",
+                        !!command->flags.bypass_document_validation);
+   }
 
    if (!_mongoc_write_command_will_overflow (0,
                                              command->documents->len,
@@ -901,7 +905,7 @@ again:
 
    bson_destroy (&cmd);
 
-   if (has_more && (ret || !command->ordered)) {
+   if (has_more && (ret || !command->flags.ordered)) {
       GOTO (again);
    }
 

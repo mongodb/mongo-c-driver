@@ -135,6 +135,13 @@ extern "C" {
       }  \
    } while (0)
 
+#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message) \
+   do { \
+      ASSERT_CMPINT (error.domain, ==, _domain); \
+      ASSERT_CMPINT (error.code, ==, _code); \
+      ASSERT_CONTAINS (error.message, _message); \
+   } while (0);
+
 #define MAX_TEST_NAME_LENGTH 500
 
 

@@ -42,9 +42,10 @@ bool test_framework_is_mongos (void);
 bool test_framework_is_replset (void);
 bool test_framework_server_is_secondary (mongoc_client_t *client,
                                          uint32_t server_id);
+bool test_framework_max_wire_version_at_least (int version);
 int test_framework_skip_if_mongos (void);
 int test_framework_skip_if_replset (void);
-bool test_framework_max_wire_version_at_least (int version);
+int test_framework_skip_if_max_version_version_less_than_4 (void);
 
 typedef struct _debug_stream_stats_t {
     int n_destroyed;
