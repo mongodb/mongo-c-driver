@@ -688,20 +688,17 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
          key = bson_iter_key (&iter);
 
          if (strcmp (key, "n") == 0) {
-            /* TODO Why do we need this */
-            file->n = bson_iter_int32 (&iter);
+            if (file->n != bson_iter_int32 (&iter)) {
+               /* We're on the wrong chunk because the file is missing chunks */
+               RETURN (0);
+            }
          } else if (strcmp (key, "data") == 0) {
             bson_iter_binary (&iter, NULL, &len, &data);
          } else {
+            /* Unexpected key. This should never happen */
             RETURN (0);
          }
       }
-
-      /* we're on the wrong chunk somehow... probably because our gridfs is
-       * missing chunks.
-       *
-       * TODO: maybe we should make more noise here?
-       */
 
       if (file->n != file->pos / file->chunk_size) {
          return 0;
