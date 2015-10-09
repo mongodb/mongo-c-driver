@@ -537,7 +537,7 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
  *      Extend a GridFS file to the current position pointer. Zeros will be
  *      appended to the end of the file until file->length is even with file->pos.
  *
- *      If file->length >= file-> pos, the function exits successfully with no
+ *      If file->length >= file->pos, the function exits successfully with no
  *      operation performed.
  *
  * Parameters:
