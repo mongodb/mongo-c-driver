@@ -37,6 +37,10 @@ static void request_from_killcursors (request_t *request, const mongoc_rpc_t *rp
 
 static void request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
 
+static char *query_flags_str (uint32_t flags);
+static char *insert_flags_str (uint32_t flags);
+static char *update_flags_str (uint32_t flags);
+static char *delete_flags_str (uint32_t flags);
 
 request_t *
 request_new (const mongoc_buffer_t *buffer,
@@ -155,7 +159,9 @@ request_matches_query (const request_t *request,
    }
 
    if (rpc->query.flags != flags) {
-      MONGOC_ERROR ("request's query flags don't match");
+      MONGOC_ERROR ("request's query flags are %s, expected %s",
+                    query_flags_str (rpc->query.flags), 
+                    query_flags_str (flags));
       return false;
    }
 
@@ -233,7 +239,9 @@ request_matches_insert (const request_t *request,
    }
 
    if (rpc->insert.flags != flags) {
-      MONGOC_ERROR ("request's insert flags don't match");
+      MONGOC_ERROR ("request's insert flags are %s, expected %s",
+                    insert_flags_str (rpc->insert.flags),
+                    insert_flags_str (flags));
       return false;
    }
 
@@ -271,7 +279,9 @@ request_matches_bulk_insert (const request_t *request,
    }
 
    if (rpc->insert.flags != flags) {
-      MONGOC_ERROR ("request's insert flags don't match");
+      MONGOC_ERROR ("request's insert flags are %s, expected %s",
+                    insert_flags_str (rpc->insert.flags),
+                    insert_flags_str (flags));
       return false;
    }
 
@@ -311,7 +321,9 @@ request_matches_update (const request_t *request,
    }
 
    if (rpc->update.flags != flags) {
-      MONGOC_ERROR ("request's update flags don't match");
+      MONGOC_ERROR ("request's update flags are %s, expected %s",
+                    update_flags_str (rpc->update.flags),
+                    update_flags_str (flags));
       return false;
    }
 
@@ -355,7 +367,9 @@ request_matches_delete (const request_t *request,
    }
 
    if (rpc->delete_.flags != flags) {
-      MONGOC_ERROR ("request's delete flags don't match");
+      MONGOC_ERROR ("request's delete flags are %s, expected %s",
+                    delete_flags_str (rpc->delete_.flags),
+                    delete_flags_str (flags));
       return false;
    }
 
