@@ -1,3 +1,12 @@
+mongo-c-driver 1.3.0
+====================
+
+
+  * mongoc_collection_find_and_modify () will now apply the mongoc_collection_t
+    write_concern_t when talking to MongoDB 3.2+.
+
+
+
 mongo-c-driver 1.2.0-rc0
 ========================
 

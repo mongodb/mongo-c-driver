@@ -39,6 +39,23 @@
 #define MONGOC_LOG_DOMAIN "collection"
 
 
+#define _BSON_APPEND_WRITE_CONCERN(_bson, _write_concern) \
+      do { \
+         const bson_t *write_concern_bson; \
+         mongoc_write_concern_t *write_concern_copy = NULL; \
+         if (_write_concern->frozen) { \
+            write_concern_bson = _mongoc_write_concern_get_bson (_write_concern); \
+         } else { \
+            /* _mongoc_write_concern_get_bson will freeze the write_concern */ \
+            write_concern_copy = mongoc_write_concern_copy (_write_concern); \
+            write_concern_bson = _mongoc_write_concern_get_bson (write_concern_copy); \
+         } \
+         BSON_APPEND_DOCUMENT (_bson, "writeConcern", write_concern_bson); \
+         if (write_concern_copy) { \
+            mongoc_write_concern_destroy (write_concern_copy); \
+         } \
+      } while(0); \
+
 static bool
 validate_name (const char *str)
 {
@@ -1872,6 +1889,7 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
                                    bson_t              *reply,
                                    bson_error_t        *error)
 {
+   mongoc_server_description_t *selected_server;
    const char *name;
    bool ret;
    bson_t command = BSON_INITIALIZER;
@@ -1883,6 +1901,18 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
    BSON_ASSERT (update || _remove);
 
    name = mongoc_collection_get_name (collection);
+
+   /* Preselect the server to check its wire_version */
+   selected_server = mongoc_topology_select(collection->client->topology,
+                                            MONGOC_SS_WRITE,
+                                            collection->read_prefs,
+                                            15,
+                                            error);
+
+   if (!selected_server) {
+      bson_destroy (&command);
+      RETURN (false);
+   }
 
    BSON_APPEND_UTF8 (&command, "findAndModify", name);
    BSON_APPEND_DOCUMENT (&command, "query", query);
@@ -1911,10 +1941,27 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
       BSON_APPEND_BOOL (&command, "new", _new);
    }
 
+   if (selected_server->max_wire_version >= 4) {
+      if (!_mongoc_write_concern_is_valid (collection->write_concern)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "The write concern is invalid.");
+         bson_destroy (&command);
+         RETURN (false);
+      }
+
+      if (_mongoc_write_concern_needs_gle (collection->write_concern)) {
+         _BSON_APPEND_WRITE_CONCERN (&command, collection->write_concern);
+      }
+   }
+
    /*
     * Submit the command to MongoDB server.
     */
-   ret = mongoc_collection_command_simple (collection, &command, NULL, reply, error);
+   ret = _mongoc_client_command_simple_with_hint (collection->client,
+                                                  collection->db, &command, NULL,
+                                                  reply, selected_server->id, error);
 
    /*
     * Cleanup.
