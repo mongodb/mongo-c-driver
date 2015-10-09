@@ -100,8 +100,9 @@ bool _mongoc_rpc_scatter            (mongoc_rpc_t                 *rpc,
                                      size_t                        buflen);
 bool _mongoc_rpc_reply_get_first    (mongoc_rpc_reply_t           *reply,
                                      bson_t                       *bson);
-bool _mongoc_rpc_reply_unwrap_error (mongoc_rpc_t                 *rpc,
-                                     bool                          is_command,
+bool _mongoc_rpc_parse_command_error(mongoc_rpc_t                 *rpc,
+                                     bson_error_t                 *error);
+bool _mongoc_rpc_parse_query_error  (mongoc_rpc_t                 *rpc,
                                      bson_error_t                 *error);
 
 

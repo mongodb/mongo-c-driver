@@ -353,10 +353,16 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
       GOTO (failure);
    }
 
-   if (_mongoc_rpc_reply_unwrap_error (&cursor->rpc,
-                                       cursor->is_command != 0,
-                                       &cursor->error)) {
-      GOTO (failure);
+   if (cursor->is_command) {
+       if (_mongoc_rpc_parse_command_error (&cursor->rpc,
+                                            &cursor->error)) {
+          GOTO (failure);
+       }
+   } else {
+      if (_mongoc_rpc_parse_query_error (&cursor->rpc,
+                                         &cursor->error)) {
+         GOTO (failure);
+      }
    }
 
    if (cursor->reader) {
@@ -458,9 +464,8 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       GOTO (failure);
    }
 
-   if (_mongoc_rpc_reply_unwrap_error (&cursor->rpc,
-                                       cursor->is_command != 0,
-                                       &cursor->error)) {
+   if (_mongoc_rpc_parse_query_error (&cursor->rpc,
+                                      &cursor->error)) {
       GOTO (failure);
    }
 

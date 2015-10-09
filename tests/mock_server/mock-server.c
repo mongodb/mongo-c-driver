@@ -744,13 +744,15 @@ mock_server_receives_command (mock_server_t *server,
                               ...)
 {
    va_list args;
-   char *formatted_command_json;
+   char *formatted_command_json = NULL;
    char *ns;
    sync_queue_t *q;
    request_t *request;
 
    va_start (args, command_json);
-   formatted_command_json = bson_strdupv_printf (command_json, args);
+   if (command_json) {
+      formatted_command_json = bson_strdupv_printf (command_json, args);
+   }
    va_end (args);
 
    ns = bson_strdup_printf ("%s.$cmd", database_name);

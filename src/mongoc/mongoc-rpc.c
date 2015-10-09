@@ -708,7 +708,10 @@ _mongoc_populate_error (const bson_t *doc,
    const char *msg = "Unknown query failure";
 
    BSON_ASSERT (doc);
-   BSON_ASSERT (error);
+
+   if (!error) {
+      return;
+   }
 
    if (bson_iter_init_find (&iter, doc, "code") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
@@ -729,26 +732,11 @@ _mongoc_populate_error (const bson_t *doc,
    bson_set_error(error, MONGOC_ERROR_QUERY, code, "%s", msg);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_rpc_reply_unwrap_error --
- *
- *       Fill out a bson_error_t from a server OP_REPLY.
- *
- * Returns:
- *       true if the reply is an error message, false otherwise.
- *
- * Side effects:
- *       If rpc is an error reply, set error's domain, code, and message.
- *
- *--------------------------------------------------------------------------
- */
 
-bool
-_mongoc_rpc_reply_unwrap_error (mongoc_rpc_t *rpc,
-                                bool is_command,
-                                bson_error_t *error /* OUT */)
+static bool
+_mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
+                         bool is_command,
+                         bson_error_t *error /* OUT */)
 {
    bson_iter_t iter;
    bson_t b;
@@ -756,7 +744,6 @@ _mongoc_rpc_reply_unwrap_error (mongoc_rpc_t *rpc,
    ENTRY;
 
    BSON_ASSERT (rpc);
-   BSON_ASSERT (error);
 
    if (rpc->header.opcode != MONGOC_OPCODE_REPLY) {
       bson_set_error(error,
@@ -806,4 +793,54 @@ _mongoc_rpc_reply_unwrap_error (mongoc_rpc_t *rpc,
    }
 
    RETURN(false);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_parse_command_error --
+ *
+ *       Check if a server OP_REPLY is a command error message.
+ *       Optionally fill out a bson_error_t from the server error.
+ *
+ * Returns:
+ *       true if the reply is an error message, false otherwise.
+ *
+ * Side effects:
+ *       If rpc is an error reply and @error is not NULL, set its
+ *       domain, code, and message.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool _mongoc_rpc_parse_command_error (mongoc_rpc_t *rpc,
+                                      bson_error_t *error)
+{
+   return _mongoc_rpc_parse_error (rpc, true, error);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_parse_query_error --
+ *
+ *       Check if a server OP_REPLY is a query error message.
+ *       Optionally fill out a bson_error_t from the server error.
+ *
+ * Returns:
+ *       true if the reply is an error message, false otherwise.
+ *
+ * Side effects:
+ *       If rpc is an error reply and @error is not NULL, set its
+ *       domain, code, and message.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool _mongoc_rpc_parse_query_error (mongoc_rpc_t *rpc,
+                                    bson_error_t *error)
+{
+   return _mongoc_rpc_parse_error (rpc, false, error);
 }

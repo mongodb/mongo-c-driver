@@ -218,6 +218,54 @@ test_mongoc_client_authenticate_failure (void *context)
 }
 
 
+static void
+test_mongoc_client_authenticate_timeout (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_server_with_autoismaster (3);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_username (uri, "user");
+   mongoc_uri_set_password (uri, "password");
+   mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 10);
+   client = mongoc_client_new_from_uri (uri);
+
+   future = future_client_command_simple (client, "test",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL, &reply, &error);
+
+   request = mock_server_receives_command (server, "admin",
+                                           MONGOC_QUERY_SLAVE_OK,
+                                           NULL);
+
+   ASSERT_CMPSTR (request->command_name, "saslStart");
+
+   /* don't reply */
+   assert (!future_get_bool (future));
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
+   ASSERT_STARTSWITH (
+      error.message,
+      "Failed to send \"saslStart\" command with database \"admin\"");
+
+   ASSERT_CONTAINS (error.message, "within 10 milliseconds");
+
+   bson_destroy (&reply);
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_uri_destroy (uri);
+   mongoc_client_destroy(client);
+   mock_server_destroy (server);
+}
+
+
 #ifdef TODO_CDRIVER_689
 static void
 test_wire_version (void)
@@ -865,6 +913,7 @@ test_client_install (TestSuite *suite)
 
    TestSuite_AddFull (suite, "/Client/authenticate", test_mongoc_client_authenticate, NULL, NULL, should_run_auth_tests);
    TestSuite_AddFull (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure, NULL, NULL, should_run_auth_tests);
+   TestSuite_Add (suite, "/Client/authenticate_timeout", test_mongoc_client_authenticate_timeout);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
