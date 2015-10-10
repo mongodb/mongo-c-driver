@@ -141,6 +141,14 @@ FreeBSD::
 
   $ su -c 'pkg install git gcc automake autoconf libtool'
 
+OS X:
+
+The `XCode <https://developer.apple.com/xcode/download/>`_ package is required
+(at least the command-line package). It is recommended to use `Homebrew
+<http://brew.sh/>`_ for other dependencies::
+
+  $ brew install git automake autoconf libtool pkgconfig
+
 
 Fetch Sources and Build
 -----------------------
