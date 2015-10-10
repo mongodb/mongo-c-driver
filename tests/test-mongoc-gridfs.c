@@ -314,6 +314,7 @@ test_read (void)
    ssize_t r;
    char buf[10], buf2[10];
    mongoc_iovec_t iov[2];
+   int previous_errno;
 
    iov[0].iov_base = buf;
    iov[0].iov_len = 10;
@@ -353,6 +354,14 @@ test_read (void)
    ASSERT_CMPINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)(file->chunk_size+19));
    ASSERT_CMPINT (memcmp (iov[0].iov_base, "turducken ", 10), ==, 0);
    ASSERT_CMPINT (memcmp (iov[1].iov_base, "spare ribs", 10), ==, 0);
+
+   assert (mongoc_gridfs_file_seek (file, 20, SEEK_END) == 0);
+   previous_errno = errno;
+   r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
+
+   assert (errno == previous_errno);
+   assert (r == 0);
+   assert (mongoc_gridfs_file_tell (file) == file->length + 20);
 
    mongoc_gridfs_file_destroy (file);
 
@@ -423,6 +432,25 @@ test_write (void)
    r = mongoc_gridfs_file_readv (file, &riov, 1, len, 0);
    ASSERT_CMPLONG (r, ==, len);
    ASSERT_CMPINT (memcmp (buf3, "fo bazr baz", len), ==, 0);
+
+   /* Test writing beyond the end of the file */
+   assert (mongoc_gridfs_file_seek (file, 5, SEEK_END) == 0);
+   assert (mongoc_gridfs_file_tell (file) == file->length + 5);
+
+   r = mongoc_gridfs_file_writev (file, iov, 2, 0);
+   assert (r == len);
+   assert (mongoc_gridfs_file_tell (file) == 2*len + 5);
+   assert (file->length == 2*len + 5);
+   assert (mongoc_gridfs_file_save (file));
+
+   assert (mongoc_gridfs_file_seek (file, 0, SEEK_SET) == 0);
+   assert (mongoc_gridfs_file_tell (file) == 0);
+
+   r = mongoc_gridfs_file_readv (file, &riov, 1, 2*len + 5, 0);
+   assert (r == 2*len + 5);
+   assert (memcmp (buf3, "fo bazr baz\0\0\0\0\0foo bar baz", 2*len + 5) == 0);
+   assert (mongoc_gridfs_file_save (file));
+
 
    mongoc_gridfs_file_destroy (file);
 

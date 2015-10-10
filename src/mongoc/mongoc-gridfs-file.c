@@ -40,6 +40,9 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);
 static bool
 _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file);
 
+static ssize_t
+_mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file);
+
 
 /*****************************************************************
 * Magic accessor generation
@@ -418,6 +421,12 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
    /* TODO: we should probably do something about timeout_msec here */
 
+   /* Reading when positioned past the end does nothing */
+   if (file->pos >= file->length) {
+      return 0;
+   }
+
+   /* Try to get the current chunk */
    if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
          return -1;
    }
@@ -476,6 +485,16 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
 
    /* TODO: we should probably do something about timeout_msec here */
 
+   /* Pull in the correct page */
+   if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
+      return -1;
+   }
+
+   /* When writing past the end-of-file, fill the gap with zeros */
+   if (file->pos > file->length && !_mongoc_gridfs_file_extend (file)) {
+      return -1;
+   }
+
    for (i = 0; i < iovcnt; i++) {
       iov_pos = 0;
 
@@ -509,6 +528,64 @@ mongoc_gridfs_file_writev (mongoc_gridfs_file_t *file,
    file->is_dirty = 1;
 
    RETURN (bytes_written);
+}
+
+
+/**
+ * _mongoc_gridfs_file_extend:
+ *
+ *      Extend a GridFS file to the current position pointer. Zeros will be
+ *      appended to the end of the file until file->length is even with file->pos.
+ *
+ *      If file->length >= file->pos, the function exits successfully with no
+ *      operation performed.
+ *
+ * Parameters:
+ *      @file: A mongoc_gridfs_file_t.
+ *
+ * Returns:
+ *      The number of zero bytes written, or -1 on failure.
+ */
+static ssize_t
+_mongoc_gridfs_file_extend (mongoc_gridfs_file_t *file)
+{
+   int64_t target_length;
+   ssize_t diff;
+
+   ENTRY;
+
+   BSON_ASSERT (file);
+
+   if (file->length >= file->pos) {
+      RETURN (0);
+   }
+
+   diff = (ssize_t)(file->pos - file->length);
+   target_length = file->pos;
+   mongoc_gridfs_file_seek (file, 0, SEEK_END);
+
+   while (true) {
+      if (!file->page && !_mongoc_gridfs_file_refresh_page (file)) {
+         RETURN (-1);
+      }
+
+      /* Set bytes until we reach the limit or fill a page */
+      file->pos += _mongoc_gridfs_file_page_memset0 (file->page,
+                                                     target_length - file->pos);
+
+      if (file->pos == target_length) {
+         /* We're done */
+         break;
+      } else if (!_mongoc_gridfs_file_flush_page (file)) {
+         /* We tried to flush a full buffer, but an error occurred */
+         RETURN (-1);
+      }
+   }
+
+   BSON_ASSERT (file->length = target_length);
+   file->is_dirty = true;
+
+   RETURN (diff);
 }
 
 
