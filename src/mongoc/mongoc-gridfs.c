@@ -125,7 +125,10 @@ _mongoc_gridfs_new (mongoc_client_t *client,
 
    r = _mongoc_gridfs_ensure_index (gridfs, error);
 
-   if (!r) { return NULL; }
+   if (!r) {
+      mongoc_gridfs_destroy (gridfs);
+      RETURN (NULL);
+   }
 
    RETURN (gridfs);
 }
