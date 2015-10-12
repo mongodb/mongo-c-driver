@@ -55,6 +55,22 @@ future_collection_aggregate (
 
 
 future_t *
+future_collection_find_and_modify (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr query,
+   const_bson_ptr sort,
+   const_bson_ptr update,
+   const_bson_ptr fields,
+   bool _remove,
+   bool upsert,
+   bool _new,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_collection_insert_bulk (
 
    mongoc_collection_ptr collection,

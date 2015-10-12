@@ -111,6 +111,34 @@ background_mongoc_collection_aggregate (void *data)
 }
 
 static void *
+background_mongoc_collection_find_and_modify (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_bool_type;
+
+   future_value_set_bool (
+      &return_value,
+      mongoc_collection_find_and_modify (
+         future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
+         future_value_get_const_bson_ptr (future_get_param (future, 1)),
+         future_value_get_const_bson_ptr (future_get_param (future, 2)),
+         future_value_get_const_bson_ptr (future_get_param (future, 3)),
+         future_value_get_const_bson_ptr (future_get_param (future, 4)),
+         future_value_get_bool (future_get_param (future, 5)),
+         future_value_get_bool (future_get_param (future, 6)),
+         future_value_get_bool (future_get_param (future, 7)),
+         future_value_get_bson_ptr (future_get_param (future, 8)),
+         future_value_get_bson_error_ptr (future_get_param (future, 9))
+      ));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
 background_mongoc_collection_insert_bulk (void *data)
 {
    future_t *future = (future_t *) data;
@@ -424,6 +452,56 @@ future_collection_aggregate (
       future_get_param (future, 4), read_prefs);
    
    future_start (future, background_mongoc_collection_aggregate);
+   return future;
+}
+
+future_t *
+future_collection_find_and_modify (
+   mongoc_collection_ptr collection,
+   const_bson_ptr query,
+   const_bson_ptr sort,
+   const_bson_ptr update,
+   const_bson_ptr fields,
+   bool _remove,
+   bool upsert,
+   bool _new,
+   bson_ptr reply,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_bool_type,
+                                  10);
+   
+   future_value_set_mongoc_collection_ptr (
+      future_get_param (future, 0), collection);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 1), query);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 2), sort);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 3), update);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 4), fields);
+   
+   future_value_set_bool (
+      future_get_param (future, 5), _remove);
+   
+   future_value_set_bool (
+      future_get_param (future, 6), upsert);
+   
+   future_value_set_bool (
+      future_get_param (future, 7), _new);
+   
+   future_value_set_bson_ptr (
+      future_get_param (future, 8), reply);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 9), error);
+   
+   future_start (future, background_mongoc_collection_find_and_modify);
    return future;
 }
 
