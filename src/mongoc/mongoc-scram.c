@@ -665,6 +665,9 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
       mongoc_b64_ntop (server_signature, sizeof (server_signature),
                        encoded_server_signature,
                        sizeof (encoded_server_signature));
+   if (encoded_server_signature_len == -1) {
+      return false;
+   }
 
    return (len == encoded_server_signature_len) &&
           (memcmp (verification, encoded_server_signature, len) == 0);
