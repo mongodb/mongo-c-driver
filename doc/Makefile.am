@@ -1,4 +1,4 @@
-EXTRA_DIST += $(wildcard doc/*.page)
+EXTRA_DIST += $(wildcard doc/*.page) build/libbson.xsl
 
 if ENABLE_MAN_PAGES
 MAINTAINERCLEANFILES += $(BUILT_MAN_FILES)
