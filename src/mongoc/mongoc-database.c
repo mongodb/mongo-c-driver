@@ -719,6 +719,7 @@ _mongoc_database_find_collections_legacy (mongoc_database_t *database,
                          MONGOC_ERROR_NAMESPACE,
                          MONGOC_ERROR_NAMESPACE_INVALID_FILTER_TYPE,
                          "On legacy servers, a filter on name can only be a string.");
+         bson_free (ctx);
          goto cleanup_filter;
       }
       BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
