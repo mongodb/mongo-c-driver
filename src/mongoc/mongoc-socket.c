@@ -992,7 +992,7 @@ _mongoc_socket_try_sendv (mongoc_socket_t *sock,   /* IN */
    int ret;
 #else
    struct msghdr msg;
-   ssize_t ret = -1;
+   ssize_t ret;
 #endif
 
    ENTRY;
