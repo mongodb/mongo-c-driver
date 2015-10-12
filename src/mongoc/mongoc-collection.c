@@ -763,6 +763,15 @@ _mongoc_collection_create_index_legacy (mongoc_collection_t      *collection,
       bson_append_utf8 (&insert, "name", -1, opt->name, -1);
    } else {
       name = mongoc_collection_keys_to_index_string(keys);
+      if (!name) {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Cannot generate index name from invalid `keys` argument"
+                         );
+         bson_destroy (&insert);
+         return false;
+      }
       bson_append_utf8 (&insert, "name", -1, name, -1);
       bson_free (name);
    }
@@ -850,7 +859,17 @@ mongoc_collection_create_index (mongoc_collection_t      *collection,
    name = (opt->name != def_opt->name) ? opt->name : NULL;
    if (!name) {
       alloc_name = mongoc_collection_keys_to_index_string (keys);
-      name = alloc_name;
+      if (alloc_name) {
+         name = alloc_name;
+      } else {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Cannot generate index name from invalid `keys` argument"
+                         );
+         bson_destroy (&cmd);
+         return false;
+      }
    }
 
    /*
