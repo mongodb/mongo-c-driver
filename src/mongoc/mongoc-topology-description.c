@@ -885,17 +885,20 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
 
    if (!_mongoc_topology_description_has_server(topology, server->connection_address, NULL)) return;
 
-   /*
-    * 'Server' can only be the primary if it has the right rs name.
-    */
+   /* If server->set_name was null this function wouldn't be called from
+    * mongoc_server_description_handle_ismaster(). static code analyzers however
+    * don't know that so we check for it explicitly. */
+   if (server->set_name) {
+      /* 'Server' can only be the primary if it has the right rs name  */
 
-   if (!topology->set_name && server->set_name) {
-      topology->set_name = bson_strdup (server->set_name);
-   }
-   else if (strcmp(topology->set_name, server->set_name) != 0) {
-      _mongoc_topology_description_remove_server(topology, server);
-      _update_rs_type (topology);
-      return;
+      if (!topology->set_name) {
+         topology->set_name = bson_strdup (server->set_name);
+      }
+      else if (strcmp(topology->set_name, server->set_name) != 0) {
+         _mongoc_topology_description_remove_server(topology, server);
+         _update_rs_type (topology);
+         return;
+      }
    }
 
    /* 'Server' is the primary! Invalidate other primaries if found */
