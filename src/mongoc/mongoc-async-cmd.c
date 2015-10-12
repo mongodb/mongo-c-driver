@@ -289,11 +289,9 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
       }
    }
 
-   if (!bytes) {
-      acmd->state = MONGOC_ASYNC_CMD_RECV_LEN;
-      acmd->bytes_to_read = 4;
-      acmd->events = POLLIN;
-   }
+   acmd->state = MONGOC_ASYNC_CMD_RECV_LEN;
+   acmd->bytes_to_read = 4;
+   acmd->events = POLLIN;
 
    acmd->start_time = bson_get_monotonic_time ();
 
