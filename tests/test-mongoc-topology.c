@@ -107,7 +107,7 @@ test_server_selection_try_once_option (void)
       "mongodb://a/?serverSelectionTryOnce=true",
       "mongodb://a/?serverSelectionTryOnce=false" };
 
-   int i;
+   unsigned long i;
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool;
@@ -185,7 +185,8 @@ _test_server_selection (bool try_once)
    /* no primary, selection fails after one try */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
-   assert (request = mock_server_receives_ismaster (server));
+   request = mock_server_receives_ismaster (server);
+   assert(request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
@@ -212,7 +213,8 @@ _test_server_selection (bool try_once)
    /* second selection, now we try ismaster again */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
-   assert (request = mock_server_receives_ismaster (server));
+   request = mock_server_receives_ismaster (server);
+   assert (request);
 
    /* the secondary is now primary, selection succeeds */
    mock_server_replies_simple (request, primary_response);
@@ -434,7 +436,8 @@ test_cooldown_standalone (void)
    /* first ismaster fails, selection fails */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
-   assert (request = mock_server_receives_ismaster (server));
+   request = mock_server_receives_ismaster (server);
+   assert (request);
    mock_server_hangs_up (request);
    assert (!future_get_mongoc_server_description_ptr (future));
    request_destroy (request);
@@ -516,12 +519,14 @@ test_cooldown_rs (void)
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
 
-   assert (request = mock_server_receives_ismaster (servers[0]));
+   request = mock_server_receives_ismaster (servers[0]);
+   assert (request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
    /* server 0 told us about server 1. we check it immediately but it's down. */
-   assert (request = mock_server_receives_ismaster (servers[1]));
+   request = mock_server_receives_ismaster (servers[1]);
+   assert (request);
    mock_server_hangs_up (request);
    request_destroy (request);
 
@@ -535,7 +540,8 @@ test_cooldown_rs (void)
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
 
-   assert (request = mock_server_receives_ismaster (servers[0]));
+   request = mock_server_receives_ismaster (servers[0]);
+   assert (request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
@@ -638,7 +644,8 @@ _test_connect_timeout (bool pooled, bool try_once)
    server0_last_ismaster = start = bson_get_monotonic_time ();
 
    /* server 0 doesn't respond */
-   assert (request = mock_server_receives_ismaster (servers[0]));
+   request = mock_server_receives_ismaster (servers[0]);
+   assert (request);
    request_destroy (request);
 
    /* server 1 is a secondary */
@@ -664,7 +671,8 @@ _test_connect_timeout (bool pooled, bool try_once)
 
          /* single client puts server 0 in cooldown for 5 sec */
          if (pooled || !server0_in_cooldown) {
-            assert (request = mock_server_receives_ismaster (servers[0]));
+            request = mock_server_receives_ismaster (servers[0]);
+            assert (request);
             server0_last_ismaster = bson_get_monotonic_time ();
             request_destroy (request);  /* don't respond */
          }

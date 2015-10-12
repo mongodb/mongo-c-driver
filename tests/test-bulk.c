@@ -951,7 +951,7 @@ test_update (bool ordered)
       tmp_bson ("{'a': 2}"),
       tmp_bson ("{'a': 3, 'foo': 'bar'}"),
    };
-   int i;
+   unsigned int i;
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
    bson_t reply;
@@ -2367,26 +2367,26 @@ test_bulk_new (void)
 
    r = mongoc_bulk_operation_execute (bulk, NULL, &error);
    assert (!r);
-   assert (error.domain = MONGOC_ERROR_CLIENT);
-   assert (error.code = MONGOC_ERROR_COMMAND_INVALID_ARG);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
    mongoc_bulk_operation_set_database (bulk, "test");
    r = mongoc_bulk_operation_execute (bulk, NULL, &error);
    assert (!r);
-   assert (error.domain = MONGOC_ERROR_CLIENT);
-   assert (error.code = MONGOC_ERROR_COMMAND_INVALID_ARG);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
    mongoc_bulk_operation_set_collection (bulk, "test");
    r = mongoc_bulk_operation_execute (bulk, NULL, &error);
    assert (!r);
-   assert (error.domain = MONGOC_ERROR_CLIENT);
-   assert (error.code = MONGOC_ERROR_COMMAND_INVALID_ARG);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
    mongoc_bulk_operation_set_client (bulk, client);
    r = mongoc_bulk_operation_execute (bulk, NULL, &error);
    assert (!r);
-   assert (error.domain = MONGOC_ERROR_CLIENT);
-   assert (error.code = MONGOC_ERROR_COMMAND_INVALID_ARG);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_COMMAND);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
    mongoc_bulk_operation_insert (bulk, &empty);
    ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error),

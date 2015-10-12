@@ -127,8 +127,8 @@ test_invalid_write_concern (void)
    r = _mongoc_write_result_complete (&result, &reply, &error);
 
    assert(!r);
-   assert(error.domain = MONGOC_ERROR_COMMAND);
-   assert(error.code = MONGOC_ERROR_COMMAND_INVALID_ARG);
+   ASSERT_CMPINT(error.domain, ==, MONGOC_ERROR_COMMAND);
+   ASSERT_CMPINT(error.code, ==, MONGOC_ERROR_COMMAND_INVALID_ARG);
 
    _mongoc_write_command_destroy (&command);
    _mongoc_write_result_destroy (&result);

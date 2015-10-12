@@ -283,12 +283,12 @@ make_document (size_t bytes)
    /* make the document exactly n bytes by appending a string. a string has
     * 7 bytes overhead (1 for type code, 2 for key, 4 for length prefix), so
     * make the string (n_bytes - current_length - 7) bytes long. */
-   ASSERT_CMPINT ((int) bytes, >=, bson->len + 7);
+   ASSERT_CMPUINT((unsigned int)bytes, >=, bson->len + 7);
    string_len = bytes - bson->len - 7;
    s = make_string (string_len);
    BSON_APPEND_UTF8 (bson, "s", s);
    bson_free (s);
-   ASSERT_CMPINT ((int) bytes, ==, bson->len);
+   ASSERT_CMPUINT ((unsigned int) bytes, ==, bson->len);
 
    return bson;
 }
@@ -762,7 +762,7 @@ test_regex (void)
    mongoc_database_t *database;
    mongoc_write_concern_t *wr;
    mongoc_client_t *client;
-   bson_error_t error = { 0 };
+   bson_error_t error;
    int64_t count;
    bson_t q = BSON_INITIALIZER;
    bson_t *doc;
@@ -1518,7 +1518,8 @@ test_aggregate_modern (void *data)
                                "    'firstBatch': [{'_id': 123}]"
                                "}}");
 
-   assert ((cursor = future_get_mongoc_cursor_ptr (future)));
+   cursor = future_get_mongoc_cursor_ptr (future);
+   assert(cursor);
    assert (mongoc_cursor_next (cursor, &doc));
    ASSERT_MATCH (doc, "{'_id': 123}");
 
