@@ -17,7 +17,7 @@
 
 #include "mongoc-log.h"
 #include "mongoc-matcher-op-private.h"
-
+#include "mongoc-util-private.h"
 
 /*
  *--------------------------------------------------------------------------
@@ -1117,7 +1117,7 @@ _mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,   /* IN */
 
    switch (op->base.opcode) {
    case MONGOC_MATCHER_OPCODE_EQ:
-      bson_append_iter (bson, op->compare.path, -1, &op->compare.iter);
+      _ignore_value(bson_append_iter (bson, op->compare.path, -1, &op->compare.iter));
       break;
    case MONGOC_MATCHER_OPCODE_GT:
    case MONGOC_MATCHER_OPCODE_GTE:
@@ -1152,9 +1152,10 @@ _mongoc_matcher_op_to_bson (mongoc_matcher_op_t *op,   /* IN */
          str = "???";
          break;
       }
-      bson_append_document_begin (bson, op->compare.path, -1, &child);
-      bson_append_iter (&child, str, -1, &op->compare.iter);
-      bson_append_document_end (bson, &child);
+      if (bson_append_document_begin (bson, op->compare.path, -1, &child)) {
+         _ignore_value (bson_append_iter (&child, str, -1, &op->compare.iter));
+         bson_append_document_end (bson, &child);
+      }
       break;
    case MONGOC_MATCHER_OPCODE_OR:
    case MONGOC_MATCHER_OPCODE_AND:

@@ -279,7 +279,14 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
     */
    if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
        BSON_ITER_HOLDS_ARRAY (&iter)) {
-      bson_append_iter (&command, "pipeline", 8, &iter);
+      if (!bson_append_iter (&command, "pipeline", 8, &iter)) {
+         bson_set_error (&error,
+               MONGOC_ERROR_COMMAND,
+               MONGOC_ERROR_COMMAND_INVALID_ARG,
+               "Failed to append \"pipeline\" to create command.");
+         bson_destroy (&command);
+         return NULL;
+      }
    } else {
       BSON_APPEND_ARRAY (&command, "pipeline", pipeline);
    }
@@ -306,7 +313,14 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    if (options && bson_iter_init (&iter, options)) {
       while (bson_iter_next (&iter)) {
          if (! (BSON_ITER_IS_KEY (&iter, "batchSize") || BSON_ITER_IS_KEY (&iter, "cursor"))) {
-            bson_append_iter (&command, bson_iter_key (&iter), -1, &iter);
+            if (!bson_append_iter (&command, bson_iter_key (&iter), -1, &iter)) {
+               bson_set_error (&error,
+                     MONGOC_ERROR_COMMAND,
+                     MONGOC_ERROR_COMMAND_INVALID_ARG,
+                     "Failed to append \"batchSize\" or \"cursor\" to create command.");
+               bson_destroy (&command);
+               return NULL;
+            }
          }
       }
    }
@@ -1349,7 +1363,14 @@ mongoc_collection_save (mongoc_collection_t          *collection,
    }
 
    bson_init(&selector);
-   bson_append_iter(&selector, NULL, 0, &iter);
+   if (!bson_append_iter(&selector, NULL, 0, &iter)) {
+      bson_set_error (error,
+            MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_COMMAND_INVALID_ARG,
+            "Failed to append bson to create update.");
+      bson_destroy (&selector);
+      return NULL;
+   }
 
    ret = mongoc_collection_update(collection,
                                   MONGOC_UPDATE_UPSERT,

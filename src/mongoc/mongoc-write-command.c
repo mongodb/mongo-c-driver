@@ -21,6 +21,7 @@
 #include "mongoc-trace.h"
 #include "mongoc-write-command-private.h"
 #include "mongoc-write-concern-private.h"
+#include "mongoc-util-private.h"
 
 
 /*
@@ -35,7 +36,6 @@
    (wc && _mongoc_write_concern_needs_gle ((wc))) ? \
    (_mongoc_write_concern_get_bson((mongoc_write_concern_t*)(wc))) : \
    (&gEmptyWriteConcern)
-
 
 typedef void (*mongoc_write_op_t) (mongoc_write_command_t       *command,
                                    mongoc_client_t              *client,
@@ -738,10 +738,10 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
              BSON_ITER_HOLDS_BOOL (&subiter) &&
              !bson_iter_bool (&subiter)) {
             if (has_update && bson_iter_init_find (&subiter, &update, "_id")) {
-               bson_append_iter (gle, "upserted", 8, &subiter);
+               _ignore_value (bson_append_iter (gle, "upserted", 8, &subiter));
             } else if (has_selector &&
                        bson_iter_init_find (&subiter, &selector, "_id")) {
-               bson_append_iter (gle, "upserted", 8, &subiter);
+               _ignore_value (bson_append_iter (gle, "upserted", 8, &subiter));
             }
          }
 
