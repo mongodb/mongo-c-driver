@@ -944,7 +944,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
                                 mongoc_stream_t       *stream,
                                 bson_error_t          *error)
 {
-   const char *username = "";
+   const char *username;
    bson_t cmd;
    bson_t reply;
    bool ret;
