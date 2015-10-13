@@ -57,11 +57,11 @@
 
     <p>The following instructions are for UNIX-like systems such as GNU/Linux, FreeBSD, and Solaris. To build on Windows, see the instructions for <link xref="installing#building-windows">Building on Windows</link>.</p>
 
-    <p>The most recent release of libmongoc is 1.1.11 and can be <link href="https://github.com/mongodb/mongo-c-driver/releases/download/1.1.11/mongo-c-driver-1.1.11.tar.gz">downloaded here</link>. The following snippet will download and extract the current release of the driver.</p>
+    <p>The most recent release of libmongoc is 1.2.0 and can be <link href="https://github.com/mongodb/mongo-c-driver/releases/download/1.2.0/mongo-c-driver-1.2.0.tar.gz">downloaded here</link>. The following snippet will download and extract the current release of the driver.</p>
 
-    <screen><output style="prompt">$ </output><input>wget https://github.com/mongodb/mongo-c-driver/releases/download/1.1.11/mongo-c-driver-1.1.11.tar.gz</input>
-<output style="prompt">$ </output><input>tar -xzf mongo-c-driver-1.1.11.tar.gz</input>
-<output style="prompt">$ </output><input>cd mongo-c-driver-1.1.11/</input></screen>
+    <screen><output style="prompt">$ </output><input>wget https://github.com/mongodb/mongo-c-driver/releases/download/1.2.0/mongo-c-driver-1.2.0.tar.gz</input>
+<output style="prompt">$ </output><input>tar -xzf mongo-c-driver-1.2.0.tar.gz</input>
+<output style="prompt">$ </output><input>cd mongo-c-driver-1.2.0/</input></screen>
 
     <p>Minimal dependencies are needed to build the MongoDB C driver. Optionally, if you want Kerberos (GSSAPI) or SSL support, you need to install <code>libsasl2</code> and <code>OpenSSL</code> libraries and development headers respectively.</p>
 
@@ -135,7 +135,7 @@ Install man pages                                : yes
 
     <p>Let's start by generating Visual Studio project files for libbson, a dependency of the C driver. The following assumes we are compiling for 64-bit Windows using Visual Studio 2010 Express which can be freely downloaded from Microsoft.</p>
 
-    <screen>cd mongo-c-driver-1.1.11\src\libbson
+    <screen>cd mongo-c-driver-1.2.0\src\libbson
 cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</screen>
 
     <p>Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program <code>msbuild.exe</code></p>

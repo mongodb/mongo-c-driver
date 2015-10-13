@@ -1,7 +1,7 @@
 m4_define([mongoc_major_version], [1])
 m4_define([mongoc_minor_version], [2])
 m4_define([mongoc_micro_version], [0])
-m4_define([mongoc_prerelease_version], [dev])
+m4_define([mongoc_prerelease_version], [])
 
 m4_define(
     [mongoc_version],
@@ -19,6 +19,6 @@ m4_define([lt_current], [m4_eval(100 * mongoc_minor_version + mongoc_micro_versi
 m4_define([lt_revision], [mongoc_interface_age])
 m4_define([lt_age], [m4_eval(mongoc_binary_age - mongoc_interface_age)])
 
-m4_define([libbson_required_version], [1.2.0-rc0])
+m4_define([libbson_required_version], [1.2.0])
 
 m4_define([sasl_required_version], [2.1.6])
