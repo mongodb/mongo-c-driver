@@ -322,8 +322,7 @@ class Convert(object):
         self._write('\n.B')
         self._write('\n.SH COLOPHON')
         self._write('\nThis page is part of %s.' % GROUP)
-        self._write('\nPlease report any bugs at\n')
-        self._write('\\%' + BUG_URL.replace('-','\\-') + '.')
+        self._write('\nPlease report any bugs at %s.' % BUG_URL.replace('-','\\-'))
 
     def _generate(self):
         self.realname = self.outFile
