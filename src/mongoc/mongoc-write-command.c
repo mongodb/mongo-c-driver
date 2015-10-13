@@ -888,7 +888,7 @@ again:
       ret = false;
    } else {
       ret = _mongoc_client_command_simple_with_hint (client, database, &cmd, NULL,
-                                          &reply, hint, error);
+                                                     true, &reply, hint, error);
 
       if (!ret) {
          result->failed = true;

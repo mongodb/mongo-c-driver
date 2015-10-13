@@ -115,6 +115,7 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
                                          const char                *db_name,
                                          const bson_t              *command,
                                          const mongoc_read_prefs_t *read_prefs,
+                                         bool                       is_write_command,
                                          bson_t                    *reply,
                                          uint32_t                   hint,
                                          bson_error_t              *error);

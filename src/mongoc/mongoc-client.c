@@ -1159,7 +1159,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
                               bson_error_t              *error)
 {
    return _mongoc_client_command_simple_with_hint (client, db_name, command,
-                                                   read_prefs, reply, 0, error);
+                                                   read_prefs, false, reply, 0, error);
 }
 
 bool
@@ -1167,6 +1167,7 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
                                          const char                *db_name,
                                          const bson_t              *command,
                                          const mongoc_read_prefs_t *read_prefs,
+                                         bool                       is_write_command,
                                          bson_t                    *reply,
                                          uint32_t                   hint,
                                          bson_error_t              *error)
@@ -1183,6 +1184,7 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
                                    command, NULL, read_prefs);
 
    cursor->hint = hint;
+   cursor->is_write_command = true;
 
    ret = mongoc_cursor_next (cursor, &doc);
 
