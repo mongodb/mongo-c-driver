@@ -1961,7 +1961,7 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
     */
    ret = _mongoc_client_command_simple_with_hint (collection->client,
                                                   collection->db, &command, NULL,
-                                                  reply, selected_server->id, error);
+                                                  true, reply, selected_server->id, error);
 
    /*
     * Cleanup.

@@ -55,13 +55,14 @@ struct _mongoc_cursor_t
    uint32_t                   hint;
    uint32_t                   stamp;
 
-   unsigned                   is_command   : 1;
-   unsigned                   sent         : 1;
-   unsigned                   done         : 1;
-   unsigned                   failed       : 1;
-   unsigned                   end_of_event : 1;
-   unsigned                   in_exhaust   : 1;
-   unsigned                   has_fields   : 1;
+   unsigned                   is_command      : 1;
+   unsigned                   sent            : 1;
+   unsigned                   done            : 1;
+   unsigned                   failed          : 1;
+   unsigned                   end_of_event    : 1;
+   unsigned                   has_fields      : 1;
+   unsigned                   in_exhaust      : 1;
+   unsigned                   is_write_command: 1;
 
    bson_t                     query;
    bson_t                     fields;
