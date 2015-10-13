@@ -74,7 +74,7 @@
       </p>
     </note>
 
-    <p>Make sure you have access to a <link xref="installing#supported-platforms">supported toolchain</link> such as GCC, Clang, SolarisStudio, or MinGW. Optionally, <code>pkg-config</code> can be used if your system supports it to simplify locating proper compiler and linker arguments when compiling your program.</p>
+    <p>Make sure you have access to a <link xref="installing#supported-platforms">supported toolchain</link> such as GCC, Clang, Solaris Studio, or MinGW. Optionally, <code>pkg-config</code> can be used if your system supports it to simplify locating proper compiler and linker arguments when compiling your program.</p>
 
     <p>The following will configure for a typical 64-bit Linux system such as RedHat Enterprise Linux 6 or CentOS 6. Note that not all systems place 64-bit libraries in <code>/usr/lib64</code>. Check your system to see what the convention is if you are building 64-bit versions of the library.</p>
 
@@ -114,7 +114,7 @@ Install man pages                                : yes
     <screen><output style="prompt">$ </output><input>make</input></screen>
 
     <note>
-      <p>You can optionally build code objects in parallel using the <code>-j</code> option to GNU make. Some implementations of <code>make</code> do not support this option, such as Sun's make on Solaris 10. To build in parallel on an 8 core machine, you might use:</p>
+      <p>You can optionally build code objects in parallel using the <code>-j</code> option to GNU make. Some implementations of <code>make</code> do not support this option, such as Sun's make on Solaris. To build in parallel on an 8 core machine, you might use:</p>
       <screen><output style="prompt">$ </output><input>gmake -j8</input></screen>
     </note>
 
@@ -125,21 +125,6 @@ Install man pages                                : yes
     <note>
       <p>On systems that do not support the <code>sudo</code> command, we can use <code>su -c 'make install'</code>.</p>
     </note>
-
-  </section>
-
-  <section id="solaris">
-    <info><link type="guide" xref="index#installation" /></info>
-    <title>Installing on Solaris 10</title>
-    <p>MongoDB provides two ways to install the MongoDB C driver on Solaris 10. You can either <link xref="installing#build-yourself">build the driver yourself</link> from a source code release, or install the precompiled binary driver as provided by MongoDB as follows.</p>
-    <p>Binary releases of the MongoDB C driver include support for both 32-bit and 64-bit architectures for both <code>i386</code> and <code>sparc</code>.</p>
-    <note style="warning"><p>Solaris 11 packaging is not compatible with Solaris 10. For Solaris 11, please follow the directions to <link xref="installing#build-yourself">build the driver yourself</link>.</p></note>
-    <p>The following commands will download the most recent MongoDB binary release and install it using the <code>pkgadd</code> command on Solaris 10.</p>
-      <screen><output style="prompt">$ </output><input>bash</input>
-<output style="prompt">bash-3.2$ </output><input>export ARCH=`uname -m`</input>
-<output style="prompt">bash-3.2$ </output><input>/usr/sfw/bin/wget --no-check-certificate "https://github.com/mongodb/mongo-c-driver/releases/download/1.1.11/mongo-c-driver-1.1.11.${ARCH}.pkg.tar.gz"</input>
-<output style="prompt">bash-3.2$ </output><input>gunzip -c "mongo-c-driver-1.1.11.${ARCH}.pkg.tar.gz" | tar -xf -</input>
-<output style="prompt">bash-3.2$ </output><input>pkgadd -d . mongo-c-driver</input></screen>
 
   </section>
 
