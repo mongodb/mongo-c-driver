@@ -85,6 +85,9 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
                                     bool reconnect_ok,
                                     bson_error_t *error);
 
+static void
+server_description_not_found (uint32_t server_id,
+                              bson_error_t *error);
 
 static const char *
 get_command_name (const bson_t *command)
@@ -129,7 +132,8 @@ _bson_error_message_printf (bson_error_t *error,
  *
  * mongoc_cluster_run_command --
  *
- *       Internal function to run a command on a given stream.
+ *       Internal function to run a command on a given stream
+ *       with read preference PRIMARY.
  *       @error and @reply are optional out-pointers.
  *
  * Returns:
@@ -149,6 +153,45 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
                             bson_t                *reply,
                             bson_error_t          *error)
 {
+   return mongoc_cluster_run_command_with_read_preference (
+      cluster,
+      stream,
+      db_name,
+      command,
+      0       /* server_id */,
+      NULL    /* read_prefs */,
+      reply,
+      error);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_run_command_with_read_preference --
+ *
+ *       Internal function to run a command on a given stream.
+ *       A NULL @read_prefs means PRIMARY.
+ *       @error and @reply are optional out-pointers.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *       @reply is set and should ALWAYS be released with bson_destroy().
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t      *cluster,
+                                                 mongoc_stream_t       *stream,
+                                                 const char            *db_name,
+                                                 const bson_t          *command,
+                                                 uint32_t               server_id,
+                                                 mongoc_read_prefs_t   *read_prefs,
+                                                 bson_t                *reply,
+                                                 bson_error_t          *error)
+{
    mongoc_buffer_t buffer;
    mongoc_array_t ar;
    mongoc_rpc_t rpc;
@@ -158,6 +201,9 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    bool error_set = false;
    bool reply_local_initialized = false;
    bool ret = false;
+   mongoc_topology_t *topology;
+   mongoc_server_description_t *sd;
+   bson_t command_local;
 
    ENTRY;
 
@@ -187,8 +233,30 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
    rpc.query.collection = ns;
    rpc.query.skip = 0;
    rpc.query.n_return = -1;
-   rpc.query.query = bson_get_data(command);
    rpc.query.fields = NULL;
+
+   if (read_prefs) {
+      BSON_ASSERT (server_id);
+      topology = cluster->client->topology;
+      sd = mongoc_topology_description_server_by_id (&topology->description,
+                                                     server_id);
+      if (!sd) {
+         server_description_not_found (server_id, error);
+         error_set = true;
+         GOTO (done);
+      }
+
+      /* apply_read_preferences may add $readPreference to command */
+      bson_copy_to (command, &command_local);
+      apply_read_preferences (read_prefs,
+                              topology->description.type,
+                              sd->type,
+                              &command_local,
+                              &rpc.query);
+   } else {
+      /* we haven't called apply_read_preferences, must set query */
+      rpc.query.query = bson_get_data (command);
+   }
 
    _mongoc_rpc_gather(&rpc, &ar);
    _mongoc_rpc_swab_to_le(&rpc);
@@ -257,6 +325,11 @@ done:
       bson_copy_to (&reply_local, reply);
    } else if (reply) {
       bson_init (reply);
+   }
+
+   if (read_prefs) {
+      /* we made a copy of "command" */
+      bson_destroy (&command_local);
    }
 
    _mongoc_buffer_destroy(&buffer);
