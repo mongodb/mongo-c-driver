@@ -315,10 +315,10 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
 
    if (!cursor->is_write_command) {
       apply_read_preferences (cursor->read_prefs,
-                               topology->description.type,
-                               sd->type,
-                               &cursor->query,
-                               &rpc.query);
+                              topology->description.type,
+                              sd->type,
+                              &cursor->query,
+                              &rpc.query);
    } else {
       /* we haven't called apply_read_preferences, must set query */
       rpc.query.query = bson_get_data (&cursor->query);
