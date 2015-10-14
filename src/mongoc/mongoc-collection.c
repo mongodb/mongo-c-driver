@@ -777,13 +777,13 @@ _mongoc_collection_create_index_legacy (mongoc_collection_t      *collection,
 
    if (opt->default_language != def_opt->default_language) {
       bson_append_utf8 (&insert,
-                        "defaultLanguage", -1,
+                        "default_language", -1,
                         opt->default_language, -1);
    }
 
    if (opt->language_override != def_opt->language_override) {
       bson_append_utf8 (&insert,
-                        "languageOverride", -1,
+                        "language_override", -1,
                         opt->language_override, -1);
    }
 

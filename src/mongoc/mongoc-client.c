@@ -1184,7 +1184,7 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
                                    command, NULL, read_prefs);
 
    cursor->hint = hint;
-   cursor->is_write_command = is_write_command ? 1: 0;
+   cursor->is_write_command = is_write_command ? 1 : 0;
 
    ret = mongoc_cursor_next (cursor, &doc);
 
