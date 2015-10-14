@@ -222,6 +222,10 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
  *       @flags: bitwise or of mongoc_query_flags_t or 0.
  *       @pipeline: A bson_t containing the pipeline request. @pipeline
  *                  will be sent as an array type in the request.
+ *       @options:  A bson_t containing aggregation options, such as
+ *                  bypassDocumentValidation (used with $out pipeline),
+ *                  maxTimeMS (declaring maximum server execution time) and
+ *                  explain (return information on the processing of the pipeline).
  *       @read_prefs: Optional read preferences for the command.
  *
  * Returns:

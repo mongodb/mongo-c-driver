@@ -2,6 +2,7 @@
 #include <mongoc.h>
 #include <mongoc-client-private.h>
 #include <mongoc-cursor-private.h>
+#include <mongoc-collection-private.h>
 
 #include "TestSuite.h"
 
@@ -1290,6 +1291,79 @@ test_drop (void)
 
 
 static void
+test_aggregate_bypass (void *context)
+{
+   mongoc_collection_t *data_collection;
+   mongoc_collection_t *out_collection;
+   mongoc_bulk_operation_t *bulk;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+   bson_t *pipeline;
+   bson_t *options;
+   char *collname;
+   char *dbname;
+   bson_t reply;
+   bool r;
+   int i;
+
+   client = test_framework_client_new ();
+   assert (client);
+
+   dbname = gen_collection_name ("dbtest");
+   collname = gen_collection_name ("data");
+   database = mongoc_client_get_database (client, dbname);
+   data_collection = mongoc_database_get_collection (database, collname);
+   bson_free (collname);
+
+   collname = gen_collection_name ("bypass");
+   options = tmp_bson ("{'validator': {'number': {'$gte': 5}}, 'validationAction': 'error'}");
+   ASSERT_OR_PRINT (mongoc_database_create_collection (database, collname, options, &error), error);
+   out_collection = mongoc_database_get_collection (database, collname);
+
+   bson_free (dbname);
+   bson_free (collname);
+
+   /* Generate some example data */
+   bulk = mongoc_collection_create_bulk_operation(data_collection, true, NULL);
+   for (i = 0; i < 3; i++) {
+      bson_t *document = tmp_bson (bson_strdup_printf ("{'number': 3, 'high': %d }", i));
+
+      mongoc_bulk_operation_insert (bulk, document);
+   }
+   r = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   ASSERT_OR_PRINT(r, error);
+   mongoc_bulk_operation_destroy (bulk);
+   /* }}} */
+
+   pipeline = tmp_bson (bson_strdup_printf ("[{'$out': '%s'}]", out_collection->collection));
+
+   cursor = mongoc_collection_aggregate(data_collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+   ASSERT (cursor);
+   r = mongoc_cursor_next (cursor, &doc);
+   ASSERT (!r);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_STARTSWITH (error.message, "insert for $out failed");
+   ASSERT (cursor->failed);
+
+   options = tmp_bson("{'bypassDocumentValidation': true}");
+   cursor = mongoc_collection_aggregate(data_collection, MONGOC_QUERY_NONE, pipeline, options, NULL);
+   ASSERT (cursor);
+   ASSERT (!mongoc_cursor_error (cursor, &error));
+
+
+   ASSERT_OR_PRINT (mongoc_collection_drop(data_collection, &error), error);
+   ASSERT_OR_PRINT (mongoc_collection_drop(out_collection, &error), error);
+   mongoc_collection_destroy(data_collection);
+   mongoc_collection_destroy(out_collection);
+   mongoc_database_destroy(database);
+   mongoc_client_destroy(client);
+}
+
+
+static void
 test_aggregate (void)
 {
    mongoc_collection_t *collection;
@@ -2169,6 +2243,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
+   TestSuite_AddFull (suite, "/Collection/aggregate/bypass_document_validation", test_aggregate_bypass, NULL, NULL, test_framework_skip_if_max_version_version_less_than_4);
    TestSuite_Add (suite, "/Collection/validate", test_validate);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
    TestSuite_Add (suite, "/Collection/stats", test_stats);
