@@ -496,7 +496,7 @@ mongoc_server_description_filter_eligible (
       return description_len;
    }
 
-   sd_matched = (bool *)bson_malloc(sizeof(bool) * description_len);
+   sd_matched = (bool *) bson_malloc0 (sizeof(bool) * description_len);
 
    bson_iter_init (&rp_tagset_iter, rp_tags);
 
