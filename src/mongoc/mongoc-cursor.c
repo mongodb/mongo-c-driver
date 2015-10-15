@@ -92,7 +92,6 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    cursor->batch_size = batch_size;
    cursor->is_command = is_command;
    cursor->has_fields = !!fields;
-   cursor->is_write_command = false;
 
 #define MARK_FAILED(c) \
    do { \
@@ -311,7 +310,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    }
 
    if (!apply_read_preferences (cursor->read_prefs,
-                                cursor->is_write_command,
+                                false /* is_write_command */,
                                 topology,
                                 cursor->hint,
                                 &cursor->query,
