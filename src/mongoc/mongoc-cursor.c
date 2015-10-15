@@ -287,9 +287,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
 
    topology = cursor->client->topology;
 
-   if (cursor->hint) {
-      sd = mongoc_topology_server_by_id(topology, cursor->hint);
-   } else {
+   if (!cursor->hint) {
       if (!cursor->read_prefs) {
          local_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
       }
@@ -303,28 +301,28 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
       if (local_read_prefs) {
          mongoc_read_prefs_destroy (local_read_prefs);
       }
-   }
 
-   if (!sd) {
-      GOTO (failure);
-   }
+      if (!sd) {
+         GOTO (failure);
+      }
 
-   if (!cursor->hint) {
       cursor->hint = sd->id;
+      mongoc_server_description_destroy (sd);
    }
 
    if (!cursor->is_write_command) {
-      apply_read_preferences (cursor->read_prefs,
-                              topology->description.type,
-                              sd->type,
-                              &cursor->query,
-                              &rpc.query);
+      if (!apply_read_preferences (cursor->read_prefs,
+                                   topology,
+                                   cursor->hint,
+                                   &cursor->query,
+                                   &rpc.query,
+                                   &cursor->error)) {
+         GOTO (failure);
+      }
    } else {
       /* we haven't called apply_read_preferences, must set query */
       rpc.query.query = bson_get_data (&cursor->query);
    }
-
-   mongoc_server_description_destroy (sd);
 
    if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
                                         &rpc, 1, cursor->hint,
@@ -756,10 +754,10 @@ _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
       return;
    }
 
-   description = mongoc_topology_server_by_id(cursor->client->topology, cursor->hint);
+   description = mongoc_topology_server_by_id(cursor->client->topology,
+                                              cursor->hint,
+                                              &cursor->error);
    if (!description) {
-      MONGOC_WARNING("%s(): Invalid cursor hint, no matching host.",
-                     __FUNCTION__);
       return;
    }
 

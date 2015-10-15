@@ -960,15 +960,11 @@ test_framework_server_is_secondary (mongoc_client_t *client,
    bson_t reply;
    bson_iter_t iter;
    mongoc_server_description_t *sd;
+   bson_error_t error;
    bool ret;
 
-   sd = mongoc_topology_server_by_id (client->topology, server_id);
-   if (!sd) {
-      fprintf (stderr,
-               "test_framework_server_is_secondary: no server description\n");
-      fflush (stderr);
-      abort ();
-   }
+   sd = mongoc_topology_server_by_id (client->topology, server_id, &error);
+   ASSERT_OR_PRINT (sd, error);
 
    call_ismaster_with_host_and_port (sd->host.host, sd->host.port, &reply);
 

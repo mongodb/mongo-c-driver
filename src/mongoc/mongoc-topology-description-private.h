@@ -73,7 +73,8 @@ mongoc_topology_description_select (mongoc_topology_description_t *description,
 
 mongoc_server_description_t *
 mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
-                                          uint32_t                       id);
+                                          uint32_t                       id,
+                                          bson_error_t                  *error);
 
 void
 mongoc_topology_description_suitable_servers (

@@ -15,8 +15,8 @@
  */
 
 
-#include "mongoc-read-prefs.h"
 #include "mongoc-read-prefs-private.h"
+#include "mongoc-topology-private.h"
 
 
 mongoc_read_prefs_t *
@@ -138,6 +138,13 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
 }
 
 
+bool
+mongoc_read_prefs_primary0 (mongoc_read_prefs_t *read_prefs)
+{
+   return !read_prefs || read_prefs->mode == MONGOC_READ_PRIMARY;
+}
+
+
 /* Server Selection Spec: "When any $ modifier is used, including the
  * $readPreference modifier, the query MUST be provided using the $query
  * modifier".
@@ -240,22 +247,41 @@ _apply_read_preferences_mongos (mongoc_read_prefs_t *read_prefs,
    query_rpc->query = bson_get_data (query_bson);
 }
 
-
+/* TODO: header */
 /* Update rpc->query and flags from read prefs, following Server Selection Spec.
  * Called after selecting a server: topology and server type must be known.
  */
-void
+bool
 apply_read_preferences (mongoc_read_prefs_t *read_prefs,
-                        mongoc_topology_description_type_t topology_type,
-                        mongoc_server_description_type_t server_type,
+                        mongoc_topology_t *topology,
+                        uint32_t server_id,
                         bson_t *query_bson,
-                        mongoc_rpc_query_t *query_rpc)         /* IN  / OUT */
+                        mongoc_rpc_query_t *query_rpc  /* IN / OUT */,
+                        bson_error_t *error            /* OUT */)
 {
+   mongoc_topology_description_type_t topology_type;
+   mongoc_server_description_type_t server_type;
+
+   BSON_ASSERT (read_prefs);
+   BSON_ASSERT (topology);
+   BSON_ASSERT (server_id);
+   BSON_ASSERT (query_bson);
+   BSON_ASSERT (query_rpc);
+
+   if (!mongoc_topology_get_server_type (topology,
+                                         server_id,
+                                         &topology_type,
+                                         &server_type,
+                                         error))
+   {
+      return false;
+   }
+
    switch (topology_type) {
    case MONGOC_TOPOLOGY_SINGLE:
       if (server_type == MONGOC_SERVER_MONGOS) {
          _apply_read_preferences_mongos (read_prefs, query_bson, query_rpc);
-         return;
+         return true;
       } else {
          /* Server Selection Spec: for topology type single and server types
           * besides mongos, "clients MUST always set the slaveOK wire protocol
@@ -285,7 +311,7 @@ apply_read_preferences (mongoc_read_prefs_t *read_prefs,
 
    case MONGOC_TOPOLOGY_SHARDED:
       _apply_read_preferences_mongos (read_prefs, query_bson, query_rpc);
-      return;
+      return true;
 
    case MONGOC_TOPOLOGY_UNKNOWN:
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
@@ -297,4 +323,5 @@ apply_read_preferences (mongoc_read_prefs_t *read_prefs,
 
    /* we haven't called _apply_read_preferences_mongos, must set query */
    query_rpc->query = bson_get_data (query_bson);
+   return true;
 }

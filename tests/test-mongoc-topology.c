@@ -769,10 +769,12 @@ static void
 test_invalid_server_id (void)
 {
    mongoc_client_t *client;
+   bson_error_t error;
 
    client = test_framework_client_new ();
 
-   assert (!mongoc_topology_server_by_id (client->topology, 99999));
+   BSON_ASSERT (!mongoc_topology_server_by_id (client->topology, 99999, &error));
+   ASSERT_STARTSWITH (error.message, "Could not find description for node");
 
    mongoc_client_destroy (client);
 }

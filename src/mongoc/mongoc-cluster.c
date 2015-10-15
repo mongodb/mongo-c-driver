@@ -85,10 +85,6 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
                                     bool reconnect_ok,
                                     bson_error_t *error);
 
-static void
-server_description_not_found (uint32_t server_id,
-                              bson_error_t *error);
-
 static const char *
 get_command_name (const bson_t *command)
 {
@@ -202,7 +198,6 @@ mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t      *cluster,
    bool reply_local_initialized = false;
    bool ret = false;
    mongoc_topology_t *topology;
-   mongoc_server_description_t *sd;
    bson_t command_local;
 
    ENTRY;
@@ -235,24 +230,21 @@ mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t      *cluster,
    rpc.query.n_return = -1;
    rpc.query.fields = NULL;
 
-   if (read_prefs) {
+   if (!mongoc_read_prefs_primary0 (read_prefs)) {
       BSON_ASSERT (server_id);
       topology = cluster->client->topology;
-      sd = mongoc_topology_description_server_by_id (&topology->description,
-                                                     server_id);
-      if (!sd) {
-         server_description_not_found (server_id, error);
-         error_set = true;
-         GOTO (done);
-      }
 
       /* apply_read_preferences may add $readPreference to command */
       bson_copy_to (command, &command_local);
-      apply_read_preferences (read_prefs,
-                              topology->description.type,
-                              sd->type,
-                              &command_local,
-                              &rpc.query);
+      if (!apply_read_preferences (read_prefs,
+                                   topology,
+                                   server_id,
+                                   &command_local,
+                                   &rpc.query,
+                                   error)) {
+         error_set = true;
+         GOTO (done);
+      }
    } else {
       /* we haven't called apply_read_preferences, must set query */
       rpc.query.query = bson_get_data (command);
@@ -1373,16 +1365,6 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 }
 
 static void
-server_description_not_found (uint32_t server_id,
-                              bson_error_t *error /* OUT */)
-{
-   bson_set_error (error,
-                   MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                   "Could not find description for node %u", server_id);
-}
-
-static void
 node_not_found (mongoc_server_description_t *sd,
                 bson_error_t *error /* OUT */)
 {
@@ -1452,8 +1434,7 @@ mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
 
    topology = cluster->client->topology;
 
-   if (!(sd = mongoc_topology_server_by_id (topology, server_id))) {
-      server_description_not_found (server_id, error);
+   if (!(sd = mongoc_topology_server_by_id (topology, server_id, error))) {
       RETURN (NULL);
    }
 
@@ -1981,7 +1962,8 @@ mongoc_cluster_node_max_bson_obj_size (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *node;
 
    if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_description_server_by_id (&cluster->client->topology->description, server_id))) {
+      if ((sd = mongoc_topology_description_server_by_id (
+         &cluster->client->topology->description, server_id, NULL))) {
          return sd->max_bson_obj_size;
       }
    } else {
@@ -2014,7 +1996,8 @@ mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *node;
 
    if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_description_server_by_id (&cluster->client->topology->description, server_id))) {
+      if ((sd = mongoc_topology_description_server_by_id (
+         &cluster->client->topology->description, server_id, NULL))) {
          return sd->max_msg_size;
       }
    } else {
@@ -2047,7 +2030,8 @@ mongoc_cluster_node_max_write_batch_size (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *node;
 
    if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_description_server_by_id (&cluster->client->topology->description, server_id))) {
+      if ((sd = mongoc_topology_description_server_by_id (
+         &cluster->client->topology->description, server_id, NULL))) {
          return sd->max_write_batch_size;
       }
    } else {
@@ -2152,7 +2136,8 @@ mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *node;
 
    if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_description_server_by_id (&cluster->client->topology->description, server_id))) {
+      if ((sd = mongoc_topology_description_server_by_id (
+         &cluster->client->topology->description, server_id, NULL))) {
          return sd->max_wire_version;
       }
    } else {
@@ -2185,7 +2170,8 @@ mongoc_cluster_node_min_wire_version (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *node;
 
    if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_description_server_by_id (&cluster->client->topology->description, server_id))) {
+      if ((sd = mongoc_topology_description_server_by_id (
+         &cluster->client->topology->description, server_id, NULL))) {
          return sd->min_wire_version;
       }
    } else {
@@ -2257,8 +2243,8 @@ _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
       bson_destroy (&command);
 
       if (r) {
-         sd = mongoc_topology_description_server_by_id (
-            &topology->description, server_id);
+         sd = mongoc_topology_description_server_by_id (&topology->description,
+                                                        server_id, NULL);
 
          if (!sd) {
             bson_destroy (&reply);

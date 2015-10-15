@@ -464,7 +464,8 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
  * mongoc_topology_description_server_by_id --
  *
  *       Get the server description for @id, if that server is present
- *       in @description. Otherwise, return NULL.
+ *       in @description. Otherwise, return NULL and fill out optional
+ *       @error.
  *
  *       NOTE: In most cases, caller should create a duplicate of the
  *       returned server description. Caller should hold the mutex on the
@@ -475,18 +476,29 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
  *       A mongoc_server_description_t *, or NULL.
  *
  * Side effects:
- *       None.
+ *      Fills out optional @error if server not found.
  *
  *--------------------------------------------------------------------------
  */
 
 mongoc_server_description_t *
 mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
-                                          uint32_t                       id)
+                                          uint32_t id,
+                                          bson_error_t *error)
 {
+   mongoc_server_description_t *sd;
+
    BSON_ASSERT (description);
 
-   return (mongoc_server_description_t *)mongoc_set_get(description->servers, id);
+   sd = (mongoc_server_description_t *)mongoc_set_get(description->servers, id);
+   if (!sd) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                      "Could not find description for node %u", id);
+   }
+
+   return sd;
 }
 
 /*
@@ -707,7 +719,7 @@ mongoc_topology_description_invalidate_server (mongoc_topology_description_t *to
    mongoc_server_description_t *sd;
    bson_error_t error;
 
-   sd = mongoc_topology_description_server_by_id (topology, id);
+   sd = mongoc_topology_description_server_by_id (topology, id, NULL);
    mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, &error);
 
    return;
