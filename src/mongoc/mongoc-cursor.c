@@ -310,18 +310,14 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
       mongoc_server_description_destroy (sd);
    }
 
-   if (!cursor->is_write_command) {
-      if (!apply_read_preferences (cursor->read_prefs,
-                                   topology,
-                                   cursor->hint,
-                                   &cursor->query,
-                                   &rpc.query,
-                                   &cursor->error)) {
-         GOTO (failure);
-      }
-   } else {
-      /* we haven't called apply_read_preferences, must set query */
-      rpc.query.query = bson_get_data (&cursor->query);
+   if (!apply_read_preferences (cursor->read_prefs,
+                                cursor->is_write_command,
+                                topology,
+                                cursor->hint,
+                                &cursor->query,
+                                &rpc.query,
+                                &cursor->error)) {
+      GOTO (failure);
    }
 
    if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,

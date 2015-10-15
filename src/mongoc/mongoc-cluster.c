@@ -156,6 +156,7 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
       command,
       0       /* server_id */,
       NULL    /* read_prefs */,
+      false   /* is_write_command */,
       reply,
       error);
 }
@@ -179,14 +180,15 @@ mongoc_cluster_run_command (mongoc_cluster_t      *cluster,
  */
 
 bool
-mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t      *cluster,
-                                                 mongoc_stream_t       *stream,
-                                                 const char            *db_name,
-                                                 const bson_t          *command,
-                                                 uint32_t               server_id,
-                                                 mongoc_read_prefs_t   *read_prefs,
-                                                 bson_t                *reply,
-                                                 bson_error_t          *error)
+mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t            *cluster,
+                                                 mongoc_stream_t             *stream,
+                                                 const char                  *db_name,
+                                                 const bson_t                *command,
+                                                 uint32_t                     server_id,
+                                                 const mongoc_read_prefs_t   *read_prefs,
+                                                 bool                         is_write_command,
+                                                 bson_t                      *reply,
+                                                 bson_error_t                *error)
 {
    mongoc_buffer_t buffer;
    mongoc_array_t ar;
@@ -224,7 +226,6 @@ mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t      *cluster,
    rpc.query.request_id = ++cluster->request_id;
    rpc.query.response_to = 0;
    rpc.query.opcode = MONGOC_OPCODE_QUERY;
-   rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
    rpc.query.collection = ns;
    rpc.query.skip = 0;
    rpc.query.n_return = -1;
@@ -237,6 +238,7 @@ mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t      *cluster,
       /* apply_read_preferences may add $readPreference to command */
       bson_copy_to (command, &command_local);
       if (!apply_read_preferences (read_prefs,
+                                   is_write_command,
                                    topology,
                                    server_id,
                                    &command_local,
@@ -248,6 +250,8 @@ mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t      *cluster,
    } else {
       /* we haven't called apply_read_preferences, must set query */
       rpc.query.query = bson_get_data (command);
+      rpc.query.flags = is_write_command ? MONGOC_QUERY_NONE
+                                         : MONGOC_QUERY_SLAVE_OK;
    }
 
    _mongoc_rpc_gather(&rpc, &ar);
@@ -319,7 +323,7 @@ done:
       bson_init (reply);
    }
 
-   if (read_prefs) {
+   if (!mongoc_read_prefs_primary0 (read_prefs)) {
       /* we made a copy of "command" */
       bson_destroy (&command_local);
    }

@@ -22,19 +22,14 @@
 #endif
 
 #include "mongoc-cursor-array-private.h"
-#include "mongoc-client.h"
 #include "mongoc-client-private.h"
-#include "mongoc-cluster-private.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-config.h"
 #include "mongoc-counters-private.h"
-#include "mongoc-cursor-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-gridfs-private.h"
 #include "mongoc-error.h"
-#include "mongoc-list-private.h"
 #include "mongoc-log.h"
-#include "mongoc-opcode.h"
 #include "mongoc-queue-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-stream-buffered.h"
@@ -1172,35 +1167,73 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
                                          uint32_t                   hint,
                                          bson_error_t              *error)
 {
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-   bool ret;
+   mongoc_cluster_t *cluster;
+   mongoc_stream_t *stream;
+   mongoc_read_prefs_t *local_read_prefs = NULL;
+   const mongoc_read_prefs_t *prefs_to_use = NULL;
+   mongoc_server_description_t *sd = NULL;
+   bool reply_initialized = false;
+   bool ret = false;
 
    BSON_ASSERT (client);
    BSON_ASSERT (db_name);
    BSON_ASSERT (command);
 
-   cursor = mongoc_client_command (client, db_name, MONGOC_QUERY_NONE, 0, 1, 0,
-                                   command, NULL, read_prefs);
+   cluster = &client->cluster;
 
-   cursor->hint = hint;
-   cursor->is_write_command = is_write_command ? 1 : 0;
-
-   ret = mongoc_cursor_next (cursor, &doc);
-
-   if (reply) {
-      if (ret) {
-         bson_copy_to (doc, reply);
+   if (!hint) {
+      if (is_write_command || !read_prefs) {
+         prefs_to_use = local_read_prefs =
+            mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
       } else {
-         bson_init (reply);
+         prefs_to_use = read_prefs;
       }
+
+      sd = mongoc_cluster_select_by_optype (cluster,
+                                            MONGOC_SS_READ,
+                                            prefs_to_use,
+                                            error);
+
+      if (!sd) {
+         GOTO (done);
+      }
+
+      hint = sd->id;
    }
 
-   if (!ret) {
-      mongoc_cursor_error (cursor, error);
+   stream = mongoc_cluster_fetch_stream (cluster,
+                                         hint,
+                                         true /* reconnect_ok */,
+                                         error);
+
+   if (!stream) {
+      GOTO (done);
    }
 
-   mongoc_cursor_destroy (cursor);
+   ret = mongoc_cluster_run_command_with_read_preference (cluster,
+                                                          stream,
+                                                          db_name,
+                                                          command,
+                                                          hint,
+                                                          prefs_to_use,
+                                                          is_write_command,
+                                                          reply,
+                                                          error);
+
+   reply_initialized = true;
+
+done:
+   if (sd) {
+      mongoc_server_description_destroy (sd);
+   }
+
+   if (local_read_prefs) {
+      mongoc_read_prefs_destroy (local_read_prefs);
+   }
+
+   if (!reply_initialized && reply) {
+      bson_init (reply);
+   }
 
    return ret;
 }

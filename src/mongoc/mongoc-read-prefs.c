@@ -139,7 +139,7 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
 
 
 bool
-mongoc_read_prefs_primary0 (mongoc_read_prefs_t *read_prefs)
+mongoc_read_prefs_primary0 (const mongoc_read_prefs_t *read_prefs)
 {
    return !read_prefs || read_prefs->mode == MONGOC_READ_PRIMARY;
 }
@@ -193,7 +193,7 @@ _get_read_mode_string (mongoc_read_mode_t mode)
  * The driver must have discovered the server is a mongos.
  */
 static void
-_apply_read_preferences_mongos (mongoc_read_prefs_t *read_prefs,
+_apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
                                 bson_t *query_bson,
                                 mongoc_rpc_query_t *query_rpc)  /* IN  / OUT */
 {
@@ -247,12 +247,27 @@ _apply_read_preferences_mongos (mongoc_read_prefs_t *read_prefs,
    query_rpc->query = bson_get_data (query_bson);
 }
 
-/* TODO: header */
-/* Update rpc->query and flags from read prefs, following Server Selection Spec.
- * Called after selecting a server: topology and server type must be known.
+/*
+ *--------------------------------------------------------------------------
+ *
+ * apply_read_preferences --
+ *
+ *       Update @query_rpc's "query" and "flags" fields from @read prefs,
+ *       following the Server Selection Spec.
+ *
+ * Returns:
+ *       True on success.
+ *
+ * Side effects:
+ *       May inject a $readPreference document into @query_bson.
+ *       Fills out @error on failure.
+ *
+ *--------------------------------------------------------------------------
  */
+
 bool
-apply_read_preferences (mongoc_read_prefs_t *read_prefs,
+apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
+                        bool is_write_command,
                         mongoc_topology_t *topology,
                         uint32_t server_id,
                         bson_t *query_bson,
@@ -267,6 +282,12 @@ apply_read_preferences (mongoc_read_prefs_t *read_prefs,
    BSON_ASSERT (server_id);
    BSON_ASSERT (query_bson);
    BSON_ASSERT (query_rpc);
+
+   if (is_write_command) {
+      query_rpc->flags = MONGOC_QUERY_NONE;
+      query_rpc->query = bson_get_data (query_bson);
+      return true;
+   }
 
    if (!mongoc_topology_get_server_type (topology,
                                          server_id,

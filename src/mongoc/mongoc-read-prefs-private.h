@@ -38,9 +38,10 @@ struct _mongoc_read_prefs_t
    bson_t             tags;
 };
 
-bool mongoc_read_prefs_primary0 (mongoc_read_prefs_t *read_prefs);
+bool mongoc_read_prefs_primary0 (const mongoc_read_prefs_t *read_prefs);
 
-bool apply_read_preferences (mongoc_read_prefs_t *read_prefs,
+bool apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
+                             bool is_write_command,
                              mongoc_topology_t *topology,
                              uint32_t server_id,
                              bson_t *query_bson,
