@@ -408,8 +408,10 @@ post:
       params:
         working_dir: "mongo-c-driver"
         script: |
-            cat server.log
             mongo-orchestration stop
+            pkill -9 mongo-orchestration; pkill -9 mongod; pkill -9 mongos;
+            rm -rf /tmp/mongo* /data/db
+            cat server.log
     - command: shell.cleanup
 
 
