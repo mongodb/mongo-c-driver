@@ -38,7 +38,8 @@ struct _mongoc_read_prefs_t
    bson_t             tags;
 };
 
-bool mongoc_read_prefs_primary0 (const mongoc_read_prefs_t *read_prefs);
+bool mongoc_read_prefs_is_primary_or_null (
+   const mongoc_read_prefs_t *read_prefs);
 
 bool apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
                              bool is_write_command,

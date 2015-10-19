@@ -231,7 +231,7 @@ mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t            *cl
    rpc.query.n_return = -1;
    rpc.query.fields = NULL;
 
-   if (!mongoc_read_prefs_primary0 (read_prefs)) {
+   if (!mongoc_read_prefs_is_primary_or_null (read_prefs)) {
       BSON_ASSERT (server_id);
       topology = cluster->client->topology;
 
@@ -323,7 +323,7 @@ done:
       bson_init (reply);
    }
 
-   if (!mongoc_read_prefs_primary0 (read_prefs)) {
+   if (!mongoc_read_prefs_is_primary_or_null (read_prefs)) {
       /* we made a copy of "command" */
       bson_destroy (&command_local);
    }

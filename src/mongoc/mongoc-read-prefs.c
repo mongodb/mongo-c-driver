@@ -139,7 +139,7 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
 
 
 bool
-mongoc_read_prefs_primary0 (const mongoc_read_prefs_t *read_prefs)
+mongoc_read_prefs_is_primary_or_null (const mongoc_read_prefs_t *read_prefs)
 {
    return !read_prefs || read_prefs->mode == MONGOC_READ_PRIMARY;
 }
