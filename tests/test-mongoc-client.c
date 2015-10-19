@@ -219,7 +219,7 @@ test_mongoc_client_authenticate_failure (void *context)
 
 
 static void
-test_mongoc_client_authenticate_timeout (void)
+test_mongoc_client_authenticate_timeout (void *context)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -245,6 +245,7 @@ test_mongoc_client_authenticate_timeout (void)
                                            MONGOC_QUERY_SLAVE_OK,
                                            NULL);
 
+   ASSERT (request);
    ASSERT_CMPSTR (request->command_name, "saslStart");
 
    /* don't reply */
@@ -913,7 +914,7 @@ test_client_install (TestSuite *suite)
 
    TestSuite_AddFull (suite, "/Client/authenticate", test_mongoc_client_authenticate, NULL, NULL, should_run_auth_tests);
    TestSuite_AddFull (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure, NULL, NULL, should_run_auth_tests);
-   TestSuite_Add (suite, "/Client/authenticate_timeout", test_mongoc_client_authenticate_timeout);
+   TestSuite_AddFull (suite, "/Client/authenticate_timeout", test_mongoc_client_authenticate_timeout, NULL, NULL, should_run_auth_tests);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
