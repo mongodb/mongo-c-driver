@@ -698,6 +698,7 @@ _mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,
 }
 
 
+/* TODO: refactor with mongoc_cursor_error */
 static void
 _mongoc_populate_error (const bson_t *doc,
                         bool          is_command,
@@ -716,6 +717,12 @@ _mongoc_populate_error (const bson_t *doc,
    if (bson_iter_init_find (&iter, doc, "code") &&
        BSON_ITER_HOLDS_INT32 (&iter)) {
       code = (uint32_t) bson_iter_int32 (&iter);
+   }
+
+   if (is_command &&
+       ((code == MONGOC_ERROR_PROTOCOL_ERROR) ||
+        (code == 13390))) {
+      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
    }
 
    if (bson_iter_init_find (&iter, doc, "$err") &&
