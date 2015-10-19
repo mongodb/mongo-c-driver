@@ -1172,6 +1172,7 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
    mongoc_read_prefs_t *local_read_prefs = NULL;
    const mongoc_read_prefs_t *prefs_to_use = NULL;
    mongoc_server_description_t *sd = NULL;
+   mongoc_ss_optype_t optype;
    bool reply_initialized = false;
    bool ret = false;
 
@@ -1189,8 +1190,10 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
          prefs_to_use = read_prefs;
       }
 
+      optype = is_write_command ? MONGOC_SS_WRITE : MONGOC_SS_READ;
+
       sd = mongoc_cluster_select_by_optype (cluster,
-                                            MONGOC_SS_READ,
+                                            optype,
                                             prefs_to_use,
                                             error);
 
