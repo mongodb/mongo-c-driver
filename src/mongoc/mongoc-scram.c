@@ -26,6 +26,8 @@
 
 #include "mongoc-b64-private.h"
 
+#include "mongoc-memcmp-private.h"
+
 #include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
@@ -530,7 +532,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
 
    /* verify our nonce */
    if (val_r_len < scram->encoded_nonce_len ||
-       memcmp (val_r, scram->encoded_nonce, scram->encoded_nonce_len)) {
+       mongoc_memcmp (val_r, scram->encoded_nonce, scram->encoded_nonce_len)) {
       bson_set_error (error,
                       MONGOC_ERROR_SCRAM,
                       MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
@@ -670,7 +672,7 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
    }
 
    return (len == encoded_server_signature_len) &&
-          (memcmp (verification, encoded_server_signature, len) == 0);
+          (mongoc_memcmp (verification, encoded_server_signature, len) == 0);
 }
 
 

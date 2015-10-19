@@ -43,6 +43,8 @@ else()
 endif ()
 set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
 
+set (MONGOC_HAVE_WEAK_SYMBOLS 0)
+
 configure_file (
    "${SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
@@ -106,6 +108,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-log.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
