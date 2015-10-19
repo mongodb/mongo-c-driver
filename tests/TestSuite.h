@@ -72,6 +72,16 @@ extern "C" {
 #define ASSERT_CMPINT64(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, PRId64)
 #define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, PRIu64)
 
+#define ASSERT_MEMCMP(a, b, n) \
+   do { \
+      if (0 != memcmp(a, b, n)) { \
+         fprintf (stderr, \
+                  "Failed comparing %d bytes: \"%.*s\" != \"%.*s\"", \
+                  n, n, a, n, b); \
+         abort (); \
+      }\
+   } while (0)
+
 
 #ifdef ASSERT_ALMOST_EQUAL
 # undef ASSERT_ALMOST_EQUAL

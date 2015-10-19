@@ -138,6 +138,7 @@ c_driver_variables:
           make
       msvc: &compile_msvc
         compile_script: |
+          file "tests/binary/gridfs-large.dat"
           set -o errexit
           set -o verbose
           cmake="/cygdrive/c/cmake/bin/cmake"

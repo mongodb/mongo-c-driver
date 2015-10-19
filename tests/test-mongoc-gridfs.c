@@ -337,23 +337,23 @@ test_read (void)
 
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
    ASSERT_CMPLONG (r, ==, 20L);
-   ASSERT_CMPINT (memcmp (iov[0].iov_base, "Bacon ipsu", 10), ==, 0);
-   ASSERT_CMPINT (memcmp (iov[1].iov_base, "m dolor si", 10), ==, 0);
+   ASSERT_MEMCMP (iov[0].iov_base, "Bacon ipsu", 10);
+   ASSERT_MEMCMP (iov[1].iov_base, "m dolor si", 10);
 
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 1, SEEK_SET), ==, 0);
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
 
    ASSERT_CMPLONG (r, ==, 20L);
-   ASSERT_CMPINT (memcmp (iov[0].iov_base, "acon ipsum", 10), ==, 0);
-   ASSERT_CMPINT (memcmp (iov[1].iov_base, " dolor sit", 10), ==, 0);
+   ASSERT_MEMCMP (iov[0].iov_base, "acon ipsum", 10);
+   ASSERT_MEMCMP (iov[1].iov_base, " dolor sit", 10);
 
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, file->chunk_size-1, SEEK_SET), ==, 0);
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
 
    ASSERT_CMPLONG (r, ==, 20L);
    ASSERT_CMPINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)(file->chunk_size+19));
-   ASSERT_CMPINT (memcmp (iov[0].iov_base, "turducken ", 10), ==, 0);
-   ASSERT_CMPINT (memcmp (iov[1].iov_base, "spare ribs", 10), ==, 0);
+   ASSERT_MEMCMP (iov[0].iov_base, "turducken ", 10);
+   ASSERT_MEMCMP (iov[1].iov_base, "spare ribs", 10);
 
    assert (mongoc_gridfs_file_seek (file, 20, SEEK_END) == 0);
    previous_errno = errno;
