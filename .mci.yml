@@ -50,6 +50,10 @@ c_driver_variables:
     - name: "integration test latest replica set no auth"
     - name: "integration test latest sharded no auth"
 
+  ssl_test_list: &ssl_tests
+    - name: "compile"
+    - name: "integration-test-3.0-ssl"
+
 ## Common download urls (merge in as hashes)
   mongo_download_url_prefixes:
     linux64: &mongo_url_linux64
@@ -287,6 +291,15 @@ functions:
       updates:
         - key: "orchestration_file"
           value: "auth.json"
+        - key: "topology_type"
+          value: "server"
+
+  "set-topology-standalone-ssl" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "ssl.json"
         - key: "topology_type"
           value: "server"
 
@@ -732,6 +745,16 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
+    - name: "integration-test-3.0-ssl"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set-topology-standalone-ssl"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
 
 #######################################
 #           Buildvariants             #
@@ -794,6 +817,18 @@ buildvariants:
   run_on:
   - ubuntu1404-test
   tasks: *topology_tests
+
+## Ubuntu 1404
+
+- name: ubuntu-1404-64-ssl
+  display_name: "Ubuntu 14.04 64-bit"
+  expansions:
+    <<: *cflags_64
+    <<: *mongo_url_ubuntu1404
+    <<: *unix_common
+  run_on:
+  - ubuntu1404-test
+  tasks: *ssl_tests
 
 #######################################
 #         OS X Buildvariants          #
