@@ -4,6 +4,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-util-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -148,6 +149,9 @@ test_exhaust_cursor (bool pooled)
       mongoc_cursor_destroy (cursor);
       assert (! client->in_exhaust);
    }
+
+   /* ensure even a 1 ms-resolution clock advances significantly */
+   _mongoc_usleep (10 * 1000);
 
    /* Grab a new exhaust cursor, then verify that reading from that cursor
     * (putting the client into exhaust), breaks a mid-stream read from a
