@@ -8,47 +8,51 @@ c_driver_variables:
 
   test_list: &std_tests
     - name: "compile"
-    - name: "integration test latest"
+    - name: "integration-test-latest"
 
   ## Note that the in 3.0, the default storage engine is MMAPv1 and
   ## WiredTiger is opt-in, but in latest as of MongoDB 3.1.4, the
   ## default is WiredTiger and MMAPv1 is opt-in.
   storage_engine_test_list: &storage_engine_tests
     - name: "compile"
-    - name: "integration test 3.0"
-    - name: "integration test 3.0 with WiredTiger"
-    - name: "integration test latest"
-    - name: "integration test latest with MMAPv1"
+    - name: "integration-test-3.0"
+    - name: "integration-test-3.0-with-WiredTiger"
+    - name: "integration-test-latest"
+    - name: "integration-test-latest-with-MMAPv1"
 
   topology_test_list: &topology_tests
     - name: "compile"
-    - name: "integration test 2.4"
-    - name: "integration test 2.4 replica set"
-    - name: "integration test 2.4 sharded"
-    - name: "integration test 2.6"
-    - name: "integration test 2.6 replica set"
-    - name: "integration test 2.6 sharded"
-    - name: "integration test 3.0"
-    - name: "integration test 3.0 replica set"
-    - name: "integration test 3.0 sharded"
-    - name: "integration test latest"
-    - name: "integration test latest replica set"
-    - name: "integration test latest sharded"
+    - name: "integration-test-2.4"
+    - name: "integration-test-2.4-replica-set"
+    - name: "integration-test-2.4-sharded"
+    - name: "integration-test-2.6"
+    - name: "integration-test-2.6-replica-set"
+    - name: "integration-test-2.6-sharded"
+    - name: "integration-test-3.0"
+    - name: "integration-test-3.0-replica-set"
+    - name: "integration-test-3.0-sharded"
+    - name: "integration-test-latest"
+    - name: "integration-test-latest-replica-set"
+    - name: "integration-test-latest-sharded"
 
   topology_test_no_auth_list: &topology_tests_no_auth
     - name: "compile"
-    - name: "integration test 2.4 no auth"
-    - name: "integration test 2.4 replica set no auth"
-    - name: "integration test 2.4 sharded no auth"
-    - name: "integration test 2.6 no auth"
-    - name: "integration test 2.6 replica set no auth"
-    - name: "integration test 2.6 sharded no auth"
-    - name: "integration test 3.0 no auth"
-    - name: "integration test 3.0 replica set no auth"
-    - name: "integration test 3.0 sharded no auth"
-    - name: "integration test latest no auth"
-    - name: "integration test latest replica set no auth"
-    - name: "integration test latest sharded no auth"
+    - name: "integration-test-2.4-no-auth"
+    - name: "integration-test-2.4-replica-set-no-auth"
+    - name: "integration-test-2.4-sharded-no-auth"
+    - name: "integration-test-2.6-no-auth"
+    - name: "integration-test-2.6-replica-set-no-auth"
+    - name: "integration-test-2.6-sharded-no-auth"
+    - name: "integration-test-3.0-no-auth"
+    - name: "integration-test-3.0-replica-set-no-auth"
+    - name: "integration-test-3.0-sharded-no-auth"
+    - name: "integration-test-latest-no-auth"
+    - name: "integration-test-latest-replica-set-no-auth"
+    - name: "integration-test-latest-sharded-no-auth"
+
+  ssl_test_list: &ssl_tests
+    - name: "compile"
+    - name: "integration-test-3.0-ssl"
 
 ## Common download urls (merge in as hashes)
   mongo_download_url_prefixes:
@@ -291,6 +295,15 @@ functions:
         - key: "topology_type"
           value: "server"
 
+  "set-topology-standalone-ssl" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "ssl.json"
+        - key: "topology_type"
+          value: "server"
+
   "set topology replica set" :
     command: expansions.update
     params:
@@ -445,7 +458,7 @@ tasks:
             permissions: public-read
             content_type: ${content_type|application/x-gzip}
 
-    - name: "integration test 2.4"
+    - name: "integration-test-2.4"
       depends_on:
         - name: "compile"
       commands:
@@ -456,7 +469,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.4 replica set"
+    - name: "integration-test-2.4-replica-set"
       depends_on:
         - name: "compile"
       commands:
@@ -467,7 +480,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.4 sharded"
+    - name: "integration-test-2.4-sharded"
       depends_on:
         - name: "compile"
       commands:
@@ -478,7 +491,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.6"
+    - name: "integration-test-2.6"
       depends_on:
         - name: "compile"
       commands:
@@ -489,7 +502,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.6 replica set"
+    - name: "integration-test-2.6-replica-set"
       depends_on:
         - name: "compile"
       commands:
@@ -500,7 +513,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.6 sharded"
+    - name: "integration-test-2.6-sharded"
       depends_on:
         - name: "compile"
       commands:
@@ -511,7 +524,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 3.0"
+    - name: "integration-test-3.0"
       depends_on:
         - name: "compile"
       commands:
@@ -522,7 +535,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 3.0 replica set"
+    - name: "integration-test-3.0-replica-set"
       depends_on:
         - name: "compile"
       commands:
@@ -533,7 +546,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 3.0 sharded"
+    - name: "integration-test-3.0-sharded"
       depends_on:
         - name: "compile"
       commands:
@@ -544,7 +557,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test latest"
+    - name: "integration-test-latest"
       depends_on:
         - name: "compile"
       commands:
@@ -555,7 +568,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test latest replica set"
+    - name: "integration-test-latest-replica-set"
       depends_on:
         - name: "compile"
       commands:
@@ -566,7 +579,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test latest sharded"
+    - name: "integration-test-latest-sharded"
       depends_on:
         - name: "compile"
       commands:
@@ -577,7 +590,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.4 no auth"
+    - name: "integration-test-2.4-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -588,7 +601,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.4 replica set no auth"
+    - name: "integration-test-2.4-replica-set-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -599,7 +612,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.4 sharded no auth"
+    - name: "integration-test-2.4-sharded-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -610,7 +623,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.6 no auth"
+    - name: "integration-test-2.6-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -621,7 +634,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.6 replica set no auth"
+    - name: "integration-test-2.6-replica-set-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -632,7 +645,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 2.6 sharded no auth"
+    - name: "integration-test-2.6-sharded-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -643,7 +656,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 3.0 no auth"
+    - name: "integration-test-3.0-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -654,7 +667,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 3.0 replica set no auth"
+    - name: "integration-test-3.0-replica-set-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -665,7 +678,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 3.0 sharded no auth"
+    - name: "integration-test-3.0-sharded-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -676,7 +689,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test latest no auth"
+    - name: "integration-test-latest-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -687,7 +700,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test latest replica set no auth"
+    - name: "integration-test-latest-replica-set-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -698,7 +711,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test latest sharded no auth"
+    - name: "integration-test-latest-sharded-no-auth"
       depends_on:
         - name: "compile"
       commands:
@@ -709,7 +722,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test latest with MMAPv1"
+    - name: "integration-test-latest-with-MMAPv1"
       depends_on:
         - name: "compile"
       commands:
@@ -721,7 +734,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
-    - name: "integration test 3.0 with WiredTiger"
+    - name: "integration-test-3.0-with-WiredTiger"
       depends_on:
         - name: "compile"
       commands:
@@ -733,6 +746,16 @@ tasks:
         - func: "fetch mongodb"
         - func: "run integration tests"
 
+    - name: "integration-test-3.0-ssl"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set-topology-standalone-ssl"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "run integration tests"
 
 #######################################
 #           Buildvariants             #
@@ -795,6 +818,18 @@ buildvariants:
   run_on:
   - ubuntu1404-test
   tasks: *topology_tests
+
+## Ubuntu 1404
+
+- name: ubuntu-1404-64-ssl
+  display_name: "Ubuntu 14.04 64-bit"
+  expansions:
+    <<: *cflags_64
+    <<: *mongo_url_ubuntu1404
+    <<: *unix_common
+  run_on:
+  - ubuntu1404-test
+  tasks: *ssl_tests
 
 #######################################
 #         OS X Buildvariants          #
