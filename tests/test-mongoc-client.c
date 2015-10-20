@@ -379,6 +379,50 @@ test_mongoc_client_command_secondary (void)
    bson_destroy (&cmd);
 }
 
+
+static void
+test_command_not_found (void)
+{
+   mongoc_client_t *client;
+   const bson_t *doc;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_client_new ();
+   cursor = mongoc_client_command (client, "test", MONGOC_QUERY_NONE,
+                                   0, 0, 0,
+                                   tmp_bson ("{'foo': 1}"), NULL, NULL);
+
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_QUERY);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_command_not_found_simple (void)
+{
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   ASSERT (!mongoc_client_command_simple (client, "test",
+                                          tmp_bson ("{'foo': 1}"),
+                                          NULL, &reply, &error));
+
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_QUERY);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
+
+   bson_destroy (&reply);
+   mongoc_client_destroy (client);
+}
+
+
 static void
 test_mongoc_client_preselect (void)
 {
@@ -917,6 +961,8 @@ test_client_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Client/authenticate_timeout", test_mongoc_client_authenticate_timeout, NULL, NULL, should_run_auth_tests);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
+   TestSuite_Add (suite, "/Client/command_not_found/cursor", test_command_not_found);
+   TestSuite_Add (suite, "/Client/command_not_found/simple", test_command_not_found_simple);
    TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/single", test_rs_seeds_no_connect_single);

@@ -506,22 +506,6 @@ mongoc_cursor_error (mongoc_cursor_t *cursor,
       ret = _mongoc_cursor_error(cursor, error);
    }
 
-   if (ret && error) {
-      /*
-       * Rewrite the error code if we are talking to an older mongod
-       * and the command was not found. It used to simply return an
-       * error code of 17 and we can synthesize 59.
-       *
-       * Additionally, old versions of mongos may send 13390 indicating
-       * unrecognized command.
-       */
-      if (cursor->is_command &&
-          ((error->code == MONGOC_ERROR_PROTOCOL_ERROR) ||
-           (error->code == 13390))) {
-         error->code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
-      }
-   }
-
    RETURN(ret);
 }
 
