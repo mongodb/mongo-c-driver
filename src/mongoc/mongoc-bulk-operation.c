@@ -524,3 +524,14 @@ mongoc_bulk_operation_set_bypass_document_validation (mongoc_bulk_operation_t *b
       MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE :
       MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
 }
+
+
+void
+mongoc_bulk_operation_set_flags (mongoc_bulk_operation_t  *bulk,
+                                 mongoc_bulk_write_flags_t flags)
+{
+   BSON_ASSERT (bulk);
+
+   bulk->flags.ordered = flags.ordered;
+   bulk->flags.bypass_document_validation = flags.bypass_document_validation;
+}
