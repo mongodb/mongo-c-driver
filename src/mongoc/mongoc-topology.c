@@ -492,7 +492,11 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
          mongoc_mutex_unlock (&topology->mutex);
 
+#ifdef _WIN32
+         if (r == WSAETIMEDOUT) {
+#else
          if (r == ETIMEDOUT) {
+#endif
             /* handle timeouts */
             bson_set_error(error,
                            MONGOC_ERROR_SERVER_SELECTION,
@@ -727,7 +731,11 @@ void * _mongoc_topology_run_background (void *data)
              */
             r = mongoc_cond_timedwait (&topology->cond_server, &topology->mutex, timeout);
 
+#ifdef _WIN32
+            if (! (r == 0 || r == WSAETIMEDOUT)) {
+#else
             if (! (r == 0 || r == ETIMEDOUT)) {
+#endif
                /* handle errors */
                goto DONE;
             }
