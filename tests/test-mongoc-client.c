@@ -96,6 +96,7 @@ test_mongoc_client_authenticate (void *context)
                                                     username,
                                                     "testpass");
    auth_client = mongoc_client_new (uri_str_auth);
+   test_framework_set_ssl_opts (auth_client);
    collection = mongoc_client_get_collection (auth_client, "test", "test");
    cursor = mongoc_collection_find(collection, MONGOC_QUERY_NONE, 0, 1, 0,
                                    &q, NULL, NULL);
@@ -170,6 +171,7 @@ test_mongoc_client_authenticate_failure (void *context)
     */
    bson_init(&q);
    client = mongoc_client_new (bad_uri_str);
+   test_framework_set_ssl_opts (client);
 
    collection = mongoc_client_get_collection(client, "test", "test");
    suppress_one_message ();

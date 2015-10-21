@@ -549,6 +549,8 @@ call_ismaster (bson_t *reply)
    mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
 
    client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
+
    if (!mongoc_client_command_simple (client, "admin",
                                       tmp_bson ("{'isMaster': 1}"),
                                       NULL, reply, &error)) {
@@ -742,7 +744,7 @@ test_framework_get_uri ()
  *
  *--------------------------------------------------------------------------
  */
-static void
+void
 test_framework_set_ssl_opts (mongoc_client_t *client)
 {
    assert (client);
