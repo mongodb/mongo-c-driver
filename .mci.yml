@@ -124,8 +124,8 @@ c_driver_variables:
       start_topology_command: &start_topology_command
         start_topology: |
           curl -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL"
-          ./mongodb/bin/mongo --eval 'printjson(db.serverBuildInfo())'
-          ./mongodb/bin/mongo --eval 'printjson(db.isMaster())'
+          ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.serverBuildInfo())'
+          ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())'
 
     compile:
       unix: &compile_unix
@@ -167,6 +167,14 @@ c_driver_variables:
           export MONGOC_TEST_USER=bob
           export MONGOC_TEST_PASSWORD=pwd123
 
+    connection_flags:
+      ssl: &connection_flags_ssl
+        set_connection_flags: |
+          export MONGO_SHELL_CONNECTION_FLAGS="--ssl --sslCAFile=/tmp/mongoc-test-certificates/ca.pem"
+          export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION=on
+          export MONGOC_TEST_SSL_PEM_FILE=/tmp/mongoc-test-certificates/client.pem
+          export MONGOC_TEST_SSL_CA_FILE=/tmp/mongoc-test-certificates/ca.pem
+
     integration_tests:
       msvc: &run_integration_tests_msvc
         run_integration_tests: |
@@ -196,6 +204,9 @@ c_driver_variables:
     <<: *unix_common
     <<: *compile_solaris
     <<: *solaris_path
+
+  ssl: &ssl
+    <<: *connection_flags_ssl
 
 ## Misc. for Windows builds
   windows_compilers:
@@ -394,6 +405,16 @@ functions:
         - key: "mongo_url"
           value: ${mongo_url_prefix}${mongo_url_platform|}latest.${mongo_url_extension|tgz}
 
+  "copy certificates" :
+    command: shell.exec
+    params:
+      working_dir: "mongo-c-driver"
+      script: |
+        set -o errexit
+        set -o verbose
+        # TODO: this won't work for Windows
+        cp -rf orchestration_configs/certificates /tmp/mongoc-test-certificates
+
   "run integration tests" :
     command: shell.exec
     params:
@@ -404,6 +425,7 @@ functions:
         export ORCHESTRATION_FILE="orchestration_configs/${topology_type}s/${orchestration_file}"
         export ORCHESTRATION_URL="http://localhost:8889/v1/${topology_type}s"
         ${set_username_password}
+        ${set_connection_flags}
         ${start_mongo_orchestration}
         ${start_topology}
         ${run_integration_tests}
@@ -754,6 +776,7 @@ tasks:
         - func: "create working directory"
         - func: "fetch artifacts"
         - func: "fetch mongodb"
+        - func: "copy certificates"
         - func: "run integration tests"
 
 #######################################
@@ -826,6 +849,7 @@ buildvariants:
     <<: *cflags_64
     <<: *mongo_url_ubuntu1404
     <<: *unix_common
+    <<: *ssl
   run_on:
   - ubuntu1404-test
   tasks: *ssl_tests
