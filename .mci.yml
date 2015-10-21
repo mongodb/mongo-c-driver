@@ -821,7 +821,7 @@ buildvariants:
 ## Ubuntu 1404
 
 - name: ubuntu-1404-64-ssl
-  display_name: "Ubuntu 14.04 64-bit"
+  display_name: "SSL on Ubuntu 14.04 64-bit"
   expansions:
     <<: *cflags_64
     <<: *mongo_url_ubuntu1404
