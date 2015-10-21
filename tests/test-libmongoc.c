@@ -508,7 +508,7 @@ test_framework_get_uri_str_from_env ()
    host = test_framework_get_host ();
    port = test_framework_get_port ();
    test_uri_str = bson_strdup_printf (
-      "mongodb://%s:%hu%s",
+      "mongodb://%s:%hu/%s",
       host,
       port,
       test_framework_get_ssl () ? "?ssl=true" : "");
