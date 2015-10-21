@@ -1169,9 +1169,7 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
 {
    mongoc_cluster_t *cluster;
    mongoc_stream_t *stream;
-   mongoc_read_prefs_t *local_read_prefs = NULL;
-   const mongoc_read_prefs_t *prefs_to_use = NULL;
-   mongoc_server_description_t *sd = NULL;
+   mongoc_server_description_t *sd;
    mongoc_ss_optype_t optype;
    bool reply_initialized = false;
    bool ret = false;
@@ -1183,18 +1181,10 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
    cluster = &client->cluster;
 
    if (!hint) {
-      if (is_write_command || !read_prefs) {
-         prefs_to_use = local_read_prefs =
-            mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-      } else {
-         prefs_to_use = read_prefs;
-      }
-
       optype = is_write_command ? MONGOC_SS_WRITE : MONGOC_SS_READ;
-
       sd = mongoc_cluster_select_by_optype (cluster,
                                             optype,
-                                            prefs_to_use,
+                                            read_prefs,
                                             error);
 
       if (!sd) {
@@ -1202,6 +1192,7 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
       }
 
       hint = sd->id;
+      mongoc_server_description_destroy (sd);
    }
 
    stream = mongoc_cluster_fetch_stream (cluster,
@@ -1218,7 +1209,7 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
                                                           db_name,
                                                           command,
                                                           hint,
-                                                          prefs_to_use,
+                                                          read_prefs,
                                                           is_write_command,
                                                           reply,
                                                           error);
@@ -1226,14 +1217,6 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
    reply_initialized = true;
 
 done:
-   if (sd) {
-      mongoc_server_description_destroy (sd);
-   }
-
-   if (local_read_prefs) {
-      mongoc_read_prefs_destroy (local_read_prefs);
-   }
-
    if (!reply_initialized && reply) {
       bson_init (reply);
    }

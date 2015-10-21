@@ -255,7 +255,6 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 static bool
 _mongoc_cursor_query (mongoc_cursor_t *cursor)
 {
-   mongoc_read_prefs_t *local_read_prefs = NULL;
    mongoc_topology_t *topology;
    mongoc_server_description_t *sd;
    mongoc_rpc_t rpc;
@@ -287,19 +286,11 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    topology = cursor->client->topology;
 
    if (!cursor->hint) {
-      if (!cursor->read_prefs) {
-         local_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-      }
-
       sd = mongoc_cluster_select_by_optype (
          &cursor->client->cluster,
          MONGOC_SS_READ,
-         cursor->read_prefs ? cursor->read_prefs : local_read_prefs,
+         cursor->read_prefs,
          &cursor->error);
-
-      if (local_read_prefs) {
-         mongoc_read_prefs_destroy (local_read_prefs);
-      }
 
       if (!sd) {
          GOTO (failure);

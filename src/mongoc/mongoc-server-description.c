@@ -490,6 +490,11 @@ mongoc_server_description_filter_eligible (
    size_t i;
    size_t rval = 0;
 
+   if (!read_prefs) {
+      /* NULL read_prefs is PRIMARY, no tags to filter by */
+      return description_len;
+   }
+
    rp_tags = mongoc_read_prefs_get_tags (read_prefs);
 
    if (bson_count_keys (rp_tags) == 0) {
