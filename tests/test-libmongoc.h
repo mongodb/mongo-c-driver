@@ -36,6 +36,7 @@ char *test_framework_add_user_password (const char *uri_str,
 char *test_framework_get_uri_str_no_auth (const char *database_name);
 char *test_framework_get_uri_str (void);
 mongoc_uri_t *test_framework_get_uri (void);
+void test_framework_set_ssl_opts (mongoc_client_t *client);
 mongoc_client_t *test_framework_client_new (void);
 mongoc_client_pool_t *test_framework_client_pool_new (void);
 bool test_framework_is_mongos (void);

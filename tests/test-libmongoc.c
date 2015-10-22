@@ -512,7 +512,7 @@ test_framework_get_uri_str_from_env ()
    host = test_framework_get_host ();
    port = test_framework_get_port ();
    test_uri_str = bson_strdup_printf (
-      "mongodb://%s:%hu%s",
+      "mongodb://%s:%hu/%s",
       host,
       port,
       test_framework_get_ssl () ? "?ssl=true" : "");
@@ -560,6 +560,8 @@ call_ismaster_with_host_and_port (char *host,
    mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
 
    client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
+
    if (!mongoc_client_command_simple (client, "admin",
                                       tmp_bson ("{'isMaster': 1}"),
                                       NULL, reply, &error)) {
@@ -780,7 +782,7 @@ test_framework_get_uri ()
  *
  *--------------------------------------------------------------------------
  */
-static void
+void
 test_framework_set_ssl_opts (mongoc_client_t *client)
 {
    assert (client);

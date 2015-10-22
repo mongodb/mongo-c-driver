@@ -102,7 +102,7 @@ mongoc_cond_timedwait (mongoc_cond_t  *cond,
       r = GetLastError();
 
       if (r == WAIT_TIMEOUT || r == ERROR_TIMEOUT) {
-         return ETIMEDOUT;
+         return WSAETIMEDOUT;
       } else {
          return EINVAL;
       }
