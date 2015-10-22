@@ -1792,6 +1792,7 @@ test_find_and_modify_write_concern (int wire_version)
    bson_destroy (&reply);
    bson_destroy (update);
 
+   mongoc_write_concern_destroy (write_concern);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    bson_destroy (&doc);
