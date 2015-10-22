@@ -25,6 +25,7 @@
 
 #include "mongoc-client.h"
 #include "mongoc-write-concern.h"
+#include "mongoc-server-stream-private.h"
 
 
 BSON_BEGIN_DECLS
@@ -117,7 +118,7 @@ void _mongoc_write_command_delete_append (mongoc_write_command_t *command,
 
 void _mongoc_write_command_execute     (mongoc_write_command_t        *command,
                                         mongoc_client_t               *client,
-                                        uint32_t                       hint,
+                                        mongoc_server_stream_t        *server_stream,
                                         const char                    *database,
                                         const char                    *collection,
                                         const mongoc_write_concern_t  *write_concern,

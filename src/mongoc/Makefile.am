@@ -141,6 +141,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-read-prefs.c \
 	src/mongoc/mongoc-rpc.c \
 	src/mongoc/mongoc-server-description.c \
+	src/mongoc/mongoc-server-stream.c \
 	src/mongoc/mongoc-set.c \
 	src/mongoc/mongoc-socket.c \
 	src/mongoc/mongoc-stream.c \

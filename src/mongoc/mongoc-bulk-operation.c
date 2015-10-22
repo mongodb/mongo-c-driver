@@ -19,9 +19,7 @@
 #include "mongoc-bulk-operation-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-error.h"
-#include "mongoc-opcode.h"
 #include "mongoc-trace.h"
-#include "mongoc-write-command-private.h"
 #include "mongoc-write-concern-private.h"
 
 
@@ -366,6 +364,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                bson_error_t            *error) /* OUT */
 {
    mongoc_write_command_t *command;
+   mongoc_server_stream_t *server_stream;
    bool ret;
    uint32_t offset = 0;
    int i;
@@ -417,11 +416,18 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
       RETURN (false);
    }
 
+   server_stream = mongoc_cluster_stream_for_writes (&bulk->client->cluster,
+                                                     error);
+
+   if (!server_stream) {
+      RETURN (false);
+   }
+
    for (i = 0; i < bulk->commands.len; i++) {
       command = &_mongoc_array_index (&bulk->commands,
                                       mongoc_write_command_t, i);
 
-      _mongoc_write_command_execute (command, bulk->client, bulk->hint,
+      _mongoc_write_command_execute (command, bulk->client, server_stream,
                                      bulk->database, bulk->collection,
                                      bulk->write_concern, offset,
                                      &bulk->result);
@@ -437,6 +443,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
 cleanup:
    ret = _mongoc_write_result_complete (&bulk->result, reply, error);
+   mongoc_server_stream_cleanup (server_stream);
 
    RETURN (ret ? bulk->hint : 0);
 }

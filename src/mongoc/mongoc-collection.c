@@ -29,9 +29,7 @@
 #include "mongoc-error.h"
 #include "mongoc-index.h"
 #include "mongoc-log.h"
-#include "mongoc-opcode.h"
 #include "mongoc-trace.h"
-#include "mongoc-write-command-private.h"
 #include "mongoc-write-concern-private.h"
 
 
@@ -84,6 +82,33 @@ validate_name (const char *str)
    }
 
    return false;
+}
+
+static void
+_mongoc_collection_write_command_execute (mongoc_write_command_t       *command,
+                                          const mongoc_collection_t    *collection,
+                                          const mongoc_write_concern_t *write_concern,
+                                          mongoc_write_result_t        *result)
+{
+   mongoc_server_stream_t *server_stream;
+
+   ENTRY;
+
+   server_stream = mongoc_cluster_stream_for_writes (&collection->client->cluster,
+                                                     &result->error);
+
+   if (!server_stream) {
+      /* result->error has been filled out */
+      EXIT;
+   }
+
+   _mongoc_write_command_execute (command, collection->client, server_stream,
+                                  collection->db, collection->collection,
+                                  write_concern, 0 /* offset */, result);
+
+   mongoc_server_stream_cleanup (server_stream);
+
+   EXIT;
 }
 
 /*
@@ -1157,9 +1182,8 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
       _mongoc_write_command_insert_append (&command, documents[i]);
    }
 
-   _mongoc_write_command_execute (&command, collection->client, 0,
-                                  collection->db, collection->collection,
-                                  write_concern, 0, &result);
+   _mongoc_collection_write_command_execute (&command, collection,
+                                             write_concern, &result);
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result, collection->gle, error);
@@ -1239,9 +1263,8 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_insert (&command, document, write_flags, false);
 
-   _mongoc_write_command_execute (&command, collection->client, 0,
-                                  collection->db, collection->collection,
-                                  write_concern, 0, &result);
+   _mongoc_collection_write_command_execute (&command, collection,
+                                             write_concern, &result);
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result, collection->gle, error);
@@ -1331,9 +1354,8 @@ mongoc_collection_update (mongoc_collection_t          *collection,
                                       !!(flags & MONGOC_UPDATE_MULTI_UPDATE),
                                       write_flags);
 
-   _mongoc_write_command_execute (&command, collection->client, 0,
-                                  collection->db, collection->collection,
-                                  write_concern, 0, &result);
+   _mongoc_collection_write_command_execute (&command, collection,
+                                             write_concern, &result);
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result, collection->gle, error);
@@ -1467,9 +1489,8 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_delete (&command, selector, multi, write_flags);
 
-   _mongoc_write_command_execute (&command, collection->client, 0,
-                                  collection->db, collection->collection,
-                                  write_concern, 0, &result);
+   _mongoc_collection_write_command_execute (&command, collection,
+                                             write_concern, &result);
 
    collection->gle = bson_new ();
    ret = _mongoc_write_result_complete (&result, collection->gle, error);
@@ -1933,7 +1954,8 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
                                    bson_t              *reply,
                                    bson_error_t        *error)
 {
-   mongoc_server_description_t *selected_server;
+   mongoc_cluster_t *cluster;
+   mongoc_server_stream_t *server_stream;
    const char *name;
    bool ret;
    bson_t command = BSON_INITIALIZER;
@@ -1944,20 +1966,14 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
    BSON_ASSERT (query);
    BSON_ASSERT (update || _remove);
 
-   name = mongoc_collection_get_name (collection);
-
-   /* Preselect the server to check its wire_version */
-   selected_server = mongoc_topology_select(collection->client->topology,
-                                            MONGOC_SS_WRITE,
-                                            collection->read_prefs,
-                                            15,
-                                            error);
-
-   if (!selected_server) {
+   cluster = &collection->client->cluster;
+   server_stream = mongoc_cluster_stream_for_writes (cluster, error);
+   if (!server_stream) {
       bson_destroy (&command);
       RETURN (false);
    }
 
+   name = mongoc_collection_get_name (collection);
    BSON_APPEND_UTF8 (&command, "findAndModify", name);
    BSON_APPEND_DOCUMENT (&command, "query", query);
 
@@ -1985,13 +2001,14 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
       BSON_APPEND_BOOL (&command, "new", _new);
    }
 
-   if (selected_server->max_wire_version >= 4) {
+   if (server_stream->sd->max_wire_version >= 4) {
       if (!_mongoc_write_concern_is_valid (collection->write_concern)) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "The write concern is invalid.");
          bson_destroy (&command);
+         mongoc_server_stream_cleanup (server_stream);
          RETURN (false);
       }
 
@@ -2003,14 +2020,16 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
    /*
     * Submit the command to MongoDB server.
     */
-   ret = _mongoc_client_command_simple_with_hint (collection->client,
-                                                  collection->db, &command, NULL,
-                                                  true, reply, selected_server->id, error);
+
+   ret = mongoc_cluster_run_command (cluster, server_stream->stream,
+                                     MONGOC_QUERY_NONE, collection->db,
+                                     &command, reply, error);
 
    /*
     * Cleanup.
     */
    bson_destroy (&command);
+   mongoc_server_stream_cleanup (server_stream);
 
    RETURN (ret);
 }

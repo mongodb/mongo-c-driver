@@ -134,7 +134,15 @@ static int should_run_auth_tests (void)
    char *user;
 #ifndef MONGOC_ENABLE_SSL
    mongoc_client_t *client = test_framework_client_new ();
-   uint32_t server_id = mongoc_cluster_preselect(&client->cluster, MONGOC_OPCODE_QUERY, NULL, NULL);
+   mongoc_server_stream_t *server_stream;
+   uint32_t server_id;
+   bson_error_t error;
+
+   server_stream = mongoc_cluster_stream_for_reads (&client->cluster, NULL,
+                                                    &error);
+   ASSERT_OR_PRINT (server_stream, error);
+   server_id = server_stream->sd->id;
+   mongoc_server_stream_cleanup (server_stream);
 
    if (mongoc_cluster_node_max_wire_version (&client->cluster, server_id) > 2) {
       mongoc_client_destroy (client);
@@ -421,22 +429,6 @@ test_command_not_found_simple (void)
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
 
    bson_destroy (&reply);
-   mongoc_client_destroy (client);
-}
-
-
-static void
-test_mongoc_client_preselect (void)
-{
-   mongoc_client_t *client;
-   bson_error_t error;
-
-   client = test_framework_client_new ();
-   assert (client);
-
-   ASSERT_OR_PRINT (_mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
-                                              NULL, NULL, &error), error);
-
    mongoc_client_destroy (client);
 }
 
@@ -837,9 +829,9 @@ test_recovering (void)
         read_mode <= MONGOC_READ_NEAREST;
         read_mode++) {
       mongoc_read_prefs_set_mode (prefs, read_mode);
-      assert (!mongoc_cluster_preselect (&client->cluster,
-                                         MONGOC_OPCODE_QUERY,
-                                         prefs, &error));
+      assert (!mongoc_topology_select (client->topology,
+                                       MONGOC_SS_READ,
+                                       prefs, 15, &error));
    }
 
    mongoc_read_prefs_destroy (prefs);
@@ -993,7 +985,6 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
    TestSuite_Add (suite, "/Client/command_not_found/cursor", test_command_not_found);
    TestSuite_Add (suite, "/Client/command_not_found/simple", test_command_not_found_simple);
-   TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/single", test_rs_seeds_no_connect_single);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/pooled", test_rs_seeds_no_connect_pooled);

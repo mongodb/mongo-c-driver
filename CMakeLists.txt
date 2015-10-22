@@ -114,6 +114,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-server-stream.c
    ${SOURCE_DIR}/src/mongoc/mongoc-set.c
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c

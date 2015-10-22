@@ -38,16 +38,25 @@ struct _mongoc_read_prefs_t
    bson_t             tags;
 };
 
-bool mongoc_read_prefs_is_primary_or_null (
-   const mongoc_read_prefs_t *read_prefs);
 
-bool apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
-                             bool is_write_command,
-                             mongoc_topology_t *topology,
-                             uint32_t server_id,
-                             bson_t *query_bson,
-                             mongoc_rpc_query_t *query_rpc,
-                             bson_error_t *error);
+typedef struct _mongoc_apply_read_prefs_result_t {
+   bson_t              *query_with_read_prefs;
+   bool                 query_owned;
+   mongoc_query_flags_t flags;
+} mongoc_apply_read_prefs_result_t;
+
+
+#define READ_PREFS_RESULT_INIT { NULL, false, MONGOC_QUERY_NONE }
+
+void
+apply_read_preferences (const mongoc_read_prefs_t *read_prefs,
+                        const mongoc_server_stream_t *server_stream,
+                        const bson_t *query_bson,
+                        mongoc_query_flags_t initial_flags,
+                        mongoc_apply_read_prefs_result_t *result);
+
+void
+apply_read_prefs_result_cleanup (mongoc_apply_read_prefs_result_t *result);
 
 BSON_END_DECLS
 

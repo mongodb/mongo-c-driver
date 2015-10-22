@@ -1,9 +1,9 @@
 #include <bcon.h>
 #include <mongoc.h>
 
+#include "mongoc-client-private.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-write-command-private.h"
-#include "mongoc-write-concern.h"
 #include "mongoc-write-concern-private.h"
 
 #include "TestSuite.h"
@@ -40,6 +40,7 @@ test_split_insert (void)
    bson_t **docs;
    bson_t reply = BSON_INITIALIZER;
    bson_error_t error;
+   mongoc_server_stream_t *server_stream;
    int i;
 
    client = test_framework_client_new ();
@@ -66,7 +67,9 @@ test_split_insert (void)
       _mongoc_write_command_insert_append (&command, docs[i]);
    }
 
-   _mongoc_write_command_execute (&command, client, 0, collection->db,
+   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, &error);
+   ASSERT_OR_PRINT (server_stream, error);
+   _mongoc_write_command_execute (&command, client, server_stream, collection->db,
                                   collection->collection, NULL, 0, &result);
 
    ASSERT_OR_PRINT (_mongoc_write_result_complete (&result, &reply, &error),
@@ -83,7 +86,7 @@ test_split_insert (void)
    }
 
    bson_free (docs);
-
+   mongoc_server_stream_cleanup (server_stream);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -98,6 +101,7 @@ test_invalid_write_concern (void)
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    mongoc_write_concern_t *write_concern;
+   mongoc_server_stream_t *server_stream;
    bson_t *doc;
    bson_t reply = BSON_INITIALIZER;
    bson_error_t error;
@@ -119,10 +123,11 @@ test_invalid_write_concern (void)
 
    _mongoc_write_command_init_insert(&command, doc, write_flags, true);
    _mongoc_write_result_init (&result);
-
-   _mongoc_write_command_execute (&command, client, 0, collection->db,
-                                  collection->collection, write_concern, 0,
-                                  &result);
+   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, &error);
+   ASSERT_OR_PRINT (server_stream, error);
+   _mongoc_write_command_execute (&command, client, server_stream,
+                                  collection->db, collection->collection,
+                                  write_concern, 0, &result);
 
    r = _mongoc_write_result_complete (&result, &reply, &error);
 
@@ -134,6 +139,7 @@ test_invalid_write_concern (void)
    _mongoc_write_result_destroy (&result);
 
    bson_destroy(doc);
+   mongoc_server_stream_cleanup (server_stream);
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
    mongoc_write_concern_destroy(write_concern);

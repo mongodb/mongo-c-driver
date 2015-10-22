@@ -252,11 +252,37 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 }
 
 
+static mongoc_server_stream_t *
+_mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
+{
+   mongoc_server_stream_t *server_stream;
+
+   ENTRY;
+
+   if (cursor->hint) {
+      server_stream = mongoc_cluster_stream_for_server (&cursor->client->cluster,
+                                                        cursor->hint,
+                                                        true /* reconnect_ok */,
+                                                        &cursor->error);
+   } else {
+      server_stream = mongoc_cluster_stream_for_reads (&cursor->client->cluster,
+                                                       cursor->read_prefs,
+                                                       &cursor->error);
+
+      if (server_stream) {
+         cursor->hint = server_stream->sd->id;
+      }
+   }
+
+   RETURN (server_stream);
+}
+
+
 static bool
 _mongoc_cursor_query (mongoc_cursor_t *cursor)
 {
-   mongoc_topology_t *topology;
-   mongoc_server_description_t *sd;
+   mongoc_server_stream_t *server_stream;
+   mongoc_apply_read_prefs_result_t result = READ_PREFS_RESULT_INIT;
    mongoc_rpc_t rpc;
    uint32_t request_id;
 
@@ -283,36 +309,20 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
       rpc.query.fields = NULL;
    }
 
-   topology = cursor->client->topology;
-
-   if (!cursor->hint) {
-      sd = mongoc_cluster_select_by_optype (
-         &cursor->client->cluster,
-         MONGOC_SS_READ,
-         cursor->read_prefs,
-         &cursor->error);
-
-      if (!sd) {
-         GOTO (failure);
-      }
-
-      cursor->hint = sd->id;
-      mongoc_server_description_destroy (sd);
-   }
-
-   if (!apply_read_preferences (cursor->read_prefs,
-                                false /* is_write_command */,
-                                topology,
-                                cursor->hint,
-                                &cursor->query,
-                                &rpc.query,
-                                &cursor->error)) {
+   server_stream = _mongoc_cursor_fetch_stream (cursor);
+   if (!server_stream) {
       GOTO (failure);
    }
 
+   apply_read_preferences (cursor->read_prefs, server_stream,
+                           &cursor->query, cursor->flags, &result);
+
+   rpc.query.query = bson_get_data (result.query_with_read_prefs);
+   rpc.query.flags = result.flags;
+
    if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
-                                        &rpc, 1, cursor->hint,
-                                        NULL, true, &cursor->error)) {
+                                        &rpc, 1, server_stream,
+                                        NULL, &cursor->error)) {
       GOTO (failure);
    }
 
@@ -323,7 +333,7 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    if (!_mongoc_client_recv(cursor->client,
                             &cursor->rpc,
                             &cursor->buffer,
-                            cursor->hint,
+                            server_stream,
                             &cursor->error)) {
       GOTO (failure);
    }
@@ -375,11 +385,17 @@ _mongoc_cursor_query (mongoc_cursor_t *cursor)
    cursor->end_of_event = false;
    cursor->sent = true;
 
+   mongoc_server_stream_cleanup (server_stream);
+   apply_read_prefs_result_cleanup (&result);
+
    RETURN (true);
 
 failure:
    cursor->failed = true;
    cursor->done = true;
+
+   mongoc_server_stream_cleanup (server_stream);
+   apply_read_prefs_result_cleanup (&result);
 
    RETURN (false);
 }
@@ -388,6 +404,7 @@ failure:
 static bool
 _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 {
+   mongoc_server_stream_t *server_stream;
    uint64_t cursor_id;
    uint32_t request_id;
    mongoc_rpc_t rpc;
@@ -395,6 +412,11 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    ENTRY;
 
    BSON_ASSERT (cursor);
+
+   server_stream = _mongoc_cursor_fetch_stream (cursor);
+   if (!server_stream) {
+      GOTO (failure);
+   }
 
    if (!cursor->in_exhaust) {
       if (!(cursor_id = cursor->rpc.reply.cursor_id)) {
@@ -419,8 +441,8 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       rpc.get_more.cursor_id = cursor_id;
 
       if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
-                                           &rpc, 1, cursor->hint,
-                                           NULL, true, &cursor->error)) {
+                                           &rpc, 1, server_stream,
+                                           NULL, &cursor->error)) {
          GOTO (failure);
       }
 
@@ -434,7 +456,7 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
    if (!_mongoc_client_recv(cursor->client,
                             &cursor->rpc,
                             &cursor->buffer,
-                            cursor->hint,
+                            server_stream,
                             &cursor->error)) {
       GOTO (failure);
    }
@@ -471,11 +493,15 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
    cursor->end_of_event = false;
 
+   mongoc_server_stream_cleanup (server_stream);
+
    RETURN(true);
 
 failure:
    cursor->done = true;
    cursor->failed = true;
+
+   mongoc_server_stream_cleanup (server_stream);
 
    RETURN(false);
 }

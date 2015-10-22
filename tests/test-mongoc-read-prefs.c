@@ -7,6 +7,11 @@
 #include "test-conveniences.h"
 
 
+static bool
+_can_be_command (const char *query) {
+   return (!bson_empty (tmp_bson (query)));
+}
+
 static void
 _test_query (const mongoc_uri_t *uri,
              mock_server_t *server,
@@ -65,6 +70,109 @@ _test_query (const mongoc_uri_t *uri,
    bson_destroy (&b);
 }
 
+static void
+_test_command (const mongoc_uri_t *uri,
+               mock_server_t *server,
+               const char *command,
+               mongoc_read_prefs_t *read_prefs,
+               mongoc_query_flags_t expected_query_flags,
+               const char *expected_query)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bson_t b = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+
+   client = mongoc_client_new_from_uri (uri);
+   collection = mongoc_client_get_collection (client, "test", "test");
+   mongoc_collection_set_read_prefs (collection, read_prefs);
+
+   cursor = mongoc_collection_command (collection,
+                                       MONGOC_QUERY_NONE,
+                                       0,
+                                       1,
+                                       0,
+                                       tmp_bson (command),
+                                       NULL,
+                                       read_prefs);
+
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_command (
+      server,
+      "test",
+      expected_query_flags,
+      expected_query);
+
+   mock_server_replies (request,
+                        0,                    /* flags */
+                        0,                    /* cursorId */
+                        0,                    /* startingFrom */
+                        1,                    /* numberReturned */
+                        "{'a': 1}");
+
+   /* mongoc_cursor_next returned true */
+   assert (future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&b);
+}
+
+static void
+_test_command_simple (const mongoc_uri_t *uri,
+                      mock_server_t *server,
+                      const char *command,
+                      mongoc_read_prefs_t *read_prefs,
+                      mongoc_query_flags_t expected_query_flags,
+                      const char *expected_query)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t b = BSON_INITIALIZER;
+   future_t *future;
+   request_t *request;
+
+   client = mongoc_client_new_from_uri (uri);
+   collection = mongoc_client_get_collection (client, "test", "test");
+   mongoc_collection_set_read_prefs (collection, read_prefs);
+
+   future = future_client_command_simple (client,
+                                          "test",
+                                          tmp_bson (command),
+                                          read_prefs,
+                                          NULL,
+                                          NULL);
+
+   request = mock_server_receives_command (
+      server,
+      "test",
+      expected_query_flags,
+      expected_query);
+
+   mock_server_replies (request,
+                        0,                    /* flags */
+                        0,                    /* cursorId */
+                        0,                    /* startingFrom */
+                        1,                    /* numberReturned */
+                        "{'ok': 1}");
+
+   /* mongoc_cursor_next returned true */
+   assert (future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&b);
+}
+
 
 typedef enum {
     READ_PREF_TEST_STANDALONE,
@@ -114,9 +222,36 @@ _test_read_prefs (read_pref_test_type_t test_type,
                 expected_query_flags,
                 expected_query);
 
+   if (_can_be_command (query_in)) {
+      _test_command (mock_server_get_uri (server),
+                     server,
+                     query_in,
+                     read_prefs,
+                     expected_query_flags,
+                     expected_query);
+
+      _test_command_simple (mock_server_get_uri (server),
+                            server,
+                            query_in,
+                            read_prefs,
+                            expected_query_flags,
+                            expected_query);
+   }
+
    mock_server_destroy (server);
 }
 
+
+/* test that a NULL read pref is the same as PRIMARY */
+static void
+test_read_prefs_standalone_null (void)
+{
+   _test_read_prefs (READ_PREF_TEST_STANDALONE, NULL,
+                     MONGOC_QUERY_SLAVE_OK, "{}", "{}");
+
+   _test_read_prefs (READ_PREF_TEST_STANDALONE, NULL,
+                     MONGOC_QUERY_SLAVE_OK, "{'a': 1}", "{'a': 1}");
+}
 
 static void
 test_read_prefs_standalone_primary (void)
@@ -176,6 +311,19 @@ test_read_prefs_standalone_tags (void)
 
    mongoc_read_prefs_destroy (read_prefs);
 }
+
+
+/* test that a NULL read pref is the same as PRIMARY */
+static void
+test_read_prefs_mongos_null (void)
+{
+   _test_read_prefs (READ_PREF_TEST_MONGOS, NULL,
+                     MONGOC_QUERY_NONE, "{}", "{}");
+
+   _test_read_prefs (READ_PREF_TEST_MONGOS, NULL,
+                     MONGOC_QUERY_NONE, "{'a': 1}", "{'a': 1}");
+}
+
 
 static void
 test_read_prefs_mongos_primary (void)
@@ -318,12 +466,16 @@ void
 test_read_prefs_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/ReadPrefs/score", test_mongoc_read_prefs_score);
+   TestSuite_Add (suite, "/ReadPrefs/standalone/null",
+                  test_read_prefs_standalone_null);
    TestSuite_Add (suite, "/ReadPrefs/standalone/primary",
                   test_read_prefs_standalone_primary);
    TestSuite_Add (suite, "/ReadPrefs/standalone/secondary",
                   test_read_prefs_standalone_secondary);
    TestSuite_Add (suite, "/ReadPrefs/standalone/tags",
                   test_read_prefs_standalone_tags);
+   TestSuite_Add (suite, "/ReadPrefs/mongos/null",
+                  test_read_prefs_mongos_null);
    TestSuite_Add (suite, "/ReadPrefs/mongos/primary",
                   test_read_prefs_mongos_primary);
    TestSuite_Add (suite, "/ReadPrefs/mongos/secondary",

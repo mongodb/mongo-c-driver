@@ -31,7 +31,7 @@
 #include "mongoc-opcode.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-rpc-private.h"
-#include "mongoc-server-description-private.h"
+#include "mongoc-server-stream-private.h"
 #include "mongoc-set-private.h"
 #include "mongoc-stream.h"
 #include "mongoc-topology-description-private.h"
@@ -81,24 +81,6 @@ void
 mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster,
                                 uint32_t          id);
 
-mongoc_server_description_t *
-mongoc_cluster_select_by_optype (mongoc_cluster_t *cluster,
-                                 mongoc_ss_optype_t optype,
-                                 const mongoc_read_prefs_t *read_prefs,
-                                 bson_error_t *error);
-
-uint32_t
-mongoc_cluster_preselect (mongoc_cluster_t             *cluster,
-                          mongoc_opcode_t               opcode,
-                          const mongoc_read_prefs_t    *read_prefs,
-                          bson_error_t                 *error);
-
-mongoc_server_description_t *
-mongoc_cluster_preselect_description (mongoc_cluster_t             *cluster,
-                                      mongoc_opcode_t               opcode,
-                                      const mongoc_read_prefs_t    *read_prefs,
-                                      bson_error_t                 *error /* OUT */);
-
 int32_t
 mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
                                   uint32_t          server_id);
@@ -129,42 +111,41 @@ bool
 mongoc_cluster_sendv_to_server (mongoc_cluster_t             *cluster,
                                 mongoc_rpc_t                 *rpcs,
                                 size_t                        rpcs_len,
-                                uint32_t                      server_id,
+                                mongoc_server_stream_t       *server_stream,
                                 const mongoc_write_concern_t *write_concern,
-                                bool                          reconnect_ok,
                                 bson_error_t                 *error);
 
 bool
-mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
-                         mongoc_rpc_t     *rpc,
-                         mongoc_buffer_t  *buffer,
-                         uint32_t          server_id,
-                         bson_error_t     *error);
+mongoc_cluster_try_recv (mongoc_cluster_t       *cluster,
+                         mongoc_rpc_t           *rpc,
+                         mongoc_buffer_t        *buffer,
+                         mongoc_server_stream_t *server_stream,
+                         bson_error_t           *error);
 
-mongoc_stream_t *
-mongoc_cluster_fetch_stream (mongoc_cluster_t *cluster,
-                             uint32_t server_id,
-                             bool reconnect_ok,
-                             bson_error_t *error);
+mongoc_server_stream_t *
+mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
+                                 const mongoc_read_prefs_t *read_prefs,
+                                 bson_error_t *error);
+
+mongoc_server_stream_t *
+mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
+                                  bson_error_t *error);
+
+mongoc_server_stream_t *
+mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
+                                  uint32_t server_id,
+                                  bool reconnect_ok,
+                                  bson_error_t *error);
 
 bool
 mongoc_cluster_run_command (mongoc_cluster_t *cluster,
                             mongoc_stream_t *stream,
+                            mongoc_query_flags_t flags,
                             const char *db_name,
                             const bson_t *command,
                             bson_t *reply,
                             bson_error_t *error);
 
-bool
-mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t *cluster,
-                                                 mongoc_stream_t *stream,
-                                                 const char *db_name,
-                                                 const bson_t *command,
-                                                 uint32_t server_id,
-                                                 const mongoc_read_prefs_t *read_prefs,
-                                                 bool is_write_command,
-                                                 bson_t *reply,
-                                                 bson_error_t *error);
 
 BSON_END_DECLS
 
