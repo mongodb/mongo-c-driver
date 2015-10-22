@@ -14,7 +14,6 @@ if test -z "$GREP"; then
 fi
 
 # Optional for documentation
-AC_PATH_PROG(PYTHON, python)
 AC_PATH_PROG(YELP_BUILD, yelp-build)
 
 AC_PROG_INSTALL

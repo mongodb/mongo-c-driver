@@ -23,9 +23,7 @@ BuildRequires:  pkgconfig
 %description
 mongo-c-driver is a library for building high-performance
 applications that communicate with the MongoDB NoSQL
-database in the C language. It can also be used to write
-fast client implementations in languages such as Python,
-Ruby, or Perl.
+database in the C language.
 
 
 %package devel
