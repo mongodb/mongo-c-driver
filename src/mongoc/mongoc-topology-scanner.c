@@ -423,14 +423,17 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
                                     (struct sockaddr *)&saddr,
                                     sizeof saddr,
                                     -1)) {
-      bson_string_t *msg = bson_string_new("Failed to connect to UNIX domain socket: ");
-      bson_string_append_printf(msg, "%s", strerror(mongoc_socket_errno(sock)));
-      mongoc_socket_destroy (sock);
+      char buf[128];
+      char *errstr;
+
+      errstr = bson_strerror_r(mongoc_socket_errno(sock), buf, sizeof(buf));
+
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_CONNECT,
-                      msg->str);
-      bson_string_free(msg, true);
+                      "Failed to connect to UNIX domain socket: %s",
+                      errstr);
+      mongoc_socket_destroy (sock);
       RETURN (NULL);
    }
 
