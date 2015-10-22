@@ -852,6 +852,33 @@ test_mongoc_client_ipv6 (void)
 }
 
 
+static void
+test_mongoc_client_unix_domain_socket (void *context)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   char *uri_str;
+   bson_iter_t iter;
+   bson_t reply;
+
+   uri_str = test_framework_get_unix_domain_socket_uri_str ();
+   client = mongoc_client_new (uri_str);
+
+   assert (client);
+
+   ASSERT_OR_PRINT (mongoc_client_get_server_status (client, NULL,
+                                                     &reply, &error), error);
+
+   assert (bson_iter_init_find (&iter, &reply, "host"));
+   assert (bson_iter_init_find (&iter, &reply, "version"));
+   assert (bson_iter_init_find (&iter, &reply, "ok"));
+
+   bson_destroy (&reply);
+
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -884,6 +911,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/recovering", test_recovering);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
+   TestSuite_AddFull (suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_windows);
 
 #ifdef TODO_CDRIVER_689
    TestSuite_Add (suite, "/Client/wire_version", test_wire_version);

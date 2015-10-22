@@ -230,6 +230,33 @@ test_framework_getenv_int64 (const char *name,
    return default_value;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_unix_domain_socket_path --
+ *
+ *       Get the path to Unix Domain Socket .sock of the test MongoDB server.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_unix_domain_socket_path (void)
+{
+   char *path = test_framework_getenv ("MONGOC_TEST_UNIX_DOMAIN_SOCKET");
+
+   if (path) {
+      return path;
+   }
+   return bson_strdup_printf ("%%2Ftmp%%2Fmongodb-%d.sock",
+         test_framework_get_port());
+}
 /*
  *--------------------------------------------------------------------------
  *
@@ -477,6 +504,45 @@ test_framework_get_ssl (void)
    }
 
    return test_framework_getenv_bool ("MONGOC_TEST_SSL");
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_unix_domain_socket_uri_str --
+ *
+ *       Get the connection string (unix domain socket style) of the test
+ *       MongoDB server based on the variables set in the environment.
+ *       Does *not* call isMaster to discover your actual topology.
+ *
+ * Returns:
+ *       A string you must bson_free.
+ *
+ * Side effects:
+ *       Same as test_framework_get_user_password.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+test_framework_get_unix_domain_socket_uri_str ()
+{
+   char *path;
+   char *test_uri_str;
+   char *test_uri_str_auth;
+
+   path = test_framework_get_unix_domain_socket_path ();
+   test_uri_str = bson_strdup_printf (
+      "mongodb://%s/%s",
+      path,
+      test_framework_get_ssl () ? "?ssl=true" : "");
+
+   test_uri_str_auth = test_framework_add_user_password_from_env (test_uri_str);
+
+   bson_free (path);
+   bson_free (test_uri_str);
+
+   return test_uri_str_auth;
 }
 
 
@@ -917,6 +983,12 @@ test_framework_is_replset (void)
 }
 
 int
+test_framework_skip_if_single (void)
+{
+   return (test_framework_is_mongos () || test_framework_is_replset());
+}
+
+int
 test_framework_skip_if_mongos (void)
 {
    return test_framework_is_mongos() ? 0 : 1;
@@ -926,6 +998,16 @@ int
 test_framework_skip_if_replset (void)
 {
    return test_framework_is_replset() ? 0 : 1;
+}
+
+int
+test_framework_skip_if_windows (void)
+{
+#ifdef _WIN32
+   return false;
+#else
+   return true;
+#endif
 }
 
 bool
