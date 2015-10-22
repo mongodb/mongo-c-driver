@@ -319,6 +319,7 @@ mongoc_cluster_run_command_with_read_preference (mongoc_cluster_t            *cl
 done:
    if (reply && reply_local_initialized) {
       bson_copy_to (&reply_local, reply);
+      bson_destroy (&reply_local);
    } else if (reply) {
       bson_init (reply);
    }
