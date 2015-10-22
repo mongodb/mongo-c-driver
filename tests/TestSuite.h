@@ -77,7 +77,7 @@ extern "C" {
       if (0 != memcmp(a, b, n)) { \
          fprintf (stderr, \
                   "Failed comparing %d bytes: \"%.*s\" != \"%.*s\"", \
-                  n, n, a, n, b); \
+                  n, n, (char *) a, n, (char *) b); \
          abort (); \
       }\
    } while (0)
