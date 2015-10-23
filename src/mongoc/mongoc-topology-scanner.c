@@ -407,7 +407,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
    memset (&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
    bson_snprintf (saddr.sun_path, sizeof saddr.sun_path - 1,
-                  "%s", host->host_and_port);
+                  "%s", host->host);
 
    sock = mongoc_socket_new (AF_UNIX, SOCK_STREAM, 0);
 
@@ -423,11 +423,17 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
                                     (struct sockaddr *)&saddr,
                                     sizeof saddr,
                                     -1)) {
-      mongoc_socket_destroy (sock);
+      char buf[128];
+      char *errstr;
+
+      errstr = bson_strerror_r(mongoc_socket_errno(sock), buf, sizeof(buf));
+
       bson_set_error (error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_CONNECT,
-                      "Failed to connect to UNIX domain socket.");
+                      "Failed to connect to UNIX domain socket: %s",
+                      errstr);
+      mongoc_socket_destroy (sock);
       RETURN (NULL);
    }
 

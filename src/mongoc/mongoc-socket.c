@@ -740,7 +740,7 @@ mongoc_socket_new (int domain,   /* IN */
       GOTO (fail);
    }
 
-   if (!_mongoc_socket_setnodelay (sd)) {
+   if (domain != AF_UNIX && !_mongoc_socket_setnodelay (sd)) {
       MONGOC_WARNING ("Failed to enable TCP_NODELAY.");
    }
 
