@@ -553,47 +553,6 @@ test_framework_get_unix_domain_socket_uri_str ()
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_get_uri_str_from_env --
- *
- *       Get the connection string of the test MongoDB server based on
- *       the variables set in the environment. Does *not* call isMaster
- *       to discover your actual topology.
- *
- * Returns:
- *       A string you must bson_free.
- *
- * Side effects:
- *       Same as test_framework_get_user_password.
- *
- *--------------------------------------------------------------------------
- */
-static char *
-test_framework_get_uri_str_from_env ()
-{
-   char *host;
-   uint16_t port;
-   char *test_uri_str;
-   char *test_uri_str_auth;
-
-   host = test_framework_get_host ();
-   port = test_framework_get_port ();
-   test_uri_str = bson_strdup_printf (
-      "mongodb://%s:%hu/%s",
-      host,
-      port,
-      test_framework_get_ssl () ? "?ssl=true" : "");
-
-   test_uri_str_auth = test_framework_add_user_password_from_env (test_uri_str);
-
-   bson_free (host);
-   bson_free (test_uri_str);
-
-   return test_uri_str_auth;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * call_ismaster_with_host_and_port --
  *
  *       Call isMaster on a server, possibly over SSL.
@@ -690,8 +649,7 @@ set_name (bson_t *ismaster_response)
  *
  *       Get the connection string of the test MongoDB topology --
  *       standalone, replica set, mongos, or mongoses -- along with
- *       SSL options, but not username and password. Calls
- *       test_framework_get_uri_str_from_env, calls isMaster with
+ *       SSL options, but not username and password. Calls calls isMaster with
  *       that connection string to discover your topology, and
  *       returns an appropriate connection string for the topology
  *       type.
