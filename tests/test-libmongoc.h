@@ -41,7 +41,6 @@ mongoc_uri_t *test_framework_get_uri (void);
 void test_framework_set_ssl_opts (mongoc_client_t *client);
 mongoc_client_t *test_framework_client_new (void);
 mongoc_client_pool_t *test_framework_client_pool_new (void);
-bool test_framework_max_wire_version_at_least (int version);
 
 bool test_framework_is_mongos (void);
 bool test_framework_is_replset (void);
