@@ -91,6 +91,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-uri-private.h \
 	src/mongoc/mongoc-util-private.h \
 	src/mongoc/mongoc-version.h \
+	src/mongoc/mongoc-version-functions.h \
 	src/mongoc/mongoc-write-command-private.h \
 	src/mongoc/mongoc-write-concern-private.h \
 	src/mongoc/mongoc-write-concern.h \
@@ -150,6 +151,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-topology-scanner.c \
 	src/mongoc/mongoc-uri.c \
 	src/mongoc/mongoc-util.c \
+	src/mongoc/mongoc-version-functions.c \
 	src/mongoc/mongoc-write-command.c \
 	src/mongoc/mongoc-write-concern.c
 

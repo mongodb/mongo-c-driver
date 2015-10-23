@@ -44,6 +44,7 @@ typedef enum
    MONGOC_ERROR_GRIDFS,
    MONGOC_ERROR_SCRAM,
    MONGOC_ERROR_SERVER_SELECTION,
+   MONGOC_ERROR_WRITE_CONCERN,
 } mongoc_error_domain_t;
 
 

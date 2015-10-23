@@ -50,8 +50,8 @@ mongoc_topology_description_init (mongoc_topology_description_t     *description
 {
    ENTRY;
 
-   bson_return_if_fail (description);
-   bson_return_if_fail (type == MONGOC_TOPOLOGY_UNKNOWN ||
+   BSON_ASSERT (description);
+   BSON_ASSERT (type == MONGOC_TOPOLOGY_UNKNOWN ||
                         type == MONGOC_TOPOLOGY_SINGLE ||
                         type == MONGOC_TOPOLOGY_RS_NO_PRIMARY);
 
@@ -421,8 +421,7 @@ mongoc_server_description_t *
 mongoc_topology_description_select (mongoc_topology_description_t *topology,
                                     mongoc_ss_optype_t             optype,
                                     const mongoc_read_prefs_t     *read_pref,
-                                    int64_t                        local_threshold_ms,
-                                    bson_error_t                  *error) /* OUT */
+                                    int64_t                        local_threshold_ms)
 {
    mongoc_array_t suitable_servers;
    mongoc_server_description_t *sd = NULL;
@@ -485,7 +484,7 @@ mongoc_server_description_t *
 mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
                                           uint32_t                       id)
 {
-   bson_return_val_if_fail (description, NULL);
+   BSON_ASSERT (description);
 
    return (mongoc_server_description_t *)mongoc_set_get(description->servers, id);
 }
@@ -509,8 +508,8 @@ static void
 _mongoc_topology_description_remove_server (mongoc_topology_description_t *description,
                                             mongoc_server_description_t   *server)
 {
-   bson_return_if_fail (description);
-   bson_return_if_fail (server);
+   BSON_ASSERT (description);
+   BSON_ASSERT (server);
 
    mongoc_set_rm(description->servers, server->id);
 }
@@ -560,8 +559,8 @@ _mongoc_topology_description_has_server (mongoc_topology_description_t *descript
 {
    mongoc_address_and_id_t data;
 
-   bson_return_val_if_fail (description, 0);
-   bson_return_val_if_fail (address, 0);
+   BSON_ASSERT (description);
+   BSON_ASSERT (address);
 
    data.address = address;
    data.found = false;
@@ -618,8 +617,8 @@ _mongoc_topology_description_label_unknown_member (mongoc_topology_description_t
 {
    mongoc_address_and_type_t data;
 
-   bson_return_if_fail (description);
-   bson_return_if_fail (address);
+   BSON_ASSERT (description);
+   BSON_ASSERT (address);
 
    data.type = type;
    data.address = address;
@@ -709,7 +708,7 @@ mongoc_topology_description_invalidate_server (mongoc_topology_description_t *to
    bson_error_t error;
 
    sd = mongoc_topology_description_server_by_id (topology, id);
-   mongoc_topology_description_handle_ismaster(topology, sd, NULL, 0, &error);
+   mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, &error);
 
    return;
 }
@@ -742,8 +741,8 @@ mongoc_topology_description_add_server (mongoc_topology_description_t *topology,
    uint32_t server_id;
    mongoc_server_description_t *description;
 
-   bson_return_val_if_fail (topology, false);
-   bson_return_val_if_fail (server, false);
+   BSON_ASSERT (topology);
+   BSON_ASSERT (server);
 
    if (!_mongoc_topology_description_has_server(topology, server, &server_id)){
 
@@ -881,8 +880,8 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
 {
    mongoc_primary_and_topology_t data;
 
-   bson_return_if_fail (topology);
-   bson_return_if_fail (server);
+   BSON_ASSERT (topology);
+   BSON_ASSERT (server);
 
    if (!_mongoc_topology_description_has_server(topology, server->connection_address, NULL)) return;
 
@@ -933,8 +932,8 @@ static void
 _mongoc_topology_description_update_rs_without_primary (mongoc_topology_description_t *topology,
                                                         mongoc_server_description_t   *server)
 {
-   bson_return_if_fail (topology);
-   bson_return_if_fail (server);
+   BSON_ASSERT (topology);
+   BSON_ASSERT (server);
 
    if (!_mongoc_topology_description_has_server(topology, server->connection_address, NULL)) {
       return;
@@ -982,8 +981,8 @@ static void
 _mongoc_topology_description_update_rs_with_primary_from_member (mongoc_topology_description_t *topology,
                                                                  mongoc_server_description_t   *server)
 {
-   bson_return_if_fail (topology);
-   bson_return_if_fail (server);
+   BSON_ASSERT (topology);
+   BSON_ASSERT (server);
 
    if (!_mongoc_topology_description_has_server(topology, server->connection_address, NULL)) {
       return;
@@ -1097,8 +1096,8 @@ static void
 _mongoc_topology_description_update_unknown_with_standalone (mongoc_topology_description_t *topology,
                                                              mongoc_server_description_t   *server)
 {
-   bson_return_if_fail (topology);
-   bson_return_if_fail (server);
+   BSON_ASSERT (topology);
+   BSON_ASSERT (server);
 
    if (!_mongoc_topology_description_has_server(topology, server->connection_address, NULL)) return;
 
@@ -1213,12 +1212,13 @@ mongoc_topology_description_handle_ismaster (
    int64_t                        rtt_msec,
    bson_error_t                  *error)
 {
-   bson_return_if_fail (topology);
-   bson_return_if_fail (sd);
+   BSON_ASSERT (topology);
+   BSON_ASSERT (sd);
 
    if (!_mongoc_topology_description_has_server (topology,
                                                  sd->connection_address,
                                                  NULL)) {
+      MONGOC_DEBUG("Couldn't find %s in Topology Description", sd->connection_address);
       return;
    }
 
@@ -1226,6 +1226,9 @@ mongoc_topology_description_handle_ismaster (
                                               error);
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
+      TRACE("Transitioning to %d for %d", topology->type, sd->type);
       gSDAMTransitionTable[sd->type][topology->type] (topology, sd);
+   } else {
+      TRACE("No transition entry to %d for %d", topology->type, sd->type);
    }
 }

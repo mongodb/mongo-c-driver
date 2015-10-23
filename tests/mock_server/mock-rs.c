@@ -19,18 +19,25 @@
 
 #include "mock-rs.h"
 #include "sync-queue.h"
+#include "../test-libmongoc.h"
 
 
 struct _mock_rs_t {
    bool has_primary;
    int n_secondaries;
    int n_arbiters;
-   mongoc_array_t servers;
    int32_t max_wire_version;
+   int64_t request_timeout_msec;
+   bool verbose;
+
+   mock_server_t *primary;
+   mongoc_array_t secondaries;
+   mongoc_array_t arbiters;
+   mongoc_array_t servers;
+
    char *hosts_str;
    mongoc_uri_t *uri;
    sync_queue_t *q;
-   bool verbose;
 };
 
 
@@ -124,8 +131,12 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
    rs->has_primary = has_primary;
    rs->n_secondaries = n_secondaries;
    rs->n_arbiters = n_arbiters;
+   rs->request_timeout_msec = 10 * 1000;
+   _mongoc_array_init (&rs->secondaries, sizeof (mock_server_t *));
+   _mongoc_array_init (&rs->arbiters, sizeof (mock_server_t *));
    _mongoc_array_init (&rs->servers, sizeof (mock_server_t *));
    rs->q = q_new ();
+   rs->verbose = test_framework_getenv_bool ("MONGOC_TEST_SERVER_VERBOSE");
 
    return rs;   
 }
@@ -151,6 +162,41 @@ mock_rs_set_verbose (mock_rs_t *rs,
    for (i = 0; i < rs->servers.len; i++) {
       mock_server_set_verbose (get_server (&rs->servers, i), verbose);
    }
+}
+
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_rs_get_request_timeout_msec --
+ *
+ *       How long mock_rs_receives_* functions wait for a client
+ *       request before giving up and returning NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int64_t
+mock_rs_get_request_timeout_msec (mock_rs_t *rs)
+{
+   return rs->request_timeout_msec;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_rs_set_request_timeout_msec --
+ *
+ *       How long mock_rs_receives_* functions wait for a client
+ *       request before giving up and returning NULL.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_rs_set_request_timeout_msec (mock_rs_t *rs,
+                                  int64_t request_timeout_msec)
+{
+   rs->request_timeout_msec = request_timeout_msec;
 }
 
 
@@ -186,44 +232,41 @@ void
 mock_rs_run (mock_rs_t *rs)
 {
    int i;
-   mock_server_t *primary = NULL;
-   mongoc_array_t secondaries;
-   mongoc_array_t arbiters;
    mock_server_t *server;
    char *hosts_str;
    char *ismaster_json;
 
    if (rs->has_primary) {
       /* start primary */
-      primary = mock_server_new ();
-      mock_server_run (primary);
+      rs->primary = mock_server_new ();
+      mock_server_run (rs->primary);
    }
 
    /* start secondaries */
-   _mongoc_array_init (&secondaries, sizeof(mock_server_t *));
+   _mongoc_array_init (&rs->secondaries, sizeof(mock_server_t *));
 
    for (i = 0; i < rs->n_secondaries; i++) {
       server = mock_server_new ();
       mock_server_run (server);
-      _mongoc_array_append_val (&secondaries, server);
+      _mongoc_array_append_val (&rs->secondaries, server);
    }
 
    /* start arbiters */
-   _mongoc_array_init (&arbiters, sizeof(mock_server_t *));
+   _mongoc_array_init (&rs->arbiters, sizeof(mock_server_t *));
 
    for (i = 0; i < rs->n_arbiters; i++) {
       server = mock_server_new ();
       mock_server_run (server);
-      _mongoc_array_append_val (&arbiters, server);
+      _mongoc_array_append_val (&rs->arbiters, server);
    }
 
    /* add all servers to replica set */
    if (rs->has_primary) {
-      _mongoc_array_append_val (&rs->servers, primary);
+      _mongoc_array_append_val (&rs->servers, rs->primary);
    }
 
-   append_array (&rs->servers, &secondaries);
-   append_array (&rs->servers, &arbiters);
+   append_array (&rs->servers, &rs->secondaries);
+   append_array (&rs->servers, &rs->arbiters);
 
    /* enqueue unhandled requests in rs->q, they're retrieved with
     * mock_rs_receives_query() &co. rs_q_append is added first so it
@@ -247,7 +290,7 @@ mock_rs_run (mock_rs_t *rs)
          "{'ok': 1, 'ismaster': true, 'secondary': false, 'maxWireVersion': %d, "
             "'setName': 'rs', 'hosts': [%s]}", rs->max_wire_version, hosts_str);
 
-      mock_server_auto_ismaster (primary, ismaster_json);
+      mock_server_auto_ismaster (rs->primary, ismaster_json);
       bson_free (ismaster_json);
    }
 
@@ -257,7 +300,7 @@ mock_rs_run (mock_rs_t *rs)
       "'setName': 'rs', 'hosts': [%s]}", rs->max_wire_version, hosts_str);
 
    for (i = 0; i < rs->n_secondaries; i++) {
-      mock_server_auto_ismaster (get_server (&secondaries, i), ismaster_json);
+      mock_server_auto_ismaster (get_server (&rs->secondaries, i), ismaster_json);
    }
 
    bson_free (ismaster_json);
@@ -268,7 +311,7 @@ mock_rs_run (mock_rs_t *rs)
       "'setName': 'rs', 'hosts': [%s]}", rs->max_wire_version, hosts_str);
 
    for (i = 0; i < rs->n_arbiters; i++) {
-      mock_server_auto_ismaster (get_server (&arbiters, i), ismaster_json);
+      mock_server_auto_ismaster (get_server (&rs->arbiters, i), ismaster_json);
    }
 
    for (i = 0; i < rs->servers.len; i++) {
@@ -276,8 +319,6 @@ mock_rs_run (mock_rs_t *rs)
    }
 
    bson_free (ismaster_json);
-   _mongoc_array_destroy (&secondaries);
-   _mongoc_array_destroy (&arbiters);
 }
 
 
@@ -333,17 +374,16 @@ mock_rs_receives_query (mock_rs_t *rs,
 {
    request_t *request;
 
-   /* TODO: configurable timeout val */
-   request = (request_t *) q_get (rs->q, 10 * 1000);
+   request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
 
-   if (!request_matches_query (request,
-                               ns,
-                               flags,
-                               skip,
-                               n_return,
-                               query_json,
-                               fields_json,
-                               false)) {
+   if (request && !request_matches_query (request,
+                                          ns,
+                                          flags,
+                                          skip,
+                                          n_return,
+                                          query_json,
+                                          fields_json,
+                                          false)) {
       request_destroy (request);
       return NULL;
    }
@@ -377,13 +417,12 @@ mock_rs_receives_getmore (mock_rs_t *rs,
 {
    request_t *request;
 
-   /* TODO: configurable timeout val */
-   request = (request_t *) q_get (rs->q, 10 * 1000);
+   request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
 
-   if (!request_matches_getmore (request,
-                                 ns,
-                                 n_return,
-                                 cursor_id)) {
+   if (request && !request_matches_getmore (request,
+                                            ns,
+                                            n_return,
+                                            cursor_id)) {
       request_destroy (request);
       return NULL;
    }
@@ -441,10 +480,9 @@ mock_rs_receives_kill_cursors (mock_rs_t *rs,
 {
    request_t *request;
 
-   /* TODO: configurable timeout val */
-   request = (request_t *) q_get (rs->q, 10 * 1000);
+   request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
 
-   if (!request_matches_kill_cursors (request, cursor_id)) {
+   if (request && !request_matches_kill_cursors (request, cursor_id)) {
       request_destroy (request);
       return NULL;
    }
@@ -483,6 +521,72 @@ mock_rs_replies (request_t *request,
 
 /*--------------------------------------------------------------------------
  *
+ * mock_rs_request_is_to_primary --
+ *
+ *       Check that the request is non-NULL and sent to a
+ *       primary in this replica set.
+ *
+ * Returns:
+ *       True if so.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mock_rs_request_is_to_primary (mock_rs_t *rs,
+                               request_t *request)
+{
+   uint16_t port;
+
+   assert (request);
+   port = request_get_server_port (request);
+
+   return (rs->primary && port == mock_server_get_port (rs->primary));
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_rs_request_is_to_secondary --
+ *
+ *       Check that the request is non-NULL and sent to a
+ *       secondary in this replica set.
+ *
+ * Returns:
+ *       True if so.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mock_rs_request_is_to_secondary (mock_rs_t *rs,
+                                 request_t *request)
+{
+   uint16_t port;
+   int i;
+
+   assert (request);
+
+   port = request_get_server_port (request);
+
+   for (i = 0; i < rs->secondaries.len; i++) {
+      if (port == mock_server_get_port (get_server (&rs->secondaries, i))) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * mock_rs_destroy --
  *
  *       Free a mock_rs_t.
@@ -505,6 +609,8 @@ mock_rs_destroy (mock_rs_t *rs)
       mock_server_destroy (get_server (&rs->servers, i));
    }
 
+   _mongoc_array_destroy (&rs->secondaries);
+   _mongoc_array_destroy (&rs->arbiters);
    _mongoc_array_destroy (&rs->servers);
 
    bson_free (rs->hosts_str);

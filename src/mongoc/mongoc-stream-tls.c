@@ -44,6 +44,7 @@
 
 #define MONGOC_STREAM_TLS_BUFFER_SIZE 4096
 
+
 /**
  * mongoc_stream_tls_t:
  *
@@ -220,7 +221,6 @@ _mongoc_stream_tls_bio_read (BIO  *b,
    BIO_clear_retry_flags (b);
 
    if ((ret <= 0) && MONGOC_ERRNO_IS_AGAIN (errno)) {
-      MONGOC_DEBUG("set_retry_read");
       BIO_set_retry_read (b);
    }
 
@@ -533,14 +533,9 @@ _mongoc_stream_tls_write (mongoc_stream_tls_t *tls,
       }
    }
 
-   if (ret <= 0 && BIO_should_retry (tls->bio)) {
-      if (tls->timeout_msec > 0) {
-         TRACE("I do have %dmsec left", tls->timeout_msec);
-      }
-   }
-
    RETURN (ret);
 }
+
 
 /*
  *--------------------------------------------------------------------------
@@ -642,7 +637,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
 
             child_ret = _mongoc_stream_tls_write (tls, to_write, to_write_len);
             if (child_ret != to_write_len) {
-               MONGOC_DEBUG("Got child_ret: %ld while to_write_len is: %ld",
+               TRACE("Got child_ret: %ld while to_write_len is: %ld",
                      child_ret, to_write_len);
             }
 
@@ -667,9 +662,7 @@ _mongoc_stream_tls_writev (mongoc_stream_t *stream,
    if (buf_head != buf_tail) {
       /* If we have any bytes buffered, send */
 
-      TRACE("buffered writing %ld", buf_tail - buf_head);
       child_ret = _mongoc_stream_tls_write (tls, buf_head, buf_tail - buf_head);
-      TRACE("Got %ld written", child_ret);
 
       if (child_ret < 0) {
          RETURN (child_ret);
@@ -940,7 +933,7 @@ static bool
 _mongoc_stream_tls_check_closed (mongoc_stream_t *stream) /* IN */
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   bson_return_val_if_fail(stream, -1);
+   BSON_ASSERT (stream);
    return mongoc_stream_check_closed (tls->base_stream);
 }
 

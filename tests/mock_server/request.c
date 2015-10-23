@@ -133,14 +133,6 @@ request_matches_query (const request_t *request,
 
    assert (request->docs.len <= 2);
 
-   /* TODO: make a good request repr, skip logging and say:
-    *   request_t *expected = request_new_from_pattern (...);
-    *   if (!request_matches (request, expected)) {
-    *       MONGOC_ERROR ("expected %s, got %s",
-    *                     request_repr (expected), request_repr (request));
-    *       return false;
-    *   }
-    */
    if (request->is_command && !is_command) {
       MONGOC_ERROR ("expected query, got command");
       return false;
@@ -471,6 +463,28 @@ request_get_server_port (request_t *request)
 
 /*--------------------------------------------------------------------------
  *
+ * request_get_client_port --
+ *
+ *       Get the client port this request was sent from.
+ *
+ * Returns:
+ *       A port number.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+uint16_t
+request_get_client_port (request_t *request)
+{
+   return request->client_port;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * request_destroy --
  *
  *       Free a request_t.
@@ -575,7 +589,7 @@ request_from_query (request_t *request,
    int32_t len;
    bson_t *query;
    bson_iter_t iter;
-   bson_string_t *query_as_str = bson_string_new ("");
+   bson_string_t *query_as_str = bson_string_new ("OP_QUERY ");
    char *str;
 
    memcpy (&len, rpc->query.query, 4);
@@ -637,7 +651,7 @@ request_from_insert (request_t *request,
 {
    uint8_t *pos = (uint8_t *)request->request_rpc.insert.documents->iov_base;
    uint8_t *end = request->data + request->data_len;
-   bson_string_t *insert_as_str = bson_string_new("");
+   bson_string_t *insert_as_str = bson_string_new("OP_INSERT");
    bson_t *doc;
    size_t n_documents;
    size_t i;
@@ -653,7 +667,7 @@ request_from_insert (request_t *request,
 
    n_documents = request->docs.len;
 
-   bson_string_append_printf (insert_as_str, "%d ", (int)n_documents);
+   bson_string_append_printf (insert_as_str, " %d ", (int)n_documents);
 
    for (i = 0; i < n_documents; i++) {
       str = bson_as_json (request_get_doc (request, (int) i), NULL);
@@ -722,7 +736,7 @@ request_from_update (request_t *request,
 {
    int32_t len;
    bson_t *doc;
-   bson_string_t *update_as_str = bson_string_new ("");
+   bson_string_t *update_as_str = bson_string_new ("OP_UPDATE ");
    char *str;
 
    memcpy (&len, rpc->update.selector, 4);
@@ -774,7 +788,7 @@ request_from_delete (request_t *request,
 {
    int32_t len;
    bson_t *doc;
-   bson_string_t *delete_as_str = bson_string_new ("");
+   bson_string_t *delete_as_str = bson_string_new ("OP_DELETE ");
    char *str;
 
    memcpy (&len, rpc->delete_.selector, 4);

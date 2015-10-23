@@ -121,8 +121,8 @@ void *
 mongoc_set_get_item (mongoc_set_t *set,
                      int           index)
 {
-   bson_return_val_if_fail (set, NULL);
-   bson_return_val_if_fail (index < set->items_len, NULL);
+   BSON_ASSERT (set);
+   BSON_ASSERT (index < set->items_len);
 
    return set->items[index].item;
 }

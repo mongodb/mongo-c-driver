@@ -105,7 +105,7 @@ static MONGOC_ONCE_FUN( _mongoc_do_init)
 
       /* check the version perhaps? */
 
-      assert (err == 0);
+      BSON_ASSERT (err == 0);
    }
 #endif
 

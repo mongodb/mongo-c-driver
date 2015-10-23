@@ -102,6 +102,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-collection.c \
 	tests/test-mongoc-cursor.c \
 	tests/test-mongoc-database.c \
+	tests/test-mongoc-exhaust.c \
 	tests/test-mongoc-gridfs.c \
 	tests/test-mongoc-gridfs-file-page.c \
 	tests/test-mongoc-log.c \
@@ -113,6 +114,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-socket.c \
 	tests/test-mongoc-sdam.c \
 	tests/test-mongoc-server-selection.c \
+        tests/test-mongoc-server-selection-errors.c \
 	tests/test-mongoc-set.c \
 	tests/test-mongoc-stream.c \
 	tests/test-mongoc-thread.c \
@@ -121,6 +123,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-topology.c \
 	tests/test-mongoc-uri.c \
 	tests/test-mongoc-usleep.c \
+	tests/test-mongoc-version.c \
 	tests/test-mongoc-write-concern.c \
 	tests/test-libmongoc.h \
 	tests/test-sasl.c \
@@ -256,7 +259,10 @@ EXTRA_DIST += \
 	tests/mongoc-tests.h \
 	tests/trust_dir.cnf \
 	tests/make_ca.pl \
-	tests/c_rehash
+	tests/c_rehash \
+	$(wildcard tests/json/server_discovery_and_monitoring/*/*.json) \
+	$(wildcard tests/json/server_selection/rtt/*.json) \
+	$(wildcard tests/json/server_selection/server_selection/*/*/*.json)
 
 if OS_DARWIN
 DEBUGGER = lldb --

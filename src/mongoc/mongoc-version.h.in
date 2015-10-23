@@ -91,5 +91,4 @@
          (MONGOC_MAJOR_VERSION == (major) && MONGOC_MINOR_VERSION == (minor) && \
           MONGOC_MICRO_VERSION >= (micro)))
 
-
 #endif /* MONGOC_VERSION_H */

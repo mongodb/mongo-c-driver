@@ -65,8 +65,8 @@ _mongoc_database_new (mongoc_client_t              *client,
 
    ENTRY;
 
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(name, NULL);
+   BSON_ASSERT (client);
+   BSON_ASSERT (name);
 
    db = (mongoc_database_t *)bson_malloc0(sizeof *db);
    db->client = client;
@@ -104,7 +104,7 @@ mongoc_database_destroy (mongoc_database_t *database)
 {
    ENTRY;
 
-   bson_return_if_fail(database);
+   BSON_ASSERT (database);
 
    if (database->read_prefs) {
       mongoc_read_prefs_destroy(database->read_prefs);
@@ -188,7 +188,7 @@ mongoc_database_drop (mongoc_database_t *database,
    bool ret;
    bson_t cmd;
 
-   bson_return_val_if_fail(database, false);
+   BSON_ASSERT (database);
 
    bson_init(&cmd);
    bson_append_int32(&cmd, "dropDatabase", 12, 1);
@@ -233,9 +233,9 @@ mongoc_database_add_user_legacy (mongoc_database_t *database,
 
    ENTRY;
 
-   bson_return_val_if_fail(database, false);
-   bson_return_val_if_fail(username, false);
-   bson_return_val_if_fail(password, false);
+   BSON_ASSERT (database);
+   BSON_ASSERT (username);
+   BSON_ASSERT (password);
 
    /*
     * Users are stored in the <dbname>.system.users virtual collection.
@@ -307,8 +307,8 @@ mongoc_database_remove_user (mongoc_database_t *database,
 
    ENTRY;
 
-   bson_return_val_if_fail (database, false);
-   bson_return_val_if_fail (username, false);
+   BSON_ASSERT (database);
+   BSON_ASSERT (username);
 
    bson_init (&cmd);
    BSON_APPEND_UTF8 (&cmd, "dropUser", username);
@@ -350,7 +350,7 @@ mongoc_database_remove_all_users (mongoc_database_t *database,
 
    ENTRY;
 
-   bson_return_val_if_fail (database, false);
+   BSON_ASSERT (database);
 
    bson_init (&cmd);
    BSON_APPEND_INT32 (&cmd, "dropAllUsersFromDatabase", 1);
@@ -476,7 +476,7 @@ mongoc_database_add_user (mongoc_database_t *database,
 const mongoc_read_prefs_t *
 mongoc_database_get_read_prefs (const mongoc_database_t *database) /* IN */
 {
-   bson_return_val_if_fail(database, NULL);
+   BSON_ASSERT (database);
    return database->read_prefs;
 }
 
@@ -501,7 +501,7 @@ void
 mongoc_database_set_read_prefs (mongoc_database_t         *database,
                                 const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_if_fail(database);
+   BSON_ASSERT (database);
 
    if (database->read_prefs) {
       mongoc_read_prefs_destroy(database->read_prefs);
@@ -533,7 +533,7 @@ mongoc_database_set_read_prefs (mongoc_database_t         *database,
 const mongoc_write_concern_t *
 mongoc_database_get_write_concern (const mongoc_database_t *database)
 {
-   bson_return_val_if_fail(database, NULL);
+   BSON_ASSERT (database);
 
    return database->write_concern;
 }
@@ -559,7 +559,7 @@ void
 mongoc_database_set_write_concern (mongoc_database_t            *database,
                                    const mongoc_write_concern_t *write_concern)
 {
-   bson_return_if_fail(database);
+   BSON_ASSERT (database);
 
    if (database->write_concern) {
       mongoc_write_concern_destroy(database->write_concern);
@@ -878,8 +878,8 @@ mongoc_database_create_collection (mongoc_database_t *database,
    bson_t cmd;
    bool capped = false;
 
-   bson_return_val_if_fail (database, NULL);
-   bson_return_val_if_fail (name, NULL);
+   BSON_ASSERT (database);
+   BSON_ASSERT (name);
 
    if (strchr (name, '$')) {
       bson_set_error (error,
@@ -1030,8 +1030,8 @@ mongoc_collection_t *
 mongoc_database_get_collection (mongoc_database_t *database,
                                 const char        *collection)
 {
-   bson_return_val_if_fail (database, NULL);
-   bson_return_val_if_fail (collection, NULL);
+   BSON_ASSERT (database);
+   BSON_ASSERT (collection);
 
    return mongoc_client_get_collection (database->client, database->name,
                                         collection);
@@ -1041,7 +1041,7 @@ mongoc_database_get_collection (mongoc_database_t *database,
 const char *
 mongoc_database_get_name (mongoc_database_t *database)
 {
-   bson_return_val_if_fail (database, NULL);
+   BSON_ASSERT (database);
 
    return database->name;
 }

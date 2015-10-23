@@ -311,7 +311,7 @@ mock_server_run (mock_server_t *server)
    mongoc_mutex_unlock (&server->mutex);
 
    if (mock_server_get_verbose (server)) {
-      printf ("listening on port %hu\n", bound_port);
+      fprintf (stderr, "listening on port %hu\n", bound_port);
       fflush (stdout);
    }
 
@@ -431,9 +431,11 @@ auto_ismaster (request_t *request,
    }
 
    if (mock_server_get_verbose (request->server)) {
-      printf ("%5.2f  %hu <- \t%s\n",
+      printf ("%5.2f  %hu <- %hu \t%s\n",
               mock_server_get_uptime_sec (request->server),
-              request->client_port, quotes_replaced);
+              request->client_port,
+              mock_server_get_port (request->server),
+              quotes_replaced);
       fflush (stdout);
    }
 
@@ -1101,11 +1103,53 @@ void
 mock_server_hangs_up (request_t *request)
 {
    if (mock_server_get_verbose (request->server)) {
-      printf ("%5.2f  %hu <-  \thang up!\n",
+      printf ("%5.2f  %hu <- %hu \thang up!\n",
               mock_server_get_uptime_sec (request->server),
+              request->client_port,
               request_get_server_port (request));
       fflush (stdout);
    }
+
+   mongoc_stream_close (request->client);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_resets --
+ *
+ *       Forcefully reset a connection from the client.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Causes ECONNRESET on the client side.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_server_resets (request_t *request)
+{
+   struct linger no_linger;
+   no_linger.l_onoff = 1;
+   no_linger.l_linger = 0;
+
+   if (mock_server_get_verbose (request->server)) {
+      printf ("%5.2f  %hu <- %hu \treset!\n",
+              mock_server_get_uptime_sec (request->server),
+              request->client_port,
+              request_get_server_port (request));
+      fflush (stdout);
+   }
+
+   /* send RST packet to client */
+   mongoc_stream_setsockopt (request->client,
+                             SOL_SOCKET,
+                             SO_LINGER,
+                             &no_linger,
+                             sizeof no_linger);
 
    mongoc_stream_close (request->client);
 }
@@ -1148,9 +1192,11 @@ mock_server_replies (request_t *request,
    }
 
    if (mock_server_get_verbose (request->server)) {
-      printf ("%5.2f  %hu <- \t%s\n",
+      printf ("%5.2f  %hu <- %hu \t%s\n",
               mock_server_get_uptime_sec (request->server),
-              request->client_port, quotes_replaced);
+              request->client_port,
+              mock_server_get_port (request->server),
+              quotes_replaced);
       fflush (stdout);
    }
 

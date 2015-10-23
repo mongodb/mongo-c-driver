@@ -88,8 +88,8 @@ mongoc_client_connect_tcp (const mongoc_uri_t       *uri,
 
    ENTRY;
 
-   bson_return_val_if_fail (uri, NULL);
-   bson_return_val_if_fail (host, NULL);
+   BSON_ASSERT (uri);
+   BSON_ASSERT (host);
 
    connecttimeoutms = mongoc_uri_get_option_as_int32 (
       uri, "connecttimeoutms", MONGOC_DEFAULT_CONNECTTIMEOUTMS);
@@ -208,8 +208,8 @@ mongoc_client_connect_unix (const mongoc_uri_t       *uri,
 
    ENTRY;
 
-   bson_return_val_if_fail (uri, NULL);
-   bson_return_val_if_fail (host, NULL);
+   BSON_ASSERT (uri);
+   BSON_ASSERT (host);
 
    memset (&saddr, 0, sizeof saddr);
    saddr.sun_family = AF_UNIX;
@@ -280,8 +280,8 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
    int32_t connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
 #endif
 
-   bson_return_val_if_fail (uri, NULL);
-   bson_return_val_if_fail (host, NULL);
+   BSON_ASSERT (uri);
+   BSON_ASSERT (host);
 
 #ifndef MONGOC_ENABLE_SSL
    if (mongoc_uri_get_ssl (uri)) {
@@ -379,74 +379,10 @@ _mongoc_client_create_stream (mongoc_client_t          *client,
                               const mongoc_host_list_t *host,
                               bson_error_t             *error)
 {
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(host, NULL);
+   BSON_ASSERT (client);
+   BSON_ASSERT (host);
 
    return client->initiator (client->uri, host, client->initiator_data, error);
-}
-
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_client_sendv --
- *
- *       INTERNAL API
- *
- *       This function is used to deliver one or more RPCs to the remote
- *       MongoDB server.
- *
- *       Based on the cluster state and operation type, the request may
- *       be retried. This is handled by the cluster instance.
- *
- * Returns:
- *       0 upon failure and @error is set. Otherwise non-zero indicating
- *       the cluster node that performed the request.
- *
- * Side effects:
- *       @error is set if return value is 0.
- *       @rpcs is mutated and therefore invalid after calling.
- *
- *--------------------------------------------------------------------------
- */
-
-uint32_t
-_mongoc_client_sendv (mongoc_client_t              *client,
-                      mongoc_rpc_t                 *rpcs,
-                      size_t                        rpcs_len,
-                      uint32_t                      server_id,
-                      const mongoc_write_concern_t *write_concern,
-                      const mongoc_read_prefs_t    *read_prefs,
-                      bson_error_t                 *error)
-{
-   size_t i;
-
-   bson_return_val_if_fail(client, false);
-   bson_return_val_if_fail(rpcs, false);
-   bson_return_val_if_fail(rpcs_len, false);
-
-   if (client->in_exhaust) {
-      bson_set_error(error,
-                     MONGOC_ERROR_CLIENT,
-                     MONGOC_ERROR_CLIENT_IN_EXHAUST,
-                     "A cursor derived from this client is in exhaust.");
-      RETURN(false);
-   }
-
-   for (i = 0; i < rpcs_len; i++) {
-      rpcs[i].header.msg_len = 0;
-      rpcs[i].header.request_id = ++client->request_id;
-   }
-
-   if (server_id > 0) {
-      if (mongoc_cluster_sendv_to_server(&client->cluster, rpcs, rpcs_len,
-                                         server_id, write_concern, error)) {
-         return server_id;
-      }
-   }
-
-   return mongoc_cluster_sendv(&client->cluster, rpcs, rpcs_len,
-                               write_concern, read_prefs, error);
 }
 
 
@@ -475,10 +411,10 @@ _mongoc_client_recv (mongoc_client_t *client,
                      uint32_t         server_id,
                      bson_error_t    *error)
 {
-   bson_return_val_if_fail(client, false);
-   bson_return_val_if_fail(rpc, false);
-   bson_return_val_if_fail(buffer, false);
-   bson_return_val_if_fail(server_id, false);
+   BSON_ASSERT (client);
+   BSON_ASSERT (rpc);
+   BSON_ASSERT (buffer);
+   BSON_ASSERT (server_id);
 
    if (!mongoc_cluster_try_recv (&client->cluster, rpc, buffer, server_id, error)) {
       mongoc_topology_invalidate_server (client->topology, server_id);
@@ -511,7 +447,7 @@ _bson_to_error (const bson_t *b,
    bson_iter_t iter;
    int code = 0;
 
-   BSON_ASSERT(b);
+   BSON_ASSERT (b);
 
    if (!error) {
       return;
@@ -589,8 +525,8 @@ _mongoc_client_recv_gle (mongoc_client_t  *client,
 
    ENTRY;
 
-   bson_return_val_if_fail (client, false);
-   bson_return_val_if_fail (server_id, false);
+   BSON_ASSERT (client);
+   BSON_ASSERT (server_id);
 
    if (gle_doc) {
       *gle_doc = NULL;
@@ -781,7 +717,7 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
    bson_iter_t iter;
 #endif
 
-   bson_return_val_if_fail(uri, NULL);
+   BSON_ASSERT (uri);
 
    client = (mongoc_client_t *)bson_malloc0(sizeof *client);
    client->uri = mongoc_uri_copy (uri);
@@ -873,7 +809,7 @@ mongoc_client_destroy (mongoc_client_t *client)
 const mongoc_uri_t *
 mongoc_client_get_uri (const mongoc_client_t *client)
 {
-   bson_return_val_if_fail(client, NULL);
+   BSON_ASSERT (client);
 
    return client->uri;
 }
@@ -904,8 +840,8 @@ mongoc_database_t *
 mongoc_client_get_database (mongoc_client_t *client,
                             const char      *name)
 {
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(name, NULL);
+   BSON_ASSERT (client);
+   BSON_ASSERT (name);
 
    return _mongoc_database_new(client, name, client->read_prefs, client->write_concern);
 }
@@ -936,7 +872,7 @@ mongoc_client_get_default_database (mongoc_client_t *client)
 {
    const char *db;
 
-   bson_return_val_if_fail(client, NULL);
+   BSON_ASSERT (client);
    db = mongoc_uri_get_database (client->uri);
 
    if (db) {
@@ -977,9 +913,9 @@ mongoc_client_get_collection (mongoc_client_t *client,
                               const char      *db,
                               const char      *collection)
 {
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(db, NULL);
-   bson_return_val_if_fail(collection, NULL);
+   BSON_ASSERT (client);
+   BSON_ASSERT (db);
+   BSON_ASSERT (collection);
 
    return _mongoc_collection_new(client, db, collection, client->read_prefs,
                                  client->write_concern);
@@ -1015,8 +951,8 @@ mongoc_client_get_gridfs (mongoc_client_t *client,
                           const char      *prefix,
                           bson_error_t    *error)
 {
-   bson_return_val_if_fail(client, NULL);
-   bson_return_val_if_fail(db, NULL);
+   BSON_ASSERT (client);
+   BSON_ASSERT (db);
 
    if (! prefix) {
       prefix = "fs";
@@ -1045,7 +981,7 @@ mongoc_client_get_gridfs (mongoc_client_t *client,
 const mongoc_write_concern_t *
 mongoc_client_get_write_concern (const mongoc_client_t *client)
 {
-   bson_return_val_if_fail(client, NULL);
+   BSON_ASSERT (client);
 
    return client->write_concern;
 }
@@ -1071,7 +1007,7 @@ void
 mongoc_client_set_write_concern (mongoc_client_t              *client,
                                  const mongoc_write_concern_t *write_concern)
 {
-   bson_return_if_fail(client);
+   BSON_ASSERT (client);
 
    if (write_concern != client->write_concern) {
       if (client->write_concern) {
@@ -1103,7 +1039,7 @@ mongoc_client_set_write_concern (mongoc_client_t              *client,
 const mongoc_read_prefs_t *
 mongoc_client_get_read_prefs (const mongoc_client_t *client)
 {
-   bson_return_val_if_fail (client, NULL);
+   BSON_ASSERT (client);
 
    return client->read_prefs;
 }
@@ -1129,7 +1065,7 @@ void
 mongoc_client_set_read_prefs (mongoc_client_t           *client,
                               const mongoc_read_prefs_t *read_prefs)
 {
-   bson_return_if_fail (client);
+   BSON_ASSERT (client);
 
    if (read_prefs != client->read_prefs) {
       if (client->read_prefs) {
@@ -1178,8 +1114,7 @@ mongoc_client_command (mongoc_client_t           *client,
    }
 
    /*
-    * Allow a caller to provide a fully qualified namespace. Otherwise,
-    * querying something like "$cmd.sys.inprog" is not possible.
+    * Allow a caller to provide a fully qualified namespace
     */
    if (NULL == strstr (db_name, "$cmd")) {
       bson_snprintf (ns, sizeof ns, "%s.$cmd", db_name);
@@ -1224,7 +1159,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
                               bson_error_t              *error)
 {
    return _mongoc_client_command_simple_with_hint (client, db_name, command,
-                                                   read_prefs, reply, 0, error);
+                                                   read_prefs, false, reply, 0, error);
 }
 
 bool
@@ -1232,6 +1167,7 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
                                          const char                *db_name,
                                          const bson_t              *command,
                                          const mongoc_read_prefs_t *read_prefs,
+                                         bool                       is_write_command,
                                          bson_t                    *reply,
                                          uint32_t                   hint,
                                          bson_error_t              *error)
@@ -1248,6 +1184,7 @@ _mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
                                    command, NULL, read_prefs);
 
    cursor->hint = hint;
+   cursor->is_write_command = is_write_command ? 1 : 0;
 
    ret = mongoc_cursor_next (cursor, &doc);
 
@@ -1274,11 +1211,12 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
                             int64_t          cursor_id)
 {
    mongoc_rpc_t rpc = {{ 0 }};
+   bson_error_t error;
 
    ENTRY;
 
-   bson_return_if_fail(client);
-   bson_return_if_fail(cursor_id);
+   BSON_ASSERT (client);
+   BSON_ASSERT (cursor_id);
 
    rpc.kill_cursors.msg_len = 0;
    rpc.kill_cursors.request_id = 0;
@@ -1288,16 +1226,71 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
    rpc.kill_cursors.cursors = &cursor_id;
    rpc.kill_cursors.n_cursors = 1;
 
-   _mongoc_client_sendv (client, &rpc, 1, server_id, NULL, NULL, NULL);
+   /* don't attempt reconnect if server unavailable */
+   mongoc_cluster_sendv_to_server (&client->cluster, &rpc, 1, server_id,
+                                   NULL, false, &error);
 
    EXIT;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_kill_cursor --
+ *
+ *       Destroy a cursor on the server.
+ *
+ *       NOTE: this is only reliable when connected to a single mongod or
+ *       mongos. If connected to a replica set, the driver attempts to
+ *       kill the cursor on the primary. If connected to multiple mongoses
+ *       the kill-cursors message is sent to a *random* mongos.
+ *
+ *       If no primary, mongos, or standalone server is known, return
+ *       without attempting to reconnect.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
 void
 mongoc_client_kill_cursor (mongoc_client_t *client,
-                            int64_t          cursor_id)
+                           int64_t          cursor_id)
 {
-   _mongoc_client_kill_cursor (client, 0, cursor_id);
+   mongoc_topology_t *topology;
+   mongoc_server_description_t *selected_server;
+   mongoc_read_prefs_t *read_prefs;
+   uint32_t server_id = 0;
+
+   topology = client->topology;
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   mongoc_mutex_lock (&topology->mutex);
+
+   /* see if there's a known writable server - do no I/O or retries */
+   selected_server = mongoc_topology_description_select(&topology->description,
+                                                        MONGOC_SS_WRITE,
+                                                        read_prefs,
+                                                        15);
+
+   if (selected_server) {
+      server_id = selected_server->id;
+   }
+
+   mongoc_mutex_unlock (&topology->mutex);
+
+   if (server_id) {
+      _mongoc_client_kill_cursor (client, selected_server->id, cursor_id);
+   } else {
+      MONGOC_INFO ("No server available for mongoc_client_kill_cursor");
+   }
+
+   mongoc_read_prefs_destroy (read_prefs);
 }
 
 
@@ -1366,7 +1359,7 @@ mongoc_client_find_databases (mongoc_client_t *client,
 int32_t
 mongoc_client_get_max_message_size (mongoc_client_t *client) /* IN */
 {
-   bson_return_val_if_fail (client, -1);
+   BSON_ASSERT (client);
 
    return mongoc_cluster_get_max_msg_size (&client->cluster);
 }
@@ -1375,7 +1368,7 @@ mongoc_client_get_max_message_size (mongoc_client_t *client) /* IN */
 int32_t
 mongoc_client_get_max_bson_size (mongoc_client_t *client) /* IN */
 {
-   bson_return_val_if_fail (client, -1);
+   BSON_ASSERT (client);
 
    return mongoc_cluster_get_max_bson_obj_size (&client->cluster);
 }
@@ -1390,7 +1383,7 @@ mongoc_client_get_server_status (mongoc_client_t     *client,     /* IN */
    bson_t cmd = BSON_INITIALIZER;
    bool ret = false;
 
-   bson_return_val_if_fail (client, false);
+   BSON_ASSERT (client);
 
    BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
    ret = mongoc_client_command_simple (client, "admin", &cmd, read_prefs,
@@ -1406,7 +1399,7 @@ mongoc_client_set_stream_initiator (mongoc_client_t           *client,
                                     mongoc_stream_initiator_t  initiator,
                                     void                      *user_data)
 {
-   bson_return_if_fail (client);
+   BSON_ASSERT (client);
 
    if (!initiator) {
       initiator = mongoc_client_default_stream_initiator;

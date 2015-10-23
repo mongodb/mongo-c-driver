@@ -25,6 +25,17 @@
 
 BSON_BEGIN_DECLS
 
+struct _mongoc_socket_t
+{
+#ifdef _WIN32
+   SOCKET sd;
+#else
+   int sd;
+#endif
+   int errno_;
+   int domain;
+};
+
 mongoc_socket_t *mongoc_socket_accept_ex (mongoc_socket_t *sock,
                                           int64_t          expire_at,
                                           uint16_t        *port);

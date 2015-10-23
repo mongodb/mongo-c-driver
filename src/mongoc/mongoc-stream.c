@@ -20,6 +20,7 @@
 #include "mongoc-array-private.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-error.h"
+#include "mongoc-errno-private.h"
 #include "mongoc-flags.h"
 #include "mongoc-log.h"
 #include "mongoc-opcode.h"
@@ -53,9 +54,9 @@ mongoc_stream_close (mongoc_stream_t *stream)
 
    ENTRY;
 
-   bson_return_val_if_fail(stream, -1);
+   BSON_ASSERT (stream);
 
-   ALWAYS_ASSERT(stream->close);
+   BSON_ASSERT (stream->close);
 
    ret = stream->close(stream);
 
@@ -77,7 +78,7 @@ mongoc_stream_failed (mongoc_stream_t *stream)
 {
    ENTRY;
 
-   bson_return_if_fail(stream);
+   BSON_ASSERT (stream);
 
    if (stream->failed) {
 	   stream->failed(stream);
@@ -101,9 +102,9 @@ mongoc_stream_destroy (mongoc_stream_t *stream)
 {
    ENTRY;
 
-   bson_return_if_fail(stream);
+   BSON_ASSERT (stream);
 
-   ALWAYS_ASSERT(stream->destroy);
+   BSON_ASSERT (stream->destroy);
 
    stream->destroy(stream);
 
@@ -122,7 +123,7 @@ mongoc_stream_destroy (mongoc_stream_t *stream)
 int
 mongoc_stream_flush (mongoc_stream_t *stream)
 {
-   bson_return_val_if_fail(stream, -1);
+   BSON_ASSERT (stream);
    return stream->flush(stream);
 }
 
@@ -147,11 +148,11 @@ mongoc_stream_writev (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail(stream, -1);
-   bson_return_val_if_fail(iov, -1);
-   bson_return_val_if_fail(iovcnt, -1);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (iov);
+   BSON_ASSERT (iovcnt);
 
-   BSON_ASSERT(stream->writev);
+   BSON_ASSERT (stream->writev);
 
    if (timeout_msec < 0) {
       timeout_msec = MONGOC_DEFAULT_TIMEOUT_MSEC;
@@ -185,8 +186,8 @@ mongoc_stream_write (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail (stream, -1);
-   bson_return_val_if_fail (buf, -1);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (buf);
 
    iov.iov_base = buf;
    iov.iov_len = count;
@@ -224,14 +225,16 @@ mongoc_stream_readv (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail (stream, -1);
-   bson_return_val_if_fail (iov, -1);
-   bson_return_val_if_fail (iovcnt, -1);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (iov);
+   BSON_ASSERT (iovcnt);
 
    BSON_ASSERT (stream->readv);
 
    ret = stream->readv (stream, iov, iovcnt, min_bytes, timeout_msec);
-   DUMP_IOVEC (readv, iov, iovcnt);
+   if (ret >= 0) {
+      DUMP_IOVEC (readv, iov, iovcnt);
+   }
 
    RETURN (ret);
 }
@@ -264,8 +267,8 @@ mongoc_stream_read (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail (stream, -1);
-   bson_return_val_if_fail (buf, -1);
+   BSON_ASSERT (stream);
+   BSON_ASSERT (buf);
 
    iov.iov_base = buf;
    iov.iov_len = count;
@@ -285,7 +288,7 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
                           void            *optval,
                           socklen_t        optlen)
 {
-   bson_return_val_if_fail(stream, -1);
+   BSON_ASSERT (stream);
 
    if (stream->setsockopt) {
       return stream->setsockopt(stream, level, optname, optval, optlen);
@@ -294,10 +297,11 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
    return 0;
 }
 
+
 mongoc_stream_t *
 mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
 {
-   bson_return_val_if_fail (stream, NULL);
+   BSON_ASSERT (stream);
 
    if (stream->get_base_stream) {
       return stream->get_base_stream (stream);
@@ -353,6 +357,86 @@ CLEANUP:
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_wait --
+ *
+ *       Internal helper, poll a single stream until it connects.
+ *
+ *       For now, only the POLLOUT (connected) event is supported.
+ *
+ *       @expire_at should be an absolute time at which to expire using
+ *       the monotonic clock (bson_get_monotonic_time(), which is in
+ *       microseconds). expire_at of 0 or -1 is prohibited.
+ *
+ * Returns:
+ *       true if an event matched. otherwise false.
+ *       a timeout will return false.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_stream_wait (mongoc_stream_t *stream,
+                    int64_t expire_at)
+{
+   mongoc_stream_poll_t poller;
+   int64_t now;
+   int32_t timeout_msec;
+   ssize_t ret;
+
+   ENTRY;
+
+   BSON_ASSERT (stream);
+   BSON_ASSERT (expire_at > 0);
+
+   poller.stream = stream;
+   poller.events = POLLOUT;
+   poller.revents = 0;
+
+   now = bson_get_monotonic_time();
+
+   for (;;) {
+      /* TODO CDRIVER-804 use int64_t for timeouts consistently */
+      timeout_msec = (int32_t) BSON_MIN ((expire_at - now) / 1000L, INT32_MAX);
+      if (timeout_msec < 0) {
+         timeout_msec = 0;
+      }
+
+      ret = mongoc_stream_poll (&poller, 1, timeout_msec);
+
+      if (ret > 0) {
+         /* an event happened, return true if POLLOUT else false */
+         RETURN (0 != (poller.revents & POLLOUT));
+      } else if (ret < 0) {
+         /* poll itself failed */
+
+         TRACE("errno is: %d", errno);
+         if (MONGOC_ERRNO_IS_AGAIN(errno)) {
+            now = bson_get_monotonic_time();
+
+            if (expire_at < now) {
+               RETURN (false);
+            } else {
+               continue;
+            }
+         } else {
+            /* poll failed for some non-transient reason */
+            RETURN (false);
+         }
+      } else {
+         /* poll timed out */
+         RETURN (false);
+      }
+   }
+
+   return true;
+}
+
 bool
 mongoc_stream_check_closed (mongoc_stream_t *stream)
 {
@@ -404,8 +488,8 @@ _mongoc_stream_writev_full (mongoc_stream_t *stream,
 
    if (r != total_bytes) {
       bson_set_error (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET,
-                      "Failure to send all requested bytes (only sent: %lld/%llu in %dms) during socket delivery",
-                      (long long)r, (unsigned long long)total_bytes, timeout_msec);
+                      "Failure to send all requested bytes (only sent: %" PRIu64 "/%" PRId64 " in %dms) during socket delivery",
+                      (uint64_t) r, (int64_t)total_bytes, timeout_msec);
 
       RETURN(false);
    }

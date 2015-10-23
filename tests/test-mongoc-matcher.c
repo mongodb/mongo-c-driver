@@ -40,7 +40,7 @@ test_mongoc_matcher_basic (void)
 #if 0
    {
       char *out = bson_as_json(&matcher_query, NULL);
-      printf("bson: %s\n", out);
+      fprintf(stderr, "bson: %s\n", out);
       free(out);
    }
 #endif

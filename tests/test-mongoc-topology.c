@@ -10,6 +10,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include "test-conveniences.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology-test"
@@ -55,7 +56,7 @@ test_topology_client_creation (void)
 
    /* ensure that we are sharing streams with the client */
    id = mongoc_cluster_preselect (&client_a->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
-   cluster_stream = mongoc_cluster_fetch_stream (&client_a->cluster, id, &error);
+   cluster_stream = mongoc_cluster_fetch_stream (&client_a->cluster, id, false, &error);
    node = mongoc_topology_scanner_get_node (client_a->topology->scanner, id);
    assert (node);
    topology_stream = node->stream;
@@ -198,9 +199,9 @@ _test_server_selection (bool try_once)
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
 
    if (try_once) {
-      ASSERT_CMPSTR ("No suitable servers found", error.message);
+      ASSERT_CMPSTR ("No suitable servers found (`serverselectiontryonce` set)", error.message);
    } else {
-      ASSERT_CMPSTR ("Timed out trying to select a server", error.message);
+      ASSERT_CMPSTR ("No suitable servers found: `minheartbeatfrequencyms` not reached yet", error.message);
    }
 
    assert (client->topology->stale);
@@ -243,6 +244,19 @@ test_server_selection_try_once_false (void)
 }
 
 static void
+host_list_init (mongoc_host_list_t *host_list,
+                int family,
+                const char *host,
+                uint16_t port)
+{
+   memset (host_list, 0, sizeof *host_list);
+   host_list->family = family;
+   bson_snprintf (host_list->host, sizeof host_list->host, "%s", host);
+   bson_snprintf (host_list->host_and_port, sizeof host_list->host_and_port,
+                  "%s:%hu", host, port);
+}
+
+static void
 test_topology_invalidate_server (void)
 {
    mongoc_server_description_t *fake_sd;
@@ -252,8 +266,11 @@ test_topology_invalidate_server (void)
    mongoc_buffer_t buffer;
    mongoc_client_t *client;
    bson_error_t error;
+   mongoc_host_list_t fake_host_list;
    uint32_t fake_id = 42;
    uint32_t id;
+
+   host_list_init (&fake_host_list, AF_INET, "fakeaddress", 27033);
 
    client = test_framework_client_new ();
    assert (client);
@@ -276,9 +293,16 @@ test_topology_invalidate_server (void)
    fake_sd = (mongoc_server_description_t *)bson_malloc0 (sizeof (*fake_sd));
 
    /* insert a 'fake' server description and ensure that it is invalidated by driver */
-   mongoc_server_description_init (fake_sd, "fakeaddress:27033", fake_id);
+   mongoc_server_description_init (fake_sd,
+                                   fake_host_list.host_and_port,
+                                   fake_id);
+
    fake_sd->type = MONGOC_SERVER_STANDALONE;
    mongoc_set_add(td->servers, fake_id, fake_sd);
+   mongoc_topology_scanner_add_and_scan (client->topology->scanner,
+                                         &fake_host_list,
+                                         fake_id,
+                                         MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
    /* with recv */
    _mongoc_buffer_init(&buffer, NULL, 0, NULL, NULL);
@@ -315,7 +339,7 @@ test_invalid_cluster_node (void)
    client = mongoc_client_pool_pop (pool);
    cluster = &client->cluster;
 
-   _mongoc_usleep (100 * 1000);;
+   _mongoc_usleep (100 * 1000);
 
    /* load stream into cluster */
    id = mongoc_cluster_preselect (cluster, MONGOC_OPCODE_QUERY, NULL, &error);
@@ -327,13 +351,14 @@ test_invalid_cluster_node (void)
    assert (cluster_node->timestamp > scanner_node->timestamp);
 
    /* update the scanner node's timestamp */
-   _mongoc_usleep (100 * 1000);;
+   _mongoc_usleep (1000 * 1000);
    scanner_node->timestamp = bson_get_monotonic_time ();
    assert (cluster_node->timestamp < scanner_node->timestamp);
-   _mongoc_usleep (100 * 1000);;
+   _mongoc_usleep (1000 * 1000);
 
-   /* ensure that cluster adjusts */
-   mongoc_cluster_fetch_stream (cluster, id, &error);
+   /* cluster discards node and creates new one */
+   mongoc_cluster_fetch_stream (cluster, id, true, &error);
+   cluster_node = (mongoc_cluster_node_t *)mongoc_set_get (cluster->nodes, id);
    assert (cluster_node->timestamp > scanner_node->timestamp);
 
    mongoc_client_pool_push (pool, client);
@@ -376,8 +401,8 @@ test_max_wire_version_race_condition (void)
    assert (sd);
    mongoc_server_description_reset (sd);
 
-   /* call fetch_stream, ensure that we can still auth with cached wire version */
-   stream = mongoc_cluster_fetch_stream (&client->cluster, id, &error);
+   /* new stream, ensure that we can still auth with cached wire version */
+   stream = mongoc_cluster_fetch_stream (&client->cluster, id, true, &error);
    assert (stream);
 
    mongoc_client_pool_push (pool, client);
@@ -701,6 +726,50 @@ test_connect_timeout_try_once_false(void)
 }
 
 
+static void
+test_multiple_selection_errors (void)
+{
+   const char *uri = "mongodb://doesntexist,example.com:2/?replicaSet=rs"
+      "&connectTimeoutMS=100";
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+
+   client = mongoc_client_new (uri);
+   mongoc_client_command_simple (client, "test", tmp_bson ("{'ping': 1}"),
+                                 NULL, &reply, &error);
+
+   ASSERT_CMPINT (MONGOC_ERROR_SERVER_SELECTION, ==, error.domain);
+   ASSERT_CMPINT (MONGOC_ERROR_SERVER_SELECTION_FAILURE, ==, error.code);
+
+   /* Like:
+    * "No suitable servers found (`serverselectiontryonce` set):
+    *  [Failed to resolve 'doesntexist'] [connection error]"
+    */
+   ASSERT_CONTAINS (error.message,
+                    "No suitable servers found");
+   ASSERT_CONTAINS (error.message,
+                    "[connection error calling ismaster on 'example.com:2']");
+   ASSERT_CONTAINS (error.message,
+                    "[Failed to resolve 'doesntexist']");
+
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_invalid_server_id (void)
+{
+   mongoc_client_t *client;
+
+   client = test_framework_client_new ();
+
+   assert (!mongoc_topology_server_by_id (client->topology, 99999));
+
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -717,4 +786,6 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/connect_timeout/pooled", test_connect_timeout_pooled);
    TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once", test_connect_timeout_single);
    TestSuite_Add (suite, "/Topology/connect_timeout/single/try_once_false", test_connect_timeout_try_once_false);
+   TestSuite_Add (suite, "/Topology/multiple_selection_errors", test_multiple_selection_errors);
+   TestSuite_Add (suite, "/Topology/invalid_server_id", test_invalid_server_id);
 }

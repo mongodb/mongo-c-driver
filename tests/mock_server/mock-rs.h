@@ -30,6 +30,11 @@ mock_rs_t *mock_rs_with_autoismaster (int32_t max_wire_version,
 
 void mock_rs_set_verbose (mock_rs_t *rs, bool verbose);
 
+int64_t mock_rs_get_request_timeout_msec (mock_rs_t *rs);
+
+void mock_rs_set_request_timeout_msec (mock_rs_t *rs,
+                                       int64_t request_timeout_msec);
+
 void mock_rs_run (mock_rs_t *rs);
 
 const mongoc_uri_t *mock_rs_get_uri (mock_rs_t *rs);
@@ -58,6 +63,13 @@ void mock_rs_replies (request_t *request,
                       const char *docs_json);
 
 void mock_rs_hangs_up (request_t *request);
+
+
+bool mock_rs_request_is_to_primary (mock_rs_t *rs,
+                                    request_t *request);
+
+bool mock_rs_request_is_to_secondary (mock_rs_t *rs,
+                                      request_t *request);
 
 void mock_rs_destroy (mock_rs_t *rs);
 

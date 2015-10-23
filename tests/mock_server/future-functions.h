@@ -36,6 +36,14 @@ future_client_command_simple (
 
 
 future_t *
+future_client_kill_cursor (
+
+   mongoc_client_ptr client,
+   int64_t cursor_id
+);
+
+
+future_t *
 future_collection_aggregate (
 
    mongoc_collection_ptr collection,

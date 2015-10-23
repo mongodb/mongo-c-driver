@@ -48,7 +48,7 @@ _mongoc_usleep (int64_t usec)
    LARGE_INTEGER ft;
    HANDLE timer;
 
-   assert (usec >= 0);
+   BSON_ASSERT (usec >= 0);
 
    ft.QuadPart = -(10 * usec);
    timer = CreateWaitableTimer(NULL, true, NULL);
@@ -56,7 +56,7 @@ _mongoc_usleep (int64_t usec)
    WaitForSingleObject(timer, INFINITE);
    CloseHandle(timer);
 #else
-   assert (usec >= 0);
+   BSON_ASSERT (usec >= 0);
    usleep ((useconds_t) usec);
 #endif
 }

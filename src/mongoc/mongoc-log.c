@@ -88,7 +88,7 @@ mongoc_log (mongoc_log_level_t  log_level,
       return;
    }
 
-   bson_return_if_fail(format);
+   BSON_ASSERT (format);
 
    va_start(args, format);
    message = bson_strdupv_printf(format, args);

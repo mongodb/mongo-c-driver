@@ -60,7 +60,7 @@ _topology_has_description(mongoc_topology_description_t *topology,
       } else if (strcmp("type", bson_iter_key (&server_iter)) == 0) {
          assert (sd->type == server_type_from_test(bson_iter_utf8(&server_iter, NULL)));
       } else {
-         printf ("ERROR: unparsed field %s\n", bson_iter_key(&server_iter));
+         fprintf (stderr, "ERROR: unparsed field %s\n", bson_iter_key(&server_iter));
          assert (0);
       }
    }
@@ -172,7 +172,7 @@ test_sdam_cb (bson_t *test)
                topology_type_to_string(client->topology->description.type),
                bson_iter_utf8(&outcome_iter, NULL));
          } else {
-            printf ("ERROR: unparsed test field %s\n", bson_iter_key (&outcome_iter));
+            fprintf (stderr, "ERROR: unparsed test field %s\n", bson_iter_key (&outcome_iter));
             assert (false);
          }
       }

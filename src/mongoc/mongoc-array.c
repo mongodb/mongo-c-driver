@@ -22,8 +22,8 @@ void
 _mongoc_array_init (mongoc_array_t *array,
                     size_t          element_size)
 {
-   bson_return_if_fail(array);
-   bson_return_if_fail(element_size);
+   BSON_ASSERT (array);
+   BSON_ASSERT (element_size);
 
    array->len = 0;
    array->element_size = element_size;
@@ -80,8 +80,8 @@ _mongoc_array_append_vals (mongoc_array_t *array,
    size_t off;
    size_t next_size;
 
-   bson_return_if_fail(array);
-   bson_return_if_fail(data);
+   BSON_ASSERT (array);
+   BSON_ASSERT (data);
 
    off = array->element_size * array->len;
    len = (size_t)n_elements * array->element_size;

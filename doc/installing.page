@@ -10,7 +10,8 @@
 
     <title>Supported Platforms</title>
 
-    <p>The MongoDB C Driver currently supports the following operating systems and CPU architectures.</p>
+    <p>The MongoDB C Driver is continuously tested on GNU/Linux, Windows 7, Mac OS X 10.10, and Solaris 11 (Intel and Sparc). GCC, Clang, and Visual Studio 2013 compilers are continuously tested.</p>
+    <p>The driver supports the following operating systems and CPU architectures:</p>
 
     <table>
       <tr>
@@ -22,12 +23,10 @@
         <td>
           <list>
             <item><p>GNU/Linux</p></item>
-            <item><p>Solaris 10 and 11</p></item>
+            <item><p>Solaris 11</p></item>
             <item><p>Mac OS X 10.6 and newer</p></item>
             <item><p>Windows Vista, 7, and 8</p></item>
             <item><p>FreeBSD</p></item>
-            <item><p>OpenBSD 5.4</p></item>
-            <item><p>Dragonfly BSD</p></item>
           </list>
         </td>
         <td>
@@ -42,7 +41,7 @@
           <list>
             <item><p>GCC 4.1 and newer</p></item>
             <item><p>Clang 3.3 and newer</p></item>
-            <item><p><link href="http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs#DownloadFamilies_4">Microsoft Visual Studio 2010 Express</link></p></item>
+            <item><p>Microsoft Visual Studio 2013 and newer</p></item>
             <item><p><link href="http://www.oracle.com/technetwork/server-storage/solarisstudio/downloads/index.html">Oracle Solaris Studio 12</link></p></item>
             <item><p>MinGW</p></item>
           </list>
@@ -58,11 +57,11 @@
 
     <p>The following instructions are for UNIX-like systems such as GNU/Linux, FreeBSD, and Solaris. To build on Windows, see the instructions for <link xref="installing#building-windows">Building on Windows</link>.</p>
 
-    <p>The most recent release of libmongoc is 1.1.10 and can be <link href="https://github.com/mongodb/mongo-c-driver/releases/download/1.1.10/mongo-c-driver-1.1.10.tar.gz">downloaded here</link>. The following snippet will download and extract the current release of the driver.</p>
+    <p>The most recent release of libmongoc is 1.2.0 and can be <link href="https://github.com/mongodb/mongo-c-driver/releases/download/1.2.0/mongo-c-driver-1.2.0.tar.gz">downloaded here</link>. The following snippet will download and extract the current release of the driver.</p>
 
-    <screen><output style="prompt">$ </output><input>wget https://github.com/mongodb/mongo-c-driver/releases/download/1.1.10/mongo-c-driver-1.1.10.tar.gz</input>
-<output style="prompt">$ </output><input>tar -xzf mongo-c-driver-1.1.10.tar.gz</input>
-<output style="prompt">$ </output><input>cd mongo-c-driver-1.1.10/</input></screen>
+    <screen><output style="prompt">$ </output><input>wget https://github.com/mongodb/mongo-c-driver/releases/download/1.2.0/mongo-c-driver-1.2.0.tar.gz</input>
+<output style="prompt">$ </output><input>tar -xzf mongo-c-driver-1.2.0.tar.gz</input>
+<output style="prompt">$ </output><input>cd mongo-c-driver-1.2.0/</input></screen>
 
     <p>Minimal dependencies are needed to build the MongoDB C driver. Optionally, if you want Kerberos (GSSAPI) or SSL support, you need to install <code>libsasl2</code> and <code>OpenSSL</code> libraries and development headers respectively.</p>
 
@@ -75,7 +74,7 @@
       </p>
     </note>
 
-    <p>Make sure you have access to a <link xref="installing#supported-platforms">supported toolchain</link> such as GCC, Clang, SolarisStudio, or MinGW. Optionally, <code>pkg-config</code> can be used if your system supports it to simplify locating proper compiler and linker arguments when compiling your program.</p>
+    <p>Make sure you have access to a <link xref="installing#supported-platforms">supported toolchain</link> such as GCC, Clang, Solaris Studio, or MinGW. Optionally, <code>pkg-config</code> can be used if your system supports it to simplify locating proper compiler and linker arguments when compiling your program.</p>
 
     <p>The following will configure for a typical 64-bit Linux system such as RedHat Enterprise Linux 6 or CentOS 6. Note that not all systems place 64-bit libraries in <code>/usr/lib64</code>. Check your system to see what the convention is if you are building 64-bit versions of the library.</p>
 
@@ -115,7 +114,7 @@ Install man pages                                : yes
     <screen><output style="prompt">$ </output><input>make</input></screen>
 
     <note>
-      <p>You can optionally build code objects in parallel using the <code>-j</code> option to GNU make. Some implementations of <code>make</code> do not support this option, such as Sun's make on Solaris 10. To build in parallel on an 8 core machine, you might use:</p>
+      <p>You can optionally build code objects in parallel using the <code>-j</code> option to GNU make. Some implementations of <code>make</code> do not support this option, such as Sun's make on Solaris. To build in parallel on an 8 core machine, you might use:</p>
       <screen><output style="prompt">$ </output><input>gmake -j8</input></screen>
     </note>
 
@@ -129,21 +128,6 @@ Install man pages                                : yes
 
   </section>
 
-  <section id="solaris">
-    <info><link type="guide" xref="index#installation" /></info>
-    <title>Installing on Solaris 10</title>
-    <p>MongoDB provides two ways to install the MongoDB C driver on Solaris 10. You can either <link xref="installing#build-yourself">build the driver yourself</link> from a source code release, or install the precompiled binary driver as provided by MongoDB as follows.</p>
-    <p>Binary releases of the MongoDB C driver include support for both 32-bit and 64-bit architectures for both <code>i386</code> and <code>sparc</code>.</p>
-    <note style="warning"><p>Solaris 11 packaging is not compatible with Solaris 10. For Solaris 11, please follow the directions to <link xref="installing#build-yourself">build the driver yourself</link>.</p></note>
-    <p>The following commands will download the most recent MongoDB binary release and install it using the <code>pkgadd</code> command on Solaris 10.</p>
-      <screen><output style="prompt">$ </output><input>bash</input>
-<output style="prompt">bash-3.2$ </output><input>export ARCH=`uname -m`</input>
-<output style="prompt">bash-3.2$ </output><input>/usr/sfw/bin/wget --no-check-certificate "https://github.com/mongodb/mongo-c-driver/releases/download/1.1.10/mongo-c-driver-1.1.10.${ARCH}.pkg.tar.gz"</input>
-<output style="prompt">bash-3.2$ </output><input>gunzip -c "mongo-c-driver-1.1.10.${ARCH}.pkg.tar.gz" | tar -xf -</input>
-<output style="prompt">bash-3.2$ </output><input>pkgadd -d . mongo-c-driver</input></screen>
-
-  </section>
-
   <section id="building-windows">
     <title>Building on Windows</title>
 
@@ -151,7 +135,7 @@ Install man pages                                : yes
 
     <p>Let's start by generating Visual Studio project files for libbson, a dependency of the C driver. The following assumes we are compiling for 64-bit Windows using Visual Studio 2010 Express which can be freely downloaded from Microsoft.</p>
 
-    <screen>cd mongo-c-driver-1.1.10\src\libbson
+    <screen>cd mongo-c-driver-1.2.0\src\libbson
 cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</screen>
 
     <p>Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program <code>msbuild.exe</code></p>
@@ -166,7 +150,7 @@ cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</sc
 
     <p>Now let's do the same for the MongoDB C driver.</p>
 
-    <screen>cd mongo-c-driver-1.1.10
+    <screen>cd mongo-c-driver-1.2.0-rc0
 cmake -G "Visual Studio 2010 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"
 msbuild.exe ALL_BUILD.vcxproj
 msbuild.exe INSTALL.vcxproj</screen>

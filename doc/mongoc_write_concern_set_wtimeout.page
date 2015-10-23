@@ -22,13 +22,13 @@ mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
     <title>Parameters</title>
     <table>
       <tr><td><p>write_concern</p></td><td><p>A <code xref="mongoc_write_concern_t">mongoc_write_concern_t</code>.</p></td></tr>
-      <tr><td><p>wtimeout_msec</p></td><td><p>A int32_t containing the timeout in milliseconds.</p></td></tr>
+      <tr><td><p>wtimeout_msec</p></td><td><p>A positive <code>int32_t</code> or zero.</p></td></tr>
     </table>
   </section>
 
   <section id="description">
     <title>Description</title>
-    <p>Set the timeout in milliseconds that the server should wait before idicating that the write has failed. This is not the same as a socket timeout.</p>
+    <p>Set the timeout in milliseconds that the server should wait before indicating that the write has failed. This is not the same as a socket timeout. A value of zero may be used to indicate no timeout.</p>
   </section>
 
 </page>

@@ -268,7 +268,7 @@ _mongoc_ssl_check_cert (SSL        *ssl,
 
                   break;
                default:
-                  assert (0);
+                  BSON_ASSERT (0);
                   break;
                }
             }

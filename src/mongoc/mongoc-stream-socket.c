@@ -52,7 +52,7 @@ _mongoc_stream_socket_close (mongoc_stream_t *stream)
 
    ENTRY;
 
-   bson_return_val_if_fail (ss, -1);
+   BSON_ASSERT (ss);
 
    if (ss->sock) {
       ret = mongoc_socket_close (ss->sock);
@@ -70,7 +70,7 @@ _mongoc_stream_socket_destroy (mongoc_stream_t *stream)
 
    ENTRY;
 
-   bson_return_if_fail (ss);
+   BSON_ASSERT (ss);
 
    if (ss->sock) {
       mongoc_socket_destroy (ss->sock);
@@ -106,8 +106,8 @@ _mongoc_stream_socket_setsockopt (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail (ss, -1);
-   bson_return_val_if_fail (ss->sock, -1);
+   BSON_ASSERT (ss);
+   BSON_ASSERT (ss->sock);
 
    ret = mongoc_socket_setsockopt (ss->sock, level, optname, optval, optlen);
 
@@ -138,8 +138,8 @@ _mongoc_stream_socket_readv (mongoc_stream_t *stream,
 
    ENTRY;
 
-   bson_return_val_if_fail (ss, -1);
-   bson_return_val_if_fail (ss->sock, -1);
+   BSON_ASSERT (ss);
+   BSON_ASSERT (ss->sock);
 
    expire_at = get_expiration (timeout_msec);
 
@@ -256,7 +256,7 @@ CLEANUP:
 mongoc_socket_t *
 mongoc_stream_socket_get_socket (mongoc_stream_socket_t *stream) /* IN */
 {
-   bson_return_val_if_fail (stream, NULL);
+   BSON_ASSERT (stream);
 
    return stream->sock;
 }
@@ -269,7 +269,7 @@ _mongoc_stream_socket_check_closed (mongoc_stream_t *stream) /* IN */
 
    ENTRY;
 
-   bson_return_val_if_fail (stream, true);
+   BSON_ASSERT (stream);
 
    if (ss->sock) {
       RETURN (mongoc_socket_check_closed (ss->sock));
@@ -301,7 +301,7 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
 {
    mongoc_stream_socket_t *stream;
 
-   bson_return_val_if_fail (sock, NULL);
+   BSON_ASSERT (sock);
 
    stream = (mongoc_stream_socket_t *)bson_malloc0 (sizeof *stream);
    stream->vtable.type = MONGOC_STREAM_SOCKET;

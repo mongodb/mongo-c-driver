@@ -1528,7 +1528,7 @@ test_single_error_unordered_bulk ()
 
 
 static void
-_test_write_concern (bool has_write_commands, bool ordered)
+_test_write_concern (bool has_write_commands, bool ordered, bool multi_err)
 {
    mock_server_t *mock_server;
    mongoc_client_t *client;
@@ -1539,6 +1539,8 @@ _test_write_concern (bool has_write_commands, bool ordered)
    bson_error_t error;
    future_t *future;
    request_t *request;
+   int32_t first_err;
+   int32_t second_err;
 
    /* set wire protocol version for legacy writes or write commands */
    mock_server = mock_server_with_autoismaster (has_write_commands ? 3 : 0);
@@ -1550,6 +1552,7 @@ _test_write_concern (bool has_write_commands, bool ordered)
    mongoc_write_concern_set_wtimeout (wc, 100);
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, wc);
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'_id': 2}"));
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
@@ -1565,16 +1568,41 @@ _test_write_concern (bool has_write_commands, bool ordered)
          ordered ? "true" : "false");
 
       assert (request);
-      mock_server_replies (
-         request, 0, 0, 0, 1,
+      mock_server_replies_simple (
+         request,
          "{'ok': 1.0, 'n': 1, "
          " 'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
+
+      request_destroy (request);
+      request = mock_server_receives_command (
+         mock_server,
+         "test",
+         MONGOC_QUERY_NONE,
+         "{'delete': 'test',"
+            " 'writeConcern': {'w': 2, 'wtimeout': 100},"
+            " 'ordered': %s,"
+            " 'deletes': [{'q': {'_id': 2}, 'limit': 0}]}",
+         ordered ? "true" : "false");
+
+      if (multi_err) {
+         mock_server_replies_simple (
+            request,
+            "{'ok': 1.0, 'n': 1, "
+            " 'writeConcernError': {'code': 42, 'errmsg': 'bar'}}");
+      } else {
+         mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+      }
+
+      request_destroy (request);
+
+      /* server fictionally returns 17 and 42; expect driver to use first one */
+      first_err = 17;
+      second_err = 42;
    } else {
       request = mock_server_receives_insert (
          mock_server, "test.test", MONGOC_INSERT_NONE, "{'_id': 1}");
 
       request_destroy (request);
-
       request = mock_server_receives_command (
          mock_server,
          "test",
@@ -1582,25 +1610,67 @@ _test_write_concern (bool has_write_commands, bool ordered)
          "{'getLastError': 1, 'w': 2, 'wtimeout': 100}");
 
       assert (request);
-      mock_server_replies (
-         request, 0, 0, 0, 1,
-         "{'ok': 1.0, 'n': 0, 'err': 'foo', 'wtimeout': true}");
+      mock_server_replies_simple (
+         request, "{'ok': 1.0, 'n': 0, 'err': 'foo', 'wtimeout': true}");
+
+      request = mock_server_receives_delete (
+         mock_server, "test.test", MONGOC_REMOVE_NONE, "{'_id': 1}");
+
+      request_destroy (request);
+      request = mock_server_receives_command (
+         mock_server,
+         "test",
+         MONGOC_QUERY_NONE,
+         "{'getLastError': 1, 'w': 2, 'wtimeout': 100}");
+
+      if (multi_err) {
+         mock_server_replies_simple (
+            request, "{'ok': 1.0, 'n': 0, 'err': 'bar', 'wtimeout': true}");
+      } else {
+         mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+      }
+
+      request_destroy (request);
+
+      /* The client makes up the error code for legacy writes */
+      first_err = second_err = 64;
    }
 
    /* join thread, assert mongoc_bulk_operation_execute () returned 0 */
    assert (!future_get_uint32_t (future));
 
-   ASSERT_MATCH (&reply, "{'nInserted': 1,"
-                         " 'nMatched': 0,"
-                         " 'nRemoved': 0,"
-                         " 'nUpserted': 0,"
-                         " 'writeErrors': [],"
-                         " 'writeConcernError': {'code': %d, 'errmsg': 'foo'}}",
-                         has_write_commands ? 17 : 64);
+   if (multi_err) {
+      ASSERT_MATCH (&reply,
+                    "{'nInserted': 1,"
+                    " 'nMatched': 0,"
+                    " 'nRemoved': 1,"
+                    " 'nUpserted': 0,"
+                    " 'writeErrors': [],"
+                    " 'writeConcernErrors': ["
+                    "     {'code': %d, 'errmsg': 'foo'},"
+                    "     {'code': %d, 'errmsg': 'bar'}]}",
+                    first_err, second_err);
+
+      ASSERT_CMPSTR ("Multiple write concern errors: \"foo\", \"bar\"",
+                     error.message);
+   } else {
+      ASSERT_MATCH (&reply,
+                    "{'nInserted': 1,"
+                    " 'nMatched': 0,"
+                    " 'nRemoved': 1,"
+                    " 'nUpserted': 0,"
+                    " 'writeErrors': [],"
+                    " 'writeConcernErrors': ["
+                    "     {'code': %d, 'errmsg': 'foo'}]}",
+                    first_err);
+      ASSERT_CMPSTR ("foo", error.message);
+   }
 
    check_n_modified (has_write_commands, &reply, 0);
 
-   request_destroy (request);
+   ASSERT_CMPINT (MONGOC_ERROR_WRITE_CONCERN, ==, error.domain);
+   ASSERT_CMPINT (first_err, ==, error.code);
+
    future_destroy (future);
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
@@ -1629,14 +1699,28 @@ test_write_concern_legacy_unordered (void)
 static void
 test_write_concern_write_command_ordered (void)
 {
-   _test_write_concern (true, true);
+   _test_write_concern (true, true, false);
+}
+
+
+static void
+test_write_concern_write_command_ordered_multi_err (void)
+{
+   _test_write_concern (true, true, true);
 }
 
 
 static void
 test_write_concern_write_command_unordered (void)
 {
-   _test_write_concern (true, false);
+   _test_write_concern (true, false, false);
+}
+
+
+static void
+test_write_concern_write_command_unordered_multi_err (void)
+{
+   _test_write_concern (true, false, true);
 }
 
 
@@ -1711,6 +1795,143 @@ test_multiple_error_unordered_bulk ()
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+}
+
+
+static void
+_test_wtimeout_plus_duplicate_key_err (bool has_write_commands)
+{
+   mock_server_t *mock_server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   /* set wire protocol version for legacy writes or write commands */
+   mock_server = mock_server_with_autoismaster (has_write_commands ? 3 : 0);
+   mock_server_run (mock_server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   /* unordered bulk */
+   bulk = mongoc_collection_create_bulk_operation (collection, false, NULL);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 2}"));
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'_id': 3}"));
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   if (has_write_commands) {
+      request = mock_server_receives_command (
+         mock_server,
+         "test",
+         MONGOC_QUERY_NONE,
+         "{'insert': 'test',"
+         " 'writeConcern': {},"
+         " 'ordered': false,"
+         " 'documents': [{'_id': 1}, {'_id': 2}]}");
+
+      assert (request);
+      mock_server_replies (
+         request, 0, 0, 0, 1,
+         "{'ok': 1.0, 'n': 1,"
+         " 'writeErrors': [{'index': 0, 'code': 11000, 'errmsg': 'dupe'}],"
+         " 'writeConcernError': {'code': 17, 'errmsg': 'foo'}}");
+
+      request = mock_server_receives_command (
+         mock_server,
+         "test",
+         MONGOC_QUERY_NONE,
+         "{'delete': 'test',"
+         " 'writeConcern': {},"
+         " 'ordered': false,"
+         " 'deletes': [{'q': {'_id': 3}, 'limit': 0}]}");
+
+      assert (request);
+      mock_server_replies (
+         request, 0, 0, 0, 1,
+         "{'ok': 1.0, 'n': 1,"
+         " 'writeConcernError': {'code': 42, 'errmsg': 'bar'}}");
+   } else {
+      request = mock_server_receives_insert (
+         mock_server, "test.test", MONGOC_INSERT_CONTINUE_ON_ERROR,
+         "{'_id': 1}");
+
+      request_destroy (request);
+      request = mock_server_receives_gle (mock_server, "test");
+      mock_server_replies (
+         request, 0, 0, 0, 1,
+         "{'ok': 1.0, 'n': 0, 'code': 11000, 'err': 'dupe'}");
+
+      request_destroy (request);
+      request = mock_server_receives_insert (
+         mock_server, "test.test", MONGOC_INSERT_CONTINUE_ON_ERROR,
+         "{'_id': 2}");
+
+      request_destroy (request);
+      request = mock_server_receives_gle (mock_server, "test");
+      mock_server_replies (
+         request, 0, 0, 0, 1,
+         "{'ok': 1.0, 'n': 1, 'err': 'foo', 'wtimeout': true}");
+
+      request_destroy (request);
+      request = mock_server_receives_delete (
+         mock_server, "test.test", MONGOC_REMOVE_NONE,
+         "{'_id': 3}");
+
+      request_destroy (request);
+      request = mock_server_receives_gle (mock_server, "test");
+      mock_server_replies (
+         request, 0, 0, 0, 1,
+         "{'ok': 1.0, 'n': 1, 'err': 'bar', 'wtimeout': true}");
+
+      request_destroy (request);
+   }
+
+   /* mongoc_bulk_operation_execute () returned 0 */
+   assert (!future_get_uint32_t (future));
+
+   /* get err code from server with write commands, otherwise use 64 */
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 1,"
+                 " 'nMatched': 0,"
+                 " 'nRemoved': 1,"
+                 " 'nUpserted': 0,"
+                 " 'writeErrors': ["
+                 "    {'index': 0, 'code': 11000, 'errmsg': 'dupe'}],"
+                 " 'writeConcernErrors': ["
+                 "    {'code': %d, 'errmsg': 'foo'},"
+                 "    {'code': %d, 'errmsg': 'bar'}]}",
+                 has_write_commands ? 17 : 64,
+                 has_write_commands ? 42 : 64);
+
+   check_n_modified (has_write_commands, &reply, 0);
+
+   request_destroy (request);
+   future_destroy (future);
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (mock_server);
+}
+
+ 
+#ifdef TODO_CDRIVER_707
+static void
+test_wtimeout_plus_duplicate_key_err_legacy (void)
+{
+   _test_wtimeout_plus_duplicate_key_err (false);
+}
+#endif
+
+
+static void
+test_wtimeout_plus_duplicate_key_err_write_commands (void)
+{
+   _test_wtimeout_plus_duplicate_key_err (true);
 }
 
 
@@ -2034,6 +2255,7 @@ test_bulk_edge_over_1000 (void)
    mongoc_client_destroy(client);
 }
 
+
 static void
 test_bulk_edge_case_372 (bool ordered)
 {
@@ -2218,6 +2440,10 @@ _test_legacy_write_err (op_type_t op_type)
       break;
    case REMOVE:
       mongoc_bulk_operation_remove (bulk, doc);
+      break;
+   default:
+      fprintf (stderr, "Invalid op_type: : %d\n", op_type);
+      abort ();
    }
 
    future = future_bulk_operation_execute (bulk, &reply, &error);
@@ -2239,6 +2465,9 @@ _test_legacy_write_err (op_type_t op_type)
                                              MONGOC_REMOVE_NONE,
                                              "{'_id': 1}");
       break;
+   default:
+      fprintf (stderr, "Invalid op_type: : %d\n", op_type);
+      abort ();
    }
 
    request_destroy (request);
@@ -2277,6 +2506,70 @@ test_legacy_remove_err ()
    _test_legacy_write_err (REMOVE);
 }
 
+static void
+test_bulk_write_concern_over_1000(void)
+{
+   mongoc_client_t *client;
+   mongoc_bulk_operation_t *bulk;
+   mongoc_write_concern_t *write_concern;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_t doc;
+   bson_error_t error;
+   uint32_t success;
+   int i;
+   char *str;
+   bson_t *query;
+   const bson_t *result;
+
+   client = test_framework_client_new ();
+   assert (client);
+
+
+   write_concern = mongoc_write_concern_new();
+   mongoc_write_concern_set_w (write_concern, 1);
+   mongoc_client_set_write_concern (client, write_concern);
+
+   str = gen_collection_name ("bulk_write_concern_over_1000");
+   bulk = mongoc_bulk_operation_new (true);
+   mongoc_bulk_operation_set_database (bulk, "test");
+   mongoc_bulk_operation_set_collection (bulk, str);
+   mongoc_write_concern_set_w (write_concern, 0);
+   mongoc_bulk_operation_set_write_concern (bulk, write_concern);
+   mongoc_bulk_operation_set_client (bulk, client);
+
+   for (i = 0; i < 1010; i+=3) {
+      bson_init(&doc);
+      bson_append_int32(&doc, "_id", -1, i);
+
+      mongoc_bulk_operation_insert(bulk, &doc);
+
+      bson_destroy(&doc);
+   }
+
+   success = mongoc_bulk_operation_execute(bulk, NULL, &error);
+   ASSERT_OR_PRINT (success, error);
+
+   collection = mongoc_client_get_collection (client, "test", str);
+   bson_free (str);
+
+   query = bson_new();
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
+
+    success = mongoc_cursor_next (cursor, &result);
+    if (!success) {
+       mongoc_cursor_error(cursor, &error);
+       fprintf(stderr, "%s", error.message);
+    }
+    assert(success);
+
+    bson_destroy (query);
+    mongoc_cursor_destroy (cursor);
+    mongoc_bulk_operation_destroy(bulk);
+    mongoc_collection_destroy (collection);
+    mongoc_client_destroy (client);
+    mongoc_write_concern_destroy (write_concern);
+}
 
 void
 test_bulk_install (TestSuite *suite)
@@ -2339,10 +2632,20 @@ test_bulk_install (TestSuite *suite)
 #endif
    TestSuite_Add (suite, "/BulkOperation/write_concern/write_command/ordered",
                   test_write_concern_write_command_ordered);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/write_command/ordered/multi_err",
+                  test_write_concern_write_command_ordered_multi_err);
    TestSuite_Add (suite, "/BulkOperation/write_concern/write_command/unordered",
                   test_write_concern_write_command_unordered);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/write_command/unordered/multi_err",
+                  test_write_concern_write_command_unordered_multi_err);
    TestSuite_Add (suite, "/BulkOperation/multiple_error_unordered_bulk",
                   test_multiple_error_unordered_bulk);
+#ifdef TODO_CDRIVER_707
+   TestSuite_Add (suite, "/BulkOperation/wtimeout_duplicate_key/legacy",
+                  test_wtimeout_plus_duplicate_key_err_legacy);
+#endif
+   TestSuite_Add (suite, "/BulkOperation/wtimeout_duplicate_key/write_commands",
+                  test_wtimeout_plus_duplicate_key_err_write_commands);
    TestSuite_Add (suite, "/BulkOperation/large_inserts_ordered",
                   test_large_inserts_ordered);
    TestSuite_Add (suite, "/BulkOperation/large_inserts_unordered",
@@ -2359,6 +2662,8 @@ test_bulk_install (TestSuite *suite)
                   test_bulk_new);
    TestSuite_Add (suite, "/BulkOperation/over_1000",
                   test_bulk_edge_over_1000);
+   TestSuite_Add (suite, "/BulkOperation/write_concern/over_1000",
+                  test_bulk_write_concern_over_1000);
 
    TestSuite_Add (suite, "/BulkOperation/error/insert", test_legacy_insert_err);
    TestSuite_Add (suite, "/BulkOperation/error/update", test_legacy_update_err);

@@ -45,3 +45,11 @@
    ...
    obj:*/libcrypto.so.*
 }
+{
+   ignore_sasl_load_plugin_reachable_warnings
+   Memcheck:Leak
+   ...
+   fun:_sasl_get_plugin
+   ...
+   fun:_mongoc_do_init
+}

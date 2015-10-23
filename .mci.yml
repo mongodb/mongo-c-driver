@@ -13,7 +13,6 @@ c_driver_variables:
   ## Note that the in 3.0, the default storage engine is MMAPv1 and
   ## WiredTiger is opt-in, but in latest as of MongoDB 3.1.4, the
   ## default is WiredTiger and MMAPv1 is opt-in.
-  # TODO: ONLY INTEGRATION TEST LATEST IS USED, CDRIVER-675
   storage_engine_test_list: &storage_engine_tests
     - name: "compile"
     - name: "integration test 3.0"
@@ -101,21 +100,21 @@ c_driver_variables:
     mongo_orchestration:
       windows: &mongo_orchestration_windows
         start_mongo_orchestration: |
-          trap 'set +o errexit; mongo-orchestration stop;' EXIT
+          trap 'set +o errexit; cat server.log; mongo-orchestration stop;' EXIT
           taskkill.exe /FI "IMAGENAME eq python.exe" /F
           taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
           fsutil volume diskfree c:
           echo "Starting Mongo Orchestration..."
-          echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
+          echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
           mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000
           sleep 10
           curl -s http://localhost:8889/
       unix: &mongo_orchestration_unix
         start_mongo_orchestration: |
-          trap 'set +o errexit; mongo-orchestration stop;' EXIT
-          df
+          trap 'set +o errexit; cat server.log; mongo-orchestration stop;' EXIT
+          df -h
           echo "Starting Mongo Orchestration..."
-          echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" }, \"last_updated\": \"2014-08-29 20:57:00.000000\" }" > orchestration.config
+          echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
           TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
           curl -s http://localhost:8889/
       start_topology_command: &start_topology_command
@@ -409,6 +408,7 @@ post:
       params:
         working_dir: "mongo-c-driver"
         script: |
+            cat server.log
             mongo-orchestration stop
     - command: shell.cleanup
 

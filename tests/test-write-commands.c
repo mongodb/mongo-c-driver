@@ -57,8 +57,12 @@ test_split_insert (void)
    _mongoc_write_result_init (&result);
 
    _mongoc_write_command_init_insert (&command,
-                                      (const bson_t * const *)docs,
-                                      3000, true, true);
+                                      docs[0],
+                                      true, true);
+
+   for (i = 1; i < 3000; i++) {
+      _mongoc_write_command_insert_append (&command, docs[i]);
+   }
 
    _mongoc_write_command_execute (&command, client, 0, collection->db,
                                   collection->collection, NULL, 0, &result);
@@ -91,7 +95,7 @@ test_invalid_write_concern (void)
    mongoc_collection_t *collection;
    mongoc_client_t *client;
    mongoc_write_concern_t *write_concern;
-   bson_t **docs;
+   bson_t *doc;
    bson_t reply = BSON_INITIALIZER;
    bson_error_t error;
    bool r;
@@ -108,10 +112,9 @@ test_invalid_write_concern (void)
    mongoc_write_concern_set_journal(write_concern, true);
    assert(!_mongoc_write_concern_is_valid(write_concern));
 
-   docs = (bson_t **)bson_malloc(sizeof(bson_t*));
-   docs[0] = BCON_NEW("_id", BCON_INT32(0));
+   doc = BCON_NEW("_id", BCON_INT32(0));
 
-   _mongoc_write_command_init_insert(&command, (const bson_t * const *)docs, 1, true, true);
+   _mongoc_write_command_init_insert(&command, doc, true, true);
    _mongoc_write_result_init (&result);
 
    _mongoc_write_command_execute (&command, client, 0, collection->db,
@@ -127,9 +130,7 @@ test_invalid_write_concern (void)
    _mongoc_write_command_destroy (&command);
    _mongoc_write_result_destroy (&result);
 
-   bson_destroy(docs[0]);
-   bson_free(docs);
-
+   bson_destroy(doc);
    mongoc_collection_destroy(collection);
    mongoc_client_destroy(client);
    mongoc_write_concern_destroy(write_concern);

@@ -15,19 +15,29 @@
 
 
 static const mongoc_topology_scanner_node_t *
-get_node (const mongoc_topology_scanner_t *ts,
+get_node (mongoc_topology_t *topology,
           const char *host_and_port)
 {
+   const mongoc_topology_scanner_t *ts;
    const mongoc_topology_scanner_node_t *node;
+   const mongoc_topology_scanner_node_t *sought = NULL;
+
+
+   mongoc_mutex_lock (&topology->mutex);
+
+   ts = topology->scanner;
 
    DL_FOREACH (ts->nodes, node)
    {
       if (!strcmp (host_and_port, node->host.host_and_port)) {
-         return node;
+         sought = node;
+         break;
       }
    }
 
-   return NULL;
+   mongoc_mutex_unlock (&topology->mutex);
+
+   return sought;
 }
 
 
@@ -163,7 +173,7 @@ _test_topology_reconcile_rs (bool pooled)
     * server0 is selected, server1 is discovered and added to scanner.
     */
    assert (selects_server (client, secondary_read_prefs, server0));
-   assert (get_node (client->topology->scanner,
+   assert (get_node (client->topology,
                      mock_server_get_host_and_port (server1)));
 
    /*
@@ -195,7 +205,6 @@ _test_topology_reconcile_rs (bool pooled)
       /* no additional failed streams */
       ASSERT_CMPINT (1, ==, debug_stream_stats.n_failed);
    }
-
 
    mongoc_read_prefs_destroy (primary_read_prefs);
    mongoc_read_prefs_destroy (secondary_read_prefs);
@@ -303,13 +312,13 @@ _test_topology_reconcile_sharded (bool pooled)
    if (pooled) {
       /* wait a second for scanner thread to remove secondary */
       int64_t start = bson_get_monotonic_time ();
-      while (get_node (client->topology->scanner,
+      while (get_node (client->topology,
                        mock_server_get_host_and_port (secondary)))
       {
          assert (bson_get_monotonic_time () - start < 1000000);
       }
    } else {
-      assert (!get_node (client->topology->scanner,
+      assert (!get_node (client->topology,
                          mock_server_get_host_and_port (secondary)));
    }
 

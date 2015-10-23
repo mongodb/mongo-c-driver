@@ -20,9 +20,9 @@ set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 set (MONGOC_MAJOR_VERSION 1)
 set (MONGOC_MINOR_VERSION 2)
 set (MONGOC_MICRO_VERSION 0)
-set (MONGOC_PRERELEASE_VERSION beta2-dev)
+set (MONGOC_PRERELEASE_VERSION )
 set (MONGOC_API_VERSION 1.0)
-set (MONGOC_VERSION 1.2.0-beta2-dev)
+set (MONGOC_VERSION 1.2.0)
 
 set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 set (CPACK_PACKAGE_VERSION_MAJOR ${MONGOC_MAJOR_VERSION})
@@ -126,6 +126,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-topology-scanner.c
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.c
    ${SOURCE_DIR}/src/mongoc/mongoc-util.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
 )
@@ -157,12 +158,14 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-socket-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-uri.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
 )
 
@@ -265,6 +268,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
    ${SOURCE_DIR}/tests/test-mongoc-cursor.c
    ${SOURCE_DIR}/tests/test-mongoc-database.c
+   ${SOURCE_DIR}/tests/test-mongoc-exhaust.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
    ${SOURCE_DIR}/tests/test-mongoc-list.c
@@ -275,6 +279,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${SOURCE_DIR}/tests/test-mongoc-sdam.c
    ${SOURCE_DIR}/tests/test-mongoc-server-selection.c
+   ${SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
    ${SOURCE_DIR}/tests/test-mongoc-set.c
    ${SOURCE_DIR}/tests/test-mongoc-socket.c
    ${SOURCE_DIR}/tests/test-mongoc-stream.c
@@ -283,6 +288,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-topology-reconcile.c
    ${SOURCE_DIR}/tests/test-mongoc-topology-scanner.c
    ${SOURCE_DIR}/tests/test-mongoc-uri.c
+   ${SOURCE_DIR}/tests/test-mongoc-version.c
    ${SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${SOURCE_DIR}/tests/test-mongoc-write-concern.c
    ${SOURCE_DIR}/tests/test-sasl.c

@@ -37,7 +37,7 @@ topology_type_from_test(const char *type)
    } else if (strcmp(type, "Sharded") == 0) {
       return MONGOC_TOPOLOGY_SHARDED;
    } else {
-      printf("can't parse this: %s", type);
+      fprintf(stderr, "can't parse this: %s", type);
       assert(0);
    }
 }
@@ -64,7 +64,7 @@ server_type_from_test(const char *type)
    } else if (strcmp(type, "Unknown") == 0) {
       return MONGOC_SERVER_UNKNOWN;
    } else {
-      printf("ERROR: Unknown server type %s\n", type);
+      fprintf(stderr, "ERROR: Unknown server type %s\n", type);
       assert(0);
    }
 }
@@ -85,7 +85,7 @@ topology_type_to_string(mongoc_topology_description_type_t type)
       return "Single";
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
-      printf("ERROR: Unknown topology state\n");
+      fprintf(stderr, "ERROR: Unknown topology state\n");
       assert(0);
    }
 }
@@ -296,7 +296,7 @@ install_json_test_suite(TestSuite *suite, const char *dir_path, test_hook callba
 
          TestSuite_AddWC(suite, skip_json, (void (*)(void *))callback, (void (*)(void*))bson_destroy, test);
       } else {
-         printf("NO DATA\n");
+         fprintf(stderr, "NO DATA\n");
       }
    }
 }

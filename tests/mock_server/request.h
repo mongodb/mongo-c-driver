@@ -91,6 +91,8 @@ bool request_matches_kill_cursors (const request_t *request,
 
 uint16_t request_get_server_port (request_t *request);
 
+uint16_t request_get_client_port (request_t *request);
+
 void request_destroy (request_t *request);
 
 #endif //REQUEST_H

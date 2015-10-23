@@ -17,7 +17,7 @@
 #ifndef MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 #define MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 
-#include "mongoc-read-prefs-private.h"
+#include "mongoc-set-private.h"
 #include "mongoc-server-description.h"
 
 #define MONGOC_SS_DEFAULT_TIMEOUT_MS 30000
@@ -69,8 +69,7 @@ mongoc_server_description_t *
 mongoc_topology_description_select (mongoc_topology_description_t *description,
                                     mongoc_ss_optype_t             optype,
                                     const mongoc_read_prefs_t     *read_pref,
-                                    int64_t                        local_threshold_ms,
-                                    bson_error_t                  *error);
+                                    int64_t                        local_threshold_ms);
 
 mongoc_server_description_t *
 mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,

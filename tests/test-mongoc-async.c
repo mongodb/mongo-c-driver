@@ -5,6 +5,7 @@
 #include "mongoc-tests.h"
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
+#include "mongoc-errno-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "async-test"
@@ -59,6 +60,7 @@ test_ismaster_impl (bool with_ssl)
    struct result results[NSERVERS];
    int r;
    int i;
+   int errcode;
    bson_t q = BSON_INITIALIZER;
 
 #ifdef MONGOC_ENABLE_SSL
@@ -98,8 +100,10 @@ test_ismaster_impl (bool with_ssl)
                                  sizeof (server_addr),
                                  0);
 
-      if (!(r == 0 || errno == EAGAIN || errno == EINPROGRESS)) {
-         fprintf (stderr, "mongoc_socket_connect unexpected return: %d\n", r);
+      errcode = mongoc_socket_errno (conn_sock);
+      if (!(r == 0 || MONGOC_ERRNO_IS_AGAIN (errcode))) {
+         fprintf (stderr, "mongoc_socket_connect unexpected return: "
+                          "%d (errno: %d)\n", r, errcode);
          fflush (stderr);
          abort ();
       }

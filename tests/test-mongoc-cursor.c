@@ -147,9 +147,10 @@ _test_kill_cursors (bool pooled)
    const bson_t *doc = NULL;
    future_t *future;
    request_t *request;
+   bson_error_t error;
    request_t *kill_cursors;
 
-   /* wire version 0, five secondaries, no arbiters */
+   /* wire version 0, a primary, five secondaries, no arbiters */
    rs = mock_rs_with_autoismaster (0, true, 5, 0);
    mock_rs_run (rs);
 
@@ -167,15 +168,16 @@ _test_kill_cursors (bool pooled)
                                     q, NULL, prefs);
 
    future = future_cursor_next (cursor, &doc);
-   /* TODO: bug? query has $readPreference but not slave ok!! */
-   /* request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
-                                     0, 0, "{'a': 1}", NULL); */
-
-   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_NONE,
-                                     0, 0, "{}", NULL);
+   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
+                                     0, 0, "{'a': 1}", NULL);
 
    mock_rs_replies (request, 0, 123, 0, 1, "{'b': 1}");
-   assert (future_get_bool (future));
+   if (!future_get_bool (future)) {
+      mongoc_cursor_error (cursor, &error);
+      fprintf (stderr, "%s\n", error.message);
+      abort ();
+   };
+
    ASSERT_MATCH (doc, "{'b': 1}");
    ASSERT_CMPINT (123, ==, (int) mongoc_cursor_get_id (cursor));
 
@@ -222,7 +224,6 @@ test_kill_cursors_pooled (void)
 }
 
 
-#ifdef TODO_CDRIVER_679
 static void
 _test_getmore_fail (bool has_primary,
                     bool pooled)
@@ -237,11 +238,9 @@ _test_getmore_fail (bool has_primary,
    const bson_t *doc = NULL;
    future_t *future;
    request_t *request;
-   request_t *kill_cursors;
 
    /* wire version 0, five secondaries, no arbiters */
    rs = mock_rs_with_autoismaster (0, has_primary, 5, 0);
-   mock_rs_set_verbose (rs, true);
    mock_rs_run (rs);
 
    if (pooled) {
@@ -258,12 +257,8 @@ _test_getmore_fail (bool has_primary,
                                     q, NULL, prefs);
 
    future = future_cursor_next (cursor, &doc);
-   /* TODO: bug? query has $readPreference but not slave ok!! */
-   /* request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
-                                     0, 0, "{'a': 1}", NULL); */
-
-   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_NONE,
-                                     0, 0, "{}", NULL);
+   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
+                                     0, 0, "{'a': 1}", NULL);
 
    mock_rs_replies (request, 0, 123, 0, 1, "{'b': 1}");
    assert (future_get_bool (future));
@@ -273,20 +268,19 @@ _test_getmore_fail (bool has_primary,
    future_destroy (future);
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_getmore (rs, "test.test", 0, 123);
-   /*suppress_one_message ();*/
+   suppress_one_message ();
    mock_rs_hangs_up (request);
    assert (! future_get_bool (future));
+   request_destroy (request);
 
    future_destroy (future);
    future = future_cursor_destroy (cursor);
-   kill_cursors = mock_rs_receives_kill_cursors (rs, 123);
 
-   /* OP_KILLCURSORS was sent to the right secondary */
-   ASSERT_CMPINT (request_get_server_port (kill_cursors), ==,
-                  request_get_server_port (request));
+   /* driver does not reconnect just to send killcursors */
+   mock_rs_set_request_timeout_msec (rs, 100);
+   assert (! mock_rs_receives_kill_cursors (rs, 123));
 
-   request_destroy (kill_cursors);
-   request_destroy (request);
+   future_wait (future);
    future_destroy (future);
    mongoc_read_prefs_destroy (prefs);
    mongoc_collection_destroy (collection);
@@ -329,7 +323,89 @@ test_getmore_fail_no_primary_single (void)
 {
    _test_getmore_fail (false, false);
 }
-#endif
+
+
+/* We already test that mongoc_cursor_destroy sends OP_KILLCURSORS in
+ * test_kill_cursors_single / pooled. Here, test explicit
+ * mongoc_client_kill_cursor. */
+static void
+_test_client_kill_cursor (bool has_primary)
+{
+   mock_rs_t *rs;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+
+   /* maybe a primary, definitely a secondary and no arbiter */
+   rs = mock_rs_with_autoismaster (0, has_primary, 1, 0);
+   mock_rs_run (rs);
+   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   collection = mongoc_client_get_collection (client, "test", "test");
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0,
+                                    0, tmp_bson ("{}"), NULL, read_prefs);
+
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
+                                     0, 0, "{}", NULL);
+
+   assert (mock_rs_request_is_to_secondary (rs, request));
+
+   mock_rs_replies (request,
+                    0,                    /* flags */
+                    123,                  /* cursorId */
+                    0,                    /* startingFrom */
+                    1,                    /* numberReturned */
+                    "{'a': 1}");
+
+   assert (future_get_bool (future));  /* mongoc_cursor_next returned true */
+   future_destroy (future);
+   request_destroy (request);
+
+   future = future_client_kill_cursor (client, 123);
+
+   mock_rs_set_request_timeout_msec (rs, 100);
+   request = mock_rs_receives_kill_cursors (rs, 123);
+
+   if (has_primary) {
+      assert (request);
+
+      /* weird but true. see mongoc_client_kill_cursor's documentation */
+      assert (mock_rs_request_is_to_primary (rs, request));
+
+      request_destroy (request);  /* server has no reply to OP_KILLCURSORS */
+   } else {
+      /* TODO: catch and check warning */
+      assert (!request);
+   }
+
+   future_wait (future);  /* no return value */
+
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_rs_destroy (rs);
+}
+
+static void
+test_client_kill_cursor_with_primary (void)
+{
+   _test_client_kill_cursor (true);
+}
+
+
+static void
+test_client_kill_cursor_without_primary (void)
+{
+   _test_client_kill_cursor (false);
+}
 
 
 void
@@ -340,7 +416,6 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/invalid_query", test_invalid_query);
    TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);
    TestSuite_Add (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
-#ifdef TODO_CDRIVER_679
    TestSuite_Add (suite, "/Cursor/getmore_fail/with_primary/pooled",
                   test_getmore_fail_with_primary_pooled);
    TestSuite_Add (suite, "/Cursor/getmore_fail/with_primary/single",
@@ -348,6 +423,9 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/getmore_fail/no_primary/pooled",
                   test_getmore_fail_no_primary_pooled);
    TestSuite_Add (suite, "/Cursor/getmore_fail/no_primary/single",
-                  test_getmore_fail_no_primary_single);*/
-#endif
+                  test_getmore_fail_no_primary_single);
+   TestSuite_Add (suite, "/Cursor/client_kill_cursor/with_primary",
+                  test_client_kill_cursor_with_primary);
+   TestSuite_Add (suite, "/Cursor/client_kill_cursor/without_primary",
+                  test_client_kill_cursor_without_primary);
 }
