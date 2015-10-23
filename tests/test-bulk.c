@@ -244,7 +244,7 @@ assert_n_removed (int           n,
          fprintf(stderr, "FAIL\n\nAssert Failure: count of %s is %d, not %d\n" \
                          "%s:%d  %s()\n", \
                          mongoc_collection_get_name (collection), count, n, \
-                         __FILE__, __LINE__, __FUNCTION__); \
+                         __FILE__, __LINE__, BSON_FUNC); \
          abort(); \
       } \
    } while (0)

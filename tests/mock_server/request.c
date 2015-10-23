@@ -59,7 +59,7 @@ request_new (const mongoc_buffer_t *buffer,
 
    if (!_mongoc_rpc_scatter (&request->request_rpc, data,
                              (size_t) msg_len)) {
-      MONGOC_WARNING ("%s():%d: %s", __FUNCTION__, __LINE__,
+      MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, __LINE__,
                       "Failed to scatter");
       bson_free (data);
       bson_free (request);
@@ -193,7 +193,7 @@ request_matches_query (const request_t *request,
    }
 
    if (!match_json (doc, is_command, __FILE__, __LINE__,
-                    __FUNCTION__, query_json)) {
+                    BSON_FUNC, query_json)) {
       /* match_json has logged the err */
       return false;
    }
@@ -205,7 +205,7 @@ request_matches_query (const request_t *request,
    }
 
    if (!match_json (doc, false,
-                    __FILE__, __LINE__, __FUNCTION__, fields_json)) {
+                    __FILE__, __LINE__, BSON_FUNC, fields_json)) {
       /* match_json has logged the err */
       return false;
    }
@@ -247,7 +247,7 @@ request_matches_insert (const request_t *request,
 
    ASSERT_CMPINT ((int)request->docs.len, ==, 1);
    doc = request_get_doc(request, 0);
-   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, doc_json)) {
+   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, doc_json)) {
       return false;
    }
 
@@ -329,12 +329,12 @@ request_matches_update (const request_t *request,
 
    ASSERT_CMPINT ((int)request->docs.len, ==, 2);
    doc = request_get_doc(request, 0);
-   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, selector_json)) {
+   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
       return false;
    }
 
    doc = request_get_doc(request, 1);
-   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, update_json)) {
+   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, update_json)) {
       return false;
    }
 
@@ -375,7 +375,7 @@ request_matches_delete (const request_t *request,
 
    ASSERT_CMPINT ((int)request->docs.len, ==, 1);
    doc = request_get_doc(request, 0);
-   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, selector_json)) {
+   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
       return false;
    }
 

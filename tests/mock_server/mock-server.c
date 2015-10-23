@@ -1484,7 +1484,7 @@ again:
 
    if (_mongoc_buffer_fill (&buffer, client_stream, (size_t) msg_len, -1,
                             &error) == -1) {
-      MONGOC_WARNING ("%s():%d: %s", __FUNCTION__, __LINE__, error.message);
+      MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, __LINE__, error.message);
       GOTO (failure);
    }
 

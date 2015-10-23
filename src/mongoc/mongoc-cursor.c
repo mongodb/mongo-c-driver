@@ -720,7 +720,7 @@ _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
 
    if (!cursor->hint) {
       MONGOC_WARNING("%s(): Must send query before fetching peer.",
-                     __FUNCTION__);
+                     BSON_FUNC);
       return;
    }
 

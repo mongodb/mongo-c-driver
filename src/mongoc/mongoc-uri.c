@@ -1207,7 +1207,7 @@ mongoc_uri_unescape (const char *escaped_string)
     */
    if (!bson_utf8_validate(escaped_string, len, false)) {
       MONGOC_WARNING("%s(): escaped_string contains invalid UTF-8",
-                     __FUNCTION__);
+                     BSON_FUNC);
       return NULL;
    }
 

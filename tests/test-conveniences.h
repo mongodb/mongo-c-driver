@@ -39,7 +39,7 @@ bool match_json (const bson_t *doc,
 #define ASSERT_MATCH(doc, ...) \
    do { \
       assert (match_json (doc, false, \
-                          __FILE__, __LINE__, __FUNCTION__, \
+                          __FILE__, __LINE__, BSON_FUNC, \
                           __VA_ARGS__)); \
    } while (0)
 

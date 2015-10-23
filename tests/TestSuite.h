@@ -45,7 +45,7 @@ extern "C" {
    do { \
       if (! (_statement)) { \
          fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n  %s\n\n", \
-                         __FILE__, __LINE__, __FUNCTION__, \
+                         __FILE__, __LINE__, BSON_FUNC, \
                          #_statement, _err.message); \
          fflush(stderr); \
          abort(); \
@@ -59,7 +59,7 @@ extern "C" {
          fprintf(stderr, "FAIL\n\nAssert Failure: %" fmt " %s %" fmt "\n" \
                          "%s:%d  %s()\n", \
                          a, #eq, b, \
-                         __FILE__, __LINE__, __FUNCTION__); \
+                         __FILE__, __LINE__, BSON_FUNC); \
          abort(); \
       } \
    } while (0)
@@ -96,7 +96,7 @@ extern "C" {
                          " not within 20%% of %" PRId64 "\n" \
                          "%s:%d  %s()\n", \
                          _a, _b, \
-                         __FILE__, __LINE__, __FUNCTION__); \
+                         __FILE__, __LINE__, BSON_FUNC); \
          abort(); \
       } \
    } while (0)
@@ -139,7 +139,7 @@ extern "C" {
          if (bson_get_monotonic_time() - _start > 1000 * 1000) { \
             fprintf (stderr, \
                      "%s:%d %s(): \"%s\" still false after 1 second\n", \
-                     __FILE__, __LINE__, __FUNCTION__, #_condition); \
+                     __FILE__, __LINE__, BSON_FUNC, #_condition); \
             abort (); \
          } \
       }  \
