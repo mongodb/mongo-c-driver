@@ -863,6 +863,7 @@ test_mongoc_client_unix_domain_socket (void *context)
 
    uri_str = test_framework_get_unix_domain_socket_uri_str ();
    client = mongoc_client_new (uri_str);
+   test_framework_set_ssl_opts (client);
 
    assert (client);
 
