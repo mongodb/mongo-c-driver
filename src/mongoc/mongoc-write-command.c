@@ -814,6 +814,13 @@ _mongoc_write_command(mongoc_write_command_t       *command,
 
    if ((min_wire_version == 0) &&
        !_mongoc_write_concern_needs_gle (write_concern)) {
+      if (command->flags.bypass_document_validation != MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set bypassDocumentValidation for unacknowledged writes");
+         EXIT;
+      }
       gLegacyWriteOps[command->type] (command, client, hint, database,
                                       collection, write_concern, offset,
                                       result, error);
