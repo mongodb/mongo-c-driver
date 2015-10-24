@@ -1970,10 +1970,18 @@ test_large_inserts_ordered ()
    r = (bool)mongoc_bulk_operation_execute (bulk, &reply, &error);
    assert (!r);
    /* TODO: CDRIVER-662, should always be MONGOC_ERROR_BSON */
-   assert (
+   if (!(
       (error.domain == MONGOC_ERROR_COMMAND) ||
       (error.domain == MONGOC_ERROR_BSON &&
-       error.code == MONGOC_ERROR_BSON_INVALID));
+       error.code == MONGOC_ERROR_BSON_INVALID))) {
+      fprintf (stderr, "Expected error domain %d, or domain %d with code %d.\n"
+         "Got domain %d, code %d, message: \"%s\"\n",
+              MONGOC_ERROR_COMMAND, MONGOC_ERROR_BSON,
+               MONGOC_ERROR_BSON_INVALID,
+              error.domain, error.code, error.message);
+      fflush (stderr);
+      abort ();
+   }
 
    ASSERT_MATCH (&reply, "{'nInserted': 1,"
                          " 'nMatched': 0,"
