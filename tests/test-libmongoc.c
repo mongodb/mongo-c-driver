@@ -1027,6 +1027,122 @@ test_framework_max_wire_version_at_least (int version)
    return at_least;
 }
 
+#define N_SERVER_VERSION_PARTS 4
+
+static server_version_t
+_parse_server_version (const bson_t *buildinfo)
+{
+   bson_iter_t iter;
+   bson_iter_t array_iter;
+   int i;
+   server_version_t ret = 0;
+
+   ASSERT (bson_iter_init_find (&iter, buildinfo, "versionArray"));
+   ASSERT (bson_iter_recurse (&iter, &array_iter));
+
+   /* Server returns a 4-part version like [3, 2, 0, 0], or like [3, 2, 0, -49]
+    * for an RC. Bail if number of parts is ever not 4. */
+   i = 0;
+   while (bson_iter_next (&array_iter)) {
+      ret *= 1000;
+      ret += 100 + bson_iter_as_int64 (&array_iter);
+      i++;
+      ASSERT_CMPINT (i, <=, N_SERVER_VERSION_PARTS);
+   }
+
+   ASSERT_CMPINT (i, ==, N_SERVER_VERSION_PARTS);
+
+   return ret;
+}
+
+server_version_t
+test_framework_get_server_version (void)
+{
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+   server_version_t ret = 0;
+
+   client = test_framework_client_new ();
+   ASSERT_OR_PRINT (mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'buildinfo': 1}"),
+      NULL, &reply, &error), error);
+
+   ret = _parse_server_version (&reply);
+
+   bson_destroy (&reply);
+   mongoc_client_destroy (client);
+
+   return ret;
+}
+
+server_version_t
+test_framework_str_to_version (const char *version_str)
+{
+   char *str_copy;
+   char *part;
+   char *end;
+   int i;
+   server_version_t ret = 0;
+
+   str_copy = bson_strdup (version_str);
+   i = 0;
+   part = strtok (str_copy, ".");
+   while (part) {
+      ret *= 1000;
+
+      /* add 100 since release candidates have versions like "3.2.0.-49" */
+      ret += 100 + bson_ascii_strtoll (part, &end, 10);
+      i++;
+      ASSERT_CMPINT (i, <=, N_SERVER_VERSION_PARTS);
+      part = strtok (NULL, ".");
+   }
+
+   /* pad out a short version like "3.0" */
+   for (; i < N_SERVER_VERSION_PARTS; i++) {
+      ret *= 1000;
+      ret += 100;
+   }
+
+   bson_free (str_copy);
+
+   return ret;
+}
+
+/* self-tests for a test framework feature */
+static void
+test_version_cmp (void)
+{
+   server_version_t v2_6_12        = 102106112100;
+   server_version_t v3_0_0         = 103100100100;
+   server_version_t v3_0_1         = 103100101100;
+   server_version_t v3_0_10        = 103100110100;
+   server_version_t v3_2_0_rc1_pre = 103102100051;
+
+   ASSERT (v2_6_12 == test_framework_str_to_version ("2.6.12"));
+   ASSERT (v2_6_12 == _parse_server_version (
+      tmp_bson ("{'versionArray': [2, 6, 12, 0]}")));
+
+   ASSERT (v3_0_0 == test_framework_str_to_version ("3"));
+   ASSERT (v3_0_0 == _parse_server_version (
+      tmp_bson ("{'versionArray': [3, 0, 0, 0]}")));
+
+   ASSERT (v3_0_1 == test_framework_str_to_version ("3.0.1"));
+   ASSERT (v3_0_1 == _parse_server_version (
+      tmp_bson ("{'versionArray': [3, 0, 1, 0]}")));
+
+   ASSERT (v3_0_10 == test_framework_str_to_version ("3.0.10"));
+   ASSERT (v3_0_10 == _parse_server_version (
+      tmp_bson ("{'versionArray': [3, 0, 10, 0]}")));
+
+   ASSERT (v3_2_0_rc1_pre == test_framework_str_to_version ("3.2.0.-49"));
+   ASSERT (v3_2_0_rc1_pre == _parse_server_version (
+      tmp_bson ("{'versionArray': [3, 2, 0, -49]}")));
+
+   ASSERT (v3_2_0_rc1_pre > test_framework_str_to_version ("3.1.9"));
+   ASSERT (v3_2_0_rc1_pre < test_framework_str_to_version ("3.2"));
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -1048,6 +1164,7 @@ main (int   argc,
 #endif
 
    TestSuite_Init (&suite, "", argc, argv);
+   TestSuite_Add (&suite, "/TestSuite/version_cmp", test_version_cmp);
 
    test_array_install (&suite);
    test_async_install (&suite);

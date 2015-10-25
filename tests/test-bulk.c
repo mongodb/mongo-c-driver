@@ -1936,7 +1936,7 @@ test_wtimeout_plus_duplicate_key_err_write_commands (void)
 
 
 static void
-test_large_inserts_ordered ()
+test_large_inserts_ordered (void *ctx)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -2579,6 +2579,20 @@ test_bulk_write_concern_over_1000(void)
     mongoc_write_concern_destroy (write_concern);
 }
 
+static int
+check_for_server_21079 (void)
+{
+   server_version_t server_version = test_framework_get_server_version ();
+
+   /* Skip 3.2.0 release candidates, with version arrays like [3, 2, 0, -n] */
+   if (server_version > test_framework_str_to_version ("3.1.9") &&
+       server_version < test_framework_str_to_version ("3.2.0")) {
+      return 0;
+   }
+
+   return 1;
+}
+
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -2654,8 +2668,9 @@ test_bulk_install (TestSuite *suite)
 #endif
    TestSuite_Add (suite, "/BulkOperation/wtimeout_duplicate_key/write_commands",
                   test_wtimeout_plus_duplicate_key_err_write_commands);
-   TestSuite_Add (suite, "/BulkOperation/large_inserts_ordered",
-                  test_large_inserts_ordered);
+   TestSuite_AddFull (suite, "/BulkOperation/large_inserts_ordered",
+                      test_large_inserts_ordered, NULL, NULL,
+                      check_for_server_21079);
    TestSuite_Add (suite, "/BulkOperation/large_inserts_unordered",
                   test_large_inserts_unordered);
    TestSuite_Add (suite, "/BulkOperation/numerous_ordered",
