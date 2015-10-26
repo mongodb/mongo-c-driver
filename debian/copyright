@@ -1,0 +1,81 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: libmongoc
+Source: https://github.com/mongodb/mongo-c-driver/releases
+
+Files: *
+Copyright: 2009-2015 MongoDB, Inc.
+License: Apache-2.0
+
+Files: build/autotools/LDVersionScript.m4
+Copyright: 2008-2013 Free Software Foundation, Inc.
+License: Other-FSF
+ This file is free software; the Free Software Foundation
+ gives unlimited permission to copy and/or distribute it,
+ with or without modifications, as long as this notice is preserved.
+
+Files: build/autotools/m4/ax_pthread.m4
+Copyright: 2008 Steven G. Johnson <stevenj@alum.mit.edu>
+           2011 Daniel Richard G. <skunk@iSKUNK.ORG>
+License: GPL-3+
+
+Files: build/autotools/m4/ax_python.m4
+Copyright: 2008 Michael Tindal
+License: GPL-2+
+
+Files: build/autotools/m4/ax_check_link_flag.m4 build/autotools/m4/ax_check_compile_flag.m4
+Copyright: 2008 Guido U. Draheim <guidod@gmx.de>
+           2011 Maarten Bosmans <mkbosmans@gmail.com>
+License: GPL-3+
+
+Files: build/autotools/m4/pkg.m4
+Copyright: 2004 Scott James Remnant <scott@netsplit.com>
+License: GPL-2+
+
+Files: build/autotools/m4/silent.m4
+Copyright: 2010, Damien Lespiau <damien.lespiau@gmail.com>
+License: Other-DWTFYWTPL
+            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+ .
+  0. You just DO WHAT THE FUCK YOU WANT TO.
+ .
+ The above copyright notice and this permission notice shall be
+ included in all copies or substantial portions of the Software.
+
+Files: debian/*
+Copyright: 2015 MongoDB, Inc.
+License: Apache-2.0
+
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+ http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian systems, the complete text of the Apache version 2.0 license
+ can be found in "/usr/share/common-licenses/Apache-2.0".
+
+License: GPL-3+
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation, either version 3 of the License, or (at your
+ option) any later version.
+ .
+ On Debian systems, the complete text of the GPL version 3 license can be
+ found in "/usr/share/common-licenses/GPL-3".
+
+License: GPL-2+
+ This program is free software: you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by the
+ Free Software Foundation, either version 2 of the License, or (at your
+ option) any later version.
+ .
+ On Debian systems, the complete text of the GPL version 2 license can be
+ found in "/usr/share/common-licenses/GPL-2".

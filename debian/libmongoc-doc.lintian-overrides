@@ -1,0 +1,2 @@
+# yelp-build embeds jQuery and jQuery.Syntax, so we can't use libjs-jquery
+libmongoc-doc: embedded-javascript-library

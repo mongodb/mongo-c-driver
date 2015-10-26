@@ -1,0 +1,52 @@
+Source: libmongoc
+Priority: optional
+Maintainer: A. Jesse Jiryu Davis <jesse@mongodb.com>
+Build-Depends: debhelper (>= 9), dh-autoreconf, yelp-tools, yelp-xsl, libbson-dev
+Standards-Version: 3.9.6
+Section: libs
+Homepage: https://github.com/mongodb/mongo-c-driver
+Vcs-Git: https://github.com/mongodb/mongo-c-driver.git
+Vcs-Browser: https://github.com/mongodb/mongo-c-driver/tree/debian
+
+Package: libmongoc-dev
+Section: libdevel
+Architecture: any
+Depends: libmongoc-1.0-0 (= ${binary:Version}), ${misc:Depends}
+Description: MongoDB C client library - dev files
+ libmongoc is the officially supported MongoDB client library for C
+ applications, and the foundation for certain MongoDB drivers written in
+ higher-level languages like C++ and PHP.
+ .
+ This package contains all files necessary to develop applications which
+ use libmongoc.
+
+Package: libmongoc-1.0-0
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: MongoDB C client library
+ libmongoc is the officially supported MongoDB client library for C
+ applications, and the foundation for certain MongoDB drivers written in
+ higher-level languages like C++ and PHP.
+
+Package: libmongoc-dbg
+Section: debug
+Priority: extra
+Architecture: any
+Depends: libmongoc-1.0-0 (= ${binary:Version}), ${misc:Depends}
+Description: MongoDB C client library - debug symbols
+ libmongoc is the officially supported MongoDB client library for C
+ applications, and the foundation for certain MongoDB drivers written in
+ higher-level languages like C++ and PHP.
+ .
+ This package contains the debugging symbols for libmongoc.
+
+Package: libmongoc-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}
+Description: MongoDB C client library - documentation
+ libmongoc is the officially supported MongoDB client library for C
+ applications, and the foundation for certain MongoDB drivers written in
+ higher-level languages like C++ and PHP.
+ .
+ This package contains the man pages for libmongoc.

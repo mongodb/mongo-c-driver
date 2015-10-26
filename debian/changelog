@@ -1,0 +1,5 @@
+libmongoc (1.2.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #798711)
+
+ -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Fri, 23 Oct 2015 20:21:17 +0000
