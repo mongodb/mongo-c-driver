@@ -50,6 +50,7 @@ mongoc_bulk_operation_new (bool ordered)
    mongoc_bulk_operation_t *bulk;
 
    bulk = (mongoc_bulk_operation_t *)bson_malloc0 (sizeof *bulk);
+   bulk->flags.bypass_document_validation = MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
    bulk->flags.ordered = ordered;
 
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));
