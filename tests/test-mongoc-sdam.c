@@ -13,6 +13,9 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 
+#include <limits.h>
+#include <stdlib.h>
+
 #define MAX_NUM_TESTS 100
 
 #if defined(_WIN32) && !defined(strcasecmp)
@@ -190,21 +193,27 @@ test_sdam_cb (bson_t *test)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
+   char resolved[PATH_MAX];
+
    /* Single */
-   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/single",
-                       &test_sdam_cb);
+   if (realpath ("tests/json/server_discovery_and_monitoring/single", resolved)) {
+      install_json_test_suite(suite, resolved, &test_sdam_cb);
+   }
 
    /* Replica set */
-   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/rs",
-                       &test_sdam_cb);
+   if (realpath ("tests/json/server_discovery_and_monitoring/rs", resolved)) {
+      install_json_test_suite(suite, resolved, &test_sdam_cb);
+   }
 
    /* Sharded */
-   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/sharded",
-                       &test_sdam_cb);
+   if (realpath ("tests/json/server_discovery_and_monitoring/sharded", resolved)) {
+      install_json_test_suite(suite, resolved, &test_sdam_cb);
+   }
 
    /* Tests not in official Server Discovery And Monitoring Spec */
-   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/supplemental",
-                       &test_sdam_cb);
+   if (realpath ("tests/json/server_discovery_and_monitoring/supplemental", resolved)) {
+      install_json_test_suite(suite, resolved, &test_sdam_cb);
+   }
 }
 
 void

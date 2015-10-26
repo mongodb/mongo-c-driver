@@ -11,6 +11,9 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 
+#include <limits.h>
+#include <stdlib.h>
+
 static mongoc_ss_optype_t
 optype_from_test(const char *op)
 {
@@ -236,13 +239,17 @@ test_server_selection_logic_cb (bson_t *test)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
+   char resolved[PATH_MAX];
+
    /* RTT calculation */
-   install_json_test_suite(suite, "tests/json/server_selection/rtt",
-                           &test_rtt_calculation_cb);
+   if (realpath ("tests/json/server_selection/rtt", resolved)) {
+      install_json_test_suite(suite, resolved, &test_rtt_calculation_cb);
+   }
 
    /* SS logic */
-   install_json_test_suite(suite, "tests/json/server_selection/server_selection",
-                           &test_server_selection_logic_cb);
+   if (realpath ("tests/json/server_selection/server_selection", resolved)) {
+      install_json_test_suite(suite, resolved, &test_server_selection_logic_cb);
+   }
 }
 
 void
