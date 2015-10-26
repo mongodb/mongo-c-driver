@@ -7,10 +7,6 @@ AS_IF([test "$enable_optimizations" != "no"], [
 
     dnl Add the appropriate 'O' level for optimized builds.
     CFLAGS="$CFLAGS -O2"
-
-    if test "$c_compiler" = "gcc"; then
-        CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2"
-    fi
 ])
 
 AC_SUBST(OPTIMIZE_CFLAGS)
