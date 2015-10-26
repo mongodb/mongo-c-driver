@@ -132,13 +132,13 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-ssl=yes --enable-sasl=yes
+          CFLAGS="-Werror" ./autogen.sh --enable-optimizations --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
       solaris: &compile_solaris
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-ssl=yes --enable-sasl=yes
+          CFLAGS="-Werror" ./autogen.sh --enable-optimizations --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
       msvc: &compile_msvc
         compile_script: |
