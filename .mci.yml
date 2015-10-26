@@ -183,9 +183,11 @@ c_driver_variables:
           ./tests/make_ca.pl tests/trust_dir tests/trust_dir.cnf
           touch tests/trust_dir/done
           export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
+          export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           ./Debug/test-libmongoc.exe -d -f -p
       unix: &run_integration_tests_unix
         run_integration_tests: |
+          export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           make TEST_ARGS="-f -p -d" check
 
 ## Other OS-specific attributes, grouped by OS

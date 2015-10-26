@@ -62,4 +62,9 @@ typedef struct _debug_stream_stats_t {
 void test_framework_set_debug_stream (mongoc_client_t *client,
                                       debug_stream_stats_t *stats);
 
+typedef int64_t server_version_t;
+
+server_version_t test_framework_get_server_version (void);
+server_version_t test_framework_str_to_version (const char *version_str);
+
 #endif
