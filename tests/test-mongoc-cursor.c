@@ -45,8 +45,8 @@ test_get_host (void)
 
    bson_free (uri_str);
    mongoc_uri_destroy(uri);
-   mongoc_client_destroy (client);
    mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
 }
 
 static void
