@@ -125,6 +125,7 @@ c_driver_variables:
         start_topology: |
           curl -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL"
           ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.serverBuildInfo())'
+          ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.adminCommand({getCmdLineOpts:1}))'
           ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())'
 
     compile:
