@@ -1,4 +1,4 @@
-libmongoc (1.2.0-1) unstable; urgency=low
+libmongoc (1.2.0-1) experimental; urgency=low
 
   * Initial release (Closes: #798711)
 
