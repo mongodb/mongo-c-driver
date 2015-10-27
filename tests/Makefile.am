@@ -20,7 +20,7 @@ endif
 TEST_CFLAGS += \
 	-Wno-deprecated-declarations \
 	-DMONGOC_COMPILATION \
-	-DBINARY_DIR="\"$(srcdir)/tests/binary\"" \
+	-DBINARY_DIR="\"$(abs_srcdir)/tests/binary\"" \
 	$(BSON_CFLAGS) \
 	$(SSL_CFLAGS) \
 	$(SASL_CFLAGS) \
@@ -232,8 +232,10 @@ DISTCLEANFILES += \
 EXTRA_DIST += \
 	tests/abicheck.sh \
 	tests/binary/delete1.dat \
+	tests/binary/empty.dat \
 	tests/binary/get_more1.dat \
 	tests/binary/gridfs.dat \
+	tests/binary/gridfs-large.dat \
 	tests/binary/insert1.dat \
 	tests/binary/kill_cursors1.dat \
 	tests/binary/msg1.dat \
