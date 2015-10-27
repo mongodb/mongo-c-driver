@@ -20,7 +20,7 @@
 #
 
 COPYRIGHT_HOLDER = "MongoDB, Inc."
-GROUP = "libbson"
+GROUP = "MongoDB C Driver"
 BUG_URL = 'https://jira.mongodb.org/browse/CDRIVER'
 
 """
