@@ -20,7 +20,7 @@
 #
 
 COPYRIGHT_HOLDER = "MongoDB, Inc."
-GROUP = "MongoDB C Driver"
+GROUP = "libbson"
 BUG_URL = 'https://jira.mongodb.org/browse/CDRIVER'
 
 """
@@ -340,7 +340,10 @@ class Convert(object):
 
 def main(filenames, section='3'):
     for inFile in filenames:
-        outFile = inFile[:-5] + '.' + section
+        dirName = os.path.dirname(inFile) + '/man/'
+        baseName = os.path.basename(inFile)
+        baseFile = os.path.splitext(baseName)[0]
+        outFile = dirName + baseFile + '.' + section
         c = Convert(inFile, outFile, section)
         c.convert()
 

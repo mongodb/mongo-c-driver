@@ -1,3 +1,6 @@
-*.3
 *.7
-html
+html/*.html
+html/*.css
+html/*.js
+html/*.png
+man/*.3
