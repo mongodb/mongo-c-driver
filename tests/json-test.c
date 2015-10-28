@@ -36,10 +36,11 @@ topology_type_from_test(const char *type)
       return MONGOC_TOPOLOGY_SINGLE;
    } else if (strcmp(type, "Sharded") == 0) {
       return MONGOC_TOPOLOGY_SHARDED;
-   } else {
-      fprintf(stderr, "can't parse this: %s", type);
-      assert(0);
    }
+
+   fprintf(stderr, "can't parse this: %s", type);
+   assert(0);
+   return 0;
 }
 
 mongoc_server_description_type_t
@@ -63,10 +64,10 @@ server_type_from_test(const char *type)
       return MONGOC_SERVER_RS_GHOST;
    } else if (strcmp(type, "Unknown") == 0) {
       return MONGOC_SERVER_UNKNOWN;
-   } else {
-      fprintf(stderr, "ERROR: Unknown server type %s\n", type);
-      assert(0);
    }
+   fprintf(stderr, "ERROR: Unknown server type %s\n", type);
+   assert(0);
+   return 0;
 }
 
 const char *
@@ -88,6 +89,8 @@ topology_type_to_string(mongoc_topology_description_type_t type)
       fprintf(stderr, "ERROR: Unknown topology state\n");
       assert(0);
    }
+
+   return NULL;
 }
 
 /*
