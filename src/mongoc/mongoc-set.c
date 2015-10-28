@@ -119,12 +119,12 @@ mongoc_set_get (mongoc_set_t *set,
 
 void *
 mongoc_set_get_item (mongoc_set_t *set,
-                     int           index)
+                     int           idx)
 {
    BSON_ASSERT (set);
-   BSON_ASSERT (index < set->items_len);
+   BSON_ASSERT (idx < set->items_len);
 
-   return set->items[index].item;
+   return set->items[idx].item;
 }
 
 
