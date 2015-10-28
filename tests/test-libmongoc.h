@@ -33,12 +33,17 @@ bool test_framework_get_ssl (void);
 char *test_framework_add_user_password (const char *uri_str,
                                         const char *user,
                                         const char *password);
+char *test_framework_add_user_password_from_env (const char *uri_str);
 char *test_framework_get_uri_str_no_auth (const char *database_name);
 char *test_framework_get_uri_str (void);
 char *test_framework_get_unix_domain_socket_uri_str (void);
 char *test_framework_get_unix_domain_socket_path (void);
 mongoc_uri_t *test_framework_get_uri (void);
+#ifdef MONGOC_ENABLE_SSL
+const mongoc_ssl_opt_t *test_framework_get_ssl_opts (void);
+#endif
 void test_framework_set_ssl_opts (mongoc_client_t *client);
+void test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool);
 mongoc_client_t *test_framework_client_new (void);
 mongoc_client_pool_t *test_framework_client_pool_new (void);
 bool test_framework_max_wire_version_at_least (int version);
@@ -52,8 +57,9 @@ int test_framework_skip_if_single  (void);
 int test_framework_skip_if_windows (void);
 
 typedef struct _debug_stream_stats_t {
-    int n_destroyed;
-    int n_failed;
+   mongoc_client_t *client;
+   int n_destroyed;
+   int n_failed;
 } debug_stream_stats_t;
 
 void test_framework_set_debug_stream (mongoc_client_t *client,

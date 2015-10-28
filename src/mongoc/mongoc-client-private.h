@@ -54,6 +54,7 @@ struct _mongoc_client_t
    void                      *initiator_data;
 
 #ifdef MONGOC_ENABLE_SSL
+   bool                       use_ssl;
    mongoc_ssl_opt_t           ssl_opts;
    char                      *pem_subject;
 #endif

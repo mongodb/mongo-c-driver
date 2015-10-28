@@ -180,7 +180,7 @@ debug_stream_initiator (const mongoc_uri_t       *uri,
 
    default_stream = mongoc_client_default_stream_initiator (uri,
                                                             host,
-                                                            user_data,
+                                                            stats->client,
                                                             error);
 
    return debug_stream_new (default_stream, stats);
@@ -191,6 +191,7 @@ void
 test_framework_set_debug_stream (mongoc_client_t *client,
                                  debug_stream_stats_t *stats)
 {
+   stats->client = client;
    mongoc_client_set_stream_initiator (client,
                                        debug_stream_initiator,
                                        stats);

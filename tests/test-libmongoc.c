@@ -443,7 +443,7 @@ test_framework_add_user_password (const char *uri_str,
  *
  *--------------------------------------------------------------------------
  */
-static char *
+char *
 test_framework_add_user_password_from_env (const char *uri_str)
 {
    char *user;
@@ -858,6 +858,30 @@ test_framework_client_new ()
 }
 
 
+#ifdef MONGOC_ENABLE_SSL
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_get_ssl_opts --
+ *
+ *       Get options for connecting to mongod over SSL (even if mongod
+ *       isn't actually SSL-enabled).
+ *
+ * Returns:
+ *       A pointer to constant global SSL-test options.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+const mongoc_ssl_opt_t *
+test_framework_get_ssl_opts (void)
+{
+   return &gSSLOptions;
+}
+#endif
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -874,7 +898,7 @@ test_framework_client_new ()
  *
  *--------------------------------------------------------------------------
  */
-static void
+void
 test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
 {
    assert (pool);
