@@ -10,9 +10,6 @@ mongo-c-driver is a client library written in C for MongoDB.
 mongo-c-driver depends on `Libbson <https://github.com/mongodb/libbson>`_.
 Libbson will automatically be built if you do not have it installed on your system.
 
-If you are looking for the legacy C driver, it can be found in the
-`legacy branch <https://github.com/mongodb/mongo-c-driver/tree/legacy>`_.
-
 Documentation / Support / Feedback
 ==================================
 
