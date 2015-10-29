@@ -133,19 +133,8 @@ static int should_run_auth_tests (void)
 {
    char *user;
 #ifndef MONGOC_ENABLE_SSL
-   mongoc_client_t *client = test_framework_client_new ();
-   mongoc_server_stream_t *server_stream;
-   uint32_t server_id;
-   bson_error_t error;
-
-   server_stream = mongoc_cluster_stream_for_reads (&client->cluster, NULL,
-                                                    &error);
-   ASSERT_OR_PRINT (server_stream, error);
-   server_id = server_stream->sd->id;
-   mongoc_server_stream_cleanup (server_stream);
-
-   if (mongoc_cluster_node_max_wire_version (&client->cluster, server_id) > 2) {
-      mongoc_client_destroy (client);
+   if (test_framework_max_wire_version_at_least (3)) {
+      /* requires SSL for SCRAM implementation, can't test auth */
       return 0;
    }
 #endif

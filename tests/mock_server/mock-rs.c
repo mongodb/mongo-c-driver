@@ -17,6 +17,8 @@
 
 #include <bson.h>
 
+#include "mongoc-client-private.h"
+
 #include "mock-rs.h"
 #include "sync-queue.h"
 #include "../test-libmongoc.h"
@@ -393,6 +395,101 @@ mock_rs_receives_query (mock_rs_t *rs,
 
 /*--------------------------------------------------------------------------
  *
+ * mock_rs_receives_command --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not a command matching
+ *       database_name, command_name, and command_json.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_rs_receives_command (mock_rs_t *rs,
+                          const char *database_name,
+                          mongoc_query_flags_t flags,
+                          const char *command_json,
+                          ...)
+{
+   va_list args;
+   char *formatted_command_json = NULL;
+   char *ns;
+   request_t *request;
+
+   va_start (args, command_json);
+   if (command_json) {
+      formatted_command_json = bson_strdupv_printf (command_json, args);
+   }
+   va_end (args);
+
+   ns = bson_strdup_printf ("%s.$cmd", database_name);
+
+   request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
+
+   if (request && ! request_matches_query (request,
+                                           ns,
+                                           flags,
+                                           0,
+                                           1,
+                                           formatted_command_json,
+                                           NULL,
+                                           true)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_rs_receives_insert --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not an insert matching ns, flags,
+ *       and doc_json.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_rs_receives_insert (mock_rs_t *rs,
+                         const char *ns,
+                         mongoc_insert_flags_t flags,
+                         const char *doc_json)
+{
+   request_t *request;
+
+   request = (request_t *) q_get (rs->q, rs->request_timeout_msec);
+
+   if (request && !request_matches_insert (request,
+                                           ns,
+                                           flags,
+                                           doc_json)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * mock_rs_receives_getmore --
  *
  *       Pop a client request if one is enqueued, or wait up to
@@ -519,6 +616,32 @@ mock_rs_replies (request_t *request,
 }
 
 
+static mongoc_server_description_type_t
+_mock_rs_server_type (mock_rs_t *rs,
+                      uint16_t port)
+{
+   int i;
+
+   if (rs->primary && port == mock_server_get_port (rs->primary)) {
+      return MONGOC_SERVER_RS_PRIMARY;
+   }
+
+   for (i = 0; i < rs->secondaries.len; i++) {
+      if (port == mock_server_get_port (get_server (&rs->secondaries, i))) {
+         return MONGOC_SERVER_RS_SECONDARY;
+      }
+   }
+
+   for (i = 0; i < rs->arbiters.len; i++) {
+      if (port == mock_server_get_port (get_server (&rs->arbiters, i))) {
+         return MONGOC_SERVER_RS_ARBITER;
+      }
+   }
+
+   return MONGOC_SERVER_UNKNOWN;
+}
+
+
 /*--------------------------------------------------------------------------
  *
  * mock_rs_request_is_to_primary --
@@ -539,12 +662,10 @@ bool
 mock_rs_request_is_to_primary (mock_rs_t *rs,
                                request_t *request)
 {
-   uint16_t port;
-
    assert (request);
-   port = request_get_server_port (request);
 
-   return (rs->primary && port == mock_server_get_port (rs->primary));
+   return MONGOC_SERVER_RS_PRIMARY == _mock_rs_server_type (
+      rs, request_get_server_port (request));
 }
 
 
@@ -568,20 +689,10 @@ bool
 mock_rs_request_is_to_secondary (mock_rs_t *rs,
                                  request_t *request)
 {
-   uint16_t port;
-   int i;
-
    assert (request);
 
-   port = request_get_server_port (request);
-
-   for (i = 0; i < rs->secondaries.len; i++) {
-      if (port == mock_server_get_port (get_server (&rs->secondaries, i))) {
-         return true;
-      }
-   }
-
-   return false;
+   return MONGOC_SERVER_RS_SECONDARY == _mock_rs_server_type (
+      rs, request_get_server_port (request));
 }
 
 

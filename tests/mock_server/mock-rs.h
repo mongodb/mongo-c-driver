@@ -47,6 +47,17 @@ request_t *mock_rs_receives_query (mock_rs_t *rs,
                                    const char *query_json,
                                    const char *fields_json);
 
+request_t *mock_rs_receives_command (mock_rs_t *rs,
+                                     const char *database_name,
+                                     mongoc_query_flags_t flags,
+                                     const char *command_json,
+                                     ...);
+
+request_t *mock_rs_receives_insert (mock_rs_t *rs,
+                                    const char *ns,
+                                    mongoc_insert_flags_t flags,
+                                    const char *doc_json);
+
 request_t *mock_rs_receives_getmore (mock_rs_t *rs,
                                      const char *ns,
                                      uint32_t n_return,

@@ -9,6 +9,7 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "test-conveniences.h"
+#include "mock_server/mock-rs.h"
 
 
 static char *gHugeString;
@@ -615,10 +616,10 @@ test_upserted_index (bool ordered)
 
    bulk = mongoc_collection_create_bulk_operation (collection, ordered, NULL);
    assert (bulk);
-   
+
    mongoc_bulk_operation_insert (bulk, emp);
    mongoc_bulk_operation_insert (bulk, emp);
-   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'i': 2}"));  
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'i': 2}"));
    mongoc_bulk_operation_update (bulk,
                                  tmp_bson ("{'i': 3}"),
                                  inc, false);
@@ -626,8 +627,8 @@ test_upserted_index (bool ordered)
    mongoc_bulk_operation_update (bulk,
                                  tmp_bson ("{'i': 4}"),
                                  inc, true);
-   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'i': 5}"));  
-   mongoc_bulk_operation_remove_one (bulk, tmp_bson ("{'i': 6}"));  
+   mongoc_bulk_operation_remove (bulk, tmp_bson ("{'i': 5}"));
+   mongoc_bulk_operation_remove_one (bulk, tmp_bson ("{'i': 6}"));
    mongoc_bulk_operation_replace_one (bulk, tmp_bson ("{'i': 7}"), emp, false);
    /* upsert */
    mongoc_bulk_operation_replace_one (bulk, tmp_bson ("{'i': 8}"), emp, true);
@@ -1918,7 +1919,7 @@ _test_wtimeout_plus_duplicate_key_err (bool has_write_commands)
    mock_server_destroy (mock_server);
 }
 
- 
+
 #ifdef TODO_CDRIVER_707
 static void
 test_wtimeout_plus_duplicate_key_err_legacy (void)
@@ -2579,6 +2580,167 @@ test_bulk_write_concern_over_1000(void)
     mongoc_write_concern_destroy (write_concern);
 }
 
+
+static uint32_t
+hint_for_read_mode (mongoc_client_t *client,
+                    mongoc_read_mode_t read_mode)
+{
+   mongoc_read_prefs_t *prefs;
+   mongoc_server_description_t *sd;
+   bson_error_t error;
+   uint32_t hint;
+
+   prefs = mongoc_read_prefs_new (read_mode);
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs,
+                                15, &error);
+
+   ASSERT_OR_PRINT (sd, error);
+   hint = sd->id;
+
+   mongoc_server_description_destroy (sd);
+   mongoc_read_prefs_destroy (prefs);
+
+   return hint;
+}
+
+
+static void
+_test_bulk_hint (bool pooled,
+                 bool has_write_cmds,
+                 bool use_primary)
+{
+   mock_rs_t *rs;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bool ret;
+   uint32_t hint;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   /* primary, 2 secondaries. set wire version for legacy writes / write cmds */
+   rs = mock_rs_with_autoismaster (has_write_cmds ? 3 : 0, true, 2, 0);
+   mock_rs_run (rs);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (mock_rs_get_uri (rs));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   }
+
+   /* warm up the client so its hint is valid */
+   ret = mongoc_client_command_simple (client, "admin",
+                                       tmp_bson ("{'isMaster': 1}"),
+                                       NULL, NULL, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   if (use_primary) {
+      hint = hint_for_read_mode (client, MONGOC_READ_PRIMARY);
+   } else {
+      hint = hint_for_read_mode (client, MONGOC_READ_SECONDARY);
+   }
+
+   mongoc_bulk_operation_set_hint (bulk, hint);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   if (has_write_cmds) {
+      request = mock_rs_receives_command (rs, "test", MONGOC_QUERY_NONE,
+                                          "{'insert': 'test'}");
+
+      BSON_ASSERT (request);
+      mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   } else {
+      request = mock_rs_receives_insert (rs, "test.test", MONGOC_INSERT_NONE,
+                                         "{'_id': 1}");
+
+      BSON_ASSERT (request);
+      request_destroy (request);
+      request = mock_rs_receives_command (rs, "test", MONGOC_QUERY_NONE,
+                                          "{'getLastError': 1}");
+
+      BSON_ASSERT (request);
+      mock_server_replies_simple (request, "{'ok': 1.0, 'n': 1}");
+   }
+
+   if (use_primary) {
+      BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
+   } else {
+      BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
+   }
+
+   ASSERT_CMPINT (hint, ==, future_get_uint32_t (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mock_rs_destroy (rs);
+}
+
+static void
+test_hint_single_legacy_secondary (void)
+{
+   _test_bulk_hint (false, false, false);
+}
+
+static void
+test_hint_single_legacy_primary (void)
+{
+   _test_bulk_hint (false, false, true);
+}
+
+static void
+test_hint_single_command_secondary (void)
+{
+   _test_bulk_hint (false, true, false);
+}
+
+static void
+test_hint_single_command_primary (void)
+{
+   _test_bulk_hint (false, true, true);
+}
+
+static void
+test_hint_pooled_legacy_secondary (void)
+{
+   _test_bulk_hint (true, false, false);
+}
+
+static void
+test_hint_pooled_legacy_primary (void)
+{
+   _test_bulk_hint (true, false, true);
+}
+
+static void
+test_hint_pooled_command_secondary (void)
+{
+   _test_bulk_hint (true, true, false);
+}
+
+static void
+test_hint_pooled_command_primary (void)
+{
+   _test_bulk_hint (true, true, true);
+}
+
 static int
 check_for_server_21079 (void)
 {
@@ -2691,4 +2853,21 @@ test_bulk_install (TestSuite *suite)
    TestSuite_Add (suite, "/BulkOperation/error/insert", test_legacy_insert_err);
    TestSuite_Add (suite, "/BulkOperation/error/update", test_legacy_update_err);
    TestSuite_Add (suite, "/BulkOperation/error/remove", test_legacy_remove_err);
+
+   TestSuite_Add (suite, "/BulkOperation/hint/single/legacy/secondary",
+                  test_hint_single_legacy_secondary);
+   TestSuite_Add (suite, "/BulkOperation/hint/single/legacy/primary",
+                  test_hint_single_legacy_primary);
+   TestSuite_Add (suite, "/BulkOperation/hint/single/command/secondary",
+                  test_hint_single_command_secondary);
+   TestSuite_Add (suite, "/BulkOperation/hint/single/command/primary",
+                  test_hint_single_command_primary);
+   TestSuite_Add (suite, "/BulkOperation/hint/pooled/legacy/secondary",
+                  test_hint_pooled_legacy_secondary);
+   TestSuite_Add (suite, "/BulkOperation/hint/pooled/legacy/primary",
+                  test_hint_pooled_legacy_primary);
+   TestSuite_Add (suite, "/BulkOperation/hint/pooled/command/secondary",
+                  test_hint_pooled_command_secondary);
+   TestSuite_Add (suite, "/BulkOperation/hint/pooled/command/primary",
+                  test_hint_pooled_command_primary);
 }

@@ -1874,107 +1874,6 @@ _mongoc_cluster_min_of_max_msg_size_nodes (void *item,
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_cluster_node_max_bson_obj_size --
- *
- *      Return the max bson object size for the given server.
- *
- * Returns:
- *      Max bson object size, or -1 if server is not found.
- *
- *--------------------------------------------------------------------------
- */
-int32_t
-mongoc_cluster_node_max_bson_obj_size (mongoc_cluster_t *cluster,
-                                       uint32_t         server_id)
-{
-   mongoc_server_description_t *sd;
-   mongoc_cluster_node_t *node;
-
-   if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_description_server_by_id (
-         &cluster->client->topology->description, server_id, NULL))) {
-         return sd->max_bson_obj_size;
-      }
-   } else {
-      if((node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id))) {
-         return node->max_bson_obj_size;
-      }
-   }
-
-   return -1;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_node_max_msg_size --
- *
- *      Return the max message size for the given server.
- *
- * Returns:
- *      Max message size, or -1 if server is not found.
- *
- *--------------------------------------------------------------------------
- */
-
-int32_t
-mongoc_cluster_node_max_msg_size (mongoc_cluster_t *cluster,
-                                  uint32_t          server_id)
-{
-   mongoc_server_description_t *sd;
-   mongoc_cluster_node_t *node;
-
-   if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_description_server_by_id (
-         &cluster->client->topology->description, server_id, NULL))) {
-         return sd->max_msg_size;
-      }
-   } else {
-      if((node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id))) {
-         return node->max_msg_size;
-      }
-   }
-
-   return -1;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_node_max_write_batch_size --
- *
- *      Return the max write batch size for the given server.
- *
- * Returns:
- *      Max write batch size, or -1 if server is not found.
- *
- *--------------------------------------------------------------------------
- */
-
-int32_t
-mongoc_cluster_node_max_write_batch_size (mongoc_cluster_t *cluster,
-                                  uint32_t          server_id)
-{
-   mongoc_server_description_t *sd;
-   mongoc_cluster_node_t *node;
-
-   if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_description_server_by_id (
-         &cluster->client->topology->description, server_id, NULL))) {
-         return sd->max_write_batch_size;
-      }
-   } else {
-      if((node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id))) {
-         return node->max_write_batch_size;
-      }
-   }
-
-   return -1;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
  * mongoc_cluster_get_max_bson_obj_size --
  *
  *      Return the minimum max_bson_obj_size across all servers in cluster.
@@ -2045,38 +1944,6 @@ mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster)
    return max_msg_size;
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_node_max_wire_version --
- *
- *      Return the max wire version for the given server.
- *
- * Returns:
- *      Max wire version, or -1 if server is not found.
- *
- *--------------------------------------------------------------------------
- */
-int32_t
-mongoc_cluster_node_max_wire_version (mongoc_cluster_t *cluster,
-                                      uint32_t          server_id)
-{
-   mongoc_server_description_t *sd;
-   mongoc_cluster_node_t *node;
-
-   if (cluster->client->topology->single_threaded) {
-      if ((sd = mongoc_topology_description_server_by_id (
-         &cluster->client->topology->description, server_id, NULL))) {
-         return sd->max_wire_version;
-      }
-   } else {
-      if((node = (mongoc_cluster_node_t *)mongoc_set_get(cluster->nodes, server_id))) {
-         return node->max_wire_version;
-      }
-   }
-
-   return -1;
-}
 
 /*
  *--------------------------------------------------------------------------
@@ -2276,7 +2143,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
       need_gle = _mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
 
-      max_msg_size = mongoc_cluster_node_max_msg_size (cluster, server_id);
+      max_msg_size = mongoc_stream_max_msg_size (server_stream);
 
       if (rpcs[i].header.msg_len > max_msg_size) {
          bson_set_error(error,
@@ -2412,7 +2279,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t       *cluster,
     */
    memcpy (&msg_len, &buffer->data[buffer->off + pos], 4);
    msg_len = BSON_UINT32_FROM_LE (msg_len);
-   max_msg_size = mongoc_cluster_node_max_msg_size (cluster, server_id);
+   max_msg_size = mongoc_stream_max_msg_size (server_stream);
    if ((msg_len < 16) || (msg_len > max_msg_size)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,

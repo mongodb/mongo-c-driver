@@ -183,6 +183,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t    *command,          
    command->n_documents = 0;
    command->flags = flags;
    command->u.insert.allow_bulk_op_insert = (uint8_t)allow_bulk_op_insert;
+   command->hint = 0;
 
    /* must handle NULL document from mongoc_collection_insert_bulk */
    if (document) {
@@ -209,6 +210,7 @@ _mongoc_write_command_init_delete (mongoc_write_command_t    *command,  /* IN */
    command->n_documents = 0;
    command->u.delete_.multi = (uint8_t)multi;
    command->flags = flags;
+   command->hint = 0;
 
    _mongoc_write_command_delete_append (command, selector);
 
@@ -234,6 +236,7 @@ _mongoc_write_command_init_update (mongoc_write_command_t    *command,  /* IN */
    command->documents = bson_new ();
    command->n_documents = 0;
    command->flags = flags;
+   command->hint = 0;
 
    _mongoc_write_command_update_append (command, selector, update, upsert, multi);
 
@@ -417,8 +420,8 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
 
    current_offset = offset;
 
-   max_bson_obj_size = server_stream->sd->max_bson_obj_size;
-   max_msg_size = server_stream->sd->max_msg_size;
+   max_bson_obj_size = mongoc_stream_max_bson_obj_size (server_stream);
+   max_msg_size = mongoc_stream_max_msg_size (server_stream);
 
    singly = !command->u.insert.allow_bulk_op_insert;
 
@@ -798,8 +801,8 @@ _mongoc_write_command(mongoc_write_command_t       *command,
    BSON_ASSERT (server_stream);
    BSON_ASSERT (collection);
 
-   max_bson_obj_size = server_stream->sd->max_bson_obj_size;
-   max_write_batch_size = server_stream->sd->max_write_batch_size;
+   max_bson_obj_size = mongoc_stream_max_bson_obj_size (server_stream);
+   max_write_batch_size = mongoc_stream_max_write_batch_size (server_stream);
 
    /*
     * If we have an unacknowledged write and the server supports the legacy
@@ -949,7 +952,12 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
       EXIT;
    }
 
-   command->hint = server_stream->sd->id;
+   if (!command->hint) {
+      command->hint = server_stream->sd->id;
+   } else {
+      BSON_ASSERT (command->hint == server_stream->sd->id);
+   }
+
    if (server_stream->sd->max_wire_version >= WRITE_COMMAND_WIRE_VERSION) {
       _mongoc_write_command (command, client, server_stream, database,
                              collection, write_concern, offset,

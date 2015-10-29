@@ -363,6 +363,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                bson_t                  *reply, /* OUT */
                                bson_error_t            *error) /* OUT */
 {
+   mongoc_cluster_t *cluster;
    mongoc_write_command_t *command;
    mongoc_server_stream_t *server_stream;
    bool ret;
@@ -372,6 +373,8 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
    ENTRY;
 
    BSON_ASSERT (bulk);
+
+   cluster = &bulk->client->cluster;
 
    if (bulk->executed) {
       _mongoc_write_result_destroy (&bulk->result);
@@ -416,8 +419,14 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
       RETURN (false);
    }
 
-   server_stream = mongoc_cluster_stream_for_writes (&bulk->client->cluster,
-                                                     error);
+   if (bulk->hint) {
+      server_stream = mongoc_cluster_stream_for_server (cluster,
+                                                        bulk->hint,
+                                                        true /* reconnect_ok */,
+                                                        error);
+   } else {
+      server_stream = mongoc_cluster_stream_for_writes (cluster, error);
+   }
 
    if (!server_stream) {
       RETURN (false);

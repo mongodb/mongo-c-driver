@@ -15,11 +15,13 @@
  */
 
 
+#include "mongoc-cluster-private.h"
 #include "mongoc-server-stream-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "server-stream"
 
+#define COALESCE(x, y) ((x == 0) ? (y) : (x))
 
 mongoc_server_stream_t *
 mongoc_server_stream_new (mongoc_topology_description_type_t topology_type,
@@ -48,3 +50,53 @@ mongoc_server_stream_cleanup (mongoc_server_stream_t *server_stream)
    }
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_max_bson_obj_size --
+ *
+ *      Return the max bson object size for the given server stream.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int32_t
+mongoc_stream_max_bson_obj_size (mongoc_server_stream_t *server_stream)
+{
+   return COALESCE (server_stream->sd->max_bson_obj_size,
+                    MONGOC_DEFAULT_BSON_OBJ_SIZE);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_max_msg_size --
+ *
+ *      Return the max message size for the given server stream.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int32_t
+mongoc_stream_max_msg_size (mongoc_server_stream_t *server_stream)
+{
+   return COALESCE (server_stream->sd->max_msg_size,
+                    MONGOC_DEFAULT_MAX_MSG_SIZE);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_stream_max_write_batch_size --
+ *
+ *      Return the max write batch size for the given server stream.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int32_t
+mongoc_stream_max_write_batch_size (mongoc_server_stream_t *server_stream)
+{
+   return COALESCE (server_stream->sd->max_write_batch_size,
+                    MONGOC_DEFAULT_WRITE_BATCH_SIZE);
+}
