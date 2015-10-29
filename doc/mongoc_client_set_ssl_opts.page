@@ -12,11 +12,13 @@
 
   <section id="synopsis">
     <title>Synopsis</title>
-    <synopsis><code mime="text/x-csrc"><![CDATA[void
+    <synopsis><code mime="text/x-csrc"><![CDATA[#ifdef MONGOC_ENABLE_SSL
 mongoc_client_set_ssl_opts (mongoc_client_t        *client,
-                            const mongoc_ssl_opt_t *opts);]]></code></synopsis>
+                            const mongoc_ssl_opt_t *opts);
+#endif]]></code></synopsis>
     <p>Sets the SSL options to use when connecting to SSL enabled MongoDB servers.</p>
-    <note><p>Although the <code>mongoc_ssl_opt_t</code> struct itself is shallow-copied by the client, the strings it points to (<code>pem_file</code>, <code>pem_pwd</code>, <code>ca_file</code>, <code>ca_dir</code>, and <code>crl_file</code>) are not copied and must remain valid for the life of the <code>mongoc_client_t</code>.</p></note>
+    <p>Beginning in version 1.2.0, once a client has any SSL options set, all connections use SSL, even if "ssl=true" is omitted from the MongoDB URI. Before, SSL options were ignored unless "ssl=true" was included in the URI.</p>
+    <p>Although the <code>mongoc_ssl_opt_t</code> struct itself is shallow-copied by the client, the strings it points to (<code>pem_file</code>, <code>pem_pwd</code>, <code>ca_file</code>, <code>ca_dir</code>, and <code>crl_file</code>) are not copied and must remain valid for the life of the <code>mongoc_client_t</code>.</p>
   </section>
 
   <section id="parameters">
@@ -25,6 +27,11 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
       <tr><td><p>client</p></td><td><p>A <code xref="mongoc_client_t">mongoc_client_t</code>.</p></td></tr>
       <tr><td><p>opts</p></td><td><p>A <code xref="mongoc_ssl_opt_t">mongoc_ssl_opt_t</code>. The struct is copied by the client, but the strings it points to are not.</p></td></tr>
     </table>
+  </section>
+
+  <section id="availability">
+    <title>Availability</title>
+    <p>This feature requires that the MongoDB C driver was compiled with <code>--enable-ssl</code>.</p>
   </section>
 
 </page>

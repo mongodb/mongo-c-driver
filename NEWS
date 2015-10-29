@@ -1,6 +1,11 @@
 mongo-c-driver 1.2.1
 ====================
 
+ * mongoc_client_set_ssl_opts and mongoc_client_pool_set_ssl_opts now configure
+   the driver to require an SSL connection to the server, even if "ssl=true" is
+   omitted from the MongoDB URI. Before, SSL options were ignored unless
+   "ssl=true" was included in the URI.
+
 mongo-c-driver 1.2.0
 ====================
 
