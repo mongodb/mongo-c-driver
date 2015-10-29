@@ -83,19 +83,19 @@ MongoDB project, please report it according to the `instructions here
 <http://docs.mongodb.org/manual/tutorial/create-a-vulnerability-report>`_.
 
 
-Building from Release Tarball
-=============================
+Building the Driver from Source
+===============================
 
-Unless you intend on contributing to the mongo-c-driver, you will want to build
-from a release tarball.
+Detailed installation instructions are in the manual:
+http://api.mongodb.org/mongo-c-driver/current/installing.html
 
-The most current release is 1.2.0 which you can download here.
-`mongo-c-driver-1.2.0.tar.gz <https://github.com/mongodb/mongo-c-driver/releases/download/1.2.0/mongo-c-driver-1.2.0.tar.gz>`_.
+From a tarball
+--------------
 
-To build on UNIX-like systems, do the following::
+Download the latest release from `the release page <https://github.com/mongodb/mongo-c-driver/releases>`_, then::
 
-  $ tar xzf mongo-c-driver-1.2.0.tar.gz
-  $ cd mongo-c-driver-1.2.0
+  $ tar xzf mongo-c-driver-$ver.tar.gz
+  $ cd mongo-c-driver-$ver
   $ ./configure
   $ make
   $ sudo make install
@@ -106,7 +106,7 @@ To see all of the options available to you during configuration, run::
 
 To build on Windows Vista or newer with Visual Studio 2010, do the following::
 
-  cd mongo-c-driver-1.2.0
+  cd mongo-c-driver-$ver
   cd src\libbson
   cmake -DCMAKE_INSTALL_PREFIX=C:\usr -G "Visual Studio 10 Win64" .
   msbuild.exe ALL_BUILD.vcxproj
@@ -123,78 +123,13 @@ mongo-c-driver contains a copy of libbson in the case that your system does
 not already have libbson installed. The configure script will detect if
 libbson is not installed and install it too.
 
-Dependencies
-------------
-
-Fedora::
-
-  $ sudo yum install git gcc automake autoconf libtool
-
-Debian::
-
-  $ sudo apt-get install git gcc automake autoconf libtool
-
-FreeBSD::
-
-  $ su -c 'pkg install git gcc automake autoconf libtool'
-
-
 Fetch Sources and Build
 -----------------------
 
 You can use the following to checkout and build mongo-c-driver::
 
-  git clone https://github.com/mongodb/mongo-c-driver.git
-  cd mongo-c-driver
-  ./autogen.sh
-  make
-  sudo make install
-
-In standard automake fasion, ./autogen.sh only needs to be run once.
-You can use ./configure directly going forward.
-Also, see ./configure --help for all configure options.
-
-
-Building on Windows
-===================
-
-Currently, the cmake build system for mongo-c-driver does not build the libbson
-package as well. This needs to be done manually with cmake.
-
-SSL is supported through the use of OpenSSL. SASL is not currently supported
-but is planned. To enable OpenSSL support, install the appropriate OpenSSL for
-Windows from `here <http://slproweb.com/products/Win32OpenSSL.html>`_. The
-instructions below assume 64-bit builds, so you would want to get the version
-for "Win64 OpenSSL 1.0.1f" which includes libraries and headers.
-
-If you are building from git, and not a release tarball, you also need to
-initialize the git submodule for libbson::
-
-  git submodule init
-  git submodule update
-
-Then proceed to build and install libbson using cmake and Visual Studio's
-command line tool, msbuild.exe. You can of course open these project files
-from Visual Studio as well::
-
-  cd src\libbson
-  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -G "Visual Studio 10 Win64" .
-  msbuild.exe ALL_BUILD.vcxproj
-  msbuild.exe INSTALL.vcxproj
-  cd ..\..
-  cmake -DCMAKE_INSTALL_PREFIX=C:\usr -DBSON_ROOT_DIR=C:\usr -G "Visual Studio 10 Win64" .
-  msbuild.exe ALL_BUILD.vcxproj
-  msbuild.exe INSTALL.vcxproj
-
-
-Generating the Docs
-===================
-
-To generate the documentation you must install the :code:`yelp-tools` package.
-On Linux this package can be found in the package manager for your distribution,
-on OSX we recommend using `TingPing's homebrew-gnome tap <https://github.com/TingPing/homebrew-gnome>`_.
-
-Then use the following :code:`./configure` options:
-
-* :code:`--enable-html-docs` - builds the HTML documentation
-* :code:`--enable-man-pages` - builds and installs the man-pages.
+  $ git clone https://github.com/mongodb/mongo-c-driver.git
+  $ cd mongo-c-driver
+  $ ./autogen.sh
+  $ make
+  $ sudo make install
