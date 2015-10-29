@@ -41,7 +41,7 @@ the `mongodb-user list`_ to ask for help. Please include in your email all of th
 information:
 
 - The version of the driver you are trying to build (branch or tag).
-    - Examples: master branch, 1.2.0 tag
+    - Examples: master branch, 1.2.1 tag
 - Host OS, version, and architecture.
     - Examples: Windows 8 64-bit x86, Ubuntu 12.04 32-bit x86, OS X Mavericks
 - C Compiler and version.
@@ -56,7 +56,7 @@ communications to ascertain the necessary details, delaying a useful response.
 Here is a made-up example of a help request that provides the relevant
 information:
 
-  Hello, I'm trying to build the C driver with SSL, from mongo-c-driver-1.2.0.tar.gz. I'm on Ubuntu
+  Hello, I'm trying to build the C driver with SSL, from mongo-c-driver-1.2.1.tar.gz. I'm on Ubuntu
   14.04, 64-bit Intel, with gcc 4.8.2. I run configure like::
 
     $ ./configure --enable-sasl=yes
