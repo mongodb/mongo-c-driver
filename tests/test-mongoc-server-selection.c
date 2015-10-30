@@ -13,6 +13,7 @@
 
 #ifdef _MSC_VER
 #define PATH_MAX 1024
+#define realpath(path, expanded) GetFullPathName(path, PATH_MAX, expanded, NULL)
 #endif
 
 #include <limits.h>
