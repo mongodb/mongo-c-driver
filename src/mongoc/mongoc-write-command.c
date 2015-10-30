@@ -360,7 +360,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
 
 static void
 too_large_error (bson_error_t *error,
-                 int32_t       index,
+                 int32_t       idx,
                  int32_t       len,
                  int32_t       max_bson_size,
                  bson_t       *err_doc)
@@ -371,10 +371,10 @@ too_large_error (bson_error_t *error,
    bson_set_error (error, MONGOC_ERROR_BSON, code,
                    "Document %u is too large for the cluster. "
                    "Document is %u bytes, max is %d.",
-                   index, len, max_bson_size);
+                   idx, len, max_bson_size);
 
    if (err_doc) {
-      BSON_APPEND_INT32 (err_doc, "index", index);
+      BSON_APPEND_INT32 (err_doc, "index", idx);
       BSON_APPEND_UTF8 (err_doc, "err", error->message);
       BSON_APPEND_INT32 (err_doc, "code", code);
    }
@@ -404,7 +404,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
    char ns [MONGOC_NAMESPACE_MAX + 1];
    bool r;
    uint32_t n_docs_in_batch;
-   uint32_t index = 0;
+   uint32_t idx = 0;
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
    bool singly;
@@ -457,8 +457,8 @@ again:
 
    do {
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
-      BSON_ASSERT (n_docs_in_batch <= index);
-      BSON_ASSERT (index < command->n_documents);
+      BSON_ASSERT (n_docs_in_batch <= idx);
+      BSON_ASSERT (idx < command->n_documents);
 
       bson_iter_document (&iter, &len, &data);
 
@@ -469,11 +469,11 @@ again:
          /* document is too large */
          bson_t write_err_doc = BSON_INITIALIZER;
 
-         too_large_error (error, index, len,
+         too_large_error (error, idx, len,
                           max_bson_obj_size, &write_err_doc);
 
          _mongoc_write_result_merge_legacy (result, command,
-                                            &write_err_doc, offset + index);
+                                            &write_err_doc, offset + idx);
 
          bson_destroy (&write_err_doc);
 
@@ -493,7 +493,7 @@ again:
          n_docs_in_batch++;
       }
 
-      index++;
+      idx++;
    } while (bson_iter_next (&iter));
 
    if (n_docs_in_batch) {
@@ -544,7 +544,7 @@ cleanup:
 
    if (gle) {
       _mongoc_write_result_merge_legacy (result, command, gle, current_offset);
-      current_offset = offset + index;
+      current_offset = offset + idx;
       bson_destroy (gle);
       gle = NULL;
    }
