@@ -23,7 +23,7 @@
 #include "../TestSuite.h"
 
 
-static bool is_command (const char *ns);
+static bool is_command_ns (const char *ns);
 
 static void request_from_query (request_t *request, const mongoc_rpc_t *rpc);
 
@@ -532,7 +532,7 @@ request_destroy (request_t *request)
 
 
 static bool
-is_command (const char *ns)
+is_command_ns (const char *ns)
 {
    size_t len = strlen (ns);
    const char *cmd = ".$cmd";
@@ -612,7 +612,7 @@ request_from_query (request_t *request,
    assert (query);
    _mongoc_array_append_val (&request->docs, query);
 
-   if (is_command (request->request_rpc.query.collection)) {
+   if (is_command_ns (request->request_rpc.query.collection)) {
       request->is_command = true;
 
       if (bson_iter_init (&iter, query) && bson_iter_next (&iter)) {
