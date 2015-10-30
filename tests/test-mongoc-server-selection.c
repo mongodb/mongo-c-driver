@@ -11,6 +11,10 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 
+#ifdef _MSC_VER
+#define PATH_MAX 1024
+#endif
+
 #include <limits.h>
 #include <stdlib.h>
 

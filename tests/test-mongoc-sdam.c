@@ -16,6 +16,10 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#ifdef _MSC_VER
+#define PATH_MAX 1024
+#endif
+
 #define MAX_NUM_TESTS 100
 
 #if defined(_WIN32) && !defined(strcasecmp)
