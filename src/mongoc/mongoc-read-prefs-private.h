@@ -29,9 +29,6 @@
 
 BSON_BEGIN_DECLS
 
-/* forward decl */
-typedef struct _mongoc_topology_t mongoc_topology_t;
-
 struct _mongoc_read_prefs_t
 {
    mongoc_read_mode_t mode;
