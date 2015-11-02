@@ -567,27 +567,19 @@ test_mongoc_uri_read_prefs (void)
    const read_prefs_test *t;
    int i;
 
-   bson_t *tags_dcny;
-   bson_t *tags_dcny_empty;
-   bson_t *tags_dcnyusessd_dcsf_empty;
-   bson_t *tags_empty;
-
-   tags_dcny = BCON_NEW(
+   bson_t *tags_dcny = BCON_NEW(
       "0", "{", "dc", "ny", "}"
    );
-
-   tags_dcny_empty = BCON_NEW(
+   bson_t *tags_dcny_empty = BCON_NEW(
       "0", "{", "dc", "ny", "}",
       "1", "{", "}"
    );
-
-   tags_dcnyusessd_dcsf_empty = BCON_NEW(
+   bson_t *tags_dcnyusessd_dcsf_empty = BCON_NEW(
       "0", "{", "dc", "ny", "use", "ssd", "}",
       "1", "{", "dc", "sf", "}",
       "2", "{", "}"
    );
-
-   tags_empty = BCON_NEW(
+   bson_t *tags_empty = BCON_NEW(
       "0", "{", "}"
    );
 
