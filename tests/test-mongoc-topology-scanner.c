@@ -28,6 +28,7 @@ test_topology_scanner_helper (uint32_t      id,
 {
    bson_iter_t iter;
    int *finished = (int*)data;
+   uint32_t max_wire_version;
 
    if (error->code) {
       fprintf (stderr, "scanner error: %s\n", error->message);
@@ -38,7 +39,7 @@ test_topology_scanner_helper (uint32_t      id,
    assert (bson);
    assert (bson_iter_init_find (&iter, bson, "maxWireVersion"));
    assert (BSON_ITER_HOLDS_INT32 (&iter));
-   uint32_t max_wire_version = (uint32_t) bson_iter_int32 (&iter);
+   max_wire_version = (uint32_t) bson_iter_int32 (&iter);
    ASSERT_CMPINT (max_wire_version, ==, id);
 
    (*finished)--;
