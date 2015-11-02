@@ -37,21 +37,22 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
 static int32_t
 _mongoc_n_return (mongoc_cursor_t * cursor)
 {
-   /* by default, use the batch size */
-   int32_t r = cursor->batch_size;
-
    if (cursor->is_command) {
       /* commands always have n_return of 1 */
-      r = 1;
+      return 1;
    } else if (cursor->limit) {
-      /* calculate remaining */
-      uint32_t remaining = cursor->limit - cursor->count;
+      int32_t remaining = cursor->limit - cursor->count;
+      BSON_ASSERT (remaining > 0);
 
-      /* use min of batch or remaining */
-      r = BSON_MIN(r, (int32_t)remaining);
+      if (cursor->batch_size) {
+         return BSON_MIN ((int32_t) cursor->batch_size, remaining);
+      } else {
+         /* batch_size 0 means accept the default */
+         return remaining;
+      }
+   } else {
+      return cursor->batch_size;
    }
-
-   return r;
 }
 
 mongoc_cursor_t *

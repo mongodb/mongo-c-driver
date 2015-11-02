@@ -1994,6 +1994,225 @@ END_IGNORE_DEPRECATIONS;
 }
 
 
+/* use the real server to test the "limit" parameter */
+static void
+test_find_limit (void *ctx)
+{
+   enum { N_BSONS = 9 };
+
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *bsons[N_BSONS];
+   mongoc_bulk_operation_t *bulk;
+   int i;
+   uint32_t hint;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   /* 9 docs size 1 MB each, requires batches like:
+    * batch 1: 4 documents
+    * batch 2: 4 documents  <-- should stop in middle of this batch
+    * batch 3: 1 document
+    */
+   make_bulk_insert (bsons, N_BSONS, 1024 * 1024);
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_find_limit");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+
+   for (i = 0; i < N_BSONS; i++) {
+      mongoc_bulk_operation_insert (bulk, bsons[i]);
+   }
+
+   hint = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (hint, error);
+
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0 /* skip */,
+                                    6 /* limit */,
+                                    0 /* batch_size */,
+                                    tmp_bson ("{}"),
+                                    NULL,
+                                    NULL);
+
+   i = 0;
+   while (mongoc_cursor_next (cursor, &doc)) {
+      i++;
+   }
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   ASSERT_CMPINT (6, ==, i);
+
+   /* server didn't send extra documents */
+   ASSERT_CMPINT (2, ==, cursor->rpc.reply.n_returned);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+}
+
+
+/* use a mock server to test the "limit" parameter */
+static void
+test_find_limit2 (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0 /* skip */,
+                                    2 /* limit */,
+                                    0 /* batch_size */,
+                                    tmp_bson ("{}"),
+                                    NULL,
+                                    NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_query (server,
+                                         "test.test",
+                                         MONGOC_QUERY_SLAVE_OK,
+                                         0 /* skip */,
+                                         2 /* n_return */,
+                                         "{}",
+                                         NULL);
+
+   mock_server_replies_simple (request, "{}");
+   assert (future_get_bool (future));
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+   mock_server_destroy (server);
+}
+
+
+/* use the real server to test the "batch_size" parameter */
+static void
+test_find_batch_size (void)
+{
+   enum { N_BSONS = 5 };
+
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *bsons[N_BSONS];
+   mongoc_bulk_operation_t *bulk;
+   int i;
+   uint32_t hint;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   /* 5 documents, batch_size 2
+    * batch 1: 2 documents
+    * batch 2: 2 documents
+    * batch 3: 1 document
+    */
+   make_bulk_insert (bsons, N_BSONS, 50);
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_find_batch_size");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+
+   for (i = 0; i < N_BSONS; i++) {
+      mongoc_bulk_operation_insert (bulk, bsons[i]);
+   }
+
+   hint = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (hint, error);
+
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0 /* skip */,
+                                    0 /* limit */,
+                                    2 /* batch_size */,
+                                    tmp_bson ("{}"),
+                                    NULL,
+                                    NULL);
+
+   /* first batch, 2 documents */
+   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), cursor->error);
+   ASSERT_CMPINT (2, ==, cursor->rpc.reply.n_returned);
+   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), cursor->error);
+
+   /* second batch, 2 documents */
+   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), cursor->error);
+   ASSERT_CMPINT (2, ==, cursor->rpc.reply.n_returned);
+   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), cursor->error);
+
+   /* final batch, 1 document */
+   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), cursor->error);
+   ASSERT_CMPINT (1, ==, cursor->rpc.reply.n_returned);
+   ASSERT (!mongoc_cursor_next (cursor, &doc));  /* done */
+   ASSERT (cursor->end_of_event);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+}
+
+
+/* use a mock server to test the "batch_size" parameter */
+static void
+test_find_batch_size2 (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0 /* skip */,
+                                    0 /* limit */,
+                                    2 /* batch_size */,
+                                    tmp_bson ("{}"),
+                                    NULL,
+                                    NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_query (server,
+                                         "test.test",
+                                         MONGOC_QUERY_SLAVE_OK,
+                                         0 /* skip */,
+                                         2 /* n_return */,
+                                         "{}",
+                                         NULL);
+
+   mock_server_replies_simple (request, "{}");
+   assert (future_get_bool (future));
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+   mock_server_destroy (server);
+}
+
+
 static void
 test_command_fq (void *context)
 {
@@ -2256,6 +2475,11 @@ test_collection_install (TestSuite *suite)
                   test_find_and_modify_write_concern_wire_pre_32);
    TestSuite_Add (suite, "/Collection/large_return", test_large_return);
    TestSuite_Add (suite, "/Collection/many_return", test_many_return);
+   /* mongos's default batch size is different*/
+   TestSuite_AddFull (suite, "/Collection/limit", test_find_limit, NULL, NULL, test_framework_skip_if_mongos);
+   TestSuite_Add (suite, "/Collection/limit2", test_find_limit2);
+   TestSuite_Add (suite, "/Collection/batch_size", test_find_batch_size);
+   TestSuite_Add (suite, "/Collection/batch_size2", test_find_batch_size2);
    TestSuite_AddFull (suite, "/Collection/command_fully_qualified", test_command_fq, NULL, NULL, test_framework_skip_if_mongos);
    TestSuite_Add (suite, "/Collection/get_index_info", test_get_index_info);
 }

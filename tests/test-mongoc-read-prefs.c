@@ -48,7 +48,7 @@ _test_query (const mongoc_uri_t *uri,
       "test.test",
       expected_query_flags,
       0,
-      0,
+      1,
       expected_query,
       NULL);
 
