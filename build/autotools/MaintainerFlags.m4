@@ -1,7 +1,3 @@
-dnl Ignore OpenSSL deprecation warnings on OSX
-AS_IF([test "$os_darwin" = "yes"],
-      [check_cc_cxx_flag([-Wno-deprecated-declarations], [CFLAGS="$CFLAGS -Wno-deprecated-declarations"])])
-
 AS_IF([test "x$enable_maintainer_flags" = "xyes" && test "x$GCC" = "xyes"],
       [check_cc_cxx_flag([-Wall],                         [CFLAGS="$CFLAGS -Wall"])
        check_cc_cxx_flag([-Waggregate-return],            [CFLAGS="$CFLAGS -Waggregate-return"])
