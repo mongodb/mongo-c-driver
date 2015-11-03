@@ -94,7 +94,7 @@ _mongoc_collection_cursor_new (mongoc_collection_t *collection,
                              0,                  /* skip */
                              0,                  /* limit */
                              0,                  /* batch_size */
-                             true,               /* is_command */
+                             false,              /* is_command */
                              NULL,               /* query */
                              NULL,               /* fields */
                              NULL);              /* read prefs */
