@@ -100,6 +100,10 @@ void
 _mongoc_ssl_cleanup (void)
 {
    _mongoc_ssl_thread_cleanup ();
+   EVP_cleanup();
+   CRYPTO_cleanup_all_ex_data();
+   ERR_free_strings();
+   SSL_COMP_free_compression_methods();
 }
 
 static int
