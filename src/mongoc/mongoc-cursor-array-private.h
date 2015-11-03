@@ -31,6 +31,7 @@ BSON_BEGIN_DECLS
 
 void
 _mongoc_cursor_array_init (mongoc_cursor_t *cursor,
+                           const bson_t    *command,
                            const char      *field_name);
 
 bool

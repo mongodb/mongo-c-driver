@@ -778,12 +778,11 @@ mongoc_database_find_collections (mongoc_database_t *database,
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   cursor = mongoc_database_command (database, MONGOC_QUERY_SLAVE_OK, 0, 0, 0,
-                                     &cmd, NULL, read_prefs);
+   cursor = _mongoc_cursor_new (database->client, database->name,
+                                MONGOC_QUERY_SLAVE_OK, 0, 0, 0, true,
+                                NULL, NULL, NULL);
 
-   _mongoc_cursor_cursorid_init(cursor);
-
-   cursor->limit = 0;
+   _mongoc_cursor_cursorid_init (cursor, &cmd);
 
    if (_mongoc_cursor_cursorid_prime (cursor)) {
        /* intentionally empty */
@@ -800,15 +799,6 @@ mongoc_database_find_collections (mongoc_database_t *database,
          } else if (error) {
             memcpy (error, &lerror, sizeof *error);
          }
-      } else {
-         /* TODO: remove this branch for general release.  Only relevant for RC */
-         mongoc_cursor_destroy (cursor);
-         cursor = mongoc_database_command (database, MONGOC_QUERY_SLAVE_OK, 0, 0, 0,
-                                           &cmd, NULL, read_prefs);
-
-         _mongoc_cursor_array_init(cursor, "collections");
-
-         cursor->limit = 0;
       }
    }
 

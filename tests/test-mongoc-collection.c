@@ -1568,12 +1568,15 @@ test_aggregate_modern (void *data)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
 
-   future = future_collection_aggregate (
+   cursor = mongoc_collection_aggregate (
       collection,
       MONGOC_QUERY_NONE,
       tmp_bson ("[{'a': 1}]"),
       tmp_bson (options_json (context)),
       NULL);
+
+   ASSERT (cursor);
+   future = future_cursor_next (cursor, &doc);
 
    /* "cursor" argument always sent if wire version >= 1 */
    request = mock_server_receives_command (
@@ -1592,9 +1595,7 @@ test_aggregate_modern (void *data)
                                "    'firstBatch': [{'_id': 123}]"
                                "}}");
 
-   cursor = future_get_mongoc_cursor_ptr (future);
-   assert(cursor);
-   assert (mongoc_cursor_next (cursor, &doc));
+   ASSERT (future_get_bool (future));
    ASSERT_MATCH (doc, "{'_id': 123}");
 
    /* cursor is completed */

@@ -1325,12 +1325,10 @@ mongoc_client_find_databases (mongoc_client_t *client,
 
    BSON_APPEND_INT32 (&cmd, "listDatabases", 1);
 
-   cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_SLAVE_OK, 0, 0, 0,
-                                   &cmd, NULL, NULL);
+   cursor = _mongoc_cursor_new (client, "admin", MONGOC_QUERY_SLAVE_OK,
+                                0, 0, 0, true, NULL, NULL, NULL);
 
-   _mongoc_cursor_array_init(cursor, "databases");
-
-   cursor->limit = 0;
+   _mongoc_cursor_array_init (cursor, &cmd, "databases");
 
    bson_destroy (&cmd);
 

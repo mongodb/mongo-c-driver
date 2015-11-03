@@ -76,6 +76,7 @@ struct _mongoc_cursor_t
 
    char                       ns [140];
    uint32_t                   nslen;
+   uint32_t                   dblen;
 
    bson_error_t               error;
 
@@ -102,6 +103,9 @@ mongoc_cursor_t * _mongoc_cursor_new      (mongoc_client_t            *client,
                                            const mongoc_read_prefs_t  *read_prefs);
 mongoc_cursor_t *_mongoc_cursor_clone     (const mongoc_cursor_t      *cursor);
 void             _mongoc_cursor_destroy   (mongoc_cursor_t            *cursor);
+bool             _mongoc_read_from_buffer (mongoc_cursor_t            *cursor,
+                                           const bson_t              **bson);
+bool             _mongoc_cursor_run_command (mongoc_cursor_t          *cursor);
 bool             _mongoc_cursor_more      (mongoc_cursor_t            *cursor);
 bool             _mongoc_cursor_next      (mongoc_cursor_t            *cursor,
                                            const bson_t              **bson);

@@ -697,8 +697,39 @@ _mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,
    return true;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_prep_command --
+ *
+ *       Prepare an RPC for mongoc_cluster_run_command_rpc. @cmd_ns and
+ *       @command must not be freed or modified while the RPC is in use.
+ *
+ * Side effects:
+ *       Fills out the RPC, including pointers into @cmd_ns and @command.
+ *
+ *--------------------------------------------------------------------------
+ */
 
-/* TODO: refactor with mongoc_cursor_error */
+void
+_mongoc_rpc_prep_command (mongoc_rpc_t        *rpc,
+                          const char          *cmd_ns,
+                          const bson_t        *command,
+                          mongoc_query_flags_t flags)
+{
+   rpc->query.msg_len = 0;
+   rpc->query.request_id = 0;
+   rpc->query.response_to = 0;
+   rpc->query.opcode = MONGOC_OPCODE_QUERY;
+   rpc->query.collection = cmd_ns;
+   rpc->query.skip = 0;
+   rpc->query.n_return = -1;
+   rpc->query.fields = NULL;
+   rpc->query.query = bson_get_data (command);
+   rpc->query.flags = flags;
+}
+
+
 static void
 _mongoc_populate_error (const bson_t *doc,
                         bool          is_command,

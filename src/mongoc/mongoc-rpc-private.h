@@ -27,6 +27,7 @@
 #include "mongoc-array-private.h"
 #include "mongoc-iovec.h"
 #include "mongoc-write-concern.h"
+#include "mongoc-flags.h"
 
 
 BSON_BEGIN_DECLS
@@ -100,6 +101,10 @@ bool _mongoc_rpc_scatter            (mongoc_rpc_t                 *rpc,
                                      size_t                        buflen);
 bool _mongoc_rpc_reply_get_first    (mongoc_rpc_reply_t           *reply,
                                      bson_t                       *bson);
+void _mongoc_rpc_prep_command       (mongoc_rpc_t                 *rpc,
+                                     const char                   *cmd_ns,
+                                     const bson_t                 *command,
+                                     mongoc_query_flags_t          flags);
 bool _mongoc_rpc_parse_command_error(mongoc_rpc_t                 *rpc,
                                      bson_error_t                 *error);
 bool _mongoc_rpc_parse_query_error  (mongoc_rpc_t                 *rpc,

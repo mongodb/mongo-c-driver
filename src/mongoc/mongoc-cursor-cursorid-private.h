@@ -39,7 +39,8 @@ typedef struct
 
 
 bool _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor);
-void _mongoc_cursor_cursorid_init (mongoc_cursor_t *cursor);
+void _mongoc_cursor_cursorid_init (mongoc_cursor_t *cursor,
+                                   const bson_t    *command);
 
 
 BSON_END_DECLS
