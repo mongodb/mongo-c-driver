@@ -1478,6 +1478,64 @@ again:
 }
 
 
+static void
+test_aggregate_large (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_iter_t iter;
+   int32_t i;
+   uint32_t hint;
+   mongoc_cursor_t *cursor;
+   bson_t *inserted_doc;
+   bson_error_t error;
+   bson_t *pipeline;
+   const bson_t *doc;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   collection = get_test_collection (client, "test_aggregate_large");
+   ASSERT (collection);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+
+   /* ensure a few batches */
+   inserted_doc = tmp_bson ("{'_id': 0}");
+
+   for (i = 0; i < 2000; i++) {
+      bson_iter_init_find (&iter, inserted_doc, "_id");
+      bson_iter_overwrite_int32 (&iter, i);
+      mongoc_bulk_operation_insert (bulk, inserted_doc);
+   }
+
+   hint = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (hint > 0, error);
+
+   pipeline = tmp_bson ("[{'$sort': {'_id': 1}}]");
+
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE,
+                                         pipeline, NULL, NULL);
+   ASSERT (cursor);
+
+   i = 0;
+   while (mongoc_cursor_next (cursor, &doc)) {
+      ASSERT (bson_iter_init_find (&iter, doc, "_id"));
+      ASSERT_CMPINT (i, ==, bson_iter_int32 (&iter));
+      i++;
+   }
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   ASSERT_CMPINT (i, ==, 2000);
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 typedef struct {
     bool with_batch_size;
     bool with_options;
@@ -2464,6 +2522,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
+   TestSuite_Add (suite, "/Collection/aggregate/large", test_aggregate_large);
    TestSuite_AddFull (suite, "/Collection/aggregate/bypass_document_validation", test_aggregate_bypass, NULL, NULL, test_framework_skip_if_max_version_version_less_than_4);
    TestSuite_Add (suite, "/Collection/validate", test_validate);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
