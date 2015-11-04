@@ -262,3 +262,9 @@ LIBMONGOC_1.2 {
         mongoc_get_version;
         mongoc_check_version;
 } LIBMONGOC_1.1;
+
+LIBMONGOC_1.3 {
+    global:
+        mongoc_bulk_operation_set_bypass_document_validation;
+        mongoc_bulk_operation_set_flags;
+} LIBMONGOC_1.2;
