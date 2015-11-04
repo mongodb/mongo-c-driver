@@ -55,7 +55,7 @@
   <section id="conn-options">
     <title>Connection Options</title>
     <table>
-      <tr><td><p>ssl</p></td><td><p>{true|false}, indicating if SSL must be used.</p></td></tr>
+      <tr><td><p>ssl</p></td><td><p>{true|false}, indicating if SSL must be used. (See also <code xref="mongoc_client_set_ssl_opts">mongoc_client_set_ssl_opts</code> and <code xref="mongoc_client_pool_set_ssl_opts">mongoc_client_pool_set_ssl_opts</code>.)</p></td></tr>
       <tr><td><p>connectTimeoutMS</p></td><td><p>A timeout in milliseconds to attempt a connection before timing out. This setting applies to server discovery and monitoring connections as well as to connections for application operations. The default is 10 seconds.</p></td></tr>
       <tr><td><p>socketTimeoutMS</p></td><td><p>The time in milliseconds to attempt to send or receive on a socket before the attempt times out. The default is 5 minutes.</p></td></tr>
     </table>

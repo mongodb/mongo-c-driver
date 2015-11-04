@@ -956,6 +956,97 @@ test_mongoc_client_unix_domain_socket (void *context)
 }
 
 
+#ifdef MONGOC_ENABLE_SSL
+static void
+_test_mongoc_client_ssl_opts (bool pooled)
+{
+   char *host;
+   uint16_t port;
+   char *uri_str;
+   char *uri_str_auth;
+   char *uri_str_auth_ssl;
+   mongoc_uri_t *uri;
+   const mongoc_ssl_opt_t *ssl_opts;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bool ret;
+   bson_error_t error;
+   int add_ssl_to_uri;
+
+   host = test_framework_get_host ();
+   port = test_framework_get_port ();
+   uri_str = bson_strdup_printf (
+      "mongodb://%s:%d/?serverSelectionTimeoutMS=1000",
+      host, port);
+
+   uri_str_auth = test_framework_add_user_password_from_env (uri_str);
+   uri_str_auth_ssl = bson_strdup_printf ("%s&ssl=true", uri_str_auth);
+
+   ssl_opts = test_framework_get_ssl_opts ();
+
+   /* client uses SSL once SSL options are set, regardless of "ssl=true" */
+   for (add_ssl_to_uri = 0; add_ssl_to_uri < 2; add_ssl_to_uri++) {
+
+      if (add_ssl_to_uri) {
+         uri = mongoc_uri_new (uri_str_auth_ssl);
+      } else {
+         uri = mongoc_uri_new (uri_str_auth);
+      }
+
+      if (pooled) {
+         pool = mongoc_client_pool_new (uri);
+         mongoc_client_pool_set_ssl_opts (pool, ssl_opts);
+         client = mongoc_client_pool_pop (pool);
+      } else {
+         client = mongoc_client_new_from_uri (uri);
+         mongoc_client_set_ssl_opts (client, ssl_opts);
+      }
+
+      /* any operation */
+      ret = mongoc_client_command_simple (client, "admin",
+                                          tmp_bson ("{'ping': 1}"), NULL,
+                                          NULL, &error);
+
+      if (test_framework_get_ssl ()) {
+         ASSERT_OR_PRINT (ret, error);
+      } else {
+         /* TODO: CDRIVER-936 check the err msg has "SSL handshake failed" */
+         ASSERT (!ret);
+         ASSERT_CMPINT (MONGOC_ERROR_SERVER_SELECTION, ==, error.domain);
+      }
+
+      if (pooled) {
+         mongoc_client_pool_push (pool, client);
+         mongoc_client_pool_destroy (pool);
+      } else {
+         mongoc_client_destroy (client);
+      }
+
+      mongoc_uri_destroy (uri);
+   }
+
+   bson_free (uri_str_auth_ssl);
+   bson_free (uri_str_auth);
+   bson_free (uri_str);
+   bson_free (host);
+};
+
+
+static void
+test_ssl_single (void)
+{
+   _test_mongoc_client_ssl_opts (false);
+}
+
+
+static void
+test_ssl_pooled (void)
+{
+   _test_mongoc_client_ssl_opts (true);
+}
+#endif
+
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -995,5 +1086,9 @@ test_client_install (TestSuite *suite)
 #ifdef TODO_CDRIVER_689
    TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
 #endif
-}
 
+#ifdef MONGOC_ENABLE_SSL
+   TestSuite_Add (suite, "/Client/ssl_opts/single", test_ssl_single);
+   TestSuite_Add (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
+#endif
+}
