@@ -35,6 +35,7 @@ typedef mongoc_gridfs_t * mongoc_gridfs_ptr;
 typedef mongoc_iovec_t * mongoc_iovec_t_ptr;
 typedef mongoc_server_description_t * mongoc_server_description_ptr;
 typedef mongoc_topology_t * mongoc_topology_ptr;
+typedef const mongoc_find_and_modify_opts_t * const_mongoc_find_and_modify_opts_ptr;
 typedef const mongoc_read_prefs_t * const_mongoc_read_prefs_ptr;
 typedef const mongoc_write_concern_t * const_mongoc_write_concern_ptr;
 
@@ -66,6 +67,7 @@ typedef enum {
    future_value_mongoc_server_description_ptr_type,
    future_value_mongoc_ss_optype_t_type,
    future_value_mongoc_topology_ptr_type,
+   future_value_const_mongoc_find_and_modify_opts_ptr_type,
    future_value_const_mongoc_read_prefs_ptr_type,
    future_value_const_mongoc_write_concern_ptr_type,
    future_value_void_type,
@@ -102,6 +104,7 @@ typedef struct _future_value_t
       mongoc_server_description_ptr mongoc_server_description_ptr_value;
       mongoc_ss_optype_t mongoc_ss_optype_t_value;
       mongoc_topology_ptr mongoc_topology_ptr_value;
+      const_mongoc_find_and_modify_opts_ptr const_mongoc_find_and_modify_opts_ptr_value;
       const_mongoc_read_prefs_ptr const_mongoc_read_prefs_ptr_value;
       const_mongoc_write_concern_ptr const_mongoc_write_concern_ptr_value;
 
@@ -352,6 +355,15 @@ future_value_set_mongoc_topology_ptr(
 
 mongoc_topology_ptr
 future_value_get_mongoc_topology_ptr (
+   future_value_t *future_value);
+
+void
+future_value_set_const_mongoc_find_and_modify_opts_ptr(
+   future_value_t *future_value,
+   const_mongoc_find_and_modify_opts_ptr value);
+
+const_mongoc_find_and_modify_opts_ptr
+future_value_get_const_mongoc_find_and_modify_opts_ptr (
    future_value_t *future_value);
 
 void

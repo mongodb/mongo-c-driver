@@ -318,6 +318,17 @@ future_get_mongoc_topology_ptr (future_t *future)
    abort ();
 }
 
+const_mongoc_find_and_modify_opts_ptr
+future_get_const_mongoc_find_and_modify_opts_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_const_mongoc_find_and_modify_opts_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   abort ();
+}
+
 const_mongoc_read_prefs_ptr
 future_get_const_mongoc_read_prefs_ptr (future_t *future)
 {

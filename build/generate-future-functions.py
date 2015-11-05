@@ -85,6 +85,7 @@ typedef_list = [
     typedef("mongoc_topology_ptr", "mongoc_topology_t *"),
 
     # Const libmongoc.
+    typedef("const_mongoc_find_and_modify_opts_ptr", "const mongoc_find_and_modify_opts_t *"),
     typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
     typedef("const_mongoc_write_concern_ptr", "const mongoc_write_concern_t *"),
 ]
@@ -127,6 +128,13 @@ future_functions = [
                      param("const_bson_ptr", "pipeline"),
                      param("const_bson_ptr", "options"),
                      param("const_mongoc_read_prefs_ptr", "read_prefs")]),
+    future_function("bool",
+                    "mongoc_collection_find_and_modify_with_opts",
+                    [param("mongoc_collection_ptr", "collection"),
+                     param("const_bson_ptr", "query"),
+                     param("const_mongoc_find_and_modify_opts_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
     future_function("bool",
                     "mongoc_collection_find_and_modify",
                     [param("mongoc_collection_ptr", "collection"),

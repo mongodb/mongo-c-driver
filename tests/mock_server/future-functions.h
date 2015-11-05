@@ -55,6 +55,17 @@ future_collection_aggregate (
 
 
 future_t *
+future_collection_find_and_modify_with_opts (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr query,
+   const_mongoc_find_and_modify_opts_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_collection_find_and_modify (
 
    mongoc_collection_ptr collection,
