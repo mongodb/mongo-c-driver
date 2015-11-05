@@ -77,13 +77,6 @@ static void *main_thread (void *data);
 
 static void *worker_thread (void *data);
 
-static void mock_server_reply_simple (mock_server_t *server,
-                                      mongoc_stream_t *client,
-                                      const mongoc_rpc_t *request,
-                                      mongoc_reply_flags_t flags,
-                                      const bson_t *doc,
-                                      int64_t cursor_id);
-
 void autoresponder_handle_destroy (autoresponder_handle_t *handle);
 
 static uint16_t get_port (mongoc_socket_t *sock);
@@ -430,21 +423,12 @@ auto_ismaster (request_t *request,
       _mongoc_usleep ((int64_t) (rand () % 10) * 1000);
    }
 
-   if (mock_server_get_verbose (request->server)) {
-      printf ("%5.2f  %hu <- %hu \t%s\n",
-              mock_server_get_uptime_sec (request->server),
-              request->client_port,
-              mock_server_get_port (request->server),
-              quotes_replaced);
-      fflush (stdout);
-   }
-
-   mock_server_reply_simple (request->server,
-                             request->client,
-                             &request->request_rpc,
-                             MONGOC_REPLY_NONE,
-                             &response,
-                             0);
+   mock_server_replies (request,
+                        MONGOC_REPLY_NONE,
+                        0,
+                        0,
+                        1,
+                        response_json);
 
    bson_destroy (&response);
    bson_free (quotes_replaced);
@@ -718,6 +702,16 @@ mock_server_get_queue (mock_server_t *server)
 }
 
 
+request_t *
+mock_server_receives_request (mock_server_t *server)
+{
+   sync_queue_t *q;
+
+   q = mock_server_get_queue (server);
+   return (request_t *) q_get (q, server->request_timeout_msec);
+}
+
+
 /*--------------------------------------------------------------------------
  *
  * mock_server_receives_command --
@@ -746,7 +740,6 @@ mock_server_receives_command (mock_server_t *server,
    va_list args;
    char *formatted_command_json = NULL;
    char *ns;
-   sync_queue_t *q;
    request_t *request;
 
    va_start (args, command_json);
@@ -757,8 +750,7 @@ mock_server_receives_command (mock_server_t *server,
 
    ns = bson_strdup_printf ("%s.$cmd", database_name);
 
-   q = mock_server_get_queue (server);
-   request = (request_t *) q_get (q, server->request_timeout_msec);
+   request = mock_server_receives_request (server);
 
    if (request && !request_matches_query (request,
                                           ns,
@@ -857,11 +849,9 @@ mock_server_receives_query (mock_server_t *server,
                             const char *query_json,
                             const char *fields_json)
 {
-   sync_queue_t *q;
    request_t *request;
 
-   q = mock_server_get_queue (server);
-   request = (request_t *) q_get (q, server->request_timeout_msec);
+   request = mock_server_receives_request (server);
 
    if (request && !request_matches_query (request,
                                           ns,
@@ -903,11 +893,9 @@ mock_server_receives_insert (mock_server_t *server,
                              mongoc_insert_flags_t flags,
                              const char *doc_json)
 {
-   sync_queue_t *q;
    request_t *request;
 
-   q = mock_server_get_queue (server);
-   request = (request_t *) q_get (q, server->request_timeout_msec);
+   request = mock_server_receives_request (server);
 
    if (request && !request_matches_insert (request,
                                            ns,
@@ -944,11 +932,9 @@ mock_server_receives_bulk_insert (mock_server_t *server,
                                   mongoc_insert_flags_t flags,
                                   int n)
 {
-   sync_queue_t *q;
    request_t *request;
 
-   q = mock_server_get_queue (server);
-   request = (request_t *) q_get (q, server->request_timeout_msec);
+   request = mock_server_receives_request (server);
 
    if (request && !request_matches_bulk_insert (request,
                                                 ns,
@@ -986,11 +972,9 @@ mock_server_receives_update (mock_server_t *server,
                              const char *selector_json,
                              const char *update_json)
 {
-   sync_queue_t *q;
    request_t *request;
 
-   q = mock_server_get_queue (server);
-   request = (request_t *) q_get (q, server->request_timeout_msec);
+   request = mock_server_receives_request (server);
 
    if (request && !request_matches_update (request,
                                            ns,
@@ -1029,11 +1013,9 @@ mock_server_receives_delete (mock_server_t *server,
                              mongoc_remove_flags_t flags,
                              const char *selector_json)
 {
-   sync_queue_t *q;
    request_t *request;
 
-   q = mock_server_get_queue (server);
-   request = (request_t *) q_get (q, server->request_timeout_msec);
+   request = mock_server_receives_request (server);
 
    if (request && !request_matches_delete (request,
                                            ns,
@@ -1071,12 +1053,9 @@ mock_server_receives_delete (mock_server_t *server,
 request_t *mock_server_receives_kill_cursors (mock_server_t *server,
                                               int64_t cursor_id)
 {
-   sync_queue_t *q;
    request_t *request;
 
-   q = mock_server_get_queue (server);
-
-   request = (request_t *) q_get (q, server->request_timeout_msec);
+   request = mock_server_receives_request (server);
 
    if (request && !request_matches_kill_cursors (request, cursor_id)) {
       request_destroy (request);
@@ -1174,7 +1153,7 @@ mock_server_resets (request_t *request)
 
 void
 mock_server_replies (request_t *request,
-                     uint32_t flags,
+                     mongoc_reply_flags_t flags,
                      int64_t cursor_id,
                      int32_t starting_from,
                      int32_t number_returned,
@@ -1193,22 +1172,11 @@ mock_server_replies (request_t *request,
       return;
    }
 
-   if (mock_server_get_verbose (request->server)) {
-      printf ("%5.2f  %hu <- %hu \t%s\n",
-              mock_server_get_uptime_sec (request->server),
-              request->client_port,
-              mock_server_get_port (request->server),
-              quotes_replaced);
-      fflush (stdout);
-   }
-
-   mock_server_reply_simple (request->server,
-                             request->client,
-                             &request->request_rpc,
-                             MONGOC_REPLY_NONE,
-                             &doc,
-                             cursor_id);
-
+   mock_server_reply_multi (request,
+                            flags,
+                            &doc,
+                            1,
+                            cursor_id);
    bson_destroy (&doc);
    bson_free (quotes_replaced);
 }
@@ -1544,15 +1512,18 @@ failure:
    RETURN (NULL);
 }
 
-/* TODO: merge with mock_server_reply? */
 void
-mock_server_reply_simple (mock_server_t *server,
-                          mongoc_stream_t *client,
-                          const mongoc_rpc_t *request,
-                          mongoc_reply_flags_t flags,
-                          const bson_t *doc,
-                          int64_t cursor_id)
+mock_server_reply_multi (request_t           *request,
+                         mongoc_reply_flags_t flags,
+                         const bson_t        *docs,
+                         int                  n_docs,
+                         int64_t              cursor_id)
 {
+   const mongoc_rpc_t *request_rpc;
+   mock_server_t *server;
+   mongoc_stream_t *client;
+   char *doc_json;
+   bson_string_t *docs_json;
    mongoc_iovec_t *iov;
    mongoc_array_t ar;
    mongoc_rpc_t r = {{ 0 }};
@@ -1560,11 +1531,48 @@ mock_server_reply_simple (mock_server_t *server,
    ssize_t n_written;
    int iovcnt;
    int i;
+   uint8_t *buf;
+   uint8_t *ptr;
+   size_t len;
 
-   BSON_ASSERT (server);
    BSON_ASSERT (request);
-   BSON_ASSERT (client);
-   BSON_ASSERT (doc);
+   BSON_ASSERT (docs);
+
+   request_rpc = &request->request_rpc;
+   server = request->server;
+   client = request->client;
+
+   docs_json = bson_string_new ("");
+   for (i = 0; i < n_docs; i++) {
+      doc_json = bson_as_json (&docs[i], NULL);
+      bson_string_append (docs_json, doc_json);
+      bson_free (doc_json);
+      if (i < n_docs - 1) {
+         bson_string_append (docs_json, ", ");
+      }
+   }
+
+   if (mock_server_get_verbose (request->server)) {
+      printf ("%5.2f  %hu <- %hu \t%s\n",
+              mock_server_get_uptime_sec (request->server),
+              request->client_port,
+              mock_server_get_port (request->server),
+              docs_json->str);
+      fflush (stdout);
+   }
+
+   len = 0;
+
+   for (i = 0; i < n_docs; i++) {
+      len += docs[i].len;
+   }
+
+   ptr = buf = bson_malloc (len);
+
+   for (i = 0; i < n_docs; i++) {
+      memcpy (ptr, bson_get_data (&docs[i]), docs[i].len);
+      ptr += docs[i].len;
+   }
 
    _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
 
@@ -1572,14 +1580,14 @@ mock_server_reply_simple (mock_server_t *server,
    r.reply.request_id = ++server->last_response_id;
    mongoc_mutex_unlock (&server->mutex);
    r.reply.msg_len = 0;
-   r.reply.response_to = request->header.request_id;
+   r.reply.response_to = request_rpc->header.request_id;
    r.reply.opcode = MONGOC_OPCODE_REPLY;
    r.reply.flags = flags;
    r.reply.cursor_id = cursor_id;
    r.reply.start_from = 0;
    r.reply.n_returned = 1;
-   r.reply.documents = bson_get_data (doc);
-   r.reply.documents_len = doc->len;
+   r.reply.documents = buf;
+   r.reply.documents_len = (uint32_t)len;
 
    _mongoc_rpc_gather (&r, &ar);
    _mongoc_rpc_swab_to_le (&r);
@@ -1595,7 +1603,9 @@ mock_server_reply_simple (mock_server_t *server,
 
    assert (n_written == expected);
 
+   bson_string_free (docs_json, true);
    _mongoc_array_destroy (&ar);
+   bson_free (buf);
 }
 
 

@@ -134,7 +134,7 @@ void mock_server_hangs_up (request_t *request);
 void mock_server_resets (request_t *request);
 
 void mock_server_replies (request_t *request,
-                          uint32_t flags,
+                          mongoc_reply_flags_t flags,
                           int64_t cursor_id,
                           int32_t starting_from,
                           int32_t number_returned,
@@ -142,6 +142,12 @@ void mock_server_replies (request_t *request,
 
 void mock_server_replies_simple (request_t *request,
                                  const char *docs_json);
+
+void mock_server_reply_multi (request_t           *request,
+                              mongoc_reply_flags_t flags,
+                              const bson_t        *docs,
+                              int                  n_docs,
+                              int64_t              cursor_id);
 
 void mock_server_destroy (mock_server_t *server);
 

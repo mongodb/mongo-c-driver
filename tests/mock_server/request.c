@@ -602,6 +602,7 @@ request_from_query (request_t *request,
 {
    int32_t len;
    bson_t *query;
+   bson_t *fields;
    bson_iter_t iter;
    bson_string_t *query_as_str = bson_string_new ("OP_QUERY ");
    char *str;
@@ -611,6 +612,8 @@ request_from_query (request_t *request,
    query = bson_new_from_data (rpc->query.query, (size_t) len);
    assert (query);
    _mongoc_array_append_val (&request->docs, query);
+
+   bson_string_append_printf (query_as_str, "%s ", rpc->query.collection);
 
    if (is_command_ns (request->request_rpc.query.collection)) {
       request->is_command = true;
@@ -626,6 +629,19 @@ request_from_query (request_t *request,
    str = bson_as_json (query, NULL);
    bson_string_append (query_as_str, str);
    bson_free (str);
+
+   if (rpc->query.fields) {
+      memcpy (&len, rpc->query.fields, 4);
+      len = BSON_UINT32_FROM_LE (len);
+      fields = bson_new_from_data (rpc->query.fields, (size_t) len);
+      assert (fields);
+      _mongoc_array_append_val (&request->docs, fields);
+
+      str = bson_as_json (fields, NULL);
+      bson_string_append (query_as_str, " fields=");
+      bson_string_append (query_as_str, str);
+      bson_free (str);
+   }
 
    bson_string_append (query_as_str, " flags=");
 
