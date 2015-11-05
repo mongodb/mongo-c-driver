@@ -68,18 +68,23 @@ tmp_bson (const char *json)
 
    test_conveniences_init ();
 
-   double_quoted = single_quotes_to_double (json);
-   doc = bson_new_from_json ((const uint8_t *)double_quoted,
-                             -1, &error);
+   if (json) {
+      double_quoted = single_quotes_to_double (json);
+      doc = bson_new_from_json ((const uint8_t *) double_quoted,
+                                -1, &error);
 
-   if (!doc) {
-      fprintf (stderr, "%s\n", error.message);
-      abort ();
+      if (!doc) {
+         fprintf (stderr, "%s\n", error.message);
+         abort ();
+      }
+
+      bson_free (double_quoted);
+
+   } else {
+      doc = bson_new ();
    }
 
    _mongoc_array_append_val (&gTmpBsonArray, doc);
-
-   bson_free (double_quoted);
 
    return doc;
 }
