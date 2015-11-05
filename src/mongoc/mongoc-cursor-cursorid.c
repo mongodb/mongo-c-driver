@@ -129,7 +129,7 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
       }
    }
 
-   _mongoc_read_from_buffer (cursor, bson);
+   _mongoc_cursor_next (cursor, bson);
 
 done:
    RETURN (*bson ? true : false);
