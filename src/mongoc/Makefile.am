@@ -42,6 +42,8 @@ INST_H_FILES = \
 	src/mongoc/mongoc-database.h \
 	src/mongoc/mongoc-errno-private.h \
 	src/mongoc/mongoc-error.h \
+	src/mongoc/mongoc-find-and-modify-private.h \
+	src/mongoc/mongoc-find-and-modify.h \
 	src/mongoc/mongoc-flags.h \
 	src/mongoc/mongoc-gridfs-file-list-private.h \
 	src/mongoc/mongoc-gridfs-file-list.h \
@@ -124,6 +126,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-cursor-cursorid.c \
 	src/mongoc/mongoc-cursor-transform.c \
 	src/mongoc/mongoc-database.c \
+	src/mongoc/mongoc-find-and-modify.c \
 	src/mongoc/mongoc-host-list.c \
 	src/mongoc/mongoc-init.c \
 	src/mongoc/mongoc-gridfs.c \

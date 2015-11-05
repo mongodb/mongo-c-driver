@@ -95,6 +95,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-cursorid.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-transform.c
    ${SOURCE_DIR}/src/mongoc/mongoc-database.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file.c
@@ -145,6 +146,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-database.h
    ${SOURCE_DIR}/src/mongoc/mongoc-error.h
    ${SOURCE_DIR}/src/mongoc/mongoc-flags.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.h
