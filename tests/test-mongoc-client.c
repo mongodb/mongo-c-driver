@@ -615,8 +615,6 @@ test_seed_list (bool rs,
    topology = client->topology;
    td = &topology->description;
 
-   ASSERT_CMPINT (4, ==, (int) td->servers->items_len);
-
    /* a mongos load-balanced connection never removes down nodes */
    discovered_nodes_len = rs ? 1 : 4;
 
