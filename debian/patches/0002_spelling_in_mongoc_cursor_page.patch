@@ -1,0 +1,22 @@
+Author: A. Jesse Jiryu Davis <jesse@mongodb.com>
+Description: Spelling in mongoc_cursor_t.page (fixed in upstream master)
+--- libmongoc-debian.orig/doc/mongoc_cursor_t.page
++++ libmongoc-debian/doc/mongoc_cursor_t.page
+@@ -15,7 +15,7 @@
+     <title>Synopsis</title>
+     <synopsis><code mime="text/x-csrc"><![CDATA[typedef struct _mongoc_cursor_t mongoc_cursor_t;]]></code></synopsis>
+     <p><code>mongoc_cursor_t</code> provides access to a MongoDB query cursor.
+-It wraps up the wire protocol negotation required to initiate a query and retreive an unknown number of documents.
++It wraps up the wire protocol negotation required to initiate a query and retrieve an unknown number of documents.
+ 
+ Cursors are lazy, meaning that no network traffic occurs until the first call to <code xref="mongoc_cursor_next">mongoc_cursor_next()</code>.
+ 
+@@ -23,7 +23,7 @@
+ 
+ <list>
+   <item><p>Determine which host we've connected to with <code xref="mongoc_cursor_get_host">mongoc_cursor_get_host()</code>.</p></item>
+-  <item><p>Retreive more records with repeated calls to <code xref="mongoc_cursor_next">mongoc_cursor_next()</code>.</p></item>
++  <item><p>Retrieve more records with repeated calls to <code xref="mongoc_cursor_next">mongoc_cursor_next()</code>.</p></item>
+   <item><p>Test for more records with <code xref="mongoc_cursor_more">mongoc_cursor_more()</code></p></item>
+   <item><p>Clone a query to repeat execution at a later point with <code xref="mongoc_cursor_clone">mongoc_cursor_clone()</code>.</p></item>
+   <item><p>Test for errors with <code xref="mongoc_cursor_error">mongoc_cursor_error()</code>.</p></item>
