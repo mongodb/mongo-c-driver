@@ -21,6 +21,8 @@
 #include "mongoc-bulk-operation.h"
 #include "mongoc-bulk-operation-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-find-and-modify-private.h"
+#include "mongoc-find-and-modify.h"
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-cursor-private.h"
@@ -1909,6 +1911,115 @@ mongoc_collection_create_bulk_operation (
                                       write_concern);
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_find_and_modify_with_opts --
+ *
+ *       Find a document in @collection matching @query, applying @opts.
+ *
+ *       If @reply is not NULL, then the result document will be placed
+ *       in reply and should be released with bson_destroy().
+ *
+ *       See http://docs.mongodb.org/manual/reference/command/findAndModify/
+ *       for more information.
+ *
+ * Returns:
+ *       true on success; false on failure.
+ *
+ * Side effects:
+ *       reply is initialized.
+ *       error is set if false is returned.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                 *collection,
+                                             const bson_t                        *query,
+                                             const mongoc_find_and_modify_opts_t *opts,
+                                             bson_t                              *reply,
+                                             bson_error_t                        *error)
+{
+   mongoc_cluster_t *cluster;
+   mongoc_server_stream_t *server_stream;
+   const char *name;
+   bool ret;
+   bson_t command = BSON_INITIALIZER;
+   mongoc_write_concern_t *wc;
+
+   ENTRY;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (query);
+
+
+   cluster = &collection->client->cluster;
+   server_stream = mongoc_cluster_stream_for_writes (cluster, error);
+   if (!server_stream) {
+      bson_destroy (&command);
+      RETURN (false);
+   }
+
+   name = mongoc_collection_get_name (collection);
+   BSON_APPEND_UTF8 (&command, "findAndModify", name);
+   BSON_APPEND_DOCUMENT (&command, "query", query);
+
+   if (opts->sort) {
+      BSON_APPEND_DOCUMENT (&command, "sort", opts->sort);
+   }
+
+   if (opts->update) {
+      BSON_APPEND_DOCUMENT (&command, "update", opts->update);
+   }
+
+   if (opts->fields) {
+      BSON_APPEND_DOCUMENT (&command, "fields", opts->fields);
+   }
+
+   if (opts->flags & MONGOC_FIND_AND_MODIFY_REMOVE) {
+      BSON_APPEND_BOOL (&command, "remove", true);
+   }
+
+   if (opts->flags & MONGOC_FIND_AND_MODIFY_UPSERT) {
+      BSON_APPEND_BOOL (&command, "upsert", true);
+   }
+
+   if (opts->flags & MONGOC_FIND_AND_MODIFY_RETURN_NEW) {
+      BSON_APPEND_BOOL (&command, "new", true);
+   }
+
+   if (opts->bypass_document_validation != MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+      BSON_APPEND_BOOL (&command, "bypassDocumentValidation",
+                        !!opts->bypass_document_validation);
+   }
+
+   wc = opts->write_concern ? opts->write_concern : collection->write_concern;
+
+   if (server_stream->sd->max_wire_version >= 4) {
+      if (!_mongoc_write_concern_is_valid (wc)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "The write concern is invalid.");
+         bson_destroy (&command);
+         mongoc_server_stream_cleanup (server_stream);
+         RETURN (false);
+      }
+
+      if (_mongoc_write_concern_needs_gle (wc)) {
+         _BSON_APPEND_WRITE_CONCERN (&command, wc);
+      }
+   }
+
+   ret = mongoc_cluster_run_command (cluster, server_stream->stream,
+                                     MONGOC_QUERY_NONE, collection->db,
+                                     &command, reply, error);
+
+   bson_destroy (&command);
+   mongoc_server_stream_cleanup (server_stream);
+
+   RETURN (ret);
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -1954,11 +2065,9 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
                                    bson_t              *reply,
                                    bson_error_t        *error)
 {
-   mongoc_cluster_t *cluster;
-   mongoc_server_stream_t *server_stream;
-   const char *name;
+   mongoc_find_and_modify_opts_t *opts;
+   int flags = 0;
    bool ret;
-   bson_t command = BSON_INITIALIZER;
 
    ENTRY;
 
@@ -1966,70 +2075,27 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
    BSON_ASSERT (query);
    BSON_ASSERT (update || _remove);
 
-   cluster = &collection->client->cluster;
-   server_stream = mongoc_cluster_stream_for_writes (cluster, error);
-   if (!server_stream) {
-      bson_destroy (&command);
-      RETURN (false);
-   }
-
-   name = mongoc_collection_get_name (collection);
-   BSON_APPEND_UTF8 (&command, "findAndModify", name);
-   BSON_APPEND_DOCUMENT (&command, "query", query);
-
-   if (sort) {
-      BSON_APPEND_DOCUMENT (&command, "sort", sort);
-   }
-
-   if (update) {
-      BSON_APPEND_DOCUMENT (&command, "update", update);
-   }
-
-   if (fields) {
-      BSON_APPEND_DOCUMENT (&command, "fields", fields);
-   }
 
    if (_remove) {
-      BSON_APPEND_BOOL (&command, "remove", _remove);
+      flags |= MONGOC_FIND_AND_MODIFY_REMOVE;
    }
-
    if (upsert) {
-      BSON_APPEND_BOOL (&command, "upsert", upsert);
+      flags |= MONGOC_FIND_AND_MODIFY_UPSERT;
    }
-
    if (_new) {
-      BSON_APPEND_BOOL (&command, "new", _new);
+      flags |= MONGOC_FIND_AND_MODIFY_RETURN_NEW;
    }
 
-   if (server_stream->sd->max_wire_version >= 4) {
-      if (!_mongoc_write_concern_is_valid (collection->write_concern)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "The write concern is invalid.");
-         bson_destroy (&command);
-         mongoc_server_stream_cleanup (server_stream);
-         RETURN (false);
-      }
+   opts = mongoc_find_and_modify_opts_new ();
 
-      if (_mongoc_write_concern_needs_gle (collection->write_concern)) {
-         _BSON_APPEND_WRITE_CONCERN (&command, collection->write_concern);
-      }
-   }
+   mongoc_find_and_modify_opts_set_sort (opts, sort);
+   mongoc_find_and_modify_opts_set_update (opts, update);
+   mongoc_find_and_modify_opts_set_fields (opts, fields);
+   mongoc_find_and_modify_opts_set_flags (opts, flags);
+   mongoc_find_and_modify_opts_set_write_concern (opts, collection->write_concern);
 
-   /*
-    * Submit the command to MongoDB server.
-    */
+   ret = mongoc_collection_find_and_modify_with_opts (collection, query, opts, reply, error);
+   mongoc_find_and_modify_opts_destroy (opts);
 
-   ret = mongoc_cluster_run_command (cluster, server_stream->stream,
-                                     MONGOC_QUERY_NONE, collection->db,
-                                     &command, reply, error);
-
-   /*
-    * Cleanup.
-    */
-   bson_destroy (&command);
-   mongoc_server_stream_cleanup (server_stream);
-
-   RETURN (ret);
+   return ret;
 }

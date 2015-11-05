@@ -29,13 +29,13 @@
 #include "mongoc-index.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc-write-concern.h"
+#include "mongoc-find-and-modify.h"
 
 
 BSON_BEGIN_DECLS
 
 
 typedef struct _mongoc_collection_t mongoc_collection_t;
-
 
 mongoc_cursor_t               *mongoc_collection_aggregate           (mongoc_collection_t           *collection,
                                                                       mongoc_query_flags_t           flags,
@@ -130,6 +130,11 @@ bool                          mongoc_collection_rename               (mongoc_col
                                                                       const char                    *new_name,
                                                                       bool                           drop_target_before_rename,
                                                                       bson_error_t                  *error);
+bool                          mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                 *collection,
+                                                                           const bson_t                        *query,
+                                                                           const mongoc_find_and_modify_opts_t *opts,
+                                                                           bson_t                              *reply,
+                                                                           bson_error_t                        *error);
 bool                          mongoc_collection_find_and_modify      (mongoc_collection_t           *collection,
                                                                       const bson_t                  *query,
                                                                       const bson_t                  *sort,
