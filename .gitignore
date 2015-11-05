@@ -72,6 +72,7 @@ test-mongoc-cursor
 test-mongoc-database
 test-mongoc-exhaust
 test-mongoc-event
+test-mongoc-find-and-modify
 test-mongoc-gridfs
 test-mongoc-gridfs-file-page
 test-mongoc-list
