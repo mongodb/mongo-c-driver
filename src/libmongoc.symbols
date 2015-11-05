@@ -253,3 +253,4 @@ mongoc_write_concern_set_wtimeout
 LIBMONGOC_1.0
 LIBMONGOC_1.1
 LIBMONGOC_1.2
+LIBMONGOC_1.3
