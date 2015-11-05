@@ -93,7 +93,7 @@ _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
 }
 
 
-static bool
+bool
 _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
                               const bson_t   **bson)
 {

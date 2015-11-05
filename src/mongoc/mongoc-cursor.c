@@ -34,6 +34,10 @@ static const bson_t *
 _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
                          mongoc_server_stream_t *server_stream);
 
+static const bson_t *
+_mongoc_cursor_find_command (mongoc_cursor_t *cursor);
+
+
 static int32_t
 _mongoc_n_return (mongoc_cursor_t * cursor)
 {
@@ -183,6 +187,8 @@ _mongoc_cursor_new (mongoc_client_t           *client,
          }
       }
 
+      cursor->has_dollar = found_dollar ? 1 : 0;
+
       if (found_dollar && found_non_dollar) {
          bson_set_error (&cursor->error,
                          MONGOC_ERROR_CURSOR,
@@ -319,7 +325,17 @@ _mongoc_cursor_initial_query (mongoc_cursor_t *cursor)
       GOTO (done);
    }
 
-   b = _mongoc_cursor_op_query (cursor, server_stream);
+   /* Find, getMore And killCursors Commands Spec: "the find command cannot be
+    * used to execute other commands" and "the find command does not support the
+    * exhaust flag."
+    */
+   if (server_stream->sd->max_wire_version >= FIND_COMMAND_WIRE_VERSION &&
+       !cursor->is_command &&
+       !(cursor->flags & MONGOC_QUERY_EXHAUST)) {
+      b = _mongoc_cursor_find_command (cursor);
+   } else {
+      b = _mongoc_cursor_op_query (cursor, server_stream);
+   }
 
 done:
    /* no-op if server_stream is NULL */
@@ -517,6 +533,176 @@ done:
    cursor->failed = ret ? 0 : 1;
 
    return ret;
+}
+
+
+static bool
+_invalid_field (const char      *query_field,
+                mongoc_cursor_t *cursor)
+{
+   if (query_field[0] == '\0') {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                      "empty string is not a valid query operator");
+      cursor->failed = true;
+      return true;
+   }
+
+   return false;
+}
+
+
+static void
+_query_to_cmd_field (const char  *query_field,
+                     const char **cmd_field,
+                     int         *len)
+{
+   if (query_field[0] != '$') {
+      *cmd_field = query_field;
+      *len = -1;
+      return;
+   }
+
+   /* strip the leading '$' */
+   query_field++;
+
+   if (!strcmp ("query", query_field)) {
+      *cmd_field = "filter";
+      *len = 6;
+   } else if (!strcmp ("orderby", query_field)) {
+      *cmd_field = "sort";
+      *len = 4;
+   } else if (!strcmp ("showDiskLoc", query_field)) { /* <= MongoDb 3.0 */
+      *cmd_field = "showRecordId";
+      *len = 12;
+   } else {
+      /* just use the field name, minus the '$' */
+      *cmd_field = query_field;
+      *len = -1;
+   }
+}
+
+
+static void
+_mongoc_cursor_prepare_find_command_flags (mongoc_cursor_t *cursor,
+                                           bson_t          *command)
+{
+   mongoc_query_flags_t flags = cursor->flags;
+
+   if (flags & MONGOC_QUERY_TAILABLE_CURSOR) {
+      bson_append_bool (command, "tailable", 8, true);
+   }
+
+   if (flags & MONGOC_QUERY_OPLOG_REPLAY) {
+      bson_append_bool (command, "oplogReplay", 11, true);
+   }
+
+   if (flags & MONGOC_QUERY_NO_CURSOR_TIMEOUT) {
+      bson_append_bool (command, "noCursorTimeout", 15, true);
+   }
+
+   if (flags & MONGOC_QUERY_AWAIT_DATA) {
+      bson_append_bool (command, "awaitData", 9, true);
+   }
+
+   if (flags & MONGOC_QUERY_PARTIAL) {
+      bson_append_bool (command, "allowPartialResults", 19, true);
+   }
+
+   /* Find, getMore And killCursors Commands Spec: "When sending a find command
+    * rather than a legacy OP_QUERY find, only the slaveOk flag is honored."
+    * Clear bits except slaveOk; leave slaveOk set only if it is already.
+    */
+   cursor->flags &= MONGOC_QUERY_SLAVE_OK;
+}
+
+
+static bool
+_mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
+                                     bson_t          *command)
+{
+   const char *collection;
+   int collection_len;
+   bson_iter_t iter;
+   const char *command_field;
+   int len;
+   const bson_value_t *value;
+
+   /* ns is like "db.collection". Collection name is located past the ".". */
+   collection = cursor->ns + (cursor->dblen + 1);
+   /* Collection name's length is ns length, minus length of db name and ".". */
+   collection_len = cursor->nslen - cursor->dblen - 1;
+
+   BSON_ASSERT (collection_len > 0);
+
+   bson_append_utf8 (command, "find", 4, collection, collection_len);
+
+   if (bson_empty0 (&cursor->query)) {
+      /* Find, getMore And killCursors Commands Spec: filter "MUST be included
+       * in the command".
+       */
+      bson_t empty = BSON_INITIALIZER;
+      bson_append_document (command, "filter", 6, &empty);
+   } else if (cursor->has_dollar) {
+      bson_iter_init (&iter, &cursor->query);
+      while (bson_iter_next (&iter)) {
+         if (_invalid_field (bson_iter_key (&iter), cursor)) {
+            return false;
+         }
+
+         _query_to_cmd_field (bson_iter_key (&iter), &command_field, &len);
+         value = bson_iter_value (&iter);
+         bson_append_value (command, command_field, len, value);
+      }
+   } else if (bson_has_field (&cursor->query, "filter")) {
+      bson_concat (command, &cursor->query);
+   } else {
+      /* cursor->query has no "$query", use it as the filter */
+      bson_append_document (command, "filter", 6, &cursor->query);
+   }
+
+   if (!bson_empty0 (&cursor->fields)) {
+      bson_append_document (command, "projection", 10, &cursor->fields);
+   }
+
+   if (cursor->skip) {
+      bson_append_int64 (command, "skip", 4, cursor->skip);
+   }
+
+   if (cursor->limit) {
+      bson_append_int64 (command, "limit", 5, cursor->limit);
+   }
+
+   if (cursor->batch_size) {
+      bson_append_int64 (command, "batchSize", 9, cursor->batch_size);
+   }
+
+   _mongoc_cursor_prepare_find_command_flags (cursor, command);
+
+   return true;
+}
+
+
+static const bson_t *
+_mongoc_cursor_find_command (mongoc_cursor_t *cursor)
+{
+   bson_t command = BSON_INITIALIZER;
+   const bson_t *bson = NULL;
+
+   ENTRY;
+
+   if (!_mongoc_cursor_prepare_find_command (cursor, &command)) {
+      RETURN (NULL);
+   }
+
+   _mongoc_cursor_cursorid_init (cursor, &command);
+   bson_destroy (&command);
+
+   BSON_ASSERT (cursor->iface.next);
+   _mongoc_cursor_cursorid_next (cursor, &bson);
+
+   RETURN (bson);
 }
 
 

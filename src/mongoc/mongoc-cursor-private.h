@@ -30,6 +30,7 @@
 
 BSON_BEGIN_DECLS
 
+#define FIND_COMMAND_WIRE_VERSION 4
 
 typedef struct _mongoc_cursor_interface_t mongoc_cursor_interface_t;
 
@@ -62,6 +63,7 @@ struct _mongoc_cursor_t
    unsigned                   end_of_event    : 1;
    unsigned                   has_fields      : 1;
    unsigned                   in_exhaust      : 1;
+   unsigned                   has_dollar      : 1;
 
    bson_t                     query;
    bson_t                     fields;

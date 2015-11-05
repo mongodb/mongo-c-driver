@@ -38,6 +38,7 @@ extern void test_client_install                  (TestSuite *suite);
 extern void test_client_pool_install             (TestSuite *suite);
 extern void test_cluster_install                 (TestSuite *suite);
 extern void test_collection_install              (TestSuite *suite);
+extern void test_collection_find_install         (TestSuite *suite);
 extern void test_cursor_install                  (TestSuite *suite);
 extern void test_database_install                (TestSuite *suite);
 extern void test_exhaust_install                 (TestSuite *suite);
@@ -1225,6 +1226,7 @@ main (int   argc,
    test_bulk_install (&suite);
    test_cluster_install (&suite);
    test_collection_install (&suite);
+   test_collection_find_install (&suite);
    test_cursor_install (&suite);
    test_database_install (&suite);
    test_exhaust_install (&suite);
