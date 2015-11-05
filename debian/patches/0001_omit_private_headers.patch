@@ -1,3 +1,5 @@
+Author: A. Jesse Jiryu Davis <jesse@mongodb.com>
+Description: Omit private headers and pkg-config file
 diff --git a/src/Makefile.am b/src/Makefile.am
 index 22ec261..34daf91 100644
 --- a/src/Makefile.am
