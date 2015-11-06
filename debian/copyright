@@ -1,10 +1,36 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: libmongoc
+Upstream-Name: mongo-c-driver
 Source: https://github.com/mongodb/mongo-c-driver/releases
 
 Files: *
-Copyright: 2009-2015 MongoDB, Inc.
+Copyright: 2013-2015 MongoDB, Inc.
 License: Apache-2.0
+
+Files: src/mongoc/mongoc-b64.c
+Copyright: 1996, 1998 Internet Software Consortium
+           1995 International Business Machines, Inc.
+License: ISC or Other-IBM
+
+Files: src/mongoc/utlist.h
+Copyright: 2007-2014, Troy D. Hanson   http://troydhanson.github.com/uthash/
+License: BSD-1-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ .
+     * Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+ IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+ OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Files: build/autotools/LDVersionScript.m4
 Copyright: 2008-2013 Free Software Foundation, Inc.
@@ -17,10 +43,6 @@ Files: build/autotools/m4/ax_pthread.m4
 Copyright: 2008 Steven G. Johnson <stevenj@alum.mit.edu>
            2011 Daniel Richard G. <skunk@iSKUNK.ORG>
 License: GPL-3+
-
-Files: build/autotools/m4/ax_python.m4
-Copyright: 2008 Michael Tindal
-License: GPL-2+
 
 Files: build/autotools/m4/ax_check_link_flag.m4 build/autotools/m4/ax_check_compile_flag.m4
 Copyright: 2008 Guido U. Draheim <guidod@gmx.de>
@@ -79,3 +101,41 @@ License: GPL-2+
  .
  On Debian systems, the complete text of the GPL version 2 license can be
  found in "/usr/share/common-licenses/GPL-2".
+
+License: ISC
+ Permission to use, copy, modify, and/or distribute this software for any
+ purpose with or without fee is hereby granted, provided that the above
+ copyright notice and this permission notice appear in all copies.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+License: Other-IBM
+ Portions Copyright (c) 1995 by International Business Machines, Inc.
+ .
+ International Business Machines, Inc. (hereinafter called IBM) grants
+ permission under its copyrights to use, copy, modify, and distribute this
+ Software with or without fee, provided that the above copyright notice and
+ all paragraphs of this notice appear in all copies, and that the name of IBM
+ not be used in connection with the marketing of any product incorporating
+ the Software or modifications thereof, without specific, written prior
+ permission.
+ .
+ To the extent it has a right to do so, IBM grants an immunity from suit
+ under its patents, if any, for the use, sale or manufacture of products to
+ the extent that such products are used for performing Domain Name System
+ dynamic updates in TCP/IP networks by means of the Software.  No immunity is
+ granted for any product per se or for any other function of any product.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", AND IBM DISCLAIMS ALL WARRANTIES,
+ INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ PARTICULAR PURPOSE.  IN NO EVENT SHALL IBM BE LIABLE FOR ANY SPECIAL,
+ DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER ARISING
+ OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE, EVEN
+ IF IBM IS APPRISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
