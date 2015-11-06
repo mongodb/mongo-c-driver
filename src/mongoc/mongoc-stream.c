@@ -311,6 +311,20 @@ mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
 }
 
 
+static mongoc_stream_t *
+mongoc_stream_get_root_stream (mongoc_stream_t *stream)
+
+{
+   BSON_ASSERT (stream);
+
+   while (stream->get_base_stream) {
+      stream = stream->get_base_stream (stream);
+   }
+
+   return stream;
+}
+
+
 ssize_t
 mongoc_stream_poll (mongoc_stream_poll_t *streams,
                     size_t                nstreams,
@@ -325,7 +339,7 @@ mongoc_stream_poll (mongoc_stream_poll_t *streams,
    errno = 0;
 
    for (i = 0; i < nstreams; i++) {
-      poller[i].stream = mongoc_stream_get_base_stream(streams[i].stream);
+      poller[i].stream = mongoc_stream_get_root_stream(streams[i].stream);
       poller[i].events = streams[i].events;
       poller[i].revents = 0;
 

@@ -274,10 +274,8 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
    mongoc_stream_t *base_stream = NULL;
 #ifdef MONGOC_ENABLE_SSL
    mongoc_client_t *client = (mongoc_client_t *)user_data;
-   const bson_t *options;
-   bson_iter_t iter;
    const char *mechanism;
-   int32_t connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
+   int32_t connecttimeoutms;
 #endif
 
    BSON_ASSERT (uri);
@@ -314,11 +312,9 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
 
 #ifdef MONGOC_ENABLE_SSL
    if (base_stream) {
-      options = mongoc_uri_get_options (uri);
       mechanism = mongoc_uri_get_auth_mechanism (uri);
 
-      if ((bson_iter_init_find_case (&iter, options, "ssl") &&
-           bson_iter_as_bool (&iter)) ||
+      if (client->use_ssl ||
           (mechanism && (0 == strcmp (mechanism, "MONGODB-X509")))) {
          base_stream = mongoc_stream_tls_new (base_stream, &client->ssl_opts,
                                               true);
@@ -646,6 +642,7 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
    BSON_ASSERT (client);
    BSON_ASSERT (opts);
 
+   client->use_ssl = true;
    memcpy (&client->ssl_opts, opts, sizeof client->ssl_opts);
 
    bson_free (client->pem_subject);
@@ -712,10 +709,6 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
    mongoc_client_t *client;
    const mongoc_read_prefs_t *read_prefs;
    const mongoc_write_concern_t *write_concern;
-#ifdef MONGOC_ENABLE_SSL
-   const bson_t *options;
-   bson_iter_t iter;
-#endif
 
    BSON_ASSERT (uri);
 
@@ -735,12 +728,10 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
    mongoc_cluster_init (&client->cluster, client->uri, client);
 
 #ifdef MONGOC_ENABLE_SSL
-   options = mongoc_uri_get_options (client->uri);
-
-   if (bson_iter_init_find (&iter, options, "ssl") &&
-       BSON_ITER_HOLDS_BOOL (&iter) &&
-       bson_iter_bool (&iter)) {
-         mongoc_client_set_ssl_opts (client, mongoc_ssl_opt_get_default ());
+   client->use_ssl = false;
+   if (mongoc_uri_get_ssl (client->uri)) {
+      /* sets use_ssl = true */
+      mongoc_client_set_ssl_opts (client, mongoc_ssl_opt_get_default ());
    }
 #endif
 

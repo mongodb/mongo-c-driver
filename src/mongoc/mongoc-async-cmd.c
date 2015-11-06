@@ -278,12 +278,12 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
    }
 
    while (bytes) {
-      if (acmd->iovec->iov_len < bytes) {
+      if (acmd->iovec->iov_len < (size_t)bytes) {
          bytes -= acmd->iovec->iov_len;
          acmd->iovec++;
          acmd->niovec--;
       } else {
-         acmd->iovec->iov_base += bytes;
+         acmd->iovec->iov_base = ((char *)acmd->iovec->iov_base) + bytes;
          acmd->iovec->iov_len -= bytes;
          bytes = 0;
       }

@@ -29,6 +29,7 @@ page to a groff styled man page.
 """
 
 import os
+import re
 import sys
 
 import codecs
@@ -56,6 +57,10 @@ TR = '{http://projectmallard.org/1.0/}tr'
 TD = '{http://projectmallard.org/1.0/}td'
 OUTPUT = '{http://projectmallard.org/1.0/}output'
 
+# Matches "\" and "-", but not "\-".
+replaceables = re.compile(r'(\\(?!-))|((?<!\\)-)')
+
+
 class Convert(object):
     title = None
     subtitle = None
@@ -68,6 +73,9 @@ class Convert(object):
         self.outFile = outFile
         self.section = section
         self.sections = []
+
+        # Map: section id -> section element.
+        self.sections_map = {}
 
     def _parse(self):
         self.tree = ElementTree.ElementTree()
@@ -87,14 +95,29 @@ class Convert(object):
         return self.parent_map[ele]
 
     def _extract(self):
-        # Try to extract the title.
+        # Extract the title and subtitle.
         for child in self.root.getchildren():
             if child.tag == TITLE:
                 self.title = child.text.strip()
             elif child.tag == SUBTITLE:
                 self.subtitle = child.text.strip()
             elif child.tag == SECTION:
+                if child.get('id'):
+                    self.sections_map[child.get('id')] = child
                 self.sections.append(child)
+
+        if not self.subtitle and 'description' in self.sections_map:
+            # No "subtitle" element, use description section title as subtitle.
+            self.subtitle = self._section_text(self.sections_map['description'])
+
+    def _section_text(self, section):
+        # Find <section id="description"><p>some text</p></section>.
+        for child in section:
+            if child.tag != TITLE:
+                return self._textify_elem(child)
+
+    def _textify_elem(self, elem):
+        return ''.join(elem.itertext()).strip()
 
     def _writeComment(self, text=''):
         lines = text.split('\n')
@@ -103,7 +126,26 @@ class Convert(object):
             self.outFile.write(line)
             self.outFile.write('\n')
 
+    def _escape_char(self, match):
+        c = match.group(0)
+        if c == "-":
+            return r"\(hy"
+        elif c == "\\":
+            return "\\e"
+
+        assert False, "invalid char passed to _escape_char: %r" % c
+
+    def _escape(self, text):
+        # Avoid "hyphen-used-as-minus-sign" lintian warning about man pages,
+        # and escape text like "\0" as "\\0". We'll replace all "-" with "\(hy",
+        # which is an explicit hyphen, but leave alone the first line's
+        # "name \- description" text.
+        return replaceables.sub(self._escape_char, text)
+
     def _write(self, text):
+        self._write_noescape(self._escape(text))
+
+    def _write_noescape(self, text):
         self.outFile.write(text)
 
     def _writeCommand(self, text):
@@ -135,11 +177,7 @@ class Convert(object):
         title = self.title.replace('()','').upper()
         self._write('.TH "%s" "%s" "%s" "%s"\n' % (title, self.section, date, GROUP))
         self._write('.SH NAME\n')
-
-        if self.subtitle:
-            self._write('%s \\- %s\n' % (self.title, self.subtitle))
-        else:
-            self._write('%s\n' % self.title)
+        self._write_noescape('%s \\- %s\n' % (self.title, self.subtitle))
 
     def _generateSection(self, section):
         # Try to render the title first
@@ -165,7 +203,7 @@ class Convert(object):
         is_synopsis = self._get_parent(code).tag.endswith('synopsis')
         if text and '\n' not in text and not is_synopsis:
             text = text.replace('()', '(%s)' % self.section)
-            self._writeCommand('.BR ' + text)
+            self._writeCommand('.B ' + text)
         else:
             self._writeCommand('.nf')
             self._writeLine(code.text)
@@ -203,7 +241,7 @@ class Convert(object):
             self._generateElement(child)
 
     def _generateEM(self, em):
-        self._writeCommand('.BR %s' % em.text)
+        self._writeCommand('.B %s' % em.text)
 
     def _generateOutput(self, output):
         self._generateCode(output)
@@ -274,18 +312,17 @@ class Convert(object):
         if text and '()' in text:
             text = text.replace('()', '(%s)' % self.section)
         if text:
-            self._writeCommand('.BR ' + text)
+            self._writeCommand('.B ' + text)
 
     def _generateSections(self):
         for section in self.sections:
             self._generateElement(section)
 
     def _generateFooter(self):
-        self._write('\n.BR')
+        self._write('\n.B')
         self._write('\n.SH COLOPHON')
         self._write('\nThis page is part of %s.' % GROUP)
-        self._write('\nPlease report any bugs at\n')
-        self._write('\\%' + BUG_URL.replace('-','\\-') + '.')
+        self._write('\nPlease report any bugs at %s.' % BUG_URL.replace('-','\\-'))
 
     def _generate(self):
         self.realname = self.outFile

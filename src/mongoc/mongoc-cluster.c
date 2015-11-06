@@ -1237,7 +1237,6 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 {
    mongoc_cluster_node_t *cluster_node;
    mongoc_stream_t *stream;
-   int64_t expire_at;
 
    ENTRY;
 
@@ -1250,18 +1249,6 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    if (!stream) {
       MONGOC_WARNING ("Failed connection to %s (%s)", sd->connection_address, error->message);
       RETURN (NULL);
-   }
-
-   expire_at = bson_get_monotonic_time() + cluster->client->topology->connect_timeout_msec * 1000;
-   if (!mongoc_stream_wait (stream, expire_at)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_CONNECT,
-                      "Failed to connect to target host: '%s'",
-                      sd->host.host_and_port);
-      memcpy (&sd->error, error, sizeof sd->error);
-      mongoc_stream_failed (stream);
-      return NULL;
    }
 
    /* take critical fields from a fresh ismaster */

@@ -55,7 +55,7 @@ main (int   argc,
    mongoc_collection_t  *collection;
    bson_t               *command,
                          reply,
-                         insert;
+                        *insert;
    bson_error_t          error;
    char                 *str;
    bool                  retval;
@@ -98,7 +98,7 @@ main (int   argc,
       fprintf (stderr, "%s\n", error.message);
    }
 
-   bson_destroy (&insert);
+   bson_destroy (insert);
    bson_destroy (&reply);
    bson_destroy (command);
    bson_free (str);
