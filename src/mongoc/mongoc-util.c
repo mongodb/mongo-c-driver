@@ -97,3 +97,11 @@ _mongoc_get_db_name (const char *ns,
       bson_strncpy (db, ns, MONGOC_NAMESPACE_MAX);
    }
 }
+
+void
+_mongoc_bson_destroy_if_set (bson_t *bson)
+{
+   if (bson) {
+      bson_destroy (bson);
+   }
+}

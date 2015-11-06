@@ -49,6 +49,7 @@ const char *_mongoc_get_command_name (const bson_t *command);
 void _mongoc_get_db_name (const char *ns,
                           char *db /* OUT */);
 
+void _mongoc_bson_destroy_if_set (bson_t *bson);
 BSON_END_DECLS
 
 
