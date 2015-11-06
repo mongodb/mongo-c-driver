@@ -7,7 +7,7 @@ Description: Spelling in mongoc_cursor_t.page (fixed in upstream master)
      <synopsis><code mime="text/x-csrc"><![CDATA[typedef struct _mongoc_cursor_t mongoc_cursor_t;]]></code></synopsis>
      <p><code>mongoc_cursor_t</code> provides access to a MongoDB query cursor.
 -It wraps up the wire protocol negotation required to initiate a query and retreive an unknown number of documents.
-+It wraps up the wire protocol negotation required to initiate a query and retrieve an unknown number of documents.
++It wraps up the wire protocol negotiation required to initiate a query and retrieve an unknown number of documents.
  
  Cursors are lazy, meaning that no network traffic occurs until the first call to <code xref="mongoc_cursor_next">mongoc_cursor_next()</code>.
  
