@@ -1,12 +1,5 @@
-mongo-c-driver (1.2.1-0) unstable; urgency=low
-
-  * Release 1.2.1
-
- -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Thu, 29 October 2015 12:00:00 -0400
-
-mongo-c-driver (1.2.0-0) unstable; urgency=low
-libmongoc (1.2.0-1) experimental; urgency=low
+libmongoc (1.2.1-1) experimental; urgency=low
 
   * Initial release (Closes: #798711)
 
- -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Fri, 23 Oct 2015 20:21:17 +0000
+ -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Fri, 06 Nov 2015 20:21:17 +0000
