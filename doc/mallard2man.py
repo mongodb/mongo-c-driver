@@ -98,7 +98,9 @@ class Convert(object):
         # Extract the title and subtitle.
         for child in self.root.getchildren():
             if child.tag == TITLE:
-                self.title = child.text.strip()
+                # A title like "Version Checks" can't have spaces, otherwise
+                # the "whatis" entry can't be parsed from the man page title.
+                self.title = child.text.strip().replace(' ', '_')
             elif child.tag == SUBTITLE:
                 self.subtitle = child.text.strip()
             elif child.tag == SECTION:
