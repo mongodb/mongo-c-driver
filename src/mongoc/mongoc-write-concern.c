@@ -416,13 +416,13 @@ _mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern)
 bool
 _mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
 {
-   BSON_ASSERT (write_concern);
+   if (!write_concern) {
+      return false;
+   }
 
-   /*
-    * Journal or fsync should require acknowledgement.
-    */
-   if ((mongoc_write_concern_get_fsync(write_concern) ||
-        mongoc_write_concern_get_journal(write_concern)) &&
+   /* Journal or fsync should require acknowledgement.  */
+   if ((mongoc_write_concern_get_fsync (write_concern) ||
+        mongoc_write_concern_get_journal (write_concern)) &&
        (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
         write_concern->w == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) {
       return false;
