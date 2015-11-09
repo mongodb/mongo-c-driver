@@ -40,6 +40,14 @@ static const bson_t *
 _mongoc_cursor_find_command (mongoc_cursor_t *cursor);
 
 
+static const bson_t *
+_mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
+                           mongoc_server_stream_t *server_stream);
+
+static const bson_t *
+_mongoc_cursor_getmore_command (mongoc_cursor_t *cursor);
+
+
 static int32_t
 _mongoc_n_return (mongoc_cursor_t * cursor)
 {
@@ -306,6 +314,20 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
 }
 
 
+static bool
+_use_wire_version_4_protocol (const mongoc_cursor_t        *cursor,
+                              const mongoc_server_stream_t *server_stream)
+{
+   /* Find, getMore And killCursors Commands Spec: "the find command cannot be
+    * used to execute other commands" and "the find command does not support the
+    * exhaust flag."
+    */
+   return server_stream->sd->max_wire_version >= FIND_COMMAND_WIRE_VERSION &&
+          !cursor->is_command &&
+          !(cursor->flags & MONGOC_QUERY_EXHAUST);
+}
+
+
 static const bson_t *
 _mongoc_cursor_initial_query (mongoc_cursor_t *cursor)
 {
@@ -322,13 +344,7 @@ _mongoc_cursor_initial_query (mongoc_cursor_t *cursor)
       GOTO (done);
    }
 
-   /* Find, getMore And killCursors Commands Spec: "the find command cannot be
-    * used to execute other commands" and "the find command does not support the
-    * exhaust flag."
-    */
-   if (server_stream->sd->max_wire_version >= FIND_COMMAND_WIRE_VERSION &&
-       !cursor->is_command &&
-       !(cursor->flags & MONGOC_QUERY_EXHAUST)) {
+   if (_use_wire_version_4_protocol (cursor, server_stream)) {
       b = _mongoc_cursor_find_command (cursor);
    } else {
       b = _mongoc_cursor_op_query (cursor, server_stream);
@@ -703,9 +719,6 @@ static const bson_t *
 _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 {
    mongoc_server_stream_t *server_stream;
-   uint64_t cursor_id;
-   uint32_t request_id;
-   mongoc_rpc_t rpc;
    const bson_t *b = NULL;
 
    ENTRY;
@@ -717,81 +730,15 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       GOTO (failure);
    }
 
-   if (!cursor->in_exhaust) {
-      if (!(cursor_id = cursor->rpc.reply.cursor_id)) {
-         bson_set_error(&cursor->error,
-                        MONGOC_ERROR_CURSOR,
-                        MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-                        "No valid cursor was provided.");
-         GOTO (failure);
-      }
-
-      rpc.get_more.msg_len = 0;
-      rpc.get_more.request_id = 0;
-      rpc.get_more.response_to = 0;
-      rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
-      rpc.get_more.zero = 0;
-      rpc.get_more.collection = cursor->ns;
-      if ((cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR)) {
-         rpc.get_more.n_return = 0;
-      } else {
-         rpc.get_more.n_return = _mongoc_n_return(cursor);
-      }
-      rpc.get_more.cursor_id = cursor_id;
-
-      if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
-                                           &rpc, 1, server_stream,
-                                           NULL, &cursor->error)) {
-         GOTO (failure);
-      }
-
-      request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
-   } else {
-      request_id = BSON_UINT32_FROM_LE(cursor->rpc.header.request_id);
-   }
-
-   _mongoc_buffer_clear(&cursor->buffer, false);
-
-   if (!_mongoc_client_recv(cursor->client,
-                            &cursor->rpc,
-                            &cursor->buffer,
-                            server_stream,
-                            &cursor->error)) {
-      GOTO (failure);
-   }
-
-   if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+   if (!cursor->in_exhaust && !cursor->rpc.reply.cursor_id) {
       bson_set_error (&cursor->error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid opcode. Expected %d, got %d.",
-                      MONGOC_OPCODE_REPLY, cursor->rpc.header.opcode);
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                      "No valid cursor was provided.");
       GOTO (failure);
    }
 
-   if (cursor->rpc.header.response_to != request_id) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_PROTOCOL,
-                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid response_to. Expected %d, got %d.",
-                      request_id, cursor->rpc.header.response_to);
-      GOTO (failure);
-   }
-
-   if (_mongoc_rpc_parse_query_error (&cursor->rpc,
-                                      &cursor->error)) {
-      GOTO (failure);
-   }
-
-   if (cursor->reader) {
-      bson_reader_destroy(cursor->reader);
-   }
-
-   cursor->reader = bson_reader_new_from_data(cursor->rpc.reply.documents,
-                                              cursor->rpc.reply.documents_len);
-   if (cursor->reader) {
-      _mongoc_read_from_buffer (cursor, &b);
-   }
+   b = _mongoc_cursor_op_getmore (cursor, server_stream);
 
    mongoc_server_stream_cleanup (server_stream);
 
@@ -803,6 +750,98 @@ failure:
    mongoc_server_stream_cleanup (server_stream);
 
    RETURN (NULL);
+}
+
+
+static const bson_t *
+_mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
+                           mongoc_server_stream_t *server_stream)
+{
+   mongoc_rpc_t rpc;
+   uint32_t request_id;
+   const bson_t *b = NULL;
+
+   ENTRY;
+
+   if (cursor->in_exhaust) {
+      request_id = BSON_UINT32_FROM_LE (cursor->rpc.header.request_id);
+   } else {
+      rpc.get_more.cursor_id = cursor->rpc.reply.cursor_id;
+      rpc.get_more.msg_len = 0;
+      rpc.get_more.request_id = 0;
+      rpc.get_more.response_to = 0;
+      rpc.get_more.opcode = MONGOC_OPCODE_GET_MORE;
+      rpc.get_more.zero = 0;
+      rpc.get_more.collection = cursor->ns;
+      if ((cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR)) {
+         rpc.get_more.n_return = 0;
+      } else {
+         rpc.get_more.n_return = _mongoc_n_return(cursor);
+      }
+
+      if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
+                                           &rpc, 1, server_stream,
+                                           NULL, &cursor->error)) {
+         GOTO (done);
+      }
+
+      request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
+   }
+
+   _mongoc_buffer_clear (&cursor->buffer, false);
+
+   if (!_mongoc_client_recv (cursor->client,
+                             &cursor->rpc,
+                             &cursor->buffer,
+                             server_stream,
+                             &cursor->error)) {
+      GOTO (done);
+   }
+
+   if (cursor->rpc.header.opcode != MONGOC_OPCODE_REPLY) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid opcode. Expected %d, got %d.",
+                      MONGOC_OPCODE_REPLY, cursor->rpc.header.opcode);
+      GOTO (done);
+   }
+
+   if (cursor->rpc.header.response_to != request_id) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Invalid response_to. Expected %d, got %d.",
+                      request_id, cursor->rpc.header.response_to);
+      GOTO (done);
+   }
+
+   if (_mongoc_rpc_parse_query_error (&cursor->rpc,
+                                      &cursor->error)) {
+      GOTO (done);
+   }
+
+   if (cursor->reader) {
+      bson_reader_destroy (cursor->reader);
+   }
+
+   cursor->reader = bson_reader_new_from_data (
+      cursor->rpc.reply.documents,
+      (size_t)cursor->rpc.reply.documents_len);
+
+   if (cursor->reader) {
+      _mongoc_read_from_buffer (cursor, &b);
+   }
+
+done:
+   return b;
+}
+
+
+static const bson_t *
+_mongoc_cursor_getmore_command (mongoc_cursor_t *cursor)
+{
+   return NULL;
 }
 
 
