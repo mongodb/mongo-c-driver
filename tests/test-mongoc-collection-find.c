@@ -669,7 +669,7 @@ test_batch_size (void)
    test_data.docs = "[{'_id': 1}]";
    test_data.batch_size = 2;
    test_data.n_return = 2;
-   test_data.expected_find_command = "{'find': 'collection', 'filter': {}, 'batchSize': {'$numberLong': '2'}}";
+   test_data.expected_find_command = "{'find': 'collection', 'filter': {}, 'batchSize': 2}";
    test_data.expected_result = "[{'_id': 1}]";
    _test_collection_find (&test_data);
 }
@@ -729,6 +729,70 @@ test_query_flags (void)
 }
 
 
+static void
+test_getmore_batch_size (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+   uint32_t batch_sizes[] = { 0, 1, 2 };
+   size_t i;
+   char *batch_size_json;
+   bson_error_t error;
+
+   server = mock_server_with_autoismaster (4);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   for (i = 0; i < sizeof (batch_sizes) / sizeof (uint32_t); i++) {
+      cursor = mongoc_collection_find (collection,
+                                       MONGOC_QUERY_NONE,
+                                       0,
+                                       0,
+                                       batch_sizes[i],
+                                       tmp_bson ("{}"),
+                                       NULL,
+                                       NULL);
+
+      future = future_cursor_next (cursor, &doc);
+
+      if (batch_sizes[i]) {
+         batch_size_json = bson_strdup_printf (", 'batchSize': %u",
+                                               batch_sizes[i]);
+      } else {
+         batch_size_json = bson_strdup ("");
+      }
+
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK,
+         "{'find': 'collection', 'filter': {} %s}",
+         batch_size_json);
+
+      mock_server_replies_simple (request, "{'ok': 1,"
+                                           " 'cursor': {"
+                                           "    'id': 0,"
+                                           "    'ns': 'db.collection',"
+                                           "    'firstBatch': []}}");
+
+      /* no result */
+      ASSERT (!future_get_bool (future));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+      bson_free (batch_size_json);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 void
 test_collection_find_install (TestSuite *suite)
 {
@@ -770,4 +834,7 @@ test_collection_find_install (TestSuite *suite)
                   test_limit);
    TestSuite_Add (suite, "/Collection/find/flags",
                   test_query_flags);
+
+   TestSuite_Add (suite, "/Collection/getmore/batch_size",
+                  test_getmore_batch_size);
 }

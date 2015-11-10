@@ -684,7 +684,7 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
    }
 
    if (cursor->batch_size) {
-      bson_append_int64 (command, "batchSize", 9, cursor->batch_size);
+      bson_append_int32 (command, "batchSize", 9, cursor->batch_size);
    }
 
    _mongoc_cursor_prepare_find_command_flags (cursor, command);
