@@ -59,7 +59,6 @@ struct _mongoc_cursor_t
    unsigned                   is_command      : 1;
    unsigned                   sent            : 1;
    unsigned                   done            : 1;
-   unsigned                   failed          : 1;
    unsigned                   end_of_event    : 1;
    unsigned                   has_fields      : 1;
    unsigned                   in_exhaust      : 1;

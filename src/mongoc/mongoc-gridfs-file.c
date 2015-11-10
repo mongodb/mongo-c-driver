@@ -161,9 +161,6 @@ mongoc_gridfs_file_save (mongoc_gridfs_file_t *file)
    r = mongoc_collection_update (file->gridfs->files, MONGOC_UPDATE_UPSERT,
                                  selector, update, NULL, &file->error);
 
-   file->failed = !r;
-
-
    bson_destroy (selector);
    bson_destroy (update);
 
@@ -632,8 +629,6 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
    r = mongoc_collection_update (file->gridfs->chunks, MONGOC_UPDATE_UPSERT,
                                  selector, update, NULL, &file->error);
 
-   file->failed = !r;
-
    bson_destroy (selector);
    bson_destroy (update);
 
@@ -746,12 +741,8 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
        * iterate until we're on the right chunk */
       while (file->cursor_range[0] <= file->n) {
          if (!mongoc_cursor_next (file->cursor, &chunk)) {
-            if (file->cursor->failed) {
-               memcpy (&(file->error), &(file->cursor->error),
-                       sizeof (bson_error_t));
-               file->failed = true;
-            }
-
+            /* copy cursor error, if any. might just lack a matchign chunk. */
+            mongoc_cursor_error (file->cursor, &file->error);
             RETURN (0);
          }
 
@@ -890,7 +881,7 @@ mongoc_gridfs_file_error (mongoc_gridfs_file_t *file,
    BSON_ASSERT(file);
    BSON_ASSERT(error);
 
-   if (BSON_UNLIKELY(file->failed)) {
+   if (BSON_UNLIKELY(file->error.domain)) {
       bson_set_error(error,
                      file->error.domain,
                      file->error.code,

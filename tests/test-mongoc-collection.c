@@ -1346,7 +1346,6 @@ test_aggregate_bypass (void *context)
    ASSERT (!r);
    ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_STARTSWITH (error.message, "insert for $out failed");
-   ASSERT (cursor->failed);
 
    options = tmp_bson("{'bypassDocumentValidation': true}");
    cursor = mongoc_collection_aggregate(data_collection, MONGOC_QUERY_NONE, pipeline, options, NULL);
@@ -1409,7 +1408,6 @@ again:
    r = mongoc_cursor_next (cursor, &doc);
    ASSERT (!r);
    ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT (cursor->failed);
    ASSERT (error.code == 16436);
 
    for (i = 0; i < 2; i++) {

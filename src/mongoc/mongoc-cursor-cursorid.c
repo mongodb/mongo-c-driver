@@ -20,6 +20,8 @@
 #include "mongoc-cursor-cursorid-private.h"
 #include "mongoc-log.h"
 #include "mongoc-trace.h"
+#include "mongoc-error.h"
+#include "mongoc-util-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -87,7 +89,14 @@ _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
 
       RETURN (true);
    } else {
-      cursor->failed = 1;
+      if (!cursor->error.domain) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_PROTOCOL,
+                         MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                         "Invalid reply to %s command.",
+                         _mongoc_get_command_name (&cursor->query));
+      }
+
       RETURN (false);
    }
 }

@@ -40,7 +40,6 @@ struct _mongoc_gridfs_file_t
    uint64_t                   pos;
    int32_t                    n;
    bson_error_t               error;
-   bool                       failed;
    mongoc_cursor_t           *cursor;
    uint32_t                   cursor_range[2];
    bool                       is_dirty;

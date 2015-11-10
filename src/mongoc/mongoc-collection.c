@@ -293,7 +293,6 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    bson_t child;
    int32_t batch_size = 0;
    bool use_cursor;
-   bool ret = false;
 
    ENTRY;
 
@@ -380,8 +379,6 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       _mongoc_cursor_array_init (cursor, &command, "result");
    }
 
-   ret = true;
-
 done:
    if (selected_server) {
       mongoc_server_description_destroy (selected_server);
@@ -391,10 +388,6 @@ done:
 
    /* we always return the cursor, even if it fails; users can detect the
     * failure on performing a cursor operation. see CDRIVER-880. */
-   if (!ret) {
-      cursor->failed = true;
-   }
-
    RETURN (cursor);
 }
 

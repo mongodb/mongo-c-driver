@@ -30,6 +30,8 @@
 #define MONGOC_LOG_DOMAIN "cursor"
 
 
+#define CURSOR_FAILED(cursor_) ((cursor_)->error.domain != 0)
+
 static const bson_t *
 _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
                          mongoc_server_stream_t *server_stream);
@@ -118,7 +120,6 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    do { \
       bson_init (&(c)->query); \
       bson_init (&(c)->fields); \
-      (c)->failed = true; \
       (c)->done = true; \
       (c)->end_of_event = true; \
       (c)->sent = true; \
@@ -301,10 +302,6 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
       }
    }
 
-   if (!server_stream) {
-      cursor->failed = true;
-   }
-
    RETURN (server_stream);
 }
 
@@ -457,7 +454,6 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    RETURN (bson);
 
 failure:
-   cursor->failed = true;
    cursor->done = true;
 
    apply_read_prefs_result_cleanup (&result);
@@ -530,8 +526,6 @@ done:
    apply_read_prefs_result_cleanup (&read_prefs_result);
    mongoc_server_stream_cleanup (server_stream);
 
-   cursor->failed = ret ? 0 : 1;
-
    return ret;
 }
 
@@ -545,7 +539,6 @@ _invalid_field (const char      *query_field,
                       MONGOC_ERROR_CURSOR,
                       MONGOC_ERROR_CURSOR_INVALID_CURSOR,
                       "empty string is not a valid query operator");
-      cursor->failed = true;
       return true;
    }
 
@@ -806,7 +799,6 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
 
 failure:
    cursor->done = true;
-   cursor->failed = true;
 
    mongoc_server_stream_cleanup (server_stream);
 
@@ -842,7 +834,7 @@ _mongoc_cursor_error (mongoc_cursor_t *cursor,
 
    BSON_ASSERT (cursor);
 
-   if (BSON_UNLIKELY(cursor->failed)) {
+   if (BSON_UNLIKELY(CURSOR_FAILED (cursor))) {
       bson_set_error(error,
                      cursor->error.domain,
                      cursor->error.code,
@@ -872,7 +864,7 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
       *bson = NULL;
    }
 
-   if (cursor->failed) {
+   if (CURSOR_FAILED (cursor)) {
       return false;
    }
 
@@ -884,7 +876,6 @@ mongoc_cursor_next (mongoc_cursor_t  *cursor,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_IN_EXHAUST,
                       "Another cursor derived from this client is in exhaust.");
-      cursor->failed = true;
       RETURN (false);
    }
 
@@ -931,7 +922,7 @@ _mongoc_cursor_next (mongoc_cursor_t  *cursor,
       *bson = NULL;
    }
 
-   if (cursor->done || cursor->failed) {
+   if (cursor->done || CURSOR_FAILED (cursor)) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_CURSOR,
                       MONGOC_ERROR_CURSOR_INVALID_CURSOR,
@@ -1005,7 +996,7 @@ _mongoc_cursor_more (mongoc_cursor_t *cursor)
 {
    BSON_ASSERT (cursor);
 
-   if (cursor->failed) {
+   if (CURSOR_FAILED (cursor)) {
       return false;
    }
 
@@ -1141,7 +1132,7 @@ mongoc_cursor_is_alive (const mongoc_cursor_t *cursor) /* IN */
    BSON_ASSERT (cursor);
 
    return (!cursor->sent ||
-           (!cursor->failed &&
+           (!CURSOR_FAILED (cursor) &&
             !cursor->done &&
             (cursor->rpc.header.opcode == MONGOC_OPCODE_REPLY) &&
             cursor->rpc.reply.cursor_id));

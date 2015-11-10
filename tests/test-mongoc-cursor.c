@@ -120,6 +120,7 @@ test_invalid_query (void)
 
    cursor = _mongoc_cursor_new (client, "test.test", MONGOC_QUERY_NONE, 0, 1, 1,
                                 false, q, NULL, NULL);
+   assert (!mongoc_cursor_is_alive (cursor));
    r = mongoc_cursor_next (cursor, &doc);
    assert (!r);
    mongoc_cursor_error (cursor, &error);
