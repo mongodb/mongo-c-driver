@@ -31,10 +31,10 @@ BSON_BEGIN_DECLS
 
 typedef struct
 {
-   bool        has_cursor;
-   bool        in_first_batch;
-   bson_iter_t first_batch_iter;
-   bson_t      first_batch_inline;
+   bool        in_batch;
+   bool        in_reader;
+   bson_iter_t batch_iter;
+   bson_t      current_doc;
 } mongoc_cursor_cursorid_t;
 
 

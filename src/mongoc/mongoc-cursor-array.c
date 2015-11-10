@@ -90,7 +90,7 @@ _mongoc_cursor_array_prime (mongoc_cursor_t *cursor)
 
    BSON_ASSERT (arr);
 
-   if (_mongoc_cursor_run_command (cursor) &&
+   if (_mongoc_cursor_run_command (cursor, &cursor->query) &&
        _mongoc_read_from_buffer (cursor, &bson) &&
        bson_iter_init_find (&iter, bson, arr->field_name) &&
        BSON_ITER_HOLDS_ARRAY (&iter) &&

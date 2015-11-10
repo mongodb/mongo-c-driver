@@ -53,8 +53,9 @@ _mongoc_cursor_cursorid_destroy (mongoc_cursor_t *cursor)
 }
 
 
-bool
-_mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
+static bool
+_mongoc_cursor_cursorid_refresh_from_command (mongoc_cursor_t *cursor,
+                                              const bson_t    *command)
 {
    mongoc_cursor_cursorid_t *cid;
    const bson_t *bson;
@@ -66,12 +67,13 @@ _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
    cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
    BSON_ASSERT (cid);
 
-   if (_mongoc_cursor_run_command (cursor) &&
+   /* server replies to find / aggregate with {cursor: {id: N, firstBatch: []}},
+    * to getMore command with {cursor: {id: N, nextBatch: []}}. */
+   if (_mongoc_cursor_run_command (cursor, command) &&
        _mongoc_read_from_buffer (cursor, &bson) &&
        bson_iter_init_find (&iter, bson, "cursor") &&
        BSON_ITER_HOLDS_DOCUMENT (&iter) &&
        bson_iter_recurse (&iter, &child)) {
-      cid->has_cursor = true;
 
       while (bson_iter_next (&child)) {
          if (BSON_ITER_IS_KEY (&child, "id")) {
@@ -79,10 +81,11 @@ _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
          } else if (BSON_ITER_IS_KEY (&child, "ns")) {
             ns = bson_iter_utf8 (&child, &cursor->nslen);
             bson_strncpy (cursor->ns, ns, sizeof cursor->ns);
-         } else if (BSON_ITER_IS_KEY (&child, "firstBatch")) {
+         } else if (BSON_ITER_IS_KEY (&child, "firstBatch") ||
+                    BSON_ITER_IS_KEY (&child, "nextBatch")) {
             if (BSON_ITER_HOLDS_ARRAY (&child) &&
-                bson_iter_recurse (&child, &cid->first_batch_iter)) {
-               cid->in_first_batch = true;
+                bson_iter_recurse (&child, &cid->batch_iter)) {
+               cid->in_batch = true;
             }
          }
       }
@@ -94,7 +97,7 @@ _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
                          MONGOC_ERROR_PROTOCOL,
                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                          "Invalid reply to %s command.",
-                         _mongoc_get_command_name (&cursor->query));
+                         _mongoc_get_command_name (command));
       }
 
       RETURN (false);
@@ -102,9 +105,9 @@ _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
 }
 
 
-bool
-_mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
-                              const bson_t   **bson)
+static void
+_mongoc_cursor_cursorid_read_from_batch (mongoc_cursor_t *cursor,
+                                         const bson_t   **bson)
 {
    mongoc_cursor_cursorid_t *cid;
    const uint8_t *data = NULL;
@@ -115,30 +118,128 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
    cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
    BSON_ASSERT (cid);
 
-   if (! cid->has_cursor) {
+   if (bson_iter_next (&cid->batch_iter) &&
+       BSON_ITER_HOLDS_DOCUMENT (&cid->batch_iter)) {
+      bson_iter_document (&cid->batch_iter, &data_len, &data);
+
+      if (bson_init_static (&cid->current_doc, data, data_len)) {
+         *bson = &cid->current_doc;
+      }
+   }
+}
+
+
+bool
+_mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
+{
+   cursor->sent = true;
+   return _mongoc_cursor_cursorid_refresh_from_command (cursor, &cursor->query);
+}
+
+
+static void
+_mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
+                                        bson_t          *command)
+{
+   const char *collection;
+   int collection_len;
+   mongoc_cursor_cursorid_t *cid;
+
+   cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
+   BSON_ASSERT (cid);
+
+   _mongoc_cursor_collection (cursor, &collection, &collection_len);
+
+   bson_init (command);
+   bson_append_int64 (command, "getMore", 7, mongoc_cursor_get_id (cursor));
+   bson_append_utf8 (command, "collection", 10, collection, collection_len);
+
+   if (cursor->batch_size) {
+      bson_append_int32 (command, "batchSize", 9, cursor->batch_size);
+   }
+}
+
+
+static bool
+_mongoc_cursor_cursorid_get_more (mongoc_cursor_t *cursor)
+{
+   mongoc_cursor_cursorid_t *cid;
+   mongoc_server_stream_t *server_stream;
+   bson_t command;
+   bool ret;
+
+   ENTRY;
+
+   cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
+   BSON_ASSERT (cid);
+
+   server_stream = _mongoc_cursor_fetch_stream (cursor);
+
+   if (!server_stream) {
+      RETURN (false);
+   }
+
+   if (_use_find_command (cursor, server_stream)) {
+      _mongoc_cursor_prepare_getmore_command (cursor, &command);
+      ret = _mongoc_cursor_cursorid_refresh_from_command (cursor, &command);
+      bson_destroy (&command);
+   } else {
+      ret = _mongoc_cursor_op_getmore (cursor, server_stream);
+      cid->in_reader = ret;
+   }
+
+   RETURN (ret);
+}
+
+
+bool
+_mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
+                              const bson_t   **bson)
+{
+   mongoc_cursor_cursorid_t *cid;
+   bool refreshed = false;
+
+   ENTRY;
+
+   *bson = NULL;
+
+   cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
+   BSON_ASSERT (cid);
+
+   if (!cursor->sent) {
       if (!_mongoc_cursor_cursorid_prime (cursor)) {
          GOTO (done);
       }
    }
 
-   if (cid->in_first_batch) {
-      while (bson_iter_next (&cid->first_batch_iter)) {
-         if (BSON_ITER_HOLDS_DOCUMENT (&cid->first_batch_iter)) {
-            bson_iter_document (&cid->first_batch_iter, &data_len, &data);
-            if (bson_init_static (&cid->first_batch_inline, data, data_len)) {
-               *bson = &cid->first_batch_inline;
-               GOTO (done);
-            }
-         }
-      }
-      cid->in_first_batch = false;
-      if (!cursor->rpc.reply.cursor_id) {
-         cursor->end_of_event = true;
+again:
+
+   if (cid->in_batch) {
+      _mongoc_cursor_cursorid_read_from_batch (cursor, bson);
+
+      if (*bson) {
          GOTO (done);
       }
+
+      cid->in_batch = false;
+   } else if (cid->in_reader) {
+      _mongoc_read_from_buffer (cursor, bson);
+
+      if (*bson) {
+         GOTO (done);
+      }
+
+      cid->in_reader = false;
    }
 
-   _mongoc_cursor_next (cursor, bson);
+   if (!refreshed && mongoc_cursor_get_id (cursor)) {
+      if (!_mongoc_cursor_cursorid_get_more (cursor)) {
+         GOTO (done);
+      }
+
+      refreshed = true;
+      GOTO (again);
+   }
 
 done:
    RETURN (*bson ? true : false);
@@ -183,5 +284,3 @@ _mongoc_cursor_cursorid_init (mongoc_cursor_t *cursor,
 
    EXIT;
 }
-
-

@@ -762,15 +762,14 @@ test_getmore_batch_size (void)
       future = future_cursor_next (cursor, &doc);
 
       if (batch_sizes[i]) {
-         batch_size_json = bson_strdup_printf (", 'batchSize': %u",
-                                               batch_sizes[i]);
+         batch_size_json = bson_strdup_printf ("%u", batch_sizes[i]);
       } else {
-         batch_size_json = bson_strdup ("");
+         batch_size_json = bson_strdup ("{'$exists': false}");
       }
 
       request = mock_server_receives_command (
          server, "db", MONGOC_QUERY_SLAVE_OK,
-         "{'find': 'collection', 'filter': {} %s}",
+         "{'find': 'collection', 'filter': {}, 'batchSize': %s}",
          batch_size_json);
 
       mock_server_replies_simple (request, "{'ok': 1,"
@@ -783,10 +782,77 @@ test_getmore_batch_size (void)
       ASSERT (!future_get_bool (future));
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
+      future_destroy (future);
+      request_destroy (request);
       bson_free (batch_size_json);
       mongoc_cursor_destroy (cursor);
    }
 
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_getmore_invalid_reply (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+   bson_error_t error;
+
+   server = mock_server_with_autoismaster (4);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0,
+                                    0,
+                                    0,
+                                    tmp_bson ("{}"),
+                                    NULL,
+                                    NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'find': 'collection', 'filter': {}}");
+
+   mock_server_replies_simple (request, "{'ok': 1,"
+                                        " 'cursor': {"
+                                        "    'id': {'$numberLong': '123'},"
+                                        "    'ns': 'db.collection',"
+                                        "    'firstBatch': [{}]}}");
+
+   ASSERT (future_get_bool (future));
+
+   future_destroy (future);
+   request_destroy (request);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'getMore': {'$numberLong': '123'}, 'collection': 'collection'}");
+
+   /* missing "cursor" */
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT (!future_get_bool (future));
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_PROTOCOL);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_PROTOCOL_INVALID_REPLY);
+   ASSERT_CONTAINS (error.message, "getMore");
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
@@ -837,4 +903,6 @@ test_collection_find_install (TestSuite *suite)
 
    TestSuite_Add (suite, "/Collection/getmore/batch_size",
                   test_getmore_batch_size);
+   TestSuite_Add (suite, "/Collection/getmore/invalid_reply",
+                  test_getmore_invalid_reply);
 }

@@ -40,14 +40,6 @@ static const bson_t *
 _mongoc_cursor_find_command (mongoc_cursor_t *cursor);
 
 
-static const bson_t *
-_mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
-                           mongoc_server_stream_t *server_stream);
-
-static const bson_t *
-_mongoc_cursor_getmore_command (mongoc_cursor_t *cursor);
-
-
 static int32_t
 _mongoc_n_return (mongoc_cursor_t * cursor)
 {
@@ -288,7 +280,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 }
 
 
-static mongoc_server_stream_t *
+mongoc_server_stream_t *
 _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
 {
    mongoc_server_stream_t *server_stream;
@@ -314,9 +306,9 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
 }
 
 
-static bool
-_use_wire_version_4_protocol (const mongoc_cursor_t        *cursor,
-                              const mongoc_server_stream_t *server_stream)
+bool
+_use_find_command (const mongoc_cursor_t *cursor,
+                   const mongoc_server_stream_t *server_stream)
 {
    /* Find, getMore And killCursors Commands Spec: "the find command cannot be
     * used to execute other commands" and "the find command does not support the
@@ -344,7 +336,7 @@ _mongoc_cursor_initial_query (mongoc_cursor_t *cursor)
       GOTO (done);
    }
 
-   if (_use_wire_version_4_protocol (cursor, server_stream)) {
+   if (_use_find_command (cursor, server_stream)) {
       b = _mongoc_cursor_find_command (cursor);
    } else {
       b = _mongoc_cursor_op_query (cursor, server_stream);
@@ -479,7 +471,8 @@ failure:
 
 
 bool
-_mongoc_cursor_run_command (mongoc_cursor_t *cursor)
+_mongoc_cursor_run_command (mongoc_cursor_t *cursor,
+                            const bson_t    *command)
 {
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
@@ -499,13 +492,13 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor)
       GOTO (done);
    }
 
-   cursor->sent = true;
+   _mongoc_buffer_clear (&cursor->buffer, false);
 
    bson_snprintf (cmd_ns, sizeof cmd_ns, "%.*s.$cmd", cursor->dblen,
                   cursor->ns);
 
    apply_read_preferences (cursor->read_prefs, server_stream,
-                           &cursor->query, cursor->flags, &read_prefs_result);
+                           command, cursor->flags, &read_prefs_result);
 
    _mongoc_rpc_prep_command (&rpc,
                              cmd_ns,
@@ -627,6 +620,20 @@ _mongoc_cursor_prepare_find_command_flags (mongoc_cursor_t *cursor,
 }
 
 
+void
+_mongoc_cursor_collection (const mongoc_cursor_t *cursor,
+                           const char **collection,
+                           int *collection_len)
+{
+   /* ns is like "db.collection". Collection name is located past the ".". */
+   *collection = cursor->ns + (cursor->dblen + 1);
+   /* Collection name's length is ns length, minus length of db name and ".". */
+   *collection_len = cursor->nslen - cursor->dblen - 1;
+
+   BSON_ASSERT (*collection_len > 0);
+}
+
+
 static bool
 _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
                                      bson_t          *command)
@@ -638,13 +645,7 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
    int len;
    const bson_value_t *value;
 
-   /* ns is like "db.collection". Collection name is located past the ".". */
-   collection = cursor->ns + (cursor->dblen + 1);
-   /* Collection name's length is ns length, minus length of db name and ".". */
-   collection_len = cursor->nslen - cursor->dblen - 1;
-
-   BSON_ASSERT (collection_len > 0);
-
+   _mongoc_cursor_collection (cursor, &collection, &collection_len);
    bson_append_utf8 (command, "find", 4, collection, collection_len);
 
    if (bson_empty0 (&cursor->query)) {
@@ -738,9 +739,15 @@ _mongoc_cursor_get_more (mongoc_cursor_t *cursor)
       GOTO (failure);
    }
 
-   b = _mongoc_cursor_op_getmore (cursor, server_stream);
+   if (!_mongoc_cursor_op_getmore (cursor, server_stream)) {
+      GOTO (failure);
+   }
 
    mongoc_server_stream_cleanup (server_stream);
+
+   if (cursor->reader) {
+      _mongoc_read_from_buffer (cursor, &b);
+   }
 
    RETURN (b);
 
@@ -753,13 +760,13 @@ failure:
 }
 
 
-static const bson_t *
+bool
 _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
                            mongoc_server_stream_t *server_stream)
 {
    mongoc_rpc_t rpc;
    uint32_t request_id;
-   const bson_t *b = NULL;
+   bool ret = false;
 
    ENTRY;
 
@@ -829,19 +836,10 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
       cursor->rpc.reply.documents,
       (size_t)cursor->rpc.reply.documents_len);
 
-   if (cursor->reader) {
-      _mongoc_read_from_buffer (cursor, &b);
-   }
+   ret = true;
 
 done:
-   return b;
-}
-
-
-static const bson_t *
-_mongoc_cursor_getmore_command (mongoc_cursor_t *cursor)
-{
-   return NULL;
+   RETURN (ret);
 }
 
 
