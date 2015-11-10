@@ -271,10 +271,38 @@ test_exhaust_cursor_pool (void *context)
    test_exhaust_cursor (true);
 }
 
+static void
+test_cursor_set_max_await_time_ms (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client,
+                                     "test_cursor_set_max_await_time_ms");
+
+   cursor = mongoc_collection_find (
+      collection,
+      MONGOC_QUERY_TAILABLE_CURSOR|MONGOC_QUERY_AWAIT_DATA,
+      0, 0, 0,
+      tmp_bson ("{}"), NULL, NULL);
+
+   ASSERT_CMPINT (0, ==, mongoc_cursor_get_max_await_time_ms (cursor));
+   mongoc_cursor_set_max_await_time_ms (cursor, 123);
+   ASSERT_CMPINT (123, ==, mongoc_cursor_get_max_await_time_ms (cursor));
+   _mongoc_cursor_next (cursor, NULL);
+
+   /* once started, cursor ignores set_max_await_time_ms () */
+   mongoc_cursor_set_max_await_time_ms (cursor, 42);
+   ASSERT_CMPINT (123, ==, mongoc_cursor_get_max_await_time_ms (cursor));
+}
+
 void
 test_exhaust_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/single", test_exhaust_cursor_single, NULL, NULL, skip_if_mongos);
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/pool", test_exhaust_cursor_pool, NULL, NULL, skip_if_mongos);
+   TestSuite_Add (suite, "/Client/set_max_await_time_ms", test_cursor_set_max_await_time_ms);
 }
 

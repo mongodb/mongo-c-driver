@@ -73,6 +73,7 @@ struct _mongoc_cursor_t
    uint32_t                   limit;
    uint32_t                   count;
    uint32_t                   batch_size;
+   uint32_t                   max_await_time_ms;
 
    char                       ns [140];
    uint32_t                   nslen;

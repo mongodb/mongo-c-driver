@@ -268,6 +268,8 @@ LIBMONGOC_1.3 {
         mongoc_bulk_operation_set_bypass_document_validation;
         mongoc_bulk_operation_set_flags;
         mongoc_collection_find_and_modify_with_opts;
+        mongoc_cursor_get_max_await_time_ms;
+        mongoc_cursor_set_max_await_time_ms;
         mongoc_find_and_modify_opts_destroy;
         mongoc_find_and_modify_opts_new;
         mongoc_find_and_modify_opts_set_bypass_document_validation;

@@ -726,7 +726,13 @@ _mongoc_rpc_prep_command (mongoc_rpc_t        *rpc,
    rpc->query.n_return = -1;
    rpc->query.fields = NULL;
    rpc->query.query = bson_get_data (command);
-   rpc->query.flags = flags;
+
+   /* Find, getMore And killCursors Commands Spec: "When sending a find command
+    * rather than a legacy OP_QUERY find, only the slaveOk flag is honored."
+    * For other cursor-typed commands like aggregate, only slaveOk can be set.
+    * Clear bits except slaveOk; leave slaveOk set only if it is already.
+    */
+   rpc->query.flags = flags & MONGOC_QUERY_SLAVE_OK;
 }
 
 

@@ -64,6 +64,7 @@ print_all_documents (mongoc_collection_t *collection)
 <output>{ "ts" : { "$timestamp" : { "t" : 1400023818, "i" : 1 } }, "h" : -8458503739429355503, "v" : 2, "op" : "i", "ns" : "test.test", "o" : { "_id" : { "$oid" : "5372ab0a25164be923d10d50" } } }</output></screen>
 
     <note style="tip"><p>The line of output is a sample from performing <code>db.test.insert({})</code> from the mongo shell on the given replicaSet.</p></note>
+    <p>See also <code xref="mongoc_cursor_set_max_await_time_ms">mongoc_cursor_set_max_await_time_ms</code>.</p>
 
   </section>
 

@@ -859,6 +859,110 @@ test_getmore_invalid_reply (void)
 }
 
 
+static void
+test_getmore_await (void)
+{
+   typedef struct
+   {
+      mongoc_query_flags_t flags;
+      bool                 expect_await;
+   } await_test_t;
+
+   await_test_t await_tests[] = {
+      { MONGOC_QUERY_NONE, false },
+      { MONGOC_QUERY_TAILABLE_CURSOR, false },
+      { MONGOC_QUERY_AWAIT_DATA, false },
+      { MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA, true },
+   };
+
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+   size_t i;
+   char *max_time_json;
+
+   server = mock_server_with_autoismaster (4);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   for (i = 3; i < sizeof (await_tests) / sizeof (await_test_t); i++) {
+      cursor = mongoc_collection_find (
+         collection,
+         await_tests[i].flags,
+         0,
+         0,
+         0,
+         tmp_bson ("{}"),
+         NULL,
+         NULL);
+
+      ASSERT_CMPINT (0, ==, mongoc_cursor_get_max_await_time_ms (cursor));
+      mongoc_cursor_set_max_await_time_ms (cursor, 123);
+      future = future_cursor_next (cursor, &doc);
+
+      /* only the slave ok bit is still in the query header */
+      request = mock_server_receives_command (server, "db",
+                                              MONGOC_QUERY_SLAVE_OK,
+                                              "{'find': 'collection'}");
+
+      /* reply with cursor id 1 */
+      mock_server_replies_simple (request, "{'ok': 1,"
+                                           " 'cursor': {"
+                                           "    'id': 1,"
+                                           "    'ns': 'db.collection',"
+                                           "    'firstBatch': [{}]}}");
+
+      /* no result or error */
+      ASSERT (future_get_bool (future));
+
+      future_destroy (future);
+      request_destroy (request);
+
+      future = future_cursor_next (cursor, &doc);
+
+      if (await_tests[i].expect_await) {
+         max_time_json = "123";
+      } else {
+         max_time_json = "{'$exists': false}";
+      }
+
+      /* only the slave ok bit is still in the query header */
+      request = mock_server_receives_command (
+         server, "db",
+         MONGOC_QUERY_SLAVE_OK,
+         "{'getMore': {'$numberLong': '1'},"
+         " 'collection': 'collection',"
+         " 'maxTimeMS': %s}",
+         max_time_json);
+
+      assert (request);
+      /* reply with cursor id 0 */
+      mock_server_replies_simple (request, "{'ok': 1,"
+                                           " 'cursor': {"
+                                           "    'id': 0,"
+                                           "    'ns': 'db.collection',"
+                                           "    'nextBatch': []}}");
+
+      /* no result or error */
+      ASSERT (!future_get_bool (future));
+      ASSERT (!mongoc_cursor_error (cursor, NULL));
+
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 void
 test_collection_find_install (TestSuite *suite)
 {
@@ -905,4 +1009,6 @@ test_collection_find_install (TestSuite *suite)
                   test_getmore_batch_size);
    TestSuite_Add (suite, "/Collection/getmore/invalid_reply",
                   test_getmore_invalid_reply);
+   TestSuite_Add (suite, "/Collection/getmore/await",
+                  test_getmore_await);
 }

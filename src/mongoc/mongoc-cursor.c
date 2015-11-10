@@ -372,6 +372,8 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
 
    ENTRY;
 
+   cursor->sent = true;
+
    rpc.query.msg_len = 0;
    rpc.query.request_id = 0;
    rpc.query.response_to = 0;
@@ -618,12 +620,6 @@ _mongoc_cursor_prepare_find_command_flags (mongoc_cursor_t *cursor,
    if (flags & MONGOC_QUERY_PARTIAL) {
       bson_append_bool (command, "allowPartialResults", 19, true);
    }
-
-   /* Find, getMore And killCursors Commands Spec: "When sending a find command
-    * rather than a legacy OP_QUERY find, only the slaveOk flag is honored."
-    * Clear bits except slaveOk; leave slaveOk set only if it is already.
-    */
-   cursor->flags &= MONGOC_QUERY_SLAVE_OK;
 }
 
 
@@ -1222,4 +1218,23 @@ mongoc_cursor_get_id (const mongoc_cursor_t  *cursor)
    BSON_ASSERT(cursor);
 
    return cursor->rpc.reply.cursor_id;
+}
+
+void
+mongoc_cursor_set_max_await_time_ms (mongoc_cursor_t *cursor,
+                                     uint32_t         max_await_time_ms)
+{
+   BSON_ASSERT (cursor);
+
+   if (!cursor->sent) {
+      cursor->max_await_time_ms = max_await_time_ms;
+   }
+}
+
+uint32_t
+mongoc_cursor_get_max_await_time_ms (const mongoc_cursor_t *cursor)
+{
+   BSON_ASSERT (cursor);
+
+   return cursor->max_await_time_ms;
 }

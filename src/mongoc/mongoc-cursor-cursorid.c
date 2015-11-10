@@ -157,6 +157,19 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
    if (cursor->batch_size) {
       bson_append_int32 (command, "batchSize", 9, cursor->batch_size);
    }
+
+   /* Find, getMore And killCursors Commands Spec: "In the case of a tailable
+      cursor with awaitData == true the driver MUST provide a Cursor level
+      option named maxAwaitTimeMS (See CRUD specification for details). The
+      maxTimeMS option on the getMore command MUST be set to the value of the
+      option maxAwaitTimeMS. If no maxAwaitTimeMS is specified, the driver
+      SHOULD not set maxTimeMS on the getMore command."
+    */
+   if (cursor->flags & MONGOC_QUERY_TAILABLE_CURSOR &&
+       cursor->flags & MONGOC_QUERY_AWAIT_DATA &&
+       cursor->max_await_time_ms) {
+      bson_append_int32 (command, "maxTimeMS", 9, cursor->max_await_time_ms);
+   }
 }
 
 
