@@ -19,7 +19,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-find-and-modify.h"
 #include "mongoc-find-and-modify-private.h"
-#include "mongoc-log.h"
+#include "mongoc-util-private.h"
 
 
 /**
