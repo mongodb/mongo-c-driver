@@ -45,9 +45,16 @@ BSON_BEGIN_DECLS
 #define MIN_WIRE_VERSION 0
 #define MAX_WIRE_VERSION 4
 
+/* first version that supported aggregation cursors */
+#define AGGREGATION_CURSOR_WIRE_VERSION 1
+/* first version that supported "insert", "update", "delete" commands */
 #define WRITE_COMMAND_WIRE_VERSION 2
+/* first version when SCRAM-SHA-1 replaced MONGODB-CR as default auth mech */
+#define SCRAM_DEFAULT_AUTH_WIRE_VERSION 3
+/* first version that supported "find" and "getMore" commands */
 #define FIND_COMMAND_WIRE_VERSION 4
-
+/* first version when findAndModify accepts writeConcern */
+#define FAM_WRITE_CONCERN_WIRE_VERSION 4
 
 
 struct _mongoc_client_t
