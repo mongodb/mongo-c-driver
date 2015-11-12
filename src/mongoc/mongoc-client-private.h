@@ -41,6 +41,14 @@
 
 BSON_BEGIN_DECLS
 
+/* protocol versions this driver can speak */
+#define MIN_WIRE_VERSION 0
+#define MAX_WIRE_VERSION 4
+
+#define WRITE_COMMAND_WIRE_VERSION 2
+#define FIND_COMMAND_WIRE_VERSION 4
+
+
 
 struct _mongoc_client_t
 {

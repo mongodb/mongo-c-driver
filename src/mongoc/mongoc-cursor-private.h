@@ -31,8 +31,6 @@
 
 BSON_BEGIN_DECLS
 
-#define FIND_COMMAND_WIRE_VERSION 4
-
 typedef struct _mongoc_cursor_interface_t mongoc_cursor_interface_t;
 
 

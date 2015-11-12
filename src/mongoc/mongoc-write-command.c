@@ -30,8 +30,6 @@
  *    - Remove error parameter to ops, favor result->error.
  */
 
-#define WRITE_COMMAND_WIRE_VERSION 2
-
 #define WRITE_CONCERN_DOC(wc) \
    (wc && _mongoc_write_concern_needs_gle ((wc))) ? \
    (_mongoc_write_concern_get_bson((mongoc_write_concern_t*)(wc))) : \

@@ -51,9 +51,6 @@
 #define MONGOC_LOG_DOMAIN "cluster"
 
 
-#define MIN_WIRE_VERSION 0
-#define MAX_WIRE_VERSION 3
-
 #define CHECK_CLOSED_DURATION_MSEC 1000
 
 #define DB_AND_CMD_FROM_COLLECTION(outstr, name) \

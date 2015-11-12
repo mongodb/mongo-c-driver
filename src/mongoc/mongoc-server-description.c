@@ -24,9 +24,6 @@
 
 #include <stdio.h>
 
-#define MIN_WIRE_VERSION 0
-#define MAX_WIRE_VERSION 3
-
 #define ALPHA 0.2
 
 
