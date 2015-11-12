@@ -37,6 +37,7 @@
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-util-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
@@ -46,6 +47,18 @@
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client"
+
+
+static void
+_mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
+                               mongoc_server_stream_t *server_stream,
+                               int64_t                 cursor_id);
+
+static void
+_mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
+                                    mongoc_server_stream_t *server_stream,
+                                    int64_t                 cursor_id,
+                                    const char             *ns);
 
 
 /*
@@ -1172,10 +1185,10 @@ done:
 void
 _mongoc_client_kill_cursor (mongoc_client_t *client,
                             uint32_t         server_id,
-                            int64_t          cursor_id)
+                            int64_t          cursor_id,
+                            const char      *ns)
 {
    mongoc_server_stream_t *server_stream;
-   mongoc_rpc_t rpc = {{ 0 }};
 
    ENTRY;
 
@@ -1192,6 +1205,28 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
       return;
    }
 
+   if (server_stream->sd->max_wire_version >=
+       KILLCURSORS_COMMAND_WIRE_VERSION) {
+      _mongoc_client_killcursors_command (&client->cluster, server_stream,
+                                          cursor_id, ns);
+   } else {
+      _mongoc_client_op_killcursors (&client->cluster,
+                                     server_stream,
+                                     cursor_id);
+   }
+
+   mongoc_server_stream_cleanup (server_stream);
+
+   EXIT;
+}
+
+static void
+_mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
+                               mongoc_server_stream_t *server_stream,
+                               int64_t                 cursor_id)
+{
+   mongoc_rpc_t rpc = { { 0 } };
+
    rpc.kill_cursors.msg_len = 0;
    rpc.kill_cursors.request_id = 0;
    rpc.kill_cursors.response_to = 0;
@@ -1200,12 +1235,35 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
    rpc.kill_cursors.cursors = &cursor_id;
    rpc.kill_cursors.n_cursors = 1;
 
-   mongoc_cluster_sendv_to_server (&client->cluster, &rpc, 1, server_stream,
+   mongoc_cluster_sendv_to_server (cluster, &rpc, 1, server_stream,
                                    NULL, NULL);
+}
 
-   mongoc_server_stream_cleanup (server_stream);
+static void
+_mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
+                                    mongoc_server_stream_t *server_stream,
+                                    int64_t                 cursor_id,
+                                    const char             *ns)
+{
+   bson_t command = BSON_INITIALIZER;
+   bson_t child;
+   char db[MONGOC_NAMESPACE_MAX];
 
-   EXIT;
+   _mongoc_get_db_name (ns, db);
+
+   bson_append_utf8 (&command, "killCursors", 11, ns, -1);
+   bson_append_array_begin (&command, "cursors", 7, &child);
+   bson_append_int64 (&child, "0", 1, cursor_id);
+   bson_append_array_end (&command, &child);
+
+   /* Find, getMore And killCursors Commands Spec: "The result from the
+    * killCursors command MAY be safely ignored."
+    */
+   mongoc_cluster_run_command (cluster, server_stream->stream,
+                               MONGOC_QUERY_SLAVE_OK, db, &command,
+                               NULL, NULL);
+
+   bson_destroy (&command);
 }
 
 
@@ -1260,7 +1318,7 @@ mongoc_client_kill_cursor (mongoc_client_t *client,
    mongoc_mutex_unlock (&topology->mutex);
 
    if (server_id) {
-      _mongoc_client_kill_cursor (client, selected_server->id, cursor_id);
+      _mongoc_client_kill_cursor (client, selected_server->id, cursor_id, NULL);
    } else {
       MONGOC_INFO ("No server available for mongoc_client_kill_cursor");
    }

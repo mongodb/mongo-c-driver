@@ -53,6 +53,8 @@ BSON_BEGIN_DECLS
 #define SCRAM_DEFAULT_AUTH_WIRE_VERSION 3
 /* first version that supported "find" and "getMore" commands */
 #define FIND_COMMAND_WIRE_VERSION 4
+/* first version with "killCursors" command */
+#define KILLCURSORS_COMMAND_WIRE_VERSION 4
 /* first version when findAndModify accepts writeConcern */
 #define FAM_WRITE_CONCERN_WIRE_VERSION 4
 
@@ -122,7 +124,8 @@ _mongoc_client_get_server_description (mongoc_client_t *client,
 void
 _mongoc_client_kill_cursor              (mongoc_client_t *client,
                                          uint32_t         server_id,
-                                         int64_t          cursor_id);
+                                         int64_t          cursor_id,
+                                         const char      *ns);
 
 BSON_END_DECLS
 
