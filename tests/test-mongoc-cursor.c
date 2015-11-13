@@ -448,37 +448,33 @@ _test_client_kill_cursor (bool has_primary,
 {
    mock_rs_t *rs;
    mongoc_client_t *client;
-   mongoc_collection_t *collection;
    mongoc_read_prefs_t *read_prefs;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
+   bson_error_t error;
    future_t *future;
    request_t *request;
 
-   /* maybe a primary, definitely a secondary and no arbiter */
    rs = mock_rs_with_autoismaster (wire_version_4 ? 4 : 3,
-                                   has_primary,
-                                   1,
-                                   0);
+                                   has_primary,  /* maybe a primary*/
+                                   1,            /* definitely a secondary */
+                                   0);           /* no arbiter */
    mock_rs_run (rs);
    client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
-   collection = mongoc_client_get_collection (client, "test", "test");
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0,
-                                    0, tmp_bson ("{}"), NULL, read_prefs);
 
-   future = future_cursor_next (cursor, &doc);
+   /* make client open a connection - it won't open one to kill a cursor */
+   future = future_client_command_simple (client, "admin",
+                                          tmp_bson ("{'foo': 1}"),
+                                          read_prefs, NULL, &error);
 
-   request = mock_rs_receives_request (rs);
-   mock_rs_replies_to_find (request, MONGOC_QUERY_SLAVE_OK, 123, 1, "test.test",
-                            "{'a': 1}", wire_version_4);
+   request = mock_rs_receives_command (rs, "admin",
+                                       MONGOC_QUERY_SLAVE_OK, NULL);
 
-   assert (future_get_bool (future));  /* mongoc_cursor_next returned true */
-   future_destroy (future);
+   mock_rs_replies_simple (request, "{'ok': 1}");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
    request_destroy (request);
+   future_destroy (future);
 
    future = future_client_kill_cursor (client, 123);
-
    mock_rs_set_request_timeout_msec (rs, 100);
 
    /* we don't pass namespace so client always sends legacy OP_KILLCURSORS */
@@ -497,14 +493,8 @@ _test_client_kill_cursor (bool has_primary,
    }
 
    future_wait (future);  /* no return value */
-
    future_destroy (future);
-
-   /* clean up memory, but don't send killCursors command */
-   cursor->rpc.reply.cursor_id = 0;
-   mongoc_cursor_destroy (cursor);
    mongoc_read_prefs_destroy (read_prefs);
-   mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_rs_destroy (rs);
 }
