@@ -28,6 +28,10 @@ void bson_iter_bson (const bson_iter_t *iter,
 
 char *single_quotes_to_double (const char *str);
 
+bool match_bson (const bson_t *doc,
+                 const bson_t *pattern,
+                 bool          is_command);
+
 bool match_json (const bson_t *doc,
                  bool          is_command,
                  const char   *filename,

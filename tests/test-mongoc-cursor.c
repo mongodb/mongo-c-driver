@@ -136,7 +136,8 @@ test_invalid_query (void)
 
 
 static void
-_test_kill_cursors (bool pooled)
+_test_kill_cursors (bool pooled,
+                    bool use_killcursors_cmd)
 {
    mock_rs_t *rs;
    mongoc_client_pool_t *pool = NULL;
@@ -151,8 +152,12 @@ _test_kill_cursors (bool pooled)
    bson_error_t error;
    request_t *kill_cursors;
 
-   /* wire version 0, a primary, five secondaries, no arbiters */
-   rs = mock_rs_with_autoismaster (0, true, 5, 0);
+   rs = mock_rs_with_autoismaster (
+      use_killcursors_cmd ? 4 : 3, /* wire version */
+      true,                        /* has primary */
+      5,                           /* number of secondaries */
+      0);                          /* number of arbiters */
+
    mock_rs_run (rs);
 
    if (pooled) {
@@ -169,10 +174,12 @@ _test_kill_cursors (bool pooled)
                                     q, NULL, prefs);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_rs_receives_query (rs, "test.test", MONGOC_QUERY_SLAVE_OK,
-                                     0, 0, "{'a': 1}", NULL);
+   request = mock_rs_receives_request (rs);
 
-   mock_rs_replies (request, 0, 123, 0, 1, "{'b': 1}");
+   /* reply as appropriate to OP_QUERY or find command */
+   mock_rs_replies_to_find (request, MONGOC_QUERY_SLAVE_OK, 123, 1,
+                            "test.test", "{'b': 1}", use_killcursors_cmd);
+
    if (!future_get_bool (future)) {
       mongoc_cursor_error (cursor, &error);
       fprintf (stderr, "%s\n", error.message);
@@ -185,7 +192,17 @@ _test_kill_cursors (bool pooled)
    future_destroy (future);
    future = future_cursor_destroy (cursor);
 
-   kill_cursors = mock_rs_receives_kill_cursors (rs, 123);
+   if (use_killcursors_cmd) {
+      /* mock server framework can't test "cursors" array, CDRIVER-994 */
+      kill_cursors = mock_rs_receives_command (
+         rs, "test",
+         MONGOC_QUERY_SLAVE_OK,
+         NULL);
+
+      mock_rs_replies_simple (request, "{'ok': 1}");
+   } else {
+      kill_cursors = mock_rs_receives_kill_cursors (rs, 123);
+   }
 
    /* OP_KILLCURSORS was sent to the right secondary */
    ASSERT_CMPINT (request_get_server_port (kill_cursors), ==,
@@ -214,14 +231,28 @@ _test_kill_cursors (bool pooled)
 static void
 test_kill_cursors_single (void)
 {
-   _test_kill_cursors (false);
+   _test_kill_cursors (false, false);
 }
 
 
 static void
 test_kill_cursors_pooled (void)
 {
-   _test_kill_cursors (true);
+   _test_kill_cursors (true, false);
+}
+
+
+static void
+test_kill_cursors_single_cmd (void)
+{
+   _test_kill_cursors (false, true);
+}
+
+
+static void
+test_kill_cursors_pooled_cmd (void)
+{
+   _test_kill_cursors (true, true);
 }
 
 
@@ -417,6 +448,8 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/invalid_query", test_invalid_query);
    TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);
    TestSuite_Add (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
+   TestSuite_Add (suite, "/Cursor/kill/single/cmd", test_kill_cursors_single_cmd);
+   TestSuite_Add (suite, "/Cursor/kill/pooled/cmd", test_kill_cursors_pooled_cmd);
    TestSuite_Add (suite, "/Cursor/getmore_fail/with_primary/pooled",
                   test_getmore_fail_with_primary_pooled);
    TestSuite_Add (suite, "/Cursor/getmore_fail/with_primary/single",

@@ -139,12 +139,6 @@ static bool
 match_bson_value (const bson_value_t *doc,
                   const bson_value_t *pattern);
 
-static bool
-match_bson (const bson_t *doc,
-            const bson_t *pattern,
-            bool          is_command);
-
-
 /*--------------------------------------------------------------------------
  *
  * single_quotes_to_double --
@@ -274,7 +268,7 @@ match_json (const bson_t *doc,
  *--------------------------------------------------------------------------
  */
 
-static bool
+bool
 match_bson (const bson_t *doc,
             const bson_t *pattern,
             bool          is_command)
