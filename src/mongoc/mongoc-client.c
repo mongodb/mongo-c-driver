@@ -58,7 +58,9 @@ static void
 _mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
                                     mongoc_server_stream_t *server_stream,
                                     int64_t                 cursor_id,
-                                    const char             *ns);
+                                    const char             *db,
+                                    const char             *collection);
+
 
 
 /*
@@ -1186,7 +1188,8 @@ void
 _mongoc_client_kill_cursor (mongoc_client_t *client,
                             uint32_t         server_id,
                             int64_t          cursor_id,
-                            const char      *ns)
+                            const char      *db,
+                            const char      *collection)
 {
    mongoc_server_stream_t *server_stream;
 
@@ -1205,10 +1208,11 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
       return;
    }
 
-   if (server_stream->sd->max_wire_version >=
+   if (db && collection &&
+       server_stream->sd->max_wire_version >=
        KILLCURSORS_COMMAND_WIRE_VERSION) {
       _mongoc_client_killcursors_command (&client->cluster, server_stream,
-                                          cursor_id, ns);
+                                          cursor_id, db, collection);
    } else {
       _mongoc_client_op_killcursors (&client->cluster,
                                      server_stream,
@@ -1243,15 +1247,13 @@ static void
 _mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
                                     mongoc_server_stream_t *server_stream,
                                     int64_t                 cursor_id,
-                                    const char             *ns)
+                                    const char             *db,
+                                    const char             *collection)
 {
    bson_t command = BSON_INITIALIZER;
    bson_t child;
-   char db[MONGOC_NAMESPACE_MAX];
 
-   _mongoc_get_db_name (ns, db);
-
-   bson_append_utf8 (&command, "killCursors", 11, ns, -1);
+   bson_append_utf8 (&command, "killCursors", 11, collection, -1);
    bson_append_array_begin (&command, "cursors", 7, &child);
    bson_append_int64 (&child, "0", 1, cursor_id);
    bson_append_array_end (&command, &child);
@@ -1318,7 +1320,9 @@ mongoc_client_kill_cursor (mongoc_client_t *client,
    mongoc_mutex_unlock (&topology->mutex);
 
    if (server_id) {
-      _mongoc_client_kill_cursor (client, selected_server->id, cursor_id, NULL);
+      _mongoc_client_kill_cursor (client, selected_server->id, cursor_id,
+                                  NULL /* db */,
+                                  NULL /* collection */);
    } else {
       MONGOC_INFO ("No server available for mongoc_client_kill_cursor");
    }

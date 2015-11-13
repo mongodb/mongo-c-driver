@@ -246,6 +246,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 void
 _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
+   char db[MONGOC_NAMESPACE_MAX];
    ENTRY;
 
    BSON_ASSERT (cursor);
@@ -258,10 +259,13 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
                                          cursor->hint);
       }
    } else if (cursor->rpc.reply.cursor_id) {
+      bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+
       _mongoc_client_kill_cursor(cursor->client,
                                  cursor->hint,
                                  cursor->rpc.reply.cursor_id,
-                                 cursor->ns);
+                                 db,
+                                 cursor->ns + cursor->dblen + 1);
    }
 
    if (cursor->reader) {
