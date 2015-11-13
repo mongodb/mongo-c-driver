@@ -116,6 +116,24 @@ request_get_doc (const request_t *request,
    return _mongoc_array_index (&request->docs, const bson_t *, n);
 }
 
+bool
+request_matches_flags (const request_t *request,
+                       mongoc_query_flags_t flags)
+{
+   const mongoc_rpc_t *rpc;
+
+   assert (request);
+   rpc = &request->request_rpc;
+
+   if (rpc->query.flags != flags) {
+      MONGOC_ERROR ("request's query flags are %s, expected %s",
+                    query_flags_str (rpc->query.flags),
+                    query_flags_str (flags));
+      return false;
+   }
+
+   return true;
+}
 
 /* TODO: take file, line, function params from caller, wrap in macro */
 bool
@@ -158,10 +176,7 @@ request_matches_query (const request_t *request,
       return false;
    }
 
-   if (rpc->query.flags != flags) {
-      MONGOC_ERROR ("request's query flags are %s, expected %s",
-                    query_flags_str (rpc->query.flags), 
-                    query_flags_str (flags));
+   if (!request_matches_flags (request, flags)) {
       return false;
    }
 

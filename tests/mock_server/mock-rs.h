@@ -39,6 +39,8 @@ void mock_rs_run (mock_rs_t *rs);
 
 const mongoc_uri_t *mock_rs_get_uri (mock_rs_t *rs);
 
+request_t *mock_rs_receives_request (mock_rs_t *rs);
+
 request_t *mock_rs_receives_query (mock_rs_t *rs,
                                    const char *ns,
                                    mongoc_query_flags_t flags,
@@ -72,6 +74,17 @@ void mock_rs_replies (request_t *request,
                       int32_t starting_from,
                       int32_t number_returned,
                       const char *docs_json);
+
+void mock_rs_replies_simple (request_t *request,
+                             const char *docs_json);
+
+void mock_rs_replies_to_find (request_t           *request,
+                              mongoc_query_flags_t flags,
+                              int64_t              cursor_id,
+                              int32_t              number_returned,
+                              const char          *ns,
+                              const char          *reply_json,
+                              bool                 is_command);
 
 void mock_rs_hangs_up (request_t *request);
 

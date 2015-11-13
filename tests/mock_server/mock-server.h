@@ -143,6 +143,14 @@ void mock_server_replies (request_t *request,
 void mock_server_replies_simple (request_t *request,
                                  const char *docs_json);
 
+void mock_server_replies_to_find (request_t           *request,
+                                  mongoc_query_flags_t flags,
+                                  int64_t              cursor_id,
+                                  int32_t              number_returned,
+                                  const char          *ns,
+                                  const char          *reply_json,
+                                  bool                 is_command);
+
 void mock_server_reply_multi (request_t           *request,
                               mongoc_reply_flags_t flags,
                               const bson_t        *docs,

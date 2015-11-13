@@ -1209,6 +1209,73 @@ mock_server_replies_simple (request_t *request,
 
 /*--------------------------------------------------------------------------
  *
+ * mock_server_replies_to_find --
+ *
+ *       Receive an OP_QUERY or "find" command and reply appropriately.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Very roughly validates the query or "find" command or aborts.
+ *       The intent is not to test the driver's query or find command
+ *       implementation here, see _test_kill_cursors for example use.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_server_replies_to_find (request_t           *request,
+                             mongoc_query_flags_t flags,
+                             int64_t              cursor_id,
+                             int32_t              number_returned,
+                             const char          *ns,
+                             const char          *reply_json,
+                             bool                 is_command)
+{
+   char *find_reply;
+   char db[MONGOC_NAMESPACE_MAX];
+
+   _mongoc_get_db_name (ns, db);
+
+   /* minimal validation, we're not testing query / find cmd here */
+   if (request->is_command && !is_command) {
+      MONGOC_ERROR ("expected query, got command");
+      abort ();
+   }
+
+   if (!request->is_command && is_command) {
+      MONGOC_ERROR ("expected command, got query");
+      abort ();
+   }
+
+   if (!request_matches_flags (request, flags)) {
+      abort ();
+   }
+
+   if (is_command) {
+      find_reply = bson_strdup_printf (
+         "{'ok': 1,"
+            " 'cursor': {"
+            "    'id': {'$numberLong': '%" PRId64 "'},"
+            "    'ns': '%s',"
+            "    'firstBatch': [%s]}}",
+         cursor_id,
+         ns,
+         reply_json);
+
+      mock_server_replies_simple (request, find_reply);
+      bson_free (find_reply);
+   } else {
+      mock_server_replies (request, MONGOC_REPLY_NONE, cursor_id, 0,
+                           number_returned, reply_json);
+
+   }
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * mock_server_destroy --
  *
  *       Free a mock_server_t.
