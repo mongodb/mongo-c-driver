@@ -824,7 +824,7 @@ buildvariants:
 ### RHEL 5.5 32-bit
 #
 #- name: rhel55-32-bit
-#  display_name: "RHEL 5.5 32-bit"
+#  display_name: "RHEL 5.5 32"
 #  expansions:
 #    <<: *cflags_32
 #    <<: *warning_flags_rhel55
@@ -838,7 +838,7 @@ buildvariants:
 ## Ubuntu 1204
 
 - name: ubuntu-1204-64
-  display_name: "Ubuntu 12.04 64-bit"
+  display_name: "Ubu 12 gcc-4.6.3 64"
   expansions:
     <<: *cflags_64
     <<: *mongo_url_ubuntu1204
@@ -850,7 +850,7 @@ buildvariants:
 ## Ubuntu 1404
 
 - name: ubuntu-1404-64
-  display_name: "Ubuntu 14.04 64-bit"
+  display_name: "Ubu 14 gcc-4.8.4 64"
   expansions:
     <<: *cflags_64
     <<: *mongo_url_ubuntu1404
@@ -862,7 +862,7 @@ buildvariants:
 ## Ubuntu 1404
 
 - name: ubuntu-1404-64-ssl
-  display_name: "SSL on Ubuntu 14.04 64-bit"
+  display_name: "Ubu 14 gcc-4.8.4 64 SSL"
   expansions:
     <<: *cflags_64
     <<: *mongo_url_ubuntu1404
@@ -877,7 +877,7 @@ buildvariants:
 #######################################
 
 - name: os-x-108-64
-  display_name: "OS X 10.8 64-bit"
+  display_name: "OSX 10.8 clang 64"
   expansions:
     <<: *mongo_url_osx_108
     <<: *cflags_osx_108
@@ -891,7 +891,7 @@ buildvariants:
 #######################################
 
 - name: windows-32-vs2010
-  display_name: "Windows 32-bit CMake Visual Studio 2010"
+  display_name: "Win VS2010 32"
   expansions:
     <<: *msvc_common
     <<: *mongo_url_windows64
@@ -901,7 +901,7 @@ buildvariants:
   tasks: *topology_tests_no_auth
 
 - name: windows-64-vs2010
-  display_name: "Windows 64-bit CMake Visual Studio 2010"
+  display_name: "Win VS2010 64"
   expansions:
     <<: *msvc_common
     <<: *mongo_url_windows64
@@ -911,7 +911,7 @@ buildvariants:
   tasks: *topology_tests
 
 - name: windows-32-vs2013
-  display_name: "Windows 32-bit CMake Visual Studio 2013"
+  display_name: "Win VS2013 32"
   expansions:
     <<: *msvc_common
     <<: *mongo_url_windows64
@@ -921,7 +921,7 @@ buildvariants:
   tasks: *topology_tests_no_auth
 
 - name: windows-64-vs2013
-  display_name: "Windows 64-bit CMake Visual Studio 2013"
+  display_name: "Win VS2013 64"
   expansions:
     <<: *msvc_common
     <<: *mongo_url_windows64
@@ -931,7 +931,7 @@ buildvariants:
   tasks: *topology_tests
 
 - name: windows-32-vs2015
-  display_name: "Windows 32-bit CMake Visual Studio 2015"
+  display_name: "Win VS2015 32"
   expansions:
     <<: *msvc_common
     <<: *mongo_url_windows64
@@ -941,7 +941,7 @@ buildvariants:
   tasks: *topology_tests_no_auth
 
 - name: windows-64-vs2015
-  display_name: "Windows 64-bit CMake Visual Studio 2015"
+  display_name: "Win VS2015 64"
   expansions:
     <<: *msvc_common
     <<: *mongo_url_windows64
@@ -955,7 +955,7 @@ buildvariants:
 #######################################
 
 - name: solaris-64-bit
-  display_name: Solaris 64-bit
+  display_name: "Sol gcc-4.9.2 64"
   expansions:
     <<: *solaris_common
     <<: *cflags_64
