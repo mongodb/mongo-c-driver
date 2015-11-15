@@ -147,21 +147,20 @@ c_driver_variables:
           set -o errexit
           set -o verbose
           cmake="/cygdrive/c/cmake/bin/cmake"
-          msbuild="/cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe"
           dumpbin="/cygdrive/c/Program Files (x86)/Microsoft Visual Studio 12.0/VC/bin/dumpbin.exe"
           # In Autotools builds, autogen.sh does this, we must do it here.
           git submodule init
           git submodule update
           cd src/libbson
           "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
-          "$msbuild" /m ALL_BUILD.vcxproj
+          "$MSBUILD" /m ALL_BUILD.vcxproj
           "$dumpbin" /HEADERS Debug/libbson-1.0.dll | head -n 25
-          "$msbuild" /m INSTALL.vcxproj
+          "$MSBUILD" /m INSTALL.vcxproj
           cd ../..
           "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" "$CMAKE_DEFS"
-          "$msbuild" /m ALL_BUILD.vcxproj
+          "$MSBUILD" /m ALL_BUILD.vcxproj
           "$dumpbin" /HEADERS Debug/mongoc-1.0.lib | head -n 25
-          "$msbuild" /m INSTALL.vcxproj
+          "$MSBUILD" /m INSTALL.vcxproj
 
     username_password:
       common: &username_password_common
@@ -214,13 +213,16 @@ c_driver_variables:
 
 ## Misc. for Windows builds
   windows_compilers:
-    ## msvc2010
+    msvc2010_32bit: &with_msvc2010_32bit
+      generator: Visual Studio 10 2010
+      cmake_defs: "-DSEARCH_OPEN_SSL:BOOL=OFF"
+      msbuild: /cygdrive/c/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe
     msvc2010: &with_msvc2010
       <<: *username_password_common
-      generator: Visual Studio 10 2010
-      msbuild: # ???
-      dllpath: "c:/openssl/bin,c:/sasl/bin,c:/curl/dlls"
-    ## msvc2013, 32-bit
+      generator: Visual Studio 10 2010 Win64
+      cmake_defs: "-DCMAKE_INCLUDE_PATH=C:/sasl/include -DCMAKE_LIBRARY_PATH=C:/sasl/lib"
+      msbuild: /cygdrive/c/Windows/Microsoft.NET/Framework64/v4.0.30319/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
     msvc2013_32bit: &with_msvc2013_32bit
       generator: Visual Studio 12 2013
       cmake_defs: "-DSEARCH_OPEN_SSL:BOOL=OFF"
@@ -230,6 +232,16 @@ c_driver_variables:
       generator: Visual Studio 12 2013 Win64
       cmake_defs: "-DCMAKE_INCLUDE_PATH=C:/sasl/include -DCMAKE_LIBRARY_PATH=C:/sasl/lib"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
+      dllpath: "c:/openssl/bin,c:/sasl/bin"
+    msvc2015_32bit: &with_msvc2015_32bit
+      generator: Visual Studio 14 2015
+      cmake_defs: "-DSEARCH_OPEN_SSL:BOOL=OFF"
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
+    msvc2015: &with_msvc2015
+      <<: *username_password_common
+      generator: Visual Studio 14 2015 Win64
+      cmake_defs: "-DCMAKE_INCLUDE_PATH=C:/sasl/include -DCMAKE_LIBRARY_PATH=C:/sasl/lib"
+      msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
 
   ## all windows buildvariants have these attributes in common
@@ -298,6 +310,7 @@ functions:
       script: |
           export PATH=${extra_path}:$PATH
           export GENERATOR="${generator}"     # For CMake on Windows
+          export MSBUILD="${msbuild}"         # For CMake on Windows
           export CMAKE_DEFS="${cmake_defs}"   # For CMake on Windows
           ${compile_script}
 
@@ -877,6 +890,26 @@ buildvariants:
 #        Windows Buildvariants        #
 #######################################
 
+- name: windows-32-vs2010
+  display_name: "Windows 32-bit CMake Visual Studio 2010"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2010_32bit
+  run_on:
+  - windows-64-vs2010-compile
+  tasks: *topology_tests_no_auth
+
+- name: windows-64-vs2010
+  display_name: "Windows 64-bit CMake Visual Studio 2010"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2010
+  run_on:
+  - windows-64-vs2010-compile
+  tasks: *topology_tests
+
 - name: windows-32-vs2013
   display_name: "Windows 32-bit CMake Visual Studio 2013"
   expansions:
@@ -895,6 +928,26 @@ buildvariants:
     <<: *with_msvc2013
   run_on:
   - windows-64-vs2013-compile
+  tasks: *topology_tests
+
+- name: windows-32-vs2015
+  display_name: "Windows 32-bit CMake Visual Studio 2015"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2015_32bit
+  run_on:
+  - windows-64-vs2015-compile
+  tasks: *topology_tests_no_auth
+
+- name: windows-64-vs2015
+  display_name: "Windows 64-bit CMake Visual Studio 2015"
+  expansions:
+    <<: *msvc_common
+    <<: *mongo_url_windows64
+    <<: *with_msvc2015
+  run_on:
+  - windows-64-vs2015-compile
   tasks: *topology_tests
 
 #######################################
