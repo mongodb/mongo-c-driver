@@ -956,7 +956,7 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
       BSON_ASSERT (command->hint == server_stream->sd->id);
    }
 
-   if (server_stream->sd->max_wire_version >= WRITE_COMMAND_WIRE_VERSION) {
+   if (server_stream->sd->max_wire_version >= WIRE_VERSION_WRITE_CMD) {
       _mongoc_write_command (command, client, server_stream, database,
                              collection, write_concern, offset,
                              result, &result->error);

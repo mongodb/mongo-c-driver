@@ -321,7 +321,7 @@ _use_find_command (const mongoc_cursor_t *cursor,
     * used to execute other commands" and "the find command does not support the
     * exhaust flag."
     */
-   return server_stream->sd->max_wire_version >= FIND_COMMAND_WIRE_VERSION &&
+   return server_stream->sd->max_wire_version >= WIRE_VERSION_FIND_CMD &&
           !cursor->is_command &&
           !(cursor->flags & MONGOC_QUERY_EXHAUST);
 }

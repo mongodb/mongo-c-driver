@@ -1210,7 +1210,7 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
 
    if (db && collection &&
        server_stream->sd->max_wire_version >=
-       KILLCURSORS_COMMAND_WIRE_VERSION) {
+       WIRE_VERSION_KILLCURSORS_CMD) {
       _mongoc_client_killcursors_command (&client->cluster, server_stream,
                                           cursor_id, db, collection);
    } else {

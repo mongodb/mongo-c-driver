@@ -320,7 +320,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
 
    cursor->hint = selected_server->id;
    use_cursor = 
-      selected_server->max_wire_version >= AGGREGATION_CURSOR_WIRE_VERSION;
+      selected_server->max_wire_version >= WIRE_VERSION_AGG_CURSOR;
 
    BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);
 
@@ -1996,7 +1996,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
 
    wc = opts->write_concern ? opts->write_concern : collection->write_concern;
 
-   if (server_stream->sd->max_wire_version >= FAM_WRITE_CONCERN_WIRE_VERSION) {
+   if (server_stream->sd->max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) {
       if (!_mongoc_write_concern_is_valid (wc)) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,

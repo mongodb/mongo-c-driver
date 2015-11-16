@@ -1091,7 +1091,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
 
    /* Use cached max_wire_version, not value from sd */
    if (!mechanism) {
-      if (max_wire_version < SCRAM_DEFAULT_AUTH_WIRE_VERSION) {
+      if (max_wire_version < WIRE_VERSION_SCRAM_DEFAULT) {
          mechanism = "MONGODB-CR";
       } else {
          mechanism = "SCRAM-SHA-1";
