@@ -954,6 +954,16 @@ buildvariants:
 #        Solaris Buildvariant         #
 #######################################
 
+- name: solaris-32-bit
+  display_name: "Sol gcc-4.9.2 32"
+  expansions:
+    <<: *solaris_common
+    <<: *cflags_32
+    <<: *mongo_url_solaris
+  run_on:
+      - solaris
+  tasks: *topology_tests
+
 - name: solaris-64-bit
   display_name: "Sol gcc-4.9.2 64"
   expansions:
