@@ -176,6 +176,7 @@ _test_collection_op_query_or_find_command (
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
+   bson_error_t error;
    future_t *future;
    request_t *request;
    const bson_t *doc;
@@ -198,6 +199,7 @@ _test_collection_op_query_or_find_command (
                                     test_data->fields_bson,
                                     test_data->read_prefs);
 
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    future = future_cursor_next (cursor, &doc);
    request = check_request_fn (server, test_data);
    ASSERT (request);
@@ -388,6 +390,22 @@ test_dollar_query (void)
 }
 
 
+static void
+test_dollar_or (void)
+{
+   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
+
+   test_data.docs = "[{'_id': 1}, {'_id': 2}, {'_id': 3}]";
+   test_data.query_input = "{'$or': [{'_id': 1}, {'_id': 3}]}";
+   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_find_command =
+      "{'find': 'collection', 'filter': {'$or': [{'_id': 1}, {'_id': 3}]}}";
+
+   test_data.expected_result = "[{'_id': 1}, {'_id': 3}]";
+   _test_collection_find (&test_data);
+}
+
+
 /* test that we can query for a document by a key named "filter" */
 static void
 test_key_named_filter (void)
@@ -527,40 +545,6 @@ test_int_modifiers (void)
 
 
 static void
-test_bool_modifiers (void)
-{
-   const char *modifiers[] = {
-      "snapshot",
-      "showRecordId",
-   };
-
-   const char *mod;
-   size_t i;
-   char *query;
-   char *find_command;
-   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
-
-   test_data.expected_result = test_data.docs = "[{'_id': 1}]";
-
-   for (i = 0; i < sizeof (modifiers) / sizeof (const char *); i++) {
-      mod = modifiers[i];
-      query = bson_strdup_printf ("{'$query': {}, '$%s': true}", mod);
-
-      /* find command has same modifier, without the $-prefix */
-      find_command = bson_strdup_printf (
-         "{'find': 'collection', 'filter': {}, '%s': true}", mod);
-
-      test_data.expected_op_query = test_data.query_input = query;
-      test_data.expected_find_command = find_command;
-      _test_collection_find (&test_data);
-
-      bson_free (query);
-      bson_free (find_command);
-   }
-}
-
-
-static void
 test_index_spec_modifiers (void)
 {
    /* don't include $max, it needs a slightly different argument to succeed */
@@ -616,6 +600,19 @@ test_max (void)
    test_data.query_input = "{'$query': {}, '$max': {'_id': 100}}";
    test_data.expected_op_query = test_data.query_input;
    test_data.expected_find_command = "{'find': 'collection', 'filter': {}, 'max': {'_id': 100}}";
+   test_data.expected_result = "[{'_id': 1}]";
+   _test_collection_find (&test_data);
+}
+
+
+static void
+test_snapshot (void)
+{
+   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
+   test_data.docs = "[{'_id': 1}]";
+   test_data.query_input = "{'$query': {}, '$snapshot': true}";
+   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_find_command = "{'find': 'collection', 'filter': {}, 'snapshot': true}";
    test_data.expected_result = "[{'_id': 1}]";
    _test_collection_find (&test_data);
 }
@@ -686,6 +683,21 @@ test_limit (void)
    test_data.n_return = 2;
    test_data.expected_find_command = "{'find': 'collection', 'filter': {}, 'sort': {'_id': 1}, 'limit': {'$numberLong': '2'}}";
    test_data.expected_result = "[{'_id': 1}, {'_id': 2}]";
+   _test_collection_find (&test_data);
+}
+
+
+static void
+test_unrecognized_dollar_option (void)
+{
+   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
+
+   test_data.query_input = "{'$query': {'a': 1}, '$dumb': 1}";
+   test_data.expected_find_command =
+      "{'find': 'collection', 'filter': {'a': 1}, '$dumb': 1}";
+
+   test_data.requires_wire_version_4 = true;
+   test_data.do_live = false;
    _test_collection_find (&test_data);
 }
 
@@ -968,6 +980,8 @@ test_collection_find_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Collection/find/dollar_query",
                   test_dollar_query);
+   TestSuite_Add (suite, "/Collection/find/dollar_or",
+                  test_dollar_or);
    TestSuite_Add (suite, "/Collection/find/key_named_filter",
                   test_key_named_filter);
    TestSuite_Add (suite, "/Collection/find/cmd/subdoc_named_filter",
@@ -984,14 +998,14 @@ test_collection_find_install (TestSuite *suite)
                   test_fields);
    TestSuite_Add (suite, "/Collection/find/modifiers/integer",
                   test_int_modifiers);
-   TestSuite_Add (suite, "/Collection/find/modifiers/bool",
-                  test_bool_modifiers);
    TestSuite_Add (suite, "/Collection/find/modifiers/index_spec",
                   test_index_spec_modifiers);
    TestSuite_Add (suite, "/Collection/find/comment",
                   test_comment);
    TestSuite_Add (suite, "/Collection/find/max",
                   test_max);
+   TestSuite_Add (suite, "/Collection/find/modifiers/bool",
+                  test_snapshot);
    TestSuite_Add (suite, "/Collection/find/showdiskloc",
                   test_diskloc);
    TestSuite_Add (suite, "/Collection/find/returnkey",
@@ -1002,6 +1016,8 @@ test_collection_find_install (TestSuite *suite)
                   test_batch_size);
    TestSuite_Add (suite, "/Collection/find/limit",
                   test_limit);
+   TestSuite_Add (suite, "/Collection/find/unrecognized",
+                  test_unrecognized_dollar_option);
    TestSuite_Add (suite, "/Collection/find/flags",
                   test_query_flags);
 

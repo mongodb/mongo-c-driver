@@ -188,8 +188,6 @@ _mongoc_cursor_new (mongoc_client_t           *client,
          }
       }
 
-      cursor->has_dollar = found_dollar ? 1 : 0;
-
       if (found_dollar && found_non_dollar) {
          bson_set_error (&cursor->error,
                          MONGOC_ERROR_CURSOR,
@@ -564,15 +562,15 @@ _invalid_field (const char      *query_field,
 }
 
 
-static void
-_query_to_cmd_field (const char  *query_field,
-                     const char **cmd_field,
-                     int         *len)
+static bool
+_translate_query_opt (const char *query_field,
+                      const char **cmd_field,
+                      int *len)
 {
    if (query_field[0] != '$') {
       *cmd_field = query_field;
       *len = -1;
-      return;
+      return true;
    }
 
    /* strip the leading '$' */
@@ -587,11 +585,36 @@ _query_to_cmd_field (const char  *query_field,
    } else if (!strcmp ("showDiskLoc", query_field)) { /* <= MongoDb 3.0 */
       *cmd_field = "showRecordId";
       *len = 12;
+   } else if (!strcmp("hint", query_field)) {
+      *cmd_field = "hint";
+      *len = 4;
+   } else if (!strcmp("comment", query_field)) {
+      *cmd_field = "comment";
+      *len = 7;
+   } else if (!strcmp("maxScan", query_field)) {
+      *cmd_field = "maxScan";
+      *len = 7;
+   } else if (!strcmp("maxTimeMS", query_field)) {
+      *cmd_field = "maxTimeMS";
+      *len = 9;
+   } else if (!strcmp("max", query_field)) {
+      *cmd_field = "max";
+      *len = 3;
+   } else if (!strcmp("min", query_field)) {
+      *cmd_field = "min";
+      *len = 3;
+   } else if (!strcmp("returnKey", query_field)) {
+      *cmd_field = "returnKey";
+      *len = 9;
+   } else if (!strcmp("snapshot", query_field)) {
+      *cmd_field = "snapshot";
+      *len = 8;
    } else {
-      /* just use the field name, minus the '$' */
-      *cmd_field = query_field;
-      *len = -1;
+      /* not a special command field, must be a query operator like $or */
+      return false;
    }
+
+   return true;
 }
 
 
@@ -657,16 +680,21 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
        */
       bson_t empty = BSON_INITIALIZER;
       bson_append_document (command, "filter", 6, &empty);
-   } else if (cursor->has_dollar) {
+   } else if (bson_has_field (&cursor->query, "$query")) {
       bson_iter_init (&iter, &cursor->query);
       while (bson_iter_next (&iter)) {
          if (_invalid_field (bson_iter_key (&iter), cursor)) {
             return false;
          }
 
-         _query_to_cmd_field (bson_iter_key (&iter), &command_field, &len);
          value = bson_iter_value (&iter);
-         bson_append_value (command, command_field, len, value);
+         if (_translate_query_opt (bson_iter_key (&iter),
+                                   &command_field,
+                                   &len)) {
+            bson_append_value (command, command_field, len, value);
+         } else {
+            bson_append_value (command, bson_iter_key (&iter), -1, value);
+         }
       }
    } else if (bson_has_field (&cursor->query, "filter")) {
       bson_concat (command, &cursor->query);
