@@ -643,6 +643,44 @@ _mongoc_gridfs_file_flush_page (mongoc_gridfs_file_t *file)
 
 
 /**
+ * _mongoc_gridfs_file_keep_cursor:
+ *
+ *    After a seek, decide if the next read should use the current cursor or
+ *    start a new query.
+ *
+ * Preconditions:
+ *
+ *    file has a cursor and cursor range.
+ *
+ * Side Effects:
+ *
+ *    None.
+ */
+static bool
+_mongoc_gridfs_file_keep_cursor (mongoc_gridfs_file_t *file)
+{
+   uint32_t chunk_no;
+   uint32_t chunks_per_batch;
+
+   if (file->n < 0 || file->chunk_size <= 0) {
+      return false;
+   }
+
+   chunk_no = (uint32_t) file->n;
+   /* server returns roughly 4 MB batches by default */
+   chunks_per_batch = (4 * 1024 * 1024) / (uint32_t) file->chunk_size;
+
+   return (
+      /* cursor is on or before the desired chunk */
+      file->cursor_range[0] <= chunk_no &&
+      /* chunk_no is before end of file */
+      chunk_no <= file->cursor_range[1] &&
+      /* desired chunk is in this batch or next one */
+      chunk_no < file->cursor_range[0] + 2 * chunks_per_batch);
+}
+
+
+/**
  * _mongoc_gridfs_file_refresh_page:
  *
  *    Refresh a GridFS file's underlying page. This recalculates the current
@@ -697,8 +735,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    } else {
       /* if we have a cursor, but the cursor doesn't have the chunk we're going
        * to need, destroy it (we'll grab a new one immediately there after) */
-      if (file->cursor &&
-          (file->n < file->cursor_range[0] || file->n > file->cursor_range[1])) {
+      if (file->cursor && !_mongoc_gridfs_file_keep_cursor (file)) {
          mongoc_cursor_destroy (file->cursor);
          file->cursor = NULL;
       }

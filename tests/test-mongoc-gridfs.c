@@ -6,6 +6,7 @@
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
 #include "TestSuite.h"
+#include "test-conveniences.h"
 
 
 static mongoc_gridfs_t *
@@ -557,6 +558,90 @@ test_stream (void)
    mongoc_client_destroy (client);
 }
 
+
+#define ASSERT_TELL(file_, position_) \
+   ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file_), ==, position_)
+
+
+static void
+test_long_seek (void)
+{
+   const uint64_t four_mb = 4 * 1024 * 1024;
+
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+   ssize_t r;
+   mongoc_gridfs_file_opt_t opt = { 0, "filename" };
+   mongoc_iovec_t iov;
+   char buf[16 * 1024]; /* nothing special about 16k, just a buffer */
+   const ssize_t buflen = sizeof (buf);
+   ssize_t written;
+   int64_t cursor_id;
+   int i;
+
+   iov.iov_base = buf;
+   iov.iov_len = sizeof (buf);
+
+   client = test_framework_client_new ();
+   gridfs = get_test_gridfs (client, "long_seek", &error);
+   ASSERT_OR_PRINT (gridfs, error);
+   mongoc_gridfs_drop (gridfs, NULL);
+   file = mongoc_gridfs_create_file (gridfs, &opt);
+   ASSERT (file);
+
+   /* Write 20MB, enough to ensure we need many batches, below */
+   written = 0;
+   while (written < 20 * 1024 * 1024) {
+      r = mongoc_gridfs_file_writev (file, &iov, 1, 0);
+      ASSERT_CMPLONG (r, ==, buflen);
+      written += r;
+   }
+
+   /* new file handle */
+   mongoc_gridfs_file_save (file);
+   mongoc_gridfs_file_destroy (file);
+   file = mongoc_gridfs_find_one (gridfs,
+                                  tmp_bson ("{'filename': 'filename'}"),
+                                  &error);
+
+   ASSERT_OR_PRINT (file, error);
+
+   /* read the start of the file */
+   r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
+   ASSERT_CMPLONG (r, ==, buflen);
+   ASSERT_TELL (file, (uint64_t) buflen);
+   cursor_id = mongoc_cursor_get_id (file->cursor);
+
+   /* seek forward into next batch and read, gridfs advances cursor */
+   i = mongoc_gridfs_file_seek (file, four_mb, SEEK_CUR);
+   ASSERT_CMPINT (i, ==, 0);
+   r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
+   ASSERT_CMPLONG (r, ==, buflen);
+   ASSERT_TELL (file, four_mb + 2 * buflen);
+
+   /* same as the cursor we started with */
+   ASSERT_CMPINT64 (cursor_id, ==, mongoc_cursor_get_id (file->cursor));
+
+   /* seek more than a batch forward, gridfs discards cursor */
+   i = mongoc_gridfs_file_seek (file, 3 * four_mb, SEEK_CUR);
+   ASSERT_CMPINT (i, ==, 0);
+   ASSERT_TELL (file, 4 * four_mb + 2 * buflen);
+   r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
+   ASSERT_CMPLONG (r, ==, buflen);
+   ASSERT_TELL (file, 4 * four_mb + 3 * buflen);
+
+   /* new cursor, not the one we started with */
+   ASSERT_CMPINT64 (cursor_id, !=, mongoc_cursor_get_id (file->cursor));
+
+   mongoc_gridfs_file_destroy (file);
+   ASSERT_OR_PRINT (drop_collections (gridfs, &error), error);
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_client_destroy (client);
+}
+
+
 static void
 test_remove_by_filename (void)
 {
@@ -616,5 +701,6 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/stream", test_stream);
    TestSuite_Add (suite, "/GridFS/remove", test_remove);
    TestSuite_Add (suite, "/GridFS/write", test_write);
+   TestSuite_Add (suite, "/GridFS/test_long_seek", test_long_seek);
    TestSuite_Add (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
 }
