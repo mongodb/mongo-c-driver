@@ -79,6 +79,7 @@ struct _mongoc_client_t
    mongoc_topology_t             *topology;
 
    mongoc_read_prefs_t       *read_prefs;
+   mongoc_read_concern_t     *read_concern;
    mongoc_write_concern_t    *write_concern;
 };
 

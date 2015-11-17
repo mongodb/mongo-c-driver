@@ -721,6 +721,7 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
 {
    mongoc_client_t *client;
    const mongoc_read_prefs_t *read_prefs;
+   const mongoc_read_concern_t *read_concern;
    const mongoc_write_concern_t *write_concern;
 
    BSON_ASSERT (uri);
@@ -734,6 +735,9 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
 
    write_concern = mongoc_uri_get_write_concern (client->uri);
    client->write_concern = mongoc_write_concern_copy (write_concern);
+
+   read_concern = mongoc_uri_get_read_concern (client->uri);
+   client->read_concern = mongoc_read_concern_copy (read_concern);
 
    read_prefs = mongoc_uri_get_read_prefs_t (client->uri);
    client->read_prefs = mongoc_read_prefs_copy (read_prefs);
@@ -783,6 +787,7 @@ mongoc_client_destroy (mongoc_client_t *client)
       }
 
       mongoc_write_concern_destroy (client->write_concern);
+      mongoc_read_concern_destroy (client->read_concern);
       mongoc_read_prefs_destroy (client->read_prefs);
       mongoc_cluster_destroy (&client->cluster);
       mongoc_uri_destroy (client->uri);
@@ -847,7 +852,8 @@ mongoc_client_get_database (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (name);
 
-   return _mongoc_database_new(client, name, client->read_prefs, client->write_concern);
+   return _mongoc_database_new(client, name, client->read_prefs,
+                               client->read_concern, client->write_concern);
 }
 
 
@@ -922,7 +928,7 @@ mongoc_client_get_collection (mongoc_client_t *client,
    BSON_ASSERT (collection);
 
    return _mongoc_collection_new(client, db, collection, client->read_prefs,
-                                 client->write_concern);
+                                 client->read_concern, client->write_concern);
 }
 
 
@@ -1020,6 +1026,64 @@ mongoc_client_set_write_concern (mongoc_client_t              *client,
       client->write_concern = write_concern ?
          mongoc_write_concern_copy(write_concern) :
          mongoc_write_concern_new();
+   }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_get_read_concern --
+ *
+ *       Fetches the default read concern for @client.
+ *
+ * Returns:
+ *       A mongoc_read_concern_t that should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const mongoc_read_concern_t *
+mongoc_client_get_read_concern (const mongoc_client_t *client)
+{
+   BSON_ASSERT (client);
+
+   return client->read_concern;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_client_set_read_concern --
+ *
+ *       Sets the default read concern for @client.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mongoc_client_set_read_concern (mongoc_client_t             *client,
+                                const mongoc_read_concern_t *read_concern)
+{
+   BSON_ASSERT (client);
+
+   if (read_concern != client->read_concern) {
+      if (client->read_concern) {
+         mongoc_read_concern_destroy (client->read_concern);
+      }
+      client->read_concern = read_concern ?
+         mongoc_read_concern_copy (read_concern) :
+         mongoc_read_concern_new ();
    }
 }
 

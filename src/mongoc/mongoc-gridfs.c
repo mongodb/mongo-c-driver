@@ -118,10 +118,10 @@ _mongoc_gridfs_new (mongoc_client_t *client,
    gridfs->client = client;
 
    bson_snprintf (buf, sizeof(buf), "%s.chunks", prefix);
-   gridfs->chunks = _mongoc_collection_new (client, db, buf, NULL, NULL);
+   gridfs->chunks = _mongoc_collection_new (client, db, buf, NULL, NULL, NULL);
 
    bson_snprintf (buf, sizeof(buf), "%s.files", prefix);
-   gridfs->files = _mongoc_collection_new (client, db, buf, NULL, NULL);
+   gridfs->files = _mongoc_collection_new (client, db, buf, NULL, NULL, NULL);
 
    r = _mongoc_gridfs_ensure_index (gridfs, error);
 

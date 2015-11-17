@@ -59,6 +59,7 @@ mongoc_database_t *
 _mongoc_database_new (mongoc_client_t              *client,
                       const char                   *name,
                       const mongoc_read_prefs_t    *read_prefs,
+                      const mongoc_read_concern_t  *read_concern,
                       const mongoc_write_concern_t *write_concern)
 {
    mongoc_database_t *db;
@@ -73,6 +74,9 @@ _mongoc_database_new (mongoc_client_t              *client,
    db->write_concern = write_concern ?
       mongoc_write_concern_copy(write_concern) :
       mongoc_write_concern_new();
+   db->read_concern = read_concern ?
+      mongoc_read_concern_copy(read_concern) :
+      mongoc_read_concern_new();
    db->read_prefs = read_prefs ?
       mongoc_read_prefs_copy(read_prefs) :
       mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
@@ -109,6 +113,11 @@ mongoc_database_destroy (mongoc_database_t *database)
    if (database->read_prefs) {
       mongoc_read_prefs_destroy(database->read_prefs);
       database->read_prefs = NULL;
+   }
+
+   if (database->read_concern) {
+      mongoc_read_concern_destroy(database->read_concern);
+      database->read_concern = NULL;
    }
 
    if (database->write_concern) {
@@ -510,6 +519,64 @@ mongoc_database_set_read_prefs (mongoc_database_t         *database,
 
    if (read_prefs) {
       database->read_prefs = mongoc_read_prefs_copy(read_prefs);
+   }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_get_read_concern --
+ *
+ *       Fetches the read concern for @database.
+ *
+ * Returns:
+ *       A mongoc_read_concern_t that should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const mongoc_read_concern_t *
+mongoc_database_get_read_concern (const mongoc_database_t *database)
+{
+   BSON_ASSERT (database);
+
+   return database->read_concern;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_set_read_concern --
+ *
+ *       Set the default read concern for @database.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mongoc_database_set_read_concern (mongoc_database_t            *database,
+                                  const mongoc_read_concern_t  *read_concern)
+{
+   BSON_ASSERT (database);
+
+   if (database->read_concern) {
+      mongoc_read_concern_destroy (database->read_concern);
+      database->read_concern = NULL;
+   }
+
+   if (read_concern) {
+      database->read_concern = mongoc_read_concern_copy (read_concern);
    }
 }
 
@@ -1008,6 +1075,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                            database->name,
                                            name,
                                            database->read_prefs,
+                                           database->read_concern,
                                            database->write_concern);
    }
 

@@ -32,6 +32,7 @@
 #include "mongoc-index.h"
 #include "mongoc-log.h"
 #include "mongoc-trace.h"
+#include "mongoc-read-concern-private.h"
 #include "mongoc-write-concern-private.h"
 
 
@@ -142,6 +143,7 @@ _mongoc_collection_write_command_execute (mongoc_write_command_t       *command,
  *       @db is the db name of the collection.
  *       @collection is the name of the collection.
  *       @read_prefs is the default read preferences to apply or NULL.
+ *       @read_concern is the default read concern to apply or NULL.
  *       @write_concern is the default write concern to apply or NULL.
  *
  * Returns:
@@ -159,6 +161,7 @@ _mongoc_collection_new (mongoc_client_t              *client,
                         const char                   *db,
                         const char                   *collection,
                         const mongoc_read_prefs_t    *read_prefs,
+                        const mongoc_read_concern_t  *read_concern,
                         const mongoc_write_concern_t *write_concern)
 {
    mongoc_collection_t *col;
@@ -174,6 +177,9 @@ _mongoc_collection_new (mongoc_client_t              *client,
    col->write_concern = write_concern ?
       mongoc_write_concern_copy(write_concern) :
       mongoc_write_concern_new();
+   col->read_concern = read_concern ?
+      mongoc_read_concern_copy(read_concern) :
+      mongoc_read_concern_new();
    col->read_prefs = read_prefs ?
       mongoc_read_prefs_copy(read_prefs) :
       mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
@@ -224,6 +230,11 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
    if (collection->read_prefs) {
       mongoc_read_prefs_destroy(collection->read_prefs);
       collection->read_prefs = NULL;
+   }
+
+   if (collection->read_concern) {
+      mongoc_read_concern_destroy(collection->read_concern);
+      collection->read_concern = NULL;
    }
 
    if (collection->write_concern) {
@@ -1570,6 +1581,64 @@ mongoc_collection_set_read_prefs (mongoc_collection_t       *collection,
 
    if (read_prefs) {
       collection->read_prefs = mongoc_read_prefs_copy(read_prefs);
+   }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_get_read_concern --
+ *
+ *       Fetches the default read concern for the collection instance.
+ *
+ * Returns:
+ *       A mongoc_read_concern_t that should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const mongoc_read_concern_t *
+mongoc_collection_get_read_concern (const mongoc_collection_t *collection)
+{
+   BSON_ASSERT (collection);
+
+   return collection->read_concern;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_collection_set_read_concern --
+ *
+ *       Sets the default read concern for the collection instance.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mongoc_collection_set_read_concern (mongoc_collection_t          *collection,
+                                     const mongoc_read_concern_t *read_concern)
+{
+   BSON_ASSERT (collection);
+
+   if (collection->read_concern) {
+      mongoc_read_concern_destroy(collection->read_concern);
+      collection->read_concern = NULL;
+   }
+
+   if (read_concern) {
+      collection->read_concern = mongoc_read_concern_copy(read_concern);
    }
 }
 
