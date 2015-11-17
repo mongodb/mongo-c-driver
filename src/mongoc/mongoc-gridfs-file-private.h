@@ -41,7 +41,7 @@ struct _mongoc_gridfs_file_t
    int32_t                    n;
    bson_error_t               error;
    mongoc_cursor_t           *cursor;
-   uint32_t                   cursor_range[2];
+   uint32_t                   cursor_range[2]; /* current chunk, # of chunks */
    bool                       is_dirty;
 
    bson_value_t               files_id;
