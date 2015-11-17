@@ -623,6 +623,8 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
    } else if (!strcasecmp(key, "authmechanism") ||
               !strcasecmp(key, "authsource")) {
       bson_append_utf8(&uri->credentials, key, -1, value, -1);
+   } else if (!strcasecmp(key, "readconcernlevel")) {
+      mongoc_read_concern_set_level (uri->read_concern, value);
    } else if (!strcasecmp(key, "authmechanismproperties")) {
       if (!mongoc_uri_parse_auth_mechanism_properties(uri, value)) {
          bson_free(key);
@@ -926,6 +928,9 @@ mongoc_uri_new (const char *uri_string)
    /* Initialize read_prefs since tag parsing may add to it */
    uri->read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
+   /* Initialize empty read_concern */
+   uri->read_concern = mongoc_read_concern_new ();
+
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
    }
@@ -943,7 +948,7 @@ mongoc_uri_new (const char *uri_string)
       mongoc_uri_destroy(uri);
       return NULL;
    }
-   
+
    _mongoc_uri_build_write_concern (uri);
 
    if (!_mongoc_write_concern_is_valid(uri->write_concern)) {
