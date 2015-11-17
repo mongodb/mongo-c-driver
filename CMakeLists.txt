@@ -112,6 +112,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.c
@@ -159,6 +160,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h

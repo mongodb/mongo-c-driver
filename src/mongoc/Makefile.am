@@ -68,6 +68,8 @@ INST_H_FILES = \
 	src/mongoc/mongoc-opcode.h \
 	src/mongoc/mongoc-opcode-private.h \
 	src/mongoc/mongoc-queue-private.h \
+	src/mongoc/mongoc-read-concern-private.h \
+	src/mongoc/mongoc-read-concern.h \
 	src/mongoc/mongoc-read-prefs-private.h \
 	src/mongoc/mongoc-read-prefs.h \
 	src/mongoc/mongoc-rpc-private.h \
@@ -141,6 +143,7 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-memcmp.c \
 	src/mongoc/mongoc-opcode.c \
 	src/mongoc/mongoc-queue.c \
+	src/mongoc/mongoc-read-concern.c \
 	src/mongoc/mongoc-read-prefs.c \
 	src/mongoc/mongoc-rpc.c \
 	src/mongoc/mongoc-server-description.c \
