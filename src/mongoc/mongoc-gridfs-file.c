@@ -741,7 +741,7 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
        * iterate until we're on the right chunk */
       while (file->cursor_range[0] <= file->n) {
          if (!mongoc_cursor_next (file->cursor, &chunk)) {
-            /* copy cursor error, if any. might just lack a matchign chunk. */
+            /* copy cursor error, if any. might just lack a matching chunk. */
             mongoc_cursor_error (file->cursor, &file->error);
             RETURN (0);
          }
