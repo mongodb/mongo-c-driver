@@ -57,6 +57,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_KILLCURSORS_CMD 4
 /* first version when findAndModify accepts writeConcern */
 #define WIRE_VERSION_FAM_WRITE_CONCERN 4
+/* first version to support readConcern */
+#define WIRE_VERSION_READ_CONCERN 4
 
 
 struct _mongoc_client_t
