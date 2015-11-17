@@ -468,7 +468,7 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
       read_prefs = collection->read_prefs;
    }
 
-   return _mongoc_cursor_new(collection->client, collection->ns, flags, skip,
+   return _mongoc_cursor_new (collection->client, collection->ns, flags, skip,
                              limit, batch_size, false, query, fields, read_prefs);
 }
 
@@ -605,11 +605,23 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
                                    const mongoc_read_prefs_t *read_prefs,  /* IN */
                                    bson_error_t              *error)       /* OUT */
 {
-   int64_t ret = -1;
+   mongoc_server_stream_t *server_stream;
+   mongoc_cluster_t *cluster;
    bson_iter_t iter;
+   int64_t ret = -1;
+   bool success;
    bson_t reply;
    bson_t cmd;
    bson_t q;
+
+   ENTRY;
+
+
+   cluster = &collection->client->cluster;
+   server_stream = mongoc_cluster_stream_for_writes (cluster, error);
+   if (!server_stream) {
+      RETURN (-1);
+   }
 
    BSON_ASSERT (collection);
 
@@ -629,18 +641,38 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
    if (skip) {
       bson_append_int64(&cmd, "skip", 4, skip);
    }
+   if (collection->read_concern->level != NULL) {
+      const bson_t *read_concern_bson;
+
+      if (server_stream->sd->max_wire_version < WIRE_VERSION_READ_CONCERN) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "The selected server does not support readConcern");
+         bson_destroy (&cmd);
+         mongoc_server_stream_cleanup (server_stream);
+         RETURN (-1);
+      }
+
+      read_concern_bson = _mongoc_read_concern_get_bson (collection->read_concern);
+      BSON_APPEND_DOCUMENT (&cmd, "readConcern", read_concern_bson);
+   }
    if (opts) {
        bson_concat(&cmd, opts);
    }
-   if (mongoc_collection_command_simple(collection, &cmd, read_prefs,
-                                        &reply, error) &&
-       bson_iter_init_find(&iter, &reply, "n")) {
+
+   success = mongoc_cluster_run_command (cluster, server_stream->stream,
+                                         MONGOC_QUERY_SLAVE_OK, collection->db,
+                                         &cmd, &reply, error);
+
+   if (success && bson_iter_init_find(&iter, &reply, "n")) {
       ret = bson_iter_as_int64(&iter);
    }
-   bson_destroy(&reply);
-   bson_destroy(&cmd);
+   bson_destroy (&reply);
+   bson_destroy (&cmd);
+   mongoc_server_stream_cleanup (server_stream);
 
-   return ret;
+   RETURN (ret);
 }
 
 
@@ -1628,17 +1660,17 @@ mongoc_collection_get_read_concern (const mongoc_collection_t *collection)
 
 void
 mongoc_collection_set_read_concern (mongoc_collection_t          *collection,
-                                     const mongoc_read_concern_t *read_concern)
+                                    const mongoc_read_concern_t *read_concern)
 {
    BSON_ASSERT (collection);
 
    if (collection->read_concern) {
-      mongoc_read_concern_destroy(collection->read_concern);
+      mongoc_read_concern_destroy (collection->read_concern);
       collection->read_concern = NULL;
    }
 
    if (read_concern) {
-      collection->read_concern = mongoc_read_concern_copy(read_concern);
+      collection->read_concern = mongoc_read_concern_copy (read_concern);
    }
 }
 

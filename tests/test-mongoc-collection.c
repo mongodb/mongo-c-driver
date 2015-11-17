@@ -1222,6 +1222,224 @@ test_count (void)
 
 
 static void
+test_count_read_concern (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_read_concern_t *rc;
+   mock_server_t *server;
+   request_t *request;
+   bson_error_t error;
+   future_t *future;
+   int64_t count;
+   bson_t b;
+
+   /* wire protocol version 4 */
+   server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   ASSERT (client);
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+   ASSERT (collection);
+
+   bson_init(&b);
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, &b,
+                                     0, 0, NULL, &error);
+   bson_destroy(&b);
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SLAVE_OK,
+      "{ 'count' : 'test', 'query' : {  } }");
+
+   mock_server_replies_simple (request, "{ 'n' : 42, 'ok' : 1 } ");
+   count = future_get_int64_t (future);
+   ASSERT_OR_PRINT (count == 42, error);
+
+   /* readConcern: { level: majority } */
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_collection_set_read_concern (collection, rc);
+
+   bson_init(&b);
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, &b,
+                                     0, 0, NULL, &error);
+   bson_destroy(&b);
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SLAVE_OK,
+      "{ 'count' : 'test', 'query' : {  }, 'readConcern': {'level': 'majority'}}");
+
+   mock_server_replies_simple (request, "{ 'n' : 43, 'ok' : 1 } ");
+   count = future_get_int64_t (future);
+   ASSERT_OR_PRINT (count == 43, error);
+   mongoc_read_concern_destroy (rc);
+
+
+   /* readConcern: { level: local } */
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   mongoc_collection_set_read_concern (collection, rc);
+
+   bson_init(&b);
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, &b,
+                                     0, 0, NULL, &error);
+   bson_destroy(&b);
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SLAVE_OK,
+      "{ 'count' : 'test', 'query' : {  }, 'readConcern': {'level': 'local'}}");
+
+   mock_server_replies_simple (request, "{ 'n' : 44, 'ok' : 1 } ");
+   count = future_get_int64_t (future);
+   ASSERT_OR_PRINT (count == 44, error);
+   mongoc_read_concern_destroy (rc);
+
+   /* readConcern: { level: futureCompatible } */
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, "futureCompatible");
+   mongoc_collection_set_read_concern (collection, rc);
+
+   bson_init(&b);
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, &b,
+                                     0, 0, NULL, &error);
+   bson_destroy(&b);
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SLAVE_OK,
+      "{ 'count' : 'test', 'query' : {  }, 'readConcern': {'level': 'futureCompatible'}}");
+
+   mock_server_replies_simple (request, "{ 'n' : 45, 'ok' : 1 } ");
+   count = future_get_int64_t (future);
+   ASSERT_OR_PRINT (count == 45, error);
+   mongoc_read_concern_destroy (rc);
+
+   /* Setting readConcern to NULL should not send readConcern */
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, NULL);
+   mongoc_collection_set_read_concern (collection, rc);
+
+   bson_init(&b);
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, &b,
+                                     0, 0, NULL, &error);
+   bson_destroy(&b);
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SLAVE_OK,
+      "{ 'count' : 'test', 'query' : {  } }");
+
+   mock_server_replies_simple (request, "{ 'n' : 46, 'ok' : 1 } ");
+   count = future_get_int64_t (future);
+   ASSERT_OR_PRINT (count == 46, error);
+   mongoc_read_concern_destroy (rc);
+
+   /* Fresh read_concern should not send readConcern */
+   rc = mongoc_read_concern_new ();
+   mongoc_collection_set_read_concern (collection, rc);
+
+   bson_init(&b);
+   future = future_collection_count (collection, MONGOC_QUERY_NONE, &b,
+                                     0, 0, NULL, &error);
+   bson_destroy(&b);
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SLAVE_OK,
+      "{ 'count' : 'test', 'query' : {  } }");
+
+   mock_server_replies_simple (request, "{ 'n' : 47, 'ok' : 1 } ");
+   count = future_get_int64_t (future);
+   ASSERT_OR_PRINT (count == 47, error);
+   mongoc_read_concern_destroy (rc);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+_test_count_read_concern_live (bool supports_read_concern)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mongoc_read_concern_t *rc;
+   bson_error_t error;
+   int64_t count;
+   bson_t b;
+
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+   ASSERT (collection);
+
+   mongoc_collection_drop (collection, &error);
+
+   bson_init(&b);
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &b,
+                                    0, 0, NULL, &error);
+   bson_destroy(&b);
+   ASSERT_OR_PRINT (count == 0, error);
+
+   /* Setting readConcern to NULL should not send readConcern */
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, NULL);
+   mongoc_collection_set_read_concern (collection, rc);
+
+   bson_init(&b);
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &b,
+                                    0, 0, NULL, &error);
+   bson_destroy(&b);
+   ASSERT_OR_PRINT (count == 0, error);
+   mongoc_read_concern_destroy (rc);
+
+   /* readConcern: { level: local } should raise error pre 3.2 */
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   mongoc_collection_set_read_concern (collection, rc);
+
+   bson_init(&b);
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &b,
+                                    0, 0, NULL, &error);
+   bson_destroy(&b);
+   if (supports_read_concern) {
+      ASSERT_OR_PRINT (count == 0, error);
+   } else {
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "The selected server does not support readConcern") 
+   }
+   mongoc_read_concern_destroy (rc);
+
+   /* readConcern: { level: majority } should raise error pre 3.2 */
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_collection_set_read_concern (collection, rc);
+
+   bson_init(&b);
+   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, &b,
+                                    0, 0, NULL, &error);
+   bson_destroy(&b);
+   if (supports_read_concern) {
+      ASSERT_OR_PRINT (count == 0, error);
+   } else {
+      ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "The selected server does not support readConcern") 
+   }
+   mongoc_read_concern_destroy (rc);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_count_read_concern_live (void)
+{
+   if (test_framework_max_wire_version_at_least (WIRE_VERSION_READ_CONCERN)) {
+      _test_count_read_concern_live (true);
+   } else {
+      _test_count_read_concern_live (false);
+   }
+}
+
+
+static void
 test_count_with_opts (void)
 {
    mongoc_collection_t *collection;
@@ -2393,6 +2611,8 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/remove", test_remove);
    TestSuite_Add (suite, "/Collection/count", test_count);
    TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
+   TestSuite_Add (suite, "/Collection/count/read_concern", test_count_read_concern);
+   TestSuite_Add (suite, "/Collection/count/read_concern_live", test_count_read_concern_live);
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
    TestSuite_Add (suite, "/Collection/aggregate/large", test_aggregate_large);
