@@ -230,11 +230,11 @@ future_get_mongoc_database_ptr (future_t *future)
    abort ();
 }
 
-mongoc_gridfs_file_t_ptr
-future_get_mongoc_gridfs_file_t_ptr (future_t *future)
+mongoc_gridfs_file_ptr
+future_get_mongoc_gridfs_file_ptr (future_t *future)
 {
    if (future_wait (future)) {
-      return future_value_get_mongoc_gridfs_file_t_ptr (&future->return_value);
+      return future_value_get_mongoc_gridfs_file_ptr (&future->return_value);
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);
@@ -263,11 +263,11 @@ future_get_mongoc_insert_flags_t (future_t *future)
    abort ();
 }
 
-mongoc_iovec_t_ptr
-future_get_mongoc_iovec_t_ptr (future_t *future)
+mongoc_iovec_ptr
+future_get_mongoc_iovec_ptr (future_t *future)
 {
    if (future_wait (future)) {
-      return future_value_get_mongoc_iovec_t_ptr (&future->return_value);
+      return future_value_get_mongoc_iovec_ptr (&future->return_value);
    }
 
    fprintf (stderr, "%s timed out\n", BSON_FUNC);

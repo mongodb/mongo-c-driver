@@ -94,8 +94,8 @@ future_get_mongoc_cursor_ptr (future_t *future);
 mongoc_database_ptr
 future_get_mongoc_database_ptr (future_t *future);
 
-mongoc_gridfs_file_t_ptr
-future_get_mongoc_gridfs_file_t_ptr (future_t *future);
+mongoc_gridfs_file_ptr
+future_get_mongoc_gridfs_file_ptr (future_t *future);
 
 mongoc_gridfs_ptr
 future_get_mongoc_gridfs_ptr (future_t *future);
@@ -103,8 +103,8 @@ future_get_mongoc_gridfs_ptr (future_t *future);
 mongoc_insert_flags_t
 future_get_mongoc_insert_flags_t (future_t *future);
 
-mongoc_iovec_t_ptr
-future_get_mongoc_iovec_t_ptr (future_t *future);
+mongoc_iovec_ptr
+future_get_mongoc_iovec_ptr (future_t *future);
 
 mongoc_query_flags_t
 future_get_mongoc_query_flags_t (future_t *future);

@@ -280,17 +280,17 @@ future_value_get_mongoc_database_ptr (future_value_t *future_value)
 }
 
 void
-future_value_set_mongoc_gridfs_file_t_ptr(future_value_t *future_value, mongoc_gridfs_file_t_ptr value)
+future_value_set_mongoc_gridfs_file_ptr(future_value_t *future_value, mongoc_gridfs_file_ptr value)
 {
-  future_value->type = future_value_mongoc_gridfs_file_t_ptr_type;
-  future_value->mongoc_gridfs_file_t_ptr_value = value;
+  future_value->type = future_value_mongoc_gridfs_file_ptr_type;
+  future_value->mongoc_gridfs_file_ptr_value = value;
 }
 
-mongoc_gridfs_file_t_ptr
-future_value_get_mongoc_gridfs_file_t_ptr (future_value_t *future_value)
+mongoc_gridfs_file_ptr
+future_value_get_mongoc_gridfs_file_ptr (future_value_t *future_value)
 {
-  assert (future_value->type == future_value_mongoc_gridfs_file_t_ptr_type);
-  return future_value->mongoc_gridfs_file_t_ptr_value;
+  assert (future_value->type == future_value_mongoc_gridfs_file_ptr_type);
+  return future_value->mongoc_gridfs_file_ptr_value;
 }
 
 void
@@ -322,17 +322,17 @@ future_value_get_mongoc_insert_flags_t (future_value_t *future_value)
 }
 
 void
-future_value_set_mongoc_iovec_t_ptr(future_value_t *future_value, mongoc_iovec_t_ptr value)
+future_value_set_mongoc_iovec_ptr(future_value_t *future_value, mongoc_iovec_ptr value)
 {
-  future_value->type = future_value_mongoc_iovec_t_ptr_type;
-  future_value->mongoc_iovec_t_ptr_value = value;
+  future_value->type = future_value_mongoc_iovec_ptr_type;
+  future_value->mongoc_iovec_ptr_value = value;
 }
 
-mongoc_iovec_t_ptr
-future_value_get_mongoc_iovec_t_ptr (future_value_t *future_value)
+mongoc_iovec_ptr
+future_value_get_mongoc_iovec_ptr (future_value_t *future_value)
 {
-  assert (future_value->type == future_value_mongoc_iovec_t_ptr_type);
-  return future_value->mongoc_iovec_t_ptr_value;
+  assert (future_value->type == future_value_mongoc_iovec_ptr_type);
+  return future_value->mongoc_iovec_ptr_value;
 }
 
 void

@@ -272,8 +272,8 @@ background_mongoc_gridfs_file_readv (void *data)
    future_value_set_ssize_t (
       &return_value,
       mongoc_gridfs_file_readv (
-         future_value_get_mongoc_gridfs_file_t_ptr (future_get_param (future, 0)),
-         future_value_get_mongoc_iovec_t_ptr (future_get_param (future, 1)),
+         future_value_get_mongoc_gridfs_file_ptr (future_get_param (future, 0)),
+         future_value_get_mongoc_iovec_ptr (future_get_param (future, 1)),
          future_value_get_size_t (future_get_param (future, 2)),
          future_value_get_size_t (future_get_param (future, 3)),
          future_value_get_uint32_t (future_get_param (future, 4))
@@ -295,7 +295,7 @@ background_mongoc_gridfs_file_seek (void *data)
    future_value_set_int (
       &return_value,
       mongoc_gridfs_file_seek (
-         future_value_get_mongoc_gridfs_file_t_ptr (future_get_param (future, 0)),
+         future_value_get_mongoc_gridfs_file_ptr (future_get_param (future, 0)),
          future_value_get_int64_t (future_get_param (future, 1)),
          future_value_get_int (future_get_param (future, 2))
       ));
@@ -316,8 +316,8 @@ background_mongoc_gridfs_file_writev (void *data)
    future_value_set_ssize_t (
       &return_value,
       mongoc_gridfs_file_writev (
-         future_value_get_mongoc_gridfs_file_t_ptr (future_get_param (future, 0)),
-         future_value_get_mongoc_iovec_t_ptr (future_get_param (future, 1)),
+         future_value_get_mongoc_gridfs_file_ptr (future_get_param (future, 0)),
+         future_value_get_mongoc_iovec_ptr (future_get_param (future, 1)),
          future_value_get_size_t (future_get_param (future, 2)),
          future_value_get_uint32_t (future_get_param (future, 3))
       ));
@@ -662,8 +662,8 @@ future_database_get_collection_names (
 
 future_t *
 future_gridfs_file_readv (
-   mongoc_gridfs_file_t_ptr file,
-   mongoc_iovec_t_ptr iov,
+   mongoc_gridfs_file_ptr file,
+   mongoc_iovec_ptr iov,
    size_t iovcnt,
    size_t min_bytes,
    uint32_t timeout_msec)
@@ -671,10 +671,10 @@ future_gridfs_file_readv (
    future_t *future = future_new (future_value_ssize_t_type,
                                   5);
    
-   future_value_set_mongoc_gridfs_file_t_ptr (
+   future_value_set_mongoc_gridfs_file_ptr (
       future_get_param (future, 0), file);
    
-   future_value_set_mongoc_iovec_t_ptr (
+   future_value_set_mongoc_iovec_ptr (
       future_get_param (future, 1), iov);
    
    future_value_set_size_t (
@@ -692,14 +692,14 @@ future_gridfs_file_readv (
 
 future_t *
 future_gridfs_file_seek (
-   mongoc_gridfs_file_t_ptr file,
+   mongoc_gridfs_file_ptr file,
    int64_t delta,
    int whence)
 {
    future_t *future = future_new (future_value_int_type,
                                   3);
    
-   future_value_set_mongoc_gridfs_file_t_ptr (
+   future_value_set_mongoc_gridfs_file_ptr (
       future_get_param (future, 0), file);
    
    future_value_set_int64_t (
@@ -714,18 +714,18 @@ future_gridfs_file_seek (
 
 future_t *
 future_gridfs_file_writev (
-   mongoc_gridfs_file_t_ptr file,
-   mongoc_iovec_t_ptr iov,
+   mongoc_gridfs_file_ptr file,
+   mongoc_iovec_ptr iov,
    size_t iovcnt,
    uint32_t timeout_msec)
 {
    future_t *future = future_new (future_value_ssize_t_type,
                                   4);
    
-   future_value_set_mongoc_gridfs_file_t_ptr (
+   future_value_set_mongoc_gridfs_file_ptr (
       future_get_param (future, 0), file);
    
-   future_value_set_mongoc_iovec_t_ptr (
+   future_value_set_mongoc_iovec_ptr (
       future_get_param (future, 1), iov);
    
    future_value_set_size_t (
