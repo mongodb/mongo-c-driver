@@ -79,6 +79,9 @@ Peace,
 
   A. Jesse Jiryu Davis
 
+  * If a GridFS chunk is missing, mongoc_gridfs_file_readv sets file->error to
+    domain MONGOC_ERROR_GRIDFS and a new code MONGOC_ERROR_GRIDFS_CHUNK_MISSING.
+
 
 mongo-c-driver 1.2.1
 ====================

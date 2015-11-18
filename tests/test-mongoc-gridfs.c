@@ -688,6 +688,75 @@ test_remove_by_filename (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_missing_chunk (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+   mongoc_collection_t *chunks;
+   ssize_t r;
+   mongoc_gridfs_file_opt_t opt = { 0, "filename" };
+   mongoc_iovec_t iov;
+   char buf[16 * 1024]; /* nothing special about 16k, just a buffer */
+   const ssize_t buflen = sizeof (buf);
+   ssize_t written;
+   bool ret;
+
+   iov.iov_base = buf;
+   iov.iov_len = sizeof (buf);
+
+   client = test_framework_client_new ();
+   gridfs = get_test_gridfs (client, "long_seek", &error);
+   ASSERT_OR_PRINT (gridfs, error);
+   mongoc_gridfs_drop (gridfs, NULL);
+   file = mongoc_gridfs_create_file (gridfs, &opt);
+   ASSERT (file);
+
+   /* 700k, enough to need three 255k chunks */
+   written = 0;
+   while (written < 700 * 1024) {
+      r = mongoc_gridfs_file_writev (file, &iov, 1, 0);
+      ASSERT_CMPLONG (r, ==, buflen);
+      written += r;
+   }
+
+   /* new file handle */
+   mongoc_gridfs_file_save (file);
+   mongoc_gridfs_file_destroy (file);
+   file = mongoc_gridfs_find_one_by_filename (gridfs, "filename", &error);
+   ASSERT_OR_PRINT (file, error);
+
+   /* chunks have n=0, 1, 2; remove the middle one */
+   chunks = mongoc_gridfs_get_chunks (gridfs);
+   ret = mongoc_collection_remove (chunks, MONGOC_REMOVE_NONE,
+                                   tmp_bson ("{'n': 1}"), NULL, &error);
+
+   ASSERT_OR_PRINT (ret, error);
+
+   /* read the file */
+   for (;;) {
+      r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
+      if (r > 0) {
+         ASSERT_CMPLONG (r, ==, buflen);
+      } else {
+         ASSERT (mongoc_gridfs_file_error (file, &error));
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_GRIDFS,
+                                MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
+                                "missing chunk number 1");
+
+         break;
+      }
+   }
+
+   mongoc_gridfs_file_destroy (file);
+   ASSERT_OR_PRINT (drop_collections (gridfs, &error), error);
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_client_destroy (client);
+}
+
 void
 test_gridfs_install (TestSuite *suite)
 {
@@ -703,4 +772,5 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/write", test_write);
    TestSuite_Add (suite, "/GridFS/test_long_seek", test_long_seek);
    TestSuite_Add (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
+   TestSuite_Add (suite, "/GridFS/missing_chunk", test_missing_chunk);
 }

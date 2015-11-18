@@ -33,6 +33,7 @@
 #include "mongoc-gridfs-file-page-private.h"
 #include "mongoc-iovec.h"
 #include "mongoc-trace.h"
+#include "mongoc-error.h"
 
 static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);
@@ -701,7 +702,7 @@ _mongoc_gridfs_file_keep_cursor (mongoc_gridfs_file_t *file)
  *    chunk boundary, a new page is created. We currently DO NOT handle the case
  *    of the file position being far past the end-of-file.
  *
- *    file->n is set based on file->pos.
+ *    file->n is set based on file->pos. file->error is set on error.
  */
 static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
@@ -794,7 +795,11 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
 
          if (strcmp (key, "n") == 0) {
             if (file->n != bson_iter_int32 (&iter)) {
-               /* We're on the wrong chunk because the file is missing chunks */
+               bson_set_error (&file->error,
+                               MONGOC_ERROR_GRIDFS,
+                               MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
+                               "missing chunk number %" PRId32,
+                               file->n);
                RETURN (0);
             }
          } else if (strcmp (key, "data") == 0) {
