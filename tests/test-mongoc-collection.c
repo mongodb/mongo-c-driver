@@ -1428,8 +1428,14 @@ _test_count_read_concern_live (bool supports_read_concern)
    mongoc_client_destroy (client);
 }
 
+int
+mongod_supports_majority_read_concern (void)
+{
+   return test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN");
+}
+
 static void
-test_count_read_concern_live (void)
+test_count_read_concern_live (void *context)
 {
    if (test_framework_max_wire_version_at_least (WIRE_VERSION_READ_CONCERN)) {
       _test_count_read_concern_live (true);
@@ -2890,7 +2896,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/count", test_count);
    TestSuite_Add (suite, "/Collection/count_with_opts", test_count_with_opts);
    TestSuite_Add (suite, "/Collection/count/read_concern", test_count_read_concern);
-   TestSuite_Add (suite, "/Collection/count/read_concern_live", test_count_read_concern_live);
+   TestSuite_AddFull (suite, "/Collection/count/read_concern_live", test_count_read_concern_live, NULL, NULL, mongod_supports_majority_read_concern);
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
    TestSuite_Add (suite, "/Collection/aggregate/large", test_aggregate_large);
