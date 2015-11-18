@@ -105,22 +105,6 @@ mongoc_find_and_modify_opts_set_bypass_document_validation (mongoc_find_and_modi
    return true;
 }
 
-bool
-mongoc_find_and_modify_opts_set_write_concern (mongoc_find_and_modify_opts_t *opts,
-                                               const mongoc_write_concern_t  *write_concern)
-{
-   BSON_ASSERT (opts);
-
-   if (_mongoc_write_concern_is_valid (write_concern)) {
-      if (opts->write_concern) {
-         mongoc_write_concern_destroy (opts->write_concern);
-      }
-      opts->write_concern = mongoc_write_concern_copy (write_concern);
-      return true;
-   }
-   return false;
-}
-
 /**
  * mongoc_find_and_modify_opts_destroy:
  * @opts: A mongoc_find_and_modify_opts_t.
@@ -134,9 +118,6 @@ mongoc_find_and_modify_opts_destroy (mongoc_find_and_modify_opts_t *opts)
       _mongoc_bson_destroy_if_set (opts->sort);
       _mongoc_bson_destroy_if_set (opts->update);
       _mongoc_bson_destroy_if_set (opts->fields);
-      if (opts->write_concern) {
-         mongoc_write_concern_destroy (opts->write_concern);
-      }
       bson_free (opts);
    }
 }

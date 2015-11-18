@@ -53,9 +53,6 @@ mongoc_find_and_modify_opts_set_flags         (mongoc_find_and_modify_opts_t    
 bool
 mongoc_find_and_modify_opts_set_bypass_document_validation (mongoc_find_and_modify_opts_t *opts,
                                                             bool                           bypass);
-bool
-mongoc_find_and_modify_opts_set_write_concern (mongoc_find_and_modify_opts_t        *opts,
-                                               const mongoc_write_concern_t         *write_concern);
 void
 mongoc_find_and_modify_opts_destroy           (mongoc_find_and_modify_opts_t *opts);
 

@@ -283,7 +283,6 @@ LIBMONGOC_1.3 {
         mongoc_find_and_modify_opts_set_flags;
         mongoc_find_and_modify_opts_set_sort;
         mongoc_find_and_modify_opts_set_update;
-        mongoc_find_and_modify_opts_set_write_concern;
         mongoc_read_concern_copy;
         mongoc_read_concern_destroy;
         mongoc_read_concern_get_level;

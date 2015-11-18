@@ -2064,7 +2064,6 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
    const char *name;
    bool ret;
    bson_t command = BSON_INITIALIZER;
-   mongoc_write_concern_t *wc;
 
    ENTRY;
 
@@ -2112,10 +2111,8 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
                         !!opts->bypass_document_validation);
    }
 
-   wc = opts->write_concern ? opts->write_concern : collection->write_concern;
-
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) {
-      if (!_mongoc_write_concern_is_valid (wc)) {
+      if (!_mongoc_write_concern_is_valid (collection->write_concern)) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -2125,8 +2122,8 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
          RETURN (false);
       }
 
-      if (_mongoc_write_concern_needs_gle (wc)) {
-         _BSON_APPEND_WRITE_CONCERN (&command, wc);
+      if (_mongoc_write_concern_needs_gle (collection->write_concern)) {
+         _BSON_APPEND_WRITE_CONCERN (&command, collection->write_concern);
       }
    }
 
@@ -2211,7 +2208,6 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
    mongoc_find_and_modify_opts_set_update (opts, update);
    mongoc_find_and_modify_opts_set_fields (opts, fields);
    mongoc_find_and_modify_opts_set_flags (opts, flags);
-   mongoc_find_and_modify_opts_set_write_concern (opts, collection->write_concern);
 
    ret = mongoc_collection_find_and_modify_with_opts (collection, query, opts, reply, error);
    mongoc_find_and_modify_opts_destroy (opts);

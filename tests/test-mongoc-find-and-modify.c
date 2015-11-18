@@ -83,7 +83,7 @@ test_find_and_modify_write_concern (int wire_version)
    write_concern = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (write_concern, 42);
    opts = mongoc_find_and_modify_opts_new ();
-   mongoc_find_and_modify_opts_set_write_concern (opts, write_concern);
+   mongoc_collection_set_write_concern (collection, write_concern);
    mongoc_find_and_modify_opts_set_update (opts, update);
    mongoc_find_and_modify_opts_set_flags (opts, MONGOC_FIND_AND_MODIFY_RETURN_NEW);
 
