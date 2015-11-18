@@ -65,6 +65,7 @@ struct _mongoc_cursor_t
    bson_t                     query;
    bson_t                     fields;
 
+   mongoc_read_concern_t     *read_concern;
    mongoc_read_prefs_t       *read_prefs;
 
    mongoc_query_flags_t       flags;
@@ -100,7 +101,8 @@ mongoc_cursor_t         * _mongoc_cursor_new          (mongoc_client_t          
                                                        bool                          is_command,
                                                        const bson_t                 *query,
                                                        const bson_t                 *fields,
-                                                       const mongoc_read_prefs_t    *read_prefs);
+                                                       const mongoc_read_prefs_t    *read_prefs,
+                                                       const mongoc_read_concern_t  *read_concern);
 mongoc_cursor_t         *_mongoc_cursor_clone         (const mongoc_cursor_t        *cursor);
 void                     _mongoc_cursor_destroy       (mongoc_cursor_t              *cursor);
 bool                     _mongoc_read_from_buffer     (mongoc_cursor_t              *cursor,

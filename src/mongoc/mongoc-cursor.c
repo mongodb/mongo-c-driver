@@ -23,6 +23,7 @@
 #include "mongoc-log.h"
 #include "mongoc-trace.h"
 #include "mongoc-cursor-cursorid-private.h"
+#include "mongoc-read-concern-private.h"
 #include "mongoc-util-private.h"
 
 
@@ -71,7 +72,8 @@ _mongoc_cursor_new (mongoc_client_t           *client,
                     bool                       is_command,
                     const bson_t              *query,
                     const bson_t              *fields,
-                    const mongoc_read_prefs_t *read_prefs)
+                    const mongoc_read_prefs_t *read_prefs,
+                    const mongoc_read_concern_t *read_concern)
 {
    mongoc_cursor_t *cursor;
    bson_iter_t iter;
@@ -83,6 +85,9 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    BSON_ASSERT (client);
    BSON_ASSERT (db_and_collection);
 
+   if (!read_concern) {
+      read_concern = client->read_concern;
+   }
    if (!read_prefs) {
       read_prefs = client->read_prefs;
    }
@@ -216,6 +221,10 @@ _mongoc_cursor_new (mongoc_client_t           *client,
       cursor->read_prefs = mongoc_read_prefs_copy (read_prefs);
    }
 
+   if (read_concern) {
+      cursor->read_concern = mongoc_read_concern_copy (read_concern);
+   }
+
    _mongoc_buffer_init(&cursor->buffer, NULL, 0, NULL, NULL);
 
 finish:
@@ -344,7 +353,19 @@ _mongoc_cursor_initial_query (mongoc_cursor_t *cursor)
    if (_use_find_command (cursor, server_stream)) {
       b = _mongoc_cursor_find_command (cursor);
    } else {
-      b = _mongoc_cursor_op_query (cursor, server_stream);
+      /* When the user explicitly provides a readConcern -- but the server
+       * doesn't support readConcern, we must error:
+       * https://github.com/mongodb/specifications/blob/master/source/read-write-concern/read-write-concern.rst#errors-1
+       */
+      if (cursor->read_concern->level != NULL
+          && server_stream->sd->max_wire_version < WIRE_VERSION_READ_CONCERN) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "The selected server does not support readConcern");
+      } else {
+         b = _mongoc_cursor_op_query (cursor, server_stream);
+      }
    }
 
 done:
@@ -717,6 +738,13 @@ _mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
 
    if (cursor->batch_size) {
       bson_append_int32 (command, "batchSize", 9, cursor->batch_size);
+   }
+
+   if (cursor->read_concern->level != NULL) {
+      const bson_t *read_concern_bson;
+
+      read_concern_bson = _mongoc_read_concern_get_bson (cursor->read_concern);
+      BSON_APPEND_DOCUMENT (command, "readConcern", read_concern_bson);
    }
 
    _mongoc_cursor_prepare_find_command_flags (cursor, command);
@@ -1162,6 +1190,11 @@ _mongoc_cursor_clone (const mongoc_cursor_t *cursor)
    if (cursor->read_prefs) {
       _clone->read_prefs = mongoc_read_prefs_copy (cursor->read_prefs);
    }
+
+   if (cursor->read_concern) {
+      _clone->read_concern = mongoc_read_concern_copy (cursor->read_concern);
+   }
+
 
    bson_copy_to (&cursor->query, &_clone->query);
    bson_copy_to (&cursor->fields, &_clone->fields);

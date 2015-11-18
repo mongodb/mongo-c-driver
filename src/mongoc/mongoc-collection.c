@@ -100,7 +100,8 @@ _mongoc_collection_cursor_new (mongoc_collection_t *collection,
                              false,              /* is_command */
                              NULL,               /* query */
                              NULL,               /* fields */
-                             NULL);              /* read prefs */
+                             NULL,               /* read prefs */
+                             NULL);              /* read concern */
 }
 
 static void
@@ -469,7 +470,8 @@ mongoc_collection_find (mongoc_collection_t       *collection, /* IN */
    }
 
    return _mongoc_cursor_new (collection->client, collection->ns, flags, skip,
-                             limit, batch_size, false, query, fields, read_prefs);
+                              limit, batch_size, false, query, fields, read_prefs,
+                              collection->read_concern);
 }
 
 

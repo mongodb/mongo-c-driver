@@ -1175,7 +1175,7 @@ mongoc_client_command (mongoc_client_t           *client,
    }
 
    return _mongoc_cursor_new (client, db_name, flags, skip, limit, batch_size,
-                              true, query, fields, read_prefs);
+                              true, query, fields, read_prefs, NULL);
 }
 
 
@@ -1445,7 +1445,7 @@ mongoc_client_find_databases (mongoc_client_t *client,
    BSON_APPEND_INT32 (&cmd, "listDatabases", 1);
 
    cursor = _mongoc_cursor_new (client, "admin", MONGOC_QUERY_SLAVE_OK,
-                                0, 0, 0, true, NULL, NULL, NULL);
+                                0, 0, 0, true, NULL, NULL, NULL, NULL);
 
    _mongoc_cursor_array_init (cursor, &cmd, "databases");
 
