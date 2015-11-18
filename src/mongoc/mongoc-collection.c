@@ -386,6 +386,21 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       }
    }
 
+   if (collection->read_concern->level != NULL) {
+      const bson_t *read_concern_bson;
+
+      if (selected_server->max_wire_version < WIRE_VERSION_READ_CONCERN) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "The selected server does not support readConcern");
+         GOTO (done);
+      }
+
+      read_concern_bson = _mongoc_read_concern_get_bson (collection->read_concern);
+      BSON_APPEND_DOCUMENT (&command, "readConcern", read_concern_bson);
+   }
+
    if (use_cursor) {
       _mongoc_cursor_cursorid_init (cursor, &command);
    } else {

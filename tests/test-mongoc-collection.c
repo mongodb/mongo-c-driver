@@ -2738,6 +2738,113 @@ test_find_read_concern (void)
 }
 
 
+static void
+test_aggregate_read_concern (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_read_concern_t *rc;
+   future_t *future;
+   request_t *request;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   /* No readConcern */
+   cursor = mongoc_collection_aggregate (
+      collection,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("[{'a': 1}]"),
+      NULL,
+      NULL);
+
+   ASSERT (cursor);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{"
+      "  'aggregate' : 'collection',"
+      "  'pipeline' : [{"
+      "      'a' : 1"
+      "  }],"
+      "  'cursor' : {  },"
+      "  'readConcern': { '$exists': false }"
+      "}"
+   );
+
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': 0,"
+                               "    'ns': 'db.collection',"
+                               "    'firstBatch': [{'_id': 123}]"
+                               "}}");
+
+   ASSERT (future_get_bool (future));
+   ASSERT_MATCH (doc, "{'_id': 123}");
+
+   /* cursor is completed */
+   assert (!mongoc_cursor_next (cursor, &doc));
+   mongoc_cursor_destroy (cursor);
+   request_destroy (request);
+   future_destroy (future);
+
+   /* readConcern: majority */
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_collection_set_read_concern (collection, rc);
+   cursor = mongoc_collection_aggregate (
+      collection,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("[{'a': 1}]"),
+      NULL,
+      NULL);
+
+   ASSERT (cursor);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{"
+      "  'aggregate' : 'collection',"
+      "  'pipeline' : [{"
+      "      'a' : 1"
+      "  }],"
+      "  'cursor' : {  },"
+      "  'readConcern': { 'level': 'majority'}"
+      "}"
+   );
+
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': 0,"
+                               "    'ns': 'db.collection',"
+                               "    'firstBatch': [{'_id': 123}]"
+                               "}}");
+
+   ASSERT (future_get_bool (future));
+   ASSERT_MATCH (doc, "{'_id': 123}");
+
+   /* cursor is completed */
+   assert (!mongoc_cursor_next (cursor, &doc));
+   mongoc_cursor_destroy (cursor);
+   request_destroy (request);
+   future_destroy (future);
+
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 
 void
 test_collection_install (TestSuite *suite)
@@ -2787,6 +2894,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_Add (suite, "/Collection/drop", test_drop);
    TestSuite_Add (suite, "/Collection/aggregate", test_aggregate);
    TestSuite_Add (suite, "/Collection/aggregate/large", test_aggregate_large);
+   TestSuite_Add (suite, "/Collection/aggregate/read_concern", test_aggregate_read_concern);
    TestSuite_AddFull (suite, "/Collection/aggregate/bypass_document_validation", test_aggregate_bypass, NULL, NULL, test_framework_skip_if_max_version_version_less_than_4);
    TestSuite_Add (suite, "/Collection/validate", test_validate);
    TestSuite_Add (suite, "/Collection/rename", test_rename);
