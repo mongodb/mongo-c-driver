@@ -77,6 +77,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-scram-private.h \
 	src/mongoc/mongoc-server-description.h \
 	src/mongoc/mongoc-server-description-private.h \
+	src/mongoc/mongoc-server-stream-private.h \
 	src/mongoc/mongoc-set-private.h \
 	src/mongoc/mongoc-socket.h \
 	src/mongoc/mongoc-socket-private.h \
