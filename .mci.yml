@@ -955,7 +955,7 @@ buildvariants:
 #######################################
 
 - name: solaris-32-bit
-  display_name: "Sol gcc-4.9.2 32"
+  display_name: "Sol gcc-4.8.2 32"
   expansions:
     <<: *solaris_common
     <<: *cflags_32
@@ -965,7 +965,7 @@ buildvariants:
   tasks: *topology_tests
 
 - name: solaris-64-bit
-  display_name: "Sol gcc-4.9.2 64"
+  display_name: "Sol gcc-4.8.2 64"
   expansions:
     <<: *solaris_common
     <<: *cflags_64
