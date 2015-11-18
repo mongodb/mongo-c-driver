@@ -1321,7 +1321,7 @@ test_count_read_concern (void)
    bson_destroy(&b);
    request = mock_server_receives_command (
       server, "test", MONGOC_QUERY_SLAVE_OK,
-      "{ 'count' : 'test', 'query' : {  } }");
+      "{ 'count' : 'test', 'query' : {  }, 'readConcern': { '$exists': false }}");
 
    mock_server_replies_simple (request, "{ 'n' : 46, 'ok' : 1 } ");
    count = future_get_int64_t (future);
@@ -1338,7 +1338,7 @@ test_count_read_concern (void)
    bson_destroy(&b);
    request = mock_server_receives_command (
       server, "test", MONGOC_QUERY_SLAVE_OK,
-      "{ 'count' : 'test', 'query' : {  } }");
+      "{ 'count' : 'test', 'query' : {  }, 'readConcern': { '$exists': false }}");
 
    mock_server_replies_simple (request, "{ 'n' : 47, 'ok' : 1 } ");
    count = future_get_int64_t (future);
