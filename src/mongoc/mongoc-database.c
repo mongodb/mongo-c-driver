@@ -1000,7 +1000,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The \"size\" parameter requires {\"capped\": true}");
+                            "The \"max\" parameter requires {\"capped\": true}");
             return NULL;
          }
       }
