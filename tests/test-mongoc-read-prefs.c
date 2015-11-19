@@ -637,52 +637,9 @@ test_read_prefs_mongos_tags (void)
 }
 
 
-static void
-test_mongoc_read_prefs_score (void)
-{
-#if 0
-
-   mongoc_read_prefs_t *read_prefs;
-   bool valid;
-   int score;
-
-#define ASSERT_VALID(r) \
-   valid = mongoc_read_prefs_is_valid(r); \
-   ASSERT_CMPINT(valid, ==, 1)
-
-   read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
-
-   mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY);
-   ASSERT_VALID(read_prefs);
-   score = _mongoc_read_prefs_score(read_prefs, &node);
-   ASSERT_CMPINT(score, ==, 0);
-
-   mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_PRIMARY_PREFERRED);
-   ASSERT_VALID(read_prefs);
-   score = _mongoc_read_prefs_score(read_prefs, &node);
-   ASSERT_CMPINT(score, ==, 1);
-
-   mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_SECONDARY_PREFERRED);
-   ASSERT_VALID(read_prefs);
-   score = _mongoc_read_prefs_score(read_prefs, &node);
-   ASSERT_CMPINT(score, ==, 1);
-
-   mongoc_read_prefs_set_mode(read_prefs, MONGOC_READ_SECONDARY);
-   ASSERT_VALID(read_prefs);
-   score = _mongoc_read_prefs_score(read_prefs, &node);
-   ASSERT_CMPINT(score, ==, 1);
-
-   mongoc_read_prefs_destroy(read_prefs);
-
-#undef ASSERT_VALID
-#endif
-}
-
-
 void
 test_read_prefs_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/ReadPrefs/score", test_mongoc_read_prefs_score);
    TestSuite_Add (suite, "/ReadPrefs/standalone/null",
                   test_read_prefs_standalone_null);
    TestSuite_Add (suite, "/ReadPrefs/standalone/primary",
