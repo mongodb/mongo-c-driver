@@ -4,6 +4,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-util-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -12,10 +13,6 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "mongoc-tests.h"
-
-#ifdef _WIN32
-# define strcasecmp _stricmp
-#endif
 
 
 #undef MONGOC_LOG_DOMAIN

@@ -18,12 +18,9 @@
 #include <bson.h>
 
 #include "mongoc-array-private.h"
+#include "mongoc-util-private.h"
 
 #include "test-conveniences.h"
-
-#ifdef _WIN32
-# define strcasecmp _stricmp
-#endif
 
 static bool gConveniencesInitialized = false;
 static mongoc_array_t gTmpBsonArray;

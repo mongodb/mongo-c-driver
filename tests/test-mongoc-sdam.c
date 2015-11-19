@@ -9,6 +9,7 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-util-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -22,10 +23,6 @@
 #endif
 
 #define MAX_NUM_TESTS 100
-
-#if defined(_WIN32) && !defined(strcasecmp)
-# define strcasecmp _stricmp
-#endif
 
 /* caller must clean up the returned description */
 static mongoc_server_description_t *

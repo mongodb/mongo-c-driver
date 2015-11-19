@@ -29,11 +29,6 @@
 #include "../test-libmongoc.h"
 
 
-#ifdef _WIN32
-# define strcasecmp _stricmp
-#endif
-
-
 #define TIMEOUT 100
 
 

@@ -23,6 +23,7 @@
 #include "mongoc-topology-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-util-private.h"
 
 #include "mongoc-tests.h"
 #include "TestSuite.h"
@@ -71,11 +72,6 @@ extern void test_write_concern_install           (TestSuite *suite);
 extern void test_x509_install                    (TestSuite *suite);
 extern void test_stream_tls_install              (TestSuite *suite);
 extern void test_stream_tls_error_install        (TestSuite *suite);
-#endif
-
-
-#ifdef _WIN32
-# define strcasecmp _stricmp
 #endif
 
 
