@@ -2025,7 +2025,6 @@ mongoc_collection_create_bulk_operation (
    return _mongoc_bulk_operation_new (collection->client,
                                       collection->db,
                                       collection->collection,
-                                      0,
                                       write_flags,
                                       write_concern);
 }
