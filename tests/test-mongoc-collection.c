@@ -36,6 +36,35 @@ get_test_collection (mongoc_client_t *client,
 
 
 static void
+test_copy (void)
+{
+   mongoc_database_t *database;
+   mongoc_collection_t *collection;
+   mongoc_collection_t *copy;
+   mongoc_client_t *client;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   database = get_test_database (client);
+   ASSERT (database);
+
+   collection = get_test_collection (client, "test_insert");
+   ASSERT (collection);
+
+   copy = mongoc_collection_copy(collection);
+   ASSERT (copy);
+   ASSERT (copy->client == collection->client);
+   ASSERT (strcmp(copy->ns, collection->ns) == 0);
+
+   mongoc_collection_destroy(copy);
+   mongoc_collection_destroy(collection);
+   mongoc_database_destroy(database);
+   mongoc_client_destroy(client);
+}
+
+
+static void
 test_insert (void)
 {
    mongoc_database_t *database;
@@ -2883,6 +2912,7 @@ test_collection_install (TestSuite *suite)
                   "/Collection/bulk_insert/legacy/oversized_last_continue",
                   test_legacy_bulk_insert_oversized_last_continue);
 
+   TestSuite_Add (suite, "/Collection/copy", test_copy);
    TestSuite_Add (suite, "/Collection/insert", test_insert);
    TestSuite_Add (suite, "/Collection/insert/keys", test_insert_command_keys);
    TestSuite_Add (suite, "/Collection/save", test_save);

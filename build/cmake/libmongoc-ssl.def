@@ -55,6 +55,7 @@ mongoc_client_set_write_concern
 mongoc_collection_aggregate
 mongoc_collection_command
 mongoc_collection_command_simple
+mongoc_collection_copy
 mongoc_collection_count
 mongoc_collection_count_with_opts
 mongoc_collection_create_bulk_operation
@@ -102,6 +103,7 @@ mongoc_cursor_set_max_await_time_ms
 mongoc_database_add_user
 mongoc_database_command
 mongoc_database_command_simple
+mongoc_database_copy
 mongoc_database_create_collection
 mongoc_database_destroy
 mongoc_database_drop

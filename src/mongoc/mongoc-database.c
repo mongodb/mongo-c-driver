@@ -130,6 +130,34 @@ mongoc_database_destroy (mongoc_database_t *database)
    EXIT;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_copy --
+ *
+ *       Returns a copy of @database that needs to be freed by calling
+ *       mongoc_database_destroy.
+ *
+ * Returns:
+ *       A copy of this database.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_database_t *
+mongoc_database_copy (mongoc_database_t *database)
+{
+   ENTRY;
+
+   BSON_ASSERT (database);
+
+   RETURN(_mongoc_database_new(database->client, database->name,
+                               database->read_prefs, database->read_concern,
+                               database->write_concern));
+}
 
 mongoc_cursor_t *
 mongoc_database_command (mongoc_database_t         *database,

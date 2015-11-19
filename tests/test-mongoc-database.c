@@ -4,9 +4,33 @@
 #include "test-libmongoc.h"
 #include "mongoc-tests.h"
 #include "mongoc-client-private.h"
+#include "mongoc-database-private.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 
+
+static void
+test_copy (void)
+{
+   mongoc_database_t *database;
+   mongoc_database_t *copy;
+   mongoc_client_t *client;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   database = mongoc_client_get_database (client, "test");
+   ASSERT (database);
+
+   copy = mongoc_database_copy(database);
+   ASSERT (copy);
+   ASSERT (copy->client == database->client);
+   ASSERT (strcmp(copy->name, database->name) == 0);
+
+   mongoc_database_destroy(copy);
+   mongoc_database_destroy(database);
+   mongoc_client_destroy(client);
+}
 
 static void
 test_has_collection (void)
@@ -450,6 +474,7 @@ test_get_default_database (void)
 void
 test_database_install (TestSuite *suite)
 {
+   TestSuite_Add (suite, "/Database/copy", test_copy);
    TestSuite_Add (suite, "/Database/has_collection", test_has_collection);
    TestSuite_Add (suite, "/Database/command", test_command);
    TestSuite_Add (suite, "/Database/drop", test_drop);
