@@ -85,4 +85,23 @@ pipeline_query (mongoc_collection_t *collection)
     </listing>
   </section>
 
+  <section id="options">
+    <title>Other Parameters</title>
+    <p>Pass any parameters to the <code>aggregate</code> command, besides <code>pipeline</code>, as fields in <code>options</code>:</p>
+    <listing>
+      <code mime="text/x-csrc"><![CDATA[
+pipeline = BCON_NEW ("pipeline", "[",
+                        "{", "$out", BCON_UTF8 ("collection2"), "}",
+                     "]");
+
+options = BCON_NEW ("bypassDocumentValidation", BCON_BOOL (true));
+cursor = mongoc_collection_aggregate (collection1,
+                                      MONGOC_QUERY_NONE,
+                                      pipeline,
+                                      options,
+                                      NULL);
+]]></code>
+    </listing>
+  </section>
+
 </page>
