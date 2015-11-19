@@ -78,7 +78,7 @@ struct _mongoc_client_t
    char                      *pem_subject;
 #endif
 
-   mongoc_topology_t             *topology;
+   mongoc_topology_t         *topology;
 
    mongoc_read_prefs_t       *read_prefs;
    mongoc_read_concern_t     *read_concern;
@@ -88,7 +88,7 @@ struct _mongoc_client_t
 
 mongoc_client_t *
 _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
-                             mongoc_topology_t      *topology);
+                             mongoc_topology_t  *topology);
 
 mongoc_stream_t *
 mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
