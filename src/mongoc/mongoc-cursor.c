@@ -284,6 +284,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    bson_destroy(&cursor->fields);
    _mongoc_buffer_destroy(&cursor->buffer);
    mongoc_read_prefs_destroy(cursor->read_prefs);
+   mongoc_read_concern_destroy(cursor->read_concern);
 
    bson_free(cursor);
 
