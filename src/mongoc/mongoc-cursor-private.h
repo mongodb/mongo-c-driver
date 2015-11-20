@@ -109,7 +109,6 @@ bool                     _mongoc_read_from_buffer     (mongoc_cursor_t          
                                                        const bson_t                **bson);
 bool                     _use_find_command            (const mongoc_cursor_t        *cursor,
                                                        const mongoc_server_stream_t *server_stream);
-void                     _mongoc_cursor_destroy       (mongoc_cursor_t              *cursor);
 mongoc_server_stream_t * _mongoc_cursor_fetch_stream  (mongoc_cursor_t              *cursor);
 void                     _mongoc_cursor_collection    (const mongoc_cursor_t        *cursor,
                                                        const char                  **collection,
