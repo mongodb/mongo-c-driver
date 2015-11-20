@@ -10,7 +10,6 @@ bulk3
 bulk4
 ChangeLog
 cluster1
-*.cmake
 CMakeCache.txt
 CMakeFiles
 compile

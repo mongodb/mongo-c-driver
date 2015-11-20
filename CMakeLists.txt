@@ -17,12 +17,21 @@ include(FindSASL2)
 
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
-set (MONGOC_MAJOR_VERSION 1)
-set (MONGOC_MINOR_VERSION 2)
-set (MONGOC_MICRO_VERSION 2)
-set (MONGOC_PRERELEASE_VERSION dev)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
+
+# Set MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, etc.
+include(LoadVersion)
+LoadVersion(${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
+LoadVersion(${PROJECT_SOURCE_DIR}/VERSION_RELEASED MONGOC_RELEASED)
+
+message("Current version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
+if (NOT ${MONGOC_VERSION} STREQUAL ${MONGOC_RELEASED_VERSION})
+   message("Previous release (from VERSION_RELEASED file): ${MONGOC_RELEASED_VERSION}")
+endif()
+
+set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
+
 set (MONGOC_API_VERSION 1.0)
-set (MONGOC_VERSION 1.2.2-dev)
 
 set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 set (CPACK_PACKAGE_VERSION_MAJOR ${MONGOC_MAJOR_VERSION})
@@ -42,6 +51,8 @@ else()
    set (MONGOC_ENABLE_SASL 0)
 endif ()
 set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
+
+set (MONGOC_HAVE_WEAK_SYMBOLS 0)
 
 configure_file (
    "${SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
@@ -82,8 +93,6 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-b64.c
    ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-b64.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client.c
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cluster.c
@@ -95,6 +104,7 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-cursorid.c
    ${SOURCE_DIR}/src/mongoc/mongoc-cursor-transform.c
    ${SOURCE_DIR}/src/mongoc/mongoc-database.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file.c
@@ -108,11 +118,14 @@ set (SOURCES
    ${SOURCE_DIR}/src/mongoc/mongoc-log.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.c
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher-op.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-memcmp.c
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.c
    ${SOURCE_DIR}/src/mongoc/mongoc-queue.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${SOURCE_DIR}/src/mongoc/mongoc-rpc.c
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.c
+   ${SOURCE_DIR}/src/mongoc/mongoc-server-stream.c
    ${SOURCE_DIR}/src/mongoc/mongoc-set.c
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
@@ -143,6 +156,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-database.h
    ${SOURCE_DIR}/src/mongoc/mongoc-error.h
    ${SOURCE_DIR}/src/mongoc/mongoc-flags.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file.h
    ${SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.h
@@ -155,6 +169,7 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
@@ -266,9 +281,11 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-client-pool.c
    ${SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
+   ${SOURCE_DIR}/tests/test-mongoc-collection-find.c
    ${SOURCE_DIR}/tests/test-mongoc-cursor.c
    ${SOURCE_DIR}/tests/test-mongoc-database.c
    ${SOURCE_DIR}/tests/test-mongoc-exhaust.c
+   ${SOURCE_DIR}/tests/test-mongoc-find-and-modify.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs.c
    ${SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
    ${SOURCE_DIR}/tests/test-mongoc-list.c
