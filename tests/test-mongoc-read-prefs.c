@@ -311,6 +311,8 @@ _get_uri (mock_server_t        *server,
    case READ_PREF_TEST_SECONDARY:
       mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
       break;
+   case READ_PREF_TEST_STANDALONE:
+   case READ_PREF_TEST_MONGOS:
    default:
       break;
    }
