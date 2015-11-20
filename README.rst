@@ -119,17 +119,11 @@ To build on Windows Vista or newer with Visual Studio 2010, do the following::
 Building From Git
 =================
 
-mongo-c-driver contains a copy of libbson in the case that your system does
-not already have libbson installed. The configure script will detect if
-libbson is not installed and install it too.
-
-Fetch Sources and Build
------------------------
-
 You can use the following to checkout and build mongo-c-driver::
 
   $ git clone https://github.com/mongodb/mongo-c-driver.git
   $ cd mongo-c-driver
-  $ ./autogen.sh
+  $ git checkout x.y.z  # To build a particular release
+  $ ./autogen.sh --with-libbson=bundled
   $ make
   $ sudo make install

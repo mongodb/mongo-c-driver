@@ -93,8 +93,7 @@ Libbson                                          : bundled
 Documentation:
 Generate man pages                               : no
 Install man pages                                : no</screen>
-      <p>mongo-c-driver contains a copy of libbson as a git submodule, in case your system does not already have libbson installed. The configure script will detect if libbson is not installed and use the bundled libbson.</p>
-
+      <p>mongo-c-driver contains a copy of libbson, in case your system does not already have libbson installed. The configure script will detect if libbson is not installed and use the bundled libbson.</p>
       <screen>
 $ make
 $ sudo make install
@@ -109,6 +108,14 @@ $ sudo make install
       <screen>$ sudo apt-get install git gcc automake autoconf libtool</screen>
       <p>FreeBSD:</p>
       <screen>$ su -c 'pkg install git gcc automake autoconf libtool'</screen>
+      <p>Once you have the dependencies installed, clone the repository and build the current master or a particular release tag:</p>
+      <screen>$ git clone https://github.com/mongodb/mongo-c-driver.git
+$ cd mongo-c-driver
+$ git checkout x.y.z  # To build a particular release
+$ ./autogen.sh --with-libbson=bundled
+$ make
+$ sudo make install
+      </screen>
     </section>
     <section id="unix-build-docs">
       <title>Generating the documentation</title>
