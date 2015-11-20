@@ -23,7 +23,7 @@ EOF
 fi
 
 echo "
-libmongoc was configured with the following options:
+libmongoc $MONGOC_VERSION was configured with the following options:
 
 Build configuration:
   Enable debugging (slow)                          : ${enable_debug}

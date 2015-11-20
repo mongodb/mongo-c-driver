@@ -62,7 +62,7 @@ AC_ARG_ENABLE([rdtscp],
               [enable_rdtscp=no])
 
 # use strict compiler flags only on development releases
-m4_define([maintainer_flags_default], [m4_if(m4_eval(mongoc_minor_version % 2), [1], [yes], [no])])
+m4_define([maintainer_flags_default], [m4_ifset([MONGOC_PRERELEASE_VERSION], [yes], [no])])
 AC_ARG_ENABLE([maintainer-flags],
               [AS_HELP_STRING([--enable-maintainer-flags=@<:@no/yes@:>@],
                               [Use strict compiler flags @<:@default=]maintainer_flags_default[@:>@])],

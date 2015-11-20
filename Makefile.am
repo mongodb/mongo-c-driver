@@ -46,7 +46,9 @@ EXTRA_DIST += $(mongocdoc_DATA)
 
 EXTRA_DIST += \
 	CMakeLists.txt \
-	CONTRIBUTING.md
+	CONTRIBUTING.md \
+	VERSION_CURRENT \
+	VERSION_RELEASED
 
 dist-hook:
 	@if test -d "$(srcdir)/.git"; then                              \
