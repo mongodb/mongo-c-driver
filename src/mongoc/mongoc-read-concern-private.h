@@ -22,7 +22,7 @@
 #endif
 
 #include <bson.h>
-#include <mongoc-read-concern.h>
+#include "mongoc-read-concern.h"
 
 
 BSON_BEGIN_DECLS
