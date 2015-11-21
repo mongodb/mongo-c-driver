@@ -87,7 +87,7 @@ Building the Driver from Source
 ===============================
 
 Detailed installation instructions are in the manual:
-http://api.mongodb.org/mongo-c-driver/current/installing.html
+http://api.mongodb.org/c/current/installing.html
 
 From a tarball
 --------------
