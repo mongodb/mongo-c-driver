@@ -119,7 +119,7 @@ c_driver_variables:
           df -h
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
-          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000
+          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=0.0.0.0
           curl -s http://localhost:8889/
       start_topology_command: &start_topology_command
         start_topology: |
