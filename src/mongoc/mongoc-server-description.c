@@ -299,6 +299,7 @@ mongoc_server_description_handle_ismaster (
    bool is_secondary = false;
    bool is_arbiter = false;
    bool is_replicaset = false;
+   bool is_hidden = false;
    const uint8_t *bytes;
    uint32_t len;
    int num_keys = 0;
@@ -374,13 +375,17 @@ mongoc_server_description_handle_ismaster (
          if (! BSON_ITER_HOLDS_DOCUMENT (&iter)) goto failure;
          bson_iter_document (&iter, &len, &bytes);
          bson_init_static (&sd->tags, bytes, len);
+      } else if (strcmp ("hidden", bson_iter_key (&iter)) == 0) {
+         is_hidden = bson_iter_bool (&iter);
       }
    }
 
    if (is_shard) {
       sd->type = MONGOC_SERVER_MONGOS;
    } else if (sd->set_name) {
-      if (is_master) {
+      if (is_hidden) {
+         sd->type = MONGOC_SERVER_RS_OTHER;
+      } else if (is_master) {
          sd->type = MONGOC_SERVER_RS_PRIMARY;
       } else if (is_secondary) {
          sd->type = MONGOC_SERVER_RS_SECONDARY;
