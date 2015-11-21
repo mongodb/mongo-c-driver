@@ -2,18 +2,38 @@ cmake_minimum_required(VERSION 2.8)
 
 project (libmongoc)
 
-option(SEARCH_OPEN_SSL "SEARCH_OPEN_SSL" ON)
+option(ENABLE_SSL
+       "Use OpenSSL for TLS connections and SCRAM-SHA-1 authentication.\
+NOTE: OpenSSL is required for authenticating to MongoDB 3.0 and later."
+       ON)
+
+option(ENABLE_SASL "Use Cyrus SASL library for Kerberos." ON)
+option(ENABLE_TESTS "Build MongoDB C Driver tests." ON)
+option(ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 
 include(InstallRequiredSystemLibraries)
+include(FindBSON REQUIRED)
 
-if (SEARCH_OPEN_SSL)
+if (ENABLE_SSL)
     include(FindOpenSSL)
 endif ()
+if (ENABLE_SSL AND OPENSSL_FOUND)
+   set (MONGOC_ENABLE_SSL 1)
+else ()
+   set (MONGOC_ENABLE_SSL 0)
+endif ()
 
-include(FindBSON REQUIRED)
-include(FindSASL2)
+if (ENABLE_SASL)
+   include(FindSASL2)
+endif ()
+if (ENABLE_SASL AND SASL2_FOUND)
+   set (MONGOC_ENABLE_SASL 1)
+else ()
+   set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
+   set (MONGOC_ENABLE_SASL 0)
+endif ()
 
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
@@ -38,19 +58,6 @@ set (CPACK_PACKAGE_VERSION_MAJOR ${MONGOC_MAJOR_VERSION})
 set (CPACK_PACKAGE_VERSION_MINOR ${MONGOC_MINOR_VERSION})
 
 include (CPack)
-
-if (SEARCH_OPEN_SSL AND OPENSSL_FOUND)
-   set (MONGOC_ENABLE_SSL 1)
-else()
-   set (MONGOC_ENABLE_SSL 0)
-endif ()
-
-if (SASL2_FOUND)
-   set (MONGOC_ENABLE_SASL 1)
-else()
-   set (MONGOC_ENABLE_SASL 0)
-endif ()
-set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
 
 set (MONGOC_HAVE_WEAK_SYMBOLS 0)
 
@@ -199,7 +206,7 @@ if (OPENSSL_FOUND)
    include_directories(${OPENSSL_INCLUDE_DIR})
 endif()
 
-if (SASL2_FOUND)
+if (MONGOC_ENABLE_SASL)
    set (HEADERS ${HEADERS} ${SOURCE_DIR}/src/mongoc/mongoc-sasl-private.h)
    set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sasl.c)
    set(LIBS ${LIBS} ${SASL2_LIBRARY})
@@ -207,7 +214,7 @@ if (SASL2_FOUND)
 endif()
 
 if (MSVC)
-   if (OPENSSL_FOUND)
+   if (MONGOC_ENABLE_SSL)
       set(MONGOC_SHARED_SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc-ssl.def)
    else ()
       set(MONGOC_SHARED_SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/build/cmake/libmongoc.def)
@@ -230,33 +237,36 @@ set_target_properties(mongoc_static PROPERTIES VERSION ${MONGOC_VERSION} SOVERSI
 
 set_target_properties(mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API_VERSION}" PREFIX "lib")
 set_target_properties(mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
-enable_testing()
 
 function(mongoc_add_test test use_shared)
-   add_executable(${test} ${ARGN})
-   if (${use_shared})
-      target_link_libraries(${test} mongoc_shared)
-   else()
-      set_target_properties(${test} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
-      target_link_libraries(${test} mongoc_static)
-   endif()
-   if(WIN32)
-      target_link_libraries(${test} shlwapi)
+   if (ENABLE_TESTS)
+      add_executable(${test} ${ARGN})
+      if (${use_shared})
+         target_link_libraries(${test} mongoc_shared)
+      else()
+         set_target_properties(${test} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
+         target_link_libraries(${test} mongoc_static)
+      endif()
+      if(WIN32)
+         target_link_libraries(${test} shlwapi)
+      endif()
    endif()
 endfunction()
 
 function(mongoc_add_example example use_shared)
-   add_executable(${example} ${ARGN})
-   if (${use_shared})
-      target_link_libraries(${example} mongoc_shared)
-   else()
-      set_target_properties(${example} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
-      target_link_libraries(${example} mongoc_static)
-   endif()
-   if(WIN32)
-      target_link_libraries(${example} shlwapi)
-   endif()
-   set (EXAMPLES ${EXAMPLES} ${example})
+   if (ENABLE_EXAMPLES)
+      add_executable(${example} ${ARGN})
+      if (${use_shared})
+         target_link_libraries(${example} mongoc_shared)
+      else()
+         set_target_properties(${example} PROPERTIES COMPILE_DEFINITIONS "MONGOC_COMPILATION")
+         target_link_libraries(${example} mongoc_static)
+      endif()
+      if(WIN32)
+         target_link_libraries(${example} shlwapi)
+      endif()
+      set (EXAMPLES ${EXAMPLES} ${example})
+   endif ()
 endfunction()
 
 set(test-libmongoc-sources
@@ -313,7 +323,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/TestSuite.c
 )
 
-if (SEARCH_OPEN_SSL AND OPENSSL_FOUND)
+if (MONGOC_ENABLE_SSL)
    set(test-libmongoc-sources ${test-libmongoc-sources}
       ${SOURCE_DIR}/tests/test-x509.c
       ${SOURCE_DIR}/tests/ssl-test.c
@@ -342,7 +352,11 @@ mongoc_add_test(test-sharded-cluster FALSE
    ${SOURCE_DIR}/tests/ha-test.c)
 
 mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
-add_test(NAME test-libmongoc COMMAND test-libmongoc -f -p)
+
+if (ENABLE_TESTS)
+   enable_testing()
+   add_test(NAME test-libmongoc COMMAND test-libmongoc -f -p)
+endif ()
 
 mongoc_add_example(example-gridfs TRUE ${SOURCE_DIR}/examples/example-gridfs.c)
 mongoc_add_example(example-client TRUE ${SOURCE_DIR}/examples/example-client.c)

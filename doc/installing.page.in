@@ -184,6 +184,7 @@ $ make man html</screen>
     <screen>cd mongo-c-driver-@MONGOC_RELEASED_VERSION@\src\libbson
 cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</screen>
 
+    <p>(Run <code>cmake -LH .</code> for a list of other options.)</p>
     <p>Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program <code>msbuild.exe</code></p>
 
     <screen>msbuild.exe ALL_BUILD.vcxproj</screen>

@@ -152,12 +152,13 @@ c_driver_variables:
           git submodule init
           git submodule update
           cd src/libbson
+          echo "GENERATOR: $GENERATOR, CMAKE_DEFS: $CMAKE_DEFS"
           "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
           "$MSBUILD" /m ALL_BUILD.vcxproj
           "$dumpbin" /HEADERS Debug/libbson-1.0.dll | head -n 25
           "$MSBUILD" /m INSTALL.vcxproj
           cd ../..
-          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" "$CMAKE_DEFS"
+          "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver" "-DBSON_ROOT_DIR=C:/mongo-c-driver" $CMAKE_DEFS
           "$MSBUILD" /m ALL_BUILD.vcxproj
           "$dumpbin" /HEADERS Debug/mongoc-1.0.lib | head -n 25
           "$MSBUILD" /m INSTALL.vcxproj
@@ -218,32 +219,32 @@ c_driver_variables:
   windows_compilers:
     msvc2010_32bit: &with_msvc2010_32bit
       generator: Visual Studio 10 2010
-      cmake_defs: "-DSEARCH_OPEN_SSL:BOOL=OFF"
+      # Evergreen builders only have 64-bit SSL and SASL available.
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
       msbuild: /cygdrive/c/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe
     msvc2010: &with_msvc2010
       <<: *username_password_common
       generator: Visual Studio 10 2010 Win64
-      cmake_defs: "-DCMAKE_INCLUDE_PATH=C:/sasl/include -DCMAKE_LIBRARY_PATH=C:/sasl/lib"
       msbuild: /cygdrive/c/Windows/Microsoft.NET/Framework64/v4.0.30319/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
     msvc2013_32bit: &with_msvc2013_32bit
       generator: Visual Studio 12 2013
-      cmake_defs: "-DSEARCH_OPEN_SSL:BOOL=OFF"
+      # Evergreen builders only have 64-bit SSL and SASL available.
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
     msvc2013: &with_msvc2013
       <<: *username_password_common
       generator: Visual Studio 12 2013 Win64
-      cmake_defs: "-DCMAKE_INCLUDE_PATH=C:/sasl/include -DCMAKE_LIBRARY_PATH=C:/sasl/lib"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
     msvc2015_32bit: &with_msvc2015_32bit
       generator: Visual Studio 14 2015
-      cmake_defs: "-DSEARCH_OPEN_SSL:BOOL=OFF"
+      # Evergreen builders only have 64-bit SSL and SASL available.
+      cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
     msvc2015: &with_msvc2015
       <<: *username_password_common
       generator: Visual Studio 14 2015 Win64
-      cmake_defs: "-DCMAKE_INCLUDE_PATH=C:/sasl/include -DCMAKE_LIBRARY_PATH=C:/sasl/lib"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
 
