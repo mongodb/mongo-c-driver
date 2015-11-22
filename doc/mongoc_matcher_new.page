@@ -22,6 +22,11 @@ mongoc_matcher_new (const bson_t *query,
     <p>Create a new <code xref="mongoc_matcher_t">mongoc_matcher_t</code> using the query specification provided.</p>
   </section>
 
+  <section id="deprecated">
+    <title>Deprecated</title>
+    <note style="warning"><p><code>mongoc_matcher_t</code> is deprecated and will be removed in version 2.0.</p></note>
+  </section>
+
   <section id="parameters">
     <title>Parameters</title>
     <table>

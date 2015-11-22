@@ -56,6 +56,8 @@ New features and changes:
  * Use constant-time comparision when verifying credentials
  * Combine environment's CFLAGS with configure options when building.
  * Improved man page output and "whatis" entries
+ * The client side matching feature, mongoc_matcher_t and related functions,
+   are deprecated and scheduled for removal in version 2.0.
 
 Extensive bugfixes and improvements in GridFS, including:
 

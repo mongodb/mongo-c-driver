@@ -6,6 +6,7 @@
 
 #include "TestSuite.h"
 
+BEGIN_IGNORE_DEPRECATIONS;
 
 static void
 test_mongoc_matcher_basic (void)
@@ -533,6 +534,7 @@ test_mongoc_matcher_in_basic (void)
    mongoc_matcher_destroy (matcher);
 }
 
+END_IGNORE_DEPRECATIONS;
 
 void
 test_matcher_install (TestSuite *suite)

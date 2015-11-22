@@ -22,6 +22,11 @@
     <note style="warning"><p><code>mongoc_matcher_t</code> does not currently support the full spectrum of query operations that the MongoDB server supports.</p></note>
   </section>
 
+  <section id="deprecated">
+    <title>Deprecated</title>
+    <note style="warning"><p><code>mongoc_matcher_t</code> is deprecated and will be removed in version 2.0.</p></note>
+  </section>
+
   <links type="topic" groups="function" style="2column">
     <title>Functions</title>
   </links>
