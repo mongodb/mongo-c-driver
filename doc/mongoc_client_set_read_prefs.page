@@ -17,6 +17,7 @@ mongoc_client_set_read_prefs (mongoc_client_t           *client,
                               const mongoc_read_prefs_t *read_prefs);]]></code></synopsis>
     <p>Sets the default read preferences to use with future operations upon <code>client</code>.</p>
     <p>The global default is to read from the replica set primary.</p>
+    <p>It is a programming error to call this function on a client from a <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code>. For pooled clients, set the read preferences with the <link xref="mongoc_uri_t#read-prefs-options">MongoDB URI</link> instead.</p>
 	<p>Please see the MongoDB website for a description of <link href="http://docs.mongodb.org/manual/core/read-preference/">Read Preferences</link>.</p>
   </section>
 
