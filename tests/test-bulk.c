@@ -886,8 +886,12 @@ test_upsert_large ()
    bson_t *sel = tmp_bson ("{'_id': 1}");
    bson_t doc = BSON_INITIALIZER;
    bson_t child = BSON_INITIALIZER;
+   bson_t query = BSON_INITIALIZER;
+   const bson_t *retdoc;
    bson_error_t error;
    bson_t reply;
+   mongoc_cursor_t *cursor;
+   int ok = 0;
 
    client = test_framework_client_new ();
    assert (client);
@@ -919,8 +923,28 @@ test_upsert_large ()
    check_n_modified (has_write_cmds, &reply, 0);
    ASSERT_COUNT (1, collection);
 
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0,
+                                    0,
+                                    0,
+                                    &query,
+                                    NULL,
+                                    NULL);
+   while (mongoc_cursor_next (cursor, &retdoc)) {
+      ok++;
+   }
+   ASSERT_CMPINT (ok, ==, 1);
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      fprintf (stderr, "ERROR: %s\n", error.message);
+      ASSERT (false);
+   }
+
+   bson_destroy (&query);
    bson_destroy (&reply);
    bson_destroy (&doc);
+   mongoc_cursor_destroy (cursor);
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -1965,6 +1989,10 @@ test_large_inserts_ordered (void)
    bson_t *big_doc;
    bson_iter_t iter;
    int i;
+   const bson_t *retdoc;
+   bson_t query = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor;
+   int ok = 0;
 
    client = test_framework_client_new ();
    assert (client);
@@ -2008,6 +2036,26 @@ test_large_inserts_ordered (void)
    check_n_modified (has_write_cmds, &reply, 0);
    ASSERT_COUNT (1, collection);
 
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0,
+                                    0,
+                                    0,
+                                    &query,
+                                    NULL,
+                                    NULL);
+   while (mongoc_cursor_next (cursor, &retdoc)) {
+      ok++;
+   }
+
+   ASSERT_CMPINT (ok, ==, 1);
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      fprintf (stderr, "ERROR: %s\n", error.message);
+      ASSERT (false);
+   }
+
+   bson_destroy (&query);
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
                              NULL, NULL);
 
@@ -2051,6 +2099,10 @@ test_large_inserts_unordered ()
    bson_t *big_doc;
    bson_iter_t iter;
    int i;
+   const bson_t *retdoc;
+   bson_t query = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor;
+   int ok = 0;
 
    client = test_framework_client_new ();
    assert (client);
@@ -2089,6 +2141,26 @@ test_large_inserts_unordered ()
 
    ASSERT_COUNT (2, collection);
 
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_NONE,
+                                    0,
+                                    0,
+                                    0,
+                                    &query,
+                                    NULL,
+                                    NULL);
+   while (mongoc_cursor_next (cursor, &retdoc)) {
+      ok++;
+   }
+
+   ASSERT_CMPINT (ok, ==, 2);
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      fprintf (stderr, "ERROR: %s\n", error.message);
+      ASSERT (false);
+   }
+
+   bson_destroy (&query);
    mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
                              NULL, NULL);
 
