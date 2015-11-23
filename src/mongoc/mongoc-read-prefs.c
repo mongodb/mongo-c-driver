@@ -211,7 +211,7 @@ _apply_read_preferences_mongos (const mongoc_read_prefs_t *read_prefs,
 
       if (bson_has_field (query_bson, "$query")) {
          bson_concat (result->query_with_read_prefs, query_bson);
-      } else if (!bson_empty (query_bson)) {
+      } else {
          bson_append_document (result->query_with_read_prefs,
                                "$query", 6, query_bson);
       }

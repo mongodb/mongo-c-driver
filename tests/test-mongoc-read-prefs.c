@@ -554,7 +554,7 @@ test_read_prefs_mongos_secondary (void)
 
    _test_read_prefs (
       READ_PREF_TEST_MONGOS, read_prefs, "{}",
-      "{'$readPreference': {'mode': 'secondary'}}",
+      "{'$query': {}, '$readPreference': {'mode': 'secondary'}}",
       MONGOC_QUERY_SLAVE_OK,
       "{'$query': {'find': 'test', 'filter':  {}},"
       " '$readPreference': {'mode': 'secondary'}}",
@@ -616,8 +616,8 @@ test_read_prefs_mongos_tags (void)
 
    _test_read_prefs (
       READ_PREF_TEST_MONGOS, read_prefs, "{}",
-      "{'$readPreference': {'mode': 'secondaryPreferred',"
-      "                     'tags': [{'dc': 'ny'}, {}]}}",
+      "{'$query': {}, '$readPreference': {'mode': 'secondaryPreferred',"
+      "                                   'tags': [{'dc': 'ny'}, {}]}}",
       MONGOC_QUERY_SLAVE_OK,
       "{'$query': {'find': 'test', 'filter':  {}},"
       " '$readPreference': {'mode': 'secondaryPreferred',"
