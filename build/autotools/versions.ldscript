@@ -266,7 +266,6 @@ LIBMONGOC_1.2 {
 LIBMONGOC_1.3 {
     global:
         mongoc_bulk_operation_set_bypass_document_validation;
-        mongoc_bulk_operation_set_flags;
         mongoc_collection_find_and_modify_with_opts;
         mongoc_client_get_read_concern;
         mongoc_client_set_read_concern;

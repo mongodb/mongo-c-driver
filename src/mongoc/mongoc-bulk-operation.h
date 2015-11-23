@@ -80,8 +80,6 @@ void                          mongoc_bulk_operation_set_client        (mongoc_bu
                                                                        void                          *client);
 void                          mongoc_bulk_operation_set_hint          (mongoc_bulk_operation_t       *bulk,
                                                                        uint32_t                       hint);
-void                          mongoc_bulk_operation_set_flags         (mongoc_bulk_operation_t       *bulk,
-                                                                       mongoc_bulk_write_flags_t      flags);
 const mongoc_write_concern_t *mongoc_bulk_operation_get_write_concern (const mongoc_bulk_operation_t *bulk);
 
 BSON_END_DECLS

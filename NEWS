@@ -35,7 +35,6 @@ New features and changes:
  * Support for MongoDB 3.2's "bypassDocumentValidation" option for writes.
  * New struct mongoc_bulk_write_flags_t and related functions:
    - mongoc_bulk_operation_set_bypass_document_validation
-   - mongoc_bulk_operation_set_flags
  * New struct mongoc_find_and_modify_opts_t and related functions:
    - mongoc_find_and_modify_opts_new
    - mongoc_find_and_modify_opts_destroy
