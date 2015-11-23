@@ -421,8 +421,8 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t       *command,
 
    current_offset = offset;
 
-   max_bson_obj_size = mongoc_stream_max_bson_obj_size (server_stream);
-   max_msg_size = mongoc_stream_max_msg_size (server_stream);
+   max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
+   max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
    singly = !command->u.insert.allow_bulk_op_insert;
 
@@ -809,8 +809,8 @@ _mongoc_write_command(mongoc_write_command_t       *command,
    BSON_ASSERT (server_stream);
    BSON_ASSERT (collection);
 
-   max_bson_obj_size = mongoc_stream_max_bson_obj_size (server_stream);
-   max_write_batch_size = mongoc_stream_max_write_batch_size (server_stream);
+   max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
+   max_write_batch_size = mongoc_server_stream_max_write_batch_size (server_stream);
 
    /*
     * If we have an unacknowledged write and the server supports the legacy

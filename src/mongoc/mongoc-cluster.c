@@ -2158,7 +2158,7 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
       need_gle = _mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
 
-      max_msg_size = mongoc_stream_max_msg_size (server_stream);
+      max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
 
       if (rpcs[i].header.msg_len > max_msg_size) {
          bson_set_error(error,
@@ -2294,7 +2294,7 @@ mongoc_cluster_try_recv (mongoc_cluster_t       *cluster,
     */
    memcpy (&msg_len, &buffer->data[buffer->off + pos], 4);
    msg_len = BSON_UINT32_FROM_LE (msg_len);
-   max_msg_size = mongoc_stream_max_msg_size (server_stream);
+   max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
    if ((msg_len < 16) || (msg_len > max_msg_size)) {
       bson_set_error (error,
                       MONGOC_ERROR_PROTOCOL,
