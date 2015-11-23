@@ -2530,6 +2530,7 @@ test_bulk_write_concern_over_1000(void)
    char *str;
    bson_t *query;
    const bson_t *result;
+   bool r;
 
    client = test_framework_client_new ();
    assert (client);
@@ -2565,19 +2566,19 @@ test_bulk_write_concern_over_1000(void)
    query = bson_new();
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
 
-    success = mongoc_cursor_next (cursor, &result);
-    if (!success) {
-       mongoc_cursor_error(cursor, &error);
-       fprintf(stderr, "%s", error.message);
-    }
-    assert(success);
+   r = mongoc_cursor_next (cursor, &result);
+   if (!r) {
+      mongoc_cursor_error(cursor, &error);
+      fprintf(stderr, "%s", error.message);
+   }
+   assert(r);
 
-    bson_destroy (query);
-    mongoc_cursor_destroy (cursor);
-    mongoc_bulk_operation_destroy(bulk);
-    mongoc_collection_destroy (collection);
-    mongoc_client_destroy (client);
-    mongoc_write_concern_destroy (write_concern);
+   bson_destroy (query);
+   mongoc_cursor_destroy (cursor);
+   mongoc_bulk_operation_destroy(bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mongoc_write_concern_destroy (write_concern);
 }
 
 

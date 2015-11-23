@@ -626,8 +626,8 @@ int64_t
 mongoc_collection_count (mongoc_collection_t       *collection,  /* IN */
                          mongoc_query_flags_t       flags,       /* IN */
                          const bson_t              *query,       /* IN */
-                         int64_t               skip,        /* IN */
-                         int64_t               limit,       /* IN */
+                         int64_t                    skip,        /* IN */
+                         int64_t                    limit,       /* IN */
                          const mongoc_read_prefs_t *read_prefs,  /* IN */
                          bson_error_t              *error)       /* OUT */
 {
