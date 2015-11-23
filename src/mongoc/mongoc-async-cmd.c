@@ -24,6 +24,7 @@
 #include "mongoc-opcode.h"
 #include "mongoc-rpc-private.h"
 #include "mongoc-stream-private.h"
+#include "mongoc-server-description-private.h"
 #include "utlist.h"
 
 #ifdef MONGOC_ENABLE_SSL
@@ -327,7 +328,7 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
       memcpy (&msg_len, acmd->buffer.data, 4);
       msg_len = BSON_UINT32_FROM_LE (msg_len);
 
-      if ((msg_len < 16) || (msg_len > (1024 * 1024 * 16))) {
+      if ((msg_len < 16) || (msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
          bson_set_error (&acmd->error, MONGOC_ERROR_PROTOCOL,
                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                          "Invalid reply from server.");

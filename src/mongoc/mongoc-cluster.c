@@ -173,7 +173,7 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t    *cluster,
 
    memcpy (&msg_len, buffer->data, 4);
    msg_len = BSON_UINT32_FROM_LE(msg_len);
-   if ((msg_len < 16) || (msg_len > (1024 * 1024 * 16))) {
+   if ((msg_len < 16) || (msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
       GOTO (done);
    }
 
