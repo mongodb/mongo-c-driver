@@ -1039,6 +1039,14 @@ test_ssl_pooled (void)
 {
    _test_mongoc_client_ssl_opts (true);
 }
+#else
+/* MONGOC_ENABLE_SSL is not defined */
+static void
+test_mongoc_client_ssl_disabled (void)
+{
+   suppress_one_message ();
+   ASSERT (NULL == mongoc_client_new ("mongodb://host/?ssl=true"));
+}
 #endif
 
 
@@ -1085,5 +1093,7 @@ test_client_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_Add (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_Add (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
+#else
+   TestSuite_Add (suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
 #endif
 }

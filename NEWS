@@ -1,3 +1,11 @@
+NEXT RELEASE
+============
+
+ * If the driver is compiled without SSL support but a URI with "ssl=true"
+   is passed to mongoc_client_new, mongoc_client_new_from_uri, or
+   mongoc_client_pool_new, the function logs an error and returns NULL. Before,
+   the driver would attempt a non-SSL connection.
+
 mongo-c-driver 1.3.0
 ====================
 

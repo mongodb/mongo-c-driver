@@ -726,6 +726,13 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
 
    BSON_ASSERT (uri);
 
+#ifndef MONGOC_ENABLE_SSL
+   if (mongoc_uri_get_ssl (uri)) {
+      MONGOC_ERROR ("Can't create SSL client, SSL not enabled in this build.");
+      return NULL;
+   }
+#endif
+
    client = (mongoc_client_t *)bson_malloc0(sizeof *client);
    client->uri = mongoc_uri_copy (uri);
    client->request_id = rand ();
