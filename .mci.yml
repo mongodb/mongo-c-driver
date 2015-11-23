@@ -104,22 +104,22 @@ c_driver_variables:
     mongo_orchestration:
       windows: &mongo_orchestration_windows
         start_mongo_orchestration: |
-          trap 'set +o errexit; cat server.log; mongo-orchestration stop;' EXIT
+          trap 'set +o errexit; cat server.log; mongo-orchestration --pidfile c:\\mo.pid stop;' EXIT
           taskkill.exe /FI "IMAGENAME eq python.exe" /F
           taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
           fsutil volume diskfree c:
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
-          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000
+          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000 --enable-majority-read-concern --pidfile c:\\mo.pid
           sleep 10
           curl -s http://localhost:8889/
       unix: &mongo_orchestration_unix
         start_mongo_orchestration: |
-          trap 'set +o errexit; cat server.log; mongo-orchestration stop;' EXIT
+          trap 'set +o errexit; cat server.log; mongo-orchestration --pidfile /data/mo.pid stop;' EXIT
           df -h
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
-          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=0.0.0.0
+          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=0.0.0.0  --enable-majority-read-concern --pidfile /data/mo.pid
           curl -s http://localhost:8889/
       start_topology_command: &start_topology_command
         start_topology: |
@@ -185,10 +185,12 @@ c_driver_variables:
           touch tests/trust_dir/done
           export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
+          export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
           ./Debug/test-libmongoc.exe -d -f -p
       unix: &run_integration_tests_unix
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
+          export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
           make TEST_ARGS="-f -p -d" check
 
 ## Other OS-specific attributes, grouped by OS
@@ -462,7 +464,7 @@ post:
       params:
         working_dir: "mongo-c-driver"
         script: |
-            mongo-orchestration stop
+            mongo-orchestration --pidfile /data/mo.pid stop
             pkill -9 mongo-orchestration; pkill -9 mongod; pkill -9 mongos;
             rm -rf /tmp/mongo* /data/db
             cat server.log
