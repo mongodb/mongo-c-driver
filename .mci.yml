@@ -124,9 +124,9 @@ c_driver_variables:
       start_topology_command: &start_topology_command
         start_topology: |
           curl -s --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL"
-          ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.serverBuildInfo())'
-          ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.adminCommand({getCmdLineOpts:1}))'
-          ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())'
+          ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.serverBuildInfo())' admin
+          ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.adminCommand({getCmdLineOpts:1}))' admin
+          ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())' admin
 
     compile:
       unix: &compile_unix
@@ -167,11 +167,12 @@ c_driver_variables:
         set_username_password: |
           export MONGOC_TEST_USER=bob
           export MONGOC_TEST_PASSWORD=pwd123
+          export MONGO_SHELL_CONNECTION_FLAGS="-ubob -ppwd123"
 
     connection_flags:
       ssl: &connection_flags_ssl
         set_connection_flags: |
-          export MONGO_SHELL_CONNECTION_FLAGS="--ssl --sslCAFile=/tmp/mongoc-test-certificates/ca.pem"
+          export MONGO_SHELL_CONNECTION_FLAGS="$MONGO_SHELL_CONNECTION_FLAGS --ssl --sslCAFile=/tmp/mongoc-test-certificates/ca.pem"
           export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION=on
           export MONGOC_TEST_SSL_PEM_FILE=/tmp/mongoc-test-certificates/client.pem
           export MONGOC_TEST_SSL_CA_FILE=/tmp/mongoc-test-certificates/ca.pem
