@@ -252,6 +252,37 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_collection_copy --
+ *
+ *       Returns a copy of @collection that needs to be freed by calling
+ *       mongoc_collection_destroy.
+ *
+ * Returns:
+ *       A copy of this collection.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_collection_t *
+mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
+{
+   ENTRY;
+
+   BSON_ASSERT (collection);
+
+   RETURN(_mongoc_collection_new(collection->client, collection->db,
+                                 collection->collection, collection->read_prefs,
+                                 collection->read_concern,
+                                 collection->write_concern));
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_collection_aggregate --
  *
  *       Send an "aggregate" command to the MongoDB server.

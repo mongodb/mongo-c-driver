@@ -49,6 +49,7 @@ bool                          mongoc_database_add_user             (mongoc_datab
                                                                     const bson_t                 *custom_data,
                                                                     bson_error_t                 *error);
 void                          mongoc_database_destroy              (mongoc_database_t            *database);
+mongoc_database_t            *mongoc_database_copy                 (mongoc_database_t            *database);
 mongoc_cursor_t              *mongoc_database_command              (mongoc_database_t            *database,
                                                                     mongoc_query_flags_t          flags,
                                                                     uint32_t                      skip,
