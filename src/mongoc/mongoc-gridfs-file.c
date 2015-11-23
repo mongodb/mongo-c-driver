@@ -691,9 +691,6 @@ _mongoc_gridfs_file_keep_cursor (mongoc_gridfs_file_t *file)
  *    Note that this fetch is unconditional and the page is queried from the
  *    database even if the current page covers the same theoretical chunk.
  *
- * Preconditions:
- *
- *    file->pos is nonnegative.
  *
  * Side Effects:
  *
@@ -718,7 +715,6 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
    ENTRY;
 
    BSON_ASSERT (file);
-   BSON_ASSERT (file->pos >= 0);
 
    file->n = (int32_t)(file->pos / file->chunk_size);
 
