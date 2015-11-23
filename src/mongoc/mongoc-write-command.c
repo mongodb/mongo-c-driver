@@ -326,7 +326,10 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
             EXIT;
          }
 
-         _mongoc_write_result_merge_legacy (result, command, gle, offset);
+         _mongoc_write_result_merge_legacy (
+            result, command, gle,
+            MONGOC_ERROR_COLLECTION_DELETE_FAILED, offset);
+
          offset++;
          bson_destroy (gle);
       }
@@ -470,8 +473,9 @@ again:
          too_large_error (error, idx, len,
                           max_bson_obj_size, &write_err_doc);
 
-         _mongoc_write_result_merge_legacy (result, command,
-                                            &write_err_doc, offset + idx);
+         _mongoc_write_result_merge_legacy (
+            result, command, &write_err_doc,
+            MONGOC_ERROR_COLLECTION_INSERT_FAILED, offset + idx);
 
          bson_destroy (&write_err_doc);
 
@@ -541,7 +545,10 @@ again:
 cleanup:
 
    if (gle) {
-      _mongoc_write_result_merge_legacy (result, command, gle, current_offset);
+      _mongoc_write_result_merge_legacy (
+         result, command, gle, MONGOC_ERROR_COLLECTION_INSERT_FAILED,
+         current_offset);
+
       current_offset = offset + idx;
       bson_destroy (gle);
       gle = NULL;
@@ -747,7 +754,10 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
             }
          }
 
-         _mongoc_write_result_merge_legacy (result, command, gle, offset);
+         _mongoc_write_result_merge_legacy (
+            result, command, gle,
+            MONGOC_ERROR_COLLECTION_UPDATE_FAILED, offset);
+
          offset++;
          bson_destroy (gle);
       }
@@ -1044,6 +1054,7 @@ void
 _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
                                    mongoc_write_command_t *command, /* IN */
                                    const bson_t           *reply,   /* IN */
+                                   mongoc_error_code_t     default_code,
                                    uint32_t                offset)
 {
    const bson_value_t *value;
@@ -1076,7 +1087,15 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
       code = bson_iter_int32 (&iter);
    }
 
-   if (code && err) {
+   if (code || err) {
+      if (!code) {
+         code = default_code;
+      }
+
+      if (!err) {
+         err = "unknown error";
+      }
+
       bson_set_error (&result->error,
                       MONGOC_ERROR_COLLECTION,
                       code,

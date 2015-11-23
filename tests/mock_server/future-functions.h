@@ -95,6 +95,17 @@ future_collection_find_and_modify (
 
 
 future_t *
+future_collection_insert (
+
+   mongoc_collection_ptr collection,
+   mongoc_insert_flags_t flags,
+   const_bson_ptr document,
+   const_mongoc_write_concern_ptr write_concern,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_collection_insert_bulk (
 
    mongoc_collection_ptr collection,

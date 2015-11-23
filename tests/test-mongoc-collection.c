@@ -121,6 +121,52 @@ test_insert (void)
    mongoc_client_destroy(client);
 }
 
+/* CDRIVER-759, a 2.4 mongos responds to getLastError after an oversized insert:
+ *
+ * { err: "assertion src/mongo/s/strategy_shard.cpp:461", n: 0, ok: 1.0 }
+ *
+ * There's an "err" but no "code".
+*/
+
+static void
+test_legacy_insert_oversize_mongos (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t b = BSON_INITIALIZER;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+      ASSERT (client);
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+   future = future_collection_insert (collection, MONGOC_INSERT_NONE,
+                                      &b, NULL, &error);
+
+   request = mock_server_receives_insert (server, "test.test",
+                                          MONGOC_INSERT_NONE, "{}");
+   request_destroy (request);
+   request = mock_server_receives_gle (server, "test");
+   mock_server_replies_simple (request, "{'err': 'oh no!', 'n': 0, 'ok': 1}");
+   ASSERT (!future_get_bool (future));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COLLECTION_INSERT_FAILED,
+                          "oh no!");
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_collection_destroy(collection);
+   mongoc_client_destroy(client);
+   mock_server_destroy (server);
+}
+
 
 static void
 test_insert_bulk (void)
@@ -2914,6 +2960,7 @@ test_collection_install (TestSuite *suite)
 
    TestSuite_Add (suite, "/Collection/copy", test_copy);
    TestSuite_Add (suite, "/Collection/insert", test_insert);
+   TestSuite_Add (suite, "/Collection/insert/oversize", test_legacy_insert_oversize_mongos);
    TestSuite_Add (suite, "/Collection/insert/keys", test_insert_command_keys);
    TestSuite_Add (suite, "/Collection/save", test_save);
    TestSuite_Add (suite, "/Collection/index", test_index);
