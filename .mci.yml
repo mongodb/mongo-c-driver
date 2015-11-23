@@ -301,7 +301,7 @@ functions:
       script: |
         set -o verbose
         set -o errexit
-        curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${build_variant}/${revision}/artifacts/mongo-${build_id}.tar.gz -o ${build_id}.tar.gz --silent
+        curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${build_variant}/${revision}/artifacts/mongo-${build_id}.tar.gz -o ${build_id}.tar.gz --silent --max-time 120
         tar -xzf ${build_id}.tar.gz
 
   "compile function" :
