@@ -331,6 +331,11 @@ mongoc_add_test(test-sharded-cluster FALSE
    ${SOURCE_DIR}/tests/test-sharded-cluster.c
    ${SOURCE_DIR}/tests/mongoc-tests.c
    ${SOURCE_DIR}/tests/ha-test.c)
+mongoc_add_test(test-matcher-cdriver701 FALSE
+        ${SOURCE_DIR}/tests/test-mongoc-matcher_cdriver701.c
+        ${SOURCE_DIR}/tests/mongoc-tests.c
+        ${SOURCE_DIR}/tests/ha-test.c)
+
 
 mongoc_add_test(test-libmongoc FALSE ${test-libmongoc-sources})
 add_test(NAME test-libmongoc COMMAND test-libmongoc -f -p)

@@ -499,7 +499,29 @@ _mongoc_matcher_iter_eq_match (bson_iter_t *compare_iter, /* IN */
             }
          }
       }
+      case _TYPE_CODE (BSON_TYPE_UTF8, BSON_TYPE_ARRAY):
+      case _TYPE_CODE (BSON_TYPE_OID, BSON_TYPE_ARRAY):
+      case _TYPE_CODE (BSON_TYPE_INT32, BSON_TYPE_ARRAY):
+      case _TYPE_CODE (BSON_TYPE_INT64, BSON_TYPE_ARRAY):
+      case _TYPE_CODE (BSON_TYPE_BOOL, BSON_TYPE_ARRAY):
+      case _TYPE_CODE (BSON_TYPE_DATE_TIME, BSON_TYPE_ARRAY):
+      case _TYPE_CODE (BSON_TYPE_TIMESTAMP, BSON_TYPE_ARRAY):
+      case _TYPE_CODE (BSON_TYPE_DOUBLE, BSON_TYPE_ARRAY):
+      case _TYPE_CODE (BSON_TYPE_BINARY, BSON_TYPE_ARRAY): {
+         bson_iter_t right_array;
+         bson_iter_recurse(iter, &right_array);
+         while (true) {
+            bool right_has_next = bson_iter_next(&right_array);
+            if (!right_has_next) {
+               return false;
+            }
+            if (_mongoc_matcher_iter_eq_match(compare_iter, &right_array)) {
+               return true;
+            }
+         }
+         return false;
 
+      }
    case _TYPE_CODE (BSON_TYPE_DOCUMENT, BSON_TYPE_DOCUMENT):
       {
          uint32_t llen;
