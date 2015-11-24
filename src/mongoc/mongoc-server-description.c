@@ -103,6 +103,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
 
    sd->connection_address = sd->host.host_and_port;
 
+   sd->me = NULL;
    sd->min_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
    sd->max_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
    sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
@@ -326,6 +327,9 @@ mongoc_server_description_handle_ismaster (
       } else if (strcmp ("ismaster", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto failure;
          is_master = bson_iter_bool (&iter);
+      } else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto failure;
+         sd->me = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("maxMessageSizeBytes", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          sd->max_msg_size = bson_iter_int32 (&iter);

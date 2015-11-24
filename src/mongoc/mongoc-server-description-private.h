@@ -48,6 +48,7 @@ struct _mongoc_server_description_t
    bson_t                           last_is_master;
    bool                             has_is_master;
    const char                      *connection_address;
+   const char                      *me;
 
    /* The following fields are filled from the last_is_master and are zeroed on
     * parse.  So order matters here.  DON'T move set_name */

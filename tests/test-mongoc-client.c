@@ -951,6 +951,61 @@ test_mongoc_client_unix_domain_socket (void *context)
 }
 
 
+static void
+test_mongoc_client_mismatched_me (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *prefs;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   char *reply;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+   client = mongoc_client_new_from_uri (uri);
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+   /* any operation should fail with server selection error */
+   future = future_client_command_simple (client,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          prefs,
+                                          NULL,
+                                          &error);
+
+   request = mock_server_receives_ismaster (server);
+   reply = bson_strdup_printf (
+      "{'ok': 1,"
+      " 'setName': 'rs',"
+      " 'ismaster': false,"
+      " 'secondary': true,"
+      " 'me': 'foo.com',"  /* mismatched "me" field */
+      " 'hosts': ['%s']}",
+      mock_server_get_host_and_port (server));
+
+   mock_server_replies_simple (request, reply);
+
+   assert (!future_get_bool (future));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "No suitable servers");
+
+   bson_free (reply);
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+
 #ifdef MONGOC_ENABLE_SSL
 static void
 _test_mongoc_client_ssl_opts (bool pooled)
@@ -1085,6 +1140,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
    TestSuite_AddFull (suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_windows);
+   TestSuite_Add (suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
 
 #ifdef TODO_CDRIVER_689
    TestSuite_Add (suite, "/Client/wire_version", test_wire_version);

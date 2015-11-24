@@ -861,6 +861,38 @@ _mongoc_topology_description_remove_unreported_servers (
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_topology_description_matches_me --
+ *
+ *       Server Discovery And Monitoring Spec: "Removal from the topology of
+ *       seed list members where the "me" property does not match the address
+ *       used to connect prevents clients from being able to select a server,
+ *       only to fail to re-select that server once the primary has responded.
+ *
+ * Returns:
+ *       True if "me" matches "connection_address".
+ *
+ * Side Effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_mongoc_topology_description_matches_me (mongoc_server_description_t *server)
+{
+   BSON_ASSERT (server->connection_address);
+
+   if (!server->me) {
+      /* "me" is unknown: consider it a match */
+      return true;
+   }
+
+   return strcasecmp (server->connection_address, server->me) == 0;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_update_rs_from_primary --
  *
  *       First, determine that this is really the primary:
@@ -968,6 +1000,11 @@ _mongoc_topology_description_update_rs_without_primary (mongoc_topology_descript
    /* Add new servers that this replica set member knows about */
    _mongoc_topology_description_add_new_servers (topology, server);
 
+   if (!_mongoc_topology_description_matches_me (server)) {
+      _mongoc_topology_description_remove_server(topology, server);
+      return;
+   }
+
    /* If this server thinks there is a primary, label it POSSIBLE_PRIMARY */
    if (server->current_primary) {
       _mongoc_topology_description_label_unknown_member(topology,
@@ -1007,6 +1044,11 @@ _mongoc_topology_description_update_rs_with_primary_from_member (mongoc_topology
    if (strcmp(topology->set_name, server->set_name) != 0) {
       _mongoc_topology_description_remove_server(topology, server);
       _update_rs_type (topology);
+      return;
+   }
+
+   if (!_mongoc_topology_description_matches_me (server)) {
+      _mongoc_topology_description_remove_server(topology, server);
       return;
    }
 
