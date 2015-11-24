@@ -114,25 +114,25 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %changelog -n %{DriverName}
-* Thu October 29 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.2.1-1
+* Thu Oct 29 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.2.1-1
 - Release 1.2.1
 
-* Tue October 13 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.2.0-1
+* Tue Oct 13 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.2.0-1
 - Release 1.2.0
 
-* Wed September 23 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.11-1
+* Wed Sep 23 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.11-1
 - Release 1.1.11
 
-* Tue July 21 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.10-1
+* Tue Jul 21 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.10-1
 - Release 1.1.10
 
-* Sun June 28 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.9-1
+* Sun Jun 28 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.9-1
 - Release 1.1.9
 
-* Sun June 21 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.8-1
+* Sun Jun 21 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.8-1
 - Release 1.1.8
 
-* Tue June 9 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.7-1
+* Tue Jun 9 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.7-1
 - Release 1.1.7
 
 * Tue May 18 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.6-1
@@ -200,25 +200,25 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
 %changelog -n %{BsonName}
-* Thu October 29 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.2.1-1
+* Thu Oct 29 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.2.1-1
 - Release 1.2.1
 
-* Tue October 13 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.2.0-1
+* Tue Oct 13 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.2.0-1
 - Release 1.2.0
 
-* Wed September 23 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.11-1
+* Wed Sep 23 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.11-1
 - Release 1.1.11
 
-* Tue July 21 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.10-1
+* Tue Jul 21 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.10-1
 - Release 1.1.10
 
-* Sun June 28 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.9-1
+* Sun Jun 28 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.9-1
 - Release 1.1.9
 
-* Sun June 21 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.8-1
+* Sun Jun 21 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.8-1
 - Release 1.1.8
 
-* Tue June 9 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.7-1
+* Tue Jun 9 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.7-1
 - Release 1.1.7
 
 * Tue May 18 2015 A. Jesse Jiryu Davis <jesse@mongodb.com> - 1.1.6-1
