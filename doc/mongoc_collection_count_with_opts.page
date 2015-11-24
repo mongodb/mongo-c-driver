@@ -11,7 +11,7 @@
   <info>
     <link type="guide" xref="mongoc_collection_t" group="function"/>
   </info>
-  <title>mongoc_collection_count()</title>
+  <title>mongoc_collection_count_with_opts()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
@@ -77,7 +77,7 @@ print_query_count (mongoc_collection_t *collection,
    bson_init(&opts);
    BSON_APPEND_UTF8(&opts, "hint", "_id_");
 
-   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, query, 0, 0, &opts, NULL, &error);
+   count = mongoc_collection_count_with_opts (collection, MONGOC_QUERY_NONE, query, 0, 0, &opts, NULL, &error);
 
    bson_destroy(&opts);
 
