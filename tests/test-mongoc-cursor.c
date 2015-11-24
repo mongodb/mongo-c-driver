@@ -55,10 +55,26 @@ test_get_host (void)
    assert (doc == mongoc_cursor_current (cursor));
 
    mongoc_cursor_get_host(cursor, &host);
-   ASSERT_CMPSTR (host.host, hosts->host);
-   ASSERT_CMPSTR (host.host_and_port, hosts->host_and_port);
-   ASSERT_CMPINT (host.port, ==, hosts->port);
-   ASSERT_CMPINT (host.family, ==, hosts->family);
+
+   /* In a production deployment the driver can discover servers not in the seed
+    * list, but for this test assume the cursor uses one of the seeds. */
+   while (hosts) {
+      if (!strcmp (host.host_and_port, hosts->host_and_port)) {
+         /* the cursor is using this server */
+         ASSERT_CMPSTR (host.host, hosts->host);
+         ASSERT_CMPINT (host.port, ==, hosts->port);
+         ASSERT_CMPINT (host.family, ==, hosts->family);
+         break;
+      }
+
+      hosts = hosts->next;
+   }
+
+   if (!hosts) {
+      MONGOC_ERROR ("cursor using host %s not in seeds: %s",
+                    host.host_and_port, uri_str);
+      abort ();
+   }
 
    bson_free (uri_str);
    mongoc_uri_destroy(uri);
