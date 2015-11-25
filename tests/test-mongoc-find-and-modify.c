@@ -2,6 +2,7 @@
 #include <mongoc.h>
 #include <mongoc-collection-private.h>
 #include <mongoc-find-and-modify-private.h>
+#include <mongoc-client-private.h>
 
 #include "TestSuite.h"
 
@@ -43,6 +44,93 @@ get_test_collection (mongoc_client_t *client,
    bson_free (str);
 
    return ret;
+}
+
+static void
+test_find_and_modify_bypass (bool bypass)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   mock_server_t *server;
+   request_t *request;
+   future_t *future;
+   bson_error_t error;
+   bson_t *update;
+   bson_t doc = BSON_INITIALIZER;
+   bson_t reply;
+   mongoc_find_and_modify_opts_t *opts;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   ASSERT (client);
+
+   collection = mongoc_client_get_collection (client, "test", "test_find_and_modify");
+
+   auto_ismaster (server,
+                  WIRE_VERSION_FAM_WRITE_CONCERN, /* max_wire_version */
+                  48000000,   /* max_message_size */
+                  16777216,   /* max_bson_size */
+                  1000);      /* max_write_batch_size */
+
+   BSON_APPEND_INT32 (&doc, "superduper", 77889);
+
+   update = BCON_NEW ("$set", "{",
+                         "superduper", BCON_INT32 (1234),
+                      "}");
+
+   opts = mongoc_find_and_modify_opts_new ();
+   mongoc_find_and_modify_opts_set_bypass_document_validation (opts, bypass);
+   mongoc_find_and_modify_opts_set_update (opts, update);
+   mongoc_find_and_modify_opts_set_flags (opts, MONGOC_FIND_AND_MODIFY_RETURN_NEW);
+
+   future = future_collection_find_and_modify_with_opts (collection,
+                                               &doc,
+                                               opts,
+                                               &reply,
+                                               &error);
+
+   if (bypass) {
+      request = mock_server_receives_command (server, "test", MONGOC_QUERY_NONE,
+       "{ 'findAndModify' : 'test_find_and_modify', "
+         "'query' : { 'superduper' : 77889 },"
+         "'update' : { '$set' : { 'superduper' : 1234 } },"
+         "'new' : true,"
+         "'bypassDocumentValidation' : true }");
+   } else {
+      request = mock_server_receives_command (server, "test", MONGOC_QUERY_NONE,
+       "{ 'findAndModify' : 'test_find_and_modify', "
+         "'query' : { 'superduper' : 77889 },"
+         "'update' : { '$set' : { 'superduper' : 1234 } },"
+         "'new' : true,"
+         "'bypassDocumentValidation' : false }");
+   }
+
+   mock_server_replies_simple (request, "{ 'value' : null, 'ok' : 1 }");
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+
+   future_destroy (future);
+
+   mongoc_find_and_modify_opts_destroy (opts);
+   bson_destroy (&reply);
+   bson_destroy (update);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (&doc);
+}
+
+static void
+test_find_and_modify_bypass_true (void)
+{
+   test_find_and_modify_bypass (true);
+}
+
+static void
+test_find_and_modify_bypass_false (void)
+{
+   test_find_and_modify_bypass (false);
 }
 
 static void
@@ -207,6 +295,10 @@ void
 test_find_and_modify_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/find_and_modify/find_and_modify", test_find_and_modify);
+   TestSuite_Add (suite, "/find_and_modify/find_and_modify/bypass/true",
+                  test_find_and_modify_bypass_true);
+   TestSuite_Add (suite, "/find_and_modify/find_and_modify/bypass/false",
+                  test_find_and_modify_bypass_false);
    TestSuite_Add (suite, "/find_and_modify/find_and_modify/write_concern",
                   test_find_and_modify_write_concern_wire_32);
    TestSuite_Add (suite, "/find_and_modify/find_and_modify/write_concern_pre_32",

@@ -91,3 +91,8 @@ noinst_PROGRAMS += aggregation1
 aggregation1_SOURCES = examples/aggregation/aggregation1.c
 aggregation1_CFLAGS = $(EXAMPLE_CFLAGS)
 aggregation1_LDADD = $(EXAMPLE_LDADD)
+
+noinst_PROGRAMS += fam
+fam_SOURCES = examples/find_and_modify_with_opts/fam.c
+fam_CFLAGS = $(EXAMPLE_CFLAGS)
+fam_LDADD = $(EXAMPLE_LDADD)
