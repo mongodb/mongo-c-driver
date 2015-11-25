@@ -240,12 +240,25 @@ test_bypass_validation (void *context)
    mongoc_client_destroy (client);
 }
 
+
+static int
+should_test_bypass (void)
+{
+   /* skip bypassDocumentValidation test with auth until SERVER-21659 fixed */
+   char *admin_user = test_framework_get_admin_user ();
+   int ret = !admin_user && test_framework_max_wire_version_at_least (4);
+
+   bson_free (admin_user);
+
+   return ret;
+}
+
+
 void
 test_write_command_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/WriteCommand/split_insert", test_split_insert);
    TestSuite_Add (suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
    TestSuite_AddFull (suite, "/WriteCommand/bypass_validation", test_bypass_validation,
-                      NULL, NULL,
-                      test_framework_skip_if_max_version_version_less_than_4);
+                      NULL, NULL, should_test_bypass);
 }
