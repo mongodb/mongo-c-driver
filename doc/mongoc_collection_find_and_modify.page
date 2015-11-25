@@ -44,7 +44,7 @@ mongoc_collection_find_and_modify (mongoc_collection_t *collection,
     <title>Description</title>
     <p>Update and return an object.</p>
     <p>This is a thin wrapper around the <code>findAndModify</code> command. Either <code>update</code> or <code>_remove</code> arguments are required.</p>
-    <note style="tip"><p>As of MongoDB 3.2 and mongoc 1.3.0, the <link xref="mongoc_write_concern_t">mongoc_write_concern_t</link> specified on the <link xref="mongoc_collection_t">mongoc_collection_t</link> will by used, if any.</p></note>
+    <note style="tip"><p>As of MongoDB 3.2 and mongoc 1.3.0, the <link xref="mongoc_write_concern_t">mongoc_write_concern_t</link> specified on the <link xref="mongoc_collection_t">mongoc_collection_t</link> will be used, if any.</p></note>
   </section>
 
 
