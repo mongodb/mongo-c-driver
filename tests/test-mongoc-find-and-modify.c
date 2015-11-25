@@ -32,6 +32,16 @@ auto_ismaster (mock_server_t *server,
    bson_free (response);
 }
 
+
+int
+should_run_fam_wc (void)
+{
+   if (test_framework_is_replset()) {
+      return test_framework_max_wire_version_at_least (WIRE_VERSION_FAM_WRITE_CONCERN);
+   }
+   return 0;
+}
+
 static mongoc_collection_t *
 get_test_collection (mongoc_client_t *client,
                      const char      *prefix)
@@ -212,6 +222,59 @@ test_find_and_modify_write_concern (int wire_version)
 }
 
 static void
+test_find_and_modify_write_concern_wire_32_failure (void *context)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_find_and_modify_opts_t *opts;
+   bson_t reply;
+   bson_t query = BSON_INITIALIZER;
+   bson_t *update;
+   bool success;
+   mongoc_write_concern_t *wc;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "writeFailure");
+   wc = mongoc_write_concern_new ();
+
+   mongoc_write_concern_set_w (wc, 42);
+   mongoc_collection_set_write_concern (collection, wc);
+
+   /* Find Zlatan Ibrahimovic, the striker */
+   BSON_APPEND_UTF8 (&query, "firstname", "Zlatan");
+   BSON_APPEND_UTF8 (&query, "lastname", "Ibrahimovic");
+   BSON_APPEND_UTF8 (&query, "profession", "Football player");
+   BSON_APPEND_INT32 (&query, "age", 34);
+   BSON_APPEND_INT32 (&query, "goals", (16+35+23+57+16+14+28+84)+(1+6+62));
+
+   /* Add his football position */
+   update = BCON_NEW ("$set", "{",
+      "position", BCON_UTF8 ("striker"),
+   "}");
+
+   opts = mongoc_find_and_modify_opts_new ();
+
+   mongoc_find_and_modify_opts_set_update (opts, update);
+
+   /* Create the document if it didn't exist, and return the updated document */
+   mongoc_find_and_modify_opts_set_flags (opts, MONGOC_FIND_AND_MODIFY_UPSERT|MONGOC_FIND_AND_MODIFY_RETURN_NEW);
+
+   success = mongoc_collection_find_and_modify_with_opts (collection, &query, opts, &reply, &error);
+
+   ASSERT (success);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
+
+   bson_destroy (&reply);
+   bson_destroy (update);
+   bson_destroy (&query);
+   mongoc_find_and_modify_opts_destroy (opts);
+   mongoc_collection_drop (collection, NULL);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+static void
 test_find_and_modify_write_concern_wire_32 (void)
 {
    test_find_and_modify_write_concern (4);
@@ -303,4 +366,7 @@ test_find_and_modify_install (TestSuite *suite)
                   test_find_and_modify_write_concern_wire_32);
    TestSuite_Add (suite, "/find_and_modify/find_and_modify/write_concern_pre_32",
                   test_find_and_modify_write_concern_wire_pre_32);
+   TestSuite_AddFull (suite, "/find_and_modify/find_and_modify/write_concern_failure",
+                  test_find_and_modify_write_concern_wire_32_failure, NULL, NULL,
+                  should_run_fam_wc);
 }

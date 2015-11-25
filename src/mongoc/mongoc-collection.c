@@ -2091,7 +2091,10 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
 {
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
+   bson_iter_t iter;
+   bson_iter_t inner;
    const char *name;
+   bson_t reply_local;
    bool ret;
    bson_t command = BSON_INITIALIZER;
 
@@ -2159,8 +2162,28 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
 
    ret = mongoc_cluster_run_command (cluster, server_stream->stream,
                                      MONGOC_QUERY_NONE, collection->db,
-                                     &command, reply, error);
+                                     &command, &reply_local, error);
 
+   if (bson_iter_init_find (&iter, &reply_local, "writeConcernError") &&
+         BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      const char *errmsg = NULL;
+      int32_t code = 0;
+
+      bson_iter_recurse(&iter, &inner);
+      while (bson_iter_next (&inner)) {
+         if (BSON_ITER_IS_KEY (&inner, "code")) {
+            code = bson_iter_int32 (&inner);
+         } else if (BSON_ITER_IS_KEY (&inner, "errmsg")) {
+            errmsg = bson_iter_utf8 (&inner, NULL);
+         }
+      }
+      bson_set_error (error, MONGOC_ERROR_WRITE_CONCERN, code, "Write Concern error: %s", errmsg);
+   }
+   if (reply) {
+      bson_copy_to (&reply_local, reply);
+   }
+
+   bson_destroy (&reply_local);
    bson_destroy (&command);
    mongoc_server_stream_cleanup (server_stream);
 
