@@ -272,6 +272,56 @@ test_exhaust_cursor_pool (void *context)
 }
 
 static void
+test_exhaust_cursor_multi_batch (void *context)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_collection_t *collection;
+   bson_t doc = BSON_INITIALIZER;
+   mongoc_bulk_operation_t *bulk;
+   int i;
+   uint32_t hint;
+   mongoc_cursor_t *cursor;
+   const bson_t *cursor_doc;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_exhaust_cursor_multi_batch");
+
+   ASSERT_OR_PRINT (collection, error);
+
+   BSON_APPEND_UTF8 (&doc, "key", "value");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+
+   /* enough to require more than initial batch */
+   for (i = 0; i < 1000; i++) {
+      mongoc_bulk_operation_insert (bulk, &doc);
+   }
+
+   hint = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (hint, error);
+
+   cursor = mongoc_collection_find (
+      collection,
+      MONGOC_QUERY_EXHAUST,
+      0, 0, 0,
+      tmp_bson ("{}"), NULL, NULL);
+
+   i = 0;
+   while (mongoc_cursor_next (cursor, &cursor_doc)) {
+      i++;
+   }
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   ASSERT_CMPINT (i, ==, 1000);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   bson_destroy (&doc);
+   mongoc_client_destroy (client);
+}
+
+static void
 test_cursor_set_max_await_time_ms (void)
 {
    mongoc_client_t *client;
@@ -303,6 +353,7 @@ test_exhaust_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/single", test_exhaust_cursor_single, NULL, NULL, skip_if_mongos);
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/pool", test_exhaust_cursor_pool, NULL, NULL, skip_if_mongos);
+   TestSuite_AddFull (suite, "/Client/exhaust_cursor/batches", test_exhaust_cursor_multi_batch, NULL, NULL, skip_if_mongos);
    TestSuite_Add (suite, "/Client/set_max_await_time_ms", test_cursor_set_max_await_time_ms);
 }
 
