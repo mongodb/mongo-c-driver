@@ -107,6 +107,12 @@ c_driver_variables:
           trap 'set +o errexit; cat server.log; mongo-orchestration --pidfile c:\\mo.pid stop;' EXIT
           taskkill.exe /FI "IMAGENAME eq python.exe" /F
           taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
+          pidfile=/cygdrive/c/mo.pid
+          if [ -f $pidfile ]; then
+            echo "Existing pidfile $pidfile"
+            cat $pidfile
+            rm -f $pidfile
+          fi
           fsutil volume diskfree c:
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
@@ -116,10 +122,16 @@ c_driver_variables:
       unix: &mongo_orchestration_unix
         start_mongo_orchestration: |
           trap 'set +o errexit; cat server.log; mongo-orchestration --pidfile /data/mo.pid stop;' EXIT
+          pidfile=/data/mo.pid
+          if [ -f $pidfile ]; then
+            echo "Existing pidfile $pidfile"
+            cat $pidfile
+            rm -f $pidfile
+          fi
           df -h
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
-          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=0.0.0.0  --enable-majority-read-concern --pidfile /data/mo.pid
+          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=0.0.0.0  --enable-majority-read-concern --pidfile $pidfile
           curl -s http://localhost:8889/
       start_topology_command: &start_topology_command
         start_topology: |
@@ -465,7 +477,13 @@ post:
       params:
         working_dir: "mongo-c-driver"
         script: |
-            mongo-orchestration --pidfile /data/mo.pid stop
+            if [ ${windows|false} = true ]; then
+                mongo-orchestration --pidfile c:\\mo.pid stop
+                rm -f /cygdrive/c/mo.pid
+            else
+                mongo-orchestration --pidfile /data/mo.pid stop
+                rm -f /data/mo.pid
+            fi
             pkill -9 mongo-orchestration; pkill -9 mongod; pkill -9 mongos;
             rm -rf /tmp/mongo* /data/db
             cat server.log
