@@ -108,30 +108,18 @@ c_driver_variables:
           taskkill.exe /FI "IMAGENAME eq python.exe" /F
           taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
           fsutil volume diskfree c:
+          echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
-          RETRIES=0
-          until mongo-orchestration -f orchestration.config -e default -s wsgiref start --enable-majority-read-concern --pidfile c:\\mo.pid; do
-            echo "Trying again"
-            let RETRIES=RETRIES+1
-            if [ $RETRIES -gt 5 ]; then
-              EXIT 1
-            fi
-          done
+          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000 --enable-majority-read-concern --pidfile c:\\mo.pid
+          sleep 10
           curl -s http://localhost:8889/
       unix: &mongo_orchestration_unix
         start_mongo_orchestration: |
           trap 'set +o errexit; cat server.log; mongo-orchestration --pidfile /data/mo.pid stop;' EXIT
           df -h
+          echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
-          export TMPDIR=/data/db
-          RETRIES=0
-          until mongo-orchestration -f orchestration.config -e default start --bind=0.0.0.0 --enable-majority-read-concern --pidfile=/data/mo.pid; do
-            echo "Trying again"
-            let RETRIES=RETRIES+1
-            if [ $RETRIES -gt 5 ]; then
-              EXIT 1
-            fi
-          done
+          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=0.0.0.0  --enable-majority-read-concern --pidfile /data/mo.pid
           curl -s http://localhost:8889/
       start_topology_command: &start_topology_command
         start_topology: |
