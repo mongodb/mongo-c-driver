@@ -5,4 +5,4 @@ html/*.js
 html/*.png
 man/*.3
 installing.page
-version.page
+mongoc_version.page
