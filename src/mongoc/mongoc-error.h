@@ -102,6 +102,8 @@ typedef enum
 
    /* Dup with query failure. */
    MONGOC_ERROR_PROTOCOL_ERROR = 17,
+
+   MONGOC_ERROR_WRITE_CONCERN_ERROR = 64,
 } mongoc_error_code_t;
 
 

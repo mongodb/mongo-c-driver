@@ -1050,6 +1050,69 @@ _mongoc_write_result_append_upsert (mongoc_write_result_t *result,
 }
 
 
+static void
+_append_write_concern_err_legacy (mongoc_write_result_t *result,
+                                  const char            *err,
+                                  int32_t                code)
+{
+   char str[16];
+   const char *key;
+   size_t keylen;
+   bson_t write_concern_error;
+
+   /* don't set result->failed; record the write concern err and continue */
+   keylen = bson_uint32_to_string (result->n_writeConcernErrors, &key,
+                                   str, sizeof str);
+
+   BSON_ASSERT (keylen < INT_MAX);
+
+   bson_append_document_begin (&result->writeConcernErrors, key, (int) keylen,
+                               &write_concern_error);
+
+   bson_append_int32 (&write_concern_error, "code", 4, code);
+   bson_append_utf8 (&write_concern_error, "errmsg", 6, err, -1);
+   bson_append_document_end (&result->writeConcernErrors, &write_concern_error);
+   result->n_writeConcernErrors++;
+}
+
+
+static void
+_append_write_err_legacy (mongoc_write_result_t *result,
+                          const char            *err,
+                          int32_t                code,
+                          uint32_t               offset)
+{
+   bson_t holder, write_errors, child;
+   bson_iter_t iter;
+
+   BSON_ASSERT (code > 0);
+
+   bson_set_error (&result->error, MONGOC_ERROR_COLLECTION, (uint32_t) code,
+                   "%s", err);
+
+   /* stop processing, if result->ordered */
+   result->failed = true;
+
+   bson_init (&holder);
+   bson_append_array_begin (&holder, "0", 1, &write_errors);
+   bson_append_document_begin (&write_errors, "0", 1, &child);
+
+   /* set error's "index" to 0; fixed up in _mongoc_write_result_merge_arrays */
+   bson_append_int32 (&child, "index", 5, 0);
+   bson_append_int32 (&child, "code", 4, code);
+   bson_append_utf8 (&child, "errmsg", 6, err, -1);
+   bson_append_document_end (&write_errors, &child);
+   bson_append_array_end (&holder, &write_errors);
+   bson_iter_init (&iter, &holder);
+   bson_iter_next (&iter);
+
+   _mongoc_write_result_merge_arrays (offset, result,
+                                      &result->writeErrors, &iter);
+
+   bson_destroy (&holder);
+}
+
+
 void
 _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
                                    mongoc_write_command_t *command, /* IN */
@@ -1058,7 +1121,6 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
                                    uint32_t                offset)
 {
    const bson_value_t *value;
-   bson_t holder, write_errors, child;
    bson_iter_t iter;
    bson_iter_t ar;
    bson_iter_t citer;
@@ -1088,35 +1150,25 @@ _mongoc_write_result_merge_legacy (mongoc_write_result_t  *result,  /* IN */
    }
 
    if (code || err) {
-      if (!code) {
-         code = default_code;
-      }
-
       if (!err) {
          err = "unknown error";
       }
 
-      bson_set_error (&result->error,
-                      MONGOC_ERROR_COLLECTION,
-                      code,
-                      "%s", err);
-      result->failed = true;
+      if (bson_iter_init_find (&iter, reply, "wtimeout") &&
+          bson_iter_as_bool (&iter)) {
 
-      bson_init(&holder);
-      bson_append_array_begin(&holder, "0", 1, &write_errors);
-      bson_append_document_begin(&write_errors, "0", 1, &child);
-      bson_append_int32(&child, "index", 5, 0);
-      bson_append_int32(&child, "code", 4, code);
-      bson_append_utf8(&child, "errmsg", 6, err, -1);
-      bson_append_document_end(&write_errors, &child);
-      bson_append_array_end(&holder, &write_errors);
-      bson_iter_init(&iter, &holder);
-      bson_iter_next(&iter);
+         if (!code) {
+            code = (int32_t) MONGOC_ERROR_WRITE_CONCERN_ERROR;
+         }
 
-      _mongoc_write_result_merge_arrays (offset, result, &result->writeErrors,
-                                         &iter);
+         _append_write_concern_err_legacy (result, err, code);
+      } else {
+         if (!code) {
+            code = (int32_t) default_code;
+         }
 
-      bson_destroy(&holder);
+         _append_write_err_legacy (result, err, code, offset);
+      }
    }
 
    switch (command->type) {
