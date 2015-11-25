@@ -369,10 +369,6 @@ mongoc_add_example(mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)
 file(COPY ${SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file(COPY ${SOURCE_DIR}/tests/certificates DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
-#if (OPENSSL_FOUND)
-#   file(COPY ${SOURCE_DIR}/tests/trust_dir DESTINATION ${PROJECT_BINARY_DIR}/tests)
-#endif()
-
 install(
   TARGETS mongoc_shared mongoc_static ${EXAMPLES}
   LIBRARY DESTINATION lib
