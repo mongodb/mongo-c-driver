@@ -105,14 +105,16 @@ c_driver_variables:
       windows: &mongo_orchestration_windows
         start_mongo_orchestration: |
           trap 'set +o errexit; cat server.log; mongo-orchestration --pidfile c:\\mo.pid stop;' EXIT
-          taskkill.exe /FI "IMAGENAME eq python.exe" /F
-          taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
           pidfile=/cygdrive/c/mo.pid
           if [ -f $pidfile ]; then
             echo "Existing pidfile $pidfile"
             cat $pidfile
+            mongo-orchestration --pidfile c:\\mo.pid stop
             rm -f $pidfile
           fi
+          taskkill.exe /FI "IMAGENAME eq python.exe" /F
+          taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
+          taskkill.exe /FI "IMAGENAME eq mongos.exe" /F
           fsutil volume diskfree c:
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
@@ -126,6 +128,7 @@ c_driver_variables:
           if [ -f $pidfile ]; then
             echo "Existing pidfile $pidfile"
             cat $pidfile
+            mongo-orchestration --pidfile /data/mo.pid stop;
             rm -f $pidfile
           fi
           df -h
