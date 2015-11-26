@@ -1026,6 +1026,47 @@ mock_server_receives_delete (mock_server_t *server,
 
 /*--------------------------------------------------------------------------
  *
+ * mock_server_receives_getmore --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not a getmore matching n_return
+ *       and cursor_id.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_getmore (mock_server_t *server,
+                              const char    *ns,
+                              uint32_t       n_return,
+                              int64_t        cursor_id)
+{
+   request_t *request;
+
+   request = mock_server_receives_request (server);
+
+   if (request && !request_matches_getmore (request,
+                                            ns,
+                                            n_return,
+                                            cursor_id)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+
+
+/*--------------------------------------------------------------------------
+ *
  * mock_server_receives_kill_cursors --
  *
  *       Pop a client request if one is enqueued, or wait up to
@@ -1638,8 +1679,13 @@ mock_server_reply_multi (request_t           *request,
 
    _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
 
+   if (!(request->opcode == MONGOC_OPCODE_QUERY &&
+         request_rpc->query.flags & MONGOC_QUERY_EXHAUST)) {
+      server->last_response_id++;
+   }
+
    mongoc_mutex_lock (&server->mutex);
-   r.reply.request_id = ++server->last_response_id;
+   r.reply.request_id = server->last_response_id;
    mongoc_mutex_unlock (&server->mutex);
    r.reply.msg_len = 0;
    r.reply.response_to = request_rpc->header.request_id;

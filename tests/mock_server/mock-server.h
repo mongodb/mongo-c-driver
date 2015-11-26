@@ -126,6 +126,11 @@ request_t * mock_server_receives_delete (mock_server_t *server,
                                          mongoc_remove_flags_t flags,
                                          const char *selector_json);
 
+request_t *mock_server_receives_getmore (mock_server_t *server,
+                                         const char *ns,
+                                         uint32_t n_return,
+                                         int64_t cursor_id);
+
 request_t *mock_server_receives_kill_cursors (mock_server_t *server,
                                               int64_t cursor_id);
 
