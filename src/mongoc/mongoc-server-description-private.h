@@ -68,6 +68,7 @@ struct _mongoc_server_description_t
 
    bson_t                           tags;
    const char                      *current_primary;
+   bson_oid_t                       election_id;
 };
 
 void
@@ -78,6 +79,9 @@ bool
 mongoc_server_description_has_rs_member (mongoc_server_description_t *description,
                                          const char                  *address);
 
+bool
+mongoc_server_description_has_election_id (mongoc_server_description_t *description);
+
 void
 mongoc_server_description_cleanup (mongoc_server_description_t *sd);
 
@@ -87,6 +91,9 @@ mongoc_server_description_reset (mongoc_server_description_t *sd);
 void
 mongoc_server_description_set_state (mongoc_server_description_t     *description,
                                      mongoc_server_description_type_t type);
+void
+mongoc_server_description_set_election_id (mongoc_server_description_t *description,
+                                           const bson_oid_t            *election_id);
 void
 mongoc_server_description_update_rtt (mongoc_server_description_t *server,
                                       int64_t                      new_time);

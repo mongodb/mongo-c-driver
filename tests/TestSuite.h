@@ -112,6 +112,22 @@ extern "C" {
    } while (0)
 
 
+#define ASSERT_CMPOID(a, b) \
+   do { \
+      if (bson_oid_compare ((a), (b))) { \
+         char oid_a[25]; \
+         char oid_b[25]; \
+         bson_oid_to_string ((a), oid_a); \
+         bson_oid_to_string ((b), oid_b); \
+         fprintf(stderr, \
+                 "FAIL\n\nAssert Failure: " \
+                 "ObjectId(\"%s\") != ObjectId(\"%s\")\n", \
+                 oid_a, oid_b); \
+         abort(); \
+      } \
+   } while (0)
+
+
 #define ASSERT_CONTAINS(a, b) \
    do { \
       if (NULL == strstr ((a), (b))) { \

@@ -29,6 +29,8 @@
 
 static uint8_t kMongocEmptyBson[] = { 5, 0, 0, 0, 0 };
 
+static bson_oid_t kObjectIdZero = { 0 };
+
 /* Destroy allocated resources within @description, but don't free it */
 void
 mongoc_server_description_cleanup (mongoc_server_description_t *sd)
@@ -45,7 +47,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
 {
    BSON_ASSERT(sd);
 
-   /* set other fields to default or empty states */
+   /* set other fields to default or empty states. election_id is zeroed. */
    memset (&sd->set_name, 0, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd));
    sd->set_name = NULL;
    sd->type = MONGOC_SERVER_UNKNOWN;
@@ -194,6 +196,25 @@ mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_server_description_has_election_id --
+ *
+ *      Did this server's ismaster response have an "electionId" field?
+ *
+ * Returns:
+ *      True if the server description's electionId is set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_server_description_has_election_id (mongoc_server_description_t *description)
+{
+   return 0 != bson_oid_compare (&description->election_id, &kObjectIdZero);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_server_description_id --
  *
  *      Get the id of this server.
@@ -234,13 +255,7 @@ mongoc_server_description_host (mongoc_server_description_t *description)
  *
  * mongoc_server_description_set_state --
  *
- *       Change the state of this server.
- *
- * Returns:
- *       true, false
- *
- * Side effects:
- *       None
+ *       Set the server description's server type.
  *
  *--------------------------------------------------------------------------
  */
@@ -253,6 +268,31 @@ mongoc_server_description_set_state (mongoc_server_description_t *description,
 
 
 /*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_set_election_id --
+ *
+ *       Set the election_id of this server. Copies the given ObjectId or,
+ *       if it is NULL, zeroes description's election_id.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+mongoc_server_description_set_election_id (mongoc_server_description_t *description,
+                                           const bson_oid_t *election_id)
+{
+   if (election_id) {
+      bson_oid_copy_unsafe (election_id, &description->election_id);
+   } else {
+      bson_oid_copy_unsafe (&kObjectIdZero, &description->election_id);
+   }
+}
+
+
+/*
  *-------------------------------------------------------------------------
  *
  * mongoc_server_description_update_rtt --
@@ -260,11 +300,8 @@ mongoc_server_description_set_state (mongoc_server_description_t *description,
  *       Calculate this server's rtt calculation using an exponentially-
  *       weighted moving average formula.
  *
- * Returns:
- *       None.
- *
  * Side effects:
- *       Changes this server description's rtt.
+ *       None.
  *
  *-------------------------------------------------------------------------
  */
@@ -351,6 +388,9 @@ mongoc_server_description_handle_ismaster (
       } else if (strcmp ("setName", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto failure;
          sd->set_name = bson_iter_utf8 (&iter, NULL);
+      } else if (strcmp ("electionId", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_OID (&iter)) goto failure;
+         mongoc_server_description_set_election_id (sd, bson_iter_oid (&iter));
       } else if (strcmp ("secondary", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto failure;
          is_secondary = bson_iter_bool (&iter);
