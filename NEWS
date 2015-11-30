@@ -1,6 +1,16 @@
 mongo-c-driver 1.2.2
 ====================
 
+It is my pleasure to announce to you the MongoDB C driver 1.2.2.
+
+This release fixes a rare bug where the driver can direct reads to hidden
+secondaries unintentionally. It also includes fixes and improvements to the
+build system.
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
 mongo-c-driver 1.2.1
 ====================
 
