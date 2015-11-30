@@ -61,7 +61,8 @@ New features and changes:
 Extensive bugfixes and improvements in GridFS, including:
 
  * Handle seeking, reading, and writing past the end of a GridFS file.
- * Better error reporting if a GridFS file has missing chunks.
+ * If a GridFS chunk is missing, mongoc_gridfs_file_readv sets file->error to
+   domain MONGOC_ERROR_GRIDFS and a new code MONGOC_ERROR_GRIDFS_CHUNK_MISSING.
  * Optimization for long seeks forward with mongoc_gridfs_file_seek.
 
 Other fixes:
@@ -84,12 +85,19 @@ Thanks to everyone who contributed to this version of libmongoc.
  * Matt Cotter
  * alexeyvo
 
+
+mongo-c-driver 1.2.2
+====================
+
+It is my pleasure to announce to you the MongoDB C driver 1.2.2.
+
+This release fixes a rare bug where the driver can direct reads to hidden
+secondaries unintentionally. It also includes fixes and improvements to the
+build system.
+
 Peace,
 
   A. Jesse Jiryu Davis
-
-  * If a GridFS chunk is missing, mongoc_gridfs_file_readv sets file->error to
-    domain MONGOC_ERROR_GRIDFS and a new code MONGOC_ERROR_GRIDFS_CHUNK_MISSING.
 
 
 mongo-c-driver 1.2.1
