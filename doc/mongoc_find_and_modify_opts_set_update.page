@@ -21,7 +21,7 @@ mongoc_find_and_modify_opts_set_update (mongoc_find_and_modify_opts_t  *opts,
     <title>Parameters</title>
     <table>
       <tr><td><p>opts</p></td><td><p>A <code xref="mongoc_find_and_modify_opts_t">mongoc_find_and_modify_opts_t</code>.</p></td></tr>
-      <tr><td><p>update</p></td><td><p>The <code>update<code> document is the same format as the <code>update</code> document passed to <code xref="mongoc_collection_update">mongoc_collection_update</code>.</p></td></tr>
+      <tr><td><p>update</p></td><td><p>The <code>update</code> document is the same format as the <code>update</code> document passed to <code xref="mongoc_collection_update">mongoc_collection_update</code>.</p></td></tr>
     </table>
   </section>
 
