@@ -201,6 +201,7 @@ _mongoc_cursor_cursorid_get_more (mongoc_cursor_t *cursor)
       cid->in_reader = ret;
    }
 
+   mongoc_server_stream_cleanup (server_stream);
    RETURN (ret);
 }
 
