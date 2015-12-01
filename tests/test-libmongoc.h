@@ -58,6 +58,9 @@ int test_framework_skip_if_mongos  (void);
 int test_framework_skip_if_replset (void);
 int test_framework_skip_if_single  (void);
 int test_framework_skip_if_windows (void);
+int test_framework_skip_if_not_mongos  (void);
+int test_framework_skip_if_not_replset (void);
+int test_framework_skip_if_not_single  (void);
 
 typedef struct _debug_stream_stats_t {
    mongoc_client_t *client;
