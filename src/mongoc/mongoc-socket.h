@@ -43,7 +43,7 @@
 
 BSON_BEGIN_DECLS
 
-
+struct addrinfo;
 typedef struct _mongoc_socket_t mongoc_socket_t;
 
 typedef struct
