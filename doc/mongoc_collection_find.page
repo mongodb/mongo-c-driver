@@ -94,7 +94,7 @@ print_all_documents (mongoc_collection_t *collection)
 
   <section id="find-command">
     <title>The "find" command</title>
-    <p>Queries have historically been sent as OP_QUERY wire protocol messages, but beginning in MongoDB 3.2 queries use the "find" command instead.</p>
+    <p>Queries have historically been sent as OP_QUERY wire protocol messages, but beginning in MongoDB 3.2 queries use <link href="https://docs.mongodb.org/master/reference/command/find/">the "find" command</link> instead.</p>
     <p>The driver automatically converts queries to the new "find" command syntax if needed, so this change is typically invisible to C Driver users. However, an application written exclusively for MongoDB 3.2 and later can choose to use the new syntax directly instead of relying on the driver to convert from the old syntax:</p>
     <code mime="text/x-csrc"><![CDATA[/* MongoDB 3.2+ "find" command syntax */
 query = BCON_NEW ("filter", "{", "foo", BCON_INT32 (1), "}",
@@ -121,8 +121,14 @@ cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, 
         <td><p>Other $-options</p></td> <td><p><code>$&lt;option name&gt;</code></p></td> <td><p><code>&lt;option name&gt;</code></p></td>
       </tr>
     </table>
-    <p>See the MongoDB Manual for a list of all "find" command options.</p>
     <p>Most applications should use the OP_QUERY syntax, with "$query", "$orderby", and so on, and rely on the driver to convert to the new syntax if needed. There are two caveats: querying documents by a key named "filter", and using new "find" command options that OP_QUERY does not support.</p>
+
+    <section id="seealso">
+      <title>See Also</title>
+      <p><link href="https://docs.mongodb.org/master/reference/command/find/">The "find" command</link> in the MongoDB Manual.</p>
+    </section>
+
+
     <section id="key-named-filter">
       <title>Finding a document by a key named "filter"</title>
       <p>To find a document like <code mime="x-json">{ "_id": 1, "filter": "value" }</code>, this query works in MongoDB before 3.2:</p>
