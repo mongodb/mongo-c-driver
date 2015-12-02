@@ -128,7 +128,6 @@ cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, 
       <p><link href="https://docs.mongodb.org/master/reference/command/find/">The "find" command</link> in the MongoDB Manual.</p>
     </section>
 
-
     <section id="key-named-filter">
       <title>Finding a document by a key named "filter"</title>
       <p>To find a document like <code mime="x-json">{ "_id": 1, "filter": "value" }</code>, this query works in MongoDB before 3.2:</p>
@@ -167,6 +166,11 @@ command = BCON_NEW ("explain", "{",
                     "}", "}");
 cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, query, NULL, NULL);
 ]]></code>
+  </section>
+
+  <section id="seealso">
+    <title>See Also</title>
+    <p><link href="https://docs.mongodb.org/master/reference/command/explain/">The "explain" command</link> in the MongoDB Manual.</p>
   </section>
 
 </page>
