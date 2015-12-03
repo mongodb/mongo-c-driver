@@ -28,7 +28,6 @@
 #include "mongoc-uri-private.h"
 #include "mongoc-read-concern-private.h"
 #include "mongoc-write-concern-private.h"
-#include "mongoc-util-private.h"
 
 
 struct _mongoc_uri_t
@@ -1112,7 +1111,7 @@ void
 mongoc_uri_destroy (mongoc_uri_t *uri)
 {
    if (uri) {
-      mongoc_host_list_destroy_all (uri->hosts);
+      _mongoc_host_list_destroy_all (uri->hosts);
       bson_free(uri->str);
       bson_free(uri->database);
       bson_free(uri->username);

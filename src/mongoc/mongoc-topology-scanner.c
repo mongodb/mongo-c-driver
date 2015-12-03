@@ -28,6 +28,7 @@
 #include "mongoc-counters-private.h"
 #include "utlist.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-host-list-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
@@ -230,7 +231,7 @@ mongoc_topology_scanner_has_node_for_host (mongoc_topology_scanner_t *ts,
 
    DL_FOREACH_SAFE (ts->nodes, ele, tmp)
    {
-      if (mongoc_host_list_equal (&ele->host, host)) {
+      if (_mongoc_host_list_equal (&ele->host, host)) {
          return true;
       }
    }
