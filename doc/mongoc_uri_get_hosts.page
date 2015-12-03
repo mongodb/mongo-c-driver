@@ -26,12 +26,12 @@ mongoc_uri_get_hosts (const mongoc_uri_t *uri);
 
   <section id="description">
     <title>Description</title>
-    <p>Fetches a linked list of hosts that were defined in the URI (the comman separated host section).</p>
+    <p>Fetches a linked list of hosts that were defined in the URI (the comma-separated host section).</p>
   </section>
 
   <section id="return">
     <title>Returns</title>
-    <p>A linked list of hosts that should not be modified or freed.</p>
+    <p>A linked list of <code xref="mongoc_host_list_t">mongoc_host_list_t</code> structures that should not be modified or freed.</p>
   </section>
 
 </page>
