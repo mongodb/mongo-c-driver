@@ -21,11 +21,6 @@ m4_include([build/autotools/CheckTarget.m4])
 
 m4_include([build/autotools/SetupLibtool.m4])
 LT_INIT
-MONGOC_LT_CURRENT=lt_current
-MONGOC_LT_REVISION=lt_revision
-MONGOC_LT_AGE=lt_age
-MONGOC_LT_VERSION="$MONGOC_LT_CURRENT:$MONGOC_LT_REVISION:$MONGOC_LT_AGE"
-MONGOC_LT_LDFLAGS="-version-info $MONGOC_LT_VERSION"
 
 m4_include([build/autotools/ReadCommandLineArguments.m4])
 m4_include([build/autotools/CheckSasl.m4])

@@ -42,7 +42,6 @@ libmongoc_priv_la_LDFLAGS = \
 
 libmongoc_1_0_la_LDFLAGS = \
 	$(MONGOC_LDFLAGS_SHARED) \
-	$(MONGOC_LT_LDFLAGS) \
 	-no-undefined \
 	-rpath $(libdir)
 
