@@ -20,13 +20,6 @@
 #include "mongoc-read-concern-private.h"
 
 
-static BSON_INLINE bool
-_mongoc_read_concern_warn_frozen (mongoc_read_concern_t *read_concern)
-{
-
-   return read_concern->frozen;
-}
-
 static void
 _mongoc_read_concern_freeze (mongoc_read_concern_t *read_concern);
 
