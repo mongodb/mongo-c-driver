@@ -37,5 +37,7 @@ int main(void)
    mongoc_database_destroy (database);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+
+   return 0;
 }
 

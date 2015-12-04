@@ -26,9 +26,8 @@ optype_from_test(const char *op)
       return MONGOC_SS_READ;
    } else if (strcmp(op, "write") == 0) {
       return MONGOC_SS_WRITE;
-   } else {
-      assert(0);
    }
+   return 0;
 }
 
 static mongoc_read_mode_t
@@ -44,9 +43,8 @@ read_mode_from_test(const char *mode)
       return MONGOC_READ_SECONDARY_PREFERRED;
    } else if (strcmp(mode, "Nearest") == 0) {
       return MONGOC_READ_NEAREST;
-   } else {
-      assert(0);
    }
+   return 0;
 }
 
 /*
@@ -102,6 +100,7 @@ test_server_selection_logic_cb (bson_t *test)
    mongoc_topology_description_t topology;
    mongoc_server_description_t *sd;
    mongoc_read_prefs_t *read_prefs;
+   mongoc_read_mode_t read_mode;
    mongoc_ss_optype_t op;
    bson_iter_t iter;
    bson_iter_t topology_iter;
@@ -176,7 +175,9 @@ test_server_selection_logic_cb (bson_t *test)
    bson_iter_bson (&iter, &test_read_pref);
 
    assert (bson_iter_init_find(&read_pref_iter, &test_read_pref, "mode"));
-   read_prefs = mongoc_read_prefs_new(read_mode_from_test(bson_iter_utf8(&read_pref_iter, NULL)));
+   read_mode = read_mode_from_test (bson_iter_utf8 (&read_pref_iter, NULL));
+   ASSERT (read_mode != 0);
+   read_prefs = mongoc_read_prefs_new (read_mode);
 
    assert (bson_iter_init_find(&read_pref_iter, &test_read_pref, "tags"));
    bson_iter_bson (&read_pref_iter, &test_tags);
@@ -185,6 +186,7 @@ test_server_selection_logic_cb (bson_t *test)
    /* get optype */
    assert (bson_iter_init_find(&iter, test, "operation"));
    op = optype_from_test(bson_iter_utf8(&iter, NULL));
+   ASSERT(op != 0);
 
    /* read in candidate servers */
    assert (bson_iter_init_find(&iter, test, "candidate_servers"));
