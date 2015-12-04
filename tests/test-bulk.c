@@ -805,14 +805,14 @@ test_update_one (bool ordered)
 
 
 static void
-test_update_one_ordered ()
+test_update_one_ordered (void)
 {
    test_update_one (true);
 }
 
 
 static void
-test_update_one_unordered ()
+test_update_one_unordered (void)
 {
    test_update_one (false);
 }
@@ -877,7 +877,7 @@ test_replace_one (bool ordered)
 
 
 static void
-test_upsert_large ()
+test_upsert_large (void)
 {
    mongoc_bulk_operation_t *bulk;
    mongoc_collection_t *collection;
@@ -952,14 +952,14 @@ test_upsert_large ()
 
 
 static void
-test_replace_one_ordered ()
+test_replace_one_ordered (void)
 {
    test_replace_one (true);
 }
 
 
 static void
-test_replace_one_unordered ()
+test_replace_one_unordered (void)
 {
    test_replace_one (false);
 }
@@ -1105,7 +1105,7 @@ test_index_offset (void)
 
 
 static void
-test_single_ordered_bulk ()
+test_single_ordered_bulk (void)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -1157,7 +1157,7 @@ test_single_ordered_bulk ()
 
 
 static void
-test_insert_continue_on_error ()
+test_insert_continue_on_error (void)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -1204,7 +1204,7 @@ test_insert_continue_on_error ()
 
 
 static void
-test_update_continue_on_error ()
+test_update_continue_on_error (void)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -1267,7 +1267,7 @@ test_update_continue_on_error ()
 
 
 static void
-test_remove_continue_on_error ()
+test_remove_continue_on_error (void)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -1320,7 +1320,7 @@ test_remove_continue_on_error ()
 
 
 static void
-test_single_error_ordered_bulk ()
+test_single_error_ordered_bulk (void)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -1378,7 +1378,7 @@ test_single_error_ordered_bulk ()
 
 
 static void
-test_multiple_error_ordered_bulk ()
+test_multiple_error_ordered_bulk (void)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -1445,7 +1445,7 @@ test_multiple_error_ordered_bulk ()
 
 
 static void
-test_single_unordered_bulk ()
+test_single_unordered_bulk (void)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -1495,7 +1495,7 @@ test_single_unordered_bulk ()
 
 
 static void
-test_single_error_unordered_bulk ()
+test_single_error_unordered_bulk (void)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -1768,7 +1768,7 @@ test_write_concern_write_command_unordered_multi_err (void)
 
 
 static void
-test_multiple_error_unordered_bulk ()
+test_multiple_error_unordered_bulk (void)
 {
    mongoc_client_t *client;
    bool has_write_cmds;
@@ -2087,7 +2087,7 @@ test_large_inserts_ordered (void)
 
 
 static void
-test_large_inserts_unordered ()
+test_large_inserts_unordered (void)
 {
    mongoc_client_t *client;
    bson_t *huge_doc;
@@ -2427,14 +2427,14 @@ test_bulk_edge_case_372 (bool ordered)
 
 
 static void
-test_bulk_edge_case_372_ordered ()
+test_bulk_edge_case_372_ordered (void)
 {
    test_bulk_edge_case_372 (true);
 }
 
 
 static void
-test_bulk_edge_case_372_unordered ()
+test_bulk_edge_case_372_unordered (void)
 {
    test_bulk_edge_case_372 (false);
 }
@@ -2583,21 +2583,21 @@ _test_legacy_write_err (op_type_t op_type)
 
 
 static void
-test_legacy_insert_err ()
+test_legacy_insert_err (void)
 {
    _test_legacy_write_err (INSERT);
 }
 
 
 static void
-test_legacy_update_err ()
+test_legacy_update_err (void)
 {
    _test_legacy_write_err (UPDATE);
 }
 
 
 static void
-test_legacy_remove_err ()
+test_legacy_remove_err (void)
 {
    _test_legacy_write_err (REMOVE);
 }
