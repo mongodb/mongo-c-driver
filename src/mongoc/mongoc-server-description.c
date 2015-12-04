@@ -29,7 +29,7 @@
 
 static uint8_t kMongocEmptyBson[] = { 5, 0, 0, 0, 0 };
 
-static bson_oid_t kObjectIdZero = { 0 };
+static bson_oid_t kObjectIdZero = { {0} };
 
 /* Destroy allocated resources within @description, but don't free it */
 void
