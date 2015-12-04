@@ -21,6 +21,9 @@
 #include <sys/types.h>
 #include <math.h>
 
+/* strcasecmp on windows */
+#include "mongoc-util-private.h"
+
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"

@@ -15,6 +15,8 @@
  */
 
 #include "mongoc-host-list-private.h"
+/* strcasecmp on windows */
+#include "mongoc-util-private.h"
 
 
 /*
