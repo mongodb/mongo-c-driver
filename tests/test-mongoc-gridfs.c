@@ -316,6 +316,7 @@ test_read (void)
    char buf[10], buf2[10];
    mongoc_iovec_t iov[2];
    int previous_errno;
+   ssize_t twenty = 20L;
 
    iov[0].iov_base = buf;
    iov[0].iov_len = 10;
@@ -337,21 +338,21 @@ test_read (void)
    ASSERT (mongoc_gridfs_file_save (file));
 
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
-   ASSERT_CMPLONG (r, ==, 20L);
+   ASSERT_CMPSSIZE_T (r, ==, twenty);
    ASSERT_MEMCMP (iov[0].iov_base, "Bacon ipsu", 10);
    ASSERT_MEMCMP (iov[1].iov_base, "m dolor si", 10);
 
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 1, SEEK_SET), ==, 0);
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
 
-   ASSERT_CMPLONG (r, ==, 20L);
+   ASSERT_CMPSSIZE_T (r, ==, twenty);
    ASSERT_MEMCMP (iov[0].iov_base, "acon ipsum", 10);
    ASSERT_MEMCMP (iov[1].iov_base, " dolor sit", 10);
 
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, file->chunk_size-1, SEEK_SET), ==, 0);
    r = mongoc_gridfs_file_readv (file, iov, 2, 20, 0);
 
-   ASSERT_CMPLONG (r, ==, 20L);
+   ASSERT_CMPSSIZE_T (r, ==, twenty);
    ASSERT_CMPINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)(file->chunk_size+19));
    ASSERT_MEMCMP (iov[0].iov_base, "turducken ", 10);
    ASSERT_MEMCMP (iov[1].iov_base, "spare ribs", 10);
@@ -411,13 +412,13 @@ test_write (void)
 
    /* Test a write across many pages */
    r = mongoc_gridfs_file_writev (file, iov, 2, 0);
-   ASSERT_CMPLONG (r, ==, len);
+   ASSERT_CMPSSIZE_T (r, ==, len);
 
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_SET), ==, 0);
    ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)0);
 
    r = mongoc_gridfs_file_readv (file, &riov, 1, len, 0);
-   ASSERT_CMPLONG (r, ==, len);
+   ASSERT_CMPSSIZE_T (r, ==, len);
    ASSERT_CMPINT (memcmp (buf3, "foo bar baz", len), ==, 0);
 
    /* Test a write starting and ending exactly on chunk boundaries */
@@ -425,13 +426,13 @@ test_write (void)
    ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)(file->chunk_size));
 
    r = mongoc_gridfs_file_writev (file, iov+1, 1, 0);
-   ASSERT_CMPLONG (r, ==, iov[1].iov_len);
+   ASSERT_CMPSSIZE_T (r, ==, iov[1].iov_len);
 
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_SET), ==, 0);
    ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)0);
 
    r = mongoc_gridfs_file_readv (file, &riov, 1, len, 0);
-   ASSERT_CMPLONG (r, ==, len);
+   ASSERT_CMPSSIZE_T (r, ==, len);
    ASSERT_CMPINT (memcmp (buf3, "fo bazr baz", len), ==, 0);
 
    /* Test writing beyond the end of the file */
@@ -472,6 +473,7 @@ test_empty (void)
    ssize_t r;
    char buf[2] = {'h', 'i'};
    mongoc_iovec_t iov[1];
+   ssize_t two = 2L;
 
    iov[0].iov_base = buf;
    iov[0].iov_len = 2;
@@ -496,13 +498,13 @@ test_empty (void)
 
    r = mongoc_gridfs_file_writev(file, iov, 1, 0);
 
-   ASSERT_CMPLONG (r, ==, 2L);
+   ASSERT_CMPSSIZE_T (r, ==, two);
    ASSERT_CMPINT (mongoc_gridfs_file_seek (file, 0, SEEK_SET), ==, 0);
    ASSERT_CMPUINT64 (mongoc_gridfs_file_tell (file), ==, (uint64_t)0);
 
    r = mongoc_gridfs_file_readv(file, iov, 1, 2, 0);
 
-   ASSERT_CMPLONG (r, ==, 2L);
+   ASSERT_CMPSSIZE_T (r, ==, two);
    ASSERT_CMPINT (strncmp (buf, "hi", 2), ==, 0);
 
    mongoc_gridfs_file_destroy (file);
@@ -595,7 +597,7 @@ test_long_seek (void)
    written = 0;
    while (written < 20 * 1024 * 1024) {
       r = mongoc_gridfs_file_writev (file, &iov, 1, 0);
-      ASSERT_CMPLONG (r, ==, buflen);
+      ASSERT_CMPSSIZE_T (r, ==, buflen);
       written += r;
    }
 
@@ -610,7 +612,7 @@ test_long_seek (void)
 
    /* read the start of the file */
    r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
-   ASSERT_CMPLONG (r, ==, buflen);
+   ASSERT_CMPSSIZE_T (r, ==, buflen);
    ASSERT_TELL (file, (uint64_t) buflen);
    cursor_id = mongoc_cursor_get_id (file->cursor);
 
@@ -618,7 +620,7 @@ test_long_seek (void)
    i = mongoc_gridfs_file_seek (file, four_mb, SEEK_CUR);
    ASSERT_CMPINT (i, ==, 0);
    r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
-   ASSERT_CMPLONG (r, ==, buflen);
+   ASSERT_CMPSSIZE_T (r, ==, buflen);
    ASSERT_TELL (file, four_mb + 2 * buflen);
 
    /* same as the cursor we started with */
@@ -629,7 +631,7 @@ test_long_seek (void)
    ASSERT_CMPINT (i, ==, 0);
    ASSERT_TELL (file, 4 * four_mb + 2 * buflen);
    r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
-   ASSERT_CMPLONG (r, ==, buflen);
+   ASSERT_CMPSSIZE_T (r, ==, buflen);
    ASSERT_TELL (file, 4 * four_mb + 3 * buflen);
 
    /* new cursor, not the one we started with */
@@ -718,7 +720,7 @@ test_missing_chunk (void)
    written = 0;
    while (written < 700 * 1024) {
       r = mongoc_gridfs_file_writev (file, &iov, 1, 0);
-      ASSERT_CMPLONG (r, ==, buflen);
+      ASSERT_CMPSSIZE_T (r, ==, buflen);
       written += r;
    }
 
@@ -739,7 +741,7 @@ test_missing_chunk (void)
    for (;;) {
       r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
       if (r > 0) {
-         ASSERT_CMPLONG (r, ==, buflen);
+         ASSERT_CMPSSIZE_T (r, ==, buflen);
       } else {
          ASSERT (mongoc_gridfs_file_error (file, &error));
          ASSERT_ERROR_CONTAINS (error,
