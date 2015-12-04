@@ -96,6 +96,11 @@ ssl_error_server (void *ptr)
    return NULL;
 }
 
+
+#define TRUST_DIR "tests/trust_dir"
+#define PEMFILE_NOPASS TRUST_DIR "/keys/mongodb.com.pem"
+
+#if !defined(__sun)
 /** run as a child thread by test_mongoc_tls_hangup
  *
  * It:
@@ -165,9 +170,6 @@ ssl_hangup_client (void *ptr)
    return NULL;
 }
 
-#define TRUST_DIR "tests/trust_dir"
-#define PEMFILE_NOPASS TRUST_DIR "/keys/mongodb.com.pem"
-
 static void
 test_mongoc_tls_hangup (void)
 {
@@ -210,6 +212,7 @@ test_mongoc_tls_hangup (void)
    ASSERT (cr.result == SSL_TEST_SUCCESS);
    ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
+#endif
 
 
 /** run as a child thread by test_mongoc_tls_handshake_stall
