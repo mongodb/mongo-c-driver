@@ -425,7 +425,7 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
       GOTO (failure);
    }
 
-   request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
+   request_id = BSON_UINT32_FROM_LE (rpc.header.request_id);
 
    _mongoc_buffer_clear(&cursor->buffer, false);
 
@@ -450,7 +450,7 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid response_to. Expected %d, got %d.",
+                      "Invalid response_to for query. Expected %d, got %d.",
                       request_id, cursor->rpc.header.response_to);
       GOTO (failure);
    }
@@ -831,7 +831,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
    ENTRY;
 
    if (cursor->in_exhaust) {
-      request_id = BSON_UINT32_FROM_LE (cursor->rpc.header.request_id);
+      request_id = (uint32_t) cursor->rpc.header.request_id;
    } else {
       rpc.get_more.cursor_id = cursor->rpc.reply.cursor_id;
       rpc.get_more.msg_len = 0;
@@ -852,7 +852,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
          GOTO (done);
       }
 
-      request_id = BSON_UINT32_FROM_LE(rpc.header.request_id);
+      request_id = BSON_UINT32_FROM_LE (rpc.header.request_id);
    }
 
    _mongoc_buffer_clear (&cursor->buffer, false);
@@ -878,7 +878,7 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
-                      "Invalid response_to. Expected %d, got %d.",
+                      "Invalid response_to for getmore. Expected %d, got %d.",
                       request_id, cursor->rpc.header.response_to);
       GOTO (done);
    }
