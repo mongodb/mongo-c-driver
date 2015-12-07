@@ -128,6 +128,7 @@ test_find_and_modify_bypass (bool bypass)
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mock_server_destroy (server);
    bson_destroy (&doc);
 }
 
@@ -219,6 +220,7 @@ test_find_and_modify_write_concern (int wire_version)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    bson_destroy (&doc);
+   mock_server_destroy (server);
 }
 
 static void
