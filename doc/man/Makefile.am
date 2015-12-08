@@ -14,4 +14,5 @@ man3_MANS = $(BUILT_MAN_FILES)
 	$(AM_V_GEN)./doc/mallard2man.py 3 $^
 
 man: $(BUILT_MAN_FILES)
-EXTRA_DIST += $(wildcard doc/man/*.3)
+EXTRA_DIST += $(wildcard doc/man/*.3) \
+              doc/mallard2man.py
