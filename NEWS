@@ -1,7 +1,7 @@
 mongo-c-driver 1.3.0
 ====================
 
-It is my pleasure to announce to you the release of Libbson-1.3.0.
+It is my pleasure to announce to you the release of the MongoDB C Driver 1.3.0.
 
 Changes since the the release candidate 1.3.0-rc0:
 
@@ -83,7 +83,7 @@ Other fixes since 1.2.1:
     GCC 4.8, and IBM XL C.
   * Bugs and typos in tutorial examples.
 
-Thanks to everyone who contributed to this release candidate.
+Thanks to everyone who contributed to this release.
 
   * A. Jesse Jiryu Davis
   * Hannes Magnusson
