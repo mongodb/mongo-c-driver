@@ -554,6 +554,10 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
+   if (cursor->reader) {
+      bson_reader_destroy(cursor->reader);
+   }
+
    cursor->reader = bson_reader_new_from_data (
       cursor->rpc.reply.documents,
       (size_t)cursor->rpc.reply.documents_len);
