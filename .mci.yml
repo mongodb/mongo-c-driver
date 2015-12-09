@@ -331,6 +331,7 @@ functions:
           export GENERATOR="${generator}"     # For CMake on Windows
           export MSBUILD="${msbuild}"         # For CMake on Windows
           export CMAKE_DEFS="${cmake_defs}"   # For CMake on Windows
+          export CFLAGS="${cflags}"
           ${compile_script}
 
   "set topology standalone" :
