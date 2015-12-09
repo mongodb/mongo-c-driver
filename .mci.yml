@@ -82,7 +82,7 @@ c_driver_variables:
   ## Common sets of CFLAGS
   cflags:
     standard: &cflags_64
-    cflags: "-m64 -march=x86-64 -Werror"
+      cflags: "-m64 -march=x86-64 -Werror"
     standard_32: &cflags_32
       cflags: "-m32 -march=i386 -Werror"
     osx_108: &cflags_osx_108
