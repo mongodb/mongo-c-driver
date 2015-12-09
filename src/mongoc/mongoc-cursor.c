@@ -104,7 +104,7 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    cursor->client = client;
    bson_strncpy (cursor->ns, db_and_collection, sizeof cursor->ns);
 
-   cursor->nslen = (uint32_t)strnlen (cursor->ns, sizeof cursor->ns);
+   cursor->nslen = (uint32_t)bson_strnlen (cursor->ns, sizeof cursor->ns);
    dot = strstr (db_and_collection, ".");
 
    if (dot) {
