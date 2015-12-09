@@ -468,7 +468,7 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    }
 
    if (cursor->reader) {
-      bson_reader_destroy(cursor->reader);
+      bson_reader_destroy (cursor->reader);
    }
 
    cursor->reader = bson_reader_new_from_data(
@@ -552,6 +552,10 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 
    if (_mongoc_rpc_parse_command_error (&cursor->rpc, &cursor->error)) {
       GOTO (done);
+   }
+
+   if (cursor->reader) {
+      bson_reader_destroy (cursor->reader);
    }
 
    cursor->reader = bson_reader_new_from_data (
