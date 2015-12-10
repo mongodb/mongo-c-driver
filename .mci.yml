@@ -112,9 +112,6 @@ c_driver_variables:
             mongo-orchestration --pidfile c:\\mo.pid stop
             rm -f $pidfile
           fi
-          taskkill.exe /FI "IMAGENAME eq python.exe" /F
-          taskkill.exe /FI "IMAGENAME eq mongod.exe" /F
-          taskkill.exe /FI "IMAGENAME eq mongos.exe" /F
           fsutil volume diskfree c:
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
