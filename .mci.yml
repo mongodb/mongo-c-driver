@@ -115,7 +115,7 @@ c_driver_variables:
           fsutil volume diskfree c:
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
-          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000 --enable-majority-read-concern --pidfile c:\\mo.pid
+          mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000 --bind=127.0.0.1 --enable-majority-read-concern --pidfile c:\\mo.pid
           sleep 10
           curl -s http://localhost:8889/
       unix: &mongo_orchestration_unix
@@ -131,7 +131,7 @@ c_driver_variables:
           df -h
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
-          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=0.0.0.0  --enable-majority-read-concern --pidfile $pidfile
+          TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern --pidfile $pidfile
           curl -s http://localhost:8889/
       start_topology_command: &start_topology_command
         start_topology: |
