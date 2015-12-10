@@ -355,12 +355,12 @@ test_invalid_cluster_node (void)
    assert (cluster_node);
    assert (scanner_node);
    assert (cluster_node->stream);
-   assert (cluster_node->timestamp > scanner_node->timestamp);
+   ASSERT_CMPINT64 (cluster_node->timestamp, >, scanner_node->timestamp);
 
    /* update the scanner node's timestamp */
    _mongoc_usleep (1000 * 1000);
    scanner_node->timestamp = bson_get_monotonic_time ();
-   assert (cluster_node->timestamp < scanner_node->timestamp);
+   ASSERT_CMPINT64 (cluster_node->timestamp, <, scanner_node->timestamp);
    _mongoc_usleep (1000 * 1000);
 
    /* cluster discards node and creates new one */
@@ -368,7 +368,7 @@ test_invalid_cluster_node (void)
                                                      id, true, &error);
    ASSERT_OR_PRINT (server_stream, error);
    cluster_node = (mongoc_cluster_node_t *)mongoc_set_get (cluster->nodes, id);
-   assert (cluster_node->timestamp > scanner_node->timestamp);
+   ASSERT_CMPINT64 (cluster_node->timestamp, >, scanner_node->timestamp);
 
    mongoc_server_stream_cleanup (server_stream);
    mongoc_client_pool_push (pool, client);
