@@ -87,6 +87,8 @@ c_driver_variables:
       cflags: "-m32 -march=i386 -Werror"
     osx_108: &cflags_osx_108
       cflags: "-m64 -march=x86-64"
+    solaris_64: &cflags_solaris_64
+      cflags: "-m64 -march=x86-64"
 
   ## Extra $PATH entries
   paths:
@@ -147,6 +149,15 @@ c_driver_variables:
           set -o verbose
           ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
+      solaris64: &compile_solaris64
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          sudo /opt/csw/bin/pkgutil -y -i sasl_dev
+          export SASL_CFLAGS="-I/opt/csw/include/"
+          export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
+          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          make
       solaris: &compile_solaris
         compile_script: |
           set -o errexit
@@ -200,6 +211,16 @@ c_driver_variables:
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
           ./Debug/test-libmongoc.exe -d -f -p
+      solaris: &run_integration_tests_solaris
+        run_integration_tests: |
+          export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
+          export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          sudo /opt/csw/bin/pkgutil -y -i sasl_dev
+          export SASL_CFLAGS="-I/opt/csw/include/"
+          export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
+          export LD_LIBRARY_PATH="/opt/csw/lib/amd64/"
+          make TEST_ARGS="-f -p -d" check
+
       unix: &run_integration_tests_unix
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
@@ -222,6 +243,16 @@ c_driver_variables:
   solaris_common: &solaris_common
     <<: *unix_common
     <<: *compile_solaris
+    <<: *solaris_path
+
+  solaris64_common: &solaris64_common
+    <<: *username_password_common
+    <<: *compile_unix
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_solaris
+    <<: *start_topology_command
+    <<: *unix_path
+    <<: *compile_solaris64
     <<: *solaris_path
 
   ssl: &ssl
@@ -990,8 +1021,8 @@ buildvariants:
 - name: solaris-64-bit
   display_name: "Sol gcc-4.8.2 64"
   expansions:
-    <<: *solaris_common
-    <<: *cflags_64
+    <<: *solaris64_common
+    <<: *cflags_solaris_64
     <<: *mongo_url_solaris
   run_on:
       - solaris
