@@ -379,3 +379,30 @@ install(
   FILES ${HEADERS}
   DESTINATION "include/libmongoc-${MONGOC_API_VERSION}"
 )
+
+# Define pkg-config files
+set(VERSION "${MONGOC_VERSION}")
+set(prefix "${CMAKE_INSTALL_PREFIX}")
+set(libdir "\${prefix}/lib")
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-1.0.pc.in
+  ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-1.0.pc
+@ONLY)
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-priv.pc.in
+  ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-priv.pc
+@ONLY)
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-1.0.pc ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-priv.pc
+  DESTINATION lib/pkgconfig
+)
+if (MONGOC_ENABLE_SSL)
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-ssl-1.0.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-ssl-1.0.pc
+  @ONLY)
+  install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-ssl-1.0.pc
+    DESTINATION lib/pkgconfig
+  )
+endif()
