@@ -1,7 +1,7 @@
 Source: libmongoc
 Priority: optional
 Maintainer: A. Jesse Jiryu Davis <jesse@mongodb.com>
-Build-Depends: debhelper (>= 9), dh-autoreconf, yelp-tools, yelp-xsl, libbson-dev, pkg-config
+Build-Depends: debhelper (>= 9), dh-autoreconf, yelp-tools, yelp-xsl, libbson-dev, pkg-config, libssl-dev
 Standards-Version: 3.9.6
 Section: libs
 Homepage: https://github.com/mongodb/mongo-c-driver
@@ -49,3 +49,14 @@ Description: MongoDB C client library - documentation
  applications.
  .
  This package contains the man pages for libmongoc.
+
+Package: libmongoc-priv-dev
+Section: libdevel
+Architecture: all
+Depends: ${misc:Depends}
+Description: MongoDB C client library - private headers and symbols
+ libmongoc is the officially supported MongoDB client library for C
+ applications.
+ .
+ This package contains private headers and symbols, for projects like the
+ MongoDB driver for PHP that access internals of libmongoc.
