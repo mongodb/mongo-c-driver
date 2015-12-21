@@ -40,7 +40,7 @@ typedef struct
     <title>Description</title>
     <p>This structure contains the options that may be used for tuning a specific index.</p>
 
-    <p>See the <link href="docs.mongodb.org/manual/reference/command/createIndexes/">
+    <p>See the <link href="https://docs.mongodb.org/manual/reference/command/createIndexes/">
     createIndexes documentations</link> in the MongoDB manual for descriptions of individual
     options.</p>
 
