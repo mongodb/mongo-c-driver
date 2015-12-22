@@ -38,4 +38,4 @@ override_dh_strip:
 	dh_strip -a --dbg-package=libmongoc-dbg
 
 override_dh_install:
-	dh_install -a -X.la -Xmongoc-stat -Xdoc/mongo-c-driver --fail-missing
+	dh_install -a -X.la -Xmongoc-stat -Xdoc/mongo-c-driver -Xman/man3 --fail-missing

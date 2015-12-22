@@ -38,7 +38,8 @@ Description: MongoDB C client library - debug symbols
  libmongoc is the officially supported MongoDB client library for C
  applications.
  .
- This package contains the debugging symbols for libmongoc.
+ This package contains the debugging symbols for libmongoc's public and
+ private runtime libraries.
 
 Package: libmongoc-doc
 Section: doc
@@ -50,13 +51,29 @@ Description: MongoDB C client library - documentation
  .
  This package contains the man pages for libmongoc.
 
-Package: libmongoc-priv-dev
+Package: libmongoc-priv
 Section: libdevel
-Architecture: all
+Architecture: any
 Depends: ${misc:Depends}
-Description: MongoDB C client library - private headers and symbols
+Description: MongoDB C client library - private runtime
  libmongoc is the officially supported MongoDB client library for C
  applications.
  .
- This package contains private headers and symbols, for projects like the
- MongoDB driver for PHP that access internals of libmongoc.
+ This package contains a private runtime library, for projects like the
+ MongoDB driver for PHP that access internals of libmongoc. This private
+ library is unstable and undocumented, not suitable for public use.
+ Future versions will have unannounced breaking ABI and API changes.
+
+Package: libmongoc-priv-dev
+Section: libdevel
+Architecture: any
+Depends: ${misc:Depends}
+Description: MongoDB C client library - private headers
+ libmongoc is the officially supported MongoDB client library for C
+ applications.
+ .
+ This package contains private headers for projects like the MongoDB
+ driver for PHP that access internals of libmongoc. These private headers
+ are unstable and undocumented, not suitable for public use. Future
+ versions of these headers will have unannounced breaking ABI and API
+ changes.
