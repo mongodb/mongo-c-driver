@@ -6,8 +6,7 @@
     <link type="guide" xref="index#api-reference" />
   </info>
 
-  <title>Version_Checks</title>
-  <subtitle>Conditional compilation based on mongoc version</subtitle>
+  <title>Version Checks</title>
 
   <p>
     The following preprocessor macros can be used to perform various checks based on the version of the library you are compiling against.
