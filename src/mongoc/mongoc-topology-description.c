@@ -60,6 +60,7 @@ mongoc_topology_description_init (mongoc_topology_description_t     *description
    description->type = type;
    description->servers = mongoc_set_new(8, _mongoc_topology_server_dtor, NULL);
    description->set_name = NULL;
+   description->max_set_version = MONGOC_NO_SET_VERSION;
    description->compatible = true;
    description->compatibility_error = NULL;
    description->stale = true;
@@ -152,8 +153,8 @@ _mongoc_topology_description_has_primary (mongoc_topology_description_t *descrip
  *       than this server has.
  *
  * Returns:
- *       True if the topology description's max election id is greater
- *       than the server description's election_id.
+ *       True if the topology description's max replica set version plus
+ *       election id is later than the server description's.
  *
  * Side effects:
  *       None
@@ -164,7 +165,28 @@ static bool
 _mongoc_topology_description_later_election (mongoc_topology_description_t *td,
                                              mongoc_server_description_t   *sd)
 {
-   return bson_oid_compare (&td->max_election_id, &sd->election_id) > 0;
+   /* initially max_set_version is -1 and max_election_id is zeroed */
+   return td->max_set_version > sd->set_version ||
+      (td->max_set_version == sd->set_version &&
+         bson_oid_compare (&td->max_election_id, &sd->election_id) > 0);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_description_set_max_set_version --
+ *
+ *       Remember that we've seen a new replica set version. Unconditionally
+ *       sets td->set_version to sd->set_version.
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+_mongoc_topology_description_set_max_set_version (
+   mongoc_topology_description_t *td,
+   mongoc_server_description_t   *sd)
+{
+   td->max_set_version = sd->set_version;
 }
 
 /*
@@ -593,6 +615,27 @@ _mongoc_topology_description_has_server_cb (void *item,
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_topology_description_has_set_version --
+ *
+ *       Whether @topology's max replica set version has been set.
+ *
+ * Returns:
+ *       True if the max setVersion was ever set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_mongoc_topology_description_has_set_version (mongoc_topology_description_t *td)
+{
+   return td->max_set_version != MONGOC_NO_SET_VERSION;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_topology_description_topology_has_server --
  *
  *       Return true if @server is in @topology. If so, place its id in
@@ -855,6 +898,7 @@ _mongoc_topology_description_invalidate_primaries_cb (void *item,
    if (server->id != data->primary->id &&
        server->type == MONGOC_SERVER_RS_PRIMARY) {
       mongoc_server_description_set_state (server, MONGOC_SERVER_UNKNOWN);
+      mongoc_server_description_set_set_version (server, MONGOC_NO_SET_VERSION);
       mongoc_server_description_set_election_id (server, NULL);
    }
    return true;
@@ -988,7 +1032,8 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
       }
    }
 
-   if (mongoc_server_description_has_election_id (server)) {
+   if (mongoc_server_description_has_set_version (server) &&
+       mongoc_server_description_has_election_id (server)) {
       /* Server Discovery And Monitoring Spec: "The client remembers the
        * greatest electionId reported by a primary, and distrusts primaries
        * with lesser electionIds. This prevents the client from oscillating
@@ -1003,6 +1048,12 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
 
       /* server's electionId >= topology's max electionId */
       _mongoc_topology_description_set_max_election_id (topology, server);
+   }
+
+   if (mongoc_server_description_has_set_version (server) &&
+         (! _mongoc_topology_description_has_set_version (topology) ||
+            server->set_version > topology->max_set_version)) {
+      _mongoc_topology_description_set_max_set_version (topology, server);
    }
 
    /* 'Server' is the primary! Invalidate other primaries if found */
