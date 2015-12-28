@@ -1,2 +1,3 @@
 0001_spelling_in_mongoc_cursor_page.patch
 0002_mongoc_version_whatis.patch
+0003_relocate_priv_library.patch

@@ -1,0 +1,22 @@
+--- mongo-c-driver.git.orig/src/Makefile.am
++++ mongo-c-driver.git/src/Makefile.am
+@@ -7,7 +7,8 @@
+ endif
+ 
+ 
+-lib_LTLIBRARIES += libmongoc-priv.la
++privlibdir = $(libdir)/mongoc
++privlib_LTLIBRARIES = libmongoc-priv.la
+ lib_LTLIBRARIES += libmongoc-1.0.la
+ 
+ 
+--- mongo-c-driver.git.orig/src/libmongoc-priv.pc.in
++++ mongo-c-driver.git/src/libmongoc-priv.pc.in
+@@ -1,6 +1,6 @@
+ prefix=@prefix@
+ exec_prefix=${prefix}
+-libdir=@libdir@
++libdir=@libdir@/mongoc
+ includedir=${exec_prefix}/include
+ 
+ Name: libmongoc-priv

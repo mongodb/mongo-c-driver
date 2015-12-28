@@ -1,1 +1,1 @@
-usr/lib/*/libmongoc-priv.so.*
+usr/lib/*/mongoc/libmongoc-priv.so.*
