@@ -1,3 +1,5 @@
+Author: Roberto C. Sanchez <roberto@connexer.com>
+Description: Install the libmongoc-priv.so library into a private subdirectory.
 --- mongo-c-driver.git.orig/src/Makefile.am
 +++ mongo-c-driver.git/src/Makefile.am
 @@ -7,7 +7,8 @@
