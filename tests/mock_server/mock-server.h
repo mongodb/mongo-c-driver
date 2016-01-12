@@ -148,6 +148,8 @@ void mock_server_replies (request_t *request,
 void mock_server_replies_simple (request_t *request,
                                  const char *docs_json);
 
+void mock_server_replies_ok_and_destroys (request_t *request);
+
 void mock_server_replies_to_find (request_t           *request,
                                   mongoc_query_flags_t flags,
                                   int64_t              cursor_id,

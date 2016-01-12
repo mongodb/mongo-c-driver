@@ -1249,6 +1249,30 @@ mock_server_replies_simple (request_t *request,
 }
 
 
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_replies_ok_and_destroys --
+ *
+ *       Respond to a client request.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       Sends an OP_REPLY with "{ok: 1}" to the client.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mock_server_replies_ok_and_destroys (request_t *request)
+{
+   mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, "{'ok': 1}");
+   request_destroy (request);
+}
+
+
 /*--------------------------------------------------------------------------
  *
  * mock_server_replies_to_find --
