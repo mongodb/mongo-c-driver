@@ -90,6 +90,9 @@ _mongoc_gridfs_new (mongoc_client_t *client,
                     bson_error_t    *error)
 {
    mongoc_gridfs_t *gridfs;
+   const mongoc_read_prefs_t *read_prefs;
+   const mongoc_read_concern_t *read_concern;
+   const mongoc_write_concern_t *write_concern;
    char buf[128];
    bool r;
 
@@ -117,11 +120,17 @@ _mongoc_gridfs_new (mongoc_client_t *client,
 
    gridfs->client = client;
 
+   read_prefs = mongoc_client_get_read_prefs (client);
+   read_concern = mongoc_client_get_read_concern (client);
+   write_concern = mongoc_client_get_write_concern (client);
+
    bson_snprintf (buf, sizeof(buf), "%s.chunks", prefix);
-   gridfs->chunks = _mongoc_collection_new (client, db, buf, NULL, NULL, NULL);
+   gridfs->chunks = _mongoc_collection_new (client, db, buf, read_prefs,
+                                            read_concern, write_concern);
 
    bson_snprintf (buf, sizeof(buf), "%s.files", prefix);
-   gridfs->files = _mongoc_collection_new (client, db, buf, NULL, NULL, NULL);
+   gridfs->files = _mongoc_collection_new (client, db, buf, read_prefs,
+                                           read_concern, write_concern);
 
    r = _mongoc_gridfs_ensure_index (gridfs, error);
 
