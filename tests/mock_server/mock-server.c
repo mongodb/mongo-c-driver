@@ -1245,7 +1245,7 @@ void
 mock_server_replies_simple (request_t *request,
                             const char *docs_json)
 {
-   mock_server_replies (request, 0, 0, 0, 1, docs_json);
+   mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, docs_json);
 }
 
 
