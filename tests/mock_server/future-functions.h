@@ -160,6 +160,23 @@ future_gridfs_file_readv (
 
 
 future_t *
+future_gridfs_find_one (
+
+   mongoc_gridfs_ptr gridfs,
+   const_bson_ptr query,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_gridfs_file_remove (
+
+   mongoc_gridfs_file_ptr file,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_gridfs_file_seek (
 
    mongoc_gridfs_file_ptr file,
