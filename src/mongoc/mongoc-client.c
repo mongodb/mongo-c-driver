@@ -1243,11 +1243,10 @@ mongoc_client_command_simple (mongoc_client_t           *client,
    apply_read_preferences (read_prefs, server_stream, command,
                            MONGOC_QUERY_NONE, &result);
 
-   ret = mongoc_cluster_run_command (cluster, server_stream->stream,
-                                     server_stream->sd->id,
-                                     result.flags, db_name,
-                                     result.query_with_read_prefs,
-                                     reply, error);
+   ret = mongoc_cluster_run_command_monitored (cluster, server_stream,
+                                               result.flags, db_name,
+                                               result.query_with_read_prefs,
+                                               reply, error);
 
 done:
    mongoc_server_stream_cleanup (server_stream);
@@ -1333,10 +1332,9 @@ _mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
    /* Find, getMore And killCursors Commands Spec: "The result from the
     * killCursors command MAY be safely ignored."
     */
-   mongoc_cluster_run_command (cluster, server_stream->stream,
-                               server_stream->sd->id,
-                               MONGOC_QUERY_SLAVE_OK, db, &command,
-                               NULL, NULL);
+   mongoc_cluster_run_command_monitored (cluster, server_stream,
+                                         MONGOC_QUERY_SLAVE_OK, db, &command,
+                                         NULL, NULL);
 
    bson_destroy (&command);
 }
@@ -1523,4 +1521,19 @@ mongoc_client_set_stream_initiator (mongoc_client_t           *client,
       mongoc_topology_scanner_set_stream_initiator (client->topology->scanner,
                                                     initiator, user_data);
    }
+}
+
+
+void
+mongoc_client_set_apm_callbacks (mongoc_client_t        *client,
+                                 mongoc_apm_callbacks_t *callbacks,
+                                 void                   *context)
+{
+   if (callbacks) {
+      memcpy (&client->apm_callbacks, callbacks, sizeof client->apm_callbacks);
+   } else {
+      memset (&client->apm_callbacks, 0, sizeof client->apm_callbacks);
+   }
+
+   client->apm_context = context;
 }

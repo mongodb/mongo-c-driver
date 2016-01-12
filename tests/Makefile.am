@@ -101,6 +101,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-cluster.c \
 	tests/test-mongoc-collection.c \
 	tests/test-mongoc-collection-find.c \
+	tests/test-mongoc-command-monitoring.c \
 	tests/test-mongoc-cursor.c \
 	tests/test-mongoc-database.c \
 	tests/test-mongoc-exhaust.c \
@@ -116,7 +117,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-socket.c \
 	tests/test-mongoc-sdam.c \
 	tests/test-mongoc-server-selection.c \
-        tests/test-mongoc-server-selection-errors.c \
+	tests/test-mongoc-server-selection-errors.c \
 	tests/test-mongoc-set.c \
 	tests/test-mongoc-stream.c \
 	tests/test-mongoc-thread.c \

@@ -709,10 +709,11 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
        bson_concat(&cmd, opts);
    }
 
-   success = mongoc_cluster_run_command (cluster, server_stream->stream,
-                                         server_stream->sd->id,
-                                         MONGOC_QUERY_SLAVE_OK, collection->db,
-                                         &cmd, &reply, error);
+   success = mongoc_cluster_run_command_monitored (cluster,
+                                                   server_stream,
+                                                   MONGOC_QUERY_SLAVE_OK,
+                                                   collection->db,
+                                                   &cmd, &reply, error);
 
    if (success && bson_iter_init_find(&iter, &reply, "n")) {
       ret = bson_iter_as_int64(&iter);
@@ -2161,10 +2162,10 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
       }
    }
 
-   ret = mongoc_cluster_run_command (cluster, server_stream->stream,
-                                     server_stream->sd->id,
-                                     MONGOC_QUERY_NONE, collection->db,
-                                     &command, &reply_local, error);
+   ret = mongoc_cluster_run_command_monitored (cluster, server_stream,
+                                               MONGOC_QUERY_NONE,
+                                               collection->db, &command,
+                                               &reply_local, error);
 
    if (bson_iter_init_find (&iter, &reply_local, "writeConcernError") &&
          BSON_ITER_HOLDS_DOCUMENT (&iter)) {

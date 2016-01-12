@@ -507,6 +507,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 {
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
+   const char *command_name;
+   bool r;
    char cmd_ns[MONGOC_NAMESPACE_MAX];
    mongoc_apply_read_prefs_result_t read_prefs_result = READ_PREFS_RESULT_INIT;
    bool ret = false;
@@ -536,11 +538,21 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                              read_prefs_result.query_with_read_prefs,
                              read_prefs_result.flags);
 
-   if (!mongoc_cluster_run_command_rpc (cluster, server_stream->stream,
-                                        server_stream->sd->id,
-                                        _mongoc_get_command_name (&cursor->query),
-                                        &rpc, &cursor->rpc, &cursor->buffer,
-                                        &cursor->error)) {
+   command_name = _mongoc_get_command_name (&cursor->query);
+
+   r = mongoc_cluster_run_command_rpc (cluster,
+                                       server_stream->stream,
+                                       server_stream->sd->id,
+                                       command_name,
+                                       &rpc,
+                                       &cursor->rpc,
+                                       true, /* monitored */
+                                       &server_stream->sd->host,
+                                       cursor->hint,
+                                       &cursor->buffer,
+                                       &cursor->error);
+
+   if (!r) {
       GOTO (done);
    }
 

@@ -23,6 +23,7 @@
 
 #include <bson.h>
 
+#include "mongoc-apm.h"
 #include "mongoc-collection.h"
 #include "mongoc-config.h"
 #include "mongoc-cursor.h"
@@ -151,7 +152,9 @@ void                           mongoc_client_set_read_prefs       (mongoc_client
 void                           mongoc_client_set_ssl_opts         (mongoc_client_t              *client,
                                                                    const mongoc_ssl_opt_t       *opts);
 #endif
-
+void                           mongoc_client_set_apm_callbacks    (mongoc_client_t              *client,
+                                                                   mongoc_apm_callbacks_t       *callbacks,
+                                                                   void                         *context);
 
 BSON_END_DECLS
 

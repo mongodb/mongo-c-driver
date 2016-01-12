@@ -23,6 +23,7 @@
 
 #include <bson.h>
 
+#include "mongoc-apm.h"
 #include "mongoc-client.h"
 #include "mongoc-config.h"
 #ifdef MONGOC_ENABLE_SSL
@@ -37,20 +38,23 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_client_pool_t mongoc_client_pool_t;
 
 
-mongoc_client_pool_t *mongoc_client_pool_new     (const mongoc_uri_t   *uri);
-void                  mongoc_client_pool_destroy (mongoc_client_pool_t *pool);
-mongoc_client_t      *mongoc_client_pool_pop     (mongoc_client_pool_t *pool);
-void                  mongoc_client_pool_push    (mongoc_client_pool_t *pool,
-                                                  mongoc_client_t      *client);
-mongoc_client_t      *mongoc_client_pool_try_pop (mongoc_client_pool_t *pool);
-void                  mongoc_client_pool_max_size(mongoc_client_pool_t *pool,
-                                                  uint32_t              max_pool_size);
-void                  mongoc_client_pool_min_size(mongoc_client_pool_t *pool,
-                                                  uint32_t              min_pool_size);
+mongoc_client_pool_t *mongoc_client_pool_new               (const mongoc_uri_t     *uri);
+void                  mongoc_client_pool_destroy           (mongoc_client_pool_t   *pool);
+mongoc_client_t      *mongoc_client_pool_pop               (mongoc_client_pool_t   *pool);
+void                  mongoc_client_pool_push              (mongoc_client_pool_t   *pool,
+                                                            mongoc_client_t        *client);
+mongoc_client_t      *mongoc_client_pool_try_pop           (mongoc_client_pool_t   *pool);
+void                  mongoc_client_pool_max_size          (mongoc_client_pool_t   *pool,
+                                                            uint32_t                max_pool_size);
+void                  mongoc_client_pool_min_size          (mongoc_client_pool_t   *pool,
+                                                            uint32_t                min_pool_size);
 #ifdef MONGOC_ENABLE_SSL
-void                  mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t   *pool,
-                                                       const mongoc_ssl_opt_t *opts);
+void                  mongoc_client_pool_set_ssl_opts      (mongoc_client_pool_t   *pool,
+                                                            const mongoc_ssl_opt_t *opts);
 #endif
+void                  mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
+                                                            mongoc_apm_callbacks_t *callbacks,
+                                                            void                   *context);
 
 
 BSON_END_DECLS

@@ -23,6 +23,7 @@
 
 #include <bson.h>
 
+#include "mongoc-apm-private.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-client.h"
 #include "mongoc-cluster-private.h"
@@ -83,6 +84,9 @@ struct _mongoc_client_t
    mongoc_read_prefs_t       *read_prefs;
    mongoc_read_concern_t     *read_concern;
    mongoc_write_concern_t    *write_concern;
+
+   mongoc_apm_callbacks_t     apm_callbacks;
+   void                      *apm_context;
 };
 
 

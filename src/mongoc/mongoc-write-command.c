@@ -916,9 +916,10 @@ again:
       result->failed = true;
       ret = false;
    } else {
-      ret = mongoc_cluster_run_command (&client->cluster, server_stream->stream,
-                                        server_stream->sd->id, MONGOC_QUERY_NONE,
-                                        database, &cmd, &reply, error);
+      ret = mongoc_cluster_run_command_monitored (&client->cluster,
+                                                  server_stream,
+                                                  MONGOC_QUERY_NONE, database,
+                                                  &cmd, &reply, error);
 
       if (!ret) {
          result->failed = true;

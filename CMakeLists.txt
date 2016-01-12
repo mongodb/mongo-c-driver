@@ -94,6 +94,7 @@ if (APPLE)
 endif()
 
 set (SOURCES
+   ${SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${SOURCE_DIR}/src/mongoc/mongoc-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-async.c
    ${SOURCE_DIR}/src/mongoc/mongoc-async-cmd.c
@@ -156,6 +157,7 @@ set (HEADERS
    ${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h
    ${SOURCE_DIR}/src/mongoc/mongoc.h
    ${SOURCE_DIR}/src/mongoc/mongoc-apm.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-apm-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.h
@@ -293,6 +295,7 @@ set(test-libmongoc-sources
    ${SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${SOURCE_DIR}/tests/test-mongoc-collection.c
    ${SOURCE_DIR}/tests/test-mongoc-collection-find.c
+   ${SOURCE_DIR}/tests/test-mongoc-command-monitoring.c
    ${SOURCE_DIR}/tests/test-mongoc-cursor.c
    ${SOURCE_DIR}/tests/test-mongoc-database.c
    ${SOURCE_DIR}/tests/test-mongoc-exhaust.c

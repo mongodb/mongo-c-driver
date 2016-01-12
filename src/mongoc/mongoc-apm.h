@@ -22,8 +22,7 @@
 #endif
 
 #include <bson.h>
-
-#include "mongoc-client-pool.h"
+#include "mongoc-host-list.h"
 
 BSON_BEGIN_DECLS
 
@@ -70,6 +69,8 @@ const mongoc_host_list_t *
 mongoc_apm_command_started_get_host           (const mongoc_apm_command_started_t *event);
 uint32_t
 mongoc_apm_command_started_get_hint           (const mongoc_apm_command_started_t *event);
+void *
+mongoc_apm_command_started_get_context        (const mongoc_apm_command_started_t *event);
 
 /* command-succeeded event fields */
 
@@ -87,6 +88,8 @@ const mongoc_host_list_t *
 mongoc_apm_command_succeeded_get_host         (const mongoc_apm_command_succeeded_t *event);
 uint32_t
 mongoc_apm_command_succeeded_get_hint         (const mongoc_apm_command_succeeded_t *event);
+void *
+mongoc_apm_command_succeeded_get_context      (const mongoc_apm_command_succeeded_t *event);
 
 /* command-failed event fields */
 
@@ -106,6 +109,8 @@ const mongoc_host_list_t *
 mongoc_apm_command_failed_get_host            (const mongoc_apm_command_failed_t *event);
 uint32_t
 mongoc_apm_command_failed_get_hint            (const mongoc_apm_command_failed_t *event);
+void *
+mongoc_apm_command_failed_get_context         (const mongoc_apm_command_failed_t *event);
 
 /*
  * callbacks
@@ -128,19 +133,13 @@ void
 mongoc_apm_callbacks_destroy         (mongoc_apm_callbacks_t            *callbacks);
 void
 mongoc_apm_set_command_started_cb    (mongoc_apm_callbacks_t            *callbacks,
-                                      mongoc_apm_command_started_cb_t   *cb);
+                                      mongoc_apm_command_started_cb_t    cb);
 void
 mongoc_apm_set_command_succeeded_cb  (mongoc_apm_callbacks_t            *callbacks,
-                                      mongoc_apm_command_succeeded_cb_t *cb);
+                                      mongoc_apm_command_succeeded_cb_t  cb);
 void
 mongoc_apm_set_command_failed_cb     (mongoc_apm_callbacks_t            *callbacks,
-                                      mongoc_apm_command_failed_cb_t    *cb);
-void
-mongoc_client_set_apm_callbacks      (mongoc_client_t                   *client,
-                                      mongoc_apm_callbacks_t            *callbacks);
-void
-mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t              *pool,
-                                      mongoc_apm_callbacks_t            *callbacks);
+                                      mongoc_apm_command_failed_cb_t     cb);
 
 BSON_END_DECLS
 

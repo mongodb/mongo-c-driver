@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-apm-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-client-pool-private.h"
 #include "mongoc-client-pool.h"
@@ -27,18 +28,20 @@
 
 struct _mongoc_client_pool_t
 {
-   mongoc_mutex_t     mutex;
-   mongoc_cond_t      cond;
-   mongoc_queue_t     queue;
-   mongoc_topology_t *topology;
-   mongoc_uri_t      *uri;
-   uint32_t           min_pool_size;
-   uint32_t           max_pool_size;
-   uint32_t           size;
+   mongoc_mutex_t          mutex;
+   mongoc_cond_t           cond;
+   mongoc_queue_t          queue;
+   mongoc_topology_t      *topology;
+   mongoc_uri_t           *uri;
+   uint32_t                min_pool_size;
+   uint32_t                max_pool_size;
+   uint32_t                size;
 #ifdef MONGOC_ENABLE_SSL
-   bool               ssl_opts_set;
-   mongoc_ssl_opt_t   ssl_opts;
+   bool                    ssl_opts_set;
+   mongoc_ssl_opt_t        ssl_opts;
 #endif
+   mongoc_apm_callbacks_t  apm_callbacks;
+   void                   *apm_context;
 };
 
 
@@ -274,4 +277,18 @@ mongoc_client_pool_min_size(mongoc_client_pool_t *pool,
    mongoc_mutex_unlock (&pool->mutex);
 
    EXIT;
+}
+
+void
+mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t   *pool,
+                                      mongoc_apm_callbacks_t *callbacks,
+                                      void                   *context)
+{
+   if (callbacks) {
+      memcpy (&pool->apm_callbacks, callbacks, sizeof pool->apm_callbacks);
+   } else {
+      memset (&pool->apm_callbacks, 0, sizeof pool->apm_callbacks);
+   }
+
+   pool->apm_context = context;
 }

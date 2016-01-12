@@ -45,6 +45,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-rpc-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -100,6 +101,17 @@ _bson_error_message_printf (bson_error_t *error,
    }
 }
 
+static void
+_bson_init_static_from_data (const uint8_t *data,
+                             bson_t *b)
+{
+   int32_t len;
+
+   memcpy (&len, data, 4);
+   len = BSON_UINT32_FROM_LE (len);
+   bson_init_static (b, data, (size_t) len);
+};
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -122,15 +134,21 @@ _bson_error_message_printf (bson_error_t *error,
  */
 
 bool
-mongoc_cluster_run_command_rpc (mongoc_cluster_t    *cluster,
-                                mongoc_stream_t     *stream,
-                                uint32_t             server_id,
-                                const char          *command_name,
-                                mongoc_rpc_t        *rpc,
-                                mongoc_rpc_t        *reply_rpc,
-                                mongoc_buffer_t     *buffer,
-                                bson_error_t        *error)
+mongoc_cluster_run_command_rpc (mongoc_cluster_t         *cluster,
+                                mongoc_stream_t          *stream,
+                                uint32_t                  server_id,
+                                const char               *command_name,
+                                mongoc_rpc_t             *rpc,
+                                mongoc_rpc_t             *reply_rpc,
+                                bool                      monitored,
+                                const mongoc_host_list_t *host,
+                                uint32_t                  hint,
+                                mongoc_buffer_t          *buffer,
+                                bson_error_t             *error)
 {
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_apm_command_started_t event;
+   bson_t cmd;
    mongoc_array_t ar;
    int32_t msg_len;
    bool error_set = false;
@@ -157,6 +175,22 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t    *cluster,
    _mongoc_rpc_gather (rpc, &ar);
    _mongoc_rpc_swab_to_le (rpc);
 
+   _mongoc_get_db_name (rpc->query.collection, db);
+
+   callbacks = &cluster->client->apm_callbacks;
+
+   if (monitored && callbacks->started) {
+      _bson_init_static_from_data (rpc->query.query, &cmd);
+      event.command = &cmd;
+      event.command_name = command_name;
+      event.database_name = db;
+      event.request_id = rpc->query.request_id;
+      event.context = cluster->client->apm_context;
+      event.host = host;
+      event.hint = hint;
+      cluster->client->apm_callbacks.started (&event);
+   }
+
    if (!_mongoc_stream_writev_full (stream, (mongoc_iovec_t *)ar.data, ar.len,
                                    cluster->sockettimeoutms, error) ||
        !_mongoc_buffer_append_from_stream (buffer, stream, 4,
@@ -165,7 +199,6 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t    *cluster,
       mongoc_cluster_disconnect_node (cluster, server_id);
 
       /* add info about the command to writev_full's error message */
-      _mongoc_get_db_name (rpc->query.collection, db);
       _bson_error_message_printf (
          error,
          "Failed to send \"%s\" command with database \"%s\": %s",
@@ -235,16 +268,21 @@ done:
  */
 
 bool
-mongoc_cluster_run_command (mongoc_cluster_t    *cluster,
-                            mongoc_stream_t     *stream,
-                            uint32_t             server_id,
-                            mongoc_query_flags_t flags,
-                            const char          *db_name,
-                            const bson_t        *command,
-                            bson_t              *reply,
-                            bson_error_t        *error)
+mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
+                                     mongoc_stream_t          *stream,
+                                     uint32_t                  server_id,
+                                     mongoc_query_flags_t      flags,
+                                     const char               *db_name,
+                                     const bson_t             *command,
+                                     bool                      monitored,
+                                     const mongoc_host_list_t *host,
+                                     uint32_t                  hint,
+                                     bson_t                   *reply,
+                                     bson_error_t             *error)
 {
    char ns[MONGOC_NAMESPACE_MAX];
+   const char *command_name;
+   bool r;
    mongoc_rpc_t rpc;
    bson_t reply_local;
    bool ret = false;
@@ -257,10 +295,22 @@ mongoc_cluster_run_command (mongoc_cluster_t    *cluster,
 
    _mongoc_rpc_prep_command (&rpc, ns, command, flags);
 
+   command_name = _mongoc_get_command_name (command);
+
    /* we can reuse the query rpc for the reply */
-   if (!mongoc_cluster_run_command_rpc (cluster, stream, server_id,
-                                        _mongoc_get_command_name (command),
-                                        &rpc, &rpc, &buffer, error)) {
+   r = mongoc_cluster_run_command_rpc (cluster,
+                                       stream,
+                                       server_id,
+                                       command_name,
+                                       &rpc,
+                                       &rpc,
+                                       monitored,
+                                       host,
+                                       hint,
+                                       &buffer,
+                                       error);
+
+   if (!r) {
       GOTO (done);
    }
 
@@ -292,6 +342,80 @@ done:
    _mongoc_buffer_destroy (&buffer);
 
    RETURN (ret);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_run_command_monitored --
+ *
+ *       Internal function to run a command on a given stream.
+ *       @error and @reply are optional out-pointers.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *       If the client's APM callbacks are set, they are executed.
+ *       @reply is set and should ALWAYS be released with bson_destroy().
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_cluster_run_command_monitored (mongoc_cluster_t         *cluster,
+                                      mongoc_server_stream_t   *server_stream,
+                                      mongoc_query_flags_t      flags,
+                                      const char               *db_name,
+                                      const bson_t             *command,
+                                      bson_t                   *reply,
+                                      bson_error_t             *error)
+{
+   return mongoc_cluster_run_command_internal (
+      cluster, server_stream->stream, server_stream->sd->id, flags, db_name,
+      command, true, &server_stream->sd->host, server_stream->sd->id,
+      reply, error);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_run_command --
+ *
+ *       Internal function to run a command on a given stream.
+ *       @error and @reply are optional out-pointers.
+ *       The client's APM callbacks are not executed.
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *       @reply is set and should ALWAYS be released with bson_destroy().
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_cluster_run_command (mongoc_cluster_t    *cluster,
+                            mongoc_stream_t     *stream,
+                            uint32_t             server_id,
+                            mongoc_query_flags_t flags,
+                            const char          *db_name,
+                            const bson_t        *command,
+                            bson_t              *reply,
+                            bson_error_t        *error)
+{
+   /* monitored = false */
+   return mongoc_cluster_run_command_internal (cluster,
+                                               stream,
+                                               server_id,
+                                               flags,
+                                               db_name,
+                                               command,
+                                               /* not monitored */
+                                               false, NULL, 0,
+                                               reply, error);
 }
 
 /*
@@ -2002,6 +2126,7 @@ mongoc_cluster_node_min_wire_version (mongoc_cluster_t *cluster,
 
    return -1;
 }
+
 
 static bool
 _mongoc_cluster_check_interval (mongoc_cluster_t *cluster,
