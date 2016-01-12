@@ -1195,17 +1195,24 @@ mock_server_replies (request_t *request,
                      int32_t number_returned,
                      const char *docs_json)
 {
-   char *quotes_replaced = single_quotes_to_double (docs_json);
+   char *quotes_replaced;
    bson_t doc;
    bson_error_t error;
    bool r;
 
    assert (request);
 
-   r = bson_init_from_json (&doc, quotes_replaced, -1, &error);
-   if (!r) {
-      MONGOC_WARNING ("%s", error.message);
-      return;
+   if (docs_json) {
+      quotes_replaced = single_quotes_to_double (docs_json);
+      r = bson_init_from_json (&doc, quotes_replaced, -1, &error);
+      if (!r) {
+         MONGOC_WARNING ("%s", error.message);
+         return;
+      }
+
+      bson_free (quotes_replaced);
+   } else {
+      r = bson_init_from_json (&doc, "{}", -1, &error);
    }
 
    mock_server_reply_multi (request,
@@ -1214,7 +1221,6 @@ mock_server_replies (request_t *request,
                             1,
                             cursor_id);
    bson_destroy (&doc);
-   bson_free (quotes_replaced);
 }
 
 
