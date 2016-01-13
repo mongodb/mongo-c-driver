@@ -178,7 +178,6 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode.h
    ${SOURCE_DIR}/src/mongoc/mongoc-opcode-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
-   ${SOURCE_DIR}/src/mongoc/mongoc-read-concern-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
