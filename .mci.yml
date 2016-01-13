@@ -20,6 +20,9 @@ c_driver_variables:
     - name: "integration-test-latest"
     - name: "integration-test-latest-with-MMAPv1"
 
+  release_archive: &release_archive_builder
+    - name: "releasearchive"
+
   topology_test_list: &topology_tests
     - name: "compile"
     - name: "integration-test-2.4"
@@ -87,6 +90,8 @@ c_driver_variables:
       cflags: "-m32 -march=i386 -Werror"
     osx_108: &cflags_osx_108
       cflags: "-m64 -march=x86-64"
+    solaris_64: &cflags_solaris_64
+      cflags: "-m64 -march=x86-64"
 
   ## Extra $PATH entries
   paths:
@@ -112,11 +117,15 @@ c_driver_variables:
             mongo-orchestration --pidfile c:\\mo.pid stop
             rm -f $pidfile
           fi
+          ls -la
           fsutil volume diskfree c:
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"c:\\\\mongodb\\\\bin\" }}" > orchestration.config
           mongo-orchestration -f orchestration.config -e default -s wsgiref start --socket-timeout-ms=60000 --bind=127.0.0.1 --enable-majority-read-concern --pidfile c:\\mo.pid
           sleep 10
+          cat c:\\mo.pid
+          cat orchestration.config
+          cat server.log
           curl -s http://localhost:8889/
       unix: &mongo_orchestration_unix
         start_mongo_orchestration: |
@@ -129,6 +138,7 @@ c_driver_variables:
             rm -f $pidfile
           fi
           df -h
+          ls -la
           echo "Starting Mongo Orchestration..."
           echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
           TMPDIR=/data/db mongo-orchestration -f orchestration.config -e default start --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern --pidfile $pidfile
@@ -145,13 +155,22 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
+      solaris64: &compile_solaris64
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          sudo /opt/csw/bin/pkgutil -y -i sasl_dev
+          export SASL_CFLAGS="-I/opt/csw/include/"
+          export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
+          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          make
       solaris: &compile_solaris
         compile_script: |
           set -o errexit
           set -o verbose
-          ./autogen.sh --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make
       msvc: &compile_msvc
         compile_script: |
@@ -160,9 +179,6 @@ c_driver_variables:
           set -o verbose
           cmake="/cygdrive/c/cmake/bin/cmake"
           dumpbin="/cygdrive/c/Program Files (x86)/Microsoft Visual Studio 12.0/VC/bin/dumpbin.exe"
-          # In Autotools builds, autogen.sh does this, we must do it here.
-          git submodule init
-          git submodule update
           cd src/libbson
           echo "GENERATOR: $GENERATOR, CMAKE_DEFS: $CMAKE_DEFS"
           "$cmake" -G "$GENERATOR" "-DCMAKE_INSTALL_PREFIX=C:/mongo-c-driver"
@@ -200,6 +216,16 @@ c_driver_variables:
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
           ./Debug/test-libmongoc.exe -d -f -p
+      solaris: &run_integration_tests_solaris
+        run_integration_tests: |
+          export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
+          export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          sudo /opt/csw/bin/pkgutil -y -i sasl_dev
+          export SASL_CFLAGS="-I/opt/csw/include/"
+          export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
+          export LD_LIBRARY_PATH="/opt/csw/lib/amd64/"
+          make TEST_ARGS="-f -p -d" check
+
       unix: &run_integration_tests_unix
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
@@ -222,6 +248,16 @@ c_driver_variables:
   solaris_common: &solaris_common
     <<: *unix_common
     <<: *compile_solaris
+    <<: *solaris_path
+
+  solaris64_common: &solaris64_common
+    <<: *username_password_common
+    <<: *compile_unix
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_solaris
+    <<: *start_topology_command
+    <<: *unix_path
+    <<: *compile_solaris64
     <<: *solaris_path
 
   ssl: &ssl
@@ -280,6 +316,19 @@ c_driver_variables:
 #######################################
 
 functions:
+  "fetch releasearchive" :
+    command: shell.exec
+    params:
+      script: |
+        set -o verbose
+        set -o errexit
+        rm -rf mongo-c-driver*
+        ls -la
+        curl -s https://s3.amazonaws.com/mciuploads/mongo-c-driver/${revision}/${version_id}/artifacts/mongo-c-driver-archive.tar.gz --output mongo-c-driver-archive.tar.gz
+        tar zxvf mongo-c-driver-archive.tar.gz
+        rm mongo-c-driver-archive.tar.gz
+        mv mongo-c-driver* mongo-c-driver
+
   "fetch source" :
     command: git.get_project
     params:
@@ -292,6 +341,7 @@ functions:
       script: |
         set -o verbose
         set -o errexit
+        ls -la
         curl -s ${mongo_url} --output mongo-archive.${ext|tgz}
         ${decompress} mongo-archive.${ext|tgz}
         mv mongodb* mongodb
@@ -316,6 +366,7 @@ functions:
       script: |
         set -o verbose
         set -o errexit
+        ls -la
         curl http://s3.amazonaws.com/mciuploads/mongo-c-driver/${build_variant}/${revision}/artifacts/mongo-${build_id}.tar.gz -o ${build_id}.tar.gz --silent --max-time 120
         tar -xzf ${build_id}.tar.gz
 
@@ -496,12 +547,40 @@ post:
 #######################################
 
 tasks:
-    - name: compile
+    - name: releasearchive
       commands:
         - func: "fetch source"
         - command: git.apply_patch
           params:
             directory: "mongo-c-driver"
+        - command: shell.exec
+          params:
+              working_dir: "mongo-c-driver"
+              script: |
+                set -o errexit
+                set -o verbose
+                sudo apt-get update
+                sudo apt-get install -y yelp-tools yelp-xsl
+                ./autogen.sh --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+                make dist
+                mv mongo-c-driver*.tar.gz ../mongo-c-driver-archive.tar.gz
+                ls -la
+        - command: s3.put
+          params:
+            aws_key: ${aws_key}
+            aws_secret: ${aws_secret}
+            local_file: mongo-c-driver-archive.tar.gz
+            remote_file: mongo-c-driver/${revision}/${version_id}/artifacts/mongo-c-driver-archive.tar.gz
+            bucket: mciuploads
+            permissions: public-read
+            content_type: ${content_type|application/x-gzip}
+
+    - name: compile
+      depends_on:
+        - name: "releasearchive"
+          variant: ubuntu-1404-64-release
+      commands:
+        - func: "fetch releasearchive"
         - func: "compile function"
         - command: shell.exec
           params:
@@ -858,6 +937,16 @@ buildvariants:
 #  - rhel55-test
 #  tasks: *topology_tests
 
+- name: ubuntu-1404-64-release
+  display_name: "Release Archive Creator"
+  expansions:
+    <<: *cflags_64
+    <<: *mongo_url_ubuntu1404
+    <<: *unix_common
+  run_on:
+     - ubuntu1404-build
+  tasks: *release_archive_builder
+
 ## Ubuntu 1204
 
 - name: ubuntu-1204-64
@@ -990,8 +1079,8 @@ buildvariants:
 - name: solaris-64-bit
   display_name: "Sol gcc-4.8.2 64"
   expansions:
-    <<: *solaris_common
-    <<: *cflags_64
+    <<: *solaris64_common
+    <<: *cflags_solaris_64
     <<: *mongo_url_solaris
   run_on:
       - solaris

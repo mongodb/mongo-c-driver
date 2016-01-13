@@ -7,6 +7,9 @@
 #include "mongoc-tests.h"
 #include "TestSuite.h"
 #include "test-conveniences.h"
+#include "mock_server/mock-server.h"
+#include "mock_server/future.h"
+#include "mock_server/future-functions.h"
 
 
 static mongoc_gridfs_t *
@@ -759,6 +762,122 @@ test_missing_chunk (void)
    mongoc_client_destroy (client);
 }
 
+static mongoc_gridfs_t *
+_get_gridfs (mock_server_t *server,
+             mongoc_client_t *client)
+{
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   int i;
+   mongoc_gridfs_t *gridfs;
+
+   /* gridfs ensures two indexes on fs.chunks */
+   future = future_client_get_gridfs (client, "db", NULL, &error);
+   for (i = 0; i < 2; i++) {
+      request = mock_server_receives_command (
+         server,
+         "db",
+         MONGOC_QUERY_NONE,
+         "{'createIndexes': 'fs.chunks'}");
+
+      mock_server_replies_ok_and_destroys (request);
+   }
+
+   gridfs = future_get_mongoc_gridfs_ptr (future);
+   ASSERT (gridfs);
+
+   future_destroy (future);
+
+   return gridfs;
+}
+
+
+/* check gridfs inherits read / write concern, read prefs from the client */
+static void
+test_inherit_client_config (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_write_concern_t *write_concern;
+   mongoc_read_concern_t *read_concern;
+   mongoc_read_prefs_t *secondary_pref;
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+
+   /* mock mongos: easiest way to test that read preference is configured */
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'maxWireVersion': 4,"
+                              " 'ismaster': true,"
+                              " 'msg': 'isdbgrid'}");
+
+   mock_server_run (server);
+
+   /* configure read / write concern and read prefs on client */
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   write_concern = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (write_concern, 2);
+   mongoc_client_set_write_concern (client, write_concern);
+
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern,
+                                  MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_client_set_read_concern (client, read_concern);
+
+   secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_client_set_read_prefs (client, secondary_pref);
+
+   gridfs = _get_gridfs (server, client);
+
+   /* test read prefs and read concern */
+   future = future_gridfs_find_one (gridfs, tmp_bson ("{}"), &error);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK,
+      "{'$query': {'find': 'fs.files', 'readConcern': {'level': 'majority'}},"
+      " '$readPreference': {'mode': 'secondary'}}");
+
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'cursor': {'ns': 'fs.files', 'firstBatch': [{'_id': 1}]}}");
+
+   file = future_get_mongoc_gridfs_file_ptr (future);
+   ASSERT (file);
+
+   request_destroy (request);
+   future_destroy (future);
+
+   /* test write concern */
+   future = future_gridfs_file_remove (file, &error);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'delete': 'fs.files', 'writeConcern': {'w': 2}}");
+
+   mock_server_replies_ok_and_destroys (request);
+
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_NONE,
+      "{'delete': 'fs.chunks', 'writeConcern': {'w': 2}}");
+
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT (future_get_bool (future));
+   future_destroy (future);
+
+   mongoc_gridfs_file_destroy (file);
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_write_concern_destroy (write_concern);
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_read_prefs_destroy (secondary_pref);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 void
 test_gridfs_install (TestSuite *suite)
 {
@@ -775,4 +894,5 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_Add (suite, "/GridFS/test_long_seek", test_long_seek);
    TestSuite_Add (suite, "/GridFS/remove_by_filename", test_remove_by_filename);
    TestSuite_Add (suite, "/GridFS/missing_chunk", test_missing_chunk);
+   TestSuite_Add (suite, "/GridFS/inherit_client_config", test_inherit_client_config);
 }

@@ -50,6 +50,8 @@ EXTRA_DIST += \
 	VERSION_CURRENT \
 	VERSION_RELEASED
 
+EXTRA_DIST += $(wildcard orchestration_configs/*/*)
+
 dist-hook:
 	@if test -d "$(srcdir)/.git"; then                              \
           (cd "$(srcdir)" &&                                            \

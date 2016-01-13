@@ -96,6 +96,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    sd->round_trip_time = -1;
 
    sd->set_name = NULL;
+   sd->set_version = MONGOC_NO_SET_VERSION;
    sd->current_primary = NULL;
 
    if (!_mongoc_host_list_from_string(&sd->host, address)) {
@@ -196,6 +197,25 @@ mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_server_description_has_set_version --
+ *
+ *      Did this server's ismaster response have a "setVersion" field?
+ *
+ * Returns:
+ *      True if the server description's setVersion is set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_server_description_has_set_version (mongoc_server_description_t *description)
+{
+   return description->set_version != MONGOC_NO_SET_VERSION;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_server_description_has_election_id --
  *
  *      Did this server's ismaster response have an "electionId" field?
@@ -266,6 +286,25 @@ mongoc_server_description_set_state (mongoc_server_description_t *description,
    description->type = type;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_set_set_version --
+ *
+ *       Set the replica set version of this server.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+mongoc_server_description_set_set_version (mongoc_server_description_t *description,
+                                           int64_t set_version)
+{
+   description->set_version = set_version;
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -388,6 +427,9 @@ mongoc_server_description_handle_ismaster (
       } else if (strcmp ("setName", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto failure;
          sd->set_name = bson_iter_utf8 (&iter, NULL);
+      } else if (strcmp ("setVersion", bson_iter_key (&iter)) == 0) {
+         mongoc_server_description_set_set_version (sd,
+                                                    bson_iter_as_int64 (&iter));
       } else if (strcmp ("electionId", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_OID (&iter)) goto failure;
          mongoc_server_description_set_election_id (sd, bson_iter_oid (&iter));
@@ -485,6 +527,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
 
    /* wait for handle_ismaster to fill these in properly */
    copy->has_is_master = false;
+   copy->set_version = MONGOC_NO_SET_VERSION;
    bson_init_static (&copy->hosts, kMongocEmptyBson, sizeof (kMongocEmptyBson));
    bson_init_static (&copy->passives, kMongocEmptyBson, sizeof (kMongocEmptyBson));
    bson_init_static (&copy->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));

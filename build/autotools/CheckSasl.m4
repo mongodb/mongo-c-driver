@@ -4,8 +4,6 @@ AC_ARG_ENABLE([sasl],
               [],
               [enable_sasl=auto])
 
-SASL_CFLAGS=
-SASL_LIBS=
 sasl_mode=no
 
 AS_IF([test "$enable_sasl" != "no"],[

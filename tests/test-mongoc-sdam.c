@@ -64,6 +64,14 @@ _topology_has_description(mongoc_topology_description_t *topology,
          }
       } else if (strcmp("type", bson_iter_key (&server_iter)) == 0) {
          assert (sd->type == server_type_from_test(bson_iter_utf8(&server_iter, NULL)));
+      } else if (strcmp("setVersion", bson_iter_key (&server_iter)) == 0) {
+         int64_t expected_set_version;
+         if (BSON_ITER_HOLDS_NULL (&server_iter)) {
+            expected_set_version = MONGOC_NO_SET_VERSION;
+         } else {
+            expected_set_version = bson_iter_as_int64 (&server_iter);
+         }
+         assert (sd->set_version == expected_set_version);
       } else if (strcmp("electionId", bson_iter_key (&server_iter)) == 0) {
          bson_oid_t expected_oid;
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {

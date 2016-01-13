@@ -155,6 +155,7 @@ set (HEADERS
    ${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h
    ${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h
    ${SOURCE_DIR}/src/mongoc/mongoc.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-apm.h
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${SOURCE_DIR}/src/mongoc/mongoc-client-pool.h

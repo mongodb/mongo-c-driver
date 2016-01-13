@@ -18,6 +18,7 @@ MONGOC_DEF_FILES = \
 
 INST_H_FILES = \
 	src/mongoc/mongoc.h \
+	src/mongoc/mongoc-apm.h \
 	src/mongoc/mongoc-array-private.h \
 	src/mongoc/mongoc-async-private.h \
 	src/mongoc/mongoc-async-cmd-private.h \
