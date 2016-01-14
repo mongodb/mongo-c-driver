@@ -9,6 +9,12 @@ mongo-c-driver 1.3.1
     of these options on the mongoc_client_t, they are respected by the
     mongoc_gridfs_t.
 
+  * CMakeLists.txt now includes and installs the pkg-config files.
+
+Thanks to everyone who contributed to this release.
+
+  * Jean-Bernard Jansen
+
 mongo-c-driver 1.3.0
 ====================
 
