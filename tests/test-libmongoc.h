@@ -27,6 +27,7 @@ int64_t test_framework_getenv_int64 (const char *name,
                                      int64_t default_value);
 char *test_framework_get_host (void);
 uint16_t test_framework_get_port (void);
+void test_framework_get_host_list (mongoc_host_list_t *host_list);
 char *test_framework_get_admin_user (void);
 char *test_framework_get_admin_password (void);
 bool test_framework_get_ssl (void);
