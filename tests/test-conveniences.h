@@ -33,6 +33,29 @@ void bson_iter_bson (const bson_iter_t *iter,
 #endif
 
 
+const char *bson_lookup_utf8 (const bson_t *b,
+                              const char   *key);
+
+bool bson_lookup_bool (const bson_t *b,
+                       const char   *key,
+                       bool          default_value);
+
+void bson_lookup_doc (const bson_t *b,
+                      const char   *key,
+                      bson_t       *doc);
+
+int32_t bson_lookup_int32 (const bson_t *b,
+                           const char   *key);
+
+mongoc_write_concern_t *
+bson_lookup_write_concern (const bson_t *b,
+                           const char   *key);
+
+void bson_append_json (bson_t     *doc,
+                       const char *key,
+                       const char *json,
+                       ...);
+
 char *single_quotes_to_double (const char *str);
 
 bool match_bson (const bson_t *doc,

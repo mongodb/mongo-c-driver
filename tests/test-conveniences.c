@@ -113,6 +113,166 @@ bson_iter_bson (const bson_iter_t *iter,
 }
 
 
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_utf8 --
+ *
+ *       Return a string by key, or assert and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+const char *
+bson_lookup_utf8 (const bson_t *b,
+                  const char   *key)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&descendent));
+
+   return bson_iter_utf8 (&descendent, NULL);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_bool --
+ *
+ *       Return a boolean by key, or return the default value.
+ *       Asserts and aborts if the key is present but not boolean.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+bson_lookup_bool (const bson_t *b,
+                  const char   *key,
+                  bool          default_value)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+
+   if (bson_iter_find_descendant (&iter, key, &descendent)) {
+      BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&descendent));
+      return bson_iter_bool (&descendent);
+   }
+
+   return default_value;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_doc --
+ *
+ *       Find a subdocument by key and return it by static-initializing
+ *       the passed-in bson_t "doc". There is no need to bson_destroy
+ *       "doc". Asserts and aborts if the key is absent or not a subdoc.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+bson_lookup_doc (const bson_t *b,
+                 const char   *key,
+                 bson_t       *doc)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   bson_iter_bson (&descendent, doc);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_int32 --
+ *
+ *       Return an int32_t by key, or assert and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+int32_t
+bson_lookup_int32 (const bson_t *b,
+                   const char   *key)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&descendent));
+
+   return bson_iter_int32 (&descendent);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_write_concern --
+ *
+ *       Find a subdocument like {w: <int32>} and interpret it as a
+ *       mongoc_write_concern_t, or assert and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_write_concern_t *
+bson_lookup_write_concern (const bson_t *b,
+                           const char   *key)
+{
+   bson_t doc;
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+
+   bson_lookup_doc (b, key, &doc);
+   /* current command monitoring tests always have "w" and no other fields */
+   mongoc_write_concern_set_w (wc, bson_lookup_int32 (&doc, "w"));
+
+   return wc;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_append_json --
+ *
+ *       Like bson_append_document, but accepts JSON and substitutes values
+ *       printf-style into it before BSONifying it.
+ *
+ *       For convenience, single-quotes are synonymous with double-quotes.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+bson_append_json (bson_t     *doc,
+                  const char *key,
+                  const char *json,
+                  ...)
+{
+   va_list args;
+   char *json_pattern_formatted;
+   char *double_quoted;
+   bson_error_t error;
+   bson_t *to_append;
+
+   va_start (args, json);
+   json_pattern_formatted = bson_strdupv_printf (json, args);
+   va_end (args);
+
+   double_quoted = single_quotes_to_double (json_pattern_formatted);
+   to_append = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
+
+   if (!to_append) {
+      fprintf (stderr, "couldn't parse JSON: %s\n", error.message);
+      abort ();
+   }
+
+   bson_append_document (doc, key, -1, to_append);
+}
+
+
 static bool
 get_exists_operator (const bson_value_t *value,
                      bool               *exists);
