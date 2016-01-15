@@ -8,6 +8,54 @@
 #include "test-libmongoc.h"
 
 
+static int
+check_server_version (const bson_t *test)
+{
+   const char *desc;
+   const char *s;
+   char *padded;
+   server_version_t test_version, server_version;
+   int debug = test_suite_debug_output ();
+   bool r;
+
+   if (bson_has_field (test, "description")) {
+      desc = bson_lookup_utf8 (test, "description");
+   } else {
+      desc = "<no description>";
+   }
+
+   if (bson_has_field (test, "ignore_if_server_version_greater_than")) {
+      s = bson_lookup_utf8 (test, "ignore_if_server_version_greater_than");
+      /* s is like "3.0", don't skip if server is 3.0.x but skip 3.1+ */
+      padded = bson_strdup_printf ("%s.99", s);
+      test_version = test_framework_str_to_version (padded);
+      bson_free (padded);
+      server_version = test_framework_get_server_version ();
+      r = server_version <= test_version;
+
+      if (!r && debug) {
+         fprintf (stderr, "Server version > %s, skip sub-test \"%s\".\n",
+                  s, desc);
+      }
+   } else if (bson_has_field (test, "ignore_if_server_version_less_than")) {
+      s = bson_lookup_utf8 (test, "ignore_if_server_version_less_than");
+      test_version = test_framework_str_to_version (s);
+      server_version = test_framework_get_server_version ();
+      r = server_version >= test_version;
+
+      if (!r && debug) {
+         fprintf (stderr, "Server version < %s, skip sub-test: \"%s\".\n",
+                  s, desc);
+      }
+   } else {
+      /* server version is ok, don't skip the test */
+      return true;
+   }
+
+   return r;
+}
+
+
 static void
 insert_data (mongoc_collection_t *collection,
              const bson_t        *test)
@@ -93,9 +141,11 @@ started_cb (const mongoc_apm_command_started_t *event)
       mongoc_apm_command_started_get_context (event);
    bson_t *events = &context->events;
    char *cmd_json = bson_as_json (event->command, NULL);
+   bson_t cmd;
+   bson_iter_t iter;
    char str[16];
    const char *key;
-
+   bson_t *new_event;
 
    BSON_ASSERT (mongoc_apm_command_started_get_request_id (event) > 0);
    BSON_ASSERT (mongoc_apm_command_started_get_hint (event) > 0);
@@ -105,17 +155,27 @@ started_cb (const mongoc_apm_command_started_t *event)
 
    bson_uint32_to_string (context->n_events, &key, str, sizeof str);
    context->n_events++;
+   bson_copy_to (event->command, &cmd);
 
-   bson_append_json (
-      events,
-      key,
-      "{'command_started_event': {"
-      "    'command': %s,"
-      "    'command_name': '%s',"
-      "    'database_name': '%s'}}",
-      cmd_json, event->command_name, event->database_name);
+   /* special case for command monitoring JSON tests */
+   if (bson_iter_init_find (&iter, &cmd, "getMore")) {
+      BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
+      bson_iter_overwrite_int64 (&iter, 42);
+   }
 
-   bson_free (cmd_json);
+   new_event = BCON_NEW ("command_started_event", "{",
+                         "command", BCON_DOCUMENT (&cmd),
+                         "command_name", BCON_UTF8 (event->command_name),
+                         "database_name", BCON_UTF8 (event->database_name),
+                         "}");
+
+   bson_uint32_to_string (context->n_events, &key, str, sizeof str);
+   BSON_APPEND_DOCUMENT (events, key, new_event);
+
+   context->n_events++;
+
+   bson_destroy (new_event);
+   bson_destroy (&cmd);
 }
 
 
@@ -231,6 +291,68 @@ test_count (mongoc_collection_t *collection,
 
 
 static void
+test_find (mongoc_collection_t *collection,
+           const bson_t        *arguments,
+           mongoc_read_prefs_t *read_prefs)
+{
+   bson_t query;
+   bson_t filter;
+   bson_t sort;
+   uint32_t skip = 0;
+   uint32_t limit = 0;
+   uint32_t batch_size = 0;
+   bson_t modifiers;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   bson_lookup_doc (arguments, "filter", &filter);
+
+   if (read_prefs ||
+       bson_has_field (arguments, "sort") ||
+       bson_has_field (arguments, "modifiers")) {
+      bson_init (&query);
+      BSON_APPEND_DOCUMENT (&query, "$query", &filter);
+
+      if (bson_has_field (arguments, "sort")) {
+         bson_lookup_doc (arguments, "sort", &sort);
+         BSON_APPEND_DOCUMENT (&query, "$orderby", &sort);
+      }
+
+      if (bson_has_field (arguments, "modifiers")) {
+         bson_lookup_doc (arguments, "modifiers", &modifiers);
+         bson_concat (&query, &modifiers);
+      }
+   } else {
+      bson_copy_to (&filter, &query);
+   }
+
+   if (bson_has_field (arguments, "skip")) {
+      skip = (uint32_t) bson_lookup_int64 (arguments, "skip");
+   }
+
+   if (bson_has_field (arguments, "limit")) {
+      limit = (uint32_t) bson_lookup_int64 (arguments, "limit");
+   }
+
+   if (bson_has_field (arguments, "batchSize")) {
+      batch_size = (uint32_t) bson_lookup_int64 (arguments, "batchSize");
+   }
+
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE,
+                                    skip, limit, batch_size, &query,
+                                    NULL, read_prefs);
+
+   BSON_ASSERT (cursor);
+   while (mongoc_cursor_next (cursor, &doc)) {
+   }
+
+   /* can cause a killCursors command */
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (&query);
+}
+
+
+static void
 test_delete_many (mongoc_collection_t *collection,
                   const bson_t        *arguments)
 {
@@ -338,8 +460,10 @@ one_test (mongoc_collection_t *collection,
 {
    context_t context;
    mongoc_apm_callbacks_t *callbacks;
+   bson_t operation;
    bson_t arguments;
    const char *op_name;
+   mongoc_read_prefs_t *read_prefs = NULL;
    bson_t expectations;
 
    context_init (&context);
@@ -349,13 +473,20 @@ one_test (mongoc_collection_t *collection,
    mongoc_apm_set_command_succeeded_cb (callbacks, succeeded_cb);
    mongoc_client_set_apm_callbacks (collection->client, callbacks, &context);
 
-   op_name = bson_lookup_utf8 (test, "operation.name");
-   bson_lookup_doc (test, "operation.arguments", &arguments);
+   bson_lookup_doc (test, "operation", &operation);
+   op_name = bson_lookup_utf8 (&operation, "name");
+   bson_lookup_doc (&operation, "arguments", &arguments);
+
+   if (bson_has_field (&operation, "read_preference")) {
+      read_prefs = bson_lookup_read_prefs (&operation, "read_preference");
+   }
 
    if (!strcmp (op_name, "bulkWrite")) {
       test_bulk_write (collection, &arguments);
    } else if (!strcmp (op_name, "count")) {
       test_count (collection, &arguments);
+   } else if (!strcmp (op_name, "find")) {
+      test_find (collection, &arguments, read_prefs);
    } else if (!strcmp (op_name, "deleteMany")) {
       test_delete_many (collection, &arguments);
    } else if (!strcmp (op_name, "deleteOne")) {

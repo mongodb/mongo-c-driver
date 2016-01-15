@@ -47,9 +47,14 @@ void bson_lookup_doc (const bson_t *b,
 int32_t bson_lookup_int32 (const bson_t *b,
                            const char   *key);
 
-mongoc_write_concern_t *
-bson_lookup_write_concern (const bson_t *b,
+int64_t bson_lookup_int64 (const bson_t *b,
                            const char   *key);
+
+mongoc_write_concern_t * bson_lookup_write_concern (const bson_t *b,
+                                                    const char   *key);
+
+mongoc_read_prefs_t * bson_lookup_read_prefs (const bson_t *b,
+                                              const char   *key);
 
 void bson_append_json (bson_t     *doc,
                        const char *key,

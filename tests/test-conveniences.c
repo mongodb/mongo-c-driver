@@ -18,6 +18,8 @@
 #include <bson.h>
 
 #include "mongoc-array-private.h"
+/* For strcasecmp on Windows */
+#include "mongoc-util-private.h"
 
 #include "test-conveniences.h"
 
@@ -212,6 +214,29 @@ bson_lookup_int32 (const bson_t *b,
 
 /*--------------------------------------------------------------------------
  *
+ * bson_lookup_int64 --
+ *
+ *       Return an int64_t by key, or assert and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+int64_t
+bson_lookup_int64 (const bson_t *b,
+                   const char   *key)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&descendent));
+
+   return bson_iter_int64 (&descendent);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * bson_lookup_write_concern --
  *
  *       Find a subdocument like {w: <int32>} and interpret it as a
@@ -231,6 +256,45 @@ bson_lookup_write_concern (const bson_t *b,
    mongoc_write_concern_set_w (wc, bson_lookup_int32 (&doc, "w"));
 
    return wc;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_read_prefs --
+ *
+ *       Find a subdocument like {mode: "mode"} and interpret it as a
+ *       mongoc_read_prefs_t, or assert and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_read_prefs_t *
+bson_lookup_read_prefs (const bson_t *b,
+                        const char   *key)
+{
+   bson_t doc;
+   const char *str;
+   mongoc_read_mode_t mode;
+
+   bson_lookup_doc (b, key, &doc);
+   str = bson_lookup_utf8 (&doc, "mode");
+
+   if (0 == strcasecmp("primary", str)) {
+      mode = MONGOC_READ_PRIMARY;
+   } else if (0 == strcasecmp("primarypreferred", str)) {
+      mode = MONGOC_READ_PRIMARY_PREFERRED;
+   } else if (0 == strcasecmp("secondary", str)) {
+      mode = MONGOC_READ_SECONDARY;
+   } else if (0 == strcasecmp("secondarypreferred", str)) {
+      mode = MONGOC_READ_SECONDARY_PREFERRED;
+   } else if (0 == strcasecmp("nearest", str)) {
+      mode = MONGOC_READ_NEAREST;
+   } else {
+      MONGOC_ERROR ("Bad readPreference: {\"mode\": \"%s\"}.", str);
+      abort ();
+   }
+
+   return mongoc_read_prefs_new (mode);
 }
 
 
