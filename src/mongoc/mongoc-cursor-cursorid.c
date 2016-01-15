@@ -155,7 +155,7 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
    bson_append_utf8 (command, "collection", 10, collection, collection_len);
 
    if (cursor->batch_size) {
-      bson_append_int32 (command, "batchSize", 9, cursor->batch_size);
+      bson_append_int64 (command, "batchSize", 9, cursor->batch_size);
    }
 
    /* Find, getMore And killCursors Commands Spec: "In the case of a tailable

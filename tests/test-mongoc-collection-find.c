@@ -668,7 +668,7 @@ test_batch_size (void)
    test_data.docs = "[{'_id': 1}]";
    test_data.batch_size = 2;
    test_data.n_return = 2;
-   test_data.expected_find_command = "{'find': 'collection', 'filter': {}, 'batchSize': 2}";
+   test_data.expected_find_command = "{'find': 'collection', 'filter': {}, 'batchSize': {'$numberLong': '2'}}";
    test_data.expected_result = "[{'_id': 1}]";
    _test_collection_find (&test_data);
 }
@@ -791,7 +791,8 @@ test_getmore_batch_size (void)
       future = future_cursor_next (cursor, &doc);
 
       if (batch_sizes[i]) {
-         batch_size_json = bson_strdup_printf ("%u", batch_sizes[i]);
+         batch_size_json = bson_strdup_printf ("{'$numberLong': '%u'}",
+                                               batch_sizes[i]);
       } else {
          batch_size_json = bson_strdup ("{'$exists': false}");
       }
