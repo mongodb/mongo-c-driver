@@ -18,7 +18,6 @@
 #include <bson.h>
 
 #include "mongoc-array-private.h"
-#include "mongoc-util-private.h"
 
 #include "test-conveniences.h"
 
@@ -127,7 +126,7 @@ is_empty_doc_or_array (const bson_value_t *value);
 
 static bool
 find (bson_value_t *value,
-      const bson_iter_t *iter,
+      const bson_t *doc,
       const char *key,
       bool is_command,
       bool is_first);
@@ -273,7 +272,6 @@ match_bson (const bson_t *doc,
    bson_iter_t pattern_iter;
    const char *key;
    const bson_value_t *value;
-   bson_iter_t doc_iter;
    bool is_first = true;
    bool is_exists_operator;
    bool is_empty_operator;
@@ -293,12 +291,11 @@ match_bson (const bson_t *doc,
    }
 
    assert (bson_iter_init (&pattern_iter, pattern));
-   assert (bson_iter_init (&doc_iter, doc));
 
    while (bson_iter_next (&pattern_iter)) {
       key = bson_iter_key (&pattern_iter);
       value = bson_iter_value (&pattern_iter);
-      found = find (&doc_value, &doc_iter, key, is_command, is_first);
+      found = find (&doc_value, doc, key, is_command, is_first);
 
       /* is value {"$exists": true} or {"$exists": false} ? */
       is_exists_operator = get_exists_operator (value, &exists);
@@ -318,12 +315,6 @@ match_bson (const bson_t *doc,
          }
       } else if (!match_bson_value (&doc_value, value)) {
          return false;
-      }
-
-      /* don't advance if next call may be for another key in the same subdoc,
-       * or if we're skipping a pattern key that was {$exists: false}. */
-      if (!strchr (key, '.') && !(is_exists_operator && !exists)) {
-         bson_iter_next (&doc_iter);
       }
 
       is_first = false;
@@ -353,33 +344,32 @@ match_bson (const bson_t *doc,
 
 static bool
 find (bson_value_t *value,
-      const bson_iter_t *iter,
+      const bson_t *doc,
       const char *key,
       bool is_command,
       bool is_first)
 {
-   bson_iter_t i2;
+   bson_iter_t iter;
    bson_iter_t descendent;
 
-   /* don't advance iter. */
-   memcpy (&i2, iter, sizeof *iter);
+   bson_iter_init (&iter, doc);
 
    if (strchr (key, '.')) {
-      if (!bson_iter_find_descendant (&i2, key, &descendent)) {
+      if (!bson_iter_find_descendant (&iter, key, &descendent)) {
          return false;
       }
 
       bson_value_copy(bson_iter_value (&descendent), value);
       return true;
    } else if (is_command && is_first) {
-      if (!bson_iter_find_case (&i2, key)) {
+      if (!bson_iter_find_case (&iter, key)) {
          return false;
       }
-   } else if (!bson_iter_find (&i2, key)) {
+   } else if (!bson_iter_find (&iter, key)) {
       return false;
    }
 
-   bson_value_copy (bson_iter_value (&i2), value);
+   bson_value_copy (bson_iter_value (&iter), value);
    return true;
 }
 
