@@ -51,6 +51,9 @@
 #include "TestSuite.h"
 
 
+static int test_flags;
+
+
 #define TEST_VERBOSE   (1 << 0)
 #define TEST_NOFORK    (1 << 1)
 #define TEST_HELPONLY  (1 << 2)
@@ -296,6 +299,9 @@ TestSuite_Init (TestSuite *suite,
          suite->testname = strdup (argv [++i]);
       }
    }
+
+   /* HACK: copy flags to global var */
+   test_flags = suite->flags;
 }
 
 
@@ -852,4 +858,11 @@ TestSuite_Destroy (TestSuite *suite)
    free (suite->name);
    free (suite->prgname);
    free (suite->testname);
+}
+
+
+int
+test_suite_debug_output (void)
+{
+   return 0 != (test_flags & TEST_DEBUGOUTPUT);
 }

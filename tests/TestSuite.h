@@ -237,6 +237,8 @@ void TestSuite_AddFull (TestSuite *suite,
 int  TestSuite_Run     (TestSuite *suite);
 void TestSuite_Destroy (TestSuite *suite);
 
+int test_suite_debug_output (void);
+
 #ifdef __cplusplus
 }
 #endif
