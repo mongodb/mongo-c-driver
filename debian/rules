@@ -15,6 +15,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 #export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
 # package maintainers to append LDFLAGS
 
+export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
 # main packaging script based on dh7 syntax
 %:
