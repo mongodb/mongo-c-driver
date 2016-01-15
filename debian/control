@@ -51,7 +51,7 @@ Description: MongoDB C client library - documentation
  .
  This package contains the man pages for libmongoc.
 
-Package: libmongoc-priv
+Package: libmongoc-priv0
 Section: libdevel
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
