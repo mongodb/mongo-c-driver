@@ -54,7 +54,7 @@ Description: MongoDB C client library - documentation
 Package: libmongoc-priv
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: MongoDB C client library - private runtime
  libmongoc is the officially supported MongoDB client library for C
  applications.
@@ -67,7 +67,7 @@ Description: MongoDB C client library - private runtime
 Package: libmongoc-priv-dev
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends}
+Depends: libmongoc-priv (= ${binary:Version}), ${misc:Depends}
 Description: MongoDB C client library - private headers
  libmongoc is the officially supported MongoDB client library for C
  applications.
