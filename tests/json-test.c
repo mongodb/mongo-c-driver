@@ -252,17 +252,20 @@ get_bson_from_json_file(char *filename)
 
    /* convert to bson */
    data = bson_new_from_json((const uint8_t*)buffer, length, &error);
-   bson_free((void *)buffer);
    if (!data) {
-      return NULL;
+      fprintf (stderr, "Cannot parse %s: %s\n", filename, error.message);
+      abort();
    }
+
+   bson_free((void *)buffer);
+
    return data;
 }
 
 /*
  *-----------------------------------------------------------------------
  *
- * run_json_test_suite --
+ * install_json_test_suite --
  *
  *      Given a path to a directory containing JSON tests, import each
  *      test into a BSON blob and call the provided callback for
@@ -289,17 +292,12 @@ install_json_test_suite(TestSuite *suite, const char *dir_path, test_hook callba
 
    for (i = 0; i < num_tests; i++) {
       test = get_bson_from_json_file(test_paths[i]);
+      skip_json = strstr(test_paths[i], "/json") + strlen("/json");
+      assert(skip_json);
+      ext = strstr (skip_json, ".json");
+      assert(ext);
+      ext[0] = '\0';
 
-      if (test) {
-         skip_json = strstr(test_paths[i], "/json") + strlen("/json");
-         assert(skip_json);
-         ext = strstr (skip_json, ".json");
-         assert(ext);
-         ext[0] = '\0';
-
-         TestSuite_AddWC(suite, skip_json, (void (*)(void *))callback, (void (*)(void*))bson_destroy, test);
-      } else {
-         fprintf(stderr, "NO DATA\n");
-      }
+      TestSuite_AddWC(suite, skip_json, (void (*)(void *))callback, (void (*)(void*))bson_destroy, test);
    }
 }
