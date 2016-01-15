@@ -26,6 +26,13 @@ bson_t *tmp_bson (const char *json);
 void bson_iter_bson (const bson_iter_t *iter,
                      bson_t            *bson);
 
+
+#ifdef _MSC_VER
+#define PATH_MAX 1024
+#define realpath(path, expanded) GetFullPathName(path, PATH_MAX, expanded, NULL)
+#endif
+
+
 char *single_quotes_to_double (const char *str);
 
 bool match_bson (const bson_t *doc,

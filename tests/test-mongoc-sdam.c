@@ -17,11 +17,6 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#ifdef _MSC_VER
-#define PATH_MAX 1024
-#define realpath(path, expanded) GetFullPathName(path, PATH_MAX, expanded, NULL)
-#endif
-
 #define MAX_NUM_TESTS 100
 
 /* caller must clean up the returned description */
