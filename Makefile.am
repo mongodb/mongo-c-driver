@@ -15,6 +15,12 @@ endif
 AM_CTAGSFLAGS = --fields=+l --languages=c
 
 include doc/Makefile.am
+if ENABLE_MAN_PAGES
+include doc/man/Makefile.am
+endif
+if ENABLE_HTML_DOCS
+include doc/html/Makefile.am
+endif
 include src/Makefile.am
 
 if ENABLE_TESTS
@@ -40,12 +46,16 @@ EXTRA_DIST += $(mongocdoc_DATA)
 
 EXTRA_DIST += \
 	CMakeLists.txt \
-	CONTRIBUTING.md
+	CONTRIBUTING.md \
+	VERSION_CURRENT \
+	VERSION_RELEASED
+
+EXTRA_DIST += $(wildcard orchestration_configs/*/*)
 
 dist-hook:
 	@if test -d "$(srcdir)/.git"; then                              \
           (cd "$(srcdir)" &&                                            \
-           $(top_srcdir)/missing --run git log --stat ) > ChangeLog.tmp \
+           $(top_srcdir)/build/autotools/missing --run git log --stat ) > ChangeLog.tmp \
            && mv -f ChangeLog.tmp $(top_distdir)/ChangeLog              \
            || (rm -f ChangeLog.tmp;                                     \
                echo Failed to generate ChangeLog >&2);                  \

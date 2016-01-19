@@ -11,7 +11,7 @@
   <info>
     <link type="guide" xref="mongoc_collection_t" group="function"/>
   </info>
-  <title>mongoc_collection_count()</title>
+  <title>mongoc_collection_count_with_opts()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
@@ -46,6 +46,7 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,
     <p>This function shall execute a count query on the underlying 'collection'. The bson 'query' is not validated, simply passed along as appropriate to the server.  As such, compatibility and errors should be validated in the appropriate server documentation.</p>
     <p>In addition to the standard functionality available from mongoc_collection_count, this function allows the user to add arbitrary extra keys to the count.  This pass through enables features such as hinting for counts.</p>
     <p>For more information, see the <link href="http://docs.mongodb.org/manual/reference/operator/query/">query reference</link> at the MongoDB website.</p>
+    <note style="tip"><p>The <link xref="mongoc_read_concern_t">mongoc_read_concern_t</link> specified on the <link xref="mongoc_collection_t">mongoc_collection_t</link> will be used, if any.</p></note>
   </section>
 
   <section id="errors">
@@ -77,7 +78,7 @@ print_query_count (mongoc_collection_t *collection,
    bson_init(&opts);
    BSON_APPEND_UTF8(&opts, "hint", "_id_");
 
-   count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, query, 0, 0, &opts, NULL, &error);
+   count = mongoc_collection_count_with_opts (collection, MONGOC_QUERY_NONE, query, 0, 0, &opts, NULL, &error);
 
    bson_destroy(&opts);
 

@@ -67,12 +67,12 @@
     <section id="unix-build">
       <title>Building from a release tarball</title>
       <p>Unless you intend on contributing to the mongo-c-driver, you will want to build from a release tarball.</p>
-      <p>The most recent release of libmongoc is 1.2.1 and can be <link href="https://github.com/mongodb/mongo-c-driver/releases/download/1.2.1/mongo-c-driver-1.2.1.tar.gz">downloaded here</link>. The following snippet will download and extract the driver, and configure it:</p>
+      <p>The most recent release of libmongoc is @MONGOC_RELEASED_VERSION@ and can be <link href="https://github.com/mongodb/mongo-c-driver/releases/download/@MONGOC_RELEASED_VERSION@/mongo-c-driver-@MONGOC_RELEASED_VERSION@.tar.gz">downloaded here</link>. The following snippet will download and extract the driver, and configure it:</p>
 
       <screen>
-$ wget https://github.com/mongodb/mongo-c-driver/releases/download/1.2.1/mongo-c-driver-1.2.1.tar.gz
-$ tar xzf mongo-c-driver-1.2.1.tar.gz
-$ cd mongo-c-driver-1.2.1
+$ wget https://github.com/mongodb/mongo-c-driver/releases/download/@MONGOC_RELEASED_VERSION@/mongo-c-driver-@MONGOC_RELEASED_VERSION@.tar.gz
+$ tar xzf mongo-c-driver-@MONGOC_RELEASED_VERSION@.tar.gz
+$ cd mongo-c-driver-@MONGOC_RELEASED_VERSION@
 $ ./configure
       </screen>
       <p>If <code>configure</code> completed successfully, you'll see something like the following describing your build configuration.</p>
@@ -93,8 +93,7 @@ Libbson                                          : bundled
 Documentation:
 Generate man pages                               : no
 Install man pages                                : no</screen>
-      <p>mongo-c-driver contains a copy of libbson as a git submodule, in case your system does not already have libbson installed. The configure script will detect if libbson is not installed and use the bundled libbson.</p>
-
+      <p>mongo-c-driver contains a copy of libbson, in case your system does not already have libbson installed. The configure script will detect if libbson is not installed and use the bundled libbson.</p>
       <screen>
 $ make
 $ sudo make install
@@ -109,6 +108,14 @@ $ sudo make install
       <screen>$ sudo apt-get install git gcc automake autoconf libtool</screen>
       <p>FreeBSD:</p>
       <screen>$ su -c 'pkg install git gcc automake autoconf libtool'</screen>
+      <p>Once you have the dependencies installed, clone the repository and build the current master or a particular release tag:</p>
+      <screen>$ git clone https://github.com/mongodb/mongo-c-driver.git
+$ cd mongo-c-driver
+$ git checkout x.y.z  # To build a particular release
+$ ./autogen.sh --with-libbson=bundled
+$ make
+$ sudo make install
+      </screen>
     </section>
     <section id="unix-build-docs">
       <title>Generating the documentation</title>
@@ -140,9 +147,9 @@ $ export CPPFLAGS="-I/usr/local/opt/openssl/include"</screen>
       <title>Building on OS X</title>
       <p>Download the latest release tarball:</p>
       <screen>
-$ curl -LO https://github.com/mongodb/mongo-c-driver/releases/download/1.2.1/mongo-c-driver-1.2.1.tar.gz
-$ tar xzf mongo-c-driver-1.2.1.tar.gz
-$ cd mongo-c-driver-1.2.1</screen>
+$ curl -LO https://github.com/mongodb/mongo-c-driver/releases/download/@MONGOC_RELEASED_VERSION@/mongo-c-driver-@MONGOC_RELEASED_VERSION@.tar.gz
+$ tar xzf mongo-c-driver-@MONGOC_RELEASED_VERSION@.tar.gz
+$ cd mongo-c-driver-@MONGOC_RELEASED_VERSION@</screen>
       <p>Build and install the driver:</p>
       <screen>
 $ ./configure
@@ -158,6 +165,14 @@ $ make man html</screen>
     </section>
   </section>
 
+  <section id="mac-os-x">
+    <info><link type="guide" xref="index#installation"/></info>
+    <title>Installing on Mac OS X</title>
+    <p>To build the C Driver on a Mac, install the prerequisites in order to build it from source. It is recommended to use <link href="http://brew.sh">Homebrew</link>:</p>
+    <screen><output style="prompt">$ brew install git automake autoconf libtool pkgconfig</output></screen>
+    <p>Additionally, <link href="http://developer.apple.com/xcode">XCode</link> is required. The driver can then be installed by following the directions for <link xref="installing#build-yourself">building from source</link>.</p>
+  </section>
+
   <section id="building-windows">
     <info><link type="guide" xref="index#installation" /></info>
     <title>Building on Windows</title>
@@ -166,9 +181,10 @@ $ make man html</screen>
 
     <p>Let's start by generating Visual Studio project files for libbson, a dependency of the C driver. The following assumes we are compiling for 64-bit Windows using Visual Studio 2010 Express which can be freely downloaded from Microsoft.</p>
 
-    <screen>cd mongo-c-driver-1.2.1\src\libbson
+    <screen>cd mongo-c-driver-@MONGOC_RELEASED_VERSION@\src\libbson
 cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</screen>
 
+    <p>(Run <code>cmake -LH .</code> for a list of other options.)</p>
     <p>Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program <code>msbuild.exe</code></p>
 
     <screen>msbuild.exe ALL_BUILD.vcxproj</screen>
@@ -181,7 +197,7 @@ cmake -G "Visual Studio 10 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver"</sc
 
     <p>Now let's do the same for the MongoDB C driver.</p>
 
-    <screen>cd mongo-c-driver-1.2.1
+    <screen>cd mongo-c-driver-@MONGOC_RELEASED_VERSION@
 cmake -G "Visual Studio 2010 Win64" "-DCMAKE_INSTALL_PREFIX=C:\mongo-c-driver" "-DBSON_ROOT_DIR=C:\mongo-c-driver"
 msbuild.exe ALL_BUILD.vcxproj
 msbuild.exe INSTALL.vcxproj</screen>

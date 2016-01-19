@@ -126,6 +126,11 @@ request_t * mock_server_receives_delete (mock_server_t *server,
                                          mongoc_remove_flags_t flags,
                                          const char *selector_json);
 
+request_t *mock_server_receives_getmore (mock_server_t *server,
+                                         const char *ns,
+                                         uint32_t n_return,
+                                         int64_t cursor_id);
+
 request_t *mock_server_receives_kill_cursors (mock_server_t *server,
                                               int64_t cursor_id);
 
@@ -134,7 +139,7 @@ void mock_server_hangs_up (request_t *request);
 void mock_server_resets (request_t *request);
 
 void mock_server_replies (request_t *request,
-                          uint32_t flags,
+                          mongoc_reply_flags_t flags,
                           int64_t cursor_id,
                           int32_t starting_from,
                           int32_t number_returned,
@@ -142,6 +147,20 @@ void mock_server_replies (request_t *request,
 
 void mock_server_replies_simple (request_t *request,
                                  const char *docs_json);
+
+void mock_server_replies_to_find (request_t           *request,
+                                  mongoc_query_flags_t flags,
+                                  int64_t              cursor_id,
+                                  int32_t              number_returned,
+                                  const char          *ns,
+                                  const char          *reply_json,
+                                  bool                 is_command);
+
+void mock_server_reply_multi (request_t           *request,
+                              mongoc_reply_flags_t flags,
+                              const bson_t        *docs,
+                              int                  n_docs,
+                              int64_t              cursor_id);
 
 void mock_server_destroy (mock_server_t *server);
 

@@ -26,10 +26,10 @@
 #include "mongoc-client.h"
 #include "mongoc-buffer-private.h"
 #include "mongoc-rpc-private.h"
+#include "mongoc-server-stream-private.h"
 
 
 BSON_BEGIN_DECLS
-
 
 typedef struct _mongoc_cursor_interface_t mongoc_cursor_interface_t;
 
@@ -58,16 +58,14 @@ struct _mongoc_cursor_t
    unsigned                   is_command      : 1;
    unsigned                   sent            : 1;
    unsigned                   done            : 1;
-   unsigned                   failed          : 1;
    unsigned                   end_of_event    : 1;
-   unsigned                   in_exhaust      : 1;
-   unsigned                   redir_primary   : 1;
    unsigned                   has_fields      : 1;
-   unsigned                   is_write_command: 1;
+   unsigned                   in_exhaust      : 1;
 
    bson_t                     query;
    bson_t                     fields;
 
+   mongoc_read_concern_t     *read_concern;
    mongoc_read_prefs_t       *read_prefs;
 
    mongoc_query_flags_t       flags;
@@ -75,9 +73,11 @@ struct _mongoc_cursor_t
    uint32_t                   limit;
    uint32_t                   count;
    uint32_t                   batch_size;
+   uint32_t                   max_await_time_ms;
 
    char                       ns [140];
    uint32_t                   nslen;
+   uint32_t                   dblen;
 
    bson_error_t               error;
 
@@ -92,25 +92,38 @@ struct _mongoc_cursor_t
 };
 
 
-mongoc_cursor_t * _mongoc_cursor_new      (mongoc_client_t            *client,
-                                           const char                 *db_and_collection,
-                                           mongoc_query_flags_t        flags,
-                                           uint32_t                    skip,
-                                           uint32_t                    limit,
-                                           uint32_t                    batch_size,
-                                           bool                        is_command,
-                                           const bson_t               *query,
-                                           const bson_t               *fields,
-                                           const mongoc_read_prefs_t  *read_prefs);
-mongoc_cursor_t *_mongoc_cursor_clone     (const mongoc_cursor_t      *cursor);
-void             _mongoc_cursor_destroy   (mongoc_cursor_t            *cursor);
-bool             _mongoc_cursor_more      (mongoc_cursor_t            *cursor);
-bool             _mongoc_cursor_next      (mongoc_cursor_t            *cursor,
-                                           const bson_t              **bson);
-bool             _mongoc_cursor_error     (mongoc_cursor_t            *cursor,
-                                           bson_error_t               *error);
-void             _mongoc_cursor_get_host  (mongoc_cursor_t            *cursor,
-                                           mongoc_host_list_t         *host);
+mongoc_cursor_t         * _mongoc_cursor_new          (mongoc_client_t              *client,
+                                                       const char                   *db_and_collection,
+                                                       mongoc_query_flags_t          flags,
+                                                       uint32_t                      skip,
+                                                       uint32_t                      limit,
+                                                       uint32_t                      batch_size,
+                                                       bool                          is_command,
+                                                       const bson_t                 *query,
+                                                       const bson_t                 *fields,
+                                                       const mongoc_read_prefs_t    *read_prefs,
+                                                       const mongoc_read_concern_t  *read_concern);
+mongoc_cursor_t         *_mongoc_cursor_clone         (const mongoc_cursor_t        *cursor);
+void                     _mongoc_cursor_destroy       (mongoc_cursor_t              *cursor);
+bool                     _mongoc_read_from_buffer     (mongoc_cursor_t              *cursor,
+                                                       const bson_t                **bson);
+bool                     _use_find_command            (const mongoc_cursor_t        *cursor,
+                                                       const mongoc_server_stream_t *server_stream);
+mongoc_server_stream_t * _mongoc_cursor_fetch_stream  (mongoc_cursor_t              *cursor);
+void                     _mongoc_cursor_collection    (const mongoc_cursor_t        *cursor,
+                                                       const char                  **collection,
+                                                       int                          *collection_len);
+bool                     _mongoc_cursor_op_getmore    (mongoc_cursor_t              *cursor,
+                                                       mongoc_server_stream_t       *server_stream);
+bool                     _mongoc_cursor_run_command   (mongoc_cursor_t              *cursor,
+                                                       const bson_t                 *command);
+bool                     _mongoc_cursor_more          (mongoc_cursor_t              *cursor);
+bool                     _mongoc_cursor_next          (mongoc_cursor_t              *cursor,
+                                                       const bson_t                **bson);
+bool                     _mongoc_cursor_error         (mongoc_cursor_t              *cursor,
+                                                       bson_error_t                 *error);
+void                     _mongoc_cursor_get_host      (mongoc_cursor_t              *cursor,
+                                                       mongoc_host_list_t           *host);
 
 
 BSON_END_DECLS

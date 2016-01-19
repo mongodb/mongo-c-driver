@@ -28,27 +28,25 @@
 
 BSON_BEGIN_DECLS
 
-
 struct _mongoc_bulk_operation_t
 {
-   char                   *database;
-   char                   *collection;
-   mongoc_client_t        *client;
-   mongoc_write_concern_t *write_concern;
-   bool                    ordered;
-   uint32_t                hint;
-   mongoc_array_t          commands;
-   mongoc_write_result_t   result;
-   bool                    executed;
+   char                          *database;
+   char                          *collection;
+   mongoc_client_t               *client;
+   mongoc_write_concern_t        *write_concern;
+   mongoc_bulk_write_flags_t      flags;
+   uint32_t                       hint;
+   mongoc_array_t                 commands;
+   mongoc_write_result_t          result;
+   bool                           executed;
 };
 
 
-mongoc_bulk_operation_t *_mongoc_bulk_operation_new (mongoc_client_t              *client,
-                                                     const char                   *database,
-                                                     const char                   *collection,
-                                                     uint32_t                      hint,
-                                                     bool                          ordered,
-                                                     const mongoc_write_concern_t *write_concern);
+mongoc_bulk_operation_t *_mongoc_bulk_operation_new (mongoc_client_t               *client,
+                                                     const char                    *database,
+                                                     const char                    *collection,
+                                                     mongoc_bulk_write_flags_t      flags,
+                                                     const mongoc_write_concern_t  *write_concern);
 
 
 BSON_END_DECLS

@@ -567,27 +567,19 @@ test_mongoc_uri_read_prefs (void)
    const read_prefs_test *t;
    int i;
 
-   bson_t *tags_dcny;
-   bson_t *tags_dcny_empty;
-   bson_t *tags_dcnyusessd_dcsf_empty;
-   bson_t *tags_empty;
-
-   tags_dcny = BCON_NEW(
+   bson_t *tags_dcny = BCON_NEW(
       "0", "{", "dc", "ny", "}"
    );
-
-   tags_dcny_empty = BCON_NEW(
+   bson_t *tags_dcny_empty = BCON_NEW(
       "0", "{", "dc", "ny", "}",
       "1", "{", "}"
    );
-
-   tags_dcnyusessd_dcsf_empty = BCON_NEW(
+   bson_t *tags_dcnyusessd_dcsf_empty = BCON_NEW(
       "0", "{", "dc", "ny", "use", "ssd", "}",
       "1", "{", "dc", "sf", "}",
       "2", "{", "}"
    );
-
-   tags_empty = BCON_NEW(
+   bson_t *tags_empty = BCON_NEW(
       "0", "{", "}"
    );
 
@@ -715,6 +707,53 @@ test_mongoc_uri_write_concern (void)
    }
 }
 
+static void
+test_mongoc_uri_read_concern (void)
+{
+   const mongoc_read_concern_t *rc;
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=majority");
+   rc = mongoc_uri_get_read_concern (uri);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "majority");
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=" MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   rc = mongoc_uri_get_read_concern (uri);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "majority");
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=local");
+   rc = mongoc_uri_get_read_concern (uri);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "local");
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=" MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   rc = mongoc_uri_get_read_concern (uri);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "local");
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=randomstuff");
+   rc = mongoc_uri_get_read_concern (uri);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "randomstuff");
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   rc = mongoc_uri_get_read_concern (uri);
+   ASSERT (mongoc_read_concern_get_level (rc) == NULL);
+   mongoc_uri_destroy (uri);
+
+
+   uri = mongoc_uri_new ("mongodb://localhost/?readConcernLevel=");
+   rc = mongoc_uri_get_read_concern (uri);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc), "");
+   mongoc_uri_destroy (uri);
+}
+
+
 
 void
 test_uri_install (TestSuite *suite)
@@ -723,6 +762,7 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/new_for_host_port", test_mongoc_uri_new_for_host_port);
    TestSuite_Add (suite, "/Uri/unescape", test_mongoc_uri_unescape);
    TestSuite_Add (suite, "/Uri/read_prefs", test_mongoc_uri_read_prefs);
+   TestSuite_Add (suite, "/Uri/read_concern", test_mongoc_uri_read_concern);
    TestSuite_Add (suite, "/Uri/write_concern", test_mongoc_uri_write_concern);
    TestSuite_Add (suite, "/HostList/from_string", test_mongoc_host_list_from_string);
    TestSuite_Add (suite, "/Uri/functions", test_mongoc_uri_functions);

@@ -55,6 +55,57 @@ future_collection_aggregate (
 
 
 future_t *
+future_collection_count (
+
+   mongoc_collection_ptr collection,
+   mongoc_query_flags_t flags,
+   const_bson_ptr query,
+   int64_t skip,
+   int64_t limit,
+   const_mongoc_read_prefs_ptr read_prefs,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_collection_find_and_modify_with_opts (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr query,
+   const_mongoc_find_and_modify_opts_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_collection_find_and_modify (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr query,
+   const_bson_ptr sort,
+   const_bson_ptr update,
+   const_bson_ptr fields,
+   bool _remove,
+   bool upsert,
+   bool _new,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_collection_insert (
+
+   mongoc_collection_ptr collection,
+   mongoc_insert_flags_t flags,
+   const_bson_ptr document,
+   const_mongoc_write_concern_ptr write_concern,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_collection_insert_bulk (
 
    mongoc_collection_ptr collection,
@@ -98,12 +149,52 @@ future_database_get_collection_names (
 
 
 future_t *
+future_gridfs_file_readv (
+
+   mongoc_gridfs_file_ptr file,
+   mongoc_iovec_ptr iov,
+   size_t iovcnt,
+   size_t min_bytes,
+   uint32_t timeout_msec
+);
+
+
+future_t *
+future_gridfs_file_seek (
+
+   mongoc_gridfs_file_ptr file,
+   int64_t delta,
+   int whence
+);
+
+
+future_t *
+future_gridfs_file_writev (
+
+   mongoc_gridfs_file_ptr file,
+   mongoc_iovec_ptr iov,
+   size_t iovcnt,
+   uint32_t timeout_msec
+);
+
+
+future_t *
 future_topology_select (
 
    mongoc_topology_ptr topology,
    mongoc_ss_optype_t optype,
    const_mongoc_read_prefs_ptr read_prefs,
    int64_t local_threshold_ms,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_client_get_gridfs (
+
+   mongoc_client_ptr client,
+   const_char_ptr db,
+   const_char_ptr prefix,
    bson_error_ptr error
 );
 

@@ -2,12 +2,11 @@
       type="topic"
       id="basic-troubleshooting">
 
-    <section id="basic-troubleshooting">
-      <info>
-        <link type="guide" xref="index#debugging" />
-      </info>
+    <title>Basic Troubleshooting</title>
 
-      <title>Basic Troubleshooting</title>
+    <section id="checklist">
+
+      <title>Troubleshooting Checklist</title>
 
       <p>The following is a short list of things to check when you have a problem.</p>
 

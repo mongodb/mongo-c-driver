@@ -27,6 +27,7 @@
 #include "mongoc-array-private.h"
 #include "mongoc-iovec.h"
 #include "mongoc-write-concern.h"
+#include "mongoc-flags.h"
 
 
 BSON_BEGIN_DECLS
@@ -88,18 +89,26 @@ BSON_STATIC_ASSERT (offsetof (mongoc_rpc_header_t, opcode) ==
 #undef RAW_BUFFER_FIELD
 
 
-void _mongoc_rpc_gather          (mongoc_rpc_t                 *rpc,
-                                  mongoc_array_t               *array);
-bool _mongoc_rpc_needs_gle       (mongoc_rpc_t                 *rpc,
-                                  const mongoc_write_concern_t *write_concern);
-void _mongoc_rpc_swab_to_le      (mongoc_rpc_t                 *rpc);
-void _mongoc_rpc_swab_from_le    (mongoc_rpc_t                 *rpc);
-void _mongoc_rpc_printf          (mongoc_rpc_t                 *rpc);
-bool _mongoc_rpc_scatter         (mongoc_rpc_t                 *rpc,
-                                  const uint8_t                *buf,
-                                  size_t                        buflen);
-bool _mongoc_rpc_reply_get_first (mongoc_rpc_reply_t           *reply,
-                                  bson_t                       *bson);
+void _mongoc_rpc_gather             (mongoc_rpc_t                 *rpc,
+                                     mongoc_array_t               *array);
+bool _mongoc_rpc_needs_gle          (mongoc_rpc_t                 *rpc,
+                                     const mongoc_write_concern_t *write_concern);
+void _mongoc_rpc_swab_to_le         (mongoc_rpc_t                 *rpc);
+void _mongoc_rpc_swab_from_le       (mongoc_rpc_t                 *rpc);
+void _mongoc_rpc_printf             (mongoc_rpc_t                 *rpc);
+bool _mongoc_rpc_scatter            (mongoc_rpc_t                 *rpc,
+                                     const uint8_t                *buf,
+                                     size_t                        buflen);
+bool _mongoc_rpc_reply_get_first    (mongoc_rpc_reply_t           *reply,
+                                     bson_t                       *bson);
+void _mongoc_rpc_prep_command       (mongoc_rpc_t                 *rpc,
+                                     const char                   *cmd_ns,
+                                     const bson_t                 *command,
+                                     mongoc_query_flags_t          flags);
+bool _mongoc_rpc_parse_command_error(mongoc_rpc_t                 *rpc,
+                                     bson_error_t                 *error);
+bool _mongoc_rpc_parse_query_error  (mongoc_rpc_t                 *rpc,
+                                     bson_error_t                 *error);
 
 
 BSON_END_DECLS

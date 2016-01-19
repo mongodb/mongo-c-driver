@@ -38,6 +38,8 @@ typedef struct _mongoc_topology_description_t
    mongoc_topology_description_type_t type;
    mongoc_set_t                      *servers;
    char                              *set_name;
+   int64_t                            max_set_version;
+   bson_oid_t                         max_election_id;
    bool                               compatible;
    char                              *compatibility_error;
    uint32_t                           max_server_id;
@@ -73,7 +75,8 @@ mongoc_topology_description_select (mongoc_topology_description_t *description,
 
 mongoc_server_description_t *
 mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
-                                          uint32_t                       id);
+                                          uint32_t                       id,
+                                          bson_error_t                  *error);
 
 void
 mongoc_topology_description_suitable_servers (

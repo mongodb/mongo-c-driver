@@ -60,6 +60,7 @@ mongoc_topology_description_init (mongoc_topology_description_t     *description
    description->type = type;
    description->servers = mongoc_set_new(8, _mongoc_topology_server_dtor, NULL);
    description->set_name = NULL;
+   description->max_set_version = MONGOC_NO_SET_VERSION;
    description->compatible = true;
    description->compatibility_error = NULL;
    description->stale = true;
@@ -141,6 +142,69 @@ _mongoc_topology_description_has_primary (mongoc_topology_description_t *descrip
    mongoc_set_for_each(description->servers, _mongoc_topology_description_has_primary_cb, &primary);
 
    return primary;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_description_later_election --
+ *
+ *       Check if we've seen a more recent election in the replica set
+ *       than this server has.
+ *
+ * Returns:
+ *       True if the topology description's max replica set version plus
+ *       election id is later than the server description's.
+ *
+ * Side effects:
+ *       None
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_mongoc_topology_description_later_election (mongoc_topology_description_t *td,
+                                             mongoc_server_description_t   *sd)
+{
+   /* initially max_set_version is -1 and max_election_id is zeroed */
+   return td->max_set_version > sd->set_version ||
+      (td->max_set_version == sd->set_version &&
+         bson_oid_compare (&td->max_election_id, &sd->election_id) > 0);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_description_set_max_set_version --
+ *
+ *       Remember that we've seen a new replica set version. Unconditionally
+ *       sets td->set_version to sd->set_version.
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+_mongoc_topology_description_set_max_set_version (
+   mongoc_topology_description_t *td,
+   mongoc_server_description_t   *sd)
+{
+   td->max_set_version = sd->set_version;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_description_set_max_election_id --
+ *
+ *       Remember that we've seen a new election id. Unconditionally sets
+ *       td->max_election_id to sd->election_id.
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+_mongoc_topology_description_set_max_election_id (
+   mongoc_topology_description_t *td,
+   mongoc_server_description_t   *sd)
+{
+   bson_oid_copy (&sd->election_id, &td->max_election_id);
 }
 
 static bool
@@ -464,7 +528,8 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
  * mongoc_topology_description_server_by_id --
  *
  *       Get the server description for @id, if that server is present
- *       in @description. Otherwise, return NULL.
+ *       in @description. Otherwise, return NULL and fill out optional
+ *       @error.
  *
  *       NOTE: In most cases, caller should create a duplicate of the
  *       returned server description. Caller should hold the mutex on the
@@ -475,18 +540,29 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
  *       A mongoc_server_description_t *, or NULL.
  *
  * Side effects:
- *       None.
+ *      Fills out optional @error if server not found.
  *
  *--------------------------------------------------------------------------
  */
 
 mongoc_server_description_t *
 mongoc_topology_description_server_by_id (mongoc_topology_description_t *description,
-                                          uint32_t                       id)
+                                          uint32_t id,
+                                          bson_error_t *error)
 {
+   mongoc_server_description_t *sd;
+
    BSON_ASSERT (description);
 
-   return (mongoc_server_description_t *)mongoc_set_get(description->servers, id);
+   sd = (mongoc_server_description_t *)mongoc_set_get(description->servers, id);
+   if (!sd) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                      "Could not find description for node %u", id);
+   }
+
+   return sd;
 }
 
 /*
@@ -534,6 +610,27 @@ _mongoc_topology_description_has_server_cb (void *item,
       return false;
    }
    return true;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_description_has_set_version --
+ *
+ *       Whether @topology's max replica set version has been set.
+ *
+ * Returns:
+ *       True if the max setVersion was ever set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_mongoc_topology_description_has_set_version (mongoc_topology_description_t *td)
+{
+   return td->max_set_version != MONGOC_NO_SET_VERSION;
 }
 
 /*
@@ -707,7 +804,7 @@ mongoc_topology_description_invalidate_server (mongoc_topology_description_t *to
    mongoc_server_description_t *sd;
    bson_error_t error;
 
-   sd = mongoc_topology_description_server_by_id (topology, id);
+   sd = mongoc_topology_description_server_by_id (topology, id, NULL);
    mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, &error);
 
    return;
@@ -800,7 +897,9 @@ _mongoc_topology_description_invalidate_primaries_cb (void *item,
 
    if (server->id != data->primary->id &&
        server->type == MONGOC_SERVER_RS_PRIMARY) {
-      mongoc_server_description_set_state(server, MONGOC_SERVER_UNKNOWN);
+      mongoc_server_description_set_state (server, MONGOC_SERVER_UNKNOWN);
+      mongoc_server_description_set_set_version (server, MONGOC_NO_SET_VERSION);
+      mongoc_server_description_set_election_id (server, NULL);
    }
    return true;
 }
@@ -849,6 +948,38 @@ _mongoc_topology_description_remove_unreported_servers (
 /*
  *--------------------------------------------------------------------------
  *
+ * _mongoc_topology_description_matches_me --
+ *
+ *       Server Discovery And Monitoring Spec: "Removal from the topology of
+ *       seed list members where the "me" property does not match the address
+ *       used to connect prevents clients from being able to select a server,
+ *       only to fail to re-select that server once the primary has responded.
+ *
+ * Returns:
+ *       True if "me" matches "connection_address".
+ *
+ * Side Effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_mongoc_topology_description_matches_me (mongoc_server_description_t *server)
+{
+   BSON_ASSERT (server->connection_address);
+
+   if (!server->me) {
+      /* "me" is unknown: consider it a match */
+      return true;
+   }
+
+   return strcasecmp (server->connection_address, server->me) == 0;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * _mongoc_update_rs_from_primary --
  *
  *       First, determine that this is really the primary:
@@ -885,17 +1016,44 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
 
    if (!_mongoc_topology_description_has_server(topology, server->connection_address, NULL)) return;
 
-   /*
-    * 'Server' can only be the primary if it has the right rs name.
-    */
+   /* If server->set_name was null this function wouldn't be called from
+    * mongoc_server_description_handle_ismaster(). static code analyzers however
+    * don't know that so we check for it explicitly. */
+   if (server->set_name) {
+      /* 'Server' can only be the primary if it has the right rs name  */
 
-   if (!topology->set_name && server->set_name) {
-      topology->set_name = bson_strdup (server->set_name);
+      if (!topology->set_name) {
+         topology->set_name = bson_strdup (server->set_name);
+      }
+      else if (strcmp(topology->set_name, server->set_name) != 0) {
+         _mongoc_topology_description_remove_server(topology, server);
+         _update_rs_type (topology);
+         return;
+      }
    }
-   else if (strcmp(topology->set_name, server->set_name) != 0) {
-      _mongoc_topology_description_remove_server(topology, server);
-      _update_rs_type (topology);
-      return;
+
+   if (mongoc_server_description_has_set_version (server) &&
+       mongoc_server_description_has_election_id (server)) {
+      /* Server Discovery And Monitoring Spec: "The client remembers the
+       * greatest electionId reported by a primary, and distrusts primaries
+       * with lesser electionIds. This prevents the client from oscillating
+       * between the old and new primary during a split-brain period."
+       */
+      if (_mongoc_topology_description_later_election (topology, server)) {
+         /* stale primary */
+         mongoc_topology_description_invalidate_server (topology, server->id);
+         _update_rs_type (topology);
+         return;
+      }
+
+      /* server's electionId >= topology's max electionId */
+      _mongoc_topology_description_set_max_election_id (topology, server);
+   }
+
+   if (mongoc_server_description_has_set_version (server) &&
+         (! _mongoc_topology_description_has_set_version (topology) ||
+            server->set_version > topology->max_set_version)) {
+      _mongoc_topology_description_set_max_set_version (topology, server);
    }
 
    /* 'Server' is the primary! Invalidate other primaries if found */
@@ -953,6 +1111,11 @@ _mongoc_topology_description_update_rs_without_primary (mongoc_topology_descript
    /* Add new servers that this replica set member knows about */
    _mongoc_topology_description_add_new_servers (topology, server);
 
+   if (!_mongoc_topology_description_matches_me (server)) {
+      _mongoc_topology_description_remove_server(topology, server);
+      return;
+   }
+
    /* If this server thinks there is a primary, label it POSSIBLE_PRIMARY */
    if (server->current_primary) {
       _mongoc_topology_description_label_unknown_member(topology,
@@ -992,6 +1155,11 @@ _mongoc_topology_description_update_rs_with_primary_from_member (mongoc_topology
    if (strcmp(topology->set_name, server->set_name) != 0) {
       _mongoc_topology_description_remove_server(topology, server);
       _update_rs_type (topology);
+      return;
+   }
+
+   if (!_mongoc_topology_description_matches_me (server)) {
+      _mongoc_topology_description_remove_server(topology, server);
       return;
    }
 

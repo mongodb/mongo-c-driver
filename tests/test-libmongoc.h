@@ -46,15 +46,21 @@ void test_framework_set_ssl_opts (mongoc_client_t *client);
 void test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool);
 mongoc_client_t *test_framework_client_new (void);
 mongoc_client_pool_t *test_framework_client_pool_new (void);
-bool test_framework_max_wire_version_at_least (int version);
 
 bool test_framework_is_mongos (void);
 bool test_framework_is_replset (void);
+bool test_framework_server_is_secondary (mongoc_client_t *client,
+                                         uint32_t server_id);
+bool test_framework_max_wire_version_at_least (int version);
 
+int test_framework_skip_if_max_version_version_less_than_4 (void);
 int test_framework_skip_if_mongos  (void);
 int test_framework_skip_if_replset (void);
 int test_framework_skip_if_single  (void);
 int test_framework_skip_if_windows (void);
+int test_framework_skip_if_not_mongos  (void);
+int test_framework_skip_if_not_replset (void);
+int test_framework_skip_if_not_single  (void);
 
 typedef struct _debug_stream_stats_t {
    mongoc_client_t *client;

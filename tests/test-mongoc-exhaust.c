@@ -4,6 +4,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-util-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -149,6 +150,9 @@ test_exhaust_cursor (bool pooled)
       assert (! client->in_exhaust);
    }
 
+   /* ensure even a 1 ms-resolution clock advances significantly */
+   _mongoc_usleep (10 * 1000);
+
    /* Grab a new exhaust cursor, then verify that reading from that cursor
     * (putting the client into exhaust), breaks a mid-stream read from a
     * regular cursor */
@@ -267,10 +271,278 @@ test_exhaust_cursor_pool (void *context)
    test_exhaust_cursor (true);
 }
 
+static void
+test_exhaust_cursor_multi_batch (void *context)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_collection_t *collection;
+   bson_t doc = BSON_INITIALIZER;
+   mongoc_bulk_operation_t *bulk;
+   int i;
+   uint32_t hint;
+   mongoc_cursor_t *cursor;
+   const bson_t *cursor_doc;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_exhaust_cursor_multi_batch");
+
+   ASSERT_OR_PRINT (collection, error);
+
+   BSON_APPEND_UTF8 (&doc, "key", "value");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+
+   /* enough to require more than initial batch */
+   for (i = 0; i < 1000; i++) {
+      mongoc_bulk_operation_insert (bulk, &doc);
+   }
+
+   hint = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (hint, error);
+
+   cursor = mongoc_collection_find (
+      collection,
+      MONGOC_QUERY_EXHAUST,
+      0, 0, 0,
+      tmp_bson ("{}"), NULL, NULL);
+
+   i = 0;
+   while (mongoc_cursor_next (cursor, &cursor_doc)) {
+      i++;
+   }
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   ASSERT_CMPINT (i, ==, 1000);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   bson_destroy (&doc);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_cursor_set_max_await_time_ms (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client,
+                                     "test_cursor_set_max_await_time_ms");
+
+   cursor = mongoc_collection_find (
+      collection,
+      MONGOC_QUERY_TAILABLE_CURSOR|MONGOC_QUERY_AWAIT_DATA,
+      0, 0, 0,
+      tmp_bson ("{}"), NULL, NULL);
+
+   ASSERT_CMPINT (0, ==, mongoc_cursor_get_max_await_time_ms (cursor));
+   mongoc_cursor_set_max_await_time_ms (cursor, 123);
+   ASSERT_CMPINT (123, ==, mongoc_cursor_get_max_await_time_ms (cursor));
+   _mongoc_cursor_next (cursor, NULL);
+
+   /* once started, cursor ignores set_max_await_time_ms () */
+   mongoc_cursor_set_max_await_time_ms (cursor, 42);
+   ASSERT_CMPINT (123, ==, mongoc_cursor_get_max_await_time_ms (cursor));
+}
+
+typedef enum
+{
+   FIRST_BATCH,
+   SECOND_BATCH,
+} exhaust_error_when_t;
+
+typedef enum
+{
+   NETWORK_ERROR,
+   SERVER_ERROR,
+} exhaust_error_type_t;
+
+static void
+_request_error (request_t           *request,
+                exhaust_error_type_t error_type)
+{
+   if (error_type == NETWORK_ERROR) {
+      mock_server_resets (request);
+   } else {
+      mock_server_replies (request, MONGOC_REPLY_QUERY_FAILURE, 123, 0, 0,
+                           "{'$err': 'uh oh', 'code': 4321}");
+   }
+}
+
+static void
+_check_error (mongoc_client_t     *client,
+              mongoc_cursor_t     *cursor,
+              bool                 pooled,
+              exhaust_error_type_t error_type)
+{
+   uint32_t hint;
+   bson_error_t error;
+
+   hint = mongoc_cursor_get_hint (cursor);
+   ASSERT (hint);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+
+   if (error_type == NETWORK_ERROR) {
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "Failed to read");
+
+      /* socket was discarded */
+      ASSERT (!mongoc_cluster_stream_for_server (&client->cluster,
+                                                 hint,
+                                                 false /* don't reconnect */,
+                                                 &error));
+
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                             pooled ?
+                             "Could not find node" :
+                             "Could not find stream");
+   } else {
+      /* query failure */
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_QUERY,
+                             4321 /* error from mock server */,
+                             "uh oh" /* message from mock server */);
+   }
+}
+
+static void
+_mock_test_exhaust (bool                 pooled,
+                    exhaust_error_when_t error_when,
+                    exhaust_error_type_t error_type)
+{
+   mock_server_t *server;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+
+   server = mock_server_with_autoismaster (0);
+   mock_server_run (server);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   }
+
+   collection = mongoc_client_get_collection (client, "db", "test");
+   cursor = mongoc_collection_find (collection,
+                                    MONGOC_QUERY_EXHAUST,
+                                    0, 0, 0,
+                                    tmp_bson ("{}"),
+                                    NULL, NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_query (
+      server, "db.test", MONGOC_QUERY_SLAVE_OK | MONGOC_QUERY_EXHAUST,
+      0, 0, "{}", NULL);
+
+   if (error_when == SECOND_BATCH) {
+      /* initial query succeeds, gets a doc and cursor id of 123 */
+      mock_server_replies (request, MONGOC_REPLY_NONE, 123, 1, 1, "{'a': 1}");
+      ASSERT (future_get_bool (future));
+      ASSERT (match_bson (doc, tmp_bson ("{'a': 1}"), false));
+      ASSERT_CMPINT64 ((int64_t) 123, ==, mongoc_cursor_get_id (cursor));
+
+      future_destroy (future);
+
+      /* error after initial batch */
+      future = future_cursor_next (cursor, &doc);
+   }
+
+   suppress_one_message ();
+   _request_error (request, error_type);
+   ASSERT (!future_get_bool (future));
+   _check_error (client, cursor, pooled, error_type);
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mock_server_destroy (server);
+}
+
+static void
+test_exhaust_network_err_1st_batch_single (void)
+{
+   _mock_test_exhaust (false, FIRST_BATCH, NETWORK_ERROR);
+}
+
+static void
+test_exhaust_network_err_1st_batch_pooled (void)
+{
+   _mock_test_exhaust (true, FIRST_BATCH, NETWORK_ERROR);
+}
+
+static void
+test_exhaust_server_err_1st_batch_single (void)
+{
+   _mock_test_exhaust (false, FIRST_BATCH, SERVER_ERROR);
+}
+
+static void
+test_exhaust_server_err_1st_batch_pooled (void)
+{
+   _mock_test_exhaust (true, FIRST_BATCH, SERVER_ERROR);
+}
+
+static void
+test_exhaust_network_err_2nd_batch_single (void)
+{
+   _mock_test_exhaust (false, SECOND_BATCH, NETWORK_ERROR);
+}
+
+static void
+test_exhaust_network_err_2nd_batch_pooled (void)
+{
+   _mock_test_exhaust (true, SECOND_BATCH, NETWORK_ERROR);
+}
+
+static void
+test_exhaust_server_err_2nd_batch_single (void)
+{
+   _mock_test_exhaust (false, SECOND_BATCH, SERVER_ERROR);
+}
+
+static void
+test_exhaust_server_err_2nd_batch_pooled (void)
+{
+   _mock_test_exhaust (true, SECOND_BATCH, SERVER_ERROR);
+}
+
 void
 test_exhaust_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/single", test_exhaust_cursor_single, NULL, NULL, skip_if_mongos);
    TestSuite_AddFull (suite, "/Client/exhaust_cursor/pool", test_exhaust_cursor_pool, NULL, NULL, skip_if_mongos);
+   TestSuite_AddFull (suite, "/Client/exhaust_cursor/batches", test_exhaust_cursor_multi_batch, NULL, NULL, skip_if_mongos);
+   TestSuite_Add (suite, "/Client/set_max_await_time_ms", test_cursor_set_max_await_time_ms);
+   TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/1st_batch/single", test_exhaust_network_err_1st_batch_single);
+   TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/1st_batch/pooled", test_exhaust_network_err_1st_batch_pooled);
+   TestSuite_Add (suite, "/Client/exhaust_cursor/err/server/1st_batch/single", test_exhaust_server_err_1st_batch_single);
+   TestSuite_Add (suite, "/Client/exhaust_cursor/err/server/1st_batch/pooled", test_exhaust_server_err_1st_batch_pooled);
+   TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/2nd_batch/single", test_exhaust_network_err_2nd_batch_single);
+   TestSuite_Add (suite, "/Client/exhaust_cursor/err/network/2nd_batch/pooled", test_exhaust_network_err_2nd_batch_pooled);
+   TestSuite_Add (suite, "/Client/exhaust_cursor/err/server/2nd_batch/single", test_exhaust_server_err_2nd_batch_single);
+   TestSuite_Add (suite, "/Client/exhaust_cursor/err/server/2nd_batch/pooled", test_exhaust_server_err_2nd_batch_pooled);
 }
 

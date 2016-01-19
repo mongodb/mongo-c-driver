@@ -41,6 +41,25 @@
 
 BSON_BEGIN_DECLS
 
+/* protocol versions this driver can speak */
+#define WIRE_VERSION_MIN 0
+#define WIRE_VERSION_MAX 4
+
+/* first version that supported aggregation cursors */
+#define WIRE_VERSION_AGG_CURSOR 1
+/* first version that supported "insert", "update", "delete" commands */
+#define WIRE_VERSION_WRITE_CMD 2
+/* first version when SCRAM-SHA-1 replaced MONGODB-CR as default auth mech */
+#define WIRE_VERSION_SCRAM_DEFAULT 3
+/* first version that supported "find" and "getMore" commands */
+#define WIRE_VERSION_FIND_CMD 4
+/* first version with "killCursors" command */
+#define WIRE_VERSION_KILLCURSORS_CMD 4
+/* first version when findAndModify accepts writeConcern */
+#define WIRE_VERSION_FAM_WRITE_CONCERN 4
+/* first version to support readConcern */
+#define WIRE_VERSION_READ_CONCERN 4
+
 
 struct _mongoc_client_t
 {
@@ -59,16 +78,17 @@ struct _mongoc_client_t
    char                      *pem_subject;
 #endif
 
-   mongoc_topology_t             *topology;
+   mongoc_topology_t         *topology;
 
    mongoc_read_prefs_t       *read_prefs;
+   mongoc_read_concern_t     *read_concern;
    mongoc_write_concern_t    *write_concern;
 };
 
 
 mongoc_client_t *
 _mongoc_client_new_from_uri (const mongoc_uri_t *uri,
-                             mongoc_topology_t      *topology);
+                             mongoc_topology_t  *topology);
 
 mongoc_stream_t *
 mongoc_client_default_stream_initiator (const mongoc_uri_t       *uri,
@@ -82,24 +102,17 @@ _mongoc_client_create_stream (mongoc_client_t          *client,
                               bson_error_t             *error);
 
 bool
-_mongoc_client_recv (mongoc_client_t *client,
-                     mongoc_rpc_t    *rpc,
-                     mongoc_buffer_t *buffer,
-                     uint32_t         server_id,
-                     bson_error_t    *error);
+_mongoc_client_recv (mongoc_client_t        *client,
+                     mongoc_rpc_t           *rpc,
+                     mongoc_buffer_t        *buffer,
+                     mongoc_server_stream_t *server_stream,
+                     bson_error_t           *error);
 
 bool
-_mongoc_client_recv_gle (mongoc_client_t *client,
-                         uint32_t         hint,
-                         bson_t         **gle_doc,
-                         bson_error_t    *error);
-
-uint32_t
-_mongoc_client_preselect (mongoc_client_t              *client,
-                          mongoc_opcode_t               opcode,
-                          const mongoc_write_concern_t *write_concern,
-                          const mongoc_read_prefs_t    *read_prefs,
-                          bson_error_t                 *error);
+_mongoc_client_recv_gle (mongoc_client_t        *client,
+                         mongoc_server_stream_t *server_stream,
+                         bson_t                **gle_doc,
+                         bson_error_t           *error);
 
 void
 _mongoc_topology_background_thread_start (mongoc_topology_t *topology);
@@ -111,19 +124,12 @@ mongoc_server_description_t *
 _mongoc_client_get_server_description (mongoc_client_t *client,
                                        uint32_t         server_id);
 
-bool
-_mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
-                                         const char                *db_name,
-                                         const bson_t              *command,
-                                         const mongoc_read_prefs_t *read_prefs,
-                                         bool                       is_write_command,
-                                         bson_t                    *reply,
-                                         uint32_t                   hint,
-                                         bson_error_t              *error);
 void
 _mongoc_client_kill_cursor              (mongoc_client_t *client,
                                          uint32_t         server_id,
-                                         int64_t          cursor_id);
+                                         int64_t          cursor_id,
+                                         const char      *db,
+                                         const char      *collection);
 
 BSON_END_DECLS
 

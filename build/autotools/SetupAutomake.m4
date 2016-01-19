@@ -17,9 +17,6 @@ AM_CONDITIONAL([COMPILER_CLANG],[test "$c_compiler" = "clang" && test "$cxx_comp
 # Feature Conditionals
 AM_CONDITIONAL([ENABLE_DEBUG],[test "$enable_debug" = "yes"])
 
-# Bindings Conditionals
-AM_CONDITIONAL([ENABLE_PYTHON],[test "$enable_python" = "yes"])
-
 # C99 Features
 AM_CONDITIONAL([ENABLE_STDBOOL],[test "$enable_stdbool" = "yes"])
 

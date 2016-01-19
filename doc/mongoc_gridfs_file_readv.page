@@ -41,7 +41,7 @@ mongoc_gridfs_file_readv (mongoc_gridfs_file_t *file,
 
   <section id="return">
     <title>Returns</title>
-    <p>Returns the number of bytes read, or -1 on failure and errno is set.</p>
+    <p>Returns the number of bytes read, or -1 on failure. Use <code xref="mongoc_gridfs_file_error">mongoc_gridfs_file_error</code> to retrieve error details.</p>
   </section>
 
 </page>

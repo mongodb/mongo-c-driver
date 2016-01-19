@@ -80,27 +80,25 @@ _mongoc_cursor_array_destroy (mongoc_cursor_t *cursor)
 bool
 _mongoc_cursor_array_prime (mongoc_cursor_t *cursor)
 {
-   bool ret = true;
+   const bson_t *bson;
    mongoc_cursor_array_t *arr;
    bson_iter_t iter;
 
    ENTRY;
 
    arr = (mongoc_cursor_array_t *)cursor->iface_data;
-   if (!arr->has_array) {
+
+   BSON_ASSERT (arr);
+
+   if (_mongoc_cursor_run_command (cursor, &cursor->query) &&
+       _mongoc_read_from_buffer (cursor, &bson) &&
+       bson_iter_init_find (&iter, bson, arr->field_name) &&
+       BSON_ITER_HOLDS_ARRAY (&iter) &&
+       bson_iter_recurse (&iter, &arr->iter)) {
       arr->has_array = true;
-
-      ret = _mongoc_cursor_next (cursor, &arr->result);
-
-      if (!(ret &&
-            bson_iter_init_find (&iter, arr->result, arr->field_name) &&
-            BSON_ITER_HOLDS_ARRAY (&iter) &&
-            bson_iter_recurse (&iter, &arr->iter))) {
-         ret = false;
-      }
    }
 
-   return ret;
+   return arr->has_array;
 }
 
 
@@ -146,7 +144,7 @@ _mongoc_cursor_array_clone (const mongoc_cursor_t *cursor)
    arr = (mongoc_cursor_array_t *)cursor->iface_data;
 
    clone_ = _mongoc_cursor_clone (cursor);
-   _mongoc_cursor_array_init (clone_, arr->field_name);
+   _mongoc_cursor_array_init (clone_, &cursor->query, arr->field_name);
 
    RETURN (clone_);
 }
@@ -204,9 +202,16 @@ static mongoc_cursor_interface_t gMongocCursorArray = {
 
 void
 _mongoc_cursor_array_init (mongoc_cursor_t *cursor,
+                           const bson_t    *command,
                            const char      *field_name)
 {
    ENTRY;
+
+
+   if (command) {
+      bson_destroy (&cursor->query);
+      bson_copy_to (command, &cursor->query);
+   }
 
    cursor->iface_data = _mongoc_cursor_array_new (field_name);
 

@@ -18,12 +18,9 @@
 #include <bson.h>
 
 #include "mongoc-array-private.h"
+#include "mongoc-util-private.h"
 
 #include "test-conveniences.h"
-
-#ifdef _WIN32
-# define strcasecmp _stricmp
-#endif
 
 static bool gConveniencesInitialized = false;
 static mongoc_array_t gTmpBsonArray;
@@ -68,18 +65,23 @@ tmp_bson (const char *json)
 
    test_conveniences_init ();
 
-   double_quoted = single_quotes_to_double (json);
-   doc = bson_new_from_json ((const uint8_t *)double_quoted,
-                             -1, &error);
+   if (json) {
+      double_quoted = single_quotes_to_double (json);
+      doc = bson_new_from_json ((const uint8_t *) double_quoted,
+                                -1, &error);
 
-   if (!doc) {
-      fprintf (stderr, "%s\n", error.message);
-      abort ();
+      if (!doc) {
+         fprintf (stderr, "%s\n", error.message);
+         abort ();
+      }
+
+      bson_free (double_quoted);
+
+   } else {
+      doc = bson_new ();
    }
 
    _mongoc_array_append_val (&gTmpBsonArray, doc);
-
-   bson_free (double_quoted);
 
    return doc;
 }
@@ -133,12 +135,6 @@ find (bson_value_t *value,
 static bool
 match_bson_value (const bson_value_t *doc,
                   const bson_value_t *pattern);
-
-static bool
-match_bson (const bson_t *doc,
-            const bson_t *pattern,
-            bool          is_command);
-
 
 /*--------------------------------------------------------------------------
  *
@@ -269,7 +265,7 @@ match_json (const bson_t *doc,
  *--------------------------------------------------------------------------
  */
 
-static bool
+bool
 match_bson (const bson_t *doc,
             const bson_t *pattern,
             bool          is_command)

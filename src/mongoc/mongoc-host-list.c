@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc-host-list.h"
+#include "mongoc-host-list-private.h"
+/* strcasecmp on windows */
 #include "mongoc-util-private.h"
 
 
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_host_list_equal --
+ * _mongoc_host_list_equal --
  *
  *       Check two hosts have the same domain (case-insensitive), port,
  *       and address family.
@@ -32,8 +33,8 @@
  *--------------------------------------------------------------------------
  */
 bool
-mongoc_host_list_equal (const mongoc_host_list_t *host_a,
-                        const mongoc_host_list_t *host_b)
+_mongoc_host_list_equal (const mongoc_host_list_t *host_a,
+                         const mongoc_host_list_t *host_b)
 {
    return (!strcasecmp (host_a->host_and_port, host_b->host_and_port)
            && host_a->family == host_b->family);
@@ -43,14 +44,14 @@ mongoc_host_list_equal (const mongoc_host_list_t *host_a,
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_host_list_destroy_all --
+ * _mongoc_host_list_destroy_all --
  *
  *       Destroy whole linked list of hosts.
  *
  *--------------------------------------------------------------------------
  */
 void
-mongoc_host_list_destroy_all (mongoc_host_list_t *host)
+_mongoc_host_list_destroy_all (mongoc_host_list_t *host)
 {
    mongoc_host_list_t *tmp;
 

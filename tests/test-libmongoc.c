@@ -18,7 +18,12 @@
 #include <bson.h>
 #include <mongoc.h>
 
+#include "mongoc-server-description.h"
+#include "mongoc-server-description-private.h"
+#include "mongoc-topology-private.h"
+#include "mongoc-client-private.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-util-private.h"
 
 #include "mongoc-tests.h"
 #include "TestSuite.h"
@@ -34,9 +39,11 @@ extern void test_client_install                  (TestSuite *suite);
 extern void test_client_pool_install             (TestSuite *suite);
 extern void test_cluster_install                 (TestSuite *suite);
 extern void test_collection_install              (TestSuite *suite);
+extern void test_collection_find_install         (TestSuite *suite);
 extern void test_cursor_install                  (TestSuite *suite);
 extern void test_database_install                (TestSuite *suite);
 extern void test_exhaust_install                 (TestSuite *suite);
+extern void test_find_and_modify_install         (TestSuite *suite);
 extern void test_gridfs_file_page_install        (TestSuite *suite);
 extern void test_gridfs_install                  (TestSuite *suite);
 extern void test_list_install                    (TestSuite *suite);
@@ -65,11 +72,6 @@ extern void test_write_concern_install           (TestSuite *suite);
 extern void test_x509_install                    (TestSuite *suite);
 extern void test_stream_tls_install              (TestSuite *suite);
 extern void test_stream_tls_error_install        (TestSuite *suite);
-#endif
-
-
-#ifdef _WIN32
-# define strcasecmp _stricmp
 #endif
 
 
@@ -549,50 +551,9 @@ test_framework_get_unix_domain_socket_uri_str ()
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_get_uri_str_from_env --
+ * call_ismaster_with_host_and_port --
  *
- *       Get the connection string of the test MongoDB server based on
- *       the variables set in the environment. Does *not* call isMaster
- *       to discover your actual topology.
- *
- * Returns:
- *       A string you must bson_free.
- *
- * Side effects:
- *       Same as test_framework_get_user_password.
- *
- *--------------------------------------------------------------------------
- */
-static char *
-test_framework_get_uri_str_from_env ()
-{
-   char *host;
-   uint16_t port;
-   char *test_uri_str;
-   char *test_uri_str_auth;
-
-   host = test_framework_get_host ();
-   port = test_framework_get_port ();
-   test_uri_str = bson_strdup_printf (
-      "mongodb://%s:%hu/%s",
-      host,
-      port,
-      test_framework_get_ssl () ? "?ssl=true" : "");
-
-   test_uri_str_auth = test_framework_add_user_password_from_env (test_uri_str);
-
-   bson_free (host);
-   bson_free (test_uri_str);
-
-   return test_uri_str_auth;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * call_ismaster --
- *
- *       Use test_framework_get_uri_str_from_env's URI to call isMaster.
+ *       Call isMaster on a server, possibly over SSL.
  *
  * Side effects:
  *       Fills reply with ismaster response. Logs and aborts on error.
@@ -600,14 +561,21 @@ test_framework_get_uri_str_from_env ()
  *--------------------------------------------------------------------------
  */
 static void
-call_ismaster (bson_t *reply)
+call_ismaster_with_host_and_port (char *host,
+                                  uint16_t port,
+                                  bson_t *reply)
 {
    char *uri_str;
    mongoc_uri_t *uri;
    mongoc_client_t *client;
    bson_error_t error;
 
-   uri_str = test_framework_get_uri_str_from_env ();
+   uri_str = bson_strdup_printf (
+      "mongodb://%s:%hu%s",
+      host,
+      port,
+      test_framework_get_ssl () ? "?ssl=true" : "");
+
    uri = mongoc_uri_new (uri_str);
    assert (uri);
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 10000);
@@ -631,6 +599,33 @@ call_ismaster (bson_t *reply)
    bson_free (uri_str);
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * call_ismaster --
+ *
+ *       Call isMaster on the test server, possibly over SSL, using host
+ *       and port from the environment.
+ *
+ * Side effects:
+ *       Fills reply with ismaster response. Logs and aborts on error.
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+call_ismaster (bson_t *reply)
+{
+   char *host;
+   uint16_t port;
+
+   host = test_framework_get_host ();
+   port = test_framework_get_port ();
+
+   call_ismaster_with_host_and_port (host, port, reply);
+
+   bson_free (host);
+}
+
 
 static char *
 set_name (bson_t *ismaster_response)
@@ -652,8 +647,7 @@ set_name (bson_t *ismaster_response)
  *
  *       Get the connection string of the test MongoDB topology --
  *       standalone, replica set, mongos, or mongoses -- along with
- *       SSL options, but not username and password. Calls
- *       test_framework_get_uri_str_from_env, calls isMaster with
+ *       SSL options, but not username and password. Calls calls isMaster with
  *       that connection string to discover your topology, and
  *       returns an appropriate connection string for the topology
  *       type.
@@ -999,29 +993,35 @@ test_framework_is_replset (void)
 
    call_ismaster (&reply);
 
-   is_replset = (bson_iter_init_find (&iter, &reply, "hosts") && BSON_ITER_HOLDS_DOCUMENT (&iter));
+   is_replset = (bson_iter_init_find (&iter, &reply, "hosts") &&
+                 BSON_ITER_HOLDS_ARRAY (&iter));
 
    bson_destroy (&reply);
 
    return is_replset;
 }
 
-int
-test_framework_skip_if_single (void)
+bool
+test_framework_server_is_secondary (mongoc_client_t *client,
+                                    uint32_t server_id)
 {
-   return (test_framework_is_mongos () || test_framework_is_replset());
-}
+   bson_t reply;
+   bson_iter_t iter;
+   mongoc_server_description_t *sd;
+   bson_error_t error;
+   bool ret;
 
-int
-test_framework_skip_if_mongos (void)
-{
-   return test_framework_is_mongos() ? 0 : 1;
-}
+   sd = mongoc_topology_server_by_id (client->topology, server_id, &error);
+   ASSERT_OR_PRINT (sd, error);
 
-int
-test_framework_skip_if_replset (void)
-{
-   return test_framework_is_replset() ? 0 : 1;
+   call_ismaster_with_host_and_port (sd->host.host, sd->host.port, &reply);
+
+   ret = bson_iter_init_find (&iter, &reply, "secondary") &&
+         bson_iter_as_bool (&iter);
+
+   mongoc_server_description_destroy (sd);
+
+   return ret;
 }
 
 int
@@ -1168,6 +1168,48 @@ test_version_cmp (void)
 }
 
 int
+test_framework_skip_if_single (void)
+{
+   return (test_framework_is_mongos () || test_framework_is_replset());
+}
+
+int
+test_framework_skip_if_mongos (void)
+{
+   return test_framework_is_mongos() ? 0 : 1;
+}
+
+int
+test_framework_skip_if_replset (void)
+{
+   return test_framework_is_replset() ? 0 : 1;
+}
+
+int
+test_framework_skip_if_not_single (void)
+{
+   return !test_framework_skip_if_single ();
+}
+
+int
+test_framework_skip_if_not_mongos (void)
+{
+   return !test_framework_skip_if_mongos ();
+}
+
+int
+test_framework_skip_if_not_replset (void)
+{
+   return !test_framework_skip_if_replset ();
+}
+
+int test_framework_skip_if_max_version_version_less_than_4 (void)
+{
+   return test_framework_max_wire_version_at_least (4);
+}
+
+
+int
 main (int   argc,
       char *argv[])
 {
@@ -1199,9 +1241,11 @@ main (int   argc,
    test_bulk_install (&suite);
    test_cluster_install (&suite);
    test_collection_install (&suite);
+   test_collection_find_install (&suite);
    test_cursor_install (&suite);
    test_database_install (&suite);
    test_exhaust_install (&suite);
+   test_find_and_modify_install (&suite);
    test_gridfs_install (&suite);
    test_gridfs_file_page_install (&suite);
    test_list_install (&suite);

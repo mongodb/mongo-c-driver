@@ -4,6 +4,7 @@
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-util-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -12,10 +13,6 @@
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "mongoc-tests.h"
-
-#ifdef _WIN32
-# define strcasecmp _stricmp
-#endif
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -133,11 +130,8 @@ static int should_run_auth_tests (void)
 {
    char *user;
 #ifndef MONGOC_ENABLE_SSL
-   mongoc_client_t *client = test_framework_client_new ();
-   uint32_t server_id = mongoc_cluster_preselect(&client->cluster, MONGOC_OPCODE_QUERY, NULL, NULL);
-
-   if (mongoc_cluster_node_max_wire_version (&client->cluster, server_id) > 2) {
-      mongoc_client_destroy (client);
+   if (test_framework_max_wire_version_at_least (3)) {
+      /* requires SSL for SCRAM implementation, can't test auth */
       return 0;
    }
 #endif
@@ -220,6 +214,55 @@ test_mongoc_client_authenticate_failure (void *context)
 }
 
 
+static void
+test_mongoc_client_authenticate_timeout (void *context)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+
+   server = mock_server_with_autoismaster (3);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_username (uri, "user");
+   mongoc_uri_set_password (uri, "password");
+   mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 10);
+   client = mongoc_client_new_from_uri (uri);
+
+   future = future_client_command_simple (client, "test",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL, &reply, &error);
+
+   request = mock_server_receives_command (server, "admin",
+                                           MONGOC_QUERY_SLAVE_OK,
+                                           NULL);
+
+   ASSERT (request);
+   ASSERT_CMPSTR (request->command_name, "saslStart");
+
+   /* don't reply */
+   assert (!future_get_bool (future));
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
+   ASSERT_STARTSWITH (
+      error.message,
+      "Failed to send \"saslStart\" command with database \"admin\"");
+
+   ASSERT_CONTAINS (error.message, "within 10 milliseconds");
+
+   bson_destroy (&reply);
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_uri_destroy (uri);
+   mongoc_client_destroy(client);
+   mock_server_destroy (server);
+}
+
+
 #ifdef TODO_CDRIVER_689
 static void
 test_wire_version (void)
@@ -286,7 +329,6 @@ test_mongoc_client_command (void)
    bson_append_int32 (&cmd, "ping", 4, 1);
 
    cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, NULL);
-   assert (!cursor->redir_primary);
 
    r = mongoc_cursor_next (cursor, &doc);
    assert (r);
@@ -309,39 +351,70 @@ test_mongoc_client_command_secondary (void)
    mongoc_cursor_t *cursor;
    mongoc_read_prefs_t *read_prefs;
    bson_t cmd = BSON_INITIALIZER;
+   const bson_t *reply;
 
    client = test_framework_client_new ();
    assert (client);
 
    BSON_APPEND_INT32 (&cmd, "invalid_command_here", 1);
 
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
    suppress_one_message ();
    cursor = mongoc_client_command (client, "admin", MONGOC_QUERY_NONE, 0, 1, 0, &cmd, NULL, read_prefs);
+   mongoc_cursor_next (cursor, &reply);
+
+   if (test_framework_is_replset ()) {
+      assert (test_framework_server_is_secondary (client, cursor->hint));
+   }
 
    mongoc_read_prefs_destroy (read_prefs);
-
-   /* ensure we detected this must go to primary */
-   assert (cursor->redir_primary);
 
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
    bson_destroy (&cmd);
 }
 
+
 static void
-test_mongoc_client_preselect (void)
+test_command_not_found (void)
 {
    mongoc_client_t *client;
+   const bson_t *doc;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_client_new ();
+   cursor = mongoc_client_command (client, "test", MONGOC_QUERY_NONE,
+                                   0, 0, 0,
+                                   tmp_bson ("{'foo': 1}"), NULL, NULL);
+
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_QUERY);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_command_not_found_simple (void)
+{
+   mongoc_client_t *client;
+   bson_t reply;
    bson_error_t error;
 
    client = test_framework_client_new ();
-   assert (client);
+   ASSERT (!mongoc_client_command_simple (client, "test",
+                                          tmp_bson ("{'foo': 1}"),
+                                          NULL, &reply, &error));
 
-   ASSERT_OR_PRINT (_mongoc_client_preselect (client, MONGOC_OPCODE_INSERT,
-                                              NULL, NULL, &error), error);
+   ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_QUERY);
+   ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND);
 
+   bson_destroy (&reply);
    mongoc_client_destroy (client);
 }
 
@@ -538,8 +611,6 @@ test_seed_list (bool rs,
 
    topology = client->topology;
    td = &topology->description;
-
-   ASSERT_CMPINT (4, ==, (int) td->servers->items_len);
 
    /* a mongos load-balanced connection never removes down nodes */
    discovered_nodes_len = rs ? 1 : 4;
@@ -742,9 +813,9 @@ test_recovering (void)
         read_mode <= MONGOC_READ_NEAREST;
         read_mode++) {
       mongoc_read_prefs_set_mode (prefs, read_mode);
-      assert (!mongoc_cluster_preselect (&client->cluster,
-                                         MONGOC_OPCODE_QUERY,
-                                         prefs, &error));
+      assert (!mongoc_topology_select (client->topology,
+                                       MONGOC_SS_READ,
+                                       prefs, 15, &error));
    }
 
    mongoc_read_prefs_destroy (prefs);
@@ -880,6 +951,61 @@ test_mongoc_client_unix_domain_socket (void *context)
 }
 
 
+static void
+test_mongoc_client_mismatched_me (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *prefs;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   char *reply;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+   client = mongoc_client_new_from_uri (uri);
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+   /* any operation should fail with server selection error */
+   future = future_client_command_simple (client,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          prefs,
+                                          NULL,
+                                          &error);
+
+   request = mock_server_receives_ismaster (server);
+   reply = bson_strdup_printf (
+      "{'ok': 1,"
+      " 'setName': 'rs',"
+      " 'ismaster': false,"
+      " 'secondary': true,"
+      " 'me': 'foo.com',"  /* mismatched "me" field */
+      " 'hosts': ['%s']}",
+      mock_server_get_host_and_port (server));
+
+   mock_server_replies_simple (request, reply);
+
+   assert (!future_get_bool (future));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "No suitable servers");
+
+   bson_free (reply);
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+
 #ifdef MONGOC_ENABLE_SSL
 static void
 _test_mongoc_client_ssl_opts (bool pooled)
@@ -968,6 +1094,14 @@ test_ssl_pooled (void)
 {
    _test_mongoc_client_ssl_opts (true);
 }
+#else
+/* MONGOC_ENABLE_SSL is not defined */
+static void
+test_mongoc_client_ssl_disabled (void)
+{
+   suppress_one_message ();
+   ASSERT (NULL == mongoc_client_new ("mongodb://host/?ssl=true"));
+}
 #endif
 
 
@@ -984,9 +1118,11 @@ test_client_install (TestSuite *suite)
 
    TestSuite_AddFull (suite, "/Client/authenticate", test_mongoc_client_authenticate, NULL, NULL, should_run_auth_tests);
    TestSuite_AddFull (suite, "/Client/authenticate_failure", test_mongoc_client_authenticate_failure, NULL, NULL, should_run_auth_tests);
+   TestSuite_AddFull (suite, "/Client/authenticate_timeout", test_mongoc_client_authenticate_timeout, NULL, NULL, should_run_auth_tests);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
-   TestSuite_Add (suite, "/Client/preselect", test_mongoc_client_preselect);
+   TestSuite_Add (suite, "/Client/command_not_found/cursor", test_command_not_found);
+   TestSuite_Add (suite, "/Client/command_not_found/simple", test_command_not_found_simple);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/single", test_rs_seeds_no_connect_single);
    TestSuite_Add (suite, "/Client/rs_seeds_no_connect/pooled", test_rs_seeds_no_connect_pooled);
@@ -1004,6 +1140,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
    TestSuite_AddFull (suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_windows);
+   TestSuite_Add (suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
 
 #ifdef TODO_CDRIVER_689
    TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
@@ -1012,5 +1149,7 @@ test_client_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_Add (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_Add (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
+#else
+   TestSuite_Add (suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
 #endif
 }

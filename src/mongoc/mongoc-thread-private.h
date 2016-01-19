@@ -77,7 +77,7 @@ mongoc_thread_create (mongoc_thread_t *thread,
                       void *(*cb)(void *),
                       void            *arg)
 {
-   *thread = CreateThread(NULL, 0, (void *)cb, arg, 0, NULL);
+   *thread = CreateThread (NULL, 0, (LPTHREAD_START_ROUTINE) cb, arg, 0, NULL);
    return 0;
 }
 # define mongoc_thread_join(_n)         WaitForSingleObject((_n), INFINITE)

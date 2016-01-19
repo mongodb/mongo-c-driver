@@ -262,3 +262,32 @@ LIBMONGOC_1.2 {
         mongoc_get_version;
         mongoc_check_version;
 } LIBMONGOC_1.1;
+
+LIBMONGOC_1.3 {
+    global:
+        mongoc_bulk_operation_set_bypass_document_validation;
+        mongoc_collection_find_and_modify_with_opts;
+        mongoc_client_get_read_concern;
+        mongoc_client_set_read_concern;
+        mongoc_collection_copy;
+        mongoc_collection_get_read_concern;
+        mongoc_collection_set_read_concern;
+        mongoc_cursor_get_max_await_time_ms;
+        mongoc_cursor_set_max_await_time_ms;
+        mongoc_database_copy;
+        mongoc_database_get_read_concern;
+        mongoc_database_set_read_concern;
+        mongoc_find_and_modify_opts_destroy;
+        mongoc_find_and_modify_opts_new;
+        mongoc_find_and_modify_opts_set_bypass_document_validation;
+        mongoc_find_and_modify_opts_set_fields;
+        mongoc_find_and_modify_opts_set_flags;
+        mongoc_find_and_modify_opts_set_sort;
+        mongoc_find_and_modify_opts_set_update;
+        mongoc_read_concern_copy;
+        mongoc_read_concern_destroy;
+        mongoc_read_concern_get_level;
+        mongoc_read_concern_new;
+        mongoc_read_concern_set_level;
+        mongoc_uri_get_read_concern;
+} LIBMONGOC_1.2;

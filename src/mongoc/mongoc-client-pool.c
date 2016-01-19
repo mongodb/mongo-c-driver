@@ -79,6 +79,14 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 
    BSON_ASSERT (uri);
 
+#ifndef MONGOC_ENABLE_SSL
+   if (mongoc_uri_get_ssl (uri)) {
+      MONGOC_ERROR ("Can't create SSL client pool,"
+                    " SSL not enabled in this build.");
+      return NULL;
+   }
+#endif
+
    pool = (mongoc_client_pool_t *)bson_malloc0(sizeof *pool);
    mongoc_mutex_init(&pool->mutex);
    _mongoc_queue_init(&pool->queue);

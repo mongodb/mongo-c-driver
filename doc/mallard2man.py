@@ -98,7 +98,9 @@ class Convert(object):
         # Extract the title and subtitle.
         for child in self.root.getchildren():
             if child.tag == TITLE:
-                self.title = child.text.strip()
+                # A title like "Version Checks" can't have spaces, otherwise
+                # the "whatis" entry can't be parsed from the man page title.
+                self.title = child.text.strip().replace(' ', '_')
             elif child.tag == SUBTITLE:
                 self.subtitle = child.text.strip()
             elif child.tag == SECTION:
@@ -340,7 +342,10 @@ class Convert(object):
 
 def main(filenames, section='3'):
     for inFile in filenames:
-        outFile = inFile[:-5] + '.' + section
+        dirName = os.path.dirname(inFile) + '/man/'
+        baseName = os.path.basename(inFile)
+        baseFile = os.path.splitext(baseName)[0]
+        outFile = dirName + baseFile + '.' + section
         c = Convert(inFile, outFile, section)
         c.convert()
 

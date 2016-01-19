@@ -13,7 +13,6 @@ lib_LTLIBRARIES += libmongoc-1.0.la
 
 MONGOC_CPPFLAGS_SHARED = \
 	-DMONGOC_COMPILATION \
-	-Wno-deprecated-declarations \
 	$(LIBC_FEATURES) \
 	$(OPTIMIZE_CFLAGS) \
 	$(COVERAGE_CFLAGS) \
@@ -43,7 +42,6 @@ libmongoc_priv_la_LDFLAGS = \
 
 libmongoc_1_0_la_LDFLAGS = \
 	$(MONGOC_LDFLAGS_SHARED) \
-	$(MONGOC_LT_LDFLAGS) \
 	-no-undefined \
 	-rpath $(libdir)
 

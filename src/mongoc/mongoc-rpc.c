@@ -17,9 +17,9 @@
 
 #include <bson.h>
 
-#include "mongoc-log.h"
-#include "mongoc-opcode.h"
+#include "mongoc.h"
 #include "mongoc-rpc-private.h"
+#include "mongoc-trace.h"
 
 
 #define RPC(_name, _code) \
@@ -695,4 +695,196 @@ _mongoc_rpc_needs_gle (mongoc_rpc_t                 *rpc,
    }
 
    return true;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_prep_command --
+ *
+ *       Prepare an RPC for mongoc_cluster_run_command_rpc. @cmd_ns and
+ *       @command must not be freed or modified while the RPC is in use.
+ *
+ * Side effects:
+ *       Fills out the RPC, including pointers into @cmd_ns and @command.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_rpc_prep_command (mongoc_rpc_t        *rpc,
+                          const char          *cmd_ns,
+                          const bson_t        *command,
+                          mongoc_query_flags_t flags)
+{
+   rpc->query.msg_len = 0;
+   rpc->query.request_id = 0;
+   rpc->query.response_to = 0;
+   rpc->query.opcode = MONGOC_OPCODE_QUERY;
+   rpc->query.collection = cmd_ns;
+   rpc->query.skip = 0;
+   rpc->query.n_return = -1;
+   rpc->query.fields = NULL;
+   rpc->query.query = bson_get_data (command);
+
+   /* Find, getMore And killCursors Commands Spec: "When sending a find command
+    * rather than a legacy OP_QUERY find, only the slaveOk flag is honored."
+    * For other cursor-typed commands like aggregate, only slaveOk can be set.
+    * Clear bits except slaveOk; leave slaveOk set only if it is already.
+    */
+   rpc->query.flags = flags & MONGOC_QUERY_SLAVE_OK;
+}
+
+
+static void
+_mongoc_populate_error (const bson_t *doc,
+                        bool          is_command,
+                        bson_error_t *error)
+{
+   uint32_t code = MONGOC_ERROR_QUERY_FAILURE;
+   bson_iter_t iter;
+   const char *msg = "Unknown query failure";
+
+   BSON_ASSERT (doc);
+
+   if (!error) {
+      return;
+   }
+
+   if (bson_iter_init_find (&iter, doc, "code") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+      code = (uint32_t) bson_iter_int32 (&iter);
+   }
+
+   if (is_command &&
+       ((code == MONGOC_ERROR_PROTOCOL_ERROR) ||
+        (code == 13390))) {
+      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
+   }
+
+   if (bson_iter_init_find (&iter, doc, "$err") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      msg = bson_iter_utf8 (&iter, NULL);
+   }
+
+   if (is_command &&
+       bson_iter_init_find (&iter, doc, "errmsg") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      msg = bson_iter_utf8 (&iter, NULL);
+   }
+
+   bson_set_error(error, MONGOC_ERROR_QUERY, code, "%s", msg);
+}
+
+
+static bool
+_mongoc_rpc_parse_error (mongoc_rpc_t *rpc,
+                         bool is_command,
+                         bson_error_t *error /* OUT */)
+{
+   bson_iter_t iter;
+   bson_t b;
+
+   ENTRY;
+
+   BSON_ASSERT (rpc);
+
+   if (rpc->header.opcode != MONGOC_OPCODE_REPLY) {
+      bson_set_error(error,
+                     MONGOC_ERROR_PROTOCOL,
+                     MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                     "Received rpc other than OP_REPLY.");
+      RETURN(true);
+   }
+
+   if ((rpc->reply.flags & MONGOC_REPLY_QUERY_FAILURE)) {
+      if (_mongoc_rpc_reply_get_first(&rpc->reply, &b)) {
+         _mongoc_populate_error (&b, is_command, error);
+         bson_destroy(&b);
+      } else {
+         bson_set_error(error,
+                        MONGOC_ERROR_QUERY,
+                        MONGOC_ERROR_QUERY_FAILURE,
+                        "Unknown query failure.");
+      }
+      RETURN(true);
+   } else if (is_command) {
+      if (_mongoc_rpc_reply_get_first (&rpc->reply, &b)) {
+         if (bson_iter_init_find (&iter, &b, "ok")) {
+            if (bson_iter_as_bool (&iter)) {
+               RETURN (false);
+            } else {
+               _mongoc_populate_error (&b, is_command, error);
+               bson_destroy (&b);
+               RETURN (true);
+            }
+         }
+      } else {
+         bson_set_error (error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Failed to decode document from the server.");
+         RETURN (true);
+      }
+   }
+
+   if ((rpc->reply.flags & MONGOC_REPLY_CURSOR_NOT_FOUND)) {
+      bson_set_error(error,
+                     MONGOC_ERROR_CURSOR,
+                     MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                     "The cursor is invalid or has expired.");
+      RETURN(true);
+   }
+
+   RETURN(false);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_parse_command_error --
+ *
+ *       Check if a server OP_REPLY is a command error message.
+ *       Optionally fill out a bson_error_t from the server error.
+ *
+ * Returns:
+ *       true if the reply is an error message, false otherwise.
+ *
+ * Side effects:
+ *       If rpc is an error reply and @error is not NULL, set its
+ *       domain, code, and message.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool _mongoc_rpc_parse_command_error (mongoc_rpc_t *rpc,
+                                      bson_error_t *error)
+{
+   return _mongoc_rpc_parse_error (rpc, true, error);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_rpc_parse_query_error --
+ *
+ *       Check if a server OP_REPLY is a query error message.
+ *       Optionally fill out a bson_error_t from the server error.
+ *
+ * Returns:
+ *       true if the reply is an error message, false otherwise.
+ *
+ * Side effects:
+ *       If rpc is an error reply and @error is not NULL, set its
+ *       domain, code, and message.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool _mongoc_rpc_parse_query_error (mongoc_rpc_t *rpc,
+                                    bson_error_t *error)
+{
+   return _mongoc_rpc_parse_error (rpc, false, error);
 }

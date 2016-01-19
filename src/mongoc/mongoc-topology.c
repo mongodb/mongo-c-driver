@@ -65,7 +65,7 @@ mongoc_topology_reconcile (mongoc_topology_t *topology) {
 
    /* Remove removed nodes */
    DL_FOREACH_SAFE (scanner->nodes, ele, tmp) {
-      if (! mongoc_topology_description_server_by_id (description, ele->id)) {
+      if (!mongoc_topology_description_server_by_id (description, ele->id, NULL)) {
          mongoc_topology_scanner_node_retire (ele);
       }
    }
@@ -105,7 +105,8 @@ _mongoc_topology_scanner_cb (uint32_t      id,
       mongoc_mutex_lock (&topology->mutex);
    }
 
-   sd = mongoc_topology_description_server_by_id (&topology->description, id);
+   sd = mongoc_topology_description_server_by_id (&topology->description, id,
+                                                  NULL);
 
    if (sd) {
       mongoc_topology_description_handle_ismaster (&topology->description, sd,
@@ -540,7 +541,8 @@ FAIL:
  * mongoc_topology_server_by_id --
  *
  *      Get the server description for @id, if that server is present
- *      in @description. Otherwise, return NULL.
+ *      in @description. Otherwise, return NULL and fill out the optional
+ *      @error.
  *
  *      NOTE: this method returns a copy of the original server
  *      description. Callers must own and clean up this copy.
@@ -551,24 +553,80 @@ FAIL:
  *      A mongoc_server_description_t, or NULL.
  *
  * Side effects:
- *      None.
+ *      Fills out optional @error if server not found.
  *
  *-------------------------------------------------------------------------
  */
 
 mongoc_server_description_t *
-mongoc_topology_server_by_id (mongoc_topology_t *topology, uint32_t id)
+mongoc_topology_server_by_id (mongoc_topology_t *topology,
+                              uint32_t id,
+                              bson_error_t *error)
 {
    mongoc_server_description_t *sd;
 
    mongoc_mutex_lock (&topology->mutex);
 
    sd = mongoc_server_description_new_copy (
-      mongoc_topology_description_server_by_id (&topology->description, id));
+      mongoc_topology_description_server_by_id (&topology->description,
+                                                id,
+                                                error));
 
    mongoc_mutex_unlock (&topology->mutex);
 
    return sd;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * mongoc_topology_get_server_type --
+ *
+ *      Get the topology type, and the server type for @id, if that server
+ *      is present in @description. Otherwise, return false and fill out
+ *      the optional @error.
+ *
+ *      NOTE: this method locks and unlocks @topology's mutex.
+ *
+ * Returns:
+ *      True on success.
+ *
+ * Side effects:
+ *      Fills out optional @error if server not found.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+bool
+mongoc_topology_get_server_type (
+   mongoc_topology_t *topology,
+   uint32_t id,
+   mongoc_topology_description_type_t *topology_type /* OUT */,
+   mongoc_server_description_type_t *server_type     /* OUT */,
+   bson_error_t *error)
+{
+   mongoc_server_description_t *sd;
+   bool ret = false;
+
+   BSON_ASSERT (topology);
+   BSON_ASSERT (topology_type);
+   BSON_ASSERT (server_type);
+
+   mongoc_mutex_lock (&topology->mutex);
+
+   sd = mongoc_topology_description_server_by_id (&topology->description,
+                                                  id,
+                                                  error);
+
+   if (sd) {
+      *topology_type = topology->description.type;
+      *server_type = sd->type;
+      ret = true;
+   }
+
+   mongoc_mutex_unlock (&topology->mutex);
+
+   return ret;
 }
 
 /*

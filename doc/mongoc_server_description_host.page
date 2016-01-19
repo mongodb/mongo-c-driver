@@ -33,7 +33,7 @@ mongoc_server_description_host (const mongoc_server_description_t *description);
 
   <section id="return">
     <title>Returns</title>
-    <p>A reference to the given server description's mongoc_host_list_t.</p>
+    <p>A reference to the given server description's <code xref="mongoc_host_list_t">mongoc_host_list_t</code>.</p>
   </section>
 
 </page>

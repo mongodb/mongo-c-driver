@@ -58,8 +58,6 @@ _mongoc_gridfs_file_page_seek (mongoc_gridfs_file_page_t *page,
 
    BSON_ASSERT (page);
 
-   BSON_ASSERT (offset <= page->len);
-
    page->offset = offset;
 
    RETURN (1);
@@ -94,11 +92,14 @@ _mongoc_gridfs_file_page_read (mongoc_gridfs_file_page_t *page,
 /**
  * _mongoc_gridfs_file_page_write:
  *
- * writes to a page
+ * Write to a page.
  *
- * writes are copy on write as regards the buf passed during construction.
- * I.e. the first write allocs a buf large enough for the chunk_size, which
- * becomes authoritative from then on.
+* Writes are copy-on-write with regards to the buffer that was passed to the
+ * mongoc_gridfs_file_page_t during construction. In other words, the first
+ * write allocates a large enough buffer for file->chunk_size, which becomes
+ * authoritative from then on.
+ *
+ * A write of zero bytes will trigger the copy-on-write mechanism.
  */
 int32_t
 _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
@@ -119,12 +120,57 @@ _mongoc_gridfs_file_page_write (mongoc_gridfs_file_page_t *page,
       memcpy (page->buf, page->read_buf, BSON_MIN (page->chunk_size, page->len));
    }
 
+   /* Copy bytes and adjust the page position */
    memcpy (page->buf + page->offset, src, bytes_written);
    page->offset += bytes_written;
-
    page->len = BSON_MAX (page->offset, page->len);
 
+   /* Don't use the old read buffer, which is no longer current */
+   page->read_buf = page->buf;
+
    RETURN (bytes_written);
+}
+
+
+/**
+ * _mongoc_gridfs_file_page_memset0:
+ *
+ *      Write zeros to a page, starting from the page's current position. Up to
+ *      `len` bytes will be set to zero or until the page is full, whichever
+ *      comes first.
+ *
+ *      Like _mongoc_gridfs_file_page_write, operations are copy-on-write with
+ *      regards to the page buffer.
+ *
+ * Returns:
+ *      True on success; false otherwise.
+ */
+bool
+_mongoc_gridfs_file_page_memset0 (mongoc_gridfs_file_page_t *page,
+                                  uint32_t len)
+{
+   int32_t bytes_set;
+
+   ENTRY;
+
+   BSON_ASSERT (page);
+
+   bytes_set = BSON_MIN (page->chunk_size - page->offset, len);
+
+   if (!page->buf) {
+      page->buf = (uint8_t *)bson_malloc0 (page->chunk_size);
+      memcpy (page->buf, page->read_buf, BSON_MIN (page->chunk_size, page->len));
+   }
+
+   /* Set bytes and adjust the page position */
+   memset (page->buf + page->offset, '\0', bytes_set);
+   page->offset += bytes_set;
+   page->len = BSON_MAX (page->offset, page->len);
+
+   /* Don't use the old read buffer, which is no longer current */
+   page->read_buf = page->buf;
+
+   RETURN (true);
 }
 
 

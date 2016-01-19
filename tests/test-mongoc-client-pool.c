@@ -4,6 +4,7 @@
 
 
 #include "TestSuite.h"
+#include "test-libmongoc.h"
 
 
 static void
@@ -148,6 +149,20 @@ test_mongoc_client_pool_set_min_size (void)
    mongoc_client_pool_destroy (pool);
 }
 
+#ifndef MONGOC_ENABLE_SSL
+static void
+test_mongoc_client_pool_ssl_disabled (void)
+{
+   mongoc_uri_t *uri = mongoc_uri_new ("mongodb://host/?ssl=true");
+
+   ASSERT (uri);
+   suppress_one_message ();
+   ASSERT (NULL == mongoc_client_pool_new (uri));
+
+   mongoc_uri_destroy (uri);
+}
+#endif
+
 void
 test_client_pool_install (TestSuite *suite)
 {
@@ -156,4 +171,8 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_Add (suite, "/ClientPool/min_size_dispose", test_mongoc_client_pool_min_size_dispose);
    TestSuite_Add (suite, "/ClientPool/set_max_size", test_mongoc_client_pool_set_max_size);
    TestSuite_Add (suite, "/ClientPool/set_min_size", test_mongoc_client_pool_set_min_size);
+
+#ifndef MONGOC_ENABLE_SSL
+   TestSuite_Add (suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
+#endif
 }

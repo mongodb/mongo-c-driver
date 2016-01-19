@@ -982,7 +982,16 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
    }
 
    bio_ssl = BIO_new_ssl (ssl_ctx, client);
+   if (!bio_ssl) {
+      return NULL;
+   }
+
    bio_mongoc_shim = BIO_new (&gMongocStreamTlsRawMethods);
+   if (!bio_mongoc_shim) {
+      BIO_free_all (bio_ssl);
+      return NULL;
+   }
+
 
    BIO_push (bio_ssl, bio_mongoc_shim);
 

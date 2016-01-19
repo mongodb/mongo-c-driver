@@ -182,6 +182,16 @@ as environment variables:
 URI-escape the username, for example write "user@realm" as "user%40realm".
 The user must be authorized to query `test.collection`.
 
+MongoDB 3.2 adds support for readConcern, but does not enable support for
+read concern majority by default. mongod must be launched using
+`--enableMajorityReadConcern`.
+The test framework does not (and can't) automatically discover if this option was
+provided to MongoDB, so an additional variable must be set to enable these tests:
+
+* `MONGOC_ENABLE_MAJORITY_READ_CONCERN`
+
+Set this environment variable to `on` if MongoDB has enabled majority read concern.
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner

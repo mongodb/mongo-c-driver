@@ -20,7 +20,7 @@ void
 future_get_void (future_t *future)
 {
    if (!future_wait (future)) {
-      fprintf (stderr, "%s timed out\n", __FUNCTION__);
+      fprintf (stderr, "%s timed out\n", BSON_FUNC);
       abort ();
    }
 }
@@ -33,7 +33,7 @@ future_get_{{ T }} (future_t *future)
       return future_value_get_{{ T }} (&future->return_value);
    }
 
-   fprintf (stderr, "%s timed out\n", __FUNCTION__);
+   fprintf (stderr, "%s timed out\n", BSON_FUNC);
    abort ();
 }
 {% endfor %}

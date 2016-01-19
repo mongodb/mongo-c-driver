@@ -63,7 +63,7 @@ get_replica (mongoc_client_t *client, uint32_t id)
    mongoc_server_description_t *description;
    ha_node_t *iter;
 
-   description = mongoc_topology_server_by_id(client->topology, id);
+   description = mongoc_topology_server_by_id(client->topology, id, NULL);
    BSON_ASSERT(description);
 
    for (iter = replica_set->nodes; iter; iter = iter->next) {
@@ -160,8 +160,11 @@ test1 (void)
    /*
     * Make sure we queried a secondary.
     */
-   description = mongoc_topology_server_by_id(client->topology, cursor->hint);
-   BSON_ASSERT(description->type != MONGOC_SERVER_RS_PRIMARY);
+   description = mongoc_topology_server_by_id(client->topology,
+                                              cursor->hint,
+                                              &error);
+   ASSERT_OR_PRINT (description, error);
+   BSON_ASSERT (description->type != MONGOC_SERVER_RS_PRIMARY);
    mongoc_server_description_destroy(description);
 
    /*

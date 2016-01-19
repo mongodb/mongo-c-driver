@@ -20,7 +20,7 @@ endif
 TEST_CFLAGS += \
 	-Wno-deprecated-declarations \
 	-DMONGOC_COMPILATION \
-	-DBINARY_DIR="\"$(srcdir)/tests/binary\"" \
+	-DBINARY_DIR="\"$(abs_srcdir)/tests/binary\"" \
 	$(BSON_CFLAGS) \
 	$(SSL_CFLAGS) \
 	$(SASL_CFLAGS) \
@@ -100,9 +100,11 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-client-pool.c \
 	tests/test-mongoc-cluster.c \
 	tests/test-mongoc-collection.c \
+	tests/test-mongoc-collection-find.c \
 	tests/test-mongoc-cursor.c \
 	tests/test-mongoc-database.c \
 	tests/test-mongoc-exhaust.c \
+	tests/test-mongoc-find-and-modify.c \
 	tests/test-mongoc-gridfs.c \
 	tests/test-mongoc-gridfs-file-page.c \
 	tests/test-mongoc-log.c \
@@ -232,8 +234,10 @@ DISTCLEANFILES += \
 EXTRA_DIST += \
 	tests/abicheck.sh \
 	tests/binary/delete1.dat \
+	tests/binary/empty.dat \
 	tests/binary/get_more1.dat \
 	tests/binary/gridfs.dat \
+	tests/binary/gridfs-large.dat \
 	tests/binary/insert1.dat \
 	tests/binary/kill_cursors1.dat \
 	tests/binary/msg1.dat \

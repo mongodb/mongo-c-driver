@@ -70,6 +70,20 @@ future_value_get_char_ptr_ptr (future_value_t *future_value)
 }
 
 void
+future_value_set_int(future_value_t *future_value, int value)
+{
+  future_value->type = future_value_int_type;
+  future_value->int_value = value;
+}
+
+int
+future_value_get_int (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_int_type);
+  return future_value->int_value;
+}
+
+void
 future_value_set_int64_t(future_value_t *future_value, int64_t value)
 {
   future_value->type = future_value_int64_t_type;
@@ -81,6 +95,34 @@ future_value_get_int64_t (future_value_t *future_value)
 {
   assert (future_value->type == future_value_int64_t_type);
   return future_value->int64_t_value;
+}
+
+void
+future_value_set_size_t(future_value_t *future_value, size_t value)
+{
+  future_value->type = future_value_size_t_type;
+  future_value->size_t_value = value;
+}
+
+size_t
+future_value_get_size_t (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_size_t_type);
+  return future_value->size_t_value;
+}
+
+void
+future_value_set_ssize_t(future_value_t *future_value, ssize_t value)
+{
+  future_value->type = future_value_ssize_t_type;
+  future_value->ssize_t_value = value;
+}
+
+ssize_t
+future_value_get_ssize_t (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_ssize_t_type);
+  return future_value->ssize_t_value;
 }
 
 void
@@ -238,6 +280,34 @@ future_value_get_mongoc_database_ptr (future_value_t *future_value)
 }
 
 void
+future_value_set_mongoc_gridfs_file_ptr(future_value_t *future_value, mongoc_gridfs_file_ptr value)
+{
+  future_value->type = future_value_mongoc_gridfs_file_ptr_type;
+  future_value->mongoc_gridfs_file_ptr_value = value;
+}
+
+mongoc_gridfs_file_ptr
+future_value_get_mongoc_gridfs_file_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_mongoc_gridfs_file_ptr_type);
+  return future_value->mongoc_gridfs_file_ptr_value;
+}
+
+void
+future_value_set_mongoc_gridfs_ptr(future_value_t *future_value, mongoc_gridfs_ptr value)
+{
+  future_value->type = future_value_mongoc_gridfs_ptr_type;
+  future_value->mongoc_gridfs_ptr_value = value;
+}
+
+mongoc_gridfs_ptr
+future_value_get_mongoc_gridfs_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_mongoc_gridfs_ptr_type);
+  return future_value->mongoc_gridfs_ptr_value;
+}
+
+void
 future_value_set_mongoc_insert_flags_t(future_value_t *future_value, mongoc_insert_flags_t value)
 {
   future_value->type = future_value_mongoc_insert_flags_t_type;
@@ -249,6 +319,20 @@ future_value_get_mongoc_insert_flags_t (future_value_t *future_value)
 {
   assert (future_value->type == future_value_mongoc_insert_flags_t_type);
   return future_value->mongoc_insert_flags_t_value;
+}
+
+void
+future_value_set_mongoc_iovec_ptr(future_value_t *future_value, mongoc_iovec_ptr value)
+{
+  future_value->type = future_value_mongoc_iovec_ptr_type;
+  future_value->mongoc_iovec_ptr_value = value;
+}
+
+mongoc_iovec_ptr
+future_value_get_mongoc_iovec_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_mongoc_iovec_ptr_type);
+  return future_value->mongoc_iovec_ptr_value;
 }
 
 void
@@ -305,6 +389,20 @@ future_value_get_mongoc_topology_ptr (future_value_t *future_value)
 {
   assert (future_value->type == future_value_mongoc_topology_ptr_type);
   return future_value->mongoc_topology_ptr_value;
+}
+
+void
+future_value_set_const_mongoc_find_and_modify_opts_ptr(future_value_t *future_value, const_mongoc_find_and_modify_opts_ptr value)
+{
+  future_value->type = future_value_const_mongoc_find_and_modify_opts_ptr_type;
+  future_value->const_mongoc_find_and_modify_opts_ptr_value = value;
+}
+
+const_mongoc_find_and_modify_opts_ptr
+future_value_get_const_mongoc_find_and_modify_opts_ptr (future_value_t *future_value)
+{
+  assert (future_value->type == future_value_const_mongoc_find_and_modify_opts_ptr_type);
+  return future_value->const_mongoc_find_and_modify_opts_ptr_value;
 }
 
 void

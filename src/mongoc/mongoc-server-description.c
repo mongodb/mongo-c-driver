@@ -24,13 +24,12 @@
 
 #include <stdio.h>
 
-#define MIN_WIRE_VERSION 0
-#define MAX_WIRE_VERSION 3
-
 #define ALPHA 0.2
 
 
 static uint8_t kMongocEmptyBson[] = { 5, 0, 0, 0, 0 };
+
+static bson_oid_t kObjectIdZero = { {0} };
 
 /* Destroy allocated resources within @description, but don't free it */
 void
@@ -48,7 +47,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
 {
    BSON_ASSERT(sd);
 
-   /* set other fields to default or empty states */
+   /* set other fields to default or empty states. election_id is zeroed. */
    memset (&sd->set_name, 0, sizeof (*sd) - ((char*)&sd->set_name - (char*)sd));
    sd->set_name = NULL;
    sd->type = MONGOC_SERVER_UNKNOWN;
@@ -97,6 +96,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    sd->round_trip_time = -1;
 
    sd->set_name = NULL;
+   sd->set_version = MONGOC_NO_SET_VERSION;
    sd->current_primary = NULL;
 
    if (!_mongoc_host_list_from_string(&sd->host, address)) {
@@ -106,6 +106,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
 
    sd->connection_address = sd->host.host_and_port;
 
+   sd->me = NULL;
    sd->min_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
    sd->max_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
    sd->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
@@ -196,6 +197,44 @@ mongoc_server_description_has_rs_member(mongoc_server_description_t *server,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_server_description_has_set_version --
+ *
+ *      Did this server's ismaster response have a "setVersion" field?
+ *
+ * Returns:
+ *      True if the server description's setVersion is set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_server_description_has_set_version (mongoc_server_description_t *description)
+{
+   return description->set_version != MONGOC_NO_SET_VERSION;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_has_election_id --
+ *
+ *      Did this server's ismaster response have an "electionId" field?
+ *
+ * Returns:
+ *      True if the server description's electionId is set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_server_description_has_election_id (mongoc_server_description_t *description)
+{
+   return 0 != bson_oid_compare (&description->election_id, &kObjectIdZero);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_server_description_id --
  *
  *      Get the id of this server.
@@ -236,13 +275,7 @@ mongoc_server_description_host (mongoc_server_description_t *description)
  *
  * mongoc_server_description_set_state --
  *
- *       Change the state of this server.
- *
- * Returns:
- *       true, false
- *
- * Side effects:
- *       None
+ *       Set the server description's server type.
  *
  *--------------------------------------------------------------------------
  */
@@ -255,6 +288,50 @@ mongoc_server_description_set_state (mongoc_server_description_t *description,
 
 
 /*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_set_set_version --
+ *
+ *       Set the replica set version of this server.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+mongoc_server_description_set_set_version (mongoc_server_description_t *description,
+                                           int64_t set_version)
+{
+   description->set_version = set_version;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_set_election_id --
+ *
+ *       Set the election_id of this server. Copies the given ObjectId or,
+ *       if it is NULL, zeroes description's election_id.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+mongoc_server_description_set_election_id (mongoc_server_description_t *description,
+                                           const bson_oid_t *election_id)
+{
+   if (election_id) {
+      bson_oid_copy_unsafe (election_id, &description->election_id);
+   } else {
+      bson_oid_copy_unsafe (&kObjectIdZero, &description->election_id);
+   }
+}
+
+
+/*
  *-------------------------------------------------------------------------
  *
  * mongoc_server_description_update_rtt --
@@ -262,11 +339,8 @@ mongoc_server_description_set_state (mongoc_server_description_t *description,
  *       Calculate this server's rtt calculation using an exponentially-
  *       weighted moving average formula.
  *
- * Returns:
- *       None.
- *
  * Side effects:
- *       Changes this server description's rtt.
+ *       None.
  *
  *-------------------------------------------------------------------------
  */
@@ -302,6 +376,7 @@ mongoc_server_description_handle_ismaster (
    bool is_secondary = false;
    bool is_arbiter = false;
    bool is_replicaset = false;
+   bool is_hidden = false;
    const uint8_t *bytes;
    uint32_t len;
    int num_keys = 0;
@@ -328,6 +403,9 @@ mongoc_server_description_handle_ismaster (
       } else if (strcmp ("ismaster", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto failure;
          is_master = bson_iter_bool (&iter);
+      } else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto failure;
+         sd->me = bson_iter_utf8 (&iter, NULL);
       } else if (strcmp ("maxMessageSizeBytes", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_INT32 (&iter)) goto failure;
          sd->max_msg_size = bson_iter_int32 (&iter);
@@ -349,6 +427,12 @@ mongoc_server_description_handle_ismaster (
       } else if (strcmp ("setName", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_UTF8 (&iter)) goto failure;
          sd->set_name = bson_iter_utf8 (&iter, NULL);
+      } else if (strcmp ("setVersion", bson_iter_key (&iter)) == 0) {
+         mongoc_server_description_set_set_version (sd,
+                                                    bson_iter_as_int64 (&iter));
+      } else if (strcmp ("electionId", bson_iter_key (&iter)) == 0) {
+         if (! BSON_ITER_HOLDS_OID (&iter)) goto failure;
+         mongoc_server_description_set_election_id (sd, bson_iter_oid (&iter));
       } else if (strcmp ("secondary", bson_iter_key (&iter)) == 0) {
          if (! BSON_ITER_HOLDS_BOOL (&iter)) goto failure;
          is_secondary = bson_iter_bool (&iter);
@@ -377,13 +461,17 @@ mongoc_server_description_handle_ismaster (
          if (! BSON_ITER_HOLDS_DOCUMENT (&iter)) goto failure;
          bson_iter_document (&iter, &len, &bytes);
          bson_init_static (&sd->tags, bytes, len);
+      } else if (strcmp ("hidden", bson_iter_key (&iter)) == 0) {
+         is_hidden = bson_iter_bool (&iter);
       }
    }
 
    if (is_shard) {
       sd->type = MONGOC_SERVER_MONGOS;
    } else if (sd->set_name) {
-      if (is_master) {
+      if (is_hidden) {
+         sd->type = MONGOC_SERVER_RS_OTHER;
+      } else if (is_master) {
          sd->type = MONGOC_SERVER_RS_PRIMARY;
       } else if (is_secondary) {
          sd->type = MONGOC_SERVER_RS_SECONDARY;
@@ -439,6 +527,7 @@ mongoc_server_description_new_copy (const mongoc_server_description_t *descripti
 
    /* wait for handle_ismaster to fill these in properly */
    copy->has_is_master = false;
+   copy->set_version = MONGOC_NO_SET_VERSION;
    bson_init_static (&copy->hosts, kMongocEmptyBson, sizeof (kMongocEmptyBson));
    bson_init_static (&copy->passives, kMongocEmptyBson, sizeof (kMongocEmptyBson));
    bson_init_static (&copy->arbiters, kMongocEmptyBson, sizeof (kMongocEmptyBson));
@@ -490,13 +579,18 @@ mongoc_server_description_filter_eligible (
    size_t i;
    size_t rval = 0;
 
+   if (!read_prefs) {
+      /* NULL read_prefs is PRIMARY, no tags to filter by */
+      return description_len;
+   }
+
    rp_tags = mongoc_read_prefs_get_tags (read_prefs);
 
    if (bson_count_keys (rp_tags) == 0) {
       return description_len;
    }
 
-   sd_matched = (bool *)bson_malloc(sizeof(bool) * description_len);
+   sd_matched = (bool *) bson_malloc0 (sizeof(bool) * description_len);
 
    bson_iter_init (&rp_tagset_iter, rp_tags);
 

@@ -25,6 +25,8 @@
 #define MONGOC_DEFAULT_BSON_OBJ_SIZE 16 * 1024 * 1024
 #define MONGOC_DEFAULT_MAX_MSG_SIZE 48000000
 
+/* represent a server or topology with no replica set config version */
+#define MONGOC_NO_SET_VERSION -1
 
 typedef enum
    {
@@ -48,6 +50,7 @@ struct _mongoc_server_description_t
    bson_t                           last_is_master;
    bool                             has_is_master;
    const char                      *connection_address;
+   const char                      *me;
 
    /* The following fields are filled from the last_is_master and are zeroed on
     * parse.  So order matters here.  DON'T move set_name */
@@ -67,6 +70,8 @@ struct _mongoc_server_description_t
 
    bson_t                           tags;
    const char                      *current_primary;
+   int64_t                          set_version;
+   bson_oid_t                       election_id;
 };
 
 void
@@ -77,6 +82,13 @@ bool
 mongoc_server_description_has_rs_member (mongoc_server_description_t *description,
                                          const char                  *address);
 
+
+bool
+mongoc_server_description_has_set_version (mongoc_server_description_t *description);
+
+bool
+mongoc_server_description_has_election_id (mongoc_server_description_t *description);
+
 void
 mongoc_server_description_cleanup (mongoc_server_description_t *sd);
 
@@ -86,6 +98,12 @@ mongoc_server_description_reset (mongoc_server_description_t *sd);
 void
 mongoc_server_description_set_state (mongoc_server_description_t     *description,
                                      mongoc_server_description_type_t type);
+void
+mongoc_server_description_set_set_version (mongoc_server_description_t *description,
+                                           int64_t                      set_version);
+void
+mongoc_server_description_set_election_id (mongoc_server_description_t *description,
+                                           const bson_oid_t            *election_id);
 void
 mongoc_server_description_update_rtt (mongoc_server_description_t *server,
                                       int64_t                      new_time);

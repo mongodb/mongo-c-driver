@@ -8,9 +8,9 @@ bulk1
 bulk2
 bulk3
 bulk4
+bulk5
 ChangeLog
 cluster1
-*.cmake
 CMakeCache.txt
 CMakeFiles
 compile
@@ -29,6 +29,7 @@ example-gridfs
 example-matcher
 filter-bsondump
 find-and-modify
+fam
 *.gcda
 *.gcno
 *.gz
@@ -72,6 +73,7 @@ test-mongoc-cursor
 test-mongoc-database
 test-mongoc-exhaust
 test-mongoc-event
+test-mongoc-find-and-modify
 test-mongoc-gridfs
 test-mongoc-gridfs-file-page
 test-mongoc-list

@@ -9,15 +9,20 @@
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-description-private.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-util-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
 
-#define MAX_NUM_TESTS 100
+#include <limits.h>
+#include <stdlib.h>
 
-#if defined(_WIN32) && !defined(strcasecmp)
-# define strcasecmp _stricmp
+#ifdef _MSC_VER
+#define PATH_MAX 1024
+#define realpath(path, expanded) GetFullPathName(path, PATH_MAX, expanded, NULL)
 #endif
+
+#define MAX_NUM_TESTS 100
 
 /* caller must clean up the returned description */
 static mongoc_server_description_t *
@@ -59,6 +64,25 @@ _topology_has_description(mongoc_topology_description_t *topology,
          }
       } else if (strcmp("type", bson_iter_key (&server_iter)) == 0) {
          assert (sd->type == server_type_from_test(bson_iter_utf8(&server_iter, NULL)));
+      } else if (strcmp("setVersion", bson_iter_key (&server_iter)) == 0) {
+         int64_t expected_set_version;
+         if (BSON_ITER_HOLDS_NULL (&server_iter)) {
+            expected_set_version = MONGOC_NO_SET_VERSION;
+         } else {
+            expected_set_version = bson_iter_as_int64 (&server_iter);
+         }
+         assert (sd->set_version == expected_set_version);
+      } else if (strcmp("electionId", bson_iter_key (&server_iter)) == 0) {
+         bson_oid_t expected_oid;
+         if (BSON_ITER_HOLDS_NULL (&server_iter)) {
+            bson_oid_init_from_string (&expected_oid,
+                                       "000000000000000000000000");
+         } else {
+            ASSERT (BSON_ITER_HOLDS_OID (&server_iter));
+            bson_oid_copy (bson_iter_oid (&server_iter), &expected_oid);
+         }
+
+         ASSERT_CMPOID (&sd->election_id, &expected_oid);
       } else {
          fprintf (stderr, "ERROR: unparsed field %s\n", bson_iter_key(&server_iter));
          assert (0);
@@ -190,21 +214,27 @@ test_sdam_cb (bson_t *test)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
+   char resolved[PATH_MAX];
+
    /* Single */
-   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/single",
-                       &test_sdam_cb);
+   if (realpath ("tests/json/server_discovery_and_monitoring/single", resolved)) {
+      install_json_test_suite(suite, resolved, &test_sdam_cb);
+   }
 
    /* Replica set */
-   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/rs",
-                       &test_sdam_cb);
+   if (realpath ("tests/json/server_discovery_and_monitoring/rs", resolved)) {
+      install_json_test_suite(suite, resolved, &test_sdam_cb);
+   }
 
    /* Sharded */
-   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/sharded",
-                       &test_sdam_cb);
+   if (realpath ("tests/json/server_discovery_and_monitoring/sharded", resolved)) {
+      install_json_test_suite(suite, resolved, &test_sdam_cb);
+   }
 
    /* Tests not in official Server Discovery And Monitoring Spec */
-   install_json_test_suite(suite, "tests/json/server_discovery_and_monitoring/supplemental",
-                       &test_sdam_cb);
+   if (realpath ("tests/json/server_discovery_and_monitoring/supplemental", resolved)) {
+      install_json_test_suite(suite, resolved, &test_sdam_cb);
+   }
 }
 
 void

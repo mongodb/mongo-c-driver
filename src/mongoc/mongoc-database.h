@@ -26,6 +26,7 @@
 #include "mongoc-cursor.h"
 #include "mongoc-flags.h"
 #include "mongoc-read-prefs.h"
+#include "mongoc-read-concern.h"
 #include "mongoc-write-concern.h"
 
 
@@ -48,6 +49,7 @@ bool                          mongoc_database_add_user             (mongoc_datab
                                                                     const bson_t                 *custom_data,
                                                                     bson_error_t                 *error);
 void                          mongoc_database_destroy              (mongoc_database_t            *database);
+mongoc_database_t            *mongoc_database_copy                 (mongoc_database_t            *database);
 mongoc_cursor_t              *mongoc_database_command              (mongoc_database_t            *database,
                                                                     mongoc_query_flags_t          flags,
                                                                     uint32_t                      skip,
@@ -76,6 +78,9 @@ void                          mongoc_database_set_read_prefs       (mongoc_datab
 const mongoc_write_concern_t *mongoc_database_get_write_concern    (const mongoc_database_t      *database);
 void                          mongoc_database_set_write_concern    (mongoc_database_t            *database,
                                                                     const mongoc_write_concern_t *write_concern);
+const mongoc_read_concern_t  *mongoc_database_get_read_concern     (const mongoc_database_t      *database);
+void                          mongoc_database_set_read_concern     (mongoc_database_t            *database,
+                                                                    const mongoc_read_concern_t *read_concern);
 mongoc_cursor_t              *mongoc_database_find_collections     (mongoc_database_t            *database,
                                                                     const bson_t                 *filter,
                                                                     bson_error_t                 *error);

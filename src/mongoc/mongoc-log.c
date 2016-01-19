@@ -77,14 +77,15 @@ mongoc_log (mongoc_log_level_t  log_level,
    va_list args;
    char *message;
    static mongoc_once_t once = MONGOC_ONCE_INIT;
+   int stop_logging;
 
    mongoc_once(&once, &_mongoc_ensure_mutex_once);
 
-   if (!gLogFunc
+   stop_logging = !gLogFunc;
 #ifdef MONGOC_TRACE
-         || (log_level == MONGOC_LOG_LEVEL_TRACE && !gLogTrace)
+   stop_logging = stop_logging || (log_level == MONGOC_LOG_LEVEL_TRACE && !gLogTrace);
 #endif
-      ) {
+   if (stop_logging) {
       return;
    }
 

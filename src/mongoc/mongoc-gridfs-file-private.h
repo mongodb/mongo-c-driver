@@ -38,10 +38,10 @@ struct _mongoc_gridfs_file_t
    bson_t                     bson;
    mongoc_gridfs_file_page_t *page;
    uint64_t                   pos;
+   int32_t                    n;
    bson_error_t               error;
-   bool                       failed;
    mongoc_cursor_t           *cursor;
-   uint32_t                   cursor_range[2];
+   uint32_t                   cursor_range[2]; /* current chunk, # of chunks */
    bool                       is_dirty;
 
    bson_value_t               files_id;

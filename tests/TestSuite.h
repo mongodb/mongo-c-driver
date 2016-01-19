@@ -45,7 +45,7 @@ extern "C" {
    do { \
       if (! (_statement)) { \
          fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n  %s\n\n", \
-                         __FILE__, __LINE__, __FUNCTION__, \
+                         __FILE__, __LINE__, BSON_FUNC, \
                          #_statement, _err.message); \
          fflush(stderr); \
          abort(); \
@@ -53,18 +53,35 @@ extern "C" {
    } while (0)
 
 
-#ifdef ASSERT_CMPINT
-# undef ASSERT_CMPINT
-#endif
-#define ASSERT_CMPINT(a, eq, b) \
+#define ASSERT_CMPINT_HELPER(a, eq, b, fmt) \
    do { \
       if (!((a) eq (b))) { \
-         fprintf(stderr, "FAIL\n\nAssert Failure: %d %s %d\n" \
+         fprintf(stderr, "FAIL\n\nAssert Failure: %" fmt " %s %" fmt "\n" \
                          "%s:%d  %s()\n", \
                          a, #eq, b, \
-                         __FILE__, __LINE__, __FUNCTION__); \
+                         __FILE__, __LINE__, BSON_FUNC); \
          abort(); \
       } \
+   } while (0)
+
+
+#define ASSERT_CMPINT(a, eq, b)    ASSERT_CMPINT_HELPER(a, eq, b, "d")
+#define ASSERT_CMPUINT(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "u")
+#define ASSERT_CMPLONG(a, eq, b)   ASSERT_CMPINT_HELPER(a, eq, b, "ld")
+#define ASSERT_CMPULONG(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, "lu")
+#define ASSERT_CMPINT64(a, eq, b)  ASSERT_CMPINT_HELPER(a, eq, b, PRId64)
+#define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, PRIu64)
+#define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "zd")
+#define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER(a, eq, b, "zx")
+
+#define ASSERT_MEMCMP(a, b, n) \
+   do { \
+      if (0 != memcmp(a, b, n)) { \
+         fprintf (stderr, \
+                  "Failed comparing %d bytes: \"%.*s\" != \"%.*s\"", \
+                  n, n, (char *) a, n, (char *) b); \
+         abort (); \
+      }\
    } while (0)
 
 
@@ -81,7 +98,7 @@ extern "C" {
                          " not within 20%% of %" PRId64 "\n" \
                          "%s:%d  %s()\n", \
                          _a, _b, \
-                         __FILE__, __LINE__, __FUNCTION__); \
+                         __FILE__, __LINE__, BSON_FUNC); \
          abort(); \
       } \
    } while (0)
@@ -92,6 +109,22 @@ extern "C" {
       if (((a) != (b)) && !!strcmp((a), (b))) { \
          fprintf(stderr, "FAIL\n\nAssert Failure: \"%s\" != \"%s\"\n", \
                          a, b); \
+         abort(); \
+      } \
+   } while (0)
+
+
+#define ASSERT_CMPOID(a, b) \
+   do { \
+      if (bson_oid_compare ((a), (b))) { \
+         char oid_a[25]; \
+         char oid_b[25]; \
+         bson_oid_to_string ((a), oid_a); \
+         bson_oid_to_string ((b), oid_b); \
+         fprintf(stderr, \
+                 "FAIL\n\nAssert Failure: " \
+                 "ObjectId(\"%s\") != ObjectId(\"%s\")\n", \
+                 oid_a, oid_b); \
          abort(); \
       } \
    } while (0)
@@ -124,11 +157,18 @@ extern "C" {
          if (bson_get_monotonic_time() - _start > 1000 * 1000) { \
             fprintf (stderr, \
                      "%s:%d %s(): \"%s\" still false after 1 second\n", \
-                     __FILE__, __LINE__, __FUNCTION__, #_condition); \
+                     __FILE__, __LINE__, BSON_FUNC, #_condition); \
             abort (); \
          } \
       }  \
    } while (0)
+
+#define ASSERT_ERROR_CONTAINS(error, _domain, _code, _message) \
+   do { \
+      ASSERT_CMPINT (error.domain, ==, _domain); \
+      ASSERT_CMPINT (error.code, ==, _code); \
+      ASSERT_CONTAINS (error.message, _message); \
+   } while (0);
 
 #define MAX_TEST_NAME_LENGTH 500
 

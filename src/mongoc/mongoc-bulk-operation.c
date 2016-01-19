@@ -19,9 +19,7 @@
 #include "mongoc-bulk-operation-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-error.h"
-#include "mongoc-opcode.h"
 #include "mongoc-trace.h"
-#include "mongoc-write-command-private.h"
 #include "mongoc-write-concern-private.h"
 
 
@@ -50,7 +48,9 @@ mongoc_bulk_operation_new (bool ordered)
    mongoc_bulk_operation_t *bulk;
 
    bulk = (mongoc_bulk_operation_t *)bson_malloc0 (sizeof *bulk);
-   bulk->ordered = ordered;
+   bulk->flags.bypass_document_validation = MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
+   bulk->flags.ordered = ordered;
+   bulk->hint = 0;
 
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));
 
@@ -62,8 +62,7 @@ mongoc_bulk_operation_t *
 _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN */
                             const char                   *database,      /* IN */
                             const char                   *collection,    /* IN */
-                            uint32_t                      hint,          /* IN */
-                            bool                          ordered,       /* IN */
+                            mongoc_bulk_write_flags_t     flags,         /* IN */
                             const mongoc_write_concern_t *write_concern) /* IN */
 {
    mongoc_bulk_operation_t *bulk;
@@ -71,13 +70,13 @@ _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN *
    BSON_ASSERT (client);
    BSON_ASSERT (collection);
 
-   bulk = mongoc_bulk_operation_new (ordered);
+   bulk = mongoc_bulk_operation_new (flags.ordered);
    bulk->client = client;
    bulk->database = bson_strdup (database);
    bulk->collection = bson_strdup (collection);
-   bulk->hint = hint;
    bulk->write_concern = mongoc_write_concern_copy (write_concern);
    bulk->executed = false;
+   bulk->flags = flags;
 
    return bulk;
 }
@@ -133,7 +132,7 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,     /* IN */
       }
    }
 
-   _mongoc_write_command_init_delete (&command, selector, true, bulk->ordered);
+   _mongoc_write_command_init_delete (&command, selector, true, bulk->flags);
 
    _mongoc_array_append_val (&bulk->commands, command);
 
@@ -164,7 +163,7 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk,     /* IN */
       }
    }
 
-   _mongoc_write_command_init_delete (&command, selector, false, bulk->ordered);
+   _mongoc_write_command_init_delete (&command, selector, false, bulk->flags);
 
    _mongoc_array_append_val (&bulk->commands, command);
 
@@ -220,7 +219,7 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_insert (
-      &command, document, bulk->ordered,
+      &command, document, bulk->flags,
       !_mongoc_write_concern_needs_gle (bulk->write_concern));
 
    _mongoc_array_append_val (&bulk->commands, command);
@@ -249,7 +248,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
    if (!bson_validate (document, (bson_validate_flags_t)flags, &err_off)) {
       MONGOC_WARNING ("%s(): replacement document may not contain "
                       "$ or . in keys. Ignoring document.",
-                      __FUNCTION__);
+                      BSON_FUNC);
       EXIT;
    }
 
@@ -264,7 +263,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
-                                      false, bulk->ordered);
+                                      false, bulk->flags);
    _mongoc_array_append_val (&bulk->commands, command);
 
    EXIT;
@@ -292,7 +291,7 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
       while (bson_iter_next (&iter)) {
          if (!strchr (bson_iter_key (&iter), '$')) {
             MONGOC_WARNING ("%s(): update only works with $ operators.",
-                            __FUNCTION__);
+                            BSON_FUNC);
             EXIT;
          }
       }
@@ -309,7 +308,7 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
-                                      multi, bulk->ordered);
+                                      multi, bulk->flags);
    _mongoc_array_append_val (&bulk->commands, command);
    EXIT;
 }
@@ -335,7 +334,7 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
       while (bson_iter_next (&iter)) {
          if (!strchr (bson_iter_key (&iter), '$')) {
             MONGOC_WARNING ("%s(): update_one only works with $ operators.",
-                            __FUNCTION__);
+                            BSON_FUNC);
             EXIT;
          }
       }
@@ -352,7 +351,7 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
-                                      false, bulk->ordered);
+                                      false, bulk->flags);
    _mongoc_array_append_val (&bulk->commands, command);
    EXIT;
 }
@@ -363,7 +362,9 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                bson_t                  *reply, /* OUT */
                                bson_error_t            *error) /* OUT */
 {
+   mongoc_cluster_t *cluster;
    mongoc_write_command_t *command;
+   mongoc_server_stream_t *server_stream;
    bool ret;
    uint32_t offset = 0;
    int i;
@@ -371,6 +372,8 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
    ENTRY;
 
    BSON_ASSERT (bulk);
+
+   cluster = &bulk->client->cluster;
 
    if (bulk->executed) {
       _mongoc_write_result_destroy (&bulk->result);
@@ -415,18 +418,31 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
       RETURN (false);
    }
 
+   if (bulk->hint) {
+      server_stream = mongoc_cluster_stream_for_server (cluster,
+                                                        bulk->hint,
+                                                        true /* reconnect_ok */,
+                                                        error);
+   } else {
+      server_stream = mongoc_cluster_stream_for_writes (cluster, error);
+   }
+
+   if (!server_stream) {
+      RETURN (false);
+   }
+
    for (i = 0; i < bulk->commands.len; i++) {
       command = &_mongoc_array_index (&bulk->commands,
                                       mongoc_write_command_t, i);
 
-      _mongoc_write_command_execute (command, bulk->client, bulk->hint,
+      _mongoc_write_command_execute (command, bulk->client, server_stream,
                                      bulk->database, bulk->collection,
                                      bulk->write_concern, offset,
                                      &bulk->result);
 
       bulk->hint = command->hint;
 
-      if (bulk->result.failed && bulk->ordered) {
+      if (bulk->result.failed && bulk->flags.ordered) {
          GOTO (cleanup);
       }
 
@@ -435,6 +451,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
 
 cleanup:
    ret = _mongoc_write_result_complete (&bulk->result, reply, error);
+   mongoc_server_stream_cleanup (server_stream);
 
    RETURN (ret ? bulk->hint : 0);
 }
@@ -511,3 +528,17 @@ mongoc_bulk_operation_set_hint (mongoc_bulk_operation_t *bulk,
 
    bulk->hint = hint;
 }
+
+
+void
+mongoc_bulk_operation_set_bypass_document_validation (mongoc_bulk_operation_t *bulk,
+                                                      bool                     bypass)
+{
+   BSON_ASSERT (bulk);
+
+   bulk->flags.bypass_document_validation = bypass ?
+      MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE :
+      MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
+}
+
+

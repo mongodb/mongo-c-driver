@@ -3,7 +3,7 @@ include(CheckSymbolExists)
 message (STATUS "Searching for sasl/sasl.h")
 find_path (
     SASL2_INCLUDE_DIR NAMES sasl/sasl.h
-    PATHS /include /usr/include /usr/local/include /usr/share/include /opt/include
+    PATHS /include /usr/include /usr/local/include /usr/share/include /opt/include c:/sasl/include
     DOC "Searching for sasl/sasl.h")
 
 if (SASL2_INCLUDE_DIR)
@@ -15,7 +15,7 @@ endif ()
 message (STATUS "Searching for libsasl2")
 find_library(
     SASL2_LIBRARY NAMES sasl2
-    PATHS /usr/lib /lib /usr/local/lib /usr/share/lib /opt/lib /opt/share/lib /var/lib
+    PATHS /usr/lib /lib /usr/local/lib /usr/share/lib /opt/lib /opt/share/lib /var/lib c:/sasl/lib
     DOC "Searching for libsasl2")
 
 if (SASL2_LIBRARY)

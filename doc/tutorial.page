@@ -90,7 +90,7 @@ main (int   argc,
    }
 
    str = bson_as_json (&reply, NULL);
-   fprintf (stdout, "%s\n", str);
+   printf ("%s\n", str);
 
    insert = BCON_NEW ("hello", BCON_UTF8 ("world"));
 
@@ -183,7 +183,7 @@ main (int   argc,
    /*
     * Print the document as a JSON string.
     */
-   str = bson_as_json (b, NULL);
+   str = bson_as_json (document, NULL);
    printf ("%s\n", str);
    bson_free (str);
 
@@ -199,10 +199,6 @@ main (int   argc,
     </section>
 
     <section id="bcon">
-      <info>
-        <link type="guide" href="https://github.com/hanumantmk/BCON">BCON Project</link>
-      </info>
-
       <title>Using BCON</title>
       <p><em>BSON C Object Notation</em>, BCON for short, is an alternative way of constructing BSON documents in a manner closer to the intended format. It has less type-safety than BSON's append functions but results in less code.</p>
 
@@ -215,6 +211,7 @@ main (int   argc,
       char *argv[])
 {
    bson_t *doc;
+   char *str;
 
    doc = BCON_NEW ("name", BCON_UTF8 ("Babe Ruth"),
                    "statistics", "{",
@@ -256,14 +253,14 @@ main (int   argc,
 
 int
 main (int   argc,
-      char *argv)
+      char *argv[])
 {
    bson_error_t error;
    bson_t      *bson;
    char        *string;
 
    const char *json = "{\"hello\": \"world\"}";
-   bson = bson_new_from_json (json, -1, &error);
+   bson = bson_new_from_json ((const uint8_t *)json, -1, &error);
 
    if (!bson) {
       fprintf (stderr, "%s\n", error.message);
@@ -271,7 +268,7 @@ main (int   argc,
    }
 
    string = bson_as_json (bson, NULL);
-   fprintf (stdout, "%s\n", string);
+   printf ("%s\n", string);
    bson_free (string);
 
    return 0;
@@ -310,7 +307,6 @@ main (int   argc,
 {
     mongoc_client_t *client;
     mongoc_collection_t *collection;
-    mongoc_cursor_t *cursor;
     bson_error_t error;
     bson_oid_t oid;
     bson_t *doc;
@@ -518,7 +514,7 @@ main (int   argc,
                     "key", BCON_UTF8 ("old_value"));
 
     if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
-        printf ("%s\n", error.message);
+        fprintf (stderr, "%s\n", error.message);
         goto fail;
     }
 
@@ -529,7 +525,7 @@ main (int   argc,
                        "}");
 
     if (!mongoc_collection_update (collection, MONGOC_UPDATE_NONE, query, update, NULL, &error)) {
-        printf ("%s\n", error.message);
+        fprintf (stderr, "%s\n", error.message);
         goto fail;
     }
 
@@ -592,7 +588,6 @@ main (int   argc,
 {
     mongoc_client_t *client;
     mongoc_collection_t *collection;
-    mongoc_cursor_t *cursor;
     bson_error_t error;
     bson_oid_t oid;
     bson_t *doc;
@@ -608,7 +603,7 @@ main (int   argc,
     BSON_APPEND_UTF8 (doc, "hello", "world");
 
     if (!mongoc_collection_insert (collection, MONGOC_INSERT_NONE, doc, NULL, &error)) {
-        printf ("Insert failed: %s\n", error.message);
+        fprintf (stderr, "Insert failed: %s\n", error.message);
     }
 
     bson_destroy (doc);
@@ -617,7 +612,7 @@ main (int   argc,
     BSON_APPEND_OID (doc, "_id", &oid);
 
     if (!mongoc_collection_remove (collection, MONGOC_REMOVE_SINGLE_REMOVE, doc, NULL, &error)) {
-        printf ("Delete failed: %s\n", error.message);
+        fprintf (stderr, "Delete failed: %s\n", error.message);
     }
 
     bson_destroy (doc);
@@ -671,25 +666,21 @@ main (int   argc,
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_error_t error;
-   bson_oid_t oid;
    bson_t *doc;
-   char *str;
    int64_t count;
 
    mongoc_init ();
 
    client = mongoc_client_new ("mongodb://localhost:27017/");
    collection = mongoc_client_get_collection (client, "mydb", "mycoll");
-   doc = bson_new_from_json ("{\"hello\" : \"world\"}");
+   doc = bson_new_from_json ((const uint8_t *)"{\"hello\" : \"world\"}", -1, &error);
 
    count = mongoc_collection_count (collection, MONGOC_QUERY_NONE, doc, 0, 0, NULL, &error);
 
    if (count < 0) {
-      str = bson_as_json (&error, NULL);
-      fprintf (stderr, "%s\n", str);
-      bson_free (str);
+      fprintf (stderr, "%s\n", error.message);
    } else {
-      fprintf (stdout, "%" PRIu64 "\n", count);
+      printf ("%" PRId64 "\n", count);
    }
 
    bson_destroy (doc);

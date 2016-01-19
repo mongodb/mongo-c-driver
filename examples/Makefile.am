@@ -21,7 +21,7 @@ mongoc_dump_LDADD = $(EXAMPLE_LDADD)
 
 noinst_PROGRAMS += filter-bsondump
 filter_bsondump_SOURCES = examples/filter-bsondump.c
-filter_bsondump_CFLAGS = $(EXAMPLE_CFLAGS)
+filter_bsondump_CFLAGS = -Wno-deprecated-declarations $(EXAMPLE_CFLAGS)
 filter_bsondump_LDADD = $(EXAMPLE_LDADD)
 
 noinst_PROGRAMS += example-client
@@ -59,7 +59,7 @@ find_and_modify_LDADD = $(EXAMPLE_LDADD)
 
 noinst_PROGRAMS += example-matcher
 example_matcher_SOURCES = examples/example-matcher.c
-example_matcher_CFLAGS = $(EXAMPLE_CFLAGS)
+example_matcher_CFLAGS = -Wno-deprecated-declarations $(EXAMPLE_CFLAGS)
 example_matcher_LDADD = $(EXAMPLE_LDADD)
 
 noinst_PROGRAMS += bulk1
@@ -82,7 +82,24 @@ bulk4_SOURCES = examples/bulk/bulk4.c
 bulk4_CFLAGS = $(EXAMPLE_CFLAGS)
 bulk4_LDADD = $(EXAMPLE_LDADD)
 
+noinst_PROGRAMS += bulk5
+bulk5_SOURCES = examples/bulk/bulk5.c
+bulk5_CFLAGS = $(EXAMPLE_CFLAGS)
+bulk5_LDADD = $(EXAMPLE_LDADD)
+
 noinst_PROGRAMS += aggregation1
 aggregation1_SOURCES = examples/aggregation/aggregation1.c
 aggregation1_CFLAGS = $(EXAMPLE_CFLAGS)
 aggregation1_LDADD = $(EXAMPLE_LDADD)
+
+noinst_PROGRAMS += fam
+fam_SOURCES = examples/find_and_modify_with_opts/fam.c
+fam_CFLAGS = $(EXAMPLE_CFLAGS)
+fam_LDADD = $(EXAMPLE_LDADD)
+
+EXTRA_DIST += \
+    examples/find_and_modify_with_opts/bypass.c \
+    examples/find_and_modify_with_opts/fields.c \
+    examples/find_and_modify_with_opts/flags.c \
+    examples/find_and_modify_with_opts/sort.c \
+    examples/find_and_modify_with_opts/update.c

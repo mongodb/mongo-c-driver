@@ -30,8 +30,12 @@ typedef mongoc_client_t * mongoc_client_ptr;
 typedef mongoc_collection_t * mongoc_collection_ptr;
 typedef mongoc_cursor_t * mongoc_cursor_ptr;
 typedef mongoc_database_t * mongoc_database_ptr;
+typedef mongoc_gridfs_file_t * mongoc_gridfs_file_ptr;
+typedef mongoc_gridfs_t * mongoc_gridfs_ptr;
+typedef mongoc_iovec_t * mongoc_iovec_ptr;
 typedef mongoc_server_description_t * mongoc_server_description_ptr;
 typedef mongoc_topology_t * mongoc_topology_ptr;
+typedef const mongoc_find_and_modify_opts_t * const_mongoc_find_and_modify_opts_ptr;
 typedef const mongoc_read_prefs_t * const_mongoc_read_prefs_ptr;
 typedef const mongoc_write_concern_t * const_mongoc_write_concern_ptr;
 
@@ -40,7 +44,10 @@ typedef enum {
    future_value_bool_type,
    future_value_char_ptr_type,
    future_value_char_ptr_ptr_type,
+   future_value_int_type,
    future_value_int64_t_type,
+   future_value_size_t_type,
+   future_value_ssize_t_type,
    future_value_uint32_t_type,
    future_value_const_char_ptr_type,
    future_value_bson_error_ptr_type,
@@ -52,11 +59,15 @@ typedef enum {
    future_value_mongoc_collection_ptr_type,
    future_value_mongoc_cursor_ptr_type,
    future_value_mongoc_database_ptr_type,
+   future_value_mongoc_gridfs_file_ptr_type,
+   future_value_mongoc_gridfs_ptr_type,
    future_value_mongoc_insert_flags_t_type,
+   future_value_mongoc_iovec_ptr_type,
    future_value_mongoc_query_flags_t_type,
    future_value_mongoc_server_description_ptr_type,
    future_value_mongoc_ss_optype_t_type,
    future_value_mongoc_topology_ptr_type,
+   future_value_const_mongoc_find_and_modify_opts_ptr_type,
    future_value_const_mongoc_read_prefs_ptr_type,
    future_value_const_mongoc_write_concern_ptr_type,
    future_value_void_type,
@@ -70,7 +81,10 @@ typedef struct _future_value_t
       bool bool_value;
       char_ptr char_ptr_value;
       char_ptr_ptr char_ptr_ptr_value;
+      int int_value;
       int64_t int64_t_value;
+      size_t size_t_value;
+      ssize_t ssize_t_value;
       uint32_t uint32_t_value;
       const_char_ptr const_char_ptr_value;
       bson_error_ptr bson_error_ptr_value;
@@ -82,11 +96,15 @@ typedef struct _future_value_t
       mongoc_collection_ptr mongoc_collection_ptr_value;
       mongoc_cursor_ptr mongoc_cursor_ptr_value;
       mongoc_database_ptr mongoc_database_ptr_value;
+      mongoc_gridfs_file_ptr mongoc_gridfs_file_ptr_value;
+      mongoc_gridfs_ptr mongoc_gridfs_ptr_value;
       mongoc_insert_flags_t mongoc_insert_flags_t_value;
+      mongoc_iovec_ptr mongoc_iovec_ptr_value;
       mongoc_query_flags_t mongoc_query_flags_t_value;
       mongoc_server_description_ptr mongoc_server_description_ptr_value;
       mongoc_ss_optype_t mongoc_ss_optype_t_value;
       mongoc_topology_ptr mongoc_topology_ptr_value;
+      const_mongoc_find_and_modify_opts_ptr const_mongoc_find_and_modify_opts_ptr_value;
       const_mongoc_read_prefs_ptr const_mongoc_read_prefs_ptr_value;
       const_mongoc_write_concern_ptr const_mongoc_write_concern_ptr_value;
 
@@ -133,12 +151,39 @@ future_value_get_char_ptr_ptr (
    future_value_t *future_value);
 
 void
+future_value_set_int(
+   future_value_t *future_value,
+   int value);
+
+int
+future_value_get_int (
+   future_value_t *future_value);
+
+void
 future_value_set_int64_t(
    future_value_t *future_value,
    int64_t value);
 
 int64_t
 future_value_get_int64_t (
+   future_value_t *future_value);
+
+void
+future_value_set_size_t(
+   future_value_t *future_value,
+   size_t value);
+
+size_t
+future_value_get_size_t (
+   future_value_t *future_value);
+
+void
+future_value_set_ssize_t(
+   future_value_t *future_value,
+   ssize_t value);
+
+ssize_t
+future_value_get_ssize_t (
    future_value_t *future_value);
 
 void
@@ -241,12 +286,39 @@ future_value_get_mongoc_database_ptr (
    future_value_t *future_value);
 
 void
+future_value_set_mongoc_gridfs_file_ptr(
+   future_value_t *future_value,
+   mongoc_gridfs_file_ptr value);
+
+mongoc_gridfs_file_ptr
+future_value_get_mongoc_gridfs_file_ptr (
+   future_value_t *future_value);
+
+void
+future_value_set_mongoc_gridfs_ptr(
+   future_value_t *future_value,
+   mongoc_gridfs_ptr value);
+
+mongoc_gridfs_ptr
+future_value_get_mongoc_gridfs_ptr (
+   future_value_t *future_value);
+
+void
 future_value_set_mongoc_insert_flags_t(
    future_value_t *future_value,
    mongoc_insert_flags_t value);
 
 mongoc_insert_flags_t
 future_value_get_mongoc_insert_flags_t (
+   future_value_t *future_value);
+
+void
+future_value_set_mongoc_iovec_ptr(
+   future_value_t *future_value,
+   mongoc_iovec_ptr value);
+
+mongoc_iovec_ptr
+future_value_get_mongoc_iovec_ptr (
    future_value_t *future_value);
 
 void
@@ -283,6 +355,15 @@ future_value_set_mongoc_topology_ptr(
 
 mongoc_topology_ptr
 future_value_get_mongoc_topology_ptr (
+   future_value_t *future_value);
+
+void
+future_value_set_const_mongoc_find_and_modify_opts_ptr(
+   future_value_t *future_value,
+   const_mongoc_find_and_modify_opts_ptr value);
+
+const_mongoc_find_and_modify_opts_ptr
+future_value_get_const_mongoc_find_and_modify_opts_ptr (
    future_value_t *future_value);
 
 void

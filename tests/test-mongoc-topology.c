@@ -26,9 +26,8 @@ test_topology_client_creation (void)
    mongoc_client_t *client_a;
    mongoc_client_t *client_b;
    mongoc_stream_t *topology_stream;
-   mongoc_stream_t *cluster_stream;
+   mongoc_server_stream_t *server_stream;
    bson_error_t error;
-   uint32_t id;
 
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 12345);
@@ -58,14 +57,18 @@ test_topology_client_creation (void)
    assert (topology_a->bg_thread_state == MONGOC_TOPOLOGY_BG_OFF);
 
    /* ensure that we are sharing streams with the client */
-   id = mongoc_cluster_preselect (&client_a->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
-   cluster_stream = mongoc_cluster_fetch_stream (&client_a->cluster, id, false, &error);
-   node = mongoc_topology_scanner_get_node (client_a->topology->scanner, id);
+   server_stream = mongoc_cluster_stream_for_reads (&client_a->cluster,
+                                                    NULL, &error);
+
+   ASSERT_OR_PRINT (server_stream, error);
+   node = mongoc_topology_scanner_get_node (client_a->topology->scanner,
+                                            server_stream->sd->id);
    assert (node);
    topology_stream = node->stream;
    assert (topology_stream);
-   assert (topology_stream == cluster_stream);
+   assert (topology_stream == server_stream->stream);
 
+   mongoc_server_stream_cleanup (server_stream);
    mongoc_client_destroy (client_a);
    mongoc_client_destroy (client_b);
    mongoc_uri_destroy (uri);
@@ -110,7 +113,7 @@ test_server_selection_try_once_option (void)
       "mongodb://a/?serverSelectionTryOnce=true",
       "mongodb://a/?serverSelectionTryOnce=false" };
 
-   int i;
+   unsigned long i;
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool;
@@ -188,7 +191,8 @@ _test_server_selection (bool try_once)
    /* no primary, selection fails after one try */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
-   assert (request = mock_server_receives_ismaster (server));
+   request = mock_server_receives_ismaster (server);
+   assert(request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
@@ -215,7 +219,8 @@ _test_server_selection (bool try_once)
    /* second selection, now we try ismaster again */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
-   assert (request = mock_server_receives_ismaster (server));
+   request = mock_server_receives_ismaster (server);
+   assert (request);
 
    /* the secondary is now primary, selection succeeds */
    mock_server_replies_simple (request, primary_response);
@@ -265,13 +270,12 @@ test_topology_invalidate_server (void)
    mongoc_server_description_t *fake_sd;
    mongoc_server_description_t *sd;
    mongoc_topology_description_t *td;
-   mongoc_rpc_t rpc;
-   mongoc_buffer_t buffer;
    mongoc_client_t *client;
    bson_error_t error;
    mongoc_host_list_t fake_host_list;
    uint32_t fake_id = 42;
    uint32_t id;
+   mongoc_server_stream_t *server_stream;
 
    host_list_init (&fake_host_list, AF_INET, "fakeaddress", 27033);
 
@@ -281,7 +285,10 @@ test_topology_invalidate_server (void)
    td = &client->topology->description;
 
    /* call explicitly */
-   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_reads (&client->cluster,
+                                                    NULL, &error);
+   ASSERT_OR_PRINT (server_stream, error);
+   id = server_stream->sd->id;
    sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_STANDALONE ||
@@ -307,22 +314,13 @@ test_topology_invalidate_server (void)
                                          fake_id,
                                          MONGOC_DEFAULT_CONNECTTIMEOUTMS);
 
-   /* with recv */
-   _mongoc_buffer_init(&buffer, NULL, 0, NULL, NULL);
-   _mongoc_client_recv(client, &rpc, &buffer, fake_id, &error);
+   assert (!mongoc_cluster_stream_for_server (&client->cluster, fake_id, true,
+                                              &error));
    sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, fake_id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
 
-   /* with recv_gle */
-   sd->type = MONGOC_SERVER_STANDALONE;
-   _mongoc_client_recv_gle(client, fake_id, NULL, &error);
-   sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, fake_id);
-   assert (sd);
-   assert (sd->type == MONGOC_SERVER_UNKNOWN);
-
-   _mongoc_buffer_destroy (&buffer);
-
+   mongoc_server_stream_cleanup (server_stream);
    mongoc_client_destroy (client);
 }
 
@@ -335,6 +333,7 @@ test_invalid_cluster_node (void)
    bson_error_t error;
    mongoc_client_t *client;
    mongoc_cluster_t *cluster;
+   mongoc_server_stream_t *server_stream;
    uint32_t id;
 
    /* use client pool, this test is only valid when multi-threaded */
@@ -345,25 +344,33 @@ test_invalid_cluster_node (void)
    _mongoc_usleep (100 * 1000);
 
    /* load stream into cluster */
-   id = mongoc_cluster_preselect (cluster, MONGOC_OPCODE_QUERY, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_reads (&client->cluster,
+                                                    NULL, &error);
+   ASSERT_OR_PRINT (server_stream, error);
+   id = server_stream->sd->id;
+   mongoc_server_stream_cleanup (server_stream);
+
    cluster_node = (mongoc_cluster_node_t *)mongoc_set_get (cluster->nodes, id);
    scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, id);
    assert (cluster_node);
    assert (scanner_node);
    assert (cluster_node->stream);
-   assert (cluster_node->timestamp > scanner_node->timestamp);
+   ASSERT_CMPINT64 (cluster_node->timestamp, >, scanner_node->timestamp);
 
    /* update the scanner node's timestamp */
    _mongoc_usleep (1000 * 1000);
    scanner_node->timestamp = bson_get_monotonic_time ();
-   assert (cluster_node->timestamp < scanner_node->timestamp);
+   ASSERT_CMPINT64 (cluster_node->timestamp, <, scanner_node->timestamp);
    _mongoc_usleep (1000 * 1000);
 
    /* cluster discards node and creates new one */
-   mongoc_cluster_fetch_stream (cluster, id, true, &error);
+   server_stream = mongoc_cluster_stream_for_server (&client->cluster,
+                                                     id, true, &error);
+   ASSERT_OR_PRINT (server_stream, error);
    cluster_node = (mongoc_cluster_node_t *)mongoc_set_get (cluster->nodes, id);
-   assert (cluster_node->timestamp > scanner_node->timestamp);
+   ASSERT_CMPINT64 (cluster_node->timestamp, >, scanner_node->timestamp);
 
+   mongoc_server_stream_cleanup (server_stream);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
 }
@@ -376,8 +383,8 @@ test_max_wire_version_race_condition (void)
    mongoc_database_t *database;
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
-   mongoc_stream_t *stream;
    bson_error_t error;
+   mongoc_server_stream_t *server_stream;
    uint32_t id;
 
    /* connect directly and add our user, test is only valid with auth */
@@ -394,7 +401,11 @@ test_max_wire_version_race_condition (void)
    client = mongoc_client_pool_pop (pool);
 
    /* load stream into cluster */
-   id = mongoc_cluster_preselect (&client->cluster, MONGOC_OPCODE_QUERY, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_reads (&client->cluster,
+                                                    NULL, &error);
+   ASSERT_OR_PRINT (server_stream, error);
+   id = server_stream->sd->id;
+   mongoc_server_stream_cleanup (server_stream);
 
    /* "disconnect": invalidate timestamp and reset server description */
    scanner_node = mongoc_topology_scanner_get_node (client->topology->scanner, id);
@@ -405,9 +416,12 @@ test_max_wire_version_race_condition (void)
    mongoc_server_description_reset (sd);
 
    /* new stream, ensure that we can still auth with cached wire version */
-   stream = mongoc_cluster_fetch_stream (&client->cluster, id, true, &error);
-   assert (stream);
+   server_stream = mongoc_cluster_stream_for_server (&client->cluster,
+                                                     id, true, &error);
+   ASSERT_OR_PRINT (server_stream, error);
+   assert (server_stream);
 
+   mongoc_server_stream_cleanup (server_stream);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
 }
@@ -437,7 +451,8 @@ test_cooldown_standalone (void)
    /* first ismaster fails, selection fails */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
-   assert (request = mock_server_receives_ismaster (server));
+   request = mock_server_receives_ismaster (server);
+   assert (request);
    mock_server_hangs_up (request);
    assert (!future_get_mongoc_server_description_ptr (future));
    request_destroy (request);
@@ -519,12 +534,14 @@ test_cooldown_rs (void)
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
 
-   assert (request = mock_server_receives_ismaster (servers[0]));
+   request = mock_server_receives_ismaster (servers[0]);
+   assert (request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
    /* server 0 told us about server 1. we check it immediately but it's down. */
-   assert (request = mock_server_receives_ismaster (servers[1]));
+   request = mock_server_receives_ismaster (servers[1]);
+   assert (request);
    mock_server_hangs_up (request);
    request_destroy (request);
 
@@ -538,7 +555,8 @@ test_cooldown_rs (void)
    future = future_topology_select (client->topology, MONGOC_SS_READ,
                                     primary_pref, 15, &error);
 
-   assert (request = mock_server_receives_ismaster (servers[0]));
+   request = mock_server_receives_ismaster (servers[0]);
+   assert (request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
@@ -641,7 +659,8 @@ _test_connect_timeout (bool pooled, bool try_once)
    server0_last_ismaster = start = bson_get_monotonic_time ();
 
    /* server 0 doesn't respond */
-   assert (request = mock_server_receives_ismaster (servers[0]));
+   request = mock_server_receives_ismaster (servers[0]);
+   assert (request);
    request_destroy (request);
 
    /* server 1 is a secondary */
@@ -667,7 +686,8 @@ _test_connect_timeout (bool pooled, bool try_once)
 
          /* single client puts server 0 in cooldown for 5 sec */
          if (pooled || !server0_in_cooldown) {
-            assert (request = mock_server_receives_ismaster (servers[0]));
+            request = mock_server_receives_ismaster (servers[0]);
+            assert (request);
             server0_last_ismaster = bson_get_monotonic_time ();
             request_destroy (request);  /* don't respond */
          }
@@ -764,10 +784,12 @@ static void
 test_invalid_server_id (void)
 {
    mongoc_client_t *client;
+   bson_error_t error;
 
    client = test_framework_client_new ();
 
-   assert (!mongoc_topology_server_by_id (client->topology, 99999));
+   BSON_ASSERT (!mongoc_topology_server_by_id (client->topology, 99999, &error));
+   ASSERT_STARTSWITH (error.message, "Could not find description for node");
 
    mongoc_client_destroy (client);
 }

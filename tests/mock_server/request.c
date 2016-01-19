@@ -23,7 +23,7 @@
 #include "../TestSuite.h"
 
 
-static bool is_command (const char *ns);
+static bool is_command_ns (const char *ns);
 
 static void request_from_query (request_t *request, const mongoc_rpc_t *rpc);
 
@@ -37,6 +37,10 @@ static void request_from_killcursors (request_t *request, const mongoc_rpc_t *rp
 
 static void request_from_getmore (request_t *request, const mongoc_rpc_t *rpc);
 
+static char *query_flags_str (uint32_t flags);
+static char *insert_flags_str (uint32_t flags);
+static char *update_flags_str (uint32_t flags);
+static char *delete_flags_str (uint32_t flags);
 
 request_t *
 request_new (const mongoc_buffer_t *buffer,
@@ -55,7 +59,7 @@ request_new (const mongoc_buffer_t *buffer,
 
    if (!_mongoc_rpc_scatter (&request->request_rpc, data,
                              (size_t) msg_len)) {
-      MONGOC_WARNING ("%s():%d: %s", __FUNCTION__, __LINE__,
+      MONGOC_WARNING ("%s():%d: %s", BSON_FUNC, __LINE__,
                       "Failed to scatter");
       bson_free (data);
       bson_free (request);
@@ -112,6 +116,24 @@ request_get_doc (const request_t *request,
    return _mongoc_array_index (&request->docs, const bson_t *, n);
 }
 
+bool
+request_matches_flags (const request_t *request,
+                       mongoc_query_flags_t flags)
+{
+   const mongoc_rpc_t *rpc;
+
+   assert (request);
+   rpc = &request->request_rpc;
+
+   if (rpc->query.flags != flags) {
+      MONGOC_ERROR ("request's query flags are %s, expected %s",
+                    query_flags_str (rpc->query.flags),
+                    query_flags_str (flags));
+      return false;
+   }
+
+   return true;
+}
 
 /* TODO: take file, line, function params from caller, wrap in macro */
 bool
@@ -154,8 +176,7 @@ request_matches_query (const request_t *request,
       return false;
    }
 
-   if (rpc->query.flags != flags) {
-      MONGOC_ERROR ("request's query flags don't match");
+   if (!request_matches_flags (request, flags)) {
       return false;
    }
 
@@ -187,7 +208,7 @@ request_matches_query (const request_t *request,
    }
 
    if (!match_json (doc, is_command, __FILE__, __LINE__,
-                    __FUNCTION__, query_json)) {
+                    BSON_FUNC, query_json)) {
       /* match_json has logged the err */
       return false;
    }
@@ -199,7 +220,7 @@ request_matches_query (const request_t *request,
    }
 
    if (!match_json (doc, false,
-                    __FILE__, __LINE__, __FUNCTION__, fields_json)) {
+                    __FILE__, __LINE__, BSON_FUNC, fields_json)) {
       /* match_json has logged the err */
       return false;
    }
@@ -233,13 +254,15 @@ request_matches_insert (const request_t *request,
    }
 
    if (rpc->insert.flags != flags) {
-      MONGOC_ERROR ("request's insert flags don't match");
+      MONGOC_ERROR ("request's insert flags are %s, expected %s",
+                    insert_flags_str (rpc->insert.flags),
+                    insert_flags_str (flags));
       return false;
    }
 
    ASSERT_CMPINT ((int)request->docs.len, ==, 1);
    doc = request_get_doc(request, 0);
-   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, doc_json)) {
+   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, doc_json)) {
       return false;
    }
 
@@ -271,7 +294,9 @@ request_matches_bulk_insert (const request_t *request,
    }
 
    if (rpc->insert.flags != flags) {
-      MONGOC_ERROR ("request's insert flags don't match");
+      MONGOC_ERROR ("request's insert flags are %s, expected %s",
+                    insert_flags_str (rpc->insert.flags),
+                    insert_flags_str (flags));
       return false;
    }
 
@@ -311,18 +336,20 @@ request_matches_update (const request_t *request,
    }
 
    if (rpc->update.flags != flags) {
-      MONGOC_ERROR ("request's update flags don't match");
+      MONGOC_ERROR ("request's update flags are %s, expected %s",
+                    update_flags_str (rpc->update.flags),
+                    update_flags_str (flags));
       return false;
    }
 
    ASSERT_CMPINT ((int)request->docs.len, ==, 2);
    doc = request_get_doc(request, 0);
-   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, selector_json)) {
+   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
       return false;
    }
 
    doc = request_get_doc(request, 1);
-   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, update_json)) {
+   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, update_json)) {
       return false;
    }
 
@@ -355,13 +382,15 @@ request_matches_delete (const request_t *request,
    }
 
    if (rpc->delete_.flags != flags) {
-      MONGOC_ERROR ("request's delete flags don't match");
+      MONGOC_ERROR ("request's delete flags are %s, expected %s",
+                    delete_flags_str (rpc->delete_.flags),
+                    delete_flags_str (flags));
       return false;
    }
 
    ASSERT_CMPINT ((int)request->docs.len, ==, 1);
    doc = request_get_doc(request, 0);
-   if (!match_json (doc, false, __FILE__, __LINE__, __FUNCTION__, selector_json)) {
+   if (!match_json (doc, false, __FILE__, __LINE__, BSON_FUNC, selector_json)) {
       return false;
    }
 
@@ -518,7 +547,7 @@ request_destroy (request_t *request)
 
 
 static bool
-is_command (const char *ns)
+is_command_ns (const char *ns)
 {
    size_t len = strlen (ns);
    const char *cmd = ".$cmd";
@@ -588,6 +617,7 @@ request_from_query (request_t *request,
 {
    int32_t len;
    bson_t *query;
+   bson_t *fields;
    bson_iter_t iter;
    bson_string_t *query_as_str = bson_string_new ("OP_QUERY ");
    char *str;
@@ -598,7 +628,9 @@ request_from_query (request_t *request,
    assert (query);
    _mongoc_array_append_val (&request->docs, query);
 
-   if (is_command (request->request_rpc.query.collection)) {
+   bson_string_append_printf (query_as_str, "%s ", rpc->query.collection);
+
+   if (is_command_ns (request->request_rpc.query.collection)) {
       request->is_command = true;
 
       if (bson_iter_init (&iter, query) && bson_iter_next (&iter)) {
@@ -612,6 +644,19 @@ request_from_query (request_t *request,
    str = bson_as_json (query, NULL);
    bson_string_append (query_as_str, str);
    bson_free (str);
+
+   if (rpc->query.fields) {
+      memcpy (&len, rpc->query.fields, 4);
+      len = BSON_UINT32_FROM_LE (len);
+      fields = bson_new_from_data (rpc->query.fields, (size_t) len);
+      assert (fields);
+      _mongoc_array_append_val (&request->docs, fields);
+
+      str = bson_as_json (fields, NULL);
+      bson_string_append (query_as_str, " fields=");
+      bson_string_append (query_as_str, str);
+      bson_free (str);
+   }
 
    bson_string_append (query_as_str, " flags=");
 

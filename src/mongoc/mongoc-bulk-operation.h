@@ -23,11 +23,13 @@
 
 #include "mongoc-write-concern.h"
 
+#define MONGOC_BULK_WRITE_FLAGS_INIT { true, MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT }
 
 BSON_BEGIN_DECLS
 
 
 typedef struct _mongoc_bulk_operation_t mongoc_bulk_operation_t;
+typedef struct _mongoc_bulk_write_flags_t mongoc_bulk_write_flags_t;
 
 
 void mongoc_bulk_operation_destroy     (mongoc_bulk_operation_t       *bulk);
@@ -58,6 +60,8 @@ void mongoc_bulk_operation_update_one  (mongoc_bulk_operation_t       *bulk,
                                         const bson_t                  *selector,
                                         const bson_t                  *document,
                                         bool                           upsert);
+void mongoc_bulk_operation_set_bypass_document_validation (mongoc_bulk_operation_t   *bulk,
+                                                           bool                       bypass);
 
 
 /*

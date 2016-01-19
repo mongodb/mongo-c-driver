@@ -59,6 +59,7 @@ mongoc_database_t *
 _mongoc_database_new (mongoc_client_t              *client,
                       const char                   *name,
                       const mongoc_read_prefs_t    *read_prefs,
+                      const mongoc_read_concern_t  *read_concern,
                       const mongoc_write_concern_t *write_concern)
 {
    mongoc_database_t *db;
@@ -73,6 +74,9 @@ _mongoc_database_new (mongoc_client_t              *client,
    db->write_concern = write_concern ?
       mongoc_write_concern_copy(write_concern) :
       mongoc_write_concern_new();
+   db->read_concern = read_concern ?
+      mongoc_read_concern_copy(read_concern) :
+      mongoc_read_concern_new();
    db->read_prefs = read_prefs ?
       mongoc_read_prefs_copy(read_prefs) :
       mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
@@ -111,6 +115,11 @@ mongoc_database_destroy (mongoc_database_t *database)
       database->read_prefs = NULL;
    }
 
+   if (database->read_concern) {
+      mongoc_read_concern_destroy(database->read_concern);
+      database->read_concern = NULL;
+   }
+
    if (database->write_concern) {
       mongoc_write_concern_destroy(database->write_concern);
       database->write_concern = NULL;
@@ -121,13 +130,41 @@ mongoc_database_destroy (mongoc_database_t *database)
    EXIT;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_copy --
+ *
+ *       Returns a copy of @database that needs to be freed by calling
+ *       mongoc_database_destroy.
+ *
+ * Returns:
+ *       A copy of this database.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_database_t *
+mongoc_database_copy (mongoc_database_t *database)
+{
+   ENTRY;
+
+   BSON_ASSERT (database);
+
+   RETURN(_mongoc_database_new(database->client, database->name,
+                               database->read_prefs, database->read_concern,
+                               database->write_concern));
+}
 
 mongoc_cursor_t *
 mongoc_database_command (mongoc_database_t         *database,
                          mongoc_query_flags_t       flags,
-                         uint32_t              skip,
-                         uint32_t              limit,
-                         uint32_t              batch_size,
+                         uint32_t                   skip,
+                         uint32_t                   limit,
+                         uint32_t                   batch_size,
                          const bson_t              *command,
                          const bson_t              *fields,
                          const mongoc_read_prefs_t *read_prefs)
@@ -517,6 +554,64 @@ mongoc_database_set_read_prefs (mongoc_database_t         *database,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_database_get_read_concern --
+ *
+ *       Fetches the read concern for @database.
+ *
+ * Returns:
+ *       A mongoc_read_concern_t that should not be modified or freed.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const mongoc_read_concern_t *
+mongoc_database_get_read_concern (const mongoc_database_t *database)
+{
+   BSON_ASSERT (database);
+
+   return database->read_concern;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_database_set_read_concern --
+ *
+ *       Set the default read concern for @database.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+mongoc_database_set_read_concern (mongoc_database_t            *database,
+                                  const mongoc_read_concern_t  *read_concern)
+{
+   BSON_ASSERT (database);
+
+   if (database->read_concern) {
+      mongoc_read_concern_destroy (database->read_concern);
+      database->read_concern = NULL;
+   }
+
+   if (read_concern) {
+      database->read_concern = mongoc_read_concern_copy (read_concern);
+   }
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_database_get_write_concern --
  *
  *       Fetches the write concern for @database.
@@ -613,12 +708,15 @@ mongoc_database_has_collection (mongoc_database_t *database,
    BSON_APPEND_UTF8 (&filter, "name", name);
 
    cursor = mongoc_database_find_collections (database, &filter, error);
-
-   if (!cursor ||
-       (error &&
-        ((error->domain != 0) ||
-         (error->code != 0)))) {
+   
+   if (!cursor) {
       return ret;
+   }
+   
+   if (error &&
+        ((error->domain != 0) ||
+         (error->code != 0))) {
+      GOTO (cleanup);
    }
 
    while (mongoc_cursor_next (cursor, &doc)) {
@@ -719,6 +817,7 @@ _mongoc_database_find_collections_legacy (mongoc_database_t *database,
                          MONGOC_ERROR_NAMESPACE,
                          MONGOC_ERROR_NAMESPACE_INVALID_FILTER_TYPE,
                          "On legacy servers, a filter on name can only be a string.");
+         bson_free (ctx);
          goto cleanup_filter;
       }
       BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
@@ -777,12 +876,11 @@ mongoc_database_find_collections (mongoc_database_t *database,
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   cursor = mongoc_database_command (database, MONGOC_QUERY_SLAVE_OK, 0, 0, 0,
-                                     &cmd, NULL, read_prefs);
+   cursor = _mongoc_cursor_new (database->client, database->name,
+                                MONGOC_QUERY_SLAVE_OK, 0, 0, 0, true,
+                                NULL, NULL, NULL, NULL);
 
-   _mongoc_cursor_cursorid_init(cursor);
-
-   cursor->limit = 0;
+   _mongoc_cursor_cursorid_init (cursor, &cmd);
 
    if (_mongoc_cursor_cursorid_prime (cursor)) {
        /* intentionally empty */
@@ -799,15 +897,6 @@ mongoc_database_find_collections (mongoc_database_t *database,
          } else if (error) {
             memcpy (error, &lerror, sizeof *error);
          }
-      } else {
-         /* TODO: remove this branch for general release.  Only relevant for RC */
-         mongoc_cursor_destroy (cursor);
-         cursor = mongoc_database_command (database, MONGOC_QUERY_SLAVE_OK, 0, 0, 0,
-                                           &cmd, NULL, read_prefs);
-
-         _mongoc_cursor_array_init(cursor, "collections");
-
-         cursor->limit = 0;
       }
    }
 
@@ -942,7 +1031,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The \"size\" parameter requires {\"capped\": true}");
+                            "The \"max\" parameter requires {\"capped\": true}");
             return NULL;
          }
       }
@@ -1017,6 +1106,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                            database->name,
                                            name,
                                            database->read_prefs,
+                                           database->read_concern,
                                            database->write_concern);
    }
 

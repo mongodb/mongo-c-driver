@@ -64,7 +64,7 @@ BSON_BEGIN_DECLS
          fprintf(stderr, "FAIL\n\nAssert Failure: %d %s %d\n"           \
                          "%s:%d  %s()\n",                               \
                          a, #eq, b,                                     \
-                         __FILE__, __LINE__, __FUNCTION__);             \
+                         __FILE__, __LINE__, BSON_FUNC);             \
          abort();                                                       \
       }                                                                 \
    } while (0)

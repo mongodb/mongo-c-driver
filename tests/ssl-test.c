@@ -175,7 +175,11 @@ ssl_test_client (void * ptr)
    server_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
    r = mongoc_socket_connect (conn_sock, (struct sockaddr *)&server_addr, sizeof(server_addr), -1);
-   assert (r == 0);
+   if (r != 0) {
+      fprintf (stderr, "mongoc_socket_connect returned %zd: \"%s\"",
+               r, strerror (errno));
+      abort ();
+   }
 
    sock_stream = mongoc_stream_socket_new (conn_sock);
    assert(sock_stream);

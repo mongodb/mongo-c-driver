@@ -21,13 +21,16 @@
 #include <sys/types.h>
 #include <math.h>
 
+/* strcasecmp on windows */
+#include "mongoc-util-private.h"
+
 #include "mongoc-host-list.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
 #include "mongoc-socket.h"
 #include "mongoc-uri-private.h"
+#include "mongoc-read-concern-private.h"
 #include "mongoc-write-concern-private.h"
-#include "mongoc-util-private.h"
 
 
 struct _mongoc_uri_t
@@ -40,6 +43,7 @@ struct _mongoc_uri_t
    bson_t                  options;
    bson_t                  credentials;
    mongoc_read_prefs_t    *read_prefs;
+   mongoc_read_concern_t  *read_concern;
    mongoc_write_concern_t *write_concern;
 };
 
@@ -621,6 +625,8 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
    } else if (!strcasecmp(key, "authmechanism") ||
               !strcasecmp(key, "authsource")) {
       bson_append_utf8(&uri->credentials, key, -1, value, -1);
+   } else if (!strcasecmp(key, "readconcernlevel")) {
+      mongoc_read_concern_set_level (uri->read_concern, value);
    } else if (!strcasecmp(key, "authmechanismproperties")) {
       if (!mongoc_uri_parse_auth_mechanism_properties(uri, value)) {
          bson_free(key);
@@ -924,6 +930,9 @@ mongoc_uri_new (const char *uri_string)
    /* Initialize read_prefs since tag parsing may add to it */
    uri->read_prefs = mongoc_read_prefs_new(MONGOC_READ_PRIMARY);
 
+   /* Initialize empty read_concern */
+   uri->read_concern = mongoc_read_concern_new ();
+
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
    }
@@ -941,7 +950,7 @@ mongoc_uri_new (const char *uri_string)
       mongoc_uri_destroy(uri);
       return NULL;
    }
-   
+
    _mongoc_uri_build_write_concern (uri);
 
    if (!_mongoc_write_concern_is_valid(uri->write_concern)) {
@@ -1105,13 +1114,14 @@ void
 mongoc_uri_destroy (mongoc_uri_t *uri)
 {
    if (uri) {
-      mongoc_host_list_destroy_all (uri->hosts);
+      _mongoc_host_list_destroy_all (uri->hosts);
       bson_free(uri->str);
       bson_free(uri->database);
       bson_free(uri->username);
       bson_destroy(&uri->options);
       bson_destroy(&uri->credentials);
       mongoc_read_prefs_destroy(uri->read_prefs);
+      mongoc_read_concern_destroy(uri->read_concern);
       mongoc_write_concern_destroy(uri->write_concern);
 
       if (uri->password) {
@@ -1139,6 +1149,7 @@ mongoc_uri_copy (const mongoc_uri_t *uri)
    copy->database = bson_strdup (uri->database);
 
    copy->read_prefs    = mongoc_read_prefs_copy (uri->read_prefs);
+   copy->read_concern  = mongoc_read_concern_copy (uri->read_concern);
    copy->write_concern = mongoc_write_concern_copy (uri->write_concern);
 
    for (iter = uri->hosts; iter; iter = iter->next) {
@@ -1207,7 +1218,7 @@ mongoc_uri_unescape (const char *escaped_string)
     */
    if (!bson_utf8_validate(escaped_string, len, false)) {
       MONGOC_WARNING("%s(): escaped_string contains invalid UTF-8",
-                     __FUNCTION__);
+                     BSON_FUNC);
       return NULL;
    }
 
@@ -1250,6 +1261,15 @@ mongoc_uri_get_read_prefs_t (const mongoc_uri_t *uri) /* IN */
    BSON_ASSERT (uri);
 
    return uri->read_prefs;
+}
+
+
+const mongoc_read_concern_t *
+mongoc_uri_get_read_concern (const mongoc_uri_t *uri) /* IN */
+{
+   BSON_ASSERT (uri);
+
+   return uri->read_concern;
 }
 
 

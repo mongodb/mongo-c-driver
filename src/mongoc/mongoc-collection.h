@@ -28,7 +28,9 @@
 #include "mongoc-cursor.h"
 #include "mongoc-index.h"
 #include "mongoc-read-prefs.h"
+#include "mongoc-read-concern.h"
 #include "mongoc-write-concern.h"
+#include "mongoc-find-and-modify.h"
 
 
 BSON_BEGIN_DECLS
@@ -36,13 +38,13 @@ BSON_BEGIN_DECLS
 
 typedef struct _mongoc_collection_t mongoc_collection_t;
 
-
 mongoc_cursor_t               *mongoc_collection_aggregate           (mongoc_collection_t           *collection,
                                                                       mongoc_query_flags_t           flags,
                                                                       const bson_t                  *pipeline,
                                                                       const bson_t                  *options,
                                                                       const mongoc_read_prefs_t     *read_prefs) BSON_GNUC_WARN_UNUSED_RESULT;
 void                          mongoc_collection_destroy              (mongoc_collection_t           *collection);
+mongoc_collection_t          *mongoc_collection_copy                 (mongoc_collection_t           *collection);
 mongoc_cursor_t              *mongoc_collection_command              (mongoc_collection_t           *collection,
                                                                       mongoc_query_flags_t           flags,
                                                                       uint32_t                       skip,
@@ -130,6 +132,11 @@ bool                          mongoc_collection_rename               (mongoc_col
                                                                       const char                    *new_name,
                                                                       bool                           drop_target_before_rename,
                                                                       bson_error_t                  *error);
+bool                          mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                 *collection,
+                                                                           const bson_t                        *query,
+                                                                           const mongoc_find_and_modify_opts_t *opts,
+                                                                           bson_t                              *reply,
+                                                                           bson_error_t                        *error);
 bool                          mongoc_collection_find_and_modify      (mongoc_collection_t           *collection,
                                                                       const bson_t                  *query,
                                                                       const bson_t                  *sort,
@@ -150,6 +157,9 @@ mongoc_bulk_operation_t      *mongoc_collection_create_bulk_operation(mongoc_col
 const mongoc_read_prefs_t    *mongoc_collection_get_read_prefs       (const mongoc_collection_t     *collection);
 void                          mongoc_collection_set_read_prefs       (mongoc_collection_t           *collection,
                                                                       const mongoc_read_prefs_t     *read_prefs);
+const mongoc_read_concern_t  *mongoc_collection_get_read_concern     (const mongoc_collection_t     *collection);
+void                          mongoc_collection_set_read_concern     (mongoc_collection_t           *collection,
+                                                                      const mongoc_read_concern_t   *read_concern);
 const mongoc_write_concern_t *mongoc_collection_get_write_concern    (const mongoc_collection_t     *collection);
 void                          mongoc_collection_set_write_concern    (mongoc_collection_t           *collection,
                                                                       const mongoc_write_concern_t  *write_concern);
