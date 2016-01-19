@@ -1,3 +1,0 @@
-usr/lib/*/mongoc/libmongoc-priv.so
-usr/lib/*/pkgconfig/libmongoc-priv.pc
-usr/include/libmongoc-1.0/*-private.h

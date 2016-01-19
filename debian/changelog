@@ -1,3 +1,9 @@
+libmongoc (1.2.1-2) UNRELEASED; urgency=low
+
+  * Remove libmongoc-priv and libmongoc-priv-dev packages.
+
+ -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Tue, 19 Jan 2016 20:04:30 +0000
+
 libmongoc (1.2.1-1) experimental; urgency=low
 
   * Initial release (Closes: #798711)
