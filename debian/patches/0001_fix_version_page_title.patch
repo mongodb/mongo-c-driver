@@ -1,0 +1,11 @@
+--- libmongoc-debian.orig/doc/mongoc_version.page.in
++++ libmongoc-debian/doc/mongoc_version.page.in
+@@ -6,7 +6,7 @@
+     <link type="guide" xref="index#api-reference" />
+   </info>
+ 
+-  <title>Version Checks</title>
++  <title>Version_Checks</title>
+   <subtitle>Conditional compilation based on mongoc version</subtitle>
+ 
+   <p>
