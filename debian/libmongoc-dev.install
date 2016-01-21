@@ -8,6 +8,7 @@ usr/include/libmongoc-1.0/mongoc-cursor.h
 usr/include/libmongoc-1.0/mongoc-database.h
 usr/include/libmongoc-1.0/mongoc-error.h
 usr/include/libmongoc-1.0/mongoc-flags.h
+usr/include/libmongoc-1.0/mongoc-find-and-modify.h
 usr/include/libmongoc-1.0/mongoc-gridfs-file.h
 usr/include/libmongoc-1.0/mongoc-gridfs-file-list.h
 usr/include/libmongoc-1.0/mongoc-gridfs-file-page.h
@@ -21,6 +22,7 @@ usr/include/libmongoc-1.0/mongoc-log.h
 usr/include/libmongoc-1.0/mongoc-matcher.h
 usr/include/libmongoc-1.0/mongoc-opcode.h
 usr/include/libmongoc-1.0/mongoc-rand.h
+usr/include/libmongoc-1.0/mongoc-read-concern.h
 usr/include/libmongoc-1.0/mongoc-read-prefs.h
 usr/include/libmongoc-1.0/mongoc-server-description.h
 usr/include/libmongoc-1.0/mongoc-socket.h
