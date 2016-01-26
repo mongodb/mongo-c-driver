@@ -24,11 +24,11 @@ typedef struct
    bson_t               *fields_bson;
    const char           *expected_find_command;
    const char           *expected_op_query;
-   uint32_t              n_return;
+   int32_t               n_return;
    const char           *expected_result;
    bson_t               *expected_result_bson;
    uint32_t              skip;
-   uint32_t              limit;
+   int32_t               limit;
    uint32_t              batch_size;
    mongoc_query_flags_t  flags;
    mongoc_read_prefs_t  *read_prefs;
@@ -688,6 +688,21 @@ test_limit (void)
 
 
 static void
+test_negative_limit (void)
+{
+   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
+   test_data.docs = "[{'_id': 1}, {'_id': 2}, {'_id': 3}]";
+   test_data.limit = -2;
+   test_data.query_input = "{'$query': {}, '$orderby': {'_id': 1}}";
+   test_data.expected_op_query = test_data.query_input;
+   test_data.n_return = -2;
+   test_data.expected_find_command = "{'find': 'collection', 'filter': {}, 'sort': {'_id': 1}, 'singleBatch': true, 'limit': {'$numberLong': '2'}}";
+   test_data.expected_result = "[{'_id': 1}, {'_id': 2}]";
+   _test_collection_find (&test_data);
+}
+
+
+static void
 test_unrecognized_dollar_option (void)
 {
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
@@ -1016,6 +1031,8 @@ test_collection_find_install (TestSuite *suite)
                   test_batch_size);
    TestSuite_Add (suite, "/Collection/find/limit",
                   test_limit);
+   TestSuite_Add (suite, "/Collection/find/negative_limit",
+                  test_negative_limit);
    TestSuite_Add (suite, "/Collection/find/unrecognized",
                   test_unrecognized_dollar_option);
    TestSuite_Add (suite, "/Collection/find/flags",
