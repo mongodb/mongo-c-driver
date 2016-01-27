@@ -92,7 +92,7 @@ http://api.mongodb.org/c/current/installing.html
 From a tarball
 --------------
 
-Download the latest release from `the release page <https://github.com/mongodb/mongo-c-driver/releases>`_, then::
+Download an older release (it is very important _not_ to get the latest release, because that one does not work as it does not have a ./configure script inside, and libbson is not inside it, so "make" doesn't work either) from `the release page <https://github.com/mongodb/mongo-c-driver/releases>`_, then::
 
   $ tar xzf mongo-c-driver-$ver.tar.gz
   $ cd mongo-c-driver-$ver
@@ -124,6 +124,9 @@ You can use the following to checkout and build mongo-c-driver::
   $ git clone https://github.com/mongodb/mongo-c-driver.git
   $ cd mongo-c-driver
   $ git checkout x.y.z  # To build a particular release
+  
+After the above commands you have a clone of the master branche. However, it is impossible to build it. The following commands only work in theory, in reality it fails because of missing "libbson" directory.
+  
   $ ./autogen.sh --with-libbson=bundled
   $ make
   $ sudo make install
