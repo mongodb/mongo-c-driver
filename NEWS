@@ -4,8 +4,11 @@ mongo-c-driver 1.3.2
   * mongoc_database_get_collection now copies the database's read preferences,
     read concern, and write concern, instead of copying the client's.
 
+
 mongo-c-driver 1.3.1
 ====================
+
+It is my pleasure to announce MongoDB C Driver 1.3.1. This is a bugfix release:
 
   * mongoc_client_get_gridfs now copies the client's read preferences, read
     concern, and write concern to the newly created mongoc_gridfs_t. Before
@@ -14,6 +17,21 @@ mongo-c-driver 1.3.1
     written with write concern "acknowledged". Now, if you have configured any
     of these options on the mongoc_client_t, they are respected by the
     mongoc_gridfs_t.
+  * CMakeLists.txt now includes and installs the pkg-config files.
+
+Thanks to everyone who contributed to this release.
+
+  * A. Jesse Jiryu Davis
+  * Hannes Magnusson
+  * Christopher Wang
+  * Jean-Bernard Jansen
+  * Jeremy Mikola
+  * Jeroen Ooms
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
 
 mongo-c-driver 1.3.0
 ====================
