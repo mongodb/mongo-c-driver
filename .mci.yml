@@ -559,8 +559,6 @@ tasks:
               script: |
                 set -o errexit
                 set -o verbose
-                sudo apt-get update
-                sudo apt-get install -y yelp-tools yelp-xsl
                 ./autogen.sh --enable-man-pages --enable-html-docs --enable-sasl --enable-ssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
                 make dist
                 mv mongo-c-driver*.tar.gz ../mongo-c-driver-archive.tar.gz
