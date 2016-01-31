@@ -710,6 +710,7 @@ mongoc_collection_count_with_opts (mongoc_collection_t       *collection,  /* IN
    }
 
    success = mongoc_cluster_run_command (cluster, server_stream->stream,
+                                         server_stream->sd->id,
                                          MONGOC_QUERY_SLAVE_OK, collection->db,
                                          &cmd, &reply, error);
 
@@ -2161,6 +2162,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
    }
 
    ret = mongoc_cluster_run_command (cluster, server_stream->stream,
+                                     server_stream->sd->id,
                                      MONGOC_QUERY_NONE, collection->db,
                                      &command, &reply_local, error);
 

@@ -906,8 +906,8 @@ again:
       ret = false;
    } else {
       ret = mongoc_cluster_run_command (&client->cluster, server_stream->stream,
-                                        MONGOC_QUERY_NONE, database, &cmd,
-                                        &reply, error);
+                                        server_stream->sd->id, MONGOC_QUERY_NONE,
+                                        database, &cmd, &reply, error);
 
       if (!ret) {
          result->failed = true;
