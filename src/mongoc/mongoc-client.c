@@ -1244,6 +1244,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
                            MONGOC_QUERY_NONE, &result);
 
    ret = mongoc_cluster_run_command (cluster, server_stream->stream,
+                                     server_stream->sd->id,
                                      result.flags, db_name,
                                      result.query_with_read_prefs,
                                      reply, error);
@@ -1333,6 +1334,7 @@ _mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
     * killCursors command MAY be safely ignored."
     */
    mongoc_cluster_run_command (cluster, server_stream->stream,
+                               server_stream->sd->id,
                                MONGOC_QUERY_SLAVE_OK, db, &command,
                                NULL, NULL);
 
