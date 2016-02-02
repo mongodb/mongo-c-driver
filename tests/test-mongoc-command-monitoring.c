@@ -11,18 +11,11 @@
 static int
 check_server_version (const bson_t *test)
 {
-   const char *desc;
    const char *s;
    char *padded;
    server_version_t test_version, server_version;
    int debug = test_suite_debug_output ();
    bool r;
-
-   if (bson_has_field (test, "description")) {
-      desc = bson_lookup_utf8 (test, "description");
-   } else {
-      desc = "<no description>";
-   }
 
    if (bson_has_field (test, "ignore_if_server_version_greater_than")) {
       s = bson_lookup_utf8 (test, "ignore_if_server_version_greater_than");
@@ -34,8 +27,8 @@ check_server_version (const bson_t *test)
       r = server_version <= test_version;
 
       if (!r && debug) {
-         fprintf (stderr, "Server version > %s, skip sub-test \"%s\".\n",
-                  s, desc);
+         printf ("      SKIP, Server version > %s\n", s);
+         fflush (stdout);
       }
    } else if (bson_has_field (test, "ignore_if_server_version_less_than")) {
       s = bson_lookup_utf8 (test, "ignore_if_server_version_less_than");
@@ -44,8 +37,8 @@ check_server_version (const bson_t *test)
       r = server_version >= test_version;
 
       if (!r && debug) {
-         fprintf (stderr, "Server version < %s, skip sub-test: \"%s\".\n",
-                  s, desc);
+         printf ("      SKIP, Server version < %s\n", s);
+         fflush (stdout);
       }
    } else {
       /* server version is ok, don't skip the test */
@@ -140,7 +133,6 @@ started_cb (const mongoc_apm_command_started_t *event)
    context_t *context = (context_t *)
       mongoc_apm_command_started_get_context (event);
    bson_t *events = &context->events;
-   char *cmd_json = bson_as_json (event->command, NULL);
    bson_t cmd;
    bson_iter_t iter;
    char str[16];
@@ -154,7 +146,6 @@ started_cb (const mongoc_apm_command_started_t *event)
       &context->test_framework_host));
 
    bson_uint32_to_string (context->n_events, &key, str, sizeof str);
-   context->n_events++;
    bson_copy_to (event->command, &cmd);
 
    /* special case for command monitoring JSON tests */
@@ -459,6 +450,7 @@ one_test (mongoc_collection_t *collection,
           bson_t              *test)
 {
    context_t context;
+   const char *description;
    mongoc_apm_callbacks_t *callbacks;
    bson_t operation;
    bson_t arguments;
@@ -467,8 +459,18 @@ one_test (mongoc_collection_t *collection,
    bson_t expectations;
 
    context_init (&context);
-
    callbacks = mongoc_apm_callbacks_new ();
+
+   if (test_suite_debug_output ()) {
+      description = bson_lookup_utf8 (test, "description");
+      printf ("  - %s\n", description);
+      fflush (stdout);
+   }
+
+   if (!check_server_version (test)) {
+      goto done;
+   }
+
    mongoc_apm_set_command_started_cb (callbacks, started_cb);
    mongoc_apm_set_command_succeeded_cb (callbacks, succeeded_cb);
    mongoc_client_set_apm_callbacks (collection->client, callbacks, &context);
@@ -507,6 +509,7 @@ one_test (mongoc_collection_t *collection,
    bson_lookup_doc (test, "expectations", &expectations);
    check_expectations (&context.events, &expectations);
 
+done:
    mongoc_client_set_apm_callbacks (collection->client, NULL, NULL);
    mongoc_apm_callbacks_destroy (callbacks);
    context_destroy (&context);
