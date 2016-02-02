@@ -735,7 +735,6 @@ _mongoc_client_new_from_uri (const mongoc_uri_t *uri, mongoc_topology_t *topolog
 
    client = (mongoc_client_t *)bson_malloc0(sizeof *client);
    client->uri = mongoc_uri_copy (uri);
-   client->request_id = rand ();
    client->initiator = mongoc_client_default_stream_initiator;
    client->initiator_data = client;
    client->topology = topology;
