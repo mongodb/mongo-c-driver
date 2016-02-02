@@ -61,6 +61,14 @@ mongoc_apm_command_started_get_request_id (
 }
 
 
+int64_t
+mongoc_apm_command_started_get_operation_id (
+   const mongoc_apm_command_started_t *event)
+{
+   return event->operation_id;
+}
+
+
 const mongoc_host_list_t *
 mongoc_apm_command_started_get_host (const mongoc_apm_command_started_t *event)
 {
@@ -114,6 +122,14 @@ mongoc_apm_command_succeeded_get_request_id (
    const mongoc_apm_command_succeeded_t *event)
 {
    return event->request_id;
+}
+
+
+int64_t
+mongoc_apm_command_succeeded_get_operation_id (
+   const mongoc_apm_command_succeeded_t *event)
+{
+   return event->operation_id;
 }
 
 
@@ -173,6 +189,14 @@ mongoc_apm_command_failed_get_request_id (
    const mongoc_apm_command_failed_t *event)
 {
    return event->request_id;
+}
+
+
+int64_t
+mongoc_apm_command_failed_get_operation_id (
+   const mongoc_apm_command_failed_t *event)
+{
+   return event->operation_id;
 }
 
 

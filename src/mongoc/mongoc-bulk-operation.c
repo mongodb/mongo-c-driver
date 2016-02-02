@@ -77,6 +77,7 @@ _mongoc_bulk_operation_new (mongoc_client_t              *client,        /* IN *
    bulk->write_concern = mongoc_write_concern_copy (write_concern);
    bulk->executed = false;
    bulk->flags = flags;
+   bulk->operation_id = ++client->cluster.operation_id;
 
    return bulk;
 }
@@ -132,7 +133,8 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk,     /* IN */
       }
    }
 
-   _mongoc_write_command_init_delete (&command, selector, true, bulk->flags);
+   _mongoc_write_command_init_delete (&command, selector, true, bulk->flags,
+                                      bulk->operation_id);
 
    _mongoc_array_append_val (&bulk->commands, command);
 
@@ -163,7 +165,8 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk,     /* IN */
       }
    }
 
-   _mongoc_write_command_init_delete (&command, selector, false, bulk->flags);
+   _mongoc_write_command_init_delete (&command, selector, false, bulk->flags,
+                                      bulk->operation_id);
 
    _mongoc_array_append_val (&bulk->commands, command);
 
@@ -219,7 +222,7 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_insert (
-      &command, document, bulk->flags,
+      &command, document, bulk->flags, bulk->operation_id,
       !_mongoc_write_concern_needs_gle (bulk->write_concern));
 
    _mongoc_array_append_val (&bulk->commands, command);
@@ -263,7 +266,7 @@ mongoc_bulk_operation_replace_one (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
-                                      false, bulk->flags);
+                                      false, bulk->flags, bulk->operation_id);
    _mongoc_array_append_val (&bulk->commands, command);
 
    EXIT;
@@ -308,7 +311,7 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
-                                      multi, bulk->flags);
+                                      multi, bulk->flags, bulk->operation_id);
    _mongoc_array_append_val (&bulk->commands, command);
    EXIT;
 }
@@ -351,7 +354,7 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_update (&command, selector, document, upsert,
-                                      false, bulk->flags);
+                                      false, bulk->flags, bulk->operation_id);
    _mongoc_array_append_val (&bulk->commands, command);
    EXIT;
 }

@@ -58,6 +58,7 @@ typedef struct
    bson_t  *documents;
    uint32_t n_documents;
    mongoc_bulk_write_flags_t flags;
+   int64_t operation_id;
    union {
       struct {
          bool multi;
@@ -95,17 +96,20 @@ void _mongoc_write_command_destroy     (mongoc_write_command_t        *command);
 void _mongoc_write_command_init_insert (mongoc_write_command_t        *command,
                                         const bson_t                  *document,
                                         mongoc_bulk_write_flags_t      flags,
+                                        int64_t                        operation_id,
                                         bool                           allow_bulk_op_insert);
 void _mongoc_write_command_init_delete (mongoc_write_command_t        *command,
                                         const bson_t                  *selectors,
                                         bool                           multi,
-                                        mongoc_bulk_write_flags_t      flags);
+                                        mongoc_bulk_write_flags_t      flags,
+                                        int64_t                        operation_id);
 void _mongoc_write_command_init_update (mongoc_write_command_t        *command,
                                         const bson_t                  *selector,
                                         const bson_t                  *update,
                                         bool                           upsert,
                                         bool                           multi,
-                                        mongoc_bulk_write_flags_t      flags);
+                                        mongoc_bulk_write_flags_t      flags,
+                                        int64_t                        operation_id);
 void _mongoc_write_command_insert_append (mongoc_write_command_t      *command,
                                           const bson_t                *document);
 void _mongoc_write_command_update_append (mongoc_write_command_t      *command,

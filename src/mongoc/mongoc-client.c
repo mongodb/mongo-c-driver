@@ -1302,7 +1302,7 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
    mongoc_rpc_t rpc = { { 0 } };
 
    rpc.kill_cursors.msg_len = 0;
-   rpc.kill_cursors.request_id = 0;
+   rpc.kill_cursors.request_id = ++cluster->request_id;
    rpc.kill_cursors.response_to = 0;
    rpc.kill_cursors.opcode = MONGOC_OPCODE_KILL_CURSORS;
    rpc.kill_cursors.zero = 0;

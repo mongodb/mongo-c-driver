@@ -171,6 +171,7 @@ void
 _mongoc_write_command_init_insert (mongoc_write_command_t    *command,              /* IN */
                                    const bson_t              *document,             /* IN */
                                    mongoc_bulk_write_flags_t  flags,                /* IN */
+                                   int64_t                    operation_id,         /* IN */
                                    bool                       allow_bulk_op_insert) /* IN */
 {
    ENTRY;
@@ -183,6 +184,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t    *command,          
    command->flags = flags;
    command->u.insert.allow_bulk_op_insert = (uint8_t)allow_bulk_op_insert;
    command->hint = 0;
+   command->operation_id = operation_id;
 
    /* must handle NULL document from mongoc_collection_insert_bulk */
    if (document) {
@@ -194,10 +196,11 @@ _mongoc_write_command_init_insert (mongoc_write_command_t    *command,          
 
 
 void
-_mongoc_write_command_init_delete (mongoc_write_command_t    *command,  /* IN */
-                                   const bson_t              *selector, /* IN */
-                                   bool                       multi,    /* IN */
-                                   mongoc_bulk_write_flags_t  flags)    /* IN */
+_mongoc_write_command_init_delete (mongoc_write_command_t   *command,       /* IN */
+                                   const bson_t             *selector,      /* IN */
+                                   bool                      multi,         /* IN */
+                                   mongoc_bulk_write_flags_t flags,         /* IN */
+                                   int64_t                   operation_id)  /* IN */
 {
    ENTRY;
 
@@ -210,6 +213,7 @@ _mongoc_write_command_init_delete (mongoc_write_command_t    *command,  /* IN */
    command->u.delete_.multi = (uint8_t)multi;
    command->flags = flags;
    command->hint = 0;
+   command->operation_id = operation_id;
 
    _mongoc_write_command_delete_append (command, selector);
 
@@ -218,12 +222,13 @@ _mongoc_write_command_init_delete (mongoc_write_command_t    *command,  /* IN */
 
 
 void
-_mongoc_write_command_init_update (mongoc_write_command_t    *command,  /* IN */
-                                   const bson_t              *selector, /* IN */
-                                   const bson_t              *update,   /* IN */
-                                   bool                       upsert,   /* IN */
-                                   bool                       multi,    /* IN */
-                                   mongoc_bulk_write_flags_t  flags)    /* IN */
+_mongoc_write_command_init_update (mongoc_write_command_t   *command,       /* IN */
+                                   const bson_t             *selector,      /* IN */
+                                   const bson_t             *update,        /* IN */
+                                   bool                      upsert,        /* IN */
+                                   bool                      multi,         /* IN */
+                                   mongoc_bulk_write_flags_t flags,         /* IN */
+                                   int64_t                   operation_id)  /* IN */
 {
    ENTRY;
 
@@ -236,10 +241,70 @@ _mongoc_write_command_init_update (mongoc_write_command_t    *command,  /* IN */
    command->n_documents = 0;
    command->flags = flags;
    command->hint = 0;
+   command->operation_id = operation_id;
 
    _mongoc_write_command_update_append (command, selector, update, upsert, multi);
 
    EXIT;
+}
+
+
+static void
+_mongoc_monitor_legacy_write (mongoc_client_t              *client,
+                              mongoc_write_command_t       *command,
+                              int64_t                       request_id,
+                              const char                   *db,
+                              const char                   *collection,
+                              const mongoc_write_concern_t *write_concern,
+                              mongoc_server_stream_t       *stream)
+{
+   bson_iter_t iter;
+   bson_t cmd;
+
+   ENTRY;
+
+   if (!client->apm_callbacks.started) {
+      EXIT;
+   }
+
+   if (!command->n_documents ||
+       !bson_iter_init (&iter, command->documents) ||
+       !bson_iter_next (&iter)) {
+      EXIT;
+   }
+
+   bson_init (&cmd);
+
+   BSON_APPEND_UTF8 (&cmd, gCommandNames[command->type], collection);
+   BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
+                         WRITE_CONCERN_DOC (write_concern));
+   BSON_APPEND_BOOL (&cmd, "ordered", command->flags.ordered);
+
+   if (command->flags.bypass_document_validation !=
+       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+      BSON_APPEND_BOOL (&cmd, "bypassDocumentValidation",
+                        !!command->flags.bypass_document_validation);
+   }
+
+   /* copy the whole documents buffer as e.g. "updates": [...] */
+   BSON_APPEND_ARRAY (&cmd,
+                      gCommandFields[command->type],
+                      command->documents);
+
+   {
+      mongoc_apm_command_started_t event = {
+         &cmd,
+         db,
+         gCommandNames[command->type],
+         request_id,
+         command->operation_id,
+         &stream->sd->host,
+         stream->sd->id,
+         client->apm_context
+      };
+
+      client->apm_callbacks.started (&event);
+   }
 }
 
 
@@ -305,7 +370,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       BSON_ASSERT (len >= 5);
 
       rpc.delete_.msg_len = 0;
-      rpc.delete_.request_id = 0;
+      rpc.delete_.request_id = ++client->cluster.request_id;
       rpc.delete_.response_to = 0;
       rpc.delete_.opcode = MONGOC_OPCODE_DELETE;
       rpc.delete_.zero = 0;
@@ -313,6 +378,10 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
       rpc.delete_.flags = command->u.delete_.multi ? MONGOC_DELETE_NONE
                          : MONGOC_DELETE_SINGLE_REMOVE;
       rpc.delete_.selector = data;
+
+      _mongoc_monitor_legacy_write (client, command, rpc.delete_.request_id,
+                                    database, collection, write_concern,
+                                    server_stream);
 
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, server_stream,
@@ -501,7 +570,7 @@ again:
 
    if (n_docs_in_batch) {
       rpc.insert.msg_len = 0;
-      rpc.insert.request_id = 0;
+      rpc.insert.request_id = ++client->cluster.request_id;
       rpc.insert.response_to = 0;
       rpc.insert.opcode = MONGOC_OPCODE_INSERT;
       rpc.insert.flags = (
@@ -510,6 +579,10 @@ again:
       rpc.insert.collection = ns;
       rpc.insert.documents = iov;
       rpc.insert.n_documents = n_docs_in_batch;
+
+      _mongoc_monitor_legacy_write (client, command, rpc.insert.request_id,
+                                    database, collection, write_concern,
+                                    server_stream);
 
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, server_stream,
@@ -677,7 +750,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
    bson_iter_init (&iter, command->documents);
    while (bson_iter_next (&iter)) {
       rpc.update.msg_len = 0;
-      rpc.update.request_id = 0;
+      rpc.update.request_id = ++client->cluster.request_id;
       rpc.update.response_to = 0;
       rpc.update.opcode = MONGOC_OPCODE_UPDATE;
       rpc.update.zero = 0;
@@ -715,6 +788,10 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
             is_upsert = true;
          }
       }
+
+      _mongoc_monitor_legacy_write (client, command, rpc.update.request_id,
+                                    database, collection, write_concern,
+                                    server_stream);
 
       if (!mongoc_cluster_sendv_to_server (&client->cluster,
                                            &rpc, 1, server_stream,

@@ -57,6 +57,7 @@ typedef struct _mongoc_cluster_node_t
 
 typedef struct _mongoc_cluster_t
 {
+   int64_t          operation_id;
    uint32_t         request_id;
    uint32_t         sockettimeoutms;
    uint32_t         socketcheckintervalms;

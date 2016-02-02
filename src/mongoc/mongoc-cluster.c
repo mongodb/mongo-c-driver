@@ -147,7 +147,6 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t         *cluster,
                                 bson_error_t             *error)
 {
    mongoc_apm_callbacks_t *callbacks;
-   mongoc_apm_command_started_t event;
    bson_t cmd;
    mongoc_array_t ar;
    int32_t msg_len;
@@ -180,14 +179,18 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t         *cluster,
    callbacks = &cluster->client->apm_callbacks;
 
    if (monitored && callbacks->started) {
+      mongoc_apm_command_started_t event = {
+         &cmd,
+         db,
+         command_name,
+         rpc->query.request_id,
+         cluster->operation_id,
+         host,
+         hint,
+         cluster->client->apm_context
+      };
+
       _bson_init_static_from_data (rpc->query.query, &cmd);
-      event.command = &cmd;
-      event.command_name = command_name;
-      event.database_name = db;
-      event.request_id = rpc->query.request_id;
-      event.context = cluster->client->apm_context;
-      event.host = host;
-      event.hint = hint;
       cluster->client->apm_callbacks.started (&event);
    }
 
@@ -1714,6 +1717,8 @@ mongoc_cluster_init (mongoc_cluster_t   *cluster,
 
    _mongoc_array_init (&cluster->iov, sizeof (mongoc_iovec_t));
 
+   cluster->operation_id = rand ();
+
    EXIT;
 }
 
@@ -2290,7 +2295,6 @@ mongoc_cluster_sendv_to_server (mongoc_cluster_t              *cluster,
 
    for (i = 0; i < rpcs_len; i++) {
       _mongoc_cluster_inc_egress_rpc (&rpcs[i]);
-      rpcs[i].header.request_id = ++cluster->request_id;
       need_gle = _mongoc_rpc_needs_gle(&rpcs[i], write_concern);
       _mongoc_rpc_gather (&rpcs[i], &cluster->iov);
 

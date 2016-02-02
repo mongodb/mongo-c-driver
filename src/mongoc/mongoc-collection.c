@@ -1272,7 +1272,9 @@ mongoc_collection_insert_bulk (mongoc_collection_t           *collection,
 
    write_flags.ordered = !(flags & MONGOC_INSERT_CONTINUE_ON_ERROR);
 
-   _mongoc_write_command_init_insert (&command, NULL, write_flags, true);
+   _mongoc_write_command_init_insert (&command, NULL, write_flags,
+                                      ++collection->client->cluster.operation_id,
+                                      true);
 
    for (i = 0; i < n_documents; i++) {
       _mongoc_write_command_insert_append (&command, documents[i]);
@@ -1357,7 +1359,9 @@ mongoc_collection_insert (mongoc_collection_t          *collection,
    }
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_insert (&command, document, write_flags, false);
+   _mongoc_write_command_init_insert (&command, document, write_flags,
+                                      ++collection->client->cluster.operation_id,
+                                      false);
 
    _mongoc_collection_write_command_execute (&command, collection,
                                              write_concern, &result);
@@ -1448,7 +1452,8 @@ mongoc_collection_update (mongoc_collection_t          *collection,
                                       update,
                                       !!(flags & MONGOC_UPDATE_UPSERT),
                                       !!(flags & MONGOC_UPDATE_MULTI_UPDATE),
-                                      write_flags);
+                                      write_flags,
+                                      ++collection->client->cluster.operation_id);
 
    _mongoc_collection_write_command_execute (&command, collection,
                                              write_concern, &result);
@@ -1583,7 +1588,8 @@ mongoc_collection_remove (mongoc_collection_t          *collection,
    multi = !(flags & MONGOC_REMOVE_SINGLE_REMOVE);
 
    _mongoc_write_result_init (&result);
-   _mongoc_write_command_init_delete (&command, selector, multi, write_flags);
+   _mongoc_write_command_init_delete (&command, selector, multi, write_flags,
+                                      ++collection->client->cluster.operation_id);
 
    _mongoc_collection_write_command_execute (&command, collection,
                                              write_concern, &result);

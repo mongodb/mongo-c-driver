@@ -39,6 +39,7 @@ struct _mongoc_apm_command_started_t
    const char               *database_name;
    const char               *command_name;
    int64_t                   request_id;
+   int64_t                   operation_id;
    const mongoc_host_list_t *host;
    uint32_t                  hint;
    void                     *context;
@@ -50,6 +51,7 @@ struct _mongoc_apm_command_succeeded_t
    const bson_t             *reply;
    const char               *command_name;
    int64_t                   request_id;
+   int64_t                   operation_id;
    const mongoc_host_list_t *host;
    uint32_t                  hint;
    void                     *context;
@@ -61,6 +63,7 @@ struct _mongoc_apm_command_failed_t
    const char               *command_name;
    bson_error_t             *error;
    int64_t                   request_id;
+   int64_t                   operation_id;
    const mongoc_host_list_t *host;
    uint32_t                  hint;
    void                     *context;

@@ -8,13 +8,42 @@
 #include "test-libmongoc.h"
 
 
+typedef struct
+{
+   uint32_t           n_events;
+   bson_t             events;
+   mongoc_host_list_t test_framework_host;
+   int64_t            operation_id;
+   bool               verbose;
+} context_t;
+
+
+static void
+context_init (context_t *context)
+{
+   context->n_events = 0;
+   bson_init (&context->events);
+   test_framework_get_host_list (&context->test_framework_host);
+   context->operation_id = 0;
+   context->verbose =
+      test_framework_getenv_bool ("MONGOC_TEST_MONITORING_VERBOSE");
+}
+
+
+static void
+context_destroy (context_t *context)
+{
+   bson_destroy (&context->events);
+}
+
+
 static int
-check_server_version (const bson_t *test)
+check_server_version (const bson_t *test,
+                      context_t *context)
 {
    const char *s;
    char *padded;
    server_version_t test_version, server_version;
-   int debug = test_suite_debug_output ();
    bool r;
 
    if (bson_has_field (test, "ignore_if_server_version_greater_than")) {
@@ -26,7 +55,7 @@ check_server_version (const bson_t *test)
       server_version = test_framework_get_server_version ();
       r = server_version <= test_version;
 
-      if (!r && debug) {
+      if (!r && context->verbose) {
          printf ("      SKIP, Server version > %s\n", s);
          fflush (stdout);
       }
@@ -36,7 +65,7 @@ check_server_version (const bson_t *test)
       server_version = test_framework_get_server_version ();
       r = server_version >= test_version;
 
-      if (!r && debug) {
+      if (!r && context->verbose) {
          printf ("      SKIP, Server version < %s\n", s);
          fflush (stdout);
       }
@@ -103,35 +132,13 @@ check_expectations (const bson_t *events,
 }
 
 
-typedef struct
-{
-   uint32_t           n_events;
-   bson_t             events;
-   mongoc_host_list_t test_framework_host;
-} context_t;
-
-
-static void
-context_init (context_t *context)
-{
-   context->n_events = 0;
-   bson_init (&context->events);
-   test_framework_get_host_list (&context->test_framework_host);
-}
-
-
-static void
-context_destroy (context_t *context)
-{
-   bson_destroy (&context->events);
-}
-
-
 static void
 started_cb (const mongoc_apm_command_started_t *event)
 {
    context_t *context = (context_t *)
       mongoc_apm_command_started_get_context (event);
+   int64_t operation_id;
+   char *cmd_json;
    bson_t *events = &context->events;
    bson_t cmd;
    bson_iter_t iter;
@@ -139,11 +146,27 @@ started_cb (const mongoc_apm_command_started_t *event)
    const char *key;
    bson_t *new_event;
 
+   if (context->verbose) {
+      cmd_json = bson_as_json (event->command, NULL);
+      printf ("%s\n", cmd_json);
+      fflush (stdout);
+      bson_free (cmd_json);
+   }
+
    BSON_ASSERT (mongoc_apm_command_started_get_request_id (event) > 0);
    BSON_ASSERT (mongoc_apm_command_started_get_hint (event) > 0);
    BSON_ASSERT (_mongoc_host_list_equal (
       mongoc_apm_command_started_get_host (event),
       &context->test_framework_host));
+
+   /* subsequent events share the first event's operation id */
+   operation_id = mongoc_apm_command_started_get_operation_id (event);
+   ASSERT_CMPINT64 (operation_id, !=, (int64_t) 0);
+   if (!context->operation_id) {
+      context->operation_id = operation_id;
+   } else {
+      ASSERT_CMPINT64 (context->operation_id, ==, operation_id);
+   }
 
    bson_uint32_to_string (context->n_events, &key, str, sizeof str);
    bson_copy_to (event->command, &cmd);
@@ -467,7 +490,7 @@ one_test (mongoc_collection_t *collection,
       fflush (stdout);
    }
 
-   if (!check_server_version (test)) {
+   if (!check_server_version (test, &context)) {
       goto done;
    }
 
