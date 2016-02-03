@@ -69,6 +69,17 @@ struct _mongoc_apm_command_failed_t
    void                     *context;
 };
 
+void
+mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
+                                 const bson_t                 *command,
+                                 const char                   *database_name,
+                                 const char                   *command_name,
+                                 int64_t                       request_id,
+                                 int64_t                       operation_id,
+                                 const mongoc_host_list_t     *host,
+                                 uint32_t                      hint,
+                                 void                         *context);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_APM_PRIVATE_H */

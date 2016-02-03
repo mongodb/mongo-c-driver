@@ -260,6 +260,7 @@ _mongoc_monitor_legacy_write (mongoc_client_t              *client,
 {
    bson_iter_t iter;
    bson_t cmd;
+   mongoc_apm_command_started_t event;
 
    ENTRY;
 
@@ -291,20 +292,17 @@ _mongoc_monitor_legacy_write (mongoc_client_t              *client,
                       gCommandFields[command->type],
                       command->documents);
 
-   {
-      mongoc_apm_command_started_t event = {
-         &cmd,
-         db,
-         gCommandNames[command->type],
-         request_id,
-         command->operation_id,
-         &stream->sd->host,
-         stream->sd->id,
-         client->apm_context
-      };
+   mongoc_apm_command_started_init (&event,
+                                    &cmd,
+                                    db,
+                                    gCommandNames[command->type],
+                                    request_id,
+                                    command->operation_id,
+                                    &stream->sd->host,
+                                    stream->sd->id,
+                                    client->apm_context);
 
-      client->apm_callbacks.started (&event);
-   }
+   client->apm_callbacks.started (&event);
 }
 
 

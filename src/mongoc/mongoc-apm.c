@@ -24,6 +24,73 @@
  */
 
 /*
+ * Private initializer functions.
+ */
+
+void
+mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
+                                 const bson_t                 *command,
+                                 const char                   *database_name,
+                                 const char                   *command_name,
+                                 int64_t                       request_id,
+                                 int64_t                       operation_id,
+                                 const mongoc_host_list_t     *host,
+                                 uint32_t                      hint,
+                                 void                         *context)
+{
+   event->command = command;
+   event->database_name = database_name;
+   event->command_name = command_name;
+   event->request_id = request_id;
+   event->operation_id = operation_id;
+   event->host = host;
+   event->hint = hint;
+   event->context = context;
+}
+
+void
+mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
+                                   int64_t                         duration,
+                                   const bson_t                   *reply,
+                                   const char                     *command_name,
+                                   int64_t                         request_id,
+                                   int64_t                         operation_id,
+                                   const mongoc_host_list_t       *host,
+                                   uint32_t                        hint,
+                                   void                           *context)
+{
+   event->duration = duration;
+   event->reply = reply;
+   event->command_name = command_name;
+   event->request_id = request_id;
+   event->operation_id = operation_id;
+   event->host = host;
+   event->hint = hint;
+   event->context = context;
+}
+
+void
+mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
+                                int64_t                      duration,
+                                const char                  *command_name,
+                                bson_error_t                *error,
+                                int64_t                      request_id,
+                                int64_t                      operation_id,
+                                const mongoc_host_list_t    *host,
+                                uint32_t                     hint,
+                                void                        *context)
+{
+   event->duration = duration;
+   event->command_name = command_name;
+   event->error = error;
+   event->request_id = request_id;
+   event->operation_id = operation_id;
+   event->host = host;
+   event->hint = hint;
+   event->context = context;
+}
+
+/*
  * event field accessors
  */
 

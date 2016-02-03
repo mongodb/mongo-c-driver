@@ -147,6 +147,7 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t         *cluster,
                                 bson_error_t             *error)
 {
    mongoc_apm_callbacks_t *callbacks;
+   mongoc_apm_command_started_t event;
    bson_t cmd;
    mongoc_array_t ar;
    int32_t msg_len;
@@ -179,18 +180,17 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t         *cluster,
    callbacks = &cluster->client->apm_callbacks;
 
    if (monitored && callbacks->started) {
-      mongoc_apm_command_started_t event = {
-         &cmd,
-         db,
-         command_name,
-         rpc->query.request_id,
-         cluster->operation_id,
-         host,
-         hint,
-         cluster->client->apm_context
-      };
-
       _bson_init_static_from_data (rpc->query.query, &cmd);
+      mongoc_apm_command_started_init (&event,
+                                       &cmd,
+                                       db,
+                                       command_name,
+                                       rpc->query.request_id,
+                                       cluster->operation_id,
+                                       host,
+                                       hint,
+                                       cluster->client->apm_context);
+
       cluster->client->apm_callbacks.started (&event);
    }
 
