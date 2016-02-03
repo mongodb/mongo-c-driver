@@ -95,6 +95,7 @@ _mongoc_gridfs_new (mongoc_client_t *client,
    const mongoc_write_concern_t *write_concern;
    char buf[128];
    bool r;
+   uint32_t prefix_len;
 
    ENTRY;
 
@@ -108,13 +109,8 @@ _mongoc_gridfs_new (mongoc_client_t *client,
    /* make sure prefix is short enough to bucket the chunks and files
     * collections
     */
-#ifndef BSON_DISABLE_ASSERT
-   {
-      uint32_t prefix_len;
-      prefix_len = (uint32_t)strlen (prefix);
-      BSON_ASSERT (prefix_len + sizeof (".chunks") < sizeof (buf));
-   }
-#endif
+   prefix_len = (uint32_t)strlen (prefix);
+   BSON_ASSERT (prefix_len + sizeof (".chunks") < sizeof (buf));
 
    gridfs = (mongoc_gridfs_t *) bson_malloc0 (sizeof *gridfs);
 
