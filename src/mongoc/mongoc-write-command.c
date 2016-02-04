@@ -249,6 +249,40 @@ _mongoc_write_command_init_update (mongoc_write_command_t   *command,       /* I
 }
 
 
+/* takes uninitialized bson_t *doc and begins formatting a write command */
+static void
+_mongoc_write_command_init (bson_t                       *doc,
+                            mongoc_write_command_t       *command,
+                            const char                   *collection,
+                            const mongoc_write_concern_t *write_concern)
+{
+   bson_iter_t iter;
+
+   ENTRY;
+
+   bson_init (doc);
+
+   if (!command->n_documents ||
+       !bson_iter_init (&iter, command->documents) ||
+       !bson_iter_next (&iter)) {
+      EXIT;
+   }
+
+   BSON_APPEND_UTF8 (doc, gCommandNames[command->type], collection);
+   BSON_APPEND_DOCUMENT (doc, "writeConcern",
+                         WRITE_CONCERN_DOC (write_concern));
+   BSON_APPEND_BOOL (doc, "ordered", command->flags.ordered);
+
+   if (command->flags.bypass_document_validation !=
+       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+      BSON_APPEND_BOOL (doc, "bypassDocumentValidation",
+                        !!command->flags.bypass_document_validation);
+   }
+
+   EXIT;
+}
+
+
 static void
 _mongoc_monitor_legacy_write (mongoc_client_t              *client,
                               mongoc_write_command_t       *command,
@@ -258,8 +292,7 @@ _mongoc_monitor_legacy_write (mongoc_client_t              *client,
                               const mongoc_write_concern_t *write_concern,
                               mongoc_server_stream_t       *stream)
 {
-   bson_iter_t iter;
-   bson_t cmd;
+   bson_t doc;
    mongoc_apm_command_started_t event;
 
    ENTRY;
@@ -268,32 +301,15 @@ _mongoc_monitor_legacy_write (mongoc_client_t              *client,
       EXIT;
    }
 
-   if (!command->n_documents ||
-       !bson_iter_init (&iter, command->documents) ||
-       !bson_iter_next (&iter)) {
-      EXIT;
-   }
-
-   bson_init (&cmd);
-
-   BSON_APPEND_UTF8 (&cmd, gCommandNames[command->type], collection);
-   BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
-                         WRITE_CONCERN_DOC (write_concern));
-   BSON_APPEND_BOOL (&cmd, "ordered", command->flags.ordered);
-
-   if (command->flags.bypass_document_validation !=
-       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
-      BSON_APPEND_BOOL (&cmd, "bypassDocumentValidation",
-                        !!command->flags.bypass_document_validation);
-   }
+   _mongoc_write_command_init (&doc, command, collection, write_concern);
 
    /* copy the whole documents buffer as e.g. "updates": [...] */
-   BSON_APPEND_ARRAY (&cmd,
+   BSON_APPEND_ARRAY (&doc,
                       gCommandFields[command->type],
                       command->documents);
 
    mongoc_apm_command_started_init (&event,
-                                    &cmd,
+                                    &doc,
                                     db,
                                     gCommandNames[command->type],
                                     request_id,
@@ -303,6 +319,8 @@ _mongoc_monitor_legacy_write (mongoc_client_t              *client,
                                     client->apm_context);
 
    client->apm_callbacks.started (&event);
+
+   bson_destroy (&doc);
 }
 
 
@@ -919,18 +937,10 @@ _mongoc_write_command(mongoc_write_command_t       *command,
    }
 
 again:
-   bson_init (&cmd);
    has_more = false;
    i = 0;
 
-   BSON_APPEND_UTF8 (&cmd, gCommandNames[command->type], collection);
-   BSON_APPEND_DOCUMENT (&cmd, "writeConcern",
-                         WRITE_CONCERN_DOC (write_concern));
-   BSON_APPEND_BOOL (&cmd, "ordered", command->flags.ordered);
-   if (command->flags.bypass_document_validation != MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
-      BSON_APPEND_BOOL (&cmd, "bypassDocumentValidation",
-                        !!command->flags.bypass_document_validation);
-   }
+   _mongoc_write_command_init (&cmd, command, collection, write_concern);
 
    /* 1 byte to specify array type, 1 byte for field name's null terminator */
    overhead = cmd.len + 2 + gCommandFieldLens[command->type];
