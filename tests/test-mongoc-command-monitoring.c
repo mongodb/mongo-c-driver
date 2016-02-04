@@ -12,7 +12,7 @@ typedef struct
 {
    uint32_t           n_events;
    bson_t             events;
-   mongoc_host_list_t test_framework_host;
+   mongoc_uri_t      *test_framework_uri;
    int64_t            operation_id;
    bool               verbose;
 } context_t;
@@ -23,7 +23,7 @@ context_init (context_t *context)
 {
    context->n_events = 0;
    bson_init (&context->events);
-   test_framework_get_host_list (&context->test_framework_host);
+   context->test_framework_uri = test_framework_get_uri ();
    context->operation_id = 0;
    context->verbose =
       test_framework_getenv_bool ("MONGOC_TEST_MONITORING_VERBOSE");
@@ -34,6 +34,7 @@ static void
 context_destroy (context_t *context)
 {
    bson_destroy (&context->events);
+   mongoc_uri_destroy (context->test_framework_uri);
 }
 
 
@@ -133,6 +134,28 @@ check_expectations (const bson_t *events,
 
 
 static void
+assert_host_in_uri (const mongoc_host_list_t *host,
+                    const mongoc_uri_t       *uri)
+{
+   const mongoc_host_list_t *hosts;
+
+   hosts = mongoc_uri_get_hosts (uri);
+   while (hosts) {
+      if (_mongoc_host_list_equal (hosts, host)) {
+         return;
+      }
+
+      hosts = hosts->next;
+   }
+
+   fprintf (stderr, "Host \"%s\" not in \"%s\"",
+            host->host_and_port, mongoc_uri_get_string (uri));
+   fflush (stderr);
+   abort ();
+}
+
+
+static void
 started_cb (const mongoc_apm_command_started_t *event)
 {
    context_t *context = (context_t *)
@@ -155,9 +178,7 @@ started_cb (const mongoc_apm_command_started_t *event)
 
    BSON_ASSERT (mongoc_apm_command_started_get_request_id (event) > 0);
    BSON_ASSERT (mongoc_apm_command_started_get_hint (event) > 0);
-   BSON_ASSERT (_mongoc_host_list_equal (
-      mongoc_apm_command_started_get_host (event),
-      &context->test_framework_host));
+   assert_host_in_uri (event->host, context->test_framework_uri);
 
    /* subsequent events share the first event's operation id */
    operation_id = mongoc_apm_command_started_get_operation_id (event);
@@ -205,9 +226,7 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 
    BSON_ASSERT (mongoc_apm_command_succeeded_get_request_id (event) > 0);
    BSON_ASSERT (mongoc_apm_command_succeeded_get_hint (event) > 0);
-   BSON_ASSERT (_mongoc_host_list_equal (
-                   mongoc_apm_command_succeeded_get_host (event),
-                   &context->test_framework_host));
+   assert_host_in_uri (event->host, context->test_framework_uri);
 
    bson_uint32_to_string (context->n_events, &key, str, sizeof str);
    context->n_events++;
