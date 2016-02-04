@@ -24,7 +24,7 @@
  */
 
 /*
- * Private initializer functions.
+ * Private initializer / cleanup functions.
  */
 
 void
@@ -38,7 +38,36 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
                                  uint32_t                      hint,
                                  void                         *context)
 {
-   event->command = command;
+   bson_iter_t iter;
+   uint32_t len;
+   const uint8_t *data;
+
+   /* Command Monitoring Spec:
+    *
+    * In cases where queries or commands are embedded in a $query parameter
+    * when a read preference is provided, they MUST be unwrapped and the value
+    * of the $query attribute becomes the filter or the command in the started
+    * event. The read preference will subsequently be dropped as it is
+    * considered metadata and metadata is not currently provided in the command
+    * events.
+    */
+   if (bson_has_field (command, "$readPreference")) {
+      if (bson_iter_init_find (&iter, command, "$query") &&
+          BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         bson_iter_document (&iter, &len, &data);
+         event->command = bson_new_from_data (data, len);
+      } else {
+         /* $query should exist, but user could provide us a misformatted doc */
+         event->command = bson_new ();
+      }
+
+      event->command_owned = true;
+   } else {
+      /* discard "const", we promise not to modify "command" */
+      event->command = (bson_t *) command;
+      event->command_owned = false;
+   }
+
    event->database_name = database_name;
    event->command_name = command_name;
    event->request_id = request_id;
@@ -47,6 +76,16 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
    event->hint = hint;
    event->context = context;
 }
+
+
+void
+mongoc_apm_command_started_cleanup (mongoc_apm_command_started_t *event)
+{
+   if (event->command_owned) {
+      bson_destroy (event->command);
+   }
+}
+
 
 void
 mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
@@ -69,6 +108,14 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
    event->context = context;
 }
 
+
+void
+mongoc_apm_command_succeeded_cleanup (mongoc_apm_command_succeeded_t *event)
+{
+   /* no-op */
+}
+
+
 void
 mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t                      duration,
@@ -89,6 +136,14 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
    event->hint = hint;
    event->context = context;
 }
+
+
+void
+mongoc_apm_command_failed_cleanup (mongoc_apm_command_failed_t *event)
+{
+   /* no-op */
+}
+
 
 /*
  * event field accessors

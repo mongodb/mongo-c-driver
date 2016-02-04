@@ -320,6 +320,7 @@ _mongoc_monitor_legacy_write (mongoc_client_t              *client,
 
    client->apm_callbacks.started (&event);
 
+   mongoc_apm_command_started_cleanup (&event);
    bson_destroy (&doc);
 }
 

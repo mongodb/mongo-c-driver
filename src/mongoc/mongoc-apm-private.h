@@ -35,7 +35,8 @@ struct _mongoc_apm_callbacks_t
 
 struct _mongoc_apm_command_started_t
 {
-   const bson_t             *command;
+   bson_t                   *command;
+   bool                      command_owned;
    const char               *database_name;
    const char               *command_name;
    int64_t                   request_id;
@@ -81,6 +82,9 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
                                  void                         *context);
 
 void
+mongoc_apm_command_started_cleanup (mongoc_apm_command_started_t *event);
+
+void
 mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    int64_t                         duration,
                                    const bson_t                   *reply,
@@ -92,6 +96,9 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    void                           *context);
 
 void
+mongoc_apm_command_succeeded_cleanup (mongoc_apm_command_succeeded_t *event);
+
+void
 mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t                      duration,
                                 const char                  *command_name,
@@ -101,6 +108,9 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 const mongoc_host_list_t    *host,
                                 uint32_t                     hint,
                                 void                        *context);
+
+void
+mongoc_apm_command_failed_cleanup (mongoc_apm_command_failed_t *event);
 
 BSON_END_DECLS
 

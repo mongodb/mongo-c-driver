@@ -192,6 +192,8 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t         *cluster,
                                        cluster->client->apm_context);
 
       cluster->client->apm_callbacks.started (&event);
+
+      mongoc_apm_command_started_cleanup (&event);
    }
 
    if (!_mongoc_stream_writev_full (stream, (mongoc_iovec_t *)ar.data, ar.len,
