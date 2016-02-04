@@ -18,14 +18,14 @@ static char *gFourMBString;
 static size_t gFourMB = 1024 * 1024 * 4;
 
 
-void
+static void
 test_bulk_cleanup ()
 {
    bson_free (gHugeString);
 }
 
 
-void
+static void
 init_huge_string (mongoc_client_t *client)
 {
    int32_t max_bson_size;
@@ -44,7 +44,7 @@ init_huge_string (mongoc_client_t *client)
 }
 
 
-const char *
+static const char *
 huge_string (mongoc_client_t *client)
 {
    init_huge_string (client);
@@ -52,7 +52,7 @@ huge_string (mongoc_client_t *client)
 }
 
 
-size_t
+static size_t
 huge_string_length (mongoc_client_t *client)
 {
    init_huge_string (client);
@@ -60,7 +60,7 @@ huge_string_length (mongoc_client_t *client)
 }
 
 
-void
+static void
 init_four_mb_string ()
 {
    if (!gFourMBString) {
@@ -72,7 +72,7 @@ init_four_mb_string ()
 }
 
 
-const char *
+static const char *
 four_mb_string ()
 {
    init_four_mb_string ();
@@ -95,7 +95,7 @@ four_mb_string ()
  *--------------------------------------------------------------------------
  */
 
-bool
+static bool
 server_has_write_commands (mongoc_client_t *client)
 {
    bson_t *ismaster_cmd = tmp_bson ("{'ismaster': 1}");
@@ -134,7 +134,7 @@ server_has_write_commands (mongoc_client_t *client)
  *--------------------------------------------------------------------------
  */
 
-void
+static void
 check_n_modified (bool          has_write_commands,
                   const bson_t *reply,
                   int32_t       n_modified)
@@ -166,7 +166,7 @@ check_n_modified (bool          has_write_commands,
  *--------------------------------------------------------------------------
  */
 
-void
+static void
 assert_error_count (int           len,
                     const bson_t *reply)
 {
@@ -198,7 +198,7 @@ assert_error_count (int           len,
  *--------------------------------------------------------------------------
  */
 
-void
+static void
 assert_n_inserted (int           n,
                    const bson_t *reply)
 {
@@ -225,7 +225,7 @@ assert_n_inserted (int           n,
  *--------------------------------------------------------------------------
  */
 
-void
+static void
 assert_n_removed (int           n,
                   const bson_t *reply)
 {
@@ -266,7 +266,7 @@ assert_n_removed (int           n,
  *--------------------------------------------------------------------------
  */
 
-bool
+static bool
 oid_created_on_client (const bson_t *doc)
 {
    bson_oid_t new_oid;
@@ -305,7 +305,7 @@ get_test_collection (mongoc_client_t *client,
 }
 
 
-void
+static void
 create_unique_index (mongoc_collection_t *collection)
 {
    mongoc_index_opt_t opt;
