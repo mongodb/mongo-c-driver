@@ -1,3 +1,15 @@
+mongo-c-driver 1.3.3
+====================
+
+It is my pleasure to announce MongoDB C Driver 1.3.3. This fixes a bug where
+a slightly-oversized bulk write operation was not split into batches; instead,
+it was sent whole to the server, which rejected it.
+
+Peace,
+
+  A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.3.2
 ====================
 
