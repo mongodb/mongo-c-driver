@@ -40,6 +40,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-cursor-transform-private.h \
 	src/mongoc/mongoc-cursor-private.h \
 	src/mongoc/mongoc-cursor.h \
+	src/mongoc/mongoc-crypto-private.h \
 	src/mongoc/mongoc-database-private.h \
 	src/mongoc/mongoc-database.h \
 	src/mongoc/mongoc-errno-private.h \
@@ -107,6 +108,7 @@ INST_H_FILES = \
 
 if ENABLE_OPENSSL
 INST_H_FILES += \
+	src/mongoc/mongoc-crypto-openssl-private.h \
 	src/mongoc/mongoc-rand.h \
 	src/mongoc/mongoc-rand-private.h \
 	src/mongoc/mongoc-stream-tls.h \
@@ -170,10 +172,15 @@ MONGOC_SOURCES_SHARED += \
 
 if ENABLE_SSL
 MONGOC_SOURCES_SHARED += \
-	src/mongoc/mongoc-rand.c \
+	src/mongoc/mongoc-crypto.c \
 	src/mongoc/mongoc-scram.c \
 	src/mongoc/mongoc-stream-tls.c \
 	src/mongoc/mongoc-ssl.c
+endif
+if ENABLE_OPENSSL
+MONGOC_SOURCES_SHARED += \
+	src/mongoc/mongoc-crypto-openssl.c \
+	src/mongoc/mongoc-rand-openssl.c
 endif
 
 if ENABLE_SASL

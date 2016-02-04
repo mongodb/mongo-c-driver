@@ -203,7 +203,9 @@ if (OPENSSL_FOUND)
       ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.h
       ${SOURCE_DIR}/src/mongoc/mongoc-ssl.h)
    set (SOURCES ${SOURCES}
-      ${SOURCE_DIR}/src/mongoc/mongoc-rand.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-crypto.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-crypto-openssl.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
       ${SOURCE_DIR}/src/mongoc/mongoc-scram.c
       ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.c
       ${SOURCE_DIR}/src/mongoc/mongoc-ssl.c
