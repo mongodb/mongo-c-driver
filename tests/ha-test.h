@@ -40,7 +40,7 @@ struct _ha_sharded_cluster_t
    ha_node_t        *routers;
    int               next_port;
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    mongoc_ssl_opt_t *ssl_opt;
 #endif
 };
@@ -52,7 +52,7 @@ struct _ha_replica_set_t
    ha_node_t        *nodes;
    int               next_port;
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    mongoc_ssl_opt_t *ssl_opt;
 #endif
 };
@@ -81,7 +81,7 @@ struct _ha_node_t
    bson_ha_pid_t     pid;
    uint16_t     port;
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    mongoc_ssl_opt_t *ssl_opt;
 #endif
 };
@@ -98,7 +98,7 @@ void              ha_replica_set_start            (ha_replica_set_t *replica_set
 void              ha_replica_set_shutdown         (ha_replica_set_t *replica_set);
 void              ha_replica_set_destroy          (ha_replica_set_t *replica_set);
 void              ha_replica_set_wait_for_healthy (ha_replica_set_t *replica_set);
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 void              ha_replica_set_ssl              (ha_replica_set_t *repl_set,
                                                    mongoc_ssl_opt_t *opt);
 #endif

@@ -70,7 +70,7 @@ extern void test_usleep_install                  (TestSuite *suite);
 extern void test_version_install                 (TestSuite *suite);
 extern void test_write_command_install           (TestSuite *suite);
 extern void test_write_concern_install           (TestSuite *suite);
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 extern void test_x509_install                    (TestSuite *suite);
 extern void test_stream_tls_install              (TestSuite *suite);
 extern void test_stream_tls_error_install        (TestSuite *suite);
@@ -78,7 +78,7 @@ extern void test_stream_tls_error_install        (TestSuite *suite);
 
 
 static int gSuppressCount;
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 static mongoc_ssl_opt_t gSSLOptions;
 #endif
 
@@ -420,7 +420,7 @@ test_framework_get_user_password (char **user,
       abort ();
    }
 
-#ifndef MONGOC_ENABLE_SSL
+#ifndef MONGOC_ENABLE_OPENSSL
    if (*user && *password) {
       fprintf (stderr, "You need to configure with --enable-ssl"
                        " when providing user+password (for SCRAM-SHA-1)\n");
@@ -838,7 +838,7 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
    assert (client);
 
    if (test_framework_get_ssl ()) {
-#ifndef MONGOC_ENABLE_SSL
+#ifndef MONGOC_ENABLE_OPENSSL
       fprintf (stderr,
                "SSL test config variables are specified in the environment, but"
                " SSL isn't enabled\n");
@@ -880,7 +880,7 @@ test_framework_client_new ()
 }
 
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 /*
  *--------------------------------------------------------------------------
  *
@@ -926,7 +926,7 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
    assert (pool);
 
    if (test_framework_get_ssl ()) {
-#ifndef MONGOC_ENABLE_SSL
+#ifndef MONGOC_ENABLE_OPENSSL
       fprintf (stderr,
                "SSL test config variables are specified in the environment, but"
                      " SSL isn't enabled\n");
@@ -967,7 +967,7 @@ test_framework_client_pool_new ()
    return pool;
 }
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 static void
 test_framework_global_ssl_opts_init (void)
 {
@@ -1252,7 +1252,7 @@ main (int   argc,
 
    mongoc_log_set_handler (log_handler, NULL);
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    test_framework_global_ssl_opts_init ();
    atexit (test_framework_global_ssl_opts_cleanup);
 #endif
@@ -1298,7 +1298,7 @@ main (int   argc,
    test_usleep_install (&suite);
    test_version_install (&suite);
    test_write_concern_install (&suite);
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    test_x509_install (&suite);
    test_stream_tls_install (&suite);
    test_stream_tls_error_install (&suite);

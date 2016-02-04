@@ -129,7 +129,7 @@ test_mongoc_client_authenticate (void *context)
 static int should_run_auth_tests (void)
 {
    char *user;
-#ifndef MONGOC_ENABLE_SSL
+#ifndef MONGOC_ENABLE_OPENSSL
    if (test_framework_max_wire_version_at_least (3)) {
       /* requires SSL for SCRAM implementation, can't test auth */
       return 0;
@@ -1006,7 +1006,7 @@ test_mongoc_client_mismatched_me (void)
 }
 
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 static void
 _test_mongoc_client_ssl_opts (bool pooled)
 {
@@ -1095,7 +1095,7 @@ test_ssl_pooled (void)
    _test_mongoc_client_ssl_opts (true);
 }
 #else
-/* MONGOC_ENABLE_SSL is not defined */
+/* MONGOC_ENABLE_OPENSSL is not defined */
 static void
 test_mongoc_client_ssl_disabled (void)
 {
@@ -1146,7 +1146,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/wire_version", test_wire_version);
 #endif
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    TestSuite_Add (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_Add (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
 #else

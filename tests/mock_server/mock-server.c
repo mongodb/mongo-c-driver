@@ -53,7 +53,7 @@ struct _mock_server_t
    int last_autoresponder_id;
    int64_t start_time;
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    mongoc_ssl_opt_t *ssl_opts;
 #endif
 };
@@ -192,7 +192,7 @@ mock_server_down (void)
 }
 
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 
 /*--------------------------------------------------------------------------
  *
@@ -1487,7 +1487,7 @@ main_thread (void *data)
 
          client_stream = mongoc_stream_socket_new (client_sock);
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
          if (server->ssl_opts) {
             client_stream = mongoc_stream_tls_new (client_stream,
                                                    server->ssl_opts, 0);

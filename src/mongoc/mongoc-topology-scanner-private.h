@@ -73,7 +73,7 @@ typedef struct mongoc_topology_scanner
    mongoc_stream_initiator_t       initiator;
    void                           *initiator_context;
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    mongoc_ssl_opt_t *ssl_opts;
 #endif
 } mongoc_topology_scanner_t;
@@ -141,7 +141,7 @@ mongoc_topology_scanner_set_stream_initiator (mongoc_topology_scanner_t *ts,
                                               mongoc_stream_initiator_t  si,
                                               void                      *ctx);
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 void
 mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
                                       mongoc_ssl_opt_t          *opts);

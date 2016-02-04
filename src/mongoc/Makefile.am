@@ -105,7 +105,7 @@ INST_H_FILES = \
 	src/mongoc/mongoc-write-concern.h \
 	src/mongoc/utlist.h
 
-if ENABLE_SSL
+if ENABLE_OPENSSL
 INST_H_FILES += \
 	src/mongoc/mongoc-rand.h \
 	src/mongoc/mongoc-rand-private.h \

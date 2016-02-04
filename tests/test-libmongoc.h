@@ -40,7 +40,7 @@ char *test_framework_get_uri_str (void);
 char *test_framework_get_unix_domain_socket_uri_str (void);
 char *test_framework_get_unix_domain_socket_path (void);
 mongoc_uri_t *test_framework_get_uri (void);
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 const mongoc_ssl_opt_t *test_framework_get_ssl_opts (void);
 #endif
 void test_framework_set_ssl_opts (mongoc_client_t *client);

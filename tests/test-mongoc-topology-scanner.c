@@ -55,7 +55,7 @@ _test_topology_scanner(bool with_ssl)
    int finished = NSERVERS * 3;
    bool more_to_do;
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    mongoc_ssl_opt_t sopt = { 0 };
    mongoc_ssl_opt_t copt = { 0 };
 #endif
@@ -63,7 +63,7 @@ _test_topology_scanner(bool with_ssl)
    topology_scanner = mongoc_topology_scanner_new (
          NULL, &test_topology_scanner_helper, &finished);
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    if (with_ssl) {
       copt.ca_file = CAFILE;
       copt.weak_cert_validation = 1;
@@ -77,7 +77,7 @@ _test_topology_scanner(bool with_ssl)
       servers[i] = mock_server_with_autoismaster (i);
       mock_server_set_rand_delay (servers[i], true);
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
       if (with_ssl) {
          sopt.pem_file = PEMFILE_NOPASS;
          sopt.ca_file = CAFILE;
@@ -123,7 +123,7 @@ test_topology_scanner ()
 }
 
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
 void
 test_topology_scanner_ssl ()
 {
@@ -300,7 +300,7 @@ void
 test_topology_scanner_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/TOPOLOGY/scanner", test_topology_scanner);
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_OPENSSL
    TestSuite_Add (suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
 #endif
    TestSuite_Add (suite, "/TOPOLOGY/scanner_discovery",
