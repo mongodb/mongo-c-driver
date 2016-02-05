@@ -883,8 +883,11 @@ again:
          }
 
          bson_iter_document (&iter, &len, &data);
+
+         /* append array element like "0": { ... doc ... } */
          key_len = (uint32_t) bson_uint32_to_string (i, &key, str, sizeof str);
 
+         /* 1 byte to specify document type, 1 byte for key's null terminator */
          if (_mongoc_write_command_will_overflow (overhead,
                                                   key_len + len + 2 + ar.len,
                                                   i,
