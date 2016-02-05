@@ -540,7 +540,6 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
 
    cursor->done = false;
    cursor->end_of_event = false;
-   cursor->sent = true;
 
    _mongoc_read_from_buffer (cursor, &bson);
 
