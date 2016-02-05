@@ -706,13 +706,29 @@ static bool
 match_bson_arrays (const bson_t *array,
                    const bson_t *pattern)
 {
-   /* an array is just a document with keys "0", "1", ...
-    * so match_bson suffices if the number of keys is equal. */
+   bson_iter_t array_iter;
+   bson_iter_t pattern_iter;
+   const bson_value_t *array_value;
+   const bson_value_t *pattern_value;
+
    if (bson_count_keys (array) != bson_count_keys (pattern)) {
       return false;
    }
-   
-   return match_bson (array, pattern, false);
+
+   assert (bson_iter_init (&array_iter, array));
+   assert (bson_iter_init (&pattern_iter, pattern));
+
+   while (bson_iter_next (&array_iter)) {
+      BSON_ASSERT (bson_iter_next (&pattern_iter));
+      array_value = bson_iter_value (&array_iter);
+      pattern_value = bson_iter_value (&pattern_iter);
+
+      if (!match_bson_value (array_value, pattern_value)) {
+         return false;
+      }
+   }
+
+   return true;
 }
 
 
