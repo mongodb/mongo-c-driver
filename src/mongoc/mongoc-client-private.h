@@ -131,6 +131,7 @@ void
 _mongoc_client_kill_cursor              (mongoc_client_t *client,
                                          uint32_t         server_id,
                                          int64_t          cursor_id,
+                                         int64_t          operation_id,
                                          const char      *db,
                                          const char      *collection);
 

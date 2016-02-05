@@ -165,6 +165,7 @@ started_cb (const mongoc_apm_command_started_t *event)
    bson_t *events = &context->events;
    bson_t cmd;
    bson_iter_t iter;
+   bson_iter_t array;
    char str[16];
    const char *key;
    bson_t *new_event;
@@ -192,10 +193,16 @@ started_cb (const mongoc_apm_command_started_t *event)
    bson_uint32_to_string (context->n_events, &key, str, sizeof str);
    bson_copy_to (event->command, &cmd);
 
-   /* special case for command monitoring JSON tests */
+   /* special for command monitoring JSON tests: replace numbers with "42" */
    if (bson_iter_init_find (&iter, &cmd, "getMore")) {
       BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
       bson_iter_overwrite_int64 (&iter, 42);
+   } else if (bson_iter_init_find (&iter, &cmd, "cursors")) {
+      BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
+      bson_iter_recurse (&iter, &array);
+      bson_iter_next (&array);
+      BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&array));
+      bson_iter_overwrite_int64 (&array, 42);
    }
 
    new_event = BCON_NEW ("command_started_event", "{",

@@ -38,11 +38,13 @@ typedef struct
 } mongoc_cursor_cursorid_t;
 
 
-bool _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor);
-bool _mongoc_cursor_cursorid_next (mongoc_cursor_t  *cursor,
-                                   const bson_t    **bson);
-void _mongoc_cursor_cursorid_init (mongoc_cursor_t  *cursor,
-                                   const bson_t     *command);
+bool _mongoc_cursor_cursorid_prime          (mongoc_cursor_t  *cursor);
+bool _mongoc_cursor_cursorid_next           (mongoc_cursor_t  *cursor,
+                                             const bson_t    **bson);
+void _mongoc_cursor_cursorid_init           (mongoc_cursor_t  *cursor,
+                                             const bson_t     *command);
+bool _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t  *cursor,
+                                             bson_t           *command);
 
 
 BSON_END_DECLS

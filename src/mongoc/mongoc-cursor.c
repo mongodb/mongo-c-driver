@@ -37,6 +37,10 @@ static const bson_t *
 _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
                          mongoc_server_stream_t *server_stream);
 
+static bool
+_mongoc_cursor_prepare_find_command (mongoc_cursor_t *cursor,
+                                     bson_t          *command);
+
 static const bson_t *
 _mongoc_cursor_find_command (mongoc_cursor_t *cursor);
 
@@ -273,6 +277,7 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       _mongoc_client_kill_cursor(cursor->client,
                                  cursor->hint,
                                  cursor->rpc.reply.cursor_id,
+                                 cursor->operation_id,
                                  db,
                                  cursor->ns + cursor->dblen + 1);
    }
@@ -383,6 +388,50 @@ done:
 }
 
 
+static bool
+_mongoc_cursor_monitor_legacy_query (mongoc_cursor_t        *cursor,
+                                     int32_t                 request_id,
+                                     mongoc_server_stream_t *server_stream)
+{
+   bson_t doc;
+   char db[MONGOC_NAMESPACE_MAX];
+   mongoc_client_t *client;
+   mongoc_apm_command_started_t event;
+
+   ENTRY;
+
+   client = cursor->client;
+   if (!client->apm_callbacks.started) {
+      /* successful */
+      RETURN (true);
+   }
+   
+   bson_init (&doc);
+   if (!_mongoc_cursor_prepare_find_command (cursor, &doc)) {
+      /* cursor->error is set */
+      bson_destroy (&doc);
+      RETURN (false);
+   }
+
+   bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+   mongoc_apm_command_started_init (&event,
+                                    &doc,
+                                    db,
+                                    "find",
+                                    request_id,
+                                    cursor->operation_id,
+                                    &server_stream->sd->host,
+                                    server_stream->sd->id,
+                                    client->apm_context);
+
+   client->apm_callbacks.started (&event);
+   mongoc_apm_command_started_cleanup (&event);
+   bson_destroy (&doc);
+
+   RETURN (true);
+}
+
+
 static const bson_t *
 _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
                          mongoc_server_stream_t *server_stream)
@@ -395,6 +444,7 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    ENTRY;
 
    cursor->sent = true;
+   cursor->operation_id = ++cursor->client->cluster.operation_id;
 
    rpc.query.msg_len = 0;
    rpc.query.request_id = ++cursor->client->cluster.request_id;
@@ -420,6 +470,12 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
 
    rpc.query.query = bson_get_data (result.query_with_read_prefs);
    rpc.query.flags = result.flags;
+
+   if (!_mongoc_cursor_monitor_legacy_query (cursor,
+                                             rpc.query.request_id,
+                                             server_stream)) {
+      GOTO (failure);
+   }
 
    if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,
                                         &rpc, 1, server_stream,
@@ -840,6 +896,49 @@ failure:
 }
 
 
+static bool
+_mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t        *cursor,
+                                        int32_t                 request_id,
+                                        mongoc_server_stream_t *server_stream)
+{
+   bson_t doc;
+   char db[MONGOC_NAMESPACE_MAX];
+   mongoc_client_t *client;
+   mongoc_apm_command_started_t event;
+
+   ENTRY;
+
+   client = cursor->client;
+   if (!client->apm_callbacks.started) {
+      /* successful */
+      RETURN (true);
+   }
+
+   bson_init (&doc);
+   if (!_mongoc_cursor_prepare_getmore_command (cursor, &doc)) {
+      bson_destroy (&doc);
+      RETURN (false);
+   }
+
+   bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+   mongoc_apm_command_started_init (&event,
+                                    &doc,
+                                    db,
+                                    "getMore",
+                                    request_id,
+                                    cursor->operation_id,
+                                    &server_stream->sd->host,
+                                    server_stream->sd->id,
+                                    client->apm_context);
+
+   client->apm_callbacks.started (&event);
+   mongoc_apm_command_started_cleanup (&event);
+   bson_destroy (&doc);
+
+   RETURN (true);
+}
+
+
 bool
 _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
                            mongoc_server_stream_t *server_stream)
@@ -864,6 +963,12 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
          rpc.get_more.n_return = 0;
       } else {
          rpc.get_more.n_return = _mongoc_n_return(cursor);
+      }
+
+      if (!_mongoc_cursor_monitor_legacy_get_more (cursor,
+                                                   rpc.get_more.request_id,
+                                                   server_stream)) {
+         GOTO (done);
       }
 
       if (!mongoc_cluster_sendv_to_server (&cursor->client->cluster,

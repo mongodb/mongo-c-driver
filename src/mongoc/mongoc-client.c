@@ -52,7 +52,10 @@
 static void
 _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
                                mongoc_server_stream_t *server_stream,
-                               int64_t                 cursor_id);
+                               int64_t                 cursor_id,
+                               int64_t                 operation_id,
+                               const char             *db,
+                               const char             *collection);
 
 static void
 _mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
@@ -1254,10 +1257,26 @@ done:
    RETURN (ret);
 }
 
+
+static void
+_mongoc_client_prepare_killcursors_command (int64_t     cursor_id,
+                                            const char *collection,
+                                            bson_t     *command)
+{
+   bson_t child;
+
+   bson_append_utf8 (command, "killCursors", 11, collection, -1);
+   bson_append_array_begin (command, "cursors", 7, &child);
+   bson_append_int64 (&child, "0", 1, cursor_id);
+   bson_append_array_end (command, &child);
+}
+
+
 void
 _mongoc_client_kill_cursor (mongoc_client_t *client,
                             uint32_t         server_id,
                             int64_t          cursor_id,
+                            int64_t          operation_id,
                             const char      *db,
                             const char      *collection)
 {
@@ -1286,7 +1305,8 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
    } else {
       _mongoc_client_op_killcursors (&client->cluster,
                                      server_stream,
-                                     cursor_id);
+                                     cursor_id, operation_id,
+                                     db, collection);
    }
 
    mongoc_server_stream_cleanup (server_stream);
@@ -1294,10 +1314,55 @@ _mongoc_client_kill_cursor (mongoc_client_t *client,
    EXIT;
 }
 
+
+static void
+_mongoc_client_monitor_op_killcursors (mongoc_cluster_t       *cluster,
+                                       mongoc_server_stream_t *server_stream,
+                                       int64_t                 cursor_id,
+                                       int64_t                 operation_id,
+                                       int64_t                 request_id,
+                                       const char             *db,
+                                       const char             *collection)
+{
+   bson_t doc;
+   mongoc_client_t *client;
+   mongoc_apm_command_started_t event;
+
+   ENTRY;
+
+   client = cluster->client;
+
+   if (!client->apm_callbacks.started) {
+      return;
+   }
+
+   bson_init (&doc);
+   _mongoc_client_prepare_killcursors_command (cursor_id, collection, &doc);
+   mongoc_apm_command_started_init (&event,
+                                    &doc,
+                                    db,
+                                    "killCursors",
+                                    request_id,
+                                    operation_id,
+                                    &server_stream->sd->host,
+                                    server_stream->sd->id,
+                                    client->apm_context);
+
+   client->apm_callbacks.started (&event);
+   mongoc_apm_command_started_cleanup (&event);
+   bson_destroy (&doc);
+
+   EXIT;
+}
+
+
 static void
 _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
                                mongoc_server_stream_t *server_stream,
-                               int64_t                 cursor_id)
+                               int64_t                 cursor_id,
+                               int64_t                 operation_id,
+                               const char             *db,
+                               const char             *collection)
 {
    mongoc_rpc_t rpc = { { 0 } };
 
@@ -1309,9 +1374,15 @@ _mongoc_client_op_killcursors (mongoc_cluster_t       *cluster,
    rpc.kill_cursors.cursors = &cursor_id;
    rpc.kill_cursors.n_cursors = 1;
 
+   _mongoc_client_monitor_op_killcursors (cluster, server_stream, cursor_id,
+                                          operation_id,
+                                          rpc.kill_cursors.request_id,
+                                          db, collection);
+
    mongoc_cluster_sendv_to_server (cluster, &rpc, 1, server_stream,
                                    NULL, NULL);
 }
+
 
 static void
 _mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
@@ -1321,12 +1392,12 @@ _mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
                                     const char             *collection)
 {
    bson_t command = BSON_INITIALIZER;
-   bson_t child;
 
-   bson_append_utf8 (&command, "killCursors", 11, collection, -1);
-   bson_append_array_begin (&command, "cursors", 7, &child);
-   bson_append_int64 (&child, "0", 1, cursor_id);
-   bson_append_array_end (&command, &child);
+   ENTRY;
+
+   _mongoc_client_prepare_killcursors_command (cursor_id,
+                                               collection,
+                                               &command);
 
    /* Find, getMore And killCursors Commands Spec: "The result from the
     * killCursors command MAY be safely ignored."
@@ -1336,6 +1407,8 @@ _mongoc_client_killcursors_command (mongoc_cluster_t       *cluster,
                                          NULL, NULL);
 
    bson_destroy (&command);
+
+   EXIT;
 }
 
 
@@ -1391,6 +1464,7 @@ mongoc_client_kill_cursor (mongoc_client_t *client,
 
    if (server_id) {
       _mongoc_client_kill_cursor (client, selected_server->id, cursor_id,
+                                  0 /* operation_id */,
                                   NULL /* db */,
                                   NULL /* collection */);
    } else {

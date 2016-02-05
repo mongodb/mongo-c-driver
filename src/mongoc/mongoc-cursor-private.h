@@ -89,6 +89,8 @@ struct _mongoc_cursor_t
 
    mongoc_cursor_interface_t  iface;
    void                      *iface_data;
+
+   int64_t                    operation_id;
 };
 
 

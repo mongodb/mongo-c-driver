@@ -22,6 +22,7 @@
 #include "mongoc-trace.h"
 #include "mongoc-error.h"
 #include "mongoc-util-private.h"
+#include "mongoc-client-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -133,20 +134,19 @@ bool
 _mongoc_cursor_cursorid_prime (mongoc_cursor_t *cursor)
 {
    cursor->sent = true;
+   cursor->operation_id = ++cursor->client->cluster.operation_id;
    return _mongoc_cursor_cursorid_refresh_from_command (cursor, &cursor->query);
 }
 
 
-static void
+bool
 _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
                                         bson_t          *command)
 {
    const char *collection;
    int collection_len;
-   mongoc_cursor_cursorid_t *cid;
 
-   cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
-   BSON_ASSERT (cid);
+   ENTRY;
 
    _mongoc_cursor_collection (cursor, &collection, &collection_len);
 
@@ -170,6 +170,8 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
        cursor->max_await_time_ms) {
       bson_append_int32 (command, "maxTimeMS", 9, cursor->max_await_time_ms);
    }
+
+   RETURN (true);
 }
 
 
@@ -193,7 +195,11 @@ _mongoc_cursor_cursorid_get_more (mongoc_cursor_t *cursor)
    }
 
    if (_use_find_command (cursor, server_stream)) {
-      _mongoc_cursor_prepare_getmore_command (cursor, &command);
+      if (!_mongoc_cursor_prepare_getmore_command (cursor, &command)) {
+         mongoc_server_stream_cleanup (server_stream);
+         RETURN (false);
+      }
+
       ret = _mongoc_cursor_cursorid_refresh_from_command (cursor, &command);
       bson_destroy (&command);
    } else {
