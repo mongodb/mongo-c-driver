@@ -85,6 +85,10 @@ INST_H_FILES = \
 	src/mongoc/mongoc-socket.h \
 	src/mongoc/mongoc-socket-private.h \
 	src/mongoc/mongoc-ssl-private.h \
+	src/mongoc/mongoc-stream-tls-openssl-bio-private.h \
+	src/mongoc/mongoc-stream-tls-openssl-private.h \
+	src/mongoc/mongoc-stream-tls-openssl.h \
+	src/mongoc/mongoc-stream-tls-private.h \
 	src/mongoc/mongoc-stream-buffered.h \
 	src/mongoc/mongoc-stream-file.h \
 	src/mongoc/mongoc-stream-gridfs.h \
@@ -175,6 +179,8 @@ MONGOC_SOURCES_SHARED += \
 	src/mongoc/mongoc-crypto.c \
 	src/mongoc/mongoc-scram.c \
 	src/mongoc/mongoc-stream-tls.c \
+	src/mongoc/mongoc-stream-tls-openssl.c \
+	src/mongoc/mongoc-stream-tls-openssl-bio.c \
 	src/mongoc/mongoc-ssl.c
 endif
 if ENABLE_OPENSSL

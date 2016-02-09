@@ -187,6 +187,10 @@ set (HEADERS
    ${SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${SOURCE_DIR}/src/mongoc/mongoc-socket-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-private.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
+   ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-private.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.h
    ${SOURCE_DIR}/src/mongoc/mongoc-stream-file.h
@@ -208,6 +212,8 @@ if (OPENSSL_FOUND)
       ${SOURCE_DIR}/src/mongoc/mongoc-rand-openssl.c
       ${SOURCE_DIR}/src/mongoc/mongoc-scram.c
       ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
       ${SOURCE_DIR}/src/mongoc/mongoc-ssl.c
    )
    set(LIBS ${LIBS} ${OPENSSL_LIBRARIES})

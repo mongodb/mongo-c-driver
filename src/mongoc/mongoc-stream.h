@@ -67,6 +67,7 @@ struct _mongoc_stream_t
 
 
 mongoc_stream_t *mongoc_stream_get_base_stream (mongoc_stream_t       *stream);
+mongoc_stream_t *mongoc_stream_get_tls_stream  (mongoc_stream_t       *stream);
 int              mongoc_stream_close           (mongoc_stream_t       *stream);
 void             mongoc_stream_destroy         (mongoc_stream_t       *stream);
 void             mongoc_stream_failed          (mongoc_stream_t       *stream);

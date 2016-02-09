@@ -324,6 +324,16 @@ mongoc_stream_get_root_stream (mongoc_stream_t *stream)
    return stream;
 }
 
+mongoc_stream_t *
+mongoc_stream_get_tls_stream (mongoc_stream_t *stream) /* IN */
+{
+   BSON_ASSERT (stream);
+
+   for (;stream && stream->type != MONGOC_STREAM_TLS;
+        stream = stream->get_base_stream (stream));
+
+   return stream;
+}
 
 ssize_t
 mongoc_stream_poll (mongoc_stream_poll_t *streams,

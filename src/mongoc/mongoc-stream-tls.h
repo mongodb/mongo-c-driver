@@ -25,10 +25,12 @@
 
 #include "mongoc-ssl.h"
 #include "mongoc-stream.h"
+#include "mongoc-stream-tls-private.h"
 
 
 BSON_BEGIN_DECLS
 
+typedef struct   _mongoc_stream_tls_t mongoc_stream_tls_t;
 
 bool             mongoc_stream_tls_do_handshake  (mongoc_stream_t  *stream,
                                                   int32_t           timeout_msec);
