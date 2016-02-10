@@ -41,7 +41,7 @@
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
-#include "mongoc-ssl-private.h"
+#include "mongoc-openssl-private.h"
 #endif
 
 
@@ -661,13 +661,6 @@ mongoc_client_set_ssl_opts (mongoc_client_t        *client,
    client->use_ssl = true;
    memcpy (&client->ssl_opts, opts, sizeof client->ssl_opts);
 
-   bson_free (client->pem_subject);
-   client->pem_subject = NULL;
-
-   if (opts->pem_file) {
-      client->pem_subject = _mongoc_ssl_extract_subject (opts->pem_file);
-   }
-
    if (client->topology->single_threaded) {
       mongoc_topology_scanner_set_ssl_opts (client->topology->scanner,
                                             &client->ssl_opts);
@@ -787,10 +780,6 @@ void
 mongoc_client_destroy (mongoc_client_t *client)
 {
    if (client) {
-#ifdef MONGOC_ENABLE_SSL
-      bson_free (client->pem_subject);
-#endif
-
       if (client->topology->single_threaded) {
          mongoc_topology_destroy(client->topology);
       }

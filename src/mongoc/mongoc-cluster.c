@@ -33,6 +33,10 @@
 #ifdef MONGOC_ENABLE_SASL
 #include "mongoc-sasl-private.h"
 #endif
+#ifdef MONGOC_ENABLE_SSL
+#include "mongoc-ssl.h"
+#include "mongoc-openssl-private.h"
+#endif
 #include "mongoc-b64-private.h"
 #include "mongoc-scram-private.h"
 #include "mongoc-set-private.h"
@@ -1043,8 +1047,8 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
          return false;
       }
 
-      if (cluster->client->pem_subject) {
-         username = cluster->client->pem_subject;
+      if (cluster->client->ssl_opts.pem_file) {
+         username = _mongoc_openssl_extract_subject (cluster->client->ssl_opts.pem_file);
          MONGOC_INFO ("X509: got username (%s) from certificate", username);
       }
    }

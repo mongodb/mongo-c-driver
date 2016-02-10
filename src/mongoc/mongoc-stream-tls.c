@@ -26,7 +26,7 @@
 #include "mongoc-stream-tls-private.h"
 #include "mongoc-stream-tls-openssl.h"
 #include "mongoc-stream-private.h"
-#include "mongoc-ssl-private.h"
+#include "mongoc-openssl-private.h"
 #include "mongoc-log.h"
 #include "mongoc-trace.h"
 

@@ -215,6 +215,7 @@ if (OPENSSL_FOUND)
       ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
       ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
       ${SOURCE_DIR}/src/mongoc/mongoc-ssl.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-ssl-openssl.c
    )
    set(LIBS ${LIBS} ${OPENSSL_LIBRARIES})
    include_directories(${OPENSSL_INCLUDE_DIR})

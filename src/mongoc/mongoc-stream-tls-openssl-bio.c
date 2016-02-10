@@ -29,7 +29,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-tls-openssl-bio-private.h"
 #include "mongoc-stream-tls-openssl-private.h"
-#include "mongoc-ssl-private.h"
+#include "mongoc-openssl-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-log.h"
 

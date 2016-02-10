@@ -32,13 +32,13 @@
 BSON_BEGIN_DECLS
 
 
-bool     _mongoc_ssl_check_cert      (SSL              *ssl,
-                                      const char       *host,
-                                      bool              weak_cert_validation);
-SSL_CTX *_mongoc_ssl_ctx_new         (mongoc_ssl_opt_t *opt);
-char    *_mongoc_ssl_extract_subject (const char       *filename);
-void     _mongoc_ssl_init            (void);
-void     _mongoc_ssl_cleanup         (void);
+bool     _mongoc_openssl_check_cert      (SSL              *ssl,
+                                          const char       *host,
+                                          bool              weak_cert_validation);
+SSL_CTX *_mongoc_openssl_ctx_new         (mongoc_ssl_opt_t *opt);
+char    *_mongoc_openssl_extract_subject (const char       *filename);
+void     _mongoc_openssl_init            (void);
+void     _mongoc_openssl_cleanup         (void);
 
 
 BSON_END_DECLS

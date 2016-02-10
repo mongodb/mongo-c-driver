@@ -32,7 +32,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-tls-openssl-bio-private.h"
 #include "mongoc-stream-tls-openssl-private.h"
-#include "mongoc-ssl-private.h"
+#include "mongoc-openssl-private.h"
 #include "mongoc-trace.h"
 #include "mongoc-log.h"
 
@@ -635,7 +635,7 @@ mongoc_stream_tls_openssl_check_cert (mongoc_stream_t *stream,
 
    BIO_get_ssl (openssl->bio, &ssl);
 
-   RETURN(_mongoc_ssl_check_cert (ssl, host, tls->weak_cert_validation));
+   RETURN(_mongoc_openssl_check_cert (ssl, host, tls->weak_cert_validation));
 }
 
 
@@ -677,7 +677,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
    BSON_ASSERT(opt);
    ENTRY;
 
-   ssl_ctx = _mongoc_ssl_ctx_new (opt);
+   ssl_ctx = _mongoc_openssl_ctx_new (opt);
 
    if (!ssl_ctx) {
       RETURN(NULL);
