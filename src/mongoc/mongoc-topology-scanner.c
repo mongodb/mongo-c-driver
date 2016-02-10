@@ -21,7 +21,7 @@
 #include "mongoc-topology-scanner-private.h"
 #include "mongoc-stream-socket.h"
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
 #endif
 

@@ -17,11 +17,14 @@ AS_IF([test "$os_darwin" != "yes" -a "$enable_secure_transport" = "yes" ],
    [AC_MSG_ERROR([cannot build against Secure Transport on non-darwin platform])]
 )
 AM_CONDITIONAL([ENABLE_SECURE_TRANSPORT], [test "$enable_secure_transport" = "yes"])
+AM_CONDITIONAL([ENABLE_COMMON_CRYPTO], [test "$enable_secure_transport" = "yes"])
 AC_SUBST(SSL_CFLAGS)
 AC_SUBST(SSL_LIBS)
 
 if test "$enable_secure_transport" = "yes" ; then
-  AC_SUBST(MONGOC_ENABLE_SECURE_TRANSPORT, 1)
+  AC_SUBST(MONGOC_ENABLE_SECURE_TRANSPORT, 0)
+  AC_SUBST(MONGOC_ENABLE_COMMON_CRYPTO, 1)
 else
   AC_SUBST(MONGOC_ENABLE_SECURE_TRANSPORT, 0)
+  AC_SUBST(MONGOC_ENABLE_COMMON_CRYPTO, 0)
 fi

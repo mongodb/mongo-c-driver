@@ -28,7 +28,12 @@
 
 #ifdef MONGOC_ENABLE_OPENSSL
 #define MONGOC_TLS_TYPE 1
+#else
+/* FIXME: TLS through Secure Transport isn't implemented yet ! */
+#define MONGOC_TLS_TYPE 1
 #endif
+
+BSON_BEGIN_DECLS
 
 /* Available TLS Implementations */
 typedef enum

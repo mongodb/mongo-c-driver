@@ -22,7 +22,7 @@
 #include "mongoc-config.h"
 #include <bson.h>
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_CRYPTO
 
 #ifndef MONGOC_CRYPTO_PRIVATE_H
 #define MONGOC_CRYPTO_PRIVATE_H
@@ -30,49 +30,52 @@
 
 BSON_BEGIN_DECLS
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_LIBCRYPTO
 #define MONGOC_CRYPTO_TYPE 1
+#elif defined(MONGOC_ENABLE_COMMON_CRYPTO)
+#define MONGOC_CRYPTO_TYPE 2
 #endif
 
 typedef struct _mongoc_crypto_t mongoc_crypto_t;
 
 typedef enum
 {
-   MONGOC_CRYPTO_OPENSSL = 1
+   MONGOC_CRYPTO_OPENSSL = 1,
+   MONGOC_CRYPTO_COMMON_CRYPTO = 2
 } mongoc_crypto_types_t;
 
 struct _mongoc_crypto_t
 {
-   unsigned char * (*hmac_sha1) (mongoc_crypto_t     *crypto,
-                                 const void          *key,
-                                 int                  key_len,
-                                 const unsigned char *d,
-                                 int                  n,
-                                 unsigned char       *md);
-   bool (*sha1)                 (mongoc_crypto_t     *crypto,
-                                 const unsigned char *input,
-                                 const size_t         input_len,
-                                 unsigned char       *output);
+   void (*hmac_sha1) (mongoc_crypto_t     *crypto,
+                      const void          *key,
+                      int                  key_len,
+                      const unsigned char *d,
+                      int                  n,
+                      unsigned char       *md /* OUT */);
+   bool (*sha1)      (mongoc_crypto_t     *crypto,
+                      const unsigned char *input,
+                      const size_t         input_len,
+                      unsigned char       *output /* OUT */);
 };
 
 void
 mongoc_crypto_init (mongoc_crypto_t *crypto);
 
-unsigned char *
+void
 mongoc_crypto_hmac_sha1 (mongoc_crypto_t     *crypto,
                          const void          *key,
                          int                  key_len,
                          const unsigned char *d,
                          int                  n,
-                         unsigned char       *md);
+                         unsigned char       *md /* OUT */);
 
 bool
 mongoc_crypto_sha1      (mongoc_crypto_t     *crypto,
                          const unsigned char *input,
                          const size_t         input_len,
-                         unsigned char       *output);
+                         unsigned char       *output /* OUT */);
 
 
 BSON_END_DECLS
 #endif /* MONGOC_CRYPTO_PRIVATE_H */
-#endif /* MONGOC_ENABLE_SSL */
+#endif /* MONGOC_ENABLE_CRYPTO */

@@ -1048,8 +1048,10 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
       }
 
       if (cluster->client->ssl_opts.pem_file) {
+#ifdef MONGOC_ENABLE_SSL
          username = _mongoc_openssl_extract_subject (cluster->client->ssl_opts.pem_file);
          MONGOC_INFO ("X509: got username (%s) from certificate", username);
+#endif
       }
    }
 
@@ -1075,7 +1077,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
 #endif
 
 
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_CRYPTO
 static bool
 _mongoc_cluster_auth_node_scram (mongoc_cluster_t      *cluster,
                                  mongoc_stream_t       *stream,
@@ -1253,7 +1255,7 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
                       mechanism);
 #endif
    } else if (0 == strcasecmp (mechanism, "SCRAM-SHA-1")) {
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_CRYPTO
       ret = _mongoc_cluster_auth_node_scram (cluster, stream, error);
 #else
       bson_set_error (error,

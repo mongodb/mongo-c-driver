@@ -23,10 +23,16 @@ endif ()
 if (ENABLE_SSL AND OPENSSL_FOUND)
    set (MONGOC_ENABLE_SSL 1)
    set (MONGOC_ENABLE_OPENSSL 1)
+   set (MONGOC_ENABLE_LIBCRYPTO 1)
+   set (MONGOC_ENABLE_CRYPTO 1)
 else ()
    set (MONGOC_ENABLE_SSL 0)
    set (MONGOC_ENABLE_OPENSSL 0)
+   set (MONGOC_ENABLE_LIBCRYPTO 0)
+   set (MONGOC_ENABLE_CRYPTO 0)
 endif ()
+set (MONGOC_ENABLE_SECURE_TRANSPORT 0)
+set (MONGOC_ENABLE_COMMON_CRYPTO 0)
 
 if (ENABLE_SASL)
    include(FindSASL2)
@@ -215,7 +221,7 @@ if (OPENSSL_FOUND)
       ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
       ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
       ${SOURCE_DIR}/src/mongoc/mongoc-ssl.c
-      ${SOURCE_DIR}/src/mongoc/mongoc-ssl-openssl.c
+      ${SOURCE_DIR}/src/mongoc/mongoc-openssl.c
    )
    set(LIBS ${LIBS} ${OPENSSL_LIBRARIES})
    include_directories(${OPENSSL_INCLUDE_DIR})

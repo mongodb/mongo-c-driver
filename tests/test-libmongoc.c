@@ -420,7 +420,7 @@ test_framework_get_user_password (char **user,
       abort ();
    }
 
-#ifndef MONGOC_ENABLE_OPENSSL
+#ifndef MONGOC_ENABLE_CRYPTO
    if (*user && *password) {
       fprintf (stderr, "You need to configure with --enable-ssl"
                        " when providing user+password (for SCRAM-SHA-1)\n");

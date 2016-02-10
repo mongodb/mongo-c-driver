@@ -22,7 +22,7 @@
 #include "mongoc-config.h"
 #include <bson.h>
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_LIBCRYPTO
 
 #ifndef MONGOC_CRYPTO_OPENSSL_PRIVATE_H
 #define MONGOC_CRYPTO_OPENSSL_PRIVATE_H
@@ -31,19 +31,20 @@
 
 BSON_BEGIN_DECLS
 
-unsigned char *
+void
 mongoc_crypto_openssl_hmac_sha1 (mongoc_crypto_t     *crypto,
                                  const void          *key,
                                  int                  key_len,
                                  const unsigned char *d,
                                  int                  n,
-                                 unsigned char       *md);
+                                 unsigned char       *md /* OUT */);
 
 bool
 mongoc_crypto_openssl_sha1 (mongoc_crypto_t     *crypto,
                             const unsigned char *input,
                             const size_t         input_len,
-                            unsigned char       *output);
+                            unsigned char       *output /* OUT */);
 
+BSON_END_DECLS
 #endif /* MONGOC_CRYPTO_OPENSSL_PRIVATE_H */
-#endif /* MONGOC_ENABLE_OPENSSL */
+#endif /* MONGOC_ENABLE_LIBCRYPTO */

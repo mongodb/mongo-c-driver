@@ -44,7 +44,7 @@ typedef struct _mongoc_scram_t
    uint8_t            *auth_message;
    uint32_t            auth_messagemax;
    uint32_t            auth_messagelen;
-#ifdef MONGOC_ENABLE_SSL
+#ifdef MONGOC_ENABLE_CRYPTO
    mongoc_crypto_t     crypto;
 #endif
 } mongoc_scram_t;

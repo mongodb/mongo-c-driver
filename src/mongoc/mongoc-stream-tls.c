@@ -158,12 +158,15 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
 
    switch(MONGOC_TLS_TYPE)
    {
+#ifdef MONGOC_ENABLE_OPENSSL
       case MONGOC_TLS_OPENSSL:
          return mongoc_stream_tls_openssl_new (base_stream, opt, client);
          break;
+#endif
 
       default:
          MONGOC_ERROR("Unknown crypto engine");
+         return NULL;
    }
 }
 
