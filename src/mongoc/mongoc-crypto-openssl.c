@@ -1,4 +1,5 @@
-/* Copyright 2016 MongoDB, Inc.
+/*
+ * Copyright 2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +15,12 @@
  */
 
 #include "mongoc-config.h"
-#include "mongoc-crypto-private.h"
+#include <bson.h>
 
 #ifdef MONGOC_ENABLE_OPENSSL
+#include "mongoc-crypto-private.h"
+#include "mongoc-crypto-openssl-private.h"
+
 #include <openssl/sha.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>

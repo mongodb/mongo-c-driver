@@ -20,6 +20,16 @@
 
 
 /*
+ * MONGOC_ENABLE_SECURE_TRANSPORT is set from configure to determine if we are
+ * compiled with OpenSSL support.
+ */
+#define MONGOC_ENABLE_SECURE_TRANSPORT @MONGOC_ENABLE_SECURE_TRANSPORT@
+
+#if MONGOC_ENABLE_SECURE_TRANSPORT != 1
+#  undef MONGOC_ENABLE_SECURE_TRANSPORT
+#endif
+
+/*
  * MONGOC_ENABLE_OPENSSL is set from configure to determine if we are
  * compiled with OpenSSL support.
  */

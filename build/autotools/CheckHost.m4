@@ -1,6 +1,7 @@
 AC_CANONICAL_HOST
 
 os_win32=no
+os_darwin=no
 os_linux=no
 os_freebsd=no
 os_gnu=no

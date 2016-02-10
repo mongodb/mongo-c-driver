@@ -58,7 +58,7 @@ mongoc_topology_scanner_new (const mongoc_uri_t          *uri,
    return ts;
 }
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
 void
 mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
                                       mongoc_ssl_opt_t          *opts)
@@ -478,7 +478,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
          sock_stream = mongoc_topology_scanner_node_connect_tcp (node, error);
       }
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
       if (sock_stream && node->ts->ssl_opts) {
          sock_stream = mongoc_stream_tls_new (sock_stream, node->ts->ssl_opts, 1);
       }

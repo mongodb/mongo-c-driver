@@ -1,11 +1,13 @@
+AC_MSG_CHECKING([whether to use OpenSSL for crypto and TLS])
 AC_ARG_ENABLE([openssl],
               [AS_HELP_STRING([--enable-openssl=@<:@auto/yes/no@:>@],
                               [Use OpenSSL for TLS connections and SCRAM-SHA-1 authentication.])],
               [],
               [enable_openssl=auto])
+AC_MSG_RESULT([$enable_openssl])
 
 AS_IF([test "$enable_openssl" != "no"],[
-  PKG_CHECK_MODULES(SSL, [openssl], [enable_openssl=yes], [
+  PKG_CHECK_MODULES(OpenSSL, [openssl], [enable_openssl=yes], [
     AS_IF([test "$enable_openssl" != "no"],[
       AC_CHECK_LIB([ssl],[SSL_library_init],[have_ssl_lib=yes],[have_ssl_lib=no])
       AC_CHECK_LIB([crypto],[CRYPTO_set_locking_callback],[have_crypto_lib=yes],[have_crypto_lib=no])
@@ -23,7 +25,7 @@ AS_IF([test "$enable_openssl" != "no"],[
       fi
 
       if test "$have_ssl_headers" = "yes" -a "$have_ssl_lib" = "yes" -a "$have_crypto_lib" = "yes"; then
-        SSL_LIBS="-lssl -lcrypto"
+        OpenSSL_LIBS="-lssl -lcrypto"
         enable_openssl=yes
       else
         enable_openssl=no
@@ -34,8 +36,8 @@ AS_IF([test "$enable_openssl" != "no"],[
 
 
 AM_CONDITIONAL([ENABLE_OPENSSL], [test "$enable_openssl" = "yes"])
-AC_SUBST(SSL_CFLAGS)
-AC_SUBST(SSL_LIBS)
+AC_SUBST(SSL_CFLAGS, $OpenSSL_CFLAGS)
+AC_SUBST(SSL_LIBS, $OpenSSL_LIBS)
 
 dnl Let mongoc-config.h.in know about SSL status.
 if test "$enable_openssl" = "yes" ; then

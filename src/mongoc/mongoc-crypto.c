@@ -20,6 +20,7 @@
 #include <bson.h>
 #include "mongoc-log.h"
 #include "mongoc-crypto-private.h"
+#ifdef MONGOC_ENABLE_OPENSSL
 #include "mongoc-crypto-openssl-private.h"
 
 void
@@ -27,10 +28,12 @@ mongoc_crypto_init (mongoc_crypto_t *crypto)
 {
    switch(MONGOC_CRYPTO_TYPE)
    {
+#ifdef MONGOC_ENABLE_OPENSSL
       case MONGOC_CRYPTO_OPENSSL:
          crypto->hmac_sha1 = mongoc_crypto_openssl_hmac_sha1;
          crypto->sha1 = mongoc_crypto_openssl_sha1;
          break;
+#endif
       default:
          MONGOC_ERROR("Unknown crypto engine");
    }

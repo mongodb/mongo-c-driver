@@ -19,14 +19,13 @@
 #error "Only <mongoc.h> can be included directly."
 #endif
 
+#include "mongoc-config.h"
+#include <bson.h>
+
 #ifdef MONGOC_ENABLE_SSL
 
 #ifndef MONGOC_CRYPTO_PRIVATE_H
 #define MONGOC_CRYPTO_PRIVATE_H
-
-
-#include <bson.h>
-#include "mongoc-config.h"
 
 
 BSON_BEGIN_DECLS

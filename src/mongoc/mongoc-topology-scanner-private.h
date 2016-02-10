@@ -28,6 +28,10 @@
 #include "mongoc-async-cmd-private.h"
 #include "mongoc-host-list.h"
 
+#ifdef MONGOC_ENABLE_SSL
+#include "mongoc-ssl.h"
+#endif
+
 BSON_BEGIN_DECLS
 
 typedef void (*mongoc_topology_scanner_cb_t)(uint32_t      id,
@@ -73,7 +77,7 @@ typedef struct mongoc_topology_scanner
    mongoc_stream_initiator_t       initiator;
    void                           *initiator_context;
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t *ssl_opts;
 #endif
 } mongoc_topology_scanner_t;
@@ -141,7 +145,7 @@ mongoc_topology_scanner_set_stream_initiator (mongoc_topology_scanner_t *ts,
                                               mongoc_stream_initiator_t  si,
                                               void                      *ctx);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
 void
 mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
                                       mongoc_ssl_opt_t          *opts);

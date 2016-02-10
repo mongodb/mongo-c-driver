@@ -25,6 +25,7 @@ LT_INIT
 m4_include([build/autotools/ReadCommandLineArguments.m4])
 m4_include([build/autotools/CheckSasl.m4])
 m4_include([build/autotools/CheckOpenSSL.m4])
+m4_include([build/autotools/CheckSecureTransport.m4])
 m4_include([build/autotools/CheckSSL.m4])
 m4_include([build/autotools/FindDependencies.m4])
 m4_include([build/autotools/AutoHarden.m4])
