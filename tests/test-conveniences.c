@@ -298,45 +298,6 @@ bson_lookup_read_prefs (const bson_t *b,
 }
 
 
-/*--------------------------------------------------------------------------
- *
- * bson_append_json --
- *
- *       Like bson_append_document, but accepts JSON and substitutes values
- *       printf-style into it before BSONifying it.
- *
- *       For convenience, single-quotes are synonymous with double-quotes.
- *
- *--------------------------------------------------------------------------
- */
-void
-bson_append_json (bson_t     *doc,
-                  const char *key,
-                  const char *json,
-                  ...)
-{
-   va_list args;
-   char *json_pattern_formatted;
-   char *double_quoted;
-   bson_error_t error;
-   bson_t *to_append;
-
-   va_start (args, json);
-   json_pattern_formatted = bson_strdupv_printf (json, args);
-   va_end (args);
-
-   double_quoted = single_quotes_to_double (json_pattern_formatted);
-   to_append = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
-
-   if (!to_append) {
-      fprintf (stderr, "couldn't parse JSON: %s\n", error.message);
-      abort ();
-   }
-
-   bson_append_document (doc, key, -1, to_append);
-}
-
-
 static bool
 get_exists_operator (const bson_value_t *value,
                      bool               *exists);

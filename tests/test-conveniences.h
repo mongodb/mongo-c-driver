@@ -56,11 +56,6 @@ mongoc_write_concern_t * bson_lookup_write_concern (const bson_t *b,
 mongoc_read_prefs_t * bson_lookup_read_prefs (const bson_t *b,
                                               const char   *key);
 
-void bson_append_json (bson_t     *doc,
-                       const char *key,
-                       const char *json,
-                       ...);
-
 char *single_quotes_to_double (const char *str);
 
 bool match_bson (const bson_t *doc,
