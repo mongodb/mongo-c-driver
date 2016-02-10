@@ -59,6 +59,15 @@
             "command_name": "update",
             "database_name": "command-monitoring-tests"
           }
+        },
+        {
+          "command_succeeded_event": {
+            "reply": {
+              "ok": 1.0,
+              "n": 2
+            },
+            "command_name": "update"
+          }
         }
       ]
     },
@@ -104,6 +113,22 @@
             },
             "command_name": "update",
             "database_name": "command-monitoring-tests"
+          }
+        },
+        {
+          "command_succeeded_event": {
+            "reply": {
+              "ok": 1.0,
+              "n": 0,
+              "writeErrors": [
+                {
+                  "index": 0,
+                  "code": 42,
+                  "errmsg": ""
+                }
+              ]
+            },
+            "command_name": "update"
           }
         }
       ]

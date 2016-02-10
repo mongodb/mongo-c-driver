@@ -13,6 +13,7 @@ typedef struct
    uint32_t           n_events;
    bson_t             events;
    mongoc_uri_t      *test_framework_uri;
+   int64_t            cursor_id;
    int64_t            operation_id;
    bool               verbose;
 } context_t;
@@ -24,6 +25,7 @@ context_init (context_t *context)
    context->n_events = 0;
    bson_init (&context->events);
    context->test_framework_uri = test_framework_get_uri ();
+   context->cursor_id = 0;
    context->operation_id = 0;
    context->verbose =
       test_framework_getenv_bool ("MONGOC_TEST_MONITORING_VERBOSE");
@@ -165,6 +167,130 @@ assert_host_in_uri (const mongoc_host_list_t *host,
 }
 
 
+static bool
+ends_with (const char *s,
+           const char *suffix)
+{
+   size_t s_len;
+   size_t suffix_len;
+
+   if (!s) {
+      return false;
+   }
+
+   s_len = strlen (s);
+   suffix_len = strlen (suffix);
+   return s_len >= suffix_len && !strcmp (s + s_len - suffix_len, suffix);
+}
+
+
+static int64_t
+fake_cursor_id (const bson_iter_t *iter)
+{
+   return bson_iter_as_int64 (iter) ? 42 : 0;
+}
+
+/* Convert "ok" values to doubles, cursor ids and error codes to 42, and
+ * error messages to "". See README at
+ * github.com/mongodb/specifications/tree/master/source/command-monitoring/tests
+ */
+static void
+convert_command_for_test (context_t *context,
+                          const bson_t *src,
+                          bson_t *dst,
+                          const char *path)
+{
+   bson_iter_t iter;
+   const char *key;
+   const char *errmsg;
+   bson_t src_child;
+   bson_t dst_child;
+   char *child_path;
+
+   bson_iter_init (&iter, src);
+
+   while (bson_iter_next (&iter)) {
+      key = bson_iter_key (&iter);
+
+      if (!strcmp (key, "ok")) {
+         /* "The server is inconsistent on whether the ok values returned are
+          * integers or doubles so for simplicity the tests specify all expected
+          * values as doubles. Server 'ok' values of integers MUST be converted
+          * to doubles for comparison with the expected values."
+          */
+         BSON_APPEND_DOUBLE (dst, key, (double) bson_iter_as_int64 (&iter));
+
+      } else if (!strcmp (key, "errmsg")) {
+         /* "errmsg values of "" MUST assert that the value is not empty" */
+         errmsg = bson_iter_utf8 (&iter, NULL);
+         ASSERT_CMPSIZE_T (strlen (errmsg), >, (size_t) 0);
+         BSON_APPEND_UTF8 (dst, key, "");
+
+      } else if (!strcmp (key, "id") && ends_with (path, "cursor")) {
+         /* "When encountering a cursor or getMore value of "42" in a test, the
+          * driver MUST assert that the values are equal to each other and
+          * greater than zero."
+          */
+         if (context->cursor_id == 0) {
+            context->cursor_id = bson_iter_int64 (&iter);
+         } else if (bson_iter_int64 (&iter) != 0) {
+            ASSERT_CMPINT64 (context->cursor_id, ==, bson_iter_int64 (&iter));
+         }
+
+         /* replace the reply's cursor id with 42 or 0 - check_expectations()
+          * will assert it matches the value from the JSON test */
+         BSON_APPEND_INT64 (dst, key, fake_cursor_id (&iter));
+      } else if (ends_with (path, "cursors") ||
+                 ends_with (path, "cursorsUnknown")) {
+         /* payload of a killCursors command-started event:
+          *    {killCursors: "test", cursors: [12345]}
+          * or killCursors command-succeeded event:
+          *    {ok: 1, cursorsUnknown: [12345]}
+          * */
+         ASSERT_CMPINT64 (bson_iter_as_int64 (&iter), >, (int64_t) 0);
+         BSON_APPEND_INT64 (dst, key, 42);
+
+      } else if (!strcmp (key, "getMore")) {
+         ASSERT_CMPINT64 (context->cursor_id, ==, bson_iter_int64 (&iter));
+         BSON_APPEND_INT64 (dst, key, fake_cursor_id (&iter));
+
+      } else if (!strcmp (key, "code")) {
+         /* "code values of 42 MUST assert that the value is present and greater
+          * than zero" */
+         ASSERT_CMPINT64 (bson_iter_as_int64 (&iter), >, (int64_t) 0);
+         BSON_APPEND_INT32 (dst, key, 42);
+
+      } else if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         if (path) {
+            child_path = bson_strdup_printf ("%s.%s", path, key);
+         } else {
+            child_path = bson_strdup (key);
+         }
+
+         bson_iter_bson (&iter, &src_child);
+         bson_append_document_begin (dst, key, -1, &dst_child);
+         convert_command_for_test (context, &src_child, &dst_child, child_path); /* recurse */
+         bson_append_document_end (dst, &dst_child);
+         bson_free (child_path);
+      } else if (BSON_ITER_HOLDS_ARRAY (&iter)) {
+         if (path) {
+            child_path = bson_strdup_printf ("%s.%s", path, key);
+         } else {
+            child_path = bson_strdup (key);
+         }
+
+         bson_iter_bson (&iter, &src_child);
+         bson_append_array_begin (dst, key, -1, &dst_child);
+         convert_command_for_test (context, &src_child, &dst_child, child_path); /* recurse */
+         bson_append_array_end (dst, &dst_child);
+         bson_free (child_path);
+      } else {
+         bson_append_value (dst, key, -1, bson_iter_value (&iter));
+      }
+   }
+}
+
+
 static void
 started_cb (const mongoc_apm_command_started_t *event)
 {
@@ -173,9 +299,7 @@ started_cb (const mongoc_apm_command_started_t *event)
    int64_t operation_id;
    char *cmd_json;
    bson_t *events = &context->events;
-   bson_t cmd;
-   bson_iter_t iter;
-   bson_iter_t array;
+   bson_t cmd = BSON_INITIALIZER;
    char str[16];
    const char *key;
    bson_t *new_event;
@@ -200,21 +324,7 @@ started_cb (const mongoc_apm_command_started_t *event)
       ASSERT_CMPINT64 (context->operation_id, ==, operation_id);
    }
 
-   bson_uint32_to_string (context->n_events, &key, str, sizeof str);
-   bson_copy_to (event->command, &cmd);
-
-   /* special for command monitoring JSON tests: replace numbers with "42" */
-   if (bson_iter_init_find (&iter, &cmd, "getMore")) {
-      BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&iter));
-      bson_iter_overwrite_int64 (&iter, 42);
-   } else if (bson_iter_init_find (&iter, &cmd, "cursors")) {
-      BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
-      bson_iter_recurse (&iter, &array);
-      bson_iter_next (&array);
-      BSON_ASSERT (BSON_ITER_HOLDS_INT64 (&array));
-      bson_iter_overwrite_int64 (&array, 42);
-   }
-
+   convert_command_for_test (context, event->command, &cmd, NULL);
    new_event = BCON_NEW ("command_started_event", "{",
                          "command", BCON_DOCUMENT (&cmd),
                          "command_name", BCON_UTF8 (event->command_name),
@@ -236,27 +346,36 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 {
    context_t *context = (context_t *)
       mongoc_apm_command_succeeded_get_context (event);
-   bson_t *events = &context->events;
-   char *reply_json = bson_as_json (event->reply, NULL);
+   char *reply_json;
+   bson_t reply = BSON_INITIALIZER;
    char str[16];
    const char *key;
+   bson_t *new_event;
+
+   if (context->verbose) {
+      reply_json = bson_as_json (event->reply, NULL);
+      printf ("\t\t<-- %s\n", reply_json);
+      fflush (stdout);
+      bson_free (reply_json);
+   }
 
    BSON_ASSERT (mongoc_apm_command_succeeded_get_request_id (event) > 0);
    BSON_ASSERT (mongoc_apm_command_succeeded_get_hint (event) > 0);
    assert_host_in_uri (event->host, context->test_framework_uri);
 
+   convert_command_for_test (context, event->reply, &reply, NULL);
+   new_event = BCON_NEW ("command_succeeded_event", "{",
+                         "reply", BCON_DOCUMENT (&reply),
+                         "command_name", BCON_UTF8 (event->command_name),
+                         "}");
+
    bson_uint32_to_string (context->n_events, &key, str, sizeof str);
+   BSON_APPEND_DOCUMENT (&context->events, key, new_event);
+
    context->n_events++;
 
-   bson_append_json (
-      events,
-      key,
-      "{'command_succeeded_event': {"
-      "    'command': %s,"
-      "    'command_name': '%s'}}",
-      reply_json, event->command_name);
-
-   bson_free (reply_json);
+   bson_destroy (new_event);
+   bson_destroy (&reply);
 }
 
 

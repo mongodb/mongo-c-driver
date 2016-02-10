@@ -30,6 +30,15 @@
             "command_name": "count",
             "database_name": "command-monitoring-tests"
           }
+        },
+        {
+          "command_succeeded_event": {
+            "reply": {
+              "ok": 1.0,
+              "n": 1
+            },
+            "command_name": "count"
+          }
         }
       ]
     },
@@ -82,6 +91,15 @@
             },
             "command_name": "count",
             "database_name": "command-monitoring-tests"
+          }
+        },
+        {
+          "command_succeeded_event": {
+            "reply": {
+              "ok": 1.0,
+              "n": 1
+            },
+            "command_name": "count"
           }
         }
       ]

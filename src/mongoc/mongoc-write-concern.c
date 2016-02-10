@@ -361,7 +361,7 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
       BSON_APPEND_UTF8 (compiled, "w", "majority");
    } else if (write_concern->w == MONGOC_WRITE_CONCERN_W_DEFAULT) {
       /* Do Nothing */
-   } else if (write_concern->w > 0) {
+   } else {
       BSON_APPEND_INT32 (compiled, "w", write_concern->w);
    }
 

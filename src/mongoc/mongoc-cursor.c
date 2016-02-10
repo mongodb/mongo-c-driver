@@ -432,10 +432,90 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t        *cursor,
 }
 
 
+/* append array of docs from current cursor batch */
+static void
+_mongoc_cursor_append_docs_array (mongoc_cursor_t *cursor,
+                                  bson_t          *docs)
+{
+   bool eof = false;
+   char str[16];
+   const char *key;
+   uint32_t i = 0;
+   size_t keylen;
+   const bson_t *doc;
+
+   while ((doc = bson_reader_read (cursor->reader, &eof))) {
+      keylen = bson_uint32_to_string (i, &key, str, sizeof str);
+      bson_append_document (docs, key, (int) keylen, doc);
+   }
+
+   bson_reader_reset (cursor->reader);
+}
+
+
+static void
+_mongoc_cursor_monitor_succeeded (mongoc_cursor_t        *cursor,
+                                  int64_t                 duration,
+                                  uint32_t                request_id,
+                                  bool                    first_batch,
+                                  mongoc_server_stream_t *stream)
+{
+   mongoc_apm_command_succeeded_t event;
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_t reply_cursor;
+   bson_t docs_array;
+
+   ENTRY;
+
+   client = cursor->client;
+
+   if (!client->apm_callbacks.succeeded) {
+      EXIT;
+   }
+
+   /* fake reply to find/getMore command:
+    * {ok: 1, cursor: {id: 1234, ns: "...", first/nextBatch: [ ... docs ... ]}}
+    */
+   bson_init (&docs_array);
+   _mongoc_cursor_append_docs_array (cursor, &docs_array);
+
+   bson_init (&reply);
+   bson_append_int32 (&reply, "ok", 2, 1);
+   bson_append_document_begin (&reply, "cursor", 6, &reply_cursor);
+   bson_append_int64 (&reply_cursor, "id", 2, mongoc_cursor_get_id (cursor));
+   bson_append_utf8 (&reply_cursor, "ns", 2, cursor->ns, cursor->nslen);
+   bson_append_array (&reply_cursor,
+                      first_batch ? "firstBatch" : "nextBatch",
+                      first_batch ? 10 : 9,
+                      &docs_array);
+   bson_append_document_end (&reply, &reply_cursor);
+
+   mongoc_apm_command_succeeded_init (&event,
+                                      duration,
+                                      &reply,
+                                      first_batch ? "find" : "getMore",
+                                      request_id,
+                                      cursor->operation_id,
+                                      &stream->sd->host,
+                                      stream->sd->id,
+                                      client->apm_context);
+
+   client->apm_callbacks.succeeded (&event);
+
+   mongoc_apm_command_succeeded_cleanup (&event);
+   bson_destroy (&reply);
+   bson_destroy (&docs_array);
+
+   EXIT;
+}
+
+
 static const bson_t *
 _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
                          mongoc_server_stream_t *server_stream)
 {
+   int64_t started;
    mongoc_apply_read_prefs_result_t result = READ_PREFS_RESULT_INIT;
    mongoc_rpc_t rpc;
    uint32_t request_id;
@@ -443,11 +523,13 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
 
    ENTRY;
 
+   started = bson_get_monotonic_time ();
+
    cursor->sent = true;
    cursor->operation_id = ++cursor->client->cluster.operation_id;
 
    rpc.query.msg_len = 0;
-   rpc.query.request_id = ++cursor->client->cluster.request_id;
+   rpc.query.request_id = request_id = ++cursor->client->cluster.request_id;
    rpc.query.response_to = 0;
    rpc.query.opcode = MONGOC_OPCODE_QUERY;
    rpc.query.flags = cursor->flags;
@@ -472,7 +554,7 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
    rpc.query.flags = result.flags;
 
    if (!_mongoc_cursor_monitor_legacy_query (cursor,
-                                             rpc.query.request_id,
+                                             request_id,
                                              server_stream)) {
       GOTO (failure);
    }
@@ -482,8 +564,6 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
                                         NULL, &cursor->error)) {
       GOTO (failure);
    }
-
-   request_id = BSON_UINT32_FROM_LE (rpc.header.request_id);
 
    _mongoc_buffer_clear(&cursor->buffer, false);
 
@@ -537,6 +617,12 @@ _mongoc_cursor_op_query (mongoc_cursor_t        *cursor,
       cursor->in_exhaust = true;
       cursor->client->in_exhaust = true;
    }
+
+   _mongoc_cursor_monitor_succeeded (cursor,
+                                     bson_get_monotonic_time () - started,
+                                     request_id,
+                                     true, /* first_batch */
+                                     server_stream);
 
    cursor->done = false;
    cursor->end_of_event = false;
@@ -942,11 +1028,14 @@ bool
 _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
                            mongoc_server_stream_t *server_stream)
 {
+   int64_t started;
    mongoc_rpc_t rpc;
    uint32_t request_id;
    bool ret = false;
 
    ENTRY;
+
+   started = bson_get_monotonic_time ();
 
    if (cursor->in_exhaust) {
       request_id = (uint32_t) cursor->rpc.header.request_id;
@@ -1021,6 +1110,12 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t        *cursor,
       (size_t)cursor->rpc.reply.documents_len);
 
    ret = true;
+
+   _mongoc_cursor_monitor_succeeded (cursor,
+                                     bson_get_monotonic_time () - started,
+                                     request_id,
+                                     false, /* not first batch */
+                                     server_stream);
 
 done:
    RETURN (ret);

@@ -151,7 +151,11 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t         *cluster,
                                 bson_error_t             *error)
 {
    mongoc_apm_callbacks_t *callbacks;
-   mongoc_apm_command_started_t event;
+   uint32_t request_id;
+   int64_t started;
+   bson_t reply;
+   mongoc_apm_command_started_t started_event;
+   mongoc_apm_command_succeeded_t succeeded_event;
    bson_t cmd;
    mongoc_array_t ar;
    int32_t msg_len;
@@ -175,7 +179,7 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t         *cluster,
       GOTO (done);
    }
 
-   rpc->query.request_id = ++cluster->request_id;
+   rpc->query.request_id = request_id = ++cluster->request_id;
    _mongoc_rpc_gather (rpc, &ar);
    _mongoc_rpc_swab_to_le (rpc);
 
@@ -185,20 +189,22 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t         *cluster,
 
    if (monitored && callbacks->started) {
       _bson_init_static_from_data (rpc->query.query, &cmd);
-      mongoc_apm_command_started_init (&event,
+      mongoc_apm_command_started_init (&started_event,
                                        &cmd,
                                        db,
                                        command_name,
-                                       rpc->query.request_id,
+                                       request_id,
                                        cluster->operation_id,
                                        host,
                                        hint,
                                        cluster->client->apm_context);
 
-      cluster->client->apm_callbacks.started (&event);
+      cluster->client->apm_callbacks.started (&started_event);
 
-      mongoc_apm_command_started_cleanup (&event);
+      mongoc_apm_command_started_cleanup (&started_event);
    }
+
+   started = bson_get_monotonic_time ();
 
    if (!_mongoc_stream_writev_full (stream, (mongoc_iovec_t *)ar.data, ar.len,
                                    cluster->sockettimeoutms, error) ||
@@ -242,6 +248,23 @@ mongoc_cluster_run_command_rpc (mongoc_cluster_t         *cluster,
    }
 
    ret = true;
+
+   if (monitored && callbacks->succeeded) {
+      _bson_init_static_from_data (reply_rpc->reply.documents, &reply);
+      mongoc_apm_command_succeeded_init (&succeeded_event,
+                                         bson_get_monotonic_time () - started,
+                                         &reply,
+                                         command_name,
+                                         request_id,
+                                         cluster->operation_id,
+                                         host,
+                                         hint,
+                                         cluster->client->apm_context);
+
+      cluster->client->apm_callbacks.succeeded (&succeeded_event);
+
+      mongoc_apm_command_succeeded_cleanup (&succeeded_event);
+   }
 
 done:
    _mongoc_array_destroy (&ar);

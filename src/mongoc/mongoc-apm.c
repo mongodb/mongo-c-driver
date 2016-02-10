@@ -98,6 +98,8 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    uint32_t                        hint,
                                    void                           *context)
 {
+   BSON_ASSERT (reply);
+
    event->duration = duration;
    event->reply = reply;
    event->command_name = command_name;
