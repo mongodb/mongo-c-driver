@@ -121,12 +121,22 @@ static void
 check_expectations (const bson_t *events,
                     const bson_t *expectations)
 {
-   if (!match_bson (events, expectations, false /* is_command */)) {
+   char errmsg[1000];
+   match_ctx_t ctx = { 0 };
+
+   /* Old mongod returns a double for "count", newer returns int32.
+    * Ignore this and other insignificant type differences. */
+   ctx.strict_numeric_types = false;
+   ctx.errmsg = errmsg;
+   ctx.errmsg_len = sizeof errmsg;
+
+   if (!match_bson_with_ctx (events, expectations, false, &ctx)) {
       MONGOC_ERROR ("command monitoring test failed expectations:\n\n"
                     "%s\n\n"
-                    "events:\n%s\n",
+                    "events:\n%s\n\n%s\n",
                     bson_as_json (expectations, NULL),
-                    bson_as_json (events, NULL));
+                    bson_as_json (events, NULL),
+                    errmsg);
 
       abort ();
    }

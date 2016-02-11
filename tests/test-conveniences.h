@@ -58,9 +58,21 @@ mongoc_read_prefs_t * bson_lookup_read_prefs (const bson_t *b,
 
 char *single_quotes_to_double (const char *str);
 
+typedef struct {
+   char   *errmsg;
+   size_t  errmsg_len;
+   bool    strict_numeric_types;
+   char    path[1000];
+} match_ctx_t;
+
 bool match_bson (const bson_t *doc,
                  const bson_t *pattern,
                  bool          is_command);
+
+bool match_bson_with_ctx (const bson_t *doc,
+                          const bson_t *pattern,
+                          bool          is_command,
+                          match_ctx_t  *ctx);
 
 bool match_json (const bson_t *doc,
                  bool          is_command,
