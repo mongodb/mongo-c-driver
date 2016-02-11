@@ -562,6 +562,7 @@ done:
    mongoc_client_set_apm_callbacks (collection->client, NULL, NULL);
    mongoc_apm_callbacks_destroy (callbacks);
    context_destroy (&context);
+   mongoc_read_prefs_destroy (read_prefs);
 }
 
 
@@ -603,6 +604,9 @@ test_command_monitoring_cb (bson_t *scenario)
       bson_iter_bson (&tests_iter, &test_op);
       one_test (collection, &test_op);
    }
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 }
 
 
