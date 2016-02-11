@@ -151,6 +151,12 @@ c_driver_variables:
           ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())' admin
 
     compile:
+      osx: &compile_osx
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-secure-transport --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          make -j8
       unix: &compile_unix
         compile_script: |
           set -o errexit
@@ -242,7 +248,12 @@ c_driver_variables:
     <<: *unix_path
 
   osx_common: &osx_common
-    <<: *unix_common
+    <<: *username_password_common
+    <<: *compile_osx
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_unix
+    <<: *start_topology_command
+    <<: *unix_path
     <<: *osx_path
 
   solaris_common: &solaris_common
