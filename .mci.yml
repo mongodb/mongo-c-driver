@@ -56,6 +56,9 @@ c_driver_variables:
   ssl_test_list: &ssl_tests
     - name: "compile"
     - name: "integration-test-3.0-ssl"
+    - name: "integration-test-3.0-ssl-no-auth"
+    - name: "integration-test-latest-ssl"
+    - name: "integration-test-latest-ssl-no-auth"
 
 ## Common download urls (merge in as hashes)
   mongo_download_url_prefixes:
@@ -197,13 +200,6 @@ c_driver_variables:
           "$dumpbin" /HEADERS Debug/mongoc-1.0.lib | head -n 25
           "$MSBUILD" /m INSTALL.vcxproj
 
-    username_password:
-      common: &username_password_common
-        set_username_password: |
-          export MONGOC_TEST_USER=bob
-          export MONGOC_TEST_PASSWORD=pwd123
-          export MONGO_SHELL_CONNECTION_FLAGS="-ubob -ppwd123"
-
     connection_flags:
       ssl: &connection_flags_ssl
         set_connection_flags: |
@@ -240,7 +236,6 @@ c_driver_variables:
 
 ## Other OS-specific attributes, grouped by OS
   unix_common: &unix_common
-    <<: *username_password_common
     <<: *compile_unix
     <<: *mongo_orchestration_unix
     <<: *run_integration_tests_unix
@@ -262,7 +257,6 @@ c_driver_variables:
     <<: *solaris_path
 
   solaris64_common: &solaris64_common
-    <<: *username_password_common
     <<: *compile_unix
     <<: *mongo_orchestration_unix
     <<: *run_integration_tests_solaris
@@ -282,7 +276,6 @@ c_driver_variables:
       cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
       msbuild: /cygdrive/c/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe
     msvc2010: &with_msvc2010
-      <<: *username_password_common
       generator: Visual Studio 10 2010 Win64
       msbuild: /cygdrive/c/Windows/Microsoft.NET/Framework64/v4.0.30319/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
@@ -292,7 +285,6 @@ c_driver_variables:
       cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
     msvc2013: &with_msvc2013
-      <<: *username_password_common
       generator: Visual Studio 12 2013 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
@@ -302,7 +294,6 @@ c_driver_variables:
       cmake_defs: "-DENABLE_SSL:BOOL=OFF -DENABLE_SASL:BOOL=OFF"
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
     msvc2015: &with_msvc2015
-      <<: *username_password_common
       generator: Visual Studio 14 2015 Win64
       msbuild: /cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe
       dllpath: "c:/openssl/bin,c:/sasl/bin"
@@ -402,12 +393,12 @@ functions:
         - key: "topology_type"
           value: "server"
 
-  "set-topology-standalone-ssl" :
+  "set topology standalone ssl" :
     command: expansions.update
     params:
       updates:
         - key: "orchestration_file"
-          value: "ssl.json"
+          value: "auth-ssl.json"
         - key: "topology_type"
           value: "server"
 
@@ -428,6 +419,15 @@ functions:
           value: "auth.json"
         - key: "topology_type"
           value: "sharded_cluster"
+
+  "set topology standalone ssl no auth" :
+    command: expansions.update
+    params:
+      updates:
+        - key: "orchestration_file"
+          value: "basic-ssl.json"
+        - key: "topology_type"
+          value: "server"
 
   "set topology standalone no auth" :
     command: expansions.update
@@ -519,9 +519,13 @@ functions:
       script: |
         set -o errexit
         set -o verbose
+        if [ ${use_auth|false} = true ]; then
+           export MONGOC_TEST_USER=bob
+           export MONGOC_TEST_PASSWORD=pwd123
+           export MONGO_SHELL_CONNECTION_FLAGS="-ubob -ppwd123"
+        fi
         export ORCHESTRATION_FILE="orchestration_configs/${topology_type}s/${orchestration_file}"
         export ORCHESTRATION_URL="http://localhost:8889/v1/${topology_type}s"
-        ${set_username_password}
         ${set_connection_flags}
         ${start_mongo_orchestration}
         ${start_topology}
@@ -618,6 +622,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-2.4-replica-set"
       depends_on:
@@ -629,6 +635,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-2.4-sharded"
       depends_on:
@@ -640,6 +648,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-2.6"
       depends_on:
@@ -651,6 +661,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-2.6-replica-set"
       depends_on:
@@ -662,6 +674,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-2.6-sharded"
       depends_on:
@@ -673,6 +687,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-3.0"
       depends_on:
@@ -684,6 +700,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-3.0-replica-set"
       depends_on:
@@ -695,6 +713,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-3.0-sharded"
       depends_on:
@@ -706,6 +726,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-latest"
       depends_on:
@@ -717,6 +739,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-latest-replica-set"
       depends_on:
@@ -728,6 +752,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-latest-sharded"
       depends_on:
@@ -739,6 +765,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-2.4-no-auth"
       depends_on:
@@ -750,6 +778,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-2.4-replica-set-no-auth"
       depends_on:
@@ -883,6 +912,8 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-3.0-with-WiredTiger"
       depends_on:
@@ -895,18 +926,61 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+          vars:
+            use_auth: true
 
     - name: "integration-test-3.0-ssl"
       depends_on:
         - name: "compile"
       commands:
-        - func: "set-topology-standalone-ssl"
+        - func: "set topology standalone ssl"
         - func: "set version 3.0"
         - func: "create working directory"
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "copy certificates"
         - func: "run integration tests"
+          vars:
+            use_auth: true
+
+    - name: "integration-test-3.0-ssl-no-auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone ssl no auth"
+        - func: "set version 3.0"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "copy certificates"
+        - func: "run integration tests"
+
+    - name: "integration-test-latest-ssl"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone ssl"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "copy certificates"
+        - func: "run integration tests"
+          vars:
+            use_auth: true
+
+    - name: "integration-test-latest-ssl-no-auth"
+      depends_on:
+        - name: "compile"
+      commands:
+        - func: "set topology standalone ssl no auth"
+        - func: "set version latest"
+        - func: "create working directory"
+        - func: "fetch artifacts"
+        - func: "fetch mongodb"
+        - func: "copy certificates"
+        - func: "run integration tests"
+
 
 #######################################
 #           Buildvariants             #
