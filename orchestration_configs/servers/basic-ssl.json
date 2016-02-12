@@ -1,5 +1,5 @@
 {
-  "id" : "standalonnoauthessl",
+  "id" : "standalonenoauthssl",
   "name": "mongod",
   "procParams": {
     "ipv6": true,
