@@ -1071,10 +1071,8 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
       }
 
       if (cluster->client->ssl_opts.pem_file) {
-#ifdef MONGOC_ENABLE_SSL
-         username = _mongoc_openssl_extract_subject (cluster->client->ssl_opts.pem_file);
+         username = mongoc_ssl_extract_subject (cluster->client->ssl_opts.pem_file);
          MONGOC_INFO ("X509: got username (%s) from certificate", username);
-#endif
       }
    }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,39 +14,31 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_SSL_H
-#define MONGOC_SSL_H
+#ifndef MONGOC_STREAM_TLS_SECURE_TRANSPORT_PRIVATE_H
+#define MONGOC_STREAM_TLS_SECURE_TRANSPORT_PRIVATE_H
 
 #if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
 # error "Only <mongoc.h> can be included directly."
 #endif
 
+#ifdef MONGOC_ENABLE_SECURE_TRANSPORT
 #include <bson.h>
-
 
 BSON_BEGIN_DECLS
 
 
-typedef struct _mongoc_ssl_opt_t mongoc_ssl_opt_t;
-
-
-struct _mongoc_ssl_opt_t
+/**
+ * mongoc_stream_tls_secure_transport_t:
+ *
+ * Private storage for Secure Transport Streams
+ */
+typedef struct
 {
-   const char *pem_file;
-   const char *pem_pwd;
-   const char *ca_file;
-   const char *ca_dir;
-   const char *crl_file;
-   bool        weak_cert_validation;
-   void       *padding [8];
-};
-
-
-const mongoc_ssl_opt_t *mongoc_ssl_opt_get_default (void) BSON_GNUC_CONST;
-char                   *mongoc_ssl_extract_subject (const char *filename);
+} mongoc_stream_tls_secure_transport_t;
 
 
 BSON_END_DECLS
 
+#endif /* MONGOC_ENABLE_SECURE_TRANSPORT */
+#endif /* MONGOC_STREAM_TLS_SECURE_TRANSPORT_PRIVATE_H */
 
-#endif /* MONGOC_SSL_H */

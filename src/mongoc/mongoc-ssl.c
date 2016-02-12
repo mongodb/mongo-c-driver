@@ -21,6 +21,12 @@
 #include <bson.h>
 #include "mongoc-ssl.h"
 
+#ifdef MONGOC_ENABLE_OPENSSL
+#  include "mongoc-openssl-private.h"
+#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
+#  include "mongoc-secure-transport-private.h"
+#endif
+
 /* TODO: we could populate these from a config or something further down the
  * road for providing defaults */
 #ifndef MONGOC_SSL_DEFAULT_TRUST_FILE
@@ -44,4 +50,15 @@ mongoc_ssl_opt_get_default (void)
    return &gMongocSslOptDefault;
 }
 
+char *
+mongoc_ssl_extract_subject (const char *filename)
+{
+#ifdef MONGOC_ENABLE_OPENSSL
+	return _mongoc_openssl_extract_subject (filename);
+#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
+	return _mongoc_secure_transport_extract_subject (filename);
+#else
+#error "Can only extract X509 subjects using OpenSSL or Secure Transport"
+#endif
+}
 #endif

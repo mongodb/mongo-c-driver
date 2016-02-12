@@ -1094,6 +1094,7 @@ test_ssl_pooled (void)
 {
    _test_mongoc_client_ssl_opts (true);
 }
+#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
 #else
 /* MONGOC_ENABLE_OPENSSL is not defined */
 static void
@@ -1149,6 +1150,7 @@ test_client_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_OPENSSL
    TestSuite_Add (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_Add (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
+#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
 #else
    TestSuite_Add (suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
 #endif

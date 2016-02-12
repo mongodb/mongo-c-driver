@@ -89,7 +89,7 @@ ha_replica_set_create_client_pool (ha_replica_set_t *replica_set)
    bson_string_append(str, "/?replicaSet=");
    bson_string_append(str, replica_set->name);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    if (replica_set->ssl_opt) {
       bson_string_append(str, "&ssl=true");
    }
@@ -99,7 +99,7 @@ ha_replica_set_create_client_pool (ha_replica_set_t *replica_set)
 
    client = mongoc_client_pool_new(uri);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    if (replica_set->ssl_opt) {
       mongoc_client_pool_set_ssl_opts(client, replica_set->ssl_opt);
    }
@@ -138,7 +138,7 @@ ha_replica_set_create_client (ha_replica_set_t *replica_set)
    bson_string_append(str, "/?replicaSet=");
    bson_string_append(str, replica_set->name);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    if (replica_set->ssl_opt) {
       bson_string_append(str, "&ssl=true");
    }
@@ -146,7 +146,7 @@ ha_replica_set_create_client (ha_replica_set_t *replica_set)
 
    client = mongoc_client_new(str->str);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    if (replica_set->ssl_opt) {
       mongoc_client_set_ssl_opts(client, replica_set->ssl_opt);
    }
@@ -291,7 +291,7 @@ ha_node_restart (ha_node_t *node)
       argv[i++] = (char *) "--replSet";
       argv[i++] = node->repl_set;
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
       if (node->ssl_opt) {
          if (node->ssl_opt->pem_file) {
             argv[i++] = (char *) "--sslPEMKeyFile";
@@ -450,7 +450,7 @@ random_int_range (int low,
 }
 
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
 void
 ha_replica_set_ssl (ha_replica_set_t *repl_set,
                     mongoc_ssl_opt_t *opt)
@@ -492,7 +492,7 @@ ha_replica_set_add_node (ha_replica_set_t *replica_set,
                       false,
                       false,
                       replica_set->next_port++);
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    node->ssl_opt = replica_set->ssl_opt;
 #endif
 
@@ -544,7 +544,7 @@ ha_replica_set_configure (ha_replica_set_t *replica_set,
    char key[8];
    int i = 0;
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    if (replica_set->ssl_opt) {
       uristr = bson_strdup_printf("mongodb://127.0.0.1:%hu/?ssl=true", primary->port);
    } else {
@@ -555,7 +555,7 @@ ha_replica_set_configure (ha_replica_set_t *replica_set,
 #endif
 
    client = mongoc_client_new(uristr);
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    if (replica_set->ssl_opt) {
       mongoc_client_set_ssl_opts(client, replica_set->ssl_opt);
    }
@@ -734,7 +734,7 @@ ha_replica_set_get_status (ha_replica_set_t *replica_set,
       uristr = bson_strdup_printf("mongodb://127.0.0.1:%hu/?slaveOk=true",
                                   node->port);
       client = mongoc_client_new(uristr);
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
       if (replica_set->ssl_opt) {
          mongoc_client_set_ssl_opts(client, replica_set->ssl_opt);
       }
@@ -872,7 +872,7 @@ ha_sharded_cluster_add_config (ha_sharded_cluster_t *cluster,
                       true,
                       false,
                       cluster->next_port++);
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    node->ssl_opt = cluster->ssl_opt;
 #endif
    node->next = cluster->configs;
@@ -901,7 +901,7 @@ ha_sharded_cluster_add_router (ha_sharded_cluster_t *cluster,
                       false,
                       true,
                       cluster->next_port++);
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
    node->ssl_opt = cluster->ssl_opt;
 #endif
    node->next = cluster->routers;

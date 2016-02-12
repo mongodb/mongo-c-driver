@@ -9,10 +9,10 @@ AS_IF([test "$enable_openssl" != "no"],[
 if test "$enable_openssl" = "yes"; then
     enable_ssl="openssl";
 fi])
-dnl AS_IF([test "$enable_secure_transport" != "no"],[
-dnl if test "$enable_secure_transport" = "yes"; then
-dnl     enable_ssl="secure_transport";
-dnl fi])
+AS_IF([test "$enable_secure_transport" != "no"],[
+if test "$enable_secure_transport" = "yes"; then
+    enable_ssl="secure_transport";
+fi])
 
 AM_CONDITIONAL([ENABLE_SSL], [test "$enable_ssl" != "no"])
 AM_CONDITIONAL([ENABLE_CRYPTO], true)

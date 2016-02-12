@@ -1,7 +1,13 @@
 #include <bson.h>
 #include <errno.h>
+
+#include "mongoc-config.h"
+#ifdef MONGOC_ENABLE_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#endif
+
+#include "mongoc-stream-tls.h"
 
 #include "ssl-test.h"
 
@@ -73,7 +79,11 @@ ssl_test_server (void * ptr)
    assert (sock_stream);
    ssl_stream = mongoc_stream_tls_new(sock_stream, data->server, 0);
    if (!ssl_stream) {
+#ifdef MONGOC_ENABLE_OPENSSL
       unsigned long err = ERR_get_error();
+#else
+      unsigned long err = 42;
+#endif
       assert(err);
 
       data->server_result->ssl_err = err;
@@ -88,7 +98,11 @@ ssl_test_server (void * ptr)
 
    r = mongoc_stream_tls_do_handshake (ssl_stream, TIMEOUT);
    if (!r) {
+#ifdef MONGOC_ENABLE_OPENSSL
       unsigned long err = ERR_get_error();
+#else
+      unsigned long err = 42;
+#endif
       assert(err);
 
       data->server_result->ssl_err = err;
@@ -185,7 +199,11 @@ ssl_test_client (void * ptr)
    assert(sock_stream);
    ssl_stream = mongoc_stream_tls_new(sock_stream, data->client, 1);
    if (! ssl_stream) {
+#ifdef MONGOC_ENABLE_OPENSSL
       unsigned long err = ERR_get_error();
+#else
+      unsigned long err = 42;
+#endif
       assert(err);
 
       data->client_result->ssl_err = err;
@@ -202,7 +220,11 @@ ssl_test_client (void * ptr)
    errno_captured = errno;
 
    if (! r) {
+#ifdef MONGOC_ENABLE_OPENSSL
       unsigned long err = ERR_get_error();
+#else
+      unsigned long err = 42;
+#endif
       assert(err || errno_captured);
 
       if (err) {
