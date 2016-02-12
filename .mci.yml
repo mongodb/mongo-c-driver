@@ -53,6 +53,12 @@ c_driver_variables:
     - name: "integration-test-latest-replica-set-no-auth"
     - name: "integration-test-latest-sharded-no-auth"
 
+## We don't have OSX SSL (Enterprise) Builds until 3.1.x
+  ssl_osx_test_list: &ssl_osx_tests
+    - name: "compile"
+    - name: "integration-test-latest-ssl"
+    - name: "integration-test-latest-ssl-no-auth"
+
   ssl_test_list: &ssl_tests
     - name: "compile"
     - name: "integration-test-3.0-ssl"
@@ -82,6 +88,8 @@ c_driver_variables:
       mongo_url_prefix: "http://downloads.mongodb.org/linux/mongodb-linux-i686-"
     osx-108: &mongo_url_osx_108
       mongo_url_prefix: "http://downloads.mongodb.org/osx/mongodb-osx-x86_64-"
+    osx-108: &mongo_url_osx_108_enterprise
+      mongo_url_prefix: "http://downloads.mongodb.com/osx/mongodb-osx-x86_64-enterprise-"
     solaris: &mongo_url_solaris
       mongo_url_prefix: "http://downloads.mongodb.org/sunos5/mongodb-sunos5-x86_64-"
 
@@ -154,11 +162,23 @@ c_driver_variables:
           ./mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())' admin
 
     compile:
-      osx: &compile_osx
+      osx_openssl: &compile_osx_openssl
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-openssl --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          make -j8
+      osx_nativessl: &compile_osx_nativessl
         compile_script: |
           set -o errexit
           set -o verbose
           ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-secure-transport --enable-maintainer-flags --enable-debug --with-libbson=bundled
+          make -j8
+      osx_nossl: &compile_osx_nossl
+        compile_script: |
+          set -o errexit
+          set -o verbose
+          ./configure --enable-optimizations --enable-man-pages --enable-sasl --enable-ssl=no --enable-maintainer-flags --enable-debug --with-libbson=bundled
           make -j8
       unix: &compile_unix
         compile_script: |
@@ -241,15 +261,6 @@ c_driver_variables:
     <<: *run_integration_tests_unix
     <<: *start_topology_command
     <<: *unix_path
-
-  osx_common: &osx_common
-    <<: *username_password_common
-    <<: *compile_osx
-    <<: *mongo_orchestration_unix
-    <<: *run_integration_tests_unix
-    <<: *start_topology_command
-    <<: *unix_path
-    <<: *osx_path
 
   solaris_common: &solaris_common
     <<: *unix_common
@@ -1071,12 +1082,51 @@ buildvariants:
 #         OS X Buildvariants          #
 #######################################
 
-- name: os-x-108-64
-  display_name: "OSX 10.8 clang 64"
+- name: os-x-108-64-nossl
+  display_name: "OSX 10.8 clang 64 NOSSL"
   expansions:
     <<: *mongo_url_osx_108
     <<: *cflags_osx_108
-    <<: *osx_common
+    <<: *compile_osx_nossl
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_unix
+    <<: *start_topology_command
+    <<: *unix_path
+    <<: *osx_path
+  run_on:
+  - osx-108
+  tasks: *topology_tests
+
+- name: os-x-108-64-openssl
+  display_name: "OSX 10.8 clang 64 OpenSSL"
+  expansions:
+    <<: *mongo_url_osx_108_enterprise
+    <<: *cflags_osx_108
+    <<: *compile_osx_openssl
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_unix
+    <<: *start_topology_command
+    <<: *unix_path
+    <<: *osx_path
+    <<: *ssl
+  run_on:
+  - osx-108
+  tasks: *ssl_osx_tests
+
+# Missing <<: *ssl and the test shuold be: *ssl_osx_tests
+# That should be added once Native TLS works
+# For now, it just tests Common Crypto
+- name: os-x-108-64-nativessl
+  display_name: "OSX 10.8 clang 64 NativeSSL"
+  expansions:
+    <<: *mongo_url_osx_108
+    <<: *cflags_osx_108
+    <<: *compile_osx_nativessl
+    <<: *mongo_orchestration_unix
+    <<: *run_integration_tests_unix
+    <<: *start_topology_command
+    <<: *unix_path
+    <<: *osx_path
   run_on:
   - osx-108
   tasks: *topology_tests
