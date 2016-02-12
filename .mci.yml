@@ -237,7 +237,7 @@ c_driver_variables:
           export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
-          ./Debug/test-libmongoc.exe -d -f -p
+          ./Debug/test-libmongoc.exe -d -f -p -F test-results.json
       solaris: &run_integration_tests_solaris
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
@@ -246,13 +246,13 @@ c_driver_variables:
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
           export LD_LIBRARY_PATH="/opt/csw/lib/amd64/"
-          make TEST_ARGS="-f -p -d" check
+          make TEST_ARGS="-f -p -d -F test-results.json" check
 
       unix: &run_integration_tests_unix
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
-          make TEST_ARGS="-f -p -d" check
+          make TEST_ARGS="-f -p -d -F test-results.json" check
 
 ## Other OS-specific attributes, grouped by OS
   unix_common: &unix_common
@@ -542,6 +542,12 @@ functions:
         ${start_topology}
         ${run_integration_tests}
 
+  "report results" :
+    command: attach.results
+    params:
+      file_location: "mongo-c-driver/test-results.json"
+
+
 
 #######################################
 #            Pre Task                 #
@@ -635,6 +641,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.4-replica-set"
       depends_on:
@@ -648,6 +655,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.4-sharded"
       depends_on:
@@ -661,6 +669,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.6"
       depends_on:
@@ -674,6 +683,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.6-replica-set"
       depends_on:
@@ -687,6 +697,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.6-sharded"
       depends_on:
@@ -700,6 +711,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0"
       depends_on:
@@ -713,6 +725,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0-replica-set"
       depends_on:
@@ -726,6 +739,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0-sharded"
       depends_on:
@@ -739,6 +753,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-latest"
       depends_on:
@@ -752,6 +767,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-latest-replica-set"
       depends_on:
@@ -765,6 +781,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-latest-sharded"
       depends_on:
@@ -778,6 +795,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-2.4-no-auth"
       depends_on:
@@ -801,6 +819,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-2.4-sharded-no-auth"
       depends_on:
@@ -812,6 +831,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-2.6-no-auth"
       depends_on:
@@ -823,6 +843,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-2.6-replica-set-no-auth"
       depends_on:
@@ -834,6 +855,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-2.6-sharded-no-auth"
       depends_on:
@@ -845,6 +867,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-3.0-no-auth"
       depends_on:
@@ -856,6 +879,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-3.0-replica-set-no-auth"
       depends_on:
@@ -867,6 +891,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-3.0-sharded-no-auth"
       depends_on:
@@ -878,6 +903,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-latest-no-auth"
       depends_on:
@@ -889,6 +915,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-latest-replica-set-no-auth"
       depends_on:
@@ -900,6 +927,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-latest-sharded-no-auth"
       depends_on:
@@ -911,6 +939,7 @@ tasks:
         - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-latest-with-MMAPv1"
       depends_on:
@@ -925,6 +954,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0-with-WiredTiger"
       depends_on:
@@ -939,6 +969,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0-ssl"
       depends_on:
@@ -953,6 +984,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-3.0-ssl-no-auth"
       depends_on:
@@ -965,6 +997,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "copy certificates"
         - func: "run integration tests"
+        - func: "report results"
 
     - name: "integration-test-latest-ssl"
       depends_on:
@@ -979,6 +1012,7 @@ tasks:
         - func: "run integration tests"
           vars:
             use_auth: true
+        - func: "report results"
 
     - name: "integration-test-latest-ssl-no-auth"
       depends_on:
@@ -991,6 +1025,7 @@ tasks:
         - func: "fetch mongodb"
         - func: "copy certificates"
         - func: "run integration tests"
+        - func: "report results"
 
 
 #######################################

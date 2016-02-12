@@ -62,7 +62,7 @@ stamp-h1
 tags
 test-libmongoc
 test-load
-test.log
+test-results.json
 test-mock-server
 test-mongoc-array
 test-mongoc-buffer

@@ -169,7 +169,7 @@ else
 test: $(TEST_PROGS)
 endif
 	@ for TEST_PROG in $(TEST_PROGS) ; do \
-		./$$TEST_PROG $(TEST_ARGS) -F test.log; \
+		./$$TEST_PROG $(TEST_ARGS) -F test-results.json; \
 	done
 
 valgrind: $(TEST_PROGS)
@@ -186,7 +186,7 @@ endif
 local-check:
 
 DISTCLEANFILES += \
-	test.log \
+	test-results.json \
 	tests/trust_dir/ca.db.serial \
 	tests/trust_dir/done \
 	tests/trust_dir/keys/rev.mongodb.com.pem \
