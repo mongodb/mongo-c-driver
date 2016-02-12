@@ -473,7 +473,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       Mutex_Lock (mutex);
       snprintf (buf, sizeof buf,
                 "    { \"status\": \"%s\", "
-                      "\"name\": \"%s\", "
+                      "\"test_file\": \"%s\", "
                       "\"seed\": \"%u\", "
                       "\"elapsed\": %u.%09u }%s\n",
                (status == 0) ? "PASS" : "FAIL",
@@ -493,7 +493,7 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       status = 0;
       Mutex_Lock (mutex);
       snprintf (buf, sizeof buf,
-                "    { \"status\": \"SKIP\", \"name\": \"%s\" },\n",
+                "    { \"status\": \"SKIP\", \"test_file\": \"%s\" },\n",
                 test->name);
       buf [sizeof buf - 1] = '\0';
       _Print_StdOut ("%s", buf);
@@ -578,10 +578,10 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  },\n"
             "  \"options\": {\n"
             "    \"parallel\": \"%s\",\n"
-            "    \"fork\": \"%s\"\n"
+            "    \"fork\": \"%s\",\n"
             "    \"tracing\": \"%s\"\n"
             "  },\n"
-            "  \"tests\": [\n",
+            "  \"results\": [\n",
             uri_str,
             test_framework_is_mongos () ? "true" : "false",
             major_version, minor_version, build,
@@ -624,10 +624,10 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  },\n"
             "  \"options\": {\n"
             "    \"parallel\": \"%s\",\n"
-            "    \"fork\": \"%s\"\n"
+            "    \"fork\": \"%s\",\n"
             "    \"tracing\": \"%s\"\n"
             "  },\n"
-            "  \"tests\": [\n",
+            "  \"results\": [\n",
             uri_str,
             test_framework_is_mongos () ? "true" : "false",
             u.sysname,
