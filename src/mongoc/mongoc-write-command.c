@@ -1103,7 +1103,6 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
             affected = bson_iter_int32 (&subiter);
          }
 
-         /* TODO: refactor */
          /*
           * CDRIVER-372:
           *
@@ -1429,7 +1428,6 @@ _mongoc_write_result_append_upsert (mongoc_write_result_t *result,
    len = (int)bson_uint32_to_string (result->upsert_append_count, &keyptr, key,
                                      sizeof key);
 
-   /* TODO: refactor with append_upserted */
    bson_append_document_begin (&result->upserted, keyptr, len, &child);
    BSON_APPEND_INT32 (&child, "index", idx);
    BSON_APPEND_VALUE (&child, "_id", value);
