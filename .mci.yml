@@ -237,7 +237,7 @@ c_driver_variables:
           export PATH=$PATH:`pwd`/Debug:`pwd`/src/libbson/Debug
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
-          ./Debug/test-libmongoc.exe -d -f -p -F test-results.json
+          ./Debug/test-libmongoc.exe -p -d -F test-results.json
       solaris: &run_integration_tests_solaris
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
@@ -246,13 +246,13 @@ c_driver_variables:
           export SASL_CFLAGS="-I/opt/csw/include/"
           export SASL_LIBS="-L/opt/csw/lib/amd64/ -lsasl2"
           export LD_LIBRARY_PATH="/opt/csw/lib/amd64/"
-          make TEST_ARGS="-f -p -d -F test-results.json" check
+          make TEST_ARGS="-p -d -F test-results.json" check
 
       unix: &run_integration_tests_unix
         run_integration_tests: |
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
-          make TEST_ARGS="-f -p -d -F test-results.json" check
+          make TEST_ARGS="-p -d -F test-results.json" check
 
 ## Other OS-specific attributes, grouped by OS
   unix_common: &unix_common
