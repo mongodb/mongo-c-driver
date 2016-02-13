@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2016 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,197 @@
 
 #include <bson.h>
 
+#include "mongoc-log.h"
 #include "mongoc-ssl.h"
 #include "mongoc-secure-transport-private.h"
+
+#include <Security/Security.h>
+#include <Security/SecKey.h>
+#include <CoreFoundation/CoreFoundation.h>
+
+void
+_bson_append_cftyperef (bson_string_t *retval, const char *label, CFTypeRef str) {
+   if (str) {
+      if (CFGetTypeID(str) == CFStringGetTypeID()) {
+         const char *cs = CFStringGetCStringPtr(str, kCFStringEncodingMacRoman) ;
+
+         bson_string_append_printf (retval, "%s%s", label, cs);
+      }
+   }
+}
+
+CFTypeRef
+_mongoc_secure_transport_dict_get (CFArrayRef values, CFStringRef label)
+{
+   if (!values || CFGetTypeID(values) != CFArrayGetTypeID()) {
+      return NULL;
+   }
+
+   for (CFIndex i = 0; i < CFArrayGetCount(values); ++i) {
+      CFStringRef item_label;
+      CFDictionaryRef item = CFArrayGetValueAtIndex(values, i);
+
+      if (CFGetTypeID(item) != CFDictionaryGetTypeID()) {
+         continue;
+      }
+
+      item_label = CFDictionaryGetValue(item, kSecPropertyKeyLabel);
+      if (item_label && CFStringCompare(item_label, label, 0) == kCFCompareEqualTo) {
+         return CFDictionaryGetValue(item, kSecPropertyKeyValue);
+      }
+   }
+
+   return NULL;
+}
+
+char *
+_mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
+{
+   CFTypeRef subject_name;
+   CFDictionaryRef cert_dict;
+
+   cert_dict = SecCertificateCopyValues (cert, NULL, NULL);
+   if (!cert_dict) {
+      return NULL;
+   }
+
+   subject_name = CFDictionaryGetValue (cert_dict, kSecOIDX509V1SubjectName);
+   if (subject_name) {
+      subject_name = CFDictionaryGetValue (subject_name, kSecPropertyKeyValue);
+   }
+
+   if (subject_name) {
+      CFTypeRef value;
+      bson_string_t *retval = bson_string_new ("");;
+
+      value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDCommonName);
+      _bson_append_cftyperef (retval, "CN=", value);
+
+      value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDOrganizationalUnitName);
+      if (value) {
+         if (CFGetTypeID(value) == CFStringGetTypeID()) {
+            _bson_append_cftyperef (retval, ",OU=", value);
+         } else if (CFGetTypeID(value) == CFArrayGetTypeID()) {
+            CFIndex len = CFArrayGetCount(value);
+
+            if (len > 0) {
+               _bson_append_cftyperef (retval, ",OU=", CFArrayGetValueAtIndex(value, 0));
+            }
+            if (len > 1) {
+               _bson_append_cftyperef (retval, ",", CFArrayGetValueAtIndex(value, 1));
+            }
+            if (len > 2) {
+               _bson_append_cftyperef (retval, ",", CFArrayGetValueAtIndex(value, 2));
+            }
+         }
+      }
+
+      value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDOrganizationName);
+      _bson_append_cftyperef (retval, ",O=", value);
+
+      value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDLocalityName);
+      _bson_append_cftyperef (retval, ",L=", value);
+
+      value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDStateProvinceName);
+      _bson_append_cftyperef (retval, ",ST=", value);
+
+      value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDCountryName);
+      _bson_append_cftyperef (retval, ",C=", value);
+
+      value = _mongoc_secure_transport_dict_get (subject_name, kSecOIDStreetAddress);
+      _bson_append_cftyperef (retval, ",STREET", value);
+
+      CFRelease (cert_dict);
+      return bson_string_free (retval, false);
+   }
+
+   CFRelease (cert_dict);
+   return NULL;
+}
+
+char *
+_mongoc_secure_transport_read_file (const char *filename, size_t *buffer_len)
+{
+   FILE *file;
+   long length;
+   char *buffer;
+
+   file = fopen(filename, "r");
+   if (!file) {
+      return NULL;
+   }
+
+   /* get file length */
+   fseek(file, 0, SEEK_END);
+   length = ftell(file);
+   fseek(file, 0, SEEK_SET);
+   if (length < 1) {
+      return NULL;
+   }
+
+   /* read entire file into buffer */
+   buffer = (char *)bson_malloc (length);
+   if (fread((void *)buffer, 1, length, file) != length) {
+      bson_free (buffer);
+      fclose(file);
+      return NULL;
+   }
+
+   fclose(file);
+   if (!buffer) {
+      return NULL;
+   }
+
+   if (buffer_len) {
+      *buffer_len = length;
+   }
+
+   return buffer;
+}
 
 char *
 _mongoc_secure_transport_extract_subject (const char *filename)
 {
-	return strdup("Hannes");
+   SecExternalItemType item_type = kSecItemTypeUnknown;
+   SecExternalFormat format = kSecFormatUnknown;
+   CFArrayRef cert_items = NULL;
+   CFDataRef dataref;
+   size_t buffer_len;
+   char *buffer;
+   OSStatus res;
+   int n = 0;
+
+   buffer = _mongoc_secure_transport_read_file (filename, &buffer_len);
+   if (!buffer) {
+      MONGOC_WARNING("Can't read file %s", filename);
+      return NULL;
+   }
+
+   dataref = CFDataCreate(NULL, (UInt8 *)buffer, buffer_len);
+
+   res = SecItemImport(dataref, CFSTR(".pem"), &format, &item_type, 0, NULL, NULL, &cert_items);
+   bson_free (buffer);
+
+   if (res == 0) {
+      if (item_type == kSecItemTypeAggregate) {
+         for (n=CFArrayGetCount(cert_items); n > 0; n--) {
+            CFTypeID item_id = CFGetTypeID (CFArrayGetValueAtIndex (cert_items, n-1));
+
+            if (item_id == SecCertificateGetTypeID()) {
+               SecCertificateRef certificate = (SecCertificateRef)CFArrayGetValueAtIndex(cert_items, n-1);
+
+               return _mongoc_secure_transport_RFC2253_from_cert (certificate);
+            }
+         }
+         MONGOC_WARNING("Can't find certificate in '%s'", filename);
+      } else {
+         MONGOC_WARNING("Unexpected certificate format in '%s'", filename);
+      }
+   } else {
+      MONGOC_WARNING("Invalid X.509 PEM file '%s'", filename);
+   }
+
+   return NULL;
 }
 
 #endif
