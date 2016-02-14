@@ -141,6 +141,7 @@ _test_collection_find_live (test_collection_find_t *test_data)
    bson_free (drop_cmd);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
    bson_free (collection_name);
    mongoc_client_destroy (client);
 }
@@ -236,6 +237,8 @@ _test_collection_op_query_or_find_command (
                        test_data->filename, test_data->lineno,
                        test_data->funcname, test_data->expected_result));
 
+   request_destroy (request);
+   future_destroy (future);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -282,6 +285,8 @@ _reply_to_op_query (request_t              *request,
 
    mock_server_reply_multi (request, MONGOC_REPLY_NONE, docs,
                             test_data->n_results, 0 /* cursor_id */);
+
+   bson_free (docs);
 }
 
 
@@ -1050,6 +1055,7 @@ _test_tailable_timeout (bool pooled)
    bson_destroy (&reply);
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
    bson_free (collection_name);
    
    if (pooled) {

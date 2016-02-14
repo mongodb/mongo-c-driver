@@ -2137,6 +2137,7 @@ test_large_inserts_ordered (void)
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
+   mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
    bson_destroy (huge_doc);
    mongoc_client_destroy (client);
