@@ -475,10 +475,16 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
                 "    { \"status\": \"%s\", "
                       "\"test_file\": \"%s\", "
                       "\"seed\": \"%u\", "
+                      "\"start\": %u.%09u, "
+                      "\"end\": %u.%09u, "
                       "\"elapsed\": %u.%09u }%s\n",
                (status == 0) ? "PASS" : "FAIL",
                name,
                test->seed,
+               (unsigned)ts1.tv_sec,
+               (unsigned)ts1.tv_nsec,
+               (unsigned)ts2.tv_sec,
+               (unsigned)ts2.tv_nsec,
                (unsigned)ts3.tv_sec,
                (unsigned)ts3.tv_nsec,
                ((*count) == 1) ? "" : ",");
