@@ -953,8 +953,8 @@ test_mongoc_client_unix_domain_socket (void *context)
    assert (bson_iter_init_find (&iter, &reply, "ok"));
 
    bson_destroy (&reply);
-
    mongoc_client_destroy (client);
+   bson_free (uri_str);
 }
 
 
