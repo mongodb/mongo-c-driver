@@ -129,85 +129,48 @@ _mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
 }
 
 char *
-_mongoc_secure_transport_read_file (const char *filename, size_t *buffer_len)
-{
-   FILE *file;
-   long length;
-   char *buffer;
-
-   file = fopen(filename, "r");
-   if (!file) {
-      return NULL;
-   }
-
-   /* get file length */
-   fseek(file, 0, SEEK_END);
-   length = ftell(file);
-   fseek(file, 0, SEEK_SET);
-   if (length < 1) {
-      return NULL;
-   }
-
-   /* read entire file into buffer */
-   buffer = (char *)bson_malloc (length);
-   if (fread((void *)buffer, 1, length, file) != length) {
-      bson_free (buffer);
-      fclose(file);
-      return NULL;
-   }
-
-   fclose(file);
-   if (!buffer) {
-      return NULL;
-   }
-
-   if (buffer_len) {
-      *buffer_len = length;
-   }
-
-   return buffer;
-}
-
-char *
 _mongoc_secure_transport_extract_subject (const char *filename)
 {
    SecExternalItemType item_type = kSecItemTypeUnknown;
    SecExternalFormat format = kSecFormatUnknown;
    CFArrayRef cert_items = NULL;
    CFDataRef dataref;
-   size_t buffer_len;
-   char *buffer;
    OSStatus res;
+   CFErrorRef error;
    int n = 0;
+   CFURLRef url;
+   CFReadStreamRef read_stream;
+   SecTransformRef sec_transform;
 
-   buffer = _mongoc_secure_transport_read_file (filename, &buffer_len);
-   if (!buffer) {
-      MONGOC_WARNING("Can't read file %s", filename);
+
+   url = CFURLCreateFromFileSystemRepresentation (kCFAllocatorDefault, (const UInt8 *)filename, strlen(filename), false);
+   read_stream = CFReadStreamCreateWithFile (kCFAllocatorDefault, url);
+   sec_transform = SecTransformCreateReadTransformWithReadStream (read_stream);
+   dataref = SecTransformExecute (sec_transform, &error);
+   if (error) {
+      MONGOC_WARNING("Can't read '%s'", filename);
       return NULL;
    }
 
-   dataref = CFDataCreate(NULL, (UInt8 *)buffer, buffer_len);
-
    res = SecItemImport(dataref, CFSTR(".pem"), &format, &item_type, 0, NULL, NULL, &cert_items);
-   bson_free (buffer);
-
-   if (res == 0) {
-      if (item_type == kSecItemTypeAggregate) {
-         for (n=CFArrayGetCount(cert_items); n > 0; n--) {
-            CFTypeID item_id = CFGetTypeID (CFArrayGetValueAtIndex (cert_items, n-1));
-
-            if (item_id == SecCertificateGetTypeID()) {
-               SecCertificateRef certificate = (SecCertificateRef)CFArrayGetValueAtIndex(cert_items, n-1);
-
-               return _mongoc_secure_transport_RFC2253_from_cert (certificate);
-            }
-         }
-         MONGOC_WARNING("Can't find certificate in '%s'", filename);
-      } else {
-         MONGOC_WARNING("Unexpected certificate format in '%s'", filename);
-      }
-   } else {
+   if (res) {
       MONGOC_WARNING("Invalid X.509 PEM file '%s'", filename);
+      return NULL;
+   }
+
+   if (item_type == kSecItemTypeAggregate) {
+      for (n=CFArrayGetCount(cert_items); n > 0; n--) {
+         CFTypeID item_id = CFGetTypeID (CFArrayGetValueAtIndex (cert_items, n-1));
+
+         if (item_id == SecCertificateGetTypeID()) {
+            SecCertificateRef certificate = (SecCertificateRef)CFArrayGetValueAtIndex(cert_items, n-1);
+
+            return _mongoc_secure_transport_RFC2253_from_cert (certificate);
+         }
+      }
+      MONGOC_WARNING("Can't find certificate in '%s'", filename);
+   } else {
+      MONGOC_WARNING("Unexpected certificate format in '%s'", filename);
    }
 
    return NULL;
