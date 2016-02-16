@@ -31,6 +31,7 @@ BSON_BEGIN_DECLS
 
 typedef struct
 {
+   bson_t      array;
    bool        in_batch;
    bool        in_reader;
    bson_iter_t batch_iter;

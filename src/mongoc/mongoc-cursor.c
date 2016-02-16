@@ -644,16 +644,14 @@ failure:
 
 bool
 _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
-                            const bson_t    *command)
+                            const bson_t    *command,
+                            bson_t          *reply)
 {
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
-   bool r;
-   char cmd_ns[MONGOC_NAMESPACE_MAX];
+   char db[MONGOC_NAMESPACE_MAX];
    mongoc_apply_read_prefs_result_t read_prefs_result = READ_PREFS_RESULT_INIT;
    bool ret = false;
-   bson_t bson;
-   mongoc_rpc_t rpc;
 
    ENTRY;
 
@@ -665,57 +663,18 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
-   _mongoc_buffer_clear (&cursor->buffer, false);
-
-   bson_snprintf (cmd_ns, sizeof cmd_ns, "%.*s.$cmd", cursor->dblen,
-                  cursor->ns);
-
+   bson_strncpy (db, cursor->ns, cursor->dblen + 1);
    apply_read_preferences (cursor->read_prefs, server_stream,
                            command, cursor->flags, &read_prefs_result);
 
-   _mongoc_rpc_prep_command (&rpc,
-                             cmd_ns,
-                             read_prefs_result.query_with_read_prefs,
-                             read_prefs_result.flags);
-
-   r = mongoc_cluster_run_command_rpc (cluster,
-                                       server_stream->stream,
-                                       server_stream->sd->id,
-                                       _mongoc_get_command_name (command),
-                                       &rpc,
-                                       &cursor->rpc,
-                                       true, /* monitored */
-                                       &server_stream->sd->host,
-                                       cursor->hint,
-                                       &cursor->buffer,
-                                       &cursor->error);
-
-   if (!r) {
-      GOTO (done);
-   }
-
-   /* static-init "bson" to point into buffer */
-   if (!_mongoc_rpc_reply_get_first (&cursor->rpc.reply, &bson)) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_BSON,
-                      MONGOC_ERROR_BSON_INVALID,
-                      "Failed to decode reply BSON document.");
-      GOTO (done);
-   }
-
-   if (_mongoc_rpc_parse_command_error (&cursor->rpc, &cursor->error)) {
-      GOTO (done);
-   }
-
-   if (cursor->reader) {
-      bson_reader_destroy (cursor->reader);
-   }
-
-   cursor->reader = bson_reader_new_from_data (
-      cursor->rpc.reply.documents,
-      (size_t)cursor->rpc.reply.documents_len);
-
-   ret = true;
+   ret = mongoc_cluster_run_command_monitored (
+      cluster,
+      server_stream,
+      read_prefs_result.flags,
+      db,
+      read_prefs_result.query_with_read_prefs,
+      reply,
+      &cursor->error);
 
 done:
    apply_read_prefs_result_cleanup (&read_prefs_result);

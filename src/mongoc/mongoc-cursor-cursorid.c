@@ -37,6 +37,9 @@ _mongoc_cursor_cursorid_new (void)
    ENTRY;
 
    cid = (mongoc_cursor_cursorid_t *)bson_malloc0 (sizeof *cid);
+   cid->in_batch = false;
+   cid->in_reader = false;
+   bson_init (&cid->array);
 
    RETURN (cid);
 }
@@ -45,9 +48,15 @@ _mongoc_cursor_cursorid_new (void)
 static void
 _mongoc_cursor_cursorid_destroy (mongoc_cursor_t *cursor)
 {
+   mongoc_cursor_cursorid_t *cid;
+
    ENTRY;
 
-   bson_free (cursor->iface_data);
+   cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
+   BSON_ASSERT (cid);
+
+   bson_destroy (&cid->array);
+   bson_free (cid);
    _mongoc_cursor_destroy (cursor);
 
    EXIT;
@@ -59,7 +68,6 @@ _mongoc_cursor_cursorid_refresh_from_command (mongoc_cursor_t *cursor,
                                               const bson_t    *command)
 {
    mongoc_cursor_cursorid_t *cid;
-   const bson_t *bson;
    bson_iter_t iter, child;
    const char *ns;
 
@@ -68,11 +76,13 @@ _mongoc_cursor_cursorid_refresh_from_command (mongoc_cursor_t *cursor,
    cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
    BSON_ASSERT (cid);
 
+   /* run_command will initialize cid->array */
+   bson_destroy (&cid->array);
+
    /* server replies to find / aggregate with {cursor: {id: N, firstBatch: []}},
     * to getMore command with {cursor: {id: N, nextBatch: []}}. */
-   if (_mongoc_cursor_run_command (cursor, command) &&
-       _mongoc_read_from_buffer (cursor, &bson) &&
-       bson_iter_init_find (&iter, bson, "cursor") &&
+   if (_mongoc_cursor_run_command (cursor, command, &cid->array) &&
+       bson_iter_init_find (&iter, &cid->array, "cursor") &&
        BSON_ITER_HOLDS_DOCUMENT (&iter) &&
        bson_iter_recurse (&iter, &child)) {
 
@@ -234,6 +244,11 @@ _mongoc_cursor_cursorid_next (mongoc_cursor_t *cursor,
 
 again:
 
+   /* Two paths:
+    * - Mongo 3.2+, sent "getMore" cmd, we're reading reply's "nextBatch" array
+    * - Mongo 2.6 to 3, after "aggregate" or similar command we sent OP_GETMORE,
+    *   we're reading the raw reply
+    */
    if (cid->in_batch) {
       _mongoc_cursor_cursorid_read_from_batch (cursor, bson);
 

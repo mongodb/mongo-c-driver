@@ -81,10 +81,10 @@ struct _mongoc_cursor_t
 
    bson_error_t               error;
 
+   /* for OP_QUERY and OP_GETMORE replies*/
    mongoc_rpc_t               rpc;
    mongoc_buffer_t            buffer;
    bson_reader_t             *reader;
-
    const bson_t              *current;
 
    mongoc_cursor_interface_t  iface;
@@ -118,7 +118,8 @@ void                     _mongoc_cursor_collection    (const mongoc_cursor_t    
 bool                     _mongoc_cursor_op_getmore    (mongoc_cursor_t              *cursor,
                                                        mongoc_server_stream_t       *server_stream);
 bool                     _mongoc_cursor_run_command   (mongoc_cursor_t              *cursor,
-                                                       const bson_t                 *command);
+                                                       const bson_t                 *command,
+                                                       bson_t                       *reply);
 bool                     _mongoc_cursor_more          (mongoc_cursor_t              *cursor);
 bool                     _mongoc_cursor_next          (mongoc_cursor_t              *cursor,
                                                        const bson_t                **bson);
