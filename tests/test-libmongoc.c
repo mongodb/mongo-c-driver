@@ -67,6 +67,7 @@ extern void test_topology_reconcile_install      (TestSuite *suite);
 extern void test_topology_scanner_install        (TestSuite *suite);
 extern void test_uri_install                     (TestSuite *suite);
 extern void test_usleep_install                  (TestSuite *suite);
+extern void test_util_install                    (TestSuite *suite);
 extern void test_version_install                 (TestSuite *suite);
 extern void test_write_command_install           (TestSuite *suite);
 extern void test_write_concern_install           (TestSuite *suite);
@@ -1298,6 +1299,7 @@ main (int   argc,
    test_topology_install (&suite);
    test_uri_install (&suite);
    test_usleep_install (&suite);
+   test_util_install (&suite);
    test_version_install (&suite);
    test_write_concern_install (&suite);
 #ifdef MONGOC_ENABLE_SSL
