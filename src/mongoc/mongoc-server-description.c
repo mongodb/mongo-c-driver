@@ -273,6 +273,68 @@ mongoc_server_description_host (mongoc_server_description_t *description)
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_server_description_type --
+ *
+ *      Get this server's type, one of the types defined in the Server
+ *      Discovery And Monitoring Spec.
+ *
+ * Returns:
+ *      A string.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const char *
+mongoc_server_description_type (mongoc_server_description_t *description)
+{
+   switch (description->type) {
+   case MONGOC_SERVER_UNKNOWN:
+      return "Unknown";
+   case MONGOC_SERVER_STANDALONE:
+      return "Standalone";
+   case MONGOC_SERVER_MONGOS:
+      return "Mongos";
+   case MONGOC_SERVER_POSSIBLE_PRIMARY:
+      return "PossiblePrimary";
+   case MONGOC_SERVER_RS_PRIMARY:
+      return "RSPrimary";
+   case MONGOC_SERVER_RS_SECONDARY:
+      return "RSSecondary";
+   case MONGOC_SERVER_RS_ARBITER:
+      return "RSArbiter";
+   case MONGOC_SERVER_RS_OTHER:
+      return "RSOther";
+   case MONGOC_SERVER_RS_GHOST:
+      return "RSGhost";
+   case MONGOC_SERVER_DESCRIPTION_TYPES:
+   default:
+      MONGOC_ERROR ("Invalid mongoc_server_description_t type\n");
+      return "Invalid";
+   }
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_server_description_ismaster --
+ *
+ *      Return this server's most recent "ismaster" command response.
+ *
+ * Returns:
+ *      A reference to a BSON document, owned by the server description.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const bson_t *
+mongoc_server_description_ismaster (mongoc_server_description_t *description)
+{
+   return &description->last_is_master;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_server_description_set_state --
  *
  *       Set the server description's server type.
@@ -285,7 +347,6 @@ mongoc_server_description_set_state (mongoc_server_description_t *description,
 {
    description->type = type;
 }
-
 
 /*
  *--------------------------------------------------------------------------
@@ -329,7 +390,6 @@ mongoc_server_description_set_election_id (mongoc_server_description_t *descript
       bson_oid_copy_unsafe (&kObjectIdZero, &description->election_id);
    }
 }
-
 
 /*
  *-------------------------------------------------------------------------

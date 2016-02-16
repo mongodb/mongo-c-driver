@@ -291,3 +291,11 @@ LIBMONGOC_1.3 {
         mongoc_read_concern_set_level;
         mongoc_uri_get_read_concern;
 } LIBMONGOC_1.2;
+
+LIBMONGOC_1.4 {
+    global:
+        mongoc_server_descriptions_destroy_all;
+        mongoc_server_description_ismaster;
+        mongoc_server_description_type;
+        mongoc_client_get_server_descriptions;
+} LIBMONGOC_1.3;

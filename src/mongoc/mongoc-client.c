@@ -42,6 +42,8 @@
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
 #include "mongoc-openssl-private.h"
+#include "mongoc-set-private.h"
+
 #endif
 
 
@@ -1658,4 +1660,58 @@ mongoc_client_set_apm_callbacks (mongoc_client_t        *client,
    }
 
    client->apm_context = context;
+}
+
+
+mongoc_server_description_t **
+mongoc_client_get_server_descriptions (
+   const mongoc_client_t        *client,
+   size_t                       *n /* OUT */)
+{
+   mongoc_topology_t *topology;
+   size_t i;
+   mongoc_set_t *set;
+   mongoc_server_description_t **sds;
+   mongoc_server_description_t *sd;
+
+   BSON_ASSERT (client);
+   BSON_ASSERT (n);
+
+   topology = (mongoc_topology_t *) client->topology;
+
+   /* in case the client is pooled */
+   mongoc_mutex_lock (&topology->mutex);
+
+   set = topology->description.servers;
+
+   /* enough room for all descriptions, even if some are unknown  */
+   sds = (mongoc_server_description_t **) bson_malloc0 (
+      sizeof (mongoc_server_description_t *) * set->items_len);
+
+   *n = 0;
+   for (i = 0; i < set->items_len; ++i) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (set, (int) i);
+      if (sd->type != MONGOC_SERVER_UNKNOWN) {
+         sds[i] = mongoc_server_description_new_copy (sd);
+         ++(*n);
+      }
+   }
+
+   mongoc_mutex_unlock (&topology->mutex);
+
+   return sds;
+}
+
+
+void
+mongoc_server_descriptions_destroy_all (mongoc_server_description_t **sds,
+                                        size_t                        n)
+{
+   size_t i;
+
+   for (i = 0; i < n; ++i) {
+      mongoc_server_description_destroy (sds[i]);
+   }
+
+   bson_free (sds);
 }

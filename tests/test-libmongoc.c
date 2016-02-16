@@ -819,6 +819,107 @@ test_framework_get_uri ()
    return uri;
 }
 
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_mongos_count --
+ *
+ *       Returns the number of servers in the test framework's MongoDB URI.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+size_t
+test_framework_mongos_count (void)
+{
+   mongoc_uri_t *uri = test_framework_get_uri ();
+   const mongoc_host_list_t *h;
+   size_t count = 0;
+
+   assert (uri);
+   h = mongoc_uri_get_hosts (uri);
+   while (h) {
+      ++count;
+      h = h->next;
+   }
+
+   mongoc_uri_destroy (uri);
+
+   return count;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_replset_member_count --
+ *
+ *       Returns the number replica set data members (including arbiters).
+ *
+ *--------------------------------------------------------------------------
+ */
+
+size_t
+test_framework_replset_member_count (void)
+{
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+   bson_iter_t iter, array;
+   size_t count = 0;
+
+   client = test_framework_client_new ();
+   r = mongoc_client_command_simple (client, "admin",
+                                     tmp_bson ("{'replSetGetStatus': 1}"), NULL,
+                                     &reply, &error);
+
+   if (r) {
+      if (bson_iter_init_find (&iter, &reply, "members") &&
+          BSON_ITER_HOLDS_ARRAY (&iter)) {
+         bson_iter_recurse (&iter, &array);
+         while (bson_iter_next (&array)) {
+            ++count;
+         }
+      }
+   } else if (!strstr (error.message, "not running with --replSet") &&
+              !strstr (error.message, "replSetGetStatus is not supported through mongos"))
+   {
+      /* failed for some other reason */
+      ASSERT_OR_PRINT (false, error);
+   }
+
+   bson_destroy (&reply);
+   mongoc_client_destroy (client);
+
+   return count;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_server_count --
+ *
+ *       Returns the number of mongos servers or replica set members,
+ *       or 1 if the server is standalone.
+ *
+ *--------------------------------------------------------------------------
+ */
+size_t
+test_framework_server_count (void)
+{
+   size_t count = 0;
+
+   count = test_framework_replset_member_count ();
+   if (count > 0) {
+      return count;
+   }
+
+   return test_framework_mongos_count ();
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -1015,21 +1116,11 @@ test_framework_is_mongos (void)
    return is_mongos;
 }
 
+
 bool
 test_framework_is_replset (void)
 {
-   bson_t reply;
-   bson_iter_t iter;
-   bool is_replset;
-
-   call_ismaster (&reply);
-
-   is_replset = (bson_iter_init_find (&iter, &reply, "hosts") &&
-                 BSON_ITER_HOLDS_ARRAY (&iter));
-
-   bson_destroy (&reply);
-
-   return is_replset;
+   return test_framework_replset_member_count() > 0;
 }
 
 bool

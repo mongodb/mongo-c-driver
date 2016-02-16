@@ -19,6 +19,7 @@
 
 #include "mongoc-set-private.h"
 #include "mongoc-server-description.h"
+#include "mongoc-array-private.h"
 
 #define MONGOC_SS_DEFAULT_TIMEOUT_MS 30000
 #define MONGOC_SS_DEFAULT_LOCAL_THRESHOLD_MS 15

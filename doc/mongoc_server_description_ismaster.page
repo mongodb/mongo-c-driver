@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<page xmlns="http://projectmallard.org/1.0/"
+      type="topic"
+      style="function"
+      xmlns:api="http://projectmallard.org/experimental/api/"
+      xmlns:ui="http://projectmallard.org/experimental/ui/"
+      id="mongoc_server_description_ismaster">
+  <info>
+    <link type="guide" xref="mongoc_server_description_t" group="function"/>
+  </info>
+  <title>mongoc_server_description_ismaster()</title>
+
+  <section id="synopsis">
+    <title>Synopsis</title>
+    <synopsis><code mime="text/x-csrc"><![CDATA[const bson_t *
+mongoc_server_description_ismaster (const mongoc_server_description_t *description);
+
+]]></code></synopsis>
+  </section>
+
+  <section id="parameters">
+    <title>Parameters</title>
+    <table>
+      <tr><td><p>description</p></td><td><p>A <code xref="mongoc_server_description_t">mongoc_server_description_t</code>.</p></td></tr>
+    </table>
+  </section>
+
+  <section id="description">
+    <title>Description</title>
+    <p>The client or client pool periodically runs an <link href="https://docs.mongodb.org/manual/reference/command/isMaster/">"isMaster"</link> command on each server, to update its view of the MongoDB deployment. Use <code xref="mongoc_client_get_server_descriptions">mongoc_client_get_server_descriptions()</code> and <code>mongoc_server_description_ismaster()</code> to get the most recent "isMaster" response.</p>
+  </section>
+
+  <section id="return">
+    <title>Returns</title>
+    <p>A reference to a BSON document, owned by the server description. The document is empty if the driver is not connected to the server.</p>
+  </section>
+
+</page>

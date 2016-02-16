@@ -40,6 +40,10 @@ char *test_framework_get_uri_str (void);
 char *test_framework_get_unix_domain_socket_uri_str (void);
 char *test_framework_get_unix_domain_socket_path (void);
 mongoc_uri_t *test_framework_get_uri (void);
+size_t test_framework_mongos_count (void);
+size_t test_framework_replset_member_count (void);
+size_t test_framework_server_count (void);
+
 #ifdef MONGOC_ENABLE_OPENSSL
 const mongoc_ssl_opt_t *test_framework_get_ssl_opts (void);
 #endif

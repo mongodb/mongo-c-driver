@@ -1106,6 +1106,65 @@ test_mongoc_client_ssl_disabled (void)
 #endif
 
 
+static void
+test_mongoc_client_descriptions (void)
+{
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool;
+   mongoc_server_description_t **sds;
+   size_t n, expected_n;
+   bson_error_t error;
+   bool r;
+   bson_t *ping = tmp_bson ("{'ping': 1}");
+   int64_t start;
+
+   expected_n = test_framework_server_count ();
+
+   /*
+    * single-threaded
+    */
+   client = test_framework_client_new ();
+
+   /* before connecting */
+   sds = mongoc_client_get_server_descriptions (client, &n);
+   ASSERT_CMPSIZE_T (n, ==, (size_t) 0);
+   bson_free (sds);
+
+   /* connect */
+   r = mongoc_client_command_simple (client, "db", ping, NULL, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   sds = mongoc_client_get_server_descriptions (client, &n);
+   ASSERT_CMPSIZE_T (n, ==, expected_n);
+
+   mongoc_server_descriptions_destroy_all (sds, n);
+   mongoc_client_destroy (client);
+
+   /*
+    * pooled
+    */
+   pool = test_framework_client_pool_new ();
+   client = mongoc_client_pool_pop (pool);
+
+   /* wait for background thread to discover all members */
+   start = bson_get_monotonic_time ();
+   do {
+      _mongoc_usleep (1000);
+      if (bson_get_monotonic_time() - start > 1000 * 1000) {
+         MONGOC_ERROR (
+            "still have %zu descriptions, not expected %zu, after 1 sec\n",
+            n, expected_n);
+         abort ();
+      }
+
+      sds = mongoc_client_get_server_descriptions (client, &n);
+      mongoc_server_descriptions_destroy_all (sds, n);
+   } while (n != expected_n);
+
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
+
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -1154,4 +1213,6 @@ test_client_install (TestSuite *suite)
 #else
    TestSuite_Add (suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
 #endif
+
+   TestSuite_Add (suite, "/Client/descriptions", test_mongoc_client_descriptions);
 }

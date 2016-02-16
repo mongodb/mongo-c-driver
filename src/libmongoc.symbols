@@ -2,6 +2,7 @@ LIBMONGOC_1.0
 LIBMONGOC_1.1
 LIBMONGOC_1.2
 LIBMONGOC_1.3
+LIBMONGOC_1.4
 mongoc_bulk_operation_delete
 mongoc_bulk_operation_delete_one
 mongoc_bulk_operation_destroy
@@ -35,6 +36,7 @@ mongoc_client_get_max_bson_size
 mongoc_client_get_max_message_size
 mongoc_client_get_read_concern
 mongoc_client_get_read_prefs
+mongoc_client_get_server_descriptions
 mongoc_client_get_server_status
 mongoc_client_get_uri
 mongoc_client_get_write_concern
@@ -200,9 +202,12 @@ mongoc_read_prefs_new
 mongoc_read_prefs_set_mode
 mongoc_read_prefs_set_tags
 mongoc_server_description_destroy
+mongoc_server_descriptions_destroy_all
 mongoc_server_description_host
 mongoc_server_description_id
+mongoc_server_description_ismaster
 mongoc_server_description_new_copy
+mongoc_server_description_type
 mongoc_socket_accept
 mongoc_socket_bind
 mongoc_socket_check_closed
