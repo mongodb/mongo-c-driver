@@ -164,7 +164,8 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
    /*
     * setup
     */
-   BSON_ASSERT (command_name = _mongoc_get_command_name (command));
+   command_name = _mongoc_get_command_name (command);
+   BSON_ASSERT (command_name);
    callbacks = &cluster->client->apm_callbacks;
    _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
