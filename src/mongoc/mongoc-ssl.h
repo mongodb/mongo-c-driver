@@ -43,7 +43,7 @@ struct _mongoc_ssl_opt_t
 
 
 const mongoc_ssl_opt_t *mongoc_ssl_opt_get_default (void) BSON_GNUC_CONST;
-char                   *mongoc_ssl_extract_subject (const char *filename);
+char                   *mongoc_ssl_extract_subject (const char *filename, const char *passphrase);
 
 
 BSON_END_DECLS

@@ -59,7 +59,6 @@ struct _mongoc_stream_tls_t
    bool (*check_cert)   (mongoc_stream_t *stream, const char *host);
    bool (*should_retry) (mongoc_stream_t *stream);
    bool (*should_read)  (mongoc_stream_t *stream);
-   bool (*should_write) (mongoc_stream_t *stream);
 };
 
 

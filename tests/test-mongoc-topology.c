@@ -40,8 +40,10 @@ test_topology_client_creation (void)
    assert (client_a);
    assert (client_b);
 
+#ifdef MONGOC_ENABLE_SSL
    test_framework_set_ssl_opts (client_a);
    test_framework_set_ssl_opts (client_b);
+#endif
 
    /* ensure that they are using different topologies */
    topology_a = client_a->topology;

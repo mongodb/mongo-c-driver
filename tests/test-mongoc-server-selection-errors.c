@@ -81,7 +81,9 @@ test_server_selection_uds_auth_failure (void *context)
    path = test_framework_get_unix_domain_socket_path_escaped ();
    uri = bson_strdup_printf ("mongodb://user:wrongpass@%s", path);
    client = mongoc_client_new (uri);
+#ifdef MONGOC_ENABLE_SSL
    test_framework_set_ssl_opts (client);
+#endif
 
    assert (client);
 
@@ -106,7 +108,9 @@ test_server_selection_uds_not_found (void *context)
    bson_t reply;
 
    client = mongoc_client_new ("mongodb:///tmp/mongodb-so-close.sock");
+#ifdef MONGOC_ENABLE_SSL
    test_framework_set_ssl_opts (client);
+#endif
 
    assert (client);
 

@@ -48,11 +48,11 @@ size_t test_framework_mongos_count (void);
 size_t test_framework_replset_member_count (void);
 size_t test_framework_server_count (void);
 
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
 const mongoc_ssl_opt_t *test_framework_get_ssl_opts (void);
-#endif
 void test_framework_set_ssl_opts (mongoc_client_t *client);
 void test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool);
+#endif
 mongoc_client_t *test_framework_client_new (void);
 mongoc_client_pool_t *test_framework_client_pool_new (void);
 

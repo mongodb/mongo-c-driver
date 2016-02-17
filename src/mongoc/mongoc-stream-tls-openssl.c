@@ -599,24 +599,6 @@ mongoc_stream_tls_openssl_should_read (mongoc_stream_t *stream)
 
 
 /**
- * mongoc_stream_tls_openssl_should_write:
- *
- * If the stream should write
- */
-bool
-mongoc_stream_tls_openssl_should_write (mongoc_stream_t *stream)
-{
-   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *)stream;
-   mongoc_stream_tls_openssl_t *openssl = (mongoc_stream_tls_openssl_t *) tls->ctx;
-
-   BSON_ASSERT (tls);
-   ENTRY;
-
-   RETURN(BIO_should_write (openssl->bio));
-}
-
-
-/**
  * mongoc_stream_tls_openssl_check_cert:
  *
  * check the cert returned by the other party
@@ -715,7 +697,6 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t  *base_stream,
    tls->parent.check_closed = _mongoc_stream_tls_openssl_check_closed;
    tls->weak_cert_validation = opt->weak_cert_validation;
    tls->should_read = mongoc_stream_tls_openssl_should_read;
-   tls->should_write = mongoc_stream_tls_openssl_should_write;
    tls->should_retry = mongoc_stream_tls_openssl_should_retry;
    tls->do_handshake = mongoc_stream_tls_openssl_do_handshake;
    tls->check_cert = mongoc_stream_tls_openssl_check_cert;

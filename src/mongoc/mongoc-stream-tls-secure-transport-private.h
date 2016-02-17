@@ -24,6 +24,8 @@
 #ifdef MONGOC_ENABLE_SECURE_TRANSPORT
 #include <bson.h>
 
+#include <Security/Security.h>
+
 BSON_BEGIN_DECLS
 
 
@@ -34,6 +36,9 @@ BSON_BEGIN_DECLS
  */
 typedef struct
 {
+    SSLContextRef      ssl_ctx_ref;
+    CFArrayRef         anchors;
+    CFMutableArrayRef  my_cert;
 } mongoc_stream_tls_secure_transport_t;
 
 

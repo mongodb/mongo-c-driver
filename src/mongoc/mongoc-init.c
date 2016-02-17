@@ -23,7 +23,9 @@
 #ifdef MONGOC_ENABLE_SSL
 # include "mongoc-scram-private.h"
 # include "mongoc-ssl.h"
-# include "mongoc-openssl-private.h"
+# ifdef MONGOC_ENABLE_OPENSSL
+#  include "mongoc-openssl-private.h"
+# endif
 #endif
 #include "mongoc-thread-private.h"
 #include "mongoc-trace.h"

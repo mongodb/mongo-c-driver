@@ -260,6 +260,7 @@ _test_cluster_command_timeout (bool pooled)
                                           NULL, &reply, &error);
    request = mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK,
                                            "{'baz': 1}");
+   ASSERT (request);
    /* new socket */
    ASSERT_CMPUINT16 (client_port, !=, request_get_client_port (request));
    mock_server_replies_simple (request, "{'ok': 1, 'quux': 1}");

@@ -38,12 +38,10 @@
 #include "mongoc-trace.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-set-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
-#include "mongoc-openssl-private.h"
-#include "mongoc-set-private.h"
-
 #endif
 
 

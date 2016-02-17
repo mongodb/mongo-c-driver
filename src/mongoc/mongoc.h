@@ -52,7 +52,7 @@
 #include "mongoc-write-concern.h"
 #include "mongoc-version.h"
 #include "mongoc-version-functions.h"
-#ifdef MONGOC_ENABLE_OPENSSL
+#ifdef MONGOC_ENABLE_SSL
 #include "mongoc-rand.h"
 #include "mongoc-stream-tls.h"
 #include "mongoc-ssl.h"

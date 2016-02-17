@@ -426,7 +426,7 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
 
 
 char *
-_mongoc_openssl_extract_subject (const char *filename)
+_mongoc_openssl_extract_subject (const char *filename, const char *passphrase)
 {
    X509_NAME *subject = NULL;
    X509 *cert = NULL;

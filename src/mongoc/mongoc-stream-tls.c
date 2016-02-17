@@ -31,6 +31,9 @@
 #ifdef MONGOC_ENABLE_OPENSSL
 # include "mongoc-stream-tls-openssl.h"
 # include "mongoc-openssl-private.h"
+#elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
+# include "mongoc-secure-transport-private.h"
+# include "mongoc-stream-tls-secure-transport.h"
 #endif
 
 #undef MONGOC_LOG_DOMAIN
@@ -70,7 +73,10 @@ mongoc_stream_tls_should_retry (mongoc_stream_t *stream)
    BSON_ASSERT (stream_tls);
    BSON_ASSERT (stream_tls->should_retry);
 
-   return stream_tls->should_retry(stream);
+   if (stream_tls->should_retry) {
+      return stream_tls->should_retry (stream);
+   }
+   return false;
 }
 
 
@@ -87,24 +93,11 @@ mongoc_stream_tls_should_read (mongoc_stream_t *stream)
    BSON_ASSERT (stream_tls);
    BSON_ASSERT (stream_tls->should_read);
 
-   return stream_tls->should_read(stream);
-}
+   if (stream_tls->should_read) {
+      return stream_tls->should_read (stream);
+   }
 
-
-/**
- * mongoc_stream_tls_should_write:
- *
- * If the stream should write
- */
-bool
-mongoc_stream_tls_should_write (mongoc_stream_t *stream)
-{
-   mongoc_stream_tls_t *stream_tls = (mongoc_stream_tls_t *)mongoc_stream_get_tls_stream (stream);
-
-   BSON_ASSERT (stream_tls);
-   BSON_ASSERT (stream_tls->should_write);
-
-   return stream_tls->should_write(stream);
+   return false;
 }
 
 
@@ -164,8 +157,14 @@ mongoc_stream_tls_new (mongoc_stream_t  *base_stream,
          break;
 #endif
 
+#ifdef MONGOC_ENABLE_SECURE_TRANSPORT
+      case MONGOC_TLS_OPENSSL:
+         return mongoc_stream_tls_secure_transport_new (base_stream, opt, client);
+         break;
+#endif
+
       default:
-         MONGOC_ERROR("Unknown crypto engine");
+         MONGOC_ERROR("Unknown TLS engine");
          return NULL;
    }
 }

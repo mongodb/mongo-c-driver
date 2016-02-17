@@ -51,12 +51,12 @@ mongoc_ssl_opt_get_default (void)
 }
 
 char *
-mongoc_ssl_extract_subject (const char *filename)
+mongoc_ssl_extract_subject (const char *filename, const char *passphrase)
 {
 #ifdef MONGOC_ENABLE_OPENSSL
-	return _mongoc_openssl_extract_subject (filename);
+	return _mongoc_openssl_extract_subject (filename, passphrase);
 #elif defined(MONGOC_ENABLE_SECURE_TRANSPORT)
-	return _mongoc_secure_transport_extract_subject (filename);
+	return _mongoc_secure_transport_extract_subject (filename, passphrase);
 #else
 #error "Can only extract X509 subjects using OpenSSL or Secure Transport"
 #endif

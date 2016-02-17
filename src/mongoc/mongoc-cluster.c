@@ -35,7 +35,7 @@
 #endif
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
-#include "mongoc-openssl-private.h"
+#include "mongoc-stream-tls.h"
 #endif
 #include "mongoc-b64-private.h"
 #include "mongoc-scram-private.h"
@@ -995,7 +995,8 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t      *cluster,
       }
 
       if (cluster->client->ssl_opts.pem_file) {
-         username = mongoc_ssl_extract_subject (cluster->client->ssl_opts.pem_file);
+         username = mongoc_ssl_extract_subject (cluster->client->ssl_opts.pem_file,
+                                                cluster->client->ssl_opts.pem_pwd);
          MONGOC_INFO ("X509: got username (%s) from certificate", username);
       }
    }
@@ -1566,6 +1567,32 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                          sd->host.host_and_port);
          return NULL;
       }
+
+#ifdef MONGOC_ENABLE_SSL
+      if (cluster->client->use_ssl) {
+         mongoc_stream_t *tls_stream;
+
+         for (tls_stream = stream; tls_stream->type != MONGOC_STREAM_TLS;
+               tls_stream = mongoc_stream_get_base_stream (tls_stream)) {
+         }
+
+         if (mongoc_stream_tls_do_handshake (tls_stream, topology->connect_timeout_msec * 1000)) {
+            if (!mongoc_stream_tls_check_cert (tls_stream, sd->host.host)) {
+               mongoc_topology_scanner_node_disconnect (scanner_node, true);
+               bson_set_error (error, MONGOC_ERROR_STREAM,
+                     MONGOC_ERROR_STREAM_SOCKET,
+                     "Failed to verify TLS cert.");
+               return NULL;
+            }
+         } else {
+            mongoc_topology_scanner_node_disconnect (scanner_node, true);
+            bson_set_error (error, MONGOC_ERROR_STREAM,
+                  MONGOC_ERROR_STREAM_SOCKET,
+                  "Failed TLS handhsake.");
+            return NULL;
+         }
+      }
+#endif
 
       if (!_mongoc_stream_run_ismaster (cluster, stream, &reply, error)) {
          return NULL;

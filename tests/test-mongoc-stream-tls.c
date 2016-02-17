@@ -1,5 +1,9 @@
-#include <openssl/err.h>
 #include <mongoc.h>
+
+
+#ifdef MONGOC_ENABLE_OPENSSL
+# include <openssl/err.h>
+#endif
 
 #include "ssl-test.h"
 #include "TestSuite.h"
@@ -17,6 +21,7 @@
 #define PEMFILE_REV TRUST_DIR "/keys/rev.mongodb.com.pem"
 #define PASSWORD "testpass"
 
+#ifdef MONGOC_ENABLE_OPENSSL
 static void
 test_mongoc_tls_no_certs (void)
 {
@@ -30,6 +35,7 @@ test_mongoc_tls_no_certs (void)
    ASSERT (cr.result == SSL_TEST_SSL_HANDSHAKE);
    ASSERT (sr.result == SSL_TEST_SSL_HANDSHAKE);
 }
+#endif
 
 
 static void
@@ -163,8 +169,8 @@ test_mongoc_tls_altname (void)
    ssl_test_result_t sr;
    ssl_test_result_t cr;
 
-   sopt.pem_file = PEMFILE_ALT;
    sopt.ca_file = CAFILE;
+   sopt.pem_file = PEMFILE_ALT;
 
    copt.ca_file = CAFILE;
 
@@ -215,7 +221,7 @@ test_mongoc_tls_ip (void)
 }
 
 
-#ifndef _WIN32
+#if !defined(_WIN32) && defined(MONGOC_ENABLE_OPENSSL)
 static void
 test_mongoc_tls_trust_dir (void)
 {
@@ -241,16 +247,22 @@ void
 test_stream_tls_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/TLS/altname", test_mongoc_tls_altname);
+   TestSuite_Add (suite, "/TLS/ip", test_mongoc_tls_ip);
+   TestSuite_Add (suite, "/TLS/password", test_mongoc_tls_password);
+   TestSuite_Add (suite, "/TLS/basic", test_mongoc_tls_basic);
+   TestSuite_Add (suite, "/TLS/wild", test_mongoc_tls_wild);
+   TestSuite_Add (suite, "/TLS/no_verify", test_mongoc_tls_no_verify);
+#ifdef MONGOC_ENABLE_OPENSSL
    TestSuite_Add (suite, "/TLS/bad_password", test_mongoc_tls_bad_password);
    TestSuite_Add (suite, "/TLS/bad_verify", test_mongoc_tls_bad_verify);
-   TestSuite_Add (suite, "/TLS/basic", test_mongoc_tls_basic);
    TestSuite_Add (suite, "/TLS/crl", test_mongoc_tls_crl);
-   TestSuite_Add (suite, "/TLS/ip", test_mongoc_tls_ip);
+#endif
+
+#ifdef MONGOC_ENABLE_OPENSSL
+   /* Darwin Crypto can't not-provide cert for server side */
    TestSuite_Add (suite, "/TLS/no_certs", test_mongoc_tls_no_certs);
-   TestSuite_Add (suite, "/TLS/no_verify", test_mongoc_tls_no_verify);
-   TestSuite_Add (suite, "/TLS/password", test_mongoc_tls_password);
-#ifndef _WIN32
+#endif
+#if !defined(_WIN32) && defined(MONGOC_ENABLE_OPENSSL)
    TestSuite_Add (suite, "/TLS/trust_dir", test_mongoc_tls_trust_dir);
 #endif
-   TestSuite_Add (suite, "/TLS/wild", test_mongoc_tls_wild);
 }

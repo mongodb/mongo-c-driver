@@ -1,7 +1,11 @@
-#include <openssl/err.h>
 #include <mongoc.h>
 #include <mongoc-thread-private.h>
 #include <mongoc-util-private.h>
+#include <mongoc-stream-tls.h>
+
+#ifdef MONGOC_ENABLE_OPENSSL
+# include <openssl/err.h>
+#endif
 
 #include "ssl-test.h"
 #include "TestSuite.h"
