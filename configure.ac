@@ -1,8 +1,8 @@
 AC_PREREQ(2.60)
 
-# Set version from contents of "VERSION_CURRENT" file.
+# Set version from contents of "VERSION_CURRENT" file (and strip newlines).
 AC_INIT([mongo-c-driver],
-        m4_esyscmd_s(cat VERSION_CURRENT),
+        m4_esyscmd(cat VERSION_CURRENT | tr -d '\n'),
         [https://jira.mongodb.org/browse/CDRIVER])
 
 m4_include([build/autotools/Versions.m4])
