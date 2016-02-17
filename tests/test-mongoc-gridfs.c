@@ -253,6 +253,7 @@ test_create_from_stream (void)
    mongoc_gridfs_drop (gridfs, &error);
 
    stream = mongoc_stream_file_new_for_path (BINARY_DIR"/gridfs.dat", O_RDONLY, 0);
+   ASSERT_OR_PRINT_ERRNO (stream, errno);
    ASSERT (stream);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
@@ -486,6 +487,7 @@ test_empty (void)
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "empty", &error), error);
 
    stream = mongoc_stream_file_new_for_path (BINARY_DIR"/empty.dat", O_RDONLY, 0);
+   ASSERT_OR_PRINT_ERRNO (stream, errno);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, stream, NULL);
    ASSERT (file);
@@ -543,6 +545,7 @@ test_stream (void)
    mongoc_gridfs_drop (gridfs, &error);
 
    in_stream = mongoc_stream_file_new_for_path (BINARY_DIR"/gridfs.dat", O_RDONLY, 0);
+   ASSERT_OR_PRINT_ERRNO (in_stream, errno);
 
    file = mongoc_gridfs_create_file_from_stream (gridfs, in_stream, NULL);
    ASSERT (file);

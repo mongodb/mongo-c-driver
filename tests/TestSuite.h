@@ -41,6 +41,7 @@ extern "C" {
 #ifdef ASSERT_OR_PRINT
 # undef ASSERT_OR_PRINT
 #endif
+
 #define ASSERT_OR_PRINT(_statement, _err) \
    do { \
       if (! (_statement)) { \
@@ -191,6 +192,17 @@ extern "C" {
       }\
    } while (0)
 
+
+#define ASSERT_OR_PRINT_ERRNO(_statement, _errcode) \
+   do { \
+      if (! (_statement)) { \
+         fprintf(stderr, "FAIL:%s:%d  %s()\n  %s\n  Failed with error code: %d (%s)\n\n", \
+                         __FILE__, __LINE__, BSON_FUNC, \
+                         #_statement, _errcode, strerror(_errcode)); \
+         fflush(stderr); \
+         abort(); \
+      } \
+   } while (0)
 
 #define MAX_TEST_NAME_LENGTH 500
 
