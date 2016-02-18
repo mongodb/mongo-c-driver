@@ -1,7 +1,13 @@
 Source: libmongoc
 Priority: optional
 Maintainer: A. Jesse Jiryu Davis <jesse@mongodb.com>
-Build-Depends: debhelper (>= 9), dh-autoreconf, yelp-tools, yelp-xsl, libbson-dev (>= 1.3.1), pkg-config, libssl-dev
+Build-Depends: debhelper (>= 9),
+               dh-autoreconf,
+               libbson-dev (>= 1.3.1),
+               libssl-dev,
+               pkg-config,
+               yelp-tools,
+               yelp-xsl
 Standards-Version: 3.9.6
 Section: libs
 Homepage: https://github.com/mongodb/mongo-c-driver
@@ -11,7 +17,8 @@ Vcs-Browser: https://github.com/mongodb/mongo-c-driver/tree/debian
 Package: libmongoc-dev
 Section: libdevel
 Architecture: any
-Depends: libmongoc-1.0-0 (= ${binary:Version}), ${misc:Depends}
+Depends: libmongoc-1.0-0 (= ${binary:Version}),
+         ${misc:Depends}
 Description: MongoDB C client library - dev files
  libmongoc is the officially supported MongoDB client library for C
  applications.
@@ -21,7 +28,8 @@ Description: MongoDB C client library - dev files
 
 Package: libmongoc-1.0-0
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
 Description: MongoDB C client library - runtime files
  libmongoc is the officially supported MongoDB client library for C
  applications.
@@ -33,7 +41,8 @@ Package: libmongoc-dbg
 Section: debug
 Priority: extra
 Architecture: any
-Depends: libmongoc-1.0-0 (= ${binary:Version}), ${misc:Depends}
+Depends: libmongoc-1.0-0 (= ${binary:Version}),
+         ${misc:Depends}
 Description: MongoDB C client library - debug symbols
  libmongoc is the officially supported MongoDB client library for C
  applications.
