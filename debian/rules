@@ -17,9 +17,16 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
+ifeq ($(shell if dpkg --compare-versions 9.20160114 le $$(dpkg-query -f'$${Version}' -W debhelper); then echo dbgsym; fi),dbgsym)
+  DBGSYM_EXCLUDE_PACKAGES := -Nlibmongoc-dbg
+  DBGSYM_DH_STRIP_OPTIONS := --dbgsym-migration='libmongoc-dbg'
+else
+  DBGSYM_DH_STRIP_OPTIONS := --dbg-package=libmongoc-dbg
+endif
+
 # main packaging script based on dh7 syntax
 %:
-	dh $@ --with autoreconf
+	dh $@ --with autoreconf $(DBGSYM_EXCLUDE_PACKAGES)
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
@@ -36,7 +43,7 @@ override_dh_auto_clean:
 	[ ! -f README ] || /bin/rm -f README
 
 override_dh_strip:
-	dh_strip -a --dbg-package=libmongoc-dbg
+	dh_strip $(DBGSYM_DH_STRIP_OPTIONS)
 
 override_dh_install:
 	dh_install -a -X.la -Xmongoc-stat -Xdoc/mongo-c-driver -Xman/man3 -X-priv.so -X-priv.pc -X-private.h --fail-missing
