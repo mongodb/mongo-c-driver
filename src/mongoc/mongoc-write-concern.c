@@ -132,6 +132,15 @@ mongoc_write_concern_get_journal (const mongoc_write_concern_t *write_concern)
 }
 
 
+bool
+mongoc_write_concern_journal_is_set (
+   const mongoc_write_concern_t *write_concern)
+{
+   BSON_ASSERT (write_concern);
+   return (write_concern->journal != MONGOC_WRITE_CONCERN_JOURNAL_DEFAULT);
+}
+
+
 /**
  * mongoc_write_concern_set_journal:
  * @write_concern: A mongoc_write_concern_t.
@@ -383,7 +392,7 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
 
 
 /**
- * mongoc_write_concern_needs_gle:
+ * mongoc_write_concern_is_acknowledged:
  * @concern: (in): A mongoc_write_concern_t.
  *
  * Checks to see if @write_concern requests that a getlasterror command is to
@@ -392,7 +401,8 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
  * Returns: true if a getlasterror command should be sent.
  */
 bool
-_mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern)
+mongoc_write_concern_is_acknowledged (
+   const mongoc_write_concern_t *write_concern)
 {
    if (write_concern) {
       return (((write_concern->w != MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED) &&
@@ -405,7 +415,7 @@ _mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern)
 
 
 /**
- * _mongoc_write_concern_is_valid:
+ * mongoc_write_concern_is_valid:
  * @write_concern: (in): A mongoc_write_concern_t.
  *
  * Checks to see if @write_concern is valid and does not contain conflicting
@@ -414,7 +424,7 @@ _mongoc_write_concern_needs_gle (const mongoc_write_concern_t *write_concern)
  * Returns: true if the write concern is valid; otherwise false.
  */
 bool
-_mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
+mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
 {
    if (!write_concern) {
       return false;

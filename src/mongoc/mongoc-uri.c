@@ -953,7 +953,7 @@ mongoc_uri_new (const char *uri_string)
 
    _mongoc_uri_build_write_concern (uri);
 
-   if (!_mongoc_write_concern_is_valid(uri->write_concern)) {
+   if (!mongoc_write_concern_is_valid (uri->write_concern)) {
       mongoc_uri_destroy(uri);
       return NULL;
    }

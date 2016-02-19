@@ -155,54 +155,63 @@ test_write_concern_fsync_and_journal_gle_and_validity (void)
 
    /* Default write concern needs GLE and is valid */
    ASSERT(write_concern);
-   ASSERT(_mongoc_write_concern_needs_gle(write_concern));
-   ASSERT(_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(mongoc_write_concern_is_acknowledged (write_concern));
+   ASSERT(mongoc_write_concern_is_valid (write_concern));
+   ASSERT(!mongoc_write_concern_journal_is_set (write_concern));
 
    /* w=0 does not need GLE and is valid */
    mongoc_write_concern_set_w(write_concern, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
-   ASSERT(!_mongoc_write_concern_needs_gle(write_concern));
-   ASSERT(_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(!mongoc_write_concern_is_acknowledged (write_concern));
+   ASSERT(mongoc_write_concern_is_valid (write_concern));
+   ASSERT(!mongoc_write_concern_journal_is_set (write_concern));
 
    /* fsync=true needs GLE, but it conflicts with w=0 */
    mongoc_write_concern_set_fsync(write_concern, true);
-   ASSERT(_mongoc_write_concern_needs_gle(write_concern));
-   ASSERT(!_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(mongoc_write_concern_is_acknowledged (write_concern));
+   ASSERT(!mongoc_write_concern_is_valid (write_concern));
+   ASSERT(!mongoc_write_concern_journal_is_set (write_concern));
    mongoc_write_concern_set_fsync(write_concern, false);
 
    /* journal=true needs GLE, but it conflicts with w=0 */
    mongoc_write_concern_set_journal(write_concern, true);
-   ASSERT(_mongoc_write_concern_needs_gle(write_concern));
-   ASSERT(!_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(mongoc_write_concern_is_acknowledged (write_concern));
+   ASSERT(!mongoc_write_concern_is_valid (write_concern));
+   ASSERT(mongoc_write_concern_journal_is_set (write_concern));
    mongoc_write_concern_set_journal(write_concern, false);
 
    /* w=-1 does not need GLE and is valid */
    mongoc_write_concern_set_w(write_concern, MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED);
-   ASSERT(!_mongoc_write_concern_needs_gle(write_concern));
-   ASSERT(_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(!mongoc_write_concern_is_acknowledged (write_concern));
+   ASSERT(mongoc_write_concern_is_valid (write_concern));
+   ASSERT(mongoc_write_concern_journal_is_set (write_concern));
 
    /* fsync=true needs GLE, but it conflicts with w=-1 */
    mongoc_write_concern_set_fsync(write_concern, true);
-   ASSERT(_mongoc_write_concern_needs_gle(write_concern));
-   ASSERT(!_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(mongoc_write_concern_is_acknowledged (write_concern));
+   ASSERT(!mongoc_write_concern_is_valid (write_concern));
+   ASSERT(mongoc_write_concern_journal_is_set (write_concern));
 
    /* journal=true needs GLE, but it conflicts with w=-1 */
    mongoc_write_concern_set_fsync(write_concern, false);
    mongoc_write_concern_set_journal(write_concern, true);
-   ASSERT(_mongoc_write_concern_needs_gle(write_concern));
+   ASSERT(mongoc_write_concern_is_acknowledged (write_concern));
+   ASSERT(mongoc_write_concern_journal_is_set (write_concern));
 
    /* fsync=true with w=default needs GLE and is valid */
    mongoc_write_concern_set_journal(write_concern, false);
    mongoc_write_concern_set_fsync(write_concern, true);
    mongoc_write_concern_set_w(write_concern, MONGOC_WRITE_CONCERN_W_DEFAULT);
-   ASSERT(_mongoc_write_concern_needs_gle(write_concern));
-   ASSERT(_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(mongoc_write_concern_is_acknowledged (write_concern));
+   ASSERT(mongoc_write_concern_is_valid (write_concern));
+   ASSERT(mongoc_write_concern_journal_is_set (write_concern));
 
    /* journal=true with w=default needs GLE and is valid */
    mongoc_write_concern_set_journal(write_concern, false);
    mongoc_write_concern_set_fsync(write_concern, true);
    mongoc_write_concern_set_w(write_concern, MONGOC_WRITE_CONCERN_W_DEFAULT);
-   ASSERT(_mongoc_write_concern_needs_gle(write_concern));
-   ASSERT(_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(mongoc_write_concern_is_acknowledged (write_concern));
+   ASSERT(mongoc_write_concern_is_valid (write_concern));
+   ASSERT(mongoc_write_concern_journal_is_set (write_concern));
 
    mongoc_write_concern_destroy(write_concern);
 }
@@ -223,18 +232,18 @@ test_write_concern_wtimeout_validity (void)
    ASSERT(mongoc_write_concern_get_w(write_concern) == MONGOC_WRITE_CONCERN_W_DEFAULT);
    ASSERT(mongoc_write_concern_get_wtimeout(write_concern) == 0);
    ASSERT(!mongoc_write_concern_get_wmajority(write_concern));
-   ASSERT(_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(mongoc_write_concern_is_valid (write_concern));
 
    /* mongoc_write_concern_set_wmajority() ignores invalid wtimeout */
    mongoc_write_concern_set_wmajority(write_concern, -1);
    ASSERT(mongoc_write_concern_get_w(write_concern) == MONGOC_WRITE_CONCERN_W_MAJORITY);
    ASSERT(mongoc_write_concern_get_wtimeout(write_concern) == 0);
    ASSERT(mongoc_write_concern_get_wmajority(write_concern));
-   ASSERT(_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(mongoc_write_concern_is_valid (write_concern));
 
    /* Manually assigning a negative wtimeout will make the write concern invalid */
    write_concern->wtimeout = -1;
-   ASSERT(!_mongoc_write_concern_is_valid(write_concern));
+   ASSERT(!mongoc_write_concern_is_valid (write_concern));
 
    mongoc_write_concern_destroy(write_concern);
 }

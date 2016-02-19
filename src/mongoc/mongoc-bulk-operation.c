@@ -223,7 +223,7 @@ mongoc_bulk_operation_insert (mongoc_bulk_operation_t *bulk,
 
    _mongoc_write_command_init_insert (
       &command, document, bulk->flags, bulk->operation_id,
-      !_mongoc_write_concern_needs_gle (bulk->write_concern));
+      !mongoc_write_concern_is_acknowledged (bulk->write_concern));
 
    _mongoc_array_append_val (&bulk->commands, command);
 

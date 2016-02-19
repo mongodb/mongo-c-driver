@@ -119,7 +119,7 @@ test_invalid_write_concern (void)
    assert(write_concern);
    mongoc_write_concern_set_w(write_concern, 0);
    mongoc_write_concern_set_journal(write_concern, true);
-   assert(!_mongoc_write_concern_is_valid(write_concern));
+   assert(!mongoc_write_concern_is_valid (write_concern));
 
    doc = BCON_NEW("_id", BCON_INT32(0));
 

@@ -653,7 +653,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t       *command,
          EXIT;
       }
 
-      if (_mongoc_write_concern_needs_gle (write_concern)) {
+      if (mongoc_write_concern_is_acknowledged (write_concern)) {
          if (!_mongoc_client_recv_gle (client, server_stream, &gle, error)) {
             result->failed = true;
             EXIT;
@@ -870,7 +870,7 @@ again:
          GOTO (cleanup);
       }
 
-      if (_mongoc_write_concern_needs_gle (write_concern)) {
+      if (mongoc_write_concern_is_acknowledged (write_concern)) {
          bool err = false;
          bson_iter_t citer;
 
@@ -1092,7 +1092,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t       *command,
          EXIT;
       }
 
-      if (_mongoc_write_concern_needs_gle (write_concern)) {
+      if (mongoc_write_concern_is_acknowledged (write_concern)) {
          if (!_mongoc_client_recv_gle (client, server_stream, &gle, error)) {
             result->failed = true;
             EXIT;
@@ -1204,7 +1204,7 @@ _mongoc_write_command(mongoc_write_command_t       *command,
 
    min_wire_version = server_stream->sd->min_wire_version;
    if ((min_wire_version == 0) &&
-       !_mongoc_write_concern_needs_gle (write_concern)) {
+       !mongoc_write_concern_is_acknowledged (write_concern)) {
       if (command->flags.bypass_document_validation != MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -1338,7 +1338,7 @@ _mongoc_write_command_execute (mongoc_write_command_t       *command,       /* I
       write_concern = client->write_concern;
    }
 
-   if (!_mongoc_write_concern_is_valid(write_concern)) {
+   if (!mongoc_write_concern_is_valid (write_concern)) {
       bson_set_error (&result->error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,

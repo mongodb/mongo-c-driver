@@ -2153,7 +2153,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
    }
 
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) {
-      if (!_mongoc_write_concern_is_valid (collection->write_concern)) {
+      if (!mongoc_write_concern_is_valid (collection->write_concern)) {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -2163,7 +2163,7 @@ mongoc_collection_find_and_modify_with_opts (mongoc_collection_t                
          RETURN (false);
       }
 
-      if (_mongoc_write_concern_needs_gle (collection->write_concern)) {
+      if (mongoc_write_concern_is_acknowledged (collection->write_concern)) {
          _BSON_APPEND_WRITE_CONCERN (&command, collection->write_concern);
       }
    }
