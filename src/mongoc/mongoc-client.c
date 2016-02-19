@@ -1715,3 +1715,26 @@ mongoc_server_descriptions_destroy_all (mongoc_server_description_t **sds,
 
    bson_free (sds);
 }
+
+
+mongoc_server_description_t *
+mongoc_client_select_server (mongoc_client_t     *client,
+                             bool                 for_writes,
+                             mongoc_read_prefs_t *prefs,
+                             bson_error_t        *error)
+{
+   if (for_writes && prefs) {
+      bson_set_error(error,
+                     MONGOC_ERROR_SERVER_SELECTION,
+                     MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                     "Cannot use read preferences with for_writes = true");
+      return NULL;
+   }
+
+   /* CDRIVER-785: localThresholdMS should be configurable on client */
+   return mongoc_topology_select (client->topology,
+                                  for_writes ? MONGOC_SS_WRITE : MONGOC_SS_READ,
+                                  prefs,
+                                  15,
+                                  error);
+}

@@ -1165,6 +1165,162 @@ test_mongoc_client_descriptions (void)
 }
 
 
+static void
+_test_mongoc_client_select_server (bool pooled)
+{
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_server_description_t *sd;
+   const char *server_type;
+   bson_error_t error;
+   mongoc_read_prefs_t *prefs;
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+   }
+
+   sd = mongoc_client_select_server (client,
+                                     true, /* for writes */
+                                     NULL,
+                                     &error);
+
+   ASSERT (sd);
+   server_type = mongoc_server_description_type (sd);
+   ASSERT (!strcmp (server_type, "Standalone") ||
+           !strcmp (server_type, "RSPrimary") ||
+           !strcmp (server_type, "Mongos"));
+
+   mongoc_server_description_destroy (sd);
+   sd = mongoc_client_select_server (client,
+                                     false, /* for reads */
+                                     NULL,
+                                     &error);
+
+   ASSERT (sd);
+   server_type = mongoc_server_description_type (sd);
+   ASSERT (!strcmp (server_type, "Standalone") ||
+           !strcmp (server_type, "RSPrimary") ||
+           !strcmp (server_type, "Mongos"));
+
+   mongoc_server_description_destroy (sd);
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   sd = mongoc_client_select_server (client,
+                                     false, /* for reads */
+                                     prefs,
+                                     &error);
+
+   ASSERT (sd);
+   server_type = mongoc_server_description_type (sd);
+   ASSERT (!strcmp (server_type, "Standalone") ||
+           !strcmp (server_type, "RSSecondary") ||
+           !strcmp (server_type, "Mongos"));
+
+   mongoc_server_description_destroy (sd);
+   mongoc_read_prefs_destroy (prefs);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+
+static void
+test_mongoc_client_select_server_single (void)
+{
+   _test_mongoc_client_select_server (false);
+}
+
+
+static void
+test_mongoc_client_select_server_pooled (void)
+{
+   _test_mongoc_client_select_server (true);
+}
+
+
+static void
+_test_mongoc_client_select_server_error (bool pooled)
+{
+   mongoc_uri_t *uri = NULL;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   mongoc_server_description_t *sd;
+   bson_error_t error;
+   mongoc_read_prefs_t *prefs;
+   const char *server_type;
+
+   if (pooled) {
+      uri = test_framework_get_uri ();
+      mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
+      pool = mongoc_client_pool_new (uri);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+   }
+
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_read_prefs_set_tags (prefs, tmp_bson ("[{'does-not-exist': 'x'}]"));
+   sd = mongoc_client_select_server (client,
+                                     true, /* for writes */
+                                     prefs,
+                                     &error);
+
+   ASSERT (!sd);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "Cannot use read preference");
+
+   sd = mongoc_client_select_server (client,
+                                     false, /* for reads */
+                                     prefs,
+                                     &error);
+
+   /* Server Selection Spec: "With topology type Single, the single server is
+    * always suitable for reads if it is available." */
+   if (client->topology->description.type == MONGOC_TOPOLOGY_SINGLE) {
+      ASSERT (sd);
+      server_type = mongoc_server_description_type (sd);
+      ASSERT (!strcmp (server_type, "Standalone") ||
+              !strcmp (server_type, "Mongos"));
+      mongoc_server_description_destroy (sd);
+   } else {
+      ASSERT (!sd);
+      ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
+      ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
+   }
+
+   mongoc_read_prefs_destroy (prefs);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+      mongoc_uri_destroy (uri);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+
+static void
+test_mongoc_client_select_server_error_single (void)
+{
+   _test_mongoc_client_select_server_error (false);
+}
+
+
+static void
+test_mongoc_client_select_server_error_pooled (void)
+{
+   _test_mongoc_client_select_server_error (true);
+}
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -1215,4 +1371,8 @@ test_client_install (TestSuite *suite)
 #endif
 
    TestSuite_Add (suite, "/Client/descriptions", test_mongoc_client_descriptions);
+   TestSuite_Add (suite, "/Client/select_server/single", test_mongoc_client_select_server_single);
+   TestSuite_Add (suite, "/Client/select_server/pooled", test_mongoc_client_select_server_pooled);
+   TestSuite_Add (suite, "/Client/select_server/err/single", test_mongoc_client_select_server_error_single);
+   TestSuite_Add (suite, "/Client/select_server/err/pooled", test_mongoc_client_select_server_error_pooled);
 }

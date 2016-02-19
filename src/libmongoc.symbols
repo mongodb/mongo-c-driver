@@ -52,6 +52,7 @@ mongoc_client_pool_push
 mongoc_client_pool_set_ssl_opts
 mongoc_client_pool_try_pop
 mongoc_client_set_read_concern
+mongoc_client_select_server
 mongoc_client_set_read_prefs
 mongoc_client_set_ssl_opts
 mongoc_client_set_stream_initiator
