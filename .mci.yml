@@ -254,6 +254,12 @@ c_driver_variables:
           export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
           make TEST_ARGS="-d -F test-results.json" check
 
+      osx: &run_integration_tests_osx
+        run_integration_tests: |
+          export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
+          export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
+          make TEST_ARGS="--no-fork -d -F test-results.json" check
+
 ## Other OS-specific attributes, grouped by OS
   unix_common: &unix_common
     <<: *compile_unix
@@ -1124,7 +1130,7 @@ buildvariants:
     <<: *cflags_osx_108
     <<: *compile_osx_nossl
     <<: *mongo_orchestration_unix
-    <<: *run_integration_tests_unix
+    <<: *run_integration_tests_osx
     <<: *start_topology_command
     <<: *unix_path
     <<: *osx_path
@@ -1139,7 +1145,7 @@ buildvariants:
     <<: *cflags_osx_108
     <<: *compile_osx_openssl
     <<: *mongo_orchestration_unix
-    <<: *run_integration_tests_unix
+    <<: *run_integration_tests_osx
     <<: *start_topology_command
     <<: *unix_path
     <<: *osx_path
@@ -1158,7 +1164,7 @@ buildvariants:
     <<: *cflags_osx_108
     <<: *compile_osx_nativessl
     <<: *mongo_orchestration_unix
-    <<: *run_integration_tests_unix
+    <<: *run_integration_tests_osx
     <<: *start_topology_command
     <<: *unix_path
     <<: *osx_path
