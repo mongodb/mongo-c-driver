@@ -1346,6 +1346,11 @@ test_framework_skip_if_not_replset (void)
    return !test_framework_skip_if_replset ();
 }
 
+int test_framework_skip_if_max_version_version_less_than_2 (void)
+{
+   return test_framework_max_wire_version_at_least (2);
+}
+
 int test_framework_skip_if_max_version_version_less_than_4 (void)
 {
    return test_framework_max_wire_version_at_least (4);

@@ -1179,30 +1179,33 @@ mongoc_client_command (mongoc_client_t           *client,
 }
 
 
-/**
- * mongoc_client_command_simple:
- * @client: A mongoc_client_t.
- * @db_name: The namespace, such as "admin".
- * @command: The command to execute.
- * @read_prefs: The read preferences or NULL.
- * @reply: A location for the reply document or NULL.
- * @error: A location for the error, or NULL.
- *
- * This wrapper around mongoc_client_command() aims to make it simpler to
- * run a command and check the output result.
- *
- * false is returned if the command failed to be delivered or if the execution
- * of the command failed. For example, a command that returns {'ok': 0} will
- * result in this function returning false.
- *
- * To allow the caller to disambiguate between command execution failure and
- * failure to send the command, reply will always be set if non-NULL. The
- * caller should release this with bson_destroy().
- *
- * Returns: true if the command executed and resulted in success. Otherwise
- *   false and @error is set. @reply is always set, either to the resulting
- *   document or an empty bson document upon failure.
- */
+static bool
+_mongoc_client_command_with_stream (mongoc_client_t           *client,
+                                    const char                *db_name,
+                                    const bson_t              *command,
+                                    mongoc_server_stream_t    *server_stream,
+                                    const mongoc_read_prefs_t *read_prefs,
+                                    bson_t                    *reply,
+                                    bson_error_t              *error)
+{
+   mongoc_apply_read_prefs_result_t result = READ_PREFS_RESULT_INIT;
+   bool ret;
+
+   ENTRY;
+
+   apply_read_preferences (read_prefs, server_stream, command,
+                           MONGOC_QUERY_NONE, &result);
+
+   ret = mongoc_cluster_run_command_monitored (
+      &client->cluster, server_stream, result.flags, db_name,
+      result.query_with_read_prefs, reply, error);
+
+   apply_read_prefs_result_cleanup (&result);
+
+   RETURN (ret);
+}
+
+
 bool
 mongoc_client_command_simple (mongoc_client_t           *client,
                               const char                *db_name,
@@ -1213,8 +1216,7 @@ mongoc_client_command_simple (mongoc_client_t           *client,
 {
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
-   mongoc_apply_read_prefs_result_t result = READ_PREFS_RESULT_INIT;
-   bool ret = false;
+   bool ret;
 
    ENTRY;
 
@@ -1223,29 +1225,58 @@ mongoc_client_command_simple (mongoc_client_t           *client,
    BSON_ASSERT (command);
 
    cluster = &client->cluster;
-
    server_stream = mongoc_cluster_stream_for_reads (cluster, read_prefs, error);
 
-   if (!server_stream) {
+   if (server_stream) {
+      ret = _mongoc_client_command_with_stream (client, db_name, command,
+                                                server_stream, read_prefs,
+                                                reply, error);
+
+      RETURN (ret);
+   } else {
       if (reply) {
          bson_init (reply);
       }
-      GOTO (done);
+      RETURN (false);
    }
+}
 
-   apply_read_preferences (read_prefs, server_stream, command,
-                           MONGOC_QUERY_NONE, &result);
 
-   ret = mongoc_cluster_run_command_monitored (cluster, server_stream,
-                                               result.flags, db_name,
-                                               result.query_with_read_prefs,
-                                               reply, error);
+bool
+mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
+                                        const char                *db_name,
+                                        const bson_t              *command,
+                                        const mongoc_read_prefs_t *read_prefs,
+                                        uint32_t                   hint,
+                                        bson_t                    *reply,
+                                        bson_error_t              *error)
+{
+   mongoc_cluster_t *cluster;
+   mongoc_server_stream_t *server_stream;
+   bool ret;
 
-done:
-   mongoc_server_stream_cleanup (server_stream);
-   apply_read_prefs_result_cleanup (&result);
+   ENTRY;
 
-   RETURN (ret);
+   BSON_ASSERT (client);
+   BSON_ASSERT (db_name);
+   BSON_ASSERT (command);
+
+   cluster = &client->cluster;
+   server_stream = mongoc_cluster_stream_for_server (
+      cluster, hint, true /* reconnect ok */, error);
+
+   if (server_stream) {
+      ret = _mongoc_client_command_with_stream (client, db_name, command,
+                                                server_stream, read_prefs,
+                                                reply, error);
+      RETURN (ret);
+   } else {
+      if (reply) {
+         bson_init (reply);
+      }
+
+      RETURN (false);
+   }
 }
 
 

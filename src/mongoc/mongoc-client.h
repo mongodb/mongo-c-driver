@@ -119,6 +119,13 @@ bool                           mongoc_client_command_simple           (mongoc_cl
                                                                        const mongoc_read_prefs_t    *read_prefs,
                                                                        bson_t                       *reply,
                                                                        bson_error_t                 *error);
+bool                           mongoc_client_command_simple_with_hint (mongoc_client_t              *client,
+                                                                       const char                   *db_name,
+                                                                       const bson_t                 *command,
+                                                                       const mongoc_read_prefs_t    *read_prefs,
+                                                                       uint32_t                      hint,
+                                                                       bson_t                       *reply,
+                                                                       bson_error_t                 *error);
 void                           mongoc_client_destroy                  (mongoc_client_t              *client);
 mongoc_database_t             *mongoc_client_get_database             (mongoc_client_t              *client,
                                                                        const char                   *name);

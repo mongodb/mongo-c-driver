@@ -5,28 +5,28 @@
       style="function"
       xmlns:api="http://projectmallard.org/experimental/api/"
       xmlns:ui="http://projectmallard.org/experimental/ui/"
-      id="mongoc_client_command">
+      id="mongoc_client_command_simple_with_hint">
 
 
   <info>
     <link type="guide" xref="mongoc_client_t" group="function"/>
   </info>
-  <title>mongoc_client_command()</title>
+  <title>mongoc_client_command_simple_with_hint()</title>
 
   <section id="synopsis">
     <title>Synopsis</title>
     <synopsis><code mime="text/x-csrc"><![CDATA[mongoc_cursor_t *
-mongoc_client_command (mongoc_client_t           *client,
-                       const char                *db_name,
-                       mongoc_query_flags_t       flags,
-                       uint32_t                   skip,
-                       uint32_t                   limit,
-                       uint32_t                   batch_size,
-                       const bson_t              *query,
-                       const bson_t              *fields,
-                       const mongoc_read_prefs_t *read_prefs);
+mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
+                                        const char                *db_name,
+                                        mongoc_query_flags_t       flags,
+                                        uint32_t                   skip,
+                                        uint32_t                   limit,
+                                        uint32_t                   batch_size,
+                                        const bson_t              *query,
+                                        const bson_t              *fields,
+                                        const mongoc_read_prefs_t *read_prefs);
 ]]></code></synopsis>
-    <p>This function executes a command on the server using the database and command specification provided.</p>
+    <p>This function executes a command on a specific server, using the database and command specification provided.</p>
   </section>
 
   <section id="parameters">
@@ -41,6 +41,7 @@ mongoc_client_command (mongoc_client_t           *client,
       <tr><td><p>query</p></td><td><p>A <code xref="bson:bson_t">bson_t</code> containing the command specification.</p></td></tr>
       <tr><td><p>fields</p></td><td><p>An optional <code xref="bson:bson_t">bson_t</code> containing the fields to return in result documents.</p></td></tr>
       <tr><td><p>read_prefs</p></td><td><p>An optional <code xref="mongoc_read_prefs_t">mongoc_read_prefs_t</code>.</p></td></tr>
+      <tr><td><p>hint</p></td><td><p>An opaque id specifying which server to use.</p></td></tr>
     </table>
   </section>
 

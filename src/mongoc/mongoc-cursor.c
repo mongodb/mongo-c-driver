@@ -78,6 +78,27 @@ _mongoc_n_return (mongoc_cursor_t * cursor)
    }
 }
 
+
+void
+_mongoc_set_cursor_ns (mongoc_cursor_t *cursor,
+                       const char      *ns,
+                       uint32_t         nslen)
+{
+   const char *dot;
+
+   bson_strncpy (cursor->ns, ns, sizeof cursor->ns);
+   cursor->nslen = BSON_MIN (nslen, sizeof cursor->ns);
+   dot = strstr (cursor->ns, ".");
+
+   if (dot) {
+      cursor->dblen = (uint32_t) (dot - cursor->ns);
+   } else {
+      /* a database name with no collection name */
+      cursor->dblen = cursor->nslen;
+   }
+}
+
+
 mongoc_cursor_t *
 _mongoc_cursor_new (mongoc_client_t           *client,
                     const char                *db_and_collection,
@@ -94,12 +115,10 @@ _mongoc_cursor_new (mongoc_client_t           *client,
    mongoc_cursor_t *cursor;
    bson_iter_t iter;
    int flags = qflags;
-   const char *dot;
 
    ENTRY;
 
    BSON_ASSERT (client);
-   BSON_ASSERT (db_and_collection);
 
    if (!read_concern) {
       read_concern = client->read_concern;
@@ -118,24 +137,17 @@ _mongoc_cursor_new (mongoc_client_t           *client,
     */
 
    cursor->client = client;
-   bson_strncpy (cursor->ns, db_and_collection, sizeof cursor->ns);
-
-   cursor->nslen = (uint32_t)bson_strnlen (cursor->ns, sizeof cursor->ns);
-   dot = strstr (db_and_collection, ".");
-
-   if (dot) {
-      cursor->dblen = (uint32_t)(dot - db_and_collection);
-   } else {
-      /* a database name with no collection name */
-      cursor->dblen = cursor->nslen;
-   }
-
    cursor->flags = (mongoc_query_flags_t)flags;
    cursor->skip = skip;
    cursor->limit = limit;
    cursor->batch_size = batch_size;
    cursor->is_command = is_command;
    cursor->has_fields = !!fields;
+
+   if (db_and_collection) {
+      _mongoc_set_cursor_ns (cursor, db_and_collection,
+                             (uint32_t) strlen (db_and_collection));
+   }
 
 #define MARK_FAILED(c) \
    do { \
@@ -1509,4 +1521,48 @@ mongoc_cursor_get_max_await_time_ms (const mongoc_cursor_t *cursor)
    BSON_ASSERT (cursor);
 
    return cursor->max_await_time_ms;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cursor_new_from_command_reply --
+ *
+ *       Low-level function to initialize a mongoc_cursor_t from the
+ *       reply to a command like "aggregate", "find", or "listCollections".
+ *
+ *       Useful in drivers that wrap the C driver; in applications, use
+ *       high-level functions like mongoc_collection_aggregate instead.
+ *
+ * Returns:
+ *       A cursor.
+ *
+ * Side effects:
+ *       On failure, the cursor's error is set: retrieve it with
+ *       mongoc_cursor_error. On success or failure, "reply" is
+ *       destroyed.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+mongoc_cursor_t *
+mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
+                                      bson_t          *reply,
+                                      uint32_t         server_id)
+{
+   mongoc_cursor_t *cursor;
+   bson_t cmd = BSON_INITIALIZER;
+
+   BSON_ASSERT (client);
+   BSON_ASSERT (reply);
+
+   cursor = _mongoc_cursor_new (client, NULL, MONGOC_QUERY_NONE,
+                                0, 0, 0, false, NULL, NULL, NULL, NULL);
+
+   _mongoc_cursor_cursorid_init (cursor, &cmd);
+   _mongoc_cursor_cursorid_init_with_reply (cursor, reply, server_id);
+   bson_destroy (&cmd);
+
+   return cursor;
 }

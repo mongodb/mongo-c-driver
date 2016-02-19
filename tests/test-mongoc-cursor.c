@@ -1,5 +1,6 @@
 #include <mongoc.h>
 #include <assert.h>
+#include <mongoc-client-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -585,6 +586,128 @@ test_client_kill_cursor_without_primary_wire_version_4 (void)
 }
 
 
+static int
+count_docs (mongoc_cursor_t *cursor)
+{
+   int n = 0;
+   const bson_t *doc;
+   bson_error_t error;
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      ++n;
+   }
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   return n;
+}
+
+
+static void
+_test_cursor_new_from_command (const char *cmd_json,
+                               const char *collection_name)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bool r;
+   bson_error_t error;
+   mongoc_server_description_t *sd;
+   uint32_t hint;
+   bson_t *reply;
+   mongoc_cursor_t *cmd_cursor;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "test", collection_name);
+   mongoc_collection_remove (collection, MONGOC_REMOVE_NONE, tmp_bson ("{}"),
+                             NULL, NULL);
+
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 'a'}"));
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 'b'}"));
+   r = (0 != mongoc_bulk_operation_execute (bulk, NULL, &error));
+   ASSERT_OR_PRINT (r, error);
+
+   sd = mongoc_topology_select (client->topology, MONGOC_SS_READ,
+                                NULL, 15, &error);
+
+   ASSERT_OR_PRINT (sd, error);
+   hint = sd->id;
+   reply = bson_new ();
+   mongoc_client_command_simple_with_hint (client, "test",
+                                           tmp_bson (cmd_json),
+                                           NULL, hint, reply, &error);
+   cmd_cursor = mongoc_cursor_new_from_command_reply (client, reply, hint);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cmd_cursor, &error), error);
+   ASSERT_CMPUINT32 (hint, ==, mongoc_cursor_get_hint (cmd_cursor));
+   ASSERT_CMPINT (count_docs (cmd_cursor), ==, 2);
+
+   mongoc_cursor_destroy (cmd_cursor);
+   mongoc_server_description_destroy (sd);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_cursor_new_from_aggregate (void *ctx)
+{
+   _test_cursor_new_from_command (
+      "{'aggregate': 'test_cursor_new_from_aggregate',"
+      " 'pipeline': [], 'cursor': {}}",
+      "test_cursor_new_from_aggregate");
+}
+
+
+static void
+test_cursor_new_from_aggregate_no_initial (void *ctx)
+{
+   _test_cursor_new_from_command (
+      "{'aggregate': 'test_cursor_new_from_aggregate_no_initial',"
+      " 'pipeline': [], 'cursor': {'batchSize': 0}}",
+      "test_cursor_new_from_aggregate_no_initial");
+}
+
+
+static void
+test_cursor_new_from_find (void *ctx)
+{
+   _test_cursor_new_from_command (
+      "{'find': 'test_cursor_new_from_find'}",
+      "test_cursor_new_from_find");
+}
+
+
+static void
+test_cursor_new_from_find_batches (void *ctx)
+{
+   _test_cursor_new_from_command (
+      "{'find': 'test_cursor_new_from_find_batches', 'batchSize': 1}",
+      "test_cursor_new_from_find_batches");
+}
+
+
+static void
+test_cursor_new_invalid (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+
+   client = test_framework_client_new ();
+   cursor = mongoc_cursor_new_from_command_reply (client, tmp_bson ("{}"), 0);
+   ASSERT (cursor);
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Couldn't parse cursor document");
+
+
+   mongoc_client_destroy (client);
+}
+
 void
 test_cursor_install (TestSuite *suite)
 {
@@ -614,4 +737,18 @@ test_cursor_install (TestSuite *suite)
                   test_client_kill_cursor_with_primary_wire_version_4);
    TestSuite_Add (suite, "/Cursor/client_kill_cursor/without_primary/wv4",
                   test_client_kill_cursor_without_primary_wire_version_4);
+
+   TestSuite_AddFull (suite, "/Cursor/new_from_agg",
+                      test_cursor_new_from_aggregate, NULL, NULL,
+                      test_framework_skip_if_max_version_version_less_than_2);
+   TestSuite_AddFull (suite, "/Cursor/new_from_agg_no_initial",
+                      test_cursor_new_from_aggregate_no_initial, NULL, NULL,
+                      test_framework_skip_if_max_version_version_less_than_2);
+   TestSuite_AddFull (suite, "/Cursor/new_from_find",
+                      test_cursor_new_from_find, NULL, NULL,
+                      test_framework_skip_if_max_version_version_less_than_4);
+   TestSuite_AddFull (suite, "/Cursor/new_from_find_batches",
+                      test_cursor_new_from_find_batches, NULL, NULL,
+                      test_framework_skip_if_max_version_version_less_than_4);
+   TestSuite_Add (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
 }

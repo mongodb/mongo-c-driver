@@ -94,6 +94,9 @@ struct _mongoc_cursor_t
 };
 
 
+void                      _mongoc_set_cursor_ns       (mongoc_cursor_t              *cursor,
+                                                       const char                   *ns,
+                                                       uint32_t                      nslen);
 mongoc_cursor_t         * _mongoc_cursor_new          (mongoc_client_t              *client,
                                                        const char                   *db_and_collection,
                                                        mongoc_query_flags_t          flags,
