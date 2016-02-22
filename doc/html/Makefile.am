@@ -5,7 +5,7 @@ CLEANFILES += $(wildcard doc/html/*.js)
 CLEANFILES += $(wildcard doc/html/*.png)
 
 %.html: ../%.page
-	$(AM_V_GEN)$(YELP_BUILD) html -o doc/html/ doc
+	$(AM_V_GEN)$(YELP_BUILD) html -x build/libbson.xsl -o doc/html/ doc
 
 html: $(BUILT_HTML_FILES)
 
