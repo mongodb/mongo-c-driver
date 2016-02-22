@@ -46,6 +46,9 @@ const bson_t    *mongoc_cursor_current               (const mongoc_cursor_t *cur
 void             mongoc_cursor_set_batch_size        (mongoc_cursor_t       *cursor,
                                                       uint32_t               batch_size);
 uint32_t         mongoc_cursor_get_batch_size        (const mongoc_cursor_t *cursor);
+bool             mongoc_cursor_set_limit             (mongoc_cursor_t       *cursor,
+                                                      int64_t                limit);
+int64_t          mongoc_cursor_get_limit             (const mongoc_cursor_t *cursor);
 uint32_t         mongoc_cursor_get_hint              (const mongoc_cursor_t *cursor);
 int64_t          mongoc_cursor_get_id                (const mongoc_cursor_t *cursor);
 void             mongoc_cursor_set_max_await_time_ms (mongoc_cursor_t       *cursor,

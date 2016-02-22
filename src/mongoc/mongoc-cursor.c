@@ -48,23 +48,33 @@ _mongoc_cursor_find_command (mongoc_cursor_t *cursor);
 static int32_t
 _mongoc_n_return (mongoc_cursor_t * cursor)
 {
+   int64_t n_return;
+
    if (cursor->is_command) {
       /* commands always have n_return of 1 */
       return 1;
    } else if (cursor->limit < 0) {
-      return cursor->limit;
+      n_return = cursor->limit;
    } else if (cursor->limit) {
-      int32_t remaining = cursor->limit - cursor->count;
+      int64_t remaining = cursor->limit - cursor->count;
       BSON_ASSERT (remaining > 0);
 
       if (cursor->batch_size) {
-         return BSON_MIN ((int32_t) cursor->batch_size, remaining);
+         n_return = BSON_MIN (cursor->batch_size, remaining);
       } else {
          /* batch_size 0 means accept the default */
-         return remaining;
+         n_return = remaining;
       }
    } else {
-      return cursor->batch_size;
+      n_return = cursor->batch_size;
+   }
+
+   if (n_return < INT32_MIN) {
+      return INT32_MIN;
+   } else if (n_return > INT32_MAX) {
+      return INT32_MAX;
+   } else {
+      return (int32_t) n_return;
    }
 }
 
@@ -1442,6 +1452,28 @@ mongoc_cursor_get_batch_size (const mongoc_cursor_t *cursor)
    BSON_ASSERT (cursor);
 
    return cursor->batch_size;
+}
+
+bool
+mongoc_cursor_set_limit (mongoc_cursor_t *cursor,
+                         int64_t          limit)
+{
+   BSON_ASSERT (cursor);
+
+   if (!cursor->sent) {
+      cursor->limit = limit;
+      return true;
+   } else {
+      return false;
+   }
+}
+
+int64_t
+mongoc_cursor_get_limit (const mongoc_cursor_t *cursor)
+{
+   BSON_ASSERT (cursor);
+
+   return cursor->limit;
 }
 
 uint32_t

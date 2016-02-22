@@ -152,6 +152,58 @@ test_invalid_query (void)
    mongoc_client_destroy (client);
 }
 
+
+static void
+test_limit (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *b;
+   int i, n_docs;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   int64_t limits[] = { 5, -5 };
+   const bson_t *doc = NULL;
+   bool r;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_limit");
+   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   b = tmp_bson ("{}");
+   for (i = 0; i < 10; ++i) {
+      mongoc_bulk_operation_insert (bulk, b);
+   }
+
+   r = (0 != mongoc_bulk_operation_execute (bulk, NULL, &error));
+   ASSERT_OR_PRINT (r, error);
+
+   /* test positive and negative limit */
+   for (i = 0; i < 2; i++) {
+      cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
+                                       tmp_bson ("{}"), NULL, NULL);
+      ASSERT_CMPINT64 ((int64_t) 0, ==, mongoc_cursor_get_limit (cursor));
+      ASSERT (mongoc_cursor_set_limit (cursor, limits[i]));
+      ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
+      n_docs = 0;
+      while (mongoc_cursor_next (cursor, &doc)) {
+         ++n_docs;
+      }
+
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      ASSERT_CMPINT (n_docs, ==, 5);
+      ASSERT (!mongoc_cursor_set_limit (cursor, 123));  /* no effect */
+      ASSERT_CMPINT64 (limits[i], ==, mongoc_cursor_get_limit (cursor));
+
+      mongoc_cursor_destroy (cursor);
+   }
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 /* test killing a cursor with mongo_cursor_destroy and a real server */
 static void
 test_kill_cursor_live (void)
@@ -539,6 +591,7 @@ test_cursor_install (TestSuite *suite)
    TestSuite_Add (suite, "/Cursor/get_host", test_get_host);
    TestSuite_Add (suite, "/Cursor/clone", test_clone);
    TestSuite_Add (suite, "/Cursor/invalid_query", test_invalid_query);
+   TestSuite_Add (suite, "/Cursor/limit", test_limit);
    TestSuite_Add (suite, "/Cursor/kill/live", test_kill_cursor_live);
    TestSuite_Add (suite, "/Cursor/kill/single", test_kill_cursors_single);
    TestSuite_Add (suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);

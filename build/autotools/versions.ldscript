@@ -295,6 +295,8 @@ LIBMONGOC_1.3 {
 
 LIBMONGOC_1.4 {
     global:
+        mongoc_cursor_get_limit;
+        mongoc_cursor_set_limit;
         mongoc_log_trace_disable;
         mongoc_log_trace_enable;
         mongoc_server_descriptions_destroy_all;

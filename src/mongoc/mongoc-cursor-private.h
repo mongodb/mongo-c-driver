@@ -70,7 +70,7 @@ struct _mongoc_cursor_t
 
    mongoc_query_flags_t       flags;
    uint32_t                   skip;
-   int32_t                    limit;
+   int64_t                    limit;
    uint32_t                   count;
    uint32_t                   batch_size;
    uint32_t                   max_await_time_ms;
