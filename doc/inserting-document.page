@@ -7,7 +7,7 @@
   </info>
 
   <title>Inserting a Document</title>
-  <p>To insert documents into a collection, first obtain a handle to a <code>mongoc_collection_t</code> via a <code>mongoc_client_t</code>. Then, use <link xref="mongoc_collection_insert">mongoc_collection_insert()</link> to add BSON documents to the collection. This example inserts into the database "mydb" and collection "mycoll".</p>
+  <p>To insert documents into a collection, first obtain a handle to a <code xref="mongoc_collection_t">mongoc_collection_t</code> via a <code xref="mongoc_client_t">mongoc_client_t</code>. Then, use <code xref="mongoc_collection_insert">mongoc_collection_insert()</code> to add BSON documents to the collection. This example inserts into the database "mydb" and collection "mycoll".</p>
   <p>When finished, ensure that allocated structures are freed by using their respective destroy functions.</p>
 
   <listing>

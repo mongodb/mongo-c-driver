@@ -45,7 +45,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection,
 
     <p>For more information on building MongoDB pipelines, see <link href="http://docs.mongodb.org/manual/reference/command/aggregate/">MongoDB Aggregation Command</link> on the MongoDB website.</p>
     <note style="info"><p>The <code>pipeline</code> parameter should contain a field named <code>pipeline</code> containing a BSON array of pipeline stages.</p></note>
-    <note style="tip"><p>The <link xref="mongoc_read_concern_t">mongoc_read_concern_t</link> specified on the <link xref="mongoc_collection_t">mongoc_collection_t</link> will be used, if any.</p></note>
+    <note style="tip"><p>The <code xref="mongoc_read_concern_t">mongoc_read_concern_t</code> specified on the <code xref="mongoc_collection_t">mongoc_collection_t</code> will be used, if any.</p></note>
   </section>
 
   <section id="return">

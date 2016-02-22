@@ -36,7 +36,7 @@ connecting to: localhost:27017/test
     </info>
 
     <title>2. Making a Connection</title>
-    <p>The C Driver provides a convenient way to access MongoDB -- regardless of cluster configuration -- via a <link xref="mongoc_client_t">mongoc_client_t</link>. It transparently connects to standalone servers, replica sets and sharded clusters on demand. Once a connection has been made, handles to databases and collections can be obtained via the structs <link xref="mongoc_database_t">mongoc_database_t</link> and <link xref="mongoc_collection_t">mongoc_collection_t</link>, respectively. MongoDB operations can then be performed through these handles.</p>
+    <p>The C Driver provides a convenient way to access MongoDB -- regardless of cluster configuration -- via a <code xref="mongoc_client_t">mongoc_client_t</code>. It transparently connects to standalone servers, replica sets and sharded clusters on demand. Once a connection has been made, handles to databases and collections can be obtained via the structs <code xref="mongoc_database_t">mongoc_database_t</code> and <code xref="mongoc_collection_t">mongoc_collection_t</code>, respectively. MongoDB operations can then be performed through these handles.</p>
     <p>At the start of an application, call <link xref="mongoc_init">mongoc_init()</link> before any other libmongoc functions and call <link xref="mongoc_cleanup">mongoc_cleanup()</link> before exiting. When creating handles to clients, databases and servers, call the appropriate destroy functions when finished.</p>
     <p>The example below establishes a connection to a standalone server on <code>localhost</code> and performs a simple command. More information about database operations can be found in the <link xref="tutorial#crud-operations">CRUD Operations</link> and <link xref="tutorial#executing-commands">Executing Commands</link> sections. Examples of connecting to replica sets and sharded clusters can be found on the <link xref="advanced-connections">Advanced Connections</link> page.</p>
 
@@ -782,7 +782,7 @@ C:\> executing
     <info><link type="guide" xref="index#tutorial"/></info>
     <title>6. Threading</title>
     <p>The MongoDB C Driver is thread-unaware in the vast majority of its operations. This means it is up to the programmer to guarantee thread-safety.</p>
-    <p>However, <link xref="mongoc_client_pool_t">mongoc_client_pool_t</link> is thread-safe and is used to fetch a <code>mongoc_client_t</code> in a thread-safe manner. After retrieving a client from the pool, the client structure should be considered owned by the calling thread. When the thread is finished, the client should be placed back into the pool.</p>
+    <p>However, <code xref="mongoc_client_pool_t">mongoc_client_pool_t</code> is thread-safe and is used to fetch a <code>mongoc_client_t</code> in a thread-safe manner. After retrieving a client from the pool, the client structure should be considered owned by the calling thread. When the thread is finished, the client should be placed back into the pool.</p>
 
     <screen><code><![CDATA[#include <mongoc.h>
 #include <pthread.h>
