@@ -1663,6 +1663,15 @@ mongoc_client_set_apm_callbacks (mongoc_client_t        *client,
 }
 
 
+mongoc_server_description_t *
+mongoc_client_get_server_description (mongoc_client_t *client,
+                                      uint32_t         server_id)
+{
+   /* the error info isn't useful */
+   return mongoc_topology_server_by_id (client->topology, server_id, NULL);
+}
+
+
 mongoc_server_description_t **
 mongoc_client_get_server_descriptions (
    const mongoc_client_t        *client,

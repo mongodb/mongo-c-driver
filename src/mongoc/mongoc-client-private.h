@@ -122,10 +122,6 @@ _mongoc_topology_background_thread_start (mongoc_topology_t *topology);
 void
 _mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
 
-mongoc_server_description_t *
-_mongoc_client_get_server_description (mongoc_client_t *client,
-                                       uint32_t         server_id);
-
 void
 _mongoc_client_kill_cursor              (mongoc_client_t *client,
                                          uint32_t         server_id,

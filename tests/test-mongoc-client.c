@@ -1,5 +1,6 @@
 #include <fcntl.h>
 #include <mongoc.h>
+#include <mongoc-host-list-private.h>
 
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
@@ -1107,6 +1108,67 @@ test_mongoc_client_ssl_disabled (void)
 
 
 static void
+_test_mongoc_client_get_description (bool pooled)
+{
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   uint32_t server_id;
+   mongoc_server_description_t *sd;
+   mongoc_host_list_t host;
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+   }
+
+   /* bad server_id handled correctly */
+   ASSERT (NULL == mongoc_client_get_server_description (client, 1234));
+
+   collection = get_test_collection (client, "test_mongoc_client_description");
+   cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0,
+                                    tmp_bson ("{}"), NULL, NULL);
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   server_id = mongoc_cursor_get_hint (cursor);
+   ASSERT (0 != server_id);
+   sd = mongoc_client_get_server_description (client, server_id);
+   ASSERT (sd);
+   mongoc_cursor_get_host (cursor, &host);
+   ASSERT (_mongoc_host_list_equal (&host,
+                                    mongoc_server_description_host (sd)));
+
+   mongoc_server_description_destroy (sd);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+
+static void
+test_mongoc_client_get_description_single (void)
+{
+   _test_mongoc_client_get_description (false);
+}
+
+
+static void
+test_mongoc_client_get_description_pooled (void)
+{
+   _test_mongoc_client_get_description (true);
+}
+
+
+static void
 test_mongoc_client_descriptions (void)
 {
    mongoc_client_t *client;
@@ -1370,6 +1432,8 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
 #endif
 
+   TestSuite_Add (suite, "/Client/get_description/single", test_mongoc_client_get_description_single);
+   TestSuite_Add (suite, "/Client/get_description/pooled", test_mongoc_client_get_description_pooled);
    TestSuite_Add (suite, "/Client/descriptions", test_mongoc_client_descriptions);
    TestSuite_Add (suite, "/Client/select_server/single", test_mongoc_client_select_server_single);
    TestSuite_Add (suite, "/Client/select_server/pooled", test_mongoc_client_select_server_pooled);

@@ -298,5 +298,6 @@ LIBMONGOC_1.4 {
         mongoc_server_descriptions_destroy_all;
         mongoc_server_description_ismaster;
         mongoc_server_description_type;
+        mongoc_client_get_server_description;
         mongoc_client_get_server_descriptions;
 } LIBMONGOC_1.3;
