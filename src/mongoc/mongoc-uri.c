@@ -543,6 +543,7 @@ mongoc_uri_option_is_int32 (const char *key)
        !strcasecmp(key, "serverselectiontimeoutms") ||
        !strcasecmp(key, "socketcheckintervalms") ||
        !strcasecmp(key, "sockettimeoutms") ||
+       !strcasecmp(key, "localthresholdms") ||
        !strcasecmp(key, "maxpoolsize") ||
        !strcasecmp(key, "minpoolsize") ||
        !strcasecmp(key, "maxidletimems") ||

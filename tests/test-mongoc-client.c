@@ -816,7 +816,7 @@ test_recovering (void)
       mongoc_read_prefs_set_mode (prefs, read_mode);
       assert (!mongoc_topology_select (client->topology,
                                        MONGOC_SS_READ,
-                                       prefs, 15, &error));
+                                       prefs, &error));
    }
 
    mongoc_read_prefs_destroy (prefs);

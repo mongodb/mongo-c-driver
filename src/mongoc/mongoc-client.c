@@ -1502,10 +1502,11 @@ mongoc_client_kill_cursor (mongoc_client_t *client,
    mongoc_mutex_lock (&topology->mutex);
 
    /* see if there's a known writable server - do no I/O or retries */
-   selected_server = mongoc_topology_description_select(&topology->description,
-                                                        MONGOC_SS_WRITE,
-                                                        read_prefs,
-                                                        15);
+   selected_server = mongoc_topology_description_select(
+      &topology->description,
+      MONGOC_SS_WRITE,
+      read_prefs,
+      topology->local_threshold_msec);
 
    if (selected_server) {
       server_id = selected_server->id;
@@ -1740,10 +1741,8 @@ mongoc_client_select_server (mongoc_client_t     *client,
       return NULL;
    }
 
-   /* CDRIVER-785: localThresholdMS should be configurable on client */
    return mongoc_topology_select (client->topology,
                                   for_writes ? MONGOC_SS_WRITE : MONGOC_SS_READ,
                                   prefs,
-                                  15,
                                   error);
 }

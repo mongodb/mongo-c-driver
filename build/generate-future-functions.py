@@ -233,7 +233,6 @@ future_functions = [
                     [param("mongoc_topology_ptr", "topology"),
                      param("mongoc_ss_optype_t", "optype"),
                      param("const_mongoc_read_prefs_ptr", "read_prefs"),
-                     param("int64_t", "local_threshold_ms"),
                      param("bson_error_ptr", "error")]),
 
     future_function("mongoc_gridfs_ptr",

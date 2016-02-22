@@ -354,7 +354,6 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
    selected_server = mongoc_topology_select(collection->client->topology,
                                             MONGOC_SS_READ,
                                             read_prefs,
-                                            15,
                                             &cursor->error);
 
    if (!selected_server) {

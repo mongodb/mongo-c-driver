@@ -415,7 +415,11 @@ test_mongoc_uri_functions (void)
    mongoc_client_destroy (client);
 
 
-   uri = mongoc_uri_new("mongodb://localhost/?serverselectiontimeoutms=3&journal=true&wtimeoutms=42&canonicalizeHostname=false");
+   uri = mongoc_uri_new("mongodb://localhost/?serverselectiontimeoutms=3"
+                           "&journal=true"
+                           "&wtimeoutms=42"
+                           "&localthresholdms=17"
+                           "&canonicalizeHostname=false");
 
    ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "serverselectiontimeoutms", 18), ==, 3);
    ASSERT(mongoc_uri_set_option_as_int32(uri, "serverselectiontimeoutms", 18));
@@ -424,6 +428,10 @@ test_mongoc_uri_functions (void)
    ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "wtimeoutms", 18), ==, 42);
    ASSERT(mongoc_uri_set_option_as_int32(uri, "wtimeoutms", 18));
    ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "wtimeoutms", 19), ==, 18);
+
+   ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "localthresholdms", 99), ==, 17);
+   ASSERT(mongoc_uri_set_option_as_int32(uri, "localthresholdms", 99));
+   ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "localthresholdms", 42), ==, 99);
 
    /* socketcheckintervalms isn't set, return our fallback */
    ASSERT_CMPINT(mongoc_uri_get_option_as_int32(uri, "socketcheckintervalms", 123), ==, 123);

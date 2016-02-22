@@ -1747,7 +1747,6 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    selected_server = mongoc_topology_select (topology,
                                             optype,
                                             read_prefs,
-                                            15,
                                             error);
 
    if (!selected_server) {

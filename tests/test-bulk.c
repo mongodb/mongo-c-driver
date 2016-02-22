@@ -2724,7 +2724,7 @@ hint_for_read_mode (mongoc_client_t *client,
 
    prefs = mongoc_read_prefs_new (read_mode);
    sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs,
-                                15, &error);
+                                &error);
 
    ASSERT_OR_PRINT (sd, error);
    hint = sd->id;

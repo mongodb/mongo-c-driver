@@ -27,6 +27,7 @@
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
 #define MONGOC_TOPOLOGY_COOLDOWN_MS 5000
+#define MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS 15000
 #define MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS 30000
 #define MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED 10000
 #define MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED 60000
@@ -45,6 +46,7 @@ typedef struct _mongoc_topology_t
    bool                          server_selection_try_once;
 
    int64_t                       last_scan;
+   int64_t                       local_threshold_msec;
    int64_t                       connect_timeout_msec;
    int64_t                       server_selection_timeout_msec;
    int64_t                       heartbeat_msec;
@@ -74,7 +76,6 @@ mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t         *topology,
                         mongoc_ss_optype_t         optype,
                         const mongoc_read_prefs_t *read_prefs,
-                        int64_t                    local_threshold_msec,
                         bson_error_t              *error);
 
 mongoc_server_description_t *

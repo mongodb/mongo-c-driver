@@ -30,6 +30,7 @@ test_topology_client_creation (void)
    bson_error_t error;
 
    uri = test_framework_get_uri ();
+   mongoc_uri_set_option_as_int32 (uri, "localThresholdMS", 42);
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 12345);
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 54321);
 
@@ -49,6 +50,7 @@ test_topology_client_creation (void)
    assert (topology_b);
    assert (topology_a != topology_b);
 
+   assert (topology_a->local_threshold_msec == 42);
    assert (topology_a->connect_timeout_msec == 12345);
    assert (topology_a->server_selection_timeout_msec == 54321);
 
@@ -190,7 +192,7 @@ _test_server_selection (bool try_once)
 
    /* no primary, selection fails after one try */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    primary_pref, &error);
    request = mock_server_receives_ismaster (server);
    assert(request);
    mock_server_replies_simple (request, secondary_response);
@@ -218,7 +220,7 @@ _test_server_selection (bool try_once)
 
    /* second selection, now we try ismaster again */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    primary_pref, &error);
    request = mock_server_receives_ismaster (server);
    assert (request);
 
@@ -450,7 +452,7 @@ test_cooldown_standalone (void)
 
    /* first ismaster fails, selection fails */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    primary_pref, &error);
    request = mock_server_receives_ismaster (server);
    assert (request);
    mock_server_hangs_up (request);
@@ -462,7 +464,7 @@ test_cooldown_standalone (void)
 
    /* second selection doesn't try to call ismaster: we're in cooldown */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    primary_pref, &error);
    assert (!mock_server_receives_ismaster (server));  /* no ismaster call */
    assert (!future_get_mongoc_server_description_ptr (future));
    future_destroy (future);
@@ -471,7 +473,7 @@ test_cooldown_standalone (void)
 
    /* cooldown ends, now we try ismaster again, this time succeeding */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    primary_pref, &error);
    request = mock_server_receives_ismaster (server);  /* not in cooldown now */
    assert (request);
    mock_server_replies_simple (request, "{'ok': 1, 'ismaster': true}");
@@ -532,7 +534,7 @@ test_cooldown_rs (void)
 
    /* server 0 is a secondary. */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    primary_pref, &error);
 
    request = mock_server_receives_ismaster (servers[0]);
    assert (request);
@@ -553,7 +555,7 @@ test_cooldown_rs (void)
 
    /* second selection doesn't try ismaster on server 1: it's in cooldown */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    primary_pref, &error);
 
    request = mock_server_receives_ismaster (servers[0]);
    assert (request);
@@ -570,7 +572,7 @@ test_cooldown_rs (void)
 
    /* cooldown ends, now we try ismaster on server 1, this time succeeding */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    primary_pref, &error);
 
    request = mock_server_receives_ismaster (servers[1]);
    assert (request);
@@ -654,7 +656,7 @@ _test_connect_timeout (bool pooled, bool try_once)
 
    /* start waiting for a server */
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_pref, 15, &error);
+                                    primary_pref, &error);
 
    server0_last_ismaster = start = bson_get_monotonic_time ();
 

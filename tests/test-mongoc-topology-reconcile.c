@@ -106,7 +106,7 @@ selects_server (mongoc_client_t *client,
    bool result;
 
    sd = mongoc_topology_select (client->topology, MONGOC_SS_READ,
-                                read_prefs, 15, &error);
+                                read_prefs, &error);
 
    if (!sd) {
       fprintf (stderr, "%s\n", error.message);
@@ -276,7 +276,7 @@ _test_topology_reconcile_sharded (bool pooled)
 
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    future = future_topology_select (client->topology, MONGOC_SS_READ,
-                                    primary_read_prefs, 15, &error);
+                                    primary_read_prefs, &error);
 
    /* mongos */
    request = mock_server_receives_ismaster (mongos);

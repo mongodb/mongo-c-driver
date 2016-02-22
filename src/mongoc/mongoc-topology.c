@@ -204,6 +204,10 @@ mongoc_topology_new (const mongoc_uri_t *uri,
       topology->uri, "serverselectiontimeoutms",
       MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS);
 
+   topology->local_threshold_msec = mongoc_uri_get_option_as_int32 (
+      topology->uri, "localthresholdms",
+      MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
+
    /* Total time allowed to check a server is connectTimeoutMS.
     * Server Discovery And Monitoring Spec:
     *
@@ -355,9 +359,6 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology, bson_error_t *er
  *       @topology: The topology.
  *       @optype: Whether we are selecting for a read or write operation.
  *       @read_prefs: Required, the read preferences for the command.
- *       @local_threshold_ms: Maximum latency *beyond* the nearest server
- *          among which to randomly select servers. See Server Selection
- *          Spec.
  *       @error: Required, out pointer for error info.
  *
  * Returns:
@@ -373,10 +374,10 @@ mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t         *topology,
                         mongoc_ss_optype_t         optype,
                         const mongoc_read_prefs_t *read_prefs,
-                        int64_t                    local_threshold_ms,
                         bson_error_t              *error)
 {
    int r;
+   int64_t local_threshold_ms;
    mongoc_server_description_t *selected_server = NULL;
    bool try_once;
    int64_t sleep_usec;
@@ -392,6 +393,7 @@ mongoc_topology_select (mongoc_topology_t         *topology,
 
    BSON_ASSERT (topology);
 
+   local_threshold_ms = topology->local_threshold_msec;
    try_once = topology->server_selection_try_once;
    loop_start = loop_end = bson_get_monotonic_time ();
    expire_at = loop_start
