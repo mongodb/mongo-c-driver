@@ -1264,6 +1264,18 @@ mongoc_uri_get_read_prefs_t (const mongoc_uri_t *uri) /* IN */
 }
 
 
+void
+mongoc_uri_set_read_prefs_t (mongoc_uri_t              *uri,
+                             const mongoc_read_prefs_t *prefs)
+{
+   BSON_ASSERT (uri);
+   BSON_ASSERT (prefs);
+
+   mongoc_read_prefs_destroy (uri->read_prefs);
+   uri->read_prefs = mongoc_read_prefs_copy (prefs);
+}
+
+
 const mongoc_read_concern_t *
 mongoc_uri_get_read_concern (const mongoc_uri_t *uri) /* IN */
 {
@@ -1273,12 +1285,36 @@ mongoc_uri_get_read_concern (const mongoc_uri_t *uri) /* IN */
 }
 
 
+void
+mongoc_uri_set_read_concern (mongoc_uri_t                *uri,
+                             const mongoc_read_concern_t *rc)
+{
+   BSON_ASSERT (uri);
+   BSON_ASSERT (rc);
+
+   mongoc_read_concern_destroy (uri->read_concern);
+   uri->read_concern = mongoc_read_concern_copy (rc);
+}
+
+
 const mongoc_write_concern_t *
 mongoc_uri_get_write_concern (const mongoc_uri_t *uri) /* IN */
 {
    BSON_ASSERT (uri);
 
    return uri->write_concern;
+}
+
+
+void
+mongoc_uri_set_write_concern (mongoc_uri_t                 *uri,
+                              const mongoc_write_concern_t *wc)
+{
+   BSON_ASSERT (uri);
+   BSON_ASSERT (wc);
+
+   mongoc_write_concern_destroy (uri->write_concern);
+   uri->write_concern = mongoc_write_concern_copy (wc);
 }
 
 

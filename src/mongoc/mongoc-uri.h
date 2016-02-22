@@ -40,32 +40,38 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_uri_t mongoc_uri_t;
 
 
-mongoc_uri_t                 *mongoc_uri_copy                     (const mongoc_uri_t *uri);
-void                          mongoc_uri_destroy                  (mongoc_uri_t       *uri);
-mongoc_uri_t                 *mongoc_uri_new                      (const char         *uri_string)
+mongoc_uri_t                 *mongoc_uri_copy                     (const mongoc_uri_t           *uri);
+void                          mongoc_uri_destroy                  (mongoc_uri_t                 *uri);
+mongoc_uri_t                 *mongoc_uri_new                      (const char                   *uri_string)
    BSON_GNUC_WARN_UNUSED_RESULT;
-mongoc_uri_t                 *mongoc_uri_new_for_host_port        (const char         *hostname,
-                                                                         uint16_t      port)
+mongoc_uri_t                 *mongoc_uri_new_for_host_port        (const char                   *hostname,
+                                                                   uint16_t                      port)
    BSON_GNUC_WARN_UNUSED_RESULT;
-const mongoc_host_list_t     *mongoc_uri_get_hosts                (const mongoc_uri_t *uri);
-const char                   *mongoc_uri_get_database             (const mongoc_uri_t *uri);
-const bson_t                 *mongoc_uri_get_options              (const mongoc_uri_t *uri);
-const char                   *mongoc_uri_get_password             (const mongoc_uri_t *uri);
-const bson_t                 *mongoc_uri_get_read_prefs           (const mongoc_uri_t *uri)
+const mongoc_host_list_t     *mongoc_uri_get_hosts                (const mongoc_uri_t           *uri);
+const char                   *mongoc_uri_get_database             (const mongoc_uri_t           *uri);
+const bson_t                 *mongoc_uri_get_options              (const mongoc_uri_t           *uri);
+const char                   *mongoc_uri_get_password             (const mongoc_uri_t           *uri);
+const bson_t                 *mongoc_uri_get_read_prefs           (const mongoc_uri_t           *uri)
    BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_read_prefs_t);
-const char                   *mongoc_uri_get_replica_set          (const mongoc_uri_t *uri);
-const char                   *mongoc_uri_get_string               (const mongoc_uri_t *uri);
-const char                   *mongoc_uri_get_username             (const mongoc_uri_t *uri);
-const bson_t                 *mongoc_uri_get_credentials          (const mongoc_uri_t *uri);
-const char                   *mongoc_uri_get_auth_source          (const mongoc_uri_t *uri);
-const char                   *mongoc_uri_get_auth_mechanism       (const mongoc_uri_t *uri);
-bool                          mongoc_uri_get_mechanism_properties (const mongoc_uri_t *uri,
-                                                                         bson_t       *properties);
-bool                          mongoc_uri_get_ssl                  (const mongoc_uri_t *uri);
-char                         *mongoc_uri_unescape                 (const char         *escaped_string);
-const mongoc_read_prefs_t *   mongoc_uri_get_read_prefs_t         (const mongoc_uri_t *uri);
-const mongoc_write_concern_t *mongoc_uri_get_write_concern        (const mongoc_uri_t *uri);
-const mongoc_read_concern_t  *mongoc_uri_get_read_concern         (const mongoc_uri_t *uri);
+const char                   *mongoc_uri_get_replica_set          (const mongoc_uri_t           *uri);
+const char                   *mongoc_uri_get_string               (const mongoc_uri_t           *uri);
+const char                   *mongoc_uri_get_username             (const mongoc_uri_t           *uri);
+const bson_t                 *mongoc_uri_get_credentials          (const mongoc_uri_t           *uri);
+const char                   *mongoc_uri_get_auth_source          (const mongoc_uri_t           *uri);
+const char                   *mongoc_uri_get_auth_mechanism       (const mongoc_uri_t           *uri);
+bool                          mongoc_uri_get_mechanism_properties (const mongoc_uri_t           *uri,
+                                                                   bson_t                       *properties);
+bool                          mongoc_uri_get_ssl                  (const mongoc_uri_t           *uri);
+char                         *mongoc_uri_unescape                 (const char                   *escaped_string);
+const mongoc_read_prefs_t *   mongoc_uri_get_read_prefs_t         (const mongoc_uri_t           *uri);
+void                          mongoc_uri_set_read_prefs_t         (mongoc_uri_t                 *uri,
+                                                                   const mongoc_read_prefs_t    *prefs);
+const mongoc_write_concern_t *mongoc_uri_get_write_concern        (const mongoc_uri_t           *uri);
+void                          mongoc_uri_set_write_concern        (mongoc_uri_t                 *uri,
+                                                                   const mongoc_write_concern_t *wc);
+const mongoc_read_concern_t  *mongoc_uri_get_read_concern         (const mongoc_uri_t           *uri);
+void                          mongoc_uri_set_read_concern         (mongoc_uri_t                 *uri,
+                                                                   const mongoc_read_concern_t  *rc);
 
 BSON_END_DECLS
 

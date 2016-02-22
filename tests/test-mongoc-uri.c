@@ -486,6 +486,49 @@ test_mongoc_uri_functions (void)
 
 #undef ASSERT_SUPPRESS
 
+
+static void
+test_mongoc_uri_compound_setters (void)
+{
+   mongoc_uri_t *uri;
+   mongoc_read_prefs_t *prefs;
+   const mongoc_read_prefs_t *prefs_result;
+   mongoc_read_concern_t *rc;
+   const mongoc_read_concern_t *rc_result;
+   mongoc_write_concern_t *wc;
+   const mongoc_write_concern_t *wc_result;
+
+   uri = mongoc_uri_new ("mongodb://localhost/"
+                            "?readPreference=nearest&readPreferenceTags=dc:ny"
+                            "&readConcern=majority"
+                            "&w=3");
+
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_uri_set_read_prefs_t (uri, prefs);
+   prefs_result = mongoc_uri_get_read_prefs_t (uri);
+   ASSERT_CMPINT (mongoc_read_prefs_get_mode (prefs_result),
+                  ==, MONGOC_READ_SECONDARY);
+      ASSERT (bson_empty (mongoc_read_prefs_get_tags (prefs_result)));
+
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, "whatever");
+   mongoc_uri_set_read_concern (uri, rc);
+   rc_result = mongoc_uri_get_read_concern (uri);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (rc_result), "whatever");
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 2);
+   mongoc_uri_set_write_concern (uri, wc);
+   wc_result = mongoc_uri_get_write_concern (uri);
+   ASSERT_CMPINT32 (mongoc_write_concern_get_w (wc_result), ==, (int32_t) 2);
+
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_read_concern_destroy (rc);
+   mongoc_write_concern_destroy (wc);
+   mongoc_uri_destroy (uri);
+}
+
+
 static void
 test_mongoc_host_list_from_string (void)
 {
@@ -766,4 +809,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/write_concern", test_mongoc_uri_write_concern);
    TestSuite_Add (suite, "/HostList/from_string", test_mongoc_host_list_from_string);
    TestSuite_Add (suite, "/Uri/functions", test_mongoc_uri_functions);
+   TestSuite_Add (suite, "/Uri/compound_setters", test_mongoc_uri_compound_setters);
 }
