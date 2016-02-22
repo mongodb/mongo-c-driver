@@ -49,7 +49,9 @@ const char *mongoc_log_level_str       (mongoc_log_level_t log_level);
 void        mongoc_log_default_handler (mongoc_log_level_t  log_level,
                                         const char         *log_domain,
                                         const char         *message,
-                                        void               *user_data);]]></code></screen>
+                                        void               *user_data);
+void        mongoc_log_trace_enable    (void);
+void        mongoc_log_trace_disable   (void);]]></code></screen>
     <p>The MongoDB C driver comes with an abstraction for logging that you can use in your application, or integrate with an existing logging system.</p>
   </section>
 

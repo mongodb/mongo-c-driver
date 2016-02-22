@@ -117,6 +117,24 @@ const char *
 mongoc_log_level_str (mongoc_log_level_t log_level);
 
 
+/**
+ * mongoc_log_trace_enable:
+ *
+ * Enables tracing at runtime (if it has been enabled at compile time).
+ */
+void
+mongoc_log_trace_enable (void);
+
+
+/**
+ * mongoc_log_trace_disable:
+ *
+ * Disables tracing at runtime (if it has been enabled at compile time).
+ */
+void
+mongoc_log_trace_disable (void);
+
+
 BSON_END_DECLS
 
 

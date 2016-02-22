@@ -177,6 +177,8 @@ mongoc_log
 mongoc_log_default_handler
 mongoc_log_level_str
 mongoc_log_set_handler
+mongoc_log_trace_disable
+mongoc_log_trace_enable
 mongoc_matcher_destroy
 mongoc_matcher_match
 mongoc_matcher_new
