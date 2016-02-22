@@ -1352,8 +1352,9 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
  */
 
 int32_t
-mongoc_uri_get_option_as_int32(const mongoc_uri_t *uri, const char *option,
-                               int32_t fallback)
+mongoc_uri_get_option_as_int32 (const mongoc_uri_t *uri,
+                                const char         *option,
+                                int32_t             fallback)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -1397,8 +1398,9 @@ mongoc_uri_get_option_as_int32(const mongoc_uri_t *uri, const char *option,
  */
 
 bool
-mongoc_uri_set_option_as_int32(mongoc_uri_t *uri, const char *option,
-                               int32_t value)
+mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
+                                const char   *option,
+                                int32_t       value)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -1441,8 +1443,9 @@ mongoc_uri_set_option_as_int32(mongoc_uri_t *uri, const char *option,
  */
 
 bool
-mongoc_uri_get_option_as_bool (const mongoc_uri_t *uri, const char *option,
-                               bool fallback)
+mongoc_uri_get_option_as_bool (const mongoc_uri_t *uri,
+                               const char         *option,
+                               bool                fallback)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -1482,8 +1485,9 @@ mongoc_uri_get_option_as_bool (const mongoc_uri_t *uri, const char *option,
  */
 
 bool
-mongoc_uri_set_option_as_bool(mongoc_uri_t *uri, const char *option,
-                              bool value)
+mongoc_uri_set_option_as_bool (mongoc_uri_t *uri,
+                               const char   *option,
+                               bool          value)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -1526,8 +1530,9 @@ mongoc_uri_set_option_as_bool(mongoc_uri_t *uri, const char *option,
  */
 
 const char*
-mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri, const char *option,
-                               const char *fallback)
+mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri,
+                               const char         *option,
+                               const char         *fallback)
 {
    const bson_t *options;
    bson_iter_t iter;
@@ -1571,8 +1576,9 @@ mongoc_uri_get_option_as_utf8 (const mongoc_uri_t *uri, const char *option,
  */
 
 bool
-mongoc_uri_set_option_as_utf8(mongoc_uri_t *uri, const char *option,
-                              const char *value)
+mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri,
+                               const char   *option,
+                               const char   *value)
 {
    size_t len;
 
