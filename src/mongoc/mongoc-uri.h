@@ -60,6 +60,15 @@ bool                          mongoc_uri_get_option_as_bool       (const mongoc_
 const char*                   mongoc_uri_get_option_as_utf8       (const mongoc_uri_t           *uri,
                                                                    const char                   *option,
                                                                    const char                   *fallback);
+bool                          mongoc_uri_set_option_as_int32      (mongoc_uri_t                 *uri,
+                                                                   const char                   *option,
+                                                                   int32_t                       value);
+bool                          mongoc_uri_set_option_as_bool       (mongoc_uri_t                 *uri,
+                                                                   const char                   *option,
+                                                                   bool                          value);
+bool                          mongoc_uri_set_option_as_utf8       (mongoc_uri_t                 *uri,
+                                                                   const char                   *option,
+                                                                   const char                   *value);
 const bson_t                 *mongoc_uri_get_read_prefs           (const mongoc_uri_t           *uri)
    BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_read_prefs_t);
 const char                   *mongoc_uri_get_replica_set          (const mongoc_uri_t           *uri);

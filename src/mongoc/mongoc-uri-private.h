@@ -56,18 +56,6 @@ bool
 mongoc_uri_option_is_bool        (const char         *key);
 bool
 mongoc_uri_option_is_utf8        (const char         *key);
-bool
-mongoc_uri_set_option_as_int32   (      mongoc_uri_t *uri,
-                                  const char         *option,
-                                        int32_t       value);
-bool
-mongoc_uri_set_option_as_bool    (      mongoc_uri_t *uri,
-                                  const char         *option,
-                                        bool          value);
-bool
-mongoc_uri_set_option_as_utf8    (      mongoc_uri_t *uri,
-                                  const char         *option,
-                                  const char         *value);
 
 BSON_END_DECLS
 

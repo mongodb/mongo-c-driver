@@ -305,6 +305,9 @@ LIBMONGOC_1.4 {
         mongoc_uri_get_option_as_bool;
         mongoc_uri_get_option_as_int32;
         mongoc_uri_get_option_as_utf8;
+        mongoc_uri_set_option_as_bool;
+        mongoc_uri_set_option_as_int32;
+        mongoc_uri_set_option_as_utf8;
         mongoc_uri_set_read_concern;
         mongoc_uri_set_read_prefs_t;
         mongoc_uri_set_write_concern;
