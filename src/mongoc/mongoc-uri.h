@@ -49,8 +49,15 @@ mongoc_uri_t                 *mongoc_uri_new_for_host_port        (const char   
    BSON_GNUC_WARN_UNUSED_RESULT;
 const mongoc_host_list_t     *mongoc_uri_get_hosts                (const mongoc_uri_t           *uri);
 const char                   *mongoc_uri_get_database             (const mongoc_uri_t           *uri);
+bool                          mongoc_uri_set_database             (mongoc_uri_t                 *uri,
+                                                                   const char                   *database);
 const bson_t                 *mongoc_uri_get_options              (const mongoc_uri_t           *uri);
 const char                   *mongoc_uri_get_password             (const mongoc_uri_t           *uri);
+bool                          mongoc_uri_set_password             (mongoc_uri_t                 *uri,
+                                                                   const char                   *password);
+bool                          mongoc_uri_option_is_int32          (const char                   *key);
+bool                          mongoc_uri_option_is_bool           (const char                   *key);
+bool                          mongoc_uri_option_is_utf8           (const char                   *key);
 int32_t                       mongoc_uri_get_option_as_int32      (const mongoc_uri_t           *uri,
                                                                    const char                   *option,
                                                                    int32_t                       fallback);
@@ -74,8 +81,12 @@ const bson_t                 *mongoc_uri_get_read_prefs           (const mongoc_
 const char                   *mongoc_uri_get_replica_set          (const mongoc_uri_t           *uri);
 const char                   *mongoc_uri_get_string               (const mongoc_uri_t           *uri);
 const char                   *mongoc_uri_get_username             (const mongoc_uri_t           *uri);
+bool                          mongoc_uri_set_username             (mongoc_uri_t                 *uri,
+                                                                   const char                   *username);
 const bson_t                 *mongoc_uri_get_credentials          (const mongoc_uri_t           *uri);
 const char                   *mongoc_uri_get_auth_source          (const mongoc_uri_t           *uri);
+bool                          mongoc_uri_set_auth_source          (mongoc_uri_t                 *uri,
+                                                                   const char                   *value);
 const char                   *mongoc_uri_get_auth_mechanism       (const mongoc_uri_t           *uri);
 bool                          mongoc_uri_get_mechanism_properties (const mongoc_uri_t           *uri,
                                                                    bson_t                       *properties);

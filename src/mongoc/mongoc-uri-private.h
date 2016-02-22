@@ -38,24 +38,6 @@ mongoc_uri_append_host           (      mongoc_uri_t *uri,
 bool
 mongoc_uri_parse_host            (      mongoc_uri_t  *uri,
                                   const char          *str);
-bool
-mongoc_uri_set_username          (      mongoc_uri_t *uri,
-                                  const char         *username);
-bool
-mongoc_uri_set_password          (      mongoc_uri_t *uri,
-                                  const char         *password);
-bool
-mongoc_uri_set_database          (      mongoc_uri_t *uri,
-                                  const char         *database);
-bool
-mongoc_uri_set_auth_source       (      mongoc_uri_t *uri,
-                                  const char         *value);
-bool
-mongoc_uri_option_is_int32       (const char         *key);
-bool
-mongoc_uri_option_is_bool        (const char         *key);
-bool
-mongoc_uri_option_is_utf8        (const char         *key);
 
 BSON_END_DECLS
 

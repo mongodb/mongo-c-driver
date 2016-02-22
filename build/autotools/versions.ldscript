@@ -295,22 +295,29 @@ LIBMONGOC_1.3 {
 
 LIBMONGOC_1.4 {
     global:
+        mongoc_client_get_server_description;
+        mongoc_client_get_server_descriptions;
         mongoc_cursor_get_limit;
         mongoc_cursor_set_limit;
         mongoc_log_trace_disable;
         mongoc_log_trace_enable;
-        mongoc_server_descriptions_destroy_all;
         mongoc_server_description_ismaster;
         mongoc_server_description_type;
-        mongoc_client_get_server_description;
-        mongoc_client_get_server_descriptions;
+        mongoc_server_descriptions_destroy_all;
         mongoc_uri_get_option_as_bool;
         mongoc_uri_get_option_as_int32;
         mongoc_uri_get_option_as_utf8;
+        mongoc_uri_option_is_bool;
+        mongoc_uri_option_is_int32;
+        mongoc_uri_option_is_utf8;
+        mongoc_uri_set_auth_source;
+        mongoc_uri_set_database;
         mongoc_uri_set_option_as_bool;
         mongoc_uri_set_option_as_int32;
         mongoc_uri_set_option_as_utf8;
+        mongoc_uri_set_password;
         mongoc_uri_set_read_concern;
         mongoc_uri_set_read_prefs_t;
+        mongoc_uri_set_username;
         mongoc_uri_set_write_concern;
 } LIBMONGOC_1.3;
