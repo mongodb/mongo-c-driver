@@ -138,7 +138,7 @@
     <table>
       <tr>
         <td><p>readConcernLevel</p></td>
-        <td><p>The level of isolation for read operations. If the level is left unspecified, the server default will be used. See the <link xref="https://docs.mongodb.org/master/reference/readConcern/">readConcern in the MongoDB Manual</link> for details.</p></td>
+        <td><p>The level of isolation for read operations. If the level is left unspecified, the server default will be used. See <link href="https://docs.mongodb.org/master/reference/readConcern/">readConcern in the MongoDB Manual</link> for details.</p></td>
       </tr>
     </table>
   </section>
