@@ -13,28 +13,6 @@
 #include "mock_server/mock-server.h"
 
 
-static mongoc_database_t *
-get_test_database (mongoc_client_t *client)
-{
-   return mongoc_client_get_database (client, "test");
-}
-
-
-static mongoc_collection_t *
-get_test_collection (mongoc_client_t *client,
-                     const char      *prefix)
-{
-   mongoc_collection_t *ret;
-   char *str;
-
-   str = gen_collection_name (prefix);
-   ret = mongoc_client_get_collection (client, "test", str);
-   bson_free (str);
-
-   return ret;
-}
-
-
 static void
 test_copy (void)
 {

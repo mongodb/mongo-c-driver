@@ -109,7 +109,12 @@ log_handler (mongoc_log_level_t  log_level,
 }
 
 
-char MONGOC_TEST_UNIQUE [32];
+mongoc_database_t *
+get_test_database (mongoc_client_t *client)
+{
+   return mongoc_client_get_database (client, "test");
+}
+
 
 char *
 gen_collection_name (const char *str)
@@ -120,6 +125,22 @@ gen_collection_name (const char *str)
                               (unsigned)gettestpid());
 
 }
+
+
+mongoc_collection_t *
+get_test_collection (mongoc_client_t *client,
+                     const char      *prefix)
+{
+   mongoc_collection_t *ret;
+   char *str;
+
+   str = gen_collection_name (prefix);
+   ret = mongoc_client_get_collection (client, "test", str);
+   bson_free (str);
+
+   return ret;
+}
+
 
 /*
  *--------------------------------------------------------------------------
@@ -1330,6 +1351,7 @@ int test_framework_skip_if_max_version_version_less_than_4 (void)
    return test_framework_max_wire_version_at_least (4);
 }
 
+static char MONGOC_TEST_UNIQUE [32];
 
 int
 main (int   argc,

@@ -290,20 +290,6 @@ oid_created_on_client (const bson_t *doc)
    return 0 == memcmp (pid, new_pid, 2);
 }
 
-static mongoc_collection_t *
-get_test_collection (mongoc_client_t *client,
-                     const char      *prefix)
-{
-   mongoc_collection_t *ret;
-   char *str;
-
-   str = gen_collection_name (prefix);
-   ret = mongoc_client_get_collection (client, "test", str);
-   bson_free (str);
-
-   return ret;
-}
-
 
 static void
 create_unique_index (mongoc_collection_t *collection)

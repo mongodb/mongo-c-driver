@@ -19,7 +19,10 @@
 #define TEST_LIBMONGOC_H
 
 
+mongoc_database_t *get_test_database (mongoc_client_t *client);
 char *gen_collection_name (const char *prefix);
+mongoc_collection_t *get_test_collection (mongoc_client_t *client,
+                                          const char      *prefix);
 void suppress_one_message (void);
 char *test_framework_getenv (const char *name);
 bool test_framework_getenv_bool (const char *name);

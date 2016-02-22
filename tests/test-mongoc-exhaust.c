@@ -18,19 +18,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "exhaust-test"
 
-static mongoc_collection_t *
-get_test_collection (mongoc_client_t *client,
-                     const char      *name)
-{
-   mongoc_collection_t *ret;
-   char *str;
-
-   str = gen_collection_name (name);
-   ret = mongoc_client_get_collection (client, "test", str);
-   bson_free (str);
-
-   return ret;
-}
 
 int skip_if_mongos (void)
 {
