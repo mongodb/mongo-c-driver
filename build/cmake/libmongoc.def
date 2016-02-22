@@ -247,6 +247,9 @@ mongoc_uri_get_database
 mongoc_uri_get_hosts
 mongoc_uri_get_mechanism_properties
 mongoc_uri_get_options
+mongoc_uri_get_option_as_bool
+mongoc_uri_get_option_as_int32
+mongoc_uri_get_option_as_utf8
 mongoc_uri_get_password
 mongoc_uri_get_read_concern
 mongoc_uri_get_read_prefs

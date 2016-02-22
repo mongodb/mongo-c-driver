@@ -302,6 +302,9 @@ LIBMONGOC_1.4 {
         mongoc_server_description_type;
         mongoc_client_get_server_description;
         mongoc_client_get_server_descriptions;
+        mongoc_uri_get_option_as_bool;
+        mongoc_uri_get_option_as_int32;
+        mongoc_uri_get_option_as_utf8;
         mongoc_uri_set_read_concern;
         mongoc_uri_set_read_prefs_t;
         mongoc_uri_set_write_concern;

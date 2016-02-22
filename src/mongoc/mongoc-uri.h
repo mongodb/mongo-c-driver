@@ -51,6 +51,15 @@ const mongoc_host_list_t     *mongoc_uri_get_hosts                (const mongoc_
 const char                   *mongoc_uri_get_database             (const mongoc_uri_t           *uri);
 const bson_t                 *mongoc_uri_get_options              (const mongoc_uri_t           *uri);
 const char                   *mongoc_uri_get_password             (const mongoc_uri_t           *uri);
+int32_t                       mongoc_uri_get_option_as_int32      (const mongoc_uri_t           *uri,
+                                                                   const char                   *option,
+                                                                   int32_t                       fallback);
+bool                          mongoc_uri_get_option_as_bool       (const mongoc_uri_t           *uri,
+                                                                   const char                   *option,
+                                                                   bool                          fallback);
+const char*                   mongoc_uri_get_option_as_utf8       (const mongoc_uri_t           *uri,
+                                                                   const char                   *option,
+                                                                   const char                   *fallback);
 const bson_t                 *mongoc_uri_get_read_prefs           (const mongoc_uri_t           *uri)
    BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_read_prefs_t);
 const char                   *mongoc_uri_get_replica_set          (const mongoc_uri_t           *uri);

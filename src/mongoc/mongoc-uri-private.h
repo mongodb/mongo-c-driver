@@ -56,18 +56,6 @@ bool
 mongoc_uri_option_is_bool        (const char         *key);
 bool
 mongoc_uri_option_is_utf8        (const char         *key);
-int32_t
-mongoc_uri_get_option_as_int32   (const mongoc_uri_t *uri,
-                                  const char         *option,
-                                        int32_t       fallback);
-bool
-mongoc_uri_get_option_as_bool    (const mongoc_uri_t *uri,
-                                  const char         *option,
-                                        bool          fallback);
-const char*
-mongoc_uri_get_option_as_utf8    (const mongoc_uri_t *uri,
-                                  const char         *option,
-                                  const char         *fallback);
 bool
 mongoc_uri_set_option_as_int32   (      mongoc_uri_t *uri,
                                   const char         *option,
