@@ -1,3 +1,43 @@
+NEXT RELEASE
+============
+
+New functions support language drivers (specifically the PHP and HHVM drivers)
+using only the libmongoc public API:
+
+  * mongoc_bulk_operation_get_hint
+  * mongoc_client_command_simple_with_hint
+  * mongoc_client_get_server_description
+  * mongoc_client_get_server_descriptions
+  * mongoc_client_select_server
+  * mongoc_cursor_get_limit
+  * mongoc_cursor_new_from_command_reply
+  * mongoc_cursor_set_limit
+  * mongoc_log_trace_disable
+  * mongoc_log_trace_enable
+  * mongoc_server_description_ismaster
+  * mongoc_server_description_type
+  * mongoc_server_descriptions_destroy_all
+  * mongoc_uri_get_option_as_bool
+  * mongoc_uri_get_option_as_int32
+  * mongoc_uri_get_option_as_utf8
+  * mongoc_uri_option_is_bool
+  * mongoc_uri_option_is_int32
+  * mongoc_uri_option_is_utf8
+  * mongoc_uri_set_auth_source
+  * mongoc_uri_set_database
+  * mongoc_uri_set_option_as_bool
+  * mongoc_uri_set_option_as_int32
+  * mongoc_uri_set_option_as_utf8
+  * mongoc_uri_set_password
+  * mongoc_uri_set_read_concern
+  * mongoc_uri_set_read_prefs_t
+  * mongoc_uri_set_username
+  * mongoc_uri_set_write_concern
+  * mongoc_write_concern_is_acknowledged
+  * mongoc_write_concern_is_valid
+  * mongoc_write_concern_journal_is_set
+
+
 mongo-c-driver 1.3.3
 ====================
 
