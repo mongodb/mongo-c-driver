@@ -35,7 +35,7 @@ struct _mongoc_bulk_operation_t
    mongoc_client_t               *client;
    mongoc_write_concern_t        *write_concern;
    mongoc_bulk_write_flags_t      flags;
-   uint32_t                       hint;
+   uint32_t                       server_id;
    mongoc_array_t                 commands;
    mongoc_write_result_t          result;
    bool                           executed;

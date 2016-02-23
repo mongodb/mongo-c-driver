@@ -29,22 +29,22 @@ static int64_t
 get_timestamp (mongoc_client_t *client,
                mongoc_cursor_t *cursor)
 {
-   uint32_t hint;
+   uint32_t server_id;
 
-   hint = mongoc_cursor_get_hint (cursor);
+   server_id = mongoc_cursor_get_hint (cursor);
 
    if (client->topology->single_threaded) {
       mongoc_topology_scanner_node_t *scanner_node;
 
       scanner_node = mongoc_topology_scanner_get_node (
-         client->topology->scanner, hint);
+         client->topology->scanner, server_id);
 
       return scanner_node->timestamp;
    } else {
       mongoc_cluster_node_t *cluster_node;
 
-      cluster_node = (mongoc_cluster_node_t *)mongoc_set_get(
-         client->cluster.nodes, hint);
+      cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (
+         client->cluster.nodes, server_id);
 
       return cluster_node->timestamp;
    }
@@ -67,7 +67,7 @@ test_exhaust_cursor (bool pooled)
    bson_t *bptr[10];
    int i;
    bool r;
-   uint32_t hint;
+   uint32_t server_id;
    bson_error_t error;
    bson_oid_t oid;
    int64_t timestamp1;
@@ -205,8 +205,9 @@ test_exhaust_cursor (bool pooled)
       cursor2 = mongoc_collection_find (collection, MONGOC_QUERY_NONE, 0, 0, 0, &q,
                                         NULL, NULL);
 
-      stream = (mongoc_stream_t *)mongoc_set_get(client->cluster.nodes, cursor->hint);
-      hint = cursor->hint;
+      server_id = cursor->server_id;
+      stream = (mongoc_stream_t *) mongoc_set_get(client->cluster.nodes, 
+                                                  server_id);
 
       for (i = 1; i < 10; i++) {
          r = mongoc_cursor_next (cursor, &doc);
@@ -220,7 +221,8 @@ test_exhaust_cursor (bool pooled)
 
       mongoc_cursor_destroy (cursor);
 
-      assert (stream == (mongoc_stream_t *)mongoc_set_get(client->cluster.nodes, hint));
+      assert (stream == (mongoc_stream_t *) mongoc_set_get (client->cluster.nodes,
+                                                            server_id));
 
       r = mongoc_cursor_next (cursor2, &doc);
       assert (r);
@@ -267,7 +269,7 @@ test_exhaust_cursor_multi_batch (void *context)
    bson_t doc = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
    int i;
-   uint32_t hint;
+   uint32_t server_id;
    mongoc_cursor_t *cursor;
    const bson_t *cursor_doc;
 
@@ -284,8 +286,8 @@ test_exhaust_cursor_multi_batch (void *context)
       mongoc_bulk_operation_insert (bulk, &doc);
    }
 
-   hint = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   ASSERT_OR_PRINT (hint, error);
+   server_id = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (server_id, error);
 
    cursor = mongoc_collection_find (
       collection,
@@ -369,11 +371,11 @@ _check_error (mongoc_client_t     *client,
               bool                 pooled,
               exhaust_error_type_t error_type)
 {
-   uint32_t hint;
+   uint32_t server_id;
    bson_error_t error;
 
-   hint = mongoc_cursor_get_hint (cursor);
-   ASSERT (hint);
+   server_id = mongoc_cursor_get_hint (cursor);
+   ASSERT (server_id);
    ASSERT (mongoc_cursor_error (cursor, &error));
 
    if (error_type == NETWORK_ERROR) {
@@ -384,7 +386,7 @@ _check_error (mongoc_client_t     *client,
 
       /* socket was discarded */
       ASSERT (!mongoc_cluster_stream_for_server (&client->cluster,
-                                                 hint,
+                                                 server_id,
                                                  false /* don't reconnect */,
                                                  &error));
 

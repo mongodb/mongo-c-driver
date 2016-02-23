@@ -215,7 +215,7 @@ test_kill_cursor_live (void)
    mongoc_bulk_operation_t *bulk;
    int i;
    bson_error_t error;
-   uint32_t hint;
+   uint32_t server_id;
    bool r;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
@@ -229,8 +229,8 @@ test_kill_cursor_live (void)
       mongoc_bulk_operation_insert (bulk, b);
    }
 
-   hint = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   ASSERT_OR_PRINT (hint > 0, error);
+   server_id = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (server_id > 0, error);
 
    cursor = mongoc_collection_find (collection, MONGOC_QUERY_NONE,
                                     0, 0, 0, /* batch size 2 */
@@ -613,7 +613,7 @@ _test_cursor_new_from_command (const char *cmd_json,
    bool r;
    bson_error_t error;
    mongoc_server_description_t *sd;
-   uint32_t hint;
+   uint32_t server_id;
    bson_t *reply;
    mongoc_cursor_t *cmd_cursor;
 
@@ -632,14 +632,14 @@ _test_cursor_new_from_command (const char *cmd_json,
                                 NULL, &error);
 
    ASSERT_OR_PRINT (sd, error);
-   hint = sd->id;
+   server_id = sd->id;
    reply = bson_new ();
-   mongoc_client_command_simple_with_hint (client, "test",
-                                           tmp_bson (cmd_json),
-                                           NULL, hint, reply, &error);
-   cmd_cursor = mongoc_cursor_new_from_command_reply (client, reply, hint);
+   mongoc_client_command_simple_with_server_id (client, "test",
+                                                tmp_bson (cmd_json),
+                                                NULL, server_id, reply, &error);
+   cmd_cursor = mongoc_cursor_new_from_command_reply (client, reply, server_id);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cmd_cursor, &error), error);
-   ASSERT_CMPUINT32 (hint, ==, mongoc_cursor_get_hint (cmd_cursor));
+   ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cmd_cursor));
    ASSERT_CMPINT (count_docs (cmd_cursor), ==, 2);
 
    mongoc_cursor_destroy (cmd_cursor);

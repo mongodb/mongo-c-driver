@@ -35,7 +35,7 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
                                  int64_t                       request_id,
                                  int64_t                       operation_id,
                                  const mongoc_host_list_t     *host,
-                                 uint32_t                      hint,
+                                 uint32_t                      server_id,
                                  void                         *context)
 {
    bson_iter_t iter;
@@ -73,7 +73,7 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
    event->request_id = request_id;
    event->operation_id = operation_id;
    event->host = host;
-   event->hint = hint;
+   event->server_id = server_id;
    event->context = context;
 }
 
@@ -95,7 +95,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    int64_t                         request_id,
                                    int64_t                         operation_id,
                                    const mongoc_host_list_t       *host,
-                                   uint32_t                        hint,
+                                   uint32_t                        server_id,
                                    void                           *context)
 {
    BSON_ASSERT (reply);
@@ -106,7 +106,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
    event->request_id = request_id;
    event->operation_id = operation_id;
    event->host = host;
-   event->hint = hint;
+   event->server_id = server_id;
    event->context = context;
 }
 
@@ -126,7 +126,7 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t                      request_id,
                                 int64_t                      operation_id,
                                 const mongoc_host_list_t    *host,
-                                uint32_t                     hint,
+                                uint32_t                     server_id,
                                 void                        *context)
 {
    event->duration = duration;
@@ -135,7 +135,7 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
    event->request_id = request_id;
    event->operation_id = operation_id;
    event->host = host;
-   event->hint = hint;
+   event->server_id = server_id;
    event->context = context;
 }
 
@@ -201,9 +201,9 @@ mongoc_apm_command_started_get_host (const mongoc_apm_command_started_t *event)
 
 
 uint32_t
-mongoc_apm_command_started_get_hint (const mongoc_apm_command_started_t *event)
+mongoc_apm_command_started_get_server_id (const mongoc_apm_command_started_t *event)
 {
-   return event->hint;
+   return event->server_id;
 }
 
 
@@ -266,10 +266,10 @@ mongoc_apm_command_succeeded_get_host (
 
 
 uint32_t
-mongoc_apm_command_succeeded_get_hint (
+mongoc_apm_command_succeeded_get_server_id (
    const mongoc_apm_command_succeeded_t *event)
 {
-   return event->hint;
+   return event->server_id;
 }
 
 
@@ -332,9 +332,9 @@ mongoc_apm_command_failed_get_host (const mongoc_apm_command_failed_t *event)
 
 
 uint32_t
-mongoc_apm_command_failed_get_hint (const mongoc_apm_command_failed_t *event)
+mongoc_apm_command_failed_get_server_id (const mongoc_apm_command_failed_t *event)
 {
-   return event->hint;
+   return event->server_id;
 }
 
 

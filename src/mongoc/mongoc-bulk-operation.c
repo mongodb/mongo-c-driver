@@ -50,7 +50,7 @@ mongoc_bulk_operation_new (bool ordered)
    bulk = (mongoc_bulk_operation_t *)bson_malloc0 (sizeof *bulk);
    bulk->flags.bypass_document_validation = MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
    bulk->flags.ordered = ordered;
-   bulk->hint = 0;
+   bulk->server_id = 0;
 
    _mongoc_array_init (&bulk->commands, sizeof (mongoc_write_command_t));
 
@@ -421,9 +421,9 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
       RETURN (false);
    }
 
-   if (bulk->hint) {
+   if (bulk->server_id) {
       server_stream = mongoc_cluster_stream_for_server (cluster,
-                                                        bulk->hint,
+                                                        bulk->server_id,
                                                         true /* reconnect_ok */,
                                                         error);
    } else {
@@ -443,7 +443,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk,  /* IN */
                                      bulk->write_concern, offset,
                                      &bulk->result);
 
-      bulk->hint = command->hint;
+      bulk->server_id = command->server_id;
 
       if (bulk->result.failed && bulk->flags.ordered) {
          GOTO (cleanup);
@@ -456,7 +456,7 @@ cleanup:
    ret = _mongoc_write_result_complete (&bulk->result, reply, error);
    mongoc_server_stream_cleanup (server_stream);
 
-   RETURN (ret ? bulk->hint : 0);
+   RETURN (ret ? bulk->server_id : 0);
 }
 
 void
@@ -528,17 +528,17 @@ mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk)
 {
    BSON_ASSERT (bulk);
 
-   return bulk->hint;
+   return bulk->server_id;
 }
 
 
 void
 mongoc_bulk_operation_set_hint (mongoc_bulk_operation_t *bulk,
-                                uint32_t                 hint)
+                                uint32_t                 server_id)
 {
    BSON_ASSERT (bulk);
 
-   bulk->hint = hint;
+   bulk->server_id = server_id;
 }
 
 

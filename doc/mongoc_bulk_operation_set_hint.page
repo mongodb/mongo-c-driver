@@ -29,6 +29,7 @@ mongoc_bulk_operation_set_hint (const mongoc_bulk_operation_t *bulk,
   <section id="description">
     <title>Description</title>
     <p>Specifies which server to use for the operation. This function has an effect only if called before <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute</code>.</p>
+    <p>(The function name includes the old term "hint" for the sake of backward compatibility, but we now call this number a "server id".)</p>
     <p>Use <code>mongoc_bulk_operation_set_hint</code> only for building a language driver that wraps the C Driver. When writing applications in C, leave the server id unset and allow the driver to choose a suitable server for the bulk operation.</p>
   </section>
 

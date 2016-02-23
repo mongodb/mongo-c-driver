@@ -291,13 +291,13 @@ _mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       if (!cursor->done) {
          /* The only way to stop an exhaust cursor is to kill the connection */
          mongoc_cluster_disconnect_node (&cursor->client->cluster,
-                                         cursor->hint);
+                                         cursor->server_id);
       }
    } else if (cursor->rpc.reply.cursor_id) {
       bson_strncpy (db, cursor->ns, cursor->dblen + 1);
 
       _mongoc_client_kill_cursor(cursor->client,
-                                 cursor->hint,
+                                 cursor->server_id,
                                  cursor->rpc.reply.cursor_id,
                                  cursor->operation_id,
                                  db,
@@ -331,9 +331,9 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
 
    ENTRY;
 
-   if (cursor->hint) {
+   if (cursor->server_id) {
       server_stream = mongoc_cluster_stream_for_server (&cursor->client->cluster,
-                                                        cursor->hint,
+                                                        cursor->server_id,
                                                         true /* reconnect_ok */,
                                                         &cursor->error);
    } else {
@@ -342,7 +342,7 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
                                                        &cursor->error);
 
       if (server_stream) {
-         cursor->hint = server_stream->sd->id;
+         cursor->server_id = server_stream->sd->id;
       }
    }
 
@@ -1330,14 +1330,14 @@ _mongoc_cursor_get_host (mongoc_cursor_t    *cursor,
 
    memset(host, 0, sizeof *host);
 
-   if (!cursor->hint) {
+   if (!cursor->server_id) {
       MONGOC_WARNING("%s(): Must send query before fetching peer.",
                      BSON_FUNC);
       return;
    }
 
    description = mongoc_topology_server_by_id(cursor->client->topology,
-                                              cursor->hint,
+                                              cursor->server_id,
                                               &cursor->error);
    if (!description) {
       return;
@@ -1493,7 +1493,7 @@ mongoc_cursor_get_hint (const mongoc_cursor_t *cursor)
 {
    BSON_ASSERT (cursor);
 
-   return cursor->hint;
+   return cursor->server_id;
 }
 
 int64_t

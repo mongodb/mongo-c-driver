@@ -26,7 +26,7 @@ mongoc_check_version
 mongoc_cleanup
 mongoc_client_command
 mongoc_client_command_simple
-mongoc_client_command_simple_with_hint
+mongoc_client_command_simple_with_server_id
 mongoc_client_destroy
 mongoc_client_find_databases
 mongoc_client_get_collection

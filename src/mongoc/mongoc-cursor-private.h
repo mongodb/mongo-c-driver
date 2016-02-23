@@ -52,7 +52,7 @@ struct _mongoc_cursor_t
 {
    mongoc_client_t           *client;
 
-   uint32_t                   hint;
+   uint32_t                   server_id;
    uint32_t                   stamp;
 
    unsigned                   is_command      : 1;

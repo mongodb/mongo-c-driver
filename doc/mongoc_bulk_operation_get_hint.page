@@ -27,6 +27,7 @@ mongoc_bulk_operation_get_hint (const mongoc_bulk_operation_t *bulk);
   <section id="description">
     <title>Description</title>
     <p>Retrieves the opaque id of the server used for the operation.</p>
+    <p>(The function name includes the old term "hint" for the sake of backward compatibility, but we now call this number a "server id".)</p>
     <p>This number is zero until the driver actually uses a server in <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute</code>. The server id is the same number as the return value of a successful <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute</code>, so <code>mongoc_bulk_operation_get_hint</code> is useful mainly in case <code xref="mongoc_bulk_operation_execute">mongoc_bulk_operation_execute</code> fails and returns zero.</p>
   </section>
 

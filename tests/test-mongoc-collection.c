@@ -1773,7 +1773,7 @@ test_aggregate_large (void)
    mongoc_bulk_operation_t *bulk;
    bson_iter_t iter;
    int32_t i;
-   uint32_t hint;
+   uint32_t server_id;
    mongoc_cursor_t *cursor;
    bson_t *inserted_doc;
    bson_error_t error;
@@ -1797,8 +1797,8 @@ test_aggregate_large (void)
       mongoc_bulk_operation_insert (bulk, inserted_doc);
    }
 
-   hint = mongoc_bulk_operation_execute (bulk, NULL, &error);
-   ASSERT_OR_PRINT (hint > 0, error);
+   server_id = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (server_id > 0, error);
 
    pipeline = tmp_bson ("[{'$sort': {'_id': 1}}]");
 

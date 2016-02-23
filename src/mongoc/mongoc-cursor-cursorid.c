@@ -357,7 +357,7 @@ _mongoc_cursor_cursorid_init_with_reply (mongoc_cursor_t *cursor,
    mongoc_cursor_cursorid_t *cid;
 
    cursor->sent = true;
-   cursor->hint = server_id;
+   cursor->server_id = server_id;
 
    cid = (mongoc_cursor_cursorid_t *)cursor->iface_data;
    BSON_ASSERT (cid);

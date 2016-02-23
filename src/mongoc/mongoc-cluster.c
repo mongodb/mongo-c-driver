@@ -134,7 +134,6 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
                                      const bson_t             *command,
                                      bool                      monitored,
                                      const mongoc_host_list_t *host,
-                                     uint32_t                  hint,
                                      bson_t                   *reply,
                                      bson_error_t             *error)
 {
@@ -193,7 +192,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
                                        request_id,
                                        cluster->operation_id,
                                        host,
-                                       hint,
+                                       server_id,
                                        cluster->client->apm_context);
 
       cluster->client->apm_callbacks.started (&started_event);
@@ -272,7 +271,7 @@ mongoc_cluster_run_command_internal (mongoc_cluster_t         *cluster,
                                          request_id,
                                          cluster->operation_id,
                                          host,
-                                         hint,
+                                         server_id,
                                          cluster->client->apm_context);
 
       cluster->client->apm_callbacks.succeeded (&succeeded_event);
@@ -331,8 +330,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t         *cluster,
 {
    return mongoc_cluster_run_command_internal (
       cluster, server_stream->stream, server_stream->sd->id, flags, db_name,
-      command, true, &server_stream->sd->host, server_stream->sd->id,
-      reply, error);
+      command, true, &server_stream->sd->host, reply, error);
 }
 
 
@@ -372,7 +370,7 @@ mongoc_cluster_run_command (mongoc_cluster_t    *cluster,
                                                db_name,
                                                command,
                                                /* not monitored */
-                                               false, NULL, 0,
+                                               false, NULL,
                                                reply, error);
 }
 

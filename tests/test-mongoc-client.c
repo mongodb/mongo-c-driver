@@ -366,7 +366,8 @@ test_mongoc_client_command_secondary (void)
    mongoc_cursor_next (cursor, &reply);
 
    if (test_framework_is_replset ()) {
-      assert (test_framework_server_is_secondary (client, cursor->hint));
+      assert (test_framework_server_is_secondary (
+         client, mongoc_cursor_get_hint (cursor)));
    }
 
    mongoc_read_prefs_destroy (read_prefs);

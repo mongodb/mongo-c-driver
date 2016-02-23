@@ -360,7 +360,7 @@ mongoc_collection_aggregate (mongoc_collection_t       *collection, /* IN */
       GOTO (done);
    }
 
-   cursor->hint = selected_server->id;
+   cursor->server_id = selected_server->id;
    use_cursor = 
       selected_server->max_wire_version >= WIRE_VERSION_AGG_CURSOR;
 

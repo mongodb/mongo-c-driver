@@ -17,7 +17,7 @@ New functions support language drivers (specifically the PHP and HHVM drivers)
 using only the libmongoc public API:
 
   * mongoc_bulk_operation_get_hint
-  * mongoc_client_command_simple_with_hint
+  * mongoc_client_command_simple_with_server_id
   * mongoc_client_get_server_description
   * mongoc_client_get_server_descriptions
   * mongoc_client_select_server

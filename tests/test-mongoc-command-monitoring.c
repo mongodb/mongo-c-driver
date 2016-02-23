@@ -312,7 +312,7 @@ started_cb (const mongoc_apm_command_started_t *event)
    }
 
    BSON_ASSERT (mongoc_apm_command_started_get_request_id (event) > 0);
-   BSON_ASSERT (mongoc_apm_command_started_get_hint (event) > 0);
+   BSON_ASSERT (mongoc_apm_command_started_get_server_id (event) > 0);
    assert_host_in_uri (event->host, context->test_framework_uri);
 
    /* subsequent events share the first event's operation id */
@@ -360,7 +360,7 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
    }
 
    BSON_ASSERT (mongoc_apm_command_succeeded_get_request_id (event) > 0);
-   BSON_ASSERT (mongoc_apm_command_succeeded_get_hint (event) > 0);
+   BSON_ASSERT (mongoc_apm_command_succeeded_get_server_id (event) > 0);
    assert_host_in_uri (event->host, context->test_framework_uri);
 
    convert_command_for_test (context, event->reply, &reply, NULL);

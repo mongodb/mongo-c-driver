@@ -2714,25 +2714,25 @@ test_bulk_write_concern_over_1000(void)
 
 
 static uint32_t
-hint_for_read_mode (mongoc_client_t *client,
-                    mongoc_read_mode_t read_mode)
+server_id_for_read_mode (mongoc_client_t *client,
+                         mongoc_read_mode_t read_mode)
 {
    mongoc_read_prefs_t *prefs;
    mongoc_server_description_t *sd;
    bson_error_t error;
-   uint32_t hint;
+   uint32_t server_id;
 
    prefs = mongoc_read_prefs_new (read_mode);
    sd = mongoc_topology_select (client->topology, MONGOC_SS_READ, prefs,
                                 &error);
 
    ASSERT_OR_PRINT (sd, error);
-   hint = sd->id;
+   server_id = sd->id;
 
    mongoc_server_description_destroy (sd);
    mongoc_read_prefs_destroy (prefs);
 
-   return hint;
+   return server_id;
 }
 
 
@@ -2747,7 +2747,7 @@ _test_bulk_hint (bool pooled,
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
    bool ret;
-   uint32_t hint;
+   uint32_t server_id;
    bson_t reply;
    bson_error_t error;
    future_t *future;
@@ -2764,7 +2764,7 @@ _test_bulk_hint (bool pooled,
       client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
    }
 
-   /* warm up the client so its hint is valid */
+   /* warm up the client so its server_id is valid */
    ret = mongoc_client_command_simple (client, "admin",
                                        tmp_bson ("{'isMaster': 1}"),
                                        NULL, NULL, &error);
@@ -2774,13 +2774,13 @@ _test_bulk_hint (bool pooled,
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
    ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_bulk_operation_get_hint (bulk));
    if (use_primary) {
-      hint = hint_for_read_mode (client, MONGOC_READ_PRIMARY);
+      server_id = server_id_for_read_mode (client, MONGOC_READ_PRIMARY);
    } else {
-      hint = hint_for_read_mode (client, MONGOC_READ_SECONDARY);
+      server_id = server_id_for_read_mode (client, MONGOC_READ_SECONDARY);
    }
 
-   mongoc_bulk_operation_set_hint (bulk, hint);
-   ASSERT_CMPUINT32 (hint, ==, mongoc_bulk_operation_get_hint (bulk));
+   mongoc_bulk_operation_set_hint (bulk, server_id);
+   ASSERT_CMPUINT32 (server_id, ==, mongoc_bulk_operation_get_hint (bulk));
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
@@ -2809,7 +2809,7 @@ _test_bulk_hint (bool pooled,
       BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
    }
 
-   ASSERT_CMPUINT32 (hint, ==, future_get_uint32_t (future));
+   ASSERT_CMPUINT32 (server_id, ==, future_get_uint32_t (future));
 
    request_destroy (request);
    future_destroy (future);

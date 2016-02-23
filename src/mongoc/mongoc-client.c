@@ -1266,13 +1266,13 @@ mongoc_client_command_simple (mongoc_client_t           *client,
 
 
 bool
-mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
-                                        const char                *db_name,
-                                        const bson_t              *command,
-                                        const mongoc_read_prefs_t *read_prefs,
-                                        uint32_t                   hint,
-                                        bson_t                    *reply,
-                                        bson_error_t              *error)
+mongoc_client_command_simple_with_server_id (mongoc_client_t           *client,
+                                             const char                *db_name,
+                                             const bson_t              *command,
+                                             const mongoc_read_prefs_t *read_prefs,
+                                             uint32_t                   server_id,
+                                             bson_t                    *reply,
+                                             bson_error_t              *error)
 {
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
@@ -1286,7 +1286,7 @@ mongoc_client_command_simple_with_hint (mongoc_client_t           *client,
 
    cluster = &client->cluster;
    server_stream = mongoc_cluster_stream_for_server (
-      cluster, hint, true /* reconnect ok */, error);
+      cluster, server_id, true /* reconnect ok */, error);
 
    if (server_stream) {
       ret = _mongoc_client_command_with_stream (client, db_name, command,
