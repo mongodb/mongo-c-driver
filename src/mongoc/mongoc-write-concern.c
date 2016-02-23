@@ -408,7 +408,7 @@ mongoc_write_concern_is_acknowledged (
       return (((write_concern->w != MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED) &&
                (write_concern->w != MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) ||
               mongoc_write_concern_get_fsync(write_concern) ||
-              mongoc_write_concern_get_journal(write_concern));
+              write_concern->journal);
    }
    return false;
 }
@@ -432,7 +432,7 @@ mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
 
    /* Journal or fsync should require acknowledgement.  */
    if ((mongoc_write_concern_get_fsync (write_concern) ||
-        mongoc_write_concern_get_journal (write_concern)) &&
+        write_concern->journal) &&
        (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
         write_concern->w == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) {
       return false;

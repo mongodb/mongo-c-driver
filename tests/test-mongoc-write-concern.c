@@ -2,6 +2,7 @@
 #include <mongoc-write-concern-private.h>
 
 #include "TestSuite.h"
+#include "mongoc-tests.h"
 
 
 static void
@@ -13,6 +14,8 @@ test_write_concern_basic (void)
    bson_iter_t iter;
 
    write_concern = mongoc_write_concern_new();
+
+BEGIN_IGNORE_DEPRECATIONS;
 
    /*
     * Test defaults.
@@ -71,6 +74,8 @@ test_write_concern_basic (void)
    ASSERT(bson);
 
    mongoc_write_concern_destroy(write_concern);
+
+END_IGNORE_DEPRECATIONS;
 }
 
 

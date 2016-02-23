@@ -40,9 +40,11 @@ typedef struct _mongoc_write_concern_t mongoc_write_concern_t;
 mongoc_write_concern_t *mongoc_write_concern_new             (void);
 mongoc_write_concern_t *mongoc_write_concern_copy            (const mongoc_write_concern_t *write_concern);
 void                    mongoc_write_concern_destroy         (mongoc_write_concern_t       *write_concern);
-bool                    mongoc_write_concern_get_fsync       (const mongoc_write_concern_t *write_concern);
+bool                    mongoc_write_concern_get_fsync       (const mongoc_write_concern_t *write_concern)
+   BSON_GNUC_DEPRECATED;
 void                    mongoc_write_concern_set_fsync       (mongoc_write_concern_t       *write_concern,
-                                                              bool                          fsync_);
+                                                              bool                          fsync_)
+   BSON_GNUC_DEPRECATED;
 bool                    mongoc_write_concern_get_journal     (const mongoc_write_concern_t *write_concern);
 bool                    mongoc_write_concern_journal_is_set  (const mongoc_write_concern_t *write_concern);
 void                    mongoc_write_concern_set_journal     (mongoc_write_concern_t       *write_concern,

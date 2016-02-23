@@ -34,4 +34,9 @@ mongoc_write_concern_get_fsync (const mongoc_write_concern_t *write_concern);
     <p>Returns true if <code>fsync</code> is set as part of the write concern.</p>
   </section>
 
+  <section id="Deprecated">
+    <title>Deprecated</title>
+    <note style="warning"><p>The <code>fsync</code> write concern is deprecated; use <code>journal</code> instead.</p></note>
+  </section>
+
 </page>
