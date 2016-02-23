@@ -296,6 +296,7 @@ LIBMONGOC_1.3 {
 
 LIBMONGOC_1.4 {
     global:
+        mongoc_client_command_simple_with_hint;
         mongoc_client_get_server_description;
         mongoc_client_get_server_descriptions;
         mongoc_cursor_get_limit;
