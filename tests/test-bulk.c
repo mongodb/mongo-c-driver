@@ -2772,6 +2772,7 @@ _test_bulk_hint (bool pooled,
 
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
+   ASSERT_CMPUINT32 ((uint32_t) 0, ==, mongoc_bulk_operation_get_hint (bulk));
    if (use_primary) {
       hint = hint_for_read_mode (client, MONGOC_READ_PRIMARY);
    } else {
@@ -2779,6 +2780,7 @@ _test_bulk_hint (bool pooled,
    }
 
    mongoc_bulk_operation_set_hint (bulk, hint);
+   ASSERT_CMPUINT32 (hint, ==, mongoc_bulk_operation_get_hint (bulk));
    mongoc_bulk_operation_insert (bulk, tmp_bson ("{'_id': 1}"));
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
@@ -2807,7 +2809,7 @@ _test_bulk_hint (bool pooled,
       BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
    }
 
-   ASSERT_CMPINT (hint, ==, future_get_uint32_t (future));
+   ASSERT_CMPUINT32 (hint, ==, future_get_uint32_t (future));
 
    request_destroy (request);
    future_destroy (future);
