@@ -1321,9 +1321,11 @@ _test_mongoc_client_select_server_error (bool pooled)
       uri = test_framework_get_uri ();
       mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
       pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new ();
+      test_framework_set_ssl_opts (client);
    }
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
