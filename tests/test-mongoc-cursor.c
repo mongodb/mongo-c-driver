@@ -629,7 +629,7 @@ _test_cursor_new_from_command (const char *cmd_json,
    ASSERT_OR_PRINT (r, error);
 
    sd = mongoc_topology_select (client->topology, MONGOC_SS_READ,
-                                NULL, 15, &error);
+                                NULL, &error);
 
    ASSERT_OR_PRINT (sd, error);
    hint = sd->id;
