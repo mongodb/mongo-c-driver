@@ -19,7 +19,6 @@ LIBMONGOC_1.0 {
         mongoc_cleanup;
         mongoc_client_command;
         mongoc_client_command_simple;
-        mongoc_client_command_simple_with_hint;
         mongoc_client_destroy;
         mongoc_client_get_collection;
         mongoc_client_get_database;
@@ -39,7 +38,6 @@ LIBMONGOC_1.0 {
         mongoc_client_pool_push;
         mongoc_client_pool_set_ssl_opts;
         mongoc_client_pool_try_pop;
-        mongoc_client_select_server;
         mongoc_client_set_read_prefs;
         mongoc_client_set_ssl_opts;
         mongoc_client_set_stream_initiator;
@@ -301,6 +299,7 @@ LIBMONGOC_1.4 {
         mongoc_client_get_server_description;
         mongoc_client_get_server_descriptions;
         mongoc_cursor_get_limit;
+        mongoc_client_select_server;
         mongoc_cursor_new_from_command_reply;
         mongoc_cursor_set_limit;
         mongoc_log_trace_disable;
