@@ -114,7 +114,7 @@ mongoc_write_concern_get_fsync (const mongoc_write_concern_t *write_concern)
  */
 void
 mongoc_write_concern_set_fsync (mongoc_write_concern_t *write_concern,
-                                bool             fsync_)
+                                bool                    fsync_)
 {
    BSON_ASSERT (write_concern);
 
@@ -407,8 +407,8 @@ mongoc_write_concern_is_acknowledged (
    if (write_concern) {
       return (((write_concern->w != MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED) &&
                (write_concern->w != MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) ||
-              mongoc_write_concern_get_fsync(write_concern) ||
-              write_concern->journal);
+              write_concern->fsync_ == true ||
+              mongoc_write_concern_get_journal (write_concern));
    }
    return false;
 }
@@ -431,8 +431,8 @@ mongoc_write_concern_is_valid (const mongoc_write_concern_t *write_concern)
    }
 
    /* Journal or fsync should require acknowledgement.  */
-   if ((mongoc_write_concern_get_fsync (write_concern) ||
-        write_concern->journal) &&
+   if ((write_concern->fsync_ == true ||
+        mongoc_write_concern_get_journal (write_concern)) &&
        (write_concern->w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED ||
         write_concern->w == MONGOC_WRITE_CONCERN_W_ERRORS_IGNORED)) {
       return false;
