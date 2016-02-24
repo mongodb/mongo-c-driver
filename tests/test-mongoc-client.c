@@ -1008,10 +1008,10 @@ test_get_database_names (void)
                                             "{'listDatabases': 1}");
    mock_server_replies (
          request, 0, 0, 0, 1,
-         "{'ok': 1.0, 'databases': [{'name': 'a'}, {'name': 'b'}]}");
+         "{'ok': 1.0, 'databases': [{'name': 'a'}, {'name': 'local'}]}");
    names = future_get_char_ptr_ptr (future);
    assert (!strcmp(names[0], "a"));
-   assert (!strcmp(names[1], "b"));
+   assert (!strcmp(names[1], "local"));
    assert (NULL == names[2]);
 
    bson_strfreev (names);

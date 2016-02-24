@@ -1598,8 +1598,7 @@ mongoc_client_get_database_names (mongoc_client_t *client,
       if (bson_iter_init (&iter, doc) &&
           bson_iter_find (&iter, "name") &&
           BSON_ITER_HOLDS_UTF8 (&iter) &&
-          (name = bson_iter_utf8 (&iter, NULL)) &&
-          (0 != strcmp (name, "local"))) {
+          (name = bson_iter_utf8 (&iter, NULL))) {
             ret = (char **)bson_realloc (ret, sizeof(char*) * (i + 2));
             ret [i] = bson_strdup (name);
             ret [++i] = NULL;
