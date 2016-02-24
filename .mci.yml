@@ -1217,7 +1217,7 @@ buildvariants:
     <<: *mongo_url_windows64
     <<: *with_msvc2015_32bit
   run_on:
-  - windows-64-vs2015-compile-spawn
+  - windows-64-vs2015-compile
   tasks: *topology_tests_no_auth
 
 - name: windows-64-vs2015
@@ -1227,7 +1227,7 @@ buildvariants:
     <<: *mongo_url_windows64
     <<: *with_msvc2015
   run_on:
-  - windows-64-vs2015-compile-spawn
+  - windows-64-vs2015-compile
   tasks: *topology_tests
 
 #######################################
