@@ -99,11 +99,9 @@ _mongoc_cursor_array_prime (mongoc_cursor_t *cursor)
        bson_iter_recurse (&iter, &arr->iter)) {
       arr->has_array = true;
       return true;
-   } else {
-      bson_destroy (&arr->array);
-      arr->has_array = false;
-      return false;
    }
+
+   return false;
 }
 
 
