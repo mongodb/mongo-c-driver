@@ -1073,7 +1073,7 @@ buildvariants:
     <<: *mongo_url_ubuntu1404
     <<: *unix_common
   run_on:
-     - ubuntu1404-build
+     - ubuntu1404-test
   tasks: *release_archive_builder
 
 ## Ubuntu 1204
