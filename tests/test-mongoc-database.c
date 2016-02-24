@@ -10,6 +10,7 @@
 #include "mongoc-database-private.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
+#include "test-conveniences.h"
 
 
 static void
@@ -128,6 +129,139 @@ test_command (void)
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
    bson_destroy (&cmd);
+}
+
+
+static void
+_test_db_command_read_prefs (bool simple, bool pooled)
+{
+   mock_server_t *server;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   mongoc_database_t *db;
+   mongoc_read_prefs_t *secondary_pref;
+   bson_t *cmd;
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   mongoc_cursor_t *cursor;
+   const bson_t *reply;
+
+   /* mock mongos: easiest way to test that read preference is configured */
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'msg': 'isdbgrid'}");
+
+   mock_server_run (server);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   }
+
+   db = mongoc_client_get_database (client, "db");
+   secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_database_set_read_prefs (db, secondary_pref);
+   cmd = tmp_bson ("{'foo': 1}");
+
+   if (simple) {
+      /* simple, without read preference */
+      future = future_database_command_simple (db, cmd,
+                                               NULL, NULL, &error);
+
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE, "{'foo': 1}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      future_destroy (future);
+      request_destroy (request);
+
+      /* with read preference */
+      future = future_database_command_simple (db, cmd,
+                                               secondary_pref, NULL, &error);
+
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK,
+         "{'$query': {'foo': 1},"
+         " '$readPreference': {'mode': 'secondary'}}");
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      future_destroy (future);
+      request_destroy (request);
+   } else {
+      /* not simple, no read preference */
+      cursor = mongoc_database_command (db, MONGOC_QUERY_NONE, 0, 0, 0,
+                                        cmd, NULL, NULL);
+      future = future_cursor_next (cursor, &reply);
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE, "{'foo': 1}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT (future_get_bool (future));
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+
+      /* with read preference */
+      cursor = mongoc_database_command (db, MONGOC_QUERY_NONE, 0, 0, 0,
+                                        cmd, NULL, secondary_pref);
+      future = future_cursor_next (cursor, &reply);
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK,
+         "{'$query': {'foo': 1},"
+         " '$readPreference': {'mode': 'secondary'}}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT (future_get_bool (future));
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   mongoc_database_destroy (db);
+   mongoc_read_prefs_destroy (secondary_pref);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mock_server_destroy (server);
+}
+
+
+static void
+test_db_command_simple_read_prefs_single (void)
+{
+   _test_db_command_read_prefs (true, false);
+}
+
+
+static void
+test_db_command_simple_read_prefs_pooled (void)
+{
+   _test_db_command_read_prefs (true, true);
+}
+
+
+static void
+test_db_command_read_prefs_single (void)
+{
+   _test_db_command_read_prefs (false, false);
+}
+
+
+static void
+test_db_command_read_prefs_pooled (void)
+{
+   _test_db_command_read_prefs (false, true);
 }
 
 
@@ -520,6 +654,14 @@ test_database_install (TestSuite *suite)
    TestSuite_Add (suite, "/Database/copy", test_copy);
    TestSuite_Add (suite, "/Database/has_collection", test_has_collection);
    TestSuite_Add (suite, "/Database/command", test_command);
+   TestSuite_Add (suite, "/Database/command/read_prefs/simple/single",
+                  test_db_command_simple_read_prefs_single);
+   TestSuite_Add (suite, "/Database/command/read_prefs/simple/pooled",
+                  test_db_command_simple_read_prefs_pooled);
+   TestSuite_Add (suite, "/Database/command/read_prefs/single",
+                  test_db_command_read_prefs_single);
+   TestSuite_Add (suite, "/Database/command/read_prefs/pooled",
+                  test_db_command_read_prefs_pooled);
    TestSuite_Add (suite, "/Database/drop", test_drop);
    TestSuite_Add (suite, "/Database/create_collection", test_create_collection);
    TestSuite_Add (suite, "/Database/get_collection_info",

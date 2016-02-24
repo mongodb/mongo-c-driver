@@ -1157,14 +1157,12 @@ mongoc_client_command (mongoc_client_t           *client,
                        const mongoc_read_prefs_t *read_prefs)
 {
    char ns[MONGOC_NAMESPACE_MAX];
+   mongoc_read_prefs_t *local_prefs = NULL;
+   mongoc_cursor_t *cursor;
 
    BSON_ASSERT (client);
    BSON_ASSERT (db_name);
    BSON_ASSERT (query);
-
-   if (!read_prefs) {
-      read_prefs = client->read_prefs;
-   }
 
    /*
     * Allow a caller to provide a fully qualified namespace
@@ -1174,8 +1172,23 @@ mongoc_client_command (mongoc_client_t           *client,
       db_name = ns;
    }
 
-   return _mongoc_cursor_new (client, db_name, flags, skip, limit, batch_size,
-                              true, query, fields, read_prefs, NULL);
+   /* Server Selection Spec: "The generic command method has a default read
+    * preference of mode 'primary'. The generic command method MUST ignore any
+    * default read preference from client, database or collection
+    * configuration. The generic command method SHOULD allow an optional read
+    * preference argument."
+    */
+   if (!read_prefs) {
+      local_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   }
+
+   cursor = _mongoc_cursor_new (
+      client, db_name, flags, skip, limit, batch_size, true, query, fields,
+      read_prefs ? read_prefs : local_prefs, NULL);
+   
+   mongoc_read_prefs_destroy (local_prefs);  /* ok if NULL */
+
+   return cursor;
 }
 
 
@@ -1225,6 +1238,13 @@ mongoc_client_command_simple (mongoc_client_t           *client,
    BSON_ASSERT (command);
 
    cluster = &client->cluster;
+
+   /* Server Selection Spec: "The generic command method has a default read
+    * preference of mode 'primary'. The generic command method MUST ignore any
+    * default read preference from client, database or collection
+    * configuration. The generic command method SHOULD allow an optional read
+    * preference argument."
+    */
    server_stream = mongoc_cluster_stream_for_reads (cluster, read_prefs, error);
 
    if (server_stream) {

@@ -141,6 +141,17 @@ future_client_get_database_names (
 
 
 future_t *
+future_database_command_simple (
+
+   mongoc_database_ptr database,
+   bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_database_get_collection_names (
 
    mongoc_database_ptr database,

@@ -377,6 +377,145 @@ test_mongoc_client_command_secondary (void)
 }
 
 
+
+
+static void
+_test_command_read_prefs (bool simple,
+                          bool pooled)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *secondary_pref;
+   bson_t *cmd;
+   future_t *future;
+   bson_error_t error;
+   request_t *request;
+   mongoc_cursor_t *cursor;
+   const bson_t *reply;
+
+   /* mock mongos: easiest way to test that read preference is configured */
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'msg': 'isdbgrid'}");
+
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_uri_set_read_prefs_t (uri, secondary_pref);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+   }
+
+   ASSERT_CMPINT (MONGOC_READ_SECONDARY, ==, mongoc_read_prefs_get_mode (
+      mongoc_client_get_read_prefs (client)));
+
+   cmd = tmp_bson ("{'foo': 1}");
+
+   if (simple) {
+      /* simple, without read preference */
+      future = future_client_command_simple (client, "db", cmd,
+                                             NULL, NULL, &error);
+
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE, "{'foo': 1}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      future_destroy (future);
+      request_destroy (request);
+
+      /* with read preference */
+      future = future_client_command_simple (client, "db", cmd,
+                                             secondary_pref, NULL, &error);
+
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK,
+         "{'$query': {'foo': 1},"
+         " '$readPreference': {'mode': 'secondary'}}");
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      future_destroy (future);
+      request_destroy (request);
+   } else {
+      /* not simple, no read preference */
+      cursor = mongoc_client_command (client, "db", MONGOC_QUERY_NONE, 0, 0, 0,
+                                      cmd, NULL, NULL);
+      future = future_cursor_next (cursor, &reply);
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE, "{'foo': 1}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT (future_get_bool (future));
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+
+      /* with read preference */
+      cursor = mongoc_client_command (client, "db", MONGOC_QUERY_NONE,
+                                      0, 0, 0, cmd, NULL, secondary_pref);
+      future = future_cursor_next (cursor, &reply);
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK,
+         "{'$query': {'foo': 1},"
+         " '$readPreference': {'mode': 'secondary'}}");
+
+      mock_server_replies_simple (request, "{'ok': 1}");
+      ASSERT (future_get_bool (future));
+      future_destroy (future);
+      request_destroy (request);
+      mongoc_cursor_destroy (cursor);
+   }
+
+   mongoc_uri_destroy (uri);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_read_prefs_destroy (secondary_pref);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_command_simple_read_prefs_single (void)
+{
+   _test_command_read_prefs (true, false);
+}
+
+
+static void
+test_command_simple_read_prefs_pooled (void)
+{
+   _test_command_read_prefs (true, true);
+}
+
+
+static void
+test_command_read_prefs_single (void)
+{
+   _test_command_read_prefs (false, false);
+}
+
+
+static void
+test_command_read_prefs_pooled (void)
+{
+   _test_command_read_prefs (false, true);
+}
+
+
 static void
 test_command_not_found (void)
 {
@@ -1401,6 +1540,10 @@ test_client_install (TestSuite *suite)
    TestSuite_AddFull (suite, "/Client/authenticate_timeout", test_mongoc_client_authenticate_timeout, NULL, NULL, should_run_auth_tests);
    TestSuite_Add (suite, "/Client/command", test_mongoc_client_command);
    TestSuite_Add (suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
+   TestSuite_Add (suite, "/Client/command/read_prefs/simple/single", test_command_simple_read_prefs_single);
+   TestSuite_Add (suite, "/Client/command/read_prefs/simple/pooled", test_command_simple_read_prefs_pooled);
+   TestSuite_Add (suite, "/Client/command/read_prefs/single", test_command_read_prefs_single);
+   TestSuite_Add (suite, "/Client/command/read_prefs/pooled", test_command_read_prefs_pooled);
    TestSuite_Add (suite, "/Client/command_not_found/cursor", test_command_not_found);
    TestSuite_Add (suite, "/Client/command_not_found/simple", test_command_not_found_simple);
    TestSuite_Add (suite, "/Client/unavailable_seeds", test_unavailable_seeds);
