@@ -1,6 +1,18 @@
 NEXT RELEASE
 ============
 
+Command functions now ignore the read preferences set on a client, database,
+or collection. Instead, they use the mongoc_read_prefs_t passed in explicitly,
+or default to "primary". This change was made to bring them in line with the
+Server Selection Spec. These are the affected functions:
+
+  * mongoc_client_command
+  * mongoc_client_command_simple
+  * mongoc_database_command
+  * mongoc_database_command_simple
+  * mongoc_collection_command
+  * mongoc_collection_command_simple
+
 New functions support language drivers (specifically the PHP and HHVM drivers)
 using only the libmongoc public API:
 
