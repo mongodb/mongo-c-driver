@@ -162,7 +162,7 @@ tests/trust_dir/done: $(top_srcdir)/tests/make_ca.pl $(top_srcdir)/tests/trust_d
 
 check: test abicheck
 
-TEST_ARGS = -f -p
+TEST_ARGS =
 
 if ENABLE_SSL
 test: $(TEST_PROGS) test_certs
@@ -278,4 +278,4 @@ DEBUGGER = gdb --args
 endif
 
 debug: test-libmongoc
-	$(LIBTOOL) --mode=execute $(DEBUGGER) test-libmongoc $(TEST_ARGS) -f -p
+	$(LIBTOOL) --mode=execute $(DEBUGGER) test-libmongoc $(TEST_ARGS)

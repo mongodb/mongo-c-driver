@@ -57,7 +57,7 @@ static int test_flags;
 #define TEST_VERBOSE   (1 << 0)
 #define TEST_NOFORK    (1 << 1)
 #define TEST_HELPONLY  (1 << 2)
-#define TEST_NOTHREADS (1 << 3)
+#define TEST_THREADS    (1 << 3)
 #define TEST_DEBUGOUTPUT (1 << 4)
 #define TEST_TRACE     (1 << 5)
 #define TEST_VALGRIND  (1 << 6)
@@ -259,10 +259,11 @@ TestSuite_Init (TestSuite *suite,
          suite->flags |= TEST_VERBOSE;
       } else if (0 == strcmp ("-d", argv [i])) {
          suite->flags |= TEST_DEBUGOUTPUT;
-      } else if (0 == strcmp ("-f", argv [i])) {
+      } else if (0 == strcmp ("--no-fork", argv [i])) {
          suite->flags |= TEST_NOFORK;
-      } else if (0 == strcmp ("-p", argv [i])) {
-         suite->flags |= TEST_NOTHREADS;
+      } else if (0 == strcmp ("--threads", argv [i])) {
+         suite->flags |= TEST_THREADS;
+         _Print_StdErr ("--threads is an experimental probably-not-working option\n");
       } else if ((0 == strcmp ("-t", argv [i])) ||
                  (0 == strcmp ("--trace", argv [i]))) {
 #ifdef MONGOC_TRACE
@@ -679,7 +680,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             get_future_timeout_ms (),
             test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN") ? "true" : "false",
             test_framework_getenv_bool ("MONGOC_CHECK_IPV6") ? "true" : "false",
-            (suite->flags & TEST_NOTHREADS) ? "false" : "true",
+            (suite->flags & TEST_THREADS) ? "true" : "false",
             (suite->flags & TEST_NOFORK) ? "false" : "true",
             (suite->flags & TEST_TRACE) ? "true" : "false"
    );
@@ -864,10 +865,10 @@ TestSuite_Run (TestSuite *suite) /* IN */
    if (suite->tests) {
       if (suite->testname) {
          failures += TestSuite_RunNamed (suite, suite->testname);
-      } else if ((suite->flags & TEST_NOTHREADS)) {
-         failures += TestSuite_RunSerial (suite);
-      } else {
+      } else if ((suite->flags & TEST_THREADS)) {
          TestSuite_RunParallel (suite);
+      } else {
+         failures += TestSuite_RunSerial (suite);
       }
    } else {
       TestSuite_PrintJsonFooter (stdout);
