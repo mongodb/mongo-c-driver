@@ -440,15 +440,6 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
        */
 
       /* Tracing is superduper slow */
-#ifdef MONGOC_TRACE
-      if (suite->flags & TEST_TRACE) {
-         mongoc_log_set_handler (mongoc_log_default_handler, NULL);
-         mongoc_log_trace_enable ();
-      } else {
-         mongoc_log_trace_disable ();
-      }
-#endif
-
 #if defined(_WIN32)
       srand (test->seed);
 
@@ -464,6 +455,15 @@ TestSuite_RunTest (TestSuite *suite,       /* IN */
       }
       
       if ((suite->flags & TEST_NOFORK)) {
+#ifdef MONGOC_TRACE
+         if (suite->flags & TEST_TRACE) {
+            mongoc_log_set_handler (mongoc_log_default_handler, NULL);
+            mongoc_log_trace_enable ();
+         } else {
+            mongoc_log_trace_disable ();
+         }
+#endif
+
          srand (test->seed);
          test->func (test->ctx);
          status = 0;
@@ -550,11 +550,8 @@ TestSuite_PrintHelp (TestSuite *suite, /* IN */
 
 
 static void
-TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
-                           FILE *stream)     /* IN */
+TestSuite_PrintJsonSystemHeader (FILE *stream)
 {
-   char *uri_str = test_framework_get_uri_str ();
-
 #ifdef _WIN32
 #  define INFO_BUFFER_SIZE 32767
 
@@ -575,9 +572,6 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
    }
 
    fprintf (stream,
-            "{\n"
-            "  \"uri\": \"%s\",\n"
-            "  \"is_mongos\": \"%s\",\n"
             "  \"host\": {\n"
             "    \"sysname\": \"Windows\",\n"
             "    \"release\": \"%ld.%ld (%ld)\",\n"
@@ -586,28 +580,16 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "      \"pagesize\": %ld,\n"
             "      \"npages\": %d\n"
             "    }\n"
-            "  },\n"
-            "  \"options\": {\n"
-            "    \"parallel\": \"%s\",\n"
-            "    \"fork\": \"%s\",\n"
-            "    \"tracing\": \"%s\"\n"
-            "  },\n"
-            "  \"results\": [\n",
-            uri_str,
-            test_framework_is_mongos () ? "true" : "false",
+            "  },\n",
             major_version, minor_version, build,
             si.dwProcessorType,
             si.dwPageSize,
-            0,
-            (suite->flags & TEST_NOTHREADS) ? "false" : "true",
-            (suite->flags & TEST_NOFORK) ? "false" : "true",
-            (suite->flags & TEST_TRACE) ? "true" : "false");
+            0
+   );
 #else
    struct utsname u;
    uint64_t pagesize;
    uint64_t npages = 0;
-
-   ASSERT (suite);
 
    if (uname (&u) == -1) {
       perror ("uname()");
@@ -619,11 +601,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
 #  if defined(_SC_PHYS_PAGES)
    npages = sysconf (_SC_PHYS_PAGES);
 #  endif
-
    fprintf (stream,
-            "{\n"
-            "  \"uri\": \"%s\",\n"
-            "  \"is_mongos\": \"%s\",\n"
             "  \"host\": {\n"
             "    \"sysname\": \"%s\",\n"
             "    \"release\": \"%s\",\n"
@@ -632,28 +610,84 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "      \"pagesize\": %"PRIu64",\n"
             "      \"npages\": %"PRIu64"\n"
             "    }\n"
-            "  },\n"
-            "  \"options\": {\n"
-            "    \"parallel\": \"%s\",\n"
-            "    \"fork\": \"%s\",\n"
-            "    \"tracing\": \"%s\"\n"
-            "  },\n"
-            "  \"results\": [\n",
-            uri_str,
-            test_framework_is_mongos () ? "true" : "false",
+            "  },\n",
             u.sysname,
             u.release,
             u.machine,
             pagesize,
-            npages,
+            npages
+   );
+#endif
+}
+
+char *egetenv (const char *name)
+{
+   return getenv(name) ? getenv(name) : "";
+}
+static void
+TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
+                           FILE *stream)     /* IN */
+{
+   char *hostname = test_framework_get_host ();
+   char *udspath  = test_framework_get_unix_domain_socket_path ();
+   int   port     = test_framework_get_port ();
+   bool  ssl      = test_framework_get_ssl ();
+
+   ASSERT (suite);
+
+   fprintf (stream, "{\n");
+   TestSuite_PrintJsonSystemHeader (stream);
+   fprintf (stream,
+            "  \"auth\": { \"user\": \"%s\", \"pass\": \"%s\" }, \n"
+            "  \"addr\": { \"host\": \"%s\", \"port\": %d }, \n"
+            "  \"gssapi\": { \"host\": \"%s\", \"user\": \"%s\" }, \n"
+            "  \"uds\": \"%s\", \n"
+            "  \"SSL\": {\n"
+            "    \"enabled\": %s,\n"
+            "    \"weak_cert_validation\": %s,\n"
+            "    \"pem_file\": \"%s\",\n"
+            "    \"pem_pwd\": \"%s\",\n"
+            "    \"ca_file\": \"%s\",\n"
+            "    \"ca_dir\": \"%s\",\n"
+            "    \"crl_file\": \"%s\"\n"
+            "  },\n"
+            "  \"framework\": {\n"
+            "    \"verbose\": { \"monitoring\": %s, \"server\": %s },\n"
+            "    \"futureTimeoutMS\": %"PRIu64",\n"
+            "    \"majorityReadConcern\": %s,\n"
+            "    \"IPv6\": %s\n"
+            "  },\n"
+            "  \"options\": {\n"
+            "    \"parallel\": %s,\n"
+            "    \"fork\": %s,\n"
+            "    \"tracing\": %s\n"
+            "  },\n"
+            "  \"results\": [\n",
+            egetenv ("MONGOC_TEST_USER"), egetenv ("MONGOC_TEST_PASSWORD"),
+            hostname, port,
+            egetenv ("MONGOC_TEST_GSSAPI_HOST"), egetenv ("MONGOC_TEST_GSSAPI_USER"),
+            udspath,
+            ssl ? "true" : "false",
+            test_framework_getenv_bool ("MONGOC_TEST_SSL_WEAK_CERT_VALIDATION") ? "true": "false",
+            egetenv ("MONGOC_TEST_SSL_PEM_FILE"),
+            egetenv ("MONGOC_TEST_SSL_PEM_PWD"),
+            egetenv ("MONGOC_TEST_SSL_CA_FILE"),
+            egetenv ("MONGOC_TEST_SSL_CA_DIR"),
+            egetenv ("MONGOC_TEST_SSL_CRL_FILE"),
+            getenv ("MONGOC_TEST_MONITORING_VERBOSE") ? "true" : "false",
+            getenv ("MONGOC_TEST_SERVER_VERBOSE") ? "true" : "false",
+            get_future_timeout_ms (),
+            test_framework_getenv_bool ("MONGOC_ENABLE_MAJORITY_READ_CONCERN") ? "true" : "false",
+            test_framework_getenv_bool ("MONGOC_CHECK_IPV6") ? "true" : "false",
             (suite->flags & TEST_NOTHREADS) ? "false" : "true",
             (suite->flags & TEST_NOFORK) ? "false" : "true",
-            (suite->flags & TEST_TRACE) ? "true" : "false");
-#endif
+            (suite->flags & TEST_TRACE) ? "true" : "false"
+   );
+
+   bson_free (hostname);
+   bson_free (udspath);
 
    fflush (stream);
-
-   bson_free (uri_str);
 }
 
 

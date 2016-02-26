@@ -24,6 +24,7 @@ char *gen_collection_name (const char *prefix);
 mongoc_collection_t *get_test_collection (mongoc_client_t *client,
                                           const char      *prefix);
 void suppress_one_message (void);
+int64_t get_future_timeout_ms (void);
 char *test_framework_getenv (const char *name);
 bool test_framework_getenv_bool (const char *name);
 int64_t test_framework_getenv_int64 (const char *name,

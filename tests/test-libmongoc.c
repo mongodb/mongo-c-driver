@@ -93,6 +93,15 @@ suppress_one_message (void)
 }
 
 
+#define DEFAULT_FUTURE_TIMEOUT_MS 10 * 1000
+
+int64_t
+get_future_timeout_ms ()
+{
+    return test_framework_getenv_int64 ("MONGOC_TEST_FUTURE_TIMEOUT_MS",
+                                        DEFAULT_FUTURE_TIMEOUT_MS);
+}
+
 static void
 log_handler (mongoc_log_level_t  log_level,
              const char         *log_domain,
