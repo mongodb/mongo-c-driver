@@ -768,7 +768,7 @@ test_seed_list (bool rs,
 
       /* discovery should be quick despite down servers, say < 100ms */
       duration_usec = bson_get_monotonic_time () - start;
-      ASSERT_CMPINT ((int) (duration_usec / 1000), <, 100);
+      ASSERT_CMPTIME ((int) (duration_usec / 1000), 100);
 
       bson_destroy (&reply);
 
@@ -805,8 +805,8 @@ test_seed_list (bool rs,
       /* client waited for min heartbeat to pass before reconnecting, then
        * reconnected quickly despite down servers, say < 100ms later */
       duration_usec = bson_get_monotonic_time () - start;
-      ASSERT_CMPINT ((int) (duration_usec / 1000), <,
-                     MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS + 100);
+      ASSERT_CMPTIME ((int) (duration_usec / 1000),
+                      MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS + 100);
 
       bson_destroy (&reply);
 

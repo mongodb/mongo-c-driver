@@ -174,7 +174,7 @@ endif
 	done
 
 valgrind: $(TEST_PROGS)
-	$(LIBTOOL) --mode=execute valgrind --leak-check=full --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc $(TEST_ARGS)
+	MONGOC_TEST_VALGRIND=on $(LIBTOOL) --mode=execute valgrind --leak-check=full --suppressions=$(srcdir)/valgrind.suppressions ./test-libmongoc $(TEST_ARGS)
 
 if OS_LINUX
 abicheck:

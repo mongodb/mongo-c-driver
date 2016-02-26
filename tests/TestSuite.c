@@ -60,6 +60,7 @@ static int test_flags;
 #define TEST_NOTHREADS (1 << 3)
 #define TEST_DEBUGOUTPUT (1 << 4)
 #define TEST_TRACE     (1 << 5)
+#define TEST_VALGRIND  (1 << 6)
 
 
 #define NANOSEC_PER_SEC 1000000000UL
@@ -298,6 +299,10 @@ TestSuite_Init (TestSuite *suite,
          }
          suite->testname = strdup (argv [++i]);
       }
+   }
+   
+   if (test_framework_getenv_bool ("MONGOC_TEST_VALGRIND")) {
+      suite->flags |= TEST_VALGRIND;
    }
 
    /* HACK: copy flags to global var */
@@ -871,4 +876,11 @@ int
 test_suite_debug_output (void)
 {
    return 0 != (test_flags & TEST_DEBUGOUTPUT);
+}
+
+
+int
+test_suite_valgrind (void)
+{
+   return 0 != (test_flags & TEST_VALGRIND);
 }
