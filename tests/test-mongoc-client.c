@@ -1563,7 +1563,7 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite, "/Client/recovering", test_recovering);
    TestSuite_Add (suite, "/Client/server_status", test_server_status);
    TestSuite_Add (suite, "/Client/database_names", test_get_database_names);
-   TestSuite_AddFull (suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_windows);
+   TestSuite_AddFull (suite, "/Client/connect/uds", test_mongoc_client_unix_domain_socket, NULL, NULL, test_framework_skip_if_no_uds);
    TestSuite_Add (suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
 
 #ifdef TODO_CDRIVER_689

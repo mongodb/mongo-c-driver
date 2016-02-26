@@ -259,12 +259,27 @@ test_framework_getenv_int64 (const char *name,
 }
 
 
+static char *
+test_framework_get_unix_domain_socket_path (void)
+{
+   char *path = test_framework_getenv ("MONGOC_TEST_UNIX_DOMAIN_SOCKET");
+
+   if (path) {
+      return path;
+   }
+
+   return bson_strdup_printf ("/tmp/mongodb-%d.sock",
+         test_framework_get_port());
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_get_unix_domain_socket_path --
+ * test_framework_get_unix_domain_socket_path_escaped --
  *
- *       Get the path to Unix Domain Socket .sock of the test MongoDB server.
+ *       Get the path to Unix Domain Socket .sock of the test MongoDB server,
+ *       URI-escaped ("/" is replaced with "%2F").
  *
  * Returns:
  *       A string you must bson_free.
@@ -275,16 +290,33 @@ test_framework_getenv_int64 (const char *name,
  *--------------------------------------------------------------------------
  */
 char *
-test_framework_get_unix_domain_socket_path (void)
+test_framework_get_unix_domain_socket_path_escaped (void)
 {
-   char *path = test_framework_getenv ("MONGOC_TEST_UNIX_DOMAIN_SOCKET");
+   char *path = test_framework_get_unix_domain_socket_path (), *c = path;
+   bson_string_t *escaped = bson_string_new (NULL);
 
-   if (path) {
-      return path;
-   }
-   return bson_strdup_printf ("%%2Ftmp%%2Fmongodb-%d.sock",
-         test_framework_get_port());
+   /* Connection String Spec: "The host information cannot contain an unescaped
+    * slash ("/"), if it does then an exception MUST be thrown informing users
+    * that paths must be URL encoded."
+    *
+    * Even though the C Driver does not currently enforce the spec, let's pass
+    * a correctly escaped URI.
+    */
+   do {
+      if (*c == '/') {
+         bson_string_append (escaped, "%2F");
+      } else {
+         bson_string_append_c (escaped, *c);
+      }
+   } while (*(++c));
+
+   bson_string_append_c (escaped, '\0');
+   bson_free (path);
+
+   return bson_string_free (escaped, false /* free_segment */);
 }
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -585,7 +617,7 @@ test_framework_get_unix_domain_socket_uri_str ()
    char *test_uri_str;
    char *test_uri_str_auth;
 
-   path = test_framework_get_unix_domain_socket_path ();
+   path = test_framework_get_unix_domain_socket_path_escaped ();
    test_uri_str = bson_strdup_printf (
       "mongodb://%s/%s",
       path,
@@ -1167,6 +1199,7 @@ test_framework_server_is_secondary (mongoc_client_t *client,
    return ret;
 }
 
+
 int
 test_framework_skip_if_windows (void)
 {
@@ -1176,6 +1209,27 @@ test_framework_skip_if_windows (void)
    return true;
 #endif
 }
+
+
+/* skip if no Unix domain socket */
+int
+test_framework_skip_if_no_uds (void)
+{
+#ifdef _WIN32
+   return 0;
+#else
+   char *path;
+   int ret;
+
+   path = test_framework_get_unix_domain_socket_path ();
+   ret = access (path, R_OK|W_OK) == 0 ? 1 : 0;
+
+   bson_free (path);
+
+   return ret;
+#endif
+}
+
 
 bool
 test_framework_max_wire_version_at_least (int version)
