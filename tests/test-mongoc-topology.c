@@ -297,7 +297,7 @@ test_topology_invalidate_server (void)
            sd->type == MONGOC_SERVER_RS_PRIMARY ||
            sd->type == MONGOC_SERVER_MONGOS);
 
-   mongoc_topology_invalidate_server (client->topology, id);
+   mongoc_topology_invalidate_server (client->topology, id, NULL);
    sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
@@ -311,16 +311,15 @@ test_topology_invalidate_server (void)
 
    fake_sd->type = MONGOC_SERVER_STANDALONE;
    mongoc_set_add(td->servers, fake_id, fake_sd);
-   mongoc_topology_scanner_add_and_scan (client->topology->scanner,
-                                         &fake_host_list,
-                                         fake_id,
-                                         MONGOC_DEFAULT_CONNECTTIMEOUTMS);
-
+   mongoc_topology_scanner_add (client->topology->scanner,
+                                &fake_host_list,
+                                fake_id);
    assert (!mongoc_cluster_stream_for_server (&client->cluster, fake_id, true,
                                               &error));
    sd = (mongoc_server_description_t *)mongoc_set_get(td->servers, fake_id);
    assert (sd);
    assert (sd->type == MONGOC_SERVER_UNKNOWN);
+   assert (sd->error.domain != 0);
 
    mongoc_server_stream_cleanup (server_stream);
    mongoc_client_destroy (client);
