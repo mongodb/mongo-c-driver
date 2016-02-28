@@ -37,19 +37,6 @@ Description: MongoDB C client library - runtime files
  This package contains the libmongoc runtime libraries, for applications that
  have been built with libmongoc.
 
-Package: libmongoc-dbg
-Section: debug
-Priority: extra
-Architecture: any
-Depends: libmongoc-1.0-0 (= ${binary:Version}),
-         ${misc:Depends}
-Description: MongoDB C client library - debug symbols
- libmongoc is the officially supported MongoDB client library for C
- applications.
- .
- This package contains the debugging symbols for libmongoc's public and
- private runtime libraries.
-
 Package: libmongoc-doc
 Section: doc
 Architecture: all
