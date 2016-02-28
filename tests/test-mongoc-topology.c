@@ -267,22 +267,28 @@ host_list_init (mongoc_host_list_t *host_list,
 }
 
 static void
-test_topology_invalidate_server (void)
+_test_topology_invalidate_server (bool pooled)
 {
    mongoc_server_description_t *fake_sd;
    mongoc_server_description_t *sd;
    mongoc_topology_description_t *td;
    mongoc_client_t *client;
+   mongoc_client_pool_t *pool = NULL;
    bson_error_t error;
    mongoc_host_list_t fake_host_list;
    uint32_t fake_id = 42;
    uint32_t id;
    mongoc_server_stream_t *server_stream;
 
-   host_list_init (&fake_host_list, AF_INET, "fakeaddress", 27033);
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      client = mongoc_client_pool_pop (pool);
 
-   client = test_framework_client_new ();
-   assert (client);
+      /* background scanner complains about failed connection */
+      suppress_one_message ();
+   } else {
+      client = test_framework_client_new ();
+   }
 
    td = &client->topology->description;
 
@@ -305,6 +311,7 @@ test_topology_invalidate_server (void)
    fake_sd = (mongoc_server_description_t *)bson_malloc0 (sizeof (*fake_sd));
 
    /* insert a 'fake' server description and ensure that it is invalidated by driver */
+   host_list_init (&fake_host_list, AF_INET, "fakeaddress", 27033);
    mongoc_server_description_init (fake_sd,
                                    fake_host_list.host_and_port,
                                    fake_id);
@@ -322,7 +329,25 @@ test_topology_invalidate_server (void)
    assert (sd->error.domain != 0);
 
    mongoc_server_stream_cleanup (server_stream);
-   mongoc_client_destroy (client);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+static void
+test_topology_invalidate_server_single (void)
+{
+   _test_topology_invalidate_server (false);
+}
+
+static void
+test_topology_invalidate_server_pooled (void)
+{
+   _test_topology_invalidate_server (true);
 }
 
 static void
@@ -804,7 +829,8 @@ test_topology_install (TestSuite *suite)
    TestSuite_Add (suite, "/Topology/server_selection_try_once_option", test_server_selection_try_once_option);
    TestSuite_Add (suite, "/Topology/server_selection_try_once", test_server_selection_try_once);
    TestSuite_Add (suite, "/Topology/server_selection_try_once_false", test_server_selection_try_once_false);
-   TestSuite_Add (suite, "/Topology/invalidate_server", test_topology_invalidate_server);
+   TestSuite_Add (suite, "/Topology/invalidate_server/single", test_topology_invalidate_server_single);
+   TestSuite_Add (suite, "/Topology/invalidate_server/pooled", test_topology_invalidate_server_pooled);
    TestSuite_Add (suite, "/Topology/invalid_cluster_node", test_invalid_cluster_node);
    TestSuite_Add (suite, "/Topology/max_wire_version_race_condition", test_max_wire_version_race_condition);
    TestSuite_Add (suite, "/Topology/cooldown/standalone", test_cooldown_standalone);
