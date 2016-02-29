@@ -1209,6 +1209,12 @@ int test_framework_skip_if_max_version_version_less_than_4 (void)
 }
 
 
+int test_framework_skip_if_offline (void)
+{
+   return getenv("MONGOC_TEST_OFFLINE") ? 0 : 1;
+}
+
+
 int
 main (int   argc,
       char *argv[])
