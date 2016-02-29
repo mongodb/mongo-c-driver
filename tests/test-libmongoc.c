@@ -1200,6 +1200,12 @@ test_framework_server_is_secondary (mongoc_client_t *client,
 }
 
 
+int test_framework_skip_if_offline (void)
+{
+   return test_framework_getenv_bool ("MONGOC_TEST_OFFLINE") ? 0 : 1;
+}
+
+
 int
 test_framework_skip_if_windows (void)
 {
