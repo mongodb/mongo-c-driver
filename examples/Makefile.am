@@ -42,14 +42,6 @@ mongoc_ping_SOURCES = examples/mongoc-ping.c
 mongoc_ping_CFLAGS = $(EXAMPLE_CFLAGS)
 mongoc_ping_LDADD = $(EXAMPLE_LDADD)
 
-noinst_PROGRAMS += mongoc-rpc-validate
-mongoc_rpc_validate_SOURCES = examples/mongoc-rpc-validate.c
-mongoc_rpc_validate_CFLAGS = -DMONGOC_COMPILATION $(EXAMPLE_CFLAGS)
-mongoc_rpc_validate_LDADD = libmongoc-priv.la
-if EXPLICIT_LIBS
-mongoc_rpc_validate_LDADD += $(BSON_LIBS)
-endif
-
 noinst_PROGRAMS += mongoc-tail
 mongoc_tail_SOURCES = examples/mongoc-tail.c
 mongoc_tail_CFLAGS = $(EXAMPLE_CFLAGS)

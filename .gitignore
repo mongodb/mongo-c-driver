@@ -48,7 +48,6 @@ Makefile.in
 missing
 mongoc-dump
 mongoc-ping
-mongoc-rpc-validate
 mongoc-stat
 mongoc-tail
 *.o
