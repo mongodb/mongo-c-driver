@@ -684,13 +684,11 @@ mongoc_topology_request_scan (mongoc_topology_t *topology)
  *--------------------------------------------------------------------------
  */
 void
-mongoc_topology_invalidate_server (mongoc_topology_t  *topology,
-                                   uint32_t            id,
-                                   const bson_error_t *error)
+mongoc_topology_invalidate_server (mongoc_topology_t *topology,
+                                   uint32_t           id)
 {
    mongoc_mutex_lock (&topology->mutex);
-   mongoc_topology_description_invalidate_server (&topology->description,
-                                                  id, error);
+   mongoc_topology_description_invalidate_server (&topology->description, id);
    mongoc_mutex_unlock (&topology->mutex);
 }
 

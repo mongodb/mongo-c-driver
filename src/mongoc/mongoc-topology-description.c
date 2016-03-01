@@ -790,8 +790,7 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
  *
  *      Invalidate a server if a network error occurred while using it in
  *      another part of the client. Server description is set to type
- *      UNKNOWN, the error is recorded, and other parameters are reset to
- *      defaults.
+ *      UNKNOWN and other parameters are reset to defaults.
  *
  *      NOTE: this method should only be called while holding the mutex on
  *      the owning topology object.
@@ -800,17 +799,13 @@ _mongoc_topology_description_check_if_has_primary (mongoc_topology_description_t
  */
 void
 mongoc_topology_description_invalidate_server (mongoc_topology_description_t *topology,
-                                               uint32_t                       id,
-                                               const bson_error_t            *error)
+                                               uint32_t                       id)
 {
    mongoc_server_description_t *sd;
+   bson_error_t error;
 
    sd = mongoc_topology_description_server_by_id (topology, id, NULL);
-   mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, NULL);
-
-   if (error) {
-      memcpy (&sd->error, error, sizeof *error);
-   }
+   mongoc_topology_description_handle_ismaster (topology, sd, NULL, 0, &error);
 
    return;
 }
@@ -1015,7 +1010,6 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
                                                      mongoc_server_description_t   *server)
 {
    mongoc_primary_and_topology_t data;
-   bson_error_t error;
 
    BSON_ASSERT (topology);
    BSON_ASSERT (server);
@@ -1046,11 +1040,8 @@ _mongoc_topology_description_update_rs_from_primary (mongoc_topology_description
        * between the old and new primary during a split-brain period."
        */
       if (_mongoc_topology_description_later_election (topology, server)) {
-         bson_set_error (&error,
-                         MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT,
-                         "member's setVersion or electionId is stale");
-         mongoc_topology_description_invalidate_server (topology, server->id,
-                                                        &error);
+         /* stale primary */
+         mongoc_topology_description_invalidate_server (topology, server->id);
          _update_rs_type (topology);
          return;
       }

@@ -87,8 +87,7 @@ mongoc_topology_description_suitable_servers (
 
 void
 mongoc_topology_description_invalidate_server (mongoc_topology_description_t *topology,
-                                               uint32_t                       id,
-                                               const bson_error_t            *error);
+                                               uint32_t                       id);
 
 bool
 mongoc_topology_description_add_server (mongoc_topology_description_t *topology,

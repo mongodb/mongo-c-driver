@@ -792,7 +792,7 @@ test_seed_list (bool rs,
                                host_equals,
                                (void *) mock_server_get_host_and_port (server));
       ASSERT_CMPINT (id, !=, 0);
-      mongoc_topology_invalidate_server (topology, id, NULL);
+      mongoc_topology_invalidate_server (topology, id);
       if (rs) {
          ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
       } else {
