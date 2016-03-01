@@ -630,7 +630,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
                            FILE *stream)     /* IN */
 {
    char *hostname = test_framework_get_host ();
-   char *udspath  = test_framework_get_unix_domain_socket_path ();
+   char *udspath  = test_framework_get_unix_domain_socket_path_escaped ();
    int   port     = test_framework_get_port ();
    bool  ssl      = test_framework_get_ssl ();
 
