@@ -64,6 +64,10 @@ using only the libmongoc public API:
   * mongoc_write_concern_is_valid
   * mongoc_write_concern_journal_is_set
 
+Now that these public APIs are available, the PHP drivers no longer define the
+MONGOC_I_AM_A_DRIVER preprocessor symbol to access private APIs. The symbol is
+removed from C Driver headers, and libmongoc-priv.so is no longer installed.
+
 mongoc_client_get_database_names no longer filters out a replica set member's
 "local" database.
 

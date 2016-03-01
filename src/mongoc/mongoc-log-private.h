@@ -17,7 +17,7 @@
 #ifndef MONGOC_LOG_PRIVATE_H
 #define MONGOC_LOG_PRIVATE_H
 
-#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION) && !defined (MONGOC_I_AM_A_DRIVER)
+#if !defined (MONGOC_INSIDE) && !defined (MONGOC_COMPILATION)
 # error "Only <mongoc.h> can be included directly."
 #endif
 

@@ -46,7 +46,6 @@ AC_CONFIG_FILES([
     build/version
     src/libmongoc-1.0.pc
     src/libmongoc-ssl-1.0.pc
-    src/libmongoc-priv.pc
     src/mongoc/mongoc-config.h
     src/mongoc/mongoc-version.h
     doc/mongoc_installing.page

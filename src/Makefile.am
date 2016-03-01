@@ -1,14 +1,14 @@
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = \
-	$(top_builddir)/src/libmongoc-1.0.pc \
-	$(top_builddir)/src/libmongoc-priv.pc
+pkgconfig_DATA = $(top_builddir)/src/libmongoc-1.0.pc
 if ENABLE_SSL
 pkgconfig_DATA += $(top_builddir)/src/libmongoc-ssl-1.0.pc
 endif
 
 
-lib_LTLIBRARIES += libmongoc-priv.la
 lib_LTLIBRARIES += libmongoc-1.0.la
+
+# For libmongoc-test and other test programs.
+noinst_LTLIBRARIES += libmongoc-priv.la
 
 
 MONGOC_CPPFLAGS_SHARED = \

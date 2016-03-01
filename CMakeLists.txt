@@ -526,12 +526,8 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-1.0.pc.in
   ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-1.0.pc
 @ONLY)
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-priv.pc.in
-  ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-priv.pc
-@ONLY)
 install(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-1.0.pc ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-priv.pc
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/libmongoc-1.0.pc
   DESTINATION lib/pkgconfig
 )
 if (MONGOC_ENABLE_SSL)
