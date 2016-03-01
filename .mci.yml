@@ -1136,7 +1136,7 @@ buildvariants:
     <<: *osx_path
   run_on:
   - osx-108
-  tasks: *topology_tests
+  tasks: *topology_tests_no_auth
 
 - name: os-x-108-64-openssl
   display_name: "OSX 10.8 clang 64 OpenSSL"
