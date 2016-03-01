@@ -416,7 +416,11 @@ mongoc_stream_tls_secure_transport_check_cert (mongoc_stream_t *stream,
    BSON_ASSERT (secure_transport);
 
    if (!tls->weak_cert_validation) {
-      SSLSetPeerDomainName (secure_transport->ssl_ctx_ref, host, strlen (host));
+      /* Silly check for Unix Domain Sockets */
+      if (host[0] != '/' || access (host, F_OK) == -1) {
+         TRACE("Verifying hostname against: %s", host);
+         SSLSetPeerDomainName (secure_transport->ssl_ctx_ref, host, strlen (host));
+      }
    }
 
    do {
