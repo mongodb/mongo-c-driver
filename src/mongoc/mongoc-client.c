@@ -428,7 +428,7 @@ _mongoc_client_recv (mongoc_client_t        *client,
    if (!mongoc_cluster_try_recv (&client->cluster, rpc, buffer,
                                  server_stream, error)) {
       mongoc_topology_invalidate_server (client->topology,
-                                         server_stream->sd->id);
+                                         server_stream->sd->id, error);
       return false;
    }
    return true;
@@ -549,7 +549,7 @@ _mongoc_client_recv_gle (mongoc_client_t        *client,
                                  server_stream, error)) {
 
       mongoc_topology_invalidate_server (client->topology,
-                                         server_stream->sd->id);
+                                         server_stream->sd->id, error);
 
       GOTO (cleanup);
    }

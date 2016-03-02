@@ -368,7 +368,6 @@ _request_error (request_t           *request,
 static void
 _check_error (mongoc_client_t     *client,
               mongoc_cursor_t     *cursor,
-              bool                 pooled,
               exhaust_error_type_t error_type)
 {
    uint32_t server_id;
@@ -392,10 +391,8 @@ _check_error (mongoc_client_t     *client,
 
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                             pooled ?
-                             "Could not find node" :
-                             "Could not find stream");
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "Failed to read");
    } else {
       /* query failure */
       ASSERT_ERROR_CONTAINS (error,
@@ -457,7 +454,7 @@ _mock_test_exhaust (bool                 pooled,
    suppress_one_message ();
    _request_error (request, error_type);
    ASSERT (!future_get_bool (future));
-   _check_error (client, cursor, pooled, error_type);
+   _check_error (client, cursor, error_type);
 
    future_destroy (future);
    request_destroy (request);

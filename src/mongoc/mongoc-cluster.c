@@ -1392,6 +1392,10 @@ static void
 node_not_found (mongoc_server_description_t *sd,
                 bson_error_t *error /* OUT */)
 {
+   if (!error) {
+      return;
+   }
+
    if (sd->error.code) {
       memcpy (error, &sd->error, sizeof *error);
    } else {
@@ -1407,6 +1411,10 @@ static void
 stream_not_found (mongoc_server_description_t *sd,
                   bson_error_t *error /* OUT */)
 {
+   if (!error) {
+      return;
+   }
+
    if (sd->error.code) {
       memcpy (error, &sd->error, sizeof *error);
    } else {
@@ -1448,8 +1456,16 @@ _mongoc_cluster_stream_for_server_description (mongoc_cluster_t *cluster,
    }
 
    if (!server_stream) {
-      /* failed */
+      /* Server Discovery And Monitoring Spec: When an application operation
+       * fails because of any network error besides a socket timeout, the
+       * client MUST replace the server's description with a default
+       * ServerDescription of type Unknown, and fill the ServerDescription's
+       * error field with useful information.
+       *
+       * error was filled by fetch_stream_single/pooled, pass it to invalidate()
+       */
       mongoc_cluster_disconnect_node (cluster, sd->id);
+      mongoc_topology_invalidate_server (topology, sd->id, error);
    }
 
    RETURN (server_stream);
@@ -1516,7 +1532,7 @@ static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                                     mongoc_server_description_t *sd,
                                     bool reconnect_ok,
-                                    bson_error_t *error)
+                                    bson_error_t *error /* OUT */)
 {
    mongoc_topology_t *topology;
    mongoc_stream_t *stream;
@@ -1548,13 +1564,10 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                          MONGOC_ERROR_STREAM_CONNECT,
                          "Failed to connect to target host: '%s'",
                          sd->host.host_and_port);
-         memcpy (&sd->error, error, sizeof sd->error);
-         mongoc_topology_scanner_node_disconnect (scanner_node, true);
          return NULL;
       }
 
       if (!_mongoc_stream_run_ismaster (cluster, stream, &reply, error)) {
-         mongoc_topology_scanner_node_disconnect (scanner_node, true);
          return NULL;
       }
 
@@ -1581,7 +1594,7 @@ static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
                                     mongoc_server_description_t *sd,
                                     bool reconnect_ok,
-                                    bson_error_t *error)
+                                    bson_error_t *error /* OUT */)
 {
    mongoc_topology_t *topology;
    mongoc_stream_t *stream;
@@ -1596,9 +1609,10 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
    if (cluster_node) {
       BSON_ASSERT (cluster_node->stream);
 
-      /* existing cluster node, is it outdated? */
       timestamp = mongoc_topology_server_timestamp (topology, sd->id);
       if (timestamp == -1 || cluster_node->timestamp < timestamp) {
+         /* topology change or net error during background scan made us remove
+          * or replace server description since node's birth. destroy node. */
          mongoc_cluster_disconnect_node (cluster, sd->id);
       } else {
          /* TODO: thread safety! */
