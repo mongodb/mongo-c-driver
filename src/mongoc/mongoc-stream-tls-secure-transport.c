@@ -425,12 +425,11 @@ mongoc_stream_tls_secure_transport_check_cert (mongoc_stream_t *stream,
 
    do {
       ret = SSLHandshake (secure_transport->ssl_ctx_ref);
+      if (ret == errSSLServerAuthCompleted) {
+         MONGOC_WARNING("Weak validation enabled, allowing server cert whatever it is");
+         ret = errSSLWouldBlock;
+      }
    } while (ret == errSSLWouldBlock);
-
-   if (ret == errSSLServerAuthCompleted) {
-      MONGOC_WARNING("Weak validation enabled, allowing server cert whatever it is");
-      RETURN (true);
-   }
 
    RETURN (ret == noErr);
 }
