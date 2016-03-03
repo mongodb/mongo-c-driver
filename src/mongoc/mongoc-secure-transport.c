@@ -250,116 +250,6 @@ _mongoc_secure_transport_extract_subject (const char *filename, const char *pass
    return retval;
 }
 
-
-const SSLCipherSuite suites40[] = {
-   SSL_RSA_EXPORT_WITH_RC4_40_MD5,
-   SSL_RSA_EXPORT_WITH_RC2_CBC_40_MD5,
-   SSL_RSA_EXPORT_WITH_DES40_CBC_SHA,
-   SSL_DH_DSS_EXPORT_WITH_DES40_CBC_SHA,
-   SSL_DH_RSA_EXPORT_WITH_DES40_CBC_SHA,
-   SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA,
-   SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA,
-   SSL_DH_anon_EXPORT_WITH_RC4_40_MD5,
-   SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA,
-   SSL_NO_SUCH_CIPHERSUITE
-};
-
-/*
- * Given an SSLContextRef and an array of SSLCipherSuites, terminated by
- * SSL_NO_SUCH_CIPHERSUITE, select those SSLCipherSuites which the library
- * supports and do a SSLSetEnabledCiphers() specifying those.
- */
-OSStatus sslSetEnabledCiphers(
-   SSLContextRef ssl_ctx_ref,
-   const SSLCipherSuite *ciphers)
-{
-   size_t numSupported;
-   OSStatus status;
-   SSLCipherSuite *supported = NULL;
-   SSLCipherSuite *enabled = NULL;
-   unsigned enabledDex = 0;   // index into enabled
-   unsigned supportedDex = 0; // index into supported
-   unsigned inDex = 0;        // index into ciphers
-
-   /* first get all the supported ciphers */
-   status = SSLGetNumberSupportedCiphers(ssl_ctx_ref, &numSupported);
-   if(status) {
-      return status;
-   }
-   supported = (SSLCipherSuite *)malloc(numSupported * sizeof(SSLCipherSuite));
-   status = SSLGetSupportedCiphers(ssl_ctx_ref, supported, &numSupported);
-   if(status) {
-      return status;
-   }
-
-   /*
-    * Malloc an array we'll use for SSLGetEnabledCiphers - this will  be
-    * bigger than the number of suites we actually specify
-    */
-   enabled = (SSLCipherSuite *)malloc(numSupported * sizeof(SSLCipherSuite));
-
-   /*
-    * For each valid suite in ciphers, see if it's in the list of
-    * supported ciphers. If it is, add it to the list of ciphers to be
-    * enabled.
-    */
-   for(inDex=0; ciphers[inDex] != SSL_NO_SUCH_CIPHERSUITE; inDex++) {
-      for(supportedDex=0; supportedDex<numSupported; supportedDex++) {
-         if(ciphers[inDex] == supported[supportedDex]) {
-            enabled[enabledDex++] = ciphers[inDex];
-            break;
-         }
-      }
-   }
-
-   /* send it on down. */
-   status = SSLSetEnabledCiphers(ssl_ctx_ref, enabled, enabledDex);
-   free(enabled);
-   free(supported);
-   return status;
-}
-
-bool
-mongoc_secure_transport_verify_trust (mongoc_stream_tls_secure_transport_t *secure_transport,
-                                      bool weak_cert_validation)
-{
-   SecTrustRef peerTrust = NULL;
-   SecTrustResultType trustResult;
-   OSStatus status;
-
-   if (weak_cert_validation) {
-      return true;
-   }
-
-   status = SSLCopyPeerTrust (secure_transport->ssl_ctx_ref, &peerTrust);
-   if (status || !peerTrust) {
-      MONGOC_WARNING("Failed to get peer trust");
-      return false;
-   }
-
-   status = SecTrustSetAnchorCertificates (peerTrust, secure_transport->anchors);
-#if 0
-      /* This will add back the OS built-in anchors */
-      SecTrustSetAnchorCertificatesOnly (peerTrust, false);
-#endif
-
-   SecTrustEvaluate (peerTrust, &trustResult);
-   CFRelease (peerTrust);
-
-   if (trustResult == kSecTrustResultProceed || trustResult == kSecTrustResultUnspecified) {
-      return true;
-   }
-   if (trustResult == kSecTrustResultRecoverableTrustFailure) {
-      MONGOC_WARNING("Recoverable trust failure."
-                     " Probably mismatched hostname or expired certificate."
-                     " Or Unknown Certificate Authority");
-      return false;
-   }
-
-   MONGOC_WARNING("Failed to evaluate trust: %d", trustResult);
-   return false;
-}
-
 bool
 mongoc_secure_transport_setup_certificate (mongoc_stream_tls_secure_transport_t *secure_transport,
                                            mongoc_ssl_opt_t *opt)
@@ -373,6 +263,7 @@ mongoc_secure_transport_setup_certificate (mongoc_stream_tls_secure_transport_t 
 
    if (!opt->pem_file) {
       MONGOC_WARNING ("No private key provided, the server won't be able to verify us");
+      return false;
    }
 
    success = _mongoc_secure_transport_import_pem (opt->pem_file, opt->pem_pwd, &items, &type);
@@ -428,7 +319,6 @@ mongoc_secure_transport_setup_ca (mongoc_stream_tls_secure_transport_t *secure_t
    if (opt->ca_file) {
       CFArrayRef items;
       SecExternalItemType type = kSecItemTypeCertificate;
-      CFMutableArrayRef anchors = CFArrayCreateMutable (kCFAllocatorDefault, 0, &kCFTypeArrayCallBacks);
       bool success = _mongoc_secure_transport_import_pem (opt->ca_file, NULL, &items, &type);
 
       if (!success) {
@@ -437,6 +327,8 @@ mongoc_secure_transport_setup_ca (mongoc_stream_tls_secure_transport_t *secure_t
       }
 
       if (type == kSecItemTypeAggregate) {
+         CFMutableArrayRef anchors = CFArrayCreateMutable (kCFAllocatorDefault, 0, &kCFTypeArrayCallBacks);
+
          for (CFIndex i = 0; i < CFArrayGetCount (items); ++i) {
             CFTypeID item_id = CFGetTypeID (CFArrayGetValueAtIndex (items, i));
 
@@ -444,17 +336,17 @@ mongoc_secure_transport_setup_ca (mongoc_stream_tls_secure_transport_t *secure_t
                CFArrayAppendValue (anchors, CFArrayGetValueAtIndex (items, i));
             }
          }
-         secure_transport->anchors = CFArrayCreateCopy (kCFAllocatorDefault, anchors);
+         secure_transport->anchors = CFRetain (anchors);
+         CFRelease (items);
       } else if (type == kSecItemTypeCertificate) {
-         secure_transport->anchors = CFArrayCreateCopy (kCFAllocatorDefault, items);
+         secure_transport->anchors = CFRetain (items);
       }
 
-      CFRelease (anchors);
-      CFRelease (items);
+      success = !SSLSetTrustedRoots (secure_transport->ssl_ctx_ref, secure_transport->anchors, true);
+      MONGOC_DEBUG("Setting certificate authority %s", success ? "succeeded" : "failed");
       return true;
    }
 
-   secure_transport->anchors = CFArrayCreateMutable (kCFAllocatorDefault, 0, &kCFTypeArrayCallBacks);
    MONGOC_WARNING("No CA provided, using defaults");
    return false;
 }

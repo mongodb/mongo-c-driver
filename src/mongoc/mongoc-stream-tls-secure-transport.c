@@ -425,28 +425,14 @@ mongoc_stream_tls_secure_transport_check_cert (mongoc_stream_t *stream,
 
    do {
       ret = SSLHandshake (secure_transport->ssl_ctx_ref);
-
-      switch (ret) {
-         case noErr:
-            RETURN (true);
-
-         case errSSLServerAuthCompleted:
-            if (mongoc_secure_transport_verify_trust (secure_transport, tls->weak_cert_validation)) {
-               MONGOC_DEBUG("Trusted the certificate");
-               ret = errSSLWouldBlock;
-            } else {
-               MONGOC_WARNING("Didn't trust the certificate");
-               RETURN (false);
-            }
-         break;
-
-      default:
-         MONGOC_WARNING("Got a different code from SSLHandshake then expected: %d, aborting", ret);
-         RETURN (false);
-      }
    } while (ret == errSSLWouldBlock);
 
-   RETURN (false);
+   if (ret == errSSLServerAuthCompleted) {
+      MONGOC_WARNING("Weak validation enabled, allowing server cert whatever it is");
+      RETURN (true);
+   }
+
+   RETURN (ret == noErr);
 }
 
 mongoc_stream_t *
@@ -493,16 +479,23 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t  *base_stream,
                   mongoc_secure_transport_write);
    SSLSetProtocolVersionMin (secure_transport->ssl_ctx_ref, kTLSProtocol1);
 
-   /*mongoc_secure_transport_setup_certificate_revocation (secure_transport->ssl_ctx_ref, opt->crl_file);*/
    mongoc_secure_transport_setup_certificate (secure_transport, opt);
    mongoc_secure_transport_setup_ca (secure_transport, opt);
 
+   if (opt->ca_dir) {
+      MONGOC_WARNING("Setting mongoc_ssl_opt_t.ca_dir has no effect when built against"
+            "Secure Transport");
+   }
+   if (opt->crl_file) {
+      MONGOC_WARNING("Setting mongoc_ssl_opt_t.crl_file has no effect when built against"
+            "Secure Transport");
+   }
+
    if (client) {
-      SSLSetSessionOption (secure_transport->ssl_ctx_ref, kSSLSessionOptionBreakOnServerAuth, true);
+      SSLSetSessionOption (secure_transport->ssl_ctx_ref, kSSLSessionOptionBreakOnServerAuth, opt->weak_cert_validation);
    } else {
       SSLSetClientSideAuthenticate (secure_transport->ssl_ctx_ref, kTryAuthenticate);
    }
-   /*sslSetEnabledCiphers (secure_transport->ssl_ctx_ref, suites40);*/
    SSLSetConnection (secure_transport->ssl_ctx_ref, tls);
 
 
